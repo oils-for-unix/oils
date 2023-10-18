@@ -11,6 +11,7 @@ from core import test_lib
 
 
 class LexerGenTest(unittest.TestCase):
+
     def testTranslateRegex(self):
         PAIRS = [
             (r'a', r'"a" '),

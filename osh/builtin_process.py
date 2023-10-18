@@ -69,7 +69,7 @@ class Fg(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        job_spec = '' # get current job by default
+        job_spec = ''  # get current job by default
         if len(cmd_val.argv) > 1:
             job_spec = cmd_val.argv[1]
 
@@ -130,6 +130,7 @@ class Bg(vm._Builtin):
 
 
 class Fork(vm._Builtin):
+
     def __init__(self, shell_ex):
         # type: (vm._Executor) -> None
         self.shell_ex = shell_ex
@@ -144,14 +145,15 @@ class Fork(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block is None:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd is None:
             e_usage('expected a block', loc.Missing)
 
-        return self.shell_ex.RunBackgroundJob(block)
+        return self.shell_ex.RunBackgroundJob(cmd)
 
 
 class ForkWait(vm._Builtin):
+
     def __init__(self, shell_ex):
         # type: (vm._Executor) -> None
         self.shell_ex = shell_ex
@@ -165,14 +167,15 @@ class ForkWait(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block is None:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd is None:
             e_usage('expected a block', loc.Missing)
 
-        return self.shell_ex.RunSubshell(block)
+        return self.shell_ex.RunSubshell(cmd)
 
 
 class Exec(vm._Builtin):
+
     def __init__(self, mem, ext_prog, fd_state, search_path, errfmt):
         # type: (Mem, ExternalProgram, FdState, SearchPath, ErrorFormatter) -> None
         self.mem = mem
@@ -197,9 +200,9 @@ class Exec(vm._Builtin):
         if argv0_path is None:
             e_die_status(127, 'exec: %r not found' % cmd, cmd_val.arg_locs[1])
 
-        # shift off 'exec'
-        c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
-                            cmd_val.typed_args)
+        # shift off 'exec', and remove typed args because they don't apply
+        c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:], None, None,
+                            None)
 
         self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
         # makes mypy and C++ compiler happy
@@ -290,11 +293,11 @@ class Wait(vm._Builtin):
         # Get list of jobs.  Then we need to check if they are ALL stopped.
         # Returns the exit code of the last one on the COMMAND LINE, not the exit
         # code of last one to FINISH.
-        jobs = [] # type: List[process.Job]
+        jobs = []  # type: List[process.Job]
         for i, job_id in enumerate(job_ids):
             location = arg_locs[i]
 
-            job = None # type: Optional[process.Job]
+            job = None  # type: Optional[process.Job]
             if job_id == '' or job_id.startswith('%'):
                 job = self.job_list.GetJobWithSpec(job_id)
 
@@ -303,8 +306,8 @@ class Wait(vm._Builtin):
                 try:
                     pid = int(job_id)
                 except ValueError:
-                    raise error.Usage('expected PID or jobspec, got %r' % job_id,
-                                      location)
+                    raise error.Usage(
+                        'expected PID or jobspec, got %r' % job_id, location)
 
                 job = self.job_list.ProcessFromPid(pid)
 
@@ -340,6 +343,7 @@ class Wait(vm._Builtin):
 
 
 class Umask(vm._Builtin):
+
     def __init__(self):
         # type: () -> None
         """Dummy constructor for mycpp."""

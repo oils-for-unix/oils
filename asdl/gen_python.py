@@ -255,15 +255,6 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('    L.append(Field(%r, %s))' %
                       (field.name, out_val_name))
 
-        elif field.typ.IsOptional():
-            typ = field.typ.children[0]
-
-            self.Emit('  if self.%s is not None:  # Optional' % field.name)
-            child_code_str, _ = _HNodeExpr(abbrev, typ, 'self.%s' % field.name)
-            self.Emit('    %s = %s' % (out_val_name, child_code_str))
-            self.Emit('    L.append(Field(%r, %s))' %
-                      (field.name, out_val_name))
-
         elif field.typ.IsDict():
             k = 'k%d' % counter
             v = 'v%d' % counter
@@ -287,6 +278,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                       (out_val_name, k_code_str))
             self.Emit('      %s.children.append(%s)' %
                       (out_val_name, v_code_str))
+            self.Emit('    L.append(Field(%r, %s))' %
+                      (field.name, out_val_name))
+
+        elif field.typ.IsOptional():
+            typ = field.typ.children[0]
+
+            self.Emit('  if self.%s is not None:  # Optional' % field.name)
+            child_code_str, _ = _HNodeExpr(abbrev, typ, 'self.%s' % field.name)
+            self.Emit('    %s = %s' % (out_val_name, child_code_str))
             self.Emit('    L.append(Field(%r, %s))' %
                       (field.name, out_val_name))
 
@@ -359,7 +359,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('  def CreateNull(alloc_lists=False):')
             self.Emit('    # type: () -> %s%s' % (class_ns, class_name))
             self.Emit('    return %s%s(%s)' %
-                      (class_ns, class_name, ', '.join(default_vals)))
+                      (class_ns, class_name, ', '.join(default_vals)),
+                      reflow=False)
             self.Emit('')
 
         if not self.pretty_print_methods:
@@ -528,7 +529,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                 # We must use the old-style naming here, ie. command__NoOp, in order
                 # to support zero field variants as constants.
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant, class_name, (sum_name + '_t',), i + 1)
+                self._GenClass(variant, class_name, (sum_name + '_t', ), i + 1)
 
         # Class that's just a NAMESPACE, e.g. for value.Str
         self.Emit('class %s(object):' % sum_name, depth)
@@ -548,7 +549,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                 # oil_cmd.Simple.
                 fq_name = variant.name
                 self._GenClass(variant,
-                               fq_name, (sum_name + '_t',),
+                               fq_name, (sum_name + '_t', ),
                                i + 1,
                                class_ns=sum_name + '.')
 
@@ -569,5 +570,5 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             # Figure out base classes AFTERWARD.
             bases = self._product_bases[name]
             if not bases:
-                bases = ('pybase.CompoundObj',)
+                bases = ('pybase.CompoundObj', )
             self._GenClass(ast_node, name, bases, tag_num)

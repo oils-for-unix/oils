@@ -565,4 +565,5 @@ def TokenForExpr(node):
             node = cast(expr.RegexLiteral, UP_node)
             return node.left
 
-    raise AssertionError()  # unreachable
+        else:
+            raise AssertionError(node.__class__.__name__)

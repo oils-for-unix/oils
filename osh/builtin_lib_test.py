@@ -21,6 +21,7 @@ from osh import builtin_lib  # module under test
 
 
 class BuiltinTest(unittest.TestCase):
+
     def testHistoryBuiltin(self):
         test_path = '_tmp/builtin_test_history.txt'
         with open(test_path, 'w') as f:

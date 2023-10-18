@@ -25,7 +25,7 @@ _ = log
 
 from typing import Dict, List, Iterator, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import cmd_value, Proc
+    from _devbuild.gen.runtime_asdl import cmd_value
     from core.completion import Lookup, OptionState, Api, UserSpec
     from core.ui import ErrorFormatter
     from frontend.args import _Attributes
@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 
 
 class _FixedWordsAction(completion.CompletionAction):
+
     def __init__(self, d):
         # type: (List[str]) -> None
         self.d = d
@@ -59,7 +60,7 @@ class _DynamicProcDictAction(completion.CompletionAction):
     """
 
     def __init__(self, d):
-        # type: (Dict[str, Proc]) -> None
+        # type: (Dict[str, value.Proc]) -> None
         self.d = d
 
     def Matches(self, comp):
@@ -96,6 +97,7 @@ class _DynamicStrDictAction(completion.CompletionAction):
 
 
 class SpecBuilder(object):
+
     def __init__(
             self,
             cmd_ev,  # type: CommandEvaluator
@@ -160,7 +162,8 @@ class SpecBuilder(object):
         for name in attrs.actions:
             if name == 'alias':
                 a = _DynamicStrDictAction(
-                    self.parse_ctx.aliases)  # type: completion.CompletionAction
+                    self.parse_ctx.aliases
+                )  # type: completion.CompletionAction
 
             elif name == 'binding':
                 # TODO: Where do we get this from?
@@ -244,16 +247,17 @@ class SpecBuilder(object):
 
         extra_actions = []  # type: List[completion.CompletionAction]
         if base_opts.get('plusdirs', False):
-            extra_actions.append(completion.FileSystemAction(
-                True, False, False))
+            extra_actions.append(
+                completion.FileSystemAction(True, False, False))
 
         # These only happen if there were zero shown.
         else_actions = []  # type: List[completion.CompletionAction]
         if base_opts.get('default', False):
-            else_actions.append(completion.FileSystemAction(
-                False, False, False))
+            else_actions.append(
+                completion.FileSystemAction(False, False, False))
         if base_opts.get('dirnames', False):
-            else_actions.append(completion.FileSystemAction(True, False, False))
+            else_actions.append(completion.FileSystemAction(
+                True, False, False))
 
         if len(actions) == 0 and len(else_actions) == 0:
             raise error.Usage(

@@ -16,7 +16,8 @@ Places where we try a single line:
 """
 from typing import Tuple, List
 
-from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e, color_t)
+from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e,
+                                      color_t)
 from core import ansi
 from data_lang import qsn
 from pylib import cgi
@@ -216,6 +217,7 @@ INDENT = 2
 
 
 class _PrettyPrinter(object):
+
     def __init__(self, max_col):
         # type: (int) -> None
         self.max_col = max_col
@@ -341,7 +343,8 @@ class _PrettyPrinter(object):
                     # Try to print it on the same line as the field name; otherwise print
                     # it on a separate line.
                     single_f = f.NewTempBuffer()
-                    if _TrySingleLine(val, single_f, self.max_col - prefix_len):
+                    if _TrySingleLine(val, single_f,
+                                      self.max_col - prefix_len):
                         s, num_chars = single_f.GetRaw(
                         )  # extra unpacking for mycpp
                         f.WriteRaw((s, num_chars))

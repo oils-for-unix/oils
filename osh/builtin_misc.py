@@ -49,10 +49,6 @@ if TYPE_CHECKING:
 
 _ = log
 
-#
-# Implementation of builtins.
-#
-
 
 class Times(vm._Builtin):
 
@@ -84,8 +80,14 @@ class Times(vm._Builtin):
 #   the next character read and for line continuation.
 
 
-def _AppendParts(s, spans, max_results, join_next, parts):
-    # type: (str, List[Tuple[span_t, int]], int, bool, List[mylib.BufWriter]) -> Tuple[bool, bool]
+def _AppendParts(
+        s,  # type: str
+        spans,  # type: List[Tuple[span_t, int]]
+        max_results,  # type: int
+        join_next,  # type: bool
+        parts,  # type: List[mylib.BufWriter]
+):
+    # type: (...) -> Tuple[bool, bool]
     """Append to 'parts', for the 'read' builtin.
 
     Similar to _SpansToParts in osh/split.py
@@ -287,8 +289,15 @@ class ctx_TermAttrs(object):
 
 class Read(vm._Builtin):
 
-    def __init__(self, splitter, mem, parse_ctx, cmd_ev, errfmt):
-        # type: (SplitContext, Mem, ParseContext, CommandEvaluator, ErrorFormatter) -> None
+    def __init__(
+            self,
+            splitter,  # type: SplitContext
+            mem,  # type: state.Mem
+            parse_ctx,  # type: ParseContext
+            cmd_ev,  # type: CommandEvaluator
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.splitter = splitter
         self.mem = mem
         self.parse_ctx = parse_ctx
@@ -636,12 +645,12 @@ class Cd(vm._Builtin):
         # Other shells use global variables.
         self.mem.SetPwd(real_dest_dir)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd:
             out_errs = []  # type: List[bool]
             with ctx_CdBlock(self.dir_stack, real_dest_dir, self.mem,
                              self.errfmt, out_errs):
-                unused = self.cmd_ev.EvalBlock(block)
+                unused = self.cmd_ev.EvalCommand(cmd)
             if len(out_errs):
                 return 1
 

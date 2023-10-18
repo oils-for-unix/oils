@@ -493,6 +493,9 @@ job-main() {
 
   local out_dir=_tmp/soil
 
+  # Report for debugging
+  export EXTRA_MYCPP_ARGS='--stack-roots-warn 16'
+
   log-context 'job-main'
   mkdir -v -p $out_dir
   ls -l -d $out_dir

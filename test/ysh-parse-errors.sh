@@ -70,6 +70,18 @@ test-func-var-checker() {
   '
 }
 
+test-arglist() {
+  _parse-error 'json write ()'
+
+  _should-parse 'p (; n=42)'
+  _should-parse '= f(; n=42)'
+
+  _parse-error '= f(; 42)'
+  _parse-error '= f(; name)'
+  _parse-error '= f(; x for x in y)'
+}
+
+
 # Extra constraints on param groups:
 # - word arg types can only be Str or Ref
 # - no constraints on positional or keyword args?
@@ -106,15 +118,15 @@ test-proc-sig() {
 
   _should-parse 'func p (p, ...rest) { echo hi }'
 
-  _should-parse 'func p (p, ...rest; n, ...rest) { echo hi }'
-  _should-parse 'func p (p, ...rest; n, ...rest,) { echo hi }'
+  _should-parse 'func p (p, ...rest; n, ...named) { echo hi }'
+  _should-parse 'func p (p, ...rest; n, ...named,) { echo hi }'
 
-  _parse-error 'func p (p, ...rest; n, ...rest, z) { echo hi }'
-  _parse-error 'func p (p, ...rest; n, ...rest; ) { echo hi }'
+  _parse-error 'func p (p, ...rest; n, ...named, z) { echo hi }'
+  _parse-error 'func p (p, ...rest; n, ...named; ) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; pos, ...rest) { echo hi }'
+  _should-parse 'proc p (w, ...rest; pos, ...named) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; pos, ...rest; named=3, ...rest) { echo hi }'
+  _should-parse 'proc p (w, ...rest; pos, ...args; named=3, ...named) { echo hi }'
 
   _should-parse 'proc p (w=1, v=2; p=3, q=4; n=5, m=6) { echo hi }'
 
@@ -122,7 +134,7 @@ test-proc-sig() {
 
   _should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; t, ...rest; named, ...rest; block) { echo hi }'
+  _should-parse 'proc p (w, ...rest; t, ...args; n, ...named; block) { echo hi }'
 
   _parse-error 'proc p ( ; ; ; b1, b2) { echo hi }'
   _parse-error 'proc p ( ; ; ; b1, ...rest) { echo hi }'
@@ -137,6 +149,13 @@ test-proc-sig() {
   _should-parse 'proc p ( ; ; ; ) { echo hi }'
 }
 
+test-proc-def() {
+  _parse-error 'proc p(w) { var w = foo }'
+  _parse-error 'proc p(w; p) { var p = foo }'
+  _parse-error 'proc p(w; p; n, n2) { var n2 = foo }'
+  _parse-error 'proc p(w; p; n, n2; b) { var b = foo }'
+}
+
 test-func-sig() {
   _parse-error 'func f { echo hi }'
 
@@ -144,8 +163,13 @@ test-func-sig() {
 
   _should-parse 'func f (a List[Int] = [3,4]) { echo hi }'
   _should-parse 'func f (a, b, ...rest; c) { echo hi }'
-  _should-parse 'func f (a, b, ...rest; c, ...rest) { echo hi }'
-  _parse-error 'func f (a, b, ...rest; c, ...rest;) { echo hi }'
+  _should-parse 'func f (a, b, ...rest; c, ...named) { echo hi }'
+  _parse-error 'func f (a, b, ...rest; c, ...named;) { echo hi }'
+}
+
+test-func-def() {
+  _parse-error 'func f(p) { var p = foo }'
+  _parse-error 'func f(p; n) { var n = foo }'
 }
 
 test-sh-assign() {
@@ -425,10 +449,14 @@ test-parse-at() {
   _parse-error 'echo @"foo"'
 }
 
-test-ysh-nested-proc() {
+test-ysh-nested-proc-func() {
   set +o errexit
 
   _parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _parse-error 'func f() { echo 1; proc f { echo f }; echo 2 }'
+  _parse-error 'proc p { echo 1; func f() { echo f }; echo 2 }'
+  _parse-error 'func f() { echo 1; func f2() { echo f }; echo 2 }'
+
   _parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
 
   # ksh function
@@ -492,6 +520,57 @@ test-destructure() {
 
     const y = 6
   }'
+}
+
+test-lazy-arg-list() {
+  _should-parse 'assert [42 === x]'
+
+  _should-parse 'assert [ 42 === x ]'
+  _should-parse 'assert [42, 43]'
+  _should-parse 'assert [42, named=true]'
+  _should-parse 'assert [42, named=true]; echo hi'
+
+  _should-parse 'assert [42, named=true] { echo hi }'
+
+  # Seems fine
+  _should-parse 'assert [42, named=true]{ echo hi }'
+
+  # I guess this legacy is still valid?  Or disallow explicitly
+  _should-parse 'assert *.[ch]'
+  _should-parse 'assert 42[ch]'
+  _should-parse 'echo[]'
+
+  _parse-error 'assert [4'
+  _parse-error 'assert [ 4'
+
+  _should-parse 'json write (42) >out'
+
+  # I guess this is OK
+  _should-parse 'json write >out (42)'
+
+  # BUG
+  #_parse-error 'when (42) >out { echo hi }'
+
+  #_should-parse 'when (42) { echo hi } >out'
+
+  # How to support this?  Maybe the CommandParser can test for i == 0 when it
+  # gets Op_LBracket
+
+  # legacy
+  _should-parse '[ x = y ]'
+
+
+  return
+
+  # TODO: shouldn't allow extra words
+  _parse-error 'assert (42)extra'
+  _parse-error 'assert (42) extra'
+
+
+  _parse-error 'assert [42]extra'
+  _parse-error 'assert [42] extra'
+
+
 }
 
 #

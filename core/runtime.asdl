@@ -8,6 +8,7 @@ module runtime
     expr word command
     CompoundWord DoubleQuoted
     ArgList re redir_loc proc_sig 
+    LiteralBlock Func
   }
 
   IntBox = (int i)
@@ -18,10 +19,20 @@ module runtime
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
-    Argv(List[str] argv, List[CompoundWord] arg_locs, ArgList? typed_args)
+    Argv(List[str] argv, List[CompoundWord] arg_locs,
+         ArgList? typed_args,
+         # Evaluated args, similar to typed_args.py Reader
+         List[value]? pos_args, Dict[str, value]? named_args)
+
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
+
+  ProcDefaults = (
+    List[value]? for_word,  # all of them are value.Str
+    List[value]? for_typed,  # block default is also here
+    Dict[str, value]? for_named,
+  )
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
@@ -74,16 +85,26 @@ module runtime
     # ^"$1 and $2"
   | Template(DoubleQuoted dq)
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
-  | Command(command body)
+  | Command(command c)
+
+    # for Hay to get the backing lines
+    # TODO: ASDL doesn't support shared variant across module
+    # This would be more efficient
+  # | LiteralBlock %LiteralBlock
+    | Block(LiteralBlock block)
 
     # callable is vm._Callable.  TODO: ASDL should be able to express and
     # "inline" such types?  Maybe we need a forward declaration of it.
-    #
-    # VM.funcs() and VM.procs() could return dictionaries.
-  | Func(any callable)
-  | BoundFunc(value me, any callable)
-    # Reflect on Proc, e.g. find location info for its file!
-  | Proc(any p)
+  | BuiltinFunc(any callable)
+  | BuiltinMethod(value me, any callable)
+
+    # command.ShFunction and command.Proc evaluate to ProcValue.
+    # Procs have default args to evaluate, and no dynamic scope.
+  | Proc(str name, Token name_tok, proc_sig sig, command body,
+         ProcDefaults? defaults, bool dynamic_scope)
+
+  | Func(str name, Func parsed,
+         List[value] pos_defaults, Dict[str, value] named_defaults)
 
   #
   # Internal details
@@ -151,15 +172,6 @@ module runtime
 
   # Evaluated version of syntax.Redir
   RedirValue = (id op_id, loc op_loc, redir_loc loc, redirect_arg arg)
-
-  # What command.ShFunction and command.Proc evaluate to
-  # For ShFunction, this is trivial.  For Proc, we evaluate default args.
-  # We store name_loc separately because ShFunction has a word as a name, but
-  # a Proc has a Token.
-  Proc = (
-    str name, Token name_tok, proc_sig sig, command body, List[value] defaults,
-    bool dynamic_scope
-  )
 
   # An exit status with location info.  For process sub.
   StatusArray = (

@@ -66,19 +66,25 @@ class ParseHay(vm._Callable):
 
         return value.Command(node)
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        string = args.PosStr()
-        args.Done()
+        string = rd.PosStr()
+        rd.Done()
         return self._Call(string)
 
 
 class EvalHay(vm._Callable):
     """evalHay()"""
 
-    def __init__(self, hay_state, mutable_opts, mem, cmd_ev):
-        # type: (state.Hay, state.MutableOpts, state.Mem, cmd_eval.CommandEvaluator) -> None
+    def __init__(
+            self,
+            hay_state,  #type: state.Hay
+            mutable_opts,  # type: state.MutableOpts
+            mem,  # type: state.Mem
+            cmd_ev,  #type: cmd_eval.CommandEvaluator
+    ):
+        # type: (...) -> None
         self.hay_state = hay_state
         self.mutable_opts = mutable_opts
         self.mem = mem
@@ -87,20 +93,19 @@ class EvalHay(vm._Callable):
     def _Call(self, cmd):
         # type: (command_t) -> Dict[str, value_t]
 
-        with state.ctx_HayEval(self.hay_state, self.mutable_opts,
-                               self.mem):
-            unused = self.cmd_ev.EvalBlock(cmd)
+        with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
+            unused = self.cmd_ev.EvalCommand(cmd)
 
         return self.hay_state.Result()
 
         # Note: we should discourage the unvalidated top namespace for files?  It
         # needs more validation.
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        cmd = args.PosCommand()
-        args.Done()
+        cmd = rd.PosCommand()
+        rd.Done()
         return value.Dict(self._Call(cmd))
 
 
@@ -120,10 +125,10 @@ class BlockAsStr(vm._Callable):
         # type: (value_t) -> value_t
         return block
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        val = args.PosValue()
-        args.Done()
+        val = rd.PosValue()
+        rd.Done()
         return self._Call(val)
 
 
@@ -138,9 +143,8 @@ class HayFunc(vm._Callable):
         # type: () -> Dict[str, value_t]
         return self.hay_state.HayRegister()
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
         # TODO: check args
         return value.Dict(self._Call())
-

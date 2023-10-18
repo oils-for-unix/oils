@@ -189,9 +189,16 @@ if mylib.PYTHON:
 class UnsafeArith(object):
     """For parsing a[i] at RUNTIME."""
 
-    def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, arith_ev,
-                 errfmt):
-        # type: (state.Mem, optview.Exec, state.MutableOpts, parse_lib.ParseContext, ArithEvaluator, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: state.MutableOpts
+            parse_ctx,  # type: parse_lib.ParseContext
+            arith_ev,  # type: ArithEvaluator
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
@@ -217,7 +224,7 @@ class UnsafeArith(object):
         a_parser = self.parse_ctx.MakeArithParser(s)
 
         with alloc.ctx_SourceCode(self.arena,
-                                source.ArgvWord('dynamic place', location)):
+                                  source.ArgvWord('dynamic place', location)):
             try:
                 anode = a_parser.Parse()
             except error.Parse as e:
@@ -286,8 +293,15 @@ class ArithEvaluator(object):
     2. Look up variables and evaluate words.
     """
 
-    def __init__(self, mem, exec_opts, mutable_opts, parse_ctx, errfmt):
-        # type: (state.Mem, optview.Exec, state.MutableOpts, Optional[parse_lib.ParseContext], ErrorFormatter) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: state.MutableOpts
+            parse_ctx,  # type: Optional[parse_lib.ParseContext]
+            errfmt,  # type: ErrorFormatter
+    ):
+        # type: (...) -> None
         self.word_ev = None  # type: word_eval.StringWordEvaluator
         self.mem = mem
         self.exec_opts = exec_opts
@@ -376,13 +390,14 @@ class ArithEvaluator(object):
                 a_parser = self.parse_ctx.MakeArithParser(s)
 
                 # TODO: Fill in the variable name
-                with alloc.ctx_SourceCode(arena, source.Variable(None,
-                                                               blame_loc)):
+                with alloc.ctx_SourceCode(arena,
+                                          source.Variable(None, blame_loc)):
                     try:
                         node2 = a_parser.Parse()  # may raise error.Parse
                     except error.Parse as e:
                         self.errfmt.PrettyPrintError(e)
-                        e_die('Parse error in recursive arithmetic', e.location)
+                        e_die('Parse error in recursive arithmetic',
+                              e.location)
 
                 # Prevent infinite recursion of $(( 1x )) -- it's a word that evaluates
                 # to itself, and you don't want to reparse it as a word.
@@ -398,7 +413,8 @@ class ArithEvaluator(object):
                     # We don't need to flip _allow_process_sub, because they can't be
                     # parsed.  See spec/bugs.test.sh.
                     with state.ctx_Option(self.mutable_opts,
-                                          [option_i._allow_command_sub], False):
+                                          [option_i._allow_command_sub],
+                                          False):
                         integer = self.EvalToInt(node2)
 
             else:
@@ -417,7 +433,7 @@ class ArithEvaluator(object):
             UP_val = val
             with tagswitch(val) as case:
                 if case(value_e.Undef
-                       ):  # 'nounset' already handled before got here
+                        ):  # 'nounset' already handled before got here
                     # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
                     e_strict('Undefined value in arithmetic context',
                              loc.Arith(blame))
@@ -442,8 +458,8 @@ class ArithEvaluator(object):
         # In bash, (( a )) is like (( a[0] )), but I don't want that.
         # And returning '0' gives different results.
         e_die(
-            "Expected a value convertible to integer, got %s" % ui.ValType(val),
-            loc.Arith(blame))
+            "Expected a value convertible to integer, got %s" %
+            ui.ValType(val), loc.Arith(blame))
 
     def _EvalLhsAndLookupArith(self, node):
         # type: (arith_expr_t) -> Tuple[int, lvalue_t]
@@ -485,7 +501,7 @@ class ArithEvaluator(object):
 
         # BASH_LINENO, arr (array name without strict_array), etc.
         if val.tag() in (value_e.BashArray, value_e.BashAssoc
-                        ) and node.tag() == arith_expr_e.VarSub:
+                         ) and node.tag() == arith_expr_e.VarSub:
             vsub = cast(SimpleVarSub, node)
             if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
                 val = word_eval.DecayArray(val)
@@ -874,14 +890,16 @@ class BoolEvaluator(ArithEvaluator):
     where x='1+2'
     """
 
-    def __init__(self,
-                 mem,
-                 exec_opts,
-                 mutable_opts,
-                 parse_ctx,
-                 errfmt,
-                 always_strict=False):
-        # type: (state.Mem, optview.Exec, Optional[state.MutableOpts], Optional[parse_lib.ParseContext], ErrorFormatter, bool) -> None
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            exec_opts,  # type: optview.Exec
+            mutable_opts,  # type: Optional[state.MutableOpts]
+            parse_ctx,  # type: Optional[parse_lib.ParseContext]
+            errfmt,  # type: ErrorFormatter
+            always_strict=False  # type: bool
+    ):
+        # type: (...) -> None
         ArithEvaluator.__init__(self, mem, exec_opts, mutable_opts, parse_ctx,
                                 errfmt)
         self.always_strict = always_strict
@@ -1005,7 +1023,8 @@ class BoolEvaluator(ArithEvaluator):
                     # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
                     # Bash also allows [[ 1+2 -eq 3 ]].
                     i1 = self._StringToIntegerOrError(s1, blame_word=node.left)
-                    i2 = self._StringToIntegerOrError(s2, blame_word=node.right)
+                    i2 = self._StringToIntegerOrError(s2,
+                                                      blame_word=node.right)
 
                     if op_id == Id.BoolBinary_eq:
                         return i1 == i2

@@ -210,14 +210,14 @@ class Reader(object):
 
     def _FirstLocation(self):
         # type: () -> loc_t
-        if self.locs and self.locs[0] is not None:
+        if self.locs is not None and self.locs[0] is not None:
             return self.locs[0]
         else:
             return loc.Missing
 
     def Location(self):
         # type: () -> loc_t
-        if self.locs:
+        if self.locs is not None:
             if self.i == self.n:
                 i = self.n - 1  # if the last arg is missing, point at the one before
             else:
@@ -255,6 +255,7 @@ class _Action(object):
 
 
 class _ArgAction(_Action):
+
     def __init__(self, name, quit_parsing_flags, valid=None):
         # type: (str, bool, Optional[List[str]]) -> None
         """
@@ -288,6 +289,7 @@ class _ArgAction(_Action):
 
 
 class SetToInt(_ArgAction):
+
     def __init__(self, name):
         # type: (str) -> None
         # repeat defaults for C++ translation
@@ -311,6 +313,7 @@ class SetToInt(_ArgAction):
 
 
 class SetToFloat(_ArgAction):
+
     def __init__(self, name):
         # type: (str) -> None
         # repeat defaults for C++ translation
@@ -321,8 +324,9 @@ class SetToFloat(_ArgAction):
         try:
             f = float(arg)
         except ValueError:
-            e_usage('expected number after %r, got %r' % ('-' + self.name, arg),
-                    location)
+            e_usage(
+                'expected number after %r, got %r' % ('-' + self.name, arg),
+                location)
         # So far all our float values are > 0, so use -1.0 as the 'unset' value
         # corner case: this treats -0.0 as 0.0!
         if f < 0:
@@ -332,6 +336,7 @@ class SetToFloat(_ArgAction):
 
 
 class SetToString(_ArgAction):
+
     def __init__(self, name, quit_parsing_flags, valid=None):
         # type: (str, bool, Optional[List[str]]) -> None
         _ArgAction.__init__(self, name, quit_parsing_flags, valid=valid)
@@ -374,6 +379,7 @@ class SetAttachedBool(_Action):
 
 
 class SetToTrue(_Action):
+
     def __init__(self, name):
         # type: (str) -> None
         self.name = name
@@ -528,7 +534,8 @@ def Parse(spec, arg_r):
                     action.OnMatch(attached_arg, arg_r, out)
                     break
 
-                e_usage("doesn't accept flag %s" % ('-' + ch), arg_r.Location())
+                e_usage("doesn't accept flag %s" % ('-' + ch),
+                        arg_r.Location())
 
             arg_r.Next()  # next arg
 

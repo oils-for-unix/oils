@@ -41,9 +41,7 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
-    from _devbuild.gen.runtime_asdl import Proc
     from core import alloc
-    from core import code
     from osh import sh_expr_eval
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
@@ -221,7 +219,7 @@ class ctx_AssignBuiltin(object):
             self.mutable_opts.Pop(option_i._allow_process_sub)
 
 
-class ctx_OilExpr(object):
+class ctx_YshExpr(object):
     """Command sub must fail in 'mystring' ++ $(false)"""
 
     def __init__(self, mutable_opts):
@@ -1135,8 +1133,8 @@ class ctx_FuncCall(object):
     """For func calls."""
 
     def __init__(self, mem, func):
-        # type: (Mem, code.UserFunc) -> None
-        mem.PushCall(func.name, func.node.name, None)
+        # type: (Mem, value.Func) -> None
+        mem.PushCall(func.name, func.parsed.name, None)
         self.mem = mem
 
     def __enter__(self):
@@ -1152,7 +1150,7 @@ class ctx_ProcCall(object):
     """For proc calls."""
 
     def __init__(self, mem, mutable_opts, proc, argv):
-        # type: (Mem, MutableOpts, Proc, List[str]) -> None
+        # type: (Mem, MutableOpts, value.Proc, List[str]) -> None
         mem.PushCall(proc.name, proc.name_tok, argv)
         mutable_opts.PushDynamicScope(proc.dynamic_scope)
         # It may have been disabled with ctx_ErrExit for 'if echo $(false)', but
@@ -1700,8 +1698,14 @@ class Mem(object):
 
         raise AssertionError()
 
-    def _ResolveNameOrRef(self, name, which_scopes, is_setref, ref_trail=None):
-        # type: (str, scope_t, bool, Optional[List[str]]) -> Tuple[Optional[Cell], Dict[str, Cell], str]
+    def _ResolveNameOrRef(
+            self,
+            name,  # type: str
+            which_scopes,  # type: scope_t
+            is_setref,  # type: bool 
+            ref_trail=None,  # type: Optional[List[str]]
+    ):
+        # type: (...) -> Tuple[Optional[Cell], Dict[str, Cell], str]
         """Look up a cell and namespace, but respect the nameref flag.
 
         Resolving namerefs does RECURSIVE calls.

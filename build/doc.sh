@@ -566,8 +566,7 @@ run-for-release() {
   local root=_release/VERSION
   mkdir -p $root/{doc,test,pub}
 
-  # TODO: fix failures here
-  # tour
+  tour
 
   # Metadata
   cp -v _build/release-date.txt oil-version.txt $root

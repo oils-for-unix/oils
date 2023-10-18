@@ -21,10 +21,10 @@ class ExprParseTest(unittest.TestCase):
         self.arena.PushSource(source.Unused(''))
 
         loader = pyutil.GetResourceLoader()
-        oil_grammar = pyutil.LoadOilGrammar(loader)
+        ysh_grammar = pyutil.LoadYshGrammar(loader)
 
         self.parse_ctx = test_lib.InitParseContext(arena=self.arena,
-                                                   oil_grammar=oil_grammar,
+                                                   ysh_grammar=ysh_grammar,
                                                    one_pass_parse=True)
 
     def _ParseOsh(self, code_str):

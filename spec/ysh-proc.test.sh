@@ -1,4 +1,3 @@
-## oils_failures_allowed: 0
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -23,12 +22,11 @@ proc f() {
 f
 echo status=$?
 
-f a b
-echo status=$?  # status 2 because it's a usage error
+f a b  # status 2
 
+## status: 3
 ## STDOUT:
 status=42
-status=2
 ## END
 
 #### Open proc has "$@"
@@ -130,39 +128,29 @@ b c
 #### proc with typed args
 shopt --set ysh:upgrade
 
-# TODO: default args can only be mutable
-
-proc p (a; mylist, mydict; a Int = 3) {
-  json write (mylist)
-  json write (mydict)
-  json write (a)
+# TODO: duplicate param names aren't allowed
+proc p (a; mylist, mydict; opt Int = 42) {
+  json write --pretty=F (a)
+  json write --pretty=F (mylist)
+  json write --pretty=F (mydict)
+  #json write --pretty=F (opt)
 }
 
 p WORD ([1,2,3], {name: 'bob'})
 
-var bob = "bob"
-p a (:| a b |, {bob}, a = 5)
+echo ---
+
+p x (:| a b |, {bob: 42}, a = 5)
 
 ## STDOUT:
-[
-  1,
-  2,
-  3
-]
-{
-  "name": "bob"
-}
-3
-[
-  "a",
-  "b"
-]
-{
-  "bob": "bob"
-}
-5
+"WORD"
+[1,2,3]
+{"name":"bob"}
+---
+"x"
+["a","b"]
+{"bob":42}
 ## END
-
 
 #### Proc name-with-hyphen
 shopt --set parse_proc
@@ -179,21 +167,36 @@ x y z
 shopt --set ysh:upgrade
 
 # TODO: Test more of this
-proc f(x, y;;; block) {
-  echo F
+proc f(x, y ; ; ; block) {
+  echo f word $x $y
+
+  if (block) {
+    eval (block)
+  }
 }
-f a b {
-  echo in a block;
-}
+f a b { echo FFF }
 
 # With varargs and block
-proc g(x, y, ...rest;;; block) {
-  echo G
+shopt --set parse_proc
+
+proc g(x, y, ...rest ; ; ; block) {
+  echo g word $x $y
+  echo g rest @rest
+
+  if (block) {
+    eval (block)
+  }
 }
-g a b c d { echo also in a block }
+g a b c d {
+  echo GGG
+}
+
 ## STDOUT:
-F
-G
+f word a b
+FFF
+g word a b
+g rest c d
+GGG
 ## END
 
 #### proc returning wrong type

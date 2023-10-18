@@ -194,6 +194,7 @@ shopt -s nounset
 shopt -s nullglob
 shopt -s parse_at
 shopt -s parse_brace
+shopt -s parse_bracket
 shopt -s parse_equals
 shopt -s parse_func
 shopt -s parse_paren

@@ -148,16 +148,16 @@ list-gen() {
 # mycpp and pea deps are committed to git instead of in _build/NINJA/ because
 # users might not have Python 3.10
 
-readonly PY_310=../oil_DEPS/python3
-
 write-pea() {
   # PYTHONPATH=$PY_PATH 
   local module='pea.pea_main'
   local dir=prebuilt/ninja/$module
   mkdir -p $dir
 
+  source build/dev-shell.sh  # python3
+
   # Can't use vendor/typing.py
-  PYTHONPATH=. $PY_310 \
+  PYTHONPATH=. python3 \
     build/dynamic_deps.py py-manifest $module \
   > $dir/all-pairs.txt
 

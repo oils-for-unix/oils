@@ -111,7 +111,7 @@ def _PyObjToValue(val):
         return val  # passthrough
 
     elif isinstance(val, vm._Callable) or callable(val):
-        return value.Func(val)
+        raise AssertionError()
 
     else:
         raise error.Expr(
@@ -175,8 +175,8 @@ def _ValueToPyObj(val):
             val = cast(value.Range, UP_val)
             return xrange(val.lower, val.upper)
 
-        elif case(value_e.Func):
-            val = cast(value.Func, UP_val)
+        elif case(value_e.BuiltinFunc):
+            val = cast(value.BuiltinFunc, UP_val)
             return val.callable
 
         elif case(value_e.Command):

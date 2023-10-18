@@ -1,7 +1,6 @@
-# spec/ysh-funcs
+# spec/ysh-func
 
 ## our_shell: ysh
-## oils_failures_allowed: 3
 
 #### Identity function
 func id(x) {
@@ -30,6 +29,24 @@ func f(x) { return (x + 1) }
 ## STDOUT:
 ## END
 
+#### Positional args
+
+func f(x, y, ...rest) {
+  echo "pos $x $y"
+  echo rest @rest
+}
+
+_ f(1, 2, 3, 4)
+
+# This is an error
+#_ f(1, 2, m=2, n=3)
+
+## STDOUT:
+pos 1 2
+rest 3 4
+## END
+
+
 #### named args
 func f(; x=3) {
   echo x=$x
@@ -40,12 +57,14 @@ _ f()
 _ f(x=4)
 
 ## STDOUT:
+x=3
+x=4
 ## END
 
-#### named args with ...
+#### Named args with ...rest
 func f(; x=3, ...named) {
   echo x=$x
-  json write (named)
+  json write --pretty=F (named)
 }
 
 _ f()
@@ -55,9 +74,53 @@ _ f(x=4)
 _ f(x=4, y=5)
 
 ## STDOUT:
+x=3
+{}
+x=4
+{}
+x=4
+{"y":5}
 ## END
 
-#### Proc-style return in a func
+#### Spread/splat of named args: f(...more)
+
+func f(; x, y) {
+  echo "$x $y"
+}
+
+_ f(; x=9, y=10)
+
+var args = {x: 3, y: 4}
+
+_ f(; ...args)
+
+
+## STDOUT:
+9 10
+3 4
+## END
+
+
+#### Multiple spreads
+
+func f(...pos; ...named) {
+  json write --pretty=F (pos)
+  json write --pretty=F (named)
+}
+
+var a = [1,2,3]
+var d = {m: 'spam', n: 'no'}
+var e = {p: 5, q: 6}
+
+_ f(...a, ...a; ...d, ...e)
+
+## STDOUT:
+[1,2,3,1,2,3]
+{"m":"spam","n":"no","p":5,"q":6}
+## END
+
+
+#### Proc-style return in a func is error
 func t() { return 0 }
 
 = t()
@@ -65,7 +128,7 @@ func t() { return 0 }
 ## STDOUT:
 ## END
 
-#### Typed return in a proc
+#### Typed return in a proc is error
 proc t() { return (0) }
 
 = t()
@@ -110,32 +173,6 @@ func f() { return (1) }
 const f = 0
 ## status: 1
 ## STDOUT:
-## END
-
-#### Functions do not lift their inner definitions out of scope
-func f() {
-  func g() { return (1) }
-  echo "g()=$[g()]"
-}
-
-echo "g()=$[g()]"  # Undefined variable 'g'
-## status: 1
-## STDOUT:
-## END
-
-#### Calling functions still does not lift their inner definitions out of scope
-func f() {
-  func g() { return (1) }
-  echo "g()=$[g()]"
-}
-
-# If we set scope_e.GlobalOnly, then this would define g so that is may be used below
-_ f()
-
-echo "g()=$[g()]"  # Undefined variable 'g'
-## status: 1
-## STDOUT:
-g()=1
 ## END
 
 #### Multiple func calls
@@ -441,7 +478,7 @@ Meow
 ## END
 
 #### Functions cannot be nested
-func build(y) {
+proc build {
   func f(x) {
     return (x)
   }

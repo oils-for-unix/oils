@@ -21,6 +21,7 @@ _kind_sizes = ID_SPEC.kind_sizes
 
 
 class TokensTest(unittest.TestCase):
+
     def testId(self):
         #print(dir(Id))
         print(Id.Op_Newline)
@@ -70,6 +71,7 @@ class TokensTest(unittest.TestCase):
         self.assertEqual(Kind.BoolBinary, consts.GetKind(t.id))
 
     def testLexerPairs(self):
+
         def MakeLookup(p):
             return dict((pat, tok) for _, pat, tok in p)
 

@@ -37,7 +37,8 @@ from _devbuild.gen.syntax_asdl import (
     case_arg_e,
     case_arg_t,
     BraceGroup,
-    ArgList,
+    Proc,
+    Func,
     assign_op_e,
     expr_t,
     proc_sig,
@@ -64,11 +65,9 @@ from _devbuild.gen.runtime_asdl import (
     scope_e,
     CommandStatus,
     StatusArray,
-    Proc,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
-from core import code
 from core import dev
 from core import error
 from core.error import e_die, e_die_status
@@ -81,7 +80,6 @@ from data_lang import j8
 from frontend import consts
 from frontend import lexer
 from frontend import location
-from frontend import typed_args
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
@@ -89,6 +87,7 @@ from mycpp import mylib
 from mycpp.mylib import log, switch, tagswitch
 from ysh import cpython
 from ysh import expr_eval
+from ysh import func_proc
 from ysh import val_ops
 
 import posix_ as posix
@@ -122,6 +121,14 @@ YSH_TYPE_NAMES = {
     'list': 'List',
     'dict': 'Dict',
 }
+
+
+def MakeBuiltinArgv(argv1):
+    # type: (List[str]) -> cmd_value.Argv
+    argv = ['']  # dummy for argv[0]
+    argv.extend(argv1)
+    missing = None  # type: CompoundWord
+    return cmd_value.Argv(argv, [missing] * len(argv), None, None, None)
 
 
 class Deps(object):
@@ -273,7 +280,7 @@ class CommandEvaluator(object):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             errfmt,  # type: ui.ErrorFormatter
-            procs,  # type: Dict[str, Proc]
+            procs,  # type: Dict[str, value.Proc]
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
@@ -691,16 +698,15 @@ class CommandEvaluator(object):
 
     def _DoVarDecl(self, node):
         # type: (command.VarDecl) -> int
-        # Point to var name (bare assignment has no keyword)
-        self.mem.SetTokenForLine(node.lhs[0].name)
-
         # x = 'foo' in Hay blocks
         if node.keyword is None:
             # Note: there's only one LHS
             place = location.LName(node.lhs[0].name.tval)
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            self.mem.SetValue(place, val, scope_e.LocalOnly,
+            self.mem.SetValue(place,
+                              val,
+                              scope_e.LocalOnly,
                               flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
 
         else:  # var or const
@@ -721,8 +727,8 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                            'Got %d places on left, but %d values on right' %
-                            (num_lhs, num_rhs), node.keyword)
+                        'Got %d places on left, but %d values on right' %
+                        (num_lhs, num_rhs), node.keyword)
 
                 lvals = []
                 rhs_vals = []
@@ -778,8 +784,8 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                            'Got %d places on left, but %d values on right' %
-                            (num_lhs, num_rhs), node.keyword)
+                        'Got %d places on left, but %d values on right' %
+                        (num_lhs, num_rhs), node.keyword)
 
                 places = []
                 rhs_vals = []
@@ -851,12 +857,6 @@ class CommandEvaluator(object):
         # type: (command.Simple, CommandStatus) -> int
         cmd_st.check_errexit = True
 
-        # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
-        # Note that for '> $LINENO' the location token is set in _EvalRedirect.
-        # TODO: blame_tok should always be set.
-        if node.blame_tok is not None:
-            self.mem.SetTokenForLine(node.blame_tok)
-
         self._MaybeRunDebugTrap()
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
@@ -888,28 +888,9 @@ class CommandEvaluator(object):
             else:
                 self.mem.SetLastArgument('')
 
-            typed_args_ = None  # type: ArgList
-            if node.typed_args:
-                orig = node.typed_args
-                # COPY positional args because we may append an arg
-                typed_args_ = ArgList(orig.left, list(orig.pos_args),
-                                      orig.named_delim, orig.named_args,
-                                      orig.right)
-
-                # the block is the last argument
-                if node.block:
-                    typed_args_.pos_args.append(node.block)
-                    # ArgList already has a spid in this case
-            else:
-                if node.block:
-                    # Create ArgList for the block.  Since we have { } and not (),
-                    # copy them from BraceGroup
-                    typed_args_ = ArgList(node.block.brace_group.left,
-                                          [node.block], None, [],
-                                          node.block.brace_group.right)
-
-            cmd_val.typed_args = typed_args_
-
+            if node.typed_args or node.block:  # guard to avoid allocs
+                func_proc.EvalTypedArgsToProc(self.expr_ev, self.mutable_opts,
+                                              node, cmd_val)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",
@@ -997,7 +978,6 @@ class CommandEvaluator(object):
 
     def _DoDBracket(self, node, cmd_st):
         # type: (command.DBracket, CommandStatus) -> int
-        self.mem.SetTokenForLine(node.left)
         self._MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(node.left, node.right, self.arena)
@@ -1009,7 +989,6 @@ class CommandEvaluator(object):
 
     def _DoDParen(self, node, cmd_st):
         # type: (command.DParen, CommandStatus) -> int
-        self.mem.SetTokenForLine(node.left)
         self._MaybeRunDebugTrap()
 
         self.tracer.PrintSourceCode(node.left, node.right, self.arena)
@@ -1022,13 +1001,11 @@ class CommandEvaluator(object):
     def _DoShAssignment(self, node, cmd_st):
         # type: (command.ShAssignment, CommandStatus) -> int
         assert len(node.pairs) >= 1, node
-        pairs = node.pairs
-        self.mem.SetTokenForLine(pairs[0].left)
 
         # x=y is 'neutered' inside 'proc'
         which_scopes = self.mem.ScopesForWriting()
 
-        for pair in pairs:
+        for pair in node.pairs:
             if pair.op == assign_op_e.PlusEqual:
                 assert pair.rhs, pair.rhs  # I don't think a+= is valid?
                 rhs = self.word_ev.EvalRhsWord(pair.rhs)
@@ -1080,7 +1057,6 @@ class CommandEvaluator(object):
 
     def _DoExpr(self, node):
         # type: (command.Expr) -> int
-        self.mem.SetTokenForLine(node.keyword)
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
         if mylib.PYTHON:
             obj = cpython._ValueToPyObj(val)
@@ -1109,15 +1085,12 @@ class CommandEvaluator(object):
 
     def _DoRetval(self, node):
         # type: (command.Retval) -> int
-        self.mem.SetTokenForLine(node.keyword)
-
         val = self.expr_ev.EvalExpr(node.val, node.keyword)
         raise vm.ValueControlFlow(node.keyword, val)
 
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
         keyword = node.keyword
-        self.mem.SetTokenForLine(keyword)
 
         if node.arg_word:  # Evaluate the argument
             str_val = self.word_ev.EvalWordToString(node.arg_word)
@@ -1215,9 +1188,7 @@ class CommandEvaluator(object):
 
     def _DoWhileUntil(self, node):
         # type: (command.WhileUntil) -> int
-        self.mem.SetTokenForLine(node.keyword)
         status = 0
-
         with ctx_LoopLevel(self):
             while True:
                 try:
@@ -1241,7 +1212,6 @@ class CommandEvaluator(object):
 
     def _DoForEach(self, node):
         # type: (command.ForEach) -> int
-        self.mem.SetTokenForLine(node.keyword)  # for x in $LINENO
 
         # for the 2 kinds of shell loop
         iter_list = None  # type: List[str]
@@ -1374,7 +1344,6 @@ class CommandEvaluator(object):
 
     def _DoForExpr(self, node):
         # type: (command.ForExpr) -> int
-        self.mem.SetTokenForLine(node.keyword)
         #self._MaybeRunDebugTrap()
 
         status = 0
@@ -1411,33 +1380,35 @@ class CommandEvaluator(object):
         return status
 
     def _DoShFunction(self, node):
-        # type: (command.ShFunction) -> int
+        # type: (command.ShFunction) -> None
         if node.name in self.procs and not self.exec_opts.redefine_proc_func():
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
-        self.procs[node.name] = Proc(node.name, node.name_tok, proc_sig.Open,
-                                     node.body, [], True)
-
-        return 0
+        self.procs[node.name] = value.Proc(node.name, node.name_tok,
+                                           proc_sig.Open, node.body, None,
+                                           True)
 
     def _DoProc(self, node):
-        # type: (command.Proc) -> int
+        # type: (Proc) -> None
         proc_name = lexer.TokenVal(node.name)
         if proc_name in self.procs and not self.exec_opts.redefine_proc_func():
             e_die(
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,
                 node.name)
 
-        defaults = typed_args.EvalProcDefaults(self.expr_ev, node)
+        if node.sig.tag() == proc_sig_e.Closed:
+            sig = cast(proc_sig.Closed, node.sig)
+            proc_defaults = func_proc.EvalProcDefaults(self.expr_ev, sig)
+        else:
+            proc_defaults = None
 
-        self.procs[proc_name] = Proc(proc_name, node.name, node.sig, node.body,
-                                     defaults, False)  # no dynamic scope
-
-        return 0
+        # no dynamic scope
+        self.procs[proc_name] = value.Proc(proc_name, node.name, node.sig,
+                                           node.body, proc_defaults, False)
 
     def _DoFunc(self, node):
-        # type: (command.Func) -> int
+        # type: (Func) -> None
         name = lexer.TokenVal(node.name)
         lval = location.LName(name)
 
@@ -1453,21 +1424,15 @@ class CommandEvaluator(object):
                     "Func %s was already defined (redefine_proc_func)" % name,
                     node.name)
 
-        # Needed in case the func is an existing variable name
-        self.mem.SetTokenForLine(node.name)
+        pos_defaults, named_defaults = func_proc.EvalFuncDefaults(
+            self.expr_ev, node)
+        func_val = value.Func(name, node, pos_defaults, named_defaults)
 
-        val = value.Func(code.UserFunc(name, node, self.mem, self))
-        self.mem.SetValue(lval, val, scope_e.LocalOnly,
+        self.mem.SetValue(lval, func_val, scope_e.LocalOnly,
                           _PackFlags(Id.KW_Func, state.SetReadOnly))
-
-        return 0
 
     def _DoIf(self, node):
         # type: (command.If) -> int
-        # No SetTokenForLine() because
-        # - $LINENO can't appear directly in 'if'
-        # - 'if' doesn't directly cause errors
-        # It will be taken care of by command.Simple, condition, etc.
 
         done = False
         for if_arm in node.arms:
@@ -1484,8 +1449,6 @@ class CommandEvaluator(object):
 
     def _DoCase(self, node):
         # type: (command.Case) -> int
-        # Must set location for 'case $LINENO'
-        self.mem.SetTokenForLine(node.case_kw)
 
         to_match = self._EvalCaseArg(node.to_match, node.case_kw)
         self._MaybeRunDebugTrap()
@@ -1576,6 +1539,12 @@ class CommandEvaluator(object):
         with tagswitch(node) as case:
             if case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
+
+                # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
+                # Note that for '> $LINENO' the location token is set in _EvalRedirect.
+                # TODO: blame_tok should always be set.
+                if node.blame_tok is not None:
+                    self.mem.SetTokenForLine(node.blame_tok)
                 status = self._DoSimple(node, cmd_st)
 
             elif case(command_e.ExpandedAlias):
@@ -1597,37 +1566,52 @@ class CommandEvaluator(object):
 
             elif case(command_e.DBracket):
                 node = cast(command.DBracket, UP_node)
+
+                self.mem.SetTokenForLine(node.left)
                 status = self._DoDBracket(node, cmd_st)
 
             elif case(command_e.DParen):
                 node = cast(command.DParen, UP_node)
+
+                self.mem.SetTokenForLine(node.left)
                 status = self._DoDParen(node, cmd_st)
 
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
+
+                # Point to var name (bare assignment has no keyword)
+                self.mem.SetTokenForLine(node.lhs[0].name)
                 status = self._DoVarDecl(node)
 
             elif case(command_e.PlaceMutation):
                 node = cast(command.PlaceMutation, UP_node)
-                self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
 
+                self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
                 self._DoPlaceMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment
                 node = cast(command.ShAssignment, UP_node)
+
+                self.mem.SetTokenForLine(node.pairs[0].left)
                 status = self._DoShAssignment(node, cmd_st)
 
             elif case(command_e.Expr):
                 node = cast(command.Expr, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 status = self._DoExpr(node)
 
             elif case(command_e.Retval):
                 node = cast(command.Retval, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 self._DoRetval(node)
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 status = self._DoControlFlow(node)
 
             # Note CommandList and DoGroup have no redirects, but BraceGroup does.
@@ -1653,30 +1637,47 @@ class CommandEvaluator(object):
 
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 status = self._DoWhileUntil(node)
 
             elif case(command_e.ForEach):
                 node = cast(command.ForEach, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
                 status = self._DoForEach(node)
 
             elif case(command_e.ForExpr):
                 node = cast(command.ForExpr, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)  # for x in $LINENO
                 status = self._DoForExpr(node)
 
             elif case(command_e.ShFunction):
                 node = cast(command.ShFunction, UP_node)
-                status = self._DoShFunction(node)
+                self._DoShFunction(node)
+                status = 0
 
             elif case(command_e.Proc):
-                node = cast(command.Proc, UP_node)
-                status = self._DoProc(node)
+                node = cast(Proc, UP_node)
+                self._DoProc(node)
+                status = 0
 
             elif case(command_e.Func):
-                node = cast(command.Func, UP_node)
-                status = self._DoFunc(node)
+                node = cast(Func, UP_node)
+
+                # Needed for error, when the func is an existing variable name
+                self.mem.SetTokenForLine(node.name)
+                self._DoFunc(node)
+                status = 0
 
             elif case(command_e.If):
                 node = cast(command.If, UP_node)
+
+                # No SetTokenForLine() because
+                # - $LINENO can't appear directly in 'if'
+                # - 'if' doesn't directly cause errors
+                # It will be taken care of by command.Simple, condition, etc.
                 status = self._DoIf(node)
 
             elif case(command_e.NoOp):
@@ -1684,6 +1685,9 @@ class CommandEvaluator(object):
 
             elif case(command_e.Case):
                 node = cast(command.Case, UP_node)
+
+                # Must set location for 'case $LINENO'
+                self.mem.SetTokenForLine(node.case_kw)
                 status = self._DoCase(node)
 
             elif case(command_e.TimeBlock):
@@ -2002,6 +2006,24 @@ class CommandEvaluator(object):
         self.mem.SetLastStatus(status)
         return is_return, is_fatal
 
+    def EvalCommand(self, block):
+        # type: (command_t) -> int
+        """For builtins to evaluate command args.
+
+        e.g. cd /tmp (x)
+        """
+        status = 0
+        try:
+            status = self._Execute(block)  # can raise FatalRuntimeError, etc.
+        except vm.IntControlFlow as e:  # A block is more like a function.
+            # return in a block
+            if e.IsReturn():
+                status = e.StatusCode()
+            else:
+                e_die('Unexpected control flow in block', e.token)
+
+        return status
+
     def MaybeRunExitTrap(self, mut_status):
         # type: (IntParamBox) -> None
         """If an EXIT trap handler exists, run it.
@@ -2042,8 +2064,8 @@ class CommandEvaluator(object):
 
             with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
                 with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-                    with state.ctx_DebugTrap(
-                            self.mem):  # for SetTokenForLine $LINENO
+                    # for SetTokenForLine $LINENO
+                    with state.ctx_DebugTrap(self.mem):
                         # Don't catch util.UserExit, etc.
                         self._Execute(node)
 
@@ -2065,8 +2087,8 @@ class CommandEvaluator(object):
                 with ctx_ErrTrap(self):
                     self._Execute(node)
 
-    def RunProc(self, proc, argv, arg0_loc, typed_args):
-        # type: (Proc, List[str], loc_t, ArgList) -> int
+    def RunProc(self, proc, cmd_val):
+        # type: (value.Proc, cmd_value.Argv) -> int
         """Run procs aka "shell functions".
 
         For SimpleCommand and registered completion hooks.
@@ -2076,14 +2098,11 @@ class CommandEvaluator(object):
             # We're binding named params.  User should use @rest.  No 'shift'.
             proc_argv = []  # type: List[str]
         else:
-            proc_argv = argv
+            proc_argv = cmd_val.argv[1:]
 
         # Hm this sets "$@".  TODO: Set ARGV only
         with state.ctx_ProcCall(self.mem, self.mutable_opts, proc, proc_argv):
-            status = code.BindProcArgs(proc, argv, arg0_loc, typed_args,
-                                       self.mem, self.errfmt, self.expr_ev)
-            if status != 0:
-                return status
+            func_proc.BindProcArgs(proc, cmd_val, self.mem)
 
             # Redirects still valid for functions.
             # Here doc causes a pipe and Process(SubProgramThunk).
@@ -2104,28 +2123,17 @@ class CommandEvaluator(object):
 
         return status
 
-    def EvalBlock(self, block):
-        # type: (command_t) -> int
-        """Returns an integer status."""
-
-        status = 0
-        try:
-            status = self._Execute(block)  # can raise FatalRuntimeError, etc.
-        except vm.IntControlFlow as e:  # A block is more like a function.
-            # return in a block
-            if e.IsReturn():
-                status = e.StatusCode()
-            else:
-                e_die('Unexpected control flow in block', e.token)
-
-        return status
-
     def RunFuncForCompletion(self, proc, argv):
-        # type: (Proc, List[str]) -> int
+        # type: (value.Proc, List[str]) -> int
+        """
+        Args:
+          argv: $1 $2 $3 ... not including $0
+        """
+        cmd_val = MakeBuiltinArgv(argv)
 
         # TODO: Change this to run YSH procs and funcs too
         try:
-            status = self.RunProc(proc, argv, loc.Missing, None)
+            status = self.RunProc(proc, cmd_val)
         except error.FatalRuntime as e:
             self.errfmt.PrettyPrintError(e)
             status = e.ExitStatus()

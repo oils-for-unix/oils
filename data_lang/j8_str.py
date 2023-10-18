@@ -5,6 +5,7 @@ j8_str.py
 
 from mycpp import mylib
 
+
 def Encode(s, mode, buf):
     # type: (str, int, mylib.BufWriter) -> int
     """

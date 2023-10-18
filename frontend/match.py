@@ -86,6 +86,7 @@ def _MatchOshToken_Fast(lex_mode, line, start_pos):
 
 
 class _MatchTokenSlow(object):
+
     def __init__(self, pat_list):
         # type: (List[Tuple[bool, str, Id_t]]) -> None
         self.pat_list = _CompileAll(pat_list)
@@ -188,6 +189,7 @@ else:
 
 
 class SimpleLexer(object):
+
     def __init__(self, match_func, s):
         # type: (SimpleMatchFunc, str) -> None
         self.match_func = match_func

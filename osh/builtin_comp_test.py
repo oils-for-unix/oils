@@ -10,6 +10,7 @@ import unittest
 
 
 class BuiltinCompTest(unittest.TestCase):
+
     def testFoo(self):
         return
 

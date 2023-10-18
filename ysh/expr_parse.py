@@ -2,8 +2,8 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import (loc, Token, DoubleQuoted, SingleQuoted,
-                                       CommandSub, ShArrayLiteral, CompoundWord,
-                                       word_part_t, word_e)
+                                       CommandSub, ShArrayLiteral,
+                                       CompoundWord, word_part_t, word_e)
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
 
@@ -91,19 +91,18 @@ def _Classify(gr, tok, tea_keywords):
 
 
 # Newlines are ignored between these pairs.
+# yapf: disable
 _OTHER_BALANCE = {
+
     # Parenthesized expressions (tuples) and func/proc parameter lists
-    Id.Op_LParen:
-        1,
-    Id.Op_RParen:
-        -1,
-    Id.Op_LBracket:
-        1,
-    Id.Op_RBracket:
-        -1,
+    Id.Op_LParen: 1,
+    Id.Op_RParen: -1,
+    Id.Op_LBracket: 1,
+    Id.Op_RBracket: -1,
 
     # Dicts are {}, and the grammar respects Op_Newline.
 }
+# yapf: enable
 
 
 def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
@@ -227,7 +226,8 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
             continue
 
         # $(  @(  ^(
-        if tok.id in (Id.Left_DollarParen, Id.Left_AtParen, Id.Left_CaretParen):
+        if tok.id in (Id.Left_DollarParen, Id.Left_AtParen,
+                      Id.Left_CaretParen):
 
             left_token = tok
 
@@ -356,6 +356,7 @@ class ExprParser(object):
 
 
 class ctx_PNodeAllocator(object):
+
     def __init__(self, ep):
         # type: (ExprParser) -> None
         self.expr_parser = ep

@@ -209,8 +209,8 @@ def main(argv):
     id_kind_def.AddKinds(ID_SPEC)
     id_kind_def.AddBoolKinds(ID_SPEC)  # must come second
 
-    id_kind_def.SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP, TEST_BINARY_LOOKUP,
-                                 TEST_OTHER_LOOKUP)
+    id_kind_def.SetupTestBuiltin(ID_SPEC, TEST_UNARY_LOOKUP,
+                                 TEST_BINARY_LOOKUP, TEST_OTHER_LOOKUP)
 
     ids = ID_SPEC.id_str2int.items()
     ids.sort(key=lambda pair: pair[1])  # Sort by ID
@@ -517,7 +517,8 @@ Str* OptionName(option_asdl::option_t opt_num) {
             parts = []
             for i in xrange(max_state + 1):
                 parts.append('  {')
-                parts.append(', '.join('%10s' % cell for cell in edge_array[i]))
+                parts.append(', '.join('%10s' % cell
+                                       for cell in edge_array[i]))
                 parts.append(' },\n')
 
             out("""\

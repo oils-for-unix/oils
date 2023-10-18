@@ -8,6 +8,7 @@ import pyutil  # module under test
 
 
 class PyUtilTest(unittest.TestCase):
+
     def testBackslashEscape(self):
         print(pyutil.BackslashEscape('foo', 'o'))
 

@@ -49,7 +49,7 @@ lex_mode_e.VSub_ArgDQ
 
 from _devbuild.gen import grammar_nt
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
-from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
+from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
@@ -79,8 +79,9 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr_t,
     command,
     expr_t,
-    ArgList,
     pat_t,
+    ArgList,
+    Proc,
 )
 from core import alloc
 from core.error import p_die
@@ -124,6 +125,7 @@ class WordEmitter(object):
 
 
 class WordParser(WordEmitter):
+
     def __init__(self, parse_ctx, lexer, line_reader):
         # type: (ParseContext, Lexer, _Reader) -> None
         self.parse_ctx = parse_ctx
@@ -856,9 +858,11 @@ class WordParser(WordEmitter):
                         # YSH.
                         # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
                         # recursion (unless parse_backslash)
-                        if is_oil_expr or not self.parse_opts.parse_backslash():
-                            p_die("Invalid char escape in double quoted string",
-                                  self.cur_token)
+                        if (is_oil_expr or
+                                not self.parse_opts.parse_backslash()):
+                            p_die(
+                                "Invalid char escape in double quoted string",
+                                self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_oil_expr or not self.parse_opts.parse_dollar():
                             p_die("Literal $ should be quoted like \$",
@@ -1115,11 +1119,31 @@ class WordParser(WordEmitter):
         """
         self._SetNext(lex_mode_e.Expr)
         self._GetToken()
-        enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                        grammar_nt.command_expr)
+        enode, last_token = self.parse_ctx.ParseYshExpr(
+            self.lexer, grammar_nt.command_expr)
         if last_token.id == Id.Op_RBrace:
             last_token.id = Id.Lit_RBrace
         self.buffered_word = last_token
+        self._SetNext(lex_mode_e.ShCommand)
+        return enode
+
+    def ParseYshExprForCommand(self):
+        # type: () -> expr_t
+
+        # Fudge for this case
+        #  for x in(y) {
+        # versus
+        #  for x in (y) {
+        #
+        # In the former case, ReadWord on 'in' puts the lexer past (.
+        # Also see LookPastSpace in CommandParers.
+        # A simpler solution would be nicer.
+
+        if self.token_type == Id.Op_LParen:
+            self.lexer.MaybeUnreadOne()
+
+        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
+
         self._SetNext(lex_mode_e.ShCommand)
         return enode
 
@@ -1128,8 +1152,8 @@ class WordParser(WordEmitter):
         """
         = 1+2
         """
-        enode, last_token = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                        grammar_nt.command_expr)
+        enode, last_token = self.parse_ctx.ParseYshExpr(
+            self.lexer, grammar_nt.command_expr)
 
         # In some cases, such as the case statement, we expect *the lexer* to be
         # pointing at the token right after the expression. But the expression
@@ -1149,7 +1173,7 @@ class WordParser(WordEmitter):
         return enode
 
     def ParseProc(self, node):
-        # type: (command.Proc) -> None
+        # type: (Proc) -> None
 
         # proc name-with-hyphens() must be accepted
         self._SetNext(lex_mode_e.ShCommand)
@@ -1171,7 +1195,8 @@ class WordParser(WordEmitter):
 
     def ParseYshCasePattern(self):
         # type: () -> Tuple[pat_t, Token]
-        pat, left_tok, last_token = self.parse_ctx.ParseYshCasePattern(self.lexer)
+        pat, left_tok, last_token = self.parse_ctx.ParseYshCasePattern(
+            self.lexer)
 
         if last_token.id == Id.Op_LBrace:
             last_token.id = Id.Lit_LBrace
@@ -1455,23 +1480,14 @@ class WordParser(WordEmitter):
         words3 = word_.TildeDetectAll(words2)
         return ShArrayLiteral(left_token, words3, right_token)
 
-    def _ParseInlineCallArgs(self, arg_list):
-        # type: (ArgList) -> None
-        """For $f(x) and @arrayfunc(x)."""
-        #log('t: %s', self.cur_token)
-
-        # Call into expression language.
-        arg_list.left = self.cur_token
-        self.parse_ctx.ParseYshArgList(self.lexer, arg_list)
-
-    def ParseProcCallArgs(self):
-        # type: () -> ArgList
-        """For json write (x)"""
+    def ParseProcCallArgs(self, start_symbol):
+        # type: (int) -> ArgList
+        """ json write (x) """
         self.lexer.MaybeUnreadOne()
 
         arg_list = ArgList.CreateNull(alloc_lists=True)
         arg_list.left = self.cur_token
-        self.parse_ctx.ParseYshArgList(self.lexer, arg_list)
+        self.parse_ctx.ParseYshArgList(self.lexer, arg_list, start_symbol)
         return arg_list
 
     def _MaybeReadWordPart(self, is_first, lex_mode, parts):
@@ -1625,7 +1641,7 @@ class WordParser(WordEmitter):
                 # If parse_at, we can take over @( to start @(seq 3)
                 # Users can also use look at ,(*.py|*.sh)
                 if (self.parse_opts.parse_at() and
-                    self.token_type == Id.ExtGlob_At and num_parts == 0):
+                        self.token_type == Id.ExtGlob_At and num_parts == 0):
                     cs_part = self._ReadCommandSub(Id.Left_AtParen,
                                                    d_quoted=False)
                     # RARE mutation of tok.id!
@@ -1700,7 +1716,8 @@ class WordParser(WordEmitter):
                 self._SetNext(lex_mode)
                 num_parts += 1
 
-        if self.parse_opts.parse_brace() and num_parts > 1 and brace_count != 0:
+        if (self.parse_opts.parse_brace() and num_parts > 1 and
+                brace_count != 0):
             # accept { and }, but not foo{
             p_die(
                 'Word has unbalanced { }.  Maybe add a space or quote it like \{',
@@ -1713,8 +1730,8 @@ class WordParser(WordEmitter):
         return w
 
     def _ReadArithWord(self):
-        # type: () -> Tuple[Optional[word_t], bool]
-        """Helper function for ReadWord."""
+        # type: () -> Optional[word_t]
+        """ Helper for ReadArithWord() """
         self._GetToken()
 
         if self.token_kind == Kind.Unknown:
@@ -1724,43 +1741,48 @@ class WordParser(WordEmitter):
                 lexer.TokenVal(self.cur_token), self.cur_token)
 
         elif self.token_kind == Kind.Eof:
-            # Just return EOF token
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         elif self.token_kind == Kind.Ignored:
             # Space should be ignored.
             self._SetNext(lex_mode_e.Arith)
-            no_word = None  # type: Optional[word_t]
-            return no_word, True  # Tell wrapper to try again
+            return None
 
         elif self.token_kind in (Kind.Arith, Kind.Right):
             # Id.Right_DollarDParen IS just a normal token, handled by ArithParser
             self._SetNext(lex_mode_e.Arith)
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub):
-            w = self._ReadCompoundWord(lex_mode_e.Arith)
-            return cast(word_t, w), False
+            return self._ReadCompoundWord(lex_mode_e.Arith)
 
         else:
             raise AssertionError(self.cur_token)
 
-    def _ReadWord(self, lex_mode):
-        # type: (lex_mode_t) -> Tuple[Optional[word_t], bool]
-        """Helper function for ReadWord().
-
-        Returns:
-          2-tuple (word, need_more)
-            word: Word, or None if there was an error, or need_more is set
-            need_more: True if the caller should call us again
+    def _ReadWord(self, word_mode):
+        # type: (lex_mode_t) -> Optional[word_t]
+        """Helper function for ReadWord()."""
         """
-        no_word = None  # type: Optional[word_t]
+        with switch(word_mode) as case:
+            if case(word_mode_e.ShCommand, word_mode_e.Op_LBracket):
+                lex_mode = lex_mode_e.ShCommand
+            elif case(word_mode_e.DBracket):
+                lex_mode = lex_mode_e.DBracket
+            elif case(word_mode_e.BashRegex):
+                lex_mode = lex_mode_e.BashRegex
+        """
+
+        # Change the pseudo lexer mode to a real lexer mode
+        if word_mode == lex_mode_e.ShCommandBrack:
+            lex_mode = lex_mode_e.ShCommand
+        else:
+            lex_mode = word_mode
 
         self._GetToken()
 
         if self.token_kind == Kind.Eof:
             # No advance
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         # Allow Arith for ) at end of for loop?
         elif self.token_kind in (Kind.Op, Kind.Redir, Kind.Arith):
@@ -1774,12 +1796,12 @@ class WordParser(WordEmitter):
                         # This points at a blank line, but at least it gives the line number
                         p_die('Invalid blank line in multiline mode',
                               self.cur_token)
-                    return no_word, True
+                    return None
 
                 if self.returned_newline:  # skip
-                    return no_word, True
+                    return None
 
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         elif self.token_kind == Kind.Right:
             if self.token_type not in (Id.Right_Subshell, Id.Right_ShFunction,
@@ -1788,15 +1810,29 @@ class WordParser(WordEmitter):
                 raise AssertionError(self.cur_token)
 
             self._SetNext(lex_mode)
-            return cast(word_t, self.cur_token), False
+            return self.cur_token
 
         elif self.token_kind in (Kind.Ignored, Kind.WS):
             self._SetNext(lex_mode)
-            return no_word, True  # tell ReadWord() to try again
+            return None
 
         elif self.token_kind in (Kind.VSub, Kind.Lit, Kind.History, Kind.Left,
                                  Kind.KW, Kind.ControlFlow, Kind.BoolUnary,
                                  Kind.BoolBinary, Kind.ExtGlob):
+            if (word_mode == lex_mode_e.ShCommandBrack and
+                    self.parse_opts.parse_bracket() and
+                    self.token_type == Id.Lit_LBracket):
+                # Change [ from Kind.Lit -> Kind.Op
+                # So CommandParser can treat
+                #   assert [42 === x]
+                # like
+                #   json write (x)
+                bracket_word = self.cur_token
+                bracket_word.id = Id.Op_LBracket
+
+                self._SetNext(lex_mode)
+                return bracket_word
+
             # We're beginning a word.  If we see Id.Lit_Pound, change to
             # lex_mode_e.Comment and read until end of line.
             if self.token_type == Id.Lit_Pound:
@@ -1810,28 +1846,27 @@ class WordParser(WordEmitter):
 
                 # The next iteration will go into Kind.Ignored and set lex state to
                 # lex_mode_e.ShCommand/etc.
-                return no_word, True  # tell ReadWord() to try again after comment
+                return None  # tell ReadWord() to try again after comment
 
             elif self.token_type == Id.Lit_TPound:  ### doc comment
                 self._SetNext(lex_mode_e.Comment)
                 self._GetToken()
 
                 if self.token_type == Id.Ignored_Comment and self.emit_doc_token:
-                    return cast(word_t, self.cur_token), False
+                    return self.cur_token
 
-                return no_word, True  # tell ReadWord() to try again after comment
+                return None  # tell ReadWord() to try again after comment
 
             else:
                 # parse_raw_string: Is there an r'' at the beginning of a word?
                 if (self.parse_opts.parse_raw_string() and
-                    self.token_type == Id.Lit_Chars and
-                    self.cur_token.tval == 'r'):
-                    if (self.lexer.LookAheadOne(lex_mode_e.ShCommand) == 
-                        Id.Left_SingleQuote):
+                        self.token_type == Id.Lit_Chars and
+                        self.cur_token.tval == 'r'):
+                    if (self.lexer.LookAheadOne(
+                            lex_mode_e.ShCommand) == Id.Left_SingleQuote):
                         self._SetNext(lex_mode_e.ShCommand)
 
-                w = self._ReadCompoundWord(lex_mode)
-                return cast(word_t, w), False
+                return self._ReadCompoundWord(lex_mode)
 
         else:
             raise AssertionError('Unhandled: %s (%s)' %
@@ -1893,39 +1928,40 @@ class WordParser(WordEmitter):
         else:
             return False
 
-    def ReadWord(self, lex_mode):
+    def ReadWord(self, word_mode):
         # type: (lex_mode_t) -> word_t
-        """Read the next Word.
+        """Read the next word, using the given lexer mode.
 
-        Returns:
-          Word, or None if there was an error
+        This is a stateful wrapper for the stateless _ReadWord function.
         """
-        # For integration with pgen2
-        if self.buffered_word:
+        assert word_mode in (lex_mode_e.ShCommand, lex_mode_e.ShCommandBrack,
+                             lex_mode_e.DBracket, lex_mode_e.BashRegex)
+
+        if self.buffered_word:  # For integration with pgen2
             w = self.buffered_word
             self.buffered_word = None
         else:
-            # Implementation note: This is an stateful/iterative function that calls
-            # the stateless "_ReadWord" function.
             while True:
-                if lex_mode == lex_mode_e.Arith:
-                    # TODO: Can this be unified?
-                    w, need_more = self._ReadArithWord()
-                elif lex_mode in (lex_mode_e.ShCommand, lex_mode_e.DBracket,
-                                  lex_mode_e.BashRegex):
-                    w, need_more = self._ReadWord(lex_mode)
-                else:
-                    raise AssertionError('Invalid lex state %s' % lex_mode)
-                if not need_more:
+                w = self._ReadWord(word_mode)
+                if w is not None:
                     break
 
         self.returned_newline = (word_.CommandId(w) == Id.Op_Newline)
         return w
 
+    def ReadArithWord(self):
+        # type: () -> word_t
+        while True:
+            w = self._ReadArithWord()
+            if w is not None:
+                break
+        return w
+
     def ReadHereDocBody(self, parts):
         # type: (List[word_part_t]) -> None
-        """A here doc is like a double quoted context, except " isn't
-        special."""
+        """
+        A here doc is like a double quoted context, except " isn't special.
+        """
         self._ReadLikeDQ(None, False, parts)
         # Returns nothing
 

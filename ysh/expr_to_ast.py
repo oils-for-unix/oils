@@ -36,6 +36,7 @@ from _devbuild.gen.syntax_asdl import (
     proc_sig_t,
     Param,
     RestParam,
+    ParamGroup,
     NamedArg,
     ArgList,
     Variant,
@@ -44,6 +45,7 @@ from _devbuild.gen.syntax_asdl import (
     pat,
     pat_t,
     TypeExpr,
+    Func,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -91,7 +93,7 @@ NT_OFFSET = 256
 
 if mylib.PYTHON:
 
-    def MakeGrammarNames(oil_grammar):
+    def MakeGrammarNames(ysh_grammar):
         # type: (Grammar) -> Dict[int, str]
 
         # TODO: Break this dependency
@@ -115,7 +117,7 @@ if mylib.PYTHON:
             if k < 256:
                 names[k] = id_name
 
-        for k, v in oil_grammar.number2symbol.items():
+        for k, v in ysh_grammar.number2symbol.items():
             # eval_input == 256.  Remove?
             assert k >= 256, (k, v)
             names[k] = v
@@ -125,6 +127,7 @@ if mylib.PYTHON:
 
 def ISNONTERMINAL(x):
     # type: (int) -> bool
+    assert isinstance(x, int), x
     return x >= NT_OFFSET
 
 
@@ -211,7 +214,7 @@ class Transformer(object):
 
             p = p_trailer.GetChild(1)  # the X in ( X )
             assert p.typ == grammar_nt.arglist  # f(x, y)
-            self._Arglist(p, arglist)
+            self._ArgList(p, arglist)
             return expr.FuncCall(base, arglist)
 
         if op_tok.id == Id.Op_LBracket:
@@ -832,7 +835,7 @@ class Transformer(object):
 
         raise NotImplementedError()
 
-    def _Argument(self, p_node, do_named, arglist):
+    def _Argument(self, p_node, after_semi, arglist):
         # type: (PNode, bool, ArgList) -> None
         """Parse tree to LST
 
@@ -848,25 +851,31 @@ class Transformer(object):
         assert p_node.typ == grammar_nt.argument, p_node
         n = p_node.NumChildren()
         if n == 1:
-            arg = self.Expr(p_node.GetChild(0))
+            child = p_node.GetChild(0)
+            if after_semi:
+                p_die('Positional args must come before the semi-colon', child.tok)
+            arg = self.Expr(child)
             pos_args.append(arg)
             return
 
         if n == 2:
             # Note: We allow multiple spreads, just like Julia.  They are
             # concatenated as in lists and dicts.
-            if p_node.GetChild(0).tok.id == Id.Expr_Ellipsis:
-                spread_expr = self.Expr(p_node.GetChild(1))
-                if do_named:
-                    # Implicit spread with name = None
+            tok0 = p_node.GetChild(0).tok
+            if tok0.id == Id.Expr_Ellipsis:
+                spread_expr = expr.Spread(tok0, self.Expr(p_node.GetChild(1)))
+                if after_semi:  # f(; ... named)
                     named_args.append(NamedArg(None, spread_expr))
-                else:
-                    pos_args.append(
-                        expr.Spread(spread_expr, expr_context_e.Store))
+                else:  # f(...named)
+                    pos_args.append(spread_expr)
                 return
 
             if p_node.GetChild(1).typ == grammar_nt.comp_for:
-                elt = self.Expr(p_node.GetChild(0))
+                child = p_node.GetChild(0)
+                if after_semi:
+                    p_die('Positional args must come before the semi-colon', child.tok)
+
+                elt = self.Expr(child)
                 comp = self._CompFor(p_node.GetChild(1))
                 arg = expr.GeneratorExp(elt, [comp])
                 pos_args.append(arg)
@@ -874,35 +883,48 @@ class Transformer(object):
 
             raise AssertionError()
 
-        if n == 3:
+        if n == 3:  # named args can come before or after the semicolon
             n1 = NamedArg(p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
             named_args.append(n1)
             return
 
-        raise NotImplementedError()
+        raise AssertionError()
 
-    def _Arglist(self, parent, arglist):
-        # type: (PNode, ArgList) -> None
-        """Parse tree to LST
-
-        arglist:
-               argument (',' argument)* [',']
-          [';' argument (',' argument)* [','] ]
+    def _ArgGroup(self, p_node, after_semi, arglist):
+        # type: (PNode, bool, ArgList) -> None
         """
-        do_named = False
-        for i in xrange(parent.NumChildren()):
-            p_child = parent.GetChild(i)
+        arg_group: argument (',' argument)* [',']
+        """
+        for i in xrange(p_node.NumChildren()):
+            p_child = p_node.GetChild(i)
             if ISNONTERMINAL(p_child.typ):
-                self._Argument(p_child, do_named, arglist)
-            elif p_child.tok.id == Id.Op_Semi:
-                arglist.named_delim = p_child.tok
-                do_named = True
+                self._Argument(p_child, after_semi, arglist)
+
+    def _ArgList(self, p_node, arglist):
+        # type: (PNode, ArgList) -> None
+        """For both funcs and procs
+
+        arglist: [arg_group] [';' arg_group]
+        """
+        n = p_node.NumChildren()
+        if n == 0:
+            return
+
+        p0 = p_node.GetChild(0)
+        i = 0
+        if ISNONTERMINAL(p0.typ):
+            self._ArgGroup(p0, False, arglist)
+            i += 1
+
+        if n >= 2:
+            arglist.semi_tok = p_node.GetChild(i).tok
+            self._ArgGroup(p_node.GetChild(i+1), True, arglist)
 
     def ToArgList(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
-        """Transform arg lists.
-
-        oil_arglist: '(' [arglist] ')'
+        """
+        ysh_eager_arglist: '(' [arglist] ')'
+        ysh_lazy_arglist: '[' [arglist] ']'
         """
         if pnode.NumChildren() == 2:  # f()
             return
@@ -911,7 +933,7 @@ class Transformer(object):
         p = pnode.GetChild(1)  # the X in '( X )'
 
         assert p.typ == grammar_nt.arglist
-        self._Arglist(p, arglist)
+        self._ArgList(p, arglist)
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> TypeExpr
@@ -985,7 +1007,7 @@ class Transformer(object):
         return Param(name_tok, lexer.TokenVal(name_tok), type_, default_val)
 
     def _ParamGroup(self, p_node):
-        # type: (PNode) -> Tuple[List[Param], Optional[RestParam]]
+        # type: (PNode) -> ParamGroup
         """
         param_group:
           (param ',')*
@@ -1010,7 +1032,7 @@ class Transformer(object):
             i += 2
             #log('i %d n %d', i, n)
 
-        return params, rest_of
+        return ParamGroup(params, rest_of)
 
     def Proc(self, p_node):
         # type: (PNode) -> proc_sig_t
@@ -1045,19 +1067,20 @@ class Transformer(object):
         i = 1 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            sig.word_params, sig.rest_of_words = self._ParamGroup(p_node.GetChild(i))
+            sig.word = self._ParamGroup(p_node.GetChild(i))
+
+            # Validate word args
+            for word in sig.word.params:
+                if word.type:
+                    if word.type.name not in ('Str', 'Ref'):
+                        p_die('Word params may only have type Str or Ref',
+                              word.type.tok)
+                    if word.type.params is not None:
+                        p_die('Unexpected type parameters', word.type.tok)
+
             i += 2
         else:
             i += 1
-
-        # Validate word args
-        for word in sig.word_params:
-            if word.type:
-                if word.type.name not in ('Str', 'Ref'):
-                    p_die('Word params may only have type Str or Ref',
-                          word.type.tok)
-                if word.type.params is not None:
-                    p_die('Unexpected type parameters', word.type.tok)
 
         #log('i %d n %d', i, n)
         if i >= n:
@@ -1066,8 +1089,7 @@ class Transformer(object):
         # Positional args
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            sig.pos_params, sig.rest_of_pos = (
-                    self._ParamGroup(p_node.GetChild(i)))
+            sig.positional = self._ParamGroup(p_node.GetChild(i))
             i += 2
         else:
             i += 1
@@ -1079,8 +1101,7 @@ class Transformer(object):
         # Keyword args
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            sig.named_params, sig.rest_of_named = (
-                    self._ParamGroup(p_node.GetChild(i)))
+            sig.named = self._ParamGroup(p_node.GetChild(i))
             i += 2
         else:
             i += 1
@@ -1091,13 +1112,15 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            params, rest = self._ParamGroup(p_node.GetChild(i))
+            group = self._ParamGroup(p_node.GetChild(i))
+            params = group.params
             if len(params) > 1:
                 p_die('Only 1 block param is allowed', params[1].blame_tok)
-            if rest:
-                p_die("Rest param isn't allowed for blocks", rest.blame_tok)
+            if group.rest_of:
+                p_die("Rest param isn't allowed for blocks",
+                      group.rest_of.blame_tok)
 
-            if len(params) > 0:
+            if len(params) == 1:
                 if params[0].type:
                     if params[0].type.name != 'Command':
                         p_die('Block param must have type Command',
@@ -1105,7 +1128,8 @@ class Transformer(object):
                     if params[0].type.params is not None:
                         p_die('Unexpected type parameters', params[0].type.tok)
 
-                sig.block_param = RestParam(params[0].blame_tok, params[0].name)
+                sig.block_param = params[0]
+
 
         return sig
 
@@ -1191,7 +1215,7 @@ class Transformer(object):
         return command.CommandList(self.func_items(pnode.GetChild(items_index)))
 
     def YshFunc(self, p_node, out):
-        # type: (PNode, command.Func) -> None
+        # type: (PNode, Func) -> None
         """Parse tree to LST
 
         ysh_func: Expr_Name '(' [param_group] [';' param_group] ')'
@@ -1207,7 +1231,7 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            out.pos_params, out.rest_of_pos = self._ParamGroup(child)
+            out.positional = self._ParamGroup(child)
             i += 2  # skip past ;
         else:
             i += 1
@@ -1217,7 +1241,7 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
-            out.named_params, out.rest_of_named = self._ParamGroup(child)
+            out.named = self._ParamGroup(child)
 
     def TeaFunc(self, pnode, out):
         # type: (PNode, command.TeaFunc) -> None
@@ -1234,19 +1258,17 @@ class Transformer(object):
         pos = 1
         typ2 = pnode.GetChild(pos).typ
         if ISNONTERMINAL(typ2):
-            assert typ2 == grammar_nt.param_group, pnode.GetChild(
-                pos)  # f(x, y)
+            # f(x, y)
+            assert typ2 == grammar_nt.param_group, pnode.GetChild(pos)
             # every other one is a comma
-            out.pos_params, out.pos_splat = self._ParamGroup(
-                pnode.GetChild(pos))
+            out.positional = self._ParamGroup(pnode.GetChild(pos))
             pos += 1
 
         id_ = pnode.GetChild(pos).tok.id
         if id_ == Id.Op_RParen:  # f()
             pos += 1
         elif id_ == Id.Op_Semi:  # f(; a)
-            out.named_params, out.named_splat = self._ParamGroup(
-                pnode.GetChild(pos + 1))
+            out.named = self._ParamGroup(pnode.GetChild(pos + 1))
             pos += 3
 
         if pnode.GetChild(pos).typ == grammar_nt.type_expr_list:

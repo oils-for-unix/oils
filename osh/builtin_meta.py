@@ -5,7 +5,7 @@ builtin_meta.py - Builtins that call back into the interpreter.
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
+from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus, value
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import dev
@@ -23,13 +23,11 @@ from frontend import typed_args
 from mycpp.mylib import log
 from pylib import os_path
 from osh import cmd_eval
-from ysh import expr_eval
 
 _ = log
 
 from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import Proc
     from frontend import args
     from frontend.parse_lib import ParseContext
     from core import optview
@@ -40,8 +38,15 @@ if TYPE_CHECKING:
 
 class Eval(vm._Builtin):
 
-    def __init__(self, parse_ctx, exec_opts, cmd_ev, expr_ev, tracer, errfmt):
-        # type: (ParseContext, optview.Exec, CommandEvaluator, expr_eval.ExprEvaluator, dev.Tracer, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            parse_ctx,  # type: ParseContext
+            exec_opts,  # type: optview.Exec
+            cmd_ev,  # type: CommandEvaluator
+            tracer,  # type: dev.Tracer
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
         self.exec_opts = exec_opts
@@ -53,15 +58,11 @@ class Eval(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        if cmd_val.typed_args:
-            t = typed_args.ReaderFromArgv(cmd_val.argv[1:], cmd_val.typed_args,
-                                          self.expr_ev)
-
-            block = t.PosCommand()
-            t.Done()
-
-            status = self.cmd_ev.EvalBlock(block)
-            return status
+        if cmd_val.typed_args:  # eval (myblock)
+            rd = typed_args.ReaderForProc(cmd_val)
+            block = rd.PosCommand()
+            rd.Done()
+            return self.cmd_ev.EvalCommand(block)
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
@@ -89,9 +90,17 @@ class Eval(vm._Builtin):
 
 class Source(vm._Builtin):
 
-    def __init__(self, parse_ctx, search_path, cmd_ev, fd_state, tracer,
-                 errfmt, loader):
-        # type: (ParseContext, state.SearchPath, CommandEvaluator, process.FdState, dev.Tracer, ui.ErrorFormatter, pyutil._ResourceLoader) -> None
+    def __init__(
+            self,
+            parse_ctx,  # type: ParseContext
+            search_path,  # type: state.SearchPath
+            cmd_ev,  # type: CommandEvaluator
+            fd_state,  # type: process.FdState
+            tracer,  # type: dev.Tracer
+            errfmt,  # type: ui.ErrorFormatter
+            loader,  # type: pyutil._ResourceLoader
+    ):
+        # type: (...) -> None
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena
         self.search_path = search_path
@@ -181,8 +190,14 @@ class Source(vm._Builtin):
 class Command(vm._Builtin):
     """'command ls' suppresses function lookup."""
 
-    def __init__(self, shell_ex, funcs, aliases, search_path):
-        # type: (vm._Executor, Dict[str, Proc], Dict[str, str], state.SearchPath) -> None
+    def __init__(
+            self,
+            shell_ex,  # type: vm._Executor
+            funcs,  # type: Dict[str, value.Proc]
+            aliases,  # type: Dict[str, str]
+            search_path,  # type: state.SearchPath
+    ):
+        # type: (...) -> None
         self.shell_ex = shell_ex
         self.funcs = funcs
         self.aliases = aliases
@@ -196,11 +211,12 @@ class Command(vm._Builtin):
                                              cmd_val,
                                              accept_typed_args=True)
         arg = arg_types.command(attrs.attrs)
+
+        argv, locs = arg_r.Rest2()
+
         if arg.v:
             status = 0
-            names = arg_r.Rest()
-            for kind, argument in _ResolveNames(names, self.funcs,
-                                                self.aliases,
+            for kind, argument in _ResolveNames(argv, self.funcs, self.aliases,
                                                 self.search_path):
                 if kind is None:
                     status = 1  # nothing printed, but we fail
@@ -209,19 +225,25 @@ class Command(vm._Builtin):
                     print(argument)
             return status
 
-        # shift by one
-        cmd_val = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
-                                 cmd_val.typed_args)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
+                                  cmd_val.pos_args, cmd_val.named_args)
 
         # If we respected do_fork here instead of passing True, the case
         # 'command date | wc -l' would take 2 processes instead of 3.  But no other
         # shell does that, and this rare case isn't worth the bookkeeping.
         # See test/syscall
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val,
+        return self.shell_ex.RunSimpleCommand(cmd_val2,
                                               cmd_st,
                                               True,
                                               call_procs=False)
+
+
+def _ShiftArgv(cmd_val):
+    # type: (cmd_value.Argv) -> cmd_value.Argv
+    return cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
+                          cmd_val.typed_args, cmd_val.pos_args,
+                          cmd_val.named_args)
 
 
 class Builtin(vm._Builtin):
@@ -254,15 +276,14 @@ class Builtin(vm._Builtin):
                                    blame_loc=location)
             return 1
 
-        cmd_val2 = cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
-                                  cmd_val.typed_args)
+        cmd_val2 = _ShiftArgv(cmd_val)
         return self.shell_ex.RunBuiltin(to_run, cmd_val2)
 
 
 class RunProc(vm._Builtin):
 
     def __init__(self, shell_ex, procs, errfmt):
-        # type: (vm._Executor, Dict[str, Proc], ui.ErrorFormatter) -> None
+        # type: (vm._Executor, Dict[str, value.Proc], ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex
         self.procs = procs
         self.errfmt = errfmt
@@ -282,7 +303,9 @@ class RunProc(vm._Builtin):
             self.errfmt.PrintMessage('runproc: no proc named %r' % name)
             return 1
 
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
+                                  cmd_val.pos_args, cmd_val.named_args)
+
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
@@ -314,8 +337,15 @@ class Try(vm._Builtin):
     }
     """
 
-    def __init__(self, mutable_opts, mem, cmd_ev, shell_ex, errfmt):
-        # type: (state.MutableOpts, state.Mem, cmd_eval.CommandEvaluator, vm._Executor, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            mutable_opts,  # type: state.MutableOpts
+            mem,  # type: state.Mem
+            cmd_ev,  # type: cmd_eval.CommandEvaluator
+            shell_ex,  # type: vm._Executor
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mutable_opts = mutable_opts
         self.mem = mem
         self.shell_ex = shell_ex
@@ -328,12 +358,12 @@ class Try(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        block = typed_args.GetOneBlock(cmd_val.typed_args)
-        if block:
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if cmd:
             status = 0  # success by default
             try:
                 with state.ctx_Try(self.mutable_opts):
-                    status = self.cmd_ev.EvalBlock(block)
+                    unused = self.cmd_ev.EvalCommand(cmd)
             except error.Expr as e:
                 status = e.ExitStatus()
             except error.ErrExit as e:
@@ -348,7 +378,8 @@ class Try(vm._Builtin):
             e_usage('expects a block or command argv', loc.Missing)
 
         argv, locs = arg_r.Rest2()
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
+                                  cmd_val.pos_args, cmd_val.named_args)
 
         try:
             # Temporarily turn ON errexit, but don't pass a SPID because we're
@@ -376,21 +407,19 @@ class Try(vm._Builtin):
 
 class Error(vm._Builtin):
 
-    def __init__(self, expr_ev):
-        # type: (expr_eval.ExprEvaluator) -> None
-        self.expr_ev = expr_ev
+    def __init__(self):
+        # type: () -> None
+        pass
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        t = typed_args.ReaderFromArgv(cmd_val.argv[1:], cmd_val.typed_args,
-                                      self.expr_ev)
-
-        message = t.PosStr()
-        status = t.NamedInt("status", 1)
-        t.Done()
+        rd = typed_args.ReaderForProc(cmd_val)
+        message = rd.PosStr()
+        status = rd.NamedInt('status', 1)
+        rd.Done()
 
         if status == 0:
-            e_die("Status must be a non-zero integer", cmd_val.arg_locs[0])
+            e_die('Status must be a non-zero integer', cmd_val.arg_locs[0])
 
         if len(cmd_val.argv) > 1:
             raise error.TypeErrVerbose(
@@ -416,7 +445,8 @@ class BoolStatus(vm._Builtin):
             e_usage('expected a command to run', loc.Missing)
 
         argv, locs = arg_r.Rest2()
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
+                                  cmd_val.pos_args, cmd_val.named_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
@@ -429,8 +459,13 @@ class BoolStatus(vm._Builtin):
         return status
 
 
-def _ResolveNames(names, funcs, aliases, search_path):
-    # type: (List[str], Dict[str, Proc], Dict[str, str], state.SearchPath) -> List[Tuple[str, str]]
+def _ResolveNames(
+        names,  # type: List[str]
+        funcs,  # type: Dict[str, value.Proc]
+        aliases,  # type: Dict[str, str]
+        search_path,  # type: state.SearchPath
+):
+    # type: (...) -> List[Tuple[str, str]]
     results = []  # type: List[Tuple[str, str]]
     for name in names:
         if name in funcs:
@@ -464,8 +499,14 @@ def _ResolveNames(names, funcs, aliases, search_path):
 
 class Type(vm._Builtin):
 
-    def __init__(self, funcs, aliases, search_path, errfmt):
-        # type: (Dict[str, Proc], Dict[str, str], state.SearchPath, ui.ErrorFormatter) -> None
+    def __init__(
+            self,
+            funcs,  # type: Dict[str, value.Proc]
+            aliases,  # type: Dict[str, str]
+            search_path,  # type: state.SearchPath
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.funcs = funcs
         self.aliases = aliases
         self.search_path = search_path
@@ -477,7 +518,7 @@ class Type(vm._Builtin):
         arg = arg_types.type(attrs.attrs)
 
         if arg.f:
-            funcs = {}  # type: Dict[str, Proc]
+            funcs = {}  # type: Dict[str, value.Proc]
         else:
             funcs = self.funcs
 

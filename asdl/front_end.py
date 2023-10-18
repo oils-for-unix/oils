@@ -57,6 +57,7 @@ for i, (name, val) in enumerate(_TOKENS):
 
 
 class Token(object):
+
     def __init__(self, kind, value, lineno):
         self.kind = kind
         self.value = value
@@ -64,6 +65,7 @@ class Token(object):
 
 
 class ASDLSyntaxError(Exception):
+
     def __init__(self, msg, lineno=None):
         self.msg = msg
         self.lineno = lineno or '<unknown>'
@@ -445,7 +447,8 @@ def _ResolveType(typ, type_lookup):
                         'Optional primitive type {} not allowed'.format(
                             child.name))
 
-                if child.resolved and isinstance(child.resolved, ast.SimpleSum):
+                if child.resolved and isinstance(child.resolved,
+                                                 ast.SimpleSum):
                     raise ASDLSyntaxError(
                         'Optional simple sum type {} not allowed'.format(
                             child.name))

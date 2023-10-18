@@ -5,7 +5,7 @@ from errno import EINTR
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import builtin_i
-from _devbuild.gen.runtime_asdl import RedirValue, trace
+from _devbuild.gen.runtime_asdl import RedirValue, trace, value
 from _devbuild.gen.syntax_asdl import (
     command,
     command_e,
@@ -30,7 +30,7 @@ import posix_ as posix
 from typing import cast, Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import (cmd_value, CommandStatus,
-                                            StatusArray, Proc)
+                                            StatusArray)
     from _devbuild.gen.syntax_asdl import command_t
     from core import optview
     from core import state
@@ -94,7 +94,7 @@ class ShellExecutor(vm._Executor):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
-            procs,  # type: Dict[str, Proc]
+            procs,  # type: Dict[str, value.Proc]
             hay_state,  # type: state.Hay
             builtins,  # type: Dict[int, _Builtin]
             search_path,  # type: state.SearchPath
@@ -172,7 +172,8 @@ class ShellExecutor(vm._Executor):
                                         node,
                                         self.trap_state,
                                         inherit_errexit=inherit_errexit)
-        p = process.Process(thunk, self.job_control, self.job_list, self.tracer)
+        p = process.Process(thunk, self.job_control, self.job_list,
+                            self.tracer)
         return p
 
     def RunBuiltin(self, builtin_id, cmd_val):
@@ -262,8 +263,7 @@ class ShellExecutor(vm._Executor):
 
                 with dev.ctx_Tracer(self.tracer, 'proc', argv):
                     # NOTE: Functions could call 'exit 42' directly, etc.
-                    status = self.cmd_ev.RunProc(proc_node, argv[1:], arg0_loc,
-                                                 cmd_val.typed_args)
+                    status = self.cmd_ev.RunProc(proc_node, cmd_val)
                 return status
 
         # Notes:
@@ -475,7 +475,8 @@ class ShellExecutor(vm._Executor):
                 else:
                     # Like the top level IOError handler
                     e_die_status(
-                        2, 'osh I/O error (read): %s' % posix.strerror(err_num))
+                        2,
+                        'osh I/O error (read): %s' % posix.strerror(err_num))
 
             elif n == 0:  # EOF
                 break
@@ -568,7 +569,8 @@ class ShellExecutor(vm._Executor):
             # Example: cat < <(head foo.txt)
             #
             # The head process should write its stdout to a pipe.
-            redir = process.StdoutToPipe(r, w)  # type: process.ChildStateChange
+            redir = process.StdoutToPipe(r,
+                                         w)  # type: process.ChildStateChange
 
         elif op_id == Id.Left_ProcSubOut:
             # Example: head foo.txt > >(tac)

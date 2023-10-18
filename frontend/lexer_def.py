@@ -503,7 +503,6 @@ _C_STRING_COMMON = [
     _X_CHAR,
     R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
     R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
-
     R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
     # Backslash that ends a line.  Note '.' doesn't match a newline character.
@@ -818,8 +817,7 @@ _FLOAT_RE = (
     _DECIMAL_INT_RE +
     # Unlike Python, exponent can't be like 42e5_000.  There's no use because
     # 1e309 is already inf.  Let's keep our code simple.
-    r'(\.' + _DECIMAL_INT_RE + ')?([eE][+\-]?[0-9]+)?'
-)
+    r'(\.' + _DECIMAL_INT_RE + ')?([eE][+\-]?[0-9]+)?')
 
 # Ditto, used for comparison operators
 # Added optional Optional -?

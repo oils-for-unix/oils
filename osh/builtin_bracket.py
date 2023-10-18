@@ -89,6 +89,7 @@ class _StringWordEmitter(word_parse.WordEmitter):
 
 
 class _WordEvaluator(word_eval.StringWordEvaluator):
+
     def __init__(self):
         # type: () -> None
         word_eval.StringWordEvaluator.__init__(self)
@@ -169,6 +170,7 @@ def _ThreeArgs(w_parser):
 
 
 class Test(vm._Builtin):
+
     def __init__(self, need_right_bracket, exec_opts, mem, errfmt):
         # type: (bool, optview.Exec, state.Mem, ErrorFormatter) -> None
         self.need_right_bracket = need_right_bracket

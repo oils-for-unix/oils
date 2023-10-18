@@ -4,6 +4,9 @@
 #
 # Usage:
 #   build/ninja-rules-py.sh <function name>
+#
+# Env variables:
+#   EXTRA_MYCPP_ARGS - passed to mycpp_main
 
 set -o nounset
 set -o pipefail
@@ -75,8 +78,8 @@ gen-oils-for-unix() {
 
   _bin/shwrap/mycpp_main $mypypath $raw_cc \
     --header-out $raw_header \
+    ${EXTRA_MYCPP_ARGS:-} \
     "$@"
-    #--to-header osh.cmd_eval \
 
   { echo "// $main_name.h: translated from Python by mycpp"
     echo

@@ -6,6 +6,7 @@ from typing import List, Dict, Optional, Any
 
 
 class Option(object):
+
     def __init__(self,
                  index,
                  name,
@@ -152,6 +153,7 @@ _BASIC_PARSE_OPTIONS = [
     'parse_proc',  # proc p { ... }
     'parse_func',  # func f(x) { ... }
     'parse_brace',  # cd /bin { ... }
+    'parse_bracket',  # assert [42 === x]
 
     # bare assignment 'x = 42' is allowed in Hay { } blocks, but disallowed
     # everywhere else.  It's not a command 'x' with arg '='.
@@ -388,7 +390,8 @@ STRICT_ALL = [opt.index for opt in _SORTED if 'strict:all' in opt.groups]
 DEFAULT_TRUE = [opt.index for opt in _SORTED if opt.default]
 #print([opt.name for opt in _SORTED if opt.default])
 
-META_OPTIONS = ['strict:all', 'ysh:upgrade', 'ysh:all']  # Passed to flag parser
+META_OPTIONS = ['strict:all', 'ysh:upgrade',
+                'ysh:all']  # Passed to flag parser
 
 # For printing option names to stdout.  Wrapped by frontend/consts.
 OPTION_NAMES = dict((opt.index, opt.name) for opt in _SORTED)

@@ -108,7 +108,8 @@ def TranslateTree(re_tree, f, in_char_class=False):
         name, arg = child
         if name == 'in':  # character class
             f.write('[')
-            TranslateTree(arg, f, in_char_class=True)  # list of literals/ranges
+            TranslateTree(arg, f,
+                          in_char_class=True)  # list of literals/ranges
             f.write(']')
 
         elif name == 'max_repeat':  # repetition

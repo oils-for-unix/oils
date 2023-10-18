@@ -61,23 +61,23 @@ from frontend import typed_args
 from osh import braces
 from osh import word_compile
 from mycpp.mylib import log, NewDict, switch, tagswitch
+from ysh import func_proc
 from ysh import val_ops
 
 import libc
 
-from typing import cast, Any, Optional, Dict, List, Tuple, TYPE_CHECKING
+from typing import cast, Optional, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from _devbuild.gen.syntax_asdl import ArgList
-    from core.state import Mem
-    from osh.word_eval import AbstractWordEvaluator
+    from osh import cmd_eval
+    from osh import word_eval
     from osh import split
 
 _ = log
 
 
 def LookupVar(mem, var_name, which_scopes, var_loc):
-    # type: (Mem, str, scope_t, loc_t) -> value_t
+    # type: (state.Mem, str, scope_t, loc_t) -> value_t
 
     # Lookup WITHOUT dynamic scope.
     val = mem.GetValue(var_name, which_scopes=which_scopes)
@@ -166,7 +166,7 @@ class ExprEvaluator(object):
 
     def __init__(
             self,
-            mem,  # type: Mem
+            mem,  # type: state.Mem
             mutable_opts,  # type: state.MutableOpts
             methods,  # type: Dict[int, Dict[str, vm._Callable]]
             splitter,  # type: split.SplitContext
@@ -174,7 +174,8 @@ class ExprEvaluator(object):
     ):
         # type: (...) -> None
         self.shell_ex = None  # type: vm._Executor
-        self.word_ev = None  # type: AbstractWordEvaluator
+        self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
+        self.word_ev = None  # type: word_eval.AbstractWordEvaluator
 
         self.mem = mem
         self.mutable_opts = mutable_opts
@@ -262,11 +263,19 @@ class ExprEvaluator(object):
 
         raise AssertionError()  # silence C++ compiler
 
+    def EvalExpr(self, node, blame_loc):
+        # type: (expr_t, loc_t) -> value_t
+        """Public API for _EvalExpr to ensure command_sub_errexit"""
+        self.mem.SetLocationForExpr(blame_loc)
+        # Pure C++ won't need to catch exceptions
+        with state.ctx_YshExpr(self.mutable_opts):
+            val = self._EvalExpr(node)
+        return val
+
     def EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
         """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
-        # Pure C++ won't need to catch exceptions
-        with state.ctx_OilExpr(self.mutable_opts):
+        with state.ctx_YshExpr(self.mutable_opts):
             lval = self._EvalPlaceExpr(place)
         return lval
 
@@ -292,17 +301,6 @@ class ExprEvaluator(object):
         # type: (value_t, word_part.Splice) -> List[str]
         """ write -- @myvar """
         return val_ops.ToShellArray(val, loc.WordPart(part), prefix='Splice ')
-
-    def EvalExpr(self, node, blame_loc):
-        # type: (expr_t, loc_t) -> value_t
-        """Public API for _EvalExpr to ensure command_sub_errexit is on."""
-        self.mem.SetLocationForExpr(blame_loc)
-        # Pure C++ won't need to catch exceptions
-        with state.ctx_OilExpr(self.mutable_opts):
-            val = self._EvalExpr(node)
-        return val
-
-        # Note: IndexError and KeyError are handled in more specific places
 
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
@@ -679,68 +677,6 @@ class ExprEvaluator(object):
 
         return value.Bool(result)
 
-    def _EvalArgListUntyped(self, args):
-        # type: (ArgList) -> Tuple[List[Any], Dict[str, Any]]
-        """For procs and funcs - UNTYPED"""
-        pos_args = []  # type: List[Any]
-        for arg in args.pos_args:
-            UP_arg = arg
-
-            if arg.tag() == expr_e.Spread:
-                arg = cast(expr.Spread, UP_arg)
-                # assume it returns a list
-                #pos_args.extend(self._EvalExpr(arg.child))
-            else:
-                pos_args.append(self._EvalExpr(arg))
-
-        kwargs = {}  # type: Dict[str, Any]
-
-        # NOTE: Keyword args aren't tested
-        if 0:
-            for named in args.named:
-                if named.name:
-                    kwargs[named.name.tval] = self._EvalExpr(named.value)
-                else:
-                    # ...named
-                    kwargs.update(self._EvalExpr(named.value))
-
-        return pos_args, kwargs
-
-    def _EvalArgList(self, args, me=None):
-        # type: (ArgList, Optional[value_t]) -> Tuple[List[value_t], Dict[str, value_t]]
-        """For procs and args - TYPED """
-
-        # TODO: CommandEvaluator.RunProc is similar
-
-        pos_args = []  # type: List[value_t]
-
-        if me:  # self/this argument
-            pos_args.append(me)
-
-        for arg in args.pos_args:
-            UP_arg = arg
-
-            if arg.tag() == expr_e.Spread:
-                arg = cast(expr.Spread, UP_arg)
-                # assume it returns a list
-                #pos_args.extend(self._EvalExpr(arg.child))
-                pass
-            else:
-                pos_args.append(self._EvalExpr(arg))
-
-        kwargs = {}  # type: Dict[str, value_t]
-
-        # NOTE: Keyword args aren't tested
-        if 0:
-            for named in args.named:
-                if named.name:
-                    kwargs[named.name.tval] = self._EvalExpr(named.value)
-                else:
-                    # ...named
-                    kwargs.update(self._EvalExpr(named.value))
-
-        return pos_args, kwargs
-
     def _EvalFuncCall(self, node):
         # type: (expr.FuncCall) -> value_t
 
@@ -750,32 +686,37 @@ class ExprEvaluator(object):
         with tagswitch(func) as case:
             if case(value_e.Func):
                 func = cast(value.Func, UP_func)
+
+                pos_args, named_args = func_proc._EvalArgList(self, node.args)
+                rd = typed_args.Reader(pos_args, named_args, node.args)
+                return func_proc.CallUserFunc(func, rd, self.mem, self.cmd_ev)
+
+            elif case(value_e.BuiltinFunc):
+                func = cast(value.BuiltinFunc, UP_func)
                 # C++ cast to work around ASDL 'any'
                 f = cast(vm._Callable, func.callable)
-                pos_args, named_args = self._EvalArgList(node.args)
+                pos_args, named_args = func_proc._EvalArgList(self, node.args)
                 #log('pos_args %s', pos_args)
 
-                ret = f.Call(
-                    typed_args.Reader(None, pos_args, named_args, node.args,
-                                      None, False))
+                rd = typed_args.Reader(pos_args, named_args, node.args)
+                return f.Call(rd)
 
-                #log('ret %s', ret)
-                return ret
-
-            elif case(value_e.BoundFunc):
-                func = cast(value.BoundFunc, UP_func)
+            elif case(value_e.BuiltinMethod):
+                func = cast(value.BuiltinMethod, UP_func)
 
                 #assert isinstance(func.callable, vm._Callable), "Bound funcs must be typed"
                 # Cast to work around ASDL limitation for now
                 f = cast(vm._Callable, func.callable)
 
-                pos_args, named_args = self._EvalArgList(node.args, me=func.me)
+                pos_args, named_args = func_proc._EvalArgList(self,
+                                                              node.args,
+                                                              me=func.me)
 
-                ret = f.Call(
-                    typed_args.Reader(None, pos_args, named_args, node.args,
-                                      None, True))
-
-                return ret
+                rd = typed_args.Reader(pos_args,
+                                       named_args,
+                                       node.args,
+                                       is_bound=True)
+                return f.Call(rd)
 
             else:
                 raise error.TypeErr(func, 'Expected a function or method',
@@ -876,7 +817,7 @@ class ExprEvaluator(object):
                     'Method %r does not exist on type %s' %
                     (name, ui.ValType(o)), node.attr)
 
-            return value.BoundFunc(o, method)
+            return value.BuiltinMethod(o, method)
 
         if op_id == Id.Expr_Dot:  # d.key is like d['key']
             name = node.attr.tval

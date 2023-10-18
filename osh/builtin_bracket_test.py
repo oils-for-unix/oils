@@ -12,6 +12,7 @@ from osh import builtin_bracket  # module under test
 
 
 class BracketTest(unittest.TestCase):
+
     def testStringWordEmitter(self):
         # Test
         argv = '-z X -o -z Y -a -z X'.split()

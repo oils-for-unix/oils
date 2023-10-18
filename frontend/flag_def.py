@@ -195,7 +195,7 @@ def _AddShellOptions(spec):
 MAIN_SPEC = FlagSpecAndMore('main')
 
 MAIN_SPEC.ShortFlag('-c', args.String,
-                   quit_parsing_flags=True)  # command string
+                    quit_parsing_flags=True)  # command string
 MAIN_SPEC.LongFlag('--help')
 MAIN_SPEC.LongFlag('--version')
 
@@ -206,8 +206,8 @@ MAIN_SPEC.LongFlag('--version')
 #   undefined-vars - a static analysis pass
 #   parse-glob - to debug parsing
 #   parse-printf
-MAIN_SPEC.LongFlag('--tool', ['tokens', 'arena', 'syntax-tree', 'ysh-ify',
-                              'deps', 'cat-em'])
+MAIN_SPEC.LongFlag(
+    '--tool', ['tokens', 'arena', 'syntax-tree', 'ysh-ify', 'deps', 'cat-em'])
 
 MAIN_SPEC.ShortFlag('-i')  # interactive
 MAIN_SPEC.ShortFlag('-l')  # login - currently no-op
@@ -261,7 +261,8 @@ def _DefineCompletionFlags(spec):
     # type: (_FlagSpecAndMore) -> None
     spec.ShortFlag('-F', args.String, help='Complete with this function')
     spec.ShortFlag('-W', args.String, help='Complete with these words')
-    spec.ShortFlag('-C', args.String,
+    spec.ShortFlag('-C',
+                   args.String,
                    help='Complete with stdout lines of this command')
 
     spec.ShortFlag(
@@ -372,17 +373,17 @@ COMPADJUST_SPEC.ShortFlag('-s',
 
 COMPEXPORT_SPEC = FlagSpecAndMore('compexport')
 
-COMPEXPORT_SPEC.ShortFlag(
-    '-c', args.String,
-    help='Shell string to complete, like sh -c')
+COMPEXPORT_SPEC.ShortFlag('-c',
+                          args.String,
+                          help='Shell string to complete, like sh -c')
 
-COMPEXPORT_SPEC.LongFlag(
-    '--begin', args.Int,
-    help='Simulate readline begin index into line buffer')
+COMPEXPORT_SPEC.LongFlag('--begin',
+                         args.Int,
+                         help='Simulate readline begin index into line buffer')
 
-COMPEXPORT_SPEC.LongFlag(
-    '--end', args.Int,
-    help='Simulate readline end index into line buffer')
+COMPEXPORT_SPEC.LongFlag('--end',
+                         args.Int,
+                         help='Simulate readline end index into line buffer')
 
 # jlines is an array of strings with NO header line
 # TSV8 has a header line.  It can have flag descriptions and other data.

@@ -25,7 +25,7 @@ from _devbuild.gen.syntax_asdl import (
     for_iter,
     ArgList,
     BraceGroup,
-    BlockArg,
+    LiteralBlock,
     CaseArm,
     case_arg,
     IfArm,
@@ -47,10 +47,13 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_expr_t,
     AssignPair,
     EnvPair,
+    ParsedAssignment,
     assign_op_e,
     NameType,
     proc_sig,
     proc_sig_e,
+    Proc,
+    Func,
 )
 from core import alloc
 from core import error
@@ -137,15 +140,16 @@ def _MakeLiteralHereLines(
         here_lines,  # type: List[Tuple[SourceLine, int]]
         arena,  # type: Arena
 ):
-    # type: (...) -> List[word_part_t]  # less precise because List is invariant type
+    # type: (...) -> List[word_part_t]
     """Create a line_span and a token for each line."""
-    tokens = []  # type: List[Token]
+
+    # less precise type, because List[T] is an invariant type
+    tokens = []  # type: List[word_part_t]
     for src_line, start_offset in here_lines:
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line, src_line.content[start_offset:])
         tokens.append(t)
-    parts = [cast(word_part_t, t) for t in tokens]
-    return parts
+    return tokens
 
 
 def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
@@ -179,10 +183,13 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
 
 
 def _MakeAssignPair(parse_ctx, preparsed, arena):
-    # type: (ParseContext, PreParsedItem, Arena) -> AssignPair
+    # type: (ParseContext, ParsedAssignment, Arena) -> AssignPair
     """Create an AssignPair from a 4-tuples from DetectShAssignment."""
 
-    left_token, close_token, part_offset, w = preparsed
+    left_token = preparsed.left
+    close_token = preparsed.close
+
+    lhs = None  # type: sh_lhs_expr_t
 
     if left_token.id == Id.Lit_VarLike:  # s=1
         if lexer.IsPlusEquals(left_token):
@@ -192,9 +199,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
             var_name = lexer.TokenSliceRight(left_token, -1)
             op = assign_op_e.Equal
 
-        tmp = sh_lhs_expr.Name(left_token, var_name)
-
-        lhs = cast(sh_lhs_expr_t, tmp)
+        lhs = sh_lhs_expr.Name(left_token, var_name)
 
     elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
         var_name = lexer.TokenSliceRight(left_token, -1)
@@ -217,14 +222,14 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
         else:
             op = assign_op_e.Equal
 
-        span1 = left_token
-        span2 = close_token
         # Similar to SnipCodeString / SnipCodeBlock
-        if span1.line == span2.line:
+        if left_token.line == close_token.line:
             # extract what's between brackets
-            code_str = span1.line.content[span1.col + span1.length:span2.col]
+            s = left_token.col + left_token.length
+            code_str = left_token.line.content[s:close_token.col]
         else:
-            raise NotImplementedError('%s != %s' % (span1.line, span2.line))
+            raise NotImplementedError('%s != %s' %
+                                      (left_token.line, close_token.line))
         a_parser = parse_ctx.MakeArithParser(code_str)
 
         # a[i+1]= is a place
@@ -232,20 +237,21 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
         with alloc.ctx_SourceCode(arena, src):
             index_node = a_parser.Parse()  # may raise error.Parse
 
-        tmp3 = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
-
-        lhs = cast(sh_lhs_expr_t, tmp3)
+        lhs = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
 
     else:
         raise AssertionError()
 
     # TODO: Should we also create a rhs_expr.ArrayLiteral here?
-    n = len(w.parts)
-    if part_offset == n:
+    parts = preparsed.w.parts
+    offset = preparsed.part_offset
+
+    n = len(parts)
+    if offset == n:
         rhs = rhs_word.Empty  # type: rhs_word_t
     else:
         # tmp2 is for intersection of C++/MyPy type systems
-        tmp2 = CompoundWord(w.parts[part_offset:])
+        tmp2 = CompoundWord(parts[offset:])
         word_.TildeDetectAssign(tmp2)
         rhs = tmp2
 
@@ -253,41 +259,41 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
 
 def _AppendMoreEnv(preparsed_list, more_env):
-    # type: (PreParsedList, List[EnvPair]) -> None
+    # type: (List[ParsedAssignment], List[EnvPair]) -> None
     """Helper to modify a SimpleCommand node.
 
     Args:
       preparsed: a list of 4-tuples from DetectShAssignment
       more_env: a list to append env_pairs to
     """
-    for left_token, _, part_offset, w in preparsed_list:
+    for preparsed in preparsed_list:
+        left_token = preparsed.left
+
         if left_token.id != Id.Lit_VarLike:  # can't be a[x]=1
-            p_die("Environment binding shouldn't look like an array assignment",
-                  left_token)
+            p_die(
+                "Environment binding shouldn't look like an array assignment",
+                left_token)
 
         if lexer.IsPlusEquals(left_token):
             p_die('Expected = in environment binding, got +=', left_token)
 
         var_name = lexer.TokenSliceRight(left_token, -1)
-        n = len(w.parts)
-        if part_offset == n:
+
+        parts = preparsed.w.parts
+        n = len(parts)
+        offset = preparsed.part_offset
+        if offset == n:
             val = rhs_word.Empty  # type: rhs_word_t
         else:
-            val = CompoundWord(w.parts[part_offset:])
+            val = CompoundWord(parts[offset:])
 
-        pair = EnvPair(left_token, var_name, val)
-        more_env.append(pair)
-
-
-if TYPE_CHECKING:
-    PreParsedItem = Tuple[Token, Optional[Token], int, CompoundWord]
-    PreParsedList = List[PreParsedItem]
+        more_env.append(EnvPair(left_token, var_name, val))
 
 
 def _SplitSimpleCommandPrefix(words):
-    # type: (List[CompoundWord]) -> Tuple[PreParsedList, List[CompoundWord]]
+    # type: (List[CompoundWord]) -> Tuple[List[ParsedAssignment], List[CompoundWord]]
     """Second pass of SimpleCommand parsing: look for assignment words."""
-    preparsed_list = []  # type: PreParsedList
+    preparsed_list = []  # type: List[ParsedAssignment]
     suffix_words = []  # type: List[CompoundWord]
 
     done_prefix = False
@@ -298,7 +304,8 @@ def _SplitSimpleCommandPrefix(words):
 
         left_token, close_token, part_offset = word_.DetectShAssignment(w)
         if left_token:
-            preparsed_list.append((left_token, close_token, part_offset, w))
+            preparsed_list.append(
+                ParsedAssignment(left_token, close_token, part_offset, w))
         else:
             done_prefix = True
             suffix_words.append(w)
@@ -307,20 +314,20 @@ def _SplitSimpleCommandPrefix(words):
 
 
 def _MakeSimpleCommand(
-        preparsed_list,  # type: PreParsedList
+        preparsed_list,  # type: List[ParsedAssignment]
         suffix_words,  # type: List[CompoundWord]
         redirects,  # type: List[Redir]
         typed_args,  # type: Optional[ArgList]
-        block,  # type: Optional[BlockArg]
+        block,  # type: Optional[LiteralBlock]
 ):
     # type: (...) -> command.Simple
     """Create an command.Simple node."""
 
     # FOO=(1 2 3) ls is not allowed.
-    for _, _, _, w in preparsed_list:
-        if word_.HasArrayPart(w):
+    for preparsed in preparsed_list:
+        if word_.HasArrayPart(preparsed.w):
             p_die("Environment bindings can't contain array literals",
-                  loc.Word(w))
+                  loc.Word(preparsed.w))
 
     # NOTE: It would be possible to add this check back.  But it already happens
     # at runtime in EvalWordSequence2.
@@ -368,7 +375,9 @@ class VarChecker(object):
 
     def Push(self, blame_tok):
         # type: (Token) -> None
-        """Bash allows this, but it's confusing because it's the same as two
+        """Called when we enter a shell function, proc, or func.
+
+        Bash allows this, but it's confusing because it's the same as two
         functions at the top level.
 
         f() {
@@ -377,11 +386,16 @@ class VarChecker(object):
           }
         }
 
-        YSH disallows nested procs.
+        YSH disallows nested procs and funcs.
         """
         if len(self.tokens) != 0:
-            if self.tokens[0].id == Id.KW_Proc or blame_tok.id == Id.KW_Proc:
-                p_die("procs and shell functions can't be nested", blame_tok)
+            if blame_tok.id == Id.KW_Proc:
+                p_die("procs must be defined at the top level", blame_tok)
+            if blame_tok.id == Id.KW_Func:
+                p_die("funcs must be defined at the top level", blame_tok)
+            if self.tokens[0].id in (Id.KW_Proc, Id.KW_Func):
+                p_die("shell functions can't be defined inside proc or func",
+                      blame_tok)
 
         self.tokens.append(blame_tok)
         entry = {}  # type: Dict[str, Id_t]
@@ -468,7 +482,6 @@ class ctx_CmdMode(object):
         self.cmd_parse.cmd_mode = self.prev_cmd_mode
 
 
-
 SECONDARY_KEYWORDS = [
     Id.KW_Do, Id.KW_Done, Id.KW_Then, Id.KW_Fi, Id.KW_Elif, Id.KW_Else,
     Id.KW_Esac
@@ -537,7 +550,7 @@ class CommandParser(object):
         # A hacky boolean to remove 'if cd / {' ambiguity.
         self.allow_block = True
 
-        # Stack of booleans for nested Attr and SHELL nodes.  
+        # Stack of booleans for nested Attr and SHELL nodes.
         #   Attr nodes allow bare assignment x = 42, but not shell x=42.
         #   SHELL nodes are the inverse.  'var x = 42' is preferred in shell
         # nodes, but x42 is still allowed.
@@ -595,6 +608,10 @@ class CommandParser(object):
         """
         self.next_lex_mode = lex_mode_e.ShCommand
 
+    def _SetNextBrack(self):
+        # type: () -> None
+        self.next_lex_mode = lex_mode_e.ShCommandBrack
+
     def _GetWord(self):
         # type: () -> None
         """Call this when you need to make a decision based on Id or Kind.
@@ -635,8 +652,8 @@ class CommandParser(object):
         self._GetWord()
         if self.c_id != c_id:
             if msg is None:
-                msg = 'Expected word type %s, got %s' % (ui.PrettyId(c_id),
-                                                         ui.PrettyId(self.c_id))
+                msg = 'Expected word type %s, got %s' % (
+                    ui.PrettyId(c_id), ui.PrettyId(self.c_id))
             p_die(msg, loc.Word(self.cur_word))
 
         skipped = self.cur_word
@@ -738,12 +755,48 @@ class CommandParser(object):
         return redirects
 
     def _ScanSimpleCommand(self):
-        # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[BlockArg]]
-        """First pass: Split into redirects and words."""
+        # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[LiteralBlock]]
+        """YSH extends simple commands with typed args and blocks.
+
+        Shell has a recursive grammar, which awkwardly expresses
+        non-grammatical rules:
+
+        simple_command   : cmd_prefix cmd_word cmd_suffix
+                         | cmd_prefix cmd_word
+                         | cmd_prefix
+                         | cmd_name cmd_suffix
+                         | cmd_name
+                         ;
+        cmd_name         : WORD                   /* Apply rule 7a */
+                         ;
+        cmd_word         : WORD                   /* Apply rule 7b */
+                         ;
+        cmd_prefix       :            io_redirect
+                         | cmd_prefix io_redirect
+                         |            ASSIGNMENT_WORD
+                         | cmd_prefix ASSIGNMENT_WORD
+                         ;
+        cmd_suffix       :            io_redirect
+                         | cmd_suffix io_redirect
+                         |            WORD
+                         | cmd_suffix WORD
+
+        YSH grammar:
+
+        simple_command = 
+            cmd_prefix* word+ typed_args? BraceGroup? cmd_suffix*
+
+        typed_args =
+          '(' arglist ')'
+        | '[' arglist ']'
+
+        Notably, redirects shouldn't appear after between typed args and
+        BraceGroup.
+        """
         redirects = []  # type: List[Redir]
         words = []  # type: List[CompoundWord]
         typed_args = None  # type: Optional[ArgList]
-        block = None  # type: Optional[BlockArg]
+        block = None  # type: Optional[LiteralBlock]
 
         first_word_caps = False  # does first word look like Caps, but not CAPS
 
@@ -767,7 +820,7 @@ class CommandParser(object):
                             # So we can get the source code back later
                             lines = self.arena.SaveLinesAndDiscard(
                                 brace_group.left, brace_group.right)
-                            block = BlockArg(brace_group, lines)
+                            block = LiteralBlock(brace_group, lines)
 
                             self.hay_attrs_stack.pop()
 
@@ -782,14 +835,26 @@ class CommandParser(object):
                         break
 
                 w = cast(CompoundWord, self.cur_word)  # Kind.Word ensures this
-                words.append(w)
+
                 if i == 0:
+                    # Disallow leading =a because it's confusing
+                    part0 = w.parts[0]
+                    if part0.tag() == word_part_e.Literal:
+                        tok = cast(Token, part0)
+                        if tok.id == Id.Lit_Equals:
+                            p_die(
+                                "=word isn't allowed.  Hint: add a space after =, or quote it",
+                                tok)
+
+                    # Is the first word a Hay Attr word?
                     ok, word_str, quoted = word_.StaticEval(w)
                     # Foo { a = 1 } is OK, but not foo { a = 1 } or FOO { a = 1 }
                     if (ok and len(word_str) and word_str[0].isupper() and
                             not word_str.isupper()):
                         first_word_caps = True
                         #log('W %s', word_str)
+
+                words.append(w)
 
             elif self.c_id == Id.Op_LParen:
                 # 1. Check that there's a preceding space
@@ -813,14 +878,20 @@ class CommandParser(object):
                 # of a word, and we don't know if it will end.
                 next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
                 if next_id == Id.Op_RParen:
-                    p_die('Empty arg list not allowed', loc.Word(self.cur_word))
+                    p_die('Empty arg list not allowed',
+                          loc.Word(self.cur_word))
 
-                typed_args = self.w_parser.ParseProcCallArgs()
+                typed_args = self.w_parser.ParseProcCallArgs(
+                    grammar_nt.ysh_eager_arglist)
+
+            elif self.c_id == Id.Op_LBracket:  # only when parse_bracket set
+                typed_args = self.w_parser.ParseProcCallArgs(
+                    grammar_nt.ysh_lazy_arglist)
 
             else:
                 break
 
-            self._SetNext()
+            self._SetNextBrack()  # Allow bracket for SECOND word on
             i += 1
         return redirects, words, typed_args, block
 
@@ -949,8 +1020,8 @@ class CommandParser(object):
         with alloc.ctx_SourceCode(arena, src):
             with parse_lib.ctx_Alias(self.parse_ctx.trail):
                 try:
-                    # _ParseCommandTerm() handles multiline commands, compound commands, etc.
-                    # as opposed to ParseLogicalLine()
+                    # _ParseCommandTerm() handles multiline commands, compound
+                    # commands, etc.  as opposed to ParseLogicalLine()
                     node = cp._ParseCommandTerm()
                 except error.Parse as e:
                     # Failure to parse alias expansion is a fatal error
@@ -1053,29 +1124,19 @@ class CommandParser(object):
             simple.redirects = redirects
             return simple
 
-        # Disallow =a because it's confusing
-        part0 = words[0].parts[0]
-        if part0.tag() == word_part_e.Literal:
-            tok = cast(Token, part0)
-            if tok.id == Id.Lit_Equals:
-                p_die(
-                    "=word isn't allowed.  Hint: either quote it or add a space after =\n"
-                    "to pretty print an expression", tok)
-
         preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
         if len(preparsed_list):
-            left_token, _, _, _ = preparsed_list[0]
-
             # Disallow X=Y inside proc and func
             #   and inside Hay Attr blocks
             # But allow X=Y at the top level
             #   for interactive use foo=bar
-            #   for global constants GLOBAL=~/src 
+            #   for global constants GLOBAL=~/src
             #     because YSH assignment doesn't have tilde sub
             if len(suffix_words) == 0:
-                if self.cmd_mode != cmd_mode_e.Shell or (
-                        len(self.hay_attrs_stack) and self.hay_attrs_stack[-1]):
-                    p_die('Use var/setvar to assign in YSH', left_token)
+                if self.cmd_mode != cmd_mode_e.Shell or (len(
+                        self.hay_attrs_stack) and self.hay_attrs_stack[-1]):
+                    p_die('Use var/setvar to assign in YSH',
+                          preparsed_list[0].left)
 
         # Set a reference to words and redirects for completion.  We want to
         # inspect this state after a failed parse.
@@ -1101,7 +1162,8 @@ class CommandParser(object):
                 # return x - inside procs and shell functions
                 # return (x) - inside funcs
                 if typed_args is None:
-                    if self.cmd_mode not in (cmd_mode_e.Shell, cmd_mode_e.Proc):
+                    if self.cmd_mode not in (cmd_mode_e.Shell,
+                                             cmd_mode_e.Proc):
                         p_die('Shell-style returns not allowed here', kw_token)
                 else:
                     if self.cmd_mode != cmd_mode_e.Func:
@@ -1120,10 +1182,8 @@ class CommandParser(object):
                 p_die("Control flow shouldn't have redirects", kw_token)
 
             if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
-                # TODO: Change location as above
-                left_token, _, _, _ = preparsed_list[0]
                 p_die("Control flow shouldn't have environment bindings",
-                      left_token)
+                      preparsed_list[0].left)
 
             # Attach the token for errors.  (ShAssignment may not need it.)
             if len(suffix_words) == 1:
@@ -1331,8 +1391,7 @@ class CommandParser(object):
 
             self._SetNext()  # skip in
             if self.w_parser.LookPastSpace() == Id.Op_LParen:
-                enode, last_token = self.parse_ctx.ParseYshExpr(
-                    self.lexer, grammar_nt.oil_expr)
+                enode = self.w_parser.ParseYshExprForCommand()
                 node.iterable = for_iter.YshExpr(enode, expr_blame)
 
                 # For simplicity, we don't accept for x in (obj); do ...
@@ -1433,10 +1492,9 @@ class CommandParser(object):
         """
         self._SetNext()  # skip keyword
 
-        if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace(
-        ) == Id.Op_LParen:
-            enode, _ = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                   grammar_nt.oil_expr)
+        if (self.parse_opts.parse_paren() and
+                self.w_parser.LookPastSpace() == Id.Op_LParen):
+            enode = self.w_parser.ParseYshExprForCommand()
             cond = condition.YshExpr(enode)  # type: condition_t
         else:
             cond = self._ParseConditionList()
@@ -1575,7 +1633,7 @@ class CommandParser(object):
 
         Looking at: token after 'case'
         """
-        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
+        enode = self.w_parser.ParseYshExprForCommand()
         to_match = case_arg.YshExpr(enode)
 
         ate = self._Eat(Id.Lit_LBrace)
@@ -1598,7 +1656,8 @@ class CommandParser(object):
         arms_end = word_.AsOperatorToken(ate)
         arms_end.id = Id.Lit_RBrace
 
-        return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
+        return command.Case(case_kw, to_match, arms_start, arms, arms_end,
+                            None)
 
     def ParseOldCase(self, case_kw):
         # type: (Token) -> command.Case
@@ -1649,7 +1708,8 @@ class CommandParser(object):
         arms_end = word_.AsKeywordToken(ate)
 
         # no redirects yet
-        return command.Case(case_kw, to_match, arms_start, arms, arms_end, None)
+        return command.Case(case_kw, to_match, arms_start, arms, arms_end,
+                            None)
 
     def ParseCase(self):
         # type: () -> command.Case
@@ -1682,8 +1742,7 @@ class CommandParser(object):
             self._SetNext()  # skip elif
             if (self.parse_opts.parse_paren() and
                     self.w_parser.LookPastSpace() == Id.Op_LParen):
-                enode, _ = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                       grammar_nt.oil_expr)
+                enode = self.w_parser.ParseYshExprForCommand()
                 cond = condition.YshExpr(enode)  # type: condition_t
             else:
                 self.allow_block = False
@@ -1794,8 +1853,7 @@ class CommandParser(object):
         if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace(
         ) == Id.Op_LParen:
             # if (x + 1)
-            enode, _ = self.parse_ctx.ParseYshExpr(self.lexer,
-                                                   grammar_nt.oil_expr)
+            enode = self.w_parser.ParseYshExprForCommand()
             cond = condition.YshExpr(enode)  # type: condition_t
         else:
             # if echo 1; echo 2; then
@@ -1994,8 +2052,8 @@ class CommandParser(object):
         return func
 
     def ParseYshProc(self):
-        # type: () -> command.Proc
-        node = command.Proc.CreateNull(alloc_lists=True)
+        # type: () -> Proc
+        node = Proc.CreateNull(alloc_lists=True)
 
         keyword_tok = word_.AsKeywordToken(self.cur_word)
         node.keyword = keyword_tok
@@ -2006,17 +2064,41 @@ class CommandParser(object):
                 if node.sig.tag() == proc_sig_e.Closed:  # Register params
                     sig = cast(proc_sig.Closed, node.sig)
 
-                    # Treat params as variables.
-                    for param in sig.word_params:
-                        # TODO: Check() should not look at tval
-                        name_tok = param.blame_tok
+                    # Treat 3 kinds of params as variables.
+                    wp = sig.word
+                    if wp:
+                        for param in wp.params:
+                            # TODO: Check() should not look at tval
+                            name_tok = param.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+                        if wp.rest_of:
+                            name_tok = wp.rest_of.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            # We COULD register __out here but it would require a different API.
+                            #if param.prefix and param.prefix.id == Id.Arith_Colon:
+                            #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
+
+                    posit = sig.positional
+                    if posit:
+                        for param in posit.params:
+                            name_tok = param.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+                        if posit.rest_of:
+                            name_tok = posit.rest_of.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+
+                    named = sig.named
+                    if named:
+                        for param in named.params:
+                            name_tok = param.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+                        if named.rest_of:
+                            name_tok = named.rest_of.blame_tok
+                            self.var_checker.Check(Id.KW_Var, name_tok)
+
+                    if sig.block_param:
+                        name_tok = sig.block_param.blame_tok
                         self.var_checker.Check(Id.KW_Var, name_tok)
-                    if sig.rest_of_words:
-                        name_tok = sig.rest_of_words.blame_tok
-                        self.var_checker.Check(Id.KW_Var, name_tok)
-                        # We COULD register __out here but it would require a different API.
-                        #if param.prefix and param.prefix.id == Id.Arith_Colon:
-                        #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
 
                 self._SetNext()
                 node.body = self.ParseBraceGroup()
@@ -2025,13 +2107,13 @@ class CommandParser(object):
         return node
 
     def ParseYshFunc(self):
-        # type: () -> command.Func
+        # type: () -> Func
         """
         ysh_func: KW_Func Expr_Name '(' [func_params] [';' func_params] ')' brace_group
 
         Looking at KW_Func
         """
-        node = command.Func.CreateNull(alloc_lists=True)
+        node = Func.CreateNull(alloc_lists=True)
 
         keyword_tok = word_.AsKeywordToken(self.cur_word)
         node.keyword = keyword_tok
@@ -2039,12 +2121,23 @@ class CommandParser(object):
         with ctx_VarChecker(self.var_checker, keyword_tok):
             self.parse_ctx.ParseFunc(self.lexer, node)
 
-            for param in node.pos_params:
-                name_tok = param.blame_tok
-                self.var_checker.Check(Id.KW_Var, name_tok)
-            if node.rest_of_pos:
-                name_tok = node.rest_of_pos.blame_tok
-                self.var_checker.Check(Id.KW_Var, name_tok)
+            posit = node.positional
+            if posit:
+                for param in posit.params:
+                    name_tok = param.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
+                if posit.rest_of:
+                    name_tok = posit.rest_of.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
+
+            named = node.named
+            if named:
+                for param in named.params:
+                    name_tok = param.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
+                if named.rest_of:
+                    name_tok = named.rest_of.blame_tok
+                    self.var_checker.Check(Id.KW_Var, name_tok)
 
             self._SetNext()
             with ctx_CmdMode(self, cmd_mode_e.Func):
@@ -2151,7 +2244,8 @@ class CommandParser(object):
             # $ bash -c 'proc() { echo p; }; proc'
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
-            if self.parse_opts.parse_func() and not self.parse_opts.parse_tea():
+            if (self.parse_opts.parse_func() and
+                    not self.parse_opts.parse_tea()):
                 return self.ParseYshFunc()
 
             # Otherwise silently pass, like for the procs.
@@ -2224,7 +2318,8 @@ class CommandParser(object):
             return self.ParseSimpleCommand()
 
         if self.c_kind == Kind.Word:
-            cur_word = cast(CompoundWord, self.cur_word)  # ensured by Kind.Word
+            # ensured by Kind.Word
+            cur_word = cast(CompoundWord, self.cur_word)
 
             # NOTE: At the top level, only Token and Compound are possible.
             # Can this be modelled better in the type system, removing asserts?
@@ -2250,7 +2345,8 @@ class CommandParser(object):
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
                         assert tok.id == Id.Lit_Chars, tok
 
-                        if len(self.hay_attrs_stack) and self.hay_attrs_stack[-1]:
+                        if len(self.hay_attrs_stack
+                               ) and self.hay_attrs_stack[-1]:
                             # Note: no static var_checker.Check() for bare assignment
                             enode = self.w_parser.ParseBareDecl()
                             self._SetNext()  # Somehow this is necessary

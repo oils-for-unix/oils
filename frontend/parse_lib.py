@@ -4,7 +4,7 @@ parse_lib.py - Consolidate various parser instantiations here.
 
 from _devbuild.gen.id_kind_asdl import Id_t
 from _devbuild.gen.syntax_asdl import (Token, CompoundWord, expr_t, Redir,
-                                       ArgList, command, pat_t)
+                                       ArgList, Proc, Func, command, pat_t)
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
@@ -112,8 +112,8 @@ class _BaseTrail(object):
 
     def __repr__(self):
         # type: () -> str
-        return '<Trail %s %s %s %s>' % (self.words, self.redirects, self.tokens,
-                                        self.alias_words)
+        return '<Trail %s %s %s %s>' % (self.words, self.redirects,
+                                        self.tokens, self.alias_words)
 
 
 class ctx_Alias(object):
@@ -195,18 +195,18 @@ class ParseContext(object):
                  arena,
                  parse_opts,
                  aliases,
-                 oil_grammar,
+                 ysh_grammar,
                  one_pass_parse=False):
         # type: (Arena, optview.Parse, Dict[str, str], Grammar, bool) -> None
         self.arena = arena
         self.parse_opts = parse_opts
         self.aliases = aliases
-        self.oil_grammar = oil_grammar
+        self.ysh_grammar = ysh_grammar
         self.one_pass_parse = one_pass_parse
 
         # NOTE: The transformer is really a pure function.
-        if oil_grammar:
-            self.tr = expr_to_ast.Transformer(oil_grammar)
+        if ysh_grammar:
+            self.tr = expr_to_ast.Transformer(ysh_grammar)
         else:  # hack for unit tests, which pass None
             self.tr = None
 
@@ -295,11 +295,11 @@ class ParseContext(object):
 
     def _YshParser(self):
         # type: () -> expr_parse.ExprParser
-        return expr_parse.ExprParser(self, self.oil_grammar, False)
+        return expr_parse.ExprParser(self, self.ysh_grammar, False)
 
     def _TeaParser(self):
         # type: () -> expr_parse.ExprParser
-        return expr_parse.ExprParser(self, self.oil_grammar, True)
+        return expr_parse.ExprParser(self, self.ysh_grammar, True)
 
     def ParseVarDecl(self, kw_token, lexer):
         # type: (Token, Lexer) -> Tuple[command.VarDecl, Token]
@@ -318,7 +318,7 @@ class ParseContext(object):
 
     def ParsePlaceMutation(self, kw_token, lexer):
         # type: (Token, Lexer) -> Tuple[command.PlaceMutation, Token]
-        """Setvar d['a'] += 1."""
+        """ setvar d['a'] += 1 """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
             pnode, last_token = e_parser.Parse(lexer,
@@ -330,13 +330,13 @@ class ParseContext(object):
 
         return ast_node, last_token
 
-    def ParseYshArgList(self, lx, out):
-        # type: (Lexer, ArgList) -> None
-        """$f(x, y)"""
+    def ParseYshArgList(self, lx, out, start_symbol):
+        # type: (Lexer, ArgList, int) -> None
+        """ json write (x, foo=1) and assert [42 === x] """
 
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lx, grammar_nt.oil_arglist)
+            pnode, last_token = e_parser.Parse(lx, start_symbol)
 
             if 0:
                 self.p_printer.Print(pnode)
@@ -378,7 +378,7 @@ class ParseContext(object):
         return pattern, left_tok, last_token
 
     def ParseProc(self, lexer, out):
-        # type: (Lexer, command.Proc) -> Token
+        # type: (Lexer, Proc) -> Token
         """proc f(x, y, @args) {"""
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
@@ -392,7 +392,7 @@ class ParseContext(object):
         return last_token
 
     def ParseFunc(self, lexer, out):
-        # type: (Lexer, command.Func) -> None
+        # type: (Lexer, Func) -> None
         """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):

@@ -23,16 +23,13 @@ class Match(vm._Callable):
         vm._Callable.__init__(self)
         self.mem = mem
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
-        arg = 0
-        if args.NumPos():
-            arg = args.PosInt()
-            args.Done()
+        n = rd.OptionalInt(default_=0)
 
         # TODO: Support strings
-        s = self.mem.GetMatch(arg)
-        # Oil code doesn't deal well with exceptions!
+        s = self.mem.GetMatch(n)
+        # YSH code doesn't deal well with exceptions!
         #if s is None:
         #  raise IndexError('No such group')
         if s is not None:
@@ -49,7 +46,7 @@ class Start(vm._Callable):
         vm._Callable.__init__(self)
         self.mem = mem
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         raise NotImplementedError('_start')
 
@@ -62,7 +59,7 @@ class End(vm._Callable):
         vm._Callable.__init__(self)
         self.mem = mem
 
-    def Call(self, args):
+    def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         raise NotImplementedError('_end')
 

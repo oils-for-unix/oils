@@ -19,6 +19,7 @@ from osh import builtin_misc  # module under test
 
 
 class BuiltinTest(unittest.TestCase):
+
     def testAppendParts(self):
         # allow_escape is True by default, but False when the user passes -r.
         CASES = [

@@ -103,8 +103,8 @@ def _EvalWordPart(part):
 
         elif case(word_part_e.CommandSub, word_part_e.SimpleVarSub,
                   word_part_e.BracedVarSub, word_part_e.TildeSub,
-                  word_part_e.ArithSub, word_part_e.ExtGlob, word_part_e.Splice,
-                  word_part_e.ExprSub):
+                  word_part_e.ArithSub, word_part_e.ExtGlob,
+                  word_part_e.Splice, word_part_e.ExprSub):
             return False, '', False
 
         else:

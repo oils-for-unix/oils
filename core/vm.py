@@ -47,6 +47,7 @@ class ControlFlow(Exception):
 
     pass
 
+
 class IntControlFlow(Exception):
 
     def __init__(self, token, arg):
@@ -124,15 +125,24 @@ def InitUnsafeArith(mem, word_ev, unsafe_arith):
     word_ev.unsafe_arith = unsafe_arith  # for ${!ref} expansion of a[i]
 
 
-def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                     prompt_ev, tracer):
-    # type: (ArithEvaluator, BoolEvaluator, ExprEvaluator, NormalWordEvaluator, CommandEvaluator, _Executor, prompt.Evaluator, dev.Tracer) -> None
+def InitCircularDeps(
+        arith_ev,  # type: ArithEvaluator
+        bool_ev,  # type: BoolEvaluator
+        expr_ev,  # type: ExprEvaluator
+        word_ev,  # type: NormalWordEvaluator
+        cmd_ev,  # type: CommandEvaluator
+        shell_ex,  # type:  _Executor
+        prompt_ev,  # type: prompt.Evaluator
+        tracer,  # type: dev.Tracer
+):
+    # type: (...) -> None
     """Wire up mutually recursive evaluators and runtime objects."""
     arith_ev.word_ev = word_ev
     bool_ev.word_ev = word_ev
 
     if expr_ev:  # for pure OSH
         expr_ev.shell_ex = shell_ex
+        expr_ev.cmd_ev = cmd_ev
         expr_ev.word_ev = word_ev
 
     word_ev.arith_ev = arith_ev
@@ -164,6 +174,7 @@ def InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
 
 
 class _Executor(object):
+
     def __init__(self):
         # type: () -> None
         self.cmd_ev = None  # type: CommandEvaluator
@@ -314,6 +325,7 @@ class ctx_ProcessSub(object):
 
 
 class ctx_FlushStdout(object):
+
     def __init__(self):
         # type: () -> None
         pass

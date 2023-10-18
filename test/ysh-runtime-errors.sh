@@ -375,7 +375,7 @@ EOF
 }
 
 test-proc-ref-param() {
-  _error-case-X 2 '
+  _expr-error-case '
   proc p (out Ref) {
     setref out = "yo"
   }
@@ -421,6 +421,26 @@ test-dict-convert() {
   _expr-error-case '= dict([["too", "many", "parts"]])'
 }
 
+test-proc-error-locs() {
+
+  # positional
+  _expr-error-case '
+  var d = [1]
+
+  func f(a=1, x=d[2]) {
+    echo hi
+  }
+  '
+
+  _expr-error-case '
+  var d = [1]
+
+  func f(; n=1, m=d[2]) {
+    echo hi
+  }
+  '
+}
+
 test-func-error-locs() {
   # free funcs
   _expr-error-case '= join(["foo", "bar"], " ", 99)' # too many args
@@ -431,11 +451,280 @@ test-func-error-locs() {
   _expr-error-case '= "foo"->startswith("f", "o")' # too many args
   _expr-error-case '= "foo"->startswith()' # not enough args
   _expr-error-case '= "foo"->startswith(1)' # wrong type
+
+  _expr-error-case '
+  func f(x) {
+     return (x)
+  }
+  = f()
+  '
 }
 
 test-var-decl() {
   _expr-error-case 'var x, y = 1, 2, 3'
   _expr-error-case 'setvar x, y = 1, 2, 3'
+}
+
+test-proc-defaults() {
+  
+  # should be string
+  _expr-error-case 'proc p(word=42) { echo }'
+  _expr-error-case 'proc p(word=null) { echo }'
+
+  # should be ^() or null
+  _expr-error-case 'proc p( ; ; ; block="str") { echo }'
+  _expr-error-case 'proc p( ; ; ; block=[]) { echo }'
+
+  _should-run 'proc p( ; ; ; block=^(echo hi)) { true }'
+  _should-run 'proc p( ; ; ; block=null) { true }'
+
+  # divide by zero
+  _expr-error-case 'proc p(word; t=42/0) { echo }'
+
+  _error-case-X 1 'proc p(word; t=f()) { echo }'
+
+  _error-case-X 1 'proc p(word; t=42; named=undef) { echo }'
+
+  _error-case-X 1 'proc p(word; t=42; named=43; block=ZZ) { echo }'
+
+  _should-run '
+  proc p(word="yo"; t=42; named=43; block=null) {
+    #echo $word $t $named $block
+    echo $word $t $block
+  }
+  p
+  '
+}
+
+test-proc-passing() {
+  # Too few words
+  _error-case-X 3 '
+  proc p(a, b) { echo }
+  p a
+  '
+
+  # Too many words
+  _error-case-X 3 '
+  proc p(a, b) { echo }
+  p AA b c DD
+  '
+
+  # Too few typed
+  _error-case-X 3 '
+  proc p( ; a, b) { echo }
+  p (42)
+  '
+
+  # Too many words
+  _error-case-X 3 '
+  proc p( ; a, b) { echo }
+  p (42, 43, 44, 45)
+  '
+
+  _expr-error-case '
+  proc p(; a, b) {
+    echo $a - $b -
+  }
+  p (...[1, 2])
+  p (...3)
+  '
+
+  # positional: rest args and spread
+  _should-run '
+  proc p(; a, ...b) {
+    echo $a - @b -
+  }
+  p (1, 2, 3)
+
+  var x = [4, 5, 6]
+  p (...x)
+  '
+
+  # named: splat
+  _should-run '
+  proc myproc (; p ; a, b) {
+    echo "$p ; $a $b"
+  }
+  var kwargs = {a: 42, b: 43}
+  myproc (99; ...kwargs)
+  '
+
+  # named: rest args
+  _should-run '
+  proc myproc (; p ; a, b, ...named) {
+    = p
+    = a
+    = b
+    = named
+  }
+  var kwargs = {a: 42, b: 43, c:44}
+  myproc (99; ...kwargs)
+  '
+}
+
+# TODO: improve locations for all of these
+test-proc-missing() {
+  # missing word param
+  _error-case-X 3 '
+  proc myproc (w) {
+    = w
+  }
+  myproc
+  '
+
+  # missing typed param
+  _error-case-X 3 '
+  proc myproc (w; t1, t2) {
+    = w
+    = t
+  }
+  myproc foo (42)
+  '
+
+  # missing named param
+  _error-case-X 3 '
+  proc myproc (; p ; a, b) {
+    echo "$p ; $a $b"
+  }
+  myproc (99, b=3)
+  '
+
+  # missing named param with semicolon
+  _error-case-X 3 '
+  proc myproc (; p ; a, b) {
+    echo "$p ; $a $b"
+  }
+  myproc (99; b=3)
+  '
+
+  # missing block param
+  _error-case-X 3 '
+  proc myproc (w; p ; a, b; block) {
+    = block
+  }
+  myproc foo (99, a=1, b=2)
+  '
+}
+
+test-proc-extra() {
+
+  # extra word
+  _error-case-X 3 '
+  proc myproc () {
+    echo hi
+  }
+  myproc foo
+  '
+
+  # extra positional
+  _error-case-X 3 '
+  proc myproc (w) {
+    echo hi
+  }
+  myproc foo (42)
+  '
+
+  # extra named
+  _error-case-X 3 '
+  proc myproc (w; p) {
+    echo hi
+  }
+  myproc foo (42; named=1)
+  '
+
+  # extra block.  TODO: error is about typed args
+  _error-case-X 3 '
+  proc myproc (w; p; n) {
+    echo hi
+  }
+  myproc foo (42; n=1) { echo hi }
+  '
+}
+
+
+test-func-defaults() {
+  _error-case-X 1 'func f(a=ZZ) { echo }'
+  _error-case-X 1 'func f(a; named=YY) { echo }'
+
+  _expr-error-case 'func f(a=[]) { echo }'
+  _expr-error-case 'func f(; d={a:3}) { echo }'
+}
+
+test-func-missing() {
+  _expr-error-case '
+  func f(x, y) {
+    echo "$x $y"
+  }
+  _ f(1)
+  '
+
+  _expr-error-case '
+  func f(x, y; z) {
+    echo "$x $y"
+  }
+  _ f(3, 4)
+  '
+
+}
+
+test-func-extra() {
+  _expr-error-case '
+  func f() {
+    echo "$x $y"
+  }
+  _ f(42)  # extra pos
+  '
+
+  _expr-error-case '
+  func f() {
+    echo "$x $y"
+  }
+  _ f(; x=32)  # extra named
+  '
+}
+
+test-func-passing() {
+  # rest can't have default -- parse error
+  _error-case-X 2 '
+  func f(...rest=3) {
+    return (42)
+  }
+  '
+
+  _expr-error-case '
+  func f(a, b) {
+    echo "$a -- $b"
+  }
+  = f()
+  '
+
+  _expr-error-case '
+  func f(a, b) {
+    echo "$a -- $b"
+  }
+  = f(...[1, 2])
+  = f(...3)
+  '
+
+  # rest args and splat
+  _should-run '
+  func f(a, ...b) {
+    echo $a - @b -
+  }
+  = f(1, 2, 3)
+
+  var x = [4, 5, 6]
+  = f(...x)
+  '
+
+  # Named splat
+  _should-run '
+  func f(p ; a, b) {
+    echo "$p ; $a $b"
+  }
+  var kwargs = {a: 42, b: 43, c: 44}
+  = f(99; ...kwargs)
+  '
 }
 
 soil-run() {

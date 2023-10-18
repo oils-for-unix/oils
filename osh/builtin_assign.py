@@ -29,9 +29,8 @@ from data_lang import qsn
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import Proc
     from core.state import Mem
-    from core.ui import ErrorFormatter
+    from core import ui
     from frontend.args import _Attributes
 
 _ = log
@@ -55,12 +54,12 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     tmp_a = flag.get('a')
     tmp_A = flag.get('A')
 
-    flag_g = cast(value.Bool,
-                  tmp_g).b if tmp_g and tmp_g.tag() == value_e.Bool else False
-    flag_a = cast(value.Bool,
-                  tmp_a).b if tmp_a and tmp_a.tag() == value_e.Bool else False
-    flag_A = cast(value.Bool,
-                  tmp_A).b if tmp_A and tmp_A.tag() == value_e.Bool else False
+    flag_g = (cast(value.Bool, tmp_g).b
+              if tmp_g and tmp_g.tag() == value_e.Bool else False)
+    flag_a = (cast(value.Bool, tmp_a).b
+              if tmp_a and tmp_a.tag() == value_e.Bool else False)
+    flag_A = (cast(value.Bool, tmp_A).b
+              if tmp_A and tmp_A.tag() == value_e.Bool else False)
 
     tmp_n = flag.get('n')
     tmp_r = flag.get('r')
@@ -71,15 +70,12 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     # SUBTLE: export -n vs. declare -n.  flag vs. OPTION.
     # flags are value.Bool, while options are Undef or Str.
     # '+', '-', or None
-    flag_n = cast(
-        value.Str, tmp_n
-    ).s if tmp_n and tmp_n.tag() == value_e.Str else None  # type: Optional[str]
-    flag_r = cast(
-        value.Str, tmp_r
-    ).s if tmp_r and tmp_r.tag() == value_e.Str else None  # type: Optional[str]
-    flag_x = cast(
-        value.Str, tmp_x
-    ).s if tmp_x and tmp_x.tag() == value_e.Str else None  # type: Optional[str]
+    flag_n = (cast(value.Str, tmp_n).s if tmp_n and tmp_n.tag() == value_e.Str
+              else None)  # type: Optional[str]
+    flag_r = (cast(value.Str, tmp_r).s if tmp_r and tmp_r.tag() == value_e.Str
+              else None)  # type: Optional[str]
+    flag_x = (cast(value.Str, tmp_x).s if tmp_x and tmp_x.tag() == value_e.Str
+              else None)  # type: Optional[str]
 
     if cmd_val.builtin_id == builtin_i.local:
         if flag_g and not mem.IsGlobalScope():
@@ -251,8 +247,9 @@ def _ExportReadonly(mem, pair, flags):
 
 
 class Export(vm._AssignBuiltin):
+
     def __init__(self, mem, errfmt):
-        # type: (Mem, ErrorFormatter) -> None
+        # type: (Mem, ui.ErrorFormatter) -> None
         self.mem = mem
         self.errfmt = errfmt
 
@@ -321,8 +318,9 @@ def _ReconcileTypes(rval, flag_a, flag_A, blame_word):
 
 
 class Readonly(vm._AssignBuiltin):
+
     def __init__(self, mem, errfmt):
-        # type: (Mem, ErrorFormatter) -> None
+        # type: (Mem, ui.ErrorFormatter) -> None
         self.mem = mem
         self.errfmt = errfmt
 
@@ -365,7 +363,7 @@ class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
     def __init__(self, mem, procs, errfmt):
-        # type: (Mem, Dict[str, Proc], ErrorFormatter) -> None
+        # type: (Mem, Dict[str, value.Proc], ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.errfmt = errfmt
@@ -481,8 +479,15 @@ class NewVar(vm._AssignBuiltin):
 
 
 class Unset(vm._Builtin):
-    def __init__(self, mem, procs, unsafe_arith, errfmt):
-        # type: (Mem, Dict[str, Proc], sh_expr_eval.UnsafeArith, ErrorFormatter) -> None
+
+    def __init__(
+            self,
+            mem,  # type: state.Mem
+            procs,  # type: Dict[str, value.Proc]
+            unsafe_arith,  # type: sh_expr_eval.UnsafeArith
+            errfmt,  # type: ui.ErrorFormatter
+    ):
+        # type: (...) -> None
         self.mem = mem
         self.procs = procs
         self.unsafe_arith = unsafe_arith
@@ -537,6 +542,7 @@ class Unset(vm._Builtin):
 
 
 class Shift(vm._Builtin):
+
     def __init__(self, mem):
         # type: (Mem) -> None
         self.mem = mem

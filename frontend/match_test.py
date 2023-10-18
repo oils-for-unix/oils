@@ -12,6 +12,7 @@ from frontend import match  # module under test
 
 
 class MatchTest(unittest.TestCase):
+
     def testShouldHijack(self):
         self.assertEqual(False, match.ShouldHijack('# comment\n[line 2]'))
         self.assertEqual(False, match.ShouldHijack('#!/usr/bin/python\n'))

@@ -159,7 +159,8 @@ def _WriteDefaults(cc_f, defaults_name, defaults):
         else:
             raise AssertionError(val)
 
-        cc_f.write('    {%s, flag_type_e::%s, %s},\n' % (CString(name), typ, v))
+        cc_f.write('    {%s, flag_type_e::%s, %s},\n' %
+                   (CString(name), typ, v))
 
     cc_f.write('''\
     {},
@@ -381,7 +382,8 @@ namespace arg_types {
 
         if spec.actions_short:
             actions_short_name = 'short_%d' % (n + i)
-            _WriteActions(cc_f, actions_short_name, spec.actions_short, counter)
+            _WriteActions(cc_f, actions_short_name, spec.actions_short,
+                          counter)
 
         #if spec.actions_long:
         if spec.actions_long:

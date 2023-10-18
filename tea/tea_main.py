@@ -75,7 +75,7 @@ def Main(arg_r):
   aliases = {}  # type: Dict[str, str]
 
   loader = pyutil.GetResourceLoader()
-  oil_grammar = pyutil.LoadOilGrammar(loader)
+  oils_grammar = pyutil.LoadYshGrammar(loader)
 
   # Not used in Tea, but OK...
   opt0_array = state.InitOpts()
@@ -84,7 +84,7 @@ def Main(arg_r):
   parse_opts = optview.Parse(opt0_array, opt_stacks)
 
   # parse `` and a[x+1]=bar differently
-  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oil_grammar)
+  parse_ctx = parse_lib.ParseContext(arena, parse_opts, aliases, oils_grammar)
 
   if arg.n:
     try:

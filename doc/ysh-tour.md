@@ -240,7 +240,7 @@ The `$[myexpr]` syntax evaluates an expression and converts it to a string:
     echo $[1 + 2 * 3]                # => 7
     echo "_ $[1 + 2 * 3] _"          # => _ 7 _
 
-<!-- TODO: safe substitution with "$[a -> html]" -->
+<!-- TODO: safe substitution with "$[a]"html -->
 
 ### Arrays of Strings: Globs, Brace Expansion, Splicing, and Splitting
 
@@ -423,8 +423,6 @@ You can also request the loop index:
 
 To iterate over a typed data, use parentheses around an **expression**.  The
 expression should evaluate to either a `List` or `Dict`.
-
-<!-- TODO: call it a map once it's ordered -->
 
     var foods = ['ale', 'bean']
     for item in (foods) {
@@ -633,16 +631,12 @@ Oil uses JavaScript-like spellings these three "atoms":
 
     var x = null
 
-    var b1 = true
-    var b2 = false
+    var b1, b2 = true, false
 
     if (b1) {
       echo 'yes'
     }  # => yes
 
-<!-- TODO: restore this style
-    var b1, b2 = true, false
--->
 
 #### Int
 
@@ -722,19 +716,19 @@ There are two syntaxes for key lookup.  If the key doesn't exist, it's a fatal
 error.
 
     var v1 = d['name']
-    var v2 = d->name               # shorthand for the above
+    var v2 = d.name                # shorthand for the above
     var v3 = d['key with spaces']  # no shorthand for this
 
 Keys names can be computed with expressions in `[]`:
 
     var key = 'alice'
     var d2 = {[key ++ '_z']: 'ZZZ'}  # Computed key name
-    echo $[d2->alice_z]  # => ZZZ    # Reminder: expression sub
+    echo $[d2.alice_z]   # => ZZZ    # Reminder: expression sub
 
 Omitting the value causes it to be taken from a variable of the same name:
 
     var d3 = {key}             # value is taken from the environment
-    echo "name is $[d3->key]"  # => name is alice
+    echo "name is $[d3.key]"   # => name is alice
 
 More:
 
