@@ -149,6 +149,7 @@ def _EqualsFunc(left_type):
 
 _EXPLICIT = ('builtins.str', 'builtins.list', 'builtins.dict')
 
+
 def _CheckCondition(node, types):
     """
     Ban
@@ -1333,8 +1334,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 #self.log('lval type %s', lval_type)
                 if (isinstance(lval_type, UnionType) and
-                    len(lval_type.items) == 2 and
-                    isinstance(lval_type.items[1], NoneTyp)):
+                        len(lval_type.items) == 2 and
+                        isinstance(lval_type.items[1], NoneTyp)):
                     lval_type = lval_type.items[0]
 
                 c_type = GetCType(lval_type)
@@ -1346,8 +1347,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # Hack for declaration vs. definition.  TODO: clean this up
                 prefix = '' if self.current_func_node else 'auto* '
 
-                self.write_ind('%s%s = Alloc<%s>();\n',
-                               prefix, lval.name, c_type[:-1])
+                self.write_ind('%s%s = Alloc<%s>();\n', prefix, lval.name,
+                               c_type[:-1])
                 return
 
             #    src = cast(source__SourcedFile, src)

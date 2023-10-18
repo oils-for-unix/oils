@@ -65,6 +65,7 @@ class PrettyPrinter(object):
     - Prints <Dict #42> on cycles
     - Prints ASDL (value.Expr ...) on non-data types
     """
+
     def __init__(self, max_col):
         # type: (int) -> None
         self.max_col = max_col
@@ -135,6 +136,7 @@ class Printer(object):
     {"k": "v"}
     [2, 3]
     """
+
     def __init__(self, options):
         # type: (int) -> None
         """
@@ -239,7 +241,7 @@ class Printer(object):
                         buf.write(maybe_newline)
 
                     buf.write(item_indent)
-                    self.Print(item, buf, indent, level+1)
+                    self.Print(item, buf, indent, level + 1)
                 buf.write(maybe_newline)
 
                 buf.write(bracket_indent)
@@ -265,7 +267,7 @@ class Printer(object):
                     buf.write('":')
                     buf.write(maybe_space)
 
-                    self.Print(v, buf, indent, level+1)
+                    self.Print(v, buf, indent, level + 1)
 
                     i += 1
 

@@ -68,10 +68,9 @@ yapf-known() {
   # Often it involves putting () around long if conditions
 
   time yapf-files \
-    {frontend,library}/*.py \
+    {asdl,core,data_lang,frontend,library/mycpp}/*.py \
     osh/*_eval.py osh/*_parse.py \
     ysh/*_eval.py ysh/*_parse.py \
-    core/*.py \
     */builtin_*.py \
     */NINJA_subgraph.py
 }

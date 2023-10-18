@@ -195,6 +195,7 @@ class UniqueObjects(object):
 
     - Packle serialization
     """
+
     def __init__(self):
         # 64-bit id() -> small integer ID
         self.addresses = {}  # type: Dict[int, int]

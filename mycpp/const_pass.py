@@ -463,9 +463,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Omit anything that looks like if __name__ == ...
         cond = o.expr[0]
-        if (isinstance(cond, ComparisonExpr)
-                and isinstance(cond.operands[0], NameExpr)
-                and cond.operands[0].name == '__name__'):
+        if (isinstance(cond, ComparisonExpr) and
+                isinstance(cond.operands[0], NameExpr) and
+                cond.operands[0].name == '__name__'):
             return
 
         # Omit if 0:
