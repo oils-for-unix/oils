@@ -717,6 +717,10 @@ ysh-bin() {
   run-file ysh-bin "$@"
 }
 
+ysh-argparse() {
+  run-file ysh-argparse "$@"
+}
+
 ysh-array() {
   run-file ysh-array "$@"
 }
@@ -737,17 +741,8 @@ ysh-builtins() {
   run-file ysh-builtins "$@"
 }
 
-ysh-builtin-eval() {
-  run-file ysh-builtin-eval "$@"
-}
-
-
 ysh-builtin-module() {
   run-file ysh-builtin-module "$@"
-}
-
-ysh-argparse() {
-  run-file ysh-argparse "$@"
 }
 
 ysh-builtin-describe() {
