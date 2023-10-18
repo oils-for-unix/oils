@@ -701,6 +701,10 @@ ysh-stdlib-2() {
   run-file ysh-stdlib-2 "$@"
 }
 
+ysh-stdlib-argparse() {
+  run-file ysh-stdlib-argparse "$@"
+}
+
 ysh-source() {
   run-file ysh-source "$@"
 }
@@ -715,10 +719,6 @@ ysh-unicode() {
 
 ysh-bin() {
   run-file ysh-bin "$@"
-}
-
-ysh-argparse() {
-  run-file ysh-argparse "$@"
 }
 
 ysh-array() {
