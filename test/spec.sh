@@ -717,6 +717,10 @@ ysh-bin() {
   run-file ysh-bin "$@"
 }
 
+ysh-argparse() {
+  run-file ysh-argparse "$@"
+}
+
 ysh-array() {
   run-file ysh-array "$@"
 }
@@ -737,21 +741,16 @@ ysh-builtins() {
   run-file ysh-builtins "$@"
 }
 
-ysh-builtin-eval() {
-  run-file ysh-builtin-eval "$@"
-}
-
-
 ysh-builtin-module() {
   run-file ysh-builtin-module "$@"
 }
 
-ysh-builtin-argparse() {
-  run-file ysh-builtin-argparse "$@"
-}
-
 ysh-builtin-describe() {
   run-file ysh-builtin-describe "$@"
+}
+
+ysh-builtin-eval() {
+  run-file ysh-builtin-eval "$@"
 }
 
 # Related to errexit-oil
