@@ -26,7 +26,6 @@ class IteratorTest(unittest.TestCase):
 
         self.assert_(it.Done())
 
-
         mylist = value.List([value.Str('x'), value.Str('y')])
 
         it = val_ops.ListIterator(mylist)

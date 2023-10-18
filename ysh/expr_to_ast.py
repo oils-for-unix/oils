@@ -90,7 +90,6 @@ RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
 # Copied from pgen2/token.py to avoid dependency.
 NT_OFFSET = 256
 
-
 if mylib.PYTHON:
 
     def MakeGrammarNames(ysh_grammar):
@@ -312,7 +311,8 @@ class Transformer(object):
             p_node = parent.GetChild(i)
             elts.append(self.Expr(p_node))
 
-        return expr.Tuple(parent.tok, elts, expr_context_e.Store)  # unused expr_context_e
+        return expr.Tuple(parent.tok, elts,
+                          expr_context_e.Store)  # unused expr_context_e
 
     def _TestlistComp(self, parent, p_node, id0):
         # type: (PNode, PNode, Id_t) -> expr_t
@@ -423,7 +423,7 @@ class Transformer(object):
     def _CompFor(self, p_node):
         # type: (PNode) -> Comprehension
         """comp_for: 'for' exprlist 'in' or_test ['if' or_test]"""
-        lhs = self._NameTypeList(p_node.GetChild(1))  # Python calls this target
+        lhs = self._NameTypeList(p_node.GetChild(1))
         iterable = self.Expr(p_node.GetChild(3))
 
         if p_node.NumChildren() >= 6:
@@ -853,7 +853,8 @@ class Transformer(object):
         if n == 1:
             child = p_node.GetChild(0)
             if after_semi:
-                p_die('Positional args must come before the semi-colon', child.tok)
+                p_die('Positional args must come before the semi-colon',
+                      child.tok)
             arg = self.Expr(child)
             pos_args.append(arg)
             return
@@ -873,7 +874,8 @@ class Transformer(object):
             if p_node.GetChild(1).typ == grammar_nt.comp_for:
                 child = p_node.GetChild(0)
                 if after_semi:
-                    p_die('Positional args must come before the semi-colon', child.tok)
+                    p_die('Positional args must come before the semi-colon',
+                          child.tok)
 
                 elt = self.Expr(child)
                 comp = self._CompFor(p_node.GetChild(1))
@@ -884,7 +886,8 @@ class Transformer(object):
             raise AssertionError()
 
         if n == 3:  # named args can come before or after the semicolon
-            n1 = NamedArg(p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
+            n1 = NamedArg(
+                p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
             named_args.append(n1)
             return
 
@@ -918,7 +921,7 @@ class Transformer(object):
 
         if n >= 2:
             arglist.semi_tok = p_node.GetChild(i).tok
-            self._ArgGroup(p_node.GetChild(i+1), True, arglist)
+            self._ArgGroup(p_node.GetChild(i + 1), True, arglist)
 
     def ToArgList(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
@@ -1064,7 +1067,7 @@ class Transformer(object):
         sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
 
         # Word args
-        i = 1 
+        i = 1
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
             sig.word = self._ParamGroup(p_node.GetChild(i))
@@ -1129,7 +1132,6 @@ class Transformer(object):
                         p_die('Unexpected type parameters', params[0].type.tok)
 
                 sig.block_param = params[0]
-
 
         return sig
 
@@ -1204,7 +1206,8 @@ class Transformer(object):
             return command.CommandList([])
 
         if n == 3:
-            if pnode.GetChild(1).typ == grammar_nt.func_items:  # { func_items }
+            if pnode.GetChild(1).typ == grammar_nt.func_items:
+                # { func_items }
                 items_index = 1
             else:
                 return command.CommandList([])
@@ -1212,7 +1215,8 @@ class Transformer(object):
         if n == 4:  # { Op_Newline func_items }
             items_index = 2
 
-        return command.CommandList(self.func_items(pnode.GetChild(items_index)))
+        return command.CommandList(self.func_items(
+            pnode.GetChild(items_index)))
 
     def YshFunc(self, p_node, out):
         # type: (PNode, Func) -> None
@@ -1397,10 +1401,11 @@ class Transformer(object):
         if ISNONTERMINAL(typ):
             # 'a' in 'a'-'b'
             if typ == grammar_nt.sq_string:
-                sq_part = cast(SingleQuoted, p_node.GetChild(0).GetChild(1).tok)
+                sq_part = cast(SingleQuoted,
+                               p_node.GetChild(0).GetChild(1).tok)
                 tokens = sq_part.tokens
-                if len(tokens
-                      ) > 1:  # Can happen with multiline single-quoted strings
+                # Can happen with multiline single-quoted strings
+                if len(tokens) > 1:
                     p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
                 if len(tokens[0].tval) > 1:
                     p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))

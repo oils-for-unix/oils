@@ -563,10 +563,10 @@ def BindProcArgs(proc, cmd_val, mem):
 
 
 def CallUserFunc(
-        func,# type: value.Func
-        rd, # type: typed_args.Reader
-        mem,# type: state.Mem
-        cmd_ev,# type: cmd_eval.CommandEvaluator
+        func,  # type: value.Func
+        rd,  # type: typed_args.Reader
+        mem,  # type: state.Mem
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
 ):
     # type: (...) -> value_t
 

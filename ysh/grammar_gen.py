@@ -20,6 +20,7 @@ from pgen2 import parse, pgen
 
 
 class OilTokenDef(object):
+
     def __init__(self, ops, more_ops, keyword_ops):
         self.ops = ops
         self.more_ops = more_ops
@@ -46,13 +47,14 @@ class OilTokenDef(object):
 
     def GetOpNum(self, op_str):
         """
-    Args:
-      op_str: '>='
+        Args:
+          op_str: '>='
 
-    Returns:
-      Integer for '>=' or Id.Arith_GreatEqual
-    """
-        id_ = self.ops.get(op_str) or self.more_ops[op_str]  # Fail if not there
+        Returns:
+          Integer for '>=' or Id.Arith_GreatEqual
+        """
+        # Fail if not there
+        id_ = self.ops.get(op_str) or self.more_ops[op_str]
         assert id_ < 256, id_
         return id_
 
@@ -169,8 +171,8 @@ def main(argv):
             gr.dump_cpp(src_f)
 
         if 0:
-            log('%s -> (ysh/grammar_gen) -> %s/%s._nt.h', grammar_path, out_dir,
-                basename)
+            log('%s -> (ysh/grammar_gen) -> %s/%s._nt.h', grammar_path,
+                out_dir, basename)
 
     elif action == 'parse':  # generate the grammar and parse it
         # Remove build dependency
