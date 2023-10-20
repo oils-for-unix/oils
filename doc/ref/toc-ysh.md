@@ -75,8 +75,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   ysh-attr      mydict.key
                   ysh-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)
-                  arrow-method  s->startswith('prefix')
-                  mut-method    mydict:erase('key')
+                  get-method    s->startswith('prefix')
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
                   re-compound   pat|alt   pat seq   (group)

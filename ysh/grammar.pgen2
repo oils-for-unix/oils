@@ -56,7 +56,7 @@ comparison: range_expr (comp_op range_expr)*
 # Unlike slice, beginning and end are required
 range_expr: expr ['..' expr]
 
-# YSH patch: removed legacy <>, use == and !==
+# YSH patch: remove legacy <>, add === and more
 comp_op: (
     '<'|'>'|'==='|'>='|'<='|'!=='|'in'|'not' 'in'|'is'|'is' 'not'|
     '~' | '!~' | '~~' | '!~~' | '~=='
@@ -69,12 +69,13 @@ expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
 shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-# YSH: add concatenation with same precedence as +
+# YSH: add concatenation ++ with same precedence as +
 arith_expr: term (('+'|'-'|'++') term)*
-# YSH patch: removed '@'
+# YSH: removed '@' matrix mul
 term: factor (('*'|'/'|'//'|'%') factor)*
-factor: ('+'|'-'|'~') factor | power
-# YSH patch: removed Python 3 'await'
+# YSH: add & for value.Place
+factor: ('+'|'-'|'~'|'&') factor | power
+# YSH: removed Python 3 'await'
 power: atom trailer* ['**' factor]
 
 testlist_comp: (test|splat_expr) ( comp_for | (',' (test|splat_expr))* [','] )

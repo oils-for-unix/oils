@@ -353,8 +353,11 @@ class ExprEvaluator(object):
 
     def _EvalUnary(self, node):
         # type: (expr.Unary) -> value_t
+
         val = self._EvalExpr(node.child)
-        if node.op.id == Id.Arith_Minus:
+
+        op_id = node.op.id
+        if op_id == Id.Arith_Minus:
             c1, i1, f1 = _ConvertToNumber(val)
             if c1 == coerced_e.Int:
                 return value.Int(-i1)
@@ -362,15 +365,29 @@ class ExprEvaluator(object):
                 return value.Float(-f1)
             raise error.TypeErr(val, 'Negation expected Int or Float', node.op)
 
-        if node.op.id == Id.Arith_Tilde:
+        if op_id == Id.Arith_Tilde:
             i = _ConvertToInt(val, '~ expected Int', node.op)
             return value.Int(~i)
 
-        if node.op.id == Id.Expr_Not:
+        if op_id == Id.Expr_Not:
             b = val_ops.ToBool(val)
             return value.Bool(False if b else True)
 
-        raise NotImplementedError(node.op.id)
+        if op_id == Id.Arith_Amp:  # &s  &a[0]  &d.key  &d.nested.other
+            # Only 3 possibilities:
+            # - expr.Var
+            # - expr.Attribute with `.` operator (d.key)
+            # - expr.SubScript
+            #
+            # See _EvalPlaceExpr, which gives you lvalue
+
+            # TODO: &x, &a[0], &d.key, creates a value.Place?
+            # If it's Attribute or SubScript, you don't evaluate them.
+            # lvalue_t -> place_t
+
+            raise NotImplementedError(op_id)
+
+        raise AssertionError(op_id)
 
     def _ArithNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> value_t

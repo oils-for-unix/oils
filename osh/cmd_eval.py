@@ -1426,7 +1426,7 @@ class CommandEvaluator(object):
 
         pos_defaults, named_defaults = func_proc.EvalFuncDefaults(
             self.expr_ev, node)
-        func_val = value.Func(name, node, pos_defaults, named_defaults)
+        func_val = value.Func(name, node, pos_defaults, named_defaults, None)
 
         self.mem.SetValue(lval, func_val, scope_e.LocalOnly,
                           _PackFlags(Id.KW_Func, state.SetReadOnly))

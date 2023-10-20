@@ -200,21 +200,22 @@ Like Python:
 
     f(x, y)
 
-### arrow-method
+### get-method
 
-Transforming methods use the `->` operator:
+Transforming methods:
 
     var b = s->startswith('prefix')
 
-### mut-method
-
-Mutating methods use the `:` operator
-
-    var mydict = {name: 'foo'}
-    :: mydict.erase('name')
+Mutating methods:
 
     var mylist = ['bar']
     :: mylist.pop()
+
+<!--
+TODO
+    var mydict = {name: 'foo'}
+    :: mydict->.erase('name')
+-->
 
 ### match-ops
 

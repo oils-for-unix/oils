@@ -65,10 +65,7 @@ Example of better syntax which we already support:
       return (x)
     }
  
-Example of class support
-
-- static stuff which I added in ysh/grammar.pgen2:
-- virtual override abstract - this isn't horrible
+Example of class support:
 
     class ParseHay : vm._Callable {
       var fd_state: process.FdState
@@ -102,6 +99,9 @@ Example of class support
         this.mutable_opts.Pop(option_i.errexit)
       }
     }
+
+- static stuff which I added in ysh/grammar.pgen2, now yaks/old/tea.pgen2
+  - virtual override abstract - this isn't horrible
  
 Problem: this would break INTERPRETER flow, unless you generate Python!  which
 is possible, though possibly ugly.
