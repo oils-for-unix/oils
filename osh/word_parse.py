@@ -1242,11 +1242,6 @@ class WordParser(WordEmitter):
 
         return next_id
 
-    def ParseImport(self, node):
-        # type: (command.Import) -> None
-        last_token = self.parse_ctx.ParseImport(self.lexer, node)
-        self.buffered_word = last_token
-
     def _ReadArithExpr(self, end_id):
         # type: (Id_t) -> arith_expr_t
         """Read and parse an arithmetic expression in various contexts.

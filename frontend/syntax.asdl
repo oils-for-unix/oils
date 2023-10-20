@@ -402,35 +402,6 @@ module syntax
   | Proc %Proc
   | Func %Func
 
-  # Tea
-
-  | TeaFunc(Token name,
-            ParamGroup? positional, ParamGroup? named,
-            List[TypeExpr] return_types, command body)
-  | Data(Token name, List[Param] params)
-  | Enum(Token name, List[Variant] variants)
-  | Class(Token name, Token? extends, List[class_item] items)
-  | Import(SingleQuoted path, Token? alias, List[ImportName] names)
-  | For(List[NameType] targets, expr iterable, command body)
-  | While(expr test, command body)
-  | Break | Continue
-  | Return(expr? value)
-
-  # Binary(x expr, y expr) or Nullary %Token
-  # In the first case we have a tag, and an anonymous type.
-  variant_type =
-    Anon(List[Param] params)
-  | Ref(Token type_name)
-
-  # tags and types are separate in our model of algebraic data types
-  Variant = (Token tag_name, variant_type? typ)
-
-  class_item =
-    Data(Token keyword, List[NameType] fields)
-  | Method()
-
-  ImportName = (Token name, Token? alias)
-
   #
   # Glob representation, for converting ${x//} to extended regexes.
   #

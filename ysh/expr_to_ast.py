@@ -13,7 +13,6 @@ from _devbuild.gen.syntax_asdl import (
     CommandSub,
     ShArrayLiteral,
     command,
-    command_t,
     expr,
     expr_e,
     expr_t,
@@ -39,9 +38,6 @@ from _devbuild.gen.syntax_asdl import (
     ParamGroup,
     NamedArg,
     ArgList,
-    Variant,
-    variant_type,
-    variant_type_t,
     pat,
     pat_t,
     TypeExpr,
@@ -965,14 +961,6 @@ class Transformer(object):
 
         return ty
 
-    def _TypeExprList(self, pnode):
-        # type: (PNode) -> List[TypeExpr]
-        """
-        For return value annotation?
-        """
-        assert pnode.typ == grammar_nt.type_expr_list, pnode.typ
-        return None
-
     def _Param(self, pnode):
         # type: (PNode) -> Param
         """
@@ -1135,89 +1123,6 @@ class Transformer(object):
 
         return sig
 
-    def func_item(self, node):
-        # type: (PNode) -> command_t
-        """Parse tree to LST
-
-        func_item: (
-          ('var' | 'const') name_type_list '=' testlist  # ysh_var_decl.
-
-          # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
-        | 'while' test suite
-        | 'for' name_type_list 'in' test suite
-        | flow_stmt
-        | 'set' place_list (augassign | '=') testlist  # ysh_place_mutation   
-          # x  f(x)  etc.
-          #
-          # And x = 1.  Python uses the same "hack" to fit within pgen2.  It
-          # also supports a = b = 1, which we don't want.
-          #
-          # And echo 'hi' 'there'   
-          #
-          # TODO: expr_to_ast needs to validate this
-        | testlist (['=' testlist] | tea_word*)
-        )
-        """
-        if node.tok.id == Id.Expr_While:
-            return command.While(self.Expr(node.GetChild(1)),
-                                 self._Suite(node.GetChild(2)))
-        elif node.tok.id == Id.Expr_For:
-            return command.For(self._NameTypeList(node.GetChild(1)),
-                               self.Expr(node.GetChild(3)),
-                               self._Suite(node.GetChild(4)))
-        elif node.tok.id == Id.Expr_Break:
-            return command.Break
-        elif node.tok.id == Id.Expr_Continue:
-            return command.Continue
-        elif node.tok.id == Id.Expr_Return:
-            # 'return' [testlist]
-            if node.NumChildren() == 1:
-                return command.Return(None)
-            else:
-                return command.Return(self.Expr(node.GetChild(1)))
-        elif node.tok.id == Id.Expr_Name:
-            # TODO: turn echo 'hi' into AST
-            return command.NoOp
-        else:
-            raise NotImplementedError(Id_str(node.tok.id))
-
-    def func_items(self, pnode):
-        # type: (PNode) -> List[command_t]
-        """func_items: func_item (semi_newline func_item)* [semi_newline]"""
-        # Rewrite of
-        # return [self.func_item(item) for item in pnode.children[::2]]
-        # Unfortunately mycpp doesn't support the stride.
-
-        result = []  # type: List[command_t]
-        n = pnode.NumChildren()
-        for i in xrange(0, n, 2):
-            result.append(self.func_item(pnode.GetChild(i)))
-        return result
-
-    def _Suite(self, pnode):
-        # type: (PNode) -> command.CommandList
-        """Parse tree to LST
-
-        suite: '{' [Op_Newline] [func_items] '}'
-        """
-        n = pnode.NumChildren()
-
-        if n == 2:  # {}
-            return command.CommandList([])
-
-        if n == 3:
-            if pnode.GetChild(1).typ == grammar_nt.func_items:
-                # { func_items }
-                items_index = 1
-            else:
-                return command.CommandList([])
-
-        if n == 4:  # { Op_Newline func_items }
-            items_index = 2
-
-        return command.CommandList(self.func_items(
-            pnode.GetChild(items_index)))
-
     def YshFunc(self, p_node, out):
         # type: (PNode, Func) -> None
         """Parse tree to LST
@@ -1246,144 +1151,6 @@ class Transformer(object):
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
             out.named = self._ParamGroup(child)
-
-    def TeaFunc(self, pnode, out):
-        # type: (PNode, command.TeaFunc) -> None
-        """Parse tree to LST
-
-        tea_func:
-          '(' [param_group] [';' param_group] ')' [type_expr_list] suite 
-        """
-        assert pnode.typ == grammar_nt.tea_func
-        assert pnode.GetChild(0).tok.id == Id.Op_LParen  # proc foo(
-
-        # TODO: Simplify this in the style of YshFunc() above
-
-        pos = 1
-        typ2 = pnode.GetChild(pos).typ
-        if ISNONTERMINAL(typ2):
-            # f(x, y)
-            assert typ2 == grammar_nt.param_group, pnode.GetChild(pos)
-            # every other one is a comma
-            out.positional = self._ParamGroup(pnode.GetChild(pos))
-            pos += 1
-
-        id_ = pnode.GetChild(pos).tok.id
-        if id_ == Id.Op_RParen:  # f()
-            pos += 1
-        elif id_ == Id.Op_Semi:  # f(; a)
-            out.named = self._ParamGroup(pnode.GetChild(pos + 1))
-            pos += 3
-
-        if pnode.GetChild(pos).typ == grammar_nt.type_expr_list:
-            out.return_types = self._TypeExprList(pnode.GetChild(pos))
-            pos += 1
-
-        out.body = self._Suite(pnode.GetChild(pos))
-
-    def NamedFunc(self, pnode, out):
-        # type: (PNode, command.TeaFunc) -> None
-        """named_func: Expr_Name tea_func."""
-        assert pnode.typ == grammar_nt.named_func
-
-        out.name = pnode.GetChild(0).tok
-        self.TeaFunc(pnode.GetChild(1), out)
-
-    def _DataParams(self, p_node):
-        # type: (PNode) -> List[Param]
-        """data_params: (param ',')* [ param [','] ]"""
-        params = []  # type: List[Param]
-
-        n = p_node.NumChildren()
-        for i in xrange(0, n, 2):
-            params.append(self._Param(p_node.GetChild(i)))
-
-        return params
-
-    def Data(self, pnode, out):
-        # type: (PNode, command.Data) -> None
-        """tea_data: Expr_Name '(' [data_params] ')'."""
-        assert pnode.typ == grammar_nt.tea_data
-
-        out.name = pnode.GetChild(0).tok
-
-        assert pnode.GetChild(1).tok.id == Id.Op_LParen  # data foo(
-        #print(pnode)
-        if ISNONTERMINAL(pnode.GetChild(2).typ):
-            out.params = self._DataParams(pnode.GetChild(2))
-
-    def _VariantType(self, pnode):
-        # type: (PNode) -> variant_type_t
-        """variant_type: Expr_Symbol | '(' data_params ')'."""
-        n = pnode.NumChildren()
-        if n == 1:
-            return variant_type.Ref(pnode.GetChild(0).tok)
-        else:
-            assert n == 3, pnode
-            return variant_type.Anon(self._DataParams(pnode.GetChild(1)))
-
-    def _Variant(self, pnode):
-        # type: (PNode) -> Variant
-        """Variant: Expr_Name [ variant_type ]"""
-        assert pnode.typ == grammar_nt.variant, pnode
-        t = None  # type: variant_type_t
-        if pnode.NumChildren() == 2:
-            t = self._VariantType(pnode.GetChild(1))
-        return Variant(pnode.GetChild(0).tok, t)
-
-    def Enum(self, pnode, out):
-        # type: (PNode, command.Enum) -> None
-        """Parse tree to LST
-
-        tea_enum:
-          Expr_Name '{' [Op_Newline]
-          (variant variant_end)* [ variant [variant_end] ]
-          '}'
-        """
-        assert pnode.typ == grammar_nt.tea_enum
-
-        out.name = pnode.GetChild(0).tok
-
-        assert pnode.GetChild(1).tok.id == Id.Op_LBrace  # enum op {
-
-        start = 2
-        if pnode.GetChild(start).tok.id == Id.Op_Newline:
-            start = 3
-
-        n = pnode.NumChildren()
-        for i in xrange(start, n - 1, 2):  # skip commas
-            p_node = pnode.GetChild(i)
-            out.variants.append(self._Variant(p_node))
-
-    def Class(self, pnode, out):
-        # type: (PNode, command.Class) -> None
-        """tea_class: Expr_Name [':' Expr_Name ] '{' class_items '}'."""
-        assert pnode.typ == grammar_nt.tea_class
-
-        out.name = pnode.GetChild(0).tok
-
-        #assert children[1].tok.id == Id.Op_LBrace  # enum op {
-        return
-        #n = len(children)
-        #for i in xrange(2, n-1, 2):  # skip commas
-        #  p_node = children[i]
-        #  out.variants.append(self._Variant(p_node))
-
-    def Import(self, pnode, out):
-        # type: (PNode, command.Import) -> None
-        """Parse tree to LST
-        
-        tea_import: (
-          sq_string ['as' Expr_Name] (import_name ',')* [ import_name [','] ]
-        )
-        """
-        assert pnode.typ == grammar_nt.tea_import
-
-        typ = pnode.GetChild(0).typ
-        if ISNONTERMINAL(typ):
-            if typ == grammar_nt.sq_string:
-                sq_part = cast(SingleQuoted, pnode.GetChild(0).GetChild(1).tok)
-                out.path = sq_part
 
     #
     # Regex Language

@@ -2244,8 +2244,7 @@ class CommandParser(object):
             # $ bash -c 'proc() { echo p; }; proc'
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
-            if (self.parse_opts.parse_func() and
-                    not self.parse_opts.parse_tea()):
+            if self.parse_opts.parse_func():
                 return self.ParseYshFunc()
 
             # Otherwise silently pass, like for the procs.
@@ -2278,36 +2277,6 @@ class CommandParser(object):
 
         if self.c_id == Id.KW_Function:
             return self.ParseKshFunctionDef()
-
-        # Top-level keywords to hide: func, data, enum, class/mod.  Not sure about
-        # 'use'.
-        if self.parse_opts.parse_tea():
-            if self.c_id == Id.KW_Func:
-                out0 = command.TeaFunc.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseTeaFunc(self.lexer, out0)
-                self._SetNext()
-                return out0
-            if self.c_id == Id.KW_Data:
-                out1 = command.Data.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseDataType(self.lexer, out1)
-                self._SetNext()
-                return out1
-            if self.c_id == Id.KW_Enum:
-                out2 = command.Enum.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseEnum(self.lexer, out2)
-                self._SetNext()
-                return out2
-            if self.c_id == Id.KW_Class:
-                out3 = command.Class.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseClass(self.lexer, out3)
-                self._SetNext()
-                return out3
-            if self.c_id == Id.KW_Import:
-                # Needs last_token because it ends with an optional thing?
-                out4 = command.Import.CreateNull(alloc_lists=True)
-                self.w_parser.ParseImport(out4)
-                self._SetNext()
-                return out4
 
         if self.c_id in (Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen,
                          Id.Lit_LBrace, Id.KW_For, Id.KW_While, Id.KW_Until,

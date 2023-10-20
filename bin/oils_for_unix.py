@@ -33,7 +33,6 @@ from mycpp.mylib import print_stderr, log
 from pylib import os_path
 
 if mylib.PYTHON:
-    from tea import tea_main
     from tools import readlink
 
 import fanos
@@ -143,14 +142,6 @@ def AppBundleMain(argv):
     elif applet == 'oshc':
         # Moved to --tool
         raise AssertionError()
-
-    elif applet == 'tea':
-        arg_r.Next()
-        if mylib.PYTHON:
-            return tea_main.Main(arg_r)
-        else:
-            print_stderr('tea not translated')
-            return 2
 
     # For testing latency
     elif applet == 'true':
