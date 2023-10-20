@@ -1056,7 +1056,7 @@ class WordParser(WordEmitter):
 
         self._SetNext(lex_mode_e.Expr)
         enode, right_token = self.parse_ctx.ParseYshExpr(
-            self.lexer, grammar_nt.oil_expr_sub)
+            self.lexer, grammar_nt.ysh_expr_sub)
 
         self._SetNext(lex_mode)  # Move past ]
         return word_part.ExprSub(left_token, enode, right_token)
@@ -1142,7 +1142,7 @@ class WordParser(WordEmitter):
         if self.token_type == Id.Op_LParen:
             self.lexer.MaybeUnreadOne()
 
-        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
+        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.ysh_expr)
 
         self._SetNext(lex_mode_e.ShCommand)
         return enode

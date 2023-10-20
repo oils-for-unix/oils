@@ -306,7 +306,7 @@ class ParseContext(object):
         """ var mylist = [1, 2, 3] """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_var_decl)
+            pnode, last_token = e_parser.Parse(lexer, grammar_nt.ysh_var_decl)
 
             if 0:
                 self.p_printer.Print(pnode)
@@ -322,7 +322,7 @@ class ParseContext(object):
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
             pnode, last_token = e_parser.Parse(lexer,
-                                               grammar_nt.oil_place_mutation)
+                                               grammar_nt.ysh_place_mutation)
             if 0:
                 self.p_printer.Print(pnode)
             ast_node = self.tr.MakePlaceMutation(pnode)

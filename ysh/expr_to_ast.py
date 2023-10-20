@@ -500,8 +500,8 @@ class Transformer(object):
             # Oil Entry Points / Additions
             #
 
-            if typ == grammar_nt.oil_expr:  # for if/while
-                # oil_expr: '(' testlist ')'
+            if typ == grammar_nt.ysh_expr:  # for if/while
+                # ysh_expr: '(' testlist ')'
                 return self.Expr(pnode.GetChild(1))
 
             if typ == grammar_nt.command_expr:
@@ -646,7 +646,7 @@ class Transformer(object):
                 inner = self.Expr(pnode.GetChild(1))
                 return expr.Literal(inner)
 
-            elif typ == grammar_nt.oil_expr_sub:
+            elif typ == grammar_nt.ysh_expr_sub:
                 return self.Expr(pnode.GetChild(0))
 
             #
@@ -760,9 +760,9 @@ class Transformer(object):
 
     def MakeVarDecl(self, p_node):
         # type: (PNode) -> command.VarDecl
-        """oil_var_decl: name_type_list '=' testlist end_stmt."""
+        """ysh_var_decl: name_type_list '=' testlist end_stmt."""
         typ = p_node.typ
-        assert typ == grammar_nt.oil_var_decl
+        assert typ == grammar_nt.ysh_var_decl
 
         #log('len(children) = %d', len(children))
         lhs = self._NameTypeList(p_node.GetChild(0))  # could be a tuple
@@ -780,10 +780,10 @@ class Transformer(object):
         # type: (PNode) -> command.PlaceMutation
         """Parse tree to LST
         
-        oil_place_mutation: place_list (augassign | '=') testlist end_stmt
+        ysh_place_mutation: place_list (augassign | '=') testlist end_stmt
         """
         typ = p_node.typ
-        assert typ == grammar_nt.oil_place_mutation
+        assert typ == grammar_nt.ysh_place_mutation
 
         place_list = self._PlaceList(p_node.GetChild(0))  # could be a tuple
         op_tok = p_node.GetChild(1).tok
@@ -796,8 +796,8 @@ class Transformer(object):
         # type: (PNode) -> Tuple[List[NameType], expr_t]
         typ = pnode.typ
 
-        if typ == grammar_nt.oil_for:
-            # oil_for: '(' lvalue_list 'in' testlist ')'
+        if typ == grammar_nt.ysh_for:
+            # ysh_for: '(' lvalue_list 'in' testlist ')'
             lhs = self._NameTypeList(pnode.GetChild(1))  # could be a tuple
             iterable = self.Expr(pnode.GetChild(3))
             return lhs, iterable
@@ -1140,13 +1140,13 @@ class Transformer(object):
         """Parse tree to LST
 
         func_item: (
-          ('var' | 'const') name_type_list '=' testlist  # oil_var_decl.
+          ('var' | 'const') name_type_list '=' testlist  # ysh_var_decl.
 
           # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
         | 'while' test suite
         | 'for' name_type_list 'in' test suite
         | flow_stmt
-        | 'set' place_list (augassign | '=') testlist  # oil_place_mutation   
+        | 'set' place_list (augassign | '=') testlist  # ysh_place_mutation   
           # x  f(x)  etc.
           #
           # And x = 1.  Python uses the same "hack" to fit within pgen2.  It
