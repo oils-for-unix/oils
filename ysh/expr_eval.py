@@ -835,15 +835,6 @@ class ExprEvaluator(object):
 
             return result
 
-        if op_id == Id.Expr_DColon:  # StaticName::member
-            raise NotImplementedError(op_id)
-
-            # TODO: We should prevent virtual lookup here?  This is a pure static
-            # namespace lookup?
-            # But Python doesn't any hook for this.
-            # Maybe we can just check that it's a module?  And modules don't lookup
-            # in a supertype or __class__, etc.
-
         raise AssertionError(op_id)
 
     def _EvalExpr(self, node):
