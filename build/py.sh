@@ -183,6 +183,9 @@ py-codegen() {
   option-mypy-gen
   flag-gen-mypy
 
+  # Experiment
+  gen-asdl-py 'yaks/yaks.asdl'
+
   # For tests
   gen-asdl-py 'mycpp/examples/expr.asdl'
 }
