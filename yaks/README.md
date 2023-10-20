@@ -52,6 +52,20 @@ To be fast.  Language processors should be written in AOT -compiled languages:
 - Pickling also takes some time.
 - Unpickling takes time
 
+### More Issues with mycpp I want to address
+
+- speed of Python dev build
+  - type check and run Python in 1 second
+- speed of C++ build
+  - type check, generate multiple C++ MODULES, compile the whole program in
+    say 5-10 seconds.  I think it's more like 30 seconds now.
+- rooting: can be optimize it, not generate 480 KB of StackRoots or wahtever
+  - this requires analyzing the call graph
+- MODULES and dependencies -- may require re-organizing the Oils codebase
+itself.
+  - cpp/preamble.h is a hack.
+  - This includes things like "system" deps like ENOENT and fork(), etc.
+
 ## End Goal
 
 - `pea/py2_parse.py` (written in Python 3!) exports the CST format for our
@@ -140,3 +154,8 @@ Although I suppose you could consider typed Python 3 or something?
 
 That has proper declarations.  But you would still need ASDL.
 
+
+## Direct Architecture, No Bootstrapping
+
+- The whole program is Python 3, with no process boundary?
+  - It might be fast enough?  Let's see

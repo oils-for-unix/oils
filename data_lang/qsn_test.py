@@ -10,6 +10,7 @@ import unittest
 
 from mycpp.mylib import log
 from data_lang import qsn  # module under test
+from data_lang import qsn_py  # alternative impl
 
 
 class QStrTest(unittest.TestCase):
@@ -111,12 +112,12 @@ class QStrTest(unittest.TestCase):
             print('qsn U     %s' % qu)
             print('qsn X     %s' % qx)
 
-            decoded1 = qsn.py_decode(q1)
+            decoded1 = qsn_py.py_decode(q1)
             print('decoded = %r' % decoded1)
             print()
-            decoded2 = qsn.py_decode(q2)
-            decoded_u = qsn.py_decode(qu)
-            decoded_x = qsn.py_decode(qx)
+            decoded2 = qsn_py.py_decode(q2)
+            decoded_u = qsn_py.py_decode(qu)
+            decoded_x = qsn_py.py_decode(qx)
 
             self.assertEqual(c, decoded1)
             self.assertEqual(c, decoded2)
@@ -132,13 +133,13 @@ class QStrTest(unittest.TestCase):
         for c in UNICODE_CASES:
             print(repr(c))
             # what it should decode to
-            s = qsn._CodePointToChar(c).encode('utf-8')
+            s = qsn_py._CodePointToChar(c).encode('utf-8')
 
             q = '\\u{%0x}' % c  # the QSTR encoding
 
             print('qsn      %s' % q)
 
-            decoded = qsn.py_decode(q)
+            decoded = qsn_py.py_decode(q)
             print('decoded = %r' % decoded)
             print()
 
@@ -155,7 +156,7 @@ class QStrTest(unittest.TestCase):
             "%%%",
         ]
         for c in OTHER_CASES:
-            decoded = qsn.py_decode(c)
+            decoded = qsn_py.py_decode(c)
             print('qsn    = %s' % c)
             print('decoded = %r' % decoded)
             print()
@@ -170,7 +171,7 @@ class QStrTest(unittest.TestCase):
         ]
         for c in INVALID:
             try:
-                s = qsn.py_decode(c)
+                s = qsn_py.py_decode(c)
             except RuntimeError as e:
                 print(e)
             else:
@@ -178,28 +179,28 @@ class QStrTest(unittest.TestCase):
 
     def testDecode(self):
         try:
-            print(qsn.py_decode("'no\nnewlines'"))
+            print(qsn_py.py_decode("'no\nnewlines'"))
         except RuntimeError as e:
             print(e)
         else:
             self.fail('Expected failure')
 
         try:
-            print(qsn.py_decode("'no\ttabs'"))
+            print(qsn_py.py_decode("'no\ttabs'"))
         except RuntimeError as e:
             print(e)
         else:
             self.fail('Expected failure')
 
         try:
-            print(qsn.py_decode("'no\0NUL'"))
+            print(qsn_py.py_decode("'no\0NUL'"))
         except RuntimeError as e:
             print(e)
         else:
             self.fail('Expected failure')
 
         # Extra quote!
-        s = qsn.py_decode("'foo' bar")
+        s = qsn_py.py_decode("'foo' bar")
         self.assertEqual('foo', s)
 
     def testUtf8WithRegex(self):

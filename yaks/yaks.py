@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
 yaks.py - Generate C++ from Yaks IR.
 
@@ -12,7 +12,12 @@ import optparse
 import os
 import sys
 
-def Options():
+from _devbuild.gen import yaks_asdl
+
+from typing import List
+
+
+def Options() -> optparse.OptionParser:
     """Returns an option parser instance."""
 
     p = optparse.OptionParser()
@@ -42,7 +47,7 @@ def Options():
     return p
 
 
-def main(argv):
+def main(argv: List[str]) -> None:
     o = Options()
     opts, argv = o.parse_args(argv)
 
@@ -51,7 +56,17 @@ def main(argv):
     except IndexError:
         raise RuntimeError('Action required')
 
-    print('hi')
+    if action == 'cpp':
+        path = argv[2]
+
+        m = yaks_asdl.Module('hi', [])
+        print(m)
+
+        with open(path) as f:
+            print(f.read())
+
+    else:
+        raise RuntimeError('Invalid action %r' % action)
 
 
 if __name__ == '__main__':

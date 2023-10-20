@@ -1,0 +1,10 @@
+(module "hello"
+
+  (include "<stdio.h>")
+
+  (func main [argv [List Str]]
+    (print (argv 1))
+    (return 42)
+  )
+)
+
