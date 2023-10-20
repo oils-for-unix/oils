@@ -12,7 +12,7 @@ source devtools/run-task.sh
 source test/common.sh  # run-test-funcs
 
 build() {
-  build/py.sh gen-asdl-py 'yaks/yaks.asdl' --no-ordered-dict
+  build/py.sh gen-asdl-py 'yaks/yaks.asdl'
 }
 
 check() {

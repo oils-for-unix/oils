@@ -159,8 +159,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                  abbrev_mod_entries=None,
                  pretty_print_methods=True,
                  py_init_n=False,
-                 simple_int_sums=None,
-                 ordered_dict=True):
+                 simple_int_sums=None):
 
         visitor.AsdlVisitor.__init__(self, f)
         self.abbrev_mod_entries = abbrev_mod_entries or []

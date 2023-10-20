@@ -166,9 +166,7 @@ gen-asdl-py() {
 py-codegen() {
   # note: filename must come first
   # hnode.asdl has REQUIRED fields so it's --py-init-N
-  # --no-ordered-dict Python3 compat -- the schema has no Dict
-  gen-asdl-py 'asdl/hnode.asdl' \
-    --no-pretty-print-methods --py-init-N --no-ordered-dict
+  gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-N 
 
   gen-asdl-py 'frontend/types.asdl'
   # depends on syntax.asdl

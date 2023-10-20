@@ -44,13 +44,6 @@ def Options():
         default=True,
         help='Generate 0 arg and N arg constructors, in Python and C++')
 
-    p.add_option(
-        '--no-ordered-dict',
-        dest='ordered_dict',
-        action='store_false',
-        default=True,
-        help='collections_.OrderedDict incompatible / not needed for Python 3')
-
     return p
 
 
@@ -240,10 +233,6 @@ namespace %s {
 
         f = sys.stdout
 
-        if opts.ordered_dict:
-            f.write('''
-from pylib.collections_ import OrderedDict
-''')
         # TODO: Remove Any once we stop using it
         f.write("""\
 from asdl import pybase
@@ -281,8 +270,7 @@ from _devbuild.gen.hnode_asdl import color_e, hnode, hnode_e, hnode_t, Field
             f,
             abbrev_mod_entries,
             pretty_print_methods=opts.pretty_print_methods,
-            py_init_n=opts.py_init_n,
-            ordered_dict=opts.ordered_dict)
+            py_init_n=opts.py_init_n)
         v.VisitModule(schema_ast)
 
         if abbrev_mod:

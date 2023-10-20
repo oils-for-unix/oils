@@ -51,6 +51,10 @@ module yaks
     Bool(bool f)  # true false
   | Int(int i)  # 42
   | Str(str s)  # "\n"
+
+    # ''' strings like YSH, for embedding say re2c blocks?
+  | MultiStr(List[str] lines)
+
     # Very limited expression language, e.g.
     #   a[i]    (get a i) 
     #   1 + 2   (+ 1 2)
