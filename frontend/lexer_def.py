@@ -302,6 +302,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
     C(',', Id.Lit_Comma),
     C('=', Id.Lit_Equals),  # for = f(x) and x = 1+2*3
     C('_', Id.Lit_Underscore),  # for _ f(x)
+    C('::', Id.Lit_DColon),  # for  :: f(x)
     C('@', Id.Lit_At),  # for detecting @[, @' etc. shopt -s parse_at_all
 
     # @array and @func(1, c)

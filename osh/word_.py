@@ -607,7 +607,9 @@ def CommandId(w):
                 return Id.Word_Compound
 
             elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals,
-                                Id.Lit_Underscore, Id.ControlFlow_Return):
+                                # TODO: remove _
+                                Id.Lit_DColon, Id.Lit_Underscore,
+                                Id.ControlFlow_Return):
                 # OSH and YSH recognize:  {  }
                 # YSH recognizes:         =  return
                 return token_type

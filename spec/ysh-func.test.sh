@@ -36,10 +36,10 @@ func f(x, y, ...rest) {
   echo rest @rest
 }
 
-_ f(1, 2, 3, 4)
+:: f(1, 2, 3, 4)
 
 # This is an error
-#_ f(1, 2, m=2, n=3)
+#:: f(1, 2, m=2, n=3)
 
 ## STDOUT:
 pos 1 2
@@ -52,9 +52,9 @@ func f(; x=3) {
   echo x=$x
 }
 
-_ f()
+:: f()
 
-_ f(x=4)
+:: f(x=4)
 
 ## STDOUT:
 x=3
@@ -67,11 +67,11 @@ func f(; x=3, ...named) {
   json write --pretty=F (named)
 }
 
-_ f()
+:: f()
 
-_ f(x=4)
+:: f(x=4)
 
-_ f(x=4, y=5)
+:: f(x=4, y=5)
 
 ## STDOUT:
 x=3
@@ -88,11 +88,11 @@ func f(; x, y) {
   echo "$x $y"
 }
 
-_ f(; x=9, y=10)
+:: f(; x=9, y=10)
 
 var args = {x: 3, y: 4}
 
-_ f(; ...args)
+:: f(; ...args)
 
 
 ## STDOUT:
@@ -112,7 +112,7 @@ var a = [1,2,3]
 var d = {m: 'spam', n: 'no'}
 var e = {p: 5, q: 6}
 
-_ f(...a, ...a; ...d, ...e)
+:: f(...a, ...a; ...d, ...e)
 
 ## STDOUT:
 [1,2,3,1,2,3]
@@ -278,7 +278,7 @@ func remove(l, i) {
     setvar l[i] = l[i + 1]
   }
 
-  _ l->pop() # remove duplicate last element
+  :: l->pop() # remove duplicate last element
 }
 
 func fib(n) {
@@ -288,8 +288,8 @@ func fib(n) {
     var item = cache[i]
 
     if (item[0] === n) {
-      _ remove(cache, i)
-      _ cache->append(item)
+      :: remove(cache, i)
+      :: cache->append(item)
 
       echo hit: $n
       return (item[1])
@@ -307,9 +307,9 @@ func fib(n) {
   }
 
   if (len(cache) >= maxSize) {
-    _ remove(cache, 0)
+    :: remove(cache, 0)
   }
-  _ cache->append([n, result])
+  :: cache->append([n, result])
 
   return (result)
 }
@@ -353,10 +353,10 @@ func f(...args) {
   = args
 }
 
-_ f()
-_ f(1)
-_ f(1, 2)
-_ f(1, 2, 3)
+:: f()
+:: f(1)
+:: f(1, 2)
+:: f(1, 2, 3)
 ## STDOUT:
 (List)   []
 (List)   [1]
@@ -369,9 +369,9 @@ func f(a, b, ...args) {
   = [a, b, args]
 }
 
-_ f(1, 2)
-_ f(1, 2, 3)
-_ f(1, 2, 3, 4)
+:: f(1, 2)
+:: f(1, 2, 3)
+:: f(1, 2, 3, 4)
 ## STDOUT:
 (List)   [1, 2, []]
 (List)   [1, 2, [3]]
@@ -383,7 +383,7 @@ func f(a, b, ...args) {
   = [a, b, args]
 }
 
-_ f(1)
+:: f(1)
 ## status: 3
 ## STDOUT:
 ## END
@@ -468,7 +468,7 @@ const animals = [Dog, Cat]
 for animal in (animals) {
   var type = animal.type()
   echo This is a $type
-  _ animal.speak()
+  :: animal.speak()
 }
 ## STDOUT:
 This is a DOG
@@ -503,7 +503,7 @@ func inAnotherScope() {
   var mysum = mysum([1, 2, 3])
   echo mysum=$mysum
 }
-_ inAnotherScope()
+:: inAnotherScope()
 
 # We need a scope otherwise we'd overwrite `mysum` in the global scope
 var mysum = mysum([1, 2, 3])  # will raise status=1

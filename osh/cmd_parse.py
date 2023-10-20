@@ -2265,7 +2265,11 @@ class CommandParser(object):
             n9 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
             return n9
 
-        if self.c_id in (Id.Lit_Underscore, Id.Lit_Equals):  # = 42 + 1
+        if self.c_id in (Id.Lit_DColon, Id.Lit_Underscore, Id.Lit_Equals):
+            # = 42 + a[i]
+            # :: 42 + [ai]
+            # TODO: remove _
+
             keyword = word_.LiteralToken(self.cur_word)
             assert keyword is not None
             self._SetNext()
