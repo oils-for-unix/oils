@@ -12,9 +12,11 @@ import optparse
 import os
 import sys
 
-from _devbuild.gen import yaks_asdl
-
 from typing import List
+
+from _devbuild.gen import yaks_asdl
+from yaks import lex
+
 
 
 def Options() -> optparse.OptionParser:
@@ -61,6 +63,9 @@ def main(argv: List[str]) -> None:
 
         m = yaks_asdl.Module('hi', [])
         print(m)
+
+        tokens = lex.Lex('hello there')
+        print(tokens)
 
         with open(path) as f:
             print(f.read())

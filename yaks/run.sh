@@ -21,12 +21,12 @@ check() {
   # Does this do anything?
   local flags='--strict'
 
-  python3 -m mypy $flags yaks/yaks.py
+  python3 -m mypy $flags yaks/yaks_main.py
 }
 
 test-hello() {
   # translate
-  yaks/yaks.py cpp yaks/examples/hello.yaks
+  yaks/yaks_main.py cpp yaks/examples/hello.yaks
 
   # type check only
   # yaks/yaks.py check testdata/hello.yaks
