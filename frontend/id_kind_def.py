@@ -331,7 +331,7 @@ def AddKinds(spec):
             'Bang',  # eggex !digit, ![a-z]
             'Dot',
             'DDot',
-            'DColon',
+            'Colon',  # mylist:pop()
             'RArrow',
             'RDArrow',
             'DSlash',  # integer division

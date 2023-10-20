@@ -200,6 +200,21 @@ Like Python:
 
     f(x, y)
 
+### arrow-method
+
+Transforming methods use the `->` operator:
+
+    var b = s->startswith('prefix')
+
+### mut-method
+
+Mutating methods use the `:` operator
+
+    var mydict = {name: 'foo'}
+    :: mydict.erase('name')
+
+    var mylist = ['bar']
+    :: mylist.pop()
 
 ### match-ops
 

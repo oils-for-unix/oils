@@ -28,16 +28,16 @@ source --builtin math.ysh
 json write (max(1, 2))
 json write (max([1, 2, 3]))
 
-try { _ max([]) }
+try { :: max([]) }
 echo status=$_status
 
-try { _ max(1, 2) }
+try { :: max(1, 2) }
 echo status=$_status
 
-try { _ max(1, 2, 3) }
+try { :: max(1, 2, 3) }
 echo status=$_status
 
-try { _ max() }
+try { :: max() }
 echo status=$_status
 
 ## STDOUT:
@@ -55,16 +55,16 @@ source --builtin math.ysh
 json write (min(2, 3))
 json write (min([1, 2, 3]))
 
-try { _ min([]) }
+try { :: min([]) }
 echo status=$_status
 
-try { _ min(2, 3) }
+try { :: min(2, 3) }
 echo status=$_status
 
-try { _ min(1, 2, 3) }
+try { :: min(1, 2, 3) }
 echo status=$_status
 
-try { _ min() }
+try { :: min() }
 echo status=$_status
 
 ## STDOUT:
@@ -85,7 +85,7 @@ json write (abs(1))
 json write (abs(42))
 json write (abs(-42))
 
-try { _ abs(-42) }
+try { :: abs(-42) }
 echo status=$_status
 
 ## STDOUT:

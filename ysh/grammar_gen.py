@@ -73,11 +73,11 @@ def main(argv):
 
     # Used at grammar BUILD time.
     OPS = {
+        #':': Id.Arith_Colon,
         '!': Id.Expr_Bang,
         '.': Id.Expr_Dot,
         '..': Id.Expr_DDot,
         '->': Id.Expr_RArrow,
-        '::': Id.Expr_DColon,
         '//': Id.Expr_DSlash,
         '++': Id.Arith_DPlus,
         '!~': Id.Expr_NotTilde,

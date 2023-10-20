@@ -91,10 +91,10 @@ var a = [0]
 var b = [2, 1, 3]
 var c = :| hello world |
 
-_ empty->reverse()
-_ a->reverse()
-_ b->reverse()
-_ c->reverse()
+:: empty->reverse()
+:: a->reverse()
+:: b->reverse()
+:: c->reverse()
 
 json write --pretty=F (empty)
 json write --pretty=F (a)
@@ -107,3 +107,14 @@ json write --pretty=F (c)
 [3,1,2]
 ["world","hello"]
 ## END
+
+#### List->reverse() from iterator
+var x = list(0 .. 3)
+:: x->reverse()
+write @x
+## STDOUT:
+2
+1
+0
+## END
+

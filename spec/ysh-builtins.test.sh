@@ -544,7 +544,7 @@ Range
 #### List->extend()
 var l = list(1..3)
 echo $[len(l)]
-_ l->extend(list(3..6))
+:: l->extend(list(3..6))
 echo $[len(l)]
 ## STDOUT:
 2
@@ -556,10 +556,10 @@ shopt -s oil:all
 var l = list(1..3)
 
 var result = l->extend(list(3..6))
-_ assert_(result === null)
+:: assert_(result === null)
 
 setvar result = l->append(6)
-_ assert_(result === null)
+:: assert_(result === null)
 
 echo pass
 ## STDOUT:
@@ -569,10 +569,10 @@ pass
 #### List pop()
 shopt -s oil:all
 var l = list(1..5)
-_ assert_(l->pop() === 4)
-_ assert_(l->pop() === 3)
-_ assert_(l->pop() === 2)
-_ assert_(l->pop() === 1)
+:: assert_(l->pop() === 4)
+:: assert_(l->pop() === 3)
+:: assert_(l->pop() === 2)
+:: assert_(l->pop() === 1)
 echo pass
 ## STDOUT:
 pass

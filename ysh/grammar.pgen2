@@ -120,7 +120,7 @@ trailer: (
 
   | '.' Expr_Name
   | '->' Expr_Name
-  | '::' Expr_Name  # Note: unused, may not need it at all
+  #| ':' Expr_Name  # Note: unused, may not need it at all
 )
 
 # YSH patch: this is 'expr' instead of 'test'

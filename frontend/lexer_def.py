@@ -871,7 +871,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
     #
 
     C(',', Id.Arith_Comma),
-    C(':', Id.Arith_Colon),   # for slicing a[1:2]
+    C(':', Id.Arith_Colon),   # for slicing a[1:2], and mylist:pop()
 
     C('?', Id.Arith_QMark),   # regex postfix
 
@@ -935,11 +935,9 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('//', Id.Expr_DSlash),  # For YSH integer division
     C('~==', Id.Expr_TildeDEqual),  # approximate equality
 
-    C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
+    C('.', Id.Expr_Dot),      # d.key is alias for d['key']
     C('..', Id.Expr_DDot),    # range 1..5
-    C('::', Id.Expr_DColon),  # static namespace access
-    C('->', Id.Expr_RArrow),  # dynamic dict access: be d->name->age
-                            # instead of d['name']['age']
+    C('->', Id.Expr_RArrow),  # s->startswith()
     C('$', Id.Expr_Dollar),   # legacy regex end: /d+ $/ (better written /d+ >/
 
     # Reserved this.  Go uses it for channels, etc.
