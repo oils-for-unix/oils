@@ -17,12 +17,9 @@ build() {
 
 check() {
   build
-  # OrderedDict is an issue
-  #python3 -m mypy --strict yaks/yaks.py
 
-  # there are some len() errors in asdl/format.py
-  local flags='--no-strict-optional'
-  #flags=''
+  # Does this do anything?
+  local flags='--strict'
 
   python3 -m mypy $flags yaks/yaks.py
 }

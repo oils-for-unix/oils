@@ -14,8 +14,7 @@ module hnode {
   | External
 
   hnode =
-    # null node_type means there's no prefix, e.g. for 'token' type
-    Record(str? node_type, List[Field] fields,
+    Record(str node_type, List[Field] fields,
            bool abbrev, str left, str right, List[hnode] unnamed_fields)
     # TODO: for Dicts, children alternate k1 v1 k2 v2.  Use {}
   | Array(List[hnode] children)

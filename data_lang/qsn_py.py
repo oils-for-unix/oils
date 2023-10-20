@@ -6,7 +6,6 @@ For testing in qsn_test.py
 """
 
 import re
-import sys
 
 QSN_LEX = re.compile(r'''
   ( \\ [nrt0'"\\]                  ) # " accepted here but not encoded
