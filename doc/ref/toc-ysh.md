@@ -32,10 +32,10 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Commands]      proc-def      proc p (out Ref; pos, ...rest; n=0; b Block) {
                   func-def      func f(x; opt1, opt2) { return (x + 1) }
                   ysh-return    return (myexpr)
-                  error         error (status=3)
                   equal =       = 1 + 2*3
-                  underscore _  _ mylist->append(42)
+                  dcolon ::     :: mylist->append(42)
   [YSH Simple]    typed-arg     json write (x)
+                  lazy-expr-arg assert [42 === x]
                   block-arg     cd /tmp { echo $PWD }
   [Conditional]   ysh-case      case (x) { *.py { echo 'python' } }
                   ysh-if        if (x > 0) { echo }
@@ -112,7 +112,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   pp                     Pretty print interpreter state
   [Handle Errors] try                    Run with errexit and set _status
                   boolstatus             Enforce 0 or 1 exit status
-                  X error                Can be used in both proc and func
+                  error                  error 'failed' (status=2)
   [Shell State]   ysh-cd   ysh-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
                   push-registers         Save registers like $?, PIPESTATUS
@@ -121,7 +121,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   is-main                false when sourcing a file
                   use                    change first word lookup
   [I/O]           ysh-read               Buffered I/O with --line, --all, --qsn
-                  X ysh-echo             no -e -n with simple_echo
+                  ysh-echo               no -e -n with simple_echo
                   write                  Like echo, with --, --sep, --end, ()
                   fork   forkwait        Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block

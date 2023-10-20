@@ -421,14 +421,15 @@ The `=` keyword evaluates an expression and shows the result:
 It's meant to be used interactively.  Think of it as an assignment with no
 variable on the left.
 
-### underscore
+### dcolon
 
-The `_` keyword evaluates an expression and throws away the result:
+The `::` keyword evaluates an expression and throws away the result:
 
     var x = :| one two |
-    _ x.append('three')
+    :: x.append('three')
 
-Think of it as a shortcut for `_ = expr` (throwaway assignment).
+It's meant to look like the shell idiom `: ${x=42}`, but with YSH expressions
+on the right.
 
 ### typed-arg
 
@@ -440,6 +441,18 @@ TODO: Implement these
 
     eval (myblock)
     assert (x > 0)
+
+### lazy-expr-arg
+
+Expressions in brackets like this:
+
+    assert [42 === x]
+
+Are syntactic sugar for:
+
+    assert (^[42 === x])
+
+That is, it's single arg of type `value.Expr`.
 
 ### block-arg
 

@@ -1,19 +1,12 @@
-# Grammar for Oil.
+# Grammar for YSH.
 # Adapted from the Python 3.7 expression grammar, with several changes!
 # 
 # TODO:
-# - funcs in expression context, maybe disable lambdas like |x| x+1 for now?
-# - Are tuples and heterogeneous lists in Oil or Tea?
-#
-# Tea also needs:
-# - cast expressions
-#   - although cast(Int, foo) works I suppose.  It feels like it has a runtime
-#   cost
-#
-# - What about list comprehensions?
+# - Do we need lambdas?
+# - List comprehensions?
 #   - I think this could be replaced with implicit vectorization, like
 #     @len(x) or len.(x) ?  It's shorter, but it maps and doesn't filter.
-#   - Generator expressions?
+# - Generator expressions?
 
 # Note: trailing commas are allowed:
 #   {k: mydict,}
@@ -25,9 +18,8 @@
 # Kinds used:
 #   VSub, Left, Right, Expr, Op, Arith, Char, Eof, Unknown
 
-# Oil patch: removed @= **= //=
-# We're missing div= and xor=, which now look weird.  ^= is
-# exponentiation.  |= has a use case.
+# YSH patch: removed @= **= //=
+# Possibly just use have += -= *=.  Those are the most common.
 augassign: (
     '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>='
 )
@@ -35,7 +27,7 @@ augassign: (
 
 test: or_test ['if' or_test 'else' test] | lambdef
 
-# We follow the same rules as Python lambdas:
+# Lambdas follow the same rules as Python:
 #
 # |x| 1, 2                ==    (|x| 1), 2
 # |x| x if True else 42   ==    |x| (x if True else 42)
@@ -49,6 +41,10 @@ test: or_test ['if' or_test 'else' test] | lambdef
 # 
 # We used name_type_list rather than param_group because a default value like
 # x|y (bitwise or) conflicts with the | delimiter!
+#
+# TODO: consider this syntax:
+# fn (x) x            # expression
+# fn (x) ^( echo hi ) # statement
 
 lambdef: '|' [name_type_list] '|' test
 
@@ -60,7 +56,7 @@ comparison: range_expr (comp_op range_expr)*
 # Unlike slice, beginning and end are required
 range_expr: expr ['..' expr]
 
-# Oil patch: removed legacy <>, use == and !==
+# YSH patch: removed legacy <>, use == and !==
 comp_op: (
     '<'|'>'|'==='|'>='|'<='|'!=='|'in'|'not' 'in'|'is'|'is' 'not'|
     '~' | '!~' | '~~' | '!~~' | '~=='
@@ -73,12 +69,12 @@ expr: xor_expr ('|' xor_expr)*
 xor_expr: and_expr ('^' and_expr)*
 and_expr: shift_expr ('&' shift_expr)*
 shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-# Oil: add concatenation with same precedence as +
+# YSH: add concatenation with same precedence as +
 arith_expr: term (('+'|'-'|'++') term)*
-# Oil patch: removed '@'
+# YSH patch: removed '@'
 term: factor (('*'|'/'|'//'|'%') factor)*
 factor: ('+'|'-'|'~') factor | power
-# Oil patch: removed Python 3 'await'
+# YSH patch: removed Python 3 'await'
 power: atom trailer* ['**' factor]
 
 testlist_comp: (test|splat_expr) ( comp_for | (',' (test|splat_expr))* [','] )
@@ -111,8 +107,6 @@ atom: (
   | sh_command_sub | braced_var_sub
   | sh_array_literal
   | old_sh_array_literal
-    # Anonymous function.  Is this only in Tea mode?
-  | 'func' tea_func
 )
 
 literal_expr: '^[' expr ']'
@@ -121,10 +115,10 @@ literal_expr: '^[' expr ']'
 # BARE WORDS.
 #
 # Example:
-#   log "hello $name"       # valid in OSH, Oil, Tea
+#   log "hello $name"       # valid in OSH, YSH, Tea
 #   myproc $(hostname)      # ditto
 #
-#   my-proc '/' $foo        # OSH and Oil
+#   my-proc '/' $foo        # OSH and YSH
 #   run 'my-proc' '/' $foo  # Tea.  'run' is similar to 'command' and 'builtin'
 #
 
@@ -138,21 +132,14 @@ trailer: (
     '(' [arglist] ')'
   | '[' subscriptlist ']'
 
-  # TODO:
-  # - {} %() :() trailers for passing a single arg that's a collection.
-  # - and maybe %"" too
-  # Lazy evaluation:
-  # - f %(a b c)     could be                f(%(a b c))
-  # - f {a=1, b=2}   could be                f({a=1, b=2})
-  #   - although we might want that for Point {x: 1, y: 2}
-  # - f :(x, y)      could be equivalent to  f(:[x], :[y])
+  # Is a {} trailing useful for anything?  It's not in Python or JS
 
   | '.' Expr_Name
   | '->' Expr_Name
-  | '::' Expr_Name
+  | '::' Expr_Name  # Note: unused, may not need it at all
 )
 
-# Oil patch: this is 'expr' instead of 'test'
+# YSH patch: this is 'expr' instead of 'test'
 # - 1:(3<4) doesn't make any sense.
 # - And then this allows us to support a[3:] and a[:i] as special cases.
 # - First class slices have to be written 0:n.
@@ -225,17 +212,17 @@ arg_group: argument (',' argument)* [',']
 arglist: [arg_group] [';' arg_group]
 
 
-# Oil patch: test_nocond -> or_test.  I believe this was trying to prevent the
+# YSH patch: test_nocond -> or_test.  I believe this was trying to prevent the
 # "double if" ambiguity here:
 # #
 # [x for x in range(3) if lambda x: x if 1]
 # 
-# but Oil doesn't supported "nested loops", so we don't have this problem.
+# but YSH doesn't supported "nested loops", so we don't have this problem.
 comp_for: 'for' name_type_list 'in' or_test ['if' or_test]
 
 
 #
-# Expressions that are New in Oil
+# Expressions that are New in YSH
 #
 
 # Notes:
@@ -250,7 +237,7 @@ array_item: (
 )
 sh_array_literal: ':|' Expr_CastedDummy Op_Pipe
 
-# TODO: remove this
+# TODO: remove old array
 old_sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
 
@@ -306,7 +293,7 @@ oil_var_decl: name_type_list '=' testlist end_stmt
 #oil_setvar: place augassign testlist end_stmt
 #          | place_list '=' testlist end_stmt
 
-# Note: for Oil (not Tea), we could accept [':'] expr for setvar :out = 'foo'
+# Note: for YSH (not Tea), we could accept [':'] expr for setvar :out = 'foo'
 place_list: expr (',' expr)*
 oil_place_mutation: place_list (augassign | '=') testlist end_stmt
 
@@ -380,6 +367,9 @@ semi_newline: ';' [Op_Newline] | Op_Newline
 #
 # Experimental "Tea" stuff
 #
+# It also needs:
+# - cast expressions.  Although cast(Int, foo) works I suppose.  It feels like
+#   it has a runtime cost
 
 tea_enum: (
   Expr_Name '{' [Op_Newline]
@@ -400,7 +390,7 @@ func_item: (
   # In Python, imports, assert, etc. also at this 'small_stmt' level
 | 'break' | 'continue' | 'return' [testlist]
 
-  # TODO: accept setvar for consistency with Oil?
+  # TODO: accept setvar for consistency with YSH?
 | 'set' place_list (augassign | '=') testlist  # oil_place_mutation
   # x  f(x)  etc.
   #
@@ -456,7 +446,7 @@ end_import: ';' | Op_Newline
 import_name: Expr_Name ['as' Expr_Name]
 import_names: import_name (comma_newline import_name)* [import_name]
 
-# TODO: Should we have a simpler Oil string literal?
+# TODO: Should we have a simpler YSH string literal?
 tea_import: sq_string [ 'as' Expr_Name ] ['(' [Op_Newline] [import_names] ')'] end_import
 
 # Top level:
