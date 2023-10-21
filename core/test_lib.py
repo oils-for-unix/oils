@@ -18,6 +18,7 @@ from _devbuild.gen.syntax_asdl import loc, source, SourceLine
 from asdl import pybase
 from builtin import assign_osh
 from builtin import completion_osh
+from builtin import hay_ysh
 from builtin import io_osh
 from builtin import pure_osh
 from builtin import readline_osh
@@ -259,7 +260,7 @@ def InitCommandEvaluator(parse_ctx=None,
     tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
     waiter = process.Waiter(job_list, exec_opts, trap_state, tracer)
 
-    hay_state = state.Hay()
+    hay_state = hay_ysh.HayState()
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
                                       hay_state, builtins, search_path,
                                       ext_prog, waiter, tracer, job_control,

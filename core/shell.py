@@ -521,7 +521,7 @@ def Main(
     # e.g. s->startswith()
     methods = {}  # type: Dict[int, Dict[str, vm._Callable]]
 
-    hay_state = state.Hay()
+    hay_state = hay_ysh.HayState()
 
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
                                       hay_state, builtins, search_path,
@@ -580,7 +580,7 @@ def Main(
 
     # Hay
     b[builtin_i.hay] = hay_ysh.Hay(hay_state, mutable_opts, mem, cmd_ev)
-    b[builtin_i.haynode] = hay_ysh.HayNode(hay_state, mem, cmd_ev)
+    b[builtin_i.haynode] = hay_ysh.HayNode_(hay_state, mem, cmd_ev)
 
     # Interpreter introspection
     b[builtin_i.type] = meta_osh.Type(procs, aliases, search_path, errfmt)

@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
                                         lvalue_e, lvalue_t, scope_e, scope_t,
-                                        HayNode, Cell)
+                                        Cell)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
@@ -276,204 +276,6 @@ class ctx_ErrExit(object):
         if self.strict:
             self.mutable_opts.Pop(option_i._allow_command_sub)
             self.mutable_opts.Pop(option_i._allow_process_sub)
-
-
-class ctx_HayNode(object):
-    """Haynode builtin makes new names in the tree visible."""
-
-    def __init__(self, hay_state, hay_name):
-        # type: (Hay, Optional[str]) -> None
-        #log('pairs %s', pairs)
-        self.hay_state = hay_state
-        self.hay_state.Push(hay_name)
-
-    def __enter__(self):
-        # type: () -> None
-        return
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.hay_state.Pop()
-
-
-class ctx_HayEval(object):
-    """
-  - Turn on shopt oil:all and _running_hay
-  - Disallow recursive 'hay eval'
-  - Ensure result is isolated for 'hay eval :result'
-
-  More leakage:
-
-  External:
-  - execute programs (ext_prog)
-  - redirect
-  - pipelines, subshell, & etc?
-    - do you have to put _running_hay() checks everywhere?
-
-  Internal:
-
-  - state.Mem()
-    - should we at least PushTemp()?
-    - But then they can do setglobal
-  - Option state
-
-  - Disallow all builtins except echo/write/printf?
-    - maybe could do that at the top level
-    - source builtin, read builtin
-    - cd / pushd / popd
-    - trap -- hm yeah this one is bad
-
-  - procs?  Not strictly necessary
-    - you should be able to define them, but not call the user ...
-
-  """
-
-    def __init__(self, hay_state, mutable_opts, mem):
-        # type: (Hay, MutableOpts, Mem) -> None
-        self.hay_state = hay_state
-        self.mutable_opts = mutable_opts
-        self.mem = mem
-
-        if mutable_opts.Get(option_i._running_hay):
-            # This blames the right 'hay' location
-            e_die("Recursive 'hay eval' not allowed")
-
-        for opt_num in consts.YSH_ALL:
-            mutable_opts.Push(opt_num, True)
-        mutable_opts.Push(option_i._running_hay, True)
-
-        self.hay_state.PushEval()
-        self.mem.PushTemp()
-
-    def __enter__(self):
-        # type: () -> None
-        return
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-
-        self.mem.PopTemp()
-        self.hay_state.PopEval()
-
-        self.mutable_opts.Pop(option_i._running_hay)
-        for opt_num in consts.YSH_ALL:
-            self.mutable_opts.Pop(opt_num)
-
-
-class Hay(object):
-    """State for DSLs."""
-
-    def __init__(self):
-        # type: () -> None
-        ch = NewDict()  # type: Dict[str, HayNode]
-        self.root_defs = HayNode(ch)
-        self.cur_defs = self.root_defs  # Same as ClearDefs()
-        self.def_stack = [self.root_defs]
-
-        node = self._MakeOutputNode()
-        self.result_stack = [node]  # type: List[Dict[str, value_t]]
-        self.output = None  # type: Dict[str, value_t]
-
-    def _MakeOutputNode(self):
-        # type: () -> Dict[str, value_t]
-        d = NewDict()  # type: Dict[str, value_t]
-        d['source'] = value.Null
-        d['children'] = value.List([])
-        return d
-
-    def PushEval(self):
-        # type: () -> None
-
-        # remove previous results
-        node = self._MakeOutputNode()
-        self.result_stack = [node]
-
-        self.output = None  # remove last result
-
-    def PopEval(self):
-        # type: () -> None
-
-        # Save the result
-        self.output = self.result_stack[0]
-
-        # Clear results
-        node = self._MakeOutputNode()
-        self.result_stack = [node]
-
-    def AppendResult(self, d):
-        # type: (Dict[str, value_t]) -> None
-        """Called by haynode builtin."""
-        UP_children = self.result_stack[-1]['children']
-        assert UP_children.tag() == value_e.List, UP_children
-        children = cast(value.List, UP_children)
-        children.items.append(value.Dict(d))
-
-    def Result(self):
-        # type: () -> Dict[str, value_t]
-        """Called by hay eval and eval_hay()"""
-        return self.output
-
-    def HayRegister(self):
-        # type: () -> Dict[str, value_t]
-        """Called by _hay() function."""
-        return self.result_stack[0]
-
-    def Resolve(self, first_word):
-        # type: (str) -> bool
-        return first_word in self.cur_defs.children
-
-    def DefinePath(self, path):
-        # type: (List[str]) -> None
-        """Fill a tree from the given path."""
-        current = self.root_defs
-        for name in path:
-            if name not in current.children:
-                ch = NewDict()  # type: Dict[str, HayNode]
-                current.children[name] = HayNode(ch)
-            current = current.children[name]
-
-    def Reset(self):
-        # type: () -> None
-
-        # reset definitions
-        ch = NewDict()  # type: Dict[str, HayNode]
-        self.root_defs = HayNode(ch)
-        self.cur_defs = self.root_defs
-
-        # reset output
-        self.PopEval()
-
-    def Push(self, hay_name):
-        # type: (Optional[str]) -> None
-        """
-        Package cppunit {
-        }   # pushes a namespace
-
-        haynode package cppunit {
-        }   # just assumes every TYPE 'package' is valid.
-        """
-        top = self.result_stack[-1]
-        # TODO: Store this more efficiently?  See osh/builtin_pure.py
-        children = cast(value.List, top['children'])
-        last_child = cast(value.Dict, children.items[-1])
-        self.result_stack.append(last_child.d)
-
-        #log('> PUSH')
-        if hay_name is None:
-            self.def_stack.append(self.cur_defs)  # no-op
-        else:
-            # Caller should ensure this
-            assert hay_name in self.cur_defs.children, hay_name
-
-            self.cur_defs = self.cur_defs.children[hay_name]
-            self.def_stack.append(self.cur_defs)
-
-    def Pop(self):
-        # type: () -> None
-        self.def_stack.pop()
-        self.cur_defs = self.def_stack[-1]
-
-        self.result_stack.pop()
 
 
 class OptHook(object):
@@ -1127,46 +929,11 @@ class ctx_Temp(object):
         self.mem.PopTemp()
 
 
-class ctx_Shvar(object):
-    """For shvar LANG=C _ESCAPER=posix-sh-word _DIALECT=ninja."""
-
-    def __init__(self, mem, pairs):
-        # type: (Mem, List[Tuple[str, str]]) -> None
-        #log('pairs %s', pairs)
-        self.mem = mem
-        self.restore = []  # type: List[Tuple[lvalue_t, value_t]]
-        self._Push(pairs)
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self._Pop()
-
-    # Note: _Push and _Pop are separate methods because the C++ translation
-    # doesn't like when they are inline in __init__ and __exit__.
-    def _Push(self, pairs):
-        # type: (List[Tuple[str, str]]) -> None
-        for name, s in pairs:
-            lval = location.LName(name)  # type: lvalue_t
-            # LocalOnly because we are only overwriting the current scope
-            old_val = self.mem.GetValue(name, scope_e.LocalOnly)
-            self.restore.append((lval, old_val))
-            self.mem.SetValue(lval, value.Str(s), scope_e.LocalOnly)
-
-    def _Pop(self):
-        # type: () -> None
-        for lval, old_val in self.restore:
-            if old_val.tag() == value_e.Undef:
-                self.mem.Unset(lval, scope_e.LocalOnly)
-            else:
-                self.mem.SetValue(lval, old_val, scope_e.LocalOnly)
-
-
 class ctx_Registers(object):
-    """For $PS1, $PS4, $PROMPT_COMMAND, traps, and headless EVAL."""
+    """For $PS1, $PS4, $PROMPT_COMMAND, traps, and headless EVAL.
+
+    This is tightly coupled to state.Mem, so it's not in builtin/pure_ysh.
+    """
 
     def __init__(self, mem):
         # type: (Mem) -> None

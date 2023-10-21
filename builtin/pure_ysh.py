@@ -3,22 +3,62 @@ builtin/pure_ysh.py - YSH builtins that don't do I/O.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (value, value_e, value_t, cmd_value)
+from _devbuild.gen.runtime_asdl import (value, value_e, value_t, cmd_value,
+                                        scope_e, lvalue_t)
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import state
 from core import vm
 from frontend import flag_spec
+from frontend import location
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 
-from typing import TYPE_CHECKING, cast, List, Tuple
+from typing import TYPE_CHECKING, cast, List, Tuple, Any
 
 if TYPE_CHECKING:
     from core import ui
     from osh.cmd_eval import CommandEvaluator
+
+
+class ctx_Shvar(object):
+    """For shvar LANG=C _ESCAPER=posix-sh-word _DIALECT=ninja."""
+
+    def __init__(self, mem, pairs):
+        # type: (state.Mem, List[Tuple[str, str]]) -> None
+        #log('pairs %s', pairs)
+        self.mem = mem
+        self.restore = []  # type: List[Tuple[lvalue_t, value_t]]
+        self._Push(pairs)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self._Pop()
+
+    # Note: _Push and _Pop are separate methods because the C++ translation
+    # doesn't like when they are inline in __init__ and __exit__.
+    def _Push(self, pairs):
+        # type: (List[Tuple[str, str]]) -> None
+        for name, s in pairs:
+            lval = location.LName(name)  # type: lvalue_t
+            # LocalOnly because we are only overwriting the current scope
+            old_val = self.mem.GetValue(name, scope_e.LocalOnly)
+            self.restore.append((lval, old_val))
+            self.mem.SetValue(lval, value.Str(s), scope_e.LocalOnly)
+
+    def _Pop(self):
+        # type: () -> None
+        for lval, old_val in self.restore:
+            if old_val.tag() == value_e.Undef:
+                self.mem.Unset(lval, scope_e.LocalOnly)
+            else:
+                self.mem.SetValue(lval, old_val, scope_e.LocalOnly)
 
 
 class Shvar(vm._Builtin):
@@ -56,7 +96,7 @@ class Shvar(vm._Builtin):
             if name == 'PATH':
                 self.search_path.ClearCache()
 
-        with state.ctx_Shvar(self.mem, pairs):
+        with ctx_Shvar(self.mem, pairs):
             unused = self.cmd_ev.EvalCommand(cmd)
 
         return 0

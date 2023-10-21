@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import source, loc, command_t
+from builtin import hay_ysh
 from core import alloc
 from core import error
 from core import main_loop
@@ -78,7 +79,7 @@ class EvalHay(vm._Callable):
 
     def __init__(
             self,
-            hay_state,  #type: state.Hay
+            hay_state,  # type: hay_ysh.HayState
             mutable_opts,  # type: state.MutableOpts
             mem,  # type: state.Mem
             cmd_ev,  #type: cmd_eval.CommandEvaluator
@@ -92,7 +93,7 @@ class EvalHay(vm._Callable):
     def _Call(self, cmd):
         # type: (command_t) -> Dict[str, value_t]
 
-        with state.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
+        with hay_ysh.ctx_HayEval(self.hay_state, self.mutable_opts, self.mem):
             unused = self.cmd_ev.EvalCommand(cmd)
 
         return self.hay_state.Result()
@@ -135,7 +136,7 @@ class HayFunc(vm._Callable):
     """_hay() register"""
 
     def __init__(self, hay_state):
-        # type: (state.Hay) -> None
+        # type: (hay_ysh.HayState) -> None
         self.hay_state = hay_state
 
     def _Call(self):

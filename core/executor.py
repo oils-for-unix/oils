@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
+from builtin import hay_ysh
 from core import dev
 from core import error
 from core import process
@@ -95,7 +96,7 @@ class ShellExecutor(vm._Executor):
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
             procs,  # type: Dict[str, value.Proc]
-            hay_state,  # type: state.Hay
+            hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, _Builtin]
             search_path,  # type: state.SearchPath
             ext_prog,  # type: process.ExternalProgram
