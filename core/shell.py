@@ -38,9 +38,9 @@ from frontend import location
 from frontend import reader
 from frontend import parse_lib
 
-from library import func_eggex
-from library import func_hay
-from library import func_misc
+from builtin import func_eggex
+from builtin import func_hay
+from builtin import func_misc
 
 from ysh import expr_eval
 from ysh import builtin_json

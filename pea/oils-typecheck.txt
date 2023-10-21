@@ -10,6 +10,9 @@ asdl/format.py
 asdl/pybase.py
 asdl/runtime.py
 bin/oils_for_unix.py
+builtin/func_eggex.py
+builtin/func_hay.py
+builtin/func_misc.py
 core/alloc.py
 core/ansi.py
 core/comp_ui.py
@@ -47,9 +50,6 @@ frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
 frontend/typed_args.py
-library/func_eggex.py
-library/func_hay.py
-library/func_misc.py
 osh/arith_parse.py
 osh/bool_parse.py
 osh/bool_stat.py
