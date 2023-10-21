@@ -16,6 +16,8 @@ from _devbuild.gen.option_asdl import builtin_i, option_i
 from _devbuild.gen.runtime_asdl import cmd_value, value, scope_e
 from _devbuild.gen.syntax_asdl import loc, source, SourceLine
 from asdl import pybase
+from builtin import assign_osh
+from builtin import pure_osh
 from core import alloc
 from core import completion
 from core import dev
@@ -33,10 +35,8 @@ from frontend import lexer
 from frontend import location
 from frontend import parse_lib
 from frontend import reader
-from osh import builtin_assign
 from osh import builtin_comp
 from osh import builtin_lib
-from osh import builtin_pure
 from osh import builtin_trap
 from osh import cmd_eval
 from osh import prompt
@@ -200,17 +200,17 @@ def InitCommandEvaluator(parse_ctx=None,
 
     readline = None  # simulate not having it
 
-    new_var = builtin_assign.NewVar(mem, procs, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, errfmt)
     assign_builtins = {
         builtin_i.declare: new_var,
         builtin_i.typeset: new_var,
         builtin_i.local: new_var,
-        builtin_i.export_: builtin_assign.Export(mem, errfmt),
-        builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
+        builtin_i.export_: assign_osh.Export(mem, errfmt),
+        builtin_i.readonly: assign_osh.Readonly(mem, errfmt),
     }
     builtins = {  # Lookup
-        builtin_i.echo: builtin_pure.Echo(exec_opts),
-        builtin_i.shift: builtin_assign.Shift(mem),
+        builtin_i.echo: pure_osh.Echo(exec_opts),
+        builtin_i.shift: assign_osh.Shift(mem),
 
         builtin_i.history: builtin_lib.History(
           readline,
@@ -222,8 +222,8 @@ def InitCommandEvaluator(parse_ctx=None,
         builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
         builtin_i.compadjust: builtin_comp.CompAdjust(mem),
 
-        builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
-        builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
+        builtin_i.alias: pure_osh.Alias(aliases, errfmt),
+        builtin_i.unalias: pure_osh.UnAlias(aliases, errfmt),
     }
 
     debug_f = util.DebugFile(sys.stderr)

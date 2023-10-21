@@ -111,14 +111,14 @@ def ModulesToCompile(result, mod_names):
             continue
 
         # should be LAST they use base classes
-        if name in ('osh.builtin_bracket', 'core.shell'):
+        if name in ('builtin.bracket_osh', 'core.shell'):
             continue
 
         yield name, module
 
     # LAST files
     for name, module in result.files.items():
-        if name in ('osh.builtin_bracket', 'core.shell'):
+        if name in ('builtin.bracket_osh', 'core.shell'):
             yield name, module
 
 

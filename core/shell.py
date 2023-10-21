@@ -38,17 +38,18 @@ from frontend import location
 from frontend import reader
 from frontend import parse_lib
 
+from builtin import assign_osh
+from builtin import bracket_osh
 from builtin import func_eggex
 from builtin import func_hay
 from builtin import func_misc
 from builtin import json_ysh
 from builtin import io_ysh
 from builtin import pure_osh
+from builtin import pure_ysh
 
 from ysh import expr_eval
 
-from osh import builtin_assign
-from osh import builtin_bracket
 from osh import builtin_comp
 from osh import builtin_meta
 from osh import builtin_misc
@@ -203,13 +204,13 @@ def InitAssignmentBuiltins(
 
     assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
 
-    new_var = builtin_assign.NewVar(mem, procs, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, errfmt)
     assign_b[builtin_i.declare] = new_var
     assign_b[builtin_i.typeset] = new_var
     assign_b[builtin_i.local] = new_var
 
-    assign_b[builtin_i.export_] = builtin_assign.Export(mem, errfmt)
-    assign_b[builtin_i.readonly] = builtin_assign.Readonly(mem, errfmt)
+    assign_b[builtin_i.export_] = assign_osh.Export(mem, errfmt)
+    assign_b[builtin_i.readonly] = assign_osh.Readonly(mem, errfmt)
 
     return assign_b
 
@@ -619,14 +620,14 @@ def Main(
 
     b[builtin_i.getopts] = pure_osh.GetOpts(mem, errfmt)
 
-    b[builtin_i.shift] = builtin_assign.Shift(mem)
-    b[builtin_i.unset] = builtin_assign.Unset(mem, procs, unsafe_arith, errfmt)
+    b[builtin_i.shift] = assign_osh.Shift(mem)
+    b[builtin_i.unset] = assign_osh.Unset(mem, procs, unsafe_arith, errfmt)
 
-    b[builtin_i.append] = io_ysh.Append(mem, errfmt)
+    b[builtin_i.append] = pure_ysh.Append(mem, errfmt)
 
     # test / [ differ by need_right_bracket
-    b[builtin_i.test] = builtin_bracket.Test(False, exec_opts, mem, errfmt)
-    b[builtin_i.bracket] = builtin_bracket.Test(True, exec_opts, mem, errfmt)
+    b[builtin_i.test] = bracket_osh.Test(False, exec_opts, mem, errfmt)
+    b[builtin_i.bracket] = bracket_osh.Test(True, exec_opts, mem, errfmt)
 
     # Output
     b[builtin_i.echo] = pure_osh.Echo(exec_opts)

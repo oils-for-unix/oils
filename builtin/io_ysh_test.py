@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""builtin_oil_test.py: Tests for builtin_oil.py."""
 from __future__ import print_function
 
 import unittest
