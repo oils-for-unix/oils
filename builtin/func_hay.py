@@ -2,7 +2,7 @@
 """func_hay.py."""
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_e
+from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import source, loc, command_t
 from core import alloc
 from core import error
@@ -12,11 +12,10 @@ from core import ui
 from core import vm
 from frontend import reader
 from frontend import typed_args
-from mycpp import mylib
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, cast, Any, List, Dict
+from typing import TYPE_CHECKING, Dict
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import value_t

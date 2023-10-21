@@ -5,15 +5,14 @@ func_eggex.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import value, value_t
-from core import error, state, vm
+from core import state
+from core import vm
 from frontend import typed_args
-from ysh import val_ops
-
-from typing import List, Dict
 
 
 class Match(vm._Callable):
-    """_match(0) or _match():   get the whole match _match(1) ..
+    """
+    _match(0) or _match():   get the whole match _match(1) ..
 
     _match(N):  submatch
     """

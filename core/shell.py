@@ -40,18 +40,19 @@ from frontend import parse_lib
 
 from builtin import assign_osh
 from builtin import bracket_osh
+from builtin import error_ysh
 from builtin import func_eggex
 from builtin import func_hay
 from builtin import func_misc
 from builtin import json_ysh
 from builtin import io_ysh
+from builtin import meta_osh
 from builtin import pure_osh
 from builtin import pure_ysh
 
 from ysh import expr_eval
 
 from osh import builtin_comp
-from osh import builtin_meta
 from osh import builtin_misc
 from osh import builtin_lib
 from osh import builtin_printf
@@ -581,20 +582,20 @@ def Main(
     b[builtin_i.haynode] = pure_osh.HayNode(hay_state, mem, cmd_ev)
 
     # Interpreter introspection
-    b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
-    b[builtin_i.builtin] = builtin_meta.Builtin(shell_ex, errfmt)
-    b[builtin_i.command] = builtin_meta.Command(shell_ex, procs, aliases,
-                                                search_path)
-    b[builtin_i.runproc] = builtin_meta.RunProc(shell_ex, procs, errfmt)
+    b[builtin_i.type] = meta_osh.Type(procs, aliases, search_path, errfmt)
+    b[builtin_i.builtin] = meta_osh.Builtin(shell_ex, errfmt)
+    b[builtin_i.command] = meta_osh.Command(shell_ex, procs, aliases,
+                                            search_path)
+    b[builtin_i.runproc] = meta_osh.RunProc(shell_ex, procs, errfmt)
 
     # Meta builtins
-    source_builtin = builtin_meta.Source(parse_ctx, search_path, cmd_ev,
-                                         fd_state, tracer, errfmt, loader)
+    source_builtin = meta_osh.Source(parse_ctx, search_path, cmd_ev, fd_state,
+                                     tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
 
-    b[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
-                                          errfmt)
+    b[builtin_i.eval] = meta_osh.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
+                                      errfmt)
     b[builtin_i.fopen] = pure_osh.Fopen(mem, cmd_ev)
 
     # Module builtins
@@ -604,10 +605,10 @@ def Main(
     b[builtin_i.use] = pure_osh.Use(mem, errfmt)
 
     # Errors
-    b[builtin_i.error] = builtin_meta.Error()
-    b[builtin_i.boolstatus] = builtin_meta.BoolStatus(shell_ex, errfmt)
-    b[builtin_i.try_] = builtin_meta.Try(mutable_opts, mem, cmd_ev, shell_ex,
-                                         errfmt)
+    b[builtin_i.error] = error_ysh.Error()
+    b[builtin_i.boolstatus] = error_ysh.BoolStatus(shell_ex, errfmt)
+    b[builtin_i.try_] = error_ysh.Try(mutable_opts, mem, cmd_ev, shell_ex,
+                                      errfmt)
 
     # Pure builtins
     true_ = pure_osh.Boolean(0)

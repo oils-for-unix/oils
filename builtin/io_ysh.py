@@ -5,7 +5,7 @@ builtin/io_ysh.py - YSH builtins that perform I/O
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import (value, value_e, value_t, cmd_value)
+from _devbuild.gen.runtime_asdl import value, cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup
 from core import error
 from core.error import e_usage
@@ -14,11 +14,11 @@ from core import vm
 from frontend import flag_spec
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import log, tagswitch, Stdout
+from mycpp.mylib import log, Stdout
 from data_lang import qsn
 from data_lang import j8
 
-from typing import TYPE_CHECKING, cast, Dict, List
+from typing import TYPE_CHECKING, cast, Dict
 if TYPE_CHECKING:
     from core.alloc import Arena
     from core.ui import ErrorFormatter
