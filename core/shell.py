@@ -41,10 +41,11 @@ from frontend import parse_lib
 from builtin import func_eggex
 from builtin import func_hay
 from builtin import func_misc
+from builtin import json_ysh
+from builtin import io_ysh
+from builtin import pure_osh
 
 from ysh import expr_eval
-from ysh import builtin_json
-from ysh import builtin_oil
 
 from osh import builtin_assign
 from osh import builtin_bracket
@@ -54,7 +55,6 @@ from osh import builtin_misc
 from osh import builtin_lib
 from osh import builtin_printf
 from osh import builtin_process
-from osh import builtin_pure
 from osh import builtin_trap
 from osh import cmd_eval
 from osh import glob_
@@ -363,8 +363,8 @@ def Main(
     if lang == 'ysh':
         mutable_opts.SetAnyOption('ysh:all', True)
 
-    builtin_pure.SetOptionsFromFlags(mutable_opts, attrs.opt_changes,
-                                     attrs.shopt_changes)
+    pure_osh.SetOptionsFromFlags(mutable_opts, attrs.opt_changes,
+                                 attrs.shopt_changes)
 
     # feedback between runtime and parser
     aliases = {}  # type: Dict[str, str]
@@ -564,20 +564,20 @@ def Main(
     b[builtin_i.help] = builtin_misc.Help(lang, loader, help_data, errfmt)
 
     # Interpreter state
-    b[builtin_i.set] = builtin_pure.Set(mutable_opts, mem)
-    b[builtin_i.shopt] = builtin_pure.Shopt(mutable_opts, cmd_ev)
+    b[builtin_i.set] = pure_osh.Set(mutable_opts, mem)
+    b[builtin_i.shopt] = pure_osh.Shopt(mutable_opts, cmd_ev)
 
-    b[builtin_i.hash] = builtin_pure.Hash(search_path)
+    b[builtin_i.hash] = pure_osh.Hash(search_path)
 
-    b[builtin_i.shvar] = builtin_pure.Shvar(mem, search_path, cmd_ev)
-    b[builtin_i.push_registers] = builtin_pure.PushRegisters(mem, cmd_ev)
+    b[builtin_i.shvar] = pure_osh.Shvar(mem, search_path, cmd_ev)
+    b[builtin_i.push_registers] = pure_osh.PushRegisters(mem, cmd_ev)
 
     b[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer,
                                           errfmt)
 
     # Hay
-    b[builtin_i.hay] = builtin_pure.Hay(hay_state, mutable_opts, mem, cmd_ev)
-    b[builtin_i.haynode] = builtin_pure.HayNode(hay_state, mem, cmd_ev)
+    b[builtin_i.hay] = pure_osh.Hay(hay_state, mutable_opts, mem, cmd_ev)
+    b[builtin_i.haynode] = pure_osh.HayNode(hay_state, mem, cmd_ev)
 
     # Interpreter introspection
     b[builtin_i.type] = builtin_meta.Type(procs, aliases, search_path, errfmt)
@@ -594,13 +594,13 @@ def Main(
 
     b[builtin_i.eval] = builtin_meta.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
                                           errfmt)
-    b[builtin_i.fopen] = builtin_pure.Fopen(mem, cmd_ev)
+    b[builtin_i.fopen] = pure_osh.Fopen(mem, cmd_ev)
 
     # Module builtins
     modules = {}  # type: Dict[str, bool]
-    b[builtin_i.module] = builtin_pure.Module(modules, exec_opts, errfmt)
-    b[builtin_i.is_main] = builtin_pure.IsMain(mem)
-    b[builtin_i.use] = builtin_pure.Use(mem, errfmt)
+    b[builtin_i.module] = pure_osh.Module(modules, exec_opts, errfmt)
+    b[builtin_i.is_main] = pure_osh.IsMain(mem)
+    b[builtin_i.use] = pure_osh.Use(mem, errfmt)
 
     # Errors
     b[builtin_i.error] = builtin_meta.Error()
@@ -609,32 +609,32 @@ def Main(
                                          errfmt)
 
     # Pure builtins
-    true_ = builtin_pure.Boolean(0)
+    true_ = pure_osh.Boolean(0)
     b[builtin_i.colon] = true_  # a "special" builtin
     b[builtin_i.true_] = true_
-    b[builtin_i.false_] = builtin_pure.Boolean(1)
+    b[builtin_i.false_] = pure_osh.Boolean(1)
 
-    b[builtin_i.alias] = builtin_pure.Alias(aliases, errfmt)
-    b[builtin_i.unalias] = builtin_pure.UnAlias(aliases, errfmt)
+    b[builtin_i.alias] = pure_osh.Alias(aliases, errfmt)
+    b[builtin_i.unalias] = pure_osh.UnAlias(aliases, errfmt)
 
-    b[builtin_i.getopts] = builtin_pure.GetOpts(mem, errfmt)
+    b[builtin_i.getopts] = pure_osh.GetOpts(mem, errfmt)
 
     b[builtin_i.shift] = builtin_assign.Shift(mem)
     b[builtin_i.unset] = builtin_assign.Unset(mem, procs, unsafe_arith, errfmt)
 
-    b[builtin_i.append] = builtin_oil.Append(mem, errfmt)
+    b[builtin_i.append] = io_ysh.Append(mem, errfmt)
 
     # test / [ differ by need_right_bracket
     b[builtin_i.test] = builtin_bracket.Test(False, exec_opts, mem, errfmt)
     b[builtin_i.bracket] = builtin_bracket.Test(True, exec_opts, mem, errfmt)
 
     # Output
-    b[builtin_i.echo] = builtin_pure.Echo(exec_opts)
+    b[builtin_i.echo] = pure_osh.Echo(exec_opts)
     b[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx, unsafe_arith,
                                                 errfmt)
-    b[builtin_i.write] = builtin_oil.Write(mem, errfmt)
+    b[builtin_i.write] = io_ysh.Write(mem, errfmt)
     # (pp output format isn't stable)
-    b[builtin_i.pp] = builtin_oil.Pp(mem, errfmt, procs, arena)
+    b[builtin_i.pp] = io_ysh.Pp(mem, errfmt, procs, arena)
 
     # Input
     b[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
@@ -653,8 +653,8 @@ def Main(
 
     b[builtin_i.times] = builtin_misc.Times()
 
-    b[builtin_i.json] = builtin_json.Json(mem, errfmt, False)
-    b[builtin_i.j8] = builtin_json.Json(mem, errfmt, True)
+    b[builtin_i.json] = json_ysh.Json(mem, errfmt, False)
+    b[builtin_i.j8] = json_ysh.Json(mem, errfmt, True)
 
     ### Process builtins
     b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,

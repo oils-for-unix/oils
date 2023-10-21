@@ -470,8 +470,10 @@ class RootCompleterTest(unittest.TestCase):
         # -P with plusdirs
         m = list(r.Matches(MockApi('prefix_plusdirs b')))
         self.assertEqual([
-            'prefix_plusdirs __bin ', 'prefix_plusdirs benchmarks/',
-            'prefix_plusdirs bin/', 'prefix_plusdirs build/',
+            'prefix_plusdirs __bin ',
+            'prefix_plusdirs benchmarks/',
+            'prefix_plusdirs bin/',
+            'prefix_plusdirs build/',
             'prefix_plusdirs builtin/',
         ], sorted(m))
 
@@ -480,15 +482,19 @@ class RootCompleterTest(unittest.TestCase):
             # plusdirs.  The filter doesn't kill it.
             m = list(r.Matches(MockApi('flagX_plusdirs b')))
             self.assertEqual([
-                'flagX_plusdirs benchmarks/', 'flagX_plusdirs bin/',
-                'flagX_plusdirs build/', 'flagX_plusdirs builtin/',
+                'flagX_plusdirs benchmarks/',
+                'flagX_plusdirs bin/',
+                'flagX_plusdirs build/',
+                'flagX_plusdirs builtin/',
             ], sorted(m))
 
         # -P with dirnames.  -P is NOT respected.
         m = list(r.Matches(MockApi('prefix_dirnames b')))
         self.assertEqual([
-            'prefix_dirnames benchmarks/', 'prefix_dirnames bin/',
-            'prefix_dirnames build/', 'prefix_dirnames builtin/',
+            'prefix_dirnames benchmarks/',
+            'prefix_dirnames bin/',
+            'prefix_dirnames build/',
+            'prefix_dirnames builtin/',
         ], sorted(m))
 
     def testCompletesAliases(self):

@@ -13,6 +13,9 @@ bin/oils_for_unix.py
 builtin/func_eggex.py
 builtin/func_hay.py
 builtin/func_misc.py
+builtin/io_ysh.py
+builtin/json_ysh.py
+builtin/pure_osh.py
 core/alloc.py
 core/ansi.py
 core/comp_ui.py
@@ -62,7 +65,6 @@ osh/builtin_meta.py
 osh/builtin_misc.py
 osh/builtin_printf.py
 osh/builtin_process.py
-osh/builtin_pure.py
 osh/builtin_trap.py
 osh/cmd_eval.py
 osh/cmd_parse.py
@@ -84,8 +86,6 @@ pylib/cgi.py
 pylib/os_path.py
 pylib/path_stat.py
 tools/ysh_ify.py
-ysh/builtin_json.py
-ysh/builtin_oil.py
 ysh/cpython.py
 ysh/expr_eval.py
 ysh/expr_parse.py

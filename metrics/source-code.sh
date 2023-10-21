@@ -28,13 +28,14 @@ osh-files() {
   # - code generators
   # - test library
 
-  ls bin/oils_for_unix.py {osh,core,frontend}/*.py pyext/*.c */*.pyi \
+  ls bin/oils_for_unix.py {osh,core,frontend}/*.py builtin/*_osh.py \
+    pyext/*.c */*.pyi \
     "${ASDL_FILES[@]}" \
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$|os.pyi$'
 }
 
 ysh-files() {
-  ls ysh/*.{py,pgen2} {data_lang,library}/*.py | filter-py 
+  ls ysh/*.{py,pgen2} data_lang/*.py builtin/func_*.py builtin/*_ysh.py | filter-py 
 }
 
 # cloc doesn't understand ASDL files.

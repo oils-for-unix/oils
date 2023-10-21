@@ -403,6 +403,7 @@ class ParseContext(object):
 
             self.tr.YshFunc(pnode, out)
 
+
 # Another parser instantiation:
 # - For Array Literal in word_parse.py WordParser:
 #   w_parser = WordParser(self.lexer, self.line_reader)
