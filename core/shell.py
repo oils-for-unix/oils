@@ -41,14 +41,17 @@ from frontend import parse_lib
 from builtin import assign_osh
 from builtin import bracket_osh
 from builtin import completion_osh
+from builtin import completion_ysh
 from builtin import error_ysh
 from builtin import func_eggex
 from builtin import func_hay
 from builtin import func_misc
-from builtin import json_ysh
+from builtin import hay_ysh
 from builtin import io_ysh
+from builtin import json_ysh
 from builtin import meta_osh
 from builtin import misc_osh
+from builtin import module_ysh
 from builtin import printf_osh
 from builtin import process_osh
 from builtin import pure_osh
@@ -569,22 +572,22 @@ def Main(
     b[builtin_i.set] = pure_osh.Set(mutable_opts, mem)
     b[builtin_i.shopt] = pure_osh.Shopt(mutable_opts, cmd_ev)
 
-    b[builtin_i.hash] = pure_osh.Hash(search_path)
-
-    b[builtin_i.shvar] = pure_osh.Shvar(mem, search_path, cmd_ev)
-    b[builtin_i.push_registers] = pure_osh.PushRegisters(mem, cmd_ev)
-
+    b[builtin_i.hash] = pure_osh.Hash(search_path)  # not really pure
     b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, tracer, errfmt)
 
+    b[builtin_i.shvar] = pure_ysh.Shvar(mem, search_path, cmd_ev)
+    b[builtin_i.push_registers] = pure_ysh.PushRegisters(mem, cmd_ev)
+
     # Hay
-    b[builtin_i.hay] = pure_osh.Hay(hay_state, mutable_opts, mem, cmd_ev)
-    b[builtin_i.haynode] = pure_osh.HayNode(hay_state, mem, cmd_ev)
+    b[builtin_i.hay] = hay_ysh.Hay(hay_state, mutable_opts, mem, cmd_ev)
+    b[builtin_i.haynode] = hay_ysh.HayNode(hay_state, mem, cmd_ev)
 
     # Interpreter introspection
     b[builtin_i.type] = meta_osh.Type(procs, aliases, search_path, errfmt)
     b[builtin_i.builtin] = meta_osh.Builtin(shell_ex, errfmt)
     b[builtin_i.command] = meta_osh.Command(shell_ex, procs, aliases,
                                             search_path)
+    # Part of YSH
     b[builtin_i.runproc] = meta_osh.RunProc(shell_ex, procs, errfmt)
 
     # Meta builtins
@@ -595,13 +598,12 @@ def Main(
 
     b[builtin_i.eval] = meta_osh.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
                                       errfmt)
-    b[builtin_i.fopen] = pure_osh.Fopen(mem, cmd_ev)
 
     # Module builtins
     modules = {}  # type: Dict[str, bool]
-    b[builtin_i.module] = pure_osh.Module(modules, exec_opts, errfmt)
-    b[builtin_i.is_main] = pure_osh.IsMain(mem)
-    b[builtin_i.use] = pure_osh.Use(mem, errfmt)
+    b[builtin_i.module] = module_ysh.Module(modules, exec_opts, errfmt)
+    b[builtin_i.is_main] = module_ysh.IsMain(mem)
+    b[builtin_i.use] = module_ysh.Use(mem, errfmt)
 
     # Errors
     b[builtin_i.error] = error_ysh.Error()
@@ -634,6 +636,8 @@ def Main(
     b[builtin_i.printf] = printf_osh.Printf(mem, parse_ctx, unsafe_arith,
                                             errfmt)
     b[builtin_i.write] = io_ysh.Write(mem, errfmt)
+    b[builtin_i.fopen] = io_ysh.Fopen(mem, cmd_ev)
+
     # (pp output format isn't stable)
     b[builtin_i.pp] = io_ysh.Pp(mem, errfmt, procs, arena)
 
@@ -666,6 +670,7 @@ def Main(
     b[builtin_i.fg] = process_osh.Fg(job_control, job_list, waiter)
     b[builtin_i.bg] = process_osh.Bg(job_list)
 
+    # Could be in process_ysh
     b[builtin_i.fork] = process_osh.Fork(shell_ex)
     b[builtin_i.forkwait] = process_osh.ForkWait(shell_ex)
 
@@ -695,7 +700,7 @@ def Main(
     root_comp = completion.RootCompleter(comp_ev, mem, comp_lookup,
                                          compopt_state, comp_ui_state,
                                          comp_ctx, debug_f)
-    b[builtin_i.compexport] = completion_osh.CompExport(root_comp)
+    b[builtin_i.compexport] = completion_ysh.CompExport(root_comp)
 
     #
     # Initialize Builtin-in Methods

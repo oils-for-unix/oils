@@ -6,13 +6,14 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import value, cmd_value
-from _devbuild.gen.syntax_asdl import command_e, BraceGroup
+from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
 from core import error
 from core.error import e_usage
 from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import match
+from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log, Stdout
 from data_lang import qsn
@@ -22,6 +23,7 @@ from typing import TYPE_CHECKING, cast, Dict
 if TYPE_CHECKING:
     from core.alloc import Arena
     from core.ui import ErrorFormatter
+    from osh import cmd_eval
 
 _ = log
 
@@ -175,4 +177,33 @@ class Write(_Builtin):
         elif len(arg.end):
             self.stdout_.write(arg.end)
 
+        return 0
+
+
+class Fopen(vm._Builtin):
+    """fopen does nothing but run a block.
+
+    It's used solely for its redirects.
+        fopen >out.txt { echo hi }
+
+    It's a subset of eval
+        eval >out.txt { echo hi }
+    """
+
+    def __init__(self, mem, cmd_ev):
+        # type: (state.Mem, cmd_eval.CommandEvaluator) -> None
+        self.mem = mem
+        self.cmd_ev = cmd_ev  # To run blocks
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        _, arg_r = flag_spec.ParseCmdVal('fopen',
+                                         cmd_val,
+                                         accept_typed_args=True)
+
+        cmd = typed_args.OptionalCommand(cmd_val)
+        if not cmd:
+            raise error.Usage('expected a block', loc.Missing)
+
+        unused = self.cmd_ev.EvalCommand(cmd)
         return 0
