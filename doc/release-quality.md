@@ -104,8 +104,8 @@ compared with the shell interpreter?
     repo, organized by type of source file.
   - [for-translation](pub/metrics.wwz/line-counts/for-translation.html).  An
     overview of the "compiler engineer" project.
-  - [osh-cloc](pub/metrics.wwz/line-counts/osh-cloc.txt).  OSH and common
-    libraries, as measured by the [cloc][] tool.
+  - [cloc-report](pub/metrics.wwz/line-counts/cloc-report.txt).  Significant
+    lines of code, as measured by the [cloc][] tool.
 - Generated C++ code
   - [oil-cpp](pub/metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
     `oils-for-unix` tarball.

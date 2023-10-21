@@ -37,8 +37,6 @@ class Append(vm._Callable):
         rd.Done()
 
         items.append(to_append)
-
-        # Equivalent to no return value?
         return value.Null
 
 

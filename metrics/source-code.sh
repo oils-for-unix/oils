@@ -60,10 +60,16 @@ print "%5d %s" % (total, "total")
 ' "$@"
 }
 
-osh-cloc() {
+cloc-report() {
   echo 'OSH (non-blank non-comment lines)'
   echo
   osh-files | xargs cloc --quiet "$@"
+  echo
+  echo
+
+  echo 'YSH (non-blank non-comment lines)'
+  echo
+  ysh-files | xargs cloc --quiet "$@"
 
   # NOTE: --csv option could be parsed into HTML.
   # Or just sum with asdl-cloc!
@@ -150,6 +156,14 @@ osh-counts() {
     'OSH (and common libraries)' \
     'This is the input to the translators, written in statically-typed Python.  Note that bash is at least 140K lines of code, and OSH implements a large part of bash and more.' \
     "$@"
+}
+
+ysh-counts() {
+  local count=$1
+  shift
+
+  ysh-files | $count \
+    'YSH' 'Expression grammar, parser, evaluator, etc.' "$@"
 }
 
 cpp-counts() {
@@ -254,6 +268,8 @@ _for-translation() {
 
   osh-counts $count "$@"
 
+  ysh-counts $count "$@"
+
   spec-gold-counts $count "$@"
 
   gen-cpp-counts $count "$@"
@@ -265,8 +281,7 @@ _overview() {
 
   osh-counts $count "$@"
 
-  ysh-files | $count \
-    'YSH' '' "$@"
+  ysh-counts $count "$@"
 
   ls stdlib/*.ysh | $count \
     "YSH stdlib" '' "$@"
@@ -408,20 +423,20 @@ overview-html() {
 }
 
 write-reports() {
-  local dir=_tmp/metrics/line-counts
+  local out_dir=${1:-_tmp/metrics/line-counts}
 
-  mkdir -v -p $dir
+  mkdir -v -p $out_dir
 
-  for-translation-html > $dir/for-translation.html
+  for-translation-html > $out_dir/for-translation.html
 
-  overview-html > $dir/overview.html
+  overview-html > $out_dir/overview.html
 
-  cat >$dir/index.html <<EOF
+  cat >$out_dir/index.html <<EOF
 <a href="for-translation.html">for-translation</a> <br/>
 <a href="overview.html">overview</a> <br/>
 EOF
 
-  ls -l $dir
+  ls -l $out_dir
 }
 
 #

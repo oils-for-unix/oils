@@ -1,12 +1,6 @@
 #!/usr/bin/env python2
 """
 builtin_oil.py - Oil builtins.
-
-See rfc/0024-oil-builtins.md for notes.
-
-env: Should be in builtin_compat.py?
-
-It's sort of like xargs too.
 """
 from __future__ import print_function
 
