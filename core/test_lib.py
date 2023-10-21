@@ -19,6 +19,7 @@ from asdl import pybase
 from builtin import assign_osh
 from builtin import completion_osh
 from builtin import pure_osh
+from builtin import readline_osh
 from builtin import trap_osh
 from core import alloc
 from core import completion
@@ -37,7 +38,6 @@ from frontend import lexer
 from frontend import location
 from frontend import parse_lib
 from frontend import reader
-from osh import builtin_lib
 from osh import cmd_eval
 from osh import prompt
 from osh import sh_expr_eval
@@ -212,7 +212,7 @@ def InitCommandEvaluator(parse_ctx=None,
         builtin_i.echo: pure_osh.Echo(exec_opts),
         builtin_i.shift: assign_osh.Shift(mem),
 
-        builtin_i.history: builtin_lib.History(
+        builtin_i.history: readline_osh.History(
           readline,
           mem,
           errfmt,
