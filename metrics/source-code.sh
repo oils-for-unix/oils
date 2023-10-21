@@ -16,7 +16,7 @@ source test/common.sh
 source test/tsv-lib.sh
 
 filter-py() {
-  grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py$'
+  grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py|NINJA_subgraph.py$'
 }
 
 readonly -a ASDL_FILES=( {frontend,core}/*.asdl )

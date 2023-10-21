@@ -68,6 +68,7 @@ py-source        build/py.sh py-source       -
 check-types      pea/TEST.sh check-types     -
 run-tests        pea/TEST.sh run-tests       -
 parse-all        pea/TEST.sh parse-all       -
+yaks             yaks/TEST.sh soil-run       -
 EOF
 }
 
