@@ -44,9 +44,6 @@ from builtin import completion_osh
 from builtin import completion_ysh
 from builtin import dirs_osh
 from builtin import error_ysh
-from builtin import func_eggex
-from builtin import func_hay
-from builtin import func_misc
 from builtin import hay_ysh
 from builtin import io_osh
 from builtin import io_ysh
@@ -59,7 +56,16 @@ from builtin import process_osh
 from builtin import pure_osh
 from builtin import pure_ysh
 from builtin import readline_osh
+from builtin import read_osh
 from builtin import trap_osh
+
+from builtin import func_eggex
+from builtin import func_hay
+from builtin import func_misc
+
+from builtin import method_dict
+from builtin import method_list
+from builtin import method_str
 
 from ysh import expr_eval
 
@@ -643,8 +649,9 @@ def Main(
 
     # Input
     b[builtin_i.cat] = io_osh.Cat()  # for $(<file)
-    b[builtin_i.read] = misc_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
-    mapfile = misc_osh.MapFile(mem, errfmt, cmd_ev)
+    b[builtin_i.read] = read_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
+
+    mapfile = io_osh.MapFile(mem, errfmt, cmd_ev)
     b[builtin_i.mapfile] = mapfile
     b[builtin_i.readarray] = mapfile
 
@@ -708,16 +715,16 @@ def Main(
     #
 
     methods[value_e.Str] = {
-        'startswith': func_misc.StartsWith(),
-        'strip': func_misc.Strip(),
-        'upper': func_misc.Upper(),
+        'startswith': method_str.StartsWith(),
+        'strip': method_str.Strip(),
+        'upper': method_str.Upper(),
     }
-    methods[value_e.Dict] = {'keys': func_misc.Keys()}
+    methods[value_e.Dict] = {'keys': method_dict.Keys()}
     methods[value_e.List] = {
-        'reverse': func_misc.Reverse(),
-        'append': func_misc.Append(),
-        'extend': func_misc.Extend(),
-        'pop': func_misc.Pop(),
+        'reverse': method_list.Reverse(),
+        'append': method_list.Append(),
+        'extend': method_list.Extend(),
+        'pop': method_list.Pop(),
         'join': func_misc.Join(),  # both a method and a func
     }
 

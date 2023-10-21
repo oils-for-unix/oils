@@ -35,7 +35,7 @@ osh-files() {
 }
 
 ysh-files() {
-  ls ysh/*.{py,pgen2} data_lang/*.py builtin/func_*.py builtin/*_ysh.py | filter-py 
+  ls ysh/*.{py,pgen2} data_lang/*.py builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
 }
 
 # cloc doesn't understand ASDL files.

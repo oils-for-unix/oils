@@ -6,12 +6,14 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import value, value_t
 
+from builtin import read_osh
 from core.error import e_die_status
 from frontend import flag_spec
 from frontend import lexer
 from frontend import match
 from core import optview
 from core import pyos
+from core import state
 from core import vm
 from mycpp import mylib
 from mycpp.mylib import log
@@ -22,6 +24,8 @@ import posix_ as posix
 from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
+    from core import ui
+    from osh import cmd_eval
 
 _ = log
 
@@ -102,6 +106,47 @@ class Echo(vm._Builtin):
         if not arg.n and not backslash_c:
             self.f.write('\n')
 
+        return 0
+
+
+class MapFile(vm._Builtin):
+    """Mapfile / readarray."""
+
+    def __init__(self, mem, errfmt, cmd_ev):
+        # type: (state.Mem, ui.ErrorFormatter, cmd_eval.CommandEvaluator) -> None
+        self.mem = mem
+        self.errfmt = errfmt
+        self.cmd_ev = cmd_ev
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        attrs, arg_r = flag_spec.ParseCmdVal('mapfile', cmd_val)
+        arg = arg_types.mapfile(attrs.attrs)
+
+        var_name, _ = arg_r.Peek2()
+        if var_name is None:
+            var_name = 'MAPFILE'
+        else:
+            if var_name.startswith(':'):
+                var_name = var_name[1:]
+
+        lines = []  # type: List[str]
+        while True:
+            # bash uses this slow algorithm; YSH could provide read --all-lines
+            try:
+                line = read_osh.ReadLineSlowly(self.cmd_ev)
+            except pyos.ReadError as e:
+                self.errfmt.PrintMessage("mapfile: read() error: %s" %
+                                         posix.strerror(e.err_num))
+                return 1
+            if len(line) == 0:
+                break
+            # note: at least on Linux, bash doesn't strip \r\n
+            if arg.t and line.endswith('\n'):
+                line = line[:-1]
+            lines.append(line)
+
+        state.BuiltinSetArray(self.mem, var_name, lines)
         return 0
 
 

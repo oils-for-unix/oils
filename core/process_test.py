@@ -9,7 +9,7 @@ from _devbuild.gen.runtime_asdl import (RedirValue, redirect_arg, cmd_value,
                                         trace)
 from _devbuild.gen.syntax_asdl import loc, redir_loc
 from asdl import runtime
-from builtin import misc_osh
+from builtin import read_osh
 from builtin import trap_osh
 from core import dev
 from core import process  # module under test
@@ -95,11 +95,11 @@ class ProcessTest(unittest.TestCase):
         cmd_ev = CommandEvaluator()
 
         self.fd_state.Push([r])
-        line1, _ = misc_osh._ReadUntilDelim(pyos.NEWLINE_CH, cmd_ev)
+        line1, _ = read_osh._ReadUntilDelim(pyos.NEWLINE_CH, cmd_ev)
         self.fd_state.Pop()
 
         self.fd_state.Push([r])
-        line2, _ = misc_osh._ReadUntilDelim(pyos.NEWLINE_CH, cmd_ev)
+        line2, _ = read_osh._ReadUntilDelim(pyos.NEWLINE_CH, cmd_ev)
         self.fd_state.Pop()
 
         # sys.stdin.readline() would erroneously return 'two' because of buffering.

@@ -23,120 +23,6 @@ if TYPE_CHECKING:
 _ = log
 
 
-class Append(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        items = rd.PosList()
-        to_append = rd.PosValue()
-        rd.Done()
-
-        items.append(to_append)
-        return value.Null
-
-
-class Extend(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        a = rd.PosList()
-        b = rd.PosList()
-        rd.Done()
-
-        a.extend(b)
-        return value.Null
-
-
-class Pop(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        items = rd.PosList()
-        rd.Done()
-
-        return items.pop()
-
-
-class StartsWith(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        string = rd.PosStr()
-        match = rd.PosStr()
-        rd.Done()
-
-        res = string.startswith(match)
-        return value.Bool(res)
-
-
-class Strip(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        string = rd.PosStr()
-        rd.Done()
-
-        res = string.strip()
-        return value.Str(res)
-
-
-class Upper(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        string = rd.PosStr()
-        rd.Done()
-
-        res = string.upper()
-        return value.Str(res)
-
-
-class Keys(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        dictionary = rd.PosDict()
-        rd.Done()
-
-        keys = [value.Str(k) for k in dictionary.keys()]  # type: List[value_t]
-        return value.List(keys)
-
-
 class Len(vm._Callable):
 
     def __init__(self):
@@ -167,24 +53,8 @@ class Len(vm._Callable):
                             rd.BlamePos())
 
 
-class Reverse(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        li = rd.PosList()
-        rd.Done()
-
-        li.reverse()
-
-        return value.Null
-
-
 class Join(vm._Callable):
+    """Both free function join() and List->join() method."""
 
     def __init__(self):
         # type: () -> None
