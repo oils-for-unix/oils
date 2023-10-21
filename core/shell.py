@@ -42,11 +42,13 @@ from builtin import assign_osh
 from builtin import bracket_osh
 from builtin import completion_osh
 from builtin import completion_ysh
+from builtin import dirs_osh
 from builtin import error_ysh
 from builtin import func_eggex
 from builtin import func_hay
 from builtin import func_misc
 from builtin import hay_ysh
+from builtin import io_osh
 from builtin import io_ysh
 from builtin import json_ysh
 from builtin import meta_osh
@@ -492,8 +494,6 @@ def Main(
     comp_ui_state = comp_ui.State()
     prompt_state = comp_ui.PromptState()
 
-    dir_stack = state.DirStack()
-
     # The login program is supposed to set $HOME
     # https://superuser.com/questions/271925/where-is-the-home-environment-variable-set
     # state.InitMem(mem) must happen first
@@ -632,7 +632,7 @@ def Main(
     b[builtin_i.bracket] = bracket_osh.Test(True, exec_opts, mem, errfmt)
 
     # Output
-    b[builtin_i.echo] = pure_osh.Echo(exec_opts)
+    b[builtin_i.echo] = io_osh.Echo(exec_opts)
     b[builtin_i.printf] = printf_osh.Printf(mem, parse_ctx, unsafe_arith,
                                             errfmt)
     b[builtin_i.write] = io_ysh.Write(mem, errfmt)
@@ -642,18 +642,19 @@ def Main(
     b[builtin_i.pp] = io_ysh.Pp(mem, errfmt, procs, arena)
 
     # Input
-    b[builtin_i.cat] = misc_osh.Cat()  # for $(<file)
+    b[builtin_i.cat] = io_osh.Cat()  # for $(<file)
     b[builtin_i.read] = misc_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
     mapfile = misc_osh.MapFile(mem, errfmt, cmd_ev)
     b[builtin_i.mapfile] = mapfile
     b[builtin_i.readarray] = mapfile
 
     # Dirs
-    b[builtin_i.cd] = misc_osh.Cd(mem, dir_stack, cmd_ev, errfmt)
-    b[builtin_i.pushd] = misc_osh.Pushd(mem, dir_stack, errfmt)
-    b[builtin_i.popd] = misc_osh.Popd(mem, dir_stack, errfmt)
-    b[builtin_i.dirs] = misc_osh.Dirs(mem, dir_stack, errfmt)
-    b[builtin_i.pwd] = misc_osh.Pwd(mem, errfmt)
+    dir_stack = dirs_osh.DirStack()
+    b[builtin_i.cd] = dirs_osh.Cd(mem, dir_stack, cmd_ev, errfmt)
+    b[builtin_i.pushd] = dirs_osh.Pushd(mem, dir_stack, errfmt)
+    b[builtin_i.popd] = dirs_osh.Popd(mem, dir_stack, errfmt)
+    b[builtin_i.dirs] = dirs_osh.Dirs(mem, dir_stack, errfmt)
+    b[builtin_i.pwd] = dirs_osh.Pwd(mem, errfmt)
 
     b[builtin_i.times] = misc_osh.Times()
 

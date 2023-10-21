@@ -278,23 +278,6 @@ class ctx_ErrExit(object):
             self.mutable_opts.Pop(option_i._allow_process_sub)
 
 
-class ctx_Try(object):
-
-    def __init__(self, mutable_opts):
-        # type: (MutableOpts) -> None
-
-        mutable_opts.Push(option_i.errexit, True)
-        self.mutable_opts = mutable_opts
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.mutable_opts.Pop(option_i.errexit)
-
-
 class ctx_HayNode(object):
     """Haynode builtin makes new names in the tree visible."""
 
@@ -946,47 +929,6 @@ if mylib.PYTHON:
             vars_json[name] = cell_json
 
         return vars_json
-
-
-class DirStack(object):
-    """For pushd/popd/dirs."""
-
-    def __init__(self):
-        # type: () -> None
-        self.stack = []  # type: List[str]
-        self.Reset()  # Invariant: it always has at least ONE entry.
-
-    def Reset(self):
-        # type: () -> None
-        """ For dirs -c """
-        del self.stack[:]
-        self.stack.append(posix.getcwd())
-
-    def Replace(self, d):
-        # type: (str) -> None
-        """ For cd / """
-        self.stack[-1] = d
-
-    def Push(self, entry):
-        # type: (str) -> None
-        self.stack.append(entry)
-
-    def Pop(self):
-        # type: () -> Optional[str]
-        if len(self.stack) <= 1:
-            return None
-        self.stack.pop()  # remove last
-        return self.stack[-1]  # return second to last
-
-    def Iter(self):
-        # type: () -> List[str]
-        """Iterate in reverse order."""
-        # mycpp REWRITE:
-        #return reversed(self.stack)
-        ret = []  # type: List[str]
-        ret.extend(self.stack)
-        ret.reverse()
-        return ret
 
 
 def _GetWorkingDir():

@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import loc
 from core import error
@@ -10,10 +11,27 @@ from frontend import flag_spec
 from frontend import typed_args
 #from mycpp.mylib import log
 
-from typing import TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import ui
     from osh import cmd_eval
+
+
+class ctx_Try(object):
+
+    def __init__(self, mutable_opts):
+        # type: (state.MutableOpts) -> None
+
+        mutable_opts.Push(option_i.errexit, True)
+        self.mutable_opts = mutable_opts
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mutable_opts.Pop(option_i.errexit)
 
 
 class Try(vm._Builtin):
@@ -68,7 +86,7 @@ class Try(vm._Builtin):
         if cmd:
             status = 0  # success by default
             try:
-                with state.ctx_Try(self.mutable_opts):
+                with ctx_Try(self.mutable_opts):
                     unused = self.cmd_ev.EvalCommand(cmd)
             except error.Expr as e:
                 status = e.ExitStatus()
@@ -91,7 +109,7 @@ class Try(vm._Builtin):
             # Temporarily turn ON errexit, but don't pass a SPID because we're
             # ENABLING and not disabling.  Note that 'if try myproc' disables it and
             # then enables it!
-            with state.ctx_Try(self.mutable_opts):
+            with ctx_Try(self.mutable_opts):
                 # Pass do_fork=True.  Slight annoyance: the real value is a field of
                 # command.Simple().  See _NoForkLast() in CommandEvaluator We have an
                 # extra fork (miss out on an optimization) of code like ( status ls )

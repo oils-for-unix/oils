@@ -18,6 +18,7 @@ from _devbuild.gen.syntax_asdl import loc, source, SourceLine
 from asdl import pybase
 from builtin import assign_osh
 from builtin import completion_osh
+from builtin import io_osh
 from builtin import pure_osh
 from builtin import readline_osh
 from builtin import trap_osh
@@ -209,7 +210,7 @@ def InitCommandEvaluator(parse_ctx=None,
         builtin_i.readonly: assign_osh.Readonly(mem, errfmt),
     }
     builtins = {  # Lookup
-        builtin_i.echo: pure_osh.Echo(exec_opts),
+        builtin_i.echo: io_osh.Echo(exec_opts),
         builtin_i.shift: assign_osh.Shift(mem),
 
         builtin_i.history: readline_osh.History(
