@@ -552,6 +552,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                                fq_name, (sum_name + '_t', ),
                                i + 1,
                                class_ns=sum_name + '.')
+        self.Emit('  pass', depth)  # in case every variant is first class
 
         self.Dedent()
         self.Emit('')

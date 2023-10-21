@@ -74,5 +74,5 @@ message.  But when running an external process, the message is lost:
 
 ## Related 
 
-- The doc on [warts](warts.html) relates to the Oil language.
+- The doc on [warts](warts.html) relates to YSH.
 

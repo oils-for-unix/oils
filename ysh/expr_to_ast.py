@@ -646,7 +646,7 @@ class Transformer(object):
                 return self.Expr(pnode.GetChild(0))
 
             #
-            # Oil Lexer Modes
+            # YSH Lexer Modes
             #
 
             elif typ == grammar_nt.sh_array_literal:

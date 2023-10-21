@@ -1,11 +1,12 @@
 ---
 in_progress: yes
 default_highlighter: oil-sh
-css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css
 ---
 
-Procs, Blocks, and Funcs
-========================
+Informal Guide to Procs and Funcs
+=================================
+
+
 
 Procs are shell like-functions, but they can have declared parameters, and lack
 dynamic scope.
@@ -24,11 +25,40 @@ eventually procs):
     }
     echo $PWD  # prints original dir
 
-- See [Oil Language Idioms](idioms.html) for examples of procs.
-- See [Oil Builtins](oil-builtins.html) for examples of blocks.
+- See [YSH Idioms](idioms.html) for examples of procs.
 
 <div id="toc">
 </div>
+
+## Influences
+
+It's a very rich language.  But it enables a lot of power.
+
+- Subsumes everything in shell
+  - including dynamic scope, `read x`, `printf -v a[i] 'hello %s' "$x"` etc.
+- Python- and JS-like Functions
+- Ruby-like blocks
+- Julia positional, named, spread, rest
+- Awk and R for lazy arg lists.
+
+## Table of Features
+
+procs:
+
+- open or closed
+  - Open procs are more like shell "functions", and support *Bernstein chaining*
+- Closed procs have 4 types of args: word, positional typed, named typed, block
+- Block is really last positional arg: `cd /tmp { echo $PWD }`
+- lazy arg list `[]` for the typed args
+
+Common to both:
+
+- spread at call site `f(...myListForPos)` or `f(; ...myDictForNamed)`
+- rest params at definition `...rest`
+
+More
+
+- TODO: `&myvar` is a place, often used with procs.
 
 ## Procs Can Be Open Or Closed (With a Signature)
 
