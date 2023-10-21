@@ -40,6 +40,7 @@ from frontend import parse_lib
 
 from builtin import assign_osh
 from builtin import bracket_osh
+from builtin import completion_osh
 from builtin import error_ysh
 from builtin import func_eggex
 from builtin import func_hay
@@ -47,17 +48,16 @@ from builtin import func_misc
 from builtin import json_ysh
 from builtin import io_ysh
 from builtin import meta_osh
+from builtin import misc_osh
+from builtin import printf_osh
+from builtin import process_osh
 from builtin import pure_osh
 from builtin import pure_ysh
+from builtin import readline_osh
+from builtin import trap_osh
 
 from ysh import expr_eval
 
-from osh import builtin_comp
-from osh import builtin_misc
-from osh import builtin_lib
-from osh import builtin_printf
-from osh import builtin_process
-from osh import builtin_trap
 from osh import cmd_eval
 from osh import glob_
 from osh import history
@@ -89,7 +89,7 @@ if mylib.PYTHON:
 
 
 def _InitDefaultCompletions(cmd_ev, complete_builtin, comp_lookup):
-    # type: (cmd_eval.CommandEvaluator, builtin_comp.Complete, completion.Lookup) -> None
+    # type: (cmd_eval.CommandEvaluator, completion_osh.Complete, completion.Lookup) -> None
 
     # register builtins and words
     complete_builtin.Run(cmd_eval.MakeBuiltinArgv(['-E', '-A', 'command']))
@@ -450,7 +450,7 @@ def Main(
     fd_state.tracer = tracer  # circular dep
 
     signal_safe = pyos.InitSignalSafe()
-    trap_state = builtin_trap.TrapState(signal_safe)
+    trap_state = trap_osh.TrapState(signal_safe)
 
     waiter = process.Waiter(job_list, exec_opts, signal_safe, tracer)
     fd_state.waiter = waiter
@@ -563,7 +563,7 @@ def Main(
             help_data = {}  # minimal build
     else:
         help_data = help_meta.TopicMetadata()
-    b[builtin_i.help] = builtin_misc.Help(lang, loader, help_data, errfmt)
+    b[builtin_i.help] = misc_osh.Help(lang, loader, help_data, errfmt)
 
     # Interpreter state
     b[builtin_i.set] = pure_osh.Set(mutable_opts, mem)
@@ -574,8 +574,7 @@ def Main(
     b[builtin_i.shvar] = pure_osh.Shvar(mem, search_path, cmd_ev)
     b[builtin_i.push_registers] = pure_osh.PushRegisters(mem, cmd_ev)
 
-    b[builtin_i.trap] = builtin_trap.Trap(trap_state, parse_ctx, tracer,
-                                          errfmt)
+    b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, tracer, errfmt)
 
     # Hay
     b[builtin_i.hay] = pure_osh.Hay(hay_state, mutable_opts, mem, cmd_ev)
@@ -632,60 +631,58 @@ def Main(
 
     # Output
     b[builtin_i.echo] = pure_osh.Echo(exec_opts)
-    b[builtin_i.printf] = builtin_printf.Printf(mem, parse_ctx, unsafe_arith,
-                                                errfmt)
+    b[builtin_i.printf] = printf_osh.Printf(mem, parse_ctx, unsafe_arith,
+                                            errfmt)
     b[builtin_i.write] = io_ysh.Write(mem, errfmt)
     # (pp output format isn't stable)
     b[builtin_i.pp] = io_ysh.Pp(mem, errfmt, procs, arena)
 
     # Input
-    b[builtin_i.cat] = builtin_misc.Cat()  # for $(<file)
-    b[builtin_i.read] = builtin_misc.Read(splitter, mem, parse_ctx, cmd_ev,
-                                          errfmt)
-    mapfile = builtin_misc.MapFile(mem, errfmt, cmd_ev)
+    b[builtin_i.cat] = misc_osh.Cat()  # for $(<file)
+    b[builtin_i.read] = misc_osh.Read(splitter, mem, parse_ctx, cmd_ev, errfmt)
+    mapfile = misc_osh.MapFile(mem, errfmt, cmd_ev)
     b[builtin_i.mapfile] = mapfile
     b[builtin_i.readarray] = mapfile
 
     # Dirs
-    b[builtin_i.cd] = builtin_misc.Cd(mem, dir_stack, cmd_ev, errfmt)
-    b[builtin_i.pushd] = builtin_misc.Pushd(mem, dir_stack, errfmt)
-    b[builtin_i.popd] = builtin_misc.Popd(mem, dir_stack, errfmt)
-    b[builtin_i.dirs] = builtin_misc.Dirs(mem, dir_stack, errfmt)
-    b[builtin_i.pwd] = builtin_misc.Pwd(mem, errfmt)
+    b[builtin_i.cd] = misc_osh.Cd(mem, dir_stack, cmd_ev, errfmt)
+    b[builtin_i.pushd] = misc_osh.Pushd(mem, dir_stack, errfmt)
+    b[builtin_i.popd] = misc_osh.Popd(mem, dir_stack, errfmt)
+    b[builtin_i.dirs] = misc_osh.Dirs(mem, dir_stack, errfmt)
+    b[builtin_i.pwd] = misc_osh.Pwd(mem, errfmt)
 
-    b[builtin_i.times] = builtin_misc.Times()
+    b[builtin_i.times] = misc_osh.Times()
 
     b[builtin_i.json] = json_ysh.Json(mem, errfmt, False)
     b[builtin_i.j8] = json_ysh.Json(mem, errfmt, True)
 
     ### Process builtins
-    b[builtin_i.exec_] = builtin_process.Exec(mem, ext_prog, fd_state,
-                                              search_path, errfmt)
-    b[builtin_i.umask] = builtin_process.Umask()
-    b[builtin_i.wait] = builtin_process.Wait(waiter, job_list, mem, tracer,
-                                             errfmt)
+    b[builtin_i.exec_] = process_osh.Exec(mem, ext_prog, fd_state, search_path,
+                                          errfmt)
+    b[builtin_i.umask] = process_osh.Umask()
+    b[builtin_i.wait] = process_osh.Wait(waiter, job_list, mem, tracer, errfmt)
 
-    b[builtin_i.jobs] = builtin_process.Jobs(job_list)
-    b[builtin_i.fg] = builtin_process.Fg(job_control, job_list, waiter)
-    b[builtin_i.bg] = builtin_process.Bg(job_list)
+    b[builtin_i.jobs] = process_osh.Jobs(job_list)
+    b[builtin_i.fg] = process_osh.Fg(job_control, job_list, waiter)
+    b[builtin_i.bg] = process_osh.Bg(job_list)
 
-    b[builtin_i.fork] = builtin_process.Fork(shell_ex)
-    b[builtin_i.forkwait] = builtin_process.ForkWait(shell_ex)
+    b[builtin_i.fork] = process_osh.Fork(shell_ex)
+    b[builtin_i.forkwait] = process_osh.ForkWait(shell_ex)
 
     # Interactive builtins depend on readline
-    b[builtin_i.bind] = builtin_lib.Bind(readline, errfmt)
-    b[builtin_i.history] = builtin_lib.History(readline, sh_files, errfmt,
-                                               mylib.Stdout())
+    b[builtin_i.bind] = readline_osh.Bind(readline, errfmt)
+    b[builtin_i.history] = readline_osh.History(readline, sh_files, errfmt,
+                                                mylib.Stdout())
 
     # Completion
-    spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
-                                            splitter, comp_lookup, help_data,
-                                            errfmt)
-    complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
+    spec_builder = completion_osh.SpecBuilder(cmd_ev, parse_ctx, word_ev,
+                                              splitter, comp_lookup, help_data,
+                                              errfmt)
+    complete_builtin = completion_osh.Complete(spec_builder, comp_lookup)
     b[builtin_i.complete] = complete_builtin
-    b[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
-    b[builtin_i.compopt] = builtin_comp.CompOpt(compopt_state, errfmt)
-    b[builtin_i.compadjust] = builtin_comp.CompAdjust(mem)
+    b[builtin_i.compgen] = completion_osh.CompGen(spec_builder)
+    b[builtin_i.compopt] = completion_osh.CompOpt(compopt_state, errfmt)
+    b[builtin_i.compadjust] = completion_osh.CompAdjust(mem)
 
     comp_ev = word_eval.CompletionWordEvaluator(mem, exec_opts, mutable_opts,
                                                 tilde_ev, splitter, errfmt)
@@ -698,7 +695,7 @@ def Main(
     root_comp = completion.RootCompleter(comp_ev, mem, comp_lookup,
                                          compopt_state, comp_ui_state,
                                          comp_ctx, debug_f)
-    b[builtin_i.compexport] = builtin_comp.CompExport(root_comp)
+    b[builtin_i.compexport] = completion_osh.CompExport(root_comp)
 
     #
     # Initialize Builtin-in Methods

@@ -1,7 +1,4 @@
 #!/usr/bin/env python2
-"""
-builtin_comp_test.py: Tests for builtin_comp.py
-"""
 from __future__ import print_function
 
 import unittest

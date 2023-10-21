@@ -9,6 +9,8 @@ from _devbuild.gen.runtime_asdl import (RedirValue, redirect_arg, cmd_value,
                                         trace)
 from _devbuild.gen.syntax_asdl import loc, redir_loc
 from asdl import runtime
+from builtin import misc_osh
+from builtin import trap_osh
 from core import dev
 from core import process  # module under test
 from core import pyos
@@ -17,7 +19,6 @@ from core import ui
 from core import util
 from mycpp.mylib import log
 from core import state
-from osh import builtin_misc, builtin_trap
 from mycpp import mylib
 
 Process = process.Process
@@ -49,7 +50,7 @@ class ProcessTest(unittest.TestCase):
         self.job_list = process.JobList()
 
         signal_safe = pyos.InitSignalSafe()
-        self.trap_state = builtin_trap.TrapState(signal_safe)
+        self.trap_state = trap_osh.TrapState(signal_safe)
 
         self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem,
                                  mylib.Stderr())
@@ -94,11 +95,11 @@ class ProcessTest(unittest.TestCase):
         cmd_ev = CommandEvaluator()
 
         self.fd_state.Push([r])
-        line1, _ = builtin_misc._ReadUntilDelim(pyos.NEWLINE_CH, cmd_ev)
+        line1, _ = misc_osh._ReadUntilDelim(pyos.NEWLINE_CH, cmd_ev)
         self.fd_state.Pop()
 
         self.fd_state.Push([r])
-        line2, _ = builtin_misc._ReadUntilDelim(pyos.NEWLINE_CH, cmd_ev)
+        line2, _ = misc_osh._ReadUntilDelim(pyos.NEWLINE_CH, cmd_ev)
         self.fd_state.Pop()
 
         # sys.stdin.readline() would erroneously return 'two' because of buffering.

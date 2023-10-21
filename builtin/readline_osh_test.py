@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-builtin_lib_test.py: Tests for builtin_lib.py
+builtin_lib_test.py: Tests for readline_osh.py
 """
 from __future__ import print_function
 
@@ -10,6 +10,7 @@ import unittest
 # unit testing
 import readline
 
+from builtin import readline_osh  # module under test
 from core import test_lib
 from core import state
 from core import alloc
@@ -17,7 +18,6 @@ from core import ui
 from frontend import flag_def  # side effect: flags are defined!
 
 _ = flag_def
-from osh import builtin_lib  # module under test
 
 
 class BuiltinTest(unittest.TestCase):
@@ -90,7 +90,7 @@ def _TestHistory(argv):
     arena = alloc.Arena()
     mem = state.Mem('', [], arena, [])
     errfmt = ui.ErrorFormatter()
-    b = builtin_lib.History(readline, mem, errfmt, f)
+    b = readline_osh.History(readline, mem, errfmt, f)
     cmd_val = test_lib.MakeBuiltinArgv(argv)
     b.Run(cmd_val)
     return f.getvalue()

@@ -59,18 +59,10 @@ yapf-files() {
 yapf-known() {
   ### yapf some files that have been normalized
 
-  # Ad hoc list of big files
-
-  # The reason I'm not listing all files here is because yapf sometimes
-  # makes poor line break decisions, uglifying the code.  I want to eyeball
-  # those cases and fix them.
-  #
-  # Often it involves putting () around long if conditions
-
+  # TODO: add all of osh/
   time yapf-files \
     {asdl,builtin,core,data_lang,frontend,mycpp,ysh}/*.py \
     osh/*_eval.py osh/*_parse.py \
-    */builtin_*.py \
     */NINJA_subgraph.py
 }
 

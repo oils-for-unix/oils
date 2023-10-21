@@ -68,11 +68,11 @@ from typing import List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from _devbuild.gen.syntax_asdl import command_t
+    from builtin import trap_osh
     from core import optview
     from core.ui import ErrorFormatter
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator
-    from osh import builtin_trap
 
 NO_FD = -1
 
@@ -791,7 +791,7 @@ class SubProgramThunk(Thunk):
     """A subprogram that can be executed in another process."""
 
     def __init__(self, cmd_ev, node, trap_state, inherit_errexit=True):
-        # type: (CommandEvaluator, command_t, builtin_trap.TrapState, bool) -> None
+        # type: (CommandEvaluator, command_t, trap_osh.TrapState, bool) -> None
         self.cmd_ev = cmd_ev
         self.node = node
         self.trap_state = trap_state

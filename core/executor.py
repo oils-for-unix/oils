@@ -32,10 +32,10 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import (cmd_value, CommandStatus,
                                             StatusArray)
     from _devbuild.gen.syntax_asdl import command_t
+    from builtin import trap_osh
     from core import optview
     from core import state
     from core.vm import _Builtin
-    from osh import builtin_trap
 
 _ = log
 
@@ -104,7 +104,7 @@ class ShellExecutor(vm._Executor):
             job_control,  # type: process.JobControl
             job_list,  # type: process.JobList
             fd_state,  # type: process.FdState
-            trap_state,  # type: builtin_trap.TrapState
+            trap_state,  # type: trap_osh.TrapState
             errfmt  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None

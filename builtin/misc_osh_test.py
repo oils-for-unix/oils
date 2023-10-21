@@ -1,7 +1,4 @@
 #!/usr/bin/env python2
-"""
-builtin_misc_test.py: Tests for builtin_misc.py
-"""
 from __future__ import print_function
 
 import unittest
@@ -14,8 +11,8 @@ from core import pyutil
 from frontend import flag_def  # side effect: flags are defined!
 
 _ = flag_def
+from builtin import misc_osh  # module under test
 from osh import split
-from osh import builtin_misc  # module under test
 
 
 class BuiltinTest(unittest.TestCase):
@@ -35,7 +32,7 @@ class BuiltinTest(unittest.TestCase):
                 print('  %s %s' % span)
 
             parts = []
-            builtin_misc._AppendParts(line, spans, max_results, False, parts)
+            misc_osh._AppendParts(line, spans, max_results, False, parts)
             strs = [buf.getvalue() for buf in parts]
             self.assertEqual(expected_parts, strs)
 
@@ -48,7 +45,7 @@ class BuiltinTest(unittest.TestCase):
 
         loader = pyutil.GetResourceLoader()
         errfmt = None
-        builtin_misc.Help('ysh', loader, TOPICS, errfmt)
+        misc_osh.Help('ysh', loader, TOPICS, errfmt)
 
 
 if __name__ == '__main__':

@@ -103,7 +103,7 @@ if TYPE_CHECKING:
     from core.alloc import Arena
     from core import optview
     from core.vm import _Executor, _AssignBuiltin
-    from osh.builtin_trap import TrapState
+    from builtin import trap_osh
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -284,7 +284,7 @@ class CommandEvaluator(object):
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
-            trap_state,  # type: TrapState
+            trap_state,  # type: trap_osh.TrapState
             signal_safe,  # type: pyos.SignalSafe
     ):
         # type: (...) -> None

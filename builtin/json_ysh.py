@@ -3,6 +3,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import scope_e, cmd_value
 from _devbuild.gen.syntax_asdl import loc
+from builtin import misc_osh
 from core import error
 from core.error import e_usage
 from core import pyos
@@ -15,7 +16,6 @@ from frontend import location
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
-from osh import builtin_misc
 from ysh import cpython
 
 import sys
@@ -111,7 +111,7 @@ class Json(vm._Builtin):
                                   name_loc)
 
             try:
-                contents = builtin_misc.ReadAll()
+                contents = misc_osh.ReadAll()
             except pyos.ReadError as e:  # different paths for read -d, etc.
                 # don't quote code since YSH errexit will likely quote
                 self.errfmt.PrintMessage("read error: %s" %
