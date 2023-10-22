@@ -15,7 +15,7 @@ module runtime
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
-  AssignArg = (str var_name, value? rval, bool plus_eq, word blame_word)
+  AssignArg = (str var_name, value? rval, bool plus_eq, CompoundWord blame_word)
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =

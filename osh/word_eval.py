@@ -160,7 +160,7 @@ ASSIGN_ARG_RE = '^([a-zA-Z_][a-zA-Z0-9_]*)((=|\+=)(.*))?$'
 
 
 def _SplitAssignArg(arg, blame_word):
-    # type: (str, word_t) -> AssignArg
+    # type: (str, CompoundWord) -> AssignArg
     """Dynamically parse argument to declare, export, etc.
 
     This is a fallback to the static parsing done below.
@@ -170,7 +170,7 @@ def _SplitAssignArg(arg, blame_word):
     m = libc.regex_match(ASSIGN_ARG_RE, arg)
     if m is None:
         e_die("Assignment builtin expected NAME=value, got %r" % arg,
-              loc.Word(blame_word))
+              blame_word)
 
     var_name = m[1]
     # m[2] is used for grouping; ERE doesn't have non-capturing groups
