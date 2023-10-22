@@ -1022,11 +1022,10 @@ class CommandEvaluator(object):
                 else:  # e.g. 'readonly x' or 'local x'
                     val = None
 
-            # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
-            # Undef value, but the 'array' attribute.
+            # NOTE: In bash and mksh, declare -a myarray makes an empty cell
+            # with Undef value, but the 'array' attribute.
 
-            #log('setting %s to %s with flags %s', lval, val, flags)
-            flags = 0
+            flags = 0  # for tracing
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
 

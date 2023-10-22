@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
-# flags for SetValue
+# flags for mem.SetValue()
 SetReadOnly = 1 << 0
 ClearReadOnly = 1 << 1
 SetExport = 1 << 2
@@ -2009,8 +2009,8 @@ class Mem(object):
         # type: (str, int) -> bool
         """Used for export -n.
 
-        We don't use SetValue() because even if rval is None, it will
-        make an Undef value in a scope.
+        We don't use SetValue() because even if rval is None, it will make an
+        Undef value in a scope.
         """
         cell, name_map = self._ResolveNameOnly(name, self.ScopesForReading())
         if cell:
@@ -2180,14 +2180,14 @@ def SetGlobalString(mem, name, s):
     """Helper for completion, etc."""
     assert isinstance(s, str)
     val = value.Str(s)
-    mem.SetValue(location.LName(name), val, scope_e.GlobalOnly)
+    mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
     # type: (Mem, str, List[str]) -> None
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
-    mem.SetValue(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
+    mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):
@@ -2195,7 +2195,7 @@ def ExportGlobalString(mem, name, s):
     """Helper for completion, $PWD, $OLDPWD, etc."""
     assert isinstance(s, str)
     val = value.Str(s)
-    mem.SetValue(location.LName(name),
+    mem.SetNamed(location.LName(name),
                  val,
                  scope_e.GlobalOnly,
                  flags=SetExport)

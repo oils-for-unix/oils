@@ -317,7 +317,7 @@ class Read(vm._Builtin):
             line = ''.join(tmp)
 
         lhs = location.LName(var_name)
-        self.mem.SetValue(lhs, value.Str(line), scope_e.LocalOnly)
+        self.mem.SetNamed(lhs, value.Str(line), scope_e.LocalOnly)
         return 0
 
     def _All(self, var_name):
@@ -327,7 +327,7 @@ class Read(vm._Builtin):
         # No error conditions?
 
         lhs = location.LName(var_name)
-        self.mem.SetValue(lhs, value.Str(contents), scope_e.LocalOnly)
+        self.mem.SetNamed(lhs, value.Str(contents), scope_e.LocalOnly)
         return 0
 
     def Run(self, cmd_val):
