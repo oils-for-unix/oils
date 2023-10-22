@@ -56,3 +56,40 @@ echo -$x-  # fails with type error
 ## STDOUT:
 ['a b', 'c']
 ## END
+
+#### List->extend()
+var l = list(1..3)
+echo $[len(l)]
+:: l->extend(list(3..6))
+echo $[len(l)]
+## STDOUT:
+2
+5
+## END
+
+#### List append()/extend() should return null
+shopt -s oil:all
+var l = list(1..3)
+
+var result = l->extend(list(3..6))
+:: assert_(result === null)
+
+setvar result = l->append(6)
+:: assert_(result === null)
+
+echo pass
+## STDOUT:
+pass
+## END
+
+#### List pop()
+shopt -s oil:all
+var l = list(1..5)
+:: assert_(l->pop() === 4)
+:: assert_(l->pop() === 3)
+:: assert_(l->pop() === 2)
+:: assert_(l->pop() === 1)
+echo pass
+## STDOUT:
+pass
+## END

@@ -701,8 +701,12 @@ ysh-stdlib-2() {
   run-file ysh-stdlib-2 "$@"
 }
 
-ysh-stdlib-argparse() {
-  run-file ysh-stdlib-argparse "$@"
+ysh-stdlib-args() {
+  run-file ysh-stdlib-args "$@"
+}
+
+ysh-stdlib-testing() {
+  run-file ysh-stdlib-testing "$@"
 }
 
 ysh-source() {
@@ -719,6 +723,10 @@ ysh-unicode() {
 
 ysh-bin() {
   run-file ysh-bin "$@"
+}
+
+ysh-dict() {
+  run-file ysh-dict "$@"
 }
 
 ysh-list() {
@@ -743,10 +751,6 @@ ysh-builtins() {
 
 ysh-builtin-module() {
   run-file ysh-builtin-module "$@"
-}
-
-ysh-builtin-describe() {
-  run-file ysh-builtin-describe "$@"
 }
 
 ysh-builtin-eval() {
