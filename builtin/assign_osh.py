@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Builtin_assign.py."""
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
@@ -8,6 +7,7 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
+    lvalue,
     scope_e,
     cmd_value,
     AssignArg,
@@ -19,7 +19,6 @@ from core.error import e_usage
 from core import state
 from core import vm
 from frontend import flag_spec
-from frontend import location
 from frontend import args
 from mycpp import mylib
 from mycpp.mylib import log
@@ -232,7 +231,7 @@ def _ExportReadonly(mem, pair, flags):
     """
     which_scopes = mem.ScopesForWriting()
 
-    lval = location.LName(pair.var_name)
+    lval = lvalue.Named(pair.var_name, loc.Missing)
     if pair.plus_eq:
         old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
         # When 'export e+=', then rval is value.Str('')
@@ -455,7 +454,10 @@ class NewVar(vm._AssignBuiltin):
                     if old_val.tag() != value_e.BashAssoc:
                         rval = value.BashAssoc({})
 
-            lval = location.LName(pair.var_name)
+            # This causes an extra alloc.  Could we have CompoundWord instead of word_t?
+            #lval = lvalue.Named(pair.var_name, loc.Word(pair.blame_word))
+            lval = lvalue.Named(pair.var_name, loc.Missing)
+
             if pair.plus_eq:
                 old_val = sh_expr_eval.OldValue(lval, self.mem,
                                                 None)  # ignore set -u

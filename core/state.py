@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
-# flags for SetVar
+# flags for SetValue
 SetReadOnly = 1 << 0
 ClearReadOnly = 1 << 1
 SetExport = 1 << 2
@@ -1564,9 +1564,9 @@ class Mem(object):
                         # But that's true for 'readonly' too, and hoisting it makes more
                         # sense anyway.
                         if cell.readonly:
-                            # TODO: error context
-                            e_die("Can't assign to readonly value %r" %
-                                  lval.name)
+                            e_die(
+                                "Can't assign to readonly value %r" %
+                                lval.name, lval.blame_loc)
                         cell.val = val  # CHANGE VAL
 
                     # NOTE: Could be cell.flags |= flag_set_mask
@@ -1593,10 +1593,10 @@ class Mem(object):
 
                 if cell.val.tag() not in (value_e.Undef, value_e.Str):
                     if cell.exported:
-                        e_die("Only strings can be exported"
-                              )  # TODO: error context
+                        # TODO: error context
+                        e_die("Only strings can be exported", lval.blame_loc)
                     if cell.nameref:
-                        e_die("nameref must be a string")
+                        e_die("nameref must be a string", lval.blame_loc)
 
             elif case(lvalue_e.Indexed):
                 lval = cast(lvalue.Indexed, UP_lval)

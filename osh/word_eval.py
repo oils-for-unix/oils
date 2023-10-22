@@ -2014,7 +2014,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         flags = [arg0]  # initial flags like -p, and -f -F name1 name2
         flag_locs = [words[0]]
-        AssignArgs = []  # type: List[AssignArg]
+        assign_args = []  # type: List[AssignArg]
 
         n = len(words)
         for i in xrange(1, n):  # skip first word
@@ -2050,20 +2050,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         right = self.EvalRhsWord(rhs)
 
                     arg2 = AssignArg(var_name, right, append, w)
-
-                    AssignArgs.append(arg2)
+                    assign_args.append(arg2)
 
                 else:  # e.g. export $dynamic
                     argv = self._EvalWordToArgv(w)
                     for arg in argv:
                         arg2 = _SplitAssignArg(arg, w)
-                        AssignArgs.append(arg2)
+                        assign_args.append(arg2)
 
             else:
                 argv = self._EvalWordToArgv(w)
                 for arg in argv:
-                    if arg.startswith('-') or arg.startswith(
-                            '+'):  # e.g. declare -r +r
+                    if arg.startswith('-') or arg.startswith('+'):
+                        # e.g. declare -r +r
                         flags.append(arg)
                         flag_locs.append(w)
 
@@ -2075,12 +2074,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     else:  # e.g. export $dynamic
                         if eval_to_pairs:
                             arg2 = _SplitAssignArg(arg, w)
-                            AssignArgs.append(arg2)
+                            assign_args.append(arg2)
                             started_pairs = True
                         else:
                             flags.append(arg)
 
-        return cmd_value.Assign(builtin_id, flags, flag_locs, AssignArgs)
+        return cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
 
     def SimpleEvalWordSequence2(self, words, allow_assign):
         # type: (List[CompoundWord], bool) -> cmd_value_t
