@@ -21,7 +21,7 @@
 # YSH patch: removed @=
 # Possibly just use have += -= *=.  Those are the most common.
 augassign: (
-    '+=' | '-=' | '*=' | '/='
+    '+=' | '-=' | '*=' | '/=' |
     '**=' | '//=' | '%=' |
     '&=' | '|=' | '^=' | '<<=' | '>>='
 )

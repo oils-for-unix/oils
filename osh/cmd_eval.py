@@ -17,7 +17,7 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
     IntParamBox,

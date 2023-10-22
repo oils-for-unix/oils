@@ -1,8 +1,7 @@
 # Test var / setvar / etc.
 
 ## our_shell: ysh
-## oils_failures_allowed: 4
-
+## oils_failures_allowed: 3
 
 # TODO: GetVar needs a mode where Obj[str] gets translated to value.Str?
 # Then all code will work.
@@ -58,7 +57,7 @@ x=7
 x=11
 ## END
 
-#### Augmented assignment on string changes to integer
+#### Augmented assignment on string changes to Int Float
 
 var x = '42'
 = x
@@ -69,10 +68,15 @@ setvar x += 4 * 1
 setvar x += '9'
 = x
 
+setvar x = '42'
+setvar x /= 4
+= x
+
 ## STDOUT:
 (Str)   '42'
 (Int)   46
 (Int)   55
+(Float)   10.5
 ## END
 
 #### Augmented assignment with floats
@@ -93,6 +97,86 @@ echo $x
 48.0
 ## END
 
+#### Int/Float augmented += -= *= /=
+
+var x = 0
+
+setvar x = 10
+setvar x -= 3
+echo x=$x
+
+setvar x = 10
+setvar x *= 3
+echo x=$x
+
+var x = 0
+setvar x = 10
+setvar x /= 2
+echo x=$x
+
+## STDOUT:
+x=7
+x=30
+x=5.0
+## END
+
+#### Int Augmented //= %= **= and bitwise ops
+
+var x = 0
+
+setvar x = 10
+setvar x //= 3
+echo x=$x
+
+setvar x = 10
+setvar x %= 3
+echo x=$x
+
+setvar x = 10
+setvar x **= 3
+echo x=$x
+
+echo
+echo bitwise
+
+setvar x  = 0b1111
+setvar x &= 0b0101
+echo x=$x
+
+setvar x  = 0b1000
+setvar x |= 0b0111
+echo x=$x
+
+setvar x = 0b1010
+setvar x ^= 0b1001
+echo x=$x
+
+echo
+echo shift
+
+setvar x = 0b1000
+setvar x <<= 1
+echo x=$x
+
+setvar x = 0b1000
+setvar x >>= 1
+echo x=$x
+
+## STDOUT:
+x=3
+x=1
+x=1000
+
+bitwise
+x=5
+x=15
+x=3
+
+shift
+x=16
+x=4
+## END
+
 #### Augmented assignment of List and Dict entries
 
 var d = {x: 42}
@@ -111,19 +195,6 @@ echo $[d.x]
 45.0
 48.0
 ## END
-
-#### -= and other augmented assignment
-
-var x = 5
-setvar x -= 3
-echo x=$x
-
-setvar x *= 3
-echo x=$x
-## STDOUT:
-x=3
-## END
-
 
 #### Augmented assignment doesn't work with multiple LHS
 

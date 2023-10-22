@@ -196,7 +196,7 @@ class ExprEvaluator(object):
         # type: (lvalue_t, value_t, Token) -> value_t
         """Called by CommandEvaluator."""
 
-        assert op.id == Id.Arith_PlusEqual, op
+        #assert op.id == Id.Arith_PlusEqual, op
 
         # TODO: Handle other augmented assignment
         #
@@ -207,7 +207,11 @@ class ExprEvaluator(object):
             if case(lvalue_e.Named):
                 lval = cast(lvalue.Named, UP_lval)
                 lhs_val = self._LookupVar(lval.name, lval.blame_loc)
-                return self._ArithNumeric(lhs_val, rhs_val, op)
+                if op.id in (Id.Arith_PlusEqual, Id.Arith_MinusEqual,
+                             Id.Arith_StarEqual, Id.Arith_SlashEqual):
+                    return self._ArithIntFloat(lhs_val, rhs_val, op)
+                else:
+                    return self._ArithIntOnly(lhs_val, rhs_val, op)
             else:
                 # TODO: Handle other lvalue, like sh_expr_eval.OldValue() But
                 # this is for YSH values, not value.BashArray etc.
@@ -391,7 +395,7 @@ class ExprEvaluator(object):
 
         raise AssertionError(op_id)
 
-    def _ArithNumeric(self, left, right, op):
+    def _ArithIntFloat(self, left, right, op):
         # type: (value_t, value_t, Token) -> value_t
         """
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
@@ -435,6 +439,56 @@ class ExprEvaluator(object):
             raise error.TypeErrVerbose(
                 'Binary operator expected numbers, got %s and %s' %
                 (ui.ValType(left), ui.ValType(right)), op)
+
+    def _ArithIntOnly(self, left, right, op):
+        # type: (value_t, value_t, Token) -> value_t
+
+        i1 = _ConvertToInt(left, 'Left operand should be Int', op)
+        i2 = _ConvertToInt(right, 'Right operand should be Int', op)
+
+        with switch(op.id) as case:
+
+            # a % b   setvar a %= b
+            if case(Id.Arith_Percent, Id.Arith_PercentEqual):
+                if i2 == 0:
+                    raise error.Expr('Divide by zero', op)
+                return value.Int(i1 % i2)
+
+            # a // b   setvar a //= b
+            elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):  
+                if i2 == 0:
+                    raise error.Expr('Divide by zero', op)
+                return value.Int(i1 // i2)
+
+            # a ** b   setvar a **= b (ysh only)
+            elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
+                # Same as sh_expr_eval.py
+                if i2 < 0:
+                    raise error.Expr("Exponent can't be a negative number",
+                                     op)
+                ret = 1
+                for i in xrange(i2):
+                    ret *= i1
+                return value.Int(ret)
+
+            # Bitwise
+            elif case(Id.Arith_Amp, Id.Arith_AmpEqual):
+                return value.Int(i1 & i2)
+
+            elif case(Id.Arith_Pipe, Id.Arith_PipeEqual):
+                return value.Int(i1 | i2)
+
+            elif case(Id.Arith_Caret, Id.Arith_CaretEqual):
+                return value.Int(i1 ^ i2)
+
+            elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):
+                return value.Int(i1 >> i2)
+
+            elif case(Id.Arith_DLess, Id.Arith_DLessEqual):
+                return value.Int(i1 << i2)
+
+            else:
+                raise AssertionError(op.id)
 
     def _Concat(self, left, right, op):
         # type: (value_t, value_t, Token) -> value_t
@@ -485,52 +539,11 @@ class ExprEvaluator(object):
         if op_id == Id.Arith_DPlus:  # a ++ b to concat
             return self._Concat(left, right, node.op)
 
-        # Int or Float
         if op_id in (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,
                      Id.Arith_Slash):
-            return self._ArithNumeric(left, right, node.op)
+            return self._ArithIntFloat(left, right, node.op)
 
-        # Everything below has 2 integer operands
-        i1 = _ConvertToInt(left, 'Left operand should be Int', node.op)
-        i2 = _ConvertToInt(right, 'Right operand should be Int', node.op)
-
-        if op_id == Id.Expr_DSlash:  # a // b
-            if i2 == 0:
-                raise error.Expr('Divide by zero', node.op)
-            return value.Int(i1 // i2)
-
-        if op_id == Id.Arith_Percent:  # a % b
-            if i2 == 0:
-                raise error.Expr('Divide by zero', node.op)
-            return value.Int(i1 % i2)
-
-        if op_id == Id.Arith_DStar:  # a ** b
-            # Same as sh_expr_eval.py
-            if i2 < 0:
-                raise error.Expr("Exponent can't be a negative number",
-                                 node.op)
-            ret = 1
-            for i in xrange(i2):
-                ret *= i1
-            return value.Int(ret)
-
-        # Bitwise
-        if op_id == Id.Arith_Amp:
-            return value.Int(i1 & i2)
-
-        if op_id == Id.Arith_Pipe:
-            return value.Int(i1 | i2)
-
-        if op_id == Id.Arith_Caret:
-            return value.Int(i1 ^ i2)
-
-        if op_id == Id.Arith_DGreat:
-            return value.Int(i1 >> i2)
-
-        if op_id == Id.Arith_DLess:
-            return value.Int(i1 << i2)
-
-        raise NotImplementedError(op_id)
+        return self._ArithIntOnly(left, right, node.op)
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
