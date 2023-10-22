@@ -2261,7 +2261,7 @@ class CommandParser(object):
         if self.c_id in (Id.KW_SetVar, Id.KW_SetRef, Id.KW_SetGlobal):
             kw_token = word_.LiteralToken(self.cur_word)
             self._SetNext()
-            n9 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
+            n9 = self.w_parser.ParseMutation(kw_token, self.var_checker)
             return n9
 
         if self.c_id in (Id.Lit_DColon, Id.Lit_Underscore, Id.Lit_Equals):

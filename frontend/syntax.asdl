@@ -396,7 +396,7 @@ module syntax
     # var, const
   | VarDecl(Token? keyword, List[NameType] lhs, expr rhs)
     # setvar, maybe 'auto' later
-  | PlaceMutation(Token keyword, List[place_expr] lhs, Token op, expr rhs)
+  | Mutation(Token keyword, List[lhs_expr] lhs, Token op, expr rhs)
     # = keyword
   | Expr(Token keyword, expr e)
   | Proc %Proc
@@ -454,8 +454,7 @@ module syntax
   # Attributes are obj.attr, d->key, name::scope,
   Attribute = (expr obj, Token op, Token attr, expr_context ctx)
 
-  # Places that can be mutated.
-  place_expr = 
+  lhs_expr = 
     Var(Token name)  # TODO: add str var_name
   | Subscript %Subscript
   | Attribute %Attribute

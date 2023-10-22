@@ -1500,9 +1500,8 @@ class Mem(object):
 
         if cell:
             if cell.readonly:
-                e_die(
-                    "Can't assign to readonly value %r" %
-                    lval.name, lval.blame_loc)
+                e_die("Can't assign to readonly value %r" % lval.name,
+                      lval.blame_loc)
             cell.val = val  # Mutate value_t
         else:
             cell = Cell(False, False, False, val)
@@ -1521,8 +1520,7 @@ class Mem(object):
 
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
-            cell, name_map = self._ResolveNameOnly(
-                lval.name, which_scopes)
+            cell, name_map = self._ResolveNameOnly(lval.name, which_scopes)
             cell_name = lval.name
         else:
             # ref=x  # mutates THROUGH the reference
@@ -1551,9 +1549,8 @@ class Mem(object):
                 # But that's true for 'readonly' too, and hoisting it makes more
                 # sense anyway.
                 if cell.readonly:
-                    e_die(
-                        "Can't assign to readonly value %r" %
-                        lval.name, lval.blame_loc)
+                    e_die("Can't assign to readonly value %r" % lval.name,
+                          lval.blame_loc)
                 cell.val = val  # CHANGE VAL
 
             # NOTE: Could be cell.flags |= flag_set_mask
@@ -1569,8 +1566,7 @@ class Mem(object):
                 # set -o nounset; local foo; echo $foo  # It's still undefined!
                 val = value.Undef  # export foo, readonly foo
 
-            cell = Cell(bool(flags & SetExport),
-                        bool(flags & SetReadOnly),
+            cell = Cell(bool(flags & SetExport), bool(flags & SetReadOnly),
                         bool(flags & SetNameref), val)
             name_map[cell_name] = cell
 

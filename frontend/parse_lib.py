@@ -316,8 +316,8 @@ class ParseContext(object):
 
         return ast_node, last_token
 
-    def ParsePlaceMutation(self, kw_token, lexer):
-        # type: (Token, Lexer) -> Tuple[command.PlaceMutation, Token]
+    def ParseMutation(self, kw_token, lexer):
+        # type: (Token, Lexer) -> Tuple[command.Mutation, Token]
         """ setvar d['a'] += 1 """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
@@ -325,7 +325,7 @@ class ParseContext(object):
                                                grammar_nt.ysh_place_mutation)
             if 0:
                 self.p_printer.Print(pnode)
-            ast_node = self.tr.MakePlaceMutation(pnode)
+            ast_node = self.tr.MakeMutation(pnode)
             ast_node.keyword = kw_token  # VarDecl didn't fill this in
 
         return ast_node, last_token

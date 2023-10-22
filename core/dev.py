@@ -234,7 +234,7 @@ class Tracer(object):
     Other hooks:
 
     - Command completion starts other processes
-    - Oil command constructs: BareDecl, VarDecl, PlaceMutation, Expr
+    - Oil command constructs: BareDecl, VarDecl, Mutation, Expr
     """
 
     def __init__(

@@ -578,7 +578,7 @@ class CommandEvaluator(object):
                 # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
                 # command_e.Sentence, # command_e.TimeBlock, command_e.ShFunction,
                 # YSH:
-                # command_e.VarDecl, command_e.PlaceMutation,
+                # command_e.VarDecl, command_e.Mutation,
                 # command_e.Proc, command_e.Func, command_e.Expr,
                 # command_e.BareDecl
                 redirects = []
@@ -752,8 +752,8 @@ class CommandEvaluator(object):
 
         return 0
 
-    def _DoPlaceMutation(self, node):
-        # type: (command.PlaceMutation) -> None
+    def _DoMutation(self, node):
+        # type: (command.Mutation) -> None
 
         with switch(node.keyword.id) as case2:
             if case2(Id.KW_SetVar):
@@ -1575,11 +1575,11 @@ class CommandEvaluator(object):
                 self.mem.SetTokenForLine(node.lhs[0].name)
                 status = self._DoVarDecl(node)
 
-            elif case(command_e.PlaceMutation):
-                node = cast(command.PlaceMutation, UP_node)
+            elif case(command_e.Mutation):
+                node = cast(command.Mutation, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
-                self._DoPlaceMutation(node)
+                self._DoMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment

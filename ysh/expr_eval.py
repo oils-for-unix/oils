@@ -20,9 +20,9 @@ from _devbuild.gen.syntax_asdl import (
     expr,
     expr_e,
     expr_t,
-    place_expr,
-    place_expr_e,
-    place_expr_t,
+    lhs_expr,
+    lhs_expr_e,
+    lhs_expr_t,
     Attribute,
     Subscript,
     class_literal_term,
@@ -220,7 +220,7 @@ class ExprEvaluator(object):
                 UP_obj = obj
 
                 lhs_val_ = None  # type: value_t
-                # Similar to command_e.PlaceMutation
+                # Similar to command_e.Mutation
                 with tagswitch(obj) as case:
                     if case(value_e.List):
                         obj = cast(value.List, UP_obj)
@@ -277,18 +277,18 @@ class ExprEvaluator(object):
                 raise NotImplementedError(node.__class__.__name__)
 
     def _EvalPlaceExpr(self, place):
-        # type: (place_expr_t) -> lvalue_t
+        # type: (lhs_expr_t) -> lvalue_t
 
         # TODO: This could be ysh_lvalue?
 
         UP_place = place
         with tagswitch(place) as case:
-            if case(place_expr_e.Var):
-                place = cast(place_expr.Var, UP_place)
+            if case(lhs_expr_e.Var):
+                place = cast(lhs_expr.Var, UP_place)
 
                 return location.LName(place.name.tval)
 
-            elif case(place_expr_e.Subscript):
+            elif case(lhs_expr_e.Subscript):
                 place = cast(Subscript, UP_place)
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
@@ -298,7 +298,7 @@ class ExprEvaluator(object):
                 #log('index %s', index)
                 return lvalue.ObjIndex(lval, index)
 
-            elif case(place_expr_e.Attribute):
+            elif case(lhs_expr_e.Attribute):
                 place = cast(Attribute, UP_place)
                 assert place.op.id == Id.Expr_Dot
 
@@ -321,7 +321,7 @@ class ExprEvaluator(object):
         return val
 
     def EvalPlaceExpr(self, place):
-        # type: (place_expr_t) -> lvalue_t
+        # type: (lhs_expr_t) -> lvalue_t
         """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
         with state.ctx_YshExpr(self.mutable_opts):
             lval = self._EvalPlaceExpr(place)

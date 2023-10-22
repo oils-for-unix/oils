@@ -74,8 +74,8 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord,
     word_part,
     word_part_t,
-    place_expr,
-    place_expr_e,
+    lhs_expr,
+    lhs_expr_e,
     arith_expr_t,
     command,
     expr_t,
@@ -1084,16 +1084,15 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.ShCommand)  # always back to this
         return enode
 
-    def ParsePlaceMutation(self, kw_token, var_checker):
-        # type: (Token, VarChecker) -> command.PlaceMutation
+    def ParseMutation(self, kw_token, var_checker):
+        # type: (Token, VarChecker) -> command.Mutation
         """
         setvar a[i] = 1
         setvar i += 1
         setvar i++
         """
         self._SetNext(lex_mode_e.Expr)
-        enode, last_token = self.parse_ctx.ParsePlaceMutation(
-            kw_token, self.lexer)
+        enode, last_token = self.parse_ctx.ParseMutation(kw_token, self.lexer)
         # Hack to move } from what the Expr lexer modes gives to what CommandParser
         # wants
         if last_token.id == Id.Op_RBrace:
@@ -1102,8 +1101,8 @@ class WordParser(WordEmitter):
         for place in enode.lhs:
             UP_place = place
             with tagswitch(place) as case:
-                if case(place_expr_e.Var):
-                    place = cast(place_expr.Var, UP_place)
+                if case(lhs_expr_e.Var):
+                    place = cast(lhs_expr.Var, UP_place)
                     var_checker.Check(kw_token.id, place.name)
                 # TODO: Do indices as well
 
