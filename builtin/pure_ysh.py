@@ -11,7 +11,6 @@ from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import location
-from frontend import match
 from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import tagswitch
