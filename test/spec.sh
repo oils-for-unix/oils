@@ -721,8 +721,8 @@ ysh-bin() {
   run-file ysh-bin "$@"
 }
 
-ysh-array() {
-  run-file ysh-array "$@"
+ysh-list() {
+  run-file ysh-list "$@"
 }
 
 ysh-assign() {
