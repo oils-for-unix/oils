@@ -1,5 +1,4 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
 
 # From Zulip:
 #
@@ -182,12 +181,7 @@ for i in @(seq 2) {
 
   # push builtin is only for strings
 
-  # The _ keyword puts you in EXPRESSION MODE.  Then use Python-like methods.
-  # Is this awkward?  We could also do setvar e[] = o to append?  What about
-  # extend?
-
-  #_ e.append(o)
-  _ e->append(o)
+  :: e->append(o)
 }
 
 json write (e)
@@ -206,12 +200,12 @@ json write (e)
 #### Invalid op on string
 shopt -s oil:all
 
-var clients = {'email': 'foo'}
-for c in @clients {
+var clients = {'email': 'foo', 'e2': 'bar'}
+for c in (clients) {
   echo $c
   # A user tickled this.  I think this should make the whole 'const' line fail
   # with code 1 or 2?
-  const e = c->email
+  const e = c.email
 }
 ## status: 3
 ## STDOUT:

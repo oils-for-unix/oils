@@ -13,7 +13,7 @@ set -o errexit
 # TODO:
 # - remove the 'oil' everywhere
 # - translation should be 'ysh-translate'.  Later 'ysh-format'
-readonly OIL_OVM_NAMES=(oil ysh osh oshc tea sh true false readlink)
+readonly OIL_OVM_NAMES=(oil ysh osh tea sh true false readlink)
 
 # TODO: probably delete this
 # For osh-dbg.

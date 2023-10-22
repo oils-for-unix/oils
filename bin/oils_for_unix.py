@@ -139,10 +139,6 @@ def AppBundleMain(argv):
     elif applet.endswith('sh'):  # sh, osh, bash imply OSH
         return shell.Main('osh', arg_r, environ, login_shell, loader, readline)
 
-    elif applet == 'oshc':
-        # Moved to --tool
-        raise AssertionError()
-
     # For testing latency
     elif applet == 'true':
         return 0
