@@ -1234,10 +1234,10 @@ class CommandEvaluator(object):
         n = len(node.iter_names)
         assert n > 0
 
-        i_name = None  # type: Optional[lvalue_t]
+        i_name = None  # type: Optional[lvalue.Named]
         # required
-        name1 = None  # type: lvalue_t
-        name2 = None  # type: Optional[lvalue_t]
+        name1 = None  # type: lvalue.Named
+        name2 = None  # type: Optional[lvalue.Named]
 
         it2 = None  # type: val_ops._ContainerIter
         if iter_list is None:  # for_expr.YshExpr
@@ -1313,13 +1313,11 @@ class CommandEvaluator(object):
         status = 0  # in case we loop zero times
         with ctx_LoopLevel(self):
             while not it2.Done():
-                self.mem.SetValue(name1, it2.FirstValue(), scope_e.LocalOnly)
+                self.mem.SetLocalName(name1, it2.FirstValue())
                 if name2:
-                    self.mem.SetValue(name2, it2.SecondValue(),
-                                      scope_e.LocalOnly)
+                    self.mem.SetLocalName(name2, it2.SecondValue())
                 if i_name:
-                    self.mem.SetValue(i_name, value.Int(it2.Index()),
-                                      scope_e.LocalOnly)
+                    self.mem.SetLocalName(i_name, value.Int(it2.Index()))
 
                 # increment index before handling continue, etc.
                 it2.Next()

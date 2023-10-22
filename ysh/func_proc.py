@@ -337,7 +337,7 @@ def _BindWords(
         items = [value.Str(s)
                  for s in argv[num_params:]]  # type: List[value_t]
         rest_val = value.List(items)
-        mem.SetValue(lval, rest_val, scope_e.LocalOnly)
+        mem.SetLocalName(lval, rest_val)
     else:
         if num_args > num_params:
             if len(cmd_val.arg_locs):
@@ -382,8 +382,7 @@ def _BindTyped(
                         "%r wasn't passed typed param %r" %
                         (code_name, p.name), blame_loc)
 
-            mem.SetValue(lvalue.Named(p.name, p.blame_tok), val,
-                         scope_e.LocalOnly)
+            mem.SetLocalName(lvalue.Named(p.name, p.blame_tok), val)
             i += 1
         num_params += len(group.params)
 
@@ -398,8 +397,8 @@ def _BindTyped(
                     "%r wasn't passed block param %r" %
                     (code_name, block_param.name), blame_loc)
 
-        mem.SetValue(lvalue.Named(block_param.name, block_param.blame_tok),
-                     val, scope_e.LocalOnly)
+        mem.SetLocalName(lvalue.Named(block_param.name, block_param.blame_tok),
+                         val)
         num_params += 1
 
     # ...rest
@@ -410,7 +409,7 @@ def _BindTyped(
             lval = lvalue.Named(rest.name, rest.blame_tok)
 
             rest_val = value.List(pos_args[num_params:])
-            mem.SetValue(lval, rest_val, scope_e.LocalOnly)
+            mem.SetLocalName(lval, rest_val)
         else:
             if num_args > num_params:
                 # Too many arguments.
@@ -441,7 +440,7 @@ def _BindNamed(
                 "%r wasn't passed named param %r" % (code_name, p.name),
                 blame_loc)
 
-        mem.SetValue(lvalue.Named(p.name, p.blame_tok), val, scope_e.LocalOnly)
+        mem.SetLocalName(lvalue.Named(p.name, p.blame_tok), val)
         # Remove bound args
         mylib.dict_erase(named_args, p.name)
 
@@ -449,7 +448,7 @@ def _BindNamed(
     rest = group.rest_of
     if rest:
         lval = lvalue.Named(rest.name, rest.blame_tok)
-        mem.SetValue(lval, value.Dict(named_args), scope_e.LocalOnly)
+        mem.SetLocalName(lval, value.Dict(named_args))
     else:
         num_args = len(named_args)
         num_params = len(group.params)

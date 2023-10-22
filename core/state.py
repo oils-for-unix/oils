@@ -1490,6 +1490,24 @@ class Mem(object):
                 return True
         return False
 
+    def SetLocalName(self, lval, val):
+        # type: (lvalue.Named, value_t) -> None
+
+        # Equivalent to
+        # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
+        name_map = self.var_stack[-1]
+        cell = name_map.get(lval.name)
+
+        if cell:
+            if cell.readonly:
+                e_die(
+                    "Can't assign to readonly value %r" %
+                    lval.name, lval.blame_loc)
+            cell.val = val  # Mutate value_t
+        else:
+            cell = Cell(False, False, False, val)
+            name_map[lval.name] = cell
+
     def SetNamed(self, lval, val, which_scopes, flags=0):
         # type: (lvalue.Named, value_t, scope_t, int) -> None
 
@@ -1579,8 +1597,6 @@ class Mem(object):
 
         Note: in bash, PWD=/ changes the directory.  But not in dash.
         """
-        keyword_id = flags >> 8  # opposite of _PackFlags
-        is_setref = keyword_id == Id.KW_SetRef
         # STRICTNESS / SANENESS:
         #
         # 1) Don't create arrays automatically, e.g. a[1000]=x
@@ -1607,7 +1623,9 @@ class Mem(object):
 
             elif case(lvalue_e.Indexed):
                 lval = cast(lvalue.Indexed, UP_lval)
-                assert isinstance(lval.index, int), lval
+
+                keyword_id = flags >> 8  # opposite of _PackFlags
+                is_setref = keyword_id == Id.KW_SetRef
 
                 # There is no syntax 'declare a[x]'
                 assert val is not None, val
@@ -1680,6 +1698,10 @@ class Mem(object):
 
             elif case(lvalue_e.Keyed):
                 lval = cast(lvalue.Keyed, UP_lval)
+
+                keyword_id = flags >> 8  # opposite of _PackFlags
+                is_setref = keyword_id == Id.KW_SetRef
+
                 # There is no syntax 'declare A["x"]'
                 assert val is not None, val
                 assert val.tag() == value_e.Str, val
