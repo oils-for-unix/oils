@@ -1,5 +1,3 @@
-## oils_failures_allowed: 1
-
 #### Augmented assignment doesn't work on List
 
 # I suppose the logic is that string and array concat is ++
@@ -164,7 +162,7 @@ x=16
 x=4
 ## END
 
-#### Augmented assignment of List and Dict entries
+#### Augmented assignment of Dict
 
 var d = {x: 42}
 
@@ -181,6 +179,28 @@ echo $[d.x]
 43.5
 45.0
 48.0
+## END
+
+#### Augmented assignment of List
+
+shopt -s parse_at
+
+var mylist = :| 32 42 |
+
+setvar mylist[0] -= 1
+echo @mylist
+
+setvar mylist[1] //= 2
+echo @mylist
+
+setvar mylist[1] /= 2
+echo @mylist
+
+
+## STDOUT:
+31 42
+31 21
+31 10.5
 ## END
 
 #### Augmented assignment doesn't work with multiple LHS

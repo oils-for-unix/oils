@@ -192,29 +192,71 @@ class ExprEvaluator(object):
         # type: (str, loc_t) -> value_t
         return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
-    def EvalAugmented(self, lval, rhs_val, op):
-        # type: (lvalue_t, value_t, Token) -> value_t
-        """Called by CommandEvaluator."""
+    def EvalAugmented(self, lval, rhs_val, op, which_scopes):
+        # type: (lvalue_t, value_t, Token, scope_t) -> None
+        """ setvar x +=1, setvar L[0] -= 1 
 
-        #assert op.id == Id.Arith_PlusEqual, op
-
-        # TODO: Handle other augmented assignment
-        #
-        # It might be nice to do auto d[x] += 1 too
+        Called by CommandEvaluator
+        """
+        # TODO: It might be nice to do auto d[x] += 1 too
 
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):
+            if case(lvalue_e.Named):  # setvar x += 1
                 lval = cast(lvalue.Named, UP_lval)
                 lhs_val = self._LookupVar(lval.name, lval.blame_loc)
                 if op.id in (Id.Arith_PlusEqual, Id.Arith_MinusEqual,
                              Id.Arith_StarEqual, Id.Arith_SlashEqual):
-                    return self._ArithIntFloat(lhs_val, rhs_val, op)
+                    new_val = self._ArithIntFloat(lhs_val, rhs_val, op)
                 else:
-                    return self._ArithIntOnly(lhs_val, rhs_val, op)
+                    new_val = self._ArithIntOnly(lhs_val, rhs_val, op)
+
+                self.mem.SetValue(lval, new_val, which_scopes)
+
+            elif case(lvalue_e.ObjIndex):  # setvar d.key += 1
+                lval = cast(lvalue.ObjIndex, UP_lval)
+
+                obj = lval.obj
+                UP_obj = obj
+
+                lhs_val_ = None  # type: value_t
+                # Similar to command_e.PlaceMutation
+                with tagswitch(obj) as case:
+                    if case(value_e.List):
+                        obj = cast(value.List, UP_obj)
+                        index = val_ops.ToInt(lval.index,
+                                              'List index should be Int',
+                                              loc.Missing)
+                        lhs_val_ = obj.items[index]
+
+                    elif case(value_e.Dict):
+                        obj = cast(value.Dict, UP_obj)
+                        key = val_ops.ToStr(lval.index,
+                                            'Dict index should be Str',
+                                            loc.Missing)
+                        lhs_val_ = obj.d[key]
+
+                    else:
+                        raise error.TypeErr(
+                            obj, "obj[index] expected List or Dict",
+                            loc.Missing)
+
+                if op.id in (Id.Arith_PlusEqual, Id.Arith_MinusEqual,
+                             Id.Arith_StarEqual, Id.Arith_SlashEqual):
+                    new_val_ = self._ArithIntFloat(lhs_val_, rhs_val, op)
+                else:
+                    new_val_ = self._ArithIntOnly(lhs_val_, rhs_val, op)
+
+                with tagswitch(obj) as case:
+                    if case(value_e.List):
+                        obj = cast(value.List, UP_obj)
+                        obj.items[index] = new_val_
+
+                    elif case(value_e.Dict):
+                        obj = cast(value.Dict, UP_obj)
+                        obj.d[key] = new_val_
+
             else:
-                # TODO: Handle other lvalue, like sh_expr_eval.OldValue() But
-                # this is for YSH values, not value.BashArray etc.
                 raise AssertionError()
 
     def EvalLHS(self, node):

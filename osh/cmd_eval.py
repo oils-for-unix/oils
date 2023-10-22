@@ -834,8 +834,6 @@ class CommandEvaluator(object):
                                       which_scopes,
                                       flags=_PackFlags(node.keyword.id))
 
-        # TODO: Eval other augmented assignments.   Do we need "kind"
-        # here?
         else:
             # Checked in the parser
             assert len(node.lhs) == 1
@@ -843,12 +841,7 @@ class CommandEvaluator(object):
             aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            new_val = self.expr_ev.EvalAugmented(aug_lval, val, node.op)
-
-            self.mem.SetValue(aug_lval,
-                              new_val,
-                              which_scopes,
-                              flags=_PackFlags(node.keyword.id))
+            self.expr_ev.EvalAugmented(aug_lval, val, node.op, which_scopes)
 
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
