@@ -32,9 +32,9 @@ from _devbuild.gen.syntax_asdl import (
     bool_expr,
     bool_expr_e,
     bool_expr_t,
-    sh_lhs_expr,
-    sh_lhs_expr_e,
-    sh_lhs_expr_t,
+    sh_lhs,
+    sh_lhs_e,
+    sh_lhs_t,
     BracedVarSub,
     SimpleVarSub,
 )
@@ -93,7 +93,7 @@ def OldValue(lval, mem, exec_opts):
         Because s+=val doesn't check it.
 
     TODO: A stricter and less ambiguous version for YSH.
-    - Problem: why does lvalue have Indexed and Keyed, while sh_lhs_expr only has
+    - Problem: why does lvalue have Indexed and Keyed, while sh_lhs only has
       IndexedName?
       - should I have location.LName and lvalue.Indexed only?
       - and Indexed uses the index_t type?
@@ -798,25 +798,25 @@ class ArithEvaluator(object):
             e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
 
     def EvalShellLhs(self, node, which_scopes):
-        # type: (sh_lhs_expr_t, scope_t) -> lvalue_t
+        # type: (sh_lhs_t, scope_t) -> lvalue_t
         """Evaluate a shell LHS expression
 
         For  a=b  and  a[x]=b  etc.
         """
-        assert isinstance(node, sh_lhs_expr_t), node
+        assert isinstance(node, sh_lhs_t), node
 
         UP_node = node
         lval = None  # type: lvalue_t
         with tagswitch(node) as case:
-            if case(sh_lhs_expr_e.Name):  # a=x
-                node = cast(sh_lhs_expr.Name, UP_node)
+            if case(sh_lhs_e.Name):  # a=x
+                node = cast(sh_lhs.Name, UP_node)
                 assert node.name is not None
 
                 lval1 = lvalue.Named(node.name, node.left)
                 lval = lval1
 
-            elif case(sh_lhs_expr_e.IndexedName):  # a[1+2]=x
-                node = cast(sh_lhs_expr.IndexedName, UP_node)
+            elif case(sh_lhs_e.IndexedName):  # a[1+2]=x
+                node = cast(sh_lhs.IndexedName, UP_node)
                 assert node.name is not None
 
                 if self.mem.IsBashAssoc(node.name):

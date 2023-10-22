@@ -217,7 +217,7 @@ module syntax
   | String(id id, str s, CompoundWord? blame_loc)
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
-  sh_lhs_expr =
+  sh_lhs =
     Name(Token left, str name)
   | IndexedName(Token left, str name, arith_expr index)
   | UnparsedIndex(Token left, str name, str index)  # for translation
@@ -257,7 +257,7 @@ module syntax
   Redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual
-  AssignPair = (Token left, sh_lhs_expr lhs, assign_op op, rhs_word rhs)
+  AssignPair = (Token left, sh_lhs lhs, assign_op op, rhs_word rhs)
   EnvPair = (Token left, str name, rhs_word val)
 
   condition = 
@@ -396,7 +396,7 @@ module syntax
     # var, const
   | VarDecl(Token? keyword, List[NameType] lhs, expr rhs)
     # setvar, maybe 'auto' later
-  | Mutation(Token keyword, List[lhs_expr] lhs, Token op, expr rhs)
+  | Mutation(Token keyword, List[y_lhs] lhs, Token op, expr rhs)
     # = keyword
   | Expr(Token keyword, expr e)
   | Proc %Proc
@@ -454,7 +454,7 @@ module syntax
   # Attributes are obj.attr, d->key, name::scope,
   Attribute = (expr obj, Token op, Token attr, expr_context ctx)
 
-  lhs_expr = 
+  y_lhs = 
     Var(Token name)  # TODO: add str var_name
   | Subscript %Subscript
   | Attribute %Attribute

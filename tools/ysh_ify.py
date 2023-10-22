@@ -66,8 +66,8 @@ from _devbuild.gen.syntax_asdl import (
     word_part_t,
     rhs_word_e,
     rhs_word_t,
-    sh_lhs_expr,
-    sh_lhs_expr_e,
+    sh_lhs,
+    sh_lhs_e,
     command,
     command_e,
     BraceGroup,
@@ -388,14 +388,14 @@ class OilPrinter(object):
             # statements.
             if local_symbols is not None:
                 lhs0 = node.pairs[0].lhs
-                #if lhs0.tag() == sh_lhs_expr_e.Name and lhs0.name in local_symbols:
+                #if lhs0.tag() == sh_lhs_e.Name and lhs0.name in local_symbols:
                 #  defined_locally = True
 
                 #print("CHECKING NAME", lhs0.name, defined_locally, local_symbols)
 
             # TODO: Avoid translating these
             has_array_index = [
-                pair.lhs.tag() == sh_lhs_expr_e.UnparsedIndex
+                pair.lhs.tag() == sh_lhs_e.UnparsedIndex
                 for pair in node.pairs
             ]
 
@@ -417,8 +417,8 @@ class OilPrinter(object):
             lhs = pair.lhs
             UP_lhs = lhs
             with tagswitch(lhs) as case:
-                if case(sh_lhs_expr_e.Name):
-                    lhs = cast(sh_lhs_expr.Name, UP_lhs)
+                if case(sh_lhs_e.Name):
+                    lhs = cast(sh_lhs.Name, UP_lhs)
 
                     self.cursor.PrintUntil(pair.left)
                     # Assume skipping over one Lit_VarLike token
@@ -434,7 +434,7 @@ class OilPrinter(object):
                     else:
                         self.DoRhsWord(pair.rhs, local_symbols)
 
-                elif case(sh_lhs_expr_e.UnparsedIndex):
+                elif case(sh_lhs_e.UnparsedIndex):
                     # --one-pass-parse gives us this node, instead of IndexedName
                     pass
 

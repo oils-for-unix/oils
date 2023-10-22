@@ -26,8 +26,8 @@ from _devbuild.gen.syntax_asdl import (
     PosixClass,
     PerlClass,
     NameType,
-    lhs_expr,
-    lhs_expr_t,
+    y_lhs,
+    y_lhs_t,
     Comprehension,
     Subscript,
     Attribute,
@@ -714,11 +714,11 @@ class Transformer(object):
             return self.Expr(child0)  # $1 ${x} etc.
 
     def _LhsExprList(self, p_node):
-        # type: (PNode) -> List[lhs_expr_t]
+        # type: (PNode) -> List[y_lhs_t]
         """lhs_list: expr (',' expr)*"""
         assert p_node.typ == grammar_nt.lhs_list
 
-        lhs_list = []  # type: List[lhs_expr_t]
+        lhs_list = []  # type: List[y_lhs_t]
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):  # was children[::2]
             p = p_node.GetChild(i)
@@ -728,7 +728,7 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    lhs_list.append(lhs_expr.Var(e.name))
+                    lhs_list.append(y_lhs.Var(e.name))
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)

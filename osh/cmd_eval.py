@@ -784,8 +784,8 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                        'Got %d places on the left, but %d values on the right' %
-                        (num_lhs, num_rhs), node.keyword)
+                        'Got %d places on the left, but %d values on the right'
+                        % (num_lhs, num_rhs), node.keyword)
 
                 lvals = []
                 rhs_vals = []

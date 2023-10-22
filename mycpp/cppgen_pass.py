@@ -82,7 +82,7 @@ def _GetCastKind(module_path, cast_to_type):
                 'DoubleQuoted',
                 'SingleQuoted',
                 # Another kind of hack, not because of CastDummy
-                'lhs_expr_t',
+                'y_lhs_t',
         ):
             if name in cast_to_type:
                 cast_kind = 'reinterpret_cast'

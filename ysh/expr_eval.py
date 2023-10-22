@@ -20,9 +20,9 @@ from _devbuild.gen.syntax_asdl import (
     expr,
     expr_e,
     expr_t,
-    lhs_expr,
-    lhs_expr_e,
-    lhs_expr_t,
+    y_lhs,
+    y_lhs_e,
+    y_lhs_t,
     Attribute,
     Subscript,
     class_literal_term,
@@ -277,16 +277,16 @@ class ExprEvaluator(object):
                 raise NotImplementedError(node.__class__.__name__)
 
     def _EvalLhsExpr(self, lhs):
-        # type: (lhs_expr_t) -> lvalue_t
+        # type: (y_lhs_t) -> lvalue_t
 
         UP_lhs = lhs
         with tagswitch(lhs) as case:
-            if case(lhs_expr_e.Var):
-                lhs = cast(lhs_expr.Var, UP_lhs)
+            if case(y_lhs_e.Var):
+                lhs = cast(y_lhs.Var, UP_lhs)
 
                 return location.LName(lhs.name.tval)
 
-            elif case(lhs_expr_e.Subscript):
+            elif case(y_lhs_e.Subscript):
                 lhs = cast(Subscript, UP_lhs)
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
@@ -296,7 +296,7 @@ class ExprEvaluator(object):
                 #log('index %s', index)
                 return lvalue.ObjIndex(lval, index)
 
-            elif case(lhs_expr_e.Attribute):
+            elif case(y_lhs_e.Attribute):
                 lhs = cast(Attribute, UP_lhs)
                 assert lhs.op.id == Id.Expr_Dot
 
@@ -319,7 +319,7 @@ class ExprEvaluator(object):
         return val
 
     def EvalLhsExpr(self, lhs):
-        # type: (lhs_expr_t) -> lvalue_t
+        # type: (y_lhs_t) -> lvalue_t
         """Public API for _EvalLhsExpr to ensure command_sub_errexit"""
         with state.ctx_YshExpr(self.mutable_opts):
             lval = self._EvalLhsExpr(lhs)

@@ -43,8 +43,8 @@ from _devbuild.gen.syntax_asdl import (
     word_part_t,
     rhs_word,
     rhs_word_t,
-    sh_lhs_expr,
-    sh_lhs_expr_t,
+    sh_lhs,
+    sh_lhs_t,
     AssignPair,
     EnvPair,
     ParsedAssignment,
@@ -189,7 +189,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     left_token = preparsed.left
     close_token = preparsed.close
 
-    lhs = None  # type: sh_lhs_expr_t
+    lhs = None  # type: sh_lhs_t
 
     if left_token.id == Id.Lit_VarLike:  # s=1
         if lexer.IsPlusEquals(left_token):
@@ -199,7 +199,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
             var_name = lexer.TokenSliceRight(left_token, -1)
             op = assign_op_e.Equal
 
-        lhs = sh_lhs_expr.Name(left_token, var_name)
+        lhs = sh_lhs.Name(left_token, var_name)
 
     elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
         var_name = lexer.TokenSliceRight(left_token, -1)
@@ -213,7 +213,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
         left_pos = left_token.col + left_token.length
         index_str = left_token.line.content[left_pos:close_token.col]
-        lhs = sh_lhs_expr.UnparsedIndex(left_token, var_name, index_str)
+        lhs = sh_lhs.UnparsedIndex(left_token, var_name, index_str)
 
     elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
         var_name = lexer.TokenSliceRight(left_token, -1)
@@ -237,7 +237,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
         with alloc.ctx_SourceCode(arena, src):
             index_node = a_parser.Parse()  # may raise error.Parse
 
-        lhs = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
+        lhs = sh_lhs.IndexedName(left_token, var_name, index_node)
 
     else:
         raise AssertionError()

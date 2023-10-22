@@ -74,8 +74,8 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord,
     word_part,
     word_part_t,
-    lhs_expr,
-    lhs_expr_e,
+    y_lhs,
+    y_lhs_e,
     arith_expr_t,
     command,
     expr_t,
@@ -1101,8 +1101,8 @@ class WordParser(WordEmitter):
         for lhs in enode.lhs:
             UP_lhs = lhs
             with tagswitch(lhs) as case:
-                if case(lhs_expr_e.Var):
-                    lhs = cast(lhs_expr.Var, UP_lhs)
+                if case(y_lhs_e.Var):
+                    lhs = cast(y_lhs.Var, UP_lhs)
                     var_checker.Check(kw_token.id, lhs.name)
                 # TODO: Do indices as well
 

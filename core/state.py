@@ -1687,7 +1687,7 @@ class Mem(object):
 
                 # This could be an object, eggex object, etc.  It won't be
                 # BashAssoc shouldn because we query IsBashAssoc before evaluating
-                # sh_lhs_expr.  Could conslidate with s[i] case above
+                # sh_lhs.  Could conslidate with s[i] case above
                 e_die(
                     "Value of type %s can't be indexed" % ui.ValType(cell.val),
                     left_loc)
