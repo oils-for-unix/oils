@@ -29,17 +29,17 @@
 #   - LhsIndexedName should not reference Oil vars either
 
 
-#### Augmented assignment doesn't work on shell arrays
+#### Augmented assignment doesn't work on List
 
 # I suppose the logic is that string and array concat is ++
 #
 # I wonder if a ++= operator makes sense?
 
 shopt -s parse_at simple_word_eval
-var x = %(a 'b c')
+var x = :| a 'b c' |
 argv.py @x
 
-setvar x += %(d e)  # fatal error
+setvar x += :| d e |  # fatal error
 argv.py @x
 ## status: 3
 ## STDOUT:

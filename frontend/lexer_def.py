@@ -919,12 +919,15 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('/=', Id.Arith_SlashEqual),
     C('%=', Id.Arith_PercentEqual),
 
+    C('>>=', Id.Arith_DGreatEqual),
+    C('<<=', Id.Arith_DLessEqual),
     C('&=', Id.Arith_AmpEqual),
     C('|=', Id.Arith_PipeEqual),
     C('^=', Id.Arith_CaretEqual),  # Exponentiation
 
-    C('>>=', Id.Arith_DGreatEqual),
-    C('<<=', Id.Arith_DLessEqual),
+    # Augmented assignment that YSH has, but sh and OSH don't have
+    C('**=', Id.Expr_DStarEqual),
+    C('//=', Id.Expr_DSlashEqual),
 
     #
     # Expr

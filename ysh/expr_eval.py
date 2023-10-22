@@ -192,9 +192,11 @@ class ExprEvaluator(object):
         # type: (str, loc_t) -> value_t
         return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
-    def EvalPlusEquals(self, lval, rhs_val, op):
+    def EvalAugmented(self, lval, rhs_val, op):
         # type: (lvalue_t, value_t, Token) -> value_t
         """Called by CommandEvaluator."""
+
+        assert op.id == Id.Arith_PlusEqual, op
 
         # TODO: Handle other augmented assignment
         #

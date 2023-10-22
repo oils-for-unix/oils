@@ -206,18 +206,23 @@ def AddKinds(spec):
             ('Caret', '^'),
             ('Tilde', '~'),
 
-            # 11 mutating operators:  =  +=  -=  etc.
             ('Equal', '='),
+
+            # Augmented Assignment for $(( ))
+            # Must match the list in osh/arith_parse.py
+            # YSH has **= //= like Python
             ('PlusEqual', '+='),
             ('MinusEqual', '-='),
             ('StarEqual', '*='),
             ('SlashEqual', '/='),
             ('PercentEqual', '%='),
+
             ('DGreatEqual', '>>='),
             ('DLessEqual', '<<='),
+
             ('AmpEqual', '&='),
+            ('CaretEqual', '^='),
             ('PipeEqual', '|='),
-            ('CaretEqual', '^=')
         ])
 
     spec.AddKind('Eof', ['Real', 'RParen', 'Backtick'])
@@ -345,6 +350,10 @@ def AddKinds(spec):
             'NotTilde',  # !~
             'DTilde',
             'NotDTilde',  # ~~ !~~
+
+            'DStarEqual',  # **=, which bash doesn't have
+            'DSlashEqual',  # //=, which bash doesn't have
+
             'CastedDummy',  # Used for @()  $() (words in lex_mode_e.ShCommand)
             # and ${}  ''  ""  (and all other strings)
 

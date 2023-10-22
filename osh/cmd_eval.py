@@ -836,22 +836,19 @@ class CommandEvaluator(object):
 
         # TODO: Eval other augmented assignments.   Do we need "kind"
         # here?
-        elif node.op.id == Id.Arith_PlusEqual:
+        else:
             # Checked in the parser
             assert len(node.lhs) == 1
 
             aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            new_val = self.expr_ev.EvalPlusEquals(aug_lval, val, node.op)
+            new_val = self.expr_ev.EvalAugmented(aug_lval, val, node.op)
 
             self.mem.SetValue(aug_lval,
                               new_val,
                               which_scopes,
                               flags=_PackFlags(node.keyword.id))
-
-        else:
-            raise NotImplementedError(Id_str(node.op.id))
 
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int

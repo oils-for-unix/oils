@@ -73,7 +73,6 @@ def main(argv):
 
     # Used at grammar BUILD time.
     OPS = {
-        #':': Id.Arith_Colon,
         '!': Id.Expr_Bang,
         '.': Id.Expr_Dot,
         '..': Id.Expr_DDot,
@@ -89,6 +88,9 @@ def main(argv):
         '@': Id.Expr_At,
         '...': Id.Expr_Ellipsis,
         '$': Id.Expr_Dollar,  # Only for legacy eggex /d+$/
+
+        '**=': Id.Expr_DStarEqual,
+        '//=': Id.Expr_DSlashEqual,
     }
 
     # Note: We have two lists of ops because Id.Op_Semi is used, not

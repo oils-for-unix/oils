@@ -18,10 +18,12 @@
 # Kinds used:
 #   VSub, Left, Right, Expr, Op, Arith, Char, Eof, Unknown
 
-# YSH patch: removed @= **= //=
+# YSH patch: removed @=
 # Possibly just use have += -= *=.  Those are the most common.
 augassign: (
-    '+=' | '-=' | '*=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>='
+    '+=' | '-=' | '*=' | '/='
+    '**=' | '//=' | '%=' |
+    '&=' | '|=' | '^=' | '<<=' | '>>='
 )
 # For normal and annotated assignments, additional restrictions enforced by the interpreter
 
