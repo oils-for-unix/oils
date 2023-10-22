@@ -33,8 +33,8 @@ from _devbuild.gen.runtime_asdl import (
     part_value,
     part_value_e,
     part_value_t,
-    lvalue,
-    lvalue_t,
+    sh_lvalue,
+    sh_lvalue_t,
     cmd_value,
     cmd_value_e,
     cmd_value_t,
@@ -659,7 +659,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         assign_part_vals, self.splitter.GetJoinChar())
                     if vtest_place.index is None:  # using None when no index
                         lval = location.LName(
-                            vtest_place.name)  # type: lvalue_t
+                            vtest_place.name)  # type: sh_lvalue_t
                     else:
                         var_name = vtest_place.name
                         var_index = vtest_place.index
@@ -668,12 +668,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         with tagswitch(var_index) as case:
                             if case(a_index_e.Int):
                                 var_index = cast(a_index.Int, UP_var_index)
-                                lval = lvalue.Indexed(var_name, var_index.i,
-                                                      loc.Missing)
+                                lval = sh_lvalue.Indexed(
+                                    var_name, var_index.i, loc.Missing)
                             elif case(a_index_e.Str):
                                 var_index = cast(a_index.Str, UP_var_index)
-                                lval = lvalue.Keyed(var_name, var_index.s,
-                                                    loc.Missing)
+                                lval = sh_lvalue.Keyed(var_name, var_index.s,
+                                                       loc.Missing)
                             else:
                                 raise AssertionError()
 

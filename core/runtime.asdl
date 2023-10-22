@@ -96,7 +96,7 @@ module runtime
   # | LiteralBlock %LiteralBlock
   | Block(LiteralBlock block)
 
-    # An lvalue is for things mutation that happen with dynamic scope
+    # An sh_lvalue is for things mutation that happen with dynamic scope
     # (including in the same stack frame)
     #   unset 'a[0]'
     #   : ${a[0]=}
@@ -104,7 +104,7 @@ module runtime
     #
     # A place has an additional stack frame where the value is evaluated.
     # The frame MUST be lower on the stack at the time of use.
-  | Place(lvalue lval, Dict[str, Cell] frame)
+  | Place(sh_lvalue lval, Dict[str, Cell] frame)
 
     # Passed into "dot procs" that can mutate the calling frame:
     # Flags :spec { .flag -v --verbose }
@@ -141,7 +141,7 @@ module runtime
 
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
-  # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
+  # Used for ${a[i]=x}.  TODO: also use for sh_lvalue/place.
   a_index = Str(str s) | Int(int i)
 
   # for the place in ${a[0]=a}
@@ -181,7 +181,7 @@ module runtime
   # - sh_expr_eval uses this for unset / printf -v
   # - word_eval uses this for ${a[0]=}
   # - expr_eval / cmd_eval use this for setvar a[i] = 42
-  lvalue = 
+  sh_lvalue = 
     Named(str name, loc blame_loc)
   | Indexed(str name, int index, loc blame_loc)
   | Keyed(str name, str key, loc blame_loc)

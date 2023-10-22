@@ -12,9 +12,9 @@ sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
     scope_t,
-    lvalue,
-    lvalue_e,
-    lvalue_t,
+    sh_lvalue,
+    sh_lvalue_e,
+    sh_lvalue_t,
     value,
     value_e,
     value_t,
@@ -82,7 +82,7 @@ _ = log
 
 
 def OldValue(lval, mem, exec_opts):
-    # type: (lvalue_t, state.Mem, Optional[optview.Exec]) -> value_t
+    # type: (sh_lvalue_t, state.Mem, Optional[optview.Exec]) -> value_t
     """Look up for augmented assignment.
 
     For s+=val and (( i += 1 ))
@@ -93,25 +93,25 @@ def OldValue(lval, mem, exec_opts):
         Because s+=val doesn't check it.
 
     TODO: A stricter and less ambiguous version for YSH.
-    - Problem: why does lvalue have Indexed and Keyed, while sh_lhs only has
+    - Problem: why does sh_lvalue have Indexed and Keyed, while sh_lhs only has
       IndexedName?
-      - should I have location.LName and lvalue.Indexed only?
+      - should I have location.LName and sh_lvalue.Indexed only?
       - and Indexed uses the index_t type?
         - well that might be Str or Int
     """
-    assert isinstance(lval, lvalue_t), lval
+    assert isinstance(lval, sh_lvalue_t), lval
 
-    # TODO: refactor lvalue_t to make this simpler
+    # TODO: refactor sh_lvalue_t to make this simpler
     UP_lval = lval
     with tagswitch(lval) as case:
-        if case(lvalue_e.Named):  # (( i++ ))
-            lval = cast(lvalue.Named, UP_lval)
+        if case(sh_lvalue_e.Named):  # (( i++ ))
+            lval = cast(sh_lvalue.Named, UP_lval)
             var_name = lval.name
-        elif case(lvalue_e.Indexed):  # (( a[i]++ ))
-            lval = cast(lvalue.Indexed, UP_lval)
+        elif case(sh_lvalue_e.Indexed):  # (( a[i]++ ))
+            lval = cast(sh_lvalue.Indexed, UP_lval)
             var_name = lval.name
-        elif case(lvalue_e.Keyed):  # (( A['K']++ )) ?  I think this works
-            lval = cast(lvalue.Keyed, UP_lval)
+        elif case(sh_lvalue_e.Keyed):  # (( A['K']++ )) ?  I think this works
+            lval = cast(sh_lvalue.Keyed, UP_lval)
             var_name = lval.name
         else:
             raise AssertionError()
@@ -122,11 +122,11 @@ def OldValue(lval, mem, exec_opts):
 
     UP_val = val
     with tagswitch(lval) as case:
-        if case(lvalue_e.Named):
+        if case(sh_lvalue_e.Named):
             return val
 
-        elif case(lvalue_e.Indexed):
-            lval = cast(lvalue.Indexed, UP_lval)
+        elif case(sh_lvalue_e.Indexed):
+            lval = cast(sh_lvalue.Indexed, UP_lval)
 
             array_val = None  # type: value.BashArray
             with tagswitch(val) as case2:
@@ -147,8 +147,8 @@ def OldValue(lval, mem, exec_opts):
                 assert isinstance(s, str), s
                 val = value.Str(s)
 
-        elif case(lvalue_e.Keyed):
-            lval = cast(lvalue.Keyed, UP_lval)
+        elif case(sh_lvalue_e.Keyed):
+            lval = cast(sh_lvalue.Keyed, UP_lval)
 
             assoc_val = None  # type: value.BashAssoc
             with tagswitch(val) as case2:
@@ -209,8 +209,8 @@ class UnsafeArith(object):
         self.arena = self.parse_ctx.arena
 
     def ParseLValue(self, s, location):
-        # type: (str, loc_t) -> lvalue_t
-        """Parse lvalue for 'unset' and 'printf -v'.
+        # type: (str, loc_t) -> sh_lvalue_t
+        """Parse sh_lvalue for 'unset' and 'printf -v'.
 
         It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
         """
@@ -219,7 +219,7 @@ class UnsafeArith(object):
             if not match.IsValidVarName(s):
                 e_die('Invalid variable name %r (parse_sh_arith is off)' % s,
                       location)
-            return lvalue.Named(s, location)
+            return sh_lvalue.Named(s, location)
 
         a_parser = self.parse_ctx.MakeArithParser(s)
 
@@ -264,7 +264,7 @@ class UnsafeArith(object):
         NamerefExpr = NAME Subscript?   # this allows @ and * too
 
         _ResolveNameOrRef currently gives you a 'cell'.  So it might not support
-        lvalue.Indexed?
+        sh_lvalue.Indexed?
         """
         line_reader = reader.StringLineReader(ref_str, self.arena)
         lexer = self.parse_ctx.MakeLexer(line_reader)
@@ -462,21 +462,21 @@ class ArithEvaluator(object):
             ui.ValType(val), loc.Arith(blame))
 
     def _EvalLhsAndLookupArith(self, node):
-        # type: (arith_expr_t) -> Tuple[int, lvalue_t]
+        # type: (arith_expr_t) -> Tuple[int, sh_lvalue_t]
         """ For x = y  and   x += y  and  ++x """
 
         lval = self.EvalArithLhs(node)
         val = OldValue(lval, self.mem, self.exec_opts)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if val.tag() in (value_e.BashArray,
-                         value_e.BashAssoc) and lval.tag() == lvalue_e.Named:
-            named_lval = cast(lvalue.Named, lval)
+        if val.tag() in (value_e.BashArray, value_e.BashAssoc
+                         ) and lval.tag() == sh_lvalue_e.Named:
+            named_lval = cast(sh_lvalue.Named, lval)
             if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
                 if val.tag() == value_e.BashArray:
-                    lval = lvalue.Indexed(named_lval.name, 0, loc.Missing)
+                    lval = sh_lvalue.Indexed(named_lval.name, 0, loc.Missing)
                 elif val.tag() == value_e.BashAssoc:
-                    lval = lvalue.Keyed(named_lval.name, '0', loc.Missing)
+                    lval = sh_lvalue.Keyed(named_lval.name, '0', loc.Missing)
                 val = word_eval.DecayArray(val)
 
         # This error message could be better, but we already have one
@@ -487,7 +487,7 @@ class ArithEvaluator(object):
         return i, lval
 
     def _Store(self, lval, new_int):
-        # type: (lvalue_t, int) -> None
+        # type: (sh_lvalue_t, int) -> None
         val = value.Str(str(new_int))
         state.OshLanguageSetValue(self.mem, lval, val)
 
@@ -798,7 +798,7 @@ class ArithEvaluator(object):
             e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
 
     def EvalShellLhs(self, node, which_scopes):
-        # type: (sh_lhs_t, scope_t) -> lvalue_t
+        # type: (sh_lhs_t, scope_t) -> sh_lvalue_t
         """Evaluate a shell LHS expression
 
         For  a=b  and  a[x]=b  etc.
@@ -806,13 +806,13 @@ class ArithEvaluator(object):
         assert isinstance(node, sh_lhs_t), node
 
         UP_node = node
-        lval = None  # type: lvalue_t
+        lval = None  # type: sh_lvalue_t
         with tagswitch(node) as case:
             if case(sh_lhs_e.Name):  # a=x
                 node = cast(sh_lhs.Name, UP_node)
                 assert node.name is not None
 
-                lval1 = lvalue.Named(node.name, node.left)
+                lval1 = sh_lvalue.Named(node.name, node.left)
                 lval = lval1
 
             elif case(sh_lhs_e.IndexedName):  # a[1+2]=x
@@ -821,11 +821,11 @@ class ArithEvaluator(object):
 
                 if self.mem.IsBashAssoc(node.name):
                     key = self.EvalWordToString(node.index)
-                    lval2 = lvalue.Keyed(node.name, key, node.left)
+                    lval2 = sh_lvalue.Keyed(node.name, key, node.left)
                     lval = lval2
                 else:
                     index = self.EvalToInt(node.index)
-                    lval3 = lvalue.Indexed(node.name, index, node.left)
+                    lval3 = sh_lvalue.Indexed(node.name, index, node.left)
                     lval = lval3
 
             else:
@@ -852,7 +852,7 @@ class ArithEvaluator(object):
         return (no_str, loc.Missing)
 
     def EvalArithLhs(self, anode):
-        # type: (arith_expr_t) -> lvalue_t
+        # type: (arith_expr_t) -> sh_lvalue_t
         """
         For (( a[x] = 1 )) etc.
         """
@@ -869,14 +869,14 @@ class ArithEvaluator(object):
                 if var_name is not None:
                     if self.mem.IsBashAssoc(var_name):
                         key = self.EvalWordToString(anode.right)
-                        return lvalue.Keyed(var_name, key, location)
+                        return sh_lvalue.Keyed(var_name, key, location)
                     else:
                         index = self.EvalToInt(anode.right)
-                        return lvalue.Indexed(var_name, index, location)
+                        return sh_lvalue.Indexed(var_name, index, location)
 
         var_name, location = self._VarNameOrWord(anode)
         if var_name is not None:
-            return lvalue.Named(var_name, location)
+            return sh_lvalue.Named(var_name, location)
 
         # e.g. unset 'x-y'.  status 2 for runtime parse error
         e_die_status(2, 'Invalid LHS to modify', location)

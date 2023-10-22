@@ -11,9 +11,9 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
-                                        lvalue_e, lvalue_t, scope_e, scope_t,
-                                        Cell)
+from _devbuild.gen.runtime_asdl import (value, value_e, value_t, sh_lvalue,
+                                        sh_lvalue_e, sh_lvalue_t, scope_e,
+                                        scope_t, Cell)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
@@ -1491,7 +1491,7 @@ class Mem(object):
         return False
 
     def SetLocalName(self, lval, val):
-        # type: (lvalue.Named, value_t) -> None
+        # type: (sh_lvalue.Named, value_t) -> None
 
         # Equivalent to
         # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
@@ -1508,7 +1508,7 @@ class Mem(object):
             name_map[lval.name] = cell
 
     def SetNamed(self, lval, val, which_scopes, flags=0):
-        # type: (lvalue.Named, value_t, scope_t, int) -> None
+        # type: (sh_lvalue.Named, value_t, scope_t, int) -> None
 
         keyword_id = flags >> 8  # opposite of _PackFlags
         is_setref = keyword_id == Id.KW_SetRef
@@ -1529,7 +1529,7 @@ class Mem(object):
             # 1. Call _ResolveNameOnly()
             # 2. If cell.nameref, call self.unsafe_arith.ParseVarRef() ->
             #    BracedVarSub
-            # 3. Turn BracedVarSub into an lvalue, and call
+            # 3. Turn BracedVarSub into an sh_lvalue, and call
             #    self.unsafe_arith.SetValue() wrapper with ref_trail
             cell, name_map, cell_name = self._ResolveNameOrRef(
                 lval.name, which_scopes, is_setref)
@@ -1582,10 +1582,10 @@ class Mem(object):
                 e_die("nameref must be a string", lval.blame_loc)
 
     def SetValue(self, lval, val, which_scopes, flags=0):
-        # type: (lvalue_t, value_t, scope_t, int) -> None
+        # type: (sh_lvalue_t, value_t, scope_t, int) -> None
         """
         Args:
-          lval: lvalue
+          lval: sh_lvalue
           val: value, or None if only changing flags
           which_scopes:
             Local | Global | Dynamic - for builtins, PWD, etc.
@@ -1612,13 +1612,13 @@ class Mem(object):
 
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):
-                lval = cast(lvalue.Named, UP_lval)
+            if case(sh_lvalue_e.Named):
+                lval = cast(sh_lvalue.Named, UP_lval)
 
                 self.SetNamed(lval, val, which_scopes, flags=flags)
 
-            elif case(lvalue_e.Indexed):
-                lval = cast(lvalue.Indexed, UP_lval)
+            elif case(sh_lvalue_e.Indexed):
+                lval = cast(sh_lvalue.Indexed, UP_lval)
 
                 keyword_id = flags >> 8  # opposite of _PackFlags
                 is_setref = keyword_id == Id.KW_SetRef
@@ -1692,8 +1692,8 @@ class Mem(object):
                     "Value of type %s can't be indexed" % ui.ValType(cell.val),
                     left_loc)
 
-            elif case(lvalue_e.Keyed):
-                lval = cast(lvalue.Keyed, UP_lval)
+            elif case(sh_lvalue_e.Keyed):
+                lval = cast(sh_lvalue.Keyed, UP_lval)
 
                 keyword_id = flags >> 8  # opposite of _PackFlags
                 is_setref = keyword_id == Id.KW_SetRef
@@ -1711,7 +1711,7 @@ class Mem(object):
                     e_die("Can't assign to readonly associative array",
                           left_loc)
 
-                # We already looked it up before making the lvalue
+                # We already looked it up before making the sh_lvalue
                 assert cell.val.tag() == value_e.BashAssoc, cell
                 cell_val2 = cast(value.BashAssoc, cell.val)
 
@@ -1721,7 +1721,7 @@ class Mem(object):
                 raise AssertionError(lval.tag())
 
     def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
-        # type: (Dict[str, Cell], lvalue.Indexed, value.Str, int) -> None
+        # type: (Dict[str, Cell], sh_lvalue.Indexed, value.Str, int) -> None
         """Fill 'name_map' with a new indexed array entry."""
         no_str = None  # type: Optional[str]
         items = [no_str] * lval.index
@@ -1916,23 +1916,23 @@ class Mem(object):
         return cell
 
     def Unset(self, lval, which_scopes):
-        # type: (lvalue_t, scope_t) -> bool
+        # type: (sh_lvalue_t, scope_t) -> bool
         """
     Returns:
       Whether the cell was found.
     """
-        # TODO: Refactor lvalue type to avoid this
+        # TODO: Refactor sh_lvalue type to avoid this
         UP_lval = lval
 
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):  # unset x
-                lval = cast(lvalue.Named, UP_lval)
+            if case(sh_lvalue_e.Named):  # unset x
+                lval = cast(sh_lvalue.Named, UP_lval)
                 var_name = lval.name
-            elif case(lvalue_e.Indexed):  # unset 'a[1]'
-                lval = cast(lvalue.Indexed, UP_lval)
+            elif case(sh_lvalue_e.Indexed):  # unset 'a[1]'
+                lval = cast(sh_lvalue.Indexed, UP_lval)
                 var_name = lval.name
-            elif case(lvalue_e.Keyed):  # unset 'A["K"]'
-                lval = cast(lvalue.Keyed, UP_lval)
+            elif case(sh_lvalue_e.Keyed):  # unset 'A["K"]'
+                lval = cast(sh_lvalue.Keyed, UP_lval)
                 var_name = lval.name
             else:
                 raise AssertionError()
@@ -1948,7 +1948,7 @@ class Mem(object):
             raise error.Runtime("Can't unset readonly variable %r" % var_name)
 
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):  # unset x
+            if case(sh_lvalue_e.Named):  # unset x
                 # Make variables in higher scopes visible.
                 # example: test/spec.sh builtin-vars -r 24 (ble.sh)
                 mylib.dict_erase(name_map, cell_name)
@@ -1960,8 +1960,8 @@ class Mem(object):
                 # This should never happen because we do recursive lookups of namerefs.
                 assert not cell.nameref, cell
 
-            elif case(lvalue_e.Indexed):  # unset 'a[1]'
-                lval = cast(lvalue.Indexed, UP_lval)
+            elif case(sh_lvalue_e.Indexed):  # unset 'a[1]'
+                lval = cast(sh_lvalue.Indexed, UP_lval)
                 # Note: Setting an entry to None and shifting entries are pretty
                 # much the same in shell.
 
@@ -1993,13 +1993,13 @@ class Mem(object):
                     # mistake for Tcl!)
                     pass
 
-            elif case(lvalue_e.Keyed):  # unset 'A["K"]'
-                lval = cast(lvalue.Keyed, UP_lval)
+            elif case(sh_lvalue_e.Keyed):  # unset 'A["K"]'
+                lval = cast(sh_lvalue.Keyed, UP_lval)
 
                 val = cell.val
                 UP_val = val
 
-                # note: never happens because of mem.IsBashAssoc test for lvalue.Keyed
+                # note: never happens because of mem.IsBashAssoc test for sh_lvalue.Keyed
                 #if val.tag() != value_e.BashAssoc:
                 #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
@@ -2148,7 +2148,7 @@ class Mem(object):
 
 
 def OshLanguageSetValue(mem, lval, val, flags=0):
-    # type: (Mem, lvalue_t, value_t, int) -> None
+    # type: (Mem, sh_lvalue_t, value_t, int) -> None
     """Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.
 
     That is, it respects shopt --unset dynamic_scope.
@@ -2160,7 +2160,7 @@ def OshLanguageSetValue(mem, lval, val, flags=0):
 
 
 def BuiltinSetValue(mem, lval, val):
-    # type: (Mem, lvalue_t, value_t) -> None
+    # type: (Mem, sh_lvalue_t, value_t) -> None
     """Equivalent of x=$y or setref x = y.
 
     Called by BuiltinSetString and BuiltinSetArray Used directly by

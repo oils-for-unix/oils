@@ -4,7 +4,7 @@ builtin/pure_ysh.py - YSH builtins that don't do I/O.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, cmd_value,
-                                        scope_e, lvalue)
+                                        scope_e, sh_lvalue)
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import state
@@ -29,7 +29,7 @@ class ctx_Shvar(object):
         # type: (state.Mem, List[Tuple[str, str]]) -> None
         #log('pairs %s', pairs)
         self.mem = mem
-        self.restore = []  # type: List[Tuple[lvalue.Named, value_t]]
+        self.restore = []  # type: List[Tuple[sh_lvalue.Named, value_t]]
         self._Push(pairs)
 
     def __enter__(self):

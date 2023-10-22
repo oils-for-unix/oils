@@ -52,8 +52,8 @@ from _devbuild.gen.syntax_asdl import (
     word,
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue,
-    lvalue_e,
+    sh_lvalue,
+    sh_lvalue_e,
     value,
     value_e,
     value_t,
@@ -98,7 +98,7 @@ from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
     from _devbuild.gen.option_asdl import builtin_t
-    from _devbuild.gen.runtime_asdl import cmd_value_t, lvalue_t
+    from _devbuild.gen.runtime_asdl import cmd_value_t, sh_lvalue_t
     from _devbuild.gen.syntax_asdl import Redir, EnvPair
     from core.alloc import Arena
     from core import optview
@@ -712,7 +712,7 @@ class CommandEvaluator(object):
         else:  # var or const
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            lvals = None  # type: List[lvalue.Named]
+            lvals = None  # type: List[sh_lvalue.Named]
             rhs_vals = None  # type: List[value_t]
 
             num_lhs = len(node.lhs)
@@ -769,7 +769,7 @@ class CommandEvaluator(object):
         if node.op.id == Id.Arith_Equal:
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            lvals = None  # type: List[lvalue_t]
+            lvals = None  # type: List[sh_lvalue_t]
             rhs_vals = None  # type: List[value_t]
 
             num_lhs = len(node.lhs)
@@ -800,16 +800,16 @@ class CommandEvaluator(object):
                 # setvar mydict['key'] = 42
                 UP_lval = lval
 
-                if lval.tag() == lvalue_e.Named:
-                    lval = cast(lvalue.Named, UP_lval)
+                if lval.tag() == sh_lvalue_e.Named:
+                    lval = cast(sh_lvalue.Named, UP_lval)
 
                     self.mem.SetNamed(lval,
                                       rval,
                                       which_scopes,
                                       flags=_PackFlags(node.keyword.id))
 
-                elif lval.tag() == lvalue_e.ObjIndex:
-                    lval = cast(lvalue.ObjIndex, UP_lval)
+                elif lval.tag() == sh_lvalue_e.ObjIndex:
+                    lval = cast(sh_lvalue.ObjIndex, UP_lval)
 
                     obj = lval.obj
                     UP_obj = obj
@@ -1234,10 +1234,10 @@ class CommandEvaluator(object):
         n = len(node.iter_names)
         assert n > 0
 
-        i_name = None  # type: Optional[lvalue.Named]
+        i_name = None  # type: Optional[sh_lvalue.Named]
         # required
-        name1 = None  # type: lvalue.Named
-        name2 = None  # type: Optional[lvalue.Named]
+        name1 = None  # type: sh_lvalue.Named
+        name2 = None  # type: Optional[sh_lvalue.Named]
 
         it2 = None  # type: val_ops._ContainerIter
         if iter_list is None:  # for_expr.YshExpr

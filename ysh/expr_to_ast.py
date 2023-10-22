@@ -788,20 +788,6 @@ class Transformer(object):
         rhs = self.Expr(p_node.GetChild(2))
         return command.Mutation(None, lhs_list, op_tok, rhs)
 
-    def OilForExpr(self, pnode):
-        # type: (PNode) -> Tuple[List[NameType], expr_t]
-        typ = pnode.typ
-
-        if typ == grammar_nt.ysh_for:
-            # ysh_for: '(' lvalue_list 'in' testlist ')'
-            lhs = self._NameTypeList(pnode.GetChild(1))  # could be a tuple
-            iterable = self.Expr(pnode.GetChild(3))
-            return lhs, iterable
-
-        nt_name = self.number2symbol[typ]
-        raise AssertionError("PNode type %d (%s) wasn't handled" %
-                             (typ, nt_name))
-
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t
         assert pnode.typ == grammar_nt.ysh_case_pat, pnode

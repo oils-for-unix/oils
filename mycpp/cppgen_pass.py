@@ -2557,8 +2557,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     # suffix_op is needed for string_ops.py, for some reason
                     if self.decl and name in (
                             'Id', 'scope_e', 'lex_mode_e', 'suffix_op',
-                            'lvalue', 'part_value', 'loc', 'word', 'word_part',
-                            'cmd_value', 'hnode'):
+                            'sh_lvalue', 'part_value', 'loc', 'word',
+                            'word_part', 'cmd_value', 'hnode'):
                         self.f.write(using_str)
 
             else:

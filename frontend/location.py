@@ -40,7 +40,7 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr_e,
     arith_expr_t,
 )
-from _devbuild.gen.runtime_asdl import lvalue
+from _devbuild.gen.runtime_asdl import sh_lvalue
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
 
@@ -50,13 +50,13 @@ from typing import cast, Optional
 
 
 def LName(name):
-    # type: (str) -> lvalue.Named
-    """Wrapper for lvalue.Named() with location.
+    # type: (str) -> sh_lvalue.Named
+    """Wrapper for sh_lvalue.Named() with location.
 
     TODO: add locations and remove
     this.
     """
-    return lvalue.Named(name, loc.Missing)
+    return sh_lvalue.Named(name, loc.Missing)
 
 
 def TokenFor(loc_):
