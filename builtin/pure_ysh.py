@@ -129,11 +129,12 @@ class PushRegisters(vm._Builtin):
 
 
 class Append(vm._Builtin):
-    """Push args onto an array.
+    """Push word args onto an List.
 
-    Note: this could also be in builtins_pure.py?
+    Not doing typed args since you can do
+
+    :: mylist->append(42)
     """
-
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ui.ErrorFormatter) -> None
         self.mem = mem
@@ -141,37 +142,28 @@ class Append(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        arg, arg_r = flag_spec.ParseCmdVal('append', cmd_val)
 
-        var_name, var_loc = arg_r.ReadRequired2('requires a variable name')
+        # This means we ignore -- , which is consistent
+        arg, arg_r = flag_spec.ParseCmdVal('append', cmd_val,
+                                           accept_typed_args=True)
 
-        if var_name.startswith(':'):  # optional : sigil
-            var_name = var_name[1:]
+        if not cmd_val.typed_args:  # eval (myblock)
+            raise error.Usage('expected a List as a typed arg', loc.Missing)
 
-        if not match.IsValidVarName(var_name):
-            raise error.Usage('got invalid variable name %r' % var_name,
-                              var_loc)
+        rd = typed_args.ReaderForProc(cmd_val)
+        val = rd.PosValue()
 
-        val = self.mem.GetValue(var_name)
-
-        # TODO: Get rid of value.BashArray
-        ok = False
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
                 val.strs.extend(arg_r.Rest())
-                ok = True
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
                 typed = [value.Str(s)
                          for s in arg_r.Rest()]  # type: List[value_t]
                 val.items.extend(typed)
-                ok = True
-
-        if not ok:
-            # consider exit code 3 like error.TypeErrVerbose?
-            self.errfmt.Print_("%r isn't a List" % var_name, blame_loc=var_loc)
-            return 1
+            else:
+                raise error.TypeErr(val, 'expected List or BashArray', loc.Missing)
 
         return 0

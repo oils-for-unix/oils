@@ -119,7 +119,7 @@ var branches2 = :| |
 git-branch-merged | while read --line {
   var line2 = _line->strip()  # removing leading space
   if (line2 !== 'master' and not line2->startswith('*')) {
-    append :branches2 $line2
+    append $line2 (branches2)
   }
 }
 

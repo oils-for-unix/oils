@@ -1,22 +1,24 @@
 
 ## oils_failures_allowed: 6
 
-#### append onto a=(1 2)
+#### append onto BashArray a=(1 2)
 shopt -s parse_at
 a=(1 2)
-append :a '3 4' '5'
+append '3 4' '5' (a)
 argv.py "${a[@]}"
-append -- :a 6
+
+append -- 6 (a)
 argv.py "${a[@]}"
+
 ## STDOUT:
 ['1', '2', '3 4', '5']
 ['1', '2', '3 4', '5', '6']
 ## END
 
-#### append onto var a = %(1 2)
+#### append onto var a = :| 1 2 |
 shopt -s parse_at parse_proc
-var a = %(1 2)
-append a '3 4' '5'  # : is optional
+var a = :| 1 2 |
+append '3 4' '5' (a)
 argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
@@ -25,22 +27,21 @@ argv.py @a
 #### append onto var a = ['1', '2']
 shopt -s parse_at parse_proc
 var a = ['1', '2']
-append a '3 4' '5'  # : is optional
+append '3 4' '5' (a)
 argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
 ## END
 
-#### append with invalid type
-s=''
-append :s a b
-echo status=$?
-## stdout: status=1
+#### append without typed arg
+append a b
+## status: 2
 
-#### append with invalid var name
-append - a b
+#### append passed invalid type
+s=''
+append a b (s)
 echo status=$?
-## stdout: status=2
+## status: 3
 
 #### write --sep, --end, -n, varying flag syntax
 shopt -s oil:all
