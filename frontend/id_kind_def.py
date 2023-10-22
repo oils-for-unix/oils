@@ -205,7 +205,6 @@ def AddKinds(spec):
             ('Pipe', '|'),
             ('Caret', '^'),
             ('Tilde', '~'),
-
             ('Equal', '='),
 
             # Augmented Assignment for $(( ))
@@ -216,10 +215,8 @@ def AddKinds(spec):
             ('StarEqual', '*='),
             ('SlashEqual', '/='),
             ('PercentEqual', '%='),
-
             ('DGreatEqual', '>>='),
             ('DLessEqual', '<<='),
-
             ('AmpEqual', '&='),
             ('CaretEqual', '^='),
             ('PipeEqual', '|='),
@@ -350,10 +347,8 @@ def AddKinds(spec):
             'NotTilde',  # !~
             'DTilde',
             'NotDTilde',  # ~~ !~~
-
             'DStarEqual',  # **=, which bash doesn't have
             'DSlashEqual',  # //=, which bash doesn't have
-
             'CastedDummy',  # Used for @()  $() (words in lex_mode_e.ShCommand)
             # and ${}  ''  ""  (and all other strings)
 

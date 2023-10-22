@@ -737,6 +737,10 @@ ysh-assign() {
   run-file ysh-assign "$@"
 }
 
+ysh-augmented() {
+  run-file ysh-augmented "$@"
+}
+
 ysh-blocks() {
   run-file ysh-blocks "$@"
 }

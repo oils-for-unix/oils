@@ -290,18 +290,19 @@ class ExprEvaluator(object):
 
         val = self.EvalExpr(part.child, part.left)
 
-        if part.left.id == Id.Left_DollarBracket:  # $[join(x)]
-            s = val_ops.Stringify(val, loc.WordPart(part))
-            return part_value.String(s, False, False)
+        with switch(part.left.id) as case:
+            if case(Id.Left_DollarBracket):  # $[join(x)]
+                s = val_ops.Stringify(val, loc.WordPart(part))
+                return part_value.String(s, False, False)
 
-        elif part.left.id == Id.Lit_AtLBracket:  # @[split(x)]
-            strs = val_ops.ToShellArray(val,
-                                        loc.WordPart(part),
-                                        prefix='Expr splice ')
-            return part_value.Array(strs)
+            elif case(Id.Lit_AtLBracket):  # @[split(x)]
+                strs = val_ops.ToShellArray(val,
+                                            loc.WordPart(part),
+                                            prefix='Expr splice ')
+                return part_value.Array(strs)
 
-        else:
-            raise AssertionError(part.left)
+            else:
+                raise AssertionError(part.left)
 
     def SpliceValue(self, val, part):
         # type: (value_t, word_part.Splice) -> List[str]
@@ -362,38 +363,41 @@ class ExprEvaluator(object):
 
         val = self._EvalExpr(node.child)
 
-        op_id = node.op.id
-        if op_id == Id.Arith_Minus:
-            c1, i1, f1 = _ConvertToNumber(val)
-            if c1 == coerced_e.Int:
-                return value.Int(-i1)
-            if c1 == coerced_e.Float:
-                return value.Float(-f1)
-            raise error.TypeErr(val, 'Negation expected Int or Float', node.op)
+        with switch(node.op.id) as case:
+            if case(Id.Arith_Minus):
+                c1, i1, f1 = _ConvertToNumber(val)
+                if c1 == coerced_e.Int:
+                    return value.Int(-i1)
+                if c1 == coerced_e.Float:
+                    return value.Float(-f1)
+                raise error.TypeErr(val, 'Negation expected Int or Float',
+                                    node.op)
 
-        if op_id == Id.Arith_Tilde:
-            i = _ConvertToInt(val, '~ expected Int', node.op)
-            return value.Int(~i)
+            elif case(Id.Arith_Tilde):
+                i = _ConvertToInt(val, '~ expected Int', node.op)
+                return value.Int(~i)
 
-        if op_id == Id.Expr_Not:
-            b = val_ops.ToBool(val)
-            return value.Bool(False if b else True)
+            elif case(Id.Expr_Not):
+                b = val_ops.ToBool(val)
+                return value.Bool(False if b else True)
 
-        if op_id == Id.Arith_Amp:  # &s  &a[0]  &d.key  &d.nested.other
-            # Only 3 possibilities:
-            # - expr.Var
-            # - expr.Attribute with `.` operator (d.key)
-            # - expr.SubScript
-            #
-            # See _EvalPlaceExpr, which gives you lvalue
+            # &s  &a[0]  &d.key  &d.nested.other
+            elif case(Id.Arith_Amp):
+                # Only 3 possibilities:
+                # - expr.Var
+                # - expr.Attribute with `.` operator (d.key)
+                # - expr.SubScript
+                #
+                # See _EvalPlaceExpr, which gives you lvalue
 
-            # TODO: &x, &a[0], &d.key, creates a value.Place?
-            # If it's Attribute or SubScript, you don't evaluate them.
-            # lvalue_t -> place_t
+                # TODO: &x, &a[0], &d.key, creates a value.Place?
+                # If it's Attribute or SubScript, you don't evaluate them.
+                # lvalue_t -> place_t
 
-            raise NotImplementedError(op_id)
+                raise NotImplementedError(node.op)
 
-        raise AssertionError(op_id)
+            else:
+                raise AssertionError(node.op)
 
     def _ArithIntFloat(self, left, right, op):
         # type: (value_t, value_t, Token) -> value_t
@@ -455,7 +459,7 @@ class ExprEvaluator(object):
                 return value.Int(i1 % i2)
 
             # a // b   setvar a //= b
-            elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):  
+            elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
                 if i2 == 0:
                     raise error.Expr('Divide by zero', op)
                 return value.Int(i1 // i2)
@@ -464,8 +468,7 @@ class ExprEvaluator(object):
             elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
                 # Same as sh_expr_eval.py
                 if i2 < 0:
-                    raise error.Expr("Exponent can't be a negative number",
-                                     op)
+                    raise error.Expr("Exponent can't be a negative number", op)
                 ret = 1
                 for i in xrange(i2):
                     ret *= i1
@@ -522,36 +525,36 @@ class ExprEvaluator(object):
 
         op_id = node.op.id
 
-        # Logical
-        if op_id == Id.Expr_And:
-            if val_ops.ToBool(left):  # no errors
-                return right
+        with switch(node.op.id) as case:
+            # Logical
+            if case(Id.Expr_And):
+                if val_ops.ToBool(left):  # no errors
+                    return right
+                else:
+                    return left
+
+            elif case(Id.Expr_Or):
+                if val_ops.ToBool(left):
+                    return left
+                else:
+                    return right
+
+            elif case(Id.Arith_DPlus):  # a ++ b to concat Str or List
+                return self._Concat(left, right, node.op)
+
+            elif case(Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,
+                      Id.Arith_Slash):
+                return self._ArithIntFloat(left, right, node.op)
+
             else:
-                return left
-
-        if op_id == Id.Expr_Or:
-            if val_ops.ToBool(left):
-                return left
-            else:
-                return right
-
-        # Str or List
-        if op_id == Id.Arith_DPlus:  # a ++ b to concat
-            return self._Concat(left, right, node.op)
-
-        if op_id in (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,
-                     Id.Arith_Slash):
-            return self._ArithIntFloat(left, right, node.op)
-
-        return self._ArithIntOnly(left, right, node.op)
+                return self._ArithIntOnly(left, right, node.op)
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
         c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
 
-        op_id = op.id
         if c == coerced_e.Int:
-            with switch(op_id) as case:
+            with switch(op.id) as case:
                 if case(Id.Arith_Less):
                     return i1 < i2
                 elif case(Id.Arith_Great):
@@ -564,7 +567,7 @@ class ExprEvaluator(object):
                     raise AssertionError()
 
         elif c == coerced_e.Float:
-            with switch(op_id) as case:
+            with switch(op.id) as case:
                 if case(Id.Arith_Less):
                     return f1 < f2
                 elif case(Id.Arith_Great):
@@ -837,37 +840,38 @@ class ExprEvaluator(object):
         o = self._EvalExpr(node.obj)
         UP_o = o
 
-        op_id = node.op.id
-        if op_id == Id.Expr_RArrow:
-            name = node.attr.tval
-            ty = o.tag()
+        with switch(node.op.id) as case:
+            if case(Id.Expr_RArrow):
+                name = node.attr.tval
+                ty = o.tag()
 
-            recv = self.methods.get(ty)
-            method = recv.get(name) if recv is not None else None
-            if not method:
-                raise error.TypeErrVerbose(
-                    'Method %r does not exist on type %s' %
-                    (name, ui.ValType(o)), node.attr)
+                recv = self.methods.get(ty)
+                method = recv.get(name) if recv is not None else None
+                if not method:
+                    raise error.TypeErrVerbose(
+                        'Method %r does not exist on type %s' %
+                        (name, ui.ValType(o)), node.attr)
 
-            return value.BuiltinMethod(o, method)
+                return value.BuiltinMethod(o, method)
 
-        if op_id == Id.Expr_Dot:  # d.key is like d['key']
-            name = node.attr.tval
-            with tagswitch(o) as case:
-                if case(value_e.Dict):
-                    o = cast(value.Dict, UP_o)
-                    try:
-                        result = o.d[name]
-                    except KeyError:
-                        raise error.Expr('dict entry not found', node.op)
+            elif case(Id.Expr_Dot):  # d.key is like d['key']
+                name = node.attr.tval
+                with tagswitch(o) as case2:
+                    if case2(value_e.Dict):
+                        o = cast(value.Dict, UP_o)
+                        try:
+                            result = o.d[name]
+                        except KeyError:
+                            raise error.Expr('dict entry not found', node.op)
 
-                else:
-                    raise error.TypeErr(o, 'Dot operator expected Dict',
-                                        node.op)
+                    else:
+                        raise error.TypeErr(o, 'Dot operator expected Dict',
+                                            node.op)
 
-            return result
+                return result
 
-        raise AssertionError(op_id)
+            else:
+                raise AssertionError(node.op)
 
     def _EvalExpr(self, node):
         # type: (expr_t) -> value_t

@@ -88,7 +88,6 @@ def main(argv):
         '@': Id.Expr_At,
         '...': Id.Expr_Ellipsis,
         '$': Id.Expr_Dollar,  # Only for legacy eggex /d+$/
-
         '**=': Id.Expr_DStarEqual,
         '//=': Id.Expr_DSlashEqual,
     }

@@ -134,6 +134,7 @@ class Append(vm._Builtin):
 
     :: mylist->append(42)
     """
+
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ui.ErrorFormatter) -> None
         self.mem = mem
@@ -143,7 +144,8 @@ class Append(vm._Builtin):
         # type: (cmd_value.Argv) -> int
 
         # This means we ignore -- , which is consistent
-        arg, arg_r = flag_spec.ParseCmdVal('append', cmd_val,
+        arg, arg_r = flag_spec.ParseCmdVal('append',
+                                           cmd_val,
                                            accept_typed_args=True)
 
         if not cmd_val.typed_args:  # eval (myblock)
@@ -163,6 +165,7 @@ class Append(vm._Builtin):
                          for s in arg_r.Rest()]  # type: List[value_t]
                 val.items.extend(typed)
             else:
-                raise error.TypeErr(val, 'expected List or BashArray', loc.Missing)
+                raise error.TypeErr(val, 'expected List or BashArray',
+                                    loc.Missing)
 
         return 0
