@@ -177,12 +177,14 @@ module runtime
 
   scope = Parent | Shopt | Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly
 
+  LeftName = (str name, loc blame_loc)
+
   # For local assignment
   # - sh_expr_eval uses this for unset / printf -v
   # - word_eval uses this for ${a[0]=}
   # - expr_eval / cmd_eval use this for setvar a[i] = 42
   sh_lvalue = 
-    Named(str name, loc blame_loc)
+    Named %LeftName
   | Indexed(str name, int index, loc blame_loc)
   | Keyed(str name, str key, loc blame_loc)
     # YSH setvar is typed

@@ -65,6 +65,7 @@ from _devbuild.gen.runtime_asdl import (
     scope_e,
     CommandStatus,
     StatusArray,
+    LeftName,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 
@@ -712,7 +713,7 @@ class CommandEvaluator(object):
         else:  # var or const
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            lvals = None  # type: List[sh_lvalue.Named]
+            lvals = None  # type: List[LeftName]
             rhs_vals = None  # type: List[value_t]
 
             num_lhs = len(node.lhs)
@@ -801,7 +802,7 @@ class CommandEvaluator(object):
                 UP_lval = lval
 
                 if lval.tag() == sh_lvalue_e.Named:
-                    lval = cast(sh_lvalue.Named, UP_lval)
+                    lval = cast(LeftName, UP_lval)
 
                     self.mem.SetNamed(lval,
                                       rval,
@@ -1234,10 +1235,10 @@ class CommandEvaluator(object):
         n = len(node.iter_names)
         assert n > 0
 
-        i_name = None  # type: Optional[sh_lvalue.Named]
+        i_name = None  # type: Optional[LeftName]
         # required
-        name1 = None  # type: sh_lvalue.Named
-        name2 = None  # type: Optional[sh_lvalue.Named]
+        name1 = None  # type: LeftName
+        name2 = None  # type: Optional[LeftName]
 
         it2 = None  # type: val_ops._ContainerIter
         if iter_list is None:  # for_expr.YshExpr

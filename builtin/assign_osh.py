@@ -7,10 +7,10 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
-    sh_lvalue,
     scope_e,
     cmd_value,
     AssignArg,
+    LeftName,
 )
 from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
 
@@ -231,7 +231,7 @@ def _ExportReadonly(mem, pair, flags):
     """
     which_scopes = mem.ScopesForWriting()
 
-    lval = sh_lvalue.Named(pair.var_name, pair.blame_word)
+    lval = LeftName(pair.var_name, pair.blame_word)
     if pair.plus_eq:
         old_val = sh_expr_eval.OldValue(lval, mem, None)  # ignore set -u
         # When 'export e+=', then rval is value.Str('')
@@ -454,7 +454,7 @@ class NewVar(vm._AssignBuiltin):
                     if old_val.tag() != value_e.BashAssoc:
                         rval = value.BashAssoc({})
 
-            lval = sh_lvalue.Named(pair.var_name, pair.blame_word)
+            lval = LeftName(pair.var_name, pair.blame_word)
 
             if pair.plus_eq:
                 old_val = sh_expr_eval.OldValue(lval, self.mem,

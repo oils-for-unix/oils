@@ -48,6 +48,7 @@ from _devbuild.gen.runtime_asdl import (
     value_e,
     value_t,
     IntBox,
+    LeftName,
 )
 from core import error
 from core.error import e_die, e_die_status
@@ -203,7 +204,7 @@ class ExprEvaluator(object):
         UP_lval = lval
         with tagswitch(lval) as case:
             if case(sh_lvalue_e.Named):  # setvar x += 1
-                lval = cast(sh_lvalue.Named, UP_lval)
+                lval = cast(LeftName, UP_lval)
                 lhs_val = self._LookupVar(lval.name, lval.blame_loc)
                 if op.id in (Id.Arith_PlusEqual, Id.Arith_MinusEqual,
                              Id.Arith_StarEqual, Id.Arith_SlashEqual):
@@ -258,23 +259,6 @@ class ExprEvaluator(object):
 
             else:
                 raise AssertionError()
-
-    def EvalLHS(self, node):
-        # type: (expr_t) -> sh_lvalue_t
-        if 0:
-            print('EvalLHS()')
-            node.PrettyPrint()
-            print('')
-
-        UP_node = node
-        with tagswitch(node) as case:
-            if case(expr_e.Var):
-                node = cast(expr.Var, UP_node)
-                return location.LName(node.name.tval)
-            else:
-                # TODO:
-                # subscripts, tuple unpacking, starred expressions, etc.
-                raise NotImplementedError(node.__class__.__name__)
 
     def _EvalLhsExpr(self, lhs):
         # type: (y_lhs_t) -> sh_lvalue_t

@@ -18,6 +18,7 @@ from _devbuild.gen.runtime_asdl import (
     value,
     value_e,
     value_t,
+    LeftName,
 )
 from _devbuild.gen.syntax_asdl import (
     word_t,
@@ -105,7 +106,7 @@ def OldValue(lval, mem, exec_opts):
     UP_lval = lval
     with tagswitch(lval) as case:
         if case(sh_lvalue_e.Named):  # (( i++ ))
-            lval = cast(sh_lvalue.Named, UP_lval)
+            lval = cast(LeftName, UP_lval)
             var_name = lval.name
         elif case(sh_lvalue_e.Indexed):  # (( a[i]++ ))
             lval = cast(sh_lvalue.Indexed, UP_lval)
@@ -219,7 +220,7 @@ class UnsafeArith(object):
             if not match.IsValidVarName(s):
                 e_die('Invalid variable name %r (parse_sh_arith is off)' % s,
                       location)
-            return sh_lvalue.Named(s, location)
+            return LeftName(s, location)
 
         a_parser = self.parse_ctx.MakeArithParser(s)
 
@@ -471,7 +472,7 @@ class ArithEvaluator(object):
         # BASH_LINENO, arr (array name without strict_array), etc.
         if val.tag() in (value_e.BashArray, value_e.BashAssoc
                          ) and lval.tag() == sh_lvalue_e.Named:
-            named_lval = cast(sh_lvalue.Named, lval)
+            named_lval = cast(LeftName, lval)
             if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
                 if val.tag() == value_e.BashArray:
                     lval = sh_lvalue.Indexed(named_lval.name, 0, loc.Missing)
@@ -812,7 +813,7 @@ class ArithEvaluator(object):
                 node = cast(sh_lhs.Name, UP_node)
                 assert node.name is not None
 
-                lval1 = sh_lvalue.Named(node.name, node.left)
+                lval1 = LeftName(node.name, node.left)
                 lval = lval1
 
             elif case(sh_lhs_e.IndexedName):  # a[1+2]=x
@@ -876,7 +877,7 @@ class ArithEvaluator(object):
 
         var_name, location = self._VarNameOrWord(anode)
         if var_name is not None:
-            return sh_lvalue.Named(var_name, location)
+            return LeftName(var_name, location)
 
         # e.g. unset 'x-y'.  status 2 for runtime parse error
         e_die_status(2, 'Invalid LHS to modify', location)

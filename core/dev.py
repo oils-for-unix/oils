@@ -6,7 +6,7 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
 from _devbuild.gen.runtime_asdl import (value, value_e, sh_lvalue, sh_lvalue_e,
                                         cmd_value, scope_e, trace, trace_e,
-                                        trace_t)
+                                        trace_t, LeftName)
 from _devbuild.gen.syntax_asdl import assign_op_e, Token
 
 from core import error
@@ -535,7 +535,7 @@ class Tracer(object):
         UP_lval = lval
         with tagswitch(lval) as case:
             if case(sh_lvalue_e.Named):
-                lval = cast(sh_lvalue.Named, UP_lval)
+                lval = cast(LeftName, UP_lval)
                 left = lval.name
             elif case(sh_lvalue_e.Indexed):
                 lval = cast(sh_lvalue.Indexed, UP_lval)

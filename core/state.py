@@ -13,7 +13,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, sh_lvalue,
                                         sh_lvalue_e, sh_lvalue_t, scope_e,
-                                        scope_t, Cell)
+                                        scope_t, Cell, LeftName)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
@@ -1491,7 +1491,7 @@ class Mem(object):
         return False
 
     def SetLocalName(self, lval, val):
-        # type: (sh_lvalue.Named, value_t) -> None
+        # type: (LeftName, value_t) -> None
 
         # Equivalent to
         # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
@@ -1508,7 +1508,7 @@ class Mem(object):
             name_map[lval.name] = cell
 
     def SetNamed(self, lval, val, which_scopes, flags=0):
-        # type: (sh_lvalue.Named, value_t, scope_t, int) -> None
+        # type: (LeftName, value_t, scope_t, int) -> None
 
         keyword_id = flags >> 8  # opposite of _PackFlags
         is_setref = keyword_id == Id.KW_SetRef
@@ -1613,7 +1613,7 @@ class Mem(object):
         UP_lval = lval
         with tagswitch(lval) as case:
             if case(sh_lvalue_e.Named):
-                lval = cast(sh_lvalue.Named, UP_lval)
+                lval = cast(LeftName, UP_lval)
 
                 self.SetNamed(lval, val, which_scopes, flags=flags)
 
@@ -1918,15 +1918,15 @@ class Mem(object):
     def Unset(self, lval, which_scopes):
         # type: (sh_lvalue_t, scope_t) -> bool
         """
-    Returns:
-      Whether the cell was found.
-    """
+        Returns:
+          Whether the cell was found.
+        """
         # TODO: Refactor sh_lvalue type to avoid this
         UP_lval = lval
 
         with tagswitch(lval) as case:
             if case(sh_lvalue_e.Named):  # unset x
-                lval = cast(sh_lvalue.Named, UP_lval)
+                lval = cast(LeftName, UP_lval)
                 var_name = lval.name
             elif case(sh_lvalue_e.Indexed):  # unset 'a[1]'
                 lval = cast(sh_lvalue.Indexed, UP_lval)
