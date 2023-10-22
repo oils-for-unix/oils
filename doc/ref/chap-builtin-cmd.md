@@ -16,14 +16,19 @@ This chapter in the [Oils Reference](index.html) describes builtin commands for 
 
 ### append
 
-Append a string to an array of strings:
+Append word arguments to a list:
 
-    var mylist = :| one two |
-    append :mylist three
+    var mylist = :| hello |
 
-This is a command-mode synonym for the expression:
+    append *.py (mylist)  # append all Python files
 
-    _ mylist->append('three')
+    var myflags = []
+    append -- -c 'echo hi' (myflags)  # -- to avoid ambiguity
+
+It's a shortcut for:
+
+    :: myflags->append('-c')
+    :: myflags->append('echo hi')
 
 ### pp
 

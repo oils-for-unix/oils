@@ -369,6 +369,3 @@ Examples:
     echo $[strip(y)]
     write -- @[split(x)]
     write -- @[glob(x)]  # it's possible for this to fail
-
-    # arguments to procs are expressions!
-    append (x, strip(y))

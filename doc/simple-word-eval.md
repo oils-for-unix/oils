@@ -343,10 +343,10 @@ Evaluation of the syntax tree is a single step.
 The `@[maybe(s)]` function is a shortcut for something like:
 
 ```
-var x = ''         # empty in this case
+var x = ''          # empty in this case
 var tmp = :| |
-if (x) {           # test if string is non-empty
-  append :tmp $x   # appends 'x' to the array variable 'tmp'
+if (x) {            # test if string is non-empty
+  append $x (tmp)   # appends 'x' to the array variable 'tmp'
 }
 ```
 

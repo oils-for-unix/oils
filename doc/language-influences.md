@@ -134,7 +134,6 @@ The `:out` syntax for references to variable names also looks like Ruby (and
 Clojure):
 
     read :line                   # populate $line variable
-    push :myarray one two three  # append to array
 
 ### Perl
 
