@@ -1098,12 +1098,12 @@ class WordParser(WordEmitter):
         if last_token.id == Id.Op_RBrace:
             last_token.id = Id.Lit_RBrace
 
-        for place in enode.lhs:
-            UP_place = place
-            with tagswitch(place) as case:
+        for lhs in enode.lhs:
+            UP_lhs = lhs
+            with tagswitch(lhs) as case:
                 if case(lhs_expr_e.Var):
-                    place = cast(lhs_expr.Var, UP_place)
-                    var_checker.Check(kw_token.id, place.name)
+                    lhs = cast(lhs_expr.Var, UP_lhs)
+                    var_checker.Check(kw_token.id, lhs.name)
                 # TODO: Do indices as well
 
         # Let the CommandParser see the Op_Semi or Op_Newline.

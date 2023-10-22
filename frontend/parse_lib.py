@@ -321,8 +321,7 @@ class ParseContext(object):
         """ setvar d['a'] += 1 """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer,
-                                               grammar_nt.ysh_place_mutation)
+            pnode, last_token = e_parser.Parse(lexer, grammar_nt.ysh_mutation)
             if 0:
                 self.p_printer.Print(pnode)
             ast_node = self.tr.MakeMutation(pnode)

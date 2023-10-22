@@ -232,8 +232,8 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
                                       (left_token.line, close_token.line))
         a_parser = parse_ctx.MakeArithParser(code_str)
 
-        # a[i+1]= is a place
-        src = source.Reparsed('array place', left_token, close_token)
+        # a[i+1]= is a LHS
+        src = source.Reparsed('array LHS', left_token, close_token)
         with alloc.ctx_SourceCode(arena, src):
             index_node = a_parser.Parse()  # may raise error.Parse
 

@@ -210,7 +210,7 @@ class UnsafeArith(object):
 
     def ParseLValue(self, s, location):
         # type: (str, loc_t) -> lvalue_t
-        """Parse lvalue/place for 'unset' and 'printf -v'.
+        """Parse lvalue for 'unset' and 'printf -v'.
 
         It uses the arith parser, so it behaves like the LHS of (( a[i] = x ))
         """
@@ -224,16 +224,16 @@ class UnsafeArith(object):
         a_parser = self.parse_ctx.MakeArithParser(s)
 
         with alloc.ctx_SourceCode(self.arena,
-                                  source.ArgvWord('dynamic place', location)):
+                                  source.ArgvWord('dynamic LHS', location)):
             try:
                 anode = a_parser.Parse()
             except error.Parse as e:
                 self.errfmt.PrettyPrintError(e)
                 # Exception for builtins 'unset' and 'printf'
-                e_usage('got invalid place expression', location)
+                e_usage('got invalid LHS expression', location)
 
-        # Note: we parse '1+2', and then it becomes a runtime error because it's
-        # not a valid place.  Could be a parse error.
+        # Note: we parse '1+2', and then it becomes a runtime error because
+        # it's not a valid LHS.  Could be a parse error.
 
         if self.exec_opts.eval_unsafe_arith():
             lval = self.arith_ev.EvalArithLhs(anode)
@@ -799,7 +799,7 @@ class ArithEvaluator(object):
 
     def EvalShellLhs(self, node, which_scopes):
         # type: (sh_lhs_expr_t, scope_t) -> lvalue_t
-        """Evaluate a shell LHS expression, i.e. place expression.
+        """Evaluate a shell LHS expression
 
         For  a=b  and  a[x]=b  etc.
         """
@@ -854,8 +854,8 @@ class ArithEvaluator(object):
     def EvalArithLhs(self, anode):
         # type: (arith_expr_t) -> lvalue_t
         """
-    For (( a[x] = 1 )) etc.
-    """
+        For (( a[x] = 1 )) etc.
+        """
         UP_anode = anode
         if anode.tag() == arith_expr_e.Binary:
             anode = cast(arith_expr.Binary, UP_anode)
@@ -879,7 +879,7 @@ class ArithEvaluator(object):
             return lvalue.Named(var_name, location)
 
         # e.g. unset 'x-y'.  status 2 for runtime parse error
-        e_die_status(2, 'Invalid place to modify', location)
+        e_die_status(2, 'Invalid LHS to modify', location)
 
 
 class BoolEvaluator(ArithEvaluator):

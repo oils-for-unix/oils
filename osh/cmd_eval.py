@@ -701,10 +701,10 @@ class CommandEvaluator(object):
         # x = 'foo' in Hay blocks
         if node.keyword is None:
             # Note: there's only one LHS
-            place = location.LName(node.lhs[0].name.tval)
+            lval = location.LName(node.lhs[0].name.tval)
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            self.mem.SetNamed(place,
+            self.mem.SetNamed(lval,
                               val,
                               scope_e.LocalOnly,
                               flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
@@ -727,14 +727,14 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                        'Got %d places on left, but %d values on right' %
+                        'Got %d places on the left, but %d values on right' %
                         (num_lhs, num_rhs), node.keyword)
 
                 lvals = []
                 rhs_vals = []
                 for i, lhs_val in enumerate(node.lhs):
-                    place = location.LName(lhs_val.name.tval)
-                    lvals.append(place)
+                    lval = location.LName(lhs_val.name.tval)
+                    lvals.append(lval)
                     rhs_vals.append(items[i])
 
             with switch(node.keyword.id) as case:
@@ -769,12 +769,12 @@ class CommandEvaluator(object):
         if node.op.id == Id.Arith_Equal:
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            places = None  # type: List[lvalue_t]
+            lvals = None  # type: List[lvalue_t]
             rhs_vals = None  # type: List[value_t]
 
             num_lhs = len(node.lhs)
             if num_lhs == 1:
-                places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
+                lvals = [self.expr_ev.EvalLhsExpr(node.lhs[0])]
                 rhs_vals = [right_val]
             else:
                 items = val_ops.ToList(
@@ -784,46 +784,46 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                        'Got %d places on left, but %d values on right' %
+                        'Got %d places on the left, but %d values on the right' %
                         (num_lhs, num_rhs), node.keyword)
 
-                places = []
+                lvals = []
                 rhs_vals = []
                 for i, lhs_val in enumerate(node.lhs):
-                    places.append(self.expr_ev.EvalPlaceExpr(lhs_val))
+                    lvals.append(self.expr_ev.EvalLhsExpr(lhs_val))
                     rhs_vals.append(items[i])
 
-            for i, place in enumerate(places):
+            for i, lval in enumerate(lvals):
                 rval = rhs_vals[i]
 
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
-                UP_place = place
+                UP_lval = lval
 
-                if place.tag() == lvalue_e.Named:
-                    place = cast(lvalue.Named, UP_place)
+                if lval.tag() == lvalue_e.Named:
+                    lval = cast(lvalue.Named, UP_lval)
 
-                    self.mem.SetNamed(place,
+                    self.mem.SetNamed(lval,
                                       rval,
                                       which_scopes,
                                       flags=_PackFlags(node.keyword.id))
 
-                elif place.tag() == lvalue_e.ObjIndex:
-                    place = cast(lvalue.ObjIndex, UP_place)
+                elif lval.tag() == lvalue_e.ObjIndex:
+                    lval = cast(lvalue.ObjIndex, UP_lval)
 
-                    obj = place.obj
+                    obj = lval.obj
                     UP_obj = obj
                     with tagswitch(obj) as case:
                         if case(value_e.List):
                             obj = cast(value.List, UP_obj)
-                            index = val_ops.ToInt(place.index,
+                            index = val_ops.ToInt(lval.index,
                                                   'List index should be Int',
                                                   loc.Missing)
                             obj.items[index] = rval
 
                         elif case(value_e.Dict):
                             obj = cast(value.Dict, UP_obj)
-                            key = val_ops.ToStr(place.index,
+                            key = val_ops.ToStr(lval.index,
                                                 'Dict index should be Str',
                                                 loc.Missing)
                             obj.d[key] = rval
@@ -843,7 +843,7 @@ class CommandEvaluator(object):
             # Checked in the parser
             assert len(node.lhs) == 1
 
-            aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
+            aug_lval = self.expr_ev.EvalLhsExpr(node.lhs[0])
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
             self.expr_ev.EvalAugmented(aug_lval, val, node.op, which_scopes)

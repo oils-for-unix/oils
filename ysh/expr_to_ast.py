@@ -715,10 +715,10 @@ class Transformer(object):
 
     def _LhsExprList(self, p_node):
         # type: (PNode) -> List[lhs_expr_t]
-        """place_list: expr (',' expr)*"""
-        assert p_node.typ == grammar_nt.place_list
+        """lhs_list: expr (',' expr)*"""
+        assert p_node.typ == grammar_nt.lhs_list
 
-        places = []  # type: List[lhs_expr_t]
+        lhs_list = []  # type: List[lhs_expr_t]
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):  # was children[::2]
             p = p_node.GetChild(i)
@@ -728,18 +728,18 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    places.append(lhs_expr.Var(e.name))
+                    lhs_list.append(lhs_expr.Var(e.name))
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
-                    places.append(e)
+                    lhs_list.append(e)
 
                 elif case(expr_e.Attribute):
                     e = cast(Attribute, UP_e)
                     if e.op.id != Id.Expr_Dot:
                         # e.g. setvar obj->method is not valid
                         p_die("Can't assign to this attribute expr", e.op)
-                    places.append(e)
+                    lhs_list.append(e)
 
                 else:
                     pass  # work around mycpp bug
@@ -752,7 +752,7 @@ class Transformer(object):
                         blame = loc.Missing
                     p_die("Can't assign to this expression", blame)
 
-        return places
+        return lhs_list
 
     def MakeVarDecl(self, p_node):
         # type: (PNode) -> command.VarDecl
@@ -776,17 +776,17 @@ class Transformer(object):
         # type: (PNode) -> command.Mutation
         """Parse tree to LST
         
-        ysh_place_mutation: place_list (augassign | '=') testlist end_stmt
+        ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
         """
         typ = p_node.typ
-        assert typ == grammar_nt.ysh_place_mutation
+        assert typ == grammar_nt.ysh_mutation
 
-        place_list = self._LhsExprList(p_node.GetChild(0))  # could be a tuple
+        lhs_list = self._LhsExprList(p_node.GetChild(0))  # could be a tuple
         op_tok = p_node.GetChild(1).tok
-        if len(place_list) > 1 and op_tok.id != Id.Arith_Equal:
+        if len(lhs_list) > 1 and op_tok.id != Id.Arith_Equal:
             p_die('Multiple assignment must use =', op_tok)
         rhs = self.Expr(p_node.GetChild(2))
-        return command.Mutation(None, place_list, op_tok, rhs)
+        return command.Mutation(None, lhs_list, op_tok, rhs)
 
     def OilForExpr(self, pnode):
         # type: (PNode) -> Tuple[List[NameType], expr_t]

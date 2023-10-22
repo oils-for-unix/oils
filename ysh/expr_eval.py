@@ -276,36 +276,34 @@ class ExprEvaluator(object):
                 # subscripts, tuple unpacking, starred expressions, etc.
                 raise NotImplementedError(node.__class__.__name__)
 
-    def _EvalPlaceExpr(self, place):
+    def _EvalLhsExpr(self, lhs):
         # type: (lhs_expr_t) -> lvalue_t
 
-        # TODO: This could be ysh_lvalue?
-
-        UP_place = place
-        with tagswitch(place) as case:
+        UP_lhs = lhs
+        with tagswitch(lhs) as case:
             if case(lhs_expr_e.Var):
-                place = cast(lhs_expr.Var, UP_place)
+                lhs = cast(lhs_expr.Var, UP_lhs)
 
-                return location.LName(place.name.tval)
+                return location.LName(lhs.name.tval)
 
             elif case(lhs_expr_e.Subscript):
-                place = cast(Subscript, UP_place)
+                lhs = cast(Subscript, UP_lhs)
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
 
-                lval = self._EvalExpr(place.obj)
-                index = self._EvalExpr(place.index)
+                lval = self._EvalExpr(lhs.obj)
+                index = self._EvalExpr(lhs.index)
                 #log('index %s', index)
                 return lvalue.ObjIndex(lval, index)
 
             elif case(lhs_expr_e.Attribute):
-                place = cast(Attribute, UP_place)
-                assert place.op.id == Id.Expr_Dot
+                lhs = cast(Attribute, UP_lhs)
+                assert lhs.op.id == Id.Expr_Dot
 
                 # setvar mydict.key = 42
-                lval = self._EvalExpr(place.obj)
+                lval = self._EvalExpr(lhs.obj)
 
-                attr = value.Str(place.attr.tval)
+                attr = value.Str(lhs.attr.tval)
                 return lvalue.ObjIndex(lval, attr)
 
             else:
@@ -320,11 +318,11 @@ class ExprEvaluator(object):
             val = self._EvalExpr(node)
         return val
 
-    def EvalPlaceExpr(self, place):
+    def EvalLhsExpr(self, lhs):
         # type: (lhs_expr_t) -> lvalue_t
-        """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
+        """Public API for _EvalLhsExpr to ensure command_sub_errexit"""
         with state.ctx_YshExpr(self.mutable_opts):
-            lval = self._EvalPlaceExpr(place)
+            lval = self._EvalLhsExpr(lhs)
         return lval
 
     def EvalExprSub(self, part):
@@ -430,7 +428,7 @@ class ExprEvaluator(object):
                 # - expr.Attribute with `.` operator (d.key)
                 # - expr.SubScript
                 #
-                # See _EvalPlaceExpr, which gives you lvalue
+                # See _EvalLhsExpr, which gives you lvalue
 
                 # TODO: &x, &a[0], &d.key, creates a value.Place?
                 # If it's Attribute or SubScript, you don't evaluate them.

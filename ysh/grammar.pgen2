@@ -279,12 +279,12 @@ end_stmt: '}' | ';' | Op_Newline | Eof_Real
 ysh_var_decl: name_type_list '=' testlist end_stmt
 
 # Note: this production is more precise as the following, but it's ambiguous :(
-#ysh_setvar: place augassign testlist end_stmt
-#          | place_list '=' testlist end_stmt
+#ysh_setvar: lhs augassign testlist end_stmt
+#          | lhs_list '=' testlist end_stmt
 
 # Note: for YSH (not Tea), we could accept [':'] expr for setvar :out = 'foo'
-place_list: expr (',' expr)*
-ysh_place_mutation: place_list (augassign | '=') testlist end_stmt
+lhs_list: expr (',' expr)*
+ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
 
 # For json write (x)
 ysh_eager_arglist: '(' [arglist] ')'
