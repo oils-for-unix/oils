@@ -105,7 +105,7 @@ def OldValue(lval, mem, exec_opts):
     # TODO: refactor sh_lvalue_t to make this simpler
     UP_lval = lval
     with tagswitch(lval) as case:
-        if case(sh_lvalue_e.Named):  # (( i++ ))
+        if case(sh_lvalue_e.Var):  # (( i++ ))
             lval = cast(LeftName, UP_lval)
             var_name = lval.name
         elif case(sh_lvalue_e.Indexed):  # (( a[i]++ ))
@@ -123,7 +123,7 @@ def OldValue(lval, mem, exec_opts):
 
     UP_val = val
     with tagswitch(lval) as case:
-        if case(sh_lvalue_e.Named):
+        if case(sh_lvalue_e.Var):
             return val
 
         elif case(sh_lvalue_e.Indexed):
@@ -470,8 +470,8 @@ class ArithEvaluator(object):
         val = OldValue(lval, self.mem, self.exec_opts)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if val.tag() in (value_e.BashArray, value_e.BashAssoc
-                         ) and lval.tag() == sh_lvalue_e.Named:
+        if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
+                lval.tag() == sh_lvalue_e.Var):
             named_lval = cast(LeftName, lval)
             if word_eval.ShouldArrayDecay(named_lval.name, self.exec_opts):
                 if val.tag() == value_e.BashArray:

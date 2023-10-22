@@ -1612,7 +1612,7 @@ class Mem(object):
 
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(sh_lvalue_e.Named):
+            if case(sh_lvalue_e.Var):
                 lval = cast(LeftName, UP_lval)
 
                 self.SetNamed(lval, val, which_scopes, flags=flags)
@@ -1925,7 +1925,7 @@ class Mem(object):
         UP_lval = lval
 
         with tagswitch(lval) as case:
-            if case(sh_lvalue_e.Named):  # unset x
+            if case(sh_lvalue_e.Var):  # unset x
                 lval = cast(LeftName, UP_lval)
                 var_name = lval.name
             elif case(sh_lvalue_e.Indexed):  # unset 'a[1]'
@@ -1948,7 +1948,7 @@ class Mem(object):
             raise error.Runtime("Can't unset readonly variable %r" % var_name)
 
         with tagswitch(lval) as case:
-            if case(sh_lvalue_e.Named):  # unset x
+            if case(sh_lvalue_e.Var):  # unset x
                 # Make variables in higher scopes visible.
                 # example: test/spec.sh builtin-vars -r 24 (ble.sh)
                 mylib.dict_erase(name_map, cell_name)

@@ -184,11 +184,14 @@ module runtime
   # - word_eval uses this for ${a[0]=}
   # - expr_eval / cmd_eval use this for setvar a[i] = 42
   sh_lvalue = 
-    Named %LeftName
+    Var %LeftName
   | Indexed(str name, int index, loc blame_loc)
   | Keyed(str name, str key, loc blame_loc)
+
+  y_lvalue = 
+    Var %LeftName
     # YSH setvar is typed
-  | ObjIndex(value obj, value index)
+  | Container(value obj, value index)
 
   redirect_arg =
     Path(str filename)

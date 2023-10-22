@@ -41,9 +41,9 @@ from _devbuild.gen.runtime_asdl import (
     scope_t,
     part_value,
     part_value_t,
-    sh_lvalue,
-    sh_lvalue_e,
-    sh_lvalue_t,
+    y_lvalue,
+    y_lvalue_e,
+    y_lvalue_t,
     value,
     value_e,
     value_t,
@@ -194,7 +194,7 @@ class ExprEvaluator(object):
         return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
     def EvalAugmented(self, lval, rhs_val, op, which_scopes):
-        # type: (sh_lvalue_t, value_t, Token, scope_t) -> None
+        # type: (y_lvalue_t, value_t, Token, scope_t) -> None
         """ setvar x +=1, setvar L[0] -= 1 
 
         Called by CommandEvaluator
@@ -203,7 +203,7 @@ class ExprEvaluator(object):
 
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(sh_lvalue_e.Named):  # setvar x += 1
+            if case(y_lvalue_e.Var):  # setvar x += 1
                 lval = cast(LeftName, UP_lval)
                 lhs_val = self._LookupVar(lval.name, lval.blame_loc)
                 if op.id in (Id.Arith_PlusEqual, Id.Arith_MinusEqual,
@@ -214,8 +214,8 @@ class ExprEvaluator(object):
 
                 self.mem.SetNamed(lval, new_val, which_scopes)
 
-            elif case(sh_lvalue_e.ObjIndex):  # setvar d.key += 1
-                lval = cast(sh_lvalue.ObjIndex, UP_lval)
+            elif case(y_lvalue_e.Container):  # setvar d.key += 1
+                lval = cast(y_lvalue.Container, UP_lval)
 
                 obj = lval.obj
                 UP_obj = obj
@@ -261,7 +261,7 @@ class ExprEvaluator(object):
                 raise AssertionError()
 
     def _EvalLhsExpr(self, lhs):
-        # type: (y_lhs_t) -> sh_lvalue_t
+        # type: (y_lhs_t) -> y_lvalue_t
 
         UP_lhs = lhs
         with tagswitch(lhs) as case:
@@ -278,7 +278,7 @@ class ExprEvaluator(object):
                 lval = self._EvalExpr(lhs.obj)
                 index = self._EvalExpr(lhs.index)
                 #log('index %s', index)
-                return sh_lvalue.ObjIndex(lval, index)
+                return y_lvalue.Container(lval, index)
 
             elif case(y_lhs_e.Attribute):
                 lhs = cast(Attribute, UP_lhs)
@@ -288,7 +288,7 @@ class ExprEvaluator(object):
                 lval = self._EvalExpr(lhs.obj)
 
                 attr = value.Str(lhs.attr.tval)
-                return sh_lvalue.ObjIndex(lval, attr)
+                return y_lvalue.Container(lval, attr)
 
             else:
                 raise AssertionError()
@@ -303,7 +303,7 @@ class ExprEvaluator(object):
         return val
 
     def EvalLhsExpr(self, lhs):
-        # type: (y_lhs_t) -> sh_lvalue_t
+        # type: (y_lhs_t) -> y_lvalue_t
         """Public API for _EvalLhsExpr to ensure command_sub_errexit"""
         with state.ctx_YshExpr(self.mutable_opts):
             lval = self._EvalLhsExpr(lhs)
@@ -412,11 +412,11 @@ class ExprEvaluator(object):
                 # - expr.Attribute with `.` operator (d.key)
                 # - expr.SubScript
                 #
-                # See _EvalLhsExpr, which gives you sh_lvalue
+                # See _EvalLhsExpr, which gives you y_lvalue
 
                 # TODO: &x, &a[0], &d.key, creates a value.Place?
                 # If it's Attribute or SubScript, you don't evaluate them.
-                # sh_lvalue_t -> place_t
+                # y_lvalue_t -> place_t
 
                 raise NotImplementedError(node.op)
 

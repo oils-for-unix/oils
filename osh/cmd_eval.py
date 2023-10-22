@@ -52,8 +52,9 @@ from _devbuild.gen.syntax_asdl import (
     word,
 )
 from _devbuild.gen.runtime_asdl import (
-    sh_lvalue,
-    sh_lvalue_e,
+    y_lvalue,
+    y_lvalue_e,
+    y_lvalue_t,
     value,
     value_e,
     value_t,
@@ -99,7 +100,7 @@ from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
     from _devbuild.gen.option_asdl import builtin_t
-    from _devbuild.gen.runtime_asdl import cmd_value_t, sh_lvalue_t
+    from _devbuild.gen.runtime_asdl import cmd_value_t
     from _devbuild.gen.syntax_asdl import Redir, EnvPair
     from core.alloc import Arena
     from core import optview
@@ -770,7 +771,7 @@ class CommandEvaluator(object):
         if node.op.id == Id.Arith_Equal:
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            lvals = None  # type: List[sh_lvalue_t]
+            lvals = None  # type: List[y_lvalue_t]
             rhs_vals = None  # type: List[value_t]
 
             num_lhs = len(node.lhs)
@@ -801,7 +802,7 @@ class CommandEvaluator(object):
                 # setvar mydict['key'] = 42
                 UP_lval = lval
 
-                if lval.tag() == sh_lvalue_e.Named:
+                if lval.tag() == y_lvalue_e.Var:
                     lval = cast(LeftName, UP_lval)
 
                     self.mem.SetNamed(lval,
@@ -809,8 +810,8 @@ class CommandEvaluator(object):
                                       which_scopes,
                                       flags=_PackFlags(node.keyword.id))
 
-                elif lval.tag() == sh_lvalue_e.ObjIndex:
-                    lval = cast(sh_lvalue.ObjIndex, UP_lval)
+                elif lval.tag() == y_lvalue_e.Container:
+                    lval = cast(y_lvalue.Container, UP_lval)
 
                     obj = lval.obj
                     UP_obj = obj

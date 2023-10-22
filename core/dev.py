@@ -534,7 +534,7 @@ class Tracer(object):
         left = '?'
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(sh_lvalue_e.Named):
+            if case(sh_lvalue_e.Var):
                 lval = cast(LeftName, UP_lval)
                 left = lval.name
             elif case(sh_lvalue_e.Indexed):
