@@ -4,7 +4,7 @@ builtin/pure_ysh.py - YSH builtins that don't do I/O.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (value, value_e, value_t, cmd_value,
-                                        scope_e, lvalue_t)
+                                        scope_e, lvalue)
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core import state
@@ -29,7 +29,7 @@ class ctx_Shvar(object):
         # type: (state.Mem, List[Tuple[str, str]]) -> None
         #log('pairs %s', pairs)
         self.mem = mem
-        self.restore = []  # type: List[Tuple[lvalue_t, value_t]]
+        self.restore = []  # type: List[Tuple[lvalue.Named, value_t]]
         self._Push(pairs)
 
     def __enter__(self):
@@ -45,11 +45,11 @@ class ctx_Shvar(object):
     def _Push(self, pairs):
         # type: (List[Tuple[str, str]]) -> None
         for name, s in pairs:
-            lval = location.LName(name)  # type: lvalue_t
+            lval = location.LName(name)
             # LocalOnly because we are only overwriting the current scope
             old_val = self.mem.GetValue(name, scope_e.LocalOnly)
             self.restore.append((lval, old_val))
-            self.mem.SetValue(lval, value.Str(s), scope_e.LocalOnly)
+            self.mem.SetNamed(lval, value.Str(s), scope_e.LocalOnly)
 
     def _Pop(self):
         # type: () -> None
@@ -57,7 +57,7 @@ class ctx_Shvar(object):
             if old_val.tag() == value_e.Undef:
                 self.mem.Unset(lval, scope_e.LocalOnly)
             else:
-                self.mem.SetValue(lval, old_val, scope_e.LocalOnly)
+                self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
 
 
 class Shvar(vm._Builtin):

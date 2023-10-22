@@ -242,7 +242,7 @@ def _ExportReadonly(mem, pair, flags):
         # NOTE: when rval is None, only flags are changed
         val = pair.rval
 
-    mem.SetValue(lval, val, which_scopes, flags=flags)
+    mem.SetNamed(lval, val, which_scopes, flags=flags)
 
 
 class Export(vm._AssignBuiltin):
@@ -466,7 +466,7 @@ class NewVar(vm._AssignBuiltin):
             else:
                 rval = _ReconcileTypes(rval, arg.a, arg.A, pair.blame_word)
 
-            self.mem.SetValue(lval, rval, which_scopes, flags=flags)
+            self.mem.SetNamed(lval, rval, which_scopes, flags=flags)
 
         return status
 

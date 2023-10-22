@@ -211,7 +211,7 @@ class ExprEvaluator(object):
                 else:
                     new_val = self._ArithIntOnly(lhs_val, rhs_val, op)
 
-                self.mem.SetValue(lval, new_val, which_scopes)
+                self.mem.SetNamed(lval, new_val, which_scopes)
 
             elif case(lvalue_e.ObjIndex):  # setvar d.key += 1
                 lval = cast(lvalue.ObjIndex, UP_lval)
@@ -279,6 +279,8 @@ class ExprEvaluator(object):
     def _EvalPlaceExpr(self, place):
         # type: (place_expr_t) -> lvalue_t
 
+        # TODO: This could be ysh_lvalue?
+
         UP_place = place
         with tagswitch(place) as case:
             if case(place_expr_e.Var):
@@ -307,9 +309,7 @@ class ExprEvaluator(object):
                 return lvalue.ObjIndex(lval, attr)
 
             else:
-                raise NotImplementedError(place)
-
-        raise AssertionError()  # silence C++ compiler
+                raise AssertionError()
 
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t

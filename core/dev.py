@@ -318,11 +318,11 @@ class Tracer(object):
         # TODO: Remove allocation for [] ?
         with state.ctx_Option(self.mutable_opts, [option_i.xtrace], False):
             with state.ctx_Temp(self.mem):
-                self.mem.SetValue(self.lval_indent, self.val_indent,
+                self.mem.SetNamed(self.lval_indent, self.val_indent,
                                   scope_e.LocalOnly)
-                self.mem.SetValue(self.lval_punct, self.val_punct,
+                self.mem.SetNamed(self.lval_punct, self.val_punct,
                                   scope_e.LocalOnly)
-                self.mem.SetValue(self.lval_pid_str, self.val_pid_str,
+                self.mem.SetNamed(self.lval_pid_str, self.val_pid_str,
                                   scope_e.LocalOnly)
                 prefix = self.word_ev.EvalForPlugin(ps4_word)
         return prefix.s

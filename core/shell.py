@@ -203,7 +203,7 @@ def _SetGlobalFunc(mem, name, func):
     assert isinstance(func, vm._Callable), func
 
     # Note: no location info for builtin functions?
-    mem.SetValue(location.LName(name), value.BuiltinFunc(func),
+    mem.SetNamed(location.LName(name), value.BuiltinFunc(func),
                  scope_e.GlobalOnly)
 
 

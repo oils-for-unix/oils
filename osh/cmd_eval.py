@@ -614,7 +614,7 @@ class CommandEvaluator(object):
             val = self.word_ev.EvalRhsWord(e_pair.val)
             # Set each var so the next one can reference it.  Example:
             # FOO=1 BAR=$FOO ls /
-            self.mem.SetValue(location.LName(e_pair.name),
+            self.mem.SetNamed(location.LName(e_pair.name),
                               val,
                               scope_e.LocalOnly,
                               flags=flags)
@@ -704,7 +704,7 @@ class CommandEvaluator(object):
             place = location.LName(node.lhs[0].name.tval)
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            self.mem.SetValue(place,
+            self.mem.SetNamed(place,
                               val,
                               scope_e.LocalOnly,
                               flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
@@ -712,7 +712,7 @@ class CommandEvaluator(object):
         else:  # var or const
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            lvals = None  # type: List[lvalue_t]
+            lvals = None  # type: List[lvalue.Named]
             rhs_vals = None  # type: List[value_t]
 
             num_lhs = len(node.lhs)
@@ -748,7 +748,7 @@ class CommandEvaluator(object):
 
             for i, lval in enumerate(lvals):
                 rval = rhs_vals[i]
-                self.mem.SetValue(lval, rval, scope_e.LocalOnly, flags=flags)
+                self.mem.SetNamed(lval, rval, scope_e.LocalOnly, flags=flags)
 
         return 0
 
@@ -799,7 +799,16 @@ class CommandEvaluator(object):
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
                 UP_place = place
-                if place.tag() == lvalue_e.ObjIndex:
+
+                if place.tag() == lvalue_e.Named:
+                    place = cast(lvalue.Named, UP_place)
+
+                    self.mem.SetNamed(place,
+                                      rval,
+                                      which_scopes,
+                                      flags=_PackFlags(node.keyword.id))
+
+                elif place.tag() == lvalue_e.ObjIndex:
                     place = cast(lvalue.ObjIndex, UP_place)
 
                     obj = place.obj
@@ -828,11 +837,7 @@ class CommandEvaluator(object):
                         e_die('setref obj[index] not implemented')
 
                 else:
-                    # top level variable
-                    self.mem.SetValue(place,
-                                      rval,
-                                      which_scopes,
-                                      flags=_PackFlags(node.keyword.id))
+                    raise AssertionError()
 
         else:
             # Checked in the parser
@@ -1418,7 +1423,7 @@ class CommandEvaluator(object):
             self.expr_ev, node)
         func_val = value.Func(name, node, pos_defaults, named_defaults, None)
 
-        self.mem.SetValue(lval, func_val, scope_e.LocalOnly,
+        self.mem.SetNamed(lval, func_val, scope_e.LocalOnly,
                           _PackFlags(Id.KW_Func, state.SetReadOnly))
 
     def _DoIf(self, node):

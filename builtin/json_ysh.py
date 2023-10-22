@@ -128,7 +128,7 @@ class Json(vm._Builtin):
 
                 # TODO: use token directly
                 val = cpython._PyObjToValue(obj)
-                self.mem.SetValue(location.LName(var_name), val,
+                self.mem.SetNamed(location.LName(var_name), val,
                                   scope_e.LocalOnly)
 
         else:

@@ -295,7 +295,7 @@ class Hay(vm._Builtin):
             result = self.hay_state.Result()
 
             val = value.Dict(result)
-            self.mem.SetValue(location.LName(var_name), val, scope_e.LocalOnly)
+            self.mem.SetNamed(location.LName(var_name), val, scope_e.LocalOnly)
 
         elif action == 'reset':
             self.hay_state.Reset()

@@ -803,7 +803,7 @@ def _InitVarsFromEnv(mem, environ):
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
     for n, v in iteritems(environ):
-        mem.SetValue(location.LName(n),
+        mem.SetNamed(location.LName(n),
                      value.Str(v),
                      scope_e.GlobalOnly,
                      flags=SetExport)
@@ -818,7 +818,7 @@ def _InitVarsFromEnv(mem, environ):
     if val.tag() == value_e.Undef:
         SetGlobalString(mem, 'SHELLOPTS', '')
     # Now make it readonly
-    mem.SetValue(location.LName('SHELLOPTS'),
+    mem.SetNamed(location.LName('SHELLOPTS'),
                  None,
                  scope_e.GlobalOnly,
                  flags=SetReadOnly)
@@ -830,7 +830,7 @@ def _InitVarsFromEnv(mem, environ):
         SetGlobalString(mem, 'PWD', _GetWorkingDir())
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
-    mem.SetValue(location.LName('PWD'),
+    mem.SetNamed(location.LName('PWD'),
                  None,
                  scope_e.GlobalOnly,
                  flags=SetExport)
@@ -1490,6 +1490,83 @@ class Mem(object):
                 return True
         return False
 
+    def SetNamed(self, lval, val, which_scopes, flags=0):
+        # type: (lvalue.Named, value_t, scope_t, int) -> None
+
+        keyword_id = flags >> 8  # opposite of _PackFlags
+        is_setref = keyword_id == Id.KW_SetRef
+
+        if keyword_id == Id.KW_SetRef:
+            # Hidden interpreter var with __ prefix.  Matches proc call in
+            # osh/cmd_eval.py
+            lval.name = '__' + lval.name  # Mutating arg lval!  Happens to be OK
+
+        if flags & SetNameref or flags & ClearNameref:
+            # declare -n ref=x  # refers to the ref itself
+            cell, name_map = self._ResolveNameOnly(
+                lval.name, which_scopes)
+            cell_name = lval.name
+        else:
+            # ref=x  # mutates THROUGH the reference
+
+            # Note on how to implement declare -n ref='a[42]'
+            # 1. Call _ResolveNameOnly()
+            # 2. If cell.nameref, call self.unsafe_arith.ParseVarRef() ->
+            #    BracedVarSub
+            # 3. Turn BracedVarSub into an lvalue, and call
+            #    self.unsafe_arith.SetValue() wrapper with ref_trail
+            cell, name_map, cell_name = self._ResolveNameOrRef(
+                lval.name, which_scopes, is_setref)
+
+        if cell:
+            # Clear before checking readonly bit.
+            # NOTE: Could be cell.flags &= flag_clear_mask
+            if flags & ClearExport:
+                cell.exported = False
+            if flags & ClearReadOnly:
+                cell.readonly = False
+            if flags & ClearNameref:
+                cell.nameref = False
+
+            if val is not None:  # e.g. declare -rx existing
+                # Note: this DYNAMIC check means we can't have 'const' in a loop.
+                # But that's true for 'readonly' too, and hoisting it makes more
+                # sense anyway.
+                if cell.readonly:
+                    e_die(
+                        "Can't assign to readonly value %r" %
+                        lval.name, lval.blame_loc)
+                cell.val = val  # CHANGE VAL
+
+            # NOTE: Could be cell.flags |= flag_set_mask
+            if flags & SetExport:
+                cell.exported = True
+            if flags & SetReadOnly:
+                cell.readonly = True
+            if flags & SetNameref:
+                cell.nameref = True
+
+        else:
+            if val is None:  # declare -rx nonexistent
+                # set -o nounset; local foo; echo $foo  # It's still undefined!
+                val = value.Undef  # export foo, readonly foo
+
+            cell = Cell(bool(flags & SetExport),
+                        bool(flags & SetReadOnly),
+                        bool(flags & SetNameref), val)
+            name_map[cell_name] = cell
+
+        # Maintain invariant that only strings and undefined cells can be
+        # exported.
+        assert cell.val is not None, cell
+
+        if cell.val.tag() not in (value_e.Undef, value_e.Str):
+            if cell.exported:
+                # TODO: error context
+                e_die("Only strings can be exported", lval.blame_loc)
+            if cell.nameref:
+                e_die("nameref must be a string", lval.blame_loc)
+
     def SetValue(self, lval, val, which_scopes, flags=0):
         # type: (lvalue_t, value_t, scope_t, int) -> None
         """
@@ -1525,78 +1602,8 @@ class Mem(object):
         with tagswitch(lval) as case:
             if case(lvalue_e.Named):
                 lval = cast(lvalue.Named, UP_lval)
-                assert lval.name is not None
 
-                if keyword_id == Id.KW_SetRef:
-                    # Hidden interpreter var with __ prefix.  Matches proc call in
-                    # osh/cmd_eval.py
-                    lval.name = '__' + lval.name  # Mutating arg lval!  Happens to be OK
-
-                if flags & SetNameref or flags & ClearNameref:
-                    # declare -n ref=x  # refers to the ref itself
-                    cell, name_map = self._ResolveNameOnly(
-                        lval.name, which_scopes)
-                    cell_name = lval.name
-                else:
-                    # ref=x  # mutates THROUGH the reference
-
-                    # Note on how to implement declare -n ref='a[42]'
-                    # 1. Call _ResolveNameOnly()
-                    # 2. If cell.nameref, call self.unsafe_arith.ParseVarRef() ->
-                    #    BracedVarSub
-                    # 3. Turn BracedVarSub into an lvalue, and call
-                    #    self.unsafe_arith.SetValue() wrapper with ref_trail
-                    cell, name_map, cell_name = self._ResolveNameOrRef(
-                        lval.name, which_scopes, is_setref)
-
-                if cell:
-                    # Clear before checking readonly bit.
-                    # NOTE: Could be cell.flags &= flag_clear_mask
-                    if flags & ClearExport:
-                        cell.exported = False
-                    if flags & ClearReadOnly:
-                        cell.readonly = False
-                    if flags & ClearNameref:
-                        cell.nameref = False
-
-                    if val is not None:  # e.g. declare -rx existing
-                        # Note: this DYNAMIC check means we can't have 'const' in a loop.
-                        # But that's true for 'readonly' too, and hoisting it makes more
-                        # sense anyway.
-                        if cell.readonly:
-                            e_die(
-                                "Can't assign to readonly value %r" %
-                                lval.name, lval.blame_loc)
-                        cell.val = val  # CHANGE VAL
-
-                    # NOTE: Could be cell.flags |= flag_set_mask
-                    if flags & SetExport:
-                        cell.exported = True
-                    if flags & SetReadOnly:
-                        cell.readonly = True
-                    if flags & SetNameref:
-                        cell.nameref = True
-
-                else:
-                    if val is None:  # declare -rx nonexistent
-                        # set -o nounset; local foo; echo $foo  # It's still undefined!
-                        val = value.Undef  # export foo, readonly foo
-
-                    cell = Cell(bool(flags & SetExport),
-                                bool(flags & SetReadOnly),
-                                bool(flags & SetNameref), val)
-                    name_map[cell_name] = cell
-
-                # Maintain invariant that only strings and undefined cells can be
-                # exported.
-                assert cell.val is not None, cell
-
-                if cell.val.tag() not in (value_e.Undef, value_e.Str):
-                    if cell.exported:
-                        # TODO: error context
-                        e_die("Only strings can be exported", lval.blame_loc)
-                    if cell.nameref:
-                        e_die("nameref must be a string", lval.blame_loc)
+                self.SetNamed(lval, val, which_scopes, flags=flags)
 
             elif case(lvalue_e.Indexed):
                 lval = cast(lvalue.Indexed, UP_lval)
