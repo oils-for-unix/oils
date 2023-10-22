@@ -271,6 +271,46 @@ SUITE(pool_alloc) {
   RUN_TEST(pool_size);
 }
 
+int f(Str *s, List<int> *mylist) {
+  // Param Roots
+  StackRoots _roots({&s, &mylist});
+
+  // Sorted params
+  Str *first = nullptr;
+  List<int> *other = nullptr;
+  List<int> *other2 = nullptr;
+  Str *last = nullptr;
+
+  int a = 0;
+  float b = 3.5;
+
+  ptrdiff_t diff = &last - &first;
+
+  // Account for stack going up or down
+  // This is cool!
+  int n_pointers = diff > 0 ? diff : -diff;
+
+  log("a = %d, b = %f", a, b);
+
+  // 2 pointers if we don't use other2 !
+  // log("other = %p", &other);
+
+  // 3 pointers!
+  log("other = %p, other2 = %p", &other, &other2);
+
+  log("n_pointers = %d", n_pointers);
+
+  return 42;
+}
+
+TEST hybrid_root_test() {
+  log("hi = %s", "x");
+
+  f(StrFromC("hi"), nullptr);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
@@ -286,6 +326,8 @@ int main(int argc, char **argv) {
   RUN_TEST(cycle_collection_test);
 
   RUN_SUITE(pool_alloc);
+
+  RUN_TEST(hybrid_root_test);
 
   gHeap.CleanProcessExit();
 

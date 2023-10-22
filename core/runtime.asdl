@@ -82,7 +82,9 @@ module runtime
 
     # ^[42 + a[i]]
   | Expr(expr e)
+
     # ^"$1 and $2"
+    # TODO: fix bug with shared variant across files, then collapse this
   | Template(DoubleQuoted dq)
 
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
@@ -140,13 +142,6 @@ module runtime
   | Range(int lower, int upper)
 
 
-  # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
-  # Used for ${a[i]=x}.  TODO: also use for sh_lvalue/place.
-  a_index = Str(str s) | Int(int i)
-
-  # for the place in ${a[0]=a}
-  VTestPlace = (str? name, a_index? index)
-
   # evaluation state for BracedVarSub 
   VarSubState = (bool join_array, bool is_type_query)
 
@@ -179,6 +174,11 @@ module runtime
 
   LeftName = (str name, loc blame_loc)
 
+  y_lvalue = 
+    Var %LeftName
+    # YSH setvar is typed
+  | Container(value obj, value index)
+
   # For local assignment
   # - sh_expr_eval uses this for unset / printf -v
   # - word_eval uses this for ${a[0]=}
@@ -188,10 +188,13 @@ module runtime
   | Indexed(str name, int index, loc blame_loc)
   | Keyed(str name, str key, loc blame_loc)
 
-  y_lvalue = 
-    Var %LeftName
-    # YSH setvar is typed
-  | Container(value obj, value index)
+  # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
+  # Used for ${a[i]=x}.
+  a_index = Str(str s) | Int(int i)
+
+  # For the place in ${a[0]=a}
+  # Transformed into sh_lvalue_t
+  VTestPlace = (str? name, a_index? index)
 
   redirect_arg =
     Path(str filename)

@@ -575,26 +575,26 @@ class AbstractWordEvaluator(StringWordEvaluator):
     ):
         # type: (...) -> bool
         """
-    Returns:
-      Whether part_vals was mutated
+        Returns:
+          Whether part_vals was mutated
 
-      ${a:-} returns part_value[]
-      ${a:+} returns part_value[]
-      ${a:?error} returns error word?
-      ${a:=} returns part_value[] but also needs self.mem for side effects.
+          ${a:-} returns part_value[]
+          ${a:+} returns part_value[]
+          ${a:?error} returns error word?
+          ${a:=} returns part_value[] but also needs self.mem for side effects.
 
-      So I guess it should return part_value[], and then a flag for raising an
-      error, and then a flag for assigning it?
-      The original BracedVarSub will have the name.
+          So I guess it should return part_value[], and then a flag for raising an
+          error, and then a flag for assigning it?
+          The original BracedVarSub will have the name.
 
-    Example of needing multiple part_value[]
+        Example of needing multiple part_value[]
 
-      echo X-${a:-'def'"ault"}-X
+          echo X-${a:-'def'"ault"}-X
 
-    We return two part values from the BracedVarSub.  Also consider:
+        We return two part values from the BracedVarSub.  Also consider:
 
-      echo ${a:-x"$@"x}
-    """
+          echo ${a:-x"$@"x}
+        """
         eval_flags = IS_SUBST
         if quoted:
             eval_flags |= QUOTED
