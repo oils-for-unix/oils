@@ -371,15 +371,10 @@ class value__Str : public value_t {
  public:
   int typetag() const {
     int ytag = self_.ytag();
-    if (ytag == ytag_e::SmallStr || ytag == ytag_e::HeapStr) {
-      // If it's HeapObj, can we tell for FREE that it's a Str, and not
-      // something else?
-      //
-      // Yes maybe!
+    // CHECK(ytag == ytag_e::SmallStr || ytag == ytag_e::HeapStr) {
 
-      // return value_e::Str
-      return 0;
-    }
+    // TODO: return value_e::Str
+    return 0;
   }
 };
 
