@@ -423,6 +423,8 @@ class ExprEvaluator(object):
             else:
                 raise AssertionError(node.op)
 
+        raise AssertionError('for C++ compiler')
+
     def _ArithIntFloat(self, left, right, op):
         # type: (value_t, value_t, Token) -> value_t
         """

@@ -614,9 +614,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         if o.expr:
+            # Why do we not get some of the types?  e.g. hnode.Record in asdl/runtime
+            # But this might suffice for the "Str_v" and "value_v" refactoring.
+            # We want to rewrite w.parts not to w->parts, but to w.parts() (method call)
+            if 0:
+                lhs_type = self.types.get(o.expr)
+                if lhs_type is not None and isinstance(lhs_type, Instance):
+                    self.log('lhs_type %s expr %s name %s',
+                             lhs_type.type.fullname, o.expr, o.name)
+
             is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
-            is_module = isinstance(
-                o.expr, NameExpr) and o.expr.name in self.imported_names
+            is_module = (isinstance(o.expr, NameExpr) and
+                         o.expr.name in self.imported_names)
 
             # This is an approximate hack that assumes that locals don't shadow
             # imported names.  Might be a problem with names like 'word'?
@@ -1364,8 +1373,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # HACK: Distinguish between UP cast and DOWN cast.
                 # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
                 # _t is the base type, so that means it's an upcast.
-                if isinstance(type_expr,
-                              NameExpr) and type_expr.name.endswith('_t'):
+                if (isinstance(type_expr, NameExpr) and
+                        type_expr.name.endswith('_t')):
                     if self.decl:
                         self.local_var_list.append((lval.name, subtype_name))
                     self.write_ind('%s = %s<%s>(', lval.name, cast_kind,
@@ -1379,9 +1388,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 return
 
             rval_type = self.types[o.rvalue]
-            if isinstance(
-                    rval_type,
-                    Instance) and rval_type.type.fullname == 'typing.Iterator':
+            if (isinstance(rval_type, Instance) and
+                    rval_type.type.fullname == 'typing.Iterator'):
                 # We're calling a generator. Create a temporary List<T> on the stack
                 # to accumulate the results in one big batch, then wrap it in
                 # ListIter<T>.
@@ -1526,8 +1534,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # HACK for WordParser: also include Reset().  We could change them
                 # all up front but I kinda like this.
 
-                if isinstance(lval.expr,
-                              NameExpr) and lval.expr.name == 'self':
+                if (isinstance(lval.expr, NameExpr) and
+                        lval.expr.name == 'self'):
                     #log('    lval.name %s', lval.name)
                     lval_type = self.types[lval]
                     self.member_vars[lval.name] = lval_type
@@ -1559,8 +1567,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             c_type = GetCType(rvalue_type)
 
-            is_return = isinstance(o.rvalue,
-                                   CallExpr) and o.rvalue.callee.name != "next"
+            is_return = (isinstance(o.rvalue, CallExpr) and
+                         o.rvalue.callee.name != "next")
             if is_return:
                 assert c_type.endswith('*')
                 c_type = c_type[:-1]
@@ -1584,8 +1592,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         """Write a block without the { }."""
         for stmt in body:
             # Ignore things that look like docstrings
-            if isinstance(stmt, ExpressionStmt) and isinstance(
-                    stmt.expr, StrExpr):
+            if (isinstance(stmt, ExpressionStmt) and
+                    isinstance(stmt.expr, StrExpr)):
                 continue
 
             #log('-- %d', self.indent)
@@ -1599,8 +1607,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
 
         func_name = None  # does the loop look like 'for x in func():' ?
-        if isinstance(o.expr, CallExpr) and isinstance(o.expr.callee,
-                                                       NameExpr):
+        if (isinstance(o.expr, CallExpr) and
+                isinstance(o.expr.callee, NameExpr)):
             func_name = o.expr.callee.name
 
         # special case: 'for i in xrange(3)'
@@ -2416,9 +2424,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         callee = first_stmt.expr.callee
 
                         # TextOutput() : ColorOutput(f), ... {
-                        if isinstance(
-                                callee,
-                                MemberExpr) and callee.name == '__init__':
+                        if (isinstance(callee, MemberExpr) and
+                                callee.name == '__init__'):
                             base_constructor_args = expr.args
                             #log('ARGS %s', base_constructor_args)
                             self.write(' : %s(', base_class_name)
@@ -2555,10 +2562,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     # Hack for default args.  Without this limitation, we write
                     # 'using' of names that aren't declared yet.
                     # suffix_op is needed for string_ops.py, for some reason
-                    if self.decl and name in (
-                            'Id', 'scope_e', 'lex_mode_e', 'suffix_op',
-                            'sh_lvalue', 'part_value', 'loc', 'word',
-                            'word_part', 'cmd_value', 'hnode'):
+                    if (self.decl and name
+                            in ('Id', 'scope_e', 'lex_mode_e', 'suffix_op',
+                                'sh_lvalue', 'part_value', 'loc', 'word',
+                                'word_part', 'cmd_value', 'hnode')):
                         self.f.write(using_str)
 
             else:

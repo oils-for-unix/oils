@@ -17,10 +17,100 @@
 
 /*
 
-Design
-======
+To Do
+=====
 
-Everything is a value
+- prototype rooting
+  - register YaksValue only, not other primitive types
+  - Is there maybe a ImmediateVariant type?
+    - it can never be a HeapObj, and thus doesn't need to be rooted
+    - how common is this?  Probably not very
+
+- What are the ASDL schema language changes you need?
+  - defining tags and so forth
+    - shared tags ACROSS MODULES -- I ran into this with %LiteralBlock
+    - and probably %Name for (Token tok, str name)
+
+- Does this make sense?
+
+    alias CompoundWord = List[word_part]
+
+- What about
+
+    tagged value =
+      Int %Int
+    | Frame %Dict[str, str]
+
+- What's the penalty in Python?
+  - I think it's mainly mymember() bar() syntax everywhere
+    - but then do you need to generate lots of tiny classes
+      - or use getattr() on the list of known field names to simulate it
+      - but that won't pass MyPy
+      - damn you would need a ton of type annotations then ... every wrapper
+      would get a type annotation
+      - but this is only for public fields?  Maybe it's not that bad
+    - or do you need public self(), like perhaps
+      - cmd_ev.self().word_ev
+      - cmd_ev.member().foo
+        - hm that's possible
+  - self()->length_ = 32;  // this can be direct?  At least within a class
+
+
+## Use Cases
+
+- write out value_t class more
+  - value.Int is
+    - immediate int32_t
+    - or what about the 53 bit idea? (matching double precision)
+      - 64-3 bits = 61, or 64-11 = 53
+  - value.Str is Str and SmallStr
+  - value.BashAssoc is Dict[str, str]
+  - value.Dict is Dict[str, value]
+  - value.Frame is Dict[str, cell]
+
+- CompoundWord is List[word_part] parts
+
+- a_index = Str(str s) | Int(int i)
+  - this is not immdiate
+
+- Custom Token VALUE type as 16 bytes?
+  - this makes GC scanning harder
+  - can't have Token on the stack, but can have it embedded in other objects?
+    - but then you can't have any of those on the stack either
+  - There could be a restriction, hm
+
+## Problems
+
+### Code gen issue: -> vs .
+
+Is it possible for mycpp classes to use
+
+  this->token = token;
+  this->args = args;
+
+While ASDL uses
+
+  w.parts()[0].tok
+
+How would you distinguish the two things?
+
+Plus they will be mixed, like:
+
+  this->cmd_ev->w.parts()
+
+Cheap hack is to come up with a naming convention for the types
+
+Actually we already have it - types look like this.  See visit_member_expr:
+
+      lhs_type core.ui.ErrorFormatter expr NameExpr(errfmt [l]) name
+PrettyPrintError lhs_type core.util.UserExit expr NameExpr(e [l]) name status
+  lhs_type osh.cmd_eval.CommandEvaluator expr NameExpr(cmd_ev [l]) name
+MaybeRunExitTrap lhs_type _devbuild.gen.syntax_asdl.IntParamBox expr
+NameExpr(mut_status [l]) name i
+
+So we can look for syntax_asdl / runtime_asdl
+
+## Design
 
 - YaksValue contains a uint64_t  ?
   - this means any Str, List, Dict, Tuple, or class
@@ -43,9 +133,8 @@ Features that mycpp runtime doesn't have:
   - Hybrid rooting
     - ParamRoot, ParamRoot, SortedPointerRoots,
 
-tagged value =
-  Int %Int
-| Frame %Dict[str, str]
+- Not just more EFFICIENT, but LESS ROOTING
+  - call graph analysis for stuff above the stack
 
 Tagged Pointers ("Boxless optimization")
 
@@ -65,19 +154,6 @@ Later:
 
 - Value types?  How does the GC scan them on the stack???  That is hard
 
-*/
-
-/* Class translation
-
-
-class Slice:
-  def __init__(self, s: str, start: int, length: int):
-    self.s = s
-    self.start = start
-    self.length = length
-
-  def get(self) -> str:
-    return self.s[self.start : self.start + self.length]
 */
 
 // A GC heap value or an immediate value
@@ -165,6 +241,18 @@ union YaksValue {
 
   // - NUL terminator for SmallStr
 };
+
+/* Class translation
+
+class Slice:
+  def __init__(self, s: str, start: int, length: int):
+    self.s = s
+    self.start = start
+    self.length = length
+
+  def get(self) -> str:
+    return self.s[self.start : self.start + self.length]
+*/
 
 class Slice {
  public:
@@ -279,6 +367,22 @@ class value__Int : public value_t {
   }
 };
 
+class value__Str : public value_t {
+ public:
+  int typetag() const {
+    int ytag = self_.ytag();
+    if (ytag == ytag_e::SmallStr || ytag == ytag_e::HeapStr) {
+      // If it's HeapObj, can we tell for FREE that it's a Str, and not
+      // something else?
+      //
+      // Yes maybe!
+
+      // return value_e::Str
+      return 0;
+    }
+  }
+};
+
 TEST yaks_test() {
   Slice myslice(StrFromC("hello"), 1, 3);
 
@@ -289,6 +393,9 @@ TEST yaks_test() {
   // TODO: constructor
   value__Int i;
   log(" i.typetag = %d", i.typetag());
+
+  value__Str s;
+  log(" s.typetag = %d", s.typetag());
 
   PASS();
 }
