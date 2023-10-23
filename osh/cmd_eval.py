@@ -1095,8 +1095,8 @@ class CommandEvaluator(object):
             # another meaning of strict_control_flow, which also has to do with
             # break/continue at top level.  It has the side effect of making
             # 'return ""' valid, which shells other than zsh fail on.
-            if len(str_val.s
-                   ) == 0 and not self.exec_opts.strict_control_flow():
+            if (len(str_val.s) == 0 and
+                    not self.exec_opts.strict_control_flow()):
                 arg = 0
             else:
                 try:
@@ -1118,18 +1118,8 @@ class CommandEvaluator(object):
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.
-        ok = True
         if (keyword.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
                 self.loop_level == 0):
-            ok = False
-
-        if ok:
-            if keyword.id == Id.ControlFlow_Exit:
-                raise util.UserExit(
-                    arg)  # handled differently than other control flow
-            else:
-                raise vm.IntControlFlow(keyword, arg)
-        else:
             msg = 'Invalid control flow at top level'
             if self.exec_opts.strict_control_flow():
                 e_die(msg, keyword)
@@ -1138,6 +1128,12 @@ class CommandEvaluator(object):
                 # Bash oddly only exits 1 for 'return', but no other shell does.
                 self.errfmt.PrefixPrint(msg, 'warning: ', keyword)
                 return 0
+
+        if keyword.id == Id.ControlFlow_Exit:
+            # handled differently than other control flow
+            raise util.UserExit(arg)
+        else:
+            raise vm.IntControlFlow(keyword, arg)
 
     def _DoAndOr(self, node, cmd_st):
         # type: (command.AndOr, CommandStatus) -> int
