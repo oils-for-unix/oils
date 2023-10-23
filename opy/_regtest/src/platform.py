@@ -385,9 +385,9 @@ class _popen:
         if mode != 'r':
             raise ValueError,'popen()-emulation only supports read mode'
         import tempfile
-        self.tmpfile = tmpfile = tempfile.mktemp()
+        self.tmpfd, self.tmpfile = fd, tmpfile = tempfile.mkstemp()
         os.system(cmd + ' > %s' % tmpfile)
-        self.pipe = open(tmpfile,'rb')
+        self.pipe = open(fd,'rb')
         self.bufsize = bufsize
         self.mode = mode
 
@@ -400,9 +400,7 @@ class _popen:
         if self.bufsize is not None:
             return self.pipe.readlines()
 
-    def close(self,
-
-              remove=os.unlink,error=os.error):
+    def close(self,remove=os.close,error=os.error):
 
         if self.pipe:
             rc = self.pipe.close()
@@ -410,7 +408,7 @@ class _popen:
             rc = 255
         if self.tmpfile:
             try:
-                remove(self.tmpfile)
+                remove(self.tmpfd)
             except error:
                 pass
         return rc
