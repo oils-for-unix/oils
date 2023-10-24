@@ -19,6 +19,7 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
 from mycpp import format_strings
 from mycpp.crash import catch_errors
 from mycpp.util import log
+from mycpp import util
 
 from typing import Tuple, List
 
@@ -192,6 +193,10 @@ def CTypeIsManaged(c_type):
     """For rooting and field masks."""
     assert c_type != 'void'
 
+    if util.SMALL_STR:
+        if c_type == 'Str':
+            return True
+
     # int, double, bool, scope_t enums, etc. are not managed
     return c_type.endswith('*')
 
@@ -230,8 +235,12 @@ def GetCType(t, param=False, local=False):
             c_type = 'bool'
 
         elif type_name == 'builtins.str':
-            c_type = 'BigStr'
-            is_pointer = True
+            if util.SMALL_STR:
+                c_type = 'Str'
+                is_pointer = False
+            else:
+                c_type = 'BigStr'
+                is_pointer = True
 
         elif type_name == 'builtins.list':
             assert len(t.args) == 1, t.args
@@ -617,11 +626,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Why do we not get some of the types?  e.g. hnode.Record in asdl/runtime
             # But this might suffice for the "Str_v" and "value_v" refactoring.
             # We want to rewrite w.parts not to w->parts, but to w.parts() (method call)
-            if 0:
+
+            is_small_str = False
+            if util.SMALL_STR:
                 lhs_type = self.types.get(o.expr)
+                if IsStr(lhs_type):
+                    is_small_str = True
+                else:
+                    #self.log('NOT a string %s %s', o.expr, o.name)
+                    pass
+                """
                 if lhs_type is not None and isinstance(lhs_type, Instance):
                     self.log('lhs_type %s expr %s name %s',
                              lhs_type.type.fullname, o.expr, o.name)
+
+                 """
 
             is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
             is_module = (isinstance(o.expr, NameExpr) and
@@ -629,7 +648,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # This is an approximate hack that assumes that locals don't shadow
             # imported names.  Might be a problem with names like 'word'?
-            if is_asdl or is_module:
+            if is_small_str:
+                op = '.'
+            elif is_asdl or is_module:
                 op = '::'
             else:
                 op = '->'  # Everything is a pointer
@@ -1130,7 +1151,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(o.index)  # method call
         else:
             # it's hard syntactically to do (*a)[0], so do it this way.
-            self.write('->at(')
+            if util.SMALL_STR:
+                self.write('.at(')
+            else:
+                self.write('->at(')
+
             self.accept(o.index)
             self.write(')')
 
@@ -2594,8 +2619,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             done = set()
             for lval_name, c_type, is_param in self.prepend_to_block:
                 if not is_param and lval_name not in done:
-                    rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
-                    self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
+                    if util.SMALL_STR and c_type == 'Str':
+                        self.write_ind('%s %s(nullptr);\n', c_type, lval_name)
+                    else:
+                        rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
+                        self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
+
                     done.add(lval_name)
 
             # Figure out if we have any roots to write with StackRoots

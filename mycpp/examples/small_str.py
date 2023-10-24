@@ -4,19 +4,19 @@ from __future__ import print_function
 import os
 from mycpp.mylib import log
 
+def f(s):
+    # type: (str) -> str
+    return s[1].upper()
 
-#def f(s):
-#    # type: (str) -> str
-#    return s[1].upper()
 
 def run_tests():
   # type: () -> None
 
   #a = 'foo' + 'bar'
-  a = 'foo'
+  a = 'food'
   print(a.upper())
 
-  #print(f(a))
+  print(f(a))
 
 
 def run_benchmarks():

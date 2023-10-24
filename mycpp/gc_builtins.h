@@ -9,6 +9,7 @@
 
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
+#include "mycpp/gc_str.h"  // Str
 
 class BigStr;
 
@@ -111,6 +112,10 @@ class SystemExit : public _ExceptionOpaque {
 };
 
 void print(BigStr* s);
+
+inline void print(Str s) {
+  print(s.big_);
+}
 
 BigStr* repr(BigStr* s);
 

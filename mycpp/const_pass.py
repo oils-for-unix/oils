@@ -18,6 +18,7 @@ from mypy.types import Type
 from mycpp.crash import catch_errors
 from mycpp import format_strings
 from mycpp.util import log
+from mycpp import util
 
 T = None  # TODO: Make it type check?
 
@@ -118,7 +119,11 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
         raw_string = format_strings.DecodeMyPyString(o.value)
 
-        self.out('GLOBAL_STR(%s, %s);', id_, json.dumps(raw_string))
+        if util.SMALL_STR:
+            self.out('GLOBAL_STR2(%s, %s);', id_, json.dumps(raw_string))
+        else:
+            self.out('GLOBAL_STR(%s, %s);', id_, json.dumps(raw_string))
+
         self.const_lookup[o] = id_
 
     def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
