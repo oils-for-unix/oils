@@ -1449,6 +1449,21 @@ TEST str_iters_test() {
   PASS();
 }
 
+// Also see mycpp/small_str_test.cc
+TEST small_big_test() {
+  // TODO:
+  // Need GC rooting for these values
+  // Make len() work
+
+  Str s(StrFromC("hello"));
+  for (int i = 0; i < len(s); ++i) {
+    Str ch = s.at(i);
+    log("s[%d] = %s", i, ch.data());
+  }
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -1488,6 +1503,8 @@ int main(int argc, char** argv) {
   RUN_TEST(str_methods_test);
   RUN_TEST(str_funcs_test);
   RUN_TEST(str_iters_test);
+
+  RUN_TEST(small_big_test);
 
   gHeap.CleanProcessExit();
 

@@ -168,4 +168,26 @@ class GlobalStr {
       {.len_ = sizeof(val) - 1, .hash_ = 0, .is_hashed_ = 0, .data_ = val}}; \
   BigStr* name = reinterpret_cast<BigStr*>(&_##name.obj);
 
+union Str {
+ public:
+  Str(BigStr* big) : big_(big) {
+  }
+
+  char* data() {
+    return big_->data();
+  }
+
+  Str at(int i) {
+    return Str(big_->at(i));
+  }
+
+  uint64_t raw_bytes_;
+  BigStr* big_;
+  // TODO: add SmallStr, see mycpp/small_str_test.cc
+};
+
+inline int len(const Str s) {
+  return len(s.big_);
+}
+
 #endif  // MYCPP_GC_STR_H

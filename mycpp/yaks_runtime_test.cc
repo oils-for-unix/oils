@@ -370,7 +370,7 @@ class value__Int : public value_t {
 class value__Str : public value_t {
  public:
   int typetag() const {
-    int ytag = self_.ytag();
+    // int ytag = self_.ytag();
     // CHECK(ytag == ytag_e::SmallStr || ytag == ytag_e::HeapStr) {
 
     // TODO: return value_e::Str
