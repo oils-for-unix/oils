@@ -152,6 +152,38 @@ class GlobalStr {
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
 
+union Str {
+ public:
+  // Instead of this at the start of every function:
+  //   Str* s = nullptr;
+  // It will now be:
+  //   Str s(nullptr);
+  //
+  //   StackRoot _root(&s);
+  explicit Str(BigStr* big) : big_(big) {
+  }
+
+  char* data() {
+    return big_->data();
+  }
+
+  Str at(int i) {
+    return Str(big_->at(i));
+  }
+
+  Str upper() {
+    return Str(big_->upper());
+  }
+
+  uint64_t raw_bytes_;
+  BigStr* big_;
+  // TODO: add SmallStr, see mycpp/small_str_test.cc
+};
+
+inline int len(const Str s) {
+  return len(s.big_);
+}
+
 // This macro is a workaround for the fact that it's impossible to have a
 // a constexpr initializer for char[N].  The "String Literals as Non-Type
 // Template Parameters" feature of C++ 20 would have done it, but it's not
@@ -168,26 +200,11 @@ class GlobalStr {
       {.len_ = sizeof(val) - 1, .hash_ = 0, .is_hashed_ = 0, .data_ = val}}; \
   BigStr* name = reinterpret_cast<BigStr*>(&_##name.obj);
 
-union Str {
- public:
-  Str(BigStr* big) : big_(big) {
-  }
-
-  char* data() {
-    return big_->data();
-  }
-
-  Str at(int i) {
-    return Str(big_->at(i));
-  }
-
-  uint64_t raw_bytes_;
-  BigStr* big_;
-  // TODO: add SmallStr, see mycpp/small_str_test.cc
-};
-
-inline int len(const Str s) {
-  return len(s.big_);
-}
+// New style for SmallStr compatibility
+#define GLOBAL_STR2(name, val)                                               \
+  GcGlobal<GlobalStr<sizeof(val)>> _##name = {                               \
+      ObjHeader::Global(TypeTag::BigStr),                                    \
+      {.len_ = sizeof(val) - 1, .hash_ = 0, .is_hashed_ = 0, .data_ = val}}; \
+  Str name(reinterpret_cast<BigStr*>(&_##name.obj));
 
 #endif  // MYCPP_GC_STR_H
