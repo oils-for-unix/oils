@@ -8,13 +8,13 @@
 // hacky forward decl
 namespace completion {
 class ReadlineCallback;
-Str* ExecuteReadlineCallback(ReadlineCallback*, Str*, int);
+BigStr* ExecuteReadlineCallback(ReadlineCallback*, BigStr*, int);
 }  // namespace completion
 
 // hacky forward decl
 namespace comp_ui {
 class _IDisplay;
-void ExecutePrintCandidates(_IDisplay*, Str*, List<Str*>*, int);
+void ExecutePrintCandidates(_IDisplay*, BigStr*, List<BigStr*>*, int);
 }  // namespace comp_ui
 
 namespace py_readline {
@@ -22,19 +22,19 @@ namespace py_readline {
 class Readline {
  public:
   Readline();
-  void parse_and_bind(Str* s);
-  void add_history(Str* line);
-  void read_history_file(Str* path);
-  void write_history_file(Str* path);
+  void parse_and_bind(BigStr* s);
+  void add_history(BigStr* line);
+  void read_history_file(BigStr* path);
+  void write_history_file(BigStr* path);
   void set_completer(completion::ReadlineCallback* completer);
-  void set_completer_delims(Str* delims);
+  void set_completer_delims(BigStr* delims);
   void set_completion_display_matches_hook(
       comp_ui::_IDisplay* display = nullptr);
-  Str* get_line_buffer();
+  BigStr* get_line_buffer();
   int get_begidx();
   int get_endidx();
   void clear_history();
-  Str* get_history_item(int pos);
+  BigStr* get_history_item(int pos);
   void remove_history_item(int pos);
   int get_current_history_length();
   void resize_terminal();
@@ -51,7 +51,7 @@ class Readline {
 
   int begidx_;
   int endidx_;
-  Str* completer_delims_;
+  BigStr* completer_delims_;
   completion::ReadlineCallback* completer_;
   comp_ui::_IDisplay* display_;
 
@@ -67,7 +67,7 @@ class Readline {
 
 Readline* MaybeGetReadline();
 
-Str* readline(Str* prompt);
+BigStr* readline(BigStr* prompt);
 
 }  // namespace py_readline
 

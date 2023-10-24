@@ -297,7 +297,7 @@ void Dict<K, V>::clear() {
 }
 
 // TODO:
-// - Special case to intern Str* when it's hashed?  How?
+// - Special case to intern BigStr* when it's hashed?  How?
 //   - Should we have wrappers like:
 //   - V GetAndIntern<V>(D, &string_key)
 //   - SetAndIntern<V>(D, &string_key, value)

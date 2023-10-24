@@ -188,21 +188,21 @@ namespace error {  // forward declare
 
 namespace ansi {  // declare
 
-extern Str* RESET;
-extern Str* BOLD;
-extern Str* UNDERLINE;
-extern Str* REVERSE;
-extern Str* RED;
-extern Str* GREEN;
-extern Str* YELLOW;
-extern Str* BLUE;
+extern BigStr* RESET;
+extern BigStr* BOLD;
+extern BigStr* UNDERLINE;
+extern BigStr* REVERSE;
+extern BigStr* RED;
+extern BigStr* GREEN;
+extern BigStr* YELLOW;
+extern BigStr* BLUE;
 
 
 }  // declare namespace ansi
 
 namespace cgi {  // declare
 
-Str* escape(Str* s);
+BigStr* escape(BigStr* s);
 
 
 }  // declare namespace cgi
@@ -213,11 +213,11 @@ extern int BIT8_UTF8;
 extern int BIT8_U_ESCAPE;
 extern int BIT8_X_ESCAPE;
 extern int MUST_QUOTE;
-bool _encode(Str* s, int bit8_display, mylib::BufWriter* buf);
-Str* maybe_shell_encode(Str* s, int flags = 0);
-Str* maybe_encode(Str* s, int bit8_display = BIT8_UTF8);
-Str* encode(Str* s, int bit8_display = BIT8_UTF8);
-void _encode_bytes_x(Str* s, mylib::BufWriter* buf);
+bool _encode(BigStr* s, int bit8_display, mylib::BufWriter* buf);
+BigStr* maybe_shell_encode(BigStr* s, int flags = 0);
+BigStr* maybe_encode(BigStr* s, int bit8_display = BIT8_UTF8);
+BigStr* encode(BigStr* s, int bit8_display = BIT8_UTF8);
+void _encode_bytes_x(BigStr* s, mylib::BufWriter* buf);
 extern int Ascii;
 extern int Begin2;
 extern int Begin3;
@@ -231,7 +231,7 @@ extern int B4_1;
 extern int B3_2;
 extern int B4_2;
 extern int B4_3;
-bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf);
+bool EncodeRunes(BigStr* s, int bit8_display, mylib::BufWriter* buf);
 
 
 }  // declare namespace qsn
@@ -239,14 +239,14 @@ bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf);
 namespace error {  // declare
 
 using syntax_asdl::loc;
-Str* _ValType(runtime_asdl::value_t* val);
+BigStr* _ValType(runtime_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
-  _ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location);
+  _ErrorWithLocation(BigStr* msg, syntax_asdl::loc_t* location);
   bool HasLocation();
-  Str* UserErrorString();
+  BigStr* UserErrorString();
   syntax_asdl::loc_t* location;
-  Str* msg;
+  BigStr* msg;
   
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_ErrorWithLocation, location))
@@ -262,7 +262,7 @@ class _ErrorWithLocation {
 
 class Usage : public _ErrorWithLocation {
  public:
-  Usage(Str* msg, syntax_asdl::loc_t* location);
+  Usage(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ErrorWithLocation::field_mask();
@@ -277,9 +277,9 @@ class Usage : public _ErrorWithLocation {
 
 class Runtime {
  public:
-  Runtime(Str* msg);
-  Str* UserErrorString();
-  Str* msg;
+  Runtime(BigStr* msg);
+  BigStr* UserErrorString();
+  BigStr* msg;
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(1, sizeof(Runtime));
@@ -290,7 +290,7 @@ class Runtime {
 
 class Parse : public _ErrorWithLocation {
  public:
-  Parse(Str* msg, syntax_asdl::loc_t* location);
+  Parse(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ErrorWithLocation::field_mask();
@@ -305,7 +305,7 @@ class Parse : public _ErrorWithLocation {
 
 class FailGlob : public _ErrorWithLocation {
  public:
-  FailGlob(Str* msg, syntax_asdl::loc_t* location);
+  FailGlob(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ErrorWithLocation::field_mask();
@@ -320,7 +320,7 @@ class FailGlob : public _ErrorWithLocation {
 
 class RedirectEval : public _ErrorWithLocation {
  public:
-  RedirectEval(Str* msg, syntax_asdl::loc_t* location);
+  RedirectEval(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ErrorWithLocation::field_mask();
@@ -335,7 +335,7 @@ class RedirectEval : public _ErrorWithLocation {
 
 class FatalRuntime : public _ErrorWithLocation {
  public:
-  FatalRuntime(int exit_status, Str* msg, syntax_asdl::loc_t* location);
+  FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location);
   int ExitStatus();
 
   int exit_status;
@@ -353,7 +353,7 @@ class FatalRuntime : public _ErrorWithLocation {
 
 class Strict : public FatalRuntime {
  public:
-  Strict(Str* msg, syntax_asdl::loc_t* location);
+  Strict(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return FatalRuntime::field_mask();
@@ -368,7 +368,7 @@ class Strict : public FatalRuntime {
 
 class ErrExit : public FatalRuntime {
  public:
-  ErrExit(int exit_status, Str* msg, syntax_asdl::loc_t* location, bool show_code = false);
+  ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code = false);
 
   bool show_code;
   
@@ -385,7 +385,7 @@ class ErrExit : public FatalRuntime {
 
 class Expr : public FatalRuntime {
  public:
-  Expr(Str* msg, syntax_asdl::loc_t* location);
+  Expr(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return FatalRuntime::field_mask();
@@ -400,7 +400,7 @@ class Expr : public FatalRuntime {
 
 class UserError : public FatalRuntime {
  public:
-  UserError(int status, Str* msg, syntax_asdl::loc_t* location);
+  UserError(int status, BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return FatalRuntime::field_mask();
@@ -415,7 +415,7 @@ class UserError : public FatalRuntime {
 
 class AssertionErr : public Expr {
  public:
-  AssertionErr(Str* msg, syntax_asdl::loc_t* location);
+  AssertionErr(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return Expr::field_mask();
@@ -430,7 +430,7 @@ class AssertionErr : public Expr {
 
 class TypeErrVerbose : public Expr {
  public:
-  TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location);
+  TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return Expr::field_mask();
@@ -445,7 +445,7 @@ class TypeErrVerbose : public Expr {
 
 class TypeErr : public TypeErrVerbose {
  public:
-  TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location);
+  TypeErr(runtime_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return TypeErrVerbose::field_mask();
@@ -458,11 +458,11 @@ class TypeErr : public TypeErrVerbose {
   DISALLOW_COPY_AND_ASSIGN(TypeErr)
 };
 
-[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location = nullptr);
-[[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location = nullptr);
+[[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void e_strict(BigStr* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void p_die(BigStr* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void e_die(BigStr* msg, syntax_asdl::loc_t* location = nullptr);
+[[noreturn]] void e_die_status(int status, BigStr* msg, syntax_asdl::loc_t* location = nullptr);
 
 
 }  // declare namespace error
@@ -474,14 +474,14 @@ using hnode_asdl::color_t;
 using hnode_asdl::color_e;
 int NO_SPID = -1;
 
-hnode::Record* NewRecord(Str* node_type) {
-  StackRoots _roots({&node_type});
+hnode::Record* NewRecord(BigStr* node_type) {
+  StackRoot _root0(&node_type);
 
   return Alloc<hnode::Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
 }
 
-hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
-  StackRoots _roots({&s});
+hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
+  StackRoot _root0(&s);
 
   if (s == nullptr) {
     return Alloc<hnode::Leaf>(str2, color_e::OtherConst);
@@ -490,8 +490,8 @@ hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
     return Alloc<hnode::Leaf>(s, e_color);
   }
 }
-Str* TRUE_STR = str3;
-Str* FALSE_STR = str4;
+BigStr* TRUE_STR = str3;
+BigStr* FALSE_STR = str4;
 
 }  // define namespace runtime
 
@@ -504,7 +504,7 @@ using hnode_asdl::color_e;
 using hnode_asdl::color_t;
 
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
-  StackRoots _roots({&f});
+  StackRoot _root0(&f);
 
   if (f->isatty()) {
     return Alloc<AnsiOutput>(f);
@@ -539,19 +539,20 @@ void ColorOutput::PopColor() {
   FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
-void ColorOutput::write(Str* s) {
-  StackRoots _roots({&s});
+void ColorOutput::write(BigStr* s) {
+  StackRoot _root0(&s);
 
   this->f->write(s);
   this->num_chars += len(s);
 }
 
-void ColorOutput::WriteRaw(Tuple2<Str*, int>* raw) {
-  Str* s = nullptr;
+void ColorOutput::WriteRaw(Tuple2<BigStr*, int>* raw) {
+  BigStr* s = nullptr;
   int num_chars;
-  StackRoots _roots({&raw, &s});
+  StackRoot _root0(&raw);
+  StackRoot _root1(&s);
 
-  Tuple2<Str*, int>* tup0 = raw;
+  Tuple2<BigStr*, int>* tup0 = raw;
   s = tup0->at0();
   num_chars = tup0->at1();
   this->f->write(s);
@@ -562,9 +563,9 @@ int ColorOutput::NumChars() {
   return this->num_chars;
 }
 
-Tuple2<Str*, int> ColorOutput::GetRaw() {
+Tuple2<BigStr*, int> ColorOutput::GetRaw() {
   mylib::BufWriter* f = static_cast<mylib::BufWriter*>(this->f);
-  return Tuple2<Str*, int>(f->getvalue(), this->num_chars);
+  return Tuple2<BigStr*, int>(f->getvalue(), this->num_chars);
 }
 
 TextOutput::TextOutput(mylib::Writer* f) : ColorOutput(f) {
@@ -598,8 +599,8 @@ void HtmlOutput::FileFooter() {
 }
 
 void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
-  Str* css_class = nullptr;
-  StackRoots _roots({&css_class});
+  BigStr* css_class = nullptr;
+  StackRoot _root0(&css_class);
 
   if (e_color == color_e::TypeName) {
     css_class = str7;
@@ -634,8 +635,8 @@ void HtmlOutput::PopColor() {
   this->f->write(str13);
 }
 
-void HtmlOutput::write(Str* s) {
-  StackRoots _roots({&s});
+void HtmlOutput::write(BigStr* s) {
+  StackRoot _root0(&s);
 
   this->f->write(cgi::escape(s));
   this->num_chars += len(s);
@@ -691,25 +692,28 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
   int chars_so_far;
   int i;
   format::ColorOutput* single_f = nullptr;
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   int num_chars;
-  StackRoots _roots({&array, &f, &single_f, &s});
+  StackRoot _root0(&array);
+  StackRoot _root1(&f);
+  StackRoot _root2(&single_f);
+  StackRoot _root3(&s);
 
   all_fit = true;
   chars_so_far = prefix_len;
   i = 0;
   for (ListIter<hnode_asdl::hnode_t*> it(array); !it.Done(); it.Next(), ++i) {
     hnode_asdl::hnode_t* val = it.Value();
-    StackRoots _for({&val  });
+    StackRoot _for(&val  );
     if (i != 0) {
       f->write(str14);
     }
     single_f = f->NewTempBuffer();
     if (_TrySingleLine(val, single_f, (this->max_col - chars_so_far))) {
-      Tuple2<Str*, int> tup1 = single_f->GetRaw();
+      Tuple2<BigStr*, int> tup1 = single_f->GetRaw();
       s = tup1.at0();
       num_chars = tup1.at1();
-      f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
+      f->WriteRaw((Alloc<Tuple2<BigStr*, int>>(s, num_chars)));
       chars_so_far += single_f->NumChars();
     }
     else {
@@ -724,26 +728,30 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
 
 bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent) {
   bool all_fit;
-  List<Tuple2<Str*, int>*>* pieces = nullptr;
+  List<Tuple2<BigStr*, int>*>* pieces = nullptr;
   int chars_so_far;
   format::ColorOutput* single_f = nullptr;
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   int num_chars;
   int i;
-  StackRoots _roots({&array, &f, &pieces, &single_f, &s});
+  StackRoot _root0(&array);
+  StackRoot _root1(&f);
+  StackRoot _root2(&pieces);
+  StackRoot _root3(&single_f);
+  StackRoot _root4(&s);
 
   all_fit = true;
-  pieces = Alloc<List<Tuple2<Str*, int>*>>();
+  pieces = Alloc<List<Tuple2<BigStr*, int>*>>();
   chars_so_far = prefix_len;
   for (ListIter<hnode_asdl::hnode_t*> it(array); !it.Done(); it.Next()) {
     hnode_asdl::hnode_t* item = it.Value();
-    StackRoots _for({&item  });
+    StackRoot _for(&item  );
     single_f = f->NewTempBuffer();
     if (_TrySingleLine(item, single_f, (this->max_col - chars_so_far))) {
-      Tuple2<Str*, int> tup2 = single_f->GetRaw();
+      Tuple2<BigStr*, int> tup2 = single_f->GetRaw();
       s = tup2.at0();
       num_chars = tup2.at1();
-      pieces->append((Alloc<Tuple2<Str*, int>>(s, num_chars)));
+      pieces->append((Alloc<Tuple2<BigStr*, int>>(s, num_chars)));
       chars_so_far += single_f->NumChars();
     }
     else {
@@ -753,9 +761,9 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
   }
   if (all_fit) {
     i = 0;
-    for (ListIter<Tuple2<Str*, int>*> it(pieces); !it.Done(); it.Next(), ++i) {
-      Tuple2<Str*, int>* p = it.Value();
-      StackRoots _for({&p    });
+    for (ListIter<Tuple2<BigStr*, int>*> it(pieces); !it.Done(); it.Next(), ++i) {
+      Tuple2<BigStr*, int>* p = it.Value();
+      StackRoot _for(&p    );
       if (i != 0) {
         f->write(str16);
       }
@@ -767,20 +775,30 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
 }
 
 void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, int indent) {
-  Str* ind = nullptr;
-  Str* prefix = nullptr;
+  BigStr* ind = nullptr;
+  BigStr* prefix = nullptr;
   int prefix_len;
   bool all_fit;
-  Str* name = nullptr;
+  BigStr* name = nullptr;
   hnode_asdl::hnode_t* val = nullptr;
-  Str* ind1 = nullptr;
+  BigStr* ind1 = nullptr;
   hnode_asdl::hnode_t* UP_val = nullptr;
   int tag;
-  Str* name_str = nullptr;
+  BigStr* name_str = nullptr;
   format::ColorOutput* single_f = nullptr;
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   int num_chars;
-  StackRoots _roots({&node, &f, &ind, &prefix, &name, &val, &ind1, &UP_val, &name_str, &single_f, &s});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
+  StackRoot _root2(&ind);
+  StackRoot _root3(&prefix);
+  StackRoot _root4(&name);
+  StackRoot _root5(&val);
+  StackRoot _root6(&ind1);
+  StackRoot _root7(&UP_val);
+  StackRoot _root8(&name_str);
+  StackRoot _root9(&single_f);
+  StackRoot _root10(&s);
 
   ind = str_repeat(str18, indent);
   if (node->abbrev) {
@@ -808,7 +826,7 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
     f->write(str21);
     for (ListIter<hnode_asdl::Field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::Field* field = it.Value();
-      StackRoots _for({&field    });
+      StackRoot _for(&field    );
       name = field->name;
       val = field->val;
       ind1 = str_repeat(str22, (indent + INDENT));
@@ -823,7 +841,7 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
           f->write(str24);
           for (ListIter<hnode_asdl::hnode_t*> it(val->children); !it.Done(); it.Next()) {
             hnode_asdl::hnode_t* child = it.Value();
-            StackRoots _for({&child          });
+            StackRoot _for(&child          );
             this->PrintNode(child, f, ((indent + INDENT) + INDENT));
             f->write(str25);
           }
@@ -836,10 +854,10 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
         prefix_len = len(name_str);
         single_f = f->NewTempBuffer();
         if (_TrySingleLine(val, single_f, (this->max_col - prefix_len))) {
-          Tuple2<Str*, int> tup3 = single_f->GetRaw();
+          Tuple2<BigStr*, int> tup3 = single_f->GetRaw();
           s = tup3.at0();
           num_chars = tup3.at1();
-          f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
+          f->WriteRaw((Alloc<Tuple2<BigStr*, int>>(s, num_chars)));
         }
         else {
           f->write(str28);
@@ -853,22 +871,27 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
 }
 
 void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent) {
-  Str* ind = nullptr;
+  BigStr* ind = nullptr;
   format::ColorOutput* single_f = nullptr;
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   int num_chars;
   hnode_asdl::hnode_t* UP_node = nullptr;
   int tag;
-  StackRoots _roots({&node, &f, &ind, &single_f, &s, &UP_node});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
+  StackRoot _root2(&ind);
+  StackRoot _root3(&single_f);
+  StackRoot _root4(&s);
+  StackRoot _root5(&UP_node);
 
   ind = str_repeat(str30, indent);
   single_f = f->NewTempBuffer();
   single_f->write(ind);
   if (_TrySingleLine(node, single_f, (this->max_col - indent))) {
-    Tuple2<Str*, int> tup4 = single_f->GetRaw();
+    Tuple2<BigStr*, int> tup4 = single_f->GetRaw();
     s = tup4.at0();
     num_chars = tup4.at1();
-    f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
+    f->WriteRaw((Alloc<Tuple2<BigStr*, int>>(s, num_chars)));
     return ;
   }
   UP_node = node;
@@ -904,7 +927,8 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
 
 bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_chars) {
   int i;
-  StackRoots _roots({&node, &f});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
 
   f->write(node->left);
   if (node->abbrev) {
@@ -917,7 +941,7 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
-      StackRoots _for({&val    });
+      StackRoot _for(&val    );
       if (i != 0) {
         f->write(str33);
       }
@@ -932,7 +956,7 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
     f->PopColor();
     for (ListIter<hnode_asdl::Field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::Field* field = it.Value();
-      StackRoots _for({&field    });
+      StackRoot _for(&field    );
       f->write(StrFormat(" %s:", field->name));
       if (!_TrySingleLine(field->val, f, max_chars)) {
         return false;
@@ -948,7 +972,9 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
   int tag;
   int i;
   int num_chars_so_far;
-  StackRoots _roots({&node, &f, &UP_node});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
+  StackRoot _root2(&UP_node);
 
   UP_node = node;
   tag = node->tag();
@@ -976,7 +1002,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
-          StackRoots _for({&item        });
+          StackRoot _for(&item        );
           if (i != 0) {
             f->write(str37);
           }
@@ -1006,7 +1032,9 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
 
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
   format::_PrettyPrinter* pp = nullptr;
-  StackRoots _roots({&node, &f, &pp});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
+  StackRoot _root2(&pp);
 
   pp = Alloc<_PrettyPrinter>(100);
   pp->PrintNode(node, f, 0);
@@ -1016,22 +1044,22 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 
 namespace ansi {  // define
 
-Str* RESET = str39;
-Str* BOLD = str40;
-Str* UNDERLINE = str41;
-Str* REVERSE = str42;
-Str* RED = str43;
-Str* GREEN = str44;
-Str* YELLOW = str45;
-Str* BLUE = str46;
+BigStr* RESET = str39;
+BigStr* BOLD = str40;
+BigStr* UNDERLINE = str41;
+BigStr* REVERSE = str42;
+BigStr* RED = str43;
+BigStr* GREEN = str44;
+BigStr* YELLOW = str45;
+BigStr* BLUE = str46;
 
 }  // define namespace ansi
 
 namespace cgi {  // define
 
 
-Str* escape(Str* s) {
-  StackRoots _roots({&s});
+BigStr* escape(BigStr* s) {
+  StackRoot _root0(&s);
 
   s = s->replace(str47, str48);
   s = s->replace(str49, str50);
@@ -1048,8 +1076,9 @@ int BIT8_U_ESCAPE = 1;
 int BIT8_X_ESCAPE = 2;
 int MUST_QUOTE = 4;
 
-bool _encode(Str* s, int bit8_display, mylib::BufWriter* buf) {
-  StackRoots _roots({&s, &buf});
+bool _encode(BigStr* s, int bit8_display, mylib::BufWriter* buf) {
+  StackRoot _root0(&s);
+  StackRoot _root1(&buf);
 
   if (bit8_display == BIT8_X_ESCAPE) {
     _encode_bytes_x(s, buf);
@@ -1060,15 +1089,18 @@ bool _encode(Str* s, int bit8_display, mylib::BufWriter* buf) {
   }
 }
 
-Str* maybe_shell_encode(Str* s, int flags) {
+BigStr* maybe_shell_encode(BigStr* s, int flags) {
   int quote;
   int must_quote;
   int bit8_display;
-  List<Str*>* parts = nullptr;
+  List<BigStr*>* parts = nullptr;
   mylib::BufWriter* buf = nullptr;
   bool valid_utf8;
-  Str* prefix = nullptr;
-  StackRoots _roots({&s, &parts, &buf, &prefix});
+  BigStr* prefix = nullptr;
+  StackRoot _root0(&s);
+  StackRoot _root1(&parts);
+  StackRoot _root2(&buf);
+  StackRoot _root3(&prefix);
 
   quote = 0;
   must_quote = (flags & 4);
@@ -1078,8 +1110,8 @@ Str* maybe_shell_encode(Str* s, int flags) {
   }
   else {
     for (StrIter it(s); !it.Done(); it.Next()) {
-      Str* ch = it.Value();
-      StackRoots _for({&ch    });
+      BigStr* ch = it.Value();
+      StackRoot _for(&ch    );
       if ((!must_quote and IsPlainChar(ch))) {
         continue;
       }
@@ -1093,7 +1125,7 @@ Str* maybe_shell_encode(Str* s, int flags) {
   if (quote == 0) {
     return s;
   }
-  parts = Alloc<List<Str*>>();
+  parts = Alloc<List<BigStr*>>();
   buf = Alloc<mylib::BufWriter>();
   valid_utf8 = _encode(s, bit8_display, buf);
   parts->append(buf->getvalue());
@@ -1107,11 +1139,13 @@ Str* maybe_shell_encode(Str* s, int flags) {
   return str_concat(prefix, str57->join(parts));
 }
 
-Str* maybe_encode(Str* s, int bit8_display) {
+BigStr* maybe_encode(BigStr* s, int bit8_display) {
   int quote;
-  List<Str*>* parts = nullptr;
+  List<BigStr*>* parts = nullptr;
   mylib::BufWriter* buf = nullptr;
-  StackRoots _roots({&s, &parts, &buf});
+  StackRoot _root0(&s);
+  StackRoot _root1(&parts);
+  StackRoot _root2(&buf);
 
   quote = 0;
   if (len(s) == 0) {
@@ -1119,8 +1153,8 @@ Str* maybe_encode(Str* s, int bit8_display) {
   }
   else {
     for (StrIter it(s); !it.Done(); it.Next()) {
-      Str* ch = it.Value();
-      StackRoots _for({&ch    });
+      BigStr* ch = it.Value();
+      StackRoot _for(&ch    );
       if (IsPlainChar(ch)) {
         continue;
       }
@@ -1130,7 +1164,7 @@ Str* maybe_encode(Str* s, int bit8_display) {
   if (!quote) {
     return s;
   }
-  parts = Alloc<List<Str*>>();
+  parts = Alloc<List<BigStr*>>();
   parts->append(str58);
   buf = Alloc<mylib::BufWriter>();
   _encode(s, bit8_display, buf);
@@ -1139,12 +1173,14 @@ Str* maybe_encode(Str* s, int bit8_display) {
   return str60->join(parts);
 }
 
-Str* encode(Str* s, int bit8_display) {
-  List<Str*>* parts = nullptr;
+BigStr* encode(BigStr* s, int bit8_display) {
+  List<BigStr*>* parts = nullptr;
   mylib::BufWriter* buf = nullptr;
-  StackRoots _roots({&s, &parts, &buf});
+  StackRoot _root0(&s);
+  StackRoot _root1(&parts);
+  StackRoot _root2(&buf);
 
-  parts = Alloc<List<Str*>>();
+  parts = Alloc<List<BigStr*>>();
   parts->append(str61);
   buf = Alloc<mylib::BufWriter>();
   _encode(s, bit8_display, buf);
@@ -1153,13 +1189,15 @@ Str* encode(Str* s, int bit8_display) {
   return str63->join(parts);
 }
 
-void _encode_bytes_x(Str* s, mylib::BufWriter* buf) {
-  Str* part = nullptr;
-  StackRoots _roots({&s, &buf, &part});
+void _encode_bytes_x(BigStr* s, mylib::BufWriter* buf) {
+  BigStr* part = nullptr;
+  StackRoot _root0(&s);
+  StackRoot _root1(&buf);
+  StackRoot _root2(&part);
 
   for (StrIter it(s); !it.Done(); it.Next()) {
-    Str* byte = it.Value();
-    StackRoots _for({&byte  });
+    BigStr* byte = it.Value();
+    StackRoot _for(&byte  );
     if (str_equals(byte, str64)) {
       part = str65;
     }
@@ -1218,17 +1256,22 @@ int B3_2 = 4;
 int B4_2 = 5;
 int B4_3 = 6;
 
-bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf) {
+bool EncodeRunes(BigStr* s, int bit8_display, mylib::BufWriter* buf) {
   bool valid_utf8;
   int state;
-  Str* r1 = nullptr;
-  Str* r2 = nullptr;
-  Str* r3 = nullptr;
+  BigStr* r1 = nullptr;
+  BigStr* r2 = nullptr;
+  BigStr* r3 = nullptr;
   int b;
   int typ;
-  Str* out = nullptr;
+  BigStr* out = nullptr;
   int rune;
-  StackRoots _roots({&s, &buf, &r1, &r2, &r3, &out});
+  StackRoot _root0(&s);
+  StackRoot _root1(&buf);
+  StackRoot _root2(&r1);
+  StackRoot _root3(&r2);
+  StackRoot _root4(&r3);
+  StackRoot _root5(&out);
 
   valid_utf8 = true;
   state = Start;
@@ -1236,8 +1279,8 @@ bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf) {
   r2 = str77;
   r3 = str78;
   for (StrIter it(s); !it.Done(); it.Next()) {
-    Str* byte = it.Value();
-    StackRoots _for({&byte  });
+    BigStr* byte = it.Value();
+    StackRoot _for(&byte  );
     b = ord(byte);
     if (b < 127) {
       typ = Ascii;
@@ -1448,13 +1491,13 @@ using syntax_asdl::loc;
 using runtime_asdl::value_t;
 using runtime_asdl::value_str;
 
-Str* _ValType(runtime_asdl::value_t* val) {
-  StackRoots _roots({&val});
+BigStr* _ValType(runtime_asdl::value_t* val) {
+  StackRoot _root0(&val);
 
-  return value_str(val->tag());
+  return value_str(val->tag(), false);
 }
 
-_ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
+_ErrorWithLocation::_ErrorWithLocation(BigStr* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
   if (location == nullptr) {
     this->location = loc::Missing;
@@ -1468,31 +1511,31 @@ bool _ErrorWithLocation::HasLocation() {
   return this->location->tag() != loc_e::Missing;
 }
 
-Str* _ErrorWithLocation::UserErrorString() {
+BigStr* _ErrorWithLocation::UserErrorString() {
   return this->msg;
 }
 
-Usage::Usage(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-Runtime::Runtime(Str* msg) {
+Runtime::Runtime(BigStr* msg) {
   this->msg = msg;
 }
 
-Str* Runtime::UserErrorString() {
+BigStr* Runtime::UserErrorString() {
   return this->msg;
 }
 
-Parse::Parse(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-FailGlob::FailGlob(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-RedirectEval::RedirectEval(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-FatalRuntime::FatalRuntime(int exit_status, Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+FatalRuntime::FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
   this->exit_status = exit_status;
 }
 
@@ -1500,54 +1543,59 @@ int FatalRuntime::ExitStatus() {
   return this->exit_status;
 }
 
-Strict::Strict(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(1, msg, location) {
+Strict::Strict(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(1, msg, location) {
 }
 
-ErrExit::ErrExit(int exit_status, Str* msg, syntax_asdl::loc_t* location, bool show_code) : FatalRuntime(exit_status, msg, location) {
+ErrExit::ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code) : FatalRuntime(exit_status, msg, location) {
   this->show_code = show_code;
 }
 
-Expr::Expr(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
+Expr::Expr(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
 }
 
-UserError::UserError(int status, Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
+UserError::UserError(int status, BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
 }
 
-AssertionErr::AssertionErr(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-TypeErrVerbose::TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-TypeErr::TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
+TypeErr::TypeErr(runtime_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
 }
 
-[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<Usage>(msg, location);
 }
 
-[[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void e_strict(BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<Strict>(msg, location);
 }
 
-[[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void p_die(BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<Parse>(msg, location);
 }
 
-[[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void e_die(BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<FatalRuntime>(1, msg, location);
 }
 
-[[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void e_die_status(int status, BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<FatalRuntime>(status, msg, location);
 }
@@ -1568,34 +1616,35 @@ int Int = 2;
 int Float = 3;
 int Bool = 4;
 
-_Attributes::_Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults) {
-  this->attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
-  this->opt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
-  this->shopt_changes = Alloc<List<Tuple2<Str*, bool>*>>();
+_Attributes::_Attributes(Dict<BigStr*, runtime_asdl::value_t*>* defaults) {
+  this->attrs = Alloc<Dict<BigStr*, runtime_asdl::value_t*>>();
+  this->opt_changes = Alloc<List<Tuple2<BigStr*, bool>*>>();
+  this->shopt_changes = Alloc<List<Tuple2<BigStr*, bool>*>>();
   this->show_options = false;
-  this->actions = Alloc<List<Str*>>();
+  this->actions = Alloc<List<BigStr*>>();
   this->saw_double_dash = false;
-  for (DictIter<Str*, runtime_asdl::value_t*> it(defaults); !it.Done(); it.Next()) {
-    Str* name = it.Key();
+  for (DictIter<BigStr*, runtime_asdl::value_t*> it(defaults); !it.Done(); it.Next()) {
+    BigStr* name = it.Key();
     runtime_asdl::value_t* v = it.Value();
     this->Set(name, v);
   }
 }
 
-void _Attributes::SetTrue(Str* name) {
-  StackRoots _roots({&name});
+void _Attributes::SetTrue(BigStr* name) {
+  StackRoot _root0(&name);
 
   this->Set(name, Alloc<value::Bool>(true));
 }
 
-void _Attributes::Set(Str* name, runtime_asdl::value_t* val) {
-  StackRoots _roots({&name, &val});
+void _Attributes::Set(BigStr* name, runtime_asdl::value_t* val) {
+  StackRoot _root0(&name);
+  StackRoot _root1(&val);
 
   name = name->replace(str93, str94);
   this->attrs->set(name, val);
 }
 
-Reader::Reader(List<Str*>* argv, List<syntax_asdl::CompoundWord*>* locs) {
+Reader::Reader(List<BigStr*>* argv, List<syntax_asdl::CompoundWord*>* locs) {
   this->argv = argv;
   this->locs = locs;
   this->n = len(argv);
@@ -1606,7 +1655,7 @@ void Reader::Next() {
   this->i += 1;
 }
 
-Str* Reader::Peek() {
+BigStr* Reader::Peek() {
   if (this->i >= this->n) {
     return nullptr;
   }
@@ -1615,18 +1664,19 @@ Str* Reader::Peek() {
   }
 }
 
-Tuple2<Str*, syntax_asdl::loc_t*> Reader::Peek2() {
+Tuple2<BigStr*, syntax_asdl::loc_t*> Reader::Peek2() {
   if (this->i >= this->n) {
-    return Tuple2<Str*, syntax_asdl::loc_t*>(nullptr, loc::Missing);
+    return Tuple2<BigStr*, syntax_asdl::loc_t*>(nullptr, loc::Missing);
   }
   else {
-    return Tuple2<Str*, syntax_asdl::loc_t*>(this->argv->at(this->i), this->locs->at(this->i));
+    return Tuple2<BigStr*, syntax_asdl::loc_t*>(this->argv->at(this->i), this->locs->at(this->i));
   }
 }
 
-Str* Reader::ReadRequired(Str* error_msg) {
-  Str* arg = nullptr;
-  StackRoots _roots({&error_msg, &arg});
+BigStr* Reader::ReadRequired(BigStr* error_msg) {
+  BigStr* arg = nullptr;
+  StackRoot _root0(&error_msg);
+  StackRoot _root1(&arg);
 
   arg = this->Peek();
   if (arg == nullptr) {
@@ -1636,10 +1686,12 @@ Str* Reader::ReadRequired(Str* error_msg) {
   return arg;
 }
 
-Tuple2<Str*, syntax_asdl::loc_t*> Reader::ReadRequired2(Str* error_msg) {
-  Str* arg = nullptr;
+Tuple2<BigStr*, syntax_asdl::loc_t*> Reader::ReadRequired2(BigStr* error_msg) {
+  BigStr* arg = nullptr;
   syntax_asdl::CompoundWord* location = nullptr;
-  StackRoots _roots({&error_msg, &arg, &location});
+  StackRoot _root0(&error_msg);
+  StackRoot _root1(&arg);
+  StackRoot _root2(&location);
 
   arg = this->Peek();
   if (arg == nullptr) {
@@ -1647,15 +1699,15 @@ Tuple2<Str*, syntax_asdl::loc_t*> Reader::ReadRequired2(Str* error_msg) {
   }
   location = this->locs->at(this->i);
   this->Next();
-  return Tuple2<Str*, syntax_asdl::loc_t*>(arg, location);
+  return Tuple2<BigStr*, syntax_asdl::loc_t*>(arg, location);
 }
 
-List<Str*>* Reader::Rest() {
+List<BigStr*>* Reader::Rest() {
   return this->argv->slice(this->i);
 }
 
-Tuple2<List<Str*>*, List<syntax_asdl::CompoundWord*>*> Reader::Rest2() {
-  return Tuple2<List<Str*>*, List<syntax_asdl::CompoundWord*>*>(this->argv->slice(this->i), this->locs->slice(this->i));
+Tuple2<List<BigStr*>*, List<syntax_asdl::CompoundWord*>*> Reader::Rest2() {
+  return Tuple2<List<BigStr*>*, List<syntax_asdl::CompoundWord*>*>(this->argv->slice(this->i), this->locs->slice(this->i));
 }
 
 bool Reader::AtEnd() {
@@ -1663,7 +1715,7 @@ bool Reader::AtEnd() {
 }
 
 syntax_asdl::loc_t* Reader::_FirstLocation() {
-  if ((this->locs and this->locs->at(0) != nullptr)) {
+  if ((this->locs != nullptr and this->locs->at(0) != nullptr)) {
     return this->locs->at(0);
   }
   else {
@@ -1673,7 +1725,7 @@ syntax_asdl::loc_t* Reader::_FirstLocation() {
 
 syntax_asdl::loc_t* Reader::Location() {
   int i;
-  if (this->locs) {
+  if (this->locs != nullptr) {
     if (this->i == this->n) {
       i = (this->n - 1);
     }
@@ -1696,28 +1748,35 @@ _Action::_Action() {
   ;  // pass
 }
 
-bool _Action::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
-  StackRoots _roots({&attached_arg, &arg_r, &out});
+bool _Action::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
 
   FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
-_ArgAction::_ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid) {
+_ArgAction::_ArgAction(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid) {
   this->name = name;
   this->quit_parsing_flags = quit_parsing_flags;
   this->valid = valid;
 }
 
-runtime_asdl::value_t* _ArgAction::_Value(Str* arg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&arg, &location});
+runtime_asdl::value_t* _ArgAction::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&arg);
+  StackRoot _root1(&location);
 
   FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
-bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
-  Str* arg = nullptr;
+bool _ArgAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+  BigStr* arg = nullptr;
   runtime_asdl::value_t* val = nullptr;
-  StackRoots _roots({&attached_arg, &arg_r, &out, &arg, &val});
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
+  StackRoot _root3(&arg);
+  StackRoot _root4(&val);
 
   if (attached_arg != nullptr) {
     arg = attached_arg;
@@ -1734,12 +1793,13 @@ bool _ArgAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attribut
   return this->quit_parsing_flags;
 }
 
-SetToInt::SetToInt(Str* name) : _ArgAction(name, false, nullptr) {
+SetToInt::SetToInt(BigStr* name) : _ArgAction(name, false, nullptr) {
 }
 
-runtime_asdl::value_t* SetToInt::_Value(Str* arg, syntax_asdl::loc_t* location) {
+runtime_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
   int i;
-  StackRoots _roots({&arg, &location});
+  StackRoot _root0(&arg);
+  StackRoot _root1(&location);
 
   try {
     i = to_int(arg);
@@ -1753,12 +1813,13 @@ runtime_asdl::value_t* SetToInt::_Value(Str* arg, syntax_asdl::loc_t* location) 
   return Alloc<value::Int>(i);
 }
 
-SetToFloat::SetToFloat(Str* name) : _ArgAction(name, false, nullptr) {
+SetToFloat::SetToFloat(BigStr* name) : _ArgAction(name, false, nullptr) {
 }
 
-runtime_asdl::value_t* SetToFloat::_Value(Str* arg, syntax_asdl::loc_t* location) {
+runtime_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
   double f;
-  StackRoots _roots({&arg, &location});
+  StackRoot _root0(&arg);
+  StackRoot _root1(&location);
 
   try {
     f = to_float(arg);
@@ -1772,11 +1833,12 @@ runtime_asdl::value_t* SetToFloat::_Value(Str* arg, syntax_asdl::loc_t* location
   return Alloc<value::Float>(f);
 }
 
-SetToString::SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid) : _ArgAction(name, quit_parsing_flags, valid) {
+SetToString::SetToString(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid) : _ArgAction(name, quit_parsing_flags, valid) {
 }
 
-runtime_asdl::value_t* SetToString::_Value(Str* arg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&arg, &location});
+runtime_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&arg);
+  StackRoot _root1(&location);
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
     e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str108, this->name), str109->join(this->valid)), location);
@@ -1784,13 +1846,15 @@ runtime_asdl::value_t* SetToString::_Value(Str* arg, syntax_asdl::loc_t* locatio
   return Alloc<value::Str>(arg);
 }
 
-SetAttachedBool::SetAttachedBool(Str* name) {
+SetAttachedBool::SetAttachedBool(BigStr* name) {
   this->name = name;
 }
 
-bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+bool SetAttachedBool::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   bool b;
-  StackRoots _roots({&attached_arg, &arg_r, &out});
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
 
   if (attached_arg != nullptr) {
     if ((str_equals(attached_arg, str110) || str_equals(attached_arg, str111) || str_equals(attached_arg, str112) || str_equals(attached_arg, str113))) {
@@ -1812,47 +1876,56 @@ bool SetAttachedBool::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Att
   return false;
 }
 
-SetToTrue::SetToTrue(Str* name) {
+SetToTrue::SetToTrue(BigStr* name) {
   this->name = name;
 }
 
-bool SetToTrue::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
-  StackRoots _roots({&attached_arg, &arg_r, &out});
+bool SetToTrue::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
 
   out->SetTrue(this->name);
   return false;
 }
 
-SetOption::SetOption(Str* name) {
+SetOption::SetOption(BigStr* name) {
   this->name = name;
 }
 
-bool SetOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+bool SetOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   bool b;
-  StackRoots _roots({&attached_arg, &arg_r, &out});
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
 
   b = maybe_str_equals(attached_arg, str119);
-  out->opt_changes->append((Alloc<Tuple2<Str*, bool>>(this->name, b)));
+  out->opt_changes->append((Alloc<Tuple2<BigStr*, bool>>(this->name, b)));
   return false;
 }
 
 SetNamedOption::SetNamedOption(bool shopt) {
-  this->names = Alloc<List<Str*>>();
+  this->names = Alloc<List<BigStr*>>();
   this->shopt = shopt;
 }
 
-void SetNamedOption::ArgName(Str* name) {
-  StackRoots _roots({&name});
+void SetNamedOption::ArgName(BigStr* name) {
+  StackRoot _root0(&name);
 
   this->names->append(name);
 }
 
-bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+bool SetNamedOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   bool b;
-  Str* arg = nullptr;
-  Str* attr_name = nullptr;
-  List<Tuple2<Str*, bool>*>* changes = nullptr;
-  StackRoots _roots({&attached_arg, &arg_r, &out, &arg, &attr_name, &changes});
+  BigStr* arg = nullptr;
+  BigStr* attr_name = nullptr;
+  List<Tuple2<BigStr*, bool>*>* changes = nullptr;
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
+  StackRoot _root3(&arg);
+  StackRoot _root4(&attr_name);
+  StackRoot _root5(&changes);
 
   b = maybe_str_equals(attached_arg, str120);
   arg_r->Next();
@@ -1866,35 +1939,41 @@ bool SetNamedOption::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
     e_usage(StrFormat("Invalid option %r", arg), loc::Missing);
   }
   changes = this->shopt ? out->shopt_changes : out->opt_changes;
-  changes->append((Alloc<Tuple2<Str*, bool>>(attr_name, b)));
+  changes->append((Alloc<Tuple2<BigStr*, bool>>(attr_name, b)));
   return false;
 }
 
-SetAction::SetAction(Str* name) {
+SetAction::SetAction(BigStr* name) {
   this->name = name;
 }
 
-bool SetAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
-  StackRoots _roots({&attached_arg, &arg_r, &out});
+bool SetAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
 
   out->actions->append(this->name);
   return false;
 }
 
 SetNamedAction::SetNamedAction() {
-  this->names = Alloc<List<Str*>>();
+  this->names = Alloc<List<BigStr*>>();
 }
 
-void SetNamedAction::ArgName(Str* name) {
-  StackRoots _roots({&name});
+void SetNamedAction::ArgName(BigStr* name) {
+  StackRoot _root0(&name);
 
   this->names->append(name);
 }
 
-bool SetNamedAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
-  Str* arg = nullptr;
-  Str* attr_name = nullptr;
-  StackRoots _roots({&attached_arg, &arg_r, &out, &arg, &attr_name});
+bool SetNamedAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
+  BigStr* arg = nullptr;
+  BigStr* attr_name = nullptr;
+  StackRoot _root0(&attached_arg);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
+  StackRoot _root3(&arg);
+  StackRoot _root4(&attr_name);
 
   arg_r->Next();
   arg = arg_r->Peek();
@@ -1911,15 +1990,23 @@ bool SetNamedAction::OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attr
 
 args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   args::_Attributes* out = nullptr;
-  Str* arg = nullptr;
+  BigStr* arg = nullptr;
   int pos;
-  Str* suffix = nullptr;
-  Str* flag_name = nullptr;
+  BigStr* suffix = nullptr;
+  BigStr* flag_name = nullptr;
   args::_Action* action = nullptr;
   int n;
-  Str* ch = nullptr;
-  Str* attached_arg = nullptr;
-  StackRoots _roots({&spec, &arg_r, &out, &arg, &suffix, &flag_name, &action, &ch, &attached_arg});
+  BigStr* ch = nullptr;
+  BigStr* attached_arg = nullptr;
+  StackRoot _root0(&spec);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
+  StackRoot _root3(&arg);
+  StackRoot _root4(&suffix);
+  StackRoot _root5(&flag_name);
+  StackRoot _root6(&action);
+  StackRoot _root7(&ch);
+  StackRoot _root8(&attached_arg);
 
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
@@ -1997,10 +2084,14 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
 
 args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   args::_Attributes* out = nullptr;
-  Str* arg = nullptr;
-  Str* chars = nullptr;
+  BigStr* arg = nullptr;
+  BigStr* chars = nullptr;
   bool done;
-  StackRoots _roots({&spec, &arg_r, &out, &arg, &chars});
+  StackRoot _root0(&spec);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
+  StackRoot _root3(&arg);
+  StackRoot _root4(&chars);
 
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
@@ -2009,8 +2100,8 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
     if ((arg->startswith(str138) and len(chars))) {
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
-        Str* c = it.Value();
-        StackRoots _for({&c      });
+        BigStr* c = it.Value();
+        StackRoot _for(&c      );
         if (!list_contains(spec->arity0, c)) {
           done = true;
           break;
@@ -2020,8 +2111,8 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
         break;
       }
       for (StrIter it(chars); !it.Done(); it.Next()) {
-        Str* ch = it.Value();
-        StackRoots _for({&ch      });
+        BigStr* ch = it.Value();
+        StackRoot _for(&ch      );
         out->SetTrue(ch);
       }
     }
@@ -2036,11 +2127,17 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
 args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* arg_r) {
   args::_Attributes* out = nullptr;
   bool quit;
-  Str* arg = nullptr;
+  BigStr* arg = nullptr;
   args::_Action* action = nullptr;
-  Str* char0 = nullptr;
-  Str* attached_arg = nullptr;
-  StackRoots _roots({&spec, &arg_r, &out, &arg, &action, &char0, &attached_arg});
+  BigStr* char0 = nullptr;
+  BigStr* attached_arg = nullptr;
+  StackRoot _root0(&spec);
+  StackRoot _root1(&arg_r);
+  StackRoot _root2(&out);
+  StackRoot _root3(&arg);
+  StackRoot _root4(&action);
+  StackRoot _root5(&char0);
+  StackRoot _root6(&attached_arg);
 
   out = Alloc<_Attributes>(spec->defaults);
   quit = false;
@@ -2063,8 +2160,8 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
     if (((arg->startswith(str142) or arg->startswith(str143)) and len(arg) > 1)) {
       char0 = arg->at(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
-        Str* ch = it.Value();
-        StackRoots _for({&ch      });
+        BigStr* ch = it.Value();
+        StackRoot _for(&ch      );
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
           e_usage(StrFormat("got invalid flag %r", str_concat(str145, ch)), arg_r->Location());

@@ -224,9 +224,9 @@ attrs->at(StrFromC("%s"))->tag() == value_e::Undef
           : static_cast<value::Str*>(attrs->at(StrFromC("%s")))->s''' %
                                      (field_name, field_name))
 
-                    field_decls.append('Str* %s;' % field_name)
+                    field_decls.append('BigStr* %s;' % field_name)
 
-                    # Str* is a pointer type, so add a field here
+                    # BigStr* is a pointer type, so add a field here
                     bits.append('maskbit(offsetof(%s, %s))' %
                                 (spec_name, field_name))
 
@@ -263,7 +263,7 @@ attrs->at(StrFromC("%s"))->tag() == value_e::Undef
         header_f.write("""
 class %s {
  public:
-  %s(Dict<Str*, runtime_asdl::value_t*>* attrs)""" % (spec_name, spec_name))
+  %s(Dict<BigStr*, runtime_asdl::value_t*>* attrs)""" % (spec_name, spec_name))
 
         if field_names:
             header_f.write('\n      : ')

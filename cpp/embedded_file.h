@@ -9,7 +9,7 @@
 
 struct TextFile {
   const char* rel_path;
-  Str* contents;  // GC string to avoid copying on return
+  BigStr* contents;  // GC string to avoid copying on return
 };
 
 // Linear search; last one has nullptr entries

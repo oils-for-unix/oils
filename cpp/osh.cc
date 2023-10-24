@@ -24,7 +24,7 @@ tdop::ParserSpec* kArithSpec = &kArithSpec_.obj;
 
 namespace bool_stat {
 
-bool isatty(Str* fd_str, word_t* blame_word) {
+bool isatty(BigStr* fd_str, word_t* blame_word) {
   int fd;
   try {
     fd = to_int(fd_str);
@@ -37,7 +37,7 @@ bool isatty(Str* fd_str, word_t* blame_word) {
   return result;
 }
 
-bool DoUnaryOp(Id_t op_id, Str* s) {
+bool DoUnaryOp(Id_t op_id, BigStr* s) {
   const char* zPath = s->data_;
 
   if (op_id == Id::BoolUnary_h || op_id == Id::BoolUnary_L) {
@@ -133,7 +133,7 @@ bool DoUnaryOp(Id_t op_id, Str* s) {
   FAIL(kShouldNotGetHere);
 }
 
-bool DoBinaryOp(Id_t op_id, Str* s1, Str* s2) {
+bool DoBinaryOp(Id_t op_id, BigStr* s1, BigStr* s2) {
   int m1 = 0;
   struct stat st1;
   if (stat(s1->data_, &st1) == 0) {

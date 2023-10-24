@@ -10,7 +10,7 @@
 #include "mycpp/common.h"
 #include "mycpp/gc_obj.h"
 
-class Str;
+class BigStr;
 
 class _ExceptionOpaque {
  public:
@@ -40,14 +40,14 @@ class ValueError {
  public:
   ValueError() : message(nullptr) {
   }
-  explicit ValueError(Str* message) : message(message) {
+  explicit ValueError(BigStr* message) : message(message) {
   }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(ValueError));
   }
 
-  Str* message;
+  BigStr* message;
 
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(ValueError, message));
@@ -61,14 +61,14 @@ class ValueError {
 // libc::regex_match and other bindings raise RuntimeError
 class RuntimeError {
  public:
-  explicit RuntimeError(Str* message) : message(message) {
+  explicit RuntimeError(BigStr* message) : message(message) {
   }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(RuntimeError));
   }
 
-  Str* message;
+  BigStr* message;
 
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(RuntimeError, message));
@@ -78,7 +78,7 @@ class RuntimeError {
 // libc::wcswidth raises UnicodeError on invalid UTF-8
 class UnicodeError : public RuntimeError {
  public:
-  explicit UnicodeError(Str* message) : RuntimeError(message) {
+  explicit UnicodeError(BigStr* message) : RuntimeError(message) {
   }
 };
 
@@ -110,15 +110,15 @@ class SystemExit : public _ExceptionOpaque {
   int code;
 };
 
-void print(Str* s);
+void print(BigStr* s);
 
-Str* repr(Str* s);
+BigStr* repr(BigStr* s);
 
-Str* str(int i);
+BigStr* str(int i);
 
-Str* str(double d);
+BigStr* str(double d);
 
-Str* intern(Str* s);
+BigStr* intern(BigStr* s);
 
 // Helper function: returns whether the string is a valid integer, and
 // populates the result.  (Also used by marksweep_heap.cc; could be moved
@@ -126,43 +126,43 @@ Str* intern(Str* s);
 bool StringToInteger(const char* s, int len, int base, int* result);
 
 // String to integer, raising ValueError if invalid
-int to_int(Str* s);
-int to_int(Str* s, int base);
+int to_int(BigStr* s);
+int to_int(BigStr* s, int base);
 
-Str* chr(int i);
-int ord(Str* s);
+BigStr* chr(int i);
+int ord(BigStr* s);
 
 inline int to_int(bool b) {
   return b;
 }
 
-bool to_bool(Str* s);
+bool to_bool(BigStr* s);
 
 // Used by division operator
 double to_float(int i);
 
 // Used for floating point flags like read -t 0.1
-double to_float(Str* s);
+double to_float(BigStr* s);
 
 inline bool to_bool(int i) {
   return i != 0;
 }
 
-bool str_contains(Str* haystack, Str* needle);
+bool str_contains(BigStr* haystack, BigStr* needle);
 
 // Only used by unit tests
-bool str_equals0(const char* c_string, Str* s);
+bool str_equals0(const char* c_string, BigStr* s);
 
-Str* str_concat(Str* a, Str* b);           // a + b when a and b are strings
-Str* str_concat3(Str* a, Str* b, Str* c);  // for os_path::join()
-Str* str_repeat(Str* s, int times);        // e.g. ' ' * 3
+BigStr* str_concat(BigStr* a, BigStr* b);  // a + b when a and b are strings
+BigStr* str_concat3(BigStr* a, BigStr* b, BigStr* c);  // for os_path::join()
+BigStr* str_repeat(BigStr* s, int times);              // e.g. ' ' * 3
 
-extern Str* kEmptyString;
+extern BigStr* kEmptyString;
 
-int hash(Str* s);
+int hash(BigStr* s);
 
 int max(int a, int b);
 
-Str* raw_input(Str* prompt);
+BigStr* raw_input(BigStr* prompt);
 
 #endif  // GC_BUILTINS_H

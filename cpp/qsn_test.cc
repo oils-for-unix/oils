@@ -4,11 +4,11 @@
 #include "vendor/greatest.h"
 
 TEST qsn_test() {
-  Str* x = qsn::XEscape(StrFromC("a"));
+  BigStr* x = qsn::XEscape(StrFromC("a"));
   log("XEscape %s", x->data_);
   ASSERT(str_equals(x, StrFromC("\\x61")));
 
-  Str* u = qsn::UEscape(0x61);
+  BigStr* u = qsn::UEscape(0x61);
   log("UEScape %s", u->data_);
   ASSERT(str_equals(u, StrFromC("\\u{61}")));
 

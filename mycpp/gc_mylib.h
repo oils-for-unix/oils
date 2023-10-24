@@ -30,14 +30,14 @@ inline void MaybeCollect() {
   gHeap.MaybeCollect();
 }
 
-void print_stderr(Str* s);
+void print_stderr(BigStr* s);
 
 // const int kStdout = 1;
 // const int kStderr = 2;
 
-// void writeln(Str* s, int fd = kStdout);
+// void writeln(BigStr* s, int fd = kStdout);
 
-Tuple2<Str*, Str*> split_once(Str* s, Str* delim);
+Tuple2<BigStr*, BigStr*> split_once(BigStr* s, BigStr* delim);
 
 template <typename K, typename V>
 void dict_erase(Dict<K, V>* haystack, K needle) {
@@ -88,19 +88,19 @@ void dict_erase(Dict<K, V>* haystack, K needle) {
 
 // NOTE: Can use OverAllocatedStr for all of these, rather than copying
 
-inline Str* hex_lower(int i) {
+inline BigStr* hex_lower(int i) {
   char buf[kIntBufSize];
   int len = snprintf(buf, kIntBufSize, "%x", i);
   return ::StrFromC(buf, len);
 }
 
-inline Str* hex_upper(int i) {
+inline BigStr* hex_upper(int i) {
   char buf[kIntBufSize];
   int len = snprintf(buf, kIntBufSize, "%X", i);
   return ::StrFromC(buf, len);
 }
 
-inline Str* octal(int i) {
+inline BigStr* octal(int i) {
   char buf[kIntBufSize];
   int len = snprintf(buf, kIntBufSize, "%o", i);
   return ::StrFromC(buf, len);
@@ -111,7 +111,7 @@ class LineReader {
   // Abstract type with no fields: unknown size
   LineReader() {
   }
-  virtual Str* readline() = 0;
+  virtual BigStr* readline() = 0;
   virtual bool isatty() = 0;
   virtual void close() = 0;
 
@@ -126,16 +126,16 @@ class LineReader {
 
 class BufLineReader : public LineReader {
  public:
-  explicit BufLineReader(Str* s) : LineReader(), s_(s), pos_(0) {
+  explicit BufLineReader(BigStr* s) : LineReader(), s_(s), pos_(0) {
   }
-  virtual Str* readline();
+  virtual BigStr* readline();
   virtual bool isatty() {
     return false;
   }
   virtual void close() {
   }
 
-  Str* s_;
+  BigStr* s_;
   int pos_;
 
   static constexpr ObjHeader obj_header() {
@@ -154,7 +154,7 @@ class CFileLineReader : public LineReader {
  public:
   explicit CFileLineReader(FILE* f) : LineReader(), f_(f) {
   }
-  virtual Str* readline();
+  virtual BigStr* readline();
   virtual bool isatty();
   void close() {
     fclose(f_);
@@ -184,13 +184,13 @@ inline LineReader* Stdin() {
   return gStdin;
 }
 
-LineReader* open(Str* path);
+LineReader* open(BigStr* path);
 
 class Writer {
  public:
   Writer() {
   }
-  virtual void write(Str* s) = 0;
+  virtual void write(BigStr* s) = 0;
   virtual void flush() = 0;
   virtual bool isatty() = 0;
 
@@ -209,14 +209,14 @@ class BufWriter : public Writer {
  public:
   BufWriter() : Writer(), str_(nullptr), len_(0) {
   }
-  void write(Str* s) override;
+  void write(BigStr* s) override;
   void flush() override {
   }
   bool isatty() override {
     return false;
   }
   // For cStringIO API
-  Str* getvalue();
+  BigStr* getvalue();
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(BufWriter));
@@ -230,7 +230,7 @@ class BufWriter : public Writer {
  private:
   void EnsureCapacity(int n);
 
-  void Extend(Str* s);
+  void Extend(BigStr* s);
   char* data();
   char* end();
   int capacity();
@@ -246,7 +246,7 @@ class CFileWriter : public Writer {
   explicit CFileWriter(FILE* f) : Writer(), f_(f) {
     // not mutating field_mask because FILE* is not a managed pointer
   }
-  void write(Str* s) override;
+  void write(BigStr* s) override;
   void flush() override;
   bool isatty() override;
 

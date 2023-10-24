@@ -111,7 +111,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('IntExpr %d', o.value)
 
     def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
-        # - Need new Str() everywhere because "foo" doesn't match Str* :-(
+        # - Need new BigStr() everywhere because "foo" doesn't match BigStr* :-(
 
         id_ = 'str%d' % self.unique_id
         self.unique_id += 1

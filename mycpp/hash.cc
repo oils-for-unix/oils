@@ -14,7 +14,7 @@ unsigned fnv1(const char* data, int len) {
   return h;
 }
 
-unsigned hash_key(Str* s) {
+unsigned hash_key(BigStr* s) {
   return s->hash(fnv1);
 }
 
@@ -26,6 +26,6 @@ unsigned hash_key(Tuple2<int, int>* t1) {
   return t1->at0() + t1->at1();
 }
 
-unsigned hash_key(Tuple2<Str*, int>* t1) {
+unsigned hash_key(Tuple2<BigStr*, int>* t1) {
   return t1->at0()->hash(fnv1) + t1->at1();
 }

@@ -26,10 +26,10 @@ namespace runtime {  // declare
 
 using hnode_asdl::hnode;
 extern int NO_SPID;
-hnode::Record* NewRecord(Str* node_type);
-hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
-extern Str* TRUE_STR;
-extern Str* FALSE_STR;
+hnode::Record* NewRecord(BigStr* node_type);
+hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
+extern BigStr* TRUE_STR;
+extern BigStr* FALSE_STR;
 
 
 }  // declare namespace runtime
@@ -46,10 +46,10 @@ class ColorOutput {
   virtual void FileFooter();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
-  virtual void write(Str* s);
-  void WriteRaw(Tuple2<Str*, int>* raw);
+  virtual void write(BigStr* s);
+  void WriteRaw(Tuple2<BigStr*, int>* raw);
   int NumChars();
-  Tuple2<Str*, int> GetRaw();
+  Tuple2<BigStr*, int> GetRaw();
   mylib::Writer* f;
   int num_chars;
   
@@ -90,7 +90,7 @@ class HtmlOutput : public ColorOutput {
   virtual void FileFooter();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
-  virtual void write(Str* s);
+  virtual void write(BigStr* s);
   
   static constexpr uint32_t field_mask() {
     return ColorOutput::field_mask();

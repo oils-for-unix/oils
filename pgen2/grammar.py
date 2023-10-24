@@ -186,12 +186,12 @@ namespace grammar {
 """)
 
           src_f.write('Grammar::Grammar() {\n')
-          src_f.write('  symbol2number = Alloc<Dict<Str*, int>>();\n')
-          src_f.write('  number2symbol = Alloc<Dict<int, Str*>>();\n')
+          src_f.write('  symbol2number = Alloc<Dict<BigStr*, int>>();\n')
+          src_f.write('  number2symbol = Alloc<Dict<int, BigStr*>>();\n')
           src_f.write('  dfas = Alloc<Dict<int, dfa_t*>>();\n')
-          src_f.write('  keywords = Alloc<Dict<Str*, int>>();\n')
+          src_f.write('  keywords = Alloc<Dict<BigStr*, int>>();\n')
           src_f.write('  tokens = Alloc<Dict<int, int>>();\n')
-          src_f.write('  symbol2label = Alloc<Dict<Str*, int>>();\n')
+          src_f.write('  symbol2label = Alloc<Dict<BigStr*, int>>();\n')
           src_f.write('  start = %d;\n' % self.start)
 
           src_f.write('\n')

@@ -15,13 +15,13 @@ void InitCppOnly() {
   gHeap.Init(50000);
 }
 
-void print_stderr(Str* s) {
+void print_stderr(BigStr* s) {
   fputs(s->data_, stderr);  // prints until first NUL
   fputc('\n', stderr);
 }
 
 #if 0
-void writeln(Str* s, int fd) {
+void writeln(BigStr* s, int fd) {
   // TODO: handle errors and write in a loop, like posix::write().  If possible,
   // use posix::write directly, but that introduces some dependency problems.
 
@@ -34,18 +34,18 @@ void writeln(Str* s, int fd) {
 }
 #endif
 
-class MutableStr : public Str {};
+class MutableStr : public BigStr {};
 
 MutableStr* NewMutableStr(int cap) {
   // In order for everything to work, MutableStr must be identical in layout to
-  // Str. One easy way to achieve this is for MutableStr to have no members and
-  // to inherit from Str.
-  static_assert(sizeof(MutableStr) == sizeof(Str),
-                "Str and MutableStr must have same size");
+  // BigStr. One easy way to achieve this is for MutableStr to have no members
+  // and to inherit from BigStr.
+  static_assert(sizeof(MutableStr) == sizeof(BigStr),
+                "BigStr and MutableStr must have same size");
   return reinterpret_cast<MutableStr*>(NewStr(cap));
 }
 
-Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
+Tuple2<BigStr*, BigStr*> split_once(BigStr* s, BigStr* delim) {
   assert(len(delim) == 1);
 
   const char* start = s->data_;  // note: this pointer may move
@@ -58,8 +58,8 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
     int len1 = p - start;
     int len2 = length - len1 - 1;  // -1 for delim
 
-    Str* s1 = nullptr;
-    Str* s2 = nullptr;
+    BigStr* s1 = nullptr;
+    BigStr* s2 = nullptr;
     // Allocate together to avoid 's' moving in between
     s1 = NewStr(len1);
     s2 = NewStr(len2);
@@ -67,15 +67,15 @@ Tuple2<Str*, Str*> split_once(Str* s, Str* delim) {
     memcpy(s1->data_, s->data_, len1);
     memcpy(s2->data_, s->data_ + len1 + 1, len2);
 
-    return Tuple2<Str*, Str*>(s1, s2);
+    return Tuple2<BigStr*, BigStr*>(s1, s2);
   } else {
-    return Tuple2<Str*, Str*>(s, nullptr);
+    return Tuple2<BigStr*, BigStr*>(s, nullptr);
   }
 }
 
 LineReader* gStdin;
 
-LineReader* open(Str* path) {
+LineReader* open(BigStr* path) {
   // TODO: Don't use C I/O; use POSIX I/O!
   FILE* f = fopen(path->data_, "r");
   if (f == nullptr) {
@@ -85,7 +85,7 @@ LineReader* open(Str* path) {
   return Alloc<CFileLineReader>(f);
 }
 
-Str* CFileLineReader::readline() {
+BigStr* CFileLineReader::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
 
@@ -104,7 +104,7 @@ Str* CFileLineReader::readline() {
   }
 
   // Note: getline() NUL terminates the buffer
-  Str* result = ::StrFromC(line, len);
+  BigStr* result = ::StrFromC(line, len);
   free(line);
   return result;
 }
@@ -113,12 +113,12 @@ bool CFileLineReader::isatty() {
   return ::isatty(fileno(f_));
 }
 
-// Problem: most Str methods like index() and slice() COPY so they have a
+// Problem: most BigStr methods like index() and slice() COPY so they have a
 // NUL terminator.
 // log("%s") falls back on sprintf, so it expects a NUL terminator.
 // It would be easier for us to just share.
-Str* BufLineReader::readline() {
-  Str* line = nullptr;
+BigStr* BufLineReader::readline() {
+  BigStr* line = nullptr;
 
   int str_len = len(s_);
   if (pos_ == str_len) {
@@ -156,7 +156,7 @@ Writer* gStderr;
 // CFileWriter
 //
 
-void CFileWriter::write(Str* s) {
+void CFileWriter::write(BigStr* s) {
   // note: throwing away the return value
   fwrite(s->data_, sizeof(char), len(s), f_);
 }
@@ -187,7 +187,7 @@ int BufWriter::capacity() {
   return str_ ? len(str_) : 0;
 }
 
-void BufWriter::Extend(Str* s) {
+void BufWriter::Extend(BigStr* s) {
   const int n = len(s);
 
   assert(capacity() >= len_ + n);
@@ -209,7 +209,7 @@ void BufWriter::EnsureCapacity(int cap) {
   }
 }
 
-void BufWriter::write(Str* s) {
+void BufWriter::write(BigStr* s) {
   assert(is_valid_);  // Can't write() after getvalue()
 
   int n = len(s);
@@ -231,14 +231,14 @@ void BufWriter::write(Str* s) {
   Extend(s);
 }
 
-Str* BufWriter::getvalue() {
+BigStr* BufWriter::getvalue() {
   assert(is_valid_);  // Check for two INVALID getvalue() in a row
   is_valid_ = false;
 
   if (str_ == nullptr) {  // if no write() methods are called, the result is ""
     return kEmptyString;
   } else {
-    Str* s = str_;
+    BigStr* s = str_;
     s->MaybeShrink(len_);
     str_ = nullptr;
     len_ = -1;

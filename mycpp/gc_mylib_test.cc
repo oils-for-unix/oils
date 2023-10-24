@@ -7,35 +7,37 @@
 TEST split_once_test() {
   log("split_once()");
 
-  Str* s = nullptr;
-  Str* delim = nullptr;
+  BigStr* s = nullptr;
+  BigStr* delim = nullptr;
   StackRoots _roots1({&s, &delim});
 
   s = StrFromC("foo=bar");
   delim = StrFromC("=");
-  Tuple2<Str*, Str*> t = mylib::split_once(s, delim);
+  Tuple2<BigStr*, BigStr*> t = mylib::split_once(s, delim);
 
   auto t0 = t.at0();
   auto t1 = t.at1();
 
   log("t %p %p", t0, t1);
 
-  Str* foo = nullptr;
+  BigStr* foo = nullptr;
   StackRoots _roots2({&t0, &t1, &foo});
   foo = StrFromC("foo");
 
   // TODO: We lack rooting in the cases below!
   PASS();
 
-  Tuple2<Str*, Str*> u = mylib::split_once(StrFromC("foo="), StrFromC("="));
+  Tuple2<BigStr*, BigStr*> u =
+      mylib::split_once(StrFromC("foo="), StrFromC("="));
   ASSERT(str_equals(u.at0(), StrFromC("foo")));
   ASSERT(str_equals(u.at1(), StrFromC("")));
 
-  Tuple2<Str*, Str*> v = mylib::split_once(StrFromC("foo="), StrFromC("Z"));
+  Tuple2<BigStr*, BigStr*> v =
+      mylib::split_once(StrFromC("foo="), StrFromC("Z"));
   ASSERT(str_equals(v.at0(), StrFromC("foo=")));
   ASSERT(v.at1() == nullptr);
 
-  Tuple2<Str*, Str*> w = mylib::split_once(StrFromC(""), StrFromC("Z"));
+  Tuple2<BigStr*, BigStr*> w = mylib::split_once(StrFromC(""), StrFromC("Z"));
   ASSERT(str_equals(w.at0(), StrFromC("")));
   ASSERT(w.at1() == nullptr);
 
@@ -44,7 +46,7 @@ TEST split_once_test() {
 
 TEST int_to_str_test() {
   int int_min = INT_MIN;
-  Str* int_str;
+  BigStr* int_str;
 
   int_str = mylib::hex_lower(15);
   ASSERT(str_equals0("f", int_str));
@@ -63,18 +65,18 @@ TEST int_to_str_test() {
 }
 
 TEST funcs_test() {
-  Str* int_str = nullptr;
+  BigStr* int_str = nullptr;
 
   StackRoots _roots({&int_str});
 
-  Str* fooEqualsBar = nullptr;
-  Str* foo = nullptr;
-  Str* bar = nullptr;
-  Str* fooEquals = nullptr;
+  BigStr* fooEqualsBar = nullptr;
+  BigStr* foo = nullptr;
+  BigStr* bar = nullptr;
+  BigStr* fooEquals = nullptr;
 
-  Str* equals = nullptr;
-  Str* Z = nullptr;
-  Str* emptyStr = nullptr;
+  BigStr* equals = nullptr;
+  BigStr* Z = nullptr;
+  BigStr* emptyStr = nullptr;
 
   StackRoots _roots2(
       {&fooEqualsBar, &foo, &bar, &fooEquals, &equals, &Z, &emptyStr});
@@ -89,19 +91,19 @@ TEST funcs_test() {
   emptyStr = StrFromC("");
 
   log("split_once()");
-  Tuple2<Str*, Str*> t = mylib::split_once(fooEqualsBar, equals);
+  Tuple2<BigStr*, BigStr*> t = mylib::split_once(fooEqualsBar, equals);
   ASSERT(str_equals(t.at0(), foo));
   ASSERT(str_equals(t.at1(), bar));
 
-  Tuple2<Str*, Str*> u = mylib::split_once(fooEquals, equals);
+  Tuple2<BigStr*, BigStr*> u = mylib::split_once(fooEquals, equals);
   ASSERT(str_equals(u.at0(), foo));
   ASSERT(str_equals(u.at1(), emptyStr));
 
-  Tuple2<Str*, Str*> v = mylib::split_once(fooEquals, Z);
+  Tuple2<BigStr*, BigStr*> v = mylib::split_once(fooEquals, Z);
   ASSERT(str_equals(v.at0(), fooEquals));
   ASSERT(v.at1() == nullptr);
 
-  Tuple2<Str*, Str*> w = mylib::split_once(emptyStr, Z);
+  Tuple2<BigStr*, BigStr*> w = mylib::split_once(emptyStr, Z);
   ASSERT(str_equals(w.at0(), emptyStr));
   ASSERT(w.at1() == nullptr);
 
@@ -119,9 +121,9 @@ TEST writeln_test() {
 
 TEST BufWriter_test() {
   mylib::BufWriter* writer = nullptr;
-  Str* s = nullptr;
-  Str* foo = nullptr;
-  Str* bar = nullptr;
+  BigStr* s = nullptr;
+  BigStr* foo = nullptr;
+  BigStr* bar = nullptr;
   StackRoots _roots({&writer, &s, &foo, &bar});
 
   foo = StrFromC("foo");
@@ -152,14 +154,14 @@ TEST BufWriter_test() {
 using mylib::BufLineReader;
 
 TEST BufLineReader_test() {
-  Str* s = StrFromC("foo\nbar\nleftover");
+  BigStr* s = StrFromC("foo\nbar\nleftover");
   auto reader = Alloc<BufLineReader>(s);
 
   ASSERT_EQ(false, reader->isatty());
 
   log("BufLineReader");
 
-  Str* line = nullptr;
+  BigStr* line = nullptr;
   line = reader->readline();
   log("1 [%s]", line->data_);
   ASSERT(str_equals0("foo\n", line));
@@ -195,7 +197,7 @@ TEST BufLineReader_test() {
   line = reader->readline();
   ASSERT_EQ(kEmptyString, line);
 
-  Str* one_line = StrFromC("one line");
+  BigStr* one_line = StrFromC("one line");
   reader = Alloc<BufLineReader>(one_line);
   line = reader->readline();
   ASSERT(str_equals(one_line, line));
@@ -219,8 +221,8 @@ TEST files_test() {
   FILE* f = fopen("README.md", "r");
 
   mylib::CFileLineReader* r = nullptr;
-  Str* filename = nullptr;
-  Str* filename2 = nullptr;
+  BigStr* filename = nullptr;
+  BigStr* filename2 = nullptr;
   StackRoots _roots({&r, &filename, &filename2});
 
   r = Alloc<mylib::CFileLineReader>(f);
@@ -231,7 +233,7 @@ TEST files_test() {
   log("files_test");
   int i = 0;
   while (true) {
-    Str* s = r->readline();
+    BigStr* s = r->readline();
     if (len(s) == 0) {
       break;
     }

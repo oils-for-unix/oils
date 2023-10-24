@@ -5,7 +5,7 @@
 
 TEST os_path_test() {
   // TODO: use gc_mylib here, with NewStr(), StackRoots, etc.
-  Str* s = nullptr;
+  BigStr* s = nullptr;
 
   s = os_path::rstrip_slashes(StrFromC(""));
   ASSERT(str_equals(s, StrFromC("")));

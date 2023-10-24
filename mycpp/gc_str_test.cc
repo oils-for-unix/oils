@@ -12,21 +12,21 @@ GLOBAL_STR(kSpace, " ");
 GLOBAL_STR(kStrFood, "food");
 GLOBAL_STR(kWithNull, "foo\0bar");
 
-static void ShowString(Str* s) {
+static void ShowString(BigStr* s) {
   int n = len(s);
   fputs("(", stdout);
   fwrite(s->data_, sizeof(char), n, stdout);
   fputs(")\n", stdout);
 }
 
-static void ShowStringInt(Str* str, int i) {
+static void ShowStringInt(BigStr* str, int i) {
   printf("(%s) -> ", str->data_);
   printf("(%d)\n", i);
 }
 
-static void ShowList(List<Str*>* list) {
-  for (ListIter<Str*> iter((list)); !iter.Done(); iter.Next()) {
-    Str* piece = iter.Value();
+static void ShowList(List<BigStr*>* list) {
+  for (ListIter<BigStr*> iter((list)); !iter.Done(); iter.Next()) {
+    BigStr* piece = iter.Value();
     printf("(%.*s) ", len(piece), piece->data_);
   }
   printf("\n");
@@ -37,8 +37,8 @@ GLOBAL_STR(str4, "egg");
 TEST test_str_gc_header() {
   ASSERT(str_equals(kEmptyString, kEmptyString));
 
-  Str* str1 = nullptr;
-  Str* str2 = nullptr;
+  BigStr* str1 = nullptr;
+  BigStr* str2 = nullptr;
   StackRoots _roots({&str1, &str2});
 
   str1 = StrFromC("");
@@ -74,16 +74,16 @@ TEST test_str_gc_header() {
 
 // Emulating the gc_heap API.  COPIED from gc_heap_test.cc
 TEST test_str_creation() {
-  Str* s = StrFromC("foo");
+  BigStr* s = StrFromC("foo");
   ASSERT_EQ(3, len(s));
   ASSERT_EQ(0, strcmp("foo", s->data_));
 
   // String with internal NUL
-  Str* s2 = StrFromC("foo\0bar", 7);
+  BigStr* s2 = StrFromC("foo\0bar", 7);
   ASSERT_EQ(7, len(s2));
   ASSERT_EQ(0, memcmp("foo\0bar\0", s2->data_, 8));
 
-  Str* s3 = NewStr(1);
+  BigStr* s3 = NewStr(1);
   ASSERT_EQ(1, len(s3));
   ASSERT_EQ('\0', s3->data_[1]);  // NUL terminated
 
@@ -91,9 +91,9 @@ TEST test_str_creation() {
   //
   // NOTE(Jesse): It's undefined to call `len()` after allocating with this
   // function because it explicitly doesn't set the length!!
-  /* Str* s4 = mylib::OverAllocatedStr(7); */
+  /* BigStr* s4 = mylib::OverAllocatedStr(7); */
 
-  Str* s4 = NewStr(7);
+  BigStr* s4 = NewStr(7);
   ASSERT_EQ(7, len(s4));
   ASSERT_EQ('\0', s4->data_[7]);
 
@@ -109,7 +109,7 @@ TEST test_str_creation() {
 }
 
 TEST test_str_find() {
-  Str* s = StrFromC("abc-abc");
+  BigStr* s = StrFromC("abc-abc");
   ASSERT_EQ(-1, s->find(StrFromC("x")));
   ASSERT_EQ(-1, s->rfind(StrFromC("x")));
 
@@ -125,118 +125,118 @@ TEST test_str_find() {
 TEST test_str_strip() {
   printf("\n");
 
-  printf("------- Str::lstrip -------\n");
+  printf("------- BigStr::lstrip -------\n");
 
   {
-    Str* result = (StrFromC("\n "))->lstrip();
+    BigStr* result = (StrFromC("\n "))->lstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
 
   {
-    Str* result = (StrFromC("\n #"))->lstrip();
+    BigStr* result = (StrFromC("\n #"))->lstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("#")));
   }
 
   {
-    Str* result = (StrFromC("\n  #"))->lstrip();
+    BigStr* result = (StrFromC("\n  #"))->lstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("#")));
   }
 
   {
-    Str* result = (StrFromC("\n  #"))->lstrip();
+    BigStr* result = (StrFromC("\n  #"))->lstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("#")));
   }
 
   {
-    Str* result = (StrFromC("#"))->lstrip(StrFromC("#"));
+    BigStr* result = (StrFromC("#"))->lstrip(StrFromC("#"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
 
   {
-    Str* result = (StrFromC("##### "))->lstrip(StrFromC("#"));
+    BigStr* result = (StrFromC("##### "))->lstrip(StrFromC("#"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC(" ")));
   }
 
   {
-    Str* result = (StrFromC("#  "))->lstrip(StrFromC("#"));
+    BigStr* result = (StrFromC("#  "))->lstrip(StrFromC("#"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("  ")));
   }
 
   {
-    Str* result = (StrFromC(" # "))->lstrip(StrFromC("#"));
+    BigStr* result = (StrFromC(" # "))->lstrip(StrFromC("#"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC(" # ")));
   }
 
-  printf("------- Str::rstrip -------\n");
+  printf("------- BigStr::rstrip -------\n");
 
   {
-    Str* result = (StrFromC(" \n"))->rstrip();
+    BigStr* result = (StrFromC(" \n"))->rstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
 
   {
-    Str* result = (StrFromC("# \n"))->rstrip();
+    BigStr* result = (StrFromC("# \n"))->rstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("#")));
   }
 
   {
-    Str* result = (StrFromC("#  \n"))->rstrip();
+    BigStr* result = (StrFromC("#  \n"))->rstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("#")));
   }
 
   {
-    Str* s1 = StrFromC(" \n#");
-    Str* result = s1->rstrip();
+    BigStr* s1 = StrFromC(" \n#");
+    BigStr* result = s1->rstrip();
     ShowString(result);
     ASSERT(str_equals(result, s1));
     ASSERT_EQ(result, s1);  // objects are identical
   }
 
   {
-    Str* result = (StrFromC("#  \n"))->rstrip();
+    BigStr* result = (StrFromC("#  \n"))->rstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("#")));
   }
 
   {
-    Str* result = (StrFromC("#"))->rstrip(StrFromC("#"));
+    BigStr* result = (StrFromC("#"))->rstrip(StrFromC("#"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
 
   {
-    Str* result = (StrFromC(" #####"))->rstrip(StrFromC("#"));
+    BigStr* result = (StrFromC(" #####"))->rstrip(StrFromC("#"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC(" ")));
   }
 
   {
-    Str* result = (StrFromC("  #"))->rstrip(StrFromC("#"));
+    BigStr* result = (StrFromC("  #"))->rstrip(StrFromC("#"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("  ")));
   }
 
   {
-    Str* result = (StrFromC(" # "))->rstrip(StrFromC("#"));
+    BigStr* result = (StrFromC(" # "))->rstrip(StrFromC("#"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC(" # ")));
   }
 
-  printf("------- Str::strip -------\n");
+  printf("------- BigStr::strip -------\n");
 
   {
-    Str* result = (StrFromC(""))->strip();
+    BigStr* result = (StrFromC(""))->strip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
 
@@ -244,7 +244,7 @@ TEST test_str_strip() {
   }
 
   {
-    Str* result = (StrFromC(" "))->strip();
+    BigStr* result = (StrFromC(" "))->strip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
 
@@ -252,7 +252,7 @@ TEST test_str_strip() {
   }
 
   {
-    Str* result = (StrFromC("  \n"))->strip();
+    BigStr* result = (StrFromC("  \n"))->strip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
 
@@ -260,13 +260,13 @@ TEST test_str_strip() {
   }
 
   {
-    Str* result = (StrFromC(" ## "))->strip();
+    BigStr* result = (StrFromC(" ## "))->strip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("##")));
   }
 
   {
-    Str* result = (StrFromC("  hi  \n"))->strip();
+    BigStr* result = (StrFromC("  hi  \n"))->strip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("hi")));
   }
@@ -279,42 +279,42 @@ TEST test_str_strip() {
 TEST test_str_upper_lower() {
   printf("\n");
 
-  printf("------- Str::upper -------\n");
+  printf("------- BigStr::upper -------\n");
 
   {
-    Str* result = (StrFromC(""))->upper();
+    BigStr* result = (StrFromC(""))->upper();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
 
   {
-    Str* result = (StrFromC("upper"))->upper();
+    BigStr* result = (StrFromC("upper"))->upper();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("UPPER")));
   }
 
   {
-    Str* result = (StrFromC("upPer_uPper"))->upper();
+    BigStr* result = (StrFromC("upPer_uPper"))->upper();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("UPPER_UPPER")));
   }
 
-  printf("------- Str::lower -------\n");
+  printf("------- BigStr::lower -------\n");
 
   {
-    Str* result = (StrFromC(""))->lower();
+    BigStr* result = (StrFromC(""))->lower();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
 
   {
-    Str* result = (StrFromC("LOWER"))->lower();
+    BigStr* result = (StrFromC("LOWER"))->lower();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("lower")));
   }
 
   {
-    Str* result = (StrFromC("lOWeR_lowEr"))->lower();
+    BigStr* result = (StrFromC("lOWeR_lowEr"))->lower();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("lower_lower")));
   }
@@ -327,122 +327,122 @@ TEST test_str_upper_lower() {
 TEST test_str_replace() {
   printf("\n");
 
-  Str* s0 = StrFromC("ab cd ab ef");
+  BigStr* s0 = StrFromC("ab cd ab ef");
 
-  printf("----- Str::replace -------\n");
+  printf("----- BigStr::replace -------\n");
 
   {
-    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("--"));
+    BigStr* s1 = s0->replace(StrFromC("ab"), StrFromC("--"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("-- cd -- ef")));
   }
 
   {
-    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("----"));
+    BigStr* s1 = s0->replace(StrFromC("ab"), StrFromC("----"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("---- cd ---- ef")));
   }
 
   {
-    Str* s1 = s0->replace(StrFromC("ab cd ab ef"), StrFromC("0"));
+    BigStr* s1 = s0->replace(StrFromC("ab cd ab ef"), StrFromC("0"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("0")));
   }
 
   {
-    Str* s1 = s0->replace(s0, StrFromC("0"));
+    BigStr* s1 = s0->replace(s0, StrFromC("0"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("0")));
   }
 
   {
-    Str* s1 = s0->replace(StrFromC("no-match"), StrFromC("0"));
+    BigStr* s1 = s0->replace(StrFromC("no-match"), StrFromC("0"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("ab cd ab ef")));
   }
 
   {
-    Str* s1 = s0->replace(StrFromC("ef"), StrFromC("0"));
+    BigStr* s1 = s0->replace(StrFromC("ef"), StrFromC("0"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("ab cd ab 0")));
   }
 
   {
-    Str* s1 = s0->replace(StrFromC("f"), StrFromC("0"));
+    BigStr* s1 = s0->replace(StrFromC("f"), StrFromC("0"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("ab cd ab e0")));
   }
 
   {
     s0 = StrFromC("ab ab ab");
-    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
+    BigStr* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("0 0 0")));
   }
 
   {
     s0 = StrFromC("ababab");
-    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
+    BigStr* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("000")));
   }
 
   {
     s0 = StrFromC("abababab");
-    Str* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
+    BigStr* s1 = s0->replace(StrFromC("ab"), StrFromC("0"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("0000")));
   }
 
   {
     s0 = StrFromC("abc 123");
-    Str* s1 = s0->replace(StrFromC("abc"), StrFromC(""));
+    BigStr* s1 = s0->replace(StrFromC("abc"), StrFromC(""));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC(" 123")));
   }
 
   {
     s0 = StrFromC("abc 123");
-    Str* s1 = s0->replace(StrFromC("abc"), StrFromC(""));
+    BigStr* s1 = s0->replace(StrFromC("abc"), StrFromC(""));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC(" 123")));
   }
 
   {
     s0 = StrFromC("abc 123");
-    Str* s1 = s0->replace(StrFromC("abc"), StrFromC("abc"));
+    BigStr* s1 = s0->replace(StrFromC("abc"), StrFromC("abc"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("abc 123")));
   }
 
   {
     s0 = StrFromC("aaaa");
-    Str* s1 = s0->replace(StrFromC("aa"), StrFromC("bb"));
+    BigStr* s1 = s0->replace(StrFromC("aa"), StrFromC("bb"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("bbbb")));
   }
 
   {
     s0 = StrFromC("aaaaaa");
-    Str* s1 = s0->replace(StrFromC("aa"), StrFromC("bb"));
+    BigStr* s1 = s0->replace(StrFromC("aa"), StrFromC("bb"));
     ShowString(s1);
     ASSERT(str_equals(s1, StrFromC("bbbbbb")));
   }
 
   // Test NUL replacement
   {
-    Str* s_null = StrFromC("abc\0bcd", 7);
+    BigStr* s_null = StrFromC("abc\0bcd", 7);
     ASSERT_EQ(7, len(s_null));
 
-    Str* re1 = s_null->replace(StrFromC("ab"), StrFromC("--"));
+    BigStr* re1 = s_null->replace(StrFromC("ab"), StrFromC("--"));
     ASSERT_EQ_FMT(7, len(re1), "%d");
     ASSERT(str_equals(StrFromC("--c\0bcd", 7), re1));
 
-    Str* re2 = s_null->replace(StrFromC("bc"), StrFromC("--"));
+    BigStr* re2 = s_null->replace(StrFromC("bc"), StrFromC("--"));
     ASSERT_EQ_FMT(7, len(re2), "%d");
     ASSERT(str_equals(StrFromC("a--\0--d", 7), re2));
 
-    Str* re3 = s_null->replace(StrFromC("\0", 1), StrFromC("__"));
+    BigStr* re3 = s_null->replace(StrFromC("\0", 1), StrFromC("__"));
     ASSERT_EQ_FMT(8, len(re3), "%d");
     ASSERT(str_equals(StrFromC("abc__bcd", 8), re3));
   }
@@ -453,119 +453,119 @@ TEST test_str_replace() {
 TEST test_str_just() {
   printf("\n");
 
-  printf("------- Str::ljust -------\n");
+  printf("------- BigStr::ljust -------\n");
 
   {
-    Str* result = (StrFromC(""))->ljust(0, StrFromC("_"));
+    BigStr* result = (StrFromC(""))->ljust(0, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
   {
-    Str* result = (StrFromC(""))->ljust(1, StrFromC("_"));
+    BigStr* result = (StrFromC(""))->ljust(1, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("_")));
   }
   {
-    Str* result = (StrFromC(""))->ljust(4, StrFromC("_"));
+    BigStr* result = (StrFromC(""))->ljust(4, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("____")));
   }
   {
-    Str* result = (StrFromC("x"))->ljust(0, StrFromC("_"));
+    BigStr* result = (StrFromC("x"))->ljust(0, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("x")));
   }
   {
-    Str* result = (StrFromC("x"))->ljust(1, StrFromC("_"));
+    BigStr* result = (StrFromC("x"))->ljust(1, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("x")));
   }
   {
-    Str* result = (StrFromC("x"))->ljust(2, StrFromC("_"));
+    BigStr* result = (StrFromC("x"))->ljust(2, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("x_")));
   }
 
   {
-    Str* result = (StrFromC("xx"))->ljust(-1, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->ljust(-1, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->ljust(0, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->ljust(0, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->ljust(1, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->ljust(1, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->ljust(2, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->ljust(2, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->ljust(4, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->ljust(4, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx__")));
   }
 
-  printf("------- Str::rjust -------\n");
+  printf("------- BigStr::rjust -------\n");
   {
-    Str* result = (StrFromC(""))->rjust(0, StrFromC("_"));
+    BigStr* result = (StrFromC(""))->rjust(0, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
   {
-    Str* result = (StrFromC(""))->rjust(1, StrFromC("_"));
+    BigStr* result = (StrFromC(""))->rjust(1, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("_")));
   }
   {
-    Str* result = (StrFromC(""))->rjust(4, StrFromC("_"));
+    BigStr* result = (StrFromC(""))->rjust(4, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("____")));
   }
   {
-    Str* result = (StrFromC("x"))->rjust(0, StrFromC("_"));
+    BigStr* result = (StrFromC("x"))->rjust(0, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("x")));
   }
   {
-    Str* result = (StrFromC("x"))->rjust(1, StrFromC("_"));
+    BigStr* result = (StrFromC("x"))->rjust(1, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("x")));
   }
   {
-    Str* result = (StrFromC("x"))->rjust(2, StrFromC("_"));
+    BigStr* result = (StrFromC("x"))->rjust(2, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("_x")));
   }
 
   {
-    Str* result = (StrFromC("xx"))->rjust(-1, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->rjust(-1, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->rjust(0, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->rjust(0, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->rjust(1, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->rjust(1, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->rjust(2, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->rjust(2, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("xx")));
   }
   {
-    Str* result = (StrFromC("xx"))->rjust(4, StrFromC("_"));
+    BigStr* result = (StrFromC("xx"))->rjust(4, StrFromC("_"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("__xx")));
   }
@@ -577,108 +577,108 @@ TEST test_str_just() {
 TEST test_str_slice() {
   printf("\n");
 
-  Str* s0 = StrFromC("abcdef");
+  BigStr* s0 = StrFromC("abcdef");
 
-  printf("------- Str::slice -------\n");
+  printf("------- BigStr::slice -------\n");
 
   {  // Happy path
-    Str* s1 = s0->slice(0, 5);
+    BigStr* s1 = s0->slice(0, 5);
     ASSERT(str_equals(s1, StrFromC("abcde")));
     ShowString(s1);
   }
   {
-    Str* s1 = s0->slice(1, 5);
+    BigStr* s1 = s0->slice(1, 5);
     ASSERT(str_equals(s1, StrFromC("bcde")));
     ShowString(s1);
   }
   {
-    Str* s1 = s0->slice(0, 0);
+    BigStr* s1 = s0->slice(0, 0);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
   {
-    Str* s1 = s0->slice(0, 6);
+    BigStr* s1 = s0->slice(0, 6);
     ASSERT(str_equals(s1, StrFromC("abcdef")));
     ShowString(s1);
   }
   {
-    Str* s1 = s0->slice(-6, 6);
+    BigStr* s1 = s0->slice(-6, 6);
     ASSERT(str_equals(s1, StrFromC("abcdef")));
     ShowString(s1);
   }
   {
-    Str* s1 = s0->slice(0, -6);
+    BigStr* s1 = s0->slice(0, -6);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
   {
-    Str* s1 = s0->slice(-6, -6);
+    BigStr* s1 = s0->slice(-6, -6);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(5, 6);
+    BigStr* s1 = s0->slice(5, 6);
     ASSERT(str_equals(s1, StrFromC("f")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(6, 6);
+    BigStr* s1 = s0->slice(6, 6);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(0, -7);
+    BigStr* s1 = s0->slice(0, -7);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(-7, -7);
+    BigStr* s1 = s0->slice(-7, -7);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(-7, 0);
+    BigStr* s1 = s0->slice(-7, 0);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(6, 6);
+    BigStr* s1 = s0->slice(6, 6);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(7, 7);
+    BigStr* s1 = s0->slice(7, 7);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(6, 5);
+    BigStr* s1 = s0->slice(6, 5);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(7, 5);
+    BigStr* s1 = s0->slice(7, 5);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(7, 6);
+    BigStr* s1 = s0->slice(7, 6);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
 
   {
-    Str* s1 = s0->slice(7, 7);
+    BigStr* s1 = s0->slice(7, 7);
     ASSERT(str_equals(s1, StrFromC("")));
     ShowString(s1);
   }
@@ -705,47 +705,47 @@ TEST test_str_concat() {
   printf("------- str_concat -------\n");
 
   {
-    Str* result = str_concat(StrFromC(""), StrFromC(""));
+    BigStr* result = str_concat(StrFromC(""), StrFromC(""));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
   {
-    Str* result = str_concat(StrFromC("a"), StrFromC(""));
+    BigStr* result = str_concat(StrFromC("a"), StrFromC(""));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("a")));
   }
   {
-    Str* result = str_concat(StrFromC("aa"), StrFromC(""));
+    BigStr* result = str_concat(StrFromC("aa"), StrFromC(""));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("aa")));
   }
   {
-    Str* result = str_concat(StrFromC(""), StrFromC("b"));
+    BigStr* result = str_concat(StrFromC(""), StrFromC("b"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("b")));
   }
   {
-    Str* result = str_concat(StrFromC(""), StrFromC("bb"));
+    BigStr* result = str_concat(StrFromC(""), StrFromC("bb"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("bb")));
   }
   {
-    Str* result = str_concat(StrFromC("a"), StrFromC("b"));
+    BigStr* result = str_concat(StrFromC("a"), StrFromC("b"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("ab")));
   }
   {
-    Str* result = str_concat(StrFromC("aa"), StrFromC("b"));
+    BigStr* result = str_concat(StrFromC("aa"), StrFromC("b"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("aab")));
   }
   {
-    Str* result = str_concat(StrFromC("a"), StrFromC("bb"));
+    BigStr* result = str_concat(StrFromC("a"), StrFromC("bb"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("abb")));
   }
   {
-    Str* result = str_concat(StrFromC("aa"), StrFromC("bb"));
+    BigStr* result = str_concat(StrFromC("aa"), StrFromC("bb"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("aabb")));
   }
@@ -753,48 +753,48 @@ TEST test_str_concat() {
   printf("------- str_concat3 -------\n");
 
   {
-    Str* result = str_concat3(StrFromC(""), StrFromC(""), StrFromC(""));
+    BigStr* result = str_concat3(StrFromC(""), StrFromC(""), StrFromC(""));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("")));
   }
   {
-    Str* result = str_concat3(StrFromC("a"), StrFromC(""), StrFromC(""));
+    BigStr* result = str_concat3(StrFromC("a"), StrFromC(""), StrFromC(""));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("a")));
   }
   {
-    Str* result = str_concat3(StrFromC("a"), StrFromC("b"), StrFromC(""));
+    BigStr* result = str_concat3(StrFromC("a"), StrFromC("b"), StrFromC(""));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("ab")));
   }
   {
-    Str* result = str_concat3(StrFromC("a"), StrFromC("b"), StrFromC("c"));
+    BigStr* result = str_concat3(StrFromC("a"), StrFromC("b"), StrFromC("c"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("abc")));
   }
   {
-    Str* result = str_concat3(StrFromC("a"), StrFromC(""), StrFromC("c"));
+    BigStr* result = str_concat3(StrFromC("a"), StrFromC(""), StrFromC("c"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("ac")));
   }
 
   {
-    Str* result = str_concat3(StrFromC("aa"), StrFromC(""), StrFromC(""));
+    BigStr* result = str_concat3(StrFromC("aa"), StrFromC(""), StrFromC(""));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("aa")));
   }
   {
-    Str* result = str_concat3(StrFromC("aa"), StrFromC("b"), StrFromC(""));
+    BigStr* result = str_concat3(StrFromC("aa"), StrFromC("b"), StrFromC(""));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("aab")));
   }
   {
-    Str* result = str_concat3(StrFromC("aa"), StrFromC("b"), StrFromC("c"));
+    BigStr* result = str_concat3(StrFromC("aa"), StrFromC("b"), StrFromC("c"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("aabc")));
   }
   {
-    Str* result = str_concat3(StrFromC("aa"), StrFromC(""), StrFromC("c"));
+    BigStr* result = str_concat3(StrFromC("aa"), StrFromC(""), StrFromC("c"));
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("aac")));
   }
@@ -807,39 +807,39 @@ TEST test_str_to_int() {
   log("------- to_int -------");
 
   {
-    Str* input = StrFromC("0");
+    BigStr* input = StrFromC("0");
     int result = to_int(input);
     ShowStringInt(input, result);
     ASSERT(result == 0);
   }
   {
-    Str* input = StrFromC("1");
+    BigStr* input = StrFromC("1");
     int result = to_int(input);
     ShowStringInt(input, result);
     ASSERT(result == 1);
   }
   {
-    Str* input = StrFromC("-1");
+    BigStr* input = StrFromC("-1");
     int result = to_int(input);
     ShowStringInt(input, result);
     ASSERT(result == -1);
   }
   {
-    Str* input = StrFromC("100");
+    BigStr* input = StrFromC("100");
     int result = to_int(input);
     ShowStringInt(input, result);
     ASSERT(result == 100);
   }
   {
     // one less than 0x7FFFFFFF, because that value can be LONG_MAX
-    Str* input = StrFromC("2147483646");
+    BigStr* input = StrFromC("2147483646");
     int result = to_int(input);
     ShowStringInt(input, result);
     ASSERT(result == 2147483646);
   }
   {
     // one less than -0x7FFFFFFF - 1, because that value can be LONG_MIN
-    Str* input = StrFromC("-2147483647");
+    BigStr* input = StrFromC("-2147483647");
     int result = to_int(input);
     ShowStringInt(input, result);
     ASSERT(result == -2147483647);
@@ -868,7 +868,7 @@ TEST test_str_to_int() {
 }
 
 TEST test_str_startswith() {
-  printf("------ Str::helpers ------\n");
+  printf("------ BigStr::helpers ------\n");
 
   ASSERT((StrFromC(""))->startswith(StrFromC("")) == true);
   ASSERT((StrFromC(" "))->startswith(StrFromC("")) == true);
@@ -881,8 +881,8 @@ TEST test_str_startswith() {
 
 TEST test_str_contains() {
   bool b;
-  Str* s = nullptr;
-  Str* nul = nullptr;
+  BigStr* s = nullptr;
+  BigStr* nul = nullptr;
   StackRoots _roots({&s, &nul});
 
   log("  str_contains");
@@ -930,19 +930,19 @@ TEST test_str_contains() {
 TEST test_str_split() {
   printf("\n");
 
-  printf("------- Str::split -------\n");
+  printf("------- BigStr::split -------\n");
 
   {
-    Str* s = StrFromC("abc def");
+    BigStr* s = StrFromC("abc def");
     // No split
-    List<Str*>* parts = s->split(StrFromC("x"));
+    List<BigStr*>* parts = s->split(StrFromC("x"));
     ShowList(parts);
     ASSERT_EQ(1, len(parts));
     ASSERT_EQ(parts->at(0), s);
   }
 
   {
-    List<Str*>* parts = StrFromC("abc def")->split(StrFromC(" "));
+    List<BigStr*>* parts = StrFromC("abc def")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(2, len(parts));
     ASSERT(are_equal(parts->at(0), StrFromC("abc")));
@@ -950,7 +950,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*>* parts = StrFromC("###")->split(StrFromC("#"));
+    List<BigStr*>* parts = StrFromC("###")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ_FMT(4, len(parts), "%d");
     // Identical objects
@@ -961,7 +961,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*>* parts = StrFromC(" ### ")->split(StrFromC("#"));
+    List<BigStr*>* parts = StrFromC(" ### ")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(4, len(parts));
     ASSERT(are_equal(parts->at(0), StrFromC(" ")));
@@ -971,7 +971,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*>* parts = StrFromC(" # ")->split(StrFromC(" "));
+    List<BigStr*>* parts = StrFromC(" # ")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(3, len(parts));
     ASSERT(are_equal(parts->at(0), StrFromC("")));
@@ -980,7 +980,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*>* parts = StrFromC("  #")->split(StrFromC("#"));
+    List<BigStr*>* parts = StrFromC("  #")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(2, len(parts));
     ASSERT(are_equal(parts->at(0), StrFromC("  ")));
@@ -988,7 +988,7 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*>* parts = StrFromC("#  #")->split(StrFromC("#"));
+    List<BigStr*>* parts = StrFromC("#  #")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(3, len(parts));
     ASSERT(are_equal(parts->at(0), StrFromC("")));
@@ -997,15 +997,15 @@ TEST test_str_split() {
   }
 
   {
-    List<Str*>* parts = StrFromC("")->split(StrFromC(" "));
+    List<BigStr*>* parts = StrFromC("")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(1, len(parts));
     ASSERT(are_equal(parts->at(0), StrFromC("")));
   }
 
   {
-    Str* s = StrFromC("a,b,c,d,e,f,g");
-    List<Str*>* parts = s->split(StrFromC(","));
+    BigStr* s = StrFromC("a,b,c,d,e,f,g");
+    List<BigStr*>* parts = s->split(StrFromC(","));
     ShowList(parts);
     ASSERT_EQ(7, len(parts));
     ASSERT(are_equal(parts->at(0), StrFromC("a")));
@@ -1042,43 +1042,43 @@ TEST test_str_split() {
 TEST test_str_join() {
   printf("\n");
 
-  printf("-------- Str::join -------\n");
+  printf("-------- BigStr::join -------\n");
 
   {
-    Str* result = kEmptyString->join(Alloc<List<Str*>>());
+    BigStr* result = kEmptyString->join(Alloc<List<BigStr*>>());
     ShowString(result);
     ASSERT(are_equal(kEmptyString, result));
     ASSERT_EQ(kEmptyString, result);  // pointers equal
   }
 
   {
-    Str* result = StrFromC("anything")->join(Alloc<List<Str*>>());
+    BigStr* result = StrFromC("anything")->join(Alloc<List<BigStr*>>());
     ShowString(result);
     ASSERT(are_equal(kEmptyString, result));
     ASSERT_EQ(kEmptyString, result);  // pointers equal
   }
 
   {
-    Str* one_string = StrFromC("one string");
+    BigStr* one_string = StrFromC("one string");
     // NewList avoids std::initializer_list()
-    Str* result = StrFromC("anything")->join(NewList<Str*>({one_string}));
+    BigStr* result = StrFromC("anything")->join(NewList<BigStr*>({one_string}));
     ShowString(result);
     ASSERT(are_equal(one_string, result));
     ASSERT_EQ(one_string, result);  // pointers equal
   }
 
   {
-    Str* result =
-        kEmptyString->join(NewList<Str*>({StrFromC("abc"), StrFromC("def")}));
+    BigStr* result = kEmptyString->join(
+        NewList<BigStr*>({StrFromC("abc"), StrFromC("def")}));
     ShowString(result);
     ASSERT(are_equal(result, StrFromC("abcdef")));
   }
   {
-    Str* result = (StrFromC(" "))
-                      ->join(NewList<Str*>({StrFromC("abc"), StrFromC("def"),
-                                            StrFromC("abc"), StrFromC("def"),
-                                            StrFromC("abc"), StrFromC("def"),
-                                            StrFromC("abc"), StrFromC("def")}));
+    BigStr* result = (StrFromC(" "))
+                         ->join(NewList<BigStr*>(
+                             {StrFromC("abc"), StrFromC("def"), StrFromC("abc"),
+                              StrFromC("def"), StrFromC("abc"), StrFromC("def"),
+                              StrFromC("abc"), StrFromC("def")}));
     ShowString(result);
     ASSERT(are_equal(result, StrFromC("abc def abc def abc def abc def")));
   }
@@ -1122,7 +1122,7 @@ TEST test_str_format() {
   ASSERT(str_equals(StrFromC("ABC      1234DfooEF"),
                     StrFormat("ABC%10dD%sEF", 1234, StrFromC("foo"))));
 
-  // check StrFormat(char*) == StrFormat(Str*)
+  // check StrFormat(char*) == StrFormat(BigStr*)
   ASSERT(str_equals(StrFormat("%10d%s", 1234, StrFromC("foo")),
                     StrFormat(StrFromC("%10d%s"), 1234, StrFromC("foo"))));
 
@@ -1151,8 +1151,8 @@ unsigned coffee_hash(const char*, int) {
 }
 
 TEST test_str_hash() {
-  Str* s1 = StrFromC("a string");
-  Str* s2 = StrFromC("a different string");
+  BigStr* s1 = StrFromC("a string");
+  BigStr* s2 = StrFromC("a different string");
   unsigned h1 = s1->hash(fnv1);
   unsigned h2 = s2->hash(fnv1);
   ASSERT(h1 != h2);
@@ -1169,12 +1169,12 @@ GLOBAL_STR(a, "a");
 GLOBAL_STR(XX, "XX");
 
 TEST str_replace_test() {
-  Str* o = nullptr;
-  Str* _12 = nullptr;
-  Str* _123 = nullptr;
-  Str* s = nullptr;
-  Str* foxo = nullptr;
-  Str* expected = nullptr;
+  BigStr* o = nullptr;
+  BigStr* _12 = nullptr;
+  BigStr* _123 = nullptr;
+  BigStr* s = nullptr;
+  BigStr* foxo = nullptr;
+  BigStr* expected = nullptr;
   StackRoots _roots({&o, &_12, &_123, &s, &foxo, &expected});
 
   o = StrFromC("o");
@@ -1204,12 +1204,12 @@ TEST str_replace_test() {
   PASS();
 }
 
-void Print(List<Str*>* parts) {
+void Print(List<BigStr*>* parts) {
   log("---");
   log("len = %d", len(parts));
   for (int i = 0; i < len(parts); ++i) {
     printf("%d [", i);
-    Str* s = parts->at(i);
+    BigStr* s = parts->at(i);
     int n = len(s);
     fwrite(s->data_, sizeof(char), n, stdout);
     fputs("]\n", stdout);
@@ -1217,9 +1217,9 @@ void Print(List<Str*>* parts) {
 }
 
 TEST str_split_test() {
-  Str* s = nullptr;
-  Str* sep = nullptr;
-  List<Str*>* parts = nullptr;
+  BigStr* s = nullptr;
+  BigStr* sep = nullptr;
+  List<BigStr*>* parts = nullptr;
 
   StackRoots _roots({&s, &sep, &parts});
   sep = StrFromC(":");
@@ -1304,10 +1304,10 @@ TEST str_methods_test() {
   ASSERT(str_equals0("123", StrFromC(" 123")->strip()));
   ASSERT(str_equals0("123", StrFromC("123 ")->strip()));
 
-  Str* input = nullptr;
-  Str* arg = nullptr;
-  Str* expected = nullptr;
-  Str* result = nullptr;
+  BigStr* input = nullptr;
+  BigStr* arg = nullptr;
+  BigStr* expected = nullptr;
+  BigStr* result = nullptr;
   StackRoots _roots({&input, &arg, &expected, &result});
 
   log("startswith endswith");
@@ -1349,12 +1349,12 @@ TEST str_methods_test() {
 
   log("join()");
 
-  List<Str*>* L1 = nullptr;
-  List<Str*>* L2 = nullptr;
-  List<Str*>* empty_list = nullptr;
+  List<BigStr*>* L1 = nullptr;
+  List<BigStr*>* L2 = nullptr;
+  List<BigStr*>* empty_list = nullptr;
   StackRoots _roots2({&L1, &L2, &empty_list});
 
-  L1 = NewList<Str*>(std::initializer_list<Str*>{kStrFood, kStrFoo});
+  L1 = NewList<BigStr*>(std::initializer_list<BigStr*>{kStrFood, kStrFoo});
 
   // Join by empty string
   ASSERT(str_equals0("foodfoo", kEmptyString->join(L1)));
@@ -1366,11 +1366,11 @@ TEST str_methods_test() {
   ASSERT(str_equals(expected, result));
 
   // Singleton list
-  L2 = NewList<Str*>(std::initializer_list<Str*>{kStrFoo});
+  L2 = NewList<BigStr*>(std::initializer_list<BigStr*>{kStrFoo});
   ASSERT(str_equals0("foo", kEmptyString->join(L2)));
 
   // Empty list
-  empty_list = NewList<Str*>(std::initializer_list<Str*>{});
+  empty_list = NewList<BigStr*>(std::initializer_list<BigStr*>{});
 
   result = kEmptyString->join(empty_list);
   ASSERT(str_equals(kEmptyString, result));
@@ -1384,7 +1384,7 @@ TEST str_methods_test() {
 }
 
 TEST str_funcs_test() {
-  Str* s = nullptr;
+  BigStr* s = nullptr;
 
   log("ord()");
   s = StrFromC("A");

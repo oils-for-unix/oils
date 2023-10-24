@@ -13,15 +13,16 @@ GLOBAL_STR(kStrFoo, "foo");
 GLOBAL_STR(kStrBar, "bar");
 
 TEST test_dict_init() {
-  Str* s = StrFromC("foo");
-  Str* s2 = StrFromC("bar");
+  BigStr* s = StrFromC("foo");
+  BigStr* s2 = StrFromC("bar");
 
-  Dict<int, Str*>* d = Alloc<Dict<int, Str*>>(std::initializer_list<int>{42},
-                                              std::initializer_list<Str*>{s});
+  Dict<int, BigStr*>* d = Alloc<Dict<int, BigStr*>>(
+      std::initializer_list<int>{42}, std::initializer_list<BigStr*>{s});
   ASSERT_EQ(s, d->at(42));
 
-  Dict<Str*, int>* d2 = Alloc<Dict<Str*, int>>(
-      std::initializer_list<Str*>{s, s2}, std::initializer_list<int>{43, 99});
+  Dict<BigStr*, int>* d2 =
+      Alloc<Dict<BigStr*, int>>(std::initializer_list<BigStr*>{s, s2},
+                                std::initializer_list<int>{43, 99});
   ASSERT_EQ(43, d2->at(s));
   ASSERT_EQ(99, d2->at(s2));
 
@@ -29,7 +30,7 @@ TEST test_dict_init() {
 }
 
 TEST test_dict() {
-  Dict<int, Str*>* d = NewDict<int, Str*>();
+  Dict<int, BigStr*>* d = NewDict<int, BigStr*>();
 
   // Regression: clear empty dict
   d->clear();
@@ -37,8 +38,8 @@ TEST test_dict() {
   d->set(1, StrFromC("foo"));
   log("d[1] = %s", d->at(1)->data_);
 
-  auto d2 = NewDict<Str*, int>();
-  Str* key = StrFromC("key");
+  auto d2 = NewDict<BigStr*, int>();
+  BigStr* key = StrFromC("key");
   d2->set(key, 42);
 
   log("d2['key'] = %d", d2->at(key));
@@ -53,22 +54,22 @@ TEST test_dict() {
   ASSERT_EQ(0, len(d2));
 
   log("  iterating over Dict");
-  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
+  for (DictIter<BigStr*, int> it(d2); !it.Done(); it.Next()) {
     log("k = %s, v = %d", it.Key()->data_, it.Value());
   }
 
   ASSERT(dict_contains(d, 1));
   ASSERT(!dict_contains(d, 423));
 
-  Str* v1 = d->get(1);
+  BigStr* v1 = d->get(1);
   log("v1 = %s", v1->data_);
   ASSERT(str_equals0("foo", v1));
 
-  Str* v2 = d->get(423);  // nonexistent
+  BigStr* v2 = d->get(423);  // nonexistent
   ASSERT_EQ(nullptr, v2);
   log("v2 = %p", v2);
 
-  auto d3 = NewDict<Str*, int>();
+  auto d3 = NewDict<BigStr*, int>();
   ASSERT_EQ(0, len(d3));
 
   auto a = StrFromC("a");
@@ -103,7 +104,7 @@ TEST test_dict() {
   ASSERT_EQ(2, len(d3));
 
   // Test removed item
-  for (DictIter<Str*, int> it(d3); !it.Done(); it.Next()) {
+  for (DictIter<BigStr*, int> it(d3); !it.Done(); it.Next()) {
     auto key = it.Key();
     printf("d3 key = ");
     print(key);
@@ -111,7 +112,7 @@ TEST test_dict() {
 
   // Test a different type of dict, to make sure partial template
   // specialization works
-  auto ss = NewDict<Str*, Str*>();
+  auto ss = NewDict<BigStr*, BigStr*>();
   ss->set(a, a);
   ASSERT_EQ(1, len(ss));
 
@@ -122,7 +123,7 @@ TEST test_dict() {
   ASSERT_EQ(0, len(ss));
 
   // Test removed item
-  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
+  for (DictIter<BigStr*, BigStr*> it(ss); !it.Done(); it.Next()) {
     auto key = it.Key();
     printf("ss key = ");
     print(key);
@@ -143,7 +144,7 @@ TEST test_dict() {
 TEST test_dict_internals() {
   auto dict1 = NewDict<int, int>();
   StackRoots _roots1({&dict1});
-  auto dict2 = NewDict<Str*, Str*>();
+  auto dict2 = NewDict<BigStr*, BigStr*>();
   StackRoots _roots2({&dict2});
 
   ASSERT_EQ(0, len(dict1));
@@ -211,8 +212,8 @@ TEST test_dict_internals() {
     ASSERT_EQ(10, dict1->at(43));
   }
 
-  Str* foo = nullptr;
-  Str* bar = nullptr;
+  BigStr* foo = nullptr;
+  BigStr* bar = nullptr;
   StackRoots _roots3({&foo, &bar});
   foo = StrFromC("foo");
   bar = StrFromC("bar");
@@ -228,7 +229,7 @@ TEST test_dict_internals() {
   ASSERT_EQ_FMT(64, ObjHeader::FromObject(dict2->values_)->obj_len, "%d");
 #endif
 
-  auto dict_si = NewDict<Str*, int>();
+  auto dict_si = NewDict<BigStr*, int>();
   StackRoots _roots4({&dict_si});
   dict_si->set(foo, 42);
   ASSERT_EQ(1, len(dict_si));
@@ -239,7 +240,7 @@ TEST test_dict_internals() {
   ASSERT_EQ_FMT(32, ObjHeader::FromObject(dict_si->values_)->obj_len, "%d");
 #endif
 
-  auto dict_is = NewDict<int, Str*>();
+  auto dict_is = NewDict<int, BigStr*>();
   StackRoots _roots5({&dict_is});
   dict_is->set(42, foo);
   PASS();
@@ -255,9 +256,9 @@ TEST test_dict_internals() {
   auto two = StrFromC("two");
   StackRoots _roots6({&two});
 
-  auto dict3 =
-      Alloc<Dict<int, Str*>>(std::initializer_list<int>{1, 2},
-                             std::initializer_list<Str*>{kEmptyString, two});
+  auto dict3 = Alloc<Dict<int, BigStr*>>(
+      std::initializer_list<int>{1, 2},
+      std::initializer_list<BigStr*>{kEmptyString, two});
   StackRoots _roots7({&dict3});
 
   ASSERT_EQ_FMT(2, len(dict3), "%d");
@@ -268,30 +269,30 @@ TEST test_dict_internals() {
 }
 
 TEST test_empty_dict() {
-  auto d = Alloc<Dict<Str*, Str*>>();
+  auto d = Alloc<Dict<BigStr*, BigStr*>>();
 
   // Look up in empty dict
-  Str* val = d->get(StrFromC("nonexistent"));
+  BigStr* val = d->get(StrFromC("nonexistent"));
   log("val %p", val);
   ASSERT_EQ(nullptr, val);
 
-  Str* val2 = d->get(StrFromC("nonexistent"), kEmptyString);
+  BigStr* val2 = d->get(StrFromC("nonexistent"), kEmptyString);
   ASSERT_EQ(kEmptyString, val2);
 
   PASS();
 }
 
 TEST dict_methods_test() {
-  Dict<int, Str*>* d = nullptr;
-  Dict<Str*, int>* d2 = nullptr;
-  Str* key = nullptr;
+  Dict<int, BigStr*>* d = nullptr;
+  Dict<BigStr*, int>* d2 = nullptr;
+  BigStr* key = nullptr;
   StackRoots _roots({&d, &d2, &key});
 
-  d = Alloc<Dict<int, Str*>>();
+  d = Alloc<Dict<int, BigStr*>>();
   d->set(1, kStrFoo);
   ASSERT(str_equals0("foo", d->at(1)));
 
-  d2 = Alloc<Dict<Str*, int>>();
+  d2 = Alloc<Dict<BigStr*, int>>();
   key = StrFromC("key");
   d2->set(key, 42);
   ASSERT_EQ(42, d2->at(key));
@@ -325,7 +326,7 @@ TEST dict_methods_test() {
   ASSERT_EQ(3, values->at(1));
 
   int j = 0;
-  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
+  for (DictIter<BigStr*, int> it(d2); !it.Done(); it.Next()) {
     auto key = it.Key();
     auto value = it.Value();
     log("d2 key = %s, value = %d", key->data_, value);
@@ -353,7 +354,7 @@ TEST dict_methods_test() {
   ASSERT_EQ(-99, d2->get(kEmptyString, -99));
 
   // sorted()
-  auto d3 = Alloc<Dict<Str*, int>>();
+  auto d3 = Alloc<Dict<BigStr*, int>>();
   auto a = StrFromC("a");
 
   d3->set(StrFromC("b"), 11);
@@ -381,14 +382,14 @@ TEST dict_methods_test() {
 
   // Test a different type of dict, to make sure partial template
   // specialization works
-  auto ss = Alloc<Dict<Str*, Str*>>();
+  auto ss = Alloc<Dict<BigStr*, BigStr*>>();
   ss->set(a, a);
   ASSERT_EQ(1, len(ss));
   ASSERT_EQ(1, len(ss->keys()));
   ASSERT_EQ(1, len(ss->values()));
 
   int k = 0;
-  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
+  for (DictIter<BigStr*, BigStr*> it(ss); !it.Done(); it.Next()) {
     auto key = it.Key();
     log("ss key = %s", key->data_);
     ++k;
@@ -399,7 +400,7 @@ TEST dict_methods_test() {
   ASSERT_EQ(0, len(ss));
 
   int m = 0;
-  for (DictIter<Str*, Str*> it(ss); !it.Done(); it.Next()) {
+  for (DictIter<BigStr*, BigStr*> it(ss); !it.Done(); it.Next()) {
     auto key = it.Key();
     log("ss key = %s", key->data_);
     ++m;
@@ -411,11 +412,11 @@ TEST dict_methods_test() {
 }
 
 TEST dict_iters_test() {
-  Dict<Str*, int>* d2 = nullptr;
-  List<Str*>* keys = nullptr;
+  Dict<BigStr*, int>* d2 = nullptr;
+  List<BigStr*>* keys = nullptr;
   StackRoots _roots({&d2, &keys});
 
-  d2 = Alloc<Dict<Str*, int>>();
+  d2 = Alloc<Dict<BigStr*, int>>();
   d2->set(kStrFoo, 2);
   d2->set(kStrBar, 3);
 
@@ -425,7 +426,7 @@ TEST dict_iters_test() {
   }
 
   log("  iterating over Dict");
-  for (DictIter<Str*, int> it(d2); !it.Done(); it.Next()) {
+  for (DictIter<BigStr*, int> it(d2); !it.Done(); it.Next()) {
     log("k = %s, v = %d", it.Key()->data_, it.Value());
   }
 
@@ -475,9 +476,9 @@ TEST test_tuple_key() {
   ASSERT_EQ(d1->at(t1), -42);
   ASSERT_EQ(d1->at(t2), 17);
 
-  auto d2 = Alloc<Dict<Tuple2<Str*, int>*, int>>();
-  auto t3 = Alloc<Tuple2<Str*, int>>(StrFromC("foo"), 0xbeef);
-  auto t4 = Alloc<Tuple2<Str*, int>>(StrFromC("bar"), 0xeeef);
+  auto d2 = Alloc<Dict<Tuple2<BigStr*, int>*, int>>();
+  auto t3 = Alloc<Tuple2<BigStr*, int>>(StrFromC("foo"), 0xbeef);
+  auto t4 = Alloc<Tuple2<BigStr*, int>>(StrFromC("bar"), 0xeeef);
   d2->set(t3, 12345);
   d2->set(t4, 67890);
   ASSERT_EQ(d2->at(t3), 12345);
@@ -542,7 +543,7 @@ TEST test_dict_erase() {
 }
 
 TEST test_dict_erase2() {
-  auto d = NewDict<int, Str*>();
+  auto d = NewDict<int, BigStr*>();
 
   for (int i = 0; i < 6; ++i) {
     d->set(i, kEmptyString);
@@ -620,7 +621,7 @@ TEST test_dict_probe() {
 
 GLOBAL_DICT(gDict, int, int, 2, {42 COMMA 43}, {1 COMMA 2});
 
-GLOBAL_DICT(gStrDict, Str*, Str*, 2, {kStrFoo COMMA kStrBar},
+GLOBAL_DICT(gStrDict, BigStr*, BigStr*, 2, {kStrFoo COMMA kStrBar},
             {kStrBar COMMA kStrFoo});
 
 TEST test_global_dict() {

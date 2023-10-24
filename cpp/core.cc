@@ -40,8 +40,8 @@ Tuple2<int, int> WaitPid(int waitpid_options) {
   return Tuple2<int, int>(result, status);
 }
 
-Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks) {
-  Str* s = OverAllocatedStr(n);  // Allocate enough for the result
+Tuple2<int, int> Read(int fd, int n, List<BigStr*>* chunks) {
+  BigStr* s = OverAllocatedStr(n);  // Allocate enough for the result
 
   int length = ::read(fd, s->data(), n);
   if (length < 0) {
@@ -77,12 +77,12 @@ Tuple2<int, int> ReadByte(int fd) {
 }
 
 // for read --line
-Str* ReadLine() {
+BigStr* ReadLine() {
   assert(0);  // Does this get called?
 }
 
-Dict<Str*, Str*>* Environ() {
-  auto d = Alloc<Dict<Str*, Str*>>();
+Dict<BigStr*, BigStr*>* Environ() {
+  auto d = Alloc<Dict<BigStr*, BigStr*>>();
 
   for (char** env = environ; *env; ++env) {
     char* pair = *env;
@@ -93,10 +93,10 @@ Dict<Str*, Str*>* Environ() {
     int len = strlen(pair);
 
     int key_len = eq - pair;
-    Str* key = StrFromC(pair, key_len);
+    BigStr* key = StrFromC(pair, key_len);
 
     int val_len = len - key_len - 1;
-    Str* val = StrFromC(eq + 1, val_len);
+    BigStr* val = StrFromC(eq + 1, val_len);
 
     d->set(key, val);
   }
@@ -104,7 +104,7 @@ Dict<Str*, Str*>* Environ() {
   return d;
 }
 
-int Chdir(Str* dest_dir) {
+int Chdir(BigStr* dest_dir) {
   if (chdir(dest_dir->data_) == 0) {
     return 0;  // success
   } else {
@@ -112,7 +112,7 @@ int Chdir(Str* dest_dir) {
   }
 }
 
-Str* GetMyHomeDir() {
+BigStr* GetMyHomeDir() {
   uid_t uid = getuid();  // always succeeds
 
   // Don't free this.  (May return a pointer to a static area)
@@ -120,17 +120,17 @@ Str* GetMyHomeDir() {
   if (entry == nullptr) {
     return nullptr;
   }
-  Str* s = StrFromC(entry->pw_dir);
+  BigStr* s = StrFromC(entry->pw_dir);
   return s;
 }
 
-Str* GetHomeDir(Str* user_name) {
+BigStr* GetHomeDir(BigStr* user_name) {
   // Don't free this.  (May return a pointer to a static area)
   struct passwd* entry = getpwnam(user_name->data_);
   if (entry == nullptr) {
     return nullptr;
   }
-  Str* s = StrFromC(entry->pw_dir);
+  BigStr* s = StrFromC(entry->pw_dir);
   return s;
 }
 
@@ -157,8 +157,8 @@ List<PasswdEntry*>* GetAllUsers() {
   return ret;
 }
 
-Str* GetUserName(int uid) {
-  Str* result = kEmptyString;
+BigStr* GetUserName(int uid) {
+  BigStr* result = kEmptyString;
 
   if (passwd* pw = getpwuid(uid)) {
     result = StrFromC(pw->pw_name);
@@ -169,8 +169,8 @@ Str* GetUserName(int uid) {
   return result;
 }
 
-Str* OsType() {
-  Str* result = kEmptyString;
+BigStr* OsType() {
+  BigStr* result = kEmptyString;
 
   utsname un = {};
   if (::uname(&un) == 0) {
@@ -261,13 +261,13 @@ void RegisterSignalInterest(int sig_num) {
   assert(sigaction(sig_num, &act, nullptr) == 0);
 }
 
-Tuple2<Str*, int>* MakeDirCacheKey(Str* path) {
+Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path) {
   struct stat st;
   if (::stat(path->data(), &st) == -1) {
     throw Alloc<OSError>(errno);
   }
 
-  return Alloc<Tuple2<Str*, int>>(path, st.st_mtime);
+  return Alloc<Tuple2<BigStr*, int>>(path, st.st_mtime);
 }
 
 Tuple2<int, void*> PushTermAttrs(int fd, int mask) {
@@ -303,7 +303,7 @@ namespace pyutil {
 static grammar::Grammar* gOilGrammar = nullptr;
 
 // TODO: SHARE with pyext
-bool IsValidCharEscape(Str* c) {
+bool IsValidCharEscape(BigStr* c) {
   DCHECK(len(c) == 1);
 
   int ch = c->data_[0];
@@ -317,9 +317,9 @@ bool IsValidCharEscape(Str* c) {
   return ispunct(ch);
 }
 
-Str* ChArrayToString(List<int>* ch_array) {
+BigStr* ChArrayToString(List<int>* ch_array) {
   int n = len(ch_array);
-  Str* result = NewStr(n);
+  BigStr* result = NewStr(n);
   for (int i = 0; i < n; ++i) {
     result->data_[i] = ch_array->at(i);
   }
@@ -327,7 +327,7 @@ Str* ChArrayToString(List<int>* ch_array) {
   return result;
 }
 
-Str* _ResourceLoader::Get(Str* path) {
+BigStr* _ResourceLoader::Get(BigStr* path) {
   TextFile* t = gEmbeddedFiles;  // start of generated data
   while (t->rel_path != nullptr) {
     if (strcmp(t->rel_path, path->data_) == 0) {
@@ -343,7 +343,7 @@ _ResourceLoader* GetResourceLoader() {
   return Alloc<_ResourceLoader>();
 }
 
-Str* GetVersion(_ResourceLoader* loader) {
+BigStr* GetVersion(_ResourceLoader* loader) {
   return consts::gVersion;
 }
 
@@ -355,9 +355,9 @@ void PrintVersionDetails(_ResourceLoader* loader) {
   // How do we get those?  Look at CPython
 }
 
-Str* BackslashEscape(Str* s, Str* meta_chars) {
+BigStr* BackslashEscape(BigStr* s, BigStr* meta_chars) {
   int upper_bound = len(s) * 2;
-  Str* buf = OverAllocatedStr(upper_bound);
+  BigStr* buf = OverAllocatedStr(upper_bound);
   char* p = buf->data_;
 
   for (int i = 0; i < len(s); ++i) {
@@ -371,8 +371,8 @@ Str* BackslashEscape(Str* s, Str* meta_chars) {
   return buf;
 }
 
-Str* strerror(IOError_OSError* e) {
-  Str* s = StrFromC(::strerror(e->errno_));
+BigStr* strerror(IOError_OSError* e) {
+  BigStr* s = StrFromC(::strerror(e->errno_));
   return s;
 }
 

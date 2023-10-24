@@ -22,10 +22,10 @@ namespace runtime {  // declare
 
 using hnode_asdl::hnode;
 extern int NO_SPID;
-hnode::Record* NewRecord(Str* node_type);
-hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
-extern Str* TRUE_STR;
-extern Str* FALSE_STR;
+hnode::Record* NewRecord(BigStr* node_type);
+hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
+extern BigStr* TRUE_STR;
+extern BigStr* FALSE_STR;
 
 
 }  // declare namespace runtime
@@ -37,14 +37,14 @@ using hnode_asdl::color_t;
 using hnode_asdl::color_e;
 int NO_SPID = -1;
 
-hnode::Record* NewRecord(Str* node_type) {
-  StackRoots _roots({&node_type});
+hnode::Record* NewRecord(BigStr* node_type) {
+  StackRoot _root0(&node_type);
 
   return Alloc<hnode::Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
 }
 
-hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
-  StackRoots _roots({&s});
+hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
+  StackRoot _root0(&s);
 
   if (s == nullptr) {
     return Alloc<hnode::Leaf>(str2, color_e::OtherConst);
@@ -53,8 +53,8 @@ hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
     return Alloc<hnode::Leaf>(s, e_color);
   }
 }
-Str* TRUE_STR = str3;
-Str* FALSE_STR = str4;
+BigStr* TRUE_STR = str3;
+BigStr* FALSE_STR = str4;
 
 }  // define namespace runtime
 
@@ -66,13 +66,13 @@ using syntax_asdl::loc;
 using runtime_asdl::value_t;
 using runtime_asdl::value_str;
 
-Str* _ValType(runtime_asdl::value_t* val) {
-  StackRoots _roots({&val});
+BigStr* _ValType(runtime_asdl::value_t* val) {
+  StackRoot _root0(&val);
 
-  return value_str(val->tag());
+  return value_str(val->tag(), false);
 }
 
-_ErrorWithLocation::_ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location) {
+_ErrorWithLocation::_ErrorWithLocation(BigStr* msg, syntax_asdl::loc_t* location) {
   this->msg = msg;
   if (location == nullptr) {
     this->location = loc::Missing;
@@ -86,31 +86,31 @@ bool _ErrorWithLocation::HasLocation() {
   return this->location->tag() != loc_e::Missing;
 }
 
-Str* _ErrorWithLocation::UserErrorString() {
+BigStr* _ErrorWithLocation::UserErrorString() {
   return this->msg;
 }
 
-Usage::Usage(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-Runtime::Runtime(Str* msg) {
+Runtime::Runtime(BigStr* msg) {
   this->msg = msg;
 }
 
-Str* Runtime::UserErrorString() {
+BigStr* Runtime::UserErrorString() {
   return this->msg;
 }
 
-Parse::Parse(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-FailGlob::FailGlob(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-RedirectEval::RedirectEval(Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-FatalRuntime::FatalRuntime(int exit_status, Str* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+FatalRuntime::FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
   this->exit_status = exit_status;
 }
 
@@ -118,54 +118,59 @@ int FatalRuntime::ExitStatus() {
   return this->exit_status;
 }
 
-Strict::Strict(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(1, msg, location) {
+Strict::Strict(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(1, msg, location) {
 }
 
-ErrExit::ErrExit(int exit_status, Str* msg, syntax_asdl::loc_t* location, bool show_code) : FatalRuntime(exit_status, msg, location) {
+ErrExit::ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code) : FatalRuntime(exit_status, msg, location) {
   this->show_code = show_code;
 }
 
-Expr::Expr(Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
+Expr::Expr(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
 }
 
-UserError::UserError(int status, Str* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
+UserError::UserError(int status, BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
 }
 
-AssertionErr::AssertionErr(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-TypeErrVerbose::TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-TypeErr::TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
+TypeErr::TypeErr(runtime_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
 }
 
-[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<Usage>(msg, location);
 }
 
-[[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void e_strict(BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<Strict>(msg, location);
 }
 
-[[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void p_die(BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<Parse>(msg, location);
 }
 
-[[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void e_die(BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<FatalRuntime>(1, msg, location);
 }
 
-[[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location) {
-  StackRoots _roots({&msg, &location});
+[[noreturn]] void e_die_status(int status, BigStr* msg, syntax_asdl::loc_t* location) {
+  StackRoot _root0(&msg);
+  StackRoot _root1(&location);
 
   throw Alloc<FatalRuntime>(status, msg, location);
 }

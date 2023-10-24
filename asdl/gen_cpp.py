@@ -51,7 +51,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
 
 
 _PRIMITIVES = {
-    'string': 'Str*',  # declared in containers.h
+    'string': 'BigStr*',  # declared in containers.h
     'int': 'int',
     'float': 'double',
     'bool': 'bool',
@@ -275,7 +275,7 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
             if self.pretty_print_methods:
                 self.Emit(
-                    'Str* %s_str(%s tag, bool dot = true);' %
+                    'BigStr* %s_str(%s tag, bool dot = true);' %
                     (sum_name, enum_name), depth)
                 self.Emit('', depth)
 
@@ -309,8 +309,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('Str* %s_str(int tag, bool dot = true);' % sum_name,
-                          depth)
+                self.Emit(
+                    'BigStr* %s_str(int tag, bool dot = true);' % sum_name,
+                    depth)
                 self.Emit('', depth)
 
         return int_to_type
@@ -689,10 +690,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
         if strong:
             self.Emit(
-                'Str* %s_str(%s tag, bool dot) {' % (sum_name, enum_name),
+                'BigStr* %s_str(%s tag, bool dot) {' % (sum_name, enum_name),
                 depth)
         else:
-            self.Emit('Str* %s_str(int tag, bool dot) {' % sum_name, depth)
+            self.Emit('BigStr* %s_str(int tag, bool dot) {' % sum_name, depth)
 
         buf_size = 32
         v_max = max(len(variant.name) for variant in sum.types)

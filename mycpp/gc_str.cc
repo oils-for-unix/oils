@@ -15,7 +15,7 @@ GLOBAL_STR(kEmptyString, "");
 static const std::regex gStrFmtRegex("([^%]*)(?:%(-?[0-9]*)(.))?");
 static const int kMaxFmtWidth = 256;  // arbitrary...
 
-int Str::find(Str* needle, int pos) {
+int BigStr::find(BigStr* needle, int pos) {
   int len_ = len(this);
   assert(len(needle) == 1);  // Oil's usage
   char c = needle->data_[0];
@@ -27,7 +27,7 @@ int Str::find(Str* needle, int pos) {
   return -1;
 }
 
-int Str::rfind(Str* needle) {
+int BigStr::rfind(BigStr* needle) {
   int len_ = len(this);
   assert(len(needle) == 1);  // Oil's usage
   char c = needle->data_[0];
@@ -39,7 +39,7 @@ int Str::rfind(Str* needle) {
   return -1;
 }
 
-bool Str::isdigit() {
+bool BigStr::isdigit() {
   int n = len(this);
   if (n == 0) {
     return false;  // special case
@@ -52,7 +52,7 @@ bool Str::isdigit() {
   return true;
 }
 
-bool Str::isalpha() {
+bool BigStr::isalpha() {
   int n = len(this);
   if (n == 0) {
     return false;  // special case
@@ -66,7 +66,7 @@ bool Str::isalpha() {
 }
 
 // e.g. for osh/braces.py
-bool Str::isupper() {
+bool BigStr::isupper() {
   int n = len(this);
   if (n == 0) {
     return false;  // special case
@@ -79,7 +79,7 @@ bool Str::isupper() {
   return true;
 }
 
-bool Str::startswith(Str* s) {
+bool BigStr::startswith(BigStr* s) {
   int n = len(s);
   if (n > len(this)) {
     return false;
@@ -87,7 +87,7 @@ bool Str::startswith(Str* s) {
   return memcmp(data_, s->data_, n) == 0;
 }
 
-bool Str::endswith(Str* s) {
+bool BigStr::endswith(BigStr* s) {
   int len_s = len(s);
   int len_this = len(this);
   if (len_s > len_this) {
@@ -98,7 +98,7 @@ bool Str::endswith(Str* s) {
 }
 
 // Get a string with one character
-Str* Str::at(int i) {
+BigStr* BigStr::at(int i) {
   int len_ = len(this);
   if (i < 0) {
     i = len_ + i;
@@ -106,13 +106,13 @@ Str* Str::at(int i) {
   assert(i >= 0);
   assert(i < len_);  // had a problem here!
 
-  Str* result = NewStr(1);
+  BigStr* result = NewStr(1);
   result->data_[0] = data_[i];
   return result;
 }
 
 // s[begin:end:step]
-Str* Str::slice(int begin, int end, int step) {
+BigStr* BigStr::slice(int begin, int end, int step) {
   int len_ = len(this);
   begin = std::min(begin, len_);
   end = std::min(end, len_);
@@ -153,7 +153,7 @@ Str* Str::slice(int begin, int end, int step) {
   assert(new_len >= 0);
   assert(new_len <= len_);
 
-  Str* result = NewStr(new_len + 1);
+  BigStr* result = NewStr(new_len + 1);
   // step might be negative
   int j = 0;
   for (int i = begin; begin <= i && i < end; i += step, j++) {
@@ -165,7 +165,7 @@ Str* Str::slice(int begin, int end, int step) {
 }
 
 // s[begin:end]
-Str* Str::slice(int begin, int end) {
+BigStr* BigStr::slice(int begin, int end) {
   int len_ = len(this);
   begin = std::min(begin, len_);
   end = std::min(end, len_);
@@ -204,14 +204,14 @@ Str* Str::slice(int begin, int end) {
   assert(new_len >= 0);
   assert(new_len <= len_);
 
-  Str* result = NewStr(new_len);
+  BigStr* result = NewStr(new_len);
   memcpy(result->data_, data_ + begin, new_len);
 
   return result;
 }
 
 // s[begin:]
-Str* Str::slice(int begin) {
+BigStr* BigStr::slice(int begin) {
   int len_ = len(this);
   if (begin == 0) {
     return this;  // s[i:] where i == 0 is common in here docs
@@ -224,14 +224,14 @@ Str* Str::slice(int begin) {
 
 // Used by 'help' builtin and --help, neither of which translate yet.
 
-List<Str*>* Str::splitlines(bool keep) {
+List<BigStr*>* BigStr::splitlines(bool keep) {
   assert(keep == true);
   FAIL(kNotImplemented);
 }
 
-Str* Str::upper() {
+BigStr* BigStr::upper() {
   int len_ = len(this);
-  Str* result = NewStr(len_);
+  BigStr* result = NewStr(len_);
   char* buffer = result->data();
   for (int char_index = 0; char_index < len_; ++char_index) {
     buffer[char_index] = toupper(data_[char_index]);
@@ -239,9 +239,9 @@ Str* Str::upper() {
   return result;
 }
 
-Str* Str::lower() {
+BigStr* BigStr::lower() {
   int len_ = len(this);
-  Str* result = NewStr(len_);
+  BigStr* result = NewStr(len_);
   char* buffer = result->data();
   for (int char_index = 0; char_index < len_; ++char_index) {
     buffer[char_index] = tolower(data_[char_index]);
@@ -249,7 +249,7 @@ Str* Str::lower() {
   return result;
 }
 
-Str* Str::ljust(int width, Str* fillchar) {
+BigStr* BigStr::ljust(int width, BigStr* fillchar) {
   assert(len(fillchar) == 1);
 
   int len_ = len(this);
@@ -257,7 +257,7 @@ Str* Str::ljust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    Str* result = NewStr(width);
+    BigStr* result = NewStr(width);
     char c = fillchar->data_[0];
     memcpy(result->data_, data_, len_);
     for (int i = len_; i < width; ++i) {
@@ -267,7 +267,7 @@ Str* Str::ljust(int width, Str* fillchar) {
   }
 }
 
-Str* Str::rjust(int width, Str* fillchar) {
+BigStr* BigStr::rjust(int width, BigStr* fillchar) {
   assert(len(fillchar) == 1);
 
   int len_ = len(this);
@@ -275,7 +275,7 @@ Str* Str::rjust(int width, Str* fillchar) {
   if (num_fill < 0) {
     return this;
   } else {
-    Str* result = NewStr(width);
+    BigStr* result = NewStr(width);
     char c = fillchar->data_[0];
     for (int i = 0; i < num_fill; ++i) {
       result->data_[i] = c;
@@ -285,7 +285,7 @@ Str* Str::rjust(int width, Str* fillchar) {
   }
 }
 
-Str* Str::replace(Str* old, Str* new_str) {
+BigStr* BigStr::replace(BigStr* old, BigStr* new_str) {
   // log("replacing %s with %s", old_data, new_str->data_);
   const char* old_data = old->data_;
 
@@ -317,7 +317,7 @@ Str* Str::replace(Str* old, Str* new_str) {
   int result_len =
       this_len - (replace_count * old_len) + (replace_count * new_str_len);
 
-  Str* result = NewStr(result_len);
+  BigStr* result = NewStr(result_len);
 
   const char* new_data = new_str->data_;
   const size_t new_len = new_str_len;
@@ -368,7 +368,7 @@ bool OmitChar(uint8_t ch, int what) {
 //   where: which ends to strip from
 //   what: kWhitespace, or an ASCII code 0-255
 
-Str* StripAny(Str* s, StripWhere where, int what) {
+BigStr* StripAny(BigStr* s, StripWhere where, int what) {
   int length = len(s);
   const char* char_data = s->data();
 
@@ -397,37 +397,37 @@ Str* StripAny(Str* s, StripWhere where, int what) {
 
   // Note: makes a copy in leaky version, and will in GC version too
   int new_len = j - i;
-  Str* result = NewStr(new_len);
+  BigStr* result = NewStr(new_len);
   memcpy(result->data(), s->data() + i, new_len);
   return result;
 }
 
-Str* Str::strip() {
+BigStr* BigStr::strip() {
   return StripAny(this, StripWhere::Both, kWhitespace);
 }
 
 // Used for CommandSub in osh/cmd_exec.py
-Str* Str::rstrip(Str* chars) {
+BigStr* BigStr::rstrip(BigStr* chars) {
   assert(len(chars) == 1);
   int c = chars->data_[0];
   return StripAny(this, StripWhere::Right, c);
 }
 
-Str* Str::rstrip() {
+BigStr* BigStr::rstrip() {
   return StripAny(this, StripWhere::Right, kWhitespace);
 }
 
-Str* Str::lstrip(Str* chars) {
+BigStr* BigStr::lstrip(BigStr* chars) {
   assert(len(chars) == 1);
   int c = chars->data_[0];
   return StripAny(this, StripWhere::Left, c);
 }
 
-Str* Str::lstrip() {
+BigStr* BigStr::lstrip() {
   return StripAny(this, StripWhere::Left, kWhitespace);
 }
 
-Str* Str::join(List<Str*>* items) {
+BigStr* BigStr::join(List<BigStr*>* items) {
   int length = 0;
 
   int num_parts = len(items);
@@ -450,7 +450,7 @@ Str* Str::join(List<Str*>* items) {
   int this_len = len(this);
   length += this_len * (num_parts - 1);
 
-  Str* result = NewStr(length);
+  BigStr* result = NewStr(length);
   char* p_result = result->data_;  // advances through
 
   for (int i = 0; i < num_parts; ++i) {
@@ -470,9 +470,9 @@ Str* Str::join(List<Str*>* items) {
   return result;
 }
 
-static void AppendPart(List<Str*>* result, Str* s, int left, int right) {
+static void AppendPart(List<BigStr*>* result, BigStr* s, int left, int right) {
   int new_len = right - left;
-  Str* part;
+  BigStr* part;
   if (new_len == 0) {
     part = kEmptyString;
   } else {
@@ -482,9 +482,9 @@ static void AppendPart(List<Str*>* result, Str* s, int left, int right) {
   result->append(part);
 }
 
-// Split Str into List<Str*> of parts separated by 'sep'.
+// Split BigStr into List<BigStr*> of parts separated by 'sep'.
 // The code structure is taken from CPython's Objects/stringlib/split.h.
-List<Str*>* Str::split(Str* sep, int max_split) {
+List<BigStr*>* BigStr::split(BigStr* sep, int max_split) {
   DCHECK(sep != nullptr);
   DCHECK(len(sep) == 1);  // we can only split one char
   char sep_char = sep->data_[0];
@@ -492,10 +492,10 @@ List<Str*>* Str::split(Str* sep, int max_split) {
   int str_len = len(this);
   if (str_len == 0) {
     // weird case consistent with Python: ''.split(':') == ['']
-    return NewList<Str*>({kEmptyString});
+    return NewList<BigStr*>({kEmptyString});
   }
 
-  List<Str*>* result = NewList<Str*>({});
+  List<BigStr*>* result = NewList<BigStr*>({});
   int left = 0;
   int right = 0;
   int num_parts = 0;  // 3 splits results in 4 parts
@@ -521,11 +521,11 @@ List<Str*>* Str::split(Str* sep, int max_split) {
   return result;
 }
 
-List<Str*>* Str::split(Str* sep) {
+List<BigStr*>* BigStr::split(BigStr* sep) {
   return this->split(sep, len(this));
 }
 
-unsigned Str::hash(HashFunc h) {
+unsigned BigStr::hash(HashFunc h) {
   if (!is_hashed_) {
     hash_ = h(data_, len_) >> 1;
     is_hashed_ = 1;
@@ -533,7 +533,7 @@ unsigned Str::hash(HashFunc h) {
   return hash_;
 }
 
-static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
+static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
   auto beg = std::cregex_iterator(fmt, fmt + fmt_len, gStrFmtRegex);
   auto end = std::cregex_iterator();
 
@@ -584,9 +584,9 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
       break;
     }
     case 's': {
-      Str* s = va_arg(args, Str*);
+      BigStr* s = va_arg(args, BigStr*);
       // Check type unconditionally because mycpp doesn't always check it
-      CHECK(ObjHeader::FromObject(s)->type_tag == TypeTag::Str);
+      CHECK(ObjHeader::FromObject(s)->type_tag == TypeTag::BigStr);
 
       str_to_add = s->data();
       add_len = len(s);
@@ -594,9 +594,9 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
       break;
     }
     case 'r': {
-      Str* s = va_arg(args, Str*);
+      BigStr* s = va_arg(args, BigStr*);
       // Check type unconditionally because mycpp doesn't always check it
-      CHECK(ObjHeader::FromObject(s)->type_tag == TypeTag::Str);
+      CHECK(ObjHeader::FromObject(s)->type_tag == TypeTag::BigStr);
 
       s = repr(s);
       str_to_add = s->data();
@@ -635,25 +635,25 @@ static inline Str* _StrFormat(const char* fmt, int fmt_len, va_list args) {
   return StrFromC(buf.c_str(), buf.size());
 }
 
-Str* StrIter::Value() {  // similar to at()
-  Str* result = NewStr(1);
+BigStr* StrIter::Value() {  // similar to at()
+  BigStr* result = NewStr(1);
   result->data_[0] = s_->data_[i_];
   DCHECK(result->data_[1] == '\0');
   return result;
 }
 
-Str* StrFormat(const char* fmt, ...) {
+BigStr* StrFormat(const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  Str* ret = _StrFormat(fmt, strlen(fmt), args);
+  BigStr* ret = _StrFormat(fmt, strlen(fmt), args);
   va_end(args);
   return ret;
 }
 
-Str* StrFormat(Str* fmt, ...) {
+BigStr* StrFormat(BigStr* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  Str* ret = _StrFormat(fmt->data(), len(fmt), args);
+  BigStr* ret = _StrFormat(fmt->data(), len(fmt), args);
   va_end(args);
   return ret;
 }

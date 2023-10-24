@@ -7,13 +7,13 @@
 
 namespace qsn {
 
-inline bool IsUnprintableLow(Str* ch) {
+inline bool IsUnprintableLow(BigStr* ch) {
   assert(len(ch) == 1);
   uint8_t c = ch->data_[0];  // explicit conversion necessary
   return c < ' ';
 }
 
-inline bool IsUnprintableHigh(Str* ch) {
+inline bool IsUnprintableHigh(BigStr* ch) {
   assert(len(ch) == 1);
   // 255 should not be -1!
   // log("ch->data_[0] %d", ch->data_[0]);
@@ -21,7 +21,7 @@ inline bool IsUnprintableHigh(Str* ch) {
   return c >= 0x7f;
 }
 
-inline bool IsPlainChar(Str* ch) {
+inline bool IsPlainChar(BigStr* ch) {
   assert(len(ch) == 1);
   uint8_t c = ch->data_[0];  // explicit conversion necessary
   switch (c) {
@@ -34,19 +34,19 @@ inline bool IsPlainChar(Str* ch) {
          ('0' <= c && c <= '9');
 }
 
-inline Str* XEscape(Str* ch) {
+inline BigStr* XEscape(BigStr* ch) {
   assert(len(ch) == 1);
-  Str* result = NewStr(4);
+  BigStr* result = NewStr(4);
   sprintf(result->data(), "\\x%02x", ch->data_[0] & 0xff);
   return result;
 }
 
-inline Str* UEscape(int codepoint) {
+inline BigStr* UEscape(int codepoint) {
   // maximum length:
   // 3 for \u{
   // 6 for codepoint
   // 1 for }
-  Str* result = OverAllocatedStr(10);
+  BigStr* result = OverAllocatedStr(10);
   int n = sprintf(result->data(), "\\u{%x}", codepoint);
   result->MaybeShrink(n);  // truncate to what we wrote
   return result;

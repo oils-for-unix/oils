@@ -96,11 +96,11 @@ class _FlagSpec {
     return ObjHeader::ClassFixed(field_mask(), sizeof(_FlagSpec));
   }
 
-  List<Str*>* arity0;
-  Dict<Str*, args::_Action*>* arity1;
-  List<Str*>* plus_flags;
-  Dict<Str*, args::_Action*>* actions_long;
-  Dict<Str*, runtime_asdl::value_t*>* defaults;
+  List<BigStr*>* arity0;
+  Dict<BigStr*, args::_Action*>* arity1;
+  List<BigStr*>* plus_flags;
+  Dict<BigStr*, args::_Action*>* actions_long;
+  Dict<BigStr*, runtime_asdl::value_t*>* defaults;
 
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_FlagSpec, arity0)) |
@@ -124,10 +124,10 @@ class _FlagSpecAndMore {
     return ObjHeader::ClassFixed(field_mask(), sizeof(_FlagSpecAndMore));
   }
 
-  Dict<Str*, args::_Action*>* actions_long;
-  Dict<Str*, args::_Action*>* actions_short;
-  List<Str*>* plus_flags;
-  Dict<Str*, runtime_asdl::value_t*>* defaults;
+  Dict<BigStr*, args::_Action*>* actions_long;
+  Dict<BigStr*, args::_Action*>* actions_short;
+  List<BigStr*>* plus_flags;
+  Dict<BigStr*, runtime_asdl::value_t*>* defaults;
 
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_FlagSpecAndMore, actions_long)) |
@@ -138,23 +138,23 @@ class _FlagSpecAndMore {
 };
 
 // for testing only
-flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name);
-flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name);
+flag_spec::_FlagSpec* LookupFlagSpec(BigStr* spec_name);
+flag_spec::_FlagSpecAndMore* LookupFlagSpec2(BigStr* spec_name);
 
-args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r);
+args::_Attributes* Parse(BigStr* spec_name, args::Reader* arg_r);
 
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val);
+    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val);
 
 // With optional arg
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
+    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
     bool accept_typed_args);
 
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
-    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val);
+    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val);
 
-args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r);
+args::_Attributes* ParseMore(BigStr* spec_name, args::Reader* arg_r);
 
 }  // namespace flag_spec
 

@@ -47,10 +47,10 @@ namespace runtime {  // declare
 
 using hnode_asdl::hnode;
 extern int NO_SPID;
-hnode::Record* NewRecord(Str* node_type);
-hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color);
-extern Str* TRUE_STR;
-extern Str* FALSE_STR;
+hnode::Record* NewRecord(BigStr* node_type);
+hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
+extern BigStr* TRUE_STR;
+extern BigStr* FALSE_STR;
 
 
 }  // declare namespace runtime
@@ -67,10 +67,10 @@ class ColorOutput {
   virtual void FileFooter();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
-  virtual void write(Str* s);
-  void WriteRaw(Tuple2<Str*, int>* raw);
+  virtual void write(BigStr* s);
+  void WriteRaw(Tuple2<BigStr*, int>* raw);
   int NumChars();
-  Tuple2<Str*, int> GetRaw();
+  Tuple2<BigStr*, int> GetRaw();
   mylib::Writer* f;
   int num_chars;
   
@@ -111,7 +111,7 @@ class HtmlOutput : public ColorOutput {
   virtual void FileFooter();
   virtual void PushColor(hnode_asdl::color_t e_color);
   virtual void PopColor();
-  virtual void write(Str* s);
+  virtual void write(BigStr* s);
   
   static constexpr uint32_t field_mask() {
     return ColorOutput::field_mask();
@@ -175,13 +175,13 @@ extern int Float;
 extern int Bool;
 class _Attributes {
  public:
-  _Attributes(Dict<Str*, runtime_asdl::value_t*>* defaults);
-  void SetTrue(Str* name);
-  void Set(Str* name, runtime_asdl::value_t* val);
-  Dict<Str*, runtime_asdl::value_t*>* attrs;
-  List<Tuple2<Str*, bool>*>* opt_changes;
-  List<Tuple2<Str*, bool>*>* shopt_changes;
-  List<Str*>* actions;
+  _Attributes(Dict<BigStr*, runtime_asdl::value_t*>* defaults);
+  void SetTrue(BigStr* name);
+  void Set(BigStr* name, runtime_asdl::value_t* val);
+  Dict<BigStr*, runtime_asdl::value_t*>* attrs;
+  List<Tuple2<BigStr*, bool>*>* opt_changes;
+  List<Tuple2<BigStr*, bool>*>* shopt_changes;
+  List<BigStr*>* actions;
   bool show_options;
   bool saw_double_dash;
 
@@ -194,18 +194,18 @@ class _Attributes {
 
 class Reader {
  public:
-  Reader(List<Str*>* argv, List<syntax_asdl::CompoundWord*>* locs = nullptr);
+  Reader(List<BigStr*>* argv, List<syntax_asdl::CompoundWord*>* locs = nullptr);
   void Next();
-  Str* Peek();
-  Tuple2<Str*, syntax_asdl::loc_t*> Peek2();
-  Str* ReadRequired(Str* error_msg);
-  Tuple2<Str*, syntax_asdl::loc_t*> ReadRequired2(Str* error_msg);
-  List<Str*>* Rest();
-  Tuple2<List<Str*>*, List<syntax_asdl::CompoundWord*>*> Rest2();
+  BigStr* Peek();
+  Tuple2<BigStr*, syntax_asdl::loc_t*> Peek2();
+  BigStr* ReadRequired(BigStr* error_msg);
+  Tuple2<BigStr*, syntax_asdl::loc_t*> ReadRequired2(BigStr* error_msg);
+  List<BigStr*>* Rest();
+  Tuple2<List<BigStr*>*, List<syntax_asdl::CompoundWord*>*> Rest2();
   bool AtEnd();
   syntax_asdl::loc_t* _FirstLocation();
   syntax_asdl::loc_t* Location();
-  List<Str*>* argv;
+  List<BigStr*>* argv;
   List<syntax_asdl::CompoundWord*>* locs;
   int n;
   int i;
@@ -220,7 +220,7 @@ class Reader {
 class _Action {
  public:
   _Action();
-  virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
   
   static constexpr uint32_t field_mask() {
     return kZeroMask;
@@ -235,13 +235,13 @@ class _Action {
 
 class _ArgAction : public _Action {
  public:
-  _ArgAction(Str* name, bool quit_parsing_flags, List<Str*>* valid = nullptr);
-  virtual runtime_asdl::value_t* _Value(Str* arg, syntax_asdl::loc_t* location);
-  virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+  _ArgAction(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid = nullptr);
+  virtual runtime_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  Str* name;
+  BigStr* name;
   bool quit_parsing_flags;
-  List<Str*>* valid;
+  List<BigStr*>* valid;
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
@@ -258,8 +258,8 @@ class _ArgAction : public _Action {
 
 class SetToInt : public _ArgAction {
  public:
-  SetToInt(Str* name);
-  virtual runtime_asdl::value_t* _Value(Str* arg, syntax_asdl::loc_t* location);
+  SetToInt(BigStr* name);
+  virtual runtime_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();
@@ -274,8 +274,8 @@ class SetToInt : public _ArgAction {
 
 class SetToFloat : public _ArgAction {
  public:
-  SetToFloat(Str* name);
-  virtual runtime_asdl::value_t* _Value(Str* arg, syntax_asdl::loc_t* location);
+  SetToFloat(BigStr* name);
+  virtual runtime_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();
@@ -290,8 +290,8 @@ class SetToFloat : public _ArgAction {
 
 class SetToString : public _ArgAction {
  public:
-  SetToString(Str* name, bool quit_parsing_flags, List<Str*>* valid = nullptr);
-  virtual runtime_asdl::value_t* _Value(Str* arg, syntax_asdl::loc_t* location);
+  SetToString(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid = nullptr);
+  virtual runtime_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();
@@ -306,10 +306,10 @@ class SetToString : public _ArgAction {
 
 class SetAttachedBool : public _Action {
  public:
-  SetAttachedBool(Str* name);
-  virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+  SetAttachedBool(BigStr* name);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  Str* name;
+  BigStr* name;
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
@@ -325,10 +325,10 @@ class SetAttachedBool : public _Action {
 
 class SetToTrue : public _Action {
  public:
-  SetToTrue(Str* name);
-  virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+  SetToTrue(BigStr* name);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  Str* name;
+  BigStr* name;
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
@@ -344,10 +344,10 @@ class SetToTrue : public _Action {
 
 class SetOption : public _Action {
  public:
-  SetOption(Str* name);
-  virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+  SetOption(BigStr* name);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  Str* name;
+  BigStr* name;
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
@@ -364,10 +364,10 @@ class SetOption : public _Action {
 class SetNamedOption : public _Action {
  public:
   SetNamedOption(bool shopt = false);
-  void ArgName(Str* name);
-  virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+  void ArgName(BigStr* name);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  List<Str*>* names;
+  List<BigStr*>* names;
   bool shopt;
   
   static constexpr uint32_t field_mask() {
@@ -384,10 +384,10 @@ class SetNamedOption : public _Action {
 
 class SetAction : public _Action {
  public:
-  SetAction(Str* name);
-  virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+  SetAction(BigStr* name);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  Str* name;
+  BigStr* name;
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()
@@ -404,10 +404,10 @@ class SetAction : public _Action {
 class SetNamedAction : public _Action {
  public:
   SetNamedAction();
-  void ArgName(Str* name);
-  virtual bool OnMatch(Str* attached_arg, args::Reader* arg_r, args::_Attributes* out);
+  void ArgName(BigStr* name);
+  virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
-  List<Str*>* names;
+  List<BigStr*>* names;
   
   static constexpr uint32_t field_mask() {
     return _Action::field_mask()

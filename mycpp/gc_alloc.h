@@ -144,11 +144,11 @@ T* Alloc(Args&&... args) {
 
 //
 // String "Constructors".  We need these because of the "flexible array"
-// pattern.  I don't think "new Str()" can do that, and placement new would
+// pattern.  I don't think "new BigStr()" can do that, and placement new would
 // require mycpp to generate 2 statements everywhere.
 //
 
-inline Str* NewStr(int len) {
+inline BigStr* NewStr(int len) {
   if (len == 0) {  // e.g. BufLineReader::readline() can use this optimization
     return kEmptyString;
   }
@@ -162,9 +162,9 @@ inline Str* NewStr(int len) {
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
-  ObjHeader* header = new (place) ObjHeader(Str::obj_header());
+  ObjHeader* header = new (place) ObjHeader(BigStr::obj_header());
 
-  auto s = new (header->ObjectAddress()) Str();
+  auto s = new (header->ObjectAddress()) BigStr();
 
   s->data_[len] = '\0';  // NUL terminate
   s->len_ = len;
@@ -183,7 +183,7 @@ inline Str* NewStr(int len) {
 // Call OverAllocatedStr() when you don't know the length of the string up
 // front, e.g. with snprintf().  CALLER IS RESPONSIBLE for calling
 // s->MaybeShrink() afterward!
-inline Str* OverAllocatedStr(int len) {
+inline BigStr* OverAllocatedStr(int len) {
   int obj_len = kStrHeaderSize + len + 1;  // NUL terminator
   const size_t num_bytes = sizeof(ObjHeader) + obj_len;
 #if MARK_SWEEP
@@ -193,8 +193,8 @@ inline Str* OverAllocatedStr(int len) {
 #else
   void* place = gHeap.Allocate(num_bytes);
 #endif
-  ObjHeader* header = new (place) ObjHeader(Str::obj_header());
-  auto s = new (header->ObjectAddress()) Str();
+  ObjHeader* header = new (place) ObjHeader(BigStr::obj_header());
+  auto s = new (header->ObjectAddress()) BigStr();
   s->hash_ = 0;
   s->is_hashed_ = 0;
 
@@ -208,19 +208,19 @@ inline Str* OverAllocatedStr(int len) {
 }
 
 // Copy C string into the managed heap.
-inline Str* StrFromC(const char* data, int len) {
+inline BigStr* StrFromC(const char* data, int len) {
   // Optimization that could be taken out once we have SmallStr
   if (len == 0) {
     return kEmptyString;
   }
-  Str* s = NewStr(len);
+  BigStr* s = NewStr(len);
   memcpy(s->data_, data, len);
   DCHECK(s->data_[len] == '\0');  // should be true because Heap was zeroed
 
   return s;
 }
 
-inline Str* StrFromC(const char* data) {
+inline BigStr* StrFromC(const char* data) {
   return StrFromC(data, strlen(data));
 }
 

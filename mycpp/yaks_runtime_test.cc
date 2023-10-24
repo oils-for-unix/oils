@@ -63,14 +63,14 @@ To Do
     - immediate int32_t
     - or what about the 53 bit idea? (matching double precision)
       - 64-3 bits = 61, or 64-11 = 53
-  - value.Str is Str and SmallStr
+  - value.BigStr is BigStr and SmallStr
   - value.BashAssoc is Dict[str, str]
   - value.Dict is Dict[str, value]
   - value.Frame is Dict[str, cell]
 
 - CompoundWord is List[word_part] parts
 
-- a_index = Str(str s) | Int(int i)
+- a_index = BigStr(str s) | Int(int i)
   - this is not immdiate
 
 - Custom Token VALUE type as 16 bytes?
@@ -113,7 +113,7 @@ So we can look for syntax_asdl / runtime_asdl
 ## Design
 
 - YaksValue contains a uint64_t  ?
-  - this means any Str, List, Dict, Tuple, or class
+  - this means any BigStr, List, Dict, Tuple, or class
   - can List and Dict have type tag in addition to pointer?
 
 These are less than 8 bytes:
@@ -142,7 +142,7 @@ Tagged Pointers ("Boxless optimization")
   - Zero-arg constructors are integers
   - int32_t
   - float
-  - Small Str
+  - Small BigStr
     - 4 bits len
       - how is this shared with type_tag?
       - are we reserving half of this space for small_str?
@@ -174,7 +174,7 @@ Later:
 //
 // - primitive i32 i64 f32 f64
 // - enum class scope_e
-// - YaksValue that MAY have a heap_obj (which is any Str value)
+// - YaksValue that MAY have a heap_obj (which is any BigStr value)
 //   - then you have only 7 possible tags
 // - YaksValue that does NOT have a heap_obj -- then you have more room for tags
 //   - you could have variatn of Bool, Int, and some other enum_class_e
@@ -256,7 +256,7 @@ class Slice:
 
 class Slice {
  public:
-  Slice(Str* s, int start, int length) {
+  Slice(BigStr* s, int start, int length) {
     // TODO: allocate Members
     self_.heap_obj = Alloc<Members>();
 
@@ -266,7 +266,7 @@ class Slice {
   }
 
   struct Members {
-    Str* s_;
+    BigStr* s_;
     int start_;
     int length_;
 
@@ -294,7 +294,7 @@ class Slice {
   }
 
   // Methods
-  Str* Get() {
+  BigStr* Get() {
     // return StrFromC("yo");
 
     int n = self()->length_;
@@ -302,7 +302,7 @@ class Slice {
     log("start = %d", self()->start_);
     log("n = %d", n);
 
-    Str* result = NewStr(n);
+    BigStr* result = NewStr(n);
 
     memcpy(result->data_, self()->s_->data_ + self()->start_, n);
 
@@ -317,7 +317,7 @@ class Slice {
 };
 
 void SliceFunc(Slice myslice) {
-  Str* s = myslice.Get();
+  BigStr* s = myslice.Get();
   log("val = %s", s->data_);
   print(s);
 

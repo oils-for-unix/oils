@@ -16,10 +16,10 @@ TEST sizeof_syntax() {
 
   // 24 bytes: std::vector
   log("sizeof(List<int>) = %d", sizeof(List<int>));
-  log("sizeof(List<Str*>) = %d", sizeof(List<Str *>));
+  log("sizeof(List<BigStr*>) = %d", sizeof(List<BigStr *>));
 
   log("sizeof(Slab<int>) = %d", sizeof(Slab<int>));
-  log("sizeof(Slab<Str*>) = %d", sizeof(Slab<Str *>));
+  log("sizeof(Slab<BigStr*>) = %d", sizeof(Slab<BigStr *>));
   // Right after object header
   log("kSlabHeaderSize = %d", kSlabHeaderSize);
 
@@ -31,11 +31,11 @@ TEST sizeof_syntax() {
   log("alignof(int) = %d", alignof(int));
   log("alignof(float) = %d", alignof(float));
 
-  log("sizeof(Str) = %d", sizeof(Str));
-  log("alignof(Str) = %d", alignof(Str));
+  log("sizeof(BigStr) = %d", sizeof(BigStr));
+  log("alignof(BigStr) = %d", alignof(BigStr));
 
-  log("sizeof(Str*) = %d", sizeof(Str *));
-  log("alignof(Str*) = %d", alignof(Str *));
+  log("sizeof(BigStr*) = %d", sizeof(BigStr *));
+  log("alignof(BigStr*) = %d", alignof(BigStr *));
 
   log("alignof(max_align_t) = %d", alignof(max_align_t));
 
@@ -53,7 +53,7 @@ TEST sizeof_core_types() {
 
   // 24 = 4 + (4 + 4 + 4) + 8
   // Feels like a small string optimization here would be nice.
-  log("sizeof(Str) = %d", sizeof(Str));
+  log("sizeof(BigStr) = %d", sizeof(BigStr));
   // 16 = 4 + pad4 + 8
   log("sizeof(List) = %d", sizeof(List<int>));
   // 32 = 4 + pad4 + 8 + 8 + 8
@@ -77,7 +77,7 @@ TEST sizeof_core_types() {
   log("q = %p", q);
 #endif
 
-  // Str = 16 and List = 24.
+  // BigStr = 16 and List = 24.
   // Rejected ideas about slicing:
   //
   // - Use data[len] == '\0' as OWNING and data[len] != '\0' as a slice?
@@ -85,14 +85,15 @@ TEST sizeof_core_types() {
   //
   // - s->data == (void*)(s + 1)
   //   Owning string has the data RIGHT AFTER?
-  //   Maybe works? but probably a bad idea because of GLOBAL Str instances.
+  //   Maybe works? but probably a bad idea because of GLOBAL BigStr instances.
 
   log("");
-  log("sizeof(Str) = %zu", sizeof(Str));
+  log("sizeof(BigStr) = %zu", sizeof(BigStr));
   log("sizeof(List<int>) = %zu", sizeof(List<int>));
-  log("sizeof(Dict<int, Str*>) = %zu", sizeof(Dict<int, Str *>));
+  log("sizeof(Dict<int, BigStr*>) = %zu", sizeof(Dict<int, BigStr *>));
   log("sizeof(Tuple2<int, int>) = %zu", sizeof(Tuple2<int, int>));
-  log("sizeof(Tuple2<Str*, Str*>) = %zu", sizeof(Tuple2<Str *, Str *>));
+  log("sizeof(Tuple2<BigStr*, BigStr*>) = %zu",
+      sizeof(Tuple2<BigStr *, BigStr *>));
   log("sizeof(Tuple3<int, int, int>) = %zu", sizeof(Tuple3<int, int, int>));
 
   PASS();
@@ -114,13 +115,13 @@ TEST slab_growth() {
 
   log("---");
 
-  auto lp = Alloc<List<Str *>>();
+  auto lp = Alloc<List<BigStr *>>();
   log("lp->items_ %p", lp->slab_);
 
   // At some point it moves
   for (int i = 0; i < 20; ++i) {
     lp->append(kEmptyString);
-    int size = 8 + (sizeof(Str *) * lp->capacity_);
+    int size = 8 + (sizeof(BigStr *) * lp->capacity_);
     log("%2d. cap %2d, size %3d, lp->slab_ %p", i, lp->capacity_, size,
         lp->slab_);
   }

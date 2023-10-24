@@ -40,16 +40,16 @@ TEST tsan_demo() {
 }
 
 void* AppendListThread(void* p) {
-  List<Str*>* mylist = static_cast<List<Str*>*>(p);
+  List<BigStr*>* mylist = static_cast<List<BigStr*>*>(p);
   mylist->append(StrFromC("thread"));
   return nullptr;
 }
 
 TEST list_test() {
-  List<Str*>* mylist = nullptr;
+  List<BigStr*>* mylist = nullptr;
   StackRoots _roots({&mylist});
 
-  mylist = NewList<Str*>({});
+  mylist = NewList<BigStr*>({});
   mylist->append(StrFromC("main"));
 
   pthread_t t;

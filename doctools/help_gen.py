@@ -492,7 +492,7 @@ def WriteTopicDict(topic_dict, header_f, cc_f):
 #include "mycpp/runtime.h"
 
 namespace help_meta {
-Dict<Str*, Str*>* TopicMetadata();
+Dict<BigStr*, BigStr*>* TopicMetadata();
 }
 ''')
 
@@ -523,9 +523,9 @@ namespace help_meta {
 
 %s
 
-GLOBAL_DICT(gTopics, Str*, Str*, %d, {%s}, {%s});
+GLOBAL_DICT(gTopics, BigStr*, BigStr*, %d, {%s}, {%s});
 
-Dict<Str*, Str*>* TopicMetadata() {
+Dict<BigStr*, BigStr*>* TopicMetadata() {
   return gTopics;
 }
 }

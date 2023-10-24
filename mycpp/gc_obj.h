@@ -7,7 +7,7 @@
 
 namespace HeapTag {
 const int Global = 0;     // Don't mark or sweep.
-const int Opaque = 1;     // e.g. List<int>, Str
+const int Opaque = 1;     // e.g. List<int>, BigStr
                           // Mark and sweep, but don't trace children
 const int FixedSize = 2;  // Consult field_mask for children
 const int Scanned = 3;    // Scan a contiguous range of children
@@ -19,7 +19,7 @@ const int Scanned = 3;    // Scan a contiguous range of children
 // asdl/gen_cpp.py starts from 1 for variants, or 64 for shared variants.
 namespace TypeTag {
 const int OtherClass = 127;  // non-ASDL class
-const int Str = 126;         // asserted in dynamic StrFormat()
+const int BigStr = 126;      // asserted in dynamic StrFormat()
 const int Slab = 125;
 const int Tuple = 124;
 const int List = 123;
@@ -90,8 +90,9 @@ struct ObjHeader {
     return {type_tag, num_pointers, HeapTag::Scanned, kNotInPool, kUndefinedId};
   }
 
-  static constexpr ObjHeader Str() {
-    return {TypeTag::Str, kZeroMask, HeapTag::Opaque, kNotInPool, kUndefinedId};
+  static constexpr ObjHeader BigStr() {
+    return {TypeTag::BigStr, kZeroMask, HeapTag::Opaque, kNotInPool,
+            kUndefinedId};
   }
 
   static constexpr ObjHeader Slab(uint8_t heap_tag, uint32_t num_pointers) {

@@ -230,7 +230,7 @@ def GetCType(t, param=False, local=False):
             c_type = 'bool'
 
         elif type_name == 'builtins.str':
-            c_type = 'Str'
+            c_type = 'BigStr'
             is_pointer = True
 
         elif type_name == 'builtins.list':
@@ -693,7 +693,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             ret_type = callee_type.ret_type
 
             # str(i) doesn't need new.  For now it's a free function.
-            # TODO: rename int_to_str?  or Str::from_int()?
+            # TODO: rename int_to_str?  or BigStr::from_int()?
             if (callee_name not in ('str', 'bool', 'float') and
                     isinstance(ret_type, Instance)):
 
@@ -802,7 +802,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         left_type = self.types[o.left]
         right_type = self.types[o.right]
 
-        # NOTE: Need GetCType to handle Optional[Str*] in ASDL schemas.
+        # NOTE: Need GetCType to handle Optional[BigStr*] in ASDL schemas.
         # Could tighten it up later.
         left_ctype = GetCType(left_type)
         right_ctype = GetCType(right_type)
@@ -813,7 +813,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             c_op = '/'
 
         # 'abc' + 'def'
-        if left_ctype == right_ctype == 'Str*' and c_op == '+':
+        if left_ctype == right_ctype == 'BigStr*' and c_op == '+':
             self.write('str_concat(')
             self.accept(o.left)
             self.write(', ')
@@ -822,7 +822,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         # 'abc' * 3
-        if left_ctype == 'Str*' and right_ctype == 'int' and c_op == '*':
+        if left_ctype == 'BigStr*' and right_ctype == 'int' and c_op == '*':
             self.write('str_repeat(')
             self.accept(o.left)
             self.write(', ')
@@ -841,7 +841,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         # RHS can be primitive or tuple
-        if left_ctype == 'Str*' and c_op == '%':
+        if left_ctype == 'BigStr*' and c_op == '%':
             self.write('StrFormat(')
             if isinstance(o.left, StrExpr):
                 self.write(PythonStringLiteral(o.left.value))
@@ -1313,7 +1313,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(o.rvalue, CallExpr):
                 self.report_error(
                     o,
-                    "Can't initialize objects at the top level, only Str List Dict"
+                    "Can't initialize objects at the top level, only BigStr List Dict"
                 )
                 return
 
@@ -1555,9 +1555,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #
             # x, y = mytuple
             #
-            # Tuple2<int, Str*> tup1 = mytuple
+            # Tuple2<int, BigStr*> tup1 = mytuple
             # int x = tup1->at0()
-            # Str* y = tup1->at1()
+            # BigStr* y = tup1->at1()
 
             rvalue_type = self.types[o.rvalue]
 
@@ -1812,9 +1812,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 # Example:
                 # for (ListIter it(mylist); !it.Done(); it.Next()) {
-                #   Tuple2<int, Str*> tup1 = it.Value();
+                #   Tuple2<int, BigStr*> tup1 = it.Value();
                 #   int i = tup1->at0();
-                #   Str* s = tup1->at1();
+                #   BigStr* s = tup1->at1();
                 #   log("%d %s", i, s);
                 # }
 

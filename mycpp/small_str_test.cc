@@ -1,4 +1,4 @@
-// small_str_test.cc - Demo for new Str implementation
+// small_str_test.cc - Demo for new BigStr implementation
 
 #include <inttypes.h>
 #include <limits.h>  // HOST_NAME_MAX
@@ -76,7 +76,7 @@ class HeapStr {
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::Str();
+    return ObjHeader::BigStr();
   }
 
   ObjHeader header_;
@@ -92,13 +92,13 @@ static HeapStr* AllocHeapStr(int n) {
   return new (place) HeapStr();
 }
 
-// Str is a value type that can be small or big!
-union Str {
+// BigStr is a value type that can be small or big!
+union BigStr {
   // small_ is the whole 8 bytes
-  Str(SmallStr small) : small_(small) {
+  BigStr(SmallStr small) : small_(small) {
   }
   // big_ may be 4 bytes, so we need raw_bytes_ first
-  Str(HeapStr* big) : raw_bytes_(0) {
+  BigStr(HeapStr* big) : raw_bytes_(0) {
     big_ = big;
   }
 
@@ -159,13 +159,13 @@ union Str {
     memcpy(dest, src, n);
   }
 
-  Str upper() {
+  BigStr upper() {
     if (small_.is_present_) {
       // Mutate
       for (int i = 0; i < small_.length_; ++i) {
         small_.data_[i] = toupper(small_.data_[i]);
       }
-      return Str(small_);  // return a copy BY VALUE
+      return BigStr(small_);  // return a copy BY VALUE
     } else {
       int n = big_->Length();
       HeapStr* result = AllocHeapStr(n);
@@ -176,7 +176,7 @@ union Str {
       result->data_[n] = '\0';
       result->SetLength(n);
 
-      return Str(result);
+      return BigStr(result);
     }
   }
 
@@ -185,9 +185,9 @@ union Str {
   HeapStr* big_;
 };
 
-// Invariants affecting Str equality
+// Invariants affecting BigStr equality
 //
-// 1. The contents of Str are normalized
+// 1. The contents of BigStr are normalized
 //  - SmallStr: the bytes past the NUL terminator are zero-initialized.
 //  - HeapStr*: if sizeof(HeapStr*) == 4, then the rest of the bytes are
 //    zero-initialized.
@@ -199,9 +199,9 @@ union Str {
 //
 // 1. StrFromC()
 // 2. OverAllocatedStr(), then MaybeShrink()
-// 3. Str:: methods that use the above functions, or NewStr()
+// 3. BigStr:: methods that use the above functions, or NewStr()
 
-bool str_equals(Str a, Str b) {
+bool str_equals(BigStr a, BigStr b) {
   // Fast path takes care of two cases:  Identical small strings, or identical
   // pointers to big strings!
   if (a.raw_bytes_ == b.raw_bytes_) {
@@ -211,7 +211,7 @@ bool str_equals(Str a, Str b) {
   bool a_small = a.IsSmall();
   bool b_small = b.IsSmall();
 
-  // Str instances are normalized so a SmallStr can't equal a HeapStr*
+  // BigStr instances are normalized so a SmallStr can't equal a HeapStr*
   if (a_small != b_small) {
     return false;
   }
@@ -234,52 +234,52 @@ bool str_equals(Str a, Str b) {
 
 #define G_SMALL_STR(name, s, small_len)          \
   GlobalSmallStr _##name = {1, 0, small_len, s}; \
-  Str name = *(reinterpret_cast<Str*>(&_##name));
+  BigStr name = *(reinterpret_cast<BigStr*>(&_##name));
 
 G_SMALL_STR(kEmptyString, "", 0);
 
 G_SMALL_STR(gSmall, "global", 6);
 
-Str NewStr(int n) {
+BigStr NewStr(int n) {
   if (n <= kSmallStrThreshold) {
     SmallStr small(n);
-    return Str(small);
+    return BigStr(small);
   } else {
     HeapStr* big = AllocHeapStr(n);
     big->SetLength(n);
-    return Str(big);
+    return BigStr(big);
   }
 }
 
 // NOTE: must call MaybeShrink(n) afterward to set length!  Should it NUL
 // terminate?
-Str OverAllocatedStr(int n) {
+BigStr OverAllocatedStr(int n) {
   // There's no point in overallocating small strings
   assert(n > kSmallStrThreshold);
 
   HeapStr* big = AllocHeapStr(n);
   // Not setting length!
-  return Str(big);
+  return BigStr(big);
 }
 
-Str StrFromC(const char* s, int n) {
+BigStr StrFromC(const char* s, int n) {
   if (n <= kSmallStrThreshold) {
     SmallStr small(n);
     memcpy(small.data_, s, n + 1);  // copy NUL terminator too
-    return Str(small);
+    return BigStr(small);
   } else {
     HeapStr* big = AllocHeapStr(n);
     memcpy(big->data_, s, n + 1);  // copy NUL terminator too
     big->SetLength(n);
-    return Str(big);
+    return BigStr(big);
   }
 }
 
-Str StrFromC(const char* s) {
+BigStr StrFromC(const char* s) {
   return StrFromC(s, strlen(s));
 }
 
-int len(Str s) {
+int len(BigStr s) {
   if (s.small_.is_present_) {
     return s.small_.length_;
   } else {
@@ -287,7 +287,7 @@ int len(Str s) {
   }
 }
 
-Str str_concat(Str a, Str b) {
+BigStr str_concat(BigStr a, BigStr b) {
   int a_len = len(a);
   int b_len = len(b);
   int new_len = a_len + b_len;
@@ -317,17 +317,17 @@ Str str_concat(Str a, Str b) {
   *dest = '\0';
 
   if (new_len <= kSmallStrThreshold) {
-    return Str(small);
+    return BigStr(small);
   } else {
-    return Str(big);
+    return BigStr(big);
   }
 }
 
 static_assert(sizeof(SmallStr) == 8, "SmallStr should be 8 bytes");
-static_assert(sizeof(Str) == 8, "Str should be 8 bytes");
+static_assert(sizeof(BigStr) == 8, "BigStr should be 8 bytes");
 
 TEST small_str_test() {
-  log("sizeof(Str) = %d", sizeof(Str));
+  log("sizeof(BigStr) = %d", sizeof(BigStr));
   log("sizeof(SmallStr) = %d", sizeof(SmallStr));
   log("sizeof(HeapStr*) = %d", sizeof(HeapStr*));
 
@@ -337,7 +337,7 @@ TEST small_str_test() {
 
   log("gSmall = %s", gSmall.small_.data_);
 
-  // Str s { 1, 0, 3, "foo" };
+  // BigStr s { 1, 0, 3, "foo" };
   SmallStr local_small(0);
   ASSERT(local_small.is_present_);
 
@@ -345,11 +345,11 @@ TEST small_str_test() {
   log("local_small as integer %d", local_small);
   log("local_small = %s", local_small.data_);
 
-  Str local_s = StrFromC("little");
+  BigStr local_s = StrFromC("little");
   ASSERT(local_s.IsSmall());
   log("local_s = %s", local_s.small_.data_);
 
-  Str local_big = StrFromC("big long string");
+  BigStr local_big = StrFromC("big long string");
   ASSERT(!local_big.IsSmall());
 
   log("");
@@ -364,13 +364,13 @@ TEST small_str_test() {
   log("---- Str_upper() ---- ");
   log("");
 
-  Str u1 = local_s.upper();
+  BigStr u1 = local_s.upper();
   ASSERT(u1.IsSmall());
 
-  Str u2 = gSmall.upper();
+  BigStr u2 = gSmall.upper();
   ASSERT(u2.IsSmall());
 
-  Str u3 = local_big.upper();
+  BigStr u3 = local_big.upper();
   ASSERT(!u3.IsSmall());
 
   log("local_small = %s %d", u1.c_str(), len(u1));
@@ -381,11 +381,11 @@ TEST small_str_test() {
   log("---- NewStr() ---- ");
   log("");
 
-  Str small_empty = NewStr(6);
+  BigStr small_empty = NewStr(6);
   ASSERT(small_empty.IsSmall());
   ASSERT_EQ(6, len(small_empty));
 
-  Str big_empty = NewStr(7);
+  BigStr big_empty = NewStr(7);
   ASSERT(!big_empty.IsSmall());
   ASSERT_EQ_FMT(7, len(big_empty), "%d");
 
@@ -393,27 +393,27 @@ TEST small_str_test() {
   log("---- str_concat() ---- ");
   log("");
 
-  Str empty_empty = str_concat(kEmptyString, kEmptyString);
+  BigStr empty_empty = str_concat(kEmptyString, kEmptyString);
   ASSERT(empty_empty.IsSmall());
   log("empty_empty (%d) = %s", len(empty_empty), empty_empty.c_str());
 
-  Str empty_small = str_concat(kEmptyString, StrFromC("b"));
+  BigStr empty_small = str_concat(kEmptyString, StrFromC("b"));
   ASSERT(empty_small.IsSmall());
   log("empty_small (%d) = %s", len(empty_small), empty_small.c_str());
 
-  Str small_small = str_concat(StrFromC("a"), StrFromC("b"));
+  BigStr small_small = str_concat(StrFromC("a"), StrFromC("b"));
   ASSERT(small_small.IsSmall());
   log("small_small (%d) %s", len(small_small), small_small.c_str());
 
-  Str small_big = str_concat(StrFromC("small"), StrFromC("big string"));
+  BigStr small_big = str_concat(StrFromC("small"), StrFromC("big string"));
   ASSERT(!small_big.IsSmall());
   log("small_big (%d) %s", len(small_big), small_big.c_str());
 
-  Str big_small = str_concat(StrFromC("big string"), StrFromC("small"));
+  BigStr big_small = str_concat(StrFromC("big string"), StrFromC("small"));
   ASSERT(!big_small.IsSmall());
   log("big_small (%d) %s", len(big_small), big_small.c_str());
 
-  Str big_big = str_concat(StrFromC("abcdefghij"), StrFromC("0123456789"));
+  BigStr big_big = str_concat(StrFromC("abcdefghij"), StrFromC("0123456789"));
   ASSERT(!big_big.IsSmall());
   log("big_big (%d) = %s ", len(big_big), big_big.c_str());
 
@@ -445,7 +445,7 @@ TEST small_str_test() {
   log("---- OverAllocatedStr() ---- ");
   log("");
 
-  Str hostname = OverAllocatedStr(HOST_NAME_MAX);
+  BigStr hostname = OverAllocatedStr(HOST_NAME_MAX);
   int status = ::gethostname(hostname.big_->data_, HOST_NAME_MAX);
   if (status != 0) {
     assert(0);
@@ -458,7 +458,7 @@ TEST small_str_test() {
   tm* loc_time = ::localtime(&ts);
 
   const int max_len = 1024;
-  Str t1 = OverAllocatedStr(max_len);
+  BigStr t1 = OverAllocatedStr(max_len);
 
   int n = strftime(t1.big_->data_, max_len, "%Y-%m-%d", loc_time);
   if (n == 0) {  // exceeds max length
@@ -468,7 +468,7 @@ TEST small_str_test() {
 
   log("t1 = %s", t1.c_str());
 
-  Str t2 = OverAllocatedStr(max_len);
+  BigStr t2 = OverAllocatedStr(max_len);
   n = strftime(t2.big_->data_, max_len, "%Y", loc_time);
   if (n == 0) {  // exceeds max length
     assert(0);

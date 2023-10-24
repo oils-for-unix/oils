@@ -36,13 +36,13 @@ const int NEWLINE_CH = 10;
 const int UNTRAPPED_SIGWINCH = -1;
 
 Tuple2<int, int> WaitPid(int waitpid_options);
-Tuple2<int, int> Read(int fd, int n, List<Str*>* chunks);
+Tuple2<int, int> Read(int fd, int n, List<BigStr*>* chunks);
 Tuple2<int, int> ReadByte(int fd);
-Str* ReadLine();
-Dict<Str*, Str*>* Environ();
-int Chdir(Str* dest_dir);
-Str* GetMyHomeDir();
-Str* GetHomeDir(Str* user_name);
+BigStr* ReadLine();
+Dict<BigStr*, BigStr*>* Environ();
+int Chdir(BigStr* dest_dir);
+BigStr* GetMyHomeDir();
+BigStr* GetHomeDir(BigStr* user_name);
 
 class ReadError {
  public:
@@ -68,7 +68,7 @@ class PasswdEntry {
     return ObjHeader::ClassFixed(field_mask(), sizeof(PasswdEntry));
   }
 
-  Str* pw_name;
+  BigStr* pw_name;
   int pw_uid;
   int pw_gid;
 
@@ -79,9 +79,9 @@ class PasswdEntry {
 
 List<PasswdEntry*>* GetAllUsers();
 
-Str* GetUserName(int uid);
+BigStr* GetUserName(int uid);
 
-Str* OsType();
+BigStr* OsType();
 
 Tuple3<double, double, double> Time();
 
@@ -235,21 +235,21 @@ void Sigaction(int sig_num, void (*handler)(int));
 
 void RegisterSignalInterest(int sig_num);
 
-Tuple2<Str*, int>* MakeDirCacheKey(Str* path);
+Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path);
 
 }  // namespace pyos
 
 namespace pyutil {
 
-bool IsValidCharEscape(Str* c);
-Str* ChArrayToString(List<int>* ch_array);
+bool IsValidCharEscape(BigStr* c);
+BigStr* ChArrayToString(List<int>* ch_array);
 
 class _ResourceLoader {
  public:
   _ResourceLoader() {
   }
 
-  virtual Str* Get(Str* path);
+  virtual BigStr* Get(BigStr* path);
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(kZeroMask, sizeof(_ResourceLoader));
@@ -258,13 +258,13 @@ class _ResourceLoader {
 
 _ResourceLoader* GetResourceLoader();
 
-Str* GetVersion(_ResourceLoader* loader);
+BigStr* GetVersion(_ResourceLoader* loader);
 
 void PrintVersionDetails(_ResourceLoader* loader);
 
-Str* strerror(IOError_OSError* e);
+BigStr* strerror(IOError_OSError* e);
 
-Str* BackslashEscape(Str* s, Str* meta_chars);
+BigStr* BackslashEscape(BigStr* s, BigStr* meta_chars);
 
 grammar::Grammar* LoadYshGrammar(_ResourceLoader*);
 
