@@ -10,9 +10,9 @@ from typing import Any
 # Used by cppgen_pass and const_pass
 
 # mycpp/examples/small_str.py sorta works with this!
-SMALL_STR = True
+#SMALL_STR = True
 
-#SMALL_STR = False
+SMALL_STR = False
 
 
 def log(msg: str, *args: Any) -> None:
