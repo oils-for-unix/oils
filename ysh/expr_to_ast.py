@@ -391,6 +391,11 @@ class Transformer(object):
             return expr.RegexLiteral(
                 parent.GetChild(0).tok, r, flags, trans_pref)
 
+        if id_ == Id.Arith_Amp:
+            # TODO: add place_ops
+            name_tok = parent.GetChild(1).tok
+            return expr.Place(name_tok, lexer.TokenVal(name_tok), [])
+
         if id_ == Id.Expr_Func:
             # STUB.  This should really be a Func, not Lambda.
             return expr.Lambda([], expr.Implicit)

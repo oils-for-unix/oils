@@ -917,6 +917,11 @@ class ExprEvaluator(object):
                 node = cast(expr.Var, UP_node)
                 return self._LookupVar(node.name.tval, node.name)
 
+            elif case(expr_e.Place):
+                node = cast(expr.Place, UP_node)
+                frame = self.mem.TopNamespace()
+                return value.Place(LeftName(node.var_name, node.blame_tok), frame)
+
             elif case(expr_e.CommandSub):
                 node = cast(CommandSub, UP_node)
 

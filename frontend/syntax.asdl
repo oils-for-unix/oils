@@ -460,12 +460,22 @@ module syntax
   | Subscript %Subscript
   | Attribute %Attribute
 
+  place_op = 
+    # &a[i+1]
+    Subscript(Token op, expr index)
+    # &d.mykey
+  | Attribute(Token op, Token attr)
+
   expr =
     # a variable name to evaluate
     Var(Token name)  # TODO: add str var_name
     # For null, Bool, Int, Float
     # Python uses Num(object n), which doesn't respect our "LST" invariant.
   | Const(Token c)
+
+    # read(&x)  json read (&x[0])
+  | Place(Token blame_tok, str var_name, place_op* ops)
+
     # @(one 'two' "$three")
   | ShArrayLiteral %ShArrayLiteral
     # @[a b c] @[1 2 3] @[(1+1) (2+2)]

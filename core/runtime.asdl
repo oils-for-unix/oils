@@ -106,7 +106,7 @@ module runtime
     #
     # A place has an additional stack frame where the value is evaluated.
     # The frame MUST be lower on the stack at the time of use.
-  | Place(sh_lvalue lval, Dict[str, Cell] frame)
+  | Place(y_lvalue lval, Dict[str, Cell] frame)
 
     # Passed into "dot procs" that can mutate the calling frame:
     # Flags :spec { .flag -v --verbose }

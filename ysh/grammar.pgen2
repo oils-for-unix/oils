@@ -75,8 +75,7 @@ shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-'|'++') term)*
 # YSH: removed '@' matrix mul
 term: factor (('*'|'/'|'//'|'%') factor)*
-# YSH: add & for value.Place
-factor: ('+'|'-'|'~'|'&') factor | power
+factor: ('+'|'-'|'~') factor | power
 # YSH: removed Python 3 'await'
 power: atom trailer* ['**' factor]
 
@@ -88,6 +87,7 @@ atom: (
     # Note: newlines are significant inside {}, unlike inside () and []
   | '{' [Op_Newline] [dict] '}'
   | '/' regex [re_flags] '/'
+  | '&' Expr_Name place_trailer*
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
     # TODO: Allow suffixes on floats and decimals?
@@ -114,6 +114,11 @@ atom: (
 
 literal_expr: '^[' expr ']'
 
+place_trailer: (
+    '[' subscriptlist ']'
+  | '.' Expr_Name
+)
+
 # var f = f(x)
 trailer: (
     '(' [arglist] ')'
@@ -123,7 +128,6 @@ trailer: (
 
   | '.' Expr_Name
   | '->' Expr_Name
-  #| ':' Expr_Name  # Note: unused, may not need it at all
 )
 
 # YSH patch: this is 'expr' instead of 'test'
