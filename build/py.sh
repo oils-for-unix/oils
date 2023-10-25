@@ -171,6 +171,7 @@ py-codegen() {
   gen-asdl-py 'frontend/types.asdl'
   # depends on syntax.asdl
   gen-asdl-py 'core/runtime.asdl'
+  gen-asdl-py 'core/value.asdl'
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # depends on bool_arg_type_e, generates Id_t
