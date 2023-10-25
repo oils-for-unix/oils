@@ -5,7 +5,7 @@ from errno import EINTR
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import builtin_i
-from _devbuild.gen.runtime_asdl import RedirValue, trace, value
+from _devbuild.gen.runtime_asdl import RedirValue, trace
 from _devbuild.gen.syntax_asdl import (
     command,
     command_e,
@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
+from _devbuild.gen.value_asdl import value
 from builtin import hay_ysh
 from core import dev
 from core import error

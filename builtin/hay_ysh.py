@@ -1,9 +1,9 @@
 from __future__ import print_function
 
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import (scope_e, value, value_e, value_t,
-                                        HayNode)
+from _devbuild.gen.runtime_asdl import (scope_e, HayNode)
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from asdl import format as fmt
 from core import alloc

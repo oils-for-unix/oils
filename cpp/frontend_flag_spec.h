@@ -4,6 +4,7 @@
 #define FRONTEND_FLAG_SPEC_H
 
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/id_kind.asdl.h"
 #include "mycpp/runtime.h"
 
@@ -100,7 +101,7 @@ class _FlagSpec {
   Dict<BigStr*, args::_Action*>* arity1;
   List<BigStr*>* plus_flags;
   Dict<BigStr*, args::_Action*>* actions_long;
-  Dict<BigStr*, runtime_asdl::value_t*>* defaults;
+  Dict<BigStr*, value_asdl::value_t*>* defaults;
 
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_FlagSpec, arity0)) |
@@ -127,7 +128,7 @@ class _FlagSpecAndMore {
   Dict<BigStr*, args::_Action*>* actions_long;
   Dict<BigStr*, args::_Action*>* actions_short;
   List<BigStr*>* plus_flags;
-  Dict<BigStr*, runtime_asdl::value_t*>* defaults;
+  Dict<BigStr*, value_asdl::value_t*>* defaults;
 
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_FlagSpecAndMore, actions_long)) |

@@ -239,7 +239,7 @@ bool EncodeRunes(BigStr* s, int bit8_display, mylib::BufWriter* buf);
 namespace error {  // declare
 
 using syntax_asdl::loc;
-BigStr* _ValType(runtime_asdl::value_t* val);
+BigStr* _ValType(value_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
   _ErrorWithLocation(BigStr* msg, syntax_asdl::loc_t* location);
@@ -445,7 +445,7 @@ class TypeErrVerbose : public Expr {
 
 class TypeErr : public TypeErrVerbose {
  public:
-  TypeErr(runtime_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location);
+  TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return TypeErrVerbose::field_mask();
@@ -1488,10 +1488,12 @@ namespace error {  // define
 using syntax_asdl::loc_e;
 using syntax_asdl::loc_t;
 using syntax_asdl::loc;
-using runtime_asdl::value_t;
-using runtime_asdl::value_str;
+using value_asdl::value;
+using value_asdl::value_e;
+using value_asdl::value_t;
+using value_asdl::value_str;
 
-BigStr* _ValType(runtime_asdl::value_t* val) {
+BigStr* _ValType(value_asdl::value_t* val) {
   StackRoot _root0(&val);
 
   return value_str(val->tag(), false);
@@ -1562,7 +1564,7 @@ AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg
 TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-TypeErr::TypeErr(runtime_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
+TypeErr::TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
 }
 
 [[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location) {
@@ -1607,25 +1609,26 @@ namespace args {  // define
 using syntax_asdl::loc;
 using syntax_asdl::loc_t;
 using syntax_asdl::CompoundWord;
-using runtime_asdl::value;
-using runtime_asdl::value_e;
-using runtime_asdl::value_t;
+using value_asdl::value;
+using value_asdl::value_e;
+using value_asdl::value_t;
+using value_asdl::value_str;
 using error::e_usage;
 int String = 1;
 int Int = 2;
 int Float = 3;
 int Bool = 4;
 
-_Attributes::_Attributes(Dict<BigStr*, runtime_asdl::value_t*>* defaults) {
-  this->attrs = Alloc<Dict<BigStr*, runtime_asdl::value_t*>>();
+_Attributes::_Attributes(Dict<BigStr*, value_asdl::value_t*>* defaults) {
+  this->attrs = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
   this->opt_changes = Alloc<List<Tuple2<BigStr*, bool>*>>();
   this->shopt_changes = Alloc<List<Tuple2<BigStr*, bool>*>>();
   this->show_options = false;
   this->actions = Alloc<List<BigStr*>>();
   this->saw_double_dash = false;
-  for (DictIter<BigStr*, runtime_asdl::value_t*> it(defaults); !it.Done(); it.Next()) {
+  for (DictIter<BigStr*, value_asdl::value_t*> it(defaults); !it.Done(); it.Next()) {
     BigStr* name = it.Key();
-    runtime_asdl::value_t* v = it.Value();
+    value_asdl::value_t* v = it.Value();
     this->Set(name, v);
   }
 }
@@ -1636,7 +1639,7 @@ void _Attributes::SetTrue(BigStr* name) {
   this->Set(name, Alloc<value::Bool>(true));
 }
 
-void _Attributes::Set(BigStr* name, runtime_asdl::value_t* val) {
+void _Attributes::Set(BigStr* name, value_asdl::value_t* val) {
   StackRoot _root0(&name);
   StackRoot _root1(&val);
 
@@ -1762,7 +1765,7 @@ _ArgAction::_ArgAction(BigStr* name, bool quit_parsing_flags, List<BigStr*>* val
   this->valid = valid;
 }
 
-runtime_asdl::value_t* _ArgAction::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
+value_asdl::value_t* _ArgAction::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
   StackRoot _root0(&arg);
   StackRoot _root1(&location);
 
@@ -1771,7 +1774,7 @@ runtime_asdl::value_t* _ArgAction::_Value(BigStr* arg, syntax_asdl::loc_t* locat
 
 bool _ArgAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out) {
   BigStr* arg = nullptr;
-  runtime_asdl::value_t* val = nullptr;
+  value_asdl::value_t* val = nullptr;
   StackRoot _root0(&attached_arg);
   StackRoot _root1(&arg_r);
   StackRoot _root2(&out);
@@ -1796,7 +1799,7 @@ bool _ArgAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attri
 SetToInt::SetToInt(BigStr* name) : _ArgAction(name, false, nullptr) {
 }
 
-runtime_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
+value_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
   int i;
   StackRoot _root0(&arg);
   StackRoot _root1(&location);
@@ -1816,7 +1819,7 @@ runtime_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* locatio
 SetToFloat::SetToFloat(BigStr* name) : _ArgAction(name, false, nullptr) {
 }
 
-runtime_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
+value_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
   double f;
   StackRoot _root0(&arg);
   StackRoot _root1(&location);
@@ -1836,7 +1839,7 @@ runtime_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* locat
 SetToString::SetToString(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid) : _ArgAction(name, quit_parsing_flags, valid) {
 }
 
-runtime_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
+value_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
   StackRoot _root0(&arg);
   StackRoot _root1(&location);
 

@@ -8,6 +8,7 @@
 #include "mycpp/runtime.h"
 
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/frontend_flag_spec.h"
 namespace runtime {  // forward declare
@@ -175,10 +176,10 @@ extern int Float;
 extern int Bool;
 class _Attributes {
  public:
-  _Attributes(Dict<BigStr*, runtime_asdl::value_t*>* defaults);
+  _Attributes(Dict<BigStr*, value_asdl::value_t*>* defaults);
   void SetTrue(BigStr* name);
-  void Set(BigStr* name, runtime_asdl::value_t* val);
-  Dict<BigStr*, runtime_asdl::value_t*>* attrs;
+  void Set(BigStr* name, value_asdl::value_t* val);
+  Dict<BigStr*, value_asdl::value_t*>* attrs;
   List<Tuple2<BigStr*, bool>*>* opt_changes;
   List<Tuple2<BigStr*, bool>*>* shopt_changes;
   List<BigStr*>* actions;
@@ -236,7 +237,7 @@ class _Action {
 class _ArgAction : public _Action {
  public:
   _ArgAction(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid = nullptr);
-  virtual runtime_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
+  virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
 
   BigStr* name;
@@ -259,7 +260,7 @@ class _ArgAction : public _Action {
 class SetToInt : public _ArgAction {
  public:
   SetToInt(BigStr* name);
-  virtual runtime_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
+  virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();
@@ -275,7 +276,7 @@ class SetToInt : public _ArgAction {
 class SetToFloat : public _ArgAction {
  public:
   SetToFloat(BigStr* name);
-  virtual runtime_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
+  virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();
@@ -291,7 +292,7 @@ class SetToFloat : public _ArgAction {
 class SetToString : public _ArgAction {
  public:
   SetToString(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid = nullptr);
-  virtual runtime_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
+  virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ArgAction::field_mask();

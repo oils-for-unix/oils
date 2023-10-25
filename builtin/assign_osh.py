@@ -4,14 +4,11 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import builtin_i
 from _devbuild.gen.runtime_asdl import (
-    value,
-    value_e,
-    value_t,
     scope_e,
     cmd_value,
     AssignArg,
-    LeftName,
 )
+from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
 from _devbuild.gen.syntax_asdl import loc, loc_t, word_t
 
 from core import error

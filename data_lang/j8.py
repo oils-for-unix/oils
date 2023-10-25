@@ -30,7 +30,7 @@ Meta-syntax:
    <> is for non-J8 errors?  For the = oeprator
 """
 
-from _devbuild.gen.runtime_asdl import value, value_e, value_t
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from asdl import format as fmt
 from data_lang import j8_str

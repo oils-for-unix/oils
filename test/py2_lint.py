@@ -66,6 +66,11 @@ class OilsReporter(reporter.Reporter):
 
         if type_name in FATAL_CLASS_NAMES:
             self.num_fatal_errors += 1
+            color = self._stdout.isatty()
+        else:
+            color = False
+
+        if color:
             self._stdout.write(ansi.RED + ansi.BOLD)
             self._stdout.write(str(message))
             self._stdout.write(ansi.RESET)

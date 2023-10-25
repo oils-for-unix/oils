@@ -94,6 +94,7 @@ def NinjaGraph(ru):
                          '//frontend/types.asdl',
                          '//core/optview',
                          '//core/runtime.asdl',
+                         '//core/value.asdl',
                          '//osh/arith_parse',
                          '//ysh/grammar',
                          '//mycpp/runtime',

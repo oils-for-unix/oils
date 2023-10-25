@@ -26,8 +26,9 @@ with SPLIT_REGEX = / digit+ / {
 }
 """
 
-from _devbuild.gen.runtime_asdl import (value, value_e, scope_e, span_e, emit_i,
+from _devbuild.gen.runtime_asdl import ( scope_e, span_e, emit_i,
                                         char_kind_i, state_i)
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from mycpp.mylib import log
 from core import pyutil
 from frontend import consts
@@ -37,7 +38,7 @@ from mycpp.mylib import tagswitch
 from typing import List, Tuple, Dict, Optional, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from core.state import Mem
-    from _devbuild.gen.runtime_asdl import span_t, value_t
+    from _devbuild.gen.runtime_asdl import span_t
     Span = Tuple[span_t, int]
 
 DEFAULT_IFS = ' \t\n'

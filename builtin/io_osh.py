@@ -4,8 +4,7 @@ from errno import EINTR
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value, value_t
-
+from _devbuild.gen.value_asdl import (value, value_t)
 from builtin import read_osh
 from core.error import e_die_status
 from frontend import flag_spec

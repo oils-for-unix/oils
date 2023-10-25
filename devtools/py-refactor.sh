@@ -16,7 +16,7 @@ list() {
 demo() {
   #devtools/py_refactor.py -f itertools_imports builtin/*_osh.py
 
-  devtools/py_refactor.py -f itertools_imports */*.py
+  devtools/py_refactor.py -f itertools_imports */*.py -w
 }
 
 hi() {

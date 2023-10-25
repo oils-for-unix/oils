@@ -8,8 +8,8 @@ from __future__ import print_function
 import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.runtime_asdl import value, value_e, value_t
 from _devbuild.gen.syntax_asdl import (loc, command_t, source, CompoundWord)
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from core import alloc
 from core import main_loop
 from core import error

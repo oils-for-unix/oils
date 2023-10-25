@@ -8,10 +8,9 @@ from _devbuild.gen.runtime_asdl import (
     cmd_value,
     flag_type_e,
     flag_type_t,
-    value,
-    value_t,
 )
 from _devbuild.gen.syntax_asdl import ArgList
+from _devbuild.gen.value_asdl import (value, value_t)
 from core.error import e_usage
 from frontend import args
 from mycpp import mylib

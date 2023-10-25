@@ -1,17 +1,21 @@
+# Runtime value
+
 module value
 {
   # import from frontend/syntax.asdl
   use frontend syntax {
     loc Token
-    expr word command
-    CompoundWord DoubleQuoted
-    ArgList re redir_loc proc_sig 
+    expr command
+    DoubleQuoted
+    re proc_sig 
     LiteralBlock Func
   }
 
   use core runtime {
-    LeftName Cell ProcDefaults
+    Cell
   }
+
+  IntBox = (int i)
 
   ProcDefaults = (
     List[value]? for_word,  # all of them are value.Str
@@ -34,7 +38,6 @@ module value
     Var %LeftName
     # YSH setvar is typed
   | Container(value obj, value index)
-
 
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
   # value instances are stored in state.Mem().
@@ -115,6 +118,13 @@ module value
   | Func(str name, Func parsed,
          List[value] pos_defaults, Dict[str, value] named_defaults,
          Dict[str, Cell]? module_)
+
+    # a[3:5] a[:10] a[3:] a[:]  # both ends are optional
+  | Slice(IntBox? lower, IntBox? upper)
+
+    # for i in (1:n) { echo $i }  # both ends are required
+  | Range(int lower, int upper)
 }
 
 # vim: sw=2
+

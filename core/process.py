@@ -19,14 +19,15 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t,
                                         job_state_str, wait_status,
                                         wait_status_t, RedirValue,
-                                        redirect_arg, redirect_arg_e, value,
-                                        value_e, trace, trace_t)
+                                        redirect_arg, redirect_arg_e, trace,
+                                        trace_t)
 from _devbuild.gen.syntax_asdl import (
     loc_t,
     redir_loc,
     redir_loc_e,
     redir_loc_t,
 )
+from _devbuild.gen.value_asdl import (value, value_e)
 from core import dev
 from core import error
 from core.error import e_die

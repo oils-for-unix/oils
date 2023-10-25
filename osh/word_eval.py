@@ -27,14 +27,9 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
-    value,
-    value_e,
-    value_t,
     part_value,
     part_value_e,
     part_value_t,
-    sh_lvalue,
-    sh_lvalue_t,
     cmd_value,
     cmd_value_e,
     cmd_value_t,
@@ -45,6 +40,13 @@ from _devbuild.gen.runtime_asdl import (
     VarSubState,
 )
 from _devbuild.gen.option_asdl import option_i
+from _devbuild.gen.value_asdl import (
+    value,
+    value_e,
+    value_t,
+    sh_lvalue,
+    sh_lvalue_t,
+)
 from core import error
 from core import pyos
 from core import pyutil

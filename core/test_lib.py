@@ -13,8 +13,9 @@ import string
 import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
-from _devbuild.gen.runtime_asdl import cmd_value, value, scope_e
+from _devbuild.gen.runtime_asdl import cmd_value, scope_e
 from _devbuild.gen.syntax_asdl import loc, source, SourceLine
+from _devbuild.gen.value_asdl import value
 from asdl import pybase
 from builtin import assign_osh
 from builtin import completion_osh

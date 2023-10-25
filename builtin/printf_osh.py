@@ -6,7 +6,7 @@ import time as time_  # avoid name conflict
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
-from _devbuild.gen.runtime_asdl import cmd_value, value, value_e
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import (
     loc,
     loc_e,
@@ -19,6 +19,7 @@ from _devbuild.gen.syntax_asdl import (
     printf_part_t,
 )
 from _devbuild.gen.types_asdl import lex_mode_e, lex_mode_t
+from _devbuild.gen.value_asdl import (value, value_e)
 
 from core import alloc
 from core import error

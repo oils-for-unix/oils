@@ -6,10 +6,10 @@ from __future__ import print_function
 
 import unittest
 
-from _devbuild.gen.runtime_asdl import value
+from _devbuild.gen.value_asdl import value
+from core import state
 from core import test_lib
 from frontend import match
-from core import state
 from osh import prompt  # module under test
 
 

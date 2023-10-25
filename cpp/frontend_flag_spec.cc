@@ -13,8 +13,8 @@ namespace flag_spec {
 using arg_types::kFlagSpecs;
 using arg_types::kFlagSpecsAndMore;
 using runtime_asdl::flag_type_e;
-using runtime_asdl::value;
-using runtime_asdl::value_t;
+using value_asdl::value;
+using value_asdl::value_t;
 
 void _CreateStrList(const char** in, List<BigStr*>* out) {
   int i = 0;
@@ -30,7 +30,7 @@ void _CreateStrList(const char** in, List<BigStr*>* out) {
 }
 
 void _CreateDefaults(DefaultPair_c* in,
-                     Dict<BigStr*, runtime_asdl::value_t*>* out) {
+                     Dict<BigStr*, value_asdl::value_t*>* out) {
   int i = 0;
   while (true) {
     DefaultPair_c* pair = &(in[i]);
@@ -149,7 +149,7 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   out->arity1 = NewDict<BigStr*, args::_Action*>();
   out->actions_long = NewDict<BigStr*, args::_Action*>();
   out->plus_flags = NewList<BigStr*>();
-  out->defaults = NewDict<BigStr*, runtime_asdl::value_t*>();
+  out->defaults = NewDict<BigStr*, value_asdl::value_t*>();
 
   if (in->arity0) {
     _CreateStrList(in->arity0, out->arity0);
@@ -174,7 +174,7 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   out->actions_short = NewDict<BigStr*, args::_Action*>();
   out->actions_long = NewDict<BigStr*, args::_Action*>();
   out->plus_flags = NewList<BigStr*>();
-  out->defaults = NewDict<BigStr*, runtime_asdl::value_t*>();
+  out->defaults = NewDict<BigStr*, value_asdl::value_t*>();
 
   if (in->actions_short) {
     _CreateActions(in->actions_short, out->actions_short);

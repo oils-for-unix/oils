@@ -52,12 +52,6 @@ from _devbuild.gen.syntax_asdl import (
     word,
 )
 from _devbuild.gen.runtime_asdl import (
-    y_lvalue,
-    y_lvalue_e,
-    y_lvalue_t,
-    value,
-    value_e,
-    value_t,
     cmd_value,
     cmd_value_e,
     RedirValue,
@@ -66,9 +60,10 @@ from _devbuild.gen.runtime_asdl import (
     scope_e,
     CommandStatus,
     StatusArray,
-    LeftName,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
+from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
+                                      y_lvalue_e, y_lvalue_t, LeftName)
 
 from core import dev
 from core import error

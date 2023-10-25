@@ -11,12 +11,12 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import (value, value_e, value_t, sh_lvalue,
-                                        sh_lvalue_e, sh_lvalue_t, scope_e,
-                                        scope_t, Cell, LeftName)
+from _devbuild.gen.runtime_asdl import (scope_e, scope_t, Cell)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
+from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
+                                      sh_lvalue_e, sh_lvalue_t, LeftName)
 from asdl import runtime
 from core import error
 from core.error import e_usage, e_die

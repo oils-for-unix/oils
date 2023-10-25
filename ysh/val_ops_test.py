@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import unittest
 
-from _devbuild.gen.runtime_asdl import value
+from _devbuild.gen.value_asdl import value
 from ysh import val_ops  # module under test
 
 

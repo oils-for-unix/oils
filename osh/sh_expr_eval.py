@@ -11,15 +11,7 @@ sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (
-    scope_t,
-    sh_lvalue,
-    sh_lvalue_e,
-    sh_lvalue_t,
-    value,
-    value_e,
-    value_t,
-    LeftName,
-)
+    scope_t, )
 from _devbuild.gen.syntax_asdl import (
     word_t,
     CompoundWord,
@@ -41,6 +33,15 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.types_asdl import bool_arg_type_e
+from _devbuild.gen.value_asdl import (
+    value,
+    value_e,
+    value_t,
+    sh_lvalue,
+    sh_lvalue_e,
+    sh_lvalue_t,
+    LeftName,
+)
 from core import alloc
 from core import error
 from core.error import e_die, e_die_status, e_strict, e_usage

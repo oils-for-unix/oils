@@ -63,10 +63,12 @@ namespace error {  // define
 using syntax_asdl::loc_e;
 using syntax_asdl::loc_t;
 using syntax_asdl::loc;
-using runtime_asdl::value_t;
-using runtime_asdl::value_str;
+using value_asdl::value;
+using value_asdl::value_e;
+using value_asdl::value_t;
+using value_asdl::value_str;
 
-BigStr* _ValType(runtime_asdl::value_t* val) {
+BigStr* _ValType(value_asdl::value_t* val) {
   StackRoot _root0(&val);
 
   return value_str(val->tag(), false);
@@ -137,7 +139,7 @@ AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg
 TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
 }
 
-TypeErr::TypeErr(runtime_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
+TypeErr::TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
 }
 
 [[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location) {

@@ -13,8 +13,9 @@ import unittest
 import sys
 
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import value_e, value, comp_action_e
+from _devbuild.gen.runtime_asdl import comp_action_e
 from _devbuild.gen.syntax_asdl import proc_sig
+from _devbuild.gen.value_asdl import (value, value_e)
 from core import completion  # module under test
 from core import comp_ui
 from core import state

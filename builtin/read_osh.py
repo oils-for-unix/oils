@@ -3,8 +3,9 @@ from __future__ import print_function
 from errno import EINTR
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import (span_e, cmd_value, value, scope_e)
+from _devbuild.gen.runtime_asdl import (span_e, cmd_value, scope_e)
 from _devbuild.gen.syntax_asdl import source, loc
+from _devbuild.gen.value_asdl import value
 from core import alloc
 from core import error
 from core.error import e_usage, e_die

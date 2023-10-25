@@ -8,6 +8,7 @@
 #include "mycpp/runtime.h"
 
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 namespace error {  // forward declare
 
@@ -31,7 +32,7 @@ namespace error {  // forward declare
 namespace error {  // declare
 
 using syntax_asdl::loc;
-BigStr* _ValType(runtime_asdl::value_t* val);
+BigStr* _ValType(value_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
   _ErrorWithLocation(BigStr* msg, syntax_asdl::loc_t* location);
@@ -237,7 +238,7 @@ class TypeErrVerbose : public Expr {
 
 class TypeErr : public TypeErrVerbose {
  public:
-  TypeErr(runtime_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location);
+  TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return TypeErrVerbose::field_mask();

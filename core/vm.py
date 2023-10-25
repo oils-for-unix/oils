@@ -5,12 +5,13 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token
+from _devbuild.gen.value_asdl import value_t
 from core import pyos
 from mycpp.mylib import log
 
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from _devbuild.gen.runtime_asdl import cmd_value, RedirValue, value_t
+    from _devbuild.gen.runtime_asdl import cmd_value, RedirValue
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
     from frontend import typed_args
     from osh import sh_expr_eval
@@ -32,19 +33,7 @@ class ControlFlow(Exception):
     Used by CommandEvaluator and 'source' builtin
 
     break and continue are caught by loops, return is caught by functions.
-
-    NOTE: I tried representing this in ASDL, but in Python the base class has to
-    be BaseException.  Also, 'Token' is in syntax.asdl but not runtime.asdl.
-
-    cflow =
-      -- break, continue, return, exit
-      Shell(Token keyword, int arg)
-      -- break, continue
-    | OilLoop(Token keyword)
-      -- return
-    | OilReturn(Token keyword, value val)
     """
-
     pass
 
 

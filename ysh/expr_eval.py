@@ -41,15 +41,9 @@ from _devbuild.gen.runtime_asdl import (
     scope_t,
     part_value,
     part_value_t,
-    y_lvalue,
-    y_lvalue_e,
-    y_lvalue_t,
-    value,
-    value_e,
-    value_t,
-    IntBox,
-    LeftName,
 )
+from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
+                                      y_lvalue_e, y_lvalue_t, IntBox, LeftName)
 from core import error
 from core.error import e_die, e_die_status
 from core import state
@@ -920,7 +914,8 @@ class ExprEvaluator(object):
             elif case(expr_e.Place):
                 node = cast(expr.Place, UP_node)
                 frame = self.mem.TopNamespace()
-                return value.Place(LeftName(node.var_name, node.blame_tok), frame)
+                return value.Place(LeftName(node.var_name, node.blame_tok),
+                                   frame)
 
             elif case(expr_e.CommandSub):
                 node = cast(CommandSub, UP_node)

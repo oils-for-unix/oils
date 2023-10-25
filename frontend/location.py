@@ -40,7 +40,7 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr_e,
     arith_expr_t,
 )
-from _devbuild.gen.runtime_asdl import LeftName
+from _devbuild.gen.value_asdl import LeftName
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
 

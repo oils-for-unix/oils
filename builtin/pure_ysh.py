@@ -3,9 +3,9 @@ builtin/pure_ysh.py - YSH builtins that don't do I/O.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (value, value_e, value_t, cmd_value,
-                                        scope_e, LeftName)
+from _devbuild.gen.runtime_asdl import (cmd_value, scope_e)
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
 from core import error
 from core import state
 from core import vm

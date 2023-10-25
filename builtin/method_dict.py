@@ -2,7 +2,8 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (value, value_t)
+from _devbuild.gen.value_asdl import (value, value_t)
+
 from core import vm
 from frontend import typed_args
 from mycpp.mylib import log

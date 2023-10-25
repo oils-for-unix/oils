@@ -4,8 +4,9 @@ func_misc.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (value, value_str, value_t, value_e,
-                                        scope_e)
+from _devbuild.gen.runtime_asdl import (scope_e)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
+
 from core import error
 from core import ui
 from core import vm

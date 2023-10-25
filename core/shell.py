@@ -8,9 +8,10 @@ import time
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
-from _devbuild.gen.runtime_asdl import value, value_e, scope_e
+from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import (loc, source, source_t, IntParamBox,
                                        debug_frame, debug_frame_t)
+from _devbuild.gen.value_asdl import (value, value_e)
 from core import alloc
 from core import comp_ui
 from core import dev

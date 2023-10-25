@@ -5,8 +5,9 @@ import unittest
 import os.path
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import scope_e, sh_lvalue, value, value_e
+from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import source, SourceLine
+from _devbuild.gen.value_asdl import (value, value_e, sh_lvalue)
 from asdl import runtime
 from core import error
 from core import test_lib

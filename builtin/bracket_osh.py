@@ -2,9 +2,9 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import loc, word, word_e, word_t, bool_expr
 from _devbuild.gen.types_asdl import lex_mode_e
+from _devbuild.gen.value_asdl import value
 
 from core import error
 from core.error import e_usage, p_die

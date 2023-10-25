@@ -1,7 +1,8 @@
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import scope_e, value, value_e
+from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.value_asdl import (value, value_e)
 
 from core import error
 from core import state

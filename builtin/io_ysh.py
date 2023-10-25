@@ -5,8 +5,9 @@ builtin/io_ysh.py - YSH builtins that perform I/O
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import value, cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
+from _devbuild.gen.value_asdl import value
 from core import error
 from core.error import e_usage
 from core import state

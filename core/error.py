@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
-from _devbuild.gen.runtime_asdl import value_t, value_str
+from _devbuild.gen.value_asdl import (value_t, value_str)
 
 from typing import NoReturn
 
