@@ -25,7 +25,14 @@ module value
 
   LeftName = (str name, loc blame_loc)
 
-  # For local assignment
+  # for read (&x)   that is, value.Place
+  y_lvalue = 
+    Var %LeftName
+    # YSH setvar is typed
+  | Container(value obj, value index)
+
+  # An sh_lvalue is for things mutation that happen with dynamic scope
+  #
   # - sh_expr_eval uses this for unset / printf -v
   # - word_eval uses this for ${a[0]=}
   # - expr_eval / cmd_eval use this for setvar a[i] = 42
@@ -34,15 +41,13 @@ module value
   | Indexed(str name, int index, loc blame_loc)
   | Keyed(str name, str key, loc blame_loc)
 
-  y_lvalue = 
-    Var %LeftName
-    # YSH setvar is typed
-  | Container(value obj, value index)
-
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
-  # value instances are stored in state.Mem().
+  # value_t instances are stored in state.Mem().
   value =
-    # A var bound to Undef is different than no binding because of dynamic scope.
+    # A var bound to Undef is different than no binding because of dynamic
+    # scope.  Undef can shadow values lower on the stack.
+    #
+    # Methods on state.Mem return value.Undef, but it's not visible in YSH.
     Undef
 
   | Str(str s)
@@ -79,19 +84,14 @@ module value
   | Command(command c)
 
     # for Hay to get the backing lines
-    # TODO: all value.Command should have the backing lines
+    # TODO: Consolidate value.Command and value.LiteralBlock.  All Command
+    # instance should have backing lines.
 
     # TODO: ASDL doesn't support shared variant across module
     # This would be more efficient
   # | LiteralBlock %LiteralBlock
   | Block(LiteralBlock block)
 
-    # An sh_lvalue is for things mutation that happen with dynamic scope
-    # (including in the same stack frame)
-    #   unset 'a[0]'
-    #   : ${a[0]=}
-    #   printf -v 'a[0]'
-    #
     # A place has an additional stack frame where the value is evaluated.
     # The frame MUST be lower on the stack at the time of use.
   | Place(y_lvalue lval, Dict[str, Cell] frame)
@@ -100,8 +100,13 @@ module value
     # Flags :spec { .flag -v --verbose }
   | Frame(Dict[str, Cell] fr)
 
-    # callable is vm._Callable.  TODO: ASDL should be able to express and
-    # "inline" such types?  Maybe we need a forward declaration of it.
+    # This has methods attached to it, and it may also have a cmd_ev instance.
+  | IO(any obj)
+
+    # callable is vm._Callable.
+    # TODO: ASDL needs some kind of "extern" to declare vm._Callable and
+    # cmd_eval.CommandEvaluator.  I think it would just generate a forward
+    # declaration.
   | BuiltinFunc(any callable)
   | BuiltinMethod(value me, any callable)
 

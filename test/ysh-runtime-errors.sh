@@ -52,6 +52,15 @@ _should-run() {
 # Cases
 #
 
+test-no-typed-args() {
+  # Hm these could both be J8 notation
+  #_error-case 'echo (42)'
+  #_error-case 'write (42)'
+
+  _error-case-X 2 'true (42)'
+  _error-case-X 2 'false { echo hi }'
+}
+
 test-undefined-vars() {
   set +o errexit
 

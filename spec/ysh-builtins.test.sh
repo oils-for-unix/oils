@@ -44,7 +44,7 @@ echo status=$?
 ## status: 3
 
 #### write --sep, --end, -n, varying flag syntax
-shopt -s oil:all
+shopt -s ysh:all
 var a = %('a b' 'c d')
 write @a
 write .
@@ -120,21 +120,21 @@ write --j8 --unicode x $'\u{3bc}'
 ## END
 
 #### write  -e not supported
-shopt -s oil:all
+shopt -s ysh:all
 write -e foo
 write status=$?
 ## stdout-json: ""
 ## status: 2
 
 #### write syntax error
-shopt -s oil:all
+shopt -s ysh:all
 write ---end foo
 write status=$?
 ## stdout-json: ""
 ## status: 2
 
 #### write --
-shopt -s oil:all
+shopt -s ysh:all
 write --
 # This is annoying
 write -- --
@@ -202,7 +202,7 @@ z=foo
 ## END
 
 #### read --line --with-eol
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 # Hm this preserves the newline?
 seq 3 | while read --line {
@@ -363,7 +363,7 @@ echo status=$?
 [ -n foo ]
 echo status=$?
 
-shopt --set oil:all
+shopt --set ysh:all
 shopt --unset errexit
 
 test -n "foo" -a -n "bar"
@@ -413,7 +413,7 @@ status=2
 
 
 #### push-registers
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset errexit
 
 status_code() {
