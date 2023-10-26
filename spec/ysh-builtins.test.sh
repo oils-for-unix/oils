@@ -1,5 +1,5 @@
 
-## oils_failures_allowed: 6
+## oils_failures_allowed: 7
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -184,7 +184,7 @@ x=spam y=eggs
 x=foo y=bar
 ## END
 
-#### Idiom for returning 'read'
+#### OLD setref Idiom for returning 'read'
 shopt --set parse_proc
 
 proc p(out Ref) {
@@ -199,6 +199,15 @@ p :z
 echo z=$z
 ## STDOUT:
 z=foo
+## END
+
+#### read (&x)
+
+var x = null  # allow no initialization
+echo hello | read (&x)
+echo x=$x
+
+## STDOUT:
 ## END
 
 #### read --line --with-eol
