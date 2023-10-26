@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 16
 ## compare_shells: bash
 
 
@@ -189,6 +189,78 @@ mv is /tmp/mv
 tar is /tmp/tar
 grep is /tmp/grep
 ## END
+
+#### type -a -> function
+f () { :; }
+type -a f
+## stdout-json: "f is a function\nf () \n{ \n    :\n}\n"
+
+#### type -ap -> function
+f () { :; }
+type -ap f
+## status: 0
+## stdout-json: ""
+
+#### type -a -> alias
+shopt -s expand_aliases
+alias ll="ls -lha"
+type -a ll
+## stdout-json: "ll is aliased to `ls -lha'\n"
+
+#### type -ap -> alias
+shopt -s expand_aliases
+alias ll="ls -lha"
+type -ap ll
+## status: 0
+## stdout-json: ""
+
+#### type -a -> builtin
+type -a cd
+## stdout: cd is a shell builtin
+
+#### type -ap -> builtin
+type -ap cd
+## status: 0
+## stdout-json: ""
+
+#### type -a -> keyword
+type -a while
+## stdout: while is a shell keyword
+
+#### type -a -> file
+type -a date
+## STDOUT:
+date is /usr/bin/date
+date is /bin/date
+## END
+
+#### type -ap -> file
+type -ap date
+## STDOUT:
+/usr/bin/date
+/bin/date
+## END
+
+#### type -a -> builtin and file
+type -a pwd
+## STDOUT:
+pwd is a shell builtin
+pwd is /usr/bin/pwd
+pwd is /bin/pwd
+## END
+
+#### type -ap -> builtin and file
+type -ap pwd
+## STDOUT:
+/usr/bin/pwd
+/bin/pwd
+## END
+
+#### type -a -> executable not in PATH
+touch /tmp/executable
+chmod +x /tmp/executable
+type -a executable
+## status: 1
 
 #### mapfile
 type mapfile >/dev/null 2>&1 || exit 0
