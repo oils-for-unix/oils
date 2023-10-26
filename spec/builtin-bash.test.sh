@@ -229,32 +229,22 @@ type -a while
 
 #### type -a -> file
 type -a date
-## STDOUT:
-date is /usr/bin/date
-date is /bin/date
-## END
+## stdout: date is /bin/date
 
 #### type -ap -> file
 type -ap date
-## STDOUT:
-/usr/bin/date
-/bin/date
-## END
+## stdout: /bin/date
 
 #### type -a -> builtin and file
 type -a pwd
 ## STDOUT:
 pwd is a shell builtin
-pwd is /usr/bin/pwd
 pwd is /bin/pwd
 ## END
 
 #### type -ap -> builtin and file
 type -ap pwd
-## STDOUT:
-/usr/bin/pwd
-/bin/pwd
-## END
+## stdout: /bin/pwd
 
 #### type -a -> executable not in PATH
 touch /tmp/executable
