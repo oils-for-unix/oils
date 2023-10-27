@@ -411,7 +411,14 @@ static PyMethodDef methods[] = {
 #endif
 
 void initlibc(void) {
-  Py_InitModule("libc", methods);
+  PyObject *module;
+
+  module = Py_InitModule("libc", methods);
+  if (module != NULL) {
+      PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
+      PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
+  }
+
   errno_error = PyErr_NewException("libc.error",
                                     PyExc_IOError, NULL);
 }

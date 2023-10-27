@@ -111,9 +111,6 @@ IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
 
-# flags for fnmatch
-FnmCasefold = 1 << 4
-
 # Python type name -> YSH type name
 YSH_TYPE_NAMES = {
     'bool': 'Bool',
@@ -1454,9 +1451,7 @@ class CommandEvaluator(object):
         # type: (command.Case) -> int
 
         to_match = self._EvalCaseArg(node.to_match, node.case_kw)
-        eval_flags = 0
-        if self.exec_opts.nocasematch():
-            eval_flags |= FnmCasefold
+        fnmatch_flags = libc.FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
         self._MaybeRunDebugTrap()
 
         status = 0  # If there are no arms, it should be zero?
@@ -1475,7 +1470,7 @@ class CommandEvaluator(object):
                         word_val = self.word_ev.EvalWordToString(
                             pat_word, word_eval.QUOTE_FNMATCH)
 
-                        if libc.fnmatch(word_val.s, to_match_str.s, eval_flags):
+                        if libc.fnmatch(word_val.s, to_match_str.s, fnmatch_flags):
                             status = self._ExecuteList(case_arm.action)
                             matched = True  # TODO: Parse ;;& and for fallthrough and such?
                             break
