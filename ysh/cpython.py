@@ -4,12 +4,8 @@ cpython.py - temporary bridge
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (
-    value,
-    value_e,
-    value_t,
-)
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from core import error
 from core import vm
 from mycpp.mylib import log, NewDict, tagswitch

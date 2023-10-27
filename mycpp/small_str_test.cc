@@ -76,7 +76,7 @@ class HeapStr {
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::Str();
+    return ObjHeader::BigStr();
   }
 
   ObjHeader header_;

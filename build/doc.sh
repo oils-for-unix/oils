@@ -81,9 +81,15 @@ readonly MARKDOWN_DOCS=(
   simple-word-eval
   quirks
   warts
+
   eggex
   upgrade-breakage
   ysh-tour
+
+  style-guide
+  novelties
+
+  proc-func
 
   # Data language
   qsn
@@ -116,7 +122,6 @@ readonly MARKDOWN_DOCS=(
   old/project-tour
   old/legacy-array
   old/ysh-keywords
-  old/proc-block-func
   old/modules
   old/expression-language
   old/word-language

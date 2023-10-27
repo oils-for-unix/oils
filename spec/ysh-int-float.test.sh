@@ -100,7 +100,7 @@ shopt -s ysh:upgrade
 
 var zeros = []
 for i in (1 .. 324) {
-  _ zeros->append('0')
+  :: zeros->append('0')
 }
 
 #= zeros

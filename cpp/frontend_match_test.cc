@@ -11,7 +11,7 @@ TEST lexer_test() {
 
   match::SimpleLexer* lex = match::BraceRangeLexer(StrFromC("{-1..22}"));
 
-  List<Tuple2<Id_t, Str*>*>* toks = lex->Tokens();
+  List<Tuple2<Id_t, BigStr*>*>* toks = lex->Tokens();
   for (int i = 0; i < len(toks); i++) {
     auto* t = toks->at(i);
     int id = t->at0();
@@ -41,8 +41,8 @@ TEST func_test() {
   ASSERT_EQ(Id::Op_LParen, match::BracketOther(StrFromC("(")));
 
   // This still works, but can't it overflow a buffer?
-  Str* s = StrFromC("!= ");
-  Str* stripped = s->strip();
+  BigStr* s = StrFromC("!= ");
+  BigStr* stripped = s->strip();
 
   ASSERT_EQ(3, len(s));
   ASSERT_EQ(2, len(stripped));

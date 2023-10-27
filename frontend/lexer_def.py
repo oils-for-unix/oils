@@ -302,6 +302,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
     C(',', Id.Lit_Comma),
     C('=', Id.Lit_Equals),  # for = f(x) and x = 1+2*3
     C('_', Id.Lit_Underscore),  # for _ f(x)
+    C('::', Id.Lit_DColon),  # for  :: f(x)
     C('@', Id.Lit_At),  # for detecting @[, @' etc. shopt -s parse_at_all
 
     # @array and @func(1, c)
@@ -870,7 +871,7 @@ LEXER_DEF[lex_mode_e.Expr] = \
     #
 
     C(',', Id.Arith_Comma),
-    C(':', Id.Arith_Colon),   # for slicing a[1:2]
+    C(':', Id.Arith_Colon),   # for slicing a[1:2], and mylist:pop()
 
     C('?', Id.Arith_QMark),   # regex postfix
 
@@ -918,12 +919,15 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('/=', Id.Arith_SlashEqual),
     C('%=', Id.Arith_PercentEqual),
 
+    C('>>=', Id.Arith_DGreatEqual),
+    C('<<=', Id.Arith_DLessEqual),
     C('&=', Id.Arith_AmpEqual),
     C('|=', Id.Arith_PipeEqual),
     C('^=', Id.Arith_CaretEqual),  # Exponentiation
 
-    C('>>=', Id.Arith_DGreatEqual),
-    C('<<=', Id.Arith_DLessEqual),
+    # Augmented assignment that YSH has, but sh and OSH don't have
+    C('**=', Id.Expr_DStarEqual),
+    C('//=', Id.Expr_DSlashEqual),
 
     #
     # Expr
@@ -934,11 +938,9 @@ LEXER_DEF[lex_mode_e.Expr] = \
     C('//', Id.Expr_DSlash),  # For YSH integer division
     C('~==', Id.Expr_TildeDEqual),  # approximate equality
 
-    C('.', Id.Expr_Dot),      # attribute access (static or dynamic)
+    C('.', Id.Expr_Dot),      # d.key is alias for d['key']
     C('..', Id.Expr_DDot),    # range 1..5
-    C('::', Id.Expr_DColon),  # static namespace access
-    C('->', Id.Expr_RArrow),  # dynamic dict access: be d->name->age
-                            # instead of d['name']['age']
+    C('->', Id.Expr_RArrow),  # s->startswith()
     C('$', Id.Expr_Dollar),   # legacy regex end: /d+ $/ (better written /d+ >/
 
     # Reserved this.  Go uses it for channels, etc.

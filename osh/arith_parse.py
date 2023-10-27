@@ -177,7 +177,7 @@ if mylib.PYTHON:
         spec.LeftRightAssoc(3, tdop.LeftAssign, [
             Id.Arith_Equal, Id.Arith_PlusEqual, Id.Arith_MinusEqual,
             Id.Arith_StarEqual, Id.Arith_SlashEqual, Id.Arith_PercentEqual,
-            Id.Arith_DLessEqual, Id.Arith_DGreatEqual, Id.Arith_AmpEqual,
+            Id.Arith_DGreatEqual, Id.Arith_DLessEqual, Id.Arith_AmpEqual,
             Id.Arith_CaretEqual, Id.Arith_PipeEqual
         ])
 

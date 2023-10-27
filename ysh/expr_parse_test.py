@@ -15,6 +15,7 @@ from frontend import reader
 
 
 class ExprParseTest(unittest.TestCase):
+
     def setUp(self):
         """Done on every test."""
         self.arena = alloc.Arena()

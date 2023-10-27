@@ -21,13 +21,13 @@ namespace posix {
 
 mode_t umask(mode_t mask);
 
-inline bool access(Str* pathname, int mode) {
+inline bool access(BigStr* pathname, int mode) {
   // No error case: 0 is success, -1 is error AND false.
   return ::access(pathname->data_, mode) == 0;
 }
 
-inline Str* getcwd() {
-  Str* result = OverAllocatedStr(PATH_MAX);
+inline BigStr* getcwd() {
+  BigStr* result = OverAllocatedStr(PATH_MAX);
   char* p = ::getcwd(result->data_, PATH_MAX);
   if (p == nullptr) {
     throw Alloc<OSError>(errno);
@@ -64,7 +64,7 @@ inline bool isatty(int fd) {
   return ::isatty(fd);
 }
 
-inline Str* strerror(int err_num) {
+inline BigStr* strerror(int err_num) {
   // No error case: returns an appropriate string if err_num is invalid
   return StrFromC(::strerror(err_num));
 }
@@ -83,7 +83,7 @@ inline void close(int fd) {
   }
 }
 
-void putenv(Str* name, Str* value);
+void putenv(BigStr* name, BigStr* value);
 
 inline int fork() {
   int result = ::fork();
@@ -98,7 +98,7 @@ inline void _exit(int status) {
   ::_exit(status);
 }
 
-inline void write(int fd, Str* s) {
+inline void write(int fd, BigStr* s) {
   //
   // IMPORTANT TODO: Write in a loop like posix_write() in pyext/posixmodule.c
   //
@@ -137,16 +137,17 @@ inline int tcgetpgrp(int fd) {
 // Can we use fcntl instead?
 void dup2(int oldfd, int newfd);
 
-int open(Str* path, int flags, int perms);
+int open(BigStr* path, int flags, int perms);
 
-mylib::LineReader* fdopen(int fd, Str* c_mode);
+mylib::LineReader* fdopen(int fd, BigStr* c_mode);
 
-void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ);
+void execve(BigStr* argv0, List<BigStr*>* argv,
+            Dict<BigStr*, BigStr*>* environ);
 
 void kill(int pid, int sig);
 void killpg(int pgid, int sig);
 
-List<Str*>* listdir(Str* path);
+List<BigStr*>* listdir(BigStr* path);
 
 }  // namespace posix
 
@@ -157,7 +158,7 @@ time_t time();
 // Note: This is translated in a weird way, unlike Python's API.  Might want to
 // factor out our own API with better types.
 time_t localtime(time_t ts);
-Str* strftime(Str* s, time_t ts);
+BigStr* strftime(BigStr* s, time_t ts);
 void sleep(int seconds);
 
 }  // namespace time_

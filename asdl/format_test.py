@@ -10,6 +10,7 @@ from _devbuild.gen import typed_demo_asdl as demo_asdl  # module under test
 
 
 class FormatTest(unittest.TestCase):
+
     def testSimpleSum(self):
         node = demo_asdl.op_id_e.Plus
         # This calls __repr__, but does NOT call asdl/format.py

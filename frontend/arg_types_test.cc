@@ -1,13 +1,13 @@
 #include "_gen/frontend/arg_types.h"
-#include "_gen/core/runtime.asdl.h"
+#include "_gen/core/value.asdl.h"
 #include "vendor/greatest.h"
 
-using runtime_asdl::value;
+using value_asdl::value;
 
 TEST opaque_test() {
   // struct for command -v is HeapTag::Opaque
 
-  auto attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
+  auto attrs = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
   StackRoots _r({&attrs});
 
   auto b = Alloc<value::Bool>(true);
@@ -26,9 +26,9 @@ TEST opaque_test() {
 }
 
 TEST pointer_test() {
-  // struct for printf -v is has Str*
+  // struct for printf -v is has BigStr*
 
-  auto attrs = Alloc<Dict<Str*, runtime_asdl::value_t*>>();
+  auto attrs = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
   StackRoots _r({&attrs});
 
   auto s = Alloc<value::Str>(StrFromC("hi %s"));

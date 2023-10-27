@@ -14,6 +14,7 @@ from typing import List
 
 
 class AST(object):
+
     def Print(self, f, indent):
         raise NotImplementedError()
 
@@ -24,6 +25,7 @@ class AST(object):
 
 
 class Use(AST):
+
     def __init__(self, module_parts, type_names):
         self.module_parts = module_parts
         self.type_names = type_names
@@ -36,6 +38,7 @@ class Use(AST):
 
 
 class Module(AST):
+
     def __init__(self, name, uses, dfns):
         self.name = name
         self.uses = uses
@@ -142,6 +145,7 @@ class ParameterizedType(AST):
 
 
 class Field(AST):
+
     def __init__(self, typ, name):
         # type: (AST, str) -> None
         self.typ = typ  # type expression
@@ -165,6 +169,7 @@ class _CompoundAST(AST):
 
 
 class Constructor(_CompoundAST):
+
     def __init__(self, name, shared_type=None, fields=None):
         _CompoundAST.__init__(self, fields)
         self.name = name
@@ -186,6 +191,7 @@ class Constructor(_CompoundAST):
 
 
 class Sum(AST):
+
     def __init__(self, types, generate=None):
         self.types = types  # type: List[Constructor]
         self.generate = generate or []
@@ -205,6 +211,7 @@ class SimpleSum(Sum):
 
 
 class Product(_CompoundAST):
+
     def __init__(self, fields):
         _CompoundAST.__init__(self, fields)
 

@@ -8,6 +8,7 @@
 #include "mycpp/runtime.h"
 
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 namespace error {  // forward declare
 
@@ -31,14 +32,14 @@ namespace error {  // forward declare
 namespace error {  // declare
 
 using syntax_asdl::loc;
-Str* _ValType(runtime_asdl::value_t* val);
+BigStr* _ValType(value_asdl::value_t* val);
 class _ErrorWithLocation {
  public:
-  _ErrorWithLocation(Str* msg, syntax_asdl::loc_t* location);
+  _ErrorWithLocation(BigStr* msg, syntax_asdl::loc_t* location);
   bool HasLocation();
-  Str* UserErrorString();
+  BigStr* UserErrorString();
   syntax_asdl::loc_t* location;
-  Str* msg;
+  BigStr* msg;
   
   static constexpr uint32_t field_mask() {
     return maskbit(offsetof(_ErrorWithLocation, location))
@@ -54,7 +55,7 @@ class _ErrorWithLocation {
 
 class Usage : public _ErrorWithLocation {
  public:
-  Usage(Str* msg, syntax_asdl::loc_t* location);
+  Usage(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ErrorWithLocation::field_mask();
@@ -69,9 +70,9 @@ class Usage : public _ErrorWithLocation {
 
 class Runtime {
  public:
-  Runtime(Str* msg);
-  Str* UserErrorString();
-  Str* msg;
+  Runtime(BigStr* msg);
+  BigStr* UserErrorString();
+  BigStr* msg;
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(1, sizeof(Runtime));
@@ -82,7 +83,7 @@ class Runtime {
 
 class Parse : public _ErrorWithLocation {
  public:
-  Parse(Str* msg, syntax_asdl::loc_t* location);
+  Parse(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ErrorWithLocation::field_mask();
@@ -97,7 +98,7 @@ class Parse : public _ErrorWithLocation {
 
 class FailGlob : public _ErrorWithLocation {
  public:
-  FailGlob(Str* msg, syntax_asdl::loc_t* location);
+  FailGlob(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ErrorWithLocation::field_mask();
@@ -112,7 +113,7 @@ class FailGlob : public _ErrorWithLocation {
 
 class RedirectEval : public _ErrorWithLocation {
  public:
-  RedirectEval(Str* msg, syntax_asdl::loc_t* location);
+  RedirectEval(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return _ErrorWithLocation::field_mask();
@@ -127,7 +128,7 @@ class RedirectEval : public _ErrorWithLocation {
 
 class FatalRuntime : public _ErrorWithLocation {
  public:
-  FatalRuntime(int exit_status, Str* msg, syntax_asdl::loc_t* location);
+  FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location);
   int ExitStatus();
 
   int exit_status;
@@ -145,7 +146,7 @@ class FatalRuntime : public _ErrorWithLocation {
 
 class Strict : public FatalRuntime {
  public:
-  Strict(Str* msg, syntax_asdl::loc_t* location);
+  Strict(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return FatalRuntime::field_mask();
@@ -160,7 +161,7 @@ class Strict : public FatalRuntime {
 
 class ErrExit : public FatalRuntime {
  public:
-  ErrExit(int exit_status, Str* msg, syntax_asdl::loc_t* location, bool show_code = false);
+  ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code = false);
 
   bool show_code;
   
@@ -177,7 +178,7 @@ class ErrExit : public FatalRuntime {
 
 class Expr : public FatalRuntime {
  public:
-  Expr(Str* msg, syntax_asdl::loc_t* location);
+  Expr(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return FatalRuntime::field_mask();
@@ -192,7 +193,7 @@ class Expr : public FatalRuntime {
 
 class UserError : public FatalRuntime {
  public:
-  UserError(int status, Str* msg, syntax_asdl::loc_t* location);
+  UserError(int status, BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return FatalRuntime::field_mask();
@@ -207,7 +208,7 @@ class UserError : public FatalRuntime {
 
 class AssertionErr : public Expr {
  public:
-  AssertionErr(Str* msg, syntax_asdl::loc_t* location);
+  AssertionErr(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return Expr::field_mask();
@@ -222,7 +223,7 @@ class AssertionErr : public Expr {
 
 class TypeErrVerbose : public Expr {
  public:
-  TypeErrVerbose(Str* msg, syntax_asdl::loc_t* location);
+  TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return Expr::field_mask();
@@ -237,7 +238,7 @@ class TypeErrVerbose : public Expr {
 
 class TypeErr : public TypeErrVerbose {
  public:
-  TypeErr(runtime_asdl::value_t* actual_val, Str* msg, syntax_asdl::loc_t* location);
+  TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
     return TypeErrVerbose::field_mask();
@@ -250,11 +251,11 @@ class TypeErr : public TypeErrVerbose {
   DISALLOW_COPY_AND_ASSIGN(TypeErr)
 };
 
-[[noreturn]] void e_usage(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void e_strict(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void p_die(Str* msg, syntax_asdl::loc_t* location);
-[[noreturn]] void e_die(Str* msg, syntax_asdl::loc_t* location = nullptr);
-[[noreturn]] void e_die_status(int status, Str* msg, syntax_asdl::loc_t* location = nullptr);
+[[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void e_strict(BigStr* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void p_die(BigStr* msg, syntax_asdl::loc_t* location);
+[[noreturn]] void e_die(BigStr* msg, syntax_asdl::loc_t* location = nullptr);
+[[noreturn]] void e_die_status(int status, BigStr* msg, syntax_asdl::loc_t* location = nullptr);
 
 
 }  // declare namespace error

@@ -12,9 +12,9 @@
 
 // The structures must be layout compatible!  Protect against typos.
 
-#define ASSERT_GLOBAL_STR(field)                                       \
-  static_assert(offsetof(Str, field) == offsetof(GlobalStr<1>, field), \
-                "Str and GlobalStr should be consistent");
+#define ASSERT_GLOBAL_STR(field)                                          \
+  static_assert(offsetof(BigStr, field) == offsetof(GlobalStr<1>, field), \
+                "BigStr and GlobalStr should be consistent");
 ASSERT_GLOBAL_STR(len_);
 // NOTE: offsetof doesn't work with bitfields...
 // ASSERT_GLOBAL_STR(hash_);
@@ -69,7 +69,7 @@ TEST field_masks_test() {
   L->append(1);
   log("List mask = %d", FIELD_MASK(*ObjHeader::FromObject(L)));
 
-  auto d = Alloc<Dict<Str*, int>>();
+  auto d = Alloc<Dict<BigStr*, int>>();
   StackRoots _roots2({&d});
 
   auto key = StrFromC("foo");
@@ -87,7 +87,7 @@ TEST field_masks_test() {
   ShowFixedChildren(d);
 #endif
 
-  auto L2 = NewList<Str*>();
+  auto L2 = NewList<BigStr*>();
   StackRoots _roots3({&L2});
 
   auto s = StrFromC("foo");
@@ -148,16 +148,16 @@ TEST list_resize_policy_test() {
   }
 
   log("");
-  log("\tList<Str*>");
-  log("\tNumItems2 %d", List<Str*>::kNumItems2);
+  log("\tList<BigStr*>");
+  log("\tNumItems2 %d", List<BigStr*>::kNumItems2);
 
   // Note: on 32-bit systems, this should be the same
 
-  auto big = NewList<Str*>();
+  auto big = NewList<BigStr*>();
   for (int i = 0; i < 20; ++i) {
     big->append(kEmptyString);
     int c = big->capacity_;
-    int slab_bytes = sizeof(ObjHeader) + c * sizeof(Str*);
+    int slab_bytes = sizeof(ObjHeader) + c * sizeof(BigStr*);
     log("desired %3d how many %3d slab bytes %3d", i, c, slab_bytes);
   }
 
@@ -186,18 +186,18 @@ TEST dict_resize_policy_test() {
   }
 
   log("");
-  log("\tDict<Str*, int>");
+  log("\tDict<BigStr*, int>");
 
-  log("\tkNumItems2 %d", Dict<Str*, int>::kNumItems2);
-  log("\tkHeaderFudge %d", Dict<Str*, int>::kHeaderFudge);
+  log("\tkNumItems2 %d", Dict<BigStr*, int>::kNumItems2);
+  log("\tkHeaderFudge %d", Dict<BigStr*, int>::kHeaderFudge);
 
-  auto big = Alloc<Dict<Str*, int>>();
+  auto big = Alloc<Dict<BigStr*, int>>();
 
   for (int i = 0; i < 20; ++i) {
-    Str* key = str_repeat(StrFromC("x"), i);
+    BigStr* key = str_repeat(StrFromC("x"), i);
     big->set(key, i);
     int c = big->capacity_;
-    int slab_k = sizeof(ObjHeader) + c * sizeof(Str*);
+    int slab_k = sizeof(ObjHeader) + c * sizeof(BigStr*);
     int slab_v = sizeof(ObjHeader) + c * sizeof(int);
 
     int x = big->index_len_;
@@ -306,12 +306,12 @@ TEST slab_trace_test() {
   gHeap.Collect();
   ASSERT_NUM_LIVE_OBJS(0);
 
-  List<Str*>* strings = nullptr;
-  Str* tmp = nullptr;
+  List<BigStr*>* strings = nullptr;
+  BigStr* tmp = nullptr;
   StackRoots _roots({&strings, &tmp});
 
   // List of strings
-  strings = Alloc<List<Str*>>();
+  strings = Alloc<List<BigStr*>>();
   ASSERT_NUM_LIVE_OBJS(1);
 
   // +2: slab and string
@@ -341,8 +341,8 @@ TEST slab_trace_test() {
 TEST global_trace_test() {
   gHeap.Collect();
 
-  Str* l4 = nullptr;
-  List<Str*>* strings = nullptr;
+  BigStr* l4 = nullptr;
+  List<BigStr*>* strings = nullptr;
 
   int num_roots;
   num_roots = gHeap.roots_.size();
@@ -362,7 +362,7 @@ TEST global_trace_test() {
 
   // Heap reference to global
 
-  strings = Alloc<List<Str*>>();
+  strings = Alloc<List<BigStr*>>();
   ASSERT_NUM_LIVE_OBJS(1);
 
   // We now have the Slab too
@@ -447,7 +447,7 @@ TEST inheritance_test() {
 }
 
 TEST stack_roots_test() {
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   List<int>* L = nullptr;
 
   gHeap.Collect();

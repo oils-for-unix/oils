@@ -11,11 +11,13 @@ module runtime
     LiteralBlock Func
   }
 
-  IntBox = (int i)
+  use core value {
+    value
+  }
 
   # Evaluating SimpleCommand results in either an argv array or an assignment.
   # in 'local foo', rval is None.
-  AssignArg = (str var_name, value? rval, bool plus_eq, word blame_word)
+  AssignArg = (str var_name, value? rval, bool plus_eq, CompoundWord blame_word)
 
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
@@ -27,12 +29,6 @@ module runtime
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
-
-  ProcDefaults = (
-    List[value]? for_word,  # all of them are value.Str
-    List[value]? for_typed,  # block default is also here
-    Dict[str, value]? for_named,
-  )
 
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
@@ -50,79 +46,6 @@ module runtime
   | ExtGlob(List[part_value] part_vals)
 
   coerced = Int | Float | Neither
-
-  # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
-  # value instances are stored in state.Mem().
-  value =
-    # A var bound to Undef is different than no binding because of dynamic scope.
-    Undef
-
-  | Str(str s)
-
-    # "holes" in the array are represented by None
-    # TODO: Use Dict[int, str] representation
-  | BashArray(List[str] strs)
-  | BashAssoc(Dict[str, str] d)
-
-    # DATA model for YSH follows JSON.  Note: YSH doesn't have 'undefined' and
-    # 'null' like JavaScript, just 'null'.
-  | Null
-  | Bool(bool b)
-  | Int(int i)
-  | Float(float f)
-  | List(List[value] items)
-  | Dict(Dict[str, value] d)
-
-  # CODE types
-  #   unevaluated: Eggex, Expr, Template, Command/Block
-  #   callable, in separate namespaces: Func, BoundFunc, Proc
-
-    # / d+ /
-  | Eggex(re expr, str? as_ere)
-
-    # ^[42 + a[i]]
-  | Expr(expr e)
-    # ^"$1 and $2"
-  | Template(DoubleQuoted dq)
-    # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
-  | Command(command c)
-
-    # for Hay to get the backing lines
-    # TODO: ASDL doesn't support shared variant across module
-    # This would be more efficient
-  # | LiteralBlock %LiteralBlock
-    | Block(LiteralBlock block)
-
-    # callable is vm._Callable.  TODO: ASDL should be able to express and
-    # "inline" such types?  Maybe we need a forward declaration of it.
-  | BuiltinFunc(any callable)
-  | BuiltinMethod(value me, any callable)
-
-    # command.ShFunction and command.Proc evaluate to ProcValue.
-    # Procs have default args to evaluate, and no dynamic scope.
-  | Proc(str name, Token name_tok, proc_sig sig, command body,
-         ProcDefaults? defaults, bool dynamic_scope)
-
-  | Func(str name, Func parsed,
-         List[value] pos_defaults, Dict[str, value] named_defaults)
-
-  #
-  # Internal details
-  #
-
-    # a[3:5] a[:10] a[3:] a[:]  # both ends are optional
-  | Slice(IntBox? lower, IntBox? upper)
-
-    # for i in (1:n) { echo $i }  # both ends are required
-  | Range(int lower, int upper)
-
-
-  # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
-  # Used for ${a[i]=x}.  TODO: also use for lvalue/place.
-  a_index = Str(str s) | Int(int i)
-
-  # for the place in ${a[0]=a}
-  VTestPlace = (str? name, a_index? index)
 
   # evaluation state for BracedVarSub 
   VarSubState = (bool join_array, bool is_type_query)
@@ -154,14 +77,13 @@ module runtime
 
   scope = Parent | Shopt | Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly
 
-  # For OSH assignment, evaluated from osh_ast.lhs_expr
-  # TODO: Rename this to sh_place?
-  lvalue = 
-    Named(str name, loc blame_loc)
-  | Indexed(str name, int index, loc blame_loc)
-  | Keyed(str name, str key, loc blame_loc)
-    # YSH setvar is typed
-  | ObjIndex(value obj, value index)
+  # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
+  # Used for ${a[i]=x}.
+  a_index = Str(str s) | Int(int i)
+
+  # For the place in ${a[0]=a}
+  # Transformed into sh_lvalue_t
+  VTestPlace = (str? name, a_index? index)
 
   redirect_arg =
     Path(str filename)

@@ -1,0 +1,52 @@
+#!/usr/bin/env python2
+from __future__ import print_function
+
+import unittest
+
+try:
+    from _devbuild.gen.help_meta import TOPICS
+except ImportError:
+    TOPICS = None  # minimal dev build
+from core import pyutil
+from frontend import flag_def  # side effect: flags are defined!
+
+_ = flag_def
+from builtin import misc_osh  # module under test
+from osh import split
+
+
+class BuiltinTest(unittest.TestCase):
+
+    def testAppendParts(self):
+        # allow_escape is True by default, but False when the user passes -r.
+        CASES = [
+            (['Aa', 'b', ' a b'], 100, 'Aa b \\ a\\ b'),
+            (['a', 'b', 'c'], 3, 'a b c '),
+        ]
+
+        for expected_parts, max_results, line in CASES:
+            sp = split.IfsSplitter(split.DEFAULT_IFS, '')
+            spans = sp.Split(line, True)
+            print('--- %r' % line)
+            for span in spans:
+                print('  %s %s' % span)
+
+            parts = []
+            misc_osh._AppendParts(line, spans, max_results, False, parts)
+            strs = [buf.getvalue() for buf in parts]
+            self.assertEqual(expected_parts, strs)
+
+            print('---')
+
+    def testPrintHelp(self):
+        # Localization: Optionally  use GNU gettext()?  For help only.  Might be
+        # useful in parser error messages too.  Good thing both kinds of code are
+        # generated?  Because I don't want to deal with a C toolchain for it.
+
+        loader = pyutil.GetResourceLoader()
+        errfmt = None
+        misc_osh.Help('ysh', loader, TOPICS, errfmt)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -6,7 +6,7 @@
 
 namespace os_path {
 
-Str* rstrip_slashes(Str* s) {
+BigStr* rstrip_slashes(BigStr* s) {
   // Strip all the rightmost slashes, but not if it's ALL slashes
   int n = len(s);
   if (n == 0) {
@@ -28,7 +28,7 @@ Str* rstrip_slashes(Str* s) {
   }
 
   // Truncate to new_len
-  Str* result = NewStr(new_len);
+  BigStr* result = NewStr(new_len);
   memcpy(result->data_, s->data_, new_len);
   result->data_[new_len] = '\0';
   return result;
@@ -38,7 +38,7 @@ Str* rstrip_slashes(Str* s) {
 
 namespace path_stat {
 
-bool exists(Str* path) {
+bool exists(BigStr* path) {
   struct stat st;
   if (::stat(path->data_, &st) < 0) {
     return false;
@@ -47,7 +47,7 @@ bool exists(Str* path) {
   }
 }
 
-bool isdir(Str* path) {
+bool isdir(BigStr* path) {
   struct stat st;
   if (::stat(path->data_, &st) < 0) {
     return false;

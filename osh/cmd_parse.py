@@ -43,8 +43,8 @@ from _devbuild.gen.syntax_asdl import (
     word_part_t,
     rhs_word,
     rhs_word_t,
-    sh_lhs_expr,
-    sh_lhs_expr_t,
+    sh_lhs,
+    sh_lhs_t,
     AssignPair,
     EnvPair,
     ParsedAssignment,
@@ -140,15 +140,16 @@ def _MakeLiteralHereLines(
         here_lines,  # type: List[Tuple[SourceLine, int]]
         arena,  # type: Arena
 ):
-    # type: (...) -> List[word_part_t]  # less precise because List is invariant type
+    # type: (...) -> List[word_part_t]
     """Create a line_span and a token for each line."""
-    tokens = []  # type: List[Token]
+
+    # less precise type, because List[T] is an invariant type
+    tokens = []  # type: List[word_part_t]
     for src_line, start_offset in here_lines:
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line, src_line.content[start_offset:])
         tokens.append(t)
-    parts = [cast(word_part_t, t) for t in tokens]
-    return parts
+    return tokens
 
 
 def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
@@ -188,7 +189,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     left_token = preparsed.left
     close_token = preparsed.close
 
-    lhs = None  # type: sh_lhs_expr_t
+    lhs = None  # type: sh_lhs_t
 
     if left_token.id == Id.Lit_VarLike:  # s=1
         if lexer.IsPlusEquals(left_token):
@@ -198,7 +199,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
             var_name = lexer.TokenSliceRight(left_token, -1)
             op = assign_op_e.Equal
 
-        lhs = sh_lhs_expr.Name(left_token, var_name)
+        lhs = sh_lhs.Name(left_token, var_name)
 
     elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
         var_name = lexer.TokenSliceRight(left_token, -1)
@@ -212,7 +213,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
         left_pos = left_token.col + left_token.length
         index_str = left_token.line.content[left_pos:close_token.col]
-        lhs = sh_lhs_expr.UnparsedIndex(left_token, var_name, index_str)
+        lhs = sh_lhs.UnparsedIndex(left_token, var_name, index_str)
 
     elif left_token.id == Id.Lit_ArrayLhsOpen:  # a[x++]=1
         var_name = lexer.TokenSliceRight(left_token, -1)
@@ -231,12 +232,12 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
                                       (left_token.line, close_token.line))
         a_parser = parse_ctx.MakeArithParser(code_str)
 
-        # a[i+1]= is a place
-        src = source.Reparsed('array place', left_token, close_token)
+        # a[i+1]= is a LHS
+        src = source.Reparsed('array LHS', left_token, close_token)
         with alloc.ctx_SourceCode(arena, src):
             index_node = a_parser.Parse()  # may raise error.Parse
 
-        lhs = sh_lhs_expr.IndexedName(left_token, var_name, index_node)
+        lhs = sh_lhs.IndexedName(left_token, var_name, index_node)
 
     else:
         raise AssertionError()
@@ -2243,8 +2244,7 @@ class CommandParser(object):
             # $ bash -c 'proc() { echo p; }; proc'
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
-            if (self.parse_opts.parse_func() and
-                    not self.parse_opts.parse_tea()):
+            if self.parse_opts.parse_func():
                 return self.ParseYshFunc()
 
             # Otherwise silently pass, like for the procs.
@@ -2261,10 +2261,14 @@ class CommandParser(object):
         if self.c_id in (Id.KW_SetVar, Id.KW_SetRef, Id.KW_SetGlobal):
             kw_token = word_.LiteralToken(self.cur_word)
             self._SetNext()
-            n9 = self.w_parser.ParsePlaceMutation(kw_token, self.var_checker)
+            n9 = self.w_parser.ParseMutation(kw_token, self.var_checker)
             return n9
 
-        if self.c_id in (Id.Lit_Underscore, Id.Lit_Equals):  # = 42 + 1
+        if self.c_id in (Id.Lit_DColon, Id.Lit_Underscore, Id.Lit_Equals):
+            # = 42 + a[i]
+            # :: 42 + [ai]
+            # TODO: remove _
+
             keyword = word_.LiteralToken(self.cur_word)
             assert keyword is not None
             self._SetNext()
@@ -2273,36 +2277,6 @@ class CommandParser(object):
 
         if self.c_id == Id.KW_Function:
             return self.ParseKshFunctionDef()
-
-        # Top-level keywords to hide: func, data, enum, class/mod.  Not sure about
-        # 'use'.
-        if self.parse_opts.parse_tea():
-            if self.c_id == Id.KW_Func:
-                out0 = command.TeaFunc.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseTeaFunc(self.lexer, out0)
-                self._SetNext()
-                return out0
-            if self.c_id == Id.KW_Data:
-                out1 = command.Data.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseDataType(self.lexer, out1)
-                self._SetNext()
-                return out1
-            if self.c_id == Id.KW_Enum:
-                out2 = command.Enum.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseEnum(self.lexer, out2)
-                self._SetNext()
-                return out2
-            if self.c_id == Id.KW_Class:
-                out3 = command.Class.CreateNull(alloc_lists=True)
-                self.parse_ctx.ParseClass(self.lexer, out3)
-                self._SetNext()
-                return out3
-            if self.c_id == Id.KW_Import:
-                # Needs last_token because it ends with an optional thing?
-                out4 = command.Import.CreateNull(alloc_lists=True)
-                self.w_parser.ParseImport(out4)
-                self._SetNext()
-                return out4
 
         if self.c_id in (Id.KW_DLeftBracket, Id.Op_DLeftParen, Id.Op_LParen,
                          Id.Lit_LBrace, Id.KW_For, Id.KW_While, Id.KW_Until,

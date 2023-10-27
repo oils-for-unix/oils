@@ -5,7 +5,8 @@ from __future__ import print_function
 import itertools
 import sys
 
-from _devbuild.gen.runtime_asdl import flag_type_e, value_e
+from _devbuild.gen.runtime_asdl import flag_type_e
+from _devbuild.gen.value_asdl import value_e
 from mycpp.mylib import log
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
@@ -181,8 +182,8 @@ def Cpp(specs, header_f, cc_f):
 #include "cpp/frontend_flag_spec.h"  // for FlagSpec_c
 #include "mycpp/gc_mylib.h"
 
-using runtime_asdl::value;
-using runtime_asdl::value_e;
+using value_asdl::value;
+using value_asdl::value_e;
 
 namespace arg_types {
 """)
@@ -224,9 +225,9 @@ attrs->at(StrFromC("%s"))->tag() == value_e::Undef
           : static_cast<value::Str*>(attrs->at(StrFromC("%s")))->s''' %
                                      (field_name, field_name))
 
-                    field_decls.append('Str* %s;' % field_name)
+                    field_decls.append('BigStr* %s;' % field_name)
 
-                    # Str* is a pointer type, so add a field here
+                    # BigStr* is a pointer type, so add a field here
                     bits.append('maskbit(offsetof(%s, %s))' %
                                 (spec_name, field_name))
 
@@ -263,7 +264,7 @@ attrs->at(StrFromC("%s"))->tag() == value_e::Undef
         header_f.write("""
 class %s {
  public:
-  %s(Dict<Str*, runtime_asdl::value_t*>* attrs)""" % (spec_name, spec_name))
+  %s(Dict<BigStr*, value_asdl::value_t*>* attrs)""" % (spec_name, spec_name))
 
         if field_names:
             header_f.write('\n      : ')
@@ -461,7 +462,7 @@ def main(argv):
     elif action == 'mypy':
         print("""
 from frontend.args import _Attributes
-from _devbuild.gen.runtime_asdl import value, value_e, value_t
+from _devbuild.gen.value_asdl import value, value_e, value_t
 from typing import cast, Dict, Optional
 """)
         for spec_name in sorted(specs):

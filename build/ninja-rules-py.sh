@@ -45,7 +45,7 @@ oils-for-unix-main() {
 int main(int argc, char **argv) {
   mylib::InitCppOnly();  // Initializes gHeap
 
-  auto* args = Alloc<List<Str*>>();
+  auto* args = Alloc<List<BigStr*>>();
   for (int i = 0; i < argc; ++i) {
     args->append(StrFromC(argv[i]));
   }

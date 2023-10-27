@@ -1,0 +1,135 @@
+# Runtime value
+
+module value
+{
+  # import from frontend/syntax.asdl
+  use frontend syntax {
+    loc Token
+    expr command
+    DoubleQuoted
+    re proc_sig 
+    LiteralBlock Func
+  }
+
+  use core runtime {
+    Cell
+  }
+
+  IntBox = (int i)
+
+  ProcDefaults = (
+    List[value]? for_word,  # all of them are value.Str
+    List[value]? for_typed,  # block default is also here
+    Dict[str, value]? for_named,
+  )
+
+  LeftName = (str name, loc blame_loc)
+
+  # for read (&x)   that is, value.Place
+  y_lvalue = 
+    Var %LeftName
+    # YSH setvar is typed
+  | Container(value obj, value index)
+
+  # An sh_lvalue is for things mutation that happen with dynamic scope
+  #
+  # - sh_expr_eval uses this for unset / printf -v
+  # - word_eval uses this for ${a[0]=}
+  # - expr_eval / cmd_eval use this for setvar a[i] = 42
+  sh_lvalue = 
+    Var %LeftName
+  | Indexed(str name, int index, loc blame_loc)
+  | Keyed(str name, str key, loc blame_loc)
+
+  # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
+  # value_t instances are stored in state.Mem().
+  value =
+    # A var bound to Undef is different than no binding because of dynamic
+    # scope.  Undef can shadow values lower on the stack.
+    #
+    # Methods on state.Mem return value.Undef, but it's not visible in YSH.
+    Undef
+
+  | Str(str s)
+
+    # "holes" in the array are represented by None
+    # TODO: Use Dict[int, str] representation
+  | BashArray(List[str] strs)
+  | BashAssoc(Dict[str, str] d)
+
+    # DATA model for YSH follows JSON.  Note: YSH doesn't have 'undefined' and
+    # 'null' like JavaScript, just 'null'.
+  | Null
+  | Bool(bool b)
+  | Int(int i)
+  | Float(float f)
+  | List(List[value] items)
+  | Dict(Dict[str, value] d)
+
+  # CODE types
+  #   unevaluated: Eggex, Expr, Template, Command/Block
+  #   callable, in separate namespaces: Func, BoundFunc, Proc
+
+    # / d+ /
+  | Eggex(re expr, str? as_ere)
+
+    # ^[42 + a[i]]
+  | Expr(expr e)
+
+    # ^"$1 and $2"
+    # TODO: fix bug with shared variant across files, then collapse this
+  | Template(DoubleQuoted dq)
+
+    # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
+  | Command(command c)
+
+    # for Hay to get the backing lines
+    # TODO: Consolidate value.Command and value.LiteralBlock.  All Command
+    # instance should have backing lines.
+
+    # TODO: ASDL doesn't support shared variant across module
+    # This would be more efficient
+  # | LiteralBlock %LiteralBlock
+  | Block(LiteralBlock block)
+
+    # A place has an additional stack frame where the value is evaluated.
+    # The frame MUST be lower on the stack at the time of use.
+  | Place(y_lvalue lval, Dict[str, Cell] frame)
+
+    # Passed into "dot procs" that can mutate the calling frame:
+    # Flags :spec { .flag -v --verbose }
+  | Frame(Dict[str, Cell] fr)
+
+    # This has methods attached to it, and it may also have a cmd_ev instance.
+  | IO(any obj)
+
+    # callable is vm._Callable.
+    # TODO: ASDL needs some kind of "extern" to declare vm._Callable and
+    # cmd_eval.CommandEvaluator.  I think it would just generate a forward
+    # declaration.
+  | BuiltinFunc(any callable)
+  | BuiltinMethod(value me, any callable)
+
+    # command.ShFunction and command.Proc evaluate to ProcValue.
+    # Procs have default args to evaluate, and no dynamic scope.
+    #
+    # TODO: this can also have frame.
+    # Perhaps divide this into Proc and ShFunction
+
+  | Proc(str name, Token name_tok, proc_sig sig, command body,
+         ProcDefaults? defaults, bool dynamic_scope)
+
+    # module may be a frame where defined
+  | Func(str name, Func parsed,
+         List[value] pos_defaults, Dict[str, value] named_defaults,
+         Dict[str, Cell]? module_)
+
+    # a[3:5] a[:10] a[3:] a[:]  # both ends are optional
+  | Slice(IntBox? lower, IntBox? upper)
+
+    # for i in (1:n) { echo $i }  # both ends are required
+  | Range(int lower, int upper)
+}
+
+# vim: sw=2
+

@@ -175,7 +175,7 @@ struct UnionBitfield {
 
   union Trace {
     // Note: the string length is NOT used by the GC, so it doesn't really have
-    // to be here.  But this makes the Str object smaller.
+    // to be here.  But this makes the BigStr object smaller.
 
     unsigned str_len : 30;       // HeapTag::Opaque
     unsigned num_pointers : 30;  // HeapTag::Scanned
@@ -273,7 +273,7 @@ union ObjHeader2 {
     this->field_mask.val = field_mask;
   }
 
-  // - Slab<List*>, Slab<Str> (might be HeapStr*)
+  // - Slab<List*>, Slab<BigStr> (might be HeapStr*)
   // - Generated classes without inheritance
   // - all ASDL types
   void InitScanned(int num_pointers) {
@@ -302,7 +302,7 @@ union ObjHeader2 {
   //
   // All the variants of value_e get their own type tag?
   // - Boxed value.{Bool,Int,Float}
-  // - And "boxless" / "tagless" Str, List, Dict
+  // - And "boxless" / "tagless" BigStr, List, Dict
 };
 
 class Token {

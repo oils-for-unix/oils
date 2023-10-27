@@ -101,7 +101,7 @@ using shared_variant_asdl::tok_t;
 using shared_variant_asdl::Token;
 
 TEST shared_variant_test() {
-  auto* dq = Alloc<DoubleQuoted>(0, Alloc<List<Str*>>());
+  auto* dq = Alloc<DoubleQuoted>(0, Alloc<List<BigStr*>>());
 
   word_part_t* wp = nullptr;
   wp = dq;  // assign to base type
@@ -162,7 +162,7 @@ TEST dicts_test() {
   log("m.ss = %p", m->ss);
   log("m.ib = %p", m->ib);
 
-  m->ss = Alloc<Dict<Str*, Str*>>();
+  m->ss = Alloc<Dict<BigStr*, BigStr*>>();
   m->ib = Alloc<Dict<int, bool>>();
 
   m->ss->set(StrFromC("foo"), StrFromC("bar"));
@@ -205,7 +205,7 @@ int i0 = 7;
 List<int>* g_list = NewList<int>({i0, 8, 9});
 #endif
 
-// Dict<Str*, int> g_dict = {4, 5, 6};
+// Dict<BigStr*, int> g_dict = {4, 5, 6};
 
 TEST literal_test() {
   // Interesting, initializer list part of the constructor "runs".  Otherwise

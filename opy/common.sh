@@ -10,8 +10,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly GRAMMAR=_tmp/py27.grammar.pickle
-
 # Used by scripts/release.sh too.
 readonly OSH_BYTERUN=opy/_tmp/repo-with-opy/bin/osh-byterun 
 
@@ -46,6 +44,7 @@ oil-python-sources() {
     -name _regtest -a -prune -o \
     -name mycpp -a -prune -o \
     -name pea -a -prune -o \
+    -name yaks -a -prune -o \
     -name testdata -a -prune -o \
     -name Python-2.7.13 -a -prune -o \
     -name py-yajl -a -prune -o \

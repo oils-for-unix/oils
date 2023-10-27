@@ -37,7 +37,6 @@ def run_tests():
 
   print("int 5d %5d" % 35)
 
-
   print("'single'")
   print('"double"')
 
@@ -78,6 +77,7 @@ def run_tests():
   s = 'a1b2c3d4e5'
   print(s[0:10:2])
   print(s[1:10:2])
+  print(s.upper())
 
 
 def run_benchmarks():

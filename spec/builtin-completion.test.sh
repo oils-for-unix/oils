@@ -289,10 +289,12 @@ b2
 benchmarks
 bin
 build
+builtin
 ---
 benchmarks
 bin
 build
+builtin
 ## END
 
 #### compgen -o default completes files and dirs

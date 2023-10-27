@@ -116,6 +116,7 @@ def NinjaGraph(ru):
         deps=[
             # Dependencies of //prebuilt/frontend/args.mycpp
             '//core/runtime.asdl',
+            '//core/value.asdl',
             '//frontend/syntax.asdl',
             '//frontend/arg_types',  # generated code
             '//mycpp/runtime',

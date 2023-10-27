@@ -82,8 +82,8 @@ def Parse(fmt):
 # TODO: Should there be a char type?
 """
 enum format_part {
-  case Literal(s Str)
-  case Subst(char_code Str, arg_num Int)
+  case Literal(s BigStr)
+  case Subst(char_code BigStr, arg_num Int)
 }
 
 let PAT = ///
@@ -91,7 +91,7 @@ let PAT = ///
   < '%' dot : subst >  # % and then any char
 ///
 
-func Parse(fmt Str) {
+func Parse(fmt BigStr) {
   var arg_num = 0
   let parts = []
 

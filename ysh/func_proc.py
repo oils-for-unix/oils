@@ -1,15 +1,16 @@
 #!/usr/bin/env python2
 """
-code.py: User-defined funcs and procs
+User-defined funcs and procs
 """
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (value, value_e, value_t, scope_e,
-                                        lvalue, cmd_value, ProcDefaults)
+from _devbuild.gen.runtime_asdl import (scope_e, cmd_value)
 from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, ParamGroup,
                                        NamedArg, Func, loc, ArgList, expr,
                                        expr_e, expr_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, ProcDefaults,
+                                      LeftName)
 
 from core import error
 from core import state
@@ -322,7 +323,7 @@ def _BindWords(
         else:
             flags = 0
 
-        mem.SetValue(lvalue.Named(param_name, p.blame_tok),
+        mem.SetValue(LeftName(param_name, p.blame_tok),
                      val,
                      scope_e.LocalOnly,
                      flags=flags)
@@ -332,12 +333,12 @@ def _BindWords(
     num_params = len(group.params)
     rest = group.rest_of
     if rest:
-        lval = lvalue.Named(rest.name, rest.blame_tok)
+        lval = LeftName(rest.name, rest.blame_tok)
 
         items = [value.Str(s)
                  for s in argv[num_params:]]  # type: List[value_t]
         rest_val = value.List(items)
-        mem.SetValue(lval, rest_val, scope_e.LocalOnly)
+        mem.SetLocalName(lval, rest_val)
     else:
         if num_args > num_params:
             if len(cmd_val.arg_locs):
@@ -382,8 +383,7 @@ def _BindTyped(
                         "%r wasn't passed typed param %r" %
                         (code_name, p.name), blame_loc)
 
-            mem.SetValue(lvalue.Named(p.name, p.blame_tok), val,
-                         scope_e.LocalOnly)
+            mem.SetLocalName(LeftName(p.name, p.blame_tok), val)
             i += 1
         num_params += len(group.params)
 
@@ -398,8 +398,8 @@ def _BindTyped(
                     "%r wasn't passed block param %r" %
                     (code_name, block_param.name), blame_loc)
 
-        mem.SetValue(lvalue.Named(block_param.name, block_param.blame_tok),
-                     val, scope_e.LocalOnly)
+        mem.SetLocalName(LeftName(block_param.name, block_param.blame_tok),
+                         val)
         num_params += 1
 
     # ...rest
@@ -407,10 +407,10 @@ def _BindTyped(
     if group:
         rest = group.rest_of
         if rest:
-            lval = lvalue.Named(rest.name, rest.blame_tok)
+            lval = LeftName(rest.name, rest.blame_tok)
 
             rest_val = value.List(pos_args[num_params:])
-            mem.SetValue(lval, rest_val, scope_e.LocalOnly)
+            mem.SetLocalName(lval, rest_val)
         else:
             if num_args > num_params:
                 # Too many arguments.
@@ -441,15 +441,15 @@ def _BindNamed(
                 "%r wasn't passed named param %r" % (code_name, p.name),
                 blame_loc)
 
-        mem.SetValue(lvalue.Named(p.name, p.blame_tok), val, scope_e.LocalOnly)
+        mem.SetLocalName(LeftName(p.name, p.blame_tok), val)
         # Remove bound args
         mylib.dict_erase(named_args, p.name)
 
     # ...rest
     rest = group.rest_of
     if rest:
-        lval = lvalue.Named(rest.name, rest.blame_tok)
-        mem.SetValue(lval, value.Dict(named_args), scope_e.LocalOnly)
+        lval = LeftName(rest.name, rest.blame_tok)
+        mem.SetLocalName(lval, value.Dict(named_args))
     else:
         num_args = len(named_args)
         num_params = len(group.params)
@@ -563,10 +563,10 @@ def BindProcArgs(proc, cmd_val, mem):
 
 
 def CallUserFunc(
-        func,# type: value.Func
-        rd, # type: typed_args.Reader
-        mem,# type: state.Mem
-        cmd_ev,# type: cmd_eval.CommandEvaluator
+        func,  # type: value.Func
+        rd,  # type: typed_args.Reader
+        mem,  # type: state.Mem
+        cmd_ev,  # type: cmd_eval.CommandEvaluator
 ):
     # type: (...) -> value_t
 

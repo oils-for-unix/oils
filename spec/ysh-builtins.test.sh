@@ -1,22 +1,24 @@
 
 ## oils_failures_allowed: 6
 
-#### append onto a=(1 2)
+#### append onto BashArray a=(1 2)
 shopt -s parse_at
 a=(1 2)
-append :a '3 4' '5'
+append '3 4' '5' (a)
 argv.py "${a[@]}"
-append -- :a 6
+
+append -- 6 (a)
 argv.py "${a[@]}"
+
 ## STDOUT:
 ['1', '2', '3 4', '5']
 ['1', '2', '3 4', '5', '6']
 ## END
 
-#### append onto var a = %(1 2)
+#### append onto var a = :| 1 2 |
 shopt -s parse_at parse_proc
-var a = %(1 2)
-append a '3 4' '5'  # : is optional
+var a = :| 1 2 |
+append '3 4' '5' (a)
 argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
@@ -25,25 +27,24 @@ argv.py @a
 #### append onto var a = ['1', '2']
 shopt -s parse_at parse_proc
 var a = ['1', '2']
-append a '3 4' '5'  # : is optional
+append '3 4' '5' (a)
 argv.py @a
 ## STDOUT:
 ['1', '2', '3 4', '5']
 ## END
 
-#### append with invalid type
-s=''
-append :s a b
-echo status=$?
-## stdout: status=1
+#### append without typed arg
+append a b
+## status: 2
 
-#### append with invalid var name
-append - a b
+#### append passed invalid type
+s=''
+append a b (s)
 echo status=$?
-## stdout: status=2
+## status: 3
 
 #### write --sep, --end, -n, varying flag syntax
-shopt -s oil:all
+shopt -s ysh:all
 var a = %('a b' 'c d')
 write @a
 write .
@@ -119,21 +120,21 @@ write --j8 --unicode x $'\u{3bc}'
 ## END
 
 #### write  -e not supported
-shopt -s oil:all
+shopt -s ysh:all
 write -e foo
 write status=$?
 ## stdout-json: ""
 ## status: 2
 
 #### write syntax error
-shopt -s oil:all
+shopt -s ysh:all
 write ---end foo
 write status=$?
 ## stdout-json: ""
 ## status: 2
 
 #### write --
-shopt -s oil:all
+shopt -s ysh:all
 write --
 # This is annoying
 write -- --
@@ -201,7 +202,7 @@ z=foo
 ## END
 
 #### read --line --with-eol
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 # Hm this preserves the newline?
 seq 3 | while read --line {
@@ -362,7 +363,7 @@ echo status=$?
 [ -n foo ]
 echo status=$?
 
-shopt --set oil:all
+shopt --set ysh:all
 shopt --unset errexit
 
 test -n "foo" -a -n "bar"
@@ -412,7 +413,7 @@ status=2
 
 
 #### push-registers
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset errexit
 
 status_code() {
@@ -539,41 +540,4 @@ Func
 BuiltinFunc
 BuiltinMethod
 Range
-## END
-
-#### List->extend()
-var l = list(1..3)
-echo $[len(l)]
-_ l->extend(list(3..6))
-echo $[len(l)]
-## STDOUT:
-2
-5
-## END
-
-#### List append()/extend() should return null
-shopt -s oil:all
-var l = list(1..3)
-
-var result = l->extend(list(3..6))
-_ assert_(result === null)
-
-setvar result = l->append(6)
-_ assert_(result === null)
-
-echo pass
-## STDOUT:
-pass
-## END
-
-#### List pop()
-shopt -s oil:all
-var l = list(1..5)
-_ assert_(l->pop() === 4)
-_ assert_(l->pop() === 3)
-_ assert_(l->pop() === 2)
-_ assert_(l->pop() === 1)
-echo pass
-## STDOUT:
-pass
 ## END

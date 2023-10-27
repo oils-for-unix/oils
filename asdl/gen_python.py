@@ -529,7 +529,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                 # We must use the old-style naming here, ie. command__NoOp, in order
                 # to support zero field variants as constants.
                 class_name = '%s__%s' % (sum_name, variant.name)
-                self._GenClass(variant, class_name, (sum_name + '_t',), i + 1)
+                self._GenClass(variant, class_name, (sum_name + '_t', ), i + 1)
 
         # Class that's just a NAMESPACE, e.g. for value.Str
         self.Emit('class %s(object):' % sum_name, depth)
@@ -549,9 +549,10 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                 # oil_cmd.Simple.
                 fq_name = variant.name
                 self._GenClass(variant,
-                               fq_name, (sum_name + '_t',),
+                               fq_name, (sum_name + '_t', ),
                                i + 1,
                                class_ns=sum_name + '.')
+        self.Emit('  pass', depth)  # in case every variant is first class
 
         self.Dedent()
         self.Emit('')
@@ -570,5 +571,5 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             # Figure out base classes AFTERWARD.
             bases = self._product_bases[name]
             if not bases:
-                bases = ('pybase.CompoundObj',)
+                bases = ('pybase.CompoundObj', )
             self._GenClass(ast_node, name, bases, tag_num)

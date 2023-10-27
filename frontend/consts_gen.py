@@ -70,7 +70,7 @@ def GenStringLookup(type_name, func_name, pairs, f):
     # Size optimization: don't repeat constants literally?
 
     f.write("""\
-%s %s(Str* s) {
+%s %s(BigStr* s) {
   int length = len(s);
   if (length == 0) return 0;  // consts.NO_INDEX
 
@@ -104,7 +104,7 @@ def GenStringMembership(func_name, strs, f):
         groups[first_char].append(s)
 
     f.write("""\
-bool %s(Str* s) {
+bool %s(BigStr* s) {
   int length = len(s);
   if (length == 0) return false;
 
@@ -154,7 +154,7 @@ def CChar(c):
 
 def GenCharLookup(func_name, lookup, f, required=False):
     f.write("""\
-Str* %s(Str* c) {
+BigStr* %s(BigStr* c) {
   assert(len(c) == 1);
 
   char ch = c->data_[0];
@@ -188,7 +188,7 @@ def GenStrList(l, name, out):
         element_globals.append(global_name)
 
     lit = ' COMMA '.join(element_globals)
-    out('GLOBAL_LIST(%s, Str*, %d, {%s});\n', name, len(l), lit)
+    out('GLOBAL_LIST(%s, BigStr*, %d, {%s});\n', name, len(l), lit)
 
 
 def main(argv):
@@ -229,7 +229,7 @@ def main(argv):
 #ifndef ID_KIND_ASDL_H
 #define ID_KIND_ASDL_H
 
-class Str;
+class BigStr;
 
 namespace id_kind_asdl {
 
@@ -321,33 +321,33 @@ namespace consts {
             for name in LIST_INT:
                 out('extern List<int>* %s;', name)
 
-            out('extern List<Str*>* BUILTIN_NAMES;')
-            out('extern List<Str*>* OSH_KEYWORD_NAMES;')
-            out('extern List<Str*>* SET_OPTION_NAMES;')
-            out('extern List<Str*>* SHOPT_OPTION_NAMES;')
+            out('extern List<BigStr*>* BUILTIN_NAMES;')
+            out('extern List<BigStr*>* OSH_KEYWORD_NAMES;')
+            out('extern List<BigStr*>* SET_OPTION_NAMES;')
+            out('extern List<BigStr*>* SHOPT_OPTION_NAMES;')
 
             out("""\
 
 extern int NO_INDEX;
 
-extern Str* gVersion;
+extern BigStr* gVersion;
 
 int RedirDefaultFd(id_kind_asdl::Id_t id);
 types_asdl::redir_arg_type_t RedirArgType(id_kind_asdl::Id_t id);
 types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id);
 id_kind_asdl::Kind GetKind(id_kind_asdl::Id_t id);
 
-types_asdl::opt_group_t OptionGroupNum(Str* s);
-option_asdl::option_t OptionNum(Str* s);
-option_asdl::builtin_t LookupNormalBuiltin(Str* s);
-option_asdl::builtin_t LookupAssignBuiltin(Str* s);
-option_asdl::builtin_t LookupSpecialBuiltin(Str* s);
-bool IsControlFlow(Str* s);
-bool IsKeyword(Str* s);
-Str* LookupCharC(Str* c);
-Str* LookupCharPrompt(Str* c);
+types_asdl::opt_group_t OptionGroupNum(BigStr* s);
+option_asdl::option_t OptionNum(BigStr* s);
+option_asdl::builtin_t LookupNormalBuiltin(BigStr* s);
+option_asdl::builtin_t LookupAssignBuiltin(BigStr* s);
+option_asdl::builtin_t LookupSpecialBuiltin(BigStr* s);
+bool IsControlFlow(BigStr* s);
+bool IsKeyword(BigStr* s);
+BigStr* LookupCharC(BigStr* c);
+BigStr* LookupCharPrompt(BigStr* c);
 
-Str* OptionName(option_asdl::option_t opt_num);
+BigStr* OptionName(option_asdl::option_t opt_num);
 
 Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_t state, runtime_asdl::char_kind_t ch);
 
@@ -430,7 +430,7 @@ types_asdl::bool_arg_type_t BoolArgType(id_kind_asdl::Id_t id) {
 """)
             for id_ in sorted(BOOL_ARG_TYPES):
                 a = Id_str(id_).replace('.', '::')
-                # bool_arg_type_e::Str, etc.
+                # bool_arg_type_e::BigStr, etc.
                 b = bool_arg_type_str(BOOL_ARG_TYPES[id_]).replace('.', '_e::')
                 out('  case %s: return %s;' % (a, b))
             out("""\
@@ -476,7 +476,7 @@ Kind GetKind(id_kind_asdl::Id_t id) {
             # OptionName() is a bit redundant with ADSL's debug print option_str(),
             # but the latter should get stripped from the binary
             out("""\
-Str* OptionName(option_asdl::option_t opt_num) {
+BigStr* OptionName(option_asdl::option_t opt_num) {
   const char* s;
   switch (opt_num) {
 """)

@@ -14,9 +14,8 @@ from _devbuild.gen.syntax_asdl import (
     re_repeat,
     re_repeat_e,
 )
-from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.id_kind_asdl import Id
-
+from _devbuild.gen.value_asdl import value
 from core.error import e_die
 from mycpp.mylib import log, tagswitch
 from osh import glob_  # for ExtendedRegexEscape

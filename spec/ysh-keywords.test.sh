@@ -6,22 +6,22 @@
 (Int)   7
 ## END
 
-#### _ to ignore return value
-_ 1 + 2 * 3
+#### :: to ignore return value
+:: 1 + 2 * 3
 
 var strs = %(a b)
-_ len(strs)
-_ strs->append('c')
+:: len(strs)
+:: strs->append('c')
 write -- @strs
 
 # integer types too
 const L = [5, 6]
-_ L->append(7)
+:: L->append(7)
 write -- @L
 
 write __
 
-_ L->pop()  # could also be pop :L
+:: L->pop()  # could also be pop :L
 write -- @L
 
 ## STDOUT:

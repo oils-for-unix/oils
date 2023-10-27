@@ -35,6 +35,8 @@ If we were starting from scratch, I would have chosen a different prefix, but
 it isn't worth the breakage and complexity.  All string literals exist in both
 command and expression mode, which is tricky to implement.
 
+<!-- TODO: remove in favor of j"" -->
+
 ### Two Left Parens Should be Separated By Space
 
 No:
@@ -79,6 +81,8 @@ Most users won't see these literal forms very much.  They're more useful for
 testing and frameworks rather than simple scripts/applications.
 
 ## In `read :x`, The Colon is a "Pseudo-Sigil"
+
+<!-- TODO: remove in favor of value.Place -->
 
 Sigils like `$` and `@` are [statically
 parsed](https://www.oilshell.org/blog/2019/02/07.html), but the optional `:` is

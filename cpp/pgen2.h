@@ -19,14 +19,14 @@ class Grammar {
  public:
   Grammar();
 
-  Dict<Str*, int>* symbol2number;
-  Dict<int, Str*>* number2symbol;
+  Dict<BigStr*, int>* symbol2number;
+  Dict<int, BigStr*>* number2symbol;
   List<List<Tuple2<int, int>*>*>* states;
   Dict<int, Tuple2<List<List<Tuple2<int, int>*>*>*, Dict<int, int>*>*>* dfas;
   List<int>* labels;
-  Dict<Str*, int>* keywords;
+  Dict<BigStr*, int>* keywords;
   Dict<int, int>* tokens;
-  Dict<Str*, int>* symbol2label;
+  Dict<BigStr*, int>* symbol2label;
   int start;
 
   static constexpr ObjHeader obj_header() {

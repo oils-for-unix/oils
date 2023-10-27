@@ -14,11 +14,11 @@ using mylib::str_cmp;
 GLOBAL_STR(kStrFoo, "foo");
 GLOBAL_STR(kSpace, " ");
 
-void Print(List<Str*>* parts) {
+void Print(List<BigStr*>* parts) {
   log("---");
   log("len = %d", len(parts));
   for (int i = 0; i < len(parts); ++i) {
-    Str* s = parts->at(i);
+    BigStr* s = parts->at(i);
     printf("%d [ %s ]\n", i, s->data_);
   }
 }
@@ -31,7 +31,7 @@ void Print(List<Str*>* parts) {
 TEST test_list_gc_header() {
   auto list1 = NewList<int>();
   StackRoots _roots1({&list1});
-  auto list2 = NewList<Str*>();
+  auto list2 = NewList<BigStr*>();
   StackRoots _roots2({&list2});
 
   ASSERT_EQ(0, len(list1));
@@ -136,7 +136,7 @@ List<int>* gList = reinterpret_cast<List<int>*>(&_gList.obj);
 GLOBAL_LIST(gList2, int, 4, {5 COMMA 4 COMMA 3 COMMA 2});
 
 GLOBAL_STR(gFoo, "foo");
-GLOBAL_LIST(gList3, Str*, 2, {gFoo COMMA gFoo});
+GLOBAL_LIST(gList3, BigStr*, 2, {gFoo COMMA gFoo});
 
 TEST test_global_list() {
   ASSERT_EQ(3, len(gList));
@@ -192,7 +192,7 @@ TEST test_list_funcs() {
     log("ints[%d] = %d", i, ints->at(i));
   }
 
-  auto L = list_repeat<Str*>(nullptr, 3);
+  auto L = list_repeat<BigStr*>(nullptr, 3);
   log("list_repeat length = %d", len(L));
 
   auto L2 = list_repeat<bool>(true, 3);
@@ -200,7 +200,7 @@ TEST test_list_funcs() {
   log("item 0 %d", L2->at(0));
   log("item 1 %d", L2->at(1));
 
-  auto strs = NewList<Str*>();
+  auto strs = NewList<BigStr*>();
   strs->append(StrFromC("c"));
   strs->append(StrFromC("a"));
   strs->append(StrFromC("b"));
@@ -233,7 +233,7 @@ TEST test_list_funcs() {
   PASS();
 }
 
-void ListFunc(std::initializer_list<Str*> init) {
+void ListFunc(std::initializer_list<BigStr*> init) {
   log("init.size() = %d", init.size());
 }
 
@@ -354,7 +354,7 @@ TEST sort_test() {
   ASSERT_EQ(-1, int_cmp(0, 5));
   ASSERT_EQ(1, int_cmp(0, -5));
 
-  Str *a = nullptr, *aa = nullptr, *b = nullptr;
+  BigStr *a = nullptr, *aa = nullptr, *b = nullptr;
   StackRoots _roots({&a, &aa, &b});
 
   a = StrFromC("a");
@@ -369,9 +369,9 @@ TEST sort_test() {
   ASSERT_EQ(1, str_cmp(b, a));
   ASSERT_EQ(1, str_cmp(b, kEmptyString));
 
-  List<Str*>* strs = nullptr;
+  List<BigStr*>* strs = nullptr;
   StackRoots _roots2({&strs});
-  strs = Alloc<List<Str*>>();
+  strs = Alloc<List<BigStr*>>();
 
   strs->append(a);
   strs->append(aa);
@@ -390,18 +390,18 @@ TEST sort_test() {
 }
 
 TEST contains_test() {
-  Str* s = nullptr;
-  Str* nul = nullptr;
+  BigStr* s = nullptr;
+  BigStr* nul = nullptr;
   StackRoots _roots({&s, &nul});
 
-  log("  List<Str*>");
-  List<Str*>* strs = nullptr;
+  log("  List<BigStr*>");
+  List<BigStr*>* strs = nullptr;
   List<int>* ints = nullptr;
   List<double>* floats = nullptr;
 
   StackRoots _roots2({&strs, &ints, &floats});
 
-  strs = Alloc<List<Str*>>();
+  strs = Alloc<List<BigStr*>>();
 
   strs->append(kSpace);
   s = StrFromC(" ");  // LOCAL space
@@ -429,7 +429,7 @@ TEST test_list_sort() {
   auto s1 = StrFromC("fooA");
   auto s2 = StrFromC("fooB");
   auto s3 = StrFromC("fooC");
-  auto l = NewList<Str*>(std::initializer_list<Str*>{s3, s1, s2});
+  auto l = NewList<BigStr*>(std::initializer_list<BigStr*>{s3, s1, s2});
 
   auto s = sorted(l);
   ASSERT(str_equals(s->at(0), s1));

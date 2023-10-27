@@ -114,21 +114,21 @@ namespace qsn {  // forward declare
 
 namespace ansi {  // declare
 
-extern Str* RESET;
-extern Str* BOLD;
-extern Str* UNDERLINE;
-extern Str* REVERSE;
-extern Str* RED;
-extern Str* GREEN;
-extern Str* YELLOW;
-extern Str* BLUE;
+extern BigStr* RESET;
+extern BigStr* BOLD;
+extern BigStr* UNDERLINE;
+extern BigStr* REVERSE;
+extern BigStr* RED;
+extern BigStr* GREEN;
+extern BigStr* YELLOW;
+extern BigStr* BLUE;
 
 
 }  // declare namespace ansi
 
 namespace cgi {  // declare
 
-Str* escape(Str* s);
+BigStr* escape(BigStr* s);
 
 
 }  // declare namespace cgi
@@ -139,11 +139,11 @@ extern int BIT8_UTF8;
 extern int BIT8_U_ESCAPE;
 extern int BIT8_X_ESCAPE;
 extern int MUST_QUOTE;
-bool _encode(Str* s, int bit8_display, mylib::BufWriter* buf);
-Str* maybe_shell_encode(Str* s, int flags = 0);
-Str* maybe_encode(Str* s, int bit8_display = BIT8_UTF8);
-Str* encode(Str* s, int bit8_display = BIT8_UTF8);
-void _encode_bytes_x(Str* s, mylib::BufWriter* buf);
+bool _encode(BigStr* s, int bit8_display, mylib::BufWriter* buf);
+BigStr* maybe_shell_encode(BigStr* s, int flags = 0);
+BigStr* maybe_encode(BigStr* s, int bit8_display = BIT8_UTF8);
+BigStr* encode(BigStr* s, int bit8_display = BIT8_UTF8);
+void _encode_bytes_x(BigStr* s, mylib::BufWriter* buf);
 extern int Ascii;
 extern int Begin2;
 extern int Begin3;
@@ -157,7 +157,7 @@ extern int B4_1;
 extern int B3_2;
 extern int B4_2;
 extern int B4_3;
-bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf);
+bool EncodeRunes(BigStr* s, int bit8_display, mylib::BufWriter* buf);
 
 
 }  // declare namespace qsn
@@ -169,14 +169,14 @@ using hnode_asdl::color_t;
 using hnode_asdl::color_e;
 int NO_SPID = -1;
 
-hnode::Record* NewRecord(Str* node_type) {
-  StackRoots _roots({&node_type});
+hnode::Record* NewRecord(BigStr* node_type) {
+  StackRoot _root0(&node_type);
 
   return Alloc<hnode::Record>(node_type, Alloc<List<hnode_asdl::Field*>>(), false, str0, str1, Alloc<List<hnode_asdl::hnode_t*>>());
 }
 
-hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
-  StackRoots _roots({&s});
+hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
+  StackRoot _root0(&s);
 
   if (s == nullptr) {
     return Alloc<hnode::Leaf>(str2, color_e::OtherConst);
@@ -185,8 +185,8 @@ hnode::Leaf* NewLeaf(Str* s, hnode_asdl::color_t e_color) {
     return Alloc<hnode::Leaf>(s, e_color);
   }
 }
-Str* TRUE_STR = str3;
-Str* FALSE_STR = str4;
+BigStr* TRUE_STR = str3;
+BigStr* FALSE_STR = str4;
 
 }  // define namespace runtime
 
@@ -199,7 +199,7 @@ using hnode_asdl::color_e;
 using hnode_asdl::color_t;
 
 format::ColorOutput* DetectConsoleOutput(mylib::Writer* f) {
-  StackRoots _roots({&f});
+  StackRoot _root0(&f);
 
   if (f->isatty()) {
     return Alloc<AnsiOutput>(f);
@@ -234,19 +234,20 @@ void ColorOutput::PopColor() {
   FAIL(kNotImplemented);  // Python NotImplementedError
 }
 
-void ColorOutput::write(Str* s) {
-  StackRoots _roots({&s});
+void ColorOutput::write(BigStr* s) {
+  StackRoot _root0(&s);
 
   this->f->write(s);
   this->num_chars += len(s);
 }
 
-void ColorOutput::WriteRaw(Tuple2<Str*, int>* raw) {
-  Str* s = nullptr;
+void ColorOutput::WriteRaw(Tuple2<BigStr*, int>* raw) {
+  BigStr* s = nullptr;
   int num_chars;
-  StackRoots _roots({&raw, &s});
+  StackRoot _root0(&raw);
+  StackRoot _root1(&s);
 
-  Tuple2<Str*, int>* tup0 = raw;
+  Tuple2<BigStr*, int>* tup0 = raw;
   s = tup0->at0();
   num_chars = tup0->at1();
   this->f->write(s);
@@ -257,9 +258,9 @@ int ColorOutput::NumChars() {
   return this->num_chars;
 }
 
-Tuple2<Str*, int> ColorOutput::GetRaw() {
+Tuple2<BigStr*, int> ColorOutput::GetRaw() {
   mylib::BufWriter* f = static_cast<mylib::BufWriter*>(this->f);
-  return Tuple2<Str*, int>(f->getvalue(), this->num_chars);
+  return Tuple2<BigStr*, int>(f->getvalue(), this->num_chars);
 }
 
 TextOutput::TextOutput(mylib::Writer* f) : ColorOutput(f) {
@@ -293,8 +294,8 @@ void HtmlOutput::FileFooter() {
 }
 
 void HtmlOutput::PushColor(hnode_asdl::color_t e_color) {
-  Str* css_class = nullptr;
-  StackRoots _roots({&css_class});
+  BigStr* css_class = nullptr;
+  StackRoot _root0(&css_class);
 
   if (e_color == color_e::TypeName) {
     css_class = str7;
@@ -329,8 +330,8 @@ void HtmlOutput::PopColor() {
   this->f->write(str13);
 }
 
-void HtmlOutput::write(Str* s) {
-  StackRoots _roots({&s});
+void HtmlOutput::write(BigStr* s) {
+  StackRoot _root0(&s);
 
   this->f->write(cgi::escape(s));
   this->num_chars += len(s);
@@ -386,25 +387,28 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
   int chars_so_far;
   int i;
   format::ColorOutput* single_f = nullptr;
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   int num_chars;
-  StackRoots _roots({&array, &f, &single_f, &s});
+  StackRoot _root0(&array);
+  StackRoot _root1(&f);
+  StackRoot _root2(&single_f);
+  StackRoot _root3(&s);
 
   all_fit = true;
   chars_so_far = prefix_len;
   i = 0;
   for (ListIter<hnode_asdl::hnode_t*> it(array); !it.Done(); it.Next(), ++i) {
     hnode_asdl::hnode_t* val = it.Value();
-    StackRoots _for({&val  });
+    StackRoot _for(&val  );
     if (i != 0) {
       f->write(str14);
     }
     single_f = f->NewTempBuffer();
     if (_TrySingleLine(val, single_f, (this->max_col - chars_so_far))) {
-      Tuple2<Str*, int> tup1 = single_f->GetRaw();
+      Tuple2<BigStr*, int> tup1 = single_f->GetRaw();
       s = tup1.at0();
       num_chars = tup1.at1();
-      f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
+      f->WriteRaw((Alloc<Tuple2<BigStr*, int>>(s, num_chars)));
       chars_so_far += single_f->NumChars();
     }
     else {
@@ -419,26 +423,30 @@ bool _PrettyPrinter::_PrintWrappedArray(List<hnode_asdl::hnode_t*>* array, int p
 
 bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int prefix_len, format::ColorOutput* f, int indent) {
   bool all_fit;
-  List<Tuple2<Str*, int>*>* pieces = nullptr;
+  List<Tuple2<BigStr*, int>*>* pieces = nullptr;
   int chars_so_far;
   format::ColorOutput* single_f = nullptr;
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   int num_chars;
   int i;
-  StackRoots _roots({&array, &f, &pieces, &single_f, &s});
+  StackRoot _root0(&array);
+  StackRoot _root1(&f);
+  StackRoot _root2(&pieces);
+  StackRoot _root3(&single_f);
+  StackRoot _root4(&s);
 
   all_fit = true;
-  pieces = Alloc<List<Tuple2<Str*, int>*>>();
+  pieces = Alloc<List<Tuple2<BigStr*, int>*>>();
   chars_so_far = prefix_len;
   for (ListIter<hnode_asdl::hnode_t*> it(array); !it.Done(); it.Next()) {
     hnode_asdl::hnode_t* item = it.Value();
-    StackRoots _for({&item  });
+    StackRoot _for(&item  );
     single_f = f->NewTempBuffer();
     if (_TrySingleLine(item, single_f, (this->max_col - chars_so_far))) {
-      Tuple2<Str*, int> tup2 = single_f->GetRaw();
+      Tuple2<BigStr*, int> tup2 = single_f->GetRaw();
       s = tup2.at0();
       num_chars = tup2.at1();
-      pieces->append((Alloc<Tuple2<Str*, int>>(s, num_chars)));
+      pieces->append((Alloc<Tuple2<BigStr*, int>>(s, num_chars)));
       chars_so_far += single_f->NumChars();
     }
     else {
@@ -448,9 +456,9 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
   }
   if (all_fit) {
     i = 0;
-    for (ListIter<Tuple2<Str*, int>*> it(pieces); !it.Done(); it.Next(), ++i) {
-      Tuple2<Str*, int>* p = it.Value();
-      StackRoots _for({&p    });
+    for (ListIter<Tuple2<BigStr*, int>*> it(pieces); !it.Done(); it.Next(), ++i) {
+      Tuple2<BigStr*, int>* p = it.Value();
+      StackRoot _for(&p    );
       if (i != 0) {
         f->write(str16);
       }
@@ -462,20 +470,30 @@ bool _PrettyPrinter::_PrintWholeArray(List<hnode_asdl::hnode_t*>* array, int pre
 }
 
 void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, int indent) {
-  Str* ind = nullptr;
-  Str* prefix = nullptr;
+  BigStr* ind = nullptr;
+  BigStr* prefix = nullptr;
   int prefix_len;
   bool all_fit;
-  Str* name = nullptr;
+  BigStr* name = nullptr;
   hnode_asdl::hnode_t* val = nullptr;
-  Str* ind1 = nullptr;
+  BigStr* ind1 = nullptr;
   hnode_asdl::hnode_t* UP_val = nullptr;
   int tag;
-  Str* name_str = nullptr;
+  BigStr* name_str = nullptr;
   format::ColorOutput* single_f = nullptr;
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   int num_chars;
-  StackRoots _roots({&node, &f, &ind, &prefix, &name, &val, &ind1, &UP_val, &name_str, &single_f, &s});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
+  StackRoot _root2(&ind);
+  StackRoot _root3(&prefix);
+  StackRoot _root4(&name);
+  StackRoot _root5(&val);
+  StackRoot _root6(&ind1);
+  StackRoot _root7(&UP_val);
+  StackRoot _root8(&name_str);
+  StackRoot _root9(&single_f);
+  StackRoot _root10(&s);
 
   ind = str_repeat(str18, indent);
   if (node->abbrev) {
@@ -503,7 +521,7 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
     f->write(str21);
     for (ListIter<hnode_asdl::Field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::Field* field = it.Value();
-      StackRoots _for({&field    });
+      StackRoot _for(&field    );
       name = field->name;
       val = field->val;
       ind1 = str_repeat(str22, (indent + INDENT));
@@ -518,7 +536,7 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
           f->write(str24);
           for (ListIter<hnode_asdl::hnode_t*> it(val->children); !it.Done(); it.Next()) {
             hnode_asdl::hnode_t* child = it.Value();
-            StackRoots _for({&child          });
+            StackRoot _for(&child          );
             this->PrintNode(child, f, ((indent + INDENT) + INDENT));
             f->write(str25);
           }
@@ -531,10 +549,10 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
         prefix_len = len(name_str);
         single_f = f->NewTempBuffer();
         if (_TrySingleLine(val, single_f, (this->max_col - prefix_len))) {
-          Tuple2<Str*, int> tup3 = single_f->GetRaw();
+          Tuple2<BigStr*, int> tup3 = single_f->GetRaw();
           s = tup3.at0();
           num_chars = tup3.at1();
-          f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
+          f->WriteRaw((Alloc<Tuple2<BigStr*, int>>(s, num_chars)));
         }
         else {
           f->write(str28);
@@ -548,22 +566,27 @@ void _PrettyPrinter::_PrintRecord(hnode::Record* node, format::ColorOutput* f, i
 }
 
 void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f, int indent) {
-  Str* ind = nullptr;
+  BigStr* ind = nullptr;
   format::ColorOutput* single_f = nullptr;
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   int num_chars;
   hnode_asdl::hnode_t* UP_node = nullptr;
   int tag;
-  StackRoots _roots({&node, &f, &ind, &single_f, &s, &UP_node});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
+  StackRoot _root2(&ind);
+  StackRoot _root3(&single_f);
+  StackRoot _root4(&s);
+  StackRoot _root5(&UP_node);
 
   ind = str_repeat(str30, indent);
   single_f = f->NewTempBuffer();
   single_f->write(ind);
   if (_TrySingleLine(node, single_f, (this->max_col - indent))) {
-    Tuple2<Str*, int> tup4 = single_f->GetRaw();
+    Tuple2<BigStr*, int> tup4 = single_f->GetRaw();
     s = tup4.at0();
     num_chars = tup4.at1();
-    f->WriteRaw((Alloc<Tuple2<Str*, int>>(s, num_chars)));
+    f->WriteRaw((Alloc<Tuple2<BigStr*, int>>(s, num_chars)));
     return ;
   }
   UP_node = node;
@@ -599,7 +622,8 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
 
 bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_chars) {
   int i;
-  StackRoots _roots({&node, &f});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
 
   f->write(node->left);
   if (node->abbrev) {
@@ -612,7 +636,7 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
-      StackRoots _for({&val    });
+      StackRoot _for(&val    );
       if (i != 0) {
         f->write(str33);
       }
@@ -627,7 +651,7 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
     f->PopColor();
     for (ListIter<hnode_asdl::Field*> it(node->fields); !it.Done(); it.Next()) {
       hnode_asdl::Field* field = it.Value();
-      StackRoots _for({&field    });
+      StackRoot _for(&field    );
       f->write(StrFormat(" %s:", field->name));
       if (!_TrySingleLine(field->val, f, max_chars)) {
         return false;
@@ -643,7 +667,9 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
   int tag;
   int i;
   int num_chars_so_far;
-  StackRoots _roots({&node, &f, &UP_node});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
+  StackRoot _root2(&UP_node);
 
   UP_node = node;
   tag = node->tag();
@@ -671,7 +697,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
-          StackRoots _for({&item        });
+          StackRoot _for(&item        );
           if (i != 0) {
             f->write(str37);
           }
@@ -701,7 +727,9 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
 
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
   format::_PrettyPrinter* pp = nullptr;
-  StackRoots _roots({&node, &f, &pp});
+  StackRoot _root0(&node);
+  StackRoot _root1(&f);
+  StackRoot _root2(&pp);
 
   pp = Alloc<_PrettyPrinter>(100);
   pp->PrintNode(node, f, 0);
@@ -711,22 +739,22 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 
 namespace ansi {  // define
 
-Str* RESET = str39;
-Str* BOLD = str40;
-Str* UNDERLINE = str41;
-Str* REVERSE = str42;
-Str* RED = str43;
-Str* GREEN = str44;
-Str* YELLOW = str45;
-Str* BLUE = str46;
+BigStr* RESET = str39;
+BigStr* BOLD = str40;
+BigStr* UNDERLINE = str41;
+BigStr* REVERSE = str42;
+BigStr* RED = str43;
+BigStr* GREEN = str44;
+BigStr* YELLOW = str45;
+BigStr* BLUE = str46;
 
 }  // define namespace ansi
 
 namespace cgi {  // define
 
 
-Str* escape(Str* s) {
-  StackRoots _roots({&s});
+BigStr* escape(BigStr* s) {
+  StackRoot _root0(&s);
 
   s = s->replace(str47, str48);
   s = s->replace(str49, str50);
@@ -743,8 +771,9 @@ int BIT8_U_ESCAPE = 1;
 int BIT8_X_ESCAPE = 2;
 int MUST_QUOTE = 4;
 
-bool _encode(Str* s, int bit8_display, mylib::BufWriter* buf) {
-  StackRoots _roots({&s, &buf});
+bool _encode(BigStr* s, int bit8_display, mylib::BufWriter* buf) {
+  StackRoot _root0(&s);
+  StackRoot _root1(&buf);
 
   if (bit8_display == BIT8_X_ESCAPE) {
     _encode_bytes_x(s, buf);
@@ -755,15 +784,18 @@ bool _encode(Str* s, int bit8_display, mylib::BufWriter* buf) {
   }
 }
 
-Str* maybe_shell_encode(Str* s, int flags) {
+BigStr* maybe_shell_encode(BigStr* s, int flags) {
   int quote;
   int must_quote;
   int bit8_display;
-  List<Str*>* parts = nullptr;
+  List<BigStr*>* parts = nullptr;
   mylib::BufWriter* buf = nullptr;
   bool valid_utf8;
-  Str* prefix = nullptr;
-  StackRoots _roots({&s, &parts, &buf, &prefix});
+  BigStr* prefix = nullptr;
+  StackRoot _root0(&s);
+  StackRoot _root1(&parts);
+  StackRoot _root2(&buf);
+  StackRoot _root3(&prefix);
 
   quote = 0;
   must_quote = (flags & 4);
@@ -773,8 +805,8 @@ Str* maybe_shell_encode(Str* s, int flags) {
   }
   else {
     for (StrIter it(s); !it.Done(); it.Next()) {
-      Str* ch = it.Value();
-      StackRoots _for({&ch    });
+      BigStr* ch = it.Value();
+      StackRoot _for(&ch    );
       if ((!must_quote and IsPlainChar(ch))) {
         continue;
       }
@@ -788,7 +820,7 @@ Str* maybe_shell_encode(Str* s, int flags) {
   if (quote == 0) {
     return s;
   }
-  parts = Alloc<List<Str*>>();
+  parts = Alloc<List<BigStr*>>();
   buf = Alloc<mylib::BufWriter>();
   valid_utf8 = _encode(s, bit8_display, buf);
   parts->append(buf->getvalue());
@@ -802,11 +834,13 @@ Str* maybe_shell_encode(Str* s, int flags) {
   return str_concat(prefix, str57->join(parts));
 }
 
-Str* maybe_encode(Str* s, int bit8_display) {
+BigStr* maybe_encode(BigStr* s, int bit8_display) {
   int quote;
-  List<Str*>* parts = nullptr;
+  List<BigStr*>* parts = nullptr;
   mylib::BufWriter* buf = nullptr;
-  StackRoots _roots({&s, &parts, &buf});
+  StackRoot _root0(&s);
+  StackRoot _root1(&parts);
+  StackRoot _root2(&buf);
 
   quote = 0;
   if (len(s) == 0) {
@@ -814,8 +848,8 @@ Str* maybe_encode(Str* s, int bit8_display) {
   }
   else {
     for (StrIter it(s); !it.Done(); it.Next()) {
-      Str* ch = it.Value();
-      StackRoots _for({&ch    });
+      BigStr* ch = it.Value();
+      StackRoot _for(&ch    );
       if (IsPlainChar(ch)) {
         continue;
       }
@@ -825,7 +859,7 @@ Str* maybe_encode(Str* s, int bit8_display) {
   if (!quote) {
     return s;
   }
-  parts = Alloc<List<Str*>>();
+  parts = Alloc<List<BigStr*>>();
   parts->append(str58);
   buf = Alloc<mylib::BufWriter>();
   _encode(s, bit8_display, buf);
@@ -834,12 +868,14 @@ Str* maybe_encode(Str* s, int bit8_display) {
   return str60->join(parts);
 }
 
-Str* encode(Str* s, int bit8_display) {
-  List<Str*>* parts = nullptr;
+BigStr* encode(BigStr* s, int bit8_display) {
+  List<BigStr*>* parts = nullptr;
   mylib::BufWriter* buf = nullptr;
-  StackRoots _roots({&s, &parts, &buf});
+  StackRoot _root0(&s);
+  StackRoot _root1(&parts);
+  StackRoot _root2(&buf);
 
-  parts = Alloc<List<Str*>>();
+  parts = Alloc<List<BigStr*>>();
   parts->append(str61);
   buf = Alloc<mylib::BufWriter>();
   _encode(s, bit8_display, buf);
@@ -848,13 +884,15 @@ Str* encode(Str* s, int bit8_display) {
   return str63->join(parts);
 }
 
-void _encode_bytes_x(Str* s, mylib::BufWriter* buf) {
-  Str* part = nullptr;
-  StackRoots _roots({&s, &buf, &part});
+void _encode_bytes_x(BigStr* s, mylib::BufWriter* buf) {
+  BigStr* part = nullptr;
+  StackRoot _root0(&s);
+  StackRoot _root1(&buf);
+  StackRoot _root2(&part);
 
   for (StrIter it(s); !it.Done(); it.Next()) {
-    Str* byte = it.Value();
-    StackRoots _for({&byte  });
+    BigStr* byte = it.Value();
+    StackRoot _for(&byte  );
     if (str_equals(byte, str64)) {
       part = str65;
     }
@@ -913,17 +951,22 @@ int B3_2 = 4;
 int B4_2 = 5;
 int B4_3 = 6;
 
-bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf) {
+bool EncodeRunes(BigStr* s, int bit8_display, mylib::BufWriter* buf) {
   bool valid_utf8;
   int state;
-  Str* r1 = nullptr;
-  Str* r2 = nullptr;
-  Str* r3 = nullptr;
+  BigStr* r1 = nullptr;
+  BigStr* r2 = nullptr;
+  BigStr* r3 = nullptr;
   int b;
   int typ;
-  Str* out = nullptr;
+  BigStr* out = nullptr;
   int rune;
-  StackRoots _roots({&s, &buf, &r1, &r2, &r3, &out});
+  StackRoot _root0(&s);
+  StackRoot _root1(&buf);
+  StackRoot _root2(&r1);
+  StackRoot _root3(&r2);
+  StackRoot _root4(&r3);
+  StackRoot _root5(&out);
 
   valid_utf8 = true;
   state = Start;
@@ -931,8 +974,8 @@ bool EncodeRunes(Str* s, int bit8_display, mylib::BufWriter* buf) {
   r2 = str77;
   r3 = str78;
   for (StrIter it(s); !it.Done(); it.Next()) {
-    Str* byte = it.Value();
-    StackRoots _for({&byte  });
+    BigStr* byte = it.Value();
+    StackRoot _for(&byte  );
     b = ord(byte);
     if (b < 127) {
       typ = Ascii;

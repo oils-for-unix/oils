@@ -16,9 +16,9 @@ from _devbuild.gen.syntax_asdl import (
     command,
     command_e,
     command_t,
-    sh_lhs_expr,
-    sh_lhs_expr_e,
-    sh_lhs_expr_t,
+    sh_lhs,
+    sh_lhs_e,
+    sh_lhs_t,
     word,
     word_e,
     word_t,
@@ -40,7 +40,7 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr_e,
     arith_expr_t,
 )
-from _devbuild.gen.runtime_asdl import lvalue
+from _devbuild.gen.value_asdl import LeftName
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
 
@@ -50,13 +50,12 @@ from typing import cast, Optional
 
 
 def LName(name):
-    # type: (str) -> lvalue.Named
-    """Wrapper for lvalue.Named() with location.
+    # type: (str) -> LeftName
+    """Wrapper for LeftName() with location.
 
-    TODO: add locations and remove
-    this.
+    TODO: add locations and remove this.
     """
-    return lvalue.Named(name, loc.Missing)
+    return LeftName(name, loc.Missing)
 
 
 def TokenFor(loc_):
@@ -436,7 +435,7 @@ def RightTokenForWord(w):
 
 
 def TokenForLhsExpr(node):
-    # type: (sh_lhs_expr_t) -> Token
+    # type: (sh_lhs_t) -> Token
     """Currently unused?
 
     Will be useful for translating YSH assignment
@@ -446,11 +445,11 @@ def TokenForLhsExpr(node):
     # it moot.  See the comment in frontend/syntax.asdl.
     UP_node = node
     with tagswitch(node) as case:
-        if case(sh_lhs_expr_e.Name):
-            node = cast(sh_lhs_expr.Name, UP_node)
+        if case(sh_lhs_e.Name):
+            node = cast(sh_lhs.Name, UP_node)
             return node.left
-        elif case(sh_lhs_expr_e.IndexedName):
-            node = cast(sh_lhs_expr.IndexedName, UP_node)
+        elif case(sh_lhs_e.IndexedName):
+            node = cast(sh_lhs.IndexedName, UP_node)
             return node.left
         else:
             # Should not see UnparsedIndex

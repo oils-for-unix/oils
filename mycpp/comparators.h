@@ -10,20 +10,20 @@
 template <typename L, typename R>
 class Tuple2;
 
-bool str_equals(Str* left, Str* right);
-bool maybe_str_equals(Str* left, Str* right);
+bool str_equals(BigStr* left, BigStr* right);
+bool maybe_str_equals(BigStr* left, BigStr* right);
 
-bool are_equal(Str* left, Str* right);
+bool are_equal(BigStr* left, BigStr* right);
 
-bool are_equal(Str* left, Str* right);
+bool are_equal(BigStr* left, BigStr* right);
 bool are_equal(int left, int right);
-bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2);
+bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
 bool are_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
 
 bool keys_equal(int left, int right);
-bool keys_equal(Str* left, Str* right);
+bool keys_equal(BigStr* left, BigStr* right);
 bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
-bool keys_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2);
+bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
 
 namespace id_kind_asdl {
 enum class Kind;
@@ -41,11 +41,11 @@ inline int int_cmp(int a, int b) {
 // mylib::str_cmp is in this common header to avoid gc_list.h -> gc_mylib.h
 // dependency
 //
-// It's also used for _cmp(Str*) in gc_list.
+// It's also used for _cmp(BigStr*) in gc_list.
 namespace mylib {
 
 // Used by [[ a > b ]] and so forth
-inline int str_cmp(Str* a, Str* b) {
+inline int str_cmp(BigStr* a, BigStr* b) {
   int len_a = len(a);
   int len_b = len(b);
 

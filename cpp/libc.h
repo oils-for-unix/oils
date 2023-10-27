@@ -16,19 +16,20 @@ inline void print_time(double real, double user, double sys) {
   fprintf(stderr, "sys\t%.3f\n", sys);
 }
 
-Str* realpath(Str* path);
+BigStr* realpath(BigStr* path);
 
-Str* gethostname();
+BigStr* gethostname();
 
-int fnmatch(Str* pat, Str* str, int flags = 0);
+int fnmatch(BigStr* pat, BigStr* str, int flags = 0);
 
-List<Str*>* glob(Str* pat);
+List<BigStr*>* glob(BigStr* pat);
 
-Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos);
+Tuple2<int, int>* regex_first_group_match(BigStr* pattern, BigStr* str,
+                                          int pos);
 
-List<Str*>* regex_match(Str* pattern, Str* str, int flags = 0);
+List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags = 0);
 
-int wcswidth(Str* str);
+int wcswidth(BigStr* str);
 int get_terminal_width();
 
 }  // namespace libc

@@ -18,6 +18,7 @@ from mypy.types import Type
 from mycpp.crash import catch_errors
 from mycpp import format_strings
 from mycpp.util import log
+from mycpp import util
 
 T = None  # TODO: Make it type check?
 
@@ -111,14 +112,18 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('IntExpr %d', o.value)
 
     def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
-        # - Need new Str() everywhere because "foo" doesn't match Str* :-(
+        # - Need new BigStr() everywhere because "foo" doesn't match BigStr* :-(
 
         id_ = 'str%d' % self.unique_id
         self.unique_id += 1
 
         raw_string = format_strings.DecodeMyPyString(o.value)
 
-        self.out('GLOBAL_STR(%s, %s);', id_, json.dumps(raw_string))
+        if util.SMALL_STR:
+            self.out('GLOBAL_STR2(%s, %s);', id_, json.dumps(raw_string))
+        else:
+            self.out('GLOBAL_STR(%s, %s);', id_, json.dumps(raw_string))
+
         self.const_lookup[o] = id_
 
     def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
@@ -463,9 +468,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Omit anything that looks like if __name__ == ...
         cond = o.expr[0]
-        if (isinstance(cond, ComparisonExpr)
-                and isinstance(cond.operands[0], NameExpr)
-                and cond.operands[0].name == '__name__'):
+        if (isinstance(cond, ComparisonExpr) and
+                isinstance(cond.operands[0], NameExpr) and
+                cond.operands[0].name == '__name__'):
             return
 
         # Omit if 0:

@@ -1,0 +1,137 @@
+
+# Tea can run a limited form of procs.  The first word must be a name, and NO
+# BARE WORDS.
+#
+# Example:
+#   log "hello $name"       # valid in OSH, YSH, Tea
+#   myproc $(hostname)      # ditto
+#
+#   my-proc '/' $foo        # OSH and YSH
+#   run 'my-proc' '/' $foo  # Tea.  'run' is similar to 'command' and 'builtin'
+#
+
+tea_word: (
+    dq_string | sq_string
+  | sh_command_sub | braced_var_sub | simple_var_sub
+)
+
+type_expr_list: type_expr (',' type_expr)*
+
+# Note: It may make sense to have ; here, for named params only!
+data_params: (param ',')* [ param [','] ]
+
+# zero params allowed for consistency with func and class?
+tea_data: Expr_Name '(' [data_params] ')'
+
+# e.g. Nullary %Token or Nullary(x Int)
+variant_type: Expr_Symbol | '(' data_params ')' 
+variant: Expr_Name [ variant_type ]
+
+#
+# Experimental "Tea" stuff
+#
+# It also needs:
+# - cast expressions.  Although cast(Int, foo) works I suppose.  It feels like
+#   it has a runtime cost
+
+tea_enum: (
+  Expr_Name '{' [Op_Newline]
+  # note: braces can be empty
+  [ variant (comma_newline variant)* [comma_newline] ]
+  '}'
+)
+
+suite: '{' [Op_Newline] [func_items] '}'
+
+func_item: (
+  ('var' | 'const') name_type_list '=' testlist  # ysh_var_decl
+
+  # TODO: if/switch, with, try/except/throw, etc.
+| 'while' test suite
+| 'for' name_type_list 'in' test suite
+
+  # In Python, imports, assert, etc. also at this 'small_stmt' level
+| 'break' | 'continue' | 'return' [testlist]
+
+  # TODO: accept setvar for consistency with YSH?
+| 'set' place_list (augassign | '=') testlist  # ysh_place_mutation
+  # x  f(x)  etc.
+  #
+  # And x = 1.  Python uses the same "hack" to fit within pgen2.  It also
+  # supports a = b = 1, which we don't want.
+  #
+  # And echo 'hi' 'there'
+  #
+  # TODO: expr_to_ast needs to validate this
+| testlist (['=' testlist] | tea_word*)
+)
+
+# we want to avoid requiring newline or ; before }
+func_items: func_item (semi_newline func_item)* [semi_newline]
+
+# This is anonymous
+tea_func: (
+  '(' [param_group] [';' param_group] ')' [type_expr_list]
+  suite
+)
+named_func: Expr_Name tea_func
+
+# TODO: Methods differ from functions:
+#  super() can be the first arg
+#  shortcut initializer: Parser(this.lexer) { }
+#  abstract, override, virtual
+#  should we allow annotations, like 'public' or 'export'?
+# 
+# No field initializers for now.  Later C++ versions allow it.
+#
+# Annotations:
+#
+# func Parse() Int
+#   [override const abstract] {
+# } ?
+
+class_item: (
+  ('virtual' | 'override' | 'func' | 'abstract' ) Expr_Name tea_func
+  # Member declaration
+| 'var' name_type_list
+)
+
+# Note: we could restrict separators to newlines.
+# But then you couldn't do class Foo { var a; var b }
+class_items: class_item (semi_newline class_item)* [semi_newline] 
+
+tea_class: Expr_Name [':' Expr_Name ] '{' [Op_Newline] [class_items] '}'
+
+# 'import' can't use 'semi_newline' because ending with an unknown number of
+# tokens doesn't compose with our CommandParser.
+end_import: ';' | Op_Newline
+
+import_name: Expr_Name ['as' Expr_Name]
+import_names: import_name (comma_newline import_name)* [import_name]
+
+# TODO: Should we have a simpler YSH string literal?
+tea_import: sq_string [ 'as' Expr_Name ] ['(' [Op_Newline] [import_names] ')'] end_import
+
+# Top level:
+# declarations of constants -- with const only?
+# maybe only const?
+# use, data, enum, class, func.  That's it?  OK.
+
+end_outer: ';' [Op_Newline] | Op_Newline | Eof_Real
+
+module_item: (
+  # ysh_var_decl, but no mutation
+  ('var' | 'const') name_type_list '=' testlist end_outer
+| 'import' tea_import  # TODO: needs Eof_Real
+  # Also 'export'
+| 'class' tea_class end_outer
+| 'data' tea_data end_outer
+| 'enum' tea_enum end_outer
+| 'func' Expr_Name tea_func end_outer
+
+  # Might need: typedef?  Or typealias?
+)
+
+# Eof_Real either after newline or before newline are both valid
+tea_module: [Op_Newline] module_item* [Eof_Real]
+

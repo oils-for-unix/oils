@@ -5,8 +5,9 @@ args_test.py: Tests for args.py
 
 import unittest
 
-from _devbuild.gen.runtime_asdl import cmd_value, value
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.value_asdl import value
 from core import error
 from frontend import flag_spec
 from frontend import args  # module under test

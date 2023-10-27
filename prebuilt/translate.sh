@@ -94,6 +94,7 @@ core-error() {
     CORE_ERROR_MYCPP_H \
     '
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"' \
     --to-header core.error \
     core/error.py
@@ -109,6 +110,7 @@ frontend-args() {
     FRONTEND_ARGS_MYCPP_H \
     '
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/frontend_flag_spec.h"' \
     --to-header asdl.runtime \

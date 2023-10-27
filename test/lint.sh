@@ -18,7 +18,8 @@ source build/dev-shell.sh  # python2 and python3
 source devtools/common.sh  # banner
 source devtools/run-task.sh  # run-task
 
-readonly -a CODE_DIRS=(asdl bin core data_lang frontend osh tools ysh)
+# TODO: synchronize with metrics/source-code.sh
+readonly -a CODE_DIRS=(asdl bin builtin core data_lang frontend osh tools ysh)
 
 #
 # C++

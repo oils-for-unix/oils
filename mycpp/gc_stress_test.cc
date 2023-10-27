@@ -42,7 +42,7 @@ TEST overflowing_roots_test() {
 TEST str_simple_test() {
   gHeap.Init();
 
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   StackRoots _roots({&s});
 
   int total = 0;
@@ -66,7 +66,7 @@ GLOBAL_STR(bx, "bx");
 TEST str_growth_test() {
   gHeap.Init();
 
-  Str* s = nullptr;
+  BigStr* s = nullptr;
   StackRoots _roots({&s});
 
   gHeap.PrintStats(STDERR_FILENO);
@@ -148,13 +148,13 @@ TEST list_slice_append_test() {
 TEST list_str_growth_test() {
   gHeap.Init();
 
-  Str* s = nullptr;
-  List<Str*>* L = nullptr;
+  BigStr* s = nullptr;
+  List<BigStr*>* L = nullptr;
   StackRoots _roots({&s, &L});
   // StackRoots _roots({&L});
 
   s = StrFromC("b");
-  L = Alloc<List<Str*>>();
+  L = Alloc<List<BigStr*>>();
 
 #if 0
   int total = 0;
@@ -180,12 +180,12 @@ TEST list_str_growth_test() {
 TEST dict_growth_test() {
   gHeap.Init();
 
-  Str* s = nullptr;
-  Dict<Str*, int>* D = nullptr;
+  BigStr* s = nullptr;
+  Dict<BigStr*, int>* D = nullptr;
   StackRoots _roots({&s, &D});
 
   s = StrFromC("abcdefg");
-  D = Alloc<Dict<Str*, int>>();
+  D = Alloc<Dict<BigStr*, int>>();
 
   int total = 0;
   for (int i = 0; i < 40; ++i) {

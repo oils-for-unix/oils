@@ -169,7 +169,7 @@ Static control flow will allow static analysis of shell scripts.
 For example, `append` is a builtin in OSH, but not in `bash`.  Use `env append`
 or `/path/to/append` if you want to run an external command.
 
-(Note that a user-defined function `append` takes priority over the builtin
+(Note that a user-defined proc `append` takes priority over the builtin
 `append`.)
 
 ### OSH has more keywords, which shadow builtins, functions, and commands

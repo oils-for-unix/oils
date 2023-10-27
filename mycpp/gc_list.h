@@ -218,7 +218,7 @@ template <typename K, typename V>
 class Dict;  // forward decl
 
 template <typename V>
-List<Str*>* sorted(Dict<Str*, V>* d);
+List<BigStr*>* sorted(Dict<BigStr*, V>* d);
 
 template <typename T>
 List<T>* sorted(List<T>* l);
@@ -417,7 +417,7 @@ void List<T>::extend(List<T>* other) {
   len_ = new_len;
 }
 
-inline bool _cmp(Str* a, Str* b) {
+inline bool _cmp(BigStr* a, BigStr* b) {
   return mylib::str_cmp(a, b) < 0;
 }
 
@@ -446,7 +446,7 @@ inline bool list_contains(List<T>* haystack, T needle) {
 }
 
 template <typename V>
-List<Str*>* sorted(Dict<Str*, V>* d) {
+List<BigStr*>* sorted(Dict<BigStr*, V>* d) {
   auto keys = d->keys();
   keys->sort();
   return keys;

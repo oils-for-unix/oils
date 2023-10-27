@@ -5,7 +5,7 @@ from errno import EINTR
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import builtin_i
-from _devbuild.gen.runtime_asdl import RedirValue, trace, value
+from _devbuild.gen.runtime_asdl import RedirValue, trace
 from _devbuild.gen.syntax_asdl import (
     command,
     command_e,
@@ -14,6 +14,8 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
+from _devbuild.gen.value_asdl import value
+from builtin import hay_ysh
 from core import dev
 from core import error
 from core import process
@@ -32,10 +34,10 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import (cmd_value, CommandStatus,
                                             StatusArray)
     from _devbuild.gen.syntax_asdl import command_t
+    from builtin import trap_osh
     from core import optview
     from core import state
     from core.vm import _Builtin
-    from osh import builtin_trap
 
 _ = log
 
@@ -95,7 +97,7 @@ class ShellExecutor(vm._Executor):
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
             procs,  # type: Dict[str, value.Proc]
-            hay_state,  # type: state.Hay
+            hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, _Builtin]
             search_path,  # type: state.SearchPath
             ext_prog,  # type: process.ExternalProgram
@@ -104,7 +106,7 @@ class ShellExecutor(vm._Executor):
             job_control,  # type: process.JobControl
             job_list,  # type: process.JobList
             fd_state,  # type: process.FdState
-            trap_state,  # type: builtin_trap.TrapState
+            trap_state,  # type: trap_osh.TrapState
             errfmt  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None

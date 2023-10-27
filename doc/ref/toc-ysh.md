@@ -32,10 +32,10 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Commands]      proc-def      proc p (out Ref; pos, ...rest; n=0; b Block) {
                   func-def      func f(x; opt1, opt2) { return (x + 1) }
                   ysh-return    return (myexpr)
-                  error         error (status=3)
                   equal =       = 1 + 2*3
-                  underscore _  _ mylist->append(42)
+                  dcolon ::     :: mylist->append(42)
   [YSH Simple]    typed-arg     json write (x)
+                  lazy-expr-arg assert [42 === x]
                   block-arg     cd /tmp { echo $PWD }
   [Conditional]   ysh-case      case (x) { *.py { echo 'python' } }
                   ysh-if        if (x > 0) { echo }
@@ -51,7 +51,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Keywords]      const   var   setvar   setglobal   setref
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
-                  X float-lit   3.14  1.5e-10
+                  float-lit     3.14  1.5e-10
                   num-suffix    42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   str-literal   r'[a-z]\n'  X j"line\n"  
@@ -60,7 +60,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   dict-literal  {name: 'bob'}
                   range         1 .. n+1
                   block-literal ^(echo $PWD)
-                  X expr-lit    ^[1 + 2*3]
+                  expr-lit      ^[1 + 2*3]
                   X template    ^"$a and $b" for Str::replace()
                   X to-string   $[myobj]
                   X to-array    @[myobj]
@@ -74,7 +74,8 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   ysh-index     a[3]  s[3]
                   ysh-attr      mydict.key
                   ysh-slice     a[1:-1]  s[1:-1]
-                  func-call     f(x, y)   s->startswith('prefix')
+                  func-call     f(x, y)
+                  get-method    s->startswith('prefix')
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
                   re-compound   pat|alt   pat seq   (group)
@@ -94,6 +95,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 ```chapter-links-word-lang
   [String Lit]    X multi-str   """  r'''  j"""
                   X j8-str      j"byte \y00 unicode \u{123456}"
+                  X tagged-str  "<span id=$x>"html
   [Expression]    expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
                   var-splice    @myarray @ARGV
@@ -107,12 +109,10 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-builtin-cmd
   [Memory]        append                 Add elements to end of array
-                  X argparse             getopts replacement, sets OPT
-                  X setref               Builtin to replace keyword
                   pp                     Pretty print interpreter state
   [Handle Errors] try                    Run with errexit and set _status
                   boolstatus             Enforce 0 or 1 exit status
-                  X error                Can be used in both proc and func
+                  error                  error 'failed' (status=2)
   [Shell State]   ysh-cd   ysh-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
                   push-registers         Save registers like $?, PIPESTATUS
@@ -121,7 +121,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   is-main                false when sourcing a file
                   use                    change first word lookup
   [I/O]           ysh-read               Buffered I/O with --line, --all, --qsn
-                  X ysh-echo             no -e -n with simple_echo
+                  ysh-echo               no -e -n with simple_echo
                   write                  Like echo, with --, --sep, --end, ()
                   fork   forkwait        Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
@@ -129,16 +129,16 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   X log   X die          common functions (polyfill)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Completion]    compadjust   compexport
-  [Data Formats]  json
-                  X j8str                Upgrade JSON with binary, utf-8
-                  X json8                Tree-shaped
-                  X tsv8                 Table-shaped
-                  X packle               Graph-shaped
+  [Data Formats]  json                   read write
+                  X j8                   read write
+                  X packle               read write, Graph-shaped
 X [TSV8]          rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
                   summary                count, sum, histogram, etc. [ext]
+X [Flags]         Flags                  getopts replacement: flag arg
+                  parseArgs()            
 X [Testing]       describe               Test harness
                   assert                 takes an expression
 X [External Lang] BEGIN   END   when (awk)
@@ -231,7 +231,7 @@ X [Builtin Sub]   _buffer
 ```chapter-links-type-method
   [Primitive] Bool   Int   Float   Str
               Slice   Range   BoundFunc
-  [Code]      Eggex   X Template   X Expr   Command
+  [Code]      Eggex   Expr   X Template   Command
   [List]      append()   pop()   extend()   X index()   join()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()

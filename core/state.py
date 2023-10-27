@@ -11,12 +11,12 @@ from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
-from _devbuild.gen.runtime_asdl import (value, value_e, value_t, lvalue,
-                                        lvalue_e, lvalue_t, scope_e, scope_t,
-                                        HayNode, Cell)
+from _devbuild.gen.runtime_asdl import (scope_e, scope_t, Cell)
 from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
+from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
+                                      sh_lvalue_e, sh_lvalue_t, LeftName)
 from asdl import runtime
 from core import error
 from core.error import e_usage, e_die
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
 # Used in both core/competion.py and osh/state.py
 _READLINE_DELIMS = ' \t\n"\'><=;|&(:'
 
-# flags for SetVar
+# flags for mem.SetValue()
 SetReadOnly = 1 << 0
 ClearReadOnly = 1 << 1
 SetExport = 1 << 2
@@ -276,221 +276,6 @@ class ctx_ErrExit(object):
         if self.strict:
             self.mutable_opts.Pop(option_i._allow_command_sub)
             self.mutable_opts.Pop(option_i._allow_process_sub)
-
-
-class ctx_Try(object):
-
-    def __init__(self, mutable_opts):
-        # type: (MutableOpts) -> None
-
-        mutable_opts.Push(option_i.errexit, True)
-        self.mutable_opts = mutable_opts
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.mutable_opts.Pop(option_i.errexit)
-
-
-class ctx_HayNode(object):
-    """Haynode builtin makes new names in the tree visible."""
-
-    def __init__(self, hay_state, hay_name):
-        # type: (Hay, Optional[str]) -> None
-        #log('pairs %s', pairs)
-        self.hay_state = hay_state
-        self.hay_state.Push(hay_name)
-
-    def __enter__(self):
-        # type: () -> None
-        return
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.hay_state.Pop()
-
-
-class ctx_HayEval(object):
-    """
-  - Turn on shopt oil:all and _running_hay
-  - Disallow recursive 'hay eval'
-  - Ensure result is isolated for 'hay eval :result'
-
-  More leakage:
-
-  External:
-  - execute programs (ext_prog)
-  - redirect
-  - pipelines, subshell, & etc?
-    - do you have to put _running_hay() checks everywhere?
-
-  Internal:
-
-  - state.Mem()
-    - should we at least PushTemp()?
-    - But then they can do setglobal
-  - Option state
-
-  - Disallow all builtins except echo/write/printf?
-    - maybe could do that at the top level
-    - source builtin, read builtin
-    - cd / pushd / popd
-    - trap -- hm yeah this one is bad
-
-  - procs?  Not strictly necessary
-    - you should be able to define them, but not call the user ...
-
-  """
-
-    def __init__(self, hay_state, mutable_opts, mem):
-        # type: (Hay, MutableOpts, Mem) -> None
-        self.hay_state = hay_state
-        self.mutable_opts = mutable_opts
-        self.mem = mem
-
-        if mutable_opts.Get(option_i._running_hay):
-            # This blames the right 'hay' location
-            e_die("Recursive 'hay eval' not allowed")
-
-        for opt_num in consts.YSH_ALL:
-            mutable_opts.Push(opt_num, True)
-        mutable_opts.Push(option_i._running_hay, True)
-
-        self.hay_state.PushEval()
-        self.mem.PushTemp()
-
-    def __enter__(self):
-        # type: () -> None
-        return
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-
-        self.mem.PopTemp()
-        self.hay_state.PopEval()
-
-        self.mutable_opts.Pop(option_i._running_hay)
-        for opt_num in consts.YSH_ALL:
-            self.mutable_opts.Pop(opt_num)
-
-
-class Hay(object):
-    """State for DSLs."""
-
-    def __init__(self):
-        # type: () -> None
-        ch = NewDict()  # type: Dict[str, HayNode]
-        self.root_defs = HayNode(ch)
-        self.cur_defs = self.root_defs  # Same as ClearDefs()
-        self.def_stack = [self.root_defs]
-
-        node = self._MakeOutputNode()
-        self.result_stack = [node]  # type: List[Dict[str, value_t]]
-        self.output = None  # type: Dict[str, value_t]
-
-    def _MakeOutputNode(self):
-        # type: () -> Dict[str, value_t]
-        d = NewDict()  # type: Dict[str, value_t]
-        d['source'] = value.Null
-        d['children'] = value.List([])
-        return d
-
-    def PushEval(self):
-        # type: () -> None
-
-        # remove previous results
-        node = self._MakeOutputNode()
-        self.result_stack = [node]
-
-        self.output = None  # remove last result
-
-    def PopEval(self):
-        # type: () -> None
-
-        # Save the result
-        self.output = self.result_stack[0]
-
-        # Clear results
-        node = self._MakeOutputNode()
-        self.result_stack = [node]
-
-    def AppendResult(self, d):
-        # type: (Dict[str, value_t]) -> None
-        """Called by haynode builtin."""
-        UP_children = self.result_stack[-1]['children']
-        assert UP_children.tag() == value_e.List, UP_children
-        children = cast(value.List, UP_children)
-        children.items.append(value.Dict(d))
-
-    def Result(self):
-        # type: () -> Dict[str, value_t]
-        """Called by hay eval and eval_hay()"""
-        return self.output
-
-    def HayRegister(self):
-        # type: () -> Dict[str, value_t]
-        """Called by _hay() function."""
-        return self.result_stack[0]
-
-    def Resolve(self, first_word):
-        # type: (str) -> bool
-        return first_word in self.cur_defs.children
-
-    def DefinePath(self, path):
-        # type: (List[str]) -> None
-        """Fill a tree from the given path."""
-        current = self.root_defs
-        for name in path:
-            if name not in current.children:
-                ch = NewDict()  # type: Dict[str, HayNode]
-                current.children[name] = HayNode(ch)
-            current = current.children[name]
-
-    def Reset(self):
-        # type: () -> None
-
-        # reset definitions
-        ch = NewDict()  # type: Dict[str, HayNode]
-        self.root_defs = HayNode(ch)
-        self.cur_defs = self.root_defs
-
-        # reset output
-        self.PopEval()
-
-    def Push(self, hay_name):
-        # type: (Optional[str]) -> None
-        """
-        Package cppunit {
-        }   # pushes a namespace
-
-        haynode package cppunit {
-        }   # just assumes every TYPE 'package' is valid.
-        """
-        top = self.result_stack[-1]
-        # TODO: Store this more efficiently?  See osh/builtin_pure.py
-        children = cast(value.List, top['children'])
-        last_child = cast(value.Dict, children.items[-1])
-        self.result_stack.append(last_child.d)
-
-        #log('> PUSH')
-        if hay_name is None:
-            self.def_stack.append(self.cur_defs)  # no-op
-        else:
-            # Caller should ensure this
-            assert hay_name in self.cur_defs.children, hay_name
-
-            self.cur_defs = self.cur_defs.children[hay_name]
-            self.def_stack.append(self.cur_defs)
-
-    def Pop(self):
-        # type: () -> None
-        self.def_stack.pop()
-        self.cur_defs = self.def_stack[-1]
-
-        self.result_stack.pop()
 
 
 class OptHook(object):
@@ -948,47 +733,6 @@ if mylib.PYTHON:
         return vars_json
 
 
-class DirStack(object):
-    """For pushd/popd/dirs."""
-
-    def __init__(self):
-        # type: () -> None
-        self.stack = []  # type: List[str]
-        self.Reset()  # Invariant: it always has at least ONE entry.
-
-    def Reset(self):
-        # type: () -> None
-        """ For dirs -c """
-        del self.stack[:]
-        self.stack.append(posix.getcwd())
-
-    def Replace(self, d):
-        # type: (str) -> None
-        """ For cd / """
-        self.stack[-1] = d
-
-    def Push(self, entry):
-        # type: (str) -> None
-        self.stack.append(entry)
-
-    def Pop(self):
-        # type: () -> Optional[str]
-        if len(self.stack) <= 1:
-            return None
-        self.stack.pop()  # remove last
-        return self.stack[-1]  # return second to last
-
-    def Iter(self):
-        # type: () -> List[str]
-        """Iterate in reverse order."""
-        # mycpp REWRITE:
-        #return reversed(self.stack)
-        ret = []  # type: List[str]
-        ret.extend(self.stack)
-        ret.reverse()
-        return ret
-
-
 def _GetWorkingDir():
     # type: () -> str
     """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
@@ -1059,7 +803,7 @@ def _InitVarsFromEnv(mem, environ):
     # 'environ' variable into shell variables.  Bash has an export_env
     # variable.  Dash has a loop through environ in init.c
     for n, v in iteritems(environ):
-        mem.SetValue(location.LName(n),
+        mem.SetNamed(location.LName(n),
                      value.Str(v),
                      scope_e.GlobalOnly,
                      flags=SetExport)
@@ -1074,7 +818,7 @@ def _InitVarsFromEnv(mem, environ):
     if val.tag() == value_e.Undef:
         SetGlobalString(mem, 'SHELLOPTS', '')
     # Now make it readonly
-    mem.SetValue(location.LName('SHELLOPTS'),
+    mem.SetNamed(location.LName('SHELLOPTS'),
                  None,
                  scope_e.GlobalOnly,
                  flags=SetReadOnly)
@@ -1086,7 +830,7 @@ def _InitVarsFromEnv(mem, environ):
         SetGlobalString(mem, 'PWD', _GetWorkingDir())
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
-    mem.SetValue(location.LName('PWD'),
+    mem.SetNamed(location.LName('PWD'),
                  None,
                  scope_e.GlobalOnly,
                  flags=SetExport)
@@ -1185,46 +929,11 @@ class ctx_Temp(object):
         self.mem.PopTemp()
 
 
-class ctx_Shvar(object):
-    """For shvar LANG=C _ESCAPER=posix-sh-word _DIALECT=ninja."""
-
-    def __init__(self, mem, pairs):
-        # type: (Mem, List[Tuple[str, str]]) -> None
-        #log('pairs %s', pairs)
-        self.mem = mem
-        self.restore = []  # type: List[Tuple[lvalue_t, value_t]]
-        self._Push(pairs)
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self._Pop()
-
-    # Note: _Push and _Pop are separate methods because the C++ translation
-    # doesn't like when they are inline in __init__ and __exit__.
-    def _Push(self, pairs):
-        # type: (List[Tuple[str, str]]) -> None
-        for name, s in pairs:
-            lval = location.LName(name)  # type: lvalue_t
-            # LocalOnly because we are only overwriting the current scope
-            old_val = self.mem.GetValue(name, scope_e.LocalOnly)
-            self.restore.append((lval, old_val))
-            self.mem.SetValue(lval, value.Str(s), scope_e.LocalOnly)
-
-    def _Pop(self):
-        # type: () -> None
-        for lval, old_val in self.restore:
-            if old_val.tag() == value_e.Undef:
-                self.mem.Unset(lval, scope_e.LocalOnly)
-            else:
-                self.mem.SetValue(lval, old_val, scope_e.LocalOnly)
-
-
 class ctx_Registers(object):
-    """For $PS1, $PS4, $PROMPT_COMMAND, traps, and headless EVAL."""
+    """For $PS1, $PS4, $PROMPT_COMMAND, traps, and headless EVAL.
+
+    This is tightly coupled to state.Mem, so it's not in builtin/pure_ysh.
+    """
 
     def __init__(self, mem):
         # type: (Mem) -> None
@@ -1781,11 +1490,102 @@ class Mem(object):
                 return True
         return False
 
+    def SetLocalName(self, lval, val):
+        # type: (LeftName, value_t) -> None
+
+        # Equivalent to
+        # self._ResolveNameOnly(lval.name, scope_e.LocalOnly)
+        name_map = self.var_stack[-1]
+        cell = name_map.get(lval.name)
+
+        if cell:
+            if cell.readonly:
+                e_die("Can't assign to readonly value %r" % lval.name,
+                      lval.blame_loc)
+            cell.val = val  # Mutate value_t
+        else:
+            cell = Cell(False, False, False, val)
+            name_map[lval.name] = cell
+
+    def SetNamed(self, lval, val, which_scopes, flags=0):
+        # type: (LeftName, value_t, scope_t, int) -> None
+
+        keyword_id = flags >> 8  # opposite of _PackFlags
+        is_setref = keyword_id == Id.KW_SetRef
+
+        if keyword_id == Id.KW_SetRef:
+            # Hidden interpreter var with __ prefix.  Matches proc call in
+            # osh/cmd_eval.py
+            lval.name = '__' + lval.name  # Mutating arg lval!  Happens to be OK
+
+        if flags & SetNameref or flags & ClearNameref:
+            # declare -n ref=x  # refers to the ref itself
+            cell, name_map = self._ResolveNameOnly(lval.name, which_scopes)
+            cell_name = lval.name
+        else:
+            # ref=x  # mutates THROUGH the reference
+
+            # Note on how to implement declare -n ref='a[42]'
+            # 1. Call _ResolveNameOnly()
+            # 2. If cell.nameref, call self.unsafe_arith.ParseVarRef() ->
+            #    BracedVarSub
+            # 3. Turn BracedVarSub into an sh_lvalue, and call
+            #    self.unsafe_arith.SetValue() wrapper with ref_trail
+            cell, name_map, cell_name = self._ResolveNameOrRef(
+                lval.name, which_scopes, is_setref)
+
+        if cell:
+            # Clear before checking readonly bit.
+            # NOTE: Could be cell.flags &= flag_clear_mask
+            if flags & ClearExport:
+                cell.exported = False
+            if flags & ClearReadOnly:
+                cell.readonly = False
+            if flags & ClearNameref:
+                cell.nameref = False
+
+            if val is not None:  # e.g. declare -rx existing
+                # Note: this DYNAMIC check means we can't have 'const' in a loop.
+                # But that's true for 'readonly' too, and hoisting it makes more
+                # sense anyway.
+                if cell.readonly:
+                    e_die("Can't assign to readonly value %r" % lval.name,
+                          lval.blame_loc)
+                cell.val = val  # CHANGE VAL
+
+            # NOTE: Could be cell.flags |= flag_set_mask
+            if flags & SetExport:
+                cell.exported = True
+            if flags & SetReadOnly:
+                cell.readonly = True
+            if flags & SetNameref:
+                cell.nameref = True
+
+        else:
+            if val is None:  # declare -rx nonexistent
+                # set -o nounset; local foo; echo $foo  # It's still undefined!
+                val = value.Undef  # export foo, readonly foo
+
+            cell = Cell(bool(flags & SetExport), bool(flags & SetReadOnly),
+                        bool(flags & SetNameref), val)
+            name_map[cell_name] = cell
+
+        # Maintain invariant that only strings and undefined cells can be
+        # exported.
+        assert cell.val is not None, cell
+
+        if cell.val.tag() not in (value_e.Undef, value_e.Str):
+            if cell.exported:
+                # TODO: error context
+                e_die("Only strings can be exported", lval.blame_loc)
+            if cell.nameref:
+                e_die("nameref must be a string", lval.blame_loc)
+
     def SetValue(self, lval, val, which_scopes, flags=0):
-        # type: (lvalue_t, value_t, scope_t, int) -> None
+        # type: (sh_lvalue_t, value_t, scope_t, int) -> None
         """
         Args:
-          lval: lvalue
+          lval: sh_lvalue
           val: value, or None if only changing flags
           which_scopes:
             Local | Global | Dynamic - for builtins, PWD, etc.
@@ -1793,8 +1593,6 @@ class Mem(object):
 
         Note: in bash, PWD=/ changes the directory.  But not in dash.
         """
-        keyword_id = flags >> 8  # opposite of _PackFlags
-        is_setref = keyword_id == Id.KW_SetRef
         # STRICTNESS / SANENESS:
         #
         # 1) Don't create arrays automatically, e.g. a[1000]=x
@@ -1814,84 +1612,16 @@ class Mem(object):
 
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):
-                lval = cast(lvalue.Named, UP_lval)
-                assert lval.name is not None
+            if case(sh_lvalue_e.Var):
+                lval = cast(LeftName, UP_lval)
 
-                if keyword_id == Id.KW_SetRef:
-                    # Hidden interpreter var with __ prefix.  Matches proc call in
-                    # osh/cmd_eval.py
-                    lval.name = '__' + lval.name  # Mutating arg lval!  Happens to be OK
+                self.SetNamed(lval, val, which_scopes, flags=flags)
 
-                if flags & SetNameref or flags & ClearNameref:
-                    # declare -n ref=x  # refers to the ref itself
-                    cell, name_map = self._ResolveNameOnly(
-                        lval.name, which_scopes)
-                    cell_name = lval.name
-                else:
-                    # ref=x  # mutates THROUGH the reference
+            elif case(sh_lvalue_e.Indexed):
+                lval = cast(sh_lvalue.Indexed, UP_lval)
 
-                    # Note on how to implement declare -n ref='a[42]'
-                    # 1. Call _ResolveNameOnly()
-                    # 2. If cell.nameref, call self.unsafe_arith.ParseVarRef() ->
-                    #    BracedVarSub
-                    # 3. Turn BracedVarSub into an lvalue, and call
-                    #    self.unsafe_arith.SetValue() wrapper with ref_trail
-                    cell, name_map, cell_name = self._ResolveNameOrRef(
-                        lval.name, which_scopes, is_setref)
-
-                if cell:
-                    # Clear before checking readonly bit.
-                    # NOTE: Could be cell.flags &= flag_clear_mask
-                    if flags & ClearExport:
-                        cell.exported = False
-                    if flags & ClearReadOnly:
-                        cell.readonly = False
-                    if flags & ClearNameref:
-                        cell.nameref = False
-
-                    if val is not None:  # e.g. declare -rx existing
-                        # Note: this DYNAMIC check means we can't have 'const' in a loop.
-                        # But that's true for 'readonly' too, and hoisting it makes more
-                        # sense anyway.
-                        if cell.readonly:
-                            # TODO: error context
-                            e_die("Can't assign to readonly value %r" %
-                                  lval.name)
-                        cell.val = val  # CHANGE VAL
-
-                    # NOTE: Could be cell.flags |= flag_set_mask
-                    if flags & SetExport:
-                        cell.exported = True
-                    if flags & SetReadOnly:
-                        cell.readonly = True
-                    if flags & SetNameref:
-                        cell.nameref = True
-
-                else:
-                    if val is None:  # declare -rx nonexistent
-                        # set -o nounset; local foo; echo $foo  # It's still undefined!
-                        val = value.Undef  # export foo, readonly foo
-
-                    cell = Cell(bool(flags & SetExport),
-                                bool(flags & SetReadOnly),
-                                bool(flags & SetNameref), val)
-                    name_map[cell_name] = cell
-
-                # Maintain invariant that only strings and undefined cells can be
-                # exported.
-                assert cell.val is not None, cell
-
-                if cell.val.tag() not in (value_e.Undef, value_e.Str):
-                    if cell.exported:
-                        e_die("Only strings can be exported"
-                              )  # TODO: error context
-                    if cell.nameref:
-                        e_die("nameref must be a string")
-
-            elif case(lvalue_e.Indexed):
-                lval = cast(lvalue.Indexed, UP_lval)
-                assert isinstance(lval.index, int), lval
+                keyword_id = flags >> 8  # opposite of _PackFlags
+                is_setref = keyword_id == Id.KW_SetRef
 
                 # There is no syntax 'declare a[x]'
                 assert val is not None, val
@@ -1957,13 +1687,17 @@ class Mem(object):
 
                 # This could be an object, eggex object, etc.  It won't be
                 # BashAssoc shouldn because we query IsBashAssoc before evaluating
-                # sh_lhs_expr.  Could conslidate with s[i] case above
+                # sh_lhs.  Could conslidate with s[i] case above
                 e_die(
                     "Value of type %s can't be indexed" % ui.ValType(cell.val),
                     left_loc)
 
-            elif case(lvalue_e.Keyed):
-                lval = cast(lvalue.Keyed, UP_lval)
+            elif case(sh_lvalue_e.Keyed):
+                lval = cast(sh_lvalue.Keyed, UP_lval)
+
+                keyword_id = flags >> 8  # opposite of _PackFlags
+                is_setref = keyword_id == Id.KW_SetRef
+
                 # There is no syntax 'declare A["x"]'
                 assert val is not None, val
                 assert val.tag() == value_e.Str, val
@@ -1977,7 +1711,7 @@ class Mem(object):
                     e_die("Can't assign to readonly associative array",
                           left_loc)
 
-                # We already looked it up before making the lvalue
+                # We already looked it up before making the sh_lvalue
                 assert cell.val.tag() == value_e.BashAssoc, cell
                 cell_val2 = cast(value.BashAssoc, cell.val)
 
@@ -1987,7 +1721,7 @@ class Mem(object):
                 raise AssertionError(lval.tag())
 
     def _BindNewArrayWithEntry(self, name_map, lval, val, flags):
-        # type: (Dict[str, Cell], lvalue.Indexed, value.Str, int) -> None
+        # type: (Dict[str, Cell], sh_lvalue.Indexed, value.Str, int) -> None
         """Fill 'name_map' with a new indexed array entry."""
         no_str = None  # type: Optional[str]
         items = [no_str] * lval.index
@@ -2182,23 +1916,23 @@ class Mem(object):
         return cell
 
     def Unset(self, lval, which_scopes):
-        # type: (lvalue_t, scope_t) -> bool
+        # type: (sh_lvalue_t, scope_t) -> bool
         """
-    Returns:
-      Whether the cell was found.
-    """
-        # TODO: Refactor lvalue type to avoid this
+        Returns:
+          Whether the cell was found.
+        """
+        # TODO: Refactor sh_lvalue type to avoid this
         UP_lval = lval
 
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):  # unset x
-                lval = cast(lvalue.Named, UP_lval)
+            if case(sh_lvalue_e.Var):  # unset x
+                lval = cast(LeftName, UP_lval)
                 var_name = lval.name
-            elif case(lvalue_e.Indexed):  # unset 'a[1]'
-                lval = cast(lvalue.Indexed, UP_lval)
+            elif case(sh_lvalue_e.Indexed):  # unset 'a[1]'
+                lval = cast(sh_lvalue.Indexed, UP_lval)
                 var_name = lval.name
-            elif case(lvalue_e.Keyed):  # unset 'A["K"]'
-                lval = cast(lvalue.Keyed, UP_lval)
+            elif case(sh_lvalue_e.Keyed):  # unset 'A["K"]'
+                lval = cast(sh_lvalue.Keyed, UP_lval)
                 var_name = lval.name
             else:
                 raise AssertionError()
@@ -2214,7 +1948,7 @@ class Mem(object):
             raise error.Runtime("Can't unset readonly variable %r" % var_name)
 
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):  # unset x
+            if case(sh_lvalue_e.Var):  # unset x
                 # Make variables in higher scopes visible.
                 # example: test/spec.sh builtin-vars -r 24 (ble.sh)
                 mylib.dict_erase(name_map, cell_name)
@@ -2226,8 +1960,8 @@ class Mem(object):
                 # This should never happen because we do recursive lookups of namerefs.
                 assert not cell.nameref, cell
 
-            elif case(lvalue_e.Indexed):  # unset 'a[1]'
-                lval = cast(lvalue.Indexed, UP_lval)
+            elif case(sh_lvalue_e.Indexed):  # unset 'a[1]'
+                lval = cast(sh_lvalue.Indexed, UP_lval)
                 # Note: Setting an entry to None and shifting entries are pretty
                 # much the same in shell.
 
@@ -2259,13 +1993,13 @@ class Mem(object):
                     # mistake for Tcl!)
                     pass
 
-            elif case(lvalue_e.Keyed):  # unset 'A["K"]'
-                lval = cast(lvalue.Keyed, UP_lval)
+            elif case(sh_lvalue_e.Keyed):  # unset 'A["K"]'
+                lval = cast(sh_lvalue.Keyed, UP_lval)
 
                 val = cell.val
                 UP_val = val
 
-                # note: never happens because of mem.IsBashAssoc test for lvalue.Keyed
+                # note: never happens because of mem.IsBashAssoc test for sh_lvalue.Keyed
                 #if val.tag() != value_e.BashAssoc:
                 #  raise error.Runtime("%r isn't an associative array" % lval.name)
 
@@ -2293,8 +2027,8 @@ class Mem(object):
         # type: (str, int) -> bool
         """Used for export -n.
 
-        We don't use SetValue() because even if rval is None, it will
-        make an Undef value in a scope.
+        We don't use SetValue() because even if rval is None, it will make an
+        Undef value in a scope.
         """
         cell, name_map = self._ResolveNameOnly(name, self.ScopesForReading())
         if cell:
@@ -2414,7 +2148,7 @@ class Mem(object):
 
 
 def OshLanguageSetValue(mem, lval, val, flags=0):
-    # type: (Mem, lvalue_t, value_t, int) -> None
+    # type: (Mem, sh_lvalue_t, value_t, int) -> None
     """Like 'setvar' (scope_e.LocalOnly), unless dynamic scope is on.
 
     That is, it respects shopt --unset dynamic_scope.
@@ -2426,7 +2160,7 @@ def OshLanguageSetValue(mem, lval, val, flags=0):
 
 
 def BuiltinSetValue(mem, lval, val):
-    # type: (Mem, lvalue_t, value_t) -> None
+    # type: (Mem, sh_lvalue_t, value_t) -> None
     """Equivalent of x=$y or setref x = y.
 
     Called by BuiltinSetString and BuiltinSetArray Used directly by
@@ -2464,14 +2198,14 @@ def SetGlobalString(mem, name, s):
     """Helper for completion, etc."""
     assert isinstance(s, str)
     val = value.Str(s)
-    mem.SetValue(location.LName(name), val, scope_e.GlobalOnly)
+    mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)
 
 
 def SetGlobalArray(mem, name, a):
     # type: (Mem, str, List[str]) -> None
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
-    mem.SetValue(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
+    mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):
@@ -2479,7 +2213,7 @@ def ExportGlobalString(mem, name, s):
     """Helper for completion, $PWD, $OLDPWD, etc."""
     assert isinstance(s, str)
     val = value.Str(s)
-    mem.SetValue(location.LName(name),
+    mem.SetNamed(location.LName(name),
                  val,
                  scope_e.GlobalOnly,
                  flags=SetExport)

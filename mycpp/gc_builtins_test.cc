@@ -77,20 +77,20 @@ TEST float_test() {
   }
   ASSERT(caught);
 
-  Str* huge = str_repeat(StrFromC("123456789"), 100);
+  BigStr* huge = str_repeat(StrFromC("123456789"), 100);
   double d = to_float(huge);
   ASSERT_EQ(INFINITY, d);
 
   double d2 = to_float(StrFromC("-1e309"));
   ASSERT_EQ(-INFINITY, d2);
 
-  Str* zeros = str_repeat(StrFromC("00000000"), 100);
-  Str* tiny = str_concat3(StrFromC("0."), zeros, StrFromC("1"));
+  BigStr* zeros = str_repeat(StrFromC("00000000"), 100);
+  BigStr* tiny = str_concat3(StrFromC("0."), zeros, StrFromC("1"));
   double d3 = to_float(tiny);
   log("d3 = %.17g", d3);
   ASSERT_EQ(0.0f, d3);
 
-  Str* neg_tiny = str_concat3(StrFromC("-0."), zeros, StrFromC("1"));
+  BigStr* neg_tiny = str_concat3(StrFromC("-0."), zeros, StrFromC("1"));
   double d4 = to_float(neg_tiny);
   log("d4 = %.17g", d4);
   ASSERT_EQ(-0.0f, d4);
@@ -99,7 +99,7 @@ TEST float_test() {
 }
 
 // Wrapper for testing
-bool _StrToInteger(Str* s, int* result, int base) {
+bool _StrToInteger(BigStr* s, int* result, int base) {
   return StringToInteger(s->data_, len(s), base, result);
 }
 
@@ -188,7 +188,7 @@ TEST str_to_int_test() {
 }
 
 TEST int_to_str_test() {
-  Str* int_str;
+  BigStr* int_str;
   int_str = str(INT_MAX);
   ASSERT(str_equals0("2147483647", int_str));
 
@@ -207,7 +207,7 @@ TEST int_to_str_test() {
 }
 
 TEST float_to_str_test() {
-  Str* s = str(3.0);
+  BigStr* s = str(3.0);
   ASSERT(str_equals0("3.0", s));
   log("s = %s", s->data_);
 
@@ -226,10 +226,10 @@ TEST comparators_test() {
   ASSERT(maybe_str_equals(nullptr, nullptr));
 
   // TODO: check for this bug elsewhere
-  log("Tuple2<Str*, int> are_equal()");
-  auto t1 = Alloc<Tuple2<Str*, int>>(StrFromC("42"), 42);
-  auto t2 = Alloc<Tuple2<Str*, int>>(StrFromC("42"), 42);
-  auto t3 = Alloc<Tuple2<Str*, int>>(StrFromC("99"), 99);
+  log("Tuple2<BigStr*, int> are_equal()");
+  auto t1 = Alloc<Tuple2<BigStr*, int>>(StrFromC("42"), 42);
+  auto t2 = Alloc<Tuple2<BigStr*, int>>(StrFromC("42"), 42);
+  auto t3 = Alloc<Tuple2<BigStr*, int>>(StrFromC("99"), 99);
 
   ASSERT(are_equal(t1, t2));
   ASSERT(!are_equal(t2, t3));
@@ -267,7 +267,7 @@ TEST exceptions_test() {
 
   // TODO: Make this work with return value rooting
   RuntimeError* r = nullptr;
-  Str* message = nullptr;
+  BigStr* message = nullptr;
   StackRoots _roots2({&r, &message});
   message = StrFromC("libc::regex_match");
 
@@ -294,16 +294,16 @@ TEST exceptions_test() {
 
 TEST hash_str_test() {
   // two strings known not to collide ahead of time
-  Str* a = StrFromC("foobarbaz");
-  Str* b = StrFromC("123456789");
+  BigStr* a = StrFromC("foobarbaz");
+  BigStr* b = StrFromC("123456789");
   ASSERT(hash(a) != hash(b));
 
   PASS();
 }
 
 TEST intern_test() {
-  Str* s = StrFromC("foo");
-  Str* t = intern(s);
+  BigStr* s = StrFromC("foo");
+  BigStr* t = intern(s);
 
   ASSERT(str_equals(s, t));
 

@@ -17,7 +17,7 @@ from __future__ import print_function
 
 import sys
 
-from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.syntax_asdl import (
     IntParamBox,
@@ -52,11 +52,6 @@ from _devbuild.gen.syntax_asdl import (
     word,
 )
 from _devbuild.gen.runtime_asdl import (
-    lvalue,
-    lvalue_e,
-    value,
-    value_e,
-    value_t,
     cmd_value,
     cmd_value_e,
     RedirValue,
@@ -67,6 +62,8 @@ from _devbuild.gen.runtime_asdl import (
     StatusArray,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
+from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
+                                      y_lvalue_e, y_lvalue_t, LeftName)
 
 from core import dev
 from core import error
@@ -98,12 +95,12 @@ from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.id_kind_asdl import Id_t
     from _devbuild.gen.option_asdl import builtin_t
-    from _devbuild.gen.runtime_asdl import cmd_value_t, lvalue_t
+    from _devbuild.gen.runtime_asdl import cmd_value_t
     from _devbuild.gen.syntax_asdl import Redir, EnvPair
     from core.alloc import Arena
     from core import optview
     from core.vm import _Executor, _AssignBuiltin
-    from osh.builtin_trap import TrapState
+    from builtin import trap_osh
 
 # flags for main_loop.Batch, ExecuteAndCatch.  TODO: Should probably in
 # ExecuteAndCatch, along with SetValue() flags.
@@ -284,7 +281,7 @@ class CommandEvaluator(object):
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
-            trap_state,  # type: TrapState
+            trap_state,  # type: trap_osh.TrapState
             signal_safe,  # type: pyos.SignalSafe
     ):
         # type: (...) -> None
@@ -578,7 +575,7 @@ class CommandEvaluator(object):
                 # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
                 # command_e.Sentence, # command_e.TimeBlock, command_e.ShFunction,
                 # YSH:
-                # command_e.VarDecl, command_e.PlaceMutation,
+                # command_e.VarDecl, command_e.Mutation,
                 # command_e.Proc, command_e.Func, command_e.Expr,
                 # command_e.BareDecl
                 redirects = []
@@ -614,7 +611,7 @@ class CommandEvaluator(object):
             val = self.word_ev.EvalRhsWord(e_pair.val)
             # Set each var so the next one can reference it.  Example:
             # FOO=1 BAR=$FOO ls /
-            self.mem.SetValue(location.LName(e_pair.name),
+            self.mem.SetNamed(location.LName(e_pair.name),
                               val,
                               scope_e.LocalOnly,
                               flags=flags)
@@ -701,10 +698,10 @@ class CommandEvaluator(object):
         # x = 'foo' in Hay blocks
         if node.keyword is None:
             # Note: there's only one LHS
-            place = location.LName(node.lhs[0].name.tval)
+            lval = location.LName(node.lhs[0].name.tval)
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            self.mem.SetValue(place,
+            self.mem.SetNamed(lval,
                               val,
                               scope_e.LocalOnly,
                               flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
@@ -712,7 +709,7 @@ class CommandEvaluator(object):
         else:  # var or const
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            lvals = None  # type: List[lvalue_t]
+            lvals = None  # type: List[LeftName]
             rhs_vals = None  # type: List[value_t]
 
             num_lhs = len(node.lhs)
@@ -727,14 +724,14 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                        'Got %d places on left, but %d values on right' %
+                        'Got %d places on the left, but %d values on right' %
                         (num_lhs, num_rhs), node.keyword)
 
                 lvals = []
                 rhs_vals = []
                 for i, lhs_val in enumerate(node.lhs):
-                    place = location.LName(lhs_val.name.tval)
-                    lvals.append(place)
+                    lval = location.LName(lhs_val.name.tval)
+                    lvals.append(lval)
                     rhs_vals.append(items[i])
 
             with switch(node.keyword.id) as case:
@@ -748,12 +745,12 @@ class CommandEvaluator(object):
 
             for i, lval in enumerate(lvals):
                 rval = rhs_vals[i]
-                self.mem.SetValue(lval, rval, scope_e.LocalOnly, flags=flags)
+                self.mem.SetNamed(lval, rval, scope_e.LocalOnly, flags=flags)
 
         return 0
 
-    def _DoPlaceMutation(self, node):
-        # type: (command.PlaceMutation) -> None
+    def _DoMutation(self, node):
+        # type: (command.Mutation) -> None
 
         with switch(node.keyword.id) as case2:
             if case2(Id.KW_SetVar):
@@ -769,12 +766,12 @@ class CommandEvaluator(object):
         if node.op.id == Id.Arith_Equal:
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            places = None  # type: List[lvalue_t]
+            lvals = None  # type: List[y_lvalue_t]
             rhs_vals = None  # type: List[value_t]
 
             num_lhs = len(node.lhs)
             if num_lhs == 1:
-                places = [self.expr_ev.EvalPlaceExpr(node.lhs[0])]
+                lvals = [self.expr_ev.EvalLhsExpr(node.lhs[0])]
                 rhs_vals = [right_val]
             else:
                 items = val_ops.ToList(
@@ -784,37 +781,46 @@ class CommandEvaluator(object):
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
                     raise error.Expr(
-                        'Got %d places on left, but %d values on right' %
-                        (num_lhs, num_rhs), node.keyword)
+                        'Got %d places on the left, but %d values on the right'
+                        % (num_lhs, num_rhs), node.keyword)
 
-                places = []
+                lvals = []
                 rhs_vals = []
                 for i, lhs_val in enumerate(node.lhs):
-                    places.append(self.expr_ev.EvalPlaceExpr(lhs_val))
+                    lvals.append(self.expr_ev.EvalLhsExpr(lhs_val))
                     rhs_vals.append(items[i])
 
-            for i, place in enumerate(places):
+            for i, lval in enumerate(lvals):
                 rval = rhs_vals[i]
 
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
-                UP_place = place
-                if place.tag() == lvalue_e.ObjIndex:
-                    place = cast(lvalue.ObjIndex, UP_place)
+                UP_lval = lval
 
-                    obj = place.obj
+                if lval.tag() == y_lvalue_e.Var:
+                    lval = cast(LeftName, UP_lval)
+
+                    self.mem.SetNamed(lval,
+                                      rval,
+                                      which_scopes,
+                                      flags=_PackFlags(node.keyword.id))
+
+                elif lval.tag() == y_lvalue_e.Container:
+                    lval = cast(y_lvalue.Container, UP_lval)
+
+                    obj = lval.obj
                     UP_obj = obj
                     with tagswitch(obj) as case:
                         if case(value_e.List):
                             obj = cast(value.List, UP_obj)
-                            index = val_ops.ToInt(place.index,
+                            index = val_ops.ToInt(lval.index,
                                                   'List index should be Int',
                                                   loc.Missing)
                             obj.items[index] = rval
 
                         elif case(value_e.Dict):
                             obj = cast(value.Dict, UP_obj)
-                            key = val_ops.ToStr(place.index,
+                            key = val_ops.ToStr(lval.index,
                                                 'Dict index should be Str',
                                                 loc.Missing)
                             obj.d[key] = rval
@@ -828,30 +834,16 @@ class CommandEvaluator(object):
                         e_die('setref obj[index] not implemented')
 
                 else:
-                    # top level variable
-                    self.mem.SetValue(place,
-                                      rval,
-                                      which_scopes,
-                                      flags=_PackFlags(node.keyword.id))
+                    raise AssertionError()
 
-        # TODO: Eval other augmented assignments.   Do we need "kind"
-        # here?
-        elif node.op.id == Id.Arith_PlusEqual:
+        else:
             # Checked in the parser
             assert len(node.lhs) == 1
 
-            aug_lval = self.expr_ev.EvalPlaceExpr(node.lhs[0])
+            aug_lval = self.expr_ev.EvalLhsExpr(node.lhs[0])
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
-            new_val = self.expr_ev.EvalPlusEquals(aug_lval, val, node.op)
-
-            self.mem.SetValue(aug_lval,
-                              new_val,
-                              which_scopes,
-                              flags=_PackFlags(node.keyword.id))
-
-        else:
-            raise NotImplementedError(Id_str(node.op.id))
+            self.expr_ev.EvalAugmented(aug_lval, val, node.op, which_scopes)
 
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
@@ -1027,11 +1019,10 @@ class CommandEvaluator(object):
                 else:  # e.g. 'readonly x' or 'local x'
                     val = None
 
-            # NOTE: In bash and mksh, declare -a myarray makes an empty cell with
-            # Undef value, but the 'array' attribute.
+            # NOTE: In bash and mksh, declare -a myarray makes an empty cell
+            # with Undef value, but the 'array' attribute.
 
-            #log('setting %s to %s with flags %s', lval, val, flags)
-            flags = 0
+            flags = 0  # for tracing
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
 
@@ -1099,8 +1090,8 @@ class CommandEvaluator(object):
             # another meaning of strict_control_flow, which also has to do with
             # break/continue at top level.  It has the side effect of making
             # 'return ""' valid, which shells other than zsh fail on.
-            if len(str_val.s
-                   ) == 0 and not self.exec_opts.strict_control_flow():
+            if (len(str_val.s) == 0 and
+                    not self.exec_opts.strict_control_flow()):
                 arg = 0
             else:
                 try:
@@ -1122,18 +1113,8 @@ class CommandEvaluator(object):
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.
-        ok = True
         if (keyword.id in (Id.ControlFlow_Break, Id.ControlFlow_Continue) and
                 self.loop_level == 0):
-            ok = False
-
-        if ok:
-            if keyword.id == Id.ControlFlow_Exit:
-                raise util.UserExit(
-                    arg)  # handled differently than other control flow
-            else:
-                raise vm.IntControlFlow(keyword, arg)
-        else:
             msg = 'Invalid control flow at top level'
             if self.exec_opts.strict_control_flow():
                 e_die(msg, keyword)
@@ -1142,6 +1123,12 @@ class CommandEvaluator(object):
                 # Bash oddly only exits 1 for 'return', but no other shell does.
                 self.errfmt.PrefixPrint(msg, 'warning: ', keyword)
                 return 0
+
+        if keyword.id == Id.ControlFlow_Exit:
+            # handled differently than other control flow
+            raise util.UserExit(arg)
+        else:
+            raise vm.IntControlFlow(keyword, arg)
 
     def _DoAndOr(self, node, cmd_st):
         # type: (command.AndOr, CommandStatus) -> int
@@ -1240,10 +1227,10 @@ class CommandEvaluator(object):
         n = len(node.iter_names)
         assert n > 0
 
-        i_name = None  # type: Optional[lvalue_t]
+        i_name = None  # type: Optional[LeftName]
         # required
-        name1 = None  # type: lvalue_t
-        name2 = None  # type: Optional[lvalue_t]
+        name1 = None  # type: LeftName
+        name2 = None  # type: Optional[LeftName]
 
         it2 = None  # type: val_ops._ContainerIter
         if iter_list is None:  # for_expr.YshExpr
@@ -1319,13 +1306,11 @@ class CommandEvaluator(object):
         status = 0  # in case we loop zero times
         with ctx_LoopLevel(self):
             while not it2.Done():
-                self.mem.SetValue(name1, it2.FirstValue(), scope_e.LocalOnly)
+                self.mem.SetLocalName(name1, it2.FirstValue())
                 if name2:
-                    self.mem.SetValue(name2, it2.SecondValue(),
-                                      scope_e.LocalOnly)
+                    self.mem.SetLocalName(name2, it2.SecondValue())
                 if i_name:
-                    self.mem.SetValue(i_name, value.Int(it2.Index()),
-                                      scope_e.LocalOnly)
+                    self.mem.SetLocalName(i_name, value.Int(it2.Index()))
 
                 # increment index before handling continue, etc.
                 it2.Next()
@@ -1426,9 +1411,9 @@ class CommandEvaluator(object):
 
         pos_defaults, named_defaults = func_proc.EvalFuncDefaults(
             self.expr_ev, node)
-        func_val = value.Func(name, node, pos_defaults, named_defaults)
+        func_val = value.Func(name, node, pos_defaults, named_defaults, None)
 
-        self.mem.SetValue(lval, func_val, scope_e.LocalOnly,
+        self.mem.SetNamed(lval, func_val, scope_e.LocalOnly,
                           _PackFlags(Id.KW_Func, state.SetReadOnly))
 
     def _DoIf(self, node):
@@ -1584,11 +1569,11 @@ class CommandEvaluator(object):
                 self.mem.SetTokenForLine(node.lhs[0].name)
                 status = self._DoVarDecl(node)
 
-            elif case(command_e.PlaceMutation):
-                node = cast(command.PlaceMutation, UP_node)
+            elif case(command_e.Mutation):
+                node = cast(command.Mutation, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
-                self._DoPlaceMutation(node)
+                self._DoMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
 
             elif case(command_e.ShAssignment):  # Only unqualified assignment

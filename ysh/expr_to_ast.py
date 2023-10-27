@@ -13,7 +13,6 @@ from _devbuild.gen.syntax_asdl import (
     CommandSub,
     ShArrayLiteral,
     command,
-    command_t,
     expr,
     expr_e,
     expr_t,
@@ -27,8 +26,8 @@ from _devbuild.gen.syntax_asdl import (
     PosixClass,
     PerlClass,
     NameType,
-    place_expr,
-    place_expr_t,
+    y_lhs,
+    y_lhs_t,
     Comprehension,
     Subscript,
     Attribute,
@@ -39,9 +38,6 @@ from _devbuild.gen.syntax_asdl import (
     ParamGroup,
     NamedArg,
     ArgList,
-    Variant,
-    variant_type,
-    variant_type_t,
     pat,
     pat_t,
     TypeExpr,
@@ -89,7 +85,6 @@ RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
 
 # Copied from pgen2/token.py to avoid dependency.
 NT_OFFSET = 256
-
 
 if mylib.PYTHON:
 
@@ -227,7 +222,7 @@ class Transformer(object):
             a = p_args.GetChild(0)
             return Subscript(op_tok, base, self._Subscript(a))
 
-        if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_DColon):
+        if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Arith_Colon):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
             return Attribute(base, op_tok, attr, expr_context_e.Store)
 
@@ -312,7 +307,8 @@ class Transformer(object):
             p_node = parent.GetChild(i)
             elts.append(self.Expr(p_node))
 
-        return expr.Tuple(parent.tok, elts, expr_context_e.Store)  # unused expr_context_e
+        return expr.Tuple(parent.tok, elts,
+                          expr_context_e.Store)  # unused expr_context_e
 
     def _TestlistComp(self, parent, p_node, id0):
         # type: (PNode, PNode, Id_t) -> expr_t
@@ -395,6 +391,11 @@ class Transformer(object):
             return expr.RegexLiteral(
                 parent.GetChild(0).tok, r, flags, trans_pref)
 
+        if id_ == Id.Arith_Amp:
+            # TODO: add place_ops
+            name_tok = parent.GetChild(1).tok
+            return expr.Place(name_tok, lexer.TokenVal(name_tok), [])
+
         if id_ == Id.Expr_Func:
             # STUB.  This should really be a Func, not Lambda.
             return expr.Lambda([], expr.Implicit)
@@ -423,7 +424,7 @@ class Transformer(object):
     def _CompFor(self, p_node):
         # type: (PNode) -> Comprehension
         """comp_for: 'for' exprlist 'in' or_test ['if' or_test]"""
-        lhs = self._NameTypeList(p_node.GetChild(1))  # Python calls this target
+        lhs = self._NameTypeList(p_node.GetChild(1))
         iterable = self.Expr(p_node.GetChild(3))
 
         if p_node.NumChildren() >= 6:
@@ -500,8 +501,8 @@ class Transformer(object):
             # Oil Entry Points / Additions
             #
 
-            if typ == grammar_nt.oil_expr:  # for if/while
-                # oil_expr: '(' testlist ')'
+            if typ == grammar_nt.ysh_expr:  # for if/while
+                # ysh_expr: '(' testlist ')'
                 return self.Expr(pnode.GetChild(1))
 
             if typ == grammar_nt.command_expr:
@@ -646,11 +647,11 @@ class Transformer(object):
                 inner = self.Expr(pnode.GetChild(1))
                 return expr.Literal(inner)
 
-            elif typ == grammar_nt.oil_expr_sub:
+            elif typ == grammar_nt.ysh_expr_sub:
                 return self.Expr(pnode.GetChild(0))
 
             #
-            # Oil Lexer Modes
+            # YSH Lexer Modes
             #
 
             elif typ == grammar_nt.sh_array_literal:
@@ -717,12 +718,12 @@ class Transformer(object):
                 return self.Expr(p_node.GetChild(1))
             return self.Expr(child0)  # $1 ${x} etc.
 
-    def _PlaceList(self, p_node):
-        # type: (PNode) -> List[place_expr_t]
-        """place_list: expr (',' expr)*"""
-        assert p_node.typ == grammar_nt.place_list
+    def _LhsExprList(self, p_node):
+        # type: (PNode) -> List[y_lhs_t]
+        """lhs_list: expr (',' expr)*"""
+        assert p_node.typ == grammar_nt.lhs_list
 
-        places = []  # type: List[place_expr_t]
+        lhs_list = []  # type: List[y_lhs_t]
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):  # was children[::2]
             p = p_node.GetChild(i)
@@ -732,18 +733,18 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    places.append(place_expr.Var(e.name))
+                    lhs_list.append(y_lhs.Var(e.name))
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
-                    places.append(e)
+                    lhs_list.append(e)
 
                 elif case(expr_e.Attribute):
                     e = cast(Attribute, UP_e)
                     if e.op.id != Id.Expr_Dot:
                         # e.g. setvar obj->method is not valid
                         p_die("Can't assign to this attribute expr", e.op)
-                    places.append(e)
+                    lhs_list.append(e)
 
                 else:
                     pass  # work around mycpp bug
@@ -756,13 +757,13 @@ class Transformer(object):
                         blame = loc.Missing
                     p_die("Can't assign to this expression", blame)
 
-        return places
+        return lhs_list
 
     def MakeVarDecl(self, p_node):
         # type: (PNode) -> command.VarDecl
-        """oil_var_decl: name_type_list '=' testlist end_stmt."""
+        """ysh_var_decl: name_type_list '=' testlist end_stmt."""
         typ = p_node.typ
-        assert typ == grammar_nt.oil_var_decl
+        assert typ == grammar_nt.ysh_var_decl
 
         #log('len(children) = %d', len(children))
         lhs = self._NameTypeList(p_node.GetChild(0))  # could be a tuple
@@ -776,35 +777,21 @@ class Transformer(object):
         # The caller should fill in the keyword token.
         return command.VarDecl(None, lhs, rhs)
 
-    def MakePlaceMutation(self, p_node):
-        # type: (PNode) -> command.PlaceMutation
+    def MakeMutation(self, p_node):
+        # type: (PNode) -> command.Mutation
         """Parse tree to LST
         
-        oil_place_mutation: place_list (augassign | '=') testlist end_stmt
+        ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
         """
         typ = p_node.typ
-        assert typ == grammar_nt.oil_place_mutation
+        assert typ == grammar_nt.ysh_mutation
 
-        place_list = self._PlaceList(p_node.GetChild(0))  # could be a tuple
+        lhs_list = self._LhsExprList(p_node.GetChild(0))  # could be a tuple
         op_tok = p_node.GetChild(1).tok
-        if len(place_list) > 1 and op_tok.id != Id.Arith_Equal:
+        if len(lhs_list) > 1 and op_tok.id != Id.Arith_Equal:
             p_die('Multiple assignment must use =', op_tok)
         rhs = self.Expr(p_node.GetChild(2))
-        return command.PlaceMutation(None, place_list, op_tok, rhs)
-
-    def OilForExpr(self, pnode):
-        # type: (PNode) -> Tuple[List[NameType], expr_t]
-        typ = pnode.typ
-
-        if typ == grammar_nt.oil_for:
-            # oil_for: '(' lvalue_list 'in' testlist ')'
-            lhs = self._NameTypeList(pnode.GetChild(1))  # could be a tuple
-            iterable = self.Expr(pnode.GetChild(3))
-            return lhs, iterable
-
-        nt_name = self.number2symbol[typ]
-        raise AssertionError("PNode type %d (%s) wasn't handled" %
-                             (typ, nt_name))
+        return command.Mutation(None, lhs_list, op_tok, rhs)
 
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t
@@ -853,7 +840,8 @@ class Transformer(object):
         if n == 1:
             child = p_node.GetChild(0)
             if after_semi:
-                p_die('Positional args must come before the semi-colon', child.tok)
+                p_die('Positional args must come before the semi-colon',
+                      child.tok)
             arg = self.Expr(child)
             pos_args.append(arg)
             return
@@ -873,7 +861,8 @@ class Transformer(object):
             if p_node.GetChild(1).typ == grammar_nt.comp_for:
                 child = p_node.GetChild(0)
                 if after_semi:
-                    p_die('Positional args must come before the semi-colon', child.tok)
+                    p_die('Positional args must come before the semi-colon',
+                          child.tok)
 
                 elt = self.Expr(child)
                 comp = self._CompFor(p_node.GetChild(1))
@@ -884,7 +873,8 @@ class Transformer(object):
             raise AssertionError()
 
         if n == 3:  # named args can come before or after the semicolon
-            n1 = NamedArg(p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
+            n1 = NamedArg(
+                p_node.GetChild(0).tok, self.Expr(p_node.GetChild(2)))
             named_args.append(n1)
             return
 
@@ -918,7 +908,7 @@ class Transformer(object):
 
         if n >= 2:
             arglist.semi_tok = p_node.GetChild(i).tok
-            self._ArgGroup(p_node.GetChild(i+1), True, arglist)
+            self._ArgGroup(p_node.GetChild(i + 1), True, arglist)
 
     def ToArgList(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
@@ -961,14 +951,6 @@ class Transformer(object):
             i += 2  # skip comma
 
         return ty
-
-    def _TypeExprList(self, pnode):
-        # type: (PNode) -> List[TypeExpr]
-        """
-        For return value annotation?
-        """
-        assert pnode.typ == grammar_nt.type_expr_list, pnode.typ
-        return None
 
     def _Param(self, pnode):
         # type: (PNode) -> Param
@@ -1064,7 +1046,7 @@ class Transformer(object):
         sig = proc_sig.Closed.CreateNull(alloc_lists=True)  # no params
 
         # Word args
-        i = 1 
+        i = 1
         child = p_node.GetChild(i)
         if child.typ == grammar_nt.param_group:
             sig.word = self._ParamGroup(p_node.GetChild(i))
@@ -1130,89 +1112,7 @@ class Transformer(object):
 
                 sig.block_param = params[0]
 
-
         return sig
-
-    def func_item(self, node):
-        # type: (PNode) -> command_t
-        """Parse tree to LST
-
-        func_item: (
-          ('var' | 'const') name_type_list '=' testlist  # oil_var_decl.
-
-          # TODO: for, if/switch, with, break/continue/return, try/throw, etc.
-        | 'while' test suite
-        | 'for' name_type_list 'in' test suite
-        | flow_stmt
-        | 'set' place_list (augassign | '=') testlist  # oil_place_mutation   
-          # x  f(x)  etc.
-          #
-          # And x = 1.  Python uses the same "hack" to fit within pgen2.  It
-          # also supports a = b = 1, which we don't want.
-          #
-          # And echo 'hi' 'there'   
-          #
-          # TODO: expr_to_ast needs to validate this
-        | testlist (['=' testlist] | tea_word*)
-        )
-        """
-        if node.tok.id == Id.Expr_While:
-            return command.While(self.Expr(node.GetChild(1)),
-                                 self._Suite(node.GetChild(2)))
-        elif node.tok.id == Id.Expr_For:
-            return command.For(self._NameTypeList(node.GetChild(1)),
-                               self.Expr(node.GetChild(3)),
-                               self._Suite(node.GetChild(4)))
-        elif node.tok.id == Id.Expr_Break:
-            return command.Break
-        elif node.tok.id == Id.Expr_Continue:
-            return command.Continue
-        elif node.tok.id == Id.Expr_Return:
-            # 'return' [testlist]
-            if node.NumChildren() == 1:
-                return command.Return(None)
-            else:
-                return command.Return(self.Expr(node.GetChild(1)))
-        elif node.tok.id == Id.Expr_Name:
-            # TODO: turn echo 'hi' into AST
-            return command.NoOp
-        else:
-            raise NotImplementedError(Id_str(node.tok.id))
-
-    def func_items(self, pnode):
-        # type: (PNode) -> List[command_t]
-        """func_items: func_item (semi_newline func_item)* [semi_newline]"""
-        # Rewrite of
-        # return [self.func_item(item) for item in pnode.children[::2]]
-        # Unfortunately mycpp doesn't support the stride.
-
-        result = []  # type: List[command_t]
-        n = pnode.NumChildren()
-        for i in xrange(0, n, 2):
-            result.append(self.func_item(pnode.GetChild(i)))
-        return result
-
-    def _Suite(self, pnode):
-        # type: (PNode) -> command.CommandList
-        """Parse tree to LST
-
-        suite: '{' [Op_Newline] [func_items] '}'
-        """
-        n = pnode.NumChildren()
-
-        if n == 2:  # {}
-            return command.CommandList([])
-
-        if n == 3:
-            if pnode.GetChild(1).typ == grammar_nt.func_items:  # { func_items }
-                items_index = 1
-            else:
-                return command.CommandList([])
-
-        if n == 4:  # { Op_Newline func_items }
-            items_index = 2
-
-        return command.CommandList(self.func_items(pnode.GetChild(items_index)))
 
     def YshFunc(self, p_node, out):
         # type: (PNode, Func) -> None
@@ -1243,144 +1143,6 @@ class Transformer(object):
         if child.typ == grammar_nt.param_group:
             out.named = self._ParamGroup(child)
 
-    def TeaFunc(self, pnode, out):
-        # type: (PNode, command.TeaFunc) -> None
-        """Parse tree to LST
-
-        tea_func:
-          '(' [param_group] [';' param_group] ')' [type_expr_list] suite 
-        """
-        assert pnode.typ == grammar_nt.tea_func
-        assert pnode.GetChild(0).tok.id == Id.Op_LParen  # proc foo(
-
-        # TODO: Simplify this in the style of YshFunc() above
-
-        pos = 1
-        typ2 = pnode.GetChild(pos).typ
-        if ISNONTERMINAL(typ2):
-            # f(x, y)
-            assert typ2 == grammar_nt.param_group, pnode.GetChild(pos)
-            # every other one is a comma
-            out.positional = self._ParamGroup(pnode.GetChild(pos))
-            pos += 1
-
-        id_ = pnode.GetChild(pos).tok.id
-        if id_ == Id.Op_RParen:  # f()
-            pos += 1
-        elif id_ == Id.Op_Semi:  # f(; a)
-            out.named = self._ParamGroup(pnode.GetChild(pos + 1))
-            pos += 3
-
-        if pnode.GetChild(pos).typ == grammar_nt.type_expr_list:
-            out.return_types = self._TypeExprList(pnode.GetChild(pos))
-            pos += 1
-
-        out.body = self._Suite(pnode.GetChild(pos))
-
-    def NamedFunc(self, pnode, out):
-        # type: (PNode, command.TeaFunc) -> None
-        """named_func: Expr_Name tea_func."""
-        assert pnode.typ == grammar_nt.named_func
-
-        out.name = pnode.GetChild(0).tok
-        self.TeaFunc(pnode.GetChild(1), out)
-
-    def _DataParams(self, p_node):
-        # type: (PNode) -> List[Param]
-        """data_params: (param ',')* [ param [','] ]"""
-        params = []  # type: List[Param]
-
-        n = p_node.NumChildren()
-        for i in xrange(0, n, 2):
-            params.append(self._Param(p_node.GetChild(i)))
-
-        return params
-
-    def Data(self, pnode, out):
-        # type: (PNode, command.Data) -> None
-        """tea_data: Expr_Name '(' [data_params] ')'."""
-        assert pnode.typ == grammar_nt.tea_data
-
-        out.name = pnode.GetChild(0).tok
-
-        assert pnode.GetChild(1).tok.id == Id.Op_LParen  # data foo(
-        #print(pnode)
-        if ISNONTERMINAL(pnode.GetChild(2).typ):
-            out.params = self._DataParams(pnode.GetChild(2))
-
-    def _VariantType(self, pnode):
-        # type: (PNode) -> variant_type_t
-        """variant_type: Expr_Symbol | '(' data_params ')'."""
-        n = pnode.NumChildren()
-        if n == 1:
-            return variant_type.Ref(pnode.GetChild(0).tok)
-        else:
-            assert n == 3, pnode
-            return variant_type.Anon(self._DataParams(pnode.GetChild(1)))
-
-    def _Variant(self, pnode):
-        # type: (PNode) -> Variant
-        """Variant: Expr_Name [ variant_type ]"""
-        assert pnode.typ == grammar_nt.variant, pnode
-        t = None  # type: variant_type_t
-        if pnode.NumChildren() == 2:
-            t = self._VariantType(pnode.GetChild(1))
-        return Variant(pnode.GetChild(0).tok, t)
-
-    def Enum(self, pnode, out):
-        # type: (PNode, command.Enum) -> None
-        """Parse tree to LST
-
-        tea_enum:
-          Expr_Name '{' [Op_Newline]
-          (variant variant_end)* [ variant [variant_end] ]
-          '}'
-        """
-        assert pnode.typ == grammar_nt.tea_enum
-
-        out.name = pnode.GetChild(0).tok
-
-        assert pnode.GetChild(1).tok.id == Id.Op_LBrace  # enum op {
-
-        start = 2
-        if pnode.GetChild(start).tok.id == Id.Op_Newline:
-            start = 3
-
-        n = pnode.NumChildren()
-        for i in xrange(start, n - 1, 2):  # skip commas
-            p_node = pnode.GetChild(i)
-            out.variants.append(self._Variant(p_node))
-
-    def Class(self, pnode, out):
-        # type: (PNode, command.Class) -> None
-        """tea_class: Expr_Name [':' Expr_Name ] '{' class_items '}'."""
-        assert pnode.typ == grammar_nt.tea_class
-
-        out.name = pnode.GetChild(0).tok
-
-        #assert children[1].tok.id == Id.Op_LBrace  # enum op {
-        return
-        #n = len(children)
-        #for i in xrange(2, n-1, 2):  # skip commas
-        #  p_node = children[i]
-        #  out.variants.append(self._Variant(p_node))
-
-    def Import(self, pnode, out):
-        # type: (PNode, command.Import) -> None
-        """Parse tree to LST
-        
-        tea_import: (
-          sq_string ['as' Expr_Name] (import_name ',')* [ import_name [','] ]
-        )
-        """
-        assert pnode.typ == grammar_nt.tea_import
-
-        typ = pnode.GetChild(0).typ
-        if ISNONTERMINAL(typ):
-            if typ == grammar_nt.sq_string:
-                sq_part = cast(SingleQuoted, pnode.GetChild(0).GetChild(1).tok)
-                out.path = sq_part
-
     #
     # Regex Language
     #
@@ -1397,10 +1159,11 @@ class Transformer(object):
         if ISNONTERMINAL(typ):
             # 'a' in 'a'-'b'
             if typ == grammar_nt.sq_string:
-                sq_part = cast(SingleQuoted, p_node.GetChild(0).GetChild(1).tok)
+                sq_part = cast(SingleQuoted,
+                               p_node.GetChild(0).GetChild(1).tok)
                 tokens = sq_part.tokens
-                if len(tokens
-                      ) > 1:  # Can happen with multiline single-quoted strings
+                # Can happen with multiline single-quoted strings
+                if len(tokens) > 1:
                     p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
                 if len(tokens[0].tval) > 1:
                     p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))

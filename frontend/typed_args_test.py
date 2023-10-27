@@ -5,8 +5,8 @@ typed_args_test.py: Tests for typed_args.py
 
 import unittest
 
-from _devbuild.gen.runtime_asdl import value
 from _devbuild.gen.syntax_asdl import ArgList, expr
+from _devbuild.gen.value_asdl import value
 from core import error
 from core import test_lib
 from frontend import typed_args  # module under test

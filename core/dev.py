@@ -4,10 +4,11 @@ dev.py - Devtools / introspection.
 from __future__ import print_function
 
 from _devbuild.gen.option_asdl import option_i, builtin_i, builtin_t
-from _devbuild.gen.runtime_asdl import (value, value_e, lvalue, lvalue_e,
-                                        cmd_value, scope_e, trace, trace_e,
+from _devbuild.gen.runtime_asdl import (cmd_value, scope_e, trace, trace_e,
                                         trace_t)
 from _devbuild.gen.syntax_asdl import assign_op_e, Token
+from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
+                                      sh_lvalue_e, LeftName)
 
 from core import error
 from core import optview
@@ -28,7 +29,8 @@ import posix_ as posix
 from typing import List, Dict, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import assign_op_t, CompoundWord
-    from _devbuild.gen.runtime_asdl import lvalue_t, value_t, scope_t
+    from _devbuild.gen.runtime_asdl import scope_t
+    from _devbuild.gen.value_asdl import sh_lvalue_t
     from core import alloc
     from core.error import _ErrorWithLocation
     from core.util import _DebugFile
@@ -234,7 +236,7 @@ class Tracer(object):
     Other hooks:
 
     - Command completion starts other processes
-    - Oil command constructs: BareDecl, VarDecl, PlaceMutation, Expr
+    - Oil command constructs: BareDecl, VarDecl, Mutation, Expr
     """
 
     def __init__(
@@ -318,11 +320,11 @@ class Tracer(object):
         # TODO: Remove allocation for [] ?
         with state.ctx_Option(self.mutable_opts, [option_i.xtrace], False):
             with state.ctx_Temp(self.mem):
-                self.mem.SetValue(self.lval_indent, self.val_indent,
+                self.mem.SetNamed(self.lval_indent, self.val_indent,
                                   scope_e.LocalOnly)
-                self.mem.SetValue(self.lval_punct, self.val_punct,
+                self.mem.SetNamed(self.lval_punct, self.val_punct,
                                   scope_e.LocalOnly)
-                self.mem.SetValue(self.lval_pid_str, self.val_pid_str,
+                self.mem.SetNamed(self.lval_pid_str, self.val_pid_str,
                                   scope_e.LocalOnly)
                 prefix = self.word_ev.EvalForPlugin(ps4_word)
         return prefix.s
@@ -526,7 +528,7 @@ class Tracer(object):
         self.f.write(buf.getvalue())
 
     def OnShAssignment(self, lval, op, val, flags, which_scopes):
-        # type: (lvalue_t, assign_op_t, value_t, int, scope_t) -> None
+        # type: (sh_lvalue_t, assign_op_t, value_t, int, scope_t) -> None
         buf = self._ShTraceBegin()
         if not buf:
             return
@@ -534,14 +536,14 @@ class Tracer(object):
         left = '?'
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):
-                lval = cast(lvalue.Named, UP_lval)
+            if case(sh_lvalue_e.Var):
+                lval = cast(LeftName, UP_lval)
                 left = lval.name
-            elif case(lvalue_e.Indexed):
-                lval = cast(lvalue.Indexed, UP_lval)
+            elif case(sh_lvalue_e.Indexed):
+                lval = cast(sh_lvalue.Indexed, UP_lval)
                 left = '%s[%d]' % (lval.name, lval.index)
-            elif case(lvalue_e.Keyed):
-                lval = cast(lvalue.Keyed, UP_lval)
+            elif case(sh_lvalue_e.Keyed):
+                lval = cast(sh_lvalue.Keyed, UP_lval)
                 left = '%s[%s]' % (lval.name, qsn.maybe_shell_encode(lval.key))
         buf.write(left)
 

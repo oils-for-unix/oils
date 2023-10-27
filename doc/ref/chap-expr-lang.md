@@ -200,6 +200,22 @@ Like Python:
 
     f(x, y)
 
+### get-method
+
+Transforming methods:
+
+    var b = s->startswith('prefix')
+
+Mutating methods:
+
+    var mylist = ['bar']
+    :: mylist.pop()
+
+<!--
+TODO
+    var mydict = {name: 'foo'}
+    :: mydict->.erase('name')
+-->
 
 ### match-ops
 

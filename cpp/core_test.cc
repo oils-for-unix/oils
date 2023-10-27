@@ -32,7 +32,7 @@ TextFile* gEmbeddedFiles = gTmp;  // turn array into pointer
 TEST loader_test() {
   auto loader = pyutil::GetResourceLoader();
 
-  Str* version = pyutil::GetVersion(loader);
+  BigStr* version = pyutil::GetVersion(loader);
   ASSERT(len(version) > 3);
 
   pyutil::PrintVersionDetails(loader);
@@ -66,8 +66,8 @@ TEST exceptions_test() {
 }
 
 TEST environ_test() {
-  Dict<Str*, Str*>* env = pyos::Environ();
-  Str* p = env->get(StrFromC("PATH"));
+  Dict<BigStr*, BigStr*>* env = pyos::Environ();
+  BigStr* p = env->get(StrFromC("PATH"));
   ASSERT(p != nullptr);
   log("PATH = %s", p->data_);
 
@@ -76,13 +76,13 @@ TEST environ_test() {
 
 TEST user_home_dir_test() {
   uid_t uid = getuid();
-  Str* username = pyos::GetUserName(uid);
+  BigStr* username = pyos::GetUserName(uid);
   ASSERT(username != nullptr);
 
-  Str* dir0 = pyos::GetMyHomeDir();
+  BigStr* dir0 = pyos::GetMyHomeDir();
   ASSERT(dir0 != nullptr);
 
-  Str* dir1 = pyos::GetHomeDir(username);
+  BigStr* dir1 = pyos::GetHomeDir(username);
   ASSERT(dir1 != nullptr);
 
   ASSERT(str_equals(dir0, dir1));
@@ -91,7 +91,7 @@ TEST user_home_dir_test() {
 }
 
 TEST uname_test() {
-  Str* os_type = pyos::OsType();
+  BigStr* os_type = pyos::OsType();
   ASSERT(os_type != nullptr);
 
   utsname un = {};
@@ -150,7 +150,7 @@ TEST pyos_read_test() {
     printf("4. ERROR %s\n", strerror(errno));
   }
 
-  List<Str*>* chunks = NewList<Str*>();
+  List<BigStr*>* chunks = NewList<BigStr*>();
   Tuple2<int, int> tup = pyos::Read(fd, 4096, chunks);
   ASSERT_EQ_FMT(2, tup.at0(), "%d");  // error code
   ASSERT_EQ_FMT(0, tup.at1(), "%d");
@@ -178,7 +178,7 @@ TEST pyos_test() {
   // This test isn't hermetic but it should work in most places, including in a
   // container
 
-  Str* current = posix::getcwd();
+  BigStr* current = posix::getcwd();
 
   int err_num = pyos::Chdir(StrFromC("/"));
   ASSERT(err_num == 0);
@@ -197,21 +197,22 @@ TEST pyutil_test() {
   ASSERT_EQ(false, pyutil::IsValidCharEscape(StrFromC("a")));
 
   // OK this seems to work
-  Str* escaped = pyutil::BackslashEscape(StrFromC("'foo bar'"), StrFromC(" '"));
+  BigStr* escaped =
+      pyutil::BackslashEscape(StrFromC("'foo bar'"), StrFromC(" '"));
   ASSERT(str_equals(escaped, StrFromC("\\'foo\\ bar\\'")));
 
-  Str* escaped2 = pyutil::BackslashEscape(StrFromC(""), StrFromC(" '"));
+  BigStr* escaped2 = pyutil::BackslashEscape(StrFromC(""), StrFromC(" '"));
   ASSERT(str_equals(escaped2, StrFromC("")));
 
-  Str* s = pyutil::ChArrayToString(NewList<int>({65}));
+  BigStr* s = pyutil::ChArrayToString(NewList<int>({65}));
   ASSERT(str_equals(s, StrFromC("A")));
   ASSERT_EQ_FMT(1, len(s), "%d");
 
-  Str* s2 = pyutil::ChArrayToString(NewList<int>({102, 111, 111}));
+  BigStr* s2 = pyutil::ChArrayToString(NewList<int>({102, 111, 111}));
   ASSERT(str_equals(s2, StrFromC("foo")));
   ASSERT_EQ_FMT(3, len(s2), "%d");
 
-  Str* s3 = pyutil::ChArrayToString(NewList<int>({45, 206, 188, 45}));
+  BigStr* s3 = pyutil::ChArrayToString(NewList<int>({45, 206, 188, 45}));
   ASSERT(str_equals(s3, StrFromC("-\xce\xbc-")));  // mu char
   ASSERT_EQ_FMT(4, len(s3), "%d");
 
@@ -222,10 +223,10 @@ TEST pyutil_test() {
 
 TEST strerror_test() {
   IOError_OSError err(EINVAL);
-  Str* s1 = pyutil::strerror(&err);
+  BigStr* s1 = pyutil::strerror(&err);
   ASSERT(s1 != nullptr);
 
-  Str* s2 = StrFromC(strerror(EINVAL));
+  BigStr* s2 = StrFromC(strerror(EINVAL));
   ASSERT(s2 != nullptr);
 
   ASSERT(str_equals(s1, s2));
@@ -321,7 +322,7 @@ TEST signal_safe_test() {
 
 TEST passwd_test() {
   uid_t my_uid = getuid();
-  Str* username = pyos::GetUserName(my_uid);
+  BigStr* username = pyos::GetUserName(my_uid);
   ASSERT(username != nullptr);
 
   List<pyos::PasswdEntry*>* entries = pyos::GetAllUsers();
@@ -344,7 +345,7 @@ TEST dir_cache_key_test() {
   struct stat st;
   ASSERT(::stat("/", &st) == 0);
 
-  Tuple2<Str*, int>* key = pyos::MakeDirCacheKey(StrFromC("/"));
+  Tuple2<BigStr*, int>* key = pyos::MakeDirCacheKey(StrFromC("/"));
   ASSERT(str_equals(key->at0(), StrFromC("/")));
   ASSERT(key->at1() == st.st_mtime);
 

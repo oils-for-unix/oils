@@ -7,15 +7,15 @@
 
 namespace os_path {
 
-Str* rstrip_slashes(Str* s);
+BigStr* rstrip_slashes(BigStr* s);
 
 }  // namespace os_path
 
 namespace path_stat {
 
-bool exists(Str* path);
+bool exists(BigStr* path);
 
-bool isdir(Str* path);
+bool isdir(BigStr* path);
 
 }  // namespace path_stat
 

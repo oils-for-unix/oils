@@ -13,10 +13,10 @@
 
 namespace libc {
 
-Str* gethostname() {
+BigStr* gethostname() {
   // Note: Fixed issue #1656 - OS X and FreeBSD don't have HOST_NAME_MAX
   // https://reviews.freebsd.org/D30062
-  Str* result = OverAllocatedStr(_POSIX_HOST_NAME_MAX);
+  BigStr* result = OverAllocatedStr(_POSIX_HOST_NAME_MAX);
   int status = ::gethostname(result->data_, _POSIX_HOST_NAME_MAX);
   if (status != 0) {
     throw Alloc<OSError>(errno);
@@ -26,8 +26,8 @@ Str* gethostname() {
   return result;
 }
 
-Str* realpath(Str* path) {
-  Str* result = OverAllocatedStr(PATH_MAX);
+BigStr* realpath(BigStr* path) {
+  BigStr* result = OverAllocatedStr(PATH_MAX);
   char* p = ::realpath(path->data_, result->data_);
   if (p == nullptr) {
     throw Alloc<OSError>(errno);
@@ -36,7 +36,7 @@ Str* realpath(Str* path) {
   return result;
 }
 
-int fnmatch(Str* pat, Str* str, int flags) {
+int fnmatch(BigStr* pat, BigStr* str, int flags) {
   // TODO: We should detect this at ./configure time, and then maybe flag these
   // at parse time, not runtime
 #ifdef FNM_EXTMATCH
@@ -57,7 +57,7 @@ int fnmatch(Str* pat, Str* str, int flags) {
   }
 }
 
-List<Str*>* glob(Str* pat) {
+List<BigStr*>* glob(BigStr* pat) {
   glob_t results;
   // Hm, it's weird that the first one can't be called with GLOB_APPEND.  You
   // get a segfault.
@@ -91,7 +91,7 @@ List<Str*>* glob(Str* pat) {
 
   // http://stackoverflow.com/questions/3512414/does-this-pylist-appendlist-py-buildvalue-leak
   size_t n = results.gl_pathc;
-  auto matches = NewList<Str*>();
+  auto matches = NewList<BigStr*>();
 
   // Print array of results
   size_t i;
@@ -106,8 +106,8 @@ List<Str*>* glob(Str* pat) {
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
-List<Str*>* regex_match(Str* pattern, Str* str, int flags) {
-  List<Str*>* results = NewList<Str*>();
+List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags) {
+  List<BigStr*>* results = NewList<BigStr*>();
 
   regex_t pat;
   if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
@@ -125,7 +125,7 @@ List<Str*>* regex_match(Str* pattern, Str* str, int flags) {
     int i;
     for (i = 0; i < outlen; i++) {
       int len = pmatch[i].rm_eo - pmatch[i].rm_so;
-      Str* m = StrFromC(s0 + pmatch[i].rm_so, len);
+      BigStr* m = StrFromC(s0 + pmatch[i].rm_so, len);
       results->append(m);
     }
   }
@@ -148,7 +148,8 @@ List<Str*>* regex_match(Str* pattern, Str* str, int flags) {
 const int NMATCH = 2;
 
 // Odd: This a Tuple2* not Tuple2 because it's Optional[Tuple2]!
-Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
+Tuple2<int, int>* regex_first_group_match(BigStr* pattern, BigStr* str,
+                                          int pos) {
   regex_t pat;
   regmatch_t m[NMATCH];
 
@@ -177,7 +178,7 @@ Tuple2<int, int>* regex_first_group_match(Str* pattern, Str* str, int pos) {
 }
 
 // TODO: SHARE with pyext
-int wcswidth(Str* s) {
+int wcswidth(BigStr* s) {
   // Behavior of mbstowcs() depends on LC_CTYPE
 
   // Calculate length first

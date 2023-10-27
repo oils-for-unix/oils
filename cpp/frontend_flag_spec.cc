@@ -13,10 +13,10 @@ namespace flag_spec {
 using arg_types::kFlagSpecs;
 using arg_types::kFlagSpecsAndMore;
 using runtime_asdl::flag_type_e;
-using runtime_asdl::value;
-using runtime_asdl::value_t;
+using value_asdl::value;
+using value_asdl::value_t;
 
-void _CreateStrList(const char** in, List<Str*>* out) {
+void _CreateStrList(const char** in, List<BigStr*>* out) {
   int i = 0;
   while (true) {
     const char* s = in[i];
@@ -30,7 +30,7 @@ void _CreateStrList(const char** in, List<Str*>* out) {
 }
 
 void _CreateDefaults(DefaultPair_c* in,
-                     Dict<Str*, runtime_asdl::value_t*>* out) {
+                     Dict<BigStr*, value_asdl::value_t*>* out) {
   int i = 0;
   while (true) {
     DefaultPair_c* pair = &(in[i]);
@@ -64,7 +64,7 @@ void _CreateDefaults(DefaultPair_c* in,
   }
 }
 
-void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
+void _CreateActions(Action_c* in, Dict<BigStr*, args::_Action*>* out) {
   int i = 0;
   while (true) {
     Action_c* p = &(in[i]);
@@ -75,9 +75,9 @@ void _CreateActions(Action_c* in, Dict<Str*, args::_Action*>* out) {
     args::_Action* action = nullptr;
     switch (p->type) {
     case ActionType_c::SetToString: {
-      List<Str*>* valid = nullptr;
+      List<BigStr*>* valid = nullptr;
       if (p->strs) {
-        valid = NewList<Str*>();
+        valid = NewList<BigStr*>();
         _CreateStrList(p->strs, valid);
       }
       auto a = Alloc<args::SetToString>(StrFromC(p->name), false, valid);
@@ -145,11 +145,11 @@ Dict<K, V>* NewDict() {
 // TODO: Make a GLOBAL CACHE?  It could be shared between subinterpreters even?
 flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
   auto out = Alloc<flag_spec::_FlagSpec>();
-  out->arity0 = NewList<Str*>();
-  out->arity1 = NewDict<Str*, args::_Action*>();
-  out->actions_long = NewDict<Str*, args::_Action*>();
-  out->plus_flags = NewList<Str*>();
-  out->defaults = NewDict<Str*, runtime_asdl::value_t*>();
+  out->arity0 = NewList<BigStr*>();
+  out->arity1 = NewDict<BigStr*, args::_Action*>();
+  out->actions_long = NewDict<BigStr*, args::_Action*>();
+  out->plus_flags = NewList<BigStr*>();
+  out->defaults = NewDict<BigStr*, value_asdl::value_t*>();
 
   if (in->arity0) {
     _CreateStrList(in->arity0, out->arity0);
@@ -171,10 +171,10 @@ flag_spec::_FlagSpec* CreateSpec(FlagSpec_c* in) {
 
 flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   auto out = Alloc<flag_spec::_FlagSpecAndMore>();
-  out->actions_short = NewDict<Str*, args::_Action*>();
-  out->actions_long = NewDict<Str*, args::_Action*>();
-  out->plus_flags = NewList<Str*>();
-  out->defaults = NewDict<Str*, runtime_asdl::value_t*>();
+  out->actions_short = NewDict<BigStr*, args::_Action*>();
+  out->actions_long = NewDict<BigStr*, args::_Action*>();
+  out->plus_flags = NewList<BigStr*>();
+  out->defaults = NewDict<BigStr*, value_asdl::value_t*>();
 
   if (in->actions_short) {
     _CreateActions(in->actions_short, out->actions_short);
@@ -191,7 +191,7 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   return out;
 }
 
-flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name) {
+flag_spec::_FlagSpec* LookupFlagSpec(BigStr* spec_name) {
   int i = 0;
   while (true) {
     const char* name = kFlagSpecs[i].name;
@@ -209,7 +209,7 @@ flag_spec::_FlagSpec* LookupFlagSpec(Str* spec_name) {
   return nullptr;
 }
 
-flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
+flag_spec::_FlagSpecAndMore* LookupFlagSpec2(BigStr* spec_name) {
   int i = 0;
   while (true) {
     const char* name = kFlagSpecsAndMore[i].name;
@@ -227,7 +227,7 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(Str* spec_name) {
   return nullptr;
 }
 
-args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
+args::_Attributes* Parse(BigStr* spec_name, args::Reader* arg_r) {
   flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
   assert(spec);  // should always be found
 
@@ -235,7 +235,7 @@ args::_Attributes* Parse(Str* spec_name, args::Reader* arg_r) {
 }
 
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
+    BigStr* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
   arg_r->Next();  // move past the builtin name
 
@@ -247,14 +247,14 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
 
 // With optional arg
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
+    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
     bool accept_typed_args) {
   // TODO: disallow typed args!
   return ParseCmdVal(spec_name, cmd_val);
 }
 
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
-    Str* spec_name, runtime_asdl::cmd_value::Argv* cmd_val) {
+    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val) {
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
   arg_r->Next();  // move past the builtin name
 
@@ -264,7 +264,7 @@ Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
       args::ParseLikeEcho(spec, arg_r), arg_r);
 }
 
-args::_Attributes* ParseMore(Str* spec_name, args::Reader* arg_r) {
+args::_Attributes* ParseMore(BigStr* spec_name, args::Reader* arg_r) {
   flag_spec::_FlagSpecAndMore* spec = LookupFlagSpec2(spec_name);
   assert(spec);
   return args::ParseMore(spec, arg_r);

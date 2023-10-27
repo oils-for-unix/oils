@@ -7,11 +7,11 @@
 
 namespace fanos {
 
-void send(int sock_fd, Str* blob);
+void send(int sock_fd, BigStr* blob);
 
 // Returns the decoded netstring payload and file descriptors.  The payload is
 // nullptr (Python None) on EOF.
-Str* recv(int sock_fd, List<int>* fd_out);
+BigStr* recv(int sock_fd, List<int>* fd_out);
 
 }  // namespace fanos
 

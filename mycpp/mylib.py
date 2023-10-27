@@ -3,7 +3,12 @@ runtime.py
 """
 from __future__ import print_function
 
-import cStringIO
+try:
+    import cStringIO
+except ImportError:  # for Python 3, imported through asdl/pybase.py
+    cStringIO = None
+    import io
+
 import sys
 
 from pylib import collections_
@@ -48,9 +53,14 @@ def print_stderr(s):
     print(s, file=sys.stderr)
 
 
-BufWriter = cStringIO.StringIO
+if cStringIO:
+    BufWriter = cStringIO.StringIO
 
-BufLineReader = cStringIO.StringIO
+    BufLineReader = cStringIO.StringIO
+else:  # Python 3
+    BufWriter = io.StringIO
+
+    BufLineReader = io.StringIO
 
 
 def Stdout():
@@ -195,6 +205,7 @@ class UniqueObjects(object):
 
     - Packle serialization
     """
+
     def __init__(self):
         # 64-bit id() -> small integer ID
         self.addresses = {}  # type: Dict[int, int]

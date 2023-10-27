@@ -25,7 +25,7 @@ void PrintSignals() {
 
 def CppGetNumber(f):
     f.write("""\
-int GetNumber(Str* sig_spec) {
+int GetNumber(BigStr* sig_spec) {
   int length = len(sig_spec);
   if (length == 0) {
     return NO_SIGNAL;
@@ -70,7 +70,7 @@ const int NO_SIGNAL = -1;
 
 void PrintSignals();
 
-int GetNumber(Str* sig_spec);
+int GetNumber(BigStr* sig_spec);
 
 }  // namespace signal_def
 

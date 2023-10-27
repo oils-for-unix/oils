@@ -14,17 +14,17 @@
 
 // forward decl
 namespace py_readline {
-Str* readline(Str*);
+BigStr* readline(BigStr*);
 }
 
 // Translation of Python's print().
-void print(Str* s) {
+void print(BigStr* s) {
   fputs(s->data_, stdout);  // print until first NUL
   fputc('\n', stdout);
 }
 
-Str* str(int i) {
-  Str* s = OverAllocatedStr(kIntBufSize);
+BigStr* str(int i) {
+  BigStr* s = OverAllocatedStr(kIntBufSize);
   int length = snprintf(s->data(), kIntBufSize, "%d", i);
   s->MaybeShrink(length);
   return s;
@@ -33,7 +33,7 @@ Str* str(int i) {
 // TODO:
 // - This could use a fancy exact algorithm, not libc
 // - Does libc depend on locale?
-Str* str(double d) {
+BigStr* str(double d) {
   char buf[64];  // overestimate, but we use snprintf() to be safe
 
   // Problem:
@@ -66,25 +66,25 @@ Str* str(double d) {
   return StrFromC(buf);
 }
 
-// Do we need this API?  Or is mylib.InternedStr(Str* s, int start, int end)
+// Do we need this API?  Or is mylib.InternedStr(BigStr* s, int start, int end)
 // better for getting values out of Token.line without allocating?
 //
 // e.g. mylib.InternedStr(tok.line, tok.start, tok.start+1)
 //
 // Also for SmallStr, we don't care about interning.  Only for HeapStr.
 
-Str* intern(Str* s) {
+BigStr* intern(BigStr* s) {
   // TODO: put in table gHeap.interned_
   return s;
 }
 
 // Print quoted string.  TODO: use C-style strings (YSTR)
-Str* repr(Str* s) {
+BigStr* repr(BigStr* s) {
   // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
   int n = len(s);
   int upper_bound = n * 4 + 2;
 
-  Str* result = OverAllocatedStr(upper_bound);
+  BigStr* result = OverAllocatedStr(upper_bound);
 
   // Single quote by default.
   char quote = '\'';
@@ -174,7 +174,7 @@ bool StringToInteger(const char* s, int length, int base, int* result) {
   return true;  // Trailing space is OK
 }
 
-int to_int(Str* s, int base) {
+int to_int(BigStr* s, int base) {
   int i;
   if (StringToInteger(s->data_, len(s), base, &i)) {
     return i;
@@ -183,7 +183,7 @@ int to_int(Str* s, int base) {
   }
 }
 
-int to_int(Str* s) {
+int to_int(BigStr* s) {
   int i;
   if (StringToInteger(s->data_, len(s), 10, &i)) {
     return i;
@@ -192,7 +192,7 @@ int to_int(Str* s) {
   }
 }
 
-Str* chr(int i) {
+BigStr* chr(int i) {
   // NOTE: i should be less than 256, in which we could return an object from
   // GLOBAL_STR() pool, like StrIter
   auto result = NewStr(1);
@@ -200,14 +200,14 @@ Str* chr(int i) {
   return result;
 }
 
-int ord(Str* s) {
+int ord(BigStr* s) {
   assert(len(s) == 1);
   // signed to unsigned conversion, so we don't get values like -127
   uint8_t c = static_cast<uint8_t>(s->data_[0]);
   return c;
 }
 
-bool to_bool(Str* s) {
+bool to_bool(BigStr* s) {
   return len(s) != 0;
 }
 
@@ -215,7 +215,7 @@ double to_float(int i) {
   return static_cast<double>(i);
 }
 
-double to_float(Str* s) {
+double to_float(BigStr* s) {
   char* begin = s->data_;
   char* end = begin + len(s);
 
@@ -241,7 +241,7 @@ double to_float(Str* s) {
 }
 
 // e.g. ('a' in 'abc')
-bool str_contains(Str* haystack, Str* needle) {
+bool str_contains(BigStr* haystack, BigStr* needle) {
   // Common case
   if (len(needle) == 1) {
     return memchr(haystack->data_, needle->data_[0], len(haystack));
@@ -266,14 +266,14 @@ bool str_contains(Str* haystack, Str* needle) {
   return false;
 }
 
-Str* str_repeat(Str* s, int times) {
+BigStr* str_repeat(BigStr* s, int times) {
   // Python allows -1 too, and Oil used that
   if (times <= 0) {
     return kEmptyString;
   }
   int len_ = len(s);
   int new_len = len_ * times;
-  Str* result = NewStr(new_len);
+  BigStr* result = NewStr(new_len);
 
   char* dest = result->data_;
   for (int i = 0; i < times; i++) {
@@ -285,13 +285,13 @@ Str* str_repeat(Str* s, int times) {
 
 // for os_path.join()
 // NOTE(Jesse): Perfect candidate for BoundedBuffer
-Str* str_concat3(Str* a, Str* b, Str* c) {
+BigStr* str_concat3(BigStr* a, BigStr* b, BigStr* c) {
   int a_len = len(a);
   int b_len = len(b);
   int c_len = len(c);
 
   int new_len = a_len + b_len + c_len;
-  Str* result = NewStr(new_len);
+  BigStr* result = NewStr(new_len);
   char* pos = result->data_;
 
   memcpy(pos, a->data_, a_len);
@@ -307,11 +307,11 @@ Str* str_concat3(Str* a, Str* b, Str* c) {
   return result;
 }
 
-Str* str_concat(Str* a, Str* b) {
+BigStr* str_concat(BigStr* a, BigStr* b) {
   int a_len = len(a);
   int b_len = len(b);
   int new_len = a_len + b_len;
-  Str* result = NewStr(new_len);
+  BigStr* result = NewStr(new_len);
   char* buf = result->data_;
 
   memcpy(buf, a->data_, a_len);
@@ -324,7 +324,7 @@ Str* str_concat(Str* a, Str* b) {
 // Comparators
 //
 
-bool str_equals(Str* left, Str* right) {
+bool str_equals(BigStr* left, BigStr* right) {
   // Fast path for identical strings.  String deduplication during GC could
   // make this more likely.  String interning could guarantee it, allowing us
   // to remove memcmp().
@@ -346,7 +346,7 @@ bool str_equals(Str* left, Str* right) {
   return false;
 }
 
-bool maybe_str_equals(Str* left, Str* right) {
+bool maybe_str_equals(BigStr* left, BigStr* right) {
   if (left && right) {
     return str_equals(left, right);
   }
@@ -355,11 +355,11 @@ bool maybe_str_equals(Str* left, Str* right) {
     return true;  // None == None
   }
 
-  return false;  // one is None and one is a Str*
+  return false;  // one is None and one is a BigStr*
 }
 
 // TODO(Jesse): Make an inline version of this
-bool are_equal(Str* left, Str* right) {
+bool are_equal(BigStr* left, BigStr* right) {
   return str_equals(left, right);
 }
 
@@ -374,11 +374,11 @@ bool keys_equal(int left, int right) {
 }
 
 // TODO(Jesse): Make an inline version of this
-bool keys_equal(Str* left, Str* right) {
+bool keys_equal(BigStr* left, BigStr* right) {
   return are_equal(left, right);
 }
 
-bool are_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
+bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
   bool result = are_equal(t1->at0(), t2->at0());
   result = result && (t1->at1() == t2->at1());
   return result;
@@ -392,11 +392,11 @@ bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
   return are_equal(t1, t2);
 }
 
-bool keys_equal(Tuple2<Str*, int>* t1, Tuple2<Str*, int>* t2) {
+bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
   return are_equal(t1, t2);
 }
 
-bool str_equals0(const char* c_string, Str* s) {
+bool str_equals0(const char* c_string, BigStr* s) {
   int n = strlen(c_string);
   if (len(s) == n) {
     return memcmp(s->data_, c_string, n) == 0;
@@ -405,7 +405,7 @@ bool str_equals0(const char* c_string, Str* s) {
   }
 }
 
-int hash(Str* s) {
+int hash(BigStr* s) {
   return s->hash(fnv1);
 }
 
@@ -430,9 +430,9 @@ int max(List<int>* elems) {
   return ret;
 }
 
-Str* raw_input(Str* prompt) {
+BigStr* raw_input(BigStr* prompt) {
 #ifdef HAVE_READLINE
-  Str* ret = py_readline::readline(prompt);
+  BigStr* ret = py_readline::readline(prompt);
   if (ret == nullptr) {
     throw Alloc<EOFError>();
   }

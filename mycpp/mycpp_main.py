@@ -89,6 +89,12 @@ def get_mypy_config(
     return sources, options
 
 
+_FIRST = ('asdl.runtime', 'core.vm')
+
+# should be LAST because they use base classes
+_LAST = ('builtin.bracket_osh', 'builtin.completion_osh', 'core.shell')
+
+
 def ModulesToCompile(result, mod_names):
     # HACK TO PUT asdl/runtime FIRST.
     #
@@ -97,7 +103,7 @@ def ModulesToCompile(result, mod_names):
 
     # FIRST files.  Somehow the MyPy builder reorders the modules.
     for name, module in result.files.items():
-        if name in ('asdl.runtime', 'core.vm'):
+        if name in _FIRST:
             yield name, module
 
     for name, module in result.files.items():
@@ -106,19 +112,17 @@ def ModulesToCompile(result, mod_names):
         if suffix not in mod_names:
             continue
 
-        # FIRST files.  Don't do it a second time!
-        if name in ('asdl.runtime', 'core.vm'):
+        if name in _FIRST:  # We already did these
             continue
 
-        # should be LAST they use base classes
-        if name in ('osh.builtin_bracket', 'core.shell'):
+        if name in _LAST:  # We'll do these later
             continue
 
         yield name, module
 
     # LAST files
     for name, module in result.files.items():
-        if name in ('osh.builtin_bracket', 'core.shell'):
+        if name in _LAST:
             yield name, module
 
 

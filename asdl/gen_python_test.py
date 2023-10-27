@@ -8,12 +8,10 @@ from asdl import pybase
 
 from _devbuild.gen import typed_demo_asdl
 from _devbuild.gen.typed_arith_asdl import arith_expr, arith_expr_e
-from _devbuild.gen.typed_demo_asdl import (
-        source_location,
-        flag_type, flag_type_str,
-        op_id_e, op_id_str,
-        cflow, cflow_t,
-        Strings, Dicts, Maybes, op_array)
+from _devbuild.gen.typed_demo_asdl import (source_location, flag_type,
+                                           flag_type_str, op_id_e, op_id_str,
+                                           cflow, cflow_t, Strings, Dicts,
+                                           Maybes, op_array)
 
 
 class ArithAstTest(unittest.TestCase):
@@ -29,7 +27,7 @@ class ArithAstTest(unittest.TestCase):
         self.assertEqual('flag_type.Bool', s)
         print(s)
 
-        s= flag_type_str(obj.tag(), dot=False)
+        s = flag_type_str(obj.tag(), dot=False)
         self.assertEqual('Bool', s)
         print(s)
 

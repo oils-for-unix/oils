@@ -231,12 +231,12 @@ _par-pickle() {
 # The ideal way to do this would be to split Oils up into MODULES, like
 #
 # _debuild/
+# builtin/
 # core/
 # data_lang/
 # frontend/
 # osh/
 # ysh/
-# library/
 # Smaller: pgen2/ pylib/ tea/ tools/
 #
 # And modules are acyclic, and can compile on their own with dependencies.  If

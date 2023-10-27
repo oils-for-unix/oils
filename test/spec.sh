@@ -701,6 +701,14 @@ ysh-stdlib-2() {
   run-file ysh-stdlib-2 "$@"
 }
 
+ysh-stdlib-args() {
+  run-file ysh-stdlib-args "$@"
+}
+
+ysh-stdlib-testing() {
+  run-file ysh-stdlib-testing "$@"
+}
+
 ysh-source() {
   run-file ysh-source "$@"
 }
@@ -717,12 +725,20 @@ ysh-bin() {
   run-file ysh-bin "$@"
 }
 
-ysh-array() {
-  run-file ysh-array "$@"
+ysh-dict() {
+  run-file ysh-dict "$@"
+}
+
+ysh-list() {
+  run-file ysh-list "$@"
 }
 
 ysh-assign() {
   run-file ysh-assign "$@"
+}
+
+ysh-augmented() {
+  run-file ysh-augmented "$@"
 }
 
 ysh-blocks() {
@@ -737,21 +753,12 @@ ysh-builtins() {
   run-file ysh-builtins "$@"
 }
 
-ysh-builtin-eval() {
-  run-file ysh-builtin-eval "$@"
-}
-
-
 ysh-builtin-module() {
   run-file ysh-builtin-module "$@"
 }
 
-ysh-builtin-argparse() {
-  run-file ysh-builtin-argparse "$@"
-}
-
-ysh-builtin-describe() {
-  run-file ysh-builtin-describe "$@"
+ysh-builtin-eval() {
+  run-file ysh-builtin-eval "$@"
 }
 
 # Related to errexit-oil

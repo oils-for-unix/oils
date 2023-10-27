@@ -767,7 +767,7 @@ TEST tea_macros_demo() {
   SUM(suffix_op,
       Nullary #Token,
       Unary(Token word, Word arg_word),
-      Static(Token tok, Str arg)
+      Static(Token tok, BigStr arg)
   );
 
   SUM(suffix_op,
@@ -779,7 +779,7 @@ TEST tea_macros_demo() {
       }
       Static {
         Token tok;
-        Str arg;
+        BigStr arg;
       }
   );
 
@@ -791,7 +791,7 @@ TEST tea_macros_demo() {
 
   PROD(Token) {
     int id;
-    Str val;
+    BigStr val;
   };
   struct Word {};
 
@@ -804,7 +804,7 @@ TEST tea_macros_demo() {
   }
 
   SCHEMA(
-    data Token(Id id, Str val);
+    data Token(Id id, BigStr val);
 
     enum suffix_op {
       Nullary %Token
@@ -814,7 +814,7 @@ TEST tea_macros_demo() {
     // I guess we retain * for reference semantics and so forth
     // *out = val; can be useful
 
-    data Other(Word[] words, Dict<Str, Word>* mydict, Str? option);
+    data Other(Word[] words, Dict<BigStr, Word>* mydict, BigStr? option);
 
     // List<Word>* is also possible, but a bit verbose
     // Word words[] would be more like C++

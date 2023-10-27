@@ -221,9 +221,9 @@ echo, printf, and write have their output captured.
 
 ### `append` and `join`
 
-    var buf = %| |
-    append :buf 'one '
-    append :buf $'two\n'
+    var buf = :| |
+    append 'one ' (buf)
+    append $'two\n' (buf)
     echo $[join(buf)]
 
 ## Appendix A: Deprecated Shell Constructs

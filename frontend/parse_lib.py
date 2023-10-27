@@ -306,7 +306,7 @@ class ParseContext(object):
         """ var mylist = [1, 2, 3] """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.oil_var_decl)
+            pnode, last_token = e_parser.Parse(lexer, grammar_nt.ysh_var_decl)
 
             if 0:
                 self.p_printer.Print(pnode)
@@ -316,16 +316,15 @@ class ParseContext(object):
 
         return ast_node, last_token
 
-    def ParsePlaceMutation(self, kw_token, lexer):
-        # type: (Token, Lexer) -> Tuple[command.PlaceMutation, Token]
+    def ParseMutation(self, kw_token, lexer):
+        # type: (Token, Lexer) -> Tuple[command.Mutation, Token]
         """ setvar d['a'] += 1 """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer,
-                                               grammar_nt.oil_place_mutation)
+            pnode, last_token = e_parser.Parse(lexer, grammar_nt.ysh_mutation)
             if 0:
                 self.p_printer.Print(pnode)
-            ast_node = self.tr.MakePlaceMutation(pnode)
+            ast_node = self.tr.MakeMutation(pnode)
             ast_node.keyword = kw_token  # VarDecl didn't fill this in
 
         return ast_node, last_token
@@ -402,96 +401,6 @@ class ParseContext(object):
                 self.p_printer.Print(pnode)
 
             self.tr.YshFunc(pnode, out)
-
-    def ParseTeaFunc(self, lexer, out):
-        # type: (Lexer, command.TeaFunc) -> Token
-        """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) { x = 42 } """
-        e_parser = self._TeaParser()
-        with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.named_func)
-
-            if 0:
-                self.p_printer.Print(pnode)
-
-            self.tr.NamedFunc(pnode, out)
-
-        return last_token
-
-    def ParseDataType(self, lexer, out):
-        # type: (Lexer, command.Data) -> Token
-        """data Point(x Int, y Int)"""
-        e_parser = self._TeaParser()
-        with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_data)
-
-            if 0:
-                self.p_printer.Print(pnode)
-
-            self.tr.Data(pnode, out)
-
-        return last_token
-
-    def ParseEnum(self, lexer, out):
-        # type: (Lexer, command.Enum) -> Token
-        """enum cflow { Break, Continue, Return(status Int) }"""
-        e_parser = self._TeaParser()
-        with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_enum)
-
-            if 0:
-                self.p_printer.Print(pnode)
-
-            self.tr.Enum(pnode, out)
-
-        return last_token
-
-    def ParseClass(self, lexer, out):
-        # type: (Lexer, command.Class) -> Token
-        """class Lexer { var Token; func Next() { echo } }"""
-        e_parser = self._TeaParser()
-        with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_class)
-
-            if 0:
-                self.p_printer.Print(pnode)
-
-            self.tr.Class(pnode, out)
-
-        return last_token
-
-    def ParseImport(self, lexer, out):
-        # type: (Lexer, command.Import) -> Token
-        """Use 'foo/bar' as spam, Foo, Z as Y."""
-        e_parser = self._TeaParser()
-        with ctx_PNodeAllocator(e_parser):
-            pnode, last_token = e_parser.Parse(lexer, grammar_nt.tea_import)
-
-            if 0:
-                self.p_printer.Print(pnode)
-
-            self.tr.Import(pnode, out)
-
-        return last_token
-
-    if mylib.PYTHON:
-
-        def ParseTeaModule(self, line_reader):
-            # type: (_Reader) -> None
-            """An entire .tea file."""
-            line_lexer = lexer.LineLexer(self.arena)
-            lx = lexer.Lexer(line_lexer, line_reader)
-
-            e_parser = self._TeaParser()
-            with ctx_PNodeAllocator(e_parser):
-                pnode, last_token = e_parser.Parse(lx, grammar_nt.tea_module)
-
-                if 1:
-                    self.p_printer.Print(pnode)
-
-                #out = command.Use()  # TODO: make a node
-                #self.tr.TeaModule(pnode, out)
-
-            return None
 
 
 # Another parser instantiation:

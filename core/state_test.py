@@ -5,8 +5,9 @@ import unittest
 import os.path
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import scope_e, lvalue, value, value_e
+from _devbuild.gen.runtime_asdl import scope_e
 from _devbuild.gen.syntax_asdl import source, SourceLine
+from _devbuild.gen.value_asdl import (value, value_e, sh_lvalue)
 from asdl import runtime
 from core import error
 from core import test_lib
@@ -221,7 +222,7 @@ class MemTest(unittest.TestCase):
         mem.ClearFlag('PYTHONPATH', state.ClearExport)
         self.assertEqual(False, mem.var_stack[0]['PYTHONPATH'].exported)
 
-        lhs = lvalue.Indexed('a', 1, runtime.NO_SPID)
+        lhs = sh_lvalue.Indexed('a', 1, runtime.NO_SPID)
         # a[1]=2
         mem.SetValue(lhs, value.Str('2'), scope_e.Dynamic)
         self.assertEqual([None, '2'], mem.var_stack[0]['a'].val.strs)
@@ -295,7 +296,7 @@ class MemTest(unittest.TestCase):
         return  # not implemented yet
 
         # unset a[1]
-        mem.Unset(lvalue.Indexed('a', 1, runtime.NO_SPID), False)
+        mem.Unset(sh_lvalue.Indexed('a', 1, runtime.NO_SPID), False)
 
     def testArgv(self):
         mem = _InitMem()

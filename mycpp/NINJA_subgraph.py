@@ -52,6 +52,7 @@ def DefineTargets(ru):
             'mycpp/gc_str_test.cc',
             'mycpp/gc_tuple_test.cc',
             'mycpp/small_str_test.cc',
+            'mycpp/yaks_runtime_test.cc',
     ]:
         ru.cc_binary(test_main,
                      deps=['//mycpp/runtime'],

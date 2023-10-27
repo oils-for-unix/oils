@@ -42,6 +42,7 @@ else:
 # Used by core/asdl_gen.py to generate _devbuild/gen/osh-types.h, with
 # lex_mode__*
 class CEnumVisitor(visitor.AsdlVisitor):
+
     def VisitSimpleSum(self, sum, name, depth):
         # Just use #define, since enums aren't namespaced.
         for i, variant in enumerate(sum.types):
@@ -50,7 +51,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
 
 
 _PRIMITIVES = {
-    'string': 'Str*',  # declared in containers.h
+    'string': 'BigStr*',  # declared in containers.h
     'int': 'int',
     'float': 'double',
     'bool': 'bool',
@@ -273,8 +274,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('Str* %s_str(%s tag, bool dot = true);' % (sum_name, enum_name),
-                          depth)
+                self.Emit(
+                    'BigStr* %s_str(%s tag, bool dot = true);' %
+                    (sum_name, enum_name), depth)
                 self.Emit('', depth)
 
         else:
@@ -307,7 +309,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self.Emit('', depth)
 
             if self.pretty_print_methods:
-                self.Emit('Str* %s_str(int tag, bool dot = true);' % sum_name, depth)
+                self.Emit(
+                    'BigStr* %s_str(int tag, bool dot = true);' % sum_name,
+                    depth)
                 self.Emit('', depth)
 
         return int_to_type
@@ -581,7 +585,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             typ = field.typ.children[0]
 
             self.Emit('if (this->%s) {  // Optional' % field.name)
-            child_code_str, _ = _HNodeExpr(abbrev, typ, 'this->%s' % field.name)
+            child_code_str, _ = _HNodeExpr(abbrev, typ,
+                                           'this->%s' % field.name)
             self.Emit('  hnode_t* %s = %s;' % (out_val_name, child_code_str))
             self.Emit('  L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                       (field.name, out_val_name))
@@ -600,7 +605,11 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 'L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                 (field.name, out_val_name), depth)
 
-    def _EmitPrettyPrintMethods(self, class_name, all_fields, ast_node, sum_name=None):
+    def _EmitPrettyPrintMethods(self,
+                                class_name,
+                                all_fields,
+                                ast_node,
+                                sum_name=None):
         #
         # PrettyTree
         #
@@ -612,8 +621,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
         self.Emit('')
         self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
-        self.Emit(
-            '  hnode::Record* out_node = runtime::NewRecord(%s);' % n)
+        self.Emit('  hnode::Record* out_node = runtime::NewRecord(%s);' % n)
         if all_fields:
             self.Emit('  List<Field*>* L = out_node->fields;')
             self.Emit('')
@@ -638,8 +646,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
         self.Emit('')
         self.Emit('hnode_t* %s::_AbbreviatedTree() {' % class_name)
-        self.Emit(
-            '  hnode::Record* out_node = runtime::NewRecord("%s");' % n)
+        self.Emit('  hnode::Record* out_node = runtime::NewRecord("%s");' % n)
         if ast_node.fields:
             self.Emit('  List<Field*>* L = out_node->fields;')
 
@@ -682,16 +689,18 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             enum_name = sum_name
 
         if strong:
-            self.Emit('Str* %s_str(%s tag, bool dot) {' % (sum_name, enum_name),
-                      depth)
+            self.Emit(
+                'BigStr* %s_str(%s tag, bool dot) {' % (sum_name, enum_name),
+                depth)
         else:
-            self.Emit('Str* %s_str(int tag, bool dot) {' % sum_name, depth)
+            self.Emit('BigStr* %s_str(int tag, bool dot) {' % sum_name, depth)
 
         buf_size = 32
         v_max = max(len(variant.name) for variant in sum.types)
         s_max = v_max + 1 + len(sum_name) + 1  # for . and NUL
         if s_max > buf_size:
-            raise RuntimeError('Sum name %r + variant name is too long' % sum_name)
+            raise RuntimeError('Sum name %r + variant name is too long' %
+                               sum_name)
 
         self.Emit('  char buf[%d];' % buf_size, depth)
         self.Emit('  const char* v = nullptr;', depth)
@@ -705,7 +714,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
 
         self.Emit('  }', depth)
         self.Emit('  if (dot) {', depth)
-        self.Emit('    snprintf(buf, %d, "%s.%%s", v);' % (buf_size, sum_name), depth)
+        self.Emit('    snprintf(buf, %d, "%s.%%s", v);' % (buf_size, sum_name),
+                  depth)
         self.Emit('    return StrFromC(buf);', depth)
         self.Emit('  } else {', depth)
         self.Emit('    return StrFromC(v);', depth)
@@ -734,15 +744,17 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 self.Emit('')
                 self.Emit('GcGlobal<%s__%s> g%s__%s = ' %
                           (sum_name, variant_name, sum_name, variant_name))
-                self.Emit('  { ObjHeader::Global(%s_e::%s) };' % (sum_name,
-                                                                  variant_name))
+                self.Emit('  { ObjHeader::Global(%s_e::%s) };' %
+                          (sum_name, variant_name))
 
         for variant in sum.types:
             if variant.shared_type:
                 continue
             all_fields = variant.fields
             class_name = '%s__%s' % (sum_name, variant.name)
-            self._EmitPrettyPrintMethods(class_name, all_fields, variant,
+            self._EmitPrettyPrintMethods(class_name,
+                                         all_fields,
+                                         variant,
                                          sum_name=sum_name)
 
         # Emit dispatch WITHOUT using 'virtual'

@@ -74,8 +74,8 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord,
     word_part,
     word_part_t,
-    place_expr,
-    place_expr_e,
+    y_lhs,
+    y_lhs_e,
     arith_expr_t,
     command,
     expr_t,
@@ -1056,7 +1056,7 @@ class WordParser(WordEmitter):
 
         self._SetNext(lex_mode_e.Expr)
         enode, right_token = self.parse_ctx.ParseYshExpr(
-            self.lexer, grammar_nt.oil_expr_sub)
+            self.lexer, grammar_nt.ysh_expr_sub)
 
         self._SetNext(lex_mode)  # Move past ]
         return word_part.ExprSub(left_token, enode, right_token)
@@ -1084,27 +1084,26 @@ class WordParser(WordEmitter):
         self._SetNext(lex_mode_e.ShCommand)  # always back to this
         return enode
 
-    def ParsePlaceMutation(self, kw_token, var_checker):
-        # type: (Token, VarChecker) -> command.PlaceMutation
+    def ParseMutation(self, kw_token, var_checker):
+        # type: (Token, VarChecker) -> command.Mutation
         """
         setvar a[i] = 1
         setvar i += 1
         setvar i++
         """
         self._SetNext(lex_mode_e.Expr)
-        enode, last_token = self.parse_ctx.ParsePlaceMutation(
-            kw_token, self.lexer)
+        enode, last_token = self.parse_ctx.ParseMutation(kw_token, self.lexer)
         # Hack to move } from what the Expr lexer modes gives to what CommandParser
         # wants
         if last_token.id == Id.Op_RBrace:
             last_token.id = Id.Lit_RBrace
 
-        for place in enode.lhs:
-            UP_place = place
-            with tagswitch(place) as case:
-                if case(place_expr_e.Var):
-                    place = cast(place_expr.Var, UP_place)
-                    var_checker.Check(kw_token.id, place.name)
+        for lhs in enode.lhs:
+            UP_lhs = lhs
+            with tagswitch(lhs) as case:
+                if case(y_lhs_e.Var):
+                    lhs = cast(y_lhs.Var, UP_lhs)
+                    var_checker.Check(kw_token.id, lhs.name)
                 # TODO: Do indices as well
 
         # Let the CommandParser see the Op_Semi or Op_Newline.
@@ -1142,7 +1141,7 @@ class WordParser(WordEmitter):
         if self.token_type == Id.Op_LParen:
             self.lexer.MaybeUnreadOne()
 
-        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.oil_expr)
+        enode, _ = self.parse_ctx.ParseYshExpr(self.lexer, grammar_nt.ysh_expr)
 
         self._SetNext(lex_mode_e.ShCommand)
         return enode
@@ -1241,11 +1240,6 @@ class WordParser(WordEmitter):
             self._GetToken()
 
         return next_id
-
-    def ParseImport(self, node):
-        # type: (command.Import) -> None
-        last_token = self.parse_ctx.ParseImport(self.lexer, node)
-        self.buffered_word = last_token
 
     def _ReadArithExpr(self, end_id):
         # type: (Id_t) -> arith_expr_t

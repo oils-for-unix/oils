@@ -27,14 +27,9 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
 )
 from _devbuild.gen.runtime_asdl import (
-    value,
-    value_e,
-    value_t,
     part_value,
     part_value_e,
     part_value_t,
-    lvalue,
-    lvalue_t,
     cmd_value,
     cmd_value_e,
     cmd_value_t,
@@ -45,6 +40,13 @@ from _devbuild.gen.runtime_asdl import (
     VarSubState,
 )
 from _devbuild.gen.option_asdl import option_i
+from _devbuild.gen.value_asdl import (
+    value,
+    value_e,
+    value_t,
+    sh_lvalue,
+    sh_lvalue_t,
+)
 from core import error
 from core import pyos
 from core import pyutil
@@ -160,7 +162,7 @@ ASSIGN_ARG_RE = '^([a-zA-Z_][a-zA-Z0-9_]*)((=|\+=)(.*))?$'
 
 
 def _SplitAssignArg(arg, blame_word):
-    # type: (str, word_t) -> AssignArg
+    # type: (str, CompoundWord) -> AssignArg
     """Dynamically parse argument to declare, export, etc.
 
     This is a fallback to the static parsing done below.
@@ -170,7 +172,7 @@ def _SplitAssignArg(arg, blame_word):
     m = libc.regex_match(ASSIGN_ARG_RE, arg)
     if m is None:
         e_die("Assignment builtin expected NAME=value, got %r" % arg,
-              loc.Word(blame_word))
+              blame_word)
 
     var_name = m[1]
     # m[2] is used for grouping; ERE doesn't have non-capturing groups
@@ -575,26 +577,26 @@ class AbstractWordEvaluator(StringWordEvaluator):
     ):
         # type: (...) -> bool
         """
-    Returns:
-      Whether part_vals was mutated
+        Returns:
+          Whether part_vals was mutated
 
-      ${a:-} returns part_value[]
-      ${a:+} returns part_value[]
-      ${a:?error} returns error word?
-      ${a:=} returns part_value[] but also needs self.mem for side effects.
+          ${a:-} returns part_value[]
+          ${a:+} returns part_value[]
+          ${a:?error} returns error word?
+          ${a:=} returns part_value[] but also needs self.mem for side effects.
 
-      So I guess it should return part_value[], and then a flag for raising an
-      error, and then a flag for assigning it?
-      The original BracedVarSub will have the name.
+          So I guess it should return part_value[], and then a flag for raising an
+          error, and then a flag for assigning it?
+          The original BracedVarSub will have the name.
 
-    Example of needing multiple part_value[]
+        Example of needing multiple part_value[]
 
-      echo X-${a:-'def'"ault"}-X
+          echo X-${a:-'def'"ault"}-X
 
-    We return two part values from the BracedVarSub.  Also consider:
+        We return two part values from the BracedVarSub.  Also consider:
 
-      echo ${a:-x"$@"x}
-    """
+          echo ${a:-x"$@"x}
+        """
         eval_flags = IS_SUBST
         if quoted:
             eval_flags |= QUOTED
@@ -659,7 +661,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         assign_part_vals, self.splitter.GetJoinChar())
                     if vtest_place.index is None:  # using None when no index
                         lval = location.LName(
-                            vtest_place.name)  # type: lvalue_t
+                            vtest_place.name)  # type: sh_lvalue_t
                     else:
                         var_name = vtest_place.name
                         var_index = vtest_place.index
@@ -668,12 +670,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         with tagswitch(var_index) as case:
                             if case(a_index_e.Int):
                                 var_index = cast(a_index.Int, UP_var_index)
-                                lval = lvalue.Indexed(var_name, var_index.i,
-                                                      loc.Missing)
+                                lval = sh_lvalue.Indexed(
+                                    var_name, var_index.i, loc.Missing)
                             elif case(a_index_e.Str):
                                 var_index = cast(a_index.Str, UP_var_index)
-                                lval = lvalue.Keyed(var_name, var_index.s,
-                                                    loc.Missing)
+                                lval = sh_lvalue.Keyed(var_name, var_index.s,
+                                                       loc.Missing)
                             else:
                                 raise AssertionError()
 
@@ -2014,7 +2016,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         flags = [arg0]  # initial flags like -p, and -f -F name1 name2
         flag_locs = [words[0]]
-        AssignArgs = []  # type: List[AssignArg]
+        assign_args = []  # type: List[AssignArg]
 
         n = len(words)
         for i in xrange(1, n):  # skip first word
@@ -2050,20 +2052,19 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         right = self.EvalRhsWord(rhs)
 
                     arg2 = AssignArg(var_name, right, append, w)
-
-                    AssignArgs.append(arg2)
+                    assign_args.append(arg2)
 
                 else:  # e.g. export $dynamic
                     argv = self._EvalWordToArgv(w)
                     for arg in argv:
                         arg2 = _SplitAssignArg(arg, w)
-                        AssignArgs.append(arg2)
+                        assign_args.append(arg2)
 
             else:
                 argv = self._EvalWordToArgv(w)
                 for arg in argv:
-                    if arg.startswith('-') or arg.startswith(
-                            '+'):  # e.g. declare -r +r
+                    if arg.startswith('-') or arg.startswith('+'):
+                        # e.g. declare -r +r
                         flags.append(arg)
                         flag_locs.append(w)
 
@@ -2075,12 +2076,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     else:  # e.g. export $dynamic
                         if eval_to_pairs:
                             arg2 = _SplitAssignArg(arg, w)
-                            AssignArgs.append(arg2)
+                            assign_args.append(arg2)
                             started_pairs = True
                         else:
                             flags.append(arg)
 
-        return cmd_value.Assign(builtin_id, flags, flag_locs, AssignArgs)
+        return cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
 
     def SimpleEvalWordSequence2(self, words, allow_assign):
         # type: (List[CompoundWord], bool) -> cmd_value_t

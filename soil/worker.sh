@@ -68,6 +68,7 @@ py-source        build/py.sh py-source       -
 check-types      pea/TEST.sh check-types     -
 run-tests        pea/TEST.sh run-tests       -
 parse-all        pea/TEST.sh parse-all       -
+yaks             yaks/TEST.sh soil-run       -
 EOF
 }
 
@@ -91,9 +92,7 @@ parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run          -
 ysh-parse-errors    test/ysh-parse-errors.sh soil-run-py         -
-tea-spec            test/spec-py.sh tea-all-serial               _tmp/spec/tea/index.html
 ysh-large           ysh/run.sh soil-run                          -
-tea-large           tea/run.sh soil-run                          -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
 osh-minimal         test/spec-py.sh osh-minimal                  _tmp/spec/osh-minimal/index.html
 headless            client/run.sh soil-run-py                    -

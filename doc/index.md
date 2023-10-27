@@ -32,6 +32,7 @@ Like many other docs, the reference is still in progress:
   - [OSH Table of Contents](ref/toc-osh.html) &dagger;
   - [YSH Table of Contents](ref/toc-ysh.html) &dagger;
   - [Data Notation Table of Contents](ref/toc-data.html) &dagger;
+- [Style Guide](style-guide.html) gives coding recommendations.
 
 ## Interactive Shell
 
@@ -64,6 +65,8 @@ These docs are for advanced users:
   differ from Bourne/POSIX shell?
 - [YSH vs. Python](ysh-vs-python.html) &dagger;.  How do YSH expressions differ
   from Python?
+- [Novelties in OSH and YSH](novelties.html).  May be helpful for experienced
+  programmers.
 
 ### Design Concepts
 
@@ -93,6 +96,8 @@ Crosscutting design issues:
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
 - [YSH I/O Builtins](io-builtins.html) &dagger;
+
+<!-- TODO: proc-func.html -- Informal guide to procs and funcs -->
 
 ## Data Languages Avoid Ad-Hoc Parsing
 

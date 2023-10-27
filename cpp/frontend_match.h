@@ -15,7 +15,7 @@ namespace match {
 using types_asdl::lex_mode_t;
 
 // The big lexer
-Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, Str* line, int start_pos);
+Tuple2<Id_t, int> OneToken(lex_mode_t lex_mode, BigStr* line, int start_pos);
 
 // There are 5 secondary lexers with matchers of this type
 typedef void (*MatchFunc)(const unsigned char* line, int line_len,
@@ -23,12 +23,12 @@ typedef void (*MatchFunc)(const unsigned char* line, int line_len,
 
 class SimpleLexer {
  public:
-  SimpleLexer(MatchFunc match_func, Str* s)
+  SimpleLexer(MatchFunc match_func, BigStr* s)
       : match_func_(match_func), s_(s), pos_(0) {
   }
 
-  Tuple2<Id_t, Str*> Next();
-  List<Tuple2<Id_t, Str*>*>* Tokens();
+  Tuple2<Id_t, BigStr*> Next();
+  List<Tuple2<Id_t, BigStr*>*>* Tokens();
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(SimpleLexer));
@@ -40,7 +40,7 @@ class SimpleLexer {
 
  private:
   MatchFunc match_func_;
-  Str* s_;
+  BigStr* s_;
   int pos_;
 };
 
@@ -48,29 +48,29 @@ class SimpleLexer {
 // Secondary Lexers
 //
 
-SimpleLexer* BraceRangeLexer(Str* s);
-SimpleLexer* GlobLexer(Str* s);
-SimpleLexer* EchoLexer(Str* s);
+SimpleLexer* BraceRangeLexer(BigStr* s);
+SimpleLexer* GlobLexer(BigStr* s);
+SimpleLexer* EchoLexer(BigStr* s);
 
-List<Tuple2<Id_t, Str*>*>* HistoryTokens(Str* s);
-List<Tuple2<Id_t, Str*>*>* Ps1Tokens(Str* s);
+List<Tuple2<Id_t, BigStr*>*>* HistoryTokens(BigStr* s);
+List<Tuple2<Id_t, BigStr*>*>* Ps1Tokens(BigStr* s);
 
-Id_t BracketUnary(Str* s);
-Id_t BracketBinary(Str* s);
-Id_t BracketOther(Str* s);
+Id_t BracketUnary(BigStr* s);
+Id_t BracketBinary(BigStr* s);
+Id_t BracketOther(BigStr* s);
 
 //
 // Other Matching Functions
 //
 
-bool IsValidVarName(Str* s);
-bool ShouldHijack(Str* s);
-bool LooksLikeFloat(Str* s);
-bool LooksLikeInteger(Str* s);
+bool IsValidVarName(BigStr* s);
+bool ShouldHijack(BigStr* s);
+bool LooksLikeFloat(BigStr* s);
+bool LooksLikeInteger(BigStr* s);
 
 // StringToInt
 
-int MatchOption(Str* s);
+int MatchOption(BigStr* s);
 
 }  // namespace match
 

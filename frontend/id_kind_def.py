@@ -205,9 +205,11 @@ def AddKinds(spec):
             ('Pipe', '|'),
             ('Caret', '^'),
             ('Tilde', '~'),
-
-            # 11 mutating operators:  =  +=  -=  etc.
             ('Equal', '='),
+
+            # Augmented Assignment for $(( ))
+            # Must match the list in osh/arith_parse.py
+            # YSH has **= //= like Python
             ('PlusEqual', '+='),
             ('MinusEqual', '-='),
             ('StarEqual', '*='),
@@ -216,8 +218,8 @@ def AddKinds(spec):
             ('DGreatEqual', '>>='),
             ('DLessEqual', '<<='),
             ('AmpEqual', '&='),
+            ('CaretEqual', '^='),
             ('PipeEqual', '|='),
-            ('CaretEqual', '^=')
         ])
 
     spec.AddKind('Eof', ['Real', 'RParen', 'Backtick'])
@@ -272,6 +274,7 @@ def AddKinds(spec):
             'Slash',
             'Percent',  # / # % for patsub, NOT unary op
             'Colon',  # x=foo:~:~root needs tilde expansion
+            'DColon',  # :: f(x)
             'Digits',  # for lex_mode_e.Arith
             'At',  # for ${a[@]} in lex_mode_e.Arith, and detecting @[]
             'ArithVarLike',  # for $((var+1)).  Distinct from Lit_VarLike 'var='
@@ -330,7 +333,7 @@ def AddKinds(spec):
             'Bang',  # eggex !digit, ![a-z]
             'Dot',
             'DDot',
-            'DColon',
+            'Colon',  # mylist:pop()
             'RArrow',
             'RDArrow',
             'DSlash',  # integer division
@@ -344,6 +347,8 @@ def AddKinds(spec):
             'NotTilde',  # !~
             'DTilde',
             'NotDTilde',  # ~~ !~~
+            'DStarEqual',  # **=, which bash doesn't have
+            'DSlashEqual',  # //=, which bash doesn't have
             'CastedDummy',  # Used for @()  $() (words in lex_mode_e.ShCommand)
             # and ${}  ''  ""  (and all other strings)
 

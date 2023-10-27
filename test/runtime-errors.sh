@@ -774,13 +774,18 @@ array_assign_1() {
 }
 
 array_assign_2() {
-  readonly -a array=(1 2 3)
-  array[0]=x
+  _error-case 'readonly -a array=(1 2 3); array[0]=x'
+
+  _error-case 'readonly -a array=(1 2 3); export array'
 }
 
 readonly_assign() {
-  readonly x=1
-  x=2
+  _error-case 'readonly x=1; x=2'
+
+  _error-case 'readonly x=2; y=3 x=99'
+
+  _error-case 'readonly x=2; declare x=99'
+  _error-case 'readonly x=2; export x=99'
 }
 
 multiple_assign() {

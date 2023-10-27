@@ -57,8 +57,8 @@ TEST api_test() {
   // no objects live
   ASSERT_EQ_FMT(0, gHeap.MaybeCollect(), "%d");
   {
-    Str *s1 = StrFromC("foo");
-    Str *s2 = StrFromC("bar");
+    BigStr *s1 = StrFromC("foo");
+    BigStr *s2 = StrFromC("bar");
     StackRoots _r({&s1, &s2});
 
     // 2 live objects
@@ -78,7 +78,7 @@ TEST api_test() {
 }
 
 TEST string_collection_test() {
-  Str *test_str = StrFromC("foo");
+  BigStr *test_str = StrFromC("foo");
 
   StackRoots _roots({&test_str});
 
@@ -93,15 +93,15 @@ TEST string_collection_test() {
 
 TEST list_collection_test() {
   {
-    Str *test_str0 = nullptr;
-    Str *test_str1 = nullptr;
-    List<Str *> *test_list = nullptr;
+    BigStr *test_str0 = nullptr;
+    BigStr *test_str1 = nullptr;
+    List<BigStr *> *test_list = nullptr;
 
     StackRoots _roots({&test_str0, &test_str1, &test_list});
 
     test_str0 = StrFromC("foo_0");
     test_str1 = StrFromC("foo_1");
-    test_list = NewList<Str *>();
+    test_list = NewList<BigStr *>();
 
     test_list->append(test_str0);
     test_list->append(test_str1);
@@ -153,7 +153,7 @@ class Node {
 };
 
 TEST cycle_collection_test() {
-  // Dict<Str*, int>* d = NewDict<Str*, int>();
+  // Dict<BigStr*, int>* d = NewDict<BigStr*, int>();
 
   Node *n1 = nullptr;
   Node *n2 = nullptr;
@@ -271,6 +271,46 @@ SUITE(pool_alloc) {
   RUN_TEST(pool_size);
 }
 
+int f(BigStr *s, List<int> *mylist) {
+  // Param Roots
+  StackRoots _roots({&s, &mylist});
+
+  // Sorted params
+  BigStr *first = nullptr;
+  List<int> *other = nullptr;
+  List<int> *other2 = nullptr;
+  BigStr *last = nullptr;
+
+  int a = 0;
+  float b = 3.5;
+
+  ptrdiff_t diff = &last - &first;
+
+  // Account for stack going up or down
+  // This is cool!
+  int n_pointers = diff > 0 ? diff : -diff;
+
+  log("a = %d, b = %f", a, b);
+
+  // 2 pointers if we don't use other2 !
+  // log("other = %p", &other);
+
+  // 3 pointers!
+  log("other = %p, other2 = %p", &other, &other2);
+
+  log("n_pointers = %d", n_pointers);
+
+  return 42;
+}
+
+TEST hybrid_root_test() {
+  log("hi = %s", "x");
+
+  f(StrFromC("hi"), nullptr);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
@@ -286,6 +326,8 @@ int main(int argc, char **argv) {
   RUN_TEST(cycle_collection_test);
 
   RUN_SUITE(pool_alloc);
+
+  RUN_TEST(hybrid_root_test);
 
   gHeap.CleanProcessExit();
 

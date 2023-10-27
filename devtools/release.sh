@@ -501,16 +501,16 @@ compress-benchmarks() {
 }
 
 line-counts() {
-  local out=$1  # should be an absolute path
-  mkdir -p $out
+  local out_dir=$1  # should be an absolute path
+  mkdir -p $out_dir
 
   # Counting directly from the build.
-  metrics/tarball.sh linecount-pydeps > $out/pydeps.txt
-  metrics/tarball.sh linecount-nativedeps > $out/nativedeps.txt
-  metrics/tarball.sh linecount-oil-cpp > $out/oil-cpp.txt
+  metrics/tarball.sh linecount-pydeps > $out_dir/pydeps.txt
+  metrics/tarball.sh linecount-nativedeps > $out_dir/nativedeps.txt
+  metrics/tarball.sh linecount-oil-cpp > $out_dir/oil-cpp.txt
 
-  metrics/source-code.sh write-reports  # for-translation and overview
-  metrics/source-code.sh osh-cloc > $out/osh-cloc.txt
+  metrics/source-code.sh write-reports $out_dir  # for-translation and overview
+  metrics/source-code.sh cloc-report > $out_dir/cloc-report.txt
 
   # goes to _tmp/metrics/preprocessed
   metrics/source-code.sh preprocessed

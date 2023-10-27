@@ -1,9 +1,10 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_e, value_t, cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
                                        command_t, expr_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from core import error
 from core.error import e_usage
 from frontend import location

@@ -46,7 +46,7 @@ mode_t umask(mode_t mask) {
   return ::umask(mask);
 }
 
-int open(Str* path, int flags, int perms) {
+int open(BigStr* path, int flags, int perms) {
   int result = ::open(path->data_, flags, perms);
   if (result < 0) {
     throw Alloc<OSError>(errno);
@@ -59,7 +59,7 @@ void dup2(int oldfd, int newfd) {
     throw Alloc<OSError>(errno);
   }
 }
-void putenv(Str* name, Str* value) {
+void putenv(BigStr* name, BigStr* value) {
   int overwrite = 1;
   int ret = ::setenv(name->data_, value->data_, overwrite);
   if (ret < 0) {
@@ -67,7 +67,7 @@ void putenv(Str* name, Str* value) {
   }
 }
 
-mylib::LineReader* fdopen(int fd, Str* c_mode) {
+mylib::LineReader* fdopen(int fd, BigStr* c_mode) {
   // CPython checks if it's a directory first
   struct stat buf;
   if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
@@ -85,7 +85,8 @@ mylib::LineReader* fdopen(int fd, Str* c_mode) {
   return Alloc<mylib::CFileLineReader>(f);
 }
 
-void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
+void execve(BigStr* argv0, List<BigStr*>* argv,
+            Dict<BigStr*, BigStr*>* environ) {
   int n_args = len(argv);
   // never deallocated
   char** _argv = static_cast<char**>(malloc((n_args + 1) * sizeof(char*)));
@@ -102,9 +103,9 @@ void execve(Str* argv0, List<Str*>* argv, Dict<Str*, Str*>* environ) {
   char** envp = static_cast<char**>(malloc((n_env + 1) * sizeof(char*)));
 
   int env_index = 0;
-  for (DictIter<Str*, Str*> it(environ); !it.Done(); it.Next()) {
-    Str* k = it.Key();
-    Str* v = it.Value();
+  for (DictIter<BigStr*, BigStr*> it(environ); !it.Done(); it.Next()) {
+    BigStr* k = it.Key();
+    BigStr* v = it.Value();
 
     int joined_len = len(k) + len(v) + 1;
     char* buf = static_cast<char*>(malloc(joined_len + 1));
@@ -138,13 +139,13 @@ void killpg(int pgid, int sig) {
   }
 }
 
-List<Str*>* listdir(Str* path) {
+List<BigStr*>* listdir(BigStr* path) {
   DIR* dirp = opendir(path->data());
   if (dirp == NULL) {
     throw Alloc<OSError>(errno);
   }
 
-  auto* ret = Alloc<List<Str*>>();
+  auto* ret = Alloc<List<BigStr*>>();
   while (true) {
     errno = 0;
     struct dirent* ep = readdir(dirp);
@@ -203,11 +204,11 @@ time_t localtime(time_t ts) {
   return result;
 }
 
-Str* strftime(Str* s, time_t ts) {
+BigStr* strftime(BigStr* s, time_t ts) {
   tm* loc_time = ::localtime(&ts);
 
   const int max_len = 1024;
-  Str* result = OverAllocatedStr(max_len);
+  BigStr* result = OverAllocatedStr(max_len);
   int n = strftime(result->data(), max_len, s->data_, loc_time);
   if (n == 0) {
     // bash silently truncates on large format string like

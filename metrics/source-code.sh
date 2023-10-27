@@ -16,7 +16,7 @@ source test/common.sh
 source test/tsv-lib.sh
 
 filter-py() {
-  grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py$'
+  grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py|NINJA_subgraph.py$'
 }
 
 readonly -a ASDL_FILES=( {frontend,core}/*.asdl )
@@ -28,13 +28,14 @@ osh-files() {
   # - code generators
   # - test library
 
-  ls bin/oils_for_unix.py {osh,core,frontend}/*.py pyext/*.c */*.pyi \
+  ls bin/oils_for_unix.py {osh,core,frontend}/*.py builtin/*_osh.py \
+    pyext/*.c */*.pyi \
     "${ASDL_FILES[@]}" \
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$|os.pyi$'
 }
 
 ysh-files() {
-  ls ysh/*.{py,pgen2} {data_lang,library}/*.py | filter-py 
+  ls ysh/*.{py,pgen2} data_lang/*.py builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
 }
 
 # cloc doesn't understand ASDL files.
@@ -60,17 +61,30 @@ print "%5d %s" % (total, "total")
 ' "$@"
 }
 
-osh-cloc() {
+cloc-report() {
   echo 'OSH (non-blank non-comment lines)'
   echo
   osh-files | xargs cloc --quiet "$@"
+  echo
+  echo
+
+  echo 'YSH (non-blank non-comment lines)'
+  echo
+  ysh-files | xargs cloc --quiet "$@"
+  echo
+  echo
+
+  echo 'ASDL SCHEMAS (non-blank non-comment lines)'
+  asdl-cloc "${ASDL_FILES[@]}"
+  echo
+  echo
 
   # NOTE: --csv option could be parsed into HTML.
   # Or just sum with asdl-cloc!
 
+  echo 'Hand-Written C++ code (non-blank non-comment lines)'
   echo
-  echo 'ASDL SCHEMAS (non-blank non-comment lines)'
-  asdl-cloc "${ASDL_FILES[@]}"
+  { cpp-binding-files; mycpp-runtime-files; } | xargs cloc --quiet "$@"
 }
 
 preprocessed() {
@@ -152,18 +166,34 @@ osh-counts() {
     "$@"
 }
 
+ysh-counts() {
+  local count=$1
+  shift
+
+  ysh-files | $count \
+    'YSH' 'Expression grammar, parser, evaluator, etc.' "$@"
+}
+
+
+cpp-binding-files() {
+  ls cpp/*.{cc,h} | egrep -v '_test.cc' 
+}
+
+mycpp-runtime-files() {
+  ls mycpp/*.{cc,h} | egrep -v '_test.cc|bump_leak_heap'
+}
+
 cpp-counts() {
   local count=$1
   shift
 
-  ls cpp/*.{cc,h} | egrep -v 'greatest.h|_test.cc' | $count \
+  cpp-binding-files | $count \
     'Hand-written C++ Code' \
     'Includes OS bindings.  Small C++ files like cpp/osh_arith_parse.{cc,h} correspond to larger Python files like osh/arith_parse.py.' \
     "$@"
 
   # Remove code that isn't "in production"
-  ls mycpp/*.{cc,h} | egrep -v '_test.cc|bump_leak_heap' \
-    | $count \
+  mycpp-runtime-files | $count \
     'Garbage-Collected Runtime' \
     'Uses a fork-friendly Mark-Sweep collector.' \
     "$@"
@@ -254,6 +284,8 @@ _for-translation() {
 
   osh-counts $count "$@"
 
+  ysh-counts $count "$@"
+
   spec-gold-counts $count "$@"
 
   gen-cpp-counts $count "$@"
@@ -265,8 +297,7 @@ _overview() {
 
   osh-counts $count "$@"
 
-  ysh-files | $count \
-    'YSH' '' "$@"
+  ysh-counts $count "$@"
 
   ls stdlib/*.ysh | $count \
     "YSH stdlib" '' "$@"
@@ -408,20 +439,20 @@ overview-html() {
 }
 
 write-reports() {
-  local dir=_tmp/metrics/line-counts
+  local out_dir=${1:-_tmp/metrics/line-counts}
 
-  mkdir -v -p $dir
+  mkdir -v -p $out_dir
 
-  for-translation-html > $dir/for-translation.html
+  for-translation-html > $out_dir/for-translation.html
 
-  overview-html > $dir/overview.html
+  overview-html > $out_dir/overview.html
 
-  cat >$dir/index.html <<EOF
+  cat >$out_dir/index.html <<EOF
 <a href="for-translation.html">for-translation</a> <br/>
 <a href="overview.html">overview</a> <br/>
 EOF
 
-  ls -l $dir
+  ls -l $out_dir
 }
 
 #

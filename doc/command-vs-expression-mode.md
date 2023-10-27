@@ -44,15 +44,15 @@ This includes *bare assignments* in Hay blocks:
       x = 42 + a[i]
     }
 
-### `=` and `_` keywords
+### `=` and `::` keywords
 
-Likewise, everything after `=` or `_` is in expression mode:
+Likewise, everything after `=` or `::` is in expression mode:
 
     = 42 + f(x)
 
 Throw away the value:
 
-    _ L.append(x)
+    :: mylist->append(x)
 
 ### YSH `for while if case`:
 
@@ -93,6 +93,10 @@ Typed arguments are surrounded by `( )`:
     json write (['three', 'four'])
     # =>
     [ "three", "four" ]
+
+Lazy arguments:
+
+    assert [42 === x]
 
 ### Proc and Func Parameter Lists
 

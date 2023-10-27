@@ -569,8 +569,22 @@ test-lazy-arg-list() {
 
   _parse-error 'assert [42]extra'
   _parse-error 'assert [42] extra'
+}
 
+test-place-expr() {
+  _should-parse 'read (&x)'
+  _should-parse 'read (&x[0])'
+  _should-parse 'read (&x[0][1])'
+  _should-parse 'read (&x.key.other)'
 
+  # This is a runtime error, not a parse time error
+  _should-parse 'read (&x + 1)'
+
+  _parse-error 'read (&42)'
+  _parse-error 'read (&+)'
+
+  # Place expressions aren't parenthesized expressions
+  _parse-error 'read (&(x))'
 }
 
 #

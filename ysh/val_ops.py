@@ -4,9 +4,8 @@ val_ops.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import value, value_e, value_t
 from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
-
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from core import error
 from mycpp.mylib import tagswitch
 from ysh import regex_translate

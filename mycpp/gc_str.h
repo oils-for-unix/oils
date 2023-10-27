@@ -8,10 +8,10 @@
 template <typename T>
 class List;
 
-class Str {
+class BigStr {
  public:
   // Don't call this directly.  Call NewStr() instead, which calls this.
-  Str() {
+  BigStr() {
   }
 
   char* data() {
@@ -21,42 +21,42 @@ class Str {
   // Call this after writing into buffer created by OverAllocatedStr()
   void MaybeShrink(int str_len);
 
-  Str* at(int i);
+  BigStr* at(int i);
 
-  int find(Str* needle, int pos = 0);
-  int rfind(Str* needle);
+  int find(BigStr* needle, int pos = 0);
+  int rfind(BigStr* needle);
 
-  Str* slice(int begin);
-  Str* slice(int begin, int end);
-  Str* slice(int begin, int end, int step);
+  BigStr* slice(int begin);
+  BigStr* slice(int begin, int end);
+  BigStr* slice(int begin, int end, int step);
 
-  Str* strip();
+  BigStr* strip();
   // Used for CommandSub in osh/cmd_exec.py
-  Str* rstrip(Str* chars);
-  Str* rstrip();
+  BigStr* rstrip(BigStr* chars);
+  BigStr* rstrip();
 
-  Str* lstrip(Str* chars);
-  Str* lstrip();
+  BigStr* lstrip(BigStr* chars);
+  BigStr* lstrip();
 
-  Str* ljust(int width, Str* fillchar);
-  Str* rjust(int width, Str* fillchar);
+  BigStr* ljust(int width, BigStr* fillchar);
+  BigStr* rjust(int width, BigStr* fillchar);
 
-  bool startswith(Str* s);
-  bool endswith(Str* s);
+  bool startswith(BigStr* s);
+  bool endswith(BigStr* s);
 
-  Str* replace(Str* old, Str* new_str);
-  Str* join(List<Str*>* items);
+  BigStr* replace(BigStr* old, BigStr* new_str);
+  BigStr* join(List<BigStr*>* items);
 
-  List<Str*>* split(Str* sep);
-  List<Str*>* split(Str* sep, int max_split);
-  List<Str*>* splitlines(bool keep);
+  List<BigStr*>* split(BigStr* sep);
+  List<BigStr*>* split(BigStr* sep, int max_split);
+  List<BigStr*>* splitlines(bool keep);
 
   bool isdigit();
   bool isalpha();
   bool isupper();
 
-  Str* upper();
-  Str* lower();
+  BigStr* upper();
+  BigStr* lower();
 
   // Other options for fast comparison / hashing / string interning:
   // - unique_id_: an index into intern table.  I don't think this works unless
@@ -72,7 +72,7 @@ class Str {
   //   too much coupling between strings, hash tables, and GC?
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::Str();
+    return ObjHeader::BigStr();
   }
 
   unsigned hash(HashFunc h);
@@ -86,28 +86,28 @@ class Str {
   int _strip_left_pos();
   int _strip_right_pos();
 
-  DISALLOW_COPY_AND_ASSIGN(Str)
+  DISALLOW_COPY_AND_ASSIGN(BigStr)
 };
 
-constexpr int kStrHeaderSize = offsetof(Str, data_);
+constexpr int kStrHeaderSize = offsetof(BigStr, data_);
 
 // Note: for SmallStr, we might copy into the VALUE
-inline void Str::MaybeShrink(int str_len) {
+inline void BigStr::MaybeShrink(int str_len) {
   len_ = str_len;
   data_[len_] = '\0';  // NUL terminate
 }
 
-inline int len(const Str* s) {
+inline int len(const BigStr* s) {
   return s->len_;
 }
 
-Str* StrFormat(const char* fmt, ...);
-Str* StrFormat(Str* fmt, ...);
+BigStr* StrFormat(const char* fmt, ...);
+BigStr* StrFormat(BigStr* fmt, ...);
 
 // NOTE: This iterates over bytes.
 class StrIter {
  public:
-  explicit StrIter(Str* s) : s_(s), i_(0), len_(len(s)) {
+  explicit StrIter(BigStr* s) : s_(s), i_(0), len_(len(s)) {
     // Cheney only: s_ could be moved during iteration.
     // gHeap.PushRoot(reinterpret_cast<RawObject**>(&s_));
   }
@@ -120,29 +120,29 @@ class StrIter {
   bool Done() {
     return i_ >= len_;
   }
-  Str* Value();  // similar to at()
+  BigStr* Value();  // similar to at()
 
  private:
-  Str* s_;
+  BigStr* s_;
   int i_;
   int len_;
 
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
-bool maybe_str_equals(Str* left, Str* right);
+bool maybe_str_equals(BigStr* left, BigStr* right);
 
-extern Str* kEmptyString;
+extern BigStr* kEmptyString;
 
 // GlobalStr notes:
 // - sizeof("foo") == 4, for the NUL terminator.
-// - gc_heap_test.cc has a static_assert that GlobalStr matches Str.  We don't
-// put it here because it triggers -Winvalid-offsetof
+// - gc_heap_test.cc has a static_assert that GlobalStr matches BigStr.  We
+// don't put it here because it triggers -Winvalid-offsetof
 
 template <int N>
 class GlobalStr {
-  // A template type with the same layout as Str with length N-1 (which needs a
-  // buffer of size N).  For initializing global constant instances.
+  // A template type with the same layout as BigStr with length N-1 (which needs
+  // a buffer of size N).  For initializing global constant instances.
  public:
   int len_;
   unsigned hash_ : 31;
@@ -151,6 +151,38 @@ class GlobalStr {
 
   DISALLOW_COPY_AND_ASSIGN(GlobalStr)
 };
+
+union Str {
+ public:
+  // Instead of this at the start of every function:
+  //   Str* s = nullptr;
+  // It will now be:
+  //   Str s(nullptr);
+  //
+  //   StackRoot _root(&s);
+  explicit Str(BigStr* big) : big_(big) {
+  }
+
+  char* data() {
+    return big_->data();
+  }
+
+  Str at(int i) {
+    return Str(big_->at(i));
+  }
+
+  Str upper() {
+    return Str(big_->upper());
+  }
+
+  uint64_t raw_bytes_;
+  BigStr* big_;
+  // TODO: add SmallStr, see mycpp/small_str_test.cc
+};
+
+inline int len(const Str s) {
+  return len(s.big_);
+}
 
 // This macro is a workaround for the fact that it's impossible to have a
 // a constexpr initializer for char[N].  The "String Literals as Non-Type
@@ -164,8 +196,15 @@ class GlobalStr {
 
 #define GLOBAL_STR(name, val)                                                \
   GcGlobal<GlobalStr<sizeof(val)>> _##name = {                               \
-      ObjHeader::Global(TypeTag::Str),                                       \
+      ObjHeader::Global(TypeTag::BigStr),                                    \
       {.len_ = sizeof(val) - 1, .hash_ = 0, .is_hashed_ = 0, .data_ = val}}; \
-  Str* name = reinterpret_cast<Str*>(&_##name.obj);
+  BigStr* name = reinterpret_cast<BigStr*>(&_##name.obj);
+
+// New style for SmallStr compatibility
+#define GLOBAL_STR2(name, val)                                               \
+  GcGlobal<GlobalStr<sizeof(val)>> _##name = {                               \
+      ObjHeader::Global(TypeTag::BigStr),                                    \
+      {.len_ = sizeof(val) - 1, .hash_ = 0, .is_hashed_ = 0, .data_ = val}}; \
+  Str name(reinterpret_cast<BigStr*>(&_##name.obj));
 
 #endif  // MYCPP_GC_STR_H

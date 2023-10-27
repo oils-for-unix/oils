@@ -217,7 +217,7 @@ module syntax
   | String(id id, str s, CompoundWord? blame_loc)
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
-  sh_lhs_expr =
+  sh_lhs =
     Name(Token left, str name)
   | IndexedName(Token left, str name, arith_expr index)
   | UnparsedIndex(Token left, str name, str index)  # for translation
@@ -257,7 +257,7 @@ module syntax
   Redir = (Token op, redir_loc loc, redir_param arg)
 
   assign_op = Equal | PlusEqual
-  AssignPair = (Token left, sh_lhs_expr lhs, assign_op op, rhs_word rhs)
+  AssignPair = (Token left, sh_lhs lhs, assign_op op, rhs_word rhs)
   EnvPair = (Token left, str name, rhs_word val)
 
   condition = 
@@ -396,40 +396,11 @@ module syntax
     # var, const
   | VarDecl(Token? keyword, List[NameType] lhs, expr rhs)
     # setvar, maybe 'auto' later
-  | PlaceMutation(Token keyword, List[place_expr] lhs, Token op, expr rhs)
+  | Mutation(Token keyword, List[y_lhs] lhs, Token op, expr rhs)
     # = keyword
   | Expr(Token keyword, expr e)
   | Proc %Proc
   | Func %Func
-
-  # Tea
-
-  | TeaFunc(Token name,
-            ParamGroup? positional, ParamGroup? named,
-            List[TypeExpr] return_types, command body)
-  | Data(Token name, List[Param] params)
-  | Enum(Token name, List[Variant] variants)
-  | Class(Token name, Token? extends, List[class_item] items)
-  | Import(SingleQuoted path, Token? alias, List[ImportName] names)
-  | For(List[NameType] targets, expr iterable, command body)
-  | While(expr test, command body)
-  | Break | Continue
-  | Return(expr? value)
-
-  # Binary(x expr, y expr) or Nullary %Token
-  # In the first case we have a tag, and an anonymous type.
-  variant_type =
-    Anon(List[Param] params)
-  | Ref(Token type_name)
-
-  # tags and types are separate in our model of algebraic data types
-  Variant = (Token tag_name, variant_type? typ)
-
-  class_item =
-    Data(Token keyword, List[NameType] fields)
-  | Method()
-
-  ImportName = (Token name, Token? alias)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.
@@ -468,6 +439,7 @@ module syntax
   TypeExpr = (Token tok, str name, List[TypeExpr] params)
 
   # LHS binding in loops, list comprehensions, and var/const
+  # TODO: need str name, Token blame_tok
   NameType = (Token name, TypeExpr? typ)
 
   # TODO: Inline this into GenExp and ListComp?  Just use a flag there?
@@ -483,11 +455,16 @@ module syntax
   # Attributes are obj.attr, d->key, name::scope,
   Attribute = (expr obj, Token op, Token attr, expr_context ctx)
 
-  # Places that can be mutated.
-  place_expr = 
+  y_lhs = 
     Var(Token name)  # TODO: add str var_name
   | Subscript %Subscript
   | Attribute %Attribute
+
+  place_op = 
+    # &a[i+1]
+    Subscript(Token op, expr index)
+    # &d.mykey
+  | Attribute(Token op, Token attr)
 
   expr =
     # a variable name to evaluate
@@ -495,6 +472,10 @@ module syntax
     # For null, Bool, Int, Float
     # Python uses Num(object n), which doesn't respect our "LST" invariant.
   | Const(Token c)
+
+    # read(&x)  json read (&x[0])
+  | Place(Token blame_tok, str var_name, place_op* ops)
+
     # @(one 'two' "$three")
   | ShArrayLiteral %ShArrayLiteral
     # @[a b c] @[1 2 3] @[(1+1) (2+2)]

@@ -40,7 +40,12 @@ def NinjaGraph(ru):
     ru.asdl_library(
         'core/runtime.asdl',
         # 'use' dependency
-        deps=['//frontend/syntax.asdl'])
+        deps=['//frontend/syntax.asdl', '//core/value.asdl'])
+
+    ru.asdl_library(
+        'core/value.asdl',
+        # 'use' dependency
+        deps=['//frontend/syntax.asdl', '//core/runtime.asdl'])
 
     ru.cc_binary('core/runtime_asdl_test.cc',
                  deps=['//core/runtime.asdl'],

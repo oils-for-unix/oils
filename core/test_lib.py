@@ -13,9 +13,17 @@ import string
 import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
-from _devbuild.gen.runtime_asdl import cmd_value, value, scope_e
+from _devbuild.gen.runtime_asdl import cmd_value, scope_e
 from _devbuild.gen.syntax_asdl import loc, source, SourceLine
+from _devbuild.gen.value_asdl import value
 from asdl import pybase
+from builtin import assign_osh
+from builtin import completion_osh
+from builtin import hay_ysh
+from builtin import io_osh
+from builtin import pure_osh
+from builtin import readline_osh
+from builtin import trap_osh
 from core import alloc
 from core import completion
 from core import dev
@@ -33,11 +41,6 @@ from frontend import lexer
 from frontend import location
 from frontend import parse_lib
 from frontend import reader
-from osh import builtin_assign
-from osh import builtin_comp
-from osh import builtin_lib
-from osh import builtin_pure
-from osh import builtin_trap
 from osh import cmd_eval
 from osh import prompt
 from osh import sh_expr_eval
@@ -200,30 +203,30 @@ def InitCommandEvaluator(parse_ctx=None,
 
     readline = None  # simulate not having it
 
-    new_var = builtin_assign.NewVar(mem, procs, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, errfmt)
     assign_builtins = {
         builtin_i.declare: new_var,
         builtin_i.typeset: new_var,
         builtin_i.local: new_var,
-        builtin_i.export_: builtin_assign.Export(mem, errfmt),
-        builtin_i.readonly: builtin_assign.Readonly(mem, errfmt),
+        builtin_i.export_: assign_osh.Export(mem, errfmt),
+        builtin_i.readonly: assign_osh.Readonly(mem, errfmt),
     }
     builtins = {  # Lookup
-        builtin_i.echo: builtin_pure.Echo(exec_opts),
-        builtin_i.shift: builtin_assign.Shift(mem),
+        builtin_i.echo: io_osh.Echo(exec_opts),
+        builtin_i.shift: assign_osh.Shift(mem),
 
-        builtin_i.history: builtin_lib.History(
+        builtin_i.history: readline_osh.History(
           readline,
           mem,
           errfmt,
           mylib.Stdout(),
         ),
 
-        builtin_i.compopt: builtin_comp.CompOpt(compopt_state, errfmt),
-        builtin_i.compadjust: builtin_comp.CompAdjust(mem),
+        builtin_i.compopt: completion_osh.CompOpt(compopt_state, errfmt),
+        builtin_i.compadjust: completion_osh.CompAdjust(mem),
 
-        builtin_i.alias: builtin_pure.Alias(aliases, errfmt),
-        builtin_i.unalias: builtin_pure.UnAlias(aliases, errfmt),
+        builtin_i.alias: pure_osh.Alias(aliases, errfmt),
+        builtin_i.unalias: pure_osh.UnAlias(aliases, errfmt),
     }
 
     debug_f = util.DebugFile(sys.stderr)
@@ -250,7 +253,7 @@ def InitCommandEvaluator(parse_ctx=None,
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
     signal_safe = pyos.InitSignalSafe()
-    trap_state = builtin_trap.TrapState(signal_safe)
+    trap_state = trap_osh.TrapState(signal_safe)
     cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs,
                                        assign_builtins, arena, cmd_deps,
                                        trap_state, signal_safe)
@@ -258,7 +261,7 @@ def InitCommandEvaluator(parse_ctx=None,
     tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
     waiter = process.Waiter(job_list, exec_opts, trap_state, tracer)
 
-    hay_state = state.Hay()
+    hay_state = hay_ysh.HayState()
     shell_ex = executor.ShellExecutor(mem, exec_opts, mutable_opts, procs,
                                       hay_state, builtins, search_path,
                                       ext_prog, waiter, tracer, job_control,
@@ -274,14 +277,14 @@ def InitCommandEvaluator(parse_ctx=None,
         from _devbuild.gen.help_meta import TOPICS
     except ImportError:
         TOPICS = None  # minimal dev build
-    spec_builder = builtin_comp.SpecBuilder(cmd_ev, parse_ctx, word_ev,
-                                            splitter, comp_lookup, TOPICS,
-                                            errfmt)
+    spec_builder = completion_osh.SpecBuilder(cmd_ev, parse_ctx, word_ev,
+                                              splitter, comp_lookup, TOPICS,
+                                              errfmt)
 
     # Add some builtins that depend on the executor!
-    complete_builtin = builtin_comp.Complete(spec_builder, comp_lookup)
+    complete_builtin = completion_osh.Complete(spec_builder, comp_lookup)
     builtins[builtin_i.complete] = complete_builtin
-    builtins[builtin_i.compgen] = builtin_comp.CompGen(spec_builder)
+    builtins[builtin_i.compgen] = completion_osh.CompGen(spec_builder)
 
     return cmd_ev
 
@@ -370,4 +373,4 @@ def SetLocalString(mem, name, s):
     # type: (state.Mem, str, str) -> None
     """Bind a local string."""
     assert isinstance(s, str)
-    mem.SetValue(location.LName(name), value.Str(s), scope_e.LocalOnly)
+    mem.SetNamed(location.LName(name), value.Str(s), scope_e.LocalOnly)

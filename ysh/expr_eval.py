@@ -20,9 +20,9 @@ from _devbuild.gen.syntax_asdl import (
     expr,
     expr_e,
     expr_t,
-    place_expr,
-    place_expr_e,
-    place_expr_t,
+    y_lhs,
+    y_lhs_e,
+    y_lhs_t,
     Attribute,
     Subscript,
     class_literal_term,
@@ -41,14 +41,9 @@ from _devbuild.gen.runtime_asdl import (
     scope_t,
     part_value,
     part_value_t,
-    lvalue,
-    lvalue_e,
-    lvalue_t,
-    value,
-    value_e,
-    value_t,
-    IntBox,
 )
+from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
+                                      y_lvalue_e, y_lvalue_t, IntBox, LeftName)
 from core import error
 from core.error import e_die, e_die_status
 from core import state
@@ -192,76 +187,105 @@ class ExprEvaluator(object):
         # type: (str, loc_t) -> value_t
         return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
 
-    def EvalPlusEquals(self, lval, rhs_val, op):
-        # type: (lvalue_t, value_t, Token) -> value_t
-        """Called by CommandEvaluator."""
+    def EvalAugmented(self, lval, rhs_val, op, which_scopes):
+        # type: (y_lvalue_t, value_t, Token, scope_t) -> None
+        """ setvar x +=1, setvar L[0] -= 1 
 
-        # TODO: Handle other augmented assignment
-        #
-        # It might be nice to do auto d[x] += 1 too
+        Called by CommandEvaluator
+        """
+        # TODO: It might be nice to do auto d[x] += 1 too
 
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(lvalue_e.Named):
-                lval = cast(lvalue.Named, UP_lval)
+            if case(y_lvalue_e.Var):  # setvar x += 1
+                lval = cast(LeftName, UP_lval)
                 lhs_val = self._LookupVar(lval.name, lval.blame_loc)
-                return self._ArithNumeric(lhs_val, rhs_val, op)
+                if op.id in (Id.Arith_PlusEqual, Id.Arith_MinusEqual,
+                             Id.Arith_StarEqual, Id.Arith_SlashEqual):
+                    new_val = self._ArithIntFloat(lhs_val, rhs_val, op)
+                else:
+                    new_val = self._ArithIntOnly(lhs_val, rhs_val, op)
+
+                self.mem.SetNamed(lval, new_val, which_scopes)
+
+            elif case(y_lvalue_e.Container):  # setvar d.key += 1
+                lval = cast(y_lvalue.Container, UP_lval)
+
+                obj = lval.obj
+                UP_obj = obj
+
+                lhs_val_ = None  # type: value_t
+                # Similar to command_e.Mutation
+                with tagswitch(obj) as case:
+                    if case(value_e.List):
+                        obj = cast(value.List, UP_obj)
+                        index = val_ops.ToInt(lval.index,
+                                              'List index should be Int',
+                                              loc.Missing)
+                        lhs_val_ = obj.items[index]
+
+                    elif case(value_e.Dict):
+                        obj = cast(value.Dict, UP_obj)
+                        key = val_ops.ToStr(lval.index,
+                                            'Dict index should be Str',
+                                            loc.Missing)
+                        lhs_val_ = obj.d[key]
+
+                    else:
+                        raise error.TypeErr(
+                            obj, "obj[index] expected List or Dict",
+                            loc.Missing)
+
+                if op.id in (Id.Arith_PlusEqual, Id.Arith_MinusEqual,
+                             Id.Arith_StarEqual, Id.Arith_SlashEqual):
+                    new_val_ = self._ArithIntFloat(lhs_val_, rhs_val, op)
+                else:
+                    new_val_ = self._ArithIntOnly(lhs_val_, rhs_val, op)
+
+                with tagswitch(obj) as case:
+                    if case(value_e.List):
+                        obj = cast(value.List, UP_obj)
+                        obj.items[index] = new_val_
+
+                    elif case(value_e.Dict):
+                        obj = cast(value.Dict, UP_obj)
+                        obj.d[key] = new_val_
+
             else:
-                # TODO: Handle other lvalue, like sh_expr_eval.OldValue() But
-                # this is for YSH values, not value.BashArray etc.
                 raise AssertionError()
 
-    def EvalLHS(self, node):
-        # type: (expr_t) -> lvalue_t
-        if 0:
-            print('EvalLHS()')
-            node.PrettyPrint()
-            print('')
+    def _EvalLhsExpr(self, lhs):
+        # type: (y_lhs_t) -> y_lvalue_t
 
-        UP_node = node
-        with tagswitch(node) as case:
-            if case(expr_e.Var):
-                node = cast(expr.Var, UP_node)
-                return location.LName(node.name.tval)
-            else:
-                # TODO:
-                # subscripts, tuple unpacking, starred expressions, etc.
-                raise NotImplementedError(node.__class__.__name__)
+        UP_lhs = lhs
+        with tagswitch(lhs) as case:
+            if case(y_lhs_e.Var):
+                lhs = cast(y_lhs.Var, UP_lhs)
 
-    def _EvalPlaceExpr(self, place):
-        # type: (place_expr_t) -> lvalue_t
+                return location.LName(lhs.name.tval)
 
-        UP_place = place
-        with tagswitch(place) as case:
-            if case(place_expr_e.Var):
-                place = cast(place_expr.Var, UP_place)
-
-                return location.LName(place.name.tval)
-
-            elif case(place_expr_e.Subscript):
-                place = cast(Subscript, UP_place)
+            elif case(y_lhs_e.Subscript):
+                lhs = cast(Subscript, UP_lhs)
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
 
-                lval = self._EvalExpr(place.obj)
-                index = self._EvalExpr(place.index)
+                lval = self._EvalExpr(lhs.obj)
+                index = self._EvalExpr(lhs.index)
                 #log('index %s', index)
-                return lvalue.ObjIndex(lval, index)
+                return y_lvalue.Container(lval, index)
 
-            elif case(place_expr_e.Attribute):
-                place = cast(Attribute, UP_place)
-                assert place.op.id == Id.Expr_Dot
+            elif case(y_lhs_e.Attribute):
+                lhs = cast(Attribute, UP_lhs)
+                assert lhs.op.id == Id.Expr_Dot
 
                 # setvar mydict.key = 42
-                lval = self._EvalExpr(place.obj)
+                lval = self._EvalExpr(lhs.obj)
 
-                attr = value.Str(place.attr.tval)
-                return lvalue.ObjIndex(lval, attr)
+                attr = value.Str(lhs.attr.tval)
+                return y_lvalue.Container(lval, attr)
 
             else:
-                raise NotImplementedError(place)
-
-        raise AssertionError()  # silence C++ compiler
+                raise AssertionError()
 
     def EvalExpr(self, node, blame_loc):
         # type: (expr_t, loc_t) -> value_t
@@ -272,11 +296,11 @@ class ExprEvaluator(object):
             val = self._EvalExpr(node)
         return val
 
-    def EvalPlaceExpr(self, place):
-        # type: (place_expr_t) -> lvalue_t
-        """Public API for _EvalPlaceExpr to ensure command_sub_errexit"""
+    def EvalLhsExpr(self, lhs):
+        # type: (y_lhs_t) -> y_lvalue_t
+        """Public API for _EvalLhsExpr to ensure command_sub_errexit"""
         with state.ctx_YshExpr(self.mutable_opts):
-            lval = self._EvalPlaceExpr(place)
+            lval = self._EvalLhsExpr(lhs)
         return lval
 
     def EvalExprSub(self, part):
@@ -284,18 +308,19 @@ class ExprEvaluator(object):
 
         val = self.EvalExpr(part.child, part.left)
 
-        if part.left.id == Id.Left_DollarBracket:  # $[join(x)]
-            s = val_ops.Stringify(val, loc.WordPart(part))
-            return part_value.String(s, False, False)
+        with switch(part.left.id) as case:
+            if case(Id.Left_DollarBracket):  # $[join(x)]
+                s = val_ops.Stringify(val, loc.WordPart(part))
+                return part_value.String(s, False, False)
 
-        elif part.left.id == Id.Lit_AtLBracket:  # @[split(x)]
-            strs = val_ops.ToShellArray(val,
-                                        loc.WordPart(part),
-                                        prefix='Expr splice ')
-            return part_value.Array(strs)
+            elif case(Id.Lit_AtLBracket):  # @[split(x)]
+                strs = val_ops.ToShellArray(val,
+                                            loc.WordPart(part),
+                                            prefix='Expr splice ')
+                return part_value.Array(strs)
 
-        else:
-            raise AssertionError(part.left)
+            else:
+                raise AssertionError(part.left)
 
     def SpliceValue(self, val, part):
         # type: (value_t, word_part.Splice) -> List[str]
@@ -353,26 +378,48 @@ class ExprEvaluator(object):
 
     def _EvalUnary(self, node):
         # type: (expr.Unary) -> value_t
+
         val = self._EvalExpr(node.child)
-        if node.op.id == Id.Arith_Minus:
-            c1, i1, f1 = _ConvertToNumber(val)
-            if c1 == coerced_e.Int:
-                return value.Int(-i1)
-            if c1 == coerced_e.Float:
-                return value.Float(-f1)
-            raise error.TypeErr(val, 'Negation expected Int or Float', node.op)
 
-        if node.op.id == Id.Arith_Tilde:
-            i = _ConvertToInt(val, '~ expected Int', node.op)
-            return value.Int(~i)
+        with switch(node.op.id) as case:
+            if case(Id.Arith_Minus):
+                c1, i1, f1 = _ConvertToNumber(val)
+                if c1 == coerced_e.Int:
+                    return value.Int(-i1)
+                if c1 == coerced_e.Float:
+                    return value.Float(-f1)
+                raise error.TypeErr(val, 'Negation expected Int or Float',
+                                    node.op)
 
-        if node.op.id == Id.Expr_Not:
-            b = val_ops.ToBool(val)
-            return value.Bool(False if b else True)
+            elif case(Id.Arith_Tilde):
+                i = _ConvertToInt(val, '~ expected Int', node.op)
+                return value.Int(~i)
 
-        raise NotImplementedError(node.op.id)
+            elif case(Id.Expr_Not):
+                b = val_ops.ToBool(val)
+                return value.Bool(False if b else True)
 
-    def _ArithNumeric(self, left, right, op):
+            # &s  &a[0]  &d.key  &d.nested.other
+            elif case(Id.Arith_Amp):
+                # Only 3 possibilities:
+                # - expr.Var
+                # - expr.Attribute with `.` operator (d.key)
+                # - expr.SubScript
+                #
+                # See _EvalLhsExpr, which gives you y_lvalue
+
+                # TODO: &x, &a[0], &d.key, creates a value.Place?
+                # If it's Attribute or SubScript, you don't evaluate them.
+                # y_lvalue_t -> place_t
+
+                raise NotImplementedError(node.op)
+
+            else:
+                raise AssertionError(node.op)
+
+        raise AssertionError('for C++ compiler')
+
+    def _ArithIntFloat(self, left, right, op):
         # type: (value_t, value_t, Token) -> value_t
         """
         Note: may be replaced with arithmetic on tagged integers, e.g. 60 bit
@@ -417,6 +464,55 @@ class ExprEvaluator(object):
                 'Binary operator expected numbers, got %s and %s' %
                 (ui.ValType(left), ui.ValType(right)), op)
 
+    def _ArithIntOnly(self, left, right, op):
+        # type: (value_t, value_t, Token) -> value_t
+
+        i1 = _ConvertToInt(left, 'Left operand should be Int', op)
+        i2 = _ConvertToInt(right, 'Right operand should be Int', op)
+
+        with switch(op.id) as case:
+
+            # a % b   setvar a %= b
+            if case(Id.Arith_Percent, Id.Arith_PercentEqual):
+                if i2 == 0:
+                    raise error.Expr('Divide by zero', op)
+                return value.Int(i1 % i2)
+
+            # a // b   setvar a //= b
+            elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
+                if i2 == 0:
+                    raise error.Expr('Divide by zero', op)
+                return value.Int(i1 // i2)
+
+            # a ** b   setvar a **= b (ysh only)
+            elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
+                # Same as sh_expr_eval.py
+                if i2 < 0:
+                    raise error.Expr("Exponent can't be a negative number", op)
+                ret = 1
+                for i in xrange(i2):
+                    ret *= i1
+                return value.Int(ret)
+
+            # Bitwise
+            elif case(Id.Arith_Amp, Id.Arith_AmpEqual):
+                return value.Int(i1 & i2)
+
+            elif case(Id.Arith_Pipe, Id.Arith_PipeEqual):
+                return value.Int(i1 | i2)
+
+            elif case(Id.Arith_Caret, Id.Arith_CaretEqual):
+                return value.Int(i1 ^ i2)
+
+            elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):
+                return value.Int(i1 >> i2)
+
+            elif case(Id.Arith_DLess, Id.Arith_DLessEqual):
+                return value.Int(i1 << i2)
+
+            else:
+                raise AssertionError(op.id)
+
     def _Concat(self, left, right, op):
         # type: (value_t, value_t, Token) -> value_t
         UP_left = left
@@ -449,77 +545,36 @@ class ExprEvaluator(object):
 
         op_id = node.op.id
 
-        # Logical
-        if op_id == Id.Expr_And:
-            if val_ops.ToBool(left):  # no errors
-                return right
+        with switch(node.op.id) as case:
+            # Logical
+            if case(Id.Expr_And):
+                if val_ops.ToBool(left):  # no errors
+                    return right
+                else:
+                    return left
+
+            elif case(Id.Expr_Or):
+                if val_ops.ToBool(left):
+                    return left
+                else:
+                    return right
+
+            elif case(Id.Arith_DPlus):  # a ++ b to concat Str or List
+                return self._Concat(left, right, node.op)
+
+            elif case(Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,
+                      Id.Arith_Slash):
+                return self._ArithIntFloat(left, right, node.op)
+
             else:
-                return left
-
-        if op_id == Id.Expr_Or:
-            if val_ops.ToBool(left):
-                return left
-            else:
-                return right
-
-        # Str or List
-        if op_id == Id.Arith_DPlus:  # a ++ b to concat
-            return self._Concat(left, right, node.op)
-
-        # Int or Float
-        if op_id in (Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,
-                     Id.Arith_Slash):
-            return self._ArithNumeric(left, right, node.op)
-
-        # Everything below has 2 integer operands
-        i1 = _ConvertToInt(left, 'Left operand should be Int', node.op)
-        i2 = _ConvertToInt(right, 'Right operand should be Int', node.op)
-
-        if op_id == Id.Expr_DSlash:  # a // b
-            if i2 == 0:
-                raise error.Expr('Divide by zero', node.op)
-            return value.Int(i1 // i2)
-
-        if op_id == Id.Arith_Percent:  # a % b
-            if i2 == 0:
-                raise error.Expr('Divide by zero', node.op)
-            return value.Int(i1 % i2)
-
-        if op_id == Id.Arith_DStar:  # a ** b
-            # Same as sh_expr_eval.py
-            if i2 < 0:
-                raise error.Expr("Exponent can't be a negative number",
-                                 node.op)
-            ret = 1
-            for i in xrange(i2):
-                ret *= i1
-            return value.Int(ret)
-
-        # Bitwise
-        if op_id == Id.Arith_Amp:
-            return value.Int(i1 & i2)
-
-        if op_id == Id.Arith_Pipe:
-            return value.Int(i1 | i2)
-
-        if op_id == Id.Arith_Caret:
-            return value.Int(i1 ^ i2)
-
-        if op_id == Id.Arith_DGreat:
-            return value.Int(i1 >> i2)
-
-        if op_id == Id.Arith_DLess:
-            return value.Int(i1 << i2)
-
-        raise NotImplementedError(op_id)
+                return self._ArithIntOnly(left, right, node.op)
 
     def _CompareNumeric(self, left, right, op):
         # type: (value_t, value_t, Token) -> bool
         c, i1, i2, f1, f2 = _ConvertForBinaryOp(left, right)
 
-        op_id = op.id
         if c == coerced_e.Int:
-            with switch(op_id) as case:
+            with switch(op.id) as case:
                 if case(Id.Arith_Less):
                     return i1 < i2
                 elif case(Id.Arith_Great):
@@ -532,7 +587,7 @@ class ExprEvaluator(object):
                     raise AssertionError()
 
         elif c == coerced_e.Float:
-            with switch(op_id) as case:
+            with switch(op.id) as case:
                 if case(Id.Arith_Less):
                     return f1 < f2
                 elif case(Id.Arith_Great):
@@ -805,46 +860,38 @@ class ExprEvaluator(object):
         o = self._EvalExpr(node.obj)
         UP_o = o
 
-        op_id = node.op.id
-        if op_id == Id.Expr_RArrow:
-            name = node.attr.tval
-            ty = o.tag()
+        with switch(node.op.id) as case:
+            if case(Id.Expr_RArrow):
+                name = node.attr.tval
+                ty = o.tag()
 
-            recv = self.methods.get(ty)
-            method = recv.get(name) if recv is not None else None
-            if not method:
-                raise error.TypeErrVerbose(
-                    'Method %r does not exist on type %s' %
-                    (name, ui.ValType(o)), node.attr)
+                recv = self.methods.get(ty)
+                method = recv.get(name) if recv is not None else None
+                if not method:
+                    raise error.TypeErrVerbose(
+                        'Method %r does not exist on type %s' %
+                        (name, ui.ValType(o)), node.attr)
 
-            return value.BuiltinMethod(o, method)
+                return value.BuiltinMethod(o, method)
 
-        if op_id == Id.Expr_Dot:  # d.key is like d['key']
-            name = node.attr.tval
-            with tagswitch(o) as case:
-                if case(value_e.Dict):
-                    o = cast(value.Dict, UP_o)
-                    try:
-                        result = o.d[name]
-                    except KeyError:
-                        raise error.Expr('dict entry not found', node.op)
+            elif case(Id.Expr_Dot):  # d.key is like d['key']
+                name = node.attr.tval
+                with tagswitch(o) as case2:
+                    if case2(value_e.Dict):
+                        o = cast(value.Dict, UP_o)
+                        try:
+                            result = o.d[name]
+                        except KeyError:
+                            raise error.Expr('dict entry not found', node.op)
 
-                else:
-                    raise error.TypeErr(o, 'Dot operator expected Dict',
-                                        node.op)
+                    else:
+                        raise error.TypeErr(o, 'Dot operator expected Dict',
+                                            node.op)
 
-            return result
+                return result
 
-        if op_id == Id.Expr_DColon:  # StaticName::member
-            raise NotImplementedError(op_id)
-
-            # TODO: We should prevent virtual lookup here?  This is a pure static
-            # namespace lookup?
-            # But Python doesn't any hook for this.
-            # Maybe we can just check that it's a module?  And modules don't lookup
-            # in a supertype or __class__, etc.
-
-        raise AssertionError(op_id)
+            else:
+                raise AssertionError(node.op)
 
     def _EvalExpr(self, node):
         # type: (expr_t) -> value_t
@@ -863,6 +910,12 @@ class ExprEvaluator(object):
             elif case(expr_e.Var):
                 node = cast(expr.Var, UP_node)
                 return self._LookupVar(node.name.tval, node.name)
+
+            elif case(expr_e.Place):
+                node = cast(expr.Place, UP_node)
+                frame = self.mem.TopNamespace()
+                return value.Place(LeftName(node.var_name, node.blame_tok),
+                                   frame)
 
             elif case(expr_e.CommandSub):
                 node = cast(CommandSub, UP_node)

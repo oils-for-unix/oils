@@ -45,11 +45,11 @@ setvar path = "/etc/path with spaces"
 setvar flags = %()
 
 if test -n $CONFIG_HAVE_FOO; then
-  append :flags --foo=$path
+  append -- --foo=$path (flags)
 fi
 
 if test -n $CONFIG_HAVE_BAR; then
-  append :flags --bar
+  append -- --bar (flags)
 fi
 
 argv @flags

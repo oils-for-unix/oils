@@ -67,16 +67,6 @@ write $[sum( 0 .. 0, start=42)]
 42
 ## END
 
-#### List->reverse()
-var x = list(0 .. 3)
-_ x->reverse()
-write @x
-## STDOUT:
-2
-1
-0
-## END
-
 #### @[split(x)] respects IFS
 setvar IFS = ":"
 var x = "one:two:three"

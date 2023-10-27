@@ -9,7 +9,7 @@
 TEST posix_test() {
   ASSERT_EQ(false, posix::access(StrFromC("nonexistent_ZZ"), R_OK));
 
-  Str* cwd = posix::getcwd();
+  BigStr* cwd = posix::getcwd();
   log("getcwd() = %s %d", cwd->data_, len(cwd));
 
   ASSERT(posix::getegid() > 0);
@@ -26,7 +26,7 @@ TEST posix_test() {
 
   posix::close(fds.at0());
 
-  Str* message = posix::strerror(EBADF);
+  BigStr* message = posix::strerror(EBADF);
   log("strerror");
   print(message);
 
@@ -34,8 +34,8 @@ TEST posix_test() {
 }
 
 TEST putenv_test() {
-  Str* key = StrFromC("KEY");
-  Str* value = StrFromC("value");
+  BigStr* key = StrFromC("KEY");
+  BigStr* value = StrFromC("value");
 
   posix::putenv(key, value);
   char* got_value = ::getenv(key->data());
@@ -65,7 +65,7 @@ TEST time_test() {
   log("ts = %d", ts);
   ASSERT(ts > 0);
 
-  Str* s = time_::strftime(StrFromC("%Y-%m-%d"), ts);
+  BigStr* s = time_::strftime(StrFromC("%Y-%m-%d"), ts);
   print(s);
 
   ASSERT(len(s) > 5);
@@ -92,7 +92,7 @@ TEST mtime_demo() {
   long ns = statbuf.st_mtim.tv_nsec;
   log("mtim.tv_nsec = %10ld", ns);
 
-  Str* s = time_::strftime(StrFromC("%Y-%m-%d"), secs);
+  BigStr* s = time_::strftime(StrFromC("%Y-%m-%d"), secs);
   print(s);
 
   log("INT_MAX      = %10d", INT_MAX);
@@ -105,7 +105,7 @@ TEST mtime_demo() {
 }
 
 TEST listdir_test() {
-  List<Str*>* contents = posix::listdir(StrFromC("/"));
+  List<BigStr*>* contents = posix::listdir(StrFromC("/"));
   // This should be universally true on any working Unix right...?
   ASSERT(len(contents) > 0);
 

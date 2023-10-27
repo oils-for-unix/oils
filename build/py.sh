@@ -166,11 +166,12 @@ gen-asdl-py() {
 py-codegen() {
   # note: filename must come first
   # hnode.asdl has REQUIRED fields so it's --py-init-N
-  gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-N
+  gen-asdl-py 'asdl/hnode.asdl' --no-pretty-print-methods --py-init-N 
 
   gen-asdl-py 'frontend/types.asdl'
   # depends on syntax.asdl
   gen-asdl-py 'core/runtime.asdl'
+  gen-asdl-py 'core/value.asdl'
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # depends on bool_arg_type_e, generates Id_t
@@ -182,6 +183,9 @@ py-codegen() {
 
   option-mypy-gen
   flag-gen-mypy
+
+  # Experiment
+  gen-asdl-py 'yaks/yaks.asdl'
 
   # For tests
   gen-asdl-py 'mycpp/examples/expr.asdl'
@@ -485,4 +489,6 @@ gitpod-minimal() {
   bin/osh -c 'echo hi'
 }
 
-run-task "$@"
+if test $(basename $0) = 'py.sh'; then
+  run-task "$@"
+fi

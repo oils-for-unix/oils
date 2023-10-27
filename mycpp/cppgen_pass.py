@@ -19,6 +19,7 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
 from mycpp import format_strings
 from mycpp.crash import catch_errors
 from mycpp.util import log
+from mycpp import util
 
 from typing import Tuple, List
 
@@ -82,7 +83,7 @@ def _GetCastKind(module_path, cast_to_type):
                 'DoubleQuoted',
                 'SingleQuoted',
                 # Another kind of hack, not because of CastDummy
-                'place_expr_t',
+                'y_lhs_t',
         ):
             if name in cast_to_type:
                 cast_kind = 'reinterpret_cast'
@@ -149,6 +150,7 @@ def _EqualsFunc(left_type):
 
 _EXPLICIT = ('builtins.str', 'builtins.list', 'builtins.dict')
 
+
 def _CheckCondition(node, types):
     """
     Ban
@@ -191,6 +193,10 @@ def CTypeIsManaged(c_type):
     """For rooting and field masks."""
     assert c_type != 'void'
 
+    if util.SMALL_STR:
+        if c_type == 'Str':
+            return True
+
     # int, double, bool, scope_t enums, etc. are not managed
     return c_type.endswith('*')
 
@@ -229,8 +235,12 @@ def GetCType(t, param=False, local=False):
             c_type = 'bool'
 
         elif type_name == 'builtins.str':
-            c_type = 'Str'
-            is_pointer = True
+            if util.SMALL_STR:
+                c_type = 'Str'
+                is_pointer = False
+            else:
+                c_type = 'BigStr'
+                is_pointer = True
 
         elif type_name == 'builtins.list':
             assert len(t.args) == 1, t.args
@@ -613,13 +623,34 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         if o.expr:
+            # Why do we not get some of the types?  e.g. hnode.Record in asdl/runtime
+            # But this might suffice for the "Str_v" and "value_v" refactoring.
+            # We want to rewrite w.parts not to w->parts, but to w.parts() (method call)
+
+            is_small_str = False
+            if util.SMALL_STR:
+                lhs_type = self.types.get(o.expr)
+                if IsStr(lhs_type):
+                    is_small_str = True
+                else:
+                    #self.log('NOT a string %s %s', o.expr, o.name)
+                    pass
+                """
+                if lhs_type is not None and isinstance(lhs_type, Instance):
+                    self.log('lhs_type %s expr %s name %s',
+                             lhs_type.type.fullname, o.expr, o.name)
+
+                 """
+
             is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
-            is_module = isinstance(
-                o.expr, NameExpr) and o.expr.name in self.imported_names
+            is_module = (isinstance(o.expr, NameExpr) and
+                         o.expr.name in self.imported_names)
 
             # This is an approximate hack that assumes that locals don't shadow
             # imported names.  Might be a problem with names like 'word'?
-            if is_asdl or is_module:
+            if is_small_str:
+                op = '.'
+            elif is_asdl or is_module:
                 op = '::'
             else:
                 op = '->'  # Everything is a pointer
@@ -683,7 +714,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             ret_type = callee_type.ret_type
 
             # str(i) doesn't need new.  For now it's a free function.
-            # TODO: rename int_to_str?  or Str::from_int()?
+            # TODO: rename int_to_str?  or BigStr::from_int()?
             if (callee_name not in ('str', 'bool', 'float') and
                     isinstance(ret_type, Instance)):
 
@@ -792,7 +823,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         left_type = self.types[o.left]
         right_type = self.types[o.right]
 
-        # NOTE: Need GetCType to handle Optional[Str*] in ASDL schemas.
+        # NOTE: Need GetCType to handle Optional[BigStr*] in ASDL schemas.
         # Could tighten it up later.
         left_ctype = GetCType(left_type)
         right_ctype = GetCType(right_type)
@@ -803,7 +834,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             c_op = '/'
 
         # 'abc' + 'def'
-        if left_ctype == right_ctype == 'Str*' and c_op == '+':
+        if left_ctype == right_ctype == 'BigStr*' and c_op == '+':
             self.write('str_concat(')
             self.accept(o.left)
             self.write(', ')
@@ -812,7 +843,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         # 'abc' * 3
-        if left_ctype == 'Str*' and right_ctype == 'int' and c_op == '*':
+        if left_ctype == 'BigStr*' and right_ctype == 'int' and c_op == '*':
             self.write('str_repeat(')
             self.accept(o.left)
             self.write(', ')
@@ -831,7 +862,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         # RHS can be primitive or tuple
-        if left_ctype == 'Str*' and c_op == '%':
+        if left_ctype == 'BigStr*' and c_op == '%':
             self.write('StrFormat(')
             if isinstance(o.left, StrExpr):
                 self.write(PythonStringLiteral(o.left.value))
@@ -1120,7 +1151,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(o.index)  # method call
         else:
             # it's hard syntactically to do (*a)[0], so do it this way.
-            self.write('->at(')
+            if util.SMALL_STR:
+                self.write('.at(')
+            else:
+                self.write('->at(')
+
             self.accept(o.index)
             self.write(')')
 
@@ -1303,7 +1338,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(o.rvalue, CallExpr):
                 self.report_error(
                     o,
-                    "Can't initialize objects at the top level, only Str List Dict"
+                    "Can't initialize objects at the top level, only BigStr List Dict"
                 )
                 return
 
@@ -1333,8 +1368,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 #self.log('lval type %s', lval_type)
                 if (isinstance(lval_type, UnionType) and
-                    len(lval_type.items) == 2 and
-                    isinstance(lval_type.items[1], NoneTyp)):
+                        len(lval_type.items) == 2 and
+                        isinstance(lval_type.items[1], NoneTyp)):
                     lval_type = lval_type.items[0]
 
                 c_type = GetCType(lval_type)
@@ -1346,8 +1381,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # Hack for declaration vs. definition.  TODO: clean this up
                 prefix = '' if self.current_func_node else 'auto* '
 
-                self.write_ind('%s%s = Alloc<%s>();\n',
-                               prefix, lval.name, c_type[:-1])
+                self.write_ind('%s%s = Alloc<%s>();\n', prefix, lval.name,
+                               c_type[:-1])
                 return
 
             #    src = cast(source__SourcedFile, src)
@@ -1363,8 +1398,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # HACK: Distinguish between UP cast and DOWN cast.
                 # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
                 # _t is the base type, so that means it's an upcast.
-                if isinstance(type_expr,
-                              NameExpr) and type_expr.name.endswith('_t'):
+                if (isinstance(type_expr, NameExpr) and
+                        type_expr.name.endswith('_t')):
                     if self.decl:
                         self.local_var_list.append((lval.name, subtype_name))
                     self.write_ind('%s = %s<%s>(', lval.name, cast_kind,
@@ -1378,9 +1413,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 return
 
             rval_type = self.types[o.rvalue]
-            if isinstance(
-                    rval_type,
-                    Instance) and rval_type.type.fullname == 'typing.Iterator':
+            if (isinstance(rval_type, Instance) and
+                    rval_type.type.fullname == 'typing.Iterator'):
                 # We're calling a generator. Create a temporary List<T> on the stack
                 # to accumulate the results in one big batch, then wrap it in
                 # ListIter<T>.
@@ -1525,8 +1559,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # HACK for WordParser: also include Reset().  We could change them
                 # all up front but I kinda like this.
 
-                if isinstance(lval.expr,
-                              NameExpr) and lval.expr.name == 'self':
+                if (isinstance(lval.expr, NameExpr) and
+                        lval.expr.name == 'self'):
                     #log('    lval.name %s', lval.name)
                     lval_type = self.types[lval]
                     self.member_vars[lval.name] = lval_type
@@ -1546,9 +1580,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #
             # x, y = mytuple
             #
-            # Tuple2<int, Str*> tup1 = mytuple
+            # Tuple2<int, BigStr*> tup1 = mytuple
             # int x = tup1->at0()
-            # Str* y = tup1->at1()
+            # BigStr* y = tup1->at1()
 
             rvalue_type = self.types[o.rvalue]
 
@@ -1558,8 +1592,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             c_type = GetCType(rvalue_type)
 
-            is_return = isinstance(o.rvalue,
-                                   CallExpr) and o.rvalue.callee.name != "next"
+            is_return = (isinstance(o.rvalue, CallExpr) and
+                         o.rvalue.callee.name != "next")
             if is_return:
                 assert c_type.endswith('*')
                 c_type = c_type[:-1]
@@ -1583,8 +1617,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         """Write a block without the { }."""
         for stmt in body:
             # Ignore things that look like docstrings
-            if isinstance(stmt, ExpressionStmt) and isinstance(
-                    stmt.expr, StrExpr):
+            if (isinstance(stmt, ExpressionStmt) and
+                    isinstance(stmt.expr, StrExpr)):
                 continue
 
             #log('-- %d', self.indent)
@@ -1598,8 +1632,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
 
         func_name = None  # does the loop look like 'for x in func():' ?
-        if isinstance(o.expr, CallExpr) and isinstance(o.expr.callee,
-                                                       NameExpr):
+        if (isinstance(o.expr, CallExpr) and
+                isinstance(o.expr.callee, NameExpr)):
             func_name = o.expr.callee.name
 
         # special case: 'for i in xrange(3)'
@@ -1803,9 +1837,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 # Example:
                 # for (ListIter it(mylist); !it.Done(); it.Next()) {
-                #   Tuple2<int, Str*> tup1 = it.Value();
+                #   Tuple2<int, BigStr*> tup1 = it.Value();
                 #   int i = tup1->at0();
-                #   Str* s = tup1->at1();
+                #   BigStr* s = tup1->at1();
                 #   log("%d %s", i, s);
                 # }
 
@@ -2415,9 +2449,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         callee = first_stmt.expr.callee
 
                         # TextOutput() : ColorOutput(f), ... {
-                        if isinstance(
-                                callee,
-                                MemberExpr) and callee.name == '__init__':
+                        if (isinstance(callee, MemberExpr) and
+                                callee.name == '__init__'):
                             base_constructor_args = expr.args
                             #log('ARGS %s', base_constructor_args)
                             self.write(' : %s(', base_class_name)
@@ -2554,10 +2587,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     # Hack for default args.  Without this limitation, we write
                     # 'using' of names that aren't declared yet.
                     # suffix_op is needed for string_ops.py, for some reason
-                    if self.decl and name in (
-                            'Id', 'scope_e', 'lex_mode_e', 'suffix_op',
-                            'lvalue', 'part_value', 'loc', 'word', 'word_part',
-                            'cmd_value', 'hnode'):
+                    if (self.decl and name
+                            in ('Id', 'scope_e', 'lex_mode_e', 'suffix_op',
+                                'sh_lvalue', 'part_value', 'loc', 'word',
+                                'word_part', 'cmd_value', 'hnode')):
                         self.f.write(using_str)
 
             else:
@@ -2586,8 +2619,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             done = set()
             for lval_name, c_type, is_param in self.prepend_to_block:
                 if not is_param and lval_name not in done:
-                    rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
-                    self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
+                    if util.SMALL_STR and c_type == 'Str':
+                        self.write_ind('%s %s(nullptr);\n', c_type, lval_name)
+                    else:
+                        rhs = ' = nullptr' if CTypeIsManaged(c_type) else ''
+                        self.write_ind('%s %s%s;\n', c_type, lval_name, rhs)
+
                     done.add(lval_name)
 
             # Figure out if we have any roots to write with StackRoots

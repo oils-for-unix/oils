@@ -6,6 +6,7 @@
 
 #include "_gen/core/optview.h"
 #include "_gen/core/runtime.asdl.h"
+#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/arg_types.h"
 #include "_gen/frontend/consts.h"
 #include "_gen/frontend/help_meta.h"
@@ -32,8 +33,8 @@
 
 // TODO: Why do we need these?
 using runtime_asdl::cmd_value;
-using runtime_asdl::lvalue;  // for builtin_assign.py and builtin_misc.py
-using runtime_asdl::value;
 using syntax_asdl::command;
 using syntax_asdl::expr;
 using syntax_asdl::proc_sig;
+using value_asdl::sh_lvalue;  // for builtin_assign.py and builtin_misc.py
+using value_asdl::value;

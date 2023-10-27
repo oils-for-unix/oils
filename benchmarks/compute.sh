@@ -589,4 +589,26 @@ EOF
 EOF
 }
 
+
+control-flow() {
+  local osh=_bin/cxx-opt/osh
+  #set -x
+
+  ninja $osh
+
+  # do_neither: dash 296 ms, bash 922, osh 993.  Not bad
+  # 
+
+  for func in do_neither do_continue do_break; do
+    echo "=== $func"
+    echo
+    for sh in dash bash $osh; do
+      echo "--- $sh"
+      # TIMEFORMAT above
+      time $sh benchmarks/compute/control_flow.sh $func 500
+      echo
+    done
+  done
+}
+
 "$@"

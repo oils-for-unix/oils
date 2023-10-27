@@ -13,7 +13,7 @@
 
 namespace fanos {
 
-void send(int sock_fd, Str* blob) {
+void send(int sock_fd, BigStr* blob) {
   // TODO: Support this argument
   int fds[FANOS_NUM_FDS] = {-1, -1, -1};
 
@@ -27,7 +27,7 @@ void send(int sock_fd, Str* blob) {
   }
 }
 
-Str* recv(int sock_fd, List<int>* fd_out) {
+BigStr* recv(int sock_fd, List<int>* fd_out) {
   FanosError err = {0};
   FanosResult res = {nullptr, FANOS_INVALID_LEN};
   int fds[FANOS_NUM_FDS] = {-1, -1, -1};
@@ -49,7 +49,7 @@ Str* recv(int sock_fd, List<int>* fd_out) {
   }
 
   DCHECK(res.data != nullptr);
-  Str* ret = StrFromC(res.data, res.len);
+  BigStr* ret = StrFromC(res.data, res.len);
   free(res.data);
   return ret;
 }
