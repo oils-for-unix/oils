@@ -146,8 +146,8 @@ def _ReadN(num_bytes, cmd_ev):
     return ''.join(chunks)
 
 
-def _ReadUntilDelim(delim_byte, cmd_ev):
-    # type: (int, CommandEvaluator) -> Tuple[str, bool]
+def _ReadUntilDelim(delim_byte, cmd_ev, max_chars):
+    # type: (int, CommandEvaluator, int) -> Tuple[str, bool]
     """Read a portion of stdin.
 
     Read until that delimiter, but don't include it.
@@ -155,6 +155,9 @@ def _ReadUntilDelim(delim_byte, cmd_ev):
     eof = False
     ch_array = []  # type: List[int]
     while True:
+        if max_chars >= 0 and len(ch_array) >= max_chars:
+            break
+
         ch, err_num = pyos.ReadByte(0)
         if ch < 0:
             if err_num == EINTR:
@@ -412,13 +415,15 @@ class Read(vm._Builtin):
     def _Read(self, arg, names):
         # type: (arg_types.read, List[str]) -> int
 
-        if arg.n >= 0:  # read a certain number of bytes (-1 means unset)
+        if arg.N >= 0:  # read a certain number of bytes (-1 means unset)
             if len(names):
                 name = names[0]
+                for i in xrange(1, len(names)):
+                    state.BuiltinSetString(self.mem, names[i], "")
             else:
                 name = 'REPLY'  # default variable name
 
-            s = _ReadN(arg.n, self.cmd_ev)
+            s = _ReadN(arg.N, self.cmd_ev)
 
             state.BuiltinSetString(self.mem, name, s)
 
@@ -453,7 +458,7 @@ class Read(vm._Builtin):
         join_next = False
         status = 0
         while True:
-            line, eof = _ReadUntilDelim(delim_byte, self.cmd_ev)
+            line, eof = _ReadUntilDelim(delim_byte, self.cmd_ev, arg.n)
 
             if eof:
                 # status 1 to terminate loop.  (This is true even though we set
