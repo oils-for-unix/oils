@@ -57,6 +57,8 @@ from osh import bool_stat
 from osh import word_eval
 
 import libc  # for fnmatch
+# Import these names directly because the C++ translation uses macros literally.
+from libc import FNM_CASEFOLD, REG_ICASE
 
 from typing import Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -1044,14 +1046,15 @@ class BoolEvaluator(ArithEvaluator):
                     raise AssertionError(op_id)  # should never happen
 
                 if arg_type == bool_arg_type_e.Str:
+                    fnmatch_flags = FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
 
                     if op_id in (Id.BoolBinary_GlobEqual,
                                  Id.BoolBinary_GlobDEqual):
                         #log('Matching %s against pattern %s', s1, s2)
-                        return libc.fnmatch(s2, s1)
+                        return libc.fnmatch(s2, s1, fnmatch_flags)
 
                     if op_id == Id.BoolBinary_GlobNEqual:
-                        return not libc.fnmatch(s2, s1)
+                        return not libc.fnmatch(s2, s1, fnmatch_flags)
 
                     if op_id in (Id.BoolBinary_Equal, Id.BoolBinary_DEqual):
                         return s1 == s2
@@ -1062,8 +1065,10 @@ class BoolEvaluator(ArithEvaluator):
                     if op_id == Id.BoolBinary_EqualTilde:
                         # TODO: This should go to --debug-file
                         #log('Matching %r against regex %r', s1, s2)
+                        regex_flags = REG_ICASE if self.exec_opts.nocasematch() else 0
+
                         try:
-                            matches = libc.regex_match(s2, s1)
+                            matches = libc.regex_match(s2, s1, regex_flags)
                         except RuntimeError as e:
                             # Status 2 indicates a regex parse error.  This is fatal in OSH but
                             # not in bash, which treats [[ like a command with an exit code.

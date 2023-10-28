@@ -232,7 +232,6 @@ _NO_OPS = [
     'mailwarn',
     'no_empty_cmd_completion',
     'nocaseglob',
-    'nocasematch',
     'progcomp_alias',
     'promptvars',
     'restricted_shell',
@@ -278,6 +277,7 @@ def _Init(opt_def):
     # shopt options that aren't in any groups.
     opt_def.Add('failglob')
     opt_def.Add('extglob')
+    opt_def.Add('nocasematch')
 
     # Compatibility
     opt_def.Add(

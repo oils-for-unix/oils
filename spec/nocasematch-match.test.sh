@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 3
+## oils_failures_allowed: 0
 
 # Tests nocasematch matching
 

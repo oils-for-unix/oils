@@ -55,12 +55,12 @@ static PyObject *
 func_fnmatch(PyObject *self, PyObject *args) {
   const char *pattern;
   const char *str;
+  int flags = 0;
 
-  if (!PyArg_ParseTuple(args, "ss", &pattern, &str)) {
+  if (!PyArg_ParseTuple(args, "ss|i", &pattern, &str, &flags)) {
     return NULL;
   }
 
-  int flags = 0;
   // NOTE: Testing for __GLIBC__ is the version detection anti-pattern.  We
   // should really use feature detection in our configure script.  But I plan
   // to get rid of the dependency on FNM_EXTMATCH because it doesn't work on
@@ -185,12 +185,15 @@ static PyObject *
 func_regex_match(PyObject *self, PyObject *args) {
   const char* pattern;
   const char* str;
-  if (!PyArg_ParseTuple(args, "ss", &pattern, &str)) {
+  int flags = 0;
+
+  if (!PyArg_ParseTuple(args, "ss|i", &pattern, &str, &flags)) {
     return NULL;
   }
 
+  flags |= REG_EXTENDED;
   regex_t pat;
-  int status = regcomp(&pat, pattern, REG_EXTENDED);
+  int status = regcomp(&pat, pattern, flags);
   if (status != 0) {
     char error_string[80];
     regerror(status, &pat, error_string, 80);
@@ -408,7 +411,14 @@ static PyMethodDef methods[] = {
 #endif
 
 void initlibc(void) {
-  Py_InitModule("libc", methods);
+  PyObject *module;
+
+  module = Py_InitModule("libc", methods);
+  if (module != NULL) {
+      PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
+      PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
+  }
+
   errno_error = PyErr_NewException("libc.error",
                                     PyExc_IOError, NULL);
 }
