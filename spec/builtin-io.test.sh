@@ -373,7 +373,7 @@ echo "'$a' '$b' '$c'"
 case $SH in (dash) exit ;; esac # dash does not implement -n
 
 c='some value'
-read -n 3 a b c < $TMP/read-all.txt
+read -n 3 a b c < $TMP/read-few.txt
 echo "'$a' '$b' '$c'"
 ## stdout-json: "'a' 'b' ''\n'a' 'b' ''\n"
 ## N-I dash stdout-json: "'a' 'b' ''\n"
