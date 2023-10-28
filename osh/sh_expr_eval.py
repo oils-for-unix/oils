@@ -57,6 +57,8 @@ from osh import bool_stat
 from osh import word_eval
 
 import libc  # for fnmatch
+# Import these names directly because the C++ translation uses macros literally.
+from libc import FNM_CASEFOLD, REG_ICASE
 
 from typing import Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -1044,7 +1046,7 @@ class BoolEvaluator(ArithEvaluator):
                     raise AssertionError(op_id)  # should never happen
 
                 if arg_type == bool_arg_type_e.Str:
-                    fnmatch_flags = libc.FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
+                    fnmatch_flags = FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
 
                     if op_id in (Id.BoolBinary_GlobEqual,
                                  Id.BoolBinary_GlobDEqual):
@@ -1063,7 +1065,7 @@ class BoolEvaluator(ArithEvaluator):
                     if op_id == Id.BoolBinary_EqualTilde:
                         # TODO: This should go to --debug-file
                         #log('Matching %r against regex %r', s1, s2)
-                        regex_flags = libc.REG_ICASE if self.exec_opts.nocasematch() else 0
+                        regex_flags = REG_ICASE if self.exec_opts.nocasematch() else 0
 
                         try:
                             matches = libc.regex_match(s2, s1, regex_flags)

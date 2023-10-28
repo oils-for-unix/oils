@@ -89,6 +89,8 @@ from ysh import val_ops
 
 import posix_ as posix
 import libc  # for fnmatch
+# Import this name directly because the C++ translation uses macros literally.
+from libc import FNM_CASEFOLD
 
 from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 
@@ -1436,7 +1438,7 @@ class CommandEvaluator(object):
         # type: (command.Case) -> int
 
         to_match = self._EvalCaseArg(node.to_match, node.case_kw)
-        fnmatch_flags = libc.FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
+        fnmatch_flags = FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
         self._MaybeRunDebugTrap()
 
         status = 0  # If there are no arms, it should be zero?
