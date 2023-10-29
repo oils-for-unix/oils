@@ -431,7 +431,7 @@ class Read(vm._Builtin):
 
             state.BuiltinSetString(self.mem, name, s)
 
-            # unset and extraneous bindings
+            # unset extra names
             for i in xrange(1, len(names)):
                 state.BuiltinSetString(self.mem, names[i], "")
 
