@@ -118,7 +118,7 @@ def _AppendParts(
 
 #
 # Three read() wrappers for 'read' builtin that RunPendingTraps: _ReadN,
-# _ReadUntilDelim, and ReadLineSlowly
+# _ReadPortion, and ReadLineSlowly
 #
 
 
@@ -146,7 +146,7 @@ def _ReadN(num_bytes, cmd_ev):
     return ''.join(chunks)
 
 
-def _ReadUntilDelim(delim_byte, max_chars, cmd_ev):
+def _ReadPortion(delim_byte, max_chars, cmd_ev):
     # type: (int, int, CommandEvaluator) -> Tuple[str, bool]
     """Read a portion of stdin.
 
@@ -466,7 +466,7 @@ class Read(vm._Builtin):
         join_next = False
         status = 0
         while True:
-            line, eof = _ReadUntilDelim(delim_byte, arg.n, self.cmd_ev)
+            line, eof = _ReadPortion(delim_byte, arg.n, self.cmd_ev)
 
             if eof:
                 # status 1 to terminate loop.  (This is true even though we set
