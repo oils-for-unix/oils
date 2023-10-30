@@ -286,60 +286,34 @@ class Read(vm._Builtin):
         self.errfmt = errfmt
         self.stdin_ = mylib.Stdin()
 
-    def _Line(self, arg, var_name):
-        # type: (arg_types.read, str) -> int
-        """For read --line."""
+    def _MaybeDecodeLine(self, line):
+        # type: (str) -> str
+        """Raises error.Parse if line isn't valid."""
 
-        # Use an optimized C implementation rather than ReadLineSlowly, which
-        # calls ReadByte() over and over.
-        line = pyos.ReadLine()
-        if len(line) == 0:  # EOF
-            return 1
-
-        if not arg.with_eol:
-            if line.endswith('\r\n'):
-                line = line[:-2]
-            elif line.endswith('\n'):
-                line = line[:-1]
-
-        # Lines that don't start with a single quote aren't QSN.  They may contain
-        # a single quote internally, like:
+        # Lines that don't start with a single quote aren't QSN.  They may
+        # contain a single quote internally, like:
         #
         # Fool's Gold
-        if arg.q and line.startswith("'"):
-            arena = self.parse_ctx.arena
-            line_reader = reader.StringLineReader(line, arena)
-            lexer = self.parse_ctx.MakeLexer(line_reader)
+        if not line.startswith("'"):
+            return line
 
-            # The parser only yields valid tokens:
-            #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
-            # So we can use word_compile.EvalCStringToken, which is also used for
-            # $''.
-            # Important: we don't generate Id.Unknown_Backslash because that is valid
-            # in echo -e.  We just make it Id.Unknown_Tok?
-            try:
-                # TODO: read should know about stdin, and redirects, and pipelines?
-                with alloc.ctx_SourceCode(arena, source.Stdin('')):
-                    tokens = qsn_native.Parse(lexer)
-            except error.Parse as e:
-                self.errfmt.PrettyPrintError(e)
-                return 1
-            tmp = [word_compile.EvalCStringToken(t) for t in tokens]
-            line = ''.join(tmp)
+        arena = self.parse_ctx.arena
+        line_reader = reader.StringLineReader(line, arena)
+        lexer = self.parse_ctx.MakeLexer(line_reader)
 
-        lhs = location.LName(var_name)
-        self.mem.SetNamed(lhs, value.Str(line), scope_e.LocalOnly)
-        return 0
+        # The parser only yields valid tokens:
+        #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
+        # So we can use word_compile.EvalCStringToken, which is also used for
+        # $''.
+        # Important: we don't generate Id.Unknown_Backslash because that is valid
+        # in echo -e.  We just make it Id.Unknown_Tok?
 
-    def _All(self, var_name):
-        # type: (str) -> int
-        contents = ReadAll()
-
-        # No error conditions?
-
-        lhs = location.LName(var_name)
-        self.mem.SetNamed(lhs, value.Str(contents), scope_e.LocalOnly)
-        return 0
+        # TODO: read location info should know about stdin, and redirects, and
+        # pipelines?
+        with alloc.ctx_SourceCode(arena, source.Stdin('')):
+            tokens = qsn_native.Parse(lexer)
+        tmp = [word_compile.EvalCStringToken(t) for t in tokens]
+        return ''.join(tmp)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -392,7 +366,10 @@ class Read(vm._Builtin):
             place = rd.PosPlace()
             rd.Done()
 
-            #log('p %s', place)
+            # TODO: need to respect --line and --all
+            # And maybe make read (&x) the same as read --all (&x)
+
+            log('p %s', place)
 
         # Don't respect any of the other options here?  This is buffered I/O.
         if arg.line:  # read --line
@@ -408,7 +385,29 @@ class Read(vm._Builtin):
             if next_arg is not None:
                 raise error.Usage('got extra argument', next_loc)
 
-            return self._Line(arg, var_name)
+            # Use an optimized C implementation rather than ReadLineSlowly, which
+            # calls ReadByte() over and over.
+            line = pyos.ReadLine()
+            if len(line) == 0:  # EOF
+                return 1  # 'while read --line' loop
+
+            if not arg.with_eol:
+                if line.endswith('\r\n'):
+                    line = line[:-2]
+                elif line.endswith('\n'):
+                    line = line[:-1]
+
+            # TODO: This should be --j8 or --json
+            if arg.q:
+                try:
+                    line = self._MaybeDecodeLine(line)
+                except error.Parse as e:
+                    self.errfmt.PrettyPrintError(e)
+                    return 1
+
+            lhs = location.LName(var_name)
+            self.mem.SetNamed(lhs, value.Str(line), scope_e.LocalOnly)
+            return 0
 
         if arg.q:
             e_usage('--qsn can only be used with --line', loc.Missing)
@@ -426,7 +425,10 @@ class Read(vm._Builtin):
             if next_arg is not None:
                 raise error.Usage('got extra argument', next_loc)
 
-            return self._All(var_name)
+            contents = ReadAll()
+            lhs = location.LName(var_name)
+            self.mem.SetNamed(lhs, value.Str(contents), scope_e.LocalOnly)
+            return 0
 
         if arg.q:
             e_usage('--qsn not implemented yet', loc.Missing)
