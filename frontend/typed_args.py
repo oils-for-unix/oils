@@ -90,7 +90,8 @@ class Reader(object):
     Builtin procs use:
 
     - args.Reader() and generated flag_def.py APIs for the words
-    - typed_args.Reader() for the positional/named typed args.
+    - typed_args.Reader() for the positional/named typed args, constructed with
+      ReaderForProc()
     """
 
     def __init__(self, pos_args, named_args, arg_list, is_bound=False):
@@ -221,6 +222,14 @@ class Reader(object):
         raise error.TypeErr(val, 'Arg %d should be a Dict' % self.pos_consumed,
                             self.BlamePos())
 
+    def _ToPlace(self, val):
+        # type: (value_t) -> value.Place
+        if val.tag() == value_e.Place:
+            return cast(value.Place, val)
+
+        raise error.TypeErr(val, 'Arg %d should be a Place' % self.pos_consumed,
+                            self.BlamePos())
+
     def _ToExpr(self, val):
         # type: (value_t) -> expr_t
         if val.tag() == value_e.Expr:
@@ -295,6 +304,11 @@ class Reader(object):
         # type: () -> Dict[str, value_t]
         val = self.PosValue()
         return self._ToDict(val)
+
+    def PosPlace(self):
+        # type: () -> value.Place
+        val = self.PosValue()
+        return self._ToPlace(val)
 
     def PosExpr(self):
         # type: () -> expr_t

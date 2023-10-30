@@ -18,6 +18,7 @@ from data_lang import qsn_native
 from frontend import flag_spec
 from frontend import location
 from frontend import reader
+from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log, STDIN_FILENO
 from osh import word_compile
@@ -353,9 +354,45 @@ class Read(vm._Builtin):
 
     def _Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val)
+        attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val,
+                                             accept_typed_args=True)
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
+
+        place = None  # type: value.Place
+        if cmd_val.typed_args:
+            # This place can be for 
+            #   read --line (&line)
+            #   read --all (&s)
+            #
+            # Shorthand:
+            #
+            #   read --line  # sets _line
+            #   read --all   # sets _all
+            #
+            # Do we still want read --line to set $_line in the current scope?
+            # I guess it's useful for interactive use
+
+            # But I'm not sure if I want
+            #   read x y z
+            #   read (&x, &y, &z)
+            #
+            # Yeah the splitting is bad.
+            #
+            # Maybe --all is the default when you pass typed args?
+            #
+            # We also want 
+            #
+            #   read --row (&row)
+            #   read --lines (mylist)  # list is mutable
+            #   read --col (&s)  # does this make sense?
+            #   read -N 3 (&s)
+
+            rd = typed_args.ReaderForProc(cmd_val)
+            place = rd.PosPlace()
+            rd.Done()
+
+            #log('p %s', place)
 
         # Don't respect any of the other options here?  This is buffered I/O.
         if arg.line:  # read --line

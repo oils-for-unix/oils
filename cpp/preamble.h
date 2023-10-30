@@ -2,6 +2,8 @@
 
 #include <errno.h>
 #include <fcntl.h>     // e.g. F_DUPFD used directly
+#include <fnmatch.h>   // FNM_CASEFOLD in osh/sh_expr_eval.py
+#include <regex.h>     // REG_ICASE in osh/sh_expr_eval.py
 #include <sys/wait.h>  // e.g. WIFSIGNALED() called directly
 
 #include "_gen/core/optview.h"
