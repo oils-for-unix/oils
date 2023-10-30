@@ -29,6 +29,7 @@ from typing import Tuple, List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import span_t
     from frontend.parse_lib import ParseContext
+    from frontend import args
     from osh.cmd_eval import CommandEvaluator
     from osh.split import SplitContext
 
@@ -326,12 +327,8 @@ class Read(vm._Builtin):
             status = 1
         return status
 
-    def _Run(self, cmd_val):
-        # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val,
-                                             accept_typed_args=True)
-        arg = arg_types.read(attrs.attrs)
-        names = arg_r.Rest()
+    def _ReadYsh(self, arg, arg_r, cmd_val):
+        # type: (arg_types.read, args.Reader, cmd_value.Argv) -> int
 
         place = None  # type: value.Place
         if cmd_val.typed_args:
@@ -365,11 +362,13 @@ class Read(vm._Builtin):
             rd = typed_args.ReaderForProc(cmd_val)
             place = rd.PosPlace()
             rd.Done()
+        else:
+            pass
 
             # TODO: need to respect --line and --all
             # And maybe make read (&x) the same as read --all (&x)
 
-            log('p %s', place)
+            #log('p %s', place)
 
         # Don't respect any of the other options here?  This is buffered I/O.
         if arg.line:  # read --line
@@ -409,9 +408,6 @@ class Read(vm._Builtin):
             self.mem.SetNamed(lhs, value.Str(line), scope_e.LocalOnly)
             return 0
 
-        if arg.q:
-            e_usage('--qsn can only be used with --line', loc.Missing)
-
         if arg.all:  # read --all
             var_name, var_loc = arg_r.Peek2()
             if var_name is None:
@@ -430,8 +426,24 @@ class Read(vm._Builtin):
             self.mem.SetNamed(lhs, value.Str(contents), scope_e.LocalOnly)
             return 0
 
-        if arg.q:
-            e_usage('--qsn not implemented yet', loc.Missing)
+        # arg.line or arg.all should be true
+        raise AssertionError()
+
+    def _Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val,
+                                             accept_typed_args=True)
+        arg = arg_types.read(attrs.attrs)
+        names = arg_r.Rest()
+
+        if arg.q and not arg.line:
+            e_usage('--qsn can only be used with --line', loc.Missing)
+
+        if arg.line or arg.all:
+            return self._ReadYsh(arg, arg_r, cmd_val)
+
+        if cmd_val.typed_args:
+            raise error.Usage("doesn't accept typed args", cmd_val.typed_args.left)
 
         if arg.t >= 0.0:
             if arg.t != 0.0:
@@ -470,9 +482,9 @@ class Read(vm._Builtin):
 
             state.BuiltinSetString(self.mem, name, s)
 
-            # unset extra names
+            # Clear extra names, as bash does
             for i in xrange(1, len(names)):
-                state.BuiltinSetString(self.mem, names[i], "")
+                state.BuiltinSetString(self.mem, names[i], '')
 
             # Did we read all the bytes we wanted?
             return 0 if len(s) == arg.n else 1

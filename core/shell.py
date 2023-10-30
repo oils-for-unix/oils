@@ -729,6 +729,22 @@ def Main(
         'join': func_misc.Join(),  # both a method and a func
     }
 
+    # TODO: implement these
+    methods[value_e.IO] = {
+      'promptChar': None,
+
+      # io->eval(myblock) is the functional version of eval (myblock)
+      'eval': None,
+
+      # identical to command sub
+      'captureStdout': None,
+    }
+
+    methods[value_e.Place] = {
+      # instead of setPlace keyword?
+      'setValue': None,
+    }
+
     #
     # Initialize Built-in Funcs
     #

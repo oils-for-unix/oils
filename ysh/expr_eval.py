@@ -197,7 +197,7 @@ class ExprEvaluator(object):
 
         UP_lval = lval
         with tagswitch(lval) as case:
-            if case(y_lvalue_e.Var):  # setvar x += 1
+            if case(y_lvalue_e.Local):  # setvar x += 1
                 lval = cast(LeftName, UP_lval)
                 lhs_val = self._LookupVar(lval.name, lval.blame_loc)
                 if op.id in (Id.Arith_PlusEqual, Id.Arith_MinusEqual,

@@ -799,7 +799,7 @@ class CommandEvaluator(object):
                 # setvar mydict['key'] = 42
                 UP_lval = lval
 
-                if lval.tag() == y_lvalue_e.Var:
+                if lval.tag() == y_lvalue_e.Local:
                     lval = cast(LeftName, UP_lval)
 
                     self.mem.SetNamed(lval,

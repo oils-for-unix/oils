@@ -733,6 +733,10 @@ ysh-list() {
   run-file ysh-list "$@"
 }
 
+ysh-place() {
+  run-file ysh-place "$@"
+}
+
 ysh-assign() {
   run-file ysh-assign "$@"
 }

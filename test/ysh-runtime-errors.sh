@@ -736,6 +736,11 @@ test-func-passing() {
   '
 }
 
+test-read-builtin() {
+  # no typed args
+  _error-case 'echo hi | read (&x)'
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

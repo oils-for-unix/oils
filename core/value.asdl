@@ -25,10 +25,11 @@ module value
 
   LeftName = (str name, loc blame_loc)
 
-  # for read (&x)   that is, value.Place
+  # for setvar, and value.Place
   y_lvalue = 
-    Var %LeftName
-    # YSH setvar is typed
+    # e.g. read (&x)
+    Local %LeftName
+    # e.g. &a[0][1].key -- we evaluate a[0][1] first
   | Container(value obj, value index)
 
   # An sh_lvalue is for things mutation that happen with dynamic scope

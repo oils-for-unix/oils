@@ -16,7 +16,8 @@ from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
                                        debug_frame_e, debug_frame_t)
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
-                                      sh_lvalue_e, sh_lvalue_t, LeftName)
+                                      sh_lvalue_e, sh_lvalue_t, LeftName,
+                                      y_lvalue_e)
 from asdl import runtime
 from core import error
 from core.error import e_usage, e_die
@@ -1485,10 +1486,40 @@ class Mem(object):
         """
         cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading(),
                                             False)
-        if cell:
-            if cell.val.tag() == value_e.BashAssoc:  # foo=([key]=value)
-                return True
-        return False
+        # foo=([key]=value)
+        return cell is not None and cell.val.tag() == value_e.BashAssoc
+
+    def SetPlace(self, place, val):
+        # type: (value.Place, value_t) -> None
+
+        yval = place.lval
+        UP_yval = yval
+        with tagswitch(yval) as case:
+            if case(y_lvalue_e.Local):
+                yval = cast(LeftName, UP_yval)
+
+                # Check that the frame is still alive
+                found = False
+                for i in xrange(len(self.var_stack) - 1, -1, -1):
+                    frame = self.var_stack[i]
+                    if frame == place.frame:
+                        found = True
+                        break
+                if not found:
+                    e_die("Can't assign to invalid, dangling place.  It must be on the call stack.",
+                          yval.blame_loc)
+
+                cell = frame.get(yval.name)
+                if cell is None:
+                    cell = Cell(False, False, False, val)
+                else:
+                    cell.val = val
+
+            elif case(y_lvalue_e.Container):
+                e_die('Container place not implemented')
+
+            else:
+                raise AssertionError()
 
     def SetLocalName(self, lval, val):
         # type: (LeftName, value_t) -> None
