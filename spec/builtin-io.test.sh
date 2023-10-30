@@ -359,7 +359,10 @@ echo $'a\nb\nc' > $TMP/read-lines.txt
 
 read -N 3 out < $TMP/read-lines.txt
 echo "$out"
-## stdout-json: "a\nb\n"
+## STDOUT:
+a
+b
+## END
 ## N-I dash/ash/zsh stdout-json: ""
 
 #### read will unset extranous vars
@@ -375,9 +378,17 @@ case $SH in (dash) exit ;; esac # dash does not implement -n
 c='some value'
 read -n 3 a b c < $TMP/read-few.txt
 echo "'$a' '$b' '$c'"
-## stdout-json: "'a' 'b' ''\n'a' 'b' ''\n"
-## N-I dash stdout-json: "'a' 'b' ''\n"
-## BUG zsh stdout-json: "'a' 'b' ''\n'b' '' ''\n"
+## STDOUT:
+'a' 'b' ''
+'a' 'b' ''
+## END
+## N-I dash STDOUT:
+'a' 'b' ''
+## END
+## BUG zsh STDOUT:
+'a' 'b' ''
+'b' '' ''
+## END
 
 #### read -r ignores backslashes
 echo 'one\ two' > $TMP/readr.txt
