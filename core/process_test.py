@@ -95,11 +95,11 @@ class ProcessTest(unittest.TestCase):
         cmd_ev = CommandEvaluator()
 
         self.fd_state.Push([r])
-        line1, _ = read_osh._ReadUntilDelim(pyos.NEWLINE_CH, -1, cmd_ev)
+        line1, _ = read_osh._ReadPortion(pyos.NEWLINE_CH, -1, cmd_ev)
         self.fd_state.Pop()
 
         self.fd_state.Push([r])
-        line2, _ = read_osh._ReadUntilDelim(pyos.NEWLINE_CH, -1, cmd_ev)
+        line2, _ = read_osh._ReadPortion(pyos.NEWLINE_CH, -1, cmd_ev)
         self.fd_state.Pop()
 
         # sys.stdin.readline() would erroneously return 'two' because of buffering.
