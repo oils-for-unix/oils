@@ -315,6 +315,81 @@ echo $REPLY
 ## stdout: 123
 ## N-I dash stdout:
 
+#### read -n vs. -N
+# dash, ash and zsh do not implement read -N
+# mksh treats -N exactly the same as -n
+case $SH in (dash|ash|zsh) exit ;; esac
+
+# bash docs: https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html
+
+echo 'a b c' > $TMP/readn.txt
+
+echo 'read -n'
+read -n 5 A B C < $TMP/readn.txt; echo "'$A' '$B' '$C'"
+read -n 4 A B C < $TMP/readn.txt; echo "'$A' '$B' '$C'"
+echo
+
+echo 'read -N'
+read -N 5 A B C < $TMP/readn.txt; echo "'$A' '$B' '$C'"
+read -N 4 A B C < $TMP/readn.txt; echo "'$A' '$B' '$C'"
+## STDOUT:
+read -n
+'a' 'b' 'c'
+'a' 'b' ''
+
+read -N
+'a b c' '' ''
+'a b ' '' ''
+## END
+## N-I dash/ash/zsh stdout-json: ""
+## BUG mksh STDOUT:
+read -n
+'a' 'b' 'c'
+'a' 'b' ''
+
+read -N
+'a' 'b' 'c'
+'a' 'b' ''
+## END
+
+#### read -N ignores delimiters
+case $SH in (dash|ash|zsh) exit ;; esac
+
+echo $'a\nb\nc' > $TMP/read-lines.txt
+
+read -N 3 out < $TMP/read-lines.txt
+echo "$out"
+## STDOUT:
+a
+b
+## END
+## N-I dash/ash/zsh stdout-json: ""
+
+#### read will unset extranous vars
+
+echo 'a b' > $TMP/read-few.txt
+
+c='some value'
+read a b c < $TMP/read-few.txt
+echo "'$a' '$b' '$c'"
+
+case $SH in (dash) exit ;; esac # dash does not implement -n
+
+c='some value'
+read -n 3 a b c < $TMP/read-few.txt
+echo "'$a' '$b' '$c'"
+## STDOUT:
+'a' 'b' ''
+'a' 'b' ''
+## END
+## N-I dash STDOUT:
+'a' 'b' ''
+## END
+## BUG zsh STDOUT:
+'a' 'b' ''
+'b' '' ''
+## END
+
 #### read -r ignores backslashes
 echo 'one\ two' > $TMP/readr.txt
 read escaped < $TMP/readr.txt
