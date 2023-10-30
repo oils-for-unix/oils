@@ -150,10 +150,10 @@ def _ReadUntilDelim(delim_byte, max_chars, cmd_ev):
     # type: (int, int, CommandEvaluator) -> Tuple[str, bool]
     """Read a portion of stdin.
 
-    Reads until delimeter or max_chars, which ever comes first. Will ignore
+    Reads until delimiter or max_chars, which ever comes first. Will ignore
     max_chars if it's set to -1.
 
-    The delimeter is not included in the result.
+    The delimiter is not included in the result.
     """
     eof = False
     ch_array = []  # type: List[int]
