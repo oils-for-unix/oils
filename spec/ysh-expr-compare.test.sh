@@ -363,7 +363,7 @@ var unimpl = [
 ]
 
 for val in (unimpl) {
-  try { _ val === val }
+  try { :: val === val }
   if (_status !== 3) {
     exit 1
   }
