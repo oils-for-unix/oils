@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 16
 ## compare_shells: bash
 
 
@@ -87,7 +87,8 @@ file
 PATH="$TMP:$PATH"
 touch $TMP/non-executable
 type -t non-executable
-## stdout-json: ""
+## STDOUT:
+## END
 ## status: 1
 ## BUG bash STDOUT:
 file
@@ -135,21 +136,25 @@ type -P mv tar grep
 #### type -p builtin -> not found
 type -p FOO BAR NOT_FOUND
 ## status: 1
-## stdout-json: ""
+## STDOUT:
+## END
 
 #### type -p builtin -> not a file
 type -p cd type builtin command
-## stdout-json: ""
+## STDOUT:
+## END
 
 #### type -P builtin -> not found
 type -P FOO BAR NOT_FOUND
 ## status: 1
-## stdout-json: ""
+## STDOUT:
+## END
 
 #### type -P builtin -> not a file
 type -P cd type builtin command
-## stdout-json: ""
 ## status: 1
+## STDOUT:
+## END
 
 #### type -P builtin -> not a file but file found
 touch /tmp/{mv,tar,grep}
@@ -190,6 +195,74 @@ tar is /tmp/tar
 grep is /tmp/grep
 ## END
 
+#### type -a -> function
+f () { :; }
+type -a f
+## STDOUT:
+f is a function
+f () 
+{ 
+    :
+}
+## END
+
+#### type -ap -> function
+f () { :; }
+type -ap f
+## STDOUT:
+## END
+
+#### type -a -> alias
+shopt -s expand_aliases
+alias ll="ls -lha"
+type -a ll
+## stdout: ll is aliased to `ls -lha'
+
+#### type -ap -> alias
+shopt -s expand_aliases
+alias ll="ls -lha"
+type -ap ll
+## STDOUT:
+## END
+
+#### type -a -> builtin
+type -a cd
+## stdout: cd is a shell builtin
+
+#### type -ap -> builtin
+type -ap cd
+## STDOUT:
+## END
+
+#### type -a -> keyword
+type -a while
+## stdout: while is a shell keyword
+
+#### type -a -> file
+type -a date
+## stdout: date is /bin/date
+
+#### type -ap -> file
+type -ap date
+## stdout: /bin/date
+
+#### type -a -> builtin and file
+type -a pwd
+## STDOUT:
+pwd is a shell builtin
+pwd is /bin/pwd
+## END
+
+#### type -ap -> builtin and file
+type -ap pwd
+## stdout: /bin/pwd
+
+#### type -a -> executable not in PATH
+touch /tmp/executable
+chmod +x /tmp/executable
+type -a executable
+## status: 1
+
 #### mapfile
 type mapfile >/dev/null 2>&1 || exit 0
 printf '%s\n' {1..5..2} | {
@@ -206,7 +279,8 @@ n=3
 [5
 ]
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### readarray (synonym for mapfile)
 type readarray >/dev/null 2>&1 || exit 0
@@ -224,7 +298,8 @@ n=3
 [5
 ]
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### mapfile (array name): arr
 type mapfile >/dev/null 2>&1 || exit 0
@@ -242,7 +317,8 @@ n=3
 [5
 ]
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### mapfile (delimiter): -d delim
 # Note: Bash-4.4+
@@ -258,7 +334,8 @@ n=3
 [3:]
 [5:]
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### mapfile (delimiter): -d '' (null-separated)
 # Note: Bash-4.4+
@@ -274,7 +351,8 @@ n=3
 [3]
 [5]
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### mapfile (truncate delim): -t
 type mapfile >/dev/null 2>&1 || exit 0
@@ -289,7 +367,8 @@ n=3
 [3]
 [5]
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### mapfile -t doesn't remove \r
 type mapfile >/dev/null 2>&1 || exit 0
@@ -300,7 +379,8 @@ printf '%s\r\n' {1..5..2} | {
 ## STDOUT:
 ['1\r', '3\r', '5\r']
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### mapfile (store position): -O start
 type mapfile >/dev/null 2>&1 || exit 0
@@ -318,7 +398,8 @@ n=5
 [a1]
 [a2]
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### mapfile (input range): -s start -n count
 type mapfile >/dev/null 2>&1 || exit 0
@@ -333,7 +414,8 @@ n=3
 [a6]
 [a7]
 ## END
-## N-I dash/mksh/zsh/ash stdout-json: ""
+## N-I dash/mksh/zsh/ash STDOUT:
+## END
 
 #### mapfile / readarray stdin  TODO: Fix me.
 shopt -s lastpipe  # for bash
