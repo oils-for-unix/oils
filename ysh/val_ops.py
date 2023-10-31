@@ -406,7 +406,7 @@ def ExactlyEqual(left, right):
 
             return True
 
-    raise NotImplementedError(left)
+    raise error.TypeErr(left, "Cannot compare this type", loc.Missing)
 
 
 def Contains(needle, haystack):
