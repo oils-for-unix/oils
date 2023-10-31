@@ -7,6 +7,7 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from core import error
+from core import ui
 from mycpp.mylib import tagswitch
 from ysh import regex_translate
 
@@ -406,7 +407,9 @@ def ExactlyEqual(left, right, blame_loc):
 
             return True
 
-    raise error.TypeErr(left, "Cannot compare this type", blame_loc)
+    raise error.TypeErrVerbose(
+        "Can't compare %s and %s" % (ui.ValType(left), ui.ValType(right)),
+        blame_loc)
 
 
 def Contains(needle, haystack):
