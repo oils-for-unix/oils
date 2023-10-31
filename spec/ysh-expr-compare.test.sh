@@ -370,3 +370,13 @@ for val in (unimpl) {
 }
 ## STDOUT:
 ## END
+
+#### Non-comparable types in case arms
+var myexpr = ^[123]
+
+case (myexpr) {
+  (myexpr) { echo 123; }
+}
+## status: 3
+## STDOUT:
+## END
