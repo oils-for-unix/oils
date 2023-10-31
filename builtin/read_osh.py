@@ -378,9 +378,9 @@ class Read(vm._Builtin):
 
         # Don't respect any of the other options here?  This is buffered I/O.
         if arg.line:  # read --line
-            # Use an optimized C implementation rather than ReadLineSlowly, which
-            # calls ReadByte() over and over.
-            line = pyos.ReadLine()
+            # Use an optimized C implementation rather than ReadLineSlowly,
+            # which calls ReadByte() over and over.
+            line = pyos.ReadLineBuffered()
             if len(line) == 0:  # EOF
                 return 1  # 'while read --line' loop
 

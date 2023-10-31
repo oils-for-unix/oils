@@ -109,21 +109,20 @@ def ReadByte(fd):
             return EOF_SENTINEL, 0
 
 
-def ReadLine():
+def ReadLineBuffered():
     # type: () -> str
     """Read a line from stdin.
 
-    This is a SLOW PYTHON implementation that calls read(0, 1) too many times.  I
-    tried to write libc.stdin_readline() which uses the getline() function, but
-    somehow that makes spec/oil-builtins.test.sh fail.  We use Python's
-    f.readline() in frontend/reader.py FileLineReader with f == stdin.
+    This is a SLOW PYTHON implementation that calls read(0, 1) too many times. 
 
-    So I think the buffers get confused:
-    - Python buffers for sys.stdin.readline()
-    - libc buffers for getline()
-    - no buffers when directly issuing read(0, 1) calls, which ReadByte() does
+    TODO: Change to use buffering like cpp/core.cc.
 
-    TODO: Add keep_newline arg
+    This requires workarounds in the spec test framework, due to using
+
+        echo "$code_string" | $SH
+
+    I changed spec/ysh-place.test.sh, but spec/ysh-builtins.test.sh also has to
+    change.
     """
     ch_array = []  # type: List[int]
     while True:

@@ -38,7 +38,7 @@ const int UNTRAPPED_SIGWINCH = -1;
 Tuple2<int, int> WaitPid(int waitpid_options);
 Tuple2<int, int> Read(int fd, int n, List<BigStr*>* chunks);
 Tuple2<int, int> ReadByte(int fd);
-BigStr* ReadLine();
+BigStr* ReadLineBuffered();
 Dict<BigStr*, BigStr*>* Environ();
 int Chdir(BigStr* dest_dir);
 BigStr* GetMyHomeDir();

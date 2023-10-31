@@ -50,7 +50,7 @@ io-strace() {
   strace -ff -e 'open,close,fcntl,read,write' -- "$@"
 }
 
-readonly OSH_NATIVE=_bin/cxx-dbg/oils-for-unix
+readonly OSH_NATIVE=_bin/cxx-dbg/osh
 
 readonly READ_SH='
 { echo "0123456789"; echo "ABCDEFGHIJ"; } |
