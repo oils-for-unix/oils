@@ -743,6 +743,23 @@ test-read-builtin() {
   _error-case-X 2 'echo hi | read --line x y'
 }
 
+test-equality() {
+  _expr-error-case '
+  = ^[42] === ^[43]
+  '
+
+  _expr-error-case '
+  = ^(echo hi) === ^(echo yo)
+  '
+
+  return
+
+  # Hm it's kind of weird you can do this -- it's False
+  _expr-error-case '
+  = ^[42] === "hi"
+  '
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs
