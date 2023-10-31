@@ -45,11 +45,15 @@ one two three
 
 #### read --line :myvar is replaced by read --line (&myvar)
 
+cat >tmp.sh <<'EOF'
 echo hi | read --line :myvar
 echo "myvar=[$myvar]"
 
 echo hi | read --all :myvar
 echo "myvar=[$myvar]"
+EOF
+
+$SH tmp.sh
 
 ## STDOUT:
 myvar=[hi]
