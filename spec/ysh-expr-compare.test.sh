@@ -343,3 +343,30 @@ y=42
 x=42
 ## END
 
+#### Undefined comparisons
+shopt -s ysh:all
+
+func f() { true }
+var mydict = {}
+var myexpr = ^[123]
+
+var unimpl = [
+    / [a-z]+ /,  # Eggex
+    myexpr,  # Expr
+    ^(echo hello),  # Block
+    f,  # Func
+    mydict->keys,  # BoundFunc
+    # These cannot be constructed
+    # - Proc
+    # - Slice
+    # - Range
+]
+
+for val in (unimpl) {
+  try { _ val === val }
+  if (_status !== 3) {
+    exit 1
+  }
+}
+## STDOUT:
+## END
