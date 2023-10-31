@@ -323,8 +323,8 @@ def ToBool(val):
             return True  # all other types are Truthy
 
 
-def ExactlyEqual(left, right):
-    # type: (value_t, value_t) -> bool
+def ExactlyEqual(left, right, blame_loc):
+    # type: (value_t, value_t, loc_t) -> bool
     if left.tag() != right.tag():
         return False
 
@@ -351,7 +351,7 @@ def ExactlyEqual(left, right):
             # Note: could provide floatEquals(), and suggest it
             # Suggested idiom is abs(f1 - f2) < 0.1
             raise error.TypeErrVerbose("Equality isn't defined on Float",
-                                       loc.Missing)
+                                       blame_loc)
 
         elif case(value_e.Str):
             left = cast(value.Str, UP_left)
@@ -377,7 +377,7 @@ def ExactlyEqual(left, right):
                 return False
 
             for i in xrange(0, len(left.items)):
-                if not ExactlyEqual(left.items[i], right.items[i]):
+                if not ExactlyEqual(left.items[i], right.items[i], blame_loc):
                     return False
 
             return True
@@ -401,12 +401,12 @@ def ExactlyEqual(left, right):
                 return False
 
             for k in left.d.keys():
-                if k not in right.d or not ExactlyEqual(right.d[k], left.d[k]):
+                if k not in right.d or not ExactlyEqual(right.d[k], left.d[k], blame_loc):
                     return False
 
             return True
 
-    raise error.TypeErr(left, "Cannot compare this type", loc.Missing)
+    raise error.TypeErr(left, "Cannot compare this type", blame_loc)
 
 
 def Contains(needle, haystack):

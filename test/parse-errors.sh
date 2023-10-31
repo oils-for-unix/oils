@@ -1012,6 +1012,14 @@ ysh_case() {
   '
 
   _ysh-should-parse '
+  var myexpr = ^[123]
+
+  case (123) {
+    (myexpr) { echo 1 }
+  }
+  '
+
+  _ysh-should-parse '
   case (x) {
     (else) { echo 1 }
   }
