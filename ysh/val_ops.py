@@ -408,8 +408,7 @@ def ExactlyEqual(left, right, blame_loc):
             return True
 
     raise error.TypeErrVerbose(
-        "Can't compare %s and %s" % (ui.ValType(left), ui.ValType(right)),
-        blame_loc)
+        "Can't compare two values of type %s" % ui.ValType(left), blame_loc)
 
 
 def Contains(needle, haystack):
