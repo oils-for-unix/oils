@@ -731,18 +731,18 @@ def Main(
 
     # TODO: implement these
     methods[value_e.IO] = {
-      'promptChar': None,
+        'promptChar': None,
 
-      # io->eval(myblock) is the functional version of eval (myblock)
-      'eval': None,
+        # io->eval(myblock) is the functional version of eval (myblock)
+        'eval': None,
 
-      # identical to command sub
-      'captureStdout': None,
+        # identical to command sub
+        'captureStdout': None,
     }
 
     methods[value_e.Place] = {
-      # instead of setPlace keyword?
-      'setValue': None,
+        # instead of setPlace keyword?
+        'setValue': None,
     }
 
     #

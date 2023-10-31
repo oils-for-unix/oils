@@ -3,9 +3,9 @@ from __future__ import print_function
 from errno import EINTR
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import (span_e, cmd_value, scope_e)
-from _devbuild.gen.syntax_asdl import source, loc
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.runtime_asdl import (span_e, cmd_value)
+from _devbuild.gen.syntax_asdl import source, loc, loc_t
+from _devbuild.gen.value_asdl import value, LeftName
 from core import alloc
 from core import error
 from core.error import e_usage, e_die
@@ -16,7 +16,6 @@ from core import ui
 from core import vm
 from data_lang import qsn_native
 from frontend import flag_spec
-from frontend import location
 from frontend import reader
 from frontend import typed_args
 from mycpp import mylib
@@ -329,61 +328,56 @@ class Read(vm._Builtin):
 
     def _ReadYsh(self, arg, arg_r, cmd_val):
         # type: (arg_types.read, args.Reader, cmd_value.Argv) -> int
+        """
+        Usage:
 
+          read --line       # sets _line var
+          read --line (&x)  # sets x
+          read --all        # sets _all
+          read --all (&x)   # sets x
+
+        Invalid for now:
+
+          read (&x)         # YSH doesn't have token splitting
+                            # we probably want read --row too
+        """
         place = None  # type: value.Place
-        if cmd_val.typed_args:
-            # This place can be for 
-            #   read --line (&line)
-            #   read --all (&s)
-            #
-            # Shorthand:
-            #
-            #   read --line  # sets _line
-            #   read --all   # sets _all
-            #
-            # Do we still want read --line to set $_line in the current scope?
-            # I guess it's useful for interactive use
+        blame_loc = loc.Missing  # type: loc_t
 
-            # But I'm not sure if I want
-            #   read x y z
-            #   read (&x, &y, &z)
-            #
-            # Yeah the splitting is bad.
-            #
-            # Maybe --all is the default when you pass typed args?
-            #
-            # We also want 
-            #
-            #   read --row (&row)
-            #   read --lines (mylist)  # list is mutable
-            #   read --col (&s)  # does this make sense?
-            #   read -N 3 (&s)
-
+        if cmd_val.typed_args:  # read --line (&x)
             rd = typed_args.ReaderForProc(cmd_val)
             place = rd.PosPlace()
             rd.Done()
-        else:
-            pass
 
-            # TODO: need to respect --line and --all
-            # And maybe make read (&x) the same as read --all (&x)
+            blame_loc = cmd_val.typed_args.left
 
-            #log('p %s', place)
-
-        # Don't respect any of the other options here?  This is buffered I/O.
-        if arg.line:  # read --line
+        else:  # read --line
             var_name, var_loc = arg_r.Peek2()
             if var_name is None:
-                var_name = '_line'
+                if arg.line:
+                    var_name = '_line'
+                elif arg.all:
+                    var_name = '_all'
+                else:
+                    raise AssertionError()
             else:
+                # TODO: eliminate this idiom?
+
                 if var_name.startswith(':'):  # optional : sigil
                     var_name = var_name[1:]
                 arg_r.Next()
 
-            next_arg, next_loc = arg_r.Peek2()
-            if next_arg is not None:
-                raise error.Usage('got extra argument', next_loc)
+            #log('VAR %s', var_name)
+            place = value.Place(LeftName(var_name, var_loc),
+                                self.mem.TopNamespace())
+            blame_loc = var_loc
 
+        next_arg, next_loc = arg_r.Peek2()
+        if next_arg is not None:
+            raise error.Usage('got extra argument', next_loc)
+
+        # Don't respect any of the other options here?  This is buffered I/O.
+        if arg.line:  # read --line
             # Use an optimized C implementation rather than ReadLineSlowly, which
             # calls ReadByte() over and over.
             line = pyos.ReadLine()
@@ -404,26 +398,13 @@ class Read(vm._Builtin):
                     self.errfmt.PrettyPrintError(e)
                     return 1
 
-            lhs = location.LName(var_name)
-            self.mem.SetNamed(lhs, value.Str(line), scope_e.LocalOnly)
+            #log('place %s', place)
+            self.mem.SetPlace(place, value.Str(line), blame_loc)
             return 0
 
         if arg.all:  # read --all
-            var_name, var_loc = arg_r.Peek2()
-            if var_name is None:
-                var_name = '_all'
-            else:
-                if var_name.startswith(':'):  # optional : sigil
-                    var_name = var_name[1:]
-                arg_r.Next()
-
-            next_arg, next_loc = arg_r.Peek2()
-            if next_arg is not None:
-                raise error.Usage('got extra argument', next_loc)
-
             contents = ReadAll()
-            lhs = location.LName(var_name)
-            self.mem.SetNamed(lhs, value.Str(contents), scope_e.LocalOnly)
+            self.mem.SetPlace(place, value.Str(contents), blame_loc)
             return 0
 
         # arg.line or arg.all should be true
@@ -431,7 +412,8 @@ class Read(vm._Builtin):
 
     def _Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('read', cmd_val,
+        attrs, arg_r = flag_spec.ParseCmdVal('read',
+                                             cmd_val,
                                              accept_typed_args=True)
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
@@ -443,7 +425,8 @@ class Read(vm._Builtin):
             return self._ReadYsh(arg, arg_r, cmd_val)
 
         if cmd_val.typed_args:
-            raise error.Usage("doesn't accept typed args", cmd_val.typed_args.left)
+            raise error.Usage("doesn't accept typed args",
+                              cmd_val.typed_args.left)
 
         if arg.t >= 0.0:
             if arg.t != 0.0:

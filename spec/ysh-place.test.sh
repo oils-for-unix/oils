@@ -1,10 +1,18 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 
 #### Local place
 
+func f(place) {
+  var x = 'f'
+  echo zzz | read --line (place)
+  echo "f x=$x"
+}
+
 func fillPlace(place) {
-  echo zzz | read (place)
+  var x = 'fillPlace'
+  :: f(place)
+  echo "fillPlace x=$x"
 }
 
 proc p {
@@ -21,6 +29,8 @@ echo "global x=$x"
 
 
 ## STDOUT:
+f x=f
+fillPlace x=fillPlace
 p x=zzz
 global x=global
 ## END
@@ -38,14 +48,18 @@ func g() {
   var place = f()
 
   # Should fail when we try to use the place
-  echo zzz | read (&place)
+  echo zzz | read --line (place)
 
   # This should also fail
-  :: place->setValue('zzz')
+  # :: place->setValue('zzz')
+
 }
 
 :: g()
 
+echo done
+
+## status: 1
 ## STDOUT:
 ## END
 

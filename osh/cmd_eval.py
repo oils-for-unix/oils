@@ -1457,7 +1457,8 @@ class CommandEvaluator(object):
                         word_val = self.word_ev.EvalWordToString(
                             pat_word, word_eval.QUOTE_FNMATCH)
 
-                        if libc.fnmatch(word_val.s, to_match_str.s, fnmatch_flags):
+                        if libc.fnmatch(word_val.s, to_match_str.s,
+                                        fnmatch_flags):
                             status = self._ExecuteList(case_arm.action)
                             matched = True  # TODO: Parse ;;& and for fallthrough and such?
                             break

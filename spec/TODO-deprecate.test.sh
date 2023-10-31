@@ -42,3 +42,17 @@ echo @a
 one two three
 ## END
 
+
+#### read --line :myvar is replaced by read --line (&myvar)
+
+echo hi | read --line :myvar
+echo "myvar=[$myvar]"
+
+echo hi | read --all :myvar
+echo "myvar=[$myvar]"
+
+## STDOUT:
+myvar=[hi]
+myvar=[hi
+]
+## END

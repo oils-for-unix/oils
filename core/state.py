@@ -1489,8 +1489,8 @@ class Mem(object):
         # foo=([key]=value)
         return cell is not None and cell.val.tag() == value_e.BashAssoc
 
-    def SetPlace(self, place, val):
-        # type: (value.Place, value_t) -> None
+    def SetPlace(self, place, val, blame_loc):
+        # type: (value.Place, value_t, loc_t) -> None
 
         yval = place.lval
         UP_yval = yval
@@ -1502,21 +1502,24 @@ class Mem(object):
                 found = False
                 for i in xrange(len(self.var_stack) - 1, -1, -1):
                     frame = self.var_stack[i]
-                    if frame == place.frame:
+                    if frame is place.frame:
                         found = True
+                        #log('FOUND %s', found)
                         break
                 if not found:
-                    e_die("Can't assign to invalid, dangling place.  It must be on the call stack.",
-                          yval.blame_loc)
+                    e_die(
+                        "Can't assign to invalid, dangling place.  It must be on the call stack.",
+                        blame_loc)
 
                 cell = frame.get(yval.name)
                 if cell is None:
                     cell = Cell(False, False, False, val)
+                    frame[yval.name] = cell
                 else:
                     cell.val = val
 
             elif case(y_lvalue_e.Container):
-                e_die('Container place not implemented')
+                e_die('Container place not implemented', blame_loc)
 
             else:
                 raise AssertionError()

@@ -738,7 +738,9 @@ test-func-passing() {
 
 test-read-builtin() {
   # no typed args
-  _error-case 'echo hi | read (&x)'
+  _error-case-X 2 'echo hi | read (&x)'
+  _error-case-X 2 'echo hi | read --all x y'
+  _error-case-X 2 'echo hi | read --line x y'
 }
 
 soil-run() {

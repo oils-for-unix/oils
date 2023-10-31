@@ -227,7 +227,8 @@ class Reader(object):
         if val.tag() == value_e.Place:
             return cast(value.Place, val)
 
-        raise error.TypeErr(val, 'Arg %d should be a Place' % self.pos_consumed,
+        raise error.TypeErr(val,
+                            'Arg %d should be a Place' % self.pos_consumed,
                             self.BlamePos())
 
     def _ToExpr(self, val):
