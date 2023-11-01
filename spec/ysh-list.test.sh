@@ -60,7 +60,7 @@ echo -$x-  # fails with type error
 #### List->extend()
 var l = list(1..3)
 echo $[len(l)]
-:: l->extend(list(3..6))
+call l->extend(list(3..6))
 echo $[len(l)]
 ## STDOUT:
 2
@@ -72,10 +72,10 @@ shopt -s oil:all
 var l = list(1..3)
 
 var result = l->extend(list(3..6))
-:: assert_(result === null)
+call assert_(result === null)
 
 setvar result = l->append(6)
-:: assert_(result === null)
+call assert_(result === null)
 
 echo pass
 ## STDOUT:
@@ -85,10 +85,10 @@ pass
 #### List pop()
 shopt -s oil:all
 var l = list(1..5)
-:: assert_(l->pop() === 4)
-:: assert_(l->pop() === 3)
-:: assert_(l->pop() === 2)
-:: assert_(l->pop() === 1)
+call assert_(l->pop() === 4)
+call assert_(l->pop() === 3)
+call assert_(l->pop() === 2)
+call assert_(l->pop() === 1)
 echo pass
 ## STDOUT:
 pass

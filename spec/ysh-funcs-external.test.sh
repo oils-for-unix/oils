@@ -84,4 +84,3 @@ wok foo {
 # Notes:
 # - consider JSON-RPC
 # - consider multiple return values
-# - :: should be external

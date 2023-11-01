@@ -361,7 +361,7 @@ echo outside2=$?
 
 # Argument list
 run '
-:: split( $(false) )
+call split( $(false) )
 echo inside3=$?
 '
 echo outside3=$?

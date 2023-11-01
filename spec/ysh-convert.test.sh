@@ -132,11 +132,11 @@ true
 #### list() does shallow copy
 var l = [1]
 var l2 = l
-:: l2->append(2)
+call l2->append(2)
 echo $[len(l)] # d2 should be an alias for d
 
 var l3 = list(l)
-_ l3->append(3)
+call l3->append(3)
 
 # l3 should NOT be an alias
 echo $[len(l)]

@@ -133,7 +133,7 @@ hay define rule  # lower case allowed
 
 proc p(name; out) {
   echo 'p'
-  :: out->setValue(name)
+  call out->setValue(name)
 }
 
 rule hello {

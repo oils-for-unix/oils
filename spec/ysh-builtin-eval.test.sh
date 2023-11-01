@@ -33,7 +33,7 @@ In a block!
 
 #### Eval block created by calling a proc
 proc lazy-block ( ; out; ; block) {
-  :: out->setValue(block)
+  call out->setValue(block)
 }
 
 var myglobal = 0

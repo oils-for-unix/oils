@@ -549,7 +549,7 @@ try {
 echo $_status
 
 try {
-  :: 'foo' ++ 3
+  = 'foo' ++ 3
 }
 echo $_status
 
@@ -592,7 +592,7 @@ eval=3
 
 #### expression literals, evaluation failure
 var e = ^[1 / 0]
-:: evalExpr(e)
+call evalExpr(e)
 ## status: 3
 ## STDOUT:
 ## END

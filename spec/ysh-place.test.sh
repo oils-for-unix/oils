@@ -31,13 +31,13 @@ func f(place) {
 
 func fillPlace(place) {
   var x = 'fillPlace'
-  :: f(place)
+  call f(place)
   echo "fillPlace x=$x"
 }
 
 proc p {
   var x = 'hi'
-  :: fillPlace(&x)
+  call fillPlace(&x)
   echo "p x=$x"
 }
 
@@ -61,19 +61,19 @@ global x=global
 
 func f(place) {
   var x = 'f'
-  :: place->setValue('zzz')
+  call place->setValue('zzz')
   echo "f x=$x"
 }
 
 func fillPlace(place) {
   var x = 'fillPlace'
-  :: f(place)
+  call f(place)
   echo "fillPlace x=$x"
 }
 
 proc p {
   var x = 'hi'
-  :: fillPlace(&x)
+  call fillPlace(&x)
   echo "p x=$x"
 }
 
@@ -104,11 +104,11 @@ func g() {
   echo zzz | read --line (place)
 
   # This should also fail
-  # :: place->setValue('zzz')
+  # call place->setValue('zzz')
 
 }
 
-:: g()
+call g()
 
 echo done
 

@@ -162,7 +162,7 @@ for i in @(seq 2) {
 
   # push builtin is only for strings
 
-  :: e->append(o)
+  call e->append(o)
 }
 
 json write (e)
