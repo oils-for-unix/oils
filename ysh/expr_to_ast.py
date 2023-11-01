@@ -359,8 +359,8 @@ class Transformer(object):
         if id_ == Id.Op_LParen:
             # atom: '(' [yield_expr|testlist_comp] ')' | ...
             if n == 2:  # () is a tuple
-                assert parent.GetChild(
-                    1).tok.id == Id.Op_RParen, parent.GetChild(1)
+                assert (parent.GetChild(1).tok.id == Id.Op_RParen
+                        ), parent.GetChild(1)
                 return expr.Tuple(tok, [], expr_context_e.Store)
 
             return self._TestlistComp(parent, parent.GetChild(1), id_)
@@ -369,8 +369,8 @@ class Transformer(object):
             # atom: ... | '[' [testlist_comp] ']' | ...
 
             if n == 2:  # []
-                assert parent.GetChild(
-                    1).tok.id == Id.Op_RBracket, parent.GetChild(1)
+                assert (parent.GetChild(1).tok.id == Id.Op_RBracket
+                        ), parent.GetChild(1)
                 return expr.List(tok, [],
                                  expr_context_e.Store)  # unused expr_context_e
 
@@ -399,6 +399,20 @@ class Transformer(object):
         if id_ == Id.Expr_Func:
             # STUB.  This should really be a Func, not Lambda.
             return expr.Lambda([], expr.Implicit)
+
+        # 100 M
+        # Ignoring the suffix for now
+        if id_ == Id.Expr_DecInt:
+            assert n > 1
+            p_die("Units suffix not implemented", parent.GetChild(1).tok)
+            #return self.Expr(parent.GetChild(0))
+
+        # 100.5 M
+        # Ignoring the suffix for now
+        if id_ == Id.Expr_Float:
+            assert n > 1
+            p_die("unix suffix implemented", parent.GetChild(1).tok)
+            #return self.Expr(parent.GetChild(0))
 
         raise NotImplementedError(Id_str(id_))
 

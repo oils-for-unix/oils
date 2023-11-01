@@ -88,12 +88,17 @@ atom: (
   | '{' [Op_Newline] [dict] '}'
   | '/' regex [re_flags] '/'
   | '&' Expr_Name place_trailer*
+
     # NOTE: These atoms are are allowed in typed array literals
   | Expr_Name | Expr_Null | Expr_True | Expr_False 
-    # TODO: Allow suffixes on floats and decimals?
-    # You could frame it as multiplication, so 100 M is 100 * M, where
-    # M = 1_000_000
-  | Expr_Float | Expr_DecInt | Expr_BinInt | Expr_OctInt | Expr_HexInt 
+
+    # Allow suffixes on floats and decimals
+    # e.g. 100 M is a function M which multiplies by 1_000_000
+    # e.g. 100 Mi is a function Mi which multiplies by 1024 * 1024
+  | Expr_Float [Expr_Name]
+  | Expr_DecInt [Expr_Name]
+
+  | Expr_BinInt | Expr_OctInt | Expr_HexInt 
 
   | Char_OneChar  # char literal \n \\ etc.
   | Char_UBraced  # char literal \u{3bc}

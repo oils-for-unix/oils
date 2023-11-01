@@ -573,8 +573,11 @@ test-lazy-arg-list() {
 
 test-place-expr() {
   _should-parse 'read (&x)'
+
+  # TODO: parse these into something
   _should-parse 'read (&x[0])'
   _should-parse 'read (&x[0][1])'
+
   _should-parse 'read (&x.key.other)'
 
   # This is a runtime error, not a parse time error
@@ -586,6 +589,26 @@ test-place-expr() {
   # Place expressions aren't parenthesized expressions
   _parse-error 'read (&(x))'
 }
+
+test-units-suffix() {
+  _parse-error '= 100 M M'
+
+  _parse-error '= 100 M; echo'
+  _parse-error '= 100 Mi; echo'
+
+  _parse-error '= 9.9 Mi; echo'
+
+  # This is confusing, could disallow, or just rely on users not to type it
+  _parse-error '= 9.9e-1 Mi; echo'
+
+  # I don't like this, but it follows lexing rules I guess
+  _parse-error '= 100Mi'
+
+  _parse-error '= [100 Mi, 200 Mi]'
+
+  _parse-error '= {[42 Ki]: 43 Ki}'
+}
+
 
 #
 # Entry Points

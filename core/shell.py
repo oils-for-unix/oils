@@ -721,16 +721,20 @@ def Main(
         'startswith': method_str.StartsWith(),
         'endswith': None,  # TODO
 
-        # TODO: think about naming, e.g. trim() or trimLeft()
+        # TODO: think about naming, e.g. trim() or trimLeft() Note that in JS
+        # whitespace is Unicode aware
+        # 
+        # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
         'strip': method_str.Strip(),
         'lstrip': None,
         'rstrip': None,
 
-        # These have UNicode issues
+        # These also have Unicode support
         'upper': method_str.Upper(),
         'lower': None,
 
         # finds a substring, OR an eggex
+        # should it be findStr / replaceStr vs. findPat / replacePat?  subst() 
         'find': None,
 
         # Match eggex at certain position?  A constant string is also useful
@@ -791,6 +795,13 @@ def Main(
     methods[value_e.Place] = {
         # instead of setplace keyword
         'setValue': method_other.SetValue(mem),
+    }
+
+    methods[value_e.Command] = {
+        # var x = ^(echo hi)
+        # Export source code and line number
+        # Useful for test frameworks and so forth
+        'export': None,
     }
 
     #
