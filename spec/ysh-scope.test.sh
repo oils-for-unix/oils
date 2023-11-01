@@ -364,45 +364,6 @@ foo-SS
 foo-TT
 ## END
 
-#### setref a, b = 'one', 'two'
-shopt --set parse_proc
-
-proc p(x, a Ref, b Ref) {
-  setref a, b = "${x}1", "${x}2"
-}
-
-p foo :c :d
-echo c=$c d=$d
-## STDOUT:
-c=foo1 d=foo2
-## END
-
-#### setref a[i]
-
-# You can do this in bash/mksh.  See nameref!
-
-shopt --set parse_proc
-
-proc set1(a Ref, item) {
-  setref a[1] = item
-}
-
-var a = %(one two three)
-var myarray = %(a b c)
-
-set1 :a zzz
-set1 :myarray z
-
-shopt --set oil:upgrade
-#write -- @a
-write -- @myarray
-
-## STDOUT:
-a
-z
-c
-## END
-
 #### unset inside proc uses local scope
 shopt --set parse_brace
 shopt --set parse_proc
