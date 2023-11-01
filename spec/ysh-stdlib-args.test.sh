@@ -1,7 +1,7 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
-# Some thoughts before writing code.  Hm can we do this entirely in user code, not as a builtin?
+# Can we do this entirely in user code, not as a builtin?
 #
 # The following is as close as possible to the python argparse which seems to work well
 
