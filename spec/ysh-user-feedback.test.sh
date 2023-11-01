@@ -68,7 +68,7 @@ EOF
 git-branch-merged | while read --line {
   # Note: this can't be 'const' because const is dynamic like 'readonly'.  And
   # we don't have block scope.
-  var line = _line->strip()  # removing leading space
+  var line = _reply->strip()  # removing leading space
 
   # with glob: line ~~ '\**'           (awkward)
   # with regex: line ~ / %start '*' /  (not terrible, but somewhat complex)
@@ -98,7 +98,7 @@ if (len(branchList) === 0) {
 # With "append".  Hm read --lines isn't bad.
 var branches2 = :| |
 git-branch-merged | while read --line {
-  var line2 = _line->strip()  # removing leading space
+  var line2 = _reply->strip()  # removing leading space
   if (line2 !== 'master' and not line2->startswith('*')) {
     append $line2 (branches2)
   }

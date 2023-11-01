@@ -342,35 +342,21 @@ class Read(vm._Builtin):
                             # we probably want read --row too
         """
         place = None  # type: value.Place
-        blame_loc = loc.Missing  # type: loc_t
 
         if cmd_val.typed_args:  # read --line (&x)
             rd = typed_args.ReaderForProc(cmd_val)
             place = rd.PosPlace()
             rd.Done()
 
-            blame_loc = cmd_val.typed_args.left
+            blame_loc = cmd_val.typed_args.left  # type: loc_t
 
         else:  # read --line
-            var_name, var_loc = arg_r.Peek2()
-            if var_name is None:
-                if arg.line:
-                    var_name = '_line'
-                elif arg.all:
-                    var_name = '_all'
-                else:
-                    raise AssertionError()
-            else:
-                # TODO: eliminate this idiom?
-
-                if var_name.startswith(':'):  # optional : sigil
-                    var_name = var_name[1:]
-                arg_r.Next()
+            var_name = '_reply'
 
             #log('VAR %s', var_name)
-            place = value.Place(LeftName(var_name, var_loc),
+            blame_loc = cmd_val.arg_locs[0]
+            place = value.Place(LeftName(var_name, blame_loc),
                                 self.mem.TopNamespace())
-            blame_loc = var_loc
 
         next_arg, next_loc = arg_r.Peek2()
         if next_arg is not None:
@@ -425,7 +411,7 @@ class Read(vm._Builtin):
             return self._ReadYsh(arg, arg_r, cmd_val)
 
         if cmd_val.typed_args:
-            raise error.Usage("doesn't accept typed args",
+            raise error.Usage("doesn't accept typed args without --line or --all",
                               cmd_val.typed_args.left)
 
         if arg.t >= 0.0:

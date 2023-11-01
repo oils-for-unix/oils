@@ -1,5 +1,5 @@
 
-## oils_failures_allowed: 7
+## oils_failures_allowed: 6
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -184,13 +184,14 @@ x=spam y=eggs
 x=foo y=bar
 ## END
 
-#### read (&x)
+#### read (&x) is usage error
 
 var x = null  # allow no initialization
 echo hello | read (&x)
-echo x=$x
+echo status=$?
 
 ## STDOUT:
+status=2
 ## END
 
 #### read --line --with-eol
@@ -198,32 +199,32 @@ shopt -s ysh:upgrade
 
 # Hm this preserves the newline?
 seq 3 | while read --line {
-  write line=$_line  # implisict
+  write reply=$_reply # implicit
 }
-write a b | while read --line --with-eol :myline {
-  write --end '' line=$myline
+write a b | while read --line --with-eol (&myline) {
+  write --end '' myline=$myline
 }
 ## STDOUT:
-line=1
-line=2
-line=3
-line=a
-line=b
+reply=1
+reply=2
+reply=3
+myline=a
+myline=b
 ## END
 
 #### read --line --qsn
 read --line --qsn <<EOF
 'foo\n'
 EOF
-write --qsn -- "$_line"
+write --qsn -- "$_reply"
 
 read --line --qsn <<EOF
 'foo\tbar hex=\x01 mu=\u{3bc}'
 EOF
-write --qsn --unicode u -- "$_line"
+write --qsn --unicode u -- "$_reply"
 
 echo '$' | read --line --qsn
-write --qsn -- "$_line"
+write --qsn -- "$_reply"
 
 ## STDOUT:
 'foo\n'
@@ -237,7 +238,7 @@ write --qsn -- "$_line"
 # I think you just check for those 2 chars
 
 echo $'$\'foo\'' | read --line --qsn
-write -- "$_line"
+write -- "$_reply"
 ## STDOUT:
 foo
 ## END
@@ -250,7 +251,7 @@ foo
 read --line --with-eol --qsn <<EOF
 'foo\n'
 EOF
-write --qsn -- "$_line"
+write --qsn -- "$_reply"
 ## STDOUT:
 'foo\n'
 ## END
@@ -297,10 +298,10 @@ two
 
 #### read --all
 echo foo | read --all
-echo "[$_all]"
+echo "[$_reply]"
 
 echo bad > tmp.txt
-read --all :x < tmp.txt
+read --all (&x) < tmp.txt
 echo "[$x]"
 
 ## STDOUT:
