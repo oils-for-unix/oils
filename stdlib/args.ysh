@@ -138,7 +138,7 @@ func parseArgs(spec, argv) {
   var value = null
   while (i < argc) {
     var arg = argv[i]
-    if (arg->startswith('-')) {
+    if (arg->startsWith('-')) {
       for flag in (spec.flags) {
         if ( (flag.short and flag.short === arg) or
              (flag.long and flag.long === arg) ) {

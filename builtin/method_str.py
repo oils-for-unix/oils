@@ -28,7 +28,7 @@ class StartsWith(vm._Callable):
         return value.Bool(res)
 
 
-class Strip(vm._Callable):
+class Trim(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -40,6 +40,10 @@ class Strip(vm._Callable):
         string = rd.PosStr()
         rd.Done()
 
+        # TODO: Make this remove unicode spaces
+        # Note that we're not calling this function strip() because it doesn't
+        # implement Python's whole API.
+        # trim() is shorter and it's consistent with JavaScript.
         res = string.strip()
         return value.Str(res)
 

@@ -97,9 +97,10 @@ module value
     # The frame MUST be lower on the stack at the time of use.
   | Place(y_lvalue lval, Dict[str, Cell] frame)
 
-    # Passed into "dot procs" that can mutate the calling frame:
-    # Flags :spec { .flag -v --verbose }
-  | Frame(Dict[str, Cell] fr)
+    # for Flags/flag and Flags/arg?
+    # for json read/write ?
+    # Possibly unify Hay and modules/namespaces
+  | Module(Dict[str, value] defs)
 
     # This has methods attached to it, and it may also have a cmd_ev instance.
   | IO(any obj)

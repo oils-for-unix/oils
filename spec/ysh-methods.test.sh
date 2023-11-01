@@ -1,12 +1,11 @@
 # spec/ysh-methods
 
 ## our_shell: ysh
-## oils_failures_allowed: 0
 
-#### Str->startswith
-= "abc"->startswith("")
-= "abc"->startswith("a")
-= "abc"->startswith("z")
+#### Str->startsWith
+= "abc"->startsWith("")
+= "abc"->startsWith("a")
+= "abc"->startsWith("z")
 ## status: 0
 ## STDOUT:
 (Bool)   True
@@ -14,12 +13,12 @@
 (Bool)   False
 ## END
 
-#### Str->startswith, no args
-= "abc"->startswith()
+#### Str->startsWith, no args
+= "abc"->startsWith()
 ## status: 3
 
-#### Str->startswith, too many args
-= "abc"->startswith("extra", "arg")
+#### Str->startsWith, too many args
+= "abc"->startsWith("extra", "arg")
 ## status: 3
 
 #### Missing method (Str->doesNotExist())
@@ -38,7 +37,7 @@ setvar en2fr["cat"] = "chat"
 ## END
 
 #### Separation of -> attr and () calling
-const check = "abc"->startswith
+const check = "abc"->startsWith
 = check("a")
 ## status: 0
 ## STDOUT:
@@ -53,7 +52,7 @@ setvar is_a_ref["baz"] = 42
 = f()
 
 var is_a_val = "abc"
-const g = is_a_val->startswith
+const g = is_a_val->startsWith
 = g("a")
 setvar is_a_val = "xyz"
 = g("a")

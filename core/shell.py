@@ -717,17 +717,18 @@ def Main(
     #
 
     methods[value_e.Str] = {
-        # TODO: startsWith()?
-        'startswith': method_str.StartsWith(),
-        'endswith': None,  # TODO
+        'startsWith': method_str.StartsWith(),
+        'endsWith': None,  # TODO
 
-        # TODO: think about naming, e.g. trim() or trimLeft() Note that in JS
-        # whitespace is Unicode aware
-        # 
+        # These functions are unicode aware
         # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-        'strip': method_str.Strip(),
-        'lstrip': None,
-        'rstrip': None,
+        'trim': method_str.Trim(),
+        'trimLeft': None,
+        'trimRight': None,
+
+        # like Python 3.9 removeprefix() removesuffix()
+        'trimPrefix': None,
+        'trimSuffix': None,
 
         # These also have Unicode support
         'upper': method_str.Upper(),

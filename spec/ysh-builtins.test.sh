@@ -519,7 +519,7 @@ func f() {
 
 echo $[type(f)]
 echo $[type(len)]
-echo $[type('foo'->startswith)]
+echo $[type('foo'->startsWith)]
 echo $[type(1..3)]
 ## STDOUT:
 Int

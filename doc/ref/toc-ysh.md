@@ -230,6 +230,11 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-type-method
   [Primitive] Bool   Int   Float   Str   Slice   Range   
+  [Str]       X find(eggex)   X replace(eggex, template)
+              startsWith()   X endsWith()
+              X trim()   X trimLeft()   X trimRight()
+              X trimPrefix()   X trimSuffix()
+              upper()   lower()  # ascii or unicode
   [List]      append()   pop()   extend()   X find()   join()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
@@ -244,7 +249,7 @@ X [Other]     Place   IO
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()   type() 
+  [Values]        len()   type()
   [Conversions]   bool()   int()   float()   str()   list()   dict()
                   X chr()   X ord()   X encodeRunes()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
@@ -253,17 +258,12 @@ X [J8 Decode]     J8.Bool()   J8.Int()  ...
                   copy()   deepCopy()
   [Word]          glob()   maybe()
   [Math]          abs()   max()   min()   X round()   sum()
-X [Str]           countRunes()   
-                  find(eggex)   replace(eggex, template)
-                  startsWith()   endsWith()
-                  strip()   lstrip()   rstrip()  # set of chars, prefix suffix
-                  upper()   lower()  # ascii or unicode
 X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()
 X [Serialize]     toJ8()   fromJ8()
                   toJson()   fromJson()
   [Pattern]       _match()   X _start()   X _end()
-  [Introspection] shvarGet()   procs()   evalExpr()
+  [Introspection] shvarGet()   evalExpr()
   [Hay Config]    parseHay()   evalHay()
 X [Date Time]     strftime()
 X [Wok]           _field()
