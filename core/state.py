@@ -1508,7 +1508,7 @@ class Mem(object):
                         break
                 if not found:
                     e_die(
-                        "Can't assign to invalid, dangling place.  It must be on the call stack.",
+                        "Can't assign to place that's no longer on the call stack.",
                         blame_loc)
 
                 cell = frame.get(yval.name)

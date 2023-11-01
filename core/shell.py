@@ -66,6 +66,7 @@ from builtin import func_misc
 
 from builtin import method_dict
 from builtin import method_list
+from builtin import method_other
 from builtin import method_str
 
 from ysh import expr_eval
@@ -741,8 +742,8 @@ def Main(
     }
 
     methods[value_e.Place] = {
-        # instead of setPlace keyword?
-        'setValue': None,
+        # instead of setplace keyword
+        'setValue': method_other.SetValue(mem),
     }
 
     #

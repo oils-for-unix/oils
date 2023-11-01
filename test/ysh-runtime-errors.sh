@@ -760,6 +760,31 @@ test-equality() {
   '
 }
 
+test-place() {
+  _expr-error-case '
+  var a = null
+  var p = &a
+  :: p->setValue()  # 1 arg
+  '
+
+  _expr-error-case '
+  var a = null
+  var p = &a
+  :: p->setValue(3, 4)
+  '
+
+  _error-case '
+  func f() {
+    var s = "foo"
+    return (&s)
+
+  }
+  var p = f()
+  :: p->setValue(3)
+  '
+
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

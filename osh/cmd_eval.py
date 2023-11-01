@@ -1470,7 +1470,8 @@ class CommandEvaluator(object):
                         expr_val = self.expr_ev.EvalExpr(
                             pat_expr, case_arm.left)
 
-                        if val_ops.ExactlyEqual(expr_val, to_match, case_arm.left):
+                        if val_ops.ExactlyEqual(expr_val, to_match,
+                                                case_arm.left):
                             status = self._ExecuteList(case_arm.action)
                             matched = True
                             break

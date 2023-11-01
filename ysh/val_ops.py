@@ -402,7 +402,8 @@ def ExactlyEqual(left, right, blame_loc):
                 return False
 
             for k in left.d.keys():
-                if k not in right.d or not ExactlyEqual(right.d[k], left.d[k], blame_loc):
+                if (k not in right.d or
+                        not ExactlyEqual(right.d[k], left.d[k], blame_loc)):
                     return False
 
             return True

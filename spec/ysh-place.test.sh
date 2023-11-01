@@ -57,6 +57,37 @@ p x=zzz
 global x=global
 ## END
 
+#### place->setValue()
+
+func f(place) {
+  var x = 'f'
+  :: place->setValue('zzz')
+  echo "f x=$x"
+}
+
+func fillPlace(place) {
+  var x = 'fillPlace'
+  :: f(place)
+  echo "fillPlace x=$x"
+}
+
+proc p {
+  var x = 'hi'
+  :: fillPlace(&x)
+  echo "p x=$x"
+}
+
+x=global
+
+p
+echo "global x=$x"
+
+## STDOUT:
+f x=f
+fillPlace x=fillPlace
+p x=zzz
+global x=global
+## END
 
 #### Places can't dangle; they should be passed UP the stakc only
 
