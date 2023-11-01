@@ -9,14 +9,14 @@
 
 source --builtin args.ysh
 
-Args :spec {
-  flag -v --verbose (Bool)
+Args (&spec) {
+  flag -v --verbose ('bool')
   arg src
   arg dst
 
   rest more  # allow more args
 }
-json write (spec)
+#json write (spec)
 
 var argv = ['-v', 'src/path', 'dst/path']
 
@@ -26,25 +26,18 @@ var argv = ['-v', 'src/path', 'dst/path']
 var result = parseArgs(spec, argv)
 setvar arg, i = result
 
-json write (arg)
+json write --pretty=F (arg)
 json write (i)
 ## STDOUT:
-{
-  "verbose": true,
-  "src": "src/path",
-  "dst": "dst/path"
-}
-# TODO: Should this be empty afterwards? Is it even possible with above call?
-[
-
-]
+{"verbose":true,"src":"src/path","dst":"dst/path","more":[]}
+3
 ## END
 
 #### Argparse basic help message
 
 source --builtin args.ysh
 
-Args :spec {
+Args (&spec) {
   description = '''
      Reference Implementation
   '''
@@ -148,7 +141,7 @@ Namespace(filename='example.sh', count='150', verbose=True)
 
 source --builtin args.ysh
 
-Args :spec {
+Args (&spec) {
   flag -v --verbose ('bool')
   arg src
   arg dst
@@ -190,7 +183,7 @@ json write (spec)
 
 source --builtin args.ysh
 
-Args :spec {
+Args (&spec) {
   flag -v --verbose ('bool', false)
   flag -c --count ('int', 120)
   arg file
