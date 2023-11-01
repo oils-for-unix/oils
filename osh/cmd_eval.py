@@ -95,7 +95,6 @@ from libc import FNM_CASEFOLD
 from typing import List, Dict, Tuple, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from _devbuild.gen.id_kind_asdl import Id_t
     from _devbuild.gen.option_asdl import builtin_t
     from _devbuild.gen.runtime_asdl import cmd_value_t
     from _devbuild.gen.syntax_asdl import Redir, EnvPair
@@ -137,13 +136,6 @@ class Deps(object):
         self.mutable_opts = None  # type: state.MutableOpts
         self.dumper = None  # type: dev.CrashDumper
         self.debug_f = None  # type: util._DebugFile
-
-
-def _PackFlags(keyword_id, flags=0):
-    # type: (Id_t, int) -> int
-
-    # Set/Clear are lower 8 bits, and keyword is the rest
-    return (keyword_id << 8) | flags
 
 
 def _HasManyStatuses(node):
@@ -706,7 +698,7 @@ class CommandEvaluator(object):
             self.mem.SetNamed(lval,
                               val,
                               scope_e.LocalOnly,
-                              flags=_PackFlags(Id.KW_Const, state.SetReadOnly))
+                              flags=state.SetReadOnly)
 
         else:  # var or const
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
@@ -736,14 +728,8 @@ class CommandEvaluator(object):
                     lvals.append(lval)
                     rhs_vals.append(items[i])
 
-            with switch(node.keyword.id) as case:
-                if case(Id.KW_Var):
-                    flags = _PackFlags(Id.KW_Var)
-                elif case(Id.KW_Const):
-                    # Same as hay block above
-                    flags = _PackFlags(Id.KW_Const, state.SetReadOnly)
-                else:
-                    raise AssertionError()
+            flags = (state.SetReadOnly
+                     if node.keyword.id == Id.KW_Const else 0)
 
             for i, lval in enumerate(lvals):
                 rval = rhs_vals[i]
@@ -799,10 +785,7 @@ class CommandEvaluator(object):
                 if lval.tag() == y_lvalue_e.Local:
                     lval = cast(LeftName, UP_lval)
 
-                    self.mem.SetNamed(lval,
-                                      rval,
-                                      which_scopes,
-                                      flags=_PackFlags(node.keyword.id))
+                    self.mem.SetNamed(lval, rval, which_scopes)
 
                 elif lval.tag() == y_lvalue_e.Container:
                     lval = cast(y_lvalue.Container, UP_lval)
@@ -1409,8 +1392,10 @@ class CommandEvaluator(object):
             self.expr_ev, node)
         func_val = value.Func(name, node, pos_defaults, named_defaults, None)
 
-        self.mem.SetNamed(lval, func_val, scope_e.LocalOnly,
-                          _PackFlags(Id.KW_Func, state.SetReadOnly))
+        self.mem.SetNamed(lval,
+                          func_val,
+                          scope_e.LocalOnly,
+                          flags=state.SetReadOnly)
 
     def _DoIf(self, node):
         # type: (command.If) -> int

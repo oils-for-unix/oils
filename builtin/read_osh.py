@@ -411,8 +411,9 @@ class Read(vm._Builtin):
             return self._ReadYsh(arg, arg_r, cmd_val)
 
         if cmd_val.typed_args:
-            raise error.Usage("doesn't accept typed args without --line or --all",
-                              cmd_val.typed_args.left)
+            raise error.Usage(
+                "doesn't accept typed args without --line or --all",
+                cmd_val.typed_args.left)
 
         if arg.t >= 0.0:
             if arg.t != 0.0:
