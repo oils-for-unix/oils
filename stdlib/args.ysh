@@ -159,7 +159,7 @@ func parseArgs(spec, argv) {
         error ("Too many arguments, unexpected '$arg'")
       }
 
-      _ rest->append(arg)
+      call rest->append(arg)
     } else {
       var pos = spec.args[positionalPos]
       setvar positionalPos += 1

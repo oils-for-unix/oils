@@ -239,7 +239,7 @@ test-EvalExpr-calls() {
   _expr-error-case 'json write (len(42))'
 
   _expr-error-case '= len(42)'
-  _expr-error-case '_ len(42)'
+  _expr-error-case 'call len(42)'
 
   _expr-error-case 'echo $[len(42)]'
   _expr-error-case 'echo $[len(z = 42)]'
@@ -654,14 +654,14 @@ test-func-missing() {
   func f(x, y) {
     echo "$x $y"
   }
-  _ f(1)
+  call f(1)
   '
 
   _expr-error-case '
   func f(x, y; z) {
     echo "$x $y"
   }
-  _ f(3, 4)
+  call f(3, 4)
   '
 
 }
@@ -671,14 +671,14 @@ test-func-extra() {
   func f() {
     echo "$x $y"
   }
-  _ f(42)  # extra pos
+  call f(42)  # extra pos
   '
 
   _expr-error-case '
   func f() {
     echo "$x $y"
   }
-  _ f(; x=32)  # extra named
+  call f(; x=32)  # extra named
   '
 }
 
@@ -754,13 +754,13 @@ test-place() {
   _expr-error-case '
   var a = null
   var p = &a
-  :: p->setValue()  # 1 arg
+  call p->setValue()  # 1 arg
   '
 
   _expr-error-case '
   var a = null
   var p = &a
-  :: p->setValue(3, 4)
+  call p->setValue(3, 4)
   '
 
   _error-case '
@@ -770,7 +770,7 @@ test-place() {
 
   }
   var p = f()
-  :: p->setValue(3)
+  call p->setValue(3)
   '
 
 }

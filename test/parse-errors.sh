@@ -853,7 +853,7 @@ ysh_to_make_nicer() {
 
   # expects expression on right
   _ysh-parse-error '='
-  _ysh-parse-error '_'
+  _ysh-parse-error 'call'
 
   # What about \u{123} parse errors
   # I get a warning now, but parse_backslash should give a syntax error

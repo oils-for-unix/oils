@@ -27,18 +27,3 @@ echo @x
 ## STDOUT:
 one two
 ## END
-
-#### _ as expression keyword
-
-var a = :|one two|
-
-_ a->append('three')
-
-shopt --set parse_at
-
-echo @a
-
-## STDOUT:
-one two three
-## END
-
