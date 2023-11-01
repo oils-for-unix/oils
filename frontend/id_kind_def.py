@@ -609,7 +609,6 @@ def AddKinds(spec):
             'Const',
             'Var',
             'SetVar',
-            'SetRef',
             'SetGlobal',
             # later: Auto
             'Proc',

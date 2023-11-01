@@ -207,7 +207,6 @@ _KEYWORDS = [
     C('const', Id.KW_Const),
     C('var', Id.KW_Var),
     C('setvar', Id.KW_SetVar),
-    C('setref', Id.KW_SetRef),
     C('setglobal', Id.KW_SetGlobal),
     C('proc', Id.KW_Proc),
 

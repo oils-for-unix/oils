@@ -58,7 +58,6 @@ module runtime
   Cell = (bool exported, bool readonly, bool nameref, value val)
 
   # Where scopes are used
-  # Parent: for the 'setref' keyword
   # Shopt: to respect shopt -u dynamic_scope.
   #   Dynamic -> LocalOrGlobal for reading
   #   Dynamic -> LocalOnly for writing.
@@ -75,7 +74,7 @@ module runtime
   #   GetValue: N/A
   #   SetValue: internal use in COMPREPLY, and Oil's 'setglobal' keyword
 
-  scope = Parent | Shopt | Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly
+  scope = Shopt | Dynamic | LocalOrGlobal | LocalOnly | GlobalOnly
 
   # What is valid in arrays or assoc arrays a[i] or A[i] in shell.
   # Used for ${a[i]=x}.

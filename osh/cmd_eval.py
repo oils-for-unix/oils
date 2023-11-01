@@ -759,9 +759,6 @@ class CommandEvaluator(object):
                 which_scopes = scope_e.LocalOnly
             elif case2(Id.KW_SetGlobal):
                 which_scopes = scope_e.GlobalOnly
-            elif case2(Id.KW_SetRef):
-                # The out param is LOCAL, but the nameref lookup is dynamic
-                which_scopes = scope_e.LocalOnly
             else:
                 raise AssertionError(node.keyword.id)
 
@@ -831,9 +828,6 @@ class CommandEvaluator(object):
                             raise error.TypeErr(
                                 obj, "obj[index] expected List or Dict",
                                 loc.Missing)
-
-                    if node.keyword.id == Id.KW_SetRef:
-                        e_die('setref obj[index] not implemented')
 
                 else:
                     raise AssertionError()
