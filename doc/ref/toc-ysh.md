@@ -229,14 +229,13 @@ X [Builtin Sub]   _buffer
 </h2>
 
 ```chapter-links-type-method
-  [Primitive] Bool   Int   Float   Str
-              Slice   Range   BoundFunc
-  [Code]      Eggex   Expr   X Template   Command
+  [Primitive] Bool   Int   Float   Str   Slice   Range   
   [List]      append()   pop()   extend()   X index()   join()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
-X [Proc]      export()   location()
-X [Func]      export()   location()
+  [Quotation] Expr   X Template   Command
+  [Code]      Func    Proc    BuiltinFunc   BuiltinMethod
+X [Other]     Place   IO
 ```
 
 <h2 id="builtin-func">

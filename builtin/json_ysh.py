@@ -1,8 +1,9 @@
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.runtime_asdl import scope_e, cmd_value
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.value_asdl import value, LeftName
 from builtin import read_osh
 from core import error
 from core.error import e_usage
@@ -12,8 +13,6 @@ from core import vm
 from data_lang import j8
 from frontend import flag_spec
 from frontend import args
-from frontend import location
-from frontend import match
 from frontend import typed_args
 from mycpp import mylib
 from ysh import cpython
@@ -99,16 +98,23 @@ class Json(vm._Builtin):
             # TODO:
             # Respect -validate=F
 
-            var_name, name_loc = arg_r.ReadRequired2("expected variable name")
-            if var_name.startswith(':'):
-                var_name = var_name[1:]
+            if cmd_val.typed_args:  # json read (&x)
+                rd = typed_args.ReaderForProc(cmd_val)
+                place = rd.PosPlace()
+                rd.Done()
+
+                blame_loc = cmd_val.typed_args.left  # type: loc_t
+
+            else:  # json read
+                var_name = '_reply'
+
+                #log('VAR %s', var_name)
+                blame_loc = cmd_val.arg_locs[0]
+                place = value.Place(LeftName(var_name, blame_loc),
+                                    self.mem.TopNamespace())
 
             if not arg_r.AtEnd():
                 e_usage('read got too many args', arg_r.Location())
-
-            if not match.IsValidVarName(var_name):
-                raise error.Usage('got invalid variable name %r' % var_name,
-                                  name_loc)
 
             try:
                 contents = read_osh.ReadAll()
@@ -128,8 +134,7 @@ class Json(vm._Builtin):
 
                 # TODO: use token directly
                 val = cpython._PyObjToValue(obj)
-                self.mem.SetNamed(location.LName(var_name), val,
-                                  scope_e.LocalOnly)
+                self.mem.SetPlace(place, val, blame_loc)
 
         else:
             raise error.Usage(_JSON_ACTION_ERROR, action_loc)

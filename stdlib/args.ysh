@@ -54,7 +54,7 @@ proc Args ( ; out; ; block) {
   }
 
   eval (block) | while read line {
-    json read parsed <<< $line
+    json read (&parsed) <<< $line
     var spec_frag = dict(parsed)
 
     case (spec_frag.tag) {

@@ -250,11 +250,14 @@ Write JSON:
     var d = {name: 'bob', age: 42}
     json write (d)
 
-Read JSON into a variable:
+Read JSON:
+
+    echo hi | json read  # fills $_reply by default
+
+Or use an explicit place:
 
     var x = ''
-    json read :x < myfile.txt
-
+    json read (&x) < myfile.txt
 
 ## Testing
 

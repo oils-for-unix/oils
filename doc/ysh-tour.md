@@ -956,8 +956,8 @@ Example:
 
     echo '["ale", 42]' > example.json
 
-    json read :d2 < example.json  # parse JSON into var d2
-    pp cell d2                    # inspect the in-memory value
+    json read (&d2) < example.json  # parse JSON into var d2
+    pp cell d2                      # inspect the in-memory value
     # =>
     # ['ale', 42]
 

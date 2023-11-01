@@ -775,6 +775,15 @@ test-place() {
 
 }
 
+test-json() {
+  _expr-error-case 'json write'
+  _expr-error-case 'json write (42, 43)'
+
+  _error-case-X 2 'json read zz'
+  _error-case-X 2 'json read yy zz'
+  _error-case-X 3 'json read (&x, 43)'
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

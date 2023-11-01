@@ -2232,8 +2232,8 @@ class CommandParser(object):
         # YSH Extensions
 
         if self.c_id == Id.KW_Proc:  # proc p { ... }
-            # proc is hidden because of the 'local reasoning' principle
-            # Code inside procs should be YSH, full stop.  That means oil:upgrade is
+            # proc is hidden because of the 'local reasoning' principle.  Code
+            # inside procs should be YSH, full stop.  That means ysh:upgrade is
             # on.
             if self.parse_opts.parse_proc():
                 return self.ParseYshProc()

@@ -3,7 +3,7 @@
 
 #### usage errors
 
-json read
+json read zz
 echo status=$?
 
 json write
@@ -94,36 +94,51 @@ echo $x
 ## END
 
 #### json read passed invalid args
+
+# EOF
 json read
 echo status=$?
+
 json read 'z z'
 echo status=$?
+
 json read a b c
 echo status=$?
+
 ## STDOUT:
-status=2
+status=1
 status=2
 status=2
 ## END
 
+#### json read uses $_reply var
+
+echo '{"age": 42}' | json read
+json write (_reply)
+
+## STDOUT:
+{
+  "age": 42
+}
+## END
 
 #### json read with redirect
 echo '{"age": 42}'  > $TMP/foo.txt
-json read :x < $TMP/foo.txt
+json read (&x) < $TMP/foo.txt
 pp cell :x
 ## STDOUT:
 x = (Cell exported:F readonly:F nameref:F val:(value.Dict d:[Dict age (value.Int i:42)]))
 ## END
 
 #### json read at end of pipeline (relies on lastpipe)
-echo '{"age": 43}' | json read :y
+echo '{"age": 43}' | json read (&y)
 pp cell y
 ## STDOUT:
 y = (Cell exported:F readonly:F nameref:F val:(value.Dict d:[Dict age (value.Int i:43)]))
 ## END
 
 #### invalid JSON
-echo '{' | json read :y
+echo '{' | json read (&y)
 echo pipeline status = $?
 pp cell y
 ## status: 1
