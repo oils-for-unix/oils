@@ -184,23 +184,6 @@ x=spam y=eggs
 x=foo y=bar
 ## END
 
-#### OLD setref Idiom for returning 'read'
-shopt --set parse_proc
-
-proc p(out Ref) {
-  #var tmp = ''
-
-  # We can't do read :out in Oil.  I think that's OK -- there's consistency in
-  # using setref everywhere.
-  echo foo | read :tmp
-  setref out = tmp
-}
-p :z
-echo z=$z
-## STDOUT:
-z=foo
-## END
-
 #### read (&x)
 
 var x = null  # allow no initialization
