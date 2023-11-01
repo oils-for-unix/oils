@@ -609,6 +609,14 @@ test-units-suffix() {
   _parse-error '= {[42 Ki]: 43 Ki}'
 }
 
+test-type-expr() {
+  # This is nicer
+  _should-parse 'var x: Int = f()'
+
+  # This doesn't use colon because it already uses semi-colon
+  _should-parse 'proc p (; x Int) { echo hi }'
+}
+
 
 #
 # Entry Points

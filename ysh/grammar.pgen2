@@ -276,7 +276,13 @@ simple_var_sub: (
 #   [x for x Int, y Int in ...]
 #   var x Int, y Int = 3, 5
 #   func(x Int, y Int)
-name_type: Expr_Name [type_expr]
+
+# Optional colon because we want both
+
+#   var x: Int = 42                             # colon looks nicer
+#   proc p (; x Int, y Int; z Int) { echo hi }  # colon gets in the way of ;
+
+name_type: Expr_Name [':'] [type_expr]
 name_type_list: name_type (',' name_type)*
 
 type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
@@ -305,9 +311,6 @@ ysh_lazy_arglist: '[' [arglist] ']'
 
 # for if (x > 0) etc.
 ysh_expr: '(' testlist ')'
-
-# Example: for (a Int, b Int in expr) { ... }
-ysh_for: '(' name_type_list 'in' testlist ')'
 
 # e.g. return 1 + 2 * 3
 command_expr: testlist end_stmt
