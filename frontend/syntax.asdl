@@ -391,10 +391,15 @@ module syntax
 
     # YSH command constructs
 
-    # For 'x = myexpr'.  There's no type and no comma allowed.
+    # var, const.
+    # - Keyword is None for hay blocks
+    # - RHS is None, for use with value.Place
+    # - TODO: consider using BareDecl
+  | VarDecl(Token? keyword, List[NameType] lhs, expr? rhs)
+
+    # this can behave like 'var', can be desugared
   | BareDecl(Token lhs, expr rhs)
-    # var, const
-  | VarDecl(Token? keyword, List[NameType] lhs, expr rhs)
+
     # setvar, maybe 'auto' later
   | Mutation(Token keyword, List[y_lhs] lhs, Token op, expr rhs)
     # = keyword

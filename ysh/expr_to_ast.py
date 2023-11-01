@@ -779,18 +779,23 @@ class Transformer(object):
 
     def MakeVarDecl(self, p_node):
         # type: (PNode) -> command.VarDecl
-        """ysh_var_decl: name_type_list '=' testlist end_stmt."""
-        typ = p_node.typ
-        assert typ == grammar_nt.ysh_var_decl
+        """
+        ysh_var_decl: name_type_list ['=' testlist] end_stmt
+        """
+        assert p_node.typ == grammar_nt.ysh_var_decl
 
-        #log('len(children) = %d', len(children))
         lhs = self._NameTypeList(p_node.GetChild(0))  # could be a tuple
+
         # This syntax is confusing, and different than JavaScript
         #   var x, y = 1, 2
         # But this is useful:
         #   var flag, i = parseArgs(spec, argv)
 
-        rhs = self.Expr(p_node.GetChild(2))
+        n = p_node.NumChildren()
+        if n >= 3:
+            rhs = self.Expr(p_node.GetChild(2))
+        else:
+            rhs = None
 
         # The caller should fill in the keyword token.
         return command.VarDecl(None, lhs, rhs)

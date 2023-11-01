@@ -291,7 +291,7 @@ type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
 # in command subs.
 end_stmt: '}' | ';' | Op_Newline | Eof_Real 
 
-ysh_var_decl: name_type_list '=' testlist end_stmt
+ysh_var_decl: name_type_list ['=' testlist] end_stmt
 
 # Note: this production is more precise as the following, but it's ambiguous :(
 #ysh_setvar: lhs augassign testlist end_stmt

@@ -571,7 +571,6 @@ class CommandEvaluator(object):
                 # YSH:
                 # command_e.VarDecl, command_e.Mutation,
                 # command_e.Proc, command_e.Func, command_e.Expr,
-                # command_e.BareDecl
                 redirects = []
 
         result = []  # type: List[RedirValue]
@@ -693,6 +692,7 @@ class CommandEvaluator(object):
         if node.keyword is None:
             # Note: there's only one LHS
             lval = location.LName(node.lhs[0].name.tval)
+            assert node.rhs is not None, node
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
             self.mem.SetNamed(lval,
@@ -701,8 +701,15 @@ class CommandEvaluator(object):
                               flags=state.SetReadOnly)
 
         else:  # var or const
-            right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
+            # var x, y does null initialization
+            if node.rhs is None:
+                for i, lhs_val in enumerate(node.lhs):
+                    lval = location.LName(lhs_val.name.tval)
+                    # Note: not respecting const since they should be initialized
+                    self.mem.SetNamed(lval, value.Null, scope_e.LocalOnly)
+                return 0
 
+            right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
             lvals = None  # type: List[LeftName]
             rhs_vals = None  # type: List[value_t]
 

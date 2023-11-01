@@ -3,30 +3,6 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 2
 
-# TODO: GetVar needs a mode where Obj[str] gets translated to value.Str?
-# Then all code will work.
-#
-# word_eval:
-#
-# val = self.mem.GetVar(var_name) ->
-# val = GetWordVar(self.mem, var_name)
-#
-# Conversely, in ysh/expr_eval.py:
-# LookupVar gives you a plain Python object.  I don't think there's any
-# downside here.
-#
-# pp exposes the differences.
-#
-# Notes:
-#
-# - osh/cmd_exec.py handles OilAssign, which gets wrapped in value.Obj()
-# - osh/word_eval.py _ValueToPartValue handles 3 value types.  Used in:
-#   - _EvalBracedVarSub
-#   - SimpleVarSub in _EvalWordPart
-# - osh/expr_eval.py: _LookupVar wrapper should disallow using Oil values
-#   - this is legacy stuff.  Both (( )) and [[ ]]
-#   - LhsIndexedName should not reference Oil vars either
-
 #### proc static check: const can't be mutated
 proc f {
   const x = 'local'
@@ -39,7 +15,7 @@ proc f {
 ## END
 
 #### top-level dynamic check: const can't be be mutated
-shopt -s oil:all
+shopt -s ysh:all
 
 const x = 'foo'
 echo x=$x
@@ -113,7 +89,7 @@ echo $y
 ## END
 
 #### proc static check: variable changed by setvar must be declared
-shopt -s oil:all
+shopt -s ysh:all
 
 var x = 1
 f() {
@@ -157,6 +133,19 @@ setglobal y = 'YY'
 ## STDOUT:
 x=XX
 x=xx
+## END
+
+#### var a, b  does implicit null init
+
+var x
+var a, b
+
+var c: Int, d: Int
+
+echo $x $a $b $c $d
+
+## STDOUT:
+null null null null null
 ## END
 
 #### var x, y = f()
@@ -251,7 +240,7 @@ json write (d)
 ## END
 
 #### setvar d.key = 42 (setitem)
-shopt -s oil:all
+shopt -s ysh:all
 
 var d = {}
 setvar d['f2'] = 42
@@ -268,7 +257,7 @@ f2=42
 ## END
 
 #### setvar mylist[1] = 42 (setitem)
-shopt -s oil:all
+shopt -s ysh:all
 var mylist = [1,2,3]
 setvar mylist[1] = 42
 
@@ -278,7 +267,7 @@ write --sep ' ' @mylist
 ## END
 
 #### mixing assignment builtins and Oil assignment
-shopt -s oil:all parse_equals
+shopt -s ysh:all parse_equals
 
 proc local-var {
   local x=1
@@ -342,7 +331,7 @@ run() {
   $REPO_ROOT/bin/osh -O parse_proc -c "$@"
 
   # Identical
-  # $SH +O oil:all -O parse_proc -c "$@"
+  # $SH +O ysh:all -O parse_proc -c "$@"
 }
 
 set +o errexit
