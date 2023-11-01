@@ -421,8 +421,6 @@ class VarChecker(object):
           - no 'source'
           - shopt -u copy_env.
           - AND use lib has to be static
-        setref x:
-          Should only mutate out params
 
         Also should p(:out) declare 'out' as well as '__out'?  Then you can't have
         local variables with the same name.
@@ -2258,7 +2256,7 @@ class CommandParser(object):
                 self.var_checker.Check(keyword_id, lhs.name)
             return n8
 
-        if self.c_id in (Id.KW_SetVar, Id.KW_SetRef, Id.KW_SetGlobal):
+        if self.c_id in (Id.KW_SetVar, Id.KW_SetGlobal):
             kw_token = word_.LiteralToken(self.cur_word)
             self._SetNext()
             n9 = self.w_parser.ParseMutation(kw_token, self.var_checker)

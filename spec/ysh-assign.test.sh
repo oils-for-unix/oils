@@ -303,48 +303,6 @@ status=0
 status=1
 ## END
 
-#### setref out = 'YY'
-proc p (s, out Ref) {
-  setref out = 'YY'
-}
-var x = 'XX'
-echo x=$x
-p abcd :x
-echo x=$x
-
-p zz :undefined_var
-echo u=$undefined_var
-
-## STDOUT:
-x=XX
-x=YY
-u=YY
-## END
-
-#### setref composes: 2 levels deep
-proc q(s, out Ref) {
-  echo "q s=$s"
-  setref out = 'YY'
-}
-proc p(out Ref) {
-  # NOTE: This doesn't work
-  # q dummy :out
-  var tmp = ''
-  q dummy :tmp
-  setref out = tmp
-}
-
-var x = 'XX'
-echo x=$x
-p :x
-echo x=$x
-
-## STDOUT:
-x=XX
-q s=dummy
-x=YY
-## END
-
 #### circular dict - TODO 2023-06 REGRESS
 var d = {name: 'foo'}
 = d

@@ -1401,18 +1401,12 @@ class Mem(object):
             name_map = self.var_stack[0]
             return name_map.get(name), name_map
 
-        if which_scopes == scope_e.Parent:
-            assert len(self.var_stack) >= 2
-            name_map = self.var_stack[-2]
-            return name_map.get(name), name_map
-
         raise AssertionError()
 
     def _ResolveNameOrRef(
             self,
             name,  # type: str
             which_scopes,  # type: scope_t
-            is_setref,  # type: bool 
             ref_trail=None,  # type: Optional[List[str]]
     ):
         # type: (...) -> Tuple[Optional[Cell], Dict[str, Cell], str]
@@ -1423,8 +1417,6 @@ class Mem(object):
         cell, name_map = self._ResolveNameOnly(name, which_scopes)
 
         if cell is None or not cell.nameref:
-            if is_setref:
-                e_die("setref requires a nameref (:out param)")
             return cell, name_map, name  # not a nameref
 
         val = cell.val
@@ -1468,12 +1460,9 @@ class Mem(object):
                 e_die('Circular nameref %s' % ' -> '.join(ref_trail))
         ref_trail.append(new_name)
 
-        # 'declare -n' uses dynamic scope.  'setref' uses parent scope to avoid the
-        # problem of 2 procs containing the same variable name.
-        which_scopes = scope_e.Parent if is_setref else scope_e.Dynamic
+        # 'declare -n' uses dynamic scope.
         cell, name_map, cell_name = self._ResolveNameOrRef(new_name,
-                                                           which_scopes,
-                                                           False,
+                                                           scope_e.Dynamic,
                                                            ref_trail=ref_trail)
         return cell, name_map, cell_name
 
@@ -1484,8 +1473,7 @@ class Mem(object):
         We need to know this to evaluate the index expression properly
         -- should it be coerced to an integer or not?
         """
-        cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading(),
-                                            False)
+        cell, _, _ = self._ResolveNameOrRef(name, self.ScopesForReading())
         # foo=([key]=value)
         return cell is not None and cell.val.tag() == value_e.BashAssoc
 
@@ -1544,14 +1532,6 @@ class Mem(object):
     def SetNamed(self, lval, val, which_scopes, flags=0):
         # type: (LeftName, value_t, scope_t, int) -> None
 
-        keyword_id = flags >> 8  # opposite of _PackFlags
-        is_setref = keyword_id == Id.KW_SetRef
-
-        if keyword_id == Id.KW_SetRef:
-            # Hidden interpreter var with __ prefix.  Matches proc call in
-            # osh/cmd_eval.py
-            lval.name = '__' + lval.name  # Mutating arg lval!  Happens to be OK
-
         if flags & SetNameref or flags & ClearNameref:
             # declare -n ref=x  # refers to the ref itself
             cell, name_map = self._ResolveNameOnly(lval.name, which_scopes)
@@ -1566,7 +1546,7 @@ class Mem(object):
             # 3. Turn BracedVarSub into an sh_lvalue, and call
             #    self.unsafe_arith.SetValue() wrapper with ref_trail
             cell, name_map, cell_name = self._ResolveNameOrRef(
-                lval.name, which_scopes, is_setref)
+                lval.name, which_scopes)
 
         if cell:
             # Clear before checking readonly bit.
@@ -1654,19 +1634,12 @@ class Mem(object):
             elif case(sh_lvalue_e.Indexed):
                 lval = cast(sh_lvalue.Indexed, UP_lval)
 
-                keyword_id = flags >> 8  # opposite of _PackFlags
-                is_setref = keyword_id == Id.KW_SetRef
-
                 # There is no syntax 'declare a[x]'
                 assert val is not None, val
 
                 # TODO: relax this for Oil
                 assert val.tag() == value_e.Str, val
                 rval = cast(value.Str, val)
-
-                # 'setref' array[index] not implemented here yet
-                #if keyword_id == Id.KW_SetRef:
-                #  lval.name = '__' + lval.name
 
                 # Note: location could be a[x]=1 or (( a[ x ] = 1 ))
                 left_loc = lval.blame_loc
@@ -1675,7 +1648,7 @@ class Mem(object):
                 # Undef, which then turns into an INDEXED array.  (Undef means that set
                 # -o nounset fails.)
                 cell, name_map, _ = self._ResolveNameOrRef(
-                    lval.name, which_scopes, is_setref)
+                    lval.name, which_scopes)
                 if not cell:
                     self._BindNewArrayWithEntry(name_map, lval, rval, flags)
                     return
@@ -1729,9 +1702,6 @@ class Mem(object):
             elif case(sh_lvalue_e.Keyed):
                 lval = cast(sh_lvalue.Keyed, UP_lval)
 
-                keyword_id = flags >> 8  # opposite of _PackFlags
-                is_setref = keyword_id == Id.KW_SetRef
-
                 # There is no syntax 'declare A["x"]'
                 assert val is not None, val
                 assert val.tag() == value_e.Str, val
@@ -1740,7 +1710,7 @@ class Mem(object):
                 left_loc = lval.blame_loc
 
                 cell, name_map, _ = self._ResolveNameOrRef(
-                    lval.name, which_scopes, is_setref)
+                    lval.name, which_scopes)
                 if cell.readonly:
                     e_die("Can't assign to readonly associative array",
                           left_loc)
@@ -1927,7 +1897,7 @@ class Mem(object):
         # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
         # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
         #    We still need a ref_trail to detect cycles.
-        cell, _, _ = self._ResolveNameOrRef(name, which_scopes, False)
+        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
         if cell:
             return cell.val
 
@@ -1975,7 +1945,7 @@ class Mem(object):
             which_scopes = self.ScopesForWriting()
 
         cell, name_map, cell_name = self._ResolveNameOrRef(
-            var_name, which_scopes, False)
+            var_name, which_scopes)
         if not cell:
             return False  # 'unset' builtin falls back on functions
         if cell.readonly:
@@ -2195,7 +2165,7 @@ def OshLanguageSetValue(mem, lval, val, flags=0):
 
 def BuiltinSetValue(mem, lval, val):
     # type: (Mem, sh_lvalue_t, value_t) -> None
-    """Equivalent of x=$y or setref x = y.
+    """Equivalent of x=$y
 
     Called by BuiltinSetString and BuiltinSetArray Used directly by
     printf -v because it can mutate an array
@@ -2207,8 +2177,6 @@ def BuiltinSetString(mem, name, s):
     # type: (Mem, str, str) -> None
     """Set a string by looking up the stack.
 
-    # Equivalent of: proc p(:myref) {   setref myref = 's' }
-
     Used for 'read', 'getopts', completion builtins, etc.
     """
     assert isinstance(s, str)
@@ -2218,8 +2186,6 @@ def BuiltinSetString(mem, name, s):
 def BuiltinSetArray(mem, name, a):
     # type: (Mem, str, List[str]) -> None
     """Set an array by looking up the stack.
-
-    # Equivalent of: proc p(:myref) {   setref myref = %(a b c) }
 
     Used by compadjust, read -a, etc.
     """

@@ -35,7 +35,7 @@
 #     - that's what it's doing, it's mutating "self"
 #     - _this is the thing we're currently creating
 
-proc Args (spec Ref;;; block) {
+proc Args ( ; out; ; block) {
   ## Create an args spec which can be passed to parseArgs.
   ##
   ## Example:
@@ -47,7 +47,7 @@ proc Args (spec Ref;;; block) {
   ##
   ##   :: parseArgs(spec, ARGV)
 
-  setref spec = {
+  var spec = {
     flags: [],
     args: [],
     rest: null,
@@ -59,16 +59,17 @@ proc Args (spec Ref;;; block) {
 
     case (spec_frag.tag) {
       flag {
-        _ spec.flags->append(spec_frag.node)
+        :: spec.flags->append(spec_frag.node)
       }
       arg {
-        _ spec.args->append(spec_frag.node)
+        :: spec.args->append(spec_frag.node)
       }
       rest {
         setvar spec.rest = spec_frag.node
       }
     }
   }
+  :: out->setValue(spec)
 }
 
 proc flag (short, long; type='bool', default=null) {

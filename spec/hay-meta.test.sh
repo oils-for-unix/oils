@@ -131,17 +131,17 @@ shopt --set oil:all
 
 hay define rule  # lower case allowed
 
-proc p(name, out Ref) {
+proc p(name; out) {
   echo 'p'
-  setref out = name
+  :: out->setValue(name)
 }
 
 rule hello {
   var eggs = ''
   var bar = ''
 
-  p spam :eggs
-  p foo :bar
+  p spam (&eggs)
+  p foo (&bar)
 }
 
 json write (_hay()) | jq '.children[0].attrs' > actual.txt

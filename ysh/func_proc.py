@@ -5,7 +5,7 @@ User-defined funcs and procs
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (scope_e, cmd_value)
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, ParamGroup,
                                        NamedArg, Func, loc, ArgList, expr,
                                        expr_e, expr_t)
@@ -32,9 +32,6 @@ _ = log
 # - use _EvalExpr more?
 #   - a single with state.ctx_YshExpr -- I guess that's faster
 #   - although EvalExpr() can take param.blame_tok
-
-# - Probably introduce value.Ref
-#   - or it might need to be "tunneled" in a string
 
 
 def _DisallowMutableDefault(val, blame_loc):
@@ -281,52 +278,16 @@ def _BindWords(
     argv = cmd_val.argv[1:]
     num_args = len(argv)
     for i, p in enumerate(group.params):
-
-        # proc p(out Ref)
-        is_out_param = (p.type is not None and p.type.name == 'Ref')
-        #log('is_out %s', is_out_param)
-
-        param_name = p.name  # may get hidden __
         if i < num_args:
-            arg_str = argv[i]
-
-            # If we have myproc(p), and call it with myproc :arg, then bind
-            # __p to 'arg'.  That is, the param has a prefix ADDED, and the arg
-            # has a prefix REMOVED.
-            #
-            # This helps eliminate "nameref cycles".
-            if is_out_param:
-                param_name = '__' + param_name
-
-                if not arg_str.startswith(':'):
-                    # TODO: Point to the exact argument.  We got argv but not
-                    # locations.
-                    raise error.Expr(
-                        'Ref param %r expected arg starting with colon : but got %r'
-                        % (p.name, arg_str), blame_loc)
-
-                arg_str = arg_str[1:]
-
-            val = value.Str(arg_str)  # type: value_t
-            #log('%s -> %s', param_name, val)
-        else:
-            # default args were evaluated on definition
-
+            val = value.Str(argv[i])  # type: value_t
+        else:  # default args were evaluated on definition
             val = defaults[i]
             if val is None:
                 raise error.Expr(
                     "proc %r wasn't passed word param %r" %
                     (proc_name, p.name), blame_loc)
 
-        if is_out_param:
-            flags = state.SetNameref
-        else:
-            flags = 0
-
-        mem.SetValue(LeftName(param_name, p.blame_tok),
-                     val,
-                     scope_e.LocalOnly,
-                     flags=flags)
+        mem.SetLocalName(LeftName(p.name, p.blame_tok), val)
 
     # ...rest
 

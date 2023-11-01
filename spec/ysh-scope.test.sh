@@ -80,7 +80,7 @@ funset x=stack
 x=global
 ## END
 
-#### read scope (setref)
+#### read scope
 set -o errexit
 
 read-x() {
@@ -325,73 +325,6 @@ echo g=$g new_global=$new_global
 g=p new_global=p
 ## END
 
-#### setref with out Ref param
-shopt --set parse_proc
-
-proc set-it(s Ref, val) {
-  # s param is rewritten to __s to avoid name conflict
-  #pp cell __s
-  setref s = "foo-$val"
-}
-
-proc demo {
-  if true; then
-    var s = 'abc'
-    set-it :s SS
-    echo $s
-  fi
-
-  var t = 'def'
-  set-it :t TT
-  echo $t
-}
-
-demo
-
-## STDOUT:
-foo-SS
-foo-TT
-## END
-
-#### setref with conflicting variable name
-shopt --set parse_proc
-
-proc set-it(s Ref, val) {
-  #pp cell __s
-
-  # This breaks it!
-  var oops = ''
-  setref s = "foo-$val"
-}
-
-proc demo {
-  var oops = ''
-  set-it :oops zz
-  echo oops=$oops
-}
-
-demo
-
-## STDOUT:
-oops=foo-zz
-## END
-
-
-#### setref of regular param is a fatal error
-shopt --set parse_proc
-
-proc set-it(s Ref, val) {
-  setref val = 'oops'
-}
-
-var s = 'abc'
-set-it :s SS
-echo $s
-
-## status: 1
-## STDOUT:
-## END
-
 #### setref equivalent without pgen2 syntax, using open proc
 shopt --set parse_proc
 
@@ -429,45 +362,6 @@ echo $t
 ## STDOUT:
 foo-SS
 foo-TT
-## END
-
-#### setref a, b = 'one', 'two'
-shopt --set parse_proc
-
-proc p(x, a Ref, b Ref) {
-  setref a, b = "${x}1", "${x}2"
-}
-
-p foo :c :d
-echo c=$c d=$d
-## STDOUT:
-c=foo1 d=foo2
-## END
-
-#### setref a[i]
-
-# You can do this in bash/mksh.  See nameref!
-
-shopt --set parse_proc
-
-proc set1(a Ref, item) {
-  setref a[1] = item
-}
-
-var a = %(one two three)
-var myarray = %(a b c)
-
-set1 :a zzz
-set1 :myarray z
-
-shopt --set oil:upgrade
-#write -- @a
-write -- @myarray
-
-## STDOUT:
-a
-z
-c
 ## END
 
 #### unset inside proc uses local scope
