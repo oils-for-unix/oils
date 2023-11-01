@@ -6,22 +6,22 @@
 (Int)   7
 ## END
 
-#### :: to ignore return value
-:: 1 + 2 * 3
+#### 'call' to ignore return value
+call 1 + 2 * 3
 
 var strs = %(a b)
-:: len(strs)
-:: strs->append('c')
+call len(strs)
+call strs->append('c')
 write -- @strs
 
 # integer types too
 const L = [5, 6]
-:: L->append(7)
+call L->append(7)
 write -- @L
 
 write __
 
-:: L->pop()  # could also be pop :L
+call L->pop()
 write -- @L
 
 ## STDOUT:

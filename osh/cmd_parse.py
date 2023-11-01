@@ -2262,10 +2262,12 @@ class CommandParser(object):
             n9 = self.w_parser.ParseMutation(kw_token, self.var_checker)
             return n9
 
-        if self.c_id in (Id.Lit_DColon, Id.Lit_Underscore, Id.Lit_Equals):
+        if self.c_id in (Id.Lit_DColon, Id.Lit_Underscore, Id.KW_Call,
+                         Id.Lit_Equals):
             # = 42 + a[i]
-            # :: 42 + [ai]
-            # TODO: remove _
+            # call mylist->append('x')
+
+            # TODO: remove _ and ::
 
             keyword = word_.LiteralToken(self.cur_word)
             assert keyword is not None
