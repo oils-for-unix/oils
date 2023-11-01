@@ -33,6 +33,7 @@ _ = log
 #   - a single with state.ctx_YshExpr -- I guess that's faster
 #   - although EvalExpr() can take param.blame_tok
 
+
 def _DisallowMutableDefault(val, blame_loc):
     # type: (value_t, loc_t) -> None
     if val.tag() in (value_e.List, value_e.Dict):
@@ -278,7 +279,7 @@ def _BindWords(
     num_args = len(argv)
     for i, p in enumerate(group.params):
         if i < num_args:
-            val = value.Str(argv[i]) # type: value_t
+            val = value.Str(argv[i])  # type: value_t
         else:  # default args were evaluated on definition
             val = defaults[i]
             if val is None:
@@ -286,10 +287,7 @@ def _BindWords(
                     "proc %r wasn't passed word param %r" %
                     (proc_name, p.name), blame_loc)
 
-        mem.SetValue(LeftName(p.name, p.blame_tok),
-                     val,
-                     scope_e.LocalOnly,
-                     0)
+        mem.SetValue(LeftName(p.name, p.blame_tok), val, scope_e.LocalOnly, 0)
 
     # ...rest
 
