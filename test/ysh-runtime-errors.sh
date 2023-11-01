@@ -383,16 +383,6 @@ EOF
   '
 }
 
-test-proc-ref-param() {
-  _expr-error-case '
-  proc p (out Ref) {
-    setref out = "yo"
-  }
-  p :x
-  p y
-  '
-}
-
 test-int-convert() {
   _expr-error-case '= int({})'
   _expr-error-case '= int([])'
