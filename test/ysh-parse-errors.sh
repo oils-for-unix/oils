@@ -575,10 +575,10 @@ test-place-expr() {
   _should-parse 'read (&x)'
 
   # TODO: parse these into something
-  _should-parse 'read (&x[0])'
-  _should-parse 'read (&x[0][1])'
+  _parse-error 'read (&x[0])'
+  _parse-error 'read (&x[0][1])'
 
-  _should-parse 'read (&x.key.other)'
+  _parse-error 'read (&x.key.other)'
 
   # This is a runtime error, not a parse time error
   _should-parse 'read (&x + 1)'

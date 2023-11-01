@@ -392,7 +392,11 @@ class Transformer(object):
                 parent.GetChild(0).tok, r, flags, trans_pref)
 
         if id_ == Id.Arith_Amp:
-            # TODO: add place_ops
+            n = parent.NumChildren()
+            if n >= 3:
+                p_die("Places in containers not implemented yet",
+                      parent.GetChild(2).tok)
+
             name_tok = parent.GetChild(1).tok
             return expr.Place(name_tok, lexer.TokenVal(name_tok), [])
 
