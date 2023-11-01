@@ -225,59 +225,6 @@ f
 ## STDOUT:
 ## END
 
-#### Out param / setref
-shopt --set parse_proc
-
-proc f(input, out Ref) {  # : means accept a string "reference"
-  #pp cell __out
-  setref out = "PREFIX-$input"
-}
-
-var myvar = 'value'
-echo myvar=$myvar
-f zzz :myvar   # : means that it's the name of a variable
-echo myvar=$myvar
-
-## STDOUT:
-myvar=value
-myvar=PREFIX-zzz
-## END
-
-#### Pass out param through 2 levels of proc
-
-shopt --set parse_proc
-
-proc p(s, out Ref) {
-  setref out = "PREFIX-$s"  # only goes up ONE level
-}
-
-proc p2(s, out Ref) {
-  # SILLY MANUAL idiom, because setref only looks up one level (scope_e.Parent)
-
-  var tmp = null  # can be null
-  p $s :tmp
-  setref out = tmp
-
-  # TODO: test 
-  #   p (s, :tmp) 
-  #   p (s, 'tmp')
-  #
-  # I think there's no reason they shouldn't work
-  # You strip : in command mode, but in expr mode it's a string
-
-  echo tmp=$tmp
-}
-
-var top = 'top'
-p2 zzz :top
-echo top=$top
-
-## STDOUT:
-tmp=PREFIX-zzz
-top=PREFIX-zzz
-## END
-
-
 #### 'return' doesn't accept expressions
 proc p {
   return 1 + 2
