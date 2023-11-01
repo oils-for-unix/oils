@@ -80,7 +80,7 @@ funset x=stack
 x=global
 ## END
 
-#### read scope (setref)
+#### read scope
 set -o errexit
 
 read-x() {
@@ -323,73 +323,6 @@ p
 echo g=$g new_global=$new_global
 ## STDOUT:
 g=p new_global=p
-## END
-
-#### setref with out Ref param
-shopt --set parse_proc
-
-proc set-it(s Ref, val) {
-  # s param is rewritten to __s to avoid name conflict
-  #pp cell __s
-  setref s = "foo-$val"
-}
-
-proc demo {
-  if true; then
-    var s = 'abc'
-    set-it :s SS
-    echo $s
-  fi
-
-  var t = 'def'
-  set-it :t TT
-  echo $t
-}
-
-demo
-
-## STDOUT:
-foo-SS
-foo-TT
-## END
-
-#### setref with conflicting variable name
-shopt --set parse_proc
-
-proc set-it(s Ref, val) {
-  #pp cell __s
-
-  # This breaks it!
-  var oops = ''
-  setref s = "foo-$val"
-}
-
-proc demo {
-  var oops = ''
-  set-it :oops zz
-  echo oops=$oops
-}
-
-demo
-
-## STDOUT:
-oops=foo-zz
-## END
-
-
-#### setref of regular param is a fatal error
-shopt --set parse_proc
-
-proc set-it(s Ref, val) {
-  setref val = 'oops'
-}
-
-var s = 'abc'
-set-it :s SS
-echo $s
-
-## status: 1
-## STDOUT:
 ## END
 
 #### setref equivalent without pgen2 syntax, using open proc
