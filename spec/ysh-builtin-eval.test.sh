@@ -32,13 +32,13 @@ In a block!
 ## END
 
 #### Eval block created by calling a proc
-proc lazy-block (out Ref;;; block) {
-  setref out = block
+proc lazy-block ( ; out; ; block) {
+  :: out->setValue(block)
 }
 
 var myglobal = 0
 
-lazy-block :my_block {
+lazy-block (&my_block) {
   json write (myglobal)
 }
 
