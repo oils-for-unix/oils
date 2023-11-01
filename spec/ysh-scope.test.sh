@@ -496,7 +496,7 @@ IFS=' x' myfunc
 
 # Problem: $IFS in procs only finds GLOBAL values.  But when actually
 # splitting, $IFS is a 'shvar' which respects DYNAMIC scope.
-# - TODO: shvar_get('IFS')
+# Use shvarGet('IFS') instead
 
 IFS=' x' myproc
 
@@ -642,14 +642,14 @@ mylocal=x
  20 09 0a 0a
 ## END
 
-#### shvar_get()
+#### shvarGet()
 shopt --set parse_proc
 
 s='xzx zxz'
 
 proc myproc {
   echo wrong IFS="$IFS"         # NOT what's used
-  echo shvar IFS=$[shvar_get('IFS')]  # what IS used: dynamic scope
+  echo shvar IFS=$[shvarGet('IFS')]  # what IS used: dynamic scope
   argv.py $s
 }
 

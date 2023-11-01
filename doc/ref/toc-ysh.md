@@ -230,9 +230,10 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-type-method
   [Primitive] Bool   Int   Float   Str   Slice   Range   
-  [List]      append()   pop()   extend()   X index()   join()
+  [List]      append()   pop()   extend()   X find()   join()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
+              X inc()   X accum()
   [Quotation] Expr   X Template   Command
   [Code]      Func    Proc    BuiltinFunc   BuiltinMethod
 X [Other]     Place   IO
@@ -262,8 +263,8 @@ X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
 X [Serialize]     toJ8()   fromJ8()
                   toJson()   fromJson()
   [Pattern]       _match()   X _start()   X _end()
-  [Introspection] shvar_get()   procs()   evalExpr()
-  [Hay Config]    parse_hay()   eval_hay()
+  [Introspection] shvarGet()   procs()   evalExpr()
+  [Hay Config]    parseHay()   evalHay()
 X [Date Time]     strftime()
 X [Wok]           _field()
 X [Hashing]       sha1dc()   sha256()

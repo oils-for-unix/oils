@@ -548,11 +548,11 @@ license 0
 license 0
 ## END
 
-#### parse_hay()
+#### parseHay()
 shopt --set parse_proc
 
 const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
-const block = parse_hay(config_path)
+const block = parseHay(config_path)
 
 # Are blocks opaque?
 {
@@ -569,16 +569,16 @@ OK
 ## END
 
 
-#### Code Blocks: parse_hay() then shvar _DIALECT= { eval_hay() }
+#### Code Blocks: parseHay() then shvar _DIALECT= { evalHay() }
 shopt --set parse_brace parse_proc
 
 hay define TASK
 
 const config_path = "$REPO_ROOT/spec/testdata/config/ci.oil"
-const block = parse_hay(config_path)
+const block = parseHay(config_path)
 
 shvar _DIALECT=sourcehut {
-  const d = eval_hay(block)
+  const d = evalHay(block)
 }
 
 const children = d['children']
@@ -602,21 +602,21 @@ publish-html
 ---
 ## END
 
-#### eval_hay() usage
+#### evalHay() usage
 shopt -s parse_brace
 
 try {
-  var d = eval_hay()
+  var d = evalHay()
 }
 echo status $_status
 
 try {
-  var d = eval_hay(3)
+  var d = evalHay(3)
 }
 echo status $_status
 
 try {
-  var d = eval_hay(^(echo hi), 5)
+  var d = evalHay(^(echo hi), 5)
 }
 echo status $_status
 
@@ -631,10 +631,10 @@ shopt --set parse_proc
 
 const path = "$REPO_ROOT/spec/testdata/config/package-manager.oil"
 
-const block = parse_hay(path)
+const block = parseHay(path)
 
 hay define Package
-const d = eval_hay(block)
+const d = evalHay(block)
 write 'level 0 children' $[len(d['children'])]
 write 'level 1 children' $[len(d['children'][1]['children'])]
 

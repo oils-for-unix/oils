@@ -203,25 +203,20 @@ _KEYWORDS = [
     C('function', Id.KW_Function),
     C('time', Id.KW_Time),
 
-    # YSH integration
-    C('const', Id.KW_Const),
+    # YSH
+    C('const', Id.KW_Const),  # maybe remove this
     C('var', Id.KW_Var),
     C('setvar', Id.KW_SetVar),
     C('setglobal', Id.KW_SetGlobal),
+    C('call', Id.KW_Call),
+
     C('proc', Id.KW_Proc),
-
-    # Tea-only
-
-    # TODO: parse_tea should enable these so we can have 'setvar x = func'
     C('func', Id.KW_Func),
+
+    # for future use
+    C('class', Id.KW_Class),
     C('data', Id.KW_Data),
     C('enum', Id.KW_Enum),
-    C('class', Id.KW_Class),
-
-    # 'import' is a Python-like import for tea.  Contrast with 'use lib
-    # foo.oil', which is a builtin.
-    C('import', Id.KW_Import),
-    # and we also need export
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we

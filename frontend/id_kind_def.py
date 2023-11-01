@@ -610,13 +610,15 @@ def AddKinds(spec):
             'Var',
             'SetVar',
             'SetGlobal',
-            # later: Auto
+            # later: Auto?
+            'Call',
+
             'Proc',
             'Func',
+
+            'Class',
             'Data',
             'Enum',
-            'Class',
-            'Import',
 
             # 'Match', 'With',  # matching
             # not sure: yield

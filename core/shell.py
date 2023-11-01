@@ -717,16 +717,63 @@ def Main(
     #
 
     methods[value_e.Str] = {
+        # TODO: startsWith()?
         'startswith': method_str.StartsWith(),
+        'endswith': None,  # TODO
+
+        # TODO: think about naming, e.g. trim() or trimLeft()
         'strip': method_str.Strip(),
+        'lstrip': None,
+        'rstrip': None,
+
+        # These have UNicode issues
         'upper': method_str.Upper(),
+        'lower': None,
+
+        # finds a substring, OR an eggex
+        'find': None,
+
+        # Match eggex at certain position?  A constant string is also useful
+        # for lexing.
+        'match': None,
+
+        # replace substring, OR an eggex
+        'replace': None,
     }
-    methods[value_e.Dict] = {'keys': method_dict.Keys()}
+    methods[value_e.Dict] = {
+        'get': None,  # doesn't raise an error
+        'erase': None,  # ensures it doesn't exist
+
+        'keys': method_dict.Keys(),
+        'values': None,  # TODO
+
+        # I think items() isn't as necessary because dicts are ordered?
+        # YSH code shouldn't use the List of Lists representation.
+
+        # could be d->tally() or d->increment(), but inc() is short
+        #
+        # call d->inc('mycounter')
+        # call d->inc('mycounter', 3)
+        'inc': None,
+
+        # call d->accum('mygroup', 'value')
+        'accum': None,
+    }
     methods[value_e.List] = {
         'reverse': method_list.Reverse(),
+
         'append': method_list.Append(),
         'extend': method_list.Extend(),
         'pop': method_list.Pop(),
+
+        'insert': None,  # insert object before index
+        'remove': None,  # insert object before index
+
+        'find': None,  # return first index of value, or -1
+                       # Python list() has index(), which raises ValueError
+                       # But this is consistent with Str->find(), and doesn't
+                       # use exceptions
+
         'join': func_misc.Join(),  # both a method and a func
     }
 
@@ -752,12 +799,10 @@ def Main(
 
     parse_hay = func_hay.ParseHay(fd_state, parse_ctx, errfmt)
     eval_hay = func_hay.EvalHay(hay_state, mutable_opts, mem, cmd_ev)
-    block_as_str = func_hay.BlockAsStr(arena)
     hay_func = func_hay.HayFunc(hay_state)
 
-    _SetGlobalFunc(mem, 'parse_hay', parse_hay)
-    _SetGlobalFunc(mem, 'eval_hay', eval_hay)
-    _SetGlobalFunc(mem, 'block_as_str', block_as_str)
+    _SetGlobalFunc(mem, 'parseHay', parse_hay)
+    _SetGlobalFunc(mem, 'evalHay', eval_hay)
     _SetGlobalFunc(mem, '_hay', hay_func)
 
     _SetGlobalFunc(mem, 'len', func_misc.Len())
@@ -777,9 +822,10 @@ def Main(
     _SetGlobalFunc(mem, 'list', func_misc.List_())
     _SetGlobalFunc(mem, 'dict', func_misc.Dict_())
 
+    # TODO: This needs Python style splitting
     _SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
-    _SetGlobalFunc(mem, 'shvar_get', func_misc.Shvar_get(mem))
+    _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
     #
