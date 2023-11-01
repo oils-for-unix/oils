@@ -939,7 +939,7 @@ Example:
 
     # Write and read
     write --qsn $mystr h| read --qsn --line
-    if (_line === mystr) {
+    if (_reply === mystr) {
       echo 'serialized string to QSN and back'
     }  # => serialized string to QSN and back
 

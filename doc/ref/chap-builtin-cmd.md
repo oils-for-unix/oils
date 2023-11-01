@@ -189,14 +189,14 @@ An accepted declaration that tools can use, but isn't used by Oil:
 
 YSH adds buffered, line-oriented I/O to shell's `read`.
 
-    read --line             # contents of line will be in $_reply
-    read --line (&x)        # fill the variable 'x' (&x is a place)
+    read --line             # fills $_reply var with line
+    read --line (&x)        # fills $x (&x is a place)
 
     read --line --with-eol  # keep the \n
     read --line --qsn       # decode QSN too
 
-    read --all              # whole file including newline
-    read --all (&x)         # fill the variable x
+    read --all              # whole file including newline, in $_reply
+    read --all (&x)         # fills $x
 
     read -0                 # read until NUL, synonym for read -r -d ''
 

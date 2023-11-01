@@ -331,9 +331,9 @@ class Read(vm._Builtin):
         """
         Usage:
 
-          read --line       # sets _line var
+          read --line       # sets _reply var
           read --line (&x)  # sets x
-          read --all        # sets _all
+          read --all        # sets _reply
           read --all (&x)   # sets x
 
         Invalid for now:
