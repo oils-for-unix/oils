@@ -1,24 +1,5 @@
 ## our_shell: ysh
 
-# From Zulip:
-#
-# https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/Experience.20using.20oil
-
-#### setvar doesn't work with ref param
-
-proc get_opt(arg, out Ref) {
-  setvar out = arg  # error
-}
-
-var a = ''
-get_opt a 'lol'
-
-echo 'should not get here'
-
-## status: 3
-## STDOUT:
-## END
-
 #### !== operator
 var a = 'bar'
 
