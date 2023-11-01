@@ -287,7 +287,7 @@ def _BindWords(
                     "proc %r wasn't passed word param %r" %
                     (proc_name, p.name), blame_loc)
 
-        mem.SetValue(LeftName(p.name, p.blame_tok), val, scope_e.LocalOnly, 0)
+        mem.SetLocalName(LeftName(p.name, p.blame_tok), val)
 
     # ...rest
 
