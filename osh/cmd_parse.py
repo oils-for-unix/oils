@@ -1131,8 +1131,8 @@ class CommandParser(object):
             #   for global constants GLOBAL=~/src
             #     because YSH assignment doesn't have tilde sub
             if len(suffix_words) == 0:
-                if self.cmd_mode != cmd_mode_e.Shell or (len(
-                        self.hay_attrs_stack) and self.hay_attrs_stack[-1]):
+                if (self.cmd_mode != cmd_mode_e.Shell or
+                    (len(self.hay_attrs_stack) and self.hay_attrs_stack[-1])):
                     p_die('Use var/setvar to assign in YSH',
                           preparsed_list[0].left)
 
@@ -2246,6 +2246,10 @@ class CommandParser(object):
                 return self.ParseYshFunc()
 
             # Otherwise silently pass, like for the procs.
+
+        if self.c_id == Id.KW_Const and self.cmd_mode != cmd_mode_e.Shell:
+            p_die("const can't be inside proc or func.  Use var instead.",
+                  loc.Word(self.cur_word))
 
         if self.c_id in (Id.KW_Var, Id.KW_Const):  # var x = 1
             keyword_id = self.c_id

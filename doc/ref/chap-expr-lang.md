@@ -17,12 +17,17 @@ language, which includes [Egg Expressions]($xref:eggex).
 
 ### const 
 
-Initializes a constant name to the Oil expression on the right.
+The `const` keywords binds the name on the left to a YSH expression on the
+right:
 
     const c = 'mystr'        # equivalent to readonly c=mystr
     const pat = / digit+ /   # an eggex, with no shell equivalent
 
-It's either a global constant or scoped to the current function.
+If you try to re-declare or mutate the name, the shell will fail with a runtime
+error.  It uses the same flag that the `readonly` builtin uses.
+
+Consts should only appear at the top-level, and can't appear within `proc` or
+`func`.
 
 ### var
 
@@ -42,12 +47,6 @@ Inside a proc, it mutates a local variable declared with var.
 ### setglobal
 
 Creates or mutates a global variable.
-
-### setref
-
-Mutates a variable through a named reference.  See examples in
-doc/variables.md.
-
 
 ## Literals
 

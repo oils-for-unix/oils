@@ -51,19 +51,19 @@ We implement many bash semantics, like "named references" for out variables:
       out=bar
     }
 
-    myvar=foo
-    f myvar
-    echo $myvar          # prints "bar"
+    x=foo
+    f x
+    echo x=$x            # => x=bar
 
-But clean up the syntax:   
+But we remove dynamic scope and generalize it with `value.Place`.
 
-    proc f(:out) {       # "out param" declared with :
-      setref out = 'bar'
+    proc f(; out) {
+      call out->setValue('bar')
     }
 
-    var myvar = 'foo'
-    f :myvar             # caller prefixes the var name with :
-    echo $myvar          # prints "bar"
+    var x = 'foo'
+    f (&x)               # pass a place
+    echo x=$x            # => x=bar
 
 <!--
 Historical note: Usenix 93.  korn shell was used for GUIs and such!

@@ -552,8 +552,8 @@ Procs can wrap blocks:
 
 Or they can be invoked from within blocks:
 
-    proc set-port(port_num, :out) {
-      setref out = "localhost:$port_num"
+    proc set-port (port_num; out) {
+      call out->setValue("localhost:$port_num")
     }
 
     Service foo {      # node

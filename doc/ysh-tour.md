@@ -384,7 +384,7 @@ A more complex example:
     echo $[d.name]                  # => alice
 
 That's most of what you need to know about assignments.  Advanced users may
-want to use `setglobal` or `setref` in certain situations.
+want to use `setglobal` or `call myplace->setValue(42)` in certain situations.
 
 <!--
     var g = 1

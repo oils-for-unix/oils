@@ -617,6 +617,21 @@ test-type-expr() {
   _should-parse 'proc p (; x Int) { echo hi }'
 }
 
+test-no-const() {
+  _should-parse 'const x = 42'
+
+  # Must be at the top level
+  _parse-error '
+  proc p {
+    const x = 42
+  }'
+
+  _parse-error '
+  func f() {
+    const x = 42
+  }'
+}
+
 
 #
 # Entry Points

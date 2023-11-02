@@ -48,7 +48,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-expr-lang
-  [Keywords]      const   var   setvar   setglobal   setref
+  [Keywords]      const   var   setvar   setglobal
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10

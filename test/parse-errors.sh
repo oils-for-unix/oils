@@ -915,14 +915,6 @@ ysh_var_decl() {
   '
 
   _ysh-parse-error '
-  proc p {
-    var x = 1
-    echo hi
-    const x = 2  # Cannot redeclare local
-  }
-  '
-
-  _ysh-parse-error '
   proc p(x, :out) {
     var out = 2   # Cannot redeclare out param
   }
@@ -936,15 +928,6 @@ ysh_var_decl() {
     }
   }
   '
-
-  # TODO: We COULD disallow this, but not sure it's necessary
-  if false; then
-    _ysh-parse-error '
-    proc p(x, :out) {
-      var __out = 2   # Cannot redeclare out param
-    }
-    '
-  fi
 
   _ysh-should-parse '
   var x = 1
@@ -966,13 +949,6 @@ ysh_place_mutation() {
   proc p(x) {
     var y = 1
     setvar L = "L"  # ERROR: not declared
-  }
-  '
-
-  _ysh-parse-error '
-  proc p(x) {
-    const c = 123
-    setvar c = 42  # ERROR: cannot modify constant
   }
   '
 

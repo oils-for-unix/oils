@@ -89,7 +89,7 @@ readonly MARKDOWN_DOCS=(
   style-guide
   novelties
 
-  proc-func
+  func-proc
 
   # Data language
   qsn

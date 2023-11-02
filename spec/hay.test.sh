@@ -171,8 +171,7 @@ invalid = 'syntax'  # parse error
 ## STDOUT:
 ## END
 
-
-#### hay eval attr node, and JSON
+#### hay eval Attr node, and JSON
 shopt --set parse_brace parse_equals
 
 hay define Package User
@@ -457,6 +456,22 @@ hay eval :result {
 foo bar
 ## END
 
+#### Attr block with duplicate names
+
+shopt --set ysh:upgrade
+
+hay define Package
+
+Package cpython {
+  version = '3.11'
+  version = '3.12'
+}
+
+= _hay()
+
+## status: 1
+## STDOUT:
+## END
 
 #### Scope of Variables Inside Hay Blocks
 

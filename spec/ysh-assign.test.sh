@@ -266,7 +266,7 @@ write --sep ' ' @mylist
 1 42 3
 ## END
 
-#### mixing assignment builtins and Oil assignment
+#### mixing assignment builtins and YSH assignment
 shopt -s ysh:all parse_equals
 
 proc local-var {
@@ -275,15 +275,15 @@ proc local-var {
   echo x=$x
 }
 
-proc readonly-const {
+proc readonly-var {
   readonly x=1
-  const x = 2
+  var x = 2
   echo x=$x
 }
 
 try eval 'local-var'
 echo status=$_status
-try eval 'readonly-const'
+try eval 'readonly-var'
 echo status=$_status
 
 ## STDOUT:
