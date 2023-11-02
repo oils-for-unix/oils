@@ -102,8 +102,9 @@ module value
     # Possibly unify Hay and modules/namespaces
   | Module(Dict[str, value] defs)
 
-    # This has methods attached to it, and it may also have a cmd_ev instance.
-  | IO(any obj)
+    # The ability to use operating system functions.  Right now some functions
+    # leak, like glob().
+  | IO(any cmd_ev, any prompt_ev)
 
     # callable is vm._Callable.
     # TODO: ASDL needs some kind of "extern" to declare vm._Callable and

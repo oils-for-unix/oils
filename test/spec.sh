@@ -737,6 +737,10 @@ ysh-place() {
   run-file ysh-place "$@"
 }
 
+ysh-prompt() {
+  run-file ysh-prompt "$@"
+}
+
 ysh-assign() {
   run-file ysh-assign "$@"
 }

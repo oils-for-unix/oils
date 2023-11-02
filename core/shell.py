@@ -65,6 +65,7 @@ from builtin import func_hay
 from builtin import func_misc
 
 from builtin import method_dict
+from builtin import method_io
 from builtin import method_list
 from builtin import method_other
 from builtin import method_str
@@ -786,7 +787,7 @@ def Main(
         'captureStdout': None,
 
         # \$ expands to $ or # when root
-        'promptChar': None,
+        'promptChar': method_io.PromptChar(),
         # like \w - working dir
         'getcwd': None,
         # like \u
@@ -841,6 +842,9 @@ def Main(
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
+
+    global_io = value.IO(cmd_ev, prompt_ev)
+    mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
 
     #
     # Is the shell interactive?

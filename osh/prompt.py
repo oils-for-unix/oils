@@ -101,8 +101,8 @@ class Evaluator(object):
         self.version_str = version_str
         self.parse_ctx = parse_ctx
         self.mem = mem
-        self.cache = _PromptEvaluatorCache(
-        )  # Cache to save syscalls / libc calls.
+        # Cache to save syscalls / libc calls.
+        self.cache = _PromptEvaluatorCache()
 
         # These caches should reduce memory pressure a bit.  We don't want to
         # reparse the prompt twice every time you hit enter.
@@ -112,6 +112,10 @@ class Evaluator(object):
     def CheckCircularDeps(self):
         # type: () -> None
         assert self.word_ev is not None
+
+    def PromptChar(self):
+        # type: () -> str
+        return self.cache.Get('$')
 
     def _ReplaceBackslashCodes(self, tokens):
         # type: (List[Tuple[Id_t, str]]) -> str
