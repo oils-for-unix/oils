@@ -34,12 +34,12 @@ It's a bit like `use strict;` in Perl and JavaScript, or `from __future__` in
 Python.
 
 
-## First Word
+## The First Word of a Command
 
 The Python-like features in YSH have to co-exist with shell like `echo "hello
 $name"`, so there are more "first words".
 
-### Mutation uses the `setvar` keyword
+### Mutation Uses the `setvar` Keyword
 
 In YSH, mutation looks like this:
 
@@ -51,22 +51,22 @@ Not like JavaScript or Python
     x = 42  # doesn't work
     x += 3  # nope
 
-### Throw away the result of an expression with `::`
+### Evaluate Expressions with the `call` and `=` Keywords
 
-In YSH, you use the `::` keyword to throw away the result of an expression:
+In YSH, you use the `call` keyword to throw away the result of an expression.
+It's most often used with functions and methods:
 
-    :: mylist->pop()
+    call myFunc(x)
 
-    :: myFunc(x)
+    call mylist->pop()
 
-It's meant to look a bit like:
+The `=` operator works the same way, but prints the return value:
 
-    = mylist->pop()  # pretty-print result with = operator
+    $ = mylist->pop()  # pretty-print result with = operator
+    (Str)    "x"
 
-And the shell idiom with a single colon:
-
-    : ${x=3}
-
+    $ = 42 + a[i]
+    (Int)    43
 
 See [Command vs. Expression Mode](command-vs-expression-mode.html) for more.
 
@@ -92,6 +92,21 @@ These use `[]` instead of `()`:
 
 It's motivated by idioms from Awk and R.
 
+## Three Quotation Types
+
+YSH is Lisp-y!  These **unevaluated** quotation types don't appear in Python
+and JS:
+
+    var myblock = ^(ls /tmp | wc -l)  
+
+    var myexpr = ^[age > 10]  # use evalExpr()
+
+    var mytemplate = ^"$name is $age yeras old"
+
+
+TODO: Explain more.
+
+
 
 <!--
 
@@ -101,7 +116,6 @@ Other: value.Place could be unfamliar to Python/JS users.  It's based on C/C++
 -->
 
 ## Related 
-
 
 - [Quirks](quirks.html) is about OSH.
 - [Warts](warts.html) is about YSH.

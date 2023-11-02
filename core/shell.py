@@ -781,6 +781,7 @@ def Main(
     # TODO: implement these
     methods[value_e.IO] = {
         # io->eval(myblock) is the functional version of eval (myblock)
+        # Should we also have expr->eval() instead of evalExpr?
         'eval': None,
 
         # identical to command sub
