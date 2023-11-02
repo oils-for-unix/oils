@@ -408,13 +408,12 @@ class VarChecker(object):
 
     def Check(self, keyword_id, name_tok):
         # type: (Id_t, Token) -> None
-        """Check for errors in declaration and mutation errors.
+        """Check for declaration / mutation errors in proc and func.
 
-        var x, const x:
+        var x
           x already declared
         setvar x:
           x is not declared
-          x is constant
         setglobal x:
           No errors are possible; we would need all these many conditions to
           statically know the names:
@@ -422,16 +421,23 @@ class VarChecker(object):
           - shopt -u copy_env.
           - AND use lib has to be static
 
-        Also should p(:out) declare 'out' as well as '__out'?  Then you can't have
-        local variables with the same name.
+        What about bare assignment in Hay?  I think these are dynamic checks --
+        there is no static check.  Hay is for building up data imperatively,
+        and then LATER, right before main(), it can be type checked.
+
+        Package {
+          version = '3.11'
+          version = '3.12'
+        }
         """
-        # Don't check the global level!  Semantics are different here!
+        # No static checks are the global level!  Because of 'source', var and
+        # setvar are essentially the same.
         if len(self.names) == 0:
             return
 
         top = self.names[-1]
         name = name_tok.tval
-        if keyword_id in (Id.KW_Const, Id.KW_Var):
+        if keyword_id == Id.KW_Var:
             if name in top:
                 p_die('%r was already declared' % name, name_tok)
             else:
@@ -440,11 +446,6 @@ class VarChecker(object):
         if keyword_id == Id.KW_SetVar:
             if name not in top:
                 p_die("%r hasn't been declared" % name, name_tok)
-
-            if name in top and top[name] == Id.KW_Const:
-                p_die("Can't modify constant %r" % name, name_tok)
-
-        # TODO: setref should only mutate out params.
 
 
 class ctx_VarChecker(object):
