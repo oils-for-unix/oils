@@ -391,7 +391,7 @@ call f(1)
 #### Userland max
 func mymax (...args) {
   if (len(args) === 0) {
-    error ('Requires 1 arg')
+    error 'Requires 1 arg'
   } elif (len(args) === 1) {
     # TODO: assert List
     var mylist = args[0]
@@ -412,13 +412,14 @@ func mymax (...args) {
     }
   } else {
     # max(1, 2, 3) doesn't work in YSH, but does in Python
-    error ('too many')
+    error 'too many'
   }
 }
 
 = mymax(5,6)  # => 6
 = mymax([5,6,7])  # => 7
 = mymax(5,6,7,8)  # error
+
 ## status: 1
 ## STDOUT:
 (Int)   6

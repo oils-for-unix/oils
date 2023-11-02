@@ -401,6 +401,8 @@ TRY_SPEC.LongFlag('--assign',
                   args.String,
                   help='Assign status to this variable, and return 0')
 
+ERROR_SPEC = FlagSpec('error')
+
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
 
 # Future directions:

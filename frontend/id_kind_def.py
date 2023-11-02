@@ -610,10 +610,8 @@ def AddKinds(spec):
             'SetGlobal',
             # later: Auto?
             'Call',
-
             'Proc',
             'Func',
-
             'Class',
             'Data',
             'Enum',

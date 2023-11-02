@@ -4,12 +4,14 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import loc
 from core import error
-from core.error import e_die, e_die_status, e_usage
+from core.error import e_die_status, e_usage
 from core import state
 from core import vm
 from frontend import flag_spec
 from frontend import typed_args
-#from mycpp.mylib import log
+from mycpp.mylib import log
+
+_ = log
 
 from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -137,18 +139,22 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+        _, arg_r = flag_spec.ParseCmdVal('error',
+                                         cmd_val,
+                                         accept_typed_args=True)
+
+        message = arg_r.Peek()
+        if message is None:
+            raise error.Usage('expected a message to display',
+                              cmd_val.arg_locs[0])
+
         rd = typed_args.ReaderForProc(cmd_val)
-        message = rd.PosStr()
         status = rd.NamedInt('status', 1)
         rd.Done()
 
         if status == 0:
-            e_die('Status must be a non-zero integer', cmd_val.arg_locs[0])
-
-        if len(cmd_val.argv) > 1:
-            raise error.TypeErrVerbose(
-                'Expected 0 untyped arguments, but got %d' %
-                (len(cmd_val.argv) - 1), loc.Missing)
+            raise error.Usage('Status must be a non-zero integer',
+                              cmd_val.arg_locs[0])
 
         raise error.UserError(status, message, cmd_val.arg_locs[0])
 

@@ -735,7 +735,7 @@ def Main(
         'lower': None,
 
         # finds a substring, OR an eggex
-        # should it be findStr / replaceStr vs. findPat / replacePat?  subst() 
+        # should it be findStr / replaceStr vs. findPat / replacePat?  subst()
         'find': None,
 
         # Match eggex at certain position?  A constant string is also useful
@@ -748,7 +748,6 @@ def Main(
     methods[value_e.Dict] = {
         'get': None,  # doesn't raise an error
         'erase': None,  # ensures it doesn't exist
-
         'keys': method_dict.Keys(),
         'values': None,  # TODO
 
@@ -766,31 +765,34 @@ def Main(
     }
     methods[value_e.List] = {
         'reverse': method_list.Reverse(),
-
         'append': method_list.Append(),
         'extend': method_list.Extend(),
         'pop': method_list.Pop(),
-
         'insert': None,  # insert object before index
         'remove': None,  # insert object before index
-
         'find': None,  # return first index of value, or -1
-                       # Python list() has index(), which raises ValueError
-                       # But this is consistent with Str->find(), and doesn't
-                       # use exceptions
-
+        # Python list() has index(), which raises ValueError
+        # But this is consistent with Str->find(), and doesn't
+        # use exceptions
         'join': func_misc.Join(),  # both a method and a func
     }
 
     # TODO: implement these
     methods[value_e.IO] = {
-        'promptChar': None,
-
         # io->eval(myblock) is the functional version of eval (myblock)
         'eval': None,
 
         # identical to command sub
         'captureStdout': None,
+
+        # \$ expands to $ or # when root
+        'promptChar': None,
+        # like \w - working dir
+        'getcwd': None,
+        # like \u
+        'getUserName': None,
+        # like \h
+        'getHostName': None,
     }
 
     methods[value_e.Place] = {

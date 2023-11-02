@@ -6,7 +6,7 @@
 #### User errors behave like builtin errors
 func divide(a, b) {
   if (b === 0) {
-    error ('divide by zero', status=3)
+    error 'divide by zero' (status=3)
   }
 
   return (a / b)
@@ -22,10 +22,11 @@ echo status=$_status
 status=3
 ## END
 
-#### Error messages can be read in userspace
+#### Error sets _error_message, which can be used by programs
+
 func divide(a, b) {
   if (b === 0) {
-    error ('divide by zero', status=3)
+    error 'divide by zero' (status=3)
   }
 
   return (a / b)
@@ -42,7 +43,7 @@ message=divide by zero
 #### Errors within multiple functions
 func inverse(x) {
   if (x === 0) {
-    error ('0 does not have an inverse')  # default status is 1
+    error '0 does not have an inverse'  # default status is 1
   }
 
   return (1 / x)
@@ -63,7 +64,7 @@ func invertList(list) {
 
 #### Impact of errors on var declaration
 func alwaysError() {
-  error ("it's an error", status=100)
+  error "it's an error" (status=100)
 }
 
 try {
@@ -77,37 +78,31 @@ try {
 ## END
 
 #### Error defaults status to 1
-error ('some error')
+error 'some error'
 ## status: 1
 ## STDOUT:
 ## END
 
-#### Error expects a positional argument
-error (status=42)
-## status: 3
-## STDOUT:
-## END
-
 #### Error will object to an incorrect named arg
-error ('error', status_typo=42)
+error 'error' (status_typo=42)
 ## status: 3
 ## STDOUT:
 ## END
 
 #### Error will object to an extraneous named arg
-error ('error', status=42, other=100)
+error 'error' (status=42, other=100)
 ## status: 3
 ## STDOUT:
 ## END
 
 #### Error expects an int status
-error ('error', status='a string?')
+error 'error' (status='a string?')
 ## status: 3
 ## STDOUT:
 ## END
 
-#### Error expects a string message
-error (100, status=42)
+#### Error typed arg, not named arg
+error msg (100)
 ## status: 3
 ## STDOUT:
 ## END
@@ -120,12 +115,12 @@ error uh-oh ('error', status=1)
 
 #### Error must take arguments
 error
-## status: 3
+## status: 2
 ## STDOUT:
 ## END
 
 #### Errors cannot have a status of 0
 error ('error', status=0)
-## status: 1
+## status: 2
 ## STDOUT:
 ## END

@@ -80,7 +80,19 @@ Runs a command and requires the exit code to be 0 or 1.
       echo 'not found'           # status 1 means not found
     }
 
+### error
 
+The error builtin signals an error.  Use it instead of `return 1`:
+
+   proc p {
+     if ! test -d /tmp {
+       error 'Missing /tmp'
+     }
+   }
+
+By default, it fails with status 1.  You can change this with a typed arg:
+
+   error 'Missing /tmp' (status=9)
 
 ## Shell State
 

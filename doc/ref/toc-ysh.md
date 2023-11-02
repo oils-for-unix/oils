@@ -239,9 +239,13 @@ X [Builtin Sub]   _buffer
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
               X inc()   X accum()
+X [Func]      toJson()
+X [Proc]      toJson()
+  [Place]     setValue()
+X [IO]        eval()   captureStdout()   promptChar()
+              getcwd()   getUserName()   getHostName()
   [Quotation] Expr   X Template   Command
-  [Code]      Func    Proc    BuiltinFunc   BuiltinMethod
-X [Other]     Place   IO
+  [Code]      BuiltinFunc   BuiltinMethod
 ```
 
 <h2 id="builtin-func">

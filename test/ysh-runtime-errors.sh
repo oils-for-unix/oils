@@ -784,6 +784,18 @@ test-json() {
   _error-case-X 3 'json read (&x, 43)'
 }
 
+test-error-builtin() {
+
+  _error-case-X 2 'error '
+  _error-case-X 2 'error --'
+
+  # These are OK
+  _error-case-X 1 'error -- oops'
+  _error-case-X 1 'error oops'
+
+  _error-case-X 99 'error oops (status=99)'
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs
