@@ -391,8 +391,8 @@ class ParseContext(object):
         return last_token
 
     def ParseFunc(self, lexer, out):
-        # type: (Lexer, Func) -> None
-        """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) """
+        # type: (Lexer, Func) -> Token
+        """ func f(x Int, y Int = 0, ...args; z Int = 3, ...named) => Int """
         e_parser = self._YshParser()
         with ctx_PNodeAllocator(e_parser):
             pnode, last_token = e_parser.Parse(lexer, grammar_nt.ysh_func)
@@ -401,6 +401,7 @@ class ParseContext(object):
                 self.p_printer.Print(pnode)
 
             self.tr.YshFunc(pnode, out)
+        return last_token
 
 
 # Another parser instantiation:

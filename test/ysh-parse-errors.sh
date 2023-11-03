@@ -202,7 +202,17 @@ here doc
 EOF
 ))'
 
-  _parse-error 'var x = $(var x = 1))'
+  # Hm we need a ; after var or setvar
+  _should-parse 'var x = $(var x = 1; )'
+  _should-parse '
+  var x = $(var x = 1
+)'
+  # This doesn't have it
+  _parse-error 'var x = $(var x = 1)'
+
+  # Extra )
+  _parse-error 'var x = $(var x = 1; ))'
+  _parse-error 'var x = $(var x = 1; ) )'
 }
 
 test-ysh-expr() {
@@ -630,6 +640,11 @@ test-no-const() {
   func f() {
     const x = 42
   }'
+}
+
+test-fat-arrow() {
+  _should-parse 'var x = s => trim()'
+  _should-parse 'func f(x Int) => List[Int] { echo hi }'
 }
 
 

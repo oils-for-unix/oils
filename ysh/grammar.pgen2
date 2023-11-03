@@ -133,6 +133,7 @@ trailer: (
 
   | '.' Expr_Name
   | '->' Expr_Name
+  | '=>' Expr_Name
 )
 
 # YSH patch: this is 'expr' instead of 'test'
@@ -309,10 +310,11 @@ ysh_lazy_arglist: '[' [arglist] ']'
 # Other Entry Points
 #
 
-# for if (x > 0) etc.
+# if (x > 0) etc.
 ysh_expr: '(' testlist ')'
 
-# e.g. return 1 + 2 * 3
+#    = 42 + a[i]
+# call f(x)
 command_expr: testlist end_stmt
 
 # $[d->key] etc.
@@ -337,8 +339,9 @@ ysh_proc: (
   '{'  # opening { for pgen2
 )
 
-# YSH entry point
-ysh_func: Expr_Name '(' [param_group] [';' param_group] ')'
+ysh_func: (
+    Expr_Name '(' [param_group] [';' param_group] ')' ['=>' type_expr] '{'
+)
 
 param: Expr_Name [type_expr] ['=' expr]
 

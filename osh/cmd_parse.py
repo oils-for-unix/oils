@@ -2108,8 +2108,9 @@ class CommandParser(object):
     def ParseYshFunc(self):
         # type: () -> Func
         """
-        ysh_func: KW_Func Expr_Name '(' [func_params] [';' func_params] ')' brace_group
-
+        ysh_func: (
+            Expr_Name '(' [func_params] [';' func_params] ')' ['=>' type_expr] '{'
+        )
         Looking at KW_Func
         """
         node = Func.CreateNull(alloc_lists=True)
@@ -2118,7 +2119,7 @@ class CommandParser(object):
         node.keyword = keyword_tok
 
         with ctx_VarChecker(self.var_checker, keyword_tok):
-            self.parse_ctx.ParseFunc(self.lexer, node)
+            self.w_parser.ParseFunc(node)
 
             posit = node.positional
             if posit:

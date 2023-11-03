@@ -77,6 +77,7 @@ def main(argv):
         '.': Id.Expr_Dot,
         '..': Id.Expr_DDot,
         '->': Id.Expr_RArrow,
+        '=>': Id.Expr_RDArrow,
         '//': Id.Expr_DSlash,
         '++': Id.Arith_DPlus,
         '!~': Id.Expr_NotTilde,

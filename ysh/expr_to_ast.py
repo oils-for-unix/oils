@@ -222,7 +222,7 @@ class Transformer(object):
             a = p_args.GetChild(0)
             return Subscript(op_tok, base, self._Subscript(a))
 
-        if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Arith_Colon):
+        if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
             return Attribute(base, op_tok, attr, expr_context_e.Store)
 

@@ -82,6 +82,7 @@ from _devbuild.gen.syntax_asdl import (
     pat_t,
     ArgList,
     Proc,
+    Func,
 )
 from core import alloc
 from core.error import p_die
@@ -1187,6 +1188,14 @@ class WordParser(WordEmitter):
         node.name = self.cur_token
 
         last_token = self.parse_ctx.ParseProc(self.lexer, node)
+        if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
+            last_token.id = Id.Lit_LBrace
+        self.buffered_word = last_token
+        self._SetNext(lex_mode_e.ShCommand)  # TODO: Do we need this?
+
+    def ParseFunc(self, node):
+        # type: (Func) -> None
+        last_token = self.parse_ctx.ParseFunc(self.lexer, node)
         if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
             last_token.id = Id.Lit_LBrace
         self.buffered_word = last_token
