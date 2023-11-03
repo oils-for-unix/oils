@@ -445,7 +445,7 @@ class VarChecker(object):
 
         if keyword_id == Id.KW_SetVar:
             if name not in top:
-                p_die("Declare 'var %s' before using 'setvar'" % name, name_tok)
+                p_die("Declare with 'var %s' before using 'setvar'" % name, name_tok)
 
 
 class ctx_VarChecker(object):

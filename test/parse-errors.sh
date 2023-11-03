@@ -945,10 +945,31 @@ ysh_var_decl() {
 ysh_place_mutation() {
   set +o errexit
 
+  _ysh-should-parse '
+  proc p(x) {
+    var y = 1
+    setvar y = 42
+  }
+  '
+
   _ysh-parse-error '
   proc p(x) {
     var y = 1
     setvar L = "L"  # ERROR: not declared
+  }
+  '
+
+  _ysh-parse-error '
+  proc p(x) {
+    var y = 1
+    setvar L[0] = "L"  # ERROR: not declared
+  }
+  '
+
+  _ysh-parse-error '
+  proc p(x) {
+    var y = 1
+    setvar d.key = "v"  # ERROR: not declared
   }
   '
 

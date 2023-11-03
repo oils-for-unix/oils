@@ -78,11 +78,15 @@ from _devbuild.gen.syntax_asdl import (
     y_lhs_e,
     arith_expr_t,
     command,
+    expr,
+    expr_e,
     expr_t,
     pat_t,
     ArgList,
     Proc,
     Func,
+    Subscript,
+    Attribute,
 )
 from core import alloc
 from core.error import p_die
@@ -1088,9 +1092,12 @@ class WordParser(WordEmitter):
     def ParseMutation(self, kw_token, var_checker):
         # type: (Token, VarChecker) -> command.Mutation
         """
-        setvar a[i] = 1
+        setvar i = 42
         setvar i += 1
-        setvar i++
+        setvar a[i] = 42
+        setvar a[i] += 1
+        setvar d.key = 42
+        setvar d.key += 1
         """
         self._SetNext(lex_mode_e.Expr)
         enode, last_token = self.parse_ctx.ParseMutation(kw_token, self.lexer)
@@ -1105,7 +1112,22 @@ class WordParser(WordEmitter):
                 if case(y_lhs_e.Var):
                     lhs = cast(y_lhs.Var, UP_lhs)
                     var_checker.Check(kw_token.id, lhs.name)
-                # TODO: Do indices as well
+
+                # Note: this does not cover cases like
+                # setvar (a[0])[1] = v
+                # setvar (d.key).other = v
+                # This leaks into catching all typos statically, which may be
+                # possible if 'use' makes all names explicit.
+                elif case(y_lhs_e.Subscript):
+                    lhs = cast(Subscript, UP_lhs)
+                    if lhs.obj.tag() == expr_e.Var:
+                        var_checker.Check(kw_token.id, cast(expr.Var, lhs.obj).name)
+
+                elif case(y_lhs_e.Attribute):
+                    lhs = cast(Attribute, UP_lhs)
+                    if lhs.obj.tag() == expr_e.Var:
+                        var_checker.Check(kw_token.id, cast(expr.Var, lhs.obj).name)
+
 
         # Let the CommandParser see the Op_Semi or Op_Newline.
         self.buffered_word = last_token
@@ -1188,18 +1210,24 @@ class WordParser(WordEmitter):
         node.name = self.cur_token
 
         last_token = self.parse_ctx.ParseProc(self.lexer, node)
-        if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
-            last_token.id = Id.Lit_LBrace
+
+        # Translate from lex_mode_e.{Expr => ShCommand}, for CommandParser
+        assert last_token.id == Id.Op_LBrace
+        last_token.id = Id.Lit_LBrace
         self.buffered_word = last_token
-        self._SetNext(lex_mode_e.ShCommand)  # TODO: Do we need this?
+
+        self._SetNext(lex_mode_e.ShCommand)
 
     def ParseFunc(self, node):
         # type: (Func) -> None
         last_token = self.parse_ctx.ParseFunc(self.lexer, node)
-        if last_token.id == Id.Op_LBrace:  # Translate to what CommandParser wants
-            last_token.id = Id.Lit_LBrace
+
+        # Translate from lex_mode_e.{Expr => ShCommand}, for CommandParser
+        assert last_token.id == Id.Op_LBrace
+        last_token.id = Id.Lit_LBrace
         self.buffered_word = last_token
-        self._SetNext(lex_mode_e.ShCommand)  # TODO: Do we need this?
+
+        self._SetNext(lex_mode_e.ShCommand)
 
     def ParseYshCasePattern(self):
         # type: () -> Tuple[pat_t, Token]
