@@ -861,7 +861,10 @@ class ExprEvaluator(object):
         UP_o = o
 
         with switch(node.op.id) as case:
-            if case(Id.Expr_RArrow):
+            # Right now => is a synonym for ->
+            # Later we may enforce that => is pure, and -> is for mutation and
+            # I/O.
+            if case(Id.Expr_RArrow, Id.Expr_RDArrow):
                 name = node.attr.tval
                 ty = o.tag()
 

@@ -2,6 +2,25 @@
 
 ## our_shell: ysh
 
+#### => operator for pure computation is allowed (may be mandatory later)
+
+# later we may make it mandatory
+
+if ("abc" => startsWith("a")) {
+  echo yes
+}
+
+var mylist = [1, 2, 3]
+
+# This one should be ->
+call mylist->pop()
+echo 'ok'
+
+## STDOUT:
+yes
+ok
+## END
+
 #### Str->startsWith
 = "abc"->startsWith("")
 = "abc"->startsWith("a")
