@@ -371,7 +371,7 @@ test-eggex-2() {
   var sq = / ('foo')+ /
   echo $sq
 
-  var sq2 = / <'foo'>+ /
+  var sq2 = / <capture 'foo'>+ /
   echo $sq2
 EOF
 )"

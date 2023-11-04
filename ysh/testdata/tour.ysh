@@ -232,7 +232,7 @@ if (s ~ /digit+/) {
 
 #### extract a submatch with < >
 ####   if ($(date -u +"%Y-%m-%d") ~ /< digit{4} :year> '-' <digit{2} :month>!word<digit{2} :day>/) {
-if ($(date -u +"%Y-%m-%d") ~ /< digit{4} :year> '-' <digit{2} :month> '-' <digit{2} :day>/) {
+if ($(date -u +"%Y-%m-%d") ~ /<capture digit{4} as year> '-' <capture digit{2} as month> '-' <capture digit{2} as day>/) {
   # extract a match by number
   const complete_match = _match(0)
   const group_match = _match(1)
