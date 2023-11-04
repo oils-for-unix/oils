@@ -420,6 +420,22 @@ class Transformer(object):
 
         raise NotImplementedError(Id_str(id_))
 
+    def _NameType(self, p_node):
+        # type: (PNode) -> NameType
+        """
+        name_type: Expr_Name [':'] [type_expr]
+        """
+        name_tok = p_node.GetChild(0).tok
+        typ = None  # type: Optional[TypeExpr]
+
+        n = p_node.NumChildren()
+        if n == 2:
+            typ = self._TypeExpr(p_node.GetChild(1))
+        if n == 3:
+            typ = self._TypeExpr(p_node.GetChild(2))
+
+        return NameType(name_tok, typ)
+
     def _NameTypeList(self, p_node):
         # type: (PNode) -> List[NameType]
         """name_type_list: name_type (',' name_type)*"""
@@ -428,15 +444,7 @@ class Transformer(object):
 
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):  # was children[::2]
-            p = p_node.GetChild(i)
-
-            if p.NumChildren() == 2:
-                typ = self._TypeExpr(p.GetChild(1))
-            else:
-                typ = None
-
-            node = NameType(p.GetChild(0).tok, typ)
-            results.append(node)
+            results.append(self._NameType(p_node.GetChild(i)))
         return results
 
     def _CompFor(self, p_node):
@@ -1330,7 +1338,9 @@ class Transformer(object):
 
     def _ReAtom(self, p_atom):
         # type: (PNode) -> re_t
-        """re_atom: ( char_literal."""
+        """
+        re_atom: ( char_literal | ...
+        """
         assert p_atom.typ == grammar_nt.re_atom, p_atom.typ
 
         typ = p_atom.GetChild(0).typ
@@ -1396,27 +1406,23 @@ class Transformer(object):
                 return re.Group(self._Regex(p_atom.GetChild(1)))
 
             if tok.id == Id.Arith_Less:
-                # | '<' regex [':' name_type] '>'
-
-                regex = self._Regex(p_atom.GetChild(1))
+                # | '<' 'capture' regex ['as' name_type] '>'
 
                 n = p_atom.NumChildren()
-                if n == 5:
-                    # TODO: Add type expression
-                    # YES
-                    #   < d+ '.' d+ : ratio Float >
-                    #   < d+ : month Int >
-                    # INVALID
-                    #   < d+ : month List[int] >
-                    name_tok = p_atom.GetChild(3).GetChild(0).tok
+                assert n == 4 or n == 6, n
 
-                    # TODO: is it possible to output the capture name <-> index mapping
-                    # here for POSIX ERE?
+                # < capture d+ >
+                regex = self._Regex(p_atom.GetChild(2))
 
-                else:
-                    name_tok = None
+                name_type = None  # type: NameType
+                # < capture d+ as date >
+                if n >= 6:
+                    name_type = self._NameType(p_atom.GetChild(4))
 
-                return re.Capture(regex, name_tok)
+                # TODO: is it possible to output the capture name <-> index mapping
+                # here for POSIX ERE?
+
+                return re.Capture(regex, name_type)
 
             if tok.id == Id.Arith_Colon:
                 # | ':' '(' regex ')'

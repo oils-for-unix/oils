@@ -245,11 +245,10 @@ EXPR_WORDS = [
     # for function literals
     C('func', Id.Expr_Func),
 
-    # Note: can 'virtual' just be 'override'?  What do other languages do?
-    C('virtual', Id.Expr_Virtual),
-    C('override', Id.Expr_Override),
-    C('abstract', Id.Expr_Abstract),
-    C('as', Id.Expr_As),  # use 'foo.sh' as bar
+    # / <capture d+/
+    C('capture', Id.Expr_Capture),
+    # / <capture d+ as date> /
+    C('as', Id.Expr_As),
 
     # Tea Control Flow Operators
     C('break', Id.Expr_Break),

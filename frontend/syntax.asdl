@@ -443,7 +443,7 @@ module syntax
   # system.
   TypeExpr = (Token tok, str name, List[TypeExpr] params)
 
-  # LHS binding in loops, list comprehensions, and var/const
+  # LHS bindings in var/const, and eggex
   # TODO: need str name, Token blame_tok
   NameType = (Token name, TypeExpr? typ)
 
@@ -608,7 +608,7 @@ module syntax
 
   | Group(re child)
     # TODO: <d+ : month Int> needs Token? type field
-  | Capture(re child, Token? var_name)  
+  | Capture(re child, NameType? name_type)  
   | Backtracking(bool negated, Token name, re child)
 
   # These nodes are never parsed; they're part of execution.

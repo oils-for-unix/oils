@@ -2,11 +2,11 @@
 # Adapted from the Python 3.7 expression grammar, with several changes!
 # 
 # TODO:
-# - Do we need lambdas?
-# - List comprehensions?
-#   - I think this could be replaced with implicit vectorization, like
-#     @len(x) or len.(x) ?  It's shorter, but it maps and doesn't filter.
+# - List comprehensions
+#   - There's also chaining => and maybe implicit vectorization ==>
+#   - But list comprehensions are more familiar, and they are concise
 # - Generator expressions?
+# - Do we need lambdas?
 
 # Note: trailing commas are allowed:
 #   {k: mydict,}
@@ -19,13 +19,11 @@
 #   VSub, Left, Right, Expr, Op, Arith, Char, Eof, Unknown
 
 # YSH patch: removed @=
-# Possibly just use have += -= *=.  Those are the most common.
 augassign: (
     '+=' | '-=' | '*=' | '/=' |
     '**=' | '//=' | '%=' |
     '&=' | '|=' | '^=' | '<<=' | '>>='
 )
-# For normal and annotated assignments, additional restrictions enforced by the interpreter
 
 test: or_test ['if' or_test 'else' test] | lambdef
 
@@ -273,10 +271,13 @@ simple_var_sub: (
 #   We have the 'var' prefix which helps.
 
 # name_type use cases:
+#   var x Int, y Int = 3, 5
+#   / <capture d+ as date: Int> /
+#
 #   for x Int, y Int
 #   [x for x Int, y Int in ...]
-#   var x Int, y Int = 3, 5
-#   func(x Int, y Int)
+#
+#   func(x Int, y Int) - this is separate
 
 # Optional colon because we want both
 
@@ -417,8 +418,14 @@ re_atom: (
 
     # grouping (non-capturing in Perl; capturing in ERE although < > is preferred)
   | '(' regex ')'
-    # capturing group, with optional name
-  | '<' regex [':' name_type] '>'
+  #| '<' regex [':' name_type] '>'
+
+    # Capturing group, with optional name, and type
+    #
+    # Could also have
+    #   <capture d+ as date: Int>
+    #   <capture d+ '.' d+ as ratio: Float>
+  | '<' 'capture' regex ['as' name_type] '>'
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.

@@ -900,8 +900,9 @@ class ExprEvaluator(object):
                     if case2(value_e.Func, value_e.BuiltinFunc):
                         return value.BoundFunc(o, val)
                     else:
-                        raise error.TypeErr(val, 'Fat arrow => expects method or function',
-                                            node.attr)
+                        raise error.TypeErr(
+                            val, 'Fat arrow => expects method or function',
+                            node.attr)
 
             elif case(Id.Expr_Dot):  # d.key is like d['key']
                 name = node.attr.tval
@@ -1224,7 +1225,7 @@ class ExprEvaluator(object):
 
             elif case(re_e.Capture):  # Identical to Group
                 node = cast(re.Capture, UP_node)
-                return re.Capture(self._EvalRegex(node.child), node.var_name)
+                return re.Capture(self._EvalRegex(node.child), node.name_type)
 
             elif case(re_e.CharClassLiteral):
                 node = cast(re.CharClassLiteral, UP_node)

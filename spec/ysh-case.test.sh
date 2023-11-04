@@ -103,8 +103,8 @@ string
 #### eggex capture
 for name in foo/foo.py bar/bar.cc zz {
   case (name) {
-    / '/f' <dot*> '.' / { echo "g0=$[_match(0)] g1=$[_match(1)] g2=$[_match(2)]" }
-    / '/b' <dot*> '.' / { echo "g0=$[_match(1)] g1=$[_match(1)]" }
+    / '/f' <capture dot*> '.' / { echo "g0=$[_match(0)] g1=$[_match(1)] g2=$[_match(2)]" }
+    / '/b' <capture dot*> '.' / { echo "g0=$[_match(1)] g1=$[_match(1)]" }
     (else) { echo 'no match' }
   }
 }

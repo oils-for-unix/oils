@@ -1278,6 +1278,17 @@ json write (x) {
   _ysh-parse-error 'f(x)'  # test short name
 }
 
+test-eggex() {
+  _should-parse '= / d+ /'
+  #_should-parse '= / <d+ : date> /'
+  _should-parse '= / < capture d+ as date > /'
+  _should-parse '= / < capture d+ as date: Int > /'
+
+  # These keywords are taken in regular expressions, I guess that's OK.
+  _parse-error 'var capture = 42'
+  _parse-error 'var as = 42'
+}
+
 #
 # Entry Points
 #

@@ -1,7 +1,7 @@
 ## oils_failures_allowed: 4
 
 #### /^.$/
-shopt -s oil:all
+shopt -s ysh:all
 var pat = ''
 
 setvar pat = /^.$/
@@ -31,7 +31,7 @@ yes
 
 
 #### /.+/
-shopt -s oil:all
+shopt -s ysh:all
 
 var pat = /.+/
 echo $pat
@@ -49,7 +49,7 @@ no
 ## END
 
 #### Positional captures with _match
-shopt -s oil:all
+shopt -s ysh:all
 
 var x = 'zz 2020-08-20'
 
@@ -61,7 +61,7 @@ if [[ $x =~ ([[:digit:]]+)-([[:digit:]]+) ]] {
 # I think that's OK.
 setvar BASH_REMATCH = %(reset)
 
-if (x ~ /<d+> '-' <d+>/) {
+if (x ~ /<capture d+> '-' <capture d+>/) {
   argv.py "${BASH_REMATCH[@]}"
   argv.py $[_match(0)] $[_match(1)] $[_match(2)]
 
@@ -77,7 +77,7 @@ if (x ~ /<d+> '-' <d+>/) {
 ## END
 
 #### s ~ regex and s !~ regex
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 var s = 'foo'
 if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
@@ -109,7 +109,7 @@ cleared
 ## END
 
 #### _start() and _end()
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 var s = 'foo123bar'
 if (s ~ /digit+/) {
@@ -146,7 +146,7 @@ echo $pat
 
 
 #### d+  digit+  !d+  !digit+
-shopt -s oil:all
+shopt -s ysh:all
 
 var pat = ''
 
@@ -186,7 +186,7 @@ echo $pat
 ## END
 
 #### Char Class Ranges
-shopt -s oil:all
+shopt -s ysh:all
 
 var pat = ''
 setvar pat = /[0-9 a-f]+/
@@ -207,7 +207,7 @@ no
 ## END
 
 #### Char Class Set
-shopt -s oil:all
+shopt -s ysh:all
 var pat = ''
 
 # This is NOT allowed
@@ -227,7 +227,7 @@ no
 ## END
 
 #### Range with escaped characters
-shopt -s oil:all
+shopt -s ysh:all
 
 var pat = null
 
@@ -240,7 +240,7 @@ echo $pat | od -A n -t x1
 
 
 #### Group ()
-shopt -s oil:all
+shopt -s ysh:all
 var pat = ''
 
 setvar pat = /(%start s or d d)/
@@ -258,19 +258,19 @@ no
 ## END
 
 #### Capture is acceptable as a group
-shopt -s oil:all
-var pat = /<%start s | d d>/
+shopt -s ysh:all
+var pat = /<capture %start s | d d>/
 echo $pat
 ## STDOUT:
 (^[[:space:]]|[[:digit:]][[:digit:]])
 ## END
 
 #### Named captures with _match
-shopt -s oil:all
+shopt -s ysh:all
 
 var x = 'zz 2020-08-20'
 
-if (x ~ /<d+ : year> '-' <d+ : month>/) {
+if (x ~ /<capture d+ as year> '-' <capture d+ as month>/) {
   argv.py $[_match('year')] $[_match('month')]
 }
 ## STDOUT:
@@ -278,8 +278,8 @@ if (x ~ /<d+ : year> '-' <d+ : month>/) {
 ## END
 
 #### Named Capture Decays Without Name
-shopt -s oil:all
-var pat = /<d+ : month>/
+shopt -s ysh:all
+var pat = /<capture d+ as month>/
 echo $pat
 
 if ('123' ~ pat) {
@@ -292,8 +292,8 @@ yes
 ## END
 
 #### Operator ~ assigns named variable
-shopt -s oil:all
-var pat = /<d+ : month>/
+shopt -s ysh:all
+var pat = /<capture d+ as month>/
 echo $pat
 
 if ('123' ~ pat) {
@@ -307,7 +307,7 @@ TODO MONTH
 ## END
 
 #### literal ''
-shopt -s oil:all
+shopt -s ysh:all
 var pat = ''
 
 setvar pat = /'abc' 'def'/
@@ -326,7 +326,7 @@ yes
 ## END
 
 #### Single quotes and splicing (do what "foo $x ${x}" used to)
-shopt -s oil:all
+shopt -s ysh:all
 var pat = ''
 
 var x = 'x'
@@ -344,7 +344,7 @@ yes
 ## END
 
 #### @splice
-shopt -s oil:all
+shopt -s ysh:all
 var d = /d+/;
 var ip = / @d '.' @d '.' @d '.' @d /
 echo $ip
@@ -357,7 +357,7 @@ no
 ## END
 
 #### splice with capital letters
-shopt -s oil:all
+shopt -s ysh:all
 var D = /d+/;
 var ip = / D '.' D '.' D '.' D /
 echo $ip
@@ -370,7 +370,7 @@ no
 ## END
 
 #### Matching escaped tab character
-shopt -s oil:all
+shopt -s ysh:all
 
 var lines=%($'aa\tbb' $'cc\tdd')
 
@@ -381,7 +381,7 @@ write @lines | egrep $pat
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
 #### Match unicode char
-shopt -s oil:all
+shopt -s ysh:all
 var pat = / 'a' dot 'b' /
 
 if ('axb' ~ pat ) { echo yes } else { echo no }
@@ -401,7 +401,7 @@ no
 # NOTE: This pattern doesn't work with en_US.UTF-8.  I think the user should
 # set LANG=C or shopt --unset libc_utf8.
 
-shopt -s oil:all
+shopt -s ysh:all
 var pat = /[ $'\xff' ]/;
 
 echo $pat | od -A n -t x1
@@ -415,7 +415,7 @@ no
 ## END
 
 #### Match non-ASCII byte denoted using \xff
-shopt -s oil:all
+shopt -s ysh:all
 var pat = /[ \xff ]/;
 
 # Show what it translates to
@@ -430,7 +430,7 @@ echo $pat | od -A n -t x1
 ## END
 
 #### ERE can express Unicode escapes that are in the ASCII range
-shopt -s oil:all
+shopt -s ysh:all
 var pat = /[ \u{7f} ]/;
 
 echo $pat | od -A n -t x1
@@ -455,7 +455,7 @@ no
 ## END
 
 #### ERE can't express higher Unicode escapes
-shopt -s oil:all
+shopt -s ysh:all
 var pat2 = /[ \u{00} - \u{ff} ]/;
 
 # This causes an error
@@ -481,7 +481,7 @@ echo $pat
 ## stdout-json: ""
 
 #### Matching escaped tab character
-shopt -s oil:all
+shopt -s ysh:all
 
 # BUG: need C strings in array literal
 var lines=%($'aa\tbb' $'cc\tdd')
@@ -493,7 +493,7 @@ write @lines | egrep $pat
 ## stdout-json: "pat=(a[\t]b)\naa\tbb\n"
 
 #### Repeated String Literal With Single Char
-shopt -s oil:all
+shopt -s ysh:all
 
 var literal = 'f'
 var pat = null
@@ -514,7 +514,7 @@ no
 ## END
 
 #### Error when unparenthesized string of more than one character is repeated
-shopt -s oil:all
+shopt -s ysh:all
 
 var literal = 'foo'
 var pat = null
@@ -531,7 +531,7 @@ if ('foof' !~ pat) { echo no }
 ## stdout-json: ""
 
 #### Instead of $'foo\\bar' use 'foo' \\ 'bar'
-shopt -s oil:all
+shopt -s ysh:all
 var pat = /'foo' \\ 'bar'/
 echo $pat
 
@@ -544,7 +544,7 @@ no
 ## END
 
 #### Negation of Character Class ![a-z]
-shopt -s oil:all
+shopt -s ysh:all
 
 var pat = / ![ a-z ] /
 echo $pat
@@ -559,7 +559,7 @@ no
 ## END
 
 #### Posix and Perl class in class literals
-shopt -s oil:all
+shopt -s ysh:all
 
 var pat = null
 
@@ -611,7 +611,7 @@ echo $pat
 # octdigit     ::=  "0"..."7"
 # hexdigit     ::=  digit | "a"..."f" | "A"..."F"
 
-shopt -s oil:all
+shopt -s ysh:all
 
 const DecDigit = / [0-9] /
 const BinDigit = / [0-1] /
@@ -665,7 +665,7 @@ pat[invalid]+=1
 
 #### Regex in a loop (bug regression)
 
-shopt --set oil:all
+shopt --set ysh:all
 
 var content = [ 1, 2 ]
 var i = 0
@@ -686,7 +686,7 @@ while (i < len(content)) {
 
 #### Regex in a loop depending on var
 
-shopt --set oil:all
+shopt --set ysh:all
 
 var lines = ['foo', 'bar']
 for line in (lines) {
@@ -709,7 +709,7 @@ matched bar
 
 
 #### Regex with [ (bug regression)
-shopt --set oil:all
+shopt --set ysh:all
 
 if ('[' ~ / '[' /) {
   echo 'sq'
@@ -766,7 +766,7 @@ no way to have [^]
 ## END
 
 #### Operator chars in char classes (eggex)
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 
 var pat = / ['-'] /
 #echo PAT=$pat
@@ -805,7 +805,7 @@ no way to have [^]
 ## END
 
 #### Matching ] and \ and ' and " in character classes
-shopt -s oil:all
+shopt -s ysh:all
 
 # BUG: need C strings in array literal
 var lines=%(
@@ -832,7 +832,7 @@ dq "
 ## END
 
 #### Matching literal hyphen in character classes
-shopt -s oil:all
+shopt -s ysh:all
 
 var literal = '-'
 var pat = / [ 'a' 'b' @literal ] /
@@ -850,7 +850,7 @@ ab
 #
 # \ is special because of gawk
 
-shopt -s oil:upgrade
+shopt -s ysh:upgrade
 
 
 # Note: single caret disalowed

@@ -367,10 +367,8 @@ def AddKinds(spec):
             'If',
             'Else',
             'Func',  # For function literals
+            'Capture',
             'As',
-            'Virtual',
-            'Override',
-            'Abstract',
 
             # Tea-specific
             'While',
