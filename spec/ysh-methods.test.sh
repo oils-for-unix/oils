@@ -21,6 +21,22 @@ yes
 ok
 ## END
 
+#### => can be used to chain free functions
+
+func dictfunc() {
+  return ({k1: 'spam', k2: 'eggs'})
+}
+
+echo $[list(dictfunc()) => join('/') => upper()]
+
+# This is nicer and more consistent
+echo $[dictfunc() => list() => join('/') => upper()]
+
+## STDOUT:
+K1/K2
+K1/K2
+## END
+
 #### Str->startsWith
 = "abc"->startsWith("")
 = "abc"->startsWith("a")

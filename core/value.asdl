@@ -111,7 +111,7 @@ module value
     # cmd_eval.CommandEvaluator.  I think it would just generate a forward
     # declaration.
   | BuiltinFunc(any callable)
-  | BuiltinMethod(value me, any callable)
+  | BoundFunc(value me, value func)
 
     # command.ShFunction and command.Proc evaluate to ProcValue.
     # Procs have default args to evaluate, and no dynamic scope.

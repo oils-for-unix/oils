@@ -162,7 +162,7 @@ class Int(vm._Callable):
 
                 return value.Int(int(val.s))
 
-        raise error.TypeErr(val, 'Int() expected Bool, Int, Float, or Str',
+        raise error.TypeErr(val, 'int() expected Bool, Int, Float, or Str',
                             rd.BlamePos())
 
 
@@ -195,7 +195,7 @@ class Float(vm._Callable):
 
                 return value.Float(float(val.s))
 
-        raise error.TypeErr(val, 'Float() expected Int, Float, or Str',
+        raise error.TypeErr(val, 'float() expected Int, Float, or Str',
                             rd.BlamePos())
 
 
@@ -226,7 +226,7 @@ class Str_(vm._Callable):
             elif case(value_e.Str):
                 return val
 
-        raise error.TypeErr(val, 'Str() expected Str, Int, or Float',
+        raise error.TypeErr(val, 'str() expected Str, Int, or Float',
                             rd.BlamePos())
 
 
@@ -260,7 +260,7 @@ class List_(vm._Callable):
 
             else:
                 raise error.TypeErr(val,
-                                    'List() expected Dict, List, or Range',
+                                    'list() expected Dict, List, or Range',
                                     rd.BlamePos())
 
         assert it is not None
@@ -301,7 +301,8 @@ class Dict_(vm._Callable):
 
                 return value.Dict(d)
 
-        raise error.TypeErr(val, 'Dict() expected List or Dict', rd.BlamePos())
+        raise error.TypeErr(val, 'dict() expected Dict or BashAssoc',
+                            rd.BlamePos())
 
 
 class Split(vm._Callable):

@@ -796,6 +796,27 @@ test-error-builtin() {
   _error-case-X 99 'error oops (status=99)'
 }
 
+test-fat-arrow() {
+  #_should-run '= "str" -> upper()'
+  _should-run '= "str" => upper()'
+
+  _expr-error-case '= "str" -> bad()'
+
+  # We get 'Undefined variable' error because of the fallback, could make it better
+  _error-case-X 1 '= "str" => bad()'
+
+  _should-run '= ["3", "4"] => join("/")'
+
+  # Good error message for method chaining
+  _expr-error-case '= "badstring" => join("/")'
+
+  # Invalid type
+  _expr-error-case '
+  var myint = 42
+  = "badstring" => myint("/")
+  '
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

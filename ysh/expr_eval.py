@@ -738,44 +738,48 @@ class ExprEvaluator(object):
         func = self._EvalExpr(node.func)
         UP_func = func
 
+        # The () operator has a 2x2 matrix of
+        #   (free, bound) x (builtin, user-defined)
+
+        # Eval args first
         with tagswitch(func) as case:
-            if case(value_e.Func):
-                func = cast(value.Func, UP_func)
-
+            if case(value_e.Func, value_e.BuiltinFunc):
+                to_call = func
                 pos_args, named_args = func_proc._EvalArgList(self, node.args)
                 rd = typed_args.Reader(pos_args, named_args, node.args)
-                return func_proc.CallUserFunc(func, rd, self.mem, self.cmd_ev)
 
-            elif case(value_e.BuiltinFunc):
-                func = cast(value.BuiltinFunc, UP_func)
-                # C++ cast to work around ASDL 'any'
-                f = cast(vm._Callable, func.callable)
-                pos_args, named_args = func_proc._EvalArgList(self, node.args)
-                #log('pos_args %s', pos_args)
+            elif case(value_e.BoundFunc):
+                func = cast(value.BoundFunc, UP_func)
 
-                rd = typed_args.Reader(pos_args, named_args, node.args)
-                return f.Call(rd)
-
-            elif case(value_e.BuiltinMethod):
-                func = cast(value.BuiltinMethod, UP_func)
-
-                #assert isinstance(func.callable, vm._Callable), "Bound funcs must be typed"
-                # Cast to work around ASDL limitation for now
-                f = cast(vm._Callable, func.callable)
-
+                to_call = func.func
                 pos_args, named_args = func_proc._EvalArgList(self,
                                                               node.args,
                                                               me=func.me)
-
                 rd = typed_args.Reader(pos_args,
                                        named_args,
                                        node.args,
                                        is_bound=True)
-                return f.Call(rd)
-
             else:
                 raise error.TypeErr(func, 'Expected a function or method',
                                     node.args.left)
+
+        # Now apply args to either builtin or user-defined function
+        UP_to_call = to_call
+        with tagswitch(to_call) as case:
+            if case(value_e.Func):
+                to_call = cast(value.Func, UP_to_call)
+
+                return func_proc.CallUserFunc(to_call, rd, self.mem,
+                                              self.cmd_ev)
+
+            elif case(value_e.BuiltinFunc):
+                to_call = cast(value.BuiltinFunc, UP_to_call)
+
+                # C++ cast to work around ASDL 'any'
+                f = cast(vm._Callable, to_call.callable)
+                return f.Call(rd)
+            else:
+                raise AssertionError("Shouldn't have been bound")
 
         raise AssertionError()
 
@@ -866,16 +870,38 @@ class ExprEvaluator(object):
             # I/O.
             if case(Id.Expr_RArrow, Id.Expr_RDArrow):
                 name = node.attr.tval
-                ty = o.tag()
+                # Look up builtin methods
+                type_methods = self.methods.get(o.tag())
+                vm_callable = (type_methods.get(name)
+                               if type_methods is not None else None)
+                if vm_callable:
+                    func_val = value.BuiltinFunc(vm_callable)
+                    return value.BoundFunc(o, func_val)
 
-                recv = self.methods.get(ty)
-                method = recv.get(name) if recv is not None else None
-                if not method:
+                # If the operator is ->, fail because we don't have any
+                # user-defined methods
+                if node.op.id == Id.Expr_RArrow:
                     raise error.TypeErrVerbose(
                         'Method %r does not exist on type %s' %
                         (name, ui.ValType(o)), node.attr)
 
-                return value.BuiltinMethod(o, method)
+                # Operator is =>, so try function chaining.
+
+                # Instead of str(f()) => upper()
+                #         or str(f()).upper() as in Pythohn
+                #
+                # It's more natural to write
+                #     f() => str() => upper()
+
+                # Could improve error message: may give "Undefined variable"
+                val = self._LookupVar(name, node.attr)
+
+                with tagswitch(val) as case2:
+                    if case2(value_e.Func, value_e.BuiltinFunc):
+                        return value.BoundFunc(o, val)
+                    else:
+                        raise error.TypeErr(val, 'Fat arrow => expects method or function',
+                                            node.attr)
 
             elif case(Id.Expr_Dot):  # d.key is like d['key']
                 name = node.attr.tval

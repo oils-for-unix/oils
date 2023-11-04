@@ -520,6 +520,7 @@ func f() {
 echo $[type(f)]
 echo $[type(len)]
 echo $[type('foo'->startsWith)]
+echo $[type('foo'=>join)]  # Type error happens later
 echo $[type(1..3)]
 ## STDOUT:
 Int
@@ -531,6 +532,7 @@ Dict
 Null
 Func
 BuiltinFunc
-BuiltinMethod
+BoundFunc
+BoundFunc
 Range
 ## END
