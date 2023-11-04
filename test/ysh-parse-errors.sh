@@ -6,7 +6,14 @@
 source test/common.sh
 source test/sh-assert.sh  # banner, _assert-sh-status
 
+OSH=${OSH:-bin/osh}
 YSH=${YSH:-bin/ysh}
+
+_osh-should-parse() {
+  local message='Should parse under YSH'
+  _assert-sh-status 0 $OSH "$message" \
+    -n -c "$@"
+}
 
 _should-parse() {
   local message='Should parse under YSH'
@@ -18,6 +25,15 @@ _parse-error() {
   local message='Should NOT parse under YSH'
   _assert-sh-status 2 $YSH "$message" \
     -n -c "$@"
+}
+
+# Aliases
+_ysh-should-parse() {
+  _should-parse "$@"
+}
+
+_ysh-parse-error() {
+  _parse-error "$@"
 }
 
 test-return-args() {
@@ -623,8 +639,17 @@ test-type-expr() {
   # This is nicer
   _should-parse 'var x: Int = f()'
 
-  # This doesn't use colon because it already uses semi-colon
-  _should-parse 'proc p (; x Int) { echo hi }'
+  # But colon is optional
+  _should-parse 'var x Int = f()'
+
+  # Colon is noisy here because we have semi-colons
+  _should-parse 'proc p (; x Int, y Int; ) { echo hi }'
+
+  _should-parse 'func f (x Int, y Int; z Int = 0) { echo hi }'
+
+  # Hm should these be allowed, but discouraged?
+  #_should-parse 'func f (x Int, y Int; z: Int = 0) { echo hi }'
+  #_should-parse 'proc p (; x: Int, y: Int;) { echo hi }'
 }
 
 test-no-const() {
@@ -647,6 +672,611 @@ test-fat-arrow() {
   _should-parse 'func f(x Int) => List[Int] { echo hi }'
 }
 
+# Backslash in UNQUOTED context
+test-parse-backslash() {
+  set +o errexit
+
+  _ysh-should-parse 'echo \('
+  _ysh-should-parse 'echo \;'
+  _ysh-should-parse 'echo ~'
+  _ysh-should-parse 'echo \!'  # history?
+
+  _ysh-should-parse 'echo \%'  # job ID?  I feel like '%' is better
+  _ysh-should-parse 'echo \#'  # comment
+
+  _ysh-parse-error 'echo \.'
+  _ysh-parse-error 'echo \-'
+  _ysh-parse-error 'echo \/'
+
+  _ysh-parse-error 'echo \a'
+  _ysh-parse-error 'echo \Z'
+  _ysh-parse-error 'echo \0'
+  _ysh-parse-error 'echo \9'
+
+  _osh-should-parse 'echo \. \- \/ \a \Z \0 \9'
+}
+
+test-make-these-nicer() {
+  set +o errexit
+
+  # expects expression on right
+  _ysh-parse-error '='
+  _ysh-parse-error 'call'
+
+  # What about \u{123} parse errors
+  # I get a warning now, but parse_backslash should give a syntax error
+  # _ysh-parse-error "x = c'\\uz'"
+
+  # Dict pair split
+  _ysh-parse-error 'const d = { name:
+42 }'
+
+  #_ysh-parse-error ' d = %{}'
+}
+
+test-var-decl() {
+  set +o errexit
+
+  _ysh-parse-error '
+  proc p(x) {
+    echo hi
+    var x = 2  # Cannot redeclare param
+  }
+  '
+
+  _ysh-parse-error '
+  proc p {
+    var x = 1
+    echo hi
+    var x = 2  # Cannot redeclare local
+  }
+  '
+
+  _ysh-parse-error '
+  proc p(x, :out) {
+    var out = 2   # Cannot redeclare out param
+  }
+  '
+
+  _ysh-parse-error '
+  proc p {
+    var out = 2   # Cannot redeclare out param
+    cd /tmp { 
+      var out = 3
+    }
+  }
+  '
+
+  _ysh-should-parse '
+  var x = 1
+  proc p {
+    echo hi
+    var x = 2
+  }
+
+  proc p2 {
+    var x = 3
+  }
+  '
+}
+
+test-setvar() {
+  set +o errexit
+
+  _ysh-should-parse '
+  proc p(x) {
+    var y = 1
+    setvar y = 42
+  }
+  '
+
+  _ysh-parse-error '
+  proc p(x) {
+    var y = 1
+    setvar L = "L"  # ERROR: not declared
+  }
+  '
+
+  _ysh-parse-error '
+  proc p(x) {
+    var y = 1
+    setvar L[0] = "L"  # ERROR: not declared
+  }
+  '
+
+  _ysh-parse-error '
+  proc p(x) {
+    var y = 1
+    setvar d.key = "v"  # ERROR: not declared
+  }
+  '
+
+  _ysh-should-parse '
+  proc p(x) {
+    setvar x = "X"  # is mutating params allowed?  I guess why not.
+  }
+  '
+}
+
+test-ysh-case() {
+  set +o errexit
+
+  _ysh-should-parse '
+  case (x) {
+    (else) { = 1; }
+  }
+  '
+
+  _ysh-should-parse '
+  var myexpr = ^[123]
+
+  case (123) {
+    (myexpr) { echo 1 }
+  }
+  '
+
+  _ysh-should-parse '
+  case (x) {
+    (else) { echo 1 }
+  }
+  '
+
+  _ysh-should-parse '
+  case (x) {
+    (else) { = 1 }
+  }
+  '
+
+  _ysh-should-parse '
+  case (x) {
+    (else) { = 1 } 
+ 
+  }
+  '
+
+  _ysh-should-parse '
+  case (x) {
+    (else) { = 1 }  # Comment
+  }
+  '
+
+  _ysh-should-parse '
+  case (3) {
+    (3) { echo hi }
+    # comment line
+  }
+  '
+
+  _ysh-should-parse '
+  case (x) {
+    (else) { echo 1 } 
+  }
+  '
+
+  _ysh-should-parse '
+  case (foo) { (else) { echo } }
+  '
+
+  _ysh-should-parse '
+  case (foo) {
+    *.py { echo "python" }
+  }
+  '
+
+  _ysh-should-parse '
+  case (foo) {
+    (obj.attr) { echo "python" }
+  }
+  '
+
+  _ysh-should-parse '
+  case (foo) {
+    (0) { echo "python" }
+  }
+  '
+
+  _ysh-should-parse '
+  case (foo) {
+    ("main.py") { echo "python" }
+  }
+  '
+
+  # Various multi-line cases
+  if false; then # TODO: fixme, this is in the vein of the `if(x)` error
+    _ysh-should-parse '
+    case (foo){("main.py"){ echo "python" } }
+    '
+  fi
+  _ysh-should-parse '
+  case (foo) { ("main.py") { echo "python" } }
+  '
+  _ysh-should-parse '
+  case (foo) {
+    ("main.py") {
+      echo "python" } }'
+  _ysh-should-parse '
+  case (foo) {
+    ("main.py") {
+      echo "python" }
+  }
+  '
+  _ysh-should-parse '
+  case (foo) {
+    ("main.py") { echo "python"
+    }
+  }
+  '
+  _ysh-should-parse '
+  case (foo) {
+    ("main.py") {
+      echo "python"
+    }
+  }
+  '
+
+  # Example valid cases from grammar brain-storming
+  _ysh-should-parse '
+  case (add(10, 32)) {
+    (40 + 2) { echo Found the answer }
+    (else) { echo Incorrect
+    }
+  }
+  '
+
+  _ysh-should-parse "
+  case (file) {
+    / dot* '.py' / {
+      echo Python
+    }
+
+    / dot* ('.cc' | '.h') /
+    {
+      echo C++
+    }
+  }
+  "
+  _ysh-should-parse '
+  case (lang) {
+      en-US
+    | en-CA
+    | en-UK {
+      echo Hello
+    }
+    fr-FR |
+    fr-CA {
+      echo Bonjour
+    }
+
+
+
+
+
+    (else) {
+      echo o/
+    }
+  }
+  '
+
+  _ysh-should-parse '
+  case (num) {
+    (1) | (2) {
+      echo number
+    }
+  }
+  '
+
+  _ysh-should-parse '
+  case (num) {
+      (1) | (2) | (3)
+    | (4) | (5) {
+      echo small
+    }
+
+    (else) {
+      echo large
+    }
+  }
+  '
+
+  # Example invalid cases from grammar brain-storming
+  _ysh-parse-error '
+  case
+  (add(10, 32)) {
+      (40 + 2) { echo Found the answer }
+      (else) { echo Incorrect }
+  }
+  '
+  _ysh-parse-error "
+  case (file)
+  {
+    ('README') | / dot* '.md' / { echo Markdown }
+  }
+  "
+  _ysh-parse-error '
+  case (file)
+  {
+    {
+      echo Python
+    }
+  }
+  '
+  _ysh-parse-error '
+  case (file)
+  {
+    cc h {
+      echo C++
+    }
+  }
+  '
+  _ysh-parse-error "
+  case (lang) {
+      en-US
+    | ('en-CA')
+    | / 'en-UK' / {
+      echo Hello
+    }
+  }
+  "
+  _ysh-parse-error '
+  case (lang) {
+    else) {
+      echo o/
+    }
+  }
+  '
+  _ysh-parse-error '
+  case (num) {
+      (1) | (2) | (3)
+    | (4) | (5) {
+      echo small
+    }
+
+    (6) | (else) {
+      echo large
+    }
+  }
+  '
+
+  _ysh-parse-error '
+  case $foo {
+    ("main.py") {
+      echo "python"
+    }
+  }
+  '
+
+  # Newline not allowed, because it isn't in for, if, while, etc.
+  _ysh-parse-error '
+  case (x)
+  {
+    *.py { echo "python" }
+  }
+  '
+
+  _ysh-parse-error '
+  case (foo) in
+    *.py {
+      echo "python"
+    }
+  esac
+  '
+
+  _ysh-parse-error '
+  case $foo {
+    bar) {
+      echo "python"
+    }
+  }
+  '
+
+  _ysh-parse-error '
+  case (x) {
+    {
+      echo "python"
+    }
+  }
+  '
+
+  _ysh-parse-error '
+  case (x {
+    *.py { echo "python" }
+  }
+  '
+
+  _ysh-parse-error '
+  case (x) {
+    *.py) { echo "python" }
+  }
+  '
+
+  _ysh-should-parse "case (x) { word { echo word; } (3) { echo expr; } /'eggex'/ { echo eggex; } }"
+
+  _ysh-should-parse "
+case (x) {
+  word    { echo word; } (3)     { echo expr; } /'eggex'/ { echo eggex; } }"
+
+  _ysh-should-parse "
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; } /'eggex'/ { echo eggex; } }"
+
+  _ysh-should-parse "
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /'eggex'/ { echo eggex; } }"
+
+  _ysh-should-parse "
+case (x) {
+  word    { echo word; }
+  (3)     { echo expr; }
+  /'eggex'/ { echo eggex; }
+}"
+
+  # No leading space
+  _ysh-should-parse "
+case (x) {
+word    { echo word; }
+(3)     { echo expr; }
+/'eggex'/ { echo eggex; }
+}"
+}
+
+test-ysh-for() {
+  set +o errexit
+
+  _ysh-should-parse '
+  for x in (obj) {
+    echo $x
+  }
+  '
+
+  _ysh-parse-error '
+  for x in (obj); do
+    echo $x
+  done
+  '
+
+  _ysh-should-parse '
+  for x, y in SPAM EGGS; do
+    echo $x
+  done
+  '
+
+  # Bad loop variable name
+  _ysh-parse-error '
+  for x-y in SPAM EGGS; do
+    echo $x
+  done
+  '
+
+  # Too many indices
+  _ysh-parse-error '
+  for x, y, z in SPAM EGGS; do
+    echo $x
+  done
+  '
+
+  _ysh-parse-error '
+  for w, x, y, z in SPAM EGGS; do
+    echo $x
+  done
+  '
+
+  # Old style
+  _ysh-should-parse '
+  for x, y in SPAM EGGS
+  do
+    echo $x
+  done
+  '
+
+  # for shell compatibility, allow this
+  _ysh-should-parse 'for const in (x) { echo $var }'
+}
+
+test-for-parse-bare-word() {
+  set +o errexit
+
+  _ysh-parse-error '
+  for x in bare {
+    echo $x
+  }
+  '
+
+  _ysh-should-parse '
+  for x in a b {
+    echo $x
+  }
+  '
+
+  _ysh-should-parse '
+  for x in *.py {
+    echo $x
+  }
+  '
+
+  _ysh-should-parse '
+  for x in "quoted" {
+    echo $x
+  }
+  '
+}
+
+test-oils-issue-1118() {
+  set +o errexit
+
+  # Originally pointed at 'for'
+  _ysh-parse-error '
+  var snippets = [{status: 42}]
+  for snippet in (snippets) {
+    if (snippet["status"] === 0) {
+      echo hi
+    }
+
+    # The $ causes a weird error
+    if ($snippet["status"] === 0) {
+      echo hi
+    }
+  }
+  '
+
+  # Issue #1118
+  # pointed at 'var' in count
+  _ysh-parse-error '
+  var content = [ 1, 2, 4 ]
+  var count = 0
+
+  # The $ causes a weird error
+  while (count < $len(content)) {
+    setvar count += 1
+  }
+  '
+}
+
+test-proc-args() {
+  set +o errexit
+
+  _osh-should-parse 'json write (x)'
+
+  _osh-should-parse 'echo $(json write (x))'  # relies on lexer.PushHint()
+
+  # nested expr -> command -> expr
+  _osh-should-parse 'var result = $(json write (x))'
+
+  _osh-should-parse 'json write (x, y); echo hi'
+
+  # named arg
+  _osh-should-parse '
+json write (x, name = "value")
+echo hi
+'
+
+  # with block on same line
+  _ysh-should-parse 'json write (x) { echo hi }'
+
+  # with block
+  _ysh-should-parse '
+json write (x) {
+  echo hi
+}'
+
+  # multiple lines
+  _osh-should-parse 'json write (
+    x,
+    y,
+    z
+  )'
+
+  # can't be empty
+  _ysh-parse-error 'json write ()'
+  _ysh-parse-error 'json write ( )'
+
+  # should have a space
+  _ysh-parse-error 'json write(x)'
+  _ysh-parse-error 'json write()'
+  _ysh-parse-error 'f(x)'  # test short name
+}
 
 #
 # Entry Points
