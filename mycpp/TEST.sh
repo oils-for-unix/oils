@@ -264,6 +264,7 @@ test-runtime() {
 
   unit '' asan
   unit '' asan+gcalways
+  unit '' opt
 
   if can-compile-32-bit; then
     unit '' asan32+gcalways  # ASAN on 32-bit

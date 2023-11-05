@@ -59,6 +59,12 @@ def DefineTargets(ru):
                      matrix=COMPILERS_VARIANTS,
                      phony_prefix='mycpp-unit')
 
+    ru.cc_binary('mycpp/float_test.cc',
+                 deps=['//mycpp/runtime'],
+                 # Just test two compilers, in fast mode
+                 matrix=[('cxx', 'opt'), ('clang', 'opt')],
+                 phony_prefix='mycpp-unit')
+
     for test_main in [
             'mycpp/demo/gc_header.cc',
             'mycpp/demo/hash_table.cc',
