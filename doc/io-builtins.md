@@ -12,14 +12,14 @@ POSIX shell has overlapping and quirky constructs for doing I/O:
 - the `$(command sub)` construct
 - Bash has `mapfile` and `readarray`
 
-Oil rationalizes I/O with:
+YSH rationalizes I/O with:
 
 - A new `write` builtin
 - Long flags to `read`, like `--line` and `--all`
 - The distinction between `$(string sub)` and `@(array sub)`
 - The [QSN](qsn.html) serialization format.
 
-Oil also has orthogonal mechanisms for string processing:
+YSH also has orthogonal mechanisms for string processing:
 
 - `${.myproc arg}` and `@{.myproc arg}` are an optimization (TODO)
 - `${x %.2f}` as a static version of the `printf` builtin (TODO)
@@ -35,20 +35,20 @@ These are discussed in more detail the [strings](strings.html) doc.
 ## Problems With Shell
 
 - `echo` is flaky because `echo $x` is a bug.  `$x` could be `-n`.
-  - Oil's write accepts `--`.
+  - YSH `write` accepts `--`.
 - `read` is flaky good because the `-r` flag to ignore `\` line continuations
   isn't the default.  The `\` creates a mini-language that isn't understood by
   other line-based tools like `grep` and `awk`.
-  - Oil has `read --line`.
+  - YSH has `read --line`.
 - There's no way to tell if `$()` strips the trailing newline,.
-  - Oil has `read --all`, as well as lastpipe being on.
+  - YSH has `read --all`, as well as lastpipe being on.
 
 Example:
 
     hostname | read --all :x
     write -- $x
 
-## Summary of Oil features
+## Summary of YSH features
 
 - `write`: `--qsn`, `--sep`, `--end`
 - `read`: `--qsn`, `--line`, `--lines`, and `--all` (or `--all-lines`?)
@@ -72,7 +72,7 @@ Example:
 
 Here are some design notes on making the I/O builtins orthogonal and
 composable.  There should be clean ways to "round trip" data between the OS and
-Oil data structures.
+YSH data structures.
 
 ### Problem
 

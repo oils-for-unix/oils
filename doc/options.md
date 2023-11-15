@@ -6,7 +6,6 @@ default_highlighter: oil-sh
 Global Shell Options: Turning OSH into YSH
 ==========================================
 
-(Until 2023, YSH was called the "Oil language".  This doc will be updated.)
 
 This document describes global shell options, which look like this:
 
@@ -20,7 +19,7 @@ They can affect parsing or execution, and are used to gradually turn the
 For example, YSH doesn't have word splitting on whitespace.  Instead, it use
 [Simple Word Evaluation](simple-word-eval.html).  (Blog: [Oil Doesn't Require
 Quoting
-Everywhere](https://www.oilshell.org/blog/2021/04/simple-word-eval.html)).
+Everywhere](https://www.oilshell.org/blog/2021/04/simple-word-eval.html)).  (Until 2023, YSH was called the "Oil language".)
 
 This isn't the **only** use for options, but it's an important one.
 
@@ -54,9 +53,9 @@ shells, use this:
     shopt --set ysh:upgrade
 
 This second line may break a few things, but is designed to be an easy upgrade.
-See [What Breaks When You Upgrade to Oil](upgrade-breakage.html).
+See [What Breaks When You Upgrade to YSH](upgrade-breakage.html).
 
-### Oil
+### YSH
 
 If you're writing a new script, you can use `bin/ysh` to get **all**
 enhancements.  Typically you use a shebang line like this:
@@ -72,7 +71,7 @@ There are several different ways of using shell options.
 
 ### Preferred Style
 
-Oil has **long flags** for readability, which are preferred:
+YSH has **long flags** for readability, which are preferred:
 
     shopt --set errexit
     shopt --unset errexit
@@ -87,7 +86,7 @@ It also allows **scoped** options:
 
 ### Bourne Shell Style
 
-For compatibility, these styles works in Oil:
+For compatibility, these styles works in YSH:
 
     set -e          # abort script on non-zero exit exit code
     set +e          # turn it off
@@ -108,8 +107,8 @@ can also set options at the command line:
     osh -O errexit -c 'shopt -p -o'  # turn on Bourne option
     osh +O errexit -c 'shopt -p -o'  # turn off Bourne option
 
-    osh -O strict_tilde -c 'shopt -p'  # turn on Oil option
-    osh +O strict_tilde -c 'shopt -p'  # turn off Oil option
+    osh -O strict_tilde -c 'shopt -p'  # turn on YSH option
+    osh +O strict_tilde -c 'shopt -p'  # turn off YSH option
 
 ### Inspecting Option State
 
@@ -120,7 +119,7 @@ Shell has many ways to do this, like:
     shopt -p nullglob failglob  # print selected options
     shopt -p ysh:upgrade          # print options in the given group
 
-TODO: Oil should enable `shopt --print` for all options.  It should have a flat
+TODO: YSH should enable `shopt --print` for all options.  It should have a flat
 list.
 
 ## Kinds of Options, With Examples
@@ -128,7 +127,7 @@ list.
 *Option groups* like `ysh:upgrade` are baked into the interpreter.  What follows
 is an informal list of *kinds* of options, which are different categorization:
 
-- Groups: How much of Oil do you want to use?
+- Groups: How much of YSH do you want to use?
 - Kinds: Does this option affect parsing behavior, runtime behavior, or
   something else?
 
@@ -156,8 +155,8 @@ correctly under `bash`.
 
 In contrast, if you set `shopt -s simple_word_eval` (an option that doesn't
 start with `strict_`), the semantics of your program have changed, and you can
-**no longer** run it under other shells.  It's considered an "Oil option": by
-setting it, you're using parts of the Oil language.
+**no longer** run it under other shells.  It's considered an "YSH option": by
+setting it, you're using parts of YSH.
 
 ### Parse Options Change Syntax
 
@@ -193,7 +192,7 @@ Specifically, it does three things:
 Test cases start here: <https://github.com/oilshell/oil/blob/master/spec/oil-options.test.sh#L257>
 -->
 
-Here's idiomatic Oil syntax after `parse_brace`:
+Here's idiomatic YSH syntax after `parse_brace`:
 
     cd /tmp {
       echo $PWD
@@ -306,11 +305,11 @@ reference.
 
 ## FAQ: Aren't Global Variables Bad?
 
-Options are technically globals, but Oil controls them in 2 ways:
+Options are technically globals, but YSH controls them in 2 ways:
 
 1. It has scoped mutation with Ruby-like [blocks](proc-block-func.html).
     - Example: `shopt --unset errexit { false }`
-2. Like all Bourne shells, Oil uses process-based concurrency.  It doesn't have
+2. Like all Bourne shells, YSH uses process-based concurrency.  It doesn't have
    shared memory.
 
 ## Related Documents

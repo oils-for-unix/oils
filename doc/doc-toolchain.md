@@ -99,8 +99,8 @@ See the raw and rendered versions of this doc for more:
 Use Markdown's fenced code blocks like this:
 
     ``` sh-prompt
-    oil$ var x = 'hello world'
-    oil$ echo $x
+    ysh$ var x = 'hello world'
+    ysh$ echo $x
     hello world
     ```
 

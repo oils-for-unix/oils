@@ -6,12 +6,12 @@ in_progress: true
 Strings: Quotes, Interpolation, Escaping, and Buffers
 =====================================================
 
-Strings are the most important data structure in shell.  Oil makes them easier
+Strings are the most important data structure in shell.  YSH makes them easier
 and safer!
 
 This doc addresses these questions:
 
-- How do you write different kinds of strings in Oil programs?
+- How do you write different kinds of strings in YSH programs?
 - How do they behave at runtime?  What are the common operations?
 - What are the recommended ways to use them?
 
@@ -20,7 +20,7 @@ Shell Features:
 - Quotes (single or double quoted)
 - Interpolation aka substitution (variable, command, etc.)
 
-Oil Features:
+YSH Features:
 
 - Escaping for safety: `${x|html}`, etc.
 - Buffers for efficiency and readability: `${.myproc arg1}`, etc.
@@ -31,13 +31,14 @@ Oil Features:
 
 ## Summary
 
-- Oil has three ways to write strings: single quoted, double quoted, and
+- YSH has three ways to write strings: single quoted, double quoted, and
   C-style (which is also QSN-style).
 - Each of the three types has a multiline variant.  They are Python-style
   triple-quoted, but they also strip leading space in an intelligent way.
-- TODO: For string safety, Oil adds the concept of "escapers" and interpolation
+- TODO: Tagged strings, like `"<h2>$x</h2>"html`
+- TODO: For string safety, YSH adds the concept of "escapers" and interpolation
   with `$[x]` (square brackets)
-- TODO: For convenience and performance, Oil adds buffers and *builtin
+- TODO: For convenience and performance, YSH adds buffers and *builtin
   substitution*: `${.myproc arg1}`.
 
 ### For Python/JS/C Users
@@ -48,7 +49,7 @@ Oil Features:
 
 ### For Shell Users
 
-- Oil replaces here docs with Python-style triple-quoted strings.
+- YSH replaces here docs with Python-style triple-quoted strings.
 
 Preferences:
 
@@ -152,7 +153,7 @@ Note you can have bugs if you use the wrong escaper!
   - These are identical except for syntax
 - Useful for log messages, which aren't security sensitive
 
-Note that you should **not** use `"${var}"` in Oil code.  Use `$var` or
+Note that you should **not** use `"${var}"` in YSH code.  Use `$var` or
 `${var}` because of simple word evaluation.
 
 ### Command Sub `$(echo hi)` 
@@ -233,9 +234,9 @@ echo, printf, and write have their output captured.
 - Backticks for command sub
   - Use `$(echo hi)`
 - Arithmetic substitution like `$((1 + 2))`
-  - Use Oil expressions: `$[1 + 2]`
+  - Use YSH expressions: `$[1 + 2]`
 - `${x%%prefix}` and so forth
-  - Use builtin Oil functions (TODO)
+  - Use builtin YSH functions (TODO)
 - Unused: bash `$""` for localization?
 
 ## Appendix B: Related Documents

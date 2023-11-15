@@ -79,7 +79,7 @@ Multi-line output is shown like this:
 
 ### Hello World Script
 
-You can also type commands into a file `hello.oil`.  This is a complete YSH
+You can also type commands into a file `hello.ysh`.  This is a complete YSH
 program, which is identical to a shell program:
 
     echo 'hello world'     # => hello world
@@ -403,11 +403,11 @@ More details: [Variable Declaration and Mutation](variables.html).
 
 Shell-style for loops iterate over **words**:
 
-    for word in 'oil' $num_beans {pea,coco}nut {
+    for word in 'oils' $num_beans {pea,coco}nut {
       echo $word
     }
     # =>
-    # oil
+    # oils
     # 13
     # peanut
     # coconut
@@ -1128,13 +1128,13 @@ YSH can be used to write simple "shell scripts" or longer programs.  It has
 A module is just a file, like this:
 
 ```
-#!/usr/bin/env oil
+#!/usr/bin/env ysh
 ### Deploy script
 
 module main || return 0         # declaration, "include guard"
 use bin cp mkdir                # optionally declare binaries used
 
-source $_this_dir/lib/util.oil  # defines 'log' helper
+source $_this_dir/lib/util.ysh  # defines 'log' helper
 
 const DEST = '/tmp'
 

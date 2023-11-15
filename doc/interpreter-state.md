@@ -5,18 +5,18 @@ in_progress: yes
 Interpreter State
 =================
 
-The Oil project has a single interpreter that supports both the OSH and Oil
+The Oils project has a single interpreter that supports both the OSH and YSH
 languages.
 
 In other words, It's useful to think of Unix shell in historical layers:
 
-- [OSH]($xref:osh-language): A compatible but cleaned-up shell language.
+- [OSH]($xref): A compatible but cleaned-up shell language.
   1. Thompson Shell (pipelines, exit status)
   2. Bourne Shell (variables, functions)
   3. [Korn Shell]($xref:ksh) (indexed arrays)
   4. [Bash]($xref:bash) (`shopt`, associative arrays)
-- [Oil]($xref:oil-language): A new shell language that manipulates the same
-  interpreter state in a cleaner way.
+- [YSH]($xref): A new shell language that manipulates the same interpreter
+  state in a cleaner way.
 
 <!--
 TODO:
@@ -47,13 +47,13 @@ $ echo $foo
 bar
 ```
 
-In addition Oil, adds JavaScript-like syntax:
+In addition, YSH adds JavaScript-like syntax:
 
 ```
 var foo = 'bar'
 ```
 
-Oil's syntax can express more data types, but it may also confuse new users.
+YSH syntax can express more data types, but it may also confuse new users.
 
 So the sections below describe the shell from a **semantic** perspective, which
 should help users reason about their programs.
@@ -68,7 +68,7 @@ POSIX shell has a fairly simple model: everything is a string, and `"$@"` is a
 special case.
 
 Bash adds many features on top of POSIX, including arrays and associative
-arrays.  Oil implements those features, and a few more.
+arrays.  Oils implements those features, and a few more.
 
 However, it also significantly simplifies the model.
 
@@ -76,10 +76,10 @@ A primary difference is mentioned in [Known Differences](known-differences.html)
 
 - In bash, the *locations* of values are tagged with types, e.g. `declare -A
   unset_assoc_array`.
-- In Oil, *values* are tagged with types.  This is how common dynamic languages
+- In Oils, *values* are tagged with types.  This is how common dynamic languages
   like Python and JavaScript behave.
 
-In other words, Oil "salvages" the confusing semantics of bash and produces
+In other words, Oils "salvages" the confusing semantics of bash and produces
 something simpler, while still being very compatible.
 
 ### Add New Features and Types
@@ -96,11 +96,11 @@ TODO
 - Shell has a stack but no heap.  The stack stores:
   - Variables that are local to a function.
   - The **arguments array** which is spelled `"$@"` in shell, and `@ARGV` in
-    Oil.
+    YSH.
 - Shell's memory has values and locations, but **no** references/pointers.
 
 <!--
-later: Oil adds references to data structures on the heap, which may be recurisve.
+later: YSH adds references to data structures on the heap, which may be recurisve.
 -->
 
 ### Environment Variables Become Global Variables
@@ -124,7 +124,7 @@ foo=bar   # a variable; doesn't affect the function
 
 ### Variable Name Lookup with "Dynamic Scope"
 
-OSH has it, but Oil limits it.
+OSH has it, but YSH limits it.
 
 ### Limitations of Arrays And Compound Data Structures
 
@@ -174,9 +174,7 @@ TODO
 
 Undef, Str, Sequential/Indexed Arrays, Associative Array
 
-- "array" refers to both.
-  - although Oil has a "homogeneous array type" that's entirely different
-  - OSH array vs. Oil array
+- OSH has `value.BashArray`, and YSH has `value.List`.
 - no integers, but there is (( ))
 - "$@" is an array, and "${a[@]}" too
   - not true in bash -- it's fuzzy there
@@ -203,14 +201,14 @@ Another important type:
 
 ### Shell Builtins
 
-Oil supports various shell and bash operations to view the interpreter state.
+Oils supports various shell and bash operations to view the interpreter state.
 
 - `set` prints variables and their values
 - `set -o` prints options
 - `declare/typeset/readonly/export -p` prints a subset of variables
 - `test -v` tests if a variable is defined.
 
-### [pp]($help) in Oil
+### [pp]($help) in Oils
 
 Pretty prints a cell.
 
@@ -223,9 +221,9 @@ TODO: What about functions
 
 ## Modifying State
 
-### Oil Keywords
+### YSH Keywords
 
-TODO: See Oil Keywords doc.
+TODO: See YSH Keywords doc.
 
 ### Shell Assignment Builtins: declare/typeset, readonly, export
 

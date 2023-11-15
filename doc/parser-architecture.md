@@ -14,14 +14,14 @@ the same material and is more polished.
 
 ### List of Regex-Based Lexers
 
-Oil uses regex-based lexers, which are turned into efficient C code with
+Oils uses regex-based lexers, which are turned into efficient C code with
 [re2c]($xref).  We intentionally avoid hand-written code that manipulates
 strings char-by-char, since that strategy is error prone; it's inevitable that
 rare cases will be mishandled.
 
 The list of lexers can be found by looking at [native/fastlex.c]($oil-src).
 
-- The large, modal OSH/Oil lexer in [frontend/lexer_def.py]($oil-src).
+- The large, modal OSH/YSH lexer in [frontend/lexer_def.py]($oil-src).
 - Lexers for OSH sublanguages
   - For `echo -e`
   - For `PS1` backslash escapes.
@@ -36,8 +36,8 @@ The list of lexers can be found by looking at [native/fastlex.c]($oil-src).
 
 ### Sublanguages We Don't Lex or Parse
 
-These constructs aren't recognized by Oil's front end.  Instead, they're punted
-to [libc]($xref):
+These constructs aren't recognized by the Oils front end.  Instead, they're
+punted to [libc]($xref):
 
 - Glob patterns, e.g. `*.py` (in most cases)
 - Extended glob patterns, e.g. `@(*.py|*.sh)`

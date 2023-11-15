@@ -1,11 +1,11 @@
 Simple Word Evaluation in Unix Shell
 ====================================
 
-This document describes Oil's word evaluation semantics (`shopt -s
+This document describes the YSH word evaluation semantics (`shopt -s
 simple_word_eval`) for experienced shell users.  It may also be useful to
 those who want to implement this behavior in another shell.
 
-The main idea is that Oil behaves like a traditional programming language:
+The main idea is that YSH behaves like a traditional programming language:
 
 1. It's **parsed** from start to end [in a single pass][parsing-shell].
 2. It's **evaluated** in a single step too.
@@ -23,7 +23,7 @@ confused.
 
 ## An Analogy: Word Expressions Should Be Like Arithmetic Expressions
 
-In Oil, "word expressions" like
+In YSH, "word expressions" like
 
     $x
     "hello $name"
@@ -52,7 +52,7 @@ and data (links below).
 In other words, the **defaults are wrong**.  Programmers are surprised by shell's
 behavior, and it leads to incorrect programs.
 
-So in Oil, you can opt out of the multiple "word expansion" stages described in
+So in YSH, you can opt out of the multiple "word expansion" stages described in
 the [POSIX shell spec][posix-spec].  Instead, there's only **one stage**:
 evaluation.
 
@@ -84,14 +84,14 @@ $ argv one "two three"
 ['one', 'two three']
 ```
 
-I also use Oil's [var]($help) keyword for assignments.  *(TODO: This could be
+I also use the YSH [var]($help) keyword for assignments.  *(TODO: This could be
 rewritten with shell assignment for the benefit of shell implementers)*
 
 [argv]: $oil-src:spec/bin/argv.py
 
 ### No Implicit Splitting, Dynamic Globbing, or Empty Elision
 
-In Oil, the following constructs always evaluate to **one argument**:
+In YSH, the following constructs always evaluate to **one argument**:
 
 - Variable / "parameter" substitution: `$x`, `${y}`
 - Command sub: `$(echo hi)` or backticks
@@ -112,7 +112,7 @@ That is, quotes aren't necessary to avoid:
 
 <!-- - Tilde Sub: `~bob/src` -->
 
-Here's an example showing that each construct evaluates to one arg in Oil:
+Here's an example showing that each construct evaluates to one arg in YSH:
 
 ```sh-prompt
 oil$ var pic = 'my pic.jpg'  # filename with spaces
@@ -153,7 +153,7 @@ contrast, these three constructs evaluate to **0 to N arguments**:
    program text.
 3. **Brace expansion**: `{alice,bob}@example.com`
 
-In Oil, `shopt -s parse_at` enables these shortcuts for splicing:
+In YSH, `shopt -s parse_at` enables these shortcuts for splicing:
 
 - `@myarray` for `"${myarray[@]}"`
 - `@ARGV` for `"$@"`
@@ -231,7 +231,7 @@ EvalWordSequence
 
 ## Opt In to the Old Behavior With Explicit Expressions
 
-Oil can express everything that shell can.
+YSH can express everything that shell can.
 
 - Split with `@[split(mystr, IFS?)]`
 - Glob with `@[glob(mypat)]`
@@ -242,7 +242,7 @@ Oil can express everything that shell can.
 ### More `shopt` Options
 
 - [nullglob]($help) - Globs matching nothing don't evaluate to code.
-- [dashglob]($help) is true by default, but **disabled** when Oil is enabled, so that
+- [dashglob]($help) is true by default, but **disabled** when YSH is enabled, so that
   files that begin with `-` aren't returned.  This avoids [confusing flags and
   files](https://www.oilshell.org/blog/2020/02/dashglob.html).
 
@@ -265,7 +265,7 @@ var python = @[glob('*.py')]
 
 ## Summary
 
-Oil word evaluation is enabled with `shopt -s simple_word_eval`, and proceeds
+YSH word evaluation is enabled with `shopt -s simple_word_eval`, and proceeds
 in a single step.
 
 Variable, command, and arithmetic substitutions predictably evaluate to a
@@ -275,7 +275,7 @@ There's no implicit splitting, globbing, or elision of empty words.
 You can opt into those behaviors with explicit expressions like
 `@[split(mystr)]`, which evaluates to an array.
 
-Oil also supports shell features that evaluate to **0 to N arguments**:
+YSH also supports shell features that evaluate to **0 to N arguments**:
 splicing, globbing, and brace expansion.
 
 There are other options that "clean up" word evaluation.  All options are
@@ -297,7 +297,7 @@ POSIX.
 - [Security implications of forgetting to quote a variable in bash/POSIX
   shells](https://unix.stackexchange.com/questions/171346/security-implications-of-forgetting-to-quote-a-variable-in-bash-posix-shells)
   by Stéphane Chazelas.  Describes the "implicit split+glob" operator, which
-  Oil word evaluation removes.
+  YSH word evaluation removes.
   - This is essentially the same [security
     issue](http://www.oilshell.org/blog/2019/01/18.html#a-story-about-a-30-year-old-security-problem)
     I rediscovered in January 2019.  It appears in all [ksh]($xref)-derived shells, and some shells
@@ -309,7 +309,7 @@ POSIX.
 
 ### Tip: View the Syntax Tree With `-n`
 
-This gives insight into [how Oil parses shell][parsing-shell]:
+This gives insight into [how Oils parses shell][parsing-shell]:
 
 ```sh-prompt
 $ osh -n -c 'echo ${x:-default}$(( 1 + 2 ))'

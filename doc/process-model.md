@@ -24,7 +24,7 @@ missing documentation for shell!
 
 ### Explicit Subshells are Rarely Needed
 
-- prefer `pushd` / `popd`, or `cd { }` in Oil.
+- prefer `pushd` / `popd`, or `cd { }` in YSH.
 
 ### Redirects
 
