@@ -37,15 +37,14 @@ BigStr* realpath(BigStr* path) {
 }
 
 int fnmatch(BigStr* pat, BigStr* str, int flags) {
+#ifdef FNM_EXTMATCH
+  flags |= FNM_EXTMATCH;
+#else
   // TODO: We should detect this at ./configure time, and then maybe flag these
   // at parse time, not runtime
-#ifdef FNM_EXTMATCH
-  int flags_todo = FNM_EXTMATCH;
-#else
-  int flags_todo = 0;
 #endif
 
-  int result = ::fnmatch(pat->data_, str->data_, flags_todo);
+  int result = ::fnmatch(pat->data_, str->data_, flags);
   switch (result) {
   case 0:
     return 1;
@@ -109,8 +108,9 @@ List<BigStr*>* glob(BigStr* pat) {
 List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags) {
   List<BigStr*>* results = NewList<BigStr*>();
 
+  flags |= REG_EXTENDED;
   regex_t pat;
-  if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
+  if (regcomp(&pat, pattern->data_, flags) != 0) {
     // TODO: check error code, as in func_regex_parse()
     throw Alloc<RuntimeError>(StrFromC("Invalid regex syntax (regex_match)"));
   }

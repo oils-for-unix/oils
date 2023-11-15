@@ -99,8 +99,8 @@ func_fnmatch(PyObject *self, PyObject *args) {
 // Bash does its own globbing -- it doesn't use libc.  Likewise, I think dash
 // and mksh do their own globbing.
 
-int globerr(const char *path, int eerrno) {
-  fprintf(stderr, "globerr: %s: %s\n", path, strerror(eerrno));
+int globerr(const char *path, int errno_) {
+  fprintf(stderr, "globerr: %s: %s\n", path, strerror(errno_));
   return 0;  // let glob() keep going
 }
 
