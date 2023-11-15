@@ -17,36 +17,76 @@ language, which includes [Egg Expressions]($xref:eggex).
 
 ### const 
 
-The `const` keywords binds the name on the left to a YSH expression on the
-right:
+Binds a name to a YSH expression on the right, with a **dynamic** check to
+prevent mutation.
 
     const c = 'mystr'        # equivalent to readonly c=mystr
     const pat = / digit+ /   # an eggex, with no shell equivalent
 
 If you try to re-declare or mutate the name, the shell will fail with a runtime
-error.  It uses the same flag that the `readonly` builtin uses.
+error.  `const` uses the same mechanism as the `readonly` builtin.
 
 Consts should only appear at the top-level, and can't appear within `proc` or
 `func`.
 
 ### var
 
-Initializes a name to the Oil expression on the right.
+Initializes a name to a YSH expression.
 
     var s = 'mystr'        # equivalent to declare s=mystr
     var pat = / digit+ /   # an eggex, with no shell equivalent
 
 It's either global or scoped to the current function.
 
+You can bind multiple variables:
+
+    var flag, i = parseArgs(spec, ARGV)
+
+    var x, y = 42, 43
+
+You can omit the right-hand side:
+
+    var x, y  # implicitly initialized to null
+
 ### setvar
 
 At the top-level, setvar creates or mutates a variable.
 
-Inside a proc, it mutates a local variable declared with var.
+    setvar gFoo = 'mutable'
+
+Inside a func or proc, it mutates a local variable declared with var.
+
+    proc p {
+      var x = 42
+      setvar x = 43
+    }
+
+You can mutate a List location:
+
+    setvar a[42] = 'foo'
+
+Or a Dict location:
+
+    setvar d['key'] = 43
+    setvar d.key = 43  # same thing
+
+You can use any of these these augmented assignment operators
+
+    +=   -=   *=   /=   **=   //=   %=
+    &=   |=   ^=   <<=   >>=
+
+Examples:
+
+    setvar x += 2  # increment by 2
+
+    setvar a[42] *= 2  # multiply by 2
+
+    setvar d.flags |= 0b0010_000  # set a flag
+
 
 ### setglobal
 
-Creates or mutates a global variable.
+Creates or mutates a global variable.  Has the same syntax as `setvar`.
 
 ## Literals
 
@@ -199,22 +239,31 @@ Like Python:
 
     f(x, y)
 
-### get-method
+### thin-arrow
 
-Transforming methods:
-
-    var b = s->startswith('prefix')
-
-Mutating methods:
+The thin arrow is for mutating methods:
 
     var mylist = ['bar']
-    :: mylist.pop()
+    call mylist->pop()
 
 <!--
 TODO
     var mydict = {name: 'foo'}
-    :: mydict->.erase('name')
+    call mydict->erase('name')
 -->
+
+### fat-arrow
+
+The fat arrow is for transforming methods:
+
+    if (s => startsWith('prefix')) {
+      echo 'yes'
+    }
+
+If the method lookup on `s` fails, it looks for free functions.  This means it
+can be used for "chaining" transformations:
+
+    var x = myFunc() => list() => join()
 
 ### match-ops
 

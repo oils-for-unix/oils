@@ -437,10 +437,17 @@ Internal commands (procs and builtins) accept typed arguments.
 
     json write (myobj)
 
-TODO: Implement these
+Block literals have a special syntax:
 
-    eval (myblock)
-    assert (x > 0)
+    cd /tmp {
+      echo $PWD
+    }
+
+This is equivalent to:
+
+    var cmd = ^(echo $PWD)  # unevaluated command
+
+    cd /tmp (cmd)  # pass typed arg
 
 ### lazy-expr-arg
 

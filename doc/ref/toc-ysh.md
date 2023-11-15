@@ -49,6 +49,8 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-expr-lang
   [Keywords]      const   var   setvar   setglobal
+  [Assign Ops]    =   +=   -=   *=   /=   **=   //=   %=
+                  &=   |=   ^=   <<=   >>=
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
@@ -75,7 +77,8 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   ysh-attr      mydict.key
                   ysh-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)
-                  get-method    s->startswith('prefix')
+                  thin-arrow    s->pop()
+                  fat-arrow     s => startswith('prefix')
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ /
                   re-compound   pat|alt   pat seq   (group)

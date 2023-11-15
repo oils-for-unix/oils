@@ -82,13 +82,21 @@ Runs a command and requires the exit code to be 0 or 1.
 
 ### error
 
-The error builtin signals an error.  Use it instead of `return 1`:
+The `error` builtin raises a fatal error.  In YSH, it's customary to use it
+instead of `return 1`:
 
-   proc p {
-     if ! test -d /tmp {
-       error 'Missing /tmp'
-     }
-   }
+    proc p {
+      if ! test -d /tmp {
+        error 'Missing /tmp'
+      }
+    }
+
+The error can be caught with `try`:
+
+    try p
+    if (_status !== 0 {
+      echo 'failed'
+    }
 
 By default, it fails with status 1.  You can change this with a typed arg:
 

@@ -226,16 +226,16 @@ Group with `(pat)`
 
     ('foo' | 'bar')+
 
-See note below: POSIX ERE has no non-capturing groups.
+See note below: When translating to POSIX ERE, grouping becomes a capturing
+group.  POSIX ERE has no non-capturing groups.
 
+Capture with `<capture pat>`:
 
-Capture with `<pat>`:
+    <capture d+>           # Becomes _match(1)
 
-    < d+ >        # Becomes _match(1)
+Add a variable after `as` for named capture:
 
-Add a variable after `:` for named capture:
-
-    < d+ : myvar>  # Becomes _match('myvar')
+    <capture d+ as myvar>  # Becomes _match('myvar')
 
 ### Character Class Literals Use `[]`
 
@@ -377,25 +377,27 @@ Yes:
 
 ## POSIX ERE Limitations
 
-### Surround repeated strings with a capturing group `<>`
+### Repetition of Strings Requires Grouping
+
+Repetitions like `* + ?` apply only to the last character, so literal strings
+need extra grouping:
+
 
 No:
 
     'foo'+ 
-    $string_with_many_chars+
 
 Yes:
 
-    <'foo'>+
-    <$string_with_many_chars>+
+    <capture 'foo'>+
+
+Also OK:
+
+    ('foo')+  # this is a CAPTURING group in ERE
 
 This is necessary because ERE doesn't have non-capturing groups like Perl's
-`(?:...)`, and - Eggex only does "dumb" translations.  It doesn't silently
-insert constructs that change the meaning of the pattern.
-
-(Exception: Although `('foo')+` is a non-capturing group, it becomes a capturing
-group when translating to ERE.  This is for convenience / familiarity.  Prefer
-`<'foo'>+`.)
+`(?:...)`, and Eggex only does "dumb" translations.  It doesn't silently insert
+constructs that change the meaning of the pattern.
 
 ### Unicode char literals are limited in range
 

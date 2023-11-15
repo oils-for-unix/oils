@@ -811,7 +811,10 @@ TODO: change example above
 - Ternary: `1 if x else 0`
 - Index and slice: `mylist[3]` and `mylist[1:3]`
   - `mydict->key` is a shortcut for `mydict['key']`
-- Function and method call: `f(x, y)  s.startswith('prefix')`
+- Function calls
+  - free: `f(x, y)`
+  - transformations and chaining: `s => startWith('prefix')`
+  - mutating methods: `mylist->pop()`
 - String and List: `++` for concatenation
   - This is a separate operator because the addition operator `+` does
     string-to-int conversion
