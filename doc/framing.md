@@ -5,11 +5,11 @@ in_progress: yes
 Solutions to the Framing Problem
 ================================
 
-Oil is a shell that lets you write correct programs.  Programs often parse
+YSH is a shell that lets you write correct programs.  Programs often parse
 multiple records or strings sent over a pipe, i.e. the "framing problem".
 (This terminology is borrowed from network engineering.)
 
-Oil provides a few solutions for that, and each solution is useful in certain
+YSH provides a few solutions for that, and each solution is useful in certain
 contexts.
 
 <div id="toc">

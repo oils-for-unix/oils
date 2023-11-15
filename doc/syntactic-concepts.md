@@ -2,16 +2,16 @@
 default_highlighter: oil-sh
 ---
 
-Syntactic Concepts in the Oil Language
-======================================
+Syntactic Concepts in YSH
+=========================
 
-These documents introduce the Oil language:
+These documents introduce the YSH language:
 
-- [The Simplest Explanation of Oil ](//www.oilshell.org/blog/2020/01/simplest-explanation.html) (blog)
-- [A Feel For Oil's Syntax](syntax-feelings.html)
+- [The Simplest Explanation of Oil](//www.oilshell.org/blog/2020/01/simplest-explanation.html) (blog)
+- [A Feel For YSH Syntax](syntax-feelings.html)
 
 In contrast, the concepts introduced below may help advanced users **remember**
-Oil and its syntax.  Read on to learn about:
+YSH and its syntax.  Read on to learn about:
 
 - **Command vs. Expression Mode**.  Command mode is like shell, and expression
   mode is like Python.
@@ -19,7 +19,7 @@ Oil and its syntax.  Read on to learn about:
 - **Sigils and Sigil Pairs**.  A style of syntax that's familiar to shell and
   Perl users.
 - **Parse Options** like `shopt -s parse_paren`.  To selectively break
-  compatibility, and gradually upgrade shell to Oil.
+  compatibility, and gradually upgrade shell to YSH.
 - **Static Parsing**, as opposed to the dynamic parsing of shell.  Static
   parsing improves error messages and makes more software engineering tools
   possible.
@@ -32,7 +32,7 @@ loops -->
 
 ## Command vs. Expression Mode
 
-The Oil parser starts out in command mode:
+The YSH parser starts out in command mode:
 
     echo "hello $name"
 
@@ -52,7 +52,7 @@ See [Command vs. Expression Mode](command-vs-expression-mode.html) for details.
 
 ## Lexer Modes
 
-*Lexer modes* are a technique that Oil uses to manage the complex syntax of
+*Lexer modes* are a technique that YSH uses to manage the complex syntax of
 shell, which evolved over many decades.
 
 For example, `:` means something different in each of these lines:
@@ -60,9 +60,9 @@ For example, `:` means something different in each of these lines:
     PATH=/bin:/usr/bin          # Literal string
     echo ${x:-default}          # Part of an operator
     echo $(( x > y ? 42 : 0 ))  # Arithmetic Operator
-    var myslice = a[3:5]        # Oil expression
+    var myslice = a[3:5]        # YSH expression
 
-To solve this problem, Oil has a lexer that can run in many **modes**.
+To solve this problem, YSH has a lexer that can run in many **modes**.
 Multiple parsers read from this single lexer, but they demand different tokens,
 depending on the parsing context.
 
@@ -81,8 +81,8 @@ A **sigil** is a symbol like the `$` in `$mystr`.
 A **sigil pair** is a sigil with opening and closing delimiters, like `${var}`
 and `@(seq 3)`.
 
-An appendix of [A Feel For Oil's Syntax](syntax-feelings.html) lists the sigil
-pairs in the Oil language.
+An appendix of [A Feel For YSH Syntax](syntax-feelings.html) lists the sigil
+pairs in the YSH language.
 
 ### Valid Contexts
 
@@ -137,7 +137,7 @@ $ echo '@myarray'       # quote it to get the old behavior
 The `parse_equals` option (in group `ysh:all`) lets you omit `const`:
 
 ```sh-prompt
-const x = 42 + a[i]     # accepted in OSH and Oil
+const x = 42 + a[i]     # accepted in OSH and YSH
 
 shopt -s parse_equals   # Change the meaning of =
 
@@ -157,7 +157,7 @@ $ echo $(( code ))  # Silent eval of a string.  Dangerous!
 6
 ```
 
-Oil expressions are parsed in a single stage, and then evaluated, which makes
+YSH expressions are parsed in a single stage, and then evaluated, which makes
 it more like Python or JavaScript:
 
 ```sh-prompt
@@ -167,7 +167,7 @@ $ echo $[ code ]
 ```
 
 Another example: shell assignment builtins like `readonly` and `local`
-dynamically parsed, while Oil assignment like `const` and `var` are statically
+dynamically parsed, while YSH assignment like `const` and `var` are statically
 parsed.
 
 ### Aside: Duplicate Functionality in Bash
@@ -201,21 +201,19 @@ Remaining dynamic parsing in shell:
 
 ## Related Documents
 
-- [Oil Language Influences](language-influences.html).  Where the syntax in Oil
+- [YSH Language Influences](language-influences.html).  Where the syntax in YSH
   comes from.
-- [Ideas for Future Deprecations](future.html).  Oil may grow its own command
-  lexer mode.
 
 ## Appendix: Hand-Written vs. Generated Parsers
 
-The [OSH language]($xref:osh-language) is parsed "by hand", while the [Oil
-language]($xref:oil-language) is parsed with tables generated from a grammar (a
-modified version of [Python's pgen]($xref:pgen2)).
+The [OSH]($xref) language is parsed "by hand", while the [YSH]($xref)
+expression language is parsed with tables generated from a grammar (a modified
+version of [Python's pgen]($xref:pgen2)).
 
 This is mostly an implementation detail, but users may notice that OSH gives
 more specific error messages!
 
-Hand-written parsers give you more control over errors.  Eventually the Oil
+Hand-written parsers give you more control over errors.  Eventually the YSH
 language may have a hand-written parser as well.  Either way, feel free to file
 bugs about error messages that confuse you.
 

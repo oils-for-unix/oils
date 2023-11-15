@@ -2,10 +2,10 @@
 default_highlighter: oil-sh
 ---
 
-Egg Expressions (Oil Regexes)
+Egg Expressions (YSH Regexes)
 =============================
 
-Oil has a new syntax for patterns, which appears between the `/ /` delimiters:
+YSH has a new syntax for patterns, which appears between the `/ /` delimiters:
 
     if (mystr ~ /d+ '.' d+/) {   
       echo 'mystr looks like a number N.M'
@@ -29,12 +29,12 @@ expressions in important ways.  So we call them *eggexes* rather than
 - bash and awk use the limited and verbose POSIX ERE syntax, while eggexes are
   more expressive and (in some cases) Perl-like.
 - They're designed to be **translated to any regex dialect**.  Right now, the
-  Oil shell translates them to ERE so you can use them with common Unix tools:
+  YSH shell translates them to ERE so you can use them with common Unix tools:
   - `egrep` (`grep -E`)
   - `awk`
   - GNU `sed --regexp-extended`
   - PCRE syntax is the second most important target.
-- They're **statically parsed** in Oil, so:
+- They're **statically parsed** in YSH, so:
   - You can get **syntax errors** at parse time.  In contrast, if you embed a
     regex in a string, you don't get syntax errors until runtime.
   - The eggex is part of the [lossless syntax tree][], which means you can do
@@ -319,9 +319,9 @@ You can spread regexes over multiple lines and add comments:
     ///
 
 
-(Not yet implemented in Oil.)
+(Not yet implemented in YSH.)
 
-### The Oil API
+### The YSH API
 
 (Still to be implemented.)
 
@@ -354,7 +354,7 @@ Splitting:
 
 ### Language Reference
 
-- See bottom of the [Oil Expression Grammar](https://github.com/oilshell/oil/blob/master/oil_lang/grammar.pgen2) for the concrete syntax.
+- See bottom of the [YSH Expression Grammar](https://github.com/oilshell/oil/blob/master/ysh/grammar.pgen2) for the concrete syntax.
 - See the bottom of
   [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
   for the abstract syntax.
@@ -477,7 +477,7 @@ However, cases like this are a fatal runtime error:
 
 With egg expressions, each construct has a **distinct syntax**.
 
-### Oil is Shorter Than Bash
+### YSH is Shorter Than Bash
 
 Bash:
 
@@ -485,7 +485,7 @@ Bash:
       echo 'x looks like a number
     fi
 
-Compare with Oil:
+Compare with YSH:
 
     if (x ~ /digit+/) {
       echo 'x looks like a number'
@@ -497,14 +497,14 @@ Perl:
 
     $x =~ /\d+/
 
-Oil:
+YSH:
 
     x ~ /d+/
 
 
 The Perl expression has three more punctuation characters:
 
-- Oil doesn't require sigils in expression mode
+- YSH doesn't require sigils in expression mode
 - The match operator is `~`, not `=~`
 - Named character classes are unadorned like `d`.  If that's too short, you can
   also write `digit`.
@@ -514,7 +514,7 @@ The Perl expression has three more punctuation characters:
 ### Eggexes In Other Languages
 
 The eggex syntax can be incorporated into other tools and shells.  It's
-designed to be separate from Oil -- hence the separate name.
+designed to be separate from YSH -- hence the separate name.
 
 Notes:
 
@@ -587,7 +587,7 @@ will be matched under which engine.
 
 ### Where Do I Send Feedback?
 
-Eggexes are implemented in Oil, but not yet set in stone.
+Eggexes are implemented in YSH, but not yet set in stone.
 
 Please try them, as described in [this
 post](http://www.oilshell.org/blog/2019/08/22.html) and the

@@ -6,7 +6,7 @@ YSH FAQ
 =======
 
 Here are some common questions about [YSH]($xref).  Many of the answers boil
-down to the fact that Oil is a **smooth upgrade** from [bash]($xref).
+down to the fact that YSH is a **smooth upgrade** from [bash]($xref).
 
 Old and new constructs exist side-by-side.  New constructs have fewer
 "gotchas".
@@ -17,7 +17,7 @@ Old and new constructs exist side-by-side.  New constructs have fewer
 
 ## What's the difference `myvar`, `$myvar`, and `"$myvar"` ?
 
-Oil is more like Python/JavaScript rather than PHP/Perl, so it doesn't use the
+YSH is more like Python/JavaScript rather than PHP/Perl, so it doesn't use the
 `$` sigil as much.
 
 Never use `$` on the left-hand side:
@@ -111,23 +111,9 @@ string.  But they are different:
 overhead, but they're not yet implemented.)
 -->
 
-## How can I return rich values from shell functions / Oil `proc`s?
-
-There are two primary ways:
-
-- Print the "returned" data to `stdout`.  Retrieve it with a command sub like
-  `$(myproc)` or a pipeline like `myproc | read --line`.
-- Use an "out param" with [setref]($oil-help:setref).
-
-(Oil may grow true functions with the `func` keyword, but it will be built on
-top of `proc` and the *builtin sub* mechanism.)
-
-Send us feedback if this doesn't make sense, or if you want a longer
-explanation.
-
 ## Why doesn't a raw string work here: `${array[r'\']}` ?
 
-This boils down to the difference between OSH and Oil, and not being able to
+This boils down to the difference between OSH and YSH, and not being able to
 mix the two.  Though they look similar, `${array[i]}` syntax (with braces) is
 fundamentally different than `$[array[i]]` syntax (with brackets).
 
@@ -135,12 +121,12 @@ fundamentally different than `$[array[i]]` syntax (with brackets).
   - The index is legacy/deprecated shell arithmetic like `${array[i++]}` or
     `${assoc["$key"]}`.
   - The index **cannot** be a raw string like `r'\'`.
-- Oil supports both, but [expression substitution]($oil-help:expr-sub) syntax
+- YSH supports both, but [expression substitution]($oil-help:expr-sub) syntax
   `$[array[i]]` is preferred.
-  - It accepts Oil expressions like `$[array[i + 1]` or `$[mydict[key]]`.
+  - It accepts YSH expressions like `$[array[i + 1]` or `$[mydict[key]]`.
   - A raw string like `r'\'` is a valid key, e.g.  `$[mydict[r'\']]`.
 
-Of course, Oil style is preferred when compatibility isn't an issue.
+Of course, YSH style is preferred when compatibility isn't an issue.
 
 No:
 
@@ -158,13 +144,13 @@ Old:
 
 New:
 
-    echo $[1 + 2]     # Oil expression
+    echo $[1 + 2]     # YSH expression
 
 <!--
 
 ## Why doesn't the ternary operator work here: `${array[0 if cond else 5]}`?
 
-The issue is the same as above.  Oil expression are allowed within `$[]` but
+The issue is the same as above.  YSH expression are allowed within `$[]` but
 not `${}`.
 
 -->

@@ -196,7 +196,7 @@ This is implemented, but a JSON library isn't in the release build.
 
 ### More
 
-For more features unique to Oil, see [Why Use Oil?][why]
+For more features unique to Oils, see [Why Use Oils?][why]
 
 [why]: https://www.oilshell.org/why.html
 

@@ -5,7 +5,7 @@ default_highlighter: oil-sh
 Shell Language Idioms
 =====================
 
-These are like the [Oil vs. Shell Idioms](idioms.html), but the advice also
+These are like the [YSH vs. Shell Idioms](idioms.html), but the advice also
 applies to other Unix shells.
 
 <div id="toc">
@@ -28,7 +28,7 @@ Arrays](http://www.oilshell.org/blog/2016/11/06.html)
 
 ### Prefer `test` to `[`
 
-Idiomatic Oil code doesn't use "puns".
+Idiomatic OSH code doesn't use "puns".
 
 No:
 
@@ -82,7 +82,7 @@ Yes:
       ls -l "$@"
     }
 
-    proc ll {      # Oil Style
+    proc ll {      # YSH Style
       ls -l @ARGV
     }
 
@@ -119,7 +119,7 @@ Yes:
     local d
     d=$(date %x)         # fails properly
 
-Better Oil style:
+Better YSH style:
 
     var d = $(date %x)   # fails properly
 
@@ -164,7 +164,7 @@ Shell workaround when the *$0 Dispatch Pattern* is used:
     "$@"  # invoked like myscript.sh mycaller arg1 arg2 ...
 
 
-Better Oil Style:
+Better YSH Style:
 
     try myfunc
     if (_status === 0) 
@@ -194,7 +194,7 @@ Yes (shell style):
     x=3          
     x=$(( x + 1 ))  # No -i flag needed
 
-Yes (Oil style):
+Yes (YSH style):
 
     var x = 3
     setvar x += 1
@@ -210,7 +210,7 @@ Yes (shell style):
 
     x=$(( 1 + 2 ))
 
-Yes (Oil style):
+Yes (YSH style):
 
     var x = 1 + 2
 

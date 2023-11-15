@@ -42,7 +42,8 @@ is the new, fast C++ build.
 
 ## Documentation
 
-These docs are **ready to read** (though there may be obsolete references to "Oil" rather than "YSH"):
+These docs are **ready to read** (though there may be obsolete references to
+"Oil" rather than "YSH"):
 
 - [Getting Started](doc/getting-started.html)
 - [FAQ on Documentation](doc/faq-doc.html).  **Look here if you can't find
@@ -54,10 +55,10 @@ These docs are **ready to read** (though there may be obsolete references to "Oi
   | [Headless Mode](doc/headless.html)
 - YSH:
   - [A Tour of YSH](doc/ysh-tour.html)
-  | [Oil vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
-  | [What Breaks When You Upgrade to Oil](doc/upgrade-breakage.html)
-  | [YSH Language FAQ](doc/ysh-faq.html)  | [Egg Expressions (Oil Regexes)](doc/eggex.html)
-  | [Oil Fixes Shell's Error Handling](doc/error-handling.html)
+  | [YSH vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
+  | [What Breaks When You Upgrade to YSH](doc/upgrade-breakage.html)
+  | [YSH Language FAQ](doc/ysh-faq.html)  | [Egg Expressions (YSH Regexes)](doc/eggex.html)
+  | [YSH Fixes Shell's Error Handling](doc/error-handling.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](doc/variables.html)
   | [Hay - Custom Languages for Unix Systems](doc/hay.html)
@@ -73,5 +74,5 @@ More:
 - [**All Docs**](doc/) about Oils (in progress).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
-  page has other ways of getting Oil.  These versions may not be up-to-date.
+  page has other ways of getting Oils.  These versions may not be up-to-date.
 

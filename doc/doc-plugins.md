@@ -8,7 +8,7 @@ Examples of HTML Plugins
 This file is essentially a unit test for [doctools/oil_doc.py]($oil-src), which
 contains all the HTML plugins.
 
-Related: [How We Build Oil's Documentation](doc-toolchain.html).
+Related: [How We Build Oils Documentation](doc-toolchain.html).
 
 <div id="toc">
 </div>
@@ -54,9 +54,9 @@ hi
 
 ### oil-sh
 
-A generic formatter that works for both shell and Oil code.  It's used in
+A generic formatter that works for both shell and YSH code.  It's used in
 [idioms.html](idioms.html), [known differences](known-differences.html), and is
-now the default for the Oil blog.
+now the default for the Oils blog.
 
 (Detail: it's the same as `sh-prompt` for now.  We might want to do something
 smarter.)
@@ -93,9 +93,9 @@ print(x, file=sys.stderr)
 
 ### Plugins We Should Have
 
-- oil and osh.  *A Tour of Oil* could use it to show which code blocks can be
+- ysh and osh.  *A Tour of YSH* could use it to show which code blocks can be
   extracted and run.
-- Side-by-side sh and Oil
+- Side-by-side sh and YSH
 - Side-by-side PCRE and Eggex
 - sh-session - How to replace the data?
 

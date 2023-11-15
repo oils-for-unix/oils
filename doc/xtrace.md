@@ -2,10 +2,10 @@
 default_highlighter: oil-sh
 ---
 
-Tracing Execution in Oil (`xtrace`)
+Tracing Execution in YSH (`xtrace`)
 ===================================
 
-Oil extends shell's `set -x` / `xtrace` mechanism to give you more visibility
+YSH extends shell's `set -x` / `xtrace` mechanism to give you more visibility
 into your program's execution.  It shows high-level program structure
 ("functions", `eval`) as well as runtime events (starting and stopping external
 processes).
@@ -41,9 +41,9 @@ default value is `'+ '`, which results in traces like this:
 
 <!-- TODO: you generally lose tracing across processes. -->
 
-## Oil Enhancements
+## YSH Enhancements
 
-Oil solves these problems.  Here's an example of tracing a builtin, a pipeline,
+YSH solves these problems.  Here's an example of tracing a builtin, a pipeline,
 then another builtin:
 
     $ osh -O ysh:upgrade -x -c 'set +e; ls | grep OOPS | wc -l; echo end'
@@ -87,7 +87,7 @@ equivalent to:
 
 ### Variables for the Trace Line
 
-In Oil, the default trace line prefix is:
+In YSH, the default trace line prefix is:
 
     $ PS4='${SHX_indent}${SHX_punct}${SHX_pid_str} '
 

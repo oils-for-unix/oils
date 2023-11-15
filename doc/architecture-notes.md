@@ -2,10 +2,10 @@
 in_progress: true
 ---
 
-Notes on Oil's Architecture
+Notes on Oils Architecture
 ===========================
 
-This doc is for contributors or users who want to understand the Oil codebase.
+This doc is for contributors or users who want to understand the Oils codebase.
 These internal details are subject to change.
 
 <div id="toc">
@@ -19,7 +19,7 @@ These internal details are subject to change.
   structures.
 - [Parser Architecture](parser-architecture.html)
 - [OSH Word Evaluation Algorithm][word-eval] (wiki) describes shell's complex
-  word evaluation.  Oil uses [Simple Word Evaluation](simple-word-eval.html)
+  word evaluation.  Oils uses [Simple Word Evaluation](simple-word-eval.html)
   instead.
 
 [Contributing]: https://github.com/oilshell/oil/wiki/Contributing

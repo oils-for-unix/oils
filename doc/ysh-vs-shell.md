@@ -3,7 +3,7 @@ in_progress: true
 ---
 
 YSH vs. Shell
-==========================
+=============
 
 This doc aims to help shell users understand YSH
 
@@ -15,28 +15,25 @@ If you don't want to read a comparison, see [A Tour of YSH](ysh-tour.html).
 ## Strictness At Parse Time and Runtime
 
 - Parse time: statically parsed.
-- Runtime: Many `strict_*` shell options to reduce edge cases.  Oil generally
+- Runtime: Many `strict_*` shell options to reduce edge cases.  YSH generally
   fails faster than shell.
 
 ## There Are 3 Core Sublanguages Instead of 4
 
 - Shell: Command, Word, Arith, Bool
-- Oil: Command, Word, Expression (Python-Like Expressions)
+- YSH: Command, Word, Expression (Python-Like Expressions)
 
 ### Expressions Replace Arith and Bool
 
 So Many Shell Constructs Are Deprecated/Discouraged.
 
-All of this is discouraged in favor of Oil expressions:
+All of this is discouraged in favor of YSH expressions:
 
 - `[[ $x =~ $pat ]]`
 - `x=$(( x + 1 ))` and `(( x = x + 1 ))` and `let`, etc.
 - `declare -A assoc=(['k1']=v1 ['k2']=v2)`
 
-For details on the expression language, see [Oil's Expression
-Language](expression-language.html) (under construction).
-
-See [Oil Languages Idioms](idioms.html) for more rewrites.
+See [YSH vs. Shell Idioms](idioms.html) for more rewrites.
 
 ### Command Language Differences
 
@@ -52,8 +49,7 @@ See [Oil Languages Idioms](idioms.html) for more rewrites.
   generally used for Python-like expressions, e.g. `if (x > 0) { echo
   'positive' }`
 
-See [A Tour of Oil](oil-language-tour.html) and [Command
-Language](command-language.html) for more details.
+See [A Tour of YSH](ysh-tour.html) for more details.
 
 ### Word Language Differences
 
@@ -63,15 +59,14 @@ Language](command-language.html) for more details.
 - Inline function calls like `echo $[join(['pea', nut'])]`
 - You can write raw strings like `echo r'C:\Program Files\'`
 
-See [A Tour of Oil](oil-language-tour.html) and [Word
-Language](word-language.html) for more details.
+See [A Tour of YSH](ysh-tour.html) for more details.
 
 ## Runtime
 
 ### Builtins
 
-- Oil adds long flags like `read --line`
-- Oil has builtin Functions
+- YSH adds long flags like `read --line`
+- YSH has builtin Functions
 
 ### Shell Options, `shvar`, Registers
 
@@ -86,7 +81,7 @@ Language](word-language.html) for more details.
 - [Modules](modules.html): for organizing code into files
 - Metaprogramming with Blocks (TODO)
 
-## Some Shell Features That Oil Retains
+## Some Shell Features That YSH Retains
 
 Here's an incomplete list of bash features that are preserved:
 
@@ -96,8 +91,8 @@ Here's an incomplete list of bash features that are preserved:
 
 ## Related Links
 
-- [Oil Languages Idioms](idioms.html) shows example of Oil and shell side by
+- [YSH vs. Shell Idioms](idioms.html) shows example of YSH and shell side by
   side.
-- [What Breaks When You Upgrade to Oil](upgrade-breakage.html).  These are
+- [What Breaks When You Upgrade to YSH](upgrade-breakage.html).  These are
   breaking changes.
-- [Oil Expressions vs. Python](oil-vs-python.html)
+- [YSH Expressions vs. Python](ysh-vs-python.html)

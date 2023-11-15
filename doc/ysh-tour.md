@@ -5,8 +5,6 @@ default_highlighter: oil-sh
 A Tour of YSH
 =============
 
-(Until 2023, YSH was called the "Oil language".  This doc will be updated.)
-
 <!-- author's note about example names
 
 - people: alice, bob
@@ -15,12 +13,12 @@ A Tour of YSH
 - 42 for integers
 -->
 
-This document describes the [Oil language]($xref:oil-language) from **clean
-slate** perspective.  We don't assume you know Unix shell or the compatible [OSH
-language]($xref:osh-language), but shell users will see similarities,
-simplifications, and upgrades.
+This document describes the [YSH]($xref) language from **clean slate**
+perspective.  We don't assume you know Unix shell or the compatible
+[OSH]($xref), but shell users will see similarities, simplifications, and
+upgrades.
 
-Remember, Oil is for Python and JavaScript users who avoid shell!  See the
+Remember, YSH is for Python and JavaScript users who avoid shell!  See the
 [project FAQ][FAQ] for more color on that.
 
 [FAQ]: https://www.oilshell.org/blog/2021/01/why-a-new-shell.html
@@ -30,17 +28,19 @@ This document is **long** because it demonstrates nearly every feature of the
 language.  You may want to read it in multiple sittings, or read [The Simplest
 Explanation of
 Oil](https://www.oilshell.org/blog/2020/01/simplest-explanation.html) first.
+(Until 2023, YSH was called the "Oil language".)
+
 
 Here's a summary of what follows:
 
-1. Oil has interleaved *word*, *command*, and *expression* languages.
+1. YSH has interleaved *word*, *command*, and *expression* languages.
    - The command language has Ruby-like *blocks*, and the expression language
      has Python-like *data types*.
-2. Oil has two kinds of *builtins* that form the "standard library".
-3. Languages for *data* (like [JSON][]) are complementary to Oil code.
-4. OSH and Oil share both an *interpreter data model* and a *process model*
+2. YSH has two kinds of *builtins* that form the "standard library".
+3. Languages for *data* (like [JSON][]) are complementary to YSH code.
+4. OSH and YSH share both an *interpreter data model* and a *process model*
    (provided by the Unix kernel).  Understanding these common models will make
-   you both a better shell user and Oil user.
+   you both a better shell user and YSH user.
 
 Keep these points in mind as you read the details below.
 
@@ -51,14 +51,14 @@ Keep these points in mind as you read the details below.
 
 ## Preliminaries
 
-Start Oil just like you start bash or Python:
+Start YSH just like you start bash or Python:
 
 <!-- oil-sh below skips code block extraction, since it doesn't run -->
 
 ```sh-prompt
-bash$ oil                # assuming it's installed
+bash$ ysh                # assuming it's installed
 
-oil$ echo 'hello world'  # command typed into Oil
+ysh$ echo 'hello world'  # command typed into YSH
 hello world
 ```
 
@@ -79,14 +79,14 @@ Multi-line output is shown like this:
 
 ### Hello World Script
 
-You can also type commands into a file `hello.oil`.  This is a complete Oil
+You can also type commands into a file `hello.oil`.  This is a complete YSH
 program, which is identical to a shell program:
 
     echo 'hello world'     # => hello world
 
-### A Taste of Oil
+### A Taste of YSH
 
-Unlike shell, Oil has `const` and `var` keywords:
+Unlike shell, YSH has `const` and `var` keywords:
 
     const name = 'world'
     echo "hello $name"     # => hello world
@@ -114,7 +114,7 @@ Expressions are often surrounded by `()`:
     # [0] item 6
     # [1] item 7
 
-Oil has Ruby-like blocks:
+YSH has Ruby-like blocks:
 
     cd /tmp {
       echo hi > greeting.txt  # file created inside /tmp
@@ -205,7 +205,7 @@ three varieties, and leading whitespace is stripped in a convenient way.
 
 ### Five Kinds of Substitution
 
-Oil has syntax for 3 types of substitution, all of which start with `$`.  These
+YSH has syntax for 3 types of substitution, all of which start with `$`.  These
 things can all be converted to a **string**:
 
 1. Variables
@@ -221,7 +221,7 @@ The syntax `$a` or `${a}` converts a variable to a string:
     echo _${a}_                      # => _ale_
     echo "_ $a _"                    # => _ ale _
 
-The shell operator `:-` is occasionally useful in Oil:
+The shell operator `:-` is occasionally useful in YSH:
 
     echo ${not_defined:-'default'}   # => default
 
@@ -306,7 +306,7 @@ There is also a variant of *command sub* that splits first:
 ### Simple Commands and Redirects
 
 A simple command is a space-separated list of words, which are often unquoted.
-Oil looks up the first word to determine if it's a `proc` or shell builtin.
+YSH looks up the first word to determine if it's a `proc` or shell builtin.
 
     echo 'hello world'   # The shell builtin 'echo'
 
@@ -349,7 +349,7 @@ Details below.
 
 ### Multi-line Commands
 
-Oil's `...` prefix lets you write long commands, pipelines, and `&&` chains
+The YSH `...` prefix lets you write long commands, pipelines, and `&&` chains
 without `\` line continuations.
 
     ... find /bin               # traverse this directory and
@@ -456,7 +456,7 @@ There are two simpler forms:
 - One variable gives you the key: `for k in (mydict)`
 - Two variables gives you the key and value: `for k, v in (mydict)`
 
-(One way to think of it: `for` loops in Oil have the functionality Python's
+(One way to think of it: `for` loops in YSH have the functionality Python's
 `enumerate()`, `items()`, `keys()`, and `values()`.)
 
 ### `while` Loop
@@ -523,7 +523,7 @@ corresponding block:
 <!-- TODO: document case on typed data -->
 
 (Shell style like `if foo; then ... fi` and `case $x in ...  esac` is also legal,
-but discouraged in Oil code.)
+but discouraged in YSH code.)
 
 ### Error Handling
 
@@ -545,9 +545,9 @@ Procs use this style (because of shell's *disabled `errexit` quirk*):
       echo 'failed'
     }
 
-For a complete list of examples, see [Oil vs. Shell Idioms > Error
+For a complete list of examples, see [YSH vs. Shell Idioms > Error
 Handling](idioms.html#error-handling).  For design goals and a reference, see
-[Oil Fixes Shell's Error Handling](error-handling.html).
+[YSH Fixes Shell's Error Handling](error-handling.html).
 
 #### `break`, `continue`, `return`, `exit`
 
@@ -614,20 +614,21 @@ It's just a visual indication that the string arg is a variable name.
 
 ## Expression Language: Python-like Types
 
-Oil expressions are more like Python and JavaScript than traditional shell
+YSH expressions are more like Python and JavaScript than traditional shell
 syntax.  For example, we write `if (x < y)` instead of `if [ $x -lt $y ]`.
 
 Expressions are usually surrounded by `( )`.  [Command vs. Expression
-Mode](command-vs-expression-mode.html) may help you understand how Oil is
+Mode](command-vs-expression-mode.html) may help you understand how YSH is
 parsed.
 
 ### Types and Literals: `Int`, `List`, `Dict`, ...
 
-Let's go through Oil's Python-like data types and see the syntax for literals.
+Let's go through the Python-like data types in YSH and see the syntax for
+literals.
 
 #### Null and Bool
 
-Oil uses JavaScript-like spellings these three "atoms":
+YSH uses JavaScript-like spellings these three "atoms":
 
     var x = null
 
@@ -649,7 +650,7 @@ There are many ways to write integers:
     echo "$hex $octal $binary"           # => 65536 493 21
 
 "Runes" are integers that represent Unicode code points.  They're not common in
-Oil code, but can make certain string algorithms more readable.
+YSH code, but can make certain string algorithms more readable.
 
     # Pound rune literals are similar to ord('A')
     const a = #'A'
@@ -665,8 +666,7 @@ Oil code, but can make certain string algorithms more readable.
 
 #### Float
 
-Floats are written like you'd expect, but the initial version of the Oil
-language doesn't have them.  (Help wanted!)
+Floats are written like you'd expect:
 
     var small = 1.5e-10
     var big = 3.14
@@ -737,7 +737,7 @@ More:
 
 #### Block and Expr
 
-These types are for reflection on Oil code.  Most Oil programs won't use them
+These types are for reflection on YSH code.  Most YSH programs won't use them
 directly.
 
 - `Block`: an unevaluated code block.
@@ -755,7 +755,7 @@ Operators are generally the same as in Python:
       echo 'enough'
     }  # => enough
 
-Oil has a few operators that aren't in Python.  Equality can be approximate or
+YSH has a few operators that aren't in Python.  Equality can be approximate or
 exact:
 
     var n = ' 42 '
@@ -824,7 +824,7 @@ TODO: What about list comprehensions?
 
 ### Builtin Functions
 
-In addition to shell-like builtins, Oil also has builtin **functions**.  These
+In addition to shell-like builtins, YSH also has builtin **functions**.  These
 are like the "standard library" for the expression language.  Examples:
 
 - Explicit word evaluation: `split()  join()  glob()  maybe()`  
@@ -833,11 +833,11 @@ are like the "standard library" for the expression language.  Examples:
 
 <!-- TODO: Make a comprehensive list of func builtins. -->
 
-### Egg Expressions (Oil Regexes)
+### Egg Expressions (YSH Regexes)
 
-*Eggex* is a language for regular expressions which is part of Oil's expression
-language.  It translates to POSIX ERE syntax, for use with tools like `egrep`,
-`awk`, and `sed --regexp-extended` (GNU only).
+*Eggex* is a language for regular expressions which is part of the YSH
+expression language.  It translates to POSIX ERE syntax, for use with tools
+like `egrep`, `awk`, and `sed --regexp-extended` (GNU only).
 
 It's designed to be readable and composable.  Example:
 
@@ -857,7 +857,7 @@ See the [Egg Expressions doc](eggex.html) for details.
 
 ## Interlude
 
-Let's review what we've seen before moving onto other Oil features.
+Let's review what we've seen before moving onto other YSH features.
 
 ### Three Interleaved Languages
 
@@ -914,17 +914,17 @@ means something different in each context:
 
 ## Languages for Data (Interchange Formats)
 
-In addition to languages for **code**, Oil also deals with languages for
+In addition to languages for **code**, YSH also deals with languages for
 **data**.  [JSON]($xref) is a prominent example of the latter.
 
 <!-- TODO: Link to slogans, fallacies, and concepts -->
 
 ### Lines of Text (traditional), and QSN
 
-Traditional Unix tools like `grep` and `awk` operate on streams of lines.  Oil
+Traditional Unix tools like `grep` and `awk` operate on streams of lines.  YSH
 supports this style as well as any other shell.
 
-But Oil also has [QSN: Quoted String Notation][QSN], an interchange format
+But YSH also has [QSN: Quoted String Notation][QSN], an interchange format
 which is borrowed from Rust's string literal notation.
 
 [QSN]: qsn.html
@@ -994,9 +994,9 @@ More later:
 - QTT: should also allow hex float representation for exactness
 -->
 
-## The Runtime Shared by OSH and Oil
+## The Runtime Shared by OSH and YSH
 
-Although we describe OSH and Oil as different languages, they use the **same**
+Although we describe OSH and YSH as different languages, they use the **same**
 interpreter under the hood.  This interpreter has various `shopt` flags that
 are flipped for different behavior, e.g. with `shopt --set ysh:all`.
 
@@ -1033,7 +1033,7 @@ The [Process Model](process-model.html) doc is **under construction**.  It will 
 - `fork`, `forkwait`
 - Command and process substitution.  (Compare with *builtin sub*).
 - Related links:
-  - [Oil's enhanced execution tracing](xtrace.html) (xtrace), which divides
+  - [YSH enhanced execution tracing](xtrace.html) (xtrace), which divides
     process-based concurrency into **synchronous** and **async** constructs.
   - [Three Comics For Understanding Unix
     Shell](http://www.oilshell.org/blog/2020/04/comics.html) (blog)
@@ -1042,39 +1042,39 @@ The [Process Model](process-model.html) doc is **under construction**.  It will 
 <!--
 Process model additions: Capers, Headless shell 
 
-some optimizations: See Oil starts fewer processes than other shells.
+some optimizations: See YSH starts fewer processes than other shells.
 -->
 
 ## Summary
 
-Oil is a large language that evolved from Unix shell.  It has Python-like
+YSH is a large language that evolved from Unix shell.  It has Python-like
 expressions on typed data, and Ruby-like command blocks.
 
 Even though it's large, you can "forget" the bad parts of shell like `[ $x -lt
 $y ]`.
 
-These concepts are central to Oil:
+These concepts are central to YSH:
 
 1. Interleaved *word*, *command*, and *expression* languages.
 2. A standard library of *shell builtins*, as well as *builtin functions*
 3. Languages for *data*: JSON, QSN, and QTT
-4. A *runtime* shared by OSH and Oil
+4. A *runtime* shared by OSH and YSH
 
 ## Related Docs
 
-- [Oil Language Idioms](idioms.html) - Oil side-by-side with shell.
-- [Oil Language Influences](language-influences.html) - In addition to shell,
-  Python, and JavaScript, Oil is influenced by Ruby, Perl, Awk, PHP, and more.
-- [A Feel For Oil's Syntax](syntax-feelings.html) - Some thoughts that may help
+- [YSH vs. Shell Idioms](idioms.html) - YSH side-by-side with shell.
+- [YSH Language Influences](language-influences.html) - In addition to shell,
+  Python, and JavaScript, YSH is influenced by Ruby, Perl, Awk, PHP, and more.
+- [A Feel For YSH Syntax](syntax-feelings.html) - Some thoughts that may help
   you remember the syntax.
-- [Oil Language Warts](warts.html) documents syntax that may be surprising.
-- [A Tour of the Oil Project](project-tour.html) (under construction).
+- [YSH Language Warts](warts.html) documents syntax that may be surprising.
+- [A Tour of the Oils Project](project-tour.html) (under construction).
 
 ## Appendix: Features Not Shown
 
 ### Advanced
 
-These shell features are part of Oil, but aren't shown for brevity.
+These shell features are part of YSH, but aren't shown for brevity.
 
 - The `fork` and `forkwait` builtins, for concurrent execution and subshells.
 - Process Substitution: `diff <(sort left.txt) <(sort right.txt)`
@@ -1083,12 +1083,12 @@ These shell features are part of Oil, but aren't shown for brevity.
 
 The shared interpreter supports many shell constructs that are deprecated:
 
-- Oil code uses shell's `||` and `&&` in limited circumstances, since `errexit`
+- YSH code uses shell's `||` and `&&` in limited circumstances, since `errexit`
   is on by default.
-- Most of what's in `${}`, like `${!indirect}`.  Use Oil functions instead.
-- Assignment builtins like `local` and `declare`.  Use Oil keywords.
-- Boolean expressions like `[[ x =~ $pat ]]`.  Use Oil expressions.
-- Shell arithmetic like `$(( x + 1 ))` and `(( y = x ))`.  Use Oil expressions.
+- Most of what's in `${}`, like `${!indirect}`.  Use YSH functions instead.
+- Assignment builtins like `local` and `declare`.  Use YSH keywords.
+- Boolean expressions like `[[ x =~ $pat ]]`.  Use YSH expressions.
+- Shell arithmetic like `$(( x + 1 ))` and `(( y = x ))`.  Use YSH expressions.
 - The `until` loop can always be replaced with a `while` loop
 
 ### Not Yet Implemented
@@ -1117,12 +1117,12 @@ Important builtins that aren't implemented:
 - Capers: stateless coprocesses
 - Functions
   - Unifying with procs and builtin sub
-  - Defining in Oil and JavaScript
+  - Defining in YSH and JavaScript
 -->
 
-## Appendix: Example of an Oil Module
+## Appendix: Example of an YSH Module
 
-Oil can be used to write simple "shell scripts" or longer programs.  It has
+YSH can be used to write simple "shell scripts" or longer programs.  It has
 *procs* and *modules* to help with the latter.
 
 A module is just a file, like this:

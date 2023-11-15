@@ -5,13 +5,13 @@ in_progress: true
 YSH Expressions vs. Python
 ==========================
 
-The YSH expression language borrows heavily from Python.  In fact, it literally
-started with Python's `Grammar/Grammar` file.
+The [YSH]($xref) expression language borrows heavily from Python.  In fact, it
+literally started with Python's `Grammar/Grammar` file.
 
-This doc describes some differences, which may help Python users learn Oil.
+This doc describes some differences, which may help Python users learn YSH.
 
 If you don't know Python, see [Expression Language](expression-language.html)
-and [A Tour of the Oil Language](oil-language-tour.html).
+and [A Tour of YSH](ysh-tour.html).
 
 <div id="toc">
 </div>
@@ -21,13 +21,13 @@ and [A Tour of the Oil Language](oil-language-tour.html).
 ### Literals Like Python
 
 - Integers: `123`, `1_000_000`, `0b1100_0010`, `0o755`, `0xff`
-- Floats: `1.023e6` (not in the first cut of Oil)
+- Floats: `1.023e6`
 - Lists: `['pea', 'nut']`
 
 ### Literals Changed
 
 - `true`, `false`, and `null` (like JavaScript) rather than `True`, `False`,
-  and `None` (like Python).  In Oil, types are spelled with capital letters.
+  and `None` (like Python).  In YSH, types are spelled with capital letters.
 - String literals are like **shell** string literals, not like Python.
   - Double Quoted: `"hello $name"`
   - Single quoted: `r'c:\Program Files\'` 
@@ -66,9 +66,9 @@ and [A Tour of the Oil Language](oil-language-tour.html).
 
 ## Operators
 
-### Note: Oil Does Less Operator Overloading
+### Note: YSH Does Less Operator Overloading
 
-Oil doesn't overload operators as much because it often does automatic string
+YSH doesn't overload operators as much because it often does automatic string
 <-> int conversion (like Awk):
 
 - `a + b` is for addition, while `a ++ b` is for concatenation.
@@ -102,41 +102,41 @@ Oil doesn't overload operators as much because it often does automatic string
 - Eggex match `s ~ /d+/`
 - Glob match `s ~~ '*.py'`
 - Approximate Equality `42 ~== '42'`
-- Oil sigils: `$` and `@`
+- YSH sigils: `$` and `@`
 - `mydict->key` as an alias for `mydict['key']`
 
 ### Operators Removed
 
 - No string formatting with `%`.  Use `${x %.3f}` instead.
 - No `@` for matrix multiply.
-- I removed slice step syntax `1:5:2` because `0::2` conflicts with
-  `module::name`.  This was only necessary for Tea, not Oil.
+- I removed slice step syntax `1:5:2` because `0::2` could conflict with
+  `module::name` (could be restored).
 
 <!--
 Do we need `is` and `is not` for identity?
 -->
 
-## Oil vs. JavaScript
+## YSH vs. JavaScript
 
-- Oil uses `==` and `~==` for exact and type-converting equality, while JS uses
+- YSH uses `===` and `~==` for exact and type-converting equality, while JS uses
   `===` and `==`.
 - `mydict->key` instead of `mydict.key`.  We want to distinguish between
   attributes and keys (like Python does).
-- Where Oil is consistent with Python
-  - Oil expressions use `and or not` while JS uses `&& || !`.  In shell, `&& ||
+- Where YSH is consistent with Python
+  - YSH expressions use `and or not` while JS uses `&& || !`.  In shell, `&& ||
     !` are already used in the command language (but they're somewhat less
-    important than in Oil).
-  - Oil's ternary operator is `0 if cond else 1`, while in JS it's `cond ? 0 :
+    important than in YSH).
+  - The YSH ternary operator is `0 if cond else 1`, while in JS it's `cond ? 0 :
     1`.
   - Precedence rules are probably slightly different (but still C-like), and
     follows Python's grammar
-- Same differences as Oil vs. Python
+- Same differences as YSH vs. Python
   - `s ++ t` for string concatenation rather than `s + t`
   - Shell string literals rather than JS string literals
 
 ## Semantics
 
-Oil's syntax is a mix of Python and JavaScript, but the **semantics** are
+YSH syntax is a mix of Python and JavaScript, but the **semantics** are
 closer to Python.
 
 ### Differences vs. Python
@@ -144,7 +144,7 @@ closer to Python.
 - Iterating over a string yields code points, not one-character strings.
   - `s[i]` returns an integer code point ("rune").
   - TODO: maybe this should be `runeAt()` and `byteAt()`?
-- Bools and integers are totally separate types.  Oil is like JavaScript, where
+- Bools and integers are totally separate types.  YSH is like JavaScript, where
   they aren't equal: `true !== 1`.  In Python, they are equal: `True == 1`.
 - No "accidentally quadratic"
   - No `in` for array/list membership.  Only dict membership.

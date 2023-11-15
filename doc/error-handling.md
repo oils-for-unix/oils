@@ -2,7 +2,7 @@
 default_highlighter: oil-sh
 ---
 
-Oil Fixes Shell's Error Handling (`errexit`)
+YSH Fixes Shell's Error Handling (`errexit`)
 ============================================
 
 <style>
@@ -22,15 +22,15 @@ Oil Fixes Shell's Error Handling (`errexit`)
   }
 </style>
 
-Oil is unlike other shells:
+YSH is unlike other shells:
 
 - It never silently ignores an error, and it never loses an exit code.
-- There's no reason to write an Oil script without `errexit`, which is on by
+- There's no reason to write an YSH script without `errexit`, which is on by
   default.
 
-This document explains how Oil makes these guarantees.  We first review shell
+This document explains how YSH makes these guarantees.  We first review shell
 error handling, and discuss its fundamental problems.  Then we show idiomatic
-Oil code, and look under the hood at the underlying mechanisms.
+YSH code, and look under the hood at the underlying mechanisms.
 
 [file a bug]: https://github.com/oilshell/oil/issues
 
@@ -45,10 +45,10 @@ POSIX shell has fundamental problems with error handling.  With `set -e` aka
 GNU [bash]($xref) fixes some of the problems, but **adds its own**, e.g. with
 respect to process subs, command subs, and assignment builtins.
 
-Oil fixes all the problems by adding new builtin commands, special variables,
+YSH fixes all the problems by adding new builtin commands, special variables,
 and global options.  But you see a simple interface with `try` and `_status`.
 
-Let's review a few concepts before discussing Oil.
+Let's review a few concepts before discussing YSH.
 
 ### POSIX Shell
 
@@ -110,7 +110,7 @@ Here are two common choices:
    - `0` for true, `1` for false, or a different number like `2` for an error.
    - Examples: the `test` builtin, `grep`, `diff`, ...
 
-Oil's new error handling constructs deal with this fundamental inconsistency.
+New error handling constructs in YSH deal with this fundamental inconsistency.
 
 ### The Meaning of `if`
 
@@ -138,7 +138,7 @@ That is, the `else` clause conflates grep's **error** status 2 and **false**
 status 1.
 
 Strangely enough, I encountered this pitfall while trying to disallow shell's
-error handling pitfalls in Oil!  I describe this in another appendix as the
+error handling pitfalls in YSH!  I describe this in another appendix as the
 "[meta pitfall](#the-meta-pitfall)".
 
 ### Design Mistake: The Disabled `errexit` Quirk
@@ -158,14 +158,14 @@ with `strict_errexit`, and add new error handling mechanisms.
 
 &nbsp;
 
-## Oil Error Handling: The Big Picture 
+## YSH Error Handling: The Big Picture 
 
 We've reviewed how POSIX shell and bash work, and showed fundamental problems
 with the shell language.
 
-But when you're using Oil, **you don't have to worry about any of this**!
+But when you're using YSH, **you don't have to worry about any of this**!
 
-### Oil Fails On Every Error
+### YSH Fails On Every Error
 
 This means you don't have to explicitly check for errors.  Examples:
 
@@ -209,8 +209,8 @@ Note that:
 
 - The `_status` variable is different than `$?`.
   - The leading `_` is a PHP-like convention for special variables /
-    "registers" in Oil.
-- Idiomatic Oil programs don't look at `$?`.
+    "registers" in YSH.
+- Idiomatic YSH programs don't look at `$?`.
 
 You can omit `{ }` when invoking a single command.  Here's how to invoke a
 function without the *`if myfunc` Pitfall*:
@@ -239,7 +239,7 @@ And each process substitution:
 
 <div class="attention">
 
-See [Oil vs. Shell Idioms > Error Handling](idioms.html#error-handling) for
+See [YSH vs. Shell Idioms > Error Handling](idioms.html#error-handling) for
 more examples.
 
 </div>
@@ -340,13 +340,13 @@ The exit status of `try` is always `0`.  If it returned a non-zero status, the
 Generally, [errors occur *inside* blocks, not
 outside](proc-block-func.html#errors).
 
-Again, idiomatic Oil scripts never look at `$?`, which is only used to trigger
+Again, idiomatic YSH scripts never look at `$?`, which is only used to trigger
 shell's `errexit` rule.  Instead they invoke `try` and inspect `_status` when
 they want to handle errors.
 
 <div class="faq">
 
-Why `boolstatus`?  Can't you just change what `if` means in Oil?
+Why `boolstatus`?  Can't you just change what `if` means in YSH?
 
 </div>
 
@@ -357,14 +357,14 @@ its own, without context.
 Readers shouldn't have to constantly look up whether `ysh:upgrade` is on.  There
 are some cases where this is necessary, but it should be minimized.
 
-Also, both `if foo` and `if boolstatus foo` are useful in idiomatic Oil code.
+Also, both `if foo` and `if boolstatus foo` are useful in idiomatic YSH code.
 
 &nbsp;
 
 <div class="attention">
 
 **Most users can skip to [the summary](#summary).**  You don't need to know all
-the details to use Oil.
+the details to use YSH.
 
 </div>
 
@@ -378,7 +378,7 @@ Under the hood, we implement the `errexit` option from POSIX, bash options like
 own.  They're all hidden behind [option groups](options.html) like `strict:all`
 and `ysh:upgrade`.
 
-The following sections explain Oil's new options.
+The following sections explain new YSH options.
 
 ### `command_sub_errexit` Adds More Errors
 
@@ -400,7 +400,7 @@ Similarly, in this example, `sort` will fail if the file doesn't exist.
 
     diff <(sort left.txt) <(sort right.txt)  # any failures are ignored
 
-But there's no way to see this error in bash.  Oil adds `process_sub_fail`,
+But there's no way to see this error in bash.  YSH adds `process_sub_fail`,
 which folds the failure into `$?` so `errexit` can do its job.
 
 You can also inspect the special `_process_sub_status` array variable to
@@ -408,7 +408,7 @@ implement custom error logic.
 
 ### `strict_errexit` Flags Two Problems
 
-Like other `strict_*` options, Oil's `strict_errexit` improves your shell
+Like other `strict_*` options, YSH `strict_errexit` improves your shell
 programs, even if you run them under another shell like [bash]($xref)!  It's
 like a linter *at runtime*, so it can catch things that [ShellCheck][] can't.
 
@@ -435,7 +435,7 @@ In any conditional context, `strict_errexit` disallows:
 This means that you should check the exit status of functions and pipeline
 differently.  See [Does a Function
 Succeed?](idioms.html#does-a-function-succeed), [Does a Pipeline
-Succeed?](idioms.html#does-a-pipeline-succeed), and other [Oil vs. Shell
+Succeed?](idioms.html#does-a-pipeline-succeed), and other [YSH vs. Shell
 Idioms](idioms.html).
 
 #### Rule to Prevent the `local x=$(false)` Pitfall
@@ -449,7 +449,7 @@ No:
 
 Yes:
 
-    var x = $(false)   # Oil style
+    var x = $(false)   # YSH style
 
     local x            # Shell style
     x=$(false)
@@ -469,7 +469,7 @@ That is, `head` closes the pipe after 10 lines, causing the `yes` command to
 **fail** with `SIGPIPE` status `141`.
 
 This error shouldn't be fatal, so OSH has a `sigpipe_status_ok` option, which
-is on by default in Oil.
+is on by default in YSH.
 
 ### `verbose_errexit`
 
@@ -505,11 +505,11 @@ disallows dangerous constructs.
 
 On the other hand, if you write code with `command_sub_errexit` on, it's
 impossible to get the same failures under bash.  So `command_sub_errexit` is
-not a `strict_*` option, and it's meant for code that runs only under Oil.
+not a `strict_*` option, and it's meant for code that runs only under YSH.
 
 <div class="faq">
 
-What's the difference between bash's `inherit_errexit` and Oil's
+What's the difference between bash's `inherit_errexit` and YSH
 `command_sub_errexit`?  Don't they both relate to command subs?
 
 </div>
@@ -523,7 +523,7 @@ What's the difference between bash's `inherit_errexit` and Oil's
 
 ## Summary
 
-Oil uses three mechanisms to fix error handling once and for all.
+YSH uses three mechanisms to fix error handling once and for all.
 
 It has two new **builtins** that relate to errors:
 
@@ -533,7 +533,7 @@ It has two new **builtins** that relate to errors:
 It has three **special variables**:
 
 1. The `_status` integer, which is set by `try`.
-   - Remember that it's distinct from `$?`, and that idiomatic Oil programs
+   - Remember that it's distinct from `$?`, and that idiomatic YSH programs
      don't use `$?`.
 1. The `_pipeline_status` array (another name for bash's `PIPESTATUS`)
 1. The `_process_sub_status` array for process substitutions.
@@ -564,7 +564,7 @@ Handling](https://www.oilshell.org/blog/2020/10/osh-features.html#reliable-error
 
 ## Related Docs
 
-- [Oil vs. Shell Idioms](idioms.html) shows more examples of `try` and `boolstatus`.
+- [YSH vs. Shell Idioms](idioms.html) shows more examples of `try` and `boolstatus`.
 - [Shell Idioms](shell-idioms.html) has a section on fixing `strict_errexit`
   problems in Bourne shell.
 
@@ -585,7 +585,7 @@ These docs aren't about error handling, but they're also painstaking
 backward-compatible overhauls of shell!
 
 - [Simple Word Evaluation in Unix Shell](simple-word-eval.html)
-- [Egg Expressions (Oil Regexes)](eggex.html)
+- [Egg Expressions (YSH Regexes)](eggex.html)
 
 For reference, this work on error handling was described in [Four Features That
 Justify a New Unix
@@ -613,9 +613,9 @@ There are two pitfalls related to command subs:
 6. The `echo $(false)` Pitfall (`command_sub_errexit`)
 6. Bash's `inherit_errexit` pitfall.
    - As mentioned, this bash 4.4 option fixed a bug in earlier versions of
-     bash.  Oil reimplements it and turns it on by default.
+     bash.  YSH reimplements it and turns it on by default.
 
-Here are two more pitfalls that don't require changes to Oil:
+Here are two more pitfalls that don't require changes to YSH:
 
 8. The Trailing `&&` Pitfall
    - When `test -d /bin && echo found` is at the end of a function, the exit
@@ -625,7 +625,7 @@ Here are two more pitfalls that don't require changes to Oil:
      `errexit` is on.
 8. The surprising return value of `(( i++ ))`, `let`, `expr`, etc.
    - Solution: Use `i=$((i + 1))`, which is valid POSIX shell.
-   - In Oil, use `setvar i += 1`.
+   - In YSH, use `setvar i += 1`.
 
 #### Example of `inherit_errexit` Pitfall
 
@@ -730,7 +730,7 @@ Simple commands have an obvious behavior:
 But the parent process loses errors from failed command subs:
 
     echo $(false)     # $? is 0
-                      # Oil makes it fail with command_sub_errexit
+                      # YSH makes it fail with command_sub_errexit
 
 Surprisingly, bare assignments take on the value of any command subs:
 
@@ -739,9 +739,9 @@ Surprisingly, bare assignments take on the value of any command subs:
 But assignment builtins have the problem again:
 
     local x=$(false)  # $? is 0 -- exit code is clobbered
-                      # disallowed by Oil's strict_errexit
+                      # disallowed by YSH strict_errexit
 
-So shell is confusing and inconsistent, but Oil fixes all these problems.  You
+So shell is confusing and inconsistent, but YSH fixes all these problems.  You
 never lose the exit code of `false`.
 
 

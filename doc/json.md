@@ -2,7 +2,7 @@
 default_highlighter: oil-sh
 ---
 
-JSON in Oil
+JSON in Oils
 ===========
 
 [JSON](https://www.json.org/) is used by both web services and command line
@@ -13,7 +13,7 @@ tools, so a modern Unix shell needs support for it.
 </div>
 
 The `json` **builtin** has `read` and `write` subcommands, which convert
-between text and data structures in memory.  Oil's data structures are like
+between text and data structures in memory.  YSH data structures are like
 those in Python and JavaScript, so this correspondence is natural.
 
 ## `json read` parses from `stdin`
@@ -37,7 +37,7 @@ Examples:
     $ = myvar   
     (Dict)   {'count': 42}
 
-    # 'json read' is valid at the end of a pipeline (because Oil implements
+    # 'json read' is valid at the end of a pipeline (because YSH implements
     # shopt -s lastpipe)
     $ echo '{"count": 42}' | json read :myvar
 
@@ -95,9 +95,9 @@ Notes:
 
 - `--indent` is ignored if `--pretty` is false.
 
-## Filter Data Structures with Oil Expressions
+## Filter Data Structures with YSH Expressions
 
-Once your data is deserialized, you can use Oil expression to operate on it.
+Once your data is deserialized, you can use YSH expression to operate on it.
 
     $ echo '{"counts": [42, 99]}' | json read :d
 
@@ -119,7 +119,7 @@ Note: It may more efficient to filter large data structures with tools like
 
 ## Other Data Structures Can Be Printed as JSON
 
-Oil arrays and shell arrays both serialize to a list of strings:
+YSH arrays and shell arrays both serialize to a list of strings:
 
     $ declare sharray=( foo.txt *.py )
     $ json write (sharray)
@@ -147,5 +147,5 @@ Bash-style associative arrays are printed like `Dict[Str, Str]`:
 
 ## Credits
 
-Under the hood, Oil uses [yajl](https://lloyd.github.io/yajl/) and a fork of
+Under the hood, YSH uses [yajl](https://lloyd.github.io/yajl/) and a fork of
 the [py-yajl](https://github.com/oilshell/py-yajl) binding.

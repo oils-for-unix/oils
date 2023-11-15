@@ -5,7 +5,7 @@ default_highlighter: oil-sh
 Hay - Custom Languages for Unix Systems
 =======================================
 
-*Hay* lets you use the syntax of the Oil shell to declare **data** and
+*Hay* lets you use the syntax of the YSH to declare **data** and
 interleaved **code**.  It allows the shell to better serve its role as
 essential **glue**.  For example, these systems all combine Unix processes in
 various ways:
@@ -21,11 +21,11 @@ Slogans:
 - *Hay Ain't YAML*.
   - It evaluates to [JSON][] + Shell Scripts.
 - *We need a better **control plane** language for the cloud*.
-- *Oil adds the missing declarative part to shell*.
+- *YSH adds the missing declarative part to shell*.
 
 This doc describes how to use Hay, with motivating examples.
 
-As of 2022, this is a new feature of Oil, and **it needs user feedback**.
+As of 2022, this is a new feature of YSH, and **it needs user feedback**.
 Nothing is set in stone, so you can influence the language and its features!
 
 
@@ -34,7 +34,7 @@ Nothing is set in stone, so you can influence the language and its features!
 <!--
   - although also Tcl, Lua, Python, Ruby
 - DSLs, Config Files, and More
-- For Dialects of Oil
+- For Dialects of YSH
 
 Use case examples
 -->
@@ -56,14 +56,14 @@ Hay could be used to configure a hypothetical Linux package manager:
       version = '3.9'
       url = 'https://python.org'
 
-      TASK build {           # a child node, with Oil code
+      TASK build {           # a child node, with YSH code
         ./configure
         make
       }
     }
 
 This program evaluates to a JSON tree, which you can consume from programs in
-any language, including Oil:
+any language, including YSH:
 
     { "type": "Package",
       "args": [ "cpython" ],
@@ -90,7 +90,7 @@ it.
 
 ### Analogies
 
-The relation between Hay and Oil is like the relationship between these pairs
+The relation between Hay and YSH is like the relationship between these pairs
 of languages:
 
 - [YAML][] / [Go templates][], which are used in Helm config for Kubernetes.
@@ -105,12 +105,12 @@ Each of these is *70's-style macro programming* &mdash; a stringly-typed
 language generating another stringly-typed language, with all the associated
 problems.
 
-In contrast, Hay and Oil are really the same language, with the same syntax,
-and the same Python- and JavaScript-like dynamic **types**.  Hay is just Oil
+In contrast, Hay and YSH are really the same language, with the same syntax,
+and the same Python- and JavaScript-like dynamic **types**.  Hay is just YSH
 that **builds up data** instead of executing commands.
 
 (Counterpoint: Ninja is intended for code generation, and it makes sense for
-Oil to generate simple languages.)
+YSH to generate simple languages.)
 
 
 [Go templates]: https://pkg.go.dev/text/template
@@ -153,7 +153,7 @@ are useful in Starlark and Hay.
 
 [Ruby][]'s use of [first-class
 blocks](http://radar.oreilly.com/2014/04/make-magic-with-ruby-dsls.html)
-inspired Oil.  They're used in systems like Vagrant (VM dev environments) and
+inspired YSH.  They're used in systems like Vagrant (VM dev environments) and
 Rake (a build system).
 
 In [Lisp][], code and data are expressed with the same syntax, and can be
@@ -204,7 +204,7 @@ The sections below elaborate on these points.
 [shell-pipelines]: https://www.oilshell.org/blog/2017/01/15.html
 
 <!--
-    - Oil has an imperative programming model.  It's a little like Starlark.
+    - YSH has an imperative programming model.  It's a little like Starlark.
     - Guile / GNU Make.
     - Tensorflow.
 -->
@@ -245,7 +245,7 @@ They eagerly evaluate a block in a new **stack frame** and turn it into an
 These blocks have a special rule to allow *bare assignments* like `version =
 '3.9'`.  That is, you don't need keywords like `const` or `var`.
 
-(3) In contrast to these two types of Hay nodes, Oil builtins that take a block
+(3) In contrast to these two types of Hay nodes, YSH builtins that take a block
 usually evaluate it eagerly:
 
     cd /tmp {  # run in a new directory
@@ -262,7 +262,7 @@ So Hay is designed to be used with a *staged evaluation model*:
 1. The first stage follows the rules above:
    - Tree of Hay nodes &rarr; [JSON]($xref) + Unevaluated shell.
    - You can use variables, conditionals, loops, and more.
-2. Your app or system controls the second stage.  You can invoke Oil again to
+2. Your app or system controls the second stage.  You can invoke YSH again to
    execute shell inside a VM, inside a Linux container, or on a remote machine.
 
 These two stages conceptually different, but use the **same** syntax and
@@ -304,7 +304,7 @@ Notes:
 You can put Hay blocks and normal shell code in the same file.  Retrieve the
 result of Hay evaluation with the `_hay()` function.
 
-    # myscript.oil
+    # myscript.ysh
 
     hay define Rule
 
@@ -341,7 +341,7 @@ In this case, you can use `echo` and `write`, but the interpreted is
 
 Parse it with `parse_hay()`, and evaluate it with `eval_hay()`:
 
-    # my-evaluator.oil
+    # my-evaluator.ysh
 
     hay define Rule  # node types for the file
     const h = parse_hay('build.hay')
@@ -434,12 +434,12 @@ Hay is parsed and evaluated with option group `ysh:all`, which includes
 -->
 
 
-## Usage: Interleaving Hay and Oil
+## Usage: Interleaving Hay and YSH
 
 Why would you want to interleave data and code?  One reason is to naturally
 express variants of a configuration.  Here are some examples.
 
-**Build variants**.  There are many variants of the Oil binary:
+**Build variants**.  There are many variants of the YSH binary:
 
 - `dbg` and `opt`. the compiler optimization level, and whether debug symbols
   are included.
@@ -467,7 +467,7 @@ flags **vary** based on where binaries are physically running.
 ---
 
 This model can be referred to as ["graph metaprogramming" or "staged
-programming"][build-ci-comments].  In Oil, it's done with dynamically typed
+programming"][build-ci-comments].  In YSH, it's done with dynamically typed
 data like integers and dictionaries.  In contrast, systems like CMake and
 autotools are more stringly typed.
 
@@ -563,11 +563,11 @@ Or they can be invoked from within blocks:
 
 ## More Usage Patterns
 
-### Using Oil for the Second Stage
+### Using YSH for the Second Stage
 
 The general pattern is:
 
-    ./my-evaluator.oil my-config.hay | json read :result
+    ./my-evaluator.ysh my-config.hay | json read :result
 
 The evaluator does the following:
 
@@ -576,7 +576,7 @@ The evaluator does the following:
 1. Evaluates it with `eval_hay()`
 1. Prints the result as JSON.
 
-Then a separate Oil processes reads this JSON and executes application code.
+Then a separate YSH processes reads this JSON and executes application code.
 
 TODO: Show code example.
 
@@ -584,7 +584,7 @@ TODO: Show code example.
 
 In Python, you would:
 
-1. Use the `subprocess` module to invoke `./my-evaluator.oil my-config.hay`. 
+1. Use the `subprocess` module to invoke `./my-evaluator.ysh my-config.hay`. 
 2. Use the `json` module to parse the result.
 3. Then execute application code using the data.
 
@@ -592,10 +592,10 @@ TODO: Show code example.
 
 ### Locating Errors in the Original `.hay` File
 
-The Oil interpreter has 2 flags starting with `--location` that give you
+The YSH interpreter has 2 flags starting with `--location` that give you
 control over error messages.
 
-    oil --location-str 'foo.hay' --location-start-line 42 -- stage2.oil
+    ysh --location-str 'foo.hay' --location-start-line 42 -- stage2.ysh
 
 Set them to the values of fields `location_str` and `location_start_line` in
 the result of `SHELL` node evaluation.
@@ -679,12 +679,12 @@ Use blocks when there's a **schema**.  Blocks are also different because:
   objects of the same type.
 - Later: custom validation
 
-### Oil vs. Shell
+### YSH vs. Shell
 
-Hay files are parsed as Oil, not OSH.  That includes `SHELL` nodes:
+Hay files are parsed as YSH, not OSH.  That includes `SHELL` nodes:
 
     TASK build {
-      cp @deps /tmp   # Oil splicing syntax
+      cp @deps /tmp   # YSH splicing syntax
     }
 
 If you want to use POSIX shell or bash, use two arguments, the second of which
@@ -694,7 +694,7 @@ is a multi-line string:
       cp "${deps[@]}" /tmp
     '''
 
-The Oil style gives you *static parsing*, which catches some errors earlier.
+The YSH style gives you *static parsing*, which catches some errors earlier.
 
 ## Future Work
 
@@ -703,7 +703,7 @@ The Oil style gives you *static parsing*, which catches some errors earlier.
 - Sandboxing:
   - More find-grained rules?
   - "restricted" could come with a security guarantee.  I've avoided making
-    such guarantees,  but I think it's possible as Oil matures.  The
+    such guarantees,  but I think it's possible as YSH matures.  The
     interpreter uses dependency inversion to isolate I/O.
 - More location info, including the source file.
 

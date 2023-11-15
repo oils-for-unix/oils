@@ -15,7 +15,7 @@ It's mostly trivia for the curious, but it may help you remember the syntax.
 
 ## General Philosophy
 
-At a high level, Oil is a bash-compatible shell language that adds features
+At a high level, YSH is a bash-compatible shell language that adds features
 from popular dynamic languages.
 
 Its design is more conservative than that of other alternative shells.  Our
@@ -37,7 +37,7 @@ The command and word syntax comes from shell:
     echo one; echo two                # sequence of commands
     test -d /tmp && test -d /tmp/foo  # builtins and operators
 
-Oil's own shell-like extensions:
+Shell-like extensions in YSH:
 
     echo $[42 + a[i]]                 # Expression substitution
     cd /tmp { echo hi }               # Block arguments
@@ -71,7 +71,7 @@ Historical note: Usenix 93.  korn shell was used for GUIs and such!
 
 ### Python
 
-Oil's expression language is mostly Python compatible.  Expressions occur on
+The YSH expression language is mostly Python compatible.  Expressions occur on
 the RHS of `=`:
 
     var a = 42 + a[i]
@@ -86,13 +86,13 @@ Proc signatures resemble Python:
 
 Differences:
 
-- Oil uses shell-like composition with "procs", not Python- or JavaScript-like
-	functions.
-- More differences in [Oil Expressions vs. Python](oil-vs-python.html).
+- YSH uses shell-like composition with "procs", in addition to Python- or
+  JavaScript-like functions.
+- More differences in [YSH Expressions vs. Python](ysh-vs-python.html).
 
 ### JavaScript
 
-Oil uses JavaScript's dict literals:
+YSH uses JavaScript's dict literals:
 
     var d1 = {name: 'Alice', age: 10}  # Keys aren't quoted
 
@@ -118,7 +118,7 @@ Blocks use curly braces, so most code resembles C / Java / JavaScript:
 
 ### Ruby
 
-Oil has Ruby-like blocks:
+YSH has Ruby-like blocks:
 
     cd /tmp {
       echo $PWD  # prints /tmp
@@ -148,12 +148,12 @@ The `@` character comes from Perl (and PowerShell):
       echo $i
     }
 
-Perl can be viewed as a mixture of shell, awk, and sed.  Oil is a similar
+Perl can be viewed as a mixture of shell, awk, and sed.  YSH is a similar
 agglomeration of languages, but it's statically parsed.
 
 ### Julia
 
-Multiline strings in Oil use similar whitespace stripping rules:
+Multiline strings in YSH use similar whitespace stripping rules:
 
     proc p {
       # Because leading and trailing space are stripped, this is 2 lines long
@@ -165,7 +165,7 @@ Multiline strings in Oil use similar whitespace stripping rules:
 
 ### Awk
 
-Oil gets its regex match operator from Awk:
+YSH gets its regex match operator from Awk:
 
     if (mystr ~ /digit+/) {
       echo 'Number'
@@ -181,7 +181,7 @@ Features influenced by these languages are planned, but not implemented.
 
 ### Tcl
 
-Oil uses `proc` and `setvar`, which makes it look something like Tcl:
+YSH uses `proc` and `setvar`, which makes it look something like Tcl:
 
      proc p(x) {
        setvar y = x * 2
@@ -190,7 +190,7 @@ Oil uses `proc` and `setvar`, which makes it look something like Tcl:
 
      p 3  # prints 6
 
-But this is mostly superficial: Oil isn't homoiconic like Tcl is, and has a
+But this is mostly superficial: YSH isn't homoiconic like Tcl is, and has a
 detailed syntax.  It intentionally avoids dynamic parsing.
 
 However, [Data Definition and Code Generation in Tcl (PDF)][config-tcl] shows
@@ -203,7 +203,7 @@ how Tcl can be used a configuration language:
       }
     }
 
-Oil's blocks would allow this to be expressed very similarly:
+YSH blocks would allow this to be expressed very similarly:
 
     change 6/11/2003 {
       author  = "Will Duquette"
@@ -220,13 +220,13 @@ Oil's blocks would allow this to be expressed very similarly:
 
 PHP has global variables like `_REQUEST` and `_POST`.
 
-Oil will have `_argv`, `_match()`, `_start()`, etc.  These are global variables
+YSH will have `_argv`, `_match()`, `_start()`, etc.  These are global variables
 that are "silently" mutated by the interpreter (and functions to access such
 global data).
 
 ### Lua
 
-Oil also uses a leading `=` to print expressions in the REPL.
+YSH also uses a leading `=` to print expressions in the REPL.
 
     = 1 + 2
 
@@ -234,7 +234,7 @@ Lua's implementation as a pure ANSI C core without I/O was also influential.
 
 ### Haskell
 
-Oil also uses `++` to concatenate strings and lists:
+YSH also uses `++` to concatenate strings and lists:
 
      var mystr = a ++ b    
      var mystr = "$a$b"       # very similar
@@ -272,7 +272,7 @@ And lazy argument lists:
 
     :(1+2)   # lazy expression in Julia
 
-    mutate :(a, b)  # lazy argument list in Oil
+    mutate :(a, b)  # lazy argument list in YSH
 
 And multi-line strings
 
@@ -300,7 +300,7 @@ Rust:
 
 Clojure:
 
-\n and \newline for character literals, but Oil uses #'n' and \n
+\n and \newline for character literals, but YSH uses #'n' and \n
 
 maybe set literals with #{a b c} vs. #{a, b, c}
 
@@ -317,7 +317,7 @@ Shell is already mix of:
   - iteration constructs: while / for / break / continue
   - conditional constructs: if / case
 
-Oil is:
+YSH is:
 
 - getting rid of: ksh.  Bourne shell is good; ksh is bad because it adds bad
   string operators.
@@ -325,7 +325,7 @@ Oil is:
   - korn shell arrays suck.  Replaced with python-like arrays
 - Add Python STRUCTURED DATA.
   - the problem with PROCESSES AND FILES is that it forces serialization everywhere.
-  - Structured Data in Oil
+  - Structured Data in YSH
 - Add **declarative** paradigm to shell.
   - Package managers like Alpine Linux, Gentoo need declarative formats.  So do
     tools like Docker and Chef.

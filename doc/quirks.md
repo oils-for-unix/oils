@@ -16,7 +16,7 @@ Related: [Known Differences](known-differences.html).
 
 ### The meaning of `()` on the RHS
 
-In Oil, **values** are tagged with types like `Str` and `AssocArray`, as
+In Oils, **values** are tagged with types like `Str` and `AssocArray`, as
 opposed to the *locations* of values (cells).
 
 This statement binds an empty indexed array to the name `x`:
@@ -59,13 +59,13 @@ gets rewritten into:
 
 That is, they **reuse the parent process**.
 
-Most shells don't print any diagnostic info when `errexit` is on.  However, Oil
+Most shells don't print any diagnostic info when `errexit` is on.  However, YSH
 does:
 
     osh -o errexit -c 'false'
     [ -c flag ]:1: fatal: Exiting with status 1
 
-`false` is a builtin rather than an external process, so Oil can print that
+`false` is a builtin rather than an external process, so YSH can print that
 message.  But when running an external process, the message is lost:
 
     osh -o errexit -c 'env false'

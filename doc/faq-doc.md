@@ -15,7 +15,7 @@ Start at one of these pages:
 1. **All Docs** at [/release/$VERSION/doc/](index.html) shows all docs, some of
    which are in progress.  Examples:
    - [Simple Word Evaluation in Unix Shell](simple-word-eval.html)
-   - [Oil Fixes Shell's Error Handling](error-handling.html)
+   - [YSH Fixes Shell's Error Handling](error-handling.html)
 1. The **Oils Reference** at [/release/$VERSION/doc/ref/](ref/index.html) has
    three indexes:
    - [Index of OSH Topics](ref/index-osh.html)

@@ -14,8 +14,8 @@ comprehensive or precise guide.  Roughly speaking, YSH code has more
 punctuation than those 3 languages, but less than shell and Perl.
 
 If you're totally unfamiliar with the language, read [The Simplest Explanation
-of Oil ](//www.oilshell.org/blog/2020/01/simplest-explanation.html) first.
-(Oil was renamed [YSH]($xref) in 2023.)
+of Oil](//www.oilshell.org/blog/2020/01/simplest-explanation.html) first.  (Oil
+was renamed [YSH]($xref) in 2023.)
 
 <div id="toc">
 </div> 
@@ -40,7 +40,7 @@ The examples below aren't organized along those lines, but they use `var` and
 Sigils are punctuation characters that precede a name, e.g. the `$` in
 `$mystr`.
 
-Unlike Perl and PHP, Oil doesn't use sigils on the LHS of assignments, or in
+Unlike Perl and PHP, YSH doesn't use sigils on the LHS of assignments, or in
 expression mode.  The [syntactic concepts](syntactic-concepts.html) doc
 explains this difference.
 
@@ -49,12 +49,12 @@ explains this difference.
 The `$` and `@` sigils mean roughly what they do in shell, Perl, and
 PowerShell.
 
-`$` means *string* / *scalar*.  These shell constructs are idiomatic in Oil:
+`$` means *string* / *scalar*.  These shell constructs are idiomatic in YSH:
 
     $mvar   ${myvar}
     $(hostname)
 
-And these Oil language extensions also use `$`:
+And these YSH language extensions also use `$`:
 
     echo $[42 + a[i]]            # string interpolation of expression
     grep $/ digit+ /             # inline eggex (not implemented yet)
@@ -63,7 +63,7 @@ And these Oil language extensions also use `$`:
 
     echo "$@"                    # Legacy syntax; prefer @ARGV
 
-Oil:
+YSH:
 
     echo @strs                   # splice array
 
@@ -113,7 +113,7 @@ Bourne shell, Korn shell, and [bash]($xref).
 ### Braces: Command Blocks and Dict Literal Expressions
 
 In expression mode, `{}` are used for dict literals (aka hash
-tables, associative arrays), which makes Oil look like JavaScript:
+tables, associative arrays), which makes YSH look like JavaScript:
 
 
     var d = {name: 'Bob', age: 10}
@@ -207,7 +207,7 @@ And are used in type expressions:
 
 ## Spaces Around `=` ?
 
-In Oil, *your own* variables look like this:
+In YSH, *your own* variables look like this:
 
     const x = 42
     var s = 'foo'
@@ -300,7 +300,7 @@ The `~` character is used in operators that mean "pattern" or "approximate":
       echo 'string equals number'
     }
 
-Extended globs are discouraged in Oil because they're a weird way of writing
+Extended globs are discouraged in YSH because they're a weird way of writing
 regular expressions.  But they also use "sigil pairs" with parens:
 
     ,(*.py|*.sh)   # preferred synonym for @(*.py|*.sh)
@@ -309,10 +309,10 @@ regular expressions.  But they also use "sigil pairs" with parens:
     ?(...)
     !(...)
 
-Shell arithmetic is also discouraged in favor of Oil arithmetic:
+Shell arithmetic is also discouraged in favor of YSH arithmetic:
 
     echo $((1 + 2))  # shell: confusing coercions, dynamically parsed
-    echo $[1 + 2]    # Oil: types, statically parsed
+    echo $[1 + 2]    # YSH: types, statically parsed
 
 <!--
     ! ?   suffixes (not implemented)
@@ -320,12 +320,12 @@ Shell arithmetic is also discouraged in favor of Oil arithmetic:
 
 ## Related Docs
 
-- [Syntactic Concepts in the Oil Language](syntactic-concepts.html)
+- [Syntactic Concepts in the YSH Language](syntactic-concepts.html)
 - [Language Influences](language-influences.html)
 
 ## Appendix: Table of Sigil Pairs
 
-This table is mainly for Oil language designers.  Many constructs aren't
+This table is mainly for YSH language designers.  Many constructs aren't
 implemented, but we reserve space for them.  The [Oils
 Reference](ref/index.html) is more complete.
 

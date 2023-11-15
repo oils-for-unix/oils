@@ -5,13 +5,12 @@ default_highlighter: oil-sh
 YSH vs. Shell Idioms
 ====================
 
-This is an informal, lightly-organized list of recommended idioms for the [Oil
-language]($xref:oil-language).  Each section has snippets labeled *No* and
-*Yes*.
+This is an informal, lightly-organized list of recommended idioms for the
+[YSH]($xref) language.  Each section has snippets labeled *No* and *Yes*.
 
-- Use the *Yes* style when you want to write in Oil, and don't care about
+- Use the *Yes* style when you want to write in YSH, and don't care about
   compatibility with other shells.
-- The *No* style is discouraged in new code, but Oil will run it.  The [OSH
+- The *No* style is discouraged in new code, but YSH will run it.  The [OSH
   language]($xref:osh-language) is compatible with
   [POSIX]($xref:posix-shell-spec) and [bash]($xref).
 
@@ -50,7 +49,7 @@ Yes:
 
 ### Explicitly Split, Glob, and Omit Empty Args
 
-Oil doesn't split arguments after variable expansion.
+YSH doesn't split arguments after variable expansion.
 
 No:
 
@@ -69,7 +68,7 @@ Even better:
 
 ---
 
-Oil doesn't glob after variable expansion.
+YSH doesn't glob after variable expansion.
 
 No:
 
@@ -84,7 +83,7 @@ Yes:
 
 ---
 
-Oil doesn't omit unquoted words that evaluate to the empty string.
+YSH doesn't omit unquoted words that evaluate to the empty string.
 
 No:
 
@@ -101,7 +100,7 @@ Yes:
 No:
 
     local n=3
-    for x in $(seq $n); do  # No implicit splitting of unquoted words in Oil
+    for x in $(seq $n); do  # No implicit splitting of unquoted words in YSH
       echo $x
     done
 
@@ -112,7 +111,7 @@ Yes:
       echo $x
     }
 
-Note that `{1..3}` works in bash and Oil, but the numbers must be constant.
+Note that `{1..3}` works in bash and YSH, but the numbers must be constant.
 
 
 ## Avoid Ad Hoc Parsing and Splitting
@@ -124,17 +123,17 @@ Instead, emit and consume the [QSN][] and [QTT][] interchange formats.
 - QSN is a JSON-like format for byte string literals
 - QTT is a convention for embedding QSN in TSV files (not yet implemented)
 
-Custom parsing and serializing should be limited to "the edges" of your Oil
+Custom parsing and serializing should be limited to "the edges" of your YSH
 programs.
 
 ### Use New Builtins That Support Structured I/O
 
 These are discussed in the next two sections, but here's a summary.
 
-    write --qsn        # also -q
-    read --qsn :mystr  # also -q
+    write --qsn          # also -q
+    read --qsn (&myvar)  # also -q
 
-    read --line --qsn :myline     # read a single line
+    read --line --qsn (&myvar)  # read a single line
 
 That is, take advantage of the invariants that the [IO
 builtins](io-builtins.html) respect.  (doc in progress)
@@ -150,7 +149,7 @@ builtins](io-builtins.html) respect.  (doc in progress)
   - These can be one-off, "bespoke" wrappers in your program, or maintained
     programs.  Use the `proc` construct and `flagspec`!
   - Example: [uxy](https://github.com/sustrik/uxy) wrappers.
-  - TODO: Examples written in Oil and in other languages.
+  - TODO: Examples written in YSH and in other languages.
 - **Patch** Existing Tools.
    - Enhance GNU grep, etc. to emit [QSN][] and [QTT][].  Add a `--qsn` flag.
 - **Write Your Own** Structured Versions.
@@ -204,17 +203,20 @@ No:
 
 Yes:
 
-    read --line   # also faster because it's a buffered read
+    read --line           # sets $_reply
+                          # faster because it's a buffered read
+    read --line (&myvar)  # sets $myvar
 
 ### Read a Whole File
 
 No:
 
-    read -d ''      # harder to read, easy to forget -r
+    read -d ''           # harder to read, easy to forget -r
 
 Yes:
 
-    read --all :mystr
+    read --all           # sets $_reply
+    read --all (&myvar)  # sets $myvar
 
 ### Read Until `\0` (consume `find -print0`)
 
@@ -225,9 +227,9 @@ No:
 
 Yes:
 
-    read -0 :myvar
+    read -0 (&myvar)
 
-## Oil Enhancements to Builtins
+## YSH Enhancements to Builtins
 
 ### Use `shopt` Instead of `set`
 
@@ -248,7 +250,7 @@ shells.)
 
 ### Use `:` When Mentioning Variable Names
 
-Oil accepts this optional "pseudo-sigil" to make code more explicit.
+YSH accepts this optional "pseudo-sigil" to make code more explicit.
 
 No:
 
@@ -257,7 +259,7 @@ No:
 
 Yes:
 
-    read -0 :record < file.bin
+    read -0 (&myvar) < file.bin
     echo $record
 
 
@@ -457,7 +459,7 @@ Here's an example of shell functions reading variables in their caller:
 
     foo
 
-In Oil, you have to pass params explicitly:
+In YSH, you have to pass params explicitly:
 
     proc bar {
       echo $foo_var  # error, not defined
@@ -468,7 +470,7 @@ do this, which makes code easier to reason about.
 
 ## Use Modules
 
-Oil has a few lightweight features that make it easier to organize code into
+YSH has a few lightweight features that make it easier to organize code into
 files.  It doesn't have "namespaces".
 
 ### Relative Imports
@@ -534,12 +536,12 @@ Yes
 
 ## Error Handling
 
-[Oil Fixes Shell's Error Handling (`errexit`)](error-handling.html) once and
+[YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html) once and
 for all!  Here's a comprehensive list of error handling idioms.
 
 ### Don't Use `&&` Outside of `if` / `while`
 
-It's implicit because `errexit` is on in Oil.
+It's implicit because `errexit` is on in YSH.
 
 No:
 
@@ -585,7 +587,7 @@ Yes:
 
 ### Does a Builtin Or External Command Succeed?
 
-These idioms are OK in both shell and Oil:
+These idioms are OK in both shell and YSH:
 
     if ! cp foo /tmp {
       echo 'error copying'  # any non-zero status
@@ -606,7 +608,7 @@ To be consistent with the idioms below, you can also write them like this:
 
 When the command is a shell function, you shouldn't use `if myfunc` directly.
 This is because shell has the *Disabled `errexit` Quirk*, which is detected by
-Oil's `strict_errexit`.
+YSH `strict_errexit`.
 
 **No**:
 
@@ -622,7 +624,7 @@ Oil's `strict_errexit`.
 
     "$@"  # Run the function $1 with args $2, $3, ...
 
-**Yes**.  Oil's try builtin sets the special `_status` variable and returns
+**Yes**.  The YSH `try` builtin sets the special `_status` variable and returns
 `0`.
 
     try myfunc  # doesn't abort
@@ -652,7 +654,7 @@ No:
     fi
 
 This is technically correct when `pipefail` is on, but it's impossible for
-Oil's `strict_errexit` to distinguish it from `if myfunc | grep python` ahead
+YSH `strict_errexit` to distinguish it from `if myfunc | grep python` ahead
 of time (the ["meta" pitfall](error-handling.html#the-meta-pitfall)).  If you
 know what you're doing, you can disable `strict_errexit`.
 
@@ -697,7 +699,7 @@ Yes:
 (I used `comm` in this example because it doesn't have a true / false / error
 status like `diff`.)
 
-### Handle Errors in Oil Expressions
+### Handle Errors in YSH Expressions
 
     try {
       var x = 42 / 0
@@ -709,7 +711,7 @@ status like `diff`.)
 
 ### Test Boolean Statuses, like `grep`, `diff`, `test`
 
-Oil's `boolstatus` builtin distinguishes **error** from **false**.
+The YSH `boolstatus` builtin distinguishes **error** from **false**.
 
 **No**, this is subtly wrong.  `grep` has 3 different return values.
 
@@ -740,7 +742,7 @@ More flexible style:
           ;;
     }
 
-## Use Oil Expressions, Initializations, and Assignments (var, setvar)
+## Use YSH Expressions, Initializations, and Assignments (var, setvar)
 
 ### Initialize and Assign Strings and Integers
 
@@ -782,7 +784,7 @@ Yes:
 
 ### Initialize and Assign Arrays
 
-Arrays in Oil look like `:| my array |` and `['my', 'array']`.
+Arrays in YSH look like `:| my array |` and `['my', 'array']`.
 
 No:
 
@@ -800,7 +802,7 @@ Yes:
 
 ### Initialize and Assign Dicts
 
-Dicts in Oil look like `{key: 'value'}`.
+Dicts in YSH look like `{key: 'value'}`.
 
 No:
 
@@ -852,7 +854,7 @@ No:
 
 Yes:
 
-    echo flag=$[1 + a[i] * 3]    # Arbitrary Oil expressions
+    echo flag=$[1 + a[i] * 3]    # Arbitrary YSH expressions
 
     # Possible, but a local var might be more readable
     echo flag=$['1' if x else '0']
@@ -943,12 +945,12 @@ Yes (purely a style preference):
 ## Related Documents
 
 - [Shell Language Idioms](shell-idioms.html).  This advice applies to shells
-  other than Oil.
-- [What Breaks When You Upgrade to Oil](upgrade-breakage.html).  Shell constructs that Oil
+  other than YSH.
+- [What Breaks When You Upgrade to YSH](upgrade-breakage.html).  Shell constructs that YSH
   users should avoid.
-- [Oil Fixes Shell's Error Handling (`errexit`)](error-handling.html).  Oil fixes the
+- [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html).  YSH fixes the
   flaky error handling in POSIX shell and bash.
 - TODO: Go through more of the [Pure Bash
-  Bible](https://github.com/dylanaraps/pure-bash-bible).  Oil provides
+  Bible](https://github.com/dylanaraps/pure-bash-bible).  YSH provides
   alternatives for such quirky syntax.
 

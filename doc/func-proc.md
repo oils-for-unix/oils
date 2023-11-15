@@ -309,7 +309,7 @@ Haven't decided on this yet.
 
 ## Funcs
 
-In addition to shell-like procs, Oil also has Python-like functions:
+In addition to shell-like procs, YSH also has Python-like functions:
 
 ```
 var x = len(ARGV) + 1
@@ -322,7 +322,7 @@ For now, we only have a few builtin functions like `len()`.
 
 ### Two Worlds: Syntax, Semantics, Composition
 
-There are two kinds of composition / code units in Oil:
+There are two kinds of composition / code units in YSH:
 
 - procs are like shell "functions".  They look like an external process, accepting an
   `argv` array and returning exit code.  I think of `proc` as *procedure* or
@@ -335,7 +335,7 @@ procs are called with a "command line":
 
     my-proc arg1 arg2 arg3
 
-funcs are called with Python/JS-like Oil expressions:
+funcs are called with Python/JS-like YSH expressions:
 
     var x = my_func(42, 'foo')
     _ my_func(42, 'foo')   # throw away the return value.
@@ -402,7 +402,7 @@ procs:
 
 - shell-like / process-like
   - have string args, stdin/stdout/stderr, and return exit code
-- BUT they also have **typed args** in Oil, including BLocks
+- BUT they also have **typed args** in YSH, including BLocks
   - args are lazily evaluated?
 - return status is for ERRORS
 - To "return" a list of strings, you should print lines of QSN to stdout!

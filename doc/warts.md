@@ -2,16 +2,16 @@
 default_highlighter: oil-sh
 ---
 
-Oil Language Warts
+YSH Language Warts
 ==================
 
-This documents describes parts of the Oil language that may be surprising.
+This documents describes parts of the YSH language that may be surprising.
 
 All languages have warts, but most of them don't document them for you!  Even a
 nice language like Python has surprising cases like `42,` and `f(x),` being a
 1-tuple (because of the trailing comma).
 
-Oil's goal is to remove the many warts of shell, documented at [Shell
+The goal of YSH is to remove the many warts of shell, documented at [Shell
 WTFs][wtfs].  Nonetheless it has some of its own.
 
 [wtfs]: https://github.com/oilshell/oil/wiki/Shell-WTFs
@@ -52,7 +52,7 @@ Yes:
     }
 
 This is because the `((` token is for bash arithmetic, which is disallowed in
-Oil.
+YSH.
 
 ### Two Different Syntaxes For `Block` and `Expr` Literals
 
