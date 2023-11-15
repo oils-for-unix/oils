@@ -6,7 +6,7 @@
 #   doctools/spelling.sh <function name>
 #
 # Examples:
-#   doctools/spelling.sh check-oil-docs
+#   doctools/spelling.sh check-oils-docs
 #   doctools/spelling.sh check-blog
 
 set -o nounset
@@ -96,7 +96,7 @@ check-one() {
   spelling check --known-words /usr/share/dict/words $words
 }
 
-check-oil-docs() {
+check-oils-docs() {
   local dir=_release/VERSION/doc
   check-tree $dir $dir/*.html
 }

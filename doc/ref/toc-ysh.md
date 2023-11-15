@@ -258,7 +258,8 @@ X [IO]        eval()   captureStdout()   promptChar()
 ```chapter-links-builtin-func
   [Values]        len()   type()
   [Conversions]   bool()   int()   float()   str()   list()   dict()
-                  X chr()   X ord()   X encodeRunes()
+                  X chr()   X ord()
+                  X runes()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
   [List]          any()   all()
   [Collections]   join()   split()  # $IFS, awk algorithm, regex
