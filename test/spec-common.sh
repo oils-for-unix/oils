@@ -20,7 +20,7 @@ sh-spec() {
 
   # Create under PID dir
   local tmp_env
-  tmp_env=$this_dir/../_tmp/spec-tmp/$$/$(basename $test_file)
+  tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file).$$
 
   # In the rare case that the PID dir exists, blow it away
   if test -d $tmp_env; then
