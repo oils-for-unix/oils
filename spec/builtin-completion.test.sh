@@ -194,7 +194,7 @@ compgen -A shopt -P [ -S ] nu
 ## END
 
 #### compgen with action and suffix: helptopic
-compgen -A helptopic -S ___ fa
+compgen -A helptopic -S ___ fal
 ## STDOUT:
 false___
 ## END
