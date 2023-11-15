@@ -18,8 +18,18 @@ sh-spec() {
   local this_dir
   this_dir=$(cd $(dirname $0); pwd)
 
+  # Create under PID dir
   local tmp_env
-  tmp_env=$this_dir/../_tmp/spec-tmp/$(basename $test_file)
+  tmp_env=$this_dir/../_tmp/spec-tmp/$$/$(basename $test_file)
+
+  # In the rare case that the PID dir exists, blow it away
+  if test -d $tmp_env; then
+    rm -r -f $tmp_env
+  fi
+  # In general we leave the tmp dir around so you can inspect it.  It's always
+  # safe to get rid of the cruft like this:
+  #
+  # rm -r -f _tmp/spec-tmp
 
   # - Prepend spec/bin on the front of the $PATH.  We can't isolate $PATH
   #   because we might be running in Nix, etc.
