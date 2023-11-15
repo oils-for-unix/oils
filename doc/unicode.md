@@ -1,5 +1,5 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 in_progress: yes
 ---
 

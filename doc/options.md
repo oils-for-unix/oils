@@ -1,6 +1,6 @@
 ---
 in_progress: yes
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 Global Shell Options: Turning OSH into YSH

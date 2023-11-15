@@ -1,5 +1,5 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 YSH Fixes Shell's Error Handling (`errexit`)

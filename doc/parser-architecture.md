@@ -19,9 +19,9 @@ Oils uses regex-based lexers, which are turned into efficient C code with
 strings char-by-char, since that strategy is error prone; it's inevitable that
 rare cases will be mishandled.
 
-The list of lexers can be found by looking at [native/fastlex.c]($oil-src).
+The list of lexers can be found by looking at [native/fastlex.c]($oils-src).
 
-- The large, modal OSH/YSH lexer in [frontend/lexer_def.py]($oil-src).
+- The large, modal OSH/YSH lexer in [frontend/lexer_def.py]($oils-src).
 - Lexers for OSH sublanguages
   - For `echo -e`
   - For `PS1` backslash escapes.
@@ -45,7 +45,7 @@ punted to [libc]($xref):
 
 ### Lexer Unread
 
-[osh/word_parse.py]($oil-src) calls `lexer.MaybeUnreadOne()` to handle right
+[osh/word_parse.py]($oils-src) calls `lexer.MaybeUnreadOne()` to handle right
 parens in this case:
 
 ```
@@ -103,7 +103,7 @@ These are handled up front, but not in a single pass.
 
 ### Where Parsers are Instantiated
 
-- See [frontend/parse_lib.py]($oil-src) and its callers.
+- See [frontend/parse_lib.py]($oils-src) and its callers.
 
 ## Runtime Parsing
 

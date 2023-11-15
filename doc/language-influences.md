@@ -1,5 +1,5 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 YSH Language Influences
@@ -241,6 +241,20 @@ YSH also uses `++` to concatenate strings and lists:
 
      var mylist = c ++ d
      var mylist = :| @c @d |  # also converts every element to a string
+
+### C
+
+Most of our C-like syntax can be attributed to JavaScript or Python.  But the
+`value.Place` type is created with the `&` operator, and should be familiar to
+C users:
+
+    $ echo hi | read --line (&myvar)
+    $ echo "myvar=$myvar"
+    => myvar=hi
+
+So a `value.Place` behaves like a pointer in some ways.
+
+The `&` syntax may also feel familiar to Rust users.
 
 <!--
 

@@ -35,11 +35,11 @@ These internal details are subject to change.
 
 ### Borrowed Code
 
-- [ASDL]($oil-src:asdl/) front end from [CPython]($xref:cpython) (heavily
+- [ASDL]($oils-src:asdl/) front end from [CPython]($xref:cpython) (heavily
   refactored)
-- [frontend/tdop.py]($oil-src): Adapted from tinypy, but almost no original code
+- [frontend/tdop.py]($oils-src): Adapted from tinypy, but almost no original code
   remains
-- [pgen2]($oil-src:pgen2/)
+- [pgen2]($oils-src:pgen2/)
 - All of OPy (will be obsolete)
   - compiler2 from stdlib
   - byterun
@@ -54,7 +54,7 @@ These internal details are subject to change.
     definitions.
   - For example, we define the core `Id` type and the lexing rules abstractly.
   - *TODO: Details on each `def` / `gen` pair*.
-- See [build/dev.sh]($oil-src) and [build/codegen.sh]($oil-src)
+- See [build/dev.sh]($oils-src) and [build/codegen.sh]($oils-src)
 
 
 ## Other Cross-Cutting Observations

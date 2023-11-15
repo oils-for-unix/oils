@@ -1,5 +1,5 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 in_progress: true
 css_files: ../../web/base.css ../../web/manual.css ../../web/toc.css
 ---

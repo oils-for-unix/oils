@@ -1,5 +1,5 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 Tracing Execution in Oils (`xtrace`)
@@ -71,7 +71,7 @@ then another builtin:
 - It shows the exit status of **every process**, which is important for
   reasoning about failure.
 - It annotates trace lines with the shell PID (when it's not the root PID).
-- Strings in `argv` arrays may be quoted with [QSN]($oil-doc:qsn.html).  This
+- Strings in `argv` arrays may be quoted with [QSN]($oils-doc:qsn.html).  This
   shows special characters unambiguously, and ensures that each trace entry is
   exactly one physical line.
 

@@ -5,7 +5,7 @@ in_progress: yes
 Examples of HTML Plugins
 ========================
 
-This file is essentially a unit test for [doctools/oil_doc.py]($oil-src), which
+This file is essentially a unit test for [doctools/oil_doc.py]($oils-src), which
 contains all the HTML plugins.
 
 Related: [How We Build Oils Documentation](doc-toolchain.html).
@@ -17,10 +17,10 @@ Related: [How We Build Oils Documentation](doc-toolchain.html).
 
 - `$xref`: [bash]($xref)
 - `$blog-tag`: [oil-release]($blog-tag)
-- `$oil-src`: [INSTALL.txt]($oil-src), [INSTALL.txt]($oil-src:INSTALL.txt)
+- `$oils-src`: [INSTALL.txt]($oils-src), [INSTALL.txt]($oils-src:INSTALL.txt)
 - `$blog-code-src`: [interactive-shell/README.md]($blog-code-src)
 - `$issue`: [issue 11]($issue:11)
-- `$oil-commit`: [this commit]($oil-commit:a1dad10d53b1fb94a164888d9ec277249ae98b58)
+- `$oils-commit`: [this commit]($oils-commit:a1dad10d53b1fb94a164888d9ec277249ae98b58)
 
 ## Syntax Highlighting Specified In Front matter
 
@@ -28,7 +28,7 @@ If every `pre` block in a document needs the same highlighter, you can specify
 it in the front matter like this:
 
     ---
-    default_highlighter: oil-sh
+    default_highlighter: oils-sh
     ---
 
     My Title
@@ -52,7 +52,7 @@ $ echo hi   # comment
 hi
 ```
 
-### oil-sh
+### oils-sh
 
 A generic formatter that works for both shell and YSH code.  It's used in
 [idioms.html](idioms.html), [known differences](known-differences.html), and is
@@ -114,7 +114,7 @@ A shell session could look like this:
 
 or
 
-    ```session-oil
+    ```session-ysh
     $ echo one
     one
 
@@ -143,7 +143,7 @@ Workflow:
 
 Another idea: PS2 should lead with the same number of spaces as PS1:
 
-oil$ for x in foo bar {
+ysh$ for x in foo bar {
    .   echo $x
    . }
 foo

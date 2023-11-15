@@ -388,7 +388,7 @@ tour() {
   touch $work_dir/{build,test}.sh
 
   mkdir -p $work_dir/lib
-  cat >$work_dir/lib/util.oil <<EOF
+  cat >$work_dir/lib/util.ysh <<EOF
 log() { echo "$@" 1>&2; }
 EOF
 

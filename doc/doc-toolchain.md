@@ -9,8 +9,8 @@ How We Build Oils Documentation
 2. Render Markdown to HTML, and run the result through our own HTML filters.
 3. Publish static HTML to <https://www.oilshell.org/>.
 
-The code is in the [doctools/]($oil-src) directory, which uses the
-[lazylex/]($oil-src)  library.
+The code is in the [doctools/]($oils-src) directory, which uses the
+[lazylex/]($oils-src)  library.
 
 <div id="toc">
 </div>
@@ -30,7 +30,7 @@ Most docs start with something like this:
 
     ---
     in_progress: yes
-    default_highlighter: oil-sh
+    default_highlighter: oils-sh
     ---
 
     My Title
@@ -85,14 +85,14 @@ List of plugins:
 
 - `$xref:bash` expands to `/cross-ref.html#bash` (shown above)
 - `$blog-tag:oil-release` expands to `/blog/tags.html#oil-release`
-- `$oil-src`
+- `$oils-src`
 
 See the raw and rendered versions of this doc for more:
 
 - [doc-plugins.md][]
 - [doc-plugins.html](doc-plugins.html)
 
-[doc-plugins.md]: $oil-src:doc/doc-plugins.md
+[doc-plugins.md]: $oils-src:doc/doc-plugins.md
 
 ### Syntax Highlighting of Code Blocks
 
@@ -114,7 +114,7 @@ This is done with `doctools/`
 
 ## Code Location
 
-- [build/doc.sh]($oil-src) drives the tools in [doctools/]($oil-src).
-- Markdown files are in [doc/]($oil-src).
+- [build/doc.sh]($oils-src) drives the tools in [doctools/]($oils-src).
+- Markdown files are in [doc/]($oils-src).
 
 

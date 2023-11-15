@@ -200,10 +200,10 @@ they not accept these sequences.
 
 ## Reference Implementation in Oil
 
-- Oil's **encoder** is in [qsn_/qsn.py]($oil-src), including the state machine
+- Oil's **encoder** is in [qsn_/qsn.py]($oils-src), including the state machine
   for the UTF-8 strategies.
-- The **decoder** has a lexer in [frontend/lexer_def.py]($oil-src), and a
-  "parser" / validator in [qsn_/qsn_native.py]($oil-src).  (Note that QSN is a
+- The **decoder** has a lexer in [frontend/lexer_def.py]($oils-src), and a
+  "parser" / validator in [qsn_/qsn_native.py]($oils-src).  (Note that QSN is a
   [regular language]($xref:regular-language)).
 
 The encoder has options to emit shell-compatible strings, which you probably

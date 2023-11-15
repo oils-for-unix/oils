@@ -1,5 +1,5 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 Egg Expressions (YSH Regexes)
@@ -354,10 +354,10 @@ Splitting:
 
 ### Language Reference
 
-- See bottom of the [YSH Expression Grammar](https://github.com/oilshell/oil/blob/master/ysh/grammar.pgen2) for the concrete syntax.
-- See the bottom of
-  [frontend/syntax.asdl](https://github.com/oilshell/oil/blob/master/frontend/syntax.asdl)
-  for the abstract syntax.
+- See bottom of the [YSH Expression Grammar]($oils-src:ysh/grammar.pgen2) for
+  the concrete syntax.
+- See the bottom of [frontend/syntax.asdl]($oils-src:frontend/syntax.asdl) for
+  the abstract syntax.
 
 ## Usage Notes
 
@@ -591,8 +591,7 @@ Eggexes are implemented in YSH, but not yet set in stone.
 
 Please try them, as described in [this
 post](http://www.oilshell.org/blog/2019/08/22.html) and the
-[README](https://github.com/oilshell/oil/blob/master/README.md), and send us
-feedback!
+[README]($oils-src:README.md), and send us feedback!
 
 You can create a new post on [/r/oilshell](https://www.reddit.com/r/oilshell/)
 or a new message on `#oil-discuss` on <https://oilshell.zulipchat.com/> (log in

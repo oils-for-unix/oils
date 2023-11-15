@@ -1,12 +1,12 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 in_progress: yes
 ---
 
 Interactive Shell Completion
 ============================
 
-You can use interactive completion directly under `osh` or `oil`, or clients of
+You can use interactive completion directly under `osh` or `ysh`, or clients of
 a [headless shell](headless.html) can use it as an API.  
 
 ## Completion API

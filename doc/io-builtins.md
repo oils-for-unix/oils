@@ -1,6 +1,6 @@
 ---
 in_progress: true
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 YSH I/O Builtins

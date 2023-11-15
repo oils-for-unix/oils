@@ -1,5 +1,5 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 Oils Headless Mode: For Alternative UIs
@@ -44,8 +44,8 @@ The shell process handles these things:
 FANOS stands for *File descriptors and Netstrings Over Sockets*.  It's a
 **control** protocol that already has 2 implementations, which are very small:
 
-- [client/py_fanos.py]($oil-src): 102 lines of code
-- [native/fanos.c]($oil-src): 294 lines of code
+- [client/py_fanos.py]($oils-src): 102 lines of code
+- [native/fanos.c]($oils-src): 294 lines of code
 
 ### Send Commands and File Descriptors to the "Server"
 
@@ -77,7 +77,7 @@ of it!
 
 ### Example Code
 
-See [client/headless_demo.py]($oil-src).  This is pure Python code that's
+See [client/headless_demo.py]($oils-src).  This is pure Python code that's
 divorced from the rest of Oils.
 
 ## Related Links

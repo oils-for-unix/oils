@@ -1,5 +1,5 @@
 ---
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 A Tour of YSH
@@ -53,7 +53,7 @@ Keep these points in mind as you read the details below.
 
 Start YSH just like you start bash or Python:
 
-<!-- oil-sh below skips code block extraction, since it doesn't run -->
+<!-- oils-sh below skips code block extraction, since it doesn't run -->
 
 ```sh-prompt
 bash$ ysh                # assuming it's installed

@@ -87,7 +87,7 @@ $ argv one "two three"
 I also use the YSH [var]($help) keyword for assignments.  *(TODO: This could be
 rewritten with shell assignment for the benefit of shell implementers)*
 
-[argv]: $oil-src:spec/bin/argv.py
+[argv]: $oils-src:spec/bin/argv.py
 
 ### No Implicit Splitting, Dynamic Globbing, or Empty Elision
 
@@ -115,11 +115,11 @@ That is, quotes aren't necessary to avoid:
 Here's an example showing that each construct evaluates to one arg in YSH:
 
 ```sh-prompt
-oil$ var pic = 'my pic.jpg'  # filename with spaces
-oil$ var empty = ''
-oil$ var pat = '*.py'        # pattern stored in a string
+ysh$ var pic = 'my pic.jpg'  # filename with spaces
+ysh$ var empty = ''
+ysh$ var pat = '*.py'        # pattern stored in a string
 
-oil$ argv ${pic} $empty $pat $(cat foo.txt) $((1 + 2))
+ysh$ argv ${pic} $empty $pat $(cat foo.txt) $((1 + 2))
 ['my pic.jpg', '', '*.py', 'contents of foo.txt', '3']
 ```
 
@@ -161,10 +161,10 @@ In YSH, `shopt -s parse_at` enables these shortcuts for splicing:
 Example:
 
 ```sh-prompt
-oil$ var myarray = :| 'a b' c |  # array with 2 elements
-oil$ set -- 'd e' f              # 2 arguments
+ysh$ var myarray = :| 'a b' c |  # array with 2 elements
+ysh$ set -- 'd e' f              # 2 arguments
 
-oil$ argv @myarray @ARGV *.py {ian,jack}@sh.com
+ysh$ argv @myarray @ARGV *.py {ian,jack}@sh.com
 ['a b', 'c', 'd e', 'f', 'g.py', 'h.py', 'ian@sh.com', 'jack@sh.com']
 ```
 
@@ -214,7 +214,7 @@ in shell:
 
 1. [Command]($help:simple-command): `echo $x foo`
 2. [For loop]($help:for): `for i in $x foo; do ...`
-3. [Array Literals]($help:array): `a=($x foo)` and `var a = :| $x foo |` ([oil-array]($help))
+3. [Array Literals]($help:array): `a=($x foo)` and `var a = :| $x foo |` ([ysh-array]($help))
 
 Shell has other word evaluation contexts like:
 

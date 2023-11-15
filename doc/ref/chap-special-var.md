@@ -1,7 +1,7 @@
 ---
 in_progress: yes
 body_css_class: width40 help-body
-default_highlighter: oil-sh
+default_highlighter: oils-sh
 ---
 
 Special Variables

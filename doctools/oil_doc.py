@@ -71,14 +71,14 @@ _ABBREVIATIONS = {
       _Abbrev('//oilshell.org/release/latest/doc/oil-help.html?topic=%(value)s#%(value)s'),
 
   # For the blog
-  'oil-doc':
+  'oils-doc':
       _Abbrev('//www.oilshell.org/release/latest/doc/%(value)s'),
 
   'blog-tag':
       _Abbrev('/blog/tags.html?tag=%(value)s#%(value)s'),
-  'oil-commit':
+  'oils-commit':
       _Abbrev('https://github.com/oilshell/oil/commit/%(value)s'),
-  'oil-src':
+  'oils-src':
       _Abbrev('https://github.com/oilshell/oil/blob/master/%(value)s'),
   'blog-code-src':
       _Abbrev('https://github.com/oilshell/blog-code/blob/master/%(value)s'),
@@ -88,6 +88,11 @@ _ABBREVIATIONS = {
       _Abbrev('https://github.com/oilshell/oil/wiki/%(value)s'),
 
 }
+
+# Backward compatibility
+_ABBREVIATIONS['oil-src'] = _ABBREVIATIONS['oils-src']
+_ABBREVIATIONS['oil-commit'] = _ABBREVIATIONS['oils-commit']
+_ABBREVIATIONS['oil-doc'] = _ABBREVIATIONS['oils-doc']
 
 # $xref:foo
 _SHORTCUT_RE = re.compile(r'\$ ([a-z\-]+) (?: : (\S+))?', re.VERBOSE)
@@ -412,7 +417,8 @@ def HighlightCode(s, default_highlighter, debug_out=None):
               # TODO: Refactor this to remove duplication with
               # language-{sh-prompt,oil-sh} below
 
-              if default_highlighter in ('sh-prompt', 'oil-sh'):
+              # oil-sh for compatibility
+              if default_highlighter in ('sh-prompt', 'oils-sh', 'oil-sh'):
                 out.PrintUntil(code_start_pos)
 
                 # Using ShPromptPlugin because it does the comment highlighting we want!
