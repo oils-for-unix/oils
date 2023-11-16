@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 #
 
 _ERROR_FMT = '<Error: %s> '
-_UNBALANCED_ERROR = r'<Error: unbalanced \[ and \]> '
+_UNBALANCED_ERROR = r'Unbalanced \[ and \]'
 
 
 class _PromptEvaluatorCache(object):
@@ -219,7 +219,7 @@ class Evaluator(object):
             elif id_ == Id.PS_RBrace:
                 non_printing -= 1
                 if non_printing < 0:  # e.g. \]\[
-                    return _UNBALANCED_ERROR
+                    return _ERROR_FMT % _UNBALANCED_ERROR
 
                 ret.append('\x02')
 
@@ -238,7 +238,7 @@ class Evaluator(object):
 
         # mismatched brackets, see https://github.com/oilshell/oil/pull/256
         if non_printing != 0:
-            return _UNBALANCED_ERROR
+            return _ERROR_FMT % _UNBALANCED_ERROR
 
         return ''.join(ret)
 

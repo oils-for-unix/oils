@@ -51,7 +51,7 @@ class PromptTest(unittest.TestCase):
                 r"\]\[",  # goes negative!
         ]:
             tokens = match.Ps1Tokens(invalid_prompt)
-            self.assertEqual(prompt.PROMPT_ERROR,
+            self.assertEqual(r'<Error: Unbalanced \[ and \]> ',
                              self.p._ReplaceBackslashCodes(tokens))
 
 
