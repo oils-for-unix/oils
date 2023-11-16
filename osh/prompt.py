@@ -38,7 +38,8 @@ if TYPE_CHECKING:
 # Prompt Evaluation
 #
 
-PROMPT_ERROR = r'<Error: unbalanced \[ and \]> '
+_ERROR_FMT = '<Error: %s> '
+_UNBALANCED_ERROR = r'<Error: unbalanced \[ and \]> '
 
 
 class _PromptEvaluatorCache(object):
@@ -125,7 +126,7 @@ class Evaluator(object):
         if what == 'D':
             # TODO: wrap strftime(), time(), localtime(), etc. so users can do
             # it themselves
-            return '%D{} not supported'
+            return _ERROR_FMT % '\D{} not in promptVal()'
         else:
             # Could make hostname -> h alias, etc.
             return self.PromptSubst(what)
@@ -176,7 +177,7 @@ class Evaluator(object):
                 # Shorten to ~/mydir
                 r = ui.PrettyDir(pwd, home)
             except error.Runtime as e:
-                r = '<Error: %s> ' % e.UserErrorString()
+                r = _ERROR_FMT % e.UserErrorString()
 
         elif ch == 'W':
             val = self.mem.GetValue('PWD')
@@ -184,7 +185,7 @@ class Evaluator(object):
                 str_val = cast(value.Str, val)
                 r = os_path.basename(str_val.s)
             else:
-                r = '<Error: PWD is not a string> '
+                r = _ERROR_FMT % 'PWD is not a string'
 
         else:
             # e.g. \e \r \n \\
@@ -193,7 +194,7 @@ class Evaluator(object):
             # TODO: Handle more codes
             # R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
             if r is None:
-                r = r'<Error: \%s not implemented in $PS1> ' % ch
+                r = _ERROR_FMT % (r'\%s not implemented in $PS1' % ch)
 
         return r
 
@@ -218,7 +219,7 @@ class Evaluator(object):
             elif id_ == Id.PS_RBrace:
                 non_printing -= 1
                 if non_printing < 0:  # e.g. \]\[
-                    return PROMPT_ERROR
+                    return _UNBALANCED_ERROR
 
                 ret.append('\x02')
 
@@ -237,7 +238,7 @@ class Evaluator(object):
 
         # mismatched brackets, see https://github.com/oilshell/oil/pull/256
         if non_printing != 0:
-            return PROMPT_ERROR
+            return _UNBALANCED_ERROR
 
         return ''.join(ret)
 

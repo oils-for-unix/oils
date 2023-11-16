@@ -786,7 +786,6 @@ def Main(
 
         # identical to command sub
         'captureStdout': None,
-
         'promptVal': method_io.PromptVal(),
         # like \w - working dir
         'getcwd': None,

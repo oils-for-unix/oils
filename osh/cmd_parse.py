@@ -450,7 +450,6 @@ class VarChecker(object):
                       name_tok)
 
 
-
 class ctx_VarChecker(object):
 
     def __init__(self, var_checker, blame_tok):
