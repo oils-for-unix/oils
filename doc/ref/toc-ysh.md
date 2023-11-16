@@ -238,15 +238,16 @@ X [Builtin Sub]   _buffer
               X trim()   X trimLeft()   X trimRight()
               X trimPrefix()   X trimSuffix()
               upper()   lower()  # ascii or unicode
-  [List]      append()   pop()   extend()   X find()   join()
+  [List]      append()   pop()   extend()   X find()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
               X inc()   X accum()
 X [Func]      toJson()
 X [Proc]      toJson()
   [Place]     setValue()
-X [IO]        eval()   captureStdout()   promptChar()
-              getcwd()   getUserName()   getHostName()
+
+  [IO]        X eval()   X captureStdout()
+              promptVal()
   [Quotation] Expr   X Template   Command
   [Code]      BuiltinFunc   BuiltinMethod
 ```

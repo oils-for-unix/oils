@@ -14,7 +14,11 @@ if TYPE_CHECKING:
 _ = log
 
 
-class PromptChar(vm._Callable):
+class PromptVal(vm._Callable):
+    """
+    _io->promptVal('$') is like \$ 
+    It expands to $ or # when root
+    """
 
     def __init__(self):
         # type: () -> None
@@ -25,7 +29,8 @@ class PromptChar(vm._Callable):
 
         # "self" param is guaranteed to succeed
         io = rd.PosIO()
+        what = rd.PosStr()
         rd.Done()  # no more args
 
         prompt_ev = cast(prompt.Evaluator, io.prompt_ev)
-        return value.Str(prompt_ev.PromptChar())
+        return value.Str(prompt_ev.PromptVal(what))

@@ -242,15 +242,25 @@ Note, you will need to `source --builtin list.ysh` to use this function.
 
 ### join()
 
-Given an array of strings, returns a string.
+Given a List, stringify its items, and join them by a separator.  The default
+separator is the empty string.
 
     var x = ['a', 'b', 'c']
 
     $ echo $[join(x)]
     abc
 
-    $ echo $[join(x, ' ')]  # optional delimiter
+    $ echo $[join(x, ' ')]  # optional separator
     a b c
+
+
+It's also often called with the `=>` chaining operator:
+
+    var items = [1, 2, 3]
+
+    json write (items => join())      # => "123"
+    json write (items => join(' '))   # => "1 2 3"
+    json write (items => join(', '))  # => "1, 2, 3"
 
 ### split()
 

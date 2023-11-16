@@ -422,7 +422,7 @@ make-dirs() {
   mkdir -p $TMP_DIR $CODE_BLOCK_DIR $TEXT_DIR $HTML_DIR/doc
 }
 
-all-help() {
+all-ref() {
   ### Build HTML and text help, which depends on libcmark.so
 
   log "Removing $TEXT_DIR/*"
@@ -580,7 +580,7 @@ run-for-release() {
   # Docs
   # Writes _release/VERSION and _tmp/release-index.html
   all-markdown
-  all-help
+  all-ref
   all-redirects  # backward compat
 
   modify-pages

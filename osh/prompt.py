@@ -26,12 +26,13 @@ from pylib import os_path
 import libc  # gethostname()
 import posix_ as posix
 
-from typing import Dict, List, Tuple, cast, TYPE_CHECKING
+from typing import Dict, List, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from frontend.parse_lib import ParseContext
     from osh.cmd_eval import CommandEvaluator
     from osh.word_eval import AbstractWordEvaluator
+
 
 #
 # Prompt Evaluation
@@ -63,11 +64,14 @@ class _PromptEvaluatorCache(object):
 
         if name == '$':  # \$
             value = '#' if self._GetEuid() == 0 else '$'
+
         elif name == 'hostname':  # for \h and \H
             value = libc.gethostname()
+
         elif name == 'user':  # for \u
-            value = pyos.GetUserName(
-                self._GetEuid())  # recursive call for caching
+            # recursive call for caching
+            value = pyos.GetUserName(self._GetEuid())
+
         else:
             raise AssertionError(name)
 
@@ -113,9 +117,85 @@ class Evaluator(object):
         # type: () -> None
         assert self.word_ev is not None
 
-    def PromptChar(self):
-        # type: () -> str
-        return self.cache.Get('$')
+    def PromptVal(self, what):
+        # type: (str) -> str
+        """
+        _io->promptVal('$')
+        """
+        if what == 'D':
+            # TODO: wrap strftime(), time(), localtime(), etc. so users can do
+            # it themselves
+            return '%D{} not supported'
+        else:
+            # Could make hostname -> h alias, etc.
+            return self.PromptSubst(what)
+
+    def PromptSubst(self, ch, arg=None):
+        # type: (str, Optional[str]) -> str
+
+        if ch == '$':  # So the user can tell if they're root or not.
+            r = self.cache.Get('$')
+
+        elif ch == 'u':
+            r = self.cache.Get('user')
+
+        elif ch == 'h':
+            hostname = self.cache.Get('hostname')
+            # foo.com -> foo
+            r, _ = mylib.split_once(hostname, '.')
+
+        elif ch == 'H':
+            r = self.cache.Get('hostname')
+
+        elif ch == 's':
+            r = self.lang
+
+        elif ch == 'v':
+            r = self.version_str
+
+        elif ch == 'A':
+            now = time_.time()
+            r = time_.strftime('%H:%M', time_.localtime(now))
+
+        elif ch == 'D':  # \D{%H:%M} is the only one with a suffix
+            now = time_.time()
+            assert arg is not None
+            if len(arg) == 0:
+                # In bash y.tab.c uses %X when string is empty
+                # This doesn't seem to match exactly, but meh for now.
+                fmt = '%X'
+            else:
+                fmt = arg
+            r = time_.strftime(fmt, time_.localtime(now))
+
+        elif ch == 'w':
+            try:
+                pwd = state.GetString(self.mem, 'PWD')
+                # doesn't have to exist
+                home = state.MaybeString(self.mem, 'HOME')
+                # Shorten to ~/mydir
+                r = ui.PrettyDir(pwd, home)
+            except error.Runtime as e:
+                r = '<Error: %s> ' % e.UserErrorString()
+
+        elif ch == 'W':
+            val = self.mem.GetValue('PWD')
+            if val.tag() == value_e.Str:
+                str_val = cast(value.Str, val)
+                r = os_path.basename(str_val.s)
+            else:
+                r = '<Error: PWD is not a string> '
+
+        else:
+            # e.g. \e \r \n \\
+            r = consts.LookupCharPrompt(ch)
+
+            # TODO: Handle more codes
+            # R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
+            if r is None:
+                r = r'<Error: \%s not implemented in $PS1> ' % ch
+
+        return r
 
     def _ReplaceBackslashCodes(self, tokens):
         # type: (List[Tuple[Id_t, str]]) -> str
@@ -144,64 +224,10 @@ class Evaluator(object):
 
             elif id_ == Id.PS_Subst:  # \u \h \w etc.
                 ch = s[1]
-                if ch == '$':  # So the user can tell if they're root or not.
-                    r = self.cache.Get('$')
-
-                elif ch == 'u':
-                    r = self.cache.Get('user')
-
-                elif ch == 'h':
-                    hostname = self.cache.Get('hostname')
-                    # foo.com -> foo
-                    r, _ = mylib.split_once(hostname, '.')
-
-                elif ch == 'H':
-                    r = self.cache.Get('hostname')
-
-                elif ch == 's':
-                    r = self.lang
-
-                elif ch == 'v':
-                    r = self.version_str
-
-                elif ch == 'A':
-                    now = time_.time()
-                    r = time_.strftime('%H:%M', time_.localtime(now))
-
-                elif ch == 'D':  # \D{%H:%M} is the only one with a suffix
-                    now = time_.time()
-                    fmt = s[3:-1]  # \D{%H:%M}
-                    if len(fmt) == 0:
-                        # In bash y.tab.c uses %X when string is empty
-                        # This doesn't seem to match exactly, but meh for now.
-                        fmt = '%X'
-                    r = time_.strftime(fmt, time_.localtime(now))
-
-                elif ch == 'w':
-                    try:
-                        pwd = state.GetString(self.mem, 'PWD')
-                        home = state.MaybeString(
-                            self.mem, 'HOME')  # doesn't have to exist
-                        # Shorten to ~/mydir
-                        r = ui.PrettyDir(pwd, home)
-                    except error.Runtime as e:
-                        r = '<Error: %s>' % e.UserErrorString()
-
-                elif ch == 'W':
-                    val = self.mem.GetValue('PWD')
-                    if val.tag() == value_e.Str:
-                        str_val = cast(value.Str, val)
-                        r = os_path.basename(str_val.s)
-                    else:
-                        r = '<Error: PWD is not a string> '
-
-                else:
-                    r = consts.LookupCharPrompt(ch)
-
-                    # TODO: Handle more codes
-                    # R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
-                    if r is None:
-                        r = r'<Error: \%s not implemented in $PS1> ' % ch
+                arg = None  # type: Optional[str]
+                if ch == 'D':
+                    arg = s[3:-1]  # \D{%H:%M}
+                r = self.PromptSubst(ch, arg=arg)
 
                 # See comment above on bash hack for $.
                 ret.append(r.replace('$', '\\$'))

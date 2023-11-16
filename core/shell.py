@@ -787,8 +787,7 @@ def Main(
         # identical to command sub
         'captureStdout': None,
 
-        # \$ expands to $ or # when root
-        'promptChar': method_io.PromptChar(),
+        'promptVal': method_io.PromptVal(),
         # like \w - working dir
         'getcwd': None,
         # like \u

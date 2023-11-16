@@ -16,30 +16,109 @@ This chapter in the [Oils Reference](index.html) describes YSH types and methods
 
 ## Bool
 
-### fromStr
-
 ## Int
 
-### fromStr
+## Float
 
 ## Str
 
-### toJ8
+### find()
+
+### replace()
+
+### startsWith()   
+
+### endsWith()
+
+### trim()   
+
+Respects unicode space.
+
+### trimLeft()   
+
+Respects unicode space.
+
+### trimRight()
+
+Respects unicode space.
+
+### trimPrefix()   
+
+### trimSuffix()
+
+### upper()   
+
+Respects unicode.
+
+### lower()
+
+Respects unicode.
 
 ## List
 
-### join
+### append()
 
-Stringify all items in a list and join them by a seperator (default seperator
-is the empty string `""`.)
+### pop()
 
-    var items = [1, 2, 3]
+### extend()
 
-    json write (items->join())  # "123"
-    json write (items->join(" "))  # "1 2 3"
-    json write (items->join(", "))  # "1, 2, 3"
+### find()
 
-See also: [`join()`](./chap-builtin-func.html#join)
+### insert()
+
+### remove()
+
+### reverse()
+
 
 ## Dict
+
+### keys()
+
+### values()
+
+### get()
+
+### erase()
+
+### inc()
+
+### accum()
+
+## Place
+
+### setValue()
+
+A Place is used as an "out param" by calling setValue():
+
+    proc p (out) {
+      call out->setValue('hi')
+    }
+
+    var x
+    p (&x)
+    echo x=$x  # => x=hi
+
+
+## IO
+
+### eval()
+
+Like the `eval` builtin, but useful in pure functions.
+
+### captureStdout()
+
+Like `$()`, but useful in pure functions.
+
+### promptVal()
+
+An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
+
+    func renderPrompt(io) {    
+      var parts = []
+      call parts->append(io->promptval('w'))  # pass 'w' for \w
+      call parts->append(io->promptval('$'))  # pass '$' for \$
+      call parts->append(' ')
+      return (join(parts))
+    }
 
