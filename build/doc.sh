@@ -384,7 +384,6 @@ tour() {
 
   local work_dir=$REPO_ROOT/_tmp/code-blocks/doc
 
-  set -x
   mkdir -p $work_dir/lib
 
   # Files used by module example
