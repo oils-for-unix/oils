@@ -1363,8 +1363,10 @@ proc my-sync(...files) {
 proc main {
   mkdir -p $DEST
 
+  touch {foo,bar}.py {build,test}.sh
+
   log "Copying source files"
-  my-sync *.py {build,test}.sh
+  my-sync *.py *.sh
 
   if test --dir /tmp/logs {
     cd /tmp/logs

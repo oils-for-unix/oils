@@ -377,17 +377,18 @@ ref-check() {
 }
 
 tour() {
-  ### Build the Oil Language Tour and execute code
+  ### Build the Tour of YSH, and execute code as validation
   local name=${1:-ysh-tour}
 
   split-and-render doc/$name.md
 
   local work_dir=$REPO_ROOT/_tmp/code-blocks/doc
 
+  mkdir -p $work_dir/lib
+
   # Files used by module example
   touch $work_dir/{build,test}.sh
 
-  mkdir -p $work_dir/lib
   cat >$work_dir/lib/util.ysh <<EOF
 log() { echo "$@" 1>&2; }
 EOF
