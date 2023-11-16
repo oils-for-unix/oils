@@ -263,7 +263,7 @@ X [IO]        eval()   captureStdout()   promptChar()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
   [List]          any()   all()
   [Collections]   join()   split()  # $IFS, awk algorithm, regex
-                  copy()   deepCopy()
+                  X copy()   X deepCopy()
   [Word]          glob()   maybe()
   [Math]          abs()   max()   min()   X round()   sum()
 X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()

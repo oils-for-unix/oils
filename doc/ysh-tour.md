@@ -347,6 +347,9 @@ Idioms for using stderr (identical to shell):
     ls /tmp 2>errors.txt
     echo 'fatal error' 1>&2
 
+"Simple" commands in YSH can also have typed `()` and block `{}` args, which
+we'll see in the section on "procs".
+
 ### Pipelines
 
 Pipelines are a powerful method manipulating data streams:
@@ -375,7 +378,7 @@ When this mode is active:
   comment is allowed.  This prevents confusion if you forget the `;`
   terminator.
 
-### Keywords for Using Variables
+### `var`, `setvar`, `const` to Declare and Mutate
 
 Constants can't be modified:
 
@@ -505,7 +508,7 @@ Or an **expression**, which is surrounded in `()`:
     # i = 4
     # i = 5
 
-### Conditionals: `if`, `case`
+### `if elif` Conditional
 
 If statements test the exit code of a command, and have optional `elif` and
 `else` clauses:
@@ -536,6 +539,8 @@ As with `while` loops, the condition can also be an **expression** wrapped in
     if (not done) {        # negate with 'not' operator (contrast with !)
       echo "we aren't done"
     }
+
+### `case` Conditional
 
 The case statement is a series of conditionals and executable blocks.  The
 condition can be either an unquoted glob pattern like `*.py`, an eggex pattern
@@ -590,34 +595,36 @@ Handling](idioms.html#error-handling).  For design goals and a reference, see
 The `exit` **keyword** exits a process (it's not a shell builtin.)  The other 3
 control flow keywords behave like they do in Python and JavaScript.
 
-### Ruby-like Blocks and Shell-like `proc`
+### Ruby-like Blocks 
 
-Here's example of a builtin command that takes a block argument:
+Here's a builtin command that takes a literal block argument:
 
     shopt --unset errexit {  # ignore errors
       cp ale /tmp
       cp bean /bin
     }
 
-Blocks are a special case of typed arguments.  Their type is `value.Command`.
+Blocks are a special kind of typed argument passed to commands like `shopt`.
+Their type is `value.Command`.
 
-#### User-defined procs
+### Shell-like `proc`
 
-You can also define your own "commands" with the `proc` keyword.
+You can define units of code with the `proc` keyword.
 
     proc mycopy (src, dest) {
       ### Copy verbosely
+
+      mkdir -p $dest
       cp --verbose $src $dest
     }
 
-The line following `###` is a "doc comment" and can be retrieved with `pp
-proc`.  Simple procs like this are invoked like a shell command:
+The `###` line is a "doc comment", and can be retrieved with `pp proc`.  Simple
+procs like this are invoked like a shell command:
 
     touch log.txt
-    # the first word 'mycopy' is resolved as a proc
-    mycopy log.txt /tmp  # runs cp --verbose
+    mycopy log.txt /tmp   # first word 'mycopy' is a proc
 
-But procs have a rich syntax, with **four** kinds of arguments:
+Procs have more features, including **four** kinds of arguments:
 
 1. Word args (which are always strings)
 1. Typed, positional args (aka positional args)
@@ -637,7 +644,9 @@ At the call site, they can look like any of these forms:
     var mycmd = ^(echo hi)       # expression for a value.Command
     eval (mycmd)                 # positional arg 
 
-At the definition site, the kinds of arguments are separated with `;`, similar
+<!-- TODO: lazy arg list: ls8 | where [age > 10] -->
+
+At the definition site, the kinds of parameters are separated with `;`, similar
 to the Julia language:
 
     proc p2 (word1, word2; pos1, pos2, ...rest_pos) {
@@ -656,12 +665,12 @@ to the Julia language:
     }
 
 YSH also has Python-like functions defined with `func`.  These are part of the
-expression language, so we'll see them in the next major section.
+expression language, which we'll see later.
 
 For more info, see the [Informal Guide to Procs and Funcs](func-proc.html)
 (under construction).
 
-### Builtin Commands
+#### Builtin Commands
 
 **Shell builtins** like `cd` and `read` are the "standard library" of the
 command language.  Each one takes various flags:
@@ -684,15 +693,110 @@ Here are some categories of builtin:
 ## Expression Language: Python-like Types
 
 YSH expressions look and behave more like Python or JavaScript than shell.  For
-example, we write `if (x < y)` instead of `if [ $x -lt $y ]`.
+example, we write `if (x < y)` instead of `if [ $x -lt $y ]`.  Expressions are
+usually surrounded by `( )`.  
 
-Expressions are usually surrounded by `( )`.  [Command vs. Expression
-Mode](command-vs-expression-mode.html) may help you understand how YSH is
-parsed.
+At runtime, variables like `x` and `y` are bounded to **typed data**, like
+integers, floats, strings, lists, and dicts.
 
-### Types and Literals: `Int`, `List`, `Dict`, ...
+<!--
+[Command vs. Expression Mode](command-vs-expression-mode.html) may help you
+understand how YSH is parsed.
+-->
 
-Let's go through the data types in YSH, and show the syntax for literals.
+### Python-like `func`
+
+At the end of the *Command Language*, we saw that procs are shell-like units of
+code.  Now let's talk about Python-like **functions** in YSH, which are
+different than `procs`:
+
+- They're defined with the `func` keyword.
+- They're called in expressions, not in commands.
+- They're **pure**, and live in the **interior** of a process.
+  - In contrast, procs usually perform I/O, and have **exterior** boundaries.
+
+Here's a function that mutates its argument:
+
+    func popTwice(mylist) {
+      call mylist->pop()
+      call mylist->pop()
+    }
+
+    var mylist = [3, 4]
+
+    # The call keyword is an "adapter" between commands and expressions,
+    # like the = keyword.
+    call popTwice(mylist)
+
+Here's a pure function:
+
+    func myRepeat(s, n; special=false) {  # positional; named params
+      var parts = []
+      for i in (0 .. n) {
+        append $s (parts)
+      }
+      var result = join(parts)
+
+      if (special) {
+        return ("$result !!")  # parens required for typed return
+      } else {
+        return (result)
+      }
+    }
+
+    echo $[myRepeat('z', 3)]  # => zzz
+
+    echo $[myRepeat('z', 3, special=true)]  # => zzz !!
+
+Funcs are named using `camelCase`, while procs use `kebab-case`.  See the
+[Style Guide](style-guide.html) for more conventions.
+
+#### Builtin Functions
+
+In addition, to builtin commands, YSH has Python-like builtin **functions**.
+These are like the "standard library" for the expression language.  Examples:
+
+- Functions that take multiple types: `len()  type()`
+- Conversions: `bool()   int()   float()   str()  list()   ...`
+- Explicit word evaluation: `split()  join()  glob()  maybe()`  
+
+<!-- TODO: Make a comprehensive list of func builtins. -->
+
+
+### Data Types: `Int`, `Str`, `List`, `Dict`, ...
+
+YSH has data types, each with an expression syntax and associated methods.
+
+### Methods
+
+Mutating methods are looked up with a thin arrow `->`:
+
+    var foods = ['ale', 'bean']
+    var last = foods->pop()  # bean
+    write @foods  # => ale
+
+You can ignore the return value with the `call` keyword:
+
+    call foods->pop()
+
+Transforming methods use a fat arrow `=>`:
+
+    var line = ' ale bean '
+    var trimmed = line => trim() => upper()  # 'ALE BEAN'
+
+If the `=>` operator doesn't find a method with the given name in the object's
+type, it looks for free functions:
+
+    # list() is a free function taking one arg
+    # join() is a free function taking two args
+    var x = {k1: 42, k2: 43} => list() => join('/')  # 'K1/K2'
+
+This allows a left-to-right "method chaining" style.
+
+---
+
+Now let's go through the data types in YSH.  We'll show the syntax for
+literals, and what **methods** they have.
 
 #### Null and Bool
 
@@ -754,8 +858,19 @@ as in Python.
 (In the future, JSON-like *J8 Notation* will distinguish between strings and
 bytes on the wire.)
 
+Strings are **immutable**, as in Python and JavaScript.  This means they only
+have **transforming** methods:
+
+    var x = s => trim()
+
+Other methods:
+
+- `trimLeft()   trimRight()`
+- `trimPrefix()   trimSuffix()`
+- `upper()   lower()` (not implemented)
+
 <!--
-- The syntax `%symbol` is used in eggex, and could be an interned string.
+The syntax `:symbol` could be an interned string.
 -->
 
 #### List (and Arrays)
@@ -773,6 +888,16 @@ convenient to write them with shell-like literals:
 
     # You can use the word language here
     var other = :| foo $s *.py {alice,bob}@example.com |
+
+Lists are **mutable**, as in Python and JavaScript.  So they mainly have
+mutating methods:
+
+    call foods->reverse()
+    write -- @foods
+    # =>
+    # corn
+    # bean
+    # ale
 
 #### Dict
 
@@ -808,7 +933,13 @@ More:
     var empty = {}
     echo $[len(empty)]  # => 0
 
-### `Place` values / "out params"
+Dicts are **mutable**, as in Python and JavaScript.  But the `keys()` and `values()`
+methods return new `List` objects:
+
+    var keys = d2 => keys()    # => alice_z
+    # var vals = d3 => values()  # => alice
+
+### `Place` type / "out params"
 
 The `read` builtin can either set an implicit variable `_reply`:
 
@@ -820,8 +951,7 @@ Or you can pass a `value.Place`, created with `&`
     whoami | read --line (&x)  # mutate this "place"
     echo who=$x  # => who=andy
 
-
-#### value.Command (Block) and value.Expr
+#### Quotation Types: value.Command (Block) and value.Expr
 
 These types are for reflection on YSH code.  Most YSH programs won't use them
 directly.
@@ -908,64 +1038,6 @@ TODO: change example above
 TODO: What about list comprehensions?
 -->
 
-### Python-like `func`
-
-YSH functions are different than `procs`:
-
-- They're defined with the `func` keyword.
-- They're called in expressions.
-- They're **pure**, and live in the **interior** of a process.
-  - In contrast, procs usually perform I/O, and have **exterior** boundaries.
-
-Functions are defined similarly to procs.  Here's a function that mutates its
-argument:
-
-    func popTwice(mylist) {
-      call mylist->pop()
-      call mylist->pop()
-    }
-
-    var mylist = [3, 4]
-
-    # The call keyword is like `=`: an "adapter" between commands and
-    # expressions.
-    call popTwice(mylist)
-
-Here's a pure function:
-
-    func myRepeat(s, n; special=false) {  # positional; named
-      var parts = []
-      for i in (0 .. n) {
-        append $s (parts)
-      }
-      var result = join(parts)
-
-      if (special) {
-        return ("$result !!")  # parens required for typed return
-      } else {
-        return (result)
-      }
-    }
-
-    echo $[myRepeat('z', 3)]  # => zzz
-
-    echo $[myRepeat('z', 3, special=true)]  # => zzz !!
-
-Funcs are named with `camelCase`, while procs use `kebab-case`.  See the [Style
-Guide](style-guide.html) for more conventions.
-
-#### Builtin Functions
-
-We've seen shell-like builtin commands, but YSH also has Python-like builtin
-**functions**.  These are like the "standard library" for the expression
-language.  Examples:
-
-- Explicit word evaluation: `split()  join()  glob()  maybe()`  
-- String and pattern: `find()  sub()`
-- Collections: `len()  keys()  values()  items()  append()  extend()`
-
-<!-- TODO: Make a comprehensive list of func builtins. -->
-
 ### Egg Expressions (YSH Regexes)
 
 An *Eggex* is a type of YSH expression that denote regular expressions.  They
@@ -1051,6 +1123,13 @@ In addition to languages for **code**, YSH also deals with languages for
 **data**.  [JSON]($xref) is a prominent example of the latter.
 
 <!-- TODO: Link to slogans, fallacies, and concepts -->
+
+### UTF-8
+
+UTF-8 is the foundation of our textual data languages.
+
+<!-- TODO: there's a runes() iterator which gives integer offsets, usable for
+slicing -->
 
 ### Lines of Text (traditional), and QSN
 
@@ -1232,9 +1311,16 @@ summary:
 # Unimplemented syntax:
 
 echo ${x|html}               # formatters
+
 echo ${x %.2f}               # statically-parsed printf
 
-echo ${.myproc arg1}         # builtin sub
+var x = j"line\n"
+echo j"line\n"               # JSON-style string literal
+
+var x = "<p>$x</p>"html      
+echo "<p>$x</p>"html         # tagged string
+
+var x = 15 Mi                # units suffix
 ```
 
 Important builtins that aren't implemented:
