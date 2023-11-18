@@ -70,16 +70,16 @@ class SearchPath(object):
 
     def Lookup(self, name, exec_required=True):
         # type: (str, bool) -> Optional[str]
-        """Returns the path itself (for relative path), the resolve path, or
-        None."""
+        """
+        Returns the path itself (if relative path), the resolved path, or None.
+        """
         if '/' in name:
             if path_stat.exists(name):
                 return name
             else:
                 return None
 
-        # TODO: Could cache this computation to avoid allocating every time for all
-        # the splitting.
+        # TODO: Could cache this to avoid split() allocating all the time.
         val = self.mem.GetValue('PATH')
         UP_val = val
         if val.tag() == value_e.Str:

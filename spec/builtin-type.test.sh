@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## compare_shells: bash zsh mksh dash ash
 
 #### type -> keyword builtin 
@@ -26,7 +26,7 @@ touch _tmp/date
 chmod +x _tmp/date
 PATH=_tmp:/bin
 
-type ll f date | sed 's/`/[BACKTICK]/g'  # make output easier to read
+type ll f date | sed 's/`/'\''/g'  # make output easier to read
 
 # Note: both procs and funcs go in var namespace?  So they don't respond to
 # 'type'?
@@ -47,7 +47,7 @@ f is a function
 date is a tracked alias for _tmp/date
 ## END
 ## OK bash STDOUT:
-ll is aliased to [BACKTICK]ls -l'
+ll is aliased to 'ls -l'
 f is a function
 f () 
 { 
@@ -55,6 +55,34 @@ f ()
 }
 date is _tmp/date
 ## END
+
+#### type of relative path
+
+touch _tmp/file _tmp/ex
+chmod +x _tmp/ex
+
+type _tmp/file _tmp/ex
+
+# dash and ash don't care if it's executable
+# mksh
+
+## status: 1
+## STDOUT:
+_tmp/ex is _tmp/ex
+## END
+
+## OK dash/ash status: 0
+## OK dash/ash STDOUT:
+_tmp/file is _tmp/file
+_tmp/ex is _tmp/ex
+## END
+
+## OK zsh/mksh status: 1
+## OK zsh/mksh STDOUT:
+_tmp/file not found
+_tmp/ex is _tmp/ex
+## END
+
 
 #### type -> not found
 

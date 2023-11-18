@@ -137,6 +137,7 @@ class Source(vm._Builtin):
             return self._Exec(cmd_val, arg_r, path, c_parser)
 
         else:
+            # Respects $PATH
             resolved = self.search_path.Lookup(path, exec_required=False)
             if resolved is None:
                 resolved = path
@@ -216,13 +217,13 @@ class Command(vm._Builtin):
 
         if arg.v:
             status = 0
-            for kind, argument in _ResolveNames(argv, self.funcs, self.aliases,
-                                                self.search_path):
+            for name, kind, _ in _ResolveNames(argv, self.funcs, self.aliases,
+                                               self.search_path):
                 if kind is None:
                     status = 1  # nothing printed, but we fail
                 else:
                     # This is for -v, -V is more detailed.
-                    print(argument)
+                    print(name)
             return status
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
@@ -316,33 +317,35 @@ def _ResolveNames(
         aliases,  # type: Dict[str, str]
         search_path,  # type: state.SearchPath
 ):
-    # type: (...) -> List[Tuple[str, str]]
-    results = []  # type: List[Tuple[str, str]]
+    # type: (...) -> List[Tuple[str, Optional[str], Optional[str]]]
+    results = []  # type: List[Tuple[str, Optional[str], Optional[str]]]
     for name in names:
         if name in funcs:
-            kind = ('function', name)
+            kind = (name, 'function', None)  # type: Tuple[str, Optional[str], Optional[str]]
         elif name in aliases:
-            kind = ('alias', name)
+            kind = (name, 'alias', aliases[name])
 
         # TODO: Use match instead?
         elif consts.LookupNormalBuiltin(name) != 0:
-            kind = ('builtin', name)
+            kind = (name, 'builtin', None)
         elif consts.LookupSpecialBuiltin(name) != 0:
-            kind = ('builtin', name)
+            kind = (name, 'builtin', None)
         elif consts.LookupAssignBuiltin(name) != 0:
-            kind = ('builtin', name)
-        elif consts.IsControlFlow(name):  # continue, etc.
-            kind = ('keyword', name)
+            kind = (name, 'builtin', None)
 
+        elif consts.IsControlFlow(name):  # continue, etc.
+            kind = (name, 'keyword', None)
         elif consts.IsKeyword(name):
-            kind = ('keyword', name)
+            kind = (name, 'keyword', None)
+
         else:
+            # TODO: Return multiple entries for type -a
             resolved = search_path.Lookup(name)
             if resolved is None:
-                no_str = None  # type: Optional[str]
-                kind = (no_str, name)
+                not_resolved = None  # type: Optional[str]
+                kind = (name, not_resolved, None)
             else:
-                kind = ('file', resolved)
+                kind = (name, 'file', resolved)
         results.append(kind)
 
     return results
@@ -374,42 +377,41 @@ class Type(vm._Builtin):
             funcs = self.funcs
 
         status = 0
-        r = _ResolveNames(arg_r.Rest(), funcs, self.aliases, self.search_path)
-        for kind, name in r:
+
+        names = arg_r.Rest()
+
+        if arg.P:  # -P should forces PATH search, regardless of builtin/alias/function/etc.
+            for name in names:
+                resolved = self.search_path.Lookup(name)
+                if resolved is None:
+                    status = 1
+                else:
+                    print(resolved)
+            return status
+
+        r = _ResolveNames(names, funcs, self.aliases, self.search_path)
+        for name, kind, resolved in r:
             if kind is None:
                 if not arg.t:  # 'type -t X' is silent in this case
                     self.errfmt.PrintMessage('type: %r not found' % name)
                 status = 1  # nothing printed, but we fail
             else:
-                if arg.t:
+                if arg.t:  # short string
                     print(kind)
+
                 elif arg.p:
                     if kind == 'file':
-                        print(name)
-                elif arg.P:
+                        print(resolved)
+
+                else:  # free-form text
                     if kind == 'file':
-                        print(name)
+                        what = resolved
+                    elif kind in ('builtin', 'keyword'):
+                        what = 'a shell %s' % kind
                     else:
-                        resolved = self.search_path.Lookup(name)
-                        if resolved is None:
-                            status = 1
-                        else:
-                            print(resolved)
+                        what = kind
 
-                else:
-                    # Alpine's abuild relies on this text because busybox ash doesn't have
-                    # -t!
-                    # ash prints "is a shell function" instead of "is a function", but the
-                    # regex accounts for that.
-                    #
-                    # TODO: dash also prints cd
-
-                    if kind in ('builtin', 'keyword'):
-                        prefix = 'shell '
-                    else:
-                        prefix = ''
-
-                    print('%s is a %s%s' % (name, prefix, kind))
+                    print('%s is %s' % (name, what))
                     if kind == 'function':
                         # bash prints the function body, busybox ash doesn't.
                         pass

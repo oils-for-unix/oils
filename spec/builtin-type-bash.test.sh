@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 7
 ## compare_shells: bash
 
 #### type -t -> function
@@ -124,9 +124,9 @@ type -P cd type builtin command
 ## END
 
 #### type -P builtin -> not a file but file found
-touch /tmp/{mv,tar,grep}
-chmod +x /tmp/{mv,tar,grep}
-PATH=/tmp:$PATH
+touch _tmp/{mv,tar,grep}
+chmod +x _tmp/{mv,tar,grep}
+PATH=_tmp:$PATH
 
 mv () { ls; }
 tar () { ls; }
@@ -134,9 +134,9 @@ grep () { ls; }
 type -P mv tar grep cd builtin command type
 ## status: 1
 ## STDOUT:
-/tmp/mv
-/tmp/tar
-/tmp/grep
+_tmp/mv
+_tmp/tar
+_tmp/grep
 ## END
 
 #### type -f builtin -> not found
@@ -153,10 +153,6 @@ tar () { ls; }
 grep () { ls; }
 type -f mv tar grep
 ## STDOUT:
-/tmp/mv is a file
-/tmp/tar is a file
-/tmp/grep is a file
-## OK bash STDOUT:
 mv is /tmp/mv
 tar is /tmp/tar
 grep is /tmp/grep
@@ -217,7 +213,7 @@ date is /bin/date
 date is _tmp/date
 ## END
 
-#### type -ap -> file
+#### type -ap -> file; abbreviated
 touch _tmp/date
 chmod +x _tmp/date
 PATH=/bin:_tmp  # control output
@@ -240,20 +236,56 @@ pwd is /bin/pwd
 pwd is _tmp/pwd
 ## END
 
-#### type -ap -> builtin and file
+#### type -a -> builtin and file and shell function
 touch _tmp/pwd
 chmod +x _tmp/pwd
 PATH=/bin:_tmp  # control output
 
+type -a pwd
+echo ---
+
+pwd() { echo function-too; }
+type -a pwd
+echo ---
+
+type -a -f pwd
+
+## STDOUT:
+pwd is a shell builtin
+pwd is /bin/pwd
+pwd is _tmp/pwd
+---
+pwd is a function
+pwd () 
+{ 
+    echo function-too
+}
+pwd is a shell builtin
+pwd is /bin/pwd
+pwd is _tmp/pwd
+---
+pwd is a shell builtin
+pwd is /bin/pwd
+pwd is _tmp/pwd
+## END
+
+#### type -ap -> builtin and file; doesn't print builtin or function
+touch _tmp/pwd
+chmod +x _tmp/pwd
+PATH=/bin:_tmp  # control output
+
+# Function is also ignored
+pwd() { echo function-too; }
+
 type -ap pwd
+
 ## STDOUT:
 /bin/pwd
 _tmp/pwd
 ## END
 
 #### type -a -> executable not in PATH
-touch /tmp/executable
-chmod +x /tmp/executable
+touch _tmp/executable
+chmod +x _tmp/executable
 type -a executable
 ## status: 1
-
