@@ -222,15 +222,16 @@ class Command(vm._Builtin):
         if arg.v:
             status = 0
             for argument in argv:
-                for name, kind, _ in _ResolveName(argument, self.funcs,
-                                                  self.aliases,
-                                                  self.search_path, False):
-                    if kind is None:
-                        status = 1  # nothing printed, but we fail
-                    else:
+                r = _ResolveName(argument, self.funcs, self.aliases,
+                                 self.search_path, False)
+                if len(r):
+                    for name, _, _ in r:
                         # command -v prints the name
                         # (-V is more detailed)
                         print(name)
+                else:
+                    status = 1  # nothing printed, but we fail
+
             return status
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
@@ -325,12 +326,12 @@ def _ResolveName(
         search_path,  # type: state.SearchPath
         do_all,  # type: bool
 ):
-    # type: (...) -> List[Tuple[str, Optional[str], Optional[str]]]
+    # type: (...) -> List[Tuple[str, str, Optional[str]]]
 
     # MyPy tuple type
     no_str = None  # type: Optional[str]
 
-    results = []  # type: List[Tuple[str, Optional[str], Optional[str]]]
+    results = []  # type: List[Tuple[str, str, Optional[str]]]
 
     if name in funcs:
         results.append((name, 'function', no_str))
@@ -351,17 +352,9 @@ def _ResolveName(
         results.append((name, 'keyword', no_str))
 
     else:
-        resolved_list = search_path.LookupReflect(name, do_all)
-
-        found = False
-        for path in resolved_list:
+        for path in search_path.LookupReflect(name, do_all):
             if posix.access(path, X_OK):
                 results.append((name, 'file', path))
-                found = True
-
-        # Entry for type -t to return None
-        if not found:
-            results.append((name, no_str, no_str))
 
     return results
 
@@ -381,18 +374,51 @@ class Type(vm._Builtin):
         self.search_path = search_path
         self.errfmt = errfmt
 
+    def _PrintEntry(self, arg, row):
+        # type: (arg_types.type, Tuple[str, str, Optional[str]]) -> None
+
+        name, kind, resolved = row
+
+        if kind is None:
+            if not arg.t:  # 'type -t X' is silent in this case
+                self.errfmt.PrintMessage('type: %r not found' % name)
+            status = 1  # nothing printed, but we fail
+        else:
+            if arg.t:  # short string
+                print(kind)
+
+            elif arg.p:
+                #log('%s %s %s', name, kind, resolved)
+                if kind == 'file':
+                    print(resolved)
+
+            else:  # free-form text
+                if kind == 'file':
+                    what = resolved
+                elif kind == 'alias':
+                    what = ('an alias for %s' %
+                            qsn.maybe_shell_encode(resolved))
+                elif kind in ('builtin', 'function', 'keyword'):
+                    what = 'a shell %s' % kind
+                else:
+                    what = kind
+
+                print('%s is %s' % (name, what))
+                if kind == 'function':
+                    # bash prints the function body, busybox ash doesn't.
+                    pass
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_spec.ParseCmdVal('type', cmd_val)
         arg = arg_types.type(attrs.attrs)
 
-        if arg.f:
+        if arg.f:  # suppress function lookup
             funcs = {}  # type: Dict[str, value.Proc]
         else:
             funcs = self.funcs
 
         status = 0
-
         names = arg_r.Rest()
 
         if arg.P:  # -P should forces PATH search, regardless of builtin/alias/function/etc.
@@ -408,34 +434,18 @@ class Type(vm._Builtin):
         for argument in names:
             r = _ResolveName(argument, funcs, self.aliases, self.search_path,
                              arg.a)
-            for name, kind, resolved in r:
-                if kind is None:
-                    if not arg.t:  # 'type -t X' is silent in this case
-                        self.errfmt.PrintMessage('type: %r not found' % name)
-                    status = 1  # nothing printed, but we fail
-                else:
-                    if arg.t:  # short string
-                        print(kind)
+            if arg.a:
+                for row in r:
+                    self._PrintEntry(arg, row)
+            else:
+                if len(r):
+                    # Just print the first one
+                    self._PrintEntry(arg, r[0])
 
-                    elif arg.p:
-                        #log('%s %s %s', name, kind, resolved)
-                        if kind == 'file':
-                            print(resolved)
-
-                    else:  # free-form text
-                        if kind == 'file':
-                            what = resolved
-                        elif kind == 'alias':
-                            what = ('an alias for %s' %
-                                    qsn.maybe_shell_encode(resolved))
-                        elif kind in ('builtin', 'function', 'keyword'):
-                            what = 'a shell %s' % kind
-                        else:
-                            what = kind
-
-                        print('%s is %s' % (name, what))
-                        if kind == 'function':
-                            # bash prints the function body, busybox ash doesn't.
-                            pass
+            # Error case
+            if len(r) == 0:
+                if not arg.t:  # 'type -t X' is silent in this case
+                    self.errfmt.PrintMessage('type: %r not found' % argument)
+                status = 1  # nothing printed, but we fail
 
         return status
