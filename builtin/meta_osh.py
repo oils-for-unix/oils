@@ -222,7 +222,8 @@ class Command(vm._Builtin):
                 if kind is None:
                     status = 1  # nothing printed, but we fail
                 else:
-                    # This is for -v, -V is more detailed.
+                    # command -v prints the name
+                    # (-V is more detailed)
                     print(name)
             return status
 
@@ -409,7 +410,7 @@ class Type(vm._Builtin):
                 else:  # free-form text
                     if kind == 'file':
                         what = resolved
-                    elif kind in ('builtin', 'keyword'):
+                    elif kind in ('builtin', 'function', 'keyword'):
                         what = 'a shell %s' % kind
                     else:
                         what = kind

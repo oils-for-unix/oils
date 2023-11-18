@@ -74,10 +74,12 @@ class SearchPath(object):
         Returns the path itself (if relative path), the resolved path, or None.
         """
         if '/' in name:
-            if path_stat.exists(name):
-                return name
+            if exec_required:
+                found = posix.access(name, X_OK)
             else:
-                return None
+                found = path_stat.exists(name)
+
+            return name if found else None
 
         # TODO: Could cache this to avoid split() allocating all the time.
         val = self.mem.GetValue('PATH')

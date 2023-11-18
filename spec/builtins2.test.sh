@@ -59,26 +59,26 @@ status=1
 #### command -v doesn't find non-executable file
 # PATH resolution is different
 
-PATH="$TMP:$PATH"
-touch $TMP/non-executable $TMP/executable
-chmod +x $TMP/executable
+PATH="_tmp:$PATH"
+touch _tmp/non-executable _tmp/executable
+chmod +x _tmp/executable
 
-command -v non-executable | grep -o /non-executable
+command -v _tmp/non-executable
 echo status=$?
 
-command -v executable | grep -o /executable
+command -v _tmp/executable
 echo status=$?
 
 ## STDOUT:
 status=1
-/executable
+_tmp/executable
 status=0
 ## END
 
-## BUG bash/dash STDOUT:
-/non-executable
+## BUG dash STDOUT:
+_tmp/non-executable
 status=0
-/executable
+_tmp/executable
 status=0
 ## END
 
