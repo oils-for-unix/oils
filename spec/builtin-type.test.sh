@@ -22,7 +22,11 @@ alias ll='ls -l'
 
 f() { echo hi; }
 
-type ll f ls | sed 's/`/[BACKTICK]/g'  # make output easier to read
+touch _tmp/date
+chmod +x _tmp/date
+PATH=_tmp:/bin
+
+type ll f date | sed 's/`/[BACKTICK]/g'  # make output easier to read
 
 # Note: both procs and funcs go in var namespace?  So they don't respond to
 # 'type'?
@@ -30,17 +34,17 @@ type ll f ls | sed 's/`/[BACKTICK]/g'  # make output easier to read
 ## STDOUT:
 ll is an alias for ls -l
 f is a shell function
-ls is /usr/bin/ls
+date is _tmp/date
 ## END
 ## OK ash STDOUT:
 ll is an alias for ls -l
 f is a function
-ls is /usr/bin/ls
+date is _tmp/date
 ## END
 ## OK mksh STDOUT:
 ll is an alias for 'ls -l'
 f is a function
-ls is a tracked alias for /usr/bin/ls
+date is a tracked alias for _tmp/date
 ## END
 ## OK bash STDOUT:
 ll is aliased to [BACKTICK]ls -l'
@@ -49,7 +53,7 @@ f ()
 { 
     echo hi
 }
-ls is /usr/bin/ls
+date is _tmp/date
 ## END
 
 #### type -> not found
