@@ -100,7 +100,7 @@ class SearchPath(object):
 
         return None
 
-    def Lookup(self, name, do_all):
+    def LookupReflect(self, name, do_all):
         # type: (str, bool) -> List[str]
         """
         Like LookupOne(), with an option for 'type -a' to return all paths.
@@ -111,7 +111,7 @@ class SearchPath(object):
             else:
                 return []
 
-        results = []
+        results = []  # type: List[str]
         for path_dir in self._GetPath():
             full_path = os_path.join(path_dir, name)
             if path_stat.exists(full_path):

@@ -349,8 +349,7 @@ def _ResolveNames(
             results.append((name, 'keyword', no_str))
 
         else:
-            # TODO: Return multiple entries for type -a
-            resolved_list = search_path.Lookup(name, do_all)
+            resolved_list = search_path.LookupReflect(name, do_all)
 
             found = False
             for path in resolved_list:
@@ -396,7 +395,7 @@ class Type(vm._Builtin):
 
         if arg.P:  # -P should forces PATH search, regardless of builtin/alias/function/etc.
             for name in names:
-                paths = self.search_path.Lookup(name, arg.a)
+                paths = self.search_path.LookupReflect(name, arg.a)
                 if len(paths):
                     for path in paths:
                         print(path)
