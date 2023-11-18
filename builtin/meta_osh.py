@@ -318,32 +318,35 @@ def _ResolveNames(
         search_path,  # type: state.SearchPath
 ):
     # type: (...) -> List[Tuple[str, Optional[str], Optional[str]]]
+
+    # MyPy tuple type
+    no_str = None  # type: Optional[str]
+
     results = []  # type: List[Tuple[str, Optional[str], Optional[str]]]
     for name in names:
         if name in funcs:
-            kind = (name, 'function', None)  # type: Tuple[str, Optional[str], Optional[str]]
+            kind = (name, 'function', no_str)  # type: Tuple[str, Optional[str], Optional[str]]
         elif name in aliases:
             kind = (name, 'alias', aliases[name])
 
         # TODO: Use match instead?
         elif consts.LookupNormalBuiltin(name) != 0:
-            kind = (name, 'builtin', None)
+            kind = (name, 'builtin', no_str)
         elif consts.LookupSpecialBuiltin(name) != 0:
-            kind = (name, 'builtin', None)
+            kind = (name, 'builtin', no_str)
         elif consts.LookupAssignBuiltin(name) != 0:
-            kind = (name, 'builtin', None)
+            kind = (name, 'builtin', no_str)
 
         elif consts.IsControlFlow(name):  # continue, etc.
-            kind = (name, 'keyword', None)
+            kind = (name, 'keyword', no_str)
         elif consts.IsKeyword(name):
-            kind = (name, 'keyword', None)
+            kind = (name, 'keyword', no_str)
 
         else:
             # TODO: Return multiple entries for type -a
             resolved = search_path.Lookup(name)
             if resolved is None:
-                not_resolved = None  # type: Optional[str]
-                kind = (name, not_resolved, None)
+                kind = (name, no_str, no_str)
             else:
                 kind = (name, 'file', resolved)
         results.append(kind)

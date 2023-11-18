@@ -291,7 +291,12 @@ def GetCType(t, param=False, local=False):
     elif isinstance(t, TupleType):
         inner_c_types = []
         for inner_type in t.items:
-            inner_c_types.append(GetCType(inner_type))
+            c_type = GetCType(inner_type)
+            if c_type == 'void':
+                # Why does MyPy give us 'None' instead of type declared with type: ?
+                # log('**** items %s', t.items)
+                pass
+            inner_c_types.append(c_type)
 
         c_type = 'Tuple%d<%s>' % (len(t.items), ', '.join(inner_c_types))
         is_pointer = True
