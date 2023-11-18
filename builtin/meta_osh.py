@@ -400,7 +400,10 @@ class Type(vm._Builtin):
                     # Alpine's abuild relies on this text because busybox ash doesn't have
                     # -t!
                     # ash prints "is a shell function" instead of "is a function", but the
-                    # regex accouts for that.
+                    # regex accounts for that.
+                    #
+                    # TODO: dash also prints cd
+
                     print('%s is a %s' % (name, kind))
                     if kind == 'function':
                         # bash prints the function body, busybox ash doesn't.

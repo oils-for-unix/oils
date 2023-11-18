@@ -64,6 +64,7 @@ TYPE_SPEC.ShortFlag('-f')
 TYPE_SPEC.ShortFlag('-t')
 TYPE_SPEC.ShortFlag('-p')
 TYPE_SPEC.ShortFlag('-P')
+TYPE_SPEC.ShortFlag('-a')
 
 #
 # Definitions for builtin_pure

@@ -253,6 +253,10 @@ builtin-bash() {
   run-file builtin-bash "$@"
 }
 
+builtin-type() {
+  run-file builtin-type "$@"
+}
+
 vars-bash() {
   run-file vars-bash "$@"
 }
