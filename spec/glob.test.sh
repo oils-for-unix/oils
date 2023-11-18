@@ -267,17 +267,6 @@ status=0
 status=0
 ## END
 
-#### Don't glob flags on file system with GLOBIGNORE
-# This is a bash-specific extension.
-expr $0 : '.*/osh$' >/dev/null && exit 99  # disabled until cd implemented
-touch _tmp/-n _tmp/zzzzz
-cd _tmp  # this fail in osh
-GLOBIGNORE=-*:zzzzz  # colon-separated pattern list
-echo -* hello zzzz?
-## stdout-json: "-* hello zzzz?\n"
-## N-I dash/mksh/ash stdout-json: "hello zzzzz"
-## status: 0
-
 #### Splitting/Globbing doesn't happen on local assignment
 cd $REPO_ROOT
 

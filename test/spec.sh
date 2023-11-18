@@ -290,8 +290,12 @@ sh-func() {
 
 glob() {
   # Note: can't pass because it assumes 'bin' exists, etc.
-  sh-spec spec/glob.test.sh --oils-failures-allowed 4 \
+  sh-spec spec/glob.test.sh --oils-failures-allowed 3 \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+}
+
+globignore() {
+  run-file globignore "$@"
 }
 
 arith() {
