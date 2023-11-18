@@ -142,7 +142,7 @@ class Source(vm._Builtin):
 
         else:
             # 'source' respects $PATH
-            resolved = self.search_path.Lookup(path)
+            resolved = self.search_path.LookupOne(path, exec_required=False)
             if resolved is None:
                 resolved = path
 
@@ -222,7 +222,7 @@ class Command(vm._Builtin):
         if arg.v:
             status = 0
             for name, kind, _ in _ResolveNames(argv, self.funcs, self.aliases,
-                                               self.search_path):
+                                               self.search_path, False):
                 if kind is None:
                     status = 1  # nothing printed, but we fail
                 else:
@@ -321,6 +321,7 @@ def _ResolveNames(
         funcs,  # type: Dict[str, value.Proc]
         aliases,  # type: Dict[str, str]
         search_path,  # type: state.SearchPath
+        do_all,  # type: bool
 ):
     # type: (...) -> List[Tuple[str, Optional[str], Optional[str]]]
 
@@ -330,34 +331,36 @@ def _ResolveNames(
     results = []  # type: List[Tuple[str, Optional[str], Optional[str]]]
     for name in names:
         if name in funcs:
-            kind = (name, 'function', no_str)
+            results.append((name, 'function', no_str))
         elif name in aliases:
-            kind = (name, 'alias', aliases[name])
+            results.append((name, 'alias', aliases[name]))
 
         # TODO: Use match instead?
         elif consts.LookupNormalBuiltin(name) != 0:
-            kind = (name, 'builtin', no_str)
+            results.append((name, 'builtin', no_str))
         elif consts.LookupSpecialBuiltin(name) != 0:
-            kind = (name, 'builtin', no_str)
+            results.append((name, 'builtin', no_str))
         elif consts.LookupAssignBuiltin(name) != 0:
-            kind = (name, 'builtin', no_str)
+            results.append((name, 'builtin', no_str))
 
         elif consts.IsControlFlow(name):  # continue, etc.
-            kind = (name, 'keyword', no_str)
+            results.append((name, 'keyword', no_str))
         elif consts.IsKeyword(name):
-            kind = (name, 'keyword', no_str)
+            results.append((name, 'keyword', no_str))
 
         else:
             # TODO: Return multiple entries for type -a
-            resolved = search_path.Lookup(name)
+            resolved_list = search_path.Lookup(name, do_all)
 
-            # Must be executable!
-            if resolved is not None and posix.access(resolved, X_OK):
-                kind = (name, 'file', resolved)
-            else:
-                kind = (name, no_str, no_str)
+            found = False
+            for path in resolved_list:
+                if posix.access(path, X_OK):
+                    results.append((name, 'file', path))
+                    found = True
 
-        results.append(kind)
+            # Entry for type -t to return None
+            if not found:
+                results.append((name, no_str, no_str))
 
     return results
 
@@ -393,14 +396,15 @@ class Type(vm._Builtin):
 
         if arg.P:  # -P should forces PATH search, regardless of builtin/alias/function/etc.
             for name in names:
-                resolved = self.search_path.Lookup(name)
-                if resolved is None:
-                    status = 1
+                paths = self.search_path.Lookup(name, arg.a)
+                if len(paths):
+                    for path in paths:
+                        print(path)
                 else:
-                    print(resolved)
+                    status = 1
             return status
 
-        r = _ResolveNames(names, funcs, self.aliases, self.search_path)
+        r = _ResolveNames(names, funcs, self.aliases, self.search_path, arg.a)
         for name, kind, resolved in r:
             if kind is None:
                 if not arg.t:  # 'type -t X' is silent in this case
@@ -411,6 +415,7 @@ class Type(vm._Builtin):
                     print(kind)
 
                 elif arg.p:
+                    #log('%s %s %s', name, kind, resolved)
                     if kind == 'file':
                         print(resolved)
 

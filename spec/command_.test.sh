@@ -133,11 +133,10 @@ status=0
 
 # shells differ in whether they actually execve('one/cmd') and get EPERM
 
-cd $TMP
-PATH="one:two:$PATH"
 mkdir -p one two
-rm -f one/mycmd two/mycmd
+PATH="one:two:$PATH"
 
+rm -f one/mycmd two/mycmd
 echo 'echo one' > one/mycmd
 echo 'echo two' > two/mycmd
 
@@ -145,6 +144,7 @@ echo 'echo two' > two/mycmd
 chmod +x two/mycmd
 mycmd
 echo status=$?
+
 ## STDOUT:
 two
 status=0

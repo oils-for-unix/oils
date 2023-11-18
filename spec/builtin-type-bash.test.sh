@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 4
 ## compare_shells: bash
 
 #### type -t -> function
@@ -98,6 +98,19 @@ type -P mv tar grep
 /tmp/mv
 /tmp/tar
 /tmp/grep
+## END
+
+#### type -a -P gives multiple files
+
+touch _tmp/pwd
+chmod +x _tmp/pwd
+PATH="_tmp:/bin"
+
+type -a -P pwd
+
+## STDOUT:
+_tmp/pwd
+/bin/pwd
 ## END
 
 #### type -p builtin -> not found
@@ -279,10 +292,14 @@ PATH=/bin:_tmp  # control output
 pwd() { echo function-too; }
 
 type -ap pwd
+echo ---
+
+type -p pwd
 
 ## STDOUT:
 /bin/pwd
 _tmp/pwd
+---
 ## END
 
 #### type -a -> executable not in PATH

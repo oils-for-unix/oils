@@ -36,6 +36,7 @@ from pylib import path_stat
 
 import libc
 import posix_ as posix
+from posix_ import X_OK  # translated directly to C macro
 
 from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
@@ -67,36 +68,66 @@ class SearchPath(object):
         self.mem = mem
         self.cache = {}  # type: Dict[str, str]
 
-    def Lookup(self, name):
-        # type: (str) -> Optional[str]
-        """
-        Returns the path itself (if relative path), the resolved path, or None.
-        """
-        if '/' in name:
-            return name if path_stat.exists(name) else None
+    def _GetPath(self):
+        # type: () -> List[str]
 
         # TODO: Could cache this to avoid split() allocating all the time.
         val = self.mem.GetValue('PATH')
         UP_val = val
         if val.tag() == value_e.Str:
             val = cast(value.Str, UP_val)
-            path_list = val.s.split(':')
+            return val.s.split(':')
         else:
-            path_list = []  # treat as empty path
+            return []  # treat as empty path
 
-        for path_dir in path_list:
+    def LookupOne(self, name, exec_required=True):
+        # type: (str, bool) -> Optional[str]
+        """
+        Returns the path itself (if relative path), the resolved path, or None.
+        """
+        if '/' in name:
+            return name if path_stat.exists(name) else None
+
+        for path_dir in self._GetPath():
             full_path = os_path.join(path_dir, name)
-            if path_stat.exists(full_path):
+            if exec_required:
+                found = posix.access(full_path, X_OK)
+            else:
+                found = path_stat.exists(full_path)
+
+            if found:
                 return full_path
 
         return None
 
+    def Lookup(self, name, do_all):
+        # type: (str, bool) -> List[str]
+        """
+        Like LookupOne(), with an option for 'type -a' to return all paths.
+        """
+        if '/' in name:
+            if path_stat.exists(name):
+                return [name]
+            else:
+                return []
+
+        results = []
+        for path_dir in self._GetPath():
+            full_path = os_path.join(path_dir, name)
+            if path_stat.exists(full_path):
+                results.append(full_path)
+                if not do_all:
+                    return results
+
+        return results
+
     def CachedLookup(self, name):
         # type: (str) -> Optional[str]
+        #log('name %r', name)
         if name in self.cache:
             return self.cache[name]
 
-        full_path = self.Lookup(name)
+        full_path = self.LookupOne(name)
         if full_path is not None:
             self.cache[name] = full_path
         return full_path

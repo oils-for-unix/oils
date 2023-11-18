@@ -50,24 +50,24 @@ class MemTest(unittest.TestCase):
         search_path = state.SearchPath(mem)
 
         # Relative path works without $PATH
-        self.assertEqual(None, search_path.Lookup('__nonexistent__'))
-        self.assertEqual('bin/osh', search_path.Lookup('bin/osh'))
-        self.assertEqual(None, search_path.Lookup('grep'))
+        self.assertEqual(None, search_path.LookupOne('__nonexistent__'))
+        self.assertEqual('bin/osh', search_path.LookupOne('bin/osh'))
+        self.assertEqual(None, search_path.LookupOne('grep'))
 
         # Set $PATH
         mem.SetValue(location.LName('PATH'), value.Str('/bin:/usr/bin'),
                      scope_e.GlobalOnly)
 
-        self.assertEqual(None, search_path.Lookup('__nonexistent__'))
-        self.assertEqual('bin/osh', search_path.Lookup('bin/osh'))
+        self.assertEqual(None, search_path.LookupOne('__nonexistent__'))
+        self.assertEqual('bin/osh', search_path.LookupOne('bin/osh'))
 
         # Not hermetic, but should be true on POSIX systems.
         # Also see https://www.freedesktop.org/wiki/Software/systemd/TheCaseForTheUsrMerge/
         #  - on some systems, /bin is a symlink to /usr/bin
         if os.path.isfile('/bin/env'):
-            self.assertEqual(search_path.Lookup('env'), '/bin/env')
+            self.assertEqual(search_path.LookupOne('env'), '/bin/env')
         else:
-            self.assertEqual(search_path.Lookup('env'), '/usr/bin/env')
+            self.assertEqual(search_path.LookupOne('env'), '/usr/bin/env')
 
     def testPushTemp(self):
         mem = _InitMem()
