@@ -225,10 +225,10 @@ class Command(vm._Builtin):
                 r = _ResolveName(argument, self.funcs, self.aliases,
                                  self.search_path, False)
                 if len(r):
-                    for name, _, _ in r:
-                        # command -v prints the name
-                        # (-V is more detailed)
-                        print(name)
+                    # command -v prints the name (-V is more detailed)
+                    # Print it only once.
+                    name, _, _ = r[0]
+                    print(name)
                 else:
                     status = 1  # nothing printed, but we fail
 
