@@ -1,271 +1,87 @@
-## oils_failures_allowed: 8
-## compare_shells: bash
+## oils_failures_allowed: 1
+## compare_shells: bash zsh mksh dash ash
 
-# TODO:
-# zsh dash ash
+#### type -> keyword builtin 
 
-#### type -t -> function
+type while cd
+
+## STDOUT:
+while is a shell keyword
+cd is a shell builtin
+## END
+## OK zsh/mksh STDOUT:
+while is a reserved word
+cd is a shell builtin
+## END
+
+#### type -> alias function external
+
+shopt -s expand_aliases || true  # bash
+
+alias ll='ls -l'
+
 f() { echo hi; }
-type -t f
-## stdout: function
 
-#### type -t -> alias
-shopt -s expand_aliases
-alias foo=bar
-type -t foo
-## stdout: alias
+type ll f ls | sed 's/`/[BACKTICK]/g'  # make output easier to read
 
-#### type -t -> builtin
-type -t echo read : [ declare local
+# Note: both procs and funcs go in var namespace?  So they don't respond to
+# 'type'?
+
 ## STDOUT:
-builtin
-builtin
-builtin
-builtin
-builtin
-builtin
+ll is an alias for ls -l
+f is a shell function
+ls is /usr/bin/ls
 ## END
-
-#### type -t -> keyword
-type -t for time ! fi do {
-## STDOUT: 
-keyword
-keyword
-keyword
-keyword
-keyword
-keyword
+## OK ash STDOUT:
+ll is an alias for ls -l
+f is a function
+ls is /usr/bin/ls
 ## END
-
-#### type -t control flow
-
-# this differs from bash, but don't lie!
-type -t break continue return exit
-## STDOUT:
-keyword
-keyword
-keyword
-keyword
+## OK mksh STDOUT:
+ll is an alias for 'ls -l'
+f is a function
+ls is a tracked alias for /usr/bin/ls
 ## END
 ## OK bash STDOUT:
-builtin
-builtin
-builtin
-builtin
-## END
-
-
-#### type -t -> file
-type -t find xargs
-## STDOUT: 
-file
-file
-## END
-
-#### type -t doesn't find non-executable (like command -v)
-PATH="$TMP:$PATH"
-touch $TMP/non-executable
-type -t non-executable
-## STDOUT:
-## END
-## status: 1
-## BUG bash STDOUT:
-file
-## END
-## BUG bash status: 0
-
-#### type -t -> not found
-type -t echo ZZZ find =
-echo status=$?
-## STDOUT: 
-builtin
-file
-status=1
-## END
-## STDERR:
-## END
-
-#### type -> not found
-type zz 2>err.txt
-echo status=$?
-grep -o 'not found' err.txt
-## STDOUT:
-status=1
-not found
-## END
-
-#### type -p and -P builtin -> file
-touch /tmp/{mv,tar,grep}
-chmod +x /tmp/{mv,tar,grep}
-PATH=/tmp:$PATH
-
-type -p mv tar grep
-echo --
-type -P mv tar grep
-## STDOUT:
-/tmp/mv
-/tmp/tar
-/tmp/grep
---
-/tmp/mv
-/tmp/tar
-/tmp/grep
-## END
-
-#### type -p builtin -> not found
-type -p FOO BAR NOT_FOUND
-## status: 1
-## STDOUT:
-## END
-
-#### type -p builtin -> not a file
-type -p cd type builtin command
-## STDOUT:
-## END
-
-#### type -P builtin -> not found
-type -P FOO BAR NOT_FOUND
-## status: 1
-## STDOUT:
-## END
-
-#### type -P builtin -> not a file
-type -P cd type builtin command
-## status: 1
-## STDOUT:
-## END
-
-#### type -P builtin -> not a file but file found
-touch /tmp/{mv,tar,grep}
-chmod +x /tmp/{mv,tar,grep}
-PATH=/tmp:$PATH
-
-mv () { ls; }
-tar () { ls; }
-grep () { ls; }
-type -P mv tar grep cd builtin command type
-## status: 1
-## STDOUT:
-/tmp/mv
-/tmp/tar
-/tmp/grep
-## END
-
-#### type -f builtin -> not found
-type -f FOO BAR NOT FOUND
-## status: 1
-
-#### type -f builtin -> function and file exists
-touch /tmp/{mv,tar,grep}
-chmod +x /tmp/{mv,tar,grep}
-PATH=/tmp:$PATH
-
-mv () { ls; }
-tar () { ls; }
-grep () { ls; }
-type -f mv tar grep
-## STDOUT:
-/tmp/mv is a file
-/tmp/tar is a file
-/tmp/grep is a file
-## OK bash STDOUT:
-mv is /tmp/mv
-tar is /tmp/tar
-grep is /tmp/grep
-## END
-
-#### type -a -> function; prints shell source code
-f () { :; }
-type -a f
-## STDOUT:
+ll is aliased to [BACKTICK]ls -l'
 f is a function
 f () 
 { 
-    :
+    echo hi
 }
+ls is /usr/bin/ls
 ## END
 
-#### type -ap -> function
-f () { :; }
-type -ap f
-## STDOUT:
-## END
+#### type -> not found
 
-#### type -a -> alias; prints alias definition
-shopt -s expand_aliases
-alias ll="ls -lha"
-type -a ll
-## stdout: ll is aliased to `ls -lha'
+type zz 2>err.txt
+echo status=$?
 
-#### type -ap -> alias
-shopt -s expand_aliases
-alias ll="ls -lha"
-type -ap ll
-## STDOUT:
-## END
+# for bash and OSH: print to stderr
+grep -o 'not found' err.txt >&2 || true
 
-#### type -a -> builtin
-type -a cd
-## stdout: cd is a shell builtin
-
-#### type -ap -> builtin
-type -ap cd
-## STDOUT:
-## END
-
-#### type -a -> keyword
-type -a while
-## stdout: while is a shell keyword
-
-#### type -a -> file
-touch _tmp/date
-chmod +x _tmp/date
-PATH=/bin:_tmp  # control output
-
-type -a date
+# zsh and mksh behave the same - status 1
+# dash and ash behave the same - status 127
 
 ## STDOUT:
-date is /bin/date
-date is _tmp/date
+status=1
+## END
+## STDERR:
+not found
 ## END
 
-#### type -ap -> file
-touch _tmp/date
-chmod +x _tmp/date
-PATH=/bin:_tmp  # control output
-
-type -ap date
-## STDOUT:
-/bin/date
-_tmp/date
+## OK zsh/mksh STDOUT:
+zz not found
+status=1
+## END
+## OK zsh/mksh STDERR:
 ## END
 
-#### type -a -> builtin and file
-touch _tmp/pwd
-chmod +x _tmp/pwd
-PATH=/bin:_tmp  # control output
-
-type -a pwd
-## STDOUT:
-pwd is a shell builtin
-pwd is /bin/pwd
-pwd is _tmp/pwd
+## OK dash/ash STDOUT:
+zz: not found
+status=127
+## END
+## OK dash/ash STDERR:
 ## END
 
-#### type -ap -> builtin and file
-touch _tmp/pwd
-chmod +x _tmp/pwd
-PATH=/bin:_tmp  # control output
-
-type -ap pwd
-## STDOUT:
-/bin/pwd
-_tmp/pwd
-## END
-
-#### type -a -> executable not in PATH
-touch /tmp/executable
-chmod +x /tmp/executable
-type -a executable
-## status: 1
 

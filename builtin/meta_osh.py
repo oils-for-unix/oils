@@ -404,7 +404,12 @@ class Type(vm._Builtin):
                     #
                     # TODO: dash also prints cd
 
-                    print('%s is a %s' % (name, kind))
+                    if kind in ('builtin', 'keyword'):
+                        prefix = 'shell '
+                    else:
+                        prefix = ''
+
+                    print('%s is a %s%s' % (name, prefix, kind))
                     if kind == 'function':
                         # bash prints the function body, busybox ash doesn't.
                         pass
