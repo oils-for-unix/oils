@@ -221,14 +221,16 @@ class Command(vm._Builtin):
 
         if arg.v:
             status = 0
-            for name, kind, _ in _ResolveNames(argv, self.funcs, self.aliases,
-                                               self.search_path, False):
-                if kind is None:
-                    status = 1  # nothing printed, but we fail
-                else:
-                    # command -v prints the name
-                    # (-V is more detailed)
-                    print(name)
+            for argument in argv:
+                for name, kind, _ in _ResolveName(argument, self.funcs,
+                                                  self.aliases,
+                                                  self.search_path, False):
+                    if kind is None:
+                        status = 1  # nothing printed, but we fail
+                    else:
+                        # command -v prints the name
+                        # (-V is more detailed)
+                        print(name)
             return status
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
@@ -316,8 +318,8 @@ class RunProc(vm._Builtin):
         return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
 
 
-def _ResolveNames(
-        names,  # type: List[str]
+def _ResolveName(
+        name,  # type: str
         funcs,  # type: Dict[str, value.Proc]
         aliases,  # type: Dict[str, str]
         search_path,  # type: state.SearchPath
@@ -329,37 +331,37 @@ def _ResolveNames(
     no_str = None  # type: Optional[str]
 
     results = []  # type: List[Tuple[str, Optional[str], Optional[str]]]
-    for name in names:
-        if name in funcs:
-            results.append((name, 'function', no_str))
-        elif name in aliases:
-            results.append((name, 'alias', aliases[name]))
 
-        # TODO: Use match instead?
-        elif consts.LookupNormalBuiltin(name) != 0:
-            results.append((name, 'builtin', no_str))
-        elif consts.LookupSpecialBuiltin(name) != 0:
-            results.append((name, 'builtin', no_str))
-        elif consts.LookupAssignBuiltin(name) != 0:
-            results.append((name, 'builtin', no_str))
+    if name in funcs:
+        results.append((name, 'function', no_str))
+    elif name in aliases:
+        results.append((name, 'alias', aliases[name]))
 
-        elif consts.IsControlFlow(name):  # continue, etc.
-            results.append((name, 'keyword', no_str))
-        elif consts.IsKeyword(name):
-            results.append((name, 'keyword', no_str))
+    # TODO: Use match instead?
+    elif consts.LookupNormalBuiltin(name) != 0:
+        results.append((name, 'builtin', no_str))
+    elif consts.LookupSpecialBuiltin(name) != 0:
+        results.append((name, 'builtin', no_str))
+    elif consts.LookupAssignBuiltin(name) != 0:
+        results.append((name, 'builtin', no_str))
 
-        else:
-            resolved_list = search_path.LookupReflect(name, do_all)
+    elif consts.IsControlFlow(name):  # continue, etc.
+        results.append((name, 'keyword', no_str))
+    elif consts.IsKeyword(name):
+        results.append((name, 'keyword', no_str))
 
-            found = False
-            for path in resolved_list:
-                if posix.access(path, X_OK):
-                    results.append((name, 'file', path))
-                    found = True
+    else:
+        resolved_list = search_path.LookupReflect(name, do_all)
 
-            # Entry for type -t to return None
-            if not found:
-                results.append((name, no_str, no_str))
+        found = False
+        for path in resolved_list:
+            if posix.access(path, X_OK):
+                results.append((name, 'file', path))
+                found = True
+
+        # Entry for type -t to return None
+        if not found:
+            results.append((name, no_str, no_str))
 
     return results
 
@@ -403,35 +405,37 @@ class Type(vm._Builtin):
                     status = 1
             return status
 
-        r = _ResolveNames(names, funcs, self.aliases, self.search_path, arg.a)
-        for name, kind, resolved in r:
-            if kind is None:
-                if not arg.t:  # 'type -t X' is silent in this case
-                    self.errfmt.PrintMessage('type: %r not found' % name)
-                status = 1  # nothing printed, but we fail
-            else:
-                if arg.t:  # short string
-                    print(kind)
+        for argument in names:
+            r = _ResolveName(argument, funcs, self.aliases, self.search_path,
+                             arg.a)
+            for name, kind, resolved in r:
+                if kind is None:
+                    if not arg.t:  # 'type -t X' is silent in this case
+                        self.errfmt.PrintMessage('type: %r not found' % name)
+                    status = 1  # nothing printed, but we fail
+                else:
+                    if arg.t:  # short string
+                        print(kind)
 
-                elif arg.p:
-                    #log('%s %s %s', name, kind, resolved)
-                    if kind == 'file':
-                        print(resolved)
+                    elif arg.p:
+                        #log('%s %s %s', name, kind, resolved)
+                        if kind == 'file':
+                            print(resolved)
 
-                else:  # free-form text
-                    if kind == 'file':
-                        what = resolved
-                    elif kind == 'alias':
-                        what = ('an alias for %s' %
-                                qsn.maybe_shell_encode(resolved))
-                    elif kind in ('builtin', 'function', 'keyword'):
-                        what = 'a shell %s' % kind
-                    else:
-                        what = kind
+                    else:  # free-form text
+                        if kind == 'file':
+                            what = resolved
+                        elif kind == 'alias':
+                            what = ('an alias for %s' %
+                                    qsn.maybe_shell_encode(resolved))
+                        elif kind in ('builtin', 'function', 'keyword'):
+                            what = 'a shell %s' % kind
+                        else:
+                            what = kind
 
-                    print('%s is %s' % (name, what))
-                    if kind == 'function':
-                        # bash prints the function body, busybox ash doesn't.
-                        pass
+                        print('%s is %s' % (name, what))
+                        if kind == 'function':
+                            # bash prints the function body, busybox ash doesn't.
+                            pass
 
         return status
