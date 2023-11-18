@@ -239,14 +239,20 @@ type -a while
 ## stdout: while is a shell keyword
 
 #### type -a -> file
+PATH=/bin  # hack to remove /usr/bin/date on my machine
+
 type -a date
 ## stdout: date is /bin/date
 
 #### type -ap -> file
+PATH=/bin  # hack to remove /usr/bin/date on my machine
+
 type -ap date
 ## stdout: /bin/date
 
 #### type -a -> builtin and file
+PATH=/bin  # hack to remove /usr/bin/date on my machine
+
 type -a pwd
 ## STDOUT:
 pwd is a shell builtin
@@ -254,6 +260,8 @@ pwd is /bin/pwd
 ## END
 
 #### type -ap -> builtin and file
+PATH=/bin  # hack to remove /usr/bin/date on my machine
+
 type -ap pwd
 ## stdout: /bin/pwd
 
