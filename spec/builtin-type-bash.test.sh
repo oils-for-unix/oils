@@ -1,4 +1,4 @@
-## oils_failures_allowed: 7
+## oils_failures_allowed: 6
 ## compare_shells: bash
 
 #### type -t -> function
@@ -179,7 +179,8 @@ type -ap f
 shopt -s expand_aliases
 alias ll="ls -lha"
 type -a ll
-## stdout: ll is aliased to `ls -lha'
+## stdout: ll is an alias for 'ls -lha'
+## OK bash stdout: ll is aliased to `ls -lha'
 
 #### type -ap -> alias
 shopt -s expand_aliases

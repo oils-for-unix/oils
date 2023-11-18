@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: bash zsh mksh dash ash
 
 #### type -> keyword builtin 
@@ -26,7 +26,11 @@ touch _tmp/date
 chmod +x _tmp/date
 PATH=_tmp:/bin
 
-type ll f date | sed 's/`/'\''/g'  # make output easier to read
+# ignore quotes and backticks
+# bash prints a left backtick
+quotes='`'\'
+
+type ll f date | sed "s/[$quotes]//g"
 
 # Note: both procs and funcs go in var namespace?  So they don't respond to
 # 'type'?
@@ -42,12 +46,12 @@ f is a function
 date is _tmp/date
 ## END
 ## OK mksh STDOUT:
-ll is an alias for 'ls -l'
+ll is an alias for ls -l
 f is a function
 date is a tracked alias for _tmp/date
 ## END
 ## OK bash STDOUT:
-ll is aliased to 'ls -l'
+ll is aliased to ls -l
 f is a function
 f () 
 { 

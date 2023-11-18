@@ -2,6 +2,8 @@
 # Miscellaneous tests for the command language.
 
 #### Command block
+PATH=/bin
+
 { which ls; }
 ## stdout: /bin/ls
 

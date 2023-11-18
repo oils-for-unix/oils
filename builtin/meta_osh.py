@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-builtin_meta.py - Builtins that call back into the interpreter.
+meta_osh.py - Builtins that call back into the interpreter.
 """
 from __future__ import print_function
 
@@ -17,6 +17,7 @@ from core.error import e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm
+from data_lang import qsn
 from frontend import flag_spec
 from frontend import consts
 from frontend import reader
@@ -24,6 +25,9 @@ from frontend import typed_args
 from mycpp.mylib import log
 from pylib import os_path
 from osh import cmd_eval
+
+import posix_ as posix
+from posix_ import X_OK  # translated directly to C macro
 
 _ = log
 
@@ -137,8 +141,8 @@ class Source(vm._Builtin):
             return self._Exec(cmd_val, arg_r, path, c_parser)
 
         else:
-            # Respects $PATH
-            resolved = self.search_path.Lookup(path, exec_required=False)
+            # 'source' respects $PATH
+            resolved = self.search_path.Lookup(path)
             if resolved is None:
                 resolved = path
 
@@ -326,7 +330,7 @@ def _ResolveNames(
     results = []  # type: List[Tuple[str, Optional[str], Optional[str]]]
     for name in names:
         if name in funcs:
-            kind = (name, 'function', no_str)  # type: Tuple[str, Optional[str], Optional[str]]
+            kind = (name, 'function', no_str)
         elif name in aliases:
             kind = (name, 'alias', aliases[name])
 
@@ -346,10 +350,13 @@ def _ResolveNames(
         else:
             # TODO: Return multiple entries for type -a
             resolved = search_path.Lookup(name)
-            if resolved is None:
-                kind = (name, no_str, no_str)
-            else:
+
+            # Must be executable!
+            if resolved is not None and posix.access(resolved, X_OK):
                 kind = (name, 'file', resolved)
+            else:
+                kind = (name, no_str, no_str)
+
         results.append(kind)
 
     return results
@@ -410,6 +417,9 @@ class Type(vm._Builtin):
                 else:  # free-form text
                     if kind == 'file':
                         what = resolved
+                    elif kind == 'alias':
+                        what = ('an alias for %s' %
+                                qsn.maybe_shell_encode(resolved))
                     elif kind in ('builtin', 'function', 'keyword'):
                         what = 'a shell %s' % kind
                     else:

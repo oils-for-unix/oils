@@ -36,7 +36,6 @@ from pylib import path_stat
 
 import libc
 import posix_ as posix
-from posix_ import X_OK  # translated directly to C macro
 
 from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
@@ -68,18 +67,13 @@ class SearchPath(object):
         self.mem = mem
         self.cache = {}  # type: Dict[str, str]
 
-    def Lookup(self, name, exec_required=True):
-        # type: (str, bool) -> Optional[str]
+    def Lookup(self, name):
+        # type: (str) -> Optional[str]
         """
         Returns the path itself (if relative path), the resolved path, or None.
         """
         if '/' in name:
-            if exec_required:
-                found = posix.access(name, X_OK)
-            else:
-                found = path_stat.exists(name)
-
-            return name if found else None
+            return name if path_stat.exists(name) else None
 
         # TODO: Could cache this to avoid split() allocating all the time.
         val = self.mem.GetValue('PATH')
@@ -92,16 +86,7 @@ class SearchPath(object):
 
         for path_dir in path_list:
             full_path = os_path.join(path_dir, name)
-
-            # NOTE: dash and bash only check for EXISTENCE in 'command -v' (and 'type
-            # -t').  OSH follows mksh and zsh.  Note that we can still get EPERM if
-            # the permissions are changed between check and use.
-            if exec_required:
-                found = posix.access(full_path, X_OK)
-            else:
-                found = path_stat.exists(full_path)  # for 'source'
-
-            if found:
+            if path_stat.exists(full_path):
                 return full_path
 
         return None
