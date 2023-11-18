@@ -135,6 +135,10 @@ Convert a single UTF-8 encoded code point to an integer.
 <!-- Do we have character literals like #'a' ?  Or just use strings.  Small
 string optimization helps. -->
 
+### runes()
+
+TODO: Explicit iterator over runes.
+
 ## List
 
 ### any()
@@ -264,9 +268,26 @@ It's also often called with the `=>` chaining operator:
 
 ### split()
 
-<!--
-Note: This is currently SplitForWordEval.  Could expose Python-type splitting?
--->
+TODO
+
+If no argument is passed, splits by whitespace 
+
+<!-- respecting Unicode space? -->
+
+If a delimiter Str with a single byte is given, splits by that byte.
+
+Modes:
+
+- Python-like algorithm
+- Is awk any different?
+- Split by eggex
+
+### shSplit()
+
+Split a string into a List of strings, using the shell algorithm that respects
+`$IFS`.
+
+Prefer `split()` to `shSplit()`.
 
 ## Word
 

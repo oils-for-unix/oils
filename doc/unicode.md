@@ -103,6 +103,7 @@ Other:
 - `for offset, rune in (mystr)` decodes UTF-8, like Go
 - `Str.{trim,trimLeft,trimRight}` respect unicode space, like JavaScript does
 - `Str.{upper,lower}` also need unicode case folding
+- `split()` respects unicode space?
 
 ## Data Languages
 

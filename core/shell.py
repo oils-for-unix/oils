@@ -836,8 +836,10 @@ def Main(
     _SetGlobalFunc(mem, 'list', func_misc.List_())
     _SetGlobalFunc(mem, 'dict', func_misc.Dict_())
 
-    # TODO: This needs Python style splitting
+    # TODO: This should be Python style splitting
     _SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
+    _SetGlobalFunc(mem, 'shSplit', func_misc.Split(splitter))
+
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())

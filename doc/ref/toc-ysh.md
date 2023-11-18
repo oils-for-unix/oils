@@ -245,9 +245,9 @@ X [Builtin Sub]   _buffer
 X [Func]      toJson()
 X [Proc]      toJson()
   [Place]     setValue()
-
   [IO]        X eval()   X captureStdout()
               promptVal()
+              X time()   X strftime()
   [Quotation] Expr   X Template   Command
   [Code]      BuiltinFunc   BuiltinMethod
 ```
@@ -263,7 +263,7 @@ X [Proc]      toJson()
                   X runes()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
   [List]          any()   all()
-  [Collections]   join()   split()  # $IFS, awk algorithm, regex
+  [Collections]   join()   X split()   X shSplit()
                   X copy()   X deepCopy()
   [Word]          glob()   maybe()
   [Math]          abs()   max()   min()   X round()   sum()
@@ -274,7 +274,6 @@ X [Serialize]     toJ8()   fromJ8()
   [Pattern]       _match()   X _start()   X _end()
   [Introspection] shvarGet()   evalExpr()
   [Hay Config]    parseHay()   evalHay()
-X [Date Time]     strftime()
 X [Wok]           _field()
 X [Hashing]       sha1dc()   sha256()
 ```

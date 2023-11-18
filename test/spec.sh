@@ -834,6 +834,10 @@ ysh-func() {
   run-file ysh-func "$@"
 }
 
+ysh-func-builtin() {
+  run-file ysh-func-builtin "$@"
+}
+
 ysh-funcs-external() {
   run-file ysh-funcs-external "$@"
 }

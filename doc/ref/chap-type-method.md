@@ -122,3 +122,14 @@ An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
       return (join(parts))
     }
 
+
+### time()
+
+TODO: Depends on system clock.
+
+### strftime()
+
+TODO: Like the awk function, this takes an timestamp directly.
+
+In other words, it calls C localtime() (which depends on the time zone
+database), and then C strftime().
