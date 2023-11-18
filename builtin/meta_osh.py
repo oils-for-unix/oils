@@ -335,26 +335,28 @@ def _ResolveName(
 
     if name in funcs:
         results.append((name, 'function', no_str))
-    elif name in aliases:
+
+    if name in aliases:
         results.append((name, 'alias', aliases[name]))
 
-    # TODO: Use match instead?
-    elif consts.LookupNormalBuiltin(name) != 0:
+    # See if it's a builtin
+    if consts.LookupNormalBuiltin(name) != 0:
         results.append((name, 'builtin', no_str))
     elif consts.LookupSpecialBuiltin(name) != 0:
         results.append((name, 'builtin', no_str))
     elif consts.LookupAssignBuiltin(name) != 0:
         results.append((name, 'builtin', no_str))
 
-    elif consts.IsControlFlow(name):  # continue, etc.
+    # See if it's a keyword
+    if consts.IsControlFlow(name):  # continue, etc.
         results.append((name, 'keyword', no_str))
     elif consts.IsKeyword(name):
         results.append((name, 'keyword', no_str))
 
-    else:
-        for path in search_path.LookupReflect(name, do_all):
-            if posix.access(path, X_OK):
-                results.append((name, 'file', path))
+    # See if it's external
+    for path in search_path.LookupReflect(name, do_all):
+        if posix.access(path, X_OK):
+            results.append((name, 'file', path))
 
     return results
 
