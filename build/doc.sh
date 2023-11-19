@@ -90,6 +90,7 @@ readonly MARKDOWN_DOCS=(
   novelties
 
   proc-func
+  block-literals
 
   # Data language
   qsn

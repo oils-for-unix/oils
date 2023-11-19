@@ -1,24 +1,47 @@
 ---
 default_highlighter: oils-sh
+in_progress: true
 ---
 
-Informal Guide to Procs and Funcs
-==================
+Guide to Procs and Funcs
+========================
 
-- Funcs are in expressions
-  - Interior
-- Procs are in commands
-  - Exterior
+YSH has two major units of code: shell-like `proc`, and Python-like `func`.
 
-See blog: Oils is Exterior-First for some conceptual background.
+- Roughly speaking, procs are for "commands" and **I/O**, while funcs are for pure
+**computation**.
+- Procs are often **big**, and often call **small** funcs.  The opposite
+  &mdash; funcs calling procs &mdash; is possible, but rarer.
+- You can write shell scripts **mostly** with procs, and maybe a few funcs.
 
-- Note: procs do everything shell functions can.
+This doc compares the two mechanisms and gives rough guidelines.
 
+<!--
+See the blog for more conceptual background: [Oils is
+Exterior-First](https://www.oilshell.org/blog/2023/06/ysh-design.html).
+-->
 
 <div id="toc">
 </div>
 
-## Comparison Table
+## Tip: You don't have to use either
+
+General theme:
+
+1. No procs
+1. then group into procs
+1. then funcs
+
+---
+
+- Block literals are  a syntax for unevaluated code like `cd /tmp { echo $ PWD
+  }`. They are instances of "quotation type" `value.Command`.  The  `{ }`
+  syntax is niec for passing to blocks to procs, but they can be passed to
+  funcs as well.
+
+You don't define blocks.  Blocks are data types.
+
+## At a Glance: Procs vs. Funcs
 
 <style>
   thead {
@@ -52,7 +75,11 @@ See blog: Oils is Exterior-First for some conceptual background.
   <tr>
     <td>Design</td>
     <td>Shell-like</td>
-    <td>Python-like (but pure)</td>
+    <td>
+
+Python-like (but **pure**)
+
+</td>
   </tr>
 
   <tr>
@@ -61,10 +88,61 @@ See blog: Oils is Exterior-First for some conceptual background.
 Architecture ([Oils is Exterior First](https://www.oilshell.org/blog/2023/06/ysh-design.html))
 
 </td>
-    <td>Exterior: processes and files<br/>
-        I/O may occur anywhere</td>
-    <td>Interior: functions and garbage-collected data<br/>
-        explicit I/O params</td>
+<td>
+
+**Exterior**: processes and files.
+
+I/O may occur anywhere.
+
+</td>
+
+<td>
+
+**Interior**: functions and garbage-collected data.
+
+Explicit I/O params.
+
+</td>
+  </tr>
+
+  <tr>
+    <td>Example Definition</td>
+<td>
+
+    proc print-max (; x, y) {
+      echo $[x if x > y else y]
+    }
+
+</td>
+<td>
+
+    func myMax(x, y) {
+      return (x if x > y else y)
+    }
+
+</td>
+  </tr>
+
+  <tr>
+    <td>Example Call</td>
+<td>
+
+    print-max (3, 4)
+
+Procs can be put in pipelines:
+
+    print-max (3, 4) | tee out.txt
+
+</td>
+<td>
+
+    var m = maxNum(3, 4)
+
+Or throw away the return value, for mutating functions:
+
+    call myMax(3, 4)
+
+</td>
   </tr>
 
   <tr>
@@ -84,7 +162,7 @@ Architecture ([Oils is Exterior First](https://www.oilshell.org/blog/2023/06/ysh
   <tr>
 <td>
 
-[Call Site Syntax](command-vs-expression-mode.html)
+[Syntax Mode](command-vs-expression-mode.html) of call site
 
 </td>
     <td>Command Mode</td>
@@ -92,52 +170,36 @@ Architecture ([Oils is Exterior First](https://www.oilshell.org/blog/2023/06/ysh
   </tr>
 
   <tr>
-    <td>Example Definition</td>
-<td>
+    <td>Kinds of Parameters / Arguments</td>
+    <td>
 
-    proc my-cd (dest; ; ; block) {
-      cd $dest (block)
-    }
-
-</td>
-<td>
-
-    func maxNum(x, y) {
-      return (x if x > y else y)
-    }
+1. Word aka string
+1. Typed and Positional
+1. Typed and Named
+1. Block
 
 </td>
-  </tr>
+    <td>
 
-  <tr>
-    <td>Kinds of Arguments</td>
-    <td>Four: Word aka string, Typed and Positional, Typed and Named, Block</td>
-    <td>Two: Positional and Named (both typed)</td>
-  </tr>
+1. Positional 
+1. Named
 
-  <tr>
-    <td>Example Call</td>
-<td>
-
-    my-cd /tmp {
-      echo $PWD
-      echo hi
-    }
-
-(Procs can also be transparently placed in pipelines.)
-
-</td>
-<td>
-
-    var m = maxNum(x, y)
+(both typed)
 
 </td>
   </tr>
+
 
   <tr>
     <td>Return Value</td>
     <td>Integer status 0-255</td>
-    <td>Any type of value</td>
+    <td>
+
+Any type of value, e.g.
+
+    return ([42, {name: 'bob'}])
+
+</td>
   </tr>
 
   <tr>
@@ -167,96 +229,6 @@ Closed `proc p () {`
 
 </table>
 
-
-- error () -- I guess this is the same?
-  - it raises an exception
-
-## Func 
-
-### Signatures
-
-    func f(pos; named) {
-    }
-
-### Param Binding
-
-## Proc
-
-### Open Procs
-
-### Signatures
-
-Closed with signature
-
-    proc proc-with-hyphens (word; pos; named; block) {
-      = word
-      = pos
-      = named
-      = block
-    }
-
-### Param Binding
-
-## Lazy Evaluation of Proc Args
-
-
-## Shell Functions vs. PRocs
-
-### ARGV
-
-Shell functions:
-
-    f() {
-      write -- "$@"
-    }
-
-
-Procs
-
-    proc p {
-      write -- @ARGV
-    }
-
-Old Notes
-=========
-
-
-
-Procs are shell like-functions, but they can have declared parameters, and lack
-dynamic scope.
-
-    proc p(name, age) {
-      echo "$name is $age years old"
-    }
-
-    p alice 42  # => alice is 42 years old
-
-Blocks are fragments of code within `{ }` that can be passed to builtins (and
-eventually procs):
-
-    cd /tmp {
-      echo $PWD  # prints /tmp
-    }
-    echo $PWD  # prints original dir
-
-- See [YSH Idioms](idioms.html) for examples of procs.
-
-<div id="toc">
-</div>
-
-## Influences
-
-It's a very rich language.  But it enables a lot of power.
-
-- Subsumes everything in shell
-  - including dynamic scope, `read x`, `printf -v a[i] 'hello %s' "$x"` etc.
-- Python- and JS-like Functions
-- Ruby-like blocks
-- Julia positional, named, spread, rest
-- Awk and R for lazy arg lists.
-
-## Table of Features
-
 procs:
 
 - open or closed
@@ -265,214 +237,175 @@ procs:
 - Block is really last positional arg: `cd /tmp { echo $PWD }`
 - lazy arg list `[]` for the typed args
 
-Common to both:
+## Func Calls and Defs
 
-- spread at call site `f(...myListForPos)` or `f(; ...myDictForNamed)`
-- rest params at definition `...rest`
+The design is based on Julia, which has all the power of Python, but without
+the special rules around `/` and `*`.
 
-More
+<table>
+  <thead>
+  <tr>
+    <td></td>
+    <td>Call Site</td>
+    <td>Definition</td>
+  </tr>
+  </thead>
 
-- TODO: `&myvar` is a place, often used with procs.
+  <tr>
+    <td>Positional Args</td>
+<td>
 
-## Procs Can Be Open Or Closed (With a Signature)
+    var x = myMax(3, 4)
 
-Shell-like open procs that accept arbitrary numbers of arguments:
+</td>
+<td>
 
-    proc open {
-      write 'args are' @ARGV
+    func myMax(x, y) {
+      return (x if x > y else y)
     }
-    # All valid:
-    open
-    open 1 
-    open 1 2
 
-Stricter closed procs:
+</td>
+  </tr>
 
-    proc closed(x) {
-      write 'arg is' $x
+  <tr>
+    <td>Rest Args (Positional)</td>
+<td>
+
+    var x = maxMany(3, 4, 5)
+
+</td>
+<td>
+
+    func maxMany(...args) {
+      var result = args[0]
+      # ...
     }
-    closed      # runtime error: missing argument
-    closed 1    # valid
-    closed 1 2  # runtime error: too many arguments
 
-### Proc Signatures
+</td>
+  </tr>
 
-TODO:
 
-* Default values for params.
-* All params are required.  Prefer `''` to `null` for string argument defaults.
-* `@` is "splice" at the call site. Or also "rest" parameters.
-* `:` for ref params
-* `&` for blocks?
-  * Procs May Accept Block Arguments
+</td>
+  </tr>
 
-<!--
+  <tr>
+    <td>Named Args</td>
+<td>
 
-* Shell vs. Python composition.
-* prefix spread ... at call site. Or "rest" parameters.
-* Optional params?
+    var x = mySum(3, 4, start=5)
 
--->
+</td>
+<td>
 
-## Block Syntax
+    func mySum(x, y; start=0) {
+      return (x + y + start)
+    }
 
-These forms work:
+</td>
+  </tr>
 
-    cd / {
+  <tr>
+    <td>Rest Args (named)</td>
+<td>
+
+    var x = f(start=5, end=7)
+
+</td>
+<td>
+
+    func f(; ...opts) {
+      if ('start' not in opts) {
+        setvar opts.start = 0
+      }
+      # ...
+      return (opts)
+    }
+
+</td>
+  </tr>
+
+</table>
+
+## Proc Calls and Defs
+
+Procs have 4 kinds of args, while funcs have 2.  This means procs have the
+**same** patterns as funcs do, with respect to positional and typed args (shown
+above).
+
+The 2 other kinds of args are words and blocks.
+
+<table>
+  <thead>
+  <tr>
+    <td></td>
+    <td>Call Site</td>
+    <td>Definition</td>
+  </tr>
+  </thead>
+
+  <tr>
+    <td>Positional Args</td>
+<td>
+
+    print-max (3, 4)
+
+</td>
+<td>
+
+    proc print-max (x, y) {
+      echo $[x if x > y else y]
+    }
+
+</td>
+  </tr>
+
+
+  <tr>
+    <td>Block Argument</td>
+<td>
+
+    my-cd /tmp {
       echo $PWD
-    }
-    cd / { echo $PWD }
-    cd / { echo $PWD }; cd / { echo $PWD }
-
-These are syntax errors:
-
-    a=1 { echo bad };        # assignments can't take blocks
-    >out.txt { echo bad };   # bare redirects can't take blocks
-    break { echo bad };      # control flow can't take blocks
-
-Runtime error:
-
-    local a=1 { echo bad };  # assignment builtins can't take blocks
-
-Caveat: Blocks Are Space Sensitive
-
-    cd {a,b}  # brace substitution
-    cd { a,b }  # tries to run command 'a,b', which probably doesn't exist
-
-Quoting of `{ }` obeys the normal rules:
-
-    echo 'literal braces not a block' \{ \}
-    echo 'literal braces not a block' '{' '}'
-
-## Block Semantics 
-
-TODO: This section has to be implemented and tested.
-
-### User Execution (like Ruby's `yield` keyword?)
-
-    proc p(&block) {
-      echo '>'
-      $block    # call it?
-                # or maybe just 'block' -- it's a new word in the "proc" namespace?
-      echo '<'
+      echo hi
     }
 
-    # Invoke it
-    p {
-      echo 'hello'
-    }
-    # Output:
-    # >
-    # hello
-    # <
+</td>
+<td>
 
-### User Evaluation (e.g. for Config Files)
-
-How to get the value?
-
-    var namespace = evalblock('name', 1+2, up=1)
-
-    # _result is set if there was a return statement!
-
-    # namespace has all vars except those prefixed with _
-    var result = namespace->_result
-
-TODO: Subinterpreters?
-
-### Errors
-
-Generally, errors occur *inside* blocks, not outside:
-
-    cd /tmp {
-       cp myfile /bad   # error happens here
-       echo 'done'
-    }                   # not here
-
-### Control Flow
-
-- `break` and `continue` are disallowed inside blocks.
-- You can exit a block early with `return` (not the enclosing function).
-- `exit` is identical: it exits the program.
-
-### Setting Variables in Enclosing Scope
-
-Can block can set vars in enclosing scope?
-
-```
-setref('name', 1+2, up=1)
-```
-
-## Notes: Use Cases for Blocks
-
-### Configuration Files
-
-Evaluates to JSON (like YAML and TOML):
-
-    server foo {
-      port = 80
+    proc my-cd (dest; ; ; block) {
+      cd $dest (block)
     }
 
-And can also be serialized as command line flags.
-
-Replaces anti-patterns:
-
-- Docker has shell
-- Ruby DSLs like chef have shell
-- similar to HCL I think, and Jsonnet?  But it's IMPERATIVE.  Probably.  It
-  might be possible to do dataflow variables... not sure.  Maybe x = 1 is a
-  dataflow var?
-
-### Awk Dialect
-
-    BEGIN {
-      end
-    }
-
-    when x {
-    }
-
-### Make Dialect
-
-    rule foo.c : foo.bar {
-      cc -o out @srcs
-    }
-
-### Flag Parsing to replace getopts
-
-Probably use a block format.  Compare with Python's optparse.o
-
-See issue.
-
-### Unit Tests
-
-Haven't decided on this yet.
-
-    check {
-    }
-
-## Funcs
-
-In addition to shell-like procs, YSH also has Python-like functions:
-
-```
-var x = len(ARGV) + 1
-```
-
-### User-Defined Functions are Deferred
-
-For now, we only have a few builtin functions like `len()`.
+</td>
+  </tr>
 
 
-### Two Worlds: Syntax, Semantics, Composition
 
-There are two kinds of composition / code units in YSH:
+</table>
 
-- procs are like shell "functions".  They look like an external process, accepting an
-  `argv` array and returning exit code.  I think of `proc` as *procedure* or
-  *process*.
-  - TODO: add notes below
-- funcs are like Python or JavaScript functions. They accept and return typed
-  data.
+## Common Features
+
+### Spread Arguments, Rest Params
+
+- Spread list `...` at call site
+- Rest params `...` at definition
+
+### `error` builtin to raise errors
+
+- `error ()` builtin is idiomatic in both
+  - it raises an "exception"
+
+### Out Params: `&myvar`, `value.Place`
+
+Out params are more common in procs, because they don't have a typed return
+value.
+
+But they can also be used in funcs.
+
+
+## Two Worlds: Syntax, Semantics, Composition
+
+There are two kinds of composition / code units in YSH, procs and funcs.
 
 procs are called with a "command line":
 
@@ -490,53 +423,6 @@ This may be legal:
 This is NOT legal:
 
     my_func(42, 'foo')  # it's illegal whether there's a space or not
-
-
-### Procs / Shell is the "main"
-
-That is, procs can call funcs, but funcs won't be able to call procs (except
-for some limited cases like `log` and `die`).
-
-
-### Proc Compose
-
-People may tend to prefer funcs because they're more familiar. But shell
-composition with proc is very powerful!
-
-They have at least two kinds of composition that functions don't have.  See
-#[shell-the-good-parts]($blog-tag) on Bernstein chaining and "point-free"
-pipelines.
-
-<!--
-
-In summary:
-
-* func signatures look like JavaScript, Julia, and Go.
-  * named and positional are separated with `;` in the signature.
-  * The prefix `...` "spread" operator takes the place of Python's `*args` and `**kwargs`. 
-  * There are optional type annotations
-* procs are like shell functions
-	* but they also allow you to name parameters, and throw errors if the arity
-is wrong.
-	* and they take blocks.
-
-One issue is that procs take block arguments but not funcs.  This is something
-of a syntactic issue.  But I don't think it's that high priority.
-
--->
-
-Here are some complicated examples from the tests.  It's not representative of
-what real code looks like, but it shows all the features.
-
-proc:
-
-```
-proc name-with-hyphen (x, y, @names) {
-  echo $x $y
-  echo names: @names
-}
-name-with-hyphen a b c
-```
 
 ### More Notes on Procs. vs Funcs
 
@@ -584,5 +470,119 @@ Examples:
     write -- @[split(x)]
     write -- @[glob(x)]  # it's possible for this to fail
 
+
+## Func 
+
+Funcs are more  straightforward and small, so let's start here.
+
+Procs are actually a **superset** of funcs in most ways, except for the return
+value.
+
+## Proc
+
+
+### Example: A Proc That Wraps Functions
+
+Note: procs can technicaly do everything shell functions can.  Except pure
+evaluation.
+
+Procs are more flexible.  Their features
+
+
+### Lazy Evaluation of Proc Args
+
+
+### Procs Can Be Open Or Closed (With a Signature)
+
+Shell-like open procs that accept arbitrary numbers of arguments:
+
+    proc open {
+      write 'args are' @ARGV
+    }
+    # All valid:
+    open
+    open 1 
+    open 1 2
+
+Stricter closed procs:
+
+    proc closed(x) {
+      write 'arg is' $x
+    }
+    closed      # runtime error: missing argument
+    closed 1    # valid
+    closed 1 2  # runtime error: too many arguments
+
+### Procs / Shell is the "main"
+
+That is, procs can call funcs, but funcs won't be able to call procs (except
+for some limited cases like `log` and `die`).
+
+### Procs Compose in Two Ways
+
+People may tend to prefer funcs because they're more familiar. But shell
+composition with proc is very powerful!
+
+They have at least two kinds of composition that functions don't have.  See
+#[shell-the-good-parts]($blog-tag) on Bernstein chaining and "point-free"
+pipelines.
+
+<!--
+
+In summary:
+
+* func signatures look like JavaScript, Julia, and Go.
+  * named and positional are separated with `;` in the signature.
+  * The prefix `...` "spread" operator takes the place of Python's `*args` and `**kwargs`. 
+  * There are optional type annotations
+* procs are like shell functions
+	* but they also allow you to name parameters, and throw errors if the arity
+is wrong.
+	* and they take blocks.
+
+One issue is that procs take block arguments but not funcs.  This is something
+of a syntactic issue.  But I don't think it's that high priority.
+
+-->
+
+Here are some complicated examples from the tests.  It's not representative of
+what real code looks like, but it shows all the features.
+
+proc:
+
+```
+proc name-with-hyphen (x, y, @names) {
+  echo $x $y
+  echo names: @names
+}
+name-with-hyphen a b c
+```
+
+## Shell Functions vs. Procs
+
+### ARGV
+
+Shell functions:
+
+    f() {
+      write -- "$@"
+    }
+
+
+Procs
+
+    proc p {
+      write -- @ARGV
+    }
+
+
+
+## Summary
+
+TODO
+
+## Related
+
+- [Block Literals](block-literals.html)
 
 <!-- vim sw=2 -->

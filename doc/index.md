@@ -93,6 +93,7 @@ YSH has 3 main sublanguages:
 Crosscutting design issues:
 
 - [Guide to Procs, Funcs, and Blocks](proc-func.html) &dagger;
+  - [Block Literals](block-literals.html) &dagger;
 - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
