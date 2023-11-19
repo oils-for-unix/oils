@@ -177,19 +177,38 @@ YSH gets its regex match operator from Awk:
 
 ### Lisp
 
-YSH has "quotation types" that represent unevaluated code.
+YSH has "quotation types" that represent unevaluated code.  Like Lisp, they
+give you control over evaluation:
 
     var my_cmd = ^(ls /tmp | wc -l)
+    eval (my_cmd)
+
     var my_expr = ^[42 + a[i]]
+    var v = evalExpr(my_expr)
+
     var my_template = ^"hi $name"  # unimplemented
 
-Control over evaluation is reminiscent of Lisp.
+### Haskell
+
+YSH also uses `++` to concatenate strings and lists:
+
+    var mystr = a ++ b    
+    var mystr = "$a$b"       # very similar
+
+    var mylist = c ++ d
+    var mylist = :| @c @d |  # also converts every element to a string
+
+YSH has a `value.IO` type that makes functions pure:
+
+    func renderPrompt(io) {
+      return (io->promptVal('$') ++ " ")
+    }
+
+## Minor Influences
 
 ### make, find and xargs
 
 Our design for Ruby-like blocks was influenced by these mini-languages.
-
-## Minor Influences
 
 ### Tcl
 
@@ -244,16 +263,6 @@ YSH also uses a leading `=` to print expressions in the REPL.
     = 1 + 2
 
 Lua's implementation as a pure ANSI C core without I/O was also influential.
-
-### Haskell
-
-YSH also uses `++` to concatenate strings and lists:
-
-     var mystr = a ++ b    
-     var mystr = "$a$b"       # very similar
-
-     var mylist = c ++ d
-     var mylist = :| @c @d |  # also converts every element to a string
 
 ### C
 

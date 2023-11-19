@@ -104,6 +104,25 @@ Instead, write `'rfoo'` if that's what you mean.
 
 (Option `parse_raw_string` is part of group `ysh:upgrade`.)
 
+### globs can't start with `[`
+
+In a command, the `[` character starts a lazy arg list:
+
+    assert [42 === x]
+
+In shell, `[` is part of the glob syntax:
+
+    echo [ch]  # extremely rare pattern matching c or h
+
+This is more common, and still works:
+
+    echo *.[ch]
+
+You can still express the former by explicitly invoking `glob('[ch]')`.
+
+
+(Option `parse_bracket` is part of group `ysh:upgrade`.)
+
 ## Unsupported
 
 ### Extended Globs in Word Evaluation

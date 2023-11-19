@@ -44,7 +44,7 @@ This includes *bare assignments* in Hay blocks:
       x = 42 + a[i]
     }
 
-### `=` and `::` keywords
+### `=` and `call` keywords
 
 Likewise, everything after `=` or `::` is in expression mode:
 
@@ -52,7 +52,7 @@ Likewise, everything after `=` or `::` is in expression mode:
 
 Throw away the value:
 
-    :: mylist->append(x)
+    call mylist->append(x)
 
 ### YSH `for while if case`:
 

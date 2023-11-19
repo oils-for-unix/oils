@@ -66,7 +66,7 @@ See [A Tour of YSH](ysh-tour.html) for more details.
 ### Builtins
 
 - YSH adds long flags like `read --line`
-- YSH has builtin Functions
+- YSH has builtin functions like `join()`
 
 ### Shell Options, `shvar`, Registers
 
@@ -74,12 +74,14 @@ See [A Tour of YSH](ysh-tour.html) for more details.
 - shvars: `IFS`, `_DIALECT`
 - Registers: `_pipeline_status`, `_match()`, etc.
 
-## Big Feature Categories
+<!--
+## TODO
 
-- **Builtin sub** with `${.myproc arg1 $x}` (TODO)
-- String Safety (TODO)
-- [Modules](modules.html): for organizing code into files
-- Metaprogramming with Blocks (TODO)
+- String Safety: tagged strings, ${x|html}
+  - maybe captureBuffer(^(echo hi))
+- [Modules](modules.html): for organizing code into files.  'use'
+
+-->
 
 ## Some Shell Features That YSH Retains
 
