@@ -126,6 +126,15 @@ A `shvar` is similar to a `shopt`, but it has a string value, like `$IFS` and
 
 -->
 
+### Data Languages, Not Ad Hoc Parsing
+
+YSH programs are encouraged to use our JSON-like data languages to serialize
+data.
+
+For example, using an encoded array like `["one\n", "two \t three"]` results in
+more obviously correct code than using ad hoc delimiters like spaces, commas,
+or colons.
+
 ## Shell Features Retained
 
 These bash features are still idiomatic in YSH:
