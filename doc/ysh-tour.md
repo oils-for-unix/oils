@@ -667,7 +667,7 @@ to the Julia language:
 YSH also has Python-like functions defined with `func`.  These are part of the
 expression language, which we'll see later.
 
-For more info, see the [Informal Guide to Procs and Funcs](func-proc.html)
+For more info, see the [Informal Guide to Procs and Funcs](proc-func.html)
 (under construction).
 
 #### Builtin Commands

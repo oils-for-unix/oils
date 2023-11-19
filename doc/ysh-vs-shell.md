@@ -38,7 +38,7 @@ See [YSH vs. Shell Idioms](idioms.html) for more rewrites.
 ### Command Language Differences
 
 - **Curly Braces** instead of `then fi` and `do done`
-- **[Procs and Blocks](proc-block-func.html)** for Modularity
+- **[Procs, Funcs, and Blocks](proc-func.html)** for Modularity
   - Shell functions are "upgraded" into procs, e.g. with named parameters
   - Ruby-like Blocks, and metaprogramming
 - **Keywords for Variables** like `var`, `const`, `setvar` instead of builtins

@@ -97,7 +97,7 @@ Crosscutting design issues:
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
 - [YSH I/O Builtins](io-builtins.html) &dagger;
 
-<!-- TODO: func-proc.html -- Informal guide to procs and funcs -->
+<!-- TODO: proc-func.html -- Informal guide to procs and funcs -->
 
 ## Data Languages Avoid Ad-Hoc Parsing
 

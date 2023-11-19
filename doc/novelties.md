@@ -101,7 +101,7 @@ and JS:
 
     var myexpr = ^[age > 10]  # use evalExpr()
 
-    var mytemplate = ^"$name is $age yeras old"
+    var mytemplate = ^"$name is $age years old"  # not implemented
 
 
 TODO: Explain more.

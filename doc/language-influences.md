@@ -6,9 +6,10 @@ YSH Language Influences
 =======================
 
 Almost all syntax in YSH comes from another language.  This doc lists some of
-those influences.
+these influences.
 
-It's mostly trivia for the curious, but it may help you remember the syntax.
+Reading this page isn't essential for all users, but it may help some users
+remember the syntax.
 
 <div id="toc">
 </div> 
@@ -23,7 +24,7 @@ goals are to:
 
 - **Preserve** what works best about shell: processes, pipelines, and files.
 - **Clean up** the sharp edges like quoting, ad hoc parsing and splitting
-- **Integrate** features from Python, JavaScript, Ruby, and the other languages
+- **Integrate** features from Python, JavaScript, Ruby, and other languages
   listed below.
 
 ## Major Influences
@@ -55,7 +56,8 @@ We implement many bash semantics, like "named references" for out variables:
     f x
     echo x=$x            # => x=bar
 
-But we remove dynamic scope and generalize it with `value.Place`.
+Though we discourage dynamic scope.  YSH provides a better mechanism called
+`value.Place`.
 
     proc f(; out) {
       call out->setValue('bar')
@@ -72,23 +74,20 @@ Historical note: Usenix 93.  korn shell was used for GUIs and such!
 ### Python
 
 The YSH expression language is mostly Python compatible.  Expressions occur on
-the RHS of `=`:
+the right-hand side of `=`:
 
     var a = 42 + a[i]
     var b = fib(10)
     var c = 'yes' if mybool else 'no'
 
-Proc signatures resemble Python:
+Proc signatures take influence from Python:
 
     proc mycopy(src, dest='/tmp') {  # Python-like default value
       cp --verbose $src $dest
     }
 
-Differences:
-
-- YSH uses shell-like composition with "procs", in addition to Python- or
-  JavaScript-like functions.
-- More differences in [YSH Expressions vs. Python](ysh-vs-python.html).
+Related: differences documented in [YSH Expressions vs.
+Python](ysh-vs-python.html).
 
 ### JavaScript
 
@@ -125,16 +124,6 @@ YSH has Ruby-like blocks:
     }
     echo $PWD
 
-    proc foo(x, &block) { run(block) }
-    var myblock = &(echo $PWD)
-
-(Julia has something like blocks too.)
-
-The `:out` syntax for references to variable names also looks like Ruby (and
-Clojure):
-
-    read :line                   # populate $line variable
-
 ### Perl
 
 The `@` character comes from Perl (and PowerShell):
@@ -153,7 +142,17 @@ agglomeration of languages, but it's statically parsed.
 
 ### Julia
 
-Multiline strings in YSH use similar whitespace stripping rules:
+The semicolon in `proc` and `func` definitions comes from Julia:
+
+    func f(x, y; invert=false) {
+      if (invert) {
+        return (-x - y)
+      } else {
+        return (x + y)
+      }
+    }
+
+Multiline strings in YSH strip leading whitespace, similar to Julia:
 
     proc p {
       # Because leading and trailing space are stripped, this is 2 lines long
@@ -162,6 +161,9 @@ Multiline strings in YSH use similar whitespace stripping rules:
       coconut
       '''
     }
+
+
+(Julia has something like blocks too.)
 
 ### Awk
 
@@ -173,9 +175,19 @@ YSH gets its regex match operator from Awk:
 
 (We don't use Perl's `=~` operator.)
 
+### Lisp
+
+YSH has "quotation types" that represent unevaluated code.
+
+    var my_cmd = ^(ls /tmp | wc -l)
+    var my_expr = ^[42 + a[i]]
+    var my_template = ^"hi $name"  # unimplemented
+
+Control over evaluation is reminiscent of Lisp.
+
 ### make, find and xargs
 
-Features influenced by these languages are planned, but not implemented.
+Our design for Ruby-like blocks was influenced by these mini-languages.
 
 ## Minor Influences
 
@@ -203,16 +215,17 @@ how Tcl can be used a configuration language:
       }
     }
 
-YSH blocks would allow this to be expressed very similarly:
+Hay blocks in YSH allow this to be expressed very similarly:
 
-    change 6/11/2003 {
-      author  = "Will Duquette"
+    hay define Change
+
+    Change 6/11/2003 {
+      author = "Will Duquette"
       description = '''
         Added the SATl component to UCLO.
       '''
     }
 
-(This mechanism is still being implemented.)
 
 [config-tcl]: https://trs.jpl.nasa.gov/bitstream/handle/2014/7660/03-1728.pdf
 
@@ -255,6 +268,10 @@ C users:
 So a `value.Place` behaves like a pointer in some ways.
 
 The `&` syntax may also feel familiar to Rust users.
+
+## Related
+
+- [Novelties in OSH and YSH](novelties.html)
 
 <!--
 

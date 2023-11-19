@@ -109,7 +109,7 @@ But array literals only make sense in expression mode:
 
 A sigil pair often changes the **lexer mode** to parse what's inside.
 
-## Parse Options to Take Over `()`, `@`, and `=`
+## Parse Options to Take Over `()`, `[]`, `@`, and `=`
 
 Most users don't have to worry about parse options.  Instead, they run either
 `bin/osh` or `bin/ysh`, which are actually aliases for the same binary.  The
@@ -134,15 +134,12 @@ $ echo '@myarray'       # quote it to get the old behavior
 @myarray
 ```
 
-The `parse_equals` option (in group `ysh:all`) lets you omit `const`:
+The `parse_bracket` option (also in group `ysh:upgrade`) lets you pass
+unevaluated expressions to a command with `[]`:
 
 ```sh-prompt
-const x = 42 + a[i]     # accepted in OSH and YSH
-
-shopt -s parse_equals   # Change the meaning of =
-
-x = 42 + a[i]           # Means the same as above
-                        # This is NOT a mutation.  It's a declaration.
+assert (^[42 === x])   # assert is passed an expression, not value
+assert [42 === x]      # syntax sugar with parse_bracket
 ```
 
 ## Static Parsing

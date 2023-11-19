@@ -376,5 +376,5 @@ YSH:
   - Each namespace contains {variable name -> cell} bindings.
   - Cells have a tagged value (string, array, etc.) and 3 flags (readonly,
     export, nameref).
-- Unpolished doc: [func-proc.html](func-proc.html)
+- Unpolished doc: [proc-func.html](proc-func.html)
 

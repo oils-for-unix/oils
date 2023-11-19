@@ -192,9 +192,19 @@ or subscript:
 
 ### Brackets with a Sigil: Expression
 
-In command mode, it means "expression":
+The sigil pair `$[]` is common in command mode:
 
-    echo $[1 + 2]
+    echo $[42 + a[i]]
+
+Quotations are valid in expression mode:
+
+    var my_expr = ^[42 + a[i]]
+
+Pass lazy arg lists to commands with `[]`.  They're syntactic sugar for `^[]`:
+
+    assert [42 === x]     # short version
+
+    assert (^[42 === x])  # same thing
 
 <!--
 
