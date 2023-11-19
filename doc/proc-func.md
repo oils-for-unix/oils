@@ -26,17 +26,8 @@ See blog: Oils is Exterior-First for some conceptual background.
     font-weight: bold;
   }
   table {
-    margin-left: 3em;
     font-family: sans-serif;
     border-collapse: collapse;
-  }
-
-  /* Markdown creates <p> in <td> that we don't want */
-  td > p {
-    margin-left: 0;
-  }
-  td > pre {
-    margin-left: 0;
   }
 
   tr {
@@ -594,4 +585,4 @@ Examples:
     write -- @[glob(x)]  # it's possible for this to fail
 
 
-<!-- vim: sw=2 -->
+<!-- vim sw=2 -->

@@ -61,7 +61,7 @@ These docs are for advanced users:
 ### Comparisons
 
 - [YSH vs. Shell Idioms](idioms.html).  A list of code snippets.
-- [YSH vs. Shell](ysh-vs-shell.html) &dagger;.  High-level descriptions: how does YSH
+- [YSH vs. Shell](ysh-vs-shell.html).  High-level descriptions: how does YSH
   differ from Bourne/POSIX shell?
 - [YSH Expressions vs. Python](ysh-vs-python.html) &dagger;.  The expression
   language is borrowed from Python, with a few tweaks.

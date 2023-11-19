@@ -1,78 +1,121 @@
 ---
-in_progress: true
 ---
 
 YSH vs. Shell
 =============
 
-This doc aims to help shell users understand YSH
-
-If you don't want to read a comparison, see [A Tour of YSH](ysh-tour.html).
+This doc may help shell users understand YSH.  If you don't want to read a
+comparison, see [A Tour of YSH](ysh-tour.html).
 
 <div id="toc">
 </div>
 
-## Strictness At Parse Time and Runtime
+## YSH is Stricter at Parse Time, and Runtime
 
-- Parse time: statically parsed.
-- Runtime: Many `strict_*` shell options to reduce edge cases.  YSH generally
-  fails faster than shell.
+OSH and YSH both prefer [static
+parsing](https://www.oilshell.org/blog/2016/10/22.html), so you get syntax
+errors up front.  In shell, syntax errors can occur at runtime.
 
-## There Are 3 Core Sublanguages Instead of 4
+At runtime, we have `strict_*` shell options that handle edge cases.  YSH
+generally fails faster than shell.  They're in the [option group](options.html)
+`strict:all`.
 
-- Shell: Command, Word, Arith, Bool
-- YSH: Command, Word, Expression (Python-Like Expressions)
+## Three Core Sublanguages, Instead of 4
 
-### Expressions Replace Arith and Bool
+- Sublanguages in Bash: Command, Word, Arith, Bool
+- Sublanguages in YSH: Command, Word, **Expression**
 
-So Many Shell Constructs Are Deprecated/Discouraged.
+See the [List of
+Sublanguages](https://www.oilshell.org/blog/2019/02/07.html#list-of-sublanguages)
+on the blog.
 
-All of this is discouraged in favor of YSH expressions:
+### Python-like Expressions Replace Arith and Bool
 
-- `[[ $x =~ $pat ]]`
-- `x=$(( x + 1 ))` and `(( x = x + 1 ))` and `let`, etc.
-- `declare -A assoc=(['k1']=v1 ['k2']=v2)`
+This means that all these constructs are discouraged in favor of YSH
+expressions:
+
+```
+[[ $x =~ $pat ]]
+
+x=$(( x + 1 ))
+(( x = x + 1 ))
+let x=x+1
+
+declare -A assoc=(['k1']=v1 ['k2']=v2)
+```
 
 See [YSH vs. Shell Idioms](idioms.html) for more rewrites.
 
-### Command Language Differences
+### Command Sublanguage
 
-- **Curly Braces** instead of `then fi` and `do done`
-- **[Procs, Funcs, and Blocks](proc-func.html)** for Modularity
-  - Shell functions are "upgraded" into procs, e.g. with named parameters
-  - Ruby-like Blocks, and metaprogramming
-- **Keywords for Variables** like `var`, `const`, `setvar` instead of builtins
-  like `local`, `readonly`, `myvar=foo`, etc.
-  - Array literals like `var a = :| ale bean |` instead of `local a=(ale bean)`.
-- **Multiline strings** replace here docs
-- `fork` and `forkwait` **builtins** instead of `&` and `()`.  Parentheses are
-  generally used for Python-like expressions, e.g. `if (x > 0) { echo
-  'positive' }`
+Notable differences:
 
-See [A Tour of YSH](ysh-tour.html) for more details.
+**Curly Braces** `{ }`, instead of `then fi` and `do done`.
 
-### Word Language Differences
+**Keywords for Variable Assignment** like `var`, `const`, `setvar`, instead of
+builtins like `local`, `readonly`, `myvar=foo`, etc.
 
-- [Simple Word Evaluation](simple-word-eval.html)
-  - Splicing with arrays
-- Expression substitution like `$[42 + a[i] + f(x)]`
-- Inline function calls like `echo $[join(['pea', nut'])]`
-- You can write raw strings like `echo r'C:\Program Files\'`
+Array literals like `var a = :| ale bean |` instead of `local a=(ale bean)`
 
-See [A Tour of YSH](ysh-tour.html) for more details.
+**[Procs, Funcs, and Blocks](proc-func.html)** for modularity:
+
+- Shell functions are "upgraded" into procs, with typed and named parameters.
+- Python-like pure funcs compute on "interior" data.
+- Ruby-like blocks enable reflection and metaprogramming.
+  - Including declarative [Hay](hay.html) blocks
+
+**Multiline strings** replace here docs.
+
+`fork` and `forkwait` **builtins**, instead of `&` and `()`
+
+Parentheses are instead used for Python-like expressions, e.g.
+
+    if (x > 0) {
+      echo 'positive'
+    }
+
+### Word Sublanguage
+
+Notable differences:
+
+[Simple Word Evaluation](simple-word-eval.html) replaces implicit word
+splitting, and dynamic parsing/evaluation of globs.  It adds splicing of Lists
+into `argv` arrays.
+
+**Expression substitution** like `echo $[42 + a[i]]`.
+
+This includes function calls: `echo $[join(['pea', nut'])]`
+
+Raw strings can have an `r` prefix, like `echo r'C:\Program Files\'`.
 
 ## Runtime
 
-### Builtins
+### Builtin Commands and Functions
 
-- YSH adds long flags like `read --line`
-- YSH has builtin functions like `join()`
+- YSH adds long flags to builtin commands, like `read --line`.
+- YSH has builtin functions like `join()`.
 
 ### Shell Options, `shvar`, Registers
 
-- shopts: `shopt --set parse_brace`
-- shvars: `IFS`, `_DIALECT`
-- Registers: `_pipeline_status`, `_match()`, etc.
+We upgrade bash's `shopt` mechanism with more options, like `shopt --set
+parse_brace`.  These global options are controlled with scope
+
+    shopt --unset errexit {
+      rm /tmp/*
+      rm /etc/*
+    }
+
+A `shvar` is similar to a `shopt`, but it has a string value, like `$IFS` and
+`$PATH`.
+
+    shvar PATH=. {
+      my-command /tmp
+    }
+
+**Registers** are special variables set by the interpreter, beginning with `_`:
+
+- `try` sets `_status` (preferred over `$?`)
+- `_pipeline_status`, `_match()`, etc.
 
 <!--
 ## TODO
@@ -83,11 +126,10 @@ See [A Tour of YSH](ysh-tour.html) for more details.
 
 -->
 
-## Some Shell Features That YSH Retains
+## Shell Features Retained
 
-Here's an incomplete list of bash features that are preserved:
+These bash features are still idiomatic in YSH:
 
-- C-style strings like `$'line\n'`
 - Brace expansion like `{alice,bob}@example.com`
 - Process Substitution like `diff <(sort left.txt) <(sort right.txt)`
 
