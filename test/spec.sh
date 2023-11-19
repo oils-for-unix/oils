@@ -209,8 +209,7 @@ builtin-printf() {
 }
 
 builtins2() {
-  sh-spec spec/builtins2.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file builtins2 "$@"
 }
 
 builtin-history() {

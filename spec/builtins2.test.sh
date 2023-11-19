@@ -1,4 +1,5 @@
 ## oils_failures_allowed: 1
+## compare_shells: dash bash mksh zsh
 
 #### command -v
 myfunc() { echo x; }

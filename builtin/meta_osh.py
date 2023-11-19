@@ -192,6 +192,36 @@ class Source(vm._Builtin):
         return status
 
 
+def _PrintEntry(arg, row):
+    # type: (arg_types.type, Tuple[str, str, Optional[str]]) -> None
+
+    name, kind, resolved = row
+    assert kind is not None
+
+    if arg.t:  # short string
+        print(kind)
+
+    elif arg.p:
+        #log('%s %s %s', name, kind, resolved)
+        if kind == 'file':
+            print(resolved)
+
+    else:  # free-form text
+        if kind == 'file':
+            what = resolved
+        elif kind == 'alias':
+            what = ('an alias for %s' % qsn.maybe_shell_encode(resolved))
+        else:  # builtin, function, keyword
+            what = 'a shell %s' % kind
+
+        # TODO: Should also print haynode
+
+        print('%s is %s' % (name, what))
+
+        # if kind == 'function':
+        #   bash is the only shell that prints the function
+
+
 class Command(vm._Builtin):
     """'command ls' suppresses function lookup."""
 
@@ -376,40 +406,6 @@ class Type(vm._Builtin):
         self.search_path = search_path
         self.errfmt = errfmt
 
-    def _PrintEntry(self, arg, row):
-        # type: (arg_types.type, Tuple[str, str, Optional[str]]) -> None
-
-        name, kind, resolved = row
-
-        if kind is None:
-            if not arg.t:  # 'type -t X' is silent in this case
-                self.errfmt.PrintMessage('type: %r not found' % name)
-            status = 1  # nothing printed, but we fail
-        else:
-            if arg.t:  # short string
-                print(kind)
-
-            elif arg.p:
-                #log('%s %s %s', name, kind, resolved)
-                if kind == 'file':
-                    print(resolved)
-
-            else:  # free-form text
-                if kind == 'file':
-                    what = resolved
-                elif kind == 'alias':
-                    what = ('an alias for %s' %
-                            qsn.maybe_shell_encode(resolved))
-                elif kind in ('builtin', 'function', 'keyword'):
-                    what = 'a shell %s' % kind
-                else:
-                    what = kind
-
-                print('%s is %s' % (name, what))
-                if kind == 'function':
-                    # bash prints the function body, busybox ash doesn't.
-                    pass
-
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_spec.ParseCmdVal('type', cmd_val)
@@ -438,11 +434,10 @@ class Type(vm._Builtin):
                              arg.a)
             if arg.a:
                 for row in r:
-                    self._PrintEntry(arg, row)
+                    _PrintEntry(arg, row)
             else:
-                if len(r):
-                    # Just print the first one
-                    self._PrintEntry(arg, r[0])
+                if len(r):  # Just print the first one
+                    _PrintEntry(arg, r[0])
 
             # Error case
             if len(r) == 0:
