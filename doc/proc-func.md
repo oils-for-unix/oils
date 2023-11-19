@@ -18,13 +18,165 @@ See blog: Oils is Exterior-First for some conceptual background.
 <div id="toc">
 </div>
 
-## Quick List of Differences
+## Comparison Table
 
-- syntax: commands vs. expr
-- name: `proc-with-hyphens`  vs. `funcCamelCase`
-- funcs interior, vs procs interior or exterior
-- eager vs lazy evaluation of params
-- return
+<style>
+  thead {
+    background-color: #eee;
+    font-weight: bold;
+  }
+  table {
+    margin-left: 3em;
+    font-family: sans-serif;
+    border-collapse: collapse;
+  }
+
+  /* Markdown creates <p> in <td> that we don't want */
+  td > p {
+    margin-left: 0;
+  }
+  td > pre {
+    margin-left: 0;
+  }
+
+  tr {
+    border-bottom: solid 1px;
+    border-color: #ddd;
+  }
+
+  td {
+    padding: 8px;  /* override default of 5px */
+  }
+</style>
+
+<table>
+  <thead>
+  <tr>
+    <td></td>
+    <td>Proc</td>
+    <td>Func</td>
+  </tr>
+  </thead>
+
+  <tr>
+    <td>Design</td>
+    <td>Shell-like</td>
+    <td>Python-like (but pure)</td>
+  </tr>
+
+  <tr>
+<td>
+
+Architecture ([Oils is Exterior First](https://www.oilshell.org/blog/2023/06/ysh-design.html))
+
+</td>
+    <td>Exterior: processes and files<br/>
+        I/O may occur anywhere</td>
+    <td>Interior: functions and garbage-collected data<br/>
+        explicit I/O params</td>
+  </tr>
+
+  <tr>
+    <td>Naming Convention</td>
+<td>
+
+`camelCase`
+
+</td>
+<td>
+
+`kebab-case`
+
+</td>
+  </tr>
+
+  <tr>
+<td>
+
+[Call Site Syntax](command-vs-expression-mode.html)
+
+</td>
+    <td>Command Mode</td>
+    <td>Expression Mode</td>
+  </tr>
+
+  <tr>
+    <td>Example Definition</td>
+<td>
+
+    proc my-cd (dest; ; ; block) {
+      cd $dest (block)
+    }
+
+</td>
+<td>
+
+    func maxNum(x, y) {
+      return (x if x > y else y)
+    }
+
+</td>
+  </tr>
+
+  <tr>
+    <td>Kinds of Arguments</td>
+    <td>Four: Word aka string, Typed and Positional, Typed and Named, Block</td>
+    <td>Two: Positional and Named (both typed)</td>
+  </tr>
+
+  <tr>
+    <td>Example Call</td>
+<td>
+
+    my-cd /tmp {
+      echo $PWD
+      echo hi
+    }
+
+(Procs can also be transparently placed in pipelines.)
+
+</td>
+<td>
+
+    var m = maxNum(x, y)
+
+</td>
+  </tr>
+
+  <tr>
+    <td>Return Value</td>
+    <td>Integer status 0-255</td>
+    <td>Any type of value</td>
+  </tr>
+
+  <tr>
+    <td colspan=3 style="text-align: center; padding: 3em">More features ...</td>
+  </tr>
+
+  <tr>
+    <td>Kinds of Signature</td>
+    <td>
+
+Open `proc p {` or <br/>
+Closed `proc p () {`
+
+</td>
+    <td>-</td>
+  </tr>
+
+  <tr>
+    <td>Lazy Args</td>
+<td>
+
+    assert [42 === x]
+
+</td>
+    <td>No</td>
+  </tr>
+
+</table>
+
+
 - error () -- I guess this is the same?
   - it raises an exception
 
@@ -442,4 +594,4 @@ Examples:
     write -- @[glob(x)]  # it's possible for this to fail
 
 
-# vim: sw=2
+<!-- vim: sw=2 -->

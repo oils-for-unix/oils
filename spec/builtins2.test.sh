@@ -1,3 +1,4 @@
+## oils_failures_allowed: 1
 
 #### command -v
 myfunc() { echo x; }
@@ -81,6 +82,84 @@ status=0
 _tmp/executable
 status=0
 ## END
+
+#### command -V
+myfunc() { echo x; }
+
+shopt -s expand_aliases
+alias ll='ls -l'
+
+backtick=\`
+command -V ll | sed "s/$backtick/'/g"
+echo status=$?
+
+command -V echo
+echo status=$?
+
+command -V myfunc
+echo status=$?
+
+command -V nonexistent  # doesn't print anything
+echo status=$?
+
+command -V for
+echo status=$?
+
+## STDOUT:
+ll is an alias for ls -l
+status=0
+echo is a shell builtin
+status=0
+myfunc is a shell function
+status=0
+nonexistent not found
+status=1
+for is a reserved word
+status=0
+## END
+
+## OK bash STDOUT:
+ll is aliased to 'ls -l'
+status=0
+echo is a shell builtin
+status=0
+myfunc is a function
+myfunc () 
+{ 
+    echo x
+}
+status=0
+status=1
+for is a shell keyword
+status=0
+## END
+
+## OK mksh STDOUT:
+ll is an alias for 'ls -l'
+status=0
+echo is a shell builtin
+status=0
+myfunc is a function
+status=0
+nonexistent not found
+status=1
+for is a reserved word
+status=0
+## END
+
+## OK dash STDOUT:
+ll is an alias for ls -l
+status=0
+echo is a shell builtin
+status=0
+myfunc is a shell function
+status=0
+nonexistent: not found
+status=127
+for is a shell keyword
+status=0
+## END
+
 
 #### command skips function lookup
 seq() {
