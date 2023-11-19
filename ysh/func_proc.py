@@ -246,7 +246,6 @@ def EvalTypedArgsToProc(
             with state.ctx_YshExpr(mutable_opts):  # What EvalExpr() does
                 _EvalPosArgs(expr_ev, ty.pos_args, cmd_val.pos_args)
 
-                n2 = ty.named_args
                 if ty.named_args is not None:
                     cmd_val.named_args = _EvalNamedArgs(expr_ev, ty.named_args)
 

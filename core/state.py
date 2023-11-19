@@ -1245,9 +1245,6 @@ class Mem(object):
         frame = NewDict()  # type: Dict[str, Cell]
         self.var_stack.append(frame)
 
-        # Filename, or [ stdin ], etc.
-        source_str = ui.GetLineSourceString(def_tok.line)
-
         # self.token_for_line can be None?
         self.debug_stack.append(
             debug_frame.Call(self.token_for_line, def_tok, func_name))

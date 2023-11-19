@@ -347,8 +347,6 @@ def Main(
                 status = 1
         return status
 
-    no_str = None  # type: str
-
     debug_stack = []  # type: List[debug_frame_t]
     if arg_r.AtEnd():
         dollar0 = argv0

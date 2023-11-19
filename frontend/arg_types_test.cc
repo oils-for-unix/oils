@@ -11,7 +11,9 @@ TEST opaque_test() {
   StackRoots _r({&attrs});
 
   auto b = Alloc<value::Bool>(true);
+  auto b2 = Alloc<value::Bool>(false);
   attrs->set(StrFromC("v"), b);
+  attrs->set(StrFromC("V"), b2);
 
   for (int i = 0; i < 10; ++i) {
     auto m = Alloc<arg_types::command>(attrs);
@@ -20,6 +22,7 @@ TEST opaque_test() {
     mylib::MaybeCollect();
 
     ASSERT_EQ(true, m->v);
+    ASSERT_EQ(false, m->V);
   }
 
   PASS();

@@ -543,8 +543,6 @@ class ExprEvaluator(object):
         left = self._EvalExpr(node.left)
         right = self._EvalExpr(node.right)
 
-        op_id = node.op.id
-
         with switch(node.op.id) as case:
             # Logical
             if case(Id.Expr_And):
