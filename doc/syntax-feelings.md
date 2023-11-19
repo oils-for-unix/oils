@@ -237,41 +237,9 @@ Which is similar to the syntax of the `env` command:
 
 ## Naming Conventions for Identifiers
 
-`kebab-case` is for procs and filenames:
-
-    gc-test   opt-stats   gen-mypy-asdl
-
-    test/spec-runner.ysh
-
-`snake_case` is for local variables:
-
-    proc foo {
-      var deploy_dest = 'bar@example.com'
-      echo $deploy_dest
-    }
-
-`CAPS` are used for global variables built into the shell:
-
-    PATH  IFS  UID  HOSTNAME
-
-External programs also accept environment variables in `CAPS`:
-
-    PYTHONPATH  LD_LIBRARY_PATH
-
-Global variables that are **silently mutated** by the interpreter start with
-`_`:
-
-    _argv   _status   _pipeline_status   _line
-
-As do functions to access such mutable vars:
-
-    _match()  _start()   _end()  _field()
+See the [Style Guide](style-guide.html).
 
 <!--
-
-Capital Letters are used for types (Tea Language):
-
-    Bool  Int  Float  Str  List  Dict  Func
 
     class Parser { }
     data Point(x Int, y Int)

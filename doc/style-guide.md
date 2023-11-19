@@ -10,7 +10,7 @@ Here are some recommendations on coding style.
 <div id="toc">
 </div>
 
-## Naming
+## Your Names
 
 ### Procs and Funcs Look Different
 
@@ -34,16 +34,13 @@ Hungarian for global "constants":
 
     var gMyGlobal = {}  # mutable
 
+For consistency, this style is also OK:
+
+    var MY_CONST = 42
+
 Env vars use `CAP_WORDS`:
 
     var maxProcs = ENV.MAX_PROCS
-
-Variables starting with `_`, like `_status`, are reserved by interpreter:
-
-    try false
-    if (_status !== 0) {
-      echo 'failed'
-    }
 
 ### Filenames
 
@@ -55,8 +52,60 @@ Variables starting with `_`, like `_status`, are reserved by interpreter:
 
     my-script.ysh   # runs with YSH
 
+## YSH Names
+
+Capital Letters are used for types:
+
+    Null   Bool   Int   Float   Str
+    List   Dict
+    Proc   Func
+
+Special shell variables:
+
+    PATH   IFS
+
+Global variables that are **silently mutated** by the interpreter start with
+`_`:
+
+    _status   _pipeline_status   _reply
+
+As do functions to access such mutable vars:
+
+    _match()  _start()   _end()
+
+Example:
+
+    try false
+    if (_status !== 0) {
+      echo 'failed'
+    }
+
 ## Related 
 
 - [Shell Language Idioms](shell-idioms.html)
+- [A Feel For YSH Syntax](syntax-feelings.html)
 
 
+<!--
+`kebab-case` is for procs and filenames:
+
+    gc-test   opt-stats   gen-mypy-asdl
+
+    test/spec-runner.ysh
+
+`snake_case` is for local variables:
+
+    proc foo {
+      var deploy_dest = 'bar@example.com'
+      echo $deploy_dest
+    }
+
+`CAPS` are used for global variables built into the shell:
+
+    PATH  IFS  UID  HOSTNAME
+
+External programs also accept environment variables in `CAPS`:
+
+    PYTHONPATH  LD_LIBRARY_PATH
+
+-->

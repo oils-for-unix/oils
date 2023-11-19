@@ -54,20 +54,23 @@ These docs are **ready to read** (though there may be obsolete references to
   | [Tracing Execution](doc/xtrace.html)
   | [Headless Mode](doc/headless.html)
 - YSH:
-  - [A Tour of YSH](doc/ysh-tour.html)
+  - Intro: [A Tour of YSH](doc/ysh-tour.html)
+  | [A Feel For YSH Syntax](doc/syntax-feelings.html) 
   | [YSH vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
   | [What Breaks When You Upgrade to YSH](doc/upgrade-breakage.html)
-  | [YSH Language FAQ](doc/ysh-faq.html)  | [Egg Expressions (YSH Regexes)](doc/eggex.html)
+  | [YSH Language FAQ](doc/ysh-faq.html)
+  - Comparisons: [YSH vs. Shell](doc/ysh-vs-shell.html) | [YSH Expressions vs.
+    Python](doc/ysh-vs-python.html)
+  - Features: [Egg Expressions (YSH Regexes)](doc/eggex.html)
   | [YSH Fixes Shell's Error Handling](doc/error-handling.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](doc/variables.html)
   | [Hay - Custom Languages for Unix Systems](doc/hay.html)
-  | [Warts](doc/warts.html)
 - Language Design:
-  - [A Feel For YSH Syntax](doc/syntax-feelings.html) 
-  | [Syntactic Concepts](doc/syntactic-concepts.html) 
+  - [Syntactic Concepts](doc/syntactic-concepts.html) 
   | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
   | [Language Influences](doc/language-influences.html)
+  - Notes: [Novelties in OSH and YSH](doc/novelties.html) | [Warts](doc/warts.html)
 
 More:
 
