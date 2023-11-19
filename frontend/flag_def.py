@@ -57,7 +57,7 @@ SOURCE_SPEC.LongFlag('--builtin')
 
 COMMAND_SPEC = FlagSpec('command')
 COMMAND_SPEC.ShortFlag('-v')
-# COMMAND_SPEC.ShortFlag('-V')  # Another verbose mode.
+COMMAND_SPEC.ShortFlag('-V')
 
 TYPE_SPEC = FlagSpec('type')
 TYPE_SPEC.ShortFlag('-f')

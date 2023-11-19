@@ -22,7 +22,7 @@ from frontend import flag_spec
 from frontend import consts
 from frontend import reader
 from frontend import typed_args
-from mycpp.mylib import log
+from mycpp.mylib import log, print_stderr
 from pylib import os_path
 from osh import cmd_eval
 
@@ -192,10 +192,29 @@ class Source(vm._Builtin):
         return status
 
 
+def _PrintFreeForm(row):
+    # type: (Tuple[str, str, Optional[str]]) -> None
+    name, kind, resolved = row
+
+    if kind == 'file':
+        what = resolved
+    elif kind == 'alias':
+        what = ('an alias for %s' % qsn.maybe_shell_encode(resolved))
+    else:  # builtin, function, keyword
+        what = 'a shell %s' % kind
+
+    # TODO: Should also print haynode
+
+    print('%s is %s' % (name, what))
+
+    # if kind == 'function':
+    #   bash is the only shell that prints the function
+
+
 def _PrintEntry(arg, row):
     # type: (arg_types.type, Tuple[str, str, Optional[str]]) -> None
 
-    name, kind, resolved = row
+    _, kind, resolved = row
     assert kind is not None
 
     if arg.t:  # short string
@@ -207,19 +226,7 @@ def _PrintEntry(arg, row):
             print(resolved)
 
     else:  # free-form text
-        if kind == 'file':
-            what = resolved
-        elif kind == 'alias':
-            what = ('an alias for %s' % qsn.maybe_shell_encode(resolved))
-        else:  # builtin, function, keyword
-            what = 'a shell %s' % kind
-
-        # TODO: Should also print haynode
-
-        print('%s is %s' % (name, what))
-
-        # if kind == 'function':
-        #   bash is the only shell that prints the function
+        _PrintFreeForm(row)
 
 
 class Command(vm._Builtin):
@@ -249,7 +256,7 @@ class Command(vm._Builtin):
 
         argv, locs = arg_r.Rest2()
 
-        if arg.v:
+        if arg.v or arg.V:
             status = 0
             for argument in argv:
                 r = _ResolveName(argument, self.funcs, self.aliases,
@@ -257,9 +264,15 @@ class Command(vm._Builtin):
                 if len(r):
                     # command -v prints the name (-V is more detailed)
                     # Print it only once.
-                    name, _, _ = r[0]
-                    print(name)
+                    row = r[0]
+                    name, _, _ = row
+                    if arg.v:
+                        print(name)
+                    else:
+                        _PrintFreeForm(row)
                 else:
+                    # match bash behavior by printing to stderr
+                    print_stderr('%s: not found' % argument)
                     status = 1  # nothing printed, but we fail
 
             return status
@@ -441,8 +454,9 @@ class Type(vm._Builtin):
 
             # Error case
             if len(r) == 0:
-                if not arg.t:  # 'type -t X' is silent in this case
-                    self.errfmt.PrintMessage('type: %r not found' % argument)
+                if not arg.t:  # 'type -t' is silent in this case
+                    # match bash behavior by printing to stderr
+                    print_stderr('%s: not found' % argument)
                 status = 1  # nothing printed, but we fail
 
         return status

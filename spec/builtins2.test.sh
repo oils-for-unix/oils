@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: dash bash mksh zsh
 
 #### command -v
@@ -107,6 +107,18 @@ command -V for
 echo status=$?
 
 ## STDOUT:
+ll is an alias for 'ls -l'
+status=0
+echo is a shell builtin
+status=0
+myfunc is a shell function
+status=0
+status=1
+for is a shell keyword
+status=0
+## END
+
+## OK zsh STDOUT:
 ll is an alias for ls -l
 status=0
 echo is a shell builtin
@@ -159,6 +171,26 @@ nonexistent: not found
 status=127
 for is a shell keyword
 status=0
+## END
+
+#### command -V nonexistent
+command -V nonexistent 2>err.txt
+echo status=$?
+fgrep -o 'nonexistent: not found' err.txt || true
+
+## STDOUT:
+status=1
+nonexistent: not found
+## END
+
+## OK zsh/mksh STDOUT:
+nonexistent not found
+status=1
+## END
+
+## BUG dash STDOUT:
+nonexistent: not found
+status=127
 ## END
 
 

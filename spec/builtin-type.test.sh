@@ -75,18 +75,16 @@ type _tmp/file _tmp/ex
 _tmp/ex is _tmp/ex
 ## END
 
-## OK dash/ash status: 0
-## OK dash/ash STDOUT:
-_tmp/file is _tmp/file
-_tmp/ex is _tmp/ex
-## END
-
-## OK zsh/mksh status: 1
-## OK zsh/mksh STDOUT:
+## OK mksh/zsh STDOUT:
 _tmp/file not found
 _tmp/ex is _tmp/ex
 ## END
 
+## BUG dash/ash status: 0
+## BUG dash/ash STDOUT:
+_tmp/file is _tmp/file
+_tmp/ex is _tmp/ex
+## END
 
 #### type -> not found
 
@@ -94,30 +92,26 @@ type zz 2>err.txt
 echo status=$?
 
 # for bash and OSH: print to stderr
-grep -o 'not found' err.txt >&2 || true
+fgrep -o 'zz: not found' err.txt || true
 
 # zsh and mksh behave the same - status 1
 # dash and ash behave the same - status 127
 
 ## STDOUT:
 status=1
-## END
-## STDERR:
-not found
+zz: not found
 ## END
 
-## OK zsh/mksh STDOUT:
+## OK mksh/zsh STDOUT:
 zz not found
 status=1
 ## END
-## OK zsh/mksh STDERR:
+## STDERR:
 ## END
 
-## OK dash/ash STDOUT:
+## BUG dash/ash STDOUT:
 zz: not found
 status=127
 ## END
-## OK dash/ash STDERR:
+## BUG dash/ash STDERR:
 ## END
-
-
