@@ -99,11 +99,10 @@ BigStr* CFileLineReader::readline() {
       log("getline() error: %s", strerror(errno));
       throw Alloc<IOError>(errno);
     }
-    // Expected EOF
-    return kEmptyString;
+    return kEmptyString;  // EOF indicated by by empty string, like Python
   }
 
-  // Note: getline() NUL terminates the buffer
+  // Note: getline() NUL-terminates the buffer
   BigStr* result = ::StrFromC(line, len);
   free(line);
   return result;

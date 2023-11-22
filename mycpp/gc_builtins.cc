@@ -436,8 +436,17 @@ BigStr* raw_input(BigStr* prompt) {
   if (ret == nullptr) {
     throw Alloc<EOFError>();
   }
-  return ret;
 #else
-  assert(0);  // not implemented
+  // Same as pyos::ReadLineBuffered()
+  // For now, test with
+  //    ./configure  --without-readline
+  BigStr* ret = mylib::gStdin->readline();
+  DCHECK(ret != nullptr);
+
+  // Like Python, EOF is indicated with empty string.
+  if (len(ret) == 0) {
+    throw Alloc<EOFError>();
+  }
 #endif
+  return ret;
 }
