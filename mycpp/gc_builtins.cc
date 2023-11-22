@@ -5,17 +5,10 @@
 #include <stdio.h>  // required for readline/readline.h (man readline)
 
 #include "_build/detected-cpp-config.h"
-
-#ifdef HAVE_READLINE
-  #include <readline/readline.h>
-#endif
-
 #include "mycpp/runtime.h"
-
-// forward decl
-namespace py_readline {
-BigStr* readline(BigStr*);
-}
+#ifdef HAVE_READLINE
+  #include "cpp/frontend_pyreadline.h"
+#endif
 
 // Translation of Python's print().
 void print(BigStr* s) {
@@ -431,7 +424,20 @@ int max(List<int>* elems) {
 }
 
 BigStr* raw_input(BigStr* prompt) {
+#if HAVE_READLINE
   BigStr* ret = py_readline::readline(prompt);
+#else
+  // Print until first NUL, like print()
+  fputs(prompt->data_, stdout);
+
+  // Plain read from stdin, without GNU readline.
+
+  // Same as pyos::ReadLineBuffered()
+  // For now, test with
+  //    ./configure  --without-readline
+  BigStr* ret = mylib::gStdin->readline();
+#endif
+
   DCHECK(ret != nullptr);
   // Like Python, EOF is indicated with empty string.
   if (len(ret) == 0) {

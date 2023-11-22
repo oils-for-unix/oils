@@ -308,15 +308,8 @@ BigStr* readline(BigStr* prompt) {
   gReadline->latest_line_ = nullptr;
   return s;
 #else
-  // Print until first NUL, like print()
-  fputs(prompt->data_, stdout);
-
-  // Plain read from stdin, without GNU readline.
-
-  // Same as pyos::ReadLineBuffered()
-  // For now, test with
-  //    ./configure  --without-readline
-  return mylib::gStdin->readline();
+  // TODO: This whole file could be omitted from both Ninja and shell builds?
+  FAIL("Shouldn't be called");
 #endif
 }
 
