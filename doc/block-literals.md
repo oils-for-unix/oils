@@ -25,6 +25,16 @@ eventually procs):
 
 - See [YSH Idioms](idioms.html) for examples of procs.
 
+<!--
+
+- Block literals are  a syntax for unevaluated code like `cd /tmp { echo $ PWD
+  }`. They are instances of "quotation type" `value.Command`.  The  `{ }`
+  syntax is niec for passing to blocks to procs, but they can be passed to
+  funcs as well.
+
+You don't define blocks.  Blocks are data types.
+
+-->
 
 <div id="toc">
 </div>

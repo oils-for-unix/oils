@@ -44,8 +44,8 @@ print-thread() {
   # Get these from Zulip web interface
   local bot_email=$1
   local bot_api_key=$2
-  local stream=${3:-'blog-ideas'}
-  local subject=${4:-'An Ambitious Version of YSH (blog backlog)'}
+  local stream=${3:-'oil-documentation'}
+  local subject=${4:-'Quick Guide to Procs and Funcs (and Blocks)'}
 
   # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
 
@@ -55,7 +55,8 @@ print-thread() {
   # - select records where subject is "needle" var
   # - print the content.  -r prints it raw.
 
-  messages-in-stream "$@" | jq --arg subject "$subject" -r \
+  messages-in-stream "$bot_email" "$bot_api_key" "$stream" | \
+    jq --arg subject "$subject" -r \
     '.messages[] | { content: .content, subject: .subject } |
       select( .subject == $subject ) | (.content + "\n\n")'
 }

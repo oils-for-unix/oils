@@ -10,11 +10,11 @@ YSH has two major units of code: shell-like `proc`, and Python-like `func`.
 
 - Roughly speaking, procs are for "commands" and **I/O**, while funcs are for pure
 **computation**.
-- Procs are often **big**, and often call **small** funcs.  The opposite
-  &mdash; funcs calling procs &mdash; is possible, but rarer.
-- You can write shell scripts **mostly** with procs, and maybe a few funcs.
+- Procs are often **big**, and may call **small** funcs.  The opposite &mdash;
+  funcs calling procs &mdash; is possible, but rarer.
+- You can write shell scripts **mostly** with procs, and perhaps a few funcs.
 
-This doc compares the two mechanisms and gives rough guidelines.
+This doc compares the two mechanisms, and gives rough guidelines.
 
 <!--
 See the blog for more conceptual background: [Oils is
@@ -26,20 +26,37 @@ Exterior-First](https://www.oilshell.org/blog/2023/06/ysh-design.html).
 
 ## Tip: You don't have to use either
 
-General theme:
+YSH is a language that scales both down and up.  You can start with **neither** procs or funcs, just a list of plain commands:
 
-1. No procs
-1. then group into procs
-1. then funcs
+    mkdir -p /tmp/dest
+    cp --verbose *.txt /tmp/dest
 
----
 
-- Block literals are  a syntax for unevaluated code like `cd /tmp { echo $ PWD
-  }`. They are instances of "quotation type" `value.Command`.  The  `{ }`
-  syntax is niec for passing to blocks to procs, but they can be passed to
-  funcs as well.
+Then copy those into procs as the script gets bigger:
 
-You don't define blocks.  Blocks are data types.
+    proc build {
+      make
+    }
+
+    proc deploy {
+      mkdir -p /tmp/dest
+      cp --verbose *.txt /tmp/dest
+    }
+
+    if is-main {
+      build
+      deploy
+    }
+
+Then add a function for pure computation:
+
+    func isCppFile(name) {
+      return (name => endswith('.cc') or name => endswith('.h'))
+    }
+
+    if (isCppFile(ARGV[1])) {
+      echo 'yes'
+    }
 
 ## At a Glance: Procs vs. Funcs
 
@@ -74,10 +91,19 @@ You don't define blocks.  Blocks are data types.
 
   <tr>
     <td>Design</td>
-    <td>Shell-like</td>
-    <td>
+<td>
 
-Python-like (but **pure**)
+Shell-like.
+
+Procs are **shaped like** Unix processes: with `argv`, an integer return
+code, and `stdin` / `stdout` streams.
+
+They're a generalization of Bourne shell functions.
+
+</td>
+<td>
+
+Python-like, but **pure**.
 
 </td>
   </tr>
@@ -85,22 +111,32 @@ Python-like (but **pure**)
   <tr>
 <td>
 
-Architecture ([Oils is Exterior First](https://www.oilshell.org/blog/2023/06/ysh-design.html))
+Architectural Role ([Oils is Exterior First](https://www.oilshell.org/blog/2023/06/ysh-design.html))
 
 </td>
 <td>
 
 **Exterior**: processes and files.
 
-I/O may occur anywhere.
-
 </td>
 
 <td>
 
-**Interior**: functions and garbage-collected data.
+**Interior**: functions and garbage-collected data structures.
 
-Explicit I/O params.
+</td>
+  </tr>
+
+  <tr>
+    <td>I/O</td>
+    <td>
+
+Procs may start external processes and pipelines.  Can perform I/O anywhere.
+
+</td>
+    <td>
+
+Funcs need an explicit `value.IO` param to perform I/O.
 
 </td>
   </tr>
@@ -116,7 +152,7 @@ Explicit I/O params.
 </td>
 <td>
 
-    func myMax(x, y) {
+    func computeMax(x, y) {
       return (x if x > y else y)
     }
 
@@ -136,11 +172,11 @@ Procs can be put in pipelines:
 </td>
 <td>
 
-    var m = maxNum(3, 4)
+    var m = computeMax(3, 4)
 
-Or throw away the return value, for mutating functions:
+Or throw away the return value, which is useful when functions mutate:
 
-    call myMax(3, 4)
+    call computeMax(3, 4)
 
 </td>
   </tr>
@@ -189,7 +225,6 @@ Or throw away the return value, for mutating functions:
 </td>
   </tr>
 
-
   <tr>
     <td>Return Value</td>
     <td>Integer status 0-255</td>
@@ -203,7 +238,14 @@ Any type of value, e.g.
   </tr>
 
   <tr>
-    <td colspan=3 style="text-align: center; padding: 3em">More features ...</td>
+    <td>Interface Evolution</td>
+    <td>Slower: Procs exposed to the outside world may need to evolve in a
+        compatible or "versionless" way.</td>
+    <td>Faster: Funcs may be refactored internally.</td>
+  </tr>
+
+  <tr>
+    <td colspan=3 style="text-align: center; padding: 3em">More <code>proc</code> features ...</td>
   </tr>
 
   <tr>
@@ -224,23 +266,15 @@ Closed `proc p () {`
     assert [42 === x]
 
 </td>
-    <td>No</td>
+    <td>-</td>
   </tr>
 
 </table>
 
-procs:
-
-- open or closed
-  - Open procs are more like shell "functions", and support *Bernstein chaining*
-- Closed procs have 4 types of args: word, positional typed, named typed, block
-- Block is really last positional arg: `cd /tmp { echo $PWD }`
-- lazy arg list `[]` for the typed args
-
 ## Func Calls and Defs
 
-The design is based on Julia, which has all the power of Python, but without
-the special rules around `/` and `*`.
+The design of argument passing is based on Julia, which has all the power of
+Python, but without the special rules of `/` and `*`.
 
 <table>
   <thead>
@@ -333,6 +367,8 @@ Procs have 4 kinds of args, while funcs have 2.  This means procs have the
 above).
 
 The 2 other kinds of args are words and blocks.
+
+- Block is really last positional arg: `cd /tmp { echo $PWD }`
 
 <table>
   <thead>
@@ -581,8 +617,86 @@ Procs
 
 TODO
 
-## Related
+### Related
 
 - [Block Literals](block-literals.html)
+
+## Appendix: Implementation Details
+
+procs vs. funcs both have these concerns:
+
+1. Evaluation of default args at definition time.
+1. Evaluation of actual args at the call site.
+1. Arg-Param binding for builtin functions, e.g. with `typed_args.Reader`.
+1. Arg-Param binding for user-defined functions.
+
+So the implementation can be thought of as a **2 &times; 4 matrix**, with some
+code shared.  This code is mostly in [ysh/func_proc.py]($oils-src).
+
+<!--
+OK we're getting close here -- #**language-design>Unifying Proc and Func Params** 
+
+I think we need to write a quick guide first, not a reference
+
+
+It might have some **tables**
+
+It might mention concerete use cases like the **flag parser** -- #**oil-dev>Progress on argparse**
+
+
+### Diff-based explanation
+
+- why not Python -- because of `/` and `*` special cases
+- Julia influence
+- lazy args for procs `where` filters and `awk`
+- out Ref parameters are for "returning" without printing to stdout
+
+#**language-design>N ways to "return" a value**
+
+
+- What does shell have?
+  - it has blocks, e.g. with redirects
+  - it has functions without params -- only named params
+
+
+- Ruby influence -- rich DSLs
+
+
+So I think you can say we're a mix of
+
+- shell
+- Python
+- Julia (mostly subsumes Python?)
+- Ruby
+
+
+### Implemented-based explanation
+
+- ASDL schemas -- #**oil-dev>Good Proc/Func refactoring**
+
+
+### Big Idea: procs are for I/O, funcs are for computation
+
+We may want to go full in on this idea with #**language-design>func evaluator without redirects and $?**
+
+
+### Very Basic Advice, Up Front
+
+
+Done with #**language-design>value.Place, & operator, read builtin** 
+
+Place works with both func and proc
+
+
+### Bump
+
+I think this might go in the backlog - #**blog-ideas**
+
+
+#**language-design>Simplify proc param passing?**
+
+-->
+
+
 
 <!-- vim sw=2 -->
