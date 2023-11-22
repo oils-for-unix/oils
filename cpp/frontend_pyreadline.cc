@@ -299,15 +299,25 @@ BigStr* readline(BigStr* prompt) {
     }
   }
 
-  if (gReadline->latest_line_ != nullptr) {
-    BigStr* s = StrFromC(gReadline->latest_line_);
-    free(gReadline->latest_line_);
-    gReadline->latest_line_ = nullptr;
-    return s;
+  if (gReadline->latest_line_ == nullptr) {
+    // Like Python, EOF is indicated with empty string.
+    return kEmptyString;
   }
-#endif
+  BigStr* s = StrFromC(gReadline->latest_line_);
+  free(gReadline->latest_line_);
+  gReadline->latest_line_ = nullptr;
+  return s;
+#else
+  // Print until first NUL, like print()
+  fputs(prompt->data_, stdout);
 
-  return nullptr;
+  // Plain read from stdin, without GNU readline.
+
+  // Same as pyos::ReadLineBuffered()
+  // For now, test with
+  //    ./configure  --without-readline
+  return mylib::gStdin->readline();
+#endif
 }
 
 }  // namespace py_readline
