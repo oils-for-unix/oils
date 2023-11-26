@@ -1,6 +1,5 @@
 ---
 default_highlighter: oils-sh
-in_progress: true
 ---
 
 Guide to Procs and Funcs
@@ -8,10 +7,10 @@ Guide to Procs and Funcs
 
 YSH has two major units of code: shell-like `proc`, and Python-like `func`.
 
-- Roughly speaking, procs are for "commands" and **I/O**, while funcs are for pure
-**computation**.
-- Procs are often **big**, and may call **small** funcs.  The opposite &mdash;
-  funcs calling procs &mdash; is possible, but rarer.
+- Roughly speaking, procs are for commands and **I/O**, while funcs are for
+  pure **computation**.
+- Procs are often **big**, and may call **small** funcs.  On the other hand,
+  it's possible, but rarer, for funcs to call procs.
 - You can write shell scripts **mostly** with procs, and perhaps a few funcs.
 
 This doc compares the two mechanisms, and gives rough guidelines.
@@ -24,18 +23,20 @@ Exterior-First](https://www.oilshell.org/blog/2023/06/ysh-design.html).
 <div id="toc">
 </div>
 
-## Tip: You don't have to use either
+## Tip: Start Simple
 
-YSH is a language that scales both down and up.  You can start with **neither** procs or funcs, just a list of plain commands:
+Before going into detail, here's a quick reminder that you don't have to use
+**either** procs or funcs.  YSH is a language that scales both down and up.  
+
+You can start with just a list of plain commands:
 
     mkdir -p /tmp/dest
     cp --verbose *.txt /tmp/dest
 
-
 Then copy those into procs as the script gets bigger:
 
-    proc build {
-      make
+    proc build-app {
+      ninja --verbose
     }
 
     proc deploy {
@@ -43,22 +44,25 @@ Then copy those into procs as the script gets bigger:
       cp --verbose *.txt /tmp/dest
     }
 
-    if is-main {
-      build
-      deploy
+    build-app
+    deploy
+
+Then add funcs if you need pure computation:
+
+    func isTestFile(name) {
+      return (name => endsWith('._test.py'))
     }
 
-Then add a function for pure computation:
-
-    func isCppFile(name) {
-      return (name => endswith('.cc') or name => endswith('.h'))
-    }
-
-    if (isCppFile(ARGV[1])) {
+    if (isTestFile('my_test.py')) {
       echo 'yes'
     }
 
-## At a Glance: Procs vs. Funcs
+## At a Glance
+
+### Procs vs. Funcs
+
+This table summarizes the difference between procs and funcs.  The rest of the
+doc will elaborate on these issues.
 
 <style>
   thead {
@@ -90,20 +94,33 @@ Then add a function for pure computation:
   </thead>
 
   <tr>
-    <td>Design</td>
+    <td>Design Influence</td>
 <td>
 
 Shell-like.
 
-Procs are **shaped like** Unix processes: with `argv`, an integer return
-code, and `stdin` / `stdout` streams.
+</td>
+<td>
 
-They're a generalization of Bourne shell functions.
+Python- and JavaScript-like, but **pure**.
+
+</td>
+  </tr>
+
+  <tr>
+    <td>Shape</td>
+
+<td>
+
+Procs are shaped like Unix processes: with `argv`, an integer return code, and
+`stdin` / `stdout` streams.
+
+They're a generalization of Bourne shell "functions".  
 
 </td>
 <td>
 
-Python-like, but **pure**.
+Funcs are shaped like mathematical functions.
 
 </td>
   </tr>
@@ -174,7 +191,7 @@ Procs can be put in pipelines:
 
     var m = computeMax(3, 4)
 
-Or throw away the return value, which is useful when functions mutate:
+Or throw away the return value, which is useful for functions that mutate:
 
     call computeMax(3, 4)
 
@@ -214,6 +231,8 @@ Or throw away the return value, which is useful when functions mutate:
 1. Typed and Named
 1. Block
 
+Examples shown below.
+
 </td>
     <td>
 
@@ -239,9 +258,16 @@ Any type of value, e.g.
 
   <tr>
     <td>Interface Evolution</td>
-    <td>Slower: Procs exposed to the outside world may need to evolve in a
-        compatible or "versionless" way.</td>
-    <td>Faster: Funcs may be refactored internally.</td>
+<td>
+
+**Slower**: Procs exposed to the outside world may need to evolve in a compatible or "versionless" way.
+
+</td>
+<td>
+
+**Faster**: Funcs may be refactored internally.
+
+</td>
   </tr>
 
   <tr>
@@ -271,15 +297,39 @@ Closed `proc p () {`
 
 </table>
 
-## Func Calls and Defs
+### Func Calls and Defs
 
-The design of argument passing is based on Julia, which has all the power of
-Python, but without the special rules of `/` and `*`.
+Now that we've compared procs and funcs, let's look more closely at funcs.
+They're inherently **simpler**: they have 2 types of args and params, rather
+than 4.
+
+YSH argument binding is based on Julia, which has all the power of Python, but
+without the "evolved warts" (e.g. `/` and `*`).
+
+In general, with all the bells and whistles, func definitions look like:
+
+    # pos args and named args separated with ;
+    func f(p1, p2, ...rest_pos; n1=42, n2='foo', ...rest_named) {
+      return (len(rest_pos) + len(rest_named))
+    }
+
+Func calls look like:
+
+    # spread operator ... at call site
+    var pos_args = [3, 4]
+    var named_args = {foo: 'bar'}
+    var x = f(1, 2, ...pos_args; n1=43, ...named_args)
+
+Note that positional args/params and named args/params can be thought of as two
+"separate worlds".
+
+This table shows simpler, more common cases.
+
 
 <table>
   <thead>
   <tr>
-    <td></td>
+    <td>Args / Params</td>
     <td>Call Site</td>
     <td>Definition</td>
   </tr>
@@ -302,22 +352,39 @@ Python, but without the special rules of `/` and `*`.
   </tr>
 
   <tr>
-    <td>Rest Args (Positional)</td>
+    <td>Spread Pos Args</td>
 <td>
 
-    var x = maxMany(3, 4, 5)
+    var args = [3, 4]
+    var x = myMax(...args)
 
 </td>
 <td>
 
-    func maxMany(...args) {
-      var result = args[0]
+(as above)
+
+</td>
+  </tr>
+
+  <tr>
+    <td>Rest Pos Params</td>
+<td>
+
+    var x = myPrintf("%s is %d", 'bob', 30)
+
+</td>
+<td>
+
+    func myPrintf(fmt, ...args) {
       # ...
     }
 
 </td>
   </tr>
 
+  <tr>
+    <td colspan=3 style="text-align: center; padding: 3em">...</td>
+  </tr>
 
 </td>
   </tr>
@@ -339,7 +406,22 @@ Python, but without the special rules of `/` and `*`.
   </tr>
 
   <tr>
-    <td>Rest Args (named)</td>
+    <td>Spread Named Args</td>
+<td>
+
+    var opts = {start: 5}
+    var x = mySum(3, 4, ...opts)
+
+</td>
+<td>
+
+(as above)
+
+</td>
+  </tr>
+
+  <tr>
+    <td>Rest Named Params</td>
 <td>
 
     var x = f(start=5, end=7)
@@ -352,7 +434,6 @@ Python, but without the special rules of `/` and `*`.
         setvar opts.start = 0
       }
       # ...
-      return (opts)
     }
 
 </td>
@@ -360,27 +441,101 @@ Python, but without the special rules of `/` and `*`.
 
 </table>
 
-## Proc Calls and Defs
+### Proc Calls and Defs
 
-Procs have 4 kinds of args, while funcs have 2.  This means procs have the
-**same** patterns as funcs do, with respect to positional and typed args (shown
-above).
+Like funcs, procs have 2 kinds of typed args/params: positional and named.
 
-The 2 other kinds of args are words and blocks.
+But they may also have **string aka word** args/params, and a **block**
+arg/param.  (The block param is passed as a typed, positional arg, although
+this detail usually doesn't matter.)
 
+In general, a proc signature has 4 sections, like this:
+
+    proc p (
+        w1, w2, ...rest_word;     # word params
+        p1, p2, ...rest_pos;      # pos params
+        n1, n2, ...rest_named;    # named params
+        block                     # block param
+    ) {
+      echo 'body'
+    }
+
+In general, a proc call looks like:
+
+    var pos_args = [3, 4]
+    var named_args = {foo: 'bar'}
+    p /bin /tmp (1, 2, ...pos_args; n1=43, ...named_args) {
+      echo 'block'
+    }
+
+<!--
 - Block is really last positional arg: `cd /tmp { echo $PWD }`
+-->
+
+Some simpler examples:
 
 <table>
   <thead>
   <tr>
-    <td></td>
+    <td>Args / Params</td>
     <td>Call Site</td>
     <td>Definition</td>
   </tr>
   </thead>
 
   <tr>
-    <td>Positional Args</td>
+    <td>Word args</td>
+<td>
+
+    my-cd /tmp
+
+</td>
+<td>
+
+    proc my-cd (dest) {
+      cd $dest
+    }
+
+</td>
+  </tr>
+
+  <tr>
+    <td>Rest Word Params</td>
+<td>
+
+    my-cd -L /tmp
+
+</td>
+<td>
+
+    proc my-cd (...flags) {
+      cd @flags
+    }
+
+  <tr>
+    <td>Spread Word Args</td>
+<td>
+
+    var flags = :| -L /tmp |
+    my-cd @flags
+
+</td>
+<td>
+
+(as above)
+
+</td>
+  </tr>
+
+</td>
+  </tr>
+
+  <tr>
+    <td colspan=3 style="text-align: center; padding: 3em">...</td>
+  </tr>
+
+  <tr>
+    <td>Typed Pos Arg</td>
 <td>
 
     print-max (3, 4)
@@ -388,12 +543,33 @@ The 2 other kinds of args are words and blocks.
 </td>
 <td>
 
-    proc print-max (x, y) {
+    proc print-max ( ; x, y) {
       echo $[x if x > y else y]
     }
 
 </td>
   </tr>
+
+  <tr>
+    <td>Typed Named Arg</td>
+<td>
+
+    print-max (3, 4, start=5)
+
+</td>
+<td>
+
+    proc print-max ( ; x, y; start=0) {
+      # ...
+    }
+
+</td>
+  </tr>
+
+  <tr>
+    <td colspan=3 style="text-align: center; padding: 3em">...</td>
+  </tr>
+
 
 
   <tr>
@@ -415,153 +591,170 @@ The 2 other kinds of args are words and blocks.
 </td>
   </tr>
 
+  <tr>
+    <td>All Four Kinds</td>
+<td>
 
+    p 'word' (42, verbose=true) {
+      echo $PWD
+      echo hi
+    }
+
+</td>
+<td>
+
+    proc p (w; myint; verbose=false; block) {
+      = w
+      = myint
+      = verbose
+      = block
+    }
+
+</td>
+  </tr>
 
 </table>
 
 ## Common Features
 
-### Spread Arguments, Rest Params
+Let's recap the common features of procs and funcs.
 
-- Spread list `...` at call site
+### Spread Args, Rest Params
+
+- Spread arg list `...` at call site
 - Rest params `...` at definition
 
-### `error` builtin to raise errors
+### The `error` builtin raises exceptions
 
-- `error ()` builtin is idiomatic in both
-  - it raises an "exception"
+The `error` builtin is idiomatic in both funcs and procs: 
 
-### Out Params: `&myvar`, `value.Place`
+    func f(x) {   
+      if (x <= 0) {
+        error 'Should be positive' (status=99)
+      }
+    }
+
+Tip: reserve such errors for **exceptional** situations.  For example, an input
+string being invalid may not be uncommon, while a disk full I/O error is more
+exceptional.
+
+(The `error` builtin is implemented with C++ exceptions, which are slow in the
+error case.)
+
+### Out Params: `&myvar` is of type `value.Place`
 
 Out params are more common in procs, because they don't have a typed return
 value.
 
-But they can also be used in funcs.
-
-
-## Two Worlds: Syntax, Semantics, Composition
-
-There are two kinds of composition / code units in YSH, procs and funcs.
-
-procs are called with a "command line":
-
-    my-proc arg1 arg2 arg3
-
-funcs are called with Python/JS-like YSH expressions:
-
-    var x = my_func(42, 'foo')
-    _ my_func(42, 'foo')   # throw away the return value.
-
-This may be legal:
-
-    my-proc (42, 'foo')  # note space
-
-This is NOT legal:
-
-    my_func(42, 'foo')  # it's illegal whether there's a space or not
-
-### More Notes on Procs. vs Funcs
-
-
-procs:
-
-- shell-like / process-like
-  - have string args, stdin/stdout/stderr, and return exit code
-- BUT they also have **typed args** in YSH, including BLocks
-  - args are lazily evaluated?
-- return status is for ERRORS
-- To "return" a list of strings, you should print lines of QSN to stdout!
-- they can have side effects (I/O)
-- they can be run on remote machines
-- they're generally for code that takes more than 10ms?
-
-Examples:
-
-    kebab-case (1, 2, 3)
-    kebab-case {
-      const block = 'literal'
+    proc p ( ; out) {
+      call out->setValue(42)
     }
-    HayBlock {
-      const block = 'literal'
+    var x
+    p (&x)
+    echo "x set to $x"  # => x set to 42
+
+But they can also be used in funcs:
+
+    func f (out) {
+      call out->setValue(42)
     }
+    var x
+    call f(&x)
+    echo "x set to $x"  # => x set to 42
 
-funcs: Python- and JavaScript, like
+Observation: procs can do everything funcs can.  But you may want the purity
+and familiar syntax of a `func`.
 
-- often do pure computation
-- eagerly evaluated args?  not sure
-- no recoverable errors?
-  - well you can use 'try' around the whole thing
-  - glob() can fail
-- run locally?
-- should be fast: should take under 10ms -- which is a typical process start time
-- which means funcs should:
-  - be vectorized in a row
+---
 
-Examples:
+Design note: out params are a nicer way of doing what bash does with `declare
+-n` aka `nameref` variables.  They don't rely on [dynamic
+scope]($xref:dynamic-scope).
 
-    var x = strip(y)
-    = strip(y)  # pretty print
-    _ strip(y)  # not useful
-    echo $[strip(y)]
-    write -- @[split(x)]
-    write -- @[glob(x)]  # it's possible for this to fail
+## Proc-Only Features
 
+Procs have some features that funcs don't have.
 
-## Func 
+### Lazy Arg Lists `where [x > 10]`
 
-Funcs are more  straightforward and small, so let's start here.
+A lazy arg list is implemented with `shopt --set parse_bracket`, and is syntax
+sugar for an unevaluated `value.Expr`.
 
-Procs are actually a **superset** of funcs in most ways, except for the return
-value.
+Longhand:
 
-## Proc
+    var my_expr = ^[42 === x]  # value of type Expr
+    assert (myexpr)
 
+Shorthand:
 
-### Example: A Proc That Wraps Functions
+    assert [42 === x]  # equivalent to the above
 
-Note: procs can technicaly do everything shell functions can.  Except pure
-evaluation.
+### Open Proc Signatures bind `argv`
 
-Procs are more flexible.  Their features
+TODO: Implement new `ARGV` semantics.
 
+When a proc signature omits `()`, it's called **"open"** because the caller can
+pass "extra" arguments:
 
-### Lazy Evaluation of Proc Args
-
-
-### Procs Can Be Open Or Closed (With a Signature)
-
-Shell-like open procs that accept arbitrary numbers of arguments:
-
-    proc open {
+    proc my-open {
       write 'args are' @ARGV
     }
     # All valid:
-    open
-    open 1 
-    open 1 2
+    my-open
+    my-open 1 
+    my-open 1 2
 
 Stricter closed procs:
 
-    proc closed(x) {
+    proc my-closed (x) {
       write 'arg is' $x
     }
-    closed      # runtime error: missing argument
-    closed 1    # valid
-    closed 1 2  # runtime error: too many arguments
+    my-closed      # runtime error: missing argument
+    my-closed 1    # valid
+    my-closed 1 2  # runtime error: too many arguments
 
-### Procs / Shell is the "main"
 
-That is, procs can call funcs, but funcs won't be able to call procs (except
-for some limited cases like `log` and `die`).
+An "open" proc is nearly is nearly identical to a shell function:
 
-### Procs Compose in Two Ways
+    shfunc() {
+      write 'args are' @ARGV
+    }
 
-People may tend to prefer funcs because they're more familiar. But shell
-composition with proc is very powerful!
+## Usage Notes
 
-They have at least two kinds of composition that functions don't have.  See
-#[shell-the-good-parts]($blog-tag) on Bernstein chaining and "point-free"
-pipelines.
+### 3 Ways to Return a Value
+
+Let's review the recommended ways to "return" a value:
+
+1. `return (x)` in a `func`.
+   - The parentheses are required because expressions like `(x + 1)` should
+     look different than words.
+1. Pass a `value.Place` instance to a proc or func.  
+   - That is, out param `&out`.
+1. Print to stdout in a `proc`
+   - Capture it with command sub: `$(myproc)`
+   - Or with `read`: `myproc | read --all; echo $_reply`
+
+Obsolete ways of "returning":
+
+1. Using `declare -n` aka `nameref` variables in bash.
+1. Relying on [dynamic scope]($xref:dynamic-scope) in POSIX shell.
+
+### Procs Compose in Pipelines / "Bernstein Chaining"
+
+Some YSH users may tend toward funcs because they're more familiar. But shell
+composition with procs is very powerful!
+
+They have at least two kinds of composition that funcs don't have.
+
+See #[shell-the-good-parts]($blog-tag):
+
+1. [Shell Has a Forth-Like
+   Quality](https://www.oilshell.org/blog/2017/01/13.html) - Bernstein
+   chaining.
+1. [Pipelines Support Vectorized, Point-Free, and Imperative
+   Style](https://www.oilshell.org/blog/2017/01/15.html) - the shell can
+   transparently run procs as elements of pipelines.
 
 <!--
 
@@ -581,47 +774,18 @@ of a syntactic issue.  But I don't think it's that high priority.
 
 -->
 
-Here are some complicated examples from the tests.  It's not representative of
-what real code looks like, but it shows all the features.
-
-proc:
-
-```
-proc name-with-hyphen (x, y, @names) {
-  echo $x $y
-  echo names: @names
-}
-name-with-hyphen a b c
-```
-
-## Shell Functions vs. Procs
-
-### ARGV
-
-Shell functions:
-
-    f() {
-      write -- "$@"
-    }
-
-
-Procs
-
-    proc p {
-      write -- @ARGV
-    }
-
-
-
 ## Summary
 
-TODO
+YSH is influenced by both shell and Python, so it has both procs and funcs.
 
-### Related
+Many programmers will gravitate towards funcs because they're familiar, but
+procs are more powerful and shell-like.
 
-- [Block Literals](block-literals.html)
+Make your YSH programs by learning to use procs!
 
-## Appendix: Implementation Details
+## Appendix
+
+### Implementation Details
 
 procs vs. funcs both have these concerns:
 
@@ -632,6 +796,16 @@ procs vs. funcs both have these concerns:
 
 So the implementation can be thought of as a **2 &times; 4 matrix**, with some
 code shared.  This code is mostly in [ysh/func_proc.py]($oils-src).
+
+### Related
+
+- [Block Literals](block-literals.html)
+
+<!--
+
+TODO: any reference topics?
+
+-->
 
 <!--
 OK we're getting close here -- #**language-design>Unifying Proc and Func Params** 

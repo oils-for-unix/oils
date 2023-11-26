@@ -92,7 +92,7 @@ YSH has 3 main sublanguages:
 
 Crosscutting design issues:
 
-- [Guide to Procs, Funcs, and Blocks](proc-func.html) &dagger;
+- [Guide to Procs and Funcs](proc-func.html)
   - [Block Literals](block-literals.html) &dagger;
 - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;

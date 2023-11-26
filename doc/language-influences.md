@@ -165,6 +165,21 @@ Multiline strings in YSH strip leading whitespace, similar to Julia:
 
 (Julia has something like blocks too.)
 
+### Go
+
+Like Go, Oils is UTF-8-centric.  (Go blog: [Strings, bytes, runes and
+characters in Go](https://go.dev/blog/strings).)
+
+The design of for loops is roughly influenced by Go:
+
+    for i, item in (mylist) {  # ask for index and value
+      echo "$i $item"
+    }
+
+    for i, k, v in (mydict) {  # ask for index, key, and value
+      echo "$i $k $v"
+    }
+
 ### Awk
 
 YSH gets its regex match operator from Awk:
@@ -297,28 +312,6 @@ LATER:
 
 - R language (probably later, need help): data frames
 	- lazy evaluation like  mutate (ms = secs * 100)
-- Honorable mention: Lua: reentrant interpreter.  However the use of Unix
-  syscalls implies global process state.
-- Lisp: symbol types
-
-Tea Language:
-
-Julia for signatures, default arguments, named arguments:
-
-    func f(p1, p2=0 ; n2, n2=0) {
-    }
-
-And lazy argument lists:
-
-    :(1+2)   # lazy expression in Julia
-
-    mutate :(a, b)  # lazy argument list in YSH
-
-And multi-line strings
-
-    x = '''
-    whitespace stripped
-    '''
 
 Go for type signatures:
 
@@ -336,7 +329,6 @@ Rust:
     0..n and 1..=n ?
     enum
     |x| x+1 
-
 
 Clojure:
 
