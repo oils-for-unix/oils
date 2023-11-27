@@ -52,9 +52,12 @@ setglobal_cxx() {
   local compiler=$1
 
   case $compiler in
-    (cxx)   cxx='c++'    ;;
-    (clang) cxx=$CLANGXX ;;
-    (*)     die "Invalid compiler $compiler" ;;
+    (clang) cxx=$CLANGXX  ;;
+    # Note: we could get rid of this "alias", and use 'c++' everywhere
+    (cxx)   cxx='c++'     ;;
+
+    # e.g. could be cosmoc++
+    (*)     cxx=$compiler ;;
   esac
 }
 
