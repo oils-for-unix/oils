@@ -2090,7 +2090,7 @@ class CommandEvaluator(object):
                 else:
                     # break/continue used in the wrong place.
                     e_die(
-                        'Unexpected %r (in function call)' %
+                        'Unexpected %r (in proc call)' %
                         lexer.TokenVal(e.token), e.token)
             except error.FatalRuntime as e:
                 # Dump the stack before unwinding it

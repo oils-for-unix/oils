@@ -8,7 +8,8 @@ from __future__ import print_function
 import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.syntax_asdl import (loc, command_t, source, CompoundWord)
+from _devbuild.gen.syntax_asdl import (loc, command_t, source, CompoundWord,
+                                       ArgList)
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from core import alloc
 from core import main_loop
@@ -19,10 +20,12 @@ from core import ui
 from frontend import consts
 from frontend import match
 from frontend import reader
+from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 from osh import word_
 from pylib import os_path
+from ysh import func_proc
 
 import libc  # gethostname()
 import posix_ as posix
@@ -31,9 +34,8 @@ from typing import Dict, List, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from frontend.parse_lib import ParseContext
-    from osh.cmd_eval import CommandEvaluator
+    from osh import cmd_eval
     from osh import word_eval
-    from ysh import expr_eval
 
 _ = log
 
@@ -104,7 +106,7 @@ class Evaluator(object):
     def __init__(self, lang, version_str, parse_ctx, mem):
         # type: (str, str, ParseContext, Mem) -> None
         self.word_ev = None  # type: word_eval.AbstractWordEvaluator
-        self.expr_ev = None  # type: expr_eval.ExprEvaluator
+        self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
 
         assert lang in ('osh', 'ysh'), lang
         self.lang = lang
@@ -287,19 +289,41 @@ class Evaluator(object):
     def EvalFirstPrompt(self):
         # type: () -> str
 
-        func_val = self.mem.GetValue('renderPrompt')
-        if func_val.tag() == value_e.Func:
-            # TODO: call this func
-            log('func_val %d', func_val.tag())
-            return 'TODO'
+        UP_func_val = self.mem.GetValue('renderPrompt')
+        if UP_func_val.tag() == value_e.Func:
+            func_val = cast(value.Func, UP_func_val)
 
-        # TODO: ysh should prepend 'ysh' or something?
-        # Or default renderPrompt() could be:
+            pos_args = []  # type: List[value_t]
+            named_args = {}  # type: Dict[str, value_t]
+            # There's no call site
+            arg_list = ArgList.CreateNull()
+
+            rd = typed_args.Reader(pos_args, named_args, arg_list)
+
+            val = func_proc.CallUserFunc(func_val, rd, self.mem, self.cmd_ev)
+            UP_val = val
+
+            with tagswitch(val) as case:
+                if case(value_e.Str):
+                    val = cast(value.Str, UP_val)
+                    return val.s
+                else:
+                    msg = 'renderPrompt() should return Str, got %s' % ui.ValType(val)
+                    return _ERROR_FMT % msg
+
+        ps1_val = self.mem.GetValue('PS1')
+        prompt_str = self.EvalPrompt(ps1_val)
+
+        # Add indication of YSH.  The user can disable this with
         #
-        # func renderPrompt() { return ("$SHELL ${PS1@P}") }
+        # func renderPrompt() {
+        #   return ("${PS1@P}")
+        # }
 
-        val = self.mem.GetValue('PS1')
-        return self.EvalPrompt(val)
+        if self.lang == 'ysh':
+            prompt_str = 'ysh ' + prompt_str
+
+        return prompt_str
 
 
 PROMPT_COMMAND = 'PROMPT_COMMAND'
@@ -312,7 +336,7 @@ class UserPlugin(object):
     """
 
     def __init__(self, mem, parse_ctx, cmd_ev, errfmt):
-        # type: (Mem, ParseContext, CommandEvaluator, ui.ErrorFormatter) -> None
+        # type: (Mem, ParseContext, cmd_eval.CommandEvaluator, ui.ErrorFormatter) -> None
         self.mem = mem
         self.parse_ctx = parse_ctx
         self.cmd_ev = cmd_ev

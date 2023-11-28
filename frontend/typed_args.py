@@ -102,6 +102,8 @@ class Reader(object):
         # that through to here?
         self.is_bound = is_bound
         self.named_args = named_args
+
+        # Note: may be ArgList.CreateNull()
         self.arg_list = arg_list
 
     def LeftParenToken(self):
@@ -117,8 +119,9 @@ class Reader(object):
 
         Applicable to procs as well.
         """
-        # return LeftParenToken() if available
-        if self.arg_list.left:  # may be None for proc like 'json write'
+        # arg_list.left may be None for 'json write', which uses ReaderForProc,
+        # ArgList.CreateNull()
+        if self.arg_list.left:
             return self.arg_list.left
 
         return loc.Missing
@@ -138,7 +141,7 @@ class Reader(object):
             # the same part of the expression
             pos -= 1
 
-        if pos >= 0 and pos < len(self.arg_list.pos_args):
+        if 0 <= pos and pos < len(self.arg_list.pos_args):
             l = location.TokenForExpr(self.arg_list.pos_args[pos])
 
             if l is not None:
@@ -146,14 +149,6 @@ class Reader(object):
 
         # Fall back on call
         return self.LeastSpecificLocation()
-
-    def PosNode(self, i):
-        # type: (int) -> expr_t
-        """Returns the expression handle for the ith positional argument.
-
-        You can use this to produce more specific errors.
-        """
-        return self.arg_list.pos_args[i]
 
     def PosValue(self):
         # type: () -> value_t
@@ -361,13 +356,6 @@ class Reader(object):
         """Returns the location of the given named argument."""
         # TODO: be more specific
         return self.LeastSpecificLocation()
-
-    def NamedNode(self, name):
-        # type: (str) -> Optional[expr_t]
-        """Returns the expression handle for the argument with the given name. The
-        caller can use this to produce more specific error messages."""
-        # TODO
-        return None
 
     def NamedStr(self, param_name, default_):
         # type: (str, str) -> str

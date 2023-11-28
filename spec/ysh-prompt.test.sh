@@ -46,9 +46,11 @@ echo 'echo hi' | $SH -i
 hi
 ^D
 ## END
-## stderr-json: "myprompt$ myprompt$ "
+## stderr-json: "ysh myprompt$ ysh myprompt$ "
 
 #### ysh respects renderPrompt() over PS1
+
+export PS1='myprompt\$ '
 
 cat >yshrc <<'EOF'
 func renderPrompt() {
@@ -59,4 +61,46 @@ EOF
 echo 'echo hi' | $SH -i --rcfile yshrc
 
 ## STDOUT:
+hi
+^D
 ## END
+## stderr-json: "hi$ hi$ "
+
+#### renderPrompt() doesn't return string
+
+export PS1='myprompt\$ '
+
+cat >yshrc <<'EOF'
+func renderPrompt() {
+  return ([42, 43])
+}
+EOF
+
+echo 'echo hi' | $SH -i --rcfile yshrc
+
+## STDOUT:
+hi
+^D
+## END
+## stderr-json: "<Error: renderPrompt() should return Str, got List> <Error: renderPrompt() should return Str, got List> "
+
+
+#### renderPrompt() raises error
+
+export PS1='myprompt\$ '
+
+cat >yshrc <<'EOF'
+func renderPrompt() {
+  error 'oops'
+}
+EOF
+
+echo 'echo hi' | $SH -i --rcfile yshrc
+
+## STDOUT:
+hi
+^D
+## END
+## stderr-json: "<Error: renderPrompt() should return Str, got List> <Error: renderPrompt() should return Str, got List> "
+
+

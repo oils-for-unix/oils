@@ -149,7 +149,7 @@ def InitCircularDeps(
     shell_ex.cmd_ev = cmd_ev
 
     prompt_ev.word_ev = word_ev
-    prompt_ev.expr_ev = expr_ev
+    prompt_ev.cmd_ev = cmd_ev
 
     tracer.word_ev = word_ev
 
