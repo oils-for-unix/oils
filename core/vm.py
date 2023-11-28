@@ -5,7 +5,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token
-from _devbuild.gen.value_asdl import value_t
+from _devbuild.gen.value_asdl import value, value_t
 from core import pyos
 from mycpp.mylib import log
 
@@ -122,6 +122,7 @@ def InitCircularDeps(
         cmd_ev,  # type: CommandEvaluator
         shell_ex,  # type:  _Executor
         prompt_ev,  # type: prompt.Evaluator
+        global_io,  # type: value.IO
         tracer,  # type: dev.Tracer
 ):
     # type: (...) -> None
@@ -149,7 +150,8 @@ def InitCircularDeps(
     shell_ex.cmd_ev = cmd_ev
 
     prompt_ev.word_ev = word_ev
-    prompt_ev.cmd_ev = cmd_ev
+    prompt_ev.expr_ev = expr_ev
+    prompt_ev.global_io = global_io
 
     tracer.word_ev = word_ev
 

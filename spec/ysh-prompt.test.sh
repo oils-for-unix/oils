@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### promptVal() with various values
 
@@ -53,8 +53,12 @@ hi
 export PS1='myprompt\$ '
 
 cat >yshrc <<'EOF'
-func renderPrompt() {
-  return ('hi$ ')
+func renderPrompt(io) {
+  var parts = []
+  call parts->append('hi')
+  call parts->append(io->promptVal('$'))
+  call parts->append(' ')
+  return (join(parts))
 }
 EOF
 
@@ -71,7 +75,7 @@ hi
 export PS1='myprompt\$ '
 
 cat >yshrc <<'EOF'
-func renderPrompt() {
+func renderPrompt(io) {
   return ([42, 43])
 }
 EOF
@@ -90,7 +94,7 @@ hi
 export PS1='myprompt\$ '
 
 cat >yshrc <<'EOF'
-func renderPrompt() {
+func renderPrompt(io) {
   error 'oops'
 }
 EOF
@@ -104,3 +108,20 @@ hi
 ## stderr-json: "<Error: renderPrompt() should return Str, got List> <Error: renderPrompt() should return Str, got List> "
 
 
+#### renderPrompt() has wrong signature
+
+export PS1='myprompt\$ '
+
+cat >yshrc <<'EOF'
+func renderPrompt() {
+  error 'oops'
+}
+EOF
+
+echo 'echo hi' | $SH -i --rcfile yshrc
+
+## STDOUT:
+hi
+^D
+## END
+## stderr-json: "<Error: renderPrompt() should return Str, got List> <Error: renderPrompt() should return Str, got List> "

@@ -33,6 +33,7 @@ from _devbuild.gen.syntax_asdl import (
     PosixClass,
     PerlClass,
     CharCode,
+    ArgList,
 )
 from _devbuild.gen.runtime_asdl import (
     coerced_e,
@@ -321,6 +322,23 @@ class ExprEvaluator(object):
 
             else:
                 raise AssertionError(part.left)
+
+    def PluginCall(self, func_val, pos_args):
+        # type: (value.Func, List[value_t]) -> value_t
+        """For renderPrompt()
+
+        Similar to WordEvaluator.EvalForPlugin(), which evaluates $PS1
+        """
+        with state.ctx_YshExpr(self.mutable_opts):
+
+            named_args = {}  # type: Dict[str, value_t]
+            arg_list = ArgList.CreateNull()  # There's no call site
+            rd = typed_args.Reader(pos_args, named_args, arg_list)
+
+            # TODO: catch exceptions
+            val = func_proc.CallUserFunc(func_val, rd, self.mem, self.cmd_ev)
+
+        return val
 
     def SpliceValue(self, val, part):
         # type: (value_t, word_part.Splice) -> List[str]

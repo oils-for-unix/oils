@@ -551,10 +551,11 @@ def Main(
 
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
+    global_io = value.IO(cmd_ev, prompt_ev)
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
-                        prompt_ev, tracer)
+                        prompt_ev, global_io, tracer)
 
     unsafe_arith = sh_expr_eval.UnsafeArith(mem, exec_opts, mutable_opts,
                                             parse_ctx, arith_ev, errfmt)
@@ -842,7 +843,6 @@ def Main(
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
-    global_io = value.IO(cmd_ev, prompt_ev)
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
 
     #

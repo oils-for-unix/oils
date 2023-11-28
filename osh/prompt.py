@@ -8,8 +8,7 @@ from __future__ import print_function
 import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
-from _devbuild.gen.syntax_asdl import (loc, command_t, source, CompoundWord,
-                                       ArgList)
+from _devbuild.gen.syntax_asdl import (loc, command_t, source, CompoundWord)
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from core import alloc
 from core import main_loop
@@ -20,12 +19,10 @@ from core import ui
 from frontend import consts
 from frontend import match
 from frontend import reader
-from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 from osh import word_
 from pylib import os_path
-from ysh import func_proc
 
 import libc  # gethostname()
 import posix_ as posix
@@ -36,6 +33,7 @@ if TYPE_CHECKING:
     from frontend.parse_lib import ParseContext
     from osh import cmd_eval
     from osh import word_eval
+    from ysh import expr_eval
 
 _ = log
 
@@ -106,7 +104,8 @@ class Evaluator(object):
     def __init__(self, lang, version_str, parse_ctx, mem):
         # type: (str, str, ParseContext, Mem) -> None
         self.word_ev = None  # type: word_eval.AbstractWordEvaluator
-        self.cmd_ev = None  # type: cmd_eval.CommandEvaluator
+        self.expr_ev = None  # type: expr_eval.ExprEvaluator
+        self.global_io = None  # type: value.IO
 
         assert lang in ('osh', 'ysh'), lang
         self.lang = lang
@@ -289,20 +288,16 @@ class Evaluator(object):
     def EvalFirstPrompt(self):
         # type: () -> str
 
+        # First try calling renderPrompt()
         UP_func_val = self.mem.GetValue('renderPrompt')
         if UP_func_val.tag() == value_e.Func:
             func_val = cast(value.Func, UP_func_val)
 
-            pos_args = []  # type: List[value_t]
-            named_args = {}  # type: Dict[str, value_t]
-            # There's no call site
-            arg_list = ArgList.CreateNull()
+            assert self.global_io is not None
+            pos_args = [self.global_io]  # type: List[value_t]
+            val = self.expr_ev.PluginCall(func_val, pos_args)
 
-            rd = typed_args.Reader(pos_args, named_args, arg_list)
-
-            val = func_proc.CallUserFunc(func_val, rd, self.mem, self.cmd_ev)
             UP_val = val
-
             with tagswitch(val) as case:
                 if case(value_e.Str):
                     val = cast(value.Str, UP_val)
@@ -311,15 +306,16 @@ class Evaluator(object):
                     msg = 'renderPrompt() should return Str, got %s' % ui.ValType(val)
                     return _ERROR_FMT % msg
 
+        # Now try evaluating $PS1
+
         ps1_val = self.mem.GetValue('PS1')
         prompt_str = self.EvalPrompt(ps1_val)
 
-        # Add indication of YSH.  The user can disable this with
+        # Add string to show it's YSH.  The user can disable this with
         #
         # func renderPrompt() {
         #   return ("${PS1@P}")
         # }
-
         if self.lang == 'ysh':
             prompt_str = 'ysh ' + prompt_str
 
