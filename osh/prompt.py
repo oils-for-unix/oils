@@ -20,6 +20,7 @@ from frontend import consts
 from frontend import match
 from frontend import reader
 from mycpp import mylib
+from mycpp.mylib import log
 from osh import word_
 from pylib import os_path
 
@@ -31,7 +32,10 @@ if TYPE_CHECKING:
     from core.state import Mem
     from frontend.parse_lib import ParseContext
     from osh.cmd_eval import CommandEvaluator
-    from osh.word_eval import AbstractWordEvaluator
+    from osh import word_eval
+    from ysh import expr_eval
+
+_ = log
 
 
 #
@@ -99,7 +103,8 @@ class Evaluator(object):
 
     def __init__(self, lang, version_str, parse_ctx, mem):
         # type: (str, str, ParseContext, Mem) -> None
-        self.word_ev = None  # type: AbstractWordEvaluator
+        self.word_ev = None  # type: word_eval.AbstractWordEvaluator
+        self.expr_ev = None  # type: expr_eval.ExprEvaluator
 
         assert lang in ('osh', 'ysh'), lang
         self.lang = lang
@@ -281,13 +286,20 @@ class Evaluator(object):
 
     def EvalFirstPrompt(self):
         # type: () -> str
-        if self.lang == 'osh':
-            val = self.mem.GetValue('PS1')
-            return self.EvalPrompt(val)
-        else:
-            # TODO: If the lang is YSH, we should use a better prompt language than
-            # $PS1!!!
-            return self.lang + '$ '
+
+        func_val = self.mem.GetValue('renderPrompt')
+        if func_val.tag() == value_e.Func:
+            # TODO: call this func
+            log('func_val %d', func_val.tag())
+            return 'TODO'
+
+        # TODO: ysh should prepend 'ysh' or something?
+        # Or default renderPrompt() could be:
+        #
+        # func renderPrompt() { return ("$SHELL ${PS1@P}") }
+
+        val = self.mem.GetValue('PS1')
+        return self.EvalPrompt(val)
 
 
 PROMPT_COMMAND = 'PROMPT_COMMAND'

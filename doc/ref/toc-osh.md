@@ -158,7 +158,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY
   [Functions]     X RANDOM   X SECONDS
-  [Shell Vars]    IFS   X LANG
+  [Shell Vars]    IFS   X LANG   X GLOBIGNORE
 ```
 
 <h2 id="plugin">
