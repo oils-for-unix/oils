@@ -6,7 +6,7 @@
 #   devtools/release.sh <function name>
 #
 # Steps:
-#   edit oil-version.txt and build/doc.sh update-src-versions
+#   edit oil-version.txt, build/doc.sh update-src-versions, bump devtools/release-note.sh
 #   $0 make-release-branch
 #   build/py.sh yajl-release
 #   $0 quick-oil-tarball     # build FIRST tarball
