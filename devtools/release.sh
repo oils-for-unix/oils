@@ -94,9 +94,9 @@ auto-machine1() {
   local resume3=${3:-}  # skip past metrics and wild tests
   local resume4=${4:-}  # skip past full spec tests
 
-  ensure-smooth-build
-
   if test -z "$resume"; then
+    ensure-smooth-build
+
     $0 build-and-test
   fi 
 

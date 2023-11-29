@@ -421,6 +421,17 @@ def main(argv):
     log('%s: Wrote %d HTML files -> %s', os.path.basename(sys.argv[0]), n,
         out_dir)
 
+  elif action == 'smoosh-file':
+    # TODO: Should fold this generated code into the source tree, and run in CI
+
+    in_path = argv[2]
+    out_path = argv[3]
+    pairs = [(in_path, out_path)]
+
+    attrs_f = sys.stdout
+    n = SpecFiles(pairs, attrs_f)
+    log('%s: %s -> %s', os.path.basename(sys.argv[0]), in_path, out_path)
+
   elif action == 'write-html-fragments':
 
     out_dir = argv[2]
