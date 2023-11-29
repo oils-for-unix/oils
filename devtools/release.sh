@@ -260,7 +260,6 @@ EOF
   done
 
   ysh/run.sh run-for-release
-  tea/run.sh run-for-release
 }
 
 _spec-sanity-check() {

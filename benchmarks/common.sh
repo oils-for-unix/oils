@@ -10,8 +10,10 @@ readonly __BENCHMARKS_COMMON_SH=1
 #readonly MACHINE1=flanders
 #readonly MACHINE2=lenny
 
-readonly MACHINE1=hoover
-readonly MACHINE2=lenny
+# 2023-11-29: machine1 is still lenny because it has bloaty, which doesn't
+#             work with ELF data emitted by newer GCC on Debian 12
+readonly MACHINE1=lenny
+readonly MACHINE2=hoover
 
 OIL_VERSION=$(head -n 1 oil-version.txt)
 
