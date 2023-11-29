@@ -2,6 +2,7 @@
 in_progress: yes
 body_css_class: width40 help-body
 default_highlighter: oils-sh
+preserve_anchor_case: yes
 ---
 
 OSH Assignment

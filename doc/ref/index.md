@@ -1,5 +1,6 @@
 ---
 default_highlighter: oils-sh
+preserve_anchor_case: yes
 ---
 
 Oils Reference

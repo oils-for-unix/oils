@@ -73,7 +73,7 @@ def demo():
   sys.stdout.write(md2html('*hi*'))
 
 
-def PrettyHref(s):
+def PrettyHref(s, preserve_anchor_case):
   """
   Turn arbitrary heading text into a clickable href with no special characters.
 
@@ -88,7 +88,11 @@ def PrettyHref(s):
   # Join with - and lowercase.  And then remove empty words, unlike Github.
   # This is SIMILAR to what Github does, but there's no need to be 100%
   # compatible.
-  return '-'.join(p.lower() for p in keep if p)
+
+  pretty = '-'.join(p for p in keep if p)
+  if not preserve_anchor_case:
+    pretty = pretty.lower()
+  return pretty
 
 
 class TocExtractor(HTMLParser.HTMLParser):
@@ -187,7 +191,8 @@ class TocExtractor(HTMLParser.HTMLParser):
 TAG_TO_CSS = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}
 
 
-def _MakeTocAndAnchors(opts, toc_tags, headings, toc_pos):
+def _MakeTocAndAnchors(opts, toc_tags, headings, toc_pos,
+                       preserve_anchor_case):
   """
   Given a list of extract headings and TOC position, render HTML to insert.
 
@@ -214,7 +219,7 @@ def _MakeTocAndAnchors(opts, toc_tags, headings, toc_pos):
     # If there was an explicit CSS ID written by the user, use that as the href.
     # I used this in the blog a few times.
 
-    pretty_href = PrettyHref(''.join(text_parts))
+    pretty_href = PrettyHref(''.join(text_parts), preserve_anchor_case)
 
     if css_id:              # A FEW OLD BLOG POSTS USE an explicit CSS ID
       toc_href = css_id
@@ -319,8 +324,9 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
     out_file.write(html)  # Pass through
     return
 
+  preserve_anchor_case = bool(meta.get('preserve_anchor_case', ''))
   insertions = _MakeTocAndAnchors(opts, toc_tags, parser.headings,
-                                  parser.toc_begin_line)
+                                  parser.toc_begin_line, preserve_anchor_case)
 
   log('')
   log('*** Text Insertions:')
