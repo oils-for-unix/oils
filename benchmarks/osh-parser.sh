@@ -280,7 +280,7 @@ stage1-cachegrind() {
   else
     # release: ../benchmark-data/osh-parser/raw.lenny.$job_id
     #maybe_host=$(hostname)
-    maybe_host=$MACHINE2  # lenny
+    maybe_host=$MACHINE1  # lenny
   fi
 
   # Only runs on one machine
