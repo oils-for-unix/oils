@@ -40,3 +40,21 @@ For 'set -o xtrace'.  The leading character is special.
 
 ## Other Plugin
 
+## YSH
+
+### renderPrompt()
+
+Users may define this func to customize their prompt.
+
+The func should take the global `value.IO` instance, and return a prompt string
+(type `value.Str`).
+
+To construct the prompt, it can make calls like
+[`io->promptVal('$')`]($chap-type-method:promptval).
+
+To render the prompt, YSH first checks if this function exists.  Otherwise, it
+uses [`$PS1`]($chap-plugin:PS1) with a `ysh` prefix.
+
+<!-- note: doctools/cmark.py turns promptVal -> promptval -->
+
+

@@ -278,3 +278,11 @@ X [Serialize]     toJ8()   fromJ8()
 X [Wok]           _field()
 X [Hashing]       sha1dc()   sha256()
 ```
+
+<h2 id="plugin">
+  Plugins and Hooks (<a class="group-link" href="chap-plugin.html">plugin</a>)
+</h2>
+
+```chapter-links-plugin
+  [YSH]   renderPrompt()
+```

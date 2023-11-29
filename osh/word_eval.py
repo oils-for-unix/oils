@@ -1854,6 +1854,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         Runtime errors like $(( 1 / 0 )) and mutating $? like $(exit 42)
         are handled here.
+
+        Similar to ExprEvaluator.PluginCall().
         """
         with state.ctx_Registers(self.mem):  # to "sandbox" $? and $PIPESTATUS
             try:

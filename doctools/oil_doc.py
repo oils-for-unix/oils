@@ -57,12 +57,20 @@ _ABBREVIATIONS = {
 
   # alias for osh-help, for backward compatibility
   # to link to the same version
+
+  # TODO: Remove all of these broken links!
   'help':
       _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
   'osh-help':
       _Abbrev('osh-help.html?topic=%(value)s#%(value)s'),
   'oil-help':
       _Abbrev('oil-help.html?topic=%(value)s#%(value)s'),
+
+  # New style: one for every chapter?
+  'chap-type-method':
+      _Abbrev('chap-type-method.html?topic=%(value)s#%(value)s'),
+  'chap-plugin':
+      _Abbrev('chap-plugin.html?topic=%(value)s#%(value)s'),
 
    # for blog
   'osh-help-latest':

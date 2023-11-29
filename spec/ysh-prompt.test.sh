@@ -1,5 +1,4 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
 
 #### promptVal() with various values
 
@@ -105,7 +104,7 @@ echo 'echo hi' | $SH -i --rcfile yshrc
 hi
 ^D
 ## END
-## stderr-json: "<Error: renderPrompt() should return Str, got List> <Error: renderPrompt() should return Str, got List> "
+## stderr-json: "<Runtime error: oops><Runtime error: oops>"
 
 
 #### renderPrompt() has wrong signature
@@ -124,4 +123,6 @@ echo 'echo hi' | $SH -i --rcfile yshrc
 hi
 ^D
 ## END
-## stderr-json: "<Error: renderPrompt() should return Str, got List> <Error: renderPrompt() should return Str, got List> "
+## stderr-json: "<Runtime error: Func 'renderPrompt' takes no positional args, but got 1><Runtime error: Func 'renderPrompt' takes no positional args, but got 1>"
+
+

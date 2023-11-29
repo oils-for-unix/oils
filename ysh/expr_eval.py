@@ -47,6 +47,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName)
 from core import error
 from core.error import e_die, e_die_status
+from core import pyutil
 from core import state
 from core import ui
 from core import vm
@@ -327,16 +328,29 @@ class ExprEvaluator(object):
         # type: (value.Func, List[value_t]) -> value_t
         """For renderPrompt()
 
-        Similar to WordEvaluator.EvalForPlugin(), which evaluates $PS1
+        Similar to
+        - WordEvaluator.EvalForPlugin(), which evaluates $PS1 outside main loop
+        - ReadlineCallback.__call__, which executes shell outside main loop
         """
         with state.ctx_YshExpr(self.mutable_opts):
+            with state.ctx_Registers(self.mem):  # to sandbox globals
+                named_args = {}  # type: Dict[str, value_t]
+                arg_list = ArgList.CreateNull()  # There's no call site
+                rd = typed_args.Reader(pos_args, named_args, arg_list)
 
-            named_args = {}  # type: Dict[str, value_t]
-            arg_list = ArgList.CreateNull()  # There's no call site
-            rd = typed_args.Reader(pos_args, named_args, arg_list)
+                # TODO: catch exceptions
+                try:
+                    val = func_proc.CallUserFunc(func_val, rd, self.mem,
+                                                 self.cmd_ev)
+                except error.FatalRuntime as e:
+                    val = value.Str('<Runtime error: %s>' %
+                                    e.UserErrorString())
 
-            # TODO: catch exceptions
-            val = func_proc.CallUserFunc(func_val, rd, self.mem, self.cmd_ev)
+                except (IOError, OSError) as e:
+                    val = value.Str('<I/O error: %s>' % pyutil.strerror(e))
+
+                except KeyboardInterrupt:
+                    val = value.Str('<Ctrl-C>')
 
         return val
 
