@@ -4,7 +4,6 @@ bin/NINJA_subgraph.py
 
 from __future__ import print_function
 
-import glob
 from build import ninja_lib
 from build.ninja_lib import log
 
@@ -31,8 +30,8 @@ def NinjaGraph(ru):
     # I wish Ninja had DIRECTORY-level dependencies?  Because this should
     # ultimately depend on doc/ref/*.md
     # We could probably create a _build/ninja-stamp/HELP file and so forth
-    files = glob.glob('_devbuild/help/*')
-    files.extend(glob.glob('stdlib/*.ysh'))
+    files = ninja_lib.globs('_devbuild/help/*')
+    files.extend(ninja_lib.globs('stdlib/*.ysh'))
 
     n.build(['_gen/bin/text_files.cc'],
             'embedded-file-gen',

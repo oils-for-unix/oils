@@ -26,6 +26,7 @@ Notes on ninja_syntax.py:
 from __future__ import print_function
 
 import collections
+import glob
 import os
 import sys
 
@@ -34,6 +35,11 @@ def log(msg, *args):
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)
+
+
+def globs(pat):
+  """Deterministic glob, e.g. for _gen/bin/text_files.cc."""
+  return sorted(glob.glob(pat))
 
 
 # Matrix of configurations
