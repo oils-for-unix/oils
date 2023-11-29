@@ -60,7 +60,6 @@ This is a supplement to the [main release page](index.html).
 - [ysh-parse-errors](more-tests.wwz/suite-logs/ysh-parse-errors.txt).  YSH
   parse errors.
 - [ysh-large](more-tests.wwz/suite-logs/ysh-large.txt)
-- [tea-large](more-tests.wwz/suite-logs/tea-large.txt)
 - [arena](more-tests.wwz/suite-logs/arena.txt).  Test an invariant of the parser.
 - [osh-usage](more-tests.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
 - [tools-deps](more-tests.wwz/suite-logs/tools-deps.txt).  Tests for a subcommand in
