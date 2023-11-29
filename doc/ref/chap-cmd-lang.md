@@ -422,15 +422,13 @@ The `=` keyword evaluates an expression and shows the result:
 It's meant to be used interactively.  Think of it as an assignment with no
 variable on the left.
 
-### dcolon
+### call
 
-The `::` keyword evaluates an expression and throws away the result:
+The `call` keyword evaluates an expression and throws away the result:
 
     var x = :| one two |
-    :: x.append('three')
-
-It's meant to look like the shell idiom `: ${x=42}`, but with YSH expressions
-on the right.
+    call x->append('three')
+    call x->append(['typed', 'data'])
 
 ### typed-arg
 

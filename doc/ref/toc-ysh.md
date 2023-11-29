@@ -34,7 +34,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   func-def      func f(x; opt1, opt2) { return (x + 1) }
                   ysh-return    return (myexpr)
                   equal =       = 1 + 2*3
-                  dcolon ::     :: mylist->append(42)
+                  call          call mylist->append(42)
   [YSH Simple]    typed-arg     json write (x)
                   lazy-expr-arg assert [42 === x]
                   block-arg     cd /tmp { echo $PWD }
@@ -249,6 +249,7 @@ X [Proc]      toJson()
   [IO]        X eval()   X captureStdout()
               promptVal()
               X time()   X strftime()
+              X glob()
   [Quotation] Expr   X Template   Command
   [Code]      BuiltinFunc   BuiltinMethod
 ```

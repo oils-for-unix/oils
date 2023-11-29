@@ -134,3 +134,9 @@ TODO: Like the awk function, this takes an timestamp directly.
 
 In other words, it calls C localtime() (which depends on the time zone
 database), and then C strftime().
+
+### glob()
+
+TODO: The free function glob() actually does I/O.  Although maybe it doesn't
+fail?
+
