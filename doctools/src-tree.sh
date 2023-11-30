@@ -156,7 +156,7 @@ highlight() {
   echo
 
   local www_dir=_tmp/src-tree-www
-  mkdir -p $www_dir
+  mkdir -p $BASE_DIR $www_dir
 
   sorted-files > $BASE_DIR/manifest.txt
   wc -l $BASE_DIR/manifest.txt
