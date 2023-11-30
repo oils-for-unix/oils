@@ -58,6 +58,9 @@ class BigStr {
   BigStr* upper();
   BigStr* lower();
 
+  // for raw_input() to look like GNU readline
+  void RemoveNewlineHack();
+
   // Other options for fast comparison / hashing / string interning:
   // - unique_id_: an index into intern table.  I don't think this works unless
   //   you want to deal with rehashing all strings when the set grows.

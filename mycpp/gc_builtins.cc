@@ -427,21 +427,32 @@ BigStr* raw_input(BigStr* prompt) {
 #if HAVE_READLINE
   BigStr* ret = py_readline::readline(prompt);
 #else
+  // For now, test this branch with
+  //    ./configure  --without-readline
+
   // Print until first NUL, like print()
   fputs(prompt->data_, stdout);
 
   // Plain read from stdin, without GNU readline.
+  // Similar to pyos::ReadLineBuffered()
 
-  // Same as pyos::ReadLineBuffered()
-  // For now, test with
-  //    ./configure  --without-readline
   BigStr* ret = mylib::gStdin->readline();
+  DCHECK(ret != nullptr);
+
+  // We have to implement the same interface:
+  // - no trailing newline, e.g. so empty line is the empty string
+  // - EOF is nullptr
+  if (len(ret) == 0) {
+    ret = nullptr;
+  } else {
+    ret->RemoveNewlineHack();
+  }
+
 #endif
 
-  DCHECK(ret != nullptr);
-  // Like Python, EOF is indicated with empty string.
-  if (len(ret) == 0) {
+  if (ret == nullptr) {
     throw Alloc<EOFError>();
   }
+  // log("LINE %d [%s]", len(ret), ret->data_);
   return ret;
 }

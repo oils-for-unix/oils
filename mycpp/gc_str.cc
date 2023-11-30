@@ -533,6 +533,17 @@ unsigned BigStr::hash(HashFunc h) {
   return hash_;
 }
 
+// for raw_input() to look like GNU readline
+void BigStr::RemoveNewlineHack() {
+  CHECK(data_[len_ - 1] == '\n');
+
+  // This is done before using the string, string can't be hashed
+  DCHECK(is_hashed_ == 0);
+
+  data_[len_ - 1] = '\0';
+  len_--;
+}
+
 static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
   auto beg = std::cregex_iterator(fmt, fmt + fmt_len, gStrFmtRegex);
   auto end = std::cregex_iterator();

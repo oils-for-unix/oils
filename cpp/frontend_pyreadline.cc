@@ -300,8 +300,8 @@ BigStr* readline(BigStr* prompt) {
   }
 
   if (gReadline->latest_line_ == nullptr) {
-    // Like Python, EOF is indicated with empty string.
-    return kEmptyString;
+    // EOF
+    return nullptr;
   }
   BigStr* s = StrFromC(gReadline->latest_line_);
   free(gReadline->latest_line_);
