@@ -10,6 +10,7 @@ reader.py - Read lines of input.
 from __future__ import print_function
 
 from mycpp import mylib
+from mycpp.mylib import log
 
 from core.error import p_die
 
@@ -21,6 +22,8 @@ if TYPE_CHECKING:
     from osh import history
     from osh import prompt
     from frontend.py_readline import Readline
+
+_ = log
 
 _PS2 = '> '
 
@@ -101,8 +104,6 @@ class FileLineReader(_Reader):
         if not line.endswith('\n'):
             self.last_line_hint = True
 
-        #from mycpp.mylib import log
-        #log('LINE %r', line)
         return line
 
     def LastLineHint(self):
@@ -154,12 +155,17 @@ class VirtualLineReader(_Reader):
 
 def _readline_no_tty(prompt):
     # type: (str) -> str
+    """
+    Returns line WITH trailing newline, like Python's f.readline(), and unlike
+    raw_input() / GNU readline
+    """
     w = mylib.Stderr()
     w.write(prompt)
     w.flush()
 
     line = mylib.Stdin().readline()
-    if line is None or len(line) == 0:
+    assert line is not None
+    if len(line) == 0:
         # empty string == EOF
         raise EOFError()
 
@@ -213,10 +219,10 @@ class InteractiveLineReader(_Reader):
             # Note: Python/bltinmodule.c builtin_raw_input() has this logic,
             # but doing it in Python reduces our C++ code
             if not mylib.Stdout().isatty() or not mylib.Stdin().isatty():
-                # newline required
-                line = _readline_no_tty(self.prompt_str) + '\n'
+                line = _readline_no_tty(self.prompt_str)
             else:
-                line = raw_input(self.prompt_str) + '\n'  # newline required
+                # GNU readline doesn't return trailing newline
+                line = raw_input(self.prompt_str) + '\n'
         except EOFError:
             print('^D')  # bash prints 'exit'; mksh prints ^D.
 
