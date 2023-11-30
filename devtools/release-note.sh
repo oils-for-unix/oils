@@ -184,21 +184,24 @@ with the previous one, version [$metric_prev](/release/$metric_prev).
 
 The Python reference implementation foo foo
 
-- [OSH spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/survey/osh.html): **2023** tests, 
+- [OSH spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/osh-py/index.html): **2023** tests, 
 **1789** passing, **91** failing
-- [OSH spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/survey/osh.html): **2042** tests, **1814** passing, **89** failing
+- [OSH spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/osh-py/index.html): **2042** tests, **1814** passing, **89** failing
 
 And the C++ translation foo foo
 
-- [C++ spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/cpp/osh-summary.html) - **1684** of **1792** passing
-- [C++ spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/cpp/osh-summary.html) - **1801** of **1817** passing
+- [C++ spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/osh-cpp/compare.html) - **1684** of **1792** passing
+- [C++ spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/osh-cpp/compare.html) - **1801** of **1817** passing
 
----
+YSH got a lot of new behavior:
 
-YSH / Oil foo foo
+- [YSH spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/ysh-py/index.html): **561** tests, **514** passing, **47** failing
+- [YSH spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/ysh-py/index.html): **630** tests, **571** passing, **59** failing
 
-- [Oil spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/oil-language/oil.html): **502** tests, **464** passing, **38** failing
-- [Oil spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/oil-language/oil.html): **506** tests, **466** passing, **40** failing
+And the C++ tarball is catching up rapidly:
+
+- [YSH C++ spec tests for $metric_prev](https://www.oilshell.org/release/$metric_prev/test/spec.wwz/ysh-cpp/compare.html): **357** of **514** passing, delta **157**
+- [YSH C++ spec tests for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/test/spec.wwz/ysh-cpp/compare.html): **492** of **569** passing, delta **77**
 
 
 ### Benchmarks
@@ -209,6 +212,19 @@ Bar Bar
   thousand irefs per line
 - [Parser Performance for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/benchmarks.wwz/osh-parser/): **26.0**
   thousand irefs per line
+
+G G
+
+- [benchmarks/gc for $metric_prev](https://www.oilshell.org/release/$metric_prev/benchmarks.wwz/gc/): \`parse.configure-coreutils\`
+  **1.83 M** objects comprising **62.1 MB**, max RSS **68.9 MB**
+- [benchmarks/gc for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/benchmarks.wwz/gc/): \`parse.configure-coreutils\` **1.83 M** objects comprising **65.0 MB**, max RSS **69.3 MB**
+
+G G
+
+- [benchmarks/gc-cachegrind for $metric_prev](https://www.oilshell.org/release/$metric_prev/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **61.6** million irefs, mut+alloc+free+gc
+- [benchmarks/gc-cachegrind for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/benchmarks.wwz/gc-cachegrind/) - \`fib\` takes **65.4** million irefs, mut+alloc+free+gc
+
+
 
 Foo Foo
 
@@ -224,9 +240,9 @@ The executable spec foo foo
 
 Significant lines:
 
-- [cloc for $metric_prev](https://www.oilshell.org/release/$metric_prev/pub/metrics.wwz/line-counts/osh-cloc.txt):
+- [cloc for $metric_prev](https://www.oilshell.org/release/$metric_prev/pub/metrics.wwz/line-counts/cloc-report.txt):
   **19,581** lines of Python and C, **355** lines of ASDL
-- [cloc for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/pub/metrics.wwz/line-counts/osh-cloc.txt):
+- [cloc for $OILS_VERSION](https://www.oilshell.org/release/$OILS_VERSION/pub/metrics.wwz/line-counts/cloc-report.txt):
   **19,491** lines of Python and C, **363** lines of ASDL
   
 Code in the \`oils-for-unix\` C++ tarball, much of which is generated:
