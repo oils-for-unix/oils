@@ -234,7 +234,7 @@ make-job-wwz() {
   zip -q -r $wwz \
     index.html \
     _test \
-    _tmp/{soil,spec,wild-www,stateful,process-table,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,gc-cachegrind,perf,vm-baseline,osh-runtime,osh-parser,host-id,shell-id,src-tree} \
+    _tmp/{soil,spec,src-tree-www,wild-www,stateful,process-table,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,gc-cachegrind,perf,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
     _tmp/uftrace/{index.html,stage2} \
     web/{base,src-tree,spec-tests,spec-cpp,line-counts,benchmarks,wild}.css web/ajax.js \
     web/table/table-sort.{css,js} \

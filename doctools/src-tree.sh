@@ -155,8 +155,8 @@ highlight() {
   doctools/micro-syntax.sh build $variant
   echo
 
-  local out_dir=$BASE_DIR/www
-  mkdir -p $out_dir
+  local www_dir=_tmp/src-tree-www
+  mkdir -p $www_dir
 
   sorted-files > $BASE_DIR/manifest.txt
   wc -l $BASE_DIR/manifest.txt
@@ -171,18 +171,10 @@ highlight() {
 
   local attrs=$BASE_DIR/attrs.txt
 
-  time all-html-to-files $out_dir > $attrs
+  time all-html-to-files $www_dir > $attrs
 
   # Now write index.html dir listings
-  time doctools/src_tree.py dirs $out_dir < $attrs
-}
-
-highlight-old() {
-  local attrs=$BASE_DIR/attrs-old.txt
-
-  time sorted-files | xargs doctools/src_tree.py files $out_dir > $attrs
-
-  time doctools/src_tree.py dirs $out_dir < $attrs
+  time doctools/src_tree.py dirs $www_dir < $attrs
 }
 
 soil-run() {
