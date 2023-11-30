@@ -210,9 +210,11 @@ class InteractiveLineReader(_Reader):
 
         line = None  # type: Optional[str]
         try:
+            # Note: Python/bltinmodule.c builtin_raw_input() has this logic,
+            # but doing it in Python reduces our C++ code
             if not mylib.Stdout().isatty() or not mylib.Stdin().isatty():
-                line = _readline_no_tty(
-                    self.prompt_str) + '\n'  # newline required
+                # newline required
+                line = _readline_no_tty(self.prompt_str) + '\n'
             else:
                 line = raw_input(self.prompt_str) + '\n'  # newline required
         except EOFError:

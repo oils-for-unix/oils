@@ -431,7 +431,7 @@ BigStr* raw_input(BigStr* prompt) {
   //    ./configure  --without-readline
 
   // Print until first NUL, like print()
-  fputs(prompt->data_, stdout);
+  fputs(prompt->data_, stderr);
 
   // Plain read from stdin, without GNU readline.
   // Similar to pyos::ReadLineBuffered()
