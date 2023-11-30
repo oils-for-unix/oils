@@ -153,11 +153,13 @@ class VirtualLineReader(_Reader):
         return src_line, start_offset
 
 
-def _readline_no_tty(prompt):
+def _PlainPromptInput(prompt):
     # type: (str) -> str
     """
     Returns line WITH trailing newline, like Python's f.readline(), and unlike
     raw_input() / GNU readline
+
+    Same interface as readline.prompt_input().
     """
     w = mylib.Stderr()
     w.write(prompt)
@@ -178,8 +180,8 @@ class InteractiveLineReader(_Reader):
             self,
             arena,  # type: Arena
             prompt_ev,  # type: prompt.Evaluator
-            hist_ev,  # type:history.Evaluator
-            line_input,  # type: Readline
+            hist_ev,  # type: history.Evaluator
+            line_input,  # type: Optional[Readline]
             prompt_state,  # type:PromptState
     ):
         # type: (...) -> None
@@ -190,7 +192,7 @@ class InteractiveLineReader(_Reader):
         _Reader.__init__(self, arena)
         self.prompt_ev = prompt_ev
         self.hist_ev = hist_ev
-        self.line_input = line_input  # may be None!
+        self.line_input = line_input
         self.prompt_state = prompt_state
 
         self.prev_line = None  # type: str
@@ -216,13 +218,13 @@ class InteractiveLineReader(_Reader):
 
         line = None  # type: Optional[str]
         try:
-            # Note: Python/bltinmodule.c builtin_raw_input() has this logic,
-            # but doing it in Python reduces our C++ code
-            if not mylib.Stdout().isatty() or not mylib.Stdin().isatty():
-                line = _readline_no_tty(self.prompt_str)
+            # Note: Python/bltinmodule.c builtin_raw_input() has the isatty()
+            # logic, but doing it in Python reduces our C++ code
+            if (not self.line_input or not mylib.Stdout().isatty() or
+                    not mylib.Stdin().isatty()):
+                line = _PlainPromptInput(self.prompt_str)
             else:
-                # GNU readline doesn't return trailing newline
-                line = raw_input(self.prompt_str) + '\n'
+                line = self.line_input.prompt_input(self.prompt_str)
         except EOFError:
             print('^D')  # bash prints 'exit'; mksh prints ^D.
 
@@ -239,8 +241,8 @@ class InteractiveLineReader(_Reader):
             # previous line, and we have line_input.
             if (len(line.strip()) and line != self.prev_line and
                     self.line_input is not None):
-                self.line_input.add_history(
-                    line.rstrip())  # no trailing newlines
+                # no trailing newlines
+                self.line_input.add_history(line.rstrip())
                 self.prev_line = line
 
         self.prompt_str = _PS2  # TODO: Do we need $PS2?  Would be easy.

@@ -20,6 +20,16 @@ class Readline(object):
         # type: () -> None
         assert line_input is not None
 
+    def prompt_input(self, prompt):
+        # type: (str) -> str
+        """
+        Print prompt, read line, and return it with trailing newline.  Or raise
+        EOFError.
+        """
+        # Add trailing newline to make GNU readline conform to Python's
+        # f.readline() interface
+        return raw_input(prompt) + '\n'
+
     def parse_and_bind(self, s):
         # type: (str) -> None
         line_input.parse_and_bind(s)

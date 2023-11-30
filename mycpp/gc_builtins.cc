@@ -422,37 +422,3 @@ int max(List<int>* elems) {
 
   return ret;
 }
-
-BigStr* raw_input(BigStr* prompt) {
-#if HAVE_READLINE
-  BigStr* ret = py_readline::readline(prompt);
-#else
-  // For now, test this branch with
-  //    ./configure  --without-readline
-
-  // Print until first NUL, like print()
-  fputs(prompt->data_, stderr);
-
-  // Plain read from stdin, without GNU readline.
-  // Similar to pyos::ReadLineBuffered()
-
-  BigStr* ret = mylib::gStdin->readline();
-  DCHECK(ret != nullptr);
-
-  // We have to implement the same interface:
-  // - no trailing newline, e.g. so empty line is the empty string
-  // - EOF is nullptr
-  if (len(ret) == 0) {
-    ret = nullptr;
-  } else {
-    ret->RemoveNewlineHack();
-  }
-
-#endif
-
-  if (ret == nullptr) {
-    throw Alloc<EOFError>();
-  }
-  // log("LINE %d [%s]", len(ret), ret->data_);
-  return ret;
-}

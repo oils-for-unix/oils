@@ -290,25 +290,14 @@ def Main(
 
     Args:
       lang: 'osh' or 'ysh'
-      login_shell: Was - on the front?
+      login_shell: Was - on argv[0]?
       loader: to get help, version, grammar, etc.
       readline: optional GNU readline
-
-    Notes: Does it make sense to create a "pure" shell here?
-
-    - Different vm._Executor - no redirects, fd_state, etc.
-      - tilde evaluator, globs?
-    - Only pure builtins
-    - source builtin has abstract I/O?
-    - Abandon legacy like shell aliases
-
-    Or perhaps we have a separate PureMain() function, along with some kind of
-    main_loop.Headless().
     """
     # Differences between osh and ysh:
     # - oshrc vs yshrc
     # - shopt -s ysh:all
-    # - Default prompt
+    # - Prompt
     # - --help
 
     argv0 = arg_r.Peek()

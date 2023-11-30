@@ -22,6 +22,7 @@ namespace py_readline {
 class Readline {
  public:
   Readline();
+  BigStr* prompt_input(BigStr* prompt);
   void parse_and_bind(BigStr* s);
   void add_history(BigStr* line);
   void read_history_file(BigStr* path);
@@ -66,8 +67,6 @@ class Readline {
 };
 
 Readline* MaybeGetReadline();
-
-BigStr* readline(BigStr* prompt);
 
 }  // namespace py_readline
 

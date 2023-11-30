@@ -168,6 +168,4 @@ int hash(BigStr* s);
 
 int max(int a, int b);
 
-BigStr* raw_input(BigStr* prompt);
-
 #endif  // GC_BUILTINS_H

@@ -90,6 +90,88 @@ Readline::Readline()
 #endif
 }
 
+static void readline_cb(char* line) {
+#if HAVE_READLINE
+  if (line == nullptr) {
+    gReadline->latest_line_ = nullptr;
+  } else {
+    gReadline->latest_line_ = line;
+  }
+  gReadline->ready_ = true;
+  rl_callback_handler_remove();
+#endif
+}
+
+// See the following for some loose documentation on the approach here:
+// https://tiswww.case.edu/php/chet/readline/readline.html#Alternate-Interface-Example
+BigStr* readline(BigStr* prompt) {
+#if HAVE_READLINE
+  fd_set fds;
+  FD_ZERO(&fds);
+  rl_callback_handler_install(prompt->data(), readline_cb);
+
+  gReadline->latest_line_ = nullptr;
+  gReadline->ready_ = false;
+  while (!gReadline->ready_) {
+    // Wait until stdin is ready or we are interrupted.
+    FD_SET(fileno(rl_instream), &fds);
+    int ec = select(FD_SETSIZE, &fds, NULL, NULL, NULL);
+    if (ec == -1) {
+      if (errno == EINTR && pyos::gSignalSafe->PollSigInt()) {
+        // User is trying to cancel. Abort and cleanup readline state.
+        rl_free_line_state();
+        rl_callback_sigcleanup();
+        rl_cleanup_after_signal();
+        rl_callback_handler_remove();
+        throw Alloc<KeyboardInterrupt>();
+      }
+
+      // To be consistent with CPython, retry on all other errors and signals.
+      continue;
+    }
+
+    // Remove this check if we start calling select() with a timeout above.
+    DCHECK(ec > 0);
+    if (FD_ISSET(fileno(rl_instream), &fds)) {
+      // Feed readline.
+      rl_callback_read_char();
+    }
+  }
+
+  if (gReadline->latest_line_ == nullptr) {
+    return kEmptyString;
+  }
+
+  // Like StrFromC(), but add trailing newline to conform to Python's
+  // f.readline() interface.
+  int len = strlen(gReadline->latest_line_);
+  BigStr* s = NewStr(len + 1);
+  memcpy(s->data_, gReadline->latest_line_, len);
+  s->data_[len] = '\n';  // like Python
+
+  free(gReadline->latest_line_);
+  gReadline->latest_line_ = nullptr;
+  return s;
+#else
+  // TODO: This whole file could be omitted from both Ninja and shell builds?
+  FAIL("Shouldn't be called");
+#endif
+}
+
+BigStr* Readline::prompt_input(BigStr* prompt) {
+#if HAVE_READLINE
+  BigStr* ret = readline(prompt);
+  DCHECK(ret != nullptr);
+  if (len(ret) == 0) {
+    throw Alloc<EOFError>();
+  }
+  // log("LINE %d [%s]", len(ret), ret->data_);
+  return ret;
+#else
+  FAIL("Shouldn't be called");
+#endif
+}
+
 void Readline::parse_and_bind(BigStr* s) {
 #if HAVE_READLINE
   // Make a copy -- rl_parse_and_bind() modifies its argument
@@ -248,68 +330,6 @@ Readline* MaybeGetReadline() {
   return gReadline;
 #else
   return nullptr;
-#endif
-}
-
-static void readline_cb(char* line) {
-#if HAVE_READLINE
-  if (line == nullptr) {
-    gReadline->latest_line_ = nullptr;
-  } else {
-    gReadline->latest_line_ = line;
-  }
-  gReadline->ready_ = true;
-  rl_callback_handler_remove();
-#endif
-}
-
-// See the following for some loose documentation on the approach here:
-// https://tiswww.case.edu/php/chet/readline/readline.html#Alternate-Interface-Example
-BigStr* readline(BigStr* prompt) {
-#if HAVE_READLINE
-  fd_set fds;
-  FD_ZERO(&fds);
-  rl_callback_handler_install(prompt->data(), readline_cb);
-
-  gReadline->latest_line_ = nullptr;
-  gReadline->ready_ = false;
-  while (!gReadline->ready_) {
-    // Wait until stdin is ready or we are interrupted.
-    FD_SET(fileno(rl_instream), &fds);
-    int ec = select(FD_SETSIZE, &fds, NULL, NULL, NULL);
-    if (ec == -1) {
-      if (errno == EINTR && pyos::gSignalSafe->PollSigInt()) {
-        // User is trying to cancel. Abort and cleanup readline state.
-        rl_free_line_state();
-        rl_callback_sigcleanup();
-        rl_cleanup_after_signal();
-        rl_callback_handler_remove();
-        throw Alloc<KeyboardInterrupt>();
-      }
-
-      // To be consistent with CPython, retry on all other errors and signals.
-      continue;
-    }
-
-    // Remove this check if we start calling select() with a timeout above.
-    DCHECK(ec > 0);
-    if (FD_ISSET(fileno(rl_instream), &fds)) {
-      // Feed readline.
-      rl_callback_read_char();
-    }
-  }
-
-  if (gReadline->latest_line_ == nullptr) {
-    // EOF
-    return nullptr;
-  }
-  BigStr* s = StrFromC(gReadline->latest_line_);
-  free(gReadline->latest_line_);
-  gReadline->latest_line_ = nullptr;
-  return s;
-#else
-  // TODO: This whole file could be omitted from both Ninja and shell builds?
-  FAIL("Shouldn't be called");
 #endif
 }
 
