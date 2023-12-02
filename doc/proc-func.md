@@ -202,12 +202,12 @@ Or throw away the return value, which is useful for functions that mutate:
     <td>Naming Convention</td>
 <td>
 
-`camelCase`
+`kebab-case`
 
 </td>
 <td>
 
-`kebab-case`
+`camelCase`
 
 </td>
   </tr>
