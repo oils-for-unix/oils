@@ -35,7 +35,11 @@ osh-files() {
 }
 
 ysh-files() {
-  ls ysh/*.{py,pgen2} data_lang/*.py builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
+  ls ysh/*.{py,pgen2} builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
+}
+
+data-lang-files() {
+  ls data_lang/*.py  | filter-py
 }
 
 # cloc doesn't understand ASDL files.
@@ -71,6 +75,12 @@ cloc-report() {
   echo 'YSH (non-blank non-comment lines)'
   echo
   ysh-files | xargs cloc --quiet "$@"
+  echo
+  echo
+
+  echo 'Data Languages (non-blank non-comment lines)'
+  echo
+  data-lang-files | xargs cloc --quiet "$@"
   echo
   echo
 
@@ -172,6 +182,14 @@ ysh-counts() {
 
   ysh-files | $count \
     'YSH' 'Expression grammar, parser, evaluator, etc.' "$@"
+}
+
+data-lang-counts() {
+  local count=$1
+  shift
+
+  data-lang-files | $count \
+    'Data Languages' 'JSON, J8 Notation, ...' "$@"
 }
 
 
@@ -286,6 +304,8 @@ _for-translation() {
 
   ysh-counts $count "$@"
 
+  data-lang-counts $count "$@"
+
   spec-gold-counts $count "$@"
 
   gen-cpp-counts $count "$@"
@@ -298,6 +318,8 @@ _overview() {
   osh-counts $count "$@"
 
   ysh-counts $count "$@"
+
+  data-lang-counts $count "$@"
 
   ls stdlib/*.ysh | $count \
     "YSH stdlib" '' "$@"

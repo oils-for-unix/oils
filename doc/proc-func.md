@@ -271,6 +271,25 @@ Any type of value, e.g.
   </tr>
 
   <tr>
+    <td>Parallelism?</td>
+<td>
+
+Procs can be parallel with:
+
+- shell constructs: pipelines, `&` aka `fork`
+- external tools and the [$0 Dispatch
+  Pattern](https://www.oilshell.org/blog/2021/08/xargs.html): xargs, make,
+  Ninja, etc. 
+
+</td>
+<td>
+
+Funcs are inherently **serial**, unless wrapped in a proc.
+
+</td>
+  </tr>
+
+  <tr>
     <td colspan=3 style="text-align: center; padding: 3em">More <code>proc</code> features ...</td>
   </tr>
 
