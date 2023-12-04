@@ -118,7 +118,8 @@ def IndexLineToHtml(chapter, line, debug_out):
   m = SECTION_RE.match(line, pos)
   if m:
     section_name = m.group(1)
-    href = _StringToHref(section_name)
+    #href = _StringToHref(section_name)
+    href = html_lib.PrettyHref(section_name, preserve_anchor_case=True)
 
     out.PrintUntil(m.start(1))
     out.Print('<a href="%s#%s" class="level2">' % (html_page, href))
@@ -398,10 +399,6 @@ def CardsFromChapters(out_dir, tag_level, paths):
   Args:
     paths: list of chap-*.html to read
   """
-
-  # TODO:
-  # - we only need a few fixed cards
-  # - turn this into a dict with sections
   topics = {}
 
   root_node = DocNode('/')
@@ -429,11 +426,13 @@ def CardsFromChapters(out_dir, tag_level, paths):
       topic_id = id_value if id_value else heading.replace(' ', '-')
 
       if tag == 'h2':
-        h2 = DocNode(heading, attrs=attrs)
+        name = html_lib.PrettyHref(heading, preserve_anchor_case=True)
+        h2 = DocNode(name, attrs=attrs)
         page_node.children.append(h2)
         cur_h2_node = h2
       elif tag == 'h3':
-        h3 = DocNode(heading, attrs=attrs)
+        name = html_lib.PrettyHref(heading, preserve_anchor_case=True)
+        h3 = DocNode(name, attrs=attrs)
         cur_h2_node.children.append(h3)
 
       if tag != tag_level:

@@ -28,11 +28,19 @@ def PrintTree(node, f, indent=0):
 
 
 def Check(all_toc_nodes, chap_tree):
+  """
+  Args:
+    all_toc_nodes: Structure of doc/ref/toc-*.md
+    chap_tree: Structure of chap-*.html
+  """
 
   #pprint(all_toc_nodes)
 
   #sections = []
   all_topics = []
+
+  link_from = set()
+  link_to = set()
 
   section_check = collections.defaultdict(list)
   toc_topic_check = collections.defaultdict(list)
@@ -41,15 +49,20 @@ def Check(all_toc_nodes, chap_tree):
     toc = toc_node['toc']
     print(toc)
     for box_node in toc_node['boxes']:
-      print('  %s' % box_node['to_chap'])
+      to_chap = box_node['to_chap']
+      print('  %s' % to_chap)
       for line_info in box_node['lines']:
         section = line_info['section']
         topics = line_info['topics']
         for topic in topics:
           toc_topic_check[topic].append(toc)
+
+          chap_filename = 'chap-%s.html' % to_chap
+          link_from.add((chap_filename, topic))
+
         all_topics.extend(topics)
 
-        print('    %s: %s' % (section or '?', ' '.join(topics)))
+        #print('    %s: %s' % (section or '?', ' '.join(topics)))
 
   log('')
 
@@ -63,27 +76,10 @@ def Check(all_toc_nodes, chap_tree):
     toc_list = toc_topic_check[topic]
     if len(toc_list) > 1:
       log('%20s: %s', topic, ' '.join(toc_list))
+  log('')
 
-  return
-
-  for box_nodes in all_toc_nodes:
-    for line_info in block:
-      if line_info['section']:
-        sections.append(line_info['section'])
-      topics.extend(line_info['topics'])
-
-  log('Index stats')
-  log('  num blocks = %d', len(index_debug_info))
-  log('  num sections = %d', len(sections))
-  log('  num unique sections = %d', len(set(sections)))
-
-  # 449 topics, 419 unique topics!
-  log('  num topics = %d', len(topics))
-
-  index_topic_set = set(topics)
-  log('  num unique topics = %d', len(index_topic_set))
-
-  return
+  log('%d in link_from set: %s', len(link_from), sorted(link_from)[:10])
+  log('')
 
   if 0:
     PrintTree(chap_tree, sys.stdout)
@@ -92,7 +88,7 @@ def Check(all_toc_nodes, chap_tree):
   num_sections = 0
   num_topics = 0
 
-  chap_topics = {}  # topic_id -> list of chapters
+  chap_topics = collections.defaultdict(list)  # topic_id -> list of chapters
 
   for chap in chap_tree.children:
     num_chapters += 1
@@ -109,9 +105,11 @@ def Check(all_toc_nodes, chap_tree):
         else:
           topic_id = topic.name
 
-        if topic_id not in chap_topics:
-          chap_topics[topic_id] = []
         chap_topics[topic_id].append(chap.name)
+        link_to.add((chap.name, topic.name))
+
+  log('%d in link_to set: %s', len(link_to), sorted(link_to)[:10])
+  log('')
 
   num_sections = sum(len(child.children) for child in chap_tree.children)
   num_sections = sum(len(child.children) for child in chap_tree.children)
@@ -122,13 +120,28 @@ def Check(all_toc_nodes, chap_tree):
 
   chap_topic_set = set(chap_topics)
   log('  num unique topics = %d', len(chap_topic_set))
+  log('')
 
-  not_linked_to = chap_topic_set - index_topic_set
+  index_topic_set = set(toc_topic_check)
 
   assert 'j8-escape' in index_topic_set
   assert 'j8-escape' in chap_topic_set
 
+  broken = link_from - link_to
+  log('%d Broken Links:', len(broken))
+  for pair in sorted(broken):
+    log('  %s', pair)
+  log('')
+
+  orphaned = link_to - link_from
+  log('%d Orphaned Topics:', len(orphaned))
+  for pair in sorted(orphaned):
+    log('  %s', pair)
+  log('')
+
+
   if 0:
+    not_linked_to = chap_topic_set - index_topic_set
     log('')
     log('%d topics not linked to:', len(not_linked_to))
     for topic_id in not_linked_to:

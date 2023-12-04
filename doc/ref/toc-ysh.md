@@ -216,14 +216,13 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [Oil Paths]     ?builtins   ?completion_plugins   ?coprocesses
-  [History]       YSH_HISTFILE
-  [Shell Vars]    ARGV   X ENV   X OPT
-                  X _ESCAPE   _DIALECT
+  [YSH Paths]     ?builtins   ?completion_plugins   ?coprocesses
+  [YSH Vars]      ARGV   X ENV  X _ESCAPE
                   _this_dir
+  [YSH Status]    _status   _pipeline_status   _process_sub_status
+  [YSH Tracing]   SHX_indent   SHX_punct   SHX_pid_str
+  [History]       YSH_HISTFILE
   [Platform]      OILS_VERSION
-  [Exit Status]   _status   _pipeline_status   _process_sub_status
-  [Tracing]       SHX_indent   SHX_punct   SHX_pid_str
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer
 ```

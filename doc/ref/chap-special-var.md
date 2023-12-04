@@ -14,17 +14,17 @@ for OSH and YSH.
 <div id="toc">
 </div>
 
-## Shell Vars
+## YSH Vars
 
-### `ARGV`
+### ARGV
 
 Replacement for `"$@"`
 
-### `_DIALECT`
+### ENV
 
-Name of a dialect being evaluated.
+TODO
 
-### `_this_dir`
+### _this_dir
 
 The directory the current script resides in.  This knows about 3 situations:
 
@@ -34,18 +34,9 @@ The directory the current script resides in.  This knows about 3 situations:
 
 It's useful for "relative imports".
 
-## Platform
+## YSH Status
 
-### OIL_VERSION
-
-The version of Oil that is being run, e.g. `0.9.0`.
-
-<!-- TODO: specify comparison algorithm. -->
-
-## Exit Status
-
-
-### `_status`
+### _status
 
 Set by the `try` builtin.
 
@@ -54,15 +45,15 @@ Set by the `try` builtin.
       echo 'failed'
     }
 
-### `_pipeline_status`
+### _pipeline_status
 
 Alias for [PIPESTATUS]($osh-help).
 
-### `_process_sub_status`
+### _process_sub_status
 
 The exit status of all the process subs in the last command.
 
-## Tracing
+## YSH Tracing
 
 ### SHX_indent
 
@@ -71,23 +62,33 @@ The exit status of all the process subs in the last command.
 ### SHX_pid_str
 
 
-<h2 id="env">Environment Variables</h2>
+## Shell Vars
 
-### Shell Options
+### IFS
 
-<!-- CONFLICT: Duplicates the above -->
+Used for word splitting.  And the builtin `shSplit()` function.
 
-<h4 id="SHELLOPTS">SHELLOPTS</h4>
+### LANG
 
-For the 'set' builtin.
+TODO: bash compat
 
-<h4 id="BASHOPTS">BASHOPTS</h4>
+### GLOBIGNORE
 
-For the 'shopt' builtin.
+TODO: bash compat
 
-<h3>Other Env</h3>
+## Shell Options
 
-<h4 id="HOME">HOME</h4>
+### SHELLOPTS
+
+bash compat: serialized options for the `set` builtin.
+
+### BASHOPTS
+
+bash compat: serialized options for the `shopt` builtin.
+
+## Other Env
+
+### HOME
 
 $HOME is used for:
 
@@ -97,71 +98,122 @@ $HOME is used for:
 Note: The shell doesn't set $HOME.  According to POSIX, the program that
 invokes the login shell sets it based on /etc/passwd.
 
-<h4 id="PATH">PATH</h4>
+### PATH
 
 A colon-separated string that's used to find executables to run.
 
-<h4 id="IFS">IFS</h4>
 
-Used for word splitting.  And the builtin split() function.
+## POSIX Special
 
-<h3>Oil Paths</h3>
+## Other Special
 
-<h2 id="special">Special Variables</h2>
+### BASH_REMATCH
 
-### Special
+Result of regex evaluation `[[ $x =~ $pat ]]`.
 
-### POSIX Special
+### PIPESTATUS
 
-### Other Special
+Exit code of each element in a pipeline.
 
-### Oil Special
+## Platform
 
-### Platform
+### OILS_VERSION
 
-### Call Stack
+The version of Oil that is being run, e.g. `0.9.0`.
 
-### Tracing
+<!-- TODO: specify comparison algorithm. -->
 
-### Process State
+## Call Stack
 
-### Process Stack
+## Tracing
 
-### Shell State
+### LINENO
 
-<h3>Completion</h3>
+## Process State
 
-<h4 id="COMP_WORDS">COMP_WORDS</h4>
+### BASHPID
+
+TODO
+
+### PPID
+
+TODO
+
+### UID
+
+### EUID
+
+## Process Stack
+
+## Shell State
+
+## Completion
+
+### COMP_WORDS
 
 An array of words, split by : and = for compatibility with bash.  New
 completion scripts should use COMP_ARGV instead.
 
-<h4 id="COMP_CWORD">COMP_CWORD</h4>
+### COMP_CWORD
 
 Discouraged; for compatibility with bash.
 
-<h4 id="COMP_LINE">COMP_LINE</h4>
+### COMP_LINE
 
 Discouraged; for compatibility with bash.
 
-<h4 id="COMP_POINT">COMP_POINT</h4>
+### COMP_POINT
 
 Discouraged; for compatibility with bash.
 
-<h4 id="COMPREPLY">COMPREPLY</h4>
+### COMPREPLY
 
 User-defined completion functions should Fill this array with candidates.  It
 is cleared on every completion request.
 
-<h4 id="COMP_ARGV">COMP_ARGV</h4>
+### COMP_ARGV
 
 An array of partial command arguments to complete.  Preferred over COMP_WORDS.
 The compadjust builtin uses this variable.
 
 (An OSH extension to bash.)
 
-<h3>Functions</h3>
+## History
+
+### HISTFILE
+
+### YSH_HISTFILE
+
+## cd
+
+### PWD
+
+### OLDPWD
+
+### CDPATH
+
+## getopts
+
+### OPTIND
+
+### OPTARG
+
+### OPTERR
+
+## read
+
+### REPLY
 
 
-### Other Special
+
+
+## Functions
+
+### RANDOM
+
+bash compat
+
+### SECONDS
+
+bash compat
 

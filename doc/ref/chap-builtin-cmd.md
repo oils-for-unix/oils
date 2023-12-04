@@ -385,7 +385,7 @@ Format specifiers:
 
 Alias for `mapfile`.
 
-#### mapfile
+### mapfile
 
     mapfile FLAG* ARRAY?
 

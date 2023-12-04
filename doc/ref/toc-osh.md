@@ -139,7 +139,8 @@ X [Unsupported]   enable
   Special Variables (<a class="group-link" href="chap-special-var.html">special-var</a>)
 </h2>
 
-```chapter-links-osh
+```chapter-links-special-var
+  [Shell Vars]    IFS   X LANG   X GLOBIGNORE
   [Shell Options] SHELLOPTS   X BASHOPTS
   [Other Env]     HOME   PATH
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
@@ -147,7 +148,7 @@ X [Unsupported]   enable
   [Platform]      HOSTNAME   OSTYPE
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
                   X @BASH_ARGV   X @BASH_ARGC
-  [Tracing]       LINENO   SOURCE_NAME
+  [Tracing]       LINENO
   [Process State] X BASHPID   X PPID   UID   EUID   
 X [Process Stack] BASH_SUBSHELL   SHLVL
 X [Shell State]   BASH_CMDS   @DIRSTACK
@@ -159,7 +160,6 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
   [getopts]       OPTIND   OPTARG   X OPTERR
   [read]          REPLY
   [Functions]     X RANDOM   X SECONDS
-  [Shell Vars]    IFS   X LANG   X GLOBIGNORE
 ```
 
 <h2 id="plugin">

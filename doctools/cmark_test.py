@@ -188,29 +188,5 @@ hello one.
     self.assertEqual('Two', ''.join(text))
 
 
-class FunctionsTest(unittest.TestCase):
-
-  def testPrettyHref(self):
-    self.assertEqual('foo-bar', cmark.PrettyHref('foo  bar', False))
-    self.assertEqual('why-not', cmark.PrettyHref('Why Not??', False))
-    self.assertEqual('cant-touch-this', cmark.PrettyHref("Can't Touch This!", False))
-
-    self.assertEqual('foo-bar', cmark.PrettyHref('foo  bar', True))
-    self.assertEqual('Why-Not', cmark.PrettyHref('Why Not??', True))
-    self.assertEqual('Cant-Touch-This', cmark.PrettyHref("Can't Touch This!", True))
-
-    # This is what github does:
-    if 0:
-      self.assertEqual('section-2--3', cmark.PrettyHref("Section 2 + 3"))
-      self.assertEqual('break--return--continue', cmark.PrettyHref("break / return / continue"))
-      self.assertEqual('inside-', cmark.PrettyHref('Inside ${}'))
-    # Ours is cleaner
-    else:
-      self.assertEqual('section-2-3', cmark.PrettyHref("Section 2 + 3", False))
-      self.assertEqual('break-return-continue', cmark.PrettyHref("break / return / continue", False))
-      self.assertEqual('inside', cmark.PrettyHref('Inside ${}', False))
-      self.assertEqual('bash-compatible', cmark.PrettyHref('Bash-Compatible', False))
-
-
 if __name__ == '__main__':
   unittest.main()

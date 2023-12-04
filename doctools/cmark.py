@@ -15,7 +15,7 @@ import os
 import re
 import sys
 
-from doctools  import html_lib
+from doctools import html_lib
 from doctools import doc_html  # templates
 from doctools import oil_doc
 
@@ -71,28 +71,6 @@ def md2html(text):
 
 def demo():
   sys.stdout.write(md2html('*hi*'))
-
-
-def PrettyHref(s, preserve_anchor_case):
-  """
-  Turn arbitrary heading text into a clickable href with no special characters.
-
-  This is modelled after what github does.  It makes everything lower case.
-  """
-  # Split by whitespace or hyphen
-  words = re.split(r'[\s\-]+', s)
-
-  # Keep only alphanumeric
-  keep = [''.join(re.findall(r'\w+', w)) for w in words]
-
-  # Join with - and lowercase.  And then remove empty words, unlike Github.
-  # This is SIMILAR to what Github does, but there's no need to be 100%
-  # compatible.
-
-  pretty = '-'.join(p for p in keep if p)
-  if not preserve_anchor_case:
-    pretty = pretty.lower()
-  return pretty
 
 
 class TocExtractor(HTMLParser.HTMLParser):
@@ -219,7 +197,8 @@ def _MakeTocAndAnchors(opts, toc_tags, headings, toc_pos,
     # If there was an explicit CSS ID written by the user, use that as the href.
     # I used this in the blog a few times.
 
-    pretty_href = PrettyHref(''.join(text_parts), preserve_anchor_case)
+    pretty_href = html_lib.PrettyHref(''.join(text_parts),
+                                      preserve_anchor_case=preserve_anchor_case)
 
     if css_id:              # A FEW OLD BLOG POSTS USE an explicit CSS ID
       toc_href = css_id
