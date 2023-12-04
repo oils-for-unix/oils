@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import collections
 import json
+from pprint import pprint
 import sys
 
 from doctools.util import log
@@ -26,15 +27,46 @@ def PrintTree(node, f, indent=0):
     PrintTree(ch, f, indent+1)
 
 
-def Check(index_debug_info, chap_tree):
+def Check(all_toc_nodes, chap_tree):
 
-  from pprint import pprint
-  pprint(index_debug_info)
+  #pprint(all_toc_nodes)
 
-  sections = []
-  topics = []
+  #sections = []
+  all_topics = []
 
-  for block in index_debug_info:
+  section_check = collections.defaultdict(list)
+  toc_topic_check = collections.defaultdict(list)
+
+  for toc_node in all_toc_nodes:
+    toc = toc_node['toc']
+    print(toc)
+    for box_node in toc_node['boxes']:
+      print('  %s' % box_node['to_chap'])
+      for line_info in box_node['lines']:
+        section = line_info['section']
+        topics = line_info['topics']
+        for topic in topics:
+          toc_topic_check[topic].append(toc)
+        all_topics.extend(topics)
+
+        print('    %s: %s' % (section or '?', ' '.join(topics)))
+
+  log('')
+
+  log('Topics in TOC: %d', len(all_topics))
+  log('Unique topics in TOC: %d', len(set(all_topics)))
+  log('')
+
+  log('Duplicate topics in TOC:')
+  log('')
+  for topic in sorted(toc_topic_check):
+    toc_list = toc_topic_check[topic]
+    if len(toc_list) > 1:
+      log('%20s: %s', topic, ' '.join(toc_list))
+
+  return
+
+  for box_nodes in all_toc_nodes:
     for line_info in block:
       if line_info['section']:
         sections.append(line_info['section'])
@@ -51,7 +83,9 @@ def Check(index_debug_info, chap_tree):
   index_topic_set = set(topics)
   log('  num unique topics = %d', len(index_topic_set))
 
-  if 1:
+  return
+
+  if 0:
     PrintTree(chap_tree, sys.stdout)
 
   num_chapters = 0
@@ -94,11 +128,11 @@ def Check(index_debug_info, chap_tree):
   assert 'j8-escape' in index_topic_set
   assert 'j8-escape' in chap_topic_set
 
-  log('')
-  log('%d topics not linked to:', len(not_linked_to))
-  for topic_id in not_linked_to:
-    log('  %s in %s', topic_id, chap_topics[topic_id])
-
+  if 0:
+    log('')
+    log('%d topics not linked to:', len(not_linked_to))
+    for topic_id in not_linked_to:
+      log('  %s in %s', topic_id, chap_topics[topic_id])
 
   log('')
   log('Topics in multiple chapters:')

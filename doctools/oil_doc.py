@@ -468,7 +468,10 @@ def HighlightCode(s, default_highlighter, debug_out=None):
 
               plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, chapter)
               block_debug_info = plugin.PrintHighlighted(out)
-              debug_out.append(block_debug_info)
+
+              # e.g. these are links to cmd-lang within a block in toc-ysh
+              chap_block = {'to_chap': chapter, 'lines': block_debug_info}
+              debug_out.append(chap_block)
 
               out.SkipTo(slash_code_left)
 

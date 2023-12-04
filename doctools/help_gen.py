@@ -394,6 +394,11 @@ def CardsFromIndex(sh, out_prefix):
 
 
 def CardsFromChapters(out_dir, tag_level, paths):
+  """
+  Args:
+    paths: list of chap-*.html to read
+  """
+
   # TODO:
   # - we only need a few fixed cards
   # - turn this into a dict with sections
@@ -580,13 +585,13 @@ def TopicMetadata():
     from doctools import ref_check
 
     chapters = []
-    index_debug_info = []
+    all_toc_nodes = []
 
     for path in argv[2:]:
       filename = os.path.basename(path)
 
       if filename.endswith('.md'):
-        assert filename.startswith('index-'), path
+        assert filename.startswith('toc-'), path
 
         # First convert to HTML
         with open(path) as in_file:
@@ -594,8 +599,11 @@ def TopicMetadata():
 
         # Now highlight code, which # which gives debug output for the
         # language-chapter-links-*
+
+        box_nodes = []
         html = oil_doc.HighlightCode(html, None,
-                                     debug_out=index_debug_info)
+                                     debug_out=box_nodes)
+        all_toc_nodes.append({'toc': filename, 'boxes': box_nodes})
 
       elif filename.endswith('.html'):
         assert filename.startswith('chap-'), path
@@ -604,13 +612,17 @@ def TopicMetadata():
         chapters.append(path)
 
       else:
-        raise RuntimeError('Expected index-* or chap-*, got %r' % filename)
+        raise RuntimeError('Expected toc-* or chap-*, got %r' % filename)
 
     # out_dir=None so we don't write anything
     topics, chap_tree = CardsFromChapters(None, 'h3', chapters)
-    #print(topics)
 
-    ref_check.Check(index_debug_info, chap_tree)
+    #log('%d chapters: %s', len(chapters), chapters[:5])
+    log('%d topics: %s', len(topics), topics.keys()[:10])
+
+    #pprint.pprint(index_debug_info)
+
+    ref_check.Check(all_toc_nodes, chap_tree)
 
 
     # TODO: check all docs
