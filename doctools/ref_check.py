@@ -84,14 +84,16 @@ def Check(all_toc_nodes, chap_tree):
   if 0:
     PrintTree(chap_tree, sys.stdout)
 
-  num_chapters = 0
   num_sections = 0
   num_topics = 0
 
+  num_topics_written = 0
+
   chap_topics = collections.defaultdict(list)  # topic_id -> list of chapters
 
+  min_words = 5  # arbitrary
+
   for chap in chap_tree.children:
-    num_chapters += 1
 
     for section in chap.children:
       num_sections += 1
@@ -108,15 +110,23 @@ def Check(all_toc_nodes, chap_tree):
         chap_topics[topic_id].append(chap.name)
         link_to.add((chap.name, topic.name))
 
+        # split by whitespace
+        num_words = len(topic.text.split())
+        if num_words > min_words:
+          num_topics_written += 1
+        elif num_words > 1:
+          log('short: %r', topic.text)
+
   log('%d in link_to set: %s', len(link_to), sorted(link_to)[:10])
   log('')
 
-  num_sections = sum(len(child.children) for child in chap_tree.children)
-  num_sections = sum(len(child.children) for child in chap_tree.children)
+  num_chapters = len(chap_tree.children)
+
   log('Chapter stats')
   log('  num chapters = %d', num_chapters)
   log('  num_sections = %d', num_sections)
   log('  num_topics = %d', num_topics)
+  log('  topics with more than %d words = %d', min_words, num_topics_written)
 
   chap_topic_set = set(chap_topics)
   log('  num unique topics = %d', len(chap_topic_set))
@@ -127,25 +137,18 @@ def Check(all_toc_nodes, chap_tree):
   assert 'j8-escape' in index_topic_set
   assert 'j8-escape' in chap_topic_set
 
-  broken = link_from - link_to
-  log('%d Broken Links:', len(broken))
-  for pair in sorted(broken):
-    log('  %s', pair)
-  log('')
-
-  orphaned = link_to - link_from
-  log('%d Orphaned Topics:', len(orphaned))
-  for pair in sorted(orphaned):
-    log('  %s', pair)
-  log('')
-
-
   if 0:
-    not_linked_to = chap_topic_set - index_topic_set
+    broken = link_from - link_to
+    log('%d Broken Links:', len(broken))
+    for pair in sorted(broken):
+      log('  %s', pair)
     log('')
-    log('%d topics not linked to:', len(not_linked_to))
-    for topic_id in not_linked_to:
-      log('  %s in %s', topic_id, chap_topics[topic_id])
+
+    orphaned = link_to - link_from
+    log('%d Orphaned Topics:', len(orphaned))
+    for pair in sorted(orphaned):
+      log('  %s', pair)
+    log('')
 
   log('')
   log('Topics in multiple chapters:')

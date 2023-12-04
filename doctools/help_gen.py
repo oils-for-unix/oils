@@ -366,9 +366,10 @@ def HelpTopics(s):
 class DocNode(object):
   """To visualize doc structure."""
 
-  def __init__(self, name, attrs=None):
+  def __init__(self, name, attrs=None, text=None):
     self.name = name
     self.attrs = attrs  # for h2 and h3 links
+    self.text = text
     self.children = []
 
 
@@ -432,7 +433,8 @@ def CardsFromChapters(out_dir, tag_level, paths):
         cur_h2_node = h2
       elif tag == 'h3':
         name = html_lib.PrettyHref(heading, preserve_anchor_case=True)
-        h3 = DocNode(name, attrs=attrs)
+        # attach text so we can see which topics have empty bodies
+        h3 = DocNode(name, attrs=attrs, text=text)
         cur_h2_node.children.append(h3)
 
       if tag != tag_level:
@@ -461,8 +463,6 @@ def CardsFromChapters(out_dir, tag_level, paths):
 
     root_node.children.append(page_node)
 
-  # 89 sections, 257 topics/cards
-  # Also want stats about which ones are done
   num_sections = sum(len(child.children) for child in root_node.children)
 
   log('%d chapters -> (doctools/make_help) -> %d <h3> cards from %d <h2> sections to %s',
@@ -555,7 +555,7 @@ def main(argv):
     cc_prefix = argv[4]
     pages = argv[5:]
 
-    topic_dict, debug_info = CardsFromChapters(out_dir, 'h3', pages)
+    topic_dict, _ = CardsFromChapters(out_dir, 'h3', pages)
 
     # Write topic dict as Python and C++
 
@@ -606,26 +606,18 @@ def TopicMetadata():
 
       elif filename.endswith('.html'):
         assert filename.startswith('chap-'), path
-
-        # . CardsFromChapters() on chap-*, which gives you debug_Info above
         chapters.append(path)
 
       else:
         raise RuntimeError('Expected toc-* or chap-*, got %r' % filename)
 
-    # out_dir=None so we don't write anything
     topics, chap_tree = CardsFromChapters(None, 'h3', chapters)
 
     #log('%d chapters: %s', len(chapters), chapters[:5])
     log('%d topics: %s', len(topics), topics.keys()[:10])
-
-    #pprint.pprint(index_debug_info)
+    log('')
 
     ref_check.Check(all_toc_nodes, chap_tree)
-
-
-    # TODO: check all docs
-    # 3. Ref Check
 
   else:
     raise RuntimeError('Invalid action %r' % action)

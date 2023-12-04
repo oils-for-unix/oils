@@ -204,8 +204,17 @@ The compadjust builtin uses this variable.
 
 ### REPLY
 
+OSH read sets this:
 
+    read < myfile
 
+### _reply
+
+YSH read sets this:
+
+    read --line < myfile
+
+    read --all < myfile
 
 ## Functions
 

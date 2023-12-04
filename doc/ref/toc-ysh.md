@@ -223,6 +223,7 @@ X [External Lang] BEGIN   END   when (awk)
   [YSH Tracing]   SHX_indent   SHX_punct   SHX_pid_str
   [History]       YSH_HISTFILE
   [Platform]      OILS_VERSION
+  [read]          _reply
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer
 ```
