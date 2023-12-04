@@ -102,13 +102,16 @@ def IndexLineToHtml(chapter, line, debug_out):
 
   html_page = 'chap-%s.html' % chapter
 
-  pos = 0 # position within line
+  pos = 0  # position within line
+
+  section_impl = True
 
   if line.startswith('X '):
     out.Print(X_LEFT_SPAN)
     out.PrintUntil(2)
     out.Print('</span>')
     pos = 2
+    section_impl = False
   elif line.startswith('  '):
     pos = 2
   else:
@@ -130,7 +133,7 @@ def IndexLineToHtml(chapter, line, debug_out):
   else:
     section_name = None
 
-  line_info = {'section': section_name, 'topics': []}
+  line_info = {'section': section_name, 'impl': section_impl, 'topics': []}
   debug_out.append(line_info)
 
   _WHITESPACE = re.compile(r'[ ]+')
@@ -146,15 +149,17 @@ def IndexLineToHtml(chapter, line, debug_out):
     if not m or m.group(2) in _NOT_A_TOPIC:
       break
 
+    topic_impl = True
     if m.group(1):
       out.PrintUntil(m.start(1))
       out.Print(X_LEFT_SPAN)
       out.PrintUntil(m.end(1))
       out.Print('</span>')
+      topic_impl = False
 
     # The linked topic
     topic = m.group(2)
-    line_info['topics'].append(topic)
+    line_info['topics'].append((topic, topic_impl))
 
     out.PrintUntil(m.start(2))
     out.Print('<a href="%s#%s">' % (html_page, topic))

@@ -33,10 +33,8 @@ def Check(all_toc_nodes, chap_tree):
     all_toc_nodes: Structure of doc/ref/toc-*.md
     chap_tree: Structure of chap-*.html
   """
-
   #pprint(all_toc_nodes)
 
-  #sections = []
   all_topics = []
 
   link_from = set()
@@ -44,6 +42,13 @@ def Check(all_toc_nodes, chap_tree):
 
   section_check = collections.defaultdict(list)
   toc_topic_check = collections.defaultdict(list)
+
+  #
+  # Walk the TOC metadata
+  #
+
+  topics_not_impl = 0
+  sections_not_impl = 0
 
   for toc_node in all_toc_nodes:
     toc = toc_node['toc']
@@ -53,12 +58,19 @@ def Check(all_toc_nodes, chap_tree):
       print('  %s' % to_chap)
       for line_info in box_node['lines']:
         section = line_info['section']
+        section_impl = line_info['impl']
+        if not section_impl:
+          sections_not_impl += 1
+
         topics = line_info['topics']
-        for topic in topics:
+        for topic, topic_impl in topics:
           toc_topic_check[topic].append(toc)
 
           chap_filename = 'chap-%s.html' % to_chap
           link_from.add((chap_filename, topic))
+
+          if not topic_impl or not section_impl:
+            topics_not_impl += 1
 
         all_topics.extend(topics)
 
@@ -68,6 +80,9 @@ def Check(all_toc_nodes, chap_tree):
 
   log('Topics in TOC: %d', len(all_topics))
   log('Unique topics in TOC: %d', len(set(all_topics)))
+  log('Sections not implemented: %d', sections_not_impl)
+  log('Total topics not implemented: %d', topics_not_impl)
+
   log('')
 
   log('Duplicate topics in TOC:')
@@ -86,8 +101,11 @@ def Check(all_toc_nodes, chap_tree):
 
   num_sections = 0
   num_topics = 0
-
   num_topics_written = 0
+
+  #
+  # Walk the Chapter Tree
+  #
 
   chap_topics = collections.defaultdict(list)  # topic_id -> list of chapters
 
@@ -137,6 +155,7 @@ def Check(all_toc_nodes, chap_tree):
   assert 'j8-escape' in index_topic_set
   assert 'j8-escape' in chap_topic_set
 
+  # Report on link integrity
   if 0:
     broken = link_from - link_to
     log('%d Broken Links:', len(broken))
@@ -150,6 +169,8 @@ def Check(all_toc_nodes, chap_tree):
       log('  %s', pair)
     log('')
 
+  # Report on topic namespace integrity, e.g. 'help append' should go to one
+  # thing
   log('')
   log('Topics in multiple chapters:')
   for topic_id, chaps in chap_topics.iteritems():
