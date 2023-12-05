@@ -41,8 +41,15 @@ YSH:
 
 <h3 id="simple-command" class="osh-ysh-topic">simple-command</h3>
 
-Commands are composed of words.  The first word may by the name of a shell
-builtin, an Oil proc / shell "function", an external command, or an alias:
+Commands are composed of words.  The first word may be the name of
+
+1. A builtin shell command
+1. A YSH `proc` or shell "function"
+1. A Hay node declared with `hay define`
+1. An external command
+1. An alias
+
+Examples:
 
     echo hi               # a shell builtin doesn't start a process
     ls /usr/bin ~/src     # starts a new process
@@ -102,7 +109,7 @@ Shell:
       echo 'neither'
     fi
 
-Oil:
+YSH:
 
     if test -d foo {
       echo 'foo is a directory'
@@ -164,7 +171,7 @@ POSIX
 
 For loops iterate over words.
 
-Oil style:
+YSH style:
 
     var mystr = 'one'
     var myarray = :| two three |
@@ -195,7 +202,7 @@ A bash/ksh construct:
 
 <h2 id="Control Flow">Control Flow</h2>
 
-These are keywords in Oil, not builtins!
+These are keywords in Oils, not builtins!
 
 ### break
 
@@ -232,13 +239,15 @@ POSIX:
 
     { echo one; echo two; }
 
-Note the trailing `;` -- which isn't necessary in Oil.
+The trailing `;` is necessary in OSH, but not YSH.  In YSH, `parse_brace` makes
+`}` is more of a special word.
+
 
 ### subshell
 
     ( echo one; echo two )
 
-Use [forkwait]($osh-help) in Oil instead.
+Use [forkwait]($osh-help) in YSH instead.
 
 <h2 id="Concurrency">Concurrency</h2>
 

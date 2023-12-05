@@ -27,7 +27,7 @@ resulting script will still run in another shell.
 
 <h3 id="ysh:upgrade">ysh:upgrade</h3>
 
-Options in this group enable Oil features that are less likely to break
+Options in this group enable YSH features that are less likely to break
 existing shell scripts.
 
 For example, `parse_at` means that `@myarray` is now the operation to splice
@@ -39,7 +39,7 @@ simply quote it like `'@literal'` to fix the problem.
 
 <h3 id="ysh:all">ysh:all</h3>
 
-Enable the full Oil language.  This includes everything in the `ysh:upgrade`
+Enable the full YSH language.  This includes everything in the `ysh:upgrade`
 group.
 
     shopt --set ysh:all     # turn on all options
@@ -77,7 +77,7 @@ References that don't contain variables also produce hard errors:
 
 ### parse_ignored
 
-For compatibility, Oil will parse some constructs it doesn't execute, like:
+For compatibility, YSH will parse some constructs it doesn't execute, like:
 
     return 0 2>&1  # redirect on control flow
 
@@ -103,7 +103,7 @@ Allow the r prefix for raw strings in command mode:
 
     echo r'\'  # a single backslash
 
-Since shell strings are already raw, this means that Oil just ignores the r
+Since shell strings are already raw, this means that YSH just ignores the r
 prefix.
 
 ### command_sub_errexit
@@ -155,7 +155,7 @@ With nullglob on, the glob expands to no arguments:
 ### dashglob
 
 Do globs return results that start with `-`?  It's on by default in `bin/osh`,
-but off when Oil is enabled.
+but off when YSH is enabled.
 
 Turning it off prevents a command like `rm *` from being confused by a file
 called `-rf`.

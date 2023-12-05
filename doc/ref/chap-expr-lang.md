@@ -93,7 +93,7 @@ Creates or mutates a global variable.  Has the same syntax as `setvar`.
 
 ### bool-literal
 
-Oil uses JavaScript-like spellings for these three "atoms":
+YSH uses JavaScript-like spellings for these three "atoms":
 
     true   false   null
 
@@ -112,7 +112,7 @@ value can't be interpolated into words.
 
 ### str-literal
 
-Oil strings appear in expression contexts, and look like shell strings:
+YSH strings appear in expression contexts, and look like shell strings:
 
     var s = 'foo'
     var double = "hello $world and $(hostname)"

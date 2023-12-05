@@ -21,7 +21,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-front-end
   [Usage]         bundle-usage   ysh-usage
-  [Oil Lexing]    doc-comment ###   multiline-command ...
+  [YSH Lexing]    doc-comment ###   multiline-command ...
   [Tools]         cat-em
 ```
 
@@ -165,7 +165,7 @@ X [External Lang] BEGIN   END   when (awk)
                   strict_word_eval       Expose unicode and slicing errors
                   strict_tilde           Tilde subst can result in error
                   X strict_glob          Parse the sublanguage more strictly
-  [Oil Upgrade]   ... Migrate Existing Code to Oil
+  [YSH Upgrade]   ... Migrate Existing Code to YSH
                   parse_at               echo @array @[arrayfunc(x, y)]
                   parse_brace            if true { ... }; cd ~/src { ... }
                   parse_equals           x = 'val' in Caps { } config blocks
@@ -189,7 +189,7 @@ X [External Lang] BEGIN   END   when (awk)
                   simple_eval_builtin    eval takes exactly 1 argument
                   simple_test_builtin    3 args or fewer; use test not [
                   X simple_trap          Function name only
-  [Oil Breaking]  ... The Full Oil Language
+  [YSH Breaking]  ... The Full YSH Language
                   parse_at_all           @ starting any word is an operator
                   parse_backslash (-u)    Bad backslashes in $''
                   parse_backticks (-u)    Legacy syntax `echo hi`

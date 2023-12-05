@@ -194,15 +194,32 @@ Use it like this:
 
 ### use
 
-Make declarations about the current file.
+TODO
 
-For files that contain embedded DSLs:
+Reuse code from other files, respecting namespaces.
 
-    use dialect ninja  # requires that _DIALECT is set to 'ninja'
+    use lib/foo.ysh  # relative import, i.ie implicit $_this_dir?
+                     # makes name 'foo' available
 
-An accepted declaration that tools can use, but isn't used by Oil:
+Bind a specific name:
 
-    use bin grep sed
+    use lib/foo.ysh (&myvar)  # makes 'myvar' available
+
+Bind multiple names:
+
+    use lib/foo.ysh (&myvar) {
+      var log, die
+    }
+
+Maybe:
+
+    use lib/foo.ysh (&myvar) {
+      var mylog = myvar.log
+    }
+
+Also a declaration
+
+    use --extern grep sed
 
 ## I/O
 
@@ -301,8 +318,8 @@ Read a line from stdin, split it into tokens with the `$IFS` algorithm,
 and assign the tokens to the given variables.  When no VARs are given,
 assign to `$REPLY`.
 
-Note: When writing Oil, prefer the extensions documented in
-[oil-read]($oil-help).  The `read` builtin is confusing because `-r` needs to
+Note: When writing ySH, prefer the extensions documented in
+[ysh-read](#ysh-read).  The `read` builtin is confusing because `-r` needs to
 be explicitly enabled.
 
 Flags:
@@ -431,12 +448,17 @@ Example:
 
 Tips:
 
-`eval` is usually unnecessary in Oil code.  Using it can confuse code and
-user-supplied data, leading to [security issues][].
-
-Prefer passing single string ARG to `eval`.
+- Using `eval` can confuse code and user-supplied data, leading to [security
+issues][].
+- Prefer passing single string ARG to `eval`.
 
 [security issues]: https://mywiki.wooledge.org/BashFAQ/048
+
+YSH eval:
+
+    var myblock = ^(echo hi)
+    eval (myblock)  # => hi
+
 
 ### trap
 
@@ -456,7 +478,7 @@ Prefer passing the name of a shell function to `trap`.
 
 ## Set Options
 
-The `set` and `shopt` builtins set global shell options.  Oil code should use
+The `set` and `shopt` builtins set global shell options.  YSH code should use
 the more natural `shopt`.
 
 ### set
@@ -567,7 +589,7 @@ Flags:
 
 ## Completion
 
-These builtins implement Oil's bash-compatible autocompletion system.
+These builtins implement our bash-compatible autocompletion system.
 
 ### complete
 
@@ -624,7 +646,7 @@ Sets the bit mask that determines the permissions for new files and
 directories.  The mask is subtracted from 666 for files and 777 for
 directories.
 
-Oil currently supports writing masks in octal.
+Oils currently supports writing masks in octal.
 
 If no MODE, show the current mask.
 
@@ -752,7 +774,7 @@ these are discouraged.
 
 <!--    -R VAR     True if the variable VAR has been set and is a nameref variable. -->
 
-Oil supports these long flags:
+Oils supports these long flags:
 
     --dir            same as -d
     --exists         same as -e

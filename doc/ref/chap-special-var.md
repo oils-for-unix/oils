@@ -119,7 +119,7 @@ Exit code of each element in a pipeline.
 
 ### OILS_VERSION
 
-The version of Oil that is being run, e.g. `0.9.0`.
+The version of Oils that is being run, e.g. `0.9.0`.
 
 <!-- TODO: specify comparison algorithm. -->
 
