@@ -28,7 +28,7 @@
 #
 #   Commit files to oilshell/benchmark-data repo and sync.
 #   benchmarks/report.sh all
-#   $0 deploy-tar  # needed to checksum
+#   $0 deploy-tar  # needed to publish tarball checksum in HTML
 #   build/doc.sh run-for-release
 #   $0 compress
 #   devtools/release-version.sh git-changelog-$VERSION

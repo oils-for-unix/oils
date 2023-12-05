@@ -76,13 +76,11 @@ def Check(all_toc_nodes, chap_tree):
 
   log('')
 
-  log('Topics in TOC: %d', len(all_topics))
-  log('Unique topics in TOC: %d', len(set(all_topics)))
-  log('Sections not implemented: %d', sections_not_impl)
-  log('Total topics not implemented: %d', topics_not_impl)
-  log('')
-
-  log('%d in link_from set: %s', len(link_from), sorted(link_from)[:10])
+  log('TOC stats:')
+  log('  Topics: %d', len(all_topics))
+  log('  Unique topics: %d', len(set(all_topics)))
+  log('  Topic Sections not implemented (X): %d', sections_not_impl)
+  log('  All topics not implemented: %d', topics_not_impl)
   log('')
 
   if 0:
@@ -99,7 +97,7 @@ def Check(all_toc_nodes, chap_tree):
   chap_topics = collections.defaultdict(list)  # topic_id -> list of chapters
   short_topics = []
 
-  min_words = 10  # arbitrary
+  min_words = 5  # arbitrary
 
   for chap in chap_tree.children:
 
@@ -125,19 +123,22 @@ def Check(all_toc_nodes, chap_tree):
         elif num_words > 1:
           short_topics.append((topic_id, topic.text))
 
-  log('%d in link_to set: %s', len(link_to), sorted(link_to)[:10])
-  log('')
-
   num_chapters = len(chap_tree.children)
 
-  log('Chapter stats')
+  log('Chapter stats:')
   log('  num chapters = %d', num_chapters)
   log('  num_sections = %d', num_sections)
   log('  num_topics = %d', num_topics)
-  log('  topics with more than %d words = %d', min_words, num_topics_written)
 
   chap_topic_set = set(chap_topics)
   log('  num unique topics = %d', len(chap_topic_set))
+  log('  topics with first draft (more than %d words) = %d', min_words,
+      num_topics_written)
+  log('')
+
+  log('%d in link_to set: %s', len(link_to), sorted(link_to)[:10])
+  log('')
+  log('%d in link_from set: %s', len(link_from), sorted(link_from)[:10])
   log('')
 
   index_topic_set = set(toc_topic_check)
