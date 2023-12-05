@@ -109,7 +109,7 @@ def Check(all_toc_nodes, chap_tree):
 
   chap_topics = collections.defaultdict(list)  # topic_id -> list of chapters
 
-  min_words = 5  # arbitrary
+  min_words = 10  # arbitrary
 
   for chap in chap_tree.children:
 
@@ -156,7 +156,7 @@ def Check(all_toc_nodes, chap_tree):
   assert 'j8-escape' in chap_topic_set
 
   # Report on link integrity
-  if 0:
+  if 1:
     broken = link_from - link_to
     log('%d Broken Links:', len(broken))
     for pair in sorted(broken):

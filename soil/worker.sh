@@ -263,6 +263,7 @@ tools-deps        test/tools-deps.sh soil-run            -
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      devtools/release.sh test-oil-tar       -
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
+ref-check         build/doc.sh ref-check                 -
 EOF
 }
 
