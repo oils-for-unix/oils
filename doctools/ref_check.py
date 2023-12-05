@@ -33,8 +33,6 @@ def Check(all_toc_nodes, chap_tree):
     all_toc_nodes: Structure of doc/ref/toc-*.md
     chap_tree: Structure of chap-*.html
   """
-  #pprint(all_toc_nodes)
-
   all_topics = []
 
   link_from = set()
@@ -50,12 +48,14 @@ def Check(all_toc_nodes, chap_tree):
   topics_not_impl = 0
   sections_not_impl = 0
 
+  log('TOC:')
+  log('')
   for toc_node in all_toc_nodes:
     toc = toc_node['toc']
-    print(toc)
+    log('  %s', toc)
     for box_node in toc_node['boxes']:
       to_chap = box_node['to_chap']
-      print('  %s' % to_chap)
+      log('    %s' % to_chap)
       for line_info in box_node['lines']:
         section = line_info['section']
         section_impl = line_info['impl']
@@ -74,23 +74,12 @@ def Check(all_toc_nodes, chap_tree):
 
         all_topics.extend(topics)
 
-        #print('    %s: %s' % (section or '?', ' '.join(topics)))
-
   log('')
 
   log('Topics in TOC: %d', len(all_topics))
   log('Unique topics in TOC: %d', len(set(all_topics)))
   log('Sections not implemented: %d', sections_not_impl)
   log('Total topics not implemented: %d', topics_not_impl)
-
-  log('')
-
-  log('Duplicate topics in TOC:')
-  log('')
-  for topic in sorted(toc_topic_check):
-    toc_list = toc_topic_check[topic]
-    if len(toc_list) > 1:
-      log('%20s: %s', topic, ' '.join(toc_list))
   log('')
 
   log('%d in link_from set: %s', len(link_from), sorted(link_from)[:10])
@@ -108,6 +97,7 @@ def Check(all_toc_nodes, chap_tree):
   #
 
   chap_topics = collections.defaultdict(list)  # topic_id -> list of chapters
+  short_topics = []
 
   min_words = 10  # arbitrary
 
@@ -133,7 +123,7 @@ def Check(all_toc_nodes, chap_tree):
         if num_words > min_words:
           num_topics_written += 1
         elif num_words > 1:
-          log('short: %r', topic.text)
+          short_topics.append((topic_id, topic.text))
 
   log('%d in link_to set: %s', len(link_to), sorted(link_to)[:10])
   log('')
@@ -155,6 +145,22 @@ def Check(all_toc_nodes, chap_tree):
   assert 'j8-escape' in index_topic_set
   assert 'j8-escape' in chap_topic_set
 
+  # Report on topic namespace integrity, e.g. 'help append' should go to one
+  # thing
+  log('Topics in multiple chapters:')
+  for topic_id, chaps in chap_topics.iteritems():
+    if len(chaps) > 1:
+      log('  %s: %s', topic_id, ' '.join(chaps))
+  log('')
+
+  log('Duplicate topics in TOC:')
+  log('')
+  for topic in sorted(toc_topic_check):
+    toc_list = toc_topic_check[topic]
+    if len(toc_list) > 1:
+      log('%20s: %s', topic, ' '.join(toc_list))
+  log('')
+
   # Report on link integrity
   if 1:
     broken = link_from - link_to
@@ -169,13 +175,9 @@ def Check(all_toc_nodes, chap_tree):
       log('  %s', pair)
     log('')
 
-  # Report on topic namespace integrity, e.g. 'help append' should go to one
-  # thing
+  log('Short topics:')
+  for topic, text in short_topics:
+    log('%15s  %r', topic, text)
   log('')
-  log('Topics in multiple chapters:')
-  for topic_id, chaps in chap_topics.iteritems():
-    if len(chaps) > 1:
-      print('%s %s' % (topic_id, chaps))
-
 
 # vim: sw=2

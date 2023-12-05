@@ -619,7 +619,7 @@ def TopicMetadata():
     topics, chap_tree = CardsFromChapters(None, 'h3', chapters)
 
     #log('%d chapters: %s', len(chapters), chapters[:5])
-    log('%d topics: %s', len(topics), topics.keys()[:10])
+    #log('%d topics: %s', len(topics), topics.keys()[:10])
     log('')
 
     ref_check.Check(all_toc_nodes, chap_tree)
