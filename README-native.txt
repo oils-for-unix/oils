@@ -1,7 +1,8 @@
 Oils for Unix
 =============
 
-This is a preview of Oil's translation to C++.
+This is the pure C++ tarball for Oils.  (In contrast to the "executable spec",
+it has no CPython code).
 
 To use it, run
 
@@ -24,4 +25,16 @@ Send feedback to:
     https://github.com/oilshell/oil/issues
 
 (TODO: Replace this with INSTALL.txt)
+
+
+## More build configuration
+
+You can pass the compiler and build variant to _build/oils.sh:
+
+    _build/oils.sh ~/install/cosmocc/bin/cosmoc++ dbg
+
+The default values are 'cxx' (c++ system compiler), and 'opt' (optimized build)
+
+You can also override the variables documented at the top of
+build/ninja-rules-cpp.sh (e.g. BASE_CXXFLAGS, CXXFLAGS)
 

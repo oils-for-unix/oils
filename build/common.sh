@@ -54,7 +54,15 @@ CXX=${CXX:-'c++'}
 # - TODO(6/22): Disabled invalid-offsetof for now, but we should enable it after
 #   progress on the garbage collector.  It could catch bugs.
 
-BASE_CXXFLAGS='-std=c++11 -Wall -Wno-invalid-offsetof -fno-omit-frame-pointer'
+# Allow user to override both BASE_CXXFLAGS and CXXFLAGS
+# There doesn't seem to be a well-known convention for this.  Similar to this
+# question:
+# - https://stackoverflow.com/questions/51606653/allowing-users-to-override-cflags-cxxflags-and-friends
+
+default_cxx_flags='-std=c++11 -Wall -Wno-invalid-offsetof -fno-omit-frame-pointer'
+
+# note: Use - and not :- so that BASE_CXXFLAGS= works
+BASE_CXXFLAGS=${BASE_CXXFLAGS-$default_cxx_flags}
 
 readonly PY27=Python-2.7.13
 

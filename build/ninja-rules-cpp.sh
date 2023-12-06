@@ -11,9 +11,10 @@
 #   build/ninja-rules-cpp.sh <function name>
 #
 # Env variables:
-#   CXXFLAGS= - additional flags
-#   OIL_NINJA_VERBOSE=1 - show command lines
-#   TIME_TSV_OUT=file - compile_one and link output rows to this TSV file
+#   BASE_CXXFLAGS=        default flags passed to all compiler invocations
+#   CXXFLAGS=             additional flags
+#   OILS_CXX_VERBOSE=1    show compiler command lines
+#   TIME_TSV_OUT=file     compile_one and link output rows to this TSV file
 
 set -o nounset
 set -o errexit
@@ -71,7 +72,13 @@ setglobal_compile_flags() {
   # flags from Ninja/shell respected
   flags="$BASE_CXXFLAGS -I $REPO_ROOT $more_cxx_flags"
 
-  # flags from env respected
+  # Flags from env
+  # Similar to
+  # - GNU make - https://www.gnu.org/software/make/manual/html_node/Implicit-Variables.html
+  #   CXXFLAGS "Extra flags to give to the C++ compiler"
+  # - CMake - https://cmake.org/cmake/help/latest/envvar/CXXFLAGS.html 
+  #   "Add default compilation flags to be used when compiling CXX (C++) files."
+
   local env_flags=${CXXFLAGS:-}
   if test -n "$env_flags"; then
     flags="$flags $env_flags"
@@ -268,7 +275,7 @@ compile_one() {
 
   setglobal_cxx $compiler
 
-  if test -n "${OIL_NINJA_VERBOSE:-}"; then
+  if test -n "${OILS_CXX_VERBOSE:-}"; then
     echo '__' "$cxx" $flags -o "$out" -c "$in" >&2
   fi
 
@@ -299,7 +306,7 @@ link() {
     prefix="benchmarks/time_.py --tsv --out $TIME_TSV_OUT --append --rusage --field link --field $out --"
   fi
 
-  if test -n "${OIL_NINJA_VERBOSE:-}"; then
+  if test -n "${OILS_CXX_VERBOSE:-}"; then
     echo "__ $prefix $cxx -o $out $@ $link_flags" >&2
   fi
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
@@ -322,7 +329,7 @@ compile_and_link() {
 
   setglobal_cxx $compiler
 
-  if test -n "${OIL_NINJA_VERBOSE:-}"; then
+  if test -n "${OILS_CXX_VERBOSE:-}"; then
     echo "__ $cxx -o $out $flags $@ $link_flags" >&2
   fi
 
