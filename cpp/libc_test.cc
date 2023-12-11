@@ -1,5 +1,6 @@
 #include "cpp/libc.h"
 
+#include <regex.h>  // regcomp()
 #include <unistd.h>  // gethostname()
 
 #include "mycpp/runtime.h"
@@ -115,6 +116,56 @@ TEST for_test_coverage() {
   PASS();
 }
 
+TEST regexec_test() {
+  regex_t pat;
+
+  const char* unanchored = "[abc]([0-9]*)(x?)(y)-";
+  const char* anchored = "^[abc]([0-9]*)(x?)(y)-";
+
+  const char* p = unanchored;
+
+  int cflags = REG_EXTENDED;
+  if (regcomp(&pat, p, cflags) != 0) {
+    FAIL();
+  }
+  int outlen = pat.re_nsub + 1;  // number of captures
+
+  // TODO: Could statically allocate 99, and assert that re_nsub is less than
+  // 99.  Would speed up loops.
+  regmatch_t* pmatch =
+      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
+
+  // adjacent matches
+  const char* s = "a345y-axy- there b789y- cy-";
+
+  int cur_pos = 0;
+  while (true) {
+    // Necessary so ^ doesn't match in the middle!
+    int eflags = cur_pos == 0 ? 0 : REG_NOTBOL;
+    bool match = regexec(&pat, s + cur_pos, outlen, pmatch, eflags) == 0;
+
+    if (!match) {
+      break;
+    }
+    int i;
+    for (i = 0; i < outlen; i++) {
+      int start = pmatch[i].rm_so;
+      int end = pmatch[i].rm_eo;
+      int len = end - start;
+      BigStr* m = StrFromC(s + cur_pos + start, len);
+      log("%d GROUP %d (%d-%d) = [%s]", cur_pos, i, start, end, m->data_);
+    }
+    log("");
+    cur_pos += pmatch[0].rm_eo;
+  }
+
+  free(pmatch);
+  regfree(&pat);
+
+  PASS();
+}
+
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -127,6 +178,7 @@ int main(int argc, char** argv) {
   RUN_TEST(libc_test);
   RUN_TEST(libc_glob_test);
   RUN_TEST(for_test_coverage);
+  RUN_TEST(regexec_test);
 
   gHeap.CleanProcessExit();
 
