@@ -232,6 +232,11 @@ def _ValueToPartValue(val, quoted, part_loc):
             s = val_ops.Stringify(val, loc.Missing)
             return part_value.String(s, quoted, not quoted)
 
+        elif case(value_e.List):
+            raise error.TypeErrVerbose(
+                "Can't substitute into word, got List. Use '@' instead of '$' to splice the List into Strings",
+                loc.WordPart(part_loc))
+
         else:
             raise error.TypeErr(val, "Can't substitute into word",
                                 loc.WordPart(part_loc))
