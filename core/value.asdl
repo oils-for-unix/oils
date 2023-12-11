@@ -9,6 +9,7 @@ module value
     DoubleQuoted
     re proc_sig 
     LiteralBlock Func
+    NameType
   }
 
   use core runtime {
@@ -72,7 +73,10 @@ module value
   #   callable, in separate namespaces: Func, BoundFunc, Proc
 
     # / d+; ignorecase / -> '[[:digit:]]+' REG_ICASE
-  | Eggex(re expr, List[str] flags, str? as_ere, int ere_flags)
+  | Eggex(re expr, List[str] flags, str? as_ere, int ere_flags,
+          # inner ? is because some groups are not named
+          # outer ? because it's not set until ERE translation is done
+          List[NameType?]? name_types)
 
     # indices has G groups and N matches.  -1 values indicate no match.
     # We flatten it to reduce allocations, and because group() start() end()

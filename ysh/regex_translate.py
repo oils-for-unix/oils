@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     re_e,
     re_repeat,
     re_repeat_e,
+    NameType,
 )
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.value_asdl import value
@@ -151,8 +152,8 @@ def _CharClassTermToEre(term, parts, special_char_flags):
             raise AssertionError(term)
 
 
-def _AsPosixEre(node, parts):
-    # type: (re_t, List[str]) -> None
+def _AsPosixEre(node, parts, name_types):
+    # type: (re_t, List[str], List[NameType]) -> None
     """Translate an Oil regex to a POSIX ERE.
 
     Appends to a list of parts that you have to join.
@@ -188,7 +189,7 @@ def _AsPosixEre(node, parts):
     if tag == re_e.Seq:
         node = cast(re.Seq, UP_node)
         for c in node.children:
-            _AsPosixEre(c, parts)
+            _AsPosixEre(c, parts, name_types)
         return
 
     if tag == re_e.Alt:
@@ -196,7 +197,7 @@ def _AsPosixEre(node, parts):
         for i, c in enumerate(node.children):
             if i != 0:
                 parts.append('|')
-            _AsPosixEre(c, parts)
+            _AsPosixEre(c, parts, name_types)
         return
 
     if tag == re_e.Repeat:
@@ -211,7 +212,7 @@ def _AsPosixEre(node, parts):
                     "POSIX EREs don't have groups without capture, so this node "
                     "needs () around it.", child.blame_tok)
 
-        _AsPosixEre(node.child, parts)
+        _AsPosixEre(node.child, parts, name_types)
         op = node.op
         op_tag = op.tag()
         UP_op = op
@@ -244,10 +245,25 @@ def _AsPosixEre(node, parts):
         raise NotImplementedError(op_tag)
 
     # Special case for familiarity: () is acceptable as a group in ERE
-    if tag in (re_e.Group, re_e.Capture):
+    if tag == re_e.Group:
         node = cast(re.Group, UP_node)
+
+        # placeholder so we know this group is numbered, but not named
+        name_types.append(None)
+
         parts.append('(')
-        _AsPosixEre(node.child, parts)
+        _AsPosixEre(node.child, parts, name_types)
+        parts.append(')')
+        return
+
+    if tag == re_e.Capture:
+        node = cast(re.Capture, UP_node)
+
+        # Collect in order of ( appearance
+        name_types.append(node.name_type)
+
+        parts.append('(')
+        _AsPosixEre(node.child, parts, name_types)
         parts.append(')')
         return
 
@@ -319,6 +335,14 @@ def AsPosixEre(eggex):
         return eggex.as_ere
 
     parts = []  # type: List[str]
-    _AsPosixEre(eggex.expr, parts)
+    name_types = []  # type: List[NameType]
+
+    _AsPosixEre(eggex.expr, parts, name_types)
+
+    #names = [n.name.tval for n in name_types]
+    #log('names %s', names)
+
     eggex.as_ere = ''.join(parts)
+    eggex.name_types = name_types
+
     return eggex.as_ere

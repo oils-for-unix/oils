@@ -187,7 +187,7 @@ TEST regex_lexer() {
   PASS();
 }
 
-TEST regex_nested_groups() {
+TEST regex_repeat_with_capture() {
   const char* lexer = "(([a-z]+)([0-9]+)-)*((A+)|(Z+))*";
   FindAll(lexer, "a0-b1-c2-AAZZZA");
   // Groups are weird
@@ -206,6 +206,22 @@ TEST regex_nested_groups() {
   PASS();
 }
 
+// Disallow this in eggex, as well as the above
+TEST regex_nested_capture() {
+  const char* lexer = "(([a-z]+)([0-9]+))";
+  FindAll(lexer, "a0");
+  PASS();
+}
+
+// I think we allow this in eggex
+TEST regex_alt_with_capture() {
+  const char* lexer = "([a-z]+)|([0-9]+)(-)";
+  FindAll(lexer, "x-");
+  FindAll(lexer, "7-");
+  PASS();
+}
+
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -222,7 +238,9 @@ int main(int argc, char** argv) {
   RUN_TEST(regex_unanchored);
   RUN_TEST(regex_caret);
   RUN_TEST(regex_lexer);
-  RUN_TEST(regex_nested_groups);
+  RUN_TEST(regex_repeat_with_capture);
+  RUN_TEST(regex_alt_with_capture);
+  RUN_TEST(regex_nested_capture);
 
   gHeap.CleanProcessExit();
 

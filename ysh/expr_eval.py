@@ -1321,8 +1321,8 @@ class ExprEvaluator(object):
 
                     elif case(value_e.Eggex):
                         val = cast(value.Eggex, UP_val)
-                        # Note: we only splice the regex, and ignore flags.
-                        # Should we warn about this?
+                        # TODO: warn about flags that don't match
+                        # This check will be transitive
                         to_splice = val.expr
 
                     else:
@@ -1350,11 +1350,9 @@ class ExprEvaluator(object):
         # - check for incompatible flags, like i
         #   - or can the root override flags?  Probably not
         # - check for named captures not at the top level
-        new_node = self._EvalRegex(node.regex)
-
+        spliced = self._EvalRegex(node.regex)
         flags = [lexer.TokenVal(tok) for tok in node.flags]
-
-        return value.Eggex(new_node, flags, None, 0)
+        return value.Eggex(spliced, flags, None, 0, None)
 
 
 # vim: sw=4
