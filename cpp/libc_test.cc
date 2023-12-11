@@ -116,13 +116,8 @@ TEST for_test_coverage() {
   PASS();
 }
 
-TEST regexec_test() {
+void FindAll(const char* p, const char* s) {
   regex_t pat;
-
-  const char* unanchored = "[abc]([0-9]*)(x?)(y)-";
-  const char* anchored = "^[abc]([0-9]*)(x?)(y)-";
-
-  const char* p = unanchored;
 
   int cflags = REG_EXTENDED;
   if (regcomp(&pat, p, cflags) != 0) {
@@ -135,8 +130,6 @@ TEST regexec_test() {
   regmatch_t* pmatch =
       static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
 
-  // adjacent matches
-  const char* s = "a345y-axy- there b789y- cy-";
 
   int cur_pos = 0;
   while (true) {
@@ -153,7 +146,7 @@ TEST regexec_test() {
       int end = pmatch[i].rm_eo;
       int len = end - start;
       BigStr* m = StrFromC(s + cur_pos + start, len);
-      log("%d GROUP %d (%d-%d) = [%s]", cur_pos, i, start, end, m->data_);
+      log("%d GROUP %d (%d .. %d) = [%s]", cur_pos, i, start, end, m->data_);
     }
     log("");
     cur_pos += pmatch[0].rm_eo;
@@ -161,10 +154,33 @@ TEST regexec_test() {
 
   free(pmatch);
   regfree(&pat);
+}
+
+// adjacent matches
+const char* s = "a345y-axy- there b789y- cy-";
+
+
+TEST regex_unanchored() {
+  const char* unanchored = "[abc]([0-9]*)(x?)(y)-";
+  FindAll(unanchored, s);
 
   PASS();
 }
 
+TEST regex_caret() {
+  const char* anchored = "^[abc]([0-9]*)(x?)(y)-";
+  FindAll(anchored, s);
+
+  PASS();
+}
+
+TEST regex_lexer() {
+  // like the Yaks / Make-a-Lisp pattern
+  const char* lexer = "([a-z]+)|([0-9]+)|([ ]+)|([+-])";
+  FindAll(lexer, s);
+
+  PASS();
+}
 
 GREATEST_MAIN_DEFS();
 
@@ -178,7 +194,10 @@ int main(int argc, char** argv) {
   RUN_TEST(libc_test);
   RUN_TEST(libc_glob_test);
   RUN_TEST(for_test_coverage);
-  RUN_TEST(regexec_test);
+
+  RUN_TEST(regex_unanchored);
+  RUN_TEST(regex_caret);
+  RUN_TEST(regex_lexer);
 
   gHeap.CleanProcessExit();
 

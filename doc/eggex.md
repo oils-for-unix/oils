@@ -328,29 +328,36 @@ You can spread regexes over multiple lines and add comments:
 Testing and extracting matches:
 
     if (mystr ~ pat) {
-      echo $_match(1)
+      echo $_match(1)  # or _group(1) ?
     }
 
 Iterative matching:
 
-    for (mystr ~ pat) {  # Saves state like JavaScript's "sticky" bit
-      echo $_match(1)
+    var pat = /<capture d+ as month> '-' <capture d+ as day>/
+    while (true) {
+      var m = pat => findNext('04-01 10-31')
+      if (not m) {
+        break
+      }
+      echo $[m => group(0)]
     }
-
-Slurping all like Python:
-
-    var matches = findall(s, / (d+) '.' (d+) /)
-    pass s => findall(/ (d+) '.' (d+) /) => var matches
 
 Substitution:
 
-    var new = sub(s, /d+/, 'zz')
-    pass s => sub(/d+/, 'zz) => var new   # Nicer left-to-right syntax
+    var new = s => replace(/<capture d+ as month>/, ^"month is $month")
+    # (could be stdlib function)
+
+Slurping all like Python:
+
+    var matches = findAll(s, / (d+) '.' (d+) /)
+    # (could be stdlib function)
+
+    # s => findAll(pat) => reversed()
 
 Splitting:
 
-    var parts = split(s, /space+/)
-    pass s => split(/space+/) => var parts
+    var parts = s => split(/space+/)  # contrast with shSplit()
+    # (could be stdlib function)
 
 ### Language Reference
 

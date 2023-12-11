@@ -488,6 +488,8 @@ pat_eggex: '/' regex [re_flags] '/'
 # / d+ ; %ERE /                 is   '[[:digit:]]+'
 # / d+ ; %python /              is   '\d+'
 # / d+ ; ignorecase %python /   is   '(?i)\d+'
+# 
+# TODO: ; ; is probably better, instead of Symbol
 
 re_flag: ['!'] Expr_Name | Expr_Symbol
 re_flags: ';' re_flag+

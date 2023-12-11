@@ -52,6 +52,7 @@ from core import state
 from core import ui
 from core import vm
 from frontend import consts
+from frontend import lexer
 from frontend import match
 from frontend import location
 from frontend import typed_args
@@ -1153,7 +1154,8 @@ class ExprEvaluator(object):
 
             elif case(expr_e.RegexLiteral):
                 node = cast(expr.RegexLiteral, UP_node)
-                return value.Eggex(self.EvalRegex(node.regex), None)
+                flags = [lexer.TokenVal(tok) for tok in node.flags]
+                return value.Eggex(self.EvalRegex(node.regex), flags, None)
 
             else:
                 raise NotImplementedError(node.__class__.__name__)
@@ -1338,7 +1340,11 @@ class ExprEvaluator(object):
 
     def EvalRegex(self, node):
         # type: (re_t) -> re_t
-        """Trivial wrapper."""
+        """Trivial wrapper.
+
+        It's a bit weird that this is re_t -> re_t, instead of different types.
+        It reflects the "macro expansion" of eggex.
+        """
         new_node = self._EvalRegex(node)
 
         # View it after evaluation

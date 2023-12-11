@@ -481,9 +481,10 @@ module syntax
     # read(&x)  json read (&x[0])
   | Place(Token blame_tok, str var_name, place_op* ops)
 
-    # @(one 'two' "$three")
+    # :| one 'two' "$three" |
   | ShArrayLiteral %ShArrayLiteral
-    # @[a b c] @[1 2 3] @[(1+1) (2+2)]
+
+    # / d+ ; ignorecase; %python /
   | RegexLiteral(Token left, re regex, List[Token] flags, Token? trans_pref)
 
   | SimpleVarSub %SimpleVarSub

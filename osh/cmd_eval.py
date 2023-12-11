@@ -1464,8 +1464,8 @@ class CommandEvaluator(object):
 
                 elif case(pat_e.Eggex):
                     pat_eggex = cast(pat.Eggex, case_arm.pattern)
-                    eggex = self.expr_ev.EvalRegex(pat_eggex.eggex)
-                    eggex_val = value.Eggex(eggex, None)
+                    re_val = self.expr_ev.EvalRegex(pat_eggex.eggex)
+                    eggex_val = value.Eggex(re_val, [], None)
 
                     if val_ops.RegexMatch(to_match, eggex_val, self.mem):
                         status = self._ExecuteList(case_arm.action)

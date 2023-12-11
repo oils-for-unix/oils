@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
 
 #### /^.$/
 shopt -s ysh:all
@@ -46,6 +46,16 @@ if (empty ~ pat) { echo yes } else { echo no }
 .+
 yes
 no
+## END
+
+#### Eggex flags ignorecase
+
+# based on Python's spelling
+var pat = / 'abc' ; ignorecase /
+
+= pat
+
+## STDOUT:
 ## END
 
 #### Positional captures with _match

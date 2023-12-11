@@ -72,7 +72,7 @@ module value
   #   callable, in separate namespaces: Func, BoundFunc, Proc
 
     # / d+ /
-  | Eggex(re expr, str? as_ere)
+  | Eggex(re expr, List[str] flags, str? as_ere)
 
     # ^[42 + a[i]]
   | Expr(expr e)
