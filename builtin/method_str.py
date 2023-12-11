@@ -62,3 +62,34 @@ class Upper(vm._Callable):
 
         res = string.upper()
         return value.Str(res)
+
+
+class Search(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        """
+        s => search(eggex, pos=0)
+        """
+
+        eggex = rd.PosEggex()
+        # don't confuse 'start' and 'pos'?
+        # Python has 2 kinds of 'pos'
+        pos = rd.NamedInt('pos', 0)
+        rd.Done()
+
+        # TODO:
+        #
+        # call libc.regex_search(str ERE, int flags, str s)
+        #
+        # which should return an array of positions
+        #
+        # - it has the regcomp cache
+        # - TODO: eggex evaluation has to cache the group names, and number of
+        #   groups
+
+        return value.Null

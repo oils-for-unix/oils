@@ -733,6 +733,10 @@ def Main(
 
         # replace substring, OR an eggex
         'replace': None,
+
+        # Like Python's re.search, except we put it on the string object
+        # It's more consistent with Str->find(substring, pos=0)
+        'search': method_str.Search(),
     }
     methods[value_e.Dict] = {
         'get': None,  # doesn't raise an error
@@ -767,6 +771,12 @@ def Main(
     }
 
     # TODO: implement these
+    methods[value_e.Match] = {
+        'group': method_other.MatchAccess(method_other.GROUP),
+        'start': method_other.MatchAccess(method_other.START),
+        'end': method_other.MatchAccess(method_other.END),
+    }
+
     methods[value_e.IO] = {
         # io->eval(myblock) is the functional version of eval (myblock)
         # Should we also have expr->eval() instead of evalExpr?
@@ -775,12 +785,6 @@ def Main(
         # identical to command sub
         'captureStdout': None,
         'promptVal': method_io.PromptVal(),
-        # like \w - working dir
-        'getcwd': None,
-        # like \u
-        'getUserName': None,
-        # like \h
-        'getHostName': None,
     }
 
     methods[value_e.Place] = {

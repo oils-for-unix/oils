@@ -30,3 +30,29 @@ class SetValue(vm._Callable):
         self.mem.SetPlace(place, val, rd.LeftParenToken())
 
         return value.Null
+
+
+# which method group() start() end()
+GROUP = 0
+START = 1
+END = 2
+
+class MatchAccess(vm._Callable):
+
+    def __init__(self, method):
+        # type: (int) -> None
+        self.method = method
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        # This is guaranteed
+        m = rd.PosMatch()
+
+        # string name or integer
+        val = rd.PosValue()
+        rd.Done()
+
+        # TODO: look at m.indices and return a string
+
+        return value.Null

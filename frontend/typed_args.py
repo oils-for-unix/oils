@@ -226,6 +226,24 @@ class Reader(object):
                             'Arg %d should be a Place' % self.pos_consumed,
                             self.BlamePos())
 
+    def _ToMatch(self, val):
+        # type: (value_t) -> value.Match
+        if val.tag() == value_e.Match:
+            return cast(value.Match, val)
+
+        raise error.TypeErr(val,
+                            'Arg %d should be a Match' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToEggex(self, val):
+        # type: (value_t) -> value.Eggex
+        if val.tag() == value_e.Eggex:
+            return cast(value.Eggex, val)
+
+        raise error.TypeErr(val,
+                            'Arg %d should be an Eggex' % self.pos_consumed,
+                            self.BlamePos())
+
     def _ToIO(self, val):
         # type: (value_t) -> value.IO
         if val.tag() == value_e.IO:
@@ -313,6 +331,16 @@ class Reader(object):
         # type: () -> value.Place
         val = self.PosValue()
         return self._ToPlace(val)
+
+    def PosEggex(self):
+        # type: () -> value.Eggex
+        val = self.PosValue()
+        return self._ToEggex(val)
+
+    def PosMatch(self):
+        # type: () -> value.Match
+        val = self.PosValue()
+        return self._ToMatch(val)
 
     def PosIO(self):
         # type: () -> value.IO
