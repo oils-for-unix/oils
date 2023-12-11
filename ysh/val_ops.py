@@ -120,6 +120,11 @@ def Stringify(val, blame_loc, prefix=''):
             val = cast(value.Eggex, UP_val)
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
 
+        elif case(value_e.List):
+            raise error.TypeErrVerbose(
+                "%sexpected Null, Bool, Int, Float, Eggex, got List. Use '@' instead of '$' to splice the returned List into Strings" % prefix,
+                blame_loc)
+
         else:
             raise error.TypeErr(
                 val, "%sexpected Null, Bool, Int, Float, Eggex" % prefix,
