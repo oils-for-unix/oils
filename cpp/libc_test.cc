@@ -130,9 +130,10 @@ void FindAll(const char* p, const char* s) {
   regmatch_t* pmatch =
       static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
 
-
   int cur_pos = 0;
+  // int n = strlen(s);
   while (true) {
+
     // Necessary so ^ doesn't match in the middle!
     int eflags = cur_pos == 0 ? 0 : REG_NOTBOL;
     bool match = regexec(&pat, s + cur_pos, outlen, pmatch, eflags) == 0;
@@ -149,7 +150,11 @@ void FindAll(const char* p, const char* s) {
       log("%d GROUP %d (%d .. %d) = [%s]", cur_pos, i, start, end, m->data_);
     }
     log("");
-    cur_pos += pmatch[0].rm_eo;
+    int match_len = pmatch[0].rm_eo;
+    if (match_len == 0) {
+      break;
+    }
+    cur_pos += match_len;
   }
 
   free(pmatch);
@@ -182,6 +187,25 @@ TEST regex_lexer() {
   PASS();
 }
 
+TEST regex_nested_groups() {
+  const char* lexer = "(([a-z]+)([0-9]+)-)*((A+)|(Z+))*";
+  FindAll(lexer, "a0-b1-c2-AAZZZA");
+  // Groups are weird
+  // whole match 0: a0-b1-c2-
+  //             1: c2-      # last repetition
+  //             2: c        # last one
+  //             3: 2        # last one
+  //
+  // And then there's an empty match
+  //
+  // Ideas:
+  // - disallow nested groups in Eggex?
+  // - I really care about the inner ones -- groups 2 and 3
+  // - I want flat groups
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -198,6 +222,7 @@ int main(int argc, char** argv) {
   RUN_TEST(regex_unanchored);
   RUN_TEST(regex_caret);
   RUN_TEST(regex_lexer);
+  RUN_TEST(regex_nested_groups);
 
   gHeap.CleanProcessExit();
 

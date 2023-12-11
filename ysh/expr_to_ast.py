@@ -42,6 +42,7 @@ from _devbuild.gen.syntax_asdl import (
     pat_t,
     TypeExpr,
     Func,
+    Eggex,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -388,8 +389,7 @@ class Transformer(object):
             flags = []  # type: List[Token]
             # TODO: Parse translation preference.
             trans_pref = None  # type: Token
-            return expr.RegexLiteral(
-                parent.GetChild(0).tok, r, flags, trans_pref)
+            return Eggex(parent.GetChild(0).tok, r, flags, trans_pref)
 
         if id_ == Id.Arith_Amp:
             n = parent.NumChildren()
@@ -848,8 +848,9 @@ class Transformer(object):
 
         elif typ == grammar_nt.pat_eggex:
             # pat_eggex
+            left = pattern.GetChild(0).tok
             re = self._Regex(pattern.GetChild(1))
-            return pat.Eggex(re)
+            return Eggex(left, re, [], None)
 
         raise NotImplementedError()
 

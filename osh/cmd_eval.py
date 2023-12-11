@@ -50,6 +50,7 @@ from _devbuild.gen.syntax_asdl import (
     pat,
     pat_e,
     word,
+    Eggex,
 )
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
@@ -1463,9 +1464,8 @@ class CommandEvaluator(object):
                             break
 
                 elif case(pat_e.Eggex):
-                    pat_eggex = cast(pat.Eggex, case_arm.pattern)
-                    re_val = self.expr_ev.EvalRegex(pat_eggex.eggex)
-                    eggex_val = value.Eggex(re_val, [], None)
+                    eggex = cast(Eggex, case_arm.pattern)
+                    eggex_val = self.expr_ev.EvalEggex(eggex)
 
                     if val_ops.RegexMatch(to_match, eggex_val, self.mem):
                         status = self._ExecuteList(case_arm.action)

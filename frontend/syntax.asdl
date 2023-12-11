@@ -288,12 +288,14 @@ module syntax
     Word(word w)
   | YshExpr(expr e)
 
+  Eggex = (Token left, re regex, List[Token] flags, Token? trans_pref)
+
   pat =
     Else
   | Words(List[word] words)
   | YshExprs(List[expr] exprs)
-  | Eggex(re eggex)
-
+  | Eggex %Eggex
+  
   # Each if arm starts with either an "if" or "elif" keyword
   # In YSH, the then keyword is not used (replaced by braces {})
   IfArm = (
@@ -485,7 +487,7 @@ module syntax
   | ShArrayLiteral %ShArrayLiteral
 
     # / d+ ; ignorecase; %python /
-  | RegexLiteral(Token left, re regex, List[Token] flags, Token? trans_pref)
+  | Eggex %Eggex
 
   | SimpleVarSub %SimpleVarSub
   | BracedVarSub %BracedVarSub
@@ -608,7 +610,7 @@ module syntax
   | Alt(List[re] children)
 
   | Group(re child)
-    # TODO: <d+ : month Int> needs Token? type field
+    # TODO: <capture d+ as month: Int> needs Token? type field
   | Capture(re child, NameType? name_type)  
   | Backtracking(bool negated, Token name, re child)
 

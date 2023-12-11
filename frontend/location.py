@@ -39,6 +39,7 @@ from _devbuild.gen.syntax_asdl import (
     arith_expr,
     arith_expr_e,
     arith_expr_t,
+    Eggex,
 )
 from _devbuild.gen.value_asdl import LeftName
 from mycpp.mylib import log
@@ -560,8 +561,8 @@ def TokenForExpr(node):
             node = cast(Attribute, UP_node)
             return node.op
 
-        elif case(expr_e.RegexLiteral):
-            node = cast(expr.RegexLiteral, UP_node)
+        elif case(expr_e.Eggex):
+            node = cast(Eggex, UP_node)
             return node.left
 
         else:

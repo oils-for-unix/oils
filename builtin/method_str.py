@@ -84,11 +84,11 @@ class Search(vm._Callable):
 
         # TODO:
         #
-        # call libc.regex_search(str ERE, int flags, str s)
+        # call libc.regex_search(str ERE, int flags, str s, int pos)
         #
-        # which should return an array of positions
+        # which should return non-empty List[int] of positions, or None
         #
-        # - it has the regcomp cache
+        # - it uses the regcomp cache
         # - TODO: eggex evaluation has to cache the group names, and number of
         #   groups
 

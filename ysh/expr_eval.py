@@ -34,6 +34,7 @@ from _devbuild.gen.syntax_asdl import (
     PerlClass,
     CharCode,
     ArgList,
+    Eggex,
 )
 from _devbuild.gen.runtime_asdl import (
     coerced_e,
@@ -1152,10 +1153,9 @@ class ExprEvaluator(object):
                 node = cast(Attribute, UP_node)
                 return self._EvalAttribute(node)
 
-            elif case(expr_e.RegexLiteral):
-                node = cast(expr.RegexLiteral, UP_node)
-                flags = [lexer.TokenVal(tok) for tok in node.flags]
-                return value.Eggex(self.EvalRegex(node.regex), flags, None)
+            elif case(expr_e.Eggex):
+                node = cast(Eggex, UP_node)
+                return self.EvalEggex(node)
 
             else:
                 raise NotImplementedError(node.__class__.__name__)
@@ -1338,21 +1338,23 @@ class ExprEvaluator(object):
                 # case(re_e.PerlClass)
                 return node
 
-    def EvalRegex(self, node):
-        # type: (re_t) -> re_t
+    def EvalEggex(self, node):
+        # type: (Eggex) -> value.Eggex
         """Trivial wrapper.
 
         It's a bit weird that this is re_t -> re_t, instead of different types.
         It reflects the "macro expansion" of eggex.
         """
-        new_node = self._EvalRegex(node)
+        # _EvalRegex does splicing
+        # TODO:
+        # - check for incompatible flags, like i
+        #   - or can the root override flags?  Probably not
+        # - check for named captures not at the top level
+        new_node = self._EvalRegex(node.regex)
 
-        # View it after evaluation
-        if 0:
-            log('After evaluation:')
-            new_node.PrettyPrint()
-            print()
-        return new_node
+        flags = [lexer.TokenVal(tok) for tok in node.flags]
+
+        return value.Eggex(new_node, flags, None, 0)
 
 
 # vim: sw=4

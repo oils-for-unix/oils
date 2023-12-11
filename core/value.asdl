@@ -71,13 +71,15 @@ module value
   #   unevaluated: Eggex, Expr, Template, Command/Block
   #   callable, in separate namespaces: Func, BoundFunc, Proc
 
-    # / d+ /
-  | Eggex(re expr, List[str] flags, str? as_ere)
+    # / d+; ignorecase / -> '[[:digit:]]+' REG_ICASE
+  | Eggex(re expr, List[str] flags, str? as_ere, int ere_flags)
 
     # indices has G groups and N matches.  -1 values indicate no match.
     # We flatten it to reduce allocations, and because group() start() end()
     # methods make it user friendly
     # TODO: might need a pointer to Eggex for the names
+    # Problem: ERE has no non-capturing groups, so grouping will occupy a
+    # number
   | Match(str s, List[int] indices)
 
     # ^[42 + a[i]]
