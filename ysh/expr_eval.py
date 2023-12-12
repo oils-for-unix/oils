@@ -35,6 +35,7 @@ from _devbuild.gen.syntax_asdl import (
     CharCode,
     ArgList,
     Eggex,
+    EggexFlag,
 )
 from _devbuild.gen.runtime_asdl import (
     coerced_e,
@@ -53,7 +54,7 @@ from core import state
 from core import ui
 from core import vm
 from frontend import consts
-from frontend import lexer
+#from frontend import lexer
 from frontend import match
 from frontend import location
 from frontend import typed_args
@@ -1323,7 +1324,7 @@ class ExprEvaluator(object):
                         val = cast(value.Eggex, UP_val)
                         # TODO: warn about flags that don't match
                         # This check will be transitive
-                        to_splice = val.expr
+                        to_splice = val.spliced
 
                     else:
                         raise error.TypeErr(
@@ -1351,7 +1352,7 @@ class ExprEvaluator(object):
         #   - or can the root override flags?  Probably not
         spliced = self._EvalRegex(node.regex)
         #flags = [lexer.TokenVal(tok) for tok in node.flags]
-        flags = []  # type: List[str]
+        flags = []  # type: List[EggexFlag]
         return value.Eggex(spliced, flags, None, 0, None)
 
 

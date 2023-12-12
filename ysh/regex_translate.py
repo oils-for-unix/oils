@@ -337,7 +337,7 @@ def AsPosixEre(eggex):
     parts = []  # type: List[str]
     name_types = []  # type: List[NameType]
 
-    _AsPosixEre(eggex.expr, parts, name_types)
+    _AsPosixEre(eggex.spliced, parts, name_types)
 
     #names = [n.name.tval for n in name_types]
     #log('names %s', names)

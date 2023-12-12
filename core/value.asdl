@@ -10,6 +10,7 @@ module value
     re proc_sig 
     LiteralBlock Func
     NameType
+    EggexFlag
   }
 
   use core runtime {
@@ -72,8 +73,10 @@ module value
   #   unevaluated: Eggex, Expr, Template, Command/Block
   #   callable, in separate namespaces: Func, BoundFunc, Proc
 
+    # expr is spliced
     # / d+; ignorecase / -> '[[:digit:]]+' REG_ICASE
-  | Eggex(re expr, List[str] flags, str? as_ere, int ere_flags,
+  | Eggex(re spliced, List[EggexFlag] normalized_flags, str? as_ere,
+          int ere_flags,
           # inner ? is because some groups are not named
           # outer ? because it's not set until ERE translation is done
           List[NameType?]? name_types)
