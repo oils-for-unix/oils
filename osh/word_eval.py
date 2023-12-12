@@ -227,15 +227,11 @@ def _ValueToPartValue(val, quoted, part_loc):
             return part_value.Array(val.d.values())
 
         # Cases added for YSH
+        # value_e.List is also here - we use val_ops.stringify()s err message
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
-                  value_e.Eggex):
+                  value_e.Eggex, value_e.List):
             s = val_ops.Stringify(val, loc.Missing)
             return part_value.String(s, quoted, not quoted)
-
-        elif case(value_e.List):
-            raise error.TypeErrVerbose(
-                "Can't substitute into word, got List. Use '@' instead of '$' to splice the List into Strings",
-                loc.WordPart(part_loc))
 
         else:
             raise error.TypeErr(val, "Can't substitute into word",

@@ -122,7 +122,7 @@ def Stringify(val, blame_loc, prefix=''):
 
         elif case(value_e.List):
             raise error.TypeErrVerbose(
-                "%sexpected Null, Bool, Int, Float, Eggex, got List. Use '@' instead of '$' to splice the returned List into Strings" % prefix,
+                "%got a List, which can't be Stringified! Use @ instead of $ or join()" % prefix,
                 blame_loc)
 
         else:
