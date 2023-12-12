@@ -455,6 +455,22 @@ re_alt: (re_atom [repeat_op])+
 
 regex: [re_alt] (('|'|'or') re_alt)*
 
+# e.g. /digit+ ; multiline !ignorecase/
+#
+# This can express translation preferences:
+#
+# / d+ ; ; ERE /                is   '[[:digit:]]+'
+# / d+ ; ; PCRE /               is   '\d+'
+# / d+ ; ignorecase ; python /  is   '(?i)\d+'
+
+# Python has the syntax
+#    (?i:myre)  to set a flag
+#    (?-i:myre) to remove a flag
+#
+# They can apply to portions of the expression, which we don't have here.
+re_flag: ['!'] Expr_Name
+eggex: '/' regex [';' re_flag* [';' Expr_Name] ] '/'
+
 # Patterns are the start of a case arm. Ie,
 #
 # case (foo) {
@@ -472,8 +488,6 @@ regex: [re_alt] (('|'|'or') re_alt)*
 #                  ^-- End of pattern/beginning of case arm body
 # }
 
-eggex: '/' regex [re_flags] '/'
-
 ysh_case_pat: (
     '(' (pat_else | pat_exprs)
   | eggex
@@ -482,18 +496,6 @@ ysh_case_pat: (
 pat_else: 'else' ')'
 pat_exprs: expr ')' [Op_Newline] ('|' [Op_Newline] '(' expr ')' [Op_Newline])*
 
-# e.g. /digit+ ; multiline !ignorecase/
-#
-# This can express translation preferences:
-#
-# / d+ ; %ERE /                 is   '[[:digit:]]+'
-# / d+ ; %python /              is   '\d+'
-# / d+ ; ignorecase %python /   is   '(?i)\d+'
-# 
-# TODO: ; ; is probably better, instead of Symbol
-
-re_flag: ['!'] Expr_Name | Expr_Symbol
-re_flags: ';' re_flag+
 
 # Syntax reserved for PCRE/Python, but that's not in ERE:
 # 

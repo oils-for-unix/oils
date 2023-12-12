@@ -43,6 +43,7 @@ from _devbuild.gen.syntax_asdl import (
     TypeExpr,
     Func,
     Eggex,
+    EggexFlag,
 )
 from _devbuild.gen import grammar_nt
 from core.error import p_die
@@ -820,11 +821,44 @@ class Transformer(object):
         rhs = self.Expr(p_node.GetChild(2))
         return command.Mutation(None, lhs_list, op_tok, rhs)
 
+    def _EggexFlag(self, p_node):
+        # type: (PNode) -> EggexFlag
+        n = p_node.NumChildren()
+        if n == 1:
+            return EggexFlag(False, p_node.GetChild(0).tok)
+        elif n == 2:
+            return EggexFlag(True, p_node.GetChild(1).tok)
+        else:
+            raise AssertionError()
+
     def _Eggex(self, p_node):
         # type: (PNode) -> Eggex
+        """
+        eggex: '/' regex [';' re_flag* [';' Expr_Name] ] '/'
+        """
+        n = p_node.NumChildren()
         left = p_node.GetChild(0).tok
         regex = self._Regex(p_node.GetChild(1))
-        return Eggex(left, regex, [], None)
+
+        flags = []  # type: List[EggexFlag]
+        trans_pref = None  # type: Optional[Token]
+
+        i = 2
+        current = p_node.GetChild(i)
+        if current.typ == Id.Op_Semi:
+            i += 1
+            while True:
+                current = p_node.GetChild(i)
+                if not ISNONTERMINAL(current.typ):
+                    break
+                flags.append(self._EggexFlag(current))
+                i += 1
+
+            if current.typ == Id.Op_Semi:
+                i += 1
+                trans_pref = p_node.GetChild(i).tok
+
+        return Eggex(left, regex, flags, trans_pref)
 
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t

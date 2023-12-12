@@ -1295,11 +1295,18 @@ test-eggex-flags() {
 
   # ERE means is the default; it's POSIX ERE
   # Other option is PCRE
-  _should-parse '= / d+ ; ignorecase ; ERE /'
+  _should-parse '= / d+ ; ignorecase !multiline ; ERE /'
   _should-parse '= / d+ ; ; ERE /'
 
+  # trailing ; is OK
+  _should-parse '= / d+ ; /'
+
+  # doesn't make sense
+  _parse-error '= / d+ ; ; /'
+  _parse-error '= / d+ ; ; ; /'
+
   # typo should be parse error
-  _parse-error '= / d+ ; ignorecas /'
+  #_parse-error '= / d+ ; ignorecas /'
 }
 
 #

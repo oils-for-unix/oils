@@ -1349,9 +1349,9 @@ class ExprEvaluator(object):
         # TODO:
         # - check for incompatible flags, like i
         #   - or can the root override flags?  Probably not
-        # - check for named captures not at the top level
         spliced = self._EvalRegex(node.regex)
-        flags = [lexer.TokenVal(tok) for tok in node.flags]
+        #flags = [lexer.TokenVal(tok) for tok in node.flags]
+        flags = []  # type: List[str]
         return value.Eggex(spliced, flags, None, 0, None)
 
 

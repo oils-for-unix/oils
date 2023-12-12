@@ -288,7 +288,8 @@ module syntax
     Word(word w)
   | YshExpr(expr e)
 
-  Eggex = (Token left, re regex, List[Token] flags, Token? trans_pref)
+  EggexFlag = (bool negated, Token flag)
+  Eggex = (Token left, re regex, List[EggexFlag] flags, Token? trans_pref)
 
   pat =
     Else
