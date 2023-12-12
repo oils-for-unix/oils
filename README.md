@@ -130,7 +130,7 @@ languages, Zephyr ASDL, and a statically-typed subset of Python.
     osh/              # OSH parsers and evaluators (cmd, word, sh_expr)
     ysh/              # YSH parser and evaluator
     data_lang/        # Languages based on JSON
-    library/          # Builtin commands and functions
+    builtin/          # Builtin commands and functions
     core/             # Other code shared between OSH and YSH
     pyext/            # Python extension modules, e.g. libc.c
     pylib/            # Borrowed from the Python standard library.
