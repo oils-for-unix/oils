@@ -1278,7 +1278,7 @@ json write (x) {
   _ysh-parse-error 'f(x)'  # test short name
 }
 
-test-eggex() {
+test-eggex-capture() {
   _should-parse '= / d+ /'
   #_should-parse '= / <d+ : date> /'
   _should-parse '= / < capture d+ as date > /'
@@ -1287,6 +1287,19 @@ test-eggex() {
   # These keywords are taken in regular expressions, I guess that's OK.
   _parse-error 'var capture = 42'
   _parse-error 'var as = 42'
+}
+
+
+test-eggex-flags() {
+  _should-parse '= / d+ ; ignorecase /'
+
+  # ERE means is the default; it's POSIX ERE
+  # Other option is PCRE
+  _should-parse '= / d+ ; ignorecase ; ERE /'
+  _should-parse '= / d+ ; ; ERE /'
+
+  # typo should be parse error
+  _parse-error '= / d+ ; ignorecas /'
 }
 
 #

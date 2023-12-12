@@ -384,13 +384,6 @@ class Transformer(object):
                 i += 1
             return self._Dict(parent, parent.GetChild(i))
 
-        if id_ == Id.Arith_Slash:
-            r = self._Regex(parent.GetChild(1))
-            flags = []  # type: List[Token]
-            # TODO: Parse translation preference.
-            trans_pref = None  # type: Token
-            return Eggex(parent.GetChild(0).tok, r, flags, trans_pref)
-
         if id_ == Id.Arith_Amp:
             n = parent.NumChildren()
             if n >= 3:
@@ -673,6 +666,9 @@ class Transformer(object):
                 inner = self.Expr(pnode.GetChild(1))
                 return expr.Literal(inner)
 
+            elif typ == grammar_nt.eggex:
+                return self._Eggex(pnode)
+
             elif typ == grammar_nt.ysh_expr_sub:
                 return self.Expr(pnode.GetChild(0))
 
@@ -824,6 +820,12 @@ class Transformer(object):
         rhs = self.Expr(p_node.GetChild(2))
         return command.Mutation(None, lhs_list, op_tok, rhs)
 
+    def _Eggex(self, p_node):
+        # type: (PNode) -> Eggex
+        left = p_node.GetChild(0).tok
+        regex = self._Regex(p_node.GetChild(1))
+        return Eggex(left, regex, [], None)
+
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t
         assert pnode.typ == grammar_nt.ysh_case_pat, pnode
@@ -846,11 +848,8 @@ class Transformer(object):
                         exprs.append(expr)
                 return pat.YshExprs(exprs)
 
-        elif typ == grammar_nt.pat_eggex:
-            # pat_eggex
-            left = pattern.GetChild(0).tok
-            re = self._Regex(pattern.GetChild(1))
-            return Eggex(left, re, [], None)
+        elif typ == grammar_nt.eggex:
+            return self._Eggex(pattern)
 
         raise NotImplementedError()
 

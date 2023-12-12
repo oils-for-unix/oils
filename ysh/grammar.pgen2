@@ -84,7 +84,6 @@ atom: (
   | '[' [testlist_comp] ']' 
     # Note: newlines are significant inside {}, unlike inside () and []
   | '{' [Op_Newline] [dict] '}'
-  | '/' regex [re_flags] '/'
   | '&' Expr_Name place_trailer*
 
     # NOTE: These atoms are are allowed in typed array literals
@@ -105,6 +104,7 @@ atom: (
   | dq_string | sq_string
     # Expr_Symbol could be %mykey
 
+  | eggex
   | literal_expr
 
   # $foo is disallowed, but $? is allowed.  Should be "$foo" to indicate a
@@ -472,14 +472,15 @@ regex: [re_alt] (('|'|'or') re_alt)*
 #                  ^-- End of pattern/beginning of case arm body
 # }
 
+eggex: '/' regex [re_flags] '/'
+
 ysh_case_pat: (
     '(' (pat_else | pat_exprs)
-  | pat_eggex
+  | eggex
 ) [Op_Newline] '{'
 
 pat_else: 'else' ')'
 pat_exprs: expr ')' [Op_Newline] ('|' [Op_Newline] '(' expr ')' [Op_Newline])*
-pat_eggex: '/' regex [re_flags] '/'
 
 # e.g. /digit+ ; multiline !ignorecase/
 #
