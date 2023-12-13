@@ -289,7 +289,13 @@ module syntax
   | YshExpr(expr e)
 
   EggexFlag = (bool negated, Token flag)
-  Eggex = (Token left, re regex, List[EggexFlag] flags, Token? trans_pref)
+
+  # ere_flags is a canonical version of flags that can be compared for
+  # equality.  This is so we can splice eggexes correctly, e.g.
+  # / 'abc' @pat ; i /
+  Eggex = (
+      Token left, re regex, List[EggexFlag] flags, Token? trans_pref,
+      str? ere_flags)
 
   pat =
     Else

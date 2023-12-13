@@ -51,6 +51,7 @@ from frontend import lexer
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 from ysh import expr_parse
+from ysh import regex_translate
 
 from typing import TYPE_CHECKING, Dict, List, Tuple, Optional, cast
 if TYPE_CHECKING:
@@ -858,7 +859,13 @@ class Transformer(object):
                 i += 1
                 trans_pref = p_node.GetChild(i).tok
 
-        return Eggex(left, regex, flags, trans_pref)
+        # Canonicalize and validate flags for ERE only.  Default is ERE.
+        if trans_pref is None or lexer.TokenVal(trans_pref) == 'ERE':
+            ere_flags = regex_translate.EncodeFlagsEre(flags)
+        else:
+            ere_flags = None
+
+        return Eggex(left, regex, flags, trans_pref, ere_flags)
 
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t

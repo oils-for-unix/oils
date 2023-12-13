@@ -1291,11 +1291,22 @@ test-eggex-capture() {
 
 
 test-eggex-flags() {
-  _should-parse '= / d+ ; ignorecase /'
+  _should-parse '= / d+ ; reg_icase /'
+  _should-parse '= / d+ ; i /'  # shortcut
+
+  # can't negate these
+  _parse-error '= / d+ ; !i /'
+
+  # typo should be parse error
+  _parse-error '= / d+ ; reg_oops /'
+
+  # PCRE should not validate
+  _should-parse '= / d+ ; !i; PCRE /'
+  _should-parse '= / d+ ; reg_oops; PCRE /'
 
   # ERE means is the default; it's POSIX ERE
   # Other option is PCRE
-  _should-parse '= / d+ ; ignorecase !multiline ; ERE /'
+  _should-parse '= / d+ ; i reg_newline ; ERE /'
   _should-parse '= / d+ ; ; ERE /'
 
   # trailing ; is OK
@@ -1304,9 +1315,6 @@ test-eggex-flags() {
   # doesn't make sense
   _parse-error '= / d+ ; ; /'
   _parse-error '= / d+ ; ; ; /'
-
-  # typo should be parse error
-  #_parse-error '= / d+ ; ignorecas /'
 }
 
 #
