@@ -99,6 +99,20 @@ setvar is_a_val = "xyz"
 (Bool)   True
 ## END
 
+#### Lis->indexOf
+var items = [1, '2', 3, { 'a': 5 }]
+
+write -- $[items->indexOf('a')]
+write -- $[items->indexOf(1)]
+write -- $[items->indexOf('2')]
+write -- $[items->indexOf({'a': 5})]
+## STDOUT:
+-1
+0
+1
+3
+## END
+
 #### List->join
 var items = [1, 2, 3]
 

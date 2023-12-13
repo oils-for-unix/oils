@@ -763,7 +763,7 @@ def Main(
         'pop': method_list.Pop(),
         'insert': None,  # insert object before index
         'remove': None,  # insert object before index
-        'find': None,  # return first index of value, or -1
+        'indexOf': method_list.IndexOf(),  # return first index of value, or -1
         # Python list() has index(), which raises ValueError
         # But this is consistent with Str->find(), and doesn't
         # use exceptions

@@ -63,7 +63,9 @@ Respects unicode.
 
 ### extend()
 
-### find()
+### indexOf()
+
+Returns -1 if element is not in the index.
 
 ### insert()
 
