@@ -14,10 +14,12 @@ from _devbuild.gen.syntax_asdl import (
     re_repeat,
     re_repeat_e,
     NameType,
+    EggexFlag,
 )
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.value_asdl import value
 from core.error import e_die
+from frontend import lexer
 from mycpp.mylib import log, tagswitch
 from osh import glob_  # for ExtendedRegexEscape
 
@@ -346,3 +348,25 @@ def AsPosixEre(eggex):
     eggex.name_types = name_types
 
     return eggex.as_ere
+
+
+def _EncodeFlags(flags):
+    # type: (List[EggexFlag]) -> str
+    """
+    Raises fatal exception on invalid flags.
+    """
+    letters = []  # type: List[str]
+    for flag in flags:
+        if flag.negated:
+            e_die("Flag can't be negated", flag.flag)
+        flag_name = lexer.TokenVal(flag.flag)
+        if flag_name in ('i', 'reg_icase'):
+            letters.append('i')
+        elif flag_name == 'reg_newline':
+            letters.append('n')
+        else:
+            e_die("Invalid regex flag %r" % flag_name, flag.flag)
+
+    # Normalize for comparison
+    return ''.join(sorted(letters))
+
