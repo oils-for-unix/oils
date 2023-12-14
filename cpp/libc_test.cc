@@ -1,6 +1,6 @@
 #include "cpp/libc.h"
 
-#include <regex.h>  // regcomp()
+#include <regex.h>   // regcomp()
 #include <unistd.h>  // gethostname()
 
 #include "mycpp/runtime.h"
@@ -68,23 +68,40 @@ TEST libc_test() {
   PASS();
 }
 
+static List<BigStr*>* Groups(BigStr* s, List<int>* indices) {
+  List<BigStr*>* groups = NewList<BigStr*>();
+  int n = len(indices) / 2;
+  for (int i = 0; i < n; ++i) {
+    int start = indices->at(2 * i);
+    int end = indices->at(2 * i + 1);
+    if (start == -1) {
+      groups->append(nullptr);
+    } else {
+      groups->append(s->slice(start, end));
+    }
+  }
+  return groups;
+}
+
 TEST regex_test() {
-  List<BigStr*>* results =
-      libc::regex_match(StrFromC("(a+).(a+)"), StrFromC("-abaacaaa"), 0);
+  BigStr* s1 = StrFromC("-abaacaaa");
+  List<int>* indices = libc::regex_match(StrFromC("(a+).(a+)"), s1, 0);
+  List<BigStr*>* results = Groups(s1, indices);
   ASSERT_EQ_FMT(3, len(results), "%d");
   ASSERT(str_equals(StrFromC("abaa"), results->at(0)));  // whole match
   ASSERT(str_equals(StrFromC("a"), results->at(1)));
   ASSERT(str_equals(StrFromC("aa"), results->at(2)));
 
-  results = libc::regex_match(StrFromC("z+"), StrFromC("abaacaaa"), 0);
-  ASSERT_EQ(nullptr, results);
+  indices = libc::regex_match(StrFromC("z+"), StrFromC("abaacaaa"), 0);
+  ASSERT_EQ(nullptr, indices);
 
   // Alternation gives unmatched group
-  results = libc::regex_match(StrFromC("(a)|(b)"), StrFromC("b"), 0);
+  BigStr* s2 = StrFromC("b");
+  indices = libc::regex_match(StrFromC("(a)|(b)"), s2, 0);
+  results = Groups(s2, indices);
   ASSERT_EQ_FMT(3, len(results), "%d");
   ASSERT(str_equals(StrFromC("b"), results->at(0)));  // whole match
-  // TODO: this should be null.  It is in JavaScript and Python
-  ASSERT(str_equals(StrFromC(""), results->at(1)));
+  ASSERT_EQ(nullptr, results->at(1));
   ASSERT(str_equals(StrFromC("b"), results->at(2)));
 
   Tuple2<int, int>* result;
@@ -145,7 +162,6 @@ void FindAll(const char* p, const char* s) {
   int cur_pos = 0;
   // int n = strlen(s);
   while (true) {
-
     // Necessary so ^ doesn't match in the middle!
     int eflags = cur_pos == 0 ? 0 : REG_NOTBOL;
     bool match = regexec(&pat, s + cur_pos, outlen, pmatch, eflags) == 0;
@@ -175,7 +191,6 @@ void FindAll(const char* p, const char* s) {
 
 // adjacent matches
 const char* s = "a345y-axy- there b789y- cy-";
-
 
 TEST regex_unanchored() {
   const char* unanchored = "[abc]([0-9]*)(x?)(y)-";
@@ -232,7 +247,6 @@ TEST regex_alt_with_capture() {
   FindAll(lexer, "7-");
   PASS();
 }
-
 
 GREATEST_MAIN_DEFS();
 

@@ -179,47 +179,8 @@ class LibcTest(unittest.TestCase):
     print(libc.glob('\\\\'))
     print(libc.glob('[[:punct:]]'))
 
-  def testRegexMatch(self):
-    # TODO: can delete this function
-    if 0:
-      self.assertEqual(True, libc.regex_parse(r'.*\.py'))
-
-      # Syntax errors
-      self.assertRaises(RuntimeError, libc.regex_parse, r'*')
-      self.assertRaises(RuntimeError, libc.regex_parse, '\\')
-      if not IS_DARWIN:
-        self.assertRaises(RuntimeError, libc.regex_parse, '{')
-
-    cases = [
-        ('([a-z]+)([0-9]+)', 'foo123', ['foo123', 'foo', '123']),
-        (r'.*\.py', 'foo.py', ['foo.py']),
-        (r'.*\.py', 'abcd', None),
-        # The match is unanchored
-        (r'bc', 'abcd', ['bc']),
-        # The match is unanchored
-        (r'.c', 'abcd', ['bc']),
-        # Empty matches empty
-        None if IS_DARWIN else (r'', '', ['']),
-        (r'^$', '', ['']),
-        (r'^.$', '', None),
-    ]
-
-    # TODO:
-    #
-    # return a single list of length 2*(1 + nsub)
-    # 2 is for start and end, +1 is for 0
-    #
-    # indices = regex_search(...)
-    # indices[2*group] is start
-    # indices[2*group+1] is end
-    # group is from 0 ... n
-
-    for pat, s, expected in filter(None, cases):
-      #print('CASE %s' % pat)
-      actual = libc.regex_match(pat, s, 0)
-      self.assertEqual(expected, actual)
-
-  def testRegexMatch(self):
+  def testRegexMatchError(self):
+    # See core/util_test.py for more tests
     self.assertRaises(RuntimeError, libc.regex_match, r'*', 'abcd', 0)
 
   def testRegexFirstGroupMatch(self):

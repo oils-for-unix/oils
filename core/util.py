@@ -16,19 +16,38 @@ from mycpp import mylib
 
 import libc
 
-from typing import List
+from typing import List, Optional
+
+
+def _Groups(s, indices):
+    # type: (str, Optional[List[int]]) -> List[str]
+    if indices is None:
+        return None
+
+    groups = []  # type: List[str]
+    n = len(indices)
+    for i in xrange(n / 2):
+        start = indices[2 * i]
+        end = indices[2 * i + 1]
+        if start == -1:
+            groups.append(None)
+        else:
+            groups.append(s[start:end])
+    return groups
 
 
 def simple_regex_search(pat, s):
     # type: (str, str) -> List[str]
     """Convenience wrapper around libc."""
-    return libc.regex_match(pat, s, 0)
+    indices = libc.regex_match(pat, s, 0)
+    return _Groups(s, indices)
 
 
 def regex_search(pat, comp_flags, s):
     # type: (str, int, str) -> List[str]
     """Convenience wrapper around libc."""
-    return libc.regex_match(pat, s, comp_flags)
+    indices = libc.regex_match(pat, s, comp_flags)
+    return _Groups(s, indices)
 
 
 class UserExit(Exception):
