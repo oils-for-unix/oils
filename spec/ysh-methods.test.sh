@@ -37,10 +37,10 @@ K1/K2
 K1/K2
 ## END
 
-#### Str->startsWith
-= "abc"->startsWith("")
-= "abc"->startsWith("a")
-= "abc"->startsWith("z")
+#### Str => startsWith()
+= "abc" => startsWith("")
+= "abc" => startsWith("a")
+= "abc" => startsWith("z")
 ## status: 0
 ## STDOUT:
 (Bool)   True
@@ -48,31 +48,31 @@ K1/K2
 (Bool)   False
 ## END
 
-#### Str->startsWith, no args
-= "abc"->startsWith()
+#### Str => startsWith(), no args
+= "abc" => startsWith()
 ## status: 3
 
-#### Str->startsWith, too many args
-= "abc"->startsWith("extra", "arg")
+#### Str => startsWith(), too many args
+= "abc" => startsWith("extra", "arg")
 ## status: 3
 
 #### Missing method (Str->doesNotExist())
 = "abc"->doesNotExist()
 ## status: 3
 
-#### Dict->keys()
+#### Dict => keys()
 var en2fr = {}
 setvar en2fr["hello"] = "bonjour"
 setvar en2fr["friend"] = "ami"
 setvar en2fr["cat"] = "chat"
-= en2fr->keys()
+= en2fr => keys()
 ## status: 0
 ## STDOUT:
 (List)   ['hello', 'friend', 'cat']
 ## END
 
 #### Separation of -> attr and () calling
-const check = "abc"->startsWith
+const check = "abc" => startsWith
 = check("a")
 ## status: 0
 ## STDOUT:
@@ -81,13 +81,13 @@ const check = "abc"->startsWith
 
 #### Bound methods, receiver value/reference semantics
 var is_a_ref = { "foo": "bar" }
-const f = is_a_ref->keys
+const f = is_a_ref => keys
 = f()
 setvar is_a_ref["baz"] = 42
 = f()
 
 var is_a_val = "abc"
-const g = is_a_val->startsWith
+const g = is_a_val => startsWith
 = g("a")
 setvar is_a_val = "xyz"
 = g("a")
@@ -99,13 +99,13 @@ setvar is_a_val = "xyz"
 (Bool)   True
 ## END
 
-#### Lis->indexOf
+#### List => indexOf()
 var items = [1, '2', 3, { 'a': 5 }]
 
-write -- $[items->indexOf('a')]
-write -- $[items->indexOf(1)]
-write -- $[items->indexOf('2')]
-write -- $[items->indexOf({'a': 5})]
+json write (items => indexOf('a'))
+json write (items => indexOf(1))
+json write (items => indexOf('2'))
+json write (items => indexOf({'a': 5}))
 ## STDOUT:
 -1
 0
@@ -113,15 +113,15 @@ write -- $[items->indexOf({'a': 5})]
 3
 ## END
 
-#### List->join
+#### List => join()
 var items = [1, 2, 3]
 
-json write (items->join())  # default separator is ''
-json write (items->join(" "))  # explicit separator (can be any number or chars)
-json write (items->join(", "))  #  separator can be any number of chars
+json write (items => join())  # default separator is ''
+json write (items => join(" "))  # explicit separator (can be any number or chars)
+json write (items => join(", "))  #  separator can be any number of chars
 
 try {
-  json write (items->join(1))  # separator must be a string
+  json write (items => join(1))  # separator must be a string
 }
 echo "failed with status $_status"
 ## STDOUT:

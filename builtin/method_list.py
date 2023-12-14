@@ -92,7 +92,7 @@ class IndexOf(vm._Callable):
         rd.Done()
         i = 0
         while i < len(li):
-            if needle.tag() == li[i].tag() and val_ops.ExactlyEqual(li[i], needle, loc.Missing):
+            if val_ops.ExactlyEqual(li[i], needle, loc.Missing):
                 return value.Int(i)
             i += 1
         return value.Int(-1)
