@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 4
 
 #### /^.$/
 shopt -s ysh:all
