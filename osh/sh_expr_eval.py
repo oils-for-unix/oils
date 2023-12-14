@@ -47,6 +47,7 @@ from core import error
 from core.error import e_die, e_die_status, e_strict, e_usage
 from core import state
 from core import ui
+from core import util
 from frontend import consts
 from frontend import match
 from frontend import parse_lib
@@ -1070,7 +1071,7 @@ class BoolEvaluator(ArithEvaluator):
                                        if self.exec_opts.nocasematch() else 0)
 
                         try:
-                            matches = libc.regex_match(s2, s1, regex_flags)
+                            matches = util.regex_search(s2, regex_flags, s1)
                         except RuntimeError as e:
                             # Status 2 indicates a regex parse error.  This is fatal in OSH but
                             # not in bash, which treats [[ like a command with an exit code.

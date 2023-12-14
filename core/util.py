@@ -14,6 +14,22 @@ from core import ansi
 from core import pyutil
 from mycpp import mylib
 
+import libc
+
+from typing import List
+
+
+def simple_regex_search(pat, s):
+    # type: (str, str) -> List[str]
+    """Convenience wrapper around libc."""
+    return libc.regex_match(pat, s, 0)
+
+
+def regex_search(pat, comp_flags, s):
+    # type: (str, int, str) -> List[str]
+    """Convenience wrapper around libc."""
+    return libc.regex_match(pat, s, comp_flags)
+
 
 class UserExit(Exception):
     """For explicit 'exit'."""

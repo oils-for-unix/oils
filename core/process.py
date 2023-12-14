@@ -43,7 +43,6 @@ from osh import cmd_eval
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, tagswitch, iteritems
 
-import libc
 import posix_ as posix
 from posix_ import (
     # translated by mycpp and directly called!  No wrapper!
@@ -1681,7 +1680,7 @@ class JobList(object):
             return previous
 
         # TODO: Add support for job specs based on prefixes of process argv.
-        m = libc.regex_match(r'^%([0-9]+)$', job_spec)
+        m = util.simple_regex_search(r'^%([0-9]+)$', job_spec)
         if m is not None and len(m) > 1:
             job_id = int(m[1])
             if job_id in self.jobs:

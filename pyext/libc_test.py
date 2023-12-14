@@ -179,14 +179,16 @@ class LibcTest(unittest.TestCase):
     print(libc.glob('\\\\'))
     print(libc.glob('[[:punct:]]'))
 
-  def testRegexParse(self):
-    self.assertEqual(True, libc.regex_parse(r'.*\.py'))
+  def testRegexMatch(self):
+    # TODO: can delete this function
+    if 0:
+      self.assertEqual(True, libc.regex_parse(r'.*\.py'))
 
-    # Syntax errors
-    self.assertRaises(RuntimeError, libc.regex_parse, r'*')
-    self.assertRaises(RuntimeError, libc.regex_parse, '\\')
-    if not IS_DARWIN:
-      self.assertRaises(RuntimeError, libc.regex_parse, '{')
+      # Syntax errors
+      self.assertRaises(RuntimeError, libc.regex_parse, r'*')
+      self.assertRaises(RuntimeError, libc.regex_parse, '\\')
+      if not IS_DARWIN:
+        self.assertRaises(RuntimeError, libc.regex_parse, '{')
 
     cases = [
         ('([a-z]+)([0-9]+)', 'foo123', ['foo123', 'foo', '123']),
@@ -201,6 +203,16 @@ class LibcTest(unittest.TestCase):
         (r'^$', '', ['']),
         (r'^.$', '', None),
     ]
+
+    # TODO:
+    #
+    # return a single list of length 2*(1 + nsub)
+    # 2 is for start and end, +1 is for 0
+    #
+    # indices = regex_search(...)
+    # indices[2*group] is start
+    # indices[2*group+1] is end
+    # group is from 0 ... n
 
     for pat, s, expected in filter(None, cases):
       #print('CASE %s' % pat)

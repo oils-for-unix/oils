@@ -14,10 +14,9 @@ import unittest
 
 from core import error
 from core import test_lib
+from core import util
 from osh import word_eval
 from osh.cmd_parse_test import assertParseSimpleCommand
-
-import libc
 
 
 def InitEvaluator():
@@ -49,7 +48,7 @@ class RegexTest(unittest.TestCase):
         ]
 
         for s, expected in CASES:
-            actual = libc.regex_match(word_eval.ASSIGN_ARG_RE, s)
+            actual = util.simple_regex_search(word_eval.ASSIGN_ARG_RE, s)
             if actual is None:
                 self.assertEqual(expected, actual)  # no match
             else:
