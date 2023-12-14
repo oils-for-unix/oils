@@ -81,7 +81,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   thin-arrow    s->pop()
                   fat-arrow     s => startswith('prefix')
                   match-ops     ~   !~   ~~   !~~
-  [Eggex]         re-literal    / d+ /
+  [Eggex]         re-literal    / d+ ; i ; ERE /
                   re-compound   pat|alt   pat seq   (group)
                                 <capture>   <capture :name> 
                   re-primitive  %zero   Subpattern   @subpattern   'sq'

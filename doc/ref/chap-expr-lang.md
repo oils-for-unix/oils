@@ -274,6 +274,21 @@ can be used for "chaining" transformations:
 
 ### re-literal
 
+Examples of eggex literals:
+
+    var pat = / d+ /  # => [[:digit:]]+
+
+You can specify flags passed to libc regcomp():
+
+    var pat = / d+ ; reg_icase reg_newline / 
+
+You can specify a translation preference:
+
+    var pat = / d+ ; reg_icase reg_newline ; ERE / 
+
+Right now the translation preference does nothing.  It could be used to
+translate eggex to PCRE or Python syntax.
+
 ### re-compound
 
 ### re-primitive

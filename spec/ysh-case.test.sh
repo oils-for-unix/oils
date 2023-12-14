@@ -67,7 +67,7 @@ case (x) {
 ## STDOUT:
 ## END
 
-#### case syntax, eggex
+#### eggex as case arm
 const x = "main.cc"
 case (x) {
   / dot* '.py' / {
@@ -79,6 +79,20 @@ case (x) {
 }
 ## STDOUT:
 C++
+## END
+
+#### eggex respects flags
+const x = 'MAIN.PY'
+case (x) {
+  / dot* '.py' ; i / {
+    echo Python
+  }
+  / dot* ('.cc' | '.h') / {
+   echo C++
+  }
+}
+## STDOUT:
+Python
 ## END
 
 #### empty case statement

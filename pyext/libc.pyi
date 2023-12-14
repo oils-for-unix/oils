@@ -2,6 +2,7 @@ from typing import List, Optional, Tuple
 
 FNM_CASEFOLD: int
 REG_ICASE: int
+REG_NEWLINE: int
 
 def gethostname() -> str: ...
 def glob(pat: str) -> List[str]: ...

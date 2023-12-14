@@ -417,6 +417,7 @@ void initlibc(void) {
   if (module != NULL) {
       PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
       PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
+      PyModule_AddIntConstant(module, "REG_NEWLINE", REG_NEWLINE);
   }
 
   errno_error = PyErr_NewException("libc.error",

@@ -35,7 +35,6 @@ from _devbuild.gen.syntax_asdl import (
     CharCode,
     ArgList,
     Eggex,
-    EggexFlag,
 )
 from _devbuild.gen.runtime_asdl import (
     coerced_e,
@@ -54,7 +53,6 @@ from core import state
 from core import ui
 from core import vm
 from frontend import consts
-#from frontend import lexer
 from frontend import match
 from frontend import location
 from frontend import typed_args
