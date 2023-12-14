@@ -48,13 +48,40 @@ yes
 no
 ## END
 
-#### Eggex flags ignorecase
+#### Eggex flags to ignore case are respected
+shopt -s ysh:upgrade
 
 # based on Python's spelling
-var pat = / 'abc' ; ignorecase /
+var pat = / 'abc' ; i /
+var pat2 = / @pat 'def' ; reg_icase /  # this is allowed
 
-= pat
+if ('-abcdef-' ~ pat2) {
+  echo 'yes'
+}
 
+if ('-ABCDEF-' ~ pat2) {
+  echo 'yes'
+}
+
+if ('ABCDE' ~ pat2) {
+  echo 'BUG'
+}
+
+## STDOUT:
+yes
+yes
+## END
+
+#### Can't splice eggex with different flags
+shopt -s ysh:upgrade
+
+var pat = / 'abc' ; i /
+var pat2 = / @pat 'def' ; reg_icase /  # this is allowed
+
+var pat3 = / @pat 'def' /
+= pat3
+
+## status: 1
 ## STDOUT:
 ## END
 

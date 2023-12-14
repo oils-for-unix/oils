@@ -1222,9 +1222,12 @@ class ExprEvaluator(object):
                     char_int, char_code_tok)
             out.append(CharCode(char_int, False, char_code_tok))
 
-    def _EvalRegex(self, node):
-        # type: (re_t) -> re_t
+    def _EvalRegex(self, node, parent_flags):
+        # type: (re_t, str) -> re_t
         """Resolve references and eval constants in an Eggex
+
+        Args:
+          parent_flags: anything spliced must have the same flags
 
         Rules:
           Splice => re_t   # like Hex and @const in  / Hex '.' @const /
@@ -1237,28 +1240,32 @@ class ExprEvaluator(object):
             if case(re_e.Seq):
                 node = cast(re.Seq, UP_node)
                 new_children = [
-                    self._EvalRegex(child) for child in node.children
+                    self._EvalRegex(child, parent_flags)
+                    for child in node.children
                 ]
                 return re.Seq(new_children)
 
             elif case(re_e.Alt):
                 node = cast(re.Alt, UP_node)
                 new_children = [
-                    self._EvalRegex(child) for child in node.children
+                    self._EvalRegex(child, parent_flags)
+                    for child in node.children
                 ]
                 return re.Alt(new_children)
 
             elif case(re_e.Repeat):
                 node = cast(re.Repeat, UP_node)
-                return re.Repeat(self._EvalRegex(node.child), node.op)
+                return re.Repeat(self._EvalRegex(node.child, parent_flags),
+                                 node.op)
 
             elif case(re_e.Group):
                 node = cast(re.Group, UP_node)
-                return re.Group(self._EvalRegex(node.child))
+                return re.Group(self._EvalRegex(node.child, parent_flags))
 
             elif case(re_e.Capture):  # Identical to Group
                 node = cast(re.Capture, UP_node)
-                return re.Capture(self._EvalRegex(node.child), node.name_type)
+                return re.Capture(self._EvalRegex(node.child, parent_flags),
+                                  node.name_type)
 
             elif case(re_e.CharClassLiteral):
                 node = cast(re.CharClassLiteral, UP_node)
@@ -1322,9 +1329,13 @@ class ExprEvaluator(object):
 
                     elif case(value_e.Eggex):
                         val = cast(value.Eggex, UP_val)
-                        # TODO: warn about flags that don't match
-                        # This check will be transitive
+                        # Splicing requires flags to match.  This check is
+                        # transitive.
                         to_splice = val.spliced
+                        if val.canonical_flags != parent_flags:
+                            e_die(
+                                "Expected eggex flags %r, but got %r" %
+                                (parent_flags, val.canonical_flags), node.name)
 
                     else:
                         raise error.TypeErr(
@@ -1341,19 +1352,11 @@ class ExprEvaluator(object):
 
     def EvalEggex(self, node):
         # type: (Eggex) -> value.Eggex
-        """Trivial wrapper.
 
-        It's a bit weird that this is re_t -> re_t, instead of different types.
-        It reflects the "macro expansion" of eggex.
-        """
-        # _EvalRegex does splicing
-        # TODO:
-        # - check for incompatible flags, like i
-        #   - or can the root override flags?  Probably not
-        spliced = self._EvalRegex(node.regex)
-        #flags = [lexer.TokenVal(tok) for tok in node.flags]
-        flags = []  # type: List[EggexFlag]
-        return value.Eggex(spliced, flags, None, 0, None)
+        spliced = self._EvalRegex(node.regex, node.canonical_flags)
+
+        # as_ere and name_types filled in during translation
+        return value.Eggex(spliced, node.canonical_flags, None, None)
 
 
 # vim: sw=4

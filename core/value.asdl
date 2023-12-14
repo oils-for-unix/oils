@@ -75,8 +75,7 @@ module value
 
     # expr is spliced
     # / d+; ignorecase / -> '[[:digit:]]+' REG_ICASE
-  | Eggex(re spliced, List[EggexFlag] normalized_flags, str? as_ere,
-          int ere_flags,
+  | Eggex(re spliced, str canonical_flags, str? as_ere, 
           # inner ? is because some groups are not named
           # outer ? because it's not set until ERE translation is done
           List[NameType?]? name_types)
