@@ -131,10 +131,18 @@ if (s ~ '[[:digit:]]+') {
 }
 # Should be cleared now
 # should this be Undef rather than ''?
-var x = _match(0)
-var y = _match(1)
-if (x === null and y === null) {
-  echo 'cleared'
+try {
+  var x = _match(0)
+}
+if (_status === 2) {
+  echo 'got expected status 2'
+}
+
+try {
+  var y = _match(1)
+}
+if (_status === 2) {
+  echo 'got expected status 2'
 }
 
 ## STDOUT:
@@ -142,7 +150,19 @@ matches
 ['foo', 'oo']
 does not match
 ['foo', 'oo']
-cleared
+got expected status 2
+got expected status 2
+## END
+
+#### _match() returns null when group doesn't match
+shopt -s ysh:upgrade
+
+var pat = / <capture 'a'> | <capture 'b'> /
+if ('b' ~ pat) {
+  echo "$[_match(1)] $[_match(2)]"
+}
+## STDOUT:
+null b
 ## END
 
 #### _start() and _end()

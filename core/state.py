@@ -2152,13 +2152,9 @@ class Mem(object):
         # type: (List[str]) -> None
         self.regex_matches[-1] = matches
 
-    def GetMatch(self, i):
-        # type: (int) -> Optional[str]
-        top = self.regex_matches[-1]
-        if i < len(top):
-            return top[i]
-        else:
-            return None
+    def GetRegexMatches(self):
+        # type: () -> List[Optional[str]]
+        return self.regex_matches[-1]
 
 
 #
