@@ -186,8 +186,9 @@ func_regex_match(PyObject *self, PyObject *args) {
   const char* pattern;
   const char* str;
   int flags = 0;
+  int pos = 0;
 
-  if (!PyArg_ParseTuple(args, "ss|i", &pattern, &str, &flags)) {
+  if (!PyArg_ParseTuple(args, "ssi|i", &pattern, &str, &flags, &pos)) {
     return NULL;
   }
 

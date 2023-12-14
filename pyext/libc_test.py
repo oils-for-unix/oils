@@ -216,11 +216,11 @@ class LibcTest(unittest.TestCase):
 
     for pat, s, expected in filter(None, cases):
       #print('CASE %s' % pat)
-      actual = libc.regex_match(pat, s)
+      actual = libc.regex_match(pat, s, 0)
       self.assertEqual(expected, actual)
 
   def testRegexMatch(self):
-    self.assertRaises(RuntimeError, libc.regex_match, r'*', 'abcd')
+    self.assertRaises(RuntimeError, libc.regex_match, r'*', 'abcd', 0)
 
   def testRegexFirstGroupMatch(self):
     s='oXooXoooXoX'
