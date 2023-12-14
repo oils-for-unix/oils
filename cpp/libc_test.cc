@@ -49,6 +49,9 @@ TEST libc_test() {
   ASSERT_EQ_FMT(2, width, "%d");
 #endif
 
+  BigStr* h = libc::gethostname();
+  log("gethostname() = %s %d", h->data_, len(h));
+
   width = libc::wcswidth(StrFromC("foo"));
   ASSERT_EQ(3, width);
 
@@ -62,15 +65,27 @@ TEST libc_test() {
   ASSERT(libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.py")));
   ASSERT(!libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.p")));
 
+  PASS();
+}
+
+TEST regex_test() {
   List<BigStr*>* results =
-      libc::regex_match(StrFromC("(a+).(a+)"), StrFromC("-abaacaaa"));
+      libc::regex_match(StrFromC("(a+).(a+)"), StrFromC("-abaacaaa"), 0);
   ASSERT_EQ_FMT(3, len(results), "%d");
   ASSERT(str_equals(StrFromC("abaa"), results->at(0)));  // whole match
   ASSERT(str_equals(StrFromC("a"), results->at(1)));
   ASSERT(str_equals(StrFromC("aa"), results->at(2)));
 
-  results = libc::regex_match(StrFromC("z+"), StrFromC("abaacaaa"));
+  results = libc::regex_match(StrFromC("z+"), StrFromC("abaacaaa"), 0);
   ASSERT_EQ(nullptr, results);
+
+  // Alternation gives unmatched group
+  results = libc::regex_match(StrFromC("(a)|(b)"), StrFromC("b"), 0);
+  ASSERT_EQ_FMT(3, len(results), "%d");
+  ASSERT(str_equals(StrFromC("b"), results->at(0)));  // whole match
+  // TODO: this should be null.  It is in JavaScript and Python
+  ASSERT(str_equals(StrFromC(""), results->at(1)));
+  ASSERT(str_equals(StrFromC("b"), results->at(2)));
 
   Tuple2<int, int>* result;
   BigStr* s = StrFromC("oXooXoooXoX");
@@ -85,9 +100,6 @@ TEST libc_test() {
   result = libc::regex_first_group_match(StrFromC("(X.)"), s, 6);
   ASSERT_EQ_FMT(8, result->at0(), "%d");
   ASSERT_EQ_FMT(10, result->at1(), "%d");
-
-  BigStr* h = libc::gethostname();
-  log("gethostname() = %s %d", h->data_, len(h));
 
   PASS();
 }
@@ -232,6 +244,7 @@ int main(int argc, char** argv) {
   RUN_TEST(hostname_test);
   RUN_TEST(realpath_test);
   RUN_TEST(libc_test);
+  RUN_TEST(regex_test);
   RUN_TEST(libc_glob_test);
   RUN_TEST(for_test_coverage);
 
