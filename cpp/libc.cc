@@ -105,9 +105,7 @@ List<BigStr*>* glob(BigStr* pat) {
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
-List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags, int pos) {
-  List<BigStr*>* results = NewList<BigStr*>();
-
+List<int>* regex_match(BigStr* pattern, BigStr* str, int flags, int pos) {
   flags |= REG_EXTENDED;
   regex_t pat;
   if (regcomp(&pat, pattern->data_, flags) != 0) {
@@ -115,18 +113,20 @@ List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags, int pos) {
     throw Alloc<RuntimeError>(StrFromC("Invalid regex syntax (regex_match)"));
   }
 
-  int outlen = pat.re_nsub + 1;  // number of captures
+  int num_groups = pat.re_nsub + 1;  // number of captures
+
+  List<int>* indices = NewList<int>();
+  indices->reserve(num_groups * 2);
 
   const char* s0 = str->data_;
   regmatch_t* pmatch =
-      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
-  int match = regexec(&pat, s0, outlen, pmatch, 0) == 0;
+      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * num_groups));
+  int match = regexec(&pat, s0, num_groups, pmatch, 0) == 0;
   if (match) {
     int i;
-    for (i = 0; i < outlen; i++) {
-      int len = pmatch[i].rm_eo - pmatch[i].rm_so;
-      BigStr* m = StrFromC(s0 + pmatch[i].rm_so, len);
-      results->append(m);
+    for (i = 0; i < num_groups; i++) {
+      indices->append(pmatch[i].rm_so);
+      indices->append(pmatch[i].rm_eo);
     }
   }
 
@@ -137,7 +137,7 @@ List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags, int pos) {
     return nullptr;
   }
 
-  return results;
+  return indices;
 }
 
 // For ${//}, the number of groups is always 1, so we want 2 match position

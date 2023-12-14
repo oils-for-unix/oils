@@ -202,22 +202,24 @@ func_regex_match(PyObject *self, PyObject *args) {
     return NULL;
   }
 
-  int outlen = pat.re_nsub + 1;
-  PyObject *ret = PyList_New(outlen);
+  int num_groups = pat.re_nsub + 1;
+  PyObject *ret = PyList_New(num_groups * 2);
 
   if (ret == NULL) {
     regfree(&pat);
     return NULL;
   }
 
-  regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * outlen);
-  int match = regexec(&pat, str, outlen, pmatch, 0);
+  regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * num_groups);
+  int match = regexec(&pat, str, num_groups, pmatch, 0);
   if (match == 0) {
     int i;
-    for (i = 0; i < outlen; i++) {
-      int len = pmatch[i].rm_eo - pmatch[i].rm_so;
-      PyObject *v = PyString_FromStringAndSize(str + pmatch[i].rm_so, len);
-      PyList_SetItem(ret, i, v);
+    for (i = 0; i < num_groups; i++) {
+      PyObject *start = PyInt_FromLong(pmatch[i].rm_so);
+      PyList_SetItem(ret, 2*i, start);
+
+      PyObject *end = PyInt_FromLong(pmatch[i].rm_eo);
+      PyList_SetItem(ret, 2*i + 1, end);
     }
   }
 

@@ -177,7 +177,7 @@ def _SplitAssignArg(arg, blame_word):
     # m[2] is used for grouping; ERE doesn't have non-capturing groups
 
     op = m[3]
-    if len(op):  # declare NAME=
+    if op is not None and len(op):  # declare NAME=
         val = value.Str(m[4])  # type: Optional[value_t]
         append = op[0] == '+'
     else:  # declare NAME

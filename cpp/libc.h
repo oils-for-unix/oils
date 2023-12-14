@@ -27,8 +27,7 @@ List<BigStr*>* glob(BigStr* pat);
 Tuple2<int, int>* regex_first_group_match(BigStr* pattern, BigStr* str,
                                           int pos);
 
-List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags,
-                           int pos = 0);
+List<int>* regex_match(BigStr* pattern, BigStr* str, int flags, int pos = 0);
 
 int wcswidth(BigStr* str);
 int get_terminal_width();

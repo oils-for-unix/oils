@@ -35,8 +35,8 @@ def InitEvaluator():
 class RegexTest(unittest.TestCase):
     def testSplitAssignArg(self):
         CASES = [
-            ('s', ['s', '', '']),
-            ('value', ['value', '', '']),
+            ('s', ['s', None, None]),
+            ('value', ['value', None, None]),
             ('s!', None),
             ('!', None),
             ('=s', None),
@@ -53,9 +53,7 @@ class RegexTest(unittest.TestCase):
                 self.assertEqual(expected, actual)  # no match
             else:
                 _, var_name, _, op, value = actual
-                self.assertEqual(expected[0], var_name)
-                self.assertEqual(expected[1], op)
-                self.assertEqual(expected[2], value)
+                self.assertEqual(expected, [var_name, op, value])
 
 
 class WordEvalTest(unittest.TestCase):
