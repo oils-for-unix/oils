@@ -812,9 +812,9 @@ def Main(
     _SetGlobalFunc(mem, '_hay', hay_func)
 
     _SetGlobalFunc(mem, 'len', func_misc.Len())
-    _SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
-    _SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
-    _SetGlobalFunc(mem, '_end', func_eggex.End(mem))
+    _SetGlobalFunc(mem, '_match', func_eggex.MatchAccess(mem, func_eggex.M))
+    _SetGlobalFunc(mem, '_start', func_eggex.MatchAccess(mem, func_eggex.S))
+    _SetGlobalFunc(mem, '_end', func_eggex.MatchAccess(mem, func_eggex.E))
     _SetGlobalFunc(mem, 'join', func_misc.Join())
     _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     _SetGlobalFunc(mem, 'type', func_misc.Type())

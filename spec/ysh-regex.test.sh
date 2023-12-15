@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### /^.$/
 shopt -s ysh:all
@@ -172,13 +172,27 @@ var s = 'foo123bar'
 if (s ~ /digit+/) {
   echo start=$[_start()] end=$[_end()]
 }
+echo ---
 
-if (s ~ / word+ <digit+> /) {
+if (s ~ / <capture [a-z]+> <capture digit+> /) {
   echo start=$[_start(1)] end=$[_end(1)]
+  echo start=$[_start(2)] end=$[_end(2)]
 }
+echo ---
+
+if (s ~ / <capture [a-z]+> | <capture digit+> /) {
+  echo start=$[_start(1)] end=$[_end(1)]
+  echo start=$[_start(2)] end=$[_end(2)]
+}
+
 ## STDOUT:
 start=3 end=6
+---
+start=0 end=3
 start=3 end=6
+---
+start=0 end=3
+start=-1 end=-1
 ## END
 
 #### Repeat {1,3} etc.

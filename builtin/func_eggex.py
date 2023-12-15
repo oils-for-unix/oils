@@ -11,17 +11,22 @@ from core import vm
 from frontend import typed_args
 
 
-class Match(vm._Callable):
+M = 0  # _match() _group()
+S = 1  # _start()
+E = 2  # _end()
+
+class MatchAccess(vm._Callable):
     """
     _match(0) or _match():   get the whole match _match(1) ..
 
     _match(N):  submatch
     """
 
-    def __init__(self, mem):
-        # type: (state.Mem) -> None
+    def __init__(self, mem, which_func):
+        # type: (state.Mem, int) -> None
         vm._Callable.__init__(self)
         self.mem = mem
+        self.which_func = which_func
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -33,7 +38,13 @@ class Match(vm._Callable):
         num_groups = len(indices) / 2  # including group 0
         if i < num_groups:
             start = indices[2 * i]
+            if self.which_func == S:
+                return value.Int(start)
+
             end = indices[2 * i + 1]
+            if self.which_func == E:
+                return value.Int(end)
+
             if start == -1:
                 return value.Null
             else:
@@ -45,32 +56,6 @@ class Match(vm._Callable):
                 msg = 'Expected capture group less than %d, got %d' % (
                     num_groups, i)
             raise error.UserError(2, msg, rd.LeftParenToken())
-
-
-class Start(vm._Callable):
-    """Same signature as _match(), but for start positions."""
-
-    def __init__(self, mem):
-        # type: (state.Mem) -> None
-        vm._Callable.__init__(self)
-        self.mem = mem
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        raise NotImplementedError('_start')
-
-
-class End(vm._Callable):
-    """Same signature as _match(), but for end positions."""
-
-    def __init__(self, mem):
-        # type: (state.Mem) -> None
-        vm._Callable.__init__(self)
-        self.mem = mem
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        raise NotImplementedError('_end')
 
 
 # vim: sw=4

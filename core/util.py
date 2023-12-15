@@ -16,7 +16,7 @@ from mycpp import mylib
 
 import libc
 
-from typing import List, Optional
+from typing import List
 
 
 def RegexGroups(s, indices):
