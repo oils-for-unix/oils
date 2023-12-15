@@ -810,6 +810,10 @@ test-fat-arrow() {
   # Good error message for method chaining
   _expr-error-case '= "badstring" => join("/")'
 
+
+  # float has no ExactlyEqual
+  _error-case-X 3 "= [1.0, 2.0] => indexOf(3.14)"
+
   # Invalid type
   _expr-error-case '
   var myint = 42

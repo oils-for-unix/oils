@@ -92,7 +92,7 @@ class IndexOf(vm._Callable):
         rd.Done()
         i = 0
         while i < len(li):
-            if val_ops.ExactlyEqual(li[i], needle, loc.Missing):
+            if val_ops.ExactlyEqual(li[i], needle, rd.LeftParenToken()):
                 return value.Int(i)
             i += 1
         return value.Int(-1)
