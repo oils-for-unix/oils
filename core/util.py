@@ -39,14 +39,14 @@ def _Groups(s, indices):
 def simple_regex_search(pat, s):
     # type: (str, str) -> List[str]
     """Convenience wrapper around libc."""
-    indices = libc.regex_match(pat, s, 0)
+    indices = libc.regex_search(pat, 0, s)
     return _Groups(s, indices)
 
 
 def regex_search(pat, comp_flags, s):
     # type: (str, int, str) -> List[str]
     """Convenience wrapper around libc."""
-    indices = libc.regex_match(pat, s, comp_flags)
+    indices = libc.regex_search(pat, comp_flags, s)
     return _Groups(s, indices)
 
 

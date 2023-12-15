@@ -181,7 +181,7 @@ class LibcTest(unittest.TestCase):
 
   def testRegexMatchError(self):
     # See core/util_test.py for more tests
-    self.assertRaises(RuntimeError, libc.regex_match, r'*', 'abcd', 0)
+    self.assertRaises(RuntimeError, libc.regex_search, r'*', 0, 'abcd')
 
   def testRegexFirstGroupMatch(self):
     s='oXooXoooXoX'

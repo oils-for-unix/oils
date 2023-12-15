@@ -182,13 +182,13 @@ func_regex_parse(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
-func_regex_match(PyObject *self, PyObject *args) {
+func_regex_search(PyObject *self, PyObject *args) {
   const char* pattern;
   const char* str;
   int flags = 0;
   int pos = 0;
 
-  if (!PyArg_ParseTuple(args, "ssi|i", &pattern, &str, &flags, &pos)) {
+  if (!PyArg_ParseTuple(args, "sis|i", &pattern, &flags, &str, &pos)) {
     return NULL;
   }
 
@@ -386,9 +386,9 @@ static PyMethodDef methods[] = {
   // Compile a regex in ERE syntax, returning whether it is valid
   {"regex_parse", func_regex_parse, METH_VARARGS, ""},
 
-  // Match regex against a string.  Returns a list of matches, None if no
+  // Search a string for regex.  Returns a list of matches, None if no
   // match.  Raises RuntimeError if the regex is invalid.
-  {"regex_match", func_regex_match, METH_VARARGS, ""},
+  {"regex_search", func_regex_search, METH_VARARGS, ""},
 
   // If the regex matches the string, return the start and end position of the
   // first group.  Returns None if there is no match.  Raises RuntimeError if
