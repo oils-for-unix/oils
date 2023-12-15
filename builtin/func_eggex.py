@@ -29,14 +29,15 @@ class Match(vm._Callable):
         # TODO: Support strings for named captures
         i = rd.OptionalInt(default_=0)
 
-        groups = self.mem.RegexGroups()
-        num_groups = len(groups)  # including group 0
+        s, indices = self.mem.GetRegexIndices()
+        num_groups = len(indices) / 2  # including group 0
         if i < num_groups:
-            captured = groups[i]
-            if captured is None:
+            start = indices[2 * i]
+            end = indices[2 * i + 1]
+            if start == -1:
                 return value.Null
             else:
-                return value.Str(captured)
+                return value.Str(s[start:end])
         else:
             if num_groups == 0:
                 msg = 'No regex capture groups'

@@ -20,10 +20,7 @@ from typing import List, Optional
 
 
 def RegexGroups(s, indices):
-    # type: (str, Optional[List[int]]) -> List[str]
-    if indices is None:
-        return None
-
+    # type: (str, List[int]) -> List[str]
     groups = []  # type: List[str]
     n = len(indices)
     for i in xrange(n / 2):
@@ -40,6 +37,8 @@ def simple_regex_search(pat, s):
     # type: (str, str) -> List[str]
     """Convenience wrapper around libc."""
     indices = libc.regex_search(pat, 0, s)
+    if indices is None:
+        return None
     return RegexGroups(s, indices)
 
 

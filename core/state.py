@@ -1821,7 +1821,9 @@ class Mem(object):
             return value.List(items)
 
         if name == 'BASH_REMATCH':
-            return value.BashArray(self.RegexGroups())
+            groups = util.RegexGroups(self.regex_string[-1],
+                                      self.regex_indices[-1])
+            return value.BashArray(groups)
 
         # Do lookup of system globals before looking at user variables.  Note: we
         # could optimize this at compile-time like $?.  That would break
@@ -2158,9 +2160,9 @@ class Mem(object):
         self.regex_string[-1] = s
         self.regex_indices[-1] = indices
 
-    def RegexGroups(self):
-        # type: () -> List[Optional[str]]
-        return util.RegexGroups(self.regex_string[-1], self.regex_indices[-1])
+    def GetRegexIndices(self):
+        # type: () -> Tuple[str, List[int]]
+        return self.regex_string[-1], self.regex_indices[-1]
 
 
 #
