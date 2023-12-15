@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 from _devbuild.gen.value_asdl import (value, value_t)
-from _devbuild.gen.syntax_asdl import loc
 
 from core import vm
 from frontend import typed_args
