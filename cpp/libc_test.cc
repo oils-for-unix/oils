@@ -85,19 +85,19 @@ static List<BigStr*>* Groups(BigStr* s, List<int>* indices) {
 
 TEST regex_test() {
   BigStr* s1 = StrFromC("-abaacaaa");
-  List<int>* indices = libc::regex_match(StrFromC("(a+).(a+)"), s1, 0);
+  List<int>* indices = libc::regex_search(StrFromC("(a+).(a+)"), 0, s1);
   List<BigStr*>* results = Groups(s1, indices);
   ASSERT_EQ_FMT(3, len(results), "%d");
   ASSERT(str_equals(StrFromC("abaa"), results->at(0)));  // whole match
   ASSERT(str_equals(StrFromC("a"), results->at(1)));
   ASSERT(str_equals(StrFromC("aa"), results->at(2)));
 
-  indices = libc::regex_match(StrFromC("z+"), StrFromC("abaacaaa"), 0);
+  indices = libc::regex_search(StrFromC("z+"), 0, StrFromC("abaacaaa"));
   ASSERT_EQ(nullptr, indices);
 
   // Alternation gives unmatched group
   BigStr* s2 = StrFromC("b");
-  indices = libc::regex_match(StrFromC("(a)|(b)"), s2, 0);
+  indices = libc::regex_search(StrFromC("(a)|(b)"), 0, s2);
   results = Groups(s2, indices);
   ASSERT_EQ_FMT(3, len(results), "%d");
   ASSERT(str_equals(StrFromC("b"), results->at(0)));  // whole match
