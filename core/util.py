@@ -19,7 +19,7 @@ import libc
 from typing import List, Optional
 
 
-def _Groups(s, indices):
+def RegexGroups(s, indices):
     # type: (str, Optional[List[int]]) -> List[str]
     if indices is None:
         return None
@@ -40,14 +40,7 @@ def simple_regex_search(pat, s):
     # type: (str, str) -> List[str]
     """Convenience wrapper around libc."""
     indices = libc.regex_search(pat, 0, s)
-    return _Groups(s, indices)
-
-
-def regex_search(pat, comp_flags, s):
-    # type: (str, int, str) -> List[str]
-    """Convenience wrapper around libc."""
-    indices = libc.regex_search(pat, comp_flags, s)
-    return _Groups(s, indices)
+    return RegexGroups(s, indices)
 
 
 class UserExit(Exception):

@@ -25,6 +25,7 @@ from core import pyos
 from core import pyutil
 from core import optview
 from core import ui
+from core import util
 from frontend import consts
 from frontend import location
 from frontend import match
@@ -968,7 +969,8 @@ class ctx_Registers(object):
         mem.pipe_status.append([])
         mem.process_sub_status.append([])
 
-        mem.regex_matches.append([])
+        mem.regex_indices.append([])
+        mem.regex_string.append('')
         self.mem = mem
 
     def __enter__(self):
@@ -977,7 +979,8 @@ class ctx_Registers(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.mem.regex_matches.pop()
+        self.mem.regex_string.pop()
+        self.mem.regex_indices.pop()
         self.mem.process_sub_status.pop()
         self.mem.pipe_status.pop()
         self.mem.try_status.pop()
@@ -1065,7 +1068,8 @@ class Mem(object):
         self.this_dir = []  # type: List[str]
 
         # 0 is the whole match, 1..n are submatches
-        self.regex_matches = [[]]  # type: List[List[str]]
+        self.regex_indices = [[]]  # type: List[List[int]]
+        self.regex_string = ['']  # type: List[str]
 
         self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
@@ -1817,7 +1821,7 @@ class Mem(object):
             return value.List(items)
 
         if name == 'BASH_REMATCH':
-            return value.BashArray(self.regex_matches[-1])  # top of stack
+            return value.BashArray(self.RegexGroups())
 
         # Do lookup of system globals before looking at user variables.  Note: we
         # could optimize this at compile-time like $?.  That would break
@@ -2143,18 +2147,20 @@ class Mem(object):
         # type: () -> bool
         return len(self.var_stack) == 1
 
-    def ClearMatches(self):
+    def ClearRegexIndices(self):
         # type: () -> None
-        top = self.regex_matches[-1]
+        top = self.regex_indices[-1]
         del top[:]  # no clear() in Python 2
+        self.regex_string[-1] = ''
 
-    def SetMatches(self, matches):
-        # type: (List[str]) -> None
-        self.regex_matches[-1] = matches
+    def SetRegexIndices(self, s, indices):
+        # type: (str, List[int]) -> None
+        self.regex_string[-1] = s
+        self.regex_indices[-1] = indices
 
-    def GetRegexMatches(self):
+    def RegexGroups(self):
         # type: () -> List[Optional[str]]
-        return self.regex_matches[-1]
+        return util.RegexGroups(self.regex_string[-1], self.regex_indices[-1])
 
 
 #

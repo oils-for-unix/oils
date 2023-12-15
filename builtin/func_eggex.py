@@ -29,10 +29,10 @@ class Match(vm._Callable):
         # TODO: Support strings for named captures
         i = rd.OptionalInt(default_=0)
 
-        matches = self.mem.GetRegexMatches()
-        num_groups = len(matches)  # including group 0
+        groups = self.mem.RegexGroups()
+        num_groups = len(groups)  # including group 0
         if i < num_groups:
-            captured = matches[i]
+            captured = groups[i]
             if captured is None:
                 return value.Null
             else:

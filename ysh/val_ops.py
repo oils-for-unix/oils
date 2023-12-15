@@ -8,12 +8,12 @@ from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from core import error
 from core import ui
-from core import util
 from mycpp.mylib import tagswitch
 from ysh import regex_translate
 
 from typing import TYPE_CHECKING, cast, Dict, List, Optional
 
+import libc
 from libc import REG_ICASE, REG_NEWLINE
 
 if TYPE_CHECKING:
@@ -476,14 +476,14 @@ def RegexMatch(left, right, mem):
     # - libc_regex_match should populate _start() and _end() too (out params?)
     # - What is the ordering for named captures?  See demo/ere*.sh
 
-    matches = util.regex_search(right_s, regex_flags, left_s)
-    if matches is not None:
+    indices = libc.regex_search(right_s, regex_flags, left_s)
+    if indices is not None:
         if mem:
-            mem.SetMatches(matches)
+            mem.SetRegexIndices(left_s, indices)
         return True
     else:
         if mem:
-            mem.ClearMatches()
+            mem.ClearRegexIndices()
         return False
 
 
