@@ -215,17 +215,61 @@ start=-1 end=-1
 
 #### Str->search() method returns value.Match object
 
-var s = 'hello Spam5-EGGS-'
+var s = '= hi5- bye6-'
 
 var m = s => search(/ <capture [a-z]+ > <capture d+> '-' ; i /)
 echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
 echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
 echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
 
+echo ---
+
+var pos = m => end(0)  # search from end position
+var m = s => search(/ <capture [a-z]+ > <capture d+> '-' ; i /, pos=pos)
+echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
+echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
+echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
+
 ## STDOUT:
-g0 6 12 Spam5-
-g1 6 10 Spam
-g2 10 11 5
+g0 2 6 hi5-
+g1 2 4 hi
+g2 4 5 5
+---
+g0 7 12 bye6-
+g1 7 10 bye
+g2 10 11 6
+## END
+
+#### Str->search() only matches %start ^ when pos == 0
+
+shopt -s ysh:upgrade
+
+var anchored = / %start <capture d+> '-' /
+var free = / <capture d+> '-' /
+
+var s = '12-34-'
+
+for pat in ([anchored, free]) {
+  echo "pat=$pat"
+
+  var pos = 0
+  while (true) {
+    var m = s => search(pat, pos=pos)
+    if (not m) {
+      break
+    }
+    echo $[m => group(0)]
+    setvar pos = m => end(0)
+  }
+
+}
+
+## STDOUT:
+pat=^([[:digit:]]+)-
+12-
+pat=([[:digit:]]+)-
+12-
+34-
 ## END
 
 #### Repeat {1,3} etc.

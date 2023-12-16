@@ -185,16 +185,16 @@ static PyObject *
 func_regex_search(PyObject *self, PyObject *args) {
   const char* pattern;
   const char* str;
-  int flags = 0;
+  int cflags = 0;
   int pos = 0;
 
-  if (!PyArg_ParseTuple(args, "sis|i", &pattern, &flags, &str, &pos)) {
+  if (!PyArg_ParseTuple(args, "sis|i", &pattern, &cflags, &str, &pos)) {
     return NULL;
   }
 
-  flags |= REG_EXTENDED;
+  cflags |= REG_EXTENDED;
   regex_t pat;
-  int status = regcomp(&pat, pattern, flags);
+  int status = regcomp(&pat, pattern, cflags);
   if (status != 0) {
     char error_string[80];
     regerror(status, &pat, error_string, 80);
@@ -211,14 +211,15 @@ func_regex_search(PyObject *self, PyObject *args) {
   }
 
   regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * num_groups);
-  int match = regexec(&pat, str, num_groups, pmatch, 0);
+  int eflags = pos == 0 ? 0 : REG_NOTBOL;  // ^ only matches when pos=0
+  int match = regexec(&pat, str + pos, num_groups, pmatch, eflags);
   if (match == 0) {
     int i;
     for (i = 0; i < num_groups; i++) {
-      PyObject *start = PyInt_FromLong(pmatch[i].rm_so);
+      PyObject *start = PyInt_FromLong(pmatch[i].rm_so + pos);
       PyList_SetItem(ret, 2*i, start);
 
-      PyObject *end = PyInt_FromLong(pmatch[i].rm_eo);
+      PyObject *end = PyInt_FromLong(pmatch[i].rm_eo + pos);
       PyList_SetItem(ret, 2*i + 1, end);
     }
   }

@@ -118,15 +118,16 @@ List<int>* regex_search(BigStr* pattern, int flags, BigStr* str, int pos) {
   List<int>* indices = NewList<int>();
   indices->reserve(num_groups * 2);
 
-  const char* s0 = str->data_;
+  const char* s = str->data_;
   regmatch_t* pmatch =
       static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * num_groups));
-  int match = regexec(&pat, s0, num_groups, pmatch, 0) == 0;
+  int eflags = pos == 0 ? 0 : REG_NOTBOL;  // ^ only matches when pos=0
+  bool match = regexec(&pat, s + pos, num_groups, pmatch, eflags) == 0;
   if (match) {
     int i;
     for (i = 0; i < num_groups; i++) {
-      indices->append(pmatch[i].rm_so);
-      indices->append(pmatch[i].rm_eo);
+      indices->append(pmatch[i].rm_so + pos);
+      indices->append(pmatch[i].rm_eo + pos);
     }
   }
 
