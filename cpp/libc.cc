@@ -105,12 +105,19 @@ List<BigStr*>* glob(BigStr* pat) {
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
-List<int>* regex_search(BigStr* pattern, int flags, BigStr* str, int pos) {
-  flags |= REG_EXTENDED;
+List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int pos) {
+  cflags |= REG_EXTENDED;
   regex_t pat;
-  if (regcomp(&pat, pattern->data_, flags) != 0) {
-    // TODO: check error code, as in func_regex_parse()
-    throw Alloc<RuntimeError>(StrFromC("Invalid regex syntax (regex_match)"));
+  int status = regcomp(&pat, pattern->data_, cflags);
+  if (status != 0) {
+    char error_desc[50];
+    regerror(status, &pat, error_desc, 50);
+
+    char error_message[80];
+    snprintf(error_message, 80, "Invalid regex %s (%s)", pattern->data_,
+             error_desc);
+
+    throw Alloc<ValueError>(StrFromC(error_message));
   }
 
   int num_groups = pat.re_nsub + 1;  // number of captures

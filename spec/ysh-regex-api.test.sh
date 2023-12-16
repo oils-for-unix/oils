@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### s ~ regex and s !~ regex
 shopt -s ysh:upgrade
@@ -39,6 +39,25 @@ does not match
 ['foo', 'oo']
 got expected status 2
 got expected status 2
+## END
+
+#### Invalid regex has libc error message
+
+shopt -s ysh:upgrade
+
+# Hm it's hard to test this, we can't get stderr of YSH from within YSH?
+#fopen 2>err.txt {
+#  if ('abc' ~ '+') {
+#    echo 'bad'
+#  }
+#}
+
+if ('abc' ~ '+') {
+  echo 'bad'
+}
+
+## status: 2
+## STDOUT:
 ## END
 
 #### Eggex flags to ignore case are respected
@@ -200,30 +219,34 @@ shopt -s ysh:upgrade
 var lexer = / <capture d+> | <capture [a-z]+> | <capture s+> /
 #echo $lexer
 
-var s = 'ab 12'
+proc show-tokens (s) {
+  var pos = 0
 
-# This isn't OK
-#var s = 'ab + 12 - cd'
+  while (true) {
+    echo "pos=$pos"
 
-var pos = 0
+    # TODO: use leftMatch()
+    var m = s->search(lexer, pos=pos)
+    if (not m) {
+      break
+    }
+    # TODO: add groups()
+    #var groups = [m => group(1), m => group(2), m => group(3)]
+    #json write --pretty=F (groups)
+    echo "$[m => group(1)]/$[m => group(2)]/$[m => group(3)]/"
 
-while (true) {
-  echo "pos=$pos"
+    echo
 
-  # TODO: use leftMatch()
-  var m = s->search(lexer, pos=pos)
-  if (not m) {
-    break
+    setvar pos = m => end(0)
   }
-  # TODO: add groups()
-  #var groups = [m => group(1), m => group(2), m => group(3)]
-  #json write --pretty=F (groups)
-  echo "$[m => group(1)]/$[m => group(2)]/$[m => group(3)]/"
-
-  echo
-
-  setvar pos = m => end(0)
 }
+
+show-tokens 'ab 12'
+
+echo '==='
+
+# There's a token here that doesn't leftMatch()
+show-tokens 'ab+12'
 
 ## STDOUT:
 pos=0
@@ -236,6 +259,11 @@ pos=3
 12/null/null/
 
 pos=5
+===
+pos=0
+null/ab/null/
+
+pos=2
 ## END
 
 

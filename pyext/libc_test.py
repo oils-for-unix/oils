@@ -181,7 +181,12 @@ class LibcTest(unittest.TestCase):
 
   def testRegexMatchError(self):
     # See core/util_test.py for more tests
-    self.assertRaises(RuntimeError, libc.regex_search, r'*', 0, 'abcd')
+    try:
+      libc.regex_search(r'*', 0, 'abcd')
+    except ValueError as e:
+      print(e)
+    else:
+      self.fail('Expected ValueError')
 
   def testRegexFirstGroupMatch(self):
     s='oXooXoooXoX'
