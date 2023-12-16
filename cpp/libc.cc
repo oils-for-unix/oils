@@ -105,7 +105,8 @@ List<BigStr*>* glob(BigStr* pat) {
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
-List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int pos) {
+List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int eflags,
+                        int pos) {
   cflags |= REG_EXTENDED;
   regex_t pat;
   int status = regcomp(&pat, pattern->data_, cflags);
@@ -128,7 +129,6 @@ List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int pos) {
   const char* s = str->data_;
   regmatch_t* pmatch =
       static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * num_groups));
-  int eflags = pos == 0 ? 0 : REG_NOTBOL;  // ^ only matches when pos=0
   bool match = regexec(&pat, s + pos, num_groups, pmatch, eflags) == 0;
   if (match) {
     int i;

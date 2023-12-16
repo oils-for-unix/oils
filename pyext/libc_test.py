@@ -182,7 +182,7 @@ class LibcTest(unittest.TestCase):
   def testRegexMatchError(self):
     # See core/util_test.py for more tests
     try:
-      libc.regex_search(r'*', 0, 'abcd')
+      libc.regex_search(r'*', 0, 'abcd', 0)
     except ValueError as e:
       print(e)
     else:

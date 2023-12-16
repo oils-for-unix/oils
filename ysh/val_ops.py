@@ -464,11 +464,7 @@ def RegexMatch(left, right, mem):
         else:
             raise error.TypeErrVerbose('LHS must be a string', loc.Missing)
 
-    # TODO:
-    # - libc_regex_match should populate _start() and _end() too (out params?)
-    # - What is the ordering for named captures?  See demo/ere*.sh
-
-    indices = libc.regex_search(right_s, regex_flags, left_s)
+    indices = libc.regex_search(right_s, regex_flags, left_s, 0)
     if indices is not None:
         if mem:
             mem.SetRegexIndices(left_s, indices)

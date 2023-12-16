@@ -165,9 +165,10 @@ func_regex_search(PyObject *self, PyObject *args) {
   const char* pattern;
   const char* str;
   int cflags = 0;
+  int eflags = 0;
   int pos = 0;
 
-  if (!PyArg_ParseTuple(args, "sis|i", &pattern, &cflags, &str, &pos)) {
+  if (!PyArg_ParseTuple(args, "sisi|i", &pattern, &cflags, &str, &eflags, &pos)) {
     return NULL;
   }
 
@@ -194,7 +195,6 @@ func_regex_search(PyObject *self, PyObject *args) {
   }
 
   regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * num_groups);
-  int eflags = pos == 0 ? 0 : REG_NOTBOL;  // ^ only matches when pos=0
   int match = regexec(&pat, str + pos, num_groups, pmatch, eflags);
   if (match == 0) {
     int i;
@@ -408,6 +408,7 @@ void initlibc(void) {
       PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
       PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
       PyModule_AddIntConstant(module, "REG_NEWLINE", REG_NEWLINE);
+      PyModule_AddIntConstant(module, "REG_NOTBOL", REG_NOTBOL);
   }
 
   errno_error = PyErr_NewException("libc.error",

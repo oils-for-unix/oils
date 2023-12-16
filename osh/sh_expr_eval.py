@@ -1070,7 +1070,7 @@ class BoolEvaluator(ArithEvaluator):
                                        if self.exec_opts.nocasematch() else 0)
 
                         try:
-                            indices = libc.regex_search(s2, regex_flags, s1)
+                            indices = libc.regex_search(s2, regex_flags, s1, 0)
                         except ValueError as e:
                             # Status 2 indicates a regex parse error.  This is fatal in OSH but
                             # not in bash, which treats [[ like a command with an exit code.

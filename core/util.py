@@ -36,7 +36,7 @@ def RegexGroups(s, indices):
 def simple_regex_search(pat, s):
     # type: (str, str) -> List[str]
     """Convenience wrapper around libc."""
-    indices = libc.regex_search(pat, 0, s)
+    indices = libc.regex_search(pat, 0, s, 0)
     if indices is None:
         return None
     return RegexGroups(s, indices)

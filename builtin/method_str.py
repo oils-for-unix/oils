@@ -10,6 +10,7 @@ from mycpp.mylib import log
 from ysh import regex_translate
 
 import libc
+from libc import REG_NOTBOL
 
 _ = log
 
@@ -87,8 +88,9 @@ class Search(vm._Callable):
 
         ere = regex_translate.AsPosixEre(eggex_val)  # lazily converts to ERE
 
-        flags = regex_translate.LibcFlags(eggex_val.canonical_flags)
-        indices = libc.regex_search(ere, flags, string, pos)
+        cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
+        eflags = 0 if pos == 0 else REG_NOTBOL  # ^ only matches when pos=0
+        indices = libc.regex_search(ere, cflags, string, eflags, pos)
 
         if indices is None:
             return value.Null
