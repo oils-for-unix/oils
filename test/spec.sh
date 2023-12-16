@@ -884,6 +884,10 @@ ysh-regex() {
   run-file ysh-regex "$@"
 }
 
+ysh-regex-api() {
+  run-file ysh-regex-api "$@"
+}
+
 ysh-reserved() {
   run-file ysh-reserved "$@"
 }
