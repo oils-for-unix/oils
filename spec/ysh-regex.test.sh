@@ -96,7 +96,7 @@ if [[ $x =~ ([[:digit:]]+)-([[:digit:]]+) ]] {
 
 # THIS IS A NO-OP.  The variable is SHADOWED by the special name.
 # I think that's OK.
-setvar BASH_REMATCH = %(reset)
+setvar BASH_REMATCH = :| reset |
 
 if (x ~ /<capture d+> '-' <capture d+>/) {
   argv.py "${BASH_REMATCH[@]}"
@@ -193,6 +193,21 @@ start=3 end=6
 ---
 start=0 end=3
 start=-1 end=-1
+## END
+
+#### Str->search() method returns value.Match object
+
+var s = 'hello spam5-eggs6-'
+
+var m = s => search(/ <capture [a-z]+ > <capture d+> '-' /)
+echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
+echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
+echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
+
+## STDOUT:
+g0 6 12 spam5-
+g1 6 10 spam
+g2 10 11 5
 ## END
 
 #### Repeat {1,3} etc.
@@ -443,7 +458,7 @@ no
 #### Matching escaped tab character
 shopt -s ysh:all
 
-var lines=%($'aa\tbb' $'cc\tdd')
+var lines = :| $'aa\tbb' $'cc\tdd' |
 
 var pat = / ('a' [\t] 'b') /
 write pat=$pat
@@ -555,7 +570,7 @@ echo $pat
 shopt -s ysh:all
 
 # BUG: need C strings in array literal
-var lines=%($'aa\tbb' $'cc\tdd')
+var lines = :| $'aa\tbb' $'cc\tdd' |
 
 var pat = / ('a' [\t] 'b') /
 write pat=$pat
@@ -879,13 +894,13 @@ no way to have [^]
 shopt -s ysh:all
 
 # BUG: need C strings in array literal
-var lines=%(
+var lines = :|
   'backslash \'
   'rbracket ]'
   'lbracket ['
   "sq '"
-  'dq "'
-)
+  'dq ""'
+|
 
 # Weird GNU quirk: ] has to come first!
 # []abc] works.  But [abc\]] does NOT work.  Stupid rule!
@@ -899,7 +914,7 @@ pat=[]'"\\]
 backslash \
 rbracket ]
 sq '
-dq "
+dq ""
 ## END
 
 #### Matching literal hyphen in character classes

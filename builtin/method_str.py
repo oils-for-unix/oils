@@ -7,6 +7,9 @@ from _devbuild.gen.value_asdl import (value, value_t)
 from core import vm
 from frontend import typed_args
 from mycpp.mylib import log
+from ysh import regex_translate
+
+import libc
 
 _ = log
 
@@ -75,21 +78,19 @@ class Search(vm._Callable):
         """
         s => search(eggex, pos=0)
         """
+        string = rd.PosStr()
+        eggex_val = rd.PosEggex()
 
-        eggex = rd.PosEggex()
-        # don't confuse 'start' and 'pos'?
-        # Python has 2 kinds of 'pos'
+        # Don't confuse 'start' and 'pos'.  Python has 2 kinds of 'start' in its regex API.
         pos = rd.NamedInt('pos', 0)
         rd.Done()
 
-        # TODO:
-        #
-        # call libc.regex_search(str ERE, int flags, str s, int pos)
-        #
-        # which should return non-empty List[int] of positions, or None
-        #
-        # - it uses the regcomp cache
-        # - TODO: eggex evaluation has to cache the group names, and number of
-        #   groups
+        ere = regex_translate.AsPosixEre(eggex_val)  # lazily converts to ERE
 
-        return value.Null
+        flags = 0  # TODO: translate flags
+        indices = libc.regex_search(ere, flags, string, 0)
+
+        if indices is None:
+            return value.Null
+
+        return value.Match(string, indices)

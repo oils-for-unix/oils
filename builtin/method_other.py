@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from _devbuild.gen.value_asdl import (value, value_t)
 
+from builtin import func_eggex
 from core import state
 from core import vm
 from frontend import typed_args
@@ -32,28 +33,22 @@ class SetValue(vm._Callable):
         return value.Null
 
 
-# which method group() start() end()
-GROUP = 0
-START = 1
-END = 2
-
-
 class MatchAccess(vm._Callable):
 
-    def __init__(self, method):
+    def __init__(self, to_return):
         # type: (int) -> None
-        self.method = method
+        self.to_return = to_return
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
         # This is guaranteed
         m = rd.PosMatch()
+        # TODO: Support strings for named captures
+        i = rd.OptionalInt(default_=0)
+        #val = rd.PosValue()
 
-        # string name or integer
-        val = rd.PosValue()
         rd.Done()
 
-        # TODO: look at m.indices and return a string
-
-        return value.Null
+        return func_eggex.GetMatch(m.s, m.indices, i, self.to_return,
+                                   rd.LeftParenToken())
