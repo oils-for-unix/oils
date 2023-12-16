@@ -231,11 +231,11 @@ group.  POSIX ERE has no non-capturing groups.
 
 Capture with `<capture pat>`:
 
-    <capture d+>           # Becomes _match(1)
+    <capture d+>           # Becomes _group(1)
 
 Add a variable after `as` for named capture:
 
-    <capture d+ as myvar>  # Becomes _match('myvar')
+    <capture d+ as myvar>  # Becomes _group('myvar')
 
 ### Character Class Literals Use `[]`
 
@@ -323,24 +323,44 @@ You can spread regexes over multiple lines and add comments:
 
 ### The YSH API
 
-(Still to be implemented.)
-
 Testing and extracting matches:
 
-    if (mystr ~ pat) {
-      echo $_match(1)  # or _group(1) ?
+    var s = 'days 04-01 and 10-31'
+    var pat = /<capture d+ as month> '-' <capture d+ as day>/
+
+    if (s ~ pat) {
+      echo $[_group(1)]
     }
 
-Iterative matching:
+More explicit API with with search():
 
-    var pat = /<capture d+ as month> '-' <capture d+ as day>/
+    var m = 's' => search(pat)
+    if (m) {
+      echo $[m => group(1)]
+    }
+
+Iterative matching with with leftMatch():
+
+    var s = 'hi 123'
+    var lexer = / <capture [a-z]+> | <capture d+> | <capture s+> /
+    var pos = 0
     while (true) {
-      var m = pat => findNext('04-01 10-31')
+      var m = s => leftMatch(lexer, pos=pos)
       if (not m) {
         break
       }
-      echo $[m => group(0)]
+      if (m => group(1) !== null) {
+        echo 'letter'
+      elif (m => group(2) !== null) {
+        echo 'digit'
+      elif (m => group(3) !== null) {
+        echo 'space'
+      }
+
+      setvar pos = m => end(0)
     }
+
+(Still to be implemented.)
 
 Substitution:
 

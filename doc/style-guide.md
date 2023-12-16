@@ -71,7 +71,7 @@ Global variables that are **silently mutated** by the interpreter start with
 
 As do functions to access such mutable vars:
 
-    _match()  _start()   _end()
+    _group()   _start()   _end()
 
 Example:
 

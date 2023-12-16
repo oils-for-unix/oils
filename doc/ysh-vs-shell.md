@@ -115,7 +115,7 @@ A `shvar` is similar to a `shopt`, but it has a string value, like `$IFS` and
 **Registers** are special variables set by the interpreter, beginning with `_`:
 
 - `try` sets `_status` (preferred over `$?`)
-- `_pipeline_status`, `_match()`, etc.
+- `_pipeline_status`, `_group()`, etc.
 
 <!--
 ## TODO

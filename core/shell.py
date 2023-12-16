@@ -814,8 +814,9 @@ def Main(
 
     _SetGlobalFunc(mem, 'len', func_misc.Len())
 
-    # TODO: rename to group
-    _SetGlobalFunc(mem, '_match', func_eggex.MatchFunc(mem, func_eggex.G))
+    g = func_eggex.MatchFunc(mem, func_eggex.G)
+    _SetGlobalFunc(mem, '_group', g)
+    _SetGlobalFunc(mem, '_match', g)  # TODO: remove this backward compat alias
     _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(mem, func_eggex.S))
     _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(mem, func_eggex.E))
 

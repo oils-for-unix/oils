@@ -6,11 +6,11 @@ shopt -s ysh:upgrade
 var s = 'foo'
 if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
   echo matches
-  argv.py $[_match(0)] $[_match(1)]
+  argv.py $[_group(0)] $[_group(1)]
 }
 if (s !~ '[[:digit:]]+') {
   echo "does not match"
-  argv.py $[_match(0)] $[_match(1)]
+  argv.py $[_group(0)] $[_group(1)]
 }
 
 if (s ~ '[[:digit:]]+') {
@@ -19,14 +19,14 @@ if (s ~ '[[:digit:]]+') {
 # Should be cleared now
 # should this be Undef rather than ''?
 try {
-  var x = _match(0)
+  var x = _group(0)
 }
 if (_status === 2) {
   echo 'got expected status 2'
 }
 
 try {
-  var y = _match(1)
+  var y = _group(1)
 }
 if (_status === 2) {
   echo 'got expected status 2'
@@ -84,7 +84,7 @@ yes
 yes
 ## END
 
-#### Positional captures with _match
+#### Positional captures with _group
 shopt -s ysh:all
 
 var x = 'zz 2020-08-20'
@@ -99,9 +99,9 @@ setvar BASH_REMATCH = :| reset |
 
 if (x ~ /<capture d+> '-' <capture d+>/) {
   argv.py "${BASH_REMATCH[@]}"
-  argv.py $[_match(0)] $[_match(1)] $[_match(2)]
+  argv.py $[_group(0)] $[_group(1)] $[_group(2)]
 
-  argv.py $[_match()]  # synonym for _match(0)
+  argv.py $[_group()]  # synonym for _group(0)
 
   # TODO: Also test _start() and _end()
 }
@@ -112,12 +112,12 @@ if (x ~ /<capture d+> '-' <capture d+>/) {
 ['2020-08']
 ## END
 
-#### _match() returns null when group doesn't match
+#### _group() returns null when group doesn't match
 shopt -s ysh:upgrade
 
 var pat = / <capture 'a'> | <capture 'b'> /
 if ('b' ~ pat) {
-  echo "$[_match(1)] $[_match(2)]"
+  echo "$[_group(1)] $[_group(2)]"
 }
 ## STDOUT:
 null b
@@ -265,13 +265,13 @@ null/ab/null/
 pos=2
 ## END
 
-#### Named captures with _match
+#### Named captures with _group
 shopt -s ysh:all
 
 var x = 'zz 2020-08-20'
 
 if (x ~ /<capture d+ as year> '-' <capture d+ as month>/) {
-  argv.py $[_match('year')] $[_match('month')]
+  argv.py $[_group('year')] $[_grou_group('month')]
 }
 ## STDOUT:
 ['2020', '08']
