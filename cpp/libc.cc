@@ -126,8 +126,17 @@ List<int>* regex_search(BigStr* pattern, int flags, BigStr* str, int pos) {
   if (match) {
     int i;
     for (i = 0; i < num_groups; i++) {
-      indices->append(pmatch[i].rm_so + pos);
-      indices->append(pmatch[i].rm_eo + pos);
+      int start = pmatch[i].rm_so;
+      if (start != -1) {
+        start += pos;
+      }
+      indices->append(start);
+
+      int end = pmatch[i].rm_eo;
+      if (end != -1) {
+        end += pos;
+      }
+      indices->append(end);
     }
   }
 

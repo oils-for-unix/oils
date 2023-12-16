@@ -10,8 +10,11 @@ from core import error
 from core import state
 from core import vm
 from frontend import typed_args
+from mycpp.mylib import log
 
 from typing import List
+
+_ = log
 
 G = 0  # _match() _group()
 S = 1  # _start()
@@ -91,6 +94,7 @@ class MatchMethod(vm._Callable):
 
         rd.Done()
 
+        #log('group %d, s %r indices %s', i, m.s, m.indices)
         return _GetMatch(m.s, m.indices, i, self.to_return,
                          rd.LeftParenToken())
 

@@ -216,11 +216,17 @@ func_regex_search(PyObject *self, PyObject *args) {
   if (match == 0) {
     int i;
     for (i = 0; i < num_groups; i++) {
-      PyObject *start = PyInt_FromLong(pmatch[i].rm_so + pos);
-      PyList_SetItem(ret, 2*i, start);
+      int start = pmatch[i].rm_so;
+      if (start != -1) {
+        start += pos;
+      }
+      PyList_SetItem(ret, 2*i, PyInt_FromLong(start));
 
-      PyObject *end = PyInt_FromLong(pmatch[i].rm_eo + pos);
-      PyList_SetItem(ret, 2*i + 1, end);
+      int end = pmatch[i].rm_eo;
+      if (end != -1) {
+        end += pos;
+      }
+      PyList_SetItem(ret, 2*i + 1, PyInt_FromLong(end));
     }
   }
 

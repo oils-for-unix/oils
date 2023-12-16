@@ -193,6 +193,51 @@ pat=([[:digit:]]+)-
 34-
 ## END
 
+#### Str->leftMatch() can implement lexer pattern
+
+shopt -s ysh:upgrade
+
+var lexer = / <capture d+> | <capture [a-z]+> | <capture s+> /
+#echo $lexer
+
+var s = 'ab 12'
+
+# This isn't OK
+#var s = 'ab + 12 - cd'
+
+var pos = 0
+
+while (true) {
+  echo "pos=$pos"
+
+  # TODO: use leftMatch()
+  var m = s->search(lexer, pos=pos)
+  if (not m) {
+    break
+  }
+  # TODO: add groups()
+  #var groups = [m => group(1), m => group(2), m => group(3)]
+  #json write --pretty=F (groups)
+  echo "$[m => group(1)]/$[m => group(2)]/$[m => group(3)]/"
+
+  echo
+
+  setvar pos = m => end(0)
+}
+
+## STDOUT:
+pos=0
+null/ab/null/
+
+pos=2
+null/null/ /
+
+pos=3
+12/null/null/
+
+pos=5
+## END
+
 
 #### Named captures with _match
 shopt -s ysh:all
