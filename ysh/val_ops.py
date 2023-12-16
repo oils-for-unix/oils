@@ -14,7 +14,6 @@ from ysh import regex_translate
 from typing import TYPE_CHECKING, cast, Dict, List, Optional
 
 import libc
-from libc import REG_ICASE, REG_NEWLINE
 
 if TYPE_CHECKING:
     from core import state
@@ -451,14 +450,8 @@ def RegexMatch(left, right, mem):
         elif case(value_e.Eggex):
             right = cast(value.Eggex, UP_right)
             right_s = regex_translate.AsPosixEre(right)
-            for ch in right.canonical_flags:
-                if ch == 'i':
-                    regex_flags |= REG_ICASE
-                elif ch == 'n':
-                    regex_flags |= REG_NEWLINE
-                else:
-                    # regex_translate should prevent this
-                    raise AssertionError()
+            if right.canonical_flags is not None:
+                regex_flags = regex_translate.LibcFlags(right.canonical_flags)
         else:
             raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
                                 loc.Missing)

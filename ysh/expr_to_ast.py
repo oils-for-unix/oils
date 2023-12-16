@@ -861,11 +861,11 @@ class Transformer(object):
 
         # Canonicalize and validate flags for ERE only.  Default is ERE.
         if trans_pref is None or lexer.TokenVal(trans_pref) == 'ERE':
-            ere_flags = regex_translate.EncodeFlagsEre(flags)
+            canonical_flags = regex_translate.CanonicalFlags(flags)
         else:
-            ere_flags = None
+            canonical_flags = None
 
-        return Eggex(left, regex, flags, trans_pref, ere_flags)
+        return Eggex(left, regex, flags, trans_pref, canonical_flags)
 
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t

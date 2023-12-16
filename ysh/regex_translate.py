@@ -28,6 +28,8 @@ from typing import List, TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import re_t
 
+from libc import REG_ICASE, REG_NEWLINE
+
 _ = log
 
 PERL_CLASS = {
@@ -350,10 +352,13 @@ def AsPosixEre(eggex):
     return eggex.as_ere
 
 
-def EncodeFlagsEre(flags):
+def CanonicalFlags(flags):
     # type: (List[EggexFlag]) -> str
     """
     Raises PARSE error on invalid flags.
+
+    In theory we could encode directly to integers like REG_ICASE, but a string
+    like like 'i' makes the error message slightly more legible.
     """
     letters = []  # type: List[str]
     for flag in flags:
@@ -370,3 +375,17 @@ def EncodeFlagsEre(flags):
     # Normalize for comparison
     letters.sort()
     return ''.join(letters)
+
+
+def LibcFlags(canonical_flags):
+    # type: (str) -> int
+    libc_flags = 0
+    for ch in canonical_flags:
+        if ch == 'i':
+            libc_flags |= REG_ICASE
+        elif ch == 'n':
+            libc_flags |= REG_NEWLINE
+        else:
+            # regex_translate should prevent this
+            raise AssertionError()
+    return libc_flags

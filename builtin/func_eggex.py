@@ -18,7 +18,7 @@ S = 1  # _start()
 E = 2  # _end()
 
 
-def GetMatch(s, indices, i, to_return, blame_loc):
+def _GetMatch(s, indices, i, to_return, blame_loc):
     # type: (str, List[int], int, int, loc_t) -> value_t
     num_groups = len(indices) / 2  # including group 0
     if i < num_groups:
@@ -43,7 +43,7 @@ def GetMatch(s, indices, i, to_return, blame_loc):
         raise error.UserError(2, msg, blame_loc)
 
 
-class MatchAccess(vm._Callable):
+class MatchFunc(vm._Callable):
     """
     _group(0) or _group() : get the whole match
     _group(1) to _group(N): get a submatch
@@ -66,7 +66,33 @@ class MatchAccess(vm._Callable):
 
         s, indices = self.mem.GetRegexIndices()
 
-        return GetMatch(s, indices, i, self.to_return, rd.LeftParenToken())
+        return _GetMatch(s, indices, i, self.to_return, rd.LeftParenToken())
+
+
+class MatchMethod(vm._Callable):
+    """
+    m => group(i)
+    m => start(i)
+    m => end(i)
+    """
+
+    def __init__(self, to_return):
+        # type: (int) -> None
+        self.to_return = to_return
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        # This is guaranteed
+        m = rd.PosMatch()
+        # TODO: Support strings for named captures
+        i = rd.OptionalInt(default_=0)
+        #val = rd.PosValue()
+
+        rd.Done()
+
+        return _GetMatch(m.s, m.indices, i, self.to_return,
+                         rd.LeftParenToken())
 
 
 # vim: sw=4

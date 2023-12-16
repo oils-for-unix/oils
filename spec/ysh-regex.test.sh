@@ -85,6 +85,24 @@ var pat3 = / @pat 'def' /
 ## STDOUT:
 ## END
 
+#### Eggex with translation preference has arbitrary flags
+shopt -s ysh:upgrade
+
+# TODO: can provide introspection so users can translate it?
+# This is kind of a speculative corner of the language.
+
+var pat = / d+ ; ignorecase ; PCRE /
+
+# This uses ERE, as a test
+if ('ab 12' ~ pat) {
+  echo yes
+}
+
+## STDOUT:
+yes
+## END
+
+
 #### Positional captures with _match
 shopt -s ysh:all
 

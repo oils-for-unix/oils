@@ -773,9 +773,9 @@ def Main(
     }
 
     methods[value_e.Match] = {
-        'group': method_other.MatchAccess(func_eggex.G),
-        'start': method_other.MatchAccess(func_eggex.S),
-        'end': method_other.MatchAccess(func_eggex.E),
+        'group': func_eggex.MatchMethod(func_eggex.G),
+        'start': func_eggex.MatchMethod(func_eggex.S),
+        'end': func_eggex.MatchMethod(func_eggex.E),
     }
 
     methods[value_e.IO] = {
@@ -815,9 +815,9 @@ def Main(
     _SetGlobalFunc(mem, 'len', func_misc.Len())
 
     # TODO: rename to group
-    _SetGlobalFunc(mem, '_match', func_eggex.MatchAccess(mem, func_eggex.G))
-    _SetGlobalFunc(mem, '_start', func_eggex.MatchAccess(mem, func_eggex.S))
-    _SetGlobalFunc(mem, '_end', func_eggex.MatchAccess(mem, func_eggex.E))
+    _SetGlobalFunc(mem, '_match', func_eggex.MatchFunc(mem, func_eggex.G))
+    _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(mem, func_eggex.S))
+    _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(mem, func_eggex.E))
 
     _SetGlobalFunc(mem, 'join', func_misc.Join())
     _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
