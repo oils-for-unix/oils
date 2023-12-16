@@ -323,61 +323,24 @@ You can spread regexes over multiple lines and add comments:
 
 ### The YSH API
 
-Testing and extracting matches:
+See [YSH regex API](ysh-regex-api.html) for details.
 
-    var s = 'days 04-01 and 10-31'
+In summary, YSH has Perl-like conveniences with an `~` operator:
+
+    var s = 'on 04-01, 10-31'
     var pat = /<capture d+ as month> '-' <capture d+ as day>/
 
-    if (s ~ pat) {
-      echo $[_group(1)]
+    if (s ~ pat) {       # search for the pattern
+      echo $[_group(1)]  # => 04
     }
 
-More explicit API with with search():
+It also has an explicit and powerful Python-like API with the `search()` and
+leftMatch()` methods on strings.
 
-    var m = 's' => search(pat)
+    var m = s => search(pat, pos=8)  # start searching at a position
     if (m) {
-      echo $[m => group(1)]
+      echo $[m => group(1)]  # => 10
     }
-
-Iterative matching with with leftMatch():
-
-    var s = 'hi 123'
-    var lexer = / <capture [a-z]+> | <capture d+> | <capture s+> /
-    var pos = 0
-    while (true) {
-      var m = s => leftMatch(lexer, pos=pos)
-      if (not m) {
-        break
-      }
-      if (m => group(1) !== null) {
-        echo 'letter'
-      elif (m => group(2) !== null) {
-        echo 'digit'
-      elif (m => group(3) !== null) {
-        echo 'space'
-      }
-
-      setvar pos = m => end(0)
-    }
-
-(Still to be implemented.)
-
-Substitution:
-
-    var new = s => replace(/<capture d+ as month>/, ^"month is $month")
-    # (could be stdlib function)
-
-Slurping all like Python:
-
-    var matches = findAll(s, / (d+) '.' (d+) /)
-    # (could be stdlib function)
-
-    # s => findAll(pat) => reversed()
-
-Splitting:
-
-    var parts = s => split(/space+/)  # contrast with shSplit()
-    # (could be stdlib function)
 
 ### Language Reference
 

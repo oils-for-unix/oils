@@ -264,6 +264,7 @@ def _AsPosixEre(node, parts, name_types):
         node = cast(re.Capture, UP_node)
 
         # Collect in order of ( appearance
+        # TODO: get the name string, and type string
         name_types.append(node.name_type)
 
         parts.append('(')

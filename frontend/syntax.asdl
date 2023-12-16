@@ -616,7 +616,7 @@ module syntax
   | Alt(List[re] children)
 
   | Group(re child)
-    # TODO: <capture d+ as month: Int> needs Token? type field
+    # TODO: NameType isn't quite right because List[Int] doesn't make sense
   | Capture(re child, NameType? name_type)  
   | Backtracking(bool negated, Token name, re child)
 

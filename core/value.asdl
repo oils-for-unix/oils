@@ -86,7 +86,7 @@ module value
     # TODO: might need a pointer to Eggex for the names
     # Problem: ERE has no non-capturing groups, so grouping will occupy a
     # number
-  | Match(str s, List[int] indices)
+  | Match(str s, List[int] indices, List[NameType?]? name_types)
 
     # ^[42 + a[i]]
   | Expr(expr e)
