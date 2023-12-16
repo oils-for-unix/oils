@@ -752,8 +752,7 @@ class ExprEvaluator(object):
                     else:
                         raise AssertionError(op)
                 except ValueError as e:
-                    # Status 2 indicates a regex parse error.  This is fatal in OSH but
-                    # not in bash, which treats [[ like a command with an exit code.
+                    # Status 2 indicates a regex parse error, as with [[ in OSH
                     e_die_status(2, e.message, op)
 
             if not result:

@@ -1071,12 +1071,10 @@ class BoolEvaluator(ArithEvaluator):
 
                         try:
                             indices = libc.regex_search(s2, regex_flags, s1)
-                        except RuntimeError as e:
+                        except ValueError as e:
                             # Status 2 indicates a regex parse error.  This is fatal in OSH but
                             # not in bash, which treats [[ like a command with an exit code.
-                            msg = e.message  # type: str
-                            e_die_status(2, 'Invalid regex %r: %s' % (s2, msg),
-                                         loc.Word(node.right))
+                            e_die_status(2, e.message, loc.Word(node.right))
 
                         if indices is not None:
                             self.mem.SetRegexIndices(s1, indices)
