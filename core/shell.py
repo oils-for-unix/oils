@@ -732,10 +732,10 @@ def Main(
         # Like Python's re.search, except we put it on the string object
         # It's more consistent with Str->find(substring, pos=0)
         # It returns value.Match() rather than an integer
-        'search': method_str.Search(),
+        'search': method_str.SearchMatch(method_str.SEARCH),
 
         # like Python's re.match()
-        'leftMatch': None,
+        'leftMatch': method_str.SearchMatch(method_str.LEFT_MATCH),
 
         # like Python's re.fullmatch(), not sure if we really need it
         'fullMatch': None,

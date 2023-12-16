@@ -68,11 +68,14 @@ class Upper(vm._Callable):
         return value.Str(res)
 
 
-class Search(vm._Callable):
+SEARCH = 0
+LEFT_MATCH = 1
 
-    def __init__(self):
-        # type: () -> None
-        pass
+class SearchMatch(vm._Callable):
+
+    def __init__(self, which_method):
+        # type: (int) -> None
+        self.which_method = which_method
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -88,8 +91,17 @@ class Search(vm._Callable):
 
         ere = regex_translate.AsPosixEre(eggex_val)  # lazily converts to ERE
 
+        # Make it anchored
+        if self.which_method == LEFT_MATCH and not ere.startswith('^'):
+            ere = '^' + ere
+
         cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
-        eflags = 0 if pos == 0 else REG_NOTBOL  # ^ only matches when pos=0
+
+        if self.which_method == LEFT_MATCH:
+            eflags = 0  # ^ matches beginning even if pos=5
+        else:
+            eflags = 0 if pos == 0 else REG_NOTBOL  # ^ only matches when pos=0
+
         indices = libc.regex_search(ere, cflags, string, eflags, pos)
 
         if indices is None:

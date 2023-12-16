@@ -55,6 +55,71 @@ Respects unicode.
 
 Respects unicode.
 
+### search()
+
+Search for the first occurrence of a regex in the string.
+
+    var m = 'hi world' => search(/[aeiou]/)  # search for vowels
+    # matches at position 1 for 'i'
+
+Returns a `value.Match()` if it matches, otherwise `null`.
+
+You can start searching in the middle of the string:
+
+    var m = 'hi world' => search(/dot 'orld'/, pos=3)
+    # also matches at position 4 for 'o'
+
+The `%start` or `^` metacharacter will only match when `pos` is zero.
+
+(Similar to Python's `re.search()`.)
+
+### leftMatch()
+
+`leftMatch()` is like `search()`, but it checks
+
+    var m = 'hi world' => leftMatch(/[aeiou]/)  # search for vowels
+    # doesn't match because h is not a vowel
+
+    var m = 'aye' => leftMatch(/[aeiou]/)
+    # matches 'a'
+
+`leftMatch()` Can be used to implement lexers that consome every byte of input.
+
+    var lexer = / <capture digit+> | <capture space+> /
+
+(Similar to Python's `re.match()`.)
+
+## Match
+
+### group()
+
+Returns the string that matched a regex capture group.  Group 0 is the entire
+match.
+
+    var m = 'foo9bar' => search(/ [a-z] <capture d+> [a-z] /)
+    echo $[m => group(0)]  # => o9b
+    echo $[m => group(1)]  # => 9
+
+<!-- TODO: document named capture.  group 0 can be omitted -->
+
+### start()
+
+Like `group()`, but returns the **start** position of a regex capture group,
+rather than its value.
+
+    var m = 'foo9bar' => search(/ [a-z] <capture d+> [a-z] /)
+    echo $[m => start(0)]  # => 2 for 'o9b'
+    echo $[m => start(1)]  # => 3 for '9'
+
+### end()
+
+Like `group()`, but returns the **end** position of a regex capture group,
+rather than its value.
+
+    var m = 'foo9bar' => search(/ [a-z] <capture d+> [a-z] /)
+    echo $[m => end(0)]  # => 5 for 'o9b'
+    echo $[m => end(1)]  # => 4 for '9'
+
 ## List
 
 ### append()

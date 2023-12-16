@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### s ~ regex and s !~ regex
 shopt -s ysh:upgrade
@@ -225,8 +225,7 @@ proc show-tokens (s) {
   while (true) {
     echo "pos=$pos"
 
-    # TODO: use leftMatch()
-    var m = s->search(lexer, pos=pos)
+    var m = s->leftMatch(lexer, pos=pos)
     if (not m) {
       break
     }
@@ -265,7 +264,6 @@ null/ab/null/
 
 pos=2
 ## END
-
 
 #### Named captures with _match
 shopt -s ysh:all
