@@ -215,16 +215,16 @@ start=-1 end=-1
 
 #### Str->search() method returns value.Match object
 
-var s = 'hello spam5-eggs6-'
+var s = 'hello Spam5-EGGS-'
 
-var m = s => search(/ <capture [a-z]+ > <capture d+> '-' /)
+var m = s => search(/ <capture [a-z]+ > <capture d+> '-' ; i /)
 echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
 echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
 echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
 
 ## STDOUT:
-g0 6 12 spam5-
-g1 6 10 spam
+g0 6 12 Spam5-
+g1 6 10 Spam
 g2 10 11 5
 ## END
 

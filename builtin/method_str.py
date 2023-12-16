@@ -87,8 +87,8 @@ class Search(vm._Callable):
 
         ere = regex_translate.AsPosixEre(eggex_val)  # lazily converts to ERE
 
-        flags = 0  # TODO: translate flags
-        indices = libc.regex_search(ere, flags, string, 0)
+        flags = regex_translate.LibcFlags(eggex_val.canonical_flags)
+        indices = libc.regex_search(ere, flags, string, pos)
 
         if indices is None:
             return value.Null

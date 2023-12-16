@@ -450,8 +450,7 @@ def RegexMatch(left, right, mem):
         elif case(value_e.Eggex):
             right = cast(value.Eggex, UP_right)
             right_s = regex_translate.AsPosixEre(right)
-            if right.canonical_flags is not None:
-                regex_flags = regex_translate.LibcFlags(right.canonical_flags)
+            regex_flags = regex_translate.LibcFlags(right.canonical_flags)
         else:
             raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
                                 loc.Missing)

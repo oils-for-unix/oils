@@ -23,7 +23,7 @@ from frontend import lexer
 from mycpp.mylib import log, tagswitch
 from osh import glob_  # for ExtendedRegexEscape
 
-from typing import List, TYPE_CHECKING, cast
+from typing import List, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import re_t
@@ -378,7 +378,10 @@ def CanonicalFlags(flags):
 
 
 def LibcFlags(canonical_flags):
-    # type: (str) -> int
+    # type: (Optional[str]) -> int
+    if canonical_flags is None:
+        return 0
+
     libc_flags = 0
     for ch in canonical_flags:
         if ch == 'i':
