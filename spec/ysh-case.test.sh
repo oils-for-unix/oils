@@ -67,7 +67,7 @@ case (x) {
 ## STDOUT:
 ## END
 
-#### case syntax, eggex
+#### eggex as case arm
 const x = "main.cc"
 case (x) {
   / dot* '.py' / {
@@ -79,6 +79,20 @@ case (x) {
 }
 ## STDOUT:
 C++
+## END
+
+#### eggex respects flags
+const x = 'MAIN.PY'
+case (x) {
+  / dot* '.py' ; i / {
+    echo Python
+  }
+  / dot* ('.cc' | '.h') / {
+   echo C++
+  }
+}
+## STDOUT:
+Python
 ## END
 
 #### empty case statement
@@ -103,14 +117,14 @@ string
 #### eggex capture
 for name in foo/foo.py bar/bar.cc zz {
   case (name) {
-    / '/f' <capture dot*> '.' / { echo "g0=$[_match(0)] g1=$[_match(1)] g2=$[_match(2)]" }
-    / '/b' <capture dot*> '.' / { echo "g0=$[_match(1)] g1=$[_match(1)]" }
+    / '/f' <capture dot*> '.' / { echo "g0=$[_group(0)] g1=$[_group(1)]" }
+    / '/b' <capture dot*> '.' / { echo "g0=$[_group(1)] g1=$[_group(1)]" }
     (else) { echo 'no match' }
   }
 }
 ## status: 0
 ## STDOUT:
-g0=/foo. g1=oo g2=null
+g0=/foo. g1=oo
 g0=ar g1=ar
 no match
 ## END

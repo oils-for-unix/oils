@@ -51,6 +51,7 @@ from frontend import lexer
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 from ysh import expr_parse
+from ysh import regex_translate
 
 from typing import TYPE_CHECKING, Dict, List, Tuple, Optional, cast
 if TYPE_CHECKING:
@@ -858,7 +859,13 @@ class Transformer(object):
                 i += 1
                 trans_pref = p_node.GetChild(i).tok
 
-        return Eggex(left, regex, flags, trans_pref)
+        # Canonicalize and validate flags for ERE only.  Default is ERE.
+        if trans_pref is None or lexer.TokenVal(trans_pref) == 'ERE':
+            canonical_flags = regex_translate.CanonicalFlags(flags)
+        else:
+            canonical_flags = None
+
+        return Eggex(left, regex, flags, trans_pref, canonical_flags)
 
     def YshCasePattern(self, pnode):
         # type: (PNode) -> pat_t
@@ -1440,23 +1447,32 @@ class Transformer(object):
                 return re.Group(self._Regex(p_atom.GetChild(1)))
 
             if tok.id == Id.Arith_Less:
-                # | '<' 'capture' regex ['as' name_type] '>'
+                # | '<' 'capture' regex ['as' Expr_Name] [':' Expr_Name] '>'
 
                 n = p_atom.NumChildren()
-                assert n == 4 or n == 6, n
+                assert n == 4 or n == 6 or n == 8, n
 
                 # < capture d+ >
                 regex = self._Regex(p_atom.GetChild(2))
 
-                name_type = None  # type: NameType
-                # < capture d+ as date >
-                if n >= 6:
-                    name_type = self._NameType(p_atom.GetChild(4))
+                as_name = None  # type: Optional[Token]
+                func_name = None  # type: Optional[Token]
+
+                i = 3  # points at any of   >   as   :
+
+                tok = p_atom.GetChild(i).tok
+                if tok.id == Id.Expr_As:
+                    as_name = p_atom.GetChild(i + 1).tok
+                    i += 2
+
+                tok = p_atom.GetChild(i).tok
+                if tok.id == Id.Arith_Colon:
+                    func_name = p_atom.GetChild(i + 1).tok
 
                 # TODO: is it possible to output the capture name <-> index mapping
                 # here for POSIX ERE?
 
-                return re.Capture(regex, name_type)
+                return re.Capture(regex, as_name, func_name)
 
             if tok.id == Id.Arith_Colon:
                 # | ':' '(' regex ')'

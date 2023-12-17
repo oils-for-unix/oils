@@ -723,20 +723,22 @@ def Main(
         'upper': method_str.Upper(),
         'lower': None,
 
-        # finds a substring, OR an eggex
-        # should it be findStr / replaceStr vs. findPat / replacePat?  subst()
+        # finds a substring, optional position to start at
         'find': None,
-
-        # Match eggex at certain position?  A constant string is also useful
-        # for lexing.
-        'match': None,
 
         # replace substring, OR an eggex
         'replace': None,
 
         # Like Python's re.search, except we put it on the string object
         # It's more consistent with Str->find(substring, pos=0)
-        'search': method_str.Search(),
+        # It returns value.Match() rather than an integer
+        'search': method_str.SearchMatch(method_str.SEARCH),
+
+        # like Python's re.match()
+        'leftMatch': method_str.SearchMatch(method_str.LEFT_MATCH),
+
+        # like Python's re.fullmatch(), not sure if we really need it
+        'fullMatch': None,
     }
     methods[value_e.Dict] = {
         'get': None,  # doesn't raise an error
@@ -770,11 +772,10 @@ def Main(
         'join': func_misc.Join(),  # both a method and a func
     }
 
-    # TODO: implement these
     methods[value_e.Match] = {
-        'group': method_other.MatchAccess(method_other.GROUP),
-        'start': method_other.MatchAccess(method_other.START),
-        'end': method_other.MatchAccess(method_other.END),
+        'group': func_eggex.MatchMethod(func_eggex.G),
+        'start': func_eggex.MatchMethod(func_eggex.S),
+        'end': func_eggex.MatchMethod(func_eggex.E),
     }
 
     methods[value_e.IO] = {
@@ -812,9 +813,13 @@ def Main(
     _SetGlobalFunc(mem, '_hay', hay_func)
 
     _SetGlobalFunc(mem, 'len', func_misc.Len())
-    _SetGlobalFunc(mem, '_match', func_eggex.Match(mem))
-    _SetGlobalFunc(mem, '_start', func_eggex.Start(mem))
-    _SetGlobalFunc(mem, '_end', func_eggex.End(mem))
+
+    g = func_eggex.MatchFunc(mem, func_eggex.G)
+    _SetGlobalFunc(mem, '_group', g)
+    _SetGlobalFunc(mem, '_match', g)  # TODO: remove this backward compat alias
+    _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(mem, func_eggex.S))
+    _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(mem, func_eggex.E))
+
     _SetGlobalFunc(mem, 'join', func_misc.Join())
     _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     _SetGlobalFunc(mem, 'type', func_misc.Type())

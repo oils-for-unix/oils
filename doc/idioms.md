@@ -894,8 +894,8 @@ No:
 
 Yes:
 
-    if (x ~ / 'foo-' <d+> /) {   # <> is capture
-      echo $_match(1)             # first submatch
+    if (x ~ / 'foo-' <capture d+> /) {   # <> is capture
+      echo $[_group(1)]                  # first submatch
     }
 
 ## Glob Matching

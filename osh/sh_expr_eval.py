@@ -1070,19 +1070,17 @@ class BoolEvaluator(ArithEvaluator):
                                        if self.exec_opts.nocasematch() else 0)
 
                         try:
-                            matches = libc.regex_match(s2, s1, regex_flags)
-                        except RuntimeError as e:
+                            indices = libc.regex_search(s2, regex_flags, s1, 0)
+                        except ValueError as e:
                             # Status 2 indicates a regex parse error.  This is fatal in OSH but
                             # not in bash, which treats [[ like a command with an exit code.
-                            msg = e.message  # type: str
-                            e_die_status(2, 'Invalid regex %r: %s' % (s2, msg),
-                                         loc.Word(node.right))
+                            e_die_status(2, e.message, loc.Word(node.right))
 
-                        if matches is not None:
-                            self.mem.SetMatches(matches)
+                        if indices is not None:
+                            self.mem.SetRegexIndices(s1, indices, [])
                             return True
                         else:
-                            self.mem.ClearMatches()
+                            self.mem.ClearRegexIndices()
                             return False
 
                     if op_id == Id.Op_Less:

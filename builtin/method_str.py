@@ -7,6 +7,10 @@ from _devbuild.gen.value_asdl import (value, value_t)
 from core import vm
 from frontend import typed_args
 from mycpp.mylib import log
+from ysh import regex_translate
+
+import libc
+from libc import REG_NOTBOL
 
 _ = log
 
@@ -64,32 +68,45 @@ class Upper(vm._Callable):
         return value.Str(res)
 
 
-class Search(vm._Callable):
+SEARCH = 0
+LEFT_MATCH = 1
 
-    def __init__(self):
-        # type: () -> None
-        pass
+
+class SearchMatch(vm._Callable):
+
+    def __init__(self, which_method):
+        # type: (int) -> None
+        self.which_method = which_method
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         """
         s => search(eggex, pos=0)
         """
+        string = rd.PosStr()
+        eggex_val = rd.PosEggex()
 
-        eggex = rd.PosEggex()
-        # don't confuse 'start' and 'pos'?
-        # Python has 2 kinds of 'pos'
+        # Don't confuse 'start' and 'pos'.  Python has 2 kinds of 'start' in its regex API.
         pos = rd.NamedInt('pos', 0)
         rd.Done()
 
-        # TODO:
-        #
-        # call libc.regex_search(str ERE, int flags, str s, int pos)
-        #
-        # which should return non-empty List[int] of positions, or None
-        #
-        # - it uses the regcomp cache
-        # - TODO: eggex evaluation has to cache the group names, and number of
-        #   groups
+        ere = regex_translate.AsPosixEre(eggex_val)  # lazily converts to ERE
 
-        return value.Null
+        # Make it anchored
+        if self.which_method == LEFT_MATCH and not ere.startswith('^'):
+            ere = '^' + ere
+
+        cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
+
+        if self.which_method == LEFT_MATCH:
+            eflags = 0  # ^ matches beginning even if pos=5
+        else:
+            eflags = 0 if pos == 0 else REG_NOTBOL  # ^ only matches when pos=0
+
+        indices = libc.regex_search(ere, cflags, string, eflags, pos)
+
+        if indices is None:
+            return value.Null
+
+        return value.Match(string, indices, eggex_val.capture_names,
+                           eggex_val.func_names)

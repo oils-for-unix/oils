@@ -231,11 +231,11 @@ group.  POSIX ERE has no non-capturing groups.
 
 Capture with `<capture pat>`:
 
-    <capture d+>           # Becomes _match(1)
+    <capture d+>           # Becomes _group(1)
 
 Add a variable after `as` for named capture:
 
-    <capture d+ as myvar>  # Becomes _match('myvar')
+    <capture d+ as myvar>  # Becomes _group('myvar')
 
 ### Character Class Literals Use `[]`
 
@@ -323,41 +323,24 @@ You can spread regexes over multiple lines and add comments:
 
 ### The YSH API
 
-(Still to be implemented.)
+See [YSH regex API](ysh-regex-api.html) for details.
 
-Testing and extracting matches:
+In summary, YSH has Perl-like conveniences with an `~` operator:
 
-    if (mystr ~ pat) {
-      echo $_match(1)  # or _group(1) ?
-    }
-
-Iterative matching:
-
+    var s = 'on 04-01, 10-31'
     var pat = /<capture d+ as month> '-' <capture d+ as day>/
-    while (true) {
-      var m = pat => findNext('04-01 10-31')
-      if (not m) {
-        break
-      }
-      echo $[m => group(0)]
+
+    if (s ~ pat) {       # search for the pattern
+      echo $[_group(1)]  # => 04
     }
 
-Substitution:
+It also has an explicit and powerful Python-like API with the `search()` and
+leftMatch()` methods on strings.
 
-    var new = s => replace(/<capture d+ as month>/, ^"month is $month")
-    # (could be stdlib function)
-
-Slurping all like Python:
-
-    var matches = findAll(s, / (d+) '.' (d+) /)
-    # (could be stdlib function)
-
-    # s => findAll(pat) => reversed()
-
-Splitting:
-
-    var parts = s => split(/space+/)  # contrast with shSplit()
-    # (could be stdlib function)
+    var m = s => search(pat, pos=8)  # start searching at a position
+    if (m) {
+      echo $[m => group(1)]  # => 10
+    }
 
 ### Language Reference
 

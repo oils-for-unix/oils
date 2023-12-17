@@ -161,62 +161,55 @@ func_glob(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
-func_regex_parse(PyObject *self, PyObject *args) {
-  const char* pattern;
-  if (!PyArg_ParseTuple(args, "s", &pattern)) {
-    return NULL;
-  }
-  regex_t pat;
-  // This is an extended regular expression rather than a basic one, i.e. we
-  // use 'a*' instead of 'a\*'.
-  int status = regcomp(&pat, pattern, REG_EXTENDED);
-  if (status != 0) {
-    char error_string[80];
-    regerror(status, &pat, error_string, 80);
-    PyErr_SetString(PyExc_RuntimeError, error_string);
-    return NULL;
-  }
-  regfree(&pat);
-
-  Py_RETURN_TRUE;
-}
-
-static PyObject *
-func_regex_match(PyObject *self, PyObject *args) {
+func_regex_search(PyObject *self, PyObject *args) {
   const char* pattern;
   const char* str;
-  int flags = 0;
+  int cflags = 0;
+  int eflags = 0;
+  int pos = 0;
 
-  if (!PyArg_ParseTuple(args, "ss|i", &pattern, &str, &flags)) {
+  if (!PyArg_ParseTuple(args, "sisi|i", &pattern, &cflags, &str, &eflags, &pos)) {
     return NULL;
   }
 
-  flags |= REG_EXTENDED;
+  cflags |= REG_EXTENDED;
   regex_t pat;
-  int status = regcomp(&pat, pattern, flags);
+  int status = regcomp(&pat, pattern, cflags);
   if (status != 0) {
-    char error_string[80];
-    regerror(status, &pat, error_string, 80);
-    PyErr_SetString(PyExc_RuntimeError, error_string);
+    char error_desc[50];
+    regerror(status, &pat, error_desc, 50);
+
+    char error_message[80];
+    snprintf(error_message, 80, "Invalid regex %s (%s)", pattern, error_desc);
+
+    PyErr_SetString(PyExc_ValueError, error_message);
     return NULL;
   }
 
-  int outlen = pat.re_nsub + 1;
-  PyObject *ret = PyList_New(outlen);
+  int num_groups = pat.re_nsub + 1;
+  PyObject *ret = PyList_New(num_groups * 2);
 
   if (ret == NULL) {
     regfree(&pat);
     return NULL;
   }
 
-  regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * outlen);
-  int match = regexec(&pat, str, outlen, pmatch, 0);
+  regmatch_t *pmatch = (regmatch_t*) malloc(sizeof(regmatch_t) * num_groups);
+  int match = regexec(&pat, str + pos, num_groups, pmatch, eflags);
   if (match == 0) {
     int i;
-    for (i = 0; i < outlen; i++) {
-      int len = pmatch[i].rm_eo - pmatch[i].rm_so;
-      PyObject *v = PyString_FromStringAndSize(str + pmatch[i].rm_so, len);
-      PyList_SetItem(ret, i, v);
+    for (i = 0; i < num_groups; i++) {
+      int start = pmatch[i].rm_so;
+      if (start != -1) {
+        start += pos;
+      }
+      PyList_SetItem(ret, 2*i, PyInt_FromLong(start));
+
+      int end = pmatch[i].rm_eo;
+      if (end != -1) {
+        end += pos;
+      }
+      PyList_SetItem(ret, 2*i + 1, PyInt_FromLong(end));
     }
   }
 
@@ -380,12 +373,9 @@ static PyMethodDef methods[] = {
   // We need this since Python's glob doesn't have char classes.
   {"glob", func_glob, METH_VARARGS, ""},
 
-  // Compile a regex in ERE syntax, returning whether it is valid
-  {"regex_parse", func_regex_parse, METH_VARARGS, ""},
-
-  // Match regex against a string.  Returns a list of matches, None if no
+  // Search a string for regex.  Returns a list of matches, None if no
   // match.  Raises RuntimeError if the regex is invalid.
-  {"regex_match", func_regex_match, METH_VARARGS, ""},
+  {"regex_search", func_regex_search, METH_VARARGS, ""},
 
   // If the regex matches the string, return the start and end position of the
   // first group.  Returns None if there is no match.  Raises RuntimeError if
@@ -417,6 +407,8 @@ void initlibc(void) {
   if (module != NULL) {
       PyModule_AddIntConstant(module, "FNM_CASEFOLD", FNM_CASEFOLD);
       PyModule_AddIntConstant(module, "REG_ICASE", REG_ICASE);
+      PyModule_AddIntConstant(module, "REG_NEWLINE", REG_NEWLINE);
+      PyModule_AddIntConstant(module, "REG_NOTBOL", REG_NOTBOL);
   }
 
   errno_error = PyErr_NewException("libc.error",

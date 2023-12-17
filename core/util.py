@@ -14,6 +14,33 @@ from core import ansi
 from core import pyutil
 from mycpp import mylib
 
+import libc
+
+from typing import List
+
+
+def RegexGroups(s, indices):
+    # type: (str, List[int]) -> List[str]
+    groups = []  # type: List[str]
+    n = len(indices)
+    for i in xrange(n / 2):
+        start = indices[2 * i]
+        end = indices[2 * i + 1]
+        if start == -1:
+            groups.append(None)
+        else:
+            groups.append(s[start:end])
+    return groups
+
+
+def simple_regex_search(pat, s):
+    # type: (str, str) -> List[str]
+    """Convenience wrapper around libc."""
+    indices = libc.regex_search(pat, 0, s, 0)
+    if indices is None:
+        return None
+    return RegexGroups(s, indices)
+
 
 class UserExit(Exception):
     """For explicit 'exit'."""

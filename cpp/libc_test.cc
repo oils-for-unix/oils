@@ -1,6 +1,6 @@
 #include "cpp/libc.h"
 
-#include <regex.h>  // regcomp()
+#include <regex.h>   // regcomp()
 #include <unistd.h>  // gethostname()
 
 #include "mycpp/runtime.h"
@@ -49,6 +49,9 @@ TEST libc_test() {
   ASSERT_EQ_FMT(2, width, "%d");
 #endif
 
+  BigStr* h = libc::gethostname();
+  log("gethostname() = %s %d", h->data_, len(h));
+
   width = libc::wcswidth(StrFromC("foo"));
   ASSERT_EQ(3, width);
 
@@ -62,15 +65,44 @@ TEST libc_test() {
   ASSERT(libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.py")));
   ASSERT(!libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.p")));
 
-  List<BigStr*>* results =
-      libc::regex_match(StrFromC("(a+).(a+)"), StrFromC("-abaacaaa"));
+  PASS();
+}
+
+static List<BigStr*>* Groups(BigStr* s, List<int>* indices) {
+  List<BigStr*>* groups = NewList<BigStr*>();
+  int n = len(indices) / 2;
+  for (int i = 0; i < n; ++i) {
+    int start = indices->at(2 * i);
+    int end = indices->at(2 * i + 1);
+    if (start == -1) {
+      groups->append(nullptr);
+    } else {
+      groups->append(s->slice(start, end));
+    }
+  }
+  return groups;
+}
+
+TEST regex_test() {
+  BigStr* s1 = StrFromC("-abaacaaa");
+  List<int>* indices = libc::regex_search(StrFromC("(a+).(a+)"), 0, s1, 0);
+  List<BigStr*>* results = Groups(s1, indices);
   ASSERT_EQ_FMT(3, len(results), "%d");
   ASSERT(str_equals(StrFromC("abaa"), results->at(0)));  // whole match
   ASSERT(str_equals(StrFromC("a"), results->at(1)));
   ASSERT(str_equals(StrFromC("aa"), results->at(2)));
 
-  results = libc::regex_match(StrFromC("z+"), StrFromC("abaacaaa"));
-  ASSERT_EQ(nullptr, results);
+  indices = libc::regex_search(StrFromC("z+"), 0, StrFromC("abaacaaa"), 0);
+  ASSERT_EQ(nullptr, indices);
+
+  // Alternation gives unmatched group
+  BigStr* s2 = StrFromC("b");
+  indices = libc::regex_search(StrFromC("(a)|(b)"), 0, s2, 0);
+  results = Groups(s2, indices);
+  ASSERT_EQ_FMT(3, len(results), "%d");
+  ASSERT(str_equals(StrFromC("b"), results->at(0)));  // whole match
+  ASSERT_EQ(nullptr, results->at(1));
+  ASSERT(str_equals(StrFromC("b"), results->at(2)));
 
   Tuple2<int, int>* result;
   BigStr* s = StrFromC("oXooXoooXoX");
@@ -85,9 +117,6 @@ TEST libc_test() {
   result = libc::regex_first_group_match(StrFromC("(X.)"), s, 6);
   ASSERT_EQ_FMT(8, result->at0(), "%d");
   ASSERT_EQ_FMT(10, result->at1(), "%d");
-
-  BigStr* h = libc::gethostname();
-  log("gethostname() = %s %d", h->data_, len(h));
 
   PASS();
 }
@@ -133,7 +162,6 @@ void FindAll(const char* p, const char* s) {
   int cur_pos = 0;
   // int n = strlen(s);
   while (true) {
-
     // Necessary so ^ doesn't match in the middle!
     int eflags = cur_pos == 0 ? 0 : REG_NOTBOL;
     bool match = regexec(&pat, s + cur_pos, outlen, pmatch, eflags) == 0;
@@ -163,7 +191,6 @@ void FindAll(const char* p, const char* s) {
 
 // adjacent matches
 const char* s = "a345y-axy- there b789y- cy-";
-
 
 TEST regex_unanchored() {
   const char* unanchored = "[abc]([0-9]*)(x?)(y)-";
@@ -221,7 +248,6 @@ TEST regex_alt_with_capture() {
   PASS();
 }
 
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -232,6 +258,7 @@ int main(int argc, char** argv) {
   RUN_TEST(hostname_test);
   RUN_TEST(realpath_test);
   RUN_TEST(libc_test);
+  RUN_TEST(regex_test);
   RUN_TEST(libc_glob_test);
   RUN_TEST(for_test_coverage);
 

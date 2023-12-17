@@ -83,6 +83,7 @@ readonly MARKDOWN_DOCS=(
   warts
 
   eggex
+  ysh-regex-api
   upgrade-breakage
   ysh-tour
 

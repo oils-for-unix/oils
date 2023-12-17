@@ -81,7 +81,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   thin-arrow    s->pop()
                   fat-arrow     s => startswith('prefix')
                   match-ops     ~   !~   ~~   !~~
-  [Eggex]         re-literal    / d+ /
+  [Eggex]         re-literal    / d+ ; i ; ERE /
                   re-compound   pat|alt   pat seq   (group)
                                 <capture>   <capture :name> 
                   re-primitive  %zero   Subpattern   @subpattern   'sq'
@@ -239,6 +239,9 @@ X [Builtin Sub]   _buffer
               X trim()   X trimLeft()   X trimRight()
               X trimPrefix()   X trimSuffix()
               upper()   lower()  # ascii or unicode
+              search()   leftMatch()              
+  [Match]     group()   start()   end()
+              X groups()   X groupDict()
   [List]      append()   pop()   extend()   indexOf()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
@@ -274,7 +277,7 @@ X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()
 X [Serialize]     toJ8()   fromJ8()
                   toJson()   fromJson()
-  [Pattern]       _match()   X _start()   X _end()
+  [Pattern]       _group()   X _start()   X _end()
   [Introspection] shvarGet()   evalExpr()
   [Hay Config]    parseHay()   evalHay()
 X [Wok]           _field()

@@ -231,11 +231,29 @@ Note, you will need to `source --builtin list.ysh` to use this function.
 
 ## Pattern
 
-### `_match()`
+### `_group()`
+
+Like `Match => group()`, but accesses the global match created by `~`:
+
+    if ('foo42' ~ / d+ /) {
+      echo $[_group(0)]  # => 42
+    }
 
 ### `_start()`
 
+Like `Match => start()`, but accesses the global match created by `~`:
+
+    if ('foo42' ~ / d+ /) {
+      echo $[_start(0)]  # => 3
+    }
+
 ### `_end()`
+
+Like `Match => end()`, but accesses the global match created by `~`:
+
+    if ('foo42' ~ / d+ /) {
+      echo $[_end(0)]  # => 5
+    }
 
 ## Str
 

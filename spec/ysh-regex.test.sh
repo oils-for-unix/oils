@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 1
 
 #### /^.$/
 shopt -s ysh:all
@@ -46,92 +46,6 @@ if (empty ~ pat) { echo yes } else { echo no }
 .+
 yes
 no
-## END
-
-#### Eggex flags ignorecase
-
-# based on Python's spelling
-var pat = / 'abc' ; ignorecase /
-
-= pat
-
-## STDOUT:
-## END
-
-#### Positional captures with _match
-shopt -s ysh:all
-
-var x = 'zz 2020-08-20'
-
-if [[ $x =~ ([[:digit:]]+)-([[:digit:]]+) ]] {
-  argv.py "${BASH_REMATCH[@]}"
-}
-
-# THIS IS A NO-OP.  The variable is SHADOWED by the special name.
-# I think that's OK.
-setvar BASH_REMATCH = %(reset)
-
-if (x ~ /<capture d+> '-' <capture d+>/) {
-  argv.py "${BASH_REMATCH[@]}"
-  argv.py $[_match(0)] $[_match(1)] $[_match(2)]
-
-  argv.py $[_match()]  # synonym for _match(0)
-
-  # TODO: Also test _start() and _end()
-}
-## STDOUT:
-['2020-08', '2020', '08']
-['2020-08', '2020', '08']
-['2020-08', '2020', '08']
-['2020-08']
-## END
-
-#### s ~ regex and s !~ regex
-shopt -s ysh:upgrade
-
-var s = 'foo'
-if (s ~ '.([[:alpha:]]+)') {  # ERE syntax
-  echo matches
-  argv.py $[_match(0)] $[_match(1)]
-}
-if (s !~ '[[:digit:]]+') {
-  echo "does not match"
-  argv.py $[_match(0)] $[_match(1)]
-}
-
-if (s ~ '[[:digit:]]+') {
-  echo "matches"
-}
-# Should be cleared now
-# should this be Undef rather than ''?
-var x = _match(0)
-var y = _match(1)
-if (x === null and y === null) {
-  echo 'cleared'
-}
-
-## STDOUT:
-matches
-['foo', 'oo']
-does not match
-['foo', 'oo']
-cleared
-## END
-
-#### _start() and _end()
-shopt -s ysh:upgrade
-
-var s = 'foo123bar'
-if (s ~ /digit+/) {
-  echo start=$[_start()] end=$[_end()]
-}
-
-if (s ~ / word+ <digit+> /) {
-  echo start=$[_start(1)] end=$[_end(1)]
-}
-## STDOUT:
-start=3 end=6
-start=3 end=6
 ## END
 
 #### Repeat {1,3} etc.
@@ -275,47 +189,6 @@ echo $pat
 (^[[:space:]]|[[:digit:]][[:digit:]])
 ## END
 
-#### Named captures with _match
-shopt -s ysh:all
-
-var x = 'zz 2020-08-20'
-
-if (x ~ /<capture d+ as year> '-' <capture d+ as month>/) {
-  argv.py $[_match('year')] $[_match('month')]
-}
-## STDOUT:
-['2020', '08']
-## END
-
-#### Named Capture Decays Without Name
-shopt -s ysh:all
-var pat = /<capture d+ as month>/
-echo $pat
-
-if ('123' ~ pat) {
-  echo yes
-}
-
-## STDOUT:
-([[:digit:]]+)
-yes
-## END
-
-#### Operator ~ assigns named variable
-shopt -s ysh:all
-var pat = /<capture d+ as month>/
-echo $pat
-
-if ('123' ~ pat) {
-  echo yes
-  = month
-}
-## STDOUT:
-([[:digit:]]+)
-yes
-TODO MONTH
-## END
-
 #### literal ''
 shopt -s ysh:all
 var pat = ''
@@ -382,7 +255,7 @@ no
 #### Matching escaped tab character
 shopt -s ysh:all
 
-var lines=%($'aa\tbb' $'cc\tdd')
+var lines = :| $'aa\tbb' $'cc\tdd' |
 
 var pat = / ('a' [\t] 'b') /
 write pat=$pat
@@ -494,7 +367,7 @@ echo $pat
 shopt -s ysh:all
 
 # BUG: need C strings in array literal
-var lines=%($'aa\tbb' $'cc\tdd')
+var lines = :| $'aa\tbb' $'cc\tdd' |
 
 var pat = / ('a' [\t] 'b') /
 write pat=$pat
@@ -606,139 +479,6 @@ echo $pat
 ## status: 1
 ## stdout-json: ""
 
-#### Long Python Example
-
-# https://docs.python.org/3/reference/lexical_analysis.html#integer-literals
-
-# integer      ::=  decinteger | bininteger | octinteger | hexinteger
-# decinteger   ::=  nonzerodigit (["_"] digit)* | "0"+ (["_"] "0")*
-# bininteger   ::=  "0" ("b" | "B") (["_"] bindigit)+
-# octinteger   ::=  "0" ("o" | "O") (["_"] octdigit)+
-# hexinteger   ::=  "0" ("x" | "X") (["_"] hexdigit)+
-# nonzerodigit ::=  "1"..."9"
-# digit        ::=  "0"..."9"
-# bindigit     ::=  "0" | "1"
-# octdigit     ::=  "0"..."7"
-# hexdigit     ::=  digit | "a"..."f" | "A"..."F"
-
-shopt -s ysh:all
-
-const DecDigit = / [0-9] /
-const BinDigit = / [0-1] /
-const OctDigit = / [0-7] /
-const HexDigit = / [0-9 a-f A-F] /  # note: not splicing Digit into character class
-
-const DecInt   = / [1-9] ('_'? DecDigit)* | '0'+ ('_'? '0')* /
-const BinInt   = / '0' [b B] ('_'? BinDigit)+ /
-const OctInt   = / '0' [o O] ('_'? OctDigit)+ /
-const HexInt   = / '0' [x X] ('_'? HexDigit)+ /
-
-const Integer  = / %start (DecInt | BinInt | OctInt | HexInt) %end /
-
-#echo $Integer
-
-if (    '123'  ~ Integer) { echo 'Y' }
-if (    'zzz' !~ Integer) { echo 'N' }
-
-if ('123_000'  ~ Integer) { echo 'Y decimal' }
-if ('000_123' !~ Integer) { echo 'N decimal' }
-
-if (  '0b100'  ~ Integer) { echo 'Y binary' }
-if (  '0b102' !~ Integer) { echo 'N binary' }
-
-if (  '0o755'  ~ Integer) { echo 'Y octal' }
-if (  '0o778' !~ Integer) { echo 'N octal' }
-
-if (   '0xFF'  ~ Integer) { echo 'Y hex' }
-if (   '0xFG' !~ Integer) { echo 'N hex' }
-
-## STDOUT:
-Y
-N
-Y decimal
-N decimal
-Y binary
-N binary
-Y octal
-N octal
-Y hex
-N hex
-## END
-
-#### Invalid sh operation on eggex
-var pat = / d+ /
-#pat[invalid]=1
-pat[invalid]+=1
-## status: 1
-## stdout-json: ""
-
-
-#### Regex in a loop (bug regression)
-
-shopt --set ysh:all
-
-var content = [ 1, 2 ]
-var i = 0
-while (i < len(content)) {
-  var line = content[i]
-  write $[content[i]]
-  if (str(line) ~ / s* 'imports' s* '=' s* .* /) {
-    exit
-  }
-  setvar i += 1
-}
-
-## STDOUT:
-1
-2
-## END
-
-
-#### Regex in a loop depending on var
-
-shopt --set ysh:all
-
-var lines = ['foo', 'bar']
-for line in (lines) {
-  write "line $line"
-
-  # = / $line /
-
-if ("x$line" ~ / dot @line /) {
-  #if (line ~ / $line /) {
-    write "matched $line"
-  }
-}
-
-## STDOUT:
-line foo
-matched foo
-line bar
-matched bar
-## END
-
-
-#### Regex with [ (bug regression)
-shopt --set ysh:all
-
-if ('[' ~ / '[' /) {
-  echo 'sq'
-}
-
-if ('[' ~ / [ '[' ] /) {
-  echo 'char class'
-}
-
-# User-reported string
-if ("a" ~ / s* 'imports' s* '=' s* '[' /) {
-  echo "yes"
-}
-
-## STDOUT:
-sq
-char class
-## END
-
 #### Operator chars in char classes (bash-like)
 
 pat='[-]'
@@ -818,13 +558,13 @@ no way to have [^]
 shopt -s ysh:all
 
 # BUG: need C strings in array literal
-var lines=%(
+var lines = :|
   'backslash \'
   'rbracket ]'
   'lbracket ['
   "sq '"
-  'dq "'
-)
+  'dq ""'
+|
 
 # Weird GNU quirk: ] has to come first!
 # []abc] works.  But [abc\]] does NOT work.  Stupid rule!
@@ -838,7 +578,7 @@ pat=[]'"\\]
 backslash \
 rbracket ]
 sq '
-dq "
+dq ""
 ## END
 
 #### Matching literal hyphen in character classes

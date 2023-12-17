@@ -272,7 +272,7 @@ simple_var_sub: (
 
 # name_type use cases:
 #   var x Int, y Int = 3, 5
-#   / <capture d+ as date: Int> /
+#   / <capture d+ as date: int> /
 #
 #   for x Int, y Int
 #   [x for x Int, y Int in ...]
@@ -418,14 +418,12 @@ re_atom: (
 
     # grouping (non-capturing in Perl; capturing in ERE although < > is preferred)
   | '(' regex ')'
-  #| '<' regex [':' name_type] '>'
 
-    # Capturing group, with optional name, and type
-    #
-    # Could also have
-    #   <capture d+ as date: Int>
-    #   <capture d+ '.' d+ as ratio: Float>
-  | '<' 'capture' regex ['as' name_type] '>'
+    # Capturing group, with optional name and conversion function
+    #   <capture d+ as date>
+    #   <capture d+ as date: int>
+    #   <capture d+ : int>
+  | '<' 'capture' regex ['as' Expr_Name] [':' Expr_Name] '>'
 
     # Might want this obscure conditional construct.  Can't use C-style ternary
     # because '?' is a regex operator.
@@ -499,9 +497,9 @@ pat_exprs: expr ')' [Op_Newline] ('|' [Op_Newline] '(' expr ')' [Op_Newline])*
 
 # Syntax reserved for PCRE/Python, but that's not in ERE:
 # 
-#   nop-greedy     a{N *}
-#   non-capturing  :( digit+ )
-#   backtracking   !REF 1  !AHEAD(d+)
+#   non-greedy     a{N *}
+#   non-capturing  ( digit+ )
+#   backtracking   !!REF 1  !!AHEAD(d+)
 # 
 # Legacy syntax:
 # 

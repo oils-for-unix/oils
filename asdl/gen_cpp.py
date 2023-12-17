@@ -176,6 +176,9 @@ def _HNodeExpr(abbrev, typ, var_name):
     # type: (str, ast.TypeExpr, str) -> str
     none_guard = False
 
+    if typ.IsOptional():
+        typ = typ.children[0]  # descend one level
+
     if isinstance(typ, ast.ParameterizedType):
         code_str = '%s->%s()' % (var_name, abbrev)
         none_guard = True

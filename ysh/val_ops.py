@@ -440,14 +440,22 @@ def RegexMatch(left, right, mem):
       mem: Whether to set or clear matches
     """
     UP_right = right
-    right_s = None  # type: str
+
     with tagswitch(right) as case:
-        if case(value_e.Str):
+        if case(value_e.Str):  # plain ERE
             right = cast(value.Str, UP_right)
+
             right_s = right.s
+            regex_flags = 0
+            capture_names = []  # type: List[Optional[str]]
+
         elif case(value_e.Eggex):
             right = cast(value.Eggex, UP_right)
+
             right_s = regex_translate.AsPosixEre(right)
+            regex_flags = regex_translate.LibcFlags(right.canonical_flags)
+            capture_names = right.capture_names
+
         else:
             raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
                                 loc.Missing)
@@ -461,18 +469,14 @@ def RegexMatch(left, right, mem):
         else:
             raise error.TypeErrVerbose('LHS must be a string', loc.Missing)
 
-    # TODO:
-    # - libc_regex_match should populate _start() and _end() too (out params?)
-    # - What is the ordering for named captures?  See demo/ere*.sh
-
-    matches = libc.regex_match(right_s, left_s)
-    if matches is not None:
+    indices = libc.regex_search(right_s, regex_flags, left_s, 0)
+    if indices is not None:
         if mem:
-            mem.SetMatches(matches)
+            mem.SetRegexIndices(left_s, indices, capture_names)
         return True
     else:
         if mem:
-            mem.ClearMatches()
+            mem.ClearRegexIndices()
         return False
 
 

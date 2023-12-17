@@ -145,10 +145,10 @@ from interfering with user code.  Example:
 
 Current list of registers:
 
-    BASH_REMATCH        aka  _match()
+    Regex data underlying BASH_REMATCH, _group(), _start(), _end()
     $?             
-    _status             set by the try builtin
-    PIPESTATUS          aka  _pipeline_status
+    _status               # set by the try builtin
+    PIPESTATUS            # aka  _pipeline_status
     _process_sub_status
 
 

@@ -27,3 +27,17 @@ echo @x
 ## STDOUT:
 one two
 ## END
+
+#### _match() instead of _group()
+
+shopt --set ysh:upgrade
+
+if ('foo42' ~ / <capture d+> /) {
+  echo $[_match(0)]
+  echo $[_group(0)]
+}
+
+## STDOUT:
+42
+42
+## END

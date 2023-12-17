@@ -105,28 +105,45 @@ List<BigStr*>* glob(BigStr* pat) {
 
 // Raises RuntimeError if the pattern is invalid.  TODO: Use a different
 // exception?
-List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags) {
-  List<BigStr*>* results = NewList<BigStr*>();
-
-  flags |= REG_EXTENDED;
+List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int eflags,
+                        int pos) {
+  cflags |= REG_EXTENDED;
   regex_t pat;
-  if (regcomp(&pat, pattern->data_, flags) != 0) {
-    // TODO: check error code, as in func_regex_parse()
-    throw Alloc<RuntimeError>(StrFromC("Invalid regex syntax (regex_match)"));
+  int status = regcomp(&pat, pattern->data_, cflags);
+  if (status != 0) {
+    char error_desc[50];
+    regerror(status, &pat, error_desc, 50);
+
+    char error_message[80];
+    snprintf(error_message, 80, "Invalid regex %s (%s)", pattern->data_,
+             error_desc);
+
+    throw Alloc<ValueError>(StrFromC(error_message));
   }
 
-  int outlen = pat.re_nsub + 1;  // number of captures
+  int num_groups = pat.re_nsub + 1;  // number of captures
 
-  const char* s0 = str->data_;
+  List<int>* indices = NewList<int>();
+  indices->reserve(num_groups * 2);
+
+  const char* s = str->data_;
   regmatch_t* pmatch =
-      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
-  int match = regexec(&pat, s0, outlen, pmatch, 0) == 0;
+      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * num_groups));
+  bool match = regexec(&pat, s + pos, num_groups, pmatch, eflags) == 0;
   if (match) {
     int i;
-    for (i = 0; i < outlen; i++) {
-      int len = pmatch[i].rm_eo - pmatch[i].rm_so;
-      BigStr* m = StrFromC(s0 + pmatch[i].rm_so, len);
-      results->append(m);
+    for (i = 0; i < num_groups; i++) {
+      int start = pmatch[i].rm_so;
+      if (start != -1) {
+        start += pos;
+      }
+      indices->append(start);
+
+      int end = pmatch[i].rm_eo;
+      if (end != -1) {
+        end += pos;
+      }
+      indices->append(end);
     }
   }
 
@@ -137,7 +154,7 @@ List<BigStr*>* regex_match(BigStr* pattern, BigStr* str, int flags) {
     return nullptr;
   }
 
-  return results;
+  return indices;
 }
 
 // For ${//}, the number of groups is always 1, so we want 2 match position

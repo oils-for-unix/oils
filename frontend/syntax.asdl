@@ -289,7 +289,12 @@ module syntax
   | YshExpr(expr e)
 
   EggexFlag = (bool negated, Token flag)
-  Eggex = (Token left, re regex, List[EggexFlag] flags, Token? trans_pref)
+
+  # canonical_flags can be compared for equality.  This is needed to splice
+  # eggexes correctly, e.g.  / 'abc' @pat ; i /
+  Eggex = (
+      Token left, re regex, List[EggexFlag] flags, Token? trans_pref,
+      str? canonical_flags)
 
   pat =
     Else
@@ -611,8 +616,8 @@ module syntax
   | Alt(List[re] children)
 
   | Group(re child)
-    # TODO: <capture d+ as month: Int> needs Token? type field
-  | Capture(re child, NameType? name_type)  
+    # TODO: NameType isn't quite right because List[Int] doesn't make sense
+  | Capture(re child, Token? name, Token? func_name)
   | Backtracking(bool negated, Token name, re child)
 
   # These nodes are never parsed; they're part of execution.

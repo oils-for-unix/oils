@@ -179,36 +179,14 @@ class LibcTest(unittest.TestCase):
     print(libc.glob('\\\\'))
     print(libc.glob('[[:punct:]]'))
 
-  def testRegexParse(self):
-    self.assertEqual(True, libc.regex_parse(r'.*\.py'))
-
-    # Syntax errors
-    self.assertRaises(RuntimeError, libc.regex_parse, r'*')
-    self.assertRaises(RuntimeError, libc.regex_parse, '\\')
-    if not IS_DARWIN:
-      self.assertRaises(RuntimeError, libc.regex_parse, '{')
-
-    cases = [
-        ('([a-z]+)([0-9]+)', 'foo123', ['foo123', 'foo', '123']),
-        (r'.*\.py', 'foo.py', ['foo.py']),
-        (r'.*\.py', 'abcd', None),
-        # The match is unanchored
-        (r'bc', 'abcd', ['bc']),
-        # The match is unanchored
-        (r'.c', 'abcd', ['bc']),
-        # Empty matches empty
-        None if IS_DARWIN else (r'', '', ['']),
-        (r'^$', '', ['']),
-        (r'^.$', '', None),
-    ]
-
-    for pat, s, expected in filter(None, cases):
-      #print('CASE %s' % pat)
-      actual = libc.regex_match(pat, s)
-      self.assertEqual(expected, actual)
-
-  def testRegexMatch(self):
-    self.assertRaises(RuntimeError, libc.regex_match, r'*', 'abcd')
+  def testRegexMatchError(self):
+    # See core/util_test.py for more tests
+    try:
+      libc.regex_search(r'*', 0, 'abcd', 0)
+    except ValueError as e:
+      print(e)
+    else:
+      self.fail('Expected ValueError')
 
   def testRegexFirstGroupMatch(self):
     s='oXooXoooXoX'
