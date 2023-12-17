@@ -62,6 +62,7 @@ These docs are **ready to read** (though there may be obsolete references to
   - Comparisons: [YSH vs. Shell](doc/ysh-vs-shell.html) | [YSH Expressions vs.
     Python](doc/ysh-vs-python.html)
   - Features: [Egg Expressions (YSH Regexes)](doc/eggex.html)
+  | [YSH Regex API](doc/ysh-regex-api.html)
   | [Guide to Procs and Funcs](doc/proc-func.html)
   | [YSH Fixes Shell's Error Handling](doc/error-handling.html)
   | [Simple Word Evaluation](doc/simple-word-eval.html)

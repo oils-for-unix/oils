@@ -727,6 +727,7 @@ def Main(
         'find': None,
 
         # replace substring, OR an eggex
+        # takes count=3, the max number of replacements to do.
         'replace': None,
 
         # Like Python's re.search, except we put it on the string object

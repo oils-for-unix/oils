@@ -89,6 +89,7 @@ YSH has 3 main sublanguages:
     experts.
 - **Expression** language on typed data.
   - [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
+  - [YSH Regex API](ysh-regex-api.html).  Convenient and powerful.
 
 Crosscutting design issues:
 

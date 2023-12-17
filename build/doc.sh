@@ -409,12 +409,18 @@ EOF
 one() {
   ### Iterate on one doc quickly
 
-  local doc=${1:-doc/oil-vs-python.md}
+  local name=${1:-options}
 
-  split-and-render $doc
+  split-and-render doc/$name.md
+
+  # Make sure the doc has valid YSH code?
+  # TODO: Maybe need an attribute for OSH or YSH
+  pushd _tmp/code-blocks/doc
+  $REPO_ROOT/bin/ysh $name.txt
+  popd
 
   if test -d ~/vm-shared; then
-    local out="${doc%.md}.html"
+    local out="${name%.md}.html"
     local path=_release/VERSION/$out
     cp -v $path ~/vm-shared/$path
   fi

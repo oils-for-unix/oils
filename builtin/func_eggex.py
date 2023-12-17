@@ -36,6 +36,9 @@ def _GetMatch(s, indices, i, to_return, blame_loc):
         if start == -1:
             return value.Null
         else:
+            # TODO: Can apply type conversion function
+            # See osh/prompt.py:
+            # val = self.expr_ev.PluginCall(func_val, pos_args)
             return value.Str(s[start:end])
     else:
         if num_groups == 0:
