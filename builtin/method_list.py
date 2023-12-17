@@ -7,6 +7,7 @@ from _devbuild.gen.value_asdl import (value, value_t)
 from core import vm
 from frontend import typed_args
 from mycpp.mylib import log
+from ysh import val_ops
 
 _ = log
 
@@ -75,3 +76,22 @@ class Reverse(vm._Callable):
         li.reverse()
 
         return value.Null
+
+class IndexOf(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        li = rd.PosList()
+        needle = rd.PosValue()
+        rd.Done()
+        i = 0
+        while i < len(li):
+            if val_ops.ExactlyEqual(li[i], needle, rd.LeftParenToken()):
+                return value.Int(i)
+            i += 1
+        return value.Int(-1)

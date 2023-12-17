@@ -239,10 +239,10 @@ X [Builtin Sub]   _buffer
               X trim()   X trimLeft()   X trimRight()
               X trimPrefix()   X trimSuffix()
               upper()   lower()  # ascii or unicode
-              search()   leftMatch()
+              search()   leftMatch()              
   [Match]     group()   start()   end()
               X groups()   X groupDict()
-  [List]      append()   pop()   extend()   X find()
+  [List]      append()   pop()   extend()   indexOf()
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
               X inc()   X accum()
