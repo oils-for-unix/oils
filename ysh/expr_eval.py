@@ -1262,7 +1262,7 @@ class ExprEvaluator(object):
             elif case(re_e.Capture):  # Identical to Group
                 node = cast(re.Capture, UP_node)
                 return re.Capture(self._EvalRegex(node.child, parent_flags),
-                                  node.name_type)
+                                  node.name, node.func_name)
 
             elif case(re_e.CharClassLiteral):
                 node = cast(re.CharClassLiteral, UP_node)
@@ -1353,7 +1353,7 @@ class ExprEvaluator(object):
         spliced = self._EvalRegex(node.regex, node.canonical_flags)
 
         # as_ere and name_types filled in during translation
-        return value.Eggex(spliced, node.canonical_flags, None, None)
+        return value.Eggex(spliced, node.canonical_flags, None, [], [])
 
 
 # vim: sw=4

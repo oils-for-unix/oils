@@ -107,4 +107,6 @@ class SearchMatch(vm._Callable):
         if indices is None:
             return value.Null
 
-        return value.Match(string, indices, eggex_val.name_types)
+        return value.Match(string, indices, eggex_val.capture_names,
+                           eggex_val.func_names)
+

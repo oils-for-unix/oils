@@ -8,11 +8,13 @@ YSH Regex API - A Mix of Python and Perl/Awk
 
 TODO:
 
+<!--
 - Make these work:
   - [`_group()`]($help-topic:_group)
   - [`Match => group()`]($help-topic:group)
   - [`Str => search()`]($help-topic:search)
   - [`Str => leftMatch()`]($help-topic:leftMatch)
+-->
 
 Mechanisms
 

@@ -617,7 +617,7 @@ module syntax
 
   | Group(re child)
     # TODO: NameType isn't quite right because List[Int] doesn't make sense
-  | Capture(re child, NameType? name_type)  
+  | Capture(re child, Token? name, Token? func_name)
   | Backtracking(bool negated, Token name, re child)
 
   # These nodes are never parsed; they're part of execution.

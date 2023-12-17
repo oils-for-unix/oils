@@ -1447,23 +1447,32 @@ class Transformer(object):
                 return re.Group(self._Regex(p_atom.GetChild(1)))
 
             if tok.id == Id.Arith_Less:
-                # | '<' 'capture' regex ['as' name_type] '>'
+                # | '<' 'capture' regex ['as' Expr_Name] [':' Expr_Name] '>'
 
                 n = p_atom.NumChildren()
-                assert n == 4 or n == 6, n
+                assert n == 4 or n == 6 or n == 8, n
 
                 # < capture d+ >
                 regex = self._Regex(p_atom.GetChild(2))
 
-                name_type = None  # type: NameType
-                # < capture d+ as date >
-                if n >= 6:
-                    name_type = self._NameType(p_atom.GetChild(4))
+                as_name = None  # type: Optional[Token]
+                func_name = None  # type: Optional[Token]
+
+                i = 3  # points at any of   >   as   :
+
+                tok = p_atom.GetChild(i).tok
+                if tok.id == Id.Expr_As:
+                    as_name = p_atom.GetChild(i+1).tok
+                    i += 2
+
+                tok = p_atom.GetChild(i).tok
+                if tok.id == Id.Arith_Colon:
+                    func_name = p_atom.GetChild(i+1).tok
 
                 # TODO: is it possible to output the capture name <-> index mapping
                 # here for POSIX ERE?
 
-                return re.Capture(regex, name_type)
+                return re.Capture(regex, as_name, func_name)
 
             if tok.id == Id.Arith_Colon:
                 # | ':' '(' regex ')'

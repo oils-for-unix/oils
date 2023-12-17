@@ -156,8 +156,8 @@ def _CharClassTermToEre(term, parts, special_char_flags):
             raise AssertionError(term)
 
 
-def _AsPosixEre(node, parts, name_types):
-    # type: (re_t, List[str], List[NameType]) -> None
+def _AsPosixEre(node, parts, eggex_out):
+    # type: (re_t, List[str], value.Eggex) -> None
     """Translate an Oil regex to a POSIX ERE.
 
     Appends to a list of parts that you have to join.
@@ -193,7 +193,7 @@ def _AsPosixEre(node, parts, name_types):
     if tag == re_e.Seq:
         node = cast(re.Seq, UP_node)
         for c in node.children:
-            _AsPosixEre(c, parts, name_types)
+            _AsPosixEre(c, parts, eggex_out)
         return
 
     if tag == re_e.Alt:
@@ -201,7 +201,7 @@ def _AsPosixEre(node, parts, name_types):
         for i, c in enumerate(node.children):
             if i != 0:
                 parts.append('|')
-            _AsPosixEre(c, parts, name_types)
+            _AsPosixEre(c, parts, eggex_out)
         return
 
     if tag == re_e.Repeat:
@@ -216,7 +216,7 @@ def _AsPosixEre(node, parts, name_types):
                     "POSIX EREs don't have groups without capture, so this node "
                     "needs () around it.", child.blame_tok)
 
-        _AsPosixEre(node.child, parts, name_types)
+        _AsPosixEre(node.child, parts, eggex_out)
         op = node.op
         op_tag = op.tag()
         UP_op = op
@@ -253,10 +253,11 @@ def _AsPosixEre(node, parts, name_types):
         node = cast(re.Group, UP_node)
 
         # placeholder so we know this group is numbered, but not named
-        name_types.append(None)
+        eggex_out.capture_names.append(None)
+        eggex_out.func_names.append(None)
 
         parts.append('(')
-        _AsPosixEre(node.child, parts, name_types)
+        _AsPosixEre(node.child, parts, eggex_out)
         parts.append(')')
         return
 
@@ -265,10 +266,15 @@ def _AsPosixEre(node, parts, name_types):
 
         # Collect in order of ( appearance
         # TODO: get the name string, and type string
-        name_types.append(node.name_type)
+
+        capture_str = lexer.TokenVal(node.name) if node.name else None
+        eggex_out.capture_names.append(capture_str)
+
+        func_str = lexer.TokenVal(node.func_name) if node.func_name else None
+        eggex_out.func_names.append(func_str)
 
         parts.append('(')
-        _AsPosixEre(node.child, parts, name_types)
+        _AsPosixEre(node.child, parts, eggex_out)
         parts.append(')')
         return
 
@@ -336,19 +342,15 @@ def _AsPosixEre(node, parts, name_types):
 
 def AsPosixEre(eggex):
     # type: (value.Eggex) -> str
+    """
+    Lazily fills in fields on the value.Eggex argument.
+    """
     if eggex.as_ere is not None:
         return eggex.as_ere
 
     parts = []  # type: List[str]
-    name_types = []  # type: List[NameType]
-
-    _AsPosixEre(eggex.spliced, parts, name_types)
-
-    #names = [n.name.tval for n in name_types]
-    #log('names %s', names)
-
+    _AsPosixEre(eggex.spliced, parts, eggex)
     eggex.as_ere = ''.join(parts)
-    eggex.name_types = name_types
 
     return eggex.as_ere
 
