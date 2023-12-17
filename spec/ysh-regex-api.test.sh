@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 
 #### s ~ regex and s !~ regex
 shopt -s ysh:upgrade
@@ -401,6 +401,41 @@ null null
 23:30:59
 null null
 23 30 59
+## END
+
+#### Capture with Type Conversion Func
+shopt -s ysh:upgrade
+
+var pat = / <capture d+: int> '-' <capture d+ '.' d+ : float> /
+
+if ('hi 42-3.14' ~ pat) {
+  var g1 = _group(1)  # Int
+  var g2 = _group(2)  # Float
+  echo $[type(g1)] $[type(g2)]
+}
+
+## STDOUT:
+Int Float
+## END
+
+
+#### Named Capture with Type Conversion Func
+shopt -s ysh:upgrade
+
+func floatNegate(x) {
+  return (-float(x))
+}
+
+var pat = / <capture d+ as left: int> '-' <capture d+ '.' d+ as right: floatNegate> /
+
+if ('hi 42-3.14' ~ pat) {
+  var g1 = _group('left')  # Int
+  var g2 = _group('right')  # Float
+  echo $[type(g1)] $[type(g2)]
+}
+
+## STDOUT:
+Int Float
 ## END
 
 #### Can't splice eggex with different flags

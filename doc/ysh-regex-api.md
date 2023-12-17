@@ -53,6 +53,12 @@ write:
       = _end('month')    # => 7
     }
 
+You can test if a string does **not** match a pattern with `!~`:
+
+    if (s !~ / space /) {
+      echo 'no whitespace'
+    }
+
 The pattern can also be a string, in plain [ERE]($xref) syntax:
 
     if (s ~ '([[:digit:]]+)') {
@@ -66,7 +72,7 @@ Help topics:
   - [`_start()`](ref/chap-builtin-func.html#_start)
   - [`_end()`](ref/chap-builtin-func.html#_end)
 
-## Powerful Python-like API
+## Python-like API
 
 ### `search()` returns a value.Match object
 
@@ -148,7 +154,9 @@ Help topics:
 
 - [leftMatch()](ref/chap-type-method.html#leftMatch)
 
-## Named Captures with Conversion Funcs - A Better `scanf()`
+## More Features
+
+### Named Captures with Conversion Funcs - A Better `scanf()`
 
 As noted about, you can name the capture groups with `as month`, and access
 them with `m => group('month')`.
@@ -179,35 +187,36 @@ Notes:
 
 ## Summary
 
-YSH is designed to have both the convenience of Perl and Awk, and the power of
-Python and JavaScript.
+YSH is designed to have the **convenience** of Perl and Awk, and the **power**
+of Python and JavaScript.
 
 Eggexes can be composed by *splicing*.  Splicing works on expressions, not
 strings.
 
-Replacement will use shell's string literal syntax, not a new language.
+Replacement will use shell's string literal syntax, rather than a new
+`printf`-like mini-language.
 
 ## Appendix: Python-like wrappers around the API
 
 ### Slurping All Matches
 
-Python's `findall()` can be emulated by using `search()` in a loop, similar to
-the lexer example above:
+Python's `findall()` function can be emulated by using `search()` in a loop,
+similar to the lexer example above:
 
     func findAll(s, pat) {
-       var pos = 0
-       var result = []
-       while (true) {
-         var m = s => search(pat, pos=pos)
-         if (not m) {
-           break
-         }
-         var left = m => start(0)
-         var right = m => end(0)
-         call result->append(s[left:right])
-         setvar pos = right
-       }
-       return (result)
+      var pos = 0
+      var result = []
+      while (true) {
+        var m = s => search(pat, pos=pos)
+        if (not m) {
+          break
+        }
+        var left = m => start(0)
+        var right = m => end(0)
+        call result->append(s[left:right])
+        setvar pos = right
+      }
+      return (result)
     }
 
     var matches = findAll('days 04-01 and 10-31', / d+ '-' d+ /)
