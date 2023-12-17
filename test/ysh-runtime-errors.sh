@@ -383,6 +383,12 @@ EOF
   '
 }
 
+test-eggex-api() {
+  _expr-error-case '= _group(0)'  # No groups
+  _expr-error-case 'if ("foo" ~ /[a-z]/) { echo $[_group(1)] }'
+  _expr-error-case '= _group("foo")'  # No such group
+}
+
 test-int-convert() {
   _expr-error-case '= int({})'
   _expr-error-case '= int([])'

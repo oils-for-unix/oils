@@ -21,15 +21,15 @@ if (s ~ '[[:digit:]]+') {
 try {
   var x = _group(0)
 }
-if (_status === 2) {
-  echo 'got expected status 2'
+if (_status === 3) {
+  echo 'got expected status 3'
 }
 
 try {
   var y = _group(1)
 }
-if (_status === 2) {
-  echo 'got expected status 2'
+if (_status === 3) {
+  echo 'got expected status 3'
 }
 
 ## STDOUT:
@@ -37,8 +37,8 @@ matches
 ['foo', 'oo']
 does not match
 ['foo', 'oo']
-got expected status 2
-got expected status 2
+got expected status 3
+got expected status 3
 ## END
 
 #### Invalid regex has libc error message

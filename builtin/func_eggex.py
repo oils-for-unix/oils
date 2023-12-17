@@ -43,7 +43,7 @@ def _GetMatch(s, indices, i, to_return, blame_loc):
         else:
             msg = 'Expected capture group less than %d, got %d' % (num_groups,
                                                                    i)
-        raise error.UserError(2, msg, blame_loc)
+        raise error.Expr(msg, blame_loc)
 
 
 def _GetGroupIndex(group, capture_names, blame_loc):
