@@ -817,6 +817,12 @@ test-fat-arrow() {
   '
 }
 
+test-method-type-errors() {
+   _expr-error-case '= "hi" => search(42)'
+   _expr-error-case '= "hi" => leftMatch(42)'
+   _expr-error-case "var m = 'hi' => leftMatch(/'hi'/); = m => group(3.14)"
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

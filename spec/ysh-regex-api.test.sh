@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### s ~ regex and s !~ regex
 shopt -s ysh:upgrade
@@ -210,7 +210,7 @@ pat=([[:digit:]]+)-
 ## END
 
 
-#### Str->search() accepts ERE string
+#### search() and leftMatch() accept ERE string
 
 var s = '= hi5- bye6-'
 
@@ -218,8 +218,21 @@ var m = s => search('([[:alpha:]]+)([[:digit:]]+)-')
 echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
 echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
 echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
+echo ---
+
+var m = s[2:] => leftMatch('([[:alpha:]]+)([[:digit:]]+)-')
+echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
+echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
+echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
 
 ## STDOUT:
+g0 2 6 hi5-
+g1 2 4 hi
+g2 4 5 5
+---
+g0 0 4 hi5-
+g1 0 2 hi
+g2 2 3 5
 ## END
 
 #### Str->leftMatch() can implement lexer pattern

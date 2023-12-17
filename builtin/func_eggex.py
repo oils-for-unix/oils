@@ -65,7 +65,8 @@ def _GetGroupIndex(group, capture_names, blame_loc):
             if group_index == -1:
                 raise error.Expr('No such group %r' % group.s, blame_loc)
         else:
-            raise error.TypeErr(group, 'Expected Int or Str', blame_loc)
+            # TODO: add method name to this error
+            raise error.TypeErr(group, 'expected Int or Str', blame_loc)
     return group_index
 
 
