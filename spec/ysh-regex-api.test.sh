@@ -101,15 +101,12 @@ if (x ~ /<capture d+> '-' <capture d+>/) {
   argv.py "${BASH_REMATCH[@]}"
   argv.py $[_group(0)] $[_group(1)] $[_group(2)]
 
-  argv.py $[_group()]  # synonym for _group(0)
-
   # TODO: Also test _start() and _end()
 }
 ## STDOUT:
 ['2020-08', '2020', '08']
 ['2020-08', '2020', '08']
 ['2020-08', '2020', '08']
-['2020-08']
 ## END
 
 #### _group() returns null when group doesn't match
@@ -128,7 +125,7 @@ shopt -s ysh:upgrade
 
 var s = 'foo123bar'
 if (s ~ /digit+/) {
-  echo start=$[_start()] end=$[_end()]
+  echo start=$[_start(0)] end=$[_end(0)]
 }
 echo ---
 
@@ -271,7 +268,7 @@ shopt -s ysh:all
 var x = 'zz 2020-08-20'
 
 if (x ~ /<capture d+ as year> '-' <capture d+ as month>/) {
-  argv.py $[_group('year')] $[_grou_group('month')]
+  argv.py $[_group('year')] $[_group('month')]
 }
 ## STDOUT:
 ['2020', '08']

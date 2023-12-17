@@ -13,7 +13,6 @@ from _devbuild.gen.syntax_asdl import (
     re_e,
     re_repeat,
     re_repeat_e,
-    NameType,
     EggexFlag,
 )
 from _devbuild.gen.id_kind_asdl import Id

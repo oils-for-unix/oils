@@ -5,14 +5,14 @@ func_eggex.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_t
-from _devbuild.gen.value_asdl import value, value_t
+from _devbuild.gen.value_asdl import value, value_e, value_t
 from core import error
 from core import state
 from core import vm
 from frontend import typed_args
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 
-from typing import List
+from typing import List, cast
 
 _ = log
 
@@ -64,8 +64,19 @@ class MatchFunc(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        # TODO: Support strings for named captures
-        i = rd.OptionalInt(default_=0)
+        group = rd.PosValue()
+        UP_group = group
+        with tagswitch(group) as case:
+            if case(value_e.Int):
+                group = cast(value.Int, UP_group)
+                i = group.i
+            elif case(value_e.Str):
+                group = cast(value.Str, UP_group)
+                # TODO: calculate from mem registers
+                i = 0
+            else:
+                raise error.TypeErr(group, 'Expected Int or Str',
+                                    rd.LeftParenToken())
 
         s, indices = self.mem.GetRegexIndices()
 
@@ -88,9 +99,20 @@ class MatchMethod(vm._Callable):
 
         # This is guaranteed
         m = rd.PosMatch()
-        # TODO: Support strings for named captures
-        i = rd.OptionalInt(default_=0)
-        #val = rd.PosValue()
+
+        group = rd.PosValue()
+        UP_group = group
+        with tagswitch(group) as case:
+            if case(value_e.Int):
+                group = cast(value.Int, UP_group)
+                i = group.i
+            elif case(value_e.Str):
+                group = cast(value.Str, UP_group)
+                # TODO: calculate from mem registers
+                i = 0
+            else:
+                raise error.TypeErr(group, 'Expected Int or Str',
+                                    rd.LeftParenToken())
 
         rd.Done()
 
