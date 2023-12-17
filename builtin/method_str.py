@@ -71,6 +71,7 @@ class Upper(vm._Callable):
 SEARCH = 0
 LEFT_MATCH = 1
 
+
 class SearchMatch(vm._Callable):
 
     def __init__(self, which_method):
@@ -109,4 +110,3 @@ class SearchMatch(vm._Callable):
 
         return value.Match(string, indices, eggex_val.capture_names,
                            eggex_val.func_names)
-

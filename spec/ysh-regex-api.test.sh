@@ -152,7 +152,7 @@ start=-1 end=-1
 
 #### Str->search() method returns value.Match object
 
-var s = '= hi5- bye6-'
+var s = '= Hi5- Bye6-'
 
 var m = s => search(/ <capture [a-z]+ > <capture d+> '-' ; i /)
 echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
@@ -168,12 +168,12 @@ echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
 echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
 
 ## STDOUT:
-g0 2 6 hi5-
-g1 2 4 hi
+g0 2 6 Hi5-
+g1 2 4 Hi
 g2 4 5 5
 ---
-g0 7 12 bye6-
-g1 7 10 bye
+g0 7 12 Bye6-
+g1 7 10 Bye
 g2 10 11 6
 ## END
 
@@ -207,6 +207,19 @@ pat=^([[:digit:]]+)-
 pat=([[:digit:]]+)-
 12-
 34-
+## END
+
+
+#### Str->search() accepts ERE string
+
+var s = '= hi5- bye6-'
+
+var m = s => search('([[:alpha:]]+)([[:digit:]]+)-')
+echo "g0 $[m => start(0)] $[m => end(0)] $[m => group(0)]"
+echo "g1 $[m => start(1)] $[m => end(1)] $[m => group(1)]"
+echo "g2 $[m => start(2)] $[m => end(2)] $[m => group(2)]"
+
+## STDOUT:
 ## END
 
 #### Str->leftMatch() can implement lexer pattern
@@ -262,16 +275,45 @@ null/ab/null/
 pos=2
 ## END
 
-#### Named captures with _group
+#### Named captures with m => group()
+shopt -s ysh:all
+
+var s = 'zz 2020-08-20'
+var pat = /<capture d+ as year> '-' <capture d+ as month>/
+
+var m = s => search(pat)
+argv.py $[m => group('year')] $[m => group('month')]
+echo $[m => start('year')] $[m => end('year')]
+echo $[m => start('month')] $[m => end('month')]
+
+argv.py $[m => group('oops')]
+echo 'error'
+
+## status: 3
+## STDOUT:
+['2020', '08']
+3 7
+8 10
+## END
+
+#### Named captures with _group() _start() _end()
 shopt -s ysh:all
 
 var x = 'zz 2020-08-20'
 
 if (x ~ /<capture d+ as year> '-' <capture d+ as month>/) {
   argv.py $[_group('year')] $[_group('month')]
+  echo $[_start('year')] $[_end('year')]
+  echo $[_start('month')] $[_end('month')]
 }
+
+argv.py $[_group('oops')]
+
+## status: 3
 ## STDOUT:
 ['2020', '08']
+3 7
+8 10
 ## END
 
 #### Named Capture Decays Without Name

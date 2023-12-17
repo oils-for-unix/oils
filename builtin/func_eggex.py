@@ -12,7 +12,7 @@ from core import vm
 from frontend import typed_args
 from mycpp.mylib import log, tagswitch
 
-from typing import List, cast
+from typing import List, Optional, cast
 
 _ = log
 
@@ -46,9 +46,36 @@ def _GetMatch(s, indices, i, to_return, blame_loc):
         raise error.UserError(2, msg, blame_loc)
 
 
+def _GetGroupIndex(group, capture_names, blame_loc):
+    # type: (value_t, List[Optional[str]], loc_t) -> int
+    UP_group = group
+
+    with tagswitch(group) as case:
+        if case(value_e.Int):
+            group = cast(value.Int, UP_group)
+            group_index = group.i
+
+        elif case(value_e.Str):
+            group = cast(value.Str, UP_group)
+            group_index = -1
+            for i, name in enumerate(capture_names):
+                if name == group.s:
+                    group_index = i + 1  # 1-based
+                    break
+            if group_index == -1:
+                raise error.Expr('No such group %r' % group.s, blame_loc)
+        else:
+            raise error.TypeErr(group, 'Expected Int or Str', blame_loc)
+    return group_index
+
+
 class MatchFunc(vm._Callable):
     """
-    _group(0) or _group() : get the whole match
+    _group(i)
+    _start(i)
+    _end(i)
+
+    _group(0)             : get the whole match
     _group(1) to _group(N): get a submatch
     _group('month')       : get group by name
 
@@ -65,22 +92,13 @@ class MatchFunc(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         group = rd.PosValue()
-        UP_group = group
-        with tagswitch(group) as case:
-            if case(value_e.Int):
-                group = cast(value.Int, UP_group)
-                i = group.i
-            elif case(value_e.Str):
-                group = cast(value.Str, UP_group)
-                # TODO: calculate from mem registers
-                i = 0
-            else:
-                raise error.TypeErr(group, 'Expected Int or Str',
-                                    rd.LeftParenToken())
+        rd.Done()
 
-        s, indices = self.mem.GetRegexIndices()
+        s, indices, capture_names = self.mem.GetRegexIndices()
+        group_index = _GetGroupIndex(group, capture_names, rd.LeftParenToken())
 
-        return _GetMatch(s, indices, i, self.to_return, rd.LeftParenToken())
+        return _GetMatch(s, indices, group_index, self.to_return,
+                         rd.LeftParenToken())
 
 
 class MatchMethod(vm._Callable):
@@ -99,25 +117,13 @@ class MatchMethod(vm._Callable):
 
         # This is guaranteed
         m = rd.PosMatch()
-
         group = rd.PosValue()
-        UP_group = group
-        with tagswitch(group) as case:
-            if case(value_e.Int):
-                group = cast(value.Int, UP_group)
-                i = group.i
-            elif case(value_e.Str):
-                group = cast(value.Str, UP_group)
-                # TODO: calculate from mem registers
-                i = 0
-            else:
-                raise error.TypeErr(group, 'Expected Int or Str',
-                                    rd.LeftParenToken())
-
         rd.Done()
 
-        #log('group %d, s %r indices %s', i, m.s, m.indices)
-        return _GetMatch(m.s, m.indices, i, self.to_return,
+        group_index = _GetGroupIndex(group, m.capture_names,
+                                     rd.LeftParenToken())
+
+        return _GetMatch(m.s, m.indices, group_index, self.to_return,
                          rd.LeftParenToken())
 
 

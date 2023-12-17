@@ -1462,12 +1462,12 @@ class Transformer(object):
 
                 tok = p_atom.GetChild(i).tok
                 if tok.id == Id.Expr_As:
-                    as_name = p_atom.GetChild(i+1).tok
+                    as_name = p_atom.GetChild(i + 1).tok
                     i += 2
 
                 tok = p_atom.GetChild(i).tok
                 if tok.id == Id.Arith_Colon:
-                    func_name = p_atom.GetChild(i+1).tok
+                    func_name = p_atom.GetChild(i + 1).tok
 
                 # TODO: is it possible to output the capture name <-> index mapping
                 # here for POSIX ERE?

@@ -440,17 +440,22 @@ def RegexMatch(left, right, mem):
       mem: Whether to set or clear matches
     """
     UP_right = right
-    right_s = None  # type: str
-    regex_flags = 0
+
     with tagswitch(right) as case:
         if case(value_e.Str):  # plain ERE
             right = cast(value.Str, UP_right)
+
             right_s = right.s
+            regex_flags = 0
+            capture_names = []  # type: List[Optional[str]]
 
         elif case(value_e.Eggex):
             right = cast(value.Eggex, UP_right)
+
             right_s = regex_translate.AsPosixEre(right)
             regex_flags = regex_translate.LibcFlags(right.canonical_flags)
+            capture_names = right.capture_names
+
         else:
             raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
                                 loc.Missing)
@@ -467,7 +472,7 @@ def RegexMatch(left, right, mem):
     indices = libc.regex_search(right_s, regex_flags, left_s, 0)
     if indices is not None:
         if mem:
-            mem.SetRegexIndices(left_s, indices)
+            mem.SetRegexIndices(left_s, indices, capture_names)
         return True
     else:
         if mem:

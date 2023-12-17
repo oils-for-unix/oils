@@ -1077,7 +1077,7 @@ class BoolEvaluator(ArithEvaluator):
                             e_die_status(2, e.message, loc.Word(node.right))
 
                         if indices is not None:
-                            self.mem.SetRegexIndices(s1, indices)
+                            self.mem.SetRegexIndices(s1, indices, [])
                             return True
                         else:
                             self.mem.ClearRegexIndices()
