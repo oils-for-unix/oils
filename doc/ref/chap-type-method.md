@@ -65,7 +65,7 @@ Respects unicode.
 
 ### indexOf()
 
-Returns -1 if element is not in the index.
+Returns the first index of the element in the List, or -1 if it's not present.
 
 ### insert()
 
