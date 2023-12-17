@@ -268,7 +268,42 @@ can be used for "chaining" transformations:
 
 ### match-ops
 
-    ~   !~   ~~   !~~
+YSH has four pattern matching operators: `~   !~   ~~   !~~`.
+
+Does string match an **eggex**?
+
+    var filename = 'x42.py'
+    if (filename ~ / d+ /) {
+      echo 'number'
+    }
+
+Does a string match a POSIX regular expression (ERE syntax)?
+
+    if (filename ~ '[[:digit:]]+') {
+      echo 'number'
+    }
+
+Negate the result with the `!~` operator:
+
+    if (filename !~ /space/ ) {
+      echo 'no space'
+    }
+
+    if (filename !~ '[[:space:]]' ) {
+      echo 'no space'
+    }
+
+Does a string match a **glob**?
+
+    if (filename ~~ '*.py') {
+      echo 'Python'
+    }
+
+    if (filename !~~ '*.py') {
+      echo 'not Python'
+    }
+
+Take care not to confuse glob patterns and regular expressions.
 
 ## Eggex
 

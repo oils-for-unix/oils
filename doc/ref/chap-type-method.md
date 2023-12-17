@@ -96,29 +96,43 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 Returns the string that matched a regex capture group.  Group 0 is the entire
 match.
 
-    var m = 'foo9bar' => search(/ [a-z] <capture d+> [a-z] /)
-    echo $[m => group(0)]  # => o9b
-    echo $[m => group(1)]  # => 9
+    var m = '10:59' => search(/ ':' <capture d+> /)
+    echo $[m => group(0)]  # => ':59'
+    echo $[m => group(1)]  # => '59'
 
-<!-- TODO: document named capture.  group 0 can be omitted -->
+Matches can be named with `as NAME`:
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+
+And then accessed by the same name:
+
+    echo $[m => group('minute')]  # => '59'
+
+<!--
+    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
+-->
 
 ### start()
 
 Like `group()`, but returns the **start** position of a regex capture group,
 rather than its value.
 
-    var m = 'foo9bar' => search(/ [a-z] <capture d+> [a-z] /)
-    echo $[m => start(0)]  # => 2 for 'o9b'
-    echo $[m => start(1)]  # => 3 for '9'
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    echo $[m => start(0)]         # => position 2 for ':59'
+    echo $[m => start(1)]         # => position 3 for '59'
+
+    echo $[m => start('minute')]  # => position 3 for '59'
 
 ### end()
 
 Like `group()`, but returns the **end** position of a regex capture group,
 rather than its value.
 
-    var m = 'foo9bar' => search(/ [a-z] <capture d+> [a-z] /)
-    echo $[m => end(0)]  # => 5 for 'o9b'
-    echo $[m => end(1)]  # => 4 for '9'
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    echo $[m => end(0)]         # => position 5 for ':59'
+    echo $[m => end(1)]         # => position 5 for '59'
+
+    echo $[m => end('minute')]  # => 5 for '59'
 
 ## List
 

@@ -150,9 +150,7 @@ It's useful for writing iterative lexers.
 (YSH `leftMatch()` vs. `search()` is like Python's `re.match()` vs.
 `re.search().`)
 
-Help topics:
-
-- [leftMatch()](ref/chap-type-method.html#leftMatch)
+- Help topic: [leftMatch()](ref/chap-type-method.html#leftMatch)
 
 ## More Features
 
@@ -176,6 +174,9 @@ We plan to have unevaluted string literals like `^"hello $1"`, instead of
 custom Python's custom replacement language `'hello \g<1>`.
 
     # var new = s => replace(/<capture d+ as month>/, ^"month is $month")
+
+
+- Help topic: [replace()](ref/chap-type-method.html#replace)
 
 <!--
 
