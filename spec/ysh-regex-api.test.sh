@@ -330,6 +330,66 @@ if ('123' ~ pat) {
 yes
 ## END
 
+#### Nested Named Capture Uses ( ordering
+
+shopt -s ysh:upgrade
+
+var Date = /<capture d+ as year> '-' <capture d+ as month>/
+var Time = /<capture d+ as hour> ':' <capture d+ as minute> (':' <capture d+ as secs>)? /
+
+var pat = / 'when: ' (<capture Date> | <capture Time as two>) /
+#echo $pat
+
+proc show-groups (; m) {
+  echo 0 $[m => group(0)]
+  echo 1 $[m => group(1)]  # this is everything except when
+  echo 2 $[m => group(2)]
+  echo
+  echo $[m => group('two')]
+  echo $[m => group('year')] $[m => group('month')]
+  echo $[m => group('hour')] $[m => group('minute')] $[m => group('secs')]
+}
+
+var m = 'when: 2023-10' => leftMatch(pat)
+
+show-groups (m)
+
+var m = 'when: 23:30' => leftMatch(pat)
+
+echo ---
+show-groups (m)
+
+var m = 'when: 23:30:59' => leftMatch(pat)
+
+echo ---
+show-groups (m)
+
+## STDOUT:
+0 when: 2023-10
+1 2023-10
+2 2023-10
+
+null
+2023 10
+null null null
+---
+0 when: 23:30
+1 23:30
+2 null
+
+23:30
+null null
+23 30 null
+---
+0 when: 23:30:59
+1 23:30:59
+2 null
+
+23:30:59
+null null
+23 30 59
+## END
+
 #### Can't splice eggex with different flags
 shopt -s ysh:upgrade
 
