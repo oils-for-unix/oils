@@ -367,7 +367,7 @@ class ExprEvaluator(object):
             # TODO: Use logic from _EvalFuncCall
 
             #val = func_proc.CallUserFunc(func_val, rd, self.mem, self.cmd_ev)
-            val = None
+            val = value.Null
 
         return val
 
