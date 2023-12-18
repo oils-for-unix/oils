@@ -30,17 +30,18 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-cmd-lang
-  [Commands]      proc-def      proc p (out Ref; pos, ...rest; n=0; b Block) {
-                  func-def      func f(x; opt1, opt2) { return (x + 1) }
-                  ysh-return    return (myexpr)
-                  equal =       = 1 + 2*3
-                  call          call mylist->append(42)
   [YSH Simple]    typed-arg     json write (x)
                   lazy-expr-arg assert [42 === x]
                   block-arg     cd /tmp { echo $PWD }
-  [Conditional]   ysh-case      case (x) { *.py { echo 'python' } }
+  [YSH Assign]    const   var   setvar   setglobal
+  [YSH Expr]      equal =       = 1 + 2*3
+                  call          call mylist->append(42)
+  [YSH Code]      proc-def      proc p (out Ref; pos, ...rest; n=0; b Block) {
+                  func-def      func f(x; opt1, opt2) { return (x + 1) }
+                  ysh-return    return (myexpr)
+  [YSH Cond]      ysh-case      case (x) { *.py { echo 'python' } }
                   ysh-if        if (x > 0) { echo }
-  [Iteration]     ysh-while     while (x > 0) { echo }
+  [YSH Iter]      ysh-while     while (x > 0) { echo }
                   ysh-for       for i, item in (mylist) { echo }
 ```
 
@@ -49,7 +50,6 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-expr-lang
-  [Keywords]      const   var   setvar   setglobal
   [Assign Ops]    =   +=   -=   *=   /=   **=   //=   %=
                   &=   |=   ^=   <<=   >>=
   [Literals]      bool-literal  true   false   null

@@ -14,81 +14,6 @@ language, which includes [Egg Expressions]($xref:eggex).
 <div id="toc">
 </div>
 
-## Keywords
-
-### const 
-
-Binds a name to a YSH expression on the right, with a **dynamic** check to
-prevent mutation.
-
-    const c = 'mystr'        # equivalent to readonly c=mystr
-    const pat = / digit+ /   # an eggex, with no shell equivalent
-
-If you try to re-declare or mutate the name, the shell will fail with a runtime
-error.  `const` uses the same mechanism as the `readonly` builtin.
-
-Consts should only appear at the top-level, and can't appear within `proc` or
-`func`.
-
-### var
-
-Initializes a name to a YSH expression.
-
-    var s = 'mystr'        # equivalent to declare s=mystr
-    var pat = / digit+ /   # an eggex, with no shell equivalent
-
-It's either global or scoped to the current function.
-
-You can bind multiple variables:
-
-    var flag, i = parseArgs(spec, ARGV)
-
-    var x, y = 42, 43
-
-You can omit the right-hand side:
-
-    var x, y  # implicitly initialized to null
-
-### setvar
-
-At the top-level, setvar creates or mutates a variable.
-
-    setvar gFoo = 'mutable'
-
-Inside a func or proc, it mutates a local variable declared with var.
-
-    proc p {
-      var x = 42
-      setvar x = 43
-    }
-
-You can mutate a List location:
-
-    setvar a[42] = 'foo'
-
-Or a Dict location:
-
-    setvar d['key'] = 43
-    setvar d.key = 43  # same thing
-
-You can use any of these these augmented assignment operators
-
-    +=   -=   *=   /=   **=   //=   %=
-    &=   |=   ^=   <<=   >>=
-
-Examples:
-
-    setvar x += 2  # increment by 2
-
-    setvar a[42] *= 2  # multiply by 2
-
-    setvar d.flags |= 0b0010_000  # set a flag
-
-
-### setglobal
-
-Creates or mutates a global variable.  Has the same syntax as `setvar`.
-
 ## Literals
 
 ### bool-literal
@@ -305,6 +230,8 @@ Does a string match a **glob**?
 
 Take care not to confuse glob patterns and regular expressions.
 
+- Related doc: [YSH Regex API](../ysh-regex-api.html)
+
 ## Eggex
 
 ### re-literal
@@ -323,6 +250,8 @@ You can specify a translation preference after a second semi-colon:
 
 Right now the translation preference does nothing.  It could be used to
 translate eggex to PCRE or Python syntax.
+
+- Related doc: [Egg Expressions](../eggex.html)
 
 ### re-primitive
 
@@ -362,8 +291,15 @@ Valid ERE flags, which are passed to libc's `regcomp()`:
 - `reg_icase` aka `i` (ignore case)
 - `reg_newline` (4 changes regarding newlines)
 
+See `man regcomp`.
+
 ### re-multiline
 
-Not implemented.
+Not implemented.  Splicing makes it less necessary:
 
+    var Name  = / <capture [a-z]+ as name> /
+    var Num   = / <capture d+ as num> /
+    var Space = / <capture s+ as space> /
 
+    # For variables named like CapWords, splicing @Name doesn't require @
+    var lexer = / Name | Num | Space /

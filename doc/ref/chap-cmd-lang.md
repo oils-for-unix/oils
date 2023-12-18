@@ -330,7 +330,7 @@ TODO: unbalanced HTML if we use \<\<?
 <!-- TODO: delimiter can be quoted -->
 <!-- Note: Python's HTML parser thinks <EOF starts a tag -->
 
-<h2 id="Other Command">Other Command</h2>
+## Other Command
 
 <h3 id="dparen" class="osh-topic">dparen ((</h3>
 
@@ -346,9 +346,150 @@ Note that time is a KEYWORD, not a builtin!
 <!-- Note: bash respects TIMEFORMAT -->
 
 
-<h2 id="YSH Command">YSH Command</h2>
+## YSH Simple
 
-### proc
+### typed-arg
+
+Internal commands (procs and builtins) accept typed arguments.
+
+    json write (myobj)
+
+Block literals have a special syntax:
+
+    cd /tmp {
+      echo $PWD
+    }
+
+This is equivalent to:
+
+    var cmd = ^(echo $PWD)  # unevaluated command
+
+    cd /tmp (cmd)  # pass typed arg
+
+### lazy-expr-arg
+
+Expressions in brackets like this:
+
+    assert [42 === x]
+
+Are syntactic sugar for:
+
+    assert (^[42 === x])
+
+That is, it's single arg of type `value.Expr`.
+
+### block-arg
+
+Blocks can be passed to builtins (and procs eventually):
+
+    cd /tmp {
+      echo $PWD  # prints /tmp
+    }
+    echo $PWD
+
+Compare with [sh-block]($osh-help).
+
+
+## YSH Assign
+
+### const 
+
+Binds a name to a YSH expression on the right, with a **dynamic** check to
+prevent mutation.
+
+    const c = 'mystr'        # equivalent to readonly c=mystr
+    const pat = / digit+ /   # an eggex, with no shell equivalent
+
+If you try to re-declare or mutate the name, the shell will fail with a runtime
+error.  `const` uses the same mechanism as the `readonly` builtin.
+
+Consts should only appear at the top-level, and can't appear within `proc` or
+`func`.
+
+### var
+
+Initializes a name to a YSH expression.
+
+    var s = 'mystr'        # equivalent to declare s=mystr
+    var pat = / digit+ /   # an eggex, with no shell equivalent
+
+It's either global or scoped to the current function.
+
+You can bind multiple variables:
+
+    var flag, i = parseArgs(spec, ARGV)
+
+    var x, y = 42, 43
+
+You can omit the right-hand side:
+
+    var x, y  # implicitly initialized to null
+
+### setvar
+
+At the top-level, setvar creates or mutates a variable.
+
+    setvar gFoo = 'mutable'
+
+Inside a func or proc, it mutates a local variable declared with var.
+
+    proc p {
+      var x = 42
+      setvar x = 43
+    }
+
+You can mutate a List location:
+
+    setvar a[42] = 'foo'
+
+Or a Dict location:
+
+    setvar d['key'] = 43
+    setvar d.key = 43  # same thing
+
+You can use any of these these augmented assignment operators
+
+    +=   -=   *=   /=   **=   //=   %=
+    &=   |=   ^=   <<=   >>=
+
+Examples:
+
+    setvar x += 2  # increment by 2
+
+    setvar a[42] *= 2  # multiply by 2
+
+    setvar d.flags |= 0b0010_000  # set a flag
+
+
+### setglobal
+
+Creates or mutates a global variable.  Has the same syntax as `setvar`.
+
+
+## YSH Expr
+
+### equal
+
+The `=` keyword evaluates an expression and shows the result:
+
+    oil$ = 1 + 2*3
+    (Int)   7
+
+It's meant to be used interactively.  Think of it as an assignment with no
+variable on the left.
+
+### call
+
+The `call` keyword evaluates an expression and throws away the result:
+
+    var x = :| one two |
+    call x->append('three')
+    call x->append(['typed', 'data'])
+
+
+## YSH Code
+
+### proc-def
 
 Procs are shell-like functions, but with named parameters, and without dynamic
 scope (TODO):
@@ -359,9 +500,29 @@ scope (TODO):
 
 Compare with [sh-func]($osh-help).
 
+### func-def
+
+TODO
+
+### ysh-return
+
+To return an expression, wrap it in `()` as usual:
+
+    func inc(x) {
+      return (x + 1)
+    }
+
+## YSH Cond
+
 ### ysh-if
 
-Command or expression:
+Like shell, you can use a command:
+
+    if test --file $x {
+      echo "$x is a file"
+    }
+
+You can also use an expression:
 
     if (x > 0) {
       echo 'positive'
@@ -369,12 +530,34 @@ Command or expression:
 
 ### ysh-case
 
-    case $x {
-      # balanced parens around patterns
-      (*.py)     echo 'Python' ;;
-      ('README') echo 'README' ;;  # consatnt words must be quoted
-      (*)        echo 'Other'  ;;
+Like the shell case statement, the Ysh case statement has **string/glob** patterns.
+
+    var s = 'README.md'
+    case (s) {
+      *.py           { echo 'Python' }
+      *.cc | *.h     { echo 'C++' }
+      *              { echo 'Other' }
     }
+    # => Other
+
+We also generated it to **typed data** within `()`:
+
+    var x = 43
+    case (x) {
+      (30 + 12)      { echo 'the integer 42' }
+      (else)         { echo 'neither' }
+    }
+    # => neither
+
+The `else` is a special keyword that matches any value.
+
+    case (s) {
+      / dot* '.md' / { echo 'Markdown' }
+      (else)         { echo 'neither' }
+    }
+    # => Markdown
+
+## YSH Iter
 
 ### ysh-while
 
@@ -420,64 +603,5 @@ Three forms for expressions that evaluate to a `Dict`:
     for i, key, value in (mydict) {
       echo "$i $key $value"
     }
-
-### equal
-
-The `=` keyword evaluates an expression and shows the result:
-
-    oil$ = 1 + 2*3
-    (Int)   7
-
-It's meant to be used interactively.  Think of it as an assignment with no
-variable on the left.
-
-### call
-
-The `call` keyword evaluates an expression and throws away the result:
-
-    var x = :| one two |
-    call x->append('three')
-    call x->append(['typed', 'data'])
-
-### typed-arg
-
-Internal commands (procs and builtins) accept typed arguments.
-
-    json write (myobj)
-
-Block literals have a special syntax:
-
-    cd /tmp {
-      echo $PWD
-    }
-
-This is equivalent to:
-
-    var cmd = ^(echo $PWD)  # unevaluated command
-
-    cd /tmp (cmd)  # pass typed arg
-
-### lazy-expr-arg
-
-Expressions in brackets like this:
-
-    assert [42 === x]
-
-Are syntactic sugar for:
-
-    assert (^[42 === x])
-
-That is, it's single arg of type `value.Expr`.
-
-### block-arg
-
-Blocks can be passed to builtins (and procs eventually):
-
-    cd /tmp {
-      echo $PWD  # prints /tmp
-    }
-    echo $PWD
-
-Compare with [sh-block]($osh-help).
 
 # vim: sw=2

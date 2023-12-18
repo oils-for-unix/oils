@@ -158,14 +158,16 @@ It's useful for writing iterative lexers.
 
 ## More Features
 
-### Named Captures with Conversion Funcs - A Better `scanf()`
+### Named Captures
 
-As noted about, you can name the capture groups with `as month`, and access
-them with `m => group('month')`.
+As noted above, you can name the capture groups with `as month`, and access
+them with `_group('month')` or `m => group('month')`.
+
+### Type Conversion Funcs - A Better `scanf()`
 
 TODO(not implemented):
 
-You can also add `: funcName` to conver the string to a different value.
+You can also add `: funcName` to convert the string to a different value.
 
     var pat = / <capture d+ as month: int> /
     if ('10-31' ~ pat) {
