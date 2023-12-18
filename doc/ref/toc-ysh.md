@@ -78,17 +78,16 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   ysh-attr      mydict.key
                   ysh-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)
-                  thin-arrow    s->pop()
-                  fat-arrow     s => startswith('prefix')
+                  thin-arrow    mylist->pop()
+                  fat-arrow     mystr => startswith('prefix')
                   match-ops     ~   !~   ~~   !~~
-  [Eggex]         re-literal    / d+ ; i ; ERE /
-                  re-compound   pat|alt   pat seq   (group)
-                                <capture>   <capture :name> 
-                  re-primitive  %zero   Subpattern   @subpattern   'sq'
-                                char-class  ! char-class
-                  named-class    dot  digit  space  word  d  s  w
+  [Eggex]         re-literal    / d+ ; re-flags ; ERE /
+                  re-primitive  %zero    'sq'   Subpattern   @subpattern
                   class-literal [c a-z 'abc' @str_var \\ \xFF \u0100]
-                  X re-flags    ignorecase etc.
+                  named-class   dot  digit  space  word  d  s  w
+                  re-compound   pat|alt   pat seq   (group)
+                  re-capture    <capture d+ as name: int>
+                  re-flags      reg_icase   reg_newline
                   X re-multiline  ///
 ```
 

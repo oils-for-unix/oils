@@ -317,22 +317,50 @@ You can specify flags passed to libc regcomp():
 
     var pat = / d+ ; reg_icase reg_newline / 
 
-You can specify a translation preference:
+You can specify a translation preference after a second semi-colon:
 
-    var pat = / d+ ; reg_icase reg_newline ; ERE / 
+    var pat = / d+ ; ; ERE / 
 
 Right now the translation preference does nothing.  It could be used to
 translate eggex to PCRE or Python syntax.
 
-### re-compound
-
 ### re-primitive
 
-### named-class
+    %zero    'sq'
+    Subpattern   @subpattern
 
 ### class-literal
 
+    [c a-z 'abc' @str_var \\ \xFF \u0100]
+
+Negated:
+
+    ![a-z]
+
+### named-class
+
+    dot
+    digit  space  word
+    d  s  w
+
+Negated:
+
+    !digit   !space   !word
+
+### re-compound
+
+    pat|alt   pat seq   (group)
+
+### re-capture
+
+    <capture d+ as name: int>
+
 ### re-flags
+
+Valid ERE flags, which are passed to libc's `regcomp()`:
+
+- `reg_icase` aka `i` (ignore case)
+- `reg_newline` (4 changes regarding newlines)
 
 ### re-multiline
 

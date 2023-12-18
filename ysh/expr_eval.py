@@ -1350,9 +1350,11 @@ class ExprEvaluator(object):
     def EvalEggex(self, node):
         # type: (Eggex) -> value.Eggex
 
+        # Splice and check flags consistency
         spliced = self._EvalRegex(node.regex, node.canonical_flags)
 
-        # as_ere and name_types filled in during translation
+        # as_ere and capture_names filled in during translation
+        # TODO: func_names should be done above
         return value.Eggex(spliced, node.canonical_flags, None, [], [])
 
 

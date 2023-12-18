@@ -8,8 +8,12 @@ YSH Regex API - Convenient and Powerful
 YSH has [Egg Expressions](eggex.html), a composable and readable syntax for
 regular expressions.  You can use *Eggex* with both:
 
-- Convenient Perl-like operators: `'mystr' ~ / [a-z]+/ `
-- A powerful Python-like API: `'mystr' => search(/ [a-z]+ /`
+- A convenient Perl-like operator: `'mystr' ~ / [a-z]+/ `
+  - access submatches with global `_group()` &nbsp; `_start()` &nbsp; `_end()`
+
+- A powerful Python-like API: `'mystr' => search(/ [a-z]+ /)` and `leftMatch()`
+  - access submatches with `Match` object methods `m => group()` &nbsp; `m =>
+    start()` &nbsp; `m => end()`
 
 You can also use plain POSIX regular expressions ([ERE]($xref)) instead of
 Eggex.
@@ -195,7 +199,8 @@ Eggexes can be composed by *splicing*.  Splicing works on expressions, not
 strings.
 
 Replacement will use shell's string literal syntax, rather than a new
-`printf`-like mini-language.
+
+printf`-like mini-language.
 
 ## Appendix: Python-like wrappers around the API
 
@@ -226,3 +231,14 @@ similar to the lexer example above:
 ### Split by Pattern
 
 Python's `re.split()` can also be emulated by using `search()` in a loop.
+
+## Eggex Help Topics
+
+- [re-literal](ref/chap-expr-lang.html#re-literal)
+- [re-primitive](ref/chap-expr-lang.html#re-primitive)
+- [class-literal](ref/chap-expr-lang.html#class-literal)
+- [named-class](ref/chap-expr-lang.html#named-class)
+- [re-compound](ref/chap-expr-lang.html#re-compound)
+- [re-capture](ref/chap-expr-lang.html#re-capture)
+- [re-flags](ref/chap-expr-lang.html#re-flags)
+
