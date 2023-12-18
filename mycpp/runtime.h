@@ -11,6 +11,7 @@
 // Python-like compound data structures
 #include "mycpp/gc_tuple.h"
 #include "mycpp/gc_list.h"
+#include "mycpp/gc_linked_list.h"
 #include "mycpp/gc_dict.h"
 
 #include "mycpp/gc_mylib.h"  // Python-like file I/O, etc.

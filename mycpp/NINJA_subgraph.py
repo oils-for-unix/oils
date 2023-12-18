@@ -49,6 +49,7 @@ def DefineTargets(ru):
             'mycpp/gc_mylib_test.cc',
             'mycpp/gc_dict_test.cc',
             'mycpp/gc_list_test.cc',
+            'mycpp/gc_linked_list_test.cc',
             'mycpp/gc_str_test.cc',
             'mycpp/gc_tuple_test.cc',
             'mycpp/small_str_test.cc',
