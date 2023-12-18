@@ -77,6 +77,7 @@ class Reverse(vm._Callable):
 
         return value.Null
 
+
 class IndexOf(vm._Callable):
 
     def __init__(self):

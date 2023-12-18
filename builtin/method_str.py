@@ -97,13 +97,13 @@ class SearchMatch(vm._Callable):
                 ere = regex_translate.AsPosixEre(eggex_val)
                 cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
                 capture_names = eggex_val.capture_names
-                func_names = eggex_val.func_names
+                convert_funcs = eggex_val.convert_funcs
 
             elif case(value_e.Str):
                 ere = cast(value.Str, pattern).s
                 cflags = 0
                 capture_names = []
-                func_names = []
+                convert_funcs = []
 
             else:
                 # TODO: add method name to this error
@@ -129,4 +129,4 @@ class SearchMatch(vm._Callable):
         if indices is None:
             return value.Null
 
-        return value.Match(string, indices, capture_names, func_names)
+        return value.Match(string, indices, convert_funcs, capture_names)

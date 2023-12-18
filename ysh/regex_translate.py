@@ -253,7 +253,6 @@ def _AsPosixEre(node, parts, eggex_out):
 
         # placeholder so we know this group is numbered, but not named
         eggex_out.capture_names.append(None)
-        eggex_out.func_names.append(None)
 
         parts.append('(')
         _AsPosixEre(node.child, parts, eggex_out)
@@ -268,9 +267,6 @@ def _AsPosixEre(node, parts, eggex_out):
 
         capture_str = lexer.TokenVal(node.name) if node.name else None
         eggex_out.capture_names.append(capture_str)
-
-        func_str = lexer.TokenVal(node.func_name) if node.func_name else None
-        eggex_out.func_names.append(func_str)
 
         parts.append('(')
         _AsPosixEre(node.child, parts, eggex_out)

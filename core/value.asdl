@@ -75,18 +75,16 @@ module value
 
     # expr is spliced
     # / d+; ignorecase / -> '[[:digit:]]+' REG_ICASE
-  | Eggex(re spliced, str canonical_flags, str? as_ere, 
+  | Eggex(re spliced, str canonical_flags, List[value?] convert_funcs,
           # str? is because some groups are not named
-          List[str?] capture_names, List[str?] func_names)
+          str? as_ere, List[str?] capture_names)
 
-    # indices has G groups and N matches.  -1 values indicate no match.
-    # We flatten it to reduce allocations, and because group() start() end()
-    # methods make it user friendly
-    # TODO: might need a pointer to Eggex for the names
-    # Problem: ERE has no non-capturing groups, so grouping will occupy a
-    # number
+    # The indices list has 2 * (num_group + 1) entries.  Group 0 is the whole
+    # match, and each group has both a start and end index.
+    # It's flat to reduce allocations.  The group() start() end() funcs/methods
+    # provide a nice interface.
   | Match(str s, List[int] indices,
-          List[str?] capture_names, List[str?] func_names)
+          List[value?] convert_funcs, List[str?] capture_names)
 
     # ^[42 + a[i]]
   | Expr(expr e)

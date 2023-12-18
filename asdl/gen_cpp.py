@@ -537,9 +537,19 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 '  for (ListIter<%s> it(this->%s); !it.Done(); it.Next()) {' %
                 (c_item_type, field.name))
             self.Emit('    %s %s = it.Value();' % (c_item_type, iter_name))
-            child_code_str, _ = _HNodeExpr(abbrev, item_type, iter_name)
-            self.Emit('    %s->children->append(%s);' %
-                      (out_val_name, child_code_str))
+
+            child_code_str, none_guard = _HNodeExpr(abbrev, item_type,
+                                                    iter_name)
+            if none_guard:  # e.g. for List[Optional[value_t]]
+                # _ means None/nullptr, like asdl/runtime.py NewLeaf
+                self.Emit(
+                    '    hnode_t* h = (%s == nullptr) ? Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst) : %s;'
+                    % (iter_name, child_code_str))
+                self.Emit('    %s->children->append(h);' % out_val_name)
+            else:
+                self.Emit('    %s->children->append(%s);' %
+                          (out_val_name, child_code_str))
+
             self.Emit('  }')
             self.Emit('  L->append(Alloc<Field>(StrFromC("%s"), %s));' %
                       (field.name, out_val_name))

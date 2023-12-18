@@ -616,7 +616,9 @@ module syntax
   | Alt(List[re] children)
 
   | Group(re child)
-    # TODO: NameType isn't quite right because List[Int] doesn't make sense
+    # convert_func is filled in on evaluation
+    # TODO: the real type should be value? from core/runtime.asdl, but we don't
+    # have circular deps!
   | Capture(re child, Token? name, Token? func_name)
   | Backtracking(bool negated, Token name, re child)
 

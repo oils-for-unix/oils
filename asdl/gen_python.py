@@ -252,9 +252,18 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
             self.Emit('  if self.%s is not None:  # List' % field.name)
             self.Emit('    %s = hnode.Array([])' % out_val_name)
             self.Emit('    for %s in self.%s:' % (iter_name, field.name))
-            child_code_str, _ = _HNodeExpr(abbrev, item_type, iter_name)
-            self.Emit('      %s.children.append(%s)' %
-                      (out_val_name, child_code_str))
+            child_code_str, none_guard = _HNodeExpr(abbrev, item_type,
+                                                    iter_name)
+
+            if none_guard:  # e.g. for List[Optional[value_t]]
+                self.Emit(
+                    '      h = (hnode.Leaf("_", color_e.OtherConst) if %s is None else %s)'
+                    % (iter_name, child_code_str))
+                self.Emit('      %s.children.append(h)' % out_val_name)
+            else:
+                self.Emit('      %s.children.append(%s)' %
+                          (out_val_name, child_code_str))
+
             self.Emit('    L.append(Field(%r, %s))' %
                       (field.name, out_val_name))
 

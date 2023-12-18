@@ -66,6 +66,7 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, LeftName)
 
+from asdl import format as fmt
 from core import dev
 from core import error
 from core.error import e_die, e_die_status
@@ -1036,27 +1037,45 @@ class CommandEvaluator(object):
     def _DoExpr(self, node):
         # type: (command.Expr) -> int
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
-        if mylib.PYTHON:
-            obj = cpython._ValueToPyObj(val)
+        UP_val = val
+        with tagswitch(val) as case:
+            # Print some typed values
+            if case(value_e.Eggex):
+                val = cast(value.Eggex, UP_val)
 
-            if node.keyword.id == Id.Lit_Equals:
-                # typed
-                if 0:
-                    buf = mylib.BufWriter()
-                    prettyp = j8.PrettyPrinter()
-                    prettyp.Print(val, buf)
-                    print(buf.getvalue())
+                ysh_type = ui.ValType(val)
+                tree = val.PrettyTree()
 
-                # NOTE: It would be nice to unify this with 'repr', but there isn't a
-                # good way to do it with the value/PyObject split.
-                class_name = obj.__class__.__name__
-                oil_name = YSH_TYPE_NAMES.get(class_name, class_name)
-                print('(%s)   %s' % (oil_name, repr(obj)))
+                f = mylib.Stdout()
+                f.write('(%s)   ' % ysh_type)
 
-                # BUG FIX related to forking!  Note that BUILTINS flush, but
-                # keywords don't flush.  So we have to beware of keywords that
-                # print.  TODO: Or avoid Python's print() altogether.
-                sys.stdout.flush()
+                pretty_f = fmt.DetectConsoleOutput(f)
+                fmt.PrintTree(tree, pretty_f)
+                f.write('\n')
+
+            else:
+                pass  # Workaround for mycpp
+                if mylib.PYTHON:
+                    obj = cpython._ValueToPyObj(val)
+
+                    if node.keyword.id == Id.Lit_Equals:
+                        # typed
+                        if 0:
+                            buf = mylib.BufWriter()
+                            prettyp = j8.PrettyPrinter()
+                            prettyp.Print(val, buf)
+                            print(buf.getvalue())
+
+                        # NOTE: It would be nice to unify this with 'repr', but there isn't a
+                        # good way to do it with the value/PyObject split.
+                        class_name = obj.__class__.__name__
+                        ysh_type = YSH_TYPE_NAMES.get(class_name, class_name)
+                        print('(%s)   %s' % (ysh_type, repr(obj)))
+
+                        # BUG FIX related to forking!  Note that BUILTINS flush, but
+                        # keywords don't flush.  So we have to beware of keywords that
+                        # print.  TODO: Or avoid Python's print() altogether.
+                        sys.stdout.flush()
 
         # TODO: What about exceptions?  They just throw?
         return 0

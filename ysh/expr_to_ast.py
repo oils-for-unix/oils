@@ -1469,9 +1469,6 @@ class Transformer(object):
                 if tok.id == Id.Arith_Colon:
                     func_name = p_atom.GetChild(i + 1).tok
 
-                # TODO: is it possible to output the capture name <-> index mapping
-                # here for POSIX ERE?
-
                 return re.Capture(regex, as_name, func_name)
 
             if tok.id == Id.Arith_Colon:

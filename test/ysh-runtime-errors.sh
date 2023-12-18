@@ -387,6 +387,14 @@ test-eggex-api() {
   _expr-error-case '= _group(0)'  # No groups
   _expr-error-case 'if ("foo" ~ /[a-z]/) { echo $[_group(1)] }'
   _expr-error-case '= _group("foo")'  # No such group
+
+  _should-run '= / <capture d+ as month: int> /'
+  _should-run '= / <capture d+: int> /'
+  _should-run '= / <capture d+> /'
+
+  # bad convert func
+  _expr-error-case '= / <capture d+ as month: BAD> /'
+  _expr-error-case '= / <capture d+: BAD> /'
 }
 
 test-int-convert() {

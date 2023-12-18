@@ -53,6 +53,7 @@ from core import state
 from core import ui
 from core import vm
 from frontend import consts
+from frontend import lexer
 from frontend import match
 from frontend import location
 from frontend import typed_args
@@ -1219,8 +1220,8 @@ class ExprEvaluator(object):
                     char_int, char_code_tok)
             out.append(CharCode(char_int, False, char_code_tok))
 
-    def _EvalRegex(self, node, parent_flags):
-        # type: (re_t, str) -> re_t
+    def _EvalEggex(self, node, parent_flags, convert_funcs):
+        # type: (re_t, str, List[Optional[value_t]]) -> re_t
         """Resolve references and eval constants in an Eggex
 
         Args:
@@ -1237,7 +1238,7 @@ class ExprEvaluator(object):
             if case(re_e.Seq):
                 node = cast(re.Seq, UP_node)
                 new_children = [
-                    self._EvalRegex(child, parent_flags)
+                    self._EvalEggex(child, parent_flags, convert_funcs)
                     for child in node.children
                 ]
                 return re.Seq(new_children)
@@ -1245,24 +1246,44 @@ class ExprEvaluator(object):
             elif case(re_e.Alt):
                 node = cast(re.Alt, UP_node)
                 new_children = [
-                    self._EvalRegex(child, parent_flags)
+                    self._EvalEggex(child, parent_flags, convert_funcs)
                     for child in node.children
                 ]
                 return re.Alt(new_children)
 
             elif case(re_e.Repeat):
                 node = cast(re.Repeat, UP_node)
-                return re.Repeat(self._EvalRegex(node.child, parent_flags),
-                                 node.op)
+                return re.Repeat(
+                    self._EvalEggex(node.child, parent_flags, convert_funcs),
+                    node.op)
 
             elif case(re_e.Group):
                 node = cast(re.Group, UP_node)
-                return re.Group(self._EvalRegex(node.child, parent_flags))
+
+                # placeholder for non-capturing group
+                convert_funcs.append(None)
+                return re.Group(
+                    self._EvalEggex(node.child, parent_flags, convert_funcs))
 
             elif case(re_e.Capture):  # Identical to Group
                 node = cast(re.Capture, UP_node)
-                return re.Capture(self._EvalRegex(node.child, parent_flags),
-                                  node.name, node.func_name)
+                convert_func = None  # type: value_t
+                if node.func_name:
+                    func_name = lexer.TokenVal(node.func_name)
+                    func_val = self.mem.GetValue(func_name)
+                    with tagswitch(func_val) as case:
+                        if case(value_e.Func, value_e.BuiltinFunc):
+                            convert_func = func_val
+                        else:
+                            raise error.TypeErr(
+                                func_val,
+                                "Expected %r to be a func" % func_name,
+                                node.func_name)
+
+                convert_funcs.append(convert_func)
+                return re.Capture(
+                    self._EvalEggex(node.child, parent_flags, convert_funcs),
+                    node.name, node.func_name)
 
             elif case(re_e.CharClassLiteral):
                 node = cast(re.CharClassLiteral, UP_node)
@@ -1351,11 +1372,14 @@ class ExprEvaluator(object):
         # type: (Eggex) -> value.Eggex
 
         # Splice and check flags consistency
-        spliced = self._EvalRegex(node.regex, node.canonical_flags)
+        convert_funcs = []  # type: List[Optional[value_t]]
+        spliced = self._EvalEggex(node.regex, node.canonical_flags,
+                                  convert_funcs)
 
         # as_ere and capture_names filled in during translation
         # TODO: func_names should be done above
-        return value.Eggex(spliced, node.canonical_flags, None, [], [])
+        return value.Eggex(spliced, node.canonical_flags, convert_funcs, None,
+                           [])
 
 
 # vim: sw=4
