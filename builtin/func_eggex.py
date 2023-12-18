@@ -12,7 +12,10 @@ from core import vm
 from frontend import typed_args
 from mycpp.mylib import log, tagswitch
 
-from typing import List, Optional, cast
+from typing import List, Optional, cast, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ysh.expr_eval import ExprEvaluator
+
 
 _ = log
 
@@ -21,32 +24,39 @@ S = 1  # _start()
 E = 2  # _end()
 
 
-def _GetMatch(s, indices, i, to_return, blame_loc):
-    # type: (str, List[int], int, int, loc_t) -> value_t
-    num_groups = len(indices) / 2  # including group 0
-    if i < num_groups:
-        start = indices[2 * i]
-        if to_return == S:
-            return value.Int(start)
+class _MatchCallable(vm._Callable):
 
-        end = indices[2 * i + 1]
-        if to_return == E:
-            return value.Int(end)
+    def __init__(self, to_return, expr_ev):
+        # type: (int, Optional[ExprEvaluator]) -> None
+        self.to_return = to_return
+        self.expr_ev = expr_ev
 
-        if start == -1:
-            return value.Null
+    def _GetMatch(self, s, indices, i, blame_loc):
+        # type: (str, List[int], int, loc_t) -> value_t
+        num_groups = len(indices) / 2  # including group 0
+        if i < num_groups:
+            start = indices[2 * i]
+            if self.to_return == S:
+                return value.Int(start)
+
+            end = indices[2 * i + 1]
+            if self.to_return == E:
+                return value.Int(end)
+
+            if start == -1:
+                return value.Null
+            else:
+                # TODO: Can apply type conversion function
+                # See osh/prompt.py:
+                # val = self.expr_ev.PluginCall(func_val, pos_args)
+                return value.Str(s[start:end])
         else:
-            # TODO: Can apply type conversion function
-            # See osh/prompt.py:
-            # val = self.expr_ev.PluginCall(func_val, pos_args)
-            return value.Str(s[start:end])
-    else:
-        if num_groups == 0:
-            msg = 'No regex capture groups'
-        else:
-            msg = 'Expected capture group less than %d, got %d' % (num_groups,
-                                                                   i)
-        raise error.Expr(msg, blame_loc)
+            if num_groups == 0:
+                msg = 'No regex capture groups'
+            else:
+                msg = 'Expected capture group less than %d, got %d' % (num_groups,
+                                                                       i)
+            raise error.Expr(msg, blame_loc)
 
 
 def _GetGroupIndex(group, capture_names, blame_loc):
@@ -73,7 +83,7 @@ def _GetGroupIndex(group, capture_names, blame_loc):
     return group_index
 
 
-class MatchFunc(vm._Callable):
+class MatchFunc(_MatchCallable):
     """
     _group(i)
     _start(i)
@@ -85,12 +95,10 @@ class MatchFunc(vm._Callable):
 
     Ditto for _start() and _end()
     """
-
-    def __init__(self, mem, to_return):
-        # type: (state.Mem, int) -> None
-        vm._Callable.__init__(self)
+    def __init__(self, to_return, expr_ev, mem):
+        # type: (int, Optional[ExprEvaluator], state.Mem) -> None
+        _MatchCallable.__init__(self, to_return, expr_ev)
         self.mem = mem
-        self.to_return = to_return
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -101,20 +109,18 @@ class MatchFunc(vm._Callable):
         s, indices, capture_names = self.mem.GetRegexIndices()
         group_index = _GetGroupIndex(group, capture_names, rd.LeftParenToken())
 
-        return _GetMatch(s, indices, group_index, self.to_return,
-                         rd.LeftParenToken())
+        return self._GetMatch(s, indices, group_index, rd.LeftParenToken())
 
 
-class MatchMethod(vm._Callable):
+class MatchMethod(_MatchCallable):
     """
     m => group(i)
     m => start(i)
     m => end(i)
     """
-
-    def __init__(self, to_return):
-        # type: (int) -> None
-        self.to_return = to_return
+    def __init__(self, to_return, expr_ev):
+        # type: (int, Optional[ExprEvaluator]) -> None
+        _MatchCallable.__init__(self, to_return, expr_ev)
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -127,8 +133,15 @@ class MatchMethod(vm._Callable):
         group_index = _GetGroupIndex(group, m.capture_names,
                                      rd.LeftParenToken())
 
-        return _GetMatch(m.s, m.indices, group_index, self.to_return,
-                         rd.LeftParenToken())
+        #log('group_index %d', group_index)
+        #log('m.convert_funcs %s', m.convert_funcs)
+        convert_func = None  # type: value_t
+        if len(m.convert_funcs):  # for ERE string, it's []
+            if group_index != 0:  # doesn't have a name or type attached to it
+                convert_func = m.convert_funcs[group_index - 1]
+        #log('conv %s', convert_func)
+
+        return self._GetMatch(m.s, m.indices, group_index, rd.LeftParenToken())
 
 
 # vim: sw=4

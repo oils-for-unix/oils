@@ -541,7 +541,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             child_code_str, none_guard = _HNodeExpr(abbrev, item_type,
                                                     iter_name)
             if none_guard:  # e.g. for List[Optional[value_t]]
-                # _ means None/nullptr, like asdl/runtime.py NewLeaf
+                # TODO: could consolidate with asdl/runtime.py NewLeaf(), which
+                # also uses _ to mean None/nullptr
                 self.Emit(
                     '    hnode_t* h = (%s == nullptr) ? Alloc<hnode::Leaf>(StrFromC("_"), color_e::OtherConst) : %s;'
                     % (iter_name, child_code_str))

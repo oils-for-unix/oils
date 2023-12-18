@@ -340,7 +340,6 @@ class ExprEvaluator(object):
                 arg_list = ArgList.CreateNull()  # There's no call site
                 rd = typed_args.Reader(pos_args, named_args, arg_list)
 
-                # TODO: catch exceptions
                 try:
                     val = func_proc.CallUserFunc(func_val, rd, self.mem,
                                                  self.cmd_ev)
@@ -353,6 +352,22 @@ class ExprEvaluator(object):
 
                 except KeyboardInterrupt:
                     val = value.Str('<Ctrl-C>')
+
+        return val
+
+    def CallConvertFunc(self, func_val, arg):
+        # type: (value_t, value_t) -> value_t
+        """ For Eggex captures """
+        with state.ctx_YshExpr(self.mutable_opts):
+            pos_args = [arg]
+            named_args = {}  # type: Dict[str, value_t]
+            arg_list = ArgList.CreateNull()  # There's no call site
+            rd = typed_args.Reader(pos_args, named_args, arg_list)
+
+            # TODO: Use logic from _EvalFuncCall
+
+            #val = func_proc.CallUserFunc(func_val, rd, self.mem, self.cmd_ev)
+            val = None
 
         return val
 
@@ -1347,9 +1362,14 @@ class ExprEvaluator(object):
 
                     elif case(value_e.Eggex):
                         val = cast(value.Eggex, UP_val)
+
+                        # Splicing means we get the conversion funcs too.
+                        convert_funcs.extend(val.convert_funcs)
+
                         # Splicing requires flags to match.  This check is
                         # transitive.
                         to_splice = val.spliced
+
                         if val.canonical_flags != parent_flags:
                             e_die(
                                 "Expected eggex flags %r, but got %r" %
@@ -1371,13 +1391,14 @@ class ExprEvaluator(object):
     def EvalEggex(self, node):
         # type: (Eggex) -> value.Eggex
 
-        # Splice and check flags consistency
+        # Splice, check flags consistency, and accumulate convert_funcs indexed
+        # by capture group
         convert_funcs = []  # type: List[Optional[value_t]]
         spliced = self._EvalEggex(node.regex, node.canonical_flags,
                                   convert_funcs)
+        #log('convert_funcs %s', convert_funcs)
 
-        # as_ere and capture_names filled in during translation
-        # TODO: func_names should be done above
+        # as_ere and capture_names filled by ~ operator or Str method
         return value.Eggex(spliced, node.canonical_flags, convert_funcs, None,
                            [])
 

@@ -256,6 +256,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
                                                     iter_name)
 
             if none_guard:  # e.g. for List[Optional[value_t]]
+                # TODO: could consolidate with asdl/runtime.py NewLeaf(), which
+                # also uses _ to mean None/nullptr
                 self.Emit(
                     '      h = (hnode.Leaf("_", color_e.OtherConst) if %s is None else %s)'
                     % (iter_name, child_code_str))

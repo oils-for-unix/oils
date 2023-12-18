@@ -774,9 +774,9 @@ def Main(
     }
 
     methods[value_e.Match] = {
-        'group': func_eggex.MatchMethod(func_eggex.G),
-        'start': func_eggex.MatchMethod(func_eggex.S),
-        'end': func_eggex.MatchMethod(func_eggex.E),
+        'group': func_eggex.MatchMethod(func_eggex.G, expr_ev),
+        'start': func_eggex.MatchMethod(func_eggex.S, None),
+        'end': func_eggex.MatchMethod(func_eggex.E, None),
     }
 
     methods[value_e.IO] = {
@@ -815,11 +815,11 @@ def Main(
 
     _SetGlobalFunc(mem, 'len', func_misc.Len())
 
-    g = func_eggex.MatchFunc(mem, func_eggex.G)
+    g = func_eggex.MatchFunc(func_eggex.G, expr_ev, mem)
     _SetGlobalFunc(mem, '_group', g)
     _SetGlobalFunc(mem, '_match', g)  # TODO: remove this backward compat alias
-    _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(mem, func_eggex.S))
-    _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(mem, func_eggex.E))
+    _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(func_eggex.S, None, mem))
+    _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
     _SetGlobalFunc(mem, 'join', func_misc.Join())
     _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
