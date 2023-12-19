@@ -44,10 +44,13 @@ module value
   | Indexed(str name, int index, loc blame_loc)
   | Keyed(str name, str key, loc blame_loc)
 
-  RegexMatch = (
-      str s, List[int] indices,
-      # TODO: These 2 fields could be None for BASH_REMATCH
-      List[value?] convert_funcs, List[str?] capture_names)
+  eggex_ops =
+    # for BASH_REMATCH or ~ with a string
+    No
+    # These lists are indexed by group number, and will have None entries
+  | Yes(List[value?] convert_funcs, List[str?] capture_names)
+
+  RegexMatch = (str s, List[int] indices, eggex_ops ops)
 
   regex_match = 
     No

@@ -2,8 +2,8 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
-
+from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
+                                      eggex_ops_t, RegexMatch)
 from core import error
 from core import vm
 from frontend import typed_args
@@ -96,14 +96,14 @@ class SearchMatch(vm._Callable):
                 # lazily converts to ERE
                 ere = regex_translate.AsPosixEre(eggex_val)
                 cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
-                capture_names = eggex_val.capture_names
-                convert_funcs = eggex_val.convert_funcs
+                capture = eggex_ops.Yes(
+                    eggex_val.convert_funcs,
+                    eggex_val.capture_names)  # type: eggex_ops_t
 
             elif case(value_e.Str):
                 ere = cast(value.Str, pattern).s
                 cflags = 0
-                capture_names = []
-                convert_funcs = []
+                capture = eggex_ops.No
 
             else:
                 # TODO: add method name to this error
@@ -129,4 +129,4 @@ class SearchMatch(vm._Callable):
         if indices is None:
             return value.Null
 
-        return RegexMatch(string, indices, convert_funcs, capture_names)
+        return RegexMatch(string, indices, capture)

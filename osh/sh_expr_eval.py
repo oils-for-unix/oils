@@ -10,8 +10,7 @@ sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import (
-    scope_t, )
+from _devbuild.gen.runtime_asdl import scope_t
 from _devbuild.gen.syntax_asdl import (
     word_t,
     CompoundWord,
@@ -41,6 +40,8 @@ from _devbuild.gen.value_asdl import (
     sh_lvalue_e,
     sh_lvalue_t,
     LeftName,
+    eggex_ops,
+    regex_match,
     RegexMatch,
 )
 from core import alloc
@@ -1078,11 +1079,11 @@ class BoolEvaluator(ArithEvaluator):
                             e_die_status(2, e.message, loc.Word(node.right))
 
                         if indices is not None:
-                            self.mem.SetRegexIndices(
-                                RegexMatch(s1, indices, [], []))
+                            self.mem.SetRegexMatch(
+                                RegexMatch(s1, indices, eggex_ops.No))
                             return True
                         else:
-                            self.mem.ClearRegexIndices()
+                            self.mem.SetRegexMatch(regex_match.No)
                             return False
 
                     if op_id == Id.Op_Less:

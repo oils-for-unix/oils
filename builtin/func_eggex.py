@@ -5,7 +5,8 @@ func_eggex.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_t
-from _devbuild.gen.value_asdl import (value, value_e, value_t, regex_match_e,
+from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
+                                      eggex_ops_e, eggex_ops_t, regex_match_e,
                                       RegexMatch)
 from core import error
 from core import state
@@ -56,27 +57,31 @@ class _MatchCallable(vm._Callable):
                 return val
         else:
             assert num_groups != 0
-            msg = 'Expected capture group less than %d, got %d' % (num_groups,
-                                                                   i)
-            raise error.Expr(msg, blame_loc)
+            raise error.Expr(
+                'Expected capture group less than %d, got %d' %
+                (num_groups, i), blame_loc)
 
     def _Call(self, match, group_arg, blame_loc):
         # type: (RegexMatch, value_t, loc_t) -> value_t
-        group_index = _GetGroupIndex(group_arg, match.capture_names,
-                                     blame_loc)
+
+        group_index = _GetGroupIndex(group_arg, match.ops, blame_loc)
 
         convert_func = None  # type: Optional[value_t]
-        if len(match.convert_funcs):  # for ERE string, it's []
-            if group_index != 0:  # doesn't have a name or type attached to it
-                convert_func = match.convert_funcs[group_index - 1]
+
+        with tagswitch(match.ops) as case:
+            if case(eggex_ops_e.Yes):
+                ops = cast(eggex_ops.Yes, match.ops)
+
+                # group 0 doesn't have a name or type attached to it
+                if len(ops.convert_funcs) and group_index != 0:
+                    convert_func = ops.convert_funcs[group_index - 1]
 
         return self._ReturnValue(match.s, match.indices, group_index,
                                  convert_func, blame_loc)
 
 
-
-def _GetGroupIndex(group, capture_names, blame_loc):
-    # type: (value_t, List[Optional[str]], loc_t) -> int
+def _GetGroupIndex(group, ops, blame_loc):
+    # type: (value_t, eggex_ops_t, loc_t) -> int
     UP_group = group
 
     with tagswitch(group) as case:
@@ -86,13 +91,26 @@ def _GetGroupIndex(group, capture_names, blame_loc):
 
         elif case(value_e.Str):
             group = cast(value.Str, UP_group)
-            group_index = -1
-            for i, name in enumerate(capture_names):
-                if name == group.s:
-                    group_index = i + 1  # 1-based
-                    break
-            if group_index == -1:
-                raise error.Expr('No such group %r' % group.s, blame_loc)
+
+            UP_ops = ops
+            with tagswitch(ops) as case2:
+
+                if case2(eggex_ops_e.No):
+                    raise error.Expr(
+                        "ERE captures don't have names (%r)" % group.s,
+                        blame_loc)
+
+                elif case2(eggex_ops_e.Yes):
+                    ops = cast(eggex_ops.Yes, UP_ops)
+                    group_index = -1
+                    for i, name in enumerate(ops.capture_names):
+                        if name == group.s:
+                            group_index = i + 1  # 1-based
+                            break
+                    if group_index == -1:
+                        raise error.Expr('No such group %r' % group.s,
+                                         blame_loc)
+
         else:
             # TODO: add method name to this error
             raise error.TypeErr(group, 'expected Int or Str', blame_loc)
@@ -123,7 +141,7 @@ class MatchFunc(_MatchCallable):
         group_arg = rd.PosValue()
         rd.Done()
 
-        match = self.mem.GetRegexIndices()
+        match = self.mem.GetRegexMatch()
         UP_match = match
         with tagswitch(match) as case:
             if case(regex_match_e.No):

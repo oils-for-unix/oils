@@ -5,7 +5,8 @@ val_ops.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
-from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
+                                      eggex_ops_t, regex_match, RegexMatch)
 from core import error
 from core import ui
 from mycpp.mylib import tagswitch
@@ -447,16 +448,14 @@ def MatchRegex(left, right, mem):
 
             right_s = right.s
             regex_flags = 0
-            capture_names = []  # type: List[Optional[str]]
-            convert_funcs = []  # type: List[Optional[value_t]]
+            capture = eggex_ops.No  # type: eggex_ops_t
 
         elif case(value_e.Eggex):
             right = cast(value.Eggex, UP_right)
 
             right_s = regex_translate.AsPosixEre(right)
             regex_flags = regex_translate.LibcFlags(right.canonical_flags)
-            capture_names = right.capture_names
-            convert_funcs = right.convert_funcs
+            capture = eggex_ops.Yes(right.convert_funcs, right.capture_names)
 
         else:
             raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
@@ -474,12 +473,11 @@ def MatchRegex(left, right, mem):
     indices = libc.regex_search(right_s, regex_flags, left_s, 0)
     if indices is not None:
         if mem:
-            mem.SetRegexIndices(
-                RegexMatch(left_s, indices, convert_funcs, capture_names))
+            mem.SetRegexMatch(RegexMatch(left_s, indices, capture))
         return True
     else:
         if mem:
-            mem.ClearRegexIndices()
+            mem.SetRegexMatch(regex_match.No)
         return False
 
 

@@ -2153,15 +2153,11 @@ class Mem(object):
         # type: () -> bool
         return len(self.var_stack) == 1
 
-    def ClearRegexIndices(self):
-        # type: () -> None
-        self.regex_match[-1] = regex_match.No
-
-    def SetRegexIndices(self, match):
-        # type: (RegexMatch) -> None
+    def SetRegexMatch(self, match):
+        # type: (regex_match_t) -> None
         self.regex_match[-1] = match
 
-    def GetRegexIndices(self):
+    def GetRegexMatch(self):
         # type: () -> regex_match_t
         return self.regex_match[-1]
 

@@ -385,7 +385,14 @@ EOF
 
 test-eggex-api() {
   _expr-error-case '= _group(0)'  # No groups
+
   _expr-error-case 'if ("foo" ~ /[a-z]/) { echo $[_group(1)] }'
+  _expr-error-case 'if ("foo" ~ /[a-z]/) { echo $[_group("name")] }'
+
+  # ERE
+  _expr-error-case 'if ("foo" ~ "[a-z]") { echo $[_group(1)] }'
+  _expr-error-case 'if ("foo" ~ "[a-z]") { echo $[_group("name")] }'
+
   _expr-error-case '= _group("foo")'  # No such group
 }
 
