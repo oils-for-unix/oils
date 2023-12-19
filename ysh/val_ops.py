@@ -455,7 +455,7 @@ def MatchRegex(left, right, mem):
 
             right_s = regex_translate.AsPosixEre(right)
             regex_flags = regex_translate.LibcFlags(right.canonical_flags)
-            capture = eggex_ops.Yes(right.convert_funcs, right.convert_locs,
+            capture = eggex_ops.Yes(right.convert_funcs, right.convert_toks,
                                     right.capture_names)
 
         else:

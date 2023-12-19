@@ -59,7 +59,7 @@ from frontend import location
 from frontend import typed_args
 from osh import braces
 from osh import word_compile
-from mycpp.mylib import log, NewDict, switch, tagswitch
+from mycpp.mylib import log, NewDict, switch, tagswitch, print_stderr
 from ysh import func_proc
 from ysh import val_ops
 
@@ -355,22 +355,23 @@ class ExprEvaluator(object):
 
         return val
 
-    def CallConvertFunc(self, func_val, arg, blame_loc):
-        # type: (value_t, value_t, loc_t) -> value_t
+    def CallConvertFunc(self, func_val, arg, convert_tok, call_loc):
+        # type: (value_t, value_t, Token, loc_t) -> value_t
         """ For Eggex captures """
         with state.ctx_YshExpr(self.mutable_opts):
             pos_args = [arg]
             named_args = {}  # type: Dict[str, value_t]
             arg_list = ArgList.CreateNull()  # There's no call site
             rd = typed_args.Reader(pos_args, named_args, arg_list)
-            rd.SetCallLocation(blame_loc)
+            rd.SetCallLocation(convert_tok)
             try:
                 val = self._CallFunc(func_val, rd)
             except error.FatalRuntime as e:
-                # TODO: it needs a name
-                # This blames the group() call
-                self.errfmt.Print_('Fatal error calling Eggex conversion func',
-                                   blame_loc)
+                func_name = lexer.TokenVal(convert_tok)
+                self.errfmt.Print_(
+                    'Fatal error calling Eggex conversion func %r from this Match accessor'
+                    % func_name, call_loc)
+                print_stderr('')
                 raise
 
         return val
@@ -1191,7 +1192,7 @@ class ExprEvaluator(object):
 
         # as_ere and capture_names filled by ~ operator or Str method
         return value.Eggex(spliced, node.canonical_flags, ev.convert_funcs,
-                           ev.convert_locs, None, [])
+                           ev.convert_toks, None, [])
 
 
 class EggexEvaluator(object):
@@ -1201,7 +1202,7 @@ class EggexEvaluator(object):
         self.mem = mem
         self.canonical_flags = canonical_flags
         self.convert_funcs = []  # type: List[Optional[value_t]]
-        self.convert_locs = []  # type: List[loc_t]
+        self.convert_toks = []  # type: List[Optional[Token]]
 
     def _LookupVar(self, name, var_loc):
         # type: (str, loc_t) -> value_t
@@ -1302,20 +1303,20 @@ class EggexEvaluator(object):
 
                 # placeholder for non-capturing group
                 self.convert_funcs.append(None)
-                self.convert_locs.append(None)
+                self.convert_toks.append(None)
                 return re.Group(self.EvalE(node.child))
 
             elif case(re_e.Capture):  # Identical to Group
                 node = cast(re.Capture, UP_node)
-                convert_func = None  # type: value_t
-                convert_loc = loc.Missing  # type: loc_t
+                convert_func = None  # type: Optional[value_t]
+                convert_tok = None  # type: Optional[Token]
                 if node.func_name:
                     func_name = lexer.TokenVal(node.func_name)
                     func_val = self.mem.GetValue(func_name)
                     with tagswitch(func_val) as case:
                         if case(value_e.Func, value_e.BuiltinFunc):
                             convert_func = func_val
-                            convert_loc = node.func_name
+                            convert_tok = node.func_name
                         else:
                             raise error.TypeErr(
                                 func_val,
@@ -1323,7 +1324,7 @@ class EggexEvaluator(object):
                                 node.func_name)
 
                 self.convert_funcs.append(convert_func)
-                self.convert_locs.append(convert_loc)
+                self.convert_toks.append(convert_tok)
                 return re.Capture(self.EvalE(node.child), node.name,
                                   node.func_name)
 
@@ -1392,7 +1393,7 @@ class EggexEvaluator(object):
 
                         # Splicing means we get the conversion funcs too.
                         self.convert_funcs.extend(val.convert_funcs)
-                        self.convert_locs.extend(val.convert_locs)
+                        self.convert_toks.extend(val.convert_toks)
 
                         # Splicing requires flags to match.  This check is
                         # transitive.

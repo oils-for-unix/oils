@@ -81,11 +81,13 @@ module syntax
 
   SourceLine = (int line_num, str content, source src)
 
-  # Token TODO:
-  # - remove .tval field.  If necessary, the string value should be manually
+  # Two ways to make Token smaller:
+  # - remove .tval field.  If necessary, the string value could be manually
   #   computed and attached to specific LST nodes.
-  # - maybe get rid of span_id, and re-compute length on demand too
-  #   -
+  #   - or is it easier to compute on demand?
+  # - Get rid of span_id, and re-compute length on demand too
+  #   - span_id is only used by tools/ysh_ify.py
+  #   - but length is used when computing .tval
   Token = (id id, int col, int length, int span_id, SourceLine? line, str tval)
 
   # Slight ASDL bug: CompoundWord has to be defined before using it as a shared
@@ -617,8 +619,7 @@ module syntax
 
   | Group(re child)
     # convert_func is filled in on evaluation
-    # TODO: the real type should be value? from core/runtime.asdl, but we don't
-    # have circular deps!
+    # TODO: name and func_name can be expanded to strings
   | Capture(re child, Token? name, Token? func_name)
   | Backtracking(bool negated, Token name, re child)
 

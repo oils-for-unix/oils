@@ -4,7 +4,7 @@ func_eggex.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_t
+from _devbuild.gen.syntax_asdl import loc_t, Token
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_e, eggex_ops_t, regex_match_e,
                                       RegexMatch)
@@ -50,6 +50,7 @@ class _MatchCallable(vm._Callable):
                 val = value.Str(match.s[start:end])  # type: value_t
 
                 convert_func = None  # type: Optional[value_t]
+                convert_tok = None  # type: Optional[Token]
                 with tagswitch(match.ops) as case:
                     if case(eggex_ops_e.Yes):
                         ops = cast(eggex_ops.Yes, match.ops)
@@ -57,13 +58,16 @@ class _MatchCallable(vm._Callable):
                         # group 0 doesn't have a name or type attached to it
                         if len(ops.convert_funcs) and group_index != 0:
                             convert_func = ops.convert_funcs[group_index - 1]
+                            convert_tok = ops.convert_toks[group_index - 1]
 
-                if convert_func:
+                if convert_func is not None:
+                    assert convert_tok is not None
                     # Blame the group() call?  It would be nicer to blame the
                     # Token re.Capture.func_name, but we lost that in
                     # _EvalEggex()
                     val = self.expr_ev.CallConvertFunc(convert_func, val,
-                                                       blame_loc)
+                                                       convert_tok, blame_loc)
+
                 return val
         else:
             assert num_groups != 0
