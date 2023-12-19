@@ -448,6 +448,7 @@ def RegexMatch(left, right, mem):
             right_s = right.s
             regex_flags = 0
             capture_names = []  # type: List[Optional[str]]
+            convert_funcs = []  # type: List[Optional[value_t]]
 
         elif case(value_e.Eggex):
             right = cast(value.Eggex, UP_right)
@@ -455,6 +456,7 @@ def RegexMatch(left, right, mem):
             right_s = regex_translate.AsPosixEre(right)
             regex_flags = regex_translate.LibcFlags(right.canonical_flags)
             capture_names = right.capture_names
+            convert_funcs = right.convert_funcs
 
         else:
             raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
@@ -472,7 +474,7 @@ def RegexMatch(left, right, mem):
     indices = libc.regex_search(right_s, regex_flags, left_s, 0)
     if indices is not None:
         if mem:
-            mem.SetRegexIndices(left_s, indices, capture_names)
+            mem.SetRegexIndices(left_s, indices, capture_names, convert_funcs)
         return True
     else:
         if mem:

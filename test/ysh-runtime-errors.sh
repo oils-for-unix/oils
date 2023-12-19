@@ -387,6 +387,9 @@ test-eggex-api() {
   _expr-error-case '= _group(0)'  # No groups
   _expr-error-case 'if ("foo" ~ /[a-z]/) { echo $[_group(1)] }'
   _expr-error-case '= _group("foo")'  # No such group
+}
+
+test-eggex-convert-func() {
 
   _should-run '= / <capture d+ as month: int> /'
   _should-run '= / <capture d+: int> /'
@@ -395,6 +398,9 @@ test-eggex-api() {
   # bad convert func
   _expr-error-case '= / <capture d+ as month: BAD> /'
   _expr-error-case '= / <capture d+: BAD> /'
+
+  # type error calling convert func (evalExpr)
+  _expr-error-case 'var pat = / <capture d+: evalExpr> /; var m = "10" => search(pat) => group(1)'
 }
 
 test-int-convert() {

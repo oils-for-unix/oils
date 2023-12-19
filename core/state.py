@@ -972,6 +972,8 @@ class ctx_Registers(object):
         mem.regex_indices.append([])
         mem.regex_string.append('')
         mem.capture_names.append([])
+        mem.convert_funcs.append([])
+
         self.mem = mem
 
     def __enter__(self):
@@ -980,9 +982,10 @@ class ctx_Registers(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
+        self.mem.convert_funcs.pop()
+        self.mem.capture_names.pop()
         self.mem.regex_string.pop()
         self.mem.regex_indices.pop()
-        self.mem.capture_names.pop()
 
         self.mem.process_sub_status.pop()
         self.mem.pipe_status.pop()
@@ -1075,6 +1078,7 @@ class Mem(object):
         self.regex_indices = [[]]  # type: List[List[int]]
         self.regex_string = ['']  # type: List[str]
         self.capture_names = [[]]  # type: List[List[Optional[str]]]
+        self.convert_funcs = [[]]  # type: List[List[Optional[value_t]]]
 
         self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
@@ -2158,20 +2162,26 @@ class Mem(object):
         # type: () -> None
         indices = self.regex_indices[-1]
         del indices[:]  # no clear() in Python 2
+
         self.regex_string[-1] = ''
+
         names = self.capture_names[-1]
         del names[:]
 
-    def SetRegexIndices(self, s, indices, capture_names):
-        # type: (str, List[int], List[Optional[str]]) -> None
+        funcs = self.convert_funcs[-1]
+        del funcs[:]
+
+    def SetRegexIndices(self, s, indices, capture_names, convert_funcs):
+        # type: (str, List[int], List[Optional[str]], List[Optional[value_t]]) -> None
         self.regex_string[-1] = s
         self.regex_indices[-1] = indices
         self.capture_names[-1] = capture_names
+        self.convert_funcs[-1] = convert_funcs
 
     def GetRegexIndices(self):
-        # type: () -> Tuple[str, List[int], List[Optional[str]]]
+        # type: () -> Tuple[str, List[int], List[Optional[str]], List[Optional[value_t]]]
         return (self.regex_string[-1], self.regex_indices[-1],
-                self.capture_names[-1])
+                self.capture_names[-1], self.convert_funcs[-1])
 
 
 #

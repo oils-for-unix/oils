@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 #### s ~ regex and s !~ regex
 shopt -s ysh:upgrade
@@ -406,15 +406,22 @@ null null
 #### Capture with Type Conversion Func
 shopt -s ysh:upgrade
 
+var s = 'hi 42-3.14'
 var pat = / <capture d+: int> '-' <capture d+ '.' d+ : float> /
 
-if ('hi 42-3.14' ~ pat) {
+if (s  ~ pat) {
   var g1 = _group(1)  # Int
   var g2 = _group(2)  # Float
   echo $[type(g1)] $[type(g2)]
 }
 
+var m = s => search(pat)
+if (m) {
+  echo $[m => group(1) => type()] $[m => group(2) => type()]
+}
+
 ## STDOUT:
+Int Float
 Int Float
 ## END
 
@@ -426,15 +433,26 @@ func floatNegate(x) {
   return (-float(x))
 }
 
+var s = 'hi 42-3.14'
 var pat = / <capture d+ as left: int> '-' <capture d+ '.' d+ as right: floatNegate> /
 
-if ('hi 42-3.14' ~ pat) {
+if (s ~ pat) {
   var g1 = _group('left')  # Int
   var g2 = _group('right')  # Float
+  echo $g2
   echo $[type(g1)] $[type(g2)]
 }
 
+var m = s => search(pat)
+if (m) {
+  echo $[m => group('right')]
+  echo $[m => group('left') => type()] $[m => group('right') => type()]
+}
+
 ## STDOUT:
+-3.14
+Int Float
+-3.14
 Int Float
 ## END
 

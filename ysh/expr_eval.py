@@ -355,19 +355,22 @@ class ExprEvaluator(object):
 
         return val
 
-    def CallConvertFunc(self, func_val, arg):
-        # type: (value_t, value_t) -> value_t
+    def CallConvertFunc(self, func_val, arg, blame_loc):
+        # type: (value_t, value_t, loc_t) -> value_t
         """ For Eggex captures """
         with state.ctx_YshExpr(self.mutable_opts):
             pos_args = [arg]
             named_args = {}  # type: Dict[str, value_t]
             arg_list = ArgList.CreateNull()  # There's no call site
             rd = typed_args.Reader(pos_args, named_args, arg_list)
-
-            # TODO: Use logic from _EvalFuncCall
-
-            #val = func_proc.CallUserFunc(func_val, rd, self.mem, self.cmd_ev)
-            val = value.Null
+            rd.SetCallLocation(blame_loc)
+            try:
+                val = self._CallFunc(func_val, rd)
+            except error.FatalRuntime as e:
+                # TODO: it needs a name
+                # This blames the group() call
+                self.errfmt.Print_('Fatal error calling Eggex conversion func', blame_loc)
+                raise
 
         return val
 
@@ -778,6 +781,27 @@ class ExprEvaluator(object):
 
         return value.Bool(result)
 
+    def _CallFunc(self, to_call, rd):
+        # type: (value_t, typed_args.Reader) -> value_t
+
+        # Now apply args to either builtin or user-defined function
+        UP_to_call = to_call
+        with tagswitch(to_call) as case:
+            if case(value_e.Func):
+                to_call = cast(value.Func, UP_to_call)
+
+                return func_proc.CallUserFunc(to_call, rd, self.mem,
+                                              self.cmd_ev)
+
+            elif case(value_e.BuiltinFunc):
+                to_call = cast(value.BuiltinFunc, UP_to_call)
+
+                # C++ cast to work around ASDL 'any'
+                f = cast(vm._Callable, to_call.callable)
+                return f.Call(rd)
+            else:
+                raise AssertionError("Shouldn't have been bound")
+
     def _EvalFuncCall(self, node):
         # type: (expr.FuncCall) -> value_t
 
@@ -809,25 +833,7 @@ class ExprEvaluator(object):
                 raise error.TypeErr(func, 'Expected a function or method',
                                     node.args.left)
 
-        # Now apply args to either builtin or user-defined function
-        UP_to_call = to_call
-        with tagswitch(to_call) as case:
-            if case(value_e.Func):
-                to_call = cast(value.Func, UP_to_call)
-
-                return func_proc.CallUserFunc(to_call, rd, self.mem,
-                                              self.cmd_ev)
-
-            elif case(value_e.BuiltinFunc):
-                to_call = cast(value.BuiltinFunc, UP_to_call)
-
-                # C++ cast to work around ASDL 'any'
-                f = cast(vm._Callable, to_call.callable)
-                return f.Call(rd)
-            else:
-                raise AssertionError("Shouldn't have been bound")
-
-        raise AssertionError()
+        return self._CallFunc(to_call, rd)
 
     def _EvalSubscript(self, node):
         # type: (Subscript) -> value_t

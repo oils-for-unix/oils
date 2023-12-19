@@ -155,8 +155,8 @@ def _CharClassTermToEre(term, parts, special_char_flags):
             raise AssertionError(term)
 
 
-def _AsPosixEre(node, parts, eggex_out):
-    # type: (re_t, List[str], value.Eggex) -> None
+def _AsPosixEre(node, parts, capture_names):
+    # type: (re_t, List[str], List[Optional[str]]) -> None
     """Translate an Oil regex to a POSIX ERE.
 
     Appends to a list of parts that you have to join.
@@ -192,7 +192,7 @@ def _AsPosixEre(node, parts, eggex_out):
     if tag == re_e.Seq:
         node = cast(re.Seq, UP_node)
         for c in node.children:
-            _AsPosixEre(c, parts, eggex_out)
+            _AsPosixEre(c, parts, capture_names)
         return
 
     if tag == re_e.Alt:
@@ -200,7 +200,7 @@ def _AsPosixEre(node, parts, eggex_out):
         for i, c in enumerate(node.children):
             if i != 0:
                 parts.append('|')
-            _AsPosixEre(c, parts, eggex_out)
+            _AsPosixEre(c, parts, capture_names)
         return
 
     if tag == re_e.Repeat:
@@ -215,7 +215,7 @@ def _AsPosixEre(node, parts, eggex_out):
                     "POSIX EREs don't have groups without capture, so this node "
                     "needs () around it.", child.blame_tok)
 
-        _AsPosixEre(node.child, parts, eggex_out)
+        _AsPosixEre(node.child, parts, capture_names)
         op = node.op
         op_tag = op.tag()
         UP_op = op
@@ -252,10 +252,10 @@ def _AsPosixEre(node, parts, eggex_out):
         node = cast(re.Group, UP_node)
 
         # placeholder so we know this group is numbered, but not named
-        eggex_out.capture_names.append(None)
+        capture_names.append(None)
 
         parts.append('(')
-        _AsPosixEre(node.child, parts, eggex_out)
+        _AsPosixEre(node.child, parts, capture_names)
         parts.append(')')
         return
 
@@ -266,10 +266,10 @@ def _AsPosixEre(node, parts, eggex_out):
         # TODO: get the name string, and type string
 
         capture_str = lexer.TokenVal(node.name) if node.name else None
-        eggex_out.capture_names.append(capture_str)
+        capture_names.append(capture_str)
 
         parts.append('(')
-        _AsPosixEre(node.child, parts, eggex_out)
+        _AsPosixEre(node.child, parts, capture_names)
         parts.append(')')
         return
 
@@ -344,7 +344,12 @@ def AsPosixEre(eggex):
         return eggex.as_ere
 
     parts = []  # type: List[str]
-    _AsPosixEre(eggex.spliced, parts, eggex)
+    _AsPosixEre(eggex.spliced, parts, eggex.capture_names)
+
+    # These are both indexed by group number, with None for the holes
+    # List[str?] vs. List[value?]
+    assert len(eggex.capture_names) == len(eggex.convert_funcs)
+
     eggex.as_ere = ''.join(parts)
 
     return eggex.as_ere

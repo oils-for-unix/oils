@@ -106,11 +106,16 @@ class Reader(object):
         # Note: may be ArgList.CreateNull()
         self.arg_list = arg_list
 
+        self.fallback_loc = loc.Missing  # type: loc_t
+
+    def SetCallLocation(self, blame_loc):
+        # type: (loc_t) -> None
+        """ In case of empty ArgList, the location we'll blame """
+        self.fallback_loc = blame_loc
+
     def LeftParenToken(self):
         # type: () -> loc_t
-        """
-        Used by functions in library/func_misc.py
-        """
+        """ Used by functions in library/func_misc.py """
         return self.arg_list.left
 
     def LeastSpecificLocation(self):
@@ -124,7 +129,7 @@ class Reader(object):
         if self.arg_list.left:
             return self.arg_list.left
 
-        return loc.Missing
+        return self.fallback_loc
 
     ### Typed positional args
 
@@ -140,6 +145,10 @@ class Reader(object):
             # Token for the first "argument" of a bound function call isn't in
             # the same part of the expression
             pos -= 1
+
+        if self.arg_list.pos_args is None:
+            # PluginCall() and CallConvertFunc() don't have pos_args
+            return self.LeastSpecificLocation()
 
         if 0 <= pos and pos < len(self.arg_list.pos_args):
             l = location.TokenForExpr(self.arg_list.pos_args[pos])

@@ -818,7 +818,8 @@ def Main(
     g = func_eggex.MatchFunc(func_eggex.G, expr_ev, mem)
     _SetGlobalFunc(mem, '_group', g)
     _SetGlobalFunc(mem, '_match', g)  # TODO: remove this backward compat alias
-    _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(func_eggex.S, None, mem))
+    _SetGlobalFunc(mem, '_start', func_eggex.MatchFunc(func_eggex.S, None,
+                                                       mem))
     _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
     _SetGlobalFunc(mem, 'join', func_misc.Join())

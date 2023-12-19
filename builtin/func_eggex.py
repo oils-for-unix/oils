@@ -16,7 +16,6 @@ from typing import List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from ysh.expr_eval import ExprEvaluator
 
-
 _ = log
 
 G = 0  # _match() _group()
@@ -31,8 +30,8 @@ class _MatchCallable(vm._Callable):
         self.to_return = to_return
         self.expr_ev = expr_ev
 
-    def _GetMatch(self, s, indices, i, blame_loc):
-        # type: (str, List[int], int, loc_t) -> value_t
+    def _GetMatch(self, s, indices, i, convert_func, blame_loc):
+        # type: (str, List[int], int, Optional[value_t], loc_t) -> value_t
         num_groups = len(indices) / 2  # including group 0
         if i < num_groups:
             start = indices[2 * i]
@@ -46,16 +45,20 @@ class _MatchCallable(vm._Callable):
             if start == -1:
                 return value.Null
             else:
-                # TODO: Can apply type conversion function
-                # See osh/prompt.py:
-                # val = self.expr_ev.PluginCall(func_val, pos_args)
-                return value.Str(s[start:end])
+                val = value.Str(s[start:end])  # type: value_t
+                if convert_func:
+                    # Blame the group() call?  It would be nicer to blame the
+                    # Token re.Capture.func_name, but we lost that in
+                    # _EvalEggex()
+                    val = self.expr_ev.CallConvertFunc(convert_func, val,
+                                                       blame_loc)
+                return val
         else:
             if num_groups == 0:
                 msg = 'No regex capture groups'
             else:
-                msg = 'Expected capture group less than %d, got %d' % (num_groups,
-                                                                       i)
+                msg = 'Expected capture group less than %d, got %d' % (
+                    num_groups, i)
             raise error.Expr(msg, blame_loc)
 
 
@@ -95,6 +98,7 @@ class MatchFunc(_MatchCallable):
 
     Ditto for _start() and _end()
     """
+
     def __init__(self, to_return, expr_ev, mem):
         # type: (int, Optional[ExprEvaluator], state.Mem) -> None
         _MatchCallable.__init__(self, to_return, expr_ev)
@@ -106,10 +110,16 @@ class MatchFunc(_MatchCallable):
         group = rd.PosValue()
         rd.Done()
 
-        s, indices, capture_names = self.mem.GetRegexIndices()
+        s, indices, capture_names, convert_funcs = self.mem.GetRegexIndices()
         group_index = _GetGroupIndex(group, capture_names, rd.LeftParenToken())
 
-        return self._GetMatch(s, indices, group_index, rd.LeftParenToken())
+        convert_func = None  # type: Optional[value_t]
+        if len(convert_funcs):  # for ERE string, it's []
+            if group_index != 0:  # doesn't have a name or type attached to it
+                convert_func = convert_funcs[group_index - 1]
+
+        return self._GetMatch(s, indices, group_index, convert_func,
+                              rd.LeftParenToken())
 
 
 class MatchMethod(_MatchCallable):
@@ -118,6 +128,7 @@ class MatchMethod(_MatchCallable):
     m => start(i)
     m => end(i)
     """
+
     def __init__(self, to_return, expr_ev):
         # type: (int, Optional[ExprEvaluator]) -> None
         _MatchCallable.__init__(self, to_return, expr_ev)
@@ -135,13 +146,14 @@ class MatchMethod(_MatchCallable):
 
         #log('group_index %d', group_index)
         #log('m.convert_funcs %s', m.convert_funcs)
-        convert_func = None  # type: value_t
+        convert_func = None  # type: Optional[value_t]
         if len(m.convert_funcs):  # for ERE string, it's []
             if group_index != 0:  # doesn't have a name or type attached to it
                 convert_func = m.convert_funcs[group_index - 1]
         #log('conv %s', convert_func)
 
-        return self._GetMatch(m.s, m.indices, group_index, rd.LeftParenToken())
+        return self._GetMatch(m.s, m.indices, group_index, convert_func,
+                              rd.LeftParenToken())
 
 
 # vim: sw=4
