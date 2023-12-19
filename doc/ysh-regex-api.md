@@ -249,7 +249,9 @@ Python's `re.split()` can also be emulated by using `search()` in a loop.
 - [re-primitive](ref/chap-expr-lang.html#re-primitive)
 - [class-literal](ref/chap-expr-lang.html#class-literal)
 - [named-class](ref/chap-expr-lang.html#named-class)
+- [re-repeat](ref/chap-expr-lang.html#re-repeat)
 - [re-compound](ref/chap-expr-lang.html#re-compound)
 - [re-capture](ref/chap-expr-lang.html#re-capture)
+- [re-splice](ref/chap-expr-lang.html#re-splice)
 - [re-flags](ref/chap-expr-lang.html#re-flags)
 

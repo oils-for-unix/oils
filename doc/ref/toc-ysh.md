@@ -82,11 +82,13 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   fat-arrow     mystr => startsWith('prefix')
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ ; re-flags ; ERE /
-                  re-primitive  %zero    'sq'   Subpattern   @subpattern
+                  re-primitive  %zero    'sq'
                   class-literal [c a-z 'abc' @str_var \\ \xFF \u0100]
-                  named-class   dot  digit  space  word  d  s  w
-                  re-compound   pat|alt   pat seq   (group)
+                  named-class    dot   digit   space   word   d  s  w
+                  re-repeat     d?   d*   d+   d{3}   d{2,4}
+                  re-compound    seq1 seq2   alt1|alt2   (expr1 expr2)
                   re-capture    <capture d+ as name: int>
+                  re-splice     Subpattern   @subpattern
                   re-flags      reg_icase   reg_newline
                   X re-multiline  ///
 ```

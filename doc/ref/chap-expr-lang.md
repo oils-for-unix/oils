@@ -236,11 +236,17 @@ Take care not to confuse glob patterns and regular expressions.
 
 ### re-literal
 
-Examples of eggex literals:
+An eggex literal looks like this:
+
+    / expression ; flags ; translation preference /
+
+The flags and translation preference are both optional.
+
+Examples:
 
     var pat = / d+ /  # => [[:digit:]]+
 
-You can specify flags passed to libc regcomp():
+You can specify flags passed to libc `regcomp()`:
 
     var pat = / d+ ; reg_icase reg_newline / 
 
@@ -255,35 +261,112 @@ translate eggex to PCRE or Python syntax.
 
 ### re-primitive
 
-    %zero    'sq'
-    Subpattern   @subpattern
+There are two kinds of eggex primitives.
+
+"Zero-width assertions" match a position rather than a character:
+
+    %start           # translates to ^
+    %end             # translates to $
+
+Literal characters appear within **single** quotes:
+
+    'oh *really*'    # translates to regex-escaped string
+
+Double-quoted strings are **not** eggex primitives.  Instead, you can use
+splicing of strings:
+
+    var dq = "hi $name"    
+    var eggex = / @dq /
 
 ### class-literal
 
-    [c a-z 'abc' @str_var \\ \xFF \u0100]
+An eggex character class literal specifies a set.  It can have individual
+characters and ranges:
 
-Negated:
+    [ 'x' 'y' 'z' a-f A-F 0-9 ]  # 3 chars, 3 ranges
 
-    ![a-z]
+Omit quotes on ASCII characters:
+
+    [ x y z ]  # avoid typing 'x' 'y' 'z'
+
+Sets of characters can be written as trings
+
+    [ 'xyz' ]  # any of 3 chars, not a sequence of 3 chars
+
+Backslash escapes are respected:
+
+    [ \\ \' \" \0 ]
+    [ \xFF \u0100 ]
+
+Splicing:
+
+    [ @str_var ]
+
+Negation always uses `!`
+
+    ![ a-f A-F 'xyz' @str_var ]
 
 ### named-class
 
-    dot
-    digit  space  word
-    d  s  w
+Perl-like shortcuts for sets of characters:
+
+    [ dot ]    # => .
+    [ digit ]  # => [[:digit:]]
+    [ space ]  # => [[:space:]]
+    [ word ]   # => [[:alpha:]][[:digit:]]_
+
+Abbreviations:
+
+    [ d s w ]  # Same as [ digit space word ]
+
+Valid POSIX classes:
+
+    alnum   cntrl   lower   space
+    alpha   digit   print   upper
+    blank   graph   punct   xdigit
 
 Negated:
 
     !digit   !space   !word
+    !d   !s   !w
+    !alnum  # etc.
+
+### re-repeat
+
+Eggex repetition looks like POSIX syntax:
+
+    / 'a'? /      # zero or one
+    / 'a'* /      # zero or more
+    / 'a'+ /      # one or more
+
+Counted repetitions:
+
+    / 'a'{3} /    # exactly 3 repetitions
+    / 'a'{2,4} /  # between 2 to 4 repetitions
 
 ### re-compound
 
-    pat|alt   pat seq   (group)
+Sequence expressions with a space:
+
+    / word digit digit /   # Matches 3 characters in sequence
+                           # Examples: a42, b51
+
+(Compare `/ [ word digit ] /`, which is a set matching 1 character.)
+
+Alternation with `|`:
+
+    / word | digit /       # Matches 'a' OR '9', for example
+
+Grouping with parentheses:
+
+    / (word digit) | \\ /  # Matches a9 or \
 
 ### re-capture
 
 To retrieve a substring of a string that matches an Eggex, use a "capture
-group".  Here's an eggex with a **positional** capture:
+group" like `<capture ...>`.
+
+Here's an eggex with a **positional** capture:
 
     var pat = / 'hi ' <capture d+> /  # access with _group(1)
                                       # or Match => _group(1)
@@ -305,18 +388,37 @@ Related docs and help topics:
 - [`_group()`](chap-builtin-func.html#_group)
 - [`Match => group()`](chap-type-method.html#group)
 
+### re-splice
+
+To build an eggex out of smaller expressions, you can **splice** eggexes
+together:
+
+    var D = / [0-9][0-9] /
+    var time = / @D ':' @D /  # [0-9][0-9]:[0-9][0-9]
+
+If the variable begins with a capital letter, you can omit `@`:
+
+    var ip = / D ':' D /
+
+You can also splice a string:
+
+    var greeting = 'hi'
+    var pat = / @greeting ' world' /  # hi world
+
+Splicing is **not** string concatenation; it works on eggex subtrees.
+
 ### re-flags
 
 Valid ERE flags, which are passed to libc's `regcomp()`:
 
-- `reg_icase` aka `i` (ignore case)
-- `reg_newline` (4 changes regarding newlines)
+- `reg_icase` aka `i` - ignore case
+- `reg_newline` - 4 matching changes related to newlines
 
 See `man regcomp`.
 
 ### re-multiline
 
-Not implemented.  Splicing makes it less necessary:
+Multi-line eggexes aren't yet implemented.  Splicing makes it less necessary:
 
     var Name  = / <capture [a-z]+ as name> /
     var Num   = / <capture d+ as num> /

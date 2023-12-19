@@ -145,12 +145,14 @@ We accept both Perl and POSIX classes.
   - `%word_start` is `\<`
   - `%word_end` is `\>`
 
-### Literals Are Quoted And Can Use String Variables
+### Single-Quoted Strings
 
-- `'abc'`
-- `"xyz $var"`
-- `$mychars`
-- `${otherchars}`
+- `'hello *world*'`  becomes a regex-escaped string
+
+Note: instead of using double-quoted strings like `"xyz $var"`, you can splice
+a strings into an eggex:
+
+    / 'xyz ' @var /
 
 ## Compound Expressions
 
@@ -220,22 +222,30 @@ Using normal variables:
 
 This is similar to how `lex` and `re2c` work.
 
-### Group and Capture With `()` and `<>`
+### Group With `()` 
 
-Group with `(pat)`
+Parentheses are used for precdence:
 
     ('foo' | 'bar')+
 
 See note below: When translating to POSIX ERE, grouping becomes a capturing
 group.  POSIX ERE has no non-capturing groups.
 
-Capture with `<capture pat>`:
+
+### Capture with `<capture ...>`
+
+Here's a positional capture:
 
     <capture d+>           # Becomes _group(1)
 
 Add a variable after `as` for named capture:
 
-    <capture d+ as myvar>  # Becomes _group('myvar')
+    <capture d+ as month>  # Becomes _group('month')
+
+You can also add type conversion functions:
+
+    <capture d+ : int>           # _group(1) returns an Int, not Str
+    <capture d+ as month: int>   # _group('month') returns an Int, not Str
 
 ### Character Class Literals Use `[]`
 
@@ -247,11 +257,7 @@ Terms:
 
 - Ranges: `a-f` or `'A' - 'F'`
 - Literals: `\n`, `\x01`, `\u0100`, etc.
-- Sets specified as strings:
-  - `'abc'`
-  - `"xyz"`
-  - `$mychars`
-  - `${otherchars}`
+- Sets specified as strings: `'abc'`
 
 Only letters, numbers, and the underscore may be unquoted:
 
@@ -294,17 +300,16 @@ performance problems.
 
 Flags or "regex modifiers" appear after a semicolon:
 
-    / digit+ ; ignorecase /
+    / digit+ ; i /  # ignore case
 
-A translation preference is specified with a symbol like `%pref`.  It controls
-what regex syntax the eggex is translated to by default.
+A translation preference is specified after a second semi-colon:
 
-    / digit+ ; %ERE /                # translates to [[:digit:]]+
-    / digit+ ; %python /             # translates to \d+
+    / digit+ ; ; ERE /                # translates to [[:digit:]]+
+    / digit+ ; ; python /             # could translate to \d+
 
 Flags and translation preferences together:
 
-    / digit+ ; ignorecase %python /  # translates to (?i)\d+
+    / digit+ ; ignorecase ; python /  # could translate to (?i)\d+
 
 ### Multiline Syntax
 
@@ -318,12 +323,11 @@ You can spread regexes over multiple lines and add comments:
       digit{2}   # day e.g. 31
     ///
 
-
 (Not yet implemented in YSH.)
 
 ### The YSH API
 
-See [YSH regex API](ysh-regex-api.html) for details.
+See the [YSH regex API](ysh-regex-api.html) for details.
 
 In summary, YSH has Perl-like conveniences with an `~` operator:
 
@@ -331,7 +335,7 @@ In summary, YSH has Perl-like conveniences with an `~` operator:
     var pat = /<capture d+ as month> '-' <capture d+ as day>/
 
     if (s ~ pat) {       # search for the pattern
-      echo $[_group(1)]  # => 04
+      echo $[_group('month')]  # => 04
     }
 
 It also has an explicit and powerful Python-like API with the `search()` and
@@ -339,7 +343,7 @@ leftMatch()` methods on strings.
 
     var m = s => search(pat, pos=8)  # start searching at a position
     if (m) {
-      echo $[m => group(1)]  # => 10
+      echo $[m => group('month')]  # => 10
     }
 
 ### Language Reference
