@@ -44,6 +44,15 @@ module value
   | Indexed(str name, int index, loc blame_loc)
   | Keyed(str name, str key, loc blame_loc)
 
+  RegexMatch = (
+      str s, List[int] indices,
+      # TODO: These 2 fields could be None for BASH_REMATCH
+      List[value?] convert_funcs, List[str?] capture_names)
+
+  regex_match = 
+    No
+  | Yes %RegexMatch
+
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
   # value_t instances are stored in state.Mem().
   value =
@@ -83,8 +92,7 @@ module value
     # match, and each group has both a start and end index.
     # It's flat to reduce allocations.  The group() start() end() funcs/methods
     # provide a nice interface.
-  | Match(str s, List[int] indices,
-          List[value?] convert_funcs, List[str?] capture_names)
+  | Match %RegexMatch
 
     # ^[42 + a[i]]
   | Expr(expr e)

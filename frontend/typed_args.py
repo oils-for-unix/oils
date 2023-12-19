@@ -4,7 +4,7 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
                                        command_t, expr_t)
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
 from core import error
 from core.error import e_usage
 from frontend import location
@@ -236,9 +236,9 @@ class Reader(object):
                             self.BlamePos())
 
     def _ToMatch(self, val):
-        # type: (value_t) -> value.Match
+        # type: (value_t) -> RegexMatch
         if val.tag() == value_e.Match:
-            return cast(value.Match, val)
+            return cast(RegexMatch, val)
 
         raise error.TypeErr(val,
                             'Arg %d should be a Match' % self.pos_consumed,
@@ -347,7 +347,7 @@ class Reader(object):
         return self._ToEggex(val)
 
     def PosMatch(self):
-        # type: () -> value.Match
+        # type: () -> RegexMatch
         val = self.PosValue()
         return self._ToMatch(val)
 

@@ -5,7 +5,8 @@ func_eggex.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_t
-from _devbuild.gen.value_asdl import value, value_e, value_t
+from _devbuild.gen.value_asdl import (value, value_e, value_t, regex_match_e,
+                                      RegexMatch)
 from core import error
 from core import state
 from core import vm
@@ -54,11 +55,9 @@ class _MatchCallable(vm._Callable):
                                                        blame_loc)
                 return val
         else:
-            if num_groups == 0:
-                msg = 'No regex capture groups'
-            else:
-                msg = 'Expected capture group less than %d, got %d' % (
-                    num_groups, i)
+            assert num_groups != 0
+            msg = 'Expected capture group less than %d, got %d' % (num_groups,
+                                                                   i)
             raise error.Expr(msg, blame_loc)
 
 
@@ -110,16 +109,29 @@ class MatchFunc(_MatchCallable):
         group = rd.PosValue()
         rd.Done()
 
-        s, indices, capture_names, convert_funcs = self.mem.GetRegexIndices()
-        group_index = _GetGroupIndex(group, capture_names, rd.LeftParenToken())
+        match = self.mem.GetRegexIndices()
+        UP_match = match
+        with tagswitch(match) as case:
+            if case(regex_match_e.No):
+                # _group(0) etc. is illegal
+                raise error.Expr('No regex capture groups',
+                                 rd.LeftParenToken())
 
-        convert_func = None  # type: Optional[value_t]
-        if len(convert_funcs):  # for ERE string, it's []
-            if group_index != 0:  # doesn't have a name or type attached to it
-                convert_func = convert_funcs[group_index - 1]
+            elif case(regex_match_e.Yes):
+                match = cast(RegexMatch, UP_match)
 
-        return self._GetMatch(s, indices, group_index, convert_func,
-                              rd.LeftParenToken())
+                group_index = _GetGroupIndex(group, match.capture_names,
+                                             rd.LeftParenToken())
+
+                convert_func = None  # type: Optional[value_t]
+                if len(match.convert_funcs):  # for ERE string, it's []
+                    if group_index != 0:  # doesn't have a name or type attached to it
+                        convert_func = match.convert_funcs[group_index - 1]
+
+                return self._GetMatch(match.s, match.indices, group_index,
+                                      convert_func, rd.LeftParenToken())
+
+        raise AssertionError()
 
 
 class MatchMethod(_MatchCallable):

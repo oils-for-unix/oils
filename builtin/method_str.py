@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
 
 from core import error
 from core import vm
@@ -129,4 +129,4 @@ class SearchMatch(vm._Callable):
         if indices is None:
             return value.Null
 
-        return value.Match(string, indices, convert_funcs, capture_names)
+        return RegexMatch(string, indices, convert_funcs, capture_names)

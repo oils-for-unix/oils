@@ -1486,7 +1486,7 @@ class CommandEvaluator(object):
                     eggex = cast(Eggex, case_arm.pattern)
                     eggex_val = self.expr_ev.EvalEggex(eggex)
 
-                    if val_ops.RegexMatch(to_match, eggex_val, self.mem):
+                    if val_ops.MatchRegex(to_match, eggex_val, self.mem):
                         status = self._ExecuteList(case_arm.action)
                         matched = True
                         break

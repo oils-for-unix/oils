@@ -369,7 +369,8 @@ class ExprEvaluator(object):
             except error.FatalRuntime as e:
                 # TODO: it needs a name
                 # This blames the group() call
-                self.errfmt.Print_('Fatal error calling Eggex conversion func', blame_loc)
+                self.errfmt.Print_('Fatal error calling Eggex conversion func',
+                                   blame_loc)
                 raise
 
         return val
@@ -762,11 +763,11 @@ class ExprEvaluator(object):
             else:
                 try:
                     if op.id == Id.Arith_Tilde:
-                        result = val_ops.RegexMatch(left, right, self.mem)
+                        result = val_ops.MatchRegex(left, right, self.mem)
 
                     elif op.id == Id.Expr_NotTilde:
                         # don't pass self.mem to not set a match
-                        result = not val_ops.RegexMatch(left, right, None)
+                        result = not val_ops.MatchRegex(left, right, None)
 
                     else:
                         raise AssertionError(op)

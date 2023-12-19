@@ -5,7 +5,7 @@ val_ops.py
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
 from core import error
 from core import ui
 from mycpp.mylib import tagswitch
@@ -433,7 +433,7 @@ def Contains(needle, haystack):
     return False
 
 
-def RegexMatch(left, right, mem):
+def MatchRegex(left, right, mem):
     # type: (value_t, value_t, Optional[state.Mem]) -> bool
     """
     Args:
@@ -474,7 +474,8 @@ def RegexMatch(left, right, mem):
     indices = libc.regex_search(right_s, regex_flags, left_s, 0)
     if indices is not None:
         if mem:
-            mem.SetRegexIndices(left_s, indices, capture_names, convert_funcs)
+            mem.SetRegexIndices(
+                RegexMatch(left_s, indices, convert_funcs, capture_names))
         return True
     else:
         if mem:

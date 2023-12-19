@@ -17,7 +17,8 @@ from _devbuild.gen.syntax_asdl import (loc, loc_t, Token, debug_frame,
 from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
                                       sh_lvalue_e, sh_lvalue_t, LeftName,
-                                      y_lvalue_e)
+                                      y_lvalue_e, regex_match, regex_match_e,
+                                      regex_match_t, RegexMatch)
 from asdl import runtime
 from core import error
 from core.error import e_usage, e_die
@@ -969,10 +970,7 @@ class ctx_Registers(object):
         mem.pipe_status.append([])
         mem.process_sub_status.append([])
 
-        mem.regex_indices.append([])
-        mem.regex_string.append('')
-        mem.capture_names.append([])
-        mem.convert_funcs.append([])
+        mem.regex_match.append(regex_match.No)
 
         self.mem = mem
 
@@ -982,10 +980,7 @@ class ctx_Registers(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.mem.convert_funcs.pop()
-        self.mem.capture_names.pop()
-        self.mem.regex_string.pop()
-        self.mem.regex_indices.pop()
+        self.mem.regex_match.pop()
 
         self.mem.process_sub_status.pop()
         self.mem.pipe_status.pop()
@@ -1073,12 +1068,7 @@ class Mem(object):
 
         # A stack but NOT a register?
         self.this_dir = []  # type: List[str]
-
-        # 0 is the whole match, 1..n are submatches
-        self.regex_indices = [[]]  # type: List[List[int]]
-        self.regex_string = ['']  # type: List[str]
-        self.capture_names = [[]]  # type: List[List[Optional[str]]]
-        self.convert_funcs = [[]]  # type: List[List[Optional[value_t]]]
+        self.regex_match = [regex_match.No]  # type: List[regex_match_t]
 
         self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
@@ -1830,8 +1820,13 @@ class Mem(object):
             return value.List(items)
 
         if name == 'BASH_REMATCH':
-            groups = util.RegexGroups(self.regex_string[-1],
-                                      self.regex_indices[-1])
+            top_match = self.regex_match[-1]
+            with tagswitch(top_match) as case:
+                if case(regex_match_e.No):
+                    groups = []
+                elif case(regex_match_e.Yes):
+                    match = cast(RegexMatch, top_match)
+                    groups = util.RegexGroups(match.s, match.indices)
             return value.BashArray(groups)
 
         # Do lookup of system globals before looking at user variables.  Note: we
@@ -2160,28 +2155,15 @@ class Mem(object):
 
     def ClearRegexIndices(self):
         # type: () -> None
-        indices = self.regex_indices[-1]
-        del indices[:]  # no clear() in Python 2
+        self.regex_match[-1] = regex_match.No
 
-        self.regex_string[-1] = ''
-
-        names = self.capture_names[-1]
-        del names[:]
-
-        funcs = self.convert_funcs[-1]
-        del funcs[:]
-
-    def SetRegexIndices(self, s, indices, capture_names, convert_funcs):
-        # type: (str, List[int], List[Optional[str]], List[Optional[value_t]]) -> None
-        self.regex_string[-1] = s
-        self.regex_indices[-1] = indices
-        self.capture_names[-1] = capture_names
-        self.convert_funcs[-1] = convert_funcs
+    def SetRegexIndices(self, match):
+        # type: (RegexMatch) -> None
+        self.regex_match[-1] = match
 
     def GetRegexIndices(self):
-        # type: () -> Tuple[str, List[int], List[Optional[str]], List[Optional[value_t]]]
-        return (self.regex_string[-1], self.regex_indices[-1],
-                self.capture_names[-1], self.convert_funcs[-1])
+        # type: () -> regex_match_t
+        return self.regex_match[-1]
 
 
 #

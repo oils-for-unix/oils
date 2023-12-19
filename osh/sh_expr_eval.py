@@ -41,6 +41,7 @@ from _devbuild.gen.value_asdl import (
     sh_lvalue_e,
     sh_lvalue_t,
     LeftName,
+    RegexMatch,
 )
 from core import alloc
 from core import error
@@ -1077,7 +1078,8 @@ class BoolEvaluator(ArithEvaluator):
                             e_die_status(2, e.message, loc.Word(node.right))
 
                         if indices is not None:
-                            self.mem.SetRegexIndices(s1, indices, [], [])
+                            self.mem.SetRegexIndices(
+                                RegexMatch(s1, indices, [], []))
                             return True
                         else:
                             self.mem.ClearRegexIndices()
