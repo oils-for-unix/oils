@@ -32,22 +32,32 @@ class _MatchCallable(vm._Callable):
         self.to_return = to_return
         self.expr_ev = expr_ev
 
-    def _ReturnValue(self, s, indices, i, convert_func, blame_loc):
-        # type: (str, List[int], int, Optional[value_t], loc_t) -> value_t
-        num_groups = len(indices) / 2  # including group 0
-        if i < num_groups:
-            start = indices[2 * i]
+    def _ReturnValue(self, match, group_index, blame_loc):
+        # type: (RegexMatch, int, loc_t) -> value_t
+        num_groups = len(match.indices) / 2  # including group 0
+        if group_index < num_groups:
+            start = match.indices[2 * group_index]
             if self.to_return == S:
                 return value.Int(start)
 
-            end = indices[2 * i + 1]
+            end = match.indices[2 * group_index + 1]
             if self.to_return == E:
                 return value.Int(end)
 
             if start == -1:
                 return value.Null
             else:
-                val = value.Str(s[start:end])  # type: value_t
+                val = value.Str(match.s[start:end])  # type: value_t
+
+                convert_func = None  # type: Optional[value_t]
+                with tagswitch(match.ops) as case:
+                    if case(eggex_ops_e.Yes):
+                        ops = cast(eggex_ops.Yes, match.ops)
+
+                        # group 0 doesn't have a name or type attached to it
+                        if len(ops.convert_funcs) and group_index != 0:
+                            convert_func = ops.convert_funcs[group_index - 1]
+
                 if convert_func:
                     # Blame the group() call?  It would be nicer to blame the
                     # Token re.Capture.func_name, but we lost that in
@@ -59,25 +69,12 @@ class _MatchCallable(vm._Callable):
             assert num_groups != 0
             raise error.Expr(
                 'Expected capture group less than %d, got %d' %
-                (num_groups, i), blame_loc)
+                (num_groups, group_index), blame_loc)
 
     def _Call(self, match, group_arg, blame_loc):
         # type: (RegexMatch, value_t, loc_t) -> value_t
-
         group_index = _GetGroupIndex(group_arg, match.ops, blame_loc)
-
-        convert_func = None  # type: Optional[value_t]
-
-        with tagswitch(match.ops) as case:
-            if case(eggex_ops_e.Yes):
-                ops = cast(eggex_ops.Yes, match.ops)
-
-                # group 0 doesn't have a name or type attached to it
-                if len(ops.convert_funcs) and group_index != 0:
-                    convert_func = ops.convert_funcs[group_index - 1]
-
-        return self._ReturnValue(match.s, match.indices, group_index,
-                                 convert_func, blame_loc)
+        return self._ReturnValue(match, group_index, blame_loc)
 
 
 def _GetGroupIndex(group, ops, blame_loc):
