@@ -97,7 +97,7 @@ class SearchMatch(vm._Callable):
                 ere = regex_translate.AsPosixEre(eggex_val)
                 cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
                 capture = eggex_ops.Yes(
-                    eggex_val.convert_funcs,
+                    eggex_val.convert_funcs, eggex_val.convert_locs,
                     eggex_val.capture_names)  # type: eggex_ops_t
 
             elif case(value_e.Str):

@@ -1181,6 +1181,35 @@ class ExprEvaluator(object):
             else:
                 raise NotImplementedError(node.__class__.__name__)
 
+    def EvalEggex(self, node):
+        # type: (Eggex) -> value.Eggex
+
+        # Splice, check flags consistency, and accumulate convert_funcs indexed
+        # by capture group
+        ev = EggexEvaluator(self.mem, node.canonical_flags)
+        spliced = ev.EvalE(node.regex)
+
+        # as_ere and capture_names filled by ~ operator or Str method
+        return value.Eggex(spliced, node.canonical_flags, ev.convert_funcs,
+                           ev.convert_locs, None, [])
+
+
+class EggexEvaluator(object):
+
+    def __init__(self, mem, canonical_flags):
+        # type: (state.Mem, str) -> None
+        self.mem = mem
+        self.canonical_flags = canonical_flags
+        self.convert_funcs = []  # type: List[Optional[value_t]]
+        self.convert_locs = []  # type: List[loc_t]
+
+    def _LookupVar(self, name, var_loc):
+        # type: (str, loc_t) -> value_t
+        """
+        Duplicated from ExprEvaluator
+        """
+        return LookupVar(self.mem, name, scope_e.LocalOrGlobal, var_loc)
+
     def _EvalClassLiteralTerm(self, term, out):
         # type: (class_literal_term_t, List[char_class_term_t]) -> None
         UP_term = term
@@ -1242,12 +1271,9 @@ class ExprEvaluator(object):
                     char_int, char_code_tok)
             out.append(CharCode(char_int, False, char_code_tok))
 
-    def _EvalEggex(self, node, parent_flags, convert_funcs):
-        # type: (re_t, str, List[Optional[value_t]]) -> re_t
+    def EvalE(self, node):
+        # type: (re_t) -> re_t
         """Resolve references and eval constants in an Eggex
-
-        Args:
-          parent_flags: anything spliced must have the same flags
 
         Rules:
           Splice => re_t   # like Hex and @const in  / Hex '.' @const /
@@ -1259,53 +1285,47 @@ class ExprEvaluator(object):
         with tagswitch(node) as case:
             if case(re_e.Seq):
                 node = cast(re.Seq, UP_node)
-                new_children = [
-                    self._EvalEggex(child, parent_flags, convert_funcs)
-                    for child in node.children
-                ]
+                new_children = [self.EvalE(child) for child in node.children]
                 return re.Seq(new_children)
 
             elif case(re_e.Alt):
                 node = cast(re.Alt, UP_node)
-                new_children = [
-                    self._EvalEggex(child, parent_flags, convert_funcs)
-                    for child in node.children
-                ]
+                new_children = [self.EvalE(child) for child in node.children]
                 return re.Alt(new_children)
 
             elif case(re_e.Repeat):
                 node = cast(re.Repeat, UP_node)
-                return re.Repeat(
-                    self._EvalEggex(node.child, parent_flags, convert_funcs),
-                    node.op)
+                return re.Repeat(self.EvalE(node.child), node.op)
 
             elif case(re_e.Group):
                 node = cast(re.Group, UP_node)
 
                 # placeholder for non-capturing group
-                convert_funcs.append(None)
-                return re.Group(
-                    self._EvalEggex(node.child, parent_flags, convert_funcs))
+                self.convert_funcs.append(None)
+                self.convert_locs.append(None)
+                return re.Group(self.EvalE(node.child))
 
             elif case(re_e.Capture):  # Identical to Group
                 node = cast(re.Capture, UP_node)
                 convert_func = None  # type: value_t
+                convert_loc = loc.Missing  # type: loc_t
                 if node.func_name:
                     func_name = lexer.TokenVal(node.func_name)
                     func_val = self.mem.GetValue(func_name)
                     with tagswitch(func_val) as case:
                         if case(value_e.Func, value_e.BuiltinFunc):
                             convert_func = func_val
+                            convert_loc = node.func_name
                         else:
                             raise error.TypeErr(
                                 func_val,
                                 "Expected %r to be a func" % func_name,
                                 node.func_name)
 
-                convert_funcs.append(convert_func)
-                return re.Capture(
-                    self._EvalEggex(node.child, parent_flags, convert_funcs),
-                    node.name, node.func_name)
+                self.convert_funcs.append(convert_func)
+                self.convert_locs.append(convert_loc)
+                return re.Capture(self.EvalE(node.child), node.name,
+                                  node.func_name)
 
             elif case(re_e.CharClassLiteral):
                 node = cast(re.CharClassLiteral, UP_node)
@@ -1371,16 +1391,18 @@ class ExprEvaluator(object):
                         val = cast(value.Eggex, UP_val)
 
                         # Splicing means we get the conversion funcs too.
-                        convert_funcs.extend(val.convert_funcs)
+                        self.convert_funcs.extend(val.convert_funcs)
+                        self.convert_locs.extend(val.convert_locs)
 
                         # Splicing requires flags to match.  This check is
                         # transitive.
                         to_splice = val.spliced
 
-                        if val.canonical_flags != parent_flags:
+                        if val.canonical_flags != self.canonical_flags:
                             e_die(
                                 "Expected eggex flags %r, but got %r" %
-                                (parent_flags, val.canonical_flags), node.name)
+                                (self.canonical_flags, val.canonical_flags),
+                                node.name)
 
                     else:
                         raise error.TypeErr(
@@ -1394,20 +1416,6 @@ class ExprEvaluator(object):
                 # case(re_e.PosixClass)
                 # case(re_e.PerlClass)
                 return node
-
-    def EvalEggex(self, node):
-        # type: (Eggex) -> value.Eggex
-
-        # Splice, check flags consistency, and accumulate convert_funcs indexed
-        # by capture group
-        convert_funcs = []  # type: List[Optional[value_t]]
-        spliced = self._EvalEggex(node.regex, node.canonical_flags,
-                                  convert_funcs)
-        #log('convert_funcs %s', convert_funcs)
-
-        # as_ere and capture_names filled by ~ operator or Str method
-        return value.Eggex(spliced, node.canonical_flags, convert_funcs, None,
-                           [])
 
 
 # vim: sw=4

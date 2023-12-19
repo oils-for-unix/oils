@@ -48,7 +48,8 @@ module value
     # for BASH_REMATCH or ~ with a string
     No
     # These lists are indexed by group number, and will have None entries
-  | Yes(List[value?] convert_funcs, List[str?] capture_names)
+  | Yes(List[value?] convert_funcs, List[loc] convert_locs,
+        List[str?] capture_names)
 
   RegexMatch = (str s, List[int] indices, eggex_ops ops)
 
@@ -87,7 +88,8 @@ module value
 
     # expr is spliced
     # / d+; ignorecase / -> '[[:digit:]]+' REG_ICASE
-  | Eggex(re spliced, str canonical_flags, List[value?] convert_funcs,
+  | Eggex(re spliced, str canonical_flags,
+          List[value?] convert_funcs, List[loc] convert_locs,
           # str? is because some groups are not named
           str? as_ere, List[str?] capture_names)
 

@@ -455,7 +455,8 @@ def MatchRegex(left, right, mem):
 
             right_s = regex_translate.AsPosixEre(right)
             regex_flags = regex_translate.LibcFlags(right.canonical_flags)
-            capture = eggex_ops.Yes(right.convert_funcs, right.capture_names)
+            capture = eggex_ops.Yes(right.convert_funcs, right.convert_locs,
+                                    right.capture_names)
 
         else:
             raise error.TypeErr(right, 'Expected Str or Regex for RHS of ~',
