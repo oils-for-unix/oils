@@ -160,27 +160,36 @@ It's useful for writing iterative lexers.
 
 ### Named Captures
 
-As noted above, you can name the capture groups with `as month`, and access
-them with `_group('month')` or `m => group('month')`.
+As noted above, you can name a capture group with say `<capture d+ as month>`,
+and access it with either
+
+- `_group('month')` for the global match
+- `m => group('month')` when using `Str` methods
 
 ### Type Conversion Funcs - A Better `scanf()`
 
-TODO(not implemented):
-
-You can also add `: funcName` to convert the string to a different value.
+You can also add `: funcName` to convert the captured string to a different
+value.
 
     var pat = / <capture d+ as month: int> /
     if ('10-31' ~ pat) {
       = _group('month')  # the integer 10, not the string '10'
     }
 
+The `func` should accept a string, and return any type of value.
+
+Conversion funcs also work with positional captures: `/<capture d+ : int>/`.
+
+- Help topic: [re-capture](ref/chap-expr-lang.html#re-capture)
+
 ### Replacement / Substitution (TODO)
 
-We plan to have unevaluted string literals like `^"hello $1"`, instead of
-custom Python's custom replacement language `'hello \g<1>`.
+We plan to use unevaluated string literals like `^"hello $1"` ("quotations") as
+the replacement object.
+
+This is instead of custom Python's custom language like `'hello \g<1>`.
 
     # var new = s => replace(/<capture d+ as month>/, ^"month is $month")
-
 
 - Help topic: [replace()](ref/chap-type-method.html#replace)
 
@@ -188,7 +197,7 @@ custom Python's custom replacement language `'hello \g<1>`.
 
 Notes:
 - replace() can be for both substring and eggex?
-- replace() takes N
+- replace() can also be a func taking a match object?
 
 -->
 

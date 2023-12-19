@@ -10,7 +10,7 @@ literally started with Python's `Grammar/Grammar` file.
 This doc describes the differences, which may help Python users learn YSH.
 
 If you don't know Python, [A Tour of YSH](ysh-tour.html) explains the language
-from the clean-slate perpsective.
+from the clean-slate perspective.
 
 (TODO: A separate doc could compare commands/statements like `for` and `if`.)
 
@@ -90,7 +90,7 @@ Python, so this section describes what's the same, and what's changed /  added
 
 ## Operators
 
-Like literals, YSH operators resemblle Python operators.  The expression `42 +
+Like literals, YSH operators resemble Python operators.  The expression `42 +
 a[i]` means the same thing in both languages.
 
 This section describes what's the same, and what's changed / added / removed.

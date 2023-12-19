@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 _ = log
 
-G = 0  # _match() _group()
+G = 0  # _group()
 S = 1  # _start()
 E = 2  # _end()
 

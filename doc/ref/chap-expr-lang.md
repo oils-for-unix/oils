@@ -282,7 +282,28 @@ Negated:
 
 ### re-capture
 
-    <capture d+ as name: int>
+To retrieve a substring of a string that matches an Eggex, use a "capture
+group".  Here's an eggex with a **positional** capture:
+
+    var pat = / 'hi ' <capture d+> /  # access with _group(1)
+                                      # or Match => _group(1)
+
+Captures can be **named**:
+
+    <capture d+ as month>       # access with _group('month')
+                                # or Match => group('month')
+
+Captures can also have a type **conversion func**:
+
+    <capture d+ : int>          # _group(1) returns Int
+
+    <capture d+ as month: int>  # _group('month') returns Int
+
+Related docs and help topics:
+
+- [YSH Regex API](../ysh-regex-api.html)
+- [`_group()`](chap-builtin-func.html#_group)
+- [`Match => group()`](chap-type-method.html#group)
 
 ### re-flags
 

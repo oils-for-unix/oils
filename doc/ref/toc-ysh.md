@@ -79,7 +79,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   ysh-slice     a[1:-1]  s[1:-1]
                   func-call     f(x, y)
                   thin-arrow    mylist->pop()
-                  fat-arrow     mystr => startswith('prefix')
+                  fat-arrow     mystr => startsWith('prefix')
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ ; re-flags ; ERE /
                   re-primitive  %zero    'sq'   Subpattern   @subpattern
