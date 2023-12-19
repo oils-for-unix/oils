@@ -11,24 +11,101 @@
 #include <unistd.h>  // gethostname()
 #include <wchar.h>
 
+#include <algorithm>
+#include <vector>
+
 namespace libc {
 
 class RegexCache {
  public:
   struct CacheEntry {
-    BigStr* pat_;
+    CacheEntry() = delete;
+    CacheEntry(const CacheEntry&) = delete;
+
+    CacheEntry(BigStr* pat, int cflags) : pat_() {
+      int status = ::regcomp(&compiled_, pat->data_, cflags);
+      if (status != 0) {
+        char error_desc[50];
+        regerror(status, &compiled_, error_desc, 50);
+
+        char error_message[80];
+        snprintf(error_message, 80, "Invalid regex %s (%s)", pat->data_,
+                 error_desc);
+
+        throw Alloc<ValueError>(StrFromC(error_message));
+      }
+
+      pat_ = static_cast<char*>(malloc(len(pat) + 1));
+      memcpy(pat_, pat->data_, len(pat) + 1);
+      pat_hash_ = hash(pat);
+    }
+
+    ~CacheEntry() {
+      DCHECK(pat_ != nullptr);
+      free(pat_);
+      regfree(&compiled_);
+    }
+
+    char* pat_;
+    int pat_hash_;
     regex_t compiled_;
   };
 
-  RegexCache(int capacity) {
+  RegexCache(int capacity) : capacity_(capacity), access_list_() {
+    access_list_.reserve(capacity_);
   }
 
   ~RegexCache() {
+    for (auto& it : access_list_) {
+      delete it;
+    }
   }
 
   regex_t* regcomp(BigStr* pat, int cflags) {
-    return nullptr;
+    CacheEntry* entry = TakeEntry(pat);
+    if (entry == nullptr) {
+      // Dealing with a new entry. Make space and compile.
+      MaybeEvict();
+      entry = new CacheEntry(pat, cflags);
+    }
+
+    SetMostRecent(entry);
+
+    return &entry->compiled_;
   }
+
+ private:
+  CacheEntry* TakeEntry(BigStr* pat) {
+    auto it = std::find_if(access_list_.begin(), access_list_.end(),
+                           [pat](CacheEntry* entry) {
+                             return hash(pat) == entry->pat_hash_ &&
+                                    strcmp(pat->data_, entry->pat_) == 0;
+                           });
+    if (it == access_list_.end()) {
+      return nullptr;
+    }
+
+    CacheEntry* ret = *it;
+    access_list_.erase(it);
+    return ret;
+  }
+
+  void MaybeEvict() {
+    if (access_list_.size() < capacity_) {
+      return;
+    }
+
+    // Evict the least recently used entry.
+    delete *access_list_.begin();
+    access_list_.erase(access_list_.begin());
+  }
+
+  void SetMostRecent(CacheEntry* entry) {
+    access_list_.push_back(entry);
+  }
+
+  size_t capacity_;
+  std::vector<CacheEntry*> access_list_;
 };
 
 static RegexCache gRegexCache(100);
