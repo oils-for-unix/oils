@@ -31,7 +31,7 @@ class _MatchCallable(vm._Callable):
         self.to_return = to_return
         self.expr_ev = expr_ev
 
-    def _GetMatch(self, s, indices, i, convert_func, blame_loc):
+    def _ReturnValue(self, s, indices, i, convert_func, blame_loc):
         # type: (str, List[int], int, Optional[value_t], loc_t) -> value_t
         num_groups = len(indices) / 2  # including group 0
         if i < num_groups:
@@ -59,6 +59,20 @@ class _MatchCallable(vm._Callable):
             msg = 'Expected capture group less than %d, got %d' % (num_groups,
                                                                    i)
             raise error.Expr(msg, blame_loc)
+
+    def _Call(self, match, group_arg, blame_loc):
+        # type: (RegexMatch, value_t, loc_t) -> value_t
+        group_index = _GetGroupIndex(group_arg, match.capture_names,
+                                     blame_loc)
+
+        convert_func = None  # type: Optional[value_t]
+        if len(match.convert_funcs):  # for ERE string, it's []
+            if group_index != 0:  # doesn't have a name or type attached to it
+                convert_func = match.convert_funcs[group_index - 1]
+
+        return self._ReturnValue(match.s, match.indices, group_index,
+                                 convert_func, blame_loc)
+
 
 
 def _GetGroupIndex(group, capture_names, blame_loc):
@@ -106,7 +120,7 @@ class MatchFunc(_MatchCallable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        group = rd.PosValue()
+        group_arg = rd.PosValue()
         rd.Done()
 
         match = self.mem.GetRegexIndices()
@@ -120,16 +134,7 @@ class MatchFunc(_MatchCallable):
             elif case(regex_match_e.Yes):
                 match = cast(RegexMatch, UP_match)
 
-                group_index = _GetGroupIndex(group, match.capture_names,
-                                             rd.LeftParenToken())
-
-                convert_func = None  # type: Optional[value_t]
-                if len(match.convert_funcs):  # for ERE string, it's []
-                    if group_index != 0:  # doesn't have a name or type attached to it
-                        convert_func = match.convert_funcs[group_index - 1]
-
-                return self._GetMatch(match.s, match.indices, group_index,
-                                      convert_func, rd.LeftParenToken())
+                return self._Call(match, group_arg, rd.LeftParenToken())
 
         raise AssertionError()
 
@@ -149,23 +154,11 @@ class MatchMethod(_MatchCallable):
         # type: (typed_args.Reader) -> value_t
 
         # This is guaranteed
-        m = rd.PosMatch()
-        group = rd.PosValue()
+        match = rd.PosMatch()
+        group_arg = rd.PosValue()
         rd.Done()
 
-        group_index = _GetGroupIndex(group, m.capture_names,
-                                     rd.LeftParenToken())
-
-        #log('group_index %d', group_index)
-        #log('m.convert_funcs %s', m.convert_funcs)
-        convert_func = None  # type: Optional[value_t]
-        if len(m.convert_funcs):  # for ERE string, it's []
-            if group_index != 0:  # doesn't have a name or type attached to it
-                convert_func = m.convert_funcs[group_index - 1]
-        #log('conv %s', convert_func)
-
-        return self._GetMatch(m.s, m.indices, group_index, convert_func,
-                              rd.LeftParenToken())
+        return self._Call(match, group_arg, rd.LeftParenToken())
 
 
 # vim: sw=4

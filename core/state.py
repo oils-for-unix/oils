@@ -1823,10 +1823,10 @@ class Mem(object):
             top_match = self.regex_match[-1]
             with tagswitch(top_match) as case:
                 if case(regex_match_e.No):
-                    groups = []
+                    groups = []  # type: List[str]
                 elif case(regex_match_e.Yes):
-                    match = cast(RegexMatch, top_match)
-                    groups = util.RegexGroups(match.s, match.indices)
+                    m = cast(RegexMatch, top_match)
+                    groups = util.RegexGroups(m.s, m.indices)
             return value.BashArray(groups)
 
         # Do lookup of system globals before looking at user variables.  Note: we
