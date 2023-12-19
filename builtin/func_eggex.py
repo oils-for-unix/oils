@@ -14,7 +14,7 @@ from core import vm
 from frontend import typed_args
 from mycpp.mylib import log, tagswitch
 
-from typing import List, Optional, cast, TYPE_CHECKING
+from typing import Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from ysh.expr_eval import ExprEvaluator
 
@@ -91,12 +91,10 @@ def _GetGroupIndex(group, ops, blame_loc):
 
             UP_ops = ops
             with tagswitch(ops) as case2:
-
                 if case2(eggex_ops_e.No):
                     raise error.Expr(
                         "ERE captures don't have names (%r)" % group.s,
                         blame_loc)
-
                 elif case2(eggex_ops_e.Yes):
                     ops = cast(eggex_ops.Yes, UP_ops)
                     group_index = -1

@@ -748,7 +748,7 @@ class ExprEvaluator(object):
                         else:
                             return value.Bool(False)
 
-                        log('left %r left2 %r', left, left2)
+                        #log('left %r left2 %r', left, left2)
                         return value.Bool(lb == right.b)
 
                     elif case(value_e.Int):
