@@ -61,8 +61,11 @@ compare() {
   # with OSH
   { time $bin $0 match-many; } >$dir/osh-stdout.txt 2>$dir/osh-time.txt
 
-  diff -u $dir/*-stdout.txt  # should have equal output
-  head $dir/*-time.txt  # show timings
+  # should have equal output except for version
+  diff $dir/*-stdout.txt || true
+
+  # show timings
+  head $dir/*-time.txt
 }
 
 
