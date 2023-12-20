@@ -247,8 +247,9 @@ X [Builtin Sub]   _buffer
               X insert()   X remove()   reverse()
   [Dict]      keys()   values()   X get()   X erase()
               X inc()   X accum()
-X [Func]      toJson()
-X [Proc]      toJson()
+X [Func]      name()   location()   toJson()
+X [Proc]      name()   location()   toJson()
+X [Module]    name()   filename()
   [Place]     setValue()
   [IO]        X eval()   X captureStdout()
               promptVal()
@@ -256,6 +257,7 @@ X [Proc]      toJson()
               X glob()
   [Quotation] Expr   X Template   Command
   [Code]      BuiltinFunc   BuiltinMethod
+X [Guts]      addr()   id()
 ```
 
 <h2 id="builtin-func">
@@ -265,8 +267,8 @@ X [Proc]      toJson()
 ```chapter-links-builtin-func
   [Values]        len()   type()
   [Conversions]   bool()   int()   float()   str()   list()   dict()
-                  X chr()   X ord()
-                  X runes()
+                  X chr()   X ord()   X runes()
+                  X guts()
   [Str]           strcmp()
   [List]          any()   all()
   [Collections]   join()   X split()   X shSplit()
