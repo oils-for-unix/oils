@@ -7,6 +7,7 @@
 #include <glob.h>
 #include <locale.h>
 #include <regex.h>
+#include <stdlib.h>  // getenv()
 #include <sys/ioctl.h>
 #include <unistd.h>  // gethostname()
 #include <wchar.h>
@@ -18,6 +19,8 @@ namespace libc {
 
 class RegexCache {
  public:
+  static const int kDefaultSize = 100;
+
   struct CacheEntry {
     CacheEntry() = delete;
     CacheEntry(const CacheEntry&) = delete;
@@ -52,7 +55,14 @@ class RegexCache {
   };
 
   RegexCache(int capacity) : capacity_(capacity), access_list_() {
-    access_list_.reserve(capacity_);
+    // Override if env var is set.
+    char* e = getenv("OILS_REGEX_CACHE_SIZE");
+    if (e) {
+      int result;
+      if (StringToInteger(e, strlen(e), 10, &result)) {
+        capacity_ = result;
+      }
+    }
   }
 
   ~RegexCache() {
@@ -108,7 +118,7 @@ class RegexCache {
   std::vector<CacheEntry*> access_list_;
 };
 
-static RegexCache gRegexCache(100);
+static RegexCache gRegexCache(RegexCache::kDefaultSize);
 
 BigStr* gethostname() {
   // Note: Fixed issue #1656 - OS X and FreeBSD don't have HOST_NAME_MAX
