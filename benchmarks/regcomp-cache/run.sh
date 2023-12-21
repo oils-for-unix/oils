@@ -14,7 +14,12 @@ set -o errexit
 
 match-many() {
   local num_pat=${1:-300}
-  local num_str=${1:-300}
+  local num_str=${2:-300}
+  local repeat=${3:-1}
+
+  # 1 2 3
+  local repeat_str
+  repeat_str=$(seq $repeat)
 
   echo BASH_VERSION=${BASH_VERSION:-}
   echo OILS_VERSION=${OILS_VERSION:-}
@@ -33,11 +38,13 @@ match-many() {
     local str="$i$i$i"  # 3 copies
     for j in $(seq $num_pat); do
       local re="${REGEXES[j]}"
-      if [[ $str =~ $re ]]; then
-        echo "string $str matches pattern $re - captured '${BASH_REMATCH[1]}'"
-        num_yes=$(( num_yes + 1 ))
-      fi
-      num_tried=$(( num_tried + 1 ))
+      for k in $repeat_str; do  # potentially use the cache more
+        if [[ $str =~ $re ]]; then
+          echo "string $str matches pattern $re - captured '${BASH_REMATCH[1]}'"
+          num_yes=$(( num_yes + 1 ))
+        fi
+        num_tried=$(( num_tried + 1 ))
+      done
     done
   done
 
@@ -56,10 +63,10 @@ compare() {
   mkdir -p $dir
 
   # with bash
-  { time $0 match-many; } >$dir/bash-stdout.txt 2>$dir/bash-time.txt
+  { time $0 match-many "$@"; } >$dir/bash-stdout.txt 2>$dir/bash-time.txt
 
   # with OSH
-  { time $bin $0 match-many; } >$dir/osh-stdout.txt 2>$dir/osh-time.txt
+  { time $bin $0 match-many "$@"; } >$dir/osh-stdout.txt 2>$dir/osh-time.txt
 
   # should have equal output except for version
   diff $dir/*-stdout.txt || true

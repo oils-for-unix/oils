@@ -134,6 +134,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   X log   X die          common functions (polyfill)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Completion]    compadjust   compexport
+X [Introspection] X vm                   guts   cell   gc-stats
   [Data Formats]  json                   read write
                   X j8                   read write
                   X packle               read write, Graph-shaped
@@ -257,7 +258,7 @@ X [Module]    name()   filename()
               X glob()
   [Quotation] Expr   X Template   Command
   [Code]      BuiltinFunc   BuiltinMethod
-X [Guts]      addr()   id()
+X [VM]        heapId()
 ```
 
 <h2 id="builtin-func">
