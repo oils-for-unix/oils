@@ -1,15 +1,14 @@
 ## oils_failures_allowed: 2
 
-#### shvm guts
+#### pp value
 x=42
 setvar y = {foo: x}
 
-shvm guts (x)
-shvm guts (y)
+pp value (x, y)
 
-#### shvm gc-stats
+#### pp gc-stats
 
-shvm gc-stats
+pp gc-stats
 
 ## STDOUT:
 ## END

@@ -542,6 +542,7 @@ def Main(
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
     global_io = value.IO(cmd_ev, prompt_ev)
+    global_guts = value.Guts(None)
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
@@ -846,6 +847,7 @@ def Main(
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
+    mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)
 
     #
     # Is the shell interactive?

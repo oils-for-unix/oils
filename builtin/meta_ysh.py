@@ -89,7 +89,8 @@ class Shvm(vm._Builtin):
                 rd = typed_args.ReaderForProc(cmd_val)
                 val = rd.PosValue()
                 rd.Done()
-                print(val)
+                if mylib.PYTHON:
+                    print(val)
 
             status = 0
 

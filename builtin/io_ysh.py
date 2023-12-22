@@ -83,6 +83,12 @@ class Pp(_Builtin):
 
                     self.stdout_.write('\n')
 
+        elif action == 'value':
+            # Evaluate typed arg and print the value
+            # I guess we could do all positional args?
+            # pp value
+            print('TODO')
+
         elif action == 'proc':
             names, locs = arg_r.Rest2()
             if len(names):
