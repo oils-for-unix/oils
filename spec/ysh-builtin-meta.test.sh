@@ -1,10 +1,27 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### pp value
-x=42
-setvar y = {foo: x}
 
-pp value (x, y)
+shopt -s ysh:upgrade
+
+fopen >out.txt {
+  x=42
+  setvar y = {foo: x}
+
+  pp value (x)
+  pp value (y)
+
+  # TODO, this might be nice?
+  # pp value (x, y)
+}
+
+# Two lines with value.Str
+grep -n -o value.Str out.txt
+
+## STDOUT:
+1:value.Str
+2:value.Str
+## END
 
 #### pp gc-stats
 

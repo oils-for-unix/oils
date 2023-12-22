@@ -114,7 +114,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-builtin-cmd
   [Memory]        append                 Add elements to end of array
-                  pp                     Pretty print interpreter state
+                  pp                     cell   value   X gc-stats   proc
   [Handle Errors] try                    Run with errexit and set _status
                   boolstatus             Enforce 0 or 1 exit status
                   error                  error 'failed' (status=2)
@@ -134,7 +134,6 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   X log   X die          common functions (polyfill)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Completion]    compadjust   compexport
-X [Introspection] X shvm                 guts   cell   gc-stats
   [Data Formats]  json                   read write
                   X j8                   read write
                   X packle               read write, Graph-shaped
@@ -259,7 +258,7 @@ X [Module]    name()   filename()
               X glob()
   [Quotation] Expr   X Template   Command
   [Code]      BuiltinFunc   BuiltinMethod
-X [VM]        heapId()
+X [Guts]      heapId()
 ```
 
 <h2 id="builtin-func">

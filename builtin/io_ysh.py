@@ -8,9 +8,11 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
 from _devbuild.gen.value_asdl import value
+from asdl import format as fmt
 from core import error
 from core.error import e_usage
 from core import state
+from core import ui
 from core import vm
 from frontend import flag_spec
 from frontend import match
@@ -52,7 +54,8 @@ class Pp(_Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        arg, arg_r = flag_spec.ParseCmdVal('pp', cmd_val)
+        arg, arg_r = flag_spec.ParseCmdVal('pp', cmd_val,
+                                           accept_typed_args=True)
 
         action, action_loc = arg_r.ReadRequired2(
             'expected an action (proc, cell, etc.)')
@@ -87,7 +90,30 @@ class Pp(_Builtin):
             # Evaluate typed arg and print the value
             # I guess we could do all positional args?
             # pp value
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
+
+            ysh_type = ui.ValType(val)
+            tree = val.PrettyTree()
+
+            f = mylib.Stdout()
+
+            # TODO: Can this part be line-wrapped with ASDL pretty printing?
+            # So we get value.Int on ONE line
+            # But value.Eggex properly wrapped
+
+            f.write('(%s)   ' % ysh_type)
+
+            pretty_f = fmt.DetectConsoleOutput(f)
+            fmt.PrintTree(tree, pretty_f)
+            f.write('\n')
+
+            status = 0
+
+        elif action == 'gc-stats':
             print('TODO')
+            status = 0
 
         elif action == 'proc':
             names, locs = arg_r.Rest2()

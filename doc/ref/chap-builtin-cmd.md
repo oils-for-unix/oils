@@ -28,8 +28,8 @@ Append word arguments to a list:
 
 It's a shortcut for:
 
-    :: myflags->append('-c')
-    :: myflags->append('echo hi')
+    call myflags->append('-c')
+    call myflags->append('echo hi')
 
 ### pp
 
@@ -41,7 +41,9 @@ Examples:
     pp proc  # print all procs and their doc comments
 
     var x = :| one two |
-    pp cell x  # print a cell, which is a location for a value
+    pp cell x  # dump the "guts" of a cell, which is a location for a value
+
+    pp value (x)  # dump the "guts" of any value
 
 ## Handle Errors
 
