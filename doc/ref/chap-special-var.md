@@ -153,6 +153,12 @@ Result of regex evaluation `[[ $x =~ $pat ]]`.
 Exit code of each element in a pipeline.
 
 
+## Tuning
+
+### OILS_REGEX_CACHE_SIZE
+
+The maximum number of entries to keep in the regular expression compilation cache.
+
 ## Call Stack
 
 ## Tracing
