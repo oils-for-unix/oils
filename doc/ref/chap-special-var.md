@@ -61,6 +61,43 @@ The exit status of all the process subs in the last command.
 
 ### SHX_pid_str
 
+## YSH Read
+
+### _reply
+
+YSH read sets this:
+
+    read --line < myfile
+
+    read --all < myfile
+
+## Oils VM
+
+### `OILS_VERSION`
+
+The version of Oils that's being run, e.g. `0.9.0`.
+
+<!-- TODO: specify comparison algorithm. -->
+
+### `OILS_GC_THRESHOLD`
+
+At a GC point, if there are more than this number of live objects, collect
+garbage.
+
+### `OILS_GC_ON_EXIT`
+
+Set `OILS_GC_ON_EXIT=1` to explicitly collect and `free()` before the process
+exits.  By default, we let the OS clean up.
+
+Useful for ASAN testing.
+
+### `OILS_GC_STATS`
+
+When the shell process exists, print GC stats to stderr.
+
+### `OILS_GC_STATS_FD`
+
+When the shell process exists, print GC stats to this file descriptor.
 
 ## Shell Vars
 
@@ -115,13 +152,6 @@ Result of regex evaluation `[[ $x =~ $pat ]]`.
 
 Exit code of each element in a pipeline.
 
-## Platform
-
-### OILS_VERSION
-
-The version of Oils that is being run, e.g. `0.9.0`.
-
-<!-- TODO: specify comparison algorithm. -->
 
 ## Call Stack
 
@@ -182,7 +212,11 @@ The compadjust builtin uses this variable.
 
 ### HISTFILE
 
+Override the default OSH history location.
+
 ### YSH_HISTFILE
+
+Override the default YSH history location.
 
 ## cd
 
@@ -207,14 +241,6 @@ The compadjust builtin uses this variable.
 OSH read sets this:
 
     read < myfile
-
-### _reply
-
-YSH read sets this:
-
-    read --line < myfile
-
-    read --all < myfile
 
 ## Functions
 

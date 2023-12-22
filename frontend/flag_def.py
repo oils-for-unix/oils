@@ -420,6 +420,8 @@ SHVAR_SPEC = FlagSpec('shvar')
 
 PP_SPEC = FlagSpec('pp')
 
+SHVM_SPEC = FlagSpec('shvm')
+
 # --verbose?
 FORK_SPEC = FlagSpec('fork')
 FORKWAIT_SPEC = FlagSpec('forkwait')

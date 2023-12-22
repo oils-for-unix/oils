@@ -134,7 +134,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   X log   X die          common functions (polyfill)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Completion]    compadjust   compexport
-X [Introspection] X vm                   guts   cell   gc-stats
+X [Introspection] X shvm                 guts   cell   gc-stats
   [Data Formats]  json                   read write
                   X j8                   read write
                   X packle               read write, Graph-shaped
@@ -218,14 +218,15 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Paths]     ?builtins   ?completion_plugins   ?coprocesses
   [YSH Vars]      ARGV   X ENV  X _ESCAPE
                   _this_dir
   [YSH Status]    _status   _pipeline_status   _process_sub_status
   [YSH Tracing]   SHX_indent   SHX_punct   SHX_pid_str
+  [YSH read]      _reply
   [History]       YSH_HISTFILE
-  [Platform]      OILS_VERSION
-  [read]          _reply
+  [Oils VM]       OILS_VERSION
+                  OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
+                  OILS_GC_STATS   OILS_GC_STATS_FD
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer
 ```

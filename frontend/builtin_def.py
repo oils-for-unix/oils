@@ -42,6 +42,7 @@ _NORMAL_BUILTINS = [
 
     # introspection
     'command', 'type', 'hash', 'help', 'history',
+    'shvm',
 
     'alias', 'unalias',
     'bind',

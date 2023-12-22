@@ -50,6 +50,7 @@ from builtin import io_osh
 from builtin import io_ysh
 from builtin import json_ysh
 from builtin import meta_osh
+from builtin import meta_ysh
 from builtin import misc_osh
 from builtin import module_ysh
 from builtin import printf_osh
@@ -584,7 +585,7 @@ def Main(
     b[builtin_i.builtin] = meta_osh.Builtin(shell_ex, errfmt)
     b[builtin_i.command] = meta_osh.Command(shell_ex, procs, aliases,
                                             search_path)
-    # Part of YSH
+    # Part of YSH, but similar to builtin/command
     b[builtin_i.runproc] = meta_osh.RunProc(shell_ex, procs, errfmt)
 
     # Meta builtins
@@ -592,9 +593,10 @@ def Main(
                                      tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
-
     b[builtin_i.eval] = meta_osh.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
                                       errfmt)
+
+    b[builtin_i.shvm] = meta_ysh.Shvm(mem, errfmt)
 
     # Module builtins
     modules = {}  # type: Dict[str, bool]

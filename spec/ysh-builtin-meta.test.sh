@@ -1,3 +1,19 @@
+## oils_failures_allowed: 2
+
+#### shvm guts
+x=42
+setvar y = {foo: x}
+
+shvm guts (x)
+shvm guts (y)
+
+#### shvm gc-stats
+
+shvm gc-stats
+
+## STDOUT:
+## END
+
 
 #### pp cell
 x=42
@@ -45,3 +61,4 @@ myproc	'Oil-style proc'
 proc_name	doc_comment
 f	'doc \' comment with " quotes'
 ## END
+

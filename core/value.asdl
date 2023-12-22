@@ -131,6 +131,11 @@ module value
     # leak, like glob().
   | IO(any cmd_ev, any prompt_ev)
 
+    # _vm->heapId() can be used to detect object cycles
+    # It's considered impure; it depends on VM implementation details.
+    # There is a related shvm builtin
+  | Shvm(any vm)
+
     # callable is vm._Callable.
     # TODO: ASDL needs some kind of "extern" to declare vm._Callable and
     # cmd_eval.CommandEvaluator.  I think it would just generate a forward
