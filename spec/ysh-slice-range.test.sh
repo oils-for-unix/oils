@@ -28,16 +28,16 @@
 
 #### subscript and slice :| 1 2 3 4 |
 var myarray = :|1 2 3 4|
-= myarray[1]
-= myarray[1:3]
+pp line (myarray[1])
+pp line (myarray[1:3])
 
 echo 'implicit'
-= myarray[:2]
-= myarray[2:]
+pp line (myarray[:2])
+pp line (myarray[2:])
 
 echo 'out of bounds'
-= myarray[:5]
-= myarray[-5:]
+pp line (myarray[:5])
+pp line (myarray[-5:])
 
 # Stride not supported
 #= myarray[1:4:2]
@@ -45,46 +45,46 @@ echo 'out of bounds'
 # Now try omitting some
 #= myarray[1:4:2]
 ## STDOUT:
-(Str)   '2'
-(List)   ['2', '3']
+(Str)   "2"
+(List)   ["2","3"]
 implicit
-(List)   ['1', '2']
-(List)   ['3', '4']
+(List)   ["1","2"]
+(List)   ["3","4"]
 out of bounds
-(List)   ['1', '2', '3', '4']
-(List)   ['1', '2', '3', '4']
+(List)   ["1","2","3","4"]
+(List)   ["1","2","3","4"]
 ## END
 
 #### subscript and slice of List
 var mylist = [1,2,3,4]
-= mylist[1]
-= mylist[1:3]
+pp line (mylist[1])
+pp line (mylist[1:3])
 
 echo 'implicit'
-= mylist[:2]
-= mylist[2:]
+pp line (mylist[:2])
+pp line (mylist[2:])
 ## STDOUT:
 (Int)   2
-(List)   [2, 3]
+(List)   [2,3]
 implicit
-(List)   [1, 2]
-(List)   [3, 4]
+(List)   [1,2]
+(List)   [3,4]
 ## END
 
 #### expressions and negative indices
-var myarray = %(1 2 3 4 5)
-= myarray[-1]
-= myarray[-4:-2]
+var myarray = :|1 2 3 4 5|
+pp line (myarray[-1])
+pp line (myarray[-4:-2])
 
 echo 'implicit'
-= myarray[:-2]
-= myarray[-2:]
+pp line (myarray[:-2])
+pp line (myarray[-2:])
 ## STDOUT:
-(Str)   '5'
-(List)   ['2', '3']
+(Str)   "5"
+(List)   ["2","3"]
 implicit
-(List)   ['1', '2', '3']
-(List)   ['4', '5']
+(List)   ["1","2","3"]
+(List)   ["4","5"]
 ## END
 
 #### Index with expression
@@ -98,9 +98,9 @@ echo $val
 #### Copy with a[:]
 var a = [1,2,3]
 var b = a[:]
-= b
+pp line (b)
 ## STDOUT:
-(List)   [1, 2, 3]
+(List)   [1,2,3]
 ## END
 
 #### Iterate over range

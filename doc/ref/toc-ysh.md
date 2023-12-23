@@ -114,7 +114,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-builtin-cmd
   [Memory]        append                 Add elements to end of array
-                  pp                     asdl   cell   X gc-stats   X line   proc
+                  pp                     asdl   cell   X gc-stats   line   proc
   [Handle Errors] try                    Run with errexit and set _status
                   boolstatus             Enforce 0 or 1 exit status
                   error                  error 'failed' (status=2)
