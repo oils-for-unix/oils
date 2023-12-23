@@ -1051,6 +1051,12 @@ class CommandEvaluator(object):
                         #f.write('(%s%s)   %s\n' % (ysh_type, id_str, repr(obj)))
                         f.write('(%s)   %s\n' % (ysh_type, repr(obj)))
 
+                    # Note: probably don't need this without Python print()?
+                    # BUG FIX related to forking!  Note that BUILTINS flush,
+                    # but keywords don't flush.  So we have to beware of
+                    # keywords that print.
+                    sys.stdout.flush()
+
             elif case(value_e.Range):
                 # Custom printing
                 val = cast(value.Range, UP_val)
@@ -1061,11 +1067,6 @@ class CommandEvaluator(object):
                 # a reference type.
                 # pp value (x) is more detailed, showing the "guts"
                 f.write('<%s%s>\n' % (ysh_type, id_str))
-
-            # BUG FIX related to forking!  Note that BUILTINS flush, but
-            # keywords don't flush.  So we have to beware of keywords that
-            # print.  TODO: Or avoid Python's print() altogether.
-            sys.stdout.flush()
 
         return 0
 
