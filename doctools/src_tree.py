@@ -107,7 +107,7 @@ def SpecFiles(pairs, attrs_f):
       title = path
 
       # How deep are we?
-      n = path.count('/') + 1
+      n = path.count('/') + 2
       base_dir = '/'.join(['..'] * n)
 
       #css_urls = ['%s/web/base.css' % base_dir, '%s/web/src-tree.css' % base_dir]
