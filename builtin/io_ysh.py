@@ -54,6 +54,7 @@ class Pp(_Builtin):
         self.procs = procs
         self.arena = arena
         self.stdout_ = mylib.Stdout()
+        self.printer = j8.Printer(0)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -121,11 +122,17 @@ class Pp(_Builtin):
 
             ysh_type = ui.ValType(val)
             self.stdout_.write('(%s)   ' % ysh_type)
-            if mylib.PYTHON:
+            #if mylib.PYTHON:
+            if 0:
                 obj = cpython._ValueToPyObj(val)
                 j = yajl.dumps(obj, indent=-1)
                 self.stdout_.write(j)
                 self.stdout_.write('\n')
+
+            buf = mylib.BufWriter()
+            self.printer.Print(val, buf, indent=-1)
+            self.stdout_.write(buf.getvalue())
+            self.stdout_.write('\n')
 
             status = 0
 
