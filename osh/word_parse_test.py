@@ -15,6 +15,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import arith_expr_e, word_e, rhs_word_e
 from _devbuild.gen.types_asdl import lex_mode_e
 
+from asdl import format as fmt
 from core import error
 from core import test_lib
 from core.test_lib import Tok
@@ -26,7 +27,7 @@ from osh import word_
 def _assertReadWordWithArena(test, w_parser):
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w is not None
-    w.PrettyPrint()
+    fmt.PrettyPrint(w)
 
     # Next word must be Eof_Real
     w2 = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -50,7 +51,7 @@ def _assertReadWordFailure(test, word_str, oil_at=False):
     except error.Parse as e:
         print('Got expected ParseError: %s' % e)
     else:
-        w.PrettyPrint()
+        fmt.PrettyPrint(w)
         test.fail('Expected a parser error, got %r' % w)
 
 
@@ -420,7 +421,7 @@ class WordParserTest(unittest.TestCase):
                 w = w_parser.ReadWord(lex_mode_e.ShCommand)
                 assert w is not None
 
-                w.PrettyPrint()
+                fmt.PrettyPrint(w)
 
                 if word_.CommandId(w) == Id.Eof_Real:
                     break
@@ -524,7 +525,7 @@ class WordParserTest(unittest.TestCase):
             while True:
                 w = w_parser.ReadArithWord()
                 assert w is not None
-                w.PrettyPrint()
+                fmt.PrettyPrint(w)
                 if word_.CommandId(w) in (Id.Eof_Real, Id.Unknown_Tok):
                     break
 

@@ -4,7 +4,7 @@ from __future__ import print_function
 
 from mycpp import mylib
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.hnode_asdl import hnode_t
 
@@ -37,16 +37,6 @@ class CompoundObj(Obj):
     def AbbreviatedTree(self):
         # type: () -> hnode_t
         raise NotImplementedError(self.__class__.__name__)
-
-    def PrettyPrint(self, f=None):
-        # type: (Optional[mylib.Writer]) -> None
-        """Print abbreviated tree in color, for debugging."""
-        from asdl import format as fmt
-        f = f if f else mylib.Stdout()
-
-        ast_f = fmt.DetectConsoleOutput(f)
-        tree = self.AbbreviatedTree()
-        fmt.PrintTree(tree, ast_f)
 
     def __repr__(self):
         # type: () -> str

@@ -6,6 +6,7 @@ import unittest
 
 from _devbuild.gen.syntax_asdl import source
 
+from asdl import format as fmt
 from core import alloc
 from core import error
 from core import pyutil
@@ -36,7 +37,7 @@ class ExprParseTest(unittest.TestCase):
         node = c_parser.ParseLogicalLine()
         print('')
         log('\t%s', code_str)
-        node.PrettyPrint()
+        fmt.PrettyPrint(node)
         print('')
         return node
 
