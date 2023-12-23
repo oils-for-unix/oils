@@ -9,6 +9,8 @@ ui.py - User interface constructs.
 """
 from __future__ import print_function
 
+import sys
+
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
@@ -21,13 +23,16 @@ from _devbuild.gen.syntax_asdl import (
     source,
     source_e,
 )
-from _devbuild.gen.value_asdl import (value_t, value_str)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from asdl import format as fmt
+from core import vm
 from frontend import lexer
 from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch
+from data_lang import j8
 from data_lang import qsn
+from ysh import cpython
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -418,3 +423,46 @@ def PrintAst(node, flag):
         fmt.PrintTree(tree, ast_f)
         ast_f.FileFooter()
         ast_f.write('\n')
+
+
+def DebugPrint(val):
+    # type: (value_t) -> None
+    ysh_type = ValType(val)
+    id_str = vm.ValueIdString(val)
+    f = mylib.Stdout()
+
+    UP_val = val
+    with tagswitch(val) as case:
+        # "JSON" data types will use J8 serialization
+        if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
+                value_e.Str, value_e.List, value_e.Dict):
+            if mylib.PYTHON:
+                obj = cpython._ValueToPyObj(val)
+
+                # typed
+                if 0:
+                    buf = mylib.BufWriter()
+                    prettyp = j8.PrettyPrinter()
+                    prettyp.Print(val, buf)
+                    print(buf.getvalue())
+
+                # Use () instead of <> as a hint that it's a "JSON value"
+                f.write('(%s%s)   %s\n' % (ysh_type, id_str, repr(obj)))
+                #f.write('(%s)   %s\n' % (ysh_type, repr(obj)))
+
+                # Note: probably don't need this without Python print()?
+                # BUG FIX related to forking!  Note that BUILTINS flush,
+                # but keywords don't flush.  So we have to beware of
+                # keywords that print.
+                sys.stdout.flush()
+
+        elif case(value_e.Range):
+            # Custom printing
+            val = cast(value.Range, UP_val)
+            f.write('(%s)   %d .. %d\n' % (ysh_type, val.lower, val.upper))
+
+        else:
+            # Just print object and ID.  Use <> to show that it's more like
+            # a reference type.
+            # pp value (x) is more detailed, showing the "guts"
+            f.write('<%s%s>\n' % (ysh_type, id_str))

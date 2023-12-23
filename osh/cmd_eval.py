@@ -74,7 +74,6 @@ from core import state
 from core import ui
 from core import util
 from core import vm
-from data_lang import j8
 from frontend import consts
 from frontend import lexer
 from frontend import location
@@ -83,7 +82,6 @@ from osh import sh_expr_eval
 from osh import word_eval
 from mycpp import mylib
 from mycpp.mylib import log, switch, tagswitch
-from ysh import cpython
 from ysh import expr_eval
 from ysh import func_proc
 from ysh import val_ops
@@ -1024,48 +1022,12 @@ class CommandEvaluator(object):
 
     def _DoExpr(self, node):
         # type: (command.Expr) -> int
+
+        # call f(x) or = f(x)
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
-        UP_val = val
 
-        ysh_type = ui.ValType(val)
-        id_str = vm.ValueIdString(val)
-        f = mylib.Stdout()
-
-        with tagswitch(val) as case:
-            # "JSON" data types will use J8 serialization
-            if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
-                    value_e.Str, value_e.List, value_e.Dict):
-                if mylib.PYTHON:
-                    obj = cpython._ValueToPyObj(val)
-
-                    if node.keyword.id == Id.Lit_Equals:
-                        # typed
-                        if 0:
-                            buf = mylib.BufWriter()
-                            prettyp = j8.PrettyPrinter()
-                            prettyp.Print(val, buf)
-                            print(buf.getvalue())
-
-                        # Use () instead of <> as a hint that it's a "JSON value"
-                        f.write('(%s%s)   %s\n' % (ysh_type, id_str, repr(obj)))
-                        #f.write('(%s)   %s\n' % (ysh_type, repr(obj)))
-
-                    # Note: probably don't need this without Python print()?
-                    # BUG FIX related to forking!  Note that BUILTINS flush,
-                    # but keywords don't flush.  So we have to beware of
-                    # keywords that print.
-                    sys.stdout.flush()
-
-            elif case(value_e.Range):
-                # Custom printing
-                val = cast(value.Range, UP_val)
-                f.write('(%s)   %d .. %d\n' % (ysh_type, val.lower, val.upper))
-
-            else:
-                # Just print object and ID.  Use <> to show that it's more like
-                # a reference type.
-                # pp value (x) is more detailed, showing the "guts"
-                f.write('<%s%s>\n' % (ysh_type, id_str))
+        if node.keyword.id == Id.Lit_Equals:  # = f(x)
+            ui.DebugPrint(val)
 
         return 0
 
