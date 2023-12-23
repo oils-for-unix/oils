@@ -86,15 +86,12 @@ class Pp(_Builtin):
 
                     self.stdout_.write('\n')
 
-        elif action == 'value':
-            # Evaluate typed arg and print the value
-            # I guess we could do all positional args?
-            # pp value
+        elif action == 'asdl':
+            # TODO: could do pp asdl (x, y, z)
             rd = typed_args.ReaderForProc(cmd_val)
             val = rd.PosValue()
             rd.Done()
 
-            #ysh_type = ui.ValType(val)
             tree = val.PrettyTree()
 
             f = mylib.Stdout()
@@ -110,6 +107,11 @@ class Pp(_Builtin):
             fmt.PrintTree(tree, pretty_f)
             f.write('\n')
 
+            status = 0
+
+        elif action == 'line':
+            # Print format for unit tests
+            print('TODO')
             status = 0
 
         elif action == 'gc-stats':

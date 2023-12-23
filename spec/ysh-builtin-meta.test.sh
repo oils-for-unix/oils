@@ -1,6 +1,6 @@
 ## oils_failures_allowed: 1
 
-#### pp value
+#### pp asdl
 
 shopt -s ysh:upgrade
 
@@ -8,11 +8,11 @@ fopen >out.txt {
   x=42
   setvar y = {foo: x}
 
-  pp value (x)
-  pp value (y)
+  pp asdl (x)
+  pp asdl (y)
 
   # TODO, this might be nice?
-  # pp value (x, y)
+  # pp asdl (x, y)
 }
 
 # Two lines with value.Str

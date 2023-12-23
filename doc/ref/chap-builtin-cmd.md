@@ -43,7 +43,9 @@ Examples:
     var x = :| one two |
     pp cell x  # dump the "guts" of a cell, which is a location for a value
 
-    pp value (x)  # dump the "guts" of any value
+    pp asdl (x)  # dump the ASDL "guts"
+
+    pp line (x)  # single-line stable format, for spec tests
 
 ## Handle Errors
 
