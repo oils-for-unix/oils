@@ -28,6 +28,30 @@ grep -n -o value.Str out.txt
 2:value.Str
 ## END
 
+#### pp line supports BashArray, BashAssoc
+
+declare -a array=(a b c)
+pp line (array)
+
+array[5]=z
+pp line (array)
+
+declare -A assoc=([k]=v [k2]=v2)
+pp line (assoc)
+
+# I think assoc arrays can never null / unset
+
+assoc['k3']=
+pp line (assoc)
+
+## STDOUT:
+(BashArray)   ["a","b","c"]
+(BashArray)   ["a","b","c",null,null,"z"]
+(BashAssoc)   {"k":"v","k2":"v2"}
+(BashAssoc)   {"k":"v","k2":"v2","k3":""}
+## END
+
+
 #### pp gc-stats
 
 pp gc-stats

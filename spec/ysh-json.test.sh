@@ -174,6 +174,9 @@ echo status=$?
 ## END
 
 #### json write of data structure with cycle
+echo BAD
+exit
+
 var L = [1, 2, 3]
 setvar L[0] = L
 
@@ -186,8 +189,7 @@ setvar d.k1 = 'v2'
 # This makes it hang?  But not interactively
 #setvar d.k2 = d
 
-= d
-#json write (d)
+pp line (d)
 
 ## STDOUT:
 ## END

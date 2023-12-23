@@ -172,6 +172,20 @@ class Printer(object):
             self.spaces[num_spaces] = ' ' * num_spaces
         return self.spaces[num_spaces]
 
+    def _StringToBuf(self, s, buf):
+        # type: (str, mylib.BufWriter) -> None
+
+        buf.write('"')
+        valid_utf8 = qsn.EncodeRunes(s, qsn.BIT8_UTF8, buf)
+
+        # TODO: check errors
+        # Is it possible to have invalid UTF-8 but valid JSON?
+        # Surrogate pairs?
+        if not valid_utf8:
+            pass
+
+        buf.write('"')
+
     def Print(self, val, buf, indent, level=0):
         # type: (value_t, mylib.BufWriter, int, int) -> None
         """
@@ -219,16 +233,7 @@ class Printer(object):
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
 
-                buf.write('"')
-                valid_utf8 = qsn.EncodeRunes(val.s, qsn.BIT8_UTF8, buf)
-
-                # TODO: check errors
-                # Is it possible to have invalid UTF-8 but valid JSON?
-                # Surrogate pairs?
-                if not valid_utf8:
-                    pass
-
-                buf.write('"')
+                self._StringToBuf(val.s, buf)
 
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
@@ -259,15 +264,67 @@ class Printer(object):
                         buf.write(maybe_newline)
 
                     buf.write(item_indent)
-                    buf.write('"')
-                    valid_utf8 = qsn.EncodeRunes(k, qsn.BIT8_UTF8, buf)
-                    # TODO: check errors
-                    if not valid_utf8:
-                        pass
-                    buf.write('":')
+
+                    self._StringToBuf(k, buf)
+
+                    buf.write(':')
                     buf.write(maybe_space)
 
                     self.Print(v, buf, indent, level + 1)
+
+                    i += 1
+
+                buf.write(maybe_newline)
+                buf.write(bracket_indent)
+                buf.write('}')
+
+            # BashArray and BashAssoc should be printed with pp line (x), e.g.
+            # for spec tests.
+            # - BashAssoc has a clear encoding.
+            # - BashArray could eventually be Dict[int, str].  But that's not
+            #   encodable in JSON, which has string keys!
+            #   So I think we can print it like ["a",null,'b"] and that won't
+            #   change.  That's what users expect.
+            elif case(value_e.BashArray):
+                val = cast(value.BashArray, UP_val)
+
+                buf.write('[')
+                buf.write(maybe_newline)
+                for i, s in enumerate(val.strs):
+                    if i != 0:
+                        buf.write(',')
+                        buf.write(maybe_newline)
+
+                    buf.write(item_indent)
+                    if s is None:
+                        buf.write('null')
+                    else:
+                        self._StringToBuf(s, buf)
+
+                buf.write(maybe_newline)
+
+                buf.write(bracket_indent)
+                buf.write(']')
+
+            elif case(value_e.BashAssoc):
+                val = cast(value.BashAssoc, UP_val)
+
+                buf.write('{')
+                buf.write(maybe_newline)
+                i = 0
+                for k2, v2 in iteritems(val.d):
+                    if i != 0:
+                        buf.write(',')
+                        buf.write(maybe_newline)
+
+                    buf.write(item_indent)
+
+                    self._StringToBuf(k2, buf)
+
+                    buf.write(':')
+                    buf.write(maybe_space)
+
+                    self._StringToBuf(v2, buf)
 
                     i += 1
 

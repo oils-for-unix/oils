@@ -38,14 +38,14 @@ K1/K2
 ## END
 
 #### Str => startsWith()
-= "abc" => startsWith("")
-= "abc" => startsWith("a")
-= "abc" => startsWith("z")
+pp line ("abc" => startsWith(""))
+pp line ("abc" => startsWith("a"))
+pp line ("abc" => startsWith("z"))
 ## status: 0
 ## STDOUT:
-(Bool)   True
-(Bool)   True
-(Bool)   False
+(Bool)   true
+(Bool)   true
+(Bool)   false
 ## END
 
 #### Str => startsWith(), no args
@@ -73,10 +73,10 @@ pp line (en2fr => keys())
 
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
-= check("a")
+pp line (check("a"))
 ## status: 0
 ## STDOUT:
-(Bool)   True
+(Bool)   true
 ## END
 
 #### Bound methods, receiver value/reference semantics
