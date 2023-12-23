@@ -86,9 +86,8 @@ class Pp(_Builtin):
                     status = 1
                 else:
                     self.stdout_.write('%s = ' % name)
-                    if mylib.PYTHON:
-                        cell.PrettyPrint()  # may be color
-
+                    pretty_f = fmt.DetectConsoleOutput(self.stdout_)
+                    fmt.PrintTree(cell.PrettyTree(), pretty_f)
                     self.stdout_.write('\n')
 
         elif action == 'asdl':
