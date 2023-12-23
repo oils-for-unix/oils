@@ -15,6 +15,7 @@ from frontend import flag_spec
 from frontend import args
 from frontend import typed_args
 from mycpp import mylib
+from mycpp.mylib import log
 from ysh import cpython
 
 import sys
@@ -24,6 +25,8 @@ import posix_ as posix
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from core.ui import ErrorFormatter
+
+_ = log
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 
@@ -72,13 +75,16 @@ class Json(vm._Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            if arg_jw.pretty:
+            if arg_jw.pretty:  # C++ BUG Here!
                 indent = arg_jw.indent
+                #log('arg_jw indent %d', indent)
                 extra_newline = False
             else:
                 # How yajl works: if indent is -1, then everything is on one line.
                 indent = -1
                 extra_newline = True
+
+            #log('json write indent %d', indent)
 
             if mylib.PYTHON:
                 #if 0:
@@ -90,7 +96,7 @@ class Json(vm._Builtin):
                     sys.stdout.write('\n')
             else:
                 buf = mylib.BufWriter()
-                self.printer.Print(val, buf, indent=indent)
+                self.printer.Print(val, buf, indent)
                 self.stdout_.write(buf.getvalue())
                 self.stdout_.write('\n')
 

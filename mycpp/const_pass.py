@@ -474,8 +474,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         # Omit if 0:
-        if isinstance(cond, IntExpr) and cond.value == 0:
-            return
+        #if isinstance(cond, IntExpr) and cond.value == 0:
+        #    return
 
         # Omit if TYPE_CHECKING blocks.  They contain type expressions that
         # don't type check!
