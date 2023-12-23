@@ -868,15 +868,22 @@ Flag:
 
     type FLAG* NAME+
 
-Print the type of each NAME.  Is it a keyword, shell builtin, shell function,
-alias, or executable file?
+Print the type of each NAME, if wit were the first word of a command.  Is it a
+shell keyword, builtin command, shell function, alias, or executable file on
+$PATH?
 
 Flags:
 
-    -a  display all possible candidates, including all executables on $PATH
-    -f  Don't look for functions
-    -P  Only look for executable files in $PATH
+    -a  Show all possible candidates, not just the first one
+    -f  Don't search for shell functions
+    -P  Only search for executable files
     -t  Print a single word: alias, builtin, file, function, or keyword
+
+<!-- TODO:
+- procs are counted as shell functions, should be their own thing
+- Hay nodes ('hay define x') also live in the first word namespace, and should
+  be recognized
+-->
 
 Modeled after the [bash `type`
 builtin](https://www.gnu.org/software/bash/manual/bash.html#index-type).
