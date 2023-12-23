@@ -575,7 +575,7 @@ const block = parseHay(config_path)
 } | wc -l | read n
 
 # Just make sure we got more than one line?
-if test "$n" -gt 1; then
+if test "$n" -eq 1; then
   echo "OK"
 fi
 

@@ -111,17 +111,6 @@ IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
 
-# Python type name -> YSH type name
-YSH_TYPE_NAMES = {
-    'bool': 'Bool',
-    'int': 'Int',
-    'float': 'Float',
-    'str': 'Str',
-    'tuple': 'Tuple',
-    'list': 'List',
-    'dict': 'Dict',
-}
-
 
 def MakeBuiltinArgv(argv1):
     # type: (List[str]) -> cmd_value.Argv
@@ -1038,23 +1027,15 @@ class CommandEvaluator(object):
         # type: (command.Expr) -> int
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
         UP_val = val
+
+        ysh_type = ui.ValType(val)
+        id_str = vm.ValueIdString(val)
+        f = mylib.Stdout()
+
         with tagswitch(val) as case:
-            # Print some typed values
-            if case(value_e.Eggex):
-                val = cast(value.Eggex, UP_val)
-
-                ysh_type = ui.ValType(val)
-                tree = val.PrettyTree()
-
-                f = mylib.Stdout()
-                f.write('(%s)   ' % ysh_type)
-
-                pretty_f = fmt.DetectConsoleOutput(f)
-                fmt.PrintTree(tree, pretty_f)
-                f.write('\n')
-
-            else:
-                pass  # Workaround for mycpp
+            # "JSON" data types will use J8 serialization
+            if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
+                    value_e.Str, value_e.List, value_e.Dict):
                 if mylib.PYTHON:
                     obj = cpython._ValueToPyObj(val)
 
@@ -1066,18 +1047,26 @@ class CommandEvaluator(object):
                             prettyp.Print(val, buf)
                             print(buf.getvalue())
 
-                        # NOTE: It would be nice to unify this with 'repr', but there isn't a
-                        # good way to do it with the value/PyObject split.
-                        class_name = obj.__class__.__name__
-                        ysh_type = YSH_TYPE_NAMES.get(class_name, class_name)
-                        print('(%s)   %s' % (ysh_type, repr(obj)))
+                        # Use () instead of <> as a hint that it's a "JSON value"
+                        #f.write('(%s%s)   %s\n' % (ysh_type, id_str, repr(obj)))
+                        f.write('(%s)   %s\n' % (ysh_type, repr(obj)))
 
-                        # BUG FIX related to forking!  Note that BUILTINS flush, but
-                        # keywords don't flush.  So we have to beware of keywords that
-                        # print.  TODO: Or avoid Python's print() altogether.
-                        sys.stdout.flush()
+            elif case(value_e.Range):
+                # Custom printing
+                val = cast(value.Range, UP_val)
+                f.write('(%s)   %d .. %d\n' % (ysh_type, val.lower, val.upper))
 
-        # TODO: What about exceptions?  They just throw?
+            else:
+                # Just print object and ID.  Use <> to show that it's more like
+                # a reference type.
+                # pp value (x) is more detailed, showing the "guts"
+                f.write('<%s%s>\n' % (ysh_type, id_str))
+
+            # BUG FIX related to forking!  Note that BUILTINS flush, but
+            # keywords don't flush.  So we have to beware of keywords that
+            # print.  TODO: Or avoid Python's print() altogether.
+            sys.stdout.flush()
+
         return 0
 
     def _DoRetval(self, node):

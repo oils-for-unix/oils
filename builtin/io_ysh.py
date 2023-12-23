@@ -100,17 +100,12 @@ class Pp(_Builtin):
 
             f = mylib.Stdout()
 
-            # TODO: Can this part be line-wrapped with ASDL pretty printing?
-            # So we get value.Int on ONE line
-            # But value.Eggex properly wrapped
-
-            heap_id = vm.ValueId(val)  # could be -1
-            if heap_id == -1:
-                id_str = ''
-            else:
-                id_str = ' 0x%s' % mylib.hex_lower(heap_id)
-
-            f.write('(%s%s)   ' % (ysh_type, id_str))
+            # TODO: ASDL should print the IDs.  And then they will be
+            # line-wrapped.
+            # The IDs should also be used to detect cycles, and omit values
+            # already printed.
+            #id_str = vm.ValueIdString(val)
+            #f.write('    <%s%s>\n' % (ysh_type, id_str))
 
             pretty_f = fmt.DetectConsoleOutput(f)
             fmt.PrintTree(tree, pretty_f)

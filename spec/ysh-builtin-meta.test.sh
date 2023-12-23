@@ -17,18 +17,15 @@ fopen >out.txt {
 
 # Two lines with value.Str
 grep -n -o value.Str out.txt
-echo
 
 # Dict should have an address
-grep -n -o 'Dict 0x' out.txt
+#grep -n -o 'Dict 0x' out.txt
 
 #cat out.txt
 
 ## STDOUT:
 1:value.Str
 2:value.Str
-
-2:Dict 0x
 ## END
 
 #### pp gc-stats

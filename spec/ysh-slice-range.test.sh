@@ -17,13 +17,13 @@
 = 1..3
 
 ## STDOUT:
-(xrange)   xrange(1, 3)
+(Range)   1 .. 3
 ## END
 
 #### precedence of 1:3 vs bitwise operator
 = 3..3|4
 ## STDOUT:
-(xrange)   xrange(3, 7)
+(Range)   3 .. 7
 ## END
 
 #### subscript and slice :| 1 2 3 4 |

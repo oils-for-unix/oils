@@ -245,10 +245,10 @@ func g(y) {
 = y
 ## STDOUT:
 (Str)   'foo'
-(NoneType)   None
+(Null)   None
 (Str)   'foo'
 (List)   ['a', 'b', 'c']
-(NoneType)   None
+(Null)   None
 (List)   ['z', 'b', 'c']
 ## END
 

@@ -52,13 +52,24 @@ def ValueId(val):
     immutable values that are copied and compared by value.
     """
     with tagswitch(val) as case:
-        if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float):
+        if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
+                value_e.Str):
             # These will not be on the heap if we switch to tagged pointers
+            # Str is handled conservatively - when we add small string
+            # optimization, some strings will be values, so we assume all are.
             return -1
         else:
-            # Note: when we add small string optimization, a value.Str may
-            # return -1.
             return HeapValueId(val)
+
+
+def ValueIdString(val):
+    # type: (value_t) -> str
+    """Used by pp value (42) and = 42"""
+    heap_id = ValueId(val)  # could be -1
+    if heap_id == -1:
+        return ''
+    else:
+        return ' 0x%s' % mylib.hex_lower(heap_id)
 
 
 class ControlFlow(Exception):
