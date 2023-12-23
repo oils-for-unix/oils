@@ -80,19 +80,19 @@ class Json(vm._Builtin):
                 indent = -1
                 extra_newline = True
 
-            if 0:
-                buf = mylib.BufWriter()
-                self.printer.Print(val, buf, indent=indent)
-                self.stdout_.write(buf.getvalue())
-                self.stdout_.write('\n')
-
-            if 1:
+            if mylib.PYTHON:
+                #if 0:
                 obj = cpython._ValueToPyObj(val)
 
                 j = yajl.dumps(obj, indent=indent)
                 sys.stdout.write(j)
                 if extra_newline:
                     sys.stdout.write('\n')
+            else:
+                buf = mylib.BufWriter()
+                self.printer.Print(val, buf, indent=indent)
+                self.stdout_.write(buf.getvalue())
+                self.stdout_.write('\n')
 
         elif action == 'read':
             attrs = flag_spec.Parse('json_read', arg_r)
