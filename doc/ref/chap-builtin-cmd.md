@@ -864,20 +864,20 @@ Flag:
 
 ### type
 
-    type FLAG* NAME*
+    type FLAG* NAME+
 
 Print the type of each NAME.  Is it a keyword, shell builtin, shell function,
 alias, or executable file?
 
 Flags:
 
+    -a  display all possible candidates, including all executables on $PATH
     -f  Don't look for functions
     -P  Only look for executable files in $PATH
     -t  Print a single word: alias, builtin, file, function, or keyword
-<!--    -a  Print all executables that can run CMD, including files, aliases,
-        builtins and functions. If used with -p, only the executable file will
-        be printed.-->
 
+Modeled after the [bash `type`
+builtin](https://www.gnu.org/software/bash/manual/bash.html#index-type).
  
 ## Word Lookup
 
