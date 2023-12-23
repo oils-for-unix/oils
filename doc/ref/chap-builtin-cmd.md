@@ -868,7 +868,7 @@ Flag:
 
     type FLAG* NAME+
 
-Print the type of each NAME, if wit were the first word of a command.  Is it a
+Print the type of each NAME, if it were the first word of a command.  Is it a
 shell keyword, builtin command, shell function, alias, or executable file on
 $PATH?
 
