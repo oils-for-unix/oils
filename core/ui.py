@@ -436,19 +436,19 @@ def DebugPrint(val):
         # "JSON" data types will use J8 serialization
         if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                 value_e.Str, value_e.List, value_e.Dict):
-            if mylib.PYTHON:
+            printer = j8.Printer(0)
+            # Use () instead of <> as a hint that it's a "JSON value"
+            f.write('(%s%s)   ' % (ysh_type, id_str))
+
+            buf = mylib.BufWriter()
+            printer.Print(val, buf, indent=-1)
+            f.write(buf.getvalue())
+            f.write('\n')
+
+            if 0:  # Old implementation
                 obj = cpython._ValueToPyObj(val)
-
-                # typed
-                if 0:
-                    buf = mylib.BufWriter()
-                    prettyp = j8.PrettyPrinter()
-                    prettyp.Print(val, buf)
-                    print(buf.getvalue())
-
-                # Use () instead of <> as a hint that it's a "JSON value"
-                f.write('(%s%s)   %s\n' % (ysh_type, id_str, repr(obj)))
-                #f.write('(%s)   %s\n' % (ysh_type, repr(obj)))
+                f.write(repr(obj))
+                f.write('\n')
 
                 # Note: probably don't need this without Python print()?
                 # BUG FIX related to forking!  Note that BUILTINS flush,
