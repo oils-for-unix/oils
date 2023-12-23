@@ -12,7 +12,6 @@ from asdl import format as fmt
 from core import error
 from core.error import e_usage
 from core import state
-from core import ui
 from core import vm
 from frontend import flag_spec
 from frontend import match
@@ -95,7 +94,7 @@ class Pp(_Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            ysh_type = ui.ValType(val)
+            #ysh_type = ui.ValType(val)
             tree = val.PrettyTree()
 
             f = mylib.Stdout()

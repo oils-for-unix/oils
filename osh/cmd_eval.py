@@ -66,7 +66,6 @@ from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, LeftName)
 
-from asdl import format as fmt
 from core import dev
 from core import error
 from core.error import e_die, e_die_status
