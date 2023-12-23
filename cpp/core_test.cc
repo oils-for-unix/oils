@@ -387,8 +387,8 @@ TEST heap_id_test() {
   value_t* val1 = Alloc<value::Str>(kEmptyString);
   value_t* val2 = Alloc<value::Str>(kEmptyString);
 
-  int id1 = vm::HeapObjectId(val1);
-  int id2 = vm::HeapObjectId(val2);
+  int id1 = vm::HeapValueId(val1);
+  int id2 = vm::HeapValueId(val2);
 
   log("id1 = %d, id2 = %d", id1, id2);
   ASSERT(id1 != id2);
