@@ -54,7 +54,8 @@ class Pp(_Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        arg, arg_r = flag_spec.ParseCmdVal('pp', cmd_val,
+        arg, arg_r = flag_spec.ParseCmdVal('pp',
+                                           cmd_val,
                                            accept_typed_args=True)
 
         action, action_loc = arg_r.ReadRequired2(
@@ -103,7 +104,13 @@ class Pp(_Builtin):
             # So we get value.Int on ONE line
             # But value.Eggex properly wrapped
 
-            f.write('(%s)   ' % ysh_type)
+            heap_id = vm.ValueId(val)  # could be -1
+            if heap_id == -1:
+                id_str = ''
+            else:
+                id_str = ' 0x%s' % mylib.hex_lower(heap_id)
+
+            f.write('(%s%s)   ' % (ysh_type, id_str))
 
             pretty_f = fmt.DetectConsoleOutput(f)
             fmt.PrintTree(tree, pretty_f)

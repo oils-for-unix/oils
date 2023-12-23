@@ -5,9 +5,10 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token
-from _devbuild.gen.value_asdl import value, value_t
+from _devbuild.gen.value_asdl import value, value_e, value_t
 from core import pyos
-from mycpp.mylib import log
+from mycpp import mylib
+from mycpp.mylib import log, tagswitch
 
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -25,6 +26,39 @@ if TYPE_CHECKING:
     from core import state
 
 _ = log
+
+if mylib.PYTHON:
+
+    def HeapValueId(val):
+        # type: (value_t) -> int
+        """
+        Python's id() returns the address, which is up to 64 bits.
+
+        In C++ we can use the GC ID, which fits within 32 bits.
+        """
+        return id(val)
+
+
+def ValueId(val):
+    # type: (value_t) -> int
+    """
+    Return an integer ID for object that:
+
+    1. Can be used to determine whether 2 objects are the same, e.g. for
+       List, Dict, Func, Proc, etc.
+    2. Will help detect object cycles
+
+    Primitives types like Int and Float don't have this notion.  They're
+    immutable values that are copied and compared by value.
+    """
+    with tagswitch(val) as case:
+        if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float):
+            # These will not be on the heap if we switch to tagged pointers
+            return -1
+        else:
+            # Note: when we add small string optimization, a value.Str may
+            # return -1.
+            return HeapValueId(val)
 
 
 class ControlFlow(Exception):

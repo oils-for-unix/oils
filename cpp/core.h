@@ -18,6 +18,7 @@
   #include <atomic>
 #endif
 
+#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/pgen2.h"
 #include "mycpp/runtime.h"
@@ -269,5 +270,11 @@ BigStr* BackslashEscape(BigStr* s, BigStr* meta_chars);
 grammar::Grammar* LoadYshGrammar(_ResourceLoader*);
 
 }  // namespace pyutil
+
+namespace vm {
+
+int HeapValueId(value_asdl::value_t* val);
+
+}  // namespace vm
 
 #endif  // LEAKY_CORE_H

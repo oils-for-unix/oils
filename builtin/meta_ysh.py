@@ -33,6 +33,7 @@ class Shvm(vm._Builtin):
       _vm->heapId(obj) - a heap ID that can be used to detect cycles for
                          serialization
     """
+
     def __init__(
             self,
             mem,  # type: state.Mem
