@@ -105,7 +105,7 @@ for args in (argsCases) {
   var args_str = args->join(" ")
   echo "----------  $args_str  ----------"
   echo "\$ bin/ysh example.sh $args_str"
-  = parseArgs(spec, args)
+  pp line (parseArgs(spec, args))
 
   echo
   echo "\$ python3 example.py $args_str"
@@ -116,21 +116,21 @@ for args in (argsCases) {
 ## STDOUT:
 ----------  -v --count 120 example.sh  ----------
 $ bin/ysh example.sh -v --count 120 example.sh
-(List)   [<'verbose': True, 'count': 120, 'file': 'example.sh'>, 4]
+(List)   [{"verbose":true,"count":120,"file":"example.sh"},4]
 
 $ python3 example.py -v --count 120 example.sh
 Namespace(filename='example.sh', count='120', verbose=True)
 
 ----------  -v --count 120 example.sh -v  ----------
 $ bin/ysh example.sh -v --count 120 example.sh -v
-(List)   [<'verbose': True, 'count': 120, 'file': 'example.sh'>, 5]
+(List)   [{"verbose":true,"count":120,"file":"example.sh"},5]
 
 $ python3 example.py -v --count 120 example.sh -v
 Namespace(filename='example.sh', count='120', verbose=True)
 
 ----------  -v --count 120 example.sh -v --count 150  ----------
 $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
-(List)   [<'verbose': True, 'count': 150, 'file': 'example.sh'>, 7]
+(List)   [{"verbose":true,"count":150,"file":"example.sh"},7]
 
 $ python3 example.py -v --count 120 example.sh -v --count 150
 Namespace(filename='example.sh', count='150', verbose=True)
@@ -199,21 +199,21 @@ for args in (argsCases) {
   var args_str = args->join(" ")
   echo "----------  $args_str  ----------"
   echo "\$ bin/ysh example.sh $args_str"
-  = parseArgs(spec, args)
+  pp line (parseArgs(spec, args))
 
   echo
 }
 ## STDOUT:
 ----------  -v --count 120 example.sh  ----------
 $ bin/ysh example.sh -v --count 120 example.sh
-(List)   [<'verbose': True, 'count': 120, 'file': 'example.sh'>, 4]
+(List)   [{"verbose":true,"count":120,"file":"example.sh"},4]
 
 ----------  -v --count 120 example.sh -v  ----------
 $ bin/ysh example.sh -v --count 120 example.sh -v
-(List)   [<'verbose': True, 'count': 120, 'file': 'example.sh'>, 5]
+(List)   [{"verbose":true,"count":120,"file":"example.sh"},5]
 
 ----------  -v --count 120 example.sh -v --count 150  ----------
 $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
-(List)   [<'verbose': True, 'count': 150, 'file': 'example.sh'>, 7]
+(List)   [{"verbose":true,"count":150,"file":"example.sh"},7]
 
 ## END

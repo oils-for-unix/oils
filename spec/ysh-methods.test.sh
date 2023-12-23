@@ -65,10 +65,10 @@ var en2fr = {}
 setvar en2fr["hello"] = "bonjour"
 setvar en2fr["friend"] = "ami"
 setvar en2fr["cat"] = "chat"
-= en2fr => keys()
+pp line (en2fr => keys())
 ## status: 0
 ## STDOUT:
-(List)   ['hello', 'friend', 'cat']
+(List)   ["hello","friend","cat"]
 ## END
 
 #### Separation of -> attr and () calling
@@ -82,21 +82,21 @@ const check = "abc" => startsWith
 #### Bound methods, receiver value/reference semantics
 var is_a_ref = { "foo": "bar" }
 const f = is_a_ref => keys
-= f()
+pp line (f())
 setvar is_a_ref["baz"] = 42
-= f()
+pp line (f())
 
 var is_a_val = "abc"
 const g = is_a_val => startsWith
-= g("a")
+pp line (g("a"))
 setvar is_a_val = "xyz"
-= g("a")
+pp line (g("a"))
 ## status: 0
 ## STDOUT:
-(List)   ['foo']
-(List)   ['foo', 'baz']
-(Bool)   True
-(Bool)   True
+(List)   ["foo"]
+(List)   ["foo","baz"]
+(Bool)   true
+(Bool)   true
 ## END
 
 #### List => indexOf()

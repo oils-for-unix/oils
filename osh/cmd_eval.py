@@ -1047,8 +1047,8 @@ class CommandEvaluator(object):
                             print(buf.getvalue())
 
                         # Use () instead of <> as a hint that it's a "JSON value"
-                        #f.write('(%s%s)   %s\n' % (ysh_type, id_str, repr(obj)))
-                        f.write('(%s)   %s\n' % (ysh_type, repr(obj)))
+                        f.write('(%s%s)   %s\n' % (ysh_type, id_str, repr(obj)))
+                        #f.write('(%s)   %s\n' % (ysh_type, repr(obj)))
 
                     # Note: probably don't need this without Python print()?
                     # BUG FIX related to forking!  Note that BUILTINS flush,
