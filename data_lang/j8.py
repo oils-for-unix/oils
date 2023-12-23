@@ -33,6 +33,7 @@ Meta-syntax:
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from asdl import format as fmt
+from core import vm
 from data_lang import j8_str
 from data_lang import qsn
 from mycpp import mylib
@@ -41,7 +42,7 @@ from mycpp.mylib import tagswitch, iteritems, log
 _ = log
 unused = j8_str
 
-from typing import cast
+from typing import cast, Dict
 
 
 class PrettyPrinter(object):
@@ -70,7 +71,8 @@ class PrettyPrinter(object):
         # type: (int) -> None
         self.max_col = max_col
 
-        # To detect cycles: by printing or by an error
+        # This could be an optimized set an C++ bit set like
+        # mark_sweep_heap.h, rather than a Dict
         self.unique_objs = mylib.UniqueObjects()
 
     def PrettyTree(self, val, f):
@@ -161,8 +163,14 @@ class Printer(object):
         """
         self.options = options
 
-        # To detect cycles: by printing or by an error
+        # This could be an optimized set an C++ bit set like mark_sweep_heap.h,
+        # rather than a Dict
         self.unique_objs = mylib.UniqueObjects()
+
+        # Key is vm.HeapValueId(val)
+        # Value is always True
+        # Dict[int, None] doesn't translate -- it would be nice to have a set()
+        self.seen = {}  # type: Dict[int, bool]
 
         self.spaces = {0: ''}  # Dic
 
@@ -192,6 +200,11 @@ class Printer(object):
         Args:
           indent: number of spaces, or -1 for everything on one line
         """
+        if level == 0:
+            # HACK, I guess this is OK because we're single threaded and can
+            # only print one object at a time.
+            self.seen.clear()
+
         #log('indent %r level %d', indent, level)
 
         # special value that means everything is on one line
@@ -238,6 +251,12 @@ class Printer(object):
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
 
+                # Cycle detection, only for containers that can be in cycles
+                heap_id = vm.HeapValueId(val) 
+                if heap_id in self.seen:
+                    raise AssertionError()
+                self.seen[heap_id] = True
+
                 buf.write('[')
                 buf.write(maybe_newline)
                 for i, item in enumerate(val.items):
@@ -254,6 +273,12 @@ class Printer(object):
 
             elif case(value_e.Dict):
                 val = cast(value.Dict, UP_val)
+
+                # Cycle detection, only for containers that can be in cycles
+                heap_id = vm.HeapValueId(val) 
+                if heap_id in self.seen:
+                    raise AssertionError()
+                self.seen[heap_id] = True
 
                 buf.write('{')
                 buf.write(maybe_newline)

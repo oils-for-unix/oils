@@ -174,8 +174,6 @@ echo status=$?
 ## END
 
 #### json write of data structure with cycle
-echo BAD
-exit
 
 var L = [1, 2, 3]
 setvar L[0] = L

@@ -39,6 +39,8 @@ class Json(vm._Builtin):
         # type: (state.Mem, ErrorFormatter, bool) -> None
         self.mem = mem
         self.errfmt = errfmt
+
+        self.stdout_ = mylib.Stdout()
         if is_j8:
             self.printer = j8.Printer(0)
         else:
@@ -81,10 +83,10 @@ class Json(vm._Builtin):
             if 0:
                 buf = mylib.BufWriter()
                 self.printer.Print(val, buf, indent=indent)
-                sys.stdout.write(buf.getvalue())
-                sys.stdout.write('\n')
-            else:
+                self.stdout_.write(buf.getvalue())
+                self.stdout_.write('\n')
 
+            if 1:
                 obj = cpython._ValueToPyObj(val)
 
                 j = yajl.dumps(obj, indent=indent)
