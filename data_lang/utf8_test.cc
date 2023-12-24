@@ -1,6 +1,7 @@
 #include <inttypes.h>
 
 #include "data_lang/utf8_impls/bjoern_dfa.h"
+#include "data_lang/utf8_impls/utf8_decode.h"
 
 //#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
@@ -38,7 +39,9 @@ void printCodePoints(const uint8_t* s) {
   uint32_t state = 0;
 
   for (; *s; ++s)
-    if (!decode(&state, &codepoint, *s)) printf("U+%04X\n", codepoint);
+    if (!decode(&state, &codepoint, *s)) {
+      printf("U+%04X\n", codepoint);
+    }
 
   if (state != UTF8_ACCEPT) printf("The string is not well-formed\n");
 }
@@ -50,6 +53,10 @@ TEST dfa_test() {
   PASS();
 }
 
+uint32_t num_code_points = 17 * 1 << 16;
+
+// uint32_t num_code_points = 1 << 21;  // DFA has 983,040 disagreements
+
 TEST decode_all_test() {
   int num_disagree = 0;
   int num_reject = 0;
@@ -58,8 +65,6 @@ TEST decode_all_test() {
   // UTF-8 can represent more numbers (up to 21 bits), but this state machine
   // doesn't need to handle them.
 
-  uint32_t num_code_points = 17 * 1 << 16;
-  // uint32_t num_code_points = 1 << 21;  // 983,040 disagreements
   uint64_t sum_codepoint = 0;
 
   for (uint32_t i = 0; i < num_code_points; ++i) {
@@ -87,6 +92,33 @@ TEST decode_all_test() {
   printf("sum_codepoint = %ld\n", sum_codepoint);
   printf("num_disagree = %d\n", num_disagree);
   printf("num_reject = %d\n", num_reject);
+
+  PASS();
+}
+
+TEST crockford_test() {
+  char* s = const_cast<char*>("hello\u03bc");
+  utf8_decode_init(s, strlen(s));
+
+  int c;
+  bool done = false;
+  while (!done) {
+    c = utf8_decode_next();
+
+    switch (c) {
+    case UTF8_END:
+      done = true;
+      break;
+
+    case UTF8_ERROR:
+      printf("decode error");
+      break;
+
+    default:
+      printf("U+%04X\n", c);
+      break;
+    }
+  }
 
   PASS();
 }
@@ -129,14 +161,11 @@ TEST loop_all_test() {
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  // gHeap.Init();
-
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(dfa_test);
   RUN_TEST(decode_all_test);
-
-  // gHeap.CleanProcessExit();
+  RUN_TEST(crockford_test);
 
   GREATEST_MAIN_END();
   return 0;
