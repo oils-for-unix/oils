@@ -18,6 +18,8 @@ all-tests() {
 
   cpp/TEST.sh unit
 
+  data_lang/TEST.sh unit
+
   frontend/TEST.sh unit
 
   # uses Ninja to run (cxx, gcalways) variant.  Could also run (clang, ubsan),
