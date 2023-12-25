@@ -4,9 +4,46 @@ j8_str.py
 """
 
 from mycpp import mylib
+from mycpp.mylib import log
+
+from typing import Tuple, List
+
+_ = log
 
 
-def Encode(s, mode, buf):
+def Replace(e):
+    # type: (UnicodeDecodeError) -> Tuple[unicode, int]
+
+    #print('ZZ', e)
+    #raise e
+    #print(dir(e))
+
+    #print('OBJ', e.object)
+
+    # Can we record these positions somewhere?
+
+    # A byte string can be alternating slices of valid unicode ranges an
+    # invalid unicode ranges?
+    # So we're doing recovery?
+
+    print('%d %d' % (e.start, e.end))
+
+    return (u'ZZ', e.end)
+
+
+# This allows us to return Unicode, not what we want
+# Replace() has a weird type
+# codecs.register_error('j8', Replace)  # type: ignore
+
+
+def Enc(s, options):
+    # type: (str, int) -> str
+    buf = mylib.BufWriter()
+    Encode(s, options, buf)
+    return buf.getvalue()
+
+
+def Encode(s, options, buf):
     # type: (str, int, mylib.BufWriter) -> int
     """
     Callers:
@@ -14,17 +51,16 @@ def Encode(s, mode, buf):
     - json write
     - j8 write
     - the = operator
+    - pp line (x)
     - 'declare' prints in bash compatible syntax
 
-    Algorithm:
+    Simple algorithm:
 
-    1. Decode UTF-8 rune-by-rune, with 4 cases
-       - 1 byte
-       - 2 bytes
-       - 3 bytes - is this the surrrogate one?
-       - 4 bytes
+    1. Decode UTF-8 
+       In Python, use built-in s.decode('utf-8')
+       In C++, use Bjoern DFA
 
-    While detecting all these errors:
+    List of errors in UTF-8:
        - Invalid start byte
        - Invalid continuation byte
        - Incomplete UTF-8 char
@@ -32,36 +68,72 @@ def Encode(s, mode, buf):
        - Decodes to invalid code point (surrogate)
          - this changed in 2003; WTF-8 allows it
 
-    Error handling options:
-       JSON mode: Either
-       - errors are exceptions
-       - errors become Unicode Replacement Char
-       Option: unpaired surrogates like \\udc00 become errors, because errors
-       shouldn't travel over the wire
+    If decoding succeeds, then surround with "" 
+    - escape unprintable chars like \\u0001 and \\t \\n \\ \\"
 
-       J8 mode: No errors by definition
-       - All errors become \yff
+    If decoding fails (this includes unpaired surrogates like \\udc00)
+    - in J8 mode, all errors become \yff, and it must be a b"" string
+    - in JSON mode, based on options, either:
+      - use unicode replacement char (lossy)
+      - raise an exception, so the 'json dump' fails etc.
+        - Error can have location info
 
-    2. Encode in different modes
+    LATER: Options for encoding
 
        JSON mode:
          Prefer literal UTF-8
-         must use \\udc00 at times, so the overall message is valid UTF-8
+         Escaping mode: must use \\udc00 at times, so the overall message is
+           valid UTF-8
 
        J8 mode:
          Prefer literal UTF-8
-         All errors become \yff
-         Return a flag so you know to add the j"" prefix when using these.
-         Option to prefer \\u{123456}
+         Escaping mode to use j"\u{123456}" and perhaps b"\u{123456} when there
+         are also errors
 
        = mode:
          Option to prefer \\u{123456}
 
-       Shell mode:
-         Prefer literal UTF-8
-         Errors can be \\xff, not \yff
-         Option (low priority): use \\u1234 \\U00123456
+    Should we generate bash-compatible strings?
+       Like $'\\xff' for OSH
+       Option (low priority): use \\u1234 \\U00123456
     """
+    pos = 0
+    portion = s
+    invalid_utf8 = []  # type: List[Tuple[int, int]]
+    while True:
+        try:
+            portion.decode('utf-8')
+        except UnicodeDecodeError as e:
+            invalid_utf8.append((pos + e.start, pos + e.end))
+            pos += e.end
+        else:
+            break  # it validated
+        #log('== pos %d', pos)
+        portion = s[pos:]
+
+    #print('INVALID', invalid_utf8)
+    if len(invalid_utf8):
+        buf.write('b"')
+        pos = 0
+        for start, end in invalid_utf8:
+            buf.write(s[pos:start])
+
+            for i in xrange(start, end):
+                buf.write('\y%x' % ord(s[i]))
+
+            pos = end
+            #log('pos %d', pos)
+
+        buf.write(s[pos:])
+        buf.write('"')
+
+    else:
+        buf.write('"')
+        # TODO: escape \\ \" etc.
+        # could use str.maketrans or something?
+        buf.write(s)
+        buf.write('"')
+
     return 0
 
 
@@ -99,3 +171,6 @@ def py_decode(s):
     # TODO: Can use a regex as a demo
     # J8 strings are a regular language
     return s
+
+
+# vim: sw=4

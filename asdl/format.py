@@ -25,8 +25,8 @@ from mycpp import mylib
 
 from typing import cast, Any, Optional
 
-
 if mylib.PYTHON:
+
     def PrettyPrint(obj, f=None):
         # type: (Any, Optional[mylib.Writer]) -> None
         """Print abbreviated tree in color, for unnit tests."""
