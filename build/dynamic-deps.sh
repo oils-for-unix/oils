@@ -79,6 +79,8 @@ asdl/py.*           # pybase.py ported by hand to C++
 core/py.*           # pyos.py, pyutil.py ported by hand to C++
 core/optview\.py    # core/optview_gen.py
 
+data_lang/py.*      # pyj8.py
+
 frontend/py.*\.py   # py_readline.py ported by hand to C++
 frontend/consts.py  # frontend/consts_gen.py
 frontend/match.py   # frontend/lexer_gen.py

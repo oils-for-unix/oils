@@ -34,13 +34,13 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from asdl import format as fmt
 from core import vm
-from data_lang import j8_str
+from data_lang import pyj8
 from data_lang import qsn
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, log
 
 _ = log
-unused = j8_str
+unused = pyj8
 
 from typing import cast, Dict
 

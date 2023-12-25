@@ -5,6 +5,7 @@ _gen/
 asdl/py.*
 core/py.*
 core/optview\.py
+data_lang/py.*
 frontend/py.*\.py
 frontend/consts.py
 frontend/match.py
