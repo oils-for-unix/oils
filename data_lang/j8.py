@@ -243,18 +243,19 @@ class InstancePrinter(object):
 
             elif case(value_e.Int):
                 val = cast(value.Int, UP_val)
-                # TODO: buf.write_int() would avoid allocation
+                # TODO: use pyj8.WriteInt(val.i, self.buf)
                 self.buf.write(str(val.i))
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
 
-                # TODO: buf.write_float() would avoid allocation
+                # TODO: use pyj8.WriteFloat(val.f, self.buf)
                 self.buf.write(str(val.f))
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
 
+                # TODO: pyj8.WriteString(val.s, self.buf)
                 self._StringToBuf(val.s)
 
             elif case(value_e.List):

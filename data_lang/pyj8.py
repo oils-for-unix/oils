@@ -12,39 +12,30 @@ from typing import Tuple, List
 _ = log
 
 
-def Replace(e):
-    # type: (UnicodeDecodeError) -> Tuple[unicode, int]
-
-    #print('ZZ', e)
-    #raise e
-    #print(dir(e))
-
-    #print('OBJ', e.object)
-
-    # Can we record these positions somewhere?
-
-    # A byte string can be alternating slices of valid unicode ranges an
-    # invalid unicode ranges?
-    # So we're doing recovery?
-
-    print('%d %d' % (e.start, e.end))
-
-    return (u'ZZ', e.end)
+def WriteInt(i, buf):
+    # type: (int, mylib.BufWriter) -> None
+    """
+    C++ version can avoid allocation
+    """
+    buf.write(str(i))
 
 
-# This allows us to return Unicode, not what we want
-# Replace() has a weird type
-# codecs.register_error('j8', Replace)  # type: ignore
+def WriteFloat(f, buf):
+    # type: (float, mylib.BufWriter) -> None
+    """
+    C++ version can avoid allocation
+    """
+    buf.write(str(f))
 
 
-def Enc(s, options):
+def EncodeString(s, options):
     # type: (str, int) -> str
     buf = mylib.BufWriter()
-    Encode(s, options, buf)
+    WriteString(s, options, buf)
     return buf.getvalue()
 
 
-def Encode(s, options, buf):
+def WriteString(s, options, buf):
     # type: (str, int, mylib.BufWriter) -> int
     """
     Callers:
@@ -88,7 +79,7 @@ def Encode(s, options, buf):
 
        J8 mode:
          Prefer literal UTF-8
-         Escaping mode to use j"\u{123456}" and perhaps b"\u{123456} when there
+         Escaping mode to use j"\\u{123456}" and perhaps b"\\u{123456} when there
          are also errors
 
        = mode:
