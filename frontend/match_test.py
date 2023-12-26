@@ -40,6 +40,27 @@ class MatchTest(unittest.TestCase):
             if id_ == Id.Eol_Tok:
                 break
 
+    def testJ8Lexer(self):
+        cases = [
+          '00',
+          '[]',
+          '[3.14, 4, true]',
+          'truez',
+          'false\t',
+          'bad',
+        ]
+
+        for s in cases:
+            log('---')
+            log('J8 CASE %r', s)
+            lex = match.J8Lexer(s)
+            while True:
+                id_, val = lex.Next()
+                log('    %s %r', Id_str(id_), val)
+                if id_ == Id.Eol_Tok:
+                    break
+            log('')
+
     def testLooksLike(self):
         INTS = [
             (False, ''),

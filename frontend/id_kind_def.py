@@ -689,6 +689,25 @@ def AddKinds(spec):
             'Cont',
         ])
 
+    # Note: not used now
+    spec.AddKind('J8', [
+        'LBracket',
+        'RBracket',
+        'LBrace',
+        'RBrace',
+
+        'Comma',
+        'Colon',
+
+        # Parsed
+        'Bool',
+        'Number',  # Int and Float
+
+        'AnyString',
+        'UString',  # unicode (no surrogate halves, no wtf-8)
+        'BString',
+    ])
+
 
 # Shared between [[ and test/[.
 _UNARY_STR_CHARS = 'zn'  # -z -n

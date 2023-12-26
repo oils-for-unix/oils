@@ -15,11 +15,7 @@ try:
 except ImportError:
     fastlex = None
 
-if fastlex:
-    # Shouldn't use re module in this case
-    re = None
-else:
-    import re  # type: ignore
+import re
 
 if TYPE_CHECKING:
     SRE_Pattern = Any  # Do we need a .pyi file for re or _sre?
@@ -137,6 +133,9 @@ def _MatchBraceRangeToken_Fast(line, start_pos):
 #  tok_type, end_pos = fastlex.MatchQsnToken(line, start_pos)
 #  return tok_type, end_pos
 
+
+J8_MATCHER = _MatchTokenSlow(lexer_def.J8_DEF)
+
 if fastlex:
     OneToken = _MatchOshToken_Fast
     ECHO_MATCHER = _MatchEchoToken_Fast
@@ -144,7 +143,6 @@ if fastlex:
     PS1_MATCHER = _MatchPS1Token_Fast
     HISTORY_MATCHER = _MatchHistoryToken_Fast
     BRACE_RANGE_MATCHER = _MatchBraceRangeToken_Fast
-    #QSN_MATCHER = _MatchQsnToken_Fast
     IsValidVarName = fastlex.IsValidVarName
     ShouldHijack = fastlex.ShouldHijack
     LooksLikeInteger = fastlex.LooksLikeInteger
@@ -156,7 +154,6 @@ else:
     PS1_MATCHER = _MatchTokenSlow(lexer_def.PS1_DEF)
     HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
     BRACE_RANGE_MATCHER = _MatchTokenSlow(lexer_def.BRACE_RANGE_DEF)
-    #QSN_MATCHER = _MatchTokenSlow(lexer_def.QSN_DEF)
 
     # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
     # anchored on the right.
@@ -228,14 +225,14 @@ def BraceRangeLexer(s):
     return SimpleLexer(BRACE_RANGE_MATCHER, s)
 
 
-#def QsnLexer(s):
-#  # type: (str) -> SimpleLexer
-#  return SimpleLexer(QSN_MATCHER, s)
-
-
 def GlobLexer(s):
     # type: (str) -> SimpleLexer
     return SimpleLexer(GLOB_MATCHER, s)
+
+
+def J8Lexer(s):
+    # type: (str) -> SimpleLexer
+    return SimpleLexer(J8_MATCHER, s)
 
 
 # These tokens are "slurped"
