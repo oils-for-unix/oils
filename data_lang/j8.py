@@ -201,6 +201,7 @@ class InstancePrinter(object):
         # type: (str) -> None
 
         if mylib.PYTHON:
+            # TODO: port this to C++
             pyj8.WriteString(s, 0, self.buf)
         else:
             self.buf.write('"')

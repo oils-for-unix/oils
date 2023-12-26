@@ -38,6 +38,36 @@ def EncodeString(s, options):
     return buf.getvalue()
 
 
+# similar to frontend/consts.py
+_JSON_ESCAPES = {
+  # Note: we don't escaping \/
+  '\\': '\\\\',
+  '"': '\\"',
+
+  '\b': '\\b',
+  '\f': '\\f',
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+}
+
+def _EscapeUnprintable(s, buf):
+    # type: (str, mylib.BufWriter) -> None
+    for ch in s:
+        escaped = _JSON_ESCAPES.get(ch)
+        if escaped is not None:
+            buf.write(escaped)
+            continue
+
+        char_code = ord(ch)
+        if char_code < 0x20:  # like IsUnprintableLow
+            # TODO: mylib.hex_lower doesn't have padding
+            buf.write(r'\u%04d' % char_code)
+            continue
+
+        buf.write(ch)
+
+
 def WriteString(s, options, buf):
     # type: (str, int, mylib.BufWriter) -> int
     """
@@ -124,13 +154,12 @@ def WriteString(s, options, buf):
         # We can use a slow dict here, and then the C++ version will use a
         # switch statement.  Need an exhaustive spec test though.
 
-        buf.write(s[pos:])
+        _EscapeUnprintable(s[pos:], buf)
         buf.write('"')
 
     else:
         buf.write('"')
-        # TODO: escape \\ \" etc.
-        buf.write(s)
+        _EscapeUnprintable(s, buf)
         buf.write('"')
 
     return 0

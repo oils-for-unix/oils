@@ -207,17 +207,18 @@ j8 write ([3, "foo"])
 
 #### j8 write bytes vs unicode string
 
-# TODO: fix newline escaping
-#u=$'mu \u03bc \n'
-u=$'mu \u03bc'
+u=$'mu \u03bc \x01 \" \\ \b\f\n\r\t'
+u2=$'\x01'  # this is a valid unicode string
 
-b=$'\xff'
+b=$'\xff'  # this isn't valid unicode
 
 j8 write (u)
+j8 write (u2)
 
 j8 write (b)
 
 ## STDOUT:
-"mu μ"
+"mu μ \u0001 \" \\ \b\f\n\r\t"
+"\u0001"
 b"\yff"
 ## END
