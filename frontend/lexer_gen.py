@@ -430,7 +430,8 @@ def main(argv):
         TranslateSimpleLexer('MatchPS1Token', lexer_def.PS1_DEF)
         TranslateSimpleLexer('MatchHistoryToken', lexer_def.HISTORY_DEF)
         TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
-        #TranslateSimpleLexer('MatchQsnToken', lexer_def.QSN_DEF)
+        TranslateSimpleLexer('MatchJ8Token', lexer_def.J8_DEF)
+        TranslateSimpleLexer('MatchJ8StrToken', lexer_def.J8_STR_DEF)
 
         TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
         TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')

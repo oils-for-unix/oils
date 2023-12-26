@@ -15,7 +15,11 @@ try:
 except ImportError:
     fastlex = None
 
-import re
+if fastlex:
+    re = None  # re module isn't in CPython slice
+else:
+    import re  # type: ignore
+
 
 if TYPE_CHECKING:
     SRE_Pattern = Any  # Do we need a .pyi file for re or _sre?
@@ -94,48 +98,45 @@ class _MatchTokenSlow(object):
 
 def _MatchEchoToken_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
-    """Returns (id, end_pos)."""
     tok_type, end_pos = fastlex.MatchEchoToken(line, start_pos)
     return tok_type, end_pos
 
 
 def _MatchGlobToken_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
-    """Returns (id, end_pos)."""
     tok_type, end_pos = fastlex.MatchGlobToken(line, start_pos)
     return tok_type, end_pos
 
 
 def _MatchPS1Token_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
-    """Returns (id, end_pos)."""
     tok_type, end_pos = fastlex.MatchPS1Token(line, start_pos)
     return tok_type, end_pos
 
 
 def _MatchHistoryToken_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
-    """Returns (id, end_pos)."""
     tok_type, end_pos = fastlex.MatchHistoryToken(line, start_pos)
     return tok_type, end_pos
 
 
 def _MatchBraceRangeToken_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
-    """Returns (id, end_pos)."""
     tok_type, end_pos = fastlex.MatchBraceRangeToken(line, start_pos)
     return tok_type, end_pos
 
 
-#def _MatchQsnToken_Fast(line, start_pos):
-#  # type: (str, int) -> Tuple[Id_t, int]
-#  """Returns (id, end_pos)."""
-#  tok_type, end_pos = fastlex.MatchQsnToken(line, start_pos)
-#  return tok_type, end_pos
+def _MatchJ8Token_Fast(line, start_pos):
+    # type: (str, int) -> Tuple[Id_t, int]
+    tok_type, end_pos = fastlex.MatchJ8Token(line, start_pos)
+    return tok_type, end_pos
 
 
-J8_MATCHER = _MatchTokenSlow(lexer_def.J8_DEF)
-J8_STR_MATCHER = _MatchTokenSlow(lexer_def.J8_STR_DEF)
+def _MatchJ8StrToken_Fast(line, start_pos):
+    # type: (str, int) -> Tuple[Id_t, int]
+    tok_type, end_pos = fastlex.MatchJ8StrToken(line, start_pos)
+    return tok_type, end_pos
+
 
 if fastlex:
     OneToken = _MatchOshToken_Fast
@@ -144,6 +145,10 @@ if fastlex:
     PS1_MATCHER = _MatchPS1Token_Fast
     HISTORY_MATCHER = _MatchHistoryToken_Fast
     BRACE_RANGE_MATCHER = _MatchBraceRangeToken_Fast
+
+    J8_MATCHER = _MatchJ8Token_Fast
+    J8_STR_MATCHER = _MatchJ8StrToken_Fast
+
     IsValidVarName = fastlex.IsValidVarName
     ShouldHijack = fastlex.ShouldHijack
     LooksLikeInteger = fastlex.LooksLikeInteger
@@ -155,6 +160,9 @@ else:
     PS1_MATCHER = _MatchTokenSlow(lexer_def.PS1_DEF)
     HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
     BRACE_RANGE_MATCHER = _MatchTokenSlow(lexer_def.BRACE_RANGE_DEF)
+
+    J8_MATCHER = _MatchTokenSlow(lexer_def.J8_DEF)
+    J8_STR_MATCHER = _MatchTokenSlow(lexer_def.J8_STR_DEF)
 
     # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
     # anchored on the right.
@@ -215,6 +223,36 @@ class SimpleLexer(object):
         return tokens
 
 
+class SimpleLexer2(object):
+
+    def __init__(self, match_func, s):
+        # type: (SimpleMatchFunc, str) -> None
+        self.match_func = match_func
+        self.s = s
+        self.pos = 0
+
+    def Next(self):
+        # type: () -> Tuple[Id_t, int]
+        """
+        Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
+        """
+        tok_id, end_pos = self.match_func(self.s, self.pos)
+        self.pos = end_pos
+        return tok_id, end_pos
+
+    def Tokens(self):
+        # type: () -> List[Tuple[Id_t, str]]
+        tokens = []  # type: List[Tuple[Id_t, str]]
+        pos = 0
+        while True:
+            tok_id, end_pos = self.Next()
+            if tok_id == Id.Eol_Tok:  # NUL terminator
+                break
+            tokens.append((tok_id, self.s[pos:end_pos]))
+            pos = end_pos
+        return tokens
+
+
 # Iterated over in osh/builtin_pure.py
 def EchoLexer(s):
     # type: (str) -> SimpleLexer
@@ -232,13 +270,13 @@ def GlobLexer(s):
 
 
 def J8Lexer(s):
-    # type: (str) -> SimpleLexer
-    return SimpleLexer(J8_MATCHER, s)
+    # type: (str) -> SimpleLexer2
+    return SimpleLexer2(J8_MATCHER, s)
 
 
 def J8StrLexer(s):
-    # type: (str) -> SimpleLexer
-    return SimpleLexer(J8_STR_MATCHER, s)
+    # type: (str) -> SimpleLexer2
+    return SimpleLexer2(J8_STR_MATCHER, s)
 
 
 # These tokens are "slurped"

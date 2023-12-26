@@ -12,8 +12,7 @@ from frontend import match  # module under test
 
 
 def _PrintTokens(lex):
-    while True:
-        id_, val = lex.Next()
+    for id_, val in lex.Tokens():
         log('    %s %r', Id_str(id_), val)
         if id_ == Id.Eol_Tok:
             break
@@ -68,6 +67,9 @@ class MatchTest(unittest.TestCase):
           '"hi\\n"',
 
           r'"\yff \xff \u1234 \u{123456} \\ \" "',
+
+          # This points at \ as Id.Unknown_Tok, which I suppose is OK
+          r'"\a \z \/ \b "',
         ]
 
         for s in cases:
