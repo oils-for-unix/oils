@@ -135,6 +135,7 @@ def _MatchBraceRangeToken_Fast(line, start_pos):
 
 
 J8_MATCHER = _MatchTokenSlow(lexer_def.J8_DEF)
+J8_STR_MATCHER = _MatchTokenSlow(lexer_def.J8_STR_DEF)
 
 if fastlex:
     OneToken = _MatchOshToken_Fast
@@ -233,6 +234,11 @@ def GlobLexer(s):
 def J8Lexer(s):
     # type: (str) -> SimpleLexer
     return SimpleLexer(J8_MATCHER, s)
+
+
+def J8StrLexer(s):
+    # type: (str) -> SimpleLexer
+    return SimpleLexer(J8_STR_MATCHER, s)
 
 
 # These tokens are "slurped"

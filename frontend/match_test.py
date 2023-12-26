@@ -11,6 +11,14 @@ from mycpp.mylib import log
 from frontend import match  # module under test
 
 
+def _PrintTokens(lex):
+    while True:
+        id_, val = lex.Next()
+        log('    %s %r', Id_str(id_), val)
+        if id_ == Id.Eol_Tok:
+            break
+
+
 class MatchTest(unittest.TestCase):
 
     def testShouldHijack(self):
@@ -34,11 +42,7 @@ class MatchTest(unittest.TestCase):
 
     def testBraceRangeLexer(self):
         lex = match.BraceRangeLexer('1..3')
-        while True:
-            id_, val = lex.Next()
-            log('%s %r', Id_str(id_), val)
-            if id_ == Id.Eol_Tok:
-                break
+        _PrintTokens(lex)
 
     def testJ8Lexer(self):
         cases = [
@@ -54,12 +58,23 @@ class MatchTest(unittest.TestCase):
             log('---')
             log('J8 CASE %r', s)
             lex = match.J8Lexer(s)
-            while True:
-                id_, val = lex.Next()
-                log('    %s %r', Id_str(id_), val)
-                if id_ == Id.Eol_Tok:
-                    break
-            log('')
+            _PrintTokens(lex)
+
+    def testJ8StrLexer(self):
+        cases = [
+          '"hi"',
+          # Newlines in strings are control chars, not accepted
+          '"hi\n"',
+          '"hi\\n"',
+
+          r'"\yff \xff \u1234 \u{123456} \\ \" "',
+        ]
+
+        for s in cases:
+            log('---')
+            log('J8 STR CASE %r', s)
+            lex = match.J8StrLexer(s)
+            _PrintTokens(lex)
 
     def testLooksLike(self):
         INTS = [

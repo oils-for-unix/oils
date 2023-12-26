@@ -470,6 +470,9 @@ _U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
 _X_CHAR_LOOSE = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)  # bash
 _X_CHAR_STRICT = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)  # YSH and J8
 
+_U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
+_U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
+
 EXPR_CHARS = [
     # This is like Rust.  We don't have the legacy C escapes like \b.
 
@@ -489,7 +492,7 @@ _C_STRING_COMMON = [
 
     # \x6 is valid in bash
     _X_CHAR_LOOSE,
-    R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
+    _U4_CHAR_LOOSE,
     R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
     R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
@@ -546,8 +549,23 @@ J8_DEF = [
 
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
 J8_STR_DEF = [
-    _X_CHAR_STRICT,
-    _U_BRACED_CHAR,
+    C('"', Id.Right_DoubleQuote),
+
+    # https://json.org list of chars
+    R(r'\\["\\/bfnrt]', Id.Char_OneChar),
+
+    _X_CHAR_STRICT,  # \xff - JSON only
+    _U4_CHAR_STRICT,  # \u1234 - JSON only
+
+    R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
+    _U_BRACED_CHAR,  # \u{123456} - J8 only
+
+    # Exclude control characters 0x00-0x1f, aka 0-31
+    # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
+    R(r'[^\\"\x00-\x1f]+', Id.Char_Literals),
+
+    # Should match control chars
+    R(r'[^\0]', Id.Unknown_Tok),
 ]
 
 OCTAL3_RE = r'\\[0-7]{1,3}'

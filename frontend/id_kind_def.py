@@ -383,7 +383,9 @@ def AddKinds(spec):
         [
             'OneChar',
             'Stop',
-            'Hex',
+            'Hex',  # \xff
+            'YHex',  # \yff for J8 notation
+
             # Two variants of Octal: \377, and \0377.
             'Octal3',
             'Octal4',
