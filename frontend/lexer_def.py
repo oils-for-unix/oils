@@ -468,7 +468,7 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 _U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
 
 _X_CHAR_LOOSE = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)  # bash
-_X_CHAR_STRICT = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)  # YSH and J8
+_X_CHAR_STRICT = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)  # YSH
 
 _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
@@ -534,8 +534,7 @@ J8_DEF = [
     C('false', Id.J8_Bool),
 
     # Numbers can't start with leading 0
-    R('[0-9]' + _JSON_FRACTION + _JSON_EXP, Id.J8_Number),
-    R('[1-9][0-9]*' + _JSON_FRACTION + _JSON_EXP, Id.J8_Number),
+    R('([0-9]|[1-9][0-9]*)' + _JSON_FRACTION + _JSON_EXP, Id.J8_Number),
 
     R(r'[ \r\n\t]', Id.Ignored_Space),
 
@@ -554,7 +553,6 @@ J8_STR_DEF = [
     # https://json.org list of chars
     R(r'\\["\\/bfnrt]', Id.Char_OneChar),
 
-    _X_CHAR_STRICT,  # \xff - JSON only
     _U4_CHAR_STRICT,  # \u1234 - JSON only
 
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only

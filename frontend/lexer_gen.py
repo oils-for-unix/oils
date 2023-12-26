@@ -70,8 +70,8 @@ LITERAL_META_CODES = [ord(c) for c in LITERAL_META]
 
 
 def _Literal(arg, char_escapes=LITERAL_META_CODES):
-    if arg == 0:
-        s = r'\x00'  # "\000"
+    if arg >= 0x80 or arg < 0x20:  # 0x1f and below
+        s = '\\x%02x' % arg  # for \x80-\xff
     elif arg == ord('\n'):
         s = r'\n'
     elif arg == ord('\r'):
@@ -80,8 +80,6 @@ def _Literal(arg, char_escapes=LITERAL_META_CODES):
         s = r'\t'
     elif arg in char_escapes:
         s = '\\' + chr(arg)
-    elif arg >= 0x80:
-        s = '\\x%02x' % arg  # for \x80-\xff
     else:
         s = chr(arg)
     return s
@@ -111,6 +109,13 @@ def TranslateTree(re_tree, f, in_char_class=False):
             TranslateTree(arg, f,
                           in_char_class=True)  # list of literals/ranges
             f.write(']')
+
+        elif name == 'branch':  # |
+            _, branches = arg
+            for i, branch in enumerate(branches):
+                if i != 0:
+                    f.write(' | ')
+                TranslateTree(branch, f)
 
         elif name == 'max_repeat':  # repetition
             min_, max_, children = arg
