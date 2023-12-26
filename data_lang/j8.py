@@ -200,16 +200,19 @@ class InstancePrinter(object):
     def _StringToBuf(self, s):
         # type: (str) -> None
 
-        self.buf.write('"')
-        valid_utf8 = qsn.EncodeRunes(s, qsn.BIT8_UTF8, self.buf)
+        if mylib.PYTHON:
+            pyj8.WriteString(s, 0, self.buf)
+        else:
+            self.buf.write('"')
+            valid_utf8 = qsn.EncodeRunes(s, qsn.BIT8_UTF8, self.buf)
 
-        # TODO: check errors
-        # Is it possible to have invalid UTF-8 but valid JSON?
-        # Surrogate pairs?
-        if not valid_utf8:
-            pass
+            # TODO: check errors
+            # Is it possible to have invalid UTF-8 but valid JSON?
+            # Surrogate pairs?
+            if not valid_utf8:
+                pass
 
-        self.buf.write('"')
+            self.buf.write('"')
 
     def Print(self, val, level=0):
         # type: (value_t, int) -> None

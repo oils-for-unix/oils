@@ -204,3 +204,20 @@ j8 write ([3, "foo"])
 ]
 ## END
 
+
+#### j8 write bytes vs unicode string
+
+# TODO: fix newline escaping
+#u=$'mu \u03bc \n'
+u=$'mu \u03bc'
+
+b=$'\xff'
+
+j8 write (u)
+
+j8 write (b)
+
+## STDOUT:
+"mu μ"
+b"\yff"
+## END
