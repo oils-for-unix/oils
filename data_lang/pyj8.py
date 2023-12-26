@@ -6,9 +6,7 @@ from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import Tuple, List, Optional, TYPE_CHECKING
-if TYPE_CHECKING:
-    from frontend.match import SimpleMatchFunc
+from typing import Tuple, List, Optional
 
 _ = log
 
@@ -187,25 +185,56 @@ class LexerDecoder(object):
         # type: (str) -> None
         self.s = s
         self.pos = 0
-        self.state = 0  # 0 for outer, 1 inside string
+        self.decoded = mylib.BufWriter()
 
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
         """
         Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
         """
-        if self.state == 0:
-            tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
-        else:
-            tok_id, end_pos = match.MatchJ8StrToken(self.s, self.pos)
+        tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
 
-        if tok_id in (Id.J8_LeftQuote, Id.J8_LeftBQuote, Id.J8_LeftUQuote):
-            self.state = 1
-        elif tok_id == Id.Right_DoubleQuote:
-            self.state = 0
+        if tok_id not in (Id.J8_LeftQuote, Id.J8_LeftBQuote, Id.J8_LeftUQuote):
+            self.pos = end_pos
+            return tok_id, end_pos, None
 
-        self.pos = end_pos
-        return tok_id, end_pos, None
+        str_pos = end_pos
+        while True:
+            tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
+            if tok_id == Id.Eol_Tok:
+                raise AssertionError()
+            if tok_id == Id.Unknown_Tok:
+                # backslash etc.
+                raise AssertionError()
+
+            if tok_id == Id.Right_DoubleQuote:
+                self.pos = str_end
+
+                s = self.decoded.getvalue()
+                # TODO: clear() to reduce GC pressure
+                self.decoded = mylib.BufWriter()
+                return Id.J8_AnyString, str_end, s
+
+            if tok_id == Id.Char_OneChar:  # JSON and J8
+                part = 'x'
+
+            elif tok_id == Id.Char_Literals:  # JSON and J8
+                part = self.s[str_pos:str_end]
+
+            elif tok_id == Id.Char_Unicode4:  # JSON only
+                part = 'y'
+
+            elif tok_id == Id.Char_YHex:  # J8 only
+                part = 'z'
+
+            elif tok_id == Id.Char_UBraced:  # J8 only
+                part = 'u'
+
+            else:
+                raise AssertionError(Id_str(tok_id))
+
+            self.decoded.write(part)
+            str_pos = str_end
 
 
 def Decode(s, mode, buf):

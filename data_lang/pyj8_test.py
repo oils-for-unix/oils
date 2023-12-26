@@ -18,7 +18,8 @@ def _PrintTokens(lex):
     while True:
         id_, end_pos, decoded = lex.Next()
         val = lex.s[pos:end_pos]
-        log('    %20s %10r %r', Id_str(id_), val, decoded)
+        d = repr(decoded) if decoded is not None else '-'
+        log('    %20s %15r %15s', Id_str(id_), val, d)
         if id_ == Id.Eol_Tok:
             break
         pos = end_pos

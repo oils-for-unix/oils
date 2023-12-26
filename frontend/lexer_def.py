@@ -524,7 +524,7 @@ _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 J8_DEF = [
     C('"', Id.J8_LeftQuote),
     # j"" makes sense in YSH code, u"" makes sense in JSON
-    C('j"', Id.J8_LeftUQuote),
+    C('u"', Id.J8_LeftUQuote),
     C('b"', Id.J8_LeftBQuote),
 
     C('[', Id.J8_LBracket),
