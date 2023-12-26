@@ -1,10 +1,8 @@
 #!/usr/bin/env python2
 from __future__ import print_function
-"""
-j8_str.py
-"""
 
-from _devbuild.gen.id_kind_asdl import Id_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t
+from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log
 
@@ -165,8 +163,8 @@ def WriteString(s, options, buf):
     return 0
 
 
-class Lexer(object):
-    """J8 lexer.
+class LexerDecoder(object):
+    """J8 lexer and string decoder.
 
     Similar interface as SimpleLexer2, except we return an optional decoded
     string
@@ -187,16 +185,25 @@ class Lexer(object):
 
     def __init__(self, s):
         # type: (str) -> None
-        self.match_func = None  # type: SimpleMatchFunc
         self.s = s
         self.pos = 0
+        self.state = 0  # 0 for outer, 1 inside string
 
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
         """
         Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
         """
-        tok_id, end_pos = self.match_func(self.s, self.pos)
+        if self.state == 0:
+            tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
+        else:
+            tok_id, end_pos = match.MatchJ8StrToken(self.s, self.pos)
+
+        if tok_id in (Id.J8_LeftQuote, Id.J8_LeftBQuote, Id.J8_LeftUQuote):
+            self.state = 1
+        elif tok_id == Id.Right_DoubleQuote:
+            self.state = 0
+
         self.pos = end_pos
         return tok_id, end_pos, None
 

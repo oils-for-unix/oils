@@ -522,6 +522,11 @@ _JSON_FRACTION = r'(\.[0-9]+)?'
 _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
 J8_DEF = [
+    C('"', Id.J8_LeftQuote),
+    # j"" makes sense in YSH code, u"" makes sense in JSON
+    C('j"', Id.J8_LeftUQuote),
+    C('b"', Id.J8_LeftBQuote),
+
     C('[', Id.J8_LBracket),
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
