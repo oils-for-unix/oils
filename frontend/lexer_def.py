@@ -526,23 +526,19 @@ J8_DEF = [
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
     C('}', Id.J8_RBrace),
-
     C(',', Id.J8_Comma),
     C(':', Id.J8_Colon),
-
     C('true', Id.J8_Bool),
     C('false', Id.J8_Bool),
 
     # Numbers can't start with leading 0
     R('([0-9]|[1-9][0-9]*)' + _JSON_FRACTION + _JSON_EXP, Id.J8_Number),
-
     R(r'[ \r\n\t]', Id.Ignored_Space),
 
     # TODO: AnyString, UString, and BString will also
     # - additionally validate utf-8
     # - decode
     # I guess this takes 2 passes?
-
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 
@@ -552,9 +548,7 @@ J8_STR_DEF = [
 
     # https://json.org list of chars
     R(r'\\["\\/bfnrt]', Id.Char_OneChar),
-
     _U4_CHAR_STRICT,  # \u1234 - JSON only
-
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
 

@@ -4,10 +4,13 @@ from __future__ import print_function
 j8_str.py
 """
 
+from _devbuild.gen.id_kind_asdl import Id_t
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import Tuple, List
+from typing import Tuple, List, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from frontend.match import SimpleMatchFunc
 
 _ = log
 
@@ -116,17 +119,57 @@ def WriteString(s, options, buf):
             pos = end
             #log('pos %d', pos)
 
+        # TODO: escape \\ \" etc.
+        # QSN does that with _encode_bytes_x() and EncodeRunes()
+        # We can use a slow dict here, and then the C++ version will use a
+        # switch statement.  Need an exhaustive spec test though.
+
         buf.write(s[pos:])
         buf.write('"')
 
     else:
         buf.write('"')
         # TODO: escape \\ \" etc.
-        # could use str.maketrans or something?
         buf.write(s)
         buf.write('"')
 
     return 0
+
+
+class Lexer(object):
+    """J8 lexer.
+
+    Similar interface as SimpleLexer2, except we return an optional decoded
+    string
+
+    TODO: Combine
+
+    match.J8Lexer
+    match.J8StrLexer
+
+    When you hit "" b"" u""
+
+    1. Start the string lexer
+    2. decode it in place
+    3. validate utf-8 on the Id.Char_Literals tokens -- these are the only ones
+       that can be arbitrary strings
+    4. return decoded string
+    """
+
+    def __init__(self, s):
+        # type: (str) -> None
+        self.match_func = None  # type: SimpleMatchFunc
+        self.s = s
+        self.pos = 0
+
+    def Next(self):
+        # type: () -> Tuple[Id_t, int, Optional[str]]
+        """
+        Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
+        """
+        tok_id, end_pos = self.match_func(self.s, self.pos)
+        self.pos = end_pos
+        return tok_id, end_pos, None
 
 
 def Decode(s, mode, buf):

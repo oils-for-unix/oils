@@ -692,23 +692,30 @@ def AddKinds(spec):
         ])
 
     # Note: not used now
-    spec.AddKind('J8', [
-        'LBracket',
-        'RBracket',
-        'LBrace',
-        'RBrace',
+    spec.AddKind(
+        'J8',
+        [
+            'LBracket',
+            'RBracket',
+            'LBrace',
+            'RBrace',
+            'Comma',
+            'Colon',
 
-        'Comma',
-        'Colon',
+            # Parsed
+            'Bool',
+            'Number',  # Int and Float
 
-        # Parsed
-        'Bool',
-        'Number',  # Int and Float
+            # Low level tokens for "" b"" u""
+            'LeftQuote',
+            'LeftBQuote',
+            'LeftUQuote',
 
-        'AnyString',
-        'UString',  # unicode (no surrogate halves, no wtf-8)
-        'BString',
-    ])
+            # High level tokens for "" b"" u""
+            'AnyString',
+            'UString',  # unicode (no surrogate halves, no wtf-8)
+            'BString',
+        ])
 
 
 # Shared between [[ and test/[.

@@ -20,7 +20,6 @@ if fastlex:
 else:
     import re  # type: ignore
 
-
 if TYPE_CHECKING:
     SRE_Pattern = Any  # Do we need a .pyi file for re or _sre?
     SimpleMatchFunc = Callable[[str, int], Tuple[Id_t, int]]
@@ -146,8 +145,8 @@ if fastlex:
     HISTORY_MATCHER = _MatchHistoryToken_Fast
     BRACE_RANGE_MATCHER = _MatchBraceRangeToken_Fast
 
-    J8_MATCHER = _MatchJ8Token_Fast
-    J8_STR_MATCHER = _MatchJ8StrToken_Fast
+    MatchJ8Token = _MatchJ8Token_Fast
+    MatchJ8StrToken = _MatchJ8StrToken_Fast
 
     IsValidVarName = fastlex.IsValidVarName
     ShouldHijack = fastlex.ShouldHijack
@@ -161,8 +160,8 @@ else:
     HISTORY_MATCHER = _MatchTokenSlow(lexer_def.HISTORY_DEF)
     BRACE_RANGE_MATCHER = _MatchTokenSlow(lexer_def.BRACE_RANGE_DEF)
 
-    J8_MATCHER = _MatchTokenSlow(lexer_def.J8_DEF)
-    J8_STR_MATCHER = _MatchTokenSlow(lexer_def.J8_STR_DEF)
+    MatchJ8Token = _MatchTokenSlow(lexer_def.J8_DEF)
+    MatchJ8StrToken = _MatchTokenSlow(lexer_def.J8_STR_DEF)
 
     # Used by osh/cmd_parse.py to validate for loop name.  Note it must be
     # anchored on the right.
@@ -271,12 +270,12 @@ def GlobLexer(s):
 
 def J8Lexer(s):
     # type: (str) -> SimpleLexer2
-    return SimpleLexer2(J8_MATCHER, s)
+    return SimpleLexer2(MatchJ8Token, s)
 
 
 def J8StrLexer(s):
     # type: (str) -> SimpleLexer2
-    return SimpleLexer2(J8_STR_MATCHER, s)
+    return SimpleLexer2(MatchJ8StrToken, s)
 
 
 # These tokens are "slurped"

@@ -45,12 +45,12 @@ class MatchTest(unittest.TestCase):
 
     def testJ8Lexer(self):
         cases = [
-          '00',
-          '[]',
-          '[3.14, 4, true]',
-          'truez',
-          'false\t',
-          'bad',
+            '00',
+            '[]',
+            '[3.14, 4, true]',
+            'truez',
+            'false\t',
+            'bad',
         ]
 
         for s in cases:
@@ -61,15 +61,14 @@ class MatchTest(unittest.TestCase):
 
     def testJ8StrLexer(self):
         cases = [
-          '"hi"',
-          # Newlines in strings are control chars, not accepted
-          '"hi\n"',
-          '"hi\\n"',
+            '"hi"',
+            # Newlines in strings are control chars, not accepted
+            '"hi\n"',
+            '"hi\\n"',
+            r'"\yff \xff \u1234 \u{123456} \\ \" "',
 
-          r'"\yff \xff \u1234 \u{123456} \\ \" "',
-
-          # This points at \ as Id.Unknown_Tok, which I suppose is OK
-          r'"\a \z \/ \b "',
+            # This points at \ as Id.Unknown_Tok, which I suppose is OK
+            r'"\a \z \/ \b "',
         ]
 
         for s in cases:

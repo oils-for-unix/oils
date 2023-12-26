@@ -63,21 +63,21 @@ def PrintRegex(pat):
     print('\t\t]')
 
 
-# re2c literals are inside double quotes, so we don't need to do anything with
-# ^ or whatever.
+# re2c literals are inside double quotes, so we need to escape \ and "
+# But we don't need to do anything with the quoted literal ^
 LITERAL_META = ['\\', '"']
 LITERAL_META_CODES = [ord(c) for c in LITERAL_META]
 
 
 def _Literal(arg, char_escapes=LITERAL_META_CODES):
-    if arg >= 0x80 or arg < 0x20:  # 0x1f and below
-        s = '\\x%02x' % arg  # for \x80-\xff
-    elif arg == ord('\n'):
+    if arg == ord('\n'):
         s = r'\n'
     elif arg == ord('\r'):
         s = r'\r'
     elif arg == ord('\t'):
         s = r'\t'
+    elif arg >= 0x80 or arg < 0x20:  # 0x1f and below
+        s = '\\x%02x' % arg  # for \x80-\xff
     elif arg in char_escapes:
         s = '\\' + chr(arg)
     else:
