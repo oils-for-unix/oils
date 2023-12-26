@@ -51,8 +51,8 @@ _JSON_ESCAPES = {
   '\t': '\\t',
 }
 
-def _EscapeUnprintable(s, buf):
-    # type: (str, mylib.BufWriter) -> None
+def _EscapeUnprintable(s, buf, u6_escapes=False):
+    # type: (str, mylib.BufWriter, bool) -> None
     for ch in s:
         escaped = _JSON_ESCAPES.get(ch)
         if escaped is not None:
@@ -62,7 +62,11 @@ def _EscapeUnprintable(s, buf):
         char_code = ord(ch)
         if char_code < 0x20:  # like IsUnprintableLow
             # TODO: mylib.hex_lower doesn't have padding
-            buf.write(r'\u%04d' % char_code)
+            #buf.write(r'\u%04d' % char_code)
+            if u6_escapes:
+                buf.write(r'\u{%x}' % char_code)
+            else:
+                buf.write(r'\u%04x' % char_code)
             continue
 
         buf.write(ch)
@@ -141,7 +145,7 @@ def WriteString(s, options, buf):
         buf.write('b"')
         pos = 0
         for start, end in invalid_utf8:
-            buf.write(s[pos:start])
+            _EscapeUnprintable(s[pos:start], buf, u6_escapes=True)
 
             for i in xrange(start, end):
                 buf.write('\y%x' % ord(s[i]))
@@ -149,12 +153,8 @@ def WriteString(s, options, buf):
             pos = end
             #log('pos %d', pos)
 
-        # TODO: escape \\ \" etc.
-        # QSN does that with _encode_bytes_x() and EncodeRunes()
-        # We can use a slow dict here, and then the C++ version will use a
-        # switch statement.  Need an exhaustive spec test though.
-
-        _EscapeUnprintable(s[pos:], buf)
+        # Last part
+        _EscapeUnprintable(s[pos:], buf, u6_escapes=True)
         buf.write('"')
 
     else:
