@@ -526,7 +526,6 @@ J8_DEF = [
     # j"" makes sense in YSH code, u"" makes sense in JSON
     C('u"', Id.J8_LeftUQuote),
     C('b"', Id.J8_LeftBQuote),
-
     C('[', Id.J8_LBracket),
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
@@ -538,7 +537,7 @@ J8_DEF = [
 
     # Numbers can't start with leading 0
     R('([0-9]|[1-9][0-9]*)' + _JSON_FRACTION + _JSON_EXP, Id.J8_Number),
-    R(r'[ \r\n\t]', Id.Ignored_Space),
+    R(r'[ \r\n\t]+', Id.Ignored_Space),
 
     # TODO: AnyString, UString, and BString will also
     # - additionally validate utf-8

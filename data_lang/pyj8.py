@@ -1,7 +1,8 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
+from frontend import consts
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log
@@ -36,16 +37,16 @@ def EncodeString(s, options):
 
 # similar to frontend/consts.py
 _JSON_ESCAPES = {
-  # Note: we don't escaping \/
-  '\\': '\\\\',
-  '"': '\\"',
-
-  '\b': '\\b',
-  '\f': '\\f',
-  '\n': '\\n',
-  '\r': '\\r',
-  '\t': '\\t',
+    # Note: we don't escaping \/
+    '\\': '\\\\',
+    '"': '\\"',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\n': '\\n',
+    '\r': '\\r',
+    '\t': '\\t',
 }
+
 
 def _EscapeUnprintable(s, buf, u6_escapes=False):
     # type: (str, mylib.BufWriter, bool) -> None
@@ -192,6 +193,9 @@ class LexerDecoder(object):
         """
         Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
         """
+        # TODO: break dep
+        from osh import string_ops
+
         tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
 
         if tok_id not in (Id.J8_LeftQuote, Id.J8_LeftBQuote, Id.J8_LeftUQuote):
@@ -202,9 +206,12 @@ class LexerDecoder(object):
         while True:
             tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
             if tok_id == Id.Eol_Tok:
+                # Syntax error: unclosed quote.  TODO: point to beginning of
+                # quote?
                 raise AssertionError()
+
             if tok_id == Id.Unknown_Tok:
-                # backslash etc.
+                # Syntax error: invalid backslash etc.
                 raise AssertionError()
 
             if tok_id == Id.Right_DoubleQuote:
@@ -215,20 +222,32 @@ class LexerDecoder(object):
                 self.decoded = mylib.BufWriter()
                 return Id.J8_AnyString, str_end, s
 
-            if tok_id == Id.Char_OneChar:  # JSON and J8
-                part = 'x'
-
-            elif tok_id == Id.Char_Literals:  # JSON and J8
+            if tok_id == Id.Char_Literals:  # JSON and J8
                 part = self.s[str_pos:str_end]
+                try:
+                    part.decode('utf-8')
+                except UnicodeDecodeError as e:
+                    # Syntax error because JSON must be invalid UTF-8
+                    raise AssertionError()
 
-            elif tok_id == Id.Char_Unicode4:  # JSON only
-                part = 'y'
-
-            elif tok_id == Id.Char_YHex:  # J8 only
-                part = 'z'
+            elif tok_id == Id.Char_OneChar:  # JSON and J8
+                ch = self.s[str_pos + 1]
+                part = consts.LookupCharC(ch)
 
             elif tok_id == Id.Char_UBraced:  # J8 only
-                part = 'u'
+                h = self.s[str_pos + 3:str_end - 1]
+                i = int(h, 16)
+                part = string_ops.Utf8Encode(i)
+
+            elif tok_id == Id.Char_YHex:  # J8 only
+                h = self.s[str_pos + 2:str_end]
+                i = int(h, 16)
+                part = chr(i)
+
+            elif tok_id == Id.Char_Unicode4:  # JSON only
+                h = self.s[str_pos + 2:str_end]
+                i = int(h, 16)
+                part = string_ops.Utf8Encode(i)
 
             else:
                 raise AssertionError(Id_str(tok_id))
