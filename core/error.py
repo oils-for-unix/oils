@@ -199,6 +199,32 @@ class TypeErr(TypeErrVerbose):
                                 "%s, got %s" % (msg, _ValType(actual_val)),
                                 location)
 
+class Decode(Exception):
+    """
+    List of J8 errors errors:
+    - message isn't UTF-8 - Id.Char_Literals - need loc
+    - Invalid token Id.Unkown_Tok - need loc
+    - Unclosed double quote string -- need loc
+    - Parse error, e.g. [}{]
+
+    - Invalid escapes:
+      - b"" and u"" don't accept \\u1234
+      - u"" doesn't accept \\yff
+      - "" doesn't accept \\yff or \\u{123456}
+    """
+    pass
+
+class Encode(Exception):
+    """
+    List of J8 encode errors:
+    - object cycle
+    - unprintable object like Eggex
+    When encoding JSON:
+    - binary data that can't be represented in JSON
+      - if using Unicode replacement char, then it won't fail
+    """
+    pass
+
 
 def e_usage(msg, location):
     # type: (str, loc_t) -> NoReturn

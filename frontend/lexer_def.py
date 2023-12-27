@@ -518,6 +518,8 @@ ECHO_E_DEF = _C_STRING_COMMON + [
 ]
 
 # https://json.org/
+
+_JSON_INT = r'([0-9]|[1-9][0-9]*)'  # Numbers can't start with leading 0
 _JSON_FRACTION = r'(\.[0-9]+)?'
 _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
@@ -536,8 +538,8 @@ J8_DEF = [
     C('true', Id.J8_Bool),
     C('false', Id.J8_Bool),
 
-    # Numbers can't start with leading 0
-    R('([0-9]|[1-9][0-9]*)' + _JSON_FRACTION + _JSON_EXP, Id.J8_Number),
+    R(_JSON_INT, Id.J8_Int),
+    R(_JSON_INT + _JSON_FRACTION + _JSON_EXP, Id.J8_Float),
 
     # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),

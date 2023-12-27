@@ -5,29 +5,36 @@ j8.py: J8 Notation and Related Utilities
 TODO:
 
 - Int vs. Float
+  - match.LooksLikeInteger() is a shortcut
 
-- Distinguish JSON vs J8 -
+- Errors
+  - Figure out location info for parse errors - turn a position into a line and
+    column?
+  - Assert should become parse errors
+
+- Distinguish JSON vs. J8 -
   - json should fail can fail to encode
   - and distinguish "" b"" u""
 
-- SHOW_CYCLES and SHOW_NON_DATA
+- Distinguish pretty-printing vs. data transfer
+  - SHOW_CYCLES and SHOW_NON_DATA
 
 - Make the whole thing translate to C++
   - use Bjoern DFA for UTF-8 validation in printing and parsing
+  - move more of LexerDecoder out of pyj8.py?  I think it can translate
 
 - Many more tests
-  - Assert should become parse errors
-  - Figure out location info for parse errors - turn a position into a line and
-    column?
-
-- Run JSONTestSuite
-
-- Option for cycle detection when pretty printing
-
-- PrettyPrinter uses hnode.asdl?
+  - Run JSONTestSuite
 
 - QSN maybe_shell_encode() is used for bash features
   - Remove shell_compat which does \\x00 instead of \\0
+
+Other
+
+- PrettyPrinter uses hnode.asdl?
+  - color
+  - line wrapping -- do this later
+  - this is open to contribution
 
 - Harmonize the API in data_lang/qsn.py 
   - use mylib.BufWriter output
@@ -47,6 +54,7 @@ from asdl import format as fmt
 from core import vm
 from data_lang import pyj8
 from data_lang import qsn
+from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
@@ -143,12 +151,9 @@ class Printer(object):
             show_cycles.Yes
         """
         self.options = options
-
-        # This could be an optimized set an C++ bit set like mark_sweep_heap.h,
-        # rather than a Dict
-        self.unique_objs = mylib.UniqueObjects()
         self.spaces = {0: ''}  # cache of strings with spaces
 
+    # Could be PrintMessage or PrintJsonMessage()
     def Print(self, val, buf, indent):
         # type: (value_t, mylib.BufWriter, int) -> None
         """
@@ -157,6 +162,33 @@ class Printer(object):
         """
         p = InstancePrinter(buf, indent, self.options, self.spaces)
         p.Print(val)
+
+    def PrintJson(self, val, buf, indent):
+        # type: (value_t, mylib.BufWriter, int) -> None
+        """
+        Doesn't decay to b"" strings
+        Either raise error.Decode() or use unicode replacement char
+        """
+        pass
+
+    def DebugPrint(self, val, buf, indent):
+        # type: (value_t, mylib.BufWriter, int) -> None
+        """
+        For = operator.
+        SHOW_CYCLES
+        SHOW_NON_DATA
+        """
+        pass
+
+    def PrintString(self, s, buf):
+        # type: (str, mylib.BufWriter) -> None
+        """
+        # TODO: write --j8 can use this
+        PrettyPrintString()
+        """
+        # There should be an option to not quote "plain words" like
+        # /usr/local/foo-bar/x.y/a_b
+        pass
 
 
 class InstancePrinter(object):
@@ -463,13 +495,15 @@ if mylib.PYTHON:
                 self._Next()
                 return b
 
-            elif self.tok_id == Id.J8_Number:
-                # TODO: distinguish Int vs. Float
-                #
-                # 1e-6 is a float
-                # 1e6 could be an int.  How do other libraries do this?
+            elif self.tok_id == Id.J8_Int:
+                part = self.s[self.start_pos:self.end_pos]
                 self._Next()
-                return value.Null
+                return value.Int(int(part))
+
+            elif self.tok_id == Id.J8_Float:
+                part = self.s[self.start_pos:self.end_pos]
+                self._Next()
+                return value.Float(float(part))
 
             # UString, BString too
             elif self.tok_id == Id.J8_AnyString:

@@ -705,7 +705,8 @@ def AddKinds(spec):
             # Parsed
             'Null',
             'Bool',
-            'Number',  # Int and Float
+            'Int',  # Number
+            'Float',  # Number
 
             # Low level tokens for "" b"" u""
             'LeftQuote',
