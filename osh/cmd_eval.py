@@ -1027,7 +1027,8 @@ class CommandEvaluator(object):
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
 
         if node.keyword.id == Id.Lit_Equals:  # = f(x)
-            ui.DebugPrint(val)
+            with vm.ctx_FlushStdout():
+                ui.DebugPrint(val)
 
         return 0
 
