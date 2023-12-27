@@ -14,17 +14,13 @@ _ = log
 
 def WriteInt(i, buf):
     # type: (int, mylib.BufWriter) -> None
-    """
-    C++ version can avoid allocation
-    """
+    """ C++ version can avoid allocation """
     buf.write(str(i))
 
 
 def WriteFloat(f, buf):
     # type: (float, mylib.BufWriter) -> None
-    """
-    C++ version can avoid allocation
-    """
+    """ C++ version can avoid allocation """
     buf.write(str(f))
 
 
@@ -50,6 +46,11 @@ _JSON_ESCAPES = {
 
 def _EscapeUnprintable(s, buf, u6_escapes=False):
     # type: (str, mylib.BufWriter, bool) -> None
+    """ Print a string literal with required esceapes like \\n
+
+    \\u001f for JSON
+    \\u{1f} for J8 - these are "u6 escapes"
+    """
     for ch in s:
         escaped = _JSON_ESCAPES.get(ch)
         if escaped is not None:
@@ -186,26 +187,24 @@ class LexerDecoder(object):
         # type: (str) -> None
         self.s = s
         self.pos = 0
+        # Reuse this instance to save GC objects.  JSON objects could have
+        # thousands of strings.
         self.decoded = mylib.BufWriter()
 
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
-        while True:
-            tok_id, end_pos, decoded = self._Next()
-            if tok_id != Id.Ignored_Space:
-                break
-        return tok_id, end_pos, decoded
 
-    def _Next(self):
-        # type: () -> Tuple[Id_t, int, Optional[str]]
-        """
-        Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
-        """
         # TODO: break dep
         from osh import string_ops
 
-        tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
+        while True:  # ignore spaces
+            tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
+            if tok_id != Id.Ignored_Space:
+                break
+            self.pos = end_pos
 
+        # TODO: Distinguish bewteen "" b"" and u"", and allow different
+        # escapes.
         if tok_id not in (Id.J8_LeftQuote, Id.J8_LeftBQuote, Id.J8_LeftUQuote):
             self.pos = end_pos
             return tok_id, end_pos, None
@@ -226,8 +225,8 @@ class LexerDecoder(object):
                 self.pos = str_end
 
                 s = self.decoded.getvalue()
-                # TODO: clear() to reduce GC pressure
-                self.decoded = mylib.BufWriter()
+                self.decoded.reset()
+
                 return Id.J8_AnyString, str_end, s
 
             if tok_id == Id.Char_Literals:  # JSON and J8
@@ -262,42 +261,5 @@ class LexerDecoder(object):
 
             self.decoded.write(part)
             str_pos = str_end
-
-
-def Decode(s, mode, buf):
-    # type: (str, int, mylib.BufWriter) -> int
-    """
-    Should we call Parse() with 
-
-        lex_mode_e.J8_Str
-        lex_mode_e.JSON
-    ?
-
-    Callers:
-
-    - json read
-    - j8 read
-    - Possibly the j"\yff" lexer, although that produces tokens first.
-
-    The lexer for $'\x00' is different.
-
-    1. Decode by backslash escapes \n etc.
-
-    JSON mode: \\u1234 only
-    J8 mode: \\yff and \\u{123456}
-
-    Errors:
-      Malformed escapes
-    """
-    return 0
-
-
-def py_decode(s):
-    # type: (str) -> str
-
-    # TODO: Can use a regex as a demo
-    # J8 strings are a regular language
-    return s
-
 
 # vim: sw=4

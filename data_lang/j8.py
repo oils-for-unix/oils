@@ -2,32 +2,40 @@
 """
 j8.py: J8 Notation and Related Utilities
 
-Callers:
-
-- the = operator
-- write (x)
-  - Flags --lines --j8 --json
-- read --j8 :x
-  - read --json
-
 TODO:
 
+- Int vs. Float
+
+- Distinguish JSON vs J8 -
+  - json should fail can fail to encode
+  - and distinguish "" b"" u""
+
+- SHOW_CYCLES and SHOW_NON_DATA
+
+- Make the whole thing translate to C++
+  - use Bjoern DFA for UTF-8 validation in printing and parsing
+
+- Many more tests
+  - Assert should become parse errors
+
+- Run JSONTestSuite
+
+- Option for cycle detection when pretty printing
+
 - PrettyPrinter uses hnode.asdl?
-- Harmonize the API in data_lang/qsn.py 
-  - use mylib.BufWriter output
-  - use u_style.LiteralUtf8 instead of BIT8_UTF8, etc.
 
 - QSN maybe_shell_encode() is used for bash features
   - Remove shell_compat which does \\x00 instead of \\0
 
+- Harmonize the API in data_lang/qsn.py 
+  - use mylib.BufWriter output
+  - use u_style.LiteralUtf8 instead of BIT8_UTF8, etc.
 
-Meta-syntax:
+- Unify with ASDL pretty printing?
 
    () is for statically typed ASDL data?
-
       (command.Simple blame_tok:(...) words:[ ])
-
-   <> is for non-J8 errors?  For the = oeprator
+   <> is for non-J8 errors?  For the = operator
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
@@ -96,47 +104,18 @@ class PrettyPrinter(object):
         pass
 
 
+SHOW_CYCLES = 1  # pretty-printing
+SHOW_NON_DATA = 2  # non-data objects like Eggex can be <Eggex 0xff>
+
 class Printer(object):
     """
-    For write --j8 (x) .  Output to monomorphic mylib.BufWriter.
+    For json/j8 write (x), write (x), = operator, pp line (x)
 
     Options:
     - Control over escaping: \\u \\x raw UTF-8
     - Control over j prefix: when necessary, or always
     - Control over strict JSON subset (--json vs --j8)
     - Dumb indentation, not smart line wrapping
-
-    Maybe:
-    - float format, like %.3f ?
-
-    Fixed behavior:
-    - Always fails on cycles
-    - Always on non-data types
-
-    Conflict:
-
-    $ write -- foo bar j"\n"
-    foo
-    bar
-    <raw newline>
-
-    $ write --j8 foo bar j"\n"
-    "foo"
-    "bar"
-    j"\n"
-
-    # I guess this makes sense?  lines are escaped?
-    $ write --lines foo bar j"\n"
-    foo   # unquoted
-    bar
-    j"\n"
-
-    # inverse is read --line --j8 or read --lines j8
-
-    # One per line
-    $ write ({k: "v"}, [2, 3])
-    {"k": "v"}
-    [2, 3]
     """
 
     def __init__(self, options):
@@ -159,7 +138,7 @@ class Printer(object):
 
             pretty.UnquotedKeys - ASDL uses this?
 
-          indent: if None, then we print everything on one line
+            show_cycles.Yes
         """
         self.options = options
 
@@ -179,6 +158,7 @@ class Printer(object):
 
 
 class InstancePrinter(object):
+    """Print a value tree as J8/JSON."""
 
     def __init__(self, buf, indent, options, spaces):
         # type: (mylib.BufWriter, int, int, Dict[int, str]) -> None
@@ -207,13 +187,8 @@ class InstancePrinter(object):
         else:
             self.buf.write('"')
             valid_utf8 = qsn.EncodeRunes(s, qsn.BIT8_UTF8, self.buf)
-
-            # TODO: check errors
-            # Is it possible to have invalid UTF-8 but valid JSON?
-            # Surrogate pairs?
             if not valid_utf8:
                 pass
-
             self.buf.write('"')
 
     def Print(self, val, level=0):
@@ -373,8 +348,7 @@ class InstancePrinter(object):
                 self.buf.write('}')
 
             else:
-                # Print statically typed () depending on flags
-                # Or <> for invalid
+                # TODO: Option to use the <> format of = operator?
                 pass
 
 
