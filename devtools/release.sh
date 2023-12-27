@@ -260,6 +260,8 @@ EOF
   done
 
   ysh/run.sh run-for-release
+
+  data_lang/json-errors.sh run-for-release
 }
 
 _spec-sanity-check() {

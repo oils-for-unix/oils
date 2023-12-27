@@ -93,6 +93,7 @@ runtime-errors      test/runtime-errors.sh run-all-with-osh      -
 ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run          -
 ysh-parse-errors    test/ysh-parse-errors.sh soil-run-py         -
 ysh-large           ysh/run.sh soil-run                          -
+json-errors         data_lang/json-errors.sh soil-run-py         -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
 osh-minimal         test/spec-py.sh osh-minimal                  _tmp/spec/osh-minimal/index.html
 headless            client/run.sh soil-run-py                    -
@@ -222,6 +223,7 @@ mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 ysh-parse-errors test/ysh-parse-errors.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
+json-errors      data_lang/json-errors.sh soil-run-cpp -
 EOF
 }
 

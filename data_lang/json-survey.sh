@@ -9,7 +9,7 @@ set -o errexit
 
 source build/dev-shell.sh  # python3 in $PATH
 
-py2() {
+int-float() {
   # This is a float
   python2 -c 'import json; val = json.loads("1e6"); print(type(val)); print(val)'
   python2 -c 'import json; val = json.loads("1e-6"); print(type(val)); print(val)'
@@ -18,20 +18,23 @@ py2() {
   # Int
   python2 -c 'import json; val = json.loads("42"); print(type(val)); print(val)'
 
-  # error
-  python2 -c 'import json; val = json.loads("{3:4}"); print(type(val)); print(val)'
-}
-
-py3() {
   python3 -c 'import json; val = json.loads("1e6"); print(type(val)); print(val)'
 
-  # error
-  python3 -c 'import json; val = json.loads("{3:4}"); print(type(val)); print(val)'
-}
+  echo
+  echo
 
-node() {
   # JavaScript only has 'number', no Int and Float
   nodejs -e 'var val = JSON.parse("1e6"); console.log(typeof(val)); console.log(val)'
+}
+
+syntax-errors() {
+
+  python2 -c 'import json; val = json.loads("{3:4}"); print(type(val)); print(val)' || true
+  echo
+  python2 -c 'import json; val = json.loads("[3:4]"); print(type(val)); print(val)' || true
+
+  echo
+  echo
 
   # This has good position information
   # It prints the line number, the line, and points to the token in the line
@@ -42,6 +45,15 @@ node() {
   nodejs -e 'var val = JSON.parse("[\n  3: 4\n]"); console.log(typeof(val)); console.log(val)' || true
 
   nodejs -e 'var val = JSON.parse("[\n\n \"hello "); console.log(typeof(val)); console.log(val)' || true
+}
+
+empty-input() {
+  python3 -c 'import json; val = json.loads(""); print(type(val)); print(val)' || true
+
+  echo
+  echo
+
+  nodejs -e 'var val = JSON.parse(""); console.log(typeof(val)); console.log(val)' || true
 }
 
 "$@"
