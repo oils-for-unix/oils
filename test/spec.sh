@@ -492,12 +492,8 @@ assoc-zsh() {
   sh-spec spec/assoc-zsh.test.sh $ZSH "$@"
 }
 
-# NOTE: zsh passes about half and fails about half.  It supports a subset of [[
-# I guess.
 dbracket() {
-  sh-spec spec/dbracket.test.sh --oils-failures-allowed 0 \
-    $BASH $MKSH $OSH_LIST "$@"
-  #sh-spec spec/dbracket.test.sh $BASH $MKSH $OSH_LIST $ZSH "$@"
+  run-file dbracket "$@"
 }
 
 dparen() {

@@ -1,3 +1,8 @@
+## oils_failures_allowed: 2
+## compare_shells: bash mksh
+
+# NOTE: zsh passes about half, and fails about half.  It supports a subset of
+# [[ I guess.
 
 #### [[ glob matching, [[ has no glob expansion
 [[ foo.py == *.py ]] && echo true
@@ -432,3 +437,129 @@ match1
 match2
 ## END
 
+
+#### [[ -v array[i] ]]
+
+typeset -a array
+array=('' nonempty)
+
+[[ -v array[0] ]]
+echo zero=$?
+
+[[ -v array[1] ]]
+echo one=$?
+
+[[ -v array[2] ]]
+echo two=$?
+
+## STDOUT:
+zero=0
+one=0
+two=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
+
+#### [[ -v array[expr]] ]] doesn't work
+
+# This feels inconsistent with the rest of bash?
+zero=0
+
+[[ -v array[zero+0] ]]
+echo zero=$?
+
+[[ -v array[zero+1] ]]
+echo one=$?
+
+[[ -v array[zero+2] ]]
+echo two=$?
+
+echo ---
+
+i='0+0'
+[[ -v array[i] ]]
+echo zero=$?
+
+i='0+1'
+[[ -v array[i] ]]
+echo one=$?
+
+i='0+2'
+[[ -v array[i] ]]
+echo two=$?
+
+
+## STDOUT:
+zero=1
+one=1
+two=1
+---
+zero=1
+one=1
+two=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
+
+#### [[ -v assoc[key] ]]
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
+
+[[ -v assoc[empty] ]]
+echo empty=$?
+
+[[ -v assoc[k] ]]
+echo k=$?
+
+[[ -v assoc[nonexistent] ]]
+echo nonexistent=$?
+
+echo ---
+# Now with quotes
+
+[[ -v assoc["empty"] ]]
+echo empty=$?
+
+[[ -v assoc['k'] ]]
+echo k=$?
+
+[[ -v assoc['nonexistent'] ]]
+echo nonexistent=$?
+
+echo ---
+# Now with var expansion
+
+key=empty
+[[ -v assoc[$key] ]]
+echo empty=$?
+
+key=k
+[[ -v assoc[$key] ]]
+echo k=$?
+
+key=nonexistent
+[[ -v assoc[$key] ]]
+echo nonexistent=$?
+
+## STDOUT:
+empty=0
+k=0
+nonexistent=1
+---
+empty=0
+k=0
+nonexistent=1
+---
+empty=0
+k=0
+nonexistent=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END

@@ -59,7 +59,7 @@ OSH disallows this by default.  If you want this behavior, you can turn on
 
 Related: [A 30-year-old security problem](https://www.oilshell.org/blog/2019/01/18.html#a-story-about-a-30-year-old-security-problem)
 
-## Parsing Differences
+## Static Parsing Differences
 
 This section describes differences related to [static
 parsing](http://www.oilshell.org/blog/2016/10/22.html).  OSH avoids the
@@ -182,7 +182,7 @@ named `func`, use `command func arg1`.
 Note that all shells have extensions that cause this issue.  For example, `[[`
 is a keyword in `bash` but not in POSIX shell.
 
-## More Parsing Differences
+## Later Parsing Differences
 
 These differences occur in subsequent stages of parsing, or in runtime parsing.
 
@@ -232,6 +232,38 @@ Yes:
 
 The ambiguous syntax is allowed when we pass globs through to `libc`, but it's
 good practice to be explicit.
+
+### [[ -v var ]] doesn't allow expressions
+
+In bash, you can use `[[` with `-v` to test whether an array contains an entry:
+
+    declare -a array=('' foo)
+    if [[ -v array[1] ]]; then
+      echo 'exists'
+    fi  # => exists
+
+Likewise for an associative array:
+
+    declare -A assoc=([key]=value)
+    if [[ -v assoc['key'] ]]
+      echo 'exists'
+    fi  # => exists
+
+OSH currently treats these expressions as a string, which means the status will
+be 1 (`false`).
+
+Workaround:
+
+    if [[ "${assoc['key']:+exists}" ]]; then
+      echo 'exists'
+    fi  # => exists
+
+In ysh, you can use:
+
+    var d = { key: 42 }
+    if ('key' in d) {
+      echo 'exists'
+    }  # => exists
 
 ## Data Structures
 
