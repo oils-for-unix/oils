@@ -87,26 +87,13 @@ class Json(vm._Builtin):
 
             #log('json write indent %d', indent)
 
-            # TODO: We should use the new printer unconditionally
-            if self.is_j8:
-                buf = mylib.BufWriter()
-                self.printer.Print(val, buf, indent)
-                self.stdout_.write(buf.getvalue())
-                self.stdout_.write('\n')
-            else:
-                if mylib.PYTHON:
-                    #if 0:
-                    obj = cpython._ValueToPyObj(val)
+            buf = mylib.BufWriter()
 
-                    j = yajl.dumps(obj, indent=indent)
-                    sys.stdout.write(j)
-                    if extra_newline:
-                        sys.stdout.write('\n')
-                else:
-                    buf = mylib.BufWriter()
-                    self.printer.Print(val, buf, indent)
-                    self.stdout_.write(buf.getvalue())
-                    self.stdout_.write('\n')
+            # TODO: Call PrintMessage() vs. PrintJsonmessage()
+            self.printer.Print(val, buf, indent)
+
+            self.stdout_.write(buf.getvalue())
+            self.stdout_.write('\n')
 
         elif action == 'read':
             attrs = flag_spec.Parse('json_read', arg_r)
