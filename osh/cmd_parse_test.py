@@ -7,6 +7,7 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import command_e, for_iter_e, pat_e
+from asdl import format as fmt
 from core import error
 from core import state
 from core import test_lib
@@ -29,7 +30,7 @@ def _assertParseMethod(test, code_str, method, expect_success=True):
             test.fail('%r failed' % code_str)
         node = None
     else:
-        node.PrettyPrint()
+        fmt.PrettyPrint(node)
         if not expect_success:
             test.fail('Expected %r to fail ' % code_str)
 
@@ -47,7 +48,7 @@ def _assert_ParseCommandListError(test, code_str):
         errfmt.PrettyPrintError(e)
     else:
         print('UNEXPECTED:')
-        node.PrettyPrint()
+        fmt.PrettyPrint(node)
         test.fail("Expected %r to fail" % code_str)
 
 

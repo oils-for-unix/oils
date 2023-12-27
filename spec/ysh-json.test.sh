@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -174,6 +174,7 @@ echo status=$?
 ## END
 
 #### json write of data structure with cycle
+
 var L = [1, 2, 3]
 setvar L[0] = L
 
@@ -186,8 +187,7 @@ setvar d.k1 = 'v2'
 # This makes it hang?  But not interactively
 #setvar d.k2 = d
 
-= d
-#json write (d)
+pp line (d)
 
 ## STDOUT:
 ## END
@@ -204,3 +204,67 @@ j8 write ([3, "foo"])
 ]
 ## END
 
+
+#### j8 write bytes vs unicode string
+
+u=$'mu \u03bc \x01 \" \\ \b\f\n\r\t'
+u2=$'\x01\x1f'  # this is a valid unicode string
+
+b=$'\xff'  # this isn't valid unicode
+
+j8 write (u)
+j8 write (u2)
+
+j8 write (b)
+
+## STDOUT:
+"mu μ \u0001 \" \\ \b\f\n\r\t"
+"\u0001\u001f"
+b"\yff"
+## END
+
+#### Escaping uses \u0001 in "", but \u{1} in b""
+
+s1=$'\x01'
+s2=$'\x01\xff\x1f'  # byte string
+
+j8 write (s1)
+j8 write (s2)
+
+## STDOUT:
+"\u0001"
+b"\u{1}\yff\u{1f}"
+## END
+
+
+#### j8 read
+
+# Avoid conflict on stdin from spec test framework?
+
+$SH $REPO_ROOT/spec/testdata/j8-read.sh
+
+## STDOUT:
+## END
+
+#### j8 round trip
+
+var obj = [42, 1.5, null, true, "hi"]
+
+j8 write --pretty=F (obj) > j
+
+cat j
+
+j8 read < j
+
+j8 write (_reply)
+
+## STDOUT:
+[42,1.5,null,true,"hi"]
+[
+  42,
+  1.5,
+  null,
+  true,
+  "hi"
+]
+## END

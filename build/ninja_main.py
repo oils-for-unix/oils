@@ -19,6 +19,7 @@ from asdl import NINJA_subgraph as asdl_subgraph
 from bin import NINJA_subgraph as bin_subgraph
 from core import NINJA_subgraph as core_subgraph
 from cpp import NINJA_subgraph as cpp_subgraph
+from data_lang import NINJA_subgraph as data_lang_subgraph
 from frontend import NINJA_subgraph as frontend_subgraph
 from ysh import NINJA_subgraph as ysh_subgraph
 from osh import NINJA_subgraph as osh_subgraph
@@ -353,6 +354,9 @@ def main(argv):
   ru.comment('')
 
   cpp_subgraph.NinjaGraph(ru)
+  ru.comment('')
+
+  data_lang_subgraph.NinjaGraph(ru)
   ru.comment('')
 
   frontend_subgraph.NinjaGraph(ru)

@@ -11,7 +11,7 @@ from typing import overload, Union, Optional, Dict, List
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
-                        ComparisonExpr, NameExpr, MemberExpr, IntExpr)
+                        ComparisonExpr, NameExpr, MemberExpr)
 
 from mypy.types import Type
 
@@ -471,10 +471,6 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         if (isinstance(cond, ComparisonExpr) and
                 isinstance(cond.operands[0], NameExpr) and
                 cond.operands[0].name == '__name__'):
-            return
-
-        # Omit if 0:
-        if isinstance(cond, IntExpr) and cond.value == 0:
             return
 
         # Omit if TYPE_CHECKING blocks.  They contain type expressions that

@@ -8,17 +8,22 @@ from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
 from _devbuild.gen.value_asdl import value
+from asdl import format as fmt
 from core import error
 from core.error import e_usage
 from core import state
+from core import ui
 from core import vm
+from data_lang import qsn
+from data_lang import j8
 from frontend import flag_spec
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import log, Stdout
-from data_lang import qsn
-from data_lang import j8
+from mycpp.mylib import log
+from ysh import cpython
+
+import yajl
 
 from typing import TYPE_CHECKING, cast, Dict
 if TYPE_CHECKING:
@@ -48,11 +53,14 @@ class Pp(_Builtin):
         _Builtin.__init__(self, mem, errfmt)
         self.procs = procs
         self.arena = arena
-        self.stdout_ = Stdout()
+        self.stdout_ = mylib.Stdout()
+        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        arg, arg_r = flag_spec.ParseCmdVal('pp', cmd_val)
+        arg, arg_r = flag_spec.ParseCmdVal('pp',
+                                           cmd_val,
+                                           accept_typed_args=True)
 
         action, action_loc = arg_r.ReadRequired2(
             'expected an action (proc, cell, etc.)')
@@ -78,10 +86,58 @@ class Pp(_Builtin):
                     status = 1
                 else:
                     self.stdout_.write('%s = ' % name)
-                    if mylib.PYTHON:
-                        cell.PrettyPrint()  # may be color
-
+                    pretty_f = fmt.DetectConsoleOutput(self.stdout_)
+                    fmt.PrintTree(cell.PrettyTree(), pretty_f)
                     self.stdout_.write('\n')
+
+        elif action == 'asdl':
+            # TODO: could be pp asdl (x, y, z)
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
+
+            tree = val.PrettyTree()
+
+            # TODO: ASDL should print the IDs.  And then they will be
+            # line-wrapped.
+            # The IDs should also be used to detect cycles, and omit values
+            # already printed.
+            #id_str = vm.ValueIdString(val)
+            #f.write('    <%s%s>\n' % (ysh_type, id_str))
+
+            pretty_f = fmt.DetectConsoleOutput(self.stdout_)
+            fmt.PrintTree(tree, pretty_f)
+            self.stdout_.write('\n')
+
+            status = 0
+
+        elif action == 'line':
+            # Print format for unit tests
+
+            # TODO: could be pp asdl (x, y, z)
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
+
+            ysh_type = ui.ValType(val)
+            self.stdout_.write('(%s)   ' % ysh_type)
+            #if mylib.PYTHON:
+            if 0:
+                obj = cpython._ValueToPyObj(val)
+                j = yajl.dumps(obj, indent=-1)
+                self.stdout_.write(j)
+                self.stdout_.write('\n')
+
+            buf = mylib.BufWriter()
+            self.j8print.Print(val, buf, indent=-1)
+            self.stdout_.write(buf.getvalue())
+            self.stdout_.write('\n')
+
+            status = 0
+
+        elif action == 'gc-stats':
+            print('TODO')
+            status = 0
 
         elif action == 'proc':
             names, locs = arg_r.Rest2()
@@ -136,8 +192,8 @@ class Write(_Builtin):
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ErrorFormatter) -> None
         _Builtin.__init__(self, mem, errfmt)
-        self.stdout_ = Stdout()
-        self.printer = j8.Printer(0)
+        self.stdout_ = mylib.Stdout()
+        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -162,7 +218,7 @@ class Write(_Builtin):
 
             if arg.j8:
                 buf = mylib.BufWriter()
-                self.printer.Print(value.Str(s), buf, -1)
+                self.j8print.Print(value.Str(s), buf, -1)
                 s = buf.getvalue()
 
             elif arg.qsn:

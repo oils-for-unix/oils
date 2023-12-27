@@ -7,6 +7,7 @@ import unittest
 
 from asdl import front_end  # module under test
 from asdl import ast
+from asdl import format as fmt
 
 
 class FrontEndTest(unittest.TestCase):
@@ -39,12 +40,12 @@ class FrontEndTest(unittest.TestCase):
         self.assertEqual(expr_e.DoubleQuoted, word_part_e.DoubleQuoted)
 
         d = DoubleQuoted(5, ['foo', 'bar'])
-        d.PrettyPrint()
+        fmt.PrettyPrint(d)
         print()
 
         b = expr.Binary(d, d)
         b.spids = [42, 43]
-        b.PrettyPrint()
+        fmt.PrettyPrint(b)
 
     def _assertParse(self, code_str):
         f = cStringIO.StringIO(code_str)

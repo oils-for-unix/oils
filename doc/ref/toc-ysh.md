@@ -114,7 +114,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-builtin-cmd
   [Memory]        append                 Add elements to end of array
-                  pp                     Pretty print interpreter state
+                  pp                     asdl   cell   X gc-stats   line   proc
   [Handle Errors] try                    Run with errexit and set _status
                   boolstatus             Enforce 0 or 1 exit status
                   error                  error 'failed' (status=2)
@@ -217,14 +217,15 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Paths]     ?builtins   ?completion_plugins   ?coprocesses
   [YSH Vars]      ARGV   X ENV  X _ESCAPE
                   _this_dir
   [YSH Status]    _status   _pipeline_status   _process_sub_status
   [YSH Tracing]   SHX_indent   SHX_punct   SHX_pid_str
+  [YSH read]      _reply
   [History]       YSH_HISTFILE
-  [Platform]      OILS_VERSION
-  [read]          _reply
+  [Oils VM]       OILS_VERSION
+                  OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
+                  OILS_GC_STATS   OILS_GC_STATS_FD
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer
 ```
@@ -257,7 +258,7 @@ X [Module]    name()   filename()
               X glob()
   [Quotation] Expr   X Template   Command
   [Code]      BuiltinFunc   BuiltinMethod
-X [Guts]      addr()   id()
+X [Guts]      heapId()
 ```
 
 <h2 id="builtin-func">

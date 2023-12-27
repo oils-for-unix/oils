@@ -541,6 +541,7 @@ def Main(
     # PromptEvaluator rendering is needed in non-interactive shells for @P.
     prompt_ev = prompt.Evaluator(lang, version_str, parse_ctx, mem)
     global_io = value.IO(cmd_ev, prompt_ev)
+    global_guts = value.Guts(None)
 
     # Wire up circular dependencies.
     vm.InitCircularDeps(arith_ev, bool_ev, expr_ev, word_ev, cmd_ev, shell_ex,
@@ -584,7 +585,7 @@ def Main(
     b[builtin_i.builtin] = meta_osh.Builtin(shell_ex, errfmt)
     b[builtin_i.command] = meta_osh.Command(shell_ex, procs, aliases,
                                             search_path)
-    # Part of YSH
+    # Part of YSH, but similar to builtin/command
     b[builtin_i.runproc] = meta_osh.RunProc(shell_ex, procs, errfmt)
 
     # Meta builtins
@@ -592,7 +593,6 @@ def Main(
                                      tracer, errfmt, loader)
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
-
     b[builtin_i.eval] = meta_osh.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
                                       errfmt)
 
@@ -844,6 +844,7 @@ def Main(
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
+    mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)
 
     #
     # Is the shell interactive?

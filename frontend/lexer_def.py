@@ -467,22 +467,22 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 
 _U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
 
-_X_CHAR = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)
+_X_CHAR_LOOSE = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)  # bash
+_X_CHAR_STRICT = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)  # YSH
 
-# Stricter QSN
-_X_CHAR_2 = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)
+_U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
+_U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
 
 EXPR_CHARS = [
     # This is like Rust.  We don't have the legacy C escapes like \b.
 
     # NOTE: \' and \" are more readable versions of '"' and "'" in regexs
     R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
-    R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
+    _X_CHAR_STRICT,
 
     # Because 'a' is a string, we use the syntax #'a' for char literals.
     # We explicitly leave out #''' because it's confusing.
-    # TODO: extend this to a valid utf-8 code point (rune), rather than a single
-    # byte.
+    # Note: we're not doing utf-8 validation here.
     R(r"#'[^'\0]'", Id.Char_Pound),
     _U_BRACED_CHAR,
 ]
@@ -491,8 +491,8 @@ EXPR_CHARS = [
 _C_STRING_COMMON = [
 
     # \x6 is valid in bash
-    _X_CHAR,
-    R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4),
+    _X_CHAR_LOOSE,
+    _U4_CHAR_LOOSE,
     R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
     R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
@@ -507,7 +507,6 @@ _C_STRING_COMMON = [
     #R('\\[uU]', Id.Unknown_BackslashU),
 ]
 
-# Used by ECHO_LEXER in core/builtin.py.
 ECHO_E_DEF = _C_STRING_COMMON + [
     # Note: tokens above \0377 can either be truncated or be flagged a syntax
     # error in strict mode.
@@ -516,6 +515,59 @@ ECHO_E_DEF = _C_STRING_COMMON + [
 
     # e.g. 'foo', anything that's not a backslash escape
     R(r'[^\\\0]+', Id.Char_Literals),
+]
+
+# https://json.org/
+
+# Note that [0-9] has to come second, because Python chooses the first match.
+_JSON_INT = r'([1-9][0-9]*|[0-9])'  # Numbers can't start with leading 0
+_JSON_FRACTION = r'(\.[0-9]+)?'
+_JSON_EXP = r'([eE][-+]?[0-9]+)?'
+
+J8_DEF = [
+    C('"', Id.J8_LeftQuote),
+    # j"" makes sense in YSH code, u"" makes sense in JSON
+    C('u"', Id.J8_LeftUQuote),
+    C('b"', Id.J8_LeftBQuote),
+    C('[', Id.J8_LBracket),
+    C(']', Id.J8_RBracket),
+    C('{', Id.J8_LBrace),
+    C('}', Id.J8_RBrace),
+    C(',', Id.J8_Comma),
+    C(':', Id.J8_Colon),
+    C('null', Id.J8_Null),
+    C('true', Id.J8_Bool),
+    C('false', Id.J8_Bool),
+
+    R(_JSON_INT, Id.J8_Int),
+    R(_JSON_INT + _JSON_FRACTION + _JSON_EXP, Id.J8_Float),
+
+    # TODO: emit Id.Ignored_Newline to count lines for error messages?
+    R(r'[ \r\n\t]+', Id.Ignored_Space),
+
+    # TODO: AnyString, UString, and BString will also
+    # - additionally validate utf-8
+    # - decode
+    # I guess this takes 2 passes?
+    R(r'[^\0]', Id.Unknown_Tok),
+]
+
+# Union of escapes that "" u"" b"" accept.  Validation is separate.
+J8_STR_DEF = [
+    C('"', Id.Right_DoubleQuote),
+
+    # https://json.org list of chars
+    R(r'\\["\\/bfnrt]', Id.Char_OneChar),
+    _U4_CHAR_STRICT,  # \u1234 - JSON only
+    R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
+    _U_BRACED_CHAR,  # \u{123456} - J8 only
+
+    # Exclude control characters 0x00-0x1f, aka 0-31
+    # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
+    R(r'[^\\"\x00-\x1f]+', Id.Char_Literals),
+
+    # Should match control chars
+    R(r'[^\0]', Id.Unknown_Tok),
 ]
 
 OCTAL3_RE = r'\\[0-7]{1,3}'
@@ -557,7 +609,7 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
 # Should match the pure Python decoder in data_lang/qsn.py
 LEXER_DEF[lex_mode_e.QSN] = [
     R(r'''\\[nrt0'"\\]''', Id.Char_OneChar),
-    _X_CHAR_2,  # \xff
+    _X_CHAR_STRICT,  # \xff
     _U_BRACED_CHAR,  # \u{3bc}
 
     # Like SQ_C, but literal newlines and tabs are illegal.

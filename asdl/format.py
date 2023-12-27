@@ -23,7 +23,18 @@ from data_lang import qsn
 from pylib import cgi
 from mycpp import mylib
 
-from typing import cast
+from typing import cast, Any, Optional
+
+if mylib.PYTHON:
+
+    def PrettyPrint(obj, f=None):
+        # type: (Any, Optional[mylib.Writer]) -> None
+        """Print abbreviated tree in color, for unnit tests."""
+        f = f if f else mylib.Stdout()
+
+        ast_f = DetectConsoleOutput(f)
+        tree = obj.AbbreviatedTree()
+        PrintTree(tree, ast_f)
 
 
 def DetectConsoleOutput(f):

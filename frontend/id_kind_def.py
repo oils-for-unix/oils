@@ -383,7 +383,9 @@ def AddKinds(spec):
         [
             'OneChar',
             'Stop',
-            'Hex',
+            'Hex',  # \xff
+            'YHex',  # \yff for J8 notation
+
             # Two variants of Octal: \377, and \0377.
             'Octal3',
             'Octal4',
@@ -687,6 +689,34 @@ def AddKinds(spec):
             'Begin3',
             'Begin4',
             'Cont',
+        ])
+
+    # Note: not used now
+    spec.AddKind(
+        'J8',
+        [
+            'LBracket',
+            'RBracket',
+            'LBrace',
+            'RBrace',
+            'Comma',
+            'Colon',
+
+            # Parsed
+            'Null',
+            'Bool',
+            'Int',  # Number
+            'Float',  # Number
+
+            # Low level tokens for "" b"" u""
+            'LeftQuote',
+            'LeftBQuote',
+            'LeftUQuote',
+
+            # High level tokens for "" b"" u""
+            'AnyString',
+            'UString',  # unicode (no surrogate halves, no wtf-8)
+            'BString',
         ])
 
 

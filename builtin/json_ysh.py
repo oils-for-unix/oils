@@ -15,15 +15,17 @@ from frontend import flag_spec
 from frontend import args
 from frontend import typed_args
 from mycpp import mylib
+from mycpp.mylib import log
 from ysh import cpython
 
-import sys
 import yajl
 import posix_ as posix
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from core.ui import ErrorFormatter
+
+_ = log
 
 _JSON_ACTION_ERROR = "builtin expects 'read' or 'write'"
 
@@ -39,11 +41,10 @@ class Json(vm._Builtin):
         # type: (state.Mem, ErrorFormatter, bool) -> None
         self.mem = mem
         self.errfmt = errfmt
-        if is_j8:
-            self.printer = j8.Printer(0)
-        else:
-            # TODO: restrict to JSON with some flags
-            self.printer = j8.Printer(0)
+
+        self.stdout_ = mylib.Stdout()
+        self.is_j8 = is_j8
+        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -70,27 +71,24 @@ class Json(vm._Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            if arg_jw.pretty:
+            if arg_jw.pretty:  # C++ BUG Here!
                 indent = arg_jw.indent
+                #log('arg_jw indent %d', indent)
                 extra_newline = False
             else:
                 # How yajl works: if indent is -1, then everything is on one line.
                 indent = -1
                 extra_newline = True
 
-            if 0:
-                buf = mylib.BufWriter()
-                self.printer.Print(val, buf, indent=indent)
-                sys.stdout.write(buf.getvalue())
-                sys.stdout.write('\n')
-            else:
+            #log('json write indent %d', indent)
 
-                obj = cpython._ValueToPyObj(val)
+            buf = mylib.BufWriter()
 
-                j = yajl.dumps(obj, indent=indent)
-                sys.stdout.write(j)
-                if extra_newline:
-                    sys.stdout.write('\n')
+            # TODO: Call PrintMessage() vs. PrintJsonmessage()
+            self.j8print.Print(val, buf, indent)
+
+            self.stdout_.write(buf.getvalue())
+            self.stdout_.write('\n')
 
         elif action == 'read':
             attrs = flag_spec.Parse('json_read', arg_r)
@@ -124,17 +122,24 @@ class Json(vm._Builtin):
                                          posix.strerror(e.err_num))
                 return 1
 
-            if mylib.PYTHON:
-                try:
-                    obj = yajl.loads(contents)
-                except ValueError as e:
-                    self.errfmt.Print_('json read: %s' % e,
-                                       blame_loc=action_loc)
-                    return 1
+            if self.is_j8:
+                if mylib.PYTHON:
+                    p = j8.Parser(contents)
+                    val = p.Parse()
+                    self.mem.SetPlace(place, val, blame_loc)
 
-                # TODO: use token directly
-                val = cpython._PyObjToValue(obj)
-                self.mem.SetPlace(place, val, blame_loc)
+            else:
+                if mylib.PYTHON:
+                    try:
+                        obj = yajl.loads(contents)
+                    except ValueError as e:
+                        self.errfmt.Print_('json read: %s' % e,
+                                           blame_loc=action_loc)
+                        return 1
+
+                    # TODO: use token directly
+                    val = cpython._PyObjToValue(obj)
+                    self.mem.SetPlace(place, val, blame_loc)
 
         else:
             raise error.Usage(_JSON_ACTION_ERROR, action_loc)

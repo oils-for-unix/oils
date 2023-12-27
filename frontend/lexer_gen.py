@@ -63,25 +63,23 @@ def PrintRegex(pat):
     print('\t\t]')
 
 
-# re2c literals are inside double quotes, so we don't need to do anything with
-# ^ or whatever.
+# re2c literals are inside double quotes, so we need to escape \ and "
+# But we don't need to do anything with the quoted literal ^
 LITERAL_META = ['\\', '"']
 LITERAL_META_CODES = [ord(c) for c in LITERAL_META]
 
 
 def _Literal(arg, char_escapes=LITERAL_META_CODES):
-    if arg == 0:
-        s = r'\x00'  # "\000"
-    elif arg == ord('\n'):
+    if arg == ord('\n'):
         s = r'\n'
     elif arg == ord('\r'):
         s = r'\r'
     elif arg == ord('\t'):
         s = r'\t'
+    elif arg >= 0x80 or arg < 0x20:  # 0x1f and below
+        s = '\\x%02x' % arg  # for \x80-\xff
     elif arg in char_escapes:
         s = '\\' + chr(arg)
-    elif arg >= 0x80:
-        s = '\\x%02x' % arg  # for \x80-\xff
     else:
         s = chr(arg)
     return s
@@ -111,6 +109,13 @@ def TranslateTree(re_tree, f, in_char_class=False):
             TranslateTree(arg, f,
                           in_char_class=True)  # list of literals/ranges
             f.write(']')
+
+        elif name == 'branch':  # |
+            _, branches = arg
+            for i, branch in enumerate(branches):
+                if i != 0:
+                    f.write(' | ')
+                TranslateTree(branch, f)
 
         elif name == 'max_repeat':  # repetition
             min_, max_, children = arg
@@ -430,7 +435,8 @@ def main(argv):
         TranslateSimpleLexer('MatchPS1Token', lexer_def.PS1_DEF)
         TranslateSimpleLexer('MatchHistoryToken', lexer_def.HISTORY_DEF)
         TranslateSimpleLexer('MatchBraceRangeToken', lexer_def.BRACE_RANGE_DEF)
-        #TranslateSimpleLexer('MatchQsnToken', lexer_def.QSN_DEF)
+        TranslateSimpleLexer('MatchJ8Token', lexer_def.J8_DEF)
+        TranslateSimpleLexer('MatchJ8StrToken', lexer_def.J8_STR_DEF)
 
         TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
         TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')

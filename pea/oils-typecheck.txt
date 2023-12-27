@@ -26,6 +26,7 @@ builtin/io_ysh.py
 builtin/json_ysh.py
 builtin/meta_osh.py
 builtin/method_dict.py
+builtin/method_io.py
 builtin/method_list.py
 builtin/method_other.py
 builtin/method_str.py
@@ -56,7 +57,7 @@ core/ui.py
 core/util.py
 core/vm.py
 data_lang/j8.py
-data_lang/j8_str.py
+data_lang/pyj8.py
 data_lang/qsn.py
 data_lang/qsn_native.py
 frontend/args.py

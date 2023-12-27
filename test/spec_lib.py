@@ -155,7 +155,7 @@ def DefineStateful(p):
 def DefineShSpec(p):
   p.add_option(
       '-d', '--details', dest='details', action='store_true', default=False,
-      help='Show details even for successful cases')
+      help='Show details even for successful cases (requires -v)')
   p.add_option(
       '-t', '--trace', dest='trace', action='store_true', default=False,
       help='trace execution of shells to diagnose hangs')

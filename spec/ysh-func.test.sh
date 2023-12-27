@@ -229,9 +229,9 @@ func f(x) {
   setvar x = 'bar'
 }
 
-= x
-= f(x)
-= x
+pp line (x)
+pp line (f(x))
+pp line (x)
 
 # reference
 var y = ['a', 'b', 'c']
@@ -240,16 +240,16 @@ func g(y) {
   setvar y[0] = 'z'
 }
 
-= y
-= g(y)
-= y
+pp line (y)
+pp line (g(y))
+pp line (y)
 ## STDOUT:
-(Str)   'foo'
-(NoneType)   None
-(Str)   'foo'
-(List)   ['a', 'b', 'c']
-(NoneType)   None
-(List)   ['z', 'b', 'c']
+(Str)   "foo"
+(Null)   null
+(Str)   "foo"
+(List)   ["a","b","c"]
+(Null)   null
+(List)   ["z","b","c"]
 ## END
 
 #### Recursive functions
@@ -350,7 +350,7 @@ hit: 8
 
 #### Varadic arguments, no other args
 func f(...args) {
-  = args
+pp line (args)
 }
 
 call f()
@@ -360,22 +360,22 @@ call f(1, 2, 3)
 ## STDOUT:
 (List)   []
 (List)   [1]
-(List)   [1, 2]
-(List)   [1, 2, 3]
+(List)   [1,2]
+(List)   [1,2,3]
 ## END
 
 #### Varadic arguments, other args
 func f(a, b, ...args) {
-  = [a, b, args]
+pp line ([a, b, args])
 }
 
 call f(1, 2)
 call f(1, 2, 3)
 call f(1, 2, 3, 4)
 ## STDOUT:
-(List)   [1, 2, []]
-(List)   [1, 2, [3]]
-(List)   [1, 2, [3, 4]]
+(List)   [1,2,[]]
+(List)   [1,2,[3]]
+(List)   [1,2,[3,4]]
 ## END
 
 #### Varadic arguments, too few args

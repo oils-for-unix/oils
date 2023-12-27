@@ -28,8 +28,8 @@ Append word arguments to a list:
 
 It's a shortcut for:
 
-    :: myflags->append('-c')
-    :: myflags->append('echo hi')
+    call myflags->append('-c')
+    call myflags->append('echo hi')
 
 ### pp
 
@@ -41,7 +41,11 @@ Examples:
     pp proc  # print all procs and their doc comments
 
     var x = :| one two |
-    pp cell x  # print a cell, which is a location for a value
+    pp cell x  # dump the "guts" of a cell, which is a location for a value
+
+    pp asdl (x)  # dump the ASDL "guts"
+
+    pp line (x)  # single-line stable format, for spec tests
 
 ## Handle Errors
 
@@ -862,20 +866,27 @@ Flag:
 
 ### type
 
-    type FLAG* NAME*
+    type FLAG* NAME+
 
-Print the type of each NAME.  Is it a keyword, shell builtin, shell function,
-alias, or executable file?
+Print the type of each NAME, if it were the first word of a command.  Is it a
+shell keyword, builtin command, shell function, alias, or executable file on
+$PATH?
 
 Flags:
 
-    -f  Don't look for functions
-    -P  Only look for executable files in $PATH
+    -a  Show all possible candidates, not just the first one
+    -f  Don't search for shell functions
+    -P  Only search for executable files
     -t  Print a single word: alias, builtin, file, function, or keyword
-<!--    -a  Print all executables that can run CMD, including files, aliases,
-        builtins and functions. If used with -p, only the executable file will
-        be printed.-->
 
+<!-- TODO:
+- procs are counted as shell functions, should be their own thing
+- Hay nodes ('hay define x') also live in the first word namespace, and should
+  be recognized
+-->
+
+Modeled after the [bash `type`
+builtin](https://www.gnu.org/software/bash/manual/bash.html#index-type).
  
 ## Word Lookup
 

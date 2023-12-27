@@ -145,9 +145,12 @@ def _WriteDefaults(cc_f, defaults_name, defaults):
             v = '{.b = %s}' % ('true' if val.b else 'false')
         elif val.tag() == value_e.Int:
             typ = 'Int'
-            v = '{.i = -1}'
+            v = '{.i = %s}' % val.i
         elif val.tag() == value_e.Float:
             typ = 'Float'
+            # printing this to C++ is problematic
+            if val.f != -1.0:
+                raise AssertionError('Float default not supported %r' % val.f)
             v = '{.f = -1.0}'
         elif val.tag() == value_e.Undef:
             typ = 'Str'  # default for string

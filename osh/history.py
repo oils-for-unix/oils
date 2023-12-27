@@ -141,8 +141,8 @@ class Evaluator(object):
                     out = prev[begin:end]
 
             elif id_ == Id.History_Num:
-                index = int(
-                    val[1:])  # regex ensures this.  Maybe have - on the front.
+                # regex ensures this.  Maybe have - on the front.
+                index = int(val[1:])
                 if index < 0:
                     num = history_len + 1 + index
                 else:

@@ -784,8 +784,8 @@ ysh-builtin-error() {
   run-file ysh-builtin-error "$@"
 }
 
-ysh-builtin-pp() {
-  run-file ysh-builtin-pp "$@"
+ysh-builtin-meta() {
+  run-file ysh-builtin-meta "$@"
 }
 
 ysh-builtin-process() {

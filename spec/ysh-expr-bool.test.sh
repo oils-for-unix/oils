@@ -2,22 +2,22 @@
 
 # consistent with if statement, ternary if, and, or
 
-= not "s"
-= not 3
-= not 4.5
-= not {}
-= not []
-= not false
-= not true
+pp line (not "s")
+pp line (not 3)
+pp line (not 4.5)
+pp line (not {})
+pp line (not [])
+pp line (not false)
+pp line (not true)
 
 ## STDOUT:
-(Bool)   False
-(Bool)   False
-(Bool)   False
-(Bool)   True
-(Bool)   True
-(Bool)   True
-(Bool)   False
+(Bool)   false
+(Bool)   false
+(Bool)   false
+(Bool)   true
+(Bool)   true
+(Bool)   true
+(Bool)   false
 ## END
 
 #### not, and, or
@@ -95,10 +95,10 @@ echo $[0 or 0.0 or false or [] or {} or "OR"]
 echo $[1 and 1.0 and true and [5] and {"d":1} and "AND"]
 
 declare -a array=(1 2 3)
-json write --pretty=false (array or 'yy')
+pp line (array or 'yy')
 
 declare -A assoc=([k]=v)
-json write --pretty=false (assoc or 'zz')
+pp line (assoc or 'zz')
 
 ## STDOUT:
 s
@@ -138,8 +138,8 @@ y
 {}
 OR
 AND
-["1","2","3"]
-{"k":"v"}
+(BashArray)   ["1","2","3"]
+(BashAssoc)   {"k":"v"}
 ## END
 
 #### x if b else y

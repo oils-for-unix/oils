@@ -8,19 +8,19 @@ from _devbuild.gen.syntax_asdl import (Token, CompoundWord, expr_t, Redir,
 from _devbuild.gen.types_asdl import lex_mode_e
 from _devbuild.gen import grammar_nt
 
+from asdl import format as fmt
 from core import state
 from frontend import lexer
 from frontend import reader
-
-from ysh import expr_parse
-from ysh import expr_to_ast
-from ysh.expr_parse import ctx_PNodeAllocator
 from osh import tdop
 from osh import arith_parse
 from osh import cmd_parse
 from osh import word_parse
 from mycpp import mylib
 from mycpp.mylib import log
+from ysh import expr_parse
+from ysh import expr_to_ast
+from ysh.expr_parse import ctx_PNodeAllocator
 
 _ = log
 
@@ -92,22 +92,22 @@ class _BaseTrail(object):
             # note: could cast DebugFile to IO[str] instead of ignoring?
             debug_f.writeln('  words:')
             for w in self.words:
-                w.PrettyPrint(f=debug_f)  # type: ignore
+                fmt.PrettyPrint(w, f=debug_f)  # type: ignore
             debug_f.writeln('')
 
             debug_f.writeln('  redirects:')
             for r in self.redirects:
-                r.PrettyPrint(f=debug_f)  # type: ignore
+                fmt.PrettyPrint(r, f=debug_f)  # type: ignore
             debug_f.writeln('')
 
             debug_f.writeln('  tokens:')
             for p in self.tokens:
-                p.PrettyPrint(f=debug_f)  # type: ignore
+                fmt.PrettyPrint(p, f=debug_f)  # type: ignore
             debug_f.writeln('')
 
             debug_f.writeln('  alias_words:')
             for w in self.alias_words:
-                w.PrettyPrint(f=debug_f)  # type: ignore
+                fmt.PrettyPrint(w, f=debug_f)  # type: ignore
             debug_f.writeln('')
 
     def __repr__(self):

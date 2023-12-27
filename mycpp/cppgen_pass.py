@@ -2738,6 +2738,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # Omit if 0:
         if isinstance(cond, IntExpr) and cond.value == 0:
+            # But write else: body
+            # Note: this would be invalid at the top level!
+            if o.else_body:
+                self.accept(o.else_body)
             return
 
         # Omit if TYPE_CHECKING blocks.  They contain type expressions that
