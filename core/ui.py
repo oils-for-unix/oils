@@ -9,8 +9,6 @@ ui.py - User interface constructs.
 """
 from __future__ import print_function
 
-import sys
-
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
@@ -32,7 +30,6 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch
 from data_lang import j8
 from data_lang import qsn
-from ysh import cpython
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:

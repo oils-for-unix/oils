@@ -4,9 +4,6 @@ j8.py: J8 Notation and Related Utilities
 
 TODO:
 
-- Int vs. Float
-  - match.LooksLikeInteger() is a shortcut
-
 - Errors
   - Figure out location info for parse errors - turn a position into a line and
     column?
@@ -19,22 +16,25 @@ TODO:
 - Distinguish pretty-printing vs. data transfer
   - SHOW_CYCLES and SHOW_NON_DATA
 
-- Make the whole thing translate to C++
+- Translate the whole thing to C++
   - use Bjoern DFA for UTF-8 validation in printing and parsing
   - move more of LexerDecoder out of pyj8.py?  I think it can translate
 
+- Remove ysh/cpython.py entirely
+
+- Remove most of QSN
+  - QSN maybe_shell_encode() is used for bash features
+  - Remove shell_compat which does \\x00 instead of \\0
+
 - Many more tests
   - Run JSONTestSuite
-
-- QSN maybe_shell_encode() is used for bash features
-  - Remove shell_compat which does \\x00 instead of \\0
 
 Other
 
 - PrettyPrinter uses hnode.asdl?
   - color
   - line wrapping -- do this later
-  - this is open to contribution
+  - would like CONTRIBUTORS here
 
 - Harmonize the API in data_lang/qsn.py 
   - use mylib.BufWriter output

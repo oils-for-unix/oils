@@ -21,9 +21,6 @@ from frontend import match
 from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log
-from ysh import cpython
-
-import yajl
 
 from typing import TYPE_CHECKING, cast, Dict
 if TYPE_CHECKING:

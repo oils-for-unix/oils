@@ -233,8 +233,7 @@ builtin-getopts() {
 }
 
 builtin-bracket() {
-  sh-spec spec/builtin-bracket.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file builtin-bracket "$@"
 }
 
 builtin-trap() {
