@@ -379,6 +379,7 @@ class InstancePrinter(object):
 
 
 if mylib.PYTHON:
+
     class Parser(object):
 
         def __init__(self, s):
@@ -401,8 +402,8 @@ if mylib.PYTHON:
             # type: (Id_t) -> None
 
             # TODO: Need location info
-            assert self.tok_id == tok_id, "Expected %s, got %s" % (Id_str(tok_id),
-                                                                   Id_str(self.tok_id))
+            assert self.tok_id == tok_id, "Expected %s, got %s" % (
+                Id_str(tok_id), Id_str(self.tok_id))
             self._Next()
 
         def _ParsePair(self):
@@ -420,10 +421,9 @@ if mylib.PYTHON:
         def _ParseDict(self):
             # type: () -> value_t
             """
-
-            key_value = string ':' value
+            pair = string ':' value
             Dict      = '{' '}'
-                      | '{' key_value (',' key_value)* '}'
+                      | '{' pair (',' pair)* '}'
             """
             # precondition
             assert self.tok_id == Id.J8_LBrace, Id_str(self.tok_id)
@@ -448,9 +448,25 @@ if mylib.PYTHON:
 
         def _ParseList(self):
             # type: () -> value_t
+            """
+            List = '[' ']'
+                 | '[' value (',' value)* ']'
+            """
             assert self.tok_id == Id.J8_LBracket, Id_str(self.tok_id)
 
             items = []  # type: List[value_t]
+
+            self._Next()
+            if self.tok_id == Id.J8_RBracket:
+                return value.List(items)
+
+            items.append(self._ParseValue())
+
+            while self.tok_id == Id.J8_Comma:
+                self._Next()
+                items.append(self._ParseValue())
+
+            self._Eat(Id.J8_RBracket)
 
             return value.List(items)
 
@@ -473,6 +489,9 @@ if mylib.PYTHON:
 
             elif self.tok_id == Id.J8_Number:
                 # TODO: distinguish Int vs. Float
+                #
+                # 1e-6 is a float
+                # 1e6 could be an int.  How do other libraries do this?
                 self._Next()
                 return value.Null
 
@@ -484,7 +503,8 @@ if mylib.PYTHON:
 
             else:
                 part = self.s[self.start_pos:self.end_pos]
-                raise AssertionError('Unexpected token %s %r' % (Id_str(self.tok_id), part))
+                raise AssertionError('Unexpected token %s %r' %
+                                     (Id_str(self.tok_id), part))
 
         def Parse(self):
             # type: () -> value_t

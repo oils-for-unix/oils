@@ -532,7 +532,6 @@ J8_DEF = [
     C('}', Id.J8_RBrace),
     C(',', Id.J8_Comma),
     C(':', Id.J8_Colon),
-
     C('null', Id.J8_Null),
     C('true', Id.J8_Bool),
     C('false', Id.J8_Bool),
