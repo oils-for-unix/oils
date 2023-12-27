@@ -1,3 +1,4 @@
+## oils_failures_allowed: 2
 
 #### [[ glob matching, [[ has no glob expansion
 [[ foo.py == *.py ]] && echo true
@@ -432,3 +433,65 @@ match1
 match2
 ## END
 
+
+#### [[ -v array[i] ]]
+
+typeset -a array
+array=('' nonempty)
+
+[[ -v array[0] ]]
+echo zero=$?
+
+[[ -v array[1] ]]
+echo one=$?
+
+
+## STDOUT:
+zero=0
+one=0
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
+
+
+#### [[ -v assoc[key] ]]
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
+
+[[ -v assoc[empty] ]]
+echo empty=$?
+
+[[ -v assoc[k] ]]
+echo k=$?
+
+[[ -v assoc[nonexistent] ]]
+echo nonexistent=$?
+
+echo ---
+# Now with quotes
+
+[[ -v assoc["empty"] ]]
+echo empty=$?
+
+[[ -v assoc['k'] ]]
+echo k=$?
+
+[[ -v assoc['nonexistent'] ]]
+echo nonexistent=$?
+
+## STDOUT:
+empty=0
+k=0
+nonexistent=1
+---
+empty=0
+k=0
+nonexistent=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
