@@ -1,4 +1,8 @@
 ## oils_failures_allowed: 2
+## compare_shells: bash mksh
+
+# NOTE: zsh passes about half, and fails about half.  It supports a subset of
+# [[ I guess.
 
 #### [[ glob matching, [[ has no glob expansion
 [[ foo.py == *.py ]] && echo true
