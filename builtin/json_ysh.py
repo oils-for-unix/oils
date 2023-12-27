@@ -141,9 +141,10 @@ class Json(vm._Builtin):
                 return 1
 
             if self.is_j8:
-                p = j8.Parser(contents)
-                val = p.Parse()
-                self.mem.SetPlace(place, val, blame_loc)
+                if mylib.PYTHON:
+                    p = j8.Parser(contents)
+                    val = p.Parse()
+                    self.mem.SetPlace(place, val, blame_loc)
 
             else:
                 if mylib.PYTHON:

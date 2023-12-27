@@ -378,120 +378,120 @@ class InstancePrinter(object):
                 pass
 
 
-class Parser(object):
+if mylib.PYTHON:
+    class Parser(object):
 
-    def __init__(self, s):
-        # type: (str) -> None
-        self.s = s
-        self.lexer = pyj8.LexerDecoder(s)
+        def __init__(self, s):
+            # type: (str) -> None
+            self.s = s
+            self.lexer = pyj8.LexerDecoder(s)
 
-        self.tok_id = Id.Undefined_Tok
-        self.start_pos = 0
-        self.end_pos = 0
-        self.decoded = ''
+            self.tok_id = Id.Undefined_Tok
+            self.start_pos = 0
+            self.end_pos = 0
+            self.decoded = ''
 
-    def _Next(self):
-        # type: () -> None
-        self.start_pos = self.end_pos
-        self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
-        #log('NEXT %s %s %s', Id_str(self.tok_id), self.end_pos, self.decoded or '-')
+        def _Next(self):
+            # type: () -> None
+            self.start_pos = self.end_pos
+            self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
+            #log('NEXT %s %s %s', Id_str(self.tok_id), self.end_pos, self.decoded or '-')
 
-    def _Eat(self, tok_id):
-        # type: (Id_t) -> None
+        def _Eat(self, tok_id):
+            # type: (Id_t) -> None
 
-        # TODO: Need location info
-        assert self.tok_id == tok_id, "Expected %s, got %s" % (Id_str(tok_id),
-                                                               Id_str(self.tok_id))
-        self._Next()
-
-    def _ParsePair(self):
-        # type: () -> Tuple[str, value_t]
-        if self.tok_id != Id.J8_AnyString:
-            raise AssertionError(Id_str(self.tok_id))
-        k = self.decoded
-        self._Next()
-
-        self._Eat(Id.J8_Colon)
-
-        v = self._ParseValue()
-        return k, v
-
-    def _ParseDict(self):
-        # type: () -> value_t
-        """
-
-        key_value = string ':' value
-        Dict      = '{' '}'
-                  | '{' key_value (',' key_value)* '}'
-        """
-        # precondition
-        assert self.tok_id == Id.J8_LBrace, Id_str(self.tok_id)
-
-        d = NewDict()  # type: Dict[str, value_t]
-
-        self._Next()
-        if self.tok_id == Id.J8_RBrace:
-            return value.Dict(d)
-
-        k, v = self._ParsePair()
-        d[k] = v
-
-        while self.tok_id == Id.J8_Comma:
+            # TODO: Need location info
+            assert self.tok_id == tok_id, "Expected %s, got %s" % (Id_str(tok_id),
+                                                                   Id_str(self.tok_id))
             self._Next()
+
+        def _ParsePair(self):
+            # type: () -> Tuple[str, value_t]
+            if self.tok_id != Id.J8_AnyString:
+                raise AssertionError(Id_str(self.tok_id))
+            k = self.decoded
+            self._Next()
+
+            self._Eat(Id.J8_Colon)
+
+            v = self._ParseValue()
+            return k, v
+
+        def _ParseDict(self):
+            # type: () -> value_t
+            """
+
+            key_value = string ':' value
+            Dict      = '{' '}'
+                      | '{' key_value (',' key_value)* '}'
+            """
+            # precondition
+            assert self.tok_id == Id.J8_LBrace, Id_str(self.tok_id)
+
+            d = NewDict()  # type: Dict[str, value_t]
+
+            self._Next()
+            if self.tok_id == Id.J8_RBrace:
+                return value.Dict(d)
+
             k, v = self._ParsePair()
             d[k] = v
 
-        self._Eat(Id.J8_RBrace)
+            while self.tok_id == Id.J8_Comma:
+                self._Next()
+                k, v = self._ParsePair()
+                d[k] = v
 
-        return value.Dict(d)
+            self._Eat(Id.J8_RBrace)
 
-    def _ParseList(self):
-        # type: () -> value_t
-        assert self.tok_id == Id.J8_LBracket, Id_str(self.tok_id)
+            return value.Dict(d)
 
-        items = []  # type: List[value_t]
+        def _ParseList(self):
+            # type: () -> value_t
+            assert self.tok_id == Id.J8_LBracket, Id_str(self.tok_id)
 
-        return value.List(items)
+            items = []  # type: List[value_t]
 
-    def _ParseValue(self):
-        # type: () -> value_t
-        if self.tok_id == Id.J8_LBrace:
-            return self._ParseDict()
+            return value.List(items)
 
-        elif self.tok_id == Id.J8_LBracket:
-            return self._ParseList()
+        def _ParseValue(self):
+            # type: () -> value_t
+            if self.tok_id == Id.J8_LBrace:
+                return self._ParseDict()
 
-        elif self.tok_id == Id.J8_Null:
+            elif self.tok_id == Id.J8_LBracket:
+                return self._ParseList()
+
+            elif self.tok_id == Id.J8_Null:
+                self._Next()
+                return value.Null
+
+            elif self.tok_id == Id.J8_Bool:
+                b = value.Bool(self.s[self.start_pos] == 't')
+                self._Next()
+                return b
+
+            elif self.tok_id == Id.J8_Number:
+                # TODO: distinguish Int vs. Float
+                self._Next()
+                return value.Null
+
+            # UString, BString too
+            elif self.tok_id == Id.J8_AnyString:
+                str_val = value.Str(self.decoded)
+                self._Next()
+                return str_val
+
+            else:
+                part = self.s[self.start_pos:self.end_pos]
+                raise AssertionError('Unexpected token %s %r' % (Id_str(self.tok_id), part))
+
+        def Parse(self):
+            # type: () -> value_t
+            """
+            Raises exception on error?
+
+            - Can parse either J8 or JSON strings
+            """
             self._Next()
-            return value.Null
-
-        elif self.tok_id == Id.J8_Bool:
-            val = value.Bool(self.s[self.start_pos] == 't')
-            self._Next()
-            return val
-
-        elif self.tok_id == Id.J8_Number:
-            self._Next()
-            # TODO: distinguish Int vs. Float
-            return value.Null
-
-        # UString, BString too
-        elif self.tok_id == Id.J8_AnyString:
-            val = value.Str(self.decoded)
-            self._Next()
-            return val
-
-        else:
-            part = self.s[self.start_pos:self.end_pos]
-            raise AssertionError('Unexpected token %s %r' % (Id_str(self.tok_id), part))
-
-    def Parse(self):
-        # type: () -> value_t
-        """
-        Raises exception on error?
-
-        - Can parse either J8 or JSON strings
-        """
-        self._Next()
-        return self._ParseValue()
-
+            return self._ParseValue()
