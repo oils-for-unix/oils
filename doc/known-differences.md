@@ -182,7 +182,7 @@ named `func`, use `command func arg1`.
 Note that all shells have extensions that cause this issue.  For example, `[[`
 is a keyword in `bash` but not in POSIX shell.
 
-## Subsequent Parsing Differences
+## Later Parsing Differences
 
 These differences occur in subsequent stages of parsing, or in runtime parsing.
 
@@ -233,22 +233,37 @@ Yes:
 The ambiguous syntax is allowed when we pass globs through to `libc`, but it's
 good practice to be explicit.
 
-### [[ -v ]] doesn't allow expressions
+### [[ -v var ]] doesn't allow expressions
 
-In bash it's possible to test if an associative array contains a key:
+In bash, you can use `[[` with `-v` to test whether an array contains an entry:
 
-    declare -A x=(['one']=1)
-    [[ -v x[one] ]] && echo "exists" # evals to 0 in bash
+    declare -a array=('' foo)
+    if [[ -v array[1] ]]; then
+      echo 'exists'
+    fi  # => exists
 
-In OSH this will always evaluate to False.
-The following backwarts compatible solution can be used instead:
+Likewise for an associative array:
 
-    [[ "${x['one']:+exists}" ]] && echo "exists"
+    declare -A assoc=([key]=value)
+    if [[ -v assoc['key'] ]]
+      echo 'exists'
+    fi  # => exists
 
-in ysh it should be:
+OSH currently treats these expressions as a string, which means the status will
+be 1 (`false`).
 
-    var x = { one: 1 }
-    if ('one' in x) { echo yeye }
+Workaround:
+
+    if [[ "${assoc['key']:+exists}" ]]; then
+      echo 'exists'
+    fi  # => exists
+
+In ysh, you can use:
+
+    var d = { key: 42 }
+    if ('key' in d) {
+      echo 'exists'
+    }  # => exists
 
 ## Data Structures
 
