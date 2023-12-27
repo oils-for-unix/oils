@@ -17,15 +17,31 @@ py2() {
 
   # Int
   python2 -c 'import json; val = json.loads("42"); print(type(val)); print(val)'
+
+  # error
+  python2 -c 'import json; val = json.loads("{3:4}"); print(type(val)); print(val)'
 }
 
 py3() {
   python3 -c 'import json; val = json.loads("1e6"); print(type(val)); print(val)'
+
+  # error
+  python3 -c 'import json; val = json.loads("{3:4}"); print(type(val)); print(val)'
 }
 
 node() {
   # JavaScript only has 'number', no Int and Float
   nodejs -e 'var val = JSON.parse("1e6"); console.log(typeof(val)); console.log(val)'
+
+  # This has good position information
+  # It prints the line number, the line, and points to the token in the line
+  # where the problem happened
+
+  nodejs -e 'var val = JSON.parse("{3: 4}"); console.log(typeof(val)); console.log(val)' || true
+
+  nodejs -e 'var val = JSON.parse("[\n  3: 4\n]"); console.log(typeof(val)); console.log(val)' || true
+
+  nodejs -e 'var val = JSON.parse("[\n\n \"hello "); console.log(typeof(val)); console.log(val)' || true
 }
 
 "$@"
