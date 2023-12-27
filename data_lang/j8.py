@@ -142,7 +142,7 @@ class Printer(object):
         self.spaces = {0: ''}  # cache of strings with spaces
 
     # Could be PrintMessage or PrintJsonMessage()
-    def Print(self, val, buf, indent):
+    def _Print(self, val, buf, indent):
         # type: (value_t, mylib.BufWriter, int) -> None
         """
         Args:
@@ -151,32 +151,51 @@ class Printer(object):
         p = InstancePrinter(buf, indent, self.options, self.spaces)
         p.Print(val)
 
-    def PrintJson(self, val, buf, indent):
+    def PrintMessage(self, val, buf, indent):
         # type: (value_t, mylib.BufWriter, int) -> None
-        """
+        """ For j8 write (x) """
+        self._Print(val, buf, indent)
+
+    def PrintJsonMessage(self, val, buf, indent):
+        # type: (value_t, mylib.BufWriter, int) -> None
+        """ For json write (x)
+
         Doesn't decay to b"" strings
         Either raise error.Decode() or use unicode replacement char
         """
-        pass
+        self._Print(val, buf, indent)
 
-    def DebugPrint(self, val, buf, indent):
-        # type: (value_t, mylib.BufWriter, int) -> None
+    def DebugPrint(self, val, f):
+        # type: (value_t, mylib.Writer) -> None
         """
         For = operator.
-        SHOW_CYCLES
-        SHOW_NON_DATA
+        TODO: set options SHOW_CYCLES SHOW_NON_DATA
         """
-        pass
+        buf = mylib.BufWriter()
+        self._Print(val, buf, -1)
+        f.write(buf.getvalue())
+        f.write('\n')
 
-    def PrintString(self, s, buf):
-        # type: (str, mylib.BufWriter) -> None
-        """
-        # TODO: write --j8 can use this
-        PrettyPrintString()
+    def PrintLine(self, val, f):
+        # type: (value_t, mylib.Writer) -> None
+        """ For pp line (x) """
+        buf = mylib.BufWriter()
+        self._Print(val, buf, -1)
+        f.write(buf.getvalue())
+        f.write('\n')
+
+    def MaybeEncodeString(self, s ):
+        # type: (str) -> str
+        """ For write --j8 $s 
+
+        Do we also want write (x) to use J8 notation?  It's the default
+        serialization.  But j8 write (x) is simple enough.
         """
         # There should be an option to not quote "plain words" like
         # /usr/local/foo-bar/x.y/a_b
-        pass
+        buf = mylib.BufWriter()
+        self._Print(value.Str(s), buf, -1)
+        return buf.getvalue()
 
 
 class InstancePrinter(object):
@@ -507,12 +526,16 @@ if mylib.PYTHON:
                 raise AssertionError('Unexpected token %s %r' %
                                      (Id_str(self.tok_id), part))
 
-        def Parse(self):
+        def ParseJ8(self):
             # type: () -> value_t
             """
             Raises exception on error?
-
-            - Can parse either J8 or JSON strings
             """
             self._Next()
             return self._ParseValue()
+
+        def ParseJson(self):
+            # type: () -> value_t
+
+            # TODO: distinguish it with flags
+            return self.ParseJ8()

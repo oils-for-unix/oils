@@ -440,21 +440,7 @@ def DebugPrint(val):
             # Use () instead of <> as a hint that it's a "JSON value"
             f.write('(%s%s)   ' % (ysh_type, id_str))
 
-            buf = mylib.BufWriter()
-            j8print.Print(val, buf, indent=-1)
-            f.write(buf.getvalue())
-            f.write('\n')
-
-            if 0:  # Old implementation
-                obj = cpython._ValueToPyObj(val)
-                f.write(repr(obj))
-                f.write('\n')
-
-                # Note: probably don't need this without Python print()?
-                # BUG FIX related to forking!  Note that BUILTINS flush,
-                # but keywords don't flush.  So we have to beware of
-                # keywords that print.
-                sys.stdout.flush()
+            j8print.DebugPrint(val, f)
 
         elif case(value_e.Range):
             # Custom printing

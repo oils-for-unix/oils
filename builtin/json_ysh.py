@@ -84,8 +84,10 @@ class Json(vm._Builtin):
 
             buf = mylib.BufWriter()
 
-            # TODO: Call PrintMessage() vs. PrintJsonmessage()
-            self.j8print.Print(val, buf, indent)
+            if self.is_j8:
+                self.j8print.PrintMessage(val, buf, indent)
+            else:
+                self.j8print.PrintJsonMessage(val, buf, indent)
 
             self.stdout_.write(buf.getvalue())
             self.stdout_.write('\n')
@@ -125,7 +127,10 @@ class Json(vm._Builtin):
             if self.is_j8:
                 if mylib.PYTHON:
                     p = j8.Parser(contents)
-                    val = p.Parse()
+                    if self.is_j8:
+                        val = p.ParseJ8()
+                    else:
+                        val = p.ParseJson()
                     self.mem.SetPlace(place, val, blame_loc)
 
             else:

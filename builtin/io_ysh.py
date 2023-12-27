@@ -121,17 +121,8 @@ class Pp(_Builtin):
 
             ysh_type = ui.ValType(val)
             self.stdout_.write('(%s)   ' % ysh_type)
-            #if mylib.PYTHON:
-            if 0:
-                obj = cpython._ValueToPyObj(val)
-                j = yajl.dumps(obj, indent=-1)
-                self.stdout_.write(j)
-                self.stdout_.write('\n')
 
-            buf = mylib.BufWriter()
-            self.j8print.Print(val, buf, indent=-1)
-            self.stdout_.write(buf.getvalue())
-            self.stdout_.write('\n')
+            self.j8print.PrintLine(val, self.stdout_)
 
             status = 0
 
@@ -217,9 +208,7 @@ class Write(_Builtin):
             s = arg_r.Peek()
 
             if arg.j8:
-                buf = mylib.BufWriter()
-                self.j8print.Print(value.Str(s), buf, -1)
-                s = buf.getvalue()
+                s = self.j8print.MaybeEncodeString(s)
 
             elif arg.qsn:
                 s = qsn.maybe_encode(s, bit8_display)
