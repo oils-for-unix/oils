@@ -531,7 +531,26 @@ echo k=$?
 [[ -v assoc['nonexistent'] ]]
 echo nonexistent=$?
 
+echo ---
+# Now with var expansion
+
+key=empty
+[[ -v assoc[$key] ]]
+echo empty=$?
+
+key=k
+[[ -v assoc[$key] ]]
+echo k=$?
+
+key=nonexistent
+[[ -v assoc[$key] ]]
+echo nonexistent=$?
+
 ## STDOUT:
+empty=0
+k=0
+nonexistent=1
+---
 empty=0
 k=0
 nonexistent=1
