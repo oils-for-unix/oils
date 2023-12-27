@@ -54,7 +54,6 @@ from asdl import format as fmt
 from core import vm
 from data_lang import pyj8
 from data_lang import qsn
-from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
@@ -410,8 +409,11 @@ if mylib.PYTHON:
             # type: (Id_t) -> None
 
             # TODO: Need location info
-            assert self.tok_id == tok_id, "Expected %s, got %s" % (
-                Id_str(tok_id), Id_str(self.tok_id))
+            if self.tok_id != tok_id:
+                #log('position %r %d-%d %r', self.s, self.start_pos,
+                #    self.end_pos, self.s[self.start_pos:self.end_pos])
+                raise AssertionError("Expected %s, got %s" % (Id_str(tok_id),
+                                                              Id_str(self.tok_id)))
             self._Next()
 
         def _ParsePair(self):
