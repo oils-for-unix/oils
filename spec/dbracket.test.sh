@@ -449,10 +449,14 @@ echo zero=$?
 [[ -v array[1] ]]
 echo one=$?
 
+[[ -v array[2] ]]
+echo two=$?
+
 
 ## STDOUT:
 zero=0
 one=0
+two=1
 ## END
 
 ## N-I mksh status: 1
