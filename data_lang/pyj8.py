@@ -265,4 +265,5 @@ class LexerDecoder(object):
             self.decoded.write(part)
             str_pos = str_end
 
+
 # vim: sw=4

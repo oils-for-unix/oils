@@ -538,7 +538,6 @@ J8_DEF = [
     C('null', Id.J8_Null),
     C('true', Id.J8_Bool),
     C('false', Id.J8_Bool),
-
     R(_JSON_INT, Id.J8_Int),
     R(_JSON_INT + _JSON_FRACTION + _JSON_EXP, Id.J8_Float),
 

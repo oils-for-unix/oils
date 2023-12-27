@@ -10,10 +10,13 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from core import error
 from core import ui
 from core import vm
+from data_lang import j8
 from frontend import match
 from frontend import typed_args
+from mycpp import mylib
 from mycpp.mylib import NewDict, iteritems, log, tagswitch
-from ysh import expr_eval, val_ops
+from ysh import expr_eval
+from ysh import val_ops
 
 from typing import TYPE_CHECKING, Dict, List, cast
 if TYPE_CHECKING:
@@ -397,3 +400,41 @@ class EvalExpr(vm._Callable):
         result = self.expr_ev.EvalExpr(lazy, rd.LeftParenToken())
 
         return result
+
+
+class ToJ8(vm._Callable):
+
+    def __init__(self, j8print, is_j8):
+        # type: (j8.Printer, bool) -> None
+        self.j8print = j8print
+        self.is_j8 = is_j8
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        val = rd.PosValue()
+        rd.Done()
+
+        buf = mylib.BufWriter()
+        if self.is_j8:
+            self.j8print.PrintMessage(val, buf, -1)
+        else:
+            self.j8print.PrintJsonMessage(val, buf, -1)
+
+        return value.Str(buf.getvalue())
+
+
+class FromJ8(vm._Callable):
+
+    def __init__(self, is_j8):
+        # type: (bool) -> None
+        self.is_j8 = is_j8
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        s = rd.PosStr()
+        rd.Done()
+
+        # TODO: invoke parser
+        return value.Null

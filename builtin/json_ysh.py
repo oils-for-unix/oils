@@ -124,7 +124,8 @@ class Json(vm._Builtin):
                                          posix.strerror(e.err_num))
                 return 1
 
-            if self.is_j8:
+            #if self.is_j8:
+            if True:
                 if mylib.PYTHON:
                     p = j8.Parser(contents)
                     if self.is_j8:

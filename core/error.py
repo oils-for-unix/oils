@@ -199,6 +199,7 @@ class TypeErr(TypeErrVerbose):
                                 "%s, got %s" % (msg, _ValType(actual_val)),
                                 location)
 
+
 class Decode(Exception):
     """
     List of J8 errors errors:
@@ -213,6 +214,7 @@ class Decode(Exception):
       - "" doesn't accept \\yff or \\u{123456}
     """
     pass
+
 
 class Encode(Exception):
     """

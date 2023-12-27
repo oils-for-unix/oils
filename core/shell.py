@@ -25,15 +25,13 @@ from core import pyutil
 from core import state
 from core import ui
 from core import util
-from mycpp.mylib import log
-
-unused1 = log
 from core import vm
+from data_lang import j8
 
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 
-unused2 = flag_def
+unused1 = flag_def
 from frontend import flag_spec
 from frontend import location
 from frontend import reader
@@ -70,8 +68,6 @@ from builtin import method_list
 from builtin import method_other
 from builtin import method_str
 
-from ysh import expr_eval
-
 from osh import cmd_eval
 from osh import glob_
 from osh import history
@@ -81,17 +77,18 @@ from osh import split
 from osh import word_eval
 
 from mycpp import mylib
-from mycpp.mylib import print_stderr
+from mycpp.mylib import print_stderr, log
 from pylib import os_path
 from tools import deps
 from tools import ysh_ify
+from ysh import expr_eval
+
+unused2 = log
 
 import libc
-
 import posix_ as posix
 
 from typing import List, Dict, Optional, TYPE_CHECKING, cast
-
 if TYPE_CHECKING:
     from frontend.py_readline import Readline
 
@@ -842,6 +839,13 @@ def Main(
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
+
+    j8print = j8.Printer()
+    _SetGlobalFunc(mem, 'toJ8', func_misc.ToJ8(j8print, True))
+    _SetGlobalFunc(mem, 'toJson', func_misc.ToJ8(j8print, False))
+
+    _SetGlobalFunc(mem, 'fromJ8', func_misc.FromJ8(True))
+    _SetGlobalFunc(mem, 'fromJson', func_misc.FromJ8(False))
 
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
     mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)

@@ -116,6 +116,7 @@ class PrettyPrinter(object):
 SHOW_CYCLES = 1  # pretty-printing
 SHOW_NON_DATA = 2  # non-data objects like Eggex can be <Eggex 0xff>
 
+
 class Printer(object):
     """
     For json/j8 write (x), write (x), = operator, pp line (x)
@@ -184,7 +185,7 @@ class Printer(object):
         f.write(buf.getvalue())
         f.write('\n')
 
-    def MaybeEncodeString(self, s ):
+    def MaybeEncodeString(self, s):
         # type: (str) -> str
         """ For write --j8 $s 
 
@@ -420,8 +421,8 @@ if mylib.PYTHON:
             if self.tok_id != tok_id:
                 #log('position %r %d-%d %r', self.s, self.start_pos,
                 #    self.end_pos, self.s[self.start_pos:self.end_pos])
-                raise AssertionError("Expected %s, got %s" % (Id_str(tok_id),
-                                                              Id_str(self.tok_id)))
+                raise AssertionError("Expected %s, got %s" %
+                                     (Id_str(tok_id), Id_str(self.tok_id)))
             self._Next()
 
         def _ParsePair(self):
