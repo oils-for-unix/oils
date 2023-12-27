@@ -1,4 +1,4 @@
-# builtin-getopts.test.sh
+## compare_shells: dash bash mksh ash
 
 #### getopts empty
 set -- 

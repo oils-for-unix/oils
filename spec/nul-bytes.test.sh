@@ -1,4 +1,5 @@
-# spec/nul-bytes
+## oils_failures_allowed: 2
+## compare_shells: dash bash mksh zsh ash
 
 #### NUL bytes with echo -e
 case $SH in (dash) exit ;; esac

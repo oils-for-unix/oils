@@ -1,3 +1,5 @@
+## oils_failures_allowed: 2
+## compare_shells: dash bash mksh zsh
 
 #### Env value doesn't persist
 FOO=foo printenv.py FOO

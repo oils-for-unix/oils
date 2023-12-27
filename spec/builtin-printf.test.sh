@@ -1,3 +1,6 @@
+## oils_failures_allowed: 1
+## compare_shells: dash bash mksh zsh ash
+
 # printf
 # bash-completion uses this odd printf -v construction.  It seems to mostly use
 # %s and %q though.

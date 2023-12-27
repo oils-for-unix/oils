@@ -29,10 +29,6 @@ readonly BUSYBOX_ASH=ash
 # POSIX.
 readonly REF_SHELLS=($DASH $BASH $MKSH)
 
-# TODO: Could be
-# test/sh_spec.py --osh-sanity-check --oils-bin-dir 
-# Along with comparison shells
-
 check-survey-shells() {
   ### Make sure bash, zsh, OSH, etc. exist
 
@@ -131,8 +127,7 @@ word-eval() {
 
 # These cases apply to many shells.
 assign() {
-  sh-spec spec/assign.test.sh --oils-failures-allowed 2 \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@" 
+  run-file assign "$@"
 }
 
 # These cases apply to a few shells.
@@ -149,13 +144,11 @@ assign-deferred() {
 
 # These test associative arrays
 assign-dialects() {
-  sh-spec spec/assign-dialects.test.sh --oils-failures-allowed 1 \
-    $BASH $MKSH $OSH_LIST "$@" 
+  run-file assign-dialects "$@"
 }
 
 background() {
-  sh-spec spec/background.test.sh --oils-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@" 
+  run-file background "$@"
 }
 
 subshell() {
@@ -183,8 +176,7 @@ if_() {
 }
 
 builtins() {
-  sh-spec spec/builtins.test.sh --oils-failures-allowed 2 \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file builtins "$@"
 }
 
 builtin-eval-source() {
@@ -193,19 +185,16 @@ builtin-eval-source() {
 }
 
 builtin-io() {
-  sh-spec spec/builtin-io.test.sh --oils-failures-allowed 2 \
-    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file builtin-io "$@"
 }
 
 nul-bytes() {
-  sh-spec spec/nul-bytes.test.sh --oils-failures-allowed 2 \
-    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file nul-bytes "$@"
 }
 
 # Special bash printf things like -v and %q.  Portable stuff goes in builtin-io.
 builtin-printf() {
-  sh-spec spec/builtin-printf.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file builtin-printf "$@"
 }
 
 builtins2() {
@@ -223,13 +212,11 @@ builtin-dirs() {
 }
 
 builtin-vars() {
-  sh-spec spec/builtin-vars.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file builtin-vars "$@"
 }
 
 builtin-getopts() {
-  sh-spec spec/builtin-getopts.test.sh --oils-failures-allowed 0 \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file builtin-getopts "$@"
 }
 
 builtin-bracket() {
@@ -237,7 +224,7 @@ builtin-bracket() {
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/builtin-trap.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -264,8 +251,7 @@ vars-bash() {
 }
 
 vars-special() {
-  sh-spec spec/vars-special.test.sh --oils-failures-allowed 2 \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file vars-special "$@"
 }
 
 builtin-completion() {
@@ -305,7 +291,7 @@ globignore() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/arith.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -364,12 +350,12 @@ introspect() {
 }
 
 tilde() {
-  sh-spec spec/tilde.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/tilde.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
 var-op-test() {
-  sh-spec spec/var-op-test.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/var-op-test.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -396,7 +382,7 @@ var-op-bash() {
 }
 
 var-op-strip() {
-  sh-spec spec/var-op-strip.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/var-op-strip.test.sh \
     ${REF_SHELLS[@]} $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -412,7 +398,7 @@ var-num() {
 }
 
 var-sub-quote() {
-  sh-spec spec/var-sub-quote.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/var-sub-quote.test.sh \
     ${REF_SHELLS[@]} $OSH_LIST "$@"
 }
 
@@ -440,7 +426,7 @@ exit-status() {
 }
 
 errexit() {
-  sh-spec spec/errexit.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/errexit.test.sh \
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -449,7 +435,7 @@ errexit-osh() {
 }
 
 fatal-errors() {
-  sh-spec spec/fatal-errors.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/fatal-errors.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
@@ -512,7 +498,7 @@ regex() {
 
 process-sub() {
   # mksh and dash don't support it
-  sh-spec spec/process-sub.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/process-sub.test.sh \
     $BASH $ZSH $OSH_LIST "$@"
 }
 
@@ -524,7 +510,7 @@ extglob-files() {
 
 # This does string matching.
 extglob-match() {
-  sh-spec spec/extglob-match.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/extglob-match.test.sh \
     $BASH $MKSH $OSH_LIST "$@"
 }
 
@@ -566,7 +552,7 @@ shell-grammar() {
 
 serialize() {
   # dash doesn't have echo -e, $'', etc.
-  sh-spec spec/serialize.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/serialize.test.sh \
     $BASH $MKSH $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
@@ -949,12 +935,12 @@ nix-idioms() {
 }
 
 ble-idioms() {
-  sh-spec spec/ble-idioms.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/ble-idioms.test.sh \
     $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
 ble-features() {
-  sh-spec spec/ble-features.test.sh --oils-failures-allowed 0 \
+  sh-spec spec/ble-features.test.sh \
     $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
 }
 
@@ -966,16 +952,6 @@ toysh() {
 toysh-posix() {
   sh-spec spec/toysh-posix.test.sh --oils-failures-allowed 3 \
     ${REF_SHELLS[@]} $ZSH yash $OSH_LIST "$@"
-}
-
-#
-# Tea Language
-#
-
-tea-func() {
-  # all of these were broken by the new grammar!
-  sh-spec spec/tea-func.test.sh --oils-failures-allowed 15 \
-    $OSH_LIST "$@"
 }
 
 run-task "$@"

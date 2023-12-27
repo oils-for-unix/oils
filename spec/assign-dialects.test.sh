@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+## compare_shells: bash mksh
 
 #### K and V are variables in (( array[K] = V ))
 K=5
