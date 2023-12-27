@@ -452,7 +452,6 @@ echo one=$?
 [[ -v array[2] ]]
 echo two=$?
 
-
 ## STDOUT:
 zero=0
 one=0
@@ -463,6 +462,48 @@ two=1
 ## N-I mksh STDOUT:
 ## END
 
+#### [[ -v array[expr]] ]] doesn't work
+
+# This feels inconsistent with the rest of bash?
+zero=0
+
+[[ -v array[zero+0] ]]
+echo zero=$?
+
+[[ -v array[zero+1] ]]
+echo one=$?
+
+[[ -v array[zero+2] ]]
+echo two=$?
+
+echo ---
+
+i='0+0'
+[[ -v array[i] ]]
+echo zero=$?
+
+i='0+1'
+[[ -v array[i] ]]
+echo one=$?
+
+i='0+2'
+[[ -v array[i] ]]
+echo two=$?
+
+
+## STDOUT:
+zero=1
+one=1
+two=1
+---
+zero=1
+one=1
+two=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
 
 #### [[ -v assoc[key] ]]
 
