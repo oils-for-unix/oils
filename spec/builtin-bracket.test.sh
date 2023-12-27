@@ -1,3 +1,4 @@
+## oils_failures_allowed: 1
 
 #### zero args: [ ]
 [ ] || echo false
@@ -459,7 +460,7 @@ status=1
 status=0
 ## END
 
-#### -v to test variable
+#### -v to test variable (bash)
 test -v nonexistent
 echo global=$?
 
@@ -495,6 +496,66 @@ global=2
 dynamic=2
 dynamic=2
 dynamic=2
+## END
+
+
+#### -v tests array/assoc expression (bash) - also see spec/dbracket)
+
+case $SH in dash|mksh) exit ;; esac
+
+typeset -a array
+array=('' nonempty)
+
+[ -v array[0] ]
+echo zero=$?
+
+[ -v array[1] ]
+echo one=$?
+
+[ -v array[2] ]
+echo two=$?
+
+echo ---
+
+[ -v array[0+0] ]
+echo zero=$?
+
+[ -v array[0+1] ]
+echo one=$?
+
+[ -v array[0+2] ]
+echo two=$?
+
+echo ---
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
+
+[[ -v assoc[empty] ]]
+echo empty=$?
+
+[[ -v assoc[k] ]]
+echo k=$?
+
+[[ -v assoc[nonexistent] ]]
+echo nonexistent=$?
+
+
+## STDOUT:
+zero=0
+one=0
+two=1
+---
+zero=0
+one=0
+two=1
+---
+empty=0
+k=0
+nonexistent=1
+## END
+
+## N-I dash/mksh STDOUT:
 ## END
 
 

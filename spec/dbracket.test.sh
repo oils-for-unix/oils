@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: bash mksh
 
 # NOTE: zsh passes about half, and fails about half.  It supports a subset of
@@ -462,7 +462,10 @@ two=1
 ## N-I mksh STDOUT:
 ## END
 
-#### [[ -v array[expr]] ]] doesn't work
+#### [[ -v array[expr]] ]] does arith expression evaluation
+
+typeset -a array
+array=('' nonempty)
 
 # This feels inconsistent with the rest of bash?
 zero=0
@@ -490,14 +493,32 @@ i='0+2'
 [[ -v array[i] ]]
 echo two=$?
 
+echo ---
+
+i='0+0'
+[[ -v array[$i] ]]
+echo zero=$?
+
+i='0+1'
+[[ -v array[$i] ]]
+echo one=$?
+
+i='0+2'
+[[ -v array[$i] ]]
+echo two=$?
+
 
 ## STDOUT:
-zero=1
-one=1
+zero=0
+one=0
 two=1
 ---
-zero=1
-one=1
+zero=0
+one=0
+two=1
+---
+zero=0
+one=0
 two=1
 ## END
 
