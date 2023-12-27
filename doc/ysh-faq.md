@@ -70,16 +70,19 @@ unary operator and a variable, not some kind of string substitution.
 Also, quoted `"~"` is a literal tilde, and shells disagree on what `~""` means.
 The rules are subtle, so we avoid inventing new ones.
 
-## How do I write `echo -e` or `echo -n`?
+## How do I write the equivalent of `echo -e` or `echo -n`?
 
-To escape variables, you can use the string language, rather than `echo`:
+YSH removed these flags to `echo` because it has good alternatives
+
+To escape variables, use the statically-parsed string language, rather than
+`echo -e`:
 
     echo $'tab \t newline \n'   # YES
     echo j"tab \t newline \n"   # TODO: J8 notation
 
     echo -e tab \t newline \n'  # NO
 
-To omit the newline, use the `write` builtin:
+To omit the newline, use the `write` builtin, rather than `echo -n`:
 
     write -n 'prefix'           # YES
     write --end '' -- 'prefix'  # synonym
@@ -88,11 +91,36 @@ To omit the newline, use the `write` builtin:
 
 ### Why Were `-e` and `-n` Removed?
 
-Without the flags, you can write `echo $flag` without the 2 corner cases that
-are impossible to fix.  Shell's `echo` doesn't accept `--`.
+Shell's `echo` is the only builtin that doesn't accept `--` to stop flag
+processing.
 
-Note that `write -- $x` is equivalent to `echo $x` in YSH, so `echo` is
-superfluous.  But we wanted the short and familiar `echo $x` to work.
+This means that `echo "$flag"` always has a few bugs: when `flag` is `-e`,
+`-n`, `-en`, or `-ne`.  There's **no** way to fix this bug in POSIX shell.
+
+Portable scripts generally use:
+
+    printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
+
+We could have chosen to respect `echo -- $x`, but YSH already has:
+
+    write -- $x         # print $x "unmolested" in YSH
+
+That means we also have:
+
+    echo $x             # an even shorter way
+
+So `echo` is technically superfluous in YSH, but it's also short, familiar, and
+correct.
+
+YSH isn't intended to be compatible with POSIX shell; only OSH is.
+
+### How do I find all the `echo` invocations I need to change when using YSH?
+
+A search like this can statically find most usages:
+
+    $ egrep -n 'echo (-e|-n|-en|-ne)' *.sh
+    test/syscall.sh:58: echo -n hi
+    test/syscall.sh:76: echo -e '\t'
 
 ## What's the difference between `$(dirname $x)` and `$[len(x)]` ?
 
