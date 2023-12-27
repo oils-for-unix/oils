@@ -54,7 +54,7 @@ class Pp(_Builtin):
         self.procs = procs
         self.arena = arena
         self.stdout_ = mylib.Stdout()
-        self.printer = j8.Printer(0)
+        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -129,7 +129,7 @@ class Pp(_Builtin):
                 self.stdout_.write('\n')
 
             buf = mylib.BufWriter()
-            self.printer.Print(val, buf, indent=-1)
+            self.j8print.Print(val, buf, indent=-1)
             self.stdout_.write(buf.getvalue())
             self.stdout_.write('\n')
 
@@ -193,7 +193,7 @@ class Write(_Builtin):
         # type: (state.Mem, ErrorFormatter) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.stdout_ = mylib.Stdout()
-        self.printer = j8.Printer(0)
+        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -218,7 +218,7 @@ class Write(_Builtin):
 
             if arg.j8:
                 buf = mylib.BufWriter()
-                self.printer.Print(value.Str(s), buf, -1)
+                self.j8print.Print(value.Str(s), buf, -1)
                 s = buf.getvalue()
 
             elif arg.qsn:

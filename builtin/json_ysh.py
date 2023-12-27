@@ -18,7 +18,6 @@ from mycpp import mylib
 from mycpp.mylib import log
 from ysh import cpython
 
-import sys
 import yajl
 import posix_ as posix
 
@@ -45,11 +44,7 @@ class Json(vm._Builtin):
 
         self.stdout_ = mylib.Stdout()
         self.is_j8 = is_j8
-        if is_j8:
-            self.printer = j8.Printer(0)
-        else:
-            # TODO: restrict to JSON with some flags
-            self.printer = j8.Printer(0)
+        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -90,7 +85,7 @@ class Json(vm._Builtin):
             buf = mylib.BufWriter()
 
             # TODO: Call PrintMessage() vs. PrintJsonmessage()
-            self.printer.Print(val, buf, indent)
+            self.j8print.Print(val, buf, indent)
 
             self.stdout_.write(buf.getvalue())
             self.stdout_.write('\n')

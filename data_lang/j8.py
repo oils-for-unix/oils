@@ -127,29 +127,18 @@ class Printer(object):
     - Dumb indentation, not smart line wrapping
     """
 
-    def __init__(self, options):
-        # type: (int) -> None
+    def __init__(self):
+        # type: () -> None
         """
         Args:
           # These can all be packed into the same byte.  ASDL needs bit_set
           # support I think?
           options:
-            j_prefix.WhenJ8  # default,  
-            j_prefix.Always  # when do we need this?
-
-            u_style.LiteralUtf8         # raw or \\x
-            u_style.UEscape      # \\u{} or \\x
-            u_style.XEscapeOnly  # always \\x escape, NO DECODING
-            u_style.JsonEscape   # \\u1234 only - Implement LAST
-
-            dialect.J8  # default
-            dialect.Json
-
+            control j"" vs. ""
+            control escaping \\x and \\u escaping like QSN
             pretty.UnquotedKeys - ASDL uses this?
-
-            show_cycles.Yes
         """
-        self.options = options
+        self.options = 0
         self.spaces = {0: ''}  # cache of strings with spaces
 
     # Could be PrintMessage or PrintJsonMessage()

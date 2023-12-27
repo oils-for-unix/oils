@@ -436,12 +436,12 @@ def DebugPrint(val):
         # "JSON" data types will use J8 serialization
         if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                 value_e.Str, value_e.List, value_e.Dict):
-            printer = j8.Printer(0)
+            j8print = j8.Printer()
             # Use () instead of <> as a hint that it's a "JSON value"
             f.write('(%s%s)   ' % (ysh_type, id_str))
 
             buf = mylib.BufWriter()
-            printer.Print(val, buf, indent=-1)
+            j8print.Print(val, buf, indent=-1)
             f.write(buf.getvalue())
             f.write('\n')
 
