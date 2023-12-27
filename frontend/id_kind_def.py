@@ -703,6 +703,7 @@ def AddKinds(spec):
             'Colon',
 
             # Parsed
+            'Null',
             'Bool',
             'Number',  # Int and Float
 

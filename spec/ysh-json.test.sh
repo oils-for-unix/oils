@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -237,7 +237,11 @@ b"\u{1}\yff\u{1f}"
 ## END
 
 
+#### j8 read
 
+# Avoid conflict on stdin from spec test framework?
 
+$SH $REPO_ROOT/spec/testdata/j8-read.sh
 
-
+## STDOUT:
+## END

@@ -190,6 +190,14 @@ class LexerDecoder(object):
 
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
+        while True:
+            tok_id, end_pos, decoded = self._Next()
+            if tok_id != Id.Ignored_Space:
+                break
+        return tok_id, end_pos, decoded
+
+    def _Next(self):
+        # type: () -> Tuple[Id_t, int, Optional[str]]
         """
         Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
         """
