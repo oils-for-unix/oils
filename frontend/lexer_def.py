@@ -538,6 +538,8 @@ J8_DEF = [
 
     # Numbers can't start with leading 0
     R('([0-9]|[1-9][0-9]*)' + _JSON_FRACTION + _JSON_EXP, Id.J8_Number),
+
+    # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),
 
     # TODO: AnyString, UString, and BString will also

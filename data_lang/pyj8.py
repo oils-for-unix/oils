@@ -237,6 +237,9 @@ class LexerDecoder(object):
                     # Syntax error because JSON must be invalid UTF-8
                     raise AssertionError()
 
+            # TODO: would be nice to avoid allocation in all these cases.
+            # But LookupCharC() would have to change.
+
             elif tok_id == Id.Char_OneChar:  # JSON and J8
                 ch = self.s[str_pos + 1]
                 part = consts.LookupCharC(ch)

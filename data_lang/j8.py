@@ -17,6 +17,8 @@ TODO:
 
 - Many more tests
   - Assert should become parse errors
+  - Figure out location info for parse errors - turn a position into a line and
+    column?
 
 - Run JSONTestSuite
 
