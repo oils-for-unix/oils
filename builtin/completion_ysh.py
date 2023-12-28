@@ -6,12 +6,10 @@ from _devbuild.gen.syntax_asdl import loc
 from core import completion
 from core.error import e_usage
 from core import vm
-from mycpp import mylib
+from data_lang import j8
 from mycpp.mylib import log
 from frontend import flag_spec
 from frontend import args
-
-import yajl
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -23,6 +21,7 @@ class CompExport(vm._Builtin):
     def __init__(self, root_comp):
         # type: (completion.RootCompleter) -> None
         self.root_comp = root_comp
+        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -59,8 +58,8 @@ class CompExport(vm._Builtin):
                 #
                 # Also, there's always a trailing space!  Gah.
 
-                if mylib.PYTHON:
-                    print(yajl.dumps(m, indent=-1))
+                s = self.j8print.MaybeEncodeString(m)
+                print(s)
 
         elif arg.format == 'tsv8':
             log('TSV8 format not implemented')

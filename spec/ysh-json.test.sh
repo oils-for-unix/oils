@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## tags: dev-minimal
 
 #### usage errors
@@ -244,6 +244,15 @@ b"\u{1}\yff\u{1f}"
 $SH $REPO_ROOT/spec/testdata/j8-read.sh
 
 ## STDOUT:
+(Dict)   {}
+(List)   []
+(List)   [42]
+(List)   [true,false]
+(Dict)   {"k":"v"}
+(Dict)   {"k":null}
+(Dict)   {"k":1,"k2":2}
+(Dict)   {"k":{"k2":null}}
+(Dict)   {"k":{"k2":"v2"},"k3":"backslash \\ \" \n line 2 μ "}
 ## END
 
 #### j8 round trip

@@ -3,7 +3,14 @@ runtime.py
 """
 from __future__ import print_function
 
-import cStringIO
+try:
+    import cStringIO
+except ImportError:
+    # Python 3 doesn't have cStringIO.  Our yaks/ demo currently uses
+    # mycpp/mylib.py with Python 3.
+    cStringIO = None 
+    import io
+
 import sys
 
 from pylib import collections_
@@ -48,8 +55,12 @@ def print_stderr(s):
     print(s, file=sys.stderr)
 
 
-BufWriter = cStringIO.StringIO
-BufLineReader = cStringIO.StringIO
+if cStringIO:
+    BufWriter = cStringIO.StringIO
+    BufLineReader = cStringIO.StringIO
+else:  # Python 3
+    BufWriter = io.StringIO
+    BufLineReader = io.StringIO
 
 
 def ClearBuf(buf):
