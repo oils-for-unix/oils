@@ -16,9 +16,7 @@ from frontend import args
 from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log
-from ysh import cpython
 
-import yajl
 import posix_ as posix
 
 from typing import TYPE_CHECKING
@@ -42,9 +40,11 @@ class Json(vm._Builtin):
         self.mem = mem
         self.errfmt = errfmt
 
-        self.stdout_ = mylib.Stdout()
         self.is_j8 = is_j8
+        self.name = 'j8' if is_j8 else 'json'  # for error messages
+
         self.j8print = j8.Printer()
+        self.stdout_ = mylib.Stdout()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -124,28 +124,20 @@ class Json(vm._Builtin):
                                          posix.strerror(e.err_num))
                 return 1
 
-            if self.is_j8:
-            #if True:
-                if mylib.PYTHON:
-                    p = j8.Parser(contents)
+            if mylib.PYTHON:
+                p = j8.Parser(contents)
+                try:
                     if self.is_j8:
                         val = p.ParseJ8()
                     else:
                         val = p.ParseJson()
-                    self.mem.SetPlace(place, val, blame_loc)
+                except error.Decode as err:
+                    # TODO: Need to show position info
+                    self.errfmt.Print_('%s read: %s' % (self.name, err),
+                                       blame_loc=action_loc)
+                    return 1
 
-            else:
-                if mylib.PYTHON:
-                    try:
-                        obj = yajl.loads(contents)
-                    except ValueError as e:
-                        self.errfmt.Print_('json read: %s' % e,
-                                           blame_loc=action_loc)
-                        return 1
-
-                    # TODO: use token directly
-                    val = cpython._PyObjToValue(obj)
-                    self.mem.SetPlace(place, val, blame_loc)
+                self.mem.SetPlace(place, val, blame_loc)
 
         else:
             raise error.Usage(_JSON_ACTION_ERROR, action_loc)

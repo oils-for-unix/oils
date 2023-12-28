@@ -51,6 +51,7 @@ from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from asdl import format as fmt
+from core import error
 from core import vm
 from data_lang import pyj8
 from data_lang import qsn
@@ -421,16 +422,20 @@ if mylib.PYTHON:
             if self.tok_id != tok_id:
                 #log('position %r %d-%d %r', self.s, self.start_pos,
                 #    self.end_pos, self.s[self.start_pos:self.end_pos])
-                raise AssertionError("Expected %s, got %s" %
-                                     (Id_str(tok_id), Id_str(self.tok_id)))
+                raise self._Error("Expected %s, got %s" % (Id_str(tok_id),
+                                                           Id_str(self.tok_id)))
             self._Next()
+
+        def _Error(self, msg):
+            # type: (str) -> error.Decode
+            return error.Decode(msg, self.s, self.start_pos, self.end_pos)
 
         def _ParsePair(self):
             # type: () -> Tuple[str, value_t]
-            if self.tok_id != Id.J8_AnyString:
-                raise AssertionError(Id_str(self.tok_id))
-            k = self.decoded
-            self._Next()
+
+            k = self.decoded  # Save the potential string value
+            self._Eat(Id.J8_AnyString)  # Check that it's a string
+            assert k is not None
 
             self._Eat(Id.J8_Colon)
 
@@ -522,7 +527,11 @@ if mylib.PYTHON:
                 self._Next()
                 return str_val
 
+            elif self.tok_id == Id.Eol_Tok:
+                raise self._Error('Unexpected EOF while parsing JSON')
+
             else:
+                # This should never happen
                 part = self.s[self.start_pos:self.end_pos]
                 raise AssertionError('Unexpected token %s %r' %
                                      (Id_str(self.tok_id), part))

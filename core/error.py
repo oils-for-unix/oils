@@ -213,7 +213,12 @@ class Decode(Exception):
       - u"" doesn't accept \\yff
       - "" doesn't accept \\yff or \\u{123456}
     """
-    pass
+    def __init__(self, msg, s, start_pos, end_pos):
+        # type: (str, str, int, int) -> None
+        self.msg = msg
+        self.s = s  # string being decoded
+        self.start_pos = start_pos
+        self.end_pos = end_pos
 
 
 class Encode(Exception):

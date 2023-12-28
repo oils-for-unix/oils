@@ -33,6 +33,8 @@ test-json() {
   #echo OSH=$OSH
   #set +o errexit
 
+  _error-case-X 1 'echo "" | json read'
+
   _error-case-X 1 'echo { | json read'
 
   _error-case-X 1 'echo { | j8 read'
