@@ -529,6 +529,10 @@ if mylib.PYTHON:
             elif self.tok_id == Id.Eol_Tok:
                 raise self._Error('Unexpected EOF while parsing JSON')
 
+            elif self.tok_id == Id.Unknown_Tok:
+                raise self._Error('Invalid token while parsing JSON: %s' %
+                                  Id_str(self.tok_id))
+
             else:
                 # This should never happen
                 part = self.s[self.start_pos:self.end_pos]

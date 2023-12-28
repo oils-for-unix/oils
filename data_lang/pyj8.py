@@ -2,6 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
+from core import error
 from frontend import consts
 from frontend import match
 from mycpp import mylib
@@ -191,6 +192,12 @@ class LexerDecoder(object):
         # thousands of strings.
         self.decoded = mylib.BufWriter()
 
+    def _Error(self, msg, end_pos):
+        # type: (str, int) -> error.Decode
+
+        # Use the current position as start pos
+        return error.Decode(msg, self.s, self.pos, end_pos)
+
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
 
@@ -213,13 +220,14 @@ class LexerDecoder(object):
         while True:
             tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
             if tok_id == Id.Eol_Tok:
-                # Syntax error: unclosed quote.  TODO: point to beginning of
-                # quote?
-                raise AssertionError()
+                # TODO: point to beginning of # quote?
+                raise self._Error('Unexpected EOF while lexing JSON string',
+                                  str_end)
 
             if tok_id == Id.Unknown_Tok:
                 # Syntax error: invalid backslash etc.
-                raise AssertionError()
+                raise self._Error('Unknown token while lexing JSON string: %s'
+                                  % Id_str(tok_id), str_end)
 
             if tok_id == Id.Right_DoubleQuote:
                 self.pos = str_end
@@ -248,8 +256,11 @@ class LexerDecoder(object):
                 try:
                     part.decode('utf-8')
                 except UnicodeDecodeError as e:
-                    # Syntax error because JSON must be invalid UTF-8
-                    raise AssertionError()
+                    # Syntax error because JSON must be valid UTF-8
+                    # Limit context to 20 chars arbitrarily
+                    raise self._Error(
+                            'Invalid UTF-8 in JSON string literal: %r' % part[:20],
+                            str_end)
 
             # TODO: would be nice to avoid allocation in all these cases.
             # But LookupCharC() would have to change.
@@ -274,6 +285,7 @@ class LexerDecoder(object):
                 part = string_ops.Utf8Encode(i)
 
             else:
+                # Should never happen
                 raise AssertionError(Id_str(tok_id))
 
             #log('%s part %r', Id_str(tok_id), part)

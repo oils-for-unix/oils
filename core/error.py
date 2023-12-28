@@ -220,6 +220,13 @@ class Decode(Exception):
         self.start_pos = start_pos
         self.end_pos = end_pos
 
+    def Message(self):
+        # type: () -> str
+
+        # Hack for context
+        part = self.s[self.start_pos - 10:self.end_pos + 10]
+        return self.msg + ' (pos %d-%d: %r)' % (self.start_pos, self.end_pos, part)
+
 
 class Encode(Exception):
     """

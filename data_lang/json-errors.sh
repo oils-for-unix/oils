@@ -29,17 +29,37 @@ _expr-error-case() {
 # Cases
 #
 
-test-json() {
+test-parse-errors() {
   #echo OSH=$OSH
   #set +o errexit
 
+  # Unexpected EOF
   _error-case-X 1 'echo "" | json read'
 
+  # Unexpected token
   _error-case-X 1 'echo { | json read'
 
-  _error-case-X 1 'echo { | j8 read'
+  # Invalid token
+  _error-case-X 1 'echo + | json read'
+}
 
-  #_error-case-X 3 'echo { | json read'
+test-lex-errors() {
+  # Unclosed quote
+  _error-case-X 1 'echo [\" | json read'
+
+  # EOL in middle of string
+  _error-case-X 1 'echo -n [\" | json read'
+
+  # Invalid unicode
+
+  json=$'"\xce"'  # part of mu = \u03bc
+  echo "json=$json"
+  json=${json//'"'/'\"'}  # shell escape
+  _error-case-X 1 $'echo -n '$json' | json read'
+}
+
+test-encode() {
+  _error-case-X 1 'var d = {}; setvar d.k = d; json write (d)'
 }
 
 #
