@@ -436,5 +436,11 @@ class FromJ8(vm._Callable):
         s = rd.PosStr()
         rd.Done()
 
-        # TODO: invoke parser
-        return value.Null
+        p = j8.Parser(s)
+
+        if self.is_j8:
+            val = p.ParseJ8()
+        else:
+            val = p.ParseJson()
+
+        return val

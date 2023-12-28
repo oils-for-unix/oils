@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 4
 ## tags: dev-minimal
 
 #### usage errors
@@ -310,3 +310,52 @@ pp line (_reply)
 ## STDOUT:
 (Dict)   {"short":"-v","long":"--verbose","type":null,"default":"","help":"Enable verbose logging"}
 ## END
+
+#### toJson() toJ8() - TODO: test difference
+
+var obj = [42, 1.5, null, true, "hi"]
+
+echo $[toJson(obj)]
+echo $[toJ8(obj)]
+
+## STDOUT:
+[42,1.5,null,true,"hi"]
+[42,1.5,null,true,"hi"]
+## END
+
+#### fromJson() fromJ8() - TODO: test difference
+
+var message ='[42,1.5,null,true,"hi"]'
+
+pp line (fromJson(message))
+pp line (fromJ8(message))
+
+## STDOUT:
+(List)   [42,1.5,null,true,"hi"]
+(List)   [42,1.5,null,true,"hi"]
+## END
+
+#### User can handle errors - toJson() toJ8()
+
+var obj = []
+call obj->append(obj)
+
+echo $[toJson(obj)]
+echo $[toJ8(obj)]
+
+## STDOUT:
+[42,1.5,null,true,"hi"]
+[42,1.5,null,true,"hi"]
+## END
+
+#### User can handle errors - fromJson() fromJ8()
+
+var message ='[42,1.5,null,true,"hi"'
+
+pp line (fromJson(message))
+pp line (fromJ8(message))
+
+## STDOUT:
+(List)   []
+## END
+

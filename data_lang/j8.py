@@ -156,7 +156,6 @@ class Printer(object):
         """ For j8 write (x) and toJ8() """
 
         # TODO: handle error.Encode
-
         self._Print(val, buf, indent)
 
     def PrintJsonMessage(self, val, buf, indent):
@@ -166,6 +165,7 @@ class Printer(object):
         Doesn't decay to b"" strings
         Either raise error.Decode() or use unicode replacement char
         """
+        # TODO: handle error.Encode
         self._Print(val, buf, indent)
 
     def DebugPrint(self, val, f):
@@ -173,9 +173,7 @@ class Printer(object):
         """
         For = operator.
         """
-        # Note: I think error.Encode is impossible here - we show cycles and
-        # non-data
-
+        # error.Encode should be impossible - we show cycles and non-data
         buf = mylib.BufWriter()
         self._Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
         f.write(buf.getvalue())
@@ -185,6 +183,7 @@ class Printer(object):
         # type: (value_t, mylib.Writer) -> None
         """ For pp line (x) """
 
+        # error.Encode should be impossible - we show cycles and non-data
         buf = mylib.BufWriter()
         self._Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
         f.write(buf.getvalue())
@@ -194,7 +193,7 @@ class Printer(object):
         # type: (str) -> str
         """ For write --j8 $s  and compexport
 
-        Do we also have write --json or --json-string?  That require handling
+        Do we also have write --json or --json-string?  That requires handling
         error.Encode()
 
         Do we also want write (x) to use J8 notation?  It's the default
