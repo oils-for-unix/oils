@@ -436,11 +436,14 @@ class FromJ8(vm._Callable):
         s = rd.PosStr()
         rd.Done()
 
-        p = j8.Parser(s)
+        if mylib.PYTHON:  # TODO: translate j8.Parser
+            p = j8.Parser(s)
 
-        if self.is_j8:
-            val = p.ParseJ8()
+            if self.is_j8:
+                val = p.ParseJ8()
+            else:
+                val = p.ParseJson()
         else:
-            val = p.ParseJson()
+            val = value.Null
 
         return val
