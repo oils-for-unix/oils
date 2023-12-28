@@ -12,6 +12,5 @@ frontend/match.py
 pgen2/grammar.py
 pgen2/pnode.py
 pylib/path_stat.py
-ysh/cpython.py
 osh/bool_stat.py
 tea/

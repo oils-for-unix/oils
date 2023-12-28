@@ -3,12 +3,7 @@ runtime.py
 """
 from __future__ import print_function
 
-try:
-    import cStringIO
-except ImportError:  # for Python 3, imported through asdl/pybase.py
-    cStringIO = None
-    import io
-
+import cStringIO
 import sys
 
 from pylib import collections_
@@ -53,14 +48,15 @@ def print_stderr(s):
     print(s, file=sys.stderr)
 
 
-if cStringIO:
-    BufWriter = cStringIO.StringIO
+BufWriter = cStringIO.StringIO
+BufLineReader = cStringIO.StringIO
 
-    BufLineReader = cStringIO.StringIO
-else:  # Python 3
-    BufWriter = io.StringIO
 
-    BufLineReader = io.StringIO
+def ClearBuf(buf):
+    # type: (BufWriter) -> None
+
+    buf.reset()  # set position back to zero
+    buf.truncate()  # truncate at current position
 
 
 def Stdout():

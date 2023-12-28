@@ -20,8 +20,6 @@ TODO:
   - use Bjoern DFA for UTF-8 validation in printing and parsing
   - move more of LexerDecoder out of pyj8.py?  I think it can translate
 
-- Remove ysh/cpython.py entirely
-
 - Remove most of QSN
   - QSN maybe_shell_encode() is used for bash features
   - Remove shell_compat which does \\x00 instead of \\0
@@ -524,6 +522,7 @@ if mylib.PYTHON:
             # UString, BString too
             elif self.tok_id == Id.J8_AnyString:
                 str_val = value.Str(self.decoded)
+                #log('d %r', self.decoded)
                 self._Next()
                 return str_val
 

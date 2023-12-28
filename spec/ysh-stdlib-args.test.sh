@@ -154,24 +154,24 @@ json write (spec)
 {
   "flags": [
     {
-      "default": null,
       "short": "-v",
+      "long": "--verbose",
       "type": "bool",
-      "help": null,
-      "long": "--verbose"
+      "default": null,
+      "help": null
     }
   ],
   "args": [
     {
-      "default": null,
-      "type": "str",
       "name": "src",
+      "type": "str",
+      "default": null,
       "help": null
     },
     {
-      "default": null,
-      "type": "str",
       "name": "dst",
+      "type": "str",
+      "default": null,
       "help": null
     }
   ],

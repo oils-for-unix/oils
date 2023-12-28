@@ -100,7 +100,6 @@ pylib/cgi.py
 pylib/os_path.py
 pylib/path_stat.py
 tools/ysh_ify.py
-ysh/cpython.py
 ysh/expr_eval.py
 ysh/expr_parse.py
 ysh/expr_to_ast.py

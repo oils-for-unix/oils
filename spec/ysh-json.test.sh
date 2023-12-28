@@ -268,3 +268,17 @@ j8 write (_reply)
   "hi"
 ]
 ## END
+
+#### json round trip (regression)
+
+var d = {
+  short: '-v', long: '--verbose', type: null, default: '', help: 'Enable verbose logging'
+}
+
+json write (d) | json read
+
+pp line (_reply)
+
+## STDOUT:
+(Dict)   {"short":"-v","long":"--verbose","type":null,"default":"","help":"Enable verbose logging"}
+## END

@@ -225,9 +225,23 @@ class LexerDecoder(object):
                 self.pos = str_end
 
                 s = self.decoded.getvalue()
-                self.decoded.reset()
+                #log('s %r', s)
+                # This doesn't do what we think
+                #self.decoded.reset()
 
+                if 0:
+                    # Reusing this object is more efficient, e.g. with a
+                    # payload with thousands of strings
+                    mylib.ClearBuf(self.decoded)
+                else:
+                    self.decoded = mylib.BufWriter()
+
+                #log('decoded %r', self.decoded.getvalue())
                 return Id.J8_AnyString, str_end, s
+
+            #
+            # Now handle each kind of token
+            #
 
             if tok_id == Id.Char_Literals:  # JSON and J8
                 part = self.s[str_pos:str_end]
@@ -262,6 +276,7 @@ class LexerDecoder(object):
             else:
                 raise AssertionError(Id_str(tok_id))
 
+            #log('%s part %r', Id_str(tok_id), part)
             self.decoded.write(part)
             str_pos = str_end
 

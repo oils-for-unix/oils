@@ -91,8 +91,6 @@ pgen2/pnode.py
 # should be py_path_stat.py, because it's ported by hand to C++
 pylib/path_stat.py
 
-ysh/cpython.py
-
 # should be py_bool_stat.py, because it's ported by hand to C++
 osh/bool_stat.py
 
