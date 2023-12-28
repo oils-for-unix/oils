@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -167,29 +167,48 @@ status=0
 
 # undefined var
 json write (a) 
-echo status=$?
+echo 'should have failed'
 
 ## status: 1
 ## STDOUT:
 ## END
 
-#### json write of data structure with cycle
+#### json write of List in cycle
 
 var L = [1, 2, 3]
 setvar L[0] = L
 
-# TODO: I guess it should exit with status 1 or 3
+shopt -s ysh:upgrade
+fopen >tmp.txt {
+  pp line (L)
+}
+fgrep -n -o '[ ...' tmp.txt
+
 json write (L)
+echo 'should have failed'
 
-var d = {k: 'v'}
-setvar d.k1 = 'v2'
-
-# This makes it hang?  But not interactively
-#setvar d.k2 = d
-
-pp line (d)
-
+## status: 1
 ## STDOUT:
+1:[ ...
+## END
+
+#### json write of Dict in cycle
+
+var d = {}
+setvar d.k = d
+
+shopt -s ysh:upgrade
+fopen >tmp.txt {
+  pp line (d)
+}
+fgrep -n -o '{ ...' tmp.txt
+
+json write (d)
+echo 'should have failed'
+
+## status: 1
+## STDOUT:
+1:{ ...
 ## END
 
 #### j8 write

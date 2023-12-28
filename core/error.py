@@ -237,7 +237,13 @@ class Encode(Exception):
     - binary data that can't be represented in JSON
       - if using Unicode replacement char, then it won't fail
     """
-    pass
+    def __init__(self, msg):
+        # type: (str) -> None
+        self.msg = msg
+
+    def Message(self):
+        # type: () -> str
+        return self.msg
 
 
 def e_usage(msg, location):

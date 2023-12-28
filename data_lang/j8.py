@@ -112,8 +112,8 @@ class PrettyPrinter(object):
         pass
 
 
-SHOW_CYCLES = 1  # pretty-printing
-SHOW_NON_DATA = 2  # non-data objects like Eggex can be <Eggex 0xff>
+SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
+SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
 
 
 class Printer(object):
@@ -142,23 +142,26 @@ class Printer(object):
         self.spaces = {0: ''}  # cache of strings with spaces
 
     # Could be PrintMessage or PrintJsonMessage()
-    def _Print(self, val, buf, indent):
-        # type: (value_t, mylib.BufWriter, int) -> None
+    def _Print(self, val, buf, indent, options=0):
+        # type: (value_t, mylib.BufWriter, int, int) -> None
         """
         Args:
           indent: number of spaces to indent, or -1 for everything on one line
         """
-        p = InstancePrinter(buf, indent, self.options, self.spaces)
+        p = InstancePrinter(buf, indent, options, self.spaces)
         p.Print(val)
 
     def PrintMessage(self, val, buf, indent):
         # type: (value_t, mylib.BufWriter, int) -> None
-        """ For j8 write (x) """
+        """ For j8 write (x) and toJ8() """
+
+        # TODO: handle error.Encode
+
         self._Print(val, buf, indent)
 
     def PrintJsonMessage(self, val, buf, indent):
         # type: (value_t, mylib.BufWriter, int) -> None
-        """ For json write (x)
+        """ For json write (x) and toJson()
 
         Doesn't decay to b"" strings
         Either raise error.Decode() or use unicode replacement char
@@ -169,24 +172,30 @@ class Printer(object):
         # type: (value_t, mylib.Writer) -> None
         """
         For = operator.
-        TODO: set options SHOW_CYCLES SHOW_NON_DATA
         """
+        # Note: I think error.Encode is impossible here - we show cycles and
+        # non-data
+
         buf = mylib.BufWriter()
-        self._Print(val, buf, -1)
+        self._Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
         f.write(buf.getvalue())
         f.write('\n')
 
     def PrintLine(self, val, f):
         # type: (value_t, mylib.Writer) -> None
         """ For pp line (x) """
+
         buf = mylib.BufWriter()
-        self._Print(val, buf, -1)
+        self._Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
         f.write(buf.getvalue())
         f.write('\n')
 
     def MaybeEncodeString(self, s):
         # type: (str) -> str
-        """ For write --j8 $s 
+        """ For write --j8 $s  and compexport
+
+        Do we also have write --json or --json-string?  That require handling
+        error.Encode()
 
         Do we also want write (x) to use J8 notation?  It's the default
         serialization.  But j8 write (x) is simple enough.
@@ -285,7 +294,12 @@ class InstancePrinter(object):
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = vm.HeapValueId(val)
                 if heap_id in self.seen:
-                    raise AssertionError()
+                    if self.options & SHOW_CYCLES:
+                        self.buf.write('[ ...%s ]' % vm.ValueIdString(val))
+                        return
+                    else:
+                        # node.js prints which index closes the cycle
+                        raise error.Encode("JSON: Can't encode List in object cycle")
                 self.seen[heap_id] = True
 
                 self.buf.write('[')
@@ -308,7 +322,13 @@ class InstancePrinter(object):
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = vm.HeapValueId(val)
                 if heap_id in self.seen:
-                    raise AssertionError()
+                    if self.options & SHOW_CYCLES:
+                        self.buf.write('{ ...%s }' % vm.ValueIdString(val))
+                        return
+                    else:
+                        # node.js prints which key closes the cycle
+                        raise error.Encode("JSON: Can't encode Dict in object cycle")
+
                 self.seen[heap_id] = True
 
                 self.buf.write('{')
@@ -389,8 +409,18 @@ class InstancePrinter(object):
                 self.buf.write('}')
 
             else:
-                # TODO: Option to use the <> format of = operator?
-                pass
+                pass # mycpp workaround
+                if self.options & SHOW_NON_DATA:
+                    # Similar to = operator, ui.DebugPrint()
+                    # TODO: that prints value.Range in a special way
+                    from core import ui
+                    ysh_type = ui.ValType(val)
+                    id_str = vm.ValueIdString(val)
+                    self.buf.write('<%s%s>' % (ysh_type, id_str))
+                else:
+                    from core import ui  # TODO: break dep
+                    raise error.Encode("Can't serialize object of type %s" %
+                                       ui.ValType(val))
 
 
 if mylib.PYTHON:

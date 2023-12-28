@@ -60,11 +60,18 @@ obj-cycles() {
   python3 -c 'import json; val = {}; val["k"] = val; print(json.dumps(val))' || true
   echo
 
+  python3 -c 'import json; val = []; val.append(val); print(json.dumps(val))' || true
+  echo
+
   # Better error message than Python!
   # TypeError: Converting circular structure to JSON
   #  --> starting at object with constructor 'Object'
   #  --- property 'k' closes the circle
   nodejs -e 'var val = {}; val["k"] = val; console.log(JSON.stringify(val))' || true
+  echo
+
+  nodejs -e 'var val = []; val.push(val); console.log(JSON.stringify(val))' || true
+  echo
 }
 
 "$@"

@@ -60,6 +60,12 @@ test-lex-errors() {
 
 test-encode() {
   _error-case-X 1 'var d = {}; setvar d.k = d; json write (d)'
+
+  _error-case-X 1 'var L = []; call L->append(L); json write (L)'
+
+  # This should fail!
+  # But not pp line (L)
+  _error-case-X 1 'var L = []; call L->append(/d+/); json write (L)'
 }
 
 #
