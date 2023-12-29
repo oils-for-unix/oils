@@ -8,7 +8,6 @@
 # Steps:
 #   edit oil-version.txt, build/doc.sh update-src-versions, bump devtools/release-note.sh
 #   $0 make-release-branch
-#   build/py.sh yajl-release
 #   $0 quick-oil-tarball     # build FIRST tarball
 #   $0 test-oil-tar T        # extract, build, install
 #                            # for cpython-defs source scanning and dogfood

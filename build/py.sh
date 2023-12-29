@@ -343,48 +343,6 @@ posix_() {
   py-ext-test pyext/posix_test.py
 }
 
-yajl-release() {
-  ### Creates a py-yajl/yajl/yajl-2.1.1/ dir, used by build/ovm-compile.sh
-
-  pushd py-yajl/yajl >/dev/null
-  ./configure
-  cmake .
-  make
-
-  #ls -l 
-
-  # TODO: Run tests too?  There are run_tests.sh files, but not all of them
-  # work.
-  popd >/dev/null
-}
-
-py-yajl-unit() {
-  pushd py-yajl >/dev/null
-  python2 tests/unit.py
-
-  echo
-  echo 'tests/issue11.py'
-  echo
-
-  zcat test_data/issue_11.gz | python2 tests/issue_11.py >/dev/null
-  popd >/dev/null
-}
-
-yajl() {
-  ### Build and test yajl binding (depends on submodule)
-
-  log "  (py-yajl/setup.py) -> yajl.so"
-
-  pushd py-yajl >/dev/null
-  python2 setup.py --quiet build_ext --inplace
-  popd >/dev/null
-
-  py-ext-test py-yajl-unit
-
-  # Link it in the repo root
-  ln -s -f py-yajl/yajl.so .
-}
-
 py-source() {
   ### Generate Python source code
 
@@ -414,9 +372,6 @@ py-extensions() {
   line-input
   posix_
   fanos
-
-  # Require submodule
-  yajl
 }
 
 minimal() {
