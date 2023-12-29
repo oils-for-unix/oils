@@ -412,8 +412,8 @@ class MutableOpts(object):
 
         # This comes after all the 'set' options.
         UP_shellopts = self.mem.GetValue('SHELLOPTS')
-        if UP_shellopts.tag(
-        ) == value_e.Str:  # Always true in Oil, see Init above
+        # Always true in Oil, see Init above
+        if UP_shellopts.tag() == value_e.Str:
             shellopts = cast(value.Str, UP_shellopts)
             self._InitOptionsFromEnv(shellopts.s)
 
@@ -726,12 +726,12 @@ def _DumpVarFrame(frame):
             cell_json['flags'] = value.Str(flags)
 
         # TODO:
-        # - Instead of 'type' tags, can we just use the dynamically typed
-        #   JSON representation?
-        #   - BashArray and BashAssoc may need 'type' tags
-        #   - Eggex may have 'type' and vm.ValueIdString()?
-        # - Provide control with JSON vs. JSON8?  JSON can use the Unicode
-        #   replacement char?  JSON8 is more precise.
+        # - Use packle for crash dumps!  Then we can represent object cycles
+        #   - although BashArray and BashAssoc may need 'type' tags
+        #     - they don't round trip correctly
+        #     - maybe add value.Tombstone here or something?
+        #   - value.{Func,Eggex,...} may have value.Tombstone and
+        #   vm.ValueIdString()?
 
         val = None  # type: value_t
         with tagswitch(cell.val) as case:
@@ -1116,13 +1116,19 @@ class Mem(object):
                       for frame in self.argv_stack]  # type: List[value_t]
 
         debug_stack = []  # type: List[value_t]
+
+        # Reuse these immutable objects
+        t_call = value.Str('Call')
+        t_source = value.Str('Source')
+        t_main = value.Str('Main')
+
         for frame in reversed(self.debug_stack):
             UP_frame = frame
             with tagswitch(frame) as case:
                 if case(debug_frame_e.Call):
                     frame = cast(debug_frame.Call, UP_frame)
                     d = {
-                        'type': value.Str('Call'),
+                        'type': t_call,
                         'func_name': value.Str(frame.func_name)
                     }  # type: Dict[str, value_t]
 
@@ -1132,7 +1138,7 @@ class Mem(object):
                 elif case(debug_frame_e.Source):
                     frame = cast(debug_frame.Source, UP_frame)
                     d = {
-                        'type': value.Str('Source'),
+                        'type': t_source,
                         'source_name': value.Str(frame.source_name)
                     }
                     _AddCallToken(d, frame.call_tok)
@@ -1140,7 +1146,7 @@ class Mem(object):
                 elif case(debug_frame_e.Main):
                     frame = cast(debug_frame.Main, UP_frame)
                     d = {
-                        'type': value.Str('Main'),
+                        'type': t_main,
                         'dollar0': value.Str(frame.dollar0)
                     }
 
