@@ -154,9 +154,6 @@ readonly INCLUDE_PATHS=(
   -I ..  # for _gen/frontend/id_kind_asdl_c.h etc.
   -I Include
   -I ../build/oil-defs
-  -I ../py-yajl
-   # Note: This depends on build/py.sh yajl-release
-  -I ../py-yajl/yajl/yajl-2.1.1/include
 )
 readonly CC=${CC:-cc}  # cc should be on POSIX systems
 
@@ -391,7 +388,6 @@ make-tar() {
     build/detect-*.c \
     _build/$app_name/$bytecode_zip \
     _build/$app_name/*.c \
-    py-yajl/yajl/COPYING \
     $PY27/LICENSE \
     $PY27/Modules/ovm.c \
     $c_module_srcs \

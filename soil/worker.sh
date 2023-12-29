@@ -255,7 +255,6 @@ ovm-tarball-tasks() {
 os-info           soil/diagnose.sh os-info    -
 dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                        -
-yajl              build/py.sh yajl-release               -
 syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
 syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
