@@ -298,7 +298,8 @@ class InstancePrinter(object):
                         return
                     else:
                         # node.js prints which index closes the cycle
-                        raise error.Encode("JSON: Can't encode List in object cycle")
+                        raise error.Encode(
+                            "JSON: Can't encode List in object cycle")
                 self.seen[heap_id] = True
 
                 self.buf.write('[')
@@ -326,7 +327,8 @@ class InstancePrinter(object):
                         return
                     else:
                         # node.js prints which key closes the cycle
-                        raise error.Encode("JSON: Can't encode Dict in object cycle")
+                        raise error.Encode(
+                            "JSON: Can't encode Dict in object cycle")
 
                 self.seen[heap_id] = True
 
@@ -408,7 +410,7 @@ class InstancePrinter(object):
                 self.buf.write('}')
 
             else:
-                pass # mycpp workaround
+                pass  # mycpp workaround
                 if self.options & SHOW_NON_DATA:
                     # Similar to = operator, ui.DebugPrint()
                     # TODO: that prints value.Range in a special way
@@ -449,8 +451,8 @@ if mylib.PYTHON:
             if self.tok_id != tok_id:
                 #log('position %r %d-%d %r', self.s, self.start_pos,
                 #    self.end_pos, self.s[self.start_pos:self.end_pos])
-                raise self._Error("Expected %s, got %s" % (Id_str(tok_id),
-                                                           Id_str(self.tok_id)))
+                raise self._Error("Expected %s, got %s" %
+                                  (Id_str(tok_id), Id_str(self.tok_id)))
             self._Next()
 
         def _Error(self, msg):

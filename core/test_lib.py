@@ -37,6 +37,7 @@ from core import state
 from core import ui
 from core import util
 from core import vm
+from data_lang import j8
 from frontend import lexer
 from frontend import location
 from frontend import parse_lib
@@ -238,7 +239,8 @@ def InitCommandEvaluator(parse_ctx=None,
     ext_prog = \
         ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
 
-    cmd_deps.dumper = dev.CrashDumper('')
+    j8print = j8.Printer()
+    cmd_deps.dumper = dev.CrashDumper('', fd_state, j8print)
     cmd_deps.debug_f = debug_f
 
     splitter = split.SplitContext(mem)

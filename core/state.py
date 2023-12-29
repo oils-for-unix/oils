@@ -678,14 +678,13 @@ class _ArgFrame(object):
         return '<_ArgFrame %s %d at %x>' % (self.argv, self.num_shifted,
                                             id(self))
 
-    if mylib.PYTHON:  # mycpp has problem with dict literal
-
-        def Dump(self):
-            # type: () -> Dict[str, Any]
-            return {
-                'argv': self.argv,
-                'num_shifted': self.num_shifted,
-            }
+    def Dump(self):
+        # type: () -> Dict[str, value_t]
+        return {
+            # Easier to serialize value.BashArray than value.List
+            'argv': value.BashArray(self.argv),
+            'num_shifted': value.Int(self.num_shifted),
+        }
 
     def GetArgNum(self, arg_num):
         # type: (int) -> value_t
@@ -709,49 +708,58 @@ class _ArgFrame(object):
         self.num_shifted = 0
 
 
-if mylib.PYTHON:
+def _DumpVarFrame(frame):
+    # type: (Dict[str, Cell]) -> Dict[str, value_t]
+    """Dump the stack frame as reasonably compact and readable JSON."""
 
-    def _DumpVarFrame(frame):
-        # type: (Dict[str, Cell]) -> Any
-        """Dump the stack frame as reasonably compact and readable JSON."""
+    vars_json = {}  # type: Dict[str, value_t]
+    for name, cell in iteritems(frame):
+        cell_json = {}  # type: Dict[str, value_t]
 
-        vars_json = {}
-        for name, cell in frame.iteritems():
-            cell_json = {}  # type: Dict[str, Any]
+        buf = mylib.BufWriter()
+        if cell.exported:
+            buf.write('x')
+        if cell.readonly:
+            buf.write('r')
+        flags = buf.getvalue()
+        if len(flags):
+            cell_json['flags'] = value.Str(flags)
 
-            buf = mylib.BufWriter()
-            if cell.exported:
-                buf.write('x')
-            if cell.readonly:
-                buf.write('r')
-            flags = buf.getvalue()
-            if len(flags):
-                cell_json['flags'] = flags
+        # TODO:
+        # - Instead of 'type' tags, can we just use the dynamically typed
+        #   JSON representation?
+        #   - BashArray and BashAssoc may need 'type' tags
+        #   - Eggex may have 'type' and vm.ValueIdString()?
+        # - Provide control with JSON vs. JSON8?  JSON can use the Unicode
+        #   replacement char?  JSON8 is more precise.
 
-            # For compactness, just put the value right in the cell.
-            val = None  # type: value_t
-            with tagswitch(cell.val) as case:
-                if case(value_e.Undef):
-                    cell_json['type'] = 'Undef'
+        val = None  # type: value_t
+        with tagswitch(cell.val) as case:
+            if case(value_e.Undef):
+                cell_json['type'] = value.Str('Undef')
 
-                elif case(value_e.Str):
-                    val = cast(value.Str, cell.val)
-                    cell_json['type'] = 'Str'
-                    cell_json['value'] = val.s
+            elif case(value_e.Str):
+                val = cast(value.Str, cell.val)
+                cell_json['type'] = value.Str('Str')
+                cell_json['value'] = value.Str(val.s)
 
-                elif case(value_e.BashArray):
-                    val = cast(value.BashArray, cell.val)
-                    cell_json['type'] = 'BashArray'
-                    cell_json['value'] = val.strs
+            elif case(value_e.BashArray):
+                val = cast(value.BashArray, cell.val)
+                cell_json['type'] = value.Str('BashArray')
+                cell_json['value'] = cell.val
 
-                elif case(value_e.BashAssoc):
-                    val = cast(value.BashAssoc, cell.val)
-                    cell_json['type'] = 'BashAssoc'
-                    cell_json['value'] = val.d
+            elif case(value_e.BashAssoc):
+                val = cast(value.BashAssoc, cell.val)
+                cell_json['type'] = value.Str('BashAssoc')
+                cell_json['value'] = cell.val
 
-            vars_json[name] = cell_json
+            else:
+                # TODO: should we show the object ID here?
+                pass
 
-        return vars_json
+        vars_json[name] = value.Dict(cell_json)
+
+    return vars_json
 
 
 def _GetWorkingDir():
@@ -771,15 +779,13 @@ def _LineNumber(tok):
     return str(tok.line.line_num)
 
 
-if mylib.PYTHON:
-
-    def _AddCallToken(d, token):
-        # type: (Dict[str, Any], Optional[Token]) -> None
-        if token is None:
-            return
-        d['call_source'] = ui.GetLineSourceString(token.line)
-        d['call_line_num'] = token.line.line_num
-        d['call_line'] = token.line.content
+def _AddCallToken(d, token):
+    # type: (Dict[str, value_t], Optional[Token]) -> None
+    if token is None:
+        return
+    d['call_source'] = value.Str(ui.GetLineSourceString(token.line))
+    d['call_line_num'] = value.Int(token.line.line_num)
+    d['call_line'] = value.Str(token.line.content)
 
 
 def _InitDefaults(mem):
@@ -1101,38 +1107,45 @@ class Mem(object):
         return len(self.var_stack) == 1 or len(self.argv_stack) == 1
 
     def Dump(self):
-        # type: () -> Tuple[Any, Any, Any]
+        # type: () -> Tuple[List[value_t], List[value_t], List[value_t]]
         """Copy state before unwinding the stack."""
-        if mylib.PYTHON:
-            var_stack = [_DumpVarFrame(frame) for frame in self.var_stack]
-            argv_stack = [frame.Dump() for frame in self.argv_stack]
+        var_stack = [
+            value.Dict(_DumpVarFrame(frame)) for frame in self.var_stack
+        ]  # type: List[value_t]
+        argv_stack = [value.Dict(frame.Dump())
+                      for frame in self.argv_stack]  # type: List[value_t]
 
-            debug_stack = []  # type: List[Dict[str, Any]]
-            for frame in reversed(self.debug_stack):
-                UP_frame = frame
-                with tagswitch(frame) as case:
-                    if case(debug_frame_e.Call):
-                        frame = cast(debug_frame.Call, UP_frame)
-                        d = {'type': 'Call', 'func_name': frame.func_name}
-                        _AddCallToken(d, frame.call_tok)
-                        # TODO: Add def_tok
+        debug_stack = []  # type: List[value_t]
+        for frame in reversed(self.debug_stack):
+            UP_frame = frame
+            with tagswitch(frame) as case:
+                if case(debug_frame_e.Call):
+                    frame = cast(debug_frame.Call, UP_frame)
+                    d = {
+                        'type': value.Str('Call'),
+                        'func_name': value.Str(frame.func_name)
+                    }  # type: Dict[str, value_t]
 
-                    elif case(debug_frame_e.Source):
-                        frame = cast(debug_frame.Source, UP_frame)
-                        d = {
-                            'type': 'Source',
-                            'source_name': frame.source_name
-                        }
-                        _AddCallToken(d, frame.call_tok)
+                    _AddCallToken(d, frame.call_tok)
+                    # TODO: Add def_tok
 
-                    elif case(debug_frame_e.Main):
-                        frame = cast(debug_frame.Main, UP_frame)
-                        d = {'type': 'Main', 'dollar0': frame.dollar0}
+                elif case(debug_frame_e.Source):
+                    frame = cast(debug_frame.Source, UP_frame)
+                    d = {
+                        'type': value.Str('Source'),
+                        'source_name': value.Str(frame.source_name)
+                    }
+                    _AddCallToken(d, frame.call_tok)
 
-                debug_stack.append(d)
-            return var_stack, argv_stack, debug_stack
+                elif case(debug_frame_e.Main):
+                    frame = cast(debug_frame.Main, UP_frame)
+                    d = {
+                        'type': value.Str('Main'),
+                        'dollar0': value.Str(frame.dollar0)
+                    }
 
-        raise AssertionError()
+            debug_stack.append(value.Dict(d))
+        return var_stack, argv_stack, debug_stack
 
     def SetLastArgument(self, s):
         # type: (str) -> None

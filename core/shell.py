@@ -474,10 +474,12 @@ def Main(
     # TODO: This is instantiation is duplicated in osh/word_eval.py
     globber = glob_.Globber(exec_opts)
 
+    j8print = j8.Printer()
+
     # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
     # stuffing too much into one, since a .json crash dump isn't a stream.
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
-    cmd_deps.dumper = dev.CrashDumper(crash_dump_dir)
+    cmd_deps.dumper = dev.CrashDumper(crash_dump_dir, fd_state, j8print)
 
     comp_lookup = completion.Lookup()
 

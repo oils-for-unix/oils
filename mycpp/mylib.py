@@ -8,7 +8,7 @@ try:
 except ImportError:
     # Python 3 doesn't have cStringIO.  Our yaks/ demo currently uses
     # mycpp/mylib.py with Python 3.
-    cStringIO = None 
+    cStringIO = None
     import io
 
 import sys

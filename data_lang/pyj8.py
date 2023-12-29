@@ -226,8 +226,9 @@ class LexerDecoder(object):
 
             if tok_id == Id.Unknown_Tok:
                 # Syntax error: invalid backslash etc.
-                raise self._Error('Unknown token while lexing JSON string: %s'
-                                  % Id_str(tok_id), str_end)
+                raise self._Error(
+                    'Unknown token while lexing JSON string: %s' %
+                    Id_str(tok_id), str_end)
 
             if tok_id == Id.Right_DoubleQuote:
                 self.pos = str_end
@@ -259,8 +260,8 @@ class LexerDecoder(object):
                     # Syntax error because JSON must be valid UTF-8
                     # Limit context to 20 chars arbitrarily
                     raise self._Error(
-                            'Invalid UTF-8 in JSON string literal: %r' % part[:20],
-                            str_end)
+                        'Invalid UTF-8 in JSON string literal: %r' % part[:20],
+                        str_end)
 
             # TODO: would be nice to avoid allocation in all these cases.
             # But LookupCharC() would have to change.

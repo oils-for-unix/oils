@@ -133,7 +133,8 @@ class Json(vm._Builtin):
                         val = p.ParseJson()
                 except error.Decode as err:
                     # TODO: Need to show position info
-                    self.errfmt.Print_('%s read: %s' % (self.name, err.Message()),
+                    self.errfmt.Print_('%s read: %s' %
+                                       (self.name, err.Message()),
                                        blame_loc=action_loc)
                     return 1
 

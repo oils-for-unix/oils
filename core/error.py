@@ -213,6 +213,7 @@ class Decode(Exception):
       - u"" doesn't accept \\yff
       - "" doesn't accept \\yff or \\u{123456}
     """
+
     def __init__(self, msg, s, start_pos, end_pos):
         # type: (str, str, int, int) -> None
         self.msg = msg
@@ -225,7 +226,8 @@ class Decode(Exception):
 
         # Hack for context
         part = self.s[self.start_pos - 10:self.end_pos + 10]
-        return self.msg + ' (pos %d-%d: %r)' % (self.start_pos, self.end_pos, part)
+        return self.msg + ' (pos %d-%d: %r)' % (self.start_pos, self.end_pos,
+                                                part)
 
 
 class Encode(Exception):
@@ -237,6 +239,7 @@ class Encode(Exception):
     - binary data that can't be represented in JSON
       - if using Unicode replacement char, then it won't fail
     """
+
     def __init__(self, msg):
         # type: (str) -> None
         self.msg = msg

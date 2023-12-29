@@ -20,7 +20,41 @@ f "${array[@]}"
 echo status=$?
 
 # Just check that we can parse it.  TODO: Test properties.
-python2 -m json.tool $TMP/*.json > /dev/null
+python3 -c '
+import json, sys
+from pprint import pprint
+
+for path in sys.argv[1:]:
+  #print(path)
+  with open(path) as f:
+    dump = json.load(f)
+
+    if 0:
+      print("DUMP")
+      print("status = %d" % dump["status"])
+      print("pid = %d" % dump["pid"])
+
+    if 0:
+      # This has msg, source, line
+      print("error %s" % dump["error"])
+      print()
+
+    if 0:
+      # It would be nice if this has the proc name, I guess debug_stack has it
+      print("argv_stack")
+      pprint(dump["argv_stack"])
+      print()
+
+    if 0:
+      print("debug_stack")
+      pprint(dump["debug_stack"])
+      print()
+
+    if 0:
+      print("var_stack")
+      pprint(dump["var_stack"])
+
+' $TMP/*.json
 echo status=$?
 
 ## STDOUT:

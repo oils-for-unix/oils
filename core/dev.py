@@ -14,6 +14,7 @@ from core import error
 from core import optview
 from core import state
 from core import ui
+from data_lang import j8
 from mycpp.mylib import log
 from frontend import location
 from osh import word_
@@ -21,8 +22,6 @@ from data_lang import qsn
 from pylib import os_path
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
-
-import yajl
 
 import posix_ as posix
 
@@ -33,9 +32,9 @@ if TYPE_CHECKING:
     from _devbuild.gen.value_asdl import sh_lvalue_t
     from core import alloc
     from core.error import _ErrorWithLocation
-    from core.util import _DebugFile
+    from core import process
+    from core import util
     from frontend.parse_lib import ParseContext
-    from core.state import MutableOpts, Mem
     from osh.word_eval import NormalWordEvaluator
     from osh.cmd_eval import CommandEvaluator
 
@@ -69,17 +68,20 @@ class CrashDumper(object):
     One is constant at build time; the other is constant at runtime.
     """
 
-    def __init__(self, crash_dump_dir):
-        # type: (str) -> None
+    def __init__(self, crash_dump_dir, fd_state, j8print):
+        # type: (str, process.FdState, j8.Printer) -> None
         self.crash_dump_dir = crash_dump_dir
+        self.fd_state = fd_state
+        self.j8print = j8print
+
         # whether we should collect a dump, at the highest level of the stack
         self.do_collect = bool(crash_dump_dir)
         self.collected = False  # whether we have anything to dump
 
-        self.var_stack = None
-        self.argv_stack = None
-        self.debug_stack = None
-        self.error = None  # type: Dict[str, Any]
+        self.var_stack = None  # type: List[value_t]
+        self.argv_stack = None  # type: List[value_t]
+        self.debug_stack = None  # type: List[value_t]
+        self.error = None  # type: Dict[str, value_t]
 
     def MaybeRecord(self, cmd_ev, err):
         # type: (CommandEvaluator, _ErrorWithLocation) -> None
@@ -92,26 +94,24 @@ class CrashDumper(object):
         if not self.do_collect:  # Either we already did it, or there is no file
             return
 
-        if mylib.PYTHON:  # can't translate yet due to dynamic typing
-            self.var_stack, self.argv_stack, self.debug_stack = cmd_ev.mem.Dump(
-            )
-            blame_tok = location.TokenFor(err.location)
+        self.var_stack, self.argv_stack, self.debug_stack = cmd_ev.mem.Dump()
+        blame_tok = location.TokenFor(err.location)
 
-            self.error = {
-                'msg': err.UserErrorString(),
-            }
+        self.error = {
+            'msg': value.Str(err.UserErrorString()),
+        }
 
-            if blame_tok:
-                # Could also do msg % args separately, but JavaScript won't be able to
-                # render that.
-                self.error['source'] = ui.GetLineSourceString(blame_tok.line)
-                self.error['line_num'] = blame_tok.line.line_num
-                self.error['line'] = blame_tok.line.content
+        if blame_tok:
+            # Could also do msg % args separately, but JavaScript won't be able to
+            # render that.
+            self.error['source'] = value.Str(
+                ui.GetLineSourceString(blame_tok.line))
+            self.error['line_num'] = value.Int(blame_tok.line.line_num)
+            self.error['line'] = value.Str(blame_tok.line.content)
 
-            # TODO: Collect functions, aliases, etc.
-
-            self.do_collect = False
-            self.collected = True
+        # TODO: Collect functions, aliases, etc.
+        self.do_collect = False
+        self.collected = True
 
     def MaybeDump(self, status):
         # type: (int) -> None
@@ -133,27 +133,39 @@ class CrashDumper(object):
         if not self.collected:
             return
 
-        if mylib.PYTHON:  # can't translate due to open()
+        my_pid = posix.getpid()  # Get fresh PID here
 
-            my_pid = posix.getpid()  # Get fresh PID here
+        # Other things we need: the reason for the crash!  _ErrorWithLocation is
+        # required I think.
+        d = {
+            'var_stack': value.List(self.var_stack),
+            'argv_stack': value.List(self.argv_stack),
+            'debug_stack': value.List(self.debug_stack),
+            'error': value.Dict(self.error),
+            'status': value.Int(status),
+            'pid': value.Int(my_pid),
+        }  # type: Dict[str, value_t]
 
-            # Other things we need: the reason for the crash!  _ErrorWithLocation is
-            # required I think.
-            d = {
-                'var_stack': self.var_stack,
-                'argv_stack': self.argv_stack,
-                'debug_stack': self.debug_stack,
-                'error': self.error,
-                'status': status,
-                'pid': my_pid,
-            }
+        path = os_path.join(self.crash_dump_dir,
+                            '%d-osh-crash-dump.json' % my_pid)
 
-            path = os_path.join(self.crash_dump_dir,
-                                '%d-osh-crash-dump.json' % my_pid)
-            json_str = yajl.dumps(d, indent=2)
-            with open(path, 'w') as f:
-                print(json_str, file=f)
-            log('[%d] Wrote crash dump to %s', my_pid, path)
+        # TODO: This should be JSON with unicode replacement char?
+        buf = mylib.BufWriter()
+        self.j8print.PrintMessage(value.Dict(d), buf, 2)
+        json_str = buf.getvalue()
+
+        try:
+            f = self.fd_state.OpenForWrite(path)
+        except (IOError, OSError) as e:
+            # Ignore error
+            return
+
+        f.write(json_str)
+
+        # TODO: mylib.Writer() needs close()?  Also for DebugFile()
+        #f.close()
+
+        log('[%d] Wrote crash dump to %s', my_pid, path)
 
 
 class ctx_Tracer(object):
@@ -243,9 +255,9 @@ class Tracer(object):
             self,
             parse_ctx,  # type: ParseContext
             exec_opts,  # type: optview.Exec
-            mutable_opts,  # type: MutableOpts
-            mem,  # type: Mem
-            f,  # type: _DebugFile
+            mutable_opts,  # type: state.MutableOpts
+            mem,  # type: state.Mem
+            f,  # type: util._DebugFile
     ):
         # type: (...) -> None
         """
