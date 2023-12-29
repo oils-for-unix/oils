@@ -252,10 +252,10 @@ class SimpleLexer2(object):
         return tokens
 
 
-# Iterated over in osh/builtin_pure.py
+# Iterated over in builtin/io_osh.py
 def EchoLexer(s):
-    # type: (str) -> SimpleLexer
-    return SimpleLexer(ECHO_MATCHER, s)
+    # type: (str) -> SimpleLexer2
+    return SimpleLexer2(ECHO_MATCHER, s)
 
 
 def BraceRangeLexer(s):
@@ -283,13 +283,13 @@ def J8StrLexer(s):
 
 def HistoryTokens(s):
     # type: (str) -> List[Tuple[Id_t, str]]
-    lex = SimpleLexer(HISTORY_MATCHER, s)
+    lex = SimpleLexer2(HISTORY_MATCHER, s)
     return lex.Tokens()
 
 
 def Ps1Tokens(s):
     # type: (str) -> List[Tuple[Id_t, str]]
-    lex = SimpleLexer(PS1_MATCHER, s)
+    lex = SimpleLexer2(PS1_MATCHER, s)
     return lex.Tokens()
 
 

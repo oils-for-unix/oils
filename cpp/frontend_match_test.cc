@@ -30,6 +30,28 @@ TEST lexer_test() {
   PASS();
 }
 
+TEST lexer2_test() {
+  match::SimpleLexer2* lex = match::EchoLexer(StrFromC("hi \\t there \\n"));
+
+  List<Tuple2<Id_t, BigStr*>*>* toks = lex->Tokens();
+  for (int i = 0; i < len(toks); i++) {
+    auto* t = toks->at(i);
+    int id = t->at0();
+    if (id == id__Eol_Tok) {
+      break;
+    }
+    log("id = %d", id);
+    log("val = %s", t->at1()->data_);
+  }
+
+  match::SimpleLexer* lex2 = match::BraceRangeLexer(kEmptyString);
+  auto t = lex2->Next();
+  int id = t.at0();
+  ASSERT_EQ(Id::Eol_Tok, id);
+
+  PASS();
+}
+
 TEST func_test() {
   ASSERT_EQ(Id::BoolUnary_G, match::BracketUnary(StrFromC("-G")));
   ASSERT_EQ(Id::Undefined_Tok, match::BracketUnary(StrFromC("-Gz")));
@@ -77,6 +99,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(lexer_test);
+  RUN_TEST(lexer2_test);
   RUN_TEST(func_test);
   RUN_TEST(for_test_coverage);
 

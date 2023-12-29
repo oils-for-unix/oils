@@ -52,6 +52,41 @@ List<Tuple2<Id_t, BigStr*>*>* SimpleLexer::Tokens() {
   return tokens;
 }
 
+Tuple2<Id_t, int> SimpleLexer2::Next() {
+  int id;
+  int end_pos;
+  match_func_(reinterpret_cast<const unsigned char*>(s_->data_), len(s_), pos_,
+              &id, &end_pos);
+
+  pos_ = end_pos;
+  return Tuple2<Id_t, int>(static_cast<Id_t>(id), end_pos);
+}
+
+List<Tuple2<Id_t, BigStr*>*>* SimpleLexer2::Tokens() {
+  auto tokens = NewList<Tuple2<Id_t, BigStr*>*>();
+  int pos = 0;
+  while (true) {
+    auto tup2 = Next();
+    Id_t id = tup2.at0();
+    int end_pos = tup2.at1();
+
+    if (id == Id::Eol_Tok) {
+      break;
+    }
+    log("pos %d end_pos %d", pos, end_pos);
+
+    int len = end_pos - pos_;
+    BigStr* tok_val = NewStr(len);
+    memcpy(tok_val->data_, s_->data_ + pos_, len);  // copy the list item
+    tok_val->data_[len] = '\0';
+
+    // It's annoying that we have to put it on the heap
+    tokens->append(Alloc<Tuple2<Id_t, BigStr*>>(id, tok_val));
+    pos = end_pos;
+  }
+  return tokens;
+}
+
 SimpleLexer* BraceRangeLexer(BigStr* s) {
   return Alloc<SimpleLexer>(&MatchBraceRangeToken, s);
 }
@@ -60,8 +95,8 @@ SimpleLexer* GlobLexer(BigStr* s) {
   return Alloc<SimpleLexer>(&MatchGlobToken, s);
 }
 
-SimpleLexer* EchoLexer(BigStr* s) {
-  return Alloc<SimpleLexer>(&MatchEchoToken, s);
+SimpleLexer2* EchoLexer(BigStr* s) {
+  return Alloc<SimpleLexer2>(&MatchEchoToken, s);
 }
 
 List<Tuple2<Id_t, BigStr*>*>* HistoryTokens(BigStr* s) {

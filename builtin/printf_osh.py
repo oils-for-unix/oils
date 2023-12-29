@@ -291,14 +291,15 @@ class Printf(vm._Builtin):
 
                         c_parts = []  # type: List[str]
                         lex = match.EchoLexer(s)
+                        pos = 0
                         while True:
-                            id_, tok_val = lex.Next()
+                            id_, end_pos = lex.Next()
                             if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                                 break
 
                             # Note: DummyToken is OK because EvalCStringToken() doesn't have
                             # any syntax errors.
-                            tok = lexer.DummyToken(id_, tok_val)
+                            tok = lexer.DummyToken(id_, s[pos:end_pos])
                             p = word_compile.EvalCStringToken(tok)
 
                             # Unusual behavior: '\c' aborts processing!
@@ -307,6 +308,7 @@ class Printf(vm._Builtin):
                                 break
 
                             c_parts.append(p)
+                            pos = end_pos
                         s = ''.join(c_parts)
 
                     elif part.type.id == Id.Format_Time or typ in 'diouxX':
