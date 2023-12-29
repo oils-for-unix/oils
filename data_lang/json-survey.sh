@@ -74,4 +74,26 @@ obj-cycles() {
   echo
 }
 
+surrogate-pair() {
+  local json=${1:-'"\ud83e\udd26"'}
+
+  # Hm it actually escapes.  I thought it would use raw UTF-8
+  python2 -c 'import json; s = json.loads(r'\'$json\''); print(json.dumps(s))'
+  echo
+
+  python3 -c 'import json; s = json.loads(r'\'$json\''); print(json.dumps(s))'
+  echo
+
+  # This doesn't escape
+  nodejs -e 'var s = JSON.parse('\'$json\''); console.log(JSON.stringify(s))'
+  echo
+}
+
+surrogate-half() {
+  local json='"\ud83e"'
+
+  # Round trips correctly!
+  surrogate-pair "$json"
+}
+
 "$@"

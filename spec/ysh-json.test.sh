@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 6
 ## tags: dev-minimal
 
 #### usage errors
@@ -309,6 +309,30 @@ pp line (_reply)
 
 ## STDOUT:
 (Dict)   {"short":"-v","long":"--verbose","type":null,"default":"","help":"Enable verbose logging"}
+## END
+
+#### round trip surrogate pair
+
+var j = r'"\ud83e\udd26"'
+
+echo $j | json read
+
+json write (_reply)
+
+## STDOUT:
+"🤦"
+## END
+
+#### round trip surrogate half
+
+var j = r'"\ud83e"'
+
+echo $j | json read
+
+json write (_reply)
+
+## STDOUT:
+"\ud83e"
 ## END
 
 #### toJson() toJ8() - TODO: test difference
