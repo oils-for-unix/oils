@@ -595,13 +595,12 @@ class ExprEvaluator(object):
         # type: (expr.Binary) -> value_t
 
         left = self._EvalExpr(node.left)
-        right = self._EvalExpr(node.right)
 
+        # Logical and/or lazily evaluate
         with switch(node.op.id) as case:
-            # Logical
             if case(Id.Expr_And):
                 if val_ops.ToBool(left):  # no errors
-                    return right
+                    return self._EvalExpr(node.right)
                 else:
                     return left
 
@@ -609,9 +608,13 @@ class ExprEvaluator(object):
                 if val_ops.ToBool(left):
                     return left
                 else:
-                    return right
+                    return self._EvalExpr(node.right)
 
-            elif case(Id.Arith_DPlus):  # a ++ b to concat Str or List
+        # These operators all eagerly evaluate
+        right = self._EvalExpr(node.right)
+
+        with switch(node.op.id) as case:
+            if case(Id.Arith_DPlus):  # a ++ b to concat Str or List
                 return self._Concat(left, right, node.op)
 
             elif case(Id.Arith_Plus, Id.Arith_Minus, Id.Arith_Star,

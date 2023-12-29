@@ -1,3 +1,28 @@
+#### or short circuits
+shopt -s ysh:upgrade
+
+var x = [1, 2]
+if (true or x[3]) {
+  echo OK
+}
+## STDOUT:
+OK
+## END
+
+#### and short circuits
+shopt -s ysh:upgrade
+
+var x = [1, 2]
+if (false and x[3]) {
+  echo bad
+} else {
+  echo OK
+}
+
+## STDOUT:
+OK
+## END
+
 #### not operator behaves like Python
 
 # consistent with if statement, ternary if, and, or
