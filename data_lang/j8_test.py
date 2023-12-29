@@ -1,21 +1,63 @@
 #!/usr/bin/env python2
 from __future__ import print_function
+"""
+Old tests for YAJL, could probably be deleted.
+
+Differences
+
+- It decoded to Python 2 str() type, not unicode()
+- Bug in emitting \\xff literally, which is not valid JSON
+"""
 
 import unittest
 
+import json
+from mycpp import mylib
 from mycpp.mylib import log
-#from ysh import builtin_oil  # module under test
 
-import yajl  # test this too
+try:
+    import yajl
+except ImportError:
+    yajl = None
+
+yajl = None  # no longer using this module
+
+from data_lang import j8
+
+
+if yajl:
+    def dumps(obj):
+        return yajl.dumps(obj)
+
+
+    def loads(s):
+        return yajl.loads(s)
+
+else:
+    dumps = json.dumps
+    loads = json.loads
+
+    # This doesn't work, we would need the old ysh/cpython.py to do value_t
+    # conversion
+    def BAD_dumps(obj):
+        p = j8.Printer()
+
+        buf = mylib.BufWriter()
+        p.PrintJsonMessage(obj, buf, -1)
+        return buf.getvalue()
+
+    def BAD_loads(s):
+        p = j8.Parser(s)
+        return p.ParseJson()
 
 
 class YajlTest(unittest.TestCase):
 
     def testMisc(self):
-        print(yajl.dumps({'foo': 42}))
+        print(dumps({'foo': 42}))
 
         # Gives us unicode back
-        print(yajl.loads('{"bar": 43}'))
+        print(loads('{"bar": 43}'))
 
     def testIntOverflow(self):
         log('OVERFLOW')
@@ -32,77 +74,79 @@ class YajlTest(unittest.TestCase):
 
             # This raises Overflow?  I guess the problem is that yajl takes an
             # integer.
-            #print(yajl.dumps(i))
+            #print(dumps(i))
             s = str(i)
             print(s)
 
-            print(yajl.loads('{"k": %d}' % i))
+            print(loads('{"k": %d}' % i))
 
             # Why doesn't it parse raw integers?
-            #print(yajl.loads(s))
+            #print(loads(s))
 
         log('')
 
     def testParseError(self):
         if 0:
-            yajl.loads('[')
+            loads('[')
 
     def testBool(self):
         log('BOOL')
-        print(yajl.dumps(True))
-        print(yajl.loads('false'))
+        print(dumps(True))
+        print(loads('false'))
         log('')
 
     def testInt(self):
         log('INT')
-        encoded = yajl.dumps(123)
+        encoded = dumps(123)
         print('encoded = %r' % encoded)
         self.assertEqual('123', encoded)
 
         # Bug fix over latest version of py-yajl: a lone int decodes
-        decoded = yajl.loads('123\n')
+        decoded = loads('123\n')
         print('decoded = %r' % decoded)
         self.assertEqual(123, decoded)
 
-        decoded = yajl.loads('{"a":123}\n')
+        decoded = loads('{"a":123}\n')
         print('decoded = %r' % decoded)
         log('')
 
     def testFloat(self):
         log('FLOAT')
-        print(yajl.dumps(123.4))
+        print(dumps(123.4))
 
         # Bug fix over latest version of py-yajl: a lone float decodes
-        decoded = yajl.loads('123.4')
+        decoded = loads('123.4')
         self.assertEqual(123.4, decoded)
         log('')
 
     def testList(self):
         log('LIST')
-        print(yajl.dumps([4, "foo", False]))
-        print(yajl.loads('[4, "foo", false]'))
+        print(dumps([4, "foo", False]))
+        print(loads('[4, "foo", false]'))
         log('')
 
     def testDict(self):
         log('DICT')
         d = {"bool": False, "int": 42, "float": 3.14, "string": "s"}
-        print(yajl.dumps(d))
+        print(dumps(d))
 
         s = '{"bool": false, "int": 42, "float": 3.14, "string": "s"}'
-        print(yajl.loads(s))
+        print(loads(s))
         log('')
 
     def testStringEncoding(self):
         log('STRING ENCODE')
 
         # It should just raise with Unicode instance
-        #print(yajl.dumps(u'abc\u0100def'))
+        #print(dumps(u'abc\u0100def'))
 
-        # It inserts \xff literally, OK I guess that's fine.  It's not valid utf-8
-        print(yajl.dumps('\x00\xff'))
+        # yajl inserts \xff literally -- this is a BUG because JSON messages
+        # must be valid UTF-8.
+        if yajl:
+            print(dumps('\x00\xff'))
 
         # mu character
-        print(yajl.dumps('\xCE\xBC'))
+        print(dumps('\xCE\xBC'))
 
     def testStringDecoding(self):
         log('STRING DECODE')
@@ -110,20 +154,22 @@ class YajlTest(unittest.TestCase):
         # This should decode to a utf-8 str()!
         # Not a unicode instance!
 
-        s = yajl.loads('"abc"')
+        s = loads('"abc"')
         print(repr(s))
 
-        obj = yajl.loads('"\u03bc"')
-        assert isinstance(obj, str), repr(obj)
-        self.assertEqual(obj, '\xce\xbc')
+        obj = loads('"\u03bc"')
+        if yajl:
+            assert isinstance(obj, str), repr(obj)
+            self.assertEqual(obj, '\xce\xbc')
 
-        obj = yajl.loads('"\xce\xbc"')
-        assert isinstance(obj, str), repr(obj)
-        self.assertEqual(obj, '\xce\xbc')
+        obj = loads('"\xce\xbc"')
+        if yajl:
+            assert isinstance(obj, str), repr(obj)
+            self.assertEqual(obj, '\xce\xbc')
 
         # Invalid utf-8.  Doesn't give a good parse error!
         if 0:
-            u = yajl.loads('"\xFF"')
+            u = loads('"\xFF"')
             print(repr(u))
 
     def testOrdered(self):
@@ -141,8 +187,11 @@ class YajlTest(unittest.TestCase):
         #d['a'] = 42
         #d['z'] = 50
 
-        actual = yajl.dumps(d)
-        self.assertEqual('{"a":42,"b":2,"c":3,"d":50}', actual)
+        actual = dumps(d)
+        if yajl:
+            self.assertEqual('{"a":42,"b":2,"c":3,"d":50}', actual)
+        else:
+            self.assertEqual('{"a": 42, "b": 2, "c": 3, "d": 50}', actual)
 
         #
         # More tests in py-yajl/tests/unit.py
