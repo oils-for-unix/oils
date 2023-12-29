@@ -56,17 +56,19 @@ linecount-pydeps() {
 
 }
 
-_oil-cpp() {
+_oils-cpp() {
   find _tmp/native-tar-test -name '*.cc' -o -name '*.h'
 }
 
-linecount-oil-cpp() {
-  _cloc-header
-  _oil-cpp | xargs cloc
-  echo
+linecount-oils-cpp() {
+  if command -v cloc; then  # CI might not have it
+    _cloc-header
+    _oils-cpp | xargs cloc
+    echo
+  fi
 
   _wc-header
-  _oil-cpp | sort | uniq | xargs wc -l | sort -n
+  _oils-cpp | sort | uniq | xargs wc -l | sort -n
 
 }
 

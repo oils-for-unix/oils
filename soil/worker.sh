@@ -128,11 +128,12 @@ wild-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info             -
-dump-env         soil/diagnose.sh dump-env            -
-wait-for-tarball soil/wait.sh for-cpp-tarball         -
-test-tar         devtools/release-native.sh test-tar  -
-wild             test/wild.sh soil-run                _tmp/wild-www/index.html
+os-info          soil/diagnose.sh os-info              -
+dump-env         soil/diagnose.sh dump-env             -
+wait-for-tarball soil/wait.sh for-cpp-tarball          -
+test-tar         devtools/release-native.sh test-tar   -
+linecount        metrics/tarball.sh linecount-oils-cpp -
+wild             test/wild.sh soil-run                 _tmp/wild-www/index.html
 EOF
 }
 

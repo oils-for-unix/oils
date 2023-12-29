@@ -106,7 +106,7 @@ compared with the shell interpreter?
   - [cloc-report](pub/metrics.wwz/line-counts/cloc-report.txt).  Significant
     lines of code, as measured by the [cloc][] tool.
 - Generated C++ code
-  - [oil-cpp](pub/metrics.wwz/line-counts/oil-cpp.txt).  The C++ code in the
+  - [oils-cpp](pub/metrics.wwz/line-counts/oils-cpp.txt).  The C++ code in the
     `oils-for-unix` tarball.
   - [preprocessed](pub/metrics.wwz/preprocessed/index.html).  How much code is
     passed to the compiler?

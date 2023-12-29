@@ -507,7 +507,7 @@ line-counts() {
   # Counting directly from the build.
   metrics/tarball.sh linecount-pydeps > $out_dir/pydeps.txt
   metrics/tarball.sh linecount-nativedeps > $out_dir/nativedeps.txt
-  metrics/tarball.sh linecount-oil-cpp > $out_dir/oil-cpp.txt
+  metrics/tarball.sh linecount-oils-cpp > $out_dir/oils-cpp.txt
 
   metrics/source-code.sh write-reports $out_dir  # for-translation and overview
   metrics/source-code.sh cloc-report > $out_dir/cloc-report.txt
