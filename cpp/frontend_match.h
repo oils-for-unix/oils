@@ -44,36 +44,13 @@ class SimpleLexer {
   int pos_;
 };
 
-class SimpleLexer2 {
- public:
-  SimpleLexer2(MatchFunc match_func, BigStr* s)
-      : match_func_(match_func), s_(s), pos_(0) {
-  }
-
-  Tuple2<Id_t, int> Next();
-  List<Tuple2<Id_t, BigStr*>*>* Tokens();
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(SimpleLexer2));
-  }
-
-  static constexpr uint32_t field_mask() {
-    return maskbit(offsetof(SimpleLexer2, s_));
-  }
-
- private:
-  MatchFunc match_func_;
-  BigStr* s_;
-  int pos_;
-};
-
 //
 // Secondary Lexers
 //
 
 SimpleLexer* BraceRangeLexer(BigStr* s);
 SimpleLexer* GlobLexer(BigStr* s);
-SimpleLexer2* EchoLexer(BigStr* s);
+SimpleLexer* EchoLexer(BigStr* s);
 
 List<Tuple2<Id_t, BigStr*>*>* HistoryTokens(BigStr* s);
 List<Tuple2<Id_t, BigStr*>*>* Ps1Tokens(BigStr* s);

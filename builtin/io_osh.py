@@ -69,18 +69,17 @@ class Echo(vm._Builtin):
 
         if arg.e:
             new_argv = []  # type: List[str]
-            for arg_str in argv:
+            for a in argv:
                 parts = []  # type: List[str]
-                lex = match.EchoLexer(arg_str)
-                pos = 0
+                lex = match.EchoLexer(a)
                 while not backslash_c:
-                    id_, end_pos = lex.Next()
+                    id_, s = lex.Next()
                     if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                         break
 
                     # Note: DummyToken is OK because EvalCStringToken() doesn't have any
                     # syntax errors.
-                    tok = lexer.DummyToken(id_, arg_str[pos:end_pos])
+                    tok = lexer.DummyToken(id_, s)
                     p = word_compile.EvalCStringToken(tok)
 
                     # Unusual behavior: '\c' prints what is there and aborts processing!
@@ -89,7 +88,6 @@ class Echo(vm._Builtin):
                         break
 
                     parts.append(p)
-                    pos = end_pos
 
                 new_argv.append(''.join(parts))
                 if backslash_c:  # no more args either
