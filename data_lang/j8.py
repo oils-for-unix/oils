@@ -7,14 +7,14 @@ TODO:
 - Errors
   - Figure out location info for parse errors - turn a position into a line and
     column?
-  - Assert should become parse errors
+  - errors are Dict with __tag__ entry?
 
 - Distinguish JSON vs. J8 -
   - json should fail can fail to encode
   - and distinguish "" b"" u""
 
-- Distinguish pretty-printing vs. data transfer
-  - SHOW_CYCLES and SHOW_NON_DATA
+- Correctness:
+  - surrgoate pair round trip
 
 - Translate the whole thing to C++
   - use Bjoern DFA for UTF-8 validation in printing and parsing
@@ -27,7 +27,7 @@ TODO:
 - Many more tests
   - Run JSONTestSuite
 
-Other
+Later:
 
 - PrettyPrinter uses hnode.asdl?
   - color
@@ -40,8 +40,10 @@ Other
 
 - Unify with ASDL pretty printing?
 
+   {} [] are for JSON?
    () is for statically typed ASDL data?
       (command.Simple blame_tok:(...) words:[ ])
+      although we are also using [] for typed ASDL arrays, not just JSON
    <> is for non-J8 errors?  For the = operator
 """
 

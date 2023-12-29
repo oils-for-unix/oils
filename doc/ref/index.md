@@ -42,6 +42,7 @@ YSH.
 
 13. [J8 Notation](chap-data-lang.html)
 1. Packle (TODO)
+1. [Errors](chap-errors.html)
 
 ## `help` builtin command
 

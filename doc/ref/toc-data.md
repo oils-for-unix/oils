@@ -14,23 +14,44 @@ Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
 <div id="toc">
 </div>
 
-<h2 id="j8-notation">J8 Notation</h2>
+<h2 id="j8-notation">
+  J8 Notation
+  (<a class="group-link" href="chap-data-lang.html">data-lang</a>)
+</h2>
 
 ```chapter-links-data-lang
   [J8 Strings]   json-escape \n   surrogate-pair
-                 j8-escape \yff   j-prefix j""
-  [JSON8]        Null   Bool   Int   Float   Str   List   Dict
+                 j8-escape \yff \u{03bc}
+                 b-prefix b""   j-prefix j"" 
+  [JSON8]        Null   Bool   Number   
+                 Json8String
+                 List   Dict
   [TSV8]         column-attrs   column-types
-  [UTF8 Errors]  bad-byte   expected-start   expected-cont
-                 incomplete-seq   overlong   bad-code-point
 ```
 
 All J8 notation is UTF-8.
 
-<h2 id="packle">Packle</h2>
+<h2 id="packle">
+  Packle
+  (<a class="group-link" href="chap-data-lang.html">data-lang</a>)
+</h2>
 
-TODO: It seems like this needs its own chapter.
+TODO: chap-packle
 
 ```chapter-links-data-lang
-  [Packle]   Null   Bool   Int   Float   Str   List   Dict
+  [Packle]   Null   Bool   Int   Float   Bytes   Unicode   List   Dict
+
+```
+
+<h2 id="errors">
+  Errors
+  (<a class="group-link" href="chap-errors.html">errors</a>)
+</h2>
+
+```chapter-links-errors
+  [JSON]   json-encode-err   json-decode-err
+  [JSON8]  json8-encode-err   json8-decode-err
+  [Packle] packle-encode-err   packle-decode-err   
+  [UTF8]   bad-byte   expected-start   expected-cont
+           incomplete-seq   overlong   bad-code-point
 ```

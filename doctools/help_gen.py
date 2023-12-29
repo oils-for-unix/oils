@@ -358,6 +358,7 @@ def HelpTopics(s):
         # Now find the <code></code> span
         _, code_start_right = html.ReadUntilStartTag(it, tag_lexer, 'code')
         css_class = tag_lexer.GetAttr('class') 
+        assert css_class is not None
         assert css_class.startswith('language-chapter-links-'), tag_lexer.TagString()
 
         code_end_left, _ = html.ReadUntilEndTag(it, tag_lexer, 'code')
