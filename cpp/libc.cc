@@ -6,121 +6,101 @@
 #include <fnmatch.h>
 #include <glob.h>
 #include <locale.h>
-#include <regex.h>
 #include <stdlib.h>  // getenv()
 #include <sys/ioctl.h>
 #include <unistd.h>  // gethostname()
 #include <wchar.h>
 
 #include <algorithm>
-#include <vector>
 
 namespace libc {
 
-class RegexCache {
- public:
-  static const int kDefaultSize = 100;
+RegexCache::CacheEntry::CacheEntry(BigStr* pat, int cflags) : pat_() {
+  int status = ::regcomp(&compiled_, pat->data_, cflags);
+  if (status != 0) {
+    char error_desc[50];
+    regerror(status, &compiled_, error_desc, 50);
 
-  struct CacheEntry {
-    CacheEntry() = delete;
-    CacheEntry(const CacheEntry&) = delete;
+    char error_message[80];
+    snprintf(error_message, 80, "Invalid regex %s (%s)", pat->data_,
+             error_desc);
 
-    CacheEntry(BigStr* pat, int cflags) : pat_() {
-      int status = ::regcomp(&compiled_, pat->data_, cflags);
-      if (status != 0) {
-        char error_desc[50];
-        regerror(status, &compiled_, error_desc, 50);
-
-        char error_message[80];
-        snprintf(error_message, 80, "Invalid regex %s (%s)", pat->data_,
-                 error_desc);
-
-        throw Alloc<ValueError>(StrFromC(error_message));
-      }
-
-      pat_ = static_cast<char*>(malloc(len(pat) + 1));
-      memcpy(pat_, pat->data_, len(pat) + 1);
-      pat_hash_ = hash(pat);
-    }
-
-    ~CacheEntry() {
-      DCHECK(pat_ != nullptr);
-      free(pat_);
-      regfree(&compiled_);
-    }
-
-    char* pat_;
-    int pat_hash_;
-    regex_t compiled_;
-  };
-
-  RegexCache(int capacity) : capacity_(capacity), access_list_() {
-    // Override if env var is set.
-    char* e = getenv("OILS_REGEX_CACHE_SIZE");
-    if (e) {
-      int result;
-      if (StringToInteger(e, strlen(e), 10, &result)) {
-        capacity_ = result;
-      }
-    }
+    throw Alloc<ValueError>(StrFromC(error_message));
   }
 
-  ~RegexCache() {
-    for (auto& it : access_list_) {
-      delete it;
+  pat_ = static_cast<char*>(malloc(len(pat) + 1));
+  memcpy(pat_, pat->data_, len(pat) + 1);
+  pat_hash_ = hash(pat);
+}
+
+RegexCache::CacheEntry::~CacheEntry() {
+  DCHECK(pat_ != nullptr);
+  free(pat_);
+  regfree(&compiled_);
+}
+
+RegexCache::RegexCache(int capacity) : capacity_(capacity), access_list_() {
+  // Override if env var is set.
+  char* e = getenv("OILS_REGEX_CACHE_SIZE");
+  if (e) {
+    int result;
+    if (StringToInteger(e, strlen(e), 10, &result)) {
+      capacity_ = result;
     }
   }
+}
 
-  regex_t* regcomp(BigStr* pat, int cflags) {
-    CacheEntry* entry = TakeEntry(pat);
-    if (entry == nullptr) {
-      // Dealing with a new entry. Make space and compile.
-      MaybeEvict();
-      entry = new CacheEntry(pat, cflags);
-    }
+RegexCache::~RegexCache() {
+  for (auto& it : access_list_) {
+    delete it;
+  }
+}
 
-    SetMostRecent(entry);
-
-    return &entry->compiled_;
+regex_t* RegexCache::regcomp(BigStr* pat, int cflags) {
+  RegexCache::CacheEntry* entry = TakeEntry(pat);
+  if (entry == nullptr) {
+    // Dealing with a new entry. Make space and compile.
+    MaybeEvict();
+    entry = new RegexCache::CacheEntry(pat, cflags);
   }
 
- private:
-  CacheEntry* TakeEntry(BigStr* pat) {
-    auto it = std::find_if(access_list_.begin(), access_list_.end(),
-                           [pat](CacheEntry* entry) {
-                             return hash(pat) == entry->pat_hash_ &&
-                                    strcmp(pat->data_, entry->pat_) == 0;
-                           });
-    if (it == access_list_.end()) {
-      return nullptr;
-    }
+  SetMostRecent(entry);
 
-    CacheEntry* ret = *it;
-    access_list_.erase(it);
-    return ret;
+  return &entry->compiled_;
+}
+
+RegexCache::CacheEntry* RegexCache::TakeEntry(BigStr* pat) {
+  auto it = std::find_if(access_list_.begin(), access_list_.end(),
+                         [pat](RegexCache::CacheEntry* entry) {
+                           return hash(pat) == entry->pat_hash_ &&
+                                  strcmp(pat->data_, entry->pat_) == 0;
+                         });
+  if (it == access_list_.end()) {
+    return nullptr;
   }
 
-  void MaybeEvict() {
-    if (access_list_.size() < capacity_) {
-      return;
-    }
+  RegexCache::CacheEntry* ret = *it;
+  access_list_.erase(it);
+  return ret;
+}
 
-    // Evict the least recently used entry.
-    if (access_list_.size()) {
-      delete *access_list_.begin();
-      access_list_.erase(access_list_.begin());
-    }
+void RegexCache::MaybeEvict() {
+  if (access_list_.size() < capacity_) {
+    return;
   }
 
-  void SetMostRecent(CacheEntry* entry) {
-    access_list_.push_back(entry);
+  // Evict the least recently used entry.
+  if (access_list_.size()) {
+    delete *access_list_.begin();
+    access_list_.erase(access_list_.begin());
   }
+}
 
-  size_t capacity_;
-  std::vector<CacheEntry*> access_list_;
-};
+void RegexCache::SetMostRecent(RegexCache::CacheEntry* entry) {
+  access_list_.push_back(entry);
+}
 
-static RegexCache gRegexCache(RegexCache::kDefaultSize);
+RegexCache gRegexCache(RegexCache::kDefaultSize);
 
 BigStr* gethostname() {
   // Note: Fixed issue #1656 - OS X and FreeBSD don't have HOST_NAME_MAX
