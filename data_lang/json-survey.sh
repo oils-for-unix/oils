@@ -96,4 +96,33 @@ surrogate-half() {
   surrogate-pair "$json"
 }
 
+encode-nan() {
+  # Wow Python doesn't conform to spec!!
+  # https://docs.python.org/3.8/library/json.html#infinite-and-nan-number-values
+
+  python2 -c 'import json; val = float("nan"); s = json.dumps(val); print(s); print(json.loads(s))' || true
+  echo
+
+  python3 -c 'import json; val = float("nan"); s = json.dumps(val); print(s); print(json.loads(s))' || true
+  echo
+
+  # nodejs uses null
+  nodejs -e 'var val = NaN; var s = JSON.stringify(val); console.log(s); console.log(JSON.parse(s));' || true
+  echo
+}
+
+encode-inf() {
+  # Again, Python doesn't conform to spec
+
+  python2 -c 'import json; val = float("-inf"); print(val); s = json.dumps(val); print(s); print(json.loads(s))' || true
+  echo
+
+  python3 -c 'import json; val = float("-inf"); print(val); s = json.dumps(val); print(s); print(json.loads(s))' || true
+  echo
+
+  # nodejs uses null again
+  nodejs -e 'var val = Number.NEGATIVE_INFINITY; console.log(val); var s = JSON.stringify(val); console.log(s); console.log(JSON.parse(s));' || true
+  echo
+}
+
 "$@"

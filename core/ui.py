@@ -356,8 +356,6 @@ class ErrorFormatter(object):
         fallback. That only applies to builtins; instead we check
         e.HasLocation() at a higher level, in CommandEvaluator.
         """
-        msg = err.UserErrorString()
-
         # TODO: Should there be a special span_id of 0 for EOF?  runtime.NO_SPID
         # means there is no location info, but 0 could mean that the location is EOF.
         # So then you query the arena for the last line in that case?
@@ -366,7 +364,7 @@ class ErrorFormatter(object):
         # is OK.
         # Problem: the column for Eof could be useful.
 
-        _PrintWithLocation(prefix, msg, err.location, True)
+        _PrintWithLocation(prefix, err.UserErrorString(), err.location, True)
 
     def PrintErrExit(self, err, pid):
         # type: (error.ErrExit, int) -> None

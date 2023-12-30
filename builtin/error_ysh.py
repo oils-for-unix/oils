@@ -113,12 +113,11 @@ class Try(vm._Builtin):
             # then enables it!
             with ctx_Try(self.mutable_opts):
                 # Pass do_fork=True.  Slight annoyance: the real value is a field of
-                # command.Simple().  See _NoForkLast() in CommandEvaluator We have an
-                # extra fork (miss out on an optimization) of code like ( status ls )
-                # or forkwait { status ls }, but that is NOT idiomatic code.  status is
-                # for functions.
-                cmd_st = CommandStatus.CreateNull(
-                    alloc_lists=True)  # TODO: take param
+                # command.Simple().  See _NoForkLast() in CommandEvaluator.
+                # We have an extra fork (miss out on an optimization) of code
+                # like ( try ls ) or forkwait { try ls }, but that is NOT
+                # idiomatic code.  try is for procs/compound expressions.
+                cmd_st = CommandStatus.CreateNull(alloc_lists=True)
                 status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
                 #log('st %d', status)
         except error.Expr as e:
@@ -155,7 +154,7 @@ class Error(vm._Builtin):
         rd.Done()
 
         if status == 0:
-            raise error.Usage('Status must be a non-zero integer',
+            raise error.Usage('status must be a non-zero integer',
                               cmd_val.arg_locs[0])
 
         raise error.UserError(status, message, cmd_val.arg_locs[0])
