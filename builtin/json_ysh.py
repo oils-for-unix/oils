@@ -84,10 +84,16 @@ class Json(vm._Builtin):
 
             buf = mylib.BufWriter()
 
-            if self.is_j8:
-                self.j8print.PrintMessage(val, buf, indent)
-            else:
-                self.j8print.PrintJsonMessage(val, buf, indent)
+            try:
+                if self.is_j8:
+                    self.j8print.PrintMessage(val, buf, indent)
+                else:
+                    self.j8print.PrintJsonMessage(val, buf, indent)
+            except error.Encode as e:
+                self.errfmt.PrintMessage('%s write: %s' % (self.name,
+                                                           e.Message()),
+                                         action_loc)
+                return 1
 
             self.stdout_.write(buf.getvalue())
             self.stdout_.write('\n')

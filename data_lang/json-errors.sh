@@ -65,7 +65,7 @@ test-encode() {
 
   # This should fail!
   # But not pp line (L)
-  _error-case-X 1 'var L = []; call L->append(/d+/); json write (L)'
+  _error-case-X 1 'var L = []; call L->append(/d+/); j8 write (L)'
 }
 
 #

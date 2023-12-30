@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 4
 ## tags: dev-minimal
 
 #### usage errors

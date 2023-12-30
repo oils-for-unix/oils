@@ -301,7 +301,9 @@ class InstancePrinter(object):
                     else:
                         # node.js prints which index closes the cycle
                         raise error.Encode(
-                            "JSON: Can't encode List in object cycle")
+                                "Can't encode List%s in object cycle"
+                                % vm.ValueIdString(val))
+
                 self.seen[heap_id] = True
 
                 self.buf.write('[')
@@ -330,7 +332,8 @@ class InstancePrinter(object):
                     else:
                         # node.js prints which key closes the cycle
                         raise error.Encode(
-                            "JSON: Can't encode Dict in object cycle")
+                                "Can't encode Dict%s in object cycle"
+                                % vm.ValueIdString(val))
 
                 self.seen[heap_id] = True
 
