@@ -47,9 +47,13 @@ Compatible with bash.
 
 ## Patterns
 
-### glob
+### glob-pat
+
+TODO: glob syntax
 
 ### extglob
+
+TODO: extended glob syntax
 
 ### regex
 

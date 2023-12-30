@@ -135,7 +135,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
-                  X j8                   read write
+                  j8                     read write
                   X packle               read write, Graph-shaped
 X [TSV8]          rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
@@ -269,18 +269,17 @@ X [Guts]      heapId()
   [Values]        len()   type()
   [Conversions]   bool()   int()   float()   str()   list()   dict()
                   X chr()   X ord()   X runes()
-X [Str]           strcmp()
-  [List]          any()   all()
-  [Collections]   join()   X split()   X shSplit()
-                  X copy()   X deepCopy()
+X [Str]           strcmp()   X split()   shSplit()
+  [List]          join()   any()   all()
+  [Collections]   X copy()   X deepCopy()
   [Word]          glob()   maybe()
   [Math]          abs()   max()   min()   X round()   sum()
+  [Serialize]     toJ8()   fromJ8()
+                  toJson()   fromJson()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
 X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()
-X [Serialize]     toJ8()   fromJ8()
-                  toJson()   fromJson()
-  [Pattern]       _group()   X _start()   X _end()
+  [Pattern]       _group()   _start()   _end()
   [Introspection] shvarGet()   evalExpr()
   [Hay Config]    parseHay()   evalHay()
 X [Wok]           _field()

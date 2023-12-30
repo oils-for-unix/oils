@@ -93,7 +93,7 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
                   bool-path     [[ -d /etc ]]
                   bool-str      [[ -z '' ]]
                   bool-other    [[ -o errexit ]]
-  [Patterns]      glob          *.py
+  [Patterns]      glob-pat      *.py
                   extglob       ,(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
   [Other Sublang] braces        {alice,bob}@example.com

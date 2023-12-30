@@ -140,7 +140,60 @@ string optimization helps. -->
 
 TODO: Explicit iterator over runes.
 
+## Str
+
+### strcmp()
+
+TODO
+
+### split()
+
+TODO
+
+If no argument is passed, splits by whitespace 
+
+<!-- respecting Unicode space? -->
+
+If a delimiter Str with a single byte is given, splits by that byte.
+
+Modes:
+
+- Python-like algorithm
+- Is awk any different?
+- Split by eggex
+
+### shSplit()
+
+Split a string into a List of strings, using the shell algorithm that respects
+`$IFS`.
+
+Prefer `split()` to `shSplit()`.
+
+
 ## List
+
+### join()
+
+Given a List, stringify its items, and join them by a separator.  The default
+separator is the empty string.
+
+    var x = ['a', 'b', 'c']
+
+    $ echo $[join(x)]
+    abc
+
+    $ echo $[join(x, ' ')]  # optional separator
+    a b c
+
+
+It's also often called with the `=>` chaining operator:
+
+    var items = [1, 2, 3]
+
+    json write (items => join())      # => "123"
+    json write (items => join(' '))   # => "1 2 3"
+    json write (items => join(', '))  # => "1, 2, 3"
+
 
 ### any()
 
@@ -170,6 +223,13 @@ If the list is empty, return true.
 
 Note, you will need to `source --builtin list.ysh` to use this function.
 
+## Word
+
+### glob() 
+
+See `glob-pat` topic for syntax.
+
+### maybe()
 
 ## Math
 
@@ -254,67 +314,6 @@ Like `Match => end()`, but accesses the global match created by `~`:
     if ('foo42' ~ / d+ /) {
       echo $[_end(0)]  # => 5
     }
-
-## Str
-
-### countRunes()
-
-### find()
-
-### sub()
-
-### join()
-
-Given a List, stringify its items, and join them by a separator.  The default
-separator is the empty string.
-
-    var x = ['a', 'b', 'c']
-
-    $ echo $[join(x)]
-    abc
-
-    $ echo $[join(x, ' ')]  # optional separator
-    a b c
-
-
-It's also often called with the `=>` chaining operator:
-
-    var items = [1, 2, 3]
-
-    json write (items => join())      # => "123"
-    json write (items => join(' '))   # => "1 2 3"
-    json write (items => join(', '))  # => "1, 2, 3"
-
-### split()
-
-TODO
-
-If no argument is passed, splits by whitespace 
-
-<!-- respecting Unicode space? -->
-
-If a delimiter Str with a single byte is given, splits by that byte.
-
-Modes:
-
-- Python-like algorithm
-- Is awk any different?
-- Split by eggex
-
-### shSplit()
-
-Split a string into a List of strings, using the shell algorithm that respects
-`$IFS`.
-
-Prefer `split()` to `shSplit()`.
-
-## Word
-
-<!--
-Note: glob() function conflicts with 'glob' language help topic
--->
-
-### maybe
 
 ## Introspection
 
