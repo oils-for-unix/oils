@@ -56,7 +56,7 @@ class MatchTest(unittest.TestCase):
         for s in cases:
             log('---')
             log('J8 CASE %r', s)
-            lex = match.J8Lexer(s)
+            lex = match.SimpleLexer(match.MatchJ8Token, s)
             _PrintTokens(lex)
 
     def testJ8StrLexer(self):
@@ -74,7 +74,7 @@ class MatchTest(unittest.TestCase):
         for s in cases:
             log('---')
             log('J8 STR CASE %r', s)
-            lex = match.J8StrLexer(s)
+            lex = match.SimpleLexer(match.MatchJ8StrToken, s)
             _PrintTokens(lex)
 
     def testLooksLike(self):
