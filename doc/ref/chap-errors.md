@@ -26,8 +26,10 @@ JSON encoding has three possible errors:
 1. Circular reference
    - e.g. a Dict that points to itself, a List that points to itself, and other
      permutations
+1. Float values of NaN, Inf, and -Inf can't be encoded.
+   - TODO: option to use `null` like JavaScript.
 1. Invalid UTF-8 in string, e.g. binary data like `\xfe\xff`
-   - Note: we can use the Unicode replacement char to avoid an error.
+   - TODO: option to use the Unicode replacement char to avoid an error.
 
 ### json-decode-err
 
@@ -39,7 +41,7 @@ TODO
 
 Compared to JSON, JSON8 removes an encoding error:
 
-3. Invalid UTF-8 is OK, because it gets turned into a binary string like
+4. Invalid UTF-8 is OK, because it gets turned into a binary string like
    `b"byte \yfe\yff"`.
 
 ### json8-decode-err
@@ -58,6 +60,7 @@ Packle has no encoding errors!
    - When you read a packle back into YSH, you'll get a `value.Tombstone`?
 1. Circular references are allowed.  Packle data expresses a **graph**, not a
    tree.
+1. Float values NaN, Inf, and -Inf use their binary representations.
 1. Both Unicode and binary data are allowed.
 
 ### packle-decode-err

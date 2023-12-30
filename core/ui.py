@@ -374,10 +374,8 @@ class ErrorFormatter(object):
         #   - _PrintWithLocation calculates the line_id.  So you need to remember that?
         #   - return it here?
         prefix = 'errexit PID %d: ' % pid
-        #self.PrettyPrintError(err, prefix=prefix)
-
-        msg = err.UserErrorString()
-        _PrintWithLocation(prefix, msg, err.location, err.show_code)
+        _PrintWithLocation(prefix, err.UserErrorString(), err.location,
+                           err.show_code)
 
 
 def PrintAst(node, flag):

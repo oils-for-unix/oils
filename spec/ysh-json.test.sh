@@ -364,22 +364,51 @@ pp line (fromJ8(message))
 var obj = []
 call obj->append(obj)
 
-echo $[toJson(obj)]
-echo $[toJ8(obj)]
+try echo $[toJson(obj)]
+echo status=$_status
+echo "encode error $[_error.message]"
 
+try {  # use different style
+  echo $[toJ8( /d+/ )]
+}
+echo status=$_status
+echo "encode error $[_error.message]"
+
+# This makes the interpreter fail with a message
+echo $[toJson(obj)]
+
+## status: 4
 ## STDOUT:
-[42,1.5,null,true,"hi"]
-[42,1.5,null,true,"hi"]
+status=4  # special encode/decode error?
+encode error CYCLE
+status=4
+encode error TYPE
 ## END
 
 #### User can handle errors - fromJson() fromJ8()
 
 var message ='[42,1.5,null,true,"hi"'
 
-pp line (fromJson(message))
-pp line (fromJ8(message))
+try {
+  var obj = fromJson(message)
+}
+echo status=$_status
+echo decode error $[_error.message]
 
+try {
+  var obj = fromJ8(message)
+}
+echo status=$_status
+echo decode error $[_error.message]
+
+# This makes the interpreter fail with a message
+var obj = fromJson(message)
+
+## status: 4
 ## STDOUT:
-(List)   []
+status=4  # special encode/decode error?
+decode error CYCLE
+status=4
+decode error TYPE
 ## END
 

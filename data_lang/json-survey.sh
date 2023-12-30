@@ -9,7 +9,7 @@ set -o errexit
 
 source build/dev-shell.sh  # python3 in $PATH
 
-int-float() {
+decode-int-float() {
   # This is a float
   python2 -c 'import json; val = json.loads("1e6"); print(type(val)); print(val)'
   python2 -c 'import json; val = json.loads("1e-6"); print(type(val)); print(val)'
@@ -27,7 +27,7 @@ int-float() {
   nodejs -e 'var val = JSON.parse("1e6"); console.log(typeof(val)); console.log(val)'
 }
 
-syntax-errors() {
+decode-syntax-errors() {
 
   python2 -c 'import json; val = json.loads("{3:4}"); print(type(val)); print(val)' || true
   echo
@@ -47,7 +47,7 @@ syntax-errors() {
   nodejs -e 'var val = JSON.parse("[\n\n \"hello "); console.log(typeof(val)); console.log(val)' || true
 }
 
-empty-input() {
+decode-empty-input() {
   python3 -c 'import json; val = json.loads(""); print(type(val)); print(val)' || true
 
   echo
@@ -56,7 +56,7 @@ empty-input() {
   nodejs -e 'var val = JSON.parse(""); console.log(typeof(val)); console.log(val)' || true
 }
 
-obj-cycles() {
+encode-obj-cycles() {
   python3 -c 'import json; val = {}; val["k"] = val; print(json.dumps(val))' || true
   echo
 
@@ -100,10 +100,15 @@ encode-nan() {
   # Wow Python doesn't conform to spec!!
   # https://docs.python.org/3.8/library/json.html#infinite-and-nan-number-values
 
+  # allow_nan=False and parse_constant alter the behavior
+
   python2 -c 'import json; val = float("nan"); s = json.dumps(val); print(s); print(json.loads(s))' || true
   echo
 
   python3 -c 'import json; val = float("nan"); s = json.dumps(val); print(s); print(json.loads(s))' || true
+  echo
+
+  python3 -c 'import json; val = float("nan"); s = json.dumps(val, allow_nan=False); print(s); print(json.loads(s))' || true
   echo
 
   # nodejs uses null
@@ -120,8 +125,21 @@ encode-inf() {
   python3 -c 'import json; val = float("-inf"); print(val); s = json.dumps(val); print(s); print(json.loads(s))' || true
   echo
 
+  python3 -c 'import json; val = float("-inf"); print(val); s = json.dumps(val, allow_nan=False); print(s); print(json.loads(s))' || true
+  echo
+
   # nodejs uses null again
   nodejs -e 'var val = Number.NEGATIVE_INFINITY; console.log(val); var s = JSON.stringify(val); console.log(s); console.log(JSON.parse(s));' || true
+  echo
+}
+
+encode-bad-type() {
+  python3 -c 'import json; print(json.dumps(json))' || true
+  echo
+
+  # {} or undefined - BAD!
+  nodejs -e 'console.log(JSON.stringify(JSON));' || true
+  nodejs -e 'function f() { return 42; }; console.log(JSON.stringify(f));' || true
   echo
 }
 
