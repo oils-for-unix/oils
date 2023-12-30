@@ -55,21 +55,6 @@ class Usage(_ErrorWithLocation):
         _ErrorWithLocation.__init__(self, msg, location)
 
 
-class Runtime(Exception):
-    """An error that's meant to be caught, i.e. it's non-fatal.
-
-    Thrown by core/state.py and caught by builtins
-    """
-
-    def __init__(self, msg):
-        # type: (str) -> None
-        self.msg = msg
-
-    def UserErrorString(self):
-        # type: () -> str
-        return self.msg
-
-
 class Parse(_ErrorWithLocation):
     """Used in the parsers."""
 
@@ -198,6 +183,21 @@ class TypeErr(TypeErrVerbose):
         TypeErrVerbose.__init__(self,
                                 "%s, got %s" % (msg, _ValType(actual_val)),
                                 location)
+
+
+class Runtime(Exception):
+    """An error that's meant to be caught, i.e. it's non-fatal.
+
+    Thrown by core/state.py and caught by builtins
+    """
+
+    def __init__(self, msg):
+        # type: (str) -> None
+        self.msg = msg
+
+    def UserErrorString(self):
+        # type: () -> str
+        return self.msg
 
 
 class Decode(Exception):

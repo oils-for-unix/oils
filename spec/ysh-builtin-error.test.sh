@@ -124,3 +124,16 @@ error ('error', status=0)
 ## status: 2
 ## STDOUT:
 ## END
+
+#### Two styles of try with error builtin behave the same way (bug)
+
+try { error oops }
+echo status=$_status
+
+try error oops
+echo status=$_status
+
+## STDOUT:
+status=1
+status=1
+## END

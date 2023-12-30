@@ -125,6 +125,8 @@ class Try(vm._Builtin):
             status = e.ExitStatus()
         except error.ErrExit as e:
             status = e.ExitStatus()
+        except error.UserError as e:
+            status = e.ExitStatus()
 
         # special variable
         self.mem.SetTryStatus(status)
