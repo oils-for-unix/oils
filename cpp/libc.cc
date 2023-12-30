@@ -106,8 +106,10 @@ class RegexCache {
     }
 
     // Evict the least recently used entry.
-    delete *access_list_.begin();
-    access_list_.erase(access_list_.begin());
+    if (access_list_.size()) {
+      delete *access_list_.begin();
+      access_list_.erase(access_list_.begin());
+    }
   }
 
   void SetMostRecent(CacheEntry* entry) {
