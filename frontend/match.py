@@ -1,5 +1,5 @@
 """
-match.py - match with generated re2c code or Python regexes.
+match.py - lexer primitives, implemented with re2c or Python regexes.
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
@@ -222,37 +222,7 @@ class SimpleLexer(object):
         return tokens
 
 
-class SimpleLexer2(object):
-
-    def __init__(self, match_func, s):
-        # type: (SimpleMatchFunc, str) -> None
-        self.match_func = match_func
-        self.s = s
-        self.pos = 0
-
-    def Next(self):
-        # type: () -> Tuple[Id_t, int]
-        """
-        Note: match_func will return Id.Eol_Tok repeatedly the terminating NUL
-        """
-        tok_id, end_pos = self.match_func(self.s, self.pos)
-        self.pos = end_pos
-        return tok_id, end_pos
-
-    def Tokens(self):
-        # type: () -> List[Tuple[Id_t, str]]
-        tokens = []  # type: List[Tuple[Id_t, str]]
-        pos = 0
-        while True:
-            tok_id, end_pos = self.Next()
-            if tok_id == Id.Eol_Tok:  # NUL terminator
-                break
-            tokens.append((tok_id, self.s[pos:end_pos]))
-            pos = end_pos
-        return tokens
-
-
-# Iterated over in osh/builtin_pure.py
+# Iterated over in builtin/io_osh.py
 def EchoLexer(s):
     # type: (str) -> SimpleLexer
     return SimpleLexer(ECHO_MATCHER, s)
@@ -266,16 +236,6 @@ def BraceRangeLexer(s):
 def GlobLexer(s):
     # type: (str) -> SimpleLexer
     return SimpleLexer(GLOB_MATCHER, s)
-
-
-def J8Lexer(s):
-    # type: (str) -> SimpleLexer2
-    return SimpleLexer2(MatchJ8Token, s)
-
-
-def J8StrLexer(s):
-    # type: (str) -> SimpleLexer2
-    return SimpleLexer2(MatchJ8StrToken, s)
 
 
 # These tokens are "slurped"
@@ -294,7 +254,7 @@ def Ps1Tokens(s):
 
 
 #
-# osh/builtin_bracket
+# builtin/bracket_osh.py
 #
 
 
