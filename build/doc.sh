@@ -430,7 +430,12 @@ make-dirs() {
   mkdir -p $TMP_DIR $CODE_BLOCK_DIR $TEXT_DIR $HTML_DIR/doc
 }
 
-all-help() {
+one-ref() {
+  local md=${1:-doc/ref/index.md}
+  split-and-render $md '' '../../web'
+}
+
+all-ref() {
   ### Build doc/ref in text and HTML.  Depends on libcmark.so
 
   log "Removing $TEXT_DIR/*"
@@ -588,7 +593,7 @@ run-for-release() {
   # Docs
   # Writes _release/VERSION and _tmp/release-index.html
   all-markdown
-  all-help
+  all-ref
   all-redirects  # backward compat
 
   modify-pages

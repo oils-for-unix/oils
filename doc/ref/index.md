@@ -6,6 +6,16 @@ preserve_anchor_case: yes
 Oils Reference
 =============
 
+<style>
+  .highlight {
+      background-color: #eee;
+      padding-top: 0.2em;
+      padding-bottom: 0.2em;
+      padding-left: 1em;
+      padding-right: 1em;
+  }
+</style>
+
 A guide to everything in Oils (in progress).
 
 Go back to [All Docs on Oils](../index.html) for design docs and tutorials.
@@ -15,12 +25,19 @@ Go back to [All Docs on Oils](../index.html) for design docs and tutorials.
 
 ## Online HTML
 
-Oils consists of two major "modes" for shell:
+<div class="highlight">
 
-- [OSH Table of Contents](toc-osh.html) - Compatible
-- [YSH Table of Contents](toc-ysh.html) - New and Powerful
+Oils has two major "modes" for shell:
 
-They link to **topics** within these 12 chapters:
+[**OSH Table of Contents**](toc-osh.html) - Compatible
+
+[**YSH Table of Contents**](toc-ysh.html) - New and Powerful
+
+You can use OSH by itself, YSH by itself, or upgrade OSH to YSH.
+
+</div>
+
+Those two docs link to dozens of **topics** within these 12 **chapters**:
 
 1. [Front End](chap-front-end.html)
 1. [Command Language](chap-cmd-lang.html)
@@ -35,12 +52,16 @@ They link to **topics** within these 12 chapters:
 1. [YSH Types and Methods](chap-type-method.html)
 1. [Builtin Functions](chap-builtin-func.html)
 
-The idea is that you can use OSH by itself, YSH by itself, or upgrade OSH to
-YSH.
+<div class="highlight">
 
-- [Data Notation Table of Contents](toc-data.html) - Oils also has data languages.
+[**Data Notation Table of Contents**](toc-data.html) - Languages for data are
+complementary to shell programs.
 
-13. [J8 Notation](chap-data-lang.html)
+</div>
+
+Topics in these 3 chapters:
+
+13. [JSON / J8 Notation](chap-j8.html)
 1. Packle (TODO)
 1. [Errors](chap-errors.html)
 

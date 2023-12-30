@@ -48,7 +48,7 @@ Compared to JSON, JSON8 removes an encoding error:
 
 TODO
 
-## Packle Errors
+## Packle
 
 ### packle-encode-err
 
@@ -67,7 +67,7 @@ Packle has no encoding errors!
 
 TODO
 
-## UTF8 Errors
+## UTF8
 
 This is for reference.
 

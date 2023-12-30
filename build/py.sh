@@ -432,7 +432,7 @@ all() {
   time-helper
 
   # help topics and chapter links are extracted from doc/ref
-  build/doc.sh all-help
+  build/doc.sh all-ref
 }
 
 gitpod-minimal() {

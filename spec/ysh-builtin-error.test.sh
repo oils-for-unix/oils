@@ -28,13 +28,13 @@ func divide(a, b) {
   if (b === 0) {
     error 'divide by zero' (status=3)
   }
-
   return (a / b)
 }
 
 try { = divide(42, 0) }
 echo status=$_status
-echo message=$_error_message
+echo message=$[_error.message]
+
 ## STDOUT:
 status=3
 message=divide by zero

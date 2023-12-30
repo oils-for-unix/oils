@@ -16,7 +16,7 @@ Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
 
 <h2 id="j8-notation">
   J8 Notation
-  (<a class="group-link" href="chap-data-lang.html">data-lang</a>)
+  (<a class="group-link" href="chap-j8.html">j8</a>)
 </h2>
 
 ```chapter-links-data-lang
@@ -33,14 +33,12 @@ All J8 notation is UTF-8.
 
 <h2 id="packle">
   Packle
-  (<a class="group-link" href="chap-data-lang.html">data-lang</a>)
+  (<a class="group-link" href="chap-packle.html">packle</a>)
 </h2>
 
-TODO: chap-packle
-
-```chapter-links-data-lang
-  [Packle]   Null   Bool   Int   Float   Bytes   Unicode   List   Dict
-
+```chapter-links-packle
+  [Atoms]    Null   Bool   Int   Float   Bytes   Unicode
+  [Compound] List   Dict
 ```
 
 <h2 id="errors">

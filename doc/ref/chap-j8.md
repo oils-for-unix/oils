@@ -5,11 +5,11 @@ default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Data Languages
-==============
+JSON / J8 Notation
+==================
 
-This chapter in the [Oils Reference](index.html) describes data languages: J8
-Notation and Packle.
+This chapter in the [Oils Reference](index.html) describes [JSON]($xref), and
+its **J8 Notation** superset.
 
 This is a quick reference, not the official spec.
 
@@ -112,14 +112,6 @@ The primitives:
 - Int
 - Float
 - Str
-
-
-# Packle
-
-- Binary data represented length-prefixed without encode/decode
-- Exact float representation
-- Represent graphs, not just trees.  ("JSON key sharing")
-
 
 [JSON]: https://json.org
 
