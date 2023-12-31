@@ -141,17 +141,17 @@ rather than its value.
 Add an element to a list.
 
     var fruits = :|apple banana pear|
-    call fruits -> append("orange") # returns null
-    echo @fruits                    # => apple banana pear orange
+    call fruits->append("orange")
+    echo @fruits  # => apple banana pear orange
 
 ### pop()
 
 remove an element from a list and return it.
 
     var fruits = :|apple banana pear orange|
-    var last = fruits -> pop() # "orange" is removed AND returned
-    echo $last                 # => orange
-    echo @fruits               # => apple banana pear
+    var last = fruits->pop()  # "orange" is removed AND returned
+    echo $last                # => orange
+    echo @fruits              # => apple banana pear
 
 ### extend()
 
@@ -159,17 +159,16 @@ Extend an existing list with the elements of another list.
 
     var foods = :|cheese chocolate|
     var fruits = :|apple banana|
-    call foods -> extend(fruits) # => null
-    echo $last_fruit             # => orange
-    echo @fruits                 # => apple banana pear
+    call foods->extend(fruits)
+    echo @foods  # => cheese chocolate apple banana pear
 
 ### indexOf()
 
 Returns the first index of the element in the list, or -1 if it's not present.
 
     var names = :| Jane Peter Joana Sam |
-    echo $[names => indexOf("Sam")]   # => 3
-    echo $[names => indexOf("Simon")] # => -1
+    echo $[names => indexOf("Sam")]    # => 3
+    echo $[names => indexOf("Simon")]  # => -1
 
 ### insert()
 
@@ -180,8 +179,8 @@ Returns the first index of the element in the list, or -1 if it's not present.
 Reverses a list in place.
 
     var fruits = :|apple banana pear|
-    call fruits -> reverse() # => null
-    echo @fruits             # => pear banana apple
+    call fruits->reverse()
+    echo @fruits  # => pear banana apple
 
 ## Dict
 
