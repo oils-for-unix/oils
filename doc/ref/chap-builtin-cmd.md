@@ -89,8 +89,11 @@ Runs a command and requires the exit code to be 0 or 1.
 
 ### error
 
-The `error` builtin raises a fatal error.  In YSH, it's customary to use it
-instead of `return 1`, since it provides more information:
+The `error` builtin interrupts the program, raising an error with a descriptive
+string and integer status code.
+
+In YSH, it's customary to use it instead of `return 1`, since it provides more
+information.
 
     proc p {
       if ! test -d /tmp {
@@ -107,7 +110,7 @@ The error can be caught with `try`:
       echo 'failed'
     }
 
-By default, it fails with status 1.  You can change this with a typed arg:
+You can override the default status of 10 by passing a named arg:
 
    error 'Missing /tmp' (status=9)
 

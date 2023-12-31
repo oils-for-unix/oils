@@ -82,7 +82,7 @@ func invertList(list) {
 }
 
 = invertList([1, 2, 0])
-## status: 1
+## status: 10
 ## STDOUT:
 ## END
 
@@ -101,9 +101,9 @@ try {
 ## STDOUT:
 ## END
 
-#### Error defaults status to 1
+#### Error defaults status to 10
 error 'some error'
-## status: 1
+## status: 10
 ## STDOUT:
 ## END
 
@@ -158,6 +158,6 @@ try error oops
 echo status=$_status
 
 ## STDOUT:
-status=1
-status=1
+status=10
+status=10
 ## END

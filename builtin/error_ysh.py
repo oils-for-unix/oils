@@ -160,7 +160,11 @@ class Error(vm._Builtin):
                               cmd_val.arg_locs[0])
 
         rd = typed_args.ReaderForProc(cmd_val)
-        status = rd.NamedInt('status', 1)
+        # Status 10 is distinct from what the Oils interpreter itself uses.  We
+        # use status 3 for expressions and 4 for encode/decode, and 10 "leaves
+        # room" for others.
+        # The user is of course free to choose status 1.
+        status = rd.NamedInt('status', 10)
         rd.Done()
 
         if status == 0:
