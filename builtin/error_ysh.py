@@ -3,7 +3,6 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.value_asdl import value
 from core import error
 from core.error import e_die_status, e_usage
 from core import state
