@@ -970,7 +970,7 @@ class ctx_Registers(object):
         last = mem.last_status[-1]
         mem.last_status.append(last)
         mem.try_status.append(0)
-        mem.try_error.append(None)
+        mem.try_error.append(value.Dict({}))
 
         # TODO: We should also copy these values!  Turn the whole thing into a
         # frame.
@@ -1071,7 +1071,7 @@ class Mem(object):
         # - push-registers builtin
         self.last_status = [0]  # type: List[int]  # a stack
         self.try_status = [0]  # type: List[int]  # a stack
-        self.try_error = [None]  # type: List[Optional[value.Dict]]  # a stack
+        self.try_error = [value.Dict({})]  # type: List[value.Dict]  # a stack
         self.pipe_status = [[]]  # type: List[List[int]]  # stack
         self.process_sub_status = [[]]  # type: List[List[int]]  # stack
 
@@ -1221,7 +1221,7 @@ class Mem(object):
         return self.try_status[-1]
 
     def TryError(self):
-        # type: () -> Optional[value.Dict]
+        # type: () -> value.Dict
         return self.try_error[-1]
 
     def PipeStatus(self):
@@ -1826,6 +1826,9 @@ class Mem(object):
         # "Registers"
         if name == '_status':
             return value.Int(self.TryStatus())
+
+        if name == '_error':
+            return self.TryError()
 
         if name == '_this_dir':
             if len(self.this_dir) == 0:

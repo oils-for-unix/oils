@@ -1,7 +1,7 @@
 # spec/ysh-builtin-error
 
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### User errors behave like builtin errors
 func divide(a, b) {
@@ -22,11 +22,21 @@ echo status=$_status
 status=3
 ## END
 
-#### Error sets _error_message, which can be used by programs
+#### _error register is initially empty dict
+
+echo $[type(_error)]
+echo $[len(_error)]
+
+## STDOUT:
+Dict
+0
+## END
+
+#### Error sets _error.message, which can be used by programs
 
 func divide(a, b) {
   if (b === 0) {
-    error 'divide by zero' (status=3)
+    error "divide by zero: $a / $b" (status=3)
   }
   return (a / b)
 }
@@ -35,9 +45,23 @@ try { = divide(42, 0) }
 echo status=$_status
 echo message=$[_error.message]
 
+proc p {
+  echo $[divide(5, 0)]
+}
+
+try p
+echo status=$_status
+echo message=$[_error.message]
+
+# Design bug: this isn't caught!
+
+# try echo $[divide(3, 0]
+
 ## STDOUT:
 status=3
-message=divide by zero
+message=divide by zero: 42 / 0
+status=3
+message=divide by zero: 5 / 0
 ## END
 
 #### Errors within multiple functions
