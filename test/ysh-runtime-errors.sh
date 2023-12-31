@@ -817,8 +817,8 @@ test-error-builtin() {
   _error-case-X 2 'error --'
 
   # These are OK
-  _error-case-X 1 'error -- oops'
-  _error-case-X 1 'error oops'
+  _error-case-X 10 'error -- oops'
+  _error-case-X 10 'error oops'
 
   _error-case-X 99 'error oops (status=99)'
 }
