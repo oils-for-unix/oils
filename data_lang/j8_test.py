@@ -24,11 +24,10 @@ yajl = None  # no longer using this module
 
 from data_lang import j8
 
-
 if yajl:
+
     def dumps(obj):
         return yajl.dumps(obj)
-
 
     def loads(s):
         return yajl.loads(s)

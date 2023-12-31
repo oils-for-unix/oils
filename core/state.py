@@ -1148,10 +1148,7 @@ class Mem(object):
 
                 elif case(debug_frame_e.Main):
                     frame = cast(debug_frame.Main, UP_frame)
-                    d = {
-                        'type': t_main,
-                        'dollar0': value.Str(frame.dollar0)
-                    }
+                    d = {'type': t_main, 'dollar0': value.Str(frame.dollar0)}
 
             debug_stack.append(value.Dict(d))
         return var_stack, argv_stack, debug_stack

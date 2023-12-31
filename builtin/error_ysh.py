@@ -96,12 +96,9 @@ class Try(vm._Builtin):
             except error.ErrExit as e:
                 status = e.ExitStatus()
 
-            except error.UserError as e:
+            except error.Structured as e:
                 status = e.ExitStatus()
-
-                d = value.Dict({'status': value.Int(status), 'message':
-                                value.Str(e.msg)})
-                self.mem.SetTryError(d)
+                self.mem.SetTryError(e.ToDict())
 
             self.mem.SetTryStatus(status)
             return 0
@@ -130,12 +127,9 @@ class Try(vm._Builtin):
             status = e.ExitStatus()
         except error.ErrExit as e:
             status = e.ExitStatus()
-        except error.UserError as e:
+        except error.Structured as e:
             status = e.ExitStatus()
-
-            d = value.Dict({'status': value.Int(status), 'message':
-                            value.Str(e.msg)})
-            self.mem.SetTryError(d)
+            self.mem.SetTryError(e.ToDict())
 
         # special variable
         self.mem.SetTryStatus(status)
@@ -171,7 +165,7 @@ class Error(vm._Builtin):
             raise error.Usage('status must be a non-zero integer',
                               cmd_val.arg_locs[0])
 
-        raise error.UserError(status, message, cmd_val.arg_locs[0])
+        raise error.Structured(status, message, cmd_val.arg_locs[0])
 
 
 class BoolStatus(vm._Builtin):

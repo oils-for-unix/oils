@@ -2,9 +2,9 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
-from _devbuild.gen.value_asdl import (value_t, value_str)
+from _devbuild.gen.value_asdl import (value, value_t, value_str)
 
-from typing import NoReturn
+from typing import Dict, NoReturn
 
 
 def _ValType(val):
@@ -152,12 +152,30 @@ class Expr(FatalRuntime):
         FatalRuntime.__init__(self, 3, msg, location)
 
 
-class UserError(FatalRuntime):
-    """An exception created by users with the `error` builtin."""
+class Structured(FatalRuntime):
+    """An error that can be exposed via the _error Dict.
 
-    def __init__(self, status, msg, location):
-        # type: (int, str, loc_t) -> None
+    Including:
+    - Errors raised by the 'error' builtin
+    - J8 encode and decode errors.
+    """
+
+    def __init__(self, status, msg, location, properties=None):
+        # type: (int, str, loc_t, Dict[str, value_t]) -> None
         FatalRuntime.__init__(self, status, msg, location)
+        self.properties = properties
+
+    def ToDict(self):
+        # type: () -> value.Dict
+
+        if self.properties is None:
+            self.properties = {}
+
+        # Override status and message.
+        self.properties['status'] = value.Int(self.ExitStatus())
+        self.properties['message'] = value.Str(self.msg)
+
+        return value.Dict(self.properties)
 
 
 class AssertionErr(Expr):

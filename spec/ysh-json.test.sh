@@ -405,6 +405,11 @@ try {
 echo status=$_status
 echo "decode error $[_error.message]" | egrep -o '.*Expected.*RBracket'
 
+try {
+  var obj = fromJson('[+]')
+}
+echo "positions $[_error.start_pos] - $[_error.end_pos]"
+
 # This makes the interpreter fail with a message
 var obj = fromJson(message)
 
@@ -414,5 +419,6 @@ status=4
 decode error Expected Id.J8_RBracket
 status=4
 decode error Expected Id.J8_RBracket
+positions 1 - 2
 ## END
 

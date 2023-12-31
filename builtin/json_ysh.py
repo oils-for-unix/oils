@@ -90,9 +90,8 @@ class Json(vm._Builtin):
                 else:
                     self.j8print.PrintJsonMessage(val, buf, indent)
             except error.Encode as e:
-                self.errfmt.PrintMessage('%s write: %s' % (self.name,
-                                                           e.Message()),
-                                         action_loc)
+                self.errfmt.PrintMessage(
+                    '%s write: %s' % (self.name, e.Message()), action_loc)
                 return 1
 
             self.stdout_.write(buf.getvalue())

@@ -422,11 +422,8 @@ class ToJ8(vm._Callable):
             else:
                 self.j8print.PrintJsonMessage(val, buf, -1)
         except error.Encode as e:
-            # TODO: This isn't a UserError, it's more like a structured error
-            # or DictError.
-            #
             # status code 4 is special, for encode/decode errors.
-            raise error.UserError(4, e.Message(), rd.LeftParenToken())
+            raise error.Structured(4, e.Message(), rd.LeftParenToken())
 
         return value.Str(buf.getvalue())
 
@@ -452,8 +449,17 @@ class FromJ8(vm._Callable):
                 else:
                     val = p.ParseJson()
             except error.Decode as e:
+                # Right now I'm not exposing the original string, because that
+                # could lead to a memory leak in the _error Dict.
+                # The message quotes part of the string, and we could improve
+                # that.  We could have a substring with context.
+                props = {
+                    'start_pos': value.Int(e.start_pos),
+                    'end_pos': value.Int(e.end_pos),
+                }  # type: Dict[str, value_t]
                 # status code 4 is special, for encode/decode errors.
-                raise error.UserError(4, e.Message(), rd.LeftParenToken())
+                raise error.Structured(4, e.Message(), rd.LeftParenToken(),
+                                       props)
         else:
             val = value.Null
 

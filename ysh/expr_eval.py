@@ -910,7 +910,8 @@ class ExprEvaluator(object):
                     return obj.d[index.s]
                 except KeyError:
                     # TODO: expr.Subscript has no error location
-                    raise error.Expr('dict entry not found', loc.Missing)
+                    raise error.Expr('Dict entry %r not found' % index.s,
+                                     loc.Missing)
 
         raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
                             loc.Missing)
@@ -969,7 +970,8 @@ class ExprEvaluator(object):
                         try:
                             result = o.d[name]
                         except KeyError:
-                            raise error.Expr('dict entry not found', node.op)
+                            raise error.Expr('Dict entry %r not found' % name,
+                                             node.op)
 
                     else:
                         raise error.TypeErr(o, 'Dot operator expected Dict',
