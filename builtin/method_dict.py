@@ -41,6 +41,5 @@ class Values(vm._Callable):
         dictionary = rd.PosDict()
         rd.Done()
 
-        keys = [k for k in dictionary.values()]  # type: List[value_t]
-        return value.List(keys)
-
+        values = dictionary.values()  # type: List[value_t]
+        return value.List(values)
