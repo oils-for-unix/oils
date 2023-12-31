@@ -101,20 +101,29 @@ As with slices, the last number isn't included.  Idiom to iterate from 1 to n:
 
 ## Operators
 
-### concat
+<h3 id="concat">concat <code>++</code></h3>
 
-    var s = 's'
-    var concat1 = s ++ '_suffix'
-    var concat2 = "${s}_suffix"  # similar
+The concatenation operator works on strings:
 
-    var c = :| one two |
-    var concat3 = c ++ :| three 4 |
-    var concat4 = :| @c three 4 |
+    var s = 'hello'
+    var t = s ++ ' world'
+    = t
+    (Str)   "hello world"
 
-    var mydict = {a: 1, b: 2}
-    var otherdict = {a: 10, c: 20}
-    var concat5 = mydict ++ otherdict
+and lists:
 
+    var L = ['one', 'two']
+    var M = L ++ ['three', '4']
+    = M
+    (List)   ["one", "two", "three", "4"]
+
+String interpolation can be nicer than `++`:
+
+    var t2 = "${s} world"  # same as t
+
+Likewise, splicing lists can be nicer:
+
+    var M2 = :| @L three 4 |  # same as M
 
 ### ysh-compare
 
