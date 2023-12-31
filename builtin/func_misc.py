@@ -416,10 +416,17 @@ class ToJ8(vm._Callable):
         rd.Done()
 
         buf = mylib.BufWriter()
-        if self.is_j8:
-            self.j8print.PrintMessage(val, buf, -1)
-        else:
-            self.j8print.PrintJsonMessage(val, buf, -1)
+        try:
+            if self.is_j8:
+                self.j8print.PrintMessage(val, buf, -1)
+            else:
+                self.j8print.PrintJsonMessage(val, buf, -1)
+        except error.Encode as e:
+            # TODO: This isn't a UserError, it's more like a structured error
+            # or DictError.
+            #
+            # status code 4 is special, for encode/decode errors.
+            raise error.UserError(4, e.Message(), rd.LeftParenToken())
 
         return value.Str(buf.getvalue())
 
@@ -439,10 +446,14 @@ class FromJ8(vm._Callable):
         if mylib.PYTHON:  # TODO: translate j8.Parser
             p = j8.Parser(s)
 
-            if self.is_j8:
-                val = p.ParseJ8()
-            else:
-                val = p.ParseJson()
+            try:
+                if self.is_j8:
+                    val = p.ParseJ8()
+                else:
+                    val = p.ParseJson()
+            except error.Decode as e:
+                # status code 4 is special, for encode/decode errors.
+                raise error.UserError(4, e.Message(), rd.LeftParenToken())
         else:
             val = value.Null
 

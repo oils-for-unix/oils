@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -360,13 +360,16 @@ pp line (fromJ8(message))
 ## END
 
 #### User can handle errors - toJson() toJ8()
+shopt -s ysh:upgrade
 
 var obj = []
 call obj->append(obj)
 
-try echo $[toJson(obj)]
+try {
+  echo $[toJson(obj)]
+}
 echo status=$_status
-echo "encode error $[_error.message]"
+echo "encode error $[_error.message]" | sed 's/0x[a-f0-9]\+/(object id)/'
 
 try {  # use different style
   echo $[toJ8( /d+/ )]
@@ -379,13 +382,14 @@ echo $[toJson(obj)]
 
 ## status: 4
 ## STDOUT:
-status=4  # special encode/decode error?
-encode error CYCLE
 status=4
-encode error TYPE
+encode error Can't encode List (object id) in object cycle
+status=4
+encode error Can't serialize object of type Eggex
 ## END
 
 #### User can handle errors - fromJson() fromJ8()
+shopt -s ysh:upgrade
 
 var message ='[42,1.5,null,true,"hi"'
 
@@ -393,22 +397,22 @@ try {
   var obj = fromJson(message)
 }
 echo status=$_status
-echo decode error $[_error.message]
+echo "decode error $[_error.message]" | egrep -o '.*Expected.*RBracket'
 
 try {
   var obj = fromJ8(message)
 }
 echo status=$_status
-echo decode error $[_error.message]
+echo "decode error $[_error.message]" | egrep -o '.*Expected.*RBracket'
 
 # This makes the interpreter fail with a message
 var obj = fromJson(message)
 
 ## status: 4
 ## STDOUT:
-status=4  # special encode/decode error?
-decode error CYCLE
 status=4
-decode error TYPE
+decode error Expected Id.J8_RBracket
+status=4
+decode error Expected Id.J8_RBracket
 ## END
 

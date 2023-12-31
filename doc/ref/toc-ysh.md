@@ -115,7 +115,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 ```chapter-links-builtin-cmd
   [Memory]        append                 Add elements to end of array
                   pp                     asdl   cell   X gc-stats   line   proc
-  [Handle Errors] try                    Run with errexit and set _status
+  [Handle Errors] try                    Run with errexit, set _status _error
                   boolstatus             Enforce 0 or 1 exit status
                   error                  error 'failed' (status=2)
   [Shell State]   ysh-cd   ysh-shopt     compatible, and takes a block
@@ -219,7 +219,8 @@ X [External Lang] BEGIN   END   when (awk)
 ```chapter-links-special-var
   [YSH Vars]      ARGV   X ENV  X _ESCAPE
                   _this_dir
-  [YSH Status]    _status   _pipeline_status   _process_sub_status
+  [YSH Status]    _status   _error
+                  _pipeline_status   _process_sub_status
   [YSH Tracing]   SHX_indent   SHX_punct   SHX_pid_str
   [YSH read]      _reply
   [History]       YSH_HISTFILE

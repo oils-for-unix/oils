@@ -75,6 +75,8 @@ Set the `_status` variable to the exit status of the block, and returns 0.
       (*) echo "error $_status" ;;
     esac
 
+It may also set the `_error` register.
+
 ### boolstatus
 
 Runs a command and requires the exit code to be 0 or 1.
@@ -88,7 +90,7 @@ Runs a command and requires the exit code to be 0 or 1.
 ### error
 
 The `error` builtin raises a fatal error.  In YSH, it's customary to use it
-instead of `return 1`:
+instead of `return 1`, since it provides more information:
 
     proc p {
       if ! test -d /tmp {
@@ -98,8 +100,10 @@ instead of `return 1`:
 
 The error can be caught with `try`:
 
-    try p
-    if (_status !== 0 {
+    try {
+      p
+    }
+    if (_status !== 0) {
       echo 'failed'
     }
 
