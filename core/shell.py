@@ -744,7 +744,7 @@ def Main(
         'get': None,  # doesn't raise an error
         'erase': None,  # ensures it doesn't exist
         'keys': method_dict.Keys(),
-        'values': None,  # TODO
+        'values': method_dict.Values(),
 
         # I think items() isn't as necessary because dicts are ordered?
         # YSH code shouldn't use the List of Lists representation.

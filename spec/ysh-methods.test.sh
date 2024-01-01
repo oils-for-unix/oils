@@ -71,6 +71,17 @@ pp line (en2fr => keys())
 (List)   ["hello","friend","cat"]
 ## END
 
+#### Dict => values()
+var en2fr = {}
+setvar en2fr["hello"] = "bonjour"
+setvar en2fr["friend"] = "ami"
+setvar en2fr["cat"] = "chat"
+pp line (en2fr => values())
+## status: 0
+## STDOUT:
+(List)   ["bonjour","ami","chat"]
+## END
+
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
 pp line (check("a"))

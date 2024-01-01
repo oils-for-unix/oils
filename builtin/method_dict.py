@@ -27,3 +27,19 @@ class Keys(vm._Callable):
 
         keys = [value.Str(k) for k in dictionary.keys()]  # type: List[value_t]
         return value.List(keys)
+
+
+class Values(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        dictionary = rd.PosDict()
+        rd.Done()
+
+        values = dictionary.values()  # type: List[value_t]
+        return value.List(values)
