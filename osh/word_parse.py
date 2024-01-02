@@ -725,7 +725,6 @@ class WordParser(WordEmitter):
 
         #log('AFT self.cur_token %s', self.cur_token)
 
-        # TODO: Change this to Left_USingleQuote, BSingleQuote
         sq_part.left.id = left_id
 
         # Advance and validate
@@ -773,14 +772,15 @@ class WordParser(WordEmitter):
                 new_id = Id.Left_TSingleQuote
 
             sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
-            # read empty '' or r'' or $''
             if triple_out and len(sq_part.tokens) == 0:
+                # Read empty '' or r'' or $''.  Now test if there's a triple
+                # quote.
                 if self.lexer.ByteLookAhead() == "'":
                     self._SetNext(lex_mode_e.ShCommand)
                     self._GetToken()
 
                     # HACK: magically transform the third ' in r''' to
-                    # Id.Left_TSingleQuote, so that ''' is the terminator
+                    # Id.Left_RTSingleQuote, so that ''' is the terminator
                     left_sq_token = self.cur_token
                     left_sq_token.id = new_id
                     triple_out.b = True  # let caller know we got it
@@ -1916,11 +1916,12 @@ class WordParser(WordEmitter):
 
                         # TODO: This makes triple quoted strings fail
 
-                        #self._SetNext(lex_mode_e.ShCommand)
-                        #self._GetToken()
-                        #assert self.token_type == Id.Left_SingleQuote, self.token_type
+                        if 0:
+                            #self._SetNext(lex_mode_e.ShCommand)
+                            self._GetToken()
+                            #assert self.token_type == Id.Left_SingleQuote, self.token_type
 
-                        #return self._ReadYshSingleQuoted(Id.Left_RSingleQuote)
+                            return self._ReadYshSingleQuoted(Id.Left_RSingleQuote)
 
                     # When shopt -s parse_j8_string
                     #     echo u'\u{3bc}' b'\yff' works

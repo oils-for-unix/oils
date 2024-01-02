@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
@@ -67,12 +67,39 @@ hello
 write --end '' -- u'\u{3bc}' | od -A n -t x1
 write --end '' -- b'\yff' | od -A n -t x1
 
-# Should be illegal?
-#echo u'hello \u03bc'
+# TODO: make this be illegal
+# echo u'hello \u03bc'
 
 ## STDOUT:
  ce bc
  ff
+## END
+
+#### J8-style multi-line strings u''' b''' in command mode
+
+write --end '' -- u'''
+--
+\u{61}
+--
+'''
+write --end '' -- b'''
+--
+\y61
+--
+'''
+
+# Should be illegal?
+#echo u'hello \u03bc'
+
+## STDOUT:
+
+--
+a
+--
+
+--
+a
+--
 ## END
 
 #### Double Quoted

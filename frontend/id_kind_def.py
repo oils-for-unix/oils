@@ -443,6 +443,9 @@ def AddKinds(spec):
             'TDoubleQuote',  # """ """
             'TSingleQuote',  # ''' '''
             'RTSingleQuote',  # r''' '''
+            'UTSingleQuote',  # u''' '''
+            'BTSingleQuote',  # b''' '''
+
             'DollarTSingleQuote',  # $''' '''
             'Backtick',  # `
             'DollarParen',  # $(
