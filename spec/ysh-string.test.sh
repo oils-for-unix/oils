@@ -44,10 +44,34 @@ echo r'hello \'
 echo u'mu \u{3bc}'
 echo b'byte \yff'
 
+echo --
+
+echo r'''
+raw multi
+'''
+
+echo u'''
+u multi
+'''
+
+echo b'''
+b multi
+'''
+
 ## STDOUT:
 rhello \
 umu \u{3bc}
 bbyte \yff
+--
+r
+raw multi
+
+u
+u multi
+
+b
+b multi
+
 ## END
 
 #### J8-style u'' and b'' strings in expression mode

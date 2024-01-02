@@ -1860,9 +1860,12 @@ class WordParser(WordEmitter):
             self._SetNext(lex_mode)
             return None
 
-        elif self.token_kind in (Kind.VSub, Kind.Lit, Kind.History, Kind.Left,
-                                 Kind.KW, Kind.ControlFlow, Kind.BoolUnary,
-                                 Kind.BoolBinary, Kind.ExtGlob):
+        else:
+            assert self.token_kind in (Kind.VSub, Kind.Lit, Kind.History,
+                                       Kind.Left, Kind.KW, Kind.ControlFlow,
+                                       Kind.BoolUnary, Kind.BoolBinary,
+                                       Kind.ExtGlob), 'Unhandled token kind'
+
             if (word_mode == lex_mode_e.ShCommandBrack and
                     self.parse_opts.parse_bracket() and
                     self.token_type == Id.Lit_LBracket):
@@ -1940,10 +1943,6 @@ class WordParser(WordEmitter):
                         return self._ReadYshSingleQuoted(left_id)
 
                 return self._ReadCompoundWord(lex_mode)
-
-        else:
-            raise AssertionError('Unhandled: %s (%s)' %
-                                 (self.cur_token, self.token_kind))
 
     def ParseVarRef(self):
         # type: () -> BracedVarSub
