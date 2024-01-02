@@ -9,10 +9,10 @@ word_parse.py - Parse the shell word language.
 
 Hairy example:
 
-hi$((1 + 2))"$(echo hi)"${var:-__"$(echo default)"__}
+    hi$((1 + 2))"$(echo hi)"${var:-__"$(echo default)"__}
 
 Substitutions can be nested, but which inner subs are allowed depends on the
-outer sub.
+outer sub.  Notes:
 
 lex_mode_e.ShCommand (_ReadUnquotedLeftParts)
   All subs and quotes are allowed:
@@ -29,7 +29,7 @@ lex_mode_e.Arith
   need those for associative array indexing.
 
 lex_mode_e.VSub_ArgUnquoted
-  Like UNQUOTED, everything is allowed (even process substitutions), but we
+  Like ShCommand, everything is allowed (even process substitutions), but we
   stop at }, and space is SIGNIFICANT.
   
   Example: ${a:-  b   }
@@ -41,7 +41,8 @@ lex_mode_e.VSub_ArgDQ
   In contrast to DQ, VS_ARG_DQ accepts nested "" and $'' and $"", e.g.
   "${x:-"default"}".
 
-  In contrast, VS_ARG_UNQ respects single quotes and process substitution.
+  In contrast, VSub_ArgUnquoted respects single quotes and process
+  substitution.
 
   It's weird that double quotes are allowed.  Space is also significant here,
   e.g. "${x:-a  "b"}".
@@ -724,9 +725,8 @@ class WordParser(WordEmitter):
         and set its value to True if we got one.
         """
         if self.token_type in (Id.Left_DoubleQuote, Id.Left_DollarDoubleQuote):
-            # NOTE: $"" is a synonym for "" for now.
-            # It would make sense if it added \n \0 \x00 \u{123} etc.  But that's not
-            # what bash does!
+            # Note: $"" is a synonym for "".  It might make sense if it added
+            # \n \0 \x00 \u{123} etc.  But that's not what bash does!
             dq_part = self._ReadDoubleQuoted(self.cur_token)
             if triple_out and len(dq_part.parts) == 0:  # read empty word ""
                 if self.lexer.ByteLookAhead() == '"':
@@ -752,8 +752,8 @@ class WordParser(WordEmitter):
                 new_id = Id.Left_TSingleQuote
 
             sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
-            if triple_out and len(
-                    sq_part.tokens) == 0:  # read empty '' or r'' or $''
+            # read empty '' or r'' or $''
+            if triple_out and len(sq_part.tokens) == 0:
                 if self.lexer.ByteLookAhead() == "'":
                     self._SetNext(lex_mode_e.ShCommand)
                     self._GetToken()
@@ -1890,13 +1890,19 @@ class WordParser(WordEmitter):
                 return None  # tell ReadWord() to try again after comment
 
             else:
-                # parse_raw_string: Is there an r'' at the beginning of a word?
-                if (self.parse_opts.parse_raw_string() and
-                        self.token_type == Id.Lit_Chars and
-                        self.cur_token.tval == 'r'):
-                    if (self.lexer.LookAheadOne(
-                            lex_mode_e.ShCommand) == Id.Left_SingleQuote):
-                        self._SetNext(lex_mode_e.ShCommand)
+                if self.token_type == Id.Lit_Chars:
+                    # parse_raw_string: Skip the r'' at the beginning of a word
+                    if (self.parse_opts.parse_raw_string() and
+                            self.cur_token.tval == 'r'):
+                        if (self.lexer.LookAheadOne(
+                                lex_mode_e.ShCommand) == Id.Left_SingleQuote):
+                            self._SetNext(lex_mode_e.ShCommand)  # skip
+                    elif (self.parse_opts.parse_j8_string() and
+                          self.cur_token.tval in ('u', 'b')):
+                        if (self.lexer.LookAheadOne(
+                                lex_mode_e.ShCommand) == Id.Left_SingleQuote):
+                            #log('SET %s', self.cur_token)
+                            self._SetNext(lex_mode_e.ShCommand)  # skip
 
                 return self._ReadCompoundWord(lex_mode)
 

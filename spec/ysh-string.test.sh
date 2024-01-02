@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 4
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
@@ -35,6 +35,27 @@ fi
 foo
 bar
 equal
+## END
+
+#### J8-style u'' and b'' strings in expression mode
+
+var x = u'hello \u{3bc}'
+var y = b'byte \yff'
+
+write -- $x $y
+
+## STDOUT:
+hello
+## END
+
+#### J8-style u'' and b'' strings in command mode
+
+echo u'hello \u{3bc}'
+echo b'byte \yff'
+
+## STDOUT:
+hello mu
+byte
 ## END
 
 #### Double Quoted

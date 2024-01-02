@@ -160,6 +160,7 @@ _BASIC_PARSE_OPTIONS = [
     'parse_equals',
     'parse_paren',  # if (x > 0) ...
     'parse_raw_string',  # echo r'\'
+    'parse_j8_string',  # echo u'hi \u{3bc}' b'byte \yff'
     'parse_triple_quote',  # for ''' and """
 ]
 
