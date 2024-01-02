@@ -619,3 +619,42 @@ sq
 char class
 ## END
 
+#### Str=>replace(Str, Str)
+shopt --set ysh:all
+
+var mystr = 'abca'
+write $[mystr=>replace('a', 'A')]  # Two matches
+write $[mystr=>replace('b', 'B')]  # One match
+write $[mystr=>replace('x', 'y')]  # No matches
+
+write $[mystr=>replace('abc', '')]  # Empty substitution
+write $[mystr=>replace('', 'new')]  # Empty substring
+## STDOUT:
+AbcA
+aBca
+abca
+a
+newanewbnewcnewanew
+## END
+
+#### Str=>replace(Eggex, Str)
+shopt --set ysh:all
+
+var mystr = 'mangled----kebab--case'
+write $[mystr=>replace(/ '-'+ /, '-')]
+## STDOUT:
+mangled-kebab-case
+## END
+
+#### Str=>replace(Eggex, Lazy)
+shopt --set ysh:all
+
+var mystr = 'name: Bob'
+write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^["Hello $1"])]
+
+var another_var = 'surprise!'
+write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^["Hello $1 ($another_var)"])]
+## STDOUT:
+Hello Bob
+Hello Bob surprise!
+## END
