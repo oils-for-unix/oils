@@ -729,11 +729,15 @@ class WordParser(WordEmitter):
         sq_part = self._ReadSingleQuoted(self.cur_token, lex_mode_e.J8_Str)
         #log('AFT self.cur_token %s', self.cur_token)
 
-        # Pretend it's single-quoted
+        # TODO: Change this to Left_USingleQuote, BSingleQuote
         sq_part.left.id = Id.Left_DollarSingleQuote
 
-        # This separates us from the next word
+        # Advance and validate
         self._SetNext(lex_mode_e.ShCommand)
+
+        self._GetToken()
+        if self.token_kind not in KINDS_THAT_END_WORDS:
+            p_die('Unexpected token after YSH single-quoted string', self.cur_token)
 
         return CompoundWord([sq_part])
 
@@ -1607,7 +1611,7 @@ class WordParser(WordEmitter):
             self._GetToken()
             # EOF, whitespace, newline, Right_Subshell
             if self.token_kind not in KINDS_THAT_END_WORDS:
-                p_die('Unexpected token after expr splice', self.cur_token)
+                p_die('Unexpected token after Expr splice', self.cur_token)
             done = True
 
         elif (is_first and self.parse_opts.parse_at() and
@@ -1814,15 +1818,6 @@ class WordParser(WordEmitter):
     def _ReadWord(self, word_mode):
         # type: (lex_mode_t) -> Optional[word_t]
         """Helper function for ReadWord()."""
-        """
-        with switch(word_mode) as case:
-            if case(word_mode_e.ShCommand, word_mode_e.Op_LBracket):
-                lex_mode = lex_mode_e.ShCommand
-            elif case(word_mode_e.DBracket):
-                lex_mode = lex_mode_e.DBracket
-            elif case(word_mode_e.BashRegex):
-                lex_mode = lex_mode_e.BashRegex
-        """
 
         # Change the pseudo lexer mode to a real lexer mode
         if word_mode == lex_mode_e.ShCommandBrack:
