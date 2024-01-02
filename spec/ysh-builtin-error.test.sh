@@ -64,6 +64,30 @@ status=3
 message=divide by zero: 5 / 0
 ## END
 
+#### error builtin adds named args as properties on _error Dict
+
+try {
+  error 'bad' (status=99)
+}
+pp line (_error)
+
+# Note: myData co
+try {
+  error 'bad' (status=99, myData={spam:'eggs'})
+}
+pp line (_error)
+
+try {
+  error 'bad' (status=99, message='cannot override')
+}
+pp line (_error)
+
+## STDOUT:
+(Dict)   {"status":99,"message":"bad"}
+(Dict)   {"myData":{"spam":"eggs"},"status":99,"message":"bad"}
+(Dict)   {"message":"bad","status":99}
+## END
+
 #### Errors within multiple functions
 func inverse(x) {
   if (x === 0) {
@@ -104,18 +128,6 @@ try {
 #### Error defaults status to 10
 error 'some error'
 ## status: 10
-## STDOUT:
-## END
-
-#### Error will object to an incorrect named arg
-error 'error' (status_typo=42)
-## status: 3
-## STDOUT:
-## END
-
-#### Error will object to an extraneous named arg
-error 'error' (status=42, other=100)
-## status: 3
 ## STDOUT:
 ## END
 

@@ -172,6 +172,10 @@ class Structured(FatalRuntime):
             self.properties = {}
 
         # Override status and message.
+        # The _error Dict order is a bit quirky -- the optional properties come
+        # before these required fields.  But we always want the required fields
+        # to take precedence, so it makes sense.
+
         self.properties['status'] = value.Int(self.ExitStatus())
         self.properties['message'] = value.Str(self.msg)
 

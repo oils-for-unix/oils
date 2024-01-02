@@ -158,13 +158,17 @@ class Error(vm._Builtin):
         # room" for others.
         # The user is of course free to choose status 1.
         status = rd.NamedInt('status', 10)
+
+        # attach rest of named args to _error Dict
+        properties = rd.RestNamed()
         rd.Done()
 
         if status == 0:
             raise error.Usage('status must be a non-zero integer',
                               cmd_val.arg_locs[0])
 
-        raise error.Structured(status, message, cmd_val.arg_locs[0])
+        raise error.Structured(status, message, cmd_val.arg_locs[0],
+                               properties)
 
 
 class BoolStatus(vm._Builtin):

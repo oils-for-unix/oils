@@ -89,30 +89,53 @@ Runs a command and requires the exit code to be 0 or 1.
 
 ### error
 
-The `error` builtin interrupts the program, raising an error with a descriptive
-string and integer status code.
+The `error` builtin interrupts the shell program.  
 
-In YSH, it's customary to use it instead of `return 1`, since it provides more
-information.
+    error 'Missing /tmp'  # program fails with status 10
+
+Override the default status of `10` with a named argument:
+
+    error 'Missing /tmp' (status=99) 
+
+In YSH, it's customary to use `error` instead of `return 1`, since it provides
+more information:
 
     proc p {
       if ! test -d /tmp {
-        error 'Missing /tmp'
+        error 'Missing /tmp'  # more descriptive than return
       }
+      echo hi
     }
 
-The error can be caught with `try`:
+Handle the error with the `try` builtin:
 
     try {
       p
     }
     if (_status !== 0) {
-      echo 'failed'
+      echo $[_error.message]  # => Missing /tmp
     }
 
-You can override the default status of 10 by passing a named arg:
+The integer `_status` is always set, and the Dict `_error` is set for all
+"structured" errors, which includes errors raised by the `try` builtin.
 
-   error 'Missing /tmp' (status=9)
+Special properties of `_error`:
+
+- `_error.message` - the positional string arg
+- `_error.status` - the named `status` arg, or the default 10
+
+You can attach other, arbitrary properties to the error:
+
+    error 'Oops' (path='foo.json')
+
+They are attached to `_error`:
+
+    try {
+      error 'Oops' (path='foo.json')
+    }
+    if (_status !== 0) {
+      echo $[_error.path]  # => foo.json
+    }
 
 ## Shell State
 
