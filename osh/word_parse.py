@@ -619,12 +619,12 @@ class WordParser(WordEmitter):
         node = SingleQuoted(left_token, tokens, right_quote)
         return node
 
-    def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_oil_expr):
+    def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_ysh_expr):
         # type: (lex_mode_t, Token, List[Token], bool) -> Token
         """Used by expr_parse.py."""
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
-        no_backslashes = is_oil_expr and left_token.id == Id.Left_SingleQuote
+        no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
 
         expected_end_tokens = 3 if left_token.id in (
             Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
@@ -645,7 +645,7 @@ class WordParser(WordEmitter):
                         r"Strings with backslashes should look like r'\n' or $'\n'",
                         tok)
 
-                if is_oil_expr:
+                if is_ysh_expr:
                     if self.token_type == Id.Char_Octal3:
                         p_die(
                             r"Use \xhh or \u{...} instead of octal escapes in YSH strings",
@@ -662,7 +662,7 @@ class WordParser(WordEmitter):
             elif self.token_kind == Kind.Unknown:
                 tok = self.cur_token
                 # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
-                if is_oil_expr or not self.parse_opts.parse_backslash():
+                if is_ysh_expr or not self.parse_opts.parse_backslash():
                     p_die("Invalid char escape in C-style string literal", tok)
 
                 tokens.append(tok)
@@ -715,17 +715,44 @@ class WordParser(WordEmitter):
 
     def _ReadYshSingleQuoted(self, left_id):
         # type: (Id_t) -> CompoundWord
-        """
-        left_letter: u or b
+        """Read YSH style strings
+
+        r''        u''        b''
+        r''' '''   u''' '''   b''' '''
         """
         #log('BEF self.cur_token %s', self.cur_token)
-        lexer_mode = (lex_mode_e.SQ_Raw if left_id == Id.Left_RSingleQuote else
-                      lex_mode_e.J8_Str)
+        if left_id == Id.Left_RSingleQuote:
+            lexer_mode = lex_mode_e.SQ_Raw 
+            triple_left_id = Id.Left_RTSingleQuote
+        elif left_id == Id.Left_USingleQuote:
+            lexer_mode = lex_mode_e.J8_Str
+            triple_left_id = Id.Left_UTSingleQuote
+        elif left_id == Id.Left_BSingleQuote:
+            lexer_mode = lex_mode_e.J8_Str
+            triple_left_id = Id.Left_BTSingleQuote
+        else:
+            raise AssertionError(left_id)
+
         sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
 
-        #log('AFT self.cur_token %s', self.cur_token)
+        if (len(sq_part.tokens) == 0 and self.lexer.ByteLookAhead() == "'"):
+            #log('yes')
 
-        sq_part.left.id = left_id
+            self._SetNext(lex_mode_e.ShCommand)
+            self._GetToken()
+
+            assert self.token_type == Id.Left_SingleQuote
+            # HACK: magically transform the third ' in u''' to
+            # Id.Left_UTSingleQuote, so that ''' is the terminator
+            left_dq_token = self.cur_token
+            left_dq_token.id = triple_left_id
+            #triple_out.b = True  # let caller know we got it
+            sq_part = self._ReadSingleQuoted(left_dq_token, lexer_mode)
+
+            # TODO: read ending quotes
+        else:
+            #log('AFT self.cur_token %s', self.cur_token)
+            sq_part.left.id = left_id
 
         # Advance and validate
         self._SetNext(lex_mode_e.ShCommand)
@@ -748,16 +775,18 @@ class WordParser(WordEmitter):
             # Note: $"" is a synonym for "".  It might make sense if it added
             # \n \0 \x00 \u{123} etc.  But that's not what bash does!
             dq_part = self._ReadDoubleQuoted(self.cur_token)
-            if triple_out and len(dq_part.parts) == 0:  # read empty word ""
-                if self.lexer.ByteLookAhead() == '"':
-                    self._SetNext(lex_mode_e.ShCommand)
-                    self._GetToken()
-                    # HACK: magically transform the third " in """ to
-                    # Id.Left_TDoubleQuote, so that """ is the terminator
-                    left_dq_token = self.cur_token
-                    left_dq_token.id = Id.Left_TDoubleQuote
-                    triple_out.b = True  # let caller know we got it
-                    return self._ReadDoubleQuoted(left_dq_token)
+            # Got empty word "" and there's a " after
+            if (triple_out and len(dq_part.parts) == 0 and
+                    self.lexer.ByteLookAhead() == '"'):
+
+                self._SetNext(lex_mode_e.ShCommand)
+                self._GetToken()
+                # HACK: magically transform the third " in """ to
+                # Id.Left_TDoubleQuote, so that """ is the terminator
+                left_dq_token = self.cur_token
+                left_dq_token.id = Id.Left_TDoubleQuote
+                triple_out.b = True  # let caller know we got it
+                return self._ReadDoubleQuoted(left_dq_token)
 
             return dq_part
 
@@ -772,19 +801,19 @@ class WordParser(WordEmitter):
                 new_id = Id.Left_TSingleQuote
 
             sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
-            if triple_out and len(sq_part.tokens) == 0:
-                # Read empty '' or r'' or $''.  Now test if there's a triple
-                # quote.
-                if self.lexer.ByteLookAhead() == "'":
-                    self._SetNext(lex_mode_e.ShCommand)
-                    self._GetToken()
+            # Got empty '' or r'' or $'' and there's a ' after
+            if (triple_out and len(sq_part.tokens) == 0 and
+                    self.lexer.ByteLookAhead() == "'"):
 
-                    # HACK: magically transform the third ' in r''' to
-                    # Id.Left_RTSingleQuote, so that ''' is the terminator
-                    left_sq_token = self.cur_token
-                    left_sq_token.id = new_id
-                    triple_out.b = True  # let caller know we got it
-                    return self._ReadSingleQuoted(left_sq_token, lexer_mode)
+                self._SetNext(lex_mode_e.ShCommand)
+                self._GetToken()
+
+                # HACK: magically transform the third ' in r''' to
+                # Id.Left_RTSingleQuote, so that ''' is the terminator
+                left_sq_token = self.cur_token
+                left_sq_token.id = new_id
+                triple_out.b = True  # let caller know we got it
+                return self._ReadSingleQuoted(left_sq_token, lexer_mode)
 
             return sq_part
 
@@ -853,13 +882,13 @@ class WordParser(WordEmitter):
 
         return word_part.ExtGlob(left_token, arms, right_token)
 
-    def _ReadLikeDQ(self, left_token, is_oil_expr, out_parts):
+    def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
         # type: (Optional[Token], bool, List[word_part_t]) -> None
         """
         Args:
           left_token: A token if we are reading a double quoted part, or None if
             we're reading a here doc.
-          is_oil_expr: Whether to disallow backticks and invalid char escapes
+          is_ysh_expr: Whether to disallow backticks and invalid char escapes
           out_parts: list of word_part to append to
         """
         if left_token:
@@ -884,13 +913,13 @@ class WordParser(WordEmitter):
                         # YSH.
                         # Slight hole: We don't catch 'x = ${undef:-"\z"} because of the
                         # recursion (unless parse_backslash)
-                        if (is_oil_expr or
+                        if (is_ysh_expr or
                                 not self.parse_opts.parse_backslash()):
                             p_die(
                                 "Invalid char escape in double quoted string",
                                 self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
-                        if is_oil_expr or not self.parse_opts.parse_dollar():
+                        if is_ysh_expr or not self.parse_opts.parse_dollar():
                             p_die("Literal $ should be quoted like \$",
                                   self.cur_token)
 
@@ -898,7 +927,7 @@ class WordParser(WordEmitter):
                 out_parts.append(part)
 
             elif self.token_kind == Kind.Left:
-                if self.token_type == Id.Left_Backtick and is_oil_expr:
+                if self.token_type == Id.Left_Backtick and is_ysh_expr:
                     p_die("Invalid backtick: use $(cmd) or \\` in YSH strings",
                           self.cur_token)
 
@@ -1924,7 +1953,8 @@ class WordParser(WordEmitter):
                             self._GetToken()
                             #assert self.token_type == Id.Left_SingleQuote, self.token_type
 
-                            return self._ReadYshSingleQuoted(Id.Left_RSingleQuote)
+                            return self._ReadYshSingleQuoted(
+                                Id.Left_RSingleQuote)
 
                     # When shopt -s parse_j8_string
                     #     echo u'\u{3bc}' b'\yff' works

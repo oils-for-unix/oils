@@ -806,7 +806,6 @@ YSH_LEFT_UNQUOTED = [
     C("u'", Id.Left_USingleQuote),
     C("b'", Id.Left_BSingleQuote),
     C("$'", Id.Left_DollarSingleQuote),  # TODO: remove
-
     C('"""', Id.Left_TDoubleQuote),
     # In expression mode, we add the r'' and c'' prefixes for '' and $''.
     C("'''", Id.Left_TSingleQuote),
@@ -814,7 +813,6 @@ YSH_LEFT_UNQUOTED = [
     C("u'''", Id.Left_UTSingleQuote),
     C("b'''", Id.Left_BTSingleQuote),
     C("$'''", Id.Left_DollarTSingleQuote),  # TODO: remove from YSH expressions
-
     C('@(', Id.Left_AtParen),  # Split Command Sub
     C('^(', Id.Left_CaretParen),  # Block literals in expression mode
     C('^[', Id.Left_CaretBracket),  # Expr literals
