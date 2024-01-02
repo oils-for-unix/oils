@@ -1319,6 +1319,7 @@ test-eggex-flags() {
 
 test-string-literals() {
   _should-parse "echo r'hi';"
+  #_parse-error "echo r'hi'bad"
 
   _should-parse "echo u'hi'"
   _should-parse "(echo u'hi')"

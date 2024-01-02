@@ -212,7 +212,8 @@ class LexerDecoder(object):
 
         # TODO: Distinguish bewteen "" b"" and u"", and allow different
         # escapes.
-        if tok_id not in (Id.J8_LeftQuote, Id.J8_LeftBQuote, Id.J8_LeftUQuote):
+        if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
+                          Id.Left_BSingleQuote):
             self.pos = end_pos
             return tok_id, end_pos, None
 

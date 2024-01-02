@@ -134,7 +134,8 @@ def EvalSingleQuoted(part):
         s = ''.join(tmp)
 
     elif part.left.id in (Id.Left_DollarSingleQuote,
-                          Id.Left_DollarTSingleQuote):
+                          Id.Left_DollarTSingleQuote,
+                          Id.Left_USingleQuote, Id.Left_BSingleQuote):
         # NOTE: This could be done at compile time
 
         # TODO: Strip leading whitespace for ''' and r'''

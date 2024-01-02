@@ -433,8 +433,11 @@ def AddKinds(spec):
         [
             'DoubleQuote',
             'SingleQuote',  # ''
-            'RSingleQuote',  # r''
             'DollarSingleQuote',  # $'' for \n escapes
+
+            'RSingleQuote',  # r''
+            'USingleQuote',  # u''
+            'BSingleQuote',  # b''
 
             # Multiline versions
             'TDoubleQuote',  # """ """
@@ -707,11 +710,6 @@ def AddKinds(spec):
             'Bool',
             'Int',  # Number
             'Float',  # Number
-
-            # Low level tokens for "" b"" u""
-            'LeftQuote',
-            'LeftBQuote',
-            'LeftUQuote',
 
             # High level tokens for "" b"" u""
             'AnyString',

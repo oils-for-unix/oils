@@ -623,13 +623,6 @@ class WordParser(WordEmitter):
         # type: (lex_mode_t, Token, List[Token], bool) -> Token
         """Used by expr_parse.py."""
 
-        # YSH could also disallow Unicode{4,8} and Octal{3,4}?  And certain OneChar
-        # like \v if we want to be pedantic.  Well that would make porting harder
-        # for no real reason.  It's probably better in a lint tool.
-        #
-        # The backslash issue is a correctness thing.  It allows the language to be
-        # expanded later.
-
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
         no_backslashes = is_oil_expr and left_token.id == Id.Left_SingleQuote
 
@@ -720,24 +713,28 @@ class WordParser(WordEmitter):
 
         raise AssertionError(self.cur_token)
 
-    def _ReadJ8String(self, left_letter):
-        # type: (str) -> CompoundWord
+    def _ReadYshSingleQuoted(self, left_id):
+        # type: (Id_t) -> CompoundWord
         """
         left_letter: u or b
         """
         #log('BEF self.cur_token %s', self.cur_token)
-        sq_part = self._ReadSingleQuoted(self.cur_token, lex_mode_e.J8_Str)
+        lexer_mode = (lex_mode_e.SQ_Raw if left_id == Id.Left_RSingleQuote else
+                      lex_mode_e.J8_Str)
+        sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
+
         #log('AFT self.cur_token %s', self.cur_token)
 
         # TODO: Change this to Left_USingleQuote, BSingleQuote
-        sq_part.left.id = Id.Left_DollarSingleQuote
+        sq_part.left.id = left_id
 
         # Advance and validate
         self._SetNext(lex_mode_e.ShCommand)
 
         self._GetToken()
         if self.token_kind not in KINDS_THAT_END_WORDS:
-            p_die('Unexpected token after YSH single-quoted string', self.cur_token)
+            p_die('Unexpected token after YSH single-quoted string',
+                  self.cur_token)
 
         return CompoundWord([sq_part])
 
@@ -1917,8 +1914,16 @@ class WordParser(WordEmitter):
                         # skip the r, and then 'foo' will be read as normal
                         self._SetNext(lex_mode_e.ShCommand)
 
+                        # TODO: This makes triple quoted strings fail
+
+                        #self._SetNext(lex_mode_e.ShCommand)
+                        #self._GetToken()
+                        #assert self.token_type == Id.Left_SingleQuote, self.token_type
+
+                        #return self._ReadYshSingleQuoted(Id.Left_RSingleQuote)
+
                     # When shopt -s parse_j8_string
-                    #     echo u'\u{3bc}' b'\yff' works 
+                    #     echo u'\u{3bc}' b'\yff' works
                     elif (self.parse_opts.parse_j8_string() and
                           self.cur_token.tval in ('u', 'b')):
 
@@ -1928,7 +1933,10 @@ class WordParser(WordEmitter):
                         assert self.token_type == Id.Left_SingleQuote, self.token_type
 
                         # Read the word in a different lexer mode
-                        return self._ReadJ8String(self.cur_token.tval)
+
+                        left_id = (Id.Left_USingleQuote if self.cur_token.tval
+                                   == 'u' else Id.Left_BSingleQuote)
+                        return self._ReadYshSingleQuoted(left_id)
 
                 return self._ReadCompoundWord(lex_mode)
 
