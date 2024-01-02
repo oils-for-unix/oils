@@ -646,14 +646,14 @@ write $[mystr=>replace(/ '-'+ /, '-')]
 mangled-kebab-case
 ## END
 
-#### Str=>replace(Eggex, Lazy)
+#### Str=>replace(Eggex, Template)
 shopt --set ysh:all
 
 var mystr = 'name: Bob'
-write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^["Hello $1"])]
+write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
 
 var another_var = 'surprise!'
-write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^["Hello $1 ($another_var)"])]
+write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^"Hello $1 ($another_var)")]
 ## STDOUT:
 Hello Bob
 Hello Bob surprise!
