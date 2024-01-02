@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
@@ -185,7 +185,7 @@ two = 2 ""
 ]
 ## END
 
-#### Triple Single Quotes, Expression Mode (TODO: j""")
+#### Triple Single Quotes, Expression Mode (TODO: u''')
 
 var two = 2
 var three = 2
@@ -200,7 +200,7 @@ echo "[$x]"
 var x = $''' 
   two = $two '
   three = $three ''
-   \u{61}
+   \u0061
   '''
 echo "[$x]"
 
@@ -336,13 +336,13 @@ echo '''
 ## END
 
 
-#### $''' in command mode (TODO: j""")
+#### $''' in command mode (TODO: u''')
 
 echo $'''
   two = $two
   '
   '' '
-  \u{61}
+  \u0061
   '''
 
 ## STDOUT:
