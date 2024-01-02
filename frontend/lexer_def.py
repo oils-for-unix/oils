@@ -553,7 +553,9 @@ J8_DEF = [
 
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
 J8_STR_DEF = [
+    # TODO: remove double quote
     C('"', Id.Right_DoubleQuote),
+    C("'", Id.Right_SingleQuote),
 
     # https://json.org list of chars
     R(r'\\["\\/bfnrt]', Id.Char_OneChar),
@@ -563,11 +565,13 @@ J8_STR_DEF = [
 
     # Exclude control characters 0x00-0x1f, aka 0-31
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\x00-\x1f]+', Id.Char_Literals),
+    R(r'[^\\"\'\x00-\x1f]+', Id.Char_Literals),
 
     # Should match control chars
     R(r'[^\0]', Id.Unknown_Tok),
 ]
+
+LEXER_DEF[lex_mode_e.J8_Str] = J8_STR_DEF
 
 OCTAL3_RE = r'\\[0-7]{1,3}'
 

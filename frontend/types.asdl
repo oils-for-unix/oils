@@ -18,7 +18,9 @@ module types {
 
   | Backtick  # preprocessing before Outer
   | DBracket
-  | SQ_Raw | DQ | SQ_C
+
+  | SQ_Raw | DQ | SQ_C | J8_Str
+
   | Arith
   | ExtGlob
   | VSub_1 | VSub_2 | VSub_ArgUnquoted | VSub_ArgDQ

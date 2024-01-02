@@ -49,7 +49,7 @@ lex_mode_e.VSub_ArgDQ
 """
 
 from _devbuild.gen import grammar_nt
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
@@ -112,7 +112,8 @@ if TYPE_CHECKING:
     from frontend.reader import _Reader
     from osh.cmd_parse import VarChecker
 
-_ = log
+unused1 = log
+unused2 = Id_str
 
 KINDS_THAT_END_WORDS = [Kind.Eof, Kind.WS, Kind.Op, Kind.Right]
 
@@ -195,6 +196,8 @@ class WordParser(WordEmitter):
 
             self.parse_ctx.trail.AppendToken(self.cur_token)  # For completion
             self.next_lex_mode = lex_mode_e.Undefined
+
+            #log('_GetToken %s %r', Id_str(self.token_type), self.cur_token.tval)
 
     def _SetNext(self, lex_mode):
         # type: (lex_mode_t) -> None
@@ -716,6 +719,23 @@ class WordParser(WordEmitter):
             return self._ReadExprSub(lex_mode_e.DQ)
 
         raise AssertionError(self.cur_token)
+
+    def _ReadJ8String(self, left_letter):
+        # type: (str) -> CompoundWord
+        """
+        left_letter: u or b
+        """
+        #log('BEF self.cur_token %s', self.cur_token)
+        sq_part = self._ReadSingleQuoted(self.cur_token, lex_mode_e.J8_Str)
+        #log('AFT self.cur_token %s', self.cur_token)
+
+        # Pretend it's single-quoted
+        sq_part.left.id = Id.Left_DollarSingleQuote
+
+        # This separates us from the next word
+        self._SetNext(lex_mode_e.ShCommand)
+
+        return CompoundWord([sq_part])
 
     def _ReadUnquotedLeftParts(self, triple_out):
         # type: (Optional[BoolParamBox]) -> word_part_t
@@ -1890,19 +1910,30 @@ class WordParser(WordEmitter):
                 return None  # tell ReadWord() to try again after comment
 
             else:
-                if self.token_type == Id.Lit_Chars:
-                    # parse_raw_string: Skip the r'' at the beginning of a word
+                # r'' u'' b''
+                if (self.token_type == Id.Lit_Chars and
+                        self.lexer.LookAheadOne(
+                            lex_mode_e.ShCommand) == Id.Left_SingleQuote):
+
+                    # When shopt -s parse_raw_string:
+                    #     echo r'hi' is like echo 'hi'
                     if (self.parse_opts.parse_raw_string() and
                             self.cur_token.tval == 'r'):
-                        if (self.lexer.LookAheadOne(
-                                lex_mode_e.ShCommand) == Id.Left_SingleQuote):
-                            self._SetNext(lex_mode_e.ShCommand)  # skip
+                        # skip the r, and then 'foo' will be read as normal
+                        self._SetNext(lex_mode_e.ShCommand)
+
+                    # When shopt -s parse_j8_string
+                    #     echo u'\u{3bc}' b'\yff' works 
                     elif (self.parse_opts.parse_j8_string() and
                           self.cur_token.tval in ('u', 'b')):
-                        if (self.lexer.LookAheadOne(
-                                lex_mode_e.ShCommand) == Id.Left_SingleQuote):
-                            #log('SET %s', self.cur_token)
-                            self._SetNext(lex_mode_e.ShCommand)  # skip
+
+                        # TODO: Also handle multiline u''' and b'''
+                        self._SetNext(lex_mode_e.ShCommand)
+                        self._GetToken()
+                        assert self.token_type == Id.Left_SingleQuote, self.token_type
+
+                        # Read the word in a different lexer mode
+                        return self._ReadJ8String(self.cur_token.tval)
 
                 return self._ReadCompoundWord(lex_mode)
 

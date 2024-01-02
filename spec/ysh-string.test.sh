@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
@@ -37,10 +37,24 @@ bar
 equal
 ## END
 
+#### raw strings and J8 strings don't work in OSH
+shopt --unset ysh:all
+
+echo r'hello \'
+echo u'mu \u{3bc}'
+echo b'byte \yff'
+
+## STDOUT:
+rhello \
+umu \u{3bc}
+bbyte \yff
+## END
+
 #### J8-style u'' and b'' strings in expression mode
 
 var x = u'hello \u{3bc}'
 var y = b'byte \yff'
+
 
 write -- $x $y
 
@@ -50,12 +64,15 @@ hello
 
 #### J8-style u'' and b'' strings in command mode
 
-echo u'hello \u{3bc}'
-echo b'byte \yff'
+write --end '' -- u'\u{3bc}' | od -A n -t x1
+write --end '' -- b'\yff' | od -A n -t x1
+
+# Should be illegal?
+#echo u'hello \u03bc'
 
 ## STDOUT:
-hello mu
-byte
+ ce bc
+ ff
 ## END
 
 #### Double Quoted

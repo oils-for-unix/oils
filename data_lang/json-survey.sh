@@ -56,6 +56,24 @@ decode-empty-input() {
   nodejs -e 'var val = JSON.parse(""); console.log(typeof(val)); console.log(val)' || true
 }
 
+decode-invalid-escape() {
+  # single quoted escape not valid
+  cat >_tmp/json.txt <<'EOF'
+"\'"
+EOF
+  local json
+  json=$(cat _tmp/json.txt)
+
+  python3 -c 'import json, sys; val = json.loads(sys.argv[1]); print(type(val)); print(val)' \
+    "$json" || true
+
+  echo
+  echo
+
+  nodejs -e 'var val = JSON.parse(process.argv[1]); console.log(typeof(val)); console.log(val)' \
+    "$json" || true
+}
+
 encode-obj-cycles() {
   python3 -c 'import json; val = {}; val["k"] = val; print(json.dumps(val))' || true
   echo

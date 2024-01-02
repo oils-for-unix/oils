@@ -176,11 +176,11 @@ shopt -s strict_tilde
 shopt -s strict_word_eval
 ## END
 
-#### shopt -s oil:upgrade
-shopt -s oil:upgrade
+#### shopt -s ysh:upgrade
+shopt -s ysh:upgrade
 # normal option names
 shopt -o -p | grep -- ' -o ' | grep -v hashall
-shopt -p oil:upgrade
+shopt -p ysh:upgrade
 ## STDOUT:
 set -o errexit
 set -o nounset
@@ -197,6 +197,7 @@ shopt -s parse_brace
 shopt -s parse_bracket
 shopt -s parse_equals
 shopt -s parse_func
+shopt -s parse_j8_string
 shopt -s parse_paren
 shopt -s parse_proc
 shopt -s parse_raw_string

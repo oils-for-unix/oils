@@ -1,10 +1,10 @@
 #!/usr/bin/env python2
-"""Osh/word_compile.py.
+"""osh/word_compile.py.
 
-This functions in this file happens after parsing, but don't depend on
-any values at runtime.
+These functions are called after parsing, but don't depend on any runtime
+values.
 """
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
     SingleQuoted,
@@ -100,7 +100,7 @@ def EvalCStringToken(tok):
             #raise AssertionError('Out of range')
         return chr(i)
 
-    elif id_ == Id.Char_Hex:
+    elif id_ in (Id.Char_Hex, Id.Char_YHex):
         s = value[2:]
         i = int(s, 16)
         return chr(i)
@@ -117,7 +117,7 @@ def EvalCStringToken(tok):
         return string_ops.Utf8Encode(i)
 
     else:
-        raise AssertionError()
+        raise AssertionError(Id_str(id_))
 
 
 def EvalSingleQuoted(part):
