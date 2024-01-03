@@ -526,9 +526,8 @@ _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
 J8_DEF = [
     C('"', Id.Left_DoubleQuote),  # JSON string
-    # TODO: change to single quote
-    C('u"', Id.Left_USingleQuote),  # unicode string
-    C('b"', Id.Left_BSingleQuote),  # byte string
+    C("u'", Id.Left_USingleQuote),  # unicode string
+    C("b'", Id.Left_BSingleQuote),  # byte string
     C('[', Id.J8_LBracket),
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
@@ -553,9 +552,8 @@ J8_DEF = [
 
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
 J8_STR_DEF = [
-    # TODO: remove double quote
-    C('"', Id.Right_DoubleQuote),
-    C("'", Id.Right_SingleQuote),
+    C('"', Id.Right_DoubleQuote),  # end for JSON
+    C("'", Id.Right_SingleQuote),  # end for J8
 
     # https://json.org list of chars
     R(r'\\["\\/bfnrt]', Id.Char_OneChar),

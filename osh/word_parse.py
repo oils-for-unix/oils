@@ -627,8 +627,8 @@ class WordParser(WordEmitter):
         no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
 
         expected_end_tokens = 3 if left_token.id in (
-            Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
-            Id.Left_UTSingleQuote, Id.Left_BTSingleQuote) else 1
+            Id.Left_TSingleQuote, Id.Left_RTSingleQuote, Id.Left_UTSingleQuote,
+            Id.Left_BTSingleQuote) else 1
         num_end_tokens = 0
 
         while num_end_tokens < expected_end_tokens:
@@ -724,7 +724,7 @@ class WordParser(WordEmitter):
         """
         #log('BEF self.cur_token %s', self.cur_token)
         if left_id == Id.Left_RSingleQuote:
-            lexer_mode = lex_mode_e.SQ_Raw 
+            lexer_mode = lex_mode_e.SQ_Raw
             triple_left_id = Id.Left_RTSingleQuote
         elif left_id == Id.Left_USingleQuote:
             lexer_mode = lex_mode_e.J8_Str
@@ -809,8 +809,9 @@ class WordParser(WordEmitter):
 
             # Got empty '' or r'' and there's a ' after
             # u'' and b'' are handled in _ReadYshSingleQuoted
-            if (triple_out and triple_left_id != Id.Undefined_Tok and
-                len(sq_part.tokens) == 0 and self.lexer.ByteLookAhead() == "'"):
+            if (triple_left_id != Id.Undefined_Tok and triple_out and
+                    len(sq_part.tokens) == 0 and
+                    self.lexer.ByteLookAhead() == "'"):
 
                 self._SetNext(lex_mode_e.ShCommand)
                 self._GetToken()
@@ -1957,9 +1958,9 @@ class WordParser(WordEmitter):
                             self.cur_token.tval in ('r', 'u', 'b')):
 
                         if self.cur_token.tval == 'r':
-                            left_id = Id.Left_RSingleQuote 
+                            left_id = Id.Left_RSingleQuote
                         elif self.cur_token.tval == 'u':
-                            left_id = Id.Left_USingleQuote 
+                            left_id = Id.Left_USingleQuote
                         else:
                             left_id = Id.Left_BSingleQuote
 

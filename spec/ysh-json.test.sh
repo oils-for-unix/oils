@@ -440,3 +440,24 @@ status=4
 ASCII control chars
 ## END
 
+
+#### JSON string can have unescaped ' and J8 string can have unescaped "
+
+json read <<EOF
+"'"
+EOF
+
+pp line (_reply)
+
+
+
+j8 read <<EOF
+u'"'
+EOF
+
+pp line (_reply)
+
+## STDOUT:
+(Str)   "'"
+(Str)   "\""
+## END

@@ -34,9 +34,10 @@ def EncodeString(s, options):
 
 # similar to frontend/consts.py
 _JSON_ESCAPES = {
-    # Note: we don't escaping \/
+    # Notes:
+    # - we don't escape \/
+    # - \' and \" are decided dynamically, based on the quote
     '\\': '\\\\',
-    '"': '\\"',
     '\b': '\\b',
     '\f': '\\f',
     '\n': '\\n',
@@ -45,7 +46,7 @@ _JSON_ESCAPES = {
 }
 
 
-def _EscapeUnprintable(s, buf, u6_escapes=False):
+def _EscapeUnprintable(s, buf, is_j8=False):
     # type: (str, mylib.BufWriter, bool) -> None
     """ Print a string literal with required esceapes like \\n
 
@@ -58,11 +59,17 @@ def _EscapeUnprintable(s, buf, u6_escapes=False):
             buf.write(escaped)
             continue
 
+        if ch == "'" and is_j8:
+            buf.write(r"\'")
+            continue
+
+        if ch == '"' and not is_j8:
+            buf.write(r'\"')
+            continue
+
         char_code = ord(ch)
         if char_code < 0x20:  # like IsUnprintableLow
-            # TODO: mylib.hex_lower doesn't have padding
-            #buf.write(r'\u%04d' % char_code)
-            if u6_escapes:
+            if is_j8:
                 buf.write(r'\u{%x}' % char_code)
             else:
                 buf.write(r'\u%04x' % char_code)
@@ -144,7 +151,7 @@ def WriteString(s, options, buf):
         buf.write('b"')
         pos = 0
         for start, end in invalid_utf8:
-            _EscapeUnprintable(s[pos:start], buf, u6_escapes=True)
+            _EscapeUnprintable(s[pos:start], buf, is_j8=True)
 
             for i in xrange(start, end):
                 buf.write('\y%x' % ord(s[i]))
@@ -153,7 +160,7 @@ def WriteString(s, options, buf):
             #log('pos %d', pos)
 
         # Last part
-        _EscapeUnprintable(s[pos:], buf, u6_escapes=True)
+        _EscapeUnprintable(s[pos:], buf, is_j8=True)
         buf.write('"')
 
     else:
@@ -201,23 +208,27 @@ class LexerDecoder(object):
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
 
-        # TODO: break dep
-        from osh import string_ops
-
         while True:  # ignore spaces
             tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
             if tok_id != Id.Ignored_Space:
                 break
             self.pos = end_pos
 
-        # TODO: Distinguish bewteen "" b"" and u"", and allow different
+        # TODO: Distinguish bewteen "" b'' and u'', and allow different
         # escapes.
         if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
                           Id.Left_BSingleQuote):
             self.pos = end_pos
             return tok_id, end_pos, None
 
-        str_pos = end_pos
+        return self._DecodeString(tok_id, end_pos)
+
+    def _DecodeString(self, left_id, str_pos):
+        # type: (Id_t, int) -> Tuple[Id_t, int, Optional[str]]
+
+        # TODO: break dep
+        from osh import string_ops
+
         while True:
             tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
 
@@ -227,13 +238,17 @@ class LexerDecoder(object):
                                   str_end)
             if tok_id == Id.Unknown_Tok:
                 # e.g. invalid backslash
-                raise self._Error(
-                    'Unknown token while lexing JSON string', str_end)
+                raise self._Error('Unknown token while lexing JSON string',
+                                  str_end)
             if tok_id == Id.Char_AsciiControl:
                 raise self._Error(
                     "ASCII control chars are illegal in JSON strings", str_end)
 
-            if tok_id == Id.Right_DoubleQuote:
+            # yapf: disable
+            if (left_id == Id.Left_DoubleQuote and tok_id == Id.Right_DoubleQuote or
+                left_id != Id.Left_DoubleQuote and tok_id == Id.Right_SingleQuote):
+                # yapf: enable
+
                 self.pos = str_end
 
                 s = self.decoded.getvalue()
@@ -255,7 +270,16 @@ class LexerDecoder(object):
             # Now handle each kind of token
             #
 
-            if tok_id == Id.Char_Literals:  # JSON and J8
+            # "'" and u'"' are OK unescaped
+            # yapf: disable
+            if (left_id == Id.Left_DoubleQuote and tok_id == Id.Right_SingleQuote or
+                left_id != Id.Left_DoubleQuote and tok_id == Id.Right_DoubleQuote):
+                # yapf: enable
+
+                assert str_end == str_pos + 1, (str_pos, str_end)
+                part = self.s[str_pos]
+
+            elif tok_id == Id.Char_Literals:  # JSON and J8
                 part = self.s[str_pos:str_end]
                 try:
                     part.decode('utf-8')

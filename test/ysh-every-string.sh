@@ -37,6 +37,7 @@ EOF
 test-legacy-expr() {
   for sh in $YSH; do
     $sh <<'EOF'
+  # can't have backslash without r, and can't have single quote
   var x = 'foo "
 ---'
   echo $x
