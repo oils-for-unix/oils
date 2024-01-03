@@ -568,7 +568,7 @@ J8_STR_DEF = [
     R(r'[\x01-\x1F]', Id.Char_AsciiControl),
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\'\0]+', Id.Char_Literals),
+    R(r'''[^\\"'\0]+''', Id.Char_Literals),
 
     # Should match control chars
     R(r'[^\0]', Id.Unknown_Tok),

@@ -812,8 +812,10 @@ class WordParser(WordEmitter):
                 self._SetNext(lex_mode_e.ShCommand)
                 self._GetToken()
 
-                # HACK: magically transform the third ' in r''' to
-                # Id.Left_RTSingleQuote, so that ''' is the terminator
+                # TODO: multi-line strings must he Id.Left_SingleQuote
+
+                # HACK: magically transform the third ' in ''' to
+                # Id.Left_TSingleQuote, so that ''' is the terminator
                 left_sq_token = self.cur_token
                 left_sq_token.id = new_id
                 triple_out.b = True  # let caller know we got it

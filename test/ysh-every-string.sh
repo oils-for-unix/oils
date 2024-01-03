@@ -22,17 +22,14 @@ test-legacy-osh-ysh() {
     log "     test-legacy with $sh"
 
     $sh <<'EOF'
-  echo 'foo
+  echo 'foo \ "
 ---'
 
-  echo "foo
+  echo "foo \\ \" '
 ---"
 
-  echo $'fo\x6f
+  echo $'fo\x6f \\ \" \'
 ---'
-
-  #echo u'fooz
-#---'
 EOF
   done
 }
@@ -44,12 +41,12 @@ test-legacy-expr() {
 ---'
   echo $x
 
-  var x = "foo
+  var x = "foo \\ \" '
 ---"
   echo $x
 
   # I guess this is useful for refactoring
-  var x = $'f\u006f\x6f
+  var x = $'f\u006f\x6f \\ \" \'
 ---'
   echo $x
 
@@ -63,12 +60,12 @@ test-legacy-multiline() {
   for sh in $YSH; do
     $sh <<'EOF'
   echo """
-  foo
+  foo \\ \" '
   ---
   """
 
   var x = """
-  foo
+  foo \\ \" '
   ---
   """
   echo $x
@@ -129,13 +126,15 @@ EOF
 test-j8() {
   ### J8 strings are allowed in YSH
 
+  # TODO: double to single quotes - Add " \' here
+
   #for sh in $OSH $YSH; do
   for sh in $YSH; do
     $sh <<'EOF'
 
   # Command mode
 
-  echo u'fo\u{6f}
+  echo u'fo\u{6f} \\ \"
 ---'
 
   echo b'f\u{6f}\y6f
