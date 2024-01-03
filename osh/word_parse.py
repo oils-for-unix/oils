@@ -643,7 +643,7 @@ class WordParser(WordEmitter):
                 # r'one\two' or c'one\\two'
                 if no_backslashes and '\\' in tok.tval:
                     p_die(
-                        r"Strings with backslashes should look like r'\n' or $'\n'",
+                        r"Strings with backslashes should look like r'\n' or u'\n' or b'\n'",
                         tok)
 
                 if is_ysh_expr:

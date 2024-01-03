@@ -37,7 +37,7 @@ EOF
 test-legacy-expr() {
   for sh in $YSH; do
     $sh <<'EOF'
-  var x = 'foo
+  var x = 'foo "
 ---'
   echo $x
 
@@ -134,28 +134,45 @@ test-j8() {
 
   # Command mode
 
-  echo u'fo\u{6f} \\ \"
+  echo u'fo\u{6f} \\
 ---'
 
-  echo b'f\u{6f}\y6f
+  echo b'f\u{6f}\y6f \\
 ---'
 
   # Leading indent of ---
   echo u'''
-  fo\u{6f}
+  fo\u{6f} \\
   ---
   '''
 
   echo b'''
-  f\u{6f}\y6f
+  f\u{6f}\y6f \\
   ---
   '''
 
   # Expression mode
 
-  #var x = u'fo\u{6f}
-#---'
-  #echo $x
+  var x = u'fo\u{6f} \\
+---'
+  echo $x
+
+  var x = b'f\u{6f}\y6f \\
+---'
+  echo $x
+
+  var x = u'''
+  fo\u{6f} \\
+  ---
+  '''
+  echo $x
+
+  var x = b'''
+  f\u{6f}\y6f \\
+  ---
+  '''
+  echo $x
+
 EOF
   done
 }

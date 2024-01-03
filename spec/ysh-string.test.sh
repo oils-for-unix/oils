@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
@@ -76,14 +76,16 @@ b multi
 
 #### J8-style u'' and b'' strings in expression mode
 
-var x = u'hello \u{3bc}'
-var y = b'byte \yff'
+var x = u'\u{3bc}'
+var y = b'\yff'
 
 
-write -- $x $y
+write --end '' -- $x | od -A n -t x1
+write --end '' -- $y | od -A n -t x1
 
 ## STDOUT:
-hello
+ ce bc
+ ff
 ## END
 
 #### J8-style u'' and b'' strings in command mode
@@ -234,7 +236,7 @@ two = 2 ""
 ]
 ## END
 
-#### Triple Single Quotes, Expression Mode (TODO: u''')
+#### Triple Single Quotes, Expression Mode
 
 var two = 2
 var three = 2
@@ -246,10 +248,17 @@ var x = '''
   '''
 echo "[$x]"
 
-var x = $''' 
+var x = u''' 
   two = $two '
   three = $three ''
-   \u0061
+   \u{61}
+  '''
+echo "[$x]"
+
+var x = b''' 
+  two = $two '
+  three = $three ''
+   \u{61} \y61
   '''
 echo "[$x]"
 
@@ -261,6 +270,10 @@ three = $three ''
 [two = $two '
 three = $three ''
  a
+]
+[two = $two '
+three = $three ''
+ a a
 ]
 ## END
 
@@ -368,7 +381,7 @@ tac <<< '''
 two = $two
 ## END
 
-#### Triple Single Quotes, disabled
+#### Triple Single Quotes without parse_triple_quote
 
 shopt --unset parse_triple_quote
 
@@ -382,24 +395,6 @@ echo '''
   two = $two
   \u{61}
   
-## END
-
-
-#### $''' in command mode (TODO: u''')
-
-echo $'''
-  two = $two
-  '
-  '' '
-  \u0061
-  '''
-
-## STDOUT:
-two = $two
-'
-'' '
-a
-
 ## END
 
 #### here doc with quotes

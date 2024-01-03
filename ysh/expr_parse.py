@@ -287,12 +287,16 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
             continue
 
         # 'x'  r'x'  $'x' and '''x'''  r'''x'''  $'''x'''
-        if tok.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
-                      Id.Left_DollarSingleQuote, Id.Left_TSingleQuote,
-                      Id.Left_RTSingleQuote, Id.Left_DollarTSingleQuote):
-            if tok.id in (Id.Left_DollarSingleQuote,
-                          Id.Left_DollarTSingleQuote):
+        if tok.id in (Id.Left_SingleQuote, Id.Left_TSingleQuote,
+                      Id.Left_RSingleQuote, Id.Left_RTSingleQuote,
+                      Id.Left_DollarSingleQuote,
+                      Id.Left_USingleQuote, Id.Left_UTSingleQuote,
+                      Id.Left_BSingleQuote, Id.Left_BTSingleQuote):
+            if tok.id == Id.Left_DollarSingleQuote:
                 sq_mode = lex_mode_e.SQ_C
+            elif tok.id in (Id.Left_USingleQuote, Id.Left_UTSingleQuote,
+                            Id.Left_BSingleQuote, Id.Left_BTSingleQuote):
+                sq_mode = lex_mode_e.J8_Str
             else:
                 sq_mode = lex_mode_e.SQ_Raw
 
