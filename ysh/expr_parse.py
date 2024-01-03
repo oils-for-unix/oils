@@ -253,8 +253,9 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
 
             continue
 
-        # " and """
-        if tok.id in (Id.Left_DoubleQuote, Id.Left_TDoubleQuote):
+        # ", """ and ^"
+        if tok.id in (Id.Left_DoubleQuote, Id.Left_TDoubleQuote,
+                      Id.Left_CaretDoubleQuote):
             left_token = tok
             line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
             w_parser = parse_ctx.MakeWordParser(lex, line_reader)

@@ -457,6 +457,7 @@ def AddKinds(spec):
             'CaretParen',  # ^( for Block literal in expression mode
             'CaretBracket',  # ^[ for Expr literal
             'CaretBrace',  # ^{ for Arglist
+            'CaretDoubleQuote',  # ^" for Template
             'ColonPipe',  # :| for word arrays
             'PercentParen',  # legacy %( for word arrays
         ])

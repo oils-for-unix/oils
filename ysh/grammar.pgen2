@@ -239,7 +239,7 @@ old_sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
 
 # Note: could add c"" too
-dq_string: (Left_DoubleQuote | Left_TDoubleQuote) Expr_CastedDummy Right_DoubleQuote
+dq_string: (Left_DoubleQuote | Left_TDoubleQuote | Left_CaretDoubleQuote) Expr_CastedDummy Right_DoubleQuote
 sq_string: (
     Left_SingleQuote | Left_TSingleQuote 
   | Left_RSingleQuote | Left_RTSingleQuote
