@@ -177,3 +177,17 @@ THREE
 TWO
 ONE
 ## END
+
+#### $''' isn't a a multiline string (removed)
+
+shopt -s ysh:upgrade
+
+echo $'''
+  foo
+  '''
+
+## STDOUT:
+
+  foo
+  
+## END

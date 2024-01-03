@@ -806,9 +806,11 @@ class WordParser(WordEmitter):
                 triple_left_id = Id.Undefined_Tok
 
             sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
-            # Got empty '' or r'' or $'' and there's a ' after
-            if (triple_out and len(sq_part.tokens) == 0 and
-                    self.lexer.ByteLookAhead() == "'"):
+
+            # Got empty '' or r'' and there's a ' after
+            # u'' and b'' are handled in _ReadYshSingleQuoted
+            if (triple_out and triple_left_id != Id.Undefined_Tok and
+                len(sq_part.tokens) == 0 and self.lexer.ByteLookAhead() == "'"):
 
                 self._SetNext(lex_mode_e.ShCommand)
                 self._GetToken()
@@ -816,7 +818,6 @@ class WordParser(WordEmitter):
                 # HACK: magically transform the third ' in ''' to
                 # Id.Left_TSingleQuote, so that ''' is the terminator
                 left_sq_token = self.cur_token
-                assert triple_left_id != Id.Undefined_Tok
                 left_sq_token.id = triple_left_id
 
                 triple_out.b = True  # let caller know we got it
