@@ -627,9 +627,8 @@ class WordParser(WordEmitter):
         no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
 
         expected_end_tokens = 3 if left_token.id in (
-            Id.Left_TSingleQuote, Id.Left_DollarTSingleQuote,
-            Id.Left_RTSingleQuote, Id.Left_UTSingleQuote,
-            Id.Left_BTSingleQuote) else 1
+            Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
+            Id.Left_UTSingleQuote, Id.Left_BTSingleQuote) else 1
         num_end_tokens = 0
 
         while num_end_tokens < expected_end_tokens:
@@ -693,9 +692,8 @@ class WordParser(WordEmitter):
             tokens.pop()
 
         # Remove space from '''  r'''  $''' in both expression mode and command mode
-        if left_token.id in (Id.Left_TSingleQuote, Id.Left_DollarTSingleQuote,
-                             Id.Left_RTSingleQuote, Id.Left_UTSingleQuote,
-                             Id.Left_BTSingleQuote):
+        if left_token.id in (Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
+                             Id.Left_UTSingleQuote, Id.Left_BTSingleQuote):
             word_compile.RemoveLeadingSpaceSQ(tokens)
 
         return self.cur_token
@@ -796,13 +794,16 @@ class WordParser(WordEmitter):
 
         if self.token_type in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
                                Id.Left_DollarSingleQuote):
-            if self.token_type == Id.Left_DollarSingleQuote:
-                lexer_mode = lex_mode_e.SQ_C
-                new_id = Id.Left_DollarTSingleQuote
-            else:
+            if self.token_type == Id.Left_SingleQuote:
                 lexer_mode = lex_mode_e.SQ_Raw
-                # Note we should also use Id.Left_RTSingleQuote
-                new_id = Id.Left_TSingleQuote
+                triple_left_id = Id.Left_TSingleQuote
+            elif self.token_type == Id.Left_RSingleQuote:
+                lexer_mode = lex_mode_e.SQ_Raw
+                triple_left_id = Id.Left_RTSingleQuote
+            else:
+                lexer_mode = lex_mode_e.SQ_C
+                # this can't be used because triple_out won't be set
+                triple_left_id = Id.Undefined_Tok
 
             sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
             # Got empty '' or r'' or $'' and there's a ' after
@@ -812,12 +813,12 @@ class WordParser(WordEmitter):
                 self._SetNext(lex_mode_e.ShCommand)
                 self._GetToken()
 
-                # TODO: multi-line strings must he Id.Left_SingleQuote
-
                 # HACK: magically transform the third ' in ''' to
                 # Id.Left_TSingleQuote, so that ''' is the terminator
                 left_sq_token = self.cur_token
-                left_sq_token.id = new_id
+                assert triple_left_id != Id.Undefined_Tok
+                left_sq_token.id = triple_left_id
+
                 triple_out.b = True  # let caller know we got it
                 return self._ReadSingleQuoted(left_sq_token, lexer_mode)
 

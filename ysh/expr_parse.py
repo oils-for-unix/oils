@@ -286,7 +286,11 @@ def _PushOilTokens(parse_ctx, gr, p, lex, tea_keywords):
 
             continue
 
-        # 'x'  r'x'  $'x' and '''x'''  r'''x'''  $'''x'''
+        # 'x'  '''x'''
+        # r'x'  r'''x'''
+        # $'x'
+        # u'x'  u'''x'''
+        # b'x'  b'''x'''
         if tok.id in (Id.Left_SingleQuote, Id.Left_TSingleQuote,
                       Id.Left_RSingleQuote, Id.Left_RTSingleQuote,
                       Id.Left_DollarSingleQuote,

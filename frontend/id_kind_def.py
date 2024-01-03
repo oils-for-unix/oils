@@ -445,7 +445,6 @@ def AddKinds(spec):
             'RTSingleQuote',  # r''' '''
             'UTSingleQuote',  # u''' '''
             'BTSingleQuote',  # b''' '''
-            'DollarTSingleQuote',  # $''' '''
             'Backtick',  # `
             'DollarParen',  # $(
             'DollarBrace',  # ${
