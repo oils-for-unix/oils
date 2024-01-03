@@ -59,6 +59,8 @@ This is a supplement to the [main release page](index.html).
   runtime errors.
 - [ysh-parse-errors](more-tests.wwz/suite-logs/ysh-parse-errors.txt).  YSH
   parse errors.
+- [ysh-every-string](more-tests.wwz/suite-logs/ysh-every-string.txt).  String
+  literal stress test.
 - [ysh-large](more-tests.wwz/suite-logs/ysh-large.txt)
 - [arena](more-tests.wwz/suite-logs/arena.txt).  Test an invariant of the parser.
 - [osh-usage](more-tests.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.

@@ -49,7 +49,7 @@ test-legacy-expr() {
   echo $x
 
   # I guess this is useful for refactoring
-  var x = $'fo\x6f
+  var x = $'f\u006f\x6f
 ---'
   echo $x
 
@@ -74,41 +74,6 @@ test-legacy-multiline() {
   echo $x
 EOF
 done
-}
-
-test-j8() {
-  ### J8 strings are allowed in YSH
-
-  #for sh in $OSH $YSH; do
-  for sh in $YSH; do
-    $sh <<'EOF'
-
-  # Command mode
-
-  echo u'fo\u{6f}
----'
-
-  echo b'foo
----'
-
-  # Leading indent of ---
-  echo u'''
-  fo\u{6f}
-  ---
-  '''
-
-  echo b'''
-  fo\u{6f}
-  ---
-  '''
-
-  # Expression mode
-
-  #var x = u'fo\u{6f}
-#---'
-  #echo $x
-EOF
-  done
 }
 
 test-raw() {
@@ -157,6 +122,41 @@ test-raw() {
   '''
   echo $x
 
+EOF
+  done
+}
+
+test-j8() {
+  ### J8 strings are allowed in YSH
+
+  #for sh in $OSH $YSH; do
+  for sh in $YSH; do
+    $sh <<'EOF'
+
+  # Command mode
+
+  echo u'fo\u{6f}
+---'
+
+  echo b'f\u{6f}\y6f
+---'
+
+  # Leading indent of ---
+  echo u'''
+  fo\u{6f}
+  ---
+  '''
+
+  echo b'''
+  f\u{6f}\y6f
+  ---
+  '''
+
+  # Expression mode
+
+  #var x = u'fo\u{6f}
+#---'
+  #echo $x
 EOF
   done
 }

@@ -1346,6 +1346,21 @@ hi
 hi
 ''
 "
+
+  _parse-error "echo r'''
+hi
+'''bad
+"
+
+  _parse-error "echo u'''
+hi
+'''bad
+"
+
+  _parse-error 'echo """
+hi
+"""bad
+'
 }
 
 #
