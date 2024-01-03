@@ -220,16 +220,18 @@ class LexerDecoder(object):
         str_pos = end_pos
         while True:
             tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
+
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?
                 raise self._Error('Unexpected EOF while lexing JSON string',
                                   str_end)
-
             if tok_id == Id.Unknown_Tok:
-                # Syntax error: invalid backslash etc.
+                # e.g. invalid backslash
                 raise self._Error(
-                    'Unknown token while lexing JSON string: %s' %
-                    Id_str(tok_id), str_end)
+                    'Unknown token while lexing JSON string', str_end)
+            if tok_id == Id.Char_AsciiControl:
+                raise self._Error(
+                    "ASCII control chars are illegal in JSON strings", str_end)
 
             if tok_id == Id.Right_DoubleQuote:
                 self.pos = str_end

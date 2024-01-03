@@ -7,6 +7,7 @@ from __future__ import print_function
 import unittest
 
 from _devbuild.gen.syntax_asdl import Id, Id_str
+from core import error
 from data_lang import pyj8  # module under test
 from mycpp.mylib import log
 
@@ -71,6 +72,22 @@ class J8Test(unittest.TestCase):
         ]
         ''')
         _PrintTokens(lex)
+
+        try:
+            lex = pyj8.LexerDecoder('"\x01"')
+            _PrintTokens(lex)
+        except error.Decode as e:
+            print(e)
+        else:
+            self.fail('Expected failure')
+
+        try:
+            lex = pyj8.LexerDecoder('"\x1f"')
+            _PrintTokens(lex)
+        except error.Decode as e:
+            print(e)
+        else:
+            self.fail('Expected failure')
 
 
 if __name__ == '__main__':

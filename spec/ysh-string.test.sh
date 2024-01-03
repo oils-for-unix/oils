@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'
@@ -102,13 +102,13 @@ write --end '' -- b'\yff' | od -A n -t x1
 #### J8-style multi-line strings u''' b''' in command mode
 
 write --end '' -- u'''
---
-\u{61}
---
-'''
+  --
+  \u{61}
+  --
+  '''
 write --end '' -- b'''
 --
-\y61
+\y62
 --
 '''
 
@@ -116,13 +116,11 @@ write --end '' -- b'''
 #echo u'hello \u03bc'
 
 ## STDOUT:
-
 --
 a
 --
-
 --
-a
+b
 --
 ## END
 

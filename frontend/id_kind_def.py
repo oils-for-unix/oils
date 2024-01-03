@@ -394,6 +394,7 @@ def AddKinds(spec):
             'UBraced',
             'Pound',  # YSH
             'Literals',
+            'AsciiControl',  # \x01-\x1f, what's disallowed in JSON
         ])
 
     # Regular expression primtiives.

@@ -422,3 +422,21 @@ decode error Expected Id.J8_RBracket
 positions 1 - 2
 ## END
 
+
+#### ASCII control chars can't appear literally in messages
+shopt -s ysh:upgrade
+
+var message=$'"\x01"'
+#echo $message | od -c
+
+try {
+  var obj = fromJson(message)
+}
+echo status=$_status
+echo "$[_error.message]" | egrep -o 'ASCII control chars'
+
+## STDOUT:
+status=4
+ASCII control chars
+## END
+

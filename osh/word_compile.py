@@ -72,8 +72,12 @@ def EvalCStringToken(tok):
     if 0:
         log('tok %s', tok)
 
-    if id_ in (Id.Char_Literals, Id.Unknown_Backslash):
+    if id_ in (Id.Char_Literals, Id.Unknown_Backslash, Id.Char_AsciiControl):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
+
+        # Char_AsciiControl is allowed in YSH code, for newlines in u''
+        # strings, just like r'' has
+        # TODO: could allow ONLY newline?
         return value
 
     # single quotes in the middle of a triple quoted string
@@ -135,7 +139,8 @@ def EvalSingleQuoted(part):
 
     elif part.left.id in (Id.Left_DollarSingleQuote,
                           Id.Left_DollarTSingleQuote,
-                          Id.Left_USingleQuote, Id.Left_BSingleQuote):
+                          Id.Left_USingleQuote, Id.Left_BSingleQuote,
+                          Id.Left_UTSingleQuote, Id.Left_BTSingleQuote):
         # NOTE: This could be done at compile time
 
         # TODO: Strip leading whitespace for ''' and r'''
@@ -223,9 +228,12 @@ def RemoveLeadingSpaceDQ(parts):
 
 def RemoveLeadingSpaceSQ(tokens):
     # type: (List[Token]) -> None
-    """In $''', we have Char_Literals \n In r''' and ''', we have Lit_Chars.
+    """
+    In $''', we have Char_Literals \n
+    In r''' and ''', we have Lit_Chars \n
+    In u''' and b''', we have Char_AsciiControl \n
 
-    \n.
+    Should make these more consistent.
     """
     if 0:
         log('--')
@@ -239,7 +247,7 @@ def RemoveLeadingSpaceSQ(tokens):
     line_ended = False
 
     first = tokens[0]
-    if first.id in (Id.Lit_Chars, Id.Char_Literals):
+    if first.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
         if qsn_native.IsWhitespace(first.tval):
             tokens.pop(0)  # Remove the first part
         if first.tval.endswith('\n'):
@@ -247,7 +255,7 @@ def RemoveLeadingSpaceSQ(tokens):
 
     last = tokens[-1]
     to_strip = None  # type: Optional[str]
-    if last.id in (Id.Lit_Chars, Id.Char_Literals):
+    if last.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
         if IsLeadingSpace(last.tval):
             to_strip = last.tval
             tokens.pop()  # Remove the last part
@@ -255,7 +263,7 @@ def RemoveLeadingSpaceSQ(tokens):
     if to_strip is not None:
         n = len(to_strip)
         for tok in tokens:
-            if tok.id not in (Id.Lit_Chars, Id.Char_Literals):
+            if tok.id not in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
                 line_ended = False
                 continue
 

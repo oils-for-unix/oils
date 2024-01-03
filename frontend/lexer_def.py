@@ -563,9 +563,12 @@ J8_STR_DEF = [
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
 
-    # Exclude control characters 0x00-0x1f, aka 0-31
+    # Exclude control characters 0x00-0x1f, aka 0-31 in J8 data
+    # But \n has to be allowed in multi-line strings
+    R(r'[\x01-\x1F]', Id.Char_AsciiControl),
+
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\'\x00-\x1f]+', Id.Char_Literals),
+    R(r'[^\\"\'\0]+', Id.Char_Literals),
 
     # Should match control chars
     R(r'[^\0]', Id.Unknown_Tok),

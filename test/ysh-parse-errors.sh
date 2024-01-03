@@ -1329,6 +1329,23 @@ test-string-literals() {
 
   # This is valid shell, but not a comment
   _should-parse "echo 'hi'#notcomment"
+
+}
+
+test-multiline-string() {
+  _should-parse "echo u'''
+hi
+'''
+"
+  _should-parse "echo b'''
+hi
+'''
+"
+
+  _parse-error "echo b'''
+hi
+''
+"
 }
 
 #

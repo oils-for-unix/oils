@@ -627,8 +627,9 @@ class WordParser(WordEmitter):
         no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
 
         expected_end_tokens = 3 if left_token.id in (
-            Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
-            Id.Left_DollarTSingleQuote) else 1
+            Id.Left_TSingleQuote, Id.Left_DollarTSingleQuote,
+            Id.Left_RTSingleQuote, Id.Left_UTSingleQuote,
+            Id.Left_BTSingleQuote) else 1
         num_end_tokens = 0
 
         while num_end_tokens < expected_end_tokens:
@@ -663,7 +664,11 @@ class WordParser(WordEmitter):
                 tok = self.cur_token
                 # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
                 if is_ysh_expr or not self.parse_opts.parse_backslash():
+                    assert tok.id == Id.Unknown_Tok, tok
                     p_die("Invalid char escape in C-style string literal", tok)
+
+                    # newlines for multi-line J8 strings
+                    #log('tok %r', tok)
 
                 tokens.append(tok)
 
@@ -690,8 +695,9 @@ class WordParser(WordEmitter):
             tokens.pop()
 
         # Remove space from '''  r'''  $''' in both expression mode and command mode
-        if left_token.id in (Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
-                             Id.Left_DollarTSingleQuote):
+        if left_token.id in (Id.Left_TSingleQuote, Id.Left_DollarTSingleQuote,
+                             Id.Left_RTSingleQuote, Id.Left_UTSingleQuote,
+                             Id.Left_BTSingleQuote):
             word_compile.RemoveLeadingSpaceSQ(tokens)
 
         return self.cur_token
@@ -734,20 +740,20 @@ class WordParser(WordEmitter):
             raise AssertionError(left_id)
 
         sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
+        #log('part %r', sq_part)
 
         if (len(sq_part.tokens) == 0 and self.lexer.ByteLookAhead() == "'"):
-            #log('yes')
-
             self._SetNext(lex_mode_e.ShCommand)
             self._GetToken()
 
             assert self.token_type == Id.Left_SingleQuote
             # HACK: magically transform the third ' in u''' to
             # Id.Left_UTSingleQuote, so that ''' is the terminator
-            left_dq_token = self.cur_token
-            left_dq_token.id = triple_left_id
-            #triple_out.b = True  # let caller know we got it
-            sq_part = self._ReadSingleQuoted(left_dq_token, lexer_mode)
+            left_tok = self.cur_token
+            left_tok.id = triple_left_id
+
+            #log('left %r', left_tok)
+            sq_part = self._ReadSingleQuoted(left_tok, lexer_mode)
 
             # TODO: read ending quotes
         else:
@@ -1703,7 +1709,8 @@ class WordParser(WordEmitter):
                             next_byte = self.lexer.ByteLookAhead()
                             # TODO: switch lexer modes and parse $/d+/.  But not ${a:-$/d+/}
                             if next_byte == '/':
-                                log('next_byte %r', next_byte)
+                                #log('next_byte %r', next_byte)
+                                pass
 
                         p_die('Literal $ should be quoted like \$',
                               self.cur_token)
@@ -1961,15 +1968,15 @@ class WordParser(WordEmitter):
                     elif (self.parse_opts.parse_j8_string() and
                           self.cur_token.tval in ('u', 'b')):
 
+                        left_id = (Id.Left_USingleQuote if self.cur_token.tval
+                                   == 'u' else Id.Left_BSingleQuote)
+
                         # TODO: Also handle multiline u''' and b'''
                         self._SetNext(lex_mode_e.ShCommand)
                         self._GetToken()
                         assert self.token_type == Id.Left_SingleQuote, self.token_type
 
                         # Read the word in a different lexer mode
-
-                        left_id = (Id.Left_USingleQuote if self.cur_token.tval
-                                   == 'u' else Id.Left_BSingleQuote)
                         return self._ReadYshSingleQuoted(left_id)
 
                 return self._ReadCompoundWord(lex_mode)
