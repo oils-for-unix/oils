@@ -662,13 +662,11 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.Unknown:
                 tok = self.cur_token
+                assert tok.id == Id.Unknown_Backslash, tok
+
                 # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
                 if is_ysh_expr or not self.parse_opts.parse_backslash():
-                    assert tok.id == Id.Unknown_Tok, tok
                     p_die("Invalid char escape in C-style string literal", tok)
-
-                    # newlines for multi-line J8 strings
-                    #log('tok %r', tok)
 
                 tokens.append(tok)
 
