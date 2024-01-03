@@ -169,7 +169,7 @@ aa	bb
 cc	dd
 ## END
 
-#### shopt parse_raw_string
+#### shopt parse_ysh_string
 
 # Ignored prefix
 echo r'\'
@@ -184,7 +184,7 @@ echo raw'\'
 echo r"\\"
 
 # Now it's a regular r
-shopt --unset parse_raw_string
+shopt --unset parse_ysh_string
 write unset r'\'
 
 ## STDOUT:
@@ -320,7 +320,7 @@ one "
 
 echo r'''a'''
 
-shopt --unset parse_raw_string
+shopt --unset parse_ysh_string
 
 echo r'''a'''
 

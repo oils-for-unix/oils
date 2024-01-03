@@ -1946,31 +1946,22 @@ class WordParser(WordEmitter):
 
                     # When shopt -s parse_raw_string:
                     #     echo r'hi' is like echo 'hi'
-                    if (self.parse_opts.parse_raw_string() and
-                            self.cur_token.tval == 'r'):
+                    #
+                    #     echo u'\u{3bc}' b'\yff' works
+
+                    if (self.parse_opts.parse_ysh_string() and
+                            self.cur_token.tval in ('r', 'u', 'b')):
+
+                        if self.cur_token.tval == 'r':
+                            left_id = Id.Left_RSingleQuote 
+                        elif self.cur_token.tval == 'u':
+                            left_id = Id.Left_USingleQuote 
+                        else:
+                            left_id = Id.Left_BSingleQuote
+
                         # skip the r, and then 'foo' will be read as normal
                         self._SetNext(lex_mode_e.ShCommand)
 
-                        # TODO: This makes triple quoted strings fail
-
-                        if 0:
-                            #self._SetNext(lex_mode_e.ShCommand)
-                            self._GetToken()
-                            #assert self.token_type == Id.Left_SingleQuote, self.token_type
-
-                            return self._ReadYshSingleQuoted(
-                                Id.Left_RSingleQuote)
-
-                    # When shopt -s parse_j8_string
-                    #     echo u'\u{3bc}' b'\yff' works
-                    elif (self.parse_opts.parse_j8_string() and
-                          self.cur_token.tval in ('u', 'b')):
-
-                        left_id = (Id.Left_USingleQuote if self.cur_token.tval
-                                   == 'u' else Id.Left_BSingleQuote)
-
-                        # TODO: Also handle multiline u''' and b'''
-                        self._SetNext(lex_mode_e.ShCommand)
                         self._GetToken()
                         assert self.token_type == Id.Left_SingleQuote, self.token_type
 

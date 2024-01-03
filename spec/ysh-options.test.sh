@@ -197,11 +197,10 @@ shopt -s parse_brace
 shopt -s parse_bracket
 shopt -s parse_equals
 shopt -s parse_func
-shopt -s parse_j8_string
 shopt -s parse_paren
 shopt -s parse_proc
-shopt -s parse_raw_string
 shopt -s parse_triple_quote
+shopt -s parse_ysh_string
 shopt -s pipefail
 shopt -s process_sub_fail
 shopt -u redefine_proc_func

@@ -172,8 +172,8 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_equals           x = 'val' in Caps { } config blocks
                   parse_paren            if (x > 0) ...
                   parse_proc             proc p { ... }
-                  parse_raw_string       echo r'\' (command mode)
-                  parse_triple_quote     """  '''  r'''  $''' in command mode
+                  parse_triple_quote     """$x"""  '''x''' (command mode)
+                  parse_ysh_string       echo r'\' u'\\' b'\\' (command mode)
                   command_sub_errexit    Synchronous errexit check
                   process_sub_fail       Analogous to pipefail for process subs
                   sigpipe_status_ok      status 141 -> 0 in pipelines

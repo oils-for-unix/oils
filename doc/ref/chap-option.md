@@ -93,18 +93,49 @@ TODO
 
 TODO
 
+TODO
+
 ### parse_paren
 
 TODO
 
-### parse_raw_string
+### parse_triple_quote
 
-Allow the r prefix for raw strings in command mode:
+Parse the shell-style multi-line strings, which strip leading whitespace:
+
+    echo '''    
+      one
+      two
+      '''
+
+    echo """
+      hello
+      $name
+      """
+
+(This option affects only command mode.  Such strings are always parsed in
+expression mode.)
+
+### parse_ysh_string
+
+Allow `r'\'` and `u'\\'` and `b'\\'` strings, as well as their multi-line
+versions.
+
+Since shell strings are already raw, this means that YSH just ignores the r
+prefix:
 
     echo r'\'  # a single backslash
 
-Since shell strings are already raw, this means that YSH just ignores the r
-prefix.
+J8 unicode strings:
+
+    echo u'mu \u{3bc}'  # mu char
+
+J8 byte strings:
+
+    echo b'byte \yff'
+
+(This option affects only command mode.  Such strings are always parsed in
+expression mode.)
 
 ### command_sub_errexit
 
