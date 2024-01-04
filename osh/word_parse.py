@@ -802,15 +802,15 @@ class WordParser(WordEmitter):
                 triple_left_id = Id.Left_RTSingleQuote
             else:
                 lexer_mode = lex_mode_e.SQ_C
-                # this can't be used because triple_out won't be set
+                # there is no such thing as $'''
                 triple_left_id = Id.Undefined_Tok
 
             sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
 
             # Got empty '' or r'' and there's a ' after
             # u'' and b'' are handled in _ReadYshSingleQuoted
-            if (triple_left_id != Id.Undefined_Tok and triple_out and
-                    len(sq_part.tokens) == 0 and
+            if (triple_left_id != Id.Undefined_Tok and
+                    triple_out is not None and len(sq_part.tokens) == 0 and
                     self.lexer.ByteLookAhead() == "'"):
 
                 self._SetNext(lex_mode_e.ShCommand)
