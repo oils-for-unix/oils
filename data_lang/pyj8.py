@@ -107,7 +107,7 @@ def WriteString(s, options, buf):
     - escape unprintable chars like \\u0001 and \\t \\n \\ \\"
 
     If decoding fails (this includes unpaired surrogates like \\udc00)
-    - in J8 mode, all errors become \yff, and it must be a b"" string
+    - in J8 mode, all errors become \yff, and it must be a b'' string
     - in JSON mode, based on options, either:
       - use unicode replacement char (lossy)
       - raise an exception, so the 'json dump' fails etc.
@@ -122,7 +122,7 @@ def WriteString(s, options, buf):
 
        J8 mode:
          Prefer literal UTF-8
-         Escaping mode to use j"\\u{123456}" and perhaps b"\\u{123456} when there
+         Escaping mode to use u'\\u{123456}' and perhaps b'\\u{123456}' when there
          are also errors
 
        = mode:
@@ -148,7 +148,7 @@ def WriteString(s, options, buf):
 
     #print('INVALID', invalid_utf8)
     if len(invalid_utf8):
-        buf.write('b"')
+        buf.write("b'")
         pos = 0
         for start, end in invalid_utf8:
             _EscapeUnprintable(s[pos:start], buf, is_j8=True)
@@ -161,7 +161,7 @@ def WriteString(s, options, buf):
 
         # Last part
         _EscapeUnprintable(s[pos:], buf, is_j8=True)
-        buf.write('"')
+        buf.write("'")
 
     else:
         buf.write('"')
@@ -182,7 +182,7 @@ class LexerDecoder(object):
     match.J8Lexer
     match.J8StrLexer
 
-    When you hit "" b"" u""
+    When you hit "" b'' u''
 
     1. Start the string lexer
     2. decode it in place

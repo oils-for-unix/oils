@@ -277,7 +277,7 @@ $SH $REPO_ROOT/spec/testdata/j8-read.sh
 
 #### j8 round trip
 
-var obj = [42, 1.5, null, true, "hi"]
+var obj = [42, 1.5, null, true, "hi", b'\yff\yfe\b\n""']
 
 j8 write --pretty=F (obj) > j
 
@@ -288,13 +288,14 @@ j8 read < j
 j8 write (_reply)
 
 ## STDOUT:
-[42,1.5,null,true,"hi"]
+[42,1.5,null,true,"hi",b'\yff\yfe\b\n""']
 [
   42,
   1.5,
   null,
   true,
-  "hi"
+  "hi",
+  b'\yff\yfe\b\n""'
 ]
 ## END
 
