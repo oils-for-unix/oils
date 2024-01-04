@@ -56,11 +56,11 @@ class J8Test(unittest.TestCase):
         lex = pyj8.LexerDecoder(r'{"hi": "bye \n"}')
         _PrintTokens(lex)
 
-        lex = pyj8.LexerDecoder(r'{u"unicode": b"bytes \y1f \yff"}')
+        lex = pyj8.LexerDecoder(r"{u'unicode': b'bytes \y1f \yff'}")
         _PrintTokens(lex)
 
         lex = pyj8.LexerDecoder(
-            r'{"mu \u03BC \u0001": b"mu \u{03bc} \u{2620}"')
+            r'{"mu \u03BC \u0001":' + r"b'mu \u{03bc} \u{2620}'")
         _PrintTokens(lex)
 
         lex = pyj8.LexerDecoder(r'{"x": [1, 2, 3.14, true]}')

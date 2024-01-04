@@ -230,7 +230,10 @@ class LexerDecoder(object):
         from osh import string_ops
 
         while True:
-            tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
+            if left_id == Id.Left_DoubleQuote:
+                tok_id, str_end = match.MatchJsonStrToken(self.s, str_pos)
+            else:
+                tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
 
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?
@@ -244,10 +247,7 @@ class LexerDecoder(object):
                 raise self._Error(
                     "ASCII control chars are illegal in JSON strings", str_end)
 
-            # yapf: disable
-            if (left_id == Id.Left_DoubleQuote and tok_id == Id.Right_DoubleQuote or
-                left_id != Id.Left_DoubleQuote and tok_id == Id.Right_SingleQuote):
-                # yapf: enable
+            if tok_id in (Id.Right_SingleQuote, Id.Right_DoubleQuote):
 
                 self.pos = str_end
 
@@ -270,16 +270,7 @@ class LexerDecoder(object):
             # Now handle each kind of token
             #
 
-            # "'" and u'"' are OK unescaped
-            # yapf: disable
-            if (left_id == Id.Left_DoubleQuote and tok_id == Id.Right_SingleQuote or
-                left_id != Id.Left_DoubleQuote and tok_id == Id.Right_DoubleQuote):
-                # yapf: enable
-
-                assert str_end == str_pos + 1, (str_pos, str_end)
-                part = self.s[str_pos]
-
-            elif tok_id == Id.Char_Literals:  # JSON and J8
+            if tok_id == Id.Char_Literals:  # JSON and J8
                 part = self.s[str_pos:str_end]
                 try:
                     part.decode('utf-8')

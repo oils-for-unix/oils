@@ -272,6 +272,7 @@ $SH $REPO_ROOT/spec/testdata/j8-read.sh
 (Dict)   {"k":1,"k2":2}
 (Dict)   {"k":{"k2":null}}
 (Dict)   {"k":{"k2":"v2"},"k3":"backslash \\ \" \n line 2 μ "}
+(Dict)   {"k":{"k2":"v2"},"k3":"backslash \\ \" \n line 2 μ "}
 ## END
 
 #### j8 round trip
