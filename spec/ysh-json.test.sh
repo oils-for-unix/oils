@@ -239,7 +239,7 @@ j8 write (b)
 ## STDOUT:
 "mu μ \u0001 \" \\ \b\f\n\r\t"
 "\u0001\u001f"
-b"\yff"
+b'\yff'
 ## END
 
 #### Escaping uses \u0001 in "", but \u{1} in b""
@@ -252,7 +252,7 @@ j8 write (s2)
 
 ## STDOUT:
 "\u0001"
-b"\u{1}\yff\u{1f}"
+b'\u{1}\yff\u{1f}'
 ## END
 
 

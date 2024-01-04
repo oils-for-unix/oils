@@ -164,6 +164,8 @@ def WriteString(s, options, buf):
         buf.write("'")
 
     else:
+        # NOTE: Our J8 encoder still emits "\u0001", not u'\u{1}'.  I guess
+        # this is OK for now, but we might want a strict mode.
         buf.write('"')
         _EscapeUnprintable(s, buf)
         buf.write('"')
