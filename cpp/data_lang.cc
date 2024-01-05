@@ -5,8 +5,8 @@
 namespace pyj8 {
 
 bool PartIsUtf8(BigStr* s, int start, int end) {
-  // TODO
-  return false;
+  // TODO: use Bjoern DFA
+  return true;
 }
 
 }  // namespace pyj8
