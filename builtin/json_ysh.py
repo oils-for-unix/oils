@@ -129,12 +129,9 @@ class Json(vm._Builtin):
                                          posix.strerror(e.err_num))
                 return 1
 
-            p = j8.Parser(contents)
+            p = j8.Parser(contents, self.is_j8)
             try:
-                if self.is_j8:
-                    val = p.ParseJ8()
-                else:
-                    val = p.ParseJson()
+                val = p.ParseValue()
             except error.Decode as err:
                 # TODO: Need to show position info
                 self.errfmt.Print_('%s read: %s' % (self.name, err.Message()),

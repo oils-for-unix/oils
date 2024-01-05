@@ -211,15 +211,34 @@ echo 'should have failed'
 1:{ ...
 ## END
 
-#### json8 write
+#### json read doesn't accept u'' or b'' strings
 
-# TODO: much better tests
-json8 write ([3, "foo"])
+json read <<EOF
+{"key": u'val'}
+EOF
+echo status=$?
+
+#pp line (_reply)
+
+json read <<EOF
+{"key": b'val'}
+EOF
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+## END
+
+#### json8 write emits b'' strings for binary data
+
+json8 write ([3, "foo", $'\xff\xfe'])
 
 ## STDOUT:
 [
   3,
-  "foo"
+  "foo",
+  b'\yff\yfe'
 ]
 ## END
 
@@ -242,7 +261,7 @@ json8 write (b)
 b'\yff'
 ## END
 
-#### Escaping uses \u0001 in "", but \u{1} in b""
+#### Escaping uses \u0001 in "", but \u{1} in b''
 
 s1=$'\x01'
 s2=$'\x01\xff\x1f'  # byte string

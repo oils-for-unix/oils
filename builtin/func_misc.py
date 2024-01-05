@@ -440,13 +440,9 @@ class FromJ8(vm._Callable):
         s = rd.PosStr()
         rd.Done()
 
-        p = j8.Parser(s)
-
+        p = j8.Parser(s, self.is_j8)
         try:
-            if self.is_j8:
-                val = p.ParseJ8()
-            else:
-                val = p.ParseJson()
+            val = p.ParseValue()
         except error.Decode as e:
             # Right now I'm not exposing the original string, because that
             # could lead to a memory leak in the _error Dict.

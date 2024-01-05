@@ -430,9 +430,11 @@ class LexerDecoder(object):
     string
     """
 
-    def __init__(self, s):
-        # type: (str) -> None
+    def __init__(self, s, is_j8):
+        # type: (str, bool) -> None
         self.s = s
+        self.is_j8 = is_j8
+
         self.pos = 0
         # Reuse this instance to save GC objects.  JSON objects could have
         # thousands of strings.
@@ -446,6 +448,7 @@ class LexerDecoder(object):
 
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
+        """ Returns a token and updates self.pos """
 
         while True:  # ignore spaces
             tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
@@ -453,17 +456,22 @@ class LexerDecoder(object):
                 break
             self.pos = end_pos
 
-        # TODO: Distinguish bewteen "" b'' and u'', and allow different
-        # escapes.
+        # Non-string tokens like { } null etc.
         if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
                           Id.Left_BSingleQuote):
             self.pos = end_pos
             return tok_id, end_pos, None
 
+        if not self.is_j8 and tok_id != Id.Left_DoubleQuote:
+            raise self._Error(
+                "Single quotes aren't part of JSON; you may want 'json8 read'",
+                end_pos)
+
         return self._DecodeString(tok_id, end_pos)
 
     def _DecodeString(self, left_id, str_pos):
         # type: (Id_t, int) -> Tuple[Id_t, int, Optional[str]]
+        """ Returns a string tkoen an updates self.pos """
 
         # TODO: break dep
         from osh import string_ops
@@ -552,11 +560,12 @@ class LexerDecoder(object):
 
 class Parser(object):
 
-    def __init__(self, s):
-        # type: (str) -> None
+    def __init__(self, s, is_j8):
+        # type: (str, bool) -> None
         self.s = s
-        self.lexer = LexerDecoder(s)
+        self.is_j8 = is_j8
 
+        self.lexer = LexerDecoder(s, is_j8)
         self.tok_id = Id.Undefined_Tok
         self.start_pos = 0
         self.end_pos = 0
@@ -694,16 +703,8 @@ class Parser(object):
             raise AssertionError('Unexpected token %s %r' %
                                  (Id_str(self.tok_id), part))
 
-    def ParseJ8(self):
+    def ParseValue(self):
         # type: () -> value_t
-        """
-        Raises exception on error?
-        """
+        """ Raises error.Decode. """
         self._Next()
         return self._ParseValue()
-
-    def ParseJson(self):
-        # type: () -> value_t
-
-        # TODO: distinguish it with flags
-        return self.ParseJ8()

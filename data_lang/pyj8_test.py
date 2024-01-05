@@ -54,28 +54,28 @@ class J8Test(unittest.TestCase):
         print(en)
 
     def testLexerDecoder(self):
-        lex = j8.LexerDecoder(r'{"hi": "bye \n"}')
+        lex = j8.LexerDecoder(r'{"hi": "bye \n"}', True)
         _PrintTokens(lex)
 
-        lex = j8.LexerDecoder(r"{u'unicode': b'bytes \y1f \yff'}")
+        lex = j8.LexerDecoder(r"{u'unicode': b'bytes \y1f \yff'}", True)
         _PrintTokens(lex)
 
         lex = j8.LexerDecoder(r'{"mu \u03BC \u0001":' +
-                              r"b'mu \u{03bc} \u{2620}'")
+                              r"b'mu \u{03bc} \u{2620}'", True)
         _PrintTokens(lex)
 
-        lex = j8.LexerDecoder(r'{"x": [1, 2, 3.14, true]}')
+        lex = j8.LexerDecoder(r'{"x": [1, 2, 3.14, true]}', True)
         _PrintTokens(lex)
 
         lex = j8.LexerDecoder(r'''
         [
           1e9, 1e-9, -1e9, -1E-9, 42
         ]
-        ''')
+        ''', True)
         _PrintTokens(lex)
 
         try:
-            lex = j8.LexerDecoder('"\x01"')
+            lex = j8.LexerDecoder('"\x01"', True)
             _PrintTokens(lex)
         except error.Decode as e:
             print(e)
@@ -83,10 +83,21 @@ class J8Test(unittest.TestCase):
             self.fail('Expected failure')
 
         try:
-            lex = j8.LexerDecoder('"\x1f"')
+            lex = j8.LexerDecoder('"\x1f"', True)
             _PrintTokens(lex)
         except error.Decode as e:
             print(e)
+        else:
+            self.fail('Expected failure')
+
+    def testErrorMessagePosition(self):
+        lex = j8.LexerDecoder("[ u'hi']", False)
+        try:
+            _PrintTokens(lex)
+        except error.Decode as e:
+            print(e)
+            self.assertEquals(2, e.start_pos)
+            self.assertEquals(4, e.end_pos)
         else:
             self.fail('Expected failure')
 
