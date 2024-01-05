@@ -406,6 +406,10 @@ int max(int a, int b) {
   return std::max(a, b);
 }
 
+int min(int a, int b) {
+  return std::min(a, b);
+}
+
 int max(List<int>* elems) {
   int n = len(elems);
   if (n < 1) {

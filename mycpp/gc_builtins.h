@@ -167,5 +167,6 @@ extern BigStr* kEmptyString;
 int hash(BigStr* s);
 
 int max(int a, int b);
+int min(int a, int b);
 
 #endif  // GC_BUILTINS_H
