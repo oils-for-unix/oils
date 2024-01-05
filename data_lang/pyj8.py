@@ -33,7 +33,7 @@ def EncodeString(s, options):
 
 
 # similar to frontend/consts.py
-_JSON_ESCAPES = {
+_COMMON_ESCAPES = {
     # Notes:
     # - we don't escape \/
     # - \' and \" are decided dynamically, based on the quote
@@ -54,7 +54,7 @@ def _EscapeUnprintable(s, buf, is_j8=False):
     \\u{1f} for J8 - these are "u6 escapes"
     """
     for ch in s:
-        escaped = _JSON_ESCAPES.get(ch)
+        escaped = _COMMON_ESCAPES.get(ch)
         if escaped is not None:
             buf.write(escaped)
             continue
@@ -173,24 +173,21 @@ def WriteString(s, options, buf):
     return 0
 
 
+def PartIsUtf8(s, start, end):
+    # type: (str, int, int) -> bool
+    part = s[start:end]
+    try:
+        part.decode('utf-8')
+    except UnicodeDecodeError as e:
+        return False
+    return True
+
+
 class LexerDecoder(object):
     """J8 lexer and string decoder.
 
-    Similar interface as SimpleLexer2, except we return an optional decoded
+    Similar interface as SimpleLexer, except we return an optional decoded
     string
-
-    TODO: Combine
-
-    match.J8Lexer
-    match.J8StrLexer
-
-    When you hit "" b'' u''
-
-    1. Start the string lexer
-    2. decode it in place
-    3. validate utf-8 on the Id.Char_Literals tokens -- these are the only ones
-       that can be arbitrary strings
-    4. return decoded string
     """
 
     def __init__(self, s):
@@ -274,13 +271,12 @@ class LexerDecoder(object):
 
             if tok_id == Id.Char_Literals:  # JSON and J8
                 part = self.s[str_pos:str_end]
-                try:
-                    part.decode('utf-8')
-                except UnicodeDecodeError as e:
+                if not PartIsUtf8(self.s, str_pos, str_end):
                     # Syntax error because JSON must be valid UTF-8
                     # Limit context to 20 chars arbitrarily
+                    snippet = self.s[str_pos:str_pos+20]
                     raise self._Error(
-                        'Invalid UTF-8 in JSON string literal: %r' % part[:20],
+                        'Invalid UTF-8 in JSON string literal: %r' % snippet,
                         str_end)
 
             # TODO: would be nice to avoid allocation in all these cases.

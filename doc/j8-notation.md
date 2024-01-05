@@ -287,6 +287,19 @@ TODO: example
 This is exactly the confusion that J8 notation sets out to fix, so we choose to
 be ultra **explicit** and different.
 
+### Why have both `u''` and `b''` strings, if only `b''` are needed?
+
+Oils doesn't have a string/bytes distinction (on the "interior"), but many
+languages like Python and Rust do.  Certain apps could make use of the
+distinction.
+
+Round-tripping arbitrary JSON strings also involves crazy hacks like WTF-8.
+Our `u''` strings don't require WTF-8 because they can't represent surrogate
+halves.
+
+`u''` strings add trivial weight to the spec, since they just remove `\yff`
+from the valid escapes.
+
 ### How Do I Write a J8 Encoder or Decoder?
 
 The list of errors at [ref/chap-errors.html](ref/chap-errors.html) may be a
@@ -299,3 +312,4 @@ We could have an SEXP8 format:
 - Concrete syntax trees
   - with location information
 - Textual IRs like WebAssembly
+

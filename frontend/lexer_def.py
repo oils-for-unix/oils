@@ -527,6 +527,7 @@ _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 J8_DEF = [
     C('"', Id.Left_DoubleQuote),  # JSON string
     C("u'", Id.Left_USingleQuote),  # unicode string
+    C("'", Id.Left_USingleQuote),  # '' is alias for u'' in data, not in code
     C("b'", Id.Left_BSingleQuote),  # byte string
     C('[', Id.J8_LBracket),
     C(']', Id.J8_RBracket),
@@ -543,10 +544,7 @@ J8_DEF = [
     # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),
 
-    # TODO: AnyString, UString, and BString will also
-    # - additionally validate utf-8
-    # - decode
-    # I guess this takes 2 passes?
+    # This will reject ASCII control chars
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 

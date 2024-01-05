@@ -1,4 +1,4 @@
-## oils_failures_allowed: 7
+## oils_failures_allowed: 8
 ## tags: dev-minimal
 
 #### usage errors
@@ -533,4 +533,22 @@ EOF
 echo status=$?
 
 ## STDOUT:
+## END
+
+#### '' means the same thing as u''
+
+echo "''" | json8 read
+pp line (_reply)
+
+echo "'\u{3bc}'" | json8 read
+pp line (_reply)
+
+# TODO: syntax error
+echo "'\yff'" | json8 read
+pp line (_reply)
+
+## STDOUT:
+(Str)   ""
+(Str)   "μ"
+(Str)   b'\yff'
 ## END
