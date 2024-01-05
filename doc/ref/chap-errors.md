@@ -36,9 +36,12 @@ JSON encoding has three possible errors:
 1. The encoded message itself is not valid UTF-8.
    - (Typically, you need to check the unescaped bytes in string literals
      `"abc\n"`).
-1. Lexical error, like the message `+`, an invalid escape `"\z"`, or a
-   truncated escape `"\u1"`.
-1. Grammatical error, like the message `}{`.
+1. Lexical error, like
+   - the message `+`
+   - an invalid escape `"\z"` or a truncated escape `"\u1"`
+   - A single quoted string like `u''`
+1. Grammatical error
+   - like the message `}{`
 
 ## JSON8
 

@@ -540,6 +540,11 @@ class LexerDecoder(object):
                 part = string_ops.Utf8Encode(i)
 
             elif tok_id == Id.Char_YHex:  # J8 only
+                if left_id != Id.Left_BSingleQuote:
+                    assert left_id != Id.Left_BTSingleQuote, "Not handled here"
+                    raise self._Error(
+                        r"\yHH escapes not allowed in u'' strings", str_end)
+
                 h = self.s[str_pos + 2:str_end]
                 i = int(h, 16)
                 part = chr(i)

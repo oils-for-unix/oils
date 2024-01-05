@@ -141,9 +141,6 @@ def EvalSingleQuoted(part):
                           Id.Left_USingleQuote, Id.Left_BSingleQuote,
                           Id.Left_UTSingleQuote, Id.Left_BTSingleQuote):
         # NOTE: This could be done at compile time
-
-        # TODO: Strip leading whitespace for ''' and r'''
-
         tmp = [EvalCStringToken(t) for t in part.tokens]
         s = ''.join(tmp)
 

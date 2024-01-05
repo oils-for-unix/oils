@@ -1,4 +1,4 @@
-## oils_failures_allowed: 7
+## oils_failures_allowed: 6
 ## tags: dev-minimal
 
 #### usage errors
@@ -483,15 +483,47 @@ pp line (_reply)
 (Str)   "\""
 ## END
 
-#### \yff can't appear in u'' string
+#### \yff can't appear in u'' code strings
 
 shopt -s ysh:upgrade
 
-echo -n b'\yff' | od -A n -t x1
-echo -n u'\yff' | od -A n -t x1
+echo -n b'\yfd' | od -A n -t x1
+echo -n u'\yfd' | od -A n -t x1
 
 ## status: 2
 ## STDOUT:
+ fd
+## END
+
+#### \yff can't appear in u'' multiline code strings
+
+shopt -s ysh:upgrade
+
+echo -n b'''\yfc''' | od -A n -t x1
+echo -n u'''\yfd''' | od -A n -t x1
+
+## status: 2
+## STDOUT:
+ fc
+## END
+
+#### \yff can't appear in u'' data strings
+
+#shopt -s ysh:upgrade
+
+json8 read (&b) <<'EOF'
+b'\yfe'
+EOF
+pp line (b)
+
+json8 read (&u) <<'EOF'
+u'\yfe'
+EOF
+pp line (u)  # undefined
+
+## status: 1
+## STDOUT:
+(Str)   b'\yfe'
 ## END
 
 #### \u{dc00} can't be in surrogate range
@@ -562,12 +594,11 @@ pp line (_reply)
 echo "'\u{3bc}'" | json8 read
 pp line (_reply)
 
-# TODO: syntax error
 echo "'\yff'" | json8 read
-pp line (_reply)
+echo status=$?
 
 ## STDOUT:
 (Str)   ""
 (Str)   "μ"
-(Str)   b'\yff'
+status=1
 ## END

@@ -764,6 +764,12 @@ class WordParser(WordEmitter):
             p_die('Unexpected token after YSH single-quoted string',
                   self.cur_token)
 
+        # Validation after lexing: u'\yff' is not valid, but b'\yff' is
+        if left_id in (Id.Left_USingleQuote, Id.Left_UTSingleQuote):
+            for tok in sq_part.tokens:
+                if tok.id == Id.Char_YHex:
+                    p_die(r"\yHH escapes not allowed in u'' strings", tok)
+
         return CompoundWord([sq_part])
 
     def _ReadUnquotedLeftParts(self, triple_out):
