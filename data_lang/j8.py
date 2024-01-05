@@ -4,10 +4,6 @@ j8.py: J8 Notation and Related Utilities
 
 TODO:
 
-- Distinguish JSON vs. J8 -
-  - json should fail can fail to encode
-  - and distinguish "" b"" u""
-
 - Translate the whole thing to C++
   - use Bjoern DFA for UTF-8 validation in printing and parsing
   - move more of LexerDecoder out of pyj8.py?  I think it can translate
@@ -434,6 +430,7 @@ class LexerDecoder(object):
         # type: (str, bool) -> None
         self.s = s
         self.is_j8 = is_j8
+        self.lang_str = "J8" if is_j8 else "JSON"
 
         self.pos = 0
         # Reuse this instance to save GC objects.  JSON objects could have
@@ -484,15 +481,18 @@ class LexerDecoder(object):
 
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?
-                raise self._Error('Unexpected EOF while lexing JSON string',
+                raise self._Error('Unexpected EOF while lexing %s string' %
+                                  self.lang_str,
                                   str_end)
             if tok_id == Id.Unknown_Tok:
                 # e.g. invalid backslash
-                raise self._Error('Unknown token while lexing JSON string',
+                raise self._Error('Unknown token while lexing %s string' %
+                                  self.lang_str,
                                   str_end)
             if tok_id == Id.Char_AsciiControl:
                 raise self._Error(
-                    "ASCII control chars are illegal in JSON strings", str_end)
+                    "ASCII control chars are illegal in %s strings" %
+                    self.lang_str, str_end)
 
             if tok_id in (Id.Right_SingleQuote, Id.Right_DoubleQuote):
 
@@ -524,7 +524,8 @@ class LexerDecoder(object):
                     # Limit context to 20 chars arbitrarily
                     snippet = self.s[str_pos:str_pos + 20]
                     raise self._Error(
-                        'Invalid UTF-8 in JSON string literal: %r' % snippet,
+                        'Invalid UTF-8 in %s string literal: %r' %
+                        (self.lang_str, snippet),
                         str_end)
 
             # TODO: would be nice to avoid allocation in all these cases.
@@ -578,6 +579,7 @@ class Parser(object):
         # type: (str, bool) -> None
         self.s = s
         self.is_j8 = is_j8
+        self.lang_str = "J8" if is_j8 else "JSON"
 
         self.lexer = LexerDecoder(s, is_j8)
         self.tok_id = Id.Undefined_Tok
@@ -705,11 +707,11 @@ class Parser(object):
             return str_val
 
         elif self.tok_id == Id.Eol_Tok:
-            raise self._Error('Unexpected EOF while parsing JSON')
+            raise self._Error('Unexpected EOF while parsing %s' % self.lang_str)
 
         elif self.tok_id == Id.Unknown_Tok:
-            raise self._Error('Invalid token while parsing JSON: %s' %
-                              Id_str(self.tok_id))
+            raise self._Error('Invalid token while parsing %s: %s' %
+                              (self.lang_str, Id_str(self.tok_id)))
 
         else:
             # This should never happen

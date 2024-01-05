@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 4
 ## tags: dev-minimal
 
 #### usage errors
@@ -230,7 +230,14 @@ status=1
 status=1
 ## END
 
-#### json8 write emits b'' strings for binary data
+#### json write emits Unicode replacement char for binary data \yff
+
+json write ([3, "foo", $'\xff\xfe'])
+
+## STDOUT:
+## END
+
+#### json8 write emits b'' strings for binary data \yff
 
 json8 write ([3, "foo", $'\xff\xfe'])
 
@@ -585,7 +592,7 @@ json dump (i)
 ## STDOUT:
 ## END
 
-#### JSON is invalid UTF-8
+#### Invalid UTF-8 in JSON is rejected
 
 echo $'"\xff"' | json read
 echo status=$?
@@ -600,9 +607,13 @@ echo $'\xff' | json8 read
 echo status=$?
 
 ## STDOUT:
+status=1
+status=1
+status=1
+status=1
 ## END
 
-#### J8 is invalid UTF-8
+#### Invalid JSON in J8 is rejected
 
 json8 read <<EOF
 b'$(echo -e -n '\xff')'
@@ -615,6 +626,8 @@ EOF
 echo status=$?
 
 ## STDOUT:
+status=1
+status=1
 ## END
 
 #### '' means the same thing as u''
