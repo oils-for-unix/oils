@@ -106,6 +106,10 @@ class PrettyPrinter(object):
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
+LOSSY_JSON = 1 << 3  # JSON is lossy
+
+# Hack until we fully translate
+assert pyj8.LOSSY_JSON == LOSSY_JSON
 
 
 class Printer(object):
@@ -145,20 +149,20 @@ class Printer(object):
 
     def PrintMessage(self, val, buf, indent):
         # type: (value_t, mylib.BufWriter, int) -> None
-        """ For j8 write (x) and toJ8() """
+        """ For j8 write (x) and toJ8() 
 
-        # TODO: handle error.Encode
+        Caller must handle error.Encode
+        """
         self._Print(val, buf, indent)
 
     def PrintJsonMessage(self, val, buf, indent):
         # type: (value_t, mylib.BufWriter, int) -> None
         """ For json write (x) and toJson()
 
-        Doesn't decay to b"" strings
-        Either raise error.Decode() or use unicode replacement char
+        Caller must handle error.Encode()
+        Doesn't decay to b'' strings - will use Unicode replacement char.
         """
-        # TODO: handle error.Encode
-        self._Print(val, buf, indent)
+        self._Print(val, buf, indent, options=LOSSY_JSON)
 
     def DebugPrint(self, val, f):
         # type: (value_t, mylib.Writer) -> None
@@ -224,7 +228,7 @@ class InstancePrinter(object):
 
         if mylib.PYTHON:
             # TODO: port this to C++
-            pyj8.WriteString(s, 0, self.buf)
+            pyj8.WriteString(s, self.options, self.buf)
         else:
             self.buf.write('"')
             valid_utf8 = qsn.EncodeRunes(s, qsn.BIT8_UTF8, self.buf)

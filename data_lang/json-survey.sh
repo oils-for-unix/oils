@@ -161,4 +161,20 @@ encode-bad-type() {
   echo
 }
 
+encode-binary-data() {
+  # utf-8 codec can't decode byte -- so it does UTF-8 decoding during encoding,
+  # which makes sense
+  python2 -c 'import json; print(json.dumps(b"\xff"))' || true
+  echo
+
+  # can't serialize bytes type
+  python3 -c 'import json; print(json.dumps(b"\xff"))' || true
+  echo
+
+  # there is no bytes type?  \xff is a code point in JS
+  nodejs -e 'console.log(JSON.stringify("\xff"));' || true
+  nodejs -e 'console.log(JSON.stringify("\u{ff}"));' || true
+  echo
+}
+
 "$@"

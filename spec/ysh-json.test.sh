@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 ## tags: dev-minimal
 
 #### usage errors
@@ -232,20 +232,30 @@ status=1
 
 #### json write emits Unicode replacement char for binary data \yff
 
-json write ([3, "foo", $'\xff\xfe'])
+json write ([3, "foo", $'-\xff\xfe---\xfd=']) > tmp.txt
 
-## STDOUT:
-## END
+# Round trip it for good measure
+json read < tmp.txt
 
-#### json8 write emits b'' strings for binary data \yff
-
-json8 write ([3, "foo", $'\xff\xfe'])
+json write (_reply)
 
 ## STDOUT:
 [
   3,
   "foo",
-  b'\yff\yfe'
+  "-��---�="
+]
+## END
+
+#### json8 write emits b'' strings for binary data \yff
+
+json8 write ([3, "foo", $'-\xff\xfe-\xfd='])
+
+## STDOUT:
+[
+  3,
+  "foo",
+  b'-\yff\yfe-\yfd='
 ]
 ## END
 

@@ -73,6 +73,8 @@ def _EscapeUnprintable(s, buf, is_j8=False):
 
         buf.write(ch)
 
+# COPY
+LOSSY_JSON = 1 << 3  # JSON is lossy
 
 def WriteString(s, options, buf):
     # type: (str, int, mylib.BufWriter) -> int
@@ -144,20 +146,40 @@ def WriteString(s, options, buf):
 
     #print('INVALID', invalid_utf8)
     if len(invalid_utf8):
-        buf.write("b'")
-        pos = 0
-        for start, end in invalid_utf8:
-            _EscapeUnprintable(s[pos:start], buf, is_j8=True)
+        if options & LOSSY_JSON:  # JSON
+            buf.write('"')
+            pos = 0
+            for start, end in invalid_utf8:
+                _EscapeUnprintable(s[pos:start], buf)
 
-            for i in xrange(start, end):
-                buf.write('\y%x' % ord(s[i]))
+                for i in xrange(start, end):
+                    # Unicode replacement char is U+FFFD, so write encoded form
+                    # >>> '\ufffd'.encode('utf-8')
+                    # b'\xef\xbf\xbd'
+                    buf.write('\xef\xbf\xbd')
 
-            pos = end
-            #log('pos %d', pos)
+                pos = end
+                #log('pos %d', pos)
 
-        # Last part
-        _EscapeUnprintable(s[pos:], buf, is_j8=True)
-        buf.write("'")
+            # Last part
+            _EscapeUnprintable(s[pos:], buf)
+            buf.write('"')
+
+        else:
+            buf.write("b'")
+            pos = 0
+            for start, end in invalid_utf8:
+                _EscapeUnprintable(s[pos:start], buf, is_j8=True)
+
+                for i in xrange(start, end):
+                    buf.write('\y%x' % ord(s[i]))
+
+                pos = end
+                #log('pos %d', pos)
+
+            # Last part
+            _EscapeUnprintable(s[pos:], buf, is_j8=True)
+            buf.write("'")
 
     else:
         # NOTE: Our J8 encoder still emits "\u0001", not u'\u{1}'.  I guess
