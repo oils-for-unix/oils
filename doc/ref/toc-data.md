@@ -19,10 +19,11 @@ Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
   (<a class="group-link" href="chap-j8.html">j8</a>)
 </h2>
 
-```chapter-links-data-lang
-  [J8 Strings]   json-escape \n   surrogate-pair
-                 j8-escape \yff \u{03bc}
-                 b-prefix b""   j-prefix j"" 
+```chapter-links-j8
+  [J8 Strings]   json-string "hi"   json-escape \" \\ \u1234
+                 surrogate-pair \ud83e\udd26
+                 u-prefix u'hi'   b-prefix b'hi'
+                 j8-escape \u{1f926} \yff
   [JSON8]        Null   Bool   Number   
                  Json8String
                  List   Dict
