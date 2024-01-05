@@ -1,14 +1,10 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from core import error
-from frontend import consts
-from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 
 _ = log
 
@@ -181,133 +177,6 @@ def PartIsUtf8(s, start, end):
     except UnicodeDecodeError as e:
         return False
     return True
-
-
-class LexerDecoder(object):
-    """J8 lexer and string decoder.
-
-    Similar interface as SimpleLexer, except we return an optional decoded
-    string
-    """
-
-    def __init__(self, s):
-        # type: (str) -> None
-        self.s = s
-        self.pos = 0
-        # Reuse this instance to save GC objects.  JSON objects could have
-        # thousands of strings.
-        self.decoded = mylib.BufWriter()
-
-    def _Error(self, msg, end_pos):
-        # type: (str, int) -> error.Decode
-
-        # Use the current position as start pos
-        return error.Decode(msg, self.s, self.pos, end_pos)
-
-    def Next(self):
-        # type: () -> Tuple[Id_t, int, Optional[str]]
-
-        while True:  # ignore spaces
-            tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
-            if tok_id != Id.Ignored_Space:
-                break
-            self.pos = end_pos
-
-        # TODO: Distinguish bewteen "" b'' and u'', and allow different
-        # escapes.
-        if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
-                          Id.Left_BSingleQuote):
-            self.pos = end_pos
-            return tok_id, end_pos, None
-
-        return self._DecodeString(tok_id, end_pos)
-
-    def _DecodeString(self, left_id, str_pos):
-        # type: (Id_t, int) -> Tuple[Id_t, int, Optional[str]]
-
-        # TODO: break dep
-        from osh import string_ops
-
-        while True:
-            if left_id == Id.Left_DoubleQuote:
-                tok_id, str_end = match.MatchJsonStrToken(self.s, str_pos)
-            else:
-                tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
-
-            if tok_id == Id.Eol_Tok:
-                # TODO: point to beginning of # quote?
-                raise self._Error('Unexpected EOF while lexing JSON string',
-                                  str_end)
-            if tok_id == Id.Unknown_Tok:
-                # e.g. invalid backslash
-                raise self._Error('Unknown token while lexing JSON string',
-                                  str_end)
-            if tok_id == Id.Char_AsciiControl:
-                raise self._Error(
-                    "ASCII control chars are illegal in JSON strings", str_end)
-
-            if tok_id in (Id.Right_SingleQuote, Id.Right_DoubleQuote):
-
-                self.pos = str_end
-
-                s = self.decoded.getvalue()
-                #log('s %r', s)
-                # This doesn't do what we think
-                #self.decoded.reset()
-
-                if 0:
-                    # Reusing this object is more efficient, e.g. with a
-                    # payload with thousands of strings
-                    mylib.ClearBuf(self.decoded)
-                else:
-                    self.decoded = mylib.BufWriter()
-
-                #log('decoded %r', self.decoded.getvalue())
-                return Id.J8_AnyString, str_end, s
-
-            #
-            # Now handle each kind of token
-            #
-
-            if tok_id == Id.Char_Literals:  # JSON and J8
-                part = self.s[str_pos:str_end]
-                if not PartIsUtf8(self.s, str_pos, str_end):
-                    # Syntax error because JSON must be valid UTF-8
-                    # Limit context to 20 chars arbitrarily
-                    snippet = self.s[str_pos:str_pos+20]
-                    raise self._Error(
-                        'Invalid UTF-8 in JSON string literal: %r' % snippet,
-                        str_end)
-
-            # TODO: would be nice to avoid allocation in all these cases.
-            # But LookupCharC() would have to change.
-
-            elif tok_id == Id.Char_OneChar:  # JSON and J8
-                ch = self.s[str_pos + 1]
-                part = consts.LookupCharC(ch)
-
-            elif tok_id == Id.Char_UBraced:  # J8 only
-                h = self.s[str_pos + 3:str_end - 1]
-                i = int(h, 16)
-                part = string_ops.Utf8Encode(i)
-
-            elif tok_id == Id.Char_YHex:  # J8 only
-                h = self.s[str_pos + 2:str_end]
-                i = int(h, 16)
-                part = chr(i)
-
-            elif tok_id == Id.Char_Unicode4:  # JSON only
-                h = self.s[str_pos + 2:str_end]
-                i = int(h, 16)
-                part = string_ops.Utf8Encode(i)
-
-            else:
-                # Should never happen
-                raise AssertionError(Id_str(tok_id))
-
-            #log('%s part %r', Id_str(tok_id), part)
-            self.decoded.write(part)
-            str_pos = str_end
 
 
 # vim: sw=4

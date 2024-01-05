@@ -4,17 +4,9 @@ j8.py: J8 Notation and Related Utilities
 
 TODO:
 
-- Errors
-  - Figure out location info for parse errors - turn a position into a line and
-    column?
-  - errors are Dict with __tag__ entry?
-
 - Distinguish JSON vs. J8 -
   - json should fail can fail to encode
   - and distinguish "" b"" u""
-
-- Correctness:
-  - surrgoate pair round trip
 
 - Translate the whole thing to C++
   - use Bjoern DFA for UTF-8 validation in printing and parsing
@@ -55,13 +47,15 @@ from core import error
 from core import vm
 from data_lang import pyj8
 from data_lang import qsn
+from frontend import consts
+from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
 _ = log
 unused = pyj8
 
-from typing import cast, Dict, List, Tuple
+from typing import cast, Dict, List, Tuple, Optional
 
 
 class PrettyPrinter(object):
@@ -429,162 +423,287 @@ class InstancePrinter(object):
                                        ui.ValType(val))
 
 
-if mylib.PYTHON:
+class LexerDecoder(object):
+    """J8 lexer and string decoder.
 
-    class Parser(object):
+    Similar interface as SimpleLexer, except we return an optional decoded
+    string
+    """
 
-        def __init__(self, s):
-            # type: (str) -> None
-            self.s = s
-            self.lexer = pyj8.LexerDecoder(s)
+    def __init__(self, s):
+        # type: (str) -> None
+        self.s = s
+        self.pos = 0
+        # Reuse this instance to save GC objects.  JSON objects could have
+        # thousands of strings.
+        self.decoded = mylib.BufWriter()
 
-            self.tok_id = Id.Undefined_Tok
-            self.start_pos = 0
-            self.end_pos = 0
-            self.decoded = ''
+    def _Error(self, msg, end_pos):
+        # type: (str, int) -> error.Decode
 
-        def _Next(self):
-            # type: () -> None
-            self.start_pos = self.end_pos
-            self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
-            #log('NEXT %s %s %s', Id_str(self.tok_id), self.end_pos, self.decoded or '-')
+        # Use the current position as start pos
+        return error.Decode(msg, self.s, self.pos, end_pos)
 
-        def _Eat(self, tok_id):
-            # type: (Id_t) -> None
+    def Next(self):
+        # type: () -> Tuple[Id_t, int, Optional[str]]
 
-            # TODO: Need location info
-            if self.tok_id != tok_id:
-                #log('position %r %d-%d %r', self.s, self.start_pos,
-                #    self.end_pos, self.s[self.start_pos:self.end_pos])
-                raise self._Error("Expected %s, got %s" %
-                                  (Id_str(tok_id), Id_str(self.tok_id)))
+        while True:  # ignore spaces
+            tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
+            if tok_id != Id.Ignored_Space:
+                break
+            self.pos = end_pos
+
+        # TODO: Distinguish bewteen "" b'' and u'', and allow different
+        # escapes.
+        if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
+                          Id.Left_BSingleQuote):
+            self.pos = end_pos
+            return tok_id, end_pos, None
+
+        return self._DecodeString(tok_id, end_pos)
+
+    def _DecodeString(self, left_id, str_pos):
+        # type: (Id_t, int) -> Tuple[Id_t, int, Optional[str]]
+
+        # TODO: break dep
+        from osh import string_ops
+
+        while True:
+            if left_id == Id.Left_DoubleQuote:
+                tok_id, str_end = match.MatchJsonStrToken(self.s, str_pos)
+            else:
+                tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
+
+            if tok_id == Id.Eol_Tok:
+                # TODO: point to beginning of # quote?
+                raise self._Error('Unexpected EOF while lexing JSON string',
+                                  str_end)
+            if tok_id == Id.Unknown_Tok:
+                # e.g. invalid backslash
+                raise self._Error('Unknown token while lexing JSON string',
+                                  str_end)
+            if tok_id == Id.Char_AsciiControl:
+                raise self._Error(
+                    "ASCII control chars are illegal in JSON strings", str_end)
+
+            if tok_id in (Id.Right_SingleQuote, Id.Right_DoubleQuote):
+
+                self.pos = str_end
+
+                s = self.decoded.getvalue()
+                #log('s %r', s)
+                # This doesn't do what we think
+                #self.decoded.reset()
+
+                if 0:
+                    # Reusing this object is more efficient, e.g. with a
+                    # payload with thousands of strings
+                    mylib.ClearBuf(self.decoded)
+                else:
+                    self.decoded = mylib.BufWriter()
+
+                #log('decoded %r', self.decoded.getvalue())
+                return Id.J8_AnyString, str_end, s
+
+            #
+            # Now handle each kind of token
+            #
+
+            if tok_id == Id.Char_Literals:  # JSON and J8
+                part = self.s[str_pos:str_end]
+                if not pyj8.PartIsUtf8(self.s, str_pos, str_end):
+                    # Syntax error because JSON must be valid UTF-8
+                    # Limit context to 20 chars arbitrarily
+                    snippet = self.s[str_pos:str_pos + 20]
+                    raise self._Error(
+                        'Invalid UTF-8 in JSON string literal: %r' % snippet,
+                        str_end)
+
+            # TODO: would be nice to avoid allocation in all these cases.
+            # But LookupCharC() would have to change.
+
+            elif tok_id == Id.Char_OneChar:  # JSON and J8
+                ch = self.s[str_pos + 1]
+                part = consts.LookupCharC(ch)
+
+            elif tok_id == Id.Char_UBraced:  # J8 only
+                h = self.s[str_pos + 3:str_end - 1]
+                i = int(h, 16)
+                part = string_ops.Utf8Encode(i)
+
+            elif tok_id == Id.Char_YHex:  # J8 only
+                h = self.s[str_pos + 2:str_end]
+                i = int(h, 16)
+                part = chr(i)
+
+            elif tok_id == Id.Char_Unicode4:  # JSON only
+                h = self.s[str_pos + 2:str_end]
+                i = int(h, 16)
+                part = string_ops.Utf8Encode(i)
+
+            else:
+                # Should never happen
+                raise AssertionError(Id_str(tok_id))
+
+            #log('%s part %r', Id_str(tok_id), part)
+            self.decoded.write(part)
+            str_pos = str_end
+
+
+class Parser(object):
+
+    def __init__(self, s):
+        # type: (str) -> None
+        self.s = s
+        self.lexer = LexerDecoder(s)
+
+        self.tok_id = Id.Undefined_Tok
+        self.start_pos = 0
+        self.end_pos = 0
+        self.decoded = ''
+
+    def _Next(self):
+        # type: () -> None
+        self.start_pos = self.end_pos
+        self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
+        #log('NEXT %s %s %s', Id_str(self.tok_id), self.end_pos, self.decoded or '-')
+
+    def _Eat(self, tok_id):
+        # type: (Id_t) -> None
+
+        # TODO: Need location info
+        if self.tok_id != tok_id:
+            #log('position %r %d-%d %r', self.s, self.start_pos,
+            #    self.end_pos, self.s[self.start_pos:self.end_pos])
+            raise self._Error("Expected %s, got %s" %
+                              (Id_str(tok_id), Id_str(self.tok_id)))
+        self._Next()
+
+    def _Error(self, msg):
+        # type: (str) -> error.Decode
+        return error.Decode(msg, self.s, self.start_pos, self.end_pos)
+
+    def _ParsePair(self):
+        # type: () -> Tuple[str, value_t]
+
+        k = self.decoded  # Save the potential string value
+        self._Eat(Id.J8_AnyString)  # Check that it's a string
+        assert k is not None
+
+        self._Eat(Id.J8_Colon)
+
+        v = self._ParseValue()
+        return k, v
+
+    def _ParseDict(self):
+        # type: () -> value_t
+        """
+        pair = string ':' value
+        Dict      = '{' '}'
+                  | '{' pair (',' pair)* '}'
+        """
+        # precondition
+        assert self.tok_id == Id.J8_LBrace, Id_str(self.tok_id)
+
+        d = NewDict()  # type: Dict[str, value_t]
+
+        self._Next()
+        if self.tok_id == Id.J8_RBrace:
+            return value.Dict(d)
+
+        k, v = self._ParsePair()
+        d[k] = v
+
+        while self.tok_id == Id.J8_Comma:
             self._Next()
-
-        def _Error(self, msg):
-            # type: (str) -> error.Decode
-            return error.Decode(msg, self.s, self.start_pos, self.end_pos)
-
-        def _ParsePair(self):
-            # type: () -> Tuple[str, value_t]
-
-            k = self.decoded  # Save the potential string value
-            self._Eat(Id.J8_AnyString)  # Check that it's a string
-            assert k is not None
-
-            self._Eat(Id.J8_Colon)
-
-            v = self._ParseValue()
-            return k, v
-
-        def _ParseDict(self):
-            # type: () -> value_t
-            """
-            pair = string ':' value
-            Dict      = '{' '}'
-                      | '{' pair (',' pair)* '}'
-            """
-            # precondition
-            assert self.tok_id == Id.J8_LBrace, Id_str(self.tok_id)
-
-            d = NewDict()  # type: Dict[str, value_t]
-
-            self._Next()
-            if self.tok_id == Id.J8_RBrace:
-                return value.Dict(d)
-
             k, v = self._ParsePair()
             d[k] = v
 
-            while self.tok_id == Id.J8_Comma:
-                self._Next()
-                k, v = self._ParsePair()
-                d[k] = v
+        self._Eat(Id.J8_RBrace)
 
-            self._Eat(Id.J8_RBrace)
+        return value.Dict(d)
 
-            return value.Dict(d)
+    def _ParseList(self):
+        # type: () -> value_t
+        """
+        List = '[' ']'
+             | '[' value (',' value)* ']'
+        """
+        assert self.tok_id == Id.J8_LBracket, Id_str(self.tok_id)
 
-        def _ParseList(self):
-            # type: () -> value_t
-            """
-            List = '[' ']'
-                 | '[' value (',' value)* ']'
-            """
-            assert self.tok_id == Id.J8_LBracket, Id_str(self.tok_id)
+        items = []  # type: List[value_t]
 
-            items = []  # type: List[value_t]
-
-            self._Next()
-            if self.tok_id == Id.J8_RBracket:
-                return value.List(items)
-
-            items.append(self._ParseValue())
-
-            while self.tok_id == Id.J8_Comma:
-                self._Next()
-                items.append(self._ParseValue())
-
-            self._Eat(Id.J8_RBracket)
-
+        self._Next()
+        if self.tok_id == Id.J8_RBracket:
             return value.List(items)
 
-        def _ParseValue(self):
-            # type: () -> value_t
-            if self.tok_id == Id.J8_LBrace:
-                return self._ParseDict()
+        items.append(self._ParseValue())
 
-            elif self.tok_id == Id.J8_LBracket:
-                return self._ParseList()
-
-            elif self.tok_id == Id.J8_Null:
-                self._Next()
-                return value.Null
-
-            elif self.tok_id == Id.J8_Bool:
-                b = value.Bool(self.s[self.start_pos] == 't')
-                self._Next()
-                return b
-
-            elif self.tok_id == Id.J8_Int:
-                part = self.s[self.start_pos:self.end_pos]
-                self._Next()
-                return value.Int(int(part))
-
-            elif self.tok_id == Id.J8_Float:
-                part = self.s[self.start_pos:self.end_pos]
-                self._Next()
-                return value.Float(float(part))
-
-            # UString, BString too
-            elif self.tok_id == Id.J8_AnyString:
-                str_val = value.Str(self.decoded)
-                #log('d %r', self.decoded)
-                self._Next()
-                return str_val
-
-            elif self.tok_id == Id.Eol_Tok:
-                raise self._Error('Unexpected EOF while parsing JSON')
-
-            elif self.tok_id == Id.Unknown_Tok:
-                raise self._Error('Invalid token while parsing JSON: %s' %
-                                  Id_str(self.tok_id))
-
-            else:
-                # This should never happen
-                part = self.s[self.start_pos:self.end_pos]
-                raise AssertionError('Unexpected token %s %r' %
-                                     (Id_str(self.tok_id), part))
-
-        def ParseJ8(self):
-            # type: () -> value_t
-            """
-            Raises exception on error?
-            """
+        while self.tok_id == Id.J8_Comma:
             self._Next()
-            return self._ParseValue()
+            items.append(self._ParseValue())
 
-        def ParseJson(self):
-            # type: () -> value_t
+        self._Eat(Id.J8_RBracket)
 
-            # TODO: distinguish it with flags
-            return self.ParseJ8()
+        return value.List(items)
+
+    def _ParseValue(self):
+        # type: () -> value_t
+        if self.tok_id == Id.J8_LBrace:
+            return self._ParseDict()
+
+        elif self.tok_id == Id.J8_LBracket:
+            return self._ParseList()
+
+        elif self.tok_id == Id.J8_Null:
+            self._Next()
+            return value.Null
+
+        elif self.tok_id == Id.J8_Bool:
+            b = value.Bool(self.s[self.start_pos] == 't')
+            self._Next()
+            return b
+
+        elif self.tok_id == Id.J8_Int:
+            part = self.s[self.start_pos:self.end_pos]
+            self._Next()
+            return value.Int(int(part))
+
+        elif self.tok_id == Id.J8_Float:
+            part = self.s[self.start_pos:self.end_pos]
+            self._Next()
+            return value.Float(float(part))
+
+        # UString, BString too
+        elif self.tok_id == Id.J8_AnyString:
+            str_val = value.Str(self.decoded)
+            #log('d %r', self.decoded)
+            self._Next()
+            return str_val
+
+        elif self.tok_id == Id.Eol_Tok:
+            raise self._Error('Unexpected EOF while parsing JSON')
+
+        elif self.tok_id == Id.Unknown_Tok:
+            raise self._Error('Invalid token while parsing JSON: %s' %
+                              Id_str(self.tok_id))
+
+        else:
+            # This should never happen
+            part = self.s[self.start_pos:self.end_pos]
+            raise AssertionError('Unexpected token %s %r' %
+                                 (Id_str(self.tok_id), part))
+
+    def ParseJ8(self):
+        # type: () -> value_t
+        """
+        Raises exception on error?
+        """
+        self._Next()
+        return self._ParseValue()
+
+    def ParseJson(self):
+        # type: () -> value_t
+
+        # TODO: distinguish it with flags
+        return self.ParseJ8()

@@ -19,6 +19,7 @@
 #include "_gen/frontend/types.asdl.h"
 #include "_gen/ysh/grammar_nt.h"
 #include "cpp/core.h"
+#include "cpp/data_lang.h"
 #include "cpp/fanos.h"
 #include "cpp/frontend_flag_spec.h"
 #include "cpp/frontend_match.h"

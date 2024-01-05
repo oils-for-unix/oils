@@ -558,33 +558,25 @@ _J8_ONE_CHAR = R(r'''\\[\\'"/bfnrt]''', Id.Char_OneChar)
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
 J8_STR_DEF = [
     C("'", Id.Right_SingleQuote),  # end for J8
-
     _J8_ONE_CHAR,
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
-
     _U_BRACED_CHAR,  # \u{123456} - J8 only
-
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
     R(r'''[^\\'\0]+''', Id.Char_Literals),
-
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 
 # For "JSON strings \" \u1234"
 JSON_STR_DEF = [
     C('"', Id.Right_DoubleQuote),  # end for JSON
-
     _J8_ONE_CHAR,
-
     _U4_CHAR_STRICT,  # \u1234 - JSON only
-
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
     R(r'[^\\"\0]+', Id.Char_Literals),
-
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 

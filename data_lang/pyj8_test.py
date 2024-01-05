@@ -9,6 +9,7 @@ import unittest
 from _devbuild.gen.syntax_asdl import Id, Id_str
 from core import error
 from data_lang import pyj8  # module under test
+from data_lang import j8
 from mycpp.mylib import log
 
 
@@ -53,20 +54,20 @@ class J8Test(unittest.TestCase):
         print(en)
 
     def testLexerDecoder(self):
-        lex = pyj8.LexerDecoder(r'{"hi": "bye \n"}')
+        lex = j8.LexerDecoder(r'{"hi": "bye \n"}')
         _PrintTokens(lex)
 
-        lex = pyj8.LexerDecoder(r"{u'unicode': b'bytes \y1f \yff'}")
+        lex = j8.LexerDecoder(r"{u'unicode': b'bytes \y1f \yff'}")
         _PrintTokens(lex)
 
-        lex = pyj8.LexerDecoder(
-            r'{"mu \u03BC \u0001":' + r"b'mu \u{03bc} \u{2620}'")
+        lex = j8.LexerDecoder(r'{"mu \u03BC \u0001":' +
+                              r"b'mu \u{03bc} \u{2620}'")
         _PrintTokens(lex)
 
-        lex = pyj8.LexerDecoder(r'{"x": [1, 2, 3.14, true]}')
+        lex = j8.LexerDecoder(r'{"x": [1, 2, 3.14, true]}')
         _PrintTokens(lex)
 
-        lex = pyj8.LexerDecoder(r'''
+        lex = j8.LexerDecoder(r'''
         [
           1e9, 1e-9, -1e9, -1E-9, 42
         ]
@@ -74,7 +75,7 @@ class J8Test(unittest.TestCase):
         _PrintTokens(lex)
 
         try:
-            lex = pyj8.LexerDecoder('"\x01"')
+            lex = j8.LexerDecoder('"\x01"')
             _PrintTokens(lex)
         except error.Decode as e:
             print(e)
@@ -82,7 +83,7 @@ class J8Test(unittest.TestCase):
             self.fail('Expected failure')
 
         try:
-            lex = pyj8.LexerDecoder('"\x1f"')
+            lex = j8.LexerDecoder('"\x1f"')
             _PrintTokens(lex)
         except error.Decode as e:
             print(e)
