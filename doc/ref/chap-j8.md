@@ -57,7 +57,12 @@ See the [Surrogate Pair Blog
 Post](https://www.oilshell.org/blog/2023/06/surrogate-pair.html) for an
 example:
 
-    \ud83e\udd26
+    "\ud83e\udd26"
+
+Because JSON strings are valid J8 strings, surrogate pairs are also part of J8
+notation.  Decoders must accept them, but encoders should avoid them.
+
+You can emit `u'\u{1f926}'` or `b'\u{1f926}'` instead of `"\ud83\udd26"`.
 
 <h3 id="u-prefix">u-prefix <code>u'hi'</code></h3>
 
@@ -72,8 +77,8 @@ because they may contain surrogate halves.
 In contrast, `u''` strings can only have escapes like `\u{1f926}`, with no
 surrogate pairs or halves.
 
-- The **encoded** bytes must also be valid UTF-8, like JSON strings.
-- The decoded bytes are valid UTF-8, **unlike** JSON strings.
+- The **encoded** bytes must be valid UTF-8, like JSON strings.
+- The **decoded** bytes must be valid UTF-8, **unlike** JSON strings.
 
 Escaping:
 
@@ -106,6 +111,16 @@ To summarize, the valid J8 escapes are:
     \yff   # only valid in b'' strings
     \u{3bc} \u{1f926} etc.
 
+<h3 id="no-prefix">no-prefix <code>'hi'</code></h3>
+
+Single-quoted strings without a `u` or `b` prefix are implicitly `u''`.
+
+    u'hi μ \n'  
+     'hi μ \n'  # same as above, no \yff escapes accepted
+
+They should be avoided in contexts where `""` strings may also appear, because
+it's easy to confuse single quotes and double quotes.
+
 ## JSON8
 
 JSON8 is JSON with 4 rules:
@@ -115,36 +130,56 @@ JSON8 is JSON with 4 rules:
 - trailing commas
 - comments?
 
-### Null   
+### json8-num
 
-Expressed as the 4 letters `null`.
+Decoding detail, specific to Oils:
 
-### Bool   
+If there's a decimal point or `e-10` suffix, then it's decoded into YSH
+`Float`.  Otherwise it's a YSH `Int`.
 
-Either `true` or `false`.
+    42       # decoded to Int
+    42.0     # decoded toFloat
+    42e1     # decoded to Float
+    42.0e1   # decoded to Float
 
+### json8-str
 
-### Number
+JSON8 strings are exactly J8 strings:
 
-See JSON grammar.
+<pre>
+"hi &#x1f926; \u03bc"
+u'hi &#x1f926; \u{3bc}'
+b'hi &#x1f926; \u{3bc} \yff'
+</pre>
 
-If there is a decimal point or `e-10` suffix, then it's decoded into YSH float.
+### json8-list
 
-### Json8String
+Like JSON lists, but can have trailing comma.  Examples:
 
-It's one of 3 types:
+    [42, 43]
+    [42, 43,]   # same as above
 
-- JSON string
-- B string (bytes)
-- J string (unicode)
+### json8-dict
 
-### List
+Like JSON "objects", but:
 
-Known as `array` in JSON
+- Can have trailing comma.
+- Can have unquoted keys, as long as they're an identifier.
 
-### Dict
+Examples:
 
-Known as `object` in JSON
+    {"json8": "message"}
+    {json8: "message"}     # same as above
+    {json8: "message",}    # same as above
+
+### json8-comment
+
+End-of-line comments in two styles:
+
+    {"json8": "message"}   // comment
+
+    {"json8": "message"}    # comment
+
 
 ## TSV8
 
@@ -164,11 +199,14 @@ These are the J8 Primitives (Bool, Int, Float, Str), separated by tabs.
 
 The primitives:
 
-- Null
 - Bool
 - Int
 - Float
 - Str
+
+Note: Can `null` be in all cells?  Maybe except `Bool`?
+
+It can stand in for `NA`?
 
 [JSON]: https://json.org
 

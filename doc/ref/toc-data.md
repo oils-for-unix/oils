@@ -24,9 +24,10 @@ Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
                  surrogate-pair \ud83e\udd26
                  u-prefix u'hi'   b-prefix b'hi'
                  j8-escape \u{1f926} \yff
-  [JSON8]        Null   Bool   Number   
-                 Json8String
-                 List   Dict
+                 no-prefix 'hi'
+  [JSON8]        json8-num   json8-str
+                 json8-list   json-dict
+                 json8-comment
   [TSV8]         column-attrs   column-types
 ```
 
@@ -51,6 +52,5 @@ All J8 notation is UTF-8.
   [JSON]   json-encode-err   json-decode-err
   [JSON8]  json8-encode-err   json8-decode-err
   [Packle] packle-encode-err   packle-decode-err   
-  [UTF8]   bad-byte   expected-start   expected-cont
-           incomplete-seq   overlong   bad-code-point
+  [UTF8]   utf8-encode-err   utf8-decode-err
 ```

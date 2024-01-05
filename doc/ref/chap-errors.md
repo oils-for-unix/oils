@@ -33,7 +33,12 @@ JSON encoding has three possible errors:
 
 ### json-decode-err
 
-TODO
+1. The encoded message itself is not valid UTF-8.
+   - (Typically, you need to check the unescaped bytes in string literals
+     `"abc\n"`).
+1. Lexical error, like the message `+`, an invalid escape `"\z"`, or a
+   truncated escape `"\u1"`.
+1. Grammatical error, like the message `}{`.
 
 ## JSON8
 
@@ -46,7 +51,11 @@ Compared to JSON, JSON8 removes an encoding error:
 
 ### json8-decode-err
 
-TODO
+JSON8 has the same decoding errors as JSON, plus:
+
+4. `\u{dc00}` should not be in the surrogate range.  This means it doesn't
+   represent a real character, and `\yff` escapes should be used instead.
+4. `\yff` should not be in `u''` string.  (It's only valid in `b''` strings.)
 
 ## Packle
 
@@ -71,17 +80,33 @@ TODO
 
 This is for reference.
 
-### bad-byte   
+### utf8-encode-err
 
-### expected-start   
+Oils stores strings as UTF-8 in memory, so it doesn't often do encoding.
 
-### expected-cont
+- Surrogate range?
 
-### incomplete-seq   
+### utf8-decode-err
 
-### overlong
+#### bad-byte   
 
-### bad-code-point
+#### expected-start   
+
+#### expected-cont
+
+#### incomplete-seq   
+
+#### overlong
+
+I think this is only leading zeros?
+
+Like the difference between `123` and `0123`.
+
+#### bad-code-point
 
 e.g. decoded to something in the surrogate range
+
+Note: I think this is relaxed for WTF-8, and our JSON decoder probably needs to
+use it.
+
 

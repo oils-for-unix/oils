@@ -7,15 +7,76 @@ J8 Notation
 ===========
 
 J8 Notation is a set of interchange formats for **Bytes, Strings, Records, and
-Tables**.  It's built on JSON, and compatible with it in many ways.
+Tables**.  It's built on [JSON]($xref), and compatible with it in many ways.
 
-See [ref/index-data.html](ref/index-data.html) for the reference.
+It was designed for Oils, but it is **not** specific to Oils.  This is just
+like JSON isn't specific to JavaScript: today a Python program and a Go program
+may communicate with [JSON]($xref), and JavaScript isn't involved at all.
+
+
+<div id="toc">
+</div>
+
+## Goals
+
+- Fix the JSON-Unix mismatch: be able to express byte strings.
+  - Note: you can still use plain JSON In Oils if **lossy** encodings are OK!
+- Provide an option to avoid the Surrogate Pair / UTF-16 legacy of JSON
+- Expose some information about strings vs. bytes
+- Turn TSV into an **exterior** [data
+  frame](https://www.oilshell.org/blog/2018/11/30.html) format.
+  - It can represent tabs!  And binary data.
+
+Non-goals:
+
+- "Replace" JSON.  It's upward compatible.
+- Resolve strings vs. bytes dilemma in all situations.
+
+## J8 Notation in As Few Words As Possible
+
+J8 Strings are a superset of JSON strings:
+
+Only valid unicode:
+
+<pre style="font-size: x-large;">
+u'hi &#x1f926; \u{1f926}'                  &rarr; hi &#x1f926; &#x1f926;
+</pre>
+
+JSON: unicode + surrogate halves:
+
+<pre style="font-size: x-large;">
+ "hi &#x1f926; \ud83e\udd26"               &rarr; hi &#x1f926; &#x1f926;
+ "\ud83e"
+</pre>
+
+Any byte string:
+
+<pre style="font-size: x-large;">
+b'hi &#x1f926; \u{1f926} \yf0\y9f\ya4\ya6' &rarr; hi &#x1f926; &#x1f926; &#x1f926;
+b'\yff'
+</pre>
+
+JSON8 is built on top of J8 strings, as well as:
+
+1. Unquoted object/Dict keys `{d, 42}`
+1. Trailing commas `{"d": 42,}` and `[42,]`
+1. Single-line comments `//` and `#`
+
+TSV8:
+
+1. Required first row with column names
+1. Optional second row with column types
+1. Gutter Column
+
+## Background
+
+See [ref/toc-data.html](ref/toc-data.html) for the reference.
 
 <!-- TODO: fix CSS -->
 
 It's available in OSH and YSH, but should be implemented in all languages.
 
-TODO:
+### TODO / Diagrams
 
 - Doc: How to Turn a JSON library encoder into a J8 Notation library.  (Issue:
   byte strings vs. unicode strings.  J8 is more expressive.)
@@ -36,19 +97,9 @@ TODO:
 - YSH relationships
   - Every J8 string is valid in YSH, with `u''`
 
-## Review of JSON
+## Strings and Bytes
 
-See <https://json.org>
-
-```
-  [primitive]     null   true   false
-  [number]        42  -1.2e-4
-  [string]        "hello\n", see J8 Strings
-  [array]         [1, 2, 3]
-  [object]        {"key": 42}
-```
-
-### JSON Strings
+### Review of JSON Strings
 
 ```
   [escaped]       \"  \\  \/  \b  \f  \n  \r  \t
@@ -59,7 +110,8 @@ See <https://json.org>
 
 TODO: Do we need JNUM a name for JSON numbers? 
 
-## J8 string - Byte strings which may be UTF-8 encoded
+### J8 strings - Byte strings which may be UTF-8 encoded
+
 
 ```
   [unicode]       \u{123456} to add UTF-8.  No surrogates.
@@ -83,7 +135,21 @@ Distinguished form:
 
 - The `j` prefix is always present.
 
-## JSON8 - Records built on J8 string
+## Tree-Shaped Records
+
+### Review of JSON
+
+See <https://json.org>
+
+```
+  [primitive]     null   true   false
+  [number]        42  -1.2e-4
+  [string]        "hello\n", see J8 Strings
+  [array]         [1, 2, 3]
+  [object]        {"key": 42}
+```
+
+### JSON8 - Records built on J8 strings
 
 Examples:
 
@@ -136,7 +202,9 @@ Canonical form?  The shortest form?
 
 - Keys aren't quoted?
 
-## Review of TSV
+## Table-Shaped Textual Data
+
+### Review of TSV
 
 See RFC (TODO)
 
@@ -155,7 +223,7 @@ Restrictions:
 - There's no escaping, so unprintable bytes result in an unprintable TSV file.
 
 
-## TSV8 - Tables built on J8 string
+### TSV8 - Tables built on J8 strings
 
 Example:
 
@@ -206,3 +274,28 @@ Canonical form:
 
 TSV8 is always distinguished by leading `!tsv8`.
 
+
+## FAQ
+
+### Why are byte escapes spelled `\yff` and not `\xff` like C?
+
+Because the JavaScript and Python languages both overload `\xff` to mean
+`\u{ff}`.
+
+TODO: example
+
+This is exactly the confusion that J8 notation sets out to fix, so we choose to
+be ultra **explicit** and different.
+
+### How Do I Write a J8 Encoder or Decoder?
+
+The list of errors at [ref/chap-errors.html](ref/chap-errors.html) may be a
+good starting points.
+
+## Future Work
+
+We could have an SEXP8 format:
+
+- Concrete syntax trees
+  - with location information
+- Textual IRs like WebAssembly

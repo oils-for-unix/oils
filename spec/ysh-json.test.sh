@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 5
 ## tags: dev-minimal
 
 #### usage errors
@@ -462,4 +462,43 @@ pp line (_reply)
 ## STDOUT:
 (Str)   "'"
 (Str)   "\""
+## END
+
+#### \yff can't appear in u'' string
+
+shopt -s ysh:upgrade
+
+echo -n b'\yff' | od -A n -t x1
+echo -n u'\yff' | od -A n -t x1
+
+## status: 2
+## STDOUT:
+## END
+
+#### \u{dc00} can't be in surrogate range
+
+shopt -s ysh:upgrade
+
+echo -n u'\u{dc00}' | od -A n -t x1
+
+## status: 2
+## STDOUT:
+## END
+
+
+#### Inf and NaN can't be encoded or decoded
+
+# This works in Python, should probably support it
+
+var n = float("NaN")
+var i = float("inf")
+
+pp line (n)
+pp line (i)
+
+json dump (n)
+json dump (i)
+
+## status: 2
+## STDOUT:
 ## END
