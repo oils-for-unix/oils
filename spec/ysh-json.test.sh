@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 7
 ## tags: dev-minimal
 
 #### usage errors
@@ -211,10 +211,10 @@ echo 'should have failed'
 1:{ ...
 ## END
 
-#### j8 write
+#### json8 write
 
 # TODO: much better tests
-j8 write ([3, "foo"])
+json8 write ([3, "foo"])
 
 ## STDOUT:
 [
@@ -224,17 +224,17 @@ j8 write ([3, "foo"])
 ## END
 
 
-#### j8 write bytes vs unicode string
+#### json8 write bytes vs unicode string
 
 u=$'mu \u03bc \x01 \" \\ \b\f\n\r\t'
 u2=$'\x01\x1f'  # this is a valid unicode string
 
 b=$'\xff'  # this isn't valid unicode
 
-j8 write (u)
-j8 write (u2)
+json8 write (u)
+json8 write (u2)
 
-j8 write (b)
+json8 write (b)
 
 ## STDOUT:
 "mu μ \u0001 \" \\ \b\f\n\r\t"
@@ -247,8 +247,8 @@ b'\yff'
 s1=$'\x01'
 s2=$'\x01\xff\x1f'  # byte string
 
-j8 write (s1)
-j8 write (s2)
+json8 write (s1)
+json8 write (s2)
 
 ## STDOUT:
 "\u0001"
@@ -256,7 +256,7 @@ b'\u{1}\yff\u{1f}'
 ## END
 
 
-#### j8 read
+#### json8 read
 
 # Avoid conflict on stdin from spec test framework?
 
@@ -275,17 +275,17 @@ $SH $REPO_ROOT/spec/testdata/j8-read.sh
 (Dict)   {"k":{"k2":"v2"},"k3":"backslash \\ \" \n line 2 μ "}
 ## END
 
-#### j8 round trip
+#### json8 round trip
 
 var obj = [42, 1.5, null, true, "hi", b'\yff\yfe\b\n""']
 
-j8 write --pretty=F (obj) > j
+json8 write --pretty=F (obj) > j
 
 cat j
 
-j8 read < j
+json8 read < j
 
-j8 write (_reply)
+json8 write (_reply)
 
 ## STDOUT:
 [42,1.5,null,true,"hi",b'\yff\yfe\b\n""']
@@ -453,7 +453,7 @@ pp line (_reply)
 
 
 
-j8 read <<EOF
+json8 read <<EOF
 u'"'
 EOF
 
@@ -500,5 +500,37 @@ json dump (n)
 json dump (i)
 
 ## status: 2
+## STDOUT:
+## END
+
+#### JSON is invalid UTF-8
+
+echo $'"\xff"' | json read
+echo status=$?
+
+echo $'"\xff"' | json8 read
+echo status=$?
+
+echo $'\xff' | json read
+echo status=$?
+
+echo $'\xff' | json8 read
+echo status=$?
+
+## STDOUT:
+## END
+
+#### J8 is invalid UTF-8
+
+json8 read <<EOF
+b'$(echo -e -n '\xff')'
+EOF
+echo status=$?
+
+json8 read <<EOF
+u'$(echo -e -n '\xff')'
+EOF
+echo status=$?
+
 ## STDOUT:
 ## END

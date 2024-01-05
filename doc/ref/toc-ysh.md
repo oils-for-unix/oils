@@ -57,7 +57,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   float-lit     3.14  1.5e-10
                   num-suffix    42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
-                  str-literal    r'[a-z]\n'  u'line\n'  b'byte \yff'
+                  str-literal   "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
                   triple-quoted """  r'''  u'''  b'''
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}
@@ -98,8 +98,8 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-word-lang
-  [String Lit]    X multi-str   """  r'''  j"""
-                  X j8-str      j"byte \y00 unicode \u{123456}"
+  [String Lit]    str-literal   "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
+                  triple-quoted """  r'''  u'''  b'''
                   X tagged-str  "<span id=$x>"html
   [Expression]    expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
@@ -135,7 +135,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
-                  j8                     read write
+                  json8                  read write
                   X packle               read write, Graph-shaped
 X [TSV8]          rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)

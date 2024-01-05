@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Option_def.py."""
 from __future__ import print_function
 
 from typing import List, Dict, Optional, Any
