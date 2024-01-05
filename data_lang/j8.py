@@ -537,15 +537,24 @@ class LexerDecoder(object):
             elif tok_id == Id.Char_UBraced:  # J8 only
                 h = self.s[str_pos + 3:str_end - 1]
                 i = int(h, 16)
+
+                # Same check in osh/word_parse.py
+                if 0xD800 <= i and i < 0xE000:
+                    raise self._Error(
+                        r"\u{%s} escape is illegal because it's in the surrogate range" % h,
+                        str_end)
+
                 part = string_ops.Utf8Encode(i)
 
             elif tok_id == Id.Char_YHex:  # J8 only
+                h = self.s[str_pos + 2:str_end]
+
+                # Same check in osh/word_parse.py
                 if left_id != Id.Left_BSingleQuote:
                     assert left_id != Id.Left_BTSingleQuote, "Not handled here"
                     raise self._Error(
-                        r"\yHH escapes not allowed in u'' strings", str_end)
+                        r"\y%s escapes not allowed in u'' strings" % h, str_end)
 
-                h = self.s[str_pos + 2:str_end]
                 i = int(h, 16)
                 part = chr(i)
 

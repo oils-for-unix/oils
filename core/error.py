@@ -247,8 +247,8 @@ class Decode(Exception):
         # type: () -> str
 
         # Show 10 chars of context for now
-        start = max(0, self.start_pos - 10)
-        end = min(len(self.s), self.end_pos + 10)
+        start = max(0, self.start_pos - 4)
+        end = min(len(self.s), self.end_pos + 4)
 
         part = self.s[start:end]
         return self.msg + ' (pos %d-%d: %r)' % (self.start_pos, self.end_pos,

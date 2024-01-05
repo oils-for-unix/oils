@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 5
 ## tags: dev-minimal
 
 #### usage errors
@@ -526,7 +526,7 @@ pp line (u)  # undefined
 (Str)   b'\yfe'
 ## END
 
-#### \u{dc00} can't be in surrogate range
+#### \u{dc00} can't be in surrogate range in code
 
 shopt -s ysh:upgrade
 
@@ -535,6 +535,37 @@ echo -n u'\u{dc00}' | od -A n -t x1
 ## status: 2
 ## STDOUT:
 ## END
+
+#### \u{dc00} can't be in surrogate range in data
+
+json8 read <<'EOF'
+["long string", u'hello \u{d7ff}', "other"]
+EOF
+echo status=$?
+
+json8 read <<'EOF'
+["long string", u'hello \u{d800}', "other"]
+EOF
+echo status=$?
+
+json8 read <<'EOF'
+["long string", u'hello \u{dfff}', "other"]
+EOF
+echo status=$?
+
+json8 read <<'EOF'
+["long string", u'hello \u{e000}', "other"]
+EOF
+echo status=$?
+
+
+## STDOUT:
+status=0
+status=1
+status=1
+status=0
+## END
+
 
 
 #### Inf and NaN can't be encoded or decoded
