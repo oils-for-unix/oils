@@ -19,18 +19,22 @@ TODO:
 
 - Doc: How to Turn a JSON library encoder into a J8 Notation library.  (Issue:
   byte strings vs. unicode strings.  J8 is more expressive.)
-- Diagrams of Evolution: JSON and strings -> J8 / JSON8/ TSV8
+- Diagrams of Evolution
+  - JSON strings -> J8 Strings
+  - J8 strings as a building block for JSON8 and TSV8
+- Superset relationships:
+  - JSON strings are valid J8 strings
+  - which means all JSON is valid JSON8
+  - `b''` strings can express a superset of JSON strings, which can express a
+    superset of `u''` strings
+    - J8-style `u'' b''` strings vs. *J8 strings*
 - Venn Diagrams of Data Language Relationships
-  - Every JSON string is valid J8 string
-  - All JSON is valid JSON8
   - If you add the left "gutter" column, every TSV is valid TSV8.
   - Every TSV8 is also syntactically valid TSV.  For example, you can import it
     into a spreadsheet, and remove/ignore the gutter column and type row.
   - TODO: make a screenshot and test it
 - YSH relationships
-  - Every J8 string is valid in YSH, with `j""`
-  - YSON with J8 string in **distinguished form** is valid in YSH
-    - `"$foo"` is something different in shell, so we need `j"$foo"`.
+  - Every J8 string is valid in YSH, with `u''`
 
 ## Review of JSON
 
@@ -66,9 +70,9 @@ TODO: Do we need JNUM a name for JSON numbers?
 Examples:
 
 ```
-"no j prefix needed"
-j"but accepted"  # similar to !json8 and !tsv8 prefixes
-j"nul byte \y00, unicode \u{123456}"
+u'but accepted'  # similar to !json8 and !tsv8 prefixes
+b'nul byte \y00, unicode \u{123456}'
+'this is a u string, but discouraged?'
 ```
 
 Compatible form:
@@ -79,7 +83,7 @@ Distinguished form:
 
 - The `j` prefix is always present.
 
-## YSON - Records built on J8 string
+## JSON8 - Records built on J8 string
 
 Examples:
 

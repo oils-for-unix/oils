@@ -57,8 +57,8 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   float-lit     3.14  1.5e-10
                   num-suffix    42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
-                  str-literal   r'[a-z]\n'  X j"line\n"  
-                  X multi-str   """  r'''  j"""
+                  str-literal    r'[a-z]\n'  u'line\n'  b'byte \yff'
+                  triple-quoted """  r'''  u'''  b'''
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}
                   range         1 .. n+1
