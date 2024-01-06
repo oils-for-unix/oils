@@ -63,6 +63,8 @@ unit() {
 
     run-test-in-dir  cpp/core_test '' $variant  # has testdata
 
+    run-one-test     cpp/data_lang_test '' $variant
+
     run-one-test     cpp/qsn_test '' $variant
 
     run-one-test     cpp/frontend_flag_spec_test '' $variant
@@ -96,6 +98,8 @@ coverage() {
   run-one-test     cpp/obj_layout_test $compiler $variant
 
   run-test-in-dir  cpp/core_test $compiler $variant  # has testdata
+
+  run-one-test     cpp/data_lang_test $compiler $variant
 
   run-one-test     cpp/qsn_test $compiler $variant
 
