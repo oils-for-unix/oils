@@ -384,19 +384,16 @@ json write (c4)
 # TODO: Weird Python allows this to be decoded, but I think the Bjoern state
 # machine will not!
 
-var j = r'"\ud83e"'
+shopt -s ysh:upgrade
 
-echo $j | json read
-echo len=$[len(_reply)]
+for j in '"\ud83e"' '"\udd26"' {
+  var s = fromJson(j)
+  echo len=$[len(s)]
 
-json write (_reply)
-
-var j = r'"\udd26"'
-
-echo $j | json read
-echo len=$[len(_reply)]
-
-json write (_reply)
+  json write (s) > tmp.txt
+  json read < tmp.txt
+  pp line (_reply)
+}
 
 ## STDOUT:
 len=3
@@ -531,7 +528,7 @@ pp line (_reply)
 (Str)   "\""
 ## END
 
-#### \yff can't appear in u'' code strings
+#### \yff can't appear in u'' code strings (command)
 
 shopt -s ysh:upgrade
 
@@ -541,6 +538,19 @@ echo -n u'\yfd' | od -A n -t x1
 ## status: 2
 ## STDOUT:
  fd
+## END
+
+#### \yff can't appear in u'' code strings (expr)
+
+var x = b'\yfe' 
+write -n -- $x | od -A n -t x1
+
+var x = u'\yfe' 
+write -n -- $x | od -A n -t x1
+
+## status: 2
+## STDOUT:
+ fe
 ## END
 
 #### \yff can't appear in u'' multiline code strings
@@ -574,11 +584,22 @@ pp line (u)  # undefined
 (Str)   b'\yfe'
 ## END
 
-#### \u{dc00} can't be in surrogate range in code
+#### \u{dc00} can't be in surrogate range in code (command)
 
 shopt -s ysh:upgrade
 
 echo -n u'\u{dc00}' | od -A n -t x1
+
+## status: 2
+## STDOUT:
+## END
+
+#### \u{dc00} can't be in surrogate range in code (expr)
+
+shopt -s ysh:upgrade
+
+var x = u'\u{dc00}' 
+echo $x | od -A n -t x1
 
 ## status: 2
 ## STDOUT:
