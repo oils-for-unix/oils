@@ -122,11 +122,12 @@ class CcLibrary(object):
   4. The tarball needs the list of sources for binary
   """
 
-  def __init__(self, label, srcs, implicit, deps, generated_headers):
+  def __init__(self, label, srcs, implicit, deps, headers, generated_headers):
     self.label = label
     self.srcs = srcs  # queried by SourcesForBinary
     self.implicit = implicit
     self.deps = deps
+    self.headers = headers
     # TODO: asdl() rule should add to this.
     # Generated headers are different than regular headers.  The former need an
     # implicit dep in Ninja, while the latter can rely on the .d mechanism.
@@ -285,6 +286,8 @@ class Rules(object):
       srcs = None,
       implicit = None,
       deps = None,
+      # note: headers is only used for tarball manifest, not compiler command line
+      headers = None,
       generated_headers = None):
 
     # srcs = [] is allowed for _gen/asdl/hnode.asdl.h
@@ -293,12 +296,14 @@ class Rules(object):
 
     implicit = implicit or []
     deps = deps or []
+    headers = headers or []
     generated_headers = generated_headers or []
 
     if label in self.cc_libs:
       raise RuntimeError('%s was already defined' % label)
 
-    self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps, generated_headers)
+    self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps,
+                                    generated_headers, headers)
 
   def _TransitiveClosure(self, name, deps, unique_out):
     """
@@ -420,6 +425,7 @@ class Rules(object):
     deps = self.cc_binary_deps[main_cc]
     headers = []
     for label in deps:
+      headers.extend(self.cc_libs[label].headers)
       headers.extend(self.cc_libs[label].generated_headers)
     return headers
 

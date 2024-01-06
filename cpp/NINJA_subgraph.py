@@ -88,6 +88,10 @@ def NinjaGraph(ru):
         deps=[
             '//mycpp/runtime',
         ],
+        # This ensures its included in the release tarball
+        headers=[
+            'data_lang/utf8_impls/bjoern_dfa.h',
+        ],
     )
 
     ru.cc_binary('cpp/data_lang_test.cc',
