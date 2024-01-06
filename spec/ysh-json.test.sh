@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -349,28 +349,59 @@ pp line (_reply)
 (Dict)   {"short":"-v","long":"--verbose","type":null,"default":"","help":"Enable verbose logging"}
 ## END
 
-#### round trip surrogate pair
+#### round trip: decode surrogate pair and encode
 
 var j = r'"\ud83e\udd26"'
+echo $j | json read (&c1)
 
-echo $j | json read
+json write (c1)
 
-json write (_reply)
+var j = r'"\uD83E\uDD26"'
+echo $j | json read (&c2)
+
+json write (c2)
+
+# Not a surrogate pair
+var j = r'"\u0001\u0002"' 
+echo $j | json read (&c3)
+
+json write (c3)
+
+var j = r'"\u0100\u0101\u0102"' 
+echo $j | json read (&c4)
+
+json write (c4)
 
 ## STDOUT:
 "🤦"
+"🤦"
+"\u0001\u0002"
+"ĀāĂ"
 ## END
 
-#### round trip surrogate half
+#### round trip: decode surrogate half and encode
+
+# TODO: Weird Python allows this to be decoded, but I think the Bjoern state
+# machine will not!
 
 var j = r'"\ud83e"'
 
 echo $j | json read
+echo len=$[len(_reply)]
+
+json write (_reply)
+
+var j = r'"\udd26"'
+
+echo $j | json read
+echo len=$[len(_reply)]
 
 json write (_reply)
 
 ## STDOUT:
+len=3
 "\ud83e"
+len=3
 ## END
 
 #### toJson() toJ8() - TODO: test difference

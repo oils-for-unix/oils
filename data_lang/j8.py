@@ -563,7 +563,18 @@ class LexerDecoder(object):
                 i = int(h, 16)
                 part = chr(i)
 
-            elif tok_id == Id.Char_Unicode4:  # JSON only
+            elif tok_id == Id.Char_SurrogatePair:
+                h1 = self.s[str_pos + 2:str_pos+6]
+                h2 = self.s[str_pos + 8:str_pos+12]
+
+                # https://www.oilshell.org/blog/2023/06/surrogate-pair.html
+                i1 = int(h1, 16) - 0xD800  # high surrogate
+                i2 = int(h2, 16) - 0xDC00  # low surrogate
+                code_point = 0x10000 + (i1 << 10) + i2
+
+                part = string_ops.Utf8Encode(code_point)
+
+            elif tok_id == Id.Char_Unicode4:  # JSON only, unpaired
                 h = self.s[str_pos + 2:str_end]
                 i = int(h, 16)
                 part = string_ops.Utf8Encode(i)

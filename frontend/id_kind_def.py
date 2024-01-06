@@ -390,7 +390,8 @@ def AddKinds(spec):
             'Octal3',
             'Octal4',
             'Unicode4',
-            'Unicode8',  # legacy
+            'SurrogatePair',  # JSON
+            'Unicode8',  # bash
             'UBraced',
             'Pound',  # YSH
             'Literals',
