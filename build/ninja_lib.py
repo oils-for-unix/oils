@@ -303,7 +303,7 @@ class Rules(object):
       raise RuntimeError('%s was already defined' % label)
 
     self.cc_libs[label] = CcLibrary(label, srcs, implicit, deps,
-                                    generated_headers, headers)
+                                    headers, generated_headers)
 
   def _TransitiveClosure(self, name, deps, unique_out):
     """
