@@ -96,6 +96,7 @@ readonly MARKDOWN_DOCS=(
   # Data language
   qsn
   qtt
+  j8-notation
 
   doc-toolchain
   doc-plugins

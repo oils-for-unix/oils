@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-"""Option_def.py."""
 from __future__ import print_function
 
 from typing import List, Dict, Optional, Any
@@ -159,7 +158,7 @@ _BASIC_PARSE_OPTIONS = [
     # everywhere else.  It's not a command 'x' with arg '='.
     'parse_equals',
     'parse_paren',  # if (x > 0) ...
-    'parse_raw_string',  # echo r'\'
+    'parse_ysh_string',  # r'' u'' b'' and multi-line versions
     'parse_triple_quote',  # for ''' and """
 ]
 

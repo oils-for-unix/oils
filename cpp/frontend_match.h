@@ -59,6 +59,10 @@ Id_t BracketUnary(BigStr* s);
 Id_t BracketBinary(BigStr* s);
 Id_t BracketOther(BigStr* s);
 
+Tuple2<Id_t, int> MatchJ8Token(BigStr* s, int pos);
+Tuple2<Id_t, int> MatchJ8StrToken(BigStr* s, int pos);
+Tuple2<Id_t, int> MatchJsonStrToken(BigStr* s, int pos);
+
 //
 // Other Matching Functions
 //

@@ -153,7 +153,7 @@ concept in shell.
 You can choose the quoting style that's most convenient to write a given
 string.
 
-#### Single-Quoted, Double-Quoted, and C-Style
+#### Double-Quoted, Single-Quoted, and J8 strings (like JSON)
 
 Double-quoted strings allow **interpolation with `$`**:
 
@@ -169,15 +169,19 @@ can't be expressed):
 
     echo 'c:\Program Files\'        # => c:\Program Files\
 
-C-style strings look like `$'foo'` and respect backslash **character escapes**:
+If you want C-style backslash **character escapes**, use a J8 string, which is
+like JSON, but with single quotes::
 
-    echo $' A is \x41 \n line two, with backslash \\'
+    echo u' A is \u{41} \n line two, with backslash \\'
     # =>
     #  A is A
     #  line two, with backslash \
 
-(The `$` before the quote doesn't mean "interpolation".  It's an unfortunate
-syntax collision that will be changed to JSON-style `j""` strings.)
+The `u''` strings are guaranteed to be valid Unicode (unlike JSON), but you can
+also use `b''` strings:
+
+    echo b'byte \yff'  # byte that's not valid unicode, like \xff in other languages
+                       # do not confuse with \u{ff}
 
 #### Multi-line Strings
 
@@ -202,14 +206,13 @@ three varieties, and leading whitespace is stripped in a convenient way.
     # $1.99
     # $2.00
 
-    sort <<< $'''
+    sort <<< u'''
     C\tD
     A\tB
-    '''
+    '''  # b''' strings also supported
     # =>
     # A        B
     # C        D
-
 
 (Use multiline strings instead of shell's [here docs]($xref:here-doc).)
 
@@ -848,15 +851,12 @@ Floats are written like you'd expect:
 #### Str
 
 See the section above called *Three Kinds of String Literals*.  It described
-`'single quoted'`, `"double ${quoted}"`, and `$'c-style\n'` strings; as well as
-their multiline variants.
+`'single quoted'`, `"double ${quoted}"`, and `u'J8-style\n'` strings; as well
+as their multiline variants.
 
 Strings are UTF-8 encoded in memory, like strings in the [Go
 language](https://golang.org).  There isn't a separate string and unicode type,
 as in Python.
-
-(In the future, JSON-like *J8 Notation* will distinguish between strings and
-bytes on the wire.)
 
 Strings are **immutable**, as in Python and JavaScript.  This means they only
 have **transforming** methods:
@@ -1147,7 +1147,7 @@ including those with newlines and terminal escape sequences.
 Example:
 
     # A line with a tab char in the middle
-    var mystr = $'pea\t' ++ $'42\n'
+    var mystr = u'pea\t' ++ u'42\n'
 
     # Print it to stdout
     write --qsn $mystr  # => 'pea\t42\n'

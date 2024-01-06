@@ -37,21 +37,79 @@ value can't be interpolated into words.
 
 ### str-literal
 
-YSH strings appear in expression contexts, and look like shell strings:
+Double quoted strings are identical to shell:
 
-    var s = 'foo'
-    var double = "hello $world and $(hostname)"
+    var dq = "hello $world and $(hostname)"
 
-However, strings with backslashes are forced to specify whether they're **raw**
-strings or C-style strings:
+Single quoted strings may be raw:
 
-    var s = 'line\n'    # parse error: ambiguous
+    var s = r'line\n'      # raw string means \n is literal, NOT a newline
 
-    var s = $'line\n'   # C-style string
+Or escaped *J8 strings*:
 
-    var s = r'[a-z]\n'  # raw strings are useful for regexes (not eggexes)
+    var s = u'line\n \u{3bc}'        # unicode string means \n is a newline
+    var s = b'line\n \u{3bc} \yff'   # same thing, but also allows bytes
 
-    var unicode = 'mu = \u{3bc}'
+Both `u''` and `b''` strings evaluate to the single `Str` type.  The difference
+is that `b''` strings allow the `\yff` byte escape.
+
+---
+
+There's no way to express a single quote in raw strings.  Use one of the other
+forms instead:
+
+    var sq = "single quote: ' "
+    var sq = u'single quote: \' '
+
+Sometimes you can omit the `r`, e.g. where there are no backslashes and thus no
+ambiguity:
+
+    echo 'foo'
+    echo r'foo'  # same thing
+
+The `u''` and `b''` strings are called *J8 strings* because the syntax in YSH
+**code** matches JSON-like **data**.
+
+    var strU = u'mu = \u{3bc}'  # J8 string with escapes
+    var strB = b'bytes \yff'    # J8 string that can express byte strings
+
+More examples:
+
+    var myRaw = r'[a-z]\n'      # raw strings are useful for regexes (not
+                                # eggexes)
+
+### triple-quoted
+
+Triple-quoted string literals have leading whitespace stripped on each line.
+They come in the same variants:
+
+    var dq = """
+        hello $world and $(hostname)
+        no leading whitespace
+        """
+
+    var myRaw = r'''
+        raw string
+        no leading whitespace
+        '''
+
+    var strU = u'''
+        string that happens to be unicode \u{3bc}
+        no leading whitespace
+        '''
+
+    var strB = b'''
+        string that happens to be bytes \u{3bc} \yff
+        no leading whitespace
+        '''
+
+Again, you can omit the `r` prefix if there's no backslash, because it's not
+ambiguous:
+
+    var myRaw = '''
+        raw string
+        no leading whitespace
+        '''
 
 ### list-literal
 

@@ -21,22 +21,6 @@ WTFs][wtfs].  Nonetheless it has some of its own.
 
 ## For Bash Compatibility
 
-### C-Escaped Strings
-
-The `$'line\n'` syntax is confusing because of the `$` character.
-
-- C-escaped strings don't allow `${var}` interpolation.
-- It has nothing to do with substitution like `${var}` or `$(hostname)`.
-
-It's also not consistent with raw strings like `r'foo'`, while `c'foo'` would
-be.
-
-If we were starting from scratch, I would have chosen a different prefix, but
-it isn't worth the breakage and complexity.  All string literals exist in both
-command and expression mode, which is tricky to implement.
-
-<!-- TODO: remove in favor of j"" -->
-
 ### Two Left Parens Should be Separated By Space
 
 No:

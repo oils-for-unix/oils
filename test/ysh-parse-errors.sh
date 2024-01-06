@@ -1317,6 +1317,52 @@ test-eggex-flags() {
   _parse-error '= / d+ ; ; ; /'
 }
 
+test-string-literals() {
+  _should-parse "echo r'hi';"
+  #_parse-error "echo r'hi'bad"
+
+  _should-parse "echo u'hi'"
+  _should-parse "(echo u'hi')"
+
+  _parse-error "echo b'hi'trailing"
+  _parse-error "echo b'hi'#notcomment"
+
+  # This is valid shell, but not a comment
+  _should-parse "echo 'hi'#notcomment"
+
+}
+
+test-multiline-string() {
+  _should-parse "echo u'''
+hi
+'''
+"
+  _should-parse "echo b'''
+hi
+'''
+"
+
+  _parse-error "echo b'''
+hi
+''
+"
+
+  _parse-error "echo r'''
+hi
+'''bad
+"
+
+  _parse-error "echo u'''
+hi
+'''bad
+"
+
+  _parse-error 'echo """
+hi
+"""bad
+'
+}
+
 #
 # Entry Points
 #

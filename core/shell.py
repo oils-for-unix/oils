@@ -656,7 +656,7 @@ def Main(
     b[builtin_i.times] = misc_osh.Times()
 
     b[builtin_i.json] = json_ysh.Json(mem, errfmt, False)
-    b[builtin_i.j8] = json_ysh.Json(mem, errfmt, True)
+    b[builtin_i.json8] = json_ysh.Json(mem, errfmt, True)
 
     ### Process builtins
     b[builtin_i.exec_] = process_osh.Exec(mem, ext_prog, fd_state, search_path,

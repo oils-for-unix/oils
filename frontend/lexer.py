@@ -53,6 +53,15 @@ def TokenSliceRight(tok, right_index):
     return tok.line.content[tok.col:right]
 
 
+def TokenSlice(tok, left, right):
+    # type: (Token, int, int) -> str
+    """Slice token directly, without creating intermediate string."""
+    assert left > 0
+    start = tok.col + left
+    end = tok.col + tok.length + right
+    return tok.line.content[start:end]
+
+
 def DummyToken(id_, val):
     # type: (int, str) -> Token
 

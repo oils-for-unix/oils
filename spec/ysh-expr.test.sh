@@ -606,3 +606,13 @@ echo result=$[evalExpr(e)]
 ## STDOUT:
 result=1
 ## END
+
+#### expression literals, sugar for strings
+var x = 0
+var e = ^"x is $x"
+
+setvar x = 1
+echo result=$[evalExpr(e)]
+## STDOUT:
+result=x is 1
+## END

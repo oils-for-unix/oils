@@ -211,52 +211,88 @@ echo 'should have failed'
 1:{ ...
 ## END
 
-#### j8 write
+#### json read doesn't accept u'' or b'' strings
 
-# TODO: much better tests
-j8 write ([3, "foo"])
+json read <<EOF
+{"key": u'val'}
+EOF
+echo status=$?
+
+#pp line (_reply)
+
+json read <<EOF
+{"key": b'val'}
+EOF
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+## END
+
+#### json write emits Unicode replacement char for binary data \yff
+
+json write ([3, "foo", $'-\xff\xfe---\xfd=']) > tmp.txt
+
+# Round trip it for good measure
+json read < tmp.txt
+
+json write (_reply)
 
 ## STDOUT:
 [
   3,
-  "foo"
+  "foo",
+  "-��---�="
+]
+## END
+
+#### json8 write emits b'' strings for binary data \yff
+
+json8 write ([3, "foo", $'-\xff\xfe-\xfd='])
+
+## STDOUT:
+[
+  3,
+  "foo",
+  b'-\yff\yfe-\yfd='
 ]
 ## END
 
 
-#### j8 write bytes vs unicode string
+#### json8 write bytes vs unicode string
 
 u=$'mu \u03bc \x01 \" \\ \b\f\n\r\t'
 u2=$'\x01\x1f'  # this is a valid unicode string
 
 b=$'\xff'  # this isn't valid unicode
 
-j8 write (u)
-j8 write (u2)
+json8 write (u)
+json8 write (u2)
 
-j8 write (b)
+json8 write (b)
 
 ## STDOUT:
 "mu μ \u0001 \" \\ \b\f\n\r\t"
 "\u0001\u001f"
-b"\yff"
+b'\yff'
 ## END
 
-#### Escaping uses \u0001 in "", but \u{1} in b""
+#### Escaping uses \u0001 in "", but \u{1} in b''
 
 s1=$'\x01'
 s2=$'\x01\xff\x1f'  # byte string
 
-j8 write (s1)
-j8 write (s2)
+json8 write (s1)
+json8 write (s2)
 
 ## STDOUT:
 "\u0001"
-b"\u{1}\yff\u{1f}"
+b'\u{1}\yff\u{1f}'
 ## END
 
 
-#### j8 read
+#### json8 read
 
 # Avoid conflict on stdin from spec test framework?
 
@@ -272,28 +308,30 @@ $SH $REPO_ROOT/spec/testdata/j8-read.sh
 (Dict)   {"k":1,"k2":2}
 (Dict)   {"k":{"k2":null}}
 (Dict)   {"k":{"k2":"v2"},"k3":"backslash \\ \" \n line 2 μ "}
+(Dict)   {"k":{"k2":"v2"},"k3":"backslash \\ \" \n line 2 μ "}
 ## END
 
-#### j8 round trip
+#### json8 round trip
 
-var obj = [42, 1.5, null, true, "hi"]
+var obj = [42, 1.5, null, true, "hi", b'\yff\yfe\b\n""']
 
-j8 write --pretty=F (obj) > j
+json8 write --pretty=F (obj) > j
 
 cat j
 
-j8 read < j
+json8 read < j
 
-j8 write (_reply)
+json8 write (_reply)
 
 ## STDOUT:
-[42,1.5,null,true,"hi"]
+[42,1.5,null,true,"hi",b'\yff\yfe\b\n""']
 [
   42,
   1.5,
   null,
   true,
-  "hi"
+  "hi",
+  b'\yff\yfe\b\n""'
 ]
 ## END
 
@@ -311,28 +349,59 @@ pp line (_reply)
 (Dict)   {"short":"-v","long":"--verbose","type":null,"default":"","help":"Enable verbose logging"}
 ## END
 
-#### round trip surrogate pair
+#### round trip: decode surrogate pair and encode
 
 var j = r'"\ud83e\udd26"'
+echo $j | json read (&c1)
 
-echo $j | json read
+json write (c1)
 
-json write (_reply)
+var j = r'"\uD83E\uDD26"'
+echo $j | json read (&c2)
+
+json write (c2)
+
+# Not a surrogate pair
+var j = r'"\u0001\u0002"' 
+echo $j | json read (&c3)
+
+json write (c3)
+
+var j = r'"\u0100\u0101\u0102"' 
+echo $j | json read (&c4)
+
+json write (c4)
 
 ## STDOUT:
 "🤦"
+"🤦"
+"\u0001\u0002"
+"ĀāĂ"
 ## END
 
-#### round trip surrogate half
+#### round trip: decode surrogate half and encode
+
+# TODO: Weird Python allows this to be decoded, but I think the Bjoern state
+# machine will not!
 
 var j = r'"\ud83e"'
 
 echo $j | json read
+echo len=$[len(_reply)]
+
+json write (_reply)
+
+var j = r'"\udd26"'
+
+echo $j | json read
+echo len=$[len(_reply)]
 
 json write (_reply)
 
 ## STDOUT:
+len=3
 "\ud83e"
+len=3
 ## END
 
 #### toJson() toJ8() - TODO: test difference
@@ -422,3 +491,199 @@ decode error Expected Id.J8_RBracket
 positions 1 - 2
 ## END
 
+
+#### ASCII control chars can't appear literally in messages
+shopt -s ysh:upgrade
+
+var message=$'"\x01"'
+#echo $message | od -c
+
+try {
+  var obj = fromJson(message)
+}
+echo status=$_status
+echo "$[_error.message]" | egrep -o 'ASCII control chars'
+
+## STDOUT:
+status=4
+ASCII control chars
+## END
+
+
+#### JSON string can have unescaped ' and J8 string can have unescaped "
+
+json read <<EOF
+"'"
+EOF
+
+pp line (_reply)
+
+
+
+json8 read <<EOF
+u'"'
+EOF
+
+pp line (_reply)
+
+## STDOUT:
+(Str)   "'"
+(Str)   "\""
+## END
+
+#### \yff can't appear in u'' code strings
+
+shopt -s ysh:upgrade
+
+echo -n b'\yfd' | od -A n -t x1
+echo -n u'\yfd' | od -A n -t x1
+
+## status: 2
+## STDOUT:
+ fd
+## END
+
+#### \yff can't appear in u'' multiline code strings
+
+shopt -s ysh:upgrade
+
+echo -n b'''\yfc''' | od -A n -t x1
+echo -n u'''\yfd''' | od -A n -t x1
+
+## status: 2
+## STDOUT:
+ fc
+## END
+
+#### \yff can't appear in u'' data strings
+
+#shopt -s ysh:upgrade
+
+json8 read (&b) <<'EOF'
+b'\yfe'
+EOF
+pp line (b)
+
+json8 read (&u) <<'EOF'
+u'\yfe'
+EOF
+pp line (u)  # undefined
+
+## status: 1
+## STDOUT:
+(Str)   b'\yfe'
+## END
+
+#### \u{dc00} can't be in surrogate range in code
+
+shopt -s ysh:upgrade
+
+echo -n u'\u{dc00}' | od -A n -t x1
+
+## status: 2
+## STDOUT:
+## END
+
+#### \u{dc00} can't be in surrogate range in data
+
+json8 read <<'EOF'
+["long string", u'hello \u{d7ff}', "other"]
+EOF
+echo status=$?
+
+json8 read <<'EOF'
+["long string", u'hello \u{d800}', "other"]
+EOF
+echo status=$?
+
+json8 read <<'EOF'
+["long string", u'hello \u{dfff}', "other"]
+EOF
+echo status=$?
+
+json8 read <<'EOF'
+["long string", u'hello \u{e000}', "other"]
+EOF
+echo status=$?
+
+
+## STDOUT:
+status=0
+status=1
+status=1
+status=0
+## END
+
+
+
+#### Inf and NaN can't be encoded or decoded
+
+# This works in Python, should probably support it
+
+var n = float("NaN")
+var i = float("inf")
+
+pp line (n)
+pp line (i)
+
+json dump (n)
+json dump (i)
+
+## status: 2
+## STDOUT:
+## END
+
+#### Invalid UTF-8 in JSON is rejected
+
+echo $'"\xff"' | json read
+echo status=$?
+
+echo $'"\xff"' | json8 read
+echo status=$?
+
+echo $'\xff' | json read
+echo status=$?
+
+echo $'\xff' | json8 read
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+status=1
+status=1
+## END
+
+#### Invalid JSON in J8 is rejected
+
+json8 read <<EOF
+b'$(echo -e -n '\xff')'
+EOF
+echo status=$?
+
+json8 read <<EOF
+u'$(echo -e -n '\xff')'
+EOF
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+## END
+
+#### '' means the same thing as u''
+
+echo "''" | json8 read
+pp line (_reply)
+
+echo "'\u{3bc}'" | json8 read
+pp line (_reply)
+
+echo "'\yff'" | json8 read
+echo status=$?
+
+## STDOUT:
+(Str)   ""
+(Str)   "μ"
+status=1
+## END

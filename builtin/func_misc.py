@@ -440,27 +440,19 @@ class FromJ8(vm._Callable):
         s = rd.PosStr()
         rd.Done()
 
-        if mylib.PYTHON:  # TODO: translate j8.Parser
-            p = j8.Parser(s)
-
-            try:
-                if self.is_j8:
-                    val = p.ParseJ8()
-                else:
-                    val = p.ParseJson()
-            except error.Decode as e:
-                # Right now I'm not exposing the original string, because that
-                # could lead to a memory leak in the _error Dict.
-                # The message quotes part of the string, and we could improve
-                # that.  We could have a substring with context.
-                props = {
-                    'start_pos': value.Int(e.start_pos),
-                    'end_pos': value.Int(e.end_pos),
-                }  # type: Dict[str, value_t]
-                # status code 4 is special, for encode/decode errors.
-                raise error.Structured(4, e.Message(), rd.LeftParenToken(),
-                                       props)
-        else:
-            val = value.Null
+        p = j8.Parser(s, self.is_j8)
+        try:
+            val = p.ParseValue()
+        except error.Decode as e:
+            # Right now I'm not exposing the original string, because that
+            # could lead to a memory leak in the _error Dict.
+            # The message quotes part of the string, and we could improve
+            # that.  We could have a substring with context.
+            props = {
+                'start_pos': value.Int(e.start_pos),
+                'end_pos': value.Int(e.end_pos),
+            }  # type: Dict[str, value_t]
+            # status code 4 is special, for encode/decode errors.
+            raise error.Structured(4, e.Message(), rd.LeftParenToken(), props)
 
         return val

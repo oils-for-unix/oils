@@ -129,21 +129,16 @@ class Json(vm._Builtin):
                                          posix.strerror(e.err_num))
                 return 1
 
-            if mylib.PYTHON:
-                p = j8.Parser(contents)
-                try:
-                    if self.is_j8:
-                        val = p.ParseJ8()
-                    else:
-                        val = p.ParseJson()
-                except error.Decode as err:
-                    # TODO: Need to show position info
-                    self.errfmt.Print_('%s read: %s' %
-                                       (self.name, err.Message()),
-                                       blame_loc=action_loc)
-                    return 1
+            p = j8.Parser(contents, self.is_j8)
+            try:
+                val = p.ParseValue()
+            except error.Decode as err:
+                # TODO: Need to show position info
+                self.errfmt.Print_('%s read: %s' % (self.name, err.Message()),
+                                   blame_loc=action_loc)
+                return 1
 
-                self.mem.SetPlace(place, val, blame_loc)
+            self.mem.SetPlace(place, val, blame_loc)
 
         else:
             raise error.Usage(_JSON_ACTION_ERROR, action_loc)

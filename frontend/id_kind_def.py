@@ -390,10 +390,12 @@ def AddKinds(spec):
             'Octal3',
             'Octal4',
             'Unicode4',
-            'Unicode8',  # legacy
+            'SurrogatePair',  # JSON
+            'Unicode8',  # bash
             'UBraced',
             'Pound',  # YSH
             'Literals',
+            'AsciiControl',  # \x01-\x1f, what's disallowed in JSON
         ])
 
     # Regular expression primtiives.
@@ -433,14 +435,17 @@ def AddKinds(spec):
         [
             'DoubleQuote',
             'SingleQuote',  # ''
-            'RSingleQuote',  # r''
             'DollarSingleQuote',  # $'' for \n escapes
+            'RSingleQuote',  # r''
+            'USingleQuote',  # u''
+            'BSingleQuote',  # b''
 
             # Multiline versions
             'TDoubleQuote',  # """ """
             'TSingleQuote',  # ''' '''
             'RTSingleQuote',  # r''' '''
-            'DollarTSingleQuote',  # $''' '''
+            'UTSingleQuote',  # u''' '''
+            'BTSingleQuote',  # b''' '''
             'Backtick',  # `
             'DollarParen',  # $(
             'DollarBrace',  # ${
@@ -453,6 +458,7 @@ def AddKinds(spec):
             'CaretParen',  # ^( for Block literal in expression mode
             'CaretBracket',  # ^[ for Expr literal
             'CaretBrace',  # ^{ for Arglist
+            'CaretDoubleQuote',  # ^" for Template
             'ColonPipe',  # :| for word arrays
             'PercentParen',  # legacy %( for word arrays
         ])
@@ -707,11 +713,6 @@ def AddKinds(spec):
             'Bool',
             'Int',  # Number
             'Float',  # Number
-
-            # Low level tokens for "" b"" u""
-            'LeftQuote',
-            'LeftBQuote',
-            'LeftUQuote',
 
             # High level tokens for "" b"" u""
             'AnyString',

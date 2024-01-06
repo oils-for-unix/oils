@@ -691,7 +691,11 @@ class Transformer(object):
                 return cast(BracedVarSub, pnode.GetChild(1).tok)
 
             elif typ == grammar_nt.dq_string:
-                return cast(DoubleQuoted, pnode.GetChild(1).tok)
+                s = cast(DoubleQuoted, pnode.GetChild(1).tok)
+                # sugar: ^"..." is short for ^["..."]
+                if pnode.GetChild(0).tok.id == Id.Left_CaretDoubleQuote:
+                    return expr.Literal(s)
+                return s
 
             elif typ == grammar_nt.sq_string:
                 return cast(SingleQuoted, pnode.GetChild(1).tok)

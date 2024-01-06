@@ -331,6 +331,20 @@ Or use an explicit place:
     var x = ''
     json read (&x) < myfile.txt
 
+Related: [json-encode-err]() and [json-decode-error]()
+
+### json8
+
+Like `json`, but on the encoding side:
+
+- Falls back to `b'\yff'` instead of lossy Unicode replacement char
+
+On decoding side:
+
+- Understands `b'' u''` strings
+
+Related: [json8-encode-err]() and [json8-decode-error]()
+
 ## Testing
 
 TODO: describe

@@ -229,6 +229,7 @@ readonly -a MORE_TESTS=(
   parse-errors runtime-errors
   ysh-runtime-errors
   ysh-parse-errors
+  ysh-every-string
   arena
   osh-usage tools-deps
   syscall

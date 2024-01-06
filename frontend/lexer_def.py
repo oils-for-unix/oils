@@ -471,7 +471,9 @@ _X_CHAR_LOOSE = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)  # bash
 _X_CHAR_STRICT = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)  # YSH
 
 _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
+
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
+
 
 EXPR_CHARS = [
     # This is like Rust.  We don't have the legacy C escapes like \b.
@@ -525,10 +527,10 @@ _JSON_FRACTION = r'(\.[0-9]+)?'
 _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
 J8_DEF = [
-    C('"', Id.J8_LeftQuote),
-    # j"" makes sense in YSH code, u"" makes sense in JSON
-    C('u"', Id.J8_LeftUQuote),
-    C('b"', Id.J8_LeftBQuote),
+    C('"', Id.Left_DoubleQuote),  # JSON string
+    C("u'", Id.Left_USingleQuote),  # unicode string
+    C("'", Id.Left_USingleQuote),  # '' is alias for u'' in data, not in code
+    C("b'", Id.Left_BSingleQuote),  # byte string
     C('[', Id.J8_LBracket),
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
@@ -544,30 +546,49 @@ J8_DEF = [
     # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),
 
-    # TODO: AnyString, UString, and BString will also
-    # - additionally validate utf-8
-    # - decode
-    # I guess this takes 2 passes?
+    # This will reject ASCII control chars
     R(r'[^\0]', Id.Unknown_Tok),
 ]
+
+# Exclude control characters 0x00-0x1f, aka 0-31 in J8 data
+# But \n has to be allowed in multi-line strings
+_ASCII_CONTROL = R(r'[\x01-\x1F]', Id.Char_AsciiControl)
+
+# https://json.org list of chars, plus '
+_J8_ONE_CHAR = R(r'''\\[\\'"/bfnrt]''', Id.Char_OneChar)
 
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
 J8_STR_DEF = [
-    C('"', Id.Right_DoubleQuote),
-
-    # https://json.org list of chars
-    R(r'\\["\\/bfnrt]', Id.Char_OneChar),
-    _U4_CHAR_STRICT,  # \u1234 - JSON only
+    C("'", Id.Right_SingleQuote),  # end for J8
+    _J8_ONE_CHAR,
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
+    _ASCII_CONTROL,
 
-    # Exclude control characters 0x00-0x1f, aka 0-31
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\x00-\x1f]+', Id.Char_Literals),
-
-    # Should match control chars
+    R(r'''[^\\'\0]+''', Id.Char_Literals),
     R(r'[^\0]', Id.Unknown_Tok),
 ]
+
+# For "JSON strings \" \u1234"
+JSON_STR_DEF = [
+    C('"', Id.Right_DoubleQuote),  # end for JSON
+    _J8_ONE_CHAR,
+    _U4_CHAR_STRICT,  # \u1234 - JSON only
+
+    # High surrogate [\uD800, \uDC00)
+    # Low surrogate  [\uDC00, \uE000)
+    # This pattern makes it easier to decode.  Unpaired surrogates because Id.Char_Unicode4.
+    R(r'\\u[dD][89aAbB][0-9a-fA-F][0-9a-fA-F]\\u[dD][cCdDeEfF][0-9a-fA-F][0-9a-fA-F]',
+      Id.Char_SurrogatePair),
+    _ASCII_CONTROL,
+
+    # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
+    R(r'[^\\"\0]+', Id.Char_Literals),
+    R(r'[^\0]', Id.Unknown_Tok),
+]
+
+LEXER_DEF[lex_mode_e.J8_Str] = J8_STR_DEF
 
 OCTAL3_RE = r'\\[0-7]{1,3}'
 
@@ -799,12 +820,16 @@ YSH_LEFT_UNQUOTED = [
     # In expression mode, we add the r'' and c'' prefixes for '' and $''.
     C("'", Id.Left_SingleQuote),
     C("r'", Id.Left_RSingleQuote),
+    C("u'", Id.Left_USingleQuote),
+    C("b'", Id.Left_BSingleQuote),
     C("$'", Id.Left_DollarSingleQuote),
+    C('^"', Id.Left_CaretDoubleQuote),
     C('"""', Id.Left_TDoubleQuote),
     # In expression mode, we add the r'' and c'' prefixes for '' and $''.
     C("'''", Id.Left_TSingleQuote),
     C("r'''", Id.Left_RTSingleQuote),
-    C("$'''", Id.Left_DollarTSingleQuote),
+    C("u'''", Id.Left_UTSingleQuote),
+    C("b'''", Id.Left_BTSingleQuote),
     C('@(', Id.Left_AtParen),  # Split Command Sub
     C('^(', Id.Left_CaretParen),  # Block literals in expression mode
     C('^[', Id.Left_CaretBracket),  # Expr literals

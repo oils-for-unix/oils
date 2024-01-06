@@ -74,8 +74,9 @@ def NinjaGraph(ru):
                      deps=[
                          '//bin/text_files',
                          '//cpp/core',
-                         '//cpp/libc',
+                         '//cpp/data_lang',
                          '//cpp/fanos',
+                         '//cpp/libc',
                          '//cpp/osh',
                          '//cpp/pgen2',
                          '//cpp/pylib',

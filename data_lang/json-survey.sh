@@ -56,6 +56,24 @@ decode-empty-input() {
   nodejs -e 'var val = JSON.parse(""); console.log(typeof(val)); console.log(val)' || true
 }
 
+decode-invalid-escape() {
+  # single quoted escape not valid
+  cat >_tmp/json.txt <<'EOF'
+"\'"
+EOF
+  local json
+  json=$(cat _tmp/json.txt)
+
+  python3 -c 'import json, sys; val = json.loads(sys.argv[1]); print(type(val)); print(val)' \
+    "$json" || true
+
+  echo
+  echo
+
+  nodejs -e 'var val = JSON.parse(process.argv[1]); console.log(typeof(val)); console.log(val)' \
+    "$json" || true
+}
+
 encode-obj-cycles() {
   python3 -c 'import json; val = {}; val["k"] = val; print(json.dumps(val))' || true
   echo
@@ -140,6 +158,22 @@ encode-bad-type() {
   # {} or undefined - BAD!
   nodejs -e 'console.log(JSON.stringify(JSON));' || true
   nodejs -e 'function f() { return 42; }; console.log(JSON.stringify(f));' || true
+  echo
+}
+
+encode-binary-data() {
+  # utf-8 codec can't decode byte -- so it does UTF-8 decoding during encoding,
+  # which makes sense
+  python2 -c 'import json; print(json.dumps(b"\xff"))' || true
+  echo
+
+  # can't serialize bytes type
+  python3 -c 'import json; print(json.dumps(b"\xff"))' || true
+  echo
+
+  # there is no bytes type?  \xff is a code point in JS
+  nodejs -e 'console.log(JSON.stringify("\xff"));' || true
+  nodejs -e 'console.log(JSON.stringify("\u{ff}"));' || true
   echo
 }
 
