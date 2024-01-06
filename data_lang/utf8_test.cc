@@ -158,6 +158,32 @@ TEST loop_all_test() {
   PASS();
 }
 
+void PrintStates(const uint8_t* s) {
+  uint32_t codepoint;
+  uint32_t state = UTF8_ACCEPT;
+
+  int n = strlen(reinterpret_cast<const char*>(s));
+  for (int i = 0; i < n; ++i) {
+    decode(&state, &codepoint, s[i]);
+    printf("state %d = %d\n", i, state);
+  }
+}
+
+TEST surrogate_test() {
+  // \ud83e
+  printf("    surrogate in utf-8\n");
+  const uint8_t* s = reinterpret_cast<const uint8_t*>("\xed\xa0\xbe");
+  PrintStates(s);
+
+  // mu
+  printf("    mu in utf-8\n");
+  const uint8_t* t = reinterpret_cast<const uint8_t*>("\xce\xbc");
+  PrintStates(t);
+
+  PASS();
+}
+
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -166,6 +192,7 @@ int main(int argc, char** argv) {
   RUN_TEST(dfa_test);
   RUN_TEST(decode_all_test);
   RUN_TEST(crockford_test);
+  RUN_TEST(surrogate_test);
 
   GREATEST_MAIN_END();
   return 0;

@@ -134,6 +134,21 @@ def WriteString(s, options, buf):
     portion = s
     invalid_utf8 = []  # type: List[Tuple[int, int]]
     while True:
+        # Problem: Python 2 UTF-8 decoder allows bytes that correspond to
+        # surrogates (but Python 3 doesn't)
+        #
+        # TODO:
+        # - JSON behavior: round trip to "\ud83e"
+        # - J8 behavior: use b'\yed\ya0\ybe' 
+        #
+        # The Bjoern DFA will reject it, but we need the code point to be able
+        # to output \ud83e.
+        #
+        # So we need a modified Bjoern DFA in both Python and C++, with a
+        # UTF8_ACCEPT_SURROGATE state!!!  It's not ACCEPT, but you can get the
+        # code point out.
+        # Maybe we can visually inspect the states?
+
         try:
             portion.decode('utf-8')
         except UnicodeDecodeError as e:
