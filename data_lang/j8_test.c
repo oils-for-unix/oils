@@ -13,7 +13,7 @@ void Encode(char* s, int n, int is_j8) {
   unsigned char* begin = out;
   unsigned char** out_pos = &begin;
 
-  **out_pos = '"';
+  **out_pos = is_j8 ? '\'' : '"';
   (*out_pos)++;
 
   printf("*in_pos %p *out_pos %p\n", *in_pos, *out_pos);
@@ -22,25 +22,30 @@ void Encode(char* s, int n, int is_j8) {
   while (*in_pos < end) {
     result = EncodeRuneOrByte(in_pos, out_pos, is_j8);
 
-    printf("result = %d\n", result);
+    // printf("result = %d\n", result);
     // printf("*in_pos %p *out_pos %p\n", *in_pos, *out_pos);
     // printf("\n");
   }
 
-  **out_pos = '"';
+  **out_pos = is_j8 ? '\'' : '"';
   (*out_pos)++;
   printf("out = %s\n", out);
+  printf("\n");
 }
 
 TEST encode_test() {
-  char* s = "hi \x01 \u4000\xfe\u4001\xff\xfd ' \" new \n \\ \u03bc";
-  // char* s = "h";
-  // char* s = "\u03bc";
-  int n = strlen(s);
-  printf("n %d\n", n);
+  char* mixed = "hi \x01 \u4000\xfe\u4001\xff\xfd ' \" new \n \\ \u03bc";
+  Encode(mixed, strlen(mixed), 0);
+  Encode(mixed, strlen(mixed), 1);
 
-  Encode(s, n, 0);
-  Encode(s, n, 1);
+  char* u = "hi \u4000 \u03bc";
+  Encode(u, strlen(u), 0);
+  Encode(u, strlen(u), 1);
+
+  // Internal NUL
+  char* b = "\x00\x01\xff";
+  Encode(b, 3, 0);
+  Encode(b, 3, 1);
 
   PASS();
 }

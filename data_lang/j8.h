@@ -5,24 +5,25 @@
 
 #include "data_lang/utf8_impls/bjoern_dfa.h"
 
-#define OUT_J8(ch) \
+#define J8_OUT(ch) \
   **out = (ch);    \
   (*out)++
 
 inline int EncodeRuneOrByte(unsigned char** in, unsigned char** out,
-                            int is_j8) {
-  // Reads from in and advances it
+                            int j8_escape) {
+  // We use a slightly weird double pointer style because
+  //   'in' may be advanced by 1 to 4 bytes (depending on whether it's UTF-8)
+  //   'out' may be advanced by 1 to 6 bytes (depending on escaping)
+
+  // CALLER MUST CHECK that we are able to write up to 6 bytes!
+  //   Because the longest output is \u001f or \u{1f} for control chars, since
+  //   we don't escapes like \u{1f926} right now
   //
-  // Writes to out and advances it
-  //   CALLER MUST CHECK that we are able to write 6 or more bytes!
-  //   The longest output is \u001f or \u{1f} for control chars, since right now
-  //   we're not writing escapes like \u{1f926}
-  //
-  // is_j8: Use j8 escapes, i.e. LOSSLESS encoding of bytes, not lossy
+  // j8_escape: Whether to use j8 escapes, i.e. LOSSLESS encoding of data
   //   \yff instead of Unicode replacement char
   //   \u{1} instead of \u0001 for unprintable low chars
 
-  // Return value
+  // Returns:
   //   0   wrote valid UTF-8 (encoded or not)
   //   1   wrote byte that's invalid UTF-8
 
@@ -33,33 +34,33 @@ inline int EncodeRuneOrByte(unsigned char** in, unsigned char** out,
   //
   switch (ch) {
   case '\\':
-    OUT_J8('\\');
-    OUT_J8('\\');
+    J8_OUT('\\');
+    J8_OUT('\\');
     (*in)++;
     return 0;
   case '\b':
-    OUT_J8('\\');
-    OUT_J8('b');
+    J8_OUT('\\');
+    J8_OUT('b');
     (*in)++;
     return 0;
   case '\f':
-    OUT_J8('\\');
-    OUT_J8('f');
+    J8_OUT('\\');
+    J8_OUT('f');
     (*in)++;
     return 0;
   case '\n':
-    OUT_J8('\\');
-    OUT_J8('n');
+    J8_OUT('\\');
+    J8_OUT('n');
     (*in)++;
     return 0;
   case '\r':
-    OUT_J8('\\');
-    OUT_J8('r');
+    J8_OUT('\\');
+    J8_OUT('r');
     (*in)++;
     return 0;
   case '\t':
-    OUT_J8('\\');
-    OUT_J8('t');
+    J8_OUT('\\');
+    J8_OUT('t');
     (*in)++;
     return 0;
   }
@@ -67,15 +68,15 @@ inline int EncodeRuneOrByte(unsigned char** in, unsigned char** out,
   //
   // Conditionally handle \' and \"
   //
-  if (ch == '\'' && is_j8) {
-    OUT_J8('\\');
-    OUT_J8('\'');  // escape code \'
+  if (ch == '\'' && j8_escape) {  // J8-style strings \'
+    J8_OUT('\\');
+    J8_OUT('\'');
     (*in)++;
     return 0;
   }
-  if (ch == '"' && !is_j8) {  // " is escaped in JSON-style
-    OUT_J8('\\');
-    OUT_J8('"');  // escape code \"
+  if (ch == '"' && !j8_escape) {  // JSON-style strings \"
+    J8_OUT('\\');
+    J8_OUT('"');
     (*in)++;
     return 0;
   }
@@ -84,7 +85,7 @@ inline int EncodeRuneOrByte(unsigned char** in, unsigned char** out,
   // Unprintable ASCII control codes
   //
   if (ch < 0x20) {
-    if (is_j8) {
+    if (j8_escape) {
       int n = sprintf((char*)*out, "\\u{%x}", ch);
       *out += n;
     } else {
@@ -108,15 +109,24 @@ inline int EncodeRuneOrByte(unsigned char** in, unsigned char** out,
     switch (state) {
     case UTF8_REJECT: {
       (*in)++;
-      int n = sprintf((char*)*out, "\\y%2x", ch);
-      *out += n;
+      if (j8_escape) {
+        int n = sprintf((char*)*out, "\\y%2x", ch);
+        *out += n;
+      } else {
+        // Unicode replacement char is U+FFFD, so write encoded form
+        // >>> '\ufffd'.encode('utf-8')
+        // b'\xef\xbf\xbd'
+        J8_OUT('\xef');
+        J8_OUT('\xbf');
+        J8_OUT('\xbd');
+      }
       return 1;
     }
     case UTF8_ACCEPT: {
       (*in)++;
       // printf("pstart %p in %p\n", pstart, *in);
       while (pstart < *in) {
-        OUT_J8(*pstart);
+        J8_OUT(*pstart);
         pstart++;
       }
       return 0;
