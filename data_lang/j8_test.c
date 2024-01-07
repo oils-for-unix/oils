@@ -5,32 +5,39 @@
 
 void Encode(char* s, int n, int is_j8) {
   unsigned char** in_pos = (unsigned char**)&s;
+  unsigned char* end = (unsigned char*)s + n;
+
   // this is big enough
   unsigned char out[64] = {0};
 
   unsigned char* begin = out;
   unsigned char** out_pos = &begin;
 
-  **out_pos = '"'; (*out_pos)++;
+  **out_pos = '"';
+  (*out_pos)++;
 
   printf("*in_pos %p *out_pos %p\n", *in_pos, *out_pos);
 
   int result = 0;
-  for (int i = 0; i < n; ++i) {
+  while (*in_pos < end) {
     result = EncodeRuneOrByte(in_pos, out_pos, is_j8);
 
     printf("result = %d\n", result);
-    //printf("*in_pos %p *out_pos %p\n", *in_pos, *out_pos);
-    //printf("\n");
+    // printf("*in_pos %p *out_pos %p\n", *in_pos, *out_pos);
+    // printf("\n");
   }
 
-  **out_pos = '"'; (*out_pos)++;
+  **out_pos = '"';
+  (*out_pos)++;
   printf("out = %s\n", out);
 }
 
 TEST encode_test() {
-  char* s = "hi \x01 ' \" new \n \\ \u03bc";
+  char* s = "hi \x01 \u4000\xfe\u4001\xff\xfd ' \" new \n \\ \u03bc";
+  // char* s = "h";
+  // char* s = "\u03bc";
   int n = strlen(s);
+  printf("n %d\n", n);
 
   Encode(s, n, 0);
   Encode(s, n, 1);
