@@ -96,6 +96,143 @@ TEST decode_all_test() {
   PASS();
 }
 
+// Exhaustive DFA testing strategies
+//
+// All code points: 1,114,112 of them
+// 
+// - Encode them all
+// - Decode each byte
+//   - end state should be UTF8_ACCEPT, except for 2048 in surrogate range
+
+//   - code point should match
+//
+// All byte sequences
+//
+// 1. 256           1-byte sequences
+// 2. 63,536        2-byte sequences
+//                  - (ASCII, ASCII) will be 25% of these
+// 3. 2**24 = 24 Mi 3-byte sequences
+//    overlapping cases
+//                  1 + 1 + 1
+//                  1 + 2
+//                  2 + 1
+//
+// 4. All 2**32 = 4 Gi 4-byte sequences?  Possible but slightly slow
+//    maybe explore this in a smarter way
+
+// Generating errors
+//
+// - enumerate all out of range
+//   - UTF-8 can go up to 2*21 - which is 2,097,152
+// - enumerate ALL overlong encodings?
+//
+// - enumerate ALL sequences that correspond to code points in surrogate range
+//   - I think they're all 3 bytes long?
+
+TEST exhaustive_test() {
+
+  long sum = 0;
+
+  for (int i = 0; i < (1<<21); ++i) {
+    sum += i;
+    // Almost half these are out of range
+
+    // 2048 of them are surrogates!
+  }
+  printf("code points %ld\n", sum);
+
+  // How many overlong sequences?
+  // The key is making the leading byte 0 I think
+  // You can also have 2 or 3 leading zero bytes
+  //
+  // So you can test all these forms:
+  //
+  // [0 42 43 44] - should be [42 43 44]
+  //
+  // [0 0 42 43]  - should be [42 43]
+  // [0 42 43]
+  //
+  // [0 0 0 42]   - should be [42]
+  // [0 0 42]
+  // [0 42]
+  //
+  // Each continuation byte has 2*6 == 64 values.
+  // 2 byte sequences have 2*5 initial choicse
+  // 3 byte sequences have 2*4 initial choices
+  // 4 byte sequences have 2*3 initial choices
+
+  for (int i = 0; i < (1<<8); ++i) {
+    sum += i;
+  }
+  printf("1 byte %ld\n", sum);
+
+  for (int i = 0; i < (1<<16); ++i) {
+    sum += i;
+  }
+  printf("2 byte %ld\n", sum);
+
+  for (int i = 0; i < (1<<24); ++i) {
+    sum += i;
+  }
+  printf("3 byte %ld\n", sum);
+
+  PASS();
+}
+
+TEST enumerate_utf8_test() {
+  // Valid digits, and some of them are overlong
+
+  // [a b c d] - 21 bits of info
+  int n = 0;
+  int overlong = 0;
+  for (int a = 0; a < (1<<3); ++a) {
+    for (int b = 0; b < (1<<6); ++b) {
+      for (int c = 0; c < (1<<6); ++c) {
+        for (int d = 0; d < (1<<6); ++d) {
+          n++;
+          if (a == 0) {
+            overlong++;
+          }
+        }
+      }
+    }
+  }
+  printf("4 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong, n -
+      overlong);
+
+  // [a b c] - 4 + 6 + 6 = 16 bits of info
+  n = 0;
+  overlong = 0;
+  for (int a = 0; a < (1<<4); ++a) {
+    for (int b = 0; b < (1<<6); ++b) {
+      for (int c = 0; c < (1<<6); ++c) {
+        n++;
+        if (a == 0) {
+          overlong++;
+        }
+      }
+    }
+  }
+  printf("3 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong, n -
+      overlong);
+
+  // [a b] - 5 + 6 = 11 bits of info
+  n = 0;
+  overlong = 0;
+  for (int a = 0; a < (1<<5); ++a) {
+    for (int b = 0; b < (1<<6); ++b) {
+      n++;
+      if (a == 0) {
+        overlong++;
+      }
+    }
+  }
+  printf("2 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong, n -
+      overlong);
+
+  PASS();
+}
+
 TEST crockford_test() {
   char* s = const_cast<char*>("hello\u03bc");
   utf8_decode_init(s, strlen(s));
@@ -191,6 +328,8 @@ int main(int argc, char** argv) {
 
   RUN_TEST(dfa_test);
   RUN_TEST(decode_all_test);
+  RUN_TEST(exhaustive_test);
+  RUN_TEST(enumerate_utf8_test);
   RUN_TEST(crockford_test);
   RUN_TEST(surrogate_test);
 
