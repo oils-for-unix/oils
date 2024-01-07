@@ -99,7 +99,7 @@ TEST decode_all_test() {
 // Exhaustive DFA testing strategies
 //
 // All code points: 1,114,112 of them
-// 
+//
 // - Encode them all
 // - Decode each byte
 //   - end state should be UTF8_ACCEPT, except for 2048 in surrogate range
@@ -130,10 +130,9 @@ TEST decode_all_test() {
 //   - I think they're all 3 bytes long?
 
 TEST exhaustive_test() {
-
   long sum = 0;
 
-  for (int i = 0; i < (1<<21); ++i) {
+  for (int i = 0; i < (1 << 21); ++i) {
     sum += i;
     // Almost half these are out of range
 
@@ -161,17 +160,17 @@ TEST exhaustive_test() {
   // 3 byte sequences have 2*4 initial choices
   // 4 byte sequences have 2*3 initial choices
 
-  for (int i = 0; i < (1<<8); ++i) {
+  for (int i = 0; i < (1 << 8); ++i) {
     sum += i;
   }
   printf("1 byte %ld\n", sum);
 
-  for (int i = 0; i < (1<<16); ++i) {
+  for (int i = 0; i < (1 << 16); ++i) {
     sum += i;
   }
   printf("2 byte %ld\n", sum);
 
-  for (int i = 0; i < (1<<24); ++i) {
+  for (int i = 0; i < (1 << 24); ++i) {
     sum += i;
   }
   printf("3 byte %ld\n", sum);
@@ -185,10 +184,10 @@ TEST enumerate_utf8_test() {
   // [a b c d] - 21 bits of info
   int n = 0;
   int overlong = 0;
-  for (int a = 0; a < (1<<3); ++a) {
-    for (int b = 0; b < (1<<6); ++b) {
-      for (int c = 0; c < (1<<6); ++c) {
-        for (int d = 0; d < (1<<6); ++d) {
+  for (int a = 0; a < (1 << 3); ++a) {
+    for (int b = 0; b < (1 << 6); ++b) {
+      for (int c = 0; c < (1 << 6); ++c) {
+        for (int d = 0; d < (1 << 6); ++d) {
           n++;
           if (a == 0) {
             overlong++;
@@ -197,15 +196,15 @@ TEST enumerate_utf8_test() {
       }
     }
   }
-  printf("4 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong, n -
-      overlong);
+  printf("4 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong,
+         n - overlong);
 
   // [a b c] - 4 + 6 + 6 = 16 bits of info
   n = 0;
   overlong = 0;
-  for (int a = 0; a < (1<<4); ++a) {
-    for (int b = 0; b < (1<<6); ++b) {
-      for (int c = 0; c < (1<<6); ++c) {
+  for (int a = 0; a < (1 << 4); ++a) {
+    for (int b = 0; b < (1 << 6); ++b) {
+      for (int c = 0; c < (1 << 6); ++c) {
         n++;
         if (a == 0) {
           overlong++;
@@ -213,22 +212,35 @@ TEST enumerate_utf8_test() {
       }
     }
   }
-  printf("3 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong, n -
-      overlong);
+  printf("3 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong,
+         n - overlong);
 
   // [a b] - 5 + 6 = 11 bits of info
   n = 0;
   overlong = 0;
-  for (int a = 0; a < (1<<5); ++a) {
-    for (int b = 0; b < (1<<6); ++b) {
+  for (int a = 0; a < (1 << 5); ++a) {
+    for (int b = 0; b < (1 << 6); ++b) {
       n++;
       if (a == 0) {
         overlong++;
       }
     }
   }
-  printf("2 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong, n -
-      overlong);
+  printf("2 byte: n = %10d, overlong = %10d, valid = %10d\n", n, overlong,
+         n - overlong);
+
+  // Types of errors
+  // Surrogate Range
+  // Overlong
+  //
+  // Not covered by this:
+  // Invalid sequence (start byte, continuation byte) - we are leaving this off
+
+  n = 0;
+  for (int a = 0; a < (1 << 8); ++a) {
+    n++;
+  }
+  printf("1 byte: n = %10d\n", n);
 
   PASS();
 }
@@ -319,7 +331,6 @@ TEST surrogate_test() {
 
   PASS();
 }
-
 
 GREATEST_MAIN_DEFS();
 
