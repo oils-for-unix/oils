@@ -4,6 +4,8 @@
 #include "vendor/greatest.h"
 
 void Encode(char* s, int n, int is_j8) {
+  char* orig_s = s;
+
   unsigned char** in_pos = (unsigned char**)&s;
   unsigned char* end = (unsigned char*)s + n;
 
@@ -11,23 +13,47 @@ void Encode(char* s, int n, int is_j8) {
   unsigned char out[64] = {0};
 
   unsigned char* begin = out;
+  unsigned char* orig_begin = out;
   unsigned char** out_pos = &begin;
 
-  **out_pos = is_j8 ? '\'' : '"';
+  **out_pos = '"';
   (*out_pos)++;
 
-  printf("*in_pos %p *out_pos %p\n", *in_pos, *out_pos);
+  printf("s %p out %p\n", s, out);
+  //printf("*in_pos %p *out_pos %p\n", *in_pos, *out_pos);
 
-  int result = 0;
+  int invalid_utf8 = 0;
   while (*in_pos < end) {
-    result = EncodeRuneOrByte(in_pos, out_pos, is_j8);
+    //printf("1 *in_pos %p *out_pos %p\n", *in_pos, *out_pos);
 
-    // printf("result = %d\n", result);
-    // printf("*in_pos %p *out_pos %p\n", *in_pos, *out_pos);
-    // printf("\n");
+    invalid_utf8 = EncodeRuneOrByte(in_pos, out_pos, 0);  // JSON escaping
+
+    // Try again with J8 escaping
+    if (invalid_utf8 && is_j8) {
+      *in_pos = (unsigned char*)orig_s;
+      *out_pos = orig_begin;
+
+      **out_pos = 'b';
+      (*out_pos)++;
+
+      **out_pos = '\'';
+      (*out_pos)++;
+
+      while (*in_pos < end) {
+        //printf("2 *in_pos %p *out_pos %p\n", *in_pos, *out_pos);
+        EncodeRuneOrByte(in_pos, out_pos, 1);  // Now with J8 escaping
+      }
+
+      **out_pos = '\'';
+      (*out_pos)++;
+
+      printf("out = %s\n", out);
+      printf("\n");
+      return;
+    }
   }
 
-  **out_pos = is_j8 ? '\'' : '"';
+  **out_pos = '"';
   (*out_pos)++;
   printf("out = %s\n", out);
   printf("\n");

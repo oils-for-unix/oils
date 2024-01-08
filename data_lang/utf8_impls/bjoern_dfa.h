@@ -1,3 +1,6 @@
+#ifndef BJOERN_DFA
+#define BJOERN_DFA
+
 // Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
 // See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
 
@@ -80,3 +83,4 @@ decode(uint32_t* state, uint32_t* codep, uint32_t byte) {
 
 #endif
 
+#endif  // BJOERN_DFA

@@ -86,6 +86,7 @@ def NinjaGraph(ru):
             'cpp/data_lang.cc',
         ],
         deps=[
+            '//data_lang/j8',
             '//mycpp/runtime',
         ],
         # This ensures its included in the release tarball
