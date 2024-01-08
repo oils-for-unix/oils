@@ -172,36 +172,13 @@ bool CFileWriter::isatty() {
 // BufWriter
 //
 
-char* BufWriter::data() {
-  DCHECK(str_);
-  return str_->data_;
-}
-
-char* BufWriter::end() {
-  DCHECK(str_);
-  return str_->data_ + len_;
-}
-
-int BufWriter::capacity() {
-  return str_ ? len(str_) : 0;
-}
-
-void BufWriter::Extend(BigStr* s) {
-  const int n = len(s);
-
-  DCHECK(capacity() >= len_ + n);
-
-  memcpy(end(), s->data_, n);
-  len_ += n;
-  data()[len_] = '\0';
-}
-
-// TODO: realloc() to new capacity instead of creating NewBuf()
 void BufWriter::EnsureCapacity(int cap) {
-  DCHECK(capacity() >= len_);
+  DCHECK(str_ != nullptr);
+  int capacity = len(str_);
+  DCHECK(capacity >= len_);
 
-  if (capacity() < cap) {
-    auto* s = NewMutableStr(std::max(capacity() * 2, cap));
+  if (capacity < cap) {
+    auto* s = NewMutableStr(std::max(capacity * 2, cap));
     memcpy(s->data_, str_->data_, len_);
     s->data_[len_] = '\0';
     str_ = s;
@@ -227,7 +204,9 @@ void BufWriter::write(BigStr* s) {
   }
 
   // Append the contents to the buffer
-  Extend(s);
+  memcpy(str_->data_ + len_, s->data_, n);
+  len_ += n;
+  str_->data_[len_] = '\0';
 }
 
 BigStr* BufWriter::getvalue() {
