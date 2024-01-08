@@ -36,13 +36,13 @@ void writeln(BigStr* s, int fd) {
 
 class MutableStr : public BigStr {};
 
-MutableStr* NewMutableStr(int cap) {
+MutableStr* NewMutableStr(int n) {
   // In order for everything to work, MutableStr must be identical in layout to
   // BigStr. One easy way to achieve this is for MutableStr to have no members
   // and to inherit from BigStr.
   static_assert(sizeof(MutableStr) == sizeof(BigStr),
                 "BigStr and MutableStr must have same size");
-  return reinterpret_cast<MutableStr*>(NewStr(cap));
+  return reinterpret_cast<MutableStr*>(NewStr(n));
 }
 
 Tuple2<BigStr*, BigStr*> split_once(BigStr* s, BigStr* delim) {
@@ -172,17 +172,37 @@ bool CFileWriter::isatty() {
 // BufWriter
 //
 
-void BufWriter::EnsureCapacity(int cap) {
+void BufWriter::ReserveMore(int n) {
+  int new_cap = len_ + n;
   DCHECK(str_ != nullptr);
-  int capacity = len(str_);
-  DCHECK(capacity >= len_);
+  int current_cap = len(str_);
+  DCHECK(current_cap >= len_);
 
-  if (capacity < cap) {
-    auto* s = NewMutableStr(std::max(capacity * 2, cap));
+  if (current_cap < new_cap) {
+    auto* s = NewMutableStr(std::max(current_cap * 2, new_cap));
     memcpy(s->data_, str_->data_, len_);
     s->data_[len_] = '\0';
     str_ = s;
   }
+}
+
+int BufWriter::BytesLeft() {
+  return -1;  // TODO
+}
+
+uint8_t* BufWriter::CurrentPos() {
+  return nullptr;  // TODO
+}
+
+void BufWriter::WriteRaw(char* start, int len) {
+  // same logic as write(), except it's not s->data_
+  // TODO: move most of write() here
+  ;
+}
+
+void BufWriter::WriteConst(const char* c_string) {
+  // meant for short strings like '"'
+  WriteRaw(const_cast<char*>(c_string), strlen(c_string));
 }
 
 void BufWriter::write(BigStr* s) {
@@ -200,7 +220,7 @@ void BufWriter::write(BigStr* s) {
     // capacity: 128 -> 256 -> 512
     str_ = NewMutableStr(n);
   } else {
-    EnsureCapacity(len_ + n);
+    ReserveMore(n);
   }
 
   // Append the contents to the buffer

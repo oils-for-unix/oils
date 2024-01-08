@@ -2,7 +2,7 @@
 
 #include "vendor/greatest.h"
 
-TEST part_is_utf8_test() {
+TEST PartIsUtf8_test() {
   BigStr* s = StrFromC("hi");
 
   ASSERT(pyj8::PartIsUtf8(s, 0, 2));
@@ -21,12 +21,19 @@ TEST part_is_utf8_test() {
   PASS();
 }
 
+TEST WriteString_test() {
+  auto buf = Alloc<mylib::BufWriter>();
+  pyj8::WriteString(kEmptyString, 0, buf);
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(part_is_utf8_test);
+  RUN_TEST(PartIsUtf8_test);
+  RUN_TEST(WriteString_test);
 
   GREATEST_MAIN_END();
   return 0;

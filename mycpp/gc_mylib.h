@@ -215,8 +215,11 @@ class BufWriter : public Writer {
   bool isatty() override {
     return false;
   }
-  // For cStringIO API
-  BigStr* getvalue();
+  void WriteConst(const char* c_string);
+  void ReserveMore(int n);  // reserve additional bytes
+  uint8_t* CurrentPos();    // query how many before resize necessary
+  int BytesLeft();          // query how many before resize necessary
+  BigStr* getvalue();       // part of cStringIO API
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(BufWriter));
@@ -228,7 +231,7 @@ class BufWriter : public Writer {
   }
 
  private:
-  void EnsureCapacity(int n);
+  void WriteRaw(char* start, int len);
 
   MutableStr* str_;  // getvalue() turns this directly into Str*, no copying
   int len_;          // how many bytes have been written so far
