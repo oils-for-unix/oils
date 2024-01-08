@@ -2,8 +2,8 @@
 
 #include "cpp/data_lang.h"
 
-#include "data_lang/utf8_impls/bjoern_dfa.h"
 #include "data_lang/j8.h"
+#include "data_lang/utf8_impls/bjoern_dfa.h"
 
 namespace pyj8 {
 

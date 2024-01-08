@@ -46,7 +46,7 @@ MutableStr* NewMutableStr(int cap) {
 }
 
 Tuple2<BigStr*, BigStr*> split_once(BigStr* s, BigStr* delim) {
-  assert(len(delim) == 1);
+  DCHECK(len(delim) == 1);
 
   const char* start = s->data_;  // note: this pointer may move
   char c = delim->data_[0];
@@ -144,7 +144,7 @@ BigStr* BufLineReader::readline() {
 
   line = NewStr(line_len);
   memcpy(line->data_, s_->data_ + orig_pos, line_len);
-  assert(line->data_[line_len] == '\0');
+  DCHECK(line->data_[line_len] == '\0');
   return line;
 }
 
@@ -173,12 +173,12 @@ bool CFileWriter::isatty() {
 //
 
 char* BufWriter::data() {
-  assert(str_);
+  DCHECK(str_);
   return str_->data_;
 }
 
 char* BufWriter::end() {
-  assert(str_);
+  DCHECK(str_);
   return str_->data_ + len_;
 }
 
@@ -189,7 +189,7 @@ int BufWriter::capacity() {
 void BufWriter::Extend(BigStr* s) {
   const int n = len(s);
 
-  assert(capacity() >= len_ + n);
+  DCHECK(capacity() >= len_ + n);
 
   memcpy(end(), s->data_, n);
   len_ += n;
@@ -198,7 +198,7 @@ void BufWriter::Extend(BigStr* s) {
 
 // TODO: realloc() to new capacity instead of creating NewBuf()
 void BufWriter::EnsureCapacity(int cap) {
-  assert(capacity() >= len_);
+  DCHECK(capacity() >= len_);
 
   if (capacity() < cap) {
     auto* s = NewMutableStr(std::max(capacity() * 2, cap));
@@ -209,7 +209,7 @@ void BufWriter::EnsureCapacity(int cap) {
 }
 
 void BufWriter::write(BigStr* s) {
-  assert(is_valid_);  // Can't write() after getvalue()
+  DCHECK(is_valid_);  // Can't write() after getvalue()
 
   int n = len(s);
 
@@ -231,7 +231,7 @@ void BufWriter::write(BigStr* s) {
 }
 
 BigStr* BufWriter::getvalue() {
-  assert(is_valid_);  // Check for two INVALID getvalue() in a row
+  DCHECK(is_valid_);  // Check for two INVALID getvalue() in a row
   is_valid_ = false;
 
   if (str_ == nullptr) {  // if no write() methods are called, the result is ""
