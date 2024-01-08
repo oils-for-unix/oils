@@ -42,7 +42,7 @@ _COMMON_ESCAPES = {
 }
 
 
-def _EscapeUnprintable(s, buf, is_j8=False):
+def _EscapeUnprintable(s, buf, j8_escape=False):
     # type: (str, mylib.BufWriter, bool) -> None
     """ Print a string literal with required esceapes like \\n
 
@@ -55,17 +55,17 @@ def _EscapeUnprintable(s, buf, is_j8=False):
             buf.write(escaped)
             continue
 
-        if ch == "'" and is_j8:
+        if ch == "'" and j8_escape:
             buf.write(r"\'")
             continue
 
-        if ch == '"' and not is_j8:
+        if ch == '"' and not j8_escape:
             buf.write(r'\"')
             continue
 
         char_code = ord(ch)
         if char_code < 0x20:  # like IsUnprintableLow
-            if is_j8:
+            if j8_escape:
                 buf.write(r'\u{%x}' % char_code)
             else:
                 buf.write(r'\u%04x' % char_code)
@@ -134,6 +134,21 @@ def WriteString(s, options, buf):
     portion = s
     invalid_utf8 = []  # type: List[Tuple[int, int]]
     while True:
+        # Problem: Python 2 UTF-8 decoder allows bytes that correspond to
+        # surrogates (but Python 3 doesn't)
+        #
+        # TODO:
+        # - JSON behavior: round trip to "\ud83e"
+        # - J8 behavior: use b'\yed\ya0\ybe' 
+        #
+        # The Bjoern DFA will reject it, but we need the code point to be able
+        # to output \ud83e.
+        #
+        # So we need a modified Bjoern DFA in both Python and C++, with a
+        # UTF8_ACCEPT_SURROGATE state!!!  It's not ACCEPT, but you can get the
+        # code point out.
+        # Maybe we can visually inspect the states?
+
         try:
             portion.decode('utf-8')
         except UnicodeDecodeError as e:
@@ -169,7 +184,7 @@ def WriteString(s, options, buf):
             buf.write("b'")
             pos = 0
             for start, end in invalid_utf8:
-                _EscapeUnprintable(s[pos:start], buf, is_j8=True)
+                _EscapeUnprintable(s[pos:start], buf, j8_escape=True)
 
                 for i in xrange(start, end):
                     buf.write('\y%x' % ord(s[i]))
@@ -178,7 +193,7 @@ def WriteString(s, options, buf):
                 #log('pos %d', pos)
 
             # Last part
-            _EscapeUnprintable(s[pos:], buf, is_j8=True)
+            _EscapeUnprintable(s[pos:], buf, j8_escape=True)
             buf.write("'")
 
     else:

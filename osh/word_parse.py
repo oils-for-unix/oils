@@ -646,6 +646,8 @@ class WordParser(WordEmitter):
                         tok)
 
                 if is_ysh_expr:
+                    # Disallow var x = $'\001'.  Arguably we don't need these
+                    # checks because u'\u{1}' is the way to write it.
                     if self.token_type == Id.Char_Octal3:
                         p_die(
                             r"Use \xhh or \u{...} instead of octal escapes in YSH strings",
@@ -696,6 +698,22 @@ class WordParser(WordEmitter):
                              Id.Left_UTSingleQuote, Id.Left_BTSingleQuote):
             word_compile.RemoveLeadingSpaceSQ(tokens)
 
+        # Validation after lexing - same 2 checks in j8.LexerDecoder
+        is_u_string = left_token.id in (Id.Left_USingleQuote, Id.Left_UTSingleQuote)
+
+        for tok in tokens:
+            # u'\yff' is not valid, but b'\yff' is
+            if is_u_string and tok.id == Id.Char_YHex:
+                p_die(r"%s escapes not allowed in u'' strings" %
+                      lexer.TokenVal(tok), tok)
+            # \u{dc00} isn't valid
+            if tok.id == Id.Char_UBraced:
+                h = lexer.TokenSlice(tok, 3, -1)  # \u{123456}
+                i = int(h, 16)
+                if 0xD800 <= i and i < 0xE000:
+                    p_die(r"%s escape is illegal because it's in the surrogate range" %
+                          lexer.TokenVal(tok), tok)
+
         return self.cur_token
 
     def _ReadDoubleQuotedLeftParts(self):
@@ -735,8 +753,11 @@ class WordParser(WordEmitter):
         else:
             raise AssertionError(left_id)
 
-        sq_part = self._ReadSingleQuoted(self.cur_token, lexer_mode)
-        #log('part %r', sq_part)
+        # Needed for syntax checks
+        left_tok = self.cur_token
+        left_tok.id = left_id
+
+        sq_part = self._ReadSingleQuoted(left_tok, lexer_mode)
 
         if (len(sq_part.tokens) == 0 and self.lexer.ByteLookAhead() == "'"):
             self._SetNext(lex_mode_e.ShCommand)
@@ -748,13 +769,8 @@ class WordParser(WordEmitter):
             left_tok = self.cur_token
             left_tok.id = triple_left_id
 
-            #log('left %r', left_tok)
+            # Handles stripping leading whitespace
             sq_part = self._ReadSingleQuoted(left_tok, lexer_mode)
-
-            # TODO: read ending quotes
-        else:
-            #log('AFT self.cur_token %s', self.cur_token)
-            sq_part.left.id = left_id
 
         # Advance and validate
         self._SetNext(lex_mode_e.ShCommand)
@@ -763,22 +779,6 @@ class WordParser(WordEmitter):
         if self.token_kind not in KINDS_THAT_END_WORDS:
             p_die('Unexpected token after YSH single-quoted string',
                   self.cur_token)
-
-        # Validation after lexing - same 2 checks in j8.LexerDecoder
-        is_u_string = left_id in (Id.Left_USingleQuote, Id.Left_UTSingleQuote)
-
-        for tok in sq_part.tokens:
-            # u'\yff' is not valid, but b'\yff' is
-            if is_u_string and tok.id == Id.Char_YHex:
-                p_die(r"%s escapes not allowed in u'' strings" %
-                      lexer.TokenVal(tok), tok)
-            # \u{dc00} isn't valid
-            if tok.id == Id.Char_UBraced:
-                h = lexer.TokenSlice(tok, 3, -1)  # \u{123456}
-                i = int(h, 16)
-                if 0xD800 <= i and i < 0xE000:
-                    p_die(r"%s escape is illegal because it's in the surrogate range" %
-                          lexer.TokenVal(tok), tok)
 
         return CompoundWord([sq_part])
 

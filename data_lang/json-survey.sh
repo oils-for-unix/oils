@@ -177,4 +177,22 @@ encode-binary-data() {
   echo
 }
 
+decode-utf8-in-surrogate-range() {
+  python2 -c 'b = "\xed\xa0\xbe"; print(repr(b.decode("utf-8")))'
+  echo
+
+  # Hm Python 3 gives an error here!
+  python3 -c 'b = b"\xed\xa0\xbe"; print(repr(b.decode("utf-8")))' || true
+  echo
+
+  # valid
+  nodejs -e 'var u = new Uint8Array([0xce, 0xbc]); var string = new TextDecoder("utf-8").decode(u); console.log(string);'
+  echo
+
+  # can't decode!
+  nodejs -e 'var u = new Uint8Array([0xed, 0xa0, 0xbe]); var string = new TextDecoder("utf-8").decode(u); console.log(string);'
+  echo
+
+}
+
 "$@"

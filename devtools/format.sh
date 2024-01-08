@@ -79,7 +79,7 @@ readonly -a CPP_FILES=(
   {asdl,core}/*.cc
   benchmarks/*.c
   cpp/*.{c,cc,h}
-  data_lang/*.cc
+  data_lang/*.{c,cc,h}
   mycpp/*.{cc,h} 
   mycpp/demo/*.{cc,h}
   demo/*.c

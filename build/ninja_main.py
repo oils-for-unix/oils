@@ -73,6 +73,7 @@ def TarballManifest(cc_h_files):
   names.extend(glob('build/detect-*.c'))
 
   # TODO: crawl headers
+  # We can now use the headers=[] attribute
   names.extend(glob('mycpp/*.h'))
   names.extend(glob('cpp/*.h'))
 
