@@ -655,6 +655,22 @@ write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
 Hello Bob
 ## END
 
+#### Str=>replace(Eggex, Expr), replacement book-keeping
+shopt --set ysh:all
+
+# Check that we properly move the cursor *after* the replacement while
+# substituting. For example:
+#  'smaller-to-bigger'    # Before replace, cursor at end of match
+#           ^
+#  'smaller---to-bigger'  # After replace, cursor still at end of match
+#             ^
+
+var mystr = 'smaller-to-bigger'
+write $[mystr=>replace(/ '-'+ /, '---')]
+## STDOUT:
+smaller---to---bigger
+## END
+
 #### Str=>replace(Eggex, Expr), scopes
 shopt --set ysh:all
 

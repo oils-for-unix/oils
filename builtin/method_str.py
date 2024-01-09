@@ -5,6 +5,7 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, RegexMatch)
+from builtin import pure_ysh
 from core import error
 from core import state
 from core import vm
@@ -209,18 +210,26 @@ class Replace(vm._Callable):
                     break
 
                 vars = []
+                named_vars = []
                 num_groups = len(indices) / 2
                 for group in xrange(num_groups):
                     start = indices[2 * group]
                     end = indices[2 * group + 1]
+                    captured = string[start:end]
 
-                    vars.append(string[start:end])
+                    vars.append(captured)
+
+                    if group > 0:
+                        name = eggex_val.capture_names[group - 1]
+                        if name:
+                            named_vars.append((name, captured))
 
                 if subst_str:
                     s = subst_str.s
                 if subst_expr:
                     with state.ctx_Argv(self.mem, vars[1:]):
-                        s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
+                        with pure_ysh.ctx_Shvar(self.mem, named_vars):
+                            s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
 
                 start = indices[0]
                 end = indices[1]
