@@ -727,7 +727,7 @@ def Main(
 
         # replace substring, OR an eggex
         # takes count=3, the max number of replacements to do.
-        'replace': None,
+        'replace': method_str.Replace(mem, expr_ev),
 
         # Like Python's re.search, except we put it on the string object
         # It's more consistent with Str->find(substring, pos=0)
