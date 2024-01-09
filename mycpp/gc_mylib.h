@@ -230,13 +230,8 @@ class BufWriter : public Writer {
  private:
   void EnsureCapacity(int n);
 
-  void Extend(BigStr* s);
-  char* data();
-  char* end();
-  int capacity();
-
-  MutableStr* str_;
-  int len_;
+  MutableStr* str_;  // getvalue() turns this directly into Str*, no copying
+  int len_;          // how many bytes have been written so far
   bool is_valid_ = true;  // It becomes invalid after getvalue() is called
 };
 
