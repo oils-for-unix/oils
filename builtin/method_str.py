@@ -199,11 +199,11 @@ class Replace(vm._Callable):
             return value.Str(string.replace(string_val.s, s))
 
         if eggex_val:
-            # lazily converts to ERE
             ere = regex_translate.AsPosixEre(eggex_val)
             cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
 
             pos = 0
+            parts = []
             while True:
                 indices = libc.regex_search(ere, cflags, string, 0, pos)
                 if not indices:
@@ -233,11 +233,13 @@ class Replace(vm._Callable):
 
                 start = indices[0]
                 end = indices[1]
-                string = string[:start] + s + string[end:]
+                parts.append(string[pos:start])
+                parts.append(s)
+                pos = end
 
-                if len(string) == end + 1:
+                if pos + 1 >= len(string):
                     break
-                else:
-                    pos = start + len(s)
 
-        return value.Str(string)
+            parts.append(string[pos:])
+
+            return value.Str("".join(parts))

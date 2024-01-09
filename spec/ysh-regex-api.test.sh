@@ -642,8 +642,12 @@ shopt --set ysh:all
 
 var mystr = 'mangled----kebab--case'
 write $[mystr=>replace(/ '-'+ /, '-')]
+
+setvar mystr = 'smaller-to-bigger'
+write $[mystr=>replace(/ '-'+ /, '---')]
 ## STDOUT:
 mangled-kebab-case
+smaller---to---bigger
 ## END
 
 #### Str=>replace(Eggex, Expr)
@@ -653,22 +657,6 @@ var mystr = 'name: Bob'
 write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
 ## STDOUT:
 Hello Bob
-## END
-
-#### Str=>replace(Eggex, Expr), replacement book-keeping
-shopt --set ysh:all
-
-# Check that we properly move the cursor *after* the replacement while
-# substituting. For example:
-#  'smaller-to-bigger'    # Before replace, cursor at end of match
-#           ^
-#  'smaller---to-bigger'  # After replace, cursor still at end of match
-#             ^
-
-var mystr = 'smaller-to-bigger'
-write $[mystr=>replace(/ '-'+ /, '---')]
-## STDOUT:
-smaller---to---bigger
 ## END
 
 #### Str=>replace(Eggex, Expr), scopes
