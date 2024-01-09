@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+from _devbuild.gen.syntax_asdl import loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, RegexMatch)
 from core import error
@@ -141,6 +142,14 @@ class Replace(vm._Callable):
         self.mem = mem
         self.expr_ev = expr_ev
 
+    def EvalSubstExpr(self, expr, blame_loc):
+        # type: (value.Expr, loc_t) -> str
+        res = self.expr_ev.EvalExpr(expr.e, blame_loc)
+        if res.tag() == value_e.Str:
+            return cast(value.Str, res).s
+
+        raise error.TypeErr(res, "expected expr to eval to a string", blame_loc)
+
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         """
@@ -177,15 +186,16 @@ class Replace(vm._Callable):
             else:
                 raise error.TypeErr(pattern, 'expected substitution to be Str or Expr', rd.LeftParenToken())
 
-        count = rd.NamedInt("count", 0)
+        count = rd.NamedInt("count", 0)  # TODO: respect count
         rd.Done()
 
         if string_val:
             if subst_str:
-                return value.Str(string.replace(string_val.s, subst_str.s))
-
+                s = subst_str.s
             if subst_expr:
-                raise NotImplementedError()
+                s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
+
+            return value.Str(string.replace(string_val.s, s))
 
         if eggex_val:
             # lazily converts to ERE
@@ -209,14 +219,8 @@ class Replace(vm._Callable):
                 if subst_str:
                     s = subst_str.s
                 if subst_expr:
-                    self.mem.argv_stack.append(state._ArgFrame(vars[1:]))
-                    UP_res = self.expr_ev.EvalExpr(subst_expr.e, rd.LeftParenToken())
-                    with tagswitch(UP_res) as case:
-                        if case(value_e.Str):
-                            res = cast(value.Str, UP_res)
-                            s = res.s
-                        else:
-                            raise error.TypeErr(UP_res, "expected expr to eval to a string", rd.LeftParenToken())
+                    with state.ctx_Argv(self.mem, vars[1:]):
+                        s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
 
                 start = indices[0]
                 end = indices[1]
@@ -225,6 +229,6 @@ class Replace(vm._Callable):
                 if len(string) == end + 1:
                     break
                 else:
-                    pos = end
+                    pos = start + len(s)
 
         return value.Str(string)

@@ -939,6 +939,23 @@ class ctx_ProcCall(object):
         self.mem.PopCall(True)
 
 
+class ctx_Argv(object):
+    """For $1, $2, $3, etc."""
+
+    def __init__(self, mem, argv):
+        # type: (Mem, List[str]) -> None
+        mem.argv_stack.append(_ArgFrame(argv))
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.argv_stack.pop()
+
+
 class ctx_Temp(object):
     """For FOO=bar myfunc, etc."""
 
