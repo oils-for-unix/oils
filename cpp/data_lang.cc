@@ -38,7 +38,7 @@ void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
   uint8_t** out = &output;
 
   int invalid_utf8 = 0;
-  invalid_utf8 = EncodeRuneOrByte(in, out, j8_escape);
+  //invalid_utf8 = EncodeRuneOrByte(in, out, j8_escape);
 
   // Growth algorithm
   //
