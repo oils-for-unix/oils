@@ -674,7 +674,7 @@ smaller---to---bigger
 #### Str=>replace(Eggex, Expr), scopes
 shopt --set ysh:all
 
-var myStr = '.. 123 ..'
+var mystr = '123'
 
 var anotherVar = 'surprise!'
 write $[mystr=>replace(/ <capture d+> /, ^"Hello $1 ($anotherVar)")]
