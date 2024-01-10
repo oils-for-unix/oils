@@ -192,7 +192,7 @@ class Replace(vm._Callable):
                                     'expected substitution to be Str or Expr',
                                     rd.LeftParenToken())
 
-        count = rd.NamedInt("count", 0)  # TODO: respect count
+        count = rd.NamedInt("count", 0)
         rd.Done()
 
         if string_val:
