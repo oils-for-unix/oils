@@ -32,13 +32,24 @@ void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
   uint8_t* input = reinterpret_cast<unsigned char*>(s->data_);
   uint8_t* input_end = reinterpret_cast<unsigned char*>(s->data_ + len(s));
 
-  //unsigned char* out = buf->str_->data_;         // mutated
-  //unsigned char* orig_out = out;
+  // unsigned char* out = buf->str_->data_;         // mutated
+  // unsigned char* orig_out = out;
 
   // TODO: have to rewind to this position
   buf->WriteConst("\"");
 
   uint8_t* output = buf->CurrentPos();
+
+  // I think we do an OPTIMISTIC
+  // EnsureMoreSpace(input_length)
+  // and then we loop while we have less than 6 bytes left
+  // TODO: maybe use the std::string or std::vector API to test it?
+
+  // Problem: we can't implement this with std::string!
+  // because we're breaking the invariant of the data structure
+  // string::append() takes a char, and mutates its length
+
+  // we could maintain a fixed size buffer of 128 or something, and copy it?
 
 #if 0
   int invalid_utf8 = 0;
