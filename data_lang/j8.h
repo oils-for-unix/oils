@@ -5,9 +5,6 @@
 
 #include "data_lang/utf8_impls/bjoern_dfa.h"
 
-// Right now \u001f and \u{1f} are the longest output sequences for a byte.
-#define J8_MAX_BYTES_PER_INPUT_BYTE 6
-
 #define J8_OUT(ch) \
   **p_out = (ch);  \
   (*p_out)++
@@ -144,6 +141,20 @@ inline int EncodeRuneOrByte(unsigned char** p_in, unsigned char** p_out,
   //
   // Unreachable
   //
+}
+
+// Right now \u001f and \u{1f} are the longest output sequences for a byte.
+#define J8_MAX_BYTES_PER_INPUT_BYTE 6
+
+int EncodeChunk(unsigned char** p_in, unsigned char* in_end,
+                unsigned char** p_out, unsigned char* out_end, bool j8_escape) {
+  while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
+    int invalid_utf8 = EncodeRuneOrByte(p_in, p_out, j8_escape);
+    if (invalid_utf8 && !j8_escape) {  // first JSON pass got binary data?
+      return invalid_utf8;             // early return
+    }
+  }
+  return 0;
 }
 
 #endif  // DATA_LANG_J8_H

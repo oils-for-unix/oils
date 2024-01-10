@@ -57,66 +57,81 @@ void Encode(char* s, int n, Buf* buf, int is_j8) {
   buf->len = out - orig_out;
 }
 
-int EncodeChunk(unsigned char** p_in, unsigned char* in_end,
-                unsigned char** p_out, unsigned char* out_end, bool j8_escape) {
-  while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
-    int invalid_utf8 = EncodeRuneOrByte(p_in, p_out, j8_escape);
-    if (invalid_utf8 && !j8_escape) {  // first pass got binary data?
-      return invalid_utf8;             // early return
-    }
-  }
-  return 0;
-}
+const int kChunkSize = 8;
 
-void EncodeCpp(char* s, int n, std::string* result, int j8_fallback) {
-  unsigned char* in = (unsigned char*)s;
-  unsigned char* orig_in = in;
+void EncodeBString(char* s, int n, std::string* result) {
+  uint8_t* in = reinterpret_cast<uint8_t*>(s);
+  uint8_t* in_end = in + n;
 
-  unsigned char* in_end = (unsigned char*)s + n;
-
-  int begin_pos = result->size();  // position before writing opening quote
-  // unsigned char* begin = (unsigned char*)result->data();
-
-  int num_chunks = 0;
-  // int chunk_size = 64;
-  int chunk_size = 8;
-  int bytes_this_chunk = 0;
-
-  printf("\n");
-
-  result->append("\"");
-
-  unsigned char* out;
+  result->append("b'");
 
   while (in < in_end) {
     // printf("in %p\n", in);
 
     int chunk_pos = result->size();    // current position
-    result->append(chunk_size, '\0');  // "pre-allocated" bytes to overwrite
+    result->append(kChunkSize, '\0');  // "pre-allocated" bytes to overwrite
 
-    out = (unsigned char*)result->data() + chunk_pos;
-    unsigned char* orig_out = out;
+    // Need C-style pointers to call the helper function
+    uint8_t* raw_data = (uint8_t*)result->data();
 
-    unsigned char* out_end = (unsigned char*)result->data() + result->size();
+    uint8_t* out = raw_data + chunk_pos;
+    uint8_t* orig_out = out;
+
+    uint8_t* out_end = raw_data + result->size();
 
     // printf("\tEncodeChunk JSON\n");
-    int invalid_utf8 = EncodeChunk(&in, in_end, &out, out_end, false);
-    // TODO: fall back to b''
+    EncodeChunk(&in, in_end, &out, out_end, true);
 
-    num_chunks++;
-    bytes_this_chunk = out - orig_out;
+    int bytes_this_chunk = out - orig_out;
+    int end_index = chunk_pos + bytes_this_chunk;
     // printf("\t  num_chunks %d\n", num_chunks);
     // printf("\t  bytes_this_chunk %d\n", bytes_this_chunk);
-
-    int end_index = chunk_pos + bytes_this_chunk;
     // printf("\tend_index %d\n", end_index);
 
     result->erase(end_index, std::string::npos);
   }
+  result->append("'");
+}
+
+void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
+  uint8_t* in = reinterpret_cast<uint8_t*>(s);
+  uint8_t* in_end = in + n;
+
+  int begin_index = result->size();  // position before writing opening quote
 
   result->append("\"");
 
-  // printf("EncodeCpp done %s\n", result->c_str());
+  while (in < in_end) {
+    // printf("in %p\n", in);
+
+    int chunk_pos = result->size();    // current position
+    result->append(kChunkSize, '\0');  // "pre-allocated" bytes to overwrite
+
+    // Need C-style pointers to call the helper function
+    uint8_t* raw_data = (uint8_t*)result->data();
+
+    uint8_t* out = raw_data + chunk_pos;
+    uint8_t* orig_out = out;
+
+    uint8_t* out_end = raw_data + result->size();
+
+    // printf("\tEncodeChunk JSON\n");
+    int invalid_utf8 = EncodeChunk(&in, in_end, &out, out_end, false);
+    if (invalid_utf8 && j8_fallback) {
+      // printf("RETRY\n");
+      result->erase(begin_index, std::string::npos);
+      EncodeBString(s, n, result);  // fall back to b''
+    }
+
+    int bytes_this_chunk = out - orig_out;
+    int end_index = chunk_pos + bytes_this_chunk;
+    // printf("\t  num_chunks %d\n", num_chunks);
+    // printf("\t  bytes_this_chunk %d\n", bytes_this_chunk);
+    // printf("\tend_index %d\n", end_index);
+
+    result->erase(end_index, std::string::npos);
+  }
+  result->append("\"");
 }
 
 void EncodeAndPrint(char* s, int n, int j8_fallback) {
@@ -133,7 +148,7 @@ void EncodeAndPrint(char* s, int n, int j8_fallback) {
 #else
 
   std::string result;
-  EncodeCpp(s, n, &result, j8_fallback);
+  EncodeString(s, n, &result, j8_fallback);
   printf("out = %s\n", result.c_str());
 
 #endif
