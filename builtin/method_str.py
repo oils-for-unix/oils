@@ -209,12 +209,11 @@ class Replace(vm._Callable):
 
             pos = 0
             parts = []  # type: List[str]
-            while True:
+            while pos + 1 < len(string):
                 indices = libc.regex_search(ere, cflags, string, 0, pos)
                 if indices is None:
                     break
 
-                # Collect captures
                 vars = []  # type: List[str]
                 named_vars = []  # type: List[Tuple[str, str]]
                 num_groups = len(indices) / 2
@@ -244,9 +243,6 @@ class Replace(vm._Callable):
                 parts.append(string[pos:start])
                 parts.append(s)
                 pos = end
-
-                if pos + 1 >= len(string):
-                    break
 
             parts.append(string[pos:])
 
