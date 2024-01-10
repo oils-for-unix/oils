@@ -64,7 +64,7 @@ void EncodeBString(char* s, int n, std::string* result) {
   result->append("b'");
 
   while (in < in_end) {
-    int chunk_pos = result->size();    // current position
+    int chunk_pos = result->size();  // current position
 
     // Same logic as EncodeBString()
     int chunk_size = in_end - in + 3;  // 3 for the quotes
@@ -109,7 +109,7 @@ void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
   printf("\t***str len %d\n", n);
 
   while (in < in_end) {
-    int chunk_pos = result->size();    // current position
+    int chunk_pos = result->size();  // current position
 
     // Compute chunk size assuming that we'll output about 5 bytes "foo" for
     // the string foo.  Cases like \u{1f}\u{1e} blow it up by a factor of 6, in
@@ -199,7 +199,8 @@ TEST encode_test() {
   EncodeAndPrint(bin, 3, 1);
 
   // Blow up size
-  char* blowup = "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0e\x0f\x10\xfe";
+  char* blowup =
+      "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0e\x0f\x10\xfe";
   EncodeAndPrint(blowup, strlen(blowup), 0);
   EncodeAndPrint(blowup, strlen(blowup), 1);
 
