@@ -149,7 +149,8 @@ class Replace(vm._Callable):
         if res.tag() == value_e.Str:
             return cast(value.Str, res).s
 
-        raise error.TypeErr(res, "expected expr to eval to a string", blame_loc)
+        raise error.TypeErr(res, "expected expr to eval to a string",
+                            blame_loc)
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -174,7 +175,9 @@ class Replace(vm._Callable):
                 string_val = cast(value.Str, pattern)
 
             else:
-                raise error.TypeErr(pattern, 'expected pattern to be Eggex or Str', rd.LeftParenToken())
+                raise error.TypeErr(pattern,
+                                    'expected pattern to be Eggex or Str',
+                                    rd.LeftParenToken())
 
         subst = rd.PosValue()
         with tagswitch(subst) as case:
@@ -185,7 +188,9 @@ class Replace(vm._Callable):
                 subst_expr = cast(value.Expr, subst)
 
             else:
-                raise error.TypeErr(pattern, 'expected substitution to be Str or Expr', rd.LeftParenToken())
+                raise error.TypeErr(pattern,
+                                    'expected substitution to be Str or Expr',
+                                    rd.LeftParenToken())
 
         count = rd.NamedInt("count", 0)  # TODO: respect count
         rd.Done()
@@ -231,7 +236,8 @@ class Replace(vm._Callable):
                 if subst_expr:
                     with state.ctx_Argv(self.mem, vars):
                         with pure_ysh.ctx_Shvar(self.mem, named_vars):
-                            s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
+                            s = self.EvalSubstExpr(subst_expr,
+                                                   rd.LeftParenToken())
 
                 start = indices[0]
                 end = indices[1]
