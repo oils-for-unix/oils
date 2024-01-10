@@ -201,7 +201,12 @@ class Replace(vm._Callable):
             if subst_expr:
                 s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
 
-            return value.Str(string.replace(string_val.s, s))
+            if count == 0:
+                result = string.replace(string_val.s, s)
+            else:
+                result = string.replace(string_val.s, s, count)
+
+            return value.Str(result)
 
         if eggex_val:
             ere = regex_translate.AsPosixEre(eggex_val)
@@ -209,6 +214,7 @@ class Replace(vm._Callable):
 
             pos = 0
             parts = []  # type: List[str]
+            replace_count = 0
             while pos + 1 < len(string):
                 indices = libc.regex_search(ere, cflags, string, 0, pos)
                 if indices is None:
@@ -242,6 +248,10 @@ class Replace(vm._Callable):
                 parts.append(string[pos:start])
                 parts.append(s)
                 pos = end
+
+                replace_count += 1
+                if count != 0 and replace_count == count:
+                    break
 
             parts.append(string[pos:])
 
