@@ -225,10 +225,9 @@ class Replace(vm._Callable):
                     vars.append(captured)
 
                     # TODO: convert_funcs
-                    if group > 0:
-                        name = eggex_val.capture_names[group - 2]
-                        if name is not None:
-                            named_vars.append((name, captured))
+                    name = eggex_val.capture_names[group - 2]
+                    if name is not None:
+                        named_vars.append((name, captured))
 
                 if subst_str:
                     s = subst_str.s
