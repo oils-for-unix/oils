@@ -4,7 +4,7 @@
 
 #include "vendor/greatest.h"
 
-// Fixed for now
+// Naive buffer
 struct Buf {
   unsigned char* data;
   int capacity;
@@ -57,8 +57,6 @@ void EncodeNaive(char* s, int n, Buf* buf, int j8_fallback) {
   buf->len = out - orig_out;
 }
 
-const int kChunkSize = 8;
-
 void EncodeBString(char* s, int n, std::string* result) {
   uint8_t* in = reinterpret_cast<uint8_t*>(s);
   uint8_t* in_end = in + n;
@@ -66,10 +64,18 @@ void EncodeBString(char* s, int n, std::string* result) {
   result->append("b'");
 
   while (in < in_end) {
-    // printf("in %p\n", in);
-
     int chunk_pos = result->size();    // current position
-    result->append(kChunkSize, '\0');  // "pre-allocated" bytes to overwrite
+
+    // Same logic as EncodeBString()
+    int chunk_size = in_end - in + 3;  // 3 for the quotes
+    // clamp it to account for tiny gaps and huge strings
+    if (chunk_size < 16) {
+      chunk_size = 16;
+    } else if (chunk_size > 4096) {
+      chunk_size = 4096;
+    }
+    printf("\t[2] in %p chunk %d\n", in, chunk_size);
+    result->append(chunk_size, '\0');  // "pre-allocated" bytes to overwrite
 
     // Need C-style pointers to call the helper function
     uint8_t* raw_data = (uint8_t*)result->data();
@@ -84,9 +90,8 @@ void EncodeBString(char* s, int n, std::string* result) {
 
     int bytes_this_chunk = out - orig_out;
     int end_index = chunk_pos + bytes_this_chunk;
-    // printf("\t  num_chunks %d\n", num_chunks);
-    // printf("\t  bytes_this_chunk %d\n", bytes_this_chunk);
-    // printf("\tend_index %d\n", end_index);
+    printf("\t    bytes_this_chunk %d\n", bytes_this_chunk);
+    printf("\t    end_index %d\n", end_index);
 
     result->erase(end_index, std::string::npos);
   }
@@ -101,11 +106,24 @@ void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
 
   result->append("\"");
 
-  while (in < in_end) {
-    // printf("in %p\n", in);
+  printf("\t***str len %d\n", n);
 
+  while (in < in_end) {
     int chunk_pos = result->size();    // current position
-    result->append(kChunkSize, '\0');  // "pre-allocated" bytes to overwrite
+
+    // Compute chunk size assuming that we'll output about 5 bytes "foo" for
+    // the string foo.  Cases like \u{1f}\u{1e} blow it up by a factor of 6, in
+    // which case we'll make more trips through the loop.
+    int chunk_size = in_end - in + 3;  // 3 for the quotes
+    // clamp it to account for tiny gaps and huge strings
+    if (chunk_size < 16) {
+      chunk_size = 16;
+    } else if (chunk_size > 4096) {
+      chunk_size = 4096;
+    }
+    printf("\t[1] in %p chunk %d\n", in, chunk_size);
+
+    result->append(chunk_size, '\0');  // "pre-allocated" bytes to overwrite
 
     // Need C-style pointers to call the helper function
     uint8_t* raw_data = (uint8_t*)result->data();
@@ -121,21 +139,23 @@ void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
       // printf("RETRY\n");
       result->erase(begin_index, std::string::npos);
       EncodeBString(s, n, result);  // fall back to b''
+      printf("\t[1] result len %d\n", result->size());
+      return;
     }
 
     int bytes_this_chunk = out - orig_out;
     int end_index = chunk_pos + bytes_this_chunk;
-    // printf("\t  num_chunks %d\n", num_chunks);
-    // printf("\t  bytes_this_chunk %d\n", bytes_this_chunk);
-    // printf("\tend_index %d\n", end_index);
+    printf("\t    bytes_this_chunk %d\n", bytes_this_chunk);
+    printf("\t    end_index %d\n", end_index);
 
     result->erase(end_index, std::string::npos);
   }
   result->append("\"");
+  printf("\t[1] result len %d\n", result->size());
 }
 
 void EncodeAndPrint(char* s, int n, int j8_fallback) {
-#if 1
+#if 0
   Buf buf = {0};
   buf.data = (unsigned char*)malloc(64);
   buf.capacity = 64;
@@ -177,6 +197,11 @@ TEST encode_test() {
   char* bin = "\x00\x01\xff";
   EncodeAndPrint(bin, 3, 0);
   EncodeAndPrint(bin, 3, 1);
+
+  // Blow up size
+  char* blowup = "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0e\x0f\x10\xfe";
+  EncodeAndPrint(blowup, strlen(blowup), 0);
+  EncodeAndPrint(blowup, strlen(blowup), 1);
 
   PASS();
 }
