@@ -17,7 +17,7 @@ from ysh import regex_translate
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast
+from typing import cast, List, Tuple
 
 _ = log
 
@@ -203,31 +203,33 @@ class Replace(vm._Callable):
             cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
 
             pos = 0
-            parts = []
+            parts = []  # type: List[str]
             while True:
                 indices = libc.regex_search(ere, cflags, string, 0, pos)
-                if not indices:
+                if indices is None:
                     break
 
-                vars = []
-                named_vars = []
+                # Collect captures
+                vars = []  # type: List[str]
+                named_vars = []  # type: List[Tuple[str, str]]
                 num_groups = len(indices) / 2
-                for group in xrange(num_groups):
+                for group in xrange(1, num_groups):
                     start = indices[2 * group]
                     end = indices[2 * group + 1]
                     captured = string[start:end]
 
                     vars.append(captured)
 
+                    # TODO: convert_funcs
                     if group > 0:
-                        name = eggex_val.capture_names[group - 1]
-                        if name:
+                        name = eggex_val.capture_names[group - 2]
+                        if name is not None:
                             named_vars.append((name, captured))
 
                 if subst_str:
                     s = subst_str.s
                 if subst_expr:
-                    with state.ctx_Argv(self.mem, vars[1:]):
+                    with state.ctx_Argv(self.mem, vars):
                         with pure_ysh.ctx_Shvar(self.mem, named_vars):
                             s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
 
@@ -243,3 +245,5 @@ class Replace(vm._Callable):
             parts.append(string[pos:])
 
             return value.Str("".join(parts))
+
+        raise AssertionError()
