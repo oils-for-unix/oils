@@ -172,7 +172,7 @@ bool CFileWriter::isatty() {
 // BufWriter
 //
 
-void BufWriter::ReserveMore(int n) {
+void BufWriter::EnsureMoreSpace(int n) {
   int new_cap = len_ + n;
   DCHECK(str_ != nullptr);
   int current_cap = len(str_);
@@ -220,7 +220,7 @@ void BufWriter::write(BigStr* s) {
     // capacity: 128 -> 256 -> 512
     str_ = NewMutableStr(n);
   } else {
-    ReserveMore(n);
+    EnsureMoreSpace(n);
   }
 
   // Append the contents to the buffer

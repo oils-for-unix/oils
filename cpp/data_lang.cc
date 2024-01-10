@@ -30,15 +30,43 @@ void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
   bool j8_escape = !(options & LOSSY_JSON);
 
   uint8_t* input = reinterpret_cast<unsigned char*>(s->data_);
+  uint8_t* input_end = reinterpret_cast<unsigned char*>(s->data_ + len(s));
 
-  // We also need RemainingBytes()
+  //unsigned char* out = buf->str_->data_;         // mutated
+  //unsigned char* orig_out = out;
+
+  // TODO: have to rewind to this position
+  buf->WriteConst("\"");
+
   uint8_t* output = buf->CurrentPos();
 
-  uint8_t** in = &input;
-  uint8_t** out = &output;
-
+#if 0
   int invalid_utf8 = 0;
-  //invalid_utf8 = EncodeRuneOrByte(in, out, j8_escape);
+  while (input < input_end) {
+    buf->EnsureMoreSpace(J8_MAX_BYTES_PER_INPUT_BYTE);  // 6 bytes at most
+    // PROBLEM: every time you call this, the output can be MOVED!
+    // So do you have to return a boolean then?
+
+    // TRICKY / UNSAFE: This updates our local pointer 'output', as well as
+    // memory owned by the BufWriter.
+    invalid_utf8 = EncodeRuneOrByte(&input, &output, j8_escape);
+    if (invalid_utf8) {
+      // Rewind?
+      buf.WriteConst("b'");
+      while (input < input_end) {
+        // some of this could be avoided
+        buf->EnsureMoreSpace(J8_MAX_BYTES_PER_INPUT_BYTE);  // 6 bytes at most
+        EncodeRuneOrByte(&input, &output, j8_escape);
+      }
+      // TODO: update BufWriter
+
+      buf.WriteConst("'");
+    }
+    // TODO: update BufWriter
+  }
+#endif
+
+  buf->WriteConst("\"");
 
   // Growth algorithm
   //

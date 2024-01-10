@@ -216,10 +216,10 @@ class BufWriter : public Writer {
     return false;
   }
   void WriteConst(const char* c_string);
-  void ReserveMore(int n);  // reserve additional bytes
-  uint8_t* CurrentPos();    // query how many before resize necessary
-  int BytesLeft();          // query how many before resize necessary
-  BigStr* getvalue();       // part of cStringIO API
+  void EnsureMoreSpace(int n);  // similar to reserve()
+  uint8_t* CurrentPos();        // query how many before resize necessary
+  int BytesLeft();              // query how many before resize necessary
+  BigStr* getvalue();           // part of cStringIO API
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(BufWriter));
