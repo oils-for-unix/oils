@@ -17,7 +17,7 @@ from ysh import regex_translate
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, List, Tuple
+from typing import cast, List, Optional, Tuple
 
 _ = log
 
@@ -227,13 +227,24 @@ class Replace(vm._Callable):
                     start = indices[2 * group]
                     end = indices[2 * group + 1]
                     captured = string[start:end]
+                    val = value.Str(captured)
 
+                    if len(eggex_val.convert_funcs) and group != 0:
+                        convert_func = eggex_val.convert_funcs[group - 1]
+                        convert_tok = eggex_val.convert_toks[group - 1]
+
+                        if convert_func:
+                            val = self.expr_ev.CallConvertFunc(convert_func,
+                                                               val,
+                                                               convert_tok,
+                                                               rd.LeftParenToken())
+
+                    # TODO: use val
                     vars.append(captured)
 
-                    # TODO: convert_funcs
                     name = eggex_val.capture_names[group - 2]
                     if name is not None:
-                        named_vars.append((name, captured))
+                        named_vars.append((name, val))
 
                 if subst_str:
                     s = subst_str.s

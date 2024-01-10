@@ -706,3 +706,13 @@ for count in (0..4) {
 1-2-3-
 1-2-3-
 ## END
+
+#### Str=>replace(Eggex, Lazy), convert_func
+shopt --set ysh:all
+
+var mystr = '123'
+
+write $[mystr=>replace(/ <capture d+ as n : int> /, ^"$[n + 1]")]
+## STDOUT:
+124
+## END
