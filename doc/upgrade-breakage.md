@@ -182,7 +182,17 @@ Idioms](idioms.html).
 Also related: [Known Differences Between OSH and Other
 Shells](known-differences.html).
 
-## Acknowledgments
+## Appendix
 
-- Thank you to `ca2013` for reviewing this doc.
+### Shell Functions vs. Procs
+
+Procs have truly local variables like Python and JavaScript.  There's no
+[dynamic scope]($xref:dynamic-scope) rule, as with shell functions.
+
+This is something to be aware of, but isn't technically a breakage because
+shell functions still work the same way in YSH.
+
+### Acknowledgments
+
+Thank you to `ca2013` for reviewing this doc.
 
