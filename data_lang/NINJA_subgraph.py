@@ -34,7 +34,7 @@ def NinjaGraph(ru):
     )
 
     ru.cc_binary(
-        'data_lang/j8_test.c',
+        'data_lang/j8_test.cc',
         deps=['//data_lang/j8'],
         # Add tcmalloc for malloc_address_test
         matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])

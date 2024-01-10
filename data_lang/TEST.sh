@@ -15,11 +15,16 @@ source test/common.sh      # run-one-test
 unit() {
   ### Run unit tests
 
-  run-one-test 'data_lang/utf8_test' '' asan
-  echo
+  for variant in asan opt; do
+    # This test needs to be faster
+    run-one-test 'data_lang/utf8_test' '' $variant
+    echo
+  done
 
-  run-one-test 'data_lang/utf8_test' '' opt
-  echo
+  for variant in asan ubsan; do
+    run-one-test 'data_lang/j8_test' '' $variant
+    echo
+  done
 }
 
 "$@"

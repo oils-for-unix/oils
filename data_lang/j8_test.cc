@@ -11,7 +11,7 @@ struct Buf {
   int len;
 };
 
-void Encode(char* s, int n, Buf* buf, int is_j8) {
+void EncodeNaive(char* s, int n, Buf* buf, int j8_fallback) {
   char* orig_s = s;  // save for rewinding
 
   unsigned char* in = (unsigned char*)s;
@@ -33,7 +33,7 @@ void Encode(char* s, int n, Buf* buf, int is_j8) {
     invalid_utf8 = EncodeRuneOrByte(&in, &out, 0);  // JSON escaping
 
     // Try again with J8 escaping
-    if (invalid_utf8 && is_j8) {
+    if (invalid_utf8 && j8_fallback) {
       in = (unsigned char*)orig_s;
       out = orig_out;
 
@@ -135,12 +135,12 @@ void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
 }
 
 void EncodeAndPrint(char* s, int n, int j8_fallback) {
-#if 0
+#if 1
   Buf buf = {0};
   buf.data = (unsigned char*)malloc(64);
   buf.capacity = 64;
 
-  Encode(s, n, &buf, is_j8);
+  EncodeNaive(s, n, &buf, j8_fallback);
   buf.data[buf.len] = '\0';  // NUL terminate
 
   printf("out = %s\n", buf.data);
