@@ -19,10 +19,55 @@ TEST char_int_test() {
   int c = s[3];
   printf("c = %c\n", c);
   printf("c = %d\n", c);
+
+  PASS();
 }
 
 TEST encode_test() {
-  EncodeString(NULL, 3, NULL, NULL, 1);
+  const char* cases[] = {
+      "x",
+      "",
+      "foozz abcdef abcdef \x01 \x02 \u03bc 0123456789 0123456 \xff",
+      "foozz abcd \xfe \x1f",
+      "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0e\x0f\x10\xfe",
+      NULL,
+  };
+
+  for (int i = 0; cases[i]; ++i) {
+    const char* s = cases[i];
+    j8_buf_t in = {(unsigned char*)s, strlen(s)};
+
+    j8_buf_t result = {0};
+    EncodeString(in, &result, 0);
+
+    printf("result %s\n", result.data);
+    printf("result.len %d\n", result.len);
+
+    // Some sanity checks
+    int n = strlen(s);
+    switch (n) {
+    case 0:  // empty string -> ""
+      ASSERT_EQ_FMT(2, result.len, "%d");
+      break;
+    case 1:  // x -> "x"
+      ASSERT_EQ_FMT(3, result.len, "%d");
+      break;
+    default:
+      ASSERT(strlen(s) < result.len);
+      break;
+    }
+    free(result.data);
+
+    // Encode again with J8 fallback
+    result = {0};
+    EncodeString(in, &result, 1);
+
+    printf("result %s\n", result.data);
+    printf("result.len %d\n", result.len);
+    free(result.data);
+
+    printf("\n");
+  }
 
   PASS();
 }

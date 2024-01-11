@@ -1,66 +1,101 @@
 #include "data_lang/j8c.h"
 
-#include "data_lang/j8.h"
+#include <stdlib.h>  // realloc
 
-void EncodeBString(char* in, int in_len, char** out, int* out_len,
-                   int j8_fallback) {
+#include "data_lang/j8.h"  // EncodeRuneOrByte
+
+void EncodeBString(j8_buf_t in_buf, j8_buf_t* out_buf, int capacity) {
+  // Compute pointers for the inner loop
+  unsigned char* in = (unsigned char*)in_buf.data;
+  unsigned char* in_end = in + in_buf.len;
+
+  unsigned char* out = out_buf->data;  // mutated
+  unsigned char* out_end = out_buf->data + capacity;
+  unsigned char** p_out = &out;
+
+  J8_OUT('b');  // Left quote b''
+  J8_OUT('\'');
+
+  while (true) {
+    EncodeChunk(&in, in_end, &out, out_end, true);  // Fill as much as we can
+    out_buf->len = out - out_buf->data;             // recompute length
+
+    if (in >= in_end) {
+      break;
+    }
+
+    // Same growth policy as below
+    capacity = capacity * 3 / 2;
+    // printf("[2] new capacity %d\n", capacity);
+    out_buf->data = (unsigned char*)realloc(out_buf->data, capacity);
+
+    // Recompute pointers
+    out = out_buf->data + out_buf->len;
+    out_end = out + capacity;
+    p_out = &out;
+  }
+
+  J8_OUT('\'');
+  out_buf->len = out - out_buf->data;
+
+  J8_OUT('\0');  // NUL terminate for printf
 }
 
-void EncodeString(char* in, int in_len, char** out, int* out_len,
-                  int j8_fallback) {
-#if 0
-  uint8_t* in = reinterpret_cast<uint8_t*>(s);
-  uint8_t* in_end = in + n;
+void EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
+  unsigned char* in = (unsigned char*)in_buf.data;
+  unsigned char* in_end = in + in_buf.len;
 
-  int begin_index = result->size();  // position before writing opening quote
+  // Growth policy: Start at a fixed size min(N + 3 + 2, 16)
+  int capacity = in_buf.len + 3 + 2;  // 3 for quotes, 2 potential \" \n
+  if (capacity < 16) {                // account for J8_MAX_BYTES_PER_INPUT_BYTE
+    capacity = 16;
+  }
+  // printf("capacity %d\n", capacity);
 
-  result->append("\"");
+  out_buf->data = (unsigned char*)malloc(capacity);
+  out_buf->len = 0;  // starts out empty
 
-  printf("\t***str len %d\n", n);
+  unsigned char* out = out_buf->data;  // mutated
+  unsigned char* out_end = out_buf->data + capacity;
+  unsigned char** p_out = &out;
 
-  while (in < in_end) {
-    int chunk_pos = result->size();  // current position
+  J8_OUT('"');
 
-    // Compute chunk size assuming that we'll output about 5 bytes "foo" for
-    // the string foo.  Cases like \u{1f}\u{1e} blow it up by a factor of 6, in
-    // which case we'll make more trips through the loop.
-    int chunk_size = in_end - in + 3;  // 3 for the quotes
-    // clamp it to account for tiny gaps and huge strings
-    if (chunk_size < 16) {
-      chunk_size = 16;
-    } else if (chunk_size > 4096) {
-      chunk_size = 4096;
-    }
-    printf("\t[1] in %p chunk %d\n", in, chunk_size);
-
-    result->append(chunk_size, '\0');  // "pre-allocated" bytes to overwrite
-
-    // Need C-style pointers to call the helper function
-    uint8_t* raw_data = (uint8_t*)result->data();
-
-    uint8_t* out = raw_data + chunk_pos;
-    uint8_t* orig_out = out;
-
-    uint8_t* out_end = raw_data + result->size();
-
-    // printf("\tEncodeChunk JSON\n");
+  while (true) {
+    // Fill in as much as we can
     int invalid_utf8 = EncodeChunk(&in, in_end, &out, out_end, false);
     if (invalid_utf8 && j8_fallback) {
-      // printf("RETRY\n");
-      result->erase(begin_index, std::string::npos);
-      EncodeBString(s, n, result);  // fall back to b''
-      printf("\t[1] result len %d\n", result->size());
+      out_buf->len = 0;  // rewind to begining
+      // printf("out %p out_end %p capacity %d\n", out, out_end, capacity);
+      EncodeBString(in_buf, out_buf, capacity);  // fall back to b''
+      // printf("len %d\n", out_buf->len);
       return;
     }
+    out_buf->len = out - out_buf->data;  // recompute length
+    // printf("[1] len %d\n", out_buf->len);
 
-    int bytes_this_chunk = out - orig_out;
-    int end_index = chunk_pos + bytes_this_chunk;
-    printf("\t    bytes_this_chunk %d\n", bytes_this_chunk);
-    printf("\t    end_index %d\n", end_index);
+    if (in >= in_end) {
+      break;
+    }
 
-    result->erase(end_index, std::string::npos);
+    // Growth policy: every time through the loop, increase 1.5x
+    //
+    // The worst blowup is 6x, and 1.5 ** 5 > 6, so it will take 5 reallocs.
+    // This seems like a reasonable tradeoff between over-allocating and too
+    // many realloc().
+    capacity = capacity * 3 / 2;
+    // printf("[1] new capacity %d\n", capacity);
+    out_buf->data = (unsigned char*)realloc(out_buf->data, capacity);
+
+    // Recompute pointers
+    out = out_buf->data + out_buf->len;
+    out_end = out_buf->data + capacity;
+    p_out = &out;
+    // printf("[1] out %p out_end %p\n", out, out_end);
   }
-  result->append("\"");
-  printf("\t[1] result len %d\n", result->size());
-#endif
+
+  J8_OUT('"');
+  out_buf->len = out - out_buf->data;
+
+  J8_OUT('\0');  // NUL terminate for printf
 }
