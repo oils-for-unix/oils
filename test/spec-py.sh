@@ -43,7 +43,34 @@ ysh-all() {
   test/spec-runner.sh all-parallel ysh compare-py ysh-py "$@"
 }
 
-oil-all() { ysh-all "$@"; }
+ysh-ovm-tarball() {
+  ### Regression test run by CI
+
+  local version
+  version=$(head -n 1 oil-version.txt)
+
+  local tar_root=$REPO_ROOT/_tmp/oil-tar-test/oil-$version
+
+  pushd $tar_root
+  $REPO_ROOT/devtools/bin.sh make-ovm-links
+  popd
+
+  # Run the file that depends on stdlib/
+
+  #test/spec.sh ysh-stdlib --ovm-bin-dir $tar_root/_bin
+
+  set +o errexit
+  ysh-all-serial --ovm-bin-dir $tar_root/_bin
+  local status=$?
+  set +o errexit
+
+  echo
+  echo status=$status
+}
+
+ysh-stdlib-regress() {
+  test/spec.sh ysh-stdlib --ovm-bin-dir $REPO_ROOT/_bin "$@"
+}
 
 tea-all() {
   # $suite $compare_mode $spec_subdir

@@ -328,7 +328,7 @@ _all-parallel() {
   # The exit codes are recorded in files for html-summary to aggregate.
   set +o errexit
   head -n $NUM_SPEC_TASKS $manifest \
-    | xargs -n 1 -I {} -P $MAX_PROCS -- \
+    | xargs -I {} -P $MAX_PROCS -- \
       $0 dispatch-one $compare_mode $spec_subdir {} "$@"
   set -o errexit
 

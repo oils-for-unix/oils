@@ -83,6 +83,12 @@ help-manifest() {
   done
 }
 
+ysh-stdlib-manifest() {
+  for path in stdlib/*.ysh; do
+    echo "$path $path"  # relative path is the same
+  done
+}
+
 pyc-version-manifest() {
   local manifest_path=${1:-_build/oil/bytecode-opy-manifest.txt}  # For example
 
