@@ -242,6 +242,8 @@ make-job-wwz() {
 }
 
 deploy-job-results() {
+  ### Copy .wwz, .tsv, and .json to a new dir
+
   local prefix=$1  # e.g. example.com/github-jobs/
   local subdir=$2  # e.g. example.com/github-jobs/1234/  # make this dir
   local job_name=$3  # e.g. example.com/github-jobs/1234/foo.wwz

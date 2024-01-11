@@ -136,7 +136,7 @@ event-job-done() {
   rewrite-jobs-index $prefix $run_id
 
   # note: we could speed jobs up by doing this separately?
-  cleanup-jobs-index $prefix
+  cleanup-jobs-index $prefix false
 }
 
 #
