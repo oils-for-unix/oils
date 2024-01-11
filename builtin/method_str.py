@@ -221,13 +221,13 @@ class Replace(vm._Callable):
                     break
 
                 vars = []  # type: List[str]
-                named_vars = []  # type: List[Tuple[str, str]]
+                named_vars = []  # type: List[Tuple[str, value_t]]
                 num_groups = len(indices) / 2
                 for group in xrange(1, num_groups):
                     start = indices[2 * group]
                     end = indices[2 * group + 1]
                     captured = string[start:end]
-                    val = value.Str(captured)
+                    val = value.Str(captured)  # type: value_t
 
                     if len(eggex_val.convert_funcs) and group != 0:
                         convert_func = eggex_val.convert_funcs[group - 1]

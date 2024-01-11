@@ -89,7 +89,8 @@ class Shvar(vm._Builtin):
             name, s = mylib.split_once(arg, '=')
             if s is None:
                 raise error.Usage('Expected name=value', arg_locs[i])
-            pairs.append((name, value.Str(s)))
+            v = value.Str(s)  # type: value_t
+            pairs.append((name, v))
 
             # Important fix: shvar PATH='' { } must make all binaries invisible
             if name == 'PATH':
