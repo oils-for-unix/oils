@@ -27,61 +27,93 @@ bool PartIsUtf8(BigStr* s, int start, int end) {
   return state == UTF8_ACCEPT;
 }
 
-void WriteBString(BigStr* s, int options, mylib::BufWriter* buf) {
+void WriteBString(BigStr* s, mylib::BufWriter* buf, int capacity) {
+  uint8_t* in = reinterpret_cast<uint8_t*>(s->data_);
+  uint8_t* in_end = reinterpret_cast<uint8_t*>(s->data_ + len(s));
+
   buf->WriteConst("b'");
+
+  // Set up pointers after writing opening quote
+  uint8_t* out = buf->LengthPointer();  // mutated
+  uint8_t* out_end = buf->CapacityPointer();
+  uint8_t** p_out = &out;
+
+  while (true) {
+    J8EncodeChunk(&in, in_end, &out, out_end, true);  // Fill as much as we can
+    buf->SetLengthFrom(out);
+
+    if (in >= in_end) {
+      break;
+    }
+
+    // Same growth policy as below
+    capacity = capacity * 3 / 2;
+    printf("[2] new capacity %d\n", capacity);
+    buf->EnsureMoreSpace(capacity);
+
+    // Recompute pointers
+    out = buf->LengthPointer();
+    out_end = buf->CapacityPointer();
+    p_out = &out;
+  }
+
   buf->WriteConst("'");
 }
 
 void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
   bool j8_fallback = !(options & LOSSY_JSON);
 
-  uint8_t* input = reinterpret_cast<unsigned char*>(s->data_);
-  uint8_t* input_end = reinterpret_cast<unsigned char*>(s->data_ + len(s));
+  uint8_t* in = reinterpret_cast<uint8_t*>(s->data_);
+  uint8_t* in_end = reinterpret_cast<uint8_t*>(s->data_ + len(s));
 
-  // unsigned char* out = buf->str_->data_;         // mutated
-  // unsigned char* orig_out = out;
+  // Growth policy: Start at a fixed size min(N + 3 + 2, 16)
+  int capacity = len(s) + 3 + 2;  // 3 for quotes, 2 potential \" \n
+  if (capacity < 16) {            // account for J8_MAX_BYTES_PER_INPUT_BYTE
+    capacity = 16;
+  }
+  printf("[1] capacity %d\n", capacity);
 
-  // TODO: have to rewind to this position
+  buf->EnsureMoreSpace(capacity);
+
+  int begin = buf->Length();  // maybe Truncate to this position
   buf->WriteConst("\"");
 
-  uint8_t* output = buf->CurrentPos();
+  // Set up pointers after writing opening quote
+  uint8_t* out = buf->LengthPointer();  // mutated
+  uint8_t* out_end = buf->CapacityPointer();
+  uint8_t** p_out = &out;
 
-  // I think we do an OPTIMISTIC
-  // EnsureMoreSpace(input_length)
-  // and then we loop while we have less than 6 bytes left
-  // TODO: maybe use the std::string or std::vector API to test it?
-
-  // Problem: we can't implement this with std::string!
-  // because we're breaking the invariant of the data structure
-  // string::append() takes a char, and mutates its length
-
-  // we could maintain a fixed size buffer of 128 or something, and copy it?
-
-#if 0
-  int invalid_utf8 = 0;
-  while (input < input_end) {
-    buf->EnsureMoreSpace(J8_MAX_BYTES_PER_INPUT_BYTE);  // 6 bytes at most
-    // PROBLEM: every time you call this, the output can be MOVED!
-    // So do you have to return a boolean then?
-
-    // TRICKY / UNSAFE: This updates our local pointer 'output', as well as
-    // memory owned by the BufWriter.
-    invalid_utf8 = EncodeRuneOrByte(&input, &output, j8_escape);
-    if (invalid_utf8) {
-      // Rewind?
-      buf.WriteConst("b'");
-      while (input < input_end) {
-        // some of this could be avoided
-        buf->EnsureMoreSpace(J8_MAX_BYTES_PER_INPUT_BYTE);  // 6 bytes at most
-        EncodeRuneOrByte(&input, &output, j8_escape);
-      }
-      // TODO: update BufWriter
-
-      buf.WriteConst("'");
+  while (true) {
+    // Fill in as much as we can
+    int invalid_utf8 = J8EncodeChunk(&in, in_end, &out, out_end, false);
+    if (invalid_utf8 && j8_fallback) {
+      buf->Truncate(begin);
+      WriteBString(s, buf, capacity);  // fall back to b''
+      return;
     }
-    // TODO: update BufWriter
+    buf->SetLengthFrom(out);
+
+    // printf("[1] len %d\n", out_buf->len);
+
+    if (in >= in_end) {
+      break;
+    }
+
+    // Growth policy: every time through the loop, increase 1.5x
+    //
+    // The worst blowup is 6x, and 1.5 ** 5 > 6, so it will take 5 reallocs.
+    // This seems like a reasonable tradeoff between over-allocating and too
+    // many realloc().
+    capacity = capacity * 3 / 2;
+    printf("[1] new capacity %d\n", capacity);
+    buf->EnsureMoreSpace(capacity);
+
+    // Recompute pointers
+    out = buf->LengthPointer();  // mutated
+    out_end = buf->CapacityPointer();
+    p_out = &out;
+    // printf("[1] out %p out_end %p\n", out, out_end);
   }
-#endif
 
   buf->WriteConst("\"");
 

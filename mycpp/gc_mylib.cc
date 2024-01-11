@@ -173,11 +173,17 @@ bool CFileWriter::isatty() {
 //
 
 void BufWriter::EnsureMoreSpace(int n) {
-  int new_cap = len_ + n;
+  if (str_ == nullptr) {
+    // TODO: we could make the default capacity big enough for a line, e.g. 128
+    // capacity: 128 -> 256 -> 512
+    str_ = NewMutableStr(n);
+    return;
+  }
 
-  DCHECK(str_ != nullptr);
   int current_cap = len(str_);
   DCHECK(current_cap >= len_);
+
+  int new_cap = len_ + n;
 
   if (current_cap < new_cap) {
     auto* s = NewMutableStr(std::max(current_cap * 2, new_cap));
@@ -187,12 +193,27 @@ void BufWriter::EnsureMoreSpace(int n) {
   }
 }
 
-int BufWriter::BytesLeft() {
-  return -1;  // TODO
+uint8_t* BufWriter::LengthPointer() {
+  // start + len
+  return reinterpret_cast<uint8_t*>(str_->data_) + len_;
 }
 
-uint8_t* BufWriter::CurrentPos() {
-  return nullptr;  // TODO
+uint8_t* BufWriter::CapacityPointer() {
+  // start + capacity
+  return reinterpret_cast<uint8_t*>(str_->data_) + str_->len_;
+}
+
+void BufWriter::SetLengthFrom(uint8_t* length_ptr) {
+  uint8_t* begin = reinterpret_cast<uint8_t*>(str_->data_);
+  DCHECK(length_ptr >= begin);  // we should have written some data
+
+  // Set the length, e.g. so we know where to resume writing from
+  len_ = length_ptr - begin;
+  printf("SET LEN to %d\n", len_);
+}
+
+void BufWriter::Truncate(int length) {
+  len_ = length;
 }
 
 void BufWriter::WriteRaw(char* s, int n) {
@@ -203,13 +224,7 @@ void BufWriter::WriteRaw(char* s, int n) {
     return;
   }
 
-  if (str_ == nullptr) {
-    // TODO: we could make the default capacity big enough for a line, e.g. 128
-    // capacity: 128 -> 256 -> 512
-    str_ = NewMutableStr(n);
-  } else {
-    EnsureMoreSpace(n);
-  }
+  EnsureMoreSpace(n);
 
   // Append the contents to the buffer
   memcpy(str_->data_ + len_, s, n);

@@ -1,10 +1,11 @@
 #include "data_lang/j8c.h"
 
 #include "data_lang/j8.h"
+#include "data_lang/j8_test_lib.h"
 #include "vendor/greatest.h"
 
 TEST char_int_test() {
-  char* s = "foo\xff";
+  const char* s = "foo\xff";
 
   // Python uses Py_CHARMASK() macro to avoid this problem!
 
@@ -24,18 +25,10 @@ TEST char_int_test() {
 }
 
 TEST encode_test() {
-  const char* cases[] = {
-      "x",
-      "",
-      "foozz abcdef abcdef \x01 \x02 \u03bc 0123456789 0123456 \xff",
-      "foozz abcd \xfe \x1f",
-      "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0e\x0f\x10\xfe",
-      NULL,
-  };
-
-  for (int i = 0; cases[i]; ++i) {
-    const char* s = cases[i];
-    j8_buf_t in = {(unsigned char*)s, strlen(s)};
+  for (int i = 0; J8_TEST_CASES[i]; ++i) {
+    const char* s = J8_TEST_CASES[i];
+    int input_len = strlen(s);
+    j8_buf_t in = {(unsigned char*)s, input_len};
 
     j8_buf_t result = {0};
     J8EncodeString(in, &result, 0);
@@ -53,7 +46,7 @@ TEST encode_test() {
       ASSERT_EQ_FMT(3, result.len, "%d");
       break;
     default:
-      ASSERT(strlen(s) < result.len);
+      ASSERT(input_len < result.len);
       break;
     }
     free(result.data);

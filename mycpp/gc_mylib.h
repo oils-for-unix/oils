@@ -215,11 +215,35 @@ class BufWriter : public Writer {
   bool isatty() override {
     return false;
   }
+  BigStr* getvalue();  // part of cStringIO API
+
+  //
+  // Low Level API for C++ usage only
+  //
+
+  // Convenient API that avoids BigStr*
   void WriteConst(const char* c_string);
-  void EnsureMoreSpace(int n);  // similar to reserve()
-  uint8_t* CurrentPos();        // query how many before resize necessary
-  int BytesLeft();              // query how many before resize necessary
-  BigStr* getvalue();           // part of cStringIO API
+
+  // Potentially resizes the buffer.
+  void EnsureMoreSpace(int n);
+  // After EnsureMoreSpace(42), you can write 42 more bytes safely.
+  //
+  // Note that if you call EnsureMoreSpace(42), write 5 byte, and then
+  // EnsureMoreSpace(42) again, the amount of additional space reserved is 47.
+
+  // (Similar to vector::reserve(n), but it takes an integer to ADD to the
+  // capacity.)
+
+  uint8_t* LengthPointer();    // start + length
+  uint8_t* CapacityPointer();  // start + capacity
+  void SetLengthFrom(uint8_t* length_ptr);
+
+  int Length() {
+    return len_;
+  }
+
+  // Rewind to earlier position, future writes start there
+  void Truncate(int length);
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(BufWriter));

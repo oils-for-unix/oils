@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "data_lang/j8_test_lib.h"
 #include "vendor/greatest.h"
 
 // Naive buffer
