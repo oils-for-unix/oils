@@ -713,6 +713,19 @@ shopt --set ysh:all
 var mystr = '123'
 
 write $[mystr=>replace(/ <capture d+ as n : int> /, ^"$[n + 1]")]
+
+# values automatically get stringified
+write $[mystr=>replace(/ <capture d+ as n : int> /, ^"$1")]
+
+func not_str(inp) {
+  return ({ "value": inp })
+}
+
+# should fail to stringify $1
+try { call mystr=>replace(/ <capture d+ : not_str> /, ^"$1") }
+echo status=$_status
 ## STDOUT:
 124
+123
+status=3
 ## END

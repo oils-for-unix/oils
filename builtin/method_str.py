@@ -13,6 +13,7 @@ from frontend import typed_args
 from mycpp.mylib import log, tagswitch
 from ysh import expr_eval
 from ysh import regex_translate
+from ysh import val_ops
 
 import libc
 from libc import REG_NOTBOL
@@ -239,8 +240,8 @@ class Replace(vm._Callable):
                                                                convert_tok,
                                                                rd.LeftParenToken())
 
-                    # TODO: use val
-                    vars.append(captured)
+                    val_str = val_ops.Stringify(val, rd.LeftParenToken())
+                    vars.append(val_str)
 
                     name = eggex_val.capture_names[group - 2]
                     if name is not None:
