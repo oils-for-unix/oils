@@ -9,8 +9,8 @@
   **p_out = (ch);  \
   (*p_out)++
 
-inline int EncodeRuneOrByte(unsigned char** p_in, unsigned char** p_out,
-                            int j8_escape) {
+inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
+                       int j8_escape) {
   // We use a slightly weird double pointer style because
   //   *p_in may be advanced by 1 to 4 bytes (depending on whether it's UTF-8)
   //   *p_out may be advanced by 1 to 6 bytes (depending on escaping)
@@ -146,13 +146,29 @@ inline int EncodeRuneOrByte(unsigned char** p_in, unsigned char** p_out,
 // Right now \u001f and \u{1f} are the longest output sequences for a byte.
 #define J8_MAX_BYTES_PER_INPUT_BYTE 6
 
-inline int EncodeChunk(unsigned char** p_in, unsigned char* in_end,
-                       unsigned char** p_out, unsigned char* out_end,
-                       bool j8_escape) {
+inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
+                         unsigned char** p_out, unsigned char* out_end,
+                         bool j8_escape) {
   while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
-    int invalid_utf8 = EncodeRuneOrByte(p_in, p_out, j8_escape);
+    int invalid_utf8 = J8EncodeOne(p_in, p_out, j8_escape);
     if (invalid_utf8 && !j8_escape) {  // first JSON pass got binary data?
       return invalid_utf8;             // early return
+    }
+  }
+  return 0;
+}
+
+// TODO: $'\x00\u1234' escaping
+inline int ShellEncodeOne(unsigned char** p_in, unsigned char** p_out) {
+  return 0;
+}
+
+inline int ShellEncodeChunk(unsigned char** p_in, unsigned char* in_end,
+                            unsigned char** p_out, unsigned char* out_end) {
+  while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
+    int dollar_fallback = ShellEncodeOne(p_in, p_out);
+    if (dollar_fallback) {     // we need escaping, e.g. \u0001 or \'
+      return dollar_fallback;  // early return
     }
   }
   return 0;

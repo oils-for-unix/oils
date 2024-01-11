@@ -17,8 +17,8 @@ void EncodeBString(j8_buf_t in_buf, j8_buf_t* out_buf, int capacity) {
   J8_OUT('\'');
 
   while (true) {
-    EncodeChunk(&in, in_end, &out, out_end, true);  // Fill as much as we can
-    out_buf->len = out - out_buf->data;             // recompute length
+    J8EncodeChunk(&in, in_end, &out, out_end, true);  // Fill as much as we can
+    out_buf->len = out - out_buf->data;               // recompute length
 
     if (in >= in_end) {
       break;
@@ -41,7 +41,7 @@ void EncodeBString(j8_buf_t in_buf, j8_buf_t* out_buf, int capacity) {
   J8_OUT('\0');  // NUL terminate for printf
 }
 
-void EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
+void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
   unsigned char* in = (unsigned char*)in_buf.data;
   unsigned char* in_end = in + in_buf.len;
 
@@ -63,7 +63,7 @@ void EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
 
   while (true) {
     // Fill in as much as we can
-    int invalid_utf8 = EncodeChunk(&in, in_end, &out, out_end, false);
+    int invalid_utf8 = J8EncodeChunk(&in, in_end, &out, out_end, false);
     if (invalid_utf8 && j8_fallback) {
       out_buf->len = 0;  // rewind to begining
       // printf("out %p out_end %p capacity %d\n", out, out_end, capacity);
@@ -98,4 +98,12 @@ void EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
   out_buf->len = out - out_buf->data;
 
   J8_OUT('\0');  // NUL terminate for printf
+}
+
+// $'' escaping, very similar to J8
+void BashDollarEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf) {
+}
+
+// Start with '', but fall back on $'' for ASCII control and \'
+void ShellEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf) {
 }

@@ -38,7 +38,7 @@ TEST encode_test() {
     j8_buf_t in = {(unsigned char*)s, strlen(s)};
 
     j8_buf_t result = {0};
-    EncodeString(in, &result, 0);
+    J8EncodeString(in, &result, 0);
 
     printf("result %s\n", result.data);
     printf("result.len %d\n", result.len);
@@ -60,7 +60,7 @@ TEST encode_test() {
 
     // Encode again with J8 fallback
     result = {0};
-    EncodeString(in, &result, 1);
+    J8EncodeString(in, &result, 1);
 
     printf("result %s\n", result.data);
     printf("result.len %d\n", result.len);

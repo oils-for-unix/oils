@@ -39,7 +39,8 @@ ysh-files() {
 }
 
 data-lang-files() {
-  ls data_lang/*.py  | filter-py
+  ls data_lang/*.py | filter-py
+  ls data_lang/*.{c,h} | egrep -v '_test.c'
 }
 
 # cloc doesn't understand ASDL files.

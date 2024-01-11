@@ -30,7 +30,7 @@ void EncodeNaive(char* s, int n, Buf* buf, int j8_fallback) {
     // printf("1 in %p *out %p\n", in, *out);
 
     // TODO: check *out vs. capacity and maybe grow buffer
-    invalid_utf8 = EncodeRuneOrByte(&in, &out, 0);  // JSON escaping
+    invalid_utf8 = J8EncodeOne(&in, &out, 0);  // JSON escaping
 
     // Try again with J8 escaping
     if (invalid_utf8 && j8_fallback) {
@@ -44,7 +44,7 @@ void EncodeNaive(char* s, int n, Buf* buf, int j8_fallback) {
 
       while (in < input_end) {
         // printf("2 in %p *out %p\n", in, *out);
-        EncodeRuneOrByte(&in, &out, 1);  // Now with J8 escaping
+        J8EncodeOne(&in, &out, 1);  // Now with J8 escaping
       }
 
       J8_OUT('\'');
@@ -86,7 +86,7 @@ void EncodeBString(char* s, int n, std::string* result) {
     uint8_t* out_end = raw_data + result->size();
 
     // printf("\tEncodeChunk JSON\n");
-    EncodeChunk(&in, in_end, &out, out_end, true);
+    J8EncodeChunk(&in, in_end, &out, out_end, true);
 
     int bytes_this_chunk = out - orig_out;
     int end_index = chunk_pos + bytes_this_chunk;
@@ -134,7 +134,7 @@ void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
     uint8_t* out_end = raw_data + result->size();
 
     // printf("\tEncodeChunk JSON\n");
-    int invalid_utf8 = EncodeChunk(&in, in_end, &out, out_end, false);
+    int invalid_utf8 = J8EncodeChunk(&in, in_end, &out, out_end, false);
     if (invalid_utf8 && j8_fallback) {
       // printf("RETRY\n");
       result->erase(begin_index, std::string::npos);

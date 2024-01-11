@@ -6,17 +6,23 @@ typedef struct j8_buf_t {
   int len;
 } j8_buf_t;
 
-// Returns an encoded string.
+// Places an encoded string in out_buf.
 //
-//   Caller must free the returned buffer after using it
+//   Caller must free the returned buffer after using it.
+//   The buffer has a len, and data is NUL-terminated.  These will match
+//   because encoded J8 strings can't have NUL bytes in them.
 //
-//   j8_buf_t result;
+// Example:
+//   j8_buf_t result = {0};
 //   EncodeString({"foo", 3}, &result, 1);
+//
 //   printf("%s\n", result.data);
 //   free(result.data);
 //
 // There are no encoding errors -- this is part of the J8 design!
 
-void EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback);
+void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback);
+
+void ShellEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf);
 
 #endif  // DATA_LANG_J8C_H
