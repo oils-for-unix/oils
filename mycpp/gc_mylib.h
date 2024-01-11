@@ -231,7 +231,7 @@ class BufWriter : public Writer {
   }
 
  private:
-  void WriteRaw(char* start, int len);
+  void WriteRaw(char* s, int n);
 
   MutableStr* str_;  // getvalue() turns this directly into Str*, no copying
   int len_;          // how many bytes have been written so far

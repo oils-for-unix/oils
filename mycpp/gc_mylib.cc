@@ -174,6 +174,7 @@ bool CFileWriter::isatty() {
 
 void BufWriter::EnsureMoreSpace(int n) {
   int new_cap = len_ + n;
+
   DCHECK(str_ != nullptr);
   int current_cap = len(str_);
   DCHECK(current_cap >= len_);
@@ -194,21 +195,8 @@ uint8_t* BufWriter::CurrentPos() {
   return nullptr;  // TODO
 }
 
-void BufWriter::WriteRaw(char* start, int len) {
-  // same logic as write(), except it's not s->data_
-  // TODO: move most of write() here
-  ;
-}
-
-void BufWriter::WriteConst(const char* c_string) {
-  // meant for short strings like '"'
-  WriteRaw(const_cast<char*>(c_string), strlen(c_string));
-}
-
-void BufWriter::write(BigStr* s) {
+void BufWriter::WriteRaw(char* s, int n) {
   DCHECK(is_valid_);  // Can't write() after getvalue()
-
-  int n = len(s);
 
   // write('') is a no-op, so don't create Buf if we don't need to
   if (n == 0) {
@@ -224,9 +212,18 @@ void BufWriter::write(BigStr* s) {
   }
 
   // Append the contents to the buffer
-  memcpy(str_->data_ + len_, s->data_, n);
+  memcpy(str_->data_ + len_, s, n);
   len_ += n;
   str_->data_[len_] = '\0';
+}
+
+void BufWriter::WriteConst(const char* c_string) {
+  // meant for short strings like '"'
+  WriteRaw(const_cast<char*>(c_string), strlen(c_string));
+}
+
+void BufWriter::write(BigStr* s) {
+  WriteRaw(s->data_, len(s));
 }
 
 BigStr* BufWriter::getvalue() {

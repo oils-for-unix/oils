@@ -21,9 +21,22 @@ TEST PartIsUtf8_test() {
   PASS();
 }
 
+// TODO: remove duplication
+#define LOSSY_JSON (1 << 3)
+
 TEST WriteString_test() {
   auto buf = Alloc<mylib::BufWriter>();
   pyj8::WriteString(kEmptyString, 0, buf);
+
+  BigStr* result = buf->getvalue();
+  log("result = %s", result->data_);
+
+  buf = Alloc<mylib::BufWriter>();
+  pyj8::WriteString(kEmptyString, LOSSY_JSON, buf);
+
+  result = buf->getvalue();
+  log("result = %s", result->data_);
+
   PASS();
 }
 

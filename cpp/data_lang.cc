@@ -5,6 +5,9 @@
 #include "data_lang/j8.h"
 #include "data_lang/utf8_impls/bjoern_dfa.h"
 
+// TODO: remove duplication
+#define LOSSY_JSON (1 << 3)
+
 namespace pyj8 {
 
 bool PartIsUtf8(BigStr* s, int start, int end) {
@@ -24,10 +27,13 @@ bool PartIsUtf8(BigStr* s, int start, int end) {
   return state == UTF8_ACCEPT;
 }
 
-const int LOSSY_JSON = 1 << 3;  // TODO: remove duplication
+void WriteBString(BigStr* s, int options, mylib::BufWriter* buf) {
+  buf->WriteConst("b'");
+  buf->WriteConst("'");
+}
 
 void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
-  bool j8_escape = !(options & LOSSY_JSON);
+  bool j8_fallback = !(options & LOSSY_JSON);
 
   uint8_t* input = reinterpret_cast<unsigned char*>(s->data_);
   uint8_t* input_end = reinterpret_cast<unsigned char*>(s->data_ + len(s));

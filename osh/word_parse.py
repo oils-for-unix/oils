@@ -699,20 +699,23 @@ class WordParser(WordEmitter):
             word_compile.RemoveLeadingSpaceSQ(tokens)
 
         # Validation after lexing - same 2 checks in j8.LexerDecoder
-        is_u_string = left_token.id in (Id.Left_USingleQuote, Id.Left_UTSingleQuote)
+        is_u_string = left_token.id in (Id.Left_USingleQuote,
+                                        Id.Left_UTSingleQuote)
 
         for tok in tokens:
             # u'\yff' is not valid, but b'\yff' is
             if is_u_string and tok.id == Id.Char_YHex:
-                p_die(r"%s escapes not allowed in u'' strings" %
-                      lexer.TokenVal(tok), tok)
+                p_die(
+                    r"%s escapes not allowed in u'' strings" %
+                    lexer.TokenVal(tok), tok)
             # \u{dc00} isn't valid
             if tok.id == Id.Char_UBraced:
                 h = lexer.TokenSlice(tok, 3, -1)  # \u{123456}
                 i = int(h, 16)
                 if 0xD800 <= i and i < 0xE000:
-                    p_die(r"%s escape is illegal because it's in the surrogate range" %
-                          lexer.TokenVal(tok), tok)
+                    p_die(
+                        r"%s escape is illegal because it's in the surrogate range"
+                        % lexer.TokenVal(tok), tok)
 
         return self.cur_token
 

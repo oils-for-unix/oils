@@ -474,7 +474,6 @@ _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
 
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
 
-
 EXPR_CHARS = [
     # This is like Rust.  We don't have the legacy C escapes like \b.
 
@@ -579,8 +578,9 @@ JSON_STR_DEF = [
     # High surrogate [\uD800, \uDC00)
     # Low surrogate  [\uDC00, \uE000)
     # This pattern makes it easier to decode.  Unpaired surrogates because Id.Char_Unicode4.
-    R(r'\\u[dD][89aAbB][0-9a-fA-F][0-9a-fA-F]\\u[dD][cCdDeEfF][0-9a-fA-F][0-9a-fA-F]',
-      Id.Char_SurrogatePair),
+    R(
+        r'\\u[dD][89aAbB][0-9a-fA-F][0-9a-fA-F]\\u[dD][cCdDeEfF][0-9a-fA-F][0-9a-fA-F]',
+        Id.Char_SurrogatePair),
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.

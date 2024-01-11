@@ -231,9 +231,7 @@ class InstancePrinter(object):
             pyj8.WriteString(s, self.options, self.buf)
         else:
             self.buf.write('"')
-            valid_utf8 = qsn.EncodeRunes(s, qsn.BIT8_UTF8, self.buf)
-            if not valid_utf8:
-                pass
+            qsn.EncodeRunes(s, qsn.BIT8_UTF8, self.buf)
             self.buf.write('"')
 
     def Print(self, val, level=0):
@@ -485,14 +483,14 @@ class LexerDecoder(object):
 
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?
-                raise self._Error('Unexpected EOF while lexing %s string' %
-                                  self.lang_str,
-                                  str_end)
+                raise self._Error(
+                    'Unexpected EOF while lexing %s string' % self.lang_str,
+                    str_end)
             if tok_id == Id.Unknown_Tok:
                 # e.g. invalid backslash
-                raise self._Error('Unknown token while lexing %s string' %
-                                  self.lang_str,
-                                  str_end)
+                raise self._Error(
+                    'Unknown token while lexing %s string' % self.lang_str,
+                    str_end)
             if tok_id == Id.Char_AsciiControl:
                 raise self._Error(
                     "ASCII control chars are illegal in %s strings" %
@@ -529,8 +527,7 @@ class LexerDecoder(object):
                     snippet = self.s[str_pos:str_pos + 20]
                     raise self._Error(
                         'Invalid UTF-8 in %s string literal: %r' %
-                        (self.lang_str, snippet),
-                        str_end)
+                        (self.lang_str, snippet), str_end)
 
             # TODO: would be nice to avoid allocation in all these cases.
             # But LookupCharC() would have to change.
@@ -546,8 +543,8 @@ class LexerDecoder(object):
                 # Same check in osh/word_parse.py
                 if 0xD800 <= i and i < 0xE000:
                     raise self._Error(
-                        r"\u{%s} escape is illegal because it's in the surrogate range" % h,
-                        str_end)
+                        r"\u{%s} escape is illegal because it's in the surrogate range"
+                        % h, str_end)
 
                 part = string_ops.Utf8Encode(i)
 
@@ -558,14 +555,15 @@ class LexerDecoder(object):
                 if left_id != Id.Left_BSingleQuote:
                     assert left_id != Id.Left_BTSingleQuote, "Not handled here"
                     raise self._Error(
-                        r"\y%s escapes not allowed in u'' strings" % h, str_end)
+                        r"\y%s escapes not allowed in u'' strings" % h,
+                        str_end)
 
                 i = int(h, 16)
                 part = chr(i)
 
             elif tok_id == Id.Char_SurrogatePair:
-                h1 = self.s[str_pos + 2:str_pos+6]
-                h2 = self.s[str_pos + 8:str_pos+12]
+                h1 = self.s[str_pos + 2:str_pos + 6]
+                h2 = self.s[str_pos + 8:str_pos + 12]
 
                 # https://www.oilshell.org/blog/2023/06/surrogate-pair.html
                 i1 = int(h1, 16) - 0xD800  # high surrogate
@@ -722,7 +720,8 @@ class Parser(object):
             return str_val
 
         elif self.tok_id == Id.Eol_Tok:
-            raise self._Error('Unexpected EOF while parsing %s' % self.lang_str)
+            raise self._Error('Unexpected EOF while parsing %s' %
+                              self.lang_str)
 
         elif self.tok_id == Id.Unknown_Tok:
             raise self._Error('Invalid token while parsing %s: %s' %

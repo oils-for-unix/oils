@@ -8,26 +8,6 @@ from typing import Tuple, List
 
 _ = log
 
-
-def WriteInt(i, buf):
-    # type: (int, mylib.BufWriter) -> None
-    """ C++ version can avoid allocation """
-    buf.write(str(i))
-
-
-def WriteFloat(f, buf):
-    # type: (float, mylib.BufWriter) -> None
-    """ C++ version can avoid allocation """
-    buf.write(str(f))
-
-
-def EncodeString(s, options):
-    # type: (str, int) -> str
-    buf = mylib.BufWriter()
-    WriteString(s, options, buf)
-    return buf.getvalue()
-
-
 # similar to frontend/consts.py
 _COMMON_ESCAPES = {
     # Notes:
@@ -44,7 +24,7 @@ _COMMON_ESCAPES = {
 
 def _EscapeUnprintable(s, buf, j8_escape=False):
     # type: (str, mylib.BufWriter, bool) -> None
-    """ Print a string literal with required esceapes like \\n
+    """ Print a string literal with required escapes like \\n
 
     \\u001f for JSON
     \\u{1f} for J8 - these are "u6 escapes"
@@ -73,43 +53,17 @@ def _EscapeUnprintable(s, buf, j8_escape=False):
 
         buf.write(ch)
 
+
 # COPY
 LOSSY_JSON = 1 << 3  # JSON is lossy
 
+
 def WriteString(s, options, buf):
     # type: (str, int, mylib.BufWriter) -> int
-    """
-    Callers:
+    """ Encode a string in J8 format
 
-    - json write
-    - j8 write
-    - the = operator
-    - pp line (x)
-    - 'declare' prints in bash compatible syntax
-
-    Simple algorithm:
-
-    1. Decode UTF-8 
-       In Python, use built-in s.decode('utf-8')
-       In C++, use Bjoern DFA
-
-    List of errors in UTF-8:
-       - Invalid start byte
-       - Invalid continuation byte
-       - Incomplete UTF-8 char
-       - Over-long UTF-8 encoding
-       - Decodes to invalid code point (surrogate)
-         - this changed in 2003; WTF-8 allows it
-
-    If decoding succeeds, then surround with "" 
-    - escape unprintable chars like \\u0001 and \\t \\n \\ \\"
-
-    If decoding fails (this includes unpaired surrogates like \\udc00)
-    - in J8 mode, all errors become \yff, and it must be a b'' string
-    - in JSON mode, based on options, either:
-      - use unicode replacement char (lossy)
-      - raise an exception, so the 'json dump' fails etc.
-        - Error can have location info
+    Does UTF-8 decoding.  TODO: replace this with C version, because Python 2
+    s.decode('utf-8') allows invalid surrogates.
 
     LATER: Options for encoding
 
@@ -125,10 +79,6 @@ def WriteString(s, options, buf):
 
        = mode:
          Option to prefer \\u{123456}
-
-    Should we generate bash-compatible strings?
-       Like $'\\xff' for OSH
-       Option (low priority): use \\u1234 \\U00123456
     """
     pos = 0
     portion = s
@@ -139,7 +89,7 @@ def WriteString(s, options, buf):
         #
         # TODO:
         # - JSON behavior: round trip to "\ud83e"
-        # - J8 behavior: use b'\yed\ya0\ybe' 
+        # - J8 behavior: use b'\yed\ya0\ybe'
         #
         # The Bjoern DFA will reject it, but we need the code point to be able
         # to output \ud83e.
@@ -208,6 +158,7 @@ def WriteString(s, options, buf):
 
 def PartIsUtf8(s, start, end):
     # type: (str, int, int) -> bool
+    """ Used for J8 decoding """
     part = s[start:end]
     try:
         part.decode('utf-8')

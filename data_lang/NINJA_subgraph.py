@@ -29,8 +29,7 @@ def NinjaGraph(ru):
         '//data_lang/j8',
         srcs=[],
         headers=['data_lang/j8.h'],
-        deps=[
-        ],
+        deps=[],
     )
 
     ru.cc_binary(
