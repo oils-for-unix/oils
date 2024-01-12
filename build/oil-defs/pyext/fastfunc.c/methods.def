@@ -1,0 +1,6 @@
+// pyext/fastfunc.c
+
+static PyMethodDef methods[] = {
+  {"J8EncodeString", func_J8EncodeString, METH_VARARGS},
+  {0},
+};
