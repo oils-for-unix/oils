@@ -56,7 +56,8 @@ TEST compare_c_test() {
 
   for (int i = 0; J8_TEST_CASES[i]; ++i) {
     const char* s = J8_TEST_CASES[i];
-    j8_buf_t in = {(unsigned char*)s, strlen(s)};
+    int input_len = strlen(s);
+    j8_buf_t in = {(unsigned char*)s, input_len};
 
     j8_buf_t c_result = {0};
     J8EncodeString(in, &c_result, 0);
