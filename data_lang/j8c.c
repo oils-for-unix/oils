@@ -17,6 +17,7 @@ void EncodeBString(j8_buf_t in_buf, j8_buf_t* out_buf, int capacity) {
   J8_OUT('\'');
 
   while (true) {
+    // printf("B iter %p < %p and %p < %p < %p\n", in, in_end, out_buf->data, out, out_end);
     J8EncodeChunk(&in, in_end, &out, out_end, true);  // Fill as much as we can
     out_buf->len = out - out_buf->data;               // recompute length
 
@@ -31,7 +32,7 @@ void EncodeBString(j8_buf_t in_buf, j8_buf_t* out_buf, int capacity) {
 
     // Recompute pointers
     out = out_buf->data + out_buf->len;
-    out_end = out + capacity;
+    out_end = out_buf->data + capacity;
     p_out = &out;
   }
 
@@ -50,7 +51,7 @@ void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
   if (capacity < 16) {                // account for J8_MAX_BYTES_PER_INPUT_BYTE
     capacity = 16;
   }
-  // printf("capacity %d\n", capacity);
+  // printf("[1] capacity %d j8_fallback %d\n", capacity, j8_fallback);
 
   out_buf->data = (unsigned char*)malloc(capacity);
   out_buf->len = 0;  // starts out empty
@@ -63,6 +64,7 @@ void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
 
   while (true) {
     // Fill in as much as we can
+    // printf("J8 iter %p < %p and %p < %p < %p\n", in, in_end, out_buf->data, out, out_end);
     int invalid_utf8 = J8EncodeChunk(&in, in_end, &out, out_end, false);
     if (invalid_utf8 && j8_fallback) {
       out_buf->len = 0;  // rewind to begining

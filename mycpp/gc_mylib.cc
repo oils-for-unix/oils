@@ -209,7 +209,7 @@ void BufWriter::SetLengthFrom(uint8_t* length_ptr) {
 
   // Set the length, e.g. so we know where to resume writing from
   len_ = length_ptr - begin;
-  printf("SET LEN to %d\n", len_);
+  // printf("SET LEN to %d\n", len_);
 }
 
 void BufWriter::Truncate(int length) {

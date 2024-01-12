@@ -86,11 +86,15 @@ inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
   //
   if (ch < 0x20) {
     if (j8_escape) {
+      // printf("Writing for %04x %p\n", ch, *p_out);
       int n = sprintf((char*)*p_out, "\\u{%x}", ch);
+      // printf("! Wrote %d bytes for %04x\n", n, ch);
       *p_out += n;
     } else {
+      //printf("Writing for %04x %p\n", ch, *p_out);
       int n = sprintf((char*)*p_out, "\\u%04x", ch);
       *p_out += n;
+      // printf("Wrote %d bytes for %04x\n", n, ch);
     }
     (*p_in)++;
     return 0;
@@ -144,12 +148,16 @@ inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
 }
 
 // Right now \u001f and \u{1f} are the longest output sequences for a byte.
-#define J8_MAX_BYTES_PER_INPUT_BYTE 6
+// Bug fix: we need 6 + 1 for the NUL terminator that sprintf() writes!  (Even
+// though we don't technically need it)
+
+#define J8_MAX_BYTES_PER_INPUT_BYTE 7
 
 inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
                          unsigned char** p_out, unsigned char* out_end,
                          bool j8_escape) {
   while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
+    // printf("iter %d  %p < %p \n", i++, *p_out, out_end);
     int invalid_utf8 = J8EncodeOne(p_in, p_out, j8_escape);
     if (invalid_utf8 && !j8_escape) {  // first JSON pass got binary data?
       return invalid_utf8;             // early return

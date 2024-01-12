@@ -30,6 +30,8 @@ TEST encode_test() {
     int input_len = strlen(s);
     j8_buf_t in = {(unsigned char*)s, input_len};
 
+    // printf("input '%s' %d\n", in.data, input_len);
+
     j8_buf_t result = {0};
     J8EncodeString(in, &result, 0);
 

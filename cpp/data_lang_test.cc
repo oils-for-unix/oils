@@ -65,27 +65,41 @@ TEST compare_c_test() {
     printf("c_result %s\n", c_result.data);
     printf("c_result.len %d\n", c_result.len);
 
-#if 0
     BigStr* s2 = StrFromC(s);
 
     buf = Alloc<mylib::BufWriter>();
     pyj8::WriteString(s2, LOSSY_JSON, buf);
 
     BigStr* cpp_result = buf->getvalue();
+
+    // Equal lengths
     ASSERT_EQ_FMT(c_result.len, len(cpp_result), "%d");
-#endif
+    // Equal contents
+    ASSERT(memcmp(c_result.data, cpp_result->data_, c_result.len) == 0);
 
     free(c_result.data);
 
-#if 0
+    //
     // Encode again with J8 fallback
+    //
+
     c_result = {0};
     J8EncodeString(in, &c_result, 1);
 
     printf("c_result %s\n", c_result.data);
     printf("c_result.len %d\n", c_result.len);
+
+    buf = Alloc<mylib::BufWriter>();
+    pyj8::WriteString(s2, 0, buf);
+
+    cpp_result = buf->getvalue();
+
+    // Equal lengths
+    ASSERT_EQ_FMT(c_result.len, len(cpp_result), "%d");
+    // Equal contents
+    ASSERT(memcmp(c_result.data, cpp_result->data_, c_result.len) == 0);
+
     free(c_result.data);
-#endif
 
     printf("\n");
   }
