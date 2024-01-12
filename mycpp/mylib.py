@@ -66,6 +66,9 @@ else:  # Python 3
 def ClearBuf(buf):
     # type: (BufWriter) -> None
 
+    # TODO: We should have a pure Python version of BufWriter, and then remove
+    # these methods from the build.  They will be trivial.
+
     buf.reset()  # set position back to zero
     buf.truncate()  # truncate at current position
 

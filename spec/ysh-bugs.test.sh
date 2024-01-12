@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -28,7 +28,7 @@ hi
 
 var d = {data: 'foo'}
 
-echo $[d->data]
+echo $[d.data]
 
 var e = {enum: 1, class: 2, import: 3, const: 4, var: 5, set: 6}
 echo $[len(e)]
