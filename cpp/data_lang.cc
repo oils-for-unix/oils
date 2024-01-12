@@ -36,7 +36,6 @@ void WriteBString(BigStr* s, mylib::BufWriter* buf, int capacity) {
   // Set up pointers after writing opening quote
   uint8_t* out = buf->LengthPointer();  // mutated
   uint8_t* out_end = buf->CapacityPointer();
-  uint8_t** p_out = &out;
 
   while (true) {
     J8EncodeChunk(&in, in_end, &out, out_end, true);  // Fill as much as we can
@@ -54,7 +53,6 @@ void WriteBString(BigStr* s, mylib::BufWriter* buf, int capacity) {
     // Recompute pointers
     out = buf->LengthPointer();
     out_end = buf->CapacityPointer();
-    p_out = &out;
   }
 
   buf->WriteConst("'");
@@ -81,7 +79,6 @@ void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
   // Set up pointers after writing opening quote
   uint8_t* out = buf->LengthPointer();  // mutated
   uint8_t* out_end = buf->CapacityPointer();
-  uint8_t** p_out = &out;
 
   while (true) {
     // Fill in as much as we can
@@ -111,7 +108,6 @@ void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
     // Recompute pointers
     out = buf->LengthPointer();  // mutated
     out_end = buf->CapacityPointer();
-    p_out = &out;
     // printf("[1] out %p out_end %p\n", out, out_end);
   }
 

@@ -223,17 +223,6 @@ class InstancePrinter(object):
             self.spaces[num_spaces] = ' ' * num_spaces
         return self.spaces[num_spaces]
 
-    def _StringToBuf(self, s):
-        # type: (str) -> None
-
-        if mylib.PYTHON:
-            # TODO: port this to C++
-            pyj8.WriteString(s, self.options, self.buf)
-        else:
-            self.buf.write('"')
-            qsn.EncodeRunes(s, qsn.BIT8_UTF8, self.buf)
-            self.buf.write('"')
-
     def Print(self, val, level=0):
         # type: (value_t, int) -> None
 
@@ -278,8 +267,7 @@ class InstancePrinter(object):
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
 
-                # TODO: pyj8.WriteString(val.s, self.buf)
-                self._StringToBuf(val.s)
+                pyj8.WriteString(val.s, self.options, self.buf)
 
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
@@ -339,7 +327,7 @@ class InstancePrinter(object):
 
                     self.buf.write(item_indent)
 
-                    self._StringToBuf(k)
+                    pyj8.WriteString(k, self.options, self.buf)
 
                     self.buf.write(':')
                     self.buf.write(maybe_space)
@@ -373,7 +361,7 @@ class InstancePrinter(object):
                     if s is None:
                         self.buf.write('null')
                     else:
-                        self._StringToBuf(s)
+                        pyj8.WriteString(s, self.options, self.buf)
 
                 self.buf.write(maybe_newline)
 
@@ -393,12 +381,12 @@ class InstancePrinter(object):
 
                     self.buf.write(item_indent)
 
-                    self._StringToBuf(k2)
+                    pyj8.WriteString(k2, self.options, self.buf)
 
                     self.buf.write(':')
                     self.buf.write(maybe_space)
 
-                    self._StringToBuf(v2)
+                    pyj8.WriteString(v2, self.options, self.buf)
 
                     i += 1
 
