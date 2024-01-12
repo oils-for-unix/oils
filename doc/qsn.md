@@ -16,7 +16,41 @@ QSN: A Familiar String Interchange Format
 .an {
   color: darkgreen;
 }
+
+.attention {
+  font-size: x-large;
+  background-color: #DEE;
+  margin-left: 1em;
+  margin-right: 1em;
+  padding-left: 1em;
+  padding-right: 1em;
+}
 </style>
+
+&nbsp;
+
+&nbsp;
+
+<div class=attention>
+
+&nbsp;
+
+As of January 2024, QSN has been replaced by [J8 Notation](j8-notation.html).
+They're very similar, but J8 Notation is more "harmonized" with JSON.
+
+&nbsp;
+
+</div>
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
 
 QSN ("quoted string notation") is a data format for **byte strings**.
 Examples:

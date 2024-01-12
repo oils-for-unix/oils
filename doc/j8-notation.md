@@ -6,32 +6,96 @@ default_highlighter: oils-sh
 J8 Notation
 ===========
 
-J8 Notation is a set of interchange formats for **Bytes, Strings, Records, and
-Tables**.  It's built on [JSON]($xref), and compatible with it in many ways.
+J8 Notation is a set of text interchange formats for **strings**, **bytes**,
+tree-shaped **records**, and **tables**.  It's built on [JSON]($xref), and
+backward compatible with it.
 
-It was designed for Oils, but it is **not** specific to Oils.  This is just
-like JSON isn't specific to JavaScript: today a Python program and a Go program
-may communicate with [JSON]($xref), and JavaScript isn't involved at all.
+As part of the Oils project, it was designed to solve the *JSON-Unix Mismatch*.
 
+But J8 notation isn't only for Oils &mdash; just like JSON isn't only for
+JavaScript.  Any language that has a JSON library should also have a J8
+library.
+
+(J8 Notation replaces the older [QSN](qsn.html) design, which wasn't compatible
+with JSON.)
+
+<!--
+it's **not** specific to Oils.  This is just like JSON isn't specific to
+JavaScript.  Today, a Python program and a Go program may communicate with
+[JSON]($xref), and JavaScript isn't involved at all.
+-->
 
 <div id="toc">
 </div>
 
+## Quick Picture
+
+<style>
+  .uni4 {
+    /* color: #111; */
+  }
+  .dq {
+    color: darkred;
+  }
+  .sq {
+    color: #111;
+  }
+</style>
+
+J8 strings can be written in any of these 3 styles:
+
+<pre style="font-size: x-large;">
+ <span class=dq>"</span>hi &#x1f642; \u<span class=uni4>D83D</span>\u<span class=uni4>DE42</span><span class=dq>"</span>      <span class="sh-comment"># JSON-style, with surrogate pair</span>
+
+<span class=sq>b'</span>hi &#x1f642; \yF0\y9F\y99\y82<span class=sq>'</span>  <span class="sh-comment"># Can be ANY bytes, including UTF-8</span>
+
+<span class=sq>u'</span>hi &#x1f642; \u{1F642}<span class=sq>'</span>         <span class="sh-comment"># nice alternative syntax</span>
+</pre>
+
+They all denote the same decoded string &mdash; "hi" and two `U+1F642` smiley
+faces:
+
+<pre style="font-size: x-large;">
+hi &#x1f642; &#x1f642;
+</pre>
+
+
+Why accept two more types of string syntax?
+
+- We want to represent any string that a Unix kernel can emit (`argv` arrays,
+  env variables, filenames, file contents, etc.)
+  - So encoders can emit `b''` strings to avoid losing information.  
+- `u''` strings are like `b''` strings, but they can only express valid
+  Unicode.  They can't express arbitrary binary data, and there's no such thing
+  as a surrogate pair or half.
+
+We then define JSON8 and TSV8 on top of J8 strings.  (Still to be implemented
+in Oils.)
+
 ## Goals
 
-- Fix the JSON-Unix mismatch: be able to express byte strings.
-  - Note: you can still use plain JSON In Oils if **lossy** encodings are OK!
-- Provide an option to avoid the Surrogate Pair / UTF-16 legacy of JSON
-- Expose some information about strings vs. bytes
-- Turn TSV into an **exterior** [data
-  frame](https://www.oilshell.org/blog/2018/11/30.html) format.
-  - It can represent tabs!  And binary data.
+1. Fix the **JSON-Unix mismatch**: all text formats should be able to express
+   byte strings.
+   - In Oils, you'll often use plain JSON, because filenames are often strings.
+     But note this is a lossy encoding, and J8 notation avoids that.
+1. Provide an option to avoid the surrogate pair / **UTF-16 legacy** of JSON.
+1. Expose some information about **strings vs. bytes**.
+1. Turn TSV into an **exterior** [data
+   frame](https://www.oilshell.org/blog/2018/11/30.html) format.
+   - Unix tools like `awk`, `cut`, and `sort` already understand tables
+     informally.
+   - TSV8 cells can represent arbitrary binary data, including tabs and
+     newlines.
 
 Non-goals:
 
-- "Replace" JSON.  It's upward compatible.
-- Resolve strings vs. bytes dilemma in all situations.
+1. "Replace" JSON.  JSON8 is upward compatible, and sometimes the lossy
+   encoding is OK.
+1. Resolve the strings vs. bytes dilemma in all situations.
+   - Like JSON, our spec is **syntactic**.  We don't specify what interior
+     types a particular language maps strings to.
 
+<!--
 ## J8 Notation in As Few Words As Possible
 
 J8 Strings are a superset of JSON strings:
@@ -56,17 +120,17 @@ b'hi &#x1f926; \u{1f926} \yf0\y9f\ya4\ya6' &rarr; hi &#x1f926; &#x1f926; &#x1f92
 b'\yff'
 </pre>
 
-JSON8 is built on top of J8 strings, as well as:
+## Structured Formats
 
-1. Unquoted object/Dict keys `{d, 42}`
-1. Trailing commas `{"d": 42,}` and `[42,]`
-1. Single-line comments `//` and `#`
+### JSON8
 
-TSV8:
+### TSV8
 
 1. Required first row with column names
 1. Optional second row with column types
 1. Gutter Column
+
+-->
 
 ## Background
 
@@ -78,64 +142,124 @@ It's available in OSH and YSH, but should be implemented in all languages.
 
 ### TODO / Diagrams
 
-- Doc: How to Turn a JSON library encoder into a J8 Notation library.  (Issue:
-  byte strings vs. unicode strings.  J8 is more expressive.)
-- Diagrams of Evolution
-  - JSON strings -> J8 Strings
-  - J8 strings as a building block for JSON8 and TSV8
-- Superset relationships:
-  - JSON strings are valid J8 strings
-  - which means all JSON is valid JSON8
-  - `b''` strings can express a superset of JSON strings, which can express a
-    superset of `u''` strings
-    - J8-style `u'' b''` strings vs. *J8 strings*
+- Diagram of Evolution
+  - JSON strings &rarr; J8 Strings
+  - J8 strings as a building block &rarr; JSON8 and TSV8
 - Venn Diagrams of Data Language Relationships
   - If you add the left "gutter" column, every TSV is valid TSV8.
   - Every TSV8 is also syntactically valid TSV.  For example, you can import it
     into a spreadsheet, and remove/ignore the gutter column and type row.
   - TODO: make a screenshot and test it
-- YSH relationships
-  - Every J8 string is valid in YSH, with `u''`
+- Doc: How to turn a JSON library into a J8 Notation library.
+  - Issue: an interior type that can represent byte strings.
 
-## Strings and Bytes
+## J8 Strings (Unicode and bytes)
 
-### Review of JSON Strings
+### Review of JSON strings
 
-```
-  [escaped]       \"  \\  \/  \b  \f  \n  \r  \t
-  [unicode]       \u1234
-```
+JSON strings may have these escape sequences:
 
-- Important: JSON strings can't contain literal tabs!  That is good for TSV8.
+    \"  \\  \/  \b  \f  \n  \r  \t
+    \u1234
 
-TODO: Do we need JNUM a name for JSON numbers? 
+Properties of JSON:
 
-### J8 strings - Byte strings which may be UTF-8 encoded
+- The encoded form must also be valid UTF-8.
+- The encoded form can't contain literal control characters, including literal
+  tabs or newlines.  (This is good, because it allows fast TSV8 parsers to
+  count literal tabs and newlines.)
 
+### J8 Description
 
-```
-  [unicode]       \u{123456} to add UTF-8.  No surrogates.
-  [byte]          \y00 - because \x00 mistakenly means \u0000
-  [escaped]       does adding \' make sense?  Probably not
-```
+`b''` strings have these escapes:
+
+    \yff            # byte escape
+    \u{1f926}       # code point escape
+    \'              # single quote, instead of \"
+    \b \f \n \r \t  # same as JSON
+
+`u''` strings have all the same escapes, except for `\yff`.  This implies that
+they're always valid unicode strings.  (If JSON-style `\u1234` escapes were
+allowed, they wouldn't be.)
 
 Examples:
 
-```
-u'but accepted'  # similar to !json8 and !tsv8 prefixes
-b'nul byte \y00, unicode \u{123456}'
-'this is a u string, but discouraged?'
-```
+    u'unicode string \u{1f642}' 
+    b'nul byte \y00, unicode \u{1f642}'
 
-Compatible form:
+A string *without* a prefix, like `'foo'`, is equivalent to `u'foo'`:
 
-- The `j` prefix is present if and only if `\y` or `\u{}` is in the string.
+     'this is a u string'  # discouraged, unless the context is clear
 
-Distinguished form:
+    u'this is a u string'  # better to be explicit
 
-- The `j` prefix is always present.
+### What's representable by each style?
 
-## Tree-Shaped Records
+<style>
+#subset {
+    text-align: center;
+    background-color: #DEE;
+    padding-top: 0.5em; padding-bottom: 0.5em;
+    margin-left: 3em; margin-right: 3em;
+}
+.set {
+  font-size: x-large;     
+}
+</style>
+
+These relationships might help you understand J8 strings:
+
+<div id="subset">
+
+<span class="set">Strings representable by `u''`</span><br/>
+&equals; All Unicode Strings (no more and no less)
+
+<b>&subset;</b>
+
+<span class="set">Strings representable by `""`</span> (JSON-style)<br/>
+&equals; All Unicode Strings <b>&cup;</b> Surrogate Half Errors
+
+<b>&subset;</b>
+
+<span class="set">Strings representable by `b''`</span></br>
+&equals; All Byte Strings
+
+</div>
+
+Examples:
+
+- `"\udd26"` is an invalid string representable with JSON (surrogate half
+  error), but not with `u''` strings.
+- `b'\yff'` is a byte representable with `b''` strings, but not with JSON
+  strings or `u''` strings.
+
+### YSH has 2 of the 3 styles
+
+The `u''` and `b''` strings are valid in YSH code:
+
+    echo u'hi \u{1f642}'
+
+    var myBytes = b'\yff\yfe'
+
+But double-quoted strings are not.  Unfortunately, they can't be reconciled,
+because shell strings look like `"x = ${myvar}"` and JSON looks like
+`"line\n"`.
+
+### Assymmetry of Encoders and Decoders
+
+A couple things to notice about J8 encoders:
+
+1. They *must* emit `b''` strings to avoid losing information.
+   - If they were to emit pure JSON strings, then they'd have to use the
+     Unicode replacement char `U+FFFD`, which is lossy.
+1. They *never* need to emit `u''` strings.
+   - This is because `""` strings can represent all such values.  Still, `u''`
+     strings may be useful or desirable in some situations, like when you want
+     to assert that a value must be valid Unicode.
+
+On the other hand, J8 decoders must accept all 3 kinds of strings.
+
+## JSON8: Tree-Shaped Records
 
 ### Review of JSON
 
@@ -149,60 +273,52 @@ See <https://json.org>
   [object]        {"key": 42}
 ```
 
-### JSON8 - Records built on J8 strings
+### JSON8 Description
+
+JSON8 is built on top of J8 strings.  It also allows:
+
+1. Unquoted object/Dict keys `{d: 42}`
+1. Trailing commas `{"d": 42,}` and `[42,]`
+1. C- and JavaScript-style comments like `//` and `/* */` (not nested)
 
 Examples:
 
 ```
 !json8  # optional prefix to distinguish from JSON
-{ "name": "Bob",
-  "age": 30,
-  "signature": j"\y00\y01",
+{ name: "Bob",  // comment
+  age: 30,
+  signature: b'\y00\y01 ... \yff',
 }
 ```
 
-```
-!json8  # on multiple lines
-[]
+## J8 Lines - Lines of Text
 
-!json8 {}  # on a single line
+*J8 Lines* is another format built on J8 strings.
 
-!json8 [1]
+Literal control characters like `\n` are illegal in J8 strings, which means
+that they always occupy **one** physical line.
 
-```
+So if you want to represent 4 filenames, you can simply use 4 lines:
 
-TODO: Look at https://json5.org/ extensions as well
+      dir/my-filename.txt      # unquoted strings allow . - /
+     "dir/with spaces.txt"     # JSON-style
+    b'dir/with bytes \ff.txt'  # J8-style
+    u'dir/unicode \u{3bc}'
 
-- Comments?
-- Containers
-  - Trailing comma (probably)
-  - Unquoted keys (if they're valid identifiers)
-    - note that {var: 42} is fine in YSH and YSON
-- Strings
-  - Single quoted strings like coreutils ls?
-  - (NO to line breaks)
-- Numbers - I don't see a strong reason for changing these
-  - +Inf, -Inf, NaN
-  - Numbers can be readable like 1_000_000?  Though this may break tools
-  - Hexadecimal?  maybe
+Leading spaces on each line are ignored, because this allows aligning the
+quotes.
 
-Smooth form:
+*J8 Lines* can be viewed as a degenerate case of TSV8, described in the next
+section.
 
-- J8 string are all in Smooth form
-- No `!json8` prefix.
-- Obeys JSON's stricter syntax
-  - no trailing commas
-  - comments stripped
+### Related
 
-Distinguished form
+- <https://jsonlines.org/> 
+- <https://ndjson.org/> - Newline Delimited JSON
 
-- The `!json8` prefix is present.
+## TSV8: Table-Shaped Text
 
-Canonical form?  The shortest form?
-
-- Keys aren't quoted?
-
-## Table-Shaped Textual Data
+Row and columns.
 
 ### Review of TSV
 
@@ -222,8 +338,7 @@ Restrictions:
   - Spaces can be confused with tabs.
 - There's no escaping, so unprintable bytes result in an unprintable TSV file.
 
-
-### TSV8 - Tables built on J8 strings
+### TSV8 Description
 
 Example:
 
@@ -274,42 +389,79 @@ Canonical form:
 
 TSV8 is always distinguished by leading `!tsv8`.
 
+## Summary
+
+This document described an upgrade of JSON strings:
+
+- J8 Strings
+
+And three formats that built on top of these strings:
+
+1. JSON8
+1. J8 Lines
+1. TSV8
+
+## Appendix
+
+### Related Links
+
+- <https://json.org/>
+- <https://json5.org/>
+- [JSON with Commas and
+  Comments](https://nigeltao.github.io/blog/2021/json-with-commas-comments.html)
+- Survey: <https://github.com/json-next/awesome-json-next>
+
+### Future Work
+
+We could have an SEXP8 format for:
+
+- Concrete syntax trees, with location information
+- Textual IRs like WebAssembly
 
 ## FAQ
 
-### Why are byte escapes spelled `\yff` and not `\xff` like C?
+### Why are byte escapes spelled `\yff`, and not `\xff` as in C?
 
-Because the JavaScript and Python languages both overload `\xff` to mean
-`\u{ff}`.
+Because in JavaScript and Python, `\xff` is a **code point**, not a byte.  That
+is, it's a synonym for `\u00ff`.
 
-TODO: example
+One of Chrome's JSON encoders [also has this
+confusion](https://source.chromium.org/chromium/chromium/src/+/main:base/json/json_reader.h;l=27;drc=d0919138b7951c1a154cf802a68aad7904b6f4c9).
 
-This is exactly the confusion that J8 notation sets out to fix, so we choose to
-be ultra **explicit** and different.
+This is exactly what we don't want, and the `\yff` is explicitly different for
+that raeson.
 
 ### Why have both `u''` and `b''` strings, if only `b''` are needed?
 
-Oils doesn't have a string/bytes distinction (on the "interior"), but many
-languages like Python and Rust do.  Certain apps could make use of the
-distinction.
+A few reasons:
 
-Round-tripping arbitrary JSON strings also involves crazy hacks like WTF-8.
-Our `u''` strings don't require WTF-8 because they can't represent surrogate
-halves.
+1. Apps in languages like Python and Rust could make use of the distinction.
+   Oils doesn't have a string/bytes distinction (on the "interior"), but many
+   languages do.
+1. Using `u''` strings can avoid crazy hacks like
+   [WTF-8](http://simonsapin.github.io/wtf-8/), which is often required for
+   round-tripping arbitrary JSON strings.  Our `u''` strings don't require
+   WTF-8 because they can't represent surrogate halves.
+1. `u''` strings add trivial weight to the spec, since compared to `b''`
+   strings, they simply remove `\yff`.  This works because *encoded* J8 strings
+   must be UTF-8 encoded.
 
-`u''` strings add trivial weight to the spec, since they just remove `\yff`
-from the valid escapes.
-
-### How Do I Write a J8 Encoder or Decoder?
+### How do I write a J8 encoder or decoder?
 
 The list of errors at [ref/chap-errors.html](ref/chap-errors.html) may be a
-good starting points.
+good starting point.
 
-## Future Work
+## Glossary
 
-We could have an SEXP8 format:
+- J8 Strings - the building block for JSON8 and TSV8.  There are 3 related
+  syntaxes `""` and `b''` and `u''`.
+- JSON strings - double quoted strings.
+- J8-style strings - either `b''` or `u''`.
 
-- Concrete syntax trees
-  - with location information
-- Textual IRs like WebAssembly
+Formats built on J8 strings:
+
+- J8 Lines - J8 strings, one per line.
+- JSON8 - An upgrade of JSON.
+- TSV8 - An upgrade of TSV.
+
 

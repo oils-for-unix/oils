@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### basic array
 var x = :| 1 2 3 |
@@ -23,19 +23,21 @@ sq
 dq 1
 ## END
 
-#### printing type of array with pp and =
-var b = %(true)
-# pp cell should show the type of the object?
-pp cell b
-= b
+#### Can print type of List with pp
 
-var empty = %()
-pp cell empty
-= empty
+var b = :|true|  # this is a string
+pp line (b)
+
+# = b
+
+var empty = :||
+pp line (empty)
+
+# = empty
 
 ## STDOUT:
-Array[Bool]
-Array[???]  # what should this be?
+(List)   ["true"]
+(List)   []
 ## END
 
 #### splice and stringify array
