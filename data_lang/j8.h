@@ -107,7 +107,7 @@ inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
   uint32_t codepoint = 0;
   uint32_t state = UTF8_ACCEPT;
 
-  while (true) {
+  while (1) {
     decode(&state, &codepoint, ch);
     // printf("  state %d\n", state);
     switch (state) {
@@ -155,7 +155,7 @@ inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
 
 inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
                          unsigned char** p_out, unsigned char* out_end,
-                         bool j8_escape) {
+                         int j8_escape) {
   while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
     // printf("iter %d  %p < %p \n", i++, *p_out, out_end);
     int invalid_utf8 = J8EncodeOne(p_in, p_out, j8_escape);

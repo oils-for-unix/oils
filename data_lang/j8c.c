@@ -1,5 +1,6 @@
 #include "data_lang/j8c.h"
 
+#include <stdbool.h>  // false
 #include <stdlib.h>  // realloc
 
 #include "data_lang/j8.h"  // EncodeRuneOrByte
