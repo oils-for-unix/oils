@@ -61,6 +61,9 @@ class J8Test(unittest.TestCase):
         en = _EncodeString('hello \xbc\xbc there', 0)
         print(en)
 
+        en = _EncodeString('hello \xbc\xbc there', pyj8.LOSSY_JSON)
+        print(en)
+
     def testLexerDecoder(self):
         lex = j8.LexerDecoder(r'{"hi": "bye \n"}', True)
         _PrintTokens(lex)
