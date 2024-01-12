@@ -42,7 +42,6 @@ from asdl import format as fmt
 from core import error
 from core import vm
 from data_lang import pyj8
-from data_lang import qsn
 from frontend import consts
 from frontend import match
 from mycpp import mylib
