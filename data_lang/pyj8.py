@@ -21,18 +21,7 @@ def WriteString(s, options, buf):
     buf.write(fastfunc.J8EncodeString(s, j8_fallback))
 
 
-def PartIsUtf8(s, start, end):
-    # type: (str, int, int) -> bool
-    """Is a part of a string UTF-8?
-
-    Used for J8 decoding.  TODO: Could also replace this with fastfunc?
-    """
-    part = s[start:end]
-    try:
-        part.decode('utf-8')
-    except UnicodeDecodeError as e:
-        return False
-    return True
+PartIsUtf8 = fastfunc.PartIsUtf8
 
 
 # vim: sw=4

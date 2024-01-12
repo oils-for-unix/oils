@@ -24,6 +24,10 @@ class FastfuncTest(unittest.TestCase):
     x = fastfunc.J8EncodeString(s, 1)
     print(x)
 
+  def testUtf8(self):
+    s = 'hi \xff'
+    self.assertEqual(True, fastfunc.PartIsUtf8(s, 0, 3))
+    self.assertEqual(False, fastfunc.PartIsUtf8(s, 3, 4))
 
 
 if __name__ == '__main__':
