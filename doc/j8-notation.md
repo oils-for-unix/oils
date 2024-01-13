@@ -8,9 +8,9 @@ J8 Notation Fixes the JSON-Unix Mismatch
 J8 Notation is a set of text interchange formats.  It's a syntax for:
 
 1. **strings** / bytes
-1. tree-shaped **records**
-1. line-based **streams**, and
-1. **tables**
+1. tree-shaped **records** (like JSON)
+1. line-based **streams** (like Unix)
+1. **tables** (like TSV)
 
 It's part of the Oils project, and was designed to solve the *JSON-Unix
 Mismatch*.  It's backward compatible with [JSON]($xref), and built on top of
@@ -19,8 +19,8 @@ it.
 But just like JSON isn't only for JavaScript, J8 notation isn't only for Oils.
 Any language that has a JSON library should also have a J8 library.
 
-(Historical note: J8 Notation replaced the very similar [QSN](qsn.html) design
-in January 2024.  QSN wasn't as consistent with both JSON and YSH code.)
+(Note: J8 Notation replaced the similar [QSN](qsn.html) design in January
+2024.  QSN wasn't as compatible with both JSON and YSH code.)
 
 <div id="toc">
 </div>
@@ -67,34 +67,56 @@ Why did we add these `u''` and `b''` strings?
 <!-- They can't express arbitrary binary data, and there's no such thing as a
 surrogate pair or half. -->
 
-Starting with J8 strings, we define the "obvious" formats JSON8, J8 Lines, and
-TSV8 (still to be fully implemented in Oils.).
+---
+
+Now, starting with J8 strings, we define the formats JSON8:
+
+    { name: "Alice",
+      signature: b'\y01 ... \yff',  // binary data
+    }
+
+J8 Lines:
+
+      doc/hello.md
+     "doc/with spaces.md"
+    b'doc/with byte \yff.md'
+
+and TSV8:
+
+    !tsv8   age     name
+    !type   Int     Str
+            42      "Alice B"
+            33      "Bob C"
 
 Together, these are called *J8 Notation*.
+
+(JSON8 and TSV8 are still to be fully implemented in Oils.).
 
 ## Goals
 
 1. Fix the **JSON-Unix mismatch**: all text formats should be able to express
    byte strings.
-   - Note that it's often OK to use plain JSON in Oils, because filenames are
-     often strings.  But JSON is necessarily a lossy encoding, while J8
-     notation is lossless.
+   - But it's OK to use plain JSON in Oils, e.g. when filenames are known to be
+     strings.
 1. Provide an option to avoid the surrogate pair / **UTF-16 legacy** of JSON.
-1. Expose some information about **strings vs. bytes**.
+1. Allow expressing metadata about **strings vs. bytes**.
 1. Turn TSV into an **exterior** [data
    frame](https://www.oilshell.org/blog/2018/11/30.html) format.
    - Unix tools like `awk`, `cut`, and `sort` already understand tables
      informally.
+
+<!--
    - TSV8 cells can represent arbitrary binary data, including tabs and
      newlines.
+-->
 
 Non-goals:
 
 1. "Replace" JSON.  JSON8 is backward compatible with JSON, and sometimes the
    lossy encoding is OK.
 1. Resolve the strings vs. bytes dilemma in all situations.
-   - Like JSON, our spec is **syntactic**.  We don't specify what interior data
-     types a particular language maps strings to.
+   - Like JSON, our spec is **syntactic**.  We don't specify a mapping from J8
+     strings to interior data types in any particular language.
 
 <!--
 ## J8 Notation in As Few Words As Possible
@@ -160,28 +182,44 @@ Let's review JSON strings, and then describe J8 strings.
 JSON strings are enclosed in double quotes, and may have these escape
 sequences:
 
-    \"  \\  \/  \b  \f  \n  \r  \t
+    \"   \\   \/
+    \b   \f   \n   \r   \t
     \u1234
 
 Properties of JSON:
 
 - The encoded form must also be valid UTF-8.
 - The encoded form can't contain literal control characters, including literal
-  tabs or newlines.  (This is good, because it allows fast TSV8 parsers to
-  count literal tabs and newlines.)
+  tabs or newlines.  (This is good for TSV8, because it means a literal tab is
+  always a field separator.)
 
 ### J8 Description
 
-There are 3 types of J8 strings: JSON strings, `b''` strings, and `u''`
-strings.
+There are 3 **styles** of J8 strings:
+
+1. JSON strings `""`
+1. `b''` strings
+1. `u''` strings
 
 `b''` strings have these escapes:
 
-    \yff            # byte escape
-    \u{1f926}       # code point escape
-                    # 16-bit escapes like \u1234 are ILLEGAL
-    \'              # single quote, instead of \"
-    \b \f \n \r \t  # same as JSON
+    \yff                # byte escape
+    \u{1f926}           # code point escape.  UTF-16 escapes like \u1234
+                        # are ILLEGAL
+    \'                  # single quote, in addition to \"
+    \"  \\  \/          # same as JSON
+    \b  \f  \n  \r  \t  
+
+(JSON-style double-quoted strings remain the same in J8 Notation; they do not
+add the `\'` escape.)
+
+Examples:
+
+    b''
+    b'hello'
+    b'\\'
+    b'"double" \'single\''
+    b'nul byte \y00, unicode \u{1f642}'
 
 `u''` strings have all the same escapes, but **not** `\yff`.  This implies that
 they're always valid unicode strings.  (If JSON-style `\u1234` escapes were
@@ -189,8 +227,9 @@ allowed, they wouldn't be.)
 
 Examples:
 
+    u''
+    u'hello'
     u'unicode string \u{1f642}' 
-    b'nul byte \y00, unicode \u{1f642}'
 
 A string *without* a prefix, like `'foo'`, is equivalent to `u'foo'`:
 
@@ -234,7 +273,7 @@ These relationships might help you understand the 3 styles of strings:
 Examples:
 
 - The JSON message `"\udd26"` represents a string that's not Unicode &mdash; it
-  has a surrogate half error).  This string is **not** representable with `u''`
+  has a surrogate half error.  This string is **not** representable with `u''`
   strings.
 - The J8 message `b'\yff'` represents a byte string.  This string is **not**
   representable with JSON strings or `u''` strings.
@@ -248,8 +287,7 @@ code:
 
     var myBytes = b'\yff\yfe'
 
-This is useful for correct code generation, and generally simplifies the
-language.
+This is useful for correct code generation, and simplifies the language.
 
 But JSON-style strings aren't valid in YSH.  The two usages of double quotes
 can't really be reconciled, because JSON looks like `"line\n"` and shell looks
@@ -260,14 +298,14 @@ like `"x = ${myvar}"`.
 A few things to notice about J8 **encoders**:
 
 1. They can emit only `""` strings, possibly using the Unicode replacement char
-   `U+FFFD`.  This is equivalent to a strict JSON encoder.
-1. They *must* emit `b''` strings to avoid losing information.
-   - The `U+FFFD` replacement is lossy.
+   `U+FFFD`.  This is a strict JSON encoder.
+1. They *must* emit `b''` strings to preserve all information, because `U+FFFD`
+   replacement is lossy.
 1. They *never* need to emit `u''` strings.
-   - This is because `""` strings (and `b''` strings) can represent all such
-     values.  Still, `u''` strings may be desirable in some situations, like
-     when you want `\u{1f642}` escapes, or to assert that a value must be a
-     valid Unicode string.
+   - This is because `""` strings (and `b''` strings) can represent all values
+     that `u''` strings can.  Still, `u''` strings may be desirable in some
+     situations, like when you want `\u{1f642}` escapes, or to assert that a
+     value must be a valid Unicode string.
 
 On the other hand, J8 **decoders** must accept all 3 kinds of strings.
 
@@ -290,20 +328,21 @@ See <https://json.org>
 
 JSON8 is like JSON, but:
 
-1. All strings can be J8 strings, i.e. one of the **3 styles** describe above.
-1. Object/Dict keys may be **unquoted** `{d: 42}`
+1. All strings can be J8 strings &mdash; one of the **3 styles** describe
+   above.
+1. Object/Dict keys may be **unquoted**, like `{age: 42}`
    - Unquoted keys must be a valid JS identifier name matching the pattern
      `[a-zA-Z_][a-zA-Z0-9_]*`.
 1. **Trailing commas** are allowed on objects and arrays: `{"d": 42,}` and `[42,]`
 1. C- and JavaScript-style single-line **comments** like `//`
-   - (No block comments, and no `#` comments)
+   - No block comments, and no `#` comments
 
 Example:
 
 ```
 { name: "Bob",  // comment
   age: 30,
-  signature: b'\y00\y01 ... \yff',
+  sig: b'\y00\y01 ... \yff',  // trailing comma, binary data
 }
 ```
 
@@ -318,23 +357,28 @@ I think using unquoted keys is a good enough signal, or MIME type.
 
 *J8 Lines* is another format built on J8 strings.
 
-Literal control characters like newlines are illegal in J8 strings, which means
-that they always occupy **one** physical line.
-
-So if you want to represent 4 filenames, you can simply use 4 lines:
+For example, to represent represent 4 filenames, simply use 4 lines:
 
       dir/my-filename.txt       # unquoted string is JS name and . - /
      "dir/with spaces.txt"      # JSON-style
     b'dir/with bytes \yff.txt'  # J8-style
     u'dir/unicode \u{3bc}'
 
-Leading spaces on each line are ignored, which allows aligning the quotes.
+Literal control characters like newlines are illegal in J8 strings, which means
+that they always occupy **one** physical line.
 
-Trailing space is also ignored, to aid readability.  That is, significant
-spaces must appear in quotes.
+- Leading spaces on each line are ignored, which allows aligning the quotes.
+- Trailing spaces are also ignored, to aid readability.  That is, significant
+  spaces must appear in quotes.
 
 *J8 Lines* can be viewed as a degenerate case of TSV8, described in the next
 section.
+
+<!--
+
+TODO: show grammar, which disallows anything but significant tabs/newlines, and
+insignificant spaces)
+-->
 
 ### Related
 
@@ -362,8 +406,9 @@ bob<TAB>33
 Limitations:
 
 - Fields can't contain tabs or newlines.
-- There's no escaping, so unprintable bytes result in an unprintable TSV file.
-- Spaces can be confused with tabs.
+- There's no escaping, so unprintable bytes in field values result in an
+  unprintable TSV file.
+- Spaces are easy to confuse with tabs.
 
 ### TSV8 Description
 
@@ -372,7 +417,7 @@ TSV8 is like TSV with:
 1. A `!tsv8` prefix and required column names.
 2. An optional `!type` line, with types `Bool Int Float Str`.
 3. Other optional column attributes.
-4. Rows with an empty "gutter" column.
+4. Rows of data, each starting with an empty "gutter" column.
 
 Example:
 
@@ -390,10 +435,10 @@ Example:
 Types:
 
 ```
-  [Bool]      false   true
-  [Int]       JSON numbers, restricted to [0-9]+
-  [Float]     same as JSON
-  [Str]       J8 string (any of the 3 styles)
+[Bool]      false   true
+[Int]       JSON numbers, restricted to [0-9]+
+[Float]     same as JSON
+[Str]       J8 string (any of the 3 styles)
 ```
 
 Rules for cells:
@@ -408,6 +453,10 @@ Rules for cells:
 TODO: What about empty cells?  Are they equivalent to `null`?  TSV apparently
 can't have empty cells, as the rule is `[character]+`, not `[character]+`.
 
+Column attributes:
+
+- `!format` could be Instant / Duration?
+
 ### Design Notes
 
 TODO: This section will be filled in as we implement TSV8.
@@ -416,7 +465,7 @@ TODO: This section will be filled in as we implement TSV8.
   - Are bools nullable?  Seems like no reason, but you could be missing
   - Are ints nullable?  In SQL they probably are
   - Are floats nullable?  Yes, like NA in R.
-  - Decoders can use a parallel typed column for nullability?
+  - Decoders can use a parallel typed column to indicate nulls?
 
 - It's OK to use plain TSV in YSH programs as well.  You don't have to add
   types if you don't want to.
@@ -426,12 +475,12 @@ TODO: This section will be filled in as we implement TSV8.
 
 This document described an upgrade of JSON strings:
 
-- J8 Strings - 3 styles
+- J8 Strings (in 3 styles)
 
-And three formats that built on top of these strings:
+And data formats that built on top of these strings:
 
 - JSON8 - tree-shaped records
-- J8 Lines
+- J8 Lines - Unix streams
 - TSV8 - table-shaped data
 
 ## Appendix
@@ -481,12 +530,20 @@ A few reasons:
    strings, they simply remove `\yff`.  This is true because *encoded* J8 strings
    must be valid UTF-8.
 
+### Why not use double quotes like `u""` and `b""`?
+
+J8-style strings could have used double quotes.  But single quotes make the new
+styles more visually distinct from `""`, and it allows `''` as a synonym for
+`u''`.
+
+Compared to `""` strings, `''` strings don't have a UTF-16 legacy.
+
 ### How do I write a J8 encoder or decoder?
 
 The list of errors at [ref/chap-errors.html](ref/chap-errors.html) may be a
 good starting point.
 
-TODO: describe the Oils implementatino.
+TODO: describe the Oils implementation.
 
 ## Glossary
 
