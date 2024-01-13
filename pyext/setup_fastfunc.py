@@ -2,7 +2,7 @@
 from distutils.core import setup, Extension
 
 module = Extension('fastfunc',
-                    sources = ['data_lang/j8c.c', 'pyext/fastfunc.c'],
+                    sources = ['data_lang/j8_libc.c', 'pyext/fastfunc.c'],
                     include_dirs = ['.'],
                     undef_macros = ['NDEBUG'])
 

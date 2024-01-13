@@ -5,7 +5,7 @@
 #include <stdio.h>  // vfprintf
 #include <stdlib.h>
 
-#include "data_lang/j8c.h"
+#include "data_lang/j8_libc.h"
 #include "data_lang/utf8_impls/bjoern_dfa.h"
 
 #include <Python.h>

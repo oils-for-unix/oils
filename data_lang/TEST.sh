@@ -27,7 +27,7 @@ unit() {
   done
 
   for variant in asan ubsan; do
-    run-one-test 'data_lang/j8c_test' '' $variant
+    run-one-test 'data_lang/j8_libc_test' '' $variant
     echo
   done
 }

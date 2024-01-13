@@ -53,56 +53,6 @@ unused = pyj8
 from typing import cast, Dict, List, Tuple, Optional
 
 
-class PrettyPrinter(object):
-    """
-    For = operator.  Output to polymorphic ColorOutput 
-
-    Also pp value (x, option = :x)
-
-    Features like asdl/format.py:
-    - line wrapping
-    - color
-
-    Options:
-    - unicode.UEscape
-    - Float: It would be nice to separate the exact parts, like we do with
-      strings
-
-    Fixed behavior:
-    - j_prefix.WhenNecessary
-    - dialect.J8
-    - Prints <Dict #42> on cycles
-    - Prints ASDL (value.Expr ...) on non-data types
-    """
-
-    def __init__(self, max_col):
-        # type: (int) -> None
-        self.max_col = max_col
-
-        # This could be an optimized set an C++ bit set like
-        # mark_sweep_heap.h, rather than a Dict
-        self.unique_objs = mylib.UniqueObjects()
-
-    def PrettyTree(self, val, f):
-        # type: (value_t, fmt.ColorOutput) -> None
-
-        # TODO: first convert to hnode.asdl types?
-
-        # Although we might want
-        # hnode.AlreadyShown = (str type, int unique_id)
-        pass
-
-    def Print(self, val, buf):
-        # type: (value_t, mylib.BufWriter) -> None
-
-        # Or print to stderr?
-        f = fmt.DetectConsoleOutput(mylib.Stdout())
-        self.PrettyTree(val, f)
-
-        # Then print those with ASDL
-        pass
-
-
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
 LOSSY_JSON = 1 << 3  # JSON is lossy
@@ -406,6 +356,45 @@ class InstancePrinter(object):
                     from core import ui  # TODO: break dep
                     raise error.Encode("Can't serialize object of type %s" %
                                        ui.ValType(val))
+
+
+class PrettyPrinter(object):
+    """ Unused right now, but could enhance the = operator.
+
+    Output to polymorphic ColorOutput 
+
+    Features like asdl/format.py:
+    - line wrapping
+    - color
+    - maybe print object IDs when there's sharing, not just for cycles?
+    """
+
+    def __init__(self, max_col):
+        # type: (int) -> None
+        self.max_col = max_col
+
+        # This could be an optimized set an C++ bit set like
+        # mark_sweep_heap.h, rather than a Dict
+        self.unique_objs = mylib.UniqueObjects()
+
+    def PrettyTree(self, val, f):
+        # type: (value_t, fmt.ColorOutput) -> None
+
+        # TODO: first convert to hnode.asdl types?
+
+        # Although we might want
+        # hnode.AlreadyShown = (str type, int unique_id)
+        pass
+
+    def Print(self, val, buf):
+        # type: (value_t, mylib.BufWriter) -> None
+
+        # Or print to stderr?
+        f = fmt.DetectConsoleOutput(mylib.Stdout())
+        self.PrettyTree(val, f)
+
+        # Then print those with ASDL
+        pass
 
 
 class LexerDecoder(object):

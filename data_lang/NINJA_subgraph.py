@@ -51,15 +51,15 @@ def NinjaGraph(ru):
     # TODO: restrict compiler flags to C99
     # can't be used by C++ (otherwise we'd need a different _build/obj location)
     ru.cc_library(
-        '//data_lang/j8c',
-        srcs=['data_lang/j8c.c'],
+        '//data_lang/j8_libc',
+        srcs=['data_lang/j8_libc.c'],
         deps=['//data_lang/j8'],
     )
 
     # TODO: restrict compiler flags to C99
     ru.cc_binary(
-        'data_lang/j8c_test.c',
-        deps=['//data_lang/j8c',
+        'data_lang/j8_libc_test.c',
+        deps=['//data_lang/j8_libc',
               '//data_lang/j8_test_lib'],
         # Add tcmalloc for malloc_address_test
         matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])

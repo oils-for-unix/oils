@@ -40,7 +40,7 @@ ysh-files() {
 
 data-lang-files() {
   ls data_lang/*.py | filter-py
-  ls data_lang/*.{c,h} | egrep -v '_test.c'
+  ls data_lang/*.{c,h} | egrep -v '_test'  # exclude j8_test_lib as well
 }
 
 # cloc doesn't understand ASDL files.

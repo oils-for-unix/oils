@@ -86,10 +86,11 @@ J8 Lines:
 
 and TSV8:
 
-    !tsv8   age     name
+    !tsv8   size    name
     !type   Int     Str
-            42      "Alice B"
-            33      "Bob C"
+            42        doc/hello.md
+            55       "doc/with spaces.md"
+            99      b'doc/with byte \yff.md'
 
 Together, these are called *J8 Notation*.
 
