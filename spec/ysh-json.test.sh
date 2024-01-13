@@ -708,3 +708,32 @@ echo status=$?
 (Str)   "μ"
 status=1
 ## END
+
+#### decode deeply nested structure (stack overflow)
+
+shopt -s ysh:upgrade
+
+proc pairs(n) {
+  var m = int(n)  # TODO: 1 .. n should auto-convert?
+
+  for i in (1 .. m) {
+    write -n -- '['
+  }
+  for i in (1 .. m) {
+    write -n -- ']'
+  }
+}
+
+# This is all Python can handle; C++ can handle more
+msg=$(pairs 50)
+
+#echo $msg
+
+echo "$msg" | json read
+pp line (_reply)
+echo len=$[len(_reply)]
+
+## STDOUT:
+(List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+len=1
+## END

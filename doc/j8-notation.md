@@ -6,18 +6,16 @@ default_highlighter: oils-sh
 J8 Notation
 ===========
 
-J8 Notation is a set of text interchange formats for **strings**, **bytes**,
-tree-shaped **records**, and **tables**.  It's built on [JSON]($xref), and
-backward compatible with it.
+J8 Notation is a set of text interchange formats.  It specifies a strict syntax
+for **strings** / bytes, tree-shaped **records**, line-based **streams**, and
+**tables**.
 
-As part of the Oils project, it was designed to solve the *JSON-Unix Mismatch*.
+It's part of the Oils project, and was designed to solve the *JSON-Unix
+Mismatch*.  It's backward compatible with [JSON]($xref), and built on it.
 
 But J8 notation isn't only for Oils &mdash; just like JSON isn't only for
 JavaScript.  Any language that has a JSON library should also have a J8
 library.
-
-(J8 Notation replaces the older [QSN](qsn.html) design, which wasn't compatible
-with JSON.)
 
 <!--
 it's **not** specific to Oils.  This is just like JSON isn't specific to
@@ -27,6 +25,9 @@ JavaScript.  Today, a Python program and a Go program may communicate with
 
 <div id="toc">
 </div>
+
+(Historical note: As of January 2024, J8 Notation replaces the [QSN](qsn.html)
+design, which wasn't as consistent with both JSON and YSH code.)
 
 ## Quick Picture
 
