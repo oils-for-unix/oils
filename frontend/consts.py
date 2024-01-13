@@ -215,6 +215,7 @@ _ONE_CHAR_C = {
     '\\': '\\',
     "'": "'",  # for $'' only, not echo -e
     '"': '"',  # not sure why this is escaped within $''
+    '/': '/',  # for JSON \/ only
 }
 
 

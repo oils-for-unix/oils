@@ -554,12 +554,13 @@ J8_DEF = [
 _ASCII_CONTROL = R(r'[\x01-\x1F]', Id.Char_AsciiControl)
 
 # https://json.org list of chars, plus '
-_J8_ONE_CHAR = R(r'''\\[\\'"/bfnrt]''', Id.Char_OneChar)
+_JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
 J8_STR_DEF = [
     C("'", Id.Right_SingleQuote),  # end for J8
-    _J8_ONE_CHAR,
+    _JSON_ONE_CHAR,
+    C("\\'", Id.Char_OneChar),
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
     _ASCII_CONTROL,
@@ -572,7 +573,7 @@ J8_STR_DEF = [
 # For "JSON strings \" \u1234"
 JSON_STR_DEF = [
     C('"', Id.Right_DoubleQuote),  # end for JSON
-    _J8_ONE_CHAR,
+    _JSON_ONE_CHAR,
     _U4_CHAR_STRICT,  # \u1234 - JSON only
 
     # High surrogate [\uD800, \uDC00)

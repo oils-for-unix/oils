@@ -278,6 +278,56 @@ json8 write (b)
 b'\yff'
 ## END
 
+#### JSON \/ escapes supported
+
+msg='"\/"'
+
+echo "$msg" | python3 -c 'import json, sys; print(json.load(sys.stdin))'
+
+echo "$msg" | json read
+echo reply=$_reply
+
+j8="b'\\/'"
+echo "$msg" | json read
+echo reply=$_reply
+
+
+## STDOUT:
+/
+reply=/
+reply=/
+## END
+
+#### J8 supports superfluous \" escapes, but JSON doesn't support \' escapes
+
+json8 read <<'EOF'
+b'\"'
+EOF
+echo reply=$_reply
+
+json8 read <<'EOF'
+b'\'\'\b\f\n\r\t\"\\'
+EOF
+pp line (_reply)
+
+# Suppress traceback
+python3 -c 'import json, sys; print(json.load(sys.stdin))' 2>/dev/null <<'EOF'
+"\'"
+EOF
+echo python3=$?
+
+json read <<'EOF'
+"\'"
+EOF
+echo json=$?
+
+## STDOUT:
+reply="
+(Str)   "''\b\f\n\r\t\"\\"
+python3=1
+json=1
+## END
+
 #### Escaping uses \u0001 in "", but \u{1} in b''
 
 s1=$'\x01'
