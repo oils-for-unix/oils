@@ -174,12 +174,9 @@ Examples:
 
 ### json8-comment
 
-End-of-line comments in two styles:
+End-of-line comments in the same style as JavaScript and C++:
 
     {"json8": "message"}   // comment
-
-    {"json8": "message"}    # comment
-
 
 ## TSV8
 
@@ -191,6 +188,7 @@ These are the J8 Primitives (Bool, Int, Float, Str), separated by tabs.
 ```
 !tsv8    name    age
 !type    Str     Int
+!other   x       y
          Alice   42
          Bob     25
 ```
