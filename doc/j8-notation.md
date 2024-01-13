@@ -2,24 +2,27 @@
 default_highlighter: oils-sh
 ---
 
-J8 Notation Fixes the JSON-Unix Mismatch
+J8 Notation - Fixing the JSON-Unix Mismatch
 ===========
 
 J8 Notation is a set of text interchange formats.  It's a syntax for:
 
 1. **strings** / bytes
-1. tree-shaped **records** (like JSON)
+1. tree-shaped **records** (like [JSON]($xref))
 1. line-based **streams** (like Unix)
 1. **tables** (like TSV)
 
-It's part of the Oils project, and was designed to solve the *JSON-Unix
-Mismatch*.  It's backward compatible with [JSON]($xref), and built on top of
+It's part of the Oils project, and is intended to solve the *JSON-Unix
+Mismatch*: the Unix kernel deals with bytes, while JSON deals with Unicode
+strings (plus UTF-16 errors).
+
+It's backward compatible with [JSON]($xref), and built on top of
 it.
 
-But just like JSON isn't only for JavaScript, J8 notation isn't only for Oils.
-Any language that has a JSON library should also have a J8 library.
+But just like JSON isn't only for JavaScript, J8 Notation isn't only for Oils.
+Any language understands JSON should also understand J8 Notation.
 
-(Note: J8 Notation replaced the similar [QSN](qsn.html) design in January
+(Note: J8 replaced the similar [QSN](qsn.html) design in January
 2024.  QSN wasn't as compatible with both JSON and YSH code.)
 
 <div id="toc">
@@ -173,7 +176,7 @@ Reference](ref/index.html).
 - Doc: How to turn a JSON library into a J8 Notation library.
   - Issue: an interior type that can represent byte strings.
 
-## J8 Strings (Unicode and bytes)
+## J8 Strings - Unicode and bytes
 
 Let's review JSON strings, and then describe J8 strings.
 
@@ -309,7 +312,7 @@ A few things to notice about J8 **encoders**:
 
 On the other hand, J8 **decoders** must accept all 3 kinds of strings.
 
-## JSON8: Tree-Shaped Records
+## JSON8 - Tree-Shaped Records
 
 Now that we've defined J8 strings, we can define JSON8, an obvious extension of
 JSON.
@@ -385,7 +388,7 @@ insignificant spaces)
 - <https://jsonlines.org/> 
 - <https://ndjson.org/> - Newline Delimited JSON
 
-## TSV8: Table-Shaped Text
+## TSV8 - Table-Shaped Text
 
 Let's review TSV, and then describe TSV8.
 
@@ -538,7 +541,7 @@ styles more visually distinct from `""`, and it allows `''` as a synonym for
 
 Compared to `""` strings, `''` strings don't have a UTF-16 legacy.
 
-### How do I write a J8 encoder or decoder?
+### How do I write a J8 encoder and decoder?
 
 The list of errors at [ref/chap-errors.html](ref/chap-errors.html) may be a
 good starting point.

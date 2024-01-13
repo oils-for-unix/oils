@@ -388,17 +388,19 @@ shopt -s ysh:upgrade
 
 for j in '"\ud83e"' '"\udd26"' {
   var s = fromJson(j)
-  echo len=$[len(s)]
+  pp line (s)
 
-  json write (s) > tmp.txt
-  json read < tmp.txt
-  pp line (_reply)
+  # TODO: modify DFA to return the code point in the surrogate range, and
+  # print it in JSON mode
+  # j8 mode could possibly use byte strings
+  json write (s)
 }
 
 ## STDOUT:
-len=3
+(Str)   b'\ya0\ybe'
 "\ud83e"
-len=3
+(Str)   b'\yb4\ya6'
+"\udd26"
 ## END
 
 #### toJson() toJ8() - TODO: test difference
