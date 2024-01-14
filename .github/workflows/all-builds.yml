@@ -100,8 +100,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: dev-minimal
         run: |
@@ -121,8 +119,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: interactive
         run: |
@@ -142,8 +138,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: pea
         run: |
@@ -163,8 +157,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: other-tests
         run: |
@@ -184,8 +176,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: ovm-tarball
         run: |
@@ -205,8 +195,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: app-tests
         run: |
@@ -226,8 +214,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: cpp-coverage
         run: |
@@ -247,8 +233,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: benchmarks
         run: |
@@ -268,8 +252,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: benchmarks2
         run: |
@@ -289,8 +271,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: cpp-small
         run: |
@@ -310,8 +290,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: cpp-tarball
         run: |
@@ -338,8 +316,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: cpp-spec
         run: |
@@ -359,8 +335,6 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: wild
         run: |

@@ -282,21 +282,6 @@ Examples:
 - The J8 message `b'\yff'` represents a byte string.  This string is **not**
   representable with JSON strings or `u''` strings.
 
-### YSH has 2 of the 3 styles
-
-A nice property of Oils is that the `u''` and `b''` strings are valid in YSH
-code:
-
-    echo u'hi \u{1f642}'
-
-    var myBytes = b'\yff\yfe'
-
-This is useful for correct code generation, and simplifies the language.
-
-But JSON-style strings aren't valid in YSH.  The two usages of double quotes
-can't really be reconciled, because JSON looks like `"line\n"` and shell looks
-like `"x = ${myvar}"`.
-
 ### Assymmetry of Encoders and Decoders
 
 A few things to notice about J8 **encoders**:
@@ -312,6 +297,43 @@ A few things to notice about J8 **encoders**:
      value must be a valid Unicode string.
 
 On the other hand, J8 **decoders** must accept all 3 kinds of strings.
+
+### YSH has 2 of the 3 styles
+
+A nice property of YSH is that the `u''` and `b''` strings are valid code:
+
+    echo u'hi \u{1f642}'  # u respected in YSH, but not OSH
+
+    var myBytes = b'\yff\yfe'
+
+This is useful for correct code generation, and simplifies the language.
+
+But JSON-style strings aren't valid in YSH.  The two usages of double quotes
+can't really be reconciled, because JSON looks like `"line\n"` and shell looks
+like `"x = ${myvar}"`.
+
+### J8 Strings vs. POSIX Shell Strings
+
+When the encoded form of a J8 string doesn't contain a **backslash**, it's
+identical to a POSIX shell string.  
+
+In this case, it can make sense to omit the `u''` prefix.  Example:
+
+<pre>
+shell_string='hi &#x1f642;'
+
+var ysh_str = u'hi &#x1f642;'
+
+var ysh_str =  'hi &#x1f642;'  <span class="sh-comment"># same thing</span>
+</pre>
+
+An encoded J8 string has no backslashes when the original string has all these
+properties:
+
+1. Valid Unicode (no non-UTF-8 bytes).
+1. No ASCII control characters.  All bytes are `0x20` and greater.
+1. No backslashes or single quotes.  (All other required escapes are control
+   characters.)
 
 ## JSON8 - Tree-Shaped Records
 
