@@ -395,6 +395,7 @@ class _PrettyPrinter(object):
         if tag == hnode_e.Leaf:
             node = cast(hnode.Leaf, UP_node)
             f.PushColor(node.color)
+            # TODO: use fastfunc.J8Encode()
             f.write(qsn.maybe_encode(node.s))
             f.PopColor()
 

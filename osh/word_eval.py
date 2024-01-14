@@ -959,23 +959,26 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     p = prompt.replace('\x01', '').replace('\x02', '')
                     result = value.Str(p)
                 else:
-                    e_die("Can't use @P on %s" %
-                          ui.ValType(val))  # TODO: location
+                    e_die("Can't use @P on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_Q:
             with tagswitch(val) as case:
                 if case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
+
+                    # TODO: use fastfunc.ShellEncode or
+                    # fastfunc.PosixShellEncode()
                     result = value.Str(qsn.maybe_shell_encode(str_val.s))
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
+
+                    # TODO: should use fastfunc.ShellEncode
                     tmp = [qsn.maybe_shell_encode(s) for s in array_val.strs]
                     result = value.Str(' '.join(tmp))
                 else:
-                    e_die("Can't use @Q on %s" %
-                          ui.ValType(val))  # TODO: location
+                    e_die("Can't use @Q on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_a:
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See

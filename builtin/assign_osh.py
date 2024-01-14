@@ -158,6 +158,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
 
         if val.tag() == value_e.Str:
             str_val = cast(value.Str, val)
+            # TODO: Use fastfunc.ShellEncode()
             decl.extend(["=", qsn.maybe_shell_encode(str_val.s)])
 
         elif val.tag() == value_e.BashArray:
