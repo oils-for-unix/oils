@@ -711,6 +711,17 @@ for count in (-1..4) {
 1-2-3-
 ## END
 
+#### Str=>replace(Str, Str), empty new/old strings
+var mystr = 'abca'
+write $[mystr=>replace('abc', '')]           # Empty substitution
+write $[mystr=>replace('', 'new')]           # Empty substring
+write $[mystr=>replace('', 'new', count=1)]  # Empty substring, count != -1
+## STDOUT:
+a
+newanewbnewcnewanew
+newabca
+## END
+
 #### Str=>replace(Eggex, Lazy), convert_func
 shopt --set ysh:all
 
