@@ -723,7 +723,7 @@ func not_str(inp) {
 
 # should fail to stringify $1
 try { call mystr=>replace(/ <capture d+ : not_str> /, ^"$1") }
-echo status=$_status
+write status=$_status
 ## STDOUT:
 124
 123

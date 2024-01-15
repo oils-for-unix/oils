@@ -170,10 +170,14 @@ class Replace(vm._Callable):
         pattern = rd.PosValue()
         with tagswitch(pattern) as case:
             if case(value_e.Eggex):
-                eggex_val = cast(value.Eggex, pattern)
+                # HACK: mycpp will otherwise generate:
+                #  value::Eggex* eggex_val ...
+                eggex_val_ = cast(value.Eggex, pattern)
+                eggex_val = eggex_val_
 
             elif case(value_e.Str):
-                string_val = cast(value.Str, pattern)
+                string_val_ = cast(value.Str, pattern)
+                string_val = string_val_
 
             else:
                 raise error.TypeErr(pattern,
@@ -183,13 +187,15 @@ class Replace(vm._Callable):
         subst = rd.PosValue()
         with tagswitch(subst) as case:
             if case(value_e.Str):
-                subst_str = cast(value.Str, subst)
+                subst_str_ = cast(value.Str, subst)
+                subst_str = subst_str_
 
             elif case(value_e.Expr):
-                subst_expr = cast(value.Expr, subst)
+                subst_expr_ = cast(value.Expr, subst)
+                subst_expr = subst_expr_
 
             else:
-                raise error.TypeErr(pattern,
+                raise error.TypeErr(subst,
                                     'expected substitution to be Str or Expr',
                                     rd.LeftParenToken())
 
@@ -216,7 +222,7 @@ class Replace(vm._Callable):
             pos = 0
             parts = []  # type: List[str]
             replace_count = 0
-            while pos + 1 < len(string):
+            while pos < len(string):
                 indices = libc.regex_search(ere, cflags, string, 0, pos)
                 if indices is None:
                     break
