@@ -36,7 +36,8 @@ Replace substrings or eggex matches within a string.
 Replacement expressions can use captures from the given eggex.
 
     var mystr = "year is 1988"
-    = mystr=>replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")  # => "year is 1989"
+    = mystr=>replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
+    # => "year is 1989"
 
 To limit the number of replacements, pass in a named count argument. By default
 the count is `-1` which means "replace all".
