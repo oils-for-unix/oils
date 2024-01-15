@@ -68,6 +68,8 @@ These docs are **ready to read** (though there may be obsolete references to
   | [Simple Word Evaluation](doc/simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](doc/variables.html)
   | [Hay - Custom Languages for Unix Systems](doc/hay.html)
+- Data Languages:
+  - [JSON](doc/json.html) | [J8 Notation](doc/j8-notation.html)
 - Language Design:
   - [Syntactic Concepts](doc/syntactic-concepts.html) 
   | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)

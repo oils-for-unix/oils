@@ -42,6 +42,7 @@ publish-html-assuming-ssh-key() {
     soil/web-worker.sh deploy-test-wwz  # dummy data that doesn't depend on the build
   fi
 
+  # Calls rewrite-jobs-index and cleanup-jobs-index
   time soil/web-worker.sh remote-event-job-done 'github-' $GITHUB_RUN_NUMBER
 
   if test -n "$update_status_api"; then

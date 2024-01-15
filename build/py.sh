@@ -243,6 +243,9 @@ py-ext-test() {
   if test $status -eq 0; then
     log "OK $log_path"
   else
+    echo
+    cat $log_path
+    echo
     die "FAIL $log_path"
   fi
 }
@@ -259,6 +262,13 @@ fanos() {
 
   py-ext fanos pyext/setup_fanos.py
   py-ext-test pyext/fanos_test.py "$@"
+}
+
+fastfunc() {
+  rm -f fastfunc.so
+
+  py-ext fastfunc pyext/setup_fastfunc.py
+  py-ext-test pyext/fastfunc_test.py "$@"
 }
 
 #
@@ -372,6 +382,7 @@ py-extensions() {
   line-input
   posix_
   fanos
+  fastfunc
 }
 
 minimal() {

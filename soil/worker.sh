@@ -266,6 +266,7 @@ osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      devtools/release.sh test-oil-tar       -
+ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
 ref-check         build/doc.sh ref-check                 -
 EOF

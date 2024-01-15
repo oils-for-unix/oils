@@ -60,6 +60,8 @@ Array literals like `var a = :| ale bean |` instead of `local a=(ale bean)`
 **[Procs, Funcs, and Blocks](proc-func.html)** for modularity:
 
 - Shell functions are "upgraded" into procs, with typed and named parameters.
+  - Procs have truly local variables, like Python and JavaScript.  There's no
+    [dynamic scope]($xref:dynamic-scope) rule, as with shell functions.
 - Python-like pure funcs compute on "interior" data.
 - Ruby-like blocks enable reflection and metaprogramming.
   - Including declarative [Hay](hay.html) blocks

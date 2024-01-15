@@ -192,7 +192,43 @@ decode-utf8-in-surrogate-range() {
   # can't decode!
   nodejs -e 'var u = new Uint8Array([0xed, 0xa0, 0xbe]); var string = new TextDecoder("utf-8").decode(u); console.log(string);'
   echo
+}
 
+pairs() {
+  local nums
+  nums=$(seq $1)
+
+  echo -n '['
+  for i in $nums; do
+    echo -n '[42,'
+  done
+  echo -n '43]'
+  for i in $nums; do
+    echo -n ']'
+  done
+}
+
+decode-deeply-nested() {
+  local msg
+  msg=$(pairs 40200)
+
+  # RuntimeError
+  echo "$msg" | python2 -c 'import json, sys; print(repr(json.load(sys.stdin)))' || true
+
+  # RecursionError
+  echo "$msg" | python3 -c 'import json, sys; print(repr(json.load(sys.stdin)))' || true
+
+  # Hm node.js handles it fine?  Probably doesn't have a stackful parser.
+  # [ [ [ [Array] ] ] ]
+  echo "$msg" | nodejs -e 'var fs = require("fs"); var stdin = fs.readFileSync(0, "utf-8"); console.log(JSON.parse(stdin));' || true
+
+  echo "$msg" | bin/osh -c 'json read; = _reply' || true
+
+  # Hm this works past 40K in C++!  Then segmentation fault.  We could put an
+  # artifical limit on it.
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+  echo "$msg" | $osh -c 'json read; = _reply; echo $[len(_reply)]' || true
 }
 
 "$@"

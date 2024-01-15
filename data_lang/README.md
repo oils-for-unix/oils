@@ -1,16 +1,37 @@
 Data Languages
 ==============
 
-TODO:
+This directory has implementations of data languages that can and should be
+reimplemented outside Oils.
 
-- Replace QSN with YSTR
-- Build YTSV on top (replaces QTT)
+## J8 Notation
 
-## QSN: Quoted String Notation
+See `doc/j8-notation.md` for details.
 
-This is the reference implementation of [QSN, a familiar string interchange
-format][doc].
+Pure C code, which can be used by CPython and Oils C++:
 
-[doc]: //www.oilshell.org/release/latest/doc/qsn.html
+    j8.h
 
+Shared test code:
+
+    j8_test_lib.{h,c}
+
+C library used by CPython, using `malloc() realloc()`:
+
+    j8c.{h,c}  j8c_test.c
+
+Parser and printer in Python, translated by mycpp:
+
+    j8.py
+
+
+## Packle
+
+TODO
+
+## UTF-8
+
+Tests for different implementations:
+
+    utf8_test.cc
 

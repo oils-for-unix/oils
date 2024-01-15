@@ -267,7 +267,7 @@ X [Guts]      heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()   type()
+  [Values]        len()   type()   X repeat()
   [Conversions]   bool()   int()   float()   str()   list()   dict()
                   X chr()   X ord()   X runes()
 X [Str]           strcmp()   X split()   shSplit()

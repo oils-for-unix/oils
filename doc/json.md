@@ -6,43 +6,57 @@ JSON in Oils
 ===========
 
 [JSON](https://www.json.org/) is used by both web services and command line
-tools, so a modern Unix shell needs support for it.
+tools, so a modern Unix shell needs to support it.
 
-<!-- cmark.py expands this -->
+Oils has a `json` builtin which you can use from bot OSH and YSH.
+
+It also has a parallel `json8` builtin with the same uage.  See [J8
+Notation](j8-notation.html) for details on the encoding.
+
 <div id="toc">
 </div>
 
 The `json` **builtin** has `read` and `write` subcommands, which convert
-between text and data structures in memory.  YSH data structures are like
-those in Python and JavaScript, so this correspondence is natural.
+between serialized data languages and in-memory data structures.
+
+YSH data structures are like those in Python and JavaScript, so this
+correspondence is natural.
 
 ## `json read` parses from `stdin`
 
 Usage:
 
-    json read FLAGS* VAR_NAME
-
-    Flags:
-      None for now, but there likely will be one to skip UTF-8 validation.
+    json  read (PLACE?)
+    json8 read (PLACE?)
 
 Examples:
 
     $ cat stats.json
     {"count": 42}
 
-    # Read from a file.  myvar is created in local scope.
-    $ json read :myvar < stats.json
+    # Read from a file.  By default, the variable _reply is written.
+    $ json read < stats.json
 
     # Use = to pretty print an expression
-    $ = myvar   
+    $ = _reply
     (Dict)   {'count': 42}
+
+Specify a place to put the data:
+
+    $ json read (&myvar) < stats.json
+
+    $ = myvar
+    (Dict)   {'count': 42}
+
+Use it in a pipeline:
 
     # 'json read' is valid at the end of a pipeline (because YSH implements
     # shopt -s lastpipe)
-    $ echo '{"count": 42}' | json read :myvar
+    $ echo '{"count": 42}' | json read (&myvar)
 
-    # Failure with invalid input data
-    $ echo '[ "incomplete"' | json read :myvar < invalid.json
+Failure with invalid input data:
+
+    $ echo '[ "incomplete"' | json read (&myvar) < invalid.json
     [ "incomplete"
      ^
     json read: premature EOF
@@ -50,12 +64,14 @@ Examples:
     $ echo $?
     1
 
-Notes:
+### `read` builtin
 
-- Variable names may be prefixed with the **optional** "sigil" `:`.
-- `json read` is consistent with shell's `read` builtin, which reads a *line*
-  from a file and splits it.
-- Only one variable name can be passed.
+TODO:
+
+    read --line --j8 
+    read --all-lines --j8 
+    read --line --json
+    read --all-lines --json
 
 ## `json write` prints to `stdout`
 
@@ -95,11 +111,18 @@ Notes:
 
 - `--indent` is ignored if `--pretty` is false.
 
+### `write` builtin
+
+TODO
+
+    write --j8 hello there
+    write --json hello there  # unicode replacement char
+
 ## Filter Data Structures with YSH Expressions
 
 Once your data is deserialized, you can use YSH expression to operate on it.
 
-    $ echo '{"counts": [42, 99]}' | json read :d
+    $ echo '{"counts": [42, 99]}' | json read (&d)
 
     $ = d['counts']
     (List)   [42, 99]
@@ -145,7 +168,3 @@ Bash-style associative arrays are printed like `Dict[Str, Str]`:
       "key": "value"
     }
 
-## Credits
-
-Under the hood, YSH uses [yajl](https://lloyd.github.io/yajl/) and a fork of
-the [py-yajl](https://github.com/oilshell/py-yajl) binding.

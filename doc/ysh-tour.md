@@ -1296,11 +1296,12 @@ The shared interpreter supports many shell constructs that are deprecated:
 
 - YSH code uses shell's `||` and `&&` in limited circumstances, since `errexit`
   is on by default.
-- Most of what's in `${}`, like `${!indirect}`.  Use YSH functions instead.
 - Assignment builtins like `local` and `declare`.  Use YSH keywords.
 - Boolean expressions like `[[ x =~ $pat ]]`.  Use YSH expressions.
 - Shell arithmetic like `$(( x + 1 ))` and `(( y = x ))`.  Use YSH expressions.
 - The `until` loop can always be replaced with a `while` loop
+- Most of what's in `${}` can be written in other ways.  For example
+  `${s#/tmp}` could be `s => removePrefix('/tmp')` (TODO).
 
 ### Not Yet Implemented
 

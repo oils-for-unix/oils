@@ -108,16 +108,13 @@ YSH programs "talk about" these data languages, also called interchange formats
 or protocols.  In-memory data structures are *in service* of data languages on
 the wire, **not** the other way around.
 
-<!-- TODO: J8 Notation -->
-
-- [JSON](json.html): Currently supported only in the Python prototype of YSH.
-- [QSN](qsn.html): Quoted String Notation.  A human- and machine-readable
-  format for byte strings.
+- [J8 Notation](j8-notation.html).  An upgrade of JSON to bytes, strings,
+  lines, and structured data.
+  - [JSON](json.html).  Some usage details.
   - [Framing](framing.html)
 
 TODO:
 
-- J8 Notation &dagger;
 - Packle &dagger;
 
 ## The Shared Oils Runtime

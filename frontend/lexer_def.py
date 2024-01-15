@@ -474,7 +474,6 @@ _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
 
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
 
-
 EXPR_CHARS = [
     # This is like Rust.  We don't have the legacy C escapes like \b.
 
@@ -555,12 +554,13 @@ J8_DEF = [
 _ASCII_CONTROL = R(r'[\x01-\x1F]', Id.Char_AsciiControl)
 
 # https://json.org list of chars, plus '
-_J8_ONE_CHAR = R(r'''\\[\\'"/bfnrt]''', Id.Char_OneChar)
+_JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
 J8_STR_DEF = [
     C("'", Id.Right_SingleQuote),  # end for J8
-    _J8_ONE_CHAR,
+    _JSON_ONE_CHAR,
+    C("\\'", Id.Char_OneChar),
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
     _ASCII_CONTROL,
@@ -573,14 +573,15 @@ J8_STR_DEF = [
 # For "JSON strings \" \u1234"
 JSON_STR_DEF = [
     C('"', Id.Right_DoubleQuote),  # end for JSON
-    _J8_ONE_CHAR,
+    _JSON_ONE_CHAR,
     _U4_CHAR_STRICT,  # \u1234 - JSON only
 
     # High surrogate [\uD800, \uDC00)
     # Low surrogate  [\uDC00, \uE000)
     # This pattern makes it easier to decode.  Unpaired surrogates because Id.Char_Unicode4.
-    R(r'\\u[dD][89aAbB][0-9a-fA-F][0-9a-fA-F]\\u[dD][cCdDeEfF][0-9a-fA-F][0-9a-fA-F]',
-      Id.Char_SurrogatePair),
+    R(
+        r'\\u[dD][89aAbB][0-9a-fA-F][0-9a-fA-F]\\u[dD][cCdDeEfF][0-9a-fA-F][0-9a-fA-F]',
+        Id.Char_SurrogatePair),
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.

@@ -25,16 +25,41 @@ def NinjaGraph(ru):
         matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])
 
     ru.cc_library(
+        '//data_lang/j8_test_lib',
+        srcs=['data_lang/j8_test_lib.c'],
+        deps=[],
+    )
+
+    # A header-only library in C, that can be used from C or C++
+    ru.cc_library(
         '//data_lang/j8',
-        # This is C, not C++, and it's header only
         srcs=[],
         headers=['data_lang/j8.h'],
-        deps=[
-        ],
+        deps=[],
     )
 
     ru.cc_binary(
-        'data_lang/j8_test.c',
+        'data_lang/j8_test.cc',
+        deps=['//data_lang/j8',
+              '//data_lang/j8_test_lib'],
+        # Add tcmalloc for malloc_address_test
+        matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])
+
+    # A higher level C library that uses realloc().  Not meant for C++, which
+    # should use a zero-copy minimal malloc style.
+
+    # TODO: restrict compiler flags to C99
+    # can't be used by C++ (otherwise we'd need a different _build/obj location)
+    ru.cc_library(
+        '//data_lang/j8_libc',
+        srcs=['data_lang/j8_libc.c'],
         deps=['//data_lang/j8'],
+    )
+
+    # TODO: restrict compiler flags to C99
+    ru.cc_binary(
+        'data_lang/j8_libc_test.c',
+        deps=['//data_lang/j8_libc',
+              '//data_lang/j8_test_lib'],
         # Add tcmalloc for malloc_address_test
         matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])

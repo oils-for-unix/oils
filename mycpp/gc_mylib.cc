@@ -36,13 +36,13 @@ void writeln(BigStr* s, int fd) {
 
 class MutableStr : public BigStr {};
 
-MutableStr* NewMutableStr(int cap) {
+MutableStr* NewMutableStr(int n) {
   // In order for everything to work, MutableStr must be identical in layout to
   // BigStr. One easy way to achieve this is for MutableStr to have no members
   // and to inherit from BigStr.
   static_assert(sizeof(MutableStr) == sizeof(BigStr),
                 "BigStr and MutableStr must have same size");
-  return reinterpret_cast<MutableStr*>(NewStr(cap));
+  return reinterpret_cast<MutableStr*>(NewStr(n));
 }
 
 Tuple2<BigStr*, BigStr*> split_once(BigStr* s, BigStr* delim) {
@@ -172,41 +172,73 @@ bool CFileWriter::isatty() {
 // BufWriter
 //
 
-void BufWriter::EnsureCapacity(int cap) {
-  DCHECK(str_ != nullptr);
-  int capacity = len(str_);
-  DCHECK(capacity >= len_);
+void BufWriter::EnsureMoreSpace(int n) {
+  if (str_ == nullptr) {
+    // TODO: we could make the default capacity big enough for a line, e.g. 128
+    // capacity: 128 -> 256 -> 512
+    str_ = NewMutableStr(n);
+    return;
+  }
 
-  if (capacity < cap) {
-    auto* s = NewMutableStr(std::max(capacity * 2, cap));
+  int current_cap = len(str_);
+  DCHECK(current_cap >= len_);
+
+  int new_cap = len_ + n;
+
+  if (current_cap < new_cap) {
+    auto* s = NewMutableStr(std::max(current_cap * 2, new_cap));
     memcpy(s->data_, str_->data_, len_);
     s->data_[len_] = '\0';
     str_ = s;
   }
 }
 
-void BufWriter::write(BigStr* s) {
-  DCHECK(is_valid_);  // Can't write() after getvalue()
+uint8_t* BufWriter::LengthPointer() {
+  // start + len
+  return reinterpret_cast<uint8_t*>(str_->data_) + len_;
+}
 
-  int n = len(s);
+uint8_t* BufWriter::CapacityPointer() {
+  // start + capacity
+  return reinterpret_cast<uint8_t*>(str_->data_) + str_->len_;
+}
+
+void BufWriter::SetLengthFrom(uint8_t* length_ptr) {
+  uint8_t* begin = reinterpret_cast<uint8_t*>(str_->data_);
+  DCHECK(length_ptr >= begin);  // we should have written some data
+
+  // Set the length, e.g. so we know where to resume writing from
+  len_ = length_ptr - begin;
+  // printf("SET LEN to %d\n", len_);
+}
+
+void BufWriter::Truncate(int length) {
+  len_ = length;
+}
+
+void BufWriter::WriteRaw(char* s, int n) {
+  DCHECK(is_valid_);  // Can't write() after getvalue()
 
   // write('') is a no-op, so don't create Buf if we don't need to
   if (n == 0) {
     return;
   }
 
-  if (str_ == nullptr) {
-    // TODO: we could make the default capacity big enough for a line, e.g. 128
-    // capacity: 128 -> 256 -> 512
-    str_ = NewMutableStr(n);
-  } else {
-    EnsureCapacity(len_ + n);
-  }
+  EnsureMoreSpace(n);
 
   // Append the contents to the buffer
-  memcpy(str_->data_ + len_, s->data_, n);
+  memcpy(str_->data_ + len_, s, n);
   len_ += n;
   str_->data_[len_] = '\0';
+}
+
+void BufWriter::WriteConst(const char* c_string) {
+  // meant for short strings like '"'
+  WriteRaw(const_cast<char*>(c_string), strlen(c_string));
+}
+
+void BufWriter::write(BigStr* s) {
+  WriteRaw(s->data_, len(s));
 }
 
 BigStr* BufWriter::getvalue() {

@@ -42,7 +42,6 @@ from asdl import format as fmt
 from core import error
 from core import vm
 from data_lang import pyj8
-from data_lang import qsn
 from frontend import consts
 from frontend import match
 from mycpp import mylib
@@ -52,56 +51,6 @@ _ = log
 unused = pyj8
 
 from typing import cast, Dict, List, Tuple, Optional
-
-
-class PrettyPrinter(object):
-    """
-    For = operator.  Output to polymorphic ColorOutput 
-
-    Also pp value (x, option = :x)
-
-    Features like asdl/format.py:
-    - line wrapping
-    - color
-
-    Options:
-    - unicode.UEscape
-    - Float: It would be nice to separate the exact parts, like we do with
-      strings
-
-    Fixed behavior:
-    - j_prefix.WhenNecessary
-    - dialect.J8
-    - Prints <Dict #42> on cycles
-    - Prints ASDL (value.Expr ...) on non-data types
-    """
-
-    def __init__(self, max_col):
-        # type: (int) -> None
-        self.max_col = max_col
-
-        # This could be an optimized set an C++ bit set like
-        # mark_sweep_heap.h, rather than a Dict
-        self.unique_objs = mylib.UniqueObjects()
-
-    def PrettyTree(self, val, f):
-        # type: (value_t, fmt.ColorOutput) -> None
-
-        # TODO: first convert to hnode.asdl types?
-
-        # Although we might want
-        # hnode.AlreadyShown = (str type, int unique_id)
-        pass
-
-    def Print(self, val, buf):
-        # type: (value_t, mylib.BufWriter) -> None
-
-        # Or print to stderr?
-        f = fmt.DetectConsoleOutput(mylib.Stdout())
-        self.PrettyTree(val, f)
-
-        # Then print those with ASDL
-        pass
 
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
@@ -223,19 +172,6 @@ class InstancePrinter(object):
             self.spaces[num_spaces] = ' ' * num_spaces
         return self.spaces[num_spaces]
 
-    def _StringToBuf(self, s):
-        # type: (str) -> None
-
-        if mylib.PYTHON:
-            # TODO: port this to C++
-            pyj8.WriteString(s, self.options, self.buf)
-        else:
-            self.buf.write('"')
-            valid_utf8 = qsn.EncodeRunes(s, qsn.BIT8_UTF8, self.buf)
-            if not valid_utf8:
-                pass
-            self.buf.write('"')
-
     def Print(self, val, level=0):
         # type: (value_t, int) -> None
 
@@ -280,8 +216,7 @@ class InstancePrinter(object):
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
 
-                # TODO: pyj8.WriteString(val.s, self.buf)
-                self._StringToBuf(val.s)
+                pyj8.WriteString(val.s, self.options, self.buf)
 
             elif case(value_e.List):
                 val = cast(value.List, UP_val)
@@ -341,7 +276,7 @@ class InstancePrinter(object):
 
                     self.buf.write(item_indent)
 
-                    self._StringToBuf(k)
+                    pyj8.WriteString(k, self.options, self.buf)
 
                     self.buf.write(':')
                     self.buf.write(maybe_space)
@@ -375,7 +310,7 @@ class InstancePrinter(object):
                     if s is None:
                         self.buf.write('null')
                     else:
-                        self._StringToBuf(s)
+                        pyj8.WriteString(s, self.options, self.buf)
 
                 self.buf.write(maybe_newline)
 
@@ -395,12 +330,12 @@ class InstancePrinter(object):
 
                     self.buf.write(item_indent)
 
-                    self._StringToBuf(k2)
+                    pyj8.WriteString(k2, self.options, self.buf)
 
                     self.buf.write(':')
                     self.buf.write(maybe_space)
 
-                    self._StringToBuf(v2)
+                    pyj8.WriteString(v2, self.options, self.buf)
 
                     i += 1
 
@@ -421,6 +356,45 @@ class InstancePrinter(object):
                     from core import ui  # TODO: break dep
                     raise error.Encode("Can't serialize object of type %s" %
                                        ui.ValType(val))
+
+
+class PrettyPrinter(object):
+    """ Unused right now, but could enhance the = operator.
+
+    Output to polymorphic ColorOutput 
+
+    Features like asdl/format.py:
+    - line wrapping
+    - color
+    - maybe print object IDs when there's sharing, not just for cycles?
+    """
+
+    def __init__(self, max_col):
+        # type: (int) -> None
+        self.max_col = max_col
+
+        # This could be an optimized set an C++ bit set like
+        # mark_sweep_heap.h, rather than a Dict
+        self.unique_objs = mylib.UniqueObjects()
+
+    def PrettyTree(self, val, f):
+        # type: (value_t, fmt.ColorOutput) -> None
+
+        # TODO: first convert to hnode.asdl types?
+
+        # Although we might want
+        # hnode.AlreadyShown = (str type, int unique_id)
+        pass
+
+    def Print(self, val, buf):
+        # type: (value_t, mylib.BufWriter) -> None
+
+        # Or print to stderr?
+        f = fmt.DetectConsoleOutput(mylib.Stdout())
+        self.PrettyTree(val, f)
+
+        # Then print those with ASDL
+        pass
 
 
 class LexerDecoder(object):
@@ -485,14 +459,14 @@ class LexerDecoder(object):
 
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?
-                raise self._Error('Unexpected EOF while lexing %s string' %
-                                  self.lang_str,
-                                  str_end)
+                raise self._Error(
+                    'Unexpected EOF while lexing %s string' % self.lang_str,
+                    str_end)
             if tok_id == Id.Unknown_Tok:
                 # e.g. invalid backslash
-                raise self._Error('Unknown token while lexing %s string' %
-                                  self.lang_str,
-                                  str_end)
+                raise self._Error(
+                    'Unknown token while lexing %s string' % self.lang_str,
+                    str_end)
             if tok_id == Id.Char_AsciiControl:
                 raise self._Error(
                     "ASCII control chars are illegal in %s strings" %
@@ -529,8 +503,7 @@ class LexerDecoder(object):
                     snippet = self.s[str_pos:str_pos + 20]
                     raise self._Error(
                         'Invalid UTF-8 in %s string literal: %r' %
-                        (self.lang_str, snippet),
-                        str_end)
+                        (self.lang_str, snippet), str_end)
 
             # TODO: would be nice to avoid allocation in all these cases.
             # But LookupCharC() would have to change.
@@ -546,8 +519,8 @@ class LexerDecoder(object):
                 # Same check in osh/word_parse.py
                 if 0xD800 <= i and i < 0xE000:
                     raise self._Error(
-                        r"\u{%s} escape is illegal because it's in the surrogate range" % h,
-                        str_end)
+                        r"\u{%s} escape is illegal because it's in the surrogate range"
+                        % h, str_end)
 
                 part = string_ops.Utf8Encode(i)
 
@@ -558,14 +531,15 @@ class LexerDecoder(object):
                 if left_id != Id.Left_BSingleQuote:
                     assert left_id != Id.Left_BTSingleQuote, "Not handled here"
                     raise self._Error(
-                        r"\y%s escapes not allowed in u'' strings" % h, str_end)
+                        r"\y%s escapes not allowed in u'' strings" % h,
+                        str_end)
 
                 i = int(h, 16)
                 part = chr(i)
 
             elif tok_id == Id.Char_SurrogatePair:
-                h1 = self.s[str_pos + 2:str_pos+6]
-                h2 = self.s[str_pos + 8:str_pos+12]
+                h1 = self.s[str_pos + 2:str_pos + 6]
+                h2 = self.s[str_pos + 8:str_pos + 12]
 
                 # https://www.oilshell.org/blog/2023/06/surrogate-pair.html
                 i1 = int(h1, 16) - 0xD800  # high surrogate
@@ -722,7 +696,8 @@ class Parser(object):
             return str_val
 
         elif self.tok_id == Id.Eol_Tok:
-            raise self._Error('Unexpected EOF while parsing %s' % self.lang_str)
+            raise self._Error('Unexpected EOF while parsing %s' %
+                              self.lang_str)
 
         elif self.tok_id == Id.Unknown_Tok:
             raise self._Error('Invalid token while parsing %s: %s' %

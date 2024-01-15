@@ -278,6 +278,56 @@ json8 write (b)
 b'\yff'
 ## END
 
+#### JSON \/ escapes supported
+
+msg='"\/"'
+
+echo "$msg" | python3 -c 'import json, sys; print(json.load(sys.stdin))'
+
+echo "$msg" | json read
+echo reply=$_reply
+
+j8="b'\\/'"
+echo "$msg" | json read
+echo reply=$_reply
+
+
+## STDOUT:
+/
+reply=/
+reply=/
+## END
+
+#### J8 supports superfluous \" escapes, but JSON doesn't support \' escapes
+
+json8 read <<'EOF'
+b'\"'
+EOF
+echo reply=$_reply
+
+json8 read <<'EOF'
+b'\'\'\b\f\n\r\t\"\\'
+EOF
+pp line (_reply)
+
+# Suppress traceback
+python3 -c 'import json, sys; print(json.load(sys.stdin))' 2>/dev/null <<'EOF'
+"\'"
+EOF
+echo python3=$?
+
+json read <<'EOF'
+"\'"
+EOF
+echo json=$?
+
+## STDOUT:
+reply="
+(Str)   "''\b\f\n\r\t\"\\"
+python3=1
+json=1
+## END
+
 #### Escaping uses \u0001 in "", but \u{1} in b''
 
 s1=$'\x01'
@@ -388,17 +438,19 @@ shopt -s ysh:upgrade
 
 for j in '"\ud83e"' '"\udd26"' {
   var s = fromJson(j)
-  echo len=$[len(s)]
+  pp line (s)
 
-  json write (s) > tmp.txt
-  json read < tmp.txt
-  pp line (_reply)
+  # TODO: modify DFA to return the code point in the surrogate range, and
+  # print it in JSON mode
+  # j8 mode could possibly use byte strings
+  json write (s)
 }
 
 ## STDOUT:
-len=3
+(Str)   b'\ya0\ybe'
 "\ud83e"
-len=3
+(Str)   b'\yb4\ya6'
+"\udd26"
 ## END
 
 #### toJson() toJ8() - TODO: test difference
@@ -707,4 +759,33 @@ echo status=$?
 (Str)   ""
 (Str)   "μ"
 status=1
+## END
+
+#### decode deeply nested structure (stack overflow)
+
+shopt -s ysh:upgrade
+
+proc pairs(n) {
+  var m = int(n)  # TODO: 1 .. n should auto-convert?
+
+  for i in (1 .. m) {
+    write -n -- '['
+  }
+  for i in (1 .. m) {
+    write -n -- ']'
+  }
+}
+
+# This is all Python can handle; C++ can handle more
+msg=$(pairs 50)
+
+#echo $msg
+
+echo "$msg" | json read
+pp line (_reply)
+echo len=$[len(_reply)]
+
+## STDOUT:
+(List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+len=1
 ## END
