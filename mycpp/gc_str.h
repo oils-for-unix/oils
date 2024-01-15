@@ -45,7 +45,6 @@ class BigStr {
   bool endswith(BigStr* s);
 
   BigStr* replace(BigStr* old, BigStr* new_str);
-  BigStr* replace(BigStr* old, BigStr* new_str, int count);
   BigStr* join(List<BigStr*>* items);
 
   List<BigStr*>* split(BigStr* sep);

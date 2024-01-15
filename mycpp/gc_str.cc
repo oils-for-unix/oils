@@ -286,10 +286,6 @@ BigStr* BigStr::rjust(int width, BigStr* fillchar) {
 }
 
 BigStr* BigStr::replace(BigStr* old, BigStr* new_str) {
-  return replace(old, new_str, 0);
-}
-
-BigStr* BigStr::replace(BigStr* old, BigStr* new_str, int count) {
   // log("replacing %s with %s", old_data, new_str->data_);
   const char* old_data = old->data_;
 
@@ -303,15 +299,12 @@ BigStr* BigStr::replace(BigStr* old, BigStr* new_str, int count) {
   // First pass: Calculate number of replacements, and hence new length
   int replace_count = 0;
   while (p_this <= last_possible) {
-    if (count != 0 && replace_count == count) {  // replace no more than count
-      p_this++;
-    } else if (memcmp(p_this, old_data, old_len) == 0) {  // equal
+    if (memcmp(p_this, old_data, old_len) == 0) {  // equal
       replace_count++;
       p_this += old_len;
     } else {
       p_this++;
     }
-
   }
 
   // log("replacements %d", replace_count);
@@ -335,10 +328,8 @@ BigStr* BigStr::replace(BigStr* old, BigStr* new_str, int count) {
 
   while (p_this <= last_possible) {
     // Note: would be more efficient if we remembered the match positions
-    if (count != 0 && replace_count == count) {  // replace no more than count
-      p_this++;
-    } else if (memcmp(p_this, old_data, old_len) == 0) {  // equal
-      memcpy(p_result, new_data, new_len);                // Copy from new_str
+    if (memcmp(p_this, old_data, old_len) == 0) {  // equal
+      memcpy(p_result, new_data, new_len);         // Copy from new_str
       p_result += new_len;
       p_this += old_len;
     } else {  // copy 1 byte
