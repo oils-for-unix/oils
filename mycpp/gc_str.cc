@@ -286,7 +286,7 @@ BigStr* BigStr::rjust(int width, BigStr* fillchar) {
 }
 
 BigStr* BigStr::replace(BigStr* old, BigStr* new_str) {
-  // Use -1 as, in python2, "aaaa".replace(-1) -> "AAAA"
+  // Use -1 as in python2: "aaaa".replace(-1) -> "AAAA"
   return replace(old, new_str, -1);
 }
 

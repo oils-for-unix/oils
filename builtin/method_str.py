@@ -246,6 +246,9 @@ class Replace(vm._Callable):
                                                                convert_tok,
                                                                rd.LeftParenToken())
 
+                    # $1, $2 variables are argv values, which must be strings.
+                    # Furthermore, they can only be used in string contexts
+                    #   eg. "$[1]" != "$1".
                     val_str = val_ops.Stringify(val, rd.LeftParenToken())
                     vars.append(val_str)
 
