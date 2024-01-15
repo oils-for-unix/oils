@@ -713,13 +713,15 @@ for count in (-1..4) {
 
 #### Str=>replace(Str, Str), empty new/old strings
 var mystr = 'abca'
-write $[mystr=>replace('abc', '')]           # Empty substitution
-write $[mystr=>replace('', 'new')]           # Empty substring
-write $[mystr=>replace('', 'new', count=1)]  # Empty substring, count != -1
+write $[mystr=>replace('abc', '')]            # Empty substitution
+write $[mystr=>replace('', 'new')]            # Empty substring
+write $[mystr=>replace('', 'new', count=1)]   # Empty substring, count != -1
+write $[mystr=>replace('', 'new', count=10)]  # Empty substring, count too large
 ## STDOUT:
 a
 newanewbnewcnewanew
 newabca
+newanewbnewcnewanew
 ## END
 
 #### Str=>replace(Eggex, Lazy), convert_func

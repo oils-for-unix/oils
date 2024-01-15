@@ -304,7 +304,10 @@ BigStr* BigStr::replace(BigStr* old, BigStr* new_str, int count) {
   // First pass: Calculate number of replacements, and hence new length
   int replace_count = 0;
   if (old_len == 0) {
-    replace_count = count == -1 ? this_len + 1 : count;
+    replace_count = this_len + 1;
+    if (count > 0) {
+      replace_count = min(replace_count, count);
+    }
   } else {
     while (p_this <= last_possible) {
       if (replace_count != count &&  // limit replacements (if count != -1)
