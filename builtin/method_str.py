@@ -156,9 +156,10 @@ class Replace(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
         """
-        s => replace(match, subst_str, count=0)
-        s => replace(eggex, subst_str, count=0)
-        s => replace(eggex, subst_expr, count=0)
+        s => replace(string_val, subst_str, count=-1)
+        s => replace(string_val, subst_expr, count=-1)
+        s => replace(eggex_val, subst_str, count=-1)
+        s => replace(eggex_val, subst_expr, count=-1)
         """
         string = rd.PosStr()
 
