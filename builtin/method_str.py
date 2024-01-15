@@ -18,7 +18,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, List, Optional, Tuple
+from typing import cast, List, Tuple
 
 _ = log
 
