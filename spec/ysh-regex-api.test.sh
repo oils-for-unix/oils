@@ -682,7 +682,7 @@ shopt --set ysh:all
 
 var mystr = '1abc2abc3abc'
 
-for count in (0..4) {
+for count in (-1..4) {
   write $[mystr=>replace('abc', "-", count=count)]
   write $[mystr=>replace('abc', ^"-", count=count)]
   write $[mystr=>replace(/ [a-z]+ /, "-", count=count)]
@@ -693,6 +693,10 @@ for count in (0..4) {
 1-2-3-
 1-2-3-
 1-2-3-
+1abc2abc3abc
+1abc2abc3abc
+1abc2abc3abc
+1abc2abc3abc
 1-2abc3abc
 1-2abc3abc
 1-2abc3abc

@@ -199,8 +199,11 @@ class Replace(vm._Callable):
                                     'expected substitution to be Str or Expr',
                                     rd.LeftParenToken())
 
-        count = rd.NamedInt("count", 0)
+        count = rd.NamedInt("count", -1)
         rd.Done()
+
+        if count == 0:
+            return value.Str(string)
 
         if string_val:
             if subst_str:
@@ -208,10 +211,7 @@ class Replace(vm._Callable):
             if subst_expr:
                 s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
 
-            if count == 0:
-                result = string.replace(string_val.s, s)
-            else:
-                result = string.replace(string_val.s, s, count)
+            result = string.replace(string_val.s, s, count)
 
             return value.Str(result)
 
@@ -268,7 +268,7 @@ class Replace(vm._Callable):
                 pos = end
 
                 replace_count += 1
-                if count != 0 and replace_count == count:
+                if count != -1 and replace_count == count:
                     break
 
             parts.append(string[pos:])
