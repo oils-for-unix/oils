@@ -1,7 +1,7 @@
 #include "cpp/data_lang.h"
 
-#include "data_lang/j8_test_lib.h"
 #include "data_lang/j8_libc.h"  // for comparison
+#include "data_lang/j8_test_lib.h"
 #include "vendor/greatest.h"
 
 TEST PartIsUtf8_test() {

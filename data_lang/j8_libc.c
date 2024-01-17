@@ -1,7 +1,7 @@
 #include "data_lang/j8_libc.h"
 
 #include <stdbool.h>  // false
-#include <stdlib.h>  // realloc
+#include <stdlib.h>   // realloc
 
 #include "data_lang/j8.h"  // EncodeRuneOrByte
 
@@ -18,7 +18,8 @@ void EncodeBString(j8_buf_t in_buf, j8_buf_t* out_buf, int capacity) {
   J8_OUT('\'');
 
   while (true) {
-    // printf("B iter %p < %p and %p < %p < %p\n", in, in_end, out_buf->data, out, out_end);
+    // printf("B iter %p < %p and %p < %p < %p\n", in, in_end, out_buf->data,
+    // out, out_end);
     J8EncodeChunk(&in, in_end, &out, out_end, true);  // Fill as much as we can
     out_buf->len = out - out_buf->data;               // recompute length
 
@@ -65,7 +66,8 @@ void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
 
   while (true) {
     // Fill in as much as we can
-    // printf("J8 iter %p < %p and %p < %p < %p\n", in, in_end, out_buf->data, out, out_end);
+    // printf("J8 iter %p < %p and %p < %p < %p\n", in, in_end, out_buf->data,
+    // out, out_end);
     int invalid_utf8 = J8EncodeChunk(&in, in_end, &out, out_end, false);
     if (invalid_utf8 && j8_fallback) {
       out_buf->len = 0;  // rewind to begining
