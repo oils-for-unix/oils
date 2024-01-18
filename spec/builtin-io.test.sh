@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh zsh ash
 
 
@@ -44,6 +44,12 @@ echo -e "\\"
 -e \
 -e \
 -e \
+## END
+
+#### echo builtin should disallow typed args
+echo (42)
+## STDOUT:
+status=2
 ## END
 
 #### echo -en
