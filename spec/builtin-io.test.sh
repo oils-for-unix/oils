@@ -48,9 +48,8 @@ echo -e "\\"
 
 #### echo builtin should disallow typed args
 echo (42)
-## STDOUT:
-status=2
-## END
+## status: 2
+## OK mksh/zsh status: 1
 
 #### echo -en
 echo -en 'abc\ndef\n'
