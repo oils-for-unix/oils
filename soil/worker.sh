@@ -42,13 +42,35 @@ raw-vm-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info         -
-dump-env         soil/diagnose.sh dump-env        -
-perf-install     benchmarks/perf.sh soil-install  -
+os-info          soil/diagnose.sh os-info             -
+dump-env         soil/diagnose.sh dump-env            -
+perf-install     benchmarks/perf.sh soil-install      -
 wait-for-tarball soil/wait.sh for-cpp-tarball         -
 test-tar         devtools/release-native.sh test-tar  -
 perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
+}
+
+# TODO: Do we need a python2 wedge?
+# Soil depends on python2 as well
+# Hm how come the VM doesn't need python2-dev and readline-dev?
+#
+# Oh there is a large list of pre-installed software
+# https://github.com/actions/runner-images#available-images
+# https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
+# https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md
+
+dev-setup-tasks() {
+  # (task_name, script, action, result_html)
+  cat <<EOF
+os-info          soil/diagnose.sh os-info           -
+dump-env         soil/diagnose.sh dump-env          -
+EOF
+
+# Fails on Ubuntu 20 because python2-dev isn't set up
+# That's in the container
+# build-minimal    build/py.sh minimal                -
+# smoke-test       build/dev-setup-test.sh smoke-test -
 }
 
 pea-tasks() {
@@ -530,6 +552,7 @@ job-main() {
 
 JOB-dummy() { job-main 'dummy'; }
 JOB-raw-vm() { job-main 'raw-vm'; }
+JOB-dev-setup() { job-main 'dev-setup'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
 JOB-interactive() { job-main 'interactive'; }

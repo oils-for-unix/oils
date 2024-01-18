@@ -71,6 +71,25 @@ jobs:
         run: |
           soil/github-actions.sh publish-and-exit raw-vm T
 
+  dev-setup:
+    runs-on: ubuntu-20.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: dev-setup
+        run: |
+          soil/worker.sh JOB-dev-setup
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit dev-setup T
+
   dummy:
     runs-on: ubuntu-20.04
     # container: oilshell/soil-dummy
@@ -352,7 +371,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm']
+    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm', 'dev-setup']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
