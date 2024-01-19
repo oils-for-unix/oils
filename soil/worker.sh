@@ -74,12 +74,22 @@ py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
 wedge-report     build/deps.sh wedge-report         -
 EOF
-
-# Fails on Ubuntu 20 because python2-dev isn't set up
-# That's in the container
-# build-minimal    build/py.sh minimal                -
-# smoke-test       build/dev-setup-test.sh smoke-test -
 }
+
+dev-setup2-tasks() {
+  # (task_name, script, action, result_html)
+  cat <<EOF
+os-info          soil/diagnose.sh os-info           -
+dump-env         soil/diagnose.sh dump-env          -
+wedge-deps       build/deps.sh wedge-deps-fedora    -
+fetch            build/deps.sh fetch                -
+install-wedges   build/deps.sh install-wedges       -
+py-all-and-ninja soil/worker.sh py-all-and-ninja    -
+smoke-test       build/dev-setup-test.sh smoke-test -
+wedge-report     build/deps.sh wedge-report         -
+EOF
+}
+
 
 pea-tasks() {
   ### Print tasks for the 'pea' build
@@ -561,6 +571,7 @@ job-main() {
 JOB-dummy() { job-main 'dummy'; }
 JOB-raw-vm() { job-main 'raw-vm'; }
 JOB-dev-setup() { job-main 'dev-setup'; }
+JOB-dev-setup2() { job-main 'dev-setup2'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
 JOB-interactive() { job-main 'interactive'; }

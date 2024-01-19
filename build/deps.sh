@@ -91,6 +91,9 @@ rm-oils-crap() {
   sudo rm -r -f -v /wedge
 }
 
+# Note: git is an implicit dependency -- that's how we got the repo in the
+# first place!
+
 # python2-dev is no longer available on Debian 12
 # python-dev also seems gone
 #
@@ -105,6 +108,36 @@ rm-oils-crap() {
 readonly -a WEDGE_DEPS_DEBIAN=(
     wget tree g++ gawk libreadline-dev ninja-build cmake
     "${PY3_BUILD_DEPS[@]}"
+)
+
+readonly -a WEDGE_DEPS_FEDORA=(
+
+  # Weird, Fedora doesn't have these by default!
+  hostname
+  tar
+  bzip2
+
+  # https://packages.fedoraproject.org/pkgs/wget/wget/
+  wget
+  # https://packages.fedoraproject.org/pkgs/tree-pkg/tree/
+  tree
+  gawk
+
+  readline-devel
+
+  # https://packages.fedoraproject.org/pkgs/gcc/gcc/
+  gcc gcc-c++
+
+  ninja-build
+  cmake
+
+  # Like PY3_BUILD_DEPS
+  # https://packages.fedoraproject.org/pkgs/zlib/zlib-devel/
+  zlib-devel
+  # https://packages.fedoraproject.org/pkgs/libffi/libffi-devel/
+  libffi-devel
+  # https://packages.fedoraproject.org/pkgs/openssl/openssl-devel/
+  openssl-devel
 )
 
 install-ubuntu-packages() {
@@ -126,10 +159,14 @@ wedge-deps-debian() {
   install-ubuntu-packages -y
 }
 
+wedge-deps-fedora() {
+  sudo dnf install --assumeyes "${WEDGE_DEPS_FEDORA[@]}"
+}
+
 download-to() {
   local dir=$1
   local url=$2
-  wget --no-clobber --directory "$dir" "$url"
+  wget --no-clobber --directory-prefix "$dir" "$url"
 }
 
 maybe-extract() {
