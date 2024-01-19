@@ -443,6 +443,17 @@ container-wedges() {
 
 }
 
+commas() {
+  # Wow I didn't know this :a trick
+  #
+  # OK this is a label and a loop, which makes sense.  You can't do it with
+  # pure regex.
+  #
+  # https://shallowsky.com/blog/linux/cmdline/sed-improve-comma-insertion.html
+  # https://shallowsky.com/blog/linux/cmdline/sed-improve-comma-insertion.html
+  sed ':a;s/\b\([0-9]\+\)\([0-9]\{3\}\)\b/\1,\2/;ta'   
+}
+
 show-wedge-tree() {
   # 4 levels deep shows the package
   if command -v tree > /dev/null; then
@@ -452,6 +463,51 @@ show-wedge-tree() {
 
   # Sizes
   du --si -s /wedge/*/*/* ~/wedge/*/*/*
+  echo
+
+  local tmp=_tmp/wedge-tree.txt
+
+  # Show the biggest files
+  find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp
+  sort -n $tmp | tail -n 20 | commas
+  echo
+
+  # Show the most common file extensions
+  #
+  # I feel like we should be able to get rid of .a files?  That's 92 MB, second
+  # most common
+
+  cat $tmp | python3 -c '
+import os, sys, collections
+
+bytes = collections.Counter()
+files = collections.Counter()
+
+for line in sys.stdin:
+  size, path = line.split(None, 1)
+  path = path.strip()  # remove newline
+  _, ext = os.path.splitext(path)
+  size = int(size)
+
+  bytes[ext] += size
+  files[ext] += 1
+
+#print(bytes)
+#print(files)
+
+n = 20
+
+print("Most common file types")
+for ext, count in files.most_common()[:n]:
+  print("%10d %s" % (count, ext))
+
+print()
+
+print("Total bytes by file type")
+for ext, total_bytes in bytes.most_common()[:n]:
+  print("%10d %s" % (total_bytes, ext))
+' | commas
+
 }
 
 run-task "$@"
