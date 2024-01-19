@@ -459,26 +459,43 @@ commas() {
   sed ':a;s/\b\([0-9]\+\)\([0-9]\{3\}\)\b/\1,\2/;ta'   
 }
 
-show-wedge-tree() {
+wedge-sizes() {
+  # Sizes
+  # printf justifies du output
+
+  local tmp=_tmp/wedge-sizes.txt
+  du -s --bytes /wedge/*/*/* ~/wedge/*/*/* | awk '
+    { print $0  # print the line
+      total_bytes += $1  # accumulate
+    }
+END { print total_bytes " TOTAL" }
+' > $tmp
+  
+  cat $tmp | commas | xargs -n 2 printf '%15s  %s\n'
+  echo
+
+  #du -s --si /wedge/*/*/* ~/wedge/*/*/* 
+  #echo
+}
+
+wedge-report() {
   # 4 levels deep shows the package
   if command -v tree > /dev/null; then
     tree -L 4 /wedge ~/wedge
     echo
   fi
 
-  # Sizes
-  # printf justifies du output
-  du -s --bytes /wedge/*/*/* ~/wedge/*/*/* | commas | xargs -n 2 printf '%15s  %s\n'
-  echo
+  wedge-sizes
 
-  #du -s --si /wedge/*/*/* ~/wedge/*/*/* 
-  #echo
+  local tmp=_tmp/wedge-manifest.txt
 
-  local tmp=_tmp/wedge-tree.txt
-
-  # Show the biggest files
+  echo 'Biggest files'
   find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp
-  sort -n $tmp | tail -n 20 | commas
+
+  set +o errexit  # ignore SIGPIPE
+  sort -n --reverse $tmp | head -n 20 | commas
+  set -o errexit
+
   echo
 
   # Show the most common file extensions
