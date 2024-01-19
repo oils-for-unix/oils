@@ -13,15 +13,3 @@ pass
 pass
 2
 ## END
-
-#### seconds
-secs=$SECONDS
-if [[ $secs -ge 0 && -n "$secs" ]]; then
-    echo pass
-else
-    echo fail
-fi
-## status: 0
-## STDOUT:
-pass
-## END

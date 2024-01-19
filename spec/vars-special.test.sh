@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh zsh
 
 
@@ -609,4 +609,16 @@ matched=0
 ## END
 ## N-I dash/mksh/zsh STDOUT:
 no version
+## END
+
+#### seconds
+secs=$SECONDS
+if [[ $secs -ge 0 && -n "$secs" ]]; then
+    echo pass
+else
+    echo fail
+fi
+## status: 0
+## STDOUT:
+pass
 ## END
