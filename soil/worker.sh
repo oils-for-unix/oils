@@ -72,6 +72,7 @@ fetch            build/deps.sh fetch                -
 install-wedges   build/deps.sh install-wedges       -
 py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
+show-wedge-tree  build/deps.sh show-wedge-tree      -
 EOF
 
 # Fails on Ubuntu 20 because python2-dev isn't set up

@@ -91,27 +91,29 @@ rm-oils-crap() {
   sudo rm -r -f -v /wedge
 }
 
+# python2-dev is no longer available on Debian 12
+# python-dev also seems gone
+#
+# wget: for fetching wedges (not on Debian by default!)
+# tree: tiny package that's useful for showing what we installed
+# g++: essential
+# libreadline-dev: needed for the build/prepare.sh Python build.
+# gawk: used by spec-runner.sh for the special match() function.
+# cmake: for cmark
+# PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
+# as well
+readonly -a WEDGE_DEPS_DEBIAN=(
+    wget tree g++ gawk libreadline-dev ninja-build cmake
+    "${PY3_BUILD_DEPS[@]}"
+)
 
 install-ubuntu-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
-  # python2-dev is no longer available on Debian 12
-  # python-dev also seems gone
-  #
-  # wget: for fetching wedges (not on Debian by default!)
-  # g++: essential
-  # libreadline-dev: needed for the build/prepare.sh Python build.
-  # gawk: used by spec-runner.sh for the special match() function.
-  # cmake: for cmark
-  # PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
-  # as well
-
   set -x  # show what needs sudo
 
   # pass -y for say gitpod
-  sudo apt "$@" install \
-    wget g++ gawk libreadline-dev ninja-build cmake \
-    "${PY3_BUILD_DEPS[@]}"
+  sudo apt "$@" install "${WEDGE_DEPS_DEBIAN[@]}"
   set +x
 
   # maybe pass -y through
@@ -439,6 +441,17 @@ container-wedges() {
     deps/wedge.sh build deps/source.medo/R-libs/
   fi
 
+}
+
+show-wedge-tree() {
+  # 4 levels deep shows the package
+  if command -v tree > /dev/null; then
+    tree -S -L 4 /wedge ~/wedge
+    echo
+  fi
+
+  # Sizes
+  du --si -s /wedge/*/*/* ~/wedge/*/*/*
 }
 
 run-task "$@"
