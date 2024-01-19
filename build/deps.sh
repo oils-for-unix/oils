@@ -446,7 +446,7 @@ container-wedges() {
 show-wedge-tree() {
   # 4 levels deep shows the package
   if command -v tree > /dev/null; then
-    tree -S -L 4 /wedge ~/wedge
+    tree -L 4 /wedge ~/wedge
     echo
   fi
 
