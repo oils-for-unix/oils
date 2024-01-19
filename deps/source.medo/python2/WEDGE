@@ -42,6 +42,16 @@ wedge-install() {
   # TODO: minimize the size?  There are some duplicate files
   time make install
 
+  # Size optimization, remove these 2 files
+  # /wedge/oils-for-unix.org/pkg/python2/2.7.18/lib/libpython2.7.a
+  # /wedge/oils-for-unix.org/pkg/python2/2.7.18/lib/python2.7/config/libpython2.7.a
+  #
+  # This is like --without-static-libpython in Python 3 
+  #   https://bugs.python.org/issue43103
+  # 
+  # but Python 2 doesn't support it
+  find $install_dir -name '*.a' | xargs rm -v -f
+
   popd
 }
 

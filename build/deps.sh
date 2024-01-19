@@ -172,11 +172,16 @@ clone-mypy() {
     return
   fi
 
-  # TODO: verify commit checksum
-
   # v$VERSION is a tag, not a branch
-  git clone --recursive --depth=50 --branch v$version \
+
+  # size optimization: --depth=1 --shallow-submodules
+  # https://git-scm.com/docs/git-clone
+
+  git clone --recursive --branch v$version \
+    --depth=1 --shallow-submodules \
     $MYPY_GIT_URL $dest
+
+  # TODO: verify commit checksum
 }
 
 fetch() {
