@@ -53,7 +53,7 @@ layer-wedge-builder() {
     g++  # re2c is C++
     make  # to build re2c
 
-    # for cmark and yajl
+    # for cmark
     cmake
 
     # cmake -G Ninja can be used
@@ -346,7 +346,7 @@ ovm-tarball() {
     gcc
     g++
 
-    # for cmark and yajl
+    # for cmark
     cmake
     # to build Python-2.7.13 (could be a wedge)
     make

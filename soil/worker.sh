@@ -51,20 +51,27 @@ perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
 }
 
-# TODO: Do we need a python2 wedge?
-# Soil depends on python2 as well
-# Hm how come the VM doesn't need python2-dev and readline-dev?
-#
 # Oh there is a large list of pre-installed software
 # https://github.com/actions/runner-images#available-images
 # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
 # https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md
+#
+# 1. System deps for building wedges - ninja, cmake, libreadline-dev, etc.
+# 2. fetch wedges - re2c, cmark, python2, python3, MyPy, pyflakes
+#    - Python 3.10 desired for "pea"
+# 3. build them
+# 4. build Oils with them
 
 dev-setup-tasks() {
   # (task_name, script, action, result_html)
   cat <<EOF
 os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
+wedge-deps       build/deps.sh wedge-deps-debian    -
+fetch            build/deps.sh fetch                -
+install-wedges   build/deps.sh install-wedges       -
+py-all-and-ninja soil/worker.sh py-all-and-ninja    -
+smoke-test       build/dev-setup-test.sh smoke-test -
 EOF
 
 # Fails on Ubuntu 20 because python2-dev isn't set up

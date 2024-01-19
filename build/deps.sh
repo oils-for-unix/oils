@@ -98,20 +98,30 @@ install-ubuntu-packages() {
   # python2-dev is no longer available on Debian 12
   # python-dev also seems gone
   #
+  # wget: for fetching wedges (not on Debian by default!)
   # g++: essential
   # libreadline-dev: needed for the build/prepare.sh Python build.
   # gawk: used by spec-runner.sh for the special match() function.
-  # cmake: for build/py.sh yajl-release (TODO: remove eventually)
+  # cmake: for cmark
+  # PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
+  # as well
 
   set -x  # show what needs sudo
 
   # pass -y for say gitpod
   sudo apt "$@" install \
-    g++ gawk libreadline-dev ninja-build cmake \
+    wget g++ gawk libreadline-dev ninja-build cmake \
     "${PY3_BUILD_DEPS[@]}"
   set +x
 
-  test/spec-bin.sh install-shells-with-apt
+  # maybe pass -y through
+  test/spec-bin.sh install-shells-with-apt "$@"
+}
+
+wedge-deps-debian() {
+  # Install packages without prompt
+  # Debian and Ubuntu packages are the same
+  install-ubuntu-packages -y
 }
 
 download-to() {
