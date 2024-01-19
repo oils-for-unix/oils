@@ -37,12 +37,9 @@ wedge-install() {
 
   pushd $build_dir
 
-  # It makes a symlink called python3
+  # It makes a symlink called python2
   #
-  # NOTE: There's no option to strip the binary?
-  # The whole package is 265 MB, but 200 MB of it is the Python stdlib.
-  # Seemingly lots of __pycache__ dirs
-
+  # TODO: minimize the size?  There are some duplicate files
   time make install
 
   popd

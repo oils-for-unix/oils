@@ -462,8 +462,12 @@ show-wedge-tree() {
   fi
 
   # Sizes
-  du --si -s /wedge/*/*/* ~/wedge/*/*/*
+  # printf justifies du output
+  du -s --bytes /wedge/*/*/* ~/wedge/*/*/* | commas | xargs -n 2 printf '%15s  %s\n'
   echo
+
+  #du -s --si /wedge/*/*/* ~/wedge/*/*/* 
+  #echo
 
   local tmp=_tmp/wedge-tree.txt
 
@@ -476,6 +480,9 @@ show-wedge-tree() {
   #
   # I feel like we should be able to get rid of .a files?  That's 92 MB, second
   # most common
+  #
+  # There are also duplicate .a files for Python -- should look at how distros
+  # get rid of those
 
   cat $tmp | python3 -c '
 import os, sys, collections
@@ -499,13 +506,13 @@ n = 20
 
 print("Most common file types")
 for ext, count in files.most_common()[:n]:
-  print("%10d %s" % (count, ext))
+  print("%10d  %s" % (count, ext))
 
 print()
 
 print("Total bytes by file type")
 for ext, total_bytes in bytes.most_common()[:n]:
-  print("%10d %s" % (total_bytes, ext))
+  print("%10d  %s" % (total_bytes, ext))
 ' | commas
 
 }
