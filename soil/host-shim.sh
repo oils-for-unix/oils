@@ -347,6 +347,7 @@ local-test-uke() {
   local job_name=${1:-dummy}
   local job2=${2:-}
   local debug_shell=${3:-}  # add 'bash' to change it to a debug shell
+  local docker=${4:-docker}
 
   local branch=$(git rev-parse --abbrev-ref HEAD)
 
@@ -356,17 +357,16 @@ local-test-uke() {
   local this_repo=$PWD
   git clone $this_repo $fresh_clone
   cd $fresh_clone
-  git submodule update --init --recursive
   git checkout $branch
 
   sudo $0 mount-perms $fresh_clone
-  sudo $0 run-job-uke docker $fresh_clone $job_name "$debug_shell"
+  sudo $0 run-job-uke "$docker" $fresh_clone $job_name "$debug_shell"
 
   # Run another job in the same container, to test interactions
 
   if test -n "$job2"; then
     $0 job-reset
-    sudo $0 run-job-uke docker $fresh_clone $job2
+    sudo $0 run-job-uke "$docker" $fresh_clone $job2
   fi
 }
 

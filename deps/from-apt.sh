@@ -92,6 +92,8 @@ layer-python-symlink() {
 layer-for-soil() {
   # git: for checking out code
   # python2: for various tools
+
+  # TODO: change python2 to python3
   apt-install git python2
 }
 
