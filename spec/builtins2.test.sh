@@ -366,6 +366,35 @@ status=127
 status=127
 ## END
 
+#### command -p (override existing program)
+# Tests whether command -p overrides the path
+# tr chosen because we need a simple non-builtin
+mkdir -p $TMP/bin
+echo "echo wrong" > $TMP/bin/tr
+chmod +x $TMP/bin/tr
+PATH="$TMP/bin:$PATH"
+echo aaa | tr "a" "b"
+echo aaa | command -p tr "a" "b"
+rm $TMP/bin/tr
+## STDOUT:
+wrong
+bbb
+## END
+
+#### command -p (hide tool in custom path)
+mkdir -p $TMP/bin
+echo "echo hello" > $TMP/bin/hello
+chmod +x $TMP/bin/hello
+export PATH=$TMP/bin
+command -p hello
+## status: 127 
+
+#### command -p (find hidden tool in default path)
+export PATH=''
+command -p ls
+## status: 0
+
+
 #### $(command type ls)
 type() { echo FUNCTION; }
 type
