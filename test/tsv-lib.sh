@@ -18,6 +18,12 @@ time-tsv() {
   $REPO_ROOT/benchmarks/time_.py --tsv "$@"
 }
 
+time-tsv3() {
+  ### Run with python3, our CI VMs don't have python2
+
+  python3 $REPO_ROOT/benchmarks/time_.py --tsv "$@"
+}
+
 tsv2html() {
   ### Convert TSV to an HTML table
   $REPO_ROOT/web/table/csv2html.py --tsv "$@"

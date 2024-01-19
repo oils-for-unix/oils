@@ -104,6 +104,7 @@ run-job() {
   # mount permissions and run the job in one step.
 
   local job_name=$1
+  local docker=${2:-docker}
 
   # I think it starts in the repo
   # cd $REPO_ROOT
@@ -112,7 +113,7 @@ run-job() {
   echo
   echo
 
-  soil/host-shim.sh run-job-uke docker $REPO_ROOT $job_name
+  soil/host-shim.sh run-job-uke $docker $REPO_ROOT $job_name
 }
 
 publish-and-exit() {

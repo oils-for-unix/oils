@@ -596,7 +596,8 @@ JOB-wild() { job-main 'wild'; }
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 
 list-jobs() {
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge'
+  # dev-setup2 for Fedora, disable
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup2'
 }
 
 "$@"

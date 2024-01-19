@@ -35,8 +35,12 @@ So we use a tiny C program time-helper.c to do it, and not /usr/bin/time.
 from __future__ import print_function
 
 import csv
-#import hashlib  # python 3
-import md5
+try:
+    import hashlib  # PY3
+except ImportError:
+    hashlib = None
+    import md5
+
 import optparse
 import os
 import sys
@@ -168,8 +172,10 @@ def main(argv):
 
   elapsed = time.time() - start_time
   if opts.stdout:
-    #m = hashlib.md5()  # python 3
-    m = md5.new()
+    if hashlib:
+      m = hashlib.md5()  # PY3
+    else:
+      m = md5.new()  # PY2
     with open(opts.stdout, 'rb') as f:
       while True:
         chunk = f.read(4096)

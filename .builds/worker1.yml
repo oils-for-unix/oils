@@ -3,6 +3,7 @@ image: debian/bullseye
 packages:
   # for running soil on the host
   - python2
+  #- python3
   - time
   - zip
   # podman and its missing dependencies

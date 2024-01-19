@@ -270,7 +270,6 @@ fetch() {
 
   if command -v tree > /dev/null; then
     tree -L 2 $DEPS_SOURCE_DIR
-    tree -L 2 $USER_WEDGE_DIR
   fi
 }
 
@@ -325,8 +324,8 @@ install-py3-libs-in-venv() {
 
   source $venv_dir/bin/activate  # enter virtualenv
 
-  # 2023-07 bug fix: have to install MyPy deps FIRST, THEN yapf.  Otherwise
-  # we get an error from pip:
+  # 2023-07 note: we're installing yapf separately, in a different venv,
+  # because it conflicts!
   # "ERROR: pip's dependency resolver does not currently take into account all
   # the packages that are installed."
 
@@ -336,7 +335,12 @@ install-py3-libs-in-venv() {
   # pexpect: for spec/stateful/*.py
   python3 -m pip install pexpect
 
-  # TODO:
+  # TODO: Need this to work around typed_ast bug:
+  #   https://github.com/python/typed_ast/issues/169
+  #
+  # Apply this patch
+  # https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
+
   # - Do something like this 'pip download' in build/deps.sh fetch
   # - Then create a WEDGE which installs it
   #   - However note that this is NOT source code; there is binary code, e.g.
@@ -428,11 +432,19 @@ install-wedges() {
     local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
     mkdir -p $dest_dir
 
+    # Note: pack files in .git/modules/typeshed/objects/pack are read-only
+    # this can fail
     cp --verbose --recursive --no-target-directory \
       $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
   fi
 
   install-py3-libs
+
+  if command -v tree > /dev/null; then
+    tree -L 2 $USER_WEDGE_DIR
+    echo
+    tree -L 2 /wedge
+  fi
 }
 
 # Host wedges end up in ~/wedge
