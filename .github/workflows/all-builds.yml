@@ -91,7 +91,7 @@ jobs:
           soil/github-actions.sh publish-and-exit dev-setup T
 
   dummy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     # container: oilshell/soil-dummy
     env:
       REPO_ROOT: ${{ github.workspace }}

@@ -87,6 +87,7 @@ publish-html() {
 
   load-secret-key
 
+  set -x
   # $1 can be the job name
   publish-html-assuming-ssh-key "$@"
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 """
-csv2html.py
-
 Usage:
   csv2html.py foo.csv
+
+Note: it's run with python2 AND python3
 
 Attempts to read foo_schema.csv.  If not it assumes everything is a string.
 
@@ -36,7 +36,10 @@ TODO:
   visualization.
 """
 
-import cgi
+try:
+  import html
+except ImportError:
+  import cgi as html
 import csv
 import optparse
 import os
@@ -116,7 +119,7 @@ class Schema:
 
     n = len(col_names)
     self.col_has_href = [False] * n
-    for i in xrange(n-1):
+    for i in range(n-1):
       this_name, next_name= col_names[i], col_names[i+1]
       if this_name + '_HREF' == next_name:
         self.col_has_href[i] = True
@@ -227,13 +230,13 @@ def PrintRow(row, schema, css_class_pattern):
     else:
       print('      <td>', end=' ')
 
-    s = cgi.escape(cell_str)
+    s = html.escape(cell_str)
     # If it's an _HREF, advance to the next column, and mutate 's'.
     if schema.ColumnIndexHasHref(i):
       i += 1
       href = row[i]
       if href:
-        s = '<a href="%s">%s</a>' % (cgi.escape(href), cgi.escape(cell_str))
+        s = '<a href="%s">%s</a>' % (html.escape(href), html.escape(cell_str))
 
     print(s, end=' ')
     print('</td>')
@@ -273,14 +276,14 @@ def PrintTable(css_id, schema, col_names, rows, opts):
     if col.endswith('_HREF'):
       continue
 
-    heading_str = cgi.escape(col.replace('_', ' '))
+    heading_str = html.escape(col.replace('_', ' '))
     if schema.ColumnIndexIsNumeric(i):
       print('    <td class="num">%s</td>' % heading_str)
     else:
       print('    <td>%s</td>' % heading_str)
   print('    </tr>')
 
-  for i in xrange(opts.thead_offset):
+  for i in range(opts.thead_offset):
     PrintRow(rows[i], schema, opts.css_class_pattern)
 
   print('  </thead>')

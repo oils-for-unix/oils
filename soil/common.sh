@@ -25,7 +25,8 @@ readonly SOIL_HOST='travis-ci.oilshell.org'
 readonly SOIL_USER_HOST="$SOIL_USER@$SOIL_HOST"
 
 html-head() {
-  PYTHONPATH=. doctools/html_head.py "$@"
+  # TODO: Shebang line should chang ecahnge to
+  PYTHONPATH=. python3 doctools/html_head.py "$@"
 }
 
 # NOTE: soil-html-head and table-sort-html-head are distinct, because they

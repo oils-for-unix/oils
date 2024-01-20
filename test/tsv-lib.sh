@@ -21,12 +21,21 @@ time-tsv() {
 time-tsv3() {
   ### Run with python3, our CI VMs don't have python2
 
-  python3 $REPO_ROOT/benchmarks/time_.py --tsv "$@"
+  if command -v python3; then
+    python3 $REPO_ROOT/benchmarks/time_.py --tsv "$@"
+  else
+    $REPO_ROOT/benchmarks/time_.py --tsv "$@"
+  fi
 }
 
 tsv2html() {
   ### Convert TSV to an HTML table
   $REPO_ROOT/web/table/csv2html.py --tsv "$@"
+}
+
+tsv2html3() {
+  ### Convert TSV to an HTML table
+  python3 $REPO_ROOT/web/table/csv2html.py --tsv "$@"
 }
 
 tsv-row() {

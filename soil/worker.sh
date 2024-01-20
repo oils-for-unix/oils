@@ -387,8 +387,8 @@ run-tasks() {
   if command -v cc > /dev/null; then
     build/py.sh time-helper
   else
-    echo 'test time-tsv'
-    time-tsv -o /tmp/echo.tsv --append -- echo hi
+    echo 'test time-tsv3'
+    time-tsv3 -o /tmp/echo.tsv --append -- echo hi
 
     echo '/tmp/echo.tsv:'
     cat /tmp/echo.tsv
@@ -429,7 +429,7 @@ run-tasks() {
     esac
 
     local -a argv=(
-      time-tsv -o $tsv --append
+      time-tsv3 -o $tsv --append
         --field $task_name --field $script --field $action
         --field $result_html -- 
         "${timeout[@]}" "$script" "$action"
