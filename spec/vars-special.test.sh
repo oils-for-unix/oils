@@ -612,13 +612,11 @@ no version
 ## END
 
 #### seconds
+case $SH in (dash|mksh) exit 0;; esac # dash/mksh does not support $SECONDS
 secs=$SECONDS
 if [[ $secs -ge 0 && -n "$secs" ]]; then
-    echo pass
+    exit 0
 else
-    echo fail
+    exit 1
 fi
 ## status: 0
-## STDOUT:
-pass
-## END
