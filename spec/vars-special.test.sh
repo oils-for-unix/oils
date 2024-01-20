@@ -612,7 +612,7 @@ no version
 ## END
 
 #### seconds
-case $SH in (dash|mksh) exit 0;; esac # dash/mksh does not support $SECONDS
+case $SH in (dash) exit 0;; esac # dash does not support $SECONDS
 secs=$SECONDS
 if [[ $secs -ge 0 && -n "$secs" ]]; then
     exit 0
