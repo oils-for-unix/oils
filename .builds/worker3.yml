@@ -2,13 +2,12 @@
 # Rather, it builds a Python 2 wedge.
 # Doesn't work with Soil right now!
 
-#image: debian/bookworm
-image: debian/bullseye
+image: debian/bookworm
+  #image: debian/bullseye
 
 packages:
   # for running soil on the host
-  #- python3
-  - python2
+  - python3
   - time
   - zip
   # podman and its missing dependencies

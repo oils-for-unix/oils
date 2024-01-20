@@ -1,9 +1,10 @@
+image: debian/bookworm
+#image: debian/bullseye
 
-# Debian bullseye has podman
-image: debian/bullseye
 packages:
   # for running soil on the host
-  - python2
+  - python3
+  #- python2
   - time
   - zip
   # podman and its missing dependencies

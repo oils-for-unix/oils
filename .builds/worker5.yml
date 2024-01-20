@@ -5,7 +5,8 @@ image: fedora/40
 packages:
   # Same package names as Ubuntu
   # https://packages.fedoraproject.org/pkgs/zip/zip/
-  - python2.7
+  #- python2.7
+  - python3
   - time
   - zip
 

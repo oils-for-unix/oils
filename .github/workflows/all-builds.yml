@@ -72,7 +72,7 @@ jobs:
           soil/github-actions.sh publish-and-exit raw-vm T
 
   dev-setup:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -113,7 +113,7 @@ jobs:
 
   dev-minimal:
     # https://github.com/actions/virtual-environments
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -132,7 +132,7 @@ jobs:
           soil/github-actions.sh publish-and-exit dev-minimal T
 
   interactive:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -151,7 +151,7 @@ jobs:
           soil/github-actions.sh publish-and-exit interactive T
 
   pea:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -170,7 +170,7 @@ jobs:
           soil/github-actions.sh publish-and-exit pea T
 
   other-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -189,7 +189,7 @@ jobs:
           soil/github-actions.sh publish-and-exit other-tests T
 
   ovm-tarball:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -208,7 +208,7 @@ jobs:
           soil/github-actions.sh publish-and-exit ovm-tarball T
 
   app-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:

@@ -12,6 +12,9 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 smoke-test() {
   ### For the fast possible development experience
 
+  # To put python2 WEDGE in $PATH
+  source build/dev-shell.sh
+
   bin/osh -c 'echo HI osh python $OILS_VERSION'
   bin/ysh -c 'echo HI ysh python $OILS_VERSION'
 
