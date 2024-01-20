@@ -53,7 +53,7 @@ layer-wedge-builder() {
     g++  # re2c is C++
     make  # to build re2c
 
-    # for cmark and yajl
+    # for cmark
     cmake
 
     # cmake -G Ninja can be used
@@ -92,6 +92,8 @@ layer-python-symlink() {
 layer-for-soil() {
   # git: for checking out code
   # python2: for various tools
+
+  # TODO: change python2 to python3
   apt-install git python2
 }
 
@@ -346,7 +348,7 @@ ovm-tarball() {
     gcc
     g++
 
-    # for cmark and yajl
+    # for cmark
     cmake
     # to build Python-2.7.13 (could be a wedge)
     make

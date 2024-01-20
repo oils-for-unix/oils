@@ -48,7 +48,9 @@ install-shells-with-apt() {
   ### Non-hermetic shells; test/spec-bin.sh replaces this for most purposes
 
   set -x  # show what needs sudo
-  sudo apt install busybox-static mksh zsh
+
+  # pass -y to install in an automated way
+  sudo apt "$@" install busybox-static mksh zsh
   set +x
   link-busybox-ash
 }

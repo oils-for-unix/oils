@@ -160,7 +160,7 @@ Extend an existing list with the elements of another list.
     var foods = :|cheese chocolate|
     var fruits = :|apple banana|
     call foods->extend(fruits)
-    echo @foods  # => cheese chocolate apple banana pear
+    echo @foods  # => cheese chocolate apple banana
 
 ### indexOf()
 

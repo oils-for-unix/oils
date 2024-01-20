@@ -87,6 +87,7 @@ publish-html() {
 
   load-secret-key
 
+  set -x
   # $1 can be the job name
   publish-html-assuming-ssh-key "$@"
 }
@@ -97,6 +98,12 @@ publish-cpp-tarball() {
   soil/web-worker.sh publish-cpp-tarball github-
 }
 
+# Don't need this because Github Actions has it pre-installed.
+install-podman() {
+  sudo apt-get install -y podman
+  podman --version
+}
+
 run-job() {
   ### Called by YAML config
 
@@ -104,6 +111,7 @@ run-job() {
   # mount permissions and run the job in one step.
 
   local job_name=$1
+  local docker=${2:-docker}
 
   # I think it starts in the repo
   # cd $REPO_ROOT
@@ -112,7 +120,7 @@ run-job() {
   echo
   echo
 
-  soil/host-shim.sh run-job-uke docker $REPO_ROOT $job_name
+  soil/host-shim.sh run-job-uke $docker $REPO_ROOT $job_name
 }
 
 publish-and-exit() {

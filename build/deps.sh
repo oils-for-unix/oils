@@ -91,33 +91,82 @@ rm-oils-crap() {
   sudo rm -r -f -v /wedge
 }
 
+# Note: git is an implicit dependency -- that's how we got the repo in the
+# first place!
+
+# python2-dev is no longer available on Debian 12
+# python-dev also seems gone
+#
+# wget: for fetching wedges (not on Debian by default!)
+# tree: tiny package that's useful for showing what we installed
+# g++: essential
+# libreadline-dev: needed for the build/prepare.sh Python build.
+# gawk: used by spec-runner.sh for the special match() function.
+# cmake: for cmark
+# PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
+# as well
+readonly -a WEDGE_DEPS_DEBIAN=(
+    wget tree g++ gawk libreadline-dev ninja-build cmake
+    "${PY3_BUILD_DEPS[@]}"
+)
+
+readonly -a WEDGE_DEPS_FEDORA=(
+
+  # Weird, Fedora doesn't have these by default!
+  hostname
+  tar
+  bzip2
+
+  # https://packages.fedoraproject.org/pkgs/wget/wget/
+  wget
+  # https://packages.fedoraproject.org/pkgs/tree-pkg/tree/
+  tree
+  gawk
+
+  readline-devel
+
+  # https://packages.fedoraproject.org/pkgs/gcc/gcc/
+  gcc gcc-c++
+
+  ninja-build
+  cmake
+
+  # Like PY3_BUILD_DEPS
+  # https://packages.fedoraproject.org/pkgs/zlib/zlib-devel/
+  zlib-devel
+  # https://packages.fedoraproject.org/pkgs/libffi/libffi-devel/
+  libffi-devel
+  # https://packages.fedoraproject.org/pkgs/openssl/openssl-devel/
+  openssl-devel
+)
 
 install-ubuntu-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
-  # python2-dev is no longer available on Debian 12
-  # python-dev also seems gone
-  #
-  # g++: essential
-  # libreadline-dev: needed for the build/prepare.sh Python build.
-  # gawk: used by spec-runner.sh for the special match() function.
-  # cmake: for build/py.sh yajl-release (TODO: remove eventually)
-
   set -x  # show what needs sudo
 
   # pass -y for say gitpod
-  sudo apt "$@" install \
-    g++ gawk libreadline-dev ninja-build cmake \
-    "${PY3_BUILD_DEPS[@]}"
+  sudo apt "$@" install "${WEDGE_DEPS_DEBIAN[@]}"
   set +x
 
-  test/spec-bin.sh install-shells-with-apt
+  # maybe pass -y through
+  test/spec-bin.sh install-shells-with-apt "$@"
+}
+
+wedge-deps-debian() {
+  # Install packages without prompt
+  # Debian and Ubuntu packages are the same
+  install-ubuntu-packages -y
+}
+
+wedge-deps-fedora() {
+  sudo dnf install --assumeyes "${WEDGE_DEPS_FEDORA[@]}"
 }
 
 download-to() {
   local dir=$1
   local url=$2
-  wget --no-clobber --directory "$dir" "$url"
+  wget --no-clobber --directory-prefix "$dir" "$url"
 }
 
 maybe-extract() {
@@ -160,11 +209,16 @@ clone-mypy() {
     return
   fi
 
-  # TODO: verify commit checksum
-
   # v$VERSION is a tag, not a branch
-  git clone --recursive --depth=50 --branch v$version \
+
+  # size optimization: --depth=1 --shallow-submodules
+  # https://git-scm.com/docs/git-clone
+
+  git clone --recursive --branch v$version \
+    --depth=1 --shallow-submodules \
     $MYPY_GIT_URL $dest
+
+  # TODO: verify commit checksum
 }
 
 fetch() {
@@ -216,7 +270,6 @@ fetch() {
 
   if command -v tree > /dev/null; then
     tree -L 2 $DEPS_SOURCE_DIR
-    tree -L 2 $USER_WEDGE_DIR
   fi
 }
 
@@ -271,8 +324,8 @@ install-py3-libs-in-venv() {
 
   source $venv_dir/bin/activate  # enter virtualenv
 
-  # 2023-07 bug fix: have to install MyPy deps FIRST, THEN yapf.  Otherwise
-  # we get an error from pip:
+  # 2023-07 note: we're installing yapf separately, in a different venv,
+  # because it conflicts!
   # "ERROR: pip's dependency resolver does not currently take into account all
   # the packages that are installed."
 
@@ -282,7 +335,12 @@ install-py3-libs-in-venv() {
   # pexpect: for spec/stateful/*.py
   python3 -m pip install pexpect
 
-  # TODO:
+  # TODO: Need this to work around typed_ast bug:
+  #   https://github.com/python/typed_ast/issues/169
+  #
+  # Apply this patch
+  # https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
+
   # - Do something like this 'pip download' in build/deps.sh fetch
   # - Then create a WEDGE which installs it
   #   - However note that this is NOT source code; there is binary code, e.g.
@@ -374,11 +432,19 @@ install-wedges() {
     local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
     mkdir -p $dest_dir
 
+    # Note: pack files in .git/modules/typeshed/objects/pack are read-only
+    # this can fail
     cp --verbose --recursive --no-target-directory \
       $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
   fi
 
   install-py3-libs
+
+  if command -v tree > /dev/null; then
+    tree -L 2 $USER_WEDGE_DIR
+    echo
+    tree -L 2 /wedge
+  fi
 }
 
 # Host wedges end up in ~/wedge
@@ -428,6 +494,97 @@ container-wedges() {
     # For soil-benchmarks/ images
     deps/wedge.sh build deps/source.medo/R-libs/
   fi
+
+}
+
+commas() {
+  # Wow I didn't know this :a trick
+  #
+  # OK this is a label and a loop, which makes sense.  You can't do it with
+  # pure regex.
+  #
+  # https://shallowsky.com/blog/linux/cmdline/sed-improve-comma-insertion.html
+  # https://shallowsky.com/blog/linux/cmdline/sed-improve-comma-insertion.html
+  sed ':a;s/\b\([0-9]\+\)\([0-9]\{3\}\)\b/\1,\2/;ta'   
+}
+
+wedge-sizes() {
+  # Sizes
+  # printf justifies du output
+
+  local tmp=_tmp/wedge-sizes.txt
+  du -s --bytes /wedge/*/*/* ~/wedge/*/*/* | awk '
+    { print $0  # print the line
+      total_bytes += $1  # accumulate
+    }
+END { print total_bytes " TOTAL" }
+' > $tmp
+  
+  cat $tmp | commas | xargs -n 2 printf '%15s  %s\n'
+  echo
+
+  #du -s --si /wedge/*/*/* ~/wedge/*/*/* 
+  #echo
+}
+
+wedge-report() {
+  # 4 levels deep shows the package
+  if command -v tree > /dev/null; then
+    tree -L 4 /wedge ~/wedge
+    echo
+  fi
+
+  wedge-sizes
+
+  local tmp=_tmp/wedge-manifest.txt
+
+  echo 'Biggest files'
+  find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp
+
+  set +o errexit  # ignore SIGPIPE
+  sort -n --reverse $tmp | head -n 20 | commas
+  set -o errexit
+
+  echo
+
+  # Show the most common file extensions
+  #
+  # I feel like we should be able to get rid of .a files?  That's 92 MB, second
+  # most common
+  #
+  # There are also duplicate .a files for Python -- should look at how distros
+  # get rid of those
+
+  cat $tmp | python3 -c '
+import os, sys, collections
+
+bytes = collections.Counter()
+files = collections.Counter()
+
+for line in sys.stdin:
+  size, path = line.split(None, 1)
+  path = path.strip()  # remove newline
+  _, ext = os.path.splitext(path)
+  size = int(size)
+
+  bytes[ext] += size
+  files[ext] += 1
+
+#print(bytes)
+#print(files)
+
+n = 20
+
+print("Most common file types")
+for ext, count in files.most_common()[:n]:
+  print("%10d  %s" % (count, ext))
+
+print()
+
+print("Total bytes by file type")
+for ext, total_bytes in bytes.most_common()[:n]:
+  print("%10d  %s" % (total_bytes, ext))
+' | commas
 
 }
 

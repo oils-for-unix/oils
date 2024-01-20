@@ -185,7 +185,7 @@ format-image-stats() {
     <h1>Image Layers</h1>
 EOF
 
-  tsv2html $soil_dir/image-layers.tsv
+  tsv2html3 $soil_dir/image-layers.tsv
 
   # First column is number of bytes; ignore header
   local total_bytes=$(awk '
@@ -239,6 +239,10 @@ make-job-wwz() {
     web/{base,src-tree,spec-tests,spec-cpp,line-counts,benchmarks,wild}.css web/ajax.js \
     web/table/table-sort.{css,js} \
     _release/oil*.tar _release/VERSION/
+}
+
+test-collect-json() {
+  soil/collect_json.py _tmp/soil PATH
 }
 
 deploy-job-results() {

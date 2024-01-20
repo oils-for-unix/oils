@@ -1,8 +1,13 @@
-# Debian bullseye has podman
-image: debian/bullseye
+# Debian Bookworm asserts that the dev setup doesn't depend on Python 2!
+# Rather, it builds a Python 2 wedge.
+# Doesn't work with Soil right now!
+
+image: debian/bookworm
+  #image: debian/bullseye
+
 packages:
   # for running soil on the host
-  - python2
+  - python3
   - time
   - zip
   # podman and its missing dependencies
@@ -17,18 +22,26 @@ secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
 tasks:
-  - mount-perms: |
+  - dev-setup: |
       cd oil
-      soil/host-shim.sh mount-perms $PWD
+      soil/worker.sh JOB-dev-setup
 
-  - dev-minimal: |
+  - publish-dev-setup: |
       cd oil
-      soil/host-shim.sh run-job-uke podman $PWD dev-minimal
+      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup
 
-  # Relies on SSH key, so do it outside the container
-  - publish-dev-minimal: |
-      cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key dev-minimal
+  #- mount-perms: |
+  #    cd oil
+  #    soil/host-shim.sh mount-perms $PWD
+
+  #- dev-minimal: |
+  #    cd oil
+  #    soil/host-shim.sh run-job-uke podman $PWD dev-minimal
+
+  ## Relies on SSH key, so do it outside the container
+  #- publish-dev-minimal: |
+  #    cd oil
+  #    soil/sourcehut.sh publish-html-assuming-ssh-key dev-minimal
 
   # Outside container
   #- job-reset: |
@@ -43,7 +56,7 @@ tasks:
   #    cd oil
   #    soil/sourcehut.sh publish-html-assuming-ssh-key
 
-  - did-all-succeed: |
-      cd oil
-      soil/host-shim.sh did-all-succeed dev-minimal
-      #soil/host-shim.sh did-all-succeed dev-minimal other-tests
+  #  - did-all-succeed: |
+  #      cd oil
+  #      soil/host-shim.sh did-all-succeed dev-minimal
+  #      #soil/host-shim.sh did-all-succeed dev-minimal other-tests
