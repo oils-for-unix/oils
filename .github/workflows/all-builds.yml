@@ -78,11 +78,7 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
 
-      - name: install-podman
-        run: |
-          soil/github-actions.sh install-podman
-
-      # Runs inside container!
+        # UPGRADED to podman
       - name: dummy
         run: |
           soil/github-actions.sh run-job dummy podman
@@ -141,9 +137,10 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
 
+        # UPGRADED to podman
       - name: pea
         run: |
-          soil/github-actions.sh run-job pea
+          soil/github-actions.sh run-job pea podman
 
       - name: publish-html
         env:

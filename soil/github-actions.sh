@@ -98,6 +98,7 @@ publish-cpp-tarball() {
   soil/web-worker.sh publish-cpp-tarball github-
 }
 
+# Don't need this because Github Actions has it pre-installed.
 install-podman() {
   sudo apt-get install -y podman
   podman --version
