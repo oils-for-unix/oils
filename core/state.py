@@ -1969,6 +1969,10 @@ class Mem(object):
         if name == '_':
             return value.Str(self.last_arg)
 
+        if name == 'SECONDS':
+            seconds = self.GetSeconds()
+            return value.Int(seconds)
+
         # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
         # fix this:
         # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
