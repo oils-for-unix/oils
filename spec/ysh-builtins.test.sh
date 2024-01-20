@@ -243,6 +243,14 @@ write -- "$_reply"
 foo
 ## END
 
+#### echo builtin should disallow typed args - literal
+echo (42)
+## status: 2
+
+#### echo builtin should disallow typed args - variable
+echo (x)
+## status: 2
+
 #### read --line --with-eol --qsn
 
 # whitespace is allowed after closing single quote; it doesn't make a 
