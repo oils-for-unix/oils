@@ -50,7 +50,7 @@ jobs:
         run: |
           soil/github-actions.sh publish-and-exit raw-vm T
 
-  dev-setup:
+  dev-setup-debian:
     runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
@@ -58,16 +58,16 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
 
-      - name: dev-setup
+      - name: dev-setup-debian
         run: |
-          soil/worker.sh JOB-dev-setup
+          soil/worker.sh JOB-dev-setup-debian
 
       - name: publish-html
         env:
           # for deploying to dashboard
           TOIL_KEY: ${{ secrets.TOIL_KEY }}
         run: |
-          soil/github-actions.sh publish-and-exit dev-setup T
+          soil/github-actions.sh publish-and-exit dev-setup-debian T
 
   dummy:
     runs-on: ubuntu-22.04
@@ -351,7 +351,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm', 'dev-setup']
+    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm', 'dev-setup-debian']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code

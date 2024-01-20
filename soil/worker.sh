@@ -62,34 +62,32 @@ EOF
 # 3. build them
 # 4. build Oils with them
 
-dev-setup-tasks() {
+dev-setup-for() {
+  local distro=$1
   # (task_name, script, action, result_html)
   cat <<EOF
 os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
-wedge-deps       build/deps.sh wedge-deps-debian    -
+wedge-deps       build/deps.sh wedge-deps-$distro   -
 fetch            build/deps.sh fetch                -
 install-wedges   build/deps.sh install-wedges       -
 py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
 wedge-report     build/deps.sh wedge-report         -
 EOF
+}
+
+dev-setup-debian-tasks() {
+  # (task_name, script, action, result_html)
+
+  dev-setup-for debian
 }
 
 dev-setup2-tasks() {
   # (task_name, script, action, result_html)
-  cat <<EOF
-os-info          soil/diagnose.sh os-info           -
-dump-env         soil/diagnose.sh dump-env          -
-wedge-deps       build/deps.sh wedge-deps-fedora    -
-fetch            build/deps.sh fetch                -
-install-wedges   build/deps.sh install-wedges       -
-py-all-and-ninja soil/worker.sh py-all-and-ninja    -
-smoke-test       build/dev-setup-test.sh smoke-test -
-wedge-report     build/deps.sh wedge-report         -
-EOF
-}
 
+  dev-setup-for fedora
+}
 
 pea-tasks() {
   ### Print tasks for the 'pea' build
@@ -570,7 +568,7 @@ job-main() {
 
 JOB-dummy() { job-main 'dummy'; }
 JOB-raw-vm() { job-main 'raw-vm'; }
-JOB-dev-setup() { job-main 'dev-setup'; }
+JOB-dev-setup-debian() { job-main 'dev-setup-debian'; }
 JOB-dev-setup2() { job-main 'dev-setup2'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }

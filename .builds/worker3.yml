@@ -22,13 +22,13 @@ secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
 tasks:
-  - dev-setup: |
+  - dev-setup-debian: |
       cd oil
-      soil/worker.sh JOB-dev-setup
+      soil/worker.sh JOB-dev-setup-debian
 
-  - publish-dev-setup: |
+  - publish-dev-setup-debian: |
       cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup
+      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-debian
 
   #- mount-perms: |
   #    cd oil
