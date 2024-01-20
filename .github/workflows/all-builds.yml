@@ -29,27 +29,6 @@ env:
   GITHUB_PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
   GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 jobs:
-  # Runs on raw VM
-  #dummy_orig:
-  #  runs-on: ubuntu-20.04
-  #  env:
-  #    REPO_ROOT: ${{ github.workspace }}
-  #  steps:
-  #    - name: Check out repository code
-  #      uses: actions/checkout@v3
-
-  #    - name: dummy
-  #      run: |
-  #        soil/worker.sh JOB-dummy
-
-  #    - name: publish-html
-  #      env:
-  #        # for deploying to dashboard
-  #        TOIL_KEY: ${{ secrets.TOIL_KEY }}
-  #      run: |
-  #        # NOTE: does not publish to status API
-  #        soil/github-actions.sh publish-and-exit dummy
-
   # The perf tool depends on a specific version of a kernel, so run it outside
   # a container.
   raw-vm:
@@ -99,10 +78,14 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
 
+      - name: install-podman
+        run: |
+          soil/github-actions.sh install-podman
+
       # Runs inside container!
       - name: dummy
         run: |
-          soil/github-actions.sh run-job dummy
+          soil/github-actions.sh run-job dummy podman
 
       - name: publish-html
         env:

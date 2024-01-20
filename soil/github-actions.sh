@@ -98,6 +98,11 @@ publish-cpp-tarball() {
   soil/web-worker.sh publish-cpp-tarball github-
 }
 
+install-podman() {
+  sudo apt-get install -y podman
+  podman --version
+}
+
 run-job() {
   ### Called by YAML config
 
