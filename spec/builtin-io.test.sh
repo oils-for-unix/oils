@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh zsh ash
 
 
@@ -46,8 +46,13 @@ echo -e "\\"
 -e \
 ## END
 
-#### echo builtin should disallow typed args
+#### echo builtin should disallow typed args - literal
 echo (42)
+## status: 2
+## OK mksh/zsh status: 1
+
+#### echo builtin should disallow typed args - variable
+echo (x)
 ## status: 2
 ## OK mksh/zsh status: 1
 
