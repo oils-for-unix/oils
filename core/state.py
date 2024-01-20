@@ -8,6 +8,7 @@
 state.py - Interpreter state
 """
 from __future__ import print_function
+from time import time
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
@@ -393,6 +394,19 @@ def _SetOptionNum(opt_name):
         e_usage("invalid option %r (try shopt)" % opt_name, loc.Missing)
 
     return opt_num
+
+
+class SecondsState(object):
+
+    def __init__(self):
+        # type: () -> None
+        self.start = int(time())
+        self.latest = self.start
+
+    def GetSeconds(self):
+        # type: () -> int
+        self.latest = int(time())
+        return self.latest - self.start
 
 
 class MutableOpts(object):
@@ -1055,6 +1069,7 @@ class Mem(object):
         self.debug_stack = debug_stack
 
         self.pwd = None  # type: Optional[str]
+        self.seconds_state = None  # type: Optional[SecondsState]
 
         self.token_for_line = None  # type: Optional[Token]
         self.loc_for_expr = loc.Missing  # type: loc_t
@@ -1099,6 +1114,13 @@ class Mem(object):
         # type: (str) -> None
         """Used by builtins."""
         self.pwd = pwd
+
+    def GetSeconds(self):
+        # type: () -> int
+        if self.seconds_state:
+            return self.seconds_state.GetSeconds()
+        self.seconds_state = SecondsState()
+        return self.seconds_state.GetSeconds()
 
     def ParsingChangesAllowed(self):
         # type: () -> bool
