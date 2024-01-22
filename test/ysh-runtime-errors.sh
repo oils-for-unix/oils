@@ -870,6 +870,20 @@ test-str-replace() {
      _should-run '= "foo" => replace("o", "x", count=-1)'
      _should-run '= "foo" => replace("o", "x", count=-2)'
    fi
+   # Replace empty string?  Weird Python behavior
+   _should-run '= "foo" => replace("", "-")'
+   _should-run '= "foo" => replace("", "-", count=2)'
+
+   # Use Expr with string
+   _should-run '= "foo" => replace("o", ^"-")'
+   # $0 is regular $0 here
+   _should-run '= "foo" => replace("o", ^"-$0")'
+
+   # Hm $0 isn't set?
+   _should-run '= "foo" => replace(/[o]/, ^"-$0")'
+   # Here $1 is set
+   _should-run '= "foo" => replace(/<capture [o]>/, ^"-$1")'
+   _should-run '= "foo" => replace(/<capture [o]> as letter/, ^"-$letter")'
 
    # Invalid arguments
    _expr-error-case '= "foo" => replace(42, "x")'
