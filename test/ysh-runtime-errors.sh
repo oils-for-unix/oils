@@ -883,7 +883,7 @@ test-str-replace() {
    _should-run '= "foo" => replace(/[o]/, ^"-$0")'
    # Here $1 is set
    _should-run '= "foo" => replace(/<capture [o]>/, ^"-$1")'
-   _should-run '= "foo" => replace(/<capture [o]> as letter/, ^"-$letter")'
+   _should-run '= "foo" => replace(/<capture [o] as letter>/, ^"-$letter")'
 
    # Invalid arguments
    _expr-error-case '= "foo" => replace(42, "x")'
