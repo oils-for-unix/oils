@@ -59,6 +59,11 @@ regex() {
   python3 -c 'import re; p = re.compile(""); print(p.sub("++", "oils-for-unix"))'
   echo
 
+  # supports equivalent of $0 and $1 ?
+  python3 -c 'import re; p = re.compile("[i](.)"); print(p.sub("[\g<0>]", "oils-for-unix"))'
+  python3 -c 'import re; p = re.compile("[i](.)"); print(p.sub("[\g<1>]", "oils-for-unix"))'
+  echo
+
   echo 'REGEX JS'
   echo
 
@@ -74,6 +79,12 @@ regex() {
 
   # Hm this is inconsistent -- empty string gets replaced everywhere
   nodejs -e 'console.log("oils-for-unix".replace(new RegExp("", "g"), "++"))'
+
+  # Hm JavaScript does not support $0 for the whole match -- it has $& instead
+  # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace
+  nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$0]"))'
+  nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$&]"))'
+  nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$1]"))'
 }
 
 "$@"
