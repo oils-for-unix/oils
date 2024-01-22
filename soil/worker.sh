@@ -83,7 +83,7 @@ dev-setup-debian-tasks() {
   dev-setup-for debian
 }
 
-dev-setup2-tasks() {
+dev-setup-fedora-tasks() {
   # (task_name, script, action, result_html)
 
   dev-setup-for fedora
@@ -569,7 +569,7 @@ job-main() {
 JOB-dummy() { job-main 'dummy'; }
 JOB-raw-vm() { job-main 'raw-vm'; }
 JOB-dev-setup-debian() { job-main 'dev-setup-debian'; }
-JOB-dev-setup2() { job-main 'dev-setup2'; }
+JOB-dev-setup-fedora() { job-main 'dev-setup-fedora'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
 JOB-interactive() { job-main 'interactive'; }
@@ -594,8 +594,8 @@ JOB-wild() { job-main 'wild'; }
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 
 list-jobs() {
-  # dev-setup2 for Fedora, disable
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup2'
+  # dev-setup-fedora for Fedora, disable
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora'
 }
 
 "$@"

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
+# Survey Python and JS string and regex replacement APIs
+#
 # Usage:
-#   data_lang/json-survey.sh <function name>
+#   demo/survey-replace.sh <function name>
 
 set -o nounset
 set -o pipefail

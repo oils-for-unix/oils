@@ -314,43 +314,92 @@ wedge-exists() {
 # _build/wedge/{absolute,relative}   # which one?
 #
 # It needs a BUILD DEPENDENCY on:
-
 # - the python3 wedge, so you can do python3 -m pip install.
 # - the mypy repo, which has test-requirements.txt
+
+download-py3-libs() {
+  ### Download source/binary packages, AFTER python3 is installed
+
+  # Note that this is NOT source code; there is binary code, e.g.  in
+  # lxml-*.whl
+
+  local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
+  local py_package_dir=_cache/py3-libs
+  mkdir -p $py_package_dir
+
+  # Avoids a warning, but doesn't fix typed_ast
+  #python3 -m pip download -d $py_package_dir wheel
+
+  python3 -m pip download -d $py_package_dir -r $mypy_dir/test-requirements.txt
+  python3 -m pip download -d $py_package_dir pexpect
+}
+
+get-typed-ast-patch() {
+  curl -o deps/typed_ast.patch https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96.patch
+}
+
+# Work around typed_ast bug:
+#   https://github.com/python/typed_ast/issues/169
+#
+# Apply this patch
+# https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
+#
+# typed_ast is tarred up though
+patch-typed-ast() {
+  local package_dir=_cache/py3-libs
+  local patch=$PWD/deps/typed_ast.patch
+
+  pushd $package_dir
+  cat $patch
+  echo
+
+  local dir=typed_ast-1.4.3
+  local tar=typed_ast-1.4.3.tar.gz
+
+  echo OLD
+  ls -l $tar
+  echo
+
+  rm -r -f -v $dir
+  tar -x -z < $tar
+
+  pushd $dir
+  patch -p1 < $patch
+  popd
+  #find $dir
+
+  # Create a new one
+  tar --create --gzip --file $tar typed_ast-1.4.3
+
+  echo NEW
+  ls -l $tar
+  echo
+
+  popd
+}
 
 install-py3-libs-in-venv() {
   local venv_dir=$1
   local mypy_dir=$2  # This is a param for host build vs. container build
+  local package_dir=_cache/py3-libs
 
   source $venv_dir/bin/activate  # enter virtualenv
 
-  # 2023-07 note: we're installing yapf separately, in a different venv,
-  # because it conflicts!
+  # 2023-07 note: we're installing yapf in a DIFFERENT venv, because it
+  # conflicts with MyPy deps!
   # "ERROR: pip's dependency resolver does not currently take into account all
   # the packages that are installed."
 
+  # --find-links uses a "cache dir" for packages (weird flag name!)
+
+  # Avoids a warning, but doesn't fix typed_ast
+  #time python3 -m pip install --find-links $package_dir wheel
+
   # for mycpp/
-  time python3 -m pip install -r $mypy_dir/test-requirements.txt
+  time python3 -m pip install --find-links $package_dir -r $mypy_dir/test-requirements.txt
 
   # pexpect: for spec/stateful/*.py
-  python3 -m pip install pexpect
-
-  # TODO: Need this to work around typed_ast bug:
-  #   https://github.com/python/typed_ast/issues/169
-  #
-  # Apply this patch
-  # https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
-
-  # - Do something like this 'pip download' in build/deps.sh fetch
-  # - Then create a WEDGE which installs it
-  #   - However note that this is NOT source code; there is binary code, e.g.
-  #   in lxml-*.whl
-  if false; then
-    local pip_dir=_tmp/pip
-    mkdir -p $pip_dir
-    python3 -m pip download -d $pip_dir -r $mypy_dir/test-requirements.txt
-    python3 -m pip download -d $pip_dir pexpect
-  fi
+  time python3 -m pip install --find-links $package_dir pexpect
 }
 
 install-py3-libs() {
@@ -438,12 +487,16 @@ install-wedges() {
       $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
   fi
 
-  install-py3-libs
+  if ! wedge-exists py3-libs $PY3_LIBS_VERSION; then
+    download-py3-libs
+    patch-typed-ast
+    install-py3-libs
+  fi
 
   if command -v tree > /dev/null; then
-    tree -L 2 $USER_WEDGE_DIR
+    tree -L 3 $USER_WEDGE_DIR
     echo
-    tree -L 2 /wedge
+    tree -L 3 /wedge/oils-for-unix.org
   fi
 }
 

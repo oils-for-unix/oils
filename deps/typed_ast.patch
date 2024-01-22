@@ -1,0 +1,32 @@
+From 123286721923ae8f3885dbfbad94d6ca940d5c96 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Miro=20Hron=C4=8Dok?= <miro@hroncok.cz>
+Date: Wed, 10 Nov 2021 19:15:50 +0100
+Subject: [PATCH] Define _PyUnicode_DecodeUnicodeEscape even on Python 3.6+
+ (#171)
+
+---
+ ast3/Python/ast.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/ast3/Python/ast.c b/ast3/Python/ast.c
+index cfca73f1..60b8fdd4 100644
+--- a/ast3/Python/ast.c
++++ b/ast3/Python/ast.c
+@@ -56,6 +56,8 @@ _PyBytes_DecodeEscape(const char *s,
+     return PyBytes_DecodeEscape(s, len, errors, unicode, recode_encoding);
+ }
+ 
++#endif
++
+ PyObject *
+ _PyUnicode_DecodeUnicodeEscape(const char *s,
+                                Py_ssize_t size,
+@@ -66,8 +68,6 @@ _PyUnicode_DecodeUnicodeEscape(const char *s,
+     return PyUnicode_DecodeUnicodeEscape(s, size, errors);
+ }
+ 
+-#endif
+-
+ static int validate_stmts(asdl_seq *);
+ static int validate_exprs(asdl_seq *, expr_context_ty, int);
+ static int validate_nonempty_seq(asdl_seq *, const char *, const char *);
