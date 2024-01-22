@@ -1,0 +1,60 @@
+# Wedge definition for zsh
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# sourced
+WEDGE_NAME='zsh'
+WEDGE_VERSION='5.1.1'
+#WEDGE_IS_ABSOLUTE=1  # TODO: try relaxing
+
+wedge-make() {
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  # FIX for Github Actions, there's "no controlling tty", so add --with-tcsetpgrp
+  # https://www.linuxfromscratch.org/blfs/view/7.5/postlfs/zsh.html
+
+  # --without-boolcodes - Fedora fix?  There is a 'const' error.  Not sure why
+  # this doesn't happen on Ubuntu.
+  # TODO: could also upgrade zsh versions and see if it's been fixed.
+
+  # This creates config.modules
+  time $src_dir/configure \
+    --disable-dynamic --with-tcsetpgrp \
+    --without-boolcodes \
+    --prefix=$install_dir 
+
+  # For some reason the regex module isn't included if we --disable-dynamic?
+  # name=zsh/regex modfile=Src/Modules/regex.mdd link=no
+  # ->
+  # name=zsh/regex modfile=Src/Modules/regex.mdd link=static
+
+  # INSTALL says I need this after editing config.modules.
+  sed -i 's/regex.mdd link=no/regex.mdd link=static/' config.modules
+  make prep
+
+  time make
+  # make test?
+}
+
+wedge-install() {
+  local build_dir=$1
+
+  pushd $build_dir
+
+  #time make install-strip
+  time make install
+
+  popd
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+
+  $install_dir/bin/zsh -c 'echo "hi from zsh"'
+}

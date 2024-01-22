@@ -65,6 +65,16 @@ EOF
 dev-setup-for() {
   local distro=$1
   # (task_name, script, action, result_html)
+
+  cat <<EOF
+os-info          soil/diagnose.sh os-info           -
+dump-env         soil/diagnose.sh dump-env          -
+wedge-deps       build/deps.sh wedge-deps-$distro   -
+fetch            build/deps.sh fetch                -
+spec-bin         build/deps.sh install-spec-bin     -
+EOF
+  return
+
   cat <<EOF
 os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
@@ -75,6 +85,7 @@ py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
 wedge-report     build/deps.sh wedge-report         -
 EOF
+
 }
 
 dev-setup-debian-tasks() {

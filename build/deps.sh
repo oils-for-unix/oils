@@ -57,6 +57,12 @@ readonly PY2_URL="https://www.python.org/ftp/python/2.7.18/Python-$PY2_VERSION.t
 readonly PY3_VERSION=3.10.4
 readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
 
+readonly DASH_VERSION=0.5.10.2
+readonly DASH_URL="https://www.oilshell.org/blob/spec-bin/dash-$DASH_VERSION.tar.gz"
+
+readonly ZSH_VERSION=5.1.1
+readonly ZSH_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_VERSION.tar.xz"
+
 readonly MYPY_GIT_URL=https://github.com/python/mypy
 readonly MYPY_VERSION=0.780
 
@@ -258,6 +264,12 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/python2 "$(basename $PY2_URL)" Python-$PY2_VERSION
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
+  download-to $DEPS_SOURCE_DIR/dash "$DASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/dash "$(basename $DASH_URL)" dash-$DASH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/zsh "$ZSH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_URL)" zsh-$ZSH_VERSION
+
   # bloaty and uftrace are for benchmarks, in containers
   download-to $DEPS_SOURCE_DIR/bloaty "$BLOATY_URL"
   download-to $DEPS_SOURCE_DIR/uftrace "$UFTRACE_URL"
@@ -297,8 +309,14 @@ mypy-new() {
 }
 
 wedge-exists() {
+  local is_absolute=${3:-yes}
+
   # TODO: Doesn't take into account ~/wedge/ vs. /wedge
-  local installed=/wedge/oils-for-unix.org/pkg/$1/$2
+  if test -n "$is_absolute"; then
+    local installed=/wedge/oils-for-unix.org/pkg/$1/$2
+  else
+    local installed=~/wedge/oils-for-unix.org/pkg/$1/$2
+  fi
 
   if test -d $installed; then
     log "$installed already exists"
@@ -429,6 +447,16 @@ install-py3-libs() {
 
   # Run in a subshell because it mutates shell state
   $0 install-py3-libs-in-venv $venv_dir $mypy_dir
+}
+
+install-spec-bin() {
+  if ! wedge-exists dash $DASH_VERSION ''; then
+    deps/wedge.sh unboxed-build _build/deps-source/dash
+  fi
+
+  if ! wedge-exists zsh $ZSH_VERSION ''; then
+    deps/wedge.sh unboxed-build _build/deps-source/zsh
+  fi
 }
 
 install-wedges() {
