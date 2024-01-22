@@ -8,7 +8,7 @@
 state.py - Interpreter state
 """
 from __future__ import print_function
-from time import time
+import time as time_  # avoid name conflict
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
@@ -400,12 +400,12 @@ class SecondsState(object):
 
     def __init__(self):
         # type: () -> None
-        self.start = int(time())
+        self.start = int(time_.time())
         self.latest = self.start
 
     def GetSeconds(self):
         # type: () -> int
-        self.latest = int(time())
+        self.latest = int(time_.time())
         return self.latest - self.start
 
 
