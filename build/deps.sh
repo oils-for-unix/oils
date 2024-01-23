@@ -124,8 +124,28 @@ rm-oils-crap() {
 # PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
 # as well
 readonly -a WEDGE_DEPS_DEBIAN=(
-    wget tree g++ gawk libreadline-dev ninja-build cmake
+    wget tree gawk 
+    g++ ninja-build cmake
+    libreadline-dev 
     "${PY3_BUILD_DEPS[@]}"
+)
+
+readonly -a WEDGE_DEPS_ALPINE=(
+  bzip2
+  xz
+
+  wget tree gawk
+
+  gcc g++
+  ninja-build
+  cmake
+
+  readline-dev
+  zlib-dev
+  libffi-dev
+  openssl-dev
+
+  ncurses-dev
 )
 
 readonly -a WEDGE_DEPS_FEDORA=(
@@ -141,13 +161,13 @@ readonly -a WEDGE_DEPS_FEDORA=(
   tree
   gawk
 
-  readline-devel
-
   # https://packages.fedoraproject.org/pkgs/gcc/gcc/
   gcc gcc-c++
 
   ninja-build
   cmake
+
+  readline-devel
 
   # Like PY3_BUILD_DEPS
   # https://packages.fedoraproject.org/pkgs/zlib/zlib-devel/
@@ -161,6 +181,10 @@ readonly -a WEDGE_DEPS_FEDORA=(
   # https://koji.fedoraproject.org/koji/rpminfo?rpmID=36987813
   ncurses-devel
   #libcap-devel
+
+  # still have a job control error compiling bash
+  # https://packages.fedoraproject.org/pkgs/glibc/glibc-devel/
+  # glibc-devel
 )
 
 install-ubuntu-packages() {
@@ -183,7 +207,19 @@ wedge-deps-debian() {
 }
 
 wedge-deps-fedora() {
+  # https://linuxconfig.org/install-development-tools-on-redhat-8
+  # Trying to get past compile errors
+  # sudo dnf group install --assumeyes 'Development Tools'
+
   sudo dnf install --assumeyes "${WEDGE_DEPS_FEDORA[@]}"
+}
+
+wedge-deps-alpine() {
+  # https://linuxconfig.org/install-development-tools-on-redhat-8
+  # Trying to get past compile errors
+  # sudo dnf group install --assumeyes 'Development Tools'
+
+  sudo apk add "${WEDGE_DEPS_ALPINE[@]}"
 }
 
 download-to() {
@@ -485,11 +521,6 @@ install-py3-libs() {
 }
 
 install-spec-bin() {
-  # Error on Fedora
-  #if ! wedge-exists bash $BASH_VER relative; then
-  #  deps/wedge.sh unboxed-build _build/deps-source/bash
-  #fi
-
   if ! wedge-exists dash $DASH_VERSION relative; then
     deps/wedge.sh unboxed-build _build/deps-source/dash
   fi
@@ -502,15 +533,14 @@ install-spec-bin() {
     deps/wedge.sh unboxed-build _build/deps-source/busybox
   fi
 
-  return
+  #return
 
-  # Hm this has problem with out-of-tree build?  I think Oils does too actually
-  if ! wedge-exists yash $YASH_VERSION relative; then
-    deps/wedge.sh unboxed-build _build/deps-source/yash
+  # Compile Error on Fedora - count_all_jobs
+  # Smoke test error on Alpine
+  if ! wedge-exists bash $BASH_VER relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/bash
   fi
 
-  return
-  # Disabled because of 'boolcodes' issue
   # zsh ./configure is NOT detecting 'boolcodes', and then it has a broken
   # fallback in Src/Modules/termcap.c that causes a compile error!  It seems
   # like ncurses-devel should fix this, but it doesn't
@@ -525,6 +555,13 @@ install-spec-bin() {
 
   if ! wedge-exists zsh $ZSH_VERSION ''; then
     deps/wedge.sh unboxed-build _build/deps-source/zsh
+  fi
+
+  return
+
+  # Hm this has problem with out-of-tree build?  I think Oils does too actually
+  if ! wedge-exists yash $YASH_VERSION relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/yash
   fi
 }
 

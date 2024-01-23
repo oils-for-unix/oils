@@ -100,6 +100,13 @@ dev-setup-fedora-tasks() {
   dev-setup-for fedora
 }
 
+dev-setup-alpine-tasks() {
+  # (task_name, script, action, result_html)
+
+  dev-setup-for alpine
+}
+
+
 pea-tasks() {
   ### Print tasks for the 'pea' build
 
@@ -581,6 +588,7 @@ JOB-dummy() { job-main 'dummy'; }
 JOB-raw-vm() { job-main 'raw-vm'; }
 JOB-dev-setup-debian() { job-main 'dev-setup-debian'; }
 JOB-dev-setup-fedora() { job-main 'dev-setup-fedora'; }
+JOB-dev-setup-alpine() { job-main 'dev-setup-alpine'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
 JOB-interactive() { job-main 'interactive'; }
@@ -606,7 +614,7 @@ JOB-maybe-merge() { job-main 'maybe-merge'; }
 
 list-jobs() {
   # dev-setup-fedora for Fedora, disable
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora'
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora|dev-setup-alpine'
 }
 
 "$@"

@@ -15,7 +15,9 @@ wedge-make() {
   local build_dir=$2
   local install_dir=$3
 
-  time $src_dir/configure --prefix=$install_dir
+  # --without-bash-malloc for Alpine only -- musl libc incompatibility?
+  # https://patchwork.ozlabs.org/project/buildroot/patch/20170523171931.18744-1-dsabogalcc@gmail.com/
+  time $src_dir/configure --without-bash-malloc --prefix=$install_dir
 
   time make
 }

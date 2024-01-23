@@ -1,0 +1,26 @@
+# https://man.sr.ht/builds.sr.ht/compatibility.md
+
+image: alpine/3.19
+
+packages:
+  - python3
+  - zip
+    # for SSH debugging!
+  - vim
+  # - time  # causes an error, don't need it
+
+secrets:
+  - 2678474d-b22b-449f-a19a-16cb403c94cd
+
+tasks:
+  - dev-setup-alpine: |
+      cd oil
+      soil/worker.sh JOB-dev-setup-alpine
+
+  - publish-dev-setup-alpine: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-alpine
+
+  - did-all-succeed: |
+      cd oil
+      soil/host-shim.sh did-all-succeed dev-setup-alpine
