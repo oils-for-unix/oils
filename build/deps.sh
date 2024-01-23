@@ -138,6 +138,8 @@ readonly -a WEDGE_DEPS_ALPINE=(
 
   gcc g++
   ninja-build
+  # https://pkgs.alpinelinux.org/packages?name=ninja-is-really-ninja&branch=v3.19&repo=&arch=&maintainer=
+  ninja-is-really-ninja
   cmake
 
   readline-dev
@@ -381,7 +383,7 @@ mypy-new() {
 }
 
 wedge-exists() {
-  local is_relative=${3:-yes}
+  local is_relative=${3:-}
 
   if test -n "$is_relative"; then
     local installed=~/wedge/oils-for-unix.org/pkg/$1/$2
@@ -623,7 +625,8 @@ install-wedges() {
 
   if ! wedge-exists py3-libs $PY3_LIBS_VERSION; then
     download-py3-libs
-    patch-typed-ast
+    # This patch doesn't work?
+    # patch-typed-ast
     install-py3-libs
   fi
 
@@ -696,17 +699,17 @@ commas() {
 }
 
 wedge-sizes() {
-  # Sizes
-  # printf justifies du output
-
   local tmp=_tmp/wedge-sizes.txt
-  du -s --bytes /wedge/*/*/* ~/wedge/*/*/* | awk '
+
+  # -b is --bytes, but use short flag for busybox compat
+  du -s -b /wedge/*/*/* ~/wedge/*/*/* | awk '
     { print $0  # print the line
       total_bytes += $1  # accumulate
     }
 END { print total_bytes " TOTAL" }
 ' > $tmp
   
+  # printf justifies du output
   cat $tmp | commas | xargs -n 2 printf '%15s  %s\n'
   echo
 
@@ -726,7 +729,11 @@ wedge-report() {
   local tmp=_tmp/wedge-manifest.txt
 
   echo 'Biggest files'
-  find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp
+  if ! find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp; then
+    # busybox find doesn't have -printf
+    echo 'find -printf failed'
+    return
+  fi
 
   set +o errexit  # ignore SIGPIPE
   sort -n --reverse $tmp | head -n 20 | commas

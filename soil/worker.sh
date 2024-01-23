@@ -71,7 +71,10 @@ os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
 wedge-deps       build/deps.sh wedge-deps-$distro   -
 fetch            build/deps.sh fetch                -
-spec-bin         build/deps.sh install-spec-bin     -
+install-wedges   build/deps.sh install-wedges       -
+py-all-and-ninja soil/worker.sh py-all-and-ninja    -
+smoke-test       build/dev-setup-test.sh smoke-test -
+wedge-report     build/deps.sh wedge-report         -
 EOF
   return
 
@@ -80,12 +83,8 @@ os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
 wedge-deps       build/deps.sh wedge-deps-$distro   -
 fetch            build/deps.sh fetch                -
-install-wedges   build/deps.sh install-wedges       -
-py-all-and-ninja soil/worker.sh py-all-and-ninja    -
-smoke-test       build/dev-setup-test.sh smoke-test -
-wedge-report     build/deps.sh wedge-report         -
+spec-bin         build/deps.sh install-spec-bin     -
 EOF
-
 }
 
 dev-setup-debian-tasks() {
