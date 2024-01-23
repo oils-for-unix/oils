@@ -339,14 +339,5 @@ class MemTest(unittest.TestCase):
         self.assertEqual(['i', 'j', 'k'], mem.GetArgv())
 
 
-class SecondsTest(unittest.TestCase):
-
-    def testGetSeconds(self):
-        seconds_state = state.SecondsState()
-
-        seconds = seconds_state.GetSeconds()
-        self.assertEqual(seconds, 0)
-
-
 if __name__ == '__main__':
     unittest.main()

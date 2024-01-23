@@ -396,19 +396,6 @@ def _SetOptionNum(opt_name):
     return opt_num
 
 
-class SecondsState(object):
-
-    def __init__(self):
-        # type: () -> None
-        self.start = int(time_.time())
-        self.latest = self.start
-
-    def GetSeconds(self):
-        # type: () -> int
-        self.latest = int(time_.time())
-        return self.latest - self.start
-
-
 class MutableOpts(object):
 
     def __init__(self, mem, opt0_array, opt_stacks, opt_hook):
@@ -1069,7 +1056,7 @@ class Mem(object):
         self.debug_stack = debug_stack
 
         self.pwd = None  # type: Optional[str]
-        self.seconds_state = None  # type: Optional[SecondsState]
+        self.seconds_start = int(time_.time())  # int
 
         self.token_for_line = None  # type: Optional[Token]
         self.loc_for_expr = loc.Missing  # type: loc_t
@@ -1117,10 +1104,7 @@ class Mem(object):
 
     def GetSeconds(self):
         # type: () -> int
-        if self.seconds_state:
-            return self.seconds_state.GetSeconds()
-        self.seconds_state = SecondsState()
-        return self.seconds_state.GetSeconds()
+        return int(time_.time()) - self.seconds_start
 
     def ParsingChangesAllowed(self):
         # type: () -> bool
