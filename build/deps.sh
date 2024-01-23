@@ -63,6 +63,9 @@ readonly DASH_URL="https://www.oilshell.org/blob/spec-bin/dash-$DASH_VERSION.tar
 readonly ZSH_VERSION=5.1.1
 readonly ZSH_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_VERSION.tar.xz"
 
+readonly MKSH_VERSION=R52c
+readonly MKSH_URL="https://www.oilshell.org/blob/spec-bin/mksh-$MKSH_VERSION.tgz"
+
 readonly MYPY_GIT_URL=https://github.com/python/mypy
 readonly MYPY_VERSION=0.780
 
@@ -144,6 +147,11 @@ readonly -a WEDGE_DEPS_FEDORA=(
   libffi-devel
   # https://packages.fedoraproject.org/pkgs/openssl/openssl-devel/
   openssl-devel
+
+  # For building zsh from source?
+  # https://koji.fedoraproject.org/koji/rpminfo?rpmID=36987813
+  ncurses-devel
+  #libcap-devel
 )
 
 install-ubuntu-packages() {
@@ -187,7 +195,7 @@ maybe-extract() {
 
   local tar=$wedge_dir/$tar_name
   case $tar_name in
-    *.gz)
+    *.gz|*.tgz)  # mksh ends with .tgz
       flag='--gzip'
       ;;
     *.bz2)
@@ -270,6 +278,16 @@ fetch() {
   download-to $DEPS_SOURCE_DIR/zsh "$ZSH_URL"
   maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_URL)" zsh-$ZSH_VERSION
 
+  download-to $DEPS_SOURCE_DIR/mksh "$MKSH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/mksh "$(basename $MKSH_URL)" mksh-$MKSH_VERSION
+
+  # Patch: this tarball doesn't follow the convention $name-$version
+  if test -d $DEPS_SOURCE_DIR/mksh/mksh; then
+    pushd $DEPS_SOURCE_DIR/mksh
+    mv -v mksh mksh-$MKSH_VERSION
+    popd
+  fi
+
   # bloaty and uftrace are for benchmarks, in containers
   download-to $DEPS_SOURCE_DIR/bloaty "$BLOATY_URL"
   download-to $DEPS_SOURCE_DIR/uftrace "$UFTRACE_URL"
@@ -309,13 +327,12 @@ mypy-new() {
 }
 
 wedge-exists() {
-  local is_absolute=${3:-yes}
+  local is_relative=${3:-yes}
 
-  # TODO: Doesn't take into account ~/wedge/ vs. /wedge
-  if test -n "$is_absolute"; then
-    local installed=/wedge/oils-for-unix.org/pkg/$1/$2
-  else
+  if test -n "$is_relative"; then
     local installed=~/wedge/oils-for-unix.org/pkg/$1/$2
+  else
+    local installed=/wedge/oils-for-unix.org/pkg/$1/$2
   fi
 
   if test -d $installed; then
@@ -450,9 +467,27 @@ install-py3-libs() {
 }
 
 install-spec-bin() {
-  if ! wedge-exists dash $DASH_VERSION ''; then
+  if ! wedge-exists dash $DASH_VERSION relative; then
     deps/wedge.sh unboxed-build _build/deps-source/dash
   fi
+
+  if ! wedge-exists mksh $MKSH_VERSION relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/mksh
+  fi
+
+  return
+  # Disabled because of 'boolcodes' issue
+  # zsh ./configure is NOT detecting 'boolcodes', and then it has a broken
+  # fallback in Src/Modules/termcap.c that causes a compile error!  It seems
+  # like ncurses-devel should fix this, but it doesn't
+  #
+  # https://koji.fedoraproject.org/koji/rpminfo?rpmID=36987813
+  #
+  # from /home/build/oil/_build/deps-source/zsh/zsh-5.1.1/Src/Modules/termcap.c:38:
+  # /usr/include/term.h:783:56: note: previous declaration of ‘boolcodes’ with type ‘const char * const[]’
+  # 783 | extern NCURSES_EXPORT_VAR(NCURSES_CONST char * const ) boolcodes[];
+  #
+  # I think the ./configure is out of sync with the actual build?
 
   if ! wedge-exists zsh $ZSH_VERSION ''; then
     deps/wedge.sh unboxed-build _build/deps-source/zsh

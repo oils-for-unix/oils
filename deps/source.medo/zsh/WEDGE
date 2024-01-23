@@ -9,7 +9,6 @@ set -o errexit
 # sourced
 WEDGE_NAME='zsh'
 WEDGE_VERSION='5.1.1'
-#WEDGE_IS_ABSOLUTE=1  # TODO: try relaxing
 
 wedge-make() {
   local src_dir=$1
@@ -19,14 +18,14 @@ wedge-make() {
   # FIX for Github Actions, there's "no controlling tty", so add --with-tcsetpgrp
   # https://www.linuxfromscratch.org/blfs/view/7.5/postlfs/zsh.html
 
-  # --without-boolcodes - Fedora fix?  There is a 'const' error.  Not sure why
-  # this doesn't happen on Ubuntu.
-  # TODO: could also upgrade zsh versions and see if it's been fixed.
+  # Fedora has a conflict with zsh/Src/Modules/termcap.c and
+  # /usr/include/term.h
+  # Happens from zsh 5.1.1 all the way to zsh 5.9.
+  # This doesn't happen on Debian/Ubuntu.
 
   # This creates config.modules
   time $src_dir/configure \
     --disable-dynamic --with-tcsetpgrp \
-    --without-boolcodes \
     --prefix=$install_dir 
 
   # For some reason the regex module isn't included if we --disable-dynamic?
