@@ -57,6 +57,9 @@ readonly PY2_URL="https://www.python.org/ftp/python/2.7.18/Python-$PY2_VERSION.t
 readonly PY3_VERSION=3.10.4
 readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
 
+readonly BASH_VER=4.4  # don't clobber BASH_VERSION
+readonly BASH_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH_VER.tar.gz"
+
 readonly DASH_VERSION=0.5.10.2
 readonly DASH_URL="https://www.oilshell.org/blob/spec-bin/dash-$DASH_VERSION.tar.gz"
 
@@ -65,6 +68,12 @@ readonly ZSH_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_VERSION.tar.xz
 
 readonly MKSH_VERSION=R52c
 readonly MKSH_URL="https://www.oilshell.org/blob/spec-bin/mksh-$MKSH_VERSION.tgz"
+
+readonly BUSYBOX_VERSION='1.35.0'
+readonly BUSYBOX_URL="https://www.oilshell.org/blob/spec-bin/busybox-$BUSYBOX_VERSION.tar.bz2"
+
+readonly YASH_VERSION=2.49
+readonly YASH_URL="https://www.oilshell.org/blob/spec-bin/yash-$YASH_VERSION.tar.xz"
 
 readonly MYPY_GIT_URL=https://github.com/python/mypy
 readonly MYPY_VERSION=0.780
@@ -272,6 +281,9 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/python2 "$(basename $PY2_URL)" Python-$PY2_VERSION
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
+  download-to $DEPS_SOURCE_DIR/bash "$BASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH_URL)" dash-$BASH_VER
+
   download-to $DEPS_SOURCE_DIR/dash "$DASH_URL"
   maybe-extract $DEPS_SOURCE_DIR/dash "$(basename $DASH_URL)" dash-$DASH_VERSION
 
@@ -280,6 +292,12 @@ fetch() {
 
   download-to $DEPS_SOURCE_DIR/mksh "$MKSH_URL"
   maybe-extract $DEPS_SOURCE_DIR/mksh "$(basename $MKSH_URL)" mksh-$MKSH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/busybox "$BUSYBOX_URL"
+  maybe-extract $DEPS_SOURCE_DIR/busybox "$(basename $BUSYBOX_URL)" busybox-$BUSYBOX_VERSION
+
+  download-to $DEPS_SOURCE_DIR/yash "$YASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/yash "$(basename $YASH_URL)" yash-$DASH_VERSION
 
   # Patch: this tarball doesn't follow the convention $name-$version
   if test -d $DEPS_SOURCE_DIR/mksh/mksh; then
@@ -467,12 +485,28 @@ install-py3-libs() {
 }
 
 install-spec-bin() {
+  # Error on Fedora
+  #if ! wedge-exists bash $BASH_VER relative; then
+  #  deps/wedge.sh unboxed-build _build/deps-source/bash
+  #fi
+
   if ! wedge-exists dash $DASH_VERSION relative; then
     deps/wedge.sh unboxed-build _build/deps-source/dash
   fi
 
   if ! wedge-exists mksh $MKSH_VERSION relative; then
     deps/wedge.sh unboxed-build _build/deps-source/mksh
+  fi
+
+  if ! wedge-exists busybox $BUSYBOX_VERSION relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/busybox
+  fi
+
+  return
+
+  # Hm this has problem with out-of-tree build?  I think Oils does too actually
+  if ! wedge-exists yash $YASH_VERSION relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/yash
   fi
 
   return
