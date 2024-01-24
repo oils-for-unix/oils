@@ -150,7 +150,7 @@ class Replace(vm._Callable):
         if res.tag() == value_e.Str:
             return cast(value.Str, res).s
 
-        raise error.TypeErr(res, "expected expr to eval to a string",
+        raise error.TypeErr(res, "expected expr to eval to a Str",
                             blame_loc)
 
     def Call(self, rd):
