@@ -215,6 +215,7 @@ class Replace(vm._Callable):
                 s = subst_str.s
             if subst_expr:
                 s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
+            assert s is not None
 
             result = string.replace(string_val.s, s, count)
 
@@ -268,6 +269,7 @@ class Replace(vm._Callable):
                         with pure_ysh.ctx_Shvar(self.mem, named_vars):
                             s = self.EvalSubstExpr(subst_expr,
                                                    rd.LeftParenToken())
+                assert s is not None
 
                 start = indices[0]
                 end = indices[1]
