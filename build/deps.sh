@@ -39,7 +39,6 @@ source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
 source deps/from-apt.sh      # PY3_BUILD_DEPS
 #source deps/podman.sh
 source devtools/run-task.sh  # run-task
-source test/common.sh  # run-task-with-status, nproc
 
 # Also in build/dev-shell.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
@@ -590,6 +589,26 @@ spec-bin-wedges() {
   echo busybox $BUSYBOX_VERSION
 }
 
+run-task-with-status() {
+  ### Run a process and write a file with status and time
+
+  # Used by test/{spec,wild}-runner.sh
+
+  local out_file=$1
+  shift
+
+  # python3 because it's OUTSIDE the container
+  python3 benchmarks/time_.py \
+    --tsv \
+    --rusage \
+    --output $out_file \
+    -- "$@" || true  # suppress failure
+
+  # TODO:
+  # - add more columns?
+  # - add a proper TSV header so it can be joined by the standard tool?
+}
+
 maybe-install-wedge() {
   local name=$1
   local version=$2
@@ -608,9 +627,35 @@ maybe-install-wedge() {
   fi
 }
 
+dummy-task() {
+  local name=$1
+  local version=$2
+
+  echo "Building $name $version"
+  sleep 1
+  echo 'stdout'
+  log 'stderr'
+}
+
+dummy-task-wrapper() {
+  local name=$1
+  local version=$2
+
+  local task_file=_build/wedge/logs/$name.task.txt
+  local log_file=_build/wedge/logs/$name.log.txt
+
+  echo "TASK $name $version"
+  run-task-with-status $task_file $0 dummy-task "$@" >$log_file 2>&1
+
+  # TODO: print FAILED status?
+  echo "DONE $name $version"
+}
+
+NPROC=$(nproc)
+
 install-wedges-fast() {
   log ""
-  log "=== Installing $nproc wedges in parallel"
+  log "=== Installing $NPROC wedges in parallel"
   log ""
 
   mkdir -p _build/wedge/logs
@@ -623,9 +668,10 @@ install-wedges-fast() {
   # test/wild-runner.sh - dump-html-and-translate-file()
   # test/spec-runner.sh - dispatch-one -> run-task-with-status with test-common
 
-  #py-wedges | xargs -P $nproc -n 2 -- $0 maybe-install-wedge
+  #py-wedges | xargs -P $NPROC -n 2 -- $0 maybe-install-wedge
 
-  spec-bin-wedges | xargs -P $nproc -n 2 -- $0 maybe-install-wedge
+  #spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 maybe-install-wedge
+  spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 dummy-task-wrapper
 
   # TODO: collect failures, and exit non-zero if anything fails
 }
