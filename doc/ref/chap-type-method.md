@@ -33,20 +33,49 @@ Replace substrings or eggex matches within a string.
     = mystr => replace("code", "Code")  # => "Code is 1234"
     = mystr => replace(/ d+ /, "<redacted>")  # => "code is <redacted>"
 
-Replacement expressions can use captures from the given eggex.
+Replacement expressions can use captures from the given eggex. Captured values
+can be read with `$1`, `$2`, etc. or, for named captures, with the names given
+to them.
 
-    var mystr = "year is 1988"
-    = mystr => replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
+    var mystr = "1989-06-08"
+    var pat = / <capture d{4}> '-' <capture d{2}> '-' <capture d{2}> /
+    = mystr => replace(pat, ^"Year: $1, Month: $2, Day: $3")
+    # => "Year: 1989, Month: 06, Day: 08"
+
+    var mystr2 = "year is 1988"
+    = mystr2 => replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
     # => "year is 1989"
 
+In some cases it might be useful to refer to the entire capture itself in a
+substitution string. This can be achieved with `$0`.
+
+    var mystr = "replace with mystr=>replace()"
+    = mystr => replace(/ alpha+ '=>' alpha+ '()' /, ^"<code>$0</code>")
+    # => "replace with <code>mystr=>replace()</code>"
+
+In addition to captures, other variables can be substituted within a
+replacement string:
+
+    var mystr = '123'
+    var anotherVar = 'surprise!'
+    = $[mystr => replace(/ <capture d+> /, ^"Hello $1 ($anotherVar)")]
+    # => "Hello 123 (surprise!)
+
 To limit the number of replacements, pass in a named count argument. By default
-the count is `-1`. For count in [0, MAX_INT], there will be at most count
+the count is `-1`. For any count in [0, MAX_INT], there will be at most count
 replacements. Any negative count means "replace all" (ie `count=-2` behaves
 exactly like `count=-1`).
 
     var mystr = "bob has a friend named bob"
     = mystr => replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"
     = mystr => replace("bob", "Bob", count=-1)  # => "Bob has a friend named Bob"
+
+The following matrix of signatures are supported by `replace()`:
+
+    s => replace(string_val, subst_str)
+    s => replace(string_val, subst_expr)
+    s => replace(eggex_val, subst_str)
+    s => replace(eggex_val, subst_expr)
 
 ### startsWith()   
 
