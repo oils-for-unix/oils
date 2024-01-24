@@ -1,11 +1,7 @@
 #!/usr/bin/env bash
 #
+# Demo of $SECONDS
 
-
-long-running-task() {
-    sleep 10
-}
-
-long-running-task
+seconds=${1:-1}
+sleep $seconds
 echo "Task took $SECONDS seconds to complete."
-

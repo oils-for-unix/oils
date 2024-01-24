@@ -611,12 +611,15 @@ matched=0
 no version
 ## END
 
-#### seconds
-case $SH in (dash) exit 0;; esac # dash does not support $SECONDS
-secs=$SECONDS
-if [[ $secs -ge 0 && -n "$secs" ]]; then
-    exit 0
-else
-    exit 1
-fi
+#### $SECONDS
+
+# should be zero seconds
+echo seconds=$SECONDS
+
 ## status: 0
+## STDOUT:
+seconds=0
+## END
+## N-I dash STDOUT:
+seconds=
+## END
