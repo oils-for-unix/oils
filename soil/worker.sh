@@ -76,8 +76,10 @@ py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
 wedge-report     build/deps.sh wedge-report         -
 EOF
-  return
+}
 
+spec-bin-for() {
+  local distro=$1
   cat <<EOF
 os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
@@ -90,7 +92,8 @@ EOF
 dev-setup-debian-tasks() {
   # (task_name, script, action, result_html)
 
-  dev-setup-for debian
+  #dev-setup-for debian
+  spec-bin-for debian
 }
 
 dev-setup-fedora-tasks() {
@@ -102,9 +105,9 @@ dev-setup-fedora-tasks() {
 dev-setup-alpine-tasks() {
   # (task_name, script, action, result_html)
 
-  dev-setup-for alpine
+  #dev-setup-for alpine
+  spec-bin-for alpine
 }
-
 
 pea-tasks() {
   ### Print tasks for the 'pea' build
