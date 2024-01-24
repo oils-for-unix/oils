@@ -40,7 +40,9 @@ Replacement expressions can use captures from the given eggex.
     # => "year is 1989"
 
 To limit the number of replacements, pass in a named count argument. By default
-the count is `-1` which means "replace all".
+the count is `-1`. For count in [0, MAX_INT], there will be at most count
+replacements. Any negative count means "replace all" (ie `count=-2` behaves
+exactly like `count=-1`).
 
     var mystr = "bob has a friend named bob"
     = mystr=>replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"

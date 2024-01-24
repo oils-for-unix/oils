@@ -160,6 +160,10 @@ class Replace(vm._Callable):
         s => replace(string_val, subst_expr, count=-1)
         s => replace(eggex_val, subst_str, count=-1)
         s => replace(eggex_val, subst_expr, count=-1)
+
+        For count in [0, MAX_INT], there will be no more than count
+        replacements. Any negative count should read as unset, and replace will
+        replace all occurances of the pattern.
         """
         string = rd.PosStr()
 
