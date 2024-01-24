@@ -30,13 +30,13 @@ This chapter in the [Oils Reference](index.html) describes YSH types and methods
 Replace substrings or eggex matches within a string.
 
     var mystr = "code is 1234"
-    = mystr=>replace("code", "Code")  # => "Code is 1234"
-    = mystr=>replace(/ d+ /, "<redacted>")  # => "code is <redacted>"
+    = mystr => replace("code", "Code")  # => "Code is 1234"
+    = mystr => replace(/ d+ /, "<redacted>")  # => "code is <redacted>"
 
 Replacement expressions can use captures from the given eggex.
 
     var mystr = "year is 1988"
-    = mystr=>replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
+    = mystr => replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
     # => "year is 1989"
 
 To limit the number of replacements, pass in a named count argument. By default
@@ -45,8 +45,8 @@ replacements. Any negative count means "replace all" (ie `count=-2` behaves
 exactly like `count=-1`).
 
     var mystr = "bob has a friend named bob"
-    = mystr=>replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"
-    = mystr=>replace("bob", "Bob", count=-1)  # => "Bob has a friend named Bob"
+    = mystr => replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"
+    = mystr => replace("bob", "Bob", count=-1)  # => "Bob has a friend named Bob"
 
 ### startsWith()   
 

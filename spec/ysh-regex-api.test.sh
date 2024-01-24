@@ -623,12 +623,12 @@ char class
 shopt --set ysh:all
 
 var mystr = 'abca'
-write $[mystr=>replace('a', 'A')]  # Two matches
-write $[mystr=>replace('b', 'B')]  # One match
-write $[mystr=>replace('x', 'y')]  # No matches
+write $[mystr => replace('a', 'A')]  # Two matches
+write $[mystr => replace('b', 'B')]  # One match
+write $[mystr => replace('x', 'y')]  # No matches
 
-write $[mystr=>replace('abc', '')]  # Empty substitution
-write $[mystr=>replace('', 'new')]  # Empty substring
+write $[mystr => replace('abc', '')]  # Empty substitution
+write $[mystr => replace('', 'new')]  # Empty substring
 ## STDOUT:
 AbcA
 aBca
@@ -641,10 +641,10 @@ newanewbnewcnewanew
 shopt --set ysh:all
 
 var mystr = 'mangled----kebab--case'
-write $[mystr=>replace(/ '-'+ /, '-')]
+write $[mystr => replace(/ '-'+ /, '-')]
 
 setvar mystr = 'smaller-to-bigger'
-write $[mystr=>replace(/ '-'+ /, '---')]
+write $[mystr => replace(/ '-'+ /, '---')]
 ## STDOUT:
 mangled-kebab-case
 smaller---to---bigger
@@ -654,7 +654,7 @@ smaller---to---bigger
 shopt --set ysh:all
 
 var mystr = 'name: Bob'
-write $[mystr=>replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
+write $[mystr => replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
 ## STDOUT:
 Hello Bob
 ## END
@@ -665,12 +665,12 @@ shopt --set ysh:all
 var mystr = '123'
 
 var anotherVar = 'surprise!'
-write $[mystr=>replace(/ <capture d+> /, ^"Hello $1 ($anotherVar)")]
+write $[mystr => replace(/ <capture d+> /, ^"Hello $1 ($anotherVar)")]
 
 var globalName = '456'
-write $[mystr=>replace(/ <capture d+ as globalName> /, ^"Hello $globalName")]
+write $[mystr => replace(/ <capture d+ as globalName> /, ^"Hello $globalName")]
 
-write $[mystr=>replace(/ <capture d+ as localName> /, ^"Hello $localName, $globalName")]
+write $[mystr => replace(/ <capture d+ as localName> /, ^"Hello $localName, $globalName")]
 ## STDOUT:
 Hello 123 (surprise!)
 Hello 123
@@ -683,10 +683,10 @@ shopt --set ysh:all
 var mystr = '1abc2abc3abc'
 
 for count in (-2..4) {
-  write $[mystr=>replace('abc', "-", count=count)]
-  write $[mystr=>replace('abc', ^"-", count=count)]
-  write $[mystr=>replace(/ [a-z]+ /, "-", count=count)]
-  write $[mystr=>replace(/ [a-z]+ /, "-", count=count)]
+  write $[mystr => replace('abc', "-", count=count)]
+  write $[mystr => replace('abc', ^"-", count=count)]
+  write $[mystr => replace(/ [a-z]+ /, "-", count=count)]
+  write $[mystr => replace(/ [a-z]+ /, "-", count=count)]
 }
 ## STDOUT:
 1-2-3-
@@ -717,10 +717,10 @@ for count in (-2..4) {
 
 #### Str=>replace(Str, Str), empty new/old strings
 var mystr = 'abca'
-write $[mystr=>replace('abc', '')]            # Empty substitution
-write $[mystr=>replace('', 'new')]            # Empty substring
-write $[mystr=>replace('', 'new', count=1)]   # Empty substring, count != -1
-write $[mystr=>replace('', 'new', count=10)]  # Empty substring, count too large
+write $[mystr => replace('abc', '')]            # Empty substitution
+write $[mystr => replace('', 'new')]            # Empty substring
+write $[mystr => replace('', 'new', count=1)]   # Empty substring, count != -1
+write $[mystr => replace('', 'new', count=10)]  # Empty substring, count too large
 ## STDOUT:
 a
 newanewbnewcnewanew
@@ -733,17 +733,17 @@ shopt --set ysh:all
 
 var mystr = '123'
 
-write $[mystr=>replace(/ <capture d+ as n : int> /, ^"$[n + 1]")]
+write $[mystr => replace(/ <capture d+ as n : int> /, ^"$[n + 1]")]
 
 # values automatically get stringified
-write $[mystr=>replace(/ <capture d+ as n : int> /, ^"$1")]
+write $[mystr => replace(/ <capture d+ as n : int> /, ^"$1")]
 
 func not_str(inp) {
   return ({ "value": inp })
 }
 
 # should fail to stringify $1
-try { call mystr=>replace(/ <capture d+ : not_str> /, ^"$1") }
+try { call mystr => replace(/ <capture d+ : not_str> /, ^"$1") }
 write status=$_status
 ## STDOUT:
 124
