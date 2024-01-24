@@ -1056,7 +1056,7 @@ class Mem(object):
         self.debug_stack = debug_stack
 
         self.pwd = None  # type: Optional[str]
-        self.seconds_start = int(time_.time())  # int
+        self.seconds_start = time_.time()
 
         self.token_for_line = None  # type: Optional[Token]
         self.loc_for_expr = loc.Missing  # type: loc_t
@@ -1101,10 +1101,6 @@ class Mem(object):
         # type: (str) -> None
         """Used by builtins."""
         self.pwd = pwd
-
-    def GetSeconds(self):
-        # type: () -> int
-        return int(time_.time()) - self.seconds_start
 
     def ParsingChangesAllowed(self):
         # type: () -> bool
@@ -1954,7 +1950,7 @@ class Mem(object):
             return value.Str(self.last_arg)
 
         if name == 'SECONDS':
-            seconds = self.GetSeconds()
+            seconds = int(time_.time() - self.seconds_start)
             return value.Int(seconds)
 
         # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
