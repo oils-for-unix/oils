@@ -610,3 +610,13 @@ matched=0
 ## N-I dash/mksh/zsh STDOUT:
 no version
 ## END
+
+#### seconds
+case $SH in (dash) exit 0;; esac # dash does not support $SECONDS
+secs=$SECONDS
+if [[ $secs -ge 0 && -n "$secs" ]]; then
+    exit 0
+else
+    exit 1
+fi
+## status: 0
