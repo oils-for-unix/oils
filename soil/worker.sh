@@ -42,14 +42,69 @@ raw-vm-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info         -
-dump-env         soil/diagnose.sh dump-env        -
-perf-install     benchmarks/perf.sh soil-install  -
+os-info          soil/diagnose.sh os-info             -
+dump-env         soil/diagnose.sh dump-env            -
+perf-install     benchmarks/perf.sh soil-install      -
 wait-for-tarball soil/wait.sh for-cpp-tarball         -
 test-tar         devtools/release-native.sh test-tar  -
 perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
 }
+
+# Oh there is a large list of pre-installed software
+# https://github.com/actions/runner-images#available-images
+# https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
+# https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md
+#
+# 1. System deps for building wedges - ninja, cmake, libreadline-dev, etc.
+# 2. fetch wedges - re2c, cmark, python2, python3, MyPy, pyflakes
+#    - Python 3.10 desired for "pea"
+# 3. build them
+# 4. build Oils with them
+
+dev-setup-for() {
+  local distro=$1
+  # (task_name, script, action, result_html)
+
+  cat <<EOF
+os-info          soil/diagnose.sh os-info           -
+dump-env         soil/diagnose.sh dump-env          -
+wedge-deps       build/deps.sh wedge-deps-$distro   -
+fetch            build/deps.sh fetch                -
+install-wedges   build/deps.sh install-wedges       -
+py-all-and-ninja soil/worker.sh py-all-and-ninja    -
+smoke-test       build/dev-setup-test.sh smoke-test -
+wedge-report     build/deps.sh wedge-report         -
+EOF
+  return
+
+  cat <<EOF
+os-info          soil/diagnose.sh os-info           -
+dump-env         soil/diagnose.sh dump-env          -
+wedge-deps       build/deps.sh wedge-deps-$distro   -
+fetch            build/deps.sh fetch                -
+spec-bin         build/deps.sh install-spec-bin     -
+EOF
+}
+
+dev-setup-debian-tasks() {
+  # (task_name, script, action, result_html)
+
+  dev-setup-for debian
+}
+
+dev-setup-fedora-tasks() {
+  # (task_name, script, action, result_html)
+
+  dev-setup-for fedora
+}
+
+dev-setup-alpine-tasks() {
+  # (task_name, script, action, result_html)
+
+  dev-setup-for alpine
+}
+
 
 pea-tasks() {
   ### Print tasks for the 'pea' build
@@ -347,8 +402,8 @@ run-tasks() {
   if command -v cc > /dev/null; then
     build/py.sh time-helper
   else
-    echo 'test time-tsv'
-    time-tsv -o /tmp/echo.tsv --append -- echo hi
+    echo 'test time-tsv3'
+    time-tsv3 -o /tmp/echo.tsv --append -- echo hi
 
     echo '/tmp/echo.tsv:'
     cat /tmp/echo.tsv
@@ -389,7 +444,7 @@ run-tasks() {
     esac
 
     local -a argv=(
-      time-tsv -o $tsv --append
+      time-tsv3 -o $tsv --append
         --field $task_name --field $script --field $action
         --field $result_html -- 
         "${timeout[@]}" "$script" "$action"
@@ -530,6 +585,9 @@ job-main() {
 
 JOB-dummy() { job-main 'dummy'; }
 JOB-raw-vm() { job-main 'raw-vm'; }
+JOB-dev-setup-debian() { job-main 'dev-setup-debian'; }
+JOB-dev-setup-fedora() { job-main 'dev-setup-fedora'; }
+JOB-dev-setup-alpine() { job-main 'dev-setup-alpine'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
 JOB-interactive() { job-main 'interactive'; }
@@ -554,7 +612,8 @@ JOB-wild() { job-main 'wild'; }
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 
 list-jobs() {
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge'
+  # dev-setup-fedora for Fedora, disable
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora|dev-setup-alpine'
 }
 
 "$@"

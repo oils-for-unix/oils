@@ -254,6 +254,13 @@ pylibc() {
   rm -f libc.so
 
   py-ext libc pyext/setup_libc.py
+
+  # Skip unit tests on Alpine for now
+  # musl libc doesn't have extended globs
+  if uname -a | grep -F Alpine; then
+    return
+  fi
+
   py-ext-test pyext/libc_test.py "$@"
 }
 

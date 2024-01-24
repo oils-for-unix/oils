@@ -57,6 +57,24 @@ readonly PY2_URL="https://www.python.org/ftp/python/2.7.18/Python-$PY2_VERSION.t
 readonly PY3_VERSION=3.10.4
 readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
 
+readonly BASH_VER=4.4  # don't clobber BASH_VERSION
+readonly BASH_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH_VER.tar.gz"
+
+readonly DASH_VERSION=0.5.10.2
+readonly DASH_URL="https://www.oilshell.org/blob/spec-bin/dash-$DASH_VERSION.tar.gz"
+
+readonly ZSH_VERSION=5.1.1
+readonly ZSH_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_VERSION.tar.xz"
+
+readonly MKSH_VERSION=R52c
+readonly MKSH_URL="https://www.oilshell.org/blob/spec-bin/mksh-$MKSH_VERSION.tgz"
+
+readonly BUSYBOX_VERSION='1.35.0'
+readonly BUSYBOX_URL="https://www.oilshell.org/blob/spec-bin/busybox-$BUSYBOX_VERSION.tar.bz2"
+
+readonly YASH_VERSION=2.49
+readonly YASH_URL="https://www.oilshell.org/blob/spec-bin/yash-$YASH_VERSION.tar.xz"
+
 readonly MYPY_GIT_URL=https://github.com/python/mypy
 readonly MYPY_VERSION=0.780
 
@@ -91,33 +109,125 @@ rm-oils-crap() {
   sudo rm -r -f -v /wedge
 }
 
+# Note: git is an implicit dependency -- that's how we got the repo in the
+# first place!
+
+# python2-dev is no longer available on Debian 12
+# python-dev also seems gone
+#
+# wget: for fetching wedges (not on Debian by default!)
+# tree: tiny package that's useful for showing what we installed
+# g++: essential
+# libreadline-dev: needed for the build/prepare.sh Python build.
+# gawk: used by spec-runner.sh for the special match() function.
+# cmake: for cmark
+# PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
+# as well
+readonly -a WEDGE_DEPS_DEBIAN=(
+    wget tree gawk 
+    g++ ninja-build cmake
+    libreadline-dev 
+    "${PY3_BUILD_DEPS[@]}"
+)
+
+readonly -a WEDGE_DEPS_ALPINE=(
+  bzip2
+  xz
+
+  wget tree gawk
+
+  gcc g++
+  ninja-build
+  # https://pkgs.alpinelinux.org/packages?name=ninja-is-really-ninja&branch=v3.19&repo=&arch=&maintainer=
+  ninja-is-really-ninja
+  cmake
+
+  readline-dev
+  zlib-dev
+  libffi-dev
+  openssl-dev
+
+  ncurses-dev
+)
+
+readonly -a WEDGE_DEPS_FEDORA=(
+
+  # Weird, Fedora doesn't have these by default!
+  hostname
+  tar
+  bzip2
+
+  # https://packages.fedoraproject.org/pkgs/wget/wget/
+  wget
+  # https://packages.fedoraproject.org/pkgs/tree-pkg/tree/
+  tree
+  gawk
+
+  # https://packages.fedoraproject.org/pkgs/gcc/gcc/
+  gcc gcc-c++
+
+  ninja-build
+  cmake
+
+  readline-devel
+
+  # Like PY3_BUILD_DEPS
+  # https://packages.fedoraproject.org/pkgs/zlib/zlib-devel/
+  zlib-devel
+  # https://packages.fedoraproject.org/pkgs/libffi/libffi-devel/
+  libffi-devel
+  # https://packages.fedoraproject.org/pkgs/openssl/openssl-devel/
+  openssl-devel
+
+  # For building zsh from source?
+  # https://koji.fedoraproject.org/koji/rpminfo?rpmID=36987813
+  ncurses-devel
+  #libcap-devel
+
+  # still have a job control error compiling bash
+  # https://packages.fedoraproject.org/pkgs/glibc/glibc-devel/
+  # glibc-devel
+)
 
 install-ubuntu-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
-  # python2-dev is no longer available on Debian 12
-  # python-dev also seems gone
-  #
-  # g++: essential
-  # libreadline-dev: needed for the build/prepare.sh Python build.
-  # gawk: used by spec-runner.sh for the special match() function.
-  # cmake: for build/py.sh yajl-release (TODO: remove eventually)
-
   set -x  # show what needs sudo
 
   # pass -y for say gitpod
-  sudo apt "$@" install \
-    g++ gawk libreadline-dev ninja-build cmake \
-    "${PY3_BUILD_DEPS[@]}"
+  sudo apt "$@" install "${WEDGE_DEPS_DEBIAN[@]}"
   set +x
 
-  test/spec-bin.sh install-shells-with-apt
+  # maybe pass -y through
+  test/spec-bin.sh install-shells-with-apt "$@"
+}
+
+wedge-deps-debian() {
+  # Install packages without prompt
+  # Debian and Ubuntu packages are the same
+  install-ubuntu-packages -y
+}
+
+wedge-deps-fedora() {
+  # https://linuxconfig.org/install-development-tools-on-redhat-8
+  # Trying to get past compile errors
+  # sudo dnf group install --assumeyes 'Development Tools'
+
+  sudo dnf install --assumeyes "${WEDGE_DEPS_FEDORA[@]}"
+}
+
+wedge-deps-alpine() {
+  # https://linuxconfig.org/install-development-tools-on-redhat-8
+  # Trying to get past compile errors
+  # sudo dnf group install --assumeyes 'Development Tools'
+
+  sudo apk add "${WEDGE_DEPS_ALPINE[@]}"
 }
 
 download-to() {
   local dir=$1
   local url=$2
-  wget --no-clobber --directory "$dir" "$url"
+  wget --no-clobber --directory-prefix "$dir" "$url"
 }
 
 maybe-extract() {
@@ -132,7 +242,7 @@ maybe-extract() {
 
   local tar=$wedge_dir/$tar_name
   case $tar_name in
-    *.gz)
+    *.gz|*.tgz)  # mksh ends with .tgz
       flag='--gzip'
       ;;
     *.bz2)
@@ -160,11 +270,16 @@ clone-mypy() {
     return
   fi
 
-  # TODO: verify commit checksum
-
   # v$VERSION is a tag, not a branch
-  git clone --recursive --depth=50 --branch v$version \
+
+  # size optimization: --depth=1 --shallow-submodules
+  # https://git-scm.com/docs/git-clone
+
+  git clone --recursive --branch v$version \
+    --depth=1 --shallow-submodules \
     $MYPY_GIT_URL $dest
+
+  # TODO: verify commit checksum
 }
 
 fetch() {
@@ -204,6 +319,31 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/python2 "$(basename $PY2_URL)" Python-$PY2_VERSION
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
+  download-to $DEPS_SOURCE_DIR/bash "$BASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH_URL)" dash-$BASH_VER
+
+  download-to $DEPS_SOURCE_DIR/dash "$DASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/dash "$(basename $DASH_URL)" dash-$DASH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/zsh "$ZSH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_URL)" zsh-$ZSH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/mksh "$MKSH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/mksh "$(basename $MKSH_URL)" mksh-$MKSH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/busybox "$BUSYBOX_URL"
+  maybe-extract $DEPS_SOURCE_DIR/busybox "$(basename $BUSYBOX_URL)" busybox-$BUSYBOX_VERSION
+
+  download-to $DEPS_SOURCE_DIR/yash "$YASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/yash "$(basename $YASH_URL)" yash-$DASH_VERSION
+
+  # Patch: this tarball doesn't follow the convention $name-$version
+  if test -d $DEPS_SOURCE_DIR/mksh/mksh; then
+    pushd $DEPS_SOURCE_DIR/mksh
+    mv -v mksh mksh-$MKSH_VERSION
+    popd
+  fi
+
   # bloaty and uftrace are for benchmarks, in containers
   download-to $DEPS_SOURCE_DIR/bloaty "$BLOATY_URL"
   download-to $DEPS_SOURCE_DIR/uftrace "$UFTRACE_URL"
@@ -216,7 +356,6 @@ fetch() {
 
   if command -v tree > /dev/null; then
     tree -L 2 $DEPS_SOURCE_DIR
-    tree -L 2 $USER_WEDGE_DIR
   fi
 }
 
@@ -244,8 +383,13 @@ mypy-new() {
 }
 
 wedge-exists() {
-  # TODO: Doesn't take into account ~/wedge/ vs. /wedge
-  local installed=/wedge/oils-for-unix.org/pkg/$1/$2
+  local is_relative=${3:-}
+
+  if test -n "$is_relative"; then
+    local installed=~/wedge/oils-for-unix.org/pkg/$1/$2
+  else
+    local installed=/wedge/oils-for-unix.org/pkg/$1/$2
+  fi
 
   if test -d $installed; then
     log "$installed already exists"
@@ -261,38 +405,92 @@ wedge-exists() {
 # _build/wedge/{absolute,relative}   # which one?
 #
 # It needs a BUILD DEPENDENCY on:
-
 # - the python3 wedge, so you can do python3 -m pip install.
 # - the mypy repo, which has test-requirements.txt
+
+download-py3-libs() {
+  ### Download source/binary packages, AFTER python3 is installed
+
+  # Note that this is NOT source code; there is binary code, e.g.  in
+  # lxml-*.whl
+
+  local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
+  local py_package_dir=_cache/py3-libs
+  mkdir -p $py_package_dir
+
+  # Avoids a warning, but doesn't fix typed_ast
+  #python3 -m pip download -d $py_package_dir wheel
+
+  python3 -m pip download -d $py_package_dir -r $mypy_dir/test-requirements.txt
+  python3 -m pip download -d $py_package_dir pexpect
+}
+
+get-typed-ast-patch() {
+  curl -o deps/typed_ast.patch https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96.patch
+}
+
+# Work around typed_ast bug:
+#   https://github.com/python/typed_ast/issues/169
+#
+# Apply this patch
+# https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
+#
+# typed_ast is tarred up though
+patch-typed-ast() {
+  local package_dir=_cache/py3-libs
+  local patch=$PWD/deps/typed_ast.patch
+
+  pushd $package_dir
+  cat $patch
+  echo
+
+  local dir=typed_ast-1.4.3
+  local tar=typed_ast-1.4.3.tar.gz
+
+  echo OLD
+  ls -l $tar
+  echo
+
+  rm -r -f -v $dir
+  tar -x -z < $tar
+
+  pushd $dir
+  patch -p1 < $patch
+  popd
+  #find $dir
+
+  # Create a new one
+  tar --create --gzip --file $tar typed_ast-1.4.3
+
+  echo NEW
+  ls -l $tar
+  echo
+
+  popd
+}
 
 install-py3-libs-in-venv() {
   local venv_dir=$1
   local mypy_dir=$2  # This is a param for host build vs. container build
+  local package_dir=_cache/py3-libs
 
   source $venv_dir/bin/activate  # enter virtualenv
 
-  # 2023-07 bug fix: have to install MyPy deps FIRST, THEN yapf.  Otherwise
-  # we get an error from pip:
+  # 2023-07 note: we're installing yapf in a DIFFERENT venv, because it
+  # conflicts with MyPy deps!
   # "ERROR: pip's dependency resolver does not currently take into account all
   # the packages that are installed."
 
+  # --find-links uses a "cache dir" for packages (weird flag name!)
+
+  # Avoids a warning, but doesn't fix typed_ast
+  #time python3 -m pip install --find-links $package_dir wheel
+
   # for mycpp/
-  time python3 -m pip install -r $mypy_dir/test-requirements.txt
+  time python3 -m pip install --find-links $package_dir -r $mypy_dir/test-requirements.txt
 
   # pexpect: for spec/stateful/*.py
-  python3 -m pip install pexpect
-
-  # TODO:
-  # - Do something like this 'pip download' in build/deps.sh fetch
-  # - Then create a WEDGE which installs it
-  #   - However note that this is NOT source code; there is binary code, e.g.
-  #   in lxml-*.whl
-  if false; then
-    local pip_dir=_tmp/pip
-    mkdir -p $pip_dir
-    python3 -m pip download -d $pip_dir -r $mypy_dir/test-requirements.txt
-    python3 -m pip download -d $pip_dir pexpect
-  fi
+  time python3 -m pip install --find-links $package_dir pexpect
 }
 
 install-py3-libs() {
@@ -322,6 +520,51 @@ install-py3-libs() {
 
   # Run in a subshell because it mutates shell state
   $0 install-py3-libs-in-venv $venv_dir $mypy_dir
+}
+
+install-spec-bin() {
+  if ! wedge-exists dash $DASH_VERSION relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/dash
+  fi
+
+  if ! wedge-exists mksh $MKSH_VERSION relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/mksh
+  fi
+
+  if ! wedge-exists busybox $BUSYBOX_VERSION relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/busybox
+  fi
+
+  #return
+
+  # Compile Error on Fedora - count_all_jobs
+  # Smoke test error on Alpine
+  if ! wedge-exists bash $BASH_VER relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/bash
+  fi
+
+  # zsh ./configure is NOT detecting 'boolcodes', and then it has a broken
+  # fallback in Src/Modules/termcap.c that causes a compile error!  It seems
+  # like ncurses-devel should fix this, but it doesn't
+  #
+  # https://koji.fedoraproject.org/koji/rpminfo?rpmID=36987813
+  #
+  # from /home/build/oil/_build/deps-source/zsh/zsh-5.1.1/Src/Modules/termcap.c:38:
+  # /usr/include/term.h:783:56: note: previous declaration of ‘boolcodes’ with type ‘const char * const[]’
+  # 783 | extern NCURSES_EXPORT_VAR(NCURSES_CONST char * const ) boolcodes[];
+  #
+  # I think the ./configure is out of sync with the actual build?
+
+  if ! wedge-exists zsh $ZSH_VERSION ''; then
+    deps/wedge.sh unboxed-build _build/deps-source/zsh
+  fi
+
+  return
+
+  # Hm this has problem with out-of-tree build?  I think Oils does too actually
+  if ! wedge-exists yash $YASH_VERSION relative; then
+    deps/wedge.sh unboxed-build _build/deps-source/yash
+  fi
 }
 
 install-wedges() {
@@ -374,11 +617,24 @@ install-wedges() {
     local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
     mkdir -p $dest_dir
 
+    # Note: pack files in .git/modules/typeshed/objects/pack are read-only
+    # this can fail
     cp --verbose --recursive --no-target-directory \
       $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
   fi
 
-  install-py3-libs
+  if ! wedge-exists py3-libs $PY3_LIBS_VERSION; then
+    download-py3-libs
+    # This patch doesn't work?
+    # patch-typed-ast
+    install-py3-libs
+  fi
+
+  if command -v tree > /dev/null; then
+    tree -L 3 $USER_WEDGE_DIR
+    echo
+    tree -L 3 /wedge/oils-for-unix.org
+  fi
 }
 
 # Host wedges end up in ~/wedge
@@ -428,6 +684,101 @@ container-wedges() {
     # For soil-benchmarks/ images
     deps/wedge.sh build deps/source.medo/R-libs/
   fi
+
+}
+
+commas() {
+  # Wow I didn't know this :a trick
+  #
+  # OK this is a label and a loop, which makes sense.  You can't do it with
+  # pure regex.
+  #
+  # https://shallowsky.com/blog/linux/cmdline/sed-improve-comma-insertion.html
+  # https://shallowsky.com/blog/linux/cmdline/sed-improve-comma-insertion.html
+  sed ':a;s/\b\([0-9]\+\)\([0-9]\{3\}\)\b/\1,\2/;ta'   
+}
+
+wedge-sizes() {
+  local tmp=_tmp/wedge-sizes.txt
+
+  # -b is --bytes, but use short flag for busybox compat
+  du -s -b /wedge/*/*/* ~/wedge/*/*/* | awk '
+    { print $0  # print the line
+      total_bytes += $1  # accumulate
+    }
+END { print total_bytes " TOTAL" }
+' > $tmp
+  
+  # printf justifies du output
+  cat $tmp | commas | xargs -n 2 printf '%15s  %s\n'
+  echo
+
+  #du -s --si /wedge/*/*/* ~/wedge/*/*/* 
+  #echo
+}
+
+wedge-report() {
+  # 4 levels deep shows the package
+  if command -v tree > /dev/null; then
+    tree -L 4 /wedge ~/wedge
+    echo
+  fi
+
+  wedge-sizes
+
+  local tmp=_tmp/wedge-manifest.txt
+
+  echo 'Biggest files'
+  if ! find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp; then
+    # busybox find doesn't have -printf
+    echo 'find -printf failed'
+    return
+  fi
+
+  set +o errexit  # ignore SIGPIPE
+  sort -n --reverse $tmp | head -n 20 | commas
+  set -o errexit
+
+  echo
+
+  # Show the most common file extensions
+  #
+  # I feel like we should be able to get rid of .a files?  That's 92 MB, second
+  # most common
+  #
+  # There are also duplicate .a files for Python -- should look at how distros
+  # get rid of those
+
+  cat $tmp | python3 -c '
+import os, sys, collections
+
+bytes = collections.Counter()
+files = collections.Counter()
+
+for line in sys.stdin:
+  size, path = line.split(None, 1)
+  path = path.strip()  # remove newline
+  _, ext = os.path.splitext(path)
+  size = int(size)
+
+  bytes[ext] += size
+  files[ext] += 1
+
+#print(bytes)
+#print(files)
+
+n = 20
+
+print("Most common file types")
+for ext, count in files.most_common()[:n]:
+  print("%10d  %s" % (count, ext))
+
+print()
+
+print("Total bytes by file type")
+for ext, total_bytes in bytes.most_common()[:n]:
+  print("%10d  %s" % (total_bytes, ext))
+' | commas
 
 }
 

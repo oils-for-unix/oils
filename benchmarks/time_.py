@@ -2,6 +2,9 @@
 """
 time.py -- Replacement for coreutils 'time'.
 
+TODO:
+(Must be Python 3 because it's used before a Python 2 WEDGE can be installed.)
+
 The interface of this program is modelled after:
 
 /usr/bin/time --append --output foo.txt --format '%x %e'
@@ -32,6 +35,12 @@ So we use a tiny C program time-helper.c to do it, and not /usr/bin/time.
 from __future__ import print_function
 
 import csv
+try:
+    import hashlib  # PY3
+except ImportError:
+    hashlib = None
+    import md5
+
 import optparse
 import os
 import sys
@@ -163,9 +172,11 @@ def main(argv):
 
   elapsed = time.time() - start_time
   if opts.stdout:
-    import md5
-    m = md5.new()
-    with open(opts.stdout) as f:
+    if hashlib:
+      m = hashlib.md5()  # PY3
+    else:
+      m = md5.new()  # PY2
+    with open(opts.stdout, 'rb') as f:
       while True:
         chunk = f.read(4096)
         if not chunk:

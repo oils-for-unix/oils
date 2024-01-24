@@ -48,7 +48,9 @@ install-shells-with-apt() {
   ### Non-hermetic shells; test/spec-bin.sh replaces this for most purposes
 
   set -x  # show what needs sudo
-  sudo apt install busybox-static mksh zsh
+
+  # pass -y to install in an automated way
+  sudo apt "$@" install busybox-static mksh zsh
   set +x
   link-busybox-ash
 }
@@ -237,8 +239,9 @@ download-original-source() {
   # http://www.linuxfromscratch.org/blfs/view/svn/postlfs/dash.html
   _wget http://gondor.apana.org.au/~herbert/dash/files/dash-0.5.10.2.tar.gz
 
-  # http://zsh.sourceforge.net/News/ - 12/2016 release
-  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.8.1/zsh-5.8.1.tar.xz
+  # http://zsh.sourceforge.net/News/
+  #_wget https://downloads.sourceforge.net/project/zsh/zsh/5.8.1/zsh-5.8.1.tar.xz
+  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.9/zsh-5.9.tar.xz
 
   _wget https://osdn.net/dl/yash/yash-2.49.tar.xz
 

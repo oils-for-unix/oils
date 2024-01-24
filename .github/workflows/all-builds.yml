@@ -29,31 +29,10 @@ env:
   GITHUB_PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
   GITHUB_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 jobs:
-  # Runs on raw VM
-  #dummy_orig:
-  #  runs-on: ubuntu-20.04
-  #  env:
-  #    REPO_ROOT: ${{ github.workspace }}
-  #  steps:
-  #    - name: Check out repository code
-  #      uses: actions/checkout@v3
-
-  #    - name: dummy
-  #      run: |
-  #        soil/worker.sh JOB-dummy
-
-  #    - name: publish-html
-  #      env:
-  #        # for deploying to dashboard
-  #        TOIL_KEY: ${{ secrets.TOIL_KEY }}
-  #      run: |
-  #        # NOTE: does not publish to status API
-  #        soil/github-actions.sh publish-and-exit dummy
-
   # The perf tool depends on a specific version of a kernel, so run it outside
   # a container.
   raw-vm:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
@@ -71,8 +50,27 @@ jobs:
         run: |
           soil/github-actions.sh publish-and-exit raw-vm T
 
+  dev-setup-debian:
+    runs-on: ubuntu-22.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: dev-setup-debian
+        run: |
+          soil/worker.sh JOB-dev-setup-debian
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit dev-setup-debian T
+
   dummy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     # container: oilshell/soil-dummy
     env:
       REPO_ROOT: ${{ github.workspace }}
@@ -80,10 +78,10 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v3
 
-      # Runs inside container!
+        # UPGRADED to podman
       - name: dummy
         run: |
-          soil/github-actions.sh run-job dummy
+          soil/github-actions.sh run-job dummy podman
 
       - name: publish-html
         env:
@@ -94,14 +92,12 @@ jobs:
 
   dev-minimal:
     # https://github.com/actions/virtual-environments
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: dev-minimal
         run: |
@@ -115,14 +111,12 @@ jobs:
           soil/github-actions.sh publish-and-exit dev-minimal T
 
   interactive:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: interactive
         run: |
@@ -136,18 +130,17 @@ jobs:
           soil/github-actions.sh publish-and-exit interactive T
 
   pea:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
+        # UPGRADED to podman
       - name: pea
         run: |
-          soil/github-actions.sh run-job pea
+          soil/github-actions.sh run-job pea podman
 
       - name: publish-html
         env:
@@ -157,14 +150,12 @@ jobs:
           soil/github-actions.sh publish-and-exit pea T
 
   other-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: other-tests
         run: |
@@ -178,14 +169,12 @@ jobs:
           soil/github-actions.sh publish-and-exit other-tests T
 
   ovm-tarball:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: ovm-tarball
         run: |
@@ -199,14 +188,12 @@ jobs:
           soil/github-actions.sh publish-and-exit ovm-tarball T
 
   app-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: app-tests
         run: |
@@ -220,14 +207,12 @@ jobs:
           soil/github-actions.sh publish-and-exit app-tests T
 
   cpp-coverage:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: cpp-coverage
         run: |
@@ -241,14 +226,12 @@ jobs:
           soil/github-actions.sh publish-and-exit cpp-coverage T
 
   benchmarks:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: benchmarks
         run: |
@@ -262,14 +245,12 @@ jobs:
           soil/github-actions.sh publish-and-exit benchmarks T
 
   benchmarks2:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: benchmarks2
         run: |
@@ -283,14 +264,12 @@ jobs:
           soil/github-actions.sh publish-and-exit benchmarks2 T
 
   cpp-small:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: cpp-small
         run: |
@@ -304,14 +283,12 @@ jobs:
           soil/github-actions.sh publish-and-exit cpp-small T
 
   cpp-tarball:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: cpp-tarball
         run: |
@@ -332,14 +309,12 @@ jobs:
           soil/github-actions.sh publish-and-exit cpp-tarball T
 
   cpp-spec:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: cpp-spec
         run: |
@@ -353,14 +328,12 @@ jobs:
           soil/github-actions.sh publish-and-exit cpp-spec T
 
   wild:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: wild
         run: |
@@ -374,11 +347,11 @@ jobs:
           soil/github-actions.sh publish-and-exit wild T
 
   maybe-merge-to-master:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm']
+    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm', 'dev-setup-debian']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code

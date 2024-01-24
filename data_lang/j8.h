@@ -9,8 +9,8 @@
   **p_out = (ch);  \
   (*p_out)++
 
-inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
-                       int j8_escape) {
+static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
+                              int j8_escape) {
   // We use a slightly weird double pointer style because
   //   *p_in may be advanced by 1 to 4 bytes (depending on whether it's UTF-8)
   //   *p_out may be advanced by 1 to 6 bytes (depending on escaping)
@@ -91,7 +91,7 @@ inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
       // printf("! Wrote %d bytes for %04x\n", n, ch);
       *p_out += n;
     } else {
-      //printf("Writing for %04x %p\n", ch, *p_out);
+      // printf("Writing for %04x %p\n", ch, *p_out);
       int n = sprintf((char*)*p_out, "\\u%04x", ch);
       *p_out += n;
       // printf("Wrote %d bytes for %04x\n", n, ch);
@@ -153,9 +153,9 @@ inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
 
 #define J8_MAX_BYTES_PER_INPUT_BYTE 7
 
-inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
-                         unsigned char** p_out, unsigned char* out_end,
-                         int j8_escape) {
+static inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
+                                unsigned char** p_out, unsigned char* out_end,
+                                int j8_escape) {
   while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
     // printf("iter %d  %p < %p \n", i++, *p_out, out_end);
     int invalid_utf8 = J8EncodeOne(p_in, p_out, j8_escape);

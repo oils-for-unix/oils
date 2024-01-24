@@ -3,12 +3,22 @@
 html_head.py: Emit <html><head> boilerplate.
 
 And make sure it works on mobile!
+
+Note: this file is also run with python3, by the Soil CI, because outside
+containers we don't have python2.
 """
 from __future__ import print_function
 
 import sys
-import cgi
-import cStringIO
+try:
+  import html
+except ImportError:
+  import cgi as html  # only for cgi.escape -> html.escape
+try:
+  import cStringIO
+except ImportError:
+  cStringIO = None
+  import io
 import optparse
 
 from doctools import doc_html
@@ -27,15 +37,15 @@ def Write(f, title, css_urls=None, js_urls=None):
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>%s</title>
-''' % cgi.escape(title))
+''' % html.escape(title))
 
   # Write CSS files first I guess?
 
   for url in css_urls:
-    f.write(doc_html.CSS_FMT % cgi.escape(url))
+    f.write(doc_html.CSS_FMT % html.escape(url))
 
   for url in js_urls:
-    f.write(doc_html.JS_FMT % cgi.escape(url))
+    f.write(doc_html.JS_FMT % html.escape(url))
 
   f.write('''\
   </head>
@@ -44,7 +54,10 @@ def Write(f, title, css_urls=None, js_urls=None):
 
   # Not used now
 def HtmlHead(title, css_urls=None, js_urls=None):
-  f = cStringIO.StringIO()
+  if cStringIO:
+    f = cStringIO.StringIO()
+  else:
+    f = io.BytesIO()
   Write(f, title, css_urls=css_urls, js_urls=js_urls)
   return f.getvalue()
 

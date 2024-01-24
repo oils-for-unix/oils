@@ -284,6 +284,8 @@ class Printf(vm._Builtin):
                     elif typ == 'q':
                         # TODO: most shells give \' for single quote, while OSH gives $'\''
                         # this could matter when SSH'ing
+
+                        # Do we need fastfunc.PosixShellEncode()?
                         s = qsn.maybe_shell_encode(s)
 
                     elif typ == 'b':
