@@ -39,6 +39,7 @@ source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
 source deps/from-apt.sh      # PY3_BUILD_DEPS
 #source deps/podman.sh
 source devtools/run-task.sh  # run-task
+source test/common.sh  # run-task-with-status, nproc
 
 # Also in build/dev-shell.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
@@ -370,19 +371,9 @@ fetch-py() {
   fetch py_only
 }
 
-mypy-new() {
-  local version=0.971
-  # Do the latest version for Python 2
-  clone-mypy $DEPS_SOURCE_DIR/mypy $version
-
-  local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$version
-  mkdir -p $dest_dir
-
-  cp --verbose --recursive --no-target-directory \
-    $DEPS_SOURCE_DIR/mypy/mypy-$version $dest_dir
-}
-
 wedge-exists() {
+  ### Does an installed wedge already exist?
+
   local is_relative=${3:-}
 
   if test -n "$is_relative"; then
@@ -426,6 +417,8 @@ download-py3-libs() {
 }
 
 get-typed-ast-patch() {
+  ### Unused now
+
   curl -o deps/typed_ast.patch https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96.patch
 }
 
@@ -437,6 +430,8 @@ get-typed-ast-patch() {
 #
 # typed_ast is tarred up though
 patch-typed-ast() {
+  ### Unused now
+
   local package_dir=_cache/py3-libs
   local patch=$PWD/deps/typed_ast.patch
 
@@ -522,6 +517,7 @@ install-py3-libs() {
   $0 install-py3-libs-in-venv $venv_dir $mypy_dir
 }
 
+# TODO: parallelize this function
 install-spec-bin() {
   if ! wedge-exists dash $DASH_VERSION relative; then
     deps/wedge.sh unboxed-build _build/deps-source/dash
@@ -535,14 +531,12 @@ install-spec-bin() {
     deps/wedge.sh unboxed-build _build/deps-source/busybox
   fi
 
-  #return
-
-  # Compile Error on Fedora - count_all_jobs
-  # Smoke test error on Alpine
+  # Fedora compile error - count_all_jobs
   if ! wedge-exists bash $BASH_VER relative; then
     deps/wedge.sh unboxed-build _build/deps-source/bash
   fi
 
+  # Fedora compiler error
   # zsh ./configure is NOT detecting 'boolcodes', and then it has a broken
   # fallback in Src/Modules/termcap.c that causes a compile error!  It seems
   # like ncurses-devel should fix this, but it doesn't
@@ -567,6 +561,63 @@ install-spec-bin() {
   fi
 }
 
+py-wedges() {
+  ### for build/py.sh all
+
+  # Can all be done in parallel
+  echo cmark $CMARK_VERSION
+  echo re2c $RE2C_VERSION
+  echo python2 $PY2_VERSION
+}
+
+cpp-wedges() {
+  ### for ninja / mycpp translation
+
+  # These are done serially?
+  echo python3 $PY3_VERSION
+  echo mypy $MYPY_VERSION
+  echo py3-libs $PY3_LIBS_VERSION
+}
+
+spec-bin-wedges() {
+  ### for test/spec-py.sh osh-all
+
+  # Can all be done in parallel
+  echo bash $BASH_VER
+  echo dash $DASH_VERSION
+  echo mksh $MKSH_VERSION
+  echo zsh $ZSH_VERSION
+  echo busybox $BUSYBOX_VERSION
+}
+
+maybe-install-wedge() {
+  local name=$1
+  local version=$2
+
+  if ! wedge-exists $name $version; then
+    deps/wedge.sh unboxed-build _build/deps-source/$name/
+  fi
+}
+
+install-wedges-fast() {
+  log ""
+  log "=== Installing $nproc wedges in parallel"
+  log ""
+
+  # TODO: because we're running in parallel, each one needs to write a separate
+  # task file.  Like the spec tests.
+  #
+  # The benchmarks run serially, so they don't do that.
+  #
+  # test/wild-runner.sh - dump-html-and-translate-file()
+  # test/spec-runner.sh - dispatch-one -> run-task-with-status with test-common
+
+  py-wedges | xargs -P $nproc -n 2 -- $0 maybe-install-wedge
+
+  # TODO: collect failures, and exit non-zero if anything fails
+}
+
+# TODO: parallelize this function
 install-wedges() {
   local py_only=${1:-}
 
@@ -577,11 +628,11 @@ install-wedges() {
   #   - rel-smoke-test -- mount it in a different location
   # - Should have a CI task that does all of this!
 
-  if ! wedge-exists cmark 0.29.0; then
+  if ! wedge-exists cmark $CMARK_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/cmark/
   fi
 
-  if ! wedge-exists re2c 3.0; then
+  if ! wedge-exists re2c $RE2C_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/re2c/
   fi
 
@@ -603,7 +654,6 @@ install-wedges() {
       $DEPS_SOURCE_DIR/pyflakes/pyflakes-$PYFLAKES_VERSION $dest_dir
   fi
 
-  # TODO: make the Python build faster by using all your cores?
   if ! wedge-exists python3 $PY3_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/python3/
   fi
@@ -613,7 +663,6 @@ install-wedges() {
 
     # NOTE: We have to also copy the .git dir, because it has
     # .git/modules/typeshed
-
     local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
     mkdir -p $dest_dir
 
@@ -649,16 +698,16 @@ uftrace-host() {
   deps/wedge.sh unboxed-build _build/deps-source/uftrace
 }
 
+install-wedges-py() {
+  install-wedges py_only
+}
+
 R-libs-host() {
   deps/wedge.sh unboxed-build _build/deps-source/R-libs
 }
 
 bloaty-host() {
   deps/wedge.sh unboxed-build _build/deps-source/bloaty
-}
-
-install-wedges-py() {
-  install-wedges py_only
 }
 
 container-wedges() {
@@ -684,7 +733,6 @@ container-wedges() {
     # For soil-benchmarks/ images
     deps/wedge.sh build deps/source.medo/R-libs/
   fi
-
 }
 
 commas() {
@@ -779,7 +827,6 @@ print("Total bytes by file type")
 for ext, total_bytes in bytes.most_common()[:n]:
   print("%10d  %s" % (total_bytes, ext))
 ' | commas
-
 }
 
 run-task "$@"

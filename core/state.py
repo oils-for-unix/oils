@@ -1800,13 +1800,7 @@ class Mem(object):
 
     def GetValue(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> value_t
-        """Used by the WordEvaluator, ArithEvaluator, ysh/expr_eval.py, etc.
-
-        TODO:
-        - Many of these should be value.Int, not value.Str
-        - And even later _pipeline_status etc. should be lists of integers, not
-          strings
-        """
+        """Used by the WordEvaluator, ArithEvaluator, ExprEvaluator, etc."""
         assert isinstance(name, str), name
 
         if which_scopes == scope_e.Shopt:
@@ -1818,6 +1812,7 @@ class Mem(object):
         # if name not in COMPUTED_VARS: ...
 
         if name == 'ARGV':
+            # TODO: ARGV can be a normal mutable variable in YSH
             items = [value.Str(s)
                      for s in self.GetArgv()]  # type: List[value_t]
             return value.List(items)
@@ -1943,7 +1938,7 @@ class Mem(object):
             self.line_num.s = str(self.token_for_line.line.line_num)
             return self.line_num
 
-        if name == 'BASHPID':  # TODO: Oil name for it
+        if name == 'BASHPID':  # TODO: YSH io->getpid()
             return value.Str(str(posix.getpid()))
 
         if name == '_':
