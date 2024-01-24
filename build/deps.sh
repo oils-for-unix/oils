@@ -583,8 +583,8 @@ spec-bin-wedges() {
   ### for test/spec-py.sh osh-all
 
   # Can all be done in parallel
-  echo bash $BASH_VER
   echo dash $DASH_VERSION
+  echo bash $BASH_VER
   echo mksh $MKSH_VERSION
   echo zsh $ZSH_VERSION
   echo busybox $BUSYBOX_VERSION
@@ -594,8 +594,17 @@ maybe-install-wedge() {
   local name=$1
   local version=$2
 
-  if ! wedge-exists $name $version; then
-    deps/wedge.sh unboxed-build _build/deps-source/$name/
+  #if ! wedge-exists $name $version; then
+  if ! wedge-exists $name $version 'relative'; then
+    # TODO:
+    # - this doesn't have elapsed, user, sys, max_rss_KiB
+    # - name, version, output wedge dir should be columns too
+    #   - total size, number of files would be useful too
+    # - we need logging too, and the log is another column
+    #   - I guess that's just >log.txt 2>&1
+
+    local task_file=_build/wedge/logs/$name.task.txt
+    run-task-with-status $task_file deps/wedge.sh unboxed-build _build/deps-source/$name/
   fi
 }
 
@@ -603,6 +612,8 @@ install-wedges-fast() {
   log ""
   log "=== Installing $nproc wedges in parallel"
   log ""
+
+  mkdir -p _build/wedge/logs
 
   # TODO: because we're running in parallel, each one needs to write a separate
   # task file.  Like the spec tests.
@@ -612,7 +623,9 @@ install-wedges-fast() {
   # test/wild-runner.sh - dump-html-and-translate-file()
   # test/spec-runner.sh - dispatch-one -> run-task-with-status with test-common
 
-  py-wedges | xargs -P $nproc -n 2 -- $0 maybe-install-wedge
+  #py-wedges | xargs -P $nproc -n 2 -- $0 maybe-install-wedge
+
+  spec-bin-wedges | xargs -P $nproc -n 2 -- $0 maybe-install-wedge
 
   # TODO: collect failures, and exit non-zero if anything fails
 }
