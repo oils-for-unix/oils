@@ -1,34 +1,25 @@
 #!/usr/bin/env bash
 #
-# Script for contributors to quickly set up core packages
+# Script for contributors to build dev dependencies -- packaged as cross-distro
+# "wedges".  Tested in the Soil CI.
 #
 # Usage:
 #   build/deps.sh <function name>
 #
 # Examples:
 #   build/deps.sh fetch
-#   build/deps.sh install-wedges
-#   build/deps.sh rm-oils-crap  # rm /wedge ~/wedge to start over
+#   build/deps.sh install-wedges  # for both Python and C++
+#   build/deps.sh rm-oils-crap  # rm -r -f /wedge ~/wedge to start over
 #
-# - re2c
-# - cmark
-# - python3
-# - mypy and deps, so mycpp can import htem
-
-# TODO:
-# - remove cmark dependency for help.  It's still used for docs and benchmarks.
-# - remove re2c from dev build?  Are there any bugs?  I think it's just slow.
+# TODO: Do we need something faster, just python2, re2c, and cmark?
 #
-# - change Contributing page
 #   - build/deps.sh fetch-py
 #   - build/deps.sh install-wedges-py
 #
-# mycpp/README.md:
+# TODO: Can we make most of them non-root deps?  This requires rebuilding
+# containers, which requires podman.
 #
-#   - build/deps.sh fetch
-#   - build/deps.sh install-wedges
-#
-# Can we make most of them non-root deps?
+#     rm -r -f ~/wedge  # would be better
 
 set -o nounset
 set -o pipefail
@@ -37,7 +28,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
-source deps/from-apt.sh      # PY3_BUILD_DEPS
+source deps/from-apt.sh  # PY3_BUILD_DEPS
 #source deps/podman.sh
 source devtools/run-task.sh  # run-task
 source test/tsv-lib.sh  # tsv-concat
@@ -518,7 +509,7 @@ install-py3-libs() {
   $0 install-py3-libs-in-venv $venv_dir $mypy_dir
 }
 
-# TODO: parallelize this function
+# This is now install-spec-bin-fast
 install-spec-bin() {
   if ! wedge-exists dash $DASH_VERSION relative; then
     deps/wedge.sh unboxed-build _build/deps-source/dash
@@ -632,6 +623,7 @@ maybe-install-wedge() {
 }
 
 dummy-task() {
+  ### For testing log capture
   local name=$1
   local version=$2
 
@@ -779,7 +771,7 @@ install-wedges() {
   fi
 
   # Just copy this source tarball
-  if ! wedge-exists pyflakes $PYFLAKES_VERSION; then
+  if ! wedge-exists pyflakes $PYFLAKES_VERSION 'relative'; then
     local dest_dir=$USER_WEDGE_DIR/pkg/pyflakes/$PYFLAKES_VERSION
     mkdir -p $dest_dir
 
@@ -792,7 +784,7 @@ install-wedges() {
   fi
 
   # Copy all the contents, except for .git folder.
-  if ! wedge-exists mypy $MYPY_VERSION; then
+  if ! wedge-exists mypy $MYPY_VERSION 'relative'; then
 
     # NOTE: We have to also copy the .git dir, because it has
     # .git/modules/typeshed
@@ -805,7 +797,7 @@ install-wedges() {
       $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
   fi
 
-  if ! wedge-exists py3-libs $PY3_LIBS_VERSION; then
+  if ! wedge-exists py3-libs $PY3_LIBS_VERSION 'relative'; then
     download-py3-libs
     # This patch doesn't work?
     # patch-typed-ast
@@ -819,7 +811,14 @@ install-wedges() {
   fi
 }
 
-# Host wedges end up in ~/wedge
+install-wedges-py() {
+  install-wedges py_only
+}
+
+#
+# Unboxed wedge builds
+#
+
 uftrace-host() {
   ### built on demand; run $0 first
 
@@ -831,10 +830,6 @@ uftrace-host() {
   deps/wedge.sh unboxed-build _build/deps-source/uftrace
 }
 
-install-wedges-py() {
-  install-wedges py_only
-}
-
 R-libs-host() {
   deps/wedge.sh unboxed-build _build/deps-source/R-libs
 }
@@ -843,10 +838,12 @@ bloaty-host() {
   deps/wedge.sh unboxed-build _build/deps-source/bloaty
 }
 
+#
+# Wedges built inside a container, for copying into a container
+#
+
 container-wedges() {
-  ### Build wedges that are copied into containers, not run on host
-  
-  # These end up in _build/wedge/binary
+  #### host _build/wedge/binary -> guest container /wedge or ~/wedge
 
   #export-podman
 
@@ -867,6 +864,10 @@ container-wedges() {
     deps/wedge.sh build deps/source.medo/R-libs/
   fi
 }
+
+#
+# Report
+#
 
 commas() {
   # Wow I didn't know this :a trick

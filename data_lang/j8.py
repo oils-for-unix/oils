@@ -52,7 +52,6 @@ unused = pyj8
 
 from typing import cast, Dict, List, Tuple, Optional
 
-
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
 LOSSY_JSON = 1 << 3  # JSON is lossy
