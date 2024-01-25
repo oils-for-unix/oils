@@ -218,6 +218,58 @@ wedge-deps-alpine() {
   sudo apk add "${WEDGE_DEPS_ALPINE[@]}"
 }
 
+#
+# Unused patch, was experiment for Fedora
+#
+
+get-typed-ast-patch() {
+  curl -o deps/typed_ast.patch https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96.patch
+}
+
+# Work around typed_ast bug:
+#   https://github.com/python/typed_ast/issues/169
+#
+# Apply this patch
+# https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
+#
+# typed_ast is tarred up though
+patch-typed-ast() {
+  local package_dir=_cache/py3-libs
+  local patch=$PWD/deps/typed_ast.patch
+
+  pushd $package_dir
+  cat $patch
+  echo
+
+  local dir=typed_ast-1.4.3
+  local tar=typed_ast-1.4.3.tar.gz
+
+  echo OLD
+  ls -l $tar
+  echo
+
+  rm -r -f -v $dir
+  tar -x -z < $tar
+
+  pushd $dir
+  patch -p1 < $patch
+  popd
+  #find $dir
+
+  # Create a new one
+  tar --create --gzip --file $tar typed_ast-1.4.3
+
+  echo NEW
+  ls -l $tar
+  echo
+
+  popd
+}
+
+#
+# Fetch
+#
+
 download-to() {
   local dir=$1
   local url=$2
@@ -354,15 +406,15 @@ fetch() {
   fi
 }
 
+fetch-py() {
+  fetch py_only
+}
+
 mirror-pyflakes() {
   ### Workaround for network error during release
   scp \
     $DEPS_SOURCE_DIR/pyflakes/"$(basename $PYFLAKES_URL)" \
     oilshell.org:oilshell.org/blob/
-}
-
-fetch-py() {
-  fetch py_only
 }
 
 wedge-exists() {
@@ -381,6 +433,10 @@ wedge-exists() {
     return 1
   fi
 }
+
+#
+# Install
+#
 
 # TODO: py3-libs needs to be a WEDGE, so that that you can run
 # 'wedge build deps/source.medo/py3-libs/' and then get it in
@@ -408,54 +464,6 @@ download-py3-libs() {
   python3 -m pip download -d $py_package_dir pexpect
 }
 
-get-typed-ast-patch() {
-  ### Unused now
-
-  curl -o deps/typed_ast.patch https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96.patch
-}
-
-# Work around typed_ast bug:
-#   https://github.com/python/typed_ast/issues/169
-#
-# Apply this patch
-# https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
-#
-# typed_ast is tarred up though
-patch-typed-ast() {
-  ### Unused now
-
-  local package_dir=_cache/py3-libs
-  local patch=$PWD/deps/typed_ast.patch
-
-  pushd $package_dir
-  cat $patch
-  echo
-
-  local dir=typed_ast-1.4.3
-  local tar=typed_ast-1.4.3.tar.gz
-
-  echo OLD
-  ls -l $tar
-  echo
-
-  rm -r -f -v $dir
-  tar -x -z < $tar
-
-  pushd $dir
-  patch -p1 < $patch
-  popd
-  #find $dir
-
-  # Create a new one
-  tar --create --gzip --file $tar typed_ast-1.4.3
-
-  echo NEW
-  ls -l $tar
-  echo
-
-  popd
-}
-
 install-py3-libs-in-venv() {
   local venv_dir=$1
   local mypy_dir=$2  # This is a param for host build vs. container build
@@ -480,7 +488,10 @@ install-py3-libs-in-venv() {
   time python3 -m pip install --find-links $package_dir pexpect
 }
 
-install-py3-libs() {
+install-py3-libs-from-cache() {
+
+  # As well as end users
+
   local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
 
   local py3
@@ -507,6 +518,13 @@ install-py3-libs() {
 
   # Run in a subshell because it mutates shell state
   $0 install-py3-libs-in-venv $venv_dir $mypy_dir
+}
+
+install-py3-libs() {
+  ### Invoked by Dockerfile.cpp-small, etc.
+
+  download-py3-libs
+  install-py3-libs-from-cache
 }
 
 # This is now install-spec-bin-fast
@@ -556,7 +574,6 @@ install-spec-bin() {
 # TODO:
 # - $ROOT_WEDGE_DIR vs. $USER_WEDGE_DIR is duplicating information that's
 # already in each WEDGE file
-# - pyflakes needs a wedge
 
 py-wedges() {
   ### for build/py.sh all
@@ -565,17 +582,20 @@ py-wedges() {
   echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR
   echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR
   echo python2 $PY2_VERSION $ROOT_WEDGE_DIR
+  echo pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR
 }
 
-# TODO:
-# - there is no MyPy wedge
 cpp-wedges() {
   ### for ninja / mycpp translation
 
   # These are done serially?
   echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
   echo mypy $MYPY_VERSION $USER_WEDGE_DIR
-  echo py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR
+
+  # py3-libs has a built time dep on both python3 and MyPy, so we're doing it
+  # separately for now
+
+  #echo py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR
 }
 
 spec-bin-wedges() {
@@ -611,11 +631,13 @@ maybe-install-wedge() {
     --output $task_file
 
   if wedge-exists "$name" "$version" "$wedge_dir"; then
+    echo "CACHED $name $version"
     return
   fi
 
   local -a cmd=( deps/wedge.sh unboxed-build _build/deps-source/$name/ )
 
+  set +o errexit
   python3 benchmarks/time_.py \
     --tsv \
     --rusage \
@@ -624,10 +646,15 @@ maybe-install-wedge() {
     --field "$version" \
     --append \
     --output $task_file \
-    "${cmd[@]}" "$@" >$log_file 2>&1 || true
+    "${cmd[@]}" "$@" >$log_file 2>&1
+  local status=$?
+  set -o errexit
 
-  # TODO: if it fails, print FAILED immediately
-  echo "DONE $name $version"
+  if test "$status" -eq 0; then
+    echo "    OK $name $version"
+  else
+    echo "  FAIL $name $version"
+  fi
 }
 
 dummy-task() {
@@ -771,11 +798,41 @@ install-spec-bin-fast() {
   write-task-report
 }
 
+fake-py3-libs-wedge() {
+  local name=py3-libs
+  local version=$PY3_LIBS_VERSION
+
+  local task_file=$WEDGE_LOG_DIR/$name.task.tsv
+  local log_file=$WEDGE_LOG_DIR/$name.log.txt
+
+  python3 benchmarks/time_.py \
+    --print-header \
+    --tsv \
+    --rusage \
+    --field wedge \
+    --field wedge_HREF \
+    --field version \
+    --output $task_file
+
+  python3 benchmarks/time_.py \
+    --tsv \
+    --rusage \
+    --field "$name" \
+    --field "$name.log.txt" \
+    --field "$version" \
+    --append \
+    --output $task_file \
+    $0 install-py3-libs >$log_file 2>&1 || true
+}
+
 install-wedges-fast() {
   py-wedges | install-wedge-list T
 
   # These have dependencies, so it can't be parallel
   cpp-wedges | install-wedge-list
+
+  fake-py3-libs-wedge
+
   write-task-report
 }
 

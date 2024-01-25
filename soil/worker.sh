@@ -71,7 +71,7 @@ os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
 wedge-deps       build/deps.sh wedge-deps-$distro   -
 fetch            build/deps.sh fetch                -
-install-wedges   build/deps.sh install-wedges       -
+install-wedges   build/deps.sh install-wedges-fast  _build/wedge/logs/index.html
 py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
 wedge-report     build/deps.sh wedge-report         -
@@ -92,8 +92,8 @@ EOF
 dev-setup-debian-tasks() {
   # (task_name, script, action, result_html)
 
-  #dev-setup-for debian
-  spec-bin-for debian
+  dev-setup-for debian
+  #spec-bin-for debian
 }
 
 dev-setup-fedora-tasks() {
@@ -105,8 +105,8 @@ dev-setup-fedora-tasks() {
 dev-setup-alpine-tasks() {
   # (task_name, script, action, result_html)
 
-  #dev-setup-for alpine
-  spec-bin-for alpine
+  dev-setup-for alpine
+  #spec-bin-for alpine
 }
 
 pea-tasks() {
