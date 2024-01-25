@@ -35,10 +35,13 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
 source deps/from-apt.sh      # PY3_BUILD_DEPS
 #source deps/podman.sh
 source devtools/run-task.sh  # run-task
+source test/tsv-lib.sh  # tsv-concat
 
 # Also in build/dev-shell.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
@@ -589,40 +592,13 @@ spec-bin-wedges() {
   echo busybox $BUSYBOX_VERSION
 }
 
-run-task-with-status() {
-  ### Run a process and write a file with status and time
-
-  # Used by test/{spec,wild}-runner.sh
-
-  local out_file=$1
-  shift
-
-  # python3 because it's OUTSIDE the container
-  python3 benchmarks/time_.py \
-    --tsv \
-    --rusage \
-    --output $out_file \
-    -- "$@" || true  # suppress failure
-
-  # TODO:
-  # - add more columns?
-  # - add a proper TSV header so it can be joined by the standard tool?
-}
-
 maybe-install-wedge() {
   local name=$1
   local version=$2
 
   #if ! wedge-exists $name $version; then
   if ! wedge-exists $name $version 'relative'; then
-    # TODO:
-    # - this doesn't have elapsed, user, sys, max_rss_KiB
-    # - name, version, output wedge dir should be columns too
-    #   - total size, number of files would be useful too
-    # - we need logging too, and the log is another column
-    #   - I guess that's just >log.txt 2>&1
-
-    local task_file=_build/wedge/logs/$name.task.txt
+    local task_file=_build/wedge/logs/$name.task.tsv
     run-task-with-status $task_file deps/wedge.sh unboxed-build _build/deps-source/$name/
   fi
 }
@@ -635,20 +611,82 @@ dummy-task() {
   sleep 1
   echo 'stdout'
   log 'stderr'
+
+  if test $name = 'mksh'; then
+    echo "simulate failure for $name"
+    exit 2
+  fi
 }
 
+readonly WEDGE_LOG_DIR=_build/wedge/logs
+
 dummy-task-wrapper() {
+  # Similar to test/common.sh run-task-with-status, used by
+  # test/{spec,wild}-runner.sh
+
   local name=$1
   local version=$2
 
-  local task_file=_build/wedge/logs/$name.task.txt
-  local log_file=_build/wedge/logs/$name.log.txt
+  local task_file=$WEDGE_LOG_DIR/$name.task.tsv
+  local log_file=$WEDGE_LOG_DIR/$name.log.txt
 
-  echo "TASK $name $version"
-  run-task-with-status $task_file $0 dummy-task "$@" >$log_file 2>&1
+  echo "TASK $name $version > $log_file"
 
-  # TODO: print FAILED status?
+  # python3 because it's OUTSIDE the container
+  python3 benchmarks/time_.py \
+    --print-header \
+    --tsv \
+    --rusage \
+    --field wedge \
+    --field wedge_HREF \
+    --field version \
+    --output $task_file
+
+  python3 benchmarks/time_.py \
+    --tsv \
+    --rusage \
+    --field "$name" \
+    --field "$name.log.txt" \
+    --field "$version" \
+    --append \
+    --output $task_file \
+    $0 dummy-task "$@" >$log_file 2>&1 || true
+
+  # Separate columns that could be joined: number of files, total size
+
+  # TODO: if it fails, print FAILED immediately
   echo "DONE $name $version"
+}
+
+html-head() {
+  # python3 because we're outside containers
+  PYTHONPATH=. python3 doctools/html_head.py "$@"
+}
+
+index-html()  {
+  local tasks_tsv=$1
+
+  local base_url='../../../web'
+  html-head --title 'Wedge Builds' \
+    "$base_url/table/table-sort.js" \
+    "$base_url/table/table-sort.css" \
+    "$base_url/base.css"\
+
+  cat <<EOF
+  <body class="width60">
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+
+  <h1>Wedge Builds</h1>
+EOF
+
+  tsv2html $tasks_tsv
+
+  cat <<EOF
+  </body>
+</html>
+EOF
 }
 
 NPROC=$(nproc)
@@ -660,20 +698,32 @@ install-wedges-fast() {
 
   mkdir -p _build/wedge/logs
 
-  # TODO: because we're running in parallel, each one needs to write a separate
-  # task file.  Like the spec tests.
-  #
-  # The benchmarks run serially, so they don't do that.
-  #
-  # test/wild-runner.sh - dump-html-and-translate-file()
-  # test/spec-runner.sh - dispatch-one -> run-task-with-status with test-common
-
-  #py-wedges | xargs -P $NPROC -n 2 -- $0 maybe-install-wedge
-
   #spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 maybe-install-wedge
   spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 dummy-task-wrapper
 
-  # TODO: collect failures, and exit non-zero if anything fails
+  local tasks_tsv=_build/wedge/tasks.tsv
+
+  # TODO: exit non-zero if any of these are non-zero
+  tsv-concat $WEDGE_LOG_DIR/*.tsv > $tasks_tsv
+  log "Wrote $tasks_tsv"
+
+  # TODO:
+  # - Add precision column
+  # - version can be right-justified?
+  here-schema-tsv-3col >_build/wedge/tasks.schema.tsv <<EOF
+column_name   type     precision
+status        integer  0
+elapsed_secs  float    2
+user_secs     float    2
+sys_secs      float    2
+max_rss_KiB   integer  0
+wedge         string   0
+wedge_HREF    string   0
+version       string   0
+EOF
+
+  index-html $tasks_tsv > $WEDGE_LOG_DIR/index.html
+  log "Wrote $WEDGE_LOG_DIR/index.html"
 }
 
 # TODO: parallelize this function

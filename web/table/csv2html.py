@@ -76,7 +76,8 @@ class NullSchema:
 INTEGER_TYPES = ('integer',)
 
 # for sorting, right-justification
-NUMERIC_TYPES = ('double', 'number') + INTEGER_TYPES
+# Note: added 'float' as alias for 'double' to be compatible with TSV8
+NUMERIC_TYPES = ('double', 'float', 'number') + INTEGER_TYPES
 
 
 class Schema:

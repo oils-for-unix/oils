@@ -63,6 +63,15 @@ here-schema-tsv() {
   done
 }
 
+here-schema-tsv-3col() {
+  ### Read a legible text format on stdin, and write TSV on stdout
+
+  while read -r one two three; do
+    echo "${one}${TAB}${two}${TAB}${three}"
+  done
+}
+
+
 tsv-concat() {
   devtools/tsv_concat.py "$@"
 }

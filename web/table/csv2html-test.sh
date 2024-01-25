@@ -102,7 +102,7 @@ EOF
   cat >_tmp/prec.schema.csv <<EOF
 column_name,type,precision
 name,string,1
-age,double,3
+age,double,2
 EOF
 
   write-html prec
