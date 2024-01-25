@@ -35,6 +35,7 @@ source test/tsv-lib.sh  # tsv-concat
 
 # Also in build/dev-shell.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
+ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 
 readonly DEPS_SOURCE_DIR=_build/deps-source
 
@@ -344,6 +345,7 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/uftrace "$(basename $UFTRACE_URL)" bloaty-$UFTRACE_VERSION
 
   # This is in $DEPS_SOURCE_DIR to COPY into containers, which mycpp will directly import.
+
   # It's also copied into a wedge in install-wedges.
   clone-mypy $DEPS_SOURCE_DIR/mypy
 
@@ -366,13 +368,11 @@ fetch-py() {
 wedge-exists() {
   ### Does an installed wedge already exist?
 
-  local is_relative=${3:-}
+  local name=$1
+  local version=$2
+  local wedge_dir=${3:-/wedge/oils-for-unix.org}
 
-  if test -n "$is_relative"; then
-    local installed=~/wedge/oils-for-unix.org/pkg/$1/$2
-  else
-    local installed=/wedge/oils-for-unix.org/pkg/$1/$2
-  fi
+  local installed=$wedge_dir/pkg/$name/$version
 
   if test -d $installed; then
     log "$installed already exists"
@@ -511,20 +511,20 @@ install-py3-libs() {
 
 # This is now install-spec-bin-fast
 install-spec-bin() {
-  if ! wedge-exists dash $DASH_VERSION relative; then
+  if ! wedge-exists dash $DASH_VERSION $USER_WEDGE_DIR; then
     deps/wedge.sh unboxed-build _build/deps-source/dash
   fi
 
-  if ! wedge-exists mksh $MKSH_VERSION relative; then
+  if ! wedge-exists mksh $MKSH_VERSION $USER_WEDGE_DIR; then
     deps/wedge.sh unboxed-build _build/deps-source/mksh
   fi
 
-  if ! wedge-exists busybox $BUSYBOX_VERSION relative; then
+  if ! wedge-exists busybox $BUSYBOX_VERSION $USER_WEDGE_DIR; then
     deps/wedge.sh unboxed-build _build/deps-source/busybox
   fi
 
   # Fedora compile error - count_all_jobs
-  if ! wedge-exists bash $BASH_VER relative; then
+  if ! wedge-exists bash $BASH_VER $USER_WEDGE_DIR; then
     deps/wedge.sh unboxed-build _build/deps-source/bash
   fi
 
@@ -548,43 +548,51 @@ install-spec-bin() {
   return
 
   # Hm this has problem with out-of-tree build?  I think Oils does too actually
-  if ! wedge-exists yash $YASH_VERSION relative; then
+  if ! wedge-exists yash $YASH_VERSION $USER_WEDGE_DIR; then
     deps/wedge.sh unboxed-build _build/deps-source/yash
   fi
 }
+
+# TODO:
+# - $ROOT_WEDGE_DIR vs. $USER_WEDGE_DIR is duplicating information that's
+# already in each WEDGE file
+# - pyflakes needs a wedge
 
 py-wedges() {
   ### for build/py.sh all
 
   # Can all be done in parallel
-  echo cmark $CMARK_VERSION
-  echo re2c $RE2C_VERSION
-  echo python2 $PY2_VERSION
+  echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR
+  echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR
+  echo python2 $PY2_VERSION $ROOT_WEDGE_DIR
 }
 
+# TODO:
+# - there is no MyPy wedge
 cpp-wedges() {
   ### for ninja / mycpp translation
 
   # These are done serially?
-  echo python3 $PY3_VERSION
-  echo mypy $MYPY_VERSION
-  echo py3-libs $PY3_LIBS_VERSION
+  echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
+  echo mypy $MYPY_VERSION $USER_WEDGE_DIR
+  echo py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR
 }
 
 spec-bin-wedges() {
   ### for test/spec-py.sh osh-all
 
   # Can all be done in parallel
-  echo dash $DASH_VERSION
-  echo bash $BASH_VER
-  echo mksh $MKSH_VERSION
-  echo zsh $ZSH_VERSION
-  echo busybox $BUSYBOX_VERSION
+  echo dash $DASH_VERSION $USER_WEDGE_DIR
+  echo bash $BASH_VER $USER_WEDGE_DIR
+  echo mksh $MKSH_VERSION $USER_WEDGE_DIR
+  echo zsh $ZSH_VERSION $USER_WEDGE_DIR
+  echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
 }
 
 maybe-install-wedge() {
   local name=$1
   local version=$2
+  local wedge_dir=$3  # e.g. $USER_WEDGE_DIR or empty
 
   local task_file=$WEDGE_LOG_DIR/$name.task.tsv
   local log_file=$WEDGE_LOG_DIR/$name.log.txt
@@ -602,7 +610,7 @@ maybe-install-wedge() {
     --field version \
     --output $task_file
 
-  if wedge-exists $name $version 'relative'; then
+  if wedge-exists "$name" "$version" "$wedge_dir"; then
     return
   fi
 
@@ -709,16 +717,32 @@ EOF
 
 NPROC=$(nproc)
 
-install-spec-bin-fast() {
-  log ""
-  log "=== Installing wedges with $NPROC jobs in parallel"
-  log ""
+install-wedge-list() {
+  ### Reads task rows from stdin
+  local parallel=${1:-}
+
 
   mkdir -p _build/wedge/logs
 
-  spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 maybe-install-wedge
-  #spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 dummy-task-wrapper
+  local -a flags
+  if test -n "$parallel"; then
+    log ""
+    log "=== Installing wedges with $NPROC jobs in parallel"
+    log ""
+    flags=( -P $NPROC )
+  else
+    log ""
+    log "=== Installing wedges serially"
+    log ""
+  fi
 
+  # Reads from stdin
+  xargs "${flags[@]}" -n 3 -- $0 maybe-install-wedge
+
+  # xargs "${flags[@]}" -n 3 -- $0 dummy-task-wrapper
+}
+
+write-task-report() {
   local tasks_tsv=_build/wedge/tasks.tsv
 
   # TODO: exit non-zero if any of these are non-zero
@@ -740,6 +764,19 @@ EOF
 
   index-html $tasks_tsv > $WEDGE_LOG_DIR/index.html
   log "Wrote $WEDGE_LOG_DIR/index.html"
+}
+
+install-spec-bin-fast() {
+  spec-bin-wedges | install-wedge-list T
+  write-task-report
+}
+
+install-wedges-fast() {
+  py-wedges | install-wedge-list T
+
+  # These have dependencies, so it can't be parallel
+  cpp-wedges | install-wedge-list
+  write-task-report
 }
 
 # TODO: parallelize this function
@@ -771,7 +808,7 @@ install-wedges() {
   fi
 
   # Just copy this source tarball
-  if ! wedge-exists pyflakes $PYFLAKES_VERSION 'relative'; then
+  if ! wedge-exists pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR; then
     local dest_dir=$USER_WEDGE_DIR/pkg/pyflakes/$PYFLAKES_VERSION
     mkdir -p $dest_dir
 
@@ -784,7 +821,7 @@ install-wedges() {
   fi
 
   # Copy all the contents, except for .git folder.
-  if ! wedge-exists mypy $MYPY_VERSION 'relative'; then
+  if ! wedge-exists mypy $MYPY_VERSION $USER_WEDGE_DIR; then
 
     # NOTE: We have to also copy the .git dir, because it has
     # .git/modules/typeshed
@@ -797,7 +834,7 @@ install-wedges() {
       $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
   fi
 
-  if ! wedge-exists py3-libs $PY3_LIBS_VERSION 'relative'; then
+  if ! wedge-exists py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR; then
     download-py3-libs
     # This patch doesn't work?
     # patch-typed-ast
