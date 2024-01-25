@@ -1,10 +1,9 @@
 #!/usr/bin/env python2
+from __future__ import print_function
 """
-csv_concat.py
+tsv_concat.py - Also run with Python 3
 """
-
 import sys
-
 
 def main(argv):
   first_header = None
@@ -31,5 +30,5 @@ if __name__ == '__main__':
   try:
     main(sys.argv)
   except RuntimeError as e:
-    print >>sys.stderr, 'FATAL: %s' % e
+    print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)

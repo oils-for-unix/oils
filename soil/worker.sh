@@ -81,11 +81,11 @@ EOF
 spec-bin-for() {
   local distro=$1
   cat <<EOF
-os-info          soil/diagnose.sh os-info           -
-dump-env         soil/diagnose.sh dump-env          -
-wedge-deps       build/deps.sh wedge-deps-$distro   -
-fetch            build/deps.sh fetch                -
-spec-bin         build/deps.sh install-spec-bin     -
+os-info          soil/diagnose.sh os-info             -
+dump-env         soil/diagnose.sh dump-env            -
+wedge-deps       build/deps.sh wedge-deps-$distro     -
+fetch            build/deps.sh fetch                  -
+spec-bin         build/deps.sh install-spec-bin-fast  _build/wedge/logs/index.html
 EOF
 }
 

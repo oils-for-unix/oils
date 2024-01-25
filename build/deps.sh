@@ -18,7 +18,6 @@
 # TODO:
 # - remove cmark dependency for help.  It's still used for docs and benchmarks.
 # - remove re2c from dev build?  Are there any bugs?  I think it's just slow.
-# - add spec-bin so people can always run the tests
 #
 # - change Contributing page
 #   - build/deps.sh fetch-py
@@ -596,11 +595,40 @@ maybe-install-wedge() {
   local name=$1
   local version=$2
 
-  #if ! wedge-exists $name $version; then
-  if ! wedge-exists $name $version 'relative'; then
-    local task_file=_build/wedge/logs/$name.task.tsv
-    run-task-with-status $task_file deps/wedge.sh unboxed-build _build/deps-source/$name/
+  local task_file=$WEDGE_LOG_DIR/$name.task.tsv
+  local log_file=$WEDGE_LOG_DIR/$name.log.txt
+
+  echo "TASK $name $version > $log_file"
+
+  # python3 because it's OUTSIDE the container
+  # Separate columns that could be joined: number of files, total size
+  python3 benchmarks/time_.py \
+    --print-header \
+    --tsv \
+    --rusage \
+    --field wedge \
+    --field wedge_HREF \
+    --field version \
+    --output $task_file
+
+  if wedge-exists $name $version 'relative'; then
+    return
   fi
+
+  local -a cmd=( deps/wedge.sh unboxed-build _build/deps-source/$name/ )
+
+  python3 benchmarks/time_.py \
+    --tsv \
+    --rusage \
+    --field "$name" \
+    --field "$name.log.txt" \
+    --field "$version" \
+    --append \
+    --output $task_file \
+    "${cmd[@]}" "$@" >$log_file 2>&1 || true
+
+  # TODO: if it fails, print FAILED immediately
+  echo "DONE $name $version"
 }
 
 dummy-task() {
@@ -623,7 +651,6 @@ readonly WEDGE_LOG_DIR=_build/wedge/logs
 dummy-task-wrapper() {
   # Similar to test/common.sh run-task-with-status, used by
   # test/{spec,wild}-runner.sh
-
   local name=$1
   local version=$2
 
@@ -633,6 +660,7 @@ dummy-task-wrapper() {
   echo "TASK $name $version > $log_file"
 
   # python3 because it's OUTSIDE the container
+  # Separate columns that could be joined: number of files, total size
   python3 benchmarks/time_.py \
     --print-header \
     --tsv \
@@ -651,8 +679,6 @@ dummy-task-wrapper() {
     --append \
     --output $task_file \
     $0 dummy-task "$@" >$log_file 2>&1 || true
-
-  # Separate columns that could be joined: number of files, total size
 
   # TODO: if it fails, print FAILED immediately
   echo "DONE $name $version"
@@ -681,7 +707,7 @@ index-html()  {
   <h1>Wedge Builds</h1>
 EOF
 
-  tsv2html $tasks_tsv
+  tsv2html3 $tasks_tsv
 
   cat <<EOF
   </body>
@@ -691,25 +717,23 @@ EOF
 
 NPROC=$(nproc)
 
-install-wedges-fast() {
+install-spec-bin-fast() {
   log ""
-  log "=== Installing $NPROC wedges in parallel"
+  log "=== Installing wedges with $NPROC jobs in parallel"
   log ""
 
   mkdir -p _build/wedge/logs
 
-  #spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 maybe-install-wedge
-  spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 dummy-task-wrapper
+  spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 maybe-install-wedge
+  #spec-bin-wedges | xargs -P $NPROC -n 2 -- $0 dummy-task-wrapper
 
   local tasks_tsv=_build/wedge/tasks.tsv
 
   # TODO: exit non-zero if any of these are non-zero
-  tsv-concat $WEDGE_LOG_DIR/*.tsv > $tasks_tsv
+  python3 devtools/tsv_concat.py $WEDGE_LOG_DIR/*.tsv > $tasks_tsv
   log "Wrote $tasks_tsv"
 
-  # TODO:
-  # - Add precision column
-  # - version can be right-justified?
+  # TODO: version can be right-justified?
   here-schema-tsv-3col >_build/wedge/tasks.schema.tsv <<EOF
 column_name   type     precision
 status        integer  0
