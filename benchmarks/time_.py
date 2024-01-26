@@ -118,7 +118,7 @@ def Options():
         default=False,
         action='store_true',
         help=
-        'Print an XSV header, respecting --rusage, --stdout, --field, and --tsv'
+        'Print an XSV header, respecting --time-span, --rusage, --stdout, --field, and --tsv'
     )
     return p
 
@@ -145,6 +145,8 @@ def main(argv):
         if child_argv:
             raise RuntimeError('No arguments allowed with --print-header')
         names = ['status', 'elapsed_secs']
+        if opts.time_span:
+            names.extend(['start_time', 'end_time'])
         if opts.rusage:
             names.extend(['user_secs', 'sys_secs', 'max_rss_KiB'])
         if opts.stdout:
@@ -174,6 +176,9 @@ def main(argv):
     # %x: exit status
     # %e: elapsed
     time_argv.extend(['-x', '-e'])
+    if opts.time_span:
+        # begin and end time
+        time_argv.extend(['-y', '-z'])
     if opts.rusage:
         # %U: user time
         # %S: sys time

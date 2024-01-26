@@ -609,6 +609,13 @@ timestamp() {
   date '+%H:%M:%S'
 }
 
+my-time-tsv() {
+  python3 benchmarks/time_.py \
+    --tsv \
+    --time-span --rusage \
+    "$@"
+}
+
 maybe-install-wedge() {
   local name=$1
   local version=$2
@@ -621,10 +628,7 @@ maybe-install-wedge() {
 
   # python3 because it's OUTSIDE the container
   # Separate columns that could be joined: number of files, total size
-  python3 benchmarks/time_.py \
-    --print-header \
-    --tsv \
-    --rusage \
+  my-time-tsv --print-header \
     --field wedge \
     --field wedge_HREF \
     --field version \
@@ -638,9 +642,7 @@ maybe-install-wedge() {
   local -a cmd=( deps/wedge.sh unboxed-build _build/deps-source/$name/ )
 
   set +o errexit
-  python3 benchmarks/time_.py \
-    --tsv \
-    --rusage \
+  my-time-tsv \
     --field "$name" \
     --field "$name.log.txt" \
     --field "$version" \
@@ -688,18 +690,13 @@ dummy-task-wrapper() {
 
   # python3 because it's OUTSIDE the container
   # Separate columns that could be joined: number of files, total size
-  python3 benchmarks/time_.py \
-    --print-header \
-    --tsv \
-    --rusage \
+  my-time-tsv --print-header \
     --field wedge \
     --field wedge_HREF \
     --field version \
     --output $task_file
 
-  python3 benchmarks/time_.py \
-    --tsv \
-    --rusage \
+  my-time-tsv \
     --field "$name" \
     --field "$name.log.txt" \
     --field "$version" \
@@ -777,16 +774,18 @@ write-task-report() {
   log "Wrote $tasks_tsv"
 
   # TODO: version can be right-justified?
-  here-schema-tsv-3col >_build/wedge/tasks.schema.tsv <<EOF
-column_name   type     precision
-status        integer  0
-elapsed_secs  float    1
-user_secs     float    1
-sys_secs      float    1
-max_rss_KiB   integer  0
-wedge         string   0
-wedge_HREF    string   0
-version       string   0
+  here-schema-tsv-4col >_build/wedge/tasks.schema.tsv <<EOF
+column_name   type      precision strftime
+status        integer   0         -
+elapsed_secs  float     1         -
+user_secs     float     1         -
+start_time    float     1         %H:%M:%S
+end_time      float     1         %H:%M:%S
+sys_secs      float     1         -
+max_rss_KiB   integer   0         -
+wedge         string    0         -
+wedge_HREF    string    0         -
+version       string    0         -
 EOF
 
   index-html $tasks_tsv > $WEDGE_LOG_DIR/index.html
@@ -805,18 +804,13 @@ fake-py3-libs-wedge() {
   local task_file=$WEDGE_LOG_DIR/$name.task.tsv
   local log_file=$WEDGE_LOG_DIR/$name.log.txt
 
-  python3 benchmarks/time_.py \
-    --print-header \
-    --tsv \
-    --rusage \
+  my-time-tsv --print-header \
     --field wedge \
     --field wedge_HREF \
     --field version \
     --output $task_file
 
-  python3 benchmarks/time_.py \
-    --tsv \
-    --rusage \
+  my-time-tsv \
     --field "$name" \
     --field "$name.log.txt" \
     --field "$version" \

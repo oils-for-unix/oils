@@ -108,6 +108,38 @@ EOF
   write-html prec
 }
 
+test-timestamp() {
+  cat >_tmp/timestamp.csv <<EOF
+name,start_time,end_time
+python3,0.1,1000000000.2
+bash,1100000000.3,1200000000.4
+EOF
+
+  # NOTE: Columns are out of order, which is OK.
+
+  # type: could be html-anchor:shell-id, html-href:shell-id
+
+  cat >_tmp/timestamp.schema.csv <<EOF
+column_name,type,strftime
+name,string,-
+start_time,float,iso
+end_time,float,iso
+EOF
+
+  write-html timestamp
+
+  cp _tmp/timestamp.csv _tmp/timestamp2.csv
+
+  cat >_tmp/timestamp2.schema.csv <<EOF
+column_name,type,strftime
+name,string,-
+start_time,float,iso
+end_time,float,%H:%M:%S
+EOF
+
+  write-html timestamp2
+}
+
 test-row-css-class() {
   cat >_tmp/css.csv <<EOF
 name,age

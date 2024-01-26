@@ -29,6 +29,8 @@ typedef struct Spec_t {
 
   bool x;  // %x status
   bool e;  // %e elapsed
+  bool y;  // start time
+  bool z;  // end time
   bool U;  // %U user time
   bool S;  // %S system time
   bool M;  // %M maxrss
@@ -109,6 +111,12 @@ int time_helper(Spec *spec, FILE *f) {
   if (spec->e) {
     time_cell(f, d, &elapsed);
   }
+  if (spec->y) {
+    time_cell(f, d, &start);
+  }
+  if (spec->z) {
+    time_cell(f, d, &end);
+  }
   if (spec->U) {
     time_cell(f, d, &usage.ru_utime);
   }
@@ -130,7 +138,7 @@ int main(int argc, char **argv) {
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
   // + means to be strict about flag parsing.
   int c;
-  while ((c = getopt(argc, argv, "+o:ad:vxeUSM")) != -1) {
+  while ((c = getopt(argc, argv, "+o:ad:vxeyzUSM")) != -1) {
     switch (c) {
     case 'o':
       spec.out_path = optarg;
@@ -151,6 +159,12 @@ int main(int argc, char **argv) {
       break;
     case 'e':
       spec.e = true;
+      break;
+    case 'y':
+      spec.y = true;
+      break;
+    case 'z':
+      spec.z = true;
       break;
     case 'U':
       spec.U = true;
