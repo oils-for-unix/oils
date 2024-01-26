@@ -424,11 +424,7 @@ class LexerDecoder(object):
         # type: () -> Tuple[Id_t, int, Optional[str]]
         """ Returns a token and updates self.pos """
 
-        while True:  # ignore spaces
-            tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
-            if tok_id != Id.Ignored_Space:
-                break
-            self.pos = end_pos
+        tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
 
         # Non-string tokens like { } null etc.
         if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
@@ -577,9 +573,15 @@ class Parser(object):
 
     def _Next(self):
         # type: () -> None
-        self.start_pos = self.end_pos
-        self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
-        #log('NEXT %s %s %s', Id_str(self.tok_id), self.end_pos, self.decoded or '-')
+
+        # This isn't the start of a J8_Bool token, it's the END of the token before it
+        while True:
+            self.start_pos = self.end_pos
+            self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
+            if self.tok_id != Id.Ignored_Space:
+                break
+
+        #log('NEXT %s %s %s %s', Id_str(self.tok_id), self.start_pos, self.end_pos, self.decoded or '-')
 
     def _Eat(self, tok_id):
         # type: (Id_t) -> None
@@ -618,21 +620,28 @@ class Parser(object):
         # precondition
         assert self.tok_id == Id.J8_LBrace, Id_str(self.tok_id)
 
+        #log('> Dict')
+
         d = NewDict()  # type: Dict[str, value_t]
 
         self._Next()
         if self.tok_id == Id.J8_RBrace:
+            self._Next()
             return value.Dict(d)
 
         k, v = self._ParsePair()
         d[k] = v
+        #log('  [1] k %s  v  %s  Id %s', k, v, Id_str(self.tok_id))
 
         while self.tok_id == Id.J8_Comma:
             self._Next()
             k, v = self._ParsePair()
             d[k] = v
+            #log('  [2] k %s  v  %s  Id %s', k, v, Id_str(self.tok_id))
 
         self._Eat(Id.J8_RBrace)
+
+        #log('< Dict')
 
         return value.Dict(d)
 
@@ -648,6 +657,7 @@ class Parser(object):
 
         self._Next()
         if self.tok_id == Id.J8_RBracket:
+            self._Next()
             return value.List(items)
 
         items.append(self._ParseValue())
@@ -663,16 +673,21 @@ class Parser(object):
     def _ParseValue(self):
         # type: () -> value_t
         if self.tok_id == Id.J8_LBrace:
-            return self._ParseDict()
+            d = self._ParseDict()
+            #self._Next()
+            return d
 
         elif self.tok_id == Id.J8_LBracket:
-            return self._ParseList()
+            li = self._ParseList()
+            #self._Next()
+            return li
 
         elif self.tok_id == Id.J8_Null:
             self._Next()
             return value.Null
 
         elif self.tok_id == Id.J8_Bool:
+            #log('%r %d', self.s[self.start_pos], self.start_pos)
             b = value.Bool(self.s[self.start_pos] == 't')
             self._Next()
             return b

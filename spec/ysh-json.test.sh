@@ -113,12 +113,44 @@ status=2
 
 #### json read uses $_reply var
 
-echo '{"age": 42}' | json read
+# space before true
+echo ' true' | json read
+json write (_reply)
+
+## STDOUT:
+true
+## END
+
+#### json read then json write
+
+# BUG with space before true
+echo '{"name": "bob", "age": 42, "ok": true}' | json read
+json write (_reply)
+
+echo '{"name": "bob", "age": 42, "ok":true}' | json read
+json write (_reply)
+
+echo '{"name": {}, "age": {}}' | json read
 json write (_reply)
 
 ## STDOUT:
 {
-  "age": 42
+  "name": "bob",
+  "age": 42,
+  "ok": true
+}
+{
+  "name": "bob",
+  "age": 42,
+  "ok": true
+}
+{
+  "name": {
+
+  },
+  "age": {
+
+  }
 }
 ## END
 
@@ -788,4 +820,22 @@ echo len=$[len(_reply)]
 ## STDOUT:
 (List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
 len=1
+## END
+
+#### round trip nested structure (regression)
+
+var file = "$REPO_ROOT/spec/testdata/bug.json"
+#cat $file
+cat $file | json read (&cfg)
+json write (cfg) > ysh-json
+
+cat ysh-json | python3 -c \
+  'import json, sys; obj = json.load(sys.stdin); json.dump(obj, sys.stdout, indent=2); print()' \
+  > py-json
+
+diff -u $file py-json
+echo diff=$?
+
+## STDOUT:
+diff=0
 ## END
