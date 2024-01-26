@@ -773,7 +773,6 @@ install-wedge-list() {
 write-task-report() {
   local tasks_tsv=_build/wedge/tasks.tsv
 
-  # TODO: exit non-zero if any of these are non-zero
   python3 devtools/tsv_concat.py $WEDGE_LOG_DIR/*.tsv > $tasks_tsv
   log "Wrote $tasks_tsv"
 
@@ -781,9 +780,9 @@ write-task-report() {
   here-schema-tsv-3col >_build/wedge/tasks.schema.tsv <<EOF
 column_name   type     precision
 status        integer  0
-elapsed_secs  float    2
-user_secs     float    2
-sys_secs      float    2
+elapsed_secs  float    1
+user_secs     float    1
+sys_secs      float    1
 max_rss_KiB   integer  0
 wedge         string   0
 wedge_HREF    string   0
