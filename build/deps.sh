@@ -527,7 +527,7 @@ install-py3-libs() {
   install-py3-libs-from-cache
 }
 
-# This is now install-spec-bin-fast
+# OBSOLETE in favor of install-spec-bin-fast
 install-spec-bin() {
   if ! wedge-exists dash $DASH_VERSION $USER_WEDGE_DIR; then
     deps/wedge.sh unboxed-build _build/deps-source/dash
@@ -578,7 +578,6 @@ install-spec-bin() {
 py-wedges() {
   ### for build/py.sh all
 
-  # Can all be done in parallel
   echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR
   echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR
   echo python2 $PY2_VERSION $ROOT_WEDGE_DIR
@@ -588,25 +587,26 @@ py-wedges() {
 cpp-wedges() {
   ### for ninja / mycpp translation
 
-  # These are done serially?
   echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
   echo mypy $MYPY_VERSION $USER_WEDGE_DIR
 
   # py3-libs has a built time dep on both python3 and MyPy, so we're doing it
   # separately for now
-
   #echo py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR
 }
 
 spec-bin-wedges() {
   ### for test/spec-py.sh osh-all
 
-  # Can all be done in parallel
   echo dash $DASH_VERSION $USER_WEDGE_DIR
   echo bash $BASH_VER $USER_WEDGE_DIR
   echo mksh $MKSH_VERSION $USER_WEDGE_DIR
   echo zsh $ZSH_VERSION $USER_WEDGE_DIR
   echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
+}
+
+timestamp() {
+  date '+%H:%m:%S'
 }
 
 maybe-install-wedge() {
@@ -631,7 +631,7 @@ maybe-install-wedge() {
     --output $task_file
 
   if wedge-exists "$name" "$version" "$wedge_dir"; then
-    echo "CACHED $name $version"
+    echo "CACHED  $(timestamp)  $name $version"
     return
   fi
 
@@ -651,9 +651,9 @@ maybe-install-wedge() {
   set -o errexit
 
   if test "$status" -eq 0; then
-    echo "    OK $name $version"
+    echo "    OK  $(timestamp)  $name $version"
   else
-    echo "  FAIL $name $version"
+    echo "  FAIL  $(timestamp)  $name $version"
   fi
 }
 
@@ -743,6 +743,7 @@ EOF
 }
 
 NPROC=$(nproc)
+#NPROC=1
 
 install-wedge-list() {
   ### Reads task rows from stdin
@@ -823,20 +824,20 @@ fake-py3-libs-wedge() {
     --append \
     --output $task_file \
     $0 install-py3-libs >$log_file 2>&1 || true
+
+  echo "  FAKE  $(timestamp)  $name $version"
 }
 
 install-wedges-fast() {
-  py-wedges | install-wedge-list T
-
-  # These have dependencies, so it can't be parallel
-  cpp-wedges | install-wedge-list
+  # Do all of them in parallel
+  { py-wedges; cpp-wedges; } | install-wedge-list T
 
   fake-py3-libs-wedge
 
   write-task-report
 }
 
-# TODO: parallelize this function
+# OBSOLETE in favor of install-wedges-fast
 install-wedges() {
   local py_only=${1:-}
 
@@ -845,7 +846,6 @@ install-wedges() {
   # - Add
   #   - unboxed-rel-smoke-test -- move it inside container
   #   - rel-smoke-test -- mount it in a different location
-  # - Should have a CI task that does all of this!
 
   if ! wedge-exists cmark $CMARK_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/cmark/
