@@ -74,15 +74,21 @@ EOF
     "$json" || true
 }
 
-pretty-print-dicts() {
+encode-list-dict-indent() {
+  echo 'PYTHON'
   python3 -c 'import json; val = {}; print(json.dumps(val, indent=4))'
   python3 -c 'import json; val = {"a": 42}; print(json.dumps(val, indent=4))'
   python3 -c 'import json; val = {"a": 42, "b": 43}; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = []; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = [42]; print(json.dumps(val, indent=4))'
   echo
 
+  echo 'JS'
   nodejs -e 'var val = {}; console.log(JSON.stringify(val, null, 4))'
   nodejs -e 'var val = {"a": 42}; console.log(JSON.stringify(val, null, 4))'
   nodejs -e 'var val = {"a": 42, "b": 43}; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = []; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = [42]; console.log(JSON.stringify(val, null, 4))'
   echo
 }
 

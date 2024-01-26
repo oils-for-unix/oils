@@ -234,6 +234,10 @@ class InstancePrinter(object):
 
                 self.seen[heap_id] = True
 
+                if len(val.items) == 0:  # Special case like Python/JS
+                    self.buf.write('[]')
+                    return
+
                 self.buf.write('[')
                 self.buf.write(maybe_newline)
                 for i, item in enumerate(val.items):
@@ -264,6 +268,10 @@ class InstancePrinter(object):
                             vm.ValueIdString(val))
 
                 self.seen[heap_id] = True
+
+                if len(val.d) == 0:  # Special case like Python/JS
+                    self.buf.write('{}')
+                    return
 
                 self.buf.write('{')
                 self.buf.write(maybe_newline)

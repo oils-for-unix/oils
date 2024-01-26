@@ -56,9 +56,7 @@ json write ([{k: 'v', k2: 'v2'}, {}])
     "k": "v",
     "k2": "v2"
   },
-  {
-
-  }
+  {}
 ]
 ## END
 
@@ -145,12 +143,8 @@ json write (_reply)
   "ok": true
 }
 {
-  "name": {
-
-  },
-  "age": {
-
-  }
+  "name": {},
+  "age": {}
 }
 ## END
 
@@ -822,7 +816,21 @@ echo len=$[len(_reply)]
 len=1
 ## END
 
-#### round trip nested structure (regression)
+#### round trip: read/write with ysh
+
+var file = "$REPO_ROOT/spec/testdata/bug.json"
+#cat $file
+cat $file | json read (&cfg)
+json write (cfg) > ysh-json
+
+diff -u $file ysh-json
+echo diff=$?
+
+## STDOUT:
+diff=0
+## END
+
+#### round trip: read/write with ysh, read/write with Python 3 (bug regression)
 
 var file = "$REPO_ROOT/spec/testdata/bug.json"
 #cat $file
