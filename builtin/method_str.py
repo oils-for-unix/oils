@@ -225,6 +225,9 @@ class Replace(vm._Callable):
             ere = regex_translate.AsPosixEre(eggex_val)
             cflags = regex_translate.LibcFlags(eggex_val.canonical_flags)
 
+            # Walk through the string finding all matches of the compiled ere.
+            # Then, collect unmatched substrings and substitutions into the
+            # `parts` list.
             pos = 0
             parts = []  # type: List[str]
             replace_count = 0
@@ -233,6 +236,7 @@ class Replace(vm._Callable):
                 if indices is None:
                     break
 
+                # Collect captures
                 vars = []  # type: List[str]
                 named_vars = []  # type: List[Tuple[str, value_t]]
                 num_groups = len(indices) / 2
@@ -273,15 +277,15 @@ class Replace(vm._Callable):
 
                 start = indices[0]
                 end = indices[1]
-                parts.append(string[pos:start])
-                parts.append(s)
-                pos = end
+                parts.append(string[pos:start])  # Unmatched substring
+                parts.append(s)  # Replacement
+                pos = end  # Move to end of match
 
                 replace_count += 1
                 if count != -1 and replace_count == count:
                     break
 
-            parts.append(string[pos:])
+            parts.append(string[pos:])  # Remaining unmatched substring
 
             return value.Str("".join(parts))
 
