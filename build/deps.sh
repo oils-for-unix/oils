@@ -617,7 +617,7 @@ maybe-install-wedge() {
   local task_file=$WEDGE_LOG_DIR/$name.task.tsv
   local log_file=$WEDGE_LOG_DIR/$name.log.txt
 
-  echo "TASK $name $version > $log_file"
+  echo "  TASK  $(timestamp)  $name $version > $log_file"
 
   # python3 because it's OUTSIDE the container
   # Separate columns that could be joined: number of files, total size
@@ -684,7 +684,7 @@ dummy-task-wrapper() {
   local task_file=$WEDGE_LOG_DIR/$name.task.tsv
   local log_file=$WEDGE_LOG_DIR/$name.log.txt
 
-  echo "TASK $name $version > $log_file"
+  echo "  TASK  $(timestamp)  $name $version > $log_file"
 
   # python3 because it's OUTSIDE the container
   # Separate columns that could be joined: number of files, total size
@@ -708,7 +708,7 @@ dummy-task-wrapper() {
     $0 dummy-task "$@" >$log_file 2>&1 || true
 
   # TODO: if it fails, print FAILED immediately
-  echo "DONE $name $version"
+  echo "  DONE   $(timestamp)  $name $version"
 }
 
 html-head() {
@@ -767,7 +767,7 @@ install-wedge-list() {
   # Reads from stdin
   xargs "${flags[@]}" -n 3 -- $0 maybe-install-wedge
 
-  # xargs "${flags[@]}" -n 3 -- $0 dummy-task-wrapper
+  #xargs "${flags[@]}" -n 3 -- $0 dummy-task-wrapper
 }
 
 write-task-report() {
@@ -829,10 +829,13 @@ fake-py3-libs-wedge() {
 }
 
 install-wedges-fast() {
+  echo " START  $(timestamp)"
+
   # Do all of them in parallel
-  { py-wedges; cpp-wedges; } | install-wedge-list T
+  { py-wedges; cpp-wedges; spec-bin-wedges; } | install-wedge-list T
 
   fake-py3-libs-wedge
+  echo "   END  $(timestamp)"
 
   write-task-report
 }
