@@ -606,7 +606,7 @@ spec-bin-wedges() {
 }
 
 timestamp() {
-  date '+%H:%m:%S'
+  date '+%H:%M:%S'
 }
 
 maybe-install-wedge() {
