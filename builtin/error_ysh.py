@@ -5,6 +5,7 @@ from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core.error import e_die_status, e_usage
+from core import executor
 from core import state
 from core import vm
 from frontend import flag_spec
@@ -120,7 +121,7 @@ class Try(vm._Builtin):
                 # like ( try ls ) or forkwait { try ls }, but that is NOT
                 # idiomatic code.  try is for procs/compound expressions.
                 cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-                status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+                status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, executor.DO_FORK)
                 #log('st %d', status)
         except error.Expr as e:
             status = e.ExitStatus()
@@ -191,7 +192,7 @@ class BoolStatus(vm._Builtin):
                                   cmd_val.pos_args, cmd_val.named_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, executor.DO_FORK)
 
         if status not in (0, 1):
             e_die_status(status,

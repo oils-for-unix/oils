@@ -39,7 +39,6 @@ from core import util
 from data_lang import qsn
 from frontend import location
 from frontend import match
-from osh import cmd_eval
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, tagswitch, iteritems
 
@@ -810,6 +809,9 @@ class SubProgramThunk(Thunk):
     def Run(self):
         # type: () -> None
         #self.errfmt.OneLineErrExit()  # don't quote code in child processes
+
+        # TODO: break circular dep.  Bit flags could go in ASDL or headers.
+        from osh import cmd_eval
 
         # signal handlers aren't inherited
         self.trap_state.ClearForSubProgram()

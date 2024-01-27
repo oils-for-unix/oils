@@ -87,6 +87,10 @@ class _ProcessSubFrame(object):
         status_array.locs = locs
 
 
+# Big flgas for RunSimpleCommand
+DO_FORK = 1 << 1
+NO_CALL_PROCS = 1 << 2
+
 class ShellExecutor(vm._Executor):
     """An executor combined with the OSH language evaluators in osh/ to create
     a shell interpreter."""
@@ -202,13 +206,13 @@ class ShellExecutor(vm._Executor):
 
         return status
 
-    def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
-        # type: (cmd_value.Argv, CommandStatus, bool, bool) -> int
+    def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
+        # type: (cmd_value.Argv, CommandStatus, int) -> int
         """Run builtins, functions, external commands.
 
         Possible variations:
         - YSH might have different, simpler rules.  No special builtins, etc.
-        - YSH might have OILS_PATH = @( ... ) or something.
+        - YSH might have OILS_PATH = :| /bin /usr/bin | or something.
         - Interpreters might want to define all their own builtins.
 
         Args:
@@ -247,6 +251,7 @@ class ShellExecutor(vm._Executor):
             #  e_die_status(status, 'special builtin failed')
             return status
 
+        call_procs = not (run_flags & NO_CALL_PROCS)
         # Builtins like 'true' can be redefined as functions.
         if call_procs:
             proc_node = self.procs.get(arg0)
@@ -307,7 +312,7 @@ class ShellExecutor(vm._Executor):
             return 127
 
         # Normal case: ls /
-        if do_fork:
+        if run_flags & DO_FORK:
             thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val,
                                           environ)
             p = process.Process(thunk, self.job_control, self.job_list,

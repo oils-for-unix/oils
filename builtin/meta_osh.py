@@ -11,6 +11,7 @@ from _devbuild.gen.value_asdl import value
 from core import alloc
 from core import dev
 from core import error
+from core import executor
 from core import main_loop
 from core import process
 from core.error import e_usage
@@ -285,10 +286,8 @@ class Command(vm._Builtin):
         # shell does that, and this rare case isn't worth the bookkeeping.
         # See test/syscall
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val2,
-                                              cmd_st,
-                                              True,
-                                              call_procs=False)
+        run_flags = executor.DO_FORK | executor.NO_CALL_PROCS
+        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
 
 
 def _ShiftArgv(cmd_val):
@@ -359,7 +358,7 @@ class RunProc(vm._Builtin):
                                   cmd_val.pos_args, cmd_val.named_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, executor.DO_FORK)
 
 
 def _ResolveName(
