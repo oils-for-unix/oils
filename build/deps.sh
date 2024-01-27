@@ -32,6 +32,7 @@ source deps/from-apt.sh  # PY3_BUILD_DEPS
 #source deps/podman.sh
 source devtools/run-task.sh  # run-task
 source test/tsv-lib.sh  # tsv-concat
+source web/table/html.sh  # table-sort-{begin,end}
 
 # Also in build/dev-shell.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
@@ -665,7 +666,10 @@ dummy-task() {
   local version=$2
 
   echo "Building $name $version"
-  sleep 1
+
+  echo "sleep 0.$SECONDS"
+  sleep "0.$SECONDS"
+
   echo 'stdout'
   log 'stderr'
 
@@ -718,12 +722,14 @@ index-html()  {
 
   local base_url='../../../web'
   html-head --title 'Wedge Builds' \
+    "$base_url/ajax.js" \
     "$base_url/table/table-sort.js" \
     "$base_url/table/table-sort.css" \
     "$base_url/base.css"\
 
+  table-sort-begin 'width60'
+
   cat <<EOF
-  <body class="width60">
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
@@ -734,9 +740,12 @@ EOF
   tsv2html3 $tasks_tsv
 
   cat <<EOF
-  </body>
-</html>
+  <p>
+    <a href="tasks.tsv">tasks.tsv</a>
+  </p>
 EOF
+
+  table-sort-end 'tasks'  # ID for sorting
 }
 
 NPROC=$(nproc)
@@ -762,19 +771,19 @@ install-wedge-list() {
   fi
 
   # Reads from stdin
-  xargs "${flags[@]}" -n 3 -- $0 maybe-install-wedge
+  #xargs "${flags[@]}" -n 3 -- $0 maybe-install-wedge
 
-  #xargs "${flags[@]}" -n 3 -- $0 dummy-task-wrapper
+  xargs "${flags[@]}" -n 3 -- $0 dummy-task-wrapper
 }
 
 write-task-report() {
-  local tasks_tsv=_build/wedge/tasks.tsv
+  local tasks_tsv=_build/wedge/logs/tasks.tsv
 
-  python3 devtools/tsv_concat.py $WEDGE_LOG_DIR/*.tsv > $tasks_tsv
+  python3 devtools/tsv_concat.py $WEDGE_LOG_DIR/*.task.tsv > $tasks_tsv
   log "Wrote $tasks_tsv"
 
   # TODO: version can be right-justified?
-  here-schema-tsv-4col >_build/wedge/tasks.schema.tsv <<EOF
+  here-schema-tsv-4col >_build/wedge/logs/tasks.schema.tsv <<EOF
 column_name   type      precision strftime
 status        integer   0         -
 elapsed_secs  float     1         -
