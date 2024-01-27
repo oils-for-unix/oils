@@ -771,9 +771,9 @@ install-wedge-list() {
   fi
 
   # Reads from stdin
-  #xargs "${flags[@]}" -n 3 -- $0 maybe-install-wedge
+  xargs "${flags[@]}" -n 3 -- $0 maybe-install-wedge
 
-  xargs "${flags[@]}" -n 3 -- $0 dummy-task-wrapper
+  #xargs "${flags[@]}" -n 3 -- $0 dummy-task-wrapper
 }
 
 write-task-report() {
