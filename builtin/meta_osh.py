@@ -286,7 +286,11 @@ class Command(vm._Builtin):
         # shell does that, and this rare case isn't worth the bookkeeping.
         # See test/syscall
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
+
         run_flags = executor.DO_FORK | executor.NO_CALL_PROCS
+        if arg.p:
+            run_flags |= executor.USE_DEFAULT_PATH
+
         return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
 
 
@@ -358,7 +362,8 @@ class RunProc(vm._Builtin):
                                   cmd_val.pos_args, cmd_val.named_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, executor.DO_FORK)
+        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,
+                                              executor.DO_FORK)
 
 
 def _ResolveName(

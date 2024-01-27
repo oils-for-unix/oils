@@ -63,6 +63,30 @@ SetNameref = 1 << 4
 ClearNameref = 1 << 5
 
 
+def LookupExecutable(name, path_dirs, exec_required=True):
+    # type: (str, List[str], bool) -> Optional[str]
+    """
+    Returns either
+    - the name if it's a relative path that exists
+    - the executable name resolved against path_dirs
+    - None if not found
+    """
+    if '/' in name:
+        return name if path_stat.exists(name) else None
+
+    for path_dir in path_dirs:
+        full_path = os_path.join(path_dir, name)
+        if exec_required:
+            found = posix.access(full_path, X_OK)
+        else:
+            found = path_stat.exists(full_path)
+
+        if found:
+            return full_path
+
+    return None
+
+
 class SearchPath(object):
     """For looking up files in $PATH."""
 
@@ -88,20 +112,9 @@ class SearchPath(object):
         """
         Returns the path itself (if relative path), the resolved path, or None.
         """
-        if '/' in name:
-            return name if path_stat.exists(name) else None
-
-        for path_dir in self._GetPath():
-            full_path = os_path.join(path_dir, name)
-            if exec_required:
-                found = posix.access(full_path, X_OK)
-            else:
-                found = path_stat.exists(full_path)
-
-            if found:
-                return full_path
-
-        return None
+        return LookupExecutable(name,
+                                self._GetPath(),
+                                exec_required=exec_required)
 
     def LookupReflect(self, name, do_all):
         # type: (str, bool) -> List[str]

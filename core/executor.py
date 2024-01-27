@@ -21,6 +21,7 @@ from core import error
 from core import process
 from core.error import e_die, e_die_status
 from core import pyos
+from core import state
 from core import ui
 from core import vm
 from frontend import consts
@@ -89,7 +90,15 @@ class _ProcessSubFrame(object):
 
 # Big flgas for RunSimpleCommand
 DO_FORK = 1 << 1
-NO_CALL_PROCS = 1 << 2
+NO_CALL_PROCS = 1 << 2  # command ls suppresses function lookup
+USE_DEFAULT_PATH = 1 << 3  # for command -p ls changes the path
+
+# Copied from var.c in dash
+DEFAULT_PATH = [
+    '/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin',
+    '/bin'
+]
+
 
 class ShellExecutor(vm._Executor):
     """An executor combined with the OSH language evaluators in osh/ to create
@@ -306,7 +315,10 @@ class ShellExecutor(vm._Executor):
                   cmd_val.typed_args.left)
 
         # Resolve argv[0] BEFORE forking.
-        argv0_path = self.search_path.CachedLookup(arg0)
+        if run_flags & USE_DEFAULT_PATH:
+            argv0_path = state.LookupExecutable(arg0, DEFAULT_PATH)
+        else:
+            argv0_path = self.search_path.CachedLookup(arg0)
         if argv0_path is None:
             self.errfmt.Print_('%r not found' % arg0, arg0_loc)
             return 127

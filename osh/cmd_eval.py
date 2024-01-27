@@ -576,7 +576,8 @@ class CommandEvaluator(object):
             if case(cmd_value_e.Argv):
                 cmd_val = cast(cmd_value.Argv, UP_cmd_val)
                 self.tracer.OnSimpleCommand(cmd_val.argv)
-                return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, run_flags)
+                return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st,
+                                                      run_flags)
 
             elif case(cmd_value_e.Assign):
                 cmd_val = cast(cmd_value.Assign, UP_cmd_val)

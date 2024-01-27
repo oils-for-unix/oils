@@ -58,6 +58,7 @@ SOURCE_SPEC.LongFlag('--builtin')
 COMMAND_SPEC = FlagSpec('command')
 COMMAND_SPEC.ShortFlag('-v')
 COMMAND_SPEC.ShortFlag('-V')
+COMMAND_SPEC.ShortFlag('-p')
 
 TYPE_SPEC = FlagSpec('type')
 TYPE_SPEC.ShortFlag('-f')
