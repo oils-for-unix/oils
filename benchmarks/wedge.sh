@@ -25,14 +25,17 @@ install-R-packages() {
 readonly DIR=_tmp/wedge
 
 download-tsv() {
-  mkdir -p $DIR
-  wget --directory-prefix $DIR \
+  mkdir -p $DIR/{github,sourcehut}
+  wget --directory-prefix $DIR/github \
     http://travis-ci.oilshell.org/github-jobs/6022/dev-setup-debian.wwz/_build/wedge/logs/tasks.tsv
+  wget --directory-prefix $DIR/sourcehut \
+    http://travis-ci.oilshell.org/srht-jobs/1138664/dev-setup-debian.wwz/_build/wedge/logs/tasks.tsv
 }
 
-xargs-report() {
+plots() {
   #R_LIBS_USER=~/R benchmarks/wedge.R xargs-report _build/wedge/logs
-  R_LIBS_USER=~/R benchmarks/wedge.R xargs-report $DIR
+  R_LIBS_USER=~/R benchmarks/wedge.R xargs-report $DIR/github
+  R_LIBS_USER=~/R benchmarks/wedge.R xargs-report $DIR/sourcehut
 }
 
 "$@"

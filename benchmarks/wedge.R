@@ -40,32 +40,28 @@ PlotElapsed <- function(ctx) {
 PlotXargs <- function(ctx) {
   tasks = ctx$tasks
 
-  print(tasks)
+  left = min(tasks$start_time)
+  Log("Starting at %f", left)
 
-  # Not sure why I have to supply origin
-  tasks$start_time = as.POSIXct(tasks$start_time, origin='1970-01-01')
-  tasks$end_time = as.POSIXct(tasks$end_time, origin='1970-01-01')
+  tasks$start_time = tasks$start_time - left
+  tasks$end_time = tasks$end_time - left
+  #print(tasks)
 
-  g <- ggplot(ctx$tasks, aes(x = wedge, y = end_time))
+  g = ggplot(tasks, aes(x = start_time, xend = end_time, y = xargs_slot, yend = xargs_slot))
+  line = geom_segment(linewidth = 10, aes(color = wedge))
+  labs = labs(title = "Parallel Wedge Builds", x = "time (seconds)", y = "xargs slot")
 
-  # NOTE: stat = "identity" required for x and y, geom_bar makes a histogram by
-  # default
-  b <- geom_bar(stat = "identity")
-  t <- ggtitle('xargs slots')
+  g + line + labs
 
-  g + b + t #+ scale_fill_manual(values=palette)
+  # Doesn't work
+  #+ scale_x_time()
 }
 
-  # TODO: geom_segment for start and end?
-  # with xargs_slot
-  #
-  # Something like this
-  # https://stackoverflow.com/questions/70767351/plotting-date-intervals-in-ggplot2
+# Something like this
+# https://stackoverflow.com/questions/70767351/plotting-date-intervals-in-ggplot2
 
-Report = function(ctx) {
+Report = function(ctx, out_dir) {
   p = PlotElapsed(ctx)
-
-  out_dir = '_build/wedge'
 
   p = PlotElapsed(ctx)
   WritePlot(p, file.path(out_dir, 'elapsed.png'))
@@ -75,9 +71,7 @@ Report = function(ctx) {
 }
 
 Load = function(in_dir) {
-  list(
-       tasks = read.table(file.path(in_dir, 'tasks.tsv'), header=T)
-       )
+  list(tasks = read.table(file.path(in_dir, 'tasks.tsv'), header=T))
 }
 
 main = function(argv) {
@@ -85,10 +79,10 @@ main = function(argv) {
 
   if (action == 'xargs-report') {
     in_dir = argv[[2]]
-    #out_dir = argv[[3]]
+    out_dir = in_dir  # same for now
 
     ctx = Load(in_dir)
-    Report(ctx)
+    Report(ctx, out_dir)
 
   } else {
     Log("Invalid action '%s'", action)
