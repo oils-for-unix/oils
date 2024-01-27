@@ -154,6 +154,10 @@ class Schema:
     col_name = self.col_names[index]
     return self.precision_lookup.get(col_name, 1)  # default is arbitrary
 
+  def HasStrfTime(self, col_name):
+    # An explicit - means "no entry"
+    return self.strftime_lookup.get(col_name, '-') != '-'
+
   def ColumnStrftime(self, index):
     col_name = self.col_names[index]
     return self.strftime_lookup.get(col_name, '-')
@@ -277,7 +281,7 @@ def PrintColGroup(col_names, schema):
       continue
 
     # CSS class is used for sorting
-    if schema.IsNumeric(col):
+    if schema.IsNumeric(col) and not schema.HasStrfTime(col):
       css_class = 'number'
     else:
       css_class = 'case-insensitive'

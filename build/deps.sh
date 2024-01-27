@@ -630,6 +630,7 @@ maybe-install-wedge() {
   # python3 because it's OUTSIDE the container
   # Separate columns that could be joined: number of files, total size
   my-time-tsv --print-header \
+    --field xargs_slot \
     --field wedge \
     --field wedge_HREF \
     --field version \
@@ -644,6 +645,7 @@ maybe-install-wedge() {
 
   set +o errexit
   my-time-tsv \
+    --field "$XARGS_SLOT" \
     --field "$name" \
     --field "$name.log.txt" \
     --field "$version" \
@@ -667,8 +669,14 @@ dummy-task() {
 
   echo "Building $name $version"
 
-  echo "sleep 0.$SECONDS"
-  sleep "0.$SECONDS"
+  # random float between 0 and 3
+  # weirdly we need a seed from bash
+  # https://stackoverflow.com/questions/4048378/random-numbers-generation-with-awk-in-bash-shell
+  local secs
+  secs=$(awk -v seed=$RANDOM 'END { srand(seed); print rand() * 3 }' < /dev/null)
+
+  echo "sleep $secs"
+  sleep $secs
 
   echo 'stdout'
   log 'stderr'
@@ -695,12 +703,14 @@ dummy-task-wrapper() {
   # python3 because it's OUTSIDE the container
   # Separate columns that could be joined: number of files, total size
   my-time-tsv --print-header \
+    --field xargs_slot \
     --field wedge \
     --field wedge_HREF \
     --field version \
     --output $task_file
 
   my-time-tsv \
+    --field "$XARGS_SLOT" \
     --field "$name" \
     --field "$name.log.txt" \
     --field "$version" \
@@ -708,8 +718,7 @@ dummy-task-wrapper() {
     --output $task_file \
     $0 dummy-task "$@" >$log_file 2>&1 || true
 
-  # TODO: if it fails, print FAILED immediately
-  echo "  DONE   $(timestamp)  $name $version"
+  echo "  DONE  $(timestamp)  $name $version"
 }
 
 html-head() {
@@ -771,9 +780,10 @@ install-wedge-list() {
   fi
 
   # Reads from stdin
-  xargs "${flags[@]}" -n 3 -- $0 maybe-install-wedge
+  # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
+  xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge
 
-  #xargs "${flags[@]}" -n 3 -- $0 dummy-task-wrapper
+  #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
 }
 
 write-task-report() {
@@ -792,6 +802,7 @@ start_time    float     1         %H:%M:%S
 end_time      float     1         %H:%M:%S
 sys_secs      float     1         -
 max_rss_KiB   integer   0         -
+xargs_slot    integer   0         -
 wedge         string    0         -
 wedge_HREF    string    0         -
 version       string    0         -
@@ -814,12 +825,15 @@ fake-py3-libs-wedge() {
   local log_file=$WEDGE_LOG_DIR/$name.log.txt
 
   my-time-tsv --print-header \
+    --field xargs_slot \
     --field wedge \
     --field wedge_HREF \
     --field version \
     --output $task_file
 
+  # There is no xargs slot!
   my-time-tsv \
+    --field "-1" \
     --field "$name" \
     --field "$name.log.txt" \
     --field "$version" \

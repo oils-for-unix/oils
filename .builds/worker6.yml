@@ -7,6 +7,8 @@ packages:
   - zip
     # for SSH debugging!
   - vim
+    # GNU xargs instead of busybox xargs, for --process-slot-var
+  - findutils
   # - time  # causes an error, don't need it
 
 secrets:
