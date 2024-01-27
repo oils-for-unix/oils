@@ -943,12 +943,12 @@ uftrace-host() {
   deps/wedge.sh unboxed-build _build/deps-source/uftrace
 }
 
-R-libs-host() {
-  deps/wedge.sh unboxed-build _build/deps-source/R-libs
-}
-
 bloaty-host() {
   deps/wedge.sh unboxed-build _build/deps-source/bloaty
+}
+
+R-libs-host() {
+  deps/wedge.sh unboxed-build _build/deps-source/R-libs
 }
 
 #
