@@ -240,6 +240,10 @@ def _PrintYshArgv(argv, buf):
     for arg in argv:
         buf.write(' ')
         # TODO: use unquoted -> POSIX '' -> b''
+        # This would use JSON "", which CONFLICTS with shell.  So we need
+        # another function.
+        #j8.EncodeString(arg, buf, unquoted_ok=True)
+
         buf.write(qsn.maybe_shell_encode(arg))
     buf.write('\n')
 

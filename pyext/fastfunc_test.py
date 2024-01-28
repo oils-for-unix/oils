@@ -29,6 +29,11 @@ class FastfuncTest(unittest.TestCase):
     self.assertEqual(True, fastfunc.PartIsUtf8(s, 0, 3))
     self.assertEqual(False, fastfunc.PartIsUtf8(s, 3, 4))
 
+  def testCanOmit(self):
+    self.assertEqual(True, fastfunc.CanOmitQuotes('foo'))
+    self.assertEqual(False, fastfunc.CanOmitQuotes('foo bar'))
+    self.assertEqual(True, fastfunc.CanOmitQuotes('my-dir/my_file.cc'))
+
 
 if __name__ == '__main__':
   unittest.main()

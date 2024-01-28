@@ -1,5 +1,5 @@
-#ifndef DATA_LANG_J8C_H
-#define DATA_LANG_J8C_H
+#ifndef DATA_LANG_J8_LIBC_H
+#define DATA_LANG_J8_LIBC_H
 
 typedef struct j8_buf_t {
   unsigned char* data;
@@ -25,4 +25,4 @@ void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback);
 
 void ShellEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf);
 
-#endif  // DATA_LANG_J8C_H
+#endif  // DATA_LANG_J8_LIBC_H

@@ -29,6 +29,7 @@ from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch
 from data_lang import j8
+from data_lang import j8_lite
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -134,13 +135,13 @@ def GetLineSourceString(line, quote_filename=False):
             # also handles characters that are unprintable in a terminal.
             s = src.path
             if quote_filename:
-                s = j8.EncodeString(s, unquoted_ok=True)
+                s = j8_lite.EncodeString(s, unquoted_ok=True)
         elif case(source_e.SourcedFile):
             src = cast(source.SourcedFile, UP_src)
             # ditto
             s = src.path
             if quote_filename:
-                s = j8.EncodeString(s, unquoted_ok=True)
+                s = j8_lite.EncodeString(s, unquoted_ok=True)
 
         elif case(source_e.ArgvWord):
             src = cast(source.ArgvWord, UP_src)

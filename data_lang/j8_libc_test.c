@@ -67,6 +67,19 @@ TEST encode_test() {
   PASS();
 }
 
+TEST can_omit_quotes_test() {
+  const char* s = "foo";
+  ASSERT(CanOmitQuotes((unsigned char*)s, strlen(s)));
+
+  s = "foo bar";
+  ASSERT(!CanOmitQuotes((unsigned char*)s, strlen(s)));
+
+  s = "my-dir/my_file.cc";
+  ASSERT(CanOmitQuotes((unsigned char*)s, strlen(s)));
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -74,6 +87,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(encode_test);
   RUN_TEST(char_int_test);
+  RUN_TEST(can_omit_quotes_test);
 
   GREATEST_MAIN_END();
   return 0;

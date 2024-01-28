@@ -182,4 +182,29 @@ inline int ShellEncodeChunk(unsigned char** p_in, unsigned char* in_end,
   return 0;
 }
 
+inline int CanOmitQuotes(unsigned char* s, int len) {
+  for (int i = 0; i < len; ++i) {
+    unsigned char ch = s[i];
+
+    // Corresponds to regex [a-zA-Z0-9./_-]
+    if ('a' <= ch && ch <= 'z') {
+      continue;
+    }
+    if ('A' <= ch && ch <= 'Z') {
+      continue;
+    }
+    if ('0' <= ch && ch <= '9') {
+      continue;
+    }
+    if (ch == '.' || ch == '/' || ch == '_' || ch == '-') {
+      continue;
+    }
+    // some byte requires quotes
+    // Not including UTF-8 here because it can have chars that look like space
+    // or quotes
+    return 0;
+  }
+  return 1;  // everything OK
+}
+
 #endif  // DATA_LANG_J8_H

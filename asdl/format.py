@@ -466,6 +466,7 @@ def _TrySingleLine(node, f, max_chars):
         node = cast(hnode.Leaf, UP_node)
         f.PushColor(node.color)
         # TODO: use fastfunc.J8Encode()
+        # j8.EncodeString(node.s, unquoted_ok=True)
         f.write(qsn.maybe_encode(node.s))
         f.PopColor()
 

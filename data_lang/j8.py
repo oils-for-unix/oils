@@ -48,7 +48,6 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
 _ = log
-unused = pyj8
 
 from typing import cast, Dict, List, Tuple, Optional
 

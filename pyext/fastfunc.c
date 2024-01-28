@@ -5,6 +5,7 @@
 #include <stdio.h>  // vfprintf
 #include <stdlib.h>
 
+#include "data_lang/j8.h"  // CanOmitQuotes
 #include "data_lang/j8_libc.h"
 #include "data_lang/utf8_impls/bjoern_dfa.h"
 
@@ -66,10 +67,20 @@ func_PartIsUtf8(PyObject *self, PyObject *args) {
   return PyBool_FromLong(state == UTF8_ACCEPT);
 }
 
+static PyObject *
+func_CanOmitQuotes(PyObject *self, PyObject *args) {
+  j8_buf_t in;
+  if (!PyArg_ParseTuple(args, "s#", &(in.data), &(in.len))) {
+    return NULL;
+  }
+  int result = CanOmitQuotes(in.data, in.len);
+  return PyBool_FromLong(result);
+}
 
 static PyMethodDef methods[] = {
   {"J8EncodeString", func_J8EncodeString, METH_VARARGS, ""},
   {"PartIsUtf8", func_PartIsUtf8, METH_VARARGS, ""},
+  {"CanOmitQuotes", func_CanOmitQuotes, METH_VARARGS, ""},
 
   {NULL, NULL},
 };

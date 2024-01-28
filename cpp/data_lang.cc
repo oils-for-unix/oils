@@ -8,6 +8,21 @@
 // TODO: remove duplication
 #define LOSSY_JSON (1 << 3)
 
+namespace fastfunc {
+
+bool CanOmitQuotes(BigStr* s) {
+  return ::CanOmitQuotes(reinterpret_cast<unsigned char*>(s->data_), len(s));
+}
+
+BigStr* J8EncodeString(BigStr* s, int j8_fallback) {
+  auto buf = Alloc<mylib::BufWriter>();
+  int options = j8_fallback ? 0 : LOSSY_JSON;
+  pyj8::WriteString(s, options, buf);
+  return buf->getvalue();
+}
+
+}  // namespace fastfunc
+
 namespace pyj8 {
 
 bool PartIsUtf8(BigStr* s, int start, int end) {
