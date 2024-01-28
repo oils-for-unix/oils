@@ -230,7 +230,7 @@ def _PrintArgv(argv, buf):
     """Uses QSN encoding without $ for xtrace_rich."""
     for arg in argv:
         buf.write(' ')
-        buf.write(qsn.maybe_encode(arg))
+        buf.write(qsn.maybe_shell_encode(arg))
     buf.write('\n')
 
 
@@ -456,7 +456,7 @@ class Tracer(object):
             buf.write(label)
             if arg is not None:
                 buf.write(' ')
-                buf.write(qsn.maybe_encode(arg))
+                buf.write(qsn.maybe_shell_encode(arg))
             buf.write('\n')
             self.f.write(buf.getvalue())
 

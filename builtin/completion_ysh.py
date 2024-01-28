@@ -53,13 +53,7 @@ class CompExport(vm._Builtin):
         if arg.format == 'jlines':
             buf = mylib.BufWriter()
             for m in comp_matches:
-                # TODO: change to J8 notation
-                # - Since there are spaces, maybe_encode() always adds quotes.
-                # - Could use a jlines=True J8 option to specify that newlines and
-                #   non-UTF-8 unprintable bytes cause quotes.  But not spaces.
-                #
-                # Also, there's always a trailing space!  Gah.
-
+                # Note: everything is quoted, that seems simpler.
                 self.j8print.EncodeString(m, buf)
                 print(buf.getvalue())
                 buf.clear()

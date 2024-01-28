@@ -505,8 +505,9 @@ b z
 < proc zero
 ## END
 
-#### QSN encoded argv
-shopt --set oil:upgrade
+#### Encoded argv uses shell encoding, not J8
+
+shopt --set ysh:upgrade
 set -x
 
 echo $'one two\n' $'\u03bc'
@@ -515,5 +516,5 @@ one two
  μ
 ## END
 ## STDERR:
-. builtin echo 'one two\n' 'μ'
+. builtin echo $'one two\n' 'μ'
 ## END
