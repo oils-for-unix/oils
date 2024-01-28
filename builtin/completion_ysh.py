@@ -7,6 +7,7 @@ from core import completion
 from core.error import e_usage
 from core import vm
 from data_lang import j8
+from mycpp import mylib
 from mycpp.mylib import log
 from frontend import flag_spec
 from frontend import args
@@ -50,6 +51,7 @@ class CompExport(vm._Builtin):
         comp_matches.reverse()
 
         if arg.format == 'jlines':
+            buf = mylib.BufWriter()
             for m in comp_matches:
                 # TODO: change to J8 notation
                 # - Since there are spaces, maybe_encode() always adds quotes.
@@ -58,8 +60,9 @@ class CompExport(vm._Builtin):
                 #
                 # Also, there's always a trailing space!  Gah.
 
-                s = self.j8print.MaybeEncodeString(m)
-                print(s)
+                self.j8print.EncodeString(m, buf)
+                print(buf.getvalue())
+                buf.clear()
 
         elif arg.format == 'tsv8':
             log('TSV8 format not implemented')

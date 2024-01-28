@@ -210,6 +210,11 @@ class BufWriter : public Writer {
   BufWriter() : Writer(), str_(nullptr), len_(0) {
   }
   void write(BigStr* s) override;
+  void clear() {  // Reuse this instance
+    str_ = nullptr;
+    len_ = 0;
+    is_valid_ = true;
+  }
   void flush() override {
   }
   bool isatty() override {

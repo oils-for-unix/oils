@@ -494,16 +494,7 @@ class LexerDecoder(object):
                 self.pos = str_end
 
                 s = self.decoded.getvalue()
-                #log('s %r', s)
-                # This doesn't do what we think
-                #self.decoded.reset()
-
-                if 0:
-                    # Reusing this object is more efficient, e.g. with a
-                    # payload with thousands of strings
-                    mylib.ClearBuf(self.decoded)
-                else:
-                    self.decoded = mylib.BufWriter()
+                self.decoded.clear()  # reuse this instance
 
                 #log('decoded %r', self.decoded.getvalue())
                 return Id.J8_AnyString, str_end, s
