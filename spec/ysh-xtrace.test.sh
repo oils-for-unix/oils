@@ -96,19 +96,27 @@ eval 'echo 1; echo 2'
 ## END
 
 #### source
-echo 'echo source-argv: "$@"' > lib.sh
+echo 'echo "\$1 = $1"' > lib.sh
 
 shopt --set oil:upgrade
 set -x
 
-source lib.sh 1 2 3
+source lib.sh a b c
+
+# Test the quoting style.  TODO: Don't use bash style in YSH.
+
+source lib.sh x $'\xfe' $'\xff'
 
 ## STDOUT:
-source-argv: 1 2 3
+$1 = a
+$1 = x
 ## END
 ## STDERR:
-> source lib.sh 1 2 3
-  . builtin echo 'source-argv:' 1 2 3
+> source lib.sh a b c
+  . builtin echo '$1 = a'
+< source lib.sh
+> source lib.sh x $'\xfe' $'\xff'
+  . builtin echo '$1 = x'
 < source lib.sh
 ## END
 

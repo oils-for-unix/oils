@@ -60,6 +60,23 @@ LOSSY_JSON = 1 << 3  # JSON is lossy
 assert pyj8.LOSSY_JSON == LOSSY_JSON
 
 
+def EncodeString(s, unquoted_ok=False):
+    # type: (str, bool) -> str
+    """Convenience API that doesn't require instance of j8.Printer()
+
+    If you have to create many strings, it may generate less garbage to reuse
+    the same BufWriter and clear() it.
+
+    Matches EncodeString() below.
+    """
+    if unquoted_ok and match.CanOmitQuotes(s):
+        return s
+
+    buf = mylib.BufWriter()
+    pyj8.WriteString(s, 0, buf)
+    return buf.getvalue()
+
+
 class Printer(object):
     """
     For json/j8 write (x), write (x), = operator, pp line (x)
