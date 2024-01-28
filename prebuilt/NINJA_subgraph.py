@@ -51,7 +51,7 @@ def NinjaGraph(ru):
         srcs=['prebuilt/asdl/runtime.mycpp.cc'],
         deps=[
             '//asdl/hnode.asdl',
-            # Should //cpp/qsn exist?
+            '//cpp/data_lang',  # for fastfunc
         ])
 
     ru.cc_library(
@@ -59,8 +59,9 @@ def NinjaGraph(ru):
         srcs=['prebuilt/core/error.mycpp.cc'],
         deps=[
             '//asdl/hnode.asdl',
+            '//core/value.asdl',
             '//frontend/syntax.asdl',
-            # Should //cpp/qsn exist?
+            '//cpp/data_lang',  # for fastfunc
         ])
 
     ru.cc_library(
@@ -70,6 +71,6 @@ def NinjaGraph(ru):
             '//asdl/hnode.asdl',
             '//core/runtime.asdl',
             '//frontend/syntax.asdl',
+            '//cpp/data_lang',  # for fastfunc
             '//cpp/frontend_flag_spec',
-            # Should //cpp/qsn exist?
         ])

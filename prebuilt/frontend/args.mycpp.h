@@ -4,13 +4,16 @@
 #define FRONTEND_ARGS_MYCPP_H
 
 #include "_gen/asdl/hnode.asdl.h"
-#include "cpp/qsn.h"
+#include "cpp/data_lang.h"
 #include "mycpp/runtime.h"
 
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/frontend_flag_spec.h"
+
+using value_asdl::value;  // This is a bit ad hoc
+
 namespace runtime {  // forward declare
 
 

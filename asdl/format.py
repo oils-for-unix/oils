@@ -19,7 +19,7 @@ from typing import Tuple, List
 from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e,
                                       color_t)
 from core import ansi
-from data_lang import qsn
+from data_lang import j8_lite
 from pylib import cgi
 from mycpp import mylib
 
@@ -395,8 +395,7 @@ class _PrettyPrinter(object):
         if tag == hnode_e.Leaf:
             node = cast(hnode.Leaf, UP_node)
             f.PushColor(node.color)
-            # TODO: use fastfunc.J8Encode()
-            f.write(qsn.maybe_encode(node.s))
+            f.write(j8_lite.EncodeString(node.s, unquoted_ok=True))
             f.PopColor()
 
         elif tag == hnode_e.External:
@@ -465,9 +464,7 @@ def _TrySingleLine(node, f, max_chars):
     if tag == hnode_e.Leaf:
         node = cast(hnode.Leaf, UP_node)
         f.PushColor(node.color)
-        # TODO: use fastfunc.J8Encode()
-        # j8.EncodeString(node.s, unquoted_ok=True)
-        f.write(qsn.maybe_encode(node.s))
+        f.write(j8_lite.EncodeString(node.s, unquoted_ok=True))
         f.PopColor()
 
     elif tag == hnode_e.External:
