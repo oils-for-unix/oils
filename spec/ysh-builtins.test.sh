@@ -78,26 +78,6 @@ a b_c d END
 xy
 ## END
 
-#### write --qsn
-write --qsn foo bar
-write __
-
-write --qsn 'abc def' ' 123 456'
-write __
-
-write --qsn $'one\ttwo\n'
-
-
-## STDOUT:
-foo
-bar
-__
-'abc def'
-' 123 456'
-__
-'one\ttwo\n'
-## END
-
 #### write --json
 shopt --set ysh:upgrade
 
@@ -118,18 +98,6 @@ write --j8 b'\yfe\yff'
 ## STDOUT:
 "μ"
 b'\yfe\yff'
-## END
-
-#### write --j8 --unicode
-
-write --j8 $'\u{3bc}'
-write --j8 --unicode u $'\u{3bc}'
-write --j8 --unicode x $'\u{3bc}'
-
-## STDOUT:
-'μ'
-'\u{3bc}'
-'\xce\xbc'
 ## END
 
 #### write  -e not supported
@@ -223,26 +191,6 @@ reply=2
 reply=3
 myline=a
 myline=b
-## END
-
-#### read --line --qsn
-read --line --qsn <<EOF
-'foo\n'
-EOF
-write --qsn -- "$_reply"
-
-read --line --qsn <<EOF
-'foo\tbar hex=\x01 mu=\u{3bc}'
-EOF
-write --qsn --unicode u -- "$_reply"
-
-echo '$' | read --line --qsn
-write --qsn -- "$_reply"
-
-## STDOUT:
-'foo\n'
-'foo\tbar hex=\u{1} mu=\u{3bc}'
-'$'
 ## END
 
 #### read --line --j8

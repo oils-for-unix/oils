@@ -265,13 +265,17 @@ YSH adds buffered, line-oriented I/O to shell's `read`.
     read --line (&x)        # fills $x (&x is a place)
 
     read --line --with-eol  # keep the \n
-    read --line --json      # decode JSON string
-    read --line --j8        # decode J8 string
 
     read --all              # whole file including newline, in $_reply
     read --all (&x)         # fills $x
 
     read -0                 # read until NUL, synonym for read -r -d ''
+
+You may want to use `fromJ8()` or `fromJson()` after reading a line.
+
+<!--
+    read --line --json      # decode JSON string
+    read --line --j8        # decode J8 string
 
 When --json is passed, the line is checked for an opening `"`.  If present,
 it's decoded as a JSON string.
@@ -279,7 +283,6 @@ it's decoded as a JSON string.
 When --j8 is passed, the line is checked for an opening `"` or `'` or `u'` or
 `b'`.  If present, it's decoded as a J8 string.
 
-<!--
 TODO: read --netstr
 -->
 
@@ -365,12 +368,21 @@ Examples:
 
     write -- ale bean         # write two lines
 
-    write --json -- ale bean  # JSON encode, guarantees two lines
-    write --j8 -- ale bean    # J8 encode, guarantees two lines
-
     write -n -- ale bean      # synonym for --end '', like echo -n
     write --sep '' --end '' -- a b        # write 2 bytes
     write --sep $'\t' --end $'\n' -- a b  # TSV line
+
+You may want to use `toJ8()` or `toJson()` before writing:
+
+    write -- $[toJ8(mystr)]
+    write -- $[toJson(mystr)]
+
+
+<!--
+    write --json -- ale bean  # JSON encode, guarantees two lines
+    write --j8 -- ale bean    # J8 encode, guarantees two lines
+-->
+
 
 ### fork
 

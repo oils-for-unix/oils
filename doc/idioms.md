@@ -14,8 +14,7 @@ This is an informal, lightly-organized list of recommended idioms for the
   language]($xref:osh-language) is compatible with
   [POSIX]($xref:posix-shell-spec) and [bash]($xref).
 
-[QSN]: qsn.html
-[QTT]: qtt.html
+[J8 Notation]: j8-notation.html
 
 <!-- cmark.py expands this -->
 <div id="toc">
@@ -126,6 +125,10 @@ Instead, emit and consume the [QSN][] and [QTT][] interchange formats.
 Custom parsing and serializing should be limited to "the edges" of your YSH
 programs.
 
+<!--
+
+TODO: write about J8 notation idioms
+
 ### Use New Builtins That Support Structured I/O
 
 These are discussed in the next two sections, but here's a summary.
@@ -138,28 +141,28 @@ These are discussed in the next two sections, but here's a summary.
 That is, take advantage of the invariants that the [IO
 builtins](io-builtins.html) respect.  (doc in progress)
 
+-->
+
 <!--
     read --lines --qsn :myarray   # read many lines
 -->
 
 ### More Strategies For Structured Data
 
-- **Wrap** and Adapt External Tools.  Parse their output, and emit [QSN][] and
-  [QTT][].
+- **Wrap** and Adapt External Tools.  Parse their output, and emit [J8 Notation][].
   - These can be one-off, "bespoke" wrappers in your program, or maintained
     programs.  Use the `proc` construct and `flagspec`!
   - Example: [uxy](https://github.com/sustrik/uxy) wrappers.
   - TODO: Examples written in YSH and in other languages.
 - **Patch** Existing Tools.
-   - Enhance GNU grep, etc. to emit [QSN][] and [QTT][].  Add a `--qsn` flag.
+   - Enhance GNU grep, etc. to emit [J8 Notation][].  Add a
+     `--j8` flag.
 - **Write Your Own** Structured Versions.
   - For example, you can write a structured subset of `ls` in Python with
     little effort.
 
 <!--
-
-  ls -q and -Q already exist, but --qsn is probably fine
-  or --qtt
+  ls -q and -Q already exist, but --j8 or --tsv8 is probably fine
 -->
 
 ## The `write` Builtin Is Simpler Than `printf` and `echo`

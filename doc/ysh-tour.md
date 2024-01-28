@@ -1131,6 +1131,8 @@ UTF-8 is the foundation of our textual data languages.
 <!-- TODO: there's a runes() iterator which gives integer offsets, usable for
 slicing -->
 
+<!-- TODO: write about J8 notation -->
+
 ### Lines of Text (traditional), and QSN
 
 Traditional Unix tools like `grep` and `awk` operate on streams of lines.  YSH

@@ -14,7 +14,6 @@ from core.error import e_usage
 from core import state
 from core import ui
 from core import vm
-from data_lang import qsn
 from data_lang import j8
 from frontend import flag_spec
 from frontend import match
@@ -192,15 +191,6 @@ class Write(_Builtin):
         arg = arg_types.write(attrs.attrs)
         #print(arg)
 
-        if arg.unicode == 'raw':
-            bit8_display = qsn.BIT8_UTF8
-        elif arg.unicode == 'u':
-            bit8_display = qsn.BIT8_U_ESCAPE
-        elif arg.unicode == 'x':
-            bit8_display = qsn.BIT8_X_ESCAPE
-        else:
-            raise AssertionError()
-
         i = 0
         while not arg_r.AtEnd():
             if i != 0:
@@ -212,10 +202,6 @@ class Write(_Builtin):
 
             elif arg.j8:
                 s = self.j8print.MaybeEncodeString(s)
-
-            # TODO: remove this
-            elif arg.qsn:
-                s = qsn.maybe_encode(s, bit8_display)
 
             self.stdout_.write(s)
 
