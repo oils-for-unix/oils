@@ -42,6 +42,7 @@ from asdl import format as fmt
 from core import error
 from core import vm
 from data_lang import pyj8
+from data_lang import qsn
 from frontend import consts
 from frontend import match
 from mycpp import mylib
@@ -59,21 +60,14 @@ LOSSY_JSON = 1 << 3  # JSON is lossy
 assert pyj8.LOSSY_JSON == LOSSY_JSON
 
 
-def EncodeString(s, unquoted_ok=False):
-    # type: (str, bool) -> str
-    """Convenience API that doesn't require instance of j8.Printer()
+def MaybeShellEncode(s):
+    # type: (str) -> str
+    return qsn.maybe_shell_encode(s)
 
-    If you have to create many strings, it may generate less garbage to reuse
-    the same BufWriter and clear() it.
 
-    Matches EncodeString() below.
-    """
-    if unquoted_ok and match.CanOmitQuotes(s):
-        return s
-
-    buf = mylib.BufWriter()
-    pyj8.WriteString(s, 0, buf)
-    return buf.getvalue()
+def ShellEncode(s):
+    # type: (str) -> str
+    return qsn.maybe_shell_encode(s, flags=qsn.MUST_QUOTE)
 
 
 class Printer(object):

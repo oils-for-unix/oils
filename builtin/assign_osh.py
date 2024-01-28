@@ -21,7 +21,7 @@ from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
-from data_lang import qsn
+from data_lang import j8
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -159,7 +159,7 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
         if val.tag() == value_e.Str:
             str_val = cast(value.Str, val)
             # TODO: Use fastfunc.ShellEncode()
-            decl.extend(["=", qsn.maybe_shell_encode(str_val.s)])
+            decl.extend(["=", j8.MaybeShellEncode(str_val.s)])
 
         elif val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, val)
@@ -184,14 +184,14 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                         decl.extend([
                             " ", name, "[",
                             str(i), "]=",
-                            qsn.maybe_shell_encode(element)
+                            j8.MaybeShellEncode(element)
                         ])
             else:
                 body = []  # type: List[str]
                 for element in array_val.strs:
                     if len(body) > 0:
                         body.append(" ")
-                    body.append(qsn.maybe_shell_encode(element))
+                    body.append(j8.MaybeShellEncode(element))
                 decl.extend(["=(", ''.join(body), ")"])
 
         elif val.tag() == value_e.BashAssoc:
@@ -200,8 +200,10 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
             for key in sorted(assoc_val.d):
                 if len(body) > 0:
                     body.append(" ")
-                key_quoted = qsn.maybe_shell_encode(key, flags=qsn.MUST_QUOTE)
-                value_quoted = qsn.maybe_shell_encode(assoc_val.d[key])
+
+                key_quoted = j8.ShellEncode(key)
+                value_quoted = j8.MaybeShellEncode(assoc_val.d[key])
+
                 body.extend(["[", key_quoted, "]=", value_quoted])
             if len(body) > 0:
                 decl.extend(["=(", ''.join(body), ")"])
