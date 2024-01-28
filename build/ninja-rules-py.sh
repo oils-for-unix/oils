@@ -157,7 +157,7 @@ task() {
 
   case $bin in
     (mycpp/examples/*.py)
-      # we import mycpp.mylib and pylib.collections_
+      # we import mycpp.mylib
       export PYTHONPATH="$REPO_ROOT/mycpp:$REPO_ROOT/vendor:$REPO_ROOT"
       ;;
   esac
