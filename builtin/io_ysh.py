@@ -170,12 +170,12 @@ class Pp(_Builtin):
 
 class Write(_Builtin):
     """
-  write -- @strs
-  write --sep ' ' --end '' -- @strs
-  write -n -- @
-  write --qsn -- @strs   # argv serialization
-  write --qsn --sep $'\t' -- @strs   # this is like QTSV
-  """
+    write -- @strs
+    write --sep ' ' --end '' -- @strs
+    write -n -- @
+    write --j8 -- @strs   # argv serialization
+    write --j8 --sep $'\t' -- @strs   # this is like TSV8
+    """
 
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ErrorFormatter) -> None
@@ -204,9 +204,13 @@ class Write(_Builtin):
                 self.stdout_.write(arg.sep)
             s = arg_r.Peek()
 
-            if arg.j8:
+            if arg.json:
+                s = self.j8print.MaybeEncodeJsonString(s)
+
+            elif arg.j8:
                 s = self.j8print.MaybeEncodeString(s)
 
+            # TODO: remove this
             elif arg.qsn:
                 s = qsn.maybe_encode(s, bit8_display)
 

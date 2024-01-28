@@ -265,16 +265,19 @@ YSH adds buffered, line-oriented I/O to shell's `read`.
     read --line (&x)        # fills $x (&x is a place)
 
     read --line --with-eol  # keep the \n
-    read --line --qsn       # decode QSN too
+    read --line --json      # decode JSON string
+    read --line --j8        # decode J8 string
 
     read --all              # whole file including newline, in $_reply
     read --all (&x)         # fills $x
 
     read -0                 # read until NUL, synonym for read -r -d ''
 
-When --qsn is passed, the line is check for an opening single quote.  If so,
-it's decoded as QSN.  The line must have a closing single quote, and there
-can't be any non-whitespace characters after it.
+When --json is passed, the line is checked for an opening `"`.  If present,
+it's decoded as a JSON string.
+
+When --j8 is passed, the line is checked for an opening `"` or `'` or `u'` or
+`b'`.  If present, it's decoded as a J8 string.
 
 <!--
 TODO: read --netstr
@@ -289,9 +292,12 @@ newline.
 
 Examples:
 
-    write -- ale bean        # write two lines
-    write --qsn -- ale bean  # QSN encode, guarantees two lines
-    write -n -- ale bean     # synonym for --end '', like echo -n
+    write -- ale bean         # write two lines
+
+    write --json -- ale bean  # JSON encode, guarantees two lines
+    write --j8 -- ale bean    # J8 encode, guarantees two lines
+
+    write -n -- ale bean      # synonym for --end '', like echo -n
     write --sep '' --end '' -- a b        # write 2 bytes
     write --sep $'\t' --end $'\n' -- a b  # TSV line
 

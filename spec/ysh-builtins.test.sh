@@ -1,5 +1,4 @@
-
-## oils_failures_allowed: 6
+## oils_failures_allowed: 5
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -99,12 +98,26 @@ __
 'one\ttwo\n'
 ## END
 
-#### write --j8
+#### write --json
+shopt --set ysh:upgrade
 
-write --j8 j"\u{3bc}"
+write --json u'\u{3bc}'
+write --json b'\yfe\yff'
 
 ## STDOUT:
-'μ'
+"μ"
+"��"
+## END
+
+#### write --j8
+shopt --set ysh:upgrade
+
+write --j8 u'\u{3bc}'
+write --j8 b'\yfe\yff'
+
+## STDOUT:
+"μ"
+b'\yfe\yff'
 ## END
 
 #### write --j8 --unicode
@@ -232,13 +245,11 @@ write --qsn -- "$_reply"
 '$'
 ## END
 
-#### read --line --qsn accepts optional $''
+#### read --line --j8
 
-# PROBLEM: is it limited to $'  ?  What about $3.99 ?
-# I think you just check for those 2 chars
-
-echo $'$\'foo\'' | read --line --qsn
+echo $'u\'foo\'' | read --line --j8
 write -- "$_reply"
+
 ## STDOUT:
 foo
 ## END
