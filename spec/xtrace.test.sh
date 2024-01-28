@@ -72,6 +72,16 @@ echo "$mu1" "$mu2"
 ## N-I dash stdout-json: ""
 ## N-I dash stderr-json: ""
 
+#### xtrace with paths
+set -o xtrace
+echo my-dir/my_file.cc
+## STDOUT:
+my-dir/my_file.cc
+## END
+## STDERR:
++ echo my-dir/my_file.cc
+## END
+
 #### xtrace with tabs
 case $SH in (dash) exit ;; esac
 
@@ -93,7 +103,7 @@ echo '1 2' \' \" \\
 1 2 ' " \
 ## END
 
-# Oil is different bceause backslashes require $'\\' and not '\', but that's OK
+# YSH is different because backslashes require $'\\' and not '\', but that's OK
 ## STDERR:
 + echo '1 2' $'\'' '"' $'\\'
 ## END

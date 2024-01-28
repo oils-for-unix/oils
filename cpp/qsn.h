@@ -28,6 +28,7 @@ inline bool IsPlainChar(BigStr* ch) {
   case '.':
   case '-':
   case '_':
+  case '/':
     return true;
   }
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||

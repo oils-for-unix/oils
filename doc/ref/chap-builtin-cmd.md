@@ -283,6 +283,77 @@ When --j8 is passed, the line is checked for an opening `"` or `'` or `u'` or
 TODO: read --netstr
 -->
 
+<!--
+
+Problem with read --json -- there's also https://jsonlines.org, which allows
+
+    {"my": "line"}
+
+That can be done with
+
+    while read --line {
+      var record = fromJson(_reply)
+    }
+
+This is distinct from:
+
+    while read --line --j8 {
+      echo $_reply
+    }
+
+This allows unquoted.  Maybe it should be read --j8-line
+
+What about write?  These would be the same:
+
+    write --json -- $s
+    write --j8 -- $s
+
+    write -- $[toJson(s)]
+    write -- $[toJ8(s)]
+
+    write --json -- @strs
+    write --j8 -- @strs
+
+    write -- @[toJson(s) for s in strs]
+    write -- @[toJ8(s) for s in strs]
+
+It's an argument for getting rid --json and --j8?  I already implemented them,
+but it makes the API smaller.
+
+I guess the main thing would be to AVOID quoting sometimes?
+
+    $ write --j8 -- unquoted
+    unquoted
+
+    $ write --j8 -- $'\'' '"'
+    "'"
+    "\""
+
+I think this could be the shell style?
+
+    $ write --shell-str -- foo bar baz
+
+Or it could be
+
+    $ write -- @[toShellString(s) for s in strs]
+
+I want this to be "J8 Lines", but it can be done in pure YSH.  It's not built
+into the interpreter.
+
+  foo/bar
+ "hi"
+b'hi'
+u'hi'
+
+But what about
+
+ Fool's Gold
+a'hi'  # This feels like an error?
+a"hi"  # what about this?
+
+Technically we CAN read those as literal strings
+-->
+
 ### write
 
 write fixes problems with shell's `echo` builtin.

@@ -139,7 +139,7 @@ if mylib.PYTHON:
         # type: (str) -> bool
 
         # yapf: disable
-        return (ch in '.-_' or
+        return (ch in '.-_/' or
                 'a' <= ch and ch <= 'z' or
                 'A' <= ch and ch <= 'Z' or
                 '0' <= ch and ch <= '9')

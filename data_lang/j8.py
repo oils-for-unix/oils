@@ -136,8 +136,10 @@ class Printer(object):
     def MaybeEncodeString(self, s):
         # type: (str) -> str
         """ For write --j8 $s  and compexport """
+
         # TODO: There should be an option to not quote "plain words" like
         # /usr/local/foo-bar/x.y/a_b
+
         buf = mylib.BufWriter()
         self._Print(value.Str(s), buf, -1)
         return buf.getvalue()
