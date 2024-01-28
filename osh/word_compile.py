@@ -16,7 +16,6 @@ from mycpp.mylib import log
 from frontend import consts
 from osh import string_ops
 from mycpp.mylib import switch
-from data_lang import qsn_native  # IsWhitespace
 
 from typing import List, Optional, cast
 
@@ -153,10 +152,20 @@ def IsLeadingSpace(s):
     # type: (str) -> bool
     """Determines if the token before ''' etc. can be stripped.
 
-    Similar to qsn_native.IsWhitespace()
+    Similar to IsWhitespace()
     """
     for ch in s:
         if ch not in ' \t':
+            return False
+    return True
+
+
+def IsWhitespace(s):
+    # type: (str) -> bool
+    """Alternative to s.isspace() that doesn't have legacy \f \v codes.
+    """
+    for ch in s:
+        if ch not in ' \n\r\t':
             return False
     return True
 
@@ -187,7 +196,7 @@ def RemoveLeadingSpaceDQ(parts):
     if UP_first.tag() == word_part_e.Literal:
         first = cast(Token, UP_first)
         #log('T %s', first_part)
-        if qsn_native.IsWhitespace(first.tval):
+        if IsWhitespace(first.tval):
             # Remove the first part.  TODO: This could be expensive if there are many
             # lines.
             parts.pop(0)
@@ -244,7 +253,7 @@ def RemoveLeadingSpaceSQ(tokens):
 
     first = tokens[0]
     if first.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
-        if qsn_native.IsWhitespace(first.tval):
+        if IsWhitespace(first.tval):
             tokens.pop(0)  # Remove the first part
         if first.tval.endswith('\n'):
             line_ended = True

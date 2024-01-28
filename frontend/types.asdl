@@ -33,9 +33,6 @@ module types {
   # YSH/eggex both use Expr
   | Expr      # var x = 1 + 2 * 3; echo $f(a, b + 1)
 
-  # TODO: J8Str is bit like SQ_C
-  | QSN
-
   # Unused.  TODO: consider this representation
   word_mode =
     ShCommand  # These three correspond to lex_mode

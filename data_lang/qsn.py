@@ -234,38 +234,6 @@ def maybe_shell_encode(s, flags=0):
     return prefix + ''.join(parts)
 
 
-def maybe_encode(s, bit8_display=BIT8_UTF8):
-    # type: (str, int) -> str
-    """Encode simple strings to a "bare" word, and complex ones to a QSN
-    literal.
-
-    Used for: ASDL pretty printing.  There, we don't care about the
-    validity of shell strings.
-    """
-    quote = 0
-
-    if len(s) == 0:
-        quote = 1
-    else:
-        for ch in s:
-            # [a-zA-Z0-9._-\_] are filename chars and don't need quotes
-            if IsPlainChar(ch):
-                continue  # quote is still 0
-
-            quote = 1
-
-    if not quote:
-        return s
-
-    parts = []  # type: List[str]
-    parts.append("'")
-    buf = mylib.BufWriter()
-    _encode(s, bit8_display, buf)
-    parts.append(buf.getvalue())
-    parts.append("'")
-    return ''.join(parts)
-
-
 def encode(s, bit8_display=BIT8_UTF8):
     # type: (str, int) -> str
     parts = []  # type: List[str]
