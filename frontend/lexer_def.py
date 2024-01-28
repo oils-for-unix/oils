@@ -59,6 +59,10 @@ def R(pat, tok_type):
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.
 SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
 
+# Used for both J8 strings in TSV8, and shell strings for xtrace
+# This omits unicode which may be bad for TSV8
+CAN_OMIT_QUOTES_RE = r'[a-zA-Z0-9_./-]+'
+
 _SIGNIFICANT_SPACE = R(r'[ \t]+', Id.WS_Space)
 
 # Tilde expansion chars are Lit_Chars, but WITHOUT the /.  The NEXT token (if

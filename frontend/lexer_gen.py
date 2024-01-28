@@ -441,6 +441,7 @@ def main(argv):
 
         TranslateRegexToPredicate(lexer_def.VAR_NAME_RE, 'IsValidVarName')
         TranslateRegexToPredicate(lexer_def.SHOULD_HIJACK_RE, 'ShouldHijack')
+        TranslateRegexToPredicate(lexer_def.CAN_OMIT_QUOTES_RE, 'CanOmitQuotes')
         TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_INTEGER,
                                   'LooksLikeInteger')
         TranslateRegexToPredicate(lexer_def.LOOKS_LIKE_FLOAT, 'LooksLikeFloat')

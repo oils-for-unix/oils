@@ -139,7 +139,7 @@ class Pp(_Builtin):
             else:
                 names = sorted(self.procs)
 
-            # QTSV header
+            # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
                 proc = self.procs[name]  # must exist
@@ -156,9 +156,12 @@ class Pp(_Builtin):
                         doc = token.line.content[token.col + 1:token.col +
                                                  token.length]
 
-                # No limits on proc names
-                print('%s\t%s' %
-                      (qsn.maybe_encode(name), qsn.maybe_encode(doc)))
+                # Note: these should be attributes on value.Proc
+                buf = mylib.BufWriter()
+                self.j8print.EncodeString(name, buf, unquoted_ok=True)
+                buf.write('\t')
+                self.j8print.EncodeString(doc, buf, unquoted_ok=True)
+                print(buf.getvalue())
 
             status = 0
 

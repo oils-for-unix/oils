@@ -201,7 +201,7 @@ if [[ -d $dir ]]; then
 fi
 ## stdout-json: ""
 ## STDERR:
-+ dir='/'
++ dir=/
 + [[ -d $dir ]]
 + (( a = 42 ))
 ## END

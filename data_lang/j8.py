@@ -133,6 +133,16 @@ class Printer(object):
         f.write(buf.getvalue())
         f.write('\n')
 
+    def EncodeString(self, s, buf, unquoted_ok=False):
+        # type: (str, mylib.BufWriter, bool) -> None
+        """ For pp proc, etc."""
+
+        if unquoted_ok and match.CanOmitQuotes(s):
+            buf.write(s)
+            return
+
+        self._Print(value.Str(s), buf, -1)
+
     def MaybeEncodeString(self, s):
         # type: (str) -> str
         """ For write --j8 $s  and compexport """

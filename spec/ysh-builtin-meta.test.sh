@@ -89,21 +89,24 @@ array = (Cell exported:F readonly:F nameref:F val:(value.BashArray strs:[_ _ _ 4
 
 
 #### pp proc
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 
 # This has to be a separate file because sh_spec.py strips comments!
 . $REPO_ROOT/spec/testdata/doc-comments.sh
 
 pp proc
 echo ---
+
+# print one
 pp proc f
+
 ## STDOUT:
 proc_name	doc_comment
-f	'doc \' comment with " quotes'
-g	''
-myproc	'Oil-style proc'
+f	"doc ' comment with \" quotes"
+g	""
+myproc	"YSH-style proc"
 ---
 proc_name	doc_comment
-f	'doc \' comment with " quotes'
+f	"doc ' comment with \" quotes"
 ## END
 

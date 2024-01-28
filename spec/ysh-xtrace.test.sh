@@ -32,7 +32,7 @@ cd /
 
 ## stdout-json: ""
 ## STDERR:
-. builtin cd '/'
+. builtin cd /
 ## END
 
 #### xtrace_details AND xtrace_rich on
@@ -227,7 +227,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
 ; process 12345: status 0
 ; process 12345: status 0
 ; process 12345: status 0
-| command 12345: cat '/dev/fd/N' '/dev/fd/N'
+| command 12345: cat /dev/fd/N /dev/fd/N
 | proc sub 12345
 | proc sub 12345
 ## END
@@ -444,7 +444,7 @@ zz
 ## STDERR:
 | here doc 12345
 | here doc 12345
-| command 12345: cat - '/dev/fd/3'
+| command 12345: cat - /dev/fd/3
 ; process 12345: status 0
 ; process 12345: status 0
 ; process 12345: status 0
