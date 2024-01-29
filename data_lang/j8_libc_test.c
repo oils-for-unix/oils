@@ -24,7 +24,7 @@ TEST char_int_test() {
   PASS();
 }
 
-TEST encode_test() {
+TEST j8_encode_test() {
   for (int i = 0; J8_TEST_CASES[i]; ++i) {
     const char* s = J8_TEST_CASES[i];
     int input_len = strlen(s);
@@ -128,7 +128,7 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(encode_test);
+  RUN_TEST(j8_encode_test);
   RUN_TEST(shell_encode_test);
   RUN_TEST(char_int_test);
   RUN_TEST(can_omit_quotes_test);

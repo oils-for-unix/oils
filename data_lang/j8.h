@@ -141,15 +141,111 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
       break;
     }
   }
-
-  //
   // Unreachable
-  //
 }
 
 // Like the above, but
 //
-// escape_style == 0 - try shell 'foo'
+//   \xff instead of \yff
+//   \u001f always, never \u{1f}
+//   No JSON vs. J8
+//     No \" escape ever
+//     No errors -- it can encode everything
+
+static inline void BashDollarEncodeOne(unsigned char** p_in,
+                                       unsigned char** p_out) {
+  unsigned char ch = **p_in;
+
+  //
+  // Handle \\ \b \f \n \r \t
+  //
+  switch (ch) {
+  case '\\':
+    J8_OUT('\\');
+    J8_OUT('\\');
+    (*p_in)++;
+    return;
+  case '\b':
+    J8_OUT('\\');
+    J8_OUT('b');
+    (*p_in)++;
+    return;
+  case '\f':
+    J8_OUT('\\');
+    J8_OUT('f');
+    (*p_in)++;
+    return;
+  case '\n':
+    J8_OUT('\\');
+    J8_OUT('n');
+    (*p_in)++;
+    return;
+  case '\r':
+    J8_OUT('\\');
+    J8_OUT('r');
+    (*p_in)++;
+    return;
+  case '\t':
+    J8_OUT('\\');
+    J8_OUT('t');
+    (*p_in)++;
+    return;
+  case '\'':
+    J8_OUT('\\');
+    J8_OUT('\'');
+    (*p_in)++;
+    return;
+  }
+
+  //
+  // Unprintable ASCII control codes
+  //
+  if (ch < 0x20) {
+    // printf("Writing for %04x %p\n", ch, *p_out);
+    int n = sprintf((char*)*p_out, "\\u%04x", ch);
+    *p_out += n;
+    // printf("Wrote %d bytes for %04x\n", n, ch);
+    (*p_in)++;
+    return;
+  }
+
+  //
+  // UTF-8 encoded runes and invalid bytes
+  //
+  unsigned char* start = *p_in;  // save start position
+  uint32_t codepoint = 0;
+  uint32_t state = UTF8_ACCEPT;
+
+  while (1) {
+    decode(&state, &codepoint, ch);
+    // printf("  state %d\n", state);
+    switch (state) {
+    case UTF8_REJECT: {
+      (*p_in)++;
+      int n = sprintf((char*)*p_out, "\\x%2x", ch);
+      *p_out += n;
+      return;
+    }
+    case UTF8_ACCEPT: {
+      (*p_in)++;
+      // printf("start %p p_in %p\n", start, *p_in);
+      while (start < *p_in) {
+        J8_OUT(*start);
+        start++;
+      }
+      return;
+    }
+    default:
+      (*p_in)++;  // advance, next UTF8_ACCEPT will write it
+      ch = **p_in;
+      break;
+    }
+  }
+  // Unreachable
+}
+
+// BourneShellEncodeOne rules:
+//
 //   must be valid UTF-8
 //   no control chars
 //   no ' is required
@@ -158,17 +254,45 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
 // For example we write $'\\' or b'\\' not '\'
 // The latter should be written r'\', but we're not outputing
 
-#define STYLE_SQ 0         // 'foo'
-#define STYLE_DOLLAR_SQ 1  // $'\xff'
-#define STYLE_B_STRING 2   // b'\yff'
+static inline int BourneShellEncodeOne(unsigned char** p_in,
+                                       unsigned char** p_out) {
+  unsigned char ch = **p_in;
 
-// escape_style == 1 means $'\xff'
-//
-// escape_style == 2 means b'\yff' I think?
+  if (ch == '\'' || ch == '\\') {  // can't encode these in Bourne shell ''
+    return 1;
+  }
+  if (ch < 0x20) {  // Unprintable ASCII control codes
+    return 1;
+  }
 
-static inline int ShellEncodeOne(unsigned char** p_in, unsigned char** p_out,
-                                 int escape_style) {
-  J8EncodeOne(p_in, p_out, 1);
+  // UTF-8 encoded runes and invalid bytes
+  unsigned char* start = *p_in;  // save start position
+  uint32_t codepoint = 0;
+  uint32_t state = UTF8_ACCEPT;
+
+  while (1) {
+    decode(&state, &codepoint, ch);
+    // printf("  state %d\n", state);
+    switch (state) {
+    case UTF8_REJECT: {
+      return 1;
+    }
+    case UTF8_ACCEPT: {
+      (*p_in)++;
+      // printf("start %p p_in %p\n", start, *p_in);
+      while (start < *p_in) {
+        J8_OUT(*start);
+        start++;
+      }
+      return 0;
+    }
+    default:
+      (*p_in)++;  // advance, next UTF8_ACCEPT will write it
+      ch = **p_in;
+      break;
+    }
+  }
+  // Unreachable
 }
 
 // Right now \u001f and \u{1f} are the longest output sequences for a byte.
@@ -190,11 +314,20 @@ static inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
   return 0;
 }
 
-inline int ShellEncodeChunk(unsigned char** p_in, unsigned char* in_end,
-                            unsigned char** p_out, unsigned char* out_end,
-                            int escape_style) {
+inline int BashDollarEncodeChunk(unsigned char** p_in, unsigned char* in_end,
+                                 unsigned char** p_out,
+                                 unsigned char* out_end) {
   while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
-    int cannot_encode = ShellEncodeOne(p_in, p_out, escape_style);
+    BashDollarEncodeOne(p_in, p_out);
+  }
+  return 0;
+}
+
+inline int BourneShellEncodeChunk(unsigned char** p_in, unsigned char* in_end,
+                                  unsigned char** p_out,
+                                  unsigned char* out_end) {
+  while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
+    int cannot_encode = BourneShellEncodeOne(p_in, p_out);
     if (cannot_encode) {     // we need escaping, e.g. \u0001 or \'
       return cannot_encode;  // early return
     }

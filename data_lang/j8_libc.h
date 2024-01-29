@@ -23,6 +23,9 @@ typedef struct j8_buf_t {
 
 void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback);
 
+#define STYLE_DOLLAR_SQ 1  // $'\xff'
+#define STYLE_B_STRING 2   // b'\yff'
+
 void ShellEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int escape_style);
 
 #endif  // DATA_LANG_J8_LIBC_H
