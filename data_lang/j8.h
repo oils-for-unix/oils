@@ -15,6 +15,13 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
   //   *p_in may be advanced by 1 to 4 bytes (depending on whether it's UTF-8)
   //   *p_out may be advanced by 1 to 6 bytes (depending on escaping)
 
+  // IMPORTANT: J8EncodeOne(), BourneShellEncodeOne(), BashDollarEncodeOne()
+  // all call Bjoern DFA decode(), and there's a subtle issue where p_in MUST
+  // have a NUL terminator is required. This is so INCOMPLETE UTF-8 sequences
+  // are terminated with an INVALID byte that the state machine can accept, and
+  // 0x00 can only be ITSELF, never part of a sequence. An alternative would be
+  // to do more bounds checks in these functions.
+
   // CALLER MUST CHECK that we are able to write up to 6 bytes!
   //   Because the longest output is \u001f or \u{1f} for control chars, since
   //   we don't escapes like \u{1f926} right now
@@ -112,9 +119,8 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
     // printf("  state %d\n", state);
     switch (state) {
     case UTF8_REJECT: {
-      (*p_in)++;
       if (j8_escape) {
-        int n = sprintf((char*)*p_out, "\\y%02x", ch);
+        int n = sprintf((char*)*p_out, "\\y%02x", *start);
         *p_out += n;
       } else {
         // Unicode replacement char is U+FFFD, so write encoded form
@@ -124,6 +130,8 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
         J8_OUT('\xbf');
         J8_OUT('\xbd');
       }
+      (*p_in) = start;  // REWIND because we might have consumed NUL terminator!
+      (*p_in)++;        // Advance past the byte we wrote
       return 1;
     }
     case UTF8_ACCEPT: {
@@ -229,9 +237,10 @@ static inline void BashDollarEncodeOne(unsigned char** p_in,
       // OK that's actually SIXTEEN at once?
 
     case UTF8_REJECT: {
-      (*p_in)++;
-      int n = sprintf((char*)*p_out, "\\x%02x", ch);
+      int n = sprintf((char*)*p_out, "\\x%02x", *start);
       *p_out += n;
+      (*p_in) = start;  // REWIND because we might have consumed NUL terminator!
+      (*p_in)++;        // Advance past the byte we wrote
       return;
     }
     case UTF8_ACCEPT: {
@@ -310,11 +319,13 @@ static inline int BourneShellEncodeOne(unsigned char** p_in,
 
 // Bug: we may need up to 16 bytes: \yaa\yaa\yaa\yaa
 // If this is too small, we would enter an infinite loop
+// +1 for NUL terminator
 
 #define J8_MAX_BYTES_PER_INPUT_BYTE 7
 
+// The minimum capacity must be more than the number above.
 // TODO: Tune this for our allocator?  We call buf->EnsureMoreSpace(capacity);
-#define J8_MIN_CAPACITY 24
+#define J8_MIN_CAPACITY 16
 
 static inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
                                 unsigned char** p_out, unsigned char* out_end,

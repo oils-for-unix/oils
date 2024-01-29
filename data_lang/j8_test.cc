@@ -70,8 +70,8 @@ void EncodeBString(char* s, int n, std::string* result) {
     // Same logic as EncodeBString()
     int chunk_size = in_end - in + 3;  // 3 for the quotes
     // clamp it to account for tiny gaps and huge strings
-    if (chunk_size < 16) {
-      chunk_size = 16;
+    if (chunk_size < J8_MIN_CAPACITY) {
+      chunk_size = J8_MIN_CAPACITY;
     } else if (chunk_size > 4096) {
       chunk_size = 4096;
     }
@@ -117,8 +117,8 @@ void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
     // which case we'll make more trips through the loop.
     int chunk_size = in_end - in + 3;  // 3 for the quotes
     // clamp it to account for tiny gaps and huge strings
-    if (chunk_size < 16) {
-      chunk_size = 16;
+    if (chunk_size < J8_MIN_CAPACITY) {
+      chunk_size = J8_MIN_CAPACITY;
     } else if (chunk_size > 4096) {
       chunk_size = 4096;
     }

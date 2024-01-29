@@ -44,9 +44,13 @@ TEST j8_encode_test() {
     case 0:  // empty string -> ""
       ASSERT_EQ_FMT(2, result.len, "%d");
       break;
-    case 1:  // x -> "x"
-      ASSERT_EQ_FMT(3, result.len, "%d");
+    case 1: {  // x -> "x"
+      unsigned char ch = s[0];
+      if (ch < 128) {
+        ASSERT_EQ_FMT(3, result.len, "%d");
+      }
       break;
+    }
     default:
       ASSERT(input_len < result.len);
       break;
@@ -87,9 +91,12 @@ TEST shell_encode_test() {
     case 0:  // empty string -> ""
       ASSERT_EQ_FMT(2, result.len, "%d");
       break;
-    case 1:  // x -> "x"
-      ASSERT_EQ_FMT(3, result.len, "%d");
-      break;
+    case 1: {  // x -> "x"
+      unsigned char ch = s[0];
+      if (ch < 128) {
+        ASSERT_EQ_FMT(3, result.len, "%d");
+      }
+    } break;
     default:
       ASSERT(input_len < result.len);
       break;
@@ -105,6 +112,46 @@ TEST shell_encode_test() {
     free(result.data);
 
     printf("\n");
+  }
+
+  PASS();
+}
+
+TEST invalid_utf8_test() {
+  {
+    // Truncated, should not have \x00 on the end
+    const char* s = "\xce";
+
+    j8_buf_t in = {(unsigned char*)s, strlen(s)};
+    j8_buf_t result = {0};
+    ShellEncodeString(in, &result, 0);
+
+    printf("%s\n", result.data);
+    ASSERT_EQ(0, memcmp("$'\\xce'", result.data, result.len));
+    free(result.data);
+
+    J8EncodeString(in, &result, 1);
+    printf("%s\n", result.data);
+    ASSERT_EQ(0, memcmp("b'\\yce'", result.data, result.len));
+    free(result.data);
+  }
+
+  {
+    // \U0001f926 with bad byte at the end
+    const char* s = "\xf0\x9f\xa4\xff";
+
+    j8_buf_t in = {(unsigned char*)s, strlen(s)};
+    j8_buf_t result = {0};
+    ShellEncodeString(in, &result, 0);
+
+    printf("%s\n", result.data);
+    ASSERT_EQ(0, memcmp("$'\\xf0\\x9f\\xa4\\xff'", result.data, result.len));
+    free(result.data);
+
+    J8EncodeString(in, &result, 1);
+    printf("%s\n", result.data);
+    ASSERT_EQ(0, memcmp("b'\\yf0\\y9f\\ya4\\yff'", result.data, result.len));
+    free(result.data);
   }
 
   PASS();
@@ -151,6 +198,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(j8_encode_test);
   RUN_TEST(shell_encode_test);
+  RUN_TEST(invalid_utf8_test);
   RUN_TEST(all_bytes_test);
   RUN_TEST(char_int_test);
   RUN_TEST(can_omit_quotes_test);
