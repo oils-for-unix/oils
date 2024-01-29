@@ -314,18 +314,20 @@ static inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
   return 0;
 }
 
-inline int BashDollarEncodeChunk(unsigned char** p_in, unsigned char* in_end,
-                                 unsigned char** p_out,
-                                 unsigned char* out_end) {
+static inline int BashDollarEncodeChunk(unsigned char** p_in,
+                                        unsigned char* in_end,
+                                        unsigned char** p_out,
+                                        unsigned char* out_end) {
   while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
     BashDollarEncodeOne(p_in, p_out);
   }
   return 0;
 }
 
-inline int BourneShellEncodeChunk(unsigned char** p_in, unsigned char* in_end,
-                                  unsigned char** p_out,
-                                  unsigned char* out_end) {
+static inline int BourneShellEncodeChunk(unsigned char** p_in,
+                                         unsigned char* in_end,
+                                         unsigned char** p_out,
+                                         unsigned char* out_end) {
   while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
     int cannot_encode = BourneShellEncodeOne(p_in, p_out);
     if (cannot_encode) {     // we need escaping, e.g. \u0001 or \'

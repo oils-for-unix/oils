@@ -76,7 +76,7 @@ TEST shell_encode_test() {
     // printf("input '%s' %d\n", in.data, input_len);
 
     j8_buf_t result = {0};
-    ShellEncodeString(in, &result, STYLE_DOLLAR_SQ);
+    ShellEncodeString(in, &result, 0);
 
     printf("result %s\n", result.data);
     printf("result.len %d\n", result.len);
@@ -98,7 +98,7 @@ TEST shell_encode_test() {
 
     // Encode again with J8 fallback
     result = {0};
-    ShellEncodeString(in, &result, STYLE_B_STRING);
+    ShellEncodeString(in, &result, 1);  // YSH fallback
 
     printf("result %s\n", result.data);
     printf("result.len %d\n", result.len);

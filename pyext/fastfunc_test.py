@@ -12,9 +12,7 @@ import fastfunc  # module under test
 
 class FastfuncTest(unittest.TestCase):
 
-  def testEncode(self):
-    """Send with Python; received our fanos library"""
-
+  def testJ8Encode(self):
     s = 'hello \xff \x01 ' + u'\u03bc " \''.encode('utf-8')
     #print(s)
 
@@ -22,6 +20,16 @@ class FastfuncTest(unittest.TestCase):
     print(x)
 
     x = fastfunc.J8EncodeString(s, 1)
+    print(x)
+
+  def testShellEncode(self):
+    s = 'hello \xff \x01 ' + u'\u03bc " \''.encode('utf-8')
+    #print(s)
+
+    x = fastfunc.ShellEncodeString(s, 0)
+    print(x)
+
+    x = fastfunc.ShellEncodeString(s, 1)
     print(x)
 
   def testUtf8(self):

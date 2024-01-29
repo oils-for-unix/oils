@@ -155,7 +155,7 @@ void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
 // EncodeBString()          -- b'\yff'
 
 // Mostly a COPY of the above
-void ShellEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int escape_style) {
+void ShellEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int ysh_fallback) {
   unsigned char* in = (unsigned char*)in_buf.data;
   unsigned char* in_end = in + in_buf.len;
 
@@ -183,10 +183,10 @@ void ShellEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int escape_style) {
     if (cannot_encode) {
       out_buf->len = 0;  // rewind to begining
       // printf("out %p out_end %p capacity %d\n", out, out_end, capacity);
-      if (escape_style == STYLE_DOLLAR_SQ) {
-        EncodeBashDollarString(in_buf, out_buf, capacity);  // fall back to $''
-      } else {
+      if (ysh_fallback) {
         EncodeBString(in_buf, out_buf, capacity);  // fall back to b''
+      } else {
+        EncodeBashDollarString(in_buf, out_buf, capacity);  // fall back to $''
       }
       // printf("len %d\n", out_buf->len);
       return;

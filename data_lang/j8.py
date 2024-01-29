@@ -67,6 +67,17 @@ def MaybeShellEncode(s):
 
 def ShellEncode(s):
     # type: (str) -> str
+
+    # TODO: call fastfunc.ShellEncodeString()
+    return qsn.maybe_shell_encode(s, flags=qsn.MUST_QUOTE)
+
+
+def YshEncode(s):
+    # type: (str) -> str
+
+    # TODO: call fastfunc.ShellEncodeString(STYLE_B_STRING)
+    #
+    # ysh_fallback -- b'' style
     return qsn.maybe_shell_encode(s, flags=qsn.MUST_QUOTE)
 
 

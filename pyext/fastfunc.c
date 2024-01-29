@@ -11,16 +11,16 @@
 
 #include <Python.h>
 
+#if 0
 // Log messages to stderr.
 static void debug(const char* fmt, ...) {
-#if 0
   va_list args;
   va_start(args, fmt);
   vfprintf(stderr, fmt, args);
   va_end(args);
   fprintf(stderr, "\n");
-#endif
 }
+#endif
 
 static PyObject *
 func_J8EncodeString(PyObject *self, PyObject *args) {
@@ -33,6 +33,22 @@ func_J8EncodeString(PyObject *self, PyObject *args) {
 
   j8_buf_t out;
   J8EncodeString(in, &out, j8_fallback);
+
+  PyObject *ret = PyString_FromStringAndSize(out.data, out.len);
+  return ret;
+}
+
+static PyObject *
+func_ShellEncodeString(PyObject *self, PyObject *args) {
+  j8_buf_t in;
+  int ysh_fallback;
+
+  if (!PyArg_ParseTuple(args, "s#i", &(in.data), &(in.len), &ysh_fallback)) {
+    return NULL;
+  }
+
+  j8_buf_t out;
+  ShellEncodeString(in, &out, ysh_fallback);
 
   PyObject *ret = PyString_FromStringAndSize(out.data, out.len);
   return ret;
@@ -79,6 +95,7 @@ func_CanOmitQuotes(PyObject *self, PyObject *args) {
 
 static PyMethodDef methods[] = {
   {"J8EncodeString", func_J8EncodeString, METH_VARARGS, ""},
+  {"ShellEncodeString", func_ShellEncodeString, METH_VARARGS, ""},
   {"PartIsUtf8", func_PartIsUtf8, METH_VARARGS, ""},
   {"CanOmitQuotes", func_CanOmitQuotes, METH_VARARGS, ""},
 
