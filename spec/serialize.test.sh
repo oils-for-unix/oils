@@ -1,4 +1,7 @@
 ## oils_failures_allowed: 1
+## compare_shells: bash mksh zsh ash
+
+# dash doesn't have echo -e, $'', etc.
 
 # TODO: fix J8 bug causing failure
 
