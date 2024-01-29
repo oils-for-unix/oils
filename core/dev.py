@@ -18,7 +18,7 @@ from data_lang import j8
 from mycpp.mylib import log
 from frontend import location
 from osh import word_
-from data_lang import qsn
+from data_lang import j8_lite
 from pylib import os_path
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
@@ -206,13 +206,13 @@ def _PrintShValue(val, buf):
     with tagswitch(val) as case:
         if case(value_e.Str):
             val = cast(value.Str, UP_val)
-            result = qsn.maybe_shell_encode(val.s)
+            result = j8_lite.MaybeShellEncode(val.s)
 
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
             parts = ['(']
             for s in val.strs:
-                parts.append(qsn.maybe_shell_encode(s))
+                parts.append(j8_lite.MaybeShellEncode(s))
             parts.append(')')
             result = ' '.join(parts)
 
@@ -220,9 +220,10 @@ def _PrintShValue(val, buf):
             val = cast(value.BashAssoc, UP_val)
             parts = ['(']
             for k, v in iteritems(val.d):
+                # key must be quoted
                 parts.append(
                     '[%s]=%s' %
-                    (qsn.maybe_shell_encode(k), qsn.maybe_shell_encode(v)))
+                    (j8_lite.ShellEncode(k), j8_lite.MaybeShellEncode(v)))
             parts.append(')')
             result = ' '.join(parts)
 
@@ -244,7 +245,7 @@ def _PrintYshArgv(argv, buf):
         # another function.
         #j8.EncodeString(arg, buf, unquoted_ok=True)
 
-        buf.write(qsn.maybe_shell_encode(arg))
+        buf.write(j8_lite.MaybeShellEncode(arg))
     buf.write('\n')
 
 
@@ -474,7 +475,7 @@ class Tracer(object):
             if arg is not None:
                 buf.write(' ')
                 # TODO: use unquoted -> POSIX '' -> b''
-                buf.write(qsn.maybe_shell_encode(arg))
+                buf.write(j8_lite.MaybeShellEncode(arg))
             buf.write('\n')
             self.f.write(buf.getvalue())
 
@@ -532,7 +533,7 @@ class Tracer(object):
         for i, arg in enumerate(argv):
             if i != 0:
                 buf.write(' ')
-            buf.write(qsn.maybe_shell_encode(arg))
+            buf.write(j8_lite.MaybeShellEncode(arg))
         buf.write('\n')
         self.f.write(buf.getvalue())
 
@@ -574,7 +575,7 @@ class Tracer(object):
                 left = '%s[%d]' % (lval.name, lval.index)
             elif case(sh_lvalue_e.Keyed):
                 lval = cast(sh_lvalue.Keyed, UP_lval)
-                left = '%s[%s]' % (lval.name, qsn.maybe_shell_encode(lval.key))
+                left = '%s[%s]' % (lval.name, j8_lite.MaybeShellEncode(lval.key))
         buf.write(left)
 
         # Only two possibilities here

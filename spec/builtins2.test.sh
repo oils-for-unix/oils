@@ -35,9 +35,9 @@ printf 'pf  %q\n' "$foo"
 echo '@Q ' ${foo@Q}
 
 ## STDOUT:
-foo=$'a\nb\x01c\'d'
-pf  $'a\nb\x01c\'d'
-@Q  $'a\nb\x01c\'d'
+foo=$'a\nb\u0001c\'d'
+pf  $'a\nb\u0001c\'d'
+@Q  $'a\nb\u0001c\'d'
 ## END
 
 ## OK bash STDOUT:
@@ -199,7 +199,7 @@ command -V for
 echo status=$?
 
 ## STDOUT:
-ll is an alias for 'ls -l'
+ll is an alias for "ls -l"
 status=0
 echo is a shell builtin
 status=0

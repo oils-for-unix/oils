@@ -114,7 +114,7 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
     case UTF8_REJECT: {
       (*p_in)++;
       if (j8_escape) {
-        int n = sprintf((char*)*p_out, "\\y%2x", ch);
+        int n = sprintf((char*)*p_out, "\\y%02x", ch);
         *p_out += n;
       } else {
         // Unicode replacement char is U+FFFD, so write encoded form
@@ -217,12 +217,20 @@ static inline void BashDollarEncodeOne(unsigned char** p_in,
   uint32_t state = UTF8_ACCEPT;
 
   while (1) {
+    // unsigned char byte = **p_in;
     decode(&state, &codepoint, ch);
-    // printf("  state %d\n", state);
+    // printf("  state %d    ch %d\n", state, ch);
     switch (state) {
+      // BUG: we don't reject IMMEDIATELY
+      //
+      // We could be in another state for up to 4 chars
+      // And then we hit REJECT
+      // And then we need to output \yff\yff\yff\yff
+      // OK that's actually SIXTEEN at once?
+
     case UTF8_REJECT: {
       (*p_in)++;
-      int n = sprintf((char*)*p_out, "\\x%2x", ch);
+      int n = sprintf((char*)*p_out, "\\x%02x", ch);
       *p_out += n;
       return;
     }
@@ -238,6 +246,7 @@ static inline void BashDollarEncodeOne(unsigned char** p_in,
     default:
       (*p_in)++;  // advance, next UTF8_ACCEPT will write it
       ch = **p_in;
+      // printf(" => ch %d\n", ch);
       break;
     }
   }
@@ -299,7 +308,13 @@ static inline int BourneShellEncodeOne(unsigned char** p_in,
 // Bug fix: we need 6 + 1 for the NUL terminator that sprintf() writes!  (Even
 // though we don't technically need it)
 
+// Bug: we may need up to 16 bytes: \yaa\yaa\yaa\yaa
+// If this is too small, we would enter an infinite loop
+
 #define J8_MAX_BYTES_PER_INPUT_BYTE 7
+
+// TODO: Tune this for our allocator?  We call buf->EnsureMoreSpace(capacity);
+#define J8_MIN_CAPACITY 24
 
 static inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
                                 unsigned char** p_out, unsigned char* out_end,
@@ -338,6 +353,10 @@ static inline int BourneShellEncodeChunk(unsigned char** p_in,
 }
 
 inline int CanOmitQuotes(unsigned char* s, int len) {
+  if (len == 0) {  // empty string has to be quoted
+    return 0;
+  }
+
   for (int i = 0; i < len; ++i) {
     unsigned char ch = s[i];
 

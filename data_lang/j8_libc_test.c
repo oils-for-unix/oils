@@ -110,6 +110,27 @@ TEST shell_encode_test() {
   PASS();
 }
 
+TEST all_bytes_test() {
+  char s[2];
+  s[1] = '\0';
+  for (int i = 0; i < 256; ++i) {
+    s[0] = i;
+
+    j8_buf_t in = {(unsigned char*)s, 1};
+    j8_buf_t result = {0};
+    ShellEncodeString(in, &result, 0);
+
+    printf("i %d -> %s\n", i, result.data);
+    free(result.data);
+
+    J8EncodeString(in, &result, 1);
+    // printf("i %d -> %s\n", i, result.data);
+    free(result.data);
+  }
+
+  PASS();
+}
+
 TEST can_omit_quotes_test() {
   const char* s = "foo";
   ASSERT(CanOmitQuotes((unsigned char*)s, strlen(s)));
@@ -130,6 +151,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(j8_encode_test);
   RUN_TEST(shell_encode_test);
+  RUN_TEST(all_bytes_test);
   RUN_TEST(char_int_test);
   RUN_TEST(can_omit_quotes_test);
 

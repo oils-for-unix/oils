@@ -90,10 +90,10 @@ void J8EncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int j8_fallback) {
   unsigned char* in = (unsigned char*)in_buf.data;
   unsigned char* in_end = in + in_buf.len;
 
-  // Growth policy: Start at a fixed size min(N + 3 + 2, 16)
+  // Growth policy: Start at a fixed size max(N + 3 + 2, J8_MIN_CAPACITY)
   int capacity = in_buf.len + 3 + 2;  // 3 for quotes, 2 potential \" \n
-  if (capacity < 16) {                // account for J8_MAX_BYTES_PER_INPUT_BYTE
-    capacity = 16;
+  if (capacity < J8_MIN_CAPACITY) {   // account for J8_MAX_BYTES_PER_INPUT_BYTE
+    capacity = J8_MIN_CAPACITY;
   }
   // printf("[1] capacity %d j8_fallback %d\n", capacity, j8_fallback);
 
@@ -159,10 +159,10 @@ void ShellEncodeString(j8_buf_t in_buf, j8_buf_t* out_buf, int ysh_fallback) {
   unsigned char* in = (unsigned char*)in_buf.data;
   unsigned char* in_end = in + in_buf.len;
 
-  // Growth policy: Start at a fixed size min(N + 3 + 2, 16)
+  // Growth policy: Start at a fixed size max(N + 3 + 2, J8_MIN_CAPACITY)
   int capacity = in_buf.len + 3 + 2;  // 3 for quotes, 2 potential \" \n
-  if (capacity < 16) {                // account for J8_MAX_BYTES_PER_INPUT_BYTE
-    capacity = 16;
+  if (capacity < J8_MIN_CAPACITY) {   // account for J8_MAX_BYTES_PER_INPUT_BYTE
+    capacity = J8_MIN_CAPACITY;
   }
   // printf("[1] capacity %d j8_fallback %d\n", capacity, j8_fallback);
 

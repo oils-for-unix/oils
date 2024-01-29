@@ -43,7 +43,7 @@ set -o xtrace
 echo "$s"
 ## stdout-repr: 'a\x03b\x04c\x00d\n'
 ## STDERR:
-+ echo $'a\x03b\x04c\x00d'
++ echo $'a\u0003b\u0004c\u0000d'
 ## END
 ## OK bash stdout-repr: 'a\x03b\x04c\n'
 ## OK bash stderr-repr: "+ echo $'a\\003b\\004c'\n"

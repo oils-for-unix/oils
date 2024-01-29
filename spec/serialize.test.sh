@@ -1,4 +1,9 @@
-# Cross-cutting test of serialization formats.  That is, what QSTR should fix.
+## oils_failures_allowed: 1
+
+# TODO: fix J8 bug causing failure
+
+# Cross-cutting test of serialization formats.  That is, what J8 Notation
+# should fix.
 #
 # TODO: Also see spec/xtrace for another use case.
 

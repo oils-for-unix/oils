@@ -53,7 +53,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import util
-from data_lang import qsn
+from data_lang import j8_lite
 from core.error import e_die
 from frontend import consts
 from frontend import lexer
@@ -968,14 +968,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                     # TODO: use fastfunc.ShellEncode or
                     # fastfunc.PosixShellEncode()
-                    result = value.Str(qsn.maybe_shell_encode(str_val.s))
+                    result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
 
                     # TODO: should use fastfunc.ShellEncode
-                    tmp = [qsn.maybe_shell_encode(s) for s in array_val.strs]
+                    tmp = [j8_lite.MaybeShellEncode(s) for s in array_val.strs]
                     result = value.Str(' '.join(tmp))
                 else:
                     e_die("Can't use @Q on %s" % ui.ValType(val), op)

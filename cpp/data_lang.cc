@@ -85,10 +85,10 @@ void ShellEncodeString(BigStr* s, int ysh_fallback, mylib::BufWriter* buf) {
   uint8_t* in = reinterpret_cast<uint8_t*>(s->data_);
   uint8_t* in_end = reinterpret_cast<uint8_t*>(s->data_ + len(s));
 
-  // Growth policy: Start at a fixed size min(N + 3 + 2, 16)
-  int capacity = len(s) + 3 + 2;  // 3 for quotes, 2 potential \" \n
-  if (capacity < 16) {            // account for J8_MAX_BYTES_PER_INPUT_BYTE
-    capacity = 16;
+  // Growth policy: Start at a fixed size max(N + 3 + 2, J8_MIN_CAPACITY)
+  int capacity = len(s) + 3 + 2;     // 3 for quotes, 2 potential \" \n
+  if (capacity < J8_MIN_CAPACITY) {  // account for J8_MAX_BYTES_PER_INPUT_BYTE
+    capacity = J8_MIN_CAPACITY;
   }
   // printf("[1] capacity %d\n", capacity);
 
@@ -187,10 +187,10 @@ void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
   uint8_t* in = reinterpret_cast<uint8_t*>(s->data_);
   uint8_t* in_end = reinterpret_cast<uint8_t*>(s->data_ + len(s));
 
-  // Growth policy: Start at a fixed size min(N + 3 + 2, 16)
-  int capacity = len(s) + 3 + 2;  // 3 for quotes, 2 potential \" \n
-  if (capacity < 16) {            // account for J8_MAX_BYTES_PER_INPUT_BYTE
-    capacity = 16;
+  // Growth policy: Start at a fixed size max(N + 3 + 2, J8_MIN_CAPACITY)
+  int capacity = len(s) + 3 + 2;     // 3 for quotes, 2 potential \" \n
+  if (capacity < J8_MIN_CAPACITY) {  // account for J8_MAX_BYTES_PER_INPUT_BYTE
+    capacity = J8_MIN_CAPACITY;
   }
   // printf("[1] capacity %d\n", capacity);
 

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## tags: dev-minimal
 
 #### usage errors
@@ -846,4 +846,17 @@ echo diff=$?
 
 ## STDOUT:
 diff=0
+## END
+
+#### Encoding bytes that don't hit UTF8_REJECT immediately (bug fix)
+
+var x = $'\xce'
+json8 write (x)
+
+var y = $'\xbc'
+json8 write (y)
+
+## STDOUT:
+b'\yce'
+b'\ybc'
 ## END

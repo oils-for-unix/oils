@@ -36,7 +36,7 @@ from core import pyos
 from core import state
 from core import ui
 from core import util
-from data_lang import qsn
+from data_lang import j8_lite
 from frontend import location
 from frontend import match
 from mycpp import mylib
@@ -777,7 +777,7 @@ class ExternalThunk(Thunk):
         # bash displays        sleep $n & (code)
         # but OSH displays     sleep 1 &  (argv array)
         # We could switch the former but I'm not sure it's necessary.
-        tmp = [qsn.maybe_shell_encode(a) for a in self.cmd_val.argv]
+        tmp = [j8_lite.MaybeShellEncode(a) for a in self.cmd_val.argv]
         return '[process] %s' % ' '.join(tmp)
 
     def Run(self):
