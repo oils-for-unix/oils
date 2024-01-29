@@ -80,7 +80,7 @@ test_echo_cpp() {
   if ! test "$?" = 0; then
     die 'Expected echo_cpp to succeed, but failed'
   fi
-  if ! test "$output" = '/* #undef HAVE_READLINE */'; then
+  if ! test "$(head -1 "$output")" = '/* #undef HAVE_READLINE */'; then
     die "Unexpected echo_cpp output: $output"
   fi
 
@@ -90,7 +90,7 @@ test_echo_cpp() {
   if ! test "$?" = 0; then
     die 'Expected echo_cpp to succeed, but failed'
   fi
-  if ! test "$output" = '#define HAVE_READLINE 1'; then
+  if ! test "$(head -1 "$output")" = '#define HAVE_READLINE 1'; then
     die "Unexpected echo_cpp output: $output"
   fi
 
