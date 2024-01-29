@@ -655,8 +655,21 @@ shopt --set ysh:all
 
 var mystr = 'name: Bob'
 write $[mystr => replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
+write $[mystr => replace(/ 'name: ' <capture dot+> /, ^"Hello $1 (extracted from '$0')")]
 ## STDOUT:
 Hello Bob
+Hello Bob (extracted from 'name: Bob')
+## END
+
+#### Str=>replace(*, Expr), $0
+shopt --set ysh:all
+
+var mystr = 'class Foo:  # this class is called Foo'
+write $[mystr => replace("Foo", ^"$0Bar")]
+write $[mystr => replace(/ 'Foo' /, ^"$0Bar")]
+## STDOUT:
+class FooBar:  # this class is called FooBar
+class FooBar:  # this class is called FooBar
 ## END
 
 #### Str=>replace(Eggex, Expr), scopes

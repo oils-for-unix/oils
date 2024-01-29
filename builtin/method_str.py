@@ -214,7 +214,9 @@ class Replace(vm._Callable):
             if subst_str:
                 s = subst_str.s
             if subst_expr:
-                s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
+                # Eval with $0 set to string_val (the matched substring)
+                with state.ctx_Argv(self.mem, [string_val.s]):
+                    s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
             assert s is not None
 
             result = string.replace(string_val.s, s, count)
@@ -240,7 +242,7 @@ class Replace(vm._Callable):
                 vars = []  # type: List[str]
                 named_vars = []  # type: List[Tuple[str, value_t]]
                 num_groups = len(indices) / 2
-                for group in xrange(1, num_groups):
+                for group in xrange(num_groups):
                     start = indices[2 * group]
                     end = indices[2 * group + 1]
                     captured = string[start:end]
@@ -262,9 +264,11 @@ class Replace(vm._Callable):
                     val_str = val_ops.Stringify(val, rd.LeftParenToken())
                     vars.append(val_str)
 
-                    name = eggex_val.capture_names[group - 2]
-                    if name is not None:
-                        named_vars.append((name, val))
+                    # $0 cannot be named
+                    if group != 0:
+                        name = eggex_val.capture_names[group - 2]
+                        if name is not None:
+                            named_vars.append((name, val))
 
                 if subst_str:
                     s = subst_str.s

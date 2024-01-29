@@ -941,11 +941,16 @@ class ctx_ProcCall(object):
 
 
 class ctx_Argv(object):
-    """For $1, $2, $3, etc."""
+    """For $0, $1, $2, $3, etc."""
 
     def __init__(self, mem, argv):
         # type: (Mem, List[str]) -> None
-        mem.argv_stack.append(_ArgFrame(argv))
+        mem.argv_stack.append(_ArgFrame(argv[1:]))
+
+        # Temporarily override $0
+        self.dollar0 = mem.dollar0
+        mem.dollar0 = argv[0]
+
         self.mem = mem
 
     def __enter__(self):
@@ -955,6 +960,7 @@ class ctx_Argv(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mem.argv_stack.pop()
+        self.mem.dollar0 = self.dollar0
 
 
 class ctx_Temp(object):
