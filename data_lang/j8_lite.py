@@ -15,7 +15,6 @@ def EncodeString(s, unquoted_ok=False):
     that method, then call BufWriter.clear() in between.
     """
     if unquoted_ok and fastfunc.CanOmitQuotes(s):
-        #if unquoted_ok and fastlex.CanOmitQuotes(s):
         return s
 
     return fastfunc.J8EncodeString(s, 1)  # j8_fallback is true

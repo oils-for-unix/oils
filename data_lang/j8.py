@@ -4,14 +4,6 @@ j8.py: J8 Notation and Related Utilities
 
 TODO:
 
-- Translate the whole thing to C++
-  - use Bjoern DFA for UTF-8 validation in printing and parsing
-  - move more of LexerDecoder out of pyj8.py?  I think it can translate
-
-- Remove most of QSN
-  - QSN maybe_shell_encode() is used for bash features
-  - Remove shell_compat which does \\x00 instead of \\0
-
 - Many more tests
   - Run JSONTestSuite
 
@@ -22,12 +14,7 @@ Later:
   - line wrapping -- do this later
   - would like CONTRIBUTORS here
 
-- Harmonize the API in data_lang/qsn.py 
-  - use mylib.BufWriter output
-  - use u_style.LiteralUtf8 instead of BIT8_UTF8, etc.
-
 - Unify with ASDL pretty printing?
-
    {} [] are for JSON?
    () is for statically typed ASDL data?
       (command.Simple blame_tok:(...) words:[ ])
@@ -42,11 +29,12 @@ from asdl import format as fmt
 from core import error
 from core import vm
 from data_lang import pyj8
-from data_lang import qsn
 from frontend import consts
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
+
+import fastfunc
 
 _ = log
 
@@ -62,23 +50,27 @@ assert pyj8.LOSSY_JSON == LOSSY_JSON
 
 def MaybeShellEncode(s):
     # type: (str) -> str
-    return qsn.maybe_shell_encode(s)
+    """
+    This is like ShellEncode(s, unquoted_ok=True)
+    But it's common, so we give it a shorter name.
+    """
+    if fastfunc.CanOmitQuotes(s):
+        return s
+
+    return fastfunc.ShellEncodeString(s, 0)  # no ysh_fallback
 
 
 def ShellEncode(s):
     # type: (str) -> str
-
-    # TODO: call fastfunc.ShellEncodeString()
-    return qsn.maybe_shell_encode(s, flags=qsn.MUST_QUOTE)
+    return fastfunc.ShellEncodeString(s, 0)  # no ysh_fallback
 
 
-def YshEncode(s):
-    # type: (str) -> str
+def YshEncode(s, unquoted_ok=False):
+    # type: (str, bool) -> str
+    if unquoted_ok and fastfunc.CanOmitQuotes(s):
+        return s
 
-    # TODO: call fastfunc.ShellEncodeString(STYLE_B_STRING)
-    #
-    # ysh_fallback -- b'' style
-    return qsn.maybe_shell_encode(s, flags=qsn.MUST_QUOTE)
+    return fastfunc.ShellEncodeString(s, 1)  # ysh_fallback
 
 
 class Printer(object):

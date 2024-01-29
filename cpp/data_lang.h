@@ -10,6 +10,8 @@ bool CanOmitQuotes(BigStr* s);
 
 BigStr* J8EncodeString(BigStr* s, int j8_fallback);
 
+BigStr* ShellEncodeString(BigStr* s, int ysh_fallback);
+
 }  // namespace fastfunc
 
 namespace pyj8 {
