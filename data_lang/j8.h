@@ -147,6 +147,30 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
   //
 }
 
+// Like the above, but
+//
+// escape_style == 0 - try shell 'foo'
+//   must be valid UTF-8
+//   no control chars
+//   no ' is required
+//   no \ -- not required, but avoids ambiguous '\n'
+//
+// For example we write $'\\' or b'\\' not '\'
+// The latter should be written r'\', but we're not outputing
+
+#define STYLE_SQ 0         // 'foo'
+#define STYLE_DOLLAR_SQ 1  // $'\xff'
+#define STYLE_B_STRING 2   // b'\yff'
+
+// escape_style == 1 means $'\xff'
+//
+// escape_style == 2 means b'\yff' I think?
+
+static inline int ShellEncodeOne(unsigned char** p_in, unsigned char** p_out,
+                                 int escape_style) {
+  J8EncodeOne(p_in, p_out, 1);
+}
+
 // Right now \u001f and \u{1f} are the longest output sequences for a byte.
 // Bug fix: we need 6 + 1 for the NUL terminator that sprintf() writes!  (Even
 // though we don't technically need it)
@@ -166,17 +190,13 @@ static inline int J8EncodeChunk(unsigned char** p_in, unsigned char* in_end,
   return 0;
 }
 
-// TODO: $'\x00\u1234' escaping
-inline int ShellEncodeOne(unsigned char** p_in, unsigned char** p_out) {
-  return 0;
-}
-
 inline int ShellEncodeChunk(unsigned char** p_in, unsigned char* in_end,
-                            unsigned char** p_out, unsigned char* out_end) {
+                            unsigned char** p_out, unsigned char* out_end,
+                            int escape_style) {
   while (*p_in < in_end && (*p_out + J8_MAX_BYTES_PER_INPUT_BYTE) <= out_end) {
-    int dollar_fallback = ShellEncodeOne(p_in, p_out);
-    if (dollar_fallback) {     // we need escaping, e.g. \u0001 or \'
-      return dollar_fallback;  // early return
+    int cannot_encode = ShellEncodeOne(p_in, p_out, escape_style);
+    if (cannot_encode) {     // we need escaping, e.g. \u0001 or \'
+      return cannot_encode;  // early return
     }
   }
   return 0;

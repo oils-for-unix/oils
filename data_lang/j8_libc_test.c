@@ -67,6 +67,49 @@ TEST encode_test() {
   PASS();
 }
 
+TEST shell_encode_test() {
+  for (int i = 0; J8_TEST_CASES[i]; ++i) {
+    const char* s = J8_TEST_CASES[i];
+    int input_len = strlen(s);
+    j8_buf_t in = {(unsigned char*)s, input_len};
+
+    // printf("input '%s' %d\n", in.data, input_len);
+
+    j8_buf_t result = {0};
+    ShellEncodeString(in, &result, STYLE_DOLLAR_SQ);
+
+    printf("result %s\n", result.data);
+    printf("result.len %d\n", result.len);
+
+    // Some sanity checks
+    int n = strlen(s);
+    switch (n) {
+    case 0:  // empty string -> ""
+      ASSERT_EQ_FMT(2, result.len, "%d");
+      break;
+    case 1:  // x -> "x"
+      ASSERT_EQ_FMT(3, result.len, "%d");
+      break;
+    default:
+      ASSERT(input_len < result.len);
+      break;
+    }
+    free(result.data);
+
+    // Encode again with J8 fallback
+    result = {0};
+    ShellEncodeString(in, &result, STYLE_B_STRING);
+
+    printf("result %s\n", result.data);
+    printf("result.len %d\n", result.len);
+    free(result.data);
+
+    printf("\n");
+  }
+
+  PASS();
+}
+
 TEST can_omit_quotes_test() {
   const char* s = "foo";
   ASSERT(CanOmitQuotes((unsigned char*)s, strlen(s)));
@@ -86,6 +129,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(encode_test);
+  RUN_TEST(shell_encode_test);
   RUN_TEST(char_int_test);
   RUN_TEST(can_omit_quotes_test);
 

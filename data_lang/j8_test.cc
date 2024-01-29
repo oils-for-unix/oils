@@ -140,7 +140,7 @@ void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
       // printf("RETRY\n");
       result->erase(begin_index, std::string::npos);
       EncodeBString(s, n, result);  // fall back to b''
-      printf("\t[1] result len %d\n", result->size());
+      printf("\t[1] result len %d\n", static_cast<int>(result->size()));
       return;
     }
 
@@ -152,7 +152,7 @@ void EncodeString(char* s, int n, std::string* result, int j8_fallback) {
     result->erase(end_index, std::string::npos);
   }
   result->append("\"");
-  printf("\t[1] result len %d\n", result->size());
+  printf("\t[1] result len %d\n", static_cast<int>(result->size()));
 }
 
 void EncodeAndPrint(char* s, int n, int j8_fallback) {
@@ -177,33 +177,33 @@ void EncodeAndPrint(char* s, int n, int j8_fallback) {
 
 TEST encode_test() {
 #if 1
-  char* mixed = "hi \x01 \u4000\xfe\u4001\xff\xfd ' \" new \n \\ \u03bc";
-  EncodeAndPrint(mixed, strlen(mixed), 0);
-  EncodeAndPrint(mixed, strlen(mixed), 1);
+  const char* mixed = "hi \x01 \u4000\xfe\u4001\xff\xfd ' \" new \n \\ \u03bc";
+  EncodeAndPrint(const_cast<char*>(mixed), strlen(mixed), 0);
+  EncodeAndPrint(const_cast<char*>(mixed), strlen(mixed), 1);
 #endif
 
-  char* a = "ab";
-  EncodeAndPrint(a, strlen(a), 0);
-  EncodeAndPrint(a, strlen(a), 1);
+  const char* a = "ab";
+  EncodeAndPrint(const_cast<char*>(a), strlen(a), 0);
+  EncodeAndPrint(const_cast<char*>(a), strlen(a), 1);
 
-  char* b = "0123456789";
-  EncodeAndPrint(b, strlen(b), 0);
-  EncodeAndPrint(b, strlen(b), 1);
+  const char* b = "0123456789";
+  EncodeAndPrint(const_cast<char*>(b), strlen(b), 0);
+  EncodeAndPrint(const_cast<char*>(b), strlen(b), 1);
 
-  char* u = "hi \u4000 \u03bc";
-  EncodeAndPrint(u, strlen(u), 0);
-  EncodeAndPrint(u, strlen(u), 1);
+  const char* u = "hi \u4000 \u03bc";
+  EncodeAndPrint(const_cast<char*>(b), strlen(u), 0);
+  EncodeAndPrint(const_cast<char*>(b), strlen(u), 1);
 
   // Internal NUL
-  char* bin = "\x00\x01\xff";
-  EncodeAndPrint(bin, 3, 0);
-  EncodeAndPrint(bin, 3, 1);
+  const char* bin = "\x00\x01\xff";
+  EncodeAndPrint(const_cast<char*>(bin), 3, 0);
+  EncodeAndPrint(const_cast<char*>(bin), 3, 1);
 
   // Blow up size
-  char* blowup =
+  const char* blowup =
       "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0e\x0f\x10\xfe";
-  EncodeAndPrint(blowup, strlen(blowup), 0);
-  EncodeAndPrint(blowup, strlen(blowup), 1);
+  EncodeAndPrint(const_cast<char*>(blowup), strlen(blowup), 0);
+  EncodeAndPrint(const_cast<char*>(blowup), strlen(blowup), 1);
 
   PASS();
 }

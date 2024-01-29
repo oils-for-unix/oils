@@ -83,16 +83,8 @@ class Printer(object):
 
     def __init__(self):
         # type: () -> None
-        """
-        Args:
-          # These can all be packed into the same byte.  ASDL needs bit_set
-          # support I think?
-          options:
-            control j"" vs. ""
-            control escaping \\x and \\u escaping like QSN
-            pretty.UnquotedKeys - ASDL uses this?
-        """
-        self.options = 0
+
+        # TODO: should remove this in favor of BufWriter method
         self.spaces = {0: ''}  # cache of strings with spaces
 
     # Could be PrintMessage or PrintJsonMessage()
