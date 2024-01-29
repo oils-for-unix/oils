@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -852,11 +852,25 @@ diff=0
 
 var x = $'\xce'
 json8 write (x)
+declare -p x
+echo
 
 var y = $'\xbc'
 json8 write (y)
+declare -p y
+echo
+
+var z = $'\xf0\x9f\xa4\xff'
+json8 write (z)
+declare -p z
 
 ## STDOUT:
 b'\yce'
+declare -- x=$'\xce'
+
 b'\ybc'
+declare -- y=$'\xbc'
+
+b'\yf0\y9f\ya4\yff'
+declare -- z=$'\xf0\x9f\xa4\xff'
 ## END
