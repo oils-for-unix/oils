@@ -144,10 +144,10 @@ BigStr* GetHomeDir(BigStr* user_name) {
 }
 
 List<PasswdEntry*>* GetAllUsers() {
+  #ifdef HAVE_PWENT
   auto* ret = NewList<PasswdEntry*>();
   struct passwd* entry = nullptr;
 
-  #ifdef HAVE_PWENT
   setpwent();
   while (true) {
     errno = 0;
@@ -163,9 +163,11 @@ List<PasswdEntry*>* GetAllUsers() {
     ret->append(Alloc<PasswdEntry>(entry));
   }
   endpwent();
-  #endif
 
   return ret;
+  #else
+  throw Alloc<RuntimeError>(StrFromC("Compiled without gepwent support. user completion not possible"));
+  #endif
 }
 
 BigStr* GetUserName(int uid) {
