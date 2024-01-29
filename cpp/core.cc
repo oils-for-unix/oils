@@ -147,6 +147,7 @@ List<PasswdEntry*>* GetAllUsers() {
   auto* ret = NewList<PasswdEntry*>();
   struct passwd* entry = nullptr;
 
+  #ifdef HAVE_PWENT
   setpwent();
   while (true) {
     errno = 0;
@@ -162,6 +163,7 @@ List<PasswdEntry*>* GetAllUsers() {
     ret->append(Alloc<PasswdEntry>(entry));
   }
   endpwent();
+  #endif
 
   return ret;
 }
