@@ -18,7 +18,7 @@ from core.error import e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm
-from data_lang import qsn
+from data_lang import j8_lite
 from frontend import flag_spec
 from frontend import consts
 from frontend import reader
@@ -200,7 +200,7 @@ def _PrintFreeForm(row):
     if kind == 'file':
         what = resolved
     elif kind == 'alias':
-        what = ('an alias for %s' % qsn.maybe_shell_encode(resolved))
+        what = ('an alias for %s' % j8_lite.EncodeString(resolved, unquoted_ok=True))
     else:  # builtin, function, keyword
         what = 'a shell %s' % kind
 

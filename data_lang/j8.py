@@ -34,8 +34,6 @@ from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
-import fastfunc
-
 _ = log
 
 from typing import cast, Dict, List, Tuple, Optional
@@ -46,31 +44,6 @@ LOSSY_JSON = 1 << 3  # JSON is lossy
 
 # Hack until we fully translate
 assert pyj8.LOSSY_JSON == LOSSY_JSON
-
-
-def MaybeShellEncode(s):
-    # type: (str) -> str
-    """
-    This is like ShellEncode(s, unquoted_ok=True)
-    But it's common, so we give it a shorter name.
-    """
-    if fastfunc.CanOmitQuotes(s):
-        return s
-
-    return fastfunc.ShellEncodeString(s, 0)  # no ysh_fallback
-
-
-def ShellEncode(s):
-    # type: (str) -> str
-    return fastfunc.ShellEncodeString(s, 0)  # no ysh_fallback
-
-
-def YshEncode(s, unquoted_ok=False):
-    # type: (str, bool) -> str
-    if unquoted_ok and fastfunc.CanOmitQuotes(s):
-        return s
-
-    return fastfunc.ShellEncodeString(s, 1)  # ysh_fallback
 
 
 class Printer(object):

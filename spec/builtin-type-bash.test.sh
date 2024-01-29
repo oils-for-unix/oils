@@ -195,7 +195,7 @@ type -ap f
 shopt -s expand_aliases
 alias ll="ls -lha"
 type -a ll
-## stdout: ll is an alias for 'ls -lha'
+## stdout: ll is an alias for "ls -lha"
 ## OK bash stdout: ll is aliased to `ls -lha'
 
 #### type -ap -> alias

@@ -18,3 +18,30 @@ def EncodeString(s, unquoted_ok=False):
         return s
 
     return fastfunc.J8EncodeString(s, 1)  # j8_fallback is true
+
+
+def MaybeShellEncode(s):
+    # type: (str) -> str
+    """
+    This is like ShellEncode(s, unquoted_ok=True)
+    But it's common, so we give it a shorter name.
+    """
+    if fastfunc.CanOmitQuotes(s):
+        return s
+
+    return fastfunc.ShellEncodeString(s, 0)  # no ysh_fallback
+
+
+def ShellEncode(s):
+    # type: (str) -> str
+    return fastfunc.ShellEncodeString(s, 0)  # no ysh_fallback
+
+
+def YshEncode(s, unquoted_ok=False):
+    # type: (str, bool) -> str
+    if unquoted_ok and fastfunc.CanOmitQuotes(s):
+        return s
+
+    return fastfunc.ShellEncodeString(s, 1)  # ysh_fallback
+
+
