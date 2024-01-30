@@ -18,16 +18,14 @@ Shared test code:
 
 C library used by CPython, using `malloc() realloc()`:
 
-    j8c.{h,c}  j8c_test.c
+    j8_libc.{h,c}  j8_libc_test.c
 
 Parser and printer in Python, translated by mycpp:
 
     j8.py
-
-
-## Packle
-
-TODO
+    pyj8.py     # function that can be optimized in C++
+    j8_lite.py  # string-only functions, used by ASDL runtime
+                # so it must have few dependencies
 
 ## UTF-8
 
@@ -35,3 +33,6 @@ Tests for different implementations:
 
     utf8_test.cc
 
+## Packle
+
+TODO
