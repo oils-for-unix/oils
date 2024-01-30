@@ -7,7 +7,6 @@
 #include <math.h>  // fmod()
 #include <pwd.h>   // passwd
 #include <signal.h>
-#include <stdio.h> // puts
 #include <sys/resource.h>  // getrusage
 #include <sys/select.h>    // select(), FD_ISSET, FD_SET, FD_ZERO
 #include <sys/stat.h>      // stat
@@ -167,7 +166,7 @@ List<PasswdEntry*>* GetAllUsers() {
 
   return ret;
   #else
-  puts("Compiled without PWENT support. Can't return any users", stderr);
+  fprintf(stderr, "Compiled without PWENT support. Can't return any users\n")
   #endif
 }
 
