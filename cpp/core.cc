@@ -166,7 +166,7 @@ List<PasswdEntry*>* GetAllUsers() {
 
   return ret;
   #else
-  throw Alloc<RuntimeError>(StrFromC("Compiled without gepwent support. user completion not possible"));
+  puts("Compiled without PWENT support. Can't return any users", stderr)
   #endif
 }
 
