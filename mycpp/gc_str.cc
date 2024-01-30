@@ -552,14 +552,17 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     bool pad_back = false;
     const std::csub_match& width_m = match[2];
     const std::string& width_s = width_m.str();
+    bool ok = false;
     if (width_m.matched && !width_s.empty()) {
       if (width_s[0] == '0') {
         zero_pad = true;
         DCHECK(width_s.size() > 1);
-        DCHECK(StringToInteger(width_s.c_str() + 1, width_s.size() - 1, 10,
-                               &width));
+        ok = StringToInteger(width_s.c_str() + 1, width_s.size() - 1, 10,
+                             &width);
+        DCHECK(ok);
       } else {
-        DCHECK(StringToInteger(width_s.c_str(), width_s.size(), 10, &width));
+        ok = StringToInteger(width_s.c_str(), width_s.size(), 10, &width);
+        DCHECK(ok);
       }
       if (width < 0) {
         pad_back = true;
