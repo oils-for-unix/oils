@@ -52,7 +52,7 @@ class List {
   List* slice(int begin, int end);
 
   // L[begin:end:step]
-  List* slice(int begin, int end, int step);
+  List* _slice(int begin, int end, int step);
 
   // Should we have a separate API that doesn't return it?
   // https://stackoverflow.com/questions/12600330/pop-back-return-value
@@ -226,18 +226,18 @@ List<T>* sorted(List<T>* l);
 // L[begin:]
 template <typename T>
 List<T>* List<T>::slice(int begin) {
-  return slice(begin, len_, 1);
+  return _slice(begin, len_, 1);
 }
 
 // L[begin:end]
 template <typename T>
 List<T>* List<T>::slice(int begin, int end) {
-  return slice(begin, end, 1);
+  return _slice(begin, end, 1);
 }
 
 // L[begin:end:step]
 template <typename T>
-List<T>* List<T>::slice(int begin, int end, int step) {
+List<T>* List<T>::_slice(int begin, int end, int step) {
   if (begin < 0) {
     begin = len_ + begin;
   }

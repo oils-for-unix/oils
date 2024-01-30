@@ -28,7 +28,7 @@ class BigStr {
 
   BigStr* slice(int begin);
   BigStr* slice(int begin, int end);
-  BigStr* slice(int begin, int end, int step);
+  BigStr* _slice(int begin, int end, int step);
 
   BigStr* strip();
   // Used for CommandSub in osh/cmd_exec.py

@@ -112,7 +112,7 @@ BigStr* BigStr::at(int i) {
 }
 
 // s[begin:end:step]
-BigStr* BigStr::slice(int begin, int end, int step) {
+BigStr* BigStr::_slice(int begin, int end, int step) {
   int len_ = len(this);
   begin = std::min(begin, len_);
   end = std::min(end, len_);
