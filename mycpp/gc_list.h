@@ -224,23 +224,9 @@ template <typename T>
 List<T>* sorted(List<T>* l);
 
 // L[begin:]
-// TODO: Implement this in terms of slice(begin, end)
 template <typename T>
 List<T>* List<T>::slice(int begin) {
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-
-  DCHECK(begin >= 0);
-
-  List<T>* result = nullptr;
-  result = NewList<T>();
-
-  for (int i = begin; i < len_; i++) {
-    result->append(slab_->items_[i]);
-  }
-
-  return result;
+  return slice(begin, len_, 1);
 }
 
 // L[begin:end]

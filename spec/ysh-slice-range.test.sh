@@ -55,6 +55,61 @@ out of bounds
 (List)   ["1","2","3","4"]
 ## END
 
+#### slice subscripts are adjusted like Python
+
+show-py() {
+  python3 -c '
+import json, sys; a = [1, 2, 3, 4, 5]; print(json.dumps(eval(sys.argv[1])))' $1
+}
+
+show-ysh() {
+  eval "var a = [1, 2, 3, 4, 5]; json write --pretty=F ($1)"
+}
+
+compare() {
+  local expr=$1
+  show-py "$1" | sed 's/ //g'
+  show-ysh "$1"
+  echo
+}
+
+compare 'a[1:3]'
+compare 'a[1:100]'  # big number
+compare 'a[100:1]'  # inverted
+compare 'a[1:-1]'
+compare 'a[-3:-1]'
+compare 'a[-100:-1]'  # very negative
+compare 'a[-1:-100]'  # inverted
+compare 'a[4:5]'
+
+## STDOUT:
+[2,3]
+[2,3]
+
+[2,3,4,5]
+[2,3,4,5]
+
+[]
+[]
+
+[2,3,4]
+[2,3,4]
+
+[3,4]
+[3,4]
+
+[1,2,3,4]
+[1,2,3,4]
+
+[]
+[]
+
+[5]
+[5]
+
+## END
+
+
 #### subscript and slice of List
 var mylist = [1,2,3,4]
 pp line (mylist[1])
