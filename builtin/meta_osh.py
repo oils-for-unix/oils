@@ -200,7 +200,8 @@ def _PrintFreeForm(row):
     if kind == 'file':
         what = resolved
     elif kind == 'alias':
-        what = ('an alias for %s' % j8_lite.EncodeString(resolved, unquoted_ok=True))
+        what = ('an alias for %s' %
+                j8_lite.EncodeString(resolved, unquoted_ok=True))
     else:  # builtin, function, keyword
         what = 'a shell %s' % kind
 

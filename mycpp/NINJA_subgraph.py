@@ -163,12 +163,14 @@ def TranslatorSubgraph(ru, translator, ex):
     # But don't pass it on the command line.
     translator_wrapper = '_bin/shwrap/%s_main' % translator
 
-    n.build(raw,
-            'translate-%s' % translator,
-            to_translate,
-            implicit=[translator_wrapper],
-            # examples/parse uses pyext/fastfunc.pyi
-            variables=[('mypypath', '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext')])
+    n.build(
+        raw,
+        'translate-%s' % translator,
+        to_translate,
+        implicit=[translator_wrapper],
+        # examples/parse uses pyext/fastfunc.pyi
+        variables=[('mypypath',
+                    '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext')])
 
     p = 'mycpp/examples/%s_preamble.h' % ex
     # Ninja empty string!

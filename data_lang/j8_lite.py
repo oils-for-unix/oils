@@ -4,6 +4,7 @@ j8_lite.py: Low dependency library for ASDL circular dep in prebuilt/
 
 import fastfunc  # Skip pyj8 and fastlex
 
+
 def EncodeString(s, unquoted_ok=False):
     # type: (str, bool) -> str
     """Convenience API that doesn't require instance of j8.Printer()
@@ -43,5 +44,3 @@ def YshEncode(s, unquoted_ok=False):
         return s
 
     return fastfunc.ShellEncodeString(s, 1)  # ysh_fallback
-
-

@@ -575,7 +575,8 @@ class Tracer(object):
                 left = '%s[%d]' % (lval.name, lval.index)
             elif case(sh_lvalue_e.Keyed):
                 lval = cast(sh_lvalue.Keyed, UP_lval)
-                left = '%s[%s]' % (lval.name, j8_lite.MaybeShellEncode(lval.key))
+                left = '%s[%s]' % (lval.name, j8_lite.MaybeShellEncode(
+                    lval.key))
         buf.write(left)
 
         # Only two possibilities here
