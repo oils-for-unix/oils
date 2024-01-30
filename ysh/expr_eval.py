@@ -392,11 +392,14 @@ class ExprEvaluator(object):
         if id_ == Id.Expr_DecInt:
             return value.Int(int(c_under))
         if id_ == Id.Expr_BinInt:
-            return value.Int(int(c_under, 2))
+            assert c_under[:2] in ('0b', '0B'), c_under
+            return value.Int(int(c_under[2:], 2))
         if id_ == Id.Expr_OctInt:
-            return value.Int(int(c_under, 8))
+            assert c_under[:2] in ('0o', '0O'), c_under
+            return value.Int(int(c_under[2:], 8))
         if id_ == Id.Expr_HexInt:
-            return value.Int(int(c_under, 16))
+            assert c_under[:2] in ('0x', '0X'), c_under
+            return value.Int(int(c_under[2:], 16))
 
         if id_ == Id.Expr_Float:
             # Note: float() in mycpp/gc_builtins.py currently uses strtod

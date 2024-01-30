@@ -1,7 +1,6 @@
 ## oils_failures_allowed: 1
 
-
-#### conflict with extglob @( cna be avoided with ,(
+#### Conflict with extglob @( can be avoided with ,(
 
 shopt -s extglob
 
