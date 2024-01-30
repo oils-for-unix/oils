@@ -939,30 +939,6 @@ class ctx_ProcCall(object):
         self.mutable_opts.PopDynamicScope()
         self.mem.PopCall(True)
 
-
-class ctx_Argv(object):
-    """For $0, $1, $2, $3, etc."""
-
-    def __init__(self, mem, argv):
-        # type: (Mem, List[str]) -> None
-        mem.argv_stack.append(_ArgFrame(argv[1:]))
-
-        # Temporarily override $0
-        self.dollar0 = mem.dollar0
-        mem.dollar0 = argv[0]
-
-        self.mem = mem
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.mem.argv_stack.pop()
-        self.mem.dollar0 = self.dollar0
-
-
 class ctx_Temp(object):
     """For FOO=bar myfunc, etc."""
 
@@ -1389,6 +1365,9 @@ class Mem(object):
     def GetArgNum(self, arg_num):
         # type: (int) -> value_t
         if arg_num == 0:
+            # $0 may be overriden, eg. by Str => replace()
+            if "0" in self.var_stack[-1] and self.var_stack[-1]["0"].val.tag() != value_e.Undef:
+                return self.var_stack[-1]["0"].val
             return value.Str(self.dollar0)
 
         return self.argv_stack[-1].GetArgNum(arg_num)
