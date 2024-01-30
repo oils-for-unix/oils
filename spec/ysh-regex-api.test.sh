@@ -664,12 +664,23 @@ Hello Bob (extracted from 'name: Bob')
 #### Str=>replace(*, Expr), $0
 shopt --set ysh:all
 
+# Functionality
 var mystr = 'class Foo:  # this class is called Foo'
 write $[mystr => replace("Foo", ^"$0Bar")]
 write $[mystr => replace(/ 'Foo' /, ^"$0Bar")]
+
+# Edge-cases
+var dollar0 = "$0"
+func f() { return ("$0") }
+write $["foo" => replace("o", "$0") === "f$dollar0$dollar0"]
+write $["foo" => replace("o", ^[f()]) === "f$dollar0$dollar0"]
+write $[f() === "$dollar0"]
 ## STDOUT:
 class FooBar:  # this class is called FooBar
 class FooBar:  # this class is called FooBar
+true
+true
+true
 ## END
 
 #### Str=>replace(Eggex, Expr), scopes
