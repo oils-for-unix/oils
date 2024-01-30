@@ -23,16 +23,21 @@ pass
 
 #### promptVal() with invalid chars
 
-var x = _io->promptVal('ZZ')
-echo x=$x
-
 # \D{} will be supported with date and time functions
 var x = _io->promptVal('D')
 echo x=$x
 
+# something else
+var x = _io->promptVal('/')
+echo x=$x
+
+var x = _io->promptVal('ZZ')
+echo x=$x
+
+## status: 3
 ## STDOUT:
-x=<Error: \ZZ not implemented in $PS1> 
 x=<Error: \D{} not in promptVal()> 
+x=<Error: \/ is invalid or unimplemented in $PS1> 
 ## END
 
 

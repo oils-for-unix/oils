@@ -200,7 +200,7 @@ class Evaluator(object):
             # TODO: Handle more codes
             # R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
             if r is None:
-                r = _ERROR_FMT % (r'\%s not implemented in $PS1' % ch)
+                r = _ERROR_FMT % (r'\%s is invalid or unimplemented in $PS1' % ch)
 
         return r
 
