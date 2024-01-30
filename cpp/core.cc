@@ -167,6 +167,7 @@ List<PasswdEntry*>* GetAllUsers() {
   return ret;
   #else
   fprintf(stderr, "Compiled without PWENT support. Can't return any users\n");
+  return NewList<PasswdEntry*>();
   #endif
 }
 
