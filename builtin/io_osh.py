@@ -10,6 +10,7 @@ from core.error import e_die_status
 from frontend import flag_spec
 from frontend import lexer
 from frontend import match
+from frontend.typed_args import DoesNotAccept
 from core import optview
 from core import pyos
 from core import state
@@ -59,6 +60,8 @@ class Echo(vm._Builtin):
 
         if self.exec_opts.simple_echo():
             # Avoid parsing -e -n
+            DoesNotAccept(cmd_val.typed_args)
+
             arg = self._SimpleFlag()
         else:
             attrs, arg_r = flag_spec.ParseLikeEcho('echo', cmd_val)
