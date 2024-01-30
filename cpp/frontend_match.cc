@@ -121,11 +121,6 @@ bool ShouldHijack(BigStr* s) {
                         len(s));
 }
 
-bool CanOmitQuotes(BigStr* s) {
-  return ::CanOmitQuotes(reinterpret_cast<const unsigned char*>(s->data_),
-                         len(s));
-}
-
 bool LooksLikeFloat(BigStr* s) {
   return ::LooksLikeFloat(reinterpret_cast<const unsigned char*>(s->data_),
                           len(s));

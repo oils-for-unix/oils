@@ -73,12 +73,9 @@ class Json(vm._Builtin):
 
             if arg_jw.pretty:  # C++ BUG Here!
                 indent = arg_jw.indent
-                #log('arg_jw indent %d', indent)
-                extra_newline = False
             else:
                 # How yajl works: if indent is -1, then everything is on one line.
                 indent = -1
-                extra_newline = True
 
             #log('json write indent %d', indent)
 

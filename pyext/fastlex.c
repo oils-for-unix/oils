@@ -266,17 +266,6 @@ fastlex_ShouldHijack(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
-fastlex_CanOmitQuotes(PyObject *self, PyObject *args) {
-  unsigned char *name;
-  int len;
-
-  if (!PyArg_ParseTuple(args, "s#", &name, &len)) {
-    return NULL;
-  }
-  return PyBool_FromLong(CanOmitQuotes(name, len));
-}
-
-static PyObject *
 fastlex_LooksLikeInteger(PyObject *self, PyObject *args) {
   unsigned char *name;
   int len;
@@ -324,7 +313,6 @@ static PyMethodDef methods[] = {
    "Is it a valid var name?"},
   // Should we hijack this shebang line?
   {"ShouldHijack", fastlex_ShouldHijack, METH_VARARGS, ""},
-  {"CanOmitQuotes", fastlex_CanOmitQuotes, METH_VARARGS, ""},
   {"LooksLikeInteger", fastlex_LooksLikeInteger, METH_VARARGS, ""},
   {"LooksLikeFloat", fastlex_LooksLikeFloat, METH_VARARGS, ""},
   {NULL, NULL},

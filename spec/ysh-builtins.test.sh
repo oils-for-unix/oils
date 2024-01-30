@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 3
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -81,23 +81,27 @@ xy
 #### write --json
 shopt --set ysh:upgrade
 
-write --json u'\u{3bc}'
-write --json b'\yfe\yff'
+write --json u'\u{3bc}' x
+write --json b'\yfe\yff' y
 
 ## STDOUT:
 "μ"
+"x"
 "��"
+"y"
 ## END
 
 #### write --j8
 shopt --set ysh:upgrade
 
-write --j8 u'\u{3bc}'
-write --j8 b'\yfe\yff'
+write --j8 u'\u{3bc}' x
+write --j8 b'\yfe\yff' y
 
 ## STDOUT:
 "μ"
+"x"
 b'\yfe\yff'
+"y"
 ## END
 
 #### write  -e not supported
@@ -202,29 +206,6 @@ write -- "$_reply"
 foo
 ## END
 
-#### read --line --with-eol --qsn
-
-# whitespace is allowed after closing single quote; it doesn't make a 
-# difference.
-
-read --line --with-eol --qsn <<EOF
-'foo\n'
-EOF
-write --qsn -- "$_reply"
-## STDOUT:
-'foo\n'
-## END
-
-#### read --qsn usage
-read --qsn << EOF
-foo
-EOF
-echo status=$?
-
-## STDOUT:
-status=2
-## END
-
 #### read --all-lines
 seq 3 | read --all-lines :nums
 write --sep ' ' -- @nums
@@ -239,20 +220,6 @@ write --sep '' -- @nums
 1
 2
 3
-## END
-
-#### read --all-lines --qsn --with-eol
-read --all-lines --qsn --with-eol :lines << EOF
-foo
-bar
-'one\ntwo'
-EOF
-write --sep '' -- @lines
-## STDOUT:
-foo
-bar
-one
-two
 ## END
 
 #### Can simulate read --all-lines with a proc and value.Place

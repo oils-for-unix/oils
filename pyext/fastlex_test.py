@@ -78,11 +78,6 @@ class LexTest(unittest.TestCase):
     self.assertEqual(False, fastlex.IsValidVarName('x-'))
     self.assertEqual(False, fastlex.IsValidVarName('var_name-foo'))
 
-  def testCanOmitQuotes(self):
-    self.assertEqual(True, fastlex.CanOmitQuotes('my-dir/my_file.cc'))
-    self.assertEqual(False, fastlex.CanOmitQuotes('a b'))
-    self.assertEqual(False, fastlex.CanOmitQuotes('\xff'))
-
 
 if __name__ == '__main__':
   unittest.main()
