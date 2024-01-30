@@ -166,7 +166,7 @@ List<PasswdEntry*>* GetAllUsers() {
 
   return ret;
   #else
-  puts("Compiled without PWENT support. Can't return any users", stderr)
+  puts("Compiled without PWENT support. Can't return any users", stderr);
   #endif
 }
 
