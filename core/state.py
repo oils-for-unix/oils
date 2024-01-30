@@ -939,6 +939,7 @@ class ctx_ProcCall(object):
         self.mutable_opts.PopDynamicScope()
         self.mem.PopCall(True)
 
+
 class ctx_Temp(object):
     """For FOO=bar myfunc, etc."""
 
@@ -1366,7 +1367,8 @@ class Mem(object):
         # type: (int) -> value_t
         if arg_num == 0:
             # $0 may be overriden, eg. by Str => replace()
-            if "0" in self.var_stack[-1] and self.var_stack[-1]["0"].val.tag() != value_e.Undef:
+            if "0" in self.var_stack[-1] and (
+                    self.var_stack[-1]["0"].val.tag() != value_e.Undef):
                 return self.var_stack[-1]["0"].val
             return value.Str(self.dollar0)
 

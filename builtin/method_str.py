@@ -182,8 +182,7 @@ class Replace(vm._Callable):
         if res.tag() == value_e.Str:
             return cast(value.Str, res).s
 
-        raise error.TypeErr(res, "expected expr to eval to a Str",
-                            blame_loc)
+        raise error.TypeErr(res, "expected expr to eval to a Str", blame_loc)
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -286,10 +285,9 @@ class Replace(vm._Callable):
                         convert_tok = eggex_val.convert_toks[group - 1]
 
                         if convert_func:
-                            val = self.expr_ev.CallConvertFunc(convert_func,
-                                                               val,
-                                                               convert_tok,
-                                                               rd.LeftParenToken())
+                            val = self.expr_ev.CallConvertFunc(
+                                convert_func, val, convert_tok,
+                                rd.LeftParenToken())
 
                     # $0, $1, $2 variables are argv values, which must be
                     # strings. Furthermore, they can only be used in string
