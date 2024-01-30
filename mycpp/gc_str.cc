@@ -111,59 +111,6 @@ BigStr* BigStr::at(int i) {
   return result;
 }
 
-// s[begin:end:step]
-BigStr* BigStr::_slice(int begin, int end, int step) {
-  int len_ = len(this);
-  begin = std::min(begin, len_);
-  end = std::min(end, len_);
-
-  DCHECK(begin <= len_);
-  DCHECK(end <= len_);
-
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-
-  if (end < 0) {
-    end = len_ + end;
-  }
-
-  begin = std::min(begin, len_);
-  end = std::min(end, len_);
-
-  begin = std::max(begin, 0);
-  end = std::max(end, 0);
-
-  DCHECK(begin >= 0);
-  DCHECK(begin <= len_);
-
-  DCHECK(end >= 0);
-  DCHECK(end <= len_);
-
-  int astep = std::abs(step);
-  int new_len = (end - begin);
-  new_len = new_len / astep + (new_len % astep);
-
-  // Tried to use std::clamp() here but we're not compiling against cxx-17
-  new_len = std::max(new_len, 0);
-  new_len = std::min(new_len, len_);
-
-  // printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len);
-
-  DCHECK(new_len >= 0);
-  DCHECK(new_len <= len_);
-
-  BigStr* result = NewStr(new_len + 1);
-  // step might be negative
-  int j = 0;
-  for (int i = begin; begin <= i && i < end; i += step, j++) {
-    result->data_[j] = data_[i];
-  }
-  result->data_[new_len] = '\0';
-
-  return result;
-}
-
 // s[begin:end]
 BigStr* BigStr::slice(int begin, int end) {
   int len_ = len(this);

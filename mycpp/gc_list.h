@@ -51,9 +51,6 @@ class List {
   // L[begin:end]
   List* slice(int begin, int end);
 
-  // L[begin:end:step]
-  List* _slice(int begin, int end, int step);
-
   // Should we have a separate API that doesn't return it?
   // https://stackoverflow.com/questions/12600330/pop-back-return-value
   T pop();
@@ -226,18 +223,12 @@ List<T>* sorted(List<T>* l);
 // L[begin:]
 template <typename T>
 List<T>* List<T>::slice(int begin) {
-  return _slice(begin, len_, 1);
+  return slice(begin, len_);
 }
 
 // L[begin:end]
 template <typename T>
 List<T>* List<T>::slice(int begin, int end) {
-  return _slice(begin, end, 1);
-}
-
-// L[begin:end:step]
-template <typename T>
-List<T>* List<T>::_slice(int begin, int end, int step) {
   if (begin < 0) {
     begin = len_ + begin;
   }
@@ -251,7 +242,7 @@ List<T>* List<T>::_slice(int begin, int end, int step) {
 
   List<T>* result = NewList<T>();
   // step might be negative
-  for (int i = begin; begin <= i && i < end; i += step) {
+  for (int i = begin; begin <= i && i < end; ++i) {
     result->append(slab_->items_[i]);
   }
 
