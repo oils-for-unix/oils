@@ -121,6 +121,11 @@ def Stringify(val, blame_loc, prefix=''):
             val = cast(value.Eggex, UP_val)
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
 
+        elif case(value_e.List):
+            raise error.TypeErrVerbose(
+                "%sgot a List, which can't be stringified. Perhaps use @ instead of $, or use join()" % prefix,
+                blame_loc)
+
         else:
             raise error.TypeErr(
                 val, "%sexpected Null, Bool, Int, Float, Eggex" % prefix,
