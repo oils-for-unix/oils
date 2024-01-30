@@ -1016,7 +1016,7 @@ class ExprEvaluator(object):
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)
-                        # TODO: Should use QSN8 lines
+                        # TODO: Should use J8 lines
                         strs = self.splitter.SplitForWordEval(stdout_str)
                         items = [value.Str(s)
                                  for s in strs]  # type: List[value_t]

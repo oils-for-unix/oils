@@ -19,7 +19,7 @@ set -o errexit
 #
 # https://pubs.opengroup.org/onlinepubs/9699919799/utilities/jobs.html
 #
-# TODO: Oil should print this as QSN!   So you can parse it.
+# TODO: YSH should print this as J8!   So you can parse it.
 #
 # - dash is the only shell that doesn't show source code; it just shows | for pipe
 # - mksh has some weird quoting, like \sleep 1

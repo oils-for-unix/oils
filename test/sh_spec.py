@@ -920,7 +920,7 @@ class TsvOutput(Output):
       self.f.write(c)
       self.f.write('\t')
 
-    # note: 'desc' could use QSN, but just ignore it for now
+    # note: 'desc' could use TSV8, but just ignore it for now
     #self.f.write(desc)
     self.f.write('\n')
 
