@@ -111,6 +111,11 @@ BigStr* BigStr::at(int i) {
   return result;
 }
 
+// s[begin:]
+BigStr* BigStr::slice(int begin) {
+  return slice(begin, len(this));
+}
+
 // s[begin:end]
 BigStr* BigStr::slice(int begin, int end) {
   int len_ = len(this);
@@ -155,18 +160,6 @@ BigStr* BigStr::slice(int begin, int end) {
   memcpy(result->data_, data_ + begin, new_len);
 
   return result;
-}
-
-// s[begin:]
-BigStr* BigStr::slice(int begin) {
-  int len_ = len(this);
-  if (begin == 0) {
-    return this;  // s[i:] where i == 0 is common in here docs
-  }
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-  return slice(begin, len_);
 }
 
 // Used by 'help' builtin and --help, neither of which translate yet.
