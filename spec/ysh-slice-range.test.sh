@@ -184,7 +184,7 @@ for i in (5..1) {
 ## STDOUT:
 ## END
 
-#### Slices with Multiple Dimensions (for QTT)
+#### Slices with Multiple Dimensions (for TSV8?)
 
 qtt pretty :mytable <<< '''
 name  age:Int

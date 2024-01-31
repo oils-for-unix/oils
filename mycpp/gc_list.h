@@ -229,16 +229,10 @@ List<T>* List<T>::slice(int begin) {
 // L[begin:end]
 template <typename T>
 List<T>* List<T>::slice(int begin, int end) {
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-  if (end < 0) {
-    end = len_ + end;
-  }
+  SLICE_ADJUST(begin, end, len_);
 
-  DCHECK(end <= len_);
-  DCHECK(begin >= 0);
-  DCHECK(end >= 0);
+  DCHECK(0 <= begin && begin <= len_);
+  DCHECK(0 <= end && end <= len_);
 
   List<T>* result = NewList<T>();
   // step might be negative
