@@ -64,6 +64,10 @@ regex() {
   # supports equivalent of $0 and $1 ?
   python3 -c 'import re; p = re.compile("[i](.)"); print(p.sub("[\g<0>]", "oils-for-unix"))'
   python3 -c 'import re; p = re.compile("[i](.)"); print(p.sub("[\g<1>]", "oils-for-unix"))'
+
+  # ^ means that only one replacement occurs
+  python3 -c 'import re; p = re.compile(r"(\d+)"); print(p.sub("[\g<1>]", "9-16-25"))'
+  python3 -c 'import re; p = re.compile(r"^(\d+)"); print(p.sub("[\g<1>]", "9-16-25"))'
   echo
 
   echo 'REGEX JS'
@@ -87,6 +91,11 @@ regex() {
   nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$0]"))'
   nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$&]"))'
   nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$1]"))'
+
+  # ^ means that only one replacement occurs
+  nodejs -e 'console.log("9-16-25".replace(new RegExp("(\\d+)", "g"), "[$&]"))'
+  nodejs -e 'console.log("9-16-25".replace(new RegExp("^(\\d+)", "g"), "[$1]"))'
+  echo
 }
 
 "$@"
