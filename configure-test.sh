@@ -80,9 +80,10 @@ test_echo_cpp() {
   if ! test "$?" = 0; then
     die 'Expected echo_cpp to succeed, but failed'
   fi
-  if ! test "$output" = '/* #undef HAVE_READLINE */'; then
-    die "Unexpected echo_cpp output: $output"
-  fi
+  case "$output" in
+    '/* #undef HAVE_READLINE */'*) ;;
+    *) die "Unexpected echo_cpp output: $output" ;;
+  esac
 
   # have readline
   have_readline=1
@@ -90,9 +91,10 @@ test_echo_cpp() {
   if ! test "$?" = 0; then
     die 'Expected echo_cpp to succeed, but failed'
   fi
-  if ! test "$output" = '#define HAVE_READLINE 1'; then
-    die "Unexpected echo_cpp output: $output"
-  fi
+  case "$output" in
+    '#define HAVE_READLINE 1'*) ;;
+    *) die "Unexpected echo_cpp output: $output" ;;
+  esac
 
   # clean-up
   detected_readline=''

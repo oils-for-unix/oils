@@ -144,6 +144,7 @@ BigStr* GetHomeDir(BigStr* user_name) {
 }
 
 List<PasswdEntry*>* GetAllUsers() {
+#ifdef HAVE_PWENT
   auto* ret = NewList<PasswdEntry*>();
   struct passwd* entry = nullptr;
 
@@ -164,6 +165,12 @@ List<PasswdEntry*>* GetAllUsers() {
   endpwent();
 
   return ret;
+#else
+  fprintf(
+      stderr,
+      "Oils compiled without libc *pwent() functions.  Can't list users.\n");
+  return NewList<PasswdEntry*>();
+#endif
 }
 
 BigStr* GetUserName(int uid) {

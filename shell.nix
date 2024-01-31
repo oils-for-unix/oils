@@ -22,7 +22,7 @@ let
     "echo Skipping Oil build."
   else ''
     echo Building \'${dev}\' Oil.
-    "$PWD/build/dev.sh" ${dev}
+    "$PWD/build/py.sh" ${dev}
   '';
   test_oil = if test == "none" then
     "echo Skipping Oil tests."
@@ -126,7 +126,7 @@ in mkShell rec {
     else
       echo "Dev build already exists. If you made changes, run:"
       echo "    'build/clean.sh' and "
-      echo "    'build/dev.sh all' or 'build/dev.sh minimal'"
+      echo "    'build/py.sh all' or 'build/py.sh minimal'"
     fi
 
     ${cleanup_oil}
