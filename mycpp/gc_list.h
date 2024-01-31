@@ -234,9 +234,13 @@ List<T>* List<T>::slice(int begin, int end) {
   DCHECK(0 <= begin && begin <= len_);
   DCHECK(0 <= end && end <= len_);
 
+  int new_len = end - begin;
+  DCHECK(0 <= new_len && new_len <= len_);
+
   List<T>* result = NewList<T>();
-  // step might be negative
-  for (int i = begin; begin <= i && i < end; ++i) {
+  result->reserve(new_len);
+
+  for (int i = begin; i < end; ++i) {
     result->append(slab_->items_[i]);
   }
 
