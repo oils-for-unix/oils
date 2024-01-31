@@ -157,7 +157,6 @@ if fastlex:
 
     IsValidVarName = fastlex.IsValidVarName
     ShouldHijack = fastlex.ShouldHijack
-    CanOmitQuotes = fastlex.CanOmitQuotes
     LooksLikeInteger = fastlex.LooksLikeInteger
     LooksLikeFloat = fastlex.LooksLikeFloat
 else:
@@ -186,12 +185,6 @@ else:
     def ShouldHijack(s):
         # type: (str) -> bool
         return bool(_SHOULD_HIJACK_RE.match(s))
-
-    _CAN_OMIT_QUOTES_RE = re.compile(lexer_def.CAN_OMIT_QUOTES_RE + '$')  # type: ignore
-
-    def CanOmitQuotes(s):
-        # type: (str) -> bool
-        return bool(_CAN_OMIT_QUOTES_RE.match(s))
 
     _LOOKS_LIKE_INTEGER_RE = re.compile(lexer_def.LOOKS_LIKE_INTEGER + '$')  # type: ignore
 

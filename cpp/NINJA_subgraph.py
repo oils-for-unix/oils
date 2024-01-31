@@ -221,10 +221,3 @@ def NinjaGraph(ru):
             '//prebuilt/core/error.mycpp',  # prebuilt e_die()
         ],
         matrix=ninja_lib.COMPILERS_VARIANTS)
-
-    # Note: there is no cc_library() for qsn.h
-    ru.cc_binary('cpp/qsn_test.cc',
-                 deps=[
-                     '//mycpp/runtime',
-                 ],
-                 matrix=ninja_lib.COMPILERS_VARIANTS)

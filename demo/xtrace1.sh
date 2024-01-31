@@ -252,7 +252,7 @@ atoms1() {
 
   foo=bar
 
-  # this messes up a lot of printing.  OSH will use QSN.
+  # This messes up a lot of printing.
   x='one
   two'
 

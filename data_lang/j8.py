@@ -34,6 +34,8 @@ from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
+import fastfunc
+
 _ = log
 
 from typing import cast, Dict, List, Tuple, Optional
@@ -115,7 +117,7 @@ class Printer(object):
         # type: (str, mylib.BufWriter, bool) -> None
         """ For pp proc, etc."""
 
-        if unquoted_ok and match.CanOmitQuotes(s):
+        if unquoted_ok and fastfunc.CanOmitQuotes(s):
             buf.write(s)
             return
 
@@ -125,7 +127,7 @@ class Printer(object):
         # type: (str) -> str
         """ For write --j8 $s  and compexport """
 
-        # TODO: There should be an option to not quote "plain words" like
+        # TODO: add unquoted_ok here?
         # /usr/local/foo-bar/x.y/a_b
 
         buf = mylib.BufWriter()
@@ -135,7 +137,8 @@ class Printer(object):
     def MaybeEncodeJsonString(self, s):
         # type: (str) -> str
         """ For write --json """
-        # TODO: There should be an option to not quote "plain words" like
+
+        # TODO: add unquoted_ok here?
         # /usr/local/foo-bar/x.y/a_b
         buf = mylib.BufWriter()
         self._Print(value.Str(s), buf, -1, options=LOSSY_JSON)

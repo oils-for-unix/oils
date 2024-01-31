@@ -1,6 +1,7 @@
-# @( conflict
+## oils_failures_allowed: 1
 
-#### extglob
+#### Conflict with extglob @( can be avoided with ,(
+
 shopt -s extglob
 
 [[ foo.py == @(*.sh|*.py) ]]
@@ -63,7 +64,23 @@ b
 c
 ## END
 
-#### Idiomatic for loop using @(seq $n)
+#### @() decodes J8 Lines
+
+var b = @(
+  echo "  unquoted ";
+  # I guess this is allowed
+  echo $'binary \xff';
+  echo '"json\n\u03bc"';
+  echo "u'j8 u \\u{3bc}'";
+  echo "b'j8 b \\y{ff'";
+)
+
+pp line (b)
+
+## STDOUT:
+## END
+
+#### for loop using @(seq $n)
 shopt -s oil:upgrade
 
 for x in @(seq 3) {

@@ -999,37 +999,6 @@ control_flow_subshell() {
   done
 }
 
-qsn_decode() {
-  read --line --qsn <<EOF
-'no closing quote
-EOF
-  assert $? -eq 1
-
-  read --line --qsn <<EOF
-'foo' trailing data
-EOF
-  assert $? -eq 1
-
-  read --line --qsn <<EOF
-'\x0'
-EOF
-  assert $? -eq 1
-
-  read --line --qsn <<EOF
-'\u{3bc'
-EOF
-  assert $? -eq 1
-
-  echo "'literal"$'\t'"tab'" | read --line --qsn
-  assert $? -eq 1
-
-	# trailing tab below is allowed
-  read --line --qsn <<EOF
-'foo'		
-EOF
-  assert $? -eq 0
-}
-
 fallback_locations() {
   # Redirect
   _error-case 'echo hi > /'
@@ -1051,9 +1020,6 @@ fallback_locations() {
 
   _error-case-2 'type -x'  # correctly points to -x
   _error-case-2 'use x'
-
-  #_error-case-2 'write --qsn'
-  _error-case-2 'read --qsn'
 
   # Assign builtin
   _error-case-2 'export -f'
@@ -1130,7 +1096,7 @@ all() {
     strict_word_eval_warnings strict_arith_warnings \
     strict_control_flow_warnings control_flow_subshell \
     bool_status bool_status_simple \
-    qsn_decode fallback_locations; do
+    fallback_locations; do
 
     _run_test $t ''  # don't assert status
   done

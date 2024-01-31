@@ -61,9 +61,6 @@ def EvalCStringToken(tok):
     """This function is shared between echo -e and $''.
 
     $'' could use it at compile time, much like brace expansion in braces.py.
-
-    It's also used by read --qsn, hence Char_UBraced support
-    (TODO: will it be used by read --j8?)
     """
     id_ = tok.id
     value = tok.tval

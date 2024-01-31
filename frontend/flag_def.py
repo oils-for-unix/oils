@@ -468,11 +468,12 @@ WRITE_SPEC.LongFlag('--j8',
 #   u means I want \u{1234}
 #   raw is utf-8
 if 0:
-    WRITE_SPEC.LongFlag('--unicode', ['raw', 'u', 'x'],
-                        default='raw',
-                        help='Encode QSN with these options.  '
-                        'x assumes an opaque byte string, while raw and u try to '
-                        'decode UTF-8.')
+    WRITE_SPEC.LongFlag(
+        '--unicode', ['raw', 'u', 'x'],
+        default='raw',
+        help='Encode QSN with these options.  '
+        'x assumes an opaque byte string, while raw and u try to '
+        'decode UTF-8.')
 
 PUSH_REGISTERS_SPEC = FlagSpec('push-registers')
 

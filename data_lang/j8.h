@@ -363,7 +363,7 @@ static inline int BourneShellEncodeChunk(unsigned char** p_in,
   return 0;
 }
 
-inline int CanOmitQuotes(unsigned char* s, int len) {
+static inline int CanOmitQuotes(unsigned char* s, int len) {
   if (len == 0) {  // empty string has to be quoted
     return 0;
   }

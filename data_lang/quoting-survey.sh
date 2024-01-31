@@ -6,7 +6,7 @@
 # - Those with terminal escape sequences
 #
 # Usage:
-#   data_lang/demo.sh <function name>
+#   data_lang/quoting-survey.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -14,9 +14,6 @@ set -o errexit
 
 # We already know:
 # - bash ${#len} operator is very broken
-#
-# Suggestion:
-#  QSN should be printf %q !!!  In ANSI C.
 
 # in bash it could be %Q.  Or maybe it's %Q everywhere?
 # in mycpp, we can translate %r calling repr() to qsn::encode()
@@ -86,7 +83,7 @@ test-programs() {
   # Test out error message
   # It's basically correct, but ugly.  There are too many segments, and
   # there's an unnecessary leading ''.
-  # QSN is shorter and more consistent.
+  # J8 is shorter and more consistent.
 
   ls -- "$RESET" || true
 
