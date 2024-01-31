@@ -111,62 +111,26 @@ BigStr* BigStr::at(int i) {
   return result;
 }
 
+// s[begin:]
+BigStr* BigStr::slice(int begin) {
+  return slice(begin, len(this));
+}
+
 // s[begin:end]
 BigStr* BigStr::slice(int begin, int end) {
   int len_ = len(this);
-  begin = std::min(begin, len_);
-  end = std::min(end, len_);
+  SLICE_ADJUST(begin, end, len_);
 
-  DCHECK(begin <= len_);
-  DCHECK(end <= len_);
-
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-
-  if (end < 0) {
-    end = len_ + end;
-  }
-
-  begin = std::min(begin, len_);
-  end = std::min(end, len_);
-
-  begin = std::max(begin, 0);
-  end = std::max(end, 0);
-
-  DCHECK(begin >= 0);
-  DCHECK(begin <= len_);
-
-  DCHECK(end >= 0);
-  DCHECK(end <= len_);
+  DCHECK(0 <= begin && begin <= len_);
+  DCHECK(0 <= end && end <= len_);
 
   int new_len = end - begin;
-
-  // Tried to use std::clamp() here but we're not compiling against cxx-17
-  new_len = std::max(new_len, 0);
-  new_len = std::min(new_len, len_);
-
-  // printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len);
-
-  DCHECK(new_len >= 0);
-  DCHECK(new_len <= len_);
+  DCHECK(0 <= new_len && new_len <= len_);
 
   BigStr* result = NewStr(new_len);
   memcpy(result->data_, data_ + begin, new_len);
 
   return result;
-}
-
-// s[begin:]
-BigStr* BigStr::slice(int begin) {
-  int len_ = len(this);
-  if (begin == 0) {
-    return this;  // s[i:] where i == 0 is common in here docs
-  }
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-  return slice(begin, len_);
 }
 
 // Used by 'help' builtin and --help, neither of which translate yet.

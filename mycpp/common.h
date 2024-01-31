@@ -63,4 +63,30 @@ inline size_t aligned(size_t n) {
 
 const int kMaxRoots = KiB(4);
 
+// Used by both Str and List slicing.  3 adjustments:
+// 1. begin: negative, or greater than len
+// 2. end: negative, or greater than len
+// 3. begin > end means empty slice
+
+#define SLICE_ADJUST(begin, end, len) \
+  if (begin < 0) {                    \
+    begin += len;                     \
+    if (begin < 0) {                  \
+      begin = 0;                      \
+    }                                 \
+  } else if (begin > len) {           \
+    begin = len;                      \
+  }                                   \
+  if (end < 0) {                      \
+    end += len;                       \
+    if (end < 0) {                    \
+      end = 0;                        \
+    }                                 \
+  } else if (end > len) {             \
+    end = len;                        \
+  }                                   \
+  if (begin > end) {                  \
+    end = begin;                      \
+  }
+
 #endif  // COMMON_H
