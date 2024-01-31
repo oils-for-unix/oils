@@ -226,8 +226,8 @@ class _Executor(object):
         """The 'builtin' builtin in osh/builtin_meta.py needs this."""
         return 0
 
-    def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
-        # type: (cmd_value.Argv, CommandStatus, bool, bool) -> int
+    def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
+        # type: (cmd_value.Argv, CommandStatus, int) -> int
         return 0
 
     def RunBackgroundJob(self, node):

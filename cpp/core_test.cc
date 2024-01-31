@@ -327,6 +327,11 @@ TEST passwd_test() {
   ASSERT(username != nullptr);
 
   List<pyos::PasswdEntry*>* entries = pyos::GetAllUsers();
+  if (len(entries) == 0) {
+    fprintf(stderr, "No *pwent() functions, skipping tests\n");
+    PASS();
+  }
+
   pyos::PasswdEntry* me = nullptr;
   for (ListIter<pyos::PasswdEntry*> it(entries); !it.Done(); it.Next()) {
     pyos::PasswdEntry* entry = it.Value();

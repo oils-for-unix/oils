@@ -10,10 +10,11 @@ TEST opaque_test() {
   auto attrs = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
   StackRoots _r({&attrs});
 
-  auto b = Alloc<value::Bool>(true);
-  auto b2 = Alloc<value::Bool>(false);
-  attrs->set(StrFromC("v"), b);
-  attrs->set(StrFromC("V"), b2);
+  auto t = Alloc<value::Bool>(true);
+  auto f = Alloc<value::Bool>(false);
+  attrs->set(StrFromC("v"), t);
+  attrs->set(StrFromC("V"), f);
+  attrs->set(StrFromC("p"), f);
 
   for (int i = 0; i < 10; ++i) {
     auto m = Alloc<arg_types::command>(attrs);
@@ -23,6 +24,7 @@ TEST opaque_test() {
 
     ASSERT_EQ(true, m->v);
     ASSERT_EQ(false, m->V);
+    ASSERT_EQ(false, m->p);
   }
 
   PASS();

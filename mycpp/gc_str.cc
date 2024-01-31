@@ -17,7 +17,7 @@ static const int kMaxFmtWidth = 256;  // arbitrary...
 
 int BigStr::find(BigStr* needle, int pos) {
   int len_ = len(this);
-  assert(len(needle) == 1);  // Oil's usage
+  DCHECK(len(needle) == 1);  // Oil's usage
   char c = needle->data_[0];
   for (int i = pos; i < len_; ++i) {
     if (data_[i] == c) {
@@ -29,7 +29,7 @@ int BigStr::find(BigStr* needle, int pos) {
 
 int BigStr::rfind(BigStr* needle) {
   int len_ = len(this);
-  assert(len(needle) == 1);  // Oil's usage
+  DCHECK(len(needle) == 1);  // Oil's usage
   char c = needle->data_[0];
   for (int i = len_ - 1; i >= 0; --i) {
     if (data_[i] == c) {
@@ -103,106 +103,29 @@ BigStr* BigStr::at(int i) {
   if (i < 0) {
     i = len_ + i;
   }
-  assert(i >= 0);
-  assert(i < len_);  // had a problem here!
+  DCHECK(i >= 0);
+  DCHECK(i < len_);  // had a problem here!
 
   BigStr* result = NewStr(1);
   result->data_[0] = data_[i];
   return result;
 }
 
-// s[begin:end:step]
-BigStr* BigStr::slice(int begin, int end, int step) {
-  int len_ = len(this);
-  begin = std::min(begin, len_);
-  end = std::min(end, len_);
-
-  assert(begin <= len_);
-  assert(end <= len_);
-
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-
-  if (end < 0) {
-    end = len_ + end;
-  }
-
-  begin = std::min(begin, len_);
-  end = std::min(end, len_);
-
-  begin = std::max(begin, 0);
-  end = std::max(end, 0);
-
-  assert(begin >= 0);
-  assert(begin <= len_);
-
-  assert(end >= 0);
-  assert(end <= len_);
-
-  int astep = std::abs(step);
-  int new_len = (end - begin);
-  new_len = new_len / astep + (new_len % astep);
-
-  // Tried to use std::clamp() here but we're not compiling against cxx-17
-  new_len = std::max(new_len, 0);
-  new_len = std::min(new_len, len_);
-
-  // printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len);
-
-  assert(new_len >= 0);
-  assert(new_len <= len_);
-
-  BigStr* result = NewStr(new_len + 1);
-  // step might be negative
-  int j = 0;
-  for (int i = begin; begin <= i && i < end; i += step, j++) {
-    result->data_[j] = data_[i];
-  }
-  result->data_[new_len] = '\0';
-
-  return result;
+// s[begin:]
+BigStr* BigStr::slice(int begin) {
+  return slice(begin, len(this));
 }
 
 // s[begin:end]
 BigStr* BigStr::slice(int begin, int end) {
   int len_ = len(this);
-  begin = std::min(begin, len_);
-  end = std::min(end, len_);
+  SLICE_ADJUST(begin, end, len_);
 
-  assert(begin <= len_);
-  assert(end <= len_);
-
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-
-  if (end < 0) {
-    end = len_ + end;
-  }
-
-  begin = std::min(begin, len_);
-  end = std::min(end, len_);
-
-  begin = std::max(begin, 0);
-  end = std::max(end, 0);
-
-  assert(begin >= 0);
-  assert(begin <= len_);
-
-  assert(end >= 0);
-  assert(end <= len_);
+  DCHECK(0 <= begin && begin <= len_);
+  DCHECK(0 <= end && end <= len_);
 
   int new_len = end - begin;
-
-  // Tried to use std::clamp() here but we're not compiling against cxx-17
-  new_len = std::max(new_len, 0);
-  new_len = std::min(new_len, len_);
-
-  // printf("len(%d) [%d, %d] newlen(%d)\n",  len_, begin, end, new_len);
-
-  assert(new_len >= 0);
-  assert(new_len <= len_);
+  DCHECK(0 <= new_len && new_len <= len_);
 
   BigStr* result = NewStr(new_len);
   memcpy(result->data_, data_ + begin, new_len);
@@ -210,22 +133,10 @@ BigStr* BigStr::slice(int begin, int end) {
   return result;
 }
 
-// s[begin:]
-BigStr* BigStr::slice(int begin) {
-  int len_ = len(this);
-  if (begin == 0) {
-    return this;  // s[i:] where i == 0 is common in here docs
-  }
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-  return slice(begin, len_);
-}
-
 // Used by 'help' builtin and --help, neither of which translate yet.
 
 List<BigStr*>* BigStr::splitlines(bool keep) {
-  assert(keep == true);
+  DCHECK(keep == true);
   FAIL(kNotImplemented);
 }
 
@@ -250,7 +161,7 @@ BigStr* BigStr::lower() {
 }
 
 BigStr* BigStr::ljust(int width, BigStr* fillchar) {
-  assert(len(fillchar) == 1);
+  DCHECK(len(fillchar) == 1);
 
   int len_ = len(this);
   int num_fill = width - len_;
@@ -268,7 +179,7 @@ BigStr* BigStr::ljust(int width, BigStr* fillchar) {
 }
 
 BigStr* BigStr::rjust(int width, BigStr* fillchar) {
-  assert(len(fillchar) == 1);
+  DCHECK(len(fillchar) == 1);
 
   int len_ = len(this);
   int num_fill = width - len_;
@@ -448,7 +359,7 @@ BigStr* BigStr::strip() {
 
 // Used for CommandSub in osh/cmd_exec.py
 BigStr* BigStr::rstrip(BigStr* chars) {
-  assert(len(chars) == 1);
+  DCHECK(len(chars) == 1);
   int c = chars->data_[0];
   return StripAny(this, StripWhere::Right, c);
 }
@@ -458,7 +369,7 @@ BigStr* BigStr::rstrip() {
 }
 
 BigStr* BigStr::lstrip(BigStr* chars) {
-  assert(len(chars) == 1);
+  DCHECK(len(chars) == 1);
   int c = chars->data_[0];
   return StripAny(this, StripWhere::Left, c);
 }
@@ -583,7 +494,7 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     const std::cmatch& match = *it;
 
     const std::csub_match& lit_m = match[1];
-    assert(lit_m.matched);
+    DCHECK(lit_m.matched);
     const std::string& lit_s = lit_m.str();
     buf.append(lit_s);
 
@@ -592,20 +503,23 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     bool pad_back = false;
     const std::csub_match& width_m = match[2];
     const std::string& width_s = width_m.str();
+    bool ok = false;
     if (width_m.matched && !width_s.empty()) {
       if (width_s[0] == '0') {
         zero_pad = true;
-        assert(width_s.size() > 1);
-        assert(StringToInteger(width_s.c_str() + 1, width_s.size() - 1, 10,
-                               &width));
+        DCHECK(width_s.size() > 1);
+        ok = StringToInteger(width_s.c_str() + 1, width_s.size() - 1, 10,
+                             &width);
+        DCHECK(ok);
       } else {
-        assert(StringToInteger(width_s.c_str(), width_s.size(), 10, &width));
+        ok = StringToInteger(width_s.c_str(), width_s.size(), 10, &width);
+        DCHECK(ok);
       }
       if (width < 0) {
         pad_back = true;
         width *= -1;
       }
-      assert(width >= 0 && width < kMaxFmtWidth);
+      DCHECK(width >= 0 && width < kMaxFmtWidth);
     }
 
     char const* str_to_add = nullptr;
@@ -613,10 +527,10 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     const std::csub_match& code_m = match[3];
     const std::string& code_s = code_m.str();
     if (!code_m.matched) {
-      assert(!width_m.matched);  // python errors on invalid format operators
+      DCHECK(!width_m.matched);  // python errors on invalid format operators
       break;
     }
-    assert(code_s.size() == 1);
+    DCHECK(code_s.size() == 1);
     switch (code_s[0]) {
     case '%': {
       str_to_add = code_s.c_str();
@@ -649,15 +563,15 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
       int d = va_arg(args, int);
       add_len = snprintf(int_buf, kMaxFmtWidth,
                          match.str().c_str() + lit_s.size(), d);
-      assert(add_len > 0);
+      DCHECK(add_len > 0);
       str_to_add = int_buf;
       break;
     }
     default:
-      assert(0);
+      DCHECK(0);
       break;
     }
-    assert(str_to_add != nullptr);
+    DCHECK(str_to_add != nullptr);
 
     if (pad_back) {
       buf.append(str_to_add, add_len);

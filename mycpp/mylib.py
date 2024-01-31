@@ -56,21 +56,35 @@ def print_stderr(s):
 
 
 if cStringIO:
-    BufWriter = cStringIO.StringIO
+    #BufWriter = cStringIO.StringIO
     BufLineReader = cStringIO.StringIO
 else:  # Python 3
-    BufWriter = io.StringIO
+    #BufWriter = io.StringIO
     BufLineReader = io.StringIO
 
 
-def ClearBuf(buf):
-    # type: (BufWriter) -> None
+class BufWriter:
+    """Mimic StringIO API, but add clear() so we can reuse objects.
 
-    # TODO: We should have a pure Python version of BufWriter, and then remove
-    # these methods from the build.  They will be trivial.
+    We can also add accelerators for directly writing numbers, to avoid
+    allocations when encoding JSON.
+    """
 
-    buf.reset()  # set position back to zero
-    buf.truncate()  # truncate at current position
+    def __init__(self):
+        # type: () -> None
+        self.parts = []
+
+    def write(self, s):
+        # type: (str) -> None
+        self.parts.append(s)
+
+    def getvalue(self):
+        # type: (str) -> None
+        return ''.join(self.parts)
+
+    def clear(self):
+        # type: () -> None
+        del self.parts[:]
 
 
 def Stdout():

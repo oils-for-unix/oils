@@ -66,6 +66,15 @@ regex() {
   python3 -c 'import re; p = re.compile("[i](.)"); print(p.sub("[\g<1>]", "oils-for-unix"))'
   echo
 
+  # ^ means that only one replacement occurs
+  python3 -c 'import re; p = re.compile(r"(\d+)"); print(p.sub("[\g<1>]", "9-16-25\n100-200"))'
+  echo
+  python3 -c 'import re; p = re.compile(r"^(\d+)"); print(p.sub("[\g<1>]", "9-16-25\n100-200"))'
+  echo
+  # one replacement per line with re.MULTILINE!
+  python3 -c 'import re; p = re.compile(r"^(\d+)", re.MULTILINE); print(p.sub("[\g<1>]", "9-16-25\n100-200"))'
+  echo
+
   echo 'REGEX JS'
   echo
 
@@ -87,6 +96,16 @@ regex() {
   nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$0]"))'
   nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$&]"))'
   nodejs -e 'console.log("oils-for-unix".replace(new RegExp("[i](.)", "g"), "[$1]"))'
+  echo
+
+  # ^ means that only one replacement occurs
+  nodejs -e 'console.log("9-16-25\n100-200".replace(new RegExp("(\\d+)", "g"), "[$&]"))'
+  echo
+  nodejs -e 'console.log("9-16-25\n100-200".replace(new RegExp("^(\\d+)", "g"), "[$1]"))'
+  echo
+  # m flag is like re.MULTILINE
+  nodejs -e 'console.log("9-16-25\n100-200".replace(new RegExp("^(\\d+)", "gm"), "[$1]"))'
+  echo
 }
 
 "$@"

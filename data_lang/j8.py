@@ -4,14 +4,6 @@ j8.py: J8 Notation and Related Utilities
 
 TODO:
 
-- Translate the whole thing to C++
-  - use Bjoern DFA for UTF-8 validation in printing and parsing
-  - move more of LexerDecoder out of pyj8.py?  I think it can translate
-
-- Remove most of QSN
-  - QSN maybe_shell_encode() is used for bash features
-  - Remove shell_compat which does \\x00 instead of \\0
-
 - Many more tests
   - Run JSONTestSuite
 
@@ -22,12 +14,7 @@ Later:
   - line wrapping -- do this later
   - would like CONTRIBUTORS here
 
-- Harmonize the API in data_lang/qsn.py 
-  - use mylib.BufWriter output
-  - use u_style.LiteralUtf8 instead of BIT8_UTF8, etc.
-
 - Unify with ASDL pretty printing?
-
    {} [] are for JSON?
    () is for statically typed ASDL data?
       (command.Simple blame_tok:(...) words:[ ])
@@ -47,11 +34,11 @@ from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
+import fastfunc
+
 _ = log
-unused = pyj8
 
 from typing import cast, Dict, List, Tuple, Optional
-
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
@@ -74,16 +61,8 @@ class Printer(object):
 
     def __init__(self):
         # type: () -> None
-        """
-        Args:
-          # These can all be packed into the same byte.  ASDL needs bit_set
-          # support I think?
-          options:
-            control j"" vs. ""
-            control escaping \\x and \\u escaping like QSN
-            pretty.UnquotedKeys - ASDL uses this?
-        """
-        self.options = 0
+
+        # TODO: should remove this in favor of BufWriter method
         self.spaces = {0: ''}  # cache of strings with spaces
 
     # Could be PrintMessage or PrintJsonMessage()
@@ -134,20 +113,35 @@ class Printer(object):
         f.write(buf.getvalue())
         f.write('\n')
 
+    def EncodeString(self, s, buf, unquoted_ok=False):
+        # type: (str, mylib.BufWriter, bool) -> None
+        """ For pp proc, etc."""
+
+        if unquoted_ok and fastfunc.CanOmitQuotes(s):
+            buf.write(s)
+            return
+
+        self._Print(value.Str(s), buf, -1)
+
     def MaybeEncodeString(self, s):
         # type: (str) -> str
-        """ For write --j8 $s  and compexport
+        """ For write --j8 $s  and compexport """
 
-        Do we also have write --json or --json-string?  That requires handling
-        error.Encode()
-
-        Do we also want write (x) to use J8 notation?  It's the default
-        serialization.  But j8 write (x) is simple enough.
-        """
-        # There should be an option to not quote "plain words" like
+        # TODO: add unquoted_ok here?
         # /usr/local/foo-bar/x.y/a_b
+
         buf = mylib.BufWriter()
         self._Print(value.Str(s), buf, -1)
+        return buf.getvalue()
+
+    def MaybeEncodeJsonString(self, s):
+        # type: (str) -> str
+        """ For write --json """
+
+        # TODO: add unquoted_ok here?
+        # /usr/local/foo-bar/x.y/a_b
+        buf = mylib.BufWriter()
+        self._Print(value.Str(s), buf, -1, options=LOSSY_JSON)
         return buf.getvalue()
 
 
@@ -235,6 +229,10 @@ class InstancePrinter(object):
 
                 self.seen[heap_id] = True
 
+                if len(val.items) == 0:  # Special case like Python/JS
+                    self.buf.write('[]')
+                    return
+
                 self.buf.write('[')
                 self.buf.write(maybe_newline)
                 for i, item in enumerate(val.items):
@@ -265,6 +263,10 @@ class InstancePrinter(object):
                             vm.ValueIdString(val))
 
                 self.seen[heap_id] = True
+
+                if len(val.d) == 0:  # Special case like Python/JS
+                    self.buf.write('{}')
+                    return
 
                 self.buf.write('{')
                 self.buf.write(maybe_newline)
@@ -425,11 +427,7 @@ class LexerDecoder(object):
         # type: () -> Tuple[Id_t, int, Optional[str]]
         """ Returns a token and updates self.pos """
 
-        while True:  # ignore spaces
-            tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
-            if tok_id != Id.Ignored_Space:
-                break
-            self.pos = end_pos
+        tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
 
         # Non-string tokens like { } null etc.
         if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
@@ -477,16 +475,7 @@ class LexerDecoder(object):
                 self.pos = str_end
 
                 s = self.decoded.getvalue()
-                #log('s %r', s)
-                # This doesn't do what we think
-                #self.decoded.reset()
-
-                if 0:
-                    # Reusing this object is more efficient, e.g. with a
-                    # payload with thousands of strings
-                    mylib.ClearBuf(self.decoded)
-                else:
-                    self.decoded = mylib.BufWriter()
+                self.decoded.clear()  # reuse this instance
 
                 #log('decoded %r', self.decoded.getvalue())
                 return Id.J8_AnyString, str_end, s
@@ -578,9 +567,15 @@ class Parser(object):
 
     def _Next(self):
         # type: () -> None
-        self.start_pos = self.end_pos
-        self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
-        #log('NEXT %s %s %s', Id_str(self.tok_id), self.end_pos, self.decoded or '-')
+
+        # This isn't the start of a J8_Bool token, it's the END of the token before it
+        while True:
+            self.start_pos = self.end_pos
+            self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
+            if self.tok_id != Id.Ignored_Space:
+                break
+
+        #log('NEXT %s %s %s %s', Id_str(self.tok_id), self.start_pos, self.end_pos, self.decoded or '-')
 
     def _Eat(self, tok_id):
         # type: (Id_t) -> None
@@ -619,21 +614,28 @@ class Parser(object):
         # precondition
         assert self.tok_id == Id.J8_LBrace, Id_str(self.tok_id)
 
+        #log('> Dict')
+
         d = NewDict()  # type: Dict[str, value_t]
 
         self._Next()
         if self.tok_id == Id.J8_RBrace:
+            self._Next()
             return value.Dict(d)
 
         k, v = self._ParsePair()
         d[k] = v
+        #log('  [1] k %s  v  %s  Id %s', k, v, Id_str(self.tok_id))
 
         while self.tok_id == Id.J8_Comma:
             self._Next()
             k, v = self._ParsePair()
             d[k] = v
+            #log('  [2] k %s  v  %s  Id %s', k, v, Id_str(self.tok_id))
 
         self._Eat(Id.J8_RBrace)
+
+        #log('< Dict')
 
         return value.Dict(d)
 
@@ -649,6 +651,7 @@ class Parser(object):
 
         self._Next()
         if self.tok_id == Id.J8_RBracket:
+            self._Next()
             return value.List(items)
 
         items.append(self._ParseValue())
@@ -664,16 +667,21 @@ class Parser(object):
     def _ParseValue(self):
         # type: () -> value_t
         if self.tok_id == Id.J8_LBrace:
-            return self._ParseDict()
+            d = self._ParseDict()
+            #self._Next()
+            return d
 
         elif self.tok_id == Id.J8_LBracket:
-            return self._ParseList()
+            li = self._ParseList()
+            #self._Next()
+            return li
 
         elif self.tok_id == Id.J8_Null:
             self._Next()
             return value.Null
 
         elif self.tok_id == Id.J8_Bool:
+            #log('%r %d', self.s[self.start_pos], self.start_pos)
             b = value.Bool(self.s[self.start_pos] == 't')
             self._Next()
             return b

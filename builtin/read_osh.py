@@ -4,23 +4,21 @@ from errno import EINTR
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (span_e, cmd_value)
-from _devbuild.gen.syntax_asdl import source, loc, loc_t
+from _devbuild.gen.syntax_asdl import source, loc_t
 from _devbuild.gen.value_asdl import value, LeftName
 from core import alloc
 from core import error
-from core.error import e_usage, e_die
+from core.error import e_die
 from core import pyos
 from core import pyutil
 from core import state
 from core import ui
 from core import vm
-from data_lang import qsn_native
 from frontend import flag_spec
 from frontend import reader
 from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log, STDIN_FILENO
-from osh import word_compile
 
 import posix_ as posix
 
@@ -286,34 +284,40 @@ class Read(vm._Builtin):
         self.errfmt = errfmt
         self.stdin_ = mylib.Stdin()
 
-    def _MaybeDecodeLine(self, line):
-        # type: (str) -> str
-        """Raises error.Parse if line isn't valid."""
+    # Was --qsn, might be restored as --j8-word or --j8-line, but not until we
+    # have fromJ8Word() and so forth
+    if 0:
+        #from data_lang import qsn_native
+        def _MaybeDecodeLine(self, line):
+            # type: (str) -> str
+            """Raises error.Parse if line isn't valid."""
 
-        # Lines that don't start with a single quote aren't QSN.  They may
-        # contain a single quote internally, like:
-        #
-        # Fool's Gold
-        if not line.startswith("'"):
-            return line
+            # Lines that don't start with a single quote aren't QSN.  They may
+            # contain a single quote internally, like:
+            #
+            # Fool's Gold
+            if not line.startswith("'"):
+                return line
 
-        arena = self.parse_ctx.arena
-        line_reader = reader.StringLineReader(line, arena)
-        lexer = self.parse_ctx.MakeLexer(line_reader)
+            arena = self.parse_ctx.arena
+            line_reader = reader.StringLineReader(line, arena)
+            lexer = self.parse_ctx.MakeLexer(line_reader)
 
-        # The parser only yields valid tokens:
-        #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
-        # So we can use word_compile.EvalCStringToken, which is also used for
-        # $''.
-        # Important: we don't generate Id.Unknown_Backslash because that is valid
-        # in echo -e.  We just make it Id.Unknown_Tok?
+            # The parser only yields valid tokens:
+            #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
+            # So we can use word_compile.EvalCStringToken, which is also used for
+            # $''.
+            # Important: we don't generate Id.Unknown_Backslash because that is valid
+            # in echo -e.  We just make it Id.Unknown_Tok?
 
-        # TODO: read location info should know about stdin, and redirects, and
-        # pipelines?
-        with alloc.ctx_SourceCode(arena, source.Stdin('')):
-            tokens = qsn_native.Parse(lexer)
-        tmp = [word_compile.EvalCStringToken(t) for t in tokens]
-        return ''.join(tmp)
+            # TODO: read location info should know about stdin, and redirects, and
+            # pipelines?
+            with alloc.ctx_SourceCode(arena, source.Stdin('')):
+                #tokens = qsn_native.Parse(lexer)
+                pass
+            #tmp = [word_compile.EvalCStringToken(t) for t in tokens]
+            #return ''.join(tmp)
+            return ''
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -376,8 +380,8 @@ class Read(vm._Builtin):
                 elif line.endswith('\n'):
                     line = line[:-1]
 
-            # TODO: This should be --j8 or --json
-            if arg.q:
+            #if arg.q:
+            if 0:  # might return as --j8-word, --j8-line, or something
                 try:
                     line = self._MaybeDecodeLine(line)
                 except error.Parse as e:
@@ -404,8 +408,8 @@ class Read(vm._Builtin):
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
 
-        if arg.q and not arg.line:
-            e_usage('--qsn can only be used with --line', loc.Missing)
+        #if arg.q and not arg.line:
+        #    e_usage('--qsn can only be used with --line', loc.Missing)
 
         if arg.line or arg.all:
             return self._ReadYsh(arg, arg_r, cmd_val)

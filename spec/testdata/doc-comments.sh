@@ -11,7 +11,7 @@ g() {
 }
 
 proc myproc {
-  ### Oil-style proc
+  ### YSH-style proc
   echo myproc
 }
 

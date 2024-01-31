@@ -57,9 +57,8 @@ core/ui.py
 core/util.py
 core/vm.py
 data_lang/j8.py
+data_lang/j8_lite.py
 data_lang/pyj8.py
-data_lang/qsn.py
-data_lang/qsn_native.py
 frontend/args.py
 frontend/builtin_def.py
 frontend/consts.py

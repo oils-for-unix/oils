@@ -35,6 +35,9 @@ test-hello() {
 soil-run() {
   ### Used by soil/worker.sh.  Prints to stdout.
 
+  echo 'DISABLED because ASDL now depends on fastfunc, which is Python 2'
+  return
+
   run-test-funcs
 
   check

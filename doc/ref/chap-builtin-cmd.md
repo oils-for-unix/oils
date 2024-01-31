@@ -265,19 +265,96 @@ YSH adds buffered, line-oriented I/O to shell's `read`.
     read --line (&x)        # fills $x (&x is a place)
 
     read --line --with-eol  # keep the \n
-    read --line --qsn       # decode QSN too
 
     read --all              # whole file including newline, in $_reply
     read --all (&x)         # fills $x
 
     read -0                 # read until NUL, synonym for read -r -d ''
 
-When --qsn is passed, the line is check for an opening single quote.  If so,
-it's decoded as QSN.  The line must have a closing single quote, and there
-can't be any non-whitespace characters after it.
+You may want to use `fromJ8()` or `fromJson()` after reading a line.
 
 <!--
+    read --line --json      # decode JSON string
+    read --line --j8        # decode J8 string
+
+When --json is passed, the line is checked for an opening `"`.  If present,
+it's decoded as a JSON string.
+
+When --j8 is passed, the line is checked for an opening `"` or `'` or `u'` or
+`b'`.  If present, it's decoded as a J8 string.
+
 TODO: read --netstr
+-->
+
+<!--
+
+Problem with read --json -- there's also https://jsonlines.org, which allows
+
+    {"my": "line"}
+
+That can be done with
+
+    while read --line {
+      var record = fromJson(_reply)
+    }
+
+This is distinct from:
+
+    while read --line --j8 {
+      echo $_reply
+    }
+
+This allows unquoted.  Maybe it should be read --j8-line
+
+What about write?  These would be the same:
+
+    write --json -- $s
+    write --j8 -- $s
+
+    write -- $[toJson(s)]
+    write -- $[toJ8(s)]
+
+    write --json -- @strs
+    write --j8 -- @strs
+
+    write -- @[toJson(s) for s in strs]
+    write -- @[toJ8(s) for s in strs]
+
+It's an argument for getting rid --json and --j8?  I already implemented them,
+but it makes the API smaller.
+
+I guess the main thing would be to AVOID quoting sometimes?
+
+    $ write --j8 -- unquoted
+    unquoted
+
+    $ write --j8 -- $'\'' '"'
+    "'"
+    "\""
+
+I think this could be the shell style?
+
+    $ write --shell-str -- foo bar baz
+
+Or it could be
+
+    $ write -- @[toShellString(s) for s in strs]
+
+I want this to be "J8 Lines", but it can be done in pure YSH.  It's not built
+into the interpreter.
+
+  foo/bar
+ "hi"
+b'hi'
+u'hi'
+
+But what about
+
+ Fool's Gold
+a'hi'  # This feels like an error?
+a"hi"  # what about this?
+
+Technically we CAN read those as literal strings
 -->
 
 ### write
@@ -289,11 +366,23 @@ newline.
 
 Examples:
 
-    write -- ale bean        # write two lines
-    write --qsn -- ale bean  # QSN encode, guarantees two lines
-    write -n -- ale bean     # synonym for --end '', like echo -n
+    write -- ale bean         # write two lines
+
+    write -n -- ale bean      # synonym for --end '', like echo -n
     write --sep '' --end '' -- a b        # write 2 bytes
     write --sep $'\t' --end $'\n' -- a b  # TSV line
+
+You may want to use `toJ8()` or `toJson()` before writing:
+
+    write -- $[toJ8(mystr)]
+    write -- $[toJson(mystr)]
+
+
+<!--
+    write --json -- ale bean  # JSON encode, guarantees two lines
+    write --j8 -- ale bean    # J8 encode, guarantees two lines
+-->
+
 
 ### fork
 

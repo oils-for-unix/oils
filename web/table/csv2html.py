@@ -76,7 +76,8 @@ class NullSchema:
 INTEGER_TYPES = ('integer',)
 
 # for sorting, right-justification
-NUMERIC_TYPES = ('double', 'number') + INTEGER_TYPES
+# Note: added 'float' as alias for 'double' to be compatible with TSV8
+NUMERIC_TYPES = ('double', 'float', 'number') + INTEGER_TYPES
 
 
 class Schema:
@@ -90,6 +91,7 @@ class Schema:
     s_cols['column_name'] = []
     s_cols['type'] = []
     s_cols['precision'] = []
+    s_cols['strftime'] = []
     for row in rows[1:]:
       for i, cell in enumerate(row):
         name = schema_col_names[i]
@@ -103,6 +105,10 @@ class Schema:
     self.precision_lookup = dict(
         (name, p) for (name, p) in
         zip(s_cols['column_name'], s_cols['precision']))
+
+    self.strftime_lookup = dict(
+        (name, p) for (name, p) in
+        zip(s_cols['column_name'], s_cols['strftime']))
 
     #log('SCHEMA %s', schema_col_names)
     #log('type_lookup %s', self.type_lookup)
@@ -147,6 +153,14 @@ class Schema:
   def ColumnPrecision(self, index):
     col_name = self.col_names[index]
     return self.precision_lookup.get(col_name, 1)  # default is arbitrary
+
+  def HasStrfTime(self, col_name):
+    # An explicit - means "no entry"
+    return self.strftime_lookup.get(col_name, '-') != '-'
+
+  def ColumnStrftime(self, index):
+    col_name = self.col_names[index]
+    return self.strftime_lookup.get(col_name, '-')
 
   def HasCssClassColumn(self):
     # It has to be the first column
@@ -214,9 +228,20 @@ def PrintRow(row, schema, css_class_pattern):
       except ValueError:
         pass  # NA
       else:
-        # commas AND floating point to a given precision
-        precision = schema.ColumnPrecision(i)
-        cell_str = '{0:,.{precision}f}'.format(cell_float, precision=precision)
+        # Floats can also be timestamps
+        fmt = schema.ColumnStrftime(i)
+        if fmt not in ('-', ''):
+            from datetime import datetime
+            t = datetime.fromtimestamp(cell_float)
+            if fmt == 'iso':
+                cell_str = t.isoformat()
+            else:
+                cell_str = t.strftime(fmt)
+        else:
+            # commas AND floating point to a given precision
+            # default precision is 1
+            precision = schema.ColumnPrecision(i)
+            cell_str = '{0:,.{precision}f}'.format(cell_float, precision=precision)
 
       # Percentage
       #cell_str = '{:.1f}%'.format(cell_float * 100)
@@ -256,7 +281,7 @@ def PrintColGroup(col_names, schema):
       continue
 
     # CSS class is used for sorting
-    if schema.IsNumeric(col):
+    if schema.IsNumeric(col) and not schema.HasStrfTime(col):
       css_class = 'number'
     else:
       css_class = 'case-insensitive'

@@ -292,10 +292,11 @@ TEST list_methods_test() {
   ASSERT_EQ(2, len(slice2));
   ASSERT_EQ(5, slice2->at(0));
 
-  List<int>* slice3 = ints->slice(1, 4, 2);
-  ASSERT_EQ(2, len(slice2));
+  List<int>* slice3 = ints->slice(1, 4);
+  ASSERT_EQ(3, len(slice3));
   ASSERT_EQ(6, slice3->at(0));
-  ASSERT_EQ(8, slice3->at(1));
+  ASSERT_EQ(7, slice3->at(1));
+  ASSERT_EQ(8, slice3->at(2));
 
   log("-- before pop(0)");
   for (int i = 0; i < len(ints); ++i) {

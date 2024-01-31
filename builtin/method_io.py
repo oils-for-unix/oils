@@ -3,6 +3,7 @@ from __future__ import print_function
 
 from _devbuild.gen.value_asdl import value, value_t
 
+from core import error
 from core import vm
 from mycpp.mylib import log
 from osh import prompt
@@ -31,6 +32,12 @@ class PromptVal(vm._Callable):
         io = rd.PosIO()
         what = rd.PosStr()
         rd.Done()  # no more args
+
+        # Bug fix: protect against crash later in PromptVal()
+        if len(what) != 1:
+            raise error.Expr(
+                'promptVal() expected a single char, got %r' % what,
+                rd.LeftParenToken())
 
         prompt_ev = cast(prompt.Evaluator, io.prompt_ev)
         return value.Str(prompt_ev.PromptVal(what))

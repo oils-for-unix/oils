@@ -4,17 +4,19 @@
 #define CORE_ERROR_MYCPP_H
 
 #include "_gen/asdl/hnode.asdl.h"
-#include "cpp/qsn.h"
+#include "cpp/data_lang.h"
 #include "mycpp/runtime.h"
 
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
+
+using value_asdl::value;  // This is a bit ad hoc
+
 namespace error {  // forward declare
 
   class _ErrorWithLocation;
   class Usage;
-  class Runtime;
   class Parse;
   class FailGlob;
   class RedirectEval;
@@ -22,10 +24,13 @@ namespace error {  // forward declare
   class Strict;
   class ErrExit;
   class Expr;
-  class UserError;
+  class Structured;
   class AssertionErr;
   class TypeErrVerbose;
   class TypeErr;
+  class Runtime;
+  class Decode;
+  class Encode;
 
 }  // forward declare namespace error
 
@@ -66,19 +71,6 @@ class Usage : public _ErrorWithLocation {
   }
 
   DISALLOW_COPY_AND_ASSIGN(Usage)
-};
-
-class Runtime {
- public:
-  Runtime(BigStr* msg);
-  BigStr* UserErrorString();
-  BigStr* msg;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(1, sizeof(Runtime));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(Runtime)
 };
 
 class Parse : public _ErrorWithLocation {
@@ -191,19 +183,23 @@ class Expr : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(Expr)
 };
 
-class UserError : public FatalRuntime {
+class Structured : public FatalRuntime {
  public:
-  UserError(int status, BigStr* msg, syntax_asdl::loc_t* location);
+  Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties = nullptr);
+  value::Dict* ToDict();
+
+  Dict<BigStr*, value_asdl::value_t*>* properties;
   
   static constexpr uint32_t field_mask() {
-    return FatalRuntime::field_mask();
+    return FatalRuntime::field_mask()
+         | maskbit(offsetof(Structured, properties));
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(UserError));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Structured));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(UserError)
+  DISALLOW_COPY_AND_ASSIGN(Structured)
 };
 
 class AssertionErr : public Expr {
@@ -249,6 +245,48 @@ class TypeErr : public TypeErrVerbose {
   }
 
   DISALLOW_COPY_AND_ASSIGN(TypeErr)
+};
+
+class Runtime {
+ public:
+  Runtime(BigStr* msg);
+  BigStr* UserErrorString();
+  BigStr* msg;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(Runtime));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Runtime)
+};
+
+class Decode {
+ public:
+  Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos);
+  BigStr* Message();
+  BigStr* msg;
+  BigStr* s;
+  int start_pos;
+  int end_pos;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(2, sizeof(Decode));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Decode)
+};
+
+class Encode {
+ public:
+  Encode(BigStr* msg);
+  BigStr* Message();
+  BigStr* msg;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(Encode));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Encode)
 };
 
 [[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location);

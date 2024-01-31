@@ -58,6 +58,7 @@ SOURCE_SPEC.LongFlag('--builtin')
 COMMAND_SPEC = FlagSpec('command')
 COMMAND_SPEC.ShortFlag('-v')
 COMMAND_SPEC.ShortFlag('-V')
+COMMAND_SPEC.ShortFlag('-p')
 
 TYPE_SPEC = FlagSpec('type')
 TYPE_SPEC.ShortFlag('-f')
@@ -117,9 +118,14 @@ READ_SPEC.LongFlag('--all')
 READ_SPEC.LongFlag('--line')
 # don't strip the trailing newline
 READ_SPEC.LongFlag('--with-eol')
-# Decode QSN after reading a line.  Note: A QSN string can't have literal
-# newlines or tabs; they must be escaped.
-READ_SPEC.ShortFlag('-q', long_name='--qsn')
+READ_SPEC.LongFlag('--json',
+                   args.Bool,
+                   default=False,
+                   help='Read elements as JSON strings')
+READ_SPEC.LongFlag('--j8',
+                   args.Bool,
+                   default=False,
+                   help='Read elements as J8 strings')
 
 MAPFILE_SPEC = FlagSpec('mapfile')
 MAPFILE_SPEC.ShortFlag('-t')
@@ -444,27 +450,30 @@ WRITE_SPEC.LongFlag('--end',
 WRITE_SPEC.ShortFlag('-n',
                      args.Bool,
                      help="Omit newline (synonym for -end '')")
+# Do we need these two?
+WRITE_SPEC.LongFlag('--json',
+                    args.Bool,
+                    default=False,
+                    help='Write elements as JSON strings(lossy)')
 WRITE_SPEC.LongFlag('--j8',
                     args.Bool,
                     default=False,
-                    help='Write elements with J8 notation, one per line')
+                    help='Write elements as J8 strings')
 # TODO: --jlines for conditional j"" prefix?  Like maybe_shell_encode()
 
-# TODO: remove this
-WRITE_SPEC.LongFlag('--qsn',
-                    args.Bool,
-                    default=False,
-                    help='Write elements in QSN format')
-
-# x means I want \x00
-# u means I want \u{1234}
-# raw is utf-8
-# might also want: maybe?
-WRITE_SPEC.LongFlag('--unicode', ['raw', 'u', 'x'],
-                    default='raw',
-                    help='Encode QSN with these options.  '
-                    'x assumes an opaque byte string, while raw and u try to '
-                    'decode UTF-8.')
+# Legacy that's not really needed with J8 notation.  The = operator might use a
+# separate pretty printer that shows \u{3bc}
+#
+#   x means I want \x00
+#   u means I want \u{1234}
+#   raw is utf-8
+if 0:
+    WRITE_SPEC.LongFlag(
+        '--unicode', ['raw', 'u', 'x'],
+        default='raw',
+        help='Encode QSN with these options.  '
+        'x assumes an opaque byte string, while raw and u try to '
+        'decode UTF-8.')
 
 PUSH_REGISTERS_SPEC = FlagSpec('push-registers')
 

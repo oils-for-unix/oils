@@ -11,10 +11,10 @@ from benchmarks import uftrace_allocs  # module under test
 
 class PluginTest(unittest.TestCase):
 
-  def testFoo(self):
-    s = uftrace_allocs.Stats('_tmp')
-    print(s)
+    def testFoo(self):
+        s = uftrace_allocs.Stats('_tmp')
+        print(s)
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

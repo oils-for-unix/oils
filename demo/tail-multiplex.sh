@@ -33,6 +33,9 @@ parallel2() {
 
   multitail _tmp/d1 _tmp/d2
 
+  # UI doesn't have both files?
+  #lnav -t _tmp/d1 _tmp/d2
+
   wait
   wait
   echo done

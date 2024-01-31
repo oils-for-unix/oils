@@ -1131,15 +1131,16 @@ UTF-8 is the foundation of our textual data languages.
 <!-- TODO: there's a runes() iterator which gives integer offsets, usable for
 slicing -->
 
-### Lines of Text (traditional), and QSN
+<!-- TODO: write about J8 notation -->
+
+### Lines of Text (traditional), and JSON/J8 Strings
 
 Traditional Unix tools like `grep` and `awk` operate on streams of lines.  YSH
-supports this style as well as any other shell.
+supports this style, just like any other shell.
 
-But YSH also has [QSN: Quoted String Notation][QSN], an interchange format
-which is borrowed from Rust's string literal notation.
+But YSH also has [J8 Notation][], a data format based on [JSON][].
 
-[QSN]: qsn.html
+[J8 Notation]: j8-notation.html
 
 It lets you encode arbitrary byte strings into a single (readable) line,
 including those with newlines and terminal escape sequences.
@@ -1149,18 +1150,15 @@ Example:
     # A line with a tab char in the middle
     var mystr = u'pea\t' ++ u'42\n'
 
-    # Print it to stdout
-    write --qsn $mystr  # => 'pea\t42\n'
+    # Print it as JSON
+    write $[toJson(mystr)]  # => "pea\t42\n"
 
-    # Write and read
-    write --qsn $mystr h| read --qsn --line
-    if (_reply === mystr) {
-      echo 'serialized string to QSN and back'
-    }  # => serialized string to QSN and back
+    # J8 is the same, but it's not lossy for binary data
+    write $[toJ8(mystr)]  # => "pea\t42\n"
 
-### Structured: JSON, QTT
+### Structured: JSON8, TSV8
 
-**Tree-shaped** data can be read and written as [JSON][]:
+You can write and read **tree-shaped** as [JSON][]:
 
     var d = {key: 'value'}
     json write (d)                # dump variable d as JSON
@@ -1176,8 +1174,17 @@ Example:
     # =>
     # ['ale', 42]
 
-[JSON]: json.html
-[QTT]: qtt.html
+[JSON][] will lose information when strings have binary data, but the slight
+[JSON8]($xref) upgrade won't:
+
+    var b = {binary: $'\xff'}
+    json8 write (b)
+    # =>
+    # {
+    #   "binary": b'\yff'
+    # }
+
+[JSON]: $xref
 
 <!--
 TODO:
@@ -1185,8 +1192,8 @@ TODO:
 - Use json write (d) syntax
 -->
 
-**Table-shaped** data can be read and written as [QTT: Quoted, Typed
-Tables](qtt.html).  (TODO: not yet implemented.)
+**Table-shaped** data can be read and written as [TSV8]($xref).  (TODO: not yet
+implemented.)
 
 <!-- Figure out the API.  Does it work like JSON?
 
@@ -1203,7 +1210,6 @@ More later:
 - MessagePack (e.g. for shared library extension modules)
   - msgpack read, write?  I think user-defined function could be like this?
 - SASH: Simple and Strict HTML?  For easy processing
-- QTT: should also allow hex float representation for exactness
 -->
 
 ## The Runtime Shared by OSH and YSH
@@ -1269,7 +1275,7 @@ These concepts are central to YSH:
 
 1. Interleaved *word*, *command*, and *expression* languages.
 2. A standard library of *shell builtins*, as well as *builtin functions*
-3. Languages for *data*: JSON, QSN, and QTT
+3. Languages for *data*: J8 Notation, including JSON8 and TSV8
 4. A *runtime* shared by OSH and YSH
 
 ## Related Docs
@@ -1326,10 +1332,9 @@ var x = 15 Mi                # units suffix
 
 Important builtins that aren't implemented:
 
-- `qtt` for [QTT](qtt.html) (analogous to JSON)
-  - selection, projection, sorting
 - `describe` for testing
 - `parseArgs()` to parse flags
+- Builtins for [TSV8]($xref) - selection, projection, sorting
 
 <!--
 

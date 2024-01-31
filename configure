@@ -395,6 +395,13 @@ echo_cpp() {
   else
     echo '/* #undef HAVE_READLINE */'
   fi
+
+  # Check if pwent is callable. E.g. bionic libc (Android) doesn't have it
+  if cc_quiet build/detect-pwent.c; then
+    echo '#define HAVE_PWENT 1'
+  else
+    echo '/* #undef HAVE_PWENT */'
+  fi
 }
 
 # Another way of working: set detected-config.mk ?

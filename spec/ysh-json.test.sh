@@ -56,9 +56,7 @@ json write ([{k: 'v', k2: 'v2'}, {}])
     "k": "v",
     "k2": "v2"
   },
-  {
-
-  }
+  {}
 ]
 ## END
 
@@ -113,12 +111,40 @@ status=2
 
 #### json read uses $_reply var
 
-echo '{"age": 42}' | json read
+# space before true
+echo ' true' | json read
+json write (_reply)
+
+## STDOUT:
+true
+## END
+
+#### json read then json write
+
+# BUG with space before true
+echo '{"name": "bob", "age": 42, "ok": true}' | json read
+json write (_reply)
+
+echo '{"name": "bob", "age": 42, "ok":true}' | json read
+json write (_reply)
+
+echo '{"name": {}, "age": {}}' | json read
 json write (_reply)
 
 ## STDOUT:
 {
-  "age": 42
+  "name": "bob",
+  "age": 42,
+  "ok": true
+}
+{
+  "name": "bob",
+  "age": 42,
+  "ok": true
+}
+{
+  "name": {},
+  "age": {}
 }
 ## END
 
@@ -788,4 +814,63 @@ echo len=$[len(_reply)]
 ## STDOUT:
 (List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
 len=1
+## END
+
+#### round trip: read/write with ysh
+
+var file = "$REPO_ROOT/spec/testdata/bug.json"
+#cat $file
+cat $file | json read (&cfg)
+json write (cfg) > ysh-json
+
+diff -u $file ysh-json
+echo diff=$?
+
+## STDOUT:
+diff=0
+## END
+
+#### round trip: read/write with ysh, read/write with Python 3 (bug regression)
+
+var file = "$REPO_ROOT/spec/testdata/bug.json"
+#cat $file
+cat $file | json read (&cfg)
+json write (cfg) > ysh-json
+
+cat ysh-json | python3 -c \
+  'import json, sys; obj = json.load(sys.stdin); json.dump(obj, sys.stdout, indent=2); print()' \
+  > py-json
+
+diff -u $file py-json
+echo diff=$?
+
+## STDOUT:
+diff=0
+## END
+
+#### Encoding bytes that don't hit UTF8_REJECT immediately (bug fix)
+
+var x = $'\xce'
+json8 write (x)
+declare -p x
+echo
+
+var y = $'\xbc'
+json8 write (y)
+declare -p y
+echo
+
+var z = $'\xf0\x9f\xa4\xff'
+json8 write (z)
+declare -p z
+
+## STDOUT:
+b'\yce'
+declare -- x=$'\xce'
+
+b'\ybc'
+declare -- y=$'\xbc'
+
+b'\yf0\y9f\ya4\yff'
+declare -- z=$'\xf0\x9f\xa4\xff'
 ## END

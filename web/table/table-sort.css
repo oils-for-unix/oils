@@ -28,6 +28,10 @@ td {
   text-align: right;
 }
 
+.timestamp {
+  text-align: right;
+}
+
 .highlight {
   background-color: #f0f0f0;
 }
