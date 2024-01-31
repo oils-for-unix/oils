@@ -240,9 +240,9 @@ List<T>* List<T>::slice(int begin, int end) {
   List<T>* result = NewList<T>();
   result->reserve(new_len);
 
-  for (int i = begin; i < end; ++i) {
-    result->append(slab_->items_[i]);
-  }
+  // Faster than append() in a loop
+  memcpy(result->slab_->items_, slab_->items_ + begin, new_len * sizeof(T));
+  result->len_ = new_len;
 
   return result;
 }
