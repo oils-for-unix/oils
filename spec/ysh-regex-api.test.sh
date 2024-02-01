@@ -84,6 +84,44 @@ yes
 yes
 ## END
 
+#### Eggex flags to treat newlines as special are respected
+shopt -s ysh:upgrade
+
+if (u'abc123\n' ~ / digit %end /) {
+  echo 'BUG'
+}
+if (u'abc\n123' ~ / %start digit /) {
+  echo 'BUG'
+}
+
+if (u'abc123\n' ~ / digit %end ; reg_newline /) {
+  echo 'yes'
+}
+if (u'abc\n123' ~ / %start digit ; reg_newline /) {
+  echo 'yes'
+}
+
+if (u'\n' ~ / . /) {
+  echo 'yes'
+}
+if (u'\n' ~ / !digit /) {
+  echo 'yes'
+}
+
+if (u'\n' ~ / . ; reg_newline /) {
+  echo 'BUG'
+}
+if (u'\n' ~ / !digit ; reg_newline /) {
+  echo 'BUG'
+}
+
+## STDOUT:
+yes
+yes
+yes
+yes
+## END
+
 #### Positional captures with _group
 shopt -s ysh:all
 
