@@ -320,17 +320,17 @@ Use this flag to ignore case when matching. For example, `/'foo'; i/` matches
 
 #### `reg_newline` (Multiline)
 
-With this flag, `%end`/`$` will match before a newline and `%start`/`^` will
-match after a newline.
+With this flag, `%end` will match before a newline and `%start` will match
+after a newline.
 
     u'abc123\n' ~ / digit %end ; reg_newline /    # true
     u'abc\n123' ~ / %start digit ; reg_newline /  # true
 
-Without the flag, `%start`/`^` and `%end`/`$` only match from the start or end
-of the string, respectively.
+Without the flag, `%start` and `%end` only match from the start or end of the
+string, respectively.
 
-    u'abc123\n' ~ / digit $ /                     # false
-    u'abc\n123' ~ / ^ digit /                     # false
+    u'abc123\n' ~ / digit %end /                  # false
+    u'abc\n123' ~ / %start digit /                # false
 
 Newlines are also ignored in `dot` and `![abc]` patterns.
 
