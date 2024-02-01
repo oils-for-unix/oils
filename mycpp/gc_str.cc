@@ -16,10 +16,10 @@ static const std::regex gStrFmtRegex("([^%]*)(?:%(-?[0-9]*)(.))?");
 static const int kMaxFmtWidth = 256;  // arbitrary...
 
 int BigStr::find(BigStr* needle, int pos) {
-  int len_ = len(this);
+  int length = len(this);
   DCHECK(len(needle) == 1);  // Oil's usage
   char c = needle->data_[0];
-  for (int i = pos; i < len_; ++i) {
+  for (int i = pos; i < length; ++i) {
     if (data_[i] == c) {
       return i;
     }
@@ -28,10 +28,10 @@ int BigStr::find(BigStr* needle, int pos) {
 }
 
 int BigStr::rfind(BigStr* needle) {
-  int len_ = len(this);
+  int length = len(this);
   DCHECK(len(needle) == 1);  // Oil's usage
   char c = needle->data_[0];
-  for (int i = len_ - 1; i >= 0; --i) {
+  for (int i = length - 1; i >= 0; --i) {
     if (data_[i] == c) {
       return i;
     }
@@ -99,12 +99,12 @@ bool BigStr::endswith(BigStr* s) {
 
 // Get a string with one character
 BigStr* BigStr::at(int i) {
-  int len_ = len(this);
+  int length = len(this);
   if (i < 0) {
-    i = len_ + i;
+    i = length + i;
   }
   DCHECK(i >= 0);
-  DCHECK(i < len_);  // had a problem here!
+  DCHECK(i < length);  // had a problem here!
 
   BigStr* result = NewStr(1);
   result->data_[0] = data_[i];
@@ -118,14 +118,14 @@ BigStr* BigStr::slice(int begin) {
 
 // s[begin:end]
 BigStr* BigStr::slice(int begin, int end) {
-  int len_ = len(this);
-  SLICE_ADJUST(begin, end, len_);
+  int length = len(this);
+  SLICE_ADJUST(begin, end, length);
 
-  DCHECK(0 <= begin && begin <= len_);
-  DCHECK(0 <= end && end <= len_);
+  DCHECK(0 <= begin && begin <= length);
+  DCHECK(0 <= end && end <= length);
 
   int new_len = end - begin;
-  DCHECK(0 <= new_len && new_len <= len_);
+  DCHECK(0 <= new_len && new_len <= length);
 
   BigStr* result = NewStr(new_len);
   memcpy(result->data_, data_ + begin, new_len);
@@ -141,20 +141,20 @@ List<BigStr*>* BigStr::splitlines(bool keep) {
 }
 
 BigStr* BigStr::upper() {
-  int len_ = len(this);
-  BigStr* result = NewStr(len_);
+  int length = len(this);
+  BigStr* result = NewStr(length);
   char* buffer = result->data();
-  for (int char_index = 0; char_index < len_; ++char_index) {
+  for (int char_index = 0; char_index < length; ++char_index) {
     buffer[char_index] = toupper(data_[char_index]);
   }
   return result;
 }
 
 BigStr* BigStr::lower() {
-  int len_ = len(this);
-  BigStr* result = NewStr(len_);
+  int length = len(this);
+  BigStr* result = NewStr(length);
   char* buffer = result->data();
-  for (int char_index = 0; char_index < len_; ++char_index) {
+  for (int char_index = 0; char_index < length; ++char_index) {
     buffer[char_index] = tolower(data_[char_index]);
   }
   return result;
@@ -163,15 +163,15 @@ BigStr* BigStr::lower() {
 BigStr* BigStr::ljust(int width, BigStr* fillchar) {
   DCHECK(len(fillchar) == 1);
 
-  int len_ = len(this);
-  int num_fill = width - len_;
+  int length = len(this);
+  int num_fill = width - length;
   if (num_fill < 0) {
     return this;
   } else {
     BigStr* result = NewStr(width);
     char c = fillchar->data_[0];
-    memcpy(result->data_, data_, len_);
-    for (int i = len_; i < width; ++i) {
+    memcpy(result->data_, data_, length);
+    for (int i = length; i < width; ++i) {
       result->data_[i] = c;
     }
     return result;
@@ -181,8 +181,8 @@ BigStr* BigStr::ljust(int width, BigStr* fillchar) {
 BigStr* BigStr::rjust(int width, BigStr* fillchar) {
   DCHECK(len(fillchar) == 1);
 
-  int len_ = len(this);
-  int num_fill = width - len_;
+  int length = len(this);
+  int num_fill = width - length;
   if (num_fill < 0) {
     return this;
   } else {
@@ -191,7 +191,7 @@ BigStr* BigStr::rjust(int width, BigStr* fillchar) {
     for (int i = 0; i < num_fill; ++i) {
       result->data_[i] = c;
     }
-    memcpy(result->data_ + num_fill, data_, len_);
+    memcpy(result->data_ + num_fill, data_, length);
     return result;
   }
 }
@@ -478,7 +478,7 @@ List<BigStr*>* BigStr::split(BigStr* sep) {
 
 unsigned BigStr::hash(HashFunc h) {
   if (!is_hashed_) {
-    hash_ = h(data_, len_) >> 1;
+    hash_ = h(data_, len(this)) >> 1;
     is_hashed_ = 1;
   }
   return hash_;
