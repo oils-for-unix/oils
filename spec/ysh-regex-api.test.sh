@@ -774,3 +774,19 @@ write status=$_status
 123
 status=3
 ## END
+
+#### Str=>replace(Eggex, *), eflags
+shopt --set ysh:all
+
+var mystr = $'1-2-3\n4-5'
+write $[mystr => replace(/ d+ /, ^"[$0]")]
+write $[mystr => replace(/ ^ d+ /, ^"[$0]")]
+write $[mystr => replace(/ ^ d+ ; reg_newline /, ^"[$0]")]
+## STDOUT:
+[1]-[2]-[3]
+[4]-[5]
+[1]-2-3
+4-5
+[1]-2-3
+[4]-5
+## END
