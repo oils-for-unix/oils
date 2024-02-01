@@ -87,31 +87,31 @@ yes
 #### Eggex flags to treat newlines as special are respected
 shopt -s ysh:upgrade
 
-if ($'abc123\n' ~ / digit $ /) {
+if (u'abc123\n' ~ / digit $ /) {
   echo 'BUG'
 }
-if ($'abc\n123' ~ / ^ digit /) {
+if (u'abc\n123' ~ / ^ digit /) {
   echo 'BUG'
 }
 
-if ($'abc123\n' ~ / digit $ ; reg_newline /) {
+if (u'abc123\n' ~ / digit $ ; reg_newline /) {
   echo 'yes'
 }
-if ($'abc\n123' ~ / ^ digit ; reg_newline /) {
-  echo 'yes'
-}
-
-if ($'\n' ~ / . /) {
-  echo 'yes'
-}
-if ($'\n' ~ / !digit /) {
+if (u'abc\n123' ~ / ^ digit ; reg_newline /) {
   echo 'yes'
 }
 
-if ($'\n' ~ / . ; reg_newline /) {
+if (u'\n' ~ / . /) {
+  echo 'yes'
+}
+if (u'\n' ~ / !digit /) {
+  echo 'yes'
+}
+
+if (u'\n' ~ / . ; reg_newline /) {
   echo 'BUG'
 }
-if ($'\n' ~ / !digit ; reg_newline /) {
+if (u'\n' ~ / !digit ; reg_newline /) {
   echo 'BUG'
 }
 
