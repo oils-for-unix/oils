@@ -311,20 +311,36 @@ Flags and translation preferences together:
 
     / digit+ ; ignorecase ; python /  # could translate to (?i)\d+
 
-The following flags are currently supported:
+In Oils, the following flags are currently supported:
 
-#### `i` / `reg_icase` (Ignore Case)
+#### `reg_icase` / `i` (Ignore Case)
 
-**With** this flag, the match _is not_ case sensitive.
-
-**Without** this flag, the match _is_ case sensitive.
+Use this flag to ignore case when matching. For example, `/'foo'; i/` matches
+'FOO', but `/'foo'/` doesn't.
 
 #### `reg_newline` (Multiline)
 
-**With** this flag, `$` will match before a newline and `^` will match after a
-newline. Newlines are also ignored in `dot` and `!...` patterns.
+With this flag, `%end`/`$` will match before a newline and `%start`/`^` will
+match after a newline.
 
-**Without** this flag, the newline `\n` is treated as an ordinary character.
+    u'abc123\n' ~ / digit %end ; reg_newline /    # true
+    u'abc\n123' ~ / %start digit ; reg_newline /  # true
+
+Without the flag, `%start`/`^` and `%end`/`$` only match from the start or end
+of the string, respectively.
+
+    u'abc123\n' ~ / digit $ /                     # false
+    u'abc\n123' ~ / ^ digit /                     # false
+
+Newlines are also ignored in `dot` and `![abc]` patterns.
+
+    u'\n' ~ / . /                                 # true
+    u'\n' ~ / !digit /                            # true
+
+Without this flag, the newline `\n` is treated as an ordinary character.
+
+    u'\n' ~ / . ; reg_newline /                   # false
+    u'\n' ~ / !digit ; reg_newline /              # false
 
 ### Multiline Syntax
 
