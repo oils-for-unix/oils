@@ -311,6 +311,21 @@ Flags and translation preferences together:
 
     / digit+ ; ignorecase ; python /  # could translate to (?i)\d+
 
+The following flags are currently supported:
+
+#### `i` / `reg_icase` (Ignore Case)
+
+**With** this flag, the match _is not_ case sensitive.
+
+**Without** this flag, the match _is_ case sensitive.
+
+#### `reg_newline` (Multiline)
+
+**With** this flag, `$` will match before a newline and `^` will match after a
+newline. Newlines are also ignored in `dot` and `!...` patterns.
+
+**Without** this flag, the newline `\n` is treated as an ordinary character.
+
 ### Multiline Syntax
 
 You can spread regexes over multiple lines and add comments:
