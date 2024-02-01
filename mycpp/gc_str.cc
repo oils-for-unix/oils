@@ -197,6 +197,11 @@ BigStr* BigStr::rjust(int width, BigStr* fillchar) {
 }
 
 BigStr* BigStr::replace(BigStr* old, BigStr* new_str) {
+  // Use -1 as in python2: "aaaa".replace(-1) -> "AAAA"
+  return replace(old, new_str, -1);
+}
+
+BigStr* BigStr::replace(BigStr* old, BigStr* new_str, int count) {
   // log("replacing %s with %s", old_data, new_str->data_);
   const char* old_data = old->data_;
 
@@ -209,12 +214,20 @@ BigStr* BigStr::replace(BigStr* old, BigStr* new_str) {
 
   // First pass: Calculate number of replacements, and hence new length
   int replace_count = 0;
-  while (p_this <= last_possible) {
-    if (memcmp(p_this, old_data, old_len) == 0) {  // equal
-      replace_count++;
-      p_this += old_len;
-    } else {
-      p_this++;
+  if (old_len == 0) {
+    replace_count = this_len + 1;
+    if (count > 0) {
+      replace_count = min(replace_count, count);
+    }
+  } else {
+    while (p_this <= last_possible) {
+      if (replace_count != count &&  // limit replacements (if count != -1)
+          memcmp(p_this, old_data, old_len) == 0) {  // equal
+        replace_count++;
+        p_this += old_len;
+      } else {
+        p_this++;
+      }
     }
   }
 
@@ -236,20 +249,47 @@ BigStr* BigStr::replace(BigStr* old, BigStr* new_str) {
   // Second pass: Copy pieces into 'result'
   p_this = data_;                  // back to beginning
   char* p_result = result->data_;  // advances through 'result'
+  replace_count = 0;
 
-  while (p_this <= last_possible) {
-    // Note: would be more efficient if we remembered the match positions
-    if (memcmp(p_this, old_data, old_len) == 0) {  // equal
-      memcpy(p_result, new_data, new_len);         // Copy from new_str
-      p_result += new_len;
-      p_this += old_len;
-    } else {  // copy 1 byte
+  if (old_len == 0) {
+    // Should place new_str between each char in this
+    while (p_this < last_possible && replace_count != count) {
+      replace_count++;
+      memcpy(p_result, new_data, new_len);  // Copy from new_str
+      p_result += new_len;                  // Move past new_str
+
+      // Write a char from this
       *p_result = *p_this;
-      p_result++;
       p_this++;
+      p_result++;
     }
+
+    if (replace_count != count) {
+      // Write a copy of new_str at the end
+      assert(p_this == last_possible);
+      memcpy(p_result, new_data, new_len);
+    } else if (p_this <= last_possible) {
+      // Write the last part of string
+      memcpy(p_result, p_this, data_ + this_len - p_this);
+    }
+  } else {
+    while (p_this <= last_possible) {
+      // Note: would be more efficient if we remembered the match positions
+      if (replace_count != count &&  // limit replacements (if count != -1)
+          memcmp(p_this, old_data, old_len) == 0) {  // equal
+        memcpy(p_result, new_data, new_len);         // Copy from new_str
+        replace_count++;
+        p_result += new_len;
+        p_this += old_len;
+      } else {  // copy 1 byte
+        *p_result = *p_this;
+        p_result++;
+        p_this++;
+      }
+    }
+    memcpy(p_result, p_this, data_ + this_len - p_this);  // last part of string
   }
-  memcpy(p_result, p_this, data_ + this_len - p_this);  // last part of string
+
   return result;
 }
 

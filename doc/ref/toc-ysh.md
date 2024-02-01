@@ -237,7 +237,7 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-type-method
   [Primitive] Bool   Int   Float   Str   Slice   Range   
-  [Str]       X find(eggex)   X replace(eggex, template)
+  [Str]       X find(eggex)   replace()
               startsWith()   X endsWith()
               X trim()   X trimLeft()   X trimRight()
               X trimPrefix()   X trimSuffix()

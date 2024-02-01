@@ -26,7 +26,7 @@ class ctx_Shvar(object):
     """For shvar LANG=C _ESCAPER=posix-sh-word _DIALECT=ninja."""
 
     def __init__(self, mem, pairs):
-        # type: (state.Mem, List[Tuple[str, str]]) -> None
+        # type: (state.Mem, List[Tuple[str, value_t]]) -> None
         #log('pairs %s', pairs)
         self.mem = mem
         self.restore = []  # type: List[Tuple[LeftName, value_t]]
@@ -43,13 +43,13 @@ class ctx_Shvar(object):
     # Note: _Push and _Pop are separate methods because the C++ translation
     # doesn't like when they are inline in __init__ and __exit__.
     def _Push(self, pairs):
-        # type: (List[Tuple[str, str]]) -> None
-        for name, s in pairs:
+        # type: (List[Tuple[str, value_t]]) -> None
+        for name, v in pairs:
             lval = location.LName(name)
             # LocalOnly because we are only overwriting the current scope
             old_val = self.mem.GetValue(name, scope_e.LocalOnly)
             self.restore.append((lval, old_val))
-            self.mem.SetNamed(lval, value.Str(s), scope_e.LocalOnly)
+            self.mem.SetNamed(lval, v, scope_e.LocalOnly)
 
     def _Pop(self):
         # type: () -> None
@@ -80,7 +80,7 @@ class Shvar(vm._Builtin):
             # But should there be a whitelist?
             raise error.Usage('expected a block', loc.Missing)
 
-        pairs = []  # type: List[Tuple[str, str]]
+        pairs = []  # type: List[Tuple[str, value_t]]
         args, arg_locs = arg_r.Rest2()
         if len(args) == 0:
             raise error.Usage('Expected name=value', loc.Missing)
@@ -89,7 +89,8 @@ class Shvar(vm._Builtin):
             name, s = mylib.split_once(arg, '=')
             if s is None:
                 raise error.Usage('Expected name=value', arg_locs[i])
-            pairs.append((name, s))
+            v = value.Str(s)  # type: value_t
+            pairs.append((name, v))
 
             # Important fix: shvar PATH='' { } must make all binaries invisible
             if name == 'PATH':

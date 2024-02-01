@@ -854,6 +854,45 @@ test-method-type-errors() {
    _expr-error-case "var m = 'hi' => leftMatch(/'hi'/); = m => group(3.14)"
 }
 
+test-str-replace() {
+   # Some ad hoc tests - spec tests cover this
+   if false; then
+     _should-run '= "hi" => replace("i", "b")'
+     _should-run '= "hi" => replace(/[a-z]/, "b")'
+     _should-run '= "hi" => replace(/[a-z]/, "b", count=1)'
+     _should-run '= "foo42" => replace(/<capture d+>/, ^"hi $1")'
+     _should-run '= "foo42" => replace(/<capture d+ as num>/, ^"hi $num")'
+     _should-run '= "foo42" => replace(/<capture d+ as num>/, ^"hi ${num}")'
+     _should-run '= "foo42" => replace(/<capture d+ as num>/, ^"hi $[num]")'
+     # test out globals - is this desirable?
+     _should-run '= "foo42" => replace(/<capture d+ as num>/, ^["hi $[num] $PATH"])'
+     # -1 is replace all
+     _should-run '= "foo" => replace("o", "x", count=-1)'
+     _should-run '= "foo" => replace("o", "x", count=-2)'
+   fi
+   # Replace empty string?  Weird Python behavior
+   _should-run '= "foo" => replace("", "-")'
+   _should-run '= "foo" => replace("", "-", count=2)'
+
+   # Use Expr with string
+   _should-run '= "foo" => replace("o", ^"-")'
+   # $0 is regular $0 here
+   _should-run '= "foo" => replace("o", ^"-$0")'
+
+   # Hm $0 isn't set?
+   _should-run '= "foo" => replace(/[o]/, ^"-$0")'
+   # Here $1 is set
+   _should-run '= "foo" => replace(/<capture [o]>/, ^"-$1")'
+   _should-run '= "foo" => replace(/<capture [o] as letter>/, ^"-$letter")'
+
+   # Invalid arguments
+   _expr-error-case '= "foo" => replace(42, "x")'
+   _expr-error-case '= "foo" => replace("x", 42)'
+
+   # Invalid evaluation
+   _expr-error-case '= "foo" => replace("x", ^[42])'
+}
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

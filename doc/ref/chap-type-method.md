@@ -27,6 +27,52 @@ This chapter in the [Oils Reference](index.html) describes YSH types and methods
 
 ### replace()
 
+Replace substrings with a given string.
+
+    = mystr => replace("OSH", "YSH")
+
+Or match with an Eggex.
+
+    = mystr => replace(/ d+ /, "<redacted>")  # => "code is <redacted>"
+
+Refer to Eggex captures with replacement expressions. Captured values can be
+referenced with `$1`, `$2`, etc.
+
+    var mystr = "1989-06-08"
+    var pat = / <capture d{4}> '-' <capture d{2}> '-' <capture d{2}> /
+    = mystr => replace(pat, ^"Year: $1, Month: $2, Day: $3")
+
+Captures can also be named.
+
+    = mystr2 => replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
+
+`$0` refers to the entire capture itself in a substitution string.
+
+    var mystr = "replace with mystr => replace()"
+    = mystr => replace(/ alpha+ '=>' alpha+ '()' /, ^"<code>$0</code>")
+    # => "replace with <code>mystr => replace()</code>"
+
+In addition to captures, other variables can be referenced within a replacement
+expression.
+
+    = mystr => replace(/ <capture alpha+> /, ^"$1 and $anotherVar")
+
+To limit the number of replacements, pass in a named count argument. By default
+the count is `-1`. For any count in [0, MAX_INT], there will be at most count
+replacements. Any negative count means "replace all" (ie. `count=-2` behaves
+exactly like `count=-1`).
+
+    var mystr = "bob has a friend named bob"
+    = mystr => replace("bob", "Bob", count=1)   # => "Bob has a friend named bob"
+    = mystr => replace("bob", "Bob", count=-1)  # => "Bob has a friend named Bob"
+
+The following matrix of signatures are supported by `replace()`:
+
+    s => replace(string_val, subst_str)
+    s => replace(string_val, subst_expr)
+    s => replace(eggex_val, subst_str)
+    s => replace(eggex_val, subst_expr)
+
 ### startsWith()   
 
 ### endsWith()
