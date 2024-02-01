@@ -619,7 +619,7 @@ sq
 char class
 ## END
 
-#### Str=>replace(Str, Str)
+#### Str => replace(Str, Str)
 shopt --set ysh:all
 
 var mystr = 'abca'
@@ -637,7 +637,7 @@ a
 newanewbnewcnewanew
 ## END
 
-#### Str=>replace(Eggex, Str)
+#### Str => replace(Eggex, Str)
 shopt --set ysh:all
 
 var mystr = 'mangled----kebab--case'
@@ -650,7 +650,7 @@ mangled-kebab-case
 smaller---to---bigger
 ## END
 
-#### Str=>replace(Eggex, Expr)
+#### Str => replace(Eggex, Expr)
 shopt --set ysh:all
 
 var mystr = 'name: Bob'
@@ -661,7 +661,7 @@ Hello Bob
 Hello Bob (extracted from 'name: Bob')
 ## END
 
-#### Str=>replace(*, Expr), $0
+#### Str => replace(*, Expr), $0
 shopt --set ysh:all
 
 # Functionality
@@ -683,7 +683,7 @@ true
 true
 ## END
 
-#### Str=>replace(Eggex, Expr), scopes
+#### Str => replace(Eggex, Expr), scopes
 shopt --set ysh:all
 
 var mystr = '123'
@@ -701,7 +701,7 @@ Hello 123
 Hello 123, 456
 ## END
 
-#### Str=>replace(Eggex, *, count)
+#### Str => replace(Eggex, *, count)
 shopt --set ysh:all
 
 var mystr = '1abc2abc3abc'
@@ -739,7 +739,7 @@ for count in (-2..4) {
 1-2-3-
 ## END
 
-#### Str=>replace(Str, Str), empty new/old strings
+#### Str => replace(Str, Str), empty new/old strings
 var mystr = 'abca'
 write $[mystr => replace('abc', '')]            # Empty substitution
 write $[mystr => replace('', 'new')]            # Empty substring
@@ -752,7 +752,7 @@ newabca
 newanewbnewcnewanew
 ## END
 
-#### Str=>replace(Eggex, Lazy), convert_func
+#### Str => replace(Eggex, Lazy), convert_func
 shopt --set ysh:all
 
 var mystr = '123'
@@ -775,7 +775,7 @@ write status=$_status
 status=3
 ## END
 
-#### Str=>replace(Eggex, *), eflags
+#### Str => replace(Eggex, *), eflags
 shopt --set ysh:all
 
 var mystr = $'1-2-3\n4-5'
