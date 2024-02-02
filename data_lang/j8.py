@@ -374,7 +374,18 @@ class PrettyPrinter(object):
     Features like asdl/format.py:
     - line wrapping
     - color
-    - maybe print object IDs when there's sharing, not just for cycles?
+    - sharing detection by passing in a REF COUTN dict
+      - print @123 the first time, and then print ... the second time
+
+    and 
+
+    - Pretty spaces: {"k": "v", "k2": "v2"} instead of {"k":"v","k2","v2"}
+    - Unquoted: {k: "v", k2: "v2"} instead of {"k": "v", "k2": "v2"}
+
+    - Omitting commas for ASDL?  Maybe we can use two spaces
+
+    (Token id: Id.VSub_DollarName  start: 0  length: 3)
+    (Token id:Id.VSub_DollarName start:0 length:3)  - color makes this work
     """
 
     def __init__(self, max_col):
@@ -384,6 +395,10 @@ class PrettyPrinter(object):
         # This could be an optimized set an C++ bit set like
         # mark_sweep_heap.h, rather than a Dict
         self.unique_objs = mylib.UniqueObjects()
+
+        # first pass of object ID -> number of times references
+
+        self.ref_count = {}  # type: Dict[int, int]
 
     def PrettyTree(self, val, f):
         # type: (value_t, fmt.ColorOutput) -> None

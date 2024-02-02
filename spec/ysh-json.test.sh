@@ -884,4 +884,6 @@ echo ")" | json8 read
 echo status=$?
 
 ## STDOUT:
+status=1
+status=1
 ## END
