@@ -562,7 +562,6 @@ class Parser(object):
     def __init__(self, s, is_j8):
         # type: (str, bool) -> None
         self.s = s
-        self.is_j8 = is_j8
         self.lang_str = "J8" if is_j8 else "JSON"
 
         self.lexer = LexerDecoder(s, is_j8)
@@ -713,15 +712,9 @@ class Parser(object):
             raise self._Error('Unexpected EOF while parsing %s' %
                               self.lang_str)
 
-        elif self.tok_id == Id.Unknown_Tok:
+        else:  # Id.Unknown_Tok, Id.J8_{LParen,RParen}
             raise self._Error('Invalid token while parsing %s: %s' %
                               (self.lang_str, Id_str(self.tok_id)))
-
-        else:
-            # This should never happen
-            part = self.s[self.start_pos:self.end_pos]
-            raise AssertionError('Unexpected token %s %r' %
-                                 (Id_str(self.tok_id), part))
 
     def ParseValue(self):
         # type: () -> value_t
