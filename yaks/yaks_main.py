@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 """
 yaks.py - Generate C++ from Yaks IR.
 
@@ -19,7 +19,8 @@ from yaks import lex
 
 
 
-def Options() -> optparse.OptionParser:
+def Options():
+    # type: () -> optparse.OptionParser
     """Returns an option parser instance."""
 
     p = optparse.OptionParser()
@@ -49,7 +50,8 @@ def Options() -> optparse.OptionParser:
     return p
 
 
-def main(argv: List[str]) -> None:
+def main(argv):
+    # type: (List[str]) -> None
     o = Options()
     opts, argv = o.parse_args(argv)
 

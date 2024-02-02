@@ -18,15 +18,14 @@ build() {
 check() {
   build
 
-  # Does this do anything?
-  local flags='--strict'
-
-  python3 -m mypy $flags yaks/yaks_main.py
+  # pyext/fastfunc is a dependency of ASDL
+  # Source is Python 2
+  MYPYPATH='.:pyext' python3 -m mypy --strict --py2 yaks/yaks_main.py
 }
 
 test-hello() {
   # translate
-  yaks/yaks_main.py cpp yaks/examples/hello.yaks
+  PYTHONPATH='.:vendor' yaks/yaks_main.py cpp yaks/examples/hello.yaks
 
   # type check only
   # yaks/yaks.py check testdata/hello.yaks
@@ -34,9 +33,6 @@ test-hello() {
 
 soil-run() {
   ### Used by soil/worker.sh.  Prints to stdout.
-
-  echo 'DISABLED because ASDL now depends on fastfunc, which is Python 2'
-  return
 
   run-test-funcs
 

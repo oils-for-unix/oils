@@ -1,4 +1,3 @@
-
 """
 """
 
@@ -10,7 +9,8 @@ from _devbuild.gen.yaks_asdl import Token
 
 _MATCH = re.compile('TODO')
 
-def Lex(s: str) -> List[Token]:
+def Lex(s):
+    # type: (str) -> List[Token]
 
     # TODO: use regex
 
