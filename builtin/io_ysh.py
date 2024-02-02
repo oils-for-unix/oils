@@ -93,6 +93,7 @@ class Pp(_Builtin):
             rd.Done()
 
             tree = val.PrettyTree()
+            #tree = val.AbbreviatedTree()  # I used this to test cycle detection
 
             # TODO: ASDL should print the IDs.  And then they will be
             # line-wrapped.

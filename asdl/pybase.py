@@ -7,6 +7,7 @@ from mycpp import mylib
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.hnode_asdl import hnode_t
+    from asdl.runtime import TraversalState
 
 
 class Obj(object):
@@ -26,16 +27,16 @@ class CompoundObj(Obj):
     # types.  Never set for product types.
     _type_tag = 0  # Starts at 1.  Zero is invalid
 
-    def PrettyTree(self):
-        # type: () -> hnode_t
+    def PrettyTree(self, trav=None):
+        # type: (TraversalState) -> hnode_t
         raise NotImplementedError(self.__class__.__name__)
 
-    def _AbbreviatedTree(self):
-        # type: () -> hnode_t
+    def _AbbreviatedTree(self, trav=None):
+        # type: (TraversalState) -> hnode_t
         raise NotImplementedError(self.__class__.__name__)
 
-    def AbbreviatedTree(self):
-        # type: () -> hnode_t
+    def AbbreviatedTree(self, trav=None):
+        # type: (TraversalState) -> hnode_t
         raise NotImplementedError(self.__class__.__name__)
 
     def __repr__(self):

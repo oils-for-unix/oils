@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### pp asdl
 
@@ -26,6 +26,22 @@ grep -n -o value.Str out.txt
 ## STDOUT:
 1:value.Str
 2:value.Str
+## END
+
+#### pp asdl can handle an object cycle
+
+shopt -s ysh:upgrade
+
+var d = {}
+setvar d.cycle = d
+
+pp line (d) | fgrep -o '{"cycle":'
+
+pp asdl (d) | fgrep -o 'cycle ---'
+
+## STDOUT:
+{"cycle":
+cycle ---
 ## END
 
 #### pp line supports BashArray, BashAssoc
