@@ -50,7 +50,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## STDOUT:
 ## END
 ## STDERR:
-| command 12345: env false
+| command 12345: env 'false'
 ; process 12345: status 1
 . builtin set '+x'
 ## END
@@ -136,9 +136,9 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## stdout-json: ""
 ## STDERR:
-| command 12345: env false
+| command 12345: env 'false'
 ; process 12345: status 1
-. builtin true
+. builtin 'true'
 . builtin set '+x'
 ## END
 
@@ -300,7 +300,7 @@ set -x
 ## stdout-json: ""
 ## STDERR:
 . builtin ':' begin
-. builtin false
+. builtin 'false'
 . builtin ':' end
 ## END
 
