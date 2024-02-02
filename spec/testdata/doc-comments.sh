@@ -15,3 +15,8 @@ proc myproc {
   echo myproc
 }
 
+proc true {
+  ### Special quoting rule
+  echo hi
+}
+

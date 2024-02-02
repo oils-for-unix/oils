@@ -43,6 +43,13 @@ class FastfuncTest(unittest.TestCase):
     self.assertEqual(True, fastfunc.CanOmitQuotes('my-dir/my_file.cc'))
     self.assertEqual(False, fastfunc.CanOmitQuotes(''))
 
+    self.assertEqual(False, fastfunc.CanOmitQuotes('true'))
+    self.assertEqual(False, fastfunc.CanOmitQuotes('false'))
+    self.assertEqual(False, fastfunc.CanOmitQuotes('null'))
+
+    self.assertEqual(True, fastfunc.CanOmitQuotes('truez'))
+    self.assertEqual(True, fastfunc.CanOmitQuotes('nul'))
+
 
 if __name__ == '__main__':
   unittest.main()

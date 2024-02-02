@@ -105,6 +105,7 @@ proc_name	doc_comment
 f	"doc ' comment with \" quotes"
 g	""
 myproc	"YSH-style proc"
+"true"	"Special quoting rule"
 ---
 proc_name	doc_comment
 f	"doc ' comment with \" quotes"

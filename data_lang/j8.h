@@ -368,6 +368,21 @@ static inline int CanOmitQuotes(unsigned char* s, int len) {
     return 0;
   }
 
+  // 3 special case keywords
+  if (len == 4) {
+    if (memcmp(s, "null") == 0) {
+      return 0;
+    }
+    if (memcmp(s, "true") == 0) {
+      return 0;
+    }
+  }
+  if (len == 5) {
+    if (memcmp(s, "false") == 0) {
+      return 0;
+    }
+  }
+
   for (int i = 0; i < len; ++i) {
     unsigned char ch = s[i];
 
