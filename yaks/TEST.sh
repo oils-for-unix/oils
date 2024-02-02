@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   yaks/run.sh <function name>
+#   yaks/TEST.sh <function name>
 
 set -o nounset
 set -o pipefail

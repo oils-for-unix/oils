@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-j8.py: J8 Notation and Related Utilities
+j8.py: J8 Notation, a superset of JSON
 
 TODO:
 
@@ -14,12 +14,24 @@ Later:
   - line wrapping -- do this later
   - would like CONTRIBUTORS here
 
-- Unify with ASDL pretty printing?
-   {} [] are for JSON?
-   () is for statically typed ASDL data?
-      (command.Simple blame_tok:(...) words:[ ])
-      although we are also using [] for typed ASDL arrays, not just JSON
-   <> is for non-J8 errors?  For the = operator
+- Unify with ASDL pretty printing - TYG8
+   - {} [] are identical
+   - () is for statically typed ASDL data
+     (command.Simple blame_tok:(...) words:[ ])
+     although we are also using [] for typed ASDL arrays, not just JSON
+   - object IDs
+     - @0x123 can create an ID
+     - *0x123 can reference an ID
+       - or maybe <0x123> though that's longer
+   - <> can be for non-J8 data types?  For the = operator
+   - 'hi \(name)' interpolation is useful for code
+
+- Common between JSON8 and TYG8 - for writing by hand
+  - comments - # line or // line (JSON5 uses // line, following JS)
+  - unquoted identifier names - TYG8 could be more relaxed for (+ 1 (* 3 4))
+  - commas
+    - JSON8 could have trailing commas rule
+    - TYG8 at least has no commas for [1 2 "hi"]
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
@@ -51,12 +63,6 @@ assert pyj8.LOSSY_JSON == LOSSY_JSON
 class Printer(object):
     """
     For json/j8 write (x), write (x), = operator, pp line (x)
-
-    Options:
-    - Control over escaping: \\u \\x raw UTF-8
-    - Control over j prefix: when necessary, or always
-    - Control over strict JSON subset (--json vs --j8)
-    - Dumb indentation, not smart line wrapping
     """
 
     def __init__(self):
@@ -478,7 +484,7 @@ class LexerDecoder(object):
                 self.decoded.clear()  # reuse this instance
 
                 #log('decoded %r', self.decoded.getvalue())
-                return Id.J8_AnyString, str_end, s
+                return Id.J8_String, str_end, s
 
             #
             # Now handle each kind of token
@@ -596,7 +602,7 @@ class Parser(object):
         # type: () -> Tuple[str, value_t]
 
         k = self.decoded  # Save the potential string value
-        self._Eat(Id.J8_AnyString)  # Check that it's a string
+        self._Eat(Id.J8_String)  # Check that it's a string
         assert k is not None
 
         self._Eat(Id.J8_Colon)
@@ -697,7 +703,7 @@ class Parser(object):
             return value.Float(float(part))
 
         # UString, BString too
-        elif self.tok_id == Id.J8_AnyString:
+        elif self.tok_id == Id.J8_String:
             str_val = value.Str(self.decoded)
             #log('d %r', self.decoded)
             self._Next()

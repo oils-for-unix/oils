@@ -123,8 +123,8 @@ def Stringify(val, blame_loc, prefix=''):
 
         elif case(value_e.List):
             raise error.TypeErrVerbose(
-                "%sgot a List, which can't be stringified. Perhaps use @ instead of $, or use join()" % prefix,
-                blame_loc)
+                "%sgot a List, which can't be stringified. Perhaps use @ instead of $, or use join()"
+                % prefix, blame_loc)
 
         else:
             raise error.TypeErr(

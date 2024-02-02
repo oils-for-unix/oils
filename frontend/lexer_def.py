@@ -530,6 +530,8 @@ J8_DEF = [
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
     C('}', Id.J8_RBrace),
+    C('(', Id.J8_LParen),  # TYG8 only
+    C(')', Id.J8_RParen),  # TYG8 only
     C(',', Id.J8_Comma),
     C(':', Id.J8_Colon),
     C('null', Id.J8_Null),
