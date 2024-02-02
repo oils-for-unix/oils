@@ -352,3 +352,7 @@ ok
 [last=0] false
 [last=1] echo ok
 ## END
+## OK osh STDERR:
+[last=0] 'false'
+[last=1] echo ok
+## END

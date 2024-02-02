@@ -370,15 +370,15 @@ static inline int CanOmitQuotes(unsigned char* s, int len) {
 
   // 3 special case keywords
   if (len == 4) {
-    if (memcmp(s, "null") == 0) {
+    if (memcmp(s, "null", 4) == 0) {
       return 0;
     }
-    if (memcmp(s, "true") == 0) {
+    if (memcmp(s, "true", 4) == 0) {
       return 0;
     }
   }
   if (len == 5) {
-    if (memcmp(s, "false") == 0) {
+    if (memcmp(s, "false", 5) == 0) {
       return 0;
     }
   }

@@ -192,13 +192,13 @@ X [External Lang] BEGIN   END   when (awk)
                   X simple_trap          Function name only
   [YSH Breaking]  ... The Full YSH Language
                   parse_at_all           @ starting any word is an operator
-                  parse_backslash (-u)    Bad backslashes in $''
-                  parse_backticks (-u)    Legacy syntax `echo hi`
+                  parse_backslash (-u)    Allow bad backslashes in "" and $''
+                  parse_backticks (-u)    Allow legacy syntax `echo hi`
                   parse_bare_word (-u)   'case unquoted' and 'for x in unquoted'
-                  parse_dollar (-u)      Is $ allowed for \$?  Maybe $/d+/
+                  parse_dollar (-u)      Allow bare $ to mean \$  (maybe $/d+/)
                   parse_dparen (-u)      Is (( legacy arithmetic allowed?
                   parse_ignored (-u)     Parse, but ignore, certain redirects
-                  parse_sh_arith (-u)    Is legacy shell arithmetic allowed?
+                  parse_sh_arith (-u)    Allow legacy shell arithmetic
                   X copy_env (-u)        Use $[ENV->PYTHONPATH] when false
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
