@@ -1,7 +1,8 @@
 #ifndef DATA_LANG_J8_H
 #define DATA_LANG_J8_H
 
-#include <stdio.h>
+#include <stdio.h>  // sprintf
+#include <string.h>  // memcmp
 
 #include "data_lang/utf8_impls/bjoern_dfa.h"
 
