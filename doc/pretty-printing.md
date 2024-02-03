@@ -114,7 +114,14 @@ Identical to the dynamically typed case above.
 ## TODO
 
 - Fix ADSL cycle bug
+  - Fix it in C++
+
+- distinguish ... vs ---
+
 - Somehow do ASDL ref counts, because the thing is long
+  - to fix bin/osh -n
+
+
 - Write separate parser for TYG8
   - no commas, no JSON8, just () and []
     - (unquotedyaks unquotedjs:value) and [value value]

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## tags: dev-minimal
 
 #### usage errors
@@ -236,6 +236,20 @@ echo 'should have failed'
 ## STDOUT:
 1:{ ...
 ## END
+
+#### json write of List/Dict referenced twice (bug fix)
+
+var mylist = [1,2,3]
+var mydict = {foo: "bar"}
+
+var top = {k: mylist, k2: mylist, k3: mydict, k4: mydict}
+
+# BUG!
+json write (top)
+
+## STDOUT:
+## END
+
 
 #### json read doesn't accept u'' or b'' strings
 
