@@ -37,8 +37,9 @@ def ListDemo():
   for i in intlist:
     log("i = %d", i)
 
-  for i in intlist[0:len(intlist):2]:
-    log("stride i = %d", i)
+  # Disable step support
+  # for i in intlist[0:len(intlist):2]:
+  #   log("stride i = %d", i)
 
   log('1? %d', 1 in intlist)
   log('42? %d', 42 in intlist)

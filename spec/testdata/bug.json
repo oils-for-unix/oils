@@ -1,0 +1,25 @@
+{
+  "files": {
+    "etc": {},
+    "sw": {}
+  },
+  "modules": {
+    "mergePath": {
+      "enable": true
+    },
+    "shareNftables": {
+      "enable": true
+    },
+    "shareSystemd": {
+      "enable": true,
+      "replace": [],
+      "units": [
+        "nftables.service",
+        "nix-unify-at-boot.service"
+      ]
+    },
+    "useNixDaemon": {
+      "enable": true
+    }
+  }
+}

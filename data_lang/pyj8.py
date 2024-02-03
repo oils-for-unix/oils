@@ -10,6 +10,7 @@ _ = log
 
 LOSSY_JSON = 1 << 3
 
+
 def WriteString(s, options, buf):
     # type: (str, int, mylib.BufWriter) -> None
     """Write encoded J8 string to buffer.
@@ -22,6 +23,5 @@ def WriteString(s, options, buf):
 
 
 PartIsUtf8 = fastfunc.PartIsUtf8
-
 
 # vim: sw=4

@@ -233,6 +233,7 @@ make-job-wwz() {
 
   zip -q -r $wwz \
     index.html \
+    _build/wedge/logs \
     _test \
     _tmp/{soil,spec,src-tree-www,wild-www,stateful,process-table,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,gc-cachegrind,perf,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
     _tmp/uftrace/{index.html,stage2} \

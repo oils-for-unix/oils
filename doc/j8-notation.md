@@ -408,8 +408,8 @@ insignificant spaces)
 
 ### Related
 
-- <https://jsonlines.org/> 
-- <https://ndjson.org/> - Newline Delimited JSON
+- <https://jsonlines.org/> - this allows not just strings, any value like `{}`
+  and `[]`
 
 ## TSV8 - Table-Shaped Text
 

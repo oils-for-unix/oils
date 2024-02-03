@@ -119,10 +119,6 @@ id-kind() {
   sed --regexp-extended -i 's/id_kind[.]/id_kind_def./g' */*.py
 }
 
-import() {
-  sed --regexp-extended -i 's/from qsen_ import qsn/from qsn_ import qsn/' */*.py
-}
-
 options() {
   #sed -i 's/simple_echo/simple_echo/g' */*.{py,md,sh}
 

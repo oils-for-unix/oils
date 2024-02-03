@@ -1,5 +1,4 @@
-
-## oils_failures_allowed: 6
+## oils_failures_allowed: 3
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -79,44 +78,30 @@ a b_c d END
 xy
 ## END
 
-#### write --qsn
-write --qsn foo bar
-write __
+#### write --json
+shopt --set ysh:upgrade
 
-write --qsn 'abc def' ' 123 456'
-write __
-
-write --qsn $'one\ttwo\n'
-
+write --json u'\u{3bc}' x
+write --json b'\yfe\yff' y
 
 ## STDOUT:
-foo
-bar
-__
-'abc def'
-' 123 456'
-__
-'one\ttwo\n'
+"μ"
+"x"
+"��"
+"y"
 ## END
 
 #### write --j8
+shopt --set ysh:upgrade
 
-write --j8 j"\u{3bc}"
-
-## STDOUT:
-'μ'
-## END
-
-#### write --j8 --unicode
-
-write --j8 $'\u{3bc}'
-write --j8 --unicode u $'\u{3bc}'
-write --j8 --unicode x $'\u{3bc}'
+write --j8 u'\u{3bc}' x
+write --j8 b'\yfe\yff' y
 
 ## STDOUT:
-'μ'
-'\u{3bc}'
-'\xce\xbc'
+"μ"
+"x"
+b'\yfe\yff'
+"y"
 ## END
 
 #### write  -e not supported
@@ -212,33 +197,11 @@ myline=a
 myline=b
 ## END
 
-#### read --line --qsn
-read --line --qsn <<EOF
-'foo\n'
-EOF
-write --qsn -- "$_reply"
+#### read --line --j8
 
-read --line --qsn <<EOF
-'foo\tbar hex=\x01 mu=\u{3bc}'
-EOF
-write --qsn --unicode u -- "$_reply"
-
-echo '$' | read --line --qsn
-write --qsn -- "$_reply"
-
-## STDOUT:
-'foo\n'
-'foo\tbar hex=\u{1} mu=\u{3bc}'
-'$'
-## END
-
-#### read --line --qsn accepts optional $''
-
-# PROBLEM: is it limited to $'  ?  What about $3.99 ?
-# I think you just check for those 2 chars
-
-echo $'$\'foo\'' | read --line --qsn
+echo $'u\'foo\'' | read --line --j8
 write -- "$_reply"
+
 ## STDOUT:
 foo
 ## END
@@ -253,25 +216,8 @@ echo (x)
 
 #### read --line --with-eol --qsn
 
-# whitespace is allowed after closing single quote; it doesn't make a 
-# difference.
-
-read --line --with-eol --qsn <<EOF
-'foo\n'
-EOF
-write --qsn -- "$_reply"
 ## STDOUT:
-'foo\n'
-## END
-
-#### read --qsn usage
-read --qsn << EOF
 foo
-EOF
-echo status=$?
-
-## STDOUT:
-status=2
 ## END
 
 #### read --all-lines
@@ -288,20 +234,6 @@ write --sep '' -- @nums
 1
 2
 3
-## END
-
-#### read --all-lines --qsn --with-eol
-read --all-lines --qsn --with-eol :lines << EOF
-foo
-bar
-'one\ntwo'
-EOF
-write --sep '' -- @lines
-## STDOUT:
-foo
-bar
-one
-two
 ## END
 
 #### Can simulate read --all-lines with a proc and value.Place

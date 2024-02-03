@@ -2,5 +2,6 @@
 
 static PyMethodDef methods[] = {
   {"J8EncodeString", func_J8EncodeString, METH_VARARGS},
+  {"PartIsUtf8", func_PartIsUtf8, METH_VARARGS},
   {0},
 };

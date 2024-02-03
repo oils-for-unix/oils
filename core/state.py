@@ -8,6 +8,7 @@
 state.py - Interpreter state
 """
 from __future__ import print_function
+import time as time_  # avoid name conflict
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
@@ -62,6 +63,30 @@ SetNameref = 1 << 4
 ClearNameref = 1 << 5
 
 
+def LookupExecutable(name, path_dirs, exec_required=True):
+    # type: (str, List[str], bool) -> Optional[str]
+    """
+    Returns either
+    - the name if it's a relative path that exists
+    - the executable name resolved against path_dirs
+    - None if not found
+    """
+    if '/' in name:
+        return name if path_stat.exists(name) else None
+
+    for path_dir in path_dirs:
+        full_path = os_path.join(path_dir, name)
+        if exec_required:
+            found = posix.access(full_path, X_OK)
+        else:
+            found = path_stat.exists(full_path)
+
+        if found:
+            return full_path
+
+    return None
+
+
 class SearchPath(object):
     """For looking up files in $PATH."""
 
@@ -87,20 +112,9 @@ class SearchPath(object):
         """
         Returns the path itself (if relative path), the resolved path, or None.
         """
-        if '/' in name:
-            return name if path_stat.exists(name) else None
-
-        for path_dir in self._GetPath():
-            full_path = os_path.join(path_dir, name)
-            if exec_required:
-                found = posix.access(full_path, X_OK)
-            else:
-                found = path_stat.exists(full_path)
-
-            if found:
-                return full_path
-
-        return None
+        return LookupExecutable(name,
+                                self._GetPath(),
+                                exec_required=exec_required)
 
     def LookupReflect(self, name, do_all):
         # type: (str, bool) -> List[str]
@@ -1055,6 +1069,7 @@ class Mem(object):
         self.debug_stack = debug_stack
 
         self.pwd = None  # type: Optional[str]
+        self.seconds_start = time_.time()
 
         self.token_for_line = None  # type: Optional[Token]
         self.loc_for_expr = loc.Missing  # type: loc_t
@@ -1364,6 +1379,10 @@ class Mem(object):
     def GetArgNum(self, arg_num):
         # type: (int) -> value_t
         if arg_num == 0:
+            # $0 may be overriden, eg. by Str => replace()
+            vars = self.var_stack[-1]
+            if "0" in vars and vars["0"].val.tag() != value_e.Undef:
+                return vars["0"].val
             return value.Str(self.dollar0)
 
         return self.argv_stack[-1].GetArgNum(arg_num)
@@ -1798,13 +1817,7 @@ class Mem(object):
 
     def GetValue(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> value_t
-        """Used by the WordEvaluator, ArithEvaluator, ysh/expr_eval.py, etc.
-
-        TODO:
-        - Many of these should be value.Int, not value.Str
-        - And even later _pipeline_status etc. should be lists of integers, not
-          strings
-        """
+        """Used by the WordEvaluator, ArithEvaluator, ExprEvaluator, etc."""
         assert isinstance(name, str), name
 
         if which_scopes == scope_e.Shopt:
@@ -1816,6 +1829,7 @@ class Mem(object):
         # if name not in COMPUTED_VARS: ...
 
         if name == 'ARGV':
+            # TODO: ARGV can be a normal mutable variable in YSH
             items = [value.Str(s)
                      for s in self.GetArgv()]  # type: List[value_t]
             return value.List(items)
@@ -1941,11 +1955,15 @@ class Mem(object):
             self.line_num.s = str(self.token_for_line.line.line_num)
             return self.line_num
 
-        if name == 'BASHPID':  # TODO: Oil name for it
+        if name == 'BASHPID':  # TODO: YSH io->getpid()
             return value.Str(str(posix.getpid()))
 
         if name == '_':
             return value.Str(self.last_arg)
+
+        if name == 'SECONDS':
+            seconds = int(time_.time() - self.seconds_start)
+            return value.Int(seconds)
 
         # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
         # fix this:

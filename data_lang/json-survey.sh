@@ -74,6 +74,24 @@ EOF
     "$json" || true
 }
 
+encode-list-dict-indent() {
+  echo 'PYTHON'
+  python3 -c 'import json; val = {}; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = {"a": 42}; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = {"a": 42, "b": 43}; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = []; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = [42]; print(json.dumps(val, indent=4))'
+  echo
+
+  echo 'JS'
+  nodejs -e 'var val = {}; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = {"a": 42}; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = {"a": 42, "b": 43}; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = []; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = [42]; console.log(JSON.stringify(val, null, 4))'
+  echo
+}
+
 encode-obj-cycles() {
   python3 -c 'import json; val = {}; val["k"] = val; print(json.dumps(val))' || true
   echo
@@ -90,6 +108,24 @@ encode-obj-cycles() {
 
   nodejs -e 'var val = []; val.push(val); console.log(JSON.stringify(val))' || true
   echo
+}
+
+multiple-refs() {
+  # Python prints a tree
+  python3 -c 'import json; mylist = [1,2,3]; val = [mylist, mylist]; print(repr(val)); print(json.dumps(val))'
+  echo
+
+  # Same with node.js
+  nodejs -e 'var mylist = [1,2,3]; var val = [mylist, mylist]; console.log(val); console.log(JSON.stringify(val))'
+  echo
+
+  # Same with Oils
+  bin/osh -c 'var mylist = [1,2,3]; var val = [mylist, mylist]; = val; json write (val); pp asdl (val)'
+  echo
+}
+
+oils-cycles() {
+  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp line (d); pp asdl (d); json write (d)'
 }
 
 surrogate-pair() {

@@ -51,9 +51,6 @@ class List {
   // L[begin:end]
   List* slice(int begin, int end);
 
-  // L[begin:end:step]
-  List* slice(int begin, int end, int step);
-
   // Should we have a separate API that doesn't return it?
   // https://stackoverflow.com/questions/12600330/pop-back-return-value
   T pop();
@@ -224,50 +221,28 @@ template <typename T>
 List<T>* sorted(List<T>* l);
 
 // L[begin:]
-// TODO: Implement this in terms of slice(begin, end)
 template <typename T>
 List<T>* List<T>::slice(int begin) {
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-
-  DCHECK(begin >= 0);
-
-  List<T>* result = nullptr;
-  result = NewList<T>();
-
-  for (int i = begin; i < len_; i++) {
-    result->append(slab_->items_[i]);
-  }
-
-  return result;
+  return slice(begin, len_);
 }
 
 // L[begin:end]
 template <typename T>
 List<T>* List<T>::slice(int begin, int end) {
-  return slice(begin, end, 1);
-}
+  SLICE_ADJUST(begin, end, len_);
 
-// L[begin:end:step]
-template <typename T>
-List<T>* List<T>::slice(int begin, int end, int step) {
-  if (begin < 0) {
-    begin = len_ + begin;
-  }
-  if (end < 0) {
-    end = len_ + end;
-  }
+  DCHECK(0 <= begin && begin <= len_);
+  DCHECK(0 <= end && end <= len_);
 
-  DCHECK(end <= len_);
-  DCHECK(begin >= 0);
-  DCHECK(end >= 0);
+  int new_len = end - begin;
+  DCHECK(0 <= new_len && new_len <= len_);
 
   List<T>* result = NewList<T>();
-  // step might be negative
-  for (int i = begin; begin <= i && i < end; i += step) {
-    result->append(slab_->items_[i]);
-  }
+  result->reserve(new_len);
+
+  // Faster than append() in a loop
+  memcpy(result->slab_->items_, slab_->items_ + begin, new_len * sizeof(T));
+  result->len_ = new_len;
 
   return result;
 }

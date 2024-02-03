@@ -35,7 +35,7 @@ from mycpp import mylib
 from mycpp.mylib import log
 from osh import sh_expr_eval
 from osh import word_compile
-from data_lang import qsn
+from data_lang import j8_lite
 
 import posix_ as posix
 
@@ -282,11 +282,11 @@ class Printf(vm._Builtin):
                             s = s[:precision]  # truncate
 
                     elif typ == 'q':
-                        # TODO: most shells give \' for single quote, while OSH gives $'\''
-                        # this could matter when SSH'ing
+                        # Most shells give \' for single quote, while OSH gives
+                        # $'\'' this could matter when SSH'ing.
+                        # Ditto for $'\\' vs. '\'
 
-                        # Do we need fastfunc.PosixShellEncode()?
-                        s = qsn.maybe_shell_encode(s)
+                        s = j8_lite.MaybeShellEncode(s)
 
                     elif typ == 'b':
                         # Process just like echo -e, except \c handling is simpler.

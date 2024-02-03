@@ -551,9 +551,7 @@ shell-grammar() {
 }
 
 serialize() {
-  # dash doesn't have echo -e, $'', etc.
-  sh-spec spec/serialize.test.sh \
-    $BASH $MKSH $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file serialize "$@"
 }
 
 #

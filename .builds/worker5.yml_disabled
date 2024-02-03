@@ -9,15 +9,21 @@ packages:
   - python3
   - time
   - zip
+    # for SSH debugging!
+  - vim
 
 secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 
 tasks:
-  - dev-setup2: |
+  - dev-setup-fedora: |
       cd oil
-      soil/worker.sh JOB-dev-setup2
+      soil/worker.sh JOB-dev-setup-fedora
 
-  - publish-dev-setup2: |
+  - publish-dev-setup-fedora: |
       cd oil
-      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup2
+      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-fedora
+
+  - did-all-succeed: |
+      cd oil
+      soil/host-shim.sh did-all-succeed dev-setup-fedora

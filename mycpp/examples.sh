@@ -96,19 +96,19 @@ translate-parse() {
   local snippet='
 
 #include "expr_asdl.h"
-#include "qsn_qsn.h"
 
 Str* repr(void* obj) {
   return StrFromC("TODO: repr()");
 }
 
 '
+  # TODO: This is similar to prebuilt/translate.sh ASDL_FILES
   translate-ordered parse "$snippet"  \
     $REPO_ROOT/pylib/cgi.py \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/asdl/format.py \
     $REPO_ROOT/core/ansi.py \
-    $REPO_ROOT/data_lang/qsn.py \
+    $REPO_ROOT/data_lang/j8_lite.py \
     examples/parse.py 
 } 
 

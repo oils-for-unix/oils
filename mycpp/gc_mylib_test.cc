@@ -148,6 +148,11 @@ TEST BufWriter_test() {
   ASSERT(str_equals0("foobar", s));
   log("result = %s", s->data());
 
+  writer->clear();
+  writer->write(bar);
+  s = writer->getvalue();
+  ASSERT(str_equals0("bar", s));
+
   PASS();
 }
 

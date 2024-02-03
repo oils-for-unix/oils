@@ -1,16 +1,8 @@
 #!/usr/bin/env python2
 """
-j8.py: J8 Notation and Related Utilities
+j8.py: J8 Notation, a superset of JSON
 
 TODO:
-
-- Translate the whole thing to C++
-  - use Bjoern DFA for UTF-8 validation in printing and parsing
-  - move more of LexerDecoder out of pyj8.py?  I think it can translate
-
-- Remove most of QSN
-  - QSN maybe_shell_encode() is used for bash features
-  - Remove shell_compat which does \\x00 instead of \\0
 
 - Many more tests
   - Run JSONTestSuite
@@ -22,17 +14,24 @@ Later:
   - line wrapping -- do this later
   - would like CONTRIBUTORS here
 
-- Harmonize the API in data_lang/qsn.py 
-  - use mylib.BufWriter output
-  - use u_style.LiteralUtf8 instead of BIT8_UTF8, etc.
+- Unify with ASDL pretty printing - TYG8
+   - {} [] are identical
+   - () is for statically typed ASDL data
+     (command.Simple blame_tok:(...) words:[ ])
+     although we are also using [] for typed ASDL arrays, not just JSON
+   - object IDs
+     - @0x123 can create an ID
+     - *0x123 can reference an ID
+       - or maybe <0x123> though that's longer
+   - <> can be for non-J8 data types?  For the = operator
+   - 'hi \(name)' interpolation is useful for code
 
-- Unify with ASDL pretty printing?
-
-   {} [] are for JSON?
-   () is for statically typed ASDL data?
-      (command.Simple blame_tok:(...) words:[ ])
-      although we are also using [] for typed ASDL arrays, not just JSON
-   <> is for non-J8 errors?  For the = operator
+- Common between JSON8 and TYG8 - for writing by hand
+  - comments - # line or // line (JSON5 uses // line, following JS)
+  - unquoted identifier names - TYG8 could be more relaxed for (+ 1 (* 3 4))
+  - commas
+    - JSON8 could have trailing commas rule
+    - TYG8 at least has no commas for [1 2 "hi"]
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
@@ -47,11 +46,11 @@ from frontend import match
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
+import fastfunc
+
 _ = log
-unused = pyj8
 
 from typing import cast, Dict, List, Tuple, Optional
-
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
@@ -64,26 +63,12 @@ assert pyj8.LOSSY_JSON == LOSSY_JSON
 class Printer(object):
     """
     For json/j8 write (x), write (x), = operator, pp line (x)
-
-    Options:
-    - Control over escaping: \\u \\x raw UTF-8
-    - Control over j prefix: when necessary, or always
-    - Control over strict JSON subset (--json vs --j8)
-    - Dumb indentation, not smart line wrapping
     """
 
     def __init__(self):
         # type: () -> None
-        """
-        Args:
-          # These can all be packed into the same byte.  ASDL needs bit_set
-          # support I think?
-          options:
-            control j"" vs. ""
-            control escaping \\x and \\u escaping like QSN
-            pretty.UnquotedKeys - ASDL uses this?
-        """
-        self.options = 0
+
+        # TODO: should remove this in favor of BufWriter method
         self.spaces = {0: ''}  # cache of strings with spaces
 
     # Could be PrintMessage or PrintJsonMessage()
@@ -134,22 +119,42 @@ class Printer(object):
         f.write(buf.getvalue())
         f.write('\n')
 
+    def EncodeString(self, s, buf, unquoted_ok=False):
+        # type: (str, mylib.BufWriter, bool) -> None
+        """ For pp proc, etc."""
+
+        if unquoted_ok and fastfunc.CanOmitQuotes(s):
+            buf.write(s)
+            return
+
+        self._Print(value.Str(s), buf, -1)
+
     def MaybeEncodeString(self, s):
         # type: (str) -> str
-        """ For write --j8 $s  and compexport
+        """ For write --j8 $s  and compexport """
 
-        Do we also have write --json or --json-string?  That requires handling
-        error.Encode()
-
-        Do we also want write (x) to use J8 notation?  It's the default
-        serialization.  But j8 write (x) is simple enough.
-        """
-        # There should be an option to not quote "plain words" like
+        # TODO: add unquoted_ok here?
         # /usr/local/foo-bar/x.y/a_b
+
         buf = mylib.BufWriter()
         self._Print(value.Str(s), buf, -1)
         return buf.getvalue()
 
+    def MaybeEncodeJsonString(self, s):
+        # type: (str) -> str
+        """ For write --json """
+
+        # TODO: add unquoted_ok here?
+        # /usr/local/foo-bar/x.y/a_b
+        buf = mylib.BufWriter()
+        self._Print(value.Str(s), buf, -1, options=LOSSY_JSON)
+        return buf.getvalue()
+
+
+# DFS traversal state
+UNSEEN = 0
+EXPLORING = 1
+FINISHED = 2
 
 class InstancePrinter(object):
     """Print a value tree as J8/JSON."""
@@ -164,7 +169,7 @@ class InstancePrinter(object):
         # Key is vm.HeapValueId(val)
         # Value is always True
         # Dict[int, None] doesn't translate -- it would be nice to have a set()
-        self.seen = {}  # type: Dict[int, bool]
+        self.visited = {}  # type: Dict[int, int]
 
     def _GetIndent(self, num_spaces):
         # type: (int) -> str
@@ -172,16 +177,82 @@ class InstancePrinter(object):
             self.spaces[num_spaces] = ' ' * num_spaces
         return self.spaces[num_spaces]
 
+    def _PrintList(self, val, level):
+        # type: (value.List, int) -> None
+
+        if self.indent == -1:
+            bracket_indent = ''
+            item_indent = ''
+            maybe_newline = ''
+        else:
+            bracket_indent = self._GetIndent(level * self.indent)
+            item_indent = self._GetIndent((level + 1) * self.indent)
+            maybe_newline = '\n'
+
+        if len(val.items) == 0:  # Special case like Python/JS
+            self.buf.write('[]')
+        else:
+            self.buf.write('[')
+            self.buf.write(maybe_newline)
+            for i, item in enumerate(val.items):
+                if i != 0:
+                    self.buf.write(',')
+                    self.buf.write(maybe_newline)
+
+                self.buf.write(item_indent)
+                self.Print(item, level + 1)
+            self.buf.write(maybe_newline)
+
+            self.buf.write(bracket_indent)
+            self.buf.write(']')
+
+    def _PrintDict(self, val, level):
+        # type: (value.Dict, int) -> None
+
+        if self.indent == -1:
+            bracket_indent = ''
+            item_indent = ''
+            maybe_newline = ''
+            maybe_space = ''
+        else:
+            bracket_indent = self._GetIndent(level * self.indent)
+            item_indent = self._GetIndent((level + 1) * self.indent)
+            maybe_newline = '\n'
+            maybe_space = ' '  # after colon
+
+        if len(val.d) == 0:  # Special case like Python/JS
+            self.buf.write('{}')
+        else:
+            self.buf.write('{')
+            self.buf.write(maybe_newline)
+            i = 0
+            for k, v in iteritems(val.d):
+                if i != 0:
+                    self.buf.write(',')
+                    self.buf.write(maybe_newline)
+
+                self.buf.write(item_indent)
+
+                pyj8.WriteString(k, self.options, self.buf)
+
+                self.buf.write(':')
+                self.buf.write(maybe_space)
+
+                self.Print(v, level + 1)
+
+                i += 1
+
+            self.buf.write(maybe_newline)
+            self.buf.write(bracket_indent)
+            self.buf.write('}')
+
     def Print(self, val, level=0):
         # type: (value_t, int) -> None
-
-        #log('indent %r level %d', indent, level)
 
         # special value that means everything is on one line
         # It's like
         #    JSON.stringify(d, null, 0)
         # except we use -1, not 0.  0 can still have newlines.
-
         if self.indent == -1:
             bracket_indent = ''
             item_indent = ''
@@ -223,9 +294,17 @@ class InstancePrinter(object):
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = vm.HeapValueId(val)
-                if heap_id in self.seen:
+
+                node_state = self.visited.get(heap_id, UNSEEN)
+                if node_state == FINISHED:
+                    # Print it AGAIN.  We print a JSON tree, which means we can
+                    # visit and print nodes MANY TIMES, as long as they're not
+                    # in a cycle.
+                    self._PrintList(val, level)
+                    return
+                if node_state == EXPLORING:
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('[ ...%s ]' % vm.ValueIdString(val))
+                        self.buf.write('[ -->%s ]' % vm.ValueIdString(val))
                         return
                     else:
                         # node.js prints which index closes the cycle
@@ -233,30 +312,26 @@ class InstancePrinter(object):
                             "Can't encode List%s in object cycle" %
                             vm.ValueIdString(val))
 
-                self.seen[heap_id] = True
-
-                self.buf.write('[')
-                self.buf.write(maybe_newline)
-                for i, item in enumerate(val.items):
-                    if i != 0:
-                        self.buf.write(',')
-                        self.buf.write(maybe_newline)
-
-                    self.buf.write(item_indent)
-                    self.Print(item, level + 1)
-                self.buf.write(maybe_newline)
-
-                self.buf.write(bracket_indent)
-                self.buf.write(']')
+                self.visited[heap_id] = EXPLORING
+                self._PrintList(val, level)
+                self.visited[heap_id] = FINISHED
 
             elif case(value_e.Dict):
                 val = cast(value.Dict, UP_val)
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = vm.HeapValueId(val)
-                if heap_id in self.seen:
+
+                node_state = self.visited.get(heap_id, UNSEEN)
+                if node_state == FINISHED:
+                    # Print it AGAIN.  We print a JSON tree, which means we can
+                    # visit and print nodes MANY TIMES, as long as they're not
+                    # in a cycle.
+                    self._PrintDict(val, level)
+                    return
+                if node_state == EXPLORING:
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('{ ...%s }' % vm.ValueIdString(val))
+                        self.buf.write('{ -->%s }' % vm.ValueIdString(val))
                         return
                     else:
                         # node.js prints which key closes the cycle
@@ -264,30 +339,9 @@ class InstancePrinter(object):
                             "Can't encode Dict%s in object cycle" %
                             vm.ValueIdString(val))
 
-                self.seen[heap_id] = True
-
-                self.buf.write('{')
-                self.buf.write(maybe_newline)
-                i = 0
-                for k, v in iteritems(val.d):
-                    if i != 0:
-                        self.buf.write(',')
-                        self.buf.write(maybe_newline)
-
-                    self.buf.write(item_indent)
-
-                    pyj8.WriteString(k, self.options, self.buf)
-
-                    self.buf.write(':')
-                    self.buf.write(maybe_space)
-
-                    self.Print(v, level + 1)
-
-                    i += 1
-
-                self.buf.write(maybe_newline)
-                self.buf.write(bracket_indent)
-                self.buf.write('}')
+                self.visited[heap_id] = EXPLORING
+                self._PrintDict(val, level)
+                self.visited[heap_id] = FINISHED
 
             # BashArray and BashAssoc should be printed with pp line (x), e.g.
             # for spec tests.
@@ -366,7 +420,18 @@ class PrettyPrinter(object):
     Features like asdl/format.py:
     - line wrapping
     - color
-    - maybe print object IDs when there's sharing, not just for cycles?
+    - sharing detection by passing in a REF COUTN dict
+      - print @123 the first time, and then print ... the second time
+
+    and 
+
+    - Pretty spaces: {"k": "v", "k2": "v2"} instead of {"k":"v","k2","v2"}
+    - Unquoted: {k: "v", k2: "v2"} instead of {"k": "v", "k2": "v2"}
+
+    - Omitting commas for ASDL?  Maybe we can use two spaces
+
+    (Token id: Id.VSub_DollarName  start: 0  length: 3)
+    (Token id:Id.VSub_DollarName start:0 length:3)  - color makes this work
     """
 
     def __init__(self, max_col):
@@ -376,6 +441,10 @@ class PrettyPrinter(object):
         # This could be an optimized set an C++ bit set like
         # mark_sweep_heap.h, rather than a Dict
         self.unique_objs = mylib.UniqueObjects()
+
+        # first pass of object ID -> number of times references
+
+        self.ref_count = {}  # type: Dict[int, int]
 
     def PrettyTree(self, val, f):
         # type: (value_t, fmt.ColorOutput) -> None
@@ -425,11 +494,7 @@ class LexerDecoder(object):
         # type: () -> Tuple[Id_t, int, Optional[str]]
         """ Returns a token and updates self.pos """
 
-        while True:  # ignore spaces
-            tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
-            if tok_id != Id.Ignored_Space:
-                break
-            self.pos = end_pos
+        tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
 
         # Non-string tokens like { } null etc.
         if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
@@ -477,19 +542,10 @@ class LexerDecoder(object):
                 self.pos = str_end
 
                 s = self.decoded.getvalue()
-                #log('s %r', s)
-                # This doesn't do what we think
-                #self.decoded.reset()
-
-                if 0:
-                    # Reusing this object is more efficient, e.g. with a
-                    # payload with thousands of strings
-                    mylib.ClearBuf(self.decoded)
-                else:
-                    self.decoded = mylib.BufWriter()
+                self.decoded.clear()  # reuse this instance
 
                 #log('decoded %r', self.decoded.getvalue())
-                return Id.J8_AnyString, str_end, s
+                return Id.J8_String, str_end, s
 
             #
             # Now handle each kind of token
@@ -567,7 +623,6 @@ class Parser(object):
     def __init__(self, s, is_j8):
         # type: (str, bool) -> None
         self.s = s
-        self.is_j8 = is_j8
         self.lang_str = "J8" if is_j8 else "JSON"
 
         self.lexer = LexerDecoder(s, is_j8)
@@ -578,9 +633,15 @@ class Parser(object):
 
     def _Next(self):
         # type: () -> None
-        self.start_pos = self.end_pos
-        self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
-        #log('NEXT %s %s %s', Id_str(self.tok_id), self.end_pos, self.decoded or '-')
+
+        # This isn't the start of a J8_Bool token, it's the END of the token before it
+        while True:
+            self.start_pos = self.end_pos
+            self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
+            if self.tok_id != Id.Ignored_Space:
+                break
+
+        #log('NEXT %s %s %s %s', Id_str(self.tok_id), self.start_pos, self.end_pos, self.decoded or '-')
 
     def _Eat(self, tok_id):
         # type: (Id_t) -> None
@@ -601,7 +662,7 @@ class Parser(object):
         # type: () -> Tuple[str, value_t]
 
         k = self.decoded  # Save the potential string value
-        self._Eat(Id.J8_AnyString)  # Check that it's a string
+        self._Eat(Id.J8_String)  # Check that it's a string
         assert k is not None
 
         self._Eat(Id.J8_Colon)
@@ -619,21 +680,28 @@ class Parser(object):
         # precondition
         assert self.tok_id == Id.J8_LBrace, Id_str(self.tok_id)
 
+        #log('> Dict')
+
         d = NewDict()  # type: Dict[str, value_t]
 
         self._Next()
         if self.tok_id == Id.J8_RBrace:
+            self._Next()
             return value.Dict(d)
 
         k, v = self._ParsePair()
         d[k] = v
+        #log('  [1] k %s  v  %s  Id %s', k, v, Id_str(self.tok_id))
 
         while self.tok_id == Id.J8_Comma:
             self._Next()
             k, v = self._ParsePair()
             d[k] = v
+            #log('  [2] k %s  v  %s  Id %s', k, v, Id_str(self.tok_id))
 
         self._Eat(Id.J8_RBrace)
+
+        #log('< Dict')
 
         return value.Dict(d)
 
@@ -649,6 +717,7 @@ class Parser(object):
 
         self._Next()
         if self.tok_id == Id.J8_RBracket:
+            self._Next()
             return value.List(items)
 
         items.append(self._ParseValue())
@@ -664,16 +733,21 @@ class Parser(object):
     def _ParseValue(self):
         # type: () -> value_t
         if self.tok_id == Id.J8_LBrace:
-            return self._ParseDict()
+            d = self._ParseDict()
+            #self._Next()
+            return d
 
         elif self.tok_id == Id.J8_LBracket:
-            return self._ParseList()
+            li = self._ParseList()
+            #self._Next()
+            return li
 
         elif self.tok_id == Id.J8_Null:
             self._Next()
             return value.Null
 
         elif self.tok_id == Id.J8_Bool:
+            #log('%r %d', self.s[self.start_pos], self.start_pos)
             b = value.Bool(self.s[self.start_pos] == 't')
             self._Next()
             return b
@@ -689,7 +763,7 @@ class Parser(object):
             return value.Float(float(part))
 
         # UString, BString too
-        elif self.tok_id == Id.J8_AnyString:
+        elif self.tok_id == Id.J8_String:
             str_val = value.Str(self.decoded)
             #log('d %r', self.decoded)
             self._Next()
@@ -699,15 +773,9 @@ class Parser(object):
             raise self._Error('Unexpected EOF while parsing %s' %
                               self.lang_str)
 
-        elif self.tok_id == Id.Unknown_Tok:
+        else:  # Id.Unknown_Tok, Id.J8_{LParen,RParen}
             raise self._Error('Invalid token while parsing %s: %s' %
                               (self.lang_str, Id_str(self.tok_id)))
-
-        else:
-            # This should never happen
-            part = self.s[self.start_pos:self.end_pos]
-            raise AssertionError('Unexpected token %s %r' %
-                                 (Id_str(self.tok_id), part))
 
     def ParseValue(self):
         # type: () -> value_t

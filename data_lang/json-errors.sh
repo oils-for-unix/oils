@@ -41,6 +41,9 @@ test-parse-errors() {
 
   # Invalid token
   _error-case-X 1 'echo + | json read'
+
+  # TYG8 token, not JSON8 token
+  _error-case-X 1 'echo "(" | json read'
 }
 
 test-lex-errors() {

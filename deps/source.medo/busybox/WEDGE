@@ -1,0 +1,36 @@
+# Wedge definition for busybox
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# sourced
+WEDGE_NAME='busybox'
+WEDGE_VERSION='1.35.0'
+
+wedge-make() {
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  # Out of tree instructions from INSTALL
+  make KBUILD_SRC=$src_dir -f $src_dir/Makefile defconfig
+
+  time make
+}
+
+wedge-install() {
+  local build_dir=$1
+  local install_dir=$2
+
+  cp -v $build_dir/busybox $install_dir
+  ln -s -f -v busybox $install_dir/ash
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+
+  $install_dir/ash -c 'echo "hi from busybox ash"'
+}

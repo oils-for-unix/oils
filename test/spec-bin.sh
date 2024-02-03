@@ -239,8 +239,9 @@ download-original-source() {
   # http://www.linuxfromscratch.org/blfs/view/svn/postlfs/dash.html
   _wget http://gondor.apana.org.au/~herbert/dash/files/dash-0.5.10.2.tar.gz
 
-  # http://zsh.sourceforge.net/News/ - 12/2016 release
-  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.8.1/zsh-5.8.1.tar.xz
+  # http://zsh.sourceforge.net/News/
+  #_wget https://downloads.sourceforge.net/project/zsh/zsh/5.8.1/zsh-5.8.1.tar.xz
+  _wget https://downloads.sourceforge.net/project/zsh/zsh/5.9/zsh-5.9.tar.xz
 
   _wget https://osdn.net/dl/yash/yash-2.49.tar.xz
 

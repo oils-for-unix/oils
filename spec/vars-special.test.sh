@@ -610,3 +610,16 @@ matched=0
 ## N-I dash/mksh/zsh STDOUT:
 no version
 ## END
+
+#### $SECONDS
+
+# should be zero seconds
+echo seconds=$SECONDS
+
+## status: 0
+## STDOUT:
+seconds=0
+## END
+## N-I dash STDOUT:
+seconds=
+## END

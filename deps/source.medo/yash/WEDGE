@@ -1,0 +1,40 @@
+# Wedge definition for yash
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# sourced
+WEDGE_NAME='yash'
+WEDGE_VERSION='2.49'
+
+wedge-make() {
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  # 9/2021: from VirtualBox VM
+  # The terminfo (curses) library is unavailable!
+  # Add the "--disable-lineedit" option and try again.
+  time $src_dir/configure --disable-lineedit --prefix=$install_dir
+
+  time make
+}
+
+wedge-install() {
+  local build_dir=$1
+
+  pushd $build_dir
+
+  time make install
+
+  popd
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+
+  $install_dir/bin/yash -c 'echo "hi from yash"'
+}

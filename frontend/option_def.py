@@ -318,9 +318,6 @@ def _Init(opt_def):
     for name, default in _AGGRESSIVE_RUNTIME_OPTIONS:
         opt_def.Add(name, default=default, groups=['ysh:all'])
 
-    # Off by default.
-    opt_def.Add('parse_tea')
-
     opt_def.DoneWithImplementedOptions()
 
     # NO_OPS

@@ -681,23 +681,6 @@ def AddKinds(spec):
 
     spec.AddKind('Range', ['Int', 'Char', 'Dots', 'Other'])
 
-    # Note: not used now
-    spec.AddKind(
-        'QSN',
-        [
-            # LiteralBytes is a string, optimized for the common case
-            'LiteralBytes',
-            # A byte that we'll look at individually, e.g. \r \n, or just a low
-            # control code like \x01
-            'SpecialByte',
-            # UTF-8 sequences:
-            'Begin2',
-            'Begin3',
-            'Begin4',
-            'Cont',
-        ])
-
-    # Note: not used now
     spec.AddKind(
         'J8',
         [
@@ -705,6 +688,10 @@ def AddKinds(spec):
             'RBracket',
             'LBrace',
             'RBrace',
+
+            # for TYG8
+            'LParen',
+            'RParen',
             'Comma',
             'Colon',
 
@@ -714,10 +701,13 @@ def AddKinds(spec):
             'Int',  # Number
             'Float',  # Number
 
-            # High level tokens for "" b"" u""
-            'AnyString',
-            'UString',  # unicode (no surrogate halves, no wtf-8)
-            'BString',
+            # High level tokens for "" b'' u''
+            # We don't distinguish them in the parser, because we parse JSON in
+            # the lexer.
+            'String',
+
+            #'UString',  # unicode (no surrogate halves, no wtf-8)
+            #'BString',
         ])
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   yaks/run.sh <function name>
+#   yaks/TEST.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -18,15 +18,14 @@ build() {
 check() {
   build
 
-  # Does this do anything?
-  local flags='--strict'
-
-  python3 -m mypy $flags yaks/yaks_main.py
+  # pyext/fastfunc is a dependency of ASDL
+  # Source is Python 2
+  MYPYPATH='.:pyext' python3 -m mypy --strict --py2 yaks/yaks_main.py
 }
 
 test-hello() {
   # translate
-  yaks/yaks_main.py cpp yaks/examples/hello.yaks
+  PYTHONPATH='.:vendor' yaks/yaks_main.py cpp yaks/examples/hello.yaks
 
   # type check only
   # yaks/yaks.py check testdata/hello.yaks
@@ -34,6 +33,11 @@ test-hello() {
 
 soil-run() {
   ### Used by soil/worker.sh.  Prints to stdout.
+
+  # Hm I guess we need the Python 2 wedge here.  Right now deps/Dockerfile.pea
+  # has a Python 3 wedge and MyPy, which we still need.
+  echo 'Disabled until container image has python2-dev to build pyext/fastfunc'
+  return
 
   run-test-funcs
 

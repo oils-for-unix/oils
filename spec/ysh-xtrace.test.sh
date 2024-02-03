@@ -32,7 +32,7 @@ cd /
 
 ## stdout-json: ""
 ## STDERR:
-. builtin cd '/'
+. builtin cd /
 ## END
 
 #### xtrace_details AND xtrace_rich on
@@ -50,7 +50,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## STDOUT:
 ## END
 ## STDERR:
-| command 12345: env false
+| command 12345: env 'false'
 ; process 12345: status 1
 . builtin set '+x'
 ## END
@@ -96,19 +96,27 @@ eval 'echo 1; echo 2'
 ## END
 
 #### source
-echo 'echo source-argv: "$@"' > lib.sh
+echo 'echo "\$1 = $1"' > lib.sh
 
 shopt --set oil:upgrade
 set -x
 
-source lib.sh 1 2 3
+source lib.sh a b c
+
+# Test the quoting style.  TODO: Don't use bash style in YSH.
+
+source lib.sh x $'\xfe' $'\xff'
 
 ## STDOUT:
-source-argv: 1 2 3
+$1 = a
+$1 = x
 ## END
 ## STDERR:
-> source lib.sh 1 2 3
-  . builtin echo 'source-argv:' 1 2 3
+> source lib.sh a b c
+  . builtin echo '$1 = a'
+< source lib.sh
+> source lib.sh x $'\xfe' $'\xff'
+  . builtin echo '$1 = x'
 < source lib.sh
 ## END
 
@@ -128,9 +136,9 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 ## stdout-json: ""
 ## STDERR:
-| command 12345: env false
+| command 12345: env 'false'
 ; process 12345: status 1
-. builtin true
+. builtin 'true'
 . builtin set '+x'
 ## END
 
@@ -227,7 +235,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
 ; process 12345: status 0
 ; process 12345: status 0
 ; process 12345: status 0
-| command 12345: cat '/dev/fd/N' '/dev/fd/N'
+| command 12345: cat /dev/fd/N /dev/fd/N
 | proc sub 12345
 | proc sub 12345
 ## END
@@ -292,7 +300,7 @@ set -x
 ## stdout-json: ""
 ## STDERR:
 . builtin ':' begin
-. builtin false
+. builtin 'false'
 . builtin ':' end
 ## END
 
@@ -444,7 +452,7 @@ zz
 ## STDERR:
 | here doc 12345
 | here doc 12345
-| command 12345: cat - '/dev/fd/3'
+| command 12345: cat - /dev/fd/3
 ; process 12345: status 0
 ; process 12345: status 0
 ; process 12345: status 0
@@ -505,8 +513,9 @@ b z
 < proc zero
 ## END
 
-#### QSN encoded argv
-shopt --set oil:upgrade
+#### Encoded argv uses shell encoding, not J8
+
+shopt --set ysh:upgrade
 set -x
 
 echo $'one two\n' $'\u03bc'
@@ -515,5 +524,5 @@ one two
  μ
 ## END
 ## STDERR:
-. builtin echo 'one two\n' 'μ'
+. builtin echo $'one two\n' 'μ'
 ## END

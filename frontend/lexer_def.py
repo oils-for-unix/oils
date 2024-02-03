@@ -461,10 +461,6 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 # 0x00012345 == \u{12345}
 # chr(0x00012345) == chr(\u{12345}) == $'\u{012345}'
 
-# We choose to match QSN (Rust) rather than Python or bash.
-# Technically it could be \u123456, because we're not embedded in a string, but
-# it's better to be consistent.
-
 _U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
 
 _X_CHAR_LOOSE = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)  # bash
@@ -534,6 +530,8 @@ J8_DEF = [
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
     C('}', Id.J8_RBrace),
+    C('(', Id.J8_LParen),  # TYG8 only
+    C(')', Id.J8_RParen),  # TYG8 only
     C(',', Id.J8_Comma),
     C(':', Id.J8_Colon),
     C('null', Id.J8_Null),
@@ -625,18 +623,6 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
     # Backslash that ends the file!  Caught by re2c exhaustiveness check.  Parser
     # will assert; should give a better syntax error.
     C('\\\0', Id.Unknown_Tok),
-]
-
-# Should match the pure Python decoder in data_lang/qsn.py
-LEXER_DEF[lex_mode_e.QSN] = [
-    R(r'''\\[nrt0'"\\]''', Id.Char_OneChar),
-    _X_CHAR_STRICT,  # \xff
-    _U_BRACED_CHAR,  # \u{3bc}
-
-    # Like SQ_C, but literal newlines and tabs are illegal.
-    R(r"[^\\'\0\t\n]+", Id.Char_Literals),
-    C("'", Id.Right_SingleQuote),
-    R(r'[^\0]', Id.Unknown_Tok),
 ]
 
 LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [

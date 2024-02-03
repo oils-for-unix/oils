@@ -3,6 +3,17 @@
 
 #include "mycpp/runtime.h"
 
+// Direct dependencies of data_lang/j8_lite
+namespace fastfunc {
+
+bool CanOmitQuotes(BigStr* s);
+
+BigStr* J8EncodeString(BigStr* s, int j8_fallback);
+
+BigStr* ShellEncodeString(BigStr* s, int ysh_fallback);
+
+}  // namespace fastfunc
+
 namespace pyj8 {
 
 bool PartIsUtf8(BigStr* s, int start, int end);

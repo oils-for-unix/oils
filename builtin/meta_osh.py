@@ -11,13 +11,14 @@ from _devbuild.gen.value_asdl import value
 from core import alloc
 from core import dev
 from core import error
+from core import executor
 from core import main_loop
 from core import process
 from core.error import e_usage
 from core import pyutil  # strerror
 from core import state
 from core import vm
-from data_lang import qsn
+from data_lang import j8_lite
 from frontend import flag_spec
 from frontend import consts
 from frontend import reader
@@ -199,7 +200,8 @@ def _PrintFreeForm(row):
     if kind == 'file':
         what = resolved
     elif kind == 'alias':
-        what = ('an alias for %s' % qsn.maybe_shell_encode(resolved))
+        what = ('an alias for %s' %
+                j8_lite.EncodeString(resolved, unquoted_ok=True))
     else:  # builtin, function, keyword
         what = 'a shell %s' % kind
 
@@ -285,10 +287,12 @@ class Command(vm._Builtin):
         # shell does that, and this rare case isn't worth the bookkeeping.
         # See test/syscall
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val2,
-                                              cmd_st,
-                                              True,
-                                              call_procs=False)
+
+        run_flags = executor.DO_FORK | executor.NO_CALL_PROCS
+        if arg.p:
+            run_flags |= executor.USE_DEFAULT_PATH
+
+        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
 
 
 def _ShiftArgv(cmd_val):
@@ -359,7 +363,8 @@ class RunProc(vm._Builtin):
                                   cmd_val.pos_args, cmd_val.named_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,
+                                              executor.DO_FORK)
 
 
 def _ResolveName(

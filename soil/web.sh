@@ -16,7 +16,9 @@ readonly REPO_ROOT
 
 source $REPO_ROOT/soil/common.sh
 
-readonly NUM_JOBS=1000  # jobs to show and keep
+# Jobs to show and keep.  This corresponds to say soil/worker.sh JOB-dummy,
+# which means each git COMMIT is more than 15 jobs.
+readonly NUM_JOBS=4000
 
 soil-web() {
   PYTHONPATH=$REPO_ROOT $REPO_ROOT/soil/web.py "$@"

@@ -14,7 +14,6 @@ from core.error import e_usage
 from core import state
 from core import ui
 from core import vm
-from data_lang import qsn
 from data_lang import j8
 from frontend import flag_spec
 from frontend import match
@@ -94,6 +93,7 @@ class Pp(_Builtin):
             rd.Done()
 
             tree = val.PrettyTree()
+            #tree = val.AbbreviatedTree()  # I used this to test cycle detection
 
             # TODO: ASDL should print the IDs.  And then they will be
             # line-wrapped.
@@ -139,7 +139,7 @@ class Pp(_Builtin):
             else:
                 names = sorted(self.procs)
 
-            # QTSV header
+            # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
                 proc = self.procs[name]  # must exist
@@ -156,9 +156,12 @@ class Pp(_Builtin):
                         doc = token.line.content[token.col + 1:token.col +
                                                  token.length]
 
-                # No limits on proc names
-                print('%s\t%s' %
-                      (qsn.maybe_encode(name), qsn.maybe_encode(doc)))
+                # Note: these should be attributes on value.Proc
+                buf = mylib.BufWriter()
+                self.j8print.EncodeString(name, buf, unquoted_ok=True)
+                buf.write('\t')
+                self.j8print.EncodeString(doc, buf, unquoted_ok=True)
+                print(buf.getvalue())
 
             status = 0
 
@@ -170,12 +173,12 @@ class Pp(_Builtin):
 
 class Write(_Builtin):
     """
-  write -- @strs
-  write --sep ' ' --end '' -- @strs
-  write -n -- @
-  write --qsn -- @strs   # argv serialization
-  write --qsn --sep $'\t' -- @strs   # this is like QTSV
-  """
+    write -- @strs
+    write --sep ' ' --end '' -- @strs
+    write -n -- @
+    write --j8 -- @strs   # argv serialization
+    write --j8 --sep $'\t' -- @strs   # this is like TSV8
+    """
 
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ErrorFormatter) -> None
@@ -189,26 +192,17 @@ class Write(_Builtin):
         arg = arg_types.write(attrs.attrs)
         #print(arg)
 
-        if arg.unicode == 'raw':
-            bit8_display = qsn.BIT8_UTF8
-        elif arg.unicode == 'u':
-            bit8_display = qsn.BIT8_U_ESCAPE
-        elif arg.unicode == 'x':
-            bit8_display = qsn.BIT8_X_ESCAPE
-        else:
-            raise AssertionError()
-
         i = 0
         while not arg_r.AtEnd():
             if i != 0:
                 self.stdout_.write(arg.sep)
             s = arg_r.Peek()
 
-            if arg.j8:
-                s = self.j8print.MaybeEncodeString(s)
+            if arg.json:
+                s = self.j8print.MaybeEncodeJsonString(s)
 
-            elif arg.qsn:
-                s = qsn.maybe_encode(s, bit8_display)
+            elif arg.j8:
+                s = self.j8print.MaybeEncodeString(s)
 
             self.stdout_.write(s)
 

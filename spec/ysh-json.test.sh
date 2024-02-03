@@ -56,9 +56,7 @@ json write ([{k: 'v', k2: 'v2'}, {}])
     "k": "v",
     "k2": "v2"
   },
-  {
-
-  }
+  {}
 ]
 ## END
 
@@ -113,12 +111,40 @@ status=2
 
 #### json read uses $_reply var
 
-echo '{"age": 42}' | json read
+# space before true
+echo ' true' | json read
+json write (_reply)
+
+## STDOUT:
+true
+## END
+
+#### json read then json write
+
+# BUG with space before true
+echo '{"name": "bob", "age": 42, "ok": true}' | json read
+json write (_reply)
+
+echo '{"name": "bob", "age": 42, "ok":true}' | json read
+json write (_reply)
+
+echo '{"name": {}, "age": {}}' | json read
 json write (_reply)
 
 ## STDOUT:
 {
-  "age": 42
+  "name": "bob",
+  "age": 42,
+  "ok": true
+}
+{
+  "name": "bob",
+  "age": 42,
+  "ok": true
+}
+{
+  "name": {},
+  "age": {}
 }
 ## END
 
@@ -182,14 +208,14 @@ shopt -s ysh:upgrade
 fopen >tmp.txt {
   pp line (L)
 }
-fgrep -n -o '[ ...' tmp.txt
+fgrep -n -o '[ -->' tmp.txt
 
 json write (L)
 echo 'should have failed'
 
 ## status: 1
 ## STDOUT:
-1:[ ...
+1:[ -->
 ## END
 
 #### json write of Dict in cycle
@@ -201,14 +227,28 @@ shopt -s ysh:upgrade
 fopen >tmp.txt {
   pp line (d)
 }
-fgrep -n -o '{ ...' tmp.txt
+fgrep -n -o '{ -->' tmp.txt
 
 json write (d)
 echo 'should have failed'
 
 ## status: 1
 ## STDOUT:
-1:{ ...
+1:{ -->
+## END
+
+#### json write of List/Dict referenced twice (bug fix)
+
+var mylist = [1,2,3]
+var mydict = {foo: "bar"}
+
+var top = {k: mylist, k2: mylist, k3: mydict, k4: mydict}
+
+# BUG!
+json write --pretty=F (top)
+
+## STDOUT:
+{"k":[1,2,3],"k2":[1,2,3],"k3":{"foo":"bar"},"k4":{"foo":"bar"}}
 ## END
 
 #### json read doesn't accept u'' or b'' strings
@@ -788,4 +828,76 @@ echo len=$[len(_reply)]
 ## STDOUT:
 (List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
 len=1
+## END
+
+#### round trip: read/write with ysh
+
+var file = "$REPO_ROOT/spec/testdata/bug.json"
+#cat $file
+cat $file | json read (&cfg)
+json write (cfg) > ysh-json
+
+diff -u $file ysh-json
+echo diff=$?
+
+## STDOUT:
+diff=0
+## END
+
+#### round trip: read/write with ysh, read/write with Python 3 (bug regression)
+
+var file = "$REPO_ROOT/spec/testdata/bug.json"
+#cat $file
+cat $file | json read (&cfg)
+json write (cfg) > ysh-json
+
+cat ysh-json | python3 -c \
+  'import json, sys; obj = json.load(sys.stdin); json.dump(obj, sys.stdout, indent=2); print()' \
+  > py-json
+
+diff -u $file py-json
+echo diff=$?
+
+## STDOUT:
+diff=0
+## END
+
+#### Encoding bytes that don't hit UTF8_REJECT immediately (bug fix)
+
+var x = $'\xce'
+json8 write (x)
+declare -p x
+echo
+
+var y = $'\xbc'
+json8 write (y)
+declare -p y
+echo
+
+var z = $'\xf0\x9f\xa4\xff'
+json8 write (z)
+declare -p z
+
+## STDOUT:
+b'\yce'
+declare -- x=$'\xce'
+
+b'\ybc'
+declare -- y=$'\xbc'
+
+b'\yf0\y9f\ya4\yff'
+declare -- z=$'\xf0\x9f\xa4\xff'
+## END
+
+#### TYG8 token in JSON / JSON8
+
+echo "(" | json read
+echo status=$?
+
+echo ")" | json8 read
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
 ## END

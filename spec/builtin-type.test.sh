@@ -28,7 +28,7 @@ PATH=_tmp:/bin
 
 # ignore quotes and backticks
 # bash prints a left backtick
-quotes='`'\'
+quotes='"`'\'
 
 type ll f date | sed "s/[$quotes]//g"
 

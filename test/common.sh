@@ -55,7 +55,7 @@ run-task-with-status() {
     --output $out_file \
     -- "$@" || true  # suppress failure
 
-  # TODO: Use rows like this with oil
+  # TODO: Use rows like this in YSH
   # '{"status": %x, "wall_secs": %e, "user_secs": %U, "kernel_secs": %S}' \
 }
 

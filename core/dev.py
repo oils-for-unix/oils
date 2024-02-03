@@ -18,7 +18,7 @@ from data_lang import j8
 from mycpp.mylib import log
 from frontend import location
 from osh import word_
-from data_lang import qsn
+from data_lang import j8_lite
 from pylib import os_path
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
@@ -194,21 +194,25 @@ class ctx_Tracer(object):
 
 def _PrintShValue(val, buf):
     # type: (value_t, mylib.BufWriter) -> None
-    """Using maybe_shell_encode() for legacy xtrace_details."""
+    """Print ShAssignment values.
 
-    # NOTE: This is a bit like _PrintVariables for declare -p
+    NOTE: This is a bit like _PrintVariables for declare -p
+    """
+    # I think this should never happen because it's for ShAssignment
     result = '?'
+
+    # Using maybe_shell_encode() because it's shell
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Str):
             val = cast(value.Str, UP_val)
-            result = qsn.maybe_shell_encode(val.s)
+            result = j8_lite.MaybeShellEncode(val.s)
 
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
             parts = ['(']
             for s in val.strs:
-                parts.append(qsn.maybe_shell_encode(s))
+                parts.append(j8_lite.MaybeShellEncode(s))
             parts.append(')')
             result = ' '.join(parts)
 
@@ -216,21 +220,32 @@ def _PrintShValue(val, buf):
             val = cast(value.BashAssoc, UP_val)
             parts = ['(']
             for k, v in iteritems(val.d):
+                # key must be quoted
                 parts.append(
                     '[%s]=%s' %
-                    (qsn.maybe_shell_encode(k), qsn.maybe_shell_encode(v)))
+                    (j8_lite.ShellEncode(k), j8_lite.MaybeShellEncode(v)))
             parts.append(')')
             result = ' '.join(parts)
 
     buf.write(result)
 
 
-def _PrintArgv(argv, buf):
+def _PrintYshArgv(argv, buf):
     # type: (List[str], mylib.BufWriter) -> None
-    """Uses QSN encoding without $ for xtrace_rich."""
+
+    # We're printing $'hi\n' for OSH, but we might want to print u'hi\n' or
+    # b'\n' for YSH.  We could have a shopt --set xtrace_j8 or something.
+    #
+    # This used to be xtrace_rich, but I think that was too subtle.
+
     for arg in argv:
         buf.write(' ')
-        buf.write(qsn.maybe_encode(arg))
+        # TODO: use unquoted -> POSIX '' -> b''
+        # This would use JSON "", which CONFLICTS with shell.  So we need
+        # another function.
+        #j8.EncodeString(arg, buf, unquoted_ok=True)
+
+        buf.write(j8_lite.MaybeShellEncode(arg))
     buf.write('\n')
 
 
@@ -389,7 +404,7 @@ class Tracer(object):
             if case(trace_e.External):
                 why = cast(trace.External, UP_why)
                 buf.write('command %d:' % pid)
-                _PrintArgv(why.argv, buf)
+                _PrintYshArgv(why.argv, buf)
 
             # Everything below is the same.  Could use string literals?
             elif case(trace_e.ForkWait):
@@ -435,11 +450,11 @@ class Tracer(object):
         if buf:
             buf.write(label)
             if label == 'proc':
-                _PrintArgv(argv, buf)
+                _PrintYshArgv(argv, buf)
             elif label == 'source':
-                _PrintArgv(argv[1:], buf)
+                _PrintYshArgv(argv[1:], buf)
             elif label == 'wait':
-                _PrintArgv(argv[1:], buf)
+                _PrintYshArgv(argv[1:], buf)
             else:
                 buf.write('\n')
             self.f.write(buf.getvalue())
@@ -448,7 +463,10 @@ class Tracer(object):
 
     def PopMessage(self, label, arg):
         # type: (str, Optional[str]) -> None
-        """For synchronous constructs that aren't processes."""
+        """For synchronous constructs that aren't processes.
+
+        e.g. source or proc
+        """
         self._Dec()
 
         buf = self._RichTraceBegin('<')
@@ -456,7 +474,8 @@ class Tracer(object):
             buf.write(label)
             if arg is not None:
                 buf.write(' ')
-                buf.write(qsn.maybe_encode(arg))
+                # TODO: use unquoted -> POSIX '' -> b''
+                buf.write(j8_lite.MaybeShellEncode(arg))
             buf.write('\n')
             self.f.write(buf.getvalue())
 
@@ -477,7 +496,7 @@ class Tracer(object):
         if not buf:
             return
         buf.write('exec')
-        _PrintArgv(argv, buf)
+        _PrintYshArgv(argv, buf)
         self.f.write(buf.getvalue())
 
     def OnBuiltin(self, builtin_id, argv):
@@ -489,7 +508,7 @@ class Tracer(object):
         if not buf:
             return
         buf.write('builtin')
-        _PrintArgv(argv, buf)
+        _PrintYshArgv(argv, buf)
         self.f.write(buf.getvalue())
 
     #
@@ -510,11 +529,11 @@ class Tracer(object):
         if self.exec_opts.xtrace_rich():
             return
 
-        # Legacy: Use SHELL encoding
+        # Legacy: Use SHELL encoding, NOT _PrintYshArgv()
         for i, arg in enumerate(argv):
             if i != 0:
                 buf.write(' ')
-            buf.write(qsn.maybe_shell_encode(arg))
+            buf.write(j8_lite.MaybeShellEncode(arg))
         buf.write('\n')
         self.f.write(buf.getvalue())
 
@@ -556,7 +575,8 @@ class Tracer(object):
                 left = '%s[%d]' % (lval.name, lval.index)
             elif case(sh_lvalue_e.Keyed):
                 lval = cast(sh_lvalue.Keyed, UP_lval)
-                left = '%s[%s]' % (lval.name, qsn.maybe_shell_encode(lval.key))
+                left = '%s[%s]' % (lval.name, j8_lite.MaybeShellEncode(
+                    lval.key))
         buf.write(left)
 
         # Only two possibilities here

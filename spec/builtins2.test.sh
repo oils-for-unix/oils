@@ -35,9 +35,9 @@ printf 'pf  %q\n' "$foo"
 echo '@Q ' ${foo@Q}
 
 ## STDOUT:
-foo=$'a\nb\x01c\'d'
-pf  $'a\nb\x01c\'d'
-@Q  $'a\nb\x01c\'d'
+foo=$'a\nb\u0001c\'d'
+pf  $'a\nb\u0001c\'d'
+@Q  $'a\nb\u0001c\'d'
 ## END
 
 ## OK bash STDOUT:
@@ -199,7 +199,7 @@ command -V for
 echo status=$?
 
 ## STDOUT:
-ll is an alias for 'ls -l'
+ll is an alias for "ls -l"
 status=0
 echo is a shell builtin
 status=0
@@ -365,6 +365,35 @@ status=127
 status=127
 status=127
 ## END
+
+#### command -p (override existing program)
+# Tests whether command -p overrides the path
+# tr chosen because we need a simple non-builtin
+mkdir -p $TMP/bin
+echo "echo wrong" > $TMP/bin/tr
+chmod +x $TMP/bin/tr
+PATH="$TMP/bin:$PATH"
+echo aaa | tr "a" "b"
+echo aaa | command -p tr "a" "b"
+rm $TMP/bin/tr
+## STDOUT:
+wrong
+bbb
+## END
+
+#### command -p (hide tool in custom path)
+mkdir -p $TMP/bin
+echo "echo hello" > $TMP/bin/hello
+chmod +x $TMP/bin/hello
+export PATH=$TMP/bin
+command -p hello
+## status: 127 
+
+#### command -p (find hidden tool in default path)
+export PATH=''
+command -p ls
+## status: 0
+
 
 #### $(command type ls)
 type() { echo FUNCTION; }

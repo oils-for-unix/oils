@@ -68,6 +68,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
 
 from core import dev
 from core import error
+from core import executor
 from core.error import e_die, e_die_status
 from core import pyos  # Time().  TODO: rename
 from core import state
@@ -567,15 +568,16 @@ class CommandEvaluator(object):
 
         return result
 
-    def _RunSimpleCommand(self, cmd_val, cmd_st, do_fork):
-        # type: (cmd_value_t, CommandStatus, bool) -> int
+    def _RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
+        # type: (cmd_value_t, CommandStatus, int) -> int
         """Private interface to run a simple command (including assignment)."""
         UP_cmd_val = cmd_val
         with tagswitch(UP_cmd_val) as case:
             if case(cmd_value_e.Argv):
                 cmd_val = cast(cmd_value.Argv, UP_cmd_val)
                 self.tracer.OnSimpleCommand(cmd_val.argv)
-                return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, do_fork)
+                return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st,
+                                                      run_flags)
 
             elif case(cmd_value_e.Assign):
                 cmd_val = cast(cmd_value.Assign, UP_cmd_val)
@@ -868,20 +870,20 @@ class CommandEvaluator(object):
             # shells aren't consistent.
             # self.mem.SetLastArgument('')
 
+        run_flags = executor.DO_FORK if node.do_fork else 0
         # NOTE: RunSimpleCommand never returns when do_fork=False!
         if len(node.more_env):  # I think this guard is necessary?
             is_other_special = False  # TODO: There are other special builtins too!
             if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
                 # Special builtins have their temp env persisted.
                 self._EvalTempEnv(node.more_env, 0)
-                status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+                status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
             else:
                 with state.ctx_Temp(self.mem):
                     self._EvalTempEnv(node.more_env, state.SetExport)
-                    status = self._RunSimpleCommand(cmd_val, cmd_st,
-                                                    node.do_fork)
+                    status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
         else:
-            status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+            status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
         return status
 

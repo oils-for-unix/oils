@@ -29,7 +29,6 @@
 #include "cpp/osh_tdop.h"
 #include "cpp/pgen2.h"
 #include "cpp/pylib.h"
-#include "cpp/qsn.h"
 #include "cpp/stdlib.h"
 #include "cpp/translation_stubs.h"
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures

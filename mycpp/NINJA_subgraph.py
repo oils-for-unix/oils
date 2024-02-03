@@ -163,11 +163,14 @@ def TranslatorSubgraph(ru, translator, ex):
     # But don't pass it on the command line.
     translator_wrapper = '_bin/shwrap/%s_main' % translator
 
-    n.build(raw,
-            'translate-%s' % translator,
-            to_translate,
-            implicit=[translator_wrapper],
-            variables=[('mypypath', '$NINJA_REPO_ROOT/mycpp')])
+    n.build(
+        raw,
+        'translate-%s' % translator,
+        to_translate,
+        implicit=[translator_wrapper],
+        # examples/parse uses pyext/fastfunc.pyi
+        variables=[('mypypath',
+                    '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext')])
 
     p = 'mycpp/examples/%s_preamble.h' % ex
     # Ninja empty string!
@@ -201,7 +204,7 @@ def TranslatorSubgraph(ru, translator, ex):
 
     deps = ['//mycpp/runtime']
     if ex == 'parse':
-        deps = deps + ['//mycpp/examples/expr.asdl']
+        deps = deps + ['//mycpp/examples/expr.asdl', '//cpp/data_lang']
 
     ru.cc_binary(
         main_cc_src,

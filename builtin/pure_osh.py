@@ -18,7 +18,7 @@ from core.error import e_usage
 from core import state
 from core import ui
 from core import vm
-from data_lang import qsn
+from data_lang import j8_lite
 from frontend import args
 from frontend import consts
 from frontend import flag_spec
@@ -152,7 +152,7 @@ class Set(vm._Builtin):
             mapping = self.mem.GetAllVars()
             for name in sorted(mapping):
                 str_val = mapping[name]
-                code_str = '%s=%s' % (name, qsn.maybe_shell_encode(str_val))
+                code_str = '%s=%s' % (name, j8_lite.MaybeShellEncode(str_val))
                 print(code_str)
             return 0
 
@@ -419,7 +419,7 @@ def _GetOpts(
                 # TODO: Add location info
                 errfmt.Print_('getopts: option %r requires an argument.' %
                               current)
-                tmp = [qsn.maybe_shell_encode(a) for a in argv]
+                tmp = [j8_lite.MaybeShellEncode(a) for a in argv]
                 print_stderr('(getopts argv: %s)' % ' '.join(tmp))
 
                 # Hm doesn't cause status 1?

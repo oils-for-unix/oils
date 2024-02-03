@@ -296,14 +296,17 @@ type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
 # in command subs.
 end_stmt: '}' | ';' | Op_Newline | Eof_Real 
 
+# TODO: allow -> to denote aliasing/mutation
 ysh_var_decl: name_type_list ['=' testlist] end_stmt
 
-# Note: this production is more precise as the following, but it's ambiguous :(
-#ysh_setvar: lhs augassign testlist end_stmt
-#          | lhs_list '=' testlist end_stmt
+# Note: this is more precise way of writing ysh_mutation, but it's ambiguous :(
+# ysh_mutation: lhs augassign testlist end_stmt
+#             | lhs_list '=' testlist end_stmt
 
 # Note: for YSH (not Tea), we could accept [':'] expr for setvar :out = 'foo'
 lhs_list: expr (',' expr)*
+
+# TODO: allow -> to denote aliasing/mutation
 ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
 
 # For json write (x)

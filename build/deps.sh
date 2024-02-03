@@ -1,47 +1,42 @@
 #!/usr/bin/env bash
 #
-# Script for contributors to quickly set up core packages
+# Script for contributors to build dev dependencies -- packaged as cross-distro
+# "wedges".  Tested in the Soil CI.
 #
 # Usage:
 #   build/deps.sh <function name>
 #
 # Examples:
 #   build/deps.sh fetch
-#   build/deps.sh install-wedges
-#   build/deps.sh rm-oils-crap  # rm /wedge ~/wedge to start over
+#   build/deps.sh install-wedges  # for both Python and C++
+#   build/deps.sh rm-oils-crap  # rm -r -f /wedge ~/wedge to start over
 #
-# - re2c
-# - cmark
-# - python3
-# - mypy and deps, so mycpp can import htem
-
-# TODO:
-# - remove cmark dependency for help.  It's still used for docs and benchmarks.
-# - remove re2c from dev build?  Are there any bugs?  I think it's just slow.
-# - add spec-bin so people can always run the tests
+# TODO: Do we need something faster, just python2, re2c, and cmark?
 #
-# - change Contributing page
 #   - build/deps.sh fetch-py
 #   - build/deps.sh install-wedges-py
 #
-# mycpp/README.md:
+# TODO: Can we make most of them non-root deps?  This requires rebuilding
+# containers, which requires podman.
 #
-#   - build/deps.sh fetch
-#   - build/deps.sh install-wedges
-#
-# Can we make most of them non-root deps?
+#     rm -r -f ~/wedge  # would be better
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
-source deps/from-apt.sh      # PY3_BUILD_DEPS
+source deps/from-apt.sh  # PY3_BUILD_DEPS
 #source deps/podman.sh
 source devtools/run-task.sh  # run-task
+source test/tsv-lib.sh  # tsv-concat
+source web/table/html.sh  # table-sort-{begin,end}
 
 # Also in build/dev-shell.sh
 USER_WEDGE_DIR=~/wedge/oils-for-unix.org
+ROOT_WEDGE_DIR=/wedge/oils-for-unix.org
 
 readonly DEPS_SOURCE_DIR=_build/deps-source
 
@@ -56,6 +51,24 @@ readonly PY2_URL="https://www.python.org/ftp/python/2.7.18/Python-$PY2_VERSION.t
 
 readonly PY3_VERSION=3.10.4
 readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
+
+readonly BASH_VER=4.4  # don't clobber BASH_VERSION
+readonly BASH_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH_VER.tar.gz"
+
+readonly DASH_VERSION=0.5.10.2
+readonly DASH_URL="https://www.oilshell.org/blob/spec-bin/dash-$DASH_VERSION.tar.gz"
+
+readonly ZSH_VERSION=5.1.1
+readonly ZSH_URL="https://www.oilshell.org/blob/spec-bin/zsh-$ZSH_VERSION.tar.xz"
+
+readonly MKSH_VERSION=R52c
+readonly MKSH_URL="https://www.oilshell.org/blob/spec-bin/mksh-$MKSH_VERSION.tgz"
+
+readonly BUSYBOX_VERSION='1.35.0'
+readonly BUSYBOX_URL="https://www.oilshell.org/blob/spec-bin/busybox-$BUSYBOX_VERSION.tar.bz2"
+
+readonly YASH_VERSION=2.49
+readonly YASH_URL="https://www.oilshell.org/blob/spec-bin/yash-$YASH_VERSION.tar.xz"
 
 readonly MYPY_GIT_URL=https://github.com/python/mypy
 readonly MYPY_VERSION=0.780
@@ -106,8 +119,30 @@ rm-oils-crap() {
 # PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
 # as well
 readonly -a WEDGE_DEPS_DEBIAN=(
-    wget tree g++ gawk libreadline-dev ninja-build cmake
+    wget tree gawk 
+    g++ ninja-build cmake
+    libreadline-dev 
     "${PY3_BUILD_DEPS[@]}"
+)
+
+readonly -a WEDGE_DEPS_ALPINE=(
+  bzip2
+  xz
+
+  wget tree gawk
+
+  gcc g++
+  ninja-build
+  # https://pkgs.alpinelinux.org/packages?name=ninja-is-really-ninja&branch=v3.19&repo=&arch=&maintainer=
+  ninja-is-really-ninja
+  cmake
+
+  readline-dev
+  zlib-dev
+  libffi-dev
+  openssl-dev
+
+  ncurses-dev
 )
 
 readonly -a WEDGE_DEPS_FEDORA=(
@@ -123,13 +158,13 @@ readonly -a WEDGE_DEPS_FEDORA=(
   tree
   gawk
 
-  readline-devel
-
   # https://packages.fedoraproject.org/pkgs/gcc/gcc/
   gcc gcc-c++
 
   ninja-build
   cmake
+
+  readline-devel
 
   # Like PY3_BUILD_DEPS
   # https://packages.fedoraproject.org/pkgs/zlib/zlib-devel/
@@ -138,6 +173,15 @@ readonly -a WEDGE_DEPS_FEDORA=(
   libffi-devel
   # https://packages.fedoraproject.org/pkgs/openssl/openssl-devel/
   openssl-devel
+
+  # For building zsh from source?
+  # https://koji.fedoraproject.org/koji/rpminfo?rpmID=36987813
+  ncurses-devel
+  #libcap-devel
+
+  # still have a job control error compiling bash
+  # https://packages.fedoraproject.org/pkgs/glibc/glibc-devel/
+  # glibc-devel
 )
 
 install-ubuntu-packages() {
@@ -160,8 +204,72 @@ wedge-deps-debian() {
 }
 
 wedge-deps-fedora() {
+  # https://linuxconfig.org/install-development-tools-on-redhat-8
+  # Trying to get past compile errors
+  # sudo dnf group install --assumeyes 'Development Tools'
+
   sudo dnf install --assumeyes "${WEDGE_DEPS_FEDORA[@]}"
 }
+
+wedge-deps-alpine() {
+  # https://linuxconfig.org/install-development-tools-on-redhat-8
+  # Trying to get past compile errors
+  # sudo dnf group install --assumeyes 'Development Tools'
+
+  sudo apk add "${WEDGE_DEPS_ALPINE[@]}"
+}
+
+#
+# Unused patch, was experiment for Fedora
+#
+
+get-typed-ast-patch() {
+  curl -o deps/typed_ast.patch https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96.patch
+}
+
+# Work around typed_ast bug:
+#   https://github.com/python/typed_ast/issues/169
+#
+# Apply this patch
+# https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
+#
+# typed_ast is tarred up though
+patch-typed-ast() {
+  local package_dir=_cache/py3-libs
+  local patch=$PWD/deps/typed_ast.patch
+
+  pushd $package_dir
+  cat $patch
+  echo
+
+  local dir=typed_ast-1.4.3
+  local tar=typed_ast-1.4.3.tar.gz
+
+  echo OLD
+  ls -l $tar
+  echo
+
+  rm -r -f -v $dir
+  tar -x -z < $tar
+
+  pushd $dir
+  patch -p1 < $patch
+  popd
+  #find $dir
+
+  # Create a new one
+  tar --create --gzip --file $tar typed_ast-1.4.3
+
+  echo NEW
+  ls -l $tar
+  echo
+
+  popd
+}
+
+#
+# Fetch
+#
 
 download-to() {
   local dir=$1
@@ -181,7 +289,7 @@ maybe-extract() {
 
   local tar=$wedge_dir/$tar_name
   case $tar_name in
-    *.gz)
+    *.gz|*.tgz)  # mksh ends with .tgz
       flag='--gzip'
       ;;
     *.bz2)
@@ -258,6 +366,31 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/python2 "$(basename $PY2_URL)" Python-$PY2_VERSION
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
+  download-to $DEPS_SOURCE_DIR/bash "$BASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH_URL)" dash-$BASH_VER
+
+  download-to $DEPS_SOURCE_DIR/dash "$DASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/dash "$(basename $DASH_URL)" dash-$DASH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/zsh "$ZSH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_URL)" zsh-$ZSH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/mksh "$MKSH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/mksh "$(basename $MKSH_URL)" mksh-$MKSH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/busybox "$BUSYBOX_URL"
+  maybe-extract $DEPS_SOURCE_DIR/busybox "$(basename $BUSYBOX_URL)" busybox-$BUSYBOX_VERSION
+
+  download-to $DEPS_SOURCE_DIR/yash "$YASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/yash "$(basename $YASH_URL)" yash-$DASH_VERSION
+
+  # Patch: this tarball doesn't follow the convention $name-$version
+  if test -d $DEPS_SOURCE_DIR/mksh/mksh; then
+    pushd $DEPS_SOURCE_DIR/mksh
+    mv -v mksh mksh-$MKSH_VERSION
+    popd
+  fi
+
   # bloaty and uftrace are for benchmarks, in containers
   download-to $DEPS_SOURCE_DIR/bloaty "$BLOATY_URL"
   download-to $DEPS_SOURCE_DIR/uftrace "$UFTRACE_URL"
@@ -265,12 +398,17 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/uftrace "$(basename $UFTRACE_URL)" bloaty-$UFTRACE_VERSION
 
   # This is in $DEPS_SOURCE_DIR to COPY into containers, which mycpp will directly import.
+
   # It's also copied into a wedge in install-wedges.
   clone-mypy $DEPS_SOURCE_DIR/mypy
 
   if command -v tree > /dev/null; then
     tree -L 2 $DEPS_SOURCE_DIR
   fi
+}
+
+fetch-py() {
+  fetch py_only
 }
 
 mirror-pyflakes() {
@@ -280,25 +418,14 @@ mirror-pyflakes() {
     oilshell.org:oilshell.org/blob/
 }
 
-fetch-py() {
-  fetch py_only
-}
-
-mypy-new() {
-  local version=0.971
-  # Do the latest version for Python 2
-  clone-mypy $DEPS_SOURCE_DIR/mypy $version
-
-  local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$version
-  mkdir -p $dest_dir
-
-  cp --verbose --recursive --no-target-directory \
-    $DEPS_SOURCE_DIR/mypy/mypy-$version $dest_dir
-}
-
 wedge-exists() {
-  # TODO: Doesn't take into account ~/wedge/ vs. /wedge
-  local installed=/wedge/oils-for-unix.org/pkg/$1/$2
+  ### Does an installed wedge already exist?
+
+  local name=$1
+  local version=$2
+  local wedge_dir=${3:-/wedge/oils-for-unix.org}
+
+  local installed=$wedge_dir/pkg/$name/$version
 
   if test -d $installed; then
     log "$installed already exists"
@@ -308,52 +435,64 @@ wedge-exists() {
   fi
 }
 
+#
+# Install
+#
+
 # TODO: py3-libs needs to be a WEDGE, so that that you can run
 # 'wedge build deps/source.medo/py3-libs/' and then get it in
 #
 # _build/wedge/{absolute,relative}   # which one?
 #
 # It needs a BUILD DEPENDENCY on:
-
 # - the python3 wedge, so you can do python3 -m pip install.
 # - the mypy repo, which has test-requirements.txt
+
+download-py3-libs() {
+  ### Download source/binary packages, AFTER python3 is installed
+
+  # Note that this is NOT source code; there is binary code, e.g.  in
+  # lxml-*.whl
+
+  local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
+  local py_package_dir=_cache/py3-libs
+  mkdir -p $py_package_dir
+
+  # Avoids a warning, but doesn't fix typed_ast
+  #python3 -m pip download -d $py_package_dir wheel
+
+  python3 -m pip download -d $py_package_dir -r $mypy_dir/test-requirements.txt
+  python3 -m pip download -d $py_package_dir pexpect
+}
 
 install-py3-libs-in-venv() {
   local venv_dir=$1
   local mypy_dir=$2  # This is a param for host build vs. container build
+  local package_dir=_cache/py3-libs
 
   source $venv_dir/bin/activate  # enter virtualenv
 
-  # 2023-07 note: we're installing yapf separately, in a different venv,
-  # because it conflicts!
+  # 2023-07 note: we're installing yapf in a DIFFERENT venv, because it
+  # conflicts with MyPy deps!
   # "ERROR: pip's dependency resolver does not currently take into account all
   # the packages that are installed."
 
+  # --find-links uses a "cache dir" for packages (weird flag name!)
+
+  # Avoids a warning, but doesn't fix typed_ast
+  #time python3 -m pip install --find-links $package_dir wheel
+
   # for mycpp/
-  time python3 -m pip install -r $mypy_dir/test-requirements.txt
+  time python3 -m pip install --find-links $package_dir -r $mypy_dir/test-requirements.txt
 
   # pexpect: for spec/stateful/*.py
-  python3 -m pip install pexpect
-
-  # TODO: Need this to work around typed_ast bug:
-  #   https://github.com/python/typed_ast/issues/169
-  #
-  # Apply this patch
-  # https://github.com/python/typed_ast/commit/123286721923ae8f3885dbfbad94d6ca940d5c96
-
-  # - Do something like this 'pip download' in build/deps.sh fetch
-  # - Then create a WEDGE which installs it
-  #   - However note that this is NOT source code; there is binary code, e.g.
-  #   in lxml-*.whl
-  if false; then
-    local pip_dir=_tmp/pip
-    mkdir -p $pip_dir
-    python3 -m pip download -d $pip_dir -r $mypy_dir/test-requirements.txt
-    python3 -m pip download -d $pip_dir pexpect
-  fi
+  time python3 -m pip install --find-links $package_dir pexpect
 }
 
-install-py3-libs() {
+install-py3-libs-from-cache() {
+
+  # As well as end users
+
   local mypy_dir=${1:-$DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION}
 
   local py3
@@ -382,6 +521,342 @@ install-py3-libs() {
   $0 install-py3-libs-in-venv $venv_dir $mypy_dir
 }
 
+install-py3-libs() {
+  ### Invoked by Dockerfile.cpp-small, etc.
+
+  download-py3-libs
+  install-py3-libs-from-cache
+}
+
+# OBSOLETE in favor of install-spec-bin-fast
+install-spec-bin() {
+  if ! wedge-exists dash $DASH_VERSION $USER_WEDGE_DIR; then
+    deps/wedge.sh unboxed-build _build/deps-source/dash
+  fi
+
+  if ! wedge-exists mksh $MKSH_VERSION $USER_WEDGE_DIR; then
+    deps/wedge.sh unboxed-build _build/deps-source/mksh
+  fi
+
+  if ! wedge-exists busybox $BUSYBOX_VERSION $USER_WEDGE_DIR; then
+    deps/wedge.sh unboxed-build _build/deps-source/busybox
+  fi
+
+  # Fedora compile error - count_all_jobs
+  if ! wedge-exists bash $BASH_VER $USER_WEDGE_DIR; then
+    deps/wedge.sh unboxed-build _build/deps-source/bash
+  fi
+
+  # Fedora compiler error
+  # zsh ./configure is NOT detecting 'boolcodes', and then it has a broken
+  # fallback in Src/Modules/termcap.c that causes a compile error!  It seems
+  # like ncurses-devel should fix this, but it doesn't
+  #
+  # https://koji.fedoraproject.org/koji/rpminfo?rpmID=36987813
+  #
+  # from /home/build/oil/_build/deps-source/zsh/zsh-5.1.1/Src/Modules/termcap.c:38:
+  # /usr/include/term.h:783:56: note: previous declaration of ‘boolcodes’ with type ‘const char * const[]’
+  # 783 | extern NCURSES_EXPORT_VAR(NCURSES_CONST char * const ) boolcodes[];
+  #
+  # I think the ./configure is out of sync with the actual build?
+
+  if ! wedge-exists zsh $ZSH_VERSION ''; then
+    deps/wedge.sh unboxed-build _build/deps-source/zsh
+  fi
+
+  return
+
+  # Hm this has problem with out-of-tree build?  I think Oils does too actually
+  if ! wedge-exists yash $YASH_VERSION $USER_WEDGE_DIR; then
+    deps/wedge.sh unboxed-build _build/deps-source/yash
+  fi
+}
+
+# TODO:
+# - $ROOT_WEDGE_DIR vs. $USER_WEDGE_DIR is duplicating information that's
+# already in each WEDGE file
+
+py-wedges() {
+  ### for build/py.sh all
+
+  echo cmark $CMARK_VERSION $ROOT_WEDGE_DIR
+  echo re2c $RE2C_VERSION $ROOT_WEDGE_DIR
+  echo python2 $PY2_VERSION $ROOT_WEDGE_DIR
+  echo pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR
+}
+
+cpp-wedges() {
+  ### for ninja / mycpp translation
+
+  echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
+  echo mypy $MYPY_VERSION $USER_WEDGE_DIR
+
+  # py3-libs has a built time dep on both python3 and MyPy, so we're doing it
+  # separately for now
+  #echo py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR
+}
+
+spec-bin-wedges() {
+  ### for test/spec-py.sh osh-all
+
+  echo dash $DASH_VERSION $USER_WEDGE_DIR
+  echo bash $BASH_VER $USER_WEDGE_DIR
+  echo mksh $MKSH_VERSION $USER_WEDGE_DIR
+  echo zsh $ZSH_VERSION $USER_WEDGE_DIR
+  echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
+}
+
+timestamp() {
+  date '+%H:%M:%S'
+}
+
+my-time-tsv() {
+  python3 benchmarks/time_.py \
+    --tsv \
+    --time-span --rusage \
+    "$@"
+}
+
+maybe-install-wedge() {
+  local name=$1
+  local version=$2
+  local wedge_dir=$3  # e.g. $USER_WEDGE_DIR or empty
+
+  local task_file=$WEDGE_LOG_DIR/$name.task.tsv
+  local log_file=$WEDGE_LOG_DIR/$name.log.txt
+
+  echo "  TASK  $(timestamp)  $name $version > $log_file"
+
+  # python3 because it's OUTSIDE the container
+  # Separate columns that could be joined: number of files, total size
+  my-time-tsv --print-header \
+    --field xargs_slot \
+    --field wedge \
+    --field wedge_HREF \
+    --field version \
+    --output $task_file
+
+  if wedge-exists "$name" "$version" "$wedge_dir"; then
+    echo "CACHED  $(timestamp)  $name $version"
+    return
+  fi
+
+  local -a cmd=( deps/wedge.sh unboxed-build _build/deps-source/$name/ )
+
+  set +o errexit
+  my-time-tsv \
+    --field "$XARGS_SLOT" \
+    --field "$name" \
+    --field "$name.log.txt" \
+    --field "$version" \
+    --append \
+    --output $task_file \
+    "${cmd[@]}" "$@" >$log_file 2>&1
+  local status=$?
+  set -o errexit
+
+  if test "$status" -eq 0; then
+    echo "    OK  $(timestamp)  $name $version"
+  else
+    echo "  FAIL  $(timestamp)  $name $version"
+  fi
+}
+
+dummy-task() {
+  ### For testing log capture
+  local name=$1
+  local version=$2
+
+  echo "Building $name $version"
+
+  # random float between 0 and 3
+  # weirdly we need a seed from bash
+  # https://stackoverflow.com/questions/4048378/random-numbers-generation-with-awk-in-bash-shell
+  local secs
+  secs=$(awk -v seed=$RANDOM 'END { srand(seed); print rand() * 3 }' < /dev/null)
+
+  echo "sleep $secs"
+  sleep $secs
+
+  echo 'stdout'
+  log 'stderr'
+
+  if test $name = 'mksh'; then
+    echo "simulate failure for $name"
+    exit 2
+  fi
+}
+
+readonly WEDGE_LOG_DIR=_build/wedge/logs
+
+dummy-task-wrapper() {
+  # Similar to test/common.sh run-task-with-status, used by
+  # test/{spec,wild}-runner.sh
+  local name=$1
+  local version=$2
+
+  local task_file=$WEDGE_LOG_DIR/$name.task.tsv
+  local log_file=$WEDGE_LOG_DIR/$name.log.txt
+
+  echo "  TASK  $(timestamp)  $name $version > $log_file"
+
+  # python3 because it's OUTSIDE the container
+  # Separate columns that could be joined: number of files, total size
+  my-time-tsv --print-header \
+    --field xargs_slot \
+    --field wedge \
+    --field wedge_HREF \
+    --field version \
+    --output $task_file
+
+  my-time-tsv \
+    --field "$XARGS_SLOT" \
+    --field "$name" \
+    --field "$name.log.txt" \
+    --field "$version" \
+    --append \
+    --output $task_file \
+    $0 dummy-task "$@" >$log_file 2>&1 || true
+
+  echo "  DONE  $(timestamp)  $name $version"
+}
+
+html-head() {
+  # python3 because we're outside containers
+  PYTHONPATH=. python3 doctools/html_head.py "$@"
+}
+
+index-html()  {
+  local tasks_tsv=$1
+
+  local base_url='../../../web'
+  html-head --title 'Wedge Builds' \
+    "$base_url/ajax.js" \
+    "$base_url/table/table-sort.js" \
+    "$base_url/table/table-sort.css" \
+    "$base_url/base.css"\
+
+  table-sort-begin 'width60'
+
+  cat <<EOF
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+
+  <h1>Wedge Builds</h1>
+EOF
+
+  tsv2html3 $tasks_tsv
+
+  cat <<EOF
+  <p>
+    <a href="tasks.tsv">tasks.tsv</a>
+  </p>
+EOF
+
+  table-sort-end 'tasks'  # ID for sorting
+}
+
+NPROC=$(nproc)
+#NPROC=1
+
+install-wedge-list() {
+  ### Reads task rows from stdin
+  local parallel=${1:-}
+
+
+  mkdir -p _build/wedge/logs
+
+  local -a flags
+  if test -n "$parallel"; then
+    log ""
+    log "=== Installing wedges with $NPROC jobs in parallel"
+    log ""
+    flags=( -P $NPROC )
+  else
+    log ""
+    log "=== Installing wedges serially"
+    log ""
+  fi
+
+  # Reads from stdin
+  # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
+  xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge
+
+  #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
+}
+
+write-task-report() {
+  local tasks_tsv=_build/wedge/logs/tasks.tsv
+
+  python3 devtools/tsv_concat.py $WEDGE_LOG_DIR/*.task.tsv > $tasks_tsv
+  log "Wrote $tasks_tsv"
+
+  # TODO: version can be right-justified?
+  here-schema-tsv-4col >_build/wedge/logs/tasks.schema.tsv <<EOF
+column_name   type      precision strftime
+status        integer   0         -
+elapsed_secs  float     1         -
+user_secs     float     1         -
+start_time    float     1         %H:%M:%S
+end_time      float     1         %H:%M:%S
+sys_secs      float     1         -
+max_rss_KiB   integer   0         -
+xargs_slot    integer   0         -
+wedge         string    0         -
+wedge_HREF    string    0         -
+version       string    0         -
+EOF
+
+  index-html $tasks_tsv > $WEDGE_LOG_DIR/index.html
+  log "Wrote $WEDGE_LOG_DIR/index.html"
+}
+
+install-spec-bin-fast() {
+  spec-bin-wedges | install-wedge-list T
+  write-task-report
+}
+
+fake-py3-libs-wedge() {
+  local name=py3-libs
+  local version=$PY3_LIBS_VERSION
+
+  local task_file=$WEDGE_LOG_DIR/$name.task.tsv
+  local log_file=$WEDGE_LOG_DIR/$name.log.txt
+
+  my-time-tsv --print-header \
+    --field xargs_slot \
+    --field wedge \
+    --field wedge_HREF \
+    --field version \
+    --output $task_file
+
+  # There is no xargs slot!
+  my-time-tsv \
+    --field "-1" \
+    --field "$name" \
+    --field "$name.log.txt" \
+    --field "$version" \
+    --append \
+    --output $task_file \
+    $0 install-py3-libs >$log_file 2>&1 || true
+
+  echo "  FAKE  $(timestamp)  $name $version"
+}
+
+install-wedges-fast() {
+  echo " START  $(timestamp)"
+
+  # Do all of them in parallel
+  { py-wedges; cpp-wedges; spec-bin-wedges; } | install-wedge-list T
+
+  fake-py3-libs-wedge
+  echo "   END  $(timestamp)"
+
+  write-task-report
+}
+
+# OBSOLETE in favor of install-wedges-fast
 install-wedges() {
   local py_only=${1:-}
 
@@ -390,13 +865,12 @@ install-wedges() {
   # - Add
   #   - unboxed-rel-smoke-test -- move it inside container
   #   - rel-smoke-test -- mount it in a different location
-  # - Should have a CI task that does all of this!
 
-  if ! wedge-exists cmark 0.29.0; then
+  if ! wedge-exists cmark $CMARK_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/cmark/
   fi
 
-  if ! wedge-exists re2c 3.0; then
+  if ! wedge-exists re2c $RE2C_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/re2c/
   fi
 
@@ -410,7 +884,7 @@ install-wedges() {
   fi
 
   # Just copy this source tarball
-  if ! wedge-exists pyflakes $PYFLAKES_VERSION; then
+  if ! wedge-exists pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR; then
     local dest_dir=$USER_WEDGE_DIR/pkg/pyflakes/$PYFLAKES_VERSION
     mkdir -p $dest_dir
 
@@ -418,17 +892,15 @@ install-wedges() {
       $DEPS_SOURCE_DIR/pyflakes/pyflakes-$PYFLAKES_VERSION $dest_dir
   fi
 
-  # TODO: make the Python build faster by using all your cores?
   if ! wedge-exists python3 $PY3_VERSION; then
     deps/wedge.sh unboxed-build _build/deps-source/python3/
   fi
 
   # Copy all the contents, except for .git folder.
-  if ! wedge-exists mypy $MYPY_VERSION; then
+  if ! wedge-exists mypy $MYPY_VERSION $USER_WEDGE_DIR; then
 
     # NOTE: We have to also copy the .git dir, because it has
     # .git/modules/typeshed
-
     local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
     mkdir -p $dest_dir
 
@@ -438,16 +910,28 @@ install-wedges() {
       $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
   fi
 
-  install-py3-libs
+  if ! wedge-exists py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR; then
+    download-py3-libs
+    # This patch doesn't work?
+    # patch-typed-ast
+    install-py3-libs
+  fi
 
   if command -v tree > /dev/null; then
-    tree -L 2 $USER_WEDGE_DIR
+    tree -L 3 $USER_WEDGE_DIR
     echo
-    tree -L 2 /wedge
+    tree -L 3 /wedge/oils-for-unix.org
   fi
 }
 
-# Host wedges end up in ~/wedge
+install-wedges-py() {
+  install-wedges py_only
+}
+
+#
+# Unboxed wedge builds
+#
+
 uftrace-host() {
   ### built on demand; run $0 first
 
@@ -459,22 +943,20 @@ uftrace-host() {
   deps/wedge.sh unboxed-build _build/deps-source/uftrace
 }
 
-R-libs-host() {
-  deps/wedge.sh unboxed-build _build/deps-source/R-libs
-}
-
 bloaty-host() {
   deps/wedge.sh unboxed-build _build/deps-source/bloaty
 }
 
-install-wedges-py() {
-  install-wedges py_only
+R-libs-host() {
+  deps/wedge.sh unboxed-build _build/deps-source/R-libs
 }
 
+#
+# Wedges built inside a container, for copying into a container
+#
+
 container-wedges() {
-  ### Build wedges that are copied into containers, not run on host
-  
-  # These end up in _build/wedge/binary
+  #### host _build/wedge/binary -> guest container /wedge or ~/wedge
 
   #export-podman
 
@@ -494,8 +976,11 @@ container-wedges() {
     # For soil-benchmarks/ images
     deps/wedge.sh build deps/source.medo/R-libs/
   fi
-
 }
+
+#
+# Report
+#
 
 commas() {
   # Wow I didn't know this :a trick
@@ -509,17 +994,17 @@ commas() {
 }
 
 wedge-sizes() {
-  # Sizes
-  # printf justifies du output
-
   local tmp=_tmp/wedge-sizes.txt
-  du -s --bytes /wedge/*/*/* ~/wedge/*/*/* | awk '
+
+  # -b is --bytes, but use short flag for busybox compat
+  du -s -b /wedge/*/*/* ~/wedge/*/*/* | awk '
     { print $0  # print the line
       total_bytes += $1  # accumulate
     }
 END { print total_bytes " TOTAL" }
 ' > $tmp
   
+  # printf justifies du output
   cat $tmp | commas | xargs -n 2 printf '%15s  %s\n'
   echo
 
@@ -539,7 +1024,11 @@ wedge-report() {
   local tmp=_tmp/wedge-manifest.txt
 
   echo 'Biggest files'
-  find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp
+  if ! find /wedge ~/wedge -type f -a -printf '%10s %P\n' > $tmp; then
+    # busybox find doesn't have -printf
+    echo 'find -printf failed'
+    return
+  fi
 
   set +o errexit  # ignore SIGPIPE
   sort -n --reverse $tmp | head -n 20 | commas
@@ -585,7 +1074,6 @@ print("Total bytes by file type")
 for ext, total_bytes in bytes.most_common()[:n]:
   print("%10d  %s" % (total_bytes, ext))
 ' | commas
-
 }
 
 run-task "$@"

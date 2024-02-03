@@ -9,7 +9,7 @@ set -o errexit
 # sourced
 WEDGE_NAME='dash'
 WEDGE_VERSION='0.5.10.2'
-WEDGE_IS_ABSOLUTE=1  # TODO: try relaxing
+#WEDGE_IS_ABSOLUTE=1  # TODO: try relaxing
 
 wedge-make() {
   local src_dir=$1

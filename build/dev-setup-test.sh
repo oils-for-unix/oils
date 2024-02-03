@@ -18,10 +18,13 @@ smoke-test() {
   bin/osh -c 'echo HI osh python $OILS_VERSION'
   bin/ysh -c 'echo HI ysh python $OILS_VERSION'
 
-  ninja
+  # ASAN doesn't work with musl libc on Alpine
+  # https://gitlab.alpinelinux.org/alpine/aports/-/issues/10304
 
-  _bin/cxx-asan/osh -c 'echo HI osh C++ $OILS_VERSION'
-  _bin/cxx-asan/ysh -c 'echo HI ysh C++ $OILS_VERSION'
+  ninja _bin/cxx-dbg/{osh,ysh}
+
+  _bin/cxx-dbg/osh -c 'echo HI osh C++ $OILS_VERSION'
+  _bin/cxx-dbg/ysh -c 'echo HI ysh C++ $OILS_VERSION'
 }
 
 "$@"

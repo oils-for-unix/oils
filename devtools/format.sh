@@ -61,7 +61,7 @@ yapf-known() {
 
   # TODO: add all of osh/
   time yapf-files \
-    {asdl,builtin,core,data_lang,frontend,mycpp,ysh}/*.py \
+    {asdl,benchmarks,builtin,core,data_lang,frontend,mycpp,ysh}/*.py \
     osh/*_eval.py osh/*_parse.py \
     */NINJA_subgraph.py
 }

@@ -84,6 +84,44 @@ yes
 yes
 ## END
 
+#### Eggex flags to treat newlines as special are respected
+shopt -s ysh:upgrade
+
+if (u'abc123\n' ~ / digit %end /) {
+  echo 'BUG'
+}
+if (u'abc\n123' ~ / %start digit /) {
+  echo 'BUG'
+}
+
+if (u'abc123\n' ~ / digit %end ; reg_newline /) {
+  echo 'yes'
+}
+if (u'abc\n123' ~ / %start digit ; reg_newline /) {
+  echo 'yes'
+}
+
+if (u'\n' ~ / . /) {
+  echo 'yes'
+}
+if (u'\n' ~ / !digit /) {
+  echo 'yes'
+}
+
+if (u'\n' ~ / . ; reg_newline /) {
+  echo 'BUG'
+}
+if (u'\n' ~ / !digit ; reg_newline /) {
+  echo 'BUG'
+}
+
+## STDOUT:
+yes
+yes
+yes
+yes
+## END
+
 #### Positional captures with _group
 shopt -s ysh:all
 
@@ -619,3 +657,174 @@ sq
 char class
 ## END
 
+#### Str => replace(Str, Str)
+shopt --set ysh:all
+
+var mystr = 'abca'
+write $[mystr => replace('a', 'A')]  # Two matches
+write $[mystr => replace('b', 'B')]  # One match
+write $[mystr => replace('x', 'y')]  # No matches
+
+write $[mystr => replace('abc', '')]  # Empty substitution
+write $[mystr => replace('', 'new')]  # Empty substring
+## STDOUT:
+AbcA
+aBca
+abca
+a
+newanewbnewcnewanew
+## END
+
+#### Str => replace(Eggex, Str)
+shopt --set ysh:all
+
+var mystr = 'mangled----kebab--case'
+write $[mystr => replace(/ '-'+ /, '-')]
+
+setvar mystr = 'smaller-to-bigger'
+write $[mystr => replace(/ '-'+ /, '---')]
+## STDOUT:
+mangled-kebab-case
+smaller---to---bigger
+## END
+
+#### Str => replace(Eggex, Expr)
+shopt --set ysh:all
+
+var mystr = 'name: Bob'
+write $[mystr => replace(/ 'name: ' <capture dot+> /, ^"Hello $1")]
+write $[mystr => replace(/ 'name: ' <capture dot+> /, ^"Hello $1 (extracted from '$0')")]
+## STDOUT:
+Hello Bob
+Hello Bob (extracted from 'name: Bob')
+## END
+
+#### Str => replace(*, Expr), $0
+shopt --set ysh:all
+
+# Functionality
+var mystr = 'class Foo:  # this class is called Foo'
+write $[mystr => replace("Foo", ^"$0Bar")]
+write $[mystr => replace(/ 'Foo' /, ^"$0Bar")]
+
+# Edge-cases
+var dollar0 = "$0"
+func f() { return ("$0") }
+write $["foo" => replace("o", "$0") === "f$dollar0$dollar0"]
+write $["foo" => replace("o", ^[f()]) === "f$dollar0$dollar0"]
+write $[f() === "$dollar0"]
+## STDOUT:
+class FooBar:  # this class is called FooBar
+class FooBar:  # this class is called FooBar
+true
+true
+true
+## END
+
+#### Str => replace(Eggex, Expr), scopes
+shopt --set ysh:all
+
+var mystr = '123'
+
+var anotherVar = 'surprise!'
+write $[mystr => replace(/ <capture d+> /, ^"Hello $1 ($anotherVar)")]
+
+var globalName = '456'
+write $[mystr => replace(/ <capture d+ as globalName> /, ^"Hello $globalName")]
+
+write $[mystr => replace(/ <capture d+ as localName> /, ^"Hello $localName, $globalName")]
+## STDOUT:
+Hello 123 (surprise!)
+Hello 123
+Hello 123, 456
+## END
+
+#### Str => replace(Eggex, *, count)
+shopt --set ysh:all
+
+var mystr = '1abc2abc3abc'
+
+for count in (-2..4) {
+  write $[mystr => replace('abc', "-", count=count)]
+  write $[mystr => replace('abc', ^"-", count=count)]
+  write $[mystr => replace(/ [a-z]+ /, "-", count=count)]
+  write $[mystr => replace(/ [a-z]+ /, "-", count=count)]
+}
+## STDOUT:
+1-2-3-
+1-2-3-
+1-2-3-
+1-2-3-
+1-2-3-
+1-2-3-
+1-2-3-
+1-2-3-
+1abc2abc3abc
+1abc2abc3abc
+1abc2abc3abc
+1abc2abc3abc
+1-2abc3abc
+1-2abc3abc
+1-2abc3abc
+1-2abc3abc
+1-2-3abc
+1-2-3abc
+1-2-3abc
+1-2-3abc
+1-2-3-
+1-2-3-
+1-2-3-
+1-2-3-
+## END
+
+#### Str => replace(Str, Str), empty new/old strings
+var mystr = 'abca'
+write $[mystr => replace('abc', '')]            # Empty substitution
+write $[mystr => replace('', 'new')]            # Empty substring
+write $[mystr => replace('', 'new', count=1)]   # Empty substring, count != -1
+write $[mystr => replace('', 'new', count=10)]  # Empty substring, count too large
+## STDOUT:
+a
+newanewbnewcnewanew
+newabca
+newanewbnewcnewanew
+## END
+
+#### Str => replace(Eggex, Lazy), convert_func
+shopt --set ysh:all
+
+var mystr = '123'
+
+write $[mystr => replace(/ <capture d+ as n : int> /, ^"$[n + 1]")]
+
+# values automatically get stringified
+write $[mystr => replace(/ <capture d+ as n : int> /, ^"$1")]
+
+func not_str(inp) {
+  return ({ "value": inp })
+}
+
+# should fail to stringify $1
+try { call mystr => replace(/ <capture d+ : not_str> /, ^"$1") }
+write status=$_status
+## STDOUT:
+124
+123
+status=3
+## END
+
+#### Str => replace(Eggex, *), eflags
+shopt --set ysh:all
+
+var mystr = $'1-2-3\n4-5'
+write $[mystr => replace(/ d+ /, ^"[$0]")]
+write $[mystr => replace(/ ^ d+ /, ^"[$0]")]
+write $[mystr => replace(/ ^ d+ ; reg_newline /, ^"[$0]")]
+## STDOUT:
+[1]-[2]-[3]
+[4]-[5]
+[1]-2-3
+4-5
+[1]-2-3
+[4]-5
+## END
