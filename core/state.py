@@ -1100,7 +1100,7 @@ class Mem(object):
         self.is_main = True  # we start out in main
 
         # For the ctx builtin
-        self.ctx_stack = []  # List[Dict[str, value_t]]
+        self.ctx_stack = []  # type: List[Dict[str, value_t]]
 
     def __repr__(self):
         # type: () -> str

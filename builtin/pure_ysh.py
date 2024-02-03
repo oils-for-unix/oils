@@ -4,7 +4,7 @@ builtin/pure_ysh.py - YSH builtins that don't do I/O.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (cmd_value, scope_e)
-from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.syntax_asdl import command_t, loc, loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
 from core import error
 from core import state
@@ -15,7 +15,7 @@ from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 
-from typing import TYPE_CHECKING, cast, List, Tuple, Any
+from typing import TYPE_CHECKING, cast, Any, Dict, List, Optional, Tuple
 
 if TYPE_CHECKING:
     from core import ui
@@ -142,14 +142,13 @@ class Ctx(vm._Builtin):
         if field not in ctx:
             ctx[field] = value.List([])
 
-        arr = ctx[field]
-
-        if arr.tag() != value_e.List:
+        UP_arr = ctx[field]
+        if UP_arr.tag() != value_e.List:
             raise error.TypeErr(
-                arr, "Expected the context item '%s' to be a List" % (field),
-                blame)
+                UP_arr,
+                "Expected the context item '%s' to be a List" % (field), blame)
 
-        arr = cast(value.List, arr)
+        arr = cast(value.List, UP_arr)
         arr.items.append(item)
 
         return 0
@@ -161,8 +160,8 @@ class Ctx(vm._Builtin):
                                          accept_typed_args=True)
 
         verb = arg_r.Peek()
-        field = None  # Optional[str]
-        field_loc = None  # Optional[loc_t]
+        field = None  # type: Optional[str]
+        field_loc = None  # type: Optional[loc_t]
         if verb is None:
             raise error.Usage('expected a verb (push, set, emit)',
                               arg_r.Location())
