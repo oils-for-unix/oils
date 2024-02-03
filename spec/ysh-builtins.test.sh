@@ -211,6 +211,7 @@ echo (42)
 ## status: 2
 
 #### echo builtin should disallow typed args - variable
+var x = 43
 echo (x)
 ## status: 2
 
