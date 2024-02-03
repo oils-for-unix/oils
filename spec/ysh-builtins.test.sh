@@ -206,6 +206,15 @@ write -- "$_reply"
 foo
 ## END
 
+#### echo builtin should disallow typed args - literal
+echo (42)
+## status: 2
+
+#### echo builtin should disallow typed args - variable
+var x = 43
+echo (x)
+## status: 2
+
 #### read --all-lines
 seq 3 | read --all-lines :nums
 write --sep ' ' -- @nums
