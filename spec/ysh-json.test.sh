@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -208,14 +208,14 @@ shopt -s ysh:upgrade
 fopen >tmp.txt {
   pp line (L)
 }
-fgrep -n -o '[ ...' tmp.txt
+fgrep -n -o '[ -->' tmp.txt
 
 json write (L)
 echo 'should have failed'
 
 ## status: 1
 ## STDOUT:
-1:[ ...
+1:[ -->
 ## END
 
 #### json write of Dict in cycle
@@ -227,14 +227,14 @@ shopt -s ysh:upgrade
 fopen >tmp.txt {
   pp line (d)
 }
-fgrep -n -o '{ ...' tmp.txt
+fgrep -n -o '{ -->' tmp.txt
 
 json write (d)
 echo 'should have failed'
 
 ## status: 1
 ## STDOUT:
-1:{ ...
+1:{ -->
 ## END
 
 #### json write of List/Dict referenced twice (bug fix)
@@ -245,11 +245,11 @@ var mydict = {foo: "bar"}
 var top = {k: mylist, k2: mylist, k3: mydict, k4: mydict}
 
 # BUG!
-json write (top)
+json write --pretty=F (top)
 
 ## STDOUT:
+{"k":[1,2,3],"k2":[1,2,3],"k3":{"foo":"bar"},"k4":{"foo":"bar"}}
 ## END
-
 
 #### json read doesn't accept u'' or b'' strings
 

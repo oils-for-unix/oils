@@ -110,6 +110,24 @@ encode-obj-cycles() {
   echo
 }
 
+multiple-refs() {
+  # Python prints a tree
+  python3 -c 'import json; mylist = [1,2,3]; val = [mylist, mylist]; print(repr(val)); print(json.dumps(val))'
+  echo
+
+  # Same with node.js
+  nodejs -e 'var mylist = [1,2,3]; var val = [mylist, mylist]; console.log(val); console.log(JSON.stringify(val))'
+  echo
+
+  # Same with Oils
+  bin/osh -c 'var mylist = [1,2,3]; var val = [mylist, mylist]; = val; json write (val); pp asdl (val)'
+  echo
+}
+
+oils-cycles() {
+  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp line (d); pp asdl (d); json write (d)'
+}
+
 surrogate-pair() {
   local json=${1:-'"\ud83e\udd26"'}
 

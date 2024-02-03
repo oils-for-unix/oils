@@ -37,11 +37,11 @@ setvar d.cycle = d
 
 pp line (d) | fgrep -o '{"cycle":'
 
-pp asdl (d) | fgrep -o 'cycle ---'
+pp asdl (d) | fgrep -o 'cycle ...'
 
 ## STDOUT:
 {"cycle":
-cycle ---
+cycle ...
 ## END
 
 #### pp line supports BashArray, BashAssoc

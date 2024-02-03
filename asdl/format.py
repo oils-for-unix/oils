@@ -413,8 +413,8 @@ class _PrettyPrinter(object):
 
         elif tag == hnode_e.ObjectCycle:
             node = cast(hnode.ObjectCycle, UP_node)
-            # --- means cycle, while ... means shared
-            f.write('--- 0x%x ---' % node.heap_id)
+            # ... means omitting second reference, while --- means a cycle
+            f.write('...0x%x' % node.heap_id)
 
         else:
             raise AssertionError(node)
@@ -501,8 +501,8 @@ def _TrySingleLine(node, f, max_chars):
 
     elif tag == hnode_e.ObjectCycle:
         node = cast(hnode.ObjectCycle, UP_node)
-        # --- means cycle, while ... means shared
-        f.write('--- 0x%x ---' % node.heap_id)
+        # ... means omitting second reference, while --- means a cycle
+        f.write('...0x%x' % node.heap_id)
 
     else:
         raise AssertionError(node)

@@ -164,7 +164,8 @@ class InstancePrinter(object):
         # Key is vm.HeapValueId(val)
         # Value is always True
         # Dict[int, None] doesn't translate -- it would be nice to have a set()
-        self.seen = {}  # type: Dict[int, bool]
+        self.exploring = {}  # type: Dict[int, bool]
+        self.finished = {}  # type: Dict[int, bool]
 
     def _GetIndent(self, num_spaces):
         # type: (int) -> str
@@ -172,16 +173,82 @@ class InstancePrinter(object):
             self.spaces[num_spaces] = ' ' * num_spaces
         return self.spaces[num_spaces]
 
+    def _PrintList(self, val, level):
+        # type: (value.List, int) -> None
+
+        if self.indent == -1:
+            bracket_indent = ''
+            item_indent = ''
+            maybe_newline = ''
+        else:
+            bracket_indent = self._GetIndent(level * self.indent)
+            item_indent = self._GetIndent((level + 1) * self.indent)
+            maybe_newline = '\n'
+
+        if len(val.items) == 0:  # Special case like Python/JS
+            self.buf.write('[]')
+        else:
+            self.buf.write('[')
+            self.buf.write(maybe_newline)
+            for i, item in enumerate(val.items):
+                if i != 0:
+                    self.buf.write(',')
+                    self.buf.write(maybe_newline)
+
+                self.buf.write(item_indent)
+                self.Print(item, level + 1)
+            self.buf.write(maybe_newline)
+
+            self.buf.write(bracket_indent)
+            self.buf.write(']')
+
+    def _PrintDict(self, val, level):
+        # type: (value.Dict, int) -> None
+
+        if self.indent == -1:
+            bracket_indent = ''
+            item_indent = ''
+            maybe_newline = ''
+            maybe_space = ''
+        else:
+            bracket_indent = self._GetIndent(level * self.indent)
+            item_indent = self._GetIndent((level + 1) * self.indent)
+            maybe_newline = '\n'
+            maybe_space = ' '  # after colon
+
+        if len(val.d) == 0:  # Special case like Python/JS
+            self.buf.write('{}')
+        else:
+            self.buf.write('{')
+            self.buf.write(maybe_newline)
+            i = 0
+            for k, v in iteritems(val.d):
+                if i != 0:
+                    self.buf.write(',')
+                    self.buf.write(maybe_newline)
+
+                self.buf.write(item_indent)
+
+                pyj8.WriteString(k, self.options, self.buf)
+
+                self.buf.write(':')
+                self.buf.write(maybe_space)
+
+                self.Print(v, level + 1)
+
+                i += 1
+
+            self.buf.write(maybe_newline)
+            self.buf.write(bracket_indent)
+            self.buf.write('}')
+
     def Print(self, val, level=0):
         # type: (value_t, int) -> None
-
-        #log('indent %r level %d', indent, level)
 
         # special value that means everything is on one line
         # It's like
         #    JSON.stringify(d, null, 0)
         # except we use -1, not 0.  0 can still have newlines.
-
         if self.indent == -1:
             bracket_indent = ''
             item_indent = ''
@@ -223,9 +290,15 @@ class InstancePrinter(object):
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = vm.HeapValueId(val)
-                if heap_id in self.seen:
+                if heap_id in self.finished:
+                    # Print it AGAIN.  We print a JSON tree, which means we can
+                    # visit and print nodes MANY TIMES, as long as they're not
+                    # in a cycle.
+                    self._PrintList(val, level)
+                    return
+                if heap_id in self.exploring:
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('[ ...%s ]' % vm.ValueIdString(val))
+                        self.buf.write('[ -->%s ]' % vm.ValueIdString(val))
                         return
                     else:
                         # node.js prints which index closes the cycle
@@ -233,34 +306,24 @@ class InstancePrinter(object):
                             "Can't encode List%s in object cycle" %
                             vm.ValueIdString(val))
 
-                self.seen[heap_id] = True
-
-                if len(val.items) == 0:  # Special case like Python/JS
-                    self.buf.write('[]')
-                    return
-
-                self.buf.write('[')
-                self.buf.write(maybe_newline)
-                for i, item in enumerate(val.items):
-                    if i != 0:
-                        self.buf.write(',')
-                        self.buf.write(maybe_newline)
-
-                    self.buf.write(item_indent)
-                    self.Print(item, level + 1)
-                self.buf.write(maybe_newline)
-
-                self.buf.write(bracket_indent)
-                self.buf.write(']')
+                self.exploring[heap_id] = True
+                self._PrintList(val, level)
+                self.finished[heap_id] = True
 
             elif case(value_e.Dict):
                 val = cast(value.Dict, UP_val)
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = vm.HeapValueId(val)
-                if heap_id in self.seen:
+                if heap_id in self.finished:
+                    # Print it AGAIN.  We print a JSON tree, which means we can
+                    # visit and print nodes MANY TIMES, as long as they're not
+                    # in a cycle.
+                    self._PrintDict(val, level)
+                    return
+                if heap_id in self.exploring:
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('{ ...%s }' % vm.ValueIdString(val))
+                        self.buf.write('{ -->%s }' % vm.ValueIdString(val))
                         return
                     else:
                         # node.js prints which key closes the cycle
@@ -268,34 +331,9 @@ class InstancePrinter(object):
                             "Can't encode Dict%s in object cycle" %
                             vm.ValueIdString(val))
 
-                self.seen[heap_id] = True
-
-                if len(val.d) == 0:  # Special case like Python/JS
-                    self.buf.write('{}')
-                    return
-
-                self.buf.write('{')
-                self.buf.write(maybe_newline)
-                i = 0
-                for k, v in iteritems(val.d):
-                    if i != 0:
-                        self.buf.write(',')
-                        self.buf.write(maybe_newline)
-
-                    self.buf.write(item_indent)
-
-                    pyj8.WriteString(k, self.options, self.buf)
-
-                    self.buf.write(':')
-                    self.buf.write(maybe_space)
-
-                    self.Print(v, level + 1)
-
-                    i += 1
-
-                self.buf.write(maybe_newline)
-                self.buf.write(bracket_indent)
-                self.buf.write('}')
+                self.exploring[heap_id] = True
+                self._PrintDict(val, level)
+                self.finished[heap_id] = True
 
             # BashArray and BashAssoc should be printed with pp line (x), e.g.
             # for spec tests.
