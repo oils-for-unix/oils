@@ -911,6 +911,10 @@ ysh-user-feedback() {
   run-file ysh-user-feedback "$@"
 }
 
+ysh-builtin-ctx() {
+  run-file ysh-builtin-ctx "$@"
+}
+
 ysh-builtin-error() {
   run-file ysh-builtin-error "$@"
 }
