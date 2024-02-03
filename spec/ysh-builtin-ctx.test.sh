@@ -14,3 +14,45 @@ json write (mydict)
   "key2": "value2"
 }
 ## END
+
+#### ctx emit
+var p = {}
+ctx push (p) {
+  ctx emit flag ({short_name: '-v'})
+  # p => {'flag': [{short_name: '-v'}]}
+  json write (p)
+
+  ctx emit flag ({short_name: '-c'})
+  # p => {'flag': [{short_name: '-v'}, {short_name: '-c'}]}
+  json write (p)
+}
+json write (p)
+## STDOUT:
+{
+  "flag": [
+    {
+      "short_name": "-v"
+    }
+  ]
+}
+{
+  "flag": [
+    {
+      "short_name": "-v"
+    },
+    {
+      "short_name": "-c"
+    }
+  ]
+}
+{
+  "flag": [
+    {
+      "short_name": "-v"
+    },
+    {
+      "short_name": "-c"
+    }
+  ]
+}
+## END

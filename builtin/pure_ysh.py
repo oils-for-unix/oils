@@ -4,7 +4,7 @@ builtin/pure_ysh.py - YSH builtins that don't do I/O.
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (cmd_value, scope_e)
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
 from core import error
 from core import state
@@ -131,6 +131,29 @@ class Ctx(vm._Builtin):
 
         return 0
 
+    def _Emit(self, field, item, blame):
+        # type: (str, value_t, loc_t) -> int
+
+        ctx = self.mem.GetContext()
+        if ctx is None:
+            # TODO: raise error
+            return 1
+
+        if field not in ctx:
+            ctx[field] = value.List([])
+
+        arr = ctx[field]
+
+        if arr.tag() != value_e.List:
+            raise error.TypeErr(
+                arr, "Expected the context item '%s' to be a List" % (field),
+                blame)
+
+        arr = cast(value.List, arr)
+        arr.items.append(item)
+
+        return 0
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         _, arg_r = flag_spec.ParseCmdVal('ctx',
@@ -138,11 +161,19 @@ class Ctx(vm._Builtin):
                                          accept_typed_args=True)
 
         verb = arg_r.Peek()
+        field = None  # Optional[str]
+        field_loc = None  # Optional[loc_t]
         if verb is None:
-            raise error.Usage('expected a verb (push, set)', arg_r.Location())
-        if verb not in ("push", "set"):
+            raise error.Usage('expected a verb (push, set, emit)',
+                              arg_r.Location())
+        if verb not in ("push", "set", "emit"):
             raise error.Usage("unknown verb '%s'" % verb, arg_r.Location())
         arg_r.Next()
+
+        if verb == "emit":
+            field = arg_r.Peek()
+            field_loc = arg_r.Location()
+            arg_r.Next()
 
         arg_r.AtEnd()
 
@@ -153,11 +184,21 @@ class Ctx(vm._Builtin):
             rd.Done()
 
             return self._Push(context, block)
+
         elif verb == "set":
             updates = rd.RestNamed()
             rd.Done()
 
             return self._Set(updates)
+
+        elif verb == "emit":
+            assert field is not None
+            assert field_loc is not None
+            item = rd.PosValue()
+            rd.Done()
+
+            return self._Emit(field, item, field_loc)
+
         else:
             raise AssertionError()  # Unreachable
 
