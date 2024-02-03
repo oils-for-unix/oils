@@ -102,6 +102,66 @@ class Shvar(vm._Builtin):
         return 0
 
 
+class Ctx(vm._Builtin):
+
+    def __init__(self, mem, cmd_ev):
+        # type: (state.Mem, CommandEvaluator) -> None
+        self.mem = mem
+        self.cmd_ev = cmd_ev  # To run blocks
+
+    def _Push(self, context, block):
+        # type: (Dict[str, value_t], command_t) -> int
+
+        # TODO: ctx_Ctx
+        self.mem.PushContextStack(context)
+        self.cmd_ev.EvalCommand(block)
+        self.mem.PopContextStack()
+
+        return 0
+
+    def _Set(self, updates):
+        # type: (Dict[str, value_t]) -> int
+
+        ctx = self.mem.GetContext()
+        if ctx is None:
+            # TODO: raise error
+            return 1
+
+        ctx.update(updates)
+
+        return 0
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        _, arg_r = flag_spec.ParseCmdVal('ctx',
+                                         cmd_val,
+                                         accept_typed_args=True)
+
+        verb = arg_r.Peek()
+        if verb is None:
+            raise error.Usage('expected a verb (push, set)', arg_r.Location())
+        if verb not in ("push", "set"):
+            raise error.Usage("unknown verb '%s'" % verb, arg_r.Location())
+        arg_r.Next()
+
+        arg_r.AtEnd()
+
+        rd = typed_args.ReaderForProc(cmd_val)
+        if verb == "push":
+            context = rd.PosDict()
+            block = rd.PosCommand()
+            rd.Done()
+
+            return self._Push(context, block)
+        elif verb == "set":
+            updates = rd.RestNamed()
+            rd.Done()
+
+            return self._Set(updates)
+        else:
+            raise AssertionError()  # Unreachable
+
+
 class PushRegisters(vm._Builtin):
 
     def __init__(self, mem, cmd_ev):

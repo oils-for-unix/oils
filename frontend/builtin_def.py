@@ -60,6 +60,7 @@ _NORMAL_BUILTINS = [
     'fork', 'forkwait',
     'fopen',
     'shvar',
+    'ctx',
 
     'runproc',
     'boolstatus',

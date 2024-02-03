@@ -1099,6 +1099,9 @@ class Mem(object):
         self.running_debug_trap = False  # set by ctx_DebugTrap()
         self.is_main = True  # we start out in main
 
+        # For the ctx builtin
+        self.ctx_stack = []  # List[Dict[str, value_t]]
+
     def __repr__(self):
         # type: () -> str
         parts = []  # type: List[str]
@@ -2208,6 +2211,21 @@ class Mem(object):
     def GetRegexMatch(self):
         # type: () -> regex_match_t
         return self.regex_match[-1]
+
+    def PushContextStack(self, context):
+        # type: (Dict[str, value_t]) -> None
+        self.ctx_stack.append(context)
+
+    def GetContext(self):
+        # type: () -> Optional[Dict[str, value_t]]
+        if len(self.ctx_stack):
+            return self.ctx_stack[-1]
+        return None
+
+    def PopContextStack(self):
+        # type: () -> Dict[str, value_t]
+        assert self.ctx_stack, "Empty context stack"
+        return self.ctx_stack.pop()
 
 
 #
