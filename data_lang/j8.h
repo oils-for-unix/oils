@@ -1,7 +1,7 @@
 #ifndef DATA_LANG_J8_H
 #define DATA_LANG_J8_H
 
-#include <stdio.h>  // sprintf
+#include <stdio.h>   // sprintf
 #include <string.h>  // memcmp
 
 #include "data_lang/utf8_impls/bjoern_dfa.h"
@@ -40,38 +40,17 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
   //
   // Handle \\ \b \f \n \r \t
   //
+
+  // clang-format off
   switch (ch) {
-  case '\\':
-    J8_OUT('\\');
-    J8_OUT('\\');
-    (*p_in)++;
-    return 0;
-  case '\b':
-    J8_OUT('\\');
-    J8_OUT('b');
-    (*p_in)++;
-    return 0;
-  case '\f':
-    J8_OUT('\\');
-    J8_OUT('f');
-    (*p_in)++;
-    return 0;
-  case '\n':
-    J8_OUT('\\');
-    J8_OUT('n');
-    (*p_in)++;
-    return 0;
-  case '\r':
-    J8_OUT('\\');
-    J8_OUT('r');
-    (*p_in)++;
-    return 0;
-  case '\t':
-    J8_OUT('\\');
-    J8_OUT('t');
-    (*p_in)++;
-    return 0;
+  case '\\': J8_OUT('\\'); J8_OUT('\\'); (*p_in)++; return 0;
+  case '\b': J8_OUT('\\'); J8_OUT('b'); (*p_in)++; return 0;
+  case '\f': J8_OUT('\\'); J8_OUT('f'); (*p_in)++; return 0;
+  case '\n': J8_OUT('\\'); J8_OUT('n'); (*p_in)++; return 0;
+  case '\r': J8_OUT('\\'); J8_OUT('r'); (*p_in)++; return 0;
+  case '\t': J8_OUT('\\'); J8_OUT('t'); (*p_in)++; return 0;
   }
+  // clang-format on
 
   //
   // Conditionally handle \' and \"
@@ -166,45 +145,20 @@ static inline void BashDollarEncodeOne(unsigned char** p_in,
   unsigned char ch = **p_in;
 
   //
-  // Handle \\ \b \f \n \r \t
+  // Handle \\ \b \f \n \r \t \'
   //
+
+  // clang-format off
   switch (ch) {
-  case '\\':
-    J8_OUT('\\');
-    J8_OUT('\\');
-    (*p_in)++;
-    return;
-  case '\b':
-    J8_OUT('\\');
-    J8_OUT('b');
-    (*p_in)++;
-    return;
-  case '\f':
-    J8_OUT('\\');
-    J8_OUT('f');
-    (*p_in)++;
-    return;
-  case '\n':
-    J8_OUT('\\');
-    J8_OUT('n');
-    (*p_in)++;
-    return;
-  case '\r':
-    J8_OUT('\\');
-    J8_OUT('r');
-    (*p_in)++;
-    return;
-  case '\t':
-    J8_OUT('\\');
-    J8_OUT('t');
-    (*p_in)++;
-    return;
-  case '\'':
-    J8_OUT('\\');
-    J8_OUT('\'');
-    (*p_in)++;
-    return;
+  case '\\': J8_OUT('\\'); J8_OUT('\\'); (*p_in)++; return;
+  case '\b': J8_OUT('\\'); J8_OUT('b'); (*p_in)++; return;
+  case '\f': J8_OUT('\\'); J8_OUT('f'); (*p_in)++; return;
+  case '\n': J8_OUT('\\'); J8_OUT('n'); (*p_in)++; return;
+  case '\r': J8_OUT('\\'); J8_OUT('r'); (*p_in)++; return;
+  case '\t': J8_OUT('\\'); J8_OUT('t'); (*p_in)++; return;
+  case '\'': J8_OUT('\\'); J8_OUT('\''); (*p_in)++; return;
   }
+  // clang-format off
 
   //
   // Unprintable ASCII control codes

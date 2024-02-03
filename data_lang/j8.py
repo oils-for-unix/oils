@@ -151,6 +151,11 @@ class Printer(object):
         return buf.getvalue()
 
 
+# DFS traversal state
+UNSEEN = 0
+EXPLORING = 1
+FINISHED = 2
+
 class InstancePrinter(object):
     """Print a value tree as J8/JSON."""
 
@@ -164,8 +169,7 @@ class InstancePrinter(object):
         # Key is vm.HeapValueId(val)
         # Value is always True
         # Dict[int, None] doesn't translate -- it would be nice to have a set()
-        self.exploring = {}  # type: Dict[int, bool]
-        self.finished = {}  # type: Dict[int, bool]
+        self.visited = {}  # type: Dict[int, int]
 
     def _GetIndent(self, num_spaces):
         # type: (int) -> str
@@ -290,13 +294,15 @@ class InstancePrinter(object):
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = vm.HeapValueId(val)
-                if heap_id in self.finished:
+
+                node_state = self.visited.get(heap_id, UNSEEN)
+                if node_state == FINISHED:
                     # Print it AGAIN.  We print a JSON tree, which means we can
                     # visit and print nodes MANY TIMES, as long as they're not
                     # in a cycle.
                     self._PrintList(val, level)
                     return
-                if heap_id in self.exploring:
+                if node_state == EXPLORING:
                     if self.options & SHOW_CYCLES:
                         self.buf.write('[ -->%s ]' % vm.ValueIdString(val))
                         return
@@ -306,22 +312,24 @@ class InstancePrinter(object):
                             "Can't encode List%s in object cycle" %
                             vm.ValueIdString(val))
 
-                self.exploring[heap_id] = True
+                self.visited[heap_id] = EXPLORING
                 self._PrintList(val, level)
-                self.finished[heap_id] = True
+                self.visited[heap_id] = FINISHED
 
             elif case(value_e.Dict):
                 val = cast(value.Dict, UP_val)
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = vm.HeapValueId(val)
-                if heap_id in self.finished:
+
+                node_state = self.visited.get(heap_id, UNSEEN)
+                if node_state == FINISHED:
                     # Print it AGAIN.  We print a JSON tree, which means we can
                     # visit and print nodes MANY TIMES, as long as they're not
                     # in a cycle.
                     self._PrintDict(val, level)
                     return
-                if heap_id in self.exploring:
+                if node_state == EXPLORING:
                     if self.options & SHOW_CYCLES:
                         self.buf.write('{ -->%s }' % vm.ValueIdString(val))
                         return
@@ -331,9 +339,9 @@ class InstancePrinter(object):
                             "Can't encode Dict%s in object cycle" %
                             vm.ValueIdString(val))
 
-                self.exploring[heap_id] = True
+                self.visited[heap_id] = EXPLORING
                 self._PrintDict(val, level)
-                self.finished[heap_id] = True
+                self.visited[heap_id] = FINISHED
 
             # BashArray and BashAssoc should be printed with pp line (x), e.g.
             # for spec tests.

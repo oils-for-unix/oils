@@ -116,25 +116,30 @@ Identical to the dynamically typed case above.
 - Fix ADSL cycle bug
   - Fix it in C++
 
-- distinguish ... vs ---
+- Do we need ASDL ref counts?
+  - because the thing is long. to fix bin/osh -n
+  - I think that WORD WRAPPING is more important, and will help.
 
-- Somehow do ASDL ref counts, because the thing is long
-  - to fix bin/osh -n
-
+- Components
+  - separate parser for TYG8
+  - j8.PrettyPrinter -> new hnode representation
+  - ASDL PrettyTree() -> new hnode representation
+  - ASDL AbbreviatedTree() -> new hnode representation
+    - need to figure out if we want abbreviations in C++
+    - it's more readable
 
 - Write separate parser for TYG8
   - no commas, no JSON8, just () and []
     - (unquotedyaks unquotedjs:value) and [value value]
     - unquotedyaks 
-      - module.Type
-      - `obj->method`
       - well to be honest this is probably SUGAR
       - so Yaks is different than ASDL
         - ASDL does have module.Type, but it doesn't need to be parsed
           differently
       - reader macro
-        - (. module 'Type')
-        - (-> obj 'method')
+        - `module::Type`  to  (:: module 'Type')
+        - `obj->method`   to  (-> obj 'method')
+        - `obj.method`    to  (. obj 'field')
 
   - but is it for ASDL?  or is it for Yaks?
   - is it worth unifying these things?
@@ -142,11 +147,14 @@ Identical to the dynamically typed case above.
 - In both JSON8 and TYG8
   - allow comments
   - allow unquoted identifiers
-    - lexer could be different here, not sure
+    - for TYG8 field names
+    - we need a different LEXER for reader macros
+      - recognize . -> :: etc.
+      - just like WASM text format, there are some syntax affordances, like
+        i32.local
 
 - maybe change = operator and pp line (x) to use new pretty printer?
 
 - come up with new hnode.asdl
-  - with better line-wrapping algorithm?
-
-
+  - Is it just Compound and Atom?
+  - ObjectCycle is an atom, etc.
