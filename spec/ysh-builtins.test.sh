@@ -214,12 +214,6 @@ echo (42)
 echo (x)
 ## status: 2
 
-#### read --line --with-eol --qsn
-
-## STDOUT:
-foo
-## END
-
 #### read --all-lines
 seq 3 | read --all-lines :nums
 write --sep ' ' -- @nums
