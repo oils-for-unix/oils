@@ -58,32 +58,27 @@ json write (p)
 ## END
 
 #### mini-argparse
-proc parser (; place ; ; block_def) {    # place for parser, and block arg
-  var p = {}  # "flag spec", maybe call it parser now
-  ctx push (p) {
-    eval (block_def)
-    # the eval "expands" to calls like this:
-    # ctx emit flag ({short_name: '-v', long_name: '--verbose'})  # flag -v --verbose
-    # ctx emit flag ({long_name: '--count', type: Int, help: 'z'})  # flag --count (Int, help='z')
-    # ctx emit arg (name: 'src')  # arg src
-  }
-  call place->setValue(p)  # "return" the parser we constructed
+proc parser (; place ; ; block_def) {
+  var p = {}
+  ctx push (p, block_def)
+  call place->setValue(p)
 }
 
+var Bool = "Bool"
+var Int = "Int"
 proc flag (short_name, long_name; type; help) {
-  ctx emit flag ({short_name, long_name, type, help})  # using "punning"
+  ctx emit flag ({short_name, long_name, type, help})
 }
 
 proc arg (name) {
   ctx emit arg ({name})
 }
 
-var Bool = "Bool"
-
-parser (&spec) {  # call proc parser with place and block
-  flag -t --tsv (Bool, help='')
-  flag -r --rusage (Bool, help='')
-  arg file
+parser (&spec) {
+  flag -t --tsv (Bool, help='Output as a TSV')
+  flag -r --recursive (Bool, help='Recurse into the given directory')
+  flag -N --count (Int, help='Process no more than N files')
+  arg path
 }
 json write (spec)
 ## STDOUT:
@@ -93,18 +88,24 @@ json write (spec)
       "short_name": "-t",
       "long_name": "--tsv",
       "type": "Bool",
-      "help": ""
+      "help": "Output as a TSV"
     },
     {
       "short_name": "-r",
-      "long_name": "--rusage",
+      "long_name": "--recursive",
       "type": "Bool",
-      "help": ""
+      "help": "Recurse into the given directory"
+    },
+    {
+      "short_name": "-N",
+      "long_name": "--count",
+      "type": "Int",
+      "help": "Process no more than N files"
     }
   ],
   "arg": [
     {
-      "name": "file"
+      "name": "path"
     }
   ]
 }
