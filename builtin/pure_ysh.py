@@ -102,6 +102,23 @@ class Shvar(vm._Builtin):
         return 0
 
 
+class ctx_Context(object):
+    """For ctx push (context) { ... }"""
+
+    def __init__(self, mem, context):
+        # type: (state.Mem, Dict[str, value_t]) -> None
+        self.mem = mem
+        self.mem.PushContextStack(context)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.PopContextStack()
+
+
 class Ctx(vm._Builtin):
 
     def __init__(self, mem, cmd_ev):
@@ -111,13 +128,8 @@ class Ctx(vm._Builtin):
 
     def _Push(self, context, block):
         # type: (Dict[str, value_t], command_t) -> int
-
-        # TODO: ctx_Ctx
-        self.mem.PushContextStack(context)
-        self.cmd_ev.EvalCommand(block)
-        self.mem.PopContextStack()
-
-        return 0
+        with ctx_Context(self.mem, context):
+            return self.cmd_ev.EvalCommand(block)
 
     def _Set(self, updates):
         # type: (Dict[str, value_t]) -> int
