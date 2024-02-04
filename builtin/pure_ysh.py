@@ -15,7 +15,7 @@ from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 
-from typing import TYPE_CHECKING, cast, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, cast, Any, Dict, List, Tuple
 
 if TYPE_CHECKING:
     from core import ui
