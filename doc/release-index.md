@@ -78,7 +78,7 @@ These docs are **ready to read**:
 More:
 
 - [**All Docs**](doc/) about Oils (in progress).
-  - Including the [**Oils Reference**](ref/index.html) (in progress)
+  - Including the [**Oils Reference**](doc/ref/index.html) (in progress)
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oils.  These versions may not be up-to-date.
