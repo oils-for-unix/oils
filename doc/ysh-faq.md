@@ -72,9 +72,10 @@ The rules are subtle, so we avoid inventing new ones.
 
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
-YSH removed these flags to `echo` because it has good alternatives
+YSH removed these flags to `echo` to fix their interference with
+variable substitutions.
 
-To escape variables, use the statically-parsed string language, rather than
+To echo escape sequences, use the statically-parsed string language, rather than
 `echo -e`:
 
     echo $'tab \t newline \n'   # YES
@@ -84,10 +85,10 @@ To escape variables, use the statically-parsed string language, rather than
 
 To omit the newline, use the `write` builtin, rather than `echo -n`:
 
-    write -n 'prefix'           # YES
-    write --end '' -- 'prefix'  # synonym
+    write -n -- $prefix           # YES
+    write --end '' -- $prefix  # synonym
 
-    echo -n 'prefix'            # NO
+    echo -n $prefix            # NO
 
 ### Why Were `-e` and `-n` Removed?
 
