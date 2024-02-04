@@ -90,7 +90,7 @@ exit 0
 status=100
 ## END
 
-#### mini-argparse
+#### mini-parseArgs
 proc parser (; place ; ; block_def) {
   var p = {}
   ctx push (p, block_def)

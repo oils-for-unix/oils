@@ -126,6 +126,13 @@ class Ctx(vm._Builtin):
         self.mem = mem
         self.cmd_ev = cmd_ev  # To run blocks
 
+    def _GetContext(self):
+        # type: () -> Dict[str, value_t]
+        ctx = self.mem.GetContext()
+        if ctx is None:
+            raise error.FatalRuntime("Could not find a context. Did you forget to 'ctx push'?")
+        return ctx
+
     def _Push(self, context, block):
         # type: (Dict[str, value_t], command_t) -> int
         with ctx_Context(self.mem, context):
@@ -133,22 +140,13 @@ class Ctx(vm._Builtin):
 
     def _Set(self, updates):
         # type: (Dict[str, value_t]) -> int
-
-        ctx = self.mem.GetContext()
-        if ctx is None:
-            # TODO: raise error
-            return 1
-
+        ctx = self._GetContext()
         ctx.update(updates)
-
         return 0
 
     def _Emit(self, field, item, blame):
         # type: (str, value_t, loc_t) -> int
-        ctx = self.mem.GetContext()
-        if ctx is None:
-            # TODO: raise error
-            return 1
+        ctx = self._GetContext()
 
         if field not in ctx:
             ctx[field] = value.List([])
@@ -166,36 +164,33 @@ class Ctx(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
+        rd = typed_args.ReaderForProc(cmd_val)
         _, arg_r = flag_spec.ParseCmdVal('ctx',
                                          cmd_val,
                                          accept_typed_args=True)
 
         verb, verb_loc = arg_r.ReadRequired2('Expected a verb (push, set, emit)')
 
-        rd = typed_args.ReaderForProc(cmd_val)
         if verb == "push":
-            arg_r.AtEnd()
-
             context = rd.PosDict()
             block = rd.PosCommand()
             rd.Done()
+            arg_r.AtEnd()
 
             return self._Push(context, block)
 
         elif verb == "set":
-            arg_r.AtEnd()
-
             updates = rd.RestNamed()
             rd.Done()
+            arg_r.AtEnd()
 
             return self._Set(updates)
 
         elif verb == "emit":
             field, field_loc = arg_r.ReadRequired2("A target field is required")
-            arg_r.AtEnd()
-
             item = rd.PosValue()
             rd.Done()
+            arg_r.AtEnd()
 
             return self._Emit(field, item, field_loc)
 
