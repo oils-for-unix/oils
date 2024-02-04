@@ -120,7 +120,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   error                  error 'failed' (status=2)
   [Shell State]   ysh-cd   ysh-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
-                  ctx                    Share and update a "context" across procs and funcs
+                  ctx                    Share and update a temporary "context"
                   push-registers         Save registers like $?, PIPESTATUS
   [Modules]       runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
