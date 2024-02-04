@@ -90,6 +90,20 @@ exit 0
 status=100
 ## END
 
+#### no context, set
+ctx set (bad=true)
+echo status=$_status
+## status: 3
+## STDOUT:
+## END
+
+#### no context, emit
+ctx emit bad (true)
+echo status=$_status
+## status: 3
+## STDOUT:
+## END
+
 #### mini-parseArgs
 proc parser (; place ; ; block_def) {
   var p = {}

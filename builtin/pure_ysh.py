@@ -130,7 +130,9 @@ class Ctx(vm._Builtin):
         # type: () -> Dict[str, value_t]
         ctx = self.mem.GetContext()
         if ctx is None:
-            raise error.FatalRuntime("Could not find a context. Did you forget to 'ctx push'?")
+            raise error.FatalRuntime(
+                3, "Could not find a context. Did you forget to 'ctx push'?",
+                loc.Missing)
         return ctx
 
     def _Push(self, context, block):
@@ -154,8 +156,8 @@ class Ctx(vm._Builtin):
         UP_arr = ctx[field]
         if UP_arr.tag() != value_e.List:
             raise error.TypeErr(
-                UP_arr, "Expected the context item '%s' to be a List" % (field),
-                blame)
+                UP_arr,
+                "Expected the context item '%s' to be a List" % (field), blame)
 
         arr = cast(value.List, UP_arr)
         arr.items.append(item)
@@ -169,7 +171,8 @@ class Ctx(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        verb, verb_loc = arg_r.ReadRequired2('Expected a verb (push, set, emit)')
+        verb, verb_loc = arg_r.ReadRequired2(
+            'Expected a verb (push, set, emit)')
 
         if verb == "push":
             context = rd.PosDict()
@@ -187,7 +190,8 @@ class Ctx(vm._Builtin):
             return self._Set(updates)
 
         elif verb == "emit":
-            field, field_loc = arg_r.ReadRequired2("A target field is required")
+            field, field_loc = arg_r.ReadRequired2(
+                "A target field is required")
             item = rd.PosValue()
             rd.Done()
             arg_r.AtEnd()
