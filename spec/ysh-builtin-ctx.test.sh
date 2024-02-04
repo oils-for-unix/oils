@@ -57,6 +57,39 @@ json write (p)
 }
 ## END
 
+#### nested ctx
+var a = {}
+var b = {}
+ctx push (a) {
+  ctx set (from="a")
+  ctx push (b) {
+    ctx set (from="b")
+  }
+}
+json write (a)
+json write (b)
+## STDOUT:
+{
+  "from": "a"
+}
+{
+  "from": "b"
+}
+## END
+
+#### error in context
+var a = {}
+try {
+  ctx push (a) {
+    error "Error from inside a context" (status=100)
+  }
+}
+echo status=$_status
+exit 0
+## STDOUT:
+status=100
+## END
+
 #### mini-argparse
 proc parser (; place ; ; block_def) {
   var p = {}
