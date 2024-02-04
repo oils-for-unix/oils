@@ -66,6 +66,11 @@ yapf-known() {
     */NINJA_subgraph.py
 }
 
+yapf-changed() {
+  branch="${1:-master}"
+  yapf-files $(git diff --name-only .."$branch" '*.py')
+}
+
 #
 # C++
 #

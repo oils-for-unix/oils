@@ -424,6 +424,8 @@ SHVAR_SPEC = FlagSpec('shvar')
 #SHVAR_SPEC.Flag('-env', args.String,
 #    help='Push a NAME=val binding and set the -x flag')
 
+CTX_SPEC = FlagSpec('ctx')
+
 PP_SPEC = FlagSpec('pp')
 
 SHVM_SPEC = FlagSpec('shvm')

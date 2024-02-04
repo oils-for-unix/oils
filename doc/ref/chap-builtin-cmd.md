@@ -165,6 +165,65 @@ Execute a block with a global variable set.
     }
     echo "ifs restored to $IFS"
 
+### ctx
+
+Execute a block with a shared "context" that can be updated using the `ctx`
+built-in.
+
+    var mydict = {}
+    ctx push (mydict) {
+       # = mydict => {}
+       ctx set (mykey='myval')
+    }
+    # = mydict => { mykey: 'myval' }
+
+The context can be modified with `ctx set (key=val)`, which updates or inserts
+the value at the given key.
+
+The context can also be updated with `ctx emit field (value)`.
+
+    ctx push (mydict) {
+       # = mydict => {}
+       ctx emit mylist (0)
+       # = mydict => { mylist: [0] }
+       ctx emit mylist (1)
+    }
+    # = mydict => { mylist: [0, 1] }
+
+Contexts can be nested, resulting in a stack of contexts.
+
+    ctx push (mydict1) {
+        ctx set (dict=1)
+        ctx push (mydict2) {
+            ctx set (dict=2)
+        }
+    }
+    # = mydict1 => { dict: 1 }
+    # = mydict2 => { dict: 2 }
+
+`ctx` is useful for creating DSLs, such as a mini-parseArgs.
+
+    proc parser (; place ; ; block_def) {
+      var p = {}
+      ctx push (p, block_def)
+      call place->setValue(p)
+    }
+
+    proc flag (short_name, long_name; type; help) {
+      ctx emit flag ({short_name, long_name, type, help})
+    }
+
+    proc arg (name) {
+      ctx emit arg ({name})
+    }
+
+    parser (&spec) {
+      flag -t --tsv (Bool, help='Output as TSV')
+      flag -r --recursive (Bool, help='Recurse into the given directory')
+      flag -N --count (Int, help='Process no more than N files')
+      arg path
+    }
+
 ### push-registers
 
 Save global registers like $? on a stack.  It's useful for preventing plugins
