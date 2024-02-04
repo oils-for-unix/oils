@@ -130,8 +130,8 @@ class Ctx(vm._Builtin):
         # type: () -> Dict[str, value_t]
         ctx = self.mem.GetContext()
         if ctx is None:
-            raise error.FatalRuntime(
-                3, "Could not find a context. Did you forget to 'ctx push'?",
+            raise error.Expr(
+                "Could not find a context. Did you forget to 'ctx push'?",
                 loc.Missing)
         return ctx
 
