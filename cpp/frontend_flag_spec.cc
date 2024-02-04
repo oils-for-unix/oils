@@ -234,8 +234,12 @@ args::_Attributes* Parse(BigStr* spec_name, args::Reader* arg_r) {
   return args::Parse(spec, arg_r);
 }
 
+// With optional arg
 Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    BigStr* spec_name, runtime_asdl::cmd_value__Argv* cmd_val) {
+    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
+    bool accept_typed_args) {
+  // TODO: disallow typed args like frontend/flag_spec.py
+
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
   arg_r->Next();  // move past the builtin name
 
@@ -245,16 +249,10 @@ Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
                                                    arg_r);
 }
 
-// With optional arg
-Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
-    bool accept_typed_args) {
-  // TODO: disallow typed args!
-  return ParseCmdVal(spec_name, cmd_val);
-}
-
 Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
     BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val) {
+  // TODO: disallow typed args like frontend/flag_spec.py
+
   auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
   arg_r->Next();  // move past the builtin name
 

@@ -58,8 +58,6 @@ def _DoesNotAccept(arg_list):
 def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
     # type: (str, cmd_value.Argv, bool) -> Tuple[args._Attributes, args.Reader]
 
-    #from frontend import typed_args  # break circular dependency
-
     if not accept_typed_args:
         _DoesNotAccept(cmd_val.typed_args)
 
@@ -72,8 +70,6 @@ def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
 
 def ParseLikeEcho(spec_name, cmd_val):
     # type: (str, cmd_value.Argv) -> Tuple[args._Attributes, args.Reader]
-
-    #from frontend import typed_args  # break circular dependency
 
     _DoesNotAccept(cmd_val.typed_args)
 
