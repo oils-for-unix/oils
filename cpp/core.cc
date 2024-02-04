@@ -18,6 +18,7 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
+#include "_build/detected-cpp-config.h"  // HAVE_PWENT
 #include "_gen/cpp/build_stamp.h"  // gCommitHash
 #include "_gen/frontend/consts.h"  // gVersion
 #include "cpp/embedded_file.h"
