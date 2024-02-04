@@ -207,13 +207,23 @@ foo
 ## END
 
 #### echo builtin should disallow typed args - literal
+shopt -s ysh:all
+#shopt -p simple_echo
+
 echo (42)
 ## status: 2
+## STDOUT:
+## END
 
 #### echo builtin should disallow typed args - variable
+shopt -s ysh:all
+#shopt -p simple_echo
+
 var x = 43
 echo (x)
 ## status: 2
+## STDOUT:
+## END
 
 #### read --all-lines
 seq 3 | read --all-lines :nums

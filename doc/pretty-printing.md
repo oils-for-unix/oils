@@ -115,6 +115,11 @@ Identical to the dynamically typed case above.
 
 - Fix ADSL cycle bug
   - Fix it in C++
+  - Maybe get rid of TraversalState in Python -- seems like it can just be a dict
+  - we are not going to parse this format
+    - we do not want to deal with `-->` cycles and `...` omitting
+    - instead we are going to manually traverse it so there are no cycles!
+    - It will be more imperative.  It will be either NIL8 or TYG8
 
 - Do we need ASDL ref counts?
   - because the thing is long. to fix bin/osh -n
