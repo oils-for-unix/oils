@@ -133,7 +133,6 @@ class Ctx(vm._Builtin):
 
     def _Emit(self, field, item, blame):
         # type: (str, value_t, loc_t) -> int
-
         ctx = self.mem.GetContext()
         if ctx is None:
             # TODO: raise error
@@ -145,8 +144,8 @@ class Ctx(vm._Builtin):
         UP_arr = ctx[field]
         if UP_arr.tag() != value_e.List:
             raise error.TypeErr(
-                UP_arr,
-                "Expected the context item '%s' to be a List" % (field), blame)
+                UP_arr, "Expected the context item '%s' to be a List" % (field),
+                blame)
 
         arr = cast(value.List, UP_arr)
         arr.items.append(item)
@@ -159,25 +158,12 @@ class Ctx(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        verb = arg_r.Peek()
-        field = None  # type: Optional[str]
-        field_loc = None  # type: Optional[loc_t]
-        if verb is None:
-            raise error.Usage('expected a verb (push, set, emit)',
-                              arg_r.Location())
-        if verb not in ("push", "set", "emit"):
-            raise error.Usage("unknown verb '%s'" % verb, arg_r.Location())
-        arg_r.Next()
-
-        if verb == "emit":
-            field = arg_r.Peek()
-            field_loc = arg_r.Location()
-            arg_r.Next()
-
-        arg_r.AtEnd()
+        verb, verb_loc = arg_r.ReadRequired2('Expected a verb (push, set, emit)')
 
         rd = typed_args.ReaderForProc(cmd_val)
         if verb == "push":
+            arg_r.AtEnd()
+
             context = rd.PosDict()
             block = rd.PosCommand()
             rd.Done()
@@ -185,21 +171,24 @@ class Ctx(vm._Builtin):
             return self._Push(context, block)
 
         elif verb == "set":
+            arg_r.AtEnd()
+
             updates = rd.RestNamed()
             rd.Done()
 
             return self._Set(updates)
 
         elif verb == "emit":
-            assert field is not None
-            assert field_loc is not None
+            field, field_loc = arg_r.ReadRequired2("A target field is required")
+            arg_r.AtEnd()
+
             item = rd.PosValue()
             rd.Done()
 
             return self._Emit(field, item, field_loc)
 
         else:
-            raise AssertionError()  # Unreachable
+            raise error.Usage("Unknown verb '%s'" % verb, verb_loc)
 
 
 class PushRegisters(vm._Builtin):
