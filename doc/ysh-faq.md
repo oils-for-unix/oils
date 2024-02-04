@@ -72,8 +72,8 @@ The rules are subtle, so we avoid inventing new ones.
 
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
-YSH removed these flags to `echo` to fix their interference with
-variable substitutions.
+YSH removed these flags to `echo` to solve their interference problem with
+variable substitutions (see next).
 
 To echo escape sequences, use the statically-parsed string language, rather than
 `echo -e`:
