@@ -516,11 +516,35 @@ _JSON_INT = r'([1-9][0-9]*|[0-9])'  # Numbers can't start with leading 0
 _JSON_FRACTION = r'(\.[0-9]+)?'
 _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
-# Common: Ignored_Newline, IdentifierName, Comment
-# NIL8: Symbol.  Does this conflict with IdentifierName?
+# R5RS extended alphabetic characters
+# https://groups.csail.mit.edu/mac/ftpdir/scheme-reports/r5rs-html/r5rs_4.html
+#
+#   ! $ % & * + - . / : < = > ? @ ^ _ ~
+
+# Description from Guile Scheme - https://www.gnu.org/software/guile/manual/html_node/Symbol-Read-Syntax.html
+#
+# "The read syntax for a symbol is a sequence of letters, digits, and extended
+# alphabetic characters, beginning with a character that cannot begin a
+# number. In addition, the special cases of +, -, and ... are read as symbols
+# even though numbers can begin with +, - or ." 
+#
+# (They should have used regular languages!)
+
+# We take out $ and @ for our splicing syntax, i.e. $unquote and
+# @unquote-splicing.  And : for now because we use it for name:value.
+
+# Also note Scheme allows |a b| for symbols with funny chars, and Guile scheme
+# allows #{a b}#.  We could use `a b` or (symbol "a b").
+
+J8_SYMBOL_CHARS = r'!%&*+./<=>?^_~-'  # - is last for regex char class
+
+J8_SYMBOL_RE = (
+    r'[a-zA-Z' + J8_SYMBOL_CHARS + ']' +
+    r'[a-zA-Z0-9' + J8_SYMBOL_CHARS + ']*')
 
 J8_DEF = [
     C('"', Id.Left_DoubleQuote),  # JSON string
+    # Three left quotes that are J8 only
     C("u'", Id.Left_USingleQuote),  # unicode string
     C("'", Id.Left_USingleQuote),  # '' is alias for u'' in data, not in code
     C("b'", Id.Left_BSingleQuote),  # byte string
@@ -528,22 +552,34 @@ J8_DEF = [
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
     C('}', Id.J8_RBrace),
-    C('(', Id.J8_LParen),  # TYG8 only
-    C(')', Id.J8_RParen),  # TYG8 only
+    C('(', Id.J8_LParen),  # NIL8 only
+    C(')', Id.J8_RParen),  # NIL8 only
     C(',', Id.J8_Comma),
     C(':', Id.J8_Colon),
     C('null', Id.J8_Null),
     C('true', Id.J8_Bool),
     C('false', Id.J8_Bool),
+
     R(_JSON_INT, Id.J8_Int),
     R(_JSON_INT + _JSON_FRACTION + _JSON_EXP, Id.J8_Float),
+
+    # Identifier names come AFTER null true false.
+    # - Happens to be the same as shell identifier # names.
+    # - Note that JS allows $ as an identifier, but we don't.
+    # - Used for dict keys / NIL8 field names.
+    R(VAR_NAME_RE, Id.J8_Identifier),
+
+    # Symbol is a SUPERSET of Identifier.  The first word in NIL8 can be can
+    # be either Symbol or plain Identifier, but field names can only be
+    # Identifier.  JSON8 only has Identifier.
+    R(J8_SYMBOL_RE, Id.J8_Symbol),  # NIL8 only
 
     # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),
     # comment is # until end of line
     # // comments are JavaScript style, but right now we might want them as
     # symbols?
-    R(r'#[^\n\0]*', Id.Ignored_Comment),
+    R(r'#[^\n\0]*', Id.Ignored_Comment),  # J8 only (JSON8, NIL8)
 
     # This will reject ASCII control chars
     R(r'[^\0]', Id.Unknown_Tok),

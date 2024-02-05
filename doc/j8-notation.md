@@ -340,6 +340,8 @@ properties:
 Now that we've defined J8 strings, we can define JSON8, an obvious extension of
 JSON.
 
+(Not implemented yet.)
+
 ### Review of JSON
 
 See <https://json.org>
@@ -360,8 +362,16 @@ JSON8 is like JSON, but:
    - Unquoted keys must be a valid JS identifier name matching the pattern
      `[a-zA-Z_][a-zA-Z0-9_]*`.
 1. **Trailing commas** are allowed on objects and arrays: `{"d": 42,}` and `[42,]`
-1. C- and JavaScript-style single-line **comments** like `//`
-   - No block comments, and no `#` comments
+1. End-of-line comments.  We use `#` to be consistent with shell.
+
+<!--
+Note that // is consistent with JavaScript / JSON5, but it actually conflicts
+with Scheme symbols, which we use for NIL8.  These are both valid Scheme, and
+probably NIL8:
+
+    (/ 5 3)
+    (// 5 3)  # This should not start a comment!
+-->
 
 Example:
 

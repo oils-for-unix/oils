@@ -123,12 +123,12 @@ it's easy to confuse single quotes and double quotes.
 
 ## JSON8
 
-JSON8 is JSON with 4 rules:
+JSON8 is JSON with 4 more things allowed:
 
-- J8 strings in addition to JSON strings
-- unquoted keys
-- trailing commas
-- comments?
+1. J8 strings in addition to JSON strings
+1. Comments
+1. Unquoted keys (TODO)
+1. Trailing commas (TODO)
 
 ### json8-num
 
@@ -138,7 +138,7 @@ If there's a decimal point or `e-10` suffix, then it's decoded into YSH
 `Float`.  Otherwise it's a YSH `Int`.
 
     42       # decoded to Int
-    42.0     # decoded toFloat
+    42.0     # decoded to Float
     42e1     # decoded to Float
     42.0e1   # decoded to Float
 
@@ -174,9 +174,9 @@ Examples:
 
 ### json8-comment
 
-End-of-line comments in the same style as JavaScript and C++:
+End-of-line comments in the same style as shell:
 
-    {"json8": "message"}   // comment
+    {"json8": "message"}   # comment
 
 ## TSV8
 

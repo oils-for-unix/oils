@@ -102,6 +102,20 @@ class J8Test(unittest.TestCase):
         else:
             self.fail('Expected failure')
 
+    def testMoreTokens(self):
+        cases = [
+            'true # comment',
+            'truez8 # identifier',
+            'truez8>  # symbol',
+            '(<= 1 3)  # less than',
+            # Can allow hex identifiers here like 123
+            '(<- 123 (Token))',
+            '(Node left:(-> 123))',
+        ]
+        for s in cases:
+            lex = j8.LexerDecoder(s, True)
+            _PrintTokens(lex)
+
     def testErrorMessagePosition(self):
         lex = j8.LexerDecoder("[ u'hi']", False)
         try:
