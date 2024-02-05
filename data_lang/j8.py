@@ -478,7 +478,7 @@ class LexerDecoder(object):
         # type: (str, bool) -> None
         self.s = s
         self.is_j8 = is_j8
-        self.lang_str = "J8" if is_j8 else "JSON"
+        self.lang_str = "NIL8"
 
         self.pos = 0
         # Reuse this instance to save GC objects.  JSON objects could have
@@ -801,13 +801,11 @@ class Parser(_Parser):
 class Nil8Parser(_Parser):
     """
     Tokens not in JSON8:
-      LParen RParen
-      Symbol
+      LParen RParen Symbol
 
-    New Tokens shared witih JSON8:
+    Tokens not in JSON, but in JSON8 and NIL8:
       Identifier (unquoted keys)
-      Comment
-      Ignored_Newline
+      Ignored_Comment
     """
 
     def __init__(self, s, is_j8):
@@ -817,13 +815,15 @@ class Nil8Parser(_Parser):
     def _ParseRecord(self):
         # type: () -> value_t
         """
-        TODO: Add these tokens
-
         named = Identifier ':' value
 
-        # Positional comes before named
-        # I guess () is invalid?  Use [] for empty list
-        record = '(' Symbol value* named* ')'
+        first = Identifier | Symbol
+        record = '(' first value* named* ')'
+
+        # - Identifier | Symbol are treated the same, it's a side effect of
+        #   the lexing style
+        # - positional args come before named args
+        # - () is invalid?  Use [] for empty list
         """
         assert self.tok_id == Id.J8_LParen, Id_str(self.tok_id)
 
@@ -884,7 +884,6 @@ class Nil8Parser(_Parser):
             return value.Null
 
         elif self.tok_id == Id.J8_Bool:
-            #log('%r %d', self.s[self.start_pos], self.start_pos)
             b = value.Bool(self.s[self.start_pos] == 't')
             self._Next()
             return b
@@ -899,10 +898,8 @@ class Nil8Parser(_Parser):
             self._Next()
             return value.Float(float(part))
 
-        # UString, BString too
         elif self.tok_id == Id.J8_String:
             str_val = value.Str(self.decoded)
-            #log('d %r', self.decoded)
             self._Next()
             return str_val
 
