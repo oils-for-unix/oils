@@ -270,6 +270,33 @@ status=1
 status=1
 ## END
 
+#### json read doesn't accept comments, but json8 does
+
+json8 read <<EOF
+{  # comment
+  "key":  # zz
+  b'val',  # yy
+  "k2": "v2"  #
+}
+EOF
+echo status=$?
+
+json8 write (_reply)
+
+json read <<EOF
+{"key": "val"}  # comment
+EOF
+echo status=$?
+## STDOUT:
+status=0
+{
+  "key": "val",
+  "k2": "v2"
+}
+status=1
+## END
+
+
 #### json write emits Unicode replacement char for binary data \yff
 
 json write ([3, "foo", $'-\xff\xfe---\xfd=']) > tmp.txt
@@ -337,6 +364,26 @@ echo reply=$_reply
 reply=/
 reply=/
 ## END
+
+#### JSON string can have unescaped ' and J8 string can have unescaped "
+
+json read <<EOF
+"'"
+EOF
+
+pp line (_reply)
+
+json8 read <<EOF
+u'"'
+EOF
+
+pp line (_reply)
+
+## STDOUT:
+(Str)   "'"
+(Str)   "\""
+## END
+
 
 #### J8 supports superfluous \" escapes, but JSON doesn't support \' escapes
 
@@ -598,27 +645,6 @@ status=4
 ASCII control chars
 ## END
 
-
-#### JSON string can have unescaped ' and J8 string can have unescaped "
-
-json read <<EOF
-"'"
-EOF
-
-pp line (_reply)
-
-
-
-json8 read <<EOF
-u'"'
-EOF
-
-pp line (_reply)
-
-## STDOUT:
-(Str)   "'"
-(Str)   "\""
-## END
 
 #### \yff can't appear in u'' code strings (command)
 

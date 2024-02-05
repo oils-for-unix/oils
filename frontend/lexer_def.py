@@ -211,11 +211,6 @@ _KEYWORDS = [
     C('call', Id.KW_Call),
     C('proc', Id.KW_Proc),
     C('func', Id.KW_Func),
-
-    # for future use
-    C('class', Id.KW_Class),
-    C('data', Id.KW_Data),
-    C('enum', Id.KW_Enum),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
@@ -545,6 +540,10 @@ J8_DEF = [
 
     # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),
+    # comment is # until end of line
+    # // comments are JavaScript style, but right now we might want them as
+    # symbols?
+    R(r'#[^\n\0]*', Id.Ignored_Comment),
 
     # This will reject ASCII control chars
     R(r'[^\0]', Id.Unknown_Tok),

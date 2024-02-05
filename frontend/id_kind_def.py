@@ -52,10 +52,10 @@ class IdSpec(object):
     def _AddId(self, id_name, kind=None):
         # type: (str, Optional[int]) -> int
         """
-    Args:
-      id_name: e.g. BoolBinary_Equal
-      kind: override autoassignment.  For AddBoolBinaryForBuiltin
-    """
+        Args:
+          id_name: e.g. BoolBinary_Equal
+          kind: override autoassignment.  For AddBoolBinaryForBuiltin
+        """
         t = self.id_index
 
         self.id_str2int[id_name] = t
@@ -159,7 +159,8 @@ def AddKinds(spec):
     # A['foo'] A["foo"] A[$foo] A["$foo"] A[${foo}] A["${foo}"]
     spec.AddKind('Word', ['Compound'])
 
-    # Token IDs in Kind.Arith are first to make the TDOP precedence table small.
+    # Token IDs in Kind.Arith are first to make the TDOP precedence table
+    # small.
     #
     # NOTE: Could share Op_Pipe, Op_Amp, Op_DAmp, Op_Semi, Op_LParen, etc.
     # Actually all of Arith could be folded into Op, because we are using
@@ -618,16 +619,6 @@ def AddKinds(spec):
             'Call',
             'Proc',
             'Func',
-            'Class',
-            'Data',
-            'Enum',
-
-            # 'Match', 'With',  # matching
-            # not sure: yield
-            # mycpp
-            # 'Switch',
-            #   - 'init' (constructor) and maybe 'call'
-            # try except (no finally?)
 
             # builtins, NOT keywords: use, fork, wait, etc.
             # Things that don't affect parsing shouldn't be keywords.
@@ -688,14 +679,8 @@ def AddKinds(spec):
             'RBracket',
             'LBrace',
             'RBrace',
-
-            # for TYG8
-            'LParen',
-            'RParen',
             'Comma',
             'Colon',
-
-            # Parsed
             'Null',
             'Bool',
             'Int',  # Number
@@ -706,8 +691,13 @@ def AddKinds(spec):
             # the lexer.
             'String',
 
-            #'UString',  # unicode (no surrogate halves, no wtf-8)
-            #'BString',
+            # JSON8 and NIL8
+            'Identifier',
+
+            # NIL8 only
+            'LParen',
+            'RParen',
+            'Symbol',
         ])
 
 

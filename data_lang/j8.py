@@ -156,6 +156,7 @@ UNSEEN = 0
 EXPLORING = 1
 FINISHED = 2
 
+
 class InstancePrinter(object):
     """Print a value tree as J8/JSON."""
 
@@ -496,22 +497,27 @@ class LexerDecoder(object):
 
         tok_id, end_pos = match.MatchJ8Token(self.s, self.pos)
 
+        if not self.is_j8:
+            if tok_id in (Id.Left_BSingleQuote, Id.Left_USingleQuote):
+                raise self._Error(
+                    "Single quotes aren't part of JSON; you may want 'json8 read'",
+                    end_pos)
+            if tok_id == Id.Ignored_Comment:
+                raise self._Error(
+                    "Comments aren't part of JSON; you may want 'json8 read'",
+                    end_pos)
+
         # Non-string tokens like { } null etc.
-        if tok_id not in (Id.Left_DoubleQuote, Id.Left_USingleQuote,
-                          Id.Left_BSingleQuote):
-            self.pos = end_pos
-            return tok_id, end_pos, None
+        if tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
+                      Id.Left_USingleQuote):
+            return self._DecodeString(tok_id, end_pos)
 
-        if not self.is_j8 and tok_id != Id.Left_DoubleQuote:
-            raise self._Error(
-                "Single quotes aren't part of JSON; you may want 'json8 read'",
-                end_pos)
-
-        return self._DecodeString(tok_id, end_pos)
+        self.pos = end_pos
+        return tok_id, end_pos, None
 
     def _DecodeString(self, left_id, str_pos):
         # type: (Id_t, int) -> Tuple[Id_t, int, Optional[str]]
-        """ Returns a string tkoen an updates self.pos """
+        """ Returns a string token and updates self.pos """
 
         # TODO: break dep
         from osh import string_ops
@@ -623,6 +629,7 @@ class _Parser(object):
     def __init__(self, s, is_j8):
         # type: (str, bool) -> None
         self.s = s
+        self.is_j8 = is_j8
         self.lang_str = "J8" if is_j8 else "JSON"
 
         self.lexer = LexerDecoder(s, is_j8)
@@ -638,7 +645,7 @@ class _Parser(object):
         while True:
             self.start_pos = self.end_pos
             self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
-            if self.tok_id != Id.Ignored_Space:
+            if self.tok_id not in (Id.Ignored_Space, Id.Ignored_Comment):
                 break
             # TODO: add Ignored_Newline to count lines, and show line numbers
             # in errors messages.  The position of the last newline and a token
@@ -791,17 +798,18 @@ class Parser(_Parser):
         return self._ParseValue()
 
 
-
 class Nil8Parser(_Parser):
     """
-    New Tokens:
+    Tokens not in JSON8:
+      LParen RParen
       Symbol
 
-    Shared Tokens:
-      IdentifierName (unquoted keys)
+    New Tokens shared witih JSON8:
+      Identifier (unquoted keys)
       Comment
       Ignored_Newline
     """
+
     def __init__(self, s, is_j8):
         # type: (str, bool) -> None
         _Parser.__init__(self, s, is_j8)
@@ -811,10 +819,11 @@ class Nil8Parser(_Parser):
         """
         TODO: Add these tokens
 
-        Named = IdentifierName ':' value
+        named = Identifier ':' value
 
         # Positional comes before named
-        Record = '(' Symbol value* Named* ')'
+        # I guess () is invalid?  Use [] for empty list
+        record = '(' Symbol value* named* ')'
         """
         assert self.tok_id == Id.J8_LParen, Id_str(self.tok_id)
 

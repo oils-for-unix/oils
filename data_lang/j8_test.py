@@ -19,14 +19,12 @@ class J8Test(unittest.TestCase):
             '()',
             '(42)',
             '[]',
-
             '[42]',
             '[42 43]',
             '[42 ["a" "b"]]',
-
             '42',
             '"hi"',
-            ]
+        ]
         for s in cases:
             p = j8.Nil8Parser(s, True)
             obj = p.ParseNil8()

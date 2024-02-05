@@ -389,7 +389,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    trav = trav or TraversalState()')
         self.Emit('    heap_id = id(self)')
         self.Emit('    if heap_id in trav.seen:')
-                         # cut off recursion
+        # cut off recursion
         self.Emit('      return hnode.ObjectCycle(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
 
@@ -416,7 +416,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    trav = trav or TraversalState()')
         self.Emit('    heap_id = id(self)')
         self.Emit('    if heap_id in trav.seen:')
-                         # cut off recursion
+        # cut off recursion
         self.Emit('      return hnode.ObjectCycle(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
@@ -436,7 +436,8 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         if abbrev_name in self.abbrev_mod_entries:
             self.Emit('    p = %s(self)' % abbrev_name)
             # If the user function didn't return anything, fall back.
-            self.Emit('    return p if p else self._AbbreviatedTree(trav=trav)')
+            self.Emit(
+                '    return p if p else self._AbbreviatedTree(trav=trav)')
         else:
             self.Emit('    return self._AbbreviatedTree(trav=trav)')
         self.Emit('')

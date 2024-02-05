@@ -253,6 +253,7 @@ class Decode(Exception):
         part = self.s[start:end]
         return self.msg + ' (pos %d-%d: %r)' % (self.start_pos, self.end_pos,
                                                 part)
+
     def __str__(self):
         # type: () -> str
         return self.Message()

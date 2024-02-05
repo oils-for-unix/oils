@@ -48,6 +48,7 @@ def NewLeaf(s, e_color):
 
 
 class TraversalState:
+
     def __init__(self):
         # type: () -> None
 
