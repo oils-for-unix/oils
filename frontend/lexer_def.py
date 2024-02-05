@@ -521,6 +521,9 @@ _JSON_INT = r'([1-9][0-9]*|[0-9])'  # Numbers can't start with leading 0
 _JSON_FRACTION = r'(\.[0-9]+)?'
 _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
+# Common: Ignored_Newline, IdentifierName, Comment
+# NIL8: Symbol.  Does this conflict with IdentifierName?
+
 J8_DEF = [
     C('"', Id.Left_DoubleQuote),  # JSON string
     C("u'", Id.Left_USingleQuote),  # unicode string

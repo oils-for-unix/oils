@@ -618,7 +618,7 @@ class LexerDecoder(object):
             str_pos = str_end
 
 
-class Parser(object):
+class _Parser(object):
 
     def __init__(self, s, is_j8):
         # type: (str, bool) -> None
@@ -640,6 +640,9 @@ class Parser(object):
             self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
             if self.tok_id != Id.Ignored_Space:
                 break
+            # TODO: add Ignored_Newline to count lines, and show line numbers
+            # in errors messages.  The position of the last newline and a token
+            # can be used to calculate a column number.
 
         #log('NEXT %s %s %s %s', Id_str(self.tok_id), self.start_pos, self.end_pos, self.decoded or '-')
 
@@ -657,6 +660,14 @@ class Parser(object):
     def _Error(self, msg):
         # type: (str) -> error.Decode
         return error.Decode(msg, self.s, self.start_pos, self.end_pos)
+
+
+class Parser(_Parser):
+    """JSON and JSON8 Parser."""
+
+    def __init__(self, s, is_j8):
+        # type: (str, bool) -> None
+        _Parser.__init__(self, s, is_j8)
 
     def _ParsePair(self):
         # type: () -> Tuple[str, value_t]
@@ -733,14 +744,10 @@ class Parser(object):
     def _ParseValue(self):
         # type: () -> value_t
         if self.tok_id == Id.J8_LBrace:
-            d = self._ParseDict()
-            #self._Next()
-            return d
+            return self._ParseDict()
 
         elif self.tok_id == Id.J8_LBracket:
-            li = self._ParseList()
-            #self._Next()
-            return li
+            return self._ParseList()
 
         elif self.tok_id == Id.J8_Null:
             self._Next()
@@ -782,3 +789,124 @@ class Parser(object):
         """ Raises error.Decode. """
         self._Next()
         return self._ParseValue()
+
+
+
+class Nil8Parser(_Parser):
+    """
+    New Tokens:
+      Symbol
+
+    Shared Tokens:
+      IdentifierName (unquoted keys)
+      Comment
+      Ignored_Newline
+    """
+    def __init__(self, s, is_j8):
+        # type: (str, bool) -> None
+        _Parser.__init__(self, s, is_j8)
+
+    def _ParseRecord(self):
+        # type: () -> value_t
+        """
+        TODO: Add these tokens
+
+        Named = IdentifierName ':' value
+
+        # Positional comes before named
+        Record = '(' Symbol value* Named* ')'
+        """
+        assert self.tok_id == Id.J8_LParen, Id_str(self.tok_id)
+
+        items = []  # type: List[value_t]
+
+        self._Next()
+        if self.tok_id == Id.J8_RParen:
+            self._Next()
+            return value.List(items)
+
+        items.append(self._ParseNil8())
+
+        while self.tok_id == Id.J8_Comma:
+            self._Next()
+            items.append(self._ParseNil8())
+
+        self._Eat(Id.J8_RParen)
+
+        return value.List(items)
+
+    def _ParseList8(self):
+        # type: () -> value_t
+        """
+        List8 = '[' value* ']'
+
+        No commas, not even optional ones for now.
+        """
+        assert self.tok_id == Id.J8_LBracket, Id_str(self.tok_id)
+
+        items = []  # type: List[value_t]
+
+        self._Next()
+        if self.tok_id == Id.J8_RBracket:
+            self._Next()
+            return value.List(items)
+
+        #log('TOK %s', Id_str(self.tok_id))
+        while self.tok_id != Id.J8_RBracket:
+            items.append(self._ParseNil8())
+            #log('TOK 2 %s', Id_str(self.tok_id))
+
+        self._Eat(Id.J8_RBracket)
+
+        return value.List(items)
+
+    def _ParseNil8(self):
+        # type: () -> value_t
+        if self.tok_id == Id.J8_LParen:
+            return self._ParseRecord()
+
+        elif self.tok_id == Id.J8_LBracket:
+            return self._ParseList8()
+
+        # Primitives are copied from J8 above.
+        # TODO: We also want hex literals.
+        elif self.tok_id == Id.J8_Null:
+            self._Next()
+            return value.Null
+
+        elif self.tok_id == Id.J8_Bool:
+            #log('%r %d', self.s[self.start_pos], self.start_pos)
+            b = value.Bool(self.s[self.start_pos] == 't')
+            self._Next()
+            return b
+
+        elif self.tok_id == Id.J8_Int:
+            part = self.s[self.start_pos:self.end_pos]
+            self._Next()
+            return value.Int(int(part))
+
+        elif self.tok_id == Id.J8_Float:
+            part = self.s[self.start_pos:self.end_pos]
+            self._Next()
+            return value.Float(float(part))
+
+        # UString, BString too
+        elif self.tok_id == Id.J8_String:
+            str_val = value.Str(self.decoded)
+            #log('d %r', self.decoded)
+            self._Next()
+            return str_val
+
+        elif self.tok_id == Id.Eol_Tok:
+            raise self._Error('Unexpected EOF while parsing %s' %
+                              self.lang_str)
+
+        else:  # Id.Unknown_Tok, Id.J8_{LParen,RParen}
+            raise self._Error('Invalid token while parsing %s: %s' %
+                              (self.lang_str, Id_str(self.tok_id)))
+
+    def ParseNil8(self):
+        # type: () -> value_t
+        """ Raises error.Decode. """
+        self._Next()
+        return self._ParseNil8()
