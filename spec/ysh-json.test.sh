@@ -173,17 +173,33 @@ pipeline status = 1
 ## END
 
 #### Extra data after valid JSON
-echo '[42]]' | json read
-echo status=$?
-pp line (_reply)
 
-echo '{}}' | json read
-echo status=$?
-pp line (_reply)
+# Trailing space is OK
+echo '42  ' | json read
+echo num space $?
+
+echo '{}  ' | json read
+echo obj space $?
+
+echo '42 # comment' | json8 read
+echo num comment $?
+
+echo '{}   # comment ' | json8 read
+echo obj comment $?
+
+echo '42]' | json read
+echo num bracket $?
+
+echo '{}]' | json read
+echo obj bracket $?
 
 ## STDOUT:
-status=1
-status=1
+num space 0
+obj space 0
+num comment 0
+obj comment 0
+num bracket 1
+obj bracket 1
 ## END
 
 #### json write expression

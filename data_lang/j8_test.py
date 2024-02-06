@@ -37,7 +37,8 @@ class J8Test(unittest.TestCase):
             '()',
             '(42)',
             '(:)',
-            #'(command.Simple))',
+            # extra input
+            '(command.Simple))',
             ]
         for s in cases:
             p = j8.Nil8Parser(s, True)

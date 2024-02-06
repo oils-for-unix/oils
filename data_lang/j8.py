@@ -795,7 +795,10 @@ class Parser(_Parser):
         # type: () -> value_t
         """ Raises error.Decode. """
         self._Next()
-        return self._ParseValue()
+        obj = self._ParseValue()
+        if self.tok_id != Id.Eol_Tok:
+            raise self._Error('Unexpected trailing input')
+        return obj
 
 
 class Nil8Parser(_Parser):
@@ -930,6 +933,9 @@ class Nil8Parser(_Parser):
         # type: () -> value_t
         """ Raises error.Decode. """
         self._Next()
-        return self._ParseNil8()
+        obj = self._ParseNil8()
+        if self.tok_id != Id.Eol_Tok:
+            raise self._Error('Unexpected trailing input')
+        return obj
 
 # vim: sw=4

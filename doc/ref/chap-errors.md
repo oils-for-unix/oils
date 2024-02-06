@@ -42,6 +42,8 @@ JSON encoding has three possible errors:
    - A single quoted string like `u''`
 1. Grammatical error
    - like the message `}{`
+1. Unexpected trailing input
+   - like the message `42]` or `{}]`
 
 ## JSON8
 
@@ -49,7 +51,7 @@ JSON encoding has three possible errors:
 
 Compared to JSON, JSON8 removes an encoding error:
 
-4. Invalid UTF-8 is OK, because it gets turned into a binary string like
+5. Invalid UTF-8 is OK, because it gets turned into a binary string like
    `b"byte \yfe\yff"`.
 
 ### json8-decode-err
