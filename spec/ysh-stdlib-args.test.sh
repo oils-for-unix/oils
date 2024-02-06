@@ -9,7 +9,7 @@
 
 source --builtin args.ysh
 
-Args (&spec) {
+arg-parse (&spec) {
   flag -v --verbose ('bool')
   arg src
   arg dst
@@ -37,11 +37,12 @@ json write (i)
 
 source --builtin args.ysh
 
-Args (&spec) {
-  description = '''
+arg-parse (&spec) {
+  # TODO: implement description, prog and help message
+  description '''
      Reference Implementation
   '''
-  prog = "program-name"
+  prog "program-name"
 
   arg -v --verbose (Bool, help = "Verbose")
   arg src
@@ -78,7 +79,7 @@ var spec = {
   args: [
     {name: 'file', type: 'str', help: 'File to check line lengths of'}
   ],
-  rest: false,
+  rest: null,
 }
 
 var argsCases = [
@@ -141,7 +142,7 @@ Namespace(filename='example.sh', count='150', verbose=True)
 
 source --builtin args.ysh
 
-Args (&spec) {
+arg-parse (&spec) {
   flag -v --verbose ('bool')
   arg src
   arg dst
@@ -164,13 +165,11 @@ json write (spec)
   "args": [
     {
       "name": "src",
-      "type": "str",
       "default": null,
       "help": null
     },
     {
       "name": "dst",
-      "type": "str",
       "default": null,
       "help": null
     }
@@ -183,7 +182,7 @@ json write (spec)
 
 source --builtin args.ysh
 
-Args (&spec) {
+arg-parse (&spec) {
   flag -v --verbose ('bool', false)
   flag -c --count ('int', 120)
   arg file
