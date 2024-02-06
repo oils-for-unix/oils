@@ -491,6 +491,11 @@ test-var-decl() {
   _expr-error-case 'setvar x, y = 1, 2, 3'
 }
 
+test-const-decl() {
+  _error-case 'const x = {}; const x = {};'
+  _error-case 'const x; const x;'
+}
+
 test-proc-defaults() {
   
   # should be string
