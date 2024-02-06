@@ -16,9 +16,10 @@ from typing import List
 
 from _devbuild.gen import yaks_asdl
 from _devbuild.gen import nil8_asdl
-from yaks import lex
+from asdl import format as fmt
 from data_lang import j8
-
+from mycpp import mylib
+from yaks import lex
 
 
 def Options():
@@ -57,12 +58,42 @@ def main(argv):
     o = Options()
     opts, argv = o.parse_args(argv)
 
+    stdout_ = mylib.Stdout()
     try:
         action = argv[1]
     except IndexError:
         raise RuntimeError('Action required')
 
     if action == 'cpp':
+        # TODO: open file and parse it
+
+        path = argv[2]
+        with open(path) as f:
+            contents = f.read()
+
+        p = j8.Nil8Parser(contents, True)
+        node = p.ParseNil8()
+
+        #print(obj)
+
+        # Dump ASDL representation
+        # We could also have a NIL8 printer
+        pretty_f = fmt.DetectConsoleOutput(stdout_)
+        fmt.PrintTree(node.PrettyTree(), pretty_f)
+        stdout_.write('\n')
+
+        # TODO:
+        #
+        # - Use nvalue representation I think
+        #   - nvalue can be converted to value for manipulating in Oils
+        #     - nvalue.Record becomes a Dict
+        #     - since field names must be identifier names, you're guaranteed
+        #       to have 0 1 2 3 available, so node.0 is fine
+        # - Then convert nvalue to a static representation in yaks.asdl
+        # - Then a few mycpp passes over this representation
+        #   - not sure if we'll need any more IRs
+
+    elif action == 'test':
         path = argv[2]
 
         m = yaks_asdl.Module('hi', [])
@@ -84,3 +115,5 @@ if __name__ == '__main__':
     except RuntimeError as e:
         print('%s: FATAL: %s' % (sys.argv[0], e), file=sys.stderr)
         sys.exit(1)
+
+# vim: sw=4

@@ -1,13 +1,13 @@
-(module "hello"
+#(module "hello"
 
-  (include "<stdio.h>")
+  #(include "<stdio.h>")
 
   (func main [argv [List Str]]
+    # array List and Dict callable?
     #(print (argv 1))
 
     # Uses the mycpp print function
     (print "hello")
     (return 42)
   )
-)
-
+#)

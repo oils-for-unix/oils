@@ -34,9 +34,9 @@ class J8Test(unittest.TestCase):
 
     def testNil8Errors(self):
         cases = [
-            '()',
-            '(42)',
-            '(:)',
+            #'()',
+            #'(42)',
+            #'(:)',
             # extra input
             '(command.Simple))',
         ]
@@ -53,6 +53,10 @@ class J8Test(unittest.TestCase):
         cases = [
             '(unquoted)',
             '(command.Simple)',
+            '(f x)',
+            '(f 42 "hi")',
+            '((-> obj method) (. obj field))',
+
             '(<-)',  # symbol
             "(<- 1 b'hi')",  # any kinds of args
             "(<- 1 'hi' (f [1 2 3]))",  # symbol

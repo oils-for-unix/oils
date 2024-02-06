@@ -863,45 +863,58 @@ class Nil8Parser(_Parser):
     def _ParseRecord(self):
         # type: () -> value_t
         """
-        named = Identifier ':' value
+        # Simple version
+        value =
+          Null | Bool | Int | Float
+        | Str | Identifier
 
-        first = Identifier | Symbol
-        record = '(' first value* named* ')'
+        # Later: consider OPERATORS
+
+        Yaks
+          (self->Next)             =>  (-> self Next)
+          (self->Next obj.field)   =>  ((-> self Next) (. obj field))
+
+          Similar to
+          ((identity identity) 42) => 42 in Clojure
+
+        ASDL
+          (Node left --> 4beef2)   # not sure how to do this
+          (Node left:(--> 4beef2))
+
+        (Node left:$4beef2)  # may interfere with templating
+
+        # LATER
+        value =
+          Null | Bool | Int | Float
+        | Str
+        | Identifier | Symbol   # leave out Symbol here?  Must be quoted)
+
+        # Ambiguous because value can be identifier.
+        # We have to look ahead to and see if there's a colon :
+        field = 
+          Identifier ':' value
+        | value
+
+        record = '(' head field* ')'
 
         - Identifier | Symbol are treated the same, it's a side effect of
           the lexing style
-        - positional args come before named args
+        - do positional args come before named args
         - () is invalid?  Use [] for empty list
-
-        Note:
-        - ((identity identity) 42) => 42 in Clojure
-
-        So the first term isn't special.  I don't think we care though, since
-        we're not making a Lisp.  (NIL8 isn't Lisp)
         """
         assert self.tok_id == Id.J8_LParen, Id_str(self.tok_id)
 
         items = []  # type: List[value_t]
 
         self._Next()
-        if self.tok_id in (Id.J8_Identifier, Id.J8_Symbol):
-            part = self.s[self.start_pos:self.end_pos]
-            # This could be obj.0 in YSH
-            # Or it could be {name: Str, pos_args: List, named_args: Dict}
-            items.append(value.Str(part))
-        else:
-            raise self._Error('Expected Identifer or Symbol after ( in NIL8')
-
-        self._Next()
         if self.tok_id == Id.J8_RParen:
             self._Next()
             return value.List(items)
 
-        # Do we accept 10 only?
+        #log('TOK %s', Id_str(self.tok_id))
         while self.tok_id != Id.J8_RParen:
             items.append(self._ParseNil8())
-
-        # TODO:
+            #log('TOK 2 %s', Id_str(self.tok_id))
 
         self._Eat(Id.J8_RParen)
 
@@ -960,6 +973,19 @@ class Nil8Parser(_Parser):
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
             return value.Float(float(part))
+
+        elif self.tok_id == Id.J8_Identifier:
+            # unquoted "word" treated like a string
+            part = self.s[self.start_pos:self.end_pos]
+            self._Next()
+            return value.Str(part)
+
+        elif self.tok_id == Id.J8_Symbol:
+            # TODO: . -> etc. could be Id.J8_Operator?  I want to make my own
+            # DSLs.
+            part = self.s[self.start_pos:self.end_pos]
+            self._Next()
+            return value.Str(part)
 
         elif self.tok_id == Id.J8_String:
             str_val = value.Str(self.decoded)

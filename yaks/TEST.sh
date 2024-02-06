@@ -20,15 +20,16 @@ check() {
 
   # pyext/fastfunc is a dependency of ASDL
   # Source is Python 2
-  # same flags as devtools/types.sh, since we pull in some Oils code
 
-  local mypy_flags='--strict --no-strict-optional'
+  # These flags are in devtools/types.sh
+  #local mypy_flags='--strict --no-strict-optional'
 
-  # 514 errors!  Geez.  Still too many imports.
+  # 514 errors!  Not sure why we need the extra flag.
   #local mypy_flags='--strict'
+  local mypy_flags='--strict --follow-imports=silent'
 
   MYPYPATH='.:pyext' python3 -m \
-    mypy --strict $mypy_flags --py2 yaks/yaks_main.py
+    mypy $mypy_flags --py2 yaks/yaks_main.py
 }
 
 test-hello() {
