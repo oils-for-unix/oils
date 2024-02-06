@@ -134,7 +134,7 @@ Let's minimize the stuff we need to write twice.
 
 So you could have:
 
-- `yaks/{yaks_main.py,yask.asdl}` -> generates mycpp C++ from `test.yaks`
+- `yaks/{yaks_main.py,yaks.asdl}` -> generates mycpp C++ from `test.yaks`
   - copy mycpp/examples
   - {lex,read,transform,cppgen}.py
 - `yaks/yaks_main.yaks` -> generates mycpp C++ from `oils-for-unix.yaks`, which
@@ -159,3 +159,16 @@ That has proper declarations.  But you would still need ASDL.
 
 - The whole program is Python 3, with no process boundary?
   - It might be fast enough?  Let's see
+
+## NIL8 Features
+
+- Might want multiline strings that are indented
+
+## Line Wrapping
+
+I do like line wrapping.  How should we support it?
+
+- ASDL has an ad hoc function I borrowed from CPython
+  - it doesn't work all the time
+
+

@@ -1,5 +1,6 @@
 #include "cpp/data_lang.h"
 
+#include "_gen/core/value.asdl.h"
 #include "data_lang/j8_libc.h"  // for comparison
 #include "data_lang/j8_test_lib.h"
 #include "vendor/greatest.h"
@@ -107,6 +108,22 @@ TEST compare_c_test() {
   PASS();
 }
 
+using value_asdl::value;
+using value_asdl::value_t;
+
+TEST heap_id_test() {
+  value_t* val1 = Alloc<value::Str>(kEmptyString);
+  value_t* val2 = Alloc<value::Str>(kEmptyString);
+
+  int id1 = j8::HeapValueId(val1);
+  int id2 = j8::HeapValueId(val2);
+
+  log("id1 = %d, id2 = %d", id1, id2);
+  ASSERT(id1 != id2);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -117,6 +134,7 @@ int main(int argc, char** argv) {
   RUN_TEST(PartIsUtf8_test);
   RUN_TEST(WriteString_test);
   RUN_TEST(compare_c_test);
+  RUN_TEST(heap_id_test);
 
   gHeap.CleanProcessExit();
 

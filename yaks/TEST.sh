@@ -20,12 +20,22 @@ check() {
 
   # pyext/fastfunc is a dependency of ASDL
   # Source is Python 2
-  MYPYPATH='.:pyext' python3 -m mypy --strict --py2 yaks/yaks_main.py
+  # same flags as devtools/types.sh, since we pull in some Oils code
+
+  local mypy_flags='--strict --no-strict-optional'
+
+  # 514 errors!  Geez.  Still too many imports.
+  #local mypy_flags='--strict'
+
+  MYPYPATH='.:pyext' python3 -m \
+    mypy --strict $mypy_flags --py2 yaks/yaks_main.py
 }
 
 test-hello() {
   # translate
   PYTHONPATH='.:vendor' yaks/yaks_main.py cpp yaks/examples/hello.yaks
+
+  # TODO: fibonacci program, etc. building up to yaks in yaks itself.
 
   # type check only
   # yaks/yaks.py check testdata/hello.yaks

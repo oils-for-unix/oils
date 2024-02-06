@@ -86,6 +86,7 @@ def NinjaGraph(ru):
             'cpp/data_lang.cc',
         ],
         deps=[
+            '//core/value.asdl',
             '//data_lang/j8',
             '//mycpp/runtime',
         ],

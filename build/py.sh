@@ -144,6 +144,7 @@ py-codegen() {
   # depends on syntax.asdl
   gen-asdl-py 'core/runtime.asdl'
   gen-asdl-py 'core/value.asdl'
+  gen-asdl-py 'data_lang/nil8.asdl'
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # depends on bool_arg_type_e, generates Id_t

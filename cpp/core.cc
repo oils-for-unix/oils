@@ -19,8 +19,8 @@
 #include <unistd.h>        // getuid(), environ
 
 #include "_build/detected-cpp-config.h"  // HAVE_PWENT
-#include "_gen/cpp/build_stamp.h"  // gCommitHash
-#include "_gen/frontend/consts.h"  // gVersion
+#include "_gen/cpp/build_stamp.h"        // gCommitHash
+#include "_gen/frontend/consts.h"        // gVersion
 #include "cpp/embedded_file.h"
 
 extern char** environ;
@@ -404,18 +404,3 @@ grammar::Grammar* LoadYshGrammar(_ResourceLoader*) {
 }
 
 }  // namespace pyutil
-
-namespace vm {
-
-int HeapValueId(value_asdl::value_t* val) {
-  ObjHeader* h = ObjHeader::FromObject(val);
-
-  // ASDL generates headers with HeapTag::Scanned, but HeapTag::FixedSize would
-  // also be valid.
-  DCHECK(h->heap_tag != HeapTag::Global && h->heap_tag != HeapTag::Opaque);
-
-  // pool_id is 2 bits, so shift the 28 bit obj_id past it.
-  return (h->obj_id << 2) + h->pool_id;
-}
-
-}  // namespace vm

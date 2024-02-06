@@ -1,0 +1,23 @@
+
+module nil8
+{
+
+# Very similar to core/value.asdl, which JSON8 is deserialized to.
+#
+# Right now we're keeping them separate because we want to write a standalone
+# Yaks compiler, with no dependency on Oils.
+#
+# Later I think that Null Bool Int Float Str can either be:
+# - defined as shared constants
+# - be "inlined" inside any sum type, because of pointer tagging
+
+nvalue =
+    Null
+  | Bool(bool b)
+  | Int(int i)
+  | Float(float f)
+  | Str(str s)
+  | List(List[nvalue] items)
+  | Record(str name, List[nvalue] args, Dict[str, nvalue] named)
+}
+

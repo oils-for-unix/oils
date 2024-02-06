@@ -64,6 +64,35 @@ oils-for-unix() {
   echo DEPS $dir/*
 }
 
+# TODO: Prune deps
+# j8.py depends on vm.HeapValueId() for cycle detection
+# But that's in the JSON8 PRINTER, which yaks doesn't need
+# vm.py depends on cmd_eval.py and a whole bunch of other stuff
+#
+# Well I guess you can create a cycle in nil8, especially if we have <- and so
+# forth.
+#
+# So that function should go in another file.
+
+yaks() {
+  ### Experimental IR to C++ translator
+
+  local dir=$DIR/yaks.yaks_main
+  mkdir -p $dir
+
+  PYTHONPATH=$PY_PATH /usr/bin/env python2 \
+    build/dynamic_deps.py py-manifest yaks.yaks_main \
+  > $dir/all.txt
+
+  set +o errexit
+  cat $dir/all.txt | repo-filter | exclude-filter typecheck | mysort \
+    > $dir/typecheck.txt
+
+  cat $dir/typecheck.txt | exclude-filter translate | mysort \
+    > $dir/translate.txt
+
+  echo DEPS $dir/*
+}
 
 main() {
   # _build/NINJA/  # Part of the Ninja graph
@@ -93,6 +122,7 @@ main() {
   # Baked into mycpp/NINJA.
   osh-eval
   oils-for-unix
+  yaks
 
   echo DEPS prebuilt/ninja/*/deps.txt
 

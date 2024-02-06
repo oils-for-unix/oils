@@ -526,7 +526,7 @@ _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 # "The read syntax for a symbol is a sequence of letters, digits, and extended
 # alphabetic characters, beginning with a character that cannot begin a
 # number. In addition, the special cases of +, -, and ... are read as symbols
-# even though numbers can begin with +, - or ." 
+# even though numbers can begin with +, - or ."
 #
 # (They should have used regular languages!)
 
@@ -538,9 +538,11 @@ _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
 J8_SYMBOL_CHARS = r'!%&*+./<=>?^_~-'  # - is last for regex char class
 
+# yapf: disable
 J8_SYMBOL_RE = (
     r'[a-zA-Z' + J8_SYMBOL_CHARS + ']' +
     r'[a-zA-Z0-9' + J8_SYMBOL_CHARS + ']*')
+# yapf: enable
 
 J8_DEF = [
     C('"', Id.Left_DoubleQuote),  # JSON string
@@ -559,7 +561,6 @@ J8_DEF = [
     C('null', Id.J8_Null),
     C('true', Id.J8_Bool),
     C('false', Id.J8_Bool),
-
     R(_JSON_INT, Id.J8_Int),
     R(_JSON_INT + _JSON_FRACTION + _JSON_EXP, Id.J8_Float),
 

@@ -3,7 +3,10 @@
   (include "<stdio.h>")
 
   (func main [argv [List Str]]
-    (print (argv 1))
+    #(print (argv 1))
+
+    # Uses the mycpp print function
+    (print "hello")
     (return 42)
   )
 )

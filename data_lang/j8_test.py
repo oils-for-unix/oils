@@ -39,7 +39,7 @@ class J8Test(unittest.TestCase):
             '(:)',
             # extra input
             '(command.Simple))',
-            ]
+        ]
         for s in cases:
             p = j8.Nil8Parser(s, True)
             try:
@@ -132,7 +132,6 @@ class J8Test(unittest.TestCase):
             self.assertEquals(4, e.end_pos)
         else:
             self.fail('Expected failure')
-
 
 
 class YajlTest(unittest.TestCase):

@@ -39,8 +39,8 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from asdl import format as fmt
 from core import error
-from core import vm
 from data_lang import pyj8
+# dependency issue: consts.py pulls in frontend/option_def.py
 from frontend import consts
 from frontend import match
 from mycpp import mylib
@@ -51,6 +51,51 @@ import fastfunc
 _ = log
 
 from typing import cast, Dict, List, Tuple, Optional
+
+if mylib.PYTHON:
+
+    def HeapValueId(val):
+        # type: (value_t) -> int
+        """
+        Python's id() returns the address, which is up to 64 bits.
+
+        In C++ we can use the GC ID, which fits within 32 bits.
+        """
+        return id(val)
+
+
+def ValueId(val):
+    # type: (value_t) -> int
+    """
+    Return an integer ID for object that:
+
+    1. Can be used to determine whether 2 objects are the same, e.g. for
+       List, Dict, Func, Proc, etc.
+    2. Will help detect object cycles
+
+    Primitives types like Int and Float don't have this notion.  They're
+    immutable values that are copied and compared by value.
+    """
+    with tagswitch(val) as case:
+        if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
+                value_e.Str):
+            # These will not be on the heap if we switch to tagged pointers
+            # Str is handled conservatively - when we add small string
+            # optimization, some strings will be values, so we assume all are.
+            return -1
+        else:
+            return HeapValueId(val)
+
+
+def ValueIdString(val):
+    # type: (value_t) -> str
+    """Used by pp value (42) and = 42"""
+    heap_id = ValueId(val)  # could be -1
+    if heap_id == -1:
+        return ''
+    else:
+        return ' 0x%s' % mylib.hex_lower(heap_id)
+
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
@@ -294,7 +339,7 @@ class InstancePrinter(object):
                 val = cast(value.List, UP_val)
 
                 # Cycle detection, only for containers that can be in cycles
-                heap_id = vm.HeapValueId(val)
+                heap_id = HeapValueId(val)
 
                 node_state = self.visited.get(heap_id, UNSEEN)
                 if node_state == FINISHED:
@@ -305,13 +350,13 @@ class InstancePrinter(object):
                     return
                 if node_state == EXPLORING:
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('[ -->%s ]' % vm.ValueIdString(val))
+                        self.buf.write('[ -->%s ]' % ValueIdString(val))
                         return
                     else:
                         # node.js prints which index closes the cycle
                         raise error.Encode(
                             "Can't encode List%s in object cycle" %
-                            vm.ValueIdString(val))
+                            ValueIdString(val))
 
                 self.visited[heap_id] = EXPLORING
                 self._PrintList(val, level)
@@ -321,7 +366,7 @@ class InstancePrinter(object):
                 val = cast(value.Dict, UP_val)
 
                 # Cycle detection, only for containers that can be in cycles
-                heap_id = vm.HeapValueId(val)
+                heap_id = HeapValueId(val)
 
                 node_state = self.visited.get(heap_id, UNSEEN)
                 if node_state == FINISHED:
@@ -332,13 +377,13 @@ class InstancePrinter(object):
                     return
                 if node_state == EXPLORING:
                     if self.options & SHOW_CYCLES:
-                        self.buf.write('{ -->%s }' % vm.ValueIdString(val))
+                        self.buf.write('{ -->%s }' % ValueIdString(val))
                         return
                     else:
                         # node.js prints which key closes the cycle
                         raise error.Encode(
                             "Can't encode Dict%s in object cycle" %
-                            vm.ValueIdString(val))
+                            ValueIdString(val))
 
                 self.visited[heap_id] = EXPLORING
                 self._PrintDict(val, level)
@@ -405,7 +450,7 @@ class InstancePrinter(object):
                     # TODO: that prints value.Range in a special way
                     from core import ui
                     ysh_type = ui.ValType(val)
-                    id_str = vm.ValueIdString(val)
+                    id_str = ValueIdString(val)
                     self.buf.write('<%s%s>' % (ysh_type, id_str))
                 else:
                     from core import ui  # TODO: break dep
@@ -937,5 +982,6 @@ class Nil8Parser(_Parser):
         if self.tok_id != Id.Eol_Tok:
             raise self._Error('Unexpected trailing input')
         return obj
+
 
 # vim: sw=4

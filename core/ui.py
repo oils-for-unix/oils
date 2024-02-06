@@ -23,7 +23,6 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from asdl import format as fmt
-from core import vm
 from frontend import lexer
 from frontend import location
 from mycpp import mylib
@@ -420,8 +419,9 @@ def PrintAst(node, flag):
 
 def DebugPrint(val):
     # type: (value_t) -> None
+    """ For the = keyword """
     ysh_type = ValType(val)
-    id_str = vm.ValueIdString(val)
+    id_str = j8.ValueIdString(val)
     f = mylib.Stdout()
 
     UP_val = val
