@@ -820,25 +820,40 @@ class Nil8Parser(_Parser):
         first = Identifier | Symbol
         record = '(' first value* named* ')'
 
-        # - Identifier | Symbol are treated the same, it's a side effect of
-        #   the lexing style
-        # - positional args come before named args
-        # - () is invalid?  Use [] for empty list
+        - Identifier | Symbol are treated the same, it's a side effect of
+          the lexing style
+        - positional args come before named args
+        - () is invalid?  Use [] for empty list
+
+        Note:
+        - ((identity identity) 42) => 42 in Clojure
+
+        So the first term isn't special.  I don't think we care though, since
+        we're not making a Lisp.  (NIL8 isn't Lisp)
         """
         assert self.tok_id == Id.J8_LParen, Id_str(self.tok_id)
 
         items = []  # type: List[value_t]
 
         self._Next()
+        if self.tok_id in (Id.J8_Identifier, Id.J8_Symbol):
+            part = self.s[self.start_pos:self.end_pos]
+            # This could be obj.0 in YSH
+            # Or it could be {name: Str, pos_args: List, named_args: Dict}
+            items.append(value.Str(part))
+        else:
+            raise self._Error('Expected Identifer or Symbol after ( in NIL8')
+
+        self._Next()
         if self.tok_id == Id.J8_RParen:
             self._Next()
             return value.List(items)
 
-        items.append(self._ParseNil8())
-
-        while self.tok_id == Id.J8_Comma:
-            self._Next()
+        # Do we accept 10 only?
+        while self.tok_id != Id.J8_RParen:
             items.append(self._ParseNil8())
+
+        # TODO:
 
         self._Eat(Id.J8_RParen)
 
@@ -916,3 +931,5 @@ class Nil8Parser(_Parser):
         """ Raises error.Decode. """
         self._Next()
         return self._ParseNil8()
+
+# vim: sw=4

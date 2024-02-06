@@ -56,6 +56,17 @@ decode-empty-input() {
   nodejs -e 'var val = JSON.parse(""); console.log(typeof(val)); console.log(val)' || true
 }
 
+decode-trailing-data() {
+  # Extra data
+  python3 -c 'import json; val = json.loads("[]]"); print(type(val)); print(val)' || true
+
+  echo
+  echo
+
+  nodejs -e 'var val = JSON.parse("[]]"); console.log(typeof(val)); console.log(val)' || true
+}
+
+
 decode-invalid-escape() {
   # single quoted escape not valid
   cat >_tmp/json.txt <<'EOF'
@@ -90,6 +101,25 @@ encode-list-dict-indent() {
   nodejs -e 'var val = []; console.log(JSON.stringify(val, null, 4))'
   nodejs -e 'var val = [42]; console.log(JSON.stringify(val, null, 4))'
   echo
+}
+
+encode-no-indent() {
+  echo 'PYTHON'
+
+  # has a space
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=None))'
+  # you control it like this
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, separators=[",", ":"]))'
+
+  # -1 and 0 are the same in Python
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=-1))'
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=0))'
+  echo
+
+  echo 'JS'
+  # -1 and 0 are the same in Python
+  nodejs -e 'var val = {"a": 42, "b": [1, 2, 3]}; console.log(JSON.stringify(val, null, -1))'
+  nodejs -e 'var val = {"a": 42, "b": [1, 2, 3]}; console.log(JSON.stringify(val, null, 0))'
 }
 
 encode-obj-cycles() {

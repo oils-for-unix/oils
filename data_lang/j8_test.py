@@ -32,10 +32,29 @@ class J8Test(unittest.TestCase):
         obj = p.ParseValue()
         print(obj)
 
-    def testNil8(self):
+    def testNil8Errors(self):
         cases = [
             '()',
             '(42)',
+            '(:)',
+            #'(command.Simple))',
+            ]
+        for s in cases:
+            p = j8.Nil8Parser(s, True)
+            try:
+                obj = p.ParseNil8()
+            except error.Decode as e:
+                print(e)
+            else:
+                self.fail('Expected error.Decode when parsing %r' % s)
+
+    def testNil8(self):
+        cases = [
+            '(unquoted)',
+            '(command.Simple)',
+            '(<-)',  # symbol
+            "(<- 1 b'hi')",  # any kinds of args
+            "(<- 1 'hi' (f [1 2 3]))",  # symbol
             '[]',
             '[42]',
             '[42 43]',
@@ -128,3 +147,5 @@ class YajlTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+# vim: sw=4

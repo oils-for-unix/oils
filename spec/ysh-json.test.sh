@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## tags: dev-minimal
 
 #### usage errors
@@ -166,10 +166,24 @@ y = (Cell exported:F readonly:F nameref:F val:(value.Dict d:[Dict age (value.Int
 #### invalid JSON
 echo '{' | json read (&y)
 echo pipeline status = $?
-pp cell y
+pp line (y)
 ## status: 1
 ## STDOUT:
 pipeline status = 1
+## END
+
+#### Extra data after valid JSON
+echo '[42]]' | json read
+echo status=$?
+pp line (_reply)
+
+echo '{}}' | json read
+echo status=$?
+pp line (_reply)
+
+## STDOUT:
+status=1
+status=1
 ## END
 
 #### json write expression
