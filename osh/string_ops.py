@@ -27,41 +27,6 @@ from typing import List, Tuple
 _ = log
 
 
-def Utf8Encode(code):
-    # type: (int) -> str
-    """Return utf-8 encoded bytes from a unicode code point.
-
-    Based on https://stackoverflow.com/a/23502707
-    """
-    num_cont_bytes = 0
-
-    if code <= 0x7F:
-        return chr(code & 0x7F)  # ASCII
-
-    elif code <= 0x7FF:
-        num_cont_bytes = 1
-    elif code <= 0xFFFF:
-        num_cont_bytes = 2
-    elif code <= 0x10FFFF:
-        num_cont_bytes = 3
-
-    else:
-        return '\xEF\xBF\xBD'  # unicode replacement character
-
-    bytes_ = []  # type: List[int]
-    for _ in xrange(num_cont_bytes):
-        bytes_.append(0x80 | (code & 0x3F))
-        code >>= 6
-
-    b = (0x1E << (6 - num_cont_bytes)) | (code & (0x3F >> num_cont_bytes))
-    bytes_.append(b)
-    bytes_.reverse()
-
-    # mod 256 because Python ints don't wrap around!
-    tmp = [chr(b & 0xFF) for b in bytes_]
-    return ''.join(tmp)
-
-
 # TODO: Add details of the invalid character/byte here?
 
 INCOMPLETE_CHAR = 'Incomplete UTF-8 character'

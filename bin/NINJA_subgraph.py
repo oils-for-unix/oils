@@ -1,7 +1,6 @@
 """
 bin/NINJA_subgraph.py
 """
-
 from __future__ import print_function
 
 from build import ninja_lib

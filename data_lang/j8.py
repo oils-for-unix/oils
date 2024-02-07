@@ -31,11 +31,11 @@ Later:
   - unquoted identifier names - TYG8 could be more relaxed for (+ 1 (* 3 4))
   - commas
     - JSON8 could have trailing commas rule
-    - TYG8 at least has no commas for [1 2 "hi"]
+    - NIL8 at least has no commas for [1 2 "hi"]
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 
 from asdl import format as fmt
 from core import error
@@ -51,6 +51,14 @@ import fastfunc
 _ = log
 
 from typing import cast, Dict, List, Tuple, Optional
+
+
+# COPIED from ui.ValType() to break dep
+def ValType(val):
+    # type: (value_t) -> str
+    """For displaying type errors in the UI."""
+
+    return value_str(val.tag(), dot=False)
 
 if mylib.PYTHON:
 
@@ -95,6 +103,43 @@ def ValueIdString(val):
         return ''
     else:
         return ' 0x%s' % mylib.hex_lower(heap_id)
+
+
+def Utf8Encode(code):
+    # type: (int) -> str
+    """Return utf-8 encoded bytes from a unicode code point.
+
+    Based on https://stackoverflow.com/a/23502707
+    """
+    num_cont_bytes = 0
+
+    if code <= 0x7F:
+        return chr(code & 0x7F)  # ASCII
+
+    elif code <= 0x7FF:
+        num_cont_bytes = 1
+    elif code <= 0xFFFF:
+        num_cont_bytes = 2
+    elif code <= 0x10FFFF:
+        num_cont_bytes = 3
+
+    else:
+        return '\xEF\xBF\xBD'  # unicode replacement character
+
+    bytes_ = []  # type: List[int]
+    for _ in xrange(num_cont_bytes):
+        bytes_.append(0x80 | (code & 0x3F))
+        code >>= 6
+
+    b = (0x1E << (6 - num_cont_bytes)) | (code & (0x3F >> num_cont_bytes))
+    bytes_.append(b)
+    bytes_.reverse()
+
+    # mod 256 because Python ints don't wrap around!
+    tmp = [chr(b & 0xFF) for b in bytes_]
+    return ''.join(tmp)
+
+
 
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
@@ -448,14 +493,12 @@ class InstancePrinter(object):
                 if self.options & SHOW_NON_DATA:
                     # Similar to = operator, ui.DebugPrint()
                     # TODO: that prints value.Range in a special way
-                    from core import ui
-                    ysh_type = ui.ValType(val)
+                    ysh_type = ValType(val)
                     id_str = ValueIdString(val)
                     self.buf.write('<%s%s>' % (ysh_type, id_str))
                 else:
-                    from core import ui  # TODO: break dep
                     raise error.Encode("Can't serialize object of type %s" %
-                                       ui.ValType(val))
+                                       ValType(val))
 
 
 class PrettyPrinter(object):
@@ -564,9 +607,6 @@ class LexerDecoder(object):
         # type: (Id_t, int) -> Tuple[Id_t, int, Optional[str]]
         """ Returns a string token and updates self.pos """
 
-        # TODO: break dep
-        from osh import string_ops
-
         while True:
             if left_id == Id.Left_DoubleQuote:
                 tok_id, str_end = match.MatchJsonStrToken(self.s, str_pos)
@@ -629,7 +669,7 @@ class LexerDecoder(object):
                         r"\u{%s} escape is illegal because it's in the surrogate range"
                         % h, str_end)
 
-                part = string_ops.Utf8Encode(i)
+                part = Utf8Encode(i)
 
             elif tok_id == Id.Char_YHex:  # J8 only
                 h = self.s[str_pos + 2:str_end]
@@ -653,12 +693,12 @@ class LexerDecoder(object):
                 i2 = int(h2, 16) - 0xDC00  # low surrogate
                 code_point = 0x10000 + (i1 << 10) + i2
 
-                part = string_ops.Utf8Encode(code_point)
+                part = Utf8Encode(code_point)
 
             elif tok_id == Id.Char_Unicode4:  # JSON only, unpaired
                 h = self.s[str_pos + 2:str_end]
                 i = int(h, 16)
-                part = string_ops.Utf8Encode(i)
+                part = Utf8Encode(i)
 
             else:
                 # Should never happen

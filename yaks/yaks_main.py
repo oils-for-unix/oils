@@ -19,12 +19,13 @@ from _devbuild.gen import nil8_asdl
 from asdl import format as fmt
 from data_lang import j8
 from mycpp import mylib
-from yaks import lex
+#from yaks import lex
 
 
+"""
 def Options():
     # type: () -> optparse.OptionParser
-    """Returns an option parser instance."""
+    "Returns an option parser instance."
 
     p = optparse.OptionParser()
     p.add_option('--no-pretty-print-methods',
@@ -51,12 +52,14 @@ def Options():
         help='Generate 0 arg and N arg constructors, in Python and C++')
 
     return p
+"""
 
 
 def main(argv):
-    # type: (List[str]) -> None
-    o = Options()
-    opts, argv = o.parse_args(argv)
+    # type: (List[str]) -> int
+
+    #o = Options()
+    #opts, argv = o.parse_args(argv)
 
     stdout_ = mylib.Stdout()
     try:
@@ -65,11 +68,12 @@ def main(argv):
         raise RuntimeError('Action required')
 
     if action == 'cpp':
-        # TODO: open file and parse it
 
         path = argv[2]
-        with open(path) as f:
-            contents = f.read()
+        #with open(path) as f:
+        #    contents = f.read()
+
+        contents = '(print "hi")'
 
         p = j8.Nil8Parser(contents, True)
         node = p.ParseNil8()
@@ -94,19 +98,22 @@ def main(argv):
         #   - not sure if we'll need any more IRs
 
     elif action == 'test':
-        path = argv[2]
+        if mylib.PYTHON:
+            path = argv[2]
 
-        m = yaks_asdl.Module('hi', [])
-        print(m)
+            m = yaks_asdl.Module('hi', [])
+            #print(m)
 
-        tokens = lex.Lex('hello there')
-        print(tokens)
+            #tokens = lex.Lex('hello there')
+            #print(tokens)
 
-        with open(path) as f:
-            print(f.read())
+            #with open(path) as f:
+            #    print(f.read())
 
     else:
         raise RuntimeError('Invalid action %r' % action)
+
+    return 0
 
 
 if __name__ == '__main__':

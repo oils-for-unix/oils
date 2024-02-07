@@ -12,10 +12,9 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     word_part_t,
 )
-from mycpp.mylib import log
+from data_lang import j8
 from frontend import consts
-from osh import string_ops
-from mycpp.mylib import switch
+from mycpp.mylib import log, switch
 
 from typing import List, Optional, cast
 
@@ -109,12 +108,12 @@ def EvalCStringToken(tok):
         s = value[2:]
         i = int(s, 16)
         #util.log('i = %d', i)
-        return string_ops.Utf8Encode(i)
+        return j8.Utf8Encode(i)
 
     elif id_ == Id.Char_UBraced:
         s = value[3:-1]  # \u{123}
         i = int(s, 16)
-        return string_ops.Utf8Encode(i)
+        return j8.Utf8Encode(i)
 
     else:
         raise AssertionError(Id_str(id_))
