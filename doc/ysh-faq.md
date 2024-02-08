@@ -75,7 +75,7 @@ The rules are subtle, so we avoid inventing new ones.
 YSH removed these flags to `echo` to solve their interference problem with
 variable substitutions (see next).
 
-To echo escape sequences, use the statically-parsed string language, rather than
+To echo escape sequences, use a statically-parsed string literal, rather than
 `echo -e`:
 
     echo $'tab \t newline \n'   # YES
