@@ -73,7 +73,7 @@ The rules are subtle, so we avoid inventing new ones.
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
 YSH removed these flags to `echo` to solve their interference problem with
-variable substitutions (see next).
+variable substitutions (see next) and double-quoted backslash.
 
 To echo escape sequences, use a statically-parsed string literal, rather than
 `echo -e`:
@@ -81,8 +81,8 @@ To echo escape sequences, use a statically-parsed string literal, rather than
     echo $'tab: \t newline: \n' # YES
     echo u'tab: \t A: \u{41}'   # J8 unicode notation
 
-    echo -e "tab: \t newline: \n"    # NO (backslash)
-    echo -e "tab: \\t newline: \\n"  # NO (echo_flags)
+    echo -e "tab: \t newline: \n"    # NO (backslash)  => Invalid char escape
+    echo -e "tab: \\t newline: \\n"  # NO (echo_flags) => -e tab...
 
 To omit the newline, use the `write` builtin, rather than `echo -n`:
 
