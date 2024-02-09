@@ -14,19 +14,18 @@ Later:
   - line wrapping -- do this later
   - would like CONTRIBUTORS here
 
-- Unify with ASDL pretty printing - TYG8
+- Unify with ASDL pretty printing - NIL8
    - {} [] are identical
    - () is for statically typed ASDL data
      (command.Simple blame_tok:(...) words:[ ])
      although we are also using [] for typed ASDL arrays, not just JSON
    - object IDs
-     - @0x123 can create an ID
-     - *0x123 can reference an ID
-       - or maybe <0x123> though that's longer
+     - @ x123 can create an ID
+     - ! x123 can reference an ID
    - <> can be for non-J8 data types?  For the = operator
    - 'hi \(name)' interpolation is useful for code
 
-- Common between JSON8 and TYG8 - for writing by hand
+- Common between JSON8 and NIL8 - for writing by hand
   - comments - # line or // line (JSON5 uses // line, following JS)
   - unquoted identifier names - TYG8 could be more relaxed for (+ 1 (* 3 4))
   - commas
@@ -139,8 +138,6 @@ def Utf8Encode(code):
     # mod 256 because Python ints don't wrap around!
     tmp = [chr(b & 0xFF) for b in bytes_]
     return ''.join(tmp)
-
-
 
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
@@ -896,10 +893,22 @@ class Nil8Parser(_Parser):
       Identifier (unquoted keys)
       Ignored_Comment
     """
-
     def __init__(self, s, is_j8):
         # type: (str, bool) -> None
         _Parser.__init__(self, s, is_j8)
+
+    if 0:
+        def _LookAhead(self):
+            # type: () -> Id_t
+            """
+            Don't need this right now
+            """
+            end_pos = self.end_pos  # look ahead from last token
+            while True:
+                tok_id, end_pos = match.MatchJ8Token(self.s, end_pos)
+                if tok_id not in (Id.Ignored_Space, Id.Ignored_Comment):
+                    break
+            return tok_id
 
     def _ParseRecord(self):
         # type: () -> nvalue_t
@@ -974,36 +983,38 @@ class Nil8Parser(_Parser):
     def _ParseNil8(self):
         # type: () -> nvalue_t
         if self.tok_id == Id.J8_LParen:
-            return self._ParseRecord()
+            obj = self._ParseRecord()  # type: nvalue_t
+            #return obj
 
         elif self.tok_id == Id.J8_LBracket:
-            return self._ParseList8()
+            obj = self._ParseList8()
+            #return obj
 
         # Primitives are copied from J8 above.
         # TODO: We also want hex literals.
         elif self.tok_id == Id.J8_Null:
             self._Next()
-            return nvalue.Null
+            obj = nvalue.Null
 
         elif self.tok_id == Id.J8_Bool:
             b = nvalue.Bool(self.s[self.start_pos] == 't')
             self._Next()
-            return b
+            obj = b
 
         elif self.tok_id == Id.J8_Int:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return nvalue.Int(int(part))
+            obj = nvalue.Int(int(part))
 
         elif self.tok_id == Id.J8_Float:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return nvalue.Float(float(part))
+            obj = nvalue.Float(float(part))
 
         elif self.tok_id == Id.J8_String:
             str_val = nvalue.Str(self.decoded)
             self._Next()
-            return str_val
+            obj = str_val
 
         # <- etc.
         elif self.tok_id in (Id.J8_Identifier, Id.J8_Operator, Id.J8_Colon,
@@ -1011,7 +1022,7 @@ class Nil8Parser(_Parser):
             # unquoted "word" treated like a string
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return nvalue.Symbol(part)
+            obj = nvalue.Symbol(part)
 
         elif self.tok_id == Id.Eol_Tok:
             raise self._Error('Unexpected EOF while parsing %s' %
@@ -1021,11 +1032,34 @@ class Nil8Parser(_Parser):
             raise self._Error('Invalid token while parsing %s: %s' %
                               (self.lang_str, Id_str(self.tok_id)))
 
+        #log('YO %s', Id_str(self.tok_id))
+        if self.tok_id in (Id.J8_Operator, Id.J8_Colon, Id.J8_Comma):
+            #log('AT %s', Id_str(self.tok_id))
+
+            # key: "value" -> (: key "value")
+            part = self.s[self.start_pos:self.end_pos]
+            op = nvalue.Symbol(part)
+
+            self._Next()
+            operand2 = self._ParseNil8()
+            infix = nvalue.List([op, obj, operand2])  # type: nvalue_t
+            #print("--> INFIX %d %s" % (id(infix), infix))
+            return infix
+
+        #next_id = self._LookAhead()
+        #print('NEXT %s' % Id_str(next_id))
+
+        #raise AssertionError()
+        #print("--> OBJ %d %s" % (id(obj), obj))
+        return obj
+
     def ParseNil8(self):
         # type: () -> nvalue_t
         """ Raises error.Decode. """
         self._Next()
+        #print('yo')
         obj = self._ParseNil8()
+        #print("==> %d %s" % (id(obj), obj))
         if self.tok_id != Id.Eol_Tok:
             raise self._Error('Unexpected trailing input')
         return obj
