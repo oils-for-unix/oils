@@ -81,7 +81,7 @@ To echo escape sequences, use a statically-parsed string literal, rather than
     echo $'tab: \t newline: \n' # YES
     echo u'tab: \t A: \u{41}'   # J8 unicode notation
 
-    echo -e tab \t newline \n'  # NO
+    echo -e "tab: \t newline: \n"  # NO (backslash, echo_flag)
 
 To omit the newline, use the `write` builtin, rather than `echo -n`:
 
