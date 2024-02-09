@@ -36,6 +36,7 @@ Later:
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
+from _devbuild.gen.nil8_asdl import (nvalue, nvalue_t)
 
 from asdl import format as fmt
 from core import error
@@ -901,15 +902,8 @@ class Nil8Parser(_Parser):
         _Parser.__init__(self, s, is_j8)
 
     def _ParseRecord(self):
-        # type: () -> value_t
+        # type: () -> nvalue_t
         """
-        # Simple version
-        value =
-          Null | Bool | Int | Float
-        | Str | Identifier
-
-        # Later: consider OPERATORS
-
         Yaks
           (self->Next)             =>  (-> self Next)
           (self->Next obj.field)   =>  ((-> self Next) (. obj field))
@@ -918,16 +912,8 @@ class Nil8Parser(_Parser):
           ((identity identity) 42) => 42 in Clojure
 
         ASDL
-          (Node left --> 4beef2)   # not sure how to do this
-          (Node left:(--> 4beef2))
-
-        (Node left:$4beef2)  # may interfere with templating
-
-        # LATER
-        value =
-          Null | Bool | Int | Float
-        | Str
-        | Identifier | Symbol   # leave out Symbol here?  Must be quoted)
+          (Node left:(. x4beef2))
+          (Node left !x4beef2)
 
         # Ambiguous because value can be identifier.
         # We have to look ahead to and see if there's a colon :
@@ -944,12 +930,12 @@ class Nil8Parser(_Parser):
         """
         assert self.tok_id == Id.J8_LParen, Id_str(self.tok_id)
 
-        items = []  # type: List[value_t]
+        items = []  # type: List[nvalue_t]
 
         self._Next()
         if self.tok_id == Id.J8_RParen:
             self._Next()
-            return value.List(items)
+            return nvalue.List(items)
 
         #log('TOK %s', Id_str(self.tok_id))
         while self.tok_id != Id.J8_RParen:
@@ -958,10 +944,10 @@ class Nil8Parser(_Parser):
 
         self._Eat(Id.J8_RParen)
 
-        return value.List(items)
+        return nvalue.List(items)
 
     def _ParseList8(self):
-        # type: () -> value_t
+        # type: () -> nvalue_t
         """
         List8 = '[' value* ']'
 
@@ -969,12 +955,12 @@ class Nil8Parser(_Parser):
         """
         assert self.tok_id == Id.J8_LBracket, Id_str(self.tok_id)
 
-        items = []  # type: List[value_t]
+        items = []  # type: List[nvalue_t]
 
         self._Next()
         if self.tok_id == Id.J8_RBracket:
             self._Next()
-            return value.List(items)
+            return nvalue.List(items)
 
         #log('TOK %s', Id_str(self.tok_id))
         while self.tok_id != Id.J8_RBracket:
@@ -983,10 +969,10 @@ class Nil8Parser(_Parser):
 
         self._Eat(Id.J8_RBracket)
 
-        return value.List(items)
+        return nvalue.List(items)
 
     def _ParseNil8(self):
-        # type: () -> value_t
+        # type: () -> nvalue_t
         if self.tok_id == Id.J8_LParen:
             return self._ParseRecord()
 
@@ -997,40 +983,35 @@ class Nil8Parser(_Parser):
         # TODO: We also want hex literals.
         elif self.tok_id == Id.J8_Null:
             self._Next()
-            return value.Null
+            return nvalue.Null
 
         elif self.tok_id == Id.J8_Bool:
-            b = value.Bool(self.s[self.start_pos] == 't')
+            b = nvalue.Bool(self.s[self.start_pos] == 't')
             self._Next()
             return b
 
         elif self.tok_id == Id.J8_Int:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Int(int(part))
+            return nvalue.Int(int(part))
 
         elif self.tok_id == Id.J8_Float:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Float(float(part))
+            return nvalue.Float(float(part))
 
-        elif self.tok_id == Id.J8_Identifier:
+        elif self.tok_id == Id.J8_String:
+            str_val = nvalue.Str(self.decoded)
+            self._Next()
+            return str_val
+
+        # <- etc.
+        elif self.tok_id in (Id.J8_Identifier, Id.J8_Operator, Id.J8_Colon,
+                             Id.J8_Comma):
             # unquoted "word" treated like a string
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Str(part)
-
-        elif self.tok_id == Id.J8_Symbol:
-            # TODO: . -> etc. could be Id.J8_Operator?  I want to make my own
-            # DSLs.
-            part = self.s[self.start_pos:self.end_pos]
-            self._Next()
-            return value.Str(part)
-
-        elif self.tok_id == Id.J8_String:
-            str_val = value.Str(self.decoded)
-            self._Next()
-            return str_val
+            return nvalue.Symbol(part)
 
         elif self.tok_id == Id.Eol_Tok:
             raise self._Error('Unexpected EOF while parsing %s' %
@@ -1041,7 +1022,7 @@ class Nil8Parser(_Parser):
                               (self.lang_str, Id_str(self.tok_id)))
 
     def ParseNil8(self):
-        # type: () -> value_t
+        # type: () -> nvalue_t
         """ Raises error.Decode. """
         self._Next()
         obj = self._ParseNil8()

@@ -73,7 +73,16 @@ def main(argv):
         #with open(path) as f:
         #    contents = f.read()
 
-        contents = '(print "hi")'
+        lines = []  # type: List[str]
+        f = mylib.open(path)
+        while True:
+            line = f.readline()
+            if len(line) == 0:
+                break
+            lines.append(line)
+
+        #contents = '(print "hi")'
+        contents = ''.join(lines)
 
         p = j8.Nil8Parser(contents, True)
         node = p.ParseNil8()

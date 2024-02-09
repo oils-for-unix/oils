@@ -573,7 +573,9 @@ J8_DEF = [
     # Symbol is a SUPERSET of Identifier.  The first word in NIL8 can be can
     # be either Symbol or plain Identifier, but field names can only be
     # Identifier.  JSON8 only has Identifier.
-    R(J8_SYMBOL_RE, Id.J8_Symbol),  # NIL8 only
+    #R(J8_SYMBOL_RE, Id.J8_Symbol),  # NIL8 only
+
+    R(r'[~!@$%^&*+=|:;./<>?-]+', Id.J8_Operator),  # NIL8 only
 
     # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),

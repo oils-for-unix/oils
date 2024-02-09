@@ -75,6 +75,19 @@ class J8Test(unittest.TestCase):
             '(f 42 "hi")',
             '((-> obj method) (. obj field))',
 
+            # address
+            '(@ x123 (Token "foo"))',
+            '(: key "value")',
+            '(. x123)',  # dereference, could be @
+
+            #'(Token "foo") @ x123',
+
+            # TODO: parse like infix
+            '(Token key:"value" k2:"v2")',
+
+            # Should be parsed like infix operator
+            '(key !x123)',
+
             '(<-)',  # symbol
             "(<- 1 b'hi')",  # any kinds of args
             "(<- 1 'hi' (f [1 2 3]))",  # symbol

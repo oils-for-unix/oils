@@ -36,10 +36,12 @@ def NinjaGraph(ru):
                  matrix=ninja_lib.COMPILERS_VARIANTS +
                  ninja_lib.GC_PERF_VARIANTS,
                  deps=[
+                     '//core/optview',  # TODO: remove this dep
                      '//core/runtime.asdl',
                      '//core/value.asdl',
                      '//cpp/data_lang',
                      '//cpp/frontend_match',
+                     '//data_lang/nil8.asdl',
                      '//frontend/consts',
                      '//mycpp/runtime',
                  ])
