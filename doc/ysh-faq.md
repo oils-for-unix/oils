@@ -78,8 +78,8 @@ variable substitutions (see next).
 To echo escape sequences, use a statically-parsed string literal, rather than
 `echo -e`:
 
-    echo $'tab \t newline \n'   # YES
-    echo j"tab \t newline \n"   # TODO: J8 notation
+    echo $'tab: \t newline: \n' # YES
+    echo u'tab: \t A: \u{41}'   # J8 unicode notation
 
     echo -e tab \t newline \n'  # NO
 
