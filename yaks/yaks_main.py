@@ -1,10 +1,8 @@
 #!/usr/bin/env python2
 """
-yaks.py - Generate C++ from Yaks IR.
+yaks_main.py - Generate C++ from Yaks IR.
 
-Uses yaks.asdl.
-
-Will this be rewritten as yaks.yaks?
+Uses yaks.asdl.  Will this be rewritten as yaks_main.yaks?
 """
 from __future__ import print_function
 
@@ -15,11 +13,10 @@ import sys
 from typing import List
 
 from _devbuild.gen import yaks_asdl
-#from _devbuild.gen import nil8_asdl
 from asdl import format as fmt
 from data_lang import j8
 from mycpp import mylib
-#from yaks import lex
+from yaks import transform
 """
 def Options():
     # type: () -> optparse.OptionParser
@@ -83,14 +80,19 @@ def main(argv):
         contents = ''.join(lines)
 
         p = j8.Nil8Parser(contents, True)
-        node = p.ParseNil8()
+        nval = p.ParseNil8()
 
         #print(obj)
 
         # Dump ASDL representation
         # We could also have a NIL8 printer
         pretty_f = fmt.DetectConsoleOutput(stdout_)
-        fmt.PrintTree(node.PrettyTree(), pretty_f)
+        fmt.PrintTree(nval.PrettyTree(), pretty_f)
+        stdout_.write('\n')
+
+        kval = transform.Transform(nval)
+
+        fmt.PrintTree(kval.PrettyTree(), pretty_f)
         stdout_.write('\n')
 
         # TODO:
