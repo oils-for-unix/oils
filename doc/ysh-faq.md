@@ -75,13 +75,13 @@ The rules are subtle, so we avoid inventing new ones.
 YSH removed these flags to `echo` to solve their interference problem with
 variable substitutions (see next) and strict backslash escaping.
 
-To echo special characters denoted by escape sequences, use a
+To echo special characters denoted by escape sequences, choose a
 statically-parsed string literal, rather than `echo -e`:
 
     echo $'tab: \t' $indented       # YES ($IFS separated, shell compatible)
-    echo $[u'tab: \t ' ++ indented] # YES (generic YSH, not $IFS separated)
     echo u'tab: \t' $indented       # J8 with \u{unicode} notation
     echo b'tab: \t' $indented       # J8 with \u{unicode} and \y{byte} notation
+    echo $[u'tab: \t ' ++ indented] # string addition (not $IFS separated)
 
     echo -e "tab: \t $indented"  # NO (backslash)  => Error: Invalid char escape
     echo -e "tab: \\t $indented" # NO (echo_flags) => Prints: "-e tab..."
