@@ -1,4 +1,4 @@
-// preamble.h: declarations to run osh_eval.cc
+// cpp/preamble.h: declarations to run oils_for_unix.mycpp
 
 #include <errno.h>
 #include <fcntl.h>     // e.g. F_DUPFD used directly

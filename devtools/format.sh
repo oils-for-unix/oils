@@ -89,6 +89,7 @@ readonly -a CPP_FILES=(
   mycpp/demo/*.{cc,h}
   demo/*.c
   doctools/*.{h,cc}
+  yaks/*.h
 
   # Could add pyext, but they have sort of a Python style
   # pyext/fanos.c

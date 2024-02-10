@@ -28,7 +28,8 @@ def NinjaGraph(ru):
             'gen-oils-for-unix',
             deps,
             implicit=['_bin/shwrap/mycpp_main', RULES_PY],
-            variables=[('out_prefix', prefix), ('main_name', main_name)])
+            variables=[('out_prefix', prefix), ('main_name', main_name),
+                       ('preamble', 'yaks/preamble.h')])
 
     ru.cc_binary(
         '_gen/yaks/%s.mycpp.cc' % main_name,

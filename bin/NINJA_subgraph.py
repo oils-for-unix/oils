@@ -54,7 +54,8 @@ def NinjaGraph(ru):
                 'gen-oils-for-unix',
                 deps,
                 implicit=['_bin/shwrap/mycpp_main', RULES_PY],
-                variables=[('out_prefix', prefix), ('main_name', main_name)])
+                variables=[('out_prefix', prefix), ('main_name', main_name),
+                           ('preamble', 'cpp/preamble.h')])
 
         if main_name == 'oils_for_unix':
             # The main program!

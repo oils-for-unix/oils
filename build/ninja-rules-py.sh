@@ -62,7 +62,8 @@ EOF
 gen-oils-for-unix() {
   local main_name=$1
   local out_prefix=$2
-  shift 2  # rest are inputs
+  local preamble=$3
+  shift 3  # rest are inputs
 
   # Put it in _build/tmp so it's not in the tarball
   local tmp=_build/tmp
@@ -97,7 +98,7 @@ gen-oils-for-unix() {
 
 // #include "$header_out"
 
-#include "cpp/preamble.h"
+#include "$preamble"
 EOF
 
     cat $raw_cc
