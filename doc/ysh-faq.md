@@ -73,7 +73,7 @@ The rules are subtle, so we avoid inventing new ones.
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
 YSH removed these flags to `echo` to solve their interference problem with
-variable substitutions (see next) and double-quoted backslash.
+variable substitutions (see next) and strict backslash escaping.
 
 To echo special characters denoted by escape sequences, use a
 statically-parsed string literal, rather than `echo -e`:
@@ -81,10 +81,10 @@ statically-parsed string literal, rather than `echo -e`:
     echo $'tab: \t newline: \n'  # YES
     echo u'tab: \t newline: \n'  # J8 with \u{unicode} notation
 
-    echo -e "tab: \t newline: \n"    # NO (backslash)  => Invalid char escape
-    echo -e "tab: \\t newline: \\n"  # NO (echo_flags) => -e tab...
+    echo -e "tab: \t newline: \n"    # NO (backslash)  => Error: Invalid char escape
+    echo -e "tab: \\t newline: \\n"  # NO (echo_flags) => Prints: "-e tab..."
 
-To omit the newline, use the `write` builtin, rather than `echo -n`:
+To omit the newline, use `write -n` (new builtin), rather than `echo -n`:
 
     write -n -- $prefix           # YES
     write --end '' -- $prefix  # synonym
@@ -93,10 +93,10 @@ To omit the newline, use the `write` builtin, rather than `echo -n`:
 
 ### Why Were `-e` and `-n` Removed?
 
-Shell's `echo` is the only builtin that doesn't accept `--` to stop flag
+Shell's `echo` is the only builtin that doesn't recognize `--` to stop flag
 processing.
 
-This means that `echo "$flag"` always has a few bugs: when `flag` is `-e`,
+This means that `echo $string` misbehaves: when the string starts with `-e`, 
 `-n`, `-en`, or `-ne`.  There's **no** way to fix this bug in POSIX shell.
 
 Portable scripts generally use:
@@ -107,14 +107,16 @@ We could have chosen to respect `echo -- $x`, but YSH already has:
 
     write -- $x         # print $x "unmolested" in YSH
 
-That means we also have:
+Still removing the echo flags in YSH allowed for:
 
-    echo $x             # an even shorter way
+    echo $x             # an even shorter "unmolested" way
 
-So `echo` is technically superfluous in YSH, but it's also short, familiar, and
-correct.
+So `echo` is technically superfluous in YSH, but it's also a short, familiar, and
+correct way to compose words to print. 
 
-YSH isn't intended to be compatible with POSIX shell; only OSH is.
+Whereas `write`, by default, prints one line per argument.
+
+YSH isn't primarily focused to be compatible with POSIX shell; only OSH is.
 
 ### How do I find all the `echo` invocations I need to change when using YSH?
 
