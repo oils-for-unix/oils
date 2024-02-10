@@ -78,10 +78,10 @@ variable substitutions (see next) and strict backslash escaping.
 To echo special characters denoted by escape sequences, use a
 statically-parsed string literal, rather than `echo -e`:
 
-    echo $'tab: \t' $indented        # YES ($IFS separated, shell compatible)
-    echo $[ u'tab: \t' ++ indented ] # YES (generic YSH, not $IFS separated)
-    echo u'tab: \t' $indented        # J8 with \u{unicode} notation
-    echo b'tab: \t' $indented        # J8 with \u{unicode} and \y{byte} notation
+    echo $'tab: \t' $indented       # YES ($IFS separated, shell compatible)
+    echo $[u'tab: \t ' ++ indented] # YES (generic YSH, not $IFS separated)
+    echo u'tab: \t' $indented       # J8 with \u{unicode} notation
+    echo b'tab: \t' $indented       # J8 with \u{unicode} and \y{byte} notation
 
     echo -e "tab: \t $indented"  # NO (backslash)  => Error: Invalid char escape
     echo -e "tab: \\t $indented" # NO (echo_flags) => Prints: "-e tab..."
