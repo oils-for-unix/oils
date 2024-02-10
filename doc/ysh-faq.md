@@ -80,6 +80,7 @@ statically-parsed string literal, rather than `echo -e`:
 
     echo $'tab: \t newline: \n'  # YES
     echo u'tab: \t newline: \n'  # J8 with \u{unicode} notation
+    echo b'tab: \t newline: \n'  # J8 with \u{unicode} and \y{byte} notation
 
     echo -e "tab: \t newline: \n"    # NO (backslash)  => Error: Invalid char escape
     echo -e "tab: \\t newline: \\n"  # NO (echo_flags) => Prints: "-e tab..."
