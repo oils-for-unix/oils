@@ -8,20 +8,18 @@ Will this be rewritten as yaks.yaks?
 """
 from __future__ import print_function
 
-import optparse
-import os
+#import optparse
+#import os
 import sys
 
 from typing import List
 
 from _devbuild.gen import yaks_asdl
-from _devbuild.gen import nil8_asdl
+#from _devbuild.gen import nil8_asdl
 from asdl import format as fmt
 from data_lang import j8
 from mycpp import mylib
 #from yaks import lex
-
-
 """
 def Options():
     # type: () -> optparse.OptionParser

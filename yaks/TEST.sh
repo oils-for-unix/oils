@@ -42,13 +42,20 @@ test-hello() {
   # yaks/yaks.py check testdata/hello.yaks
 }
 
+test-hello-cpp() {
+  local bin=_bin/cxx-asan/yaks
+  ninja $bin
+
+  $bin cpp yaks/examples/hello.yaks
+}
+
 soil-run() {
   ### Used by soil/worker.sh.  Prints to stdout.
 
   # Hm I guess we need the Python 2 wedge here.  Right now deps/Dockerfile.pea
   # has a Python 3 wedge and MyPy, which we still need.
-  echo 'Disabled until container image has python2-dev to build pyext/fastfunc'
-  return
+  #echo 'Disabled until container image has python2-dev to build pyext/fastfunc'
+  #return
 
   run-test-funcs
 

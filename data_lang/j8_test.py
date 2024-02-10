@@ -51,6 +51,15 @@ class Nil8Test(unittest.TestCase):
             #'(:)',
             # extra input
             '(command.Simple))',
+            '(',
+            '(obj.field',
+            '(obj.',
+
+            # Expected a value afterward
+            '(obj.)',
+            '(obj.:',
+            '(obj.:)',
+            '(obj.[)',
         ]
         for s in cases:
             p = j8.Nil8Parser(s, True)
@@ -68,11 +77,11 @@ class Nil8Test(unittest.TestCase):
             # These are equivalent, note that parens like (key: "value") add another layer
             ('(: key "value")', 'key: "value"'),
             ('((: k "v") (: k2 "v2"))', '(k: "v" k2: "v2")'),
-
             ('(@ "str" x123)', '"str" @ x123'),
-
             ('((! a b) c)', '( a ! b c)'),
             ('(c (! a b))', '( c a ! b )'),
+            ('(. (. obj field1) field2)', 'obj.field1.field2'),
+            ('((-> obj method) (. obj field))', '(obj->method obj.field1)'),
         ]
         for prefix, infix in cases:
             print()
@@ -89,11 +98,9 @@ class Nil8Test(unittest.TestCase):
             print(obj2)
             log('len %d', len(obj2.items))
 
-            self.assertEqual(
-                    obj1.tag(), obj2.tag(), '%s != %s' % (obj1.tag(),
-                                                          obj2.tag()))
-            self.assertEqual(
-                    len(obj1.items), len(obj2.items))
+            self.assertEqual(obj1.tag(), obj2.tag(),
+                             '%s != %s' % (obj1.tag(), obj2.tag()))
+            self.assertEqual(len(obj1.items), len(obj2.items))
 
     def testNil8(self):
         cases = [
@@ -115,7 +122,6 @@ class Nil8Test(unittest.TestCase):
 
             # Should be parsed like infix operator
             '(key !x123)',
-
             '(<-)',  # symbol
             "(<- 1 b'hi')",  # any kinds of args
             "(<- 1 'hi' (f [1 2 3]))",  # symbol

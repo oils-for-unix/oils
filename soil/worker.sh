@@ -126,7 +126,6 @@ py-source        build/py.sh py-source       -
 check-types      pea/TEST.sh check-types     -
 run-tests        pea/TEST.sh run-tests       -
 parse-all        pea/TEST.sh parse-all       -
-yaks             yaks/TEST.sh soil-run       -
 EOF
 }
 
@@ -263,13 +262,12 @@ EOF
 
 cpp-small-tasks() {
 
-  # TODO: remove tarball
-
-  # Build the tarball toward the beginning
+  # yaks could be moved to pea/ image once it has python2-dev
   cat <<EOF
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+yaks             yaks/TEST.sh soil-run                 -
 oils-cpp-smoke   build/native.sh soil-run              -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 headless         client/run.sh soil-run-cpp            -

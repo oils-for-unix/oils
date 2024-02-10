@@ -60,6 +60,7 @@ def ValType(val):
 
     return value_str(val.tag(), dot=False)
 
+
 if mylib.PYTHON:
 
     def HeapValueId(val):
@@ -893,11 +894,13 @@ class Nil8Parser(_Parser):
       Identifier (unquoted keys)
       Ignored_Comment
     """
+
     def __init__(self, s, is_j8):
         # type: (str, bool) -> None
         _Parser.__init__(self, s, is_j8)
 
     if 0:
+
         def _LookAhead(self):
             # type: () -> Id_t
             """

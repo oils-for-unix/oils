@@ -574,7 +574,6 @@ J8_DEF = [
     # be either Symbol or plain Identifier, but field names can only be
     # Identifier.  JSON8 only has Identifier.
     #R(J8_SYMBOL_RE, Id.J8_Symbol),  # NIL8 only
-
     R(r'[~!@$%^&*+=|:;./<>?-]+', Id.J8_Operator),  # NIL8 only
 
     # TODO: emit Id.Ignored_Newline to count lines for error messages?

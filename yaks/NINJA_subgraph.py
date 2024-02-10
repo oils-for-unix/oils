@@ -30,20 +30,23 @@ def NinjaGraph(ru):
             implicit=['_bin/shwrap/mycpp_main', RULES_PY],
             variables=[('out_prefix', prefix), ('main_name', main_name)])
 
-    ru.cc_binary('_gen/yaks/%s.mycpp.cc' % main_name,
-                 #bin_path='yaks_main',
-                 preprocessed=True,
-                 matrix=ninja_lib.COMPILERS_VARIANTS +
-                 ninja_lib.GC_PERF_VARIANTS,
-                 deps=[
-                     '//core/optview',  # TODO: remove this dep
-                     '//core/runtime.asdl',
-                     '//core/value.asdl',
-                     '//cpp/data_lang',
-                     '//cpp/frontend_match',
-                     '//data_lang/nil8.asdl',
-                     '//frontend/consts',
-                     '//mycpp/runtime',
-                 ])
+    ru.cc_binary(
+        '_gen/yaks/%s.mycpp.cc' % main_name,
+        # Note: yaks/yaks.py is bad for Python imports, so it's called
+        # yaks_main.py
+        bin_path='yaks',
+        preprocessed=True,
+        matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
+        deps=[
+            '//core/optview',  # TODO: remove this dep
+            '//core/runtime.asdl',
+            '//core/value.asdl',
+            '//cpp/data_lang',
+            '//cpp/frontend_match',
+            '//data_lang/nil8.asdl',
+            '//frontend/consts',
+            '//mycpp/runtime',
+        ])
+
 
 # vim: sw=4
