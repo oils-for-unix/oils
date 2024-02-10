@@ -75,11 +75,11 @@ The rules are subtle, so we avoid inventing new ones.
 YSH removed these flags to `echo` to solve their interference problem with
 variable substitutions (see next) and double-quoted backslash.
 
-To echo escape sequences, use a statically-parsed string literal, rather than
-`echo -e`:
+To echo special characters denoted by escape sequences, use a
+statically-parsed string literal, rather than `echo -e`:
 
-    echo $'tab: \t newline: \n' # YES
-    echo u'tab: \t A: \u{41}'   # J8 unicode notation
+    echo $'tab: \t newline: \n'  # YES
+    echo u'tab: \t newline: \n'  # J8 with \u{unicode} notation
 
     echo -e "tab: \t newline: \n"    # NO (backslash)  => Invalid char escape
     echo -e "tab: \\t newline: \\n"  # NO (echo_flags) => -e tab...
