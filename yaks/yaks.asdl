@@ -1,7 +1,4 @@
-# yaks IR: An idea to replace tea/, removing all the tea_* productions from
-# ysh/grammar.pgen2.
-#
-# This is basically the subset of C++ we generate.
+# yaks - idea to rewrite mycpp.
 # 
 # MAYBE:
 # - Can we generate value types in C++, to reduce GC pressure?  Is that done
@@ -163,7 +160,7 @@ module yaks
   # This is list of globals, class/method definitions, and functions.
   # It has DEPS (to be worked out)
   # (module "core/runtime_asdl" (data ...)
-  Module = (string namespace, List[definition] defs)
+  Module = (string namespace_, List[definition] defs)
 
   # There's also the idea of taking an entire parsed ASDL structure and making
   # it global!

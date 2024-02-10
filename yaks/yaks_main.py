@@ -105,11 +105,13 @@ def main(argv):
         #   - not sure if we'll need any more IRs
 
     elif action == 'test':
-        if mylib.PYTHON:
-            path = argv[2]
+        path = argv[2]
 
-            m = yaks_asdl.Module('hi', [])
-            #print(m)
+        m = yaks_asdl.Module('hi', [])
+
+        pretty_f = fmt.DetectConsoleOutput(stdout_)
+        fmt.PrintTree(m.PrettyTree(), pretty_f)
+        stdout_.write('\n')
 
             #tokens = lex.Lex('hello there')
             #print(tokens)

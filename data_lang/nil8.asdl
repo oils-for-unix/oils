@@ -17,26 +17,14 @@ nvalue =
   | Int(int i)
   | Float(float f)
 
+    # I wonder if we want nvalue.Char for translating to C?
+    # Could be literal \\ and \n and \'a' or something
+
     # string literal e.g. "foo" or b'\yff'
   | Str(str s)
 
-    # symbol e.g. for 'main' in (func main) or 'x' in (f x)
-    # Hm I guess this creates a parsing issue with named args
-    # (f x:42) vs (f x y)
-    # That would take more lookahead.  It may be acceptable.
-    #
-    # Another possibility is a reader macro
-    # Perhaps it's 
-    # (f :x 42) becomes (f [x 42])
-    # or
-    # you can just use re2c and the `:` can't have a space
-    #
-    # (f x:42) and (f x: 42) are OK, but (f x : 42)
-    # is not
-    # So maybe it's J8_FieldName which is IdentifierName + ':'
-    # And then symbols are arbitrary
-    # But symbols can't contain :
-
+    # either Identifier like func main
+    #     or operator like + or ++
   | Symbol(str s)
 
   | List(List[nvalue] items)

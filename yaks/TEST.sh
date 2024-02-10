@@ -32,9 +32,12 @@ check() {
     mypy $mypy_flags --py2 yaks/yaks_main.py
 }
 
+yaks() {
+  PYTHONPATH='.:vendor' yaks/yaks_main.py "$@"
+}
+
 test-hello() {
-  # translate
-  PYTHONPATH='.:vendor' yaks/yaks_main.py cpp yaks/examples/hello.yaks
+  yaks cpp yaks/examples/hello.yaks
 
   # TODO: fibonacci program, etc. building up to yaks in yaks itself.
 

@@ -6,6 +6,7 @@
 #include "_gen/data_lang/nil8.asdl.h"
 #include "_gen/frontend/consts.h"
 #include "_gen/frontend/id_kind.asdl.h"  // syntax.asdl depends on this
+#include "_gen/yaks/yaks.asdl.h"
 #include "cpp/data_lang.h"
 #include "cpp/frontend_match.h"
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
