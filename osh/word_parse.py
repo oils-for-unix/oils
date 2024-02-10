@@ -667,7 +667,7 @@ class WordParser(WordEmitter):
 
                 # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
                 if is_ysh_expr or not self.parse_opts.parse_backslash():
-                    p_die('Invalid char escape in C-style string literal. Use \\\\ to get \ (parse_backslash).', tok)
+                    p_die('Invalid char escape in C-style string literal (parse_backslash).\n\t* \\\\ to denote \\ ?\n\t* use u\'- or b\'-literal ? (ysh)', tok)
 
                 tokens.append(tok)
 
@@ -944,7 +944,7 @@ class WordParser(WordEmitter):
                         if (is_ysh_expr or
                                 not self.parse_opts.parse_backslash()):
                             p_die(
-                                'Invalid char escape in double quoted string. Only \", \$, or \\\\ to get \ (parse_backslash).',
+                                'Invalid char escape in double quoted string literal (parse_backslash).\n\t Only allowed: \", \$, or \\\\ to denote \\\n\t* change to \\\\ to denote \\ ?\n\t* use u\'- or b\'-literal ? (ysh)',
                                 self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_ysh_expr or not self.parse_opts.parse_dollar():
@@ -1611,7 +1611,7 @@ class WordParser(WordEmitter):
             ch = lexer.TokenSliceLeft(tok, 1)
             if not self.parse_opts.parse_backslash():
                 if not pyutil.IsValidCharEscape(ch):
-                    p_die('Invalid char escape. Remove, or use \\\\ to get \ (parse_backslash).',
+                    p_die('Invalid char escape (parse_backslash).\n\t* remove \ ?\n\t* use \\\\ to denote \\ ?\n\t* use \'- or r\'-string-literal ?',
                           self.cur_token)
 
             part = word_part.EscapedLiteral(self.cur_token,
