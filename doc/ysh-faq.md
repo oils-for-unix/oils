@@ -72,32 +72,39 @@ The rules are subtle, so we avoid inventing new ones.
 
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
-YSH removed these flags to `echo` because it has good alternatives
+YSH removed these flags to `echo` to solve their interference problems with
+strict backslash escaping and variable substitutions (see next).
 
-To escape variables, use the statically-parsed string language, rather than
-`echo -e`:
+To echo special characters denoted by escape sequences, choose a
+statically-parsed string literal, rather than `echo -e`:
 
-    echo $'tab \t newline \n'   # YES
-    echo j"tab \t newline \n"   # TODO: J8 notation
+    echo $'tab: \t' $indented       # YES ($IFS separated, shell compatible)
+    echo u'tab: \t' $indented       # J8 with \u{unicode} notation
+    echo b'tab: \t' $indented       # J8 with \u{unicode} and \y{byte} notation
+    echo $[u'tab: \t ' ++ indented] # string addition (not $IFS separated)
 
-    echo -e tab \t newline \n'  # NO
+    echo -e "tab: \t $indented"  # NO (backslash)  => Error: Invalid char escape
+    echo -e "tab: \\t $indented" # NO (echo_flags) => Prints: "-e tab..."
 
-To omit the newline, use the `write` builtin, rather than `echo -n`:
+To omit the trailing newline, use `write -n` (a new builtin),
+rather than `echo -n`:
 
-    write -n 'prefix'           # YES
-    write --end '' -- 'prefix'  # synonym
+    write -n       -- $prefix   # YES
+    write --end '' -- $prefix   # synonym
 
-    echo -n 'prefix'            # NO
+    echo -n $prefix             # NO
 
 ### Why Were `-e` and `-n` Removed?
 
-Shell's `echo` is the only builtin that doesn't accept `--` to stop flag
-processing.
+Shell's `echo` is the only builtin that doesn't recognize `--` to stop
+flag processing.
 
-This means that `echo "$flag"` always has a few bugs: when `flag` is `-e`,
-`-n`, `-en`, or `-ne`.  There's **no** way to fix this bug in POSIX shell.
+This means that `echo $flag $string` misbehaves when $string starts with
+an arbitrary number of `-e`, `-n`, `-en`, or `-ne` occurences. In other
+words, it does not matter whether $flag is empty or correct!
+There's **no** way to fix this bug in POSIX shell.
 
-Portable scripts generally use:
+So, portable scripts generally use:
 
     printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
 
@@ -105,14 +112,16 @@ We could have chosen to respect `echo -- $x`, but YSH already has:
 
     write -- $x         # print $x "unmolested" in YSH
 
-That means we also have:
+Still removing the echo flags in YSH allowed for:
 
-    echo $x             # an even shorter way
+    echo $x             # an even shorter "unmolested" way
 
-So `echo` is technically superfluous in YSH, but it's also short, familiar, and
-correct.
+So `echo` is technically superfluous in YSH, but it's also a short, familiar,
+and correct way to compose words to print. 
 
-YSH isn't intended to be compatible with POSIX shell; only OSH is.
+Whereas `write`, by default, prints one line per argument given.
+
+YSH isn't primarily focused to be compatible with POSIX shell; only OSH is.
 
 ### How do I find all the `echo` invocations I need to change when using YSH?
 
