@@ -109,7 +109,7 @@ So portable shell scripts use:
 
     printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
 
-We could have chosen to respect `echo -- $x`, but since YSH already has:
+We could have chosen to respect `echo -- $x`, but as YSH already has:
 
     write -- $x         # fully-featured "unmolested" print $x
 
