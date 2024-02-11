@@ -6,17 +6,16 @@ Uses yaks.asdl.  Will this be rewritten as yaks_main.yaks?
 """
 from __future__ import print_function
 
-#import optparse
-#import os
 import sys
-
-from typing import List
 
 from _devbuild.gen import yaks_asdl
 from asdl import format as fmt
 from data_lang import j8
 from mycpp import mylib
 from yaks import transform
+from yaks import gen_cpp
+
+from typing import List
 """
 def Options():
     # type: () -> optparse.OptionParser
@@ -104,11 +103,9 @@ def main(argv):
         fmt.PrintTree(prog.PrettyTree(), pretty_f)
         stdout_.write('\n')
 
-        # TODO:
-        #
-        # - Then convert nvalue to a static representation in yaks.asdl
-        # - Then a few mycpp passes over this representation
+        # TODO: a few mycpp passes over this representation
         #   - not sure if we'll need any more IRs
+        gen_cpp.GenCpp(prog)
 
     elif action == 'check':
         # Only do type checking?

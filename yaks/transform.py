@@ -6,13 +6,9 @@ from __future__ import print_function
 
 from _devbuild.gen.nil8_asdl import nvalue, nvalue_e, nvalue_t
 from _devbuild.gen.yaks_asdl import Module, Program, mod_def, mod_def_t, typ
-from mycpp.mylib import tagswitch, log
+from mycpp.mylib import log
 
 from typing import cast, List
-#TYPE_CHECKING
-
-#if TYPE_CHECKING:
-#    from _devbuild.gen.nil8_asdl import nvalue_t
 
 _ = log
 

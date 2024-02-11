@@ -2,6 +2,7 @@ _devbuild/gen/arg_types.py
 _devbuild/gen/grammar_nt.py
 _devbuild/gen/hnode_asdl.py
 _devbuild/gen/id_kind_asdl.py
+_devbuild/gen/nil8_asdl.py
 _devbuild/gen/option_asdl.py
 _devbuild/gen/runtime_asdl.py
 _devbuild/gen/syntax_asdl.py
