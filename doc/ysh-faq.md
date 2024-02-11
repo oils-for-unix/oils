@@ -86,22 +86,24 @@ statically-parsed string literal, rather than `echo -e`:
     echo -e "tab: \t $indented"  # NO (backslash)  => Error: Invalid char escape
     echo -e "tab: \\t $indented" # NO (echo_flags) => Prints: "-e tab..."
 
-To omit the newline, use `write -n` (new builtin), rather than `echo -n`:
+To omit the trailing newline, use `write -n` (a new builtin),
+rather than `echo -n`:
 
-    write -n -- $prefix           # YES
-    write --end '' -- $prefix  # synonym
+    write -n       -- $prefix   # YES
+    write --end '' -- $prefix   # synonym
 
-    echo -n $prefix            # NO
+    echo -n $prefix             # NO
 
 ### Why Were `-e` and `-n` Removed?
 
-Shell's `echo` is the only builtin that doesn't recognize `--` to stop flag
-processing.
+Shell's `echo` is the only builtin that doesn't recognize `--` to stop
+flag processing.
 
-This means that `echo $string` misbehaves: when the string starts with `-e`, 
-`-n`, `-en`, or `-ne`.  There's **no** way to fix this bug in POSIX shell.
+This means that `echo $flag $string` misbehaves when $string starts with
+`-e`, `-n`, `-en`, or `-ne`. (With empty and correct $flag!)
+There's **no** way to fix this bug in POSIX shell.
 
-Portable scripts generally use:
+So, portable scripts generally use:
 
     printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
 
