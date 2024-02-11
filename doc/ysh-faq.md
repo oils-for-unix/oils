@@ -115,7 +115,7 @@ We could have chosen to respect `echo -- $x`, but as YSH already has:
 
 That allowed YSH to have an "unmolested":
 
-    echo $x             # an even shorter way
+    echo $x             # optionless shortcut
 
 So `echo` is technically superfluous in YSH, but it's also short, familiar, and
 correct.
