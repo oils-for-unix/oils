@@ -113,7 +113,7 @@ We could have chosen to respect `echo -- $x`, but as YSH already has:
 
     write -- $x         # print $x "unmolested" in YSH
 
-That means YSH can have an "unmolested":
+That means YSH can have:
 
     echo $x             # an even shorter, flagless way
 
