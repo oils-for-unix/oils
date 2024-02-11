@@ -100,7 +100,8 @@ Shell's `echo` is the only builtin that doesn't recognize `--` to stop
 flag processing.
 
 This means that `echo $flag $string` misbehaves when $string starts with
-`-e`, `-n`, `-en`, or `-ne`. (With empty and correct $flag!)
+an arbitrary number of `-e`, `-n`, `-en`, or `-ne` occurences. In other
+words, it does not matter whether $flag is empty or correct!
 There's **no** way to fix this bug in POSIX shell.
 
 So, portable scripts generally use:
