@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
+    needs: ['cpp-tarball']
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -191,6 +192,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
+    needs: ['cpp-tarball']
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -331,6 +333,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
+    needs: ['cpp-tarball']
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
