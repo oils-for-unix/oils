@@ -115,7 +115,7 @@ We could have chosen to respect `echo -- $x`, but as YSH already has:
 
 That means YSH can have an "unmolested":
 
-    echo $x             # an even shorter way
+    echo $x             # an even shorter, flagless way
 
 Which is equivalent to `write --sep ' ' -- $x`.
 
