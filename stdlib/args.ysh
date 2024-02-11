@@ -47,7 +47,10 @@ proc arg-parse (; place ; ; block_def) {
   ##   var flag, i = parseArgs(spec, ARGV)
 
   var p = {}
-  ctx push (p, block_def)
+  ctx push (p) {
+    flag -h --help (help="Show this help message and exit", default=false)
+    eval (block_def)
+  }
 
   # Validate that p.rest = [name] or null and reduce p.rest into name or null.
   if ('rest' in p) {
@@ -63,7 +66,7 @@ proc arg-parse (; place ; ; block_def) {
   call place->setValue(p)
 }
 
-proc flag (short, long ; type='bool', default=null, help=null) {
+proc flag (short, long ; type='bool' ; default=null, help=null) {
   ## Declare a flag within an `arg-parse`.
   ##
   ## Examples:
@@ -106,6 +109,20 @@ proc rest (name) {
   ctx emit rest (name)
 }
 
+proc prog-name (progName) {
+  ## Set the program name used when displaying program usage and the generated
+  ## help message. (If this is not set, $0 is used instead.)
+
+  ctx set (name=progName)
+}
+
+proc description (description) {
+  ## Annotate an argument spec with a description displayed in the generated
+  ## help message.
+
+  ctx set (description=description)
+}
+
 func __args_getFlagName(flag) {
   if (flag.long) {
     return (flag.long[2:])
@@ -114,6 +131,59 @@ func __args_getFlagName(flag) {
   }
 
   error ('No flag.long or flag.short')
+}
+
+proc print-help (; spec) {
+  var name = "$0"
+  if ('name' in spec) {
+    setvar name = spec.name
+  }
+
+  var flags = []
+  for flag in (spec.flags) {
+    if (flag.default === null) {
+      # required (no [..])
+      call flags->append(" $[flag.short]")
+    } else {
+      # optional (add [..])
+      call flags->append(" [$[flag.short]]")
+    }
+  }
+
+  var args = []
+  for arg in (spec.args) {
+    call args->append(" $[arg.name]")
+  }
+
+  var rest = ''
+  if ('rest' in spec and spec.rest) {
+    setvar rest = " ...$[spec.rest[0]]"
+  }
+
+  setvar flags = flags => join("")
+  setvar args = args => join("")
+
+  write "usage: $name$flags$args$rest"
+  write
+  write $[spec.description]
+
+  write 'Positional Arguments:'
+  for arg in (spec.args) {
+    write " $[arg.name]"
+  }
+  write
+
+  write 'Flags:'
+  for flag in (spec.flags) {
+    write -n -- " $[flag.short], $[flag.long]"
+
+    if ('help' in flag and flag.help) {
+      write -n -- u'\t\t'
+      write -n -- $[flag.help]
+    }
+
+    write
+  }
 }
 
 func parseArgs(spec, argv) {
@@ -165,6 +235,12 @@ func parseArgs(spec, argv) {
 
   if (spec.rest) {
     setvar args[spec.rest] = rest
+  }
+
+  if ('help' in args and args.help) {
+    print-help (spec)
+
+    exit 0
   }
 
   return ([args, i])

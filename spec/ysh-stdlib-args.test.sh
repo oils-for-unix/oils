@@ -42,9 +42,10 @@ arg-parse (&spec) {
   description '''
      Reference Implementation
   '''
-  prog "program-name"
+  prog-name "program-name"
 
-  arg -v --verbose (Bool, help = "Verbose")
+  flag -v --verbose ('bool', help="Verbose", default=false)
+  flag -n --count ('int')
   arg src
   arg dst
 }
@@ -54,17 +55,18 @@ var argv = ['-h', 'src', 'dst']
 var arg = parseArgs(spec, argv)
 
 ## STDOUT:
-usage: program-name [-h] [-v] src dst
+usage: program-name [-h] [-v] -n src dst
 
-Reference Implementation
+   Reference Implementation
 
-positional arguments:
+Positional Arguments:
  src
  dst
 
-options:
- -h, --help           show this help message and exit
- -v, --verbose        Verbose
+Flags:
+ -h, --help		Show this help message and exit
+ -v, --verbose		Verbose
+ -n, --count
 ## END
 
 #### Parse args using a JSON argspec
@@ -155,6 +157,13 @@ json write (spec)
 {
   "flags": [
     {
+      "short": "-h",
+      "long": "--help",
+      "type": "bool",
+      "default": false,
+      "help": "Show this help message and exit"
+    },
+    {
       "short": "-v",
       "long": "--verbose",
       "type": "bool",
@@ -183,8 +192,8 @@ json write (spec)
 source --builtin args.ysh
 
 arg-parse (&spec) {
-  flag -v --verbose ('bool', false)
-  flag -c --count ('int', 120)
+  flag -v --verbose ('bool', default=false)
+  flag -c --count ('int', default=120)
   arg file
 }
 
