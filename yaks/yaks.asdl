@@ -66,29 +66,29 @@ module yaks
     Plus
   | Minus
 
-  expr =
+  kexpr =
     Bool %Bool
   | Int %Int
   | Str %Str
   | MultiStr %MultiStr
 
     # e.g. (not true)
-  | Unary(Token op, expr child)
+  | Unary(Token op, kexpr child)
     # e.g. (+ 1 2)
     #      (a i)  is a[i]
     #      (d key)  is d[key]
-  | Binary(Token op, expr left, expr right)
+  | Binary(Token op, kexpr left, kexpr right)
 
     # 'x' if mybool else 'y'
-  | Ternary(Token op, expr left, expr cond, expr right)
+  | Ternary(Token op, kexpr left, kexpr cond, kexpr right)
 
     # List[Int] is (List Int) I guess
     # This means we don't confuse Python and C++ precedence?  Everything is
     # parenthesized.
-  | Call(expr f, List[expr] args)
+  | Call(kexpr f, List[kexpr] args)
 
   # Avoid conflict with hnode_asdl.Field (TODO: should have namespaces)
-  Field_ = (str name, typ typ)
+  Field_ = (str name, ktype typ)
 
   # Do we have first-class / shared variants in this language?  We need it for
   # Oils, not sure about Yaks itself.
@@ -96,12 +96,12 @@ module yaks
 
   # Is this representation type checked directly?  I guess that would help.
   # But Pea is also type checked?
-  typ =
+  ktype =
     Bool
   | Int
   | Str
-  | List(typ T)
-  | Dict(typ K, typ V)
+  | List(ktype T)
+  | Dict(ktype K, ktype V)
 
     # How do we reference the symbol table?
   | Class(str name)
@@ -111,7 +111,7 @@ module yaks
   | Data(Field_* fields)
   | Enum(variant* variants)
 
-  NameType = (str name, typ typ)
+  NameType = (str name, ktype typ)
 
   stmt =
     VarDecl(Token keyword)        # (var i Int 42)  =>  int i = 42;
@@ -124,7 +124,7 @@ module yaks
 
   | Break
   | Continue
-  | Return(expr e)
+  | Return(kexpr e)
 
     # LATER
   | Try()
@@ -137,6 +137,7 @@ module yaks
   | Method()
   | Field()
 
+  Signature = (List[NameType] params, ktype return_type)
   # definitions allowed in a module
   mod_def =
     # These are different because we know the size at compile time.
@@ -149,7 +150,7 @@ module yaks
     # considerably, but could be the best solution.
     Global(NameType name_type)  # GLOBAL_STR
 
-  | Func(str name, List[NameType] params, typ return_type, List[stmt] statements)
+  | Func(str name, Signature sig, List[stmt] statements)
     # what we're generating
   | Class(str name, List[class_def] defs)
 
