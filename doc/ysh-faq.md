@@ -115,7 +115,9 @@ We could have chosen to respect `echo -- $x`, but as YSH already has:
 
 That allowed YSH to have an "unmolested":
 
-    echo $x             # optionless shortcut
+    echo $x              # optionless shortcut
+
+Which is equivalent to `write --sep ' ' -- $x`.
 
 So `echo` is technically superfluous in YSH, but it's also short, familiar, and
 correct.
