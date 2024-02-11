@@ -72,32 +72,40 @@ The rules are subtle, so we avoid inventing new ones.
 
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
-YSH removed these flags to `echo` because it has good alternatives
+To echo special characters denoted by backslash escapes, use a
+statically-parsed string literal, not `echo -e`:
 
-To escape variables, use the statically-parsed string language, rather than
-`echo -e`:
+    echo u'tab \t newline \n'       # YES: J8 style string is recommended in YSH
+    echo $'tab \t newline \n'       #      bash-style string is also accepted
 
-    echo $'tab \t newline \n'   # YES
-    echo j"tab \t newline \n"   # TODO: J8 notation
+These styles don't work in YSH:
 
-    echo -e tab \t newline \n'  # NO
+    echo -e "tab \\t newline \\n"   # NO: -e is printed literally
+    echo -e "tab \t newline \n"     #     Error: Invalid char escape
 
-To omit the newline, use the `write` builtin, rather than `echo -n`:
+To mix backslash escapes and var substitution, use the concatenation operator
+`++`:
 
-    write -n 'prefix'           # YES
-    write --end '' -- 'prefix'  # synonym
+    echo $[u'tab \t' ++ " $year/$month/$day"]
 
-    echo -n 'prefix'            # NO
+To omit the trailing newline, use the `write` builtin:
+
+    write -n       -- $prefix       # YES
+    write --end '' -- $prefix       # synonym
+
+    echo -n $prefix                 # NO: -n is printed literally
 
 ### Why Were `-e` and `-n` Removed?
 
-Shell's `echo` is the only builtin that doesn't accept `--` to stop flag
-processing.
+The idioms with `u''` and `write` are more powerful and consistent.
 
-This means that `echo "$flag"` always has a few bugs: when `flag` is `-e`,
-`-n`, `-en`, or `-ne`.  There's **no** way to fix this bug in POSIX shell.
+Moreover, shell's `echo` is the *only* builtin that doesn't accept `--` to stop
+flag processing.
 
-Portable scripts generally use:
+That is, `echo "$flag"` always has a few bugs: when `$flag` is `-e`, `-n`,
+`-en`, or `-ne`. There's **no** way to fix this bug in POSIX shell.
+
+So portable shell scripts use:
 
     printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
 
@@ -105,7 +113,7 @@ We could have chosen to respect `echo -- $x`, but YSH already has:
 
     write -- $x         # print $x "unmolested" in YSH
 
-That means we also have:
+That means YSH has:
 
     echo $x             # an even shorter way
 
