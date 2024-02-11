@@ -113,9 +113,9 @@ We could have chosen to respect `echo -- $x`, but as YSH already has:
 
     write -- $x         # fully-featured "unmolested" print $x
 
-That allowed YSH to have an "unmolested":
+YSH can have an "unmolested":
 
-    echo $x             # optionless shortcut
+    echo $x             # an optionless shortcut
 
 Which is equivalent to `write --sep ' ' -- $x`.
 
