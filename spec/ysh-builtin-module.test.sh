@@ -86,3 +86,29 @@ runproc p {
 hi
 ## END
 
+#### pure-ysh module
+shopt --set ysh:all
+
+proc exporting (; ; ...exports) {
+  ctx set (exports)
+}
+
+proc import (path ; place) {
+  var mod = {}
+  ctx push (mod) {
+    source $path
+  }
+  call place->setValue(mod)
+}
+
+import $REPO_ROOT/spec/testdata/module.ysh (&math)
+
+echo $[math.add(40, 2)]
+echo $[math.sub(44, 2)]
+
+echo $[add(44, 2)]  # Will raise an error: Undefined variable 'add'
+## status: 2
+## STDOUT:
+42
+42
+## END

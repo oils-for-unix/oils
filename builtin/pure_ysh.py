@@ -183,7 +183,15 @@ class Ctx(vm._Builtin):
             return self._Push(context, block)
 
         elif verb == "set":
-            updates = rd.RestNamed()
+            update_dict = rd.OptionalValue()
+            if update_dict is None:
+                updates = rd.RestNamed()
+            elif update_dict.tag() == value_e.Dict:
+                updates = cast(value.Dict, update_dict).d
+            else:
+                raise error.TypeErr(update_dict,
+                                    "Expected a Dict or named arguments",
+                                    rd.BlamePos())
             rd.Done()
             arg_r.AtEnd()
 

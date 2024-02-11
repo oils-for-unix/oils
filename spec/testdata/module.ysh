@@ -1,0 +1,9 @@
+func add(a, b) {
+  return (a + b)
+}
+
+func sub(a, b) {
+  return (a - b)
+}
+
+exporting (add=add, sub=sub)
