@@ -72,8 +72,8 @@ The rules are subtle, so we avoid inventing new ones.
 
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
-YSH removed these flags to `echo` to solve their interference problem with
-variable substitutions (see next) and strict backslash escaping.
+YSH removed these flags to `echo` to solve their interference problems with
+strict backslash escaping and variable substitutions (see next).
 
 To echo special characters denoted by escape sequences, choose a
 statically-parsed string literal, rather than `echo -e`:
@@ -113,10 +113,10 @@ Still removing the echo flags in YSH allowed for:
 
     echo $x             # an even shorter "unmolested" way
 
-So `echo` is technically superfluous in YSH, but it's also a short, familiar, and
-correct way to compose words to print. 
+So `echo` is technically superfluous in YSH, but it's also a short, familiar,
+and correct way to compose words to print. 
 
-Whereas `write`, by default, prints one line per argument.
+Whereas `write`, by default, prints one line per argument given.
 
 YSH isn't primarily focused to be compatible with POSIX shell; only OSH is.
 
