@@ -63,11 +63,20 @@ def main(argv):
         raise RuntimeError('Action required')
 
     if action == 'cpp':
+        # Usage:
+        # - Specify a root file - each file contains a module
+        #   - this module may or may not contain main()
+        # - then it will walk imports, and create a big list of modules
+        # - then does it make a SINGLE translation unit for all modules?
+        # - and then maybe generate a unit test that links the translation unit
+        #   and calls a function?
+        #   - I suppose we could add main() to each module, like core/ and osh/
 
         path = argv[2]
         #with open(path) as f:
         #    contents = f.read()
 
+        # TODO: could implement mylib.SlurpFile()
         lines = []  # type: List[str]
         f = mylib.open(path)
         while True:
@@ -90,23 +99,20 @@ def main(argv):
         fmt.PrintTree(nval.PrettyTree(), pretty_f)
         stdout_.write('\n')
 
-        kval = transform.Transform(nval)
+        prog = transform.Transform(nval)
 
-        fmt.PrintTree(kval.PrettyTree(), pretty_f)
+        fmt.PrintTree(prog.PrettyTree(), pretty_f)
         stdout_.write('\n')
 
         # TODO:
         #
-        # - Use nvalue representation I think
-        #   - nvalue can be converted to value for manipulating in Oils
-        #     - nvalue.Record becomes a Dict
-        #     - since field names must be identifier names, you're guaranteed
-        #       to have 0 1 2 3 available, so node.0 is fine
         # - Then convert nvalue to a static representation in yaks.asdl
         # - Then a few mycpp passes over this representation
         #   - not sure if we'll need any more IRs
 
-    elif action == 'test':
+    elif action == 'check':
+        # Only do type checking?
+
         path = argv[2]
 
         m = yaks_asdl.Module('hi', [])
@@ -114,12 +120,6 @@ def main(argv):
         pretty_f = fmt.DetectConsoleOutput(stdout_)
         fmt.PrintTree(m.PrettyTree(), pretty_f)
         stdout_.write('\n')
-
-            #tokens = lex.Lex('hello there')
-            #print(tokens)
-
-            #with open(path) as f:
-            #    print(f.read())
 
     else:
         raise RuntimeError('Invalid action %r' % action)

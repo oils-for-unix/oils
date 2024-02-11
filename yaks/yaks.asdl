@@ -88,7 +88,7 @@ module yaks
   | Call(expr f, List[expr] args)
 
   # Avoid conflict with hnode_asdl.Field (TODO: should have namespaces)
-  Field_ = (string name, type typ)
+  Field_ = (str name, typ typ)
 
   # Do we have first-class / shared variants in this language?  We need it for
   # Oils, not sure about Yaks itself.
@@ -96,22 +96,22 @@ module yaks
 
   # Is this representation type checked directly?  I guess that would help.
   # But Pea is also type checked?
-  type =
+  typ =
     Bool
   | Int
   | Str
-  | List(type T)
-  | Dict(type K, type V)
+  | List(typ T)
+  | Dict(typ K, typ V)
 
     # How do we reference the symbol table?
-  | Class(string name)
+  | Class(str name)
 
     # This is like ASDL.  Or do we do type checking on CLASSES only, and this
     # is SUGAR?
   | Data(Field_* fields)
   | Enum(variant* variants)
 
-  NameType = (string name, type typ)
+  NameType = (str name, typ typ)
 
   stmt =
     VarDecl(Token keyword)        # (var i Int 42)  =>  int i = 42;
@@ -149,9 +149,9 @@ module yaks
     # considerably, but could be the best solution.
     Global(NameType name_type)  # GLOBAL_STR
 
-  | Func(string name, stmt statments)
+  | Func(str name, List[NameType] params, typ return_type, List[stmt] statements)
     # what we're generating
-  | Class(string name, class_def* defs)
+  | Class(str name, List[class_def] defs)
 
     # Python import
   | Import()
@@ -159,7 +159,7 @@ module yaks
     # include <stdio.h>
     # also need names to type check?  we may need the equivalent of .pyi files
     # how do we express this in Python, maybe some special comments?
-  | Include(string path)
+  | Include(str path)
 
     # Is this SUGAR on top of classes?
   | Data()
@@ -169,7 +169,16 @@ module yaks
   # This is list of globals, class/method definitions, and functions.
   # It has DEPS (to be worked out)
   # (module "core/runtime_asdl" (data ...)
-  Module = (string namespace_, List[mod_def] defs)
+  Module = (str name, List[mod_def] defs)
+
+  # A program is a collection of modules to link together, along with a main
+  # module like oils_for_unix, in bin/oils_for_unix.py.
+  # 
+  # It contains a main function like oils_for_unix::main().
+  #
+  # TODO: do we need any notion of package, like osh/ and core/ ?
+
+  Program = (str main_module, List[Module] modules)
 }
 
 # vim: sw=2

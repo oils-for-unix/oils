@@ -12,4 +12,6 @@
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
 
 // TODO: Why do we need these?
+using nil8_asdl::nvalue;
 using value_asdl::value;
+using yaks_asdl::mod_def;
