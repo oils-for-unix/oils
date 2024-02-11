@@ -3,7 +3,10 @@
 
   #(include "<stdio.h>")
 
-  (func main [argv [List Str]] => Int
+  (func main [
+    [argv [List Str]]
+  ] => Int
+
     # array indexing is ,
     #(call print (argv,1))
 

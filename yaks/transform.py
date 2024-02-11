@@ -19,8 +19,15 @@ _ = log
 def MustBeSymbol(nval):
     # type: (nvalue_t) -> str
     if nval.tag() != nvalue_e.Symbol:
-        raise AssertionError('Expected symbol')
+        raise AssertionError('Expected Symbol, got %s' % nval)
     return cast(nvalue.Symbol, nval).s
+
+
+def MustBeList(nval):
+    # type: (nvalue_t) -> List[nvalue_t]
+    if nval.tag() != nvalue_e.List:
+        raise AssertionError('Expected List, got %s' % nval)
+    return cast(nvalue.List, nval).items
 
 
 def TransformExpr(nval):
@@ -39,11 +46,59 @@ def TransformExpr(nval):
 
 def TransformType(nval):
     # type: (nvalue_t) -> ktype_t
-    return ktype.Int
+
+    UP_nval = nval
+    with tagswitch(nval) as case:
+
+        if case(nvalue_e.Symbol):
+            nval = cast(nvalue.Symbol, UP_nval)
+
+            # TODO: Is there Void type?  That's the same as None in Python?
+            # def f() -> None: ...
+
+            if nval.s == 'Bool':
+                return ktype.Bool
+            elif nval.s == 'Int':
+                return ktype.Int
+            #elif nval.s == 'Float':
+            #    return ktype.Float
+            elif nval.s == 'Str':
+                return ktype.Str
+            else:
+                raise AssertionError(nval.s)
+
+        elif case(nvalue_e.List):
+            nval = cast(nvalue.List, UP_nval)
+
+            first = MustBeSymbol(nval.items[0])
+            if first == 'List':
+                return ktype.List(TransformType(nval.items[1]))
+            elif first == 'Dict':
+                return ktype.Dict(TransformType(nval.items[1]),
+                                  TransformType(nval.items[2]))
+            else:
+                raise AssertionError(first)
+
+        else:
+            raise AssertionError()
 
 
-def TransformParams(nval):
-    # type: (nvalue_t) -> List[NameType]
+def TransformParam(param_n):
+    # type: (List[nvalue_t]) -> NameType
+    """
+    [argv [List Int]]
+    """
+
+    if len(param_n) != 2:
+        raise AssertionError()
+
+    name = MustBeSymbol(param_n[0])
+    typ = TransformType(param_n[1])
+    return NameType(name, typ)
+
+
+def TransformParams(params_n):
+    # type: (List[nvalue_t]) -> List[NameType]
     """
     (func f [
       [x Int] [y Int] [z [List Int]]
@@ -57,62 +112,78 @@ def TransformParams(nval):
 
     (method GetCell [
       [name (*BigStr)]
-      [which_scopes runtime_asdl::scope_t=scope_e::Shopt]
+      [which_scopes runtime_asdl::scope_t scope_e::Shopt]
     ] => (*runtime_asdl::Cell)
       (call print "hi")
     )
+
+    Can't use = here because (scope_t=scope_e) would be parsed before
+    (scope_e::Shopt)
+
+      [which_scopes runtime_asdl::scope_t=scope_e::Shopt]
+
+    We don't have any precedence rules.
     """
-    return []
+    result = []  # type: List[NameType]
+    for p in params_n:
+        param_n = MustBeList(p)
+        #log('PN %s', param_n)
+        result.append(TransformParam(param_n))
+    return result
 
 
 def TransformSignature(nval):
     # type: (nvalue_t) -> Signature
 
-    if nval.tag() != nvalue_e.List:
-        raise AssertionError('Expected signature to be a List')
-
-    UP_sig_n = nval
-    sig_n = cast(nvalue.List, UP_sig_n)
-
-    if len(sig_n.items) != 3:
+    sig_n = MustBeList(nval)
+    if len(sig_n) != 3:
         raise AssertionError(
             'Signature should have 3 items: =>  params  return')
 
-    first = MustBeSymbol(sig_n.items[0])
+    first = MustBeSymbol(sig_n[0])
     if first != '=>':
         raise AssertionError('Signature should start with =>')
 
-    return Signature(TransformParams(sig_n.items[1]),
-                     TransformType(sig_n.items[2]))
+    params_n = MustBeList(sig_n[1])
+
+    return Signature(TransformParams(params_n), TransformType(sig_n[2]))
 
 
-def TransformFunc(nval):
-    # type: (nvalue.List) -> mod_def.Func
+def TransformFunc(func_n):
+    # type: (List[nvalue_t]) -> mod_def.Func
 
-    func_name = MustBeSymbol(nval.items[1])
+    func_name = MustBeSymbol(func_n[1])
     out_stmts = []  # type: List[stmt_t]
 
-    sig = TransformSignature(nval.items[2])
+    sig = TransformSignature(func_n[2])
     func = mod_def.Func(func_name, sig, out_stmts)
 
-    stmts = nval.items[3:]
+    stmts = func_n[3:]
     for st in stmts:
-        if st.tag() != nvalue_e.List:
-            raise AssertionError('Expected statement to be a List')
+        stmt_n = MustBeList(st)
 
-        UP_stmt_n = st
-        stmt_n = cast(nvalue.List, UP_stmt_n)
-
-        if len(stmt_n.items) == 0:
+        if len(stmt_n) == 0:
             raise AssertionError("Statement shouldn't be empty")
 
-        first = MustBeSymbol(stmt_n.items[0])
+        first = MustBeSymbol(stmt_n[0])
 
-        if first == 'call':
+        if first == 'var':
+            pass
+
+        elif first == 'setvar':
+            # The simple case could be
+            #   x = 42
+            # But there are precedence issues
+            #   a,42 = (call f 42)
+            # This seems better:
+            #   (setvar a,42 (call f 42))
+            pass
+
+        elif first == 'call':
             pass
 
         elif first == 'return':
-            expr = TransformExpr(stmt_n.items[1])
+            expr = TransformExpr(stmt_n[1])
             out_stmts.append(stmt.Return(expr))
 
         elif first == 'break':
@@ -127,32 +198,27 @@ def TransformFunc(nval):
     return func
 
 
-def TransformModule(nval):
-    # type: (nvalue.List) -> Module
+def TransformModule(mod_n):
+    # type: (List[nvalue_t]) -> Module
 
-    if len(nval.items) < 2:
+    if len(mod_n) < 2:
         raise AssertionError('Module should have at least 2 items, got %d' %
-                             len(nval.items))
+                             len(mod_n))
 
-    mod_name = MustBeSymbol(nval.items[1])
+    mod_name = MustBeSymbol(mod_n[1])
     out_defs = []  # type: List[mod_def_t]
     module = Module(mod_name, out_defs)
 
-    defs = nval.items[2:]
+    defs = mod_n[2:]
 
     for d in defs:
         # (global ...) (func ...) (class ...)
-        if d.tag() != nvalue_e.List:
-            # TODO: location info
-            raise AssertionError('Expected module def to be a List')
+        def_n = MustBeList(d)
 
-        UP_def_n = d
-        def_n = cast(nvalue.List, UP_def_n)
-
-        if len(def_n.items) == 0:
+        if len(def_n) == 0:
             raise AssertionError("Module shouldn't be empty")
 
-        first = MustBeSymbol(def_n.items[0])
+        first = MustBeSymbol(def_n[0])
 
         if first == 'global':
             pass
@@ -178,11 +244,7 @@ def Transform(nval):
     - YAKS_PATH
     - dict of modules that is populated?
     """
-    if nval.tag() != nvalue_e.List:
-        raise AssertionError('Expected module to be a List')
-
-    mod_n = cast(nvalue.List, nval)
-
+    mod_n = MustBeList(nval)
     module = TransformModule(mod_n)
     prog = Program('foo', [module])
     return prog
