@@ -72,39 +72,40 @@ The rules are subtle, so we avoid inventing new ones.
 
 ## How do I write the equivalent of `echo -e` or `echo -n`?
 
-YSH removed these flags to `echo` to solve their interference problems with
-strict backslash escaping and variable substitutions (see next).
+To echo special characters denoted by backslash escapes, use a
+statically-parsed string literal, not `echo -e`:
 
-To echo special characters denoted by escape sequences, choose a
-statically-parsed string literal, rather than `echo -e`:
+    echo u'tab \t newline \n'       # YES: J8 style string is recommended in YSH
+    echo $'tab \t newline \n'       #      bash-style string is also accepted
 
-    echo $'tab: \t' $indented       # YES ($IFS separated, shell compatible)
-    echo u'tab: \t' $indented       # J8 with \u{unicode} notation
-    echo b'tab: \t' $indented       # J8 with \u{unicode} and \y{byte} notation
-    echo $[u'tab: \t ' ++ indented] # string addition (not $IFS separated)
+These styles don't work in YSH:
 
-    echo -e "tab: \t $indented"  # NO (backslash)  => Error: Invalid char escape
-    echo -e "tab: \\t $indented" # NO (echo_flags) => Prints: "-e tab..."
+    echo -e "tab \\t newline \\n"   # NO: -e is printed literally
+    echo -e "tab \t newline \n"     #     Error: Invalid char escape
 
-To omit the trailing newline, use `write -n` (a new builtin),
-rather than `echo -n`:
+To mix backslash escapes and var substitution, use the concatenation operator
+`++`:
 
-    write -n       -- $prefix   # YES
-    write --end '' -- $prefix   # synonym
+    echo $[u'tab \t' ++ " $year/$month/$day"]
 
-    echo -n $prefix             # NO
+To omit the trailing newline, use the `write` builtin:
+
+    write -n       -- $prefix       # YES
+    write --end '' -- $prefix       # synonym
+
+    echo -n $prefix                 # NO: -n is printed literally
 
 ### Why Were `-e` and `-n` Removed?
 
-Shell's `echo` is the only builtin that doesn't recognize `--` to stop
+The idioms with `u''` and `write` are more powerful and consistent.
+
+Moreover, shell's `echo` is the *only* builtin that doesn't accept `--` to stop
 flag processing.
 
-This means that `echo $flag $string` misbehaves when $string starts with
-an arbitrary number of `-e`, `-n`, `-en`, or `-ne` occurences. In other
-words, it does not matter whether $flag is empty or correct!
-There's **no** way to fix this bug in POSIX shell.
+That is, `echo "$flag"` always has a few bugs: when `$flag` is `-e`, `-n`,
+`-en`, or `-ne`. There's **no** way to fix this bug in POSIX shell.
 
-So, portable scripts generally use:
+So portable shell scripts use:
 
     printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
 
@@ -112,16 +113,14 @@ We could have chosen to respect `echo -- $x`, but YSH already has:
 
     write -- $x         # print $x "unmolested" in YSH
 
-Still removing the echo flags in YSH allowed for:
+That means YSH has:
 
-    echo $x             # an even shorter "unmolested" way
+    echo $x             # an even shorter way
 
-So `echo` is technically superfluous in YSH, but it's also a short, familiar,
-and correct way to compose words to print. 
+So `echo` is technically superfluous in YSH, but it's also short, familiar, and
+correct.
 
-Whereas `write`, by default, prints one line per argument given.
-
-YSH isn't primarily focused to be compatible with POSIX shell; only OSH is.
+YSH isn't intended to be compatible with POSIX shell; only OSH is.
 
 ### How do I find all the `echo` invocations I need to change when using YSH?
 
