@@ -111,7 +111,7 @@ So portable shell scripts use:
 
 We could have chosen to respect `echo -- $x`, but since YSH already has:
 
-    write -- $x         # print $x "unmolested" in YSH
+    write -- $x         # fully-featured "unmolested" print $x
 
 That allowed YSH to have an "unmolested":
 
