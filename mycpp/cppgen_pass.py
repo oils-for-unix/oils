@@ -69,9 +69,8 @@ def _GetCTypeForCast(type_expr):
 def _GetCastKind(module_path, cast_to_type):
     """Translate MyPy cast to C++ cast.
 
-  Prefer static_cast, but sometimes we need reinterpret_cast.
-  """
-
+    Prefer static_cast, but sometimes we need reinterpret_cast.
+    """
     cast_kind = 'static_cast'
 
     # Hack for Id.Expr_CastedDummy in expr_to_ast.py
@@ -439,6 +438,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         ind_str = self.indent * '  '
         log(ind_str + msg, *args)
 
+    def always_write(self, msg, *args):
+        """Write unconditionally - forward decl, decl, def """
+        if args:
+            msg = msg % args
+        self.f.write(msg)
+
+    def always_write_ind(self, msg, *args):
+        ind_str = self.indent * '  '
+        self.always_write(ind_str + msg, *args)
+
     def def_write(self, msg, *args):
         """Write only in definitions."""
 
@@ -453,30 +462,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.f.write(msg)
 
     def def_write_ind(self, msg, *args):
-        """Write indented string, only in definitions."""
-
-        if self.decl or self.forward_decl:
-            return
         ind_str = self.indent * '  '
-        if args:
-            msg = msg % args
-        self.f.write(ind_str + msg)
+        self.def_write(ind_str + msg, *args)
 
-    def always_write(self, msg, *args):
-        """Write unconditionally, e.g. in decl mode
+    def decl_write(self, msg, *args):
+        """Write only in the decl stage (not forward declarations)"""
+        if not self.decl:
+            return
 
-      A little hack to reuse this pass for declarations too
-      """
         if args:
             msg = msg % args
         self.f.write(msg)
 
-    def always_write_ind(self, msg, *args):
-        """Write indented string, unconditionally."""
+    def decl_write_ind(self, msg, *args):
         ind_str = self.indent * '  '
-        if args:
-            msg = msg % args
-        self.f.write(ind_str + msg)
+        self.decl_write(ind_str + msg, *args)
 
     #
     # COPIED from IRBuilder
@@ -2578,6 +2578,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 if last_dotted == 'gen':
                     return
 
+                # Problem:
+                # - The decl stage has to return yaks_asdl::mod_def, so imports should go there
+                # - But if you change this to decl_write() instead of
+                #   def_write(), you end up 'using error::e_usage' in say
+                #   'assign_osh', and it hasn't been defined yet.
+
                 if alias:
                     # using runtime_asdl::emit_e = EMIT;
                     self.def_write_ind('using %s = %s::%s;\n', alias,
@@ -2595,11 +2601,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     # Hack for default args.  Without this limitation, we write
                     # 'using' of names that aren't declared yet.
                     # suffix_op is needed for string_ops.py, for some reason
-                    if (self.decl and name
-                            in ('Id', 'scope_e', 'lex_mode_e', 'suffix_op',
-                                'sh_lvalue', 'part_value', 'loc', 'word',
-                                'word_part', 'cmd_value', 'hnode')):
-                        self.f.write(using_str)
+                    if (name in ('Id', 'scope_e', 'lex_mode_e', 'suffix_op',
+                                 'sh_lvalue', 'part_value', 'loc', 'word',
+                                 'word_part', 'cmd_value', 'hnode')):
+                        self.decl_write(using_str)
 
             else:
                 # If we're importing a module without an alias, we don't need to do
