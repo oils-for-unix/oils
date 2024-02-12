@@ -37,7 +37,8 @@ def NinjaGraph(ru):
         '_gen/yaks/%s.mycpp.cc' % main_name,
         # Note: yaks/yaks.py is bad for Python imports, so it's called
         # yaks_main.py
-        bin_path='yaks',
+        # yaks overlaps with the directory _bin/cxx-opt/yaks/examples
+        #bin_path='yaks_main',
         preprocessed=True,
         matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
         deps=[
@@ -51,6 +52,26 @@ def NinjaGraph(ru):
             '//mycpp/runtime',
             '//yaks/yaks.asdl',
         ])
+
+    ### Custom yaks translation
+    n.newline()
+
+    n.rule('yaks',
+           command='_bin/cxx-opt/yaks/yaks_main.mycpp cpp $in > $out',
+           description='yaks cpp $in > $out')
+    n.newline()
+
+    # Does it build a harder?
+    n.build(['_gen/yaks/examples/hello.yaks.cc'],
+            'yaks', ['yaks/examples/hello.yaks'],
+            implicit=['_bin/cxx-opt/yaks/yaks_main.mycpp'])
+    n.newline()
+
+    ru.cc_binary(
+        '_gen/yaks/examples/hello.yaks.cc',
+        matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
+        deps=['//mycpp/runtime'],
+    )
 
 
 # vim: sw=4

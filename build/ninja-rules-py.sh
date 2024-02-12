@@ -19,6 +19,8 @@ source mycpp/common-vars.sh  # MYPY_REPO
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 
 example-main() {
+  ### Used by mycpp/examples
+
   local main_module=${1:-fib_iter}
 
   cat <<EOF
@@ -38,7 +40,8 @@ int main(int argc, char **argv) {
 EOF
 }
 
-oils-for-unix-main() {
+main-wrapper() {
+  ### Used by oils-for-unix and yaks
   local main_namespace=$1
 
   cat <<EOF
@@ -82,19 +85,22 @@ gen-oils-for-unix() {
     ${EXTRA_MYCPP_ARGS:-} \
     "$@"
 
-  { echo "// $main_name.h: translated from Python by mycpp"
+  # oils_for_unix -> OILS_FOR_UNIX_MYCPP_H'
+  local guard=${main_name^^}_MYCPP_H
+
+  { echo "// $main_name.mycpp.h: translated from Python by mycpp"
     echo
-    echo '#ifndef OILS_FOR_UNIX_MYCPP_H'
-    echo '#define OILS_FOR_UNIX_MYCPP_H'
+    echo "#ifndef $guard"
+    echo "#define $guard"
 
     cat $raw_header
 
-    echo '#endif  // OILS_FOR_UNIX_MYCPP_H'
+    echo "#endif  // $guard"
 
   } > $header_out
 
   { cat <<EOF
-// $main_name.cc: translated from Python by mycpp
+// $main_name.mycpp.cc: translated from Python by mycpp
 
 // #include "$header_out"
 
@@ -103,7 +109,7 @@ EOF
 
     cat $raw_cc
 
-    oils-for-unix-main $main_name
+    main-wrapper $main_name
   } > $cc_out
 }
 

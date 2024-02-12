@@ -55,7 +55,7 @@ def main(argv):
     #o = Options()
     #opts, argv = o.parse_args(argv)
 
-    stdout_ = mylib.Stdout()
+    stderr_ = mylib.Stderr()
     try:
         action = argv[1]
     except IndexError:
@@ -94,18 +94,18 @@ def main(argv):
 
         # Dump ASDL representation
         # We could also have a NIL8 printer
-        pretty_f = fmt.DetectConsoleOutput(stdout_)
+        pretty_f = fmt.DetectConsoleOutput(stderr_)
         fmt.PrintTree(nval.PrettyTree(), pretty_f)
-        stdout_.write('\n')
+        stderr_.write('\n')
 
         prog = transform.Transform(nval)
 
         fmt.PrintTree(prog.PrettyTree(), pretty_f)
-        stdout_.write('\n')
+        stderr_.write('\n')
 
         # TODO: a few mycpp passes over this representation
         #   - not sure if we'll need any more IRs
-        gen_cpp.GenCpp(prog)
+        gen_cpp.GenCpp(prog, mylib.Stdout())
 
     elif action == 'check':
         # Only do type checking?
@@ -114,9 +114,9 @@ def main(argv):
 
         m = yaks_asdl.Module('hi', [])
 
-        pretty_f = fmt.DetectConsoleOutput(stdout_)
+        pretty_f = fmt.DetectConsoleOutput(stderr_)
         fmt.PrintTree(m.PrettyTree(), pretty_f)
-        stdout_.write('\n')
+        stderr_.write('\n')
 
     else:
         raise RuntimeError('Invalid action %r' % action)

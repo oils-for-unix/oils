@@ -46,10 +46,15 @@ test-hello() {
 }
 
 test-hello-cpp() {
-  local bin=_bin/cxx-asan/yaks
+  local bin=_bin/cxx-asan/yaks/yaks_main.mycpp
   ninja $bin
 
+  # Translate it
   $bin cpp yaks/examples/hello.yaks
+
+  # TODO: need main wrapper
+  #local hello=_bin/cxx-asan/yaks/examples/hello.yaks
+  #ninja $hello
 }
 
 soil-run() {
