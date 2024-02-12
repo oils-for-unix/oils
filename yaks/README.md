@@ -3,8 +3,9 @@ Yaks
 
 A minimal, TYPED language that compiles to the mycpp runtime.
 
-- It uses a Lisp-ish "CST" IR, but the semantics are imperative
-  - (WebAssembly also has a Lispy text format, but is imperative.)
+- It uses NIL8 for its syntax
+   - It's a Lisp-ish IR, but the semantics are imperative.  (WebAssembly also
+     has a Lispy text format, but is imperative.)
 - It can be written by hand, and easily read by humans.
   - `(func f [] (var [x Int] 42))` etc.
   - See `oilshell/yaks` experiment in TypeScript.
@@ -59,8 +60,10 @@ itself.
 
 ## End Goal
 
-- `pea/py2_parse.py` (written in Python 3!) exports the CST format for our
-  Python 2 code in ~300-400 ms.
+- `pea/pea_main.py` (written in Python 3!) exports Yaks for the ~40-50K lines
+  of Python 2 code in ~300-400 ms.
+- I think ASDL also needs to exports Yaks.
+  - so we can build a symbol table
 - `pea/pea.yaks` is compiled to C++.  We use Ninja for that.
   - How long will a non-incremental build take?  I think this should be like
     - 500 lines for the reader/front end, 
@@ -72,9 +75,9 @@ itself.
 
 Then
 
-- `pea/py2_parse.py | _bin/pea check` type checks Oils in 1 second, and then
-  you run `bin/osh`.
-- `pea/py2_parse.py | _bin/pea translate` generates C++ in one second
+- `pea/pea_main.py | yaks check` type checks Oils in 1 second, and then you run
+  `bin/osh`.
+- `pea/pea_main.py | yaks cpp` generates C++ in one second
   - then it should take 5-10 seconds to compile the output in Ninja.
 - Then you run `_bin/cxx-dbg/osh`
 
@@ -86,6 +89,11 @@ Let's minimize the stuff we need to write twice.
   - uses the NIL8 parser
   - custom transformer from nil8.asdl -> yaks.asdl
   - then print C++ directly with no type checking
+
+- Then I think you can write "myyaks" ?
+  - It's a single mycpp pass that outputs Yaks, with all the type information?
+
+OLDER
 
 - then rewrite all of that in Yaks itself???
   - lexer - does it invoke re2c directly?  No Python
@@ -128,20 +136,16 @@ Although I suppose you could consider typed Python 3 or something?
 
 That has proper declarations.  But you would still need ASDL.
 
-## Direct Architecture, No Bootstrapping
-
-- The whole program is Python 3, with no process boundary?
-  - It might be fast enough?  Let's see
-
 ## Notes
 
 ### NIL8 Features
 
 - Might want multiline strings that are indented
+  - for printing blocks of C++
 
 ### Line Wrapping
 
-I do like line wrapping.  How should we support it?
+How do we make the output wrapped to 80 columns?  We need some kind of limit
 
 - ASDL has an ad hoc function I borrowed from CPython
   - it doesn't work all the time
@@ -272,4 +276,45 @@ Not used in mycpp, but could be in other C++ code generators:
 
     (& i)  # address of
     (* pi)  # pointer dereference
+
+
+### `PY_foo` for mycpp ambiguities
+
+I think there can be a separate pass that resolves this?
+
+Export
+
+    t(x)
+    (PY_call t x)
+
+Then this gets turned into EITHER:
+
+    (call t x)
+    (call [Alloc t] x)
+
+I think it depends on the symbol table.
+
+Likewise if you have
+
+    x.y()
+
+That has to be
+
+    (call (PY_attr x y))
+
+Turn it into either
+
+    (call x->y)  # obj->member
+    (call x::y)  # namespace::func
+
+
+More
+
+- `PY_cast` -> `reinterpret_cast` or `static_cast`
+
+
+### Other Issues
+
+- C++ nested scope vs. flat function scope
+
 
