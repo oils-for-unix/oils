@@ -34,82 +34,76 @@
 #     - that's what it's doing, it's mutating "self"
 #     - _this is the thing we're currently creating
 
-proc Args ( ; out; ; block) {
+proc arg-parse (; place ; ; block_def) {
   ## Create an args spec which can be passed to parseArgs.
   ##
   ## Example:
   ##
-  ##   # NOTE: :spec will create a variable named spec
-  ##   Args :spec {
+  ##   # NOTE: &spec will create a variable named spec
+  ##   arg-parse (&spec) {
   ##     flag -v --verbose ('bool')
   ##   }
   ##
   ##   var flag, i = parseArgs(spec, ARGV)
 
-  var spec = {
-    flags: [],
-    args: [],
-    rest: null,
-  }
+  var p = {}
+  ctx push (p, block_def)
 
-  eval (block) | while read line {
-    json read (&parsed) <<< $line
-    var spec_frag = dict(parsed)
-
-    case (spec_frag.tag) {
-      flag {
-        call spec.flags->append(spec_frag.node)
-      }
-      arg {
-        call spec.args->append(spec_frag.node)
-      }
-      rest {
-        setvar spec.rest = spec_frag.node
-      }
+  # Validate that p.rest = [name] or null and reduce p.rest into name or null.
+  if ('rest' in p) {
+    if (len(p.rest) > 1) {
+      error '`rest` was called more than once' (status=3)
+    } else {
+      setvar p.rest = p.rest[0]
     }
+  } else {
+    setvar p.rest = null
   }
-  call out->setValue(spec)
+
+  call place->setValue(p)
 }
 
-proc flag (short, long; type='bool', default=null) {
-  ## Declare a flag within an `Args`.
+proc flag (short, long ; type='bool', default=null, help=null) {
+  ## Declare a flag within an `arg-parse`.
   ##
   ## Examples:
   ##
-  ##   Args :spec {
+  ##   arg-parse (&spec) {
   ##     flag -v --verbose
   ##     flag -n --count ('int', default=1)
-  ##     flag -f --file ('str')
+  ##     flag -f --file ('str', help="File to process")
   ##   }
 
-  # TODO: help, make type take in a type object (ie. Bool, Int, Str)
-  json write --pretty=F ({ tag: 'flag', node: { short, long, type, default, help: null } })
+  # TODO: type objects (ie. Bool, Int, Str)
+  ctx emit flags ({short, long, type, default, help})
 }
 
-proc arg (name) {
-  ## Declare a positional argument within an `Args`.
+proc arg (name ; ; default=null, help=null) {
+  ## Declare a positional argument within an `arg-parse`.
   ##
   ## Examples:
   ##
-  ##   Args :spec {
-  ##     arg file
+  ##   arg-parse (&spec) {
+  ##     arg name
+  ##     arg config (help="config file path")
+  ##     arg out (default="a.out", help="output file path")
   ##   }
 
-  # TODO: type, default and help
-  json write --pretty=F ({ tag: 'arg', node: { name, type: 'str', default: null, help: null } })
+  ctx emit args ({name, default, help})
 }
 
 proc rest (name) {
-  ## Take the remaining positional arguments within an `Args`.
+  ## Take the remaining positional arguments within an `arg-parse`.
   ##
   ## Examples:
   ##
-  ##   Args :grep {
+  ##   arg-parse (&grepSpec) {
   ##     arg query
   ##     rest files
   ##   }
 
-  json write --pretty=F ({ tag: 'rest', node: name })
+  # We emit instead of set to detect multiple invocations of "rest"
+  ctx emit rest (name)
 }
 
 func __args_getFlagName(flag) {
@@ -123,10 +117,10 @@ func __args_getFlagName(flag) {
 }
 
 func parseArgs(spec, argv) {
-  ## Given a spec created by `Args`. Parse an array of strings `argv` per that
-  ## spec.
+  ## Given a spec created by `arg-parse`. Parse an array of strings `argv` per
+  ## that spec.
   ##
-  ## See `Args` for examples of use.
+  ## See `arg-parse` for examples of use.
 
   var i = 0
   var positionalPos = 0
@@ -134,8 +128,7 @@ func parseArgs(spec, argv) {
   var args = {}
   var rest = []
 
-  # Would like to have: var value
-  var value = null
+  var value
   while (i < argc) {
     var arg = argv[i]
     if (arg->startsWith('-')) {
@@ -163,11 +156,7 @@ func parseArgs(spec, argv) {
     } else {
       var pos = spec.args[positionalPos]
       setvar positionalPos += 1
-
-      case (pos.type) {
-        str { setvar value = arg }
-      }
-
+      setvar value = arg
       setvar args[pos.name] = value
     }
 
