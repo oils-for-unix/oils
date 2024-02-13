@@ -111,15 +111,14 @@ So portable shell scripts use:
 
 We could have chosen to respect `echo -- $x`, but as YSH already has:
 
-    write -- $x         # print $x "unmolested" in YSH
+    write -- $x            # print $x "unmolested" in YSH
 
 That means YSH can have:
 
-    echo $x             # an even shorter, flagless way
+    echo $x                # YES: an even shorter way
+    write --sep ' ' -- $x  # synonym
 
-Which is equivalent to `write --sep ' ' -- $x`.
-
-So `echo` is technically superfluous in YSH, but it's also short, familiar, and
+So `echo` is technically superfluous in YSH, but it's short, familiar, and
 correct.
 
 YSH isn't intended to be compatible with POSIX shell; only OSH is.
