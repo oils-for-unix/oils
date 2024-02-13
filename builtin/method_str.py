@@ -42,7 +42,7 @@ class StartsWith(vm._Callable):
 
 
 # TODO: move this to a unicode file?
-class UnicodeDecoder:
+class UTF8Decoder:
 
     def __init__(self, string):
         # type: (str) -> None
@@ -190,7 +190,7 @@ class Trim(vm._Callable):
         string = rd.PosStr()
         rd.Done()
 
-        decoder = UnicodeDecoder(string)
+        decoder = UTF8Decoder(string)
 
         # Move left to index of first non-whitespace codepoint and move right
         # to index of last non-whitespace codepoint.
