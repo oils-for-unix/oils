@@ -944,7 +944,7 @@ class WordParser(WordEmitter):
                         if (is_ysh_expr or
                                 not self.parse_opts.parse_backslash()):
                             p_die(
-                                "Invalid char escape in double quoted string literal (parse_backslash)\n\t Only allowed: \\\", \\$, or \\\\ to denote \\\n\t* use \\\\ to denote a \\ ?\n\t* (ysh) use "- ++ u'- or b'-literal instead?",
+                                "Invalid char escape in double quoted string literal (parse_backslash)\n\tOnly allowed: \\\", \\$, or \\\\ to denote \", $, or \\\n\t* use \\\\ to denote a \\ ?\n\t* (ysh) use \"- ++ u'- or b'-literals instead ?",
                                 self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_ysh_expr or not self.parse_opts.parse_dollar():
