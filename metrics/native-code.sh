@@ -135,8 +135,8 @@ compare-gcc-clang() {
     _bin/{clang,cxx}-dbg/oils-for-unix
     _bin/{clang,cxx}-opt/oils-for-unix.stripped
     _bin/cxx-{opt+bumpleak,opt+bumproot}/oils-for-unix.stripped
-    _bin/{clang,cxx}-opt/yaks.stripped
-    _bin/cxx-{opt+bumpleak,opt+bumproot}/yaks.stripped
+    _bin/{clang,cxx}-opt/yaks/yaks_main.mycpp.stripped
+    _bin/cxx-{opt+bumpleak,opt+bumproot}/yaks/yaks_main.mycpp.stripped
     )
   ninja "${targets[@]}"
 

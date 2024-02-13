@@ -270,6 +270,11 @@ code-generator-counts() {
     'Other Code Generators' \
     'In order to make Oil statically typed, we had to abandon Python reflection and use C++ source code generation instead.  The lexer, flag definitions, and constants can be easily compiled to C++.' \
     "$@"
+
+  ls yaks/*.py | filter-py | $count \
+    'Yaks' \
+    'Experimental replacement for mycpp' \
+    "$@"
 }
 
 spec-gold-counts() {
