@@ -29,7 +29,7 @@ def GenType(typ, f):
             typ = cast(ktype.List, UP_typ)
             f.write('List<')
             GenType(typ.T, f)
-            f.write('>')
+            f.write('>*')
 
         else:
             raise AssertionError(typ)

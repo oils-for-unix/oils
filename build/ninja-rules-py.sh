@@ -18,7 +18,7 @@ source build/dev-shell.sh  # python2 in $PATH
 source mycpp/common-vars.sh  # MYPY_REPO
 source $REPO_ROOT/test/tsv-lib.sh  # time-tsv
 
-example-main() {
+example-main-wrapper() {
   ### Used by mycpp/examples
 
   local main_module=${1:-fib_iter}
@@ -130,10 +130,13 @@ print-wrap-cc() {
 
    # main() function
    case $translator in
-     (mycpp)
-       example-main $main_module
+     mycpp)
+       example-main-wrapper $main_module
        ;;
-     (pea)
+     yaks)
+       main-wrapper $main_module
+       ;;
+     pea)
         echo '#include <stdio.h>'
         echo 'int main() { printf("stub\n"); return 1; }'
        ;;

@@ -46,15 +46,26 @@ test-hello() {
 }
 
 test-hello-cpp() {
-  local bin=_bin/cxx-asan/yaks/yaks_main.mycpp
-  ninja $bin
+  # Translate and compile the yaks translator
+  #local bin=_bin/cxx-asan/yaks/yaks_main.mycpp
+  #ninja $bin
 
-  # Translate it
-  $bin cpp yaks/examples/hello.yaks
+  # Generate C++ from an example
+  #$bin cpp yaks/examples/hello.yaks
 
-  # TODO: need main wrapper
-  #local hello=_bin/cxx-asan/yaks/examples/hello.yaks
-  #ninja $hello
+  # Translate and compile the yaks translator
+  # Then use it to generate C++ from an example
+  # Then wrap and compile that
+  local hello=_bin/cxx-asan/yaks/examples/hello.yaks
+  ninja $hello
+
+  set -o xtrace
+  set +o errexit
+  $hello
+  local status=$?
+  set -o errexit
+
+  echo status=$status
 }
 
 soil-run() {

@@ -61,14 +61,26 @@ def NinjaGraph(ru):
            description='yaks cpp $in > $out')
     n.newline()
 
-    # Does it build a harder?
-    n.build(['_gen/yaks/examples/hello.yaks.cc'],
-            'yaks', ['yaks/examples/hello.yaks'],
-            implicit=['_bin/cxx-opt/yaks/yaks_main.mycpp'])
+    raw_cc = '_gen/yaks/examples/hello_raw.yaks.cc'
+    example_cc = '_gen/yaks/examples/hello.yaks.cc'
+
+    n.build(
+        [raw_cc],
+        'yaks',
+        ['yaks/examples/hello.yaks'],
+        implicit=['_bin/cxx-opt/yaks/yaks_main.mycpp'],
+    )
+    n.newline()
+
+    n.build([example_cc],
+            'wrap-cc', [raw_cc],
+            implicit=[RULES_PY],
+            variables=[('name', 'hello'), ('preamble_path', '""'),
+                       ('translator', 'yaks')])
     n.newline()
 
     ru.cc_binary(
-        '_gen/yaks/examples/hello.yaks.cc',
+        example_cc,
         matrix=ninja_lib.COMPILERS_VARIANTS + ninja_lib.GC_PERF_VARIANTS,
         deps=['//mycpp/runtime'],
     )
