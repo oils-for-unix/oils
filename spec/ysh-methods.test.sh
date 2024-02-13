@@ -56,6 +56,106 @@ pp line ("abc" => startsWith("z"))
 = "abc" => startsWith("extra", "arg")
 ## status: 3
 
+#### Str => trim()
+echo $["" => trim()]
+echo $["  " => trim()]
+echo $["mystr" => trim()]
+echo $["  mystr" => trim()]
+echo $["mystr  " => trim()]
+echo $["  mystr  " => trim()]
+echo $["  my str  " => trim()]
+## STDOUT:
+
+
+mystr
+mystr
+mystr
+mystr
+my str
+## END
+
+#### Str => trimLeft()
+echo $["" => trimLeft()]
+echo $["  " => trimLeft()]
+echo $["mystr" => trimLeft()]
+echo $["  mystr" => trimLeft()]
+echo $["mystr  " => trimLeft()]
+echo $["  mystr  " => trimLeft()]
+echo $["  my str  " => trimLeft()]
+## STDOUT:
+
+
+mystr
+mystr
+mystr  
+mystr  
+my str  
+## END
+
+#### Str => trimRight()
+echo $["" => trimRight()]
+echo $["  " => trimRight()]
+echo $["mystr" => trimRight()]
+echo $["  mystr" => trimRight()]
+echo $["mystr  " => trimRight()]
+echo $["  mystr  " => trimRight()]
+echo $["  my str  " => trimRight()]
+## STDOUT:
+
+
+mystr
+  mystr
+mystr
+  mystr
+  my str
+## END
+
+#### Str => trim*(), too many args
+try { call "mystr" => trim("extra", "args") }
+echo status=$_status
+
+try { call "mystr" => trimLeft("extra", "args") }
+echo status=$_status
+
+try { call "mystr" => trimRight("extra", "args") }
+echo status=$_status
+## STDOUT:
+status=3
+status=3
+status=3
+## END
+
+
+#### Str => trim*(), unicode aware
+
+# u'\u0020' will crash!
+
+var spaces = [
+  # From https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
+  b'\u{0020}',  # SPACE
+  b'\u{00A0}',  # NO-BREAK SPACE
+  b'\u{1680}',  # OGHAM SPACE MARK
+  b'\u{2000}',  # EN QUAD
+  b'\u{2001}',  # EM QUAD
+  b'\u{2002}',  # EN SPACE
+  b'\u{2003}',  # EM SPACE
+  b'\u{2004}',  # THREE-PER-EM SPACE
+  b'\u{2005}',  # FOUR-PER-EM SPACE
+  b'\u{2006}',  # SIX-PER-EM SPACE
+  b'\u{2007}',  # FIGURE SPACE
+  b'\u{2008}',  # PUNCTUATION SPACE
+  b'\u{2009}',  # THIN SPACE
+  b'\u{200A}',  # HAIR SPACE
+  b'\u{202F}',  # NARROW NO-BREAK SPACE
+  b'\u{205F}',  # MEDIUM MATHEMATICAL SPACE
+  b'\u{3000}',  # IDEOGRAPHIC SPACE
+] => join('')
+
+echo $["$spaces YSH $spaces" => trim()]
+## STDOUT:
+YSH
+## END
+
 #### Missing method (Str->doesNotExist())
 = "abc"->doesNotExist()
 ## status: 3

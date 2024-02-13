@@ -711,9 +711,9 @@ def Main(
 
         # These functions are unicode aware
         # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-        'trim': method_str.Trim(),
-        'trimLeft': None,
-        'trimRight': None,
+        'trim': method_str.Trim(method_str.TRIM_BOTH),
+        'trimLeft': method_str.Trim(method_str.TRIM_LEFT),
+        'trimRight': method_str.Trim(method_str.TRIM_RIGHT),
 
         # like Python 3.9 removeprefix() removesuffix()
         'trimPrefix': None,

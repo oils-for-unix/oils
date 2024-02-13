@@ -19,7 +19,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, Any, List, Optional, Tuple
+from typing import cast, Any, List, Optional, Tuple, NoReturn, Iterator
 
 _ = log
 
@@ -41,11 +41,148 @@ class StartsWith(vm._Callable):
         return value.Bool(res)
 
 
+# TODO: move this to a unicode file?
+class UnicodeDecoder:
+
+    def __init__(self, string):
+        # type: (str) -> None
+        self.string = string
+        self.cursor = 0
+
+    def _EncodingError(self):
+        # type: () -> NoReturn
+        raise error.TypeErrVerbose("Invalid UTF-8 string at byte index %d" % self.cursor,
+                                   loc.Missing)
+
+    def _ReadNextUnit(self):
+        # type: () -> int
+        if self.cursor >= len(self.string):
+            self._EncodingError()
+
+        b = ord(self.string[self.cursor])
+        self.cursor += 1
+
+        if b & 0b11000000 != 0b10000000:
+            self._EncodingError()
+
+        return b & 0b00111111
+
+    def Iter(self):
+        # type: () -> Iterator[Tuple[int, int]]
+        """
+        Iterate over a string yielding a tuple [byte_pos, codepoint].
+        byte_pos is the byte index of the **start** of the codepoint.
+        codepoint is an int following the def. from the UTF-8 standard.
+
+        Raises if the string is not valid UTF-8.
+        """
+        while True:
+            cursor = self.cursor
+            codepoint = self.ReadCodepoint()
+
+            if codepoint == -1:
+                return
+
+            yield cursor, codepoint
+
+    def ReadCodepoint(self):
+        # type: () -> int
+        """
+        Returns -1 if the entire string has been decoded.
+
+        Raises if the string is not valid UTF-8.
+
+        Decoding is done following chapter 3.9 in the UTF-8 standard:
+          https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf
+        """
+        if self.cursor >= len(self.string):
+            return -1
+
+        b = ord(self.string[self.cursor])
+        self.cursor += 1
+
+        if b & 0b10000000 == 0:
+            return b & 0b01111111
+
+        if b & 0b11100000 == 0b11000000:
+            y = b & 0b00011111
+            y <<= 6
+
+            x = self._ReadNextUnit()
+
+            return y | x
+
+        if b & 0b11110000 == 0b11100000:
+            z = b & 0b00001111
+            z <<= 12
+
+            y = self._ReadNextUnit()
+            y <<= 6
+
+            x = self._ReadNextUnit()
+
+            return z | x | y
+
+        if b & 0b11111000 == 0b11110000:
+            u = b & 0b00000111
+            u <<= 18
+
+            z = self._ReadNextUnit()
+            z <<= 12
+
+            y = self._ReadNextUnit()
+            y <<= 6
+
+            x = self._ReadNextUnit()
+
+            return u | z | x | y
+
+        self._EncodingError()
+        return -1  # Unreachable
+
+    def BytePosition(self):
+        # type: () -> int
+        """
+        Get byte position of the current character.
+        """
+        return self.cursor
+
+
+# From https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
+SPACES = [0x0020,  # SPACE
+          0x00A0,  # NO-BREAK SPACE
+          0x1680,  # OGHAM SPACE MARK
+          0x2000,  # EN QUAD
+          0x2001,  # EM QUAD
+          0x2002,  # EN SPACE
+          0x2003,  # EM SPACE
+          0x2004,  # THREE-PER-EM SPACE
+          0x2005,  # FOUR-PER-EM SPACE
+          0x2006,  # SIX-PER-EM SPACE
+          0x2007,  # FIGURE SPACE
+          0x2008,  # PUNCTUATION SPACE
+          0x2009,  # THIN SPACE
+          0x200A,  # HAIR SPACE
+          0x202F,  # NARROW NO-BREAK SPACE
+          0x205F,  # MEDIUM MATHEMATICAL SPACE
+          0x3000]  # IDEOGRAPHIC SPACE
+
+
+def _IsSpace(codepoint):
+    # type: (int) -> bool
+    return codepoint in SPACES
+
+
+TRIM_BOTH = 0
+TRIM_LEFT = 1
+TRIM_RIGHT = 2
+
+
 class Trim(vm._Callable):
 
-    def __init__(self):
-        # type: () -> None
-        pass
+    def __init__(self, trim):
+        # type: (int) -> None
+        self.trim = trim
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -53,11 +190,37 @@ class Trim(vm._Callable):
         string = rd.PosStr()
         rd.Done()
 
-        # TODO: Make this remove unicode spaces
-        # Note that we're not calling this function strip() because it doesn't
-        # implement Python's whole API.
-        # trim() is shorter and it's consistent with JavaScript.
-        res = string.strip()
+        decoder = UnicodeDecoder(string)
+
+        # Move left to index of first non-whitespace codepoint and move right
+        # to index of last non-whitespace codepoint.
+        left = 0
+        right = 0
+        done_left = False
+        for pos, codepoint in decoder.Iter():
+            is_space = _IsSpace(codepoint)
+
+            if is_space:
+                continue
+
+            if done_left:
+                right = pos
+            else:
+                left = pos
+                right = pos
+                done_left = True
+
+        # String is all whitespace and won't work with [start:end + 1] below
+        if left == right:
+            return value.Str("")
+
+        if self.trim == TRIM_LEFT:
+            right = len(string) - 1
+        if self.trim == TRIM_RIGHT:
+            left = 0
+
+        # Slice with [left, right] *inclusive*
+        res = string[left:right + 1]
         return value.Str(res)
 
 
