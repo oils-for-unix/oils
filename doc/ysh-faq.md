@@ -113,7 +113,7 @@ We could have chosen to respect `echo -- $x`, but as YSH already has:
 
     write -- $x            # print $x "unmolested" in YSH
 
-That means YSH can have:
+This allowed YSH to have:
 
     echo $x                # YES: an even shorter way
     write --sep ' ' -- $x  # synonym
