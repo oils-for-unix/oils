@@ -118,7 +118,7 @@ That means YSH can have:
     echo $x                # YES: an even shorter way
     write --sep ' ' -- $x  # synonym
 
-So `echo` is technically superfluous in YSH, but it's short, familiar, and
+So `echo` is technically superfluous in YSH, but it's also short, familiar, and
 correct.
 
 YSH isn't intended to be compatible with POSIX shell; only OSH is.
