@@ -99,7 +99,7 @@ comments_url: TODO
 published: no
 ---
 
-This is the latest version of Oil, a Unix shell that's our upgrade path from
+This is the latest version of Oils, a Unix shell that's our upgrade path from
 [bash][]:
 
 [bash]: \$xref

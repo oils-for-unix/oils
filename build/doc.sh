@@ -113,8 +113,8 @@ readonly MARKDOWN_DOCS=(
   command-vs-expression-mode
 
   # needs polish
-  # Note: docs about the Oil language are prefixed 'oil-'.
-  # data-model and command-vs-expression-mode span both OSH and Oil.
+  # Note: docs about the YSH are prefixed 'ysh-'.
+  # data-model and command-vs-expression-mode span both OSH and YSH
 
   index
   faq-doc
@@ -205,7 +205,7 @@ split-and-render() {
 render-only() {
   local src=${1:-README.md}
   local css_files=${2:-'../web/manual.css ../web/toc.css'}
-  local title=${3:-'Oil Source Code'}
+  local title=${3:-'Oils Source Code'}
 
   local name
   case $src in 
@@ -240,8 +240,8 @@ EOF
 }
 
 special() {
-  render-only 'README.md' '../web/base.css ../web/manual.css ../web/toc.css' 'Oil Source Code'
-  render-only 'INSTALL.txt' '../web/base.css ../web/install.css' 'Installing Oil'
+  render-only 'README.md' '../web/base.css ../web/manual.css ../web/toc.css' 'Oils Source Code'
+  render-only 'INSTALL.txt' '../web/base.css ../web/install.css' 'Installing Oils'
 
   # These pages aren't in doc/
   split-and-render doc/release-index.md _tmp/release-index.html

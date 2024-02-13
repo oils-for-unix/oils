@@ -385,7 +385,7 @@ Source code: [oil/benchmarks/osh-parser.sh](https://github.com/oilshell/oil/tree
 #### Instructions Per Line (via cachegrind)
 
 Lower numbers are generally better, but each shell recognizes a different
-language, and Oil uses a more thorough parsing algorithm.  In **thousands** of
+language, and OSH uses a more thorough parsing algorithm.  In **thousands** of
 "I refs".
 
 EOF
@@ -442,7 +442,7 @@ EOF
     cmark <<'EOF'
 ### Memory Usage (Max Resident Set Size in MB)
 
-Again, Oil uses a **different algorithm** (and language) than POSIX shells.  It
+Again, OSH uses a **different algorithm** (and language) than POSIX shells.  It
 builds an AST in memory rather than just validating the code line-by-line.
 
 EOF

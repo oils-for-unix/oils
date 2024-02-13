@@ -148,7 +148,7 @@ extract-all-methods() {
 }
 
 cpython-defs() {
-  # Annoying: this depends on Oil for 'R' and 'C', then indirectly imports on
+  # Annoying: this depends on Oils for 'R' and 'C', then indirectly imports on
   # 'typing' module.
   PYTHONPATH='.:vendor' build/cpython_defs.py "$@"
 }

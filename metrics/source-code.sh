@@ -153,7 +153,7 @@ category-html() {
 #
 
 # Note this style is OVERLY ABSTRACT, but it's hard to do better in shell.  We
-# want to parameterize over text and HTML.  In Oil I think we would use this:
+# want to parameterize over text and HTML.  In Oils I think we would use this:
 #
 # proc p1 {
 #   category 'OSH (and common libraries)' {
@@ -258,17 +258,17 @@ code-generator-counts() {
 
   ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' | $count \
     'Zephyr ASDL' \
-    'A DSL for algebraic data types, borrowed from Python.  Oil is the most strongly typed Bourne shell implementation!' \
+    'A DSL for algebraic data types, borrowed from Python.  Oils is the most strongly typed Bourne shell implementation!' \
     "$@"
 
   ls pgen2/*.py | filter-py | $count \
     'pgen2 Parser Generator' \
-    'An LL(1) parser generator used to parse Oil expressions.  Also borrowed from CPython.' \
+    'An LL(1) parser generator used to parse YSH expressions.  Also borrowed from CPython.' \
     "$@"
 
   ls */*_gen.py | $count \
     'Other Code Generators' \
-    'In order to make Oil statically typed, we had to abandon Python reflection and use C++ source code generation instead.  The lexer, flag definitions, and constants can be easily compiled to C++.' \
+    'In order to make Oils statically typed, we had to abandon Python reflection and use C++ source code generation instead.  The lexer, flag definitions, and constants can be easily compiled to C++.' \
     "$@"
 
   ls yaks/*.py | filter-py | $count \
@@ -457,12 +457,12 @@ num_files\tinteger' >$tmp_dir/INDEX.schema.tsv
 }
 
 for-translation-html() {
-  local title='Overview: Translating Oil to C++'
+  local title='Overview: Translating Oils to C++'
   counts-html for-translation "$title"
 }
 
 overview-html() {
-  local title='Overview of Oil Code'
+  local title='Overview of Oils Code'
   counts-html overview "$title"
 }
 

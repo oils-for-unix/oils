@@ -15,7 +15,7 @@ OSH_CPP=_bin/cxx-asan/osh
 # Assertion failed
 #OSH_CPP=_bin/cxx-dbg/osh
 
-# This doesn't distinguish if they should parse with osh or Oil though!
+# This doesn't distinguish if they should parse with osh or ysh though!
 
 parse-one() {
   echo ---
@@ -67,7 +67,7 @@ test-run-osh() {
 }
 
 test-run-ysh() {
-  ### Run programs with Oil / YSH
+  ### Run programs with YSH
 
   for prog in ysh/testdata/*.ysh; do
     echo ---
