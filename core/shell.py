@@ -4,7 +4,7 @@ core/shell.py -- Entry point for the shell interpreter.
 from __future__ import print_function
 
 from errno import ENOENT
-import time
+import time as time_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
@@ -455,14 +455,14 @@ def Main(
 
     cmd_deps.debug_f = debug_f
 
-    # Not using datetime for dependency reasons.  TODO: maybe show the date at
-    # the beginning of the log, and then only show time afterward?  To save
-    # space, and make space for microseconds.  (datetime supports microseconds
-    # but time.strftime doesn't).
-    if mylib.PYTHON:
-        iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        debug_f.writeln('%s [%d] OSH started with argv %s' %
-                        (iso_stamp, my_pid, arg_r.argv))
+    now = time_.time()
+    iso_stamp = time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(now))
+
+    argv_buf = mylib.BufWriter()
+    dev.PrintShellArgv(arg_r.argv, argv_buf)
+
+    debug_f.writeln('%s [%d] Oils started with argv %s' %
+                    (iso_stamp, my_pid, argv_buf.getvalue()))
     if len(debug_path):
         debug_f.writeln('Writing logs to %r' % debug_path)
 

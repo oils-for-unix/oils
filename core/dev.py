@@ -230,6 +230,14 @@ def _PrintShValue(val, buf):
     buf.write(result)
 
 
+def PrintShellArgv(argv, buf):
+    # type: (List[str], mylib.BufWriter) -> None
+    for i, arg in enumerate(argv):
+        if i != 0:
+            buf.write(' ')
+        buf.write(j8_lite.MaybeShellEncode(arg))
+
+
 def _PrintYshArgv(argv, buf):
     # type: (List[str], mylib.BufWriter) -> None
 
@@ -530,10 +538,7 @@ class Tracer(object):
             return
 
         # Legacy: Use SHELL encoding, NOT _PrintYshArgv()
-        for i, arg in enumerate(argv):
-            if i != 0:
-                buf.write(' ')
-            buf.write(j8_lite.MaybeShellEncode(arg))
+        PrintShellArgv(argv, buf)
         buf.write('\n')
         self.f.write(buf.getvalue())
 
