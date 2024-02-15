@@ -11,7 +11,7 @@ from core import pyos
 from core import state
 from core import vm
 from data_lang import j8
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import args
 from frontend import typed_args
 from mycpp import mylib
@@ -60,7 +60,7 @@ class Json(vm._Builtin):
             # NOTE slightly different flags
             # json write --surrogate-ok $'\udc00'
             # not valid for j8 write
-            attrs = flag_spec.Parse('json_write', arg_r)
+            attrs = flag_util.Parse('json_write', arg_r)
 
             arg_jw = arg_types.json_write(attrs.attrs)
 
@@ -95,7 +95,7 @@ class Json(vm._Builtin):
             self.stdout_.write('\n')
 
         elif action == 'read':
-            attrs = flag_spec.Parse('json_read', arg_r)
+            attrs = flag_util.Parse('json_read', arg_r)
             arg_jr = arg_types.json_read(attrs.attrs)
             # TODO:
             # Respect -validate=F

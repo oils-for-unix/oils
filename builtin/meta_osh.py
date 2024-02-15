@@ -19,7 +19,7 @@ from core import pyutil  # strerror
 from core import state
 from core import vm
 from data_lang import j8_lite
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import consts
 from frontend import reader
 from frontend import typed_args
@@ -70,7 +70,7 @@ class Eval(vm._Builtin):
             return self.cmd_ev.EvalCommand(block)
 
         # There are no flags, but we need it to respect --
-        _, arg_r = flag_spec.ParseCmdVal('eval', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('eval', cmd_val)
 
         if self.exec_opts.simple_eval_builtin():
             code_str, eval_loc = arg_r.ReadRequired2('requires code string')
@@ -119,7 +119,7 @@ class Source(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('source', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('source', cmd_val)
         arg = arg_types.source(attrs.attrs)
 
         path = arg_r.Peek()
@@ -251,7 +251,7 @@ class Command(vm._Builtin):
         # type: (cmd_value.Argv) -> int
 
         # accept_typed_args=True because we invoke other builtins
-        attrs, arg_r = flag_spec.ParseCmdVal('command',
+        attrs, arg_r = flag_util.ParseCmdVal('command',
                                              cmd_val,
                                              accept_typed_args=True)
         arg = arg_types.command(attrs.attrs)
@@ -346,7 +346,7 @@ class RunProc(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('runproc',
+        _, arg_r = flag_util.ParseCmdVal('runproc',
                                          cmd_val,
                                          accept_typed_args=True)
         argv, locs = arg_r.Rest2()
@@ -426,7 +426,7 @@ class Type(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('type', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('type', cmd_val)
         arg = arg_types.type(attrs.attrs)
 
         if arg.f:  # suppress function lookup

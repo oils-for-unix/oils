@@ -32,7 +32,7 @@ from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 
 unused1 = flag_def
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import location
 from frontend import reader
 from frontend import parse_lib
@@ -304,7 +304,7 @@ def Main(
     assert lang in ('osh', 'ysh'), lang
 
     try:
-        attrs = flag_spec.ParseMore('main', arg_r)
+        attrs = flag_util.ParseMore('main', arg_r)
     except error.Usage as e:
         print_stderr('%s usage error: %s' % (lang, e.msg))
         return 2

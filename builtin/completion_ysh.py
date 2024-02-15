@@ -9,7 +9,7 @@ from core import vm
 from data_lang import j8
 from mycpp import mylib
 from mycpp.mylib import log
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import args
 
 from typing import TYPE_CHECKING
@@ -29,7 +29,7 @@ class CompExport(vm._Builtin):
         arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
         arg_r.Next()
 
-        attrs = flag_spec.ParseMore('compexport', arg_r)
+        attrs = flag_util.ParseMore('compexport', arg_r)
         arg = arg_types.compexport(attrs.attrs)
 
         if arg.c is None:

@@ -26,7 +26,7 @@ from core import error
 from core.error import e_die, p_die
 from core import state
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import consts
 from frontend import lexer
 from frontend import match
@@ -458,9 +458,9 @@ class Printf(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         """
-    printf: printf [-v var] format [argument ...]
-    """
-        attrs, arg_r = flag_spec.ParseCmdVal('printf', cmd_val)
+        printf: printf [-v var] format [argument ...]
+        """
+        attrs, arg_r = flag_util.ParseCmdVal('printf', cmd_val)
         arg = arg_types.printf(attrs.attrs)
 
         fmt, fmt_loc = arg_r.ReadRequired2('requires a format string')

@@ -14,7 +14,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import reader
 from frontend import typed_args
 from mycpp import mylib
@@ -402,7 +402,7 @@ class Read(vm._Builtin):
 
     def _Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('read',
+        attrs, arg_r = flag_util.ParseCmdVal('read',
                                              cmd_val,
                                              accept_typed_args=True)
         arg = arg_types.read(attrs.attrs)

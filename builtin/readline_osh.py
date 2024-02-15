@@ -9,7 +9,7 @@ from _devbuild.gen.syntax_asdl import loc
 from core.error import e_usage
 from core import pyutil
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from mycpp import mylib
 
 from typing import Optional, TYPE_CHECKING
@@ -61,7 +61,7 @@ class History(vm._Builtin):
             e_usage("is disabled because Oil wasn't compiled with 'readline'",
                     loc.Missing)
 
-        attrs, arg_r = flag_spec.ParseCmdVal('history', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('history', cmd_val)
         arg = arg_types.history(attrs.attrs)
 
         # Clear all history
