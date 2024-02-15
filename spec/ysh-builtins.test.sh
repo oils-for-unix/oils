@@ -180,15 +180,9 @@ status=2
 ## END
 
 #### read --line --with-eol
-shopt -s ysh:upgrade
 
-# Hm this preserves the newline?
-seq 3 | while read --line {
-  write reply=$_reply # implicit
-}
-write a b | while read --line --with-eol (&myline) {
-  write --end '' myline=$myline
-}
+$SH $REPO_ROOT/spec/testdata/ysh-read-1.sh
+
 ## STDOUT:
 reply=1
 reply=2
@@ -243,26 +237,7 @@ write --sep '' -- @nums
 
 #### Can simulate read --all-lines with a proc and value.Place
 
-shopt -s ysh:upgrade  # TODO: bad proc error message without this!
-
-# Set up a file
-seq 3 > tmp.txt
-
-proc read-lines (; out) {
-  var lines = []
-  while read --line {
-    append $_reply (lines)
-
-    # Can also be:
-    # call lines->append(_reply)
-    # call lines->push(_reply)  # might reame it
-  }
-  call out->setValue(lines)
-}
-
-var x
-read-lines (&x) < tmp.txt
-json write (x)
+$SH $REPO_ROOT/spec/testdata/ysh-read-2.sh
 
 ## STDOUT:
 [
