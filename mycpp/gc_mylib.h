@@ -162,7 +162,8 @@ class CFile : public File {
   DISALLOW_COPY_AND_ASSIGN(CFile)
 };
 
-// Abstract type: we can only read
+// Abstract File we can only read from.
+// TODO: can we get rid of DCHECK() and reinterpret_cast?
 class LineReader : public File {
  public:
   LineReader() : File() {
@@ -219,7 +220,8 @@ inline LineReader* Stdin() {
 
 LineReader* open(BigStr* path);
 
-// Abstract type: we can only write
+// Abstract File we can only write to.
+// TODO: can we get rid of DCHECK() and reinterpret_cast?
 class Writer : public File {
  public:
   Writer() : File() {
