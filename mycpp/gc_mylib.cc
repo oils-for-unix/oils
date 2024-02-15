@@ -82,10 +82,10 @@ LineReader* open(BigStr* path) {
     throw Alloc<IOError>(errno);
   }
 
-  return Alloc<CFileLineReader>(f);
+  return reinterpret_cast<LineReader*>(Alloc<CFile>(f));
 }
 
-BigStr* CFileLineReader::readline() {
+BigStr* CFile::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
 
@@ -108,7 +108,7 @@ BigStr* CFileLineReader::readline() {
   return result;
 }
 
-bool CFileLineReader::isatty() {
+bool CFile::isatty() {
   return ::isatty(fileno(f_));
 }
 
@@ -155,17 +155,17 @@ Writer* gStderr;
 // CFileWriter
 //
 
-void CFileWriter::write(BigStr* s) {
+void CFile::write(BigStr* s) {
   // note: throwing away the return value
   fwrite(s->data_, sizeof(char), len(s), f_);
 }
 
-void CFileWriter::flush() {
+void CFile::flush() {
   ::fflush(f_);
 }
 
-bool CFileWriter::isatty() {
-  return ::isatty(::fileno(f_));
+void CFile::close() {
+  ::fclose(f_);
 }
 
 //

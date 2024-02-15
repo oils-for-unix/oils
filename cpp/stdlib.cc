@@ -67,7 +67,7 @@ void putenv(BigStr* name, BigStr* value) {
   }
 }
 
-mylib::LineReader* fdopen(int fd, BigStr* c_mode) {
+mylib::File* fdopen(int fd, BigStr* c_mode) {
   // CPython checks if it's a directory first
   struct stat buf;
   if (fstat(fd, &buf) == 0 && S_ISDIR(buf.st_mode)) {
@@ -82,7 +82,7 @@ mylib::LineReader* fdopen(int fd, BigStr* c_mode) {
     throw Alloc<OSError>(errno);
   }
 
-  return Alloc<mylib::CFileLineReader>(f);
+  return Alloc<mylib::CFile>(f);
 }
 
 void execve(BigStr* argv0, List<BigStr*>* argv,
