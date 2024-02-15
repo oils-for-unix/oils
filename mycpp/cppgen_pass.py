@@ -256,7 +256,7 @@ def GetCType(t, param=False, local=False):
             is_pointer = True
 
         elif type_name == 'typing.IO':
-            c_type = 'void'
+            c_type = 'mylib::File'
             is_pointer = True
 
         elif type_name == 'typing.Iterator':

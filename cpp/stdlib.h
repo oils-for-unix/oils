@@ -139,7 +139,7 @@ void dup2(int oldfd, int newfd);
 
 int open(BigStr* path, int flags, int perms);
 
-mylib::LineReader* fdopen(int fd, BigStr* c_mode);
+mylib::File* fdopen(int fd, BigStr* c_mode);
 
 void execve(BigStr* argv0, List<BigStr*>* argv,
             Dict<BigStr*, BigStr*>* environ);

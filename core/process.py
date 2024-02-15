@@ -212,6 +212,8 @@ class FdState(object):
         """
         fd_mode = O_RDONLY
         f = self._Open(path, 'r', fd_mode)
+
+        # Hacky downcast
         return cast('mylib.LineReader', f)
 
     # used for util.DebugFile
@@ -219,8 +221,8 @@ class FdState(object):
         # type: (str) -> mylib.Writer
         fd_mode = O_CREAT | O_RDWR
         f = self._Open(path, 'w', fd_mode)
-        # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
-        # object supports both interfaces.
+
+        # Hacky downcast
         return cast('mylib.Writer', f)
 
     def _Open(self, path, c_mode, fd_mode):

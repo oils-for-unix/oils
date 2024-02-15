@@ -106,14 +106,42 @@ inline BigStr* octal(int i) {
   return ::StrFromC(buf, len);
 }
 
-class LineReader {
+// Abstract type: Union of LineReader and Writer
+class File {
  public:
-  // Abstract type with no fields: unknown size
-  LineReader() {
+  File() {
   }
+  // Writer
+  virtual void write(BigStr* s) = 0;
+  virtual void flush() = 0;
+
+  // Reader
   virtual BigStr* readline() = 0;
+
+  // Both
   virtual bool isatty() = 0;
   virtual void close() = 0;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(File));
+  }
+
+  static constexpr uint32_t field_mask() {
+    return kZeroMask;
+  }
+};
+
+// Abstract type: we can only read
+class LineReader : public File {
+ public:
+  LineReader() : File() {
+  }
+  void write(BigStr* s) override {
+    DCHECK(false);  // should not happen
+  }
+  void flush() override {
+    DCHECK(false);  // should not happen
+  }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(LineReader));
@@ -156,7 +184,7 @@ class CFileLineReader : public LineReader {
   }
   virtual BigStr* readline();
   virtual bool isatty();
-  void close() {
+  void close() override {
     fclose(f_);
   }
 
@@ -186,13 +214,14 @@ inline LineReader* Stdin() {
 
 LineReader* open(BigStr* path);
 
-class Writer {
+// Abstract type: we can only write
+class Writer : public File {
  public:
-  Writer() {
+  Writer() : File() {
   }
-  virtual void write(BigStr* s) = 0;
-  virtual void flush() = 0;
-  virtual bool isatty() = 0;
+  BigStr* readline() override {
+    DCHECK(false);  // should not happen
+  }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Writer));
@@ -214,6 +243,8 @@ class BufWriter : public Writer {
     str_ = nullptr;
     len_ = 0;
     is_valid_ = true;
+  }
+  void close() override {
   }
   void flush() override {
   }
@@ -274,6 +305,9 @@ class CFileWriter : public Writer {
     // not mutating field_mask because FILE* is not a managed pointer
   }
   void write(BigStr* s) override;
+  void close() override {
+    fclose(f_);
+  }
   void flush() override;
   bool isatty() override;
 
