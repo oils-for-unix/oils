@@ -82,7 +82,7 @@ mylib::File* fdopen(int fd, BigStr* c_mode) {
     throw Alloc<OSError>(errno);
   }
 
-  return Alloc<mylib::CFileLineReader>(f);
+  return Alloc<mylib::CFile>(f);
 }
 
 void execve(BigStr* argv0, List<BigStr*>* argv,
