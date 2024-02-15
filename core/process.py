@@ -62,7 +62,7 @@ from posix_ import (
     O_TRUNC,
 )
 
-from typing import List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
+from typing import IO, List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
@@ -211,7 +211,8 @@ class FdState(object):
           IOError or OSError if the path can't be found.  (This is Python-induced wart)
         """
         fd_mode = O_RDONLY
-        return self._Open(path, 'r', fd_mode)
+        f = self._Open(path, 'r', fd_mode)
+        return cast('mylib.LineReader', f)
 
     # used for util.DebugFile
     def OpenForWrite(self, path):
@@ -223,7 +224,7 @@ class FdState(object):
         return cast('mylib.Writer', f)
 
     def _Open(self, path, c_mode, fd_mode):
-        # type: (str, str, int) -> mylib.LineReader
+        # type: (str, str, int) -> IO[str]
         fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
 
         # Immediately move it to a new location
