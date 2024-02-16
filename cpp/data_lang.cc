@@ -242,6 +242,13 @@ void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
 namespace j8 {
 
 int HeapValueId(value_asdl::value_t* val) {
+#ifndef OPTIMIZED
+  // ASDL generates headers with HeapTag::Scanned, but HeapTag::FixedSize would
+  // also be valid.
+  ObjHeader* h = ObjHeader::FromObject(val);
+  DCHECK(h->heap_tag == HeapTag::Scanned || h->heap_tag == HeapTag::FixedSize);
+#endif
+
   return ObjectId(val);
 }
 

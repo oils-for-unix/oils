@@ -210,7 +210,7 @@ def _HNodeExpr(abbrev, typ, var_name):
                 type_name, var_name)
 
         else:
-            code_str = '%s->%s()' % (var_name, abbrev)
+            code_str = '%s->%s(seen)' % (var_name, abbrev)
             none_guard = True
 
     else:
@@ -643,9 +643,10 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         # Similar to j8::HeapValueId()
         self.Emit('  seen = seen ? seen : Alloc<Dict<int, bool>>();')
         self.Emit('  int heap_id = ObjectId(this);')
-        self.Emit('  if (!dict_contains(seen, heap_id)) {')
-        self.Emit('    seen->set(heap_id, true);')
+        self.Emit('  if (dict_contains(seen, heap_id)) {')
+        self.Emit('    return Alloc<hnode::AlreadySeen>(heap_id);')
         self.Emit('  }')
+        self.Emit('  seen->set(heap_id, true);')
 
         self.Emit('  hnode::Record* out_node = runtime::NewRecord(%s);' % n)
         if all_fields:

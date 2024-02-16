@@ -138,7 +138,7 @@ TEST pretty_print_test() {
   log("sizeof b = %d", sizeof b);
   log("");
   hnode_t* t1 = b->PrettyTree();
-  ASSERT_EQ(hnode_e::Record, t1->tag());
+  ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
 
   auto f = mylib::Stdout();
   auto ast_f = Alloc<format::TextOutput>(f);
