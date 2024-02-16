@@ -47,6 +47,7 @@ from _devbuild.gen.value_asdl import (
 from core import alloc
 from core import error
 from core.error import e_die, e_die_status, e_strict, e_usage
+from core import num
 from core import state
 from core import ui
 from frontend import consts
@@ -608,6 +609,8 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_PercentEqual:
                     if rhs == 0:
                         e_die('Divide by zero')  # TODO: location
+
+                    # TODO: remainder
                     new_int = old_int % rhs
 
                 elif op_id == Id.Arith_DGreatEqual:
@@ -723,15 +726,14 @@ class ArithEvaluator(object):
                     if rhs == 0:
                         e_die('Divide by zero', loc.Arith(node.right))
 
+                    # TODO: remainder
                     ret = lhs % rhs
 
                 elif op_id == Id.Arith_DStar:
                     if rhs < 0:
                         e_die("Exponent can't be a negative number",
                               loc.Arith(node.right))
-                    ret = 1
-                    for i in xrange(rhs):
-                        ret *= lhs
+                    ret = num.Exponent(lhs, rhs)
 
                 elif op_id == Id.Arith_DEqual:
                     ret = int(lhs == rhs)

@@ -628,22 +628,35 @@ status=1
 status=1
 ## END
 
-#### Negative numbers with % and /
+#### Negative numbers with integer division /
 
-echo $((7/2))
-echo $((7%2))
+echo $(( 10 / 3))
+echo $((-10 / 3))
+echo $(( 10 / -3))
+echo $((-10 / -3))
 
-echo $((-7/  2))
-echo $(( 7/ -2))
-
-echo $(( 7 % -2))
-echo $((-7 %  2))
+# Algorithm: make both numbers positive, then re-apply sign rules?
 
 ## STDOUT:
 3
+-3
+-3
+3
+## END
+
+#### Negative numbers with %
+
+echo $(( 10 % 3))
+echo $((-10 % 3))
+echo $(( 10 % -3))
+echo $((-10 % -3))
+
+# Algorithm: Make both number spositive, then take the sign of the first
+# number?
+
+## STDOUT:
 1
--3
--3
+-1
 1
 -1
 ## END

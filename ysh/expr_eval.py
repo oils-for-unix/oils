@@ -48,6 +48,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName)
 from core import error
 from core.error import e_die, e_die_status
+from core import num
 from core import pyutil
 from core import state
 from core import ui
@@ -546,9 +547,7 @@ class ExprEvaluator(object):
                 # Same as sh_expr_eval.py
                 if i2 < 0:
                     raise error.Expr("Exponent can't be a negative number", op)
-                ret = 1
-                for i in xrange(i2):
-                    ret *= i1
+                ret = num.Exponent(i1, i2)
                 return value.Int(ret)
 
             # Bitwise
