@@ -11,9 +11,16 @@ def Exponent(x, y):
         result *= x
     return result
 
+
 def IntDivide(x, y):
     # type: (int, int) -> int
+    """
+    Implementation that only uses the host language (Python or C++) to divide
+    non-negative numbers.  Python rounds toward negative infinity, while C++
+    rounds toward zero.
 
+    Oils rounds toward zero.
+    """
     assert y != 0, 'checked by caller'
 
     sign = 1
@@ -30,17 +37,20 @@ def IntDivide(x, y):
     else:
         ay = y
 
-    # Only divide non-negative numbers in host language.  Python rounds toward
-    # negative infinity, while C++ rounds toward zero.
-    #
-    # Oils rounds toward zero.
     return sign * (ax / ay)
 
 
 def IntRemainder(x, y):
     # type: (int, int) -> int
-    """Takes the sign of the first number."""
+    """
+    Implementation that only uses the host language (Python or C++) to divide
+    non-negative numbers.
 
+    Takes the sign of the first argument x.
+
+    Python % is modulus, while C % is remainder.  Both OSH and YSH % is
+    remainder, like C.
+    """
     assert y != 0, 'checked by caller'
 
     if x < 0:
