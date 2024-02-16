@@ -720,7 +720,7 @@ class ArithEvaluator(object):
                     if rhs == 0:
                         e_die('Divide by zero', loc.Arith(node.right))
 
-                    ret = lhs / rhs
+                    ret = num.DivideIntegers(lhs, rhs)
 
                 elif op_id == Id.Arith_Percent:
                     if rhs == 0:
