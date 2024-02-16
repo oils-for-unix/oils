@@ -390,7 +390,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    heap_id = id(self)')
         self.Emit('    if heap_id in trav.seen:')
         # cut off recursion
-        self.Emit('      return hnode.ObjectCycle(heap_id)')
+        self.Emit('      return hnode.AlreadySeen(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
 
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
@@ -417,7 +417,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    heap_id = id(self)')
         self.Emit('    if heap_id in trav.seen:')
         # cut off recursion
-        self.Emit('      return hnode.ObjectCycle(heap_id)')
+        self.Emit('      return hnode.AlreadySeen(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
         self.Emit('    L = out_node.fields')

@@ -361,7 +361,8 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         if self.pretty_print_methods:
             for abbrev in PRETTY_METHODS:
-                self.Emit('  hnode_t* %s();' % abbrev)
+                self.Emit('  hnode_t* %s(Dict<int, bool>* seen = nullptr);' %
+                          abbrev)
 
         Emit('  DISALLOW_COPY_AND_ASSIGN(%(sum_name)s_t)')
         Emit('};')
@@ -470,7 +471,9 @@ class ClassDefVisitor(visitor.AsdlVisitor):
 
         if self.pretty_print_methods:
             for abbrev in PRETTY_METHODS:
-                self.Emit('  hnode_t* %s();' % abbrev, depth)
+                self.Emit(
+                    '  hnode_t* %s(Dict<int, bool>* seen = nullptr);' % abbrev,
+                    depth)
             self.Emit('')
 
         self.Emit('  static constexpr ObjHeader obj_header() {')
@@ -634,7 +637,16 @@ class MethodDefVisitor(visitor.AsdlVisitor):
             n = 'StrFromC("%s")' % class_name
 
         self.Emit('')
-        self.Emit('hnode_t* %s::PrettyTree() {' % class_name)
+        self.Emit('hnode_t* %s::PrettyTree(Dict<int, bool>* seen) {' %
+                  class_name)
+
+        # Similar to j8::HeapValueId()
+        self.Emit('  seen = seen ? seen : Alloc<Dict<int, bool>>();')
+        self.Emit('  int heap_id = ObjectId(this);')
+        self.Emit('  if (!dict_contains(seen, heap_id)) {')
+        self.Emit('    seen->set(heap_id, true);')
+        self.Emit('  }')
+
         self.Emit('  hnode::Record* out_node = runtime::NewRecord(%s);' % n)
         if all_fields:
             self.Emit('  List<Field*>* L = out_node->fields;')
@@ -774,7 +786,8 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         # Emit dispatch WITHOUT using 'virtual'
         for func_name in PRETTY_METHODS:
             self.Emit('')
-            self.Emit('hnode_t* %s_t::%s() {' % (sum_name, func_name))
+            self.Emit('hnode_t* %s_t::%s(Dict<int, bool>* seen) {' %
+                      (sum_name, func_name))
             self.Emit('  switch (this->tag()) {', depth)
 
             for variant in sum.types:
@@ -788,7 +801,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
                 self.Emit(
                     '    %s* obj = static_cast<%s*>(this);' %
                     (subtype_name, subtype_name), depth)
-                self.Emit('    return obj->%s();' % func_name, depth)
+                self.Emit('    return obj->%s(seen);' % func_name, depth)
                 self.Emit('  }', depth)
 
             self.Emit('  default:', depth)
