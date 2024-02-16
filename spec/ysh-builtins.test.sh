@@ -263,9 +263,9 @@ echo "[$x]"
 ## END
 
 #### read --line from directory is an error (EISDIR)
-mkdir -p ./dir
-read --line < ./dir
-echo status=$?
+
+$SH $REPO_ROOT/spec/testdata/ysh-read-3.sh
+
 ## STDOUT:
 status=1
 ## END

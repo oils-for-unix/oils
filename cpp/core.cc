@@ -77,20 +77,6 @@ Tuple2<int, int> ReadByte(int fd) {
   }
 }
 
-// For read --line
-// Note: this has the "FD 0 buffering issue".  See spec/ysh-place.test.sh, and
-// demo/compare-strace.sh.
-//
-// I think that's working as intended for read --line, but we should rewrite
-// pyos.Readline() to be consistent with this?  It reads one byte at a time,
-// which is not what we want.
-
-BigStr* ReadLineBuffered() {
-  BigStr* result = mylib::gStdin->readline();
-  // log("ReadLine() => [%s]", result->data_);
-  return result;
-}
-
 Dict<BigStr*, BigStr*>* Environ() {
   auto d = Alloc<Dict<BigStr*, BigStr*>>();
 

@@ -325,8 +325,12 @@ class Read(vm._Builtin):
             status = self._Run(cmd_val)
         except pyos.ReadError as e:  # different paths for read -d, etc.
             # don't quote code since YSH errexit will likely quote
-            self.errfmt.PrintMessage("read error: %s" %
+            self.errfmt.PrintMessage("Oils read error: %s" %
                                      posix.strerror(e.err_num))
+            status = 1
+        except (IOError, OSError) as e:  # different paths for read -d, etc.
+            self.errfmt.PrintMessage("Oils read I/O error: %s" %
+                                     pyutil.strerror(e))
             status = 1
         return status
 
@@ -366,11 +370,10 @@ class Read(vm._Builtin):
         if next_arg is not None:
             raise error.Usage('got extra argument', next_loc)
 
-        # Don't respect any of the other options here?  This is buffered I/O.
-        if arg.line:  # read --line
-            # Use an optimized C implementation rather than ReadLineSlowly,
-            # which calls ReadByte() over and over.
-            line = pyos.ReadLineBuffered()
+        if arg.line:  # read --line is buffered, calls getline()
+
+            # Note that this can interfere with shell CODE on stdin.
+            line = self.stdin_.readline()
             if len(line) == 0:  # EOF
                 return 1  # 'while read --line' loop
 
