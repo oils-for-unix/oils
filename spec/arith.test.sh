@@ -1,4 +1,7 @@
-#
+## oils_failures_allowed: 1
+## compare_shells: bash dash mksh zsh
+
+
 # Interesting interpretation of constants.
 #
 # "Constants with a leading 0 are interpreted as octal numbers. A leading ‘0x’
@@ -623,4 +626,24 @@ status=2
 status=0
 status=1
 status=1
+## END
+
+#### Negative numbers with % and /
+
+echo $((7/2))
+echo $((7%2))
+
+echo $((-7/  2))
+echo $(( 7/ -2))
+
+echo $(( 7 % -2))
+echo $((-7 %  2))
+
+## STDOUT:
+3
+1
+-3
+-3
+1
+-1
 ## END

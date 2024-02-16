@@ -291,8 +291,7 @@ globignore() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file arith "$@"
 }
 
 command-sub() {
