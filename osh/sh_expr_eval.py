@@ -439,8 +439,8 @@ class ArithEvaluator(object):
         try:
             UP_val = val
             with tagswitch(val) as case:
-                if case(value_e.Undef
-                        ):  # 'nounset' already handled before got here
+                if case(value_e.Undef):
+                    # 'nounset' already handled before got here
                     # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
                     e_strict('Undefined value in arithmetic context',
                              loc.Arith(blame))
@@ -451,8 +451,8 @@ class ArithEvaluator(object):
 
                 elif case(value_e.Str):
                     val = cast(value.Str, UP_val)
-                    return self._StringToInteger(
-                        val.s, loc.Arith(blame))  # calls e_strict
+                    # calls e_strict
+                    return self._StringToInteger(val.s, loc.Arith(blame))
 
         except error.Strict as e:
             if self.exec_opts.strict_arith():
@@ -507,8 +507,8 @@ class ArithEvaluator(object):
         val = self.Eval(node)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if val.tag() in (value_e.BashArray, value_e.BashAssoc
-                         ) and node.tag() == arith_expr_e.VarSub:
+        if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
+                node.tag() == arith_expr_e.VarSub):
             vsub = cast(SimpleVarSub, node)
             if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
                 val = word_eval.DecayArray(val)
@@ -519,19 +519,19 @@ class ArithEvaluator(object):
     def Eval(self, node):
         # type: (arith_expr_t) -> value_t
         """
-    Args:
-      node: arith_expr_t
+        Args:
+          node: arith_expr_t
 
-    Returns:
-      None for Undef  (e.g. empty cell)  TODO: Don't return 0!
-      int for Str
-      List[int] for BashArray
-      Dict[str, str] for BashAssoc (TODO: Should we support this?)
+        Returns:
+          None for Undef  (e.g. empty cell)  TODO: Don't return 0!
+          int for Str
+          List[int] for BashArray
+          Dict[str, str] for BashAssoc (TODO: Should we support this?)
 
-    NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
-    bash, but don't do what you'd think.  'x' sometimes a variable name and
-    sometimes a key.
-    """
+        NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
+        bash, but don't do what you'd think.  'x' sometimes a variable name and
+        sometimes a key.
+        """
         # OSH semantics: Variable NAMES cannot be formed dynamically; but INTEGERS
         # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
         # to handle that as a special case.

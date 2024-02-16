@@ -116,7 +116,8 @@ class Evaluator(object):
                         try:
                             w = words[-1]
                         except IndexError:
-                            raise util.HistoryError("No last word in %r" % prev)
+                            raise util.HistoryError("No last word in %r" %
+                                                    prev)
 
                         tok1 = location.LeftTokenForWord(w)
                         tok2 = location.RightTokenForWord(w)

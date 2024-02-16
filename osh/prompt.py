@@ -37,7 +37,6 @@ if TYPE_CHECKING:
 
 _ = log
 
-
 #
 # Prompt Evaluation
 #
@@ -200,7 +199,8 @@ class Evaluator(object):
             # TODO: Handle more codes
             # R(r'\\[adehHjlnrstT@AuvVwW!#$\\]', Id.PS_Subst),
             if r is None:
-                r = _ERROR_FMT % (r'\%s is invalid or unimplemented in $PS1' % ch)
+                r = _ERROR_FMT % (r'\%s is invalid or unimplemented in $PS1' %
+                                  ch)
 
         return r
 
@@ -303,7 +303,8 @@ class Evaluator(object):
                     val = cast(value.Str, UP_val)
                     return val.s
                 else:
-                    msg = 'renderPrompt() should return Str, got %s' % ui.ValType(val)
+                    msg = 'renderPrompt() should return Str, got %s' % ui.ValType(
+                        val)
                     return _ERROR_FMT % msg
 
         # Now try evaluating $PS1

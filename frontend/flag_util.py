@@ -13,6 +13,7 @@ from mycpp import mylib
 from typing import Tuple, Optional
 
 if mylib.PYTHON:
+
     def LookupFlagSpec(name):
         # type: (str) -> flag_spec._FlagSpec
         return flag_spec.FLAG_SPEC[name]

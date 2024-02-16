@@ -165,6 +165,7 @@ class LexerTest(unittest.TestCase):
 
 
 class WordParserTest(unittest.TestCase):
+
     def testStaticEvalWord(self):
         expr = r'\EOF'  # Quoted here doc delimiter
         w_parser = test_lib.InitWordParser(expr)
@@ -267,7 +268,8 @@ class WordParserTest(unittest.TestCase):
         op = _GetSuffixOp(self, w)
         self.assertUnquoted('pat', op.pat)
         self.assertUnquoted('replace', op.replace)
-        self.assertEqual(Id.Lit_Slash, op.replace_mode, Id_str(op.replace_mode))
+        self.assertEqual(Id.Lit_Slash, op.replace_mode,
+                         Id_str(op.replace_mode))
 
         w = _assertReadWord(self, '${var/%pat/replace}')  # prefix
         op = _GetSuffixOp(self, w)

@@ -110,6 +110,7 @@ def ReadByte(fd):
 
 
 if 0:
+
     def ReadLineBuffered():
         # type: () -> str
         """Obsolete

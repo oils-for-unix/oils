@@ -12,6 +12,7 @@ from osh import glob_
 
 
 class GlobEscapeTest(unittest.TestCase):
+
     def testEscapeUnescape(self):
         esc = glob_.GlobEscape
         unesc = glob_.GlobUnescape
@@ -96,6 +97,7 @@ def _ReadTokens(s):
 
 
 class GlobParserTest(unittest.TestCase):
+
     def testGlobLexer(self):
         print(_ReadTokens(''))
         print(_ReadTokens('*.py'))

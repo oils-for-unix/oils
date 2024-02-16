@@ -132,9 +132,9 @@ def EvalSingleQuoted(part):
         tmp = [t.tval for t in part.tokens]
         s = ''.join(tmp)
 
-    elif part.left.id in (Id.Left_DollarSingleQuote,
-                          Id.Left_USingleQuote, Id.Left_BSingleQuote,
-                          Id.Left_UTSingleQuote, Id.Left_BTSingleQuote):
+    elif part.left.id in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
+                          Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
+                          Id.Left_BTSingleQuote):
         # NOTE: This could be done at compile time
         tmp = [EvalCStringToken(t) for t in part.tokens]
         s = ''.join(tmp)
@@ -264,7 +264,8 @@ def RemoveLeadingSpaceSQ(tokens):
     if to_strip is not None:
         n = len(to_strip)
         for tok in tokens:
-            if tok.id not in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
+            if tok.id not in (Id.Lit_Chars, Id.Char_Literals,
+                              Id.Char_AsciiControl):
                 line_ended = False
                 continue
 
