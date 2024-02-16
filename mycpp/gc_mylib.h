@@ -169,10 +169,10 @@ class LineReader : public File {
   LineReader() : File() {
   }
   void write(BigStr* s) override {
-    DCHECK(false);  // should not happen
+    CHECK(false);  // should not happen
   }
   void flush() override {
-    DCHECK(false);  // should not happen
+    CHECK(false);  // should not happen
   }
 
   static constexpr ObjHeader obj_header() {
@@ -227,7 +227,7 @@ class Writer : public File {
   Writer() : File() {
   }
   BigStr* readline() override {
-    DCHECK(false);  // should not happen
+    CHECK(false);  // should not happen
   }
 
   static constexpr ObjHeader obj_header() {
