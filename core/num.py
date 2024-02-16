@@ -11,8 +11,7 @@ def Exponent(x, y):
         result *= x
     return result
 
-
-def DivideIntegers(x, y):
+def IntDivide(x, y):
     # type: (int, int) -> int
 
     assert y != 0, 'checked by caller'
@@ -36,3 +35,25 @@ def DivideIntegers(x, y):
     #
     # Oils rounds toward zero.
     return sign * (ax / ay)
+
+
+def IntRemainder(x, y):
+    # type: (int, int) -> int
+    """Takes the sign of the first number."""
+
+    assert y != 0, 'checked by caller'
+
+    if x < 0:
+        ax = -x
+        sign = -1
+    else:
+        ax = x
+        sign = 1
+
+    if y < 0:
+        ay = -y
+    else:
+        ay = y
+
+    # Only use host language % on non-negative numbers.  Apply sign afteward.
+    return sign * (ax % ay)

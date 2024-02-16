@@ -1,4 +1,3 @@
-## oils_failures_allowed: 1
 ## compare_shells: bash dash mksh zsh
 
 
@@ -635,13 +634,34 @@ echo $((-10 / 3))
 echo $(( 10 / -3))
 echo $((-10 / -3))
 
-# Algorithm: make both numbers positive, then re-apply sign rules?
+echo ---
+
+a=20
+: $(( a /= 3 ))
+echo $a
+
+a=-20
+: $(( a /= 3 ))
+echo $a
+
+a=20
+: $(( a /= -3 ))
+echo $a
+
+a=-20
+: $(( a /= -3 ))
+echo $a
 
 ## STDOUT:
 3
 -3
 -3
 3
+---
+6
+-6
+-6
+6
 ## END
 
 #### Negative numbers with %

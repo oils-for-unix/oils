@@ -604,14 +604,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_SlashEqual:
                     if rhs == 0:
                         e_die('Divide by zero')  # TODO: location
-                    new_int = old_int / rhs
+                    new_int = num.IntDivide(old_int, rhs)
 
                 elif op_id == Id.Arith_PercentEqual:
                     if rhs == 0:
                         e_die('Divide by zero')  # TODO: location
-
-                    # TODO: remainder
-                    new_int = old_int % rhs
+                    new_int = num.IntRemainder(old_int, rhs)
 
                 elif op_id == Id.Arith_DGreatEqual:
                     new_int = old_int >> rhs
@@ -719,15 +717,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_Slash:
                     if rhs == 0:
                         e_die('Divide by zero', loc.Arith(node.right))
-
-                    ret = num.DivideIntegers(lhs, rhs)
+                    ret = num.IntDivide(lhs, rhs)
 
                 elif op_id == Id.Arith_Percent:
                     if rhs == 0:
                         e_die('Divide by zero', loc.Arith(node.right))
-
-                    # TODO: remainder
-                    ret = lhs % rhs
+                    ret = num.IntRemainder(lhs, rhs)
 
                 elif op_id == Id.Arith_DStar:
                     if rhs < 0:
