@@ -51,6 +51,7 @@ TEST isspace_demo() {
     int x = isspace(cases[i]);
     log("isspace %x %d", cases[i], x);
   }
+  PASS();
 }
 
 GREATEST_MAIN_DEFS();

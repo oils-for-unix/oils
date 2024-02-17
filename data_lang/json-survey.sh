@@ -27,6 +27,38 @@ decode-int-float() {
   nodejs -e 'var val = JSON.parse("1e6"); console.log(typeof(val)); console.log(val)'
 }
 
+big-int() {
+  for i in $(seq 1000); do
+    echo -n 1234567890
+  done
+}
+
+# Hm, decoding integers and floats doesn't have overflow cases
+
+decode-huge-int() {
+  local i
+  i=$(big-int)
+  echo $i
+
+  # really big integer causes 100% CPU usage in Python 3
+  echo "$i" | python3 -c 'import json, sys; val = json.load(sys.stdin); print(type(val)); print(val)' 
+
+  # decodes to "Infinity"
+  echo "$i" | nodejs -e 'var fs = require("fs"); var stdin = fs.readFileSync(0, "utf-8"); console.log(JSON.parse(stdin));'
+}
+
+decode-huge-float() {
+  local f
+  f=$(big-int).99
+  echo $f
+
+  # decodes to "inf"
+  echo "$f" | python3 -c 'import json, sys; val = json.load(sys.stdin); print(type(val)); print(val)' 
+
+  # decodes to "Infinity"
+  echo "$f" | nodejs -e 'var fs = require("fs"); var stdin = fs.readFileSync(0, "utf-8"); console.log(JSON.parse(stdin));'
+}
+
 decode-syntax-errors() {
 
   python2 -c 'import json; val = json.loads("{3:4}"); print(type(val)); print(val)' || true

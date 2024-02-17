@@ -1,5 +1,7 @@
 #include "mycpp/gc_mylib.h"
 
+#include <unistd.h>
+
 #include "mycpp/gc_alloc.h"  // gHeap
 #include "mycpp/gc_str.h"
 #include "vendor/greatest.h"
@@ -282,6 +284,28 @@ TEST for_test_coverage() {
   PASS();
 }
 
+TEST getc_demo() {
+  // CPython fileobject.c appears to use getc?  Is it buffered?
+  // Oh yeah I see a syscall read(0, "hi123")
+  // OK maybe I should just use getc instead of getline()?
+  // getline() has different buffering perhaps?
+
+  int fd[2];
+  ::pipe(fd);
+
+  ::dup2(fd[0], 0);
+
+  write(fd[1], "hi", 3);
+
+  int c = getc(stdin);
+  log("c = %c", c);
+
+  c = getc(stdin);
+  log("c = %c", c);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -298,6 +322,8 @@ int main(int argc, char** argv) {
   RUN_TEST(BufLineReader_test);
   RUN_TEST(files_test);
   RUN_TEST(for_test_coverage);
+
+  RUN_TEST(getc_demo);
 
   gHeap.CleanProcessExit();
 
