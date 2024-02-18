@@ -695,8 +695,14 @@ class CommandEvaluator(object):
             if node.rhs is None:
                 for i, lhs_val in enumerate(node.lhs):
                     lval = location.LName(lhs_val.name.tval)
-                    # Note: not respecting const since they should be initialized
-                    self.mem.SetNamed(lval, value.Null, scope_e.LocalOnly)
+                    flags = (
+                        state.SetReadOnly
+                        if node.keyword.id == Id.KW_Const
+                        else 0
+                    )
+                    self.mem.SetNamed(
+                        lval, value.Null, scope_e.LocalOnly, flags=flags
+                    )
                 return 0
 
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
