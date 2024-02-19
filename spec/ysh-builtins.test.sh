@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -177,6 +177,14 @@ echo status=$?
 
 ## STDOUT:
 status=2
+## END
+
+#### Mixing read --line with read -r
+
+$SH $REPO_ROOT/spec/testdata/ysh-read-0.sh
+
+## STDOUT:
+TODO
 ## END
 
 #### read --line --with-eol
