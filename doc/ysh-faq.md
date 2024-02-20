@@ -107,7 +107,7 @@ That is, `echo "$flag"` always has a few bugs: when `$flag` is `-e`, `-n`,
 
 So portable shell scripts use:
 
-    printf '%s\n' "$x"  # print $x "unmolested" in POSIX shell
+    printf '%s\n' "$x"     # print $x "unmolested" in POSIX shell
 
 We could have chosen to respect `echo -- $x`, but as YSH already has:
 
