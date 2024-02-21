@@ -667,7 +667,7 @@ class WordParser(WordEmitter):
 
                 # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
                 if is_ysh_expr or not self.parse_opts.parse_backslash():
-                    p_die("Invalid char escape in C-style $'-string literal (parse_backslash)\n\t* use \\\\ to denote a \\ ?\n\t* (ysh) use u'- or b'-literal instead ?", tok)
+                    p_die("Invalid char escape in C-style $'-string literal (parse_backslash)\n\t* use \\\\ to denote a \\ ?\n\t* 'chain'\"different\"$'literals' ?\n\t* (ysh) use u'- or b'-literal instead ?\n\t* (ysh) concat r'- ++ u'- or b'-literals ?", tok)
 
                 tokens.append(tok)
 
@@ -944,7 +944,7 @@ class WordParser(WordEmitter):
                         if (is_ysh_expr or
                                 not self.parse_opts.parse_backslash()):
                             p_die(
-                                "Invalid char escape in double quoted string literal (parse_backslash)\n\tOnly allowed: \\\", \\$, or \\\\ to denote \", $, or \\\n\t* use \\\\ to denote a \\ ?\n\t* (ysh) use \"- ++ u'- or b'-literals instead ?",
+                                "Invalid char escape in double quoted string literal (parse_backslash)\n\tOnly allowed: \\\", \\$, or \\\\ to denote \", $, or \\\n\t* use \\\\ to denote a \\ ?\n\t* 'chain'\"different\"$'literals' ?\n\t* (ysh) concat \"- ++ u'- or b'-literals ?",
                                 self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_ysh_expr or not self.parse_opts.parse_dollar():
