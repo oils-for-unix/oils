@@ -318,29 +318,28 @@ Also a declaration
 
 ### ysh-read
 
-YSH adds buffered, line-oriented I/O to shell's `read`.
+YSH adds long flags to shell's `read`:
+
+    read --all              # whole file including newline, in $_reply
+    read --all (&x)         # fills $x
+
+And a convenience:
+
+    read -0                 # read until NUL, synonym for read -r -d ''
+
+TODO: We used to have `read --line`, but buffered I/O doesn't mix with shell
+I/O, which is reads directly from file descriptors.
+
+<!--
+
+buffered, line-oriented I/O 
 
     read --line             # fills $_reply var with line
     read --line (&x)        # fills $x (&x is a place)
 
     read --line --with-eol  # keep the \n
 
-    read --all              # whole file including newline, in $_reply
-    read --all (&x)         # fills $x
-
-    read -0                 # read until NUL, synonym for read -r -d ''
-
 You may want to use `fromJ8()` or `fromJson()` after reading a line.
-
-<!--
-    read --line --json      # decode JSON string
-    read --line --j8        # decode J8 string
-
-When --json is passed, the line is checked for an opening `"`.  If present,
-it's decoded as a JSON string.
-
-When --j8 is passed, the line is checked for an opening `"` or `'` or `u'` or
-`b'`.  If present, it's decoded as a J8 string.
 
 TODO: read --netstr
 -->

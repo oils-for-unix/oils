@@ -79,11 +79,10 @@ The exit status of all the process subs in the last command.
 
 ### _reply
 
-YSH read sets this:
-
-    read --line < myfile
+YSH `read` sets this variable:
 
     read --all < myfile
+    echo $_reply
 
 ## Oils VM
 

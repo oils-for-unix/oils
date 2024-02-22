@@ -103,49 +103,35 @@ No:
       echo $x
     done
 
-Yes:
+OK:
 
     var n = 3
     for x in @(seq $n) {   # Explicit splitting
       echo $x
     }
 
-Note that `{1..3}` works in bash and YSH, but the numbers must be constant.
+Better;
 
+    var n = 3
+    for x in (1 .. n+1) {  # Range, avoids external program
+      echo $x
+    }
+
+Note that `{1..3}` works in bash and YSH, but the numbers must be constant.
 
 ## Avoid Ad Hoc Parsing and Splitting
 
 In other words, avoid *groveling through backslashes and spaces* in shell.  
 
-Instead, emit and consume the [QSN][] and [QTT][] interchange formats.
+Instead, emit and consume [J8 Notation]($xref:j8-notation):
 
-- QSN is a JSON-like format for byte string literals
-- QTT is a convention for embedding QSN in TSV files (not yet implemented)
+- J8 strings are [JSON]($xref) strings, with an upgrade for byte string
+  literals
+- [JSON8]($xref) is [JSON]($xref), with this same upgrade
+- [TSV8]($ref) is TSV with this upgrade (not yet implemented)
 
 Custom parsing and serializing should be limited to "the edges" of your YSH
 programs.
-
-<!--
-
-TODO: write about J8 notation idioms
-
-### Use New Builtins That Support Structured I/O
-
-These are discussed in the next two sections, but here's a summary.
-
-    write --qsn          # also -q
-    read --qsn (&myvar)  # also -q
-
-    read --line --qsn (&myvar)  # read a single line
-
-That is, take advantage of the invariants that the [IO
-builtins](io-builtins.html) respect.  (doc in progress)
-
--->
-
-<!--
-    read --lines --qsn :myarray   # read many lines
--->
 
 ### More Strategies For Structured Data
 
@@ -202,13 +188,17 @@ Yes:
 No:
 
     read line     # Bad because it mangles your backslashes!
-    read -r line  # Better, but easy to forget
 
-Yes:
+For now, please use this bash idiom to read a single line:
 
-    read --line           # sets $_reply
-                          # faster because it's a buffered read
-    read --line (&myvar)  # sets $myvar
+    read -r line  # Easy to forget -r for "raw"
+
+YSH used to have `read --line`, but there was a design problem: reading
+buffered lines doesn't mix well with reading directly from file descriptors,
+and shell does the latter.
+
+That is, `read -r` is suboptimal because it makes many syscalls, but it's
+already established in shell.
 
 ### Read a Whole File
 

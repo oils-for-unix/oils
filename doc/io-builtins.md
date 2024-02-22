@@ -15,9 +15,9 @@ POSIX shell has overlapping and quirky constructs for doing I/O:
 YSH rationalizes I/O with:
 
 - A new `write` builtin
-- Long flags to `read`, like `--line` and `--all`
+- Long flags to `read`, like `--all`
 - The distinction between `$(string sub)` and `@(array sub)`
-- The [QSN](qsn.html) serialization format.
+- A set of data languages called [J8 Notation](j8-notation.html).
 
 YSH also has orthogonal mechanisms for string processing:
 
@@ -36,10 +36,10 @@ These are discussed in more detail the [strings](strings.html) doc.
 
 - `echo` is flaky because `echo $x` is a bug.  `$x` could be `-n`.
   - YSH `write` accepts `--`.
-- `read` is flaky good because the `-r` flag to ignore `\` line continuations
+- `read` is non-obvious because the `-r` flag to ignore `\` line continuations
   isn't the default.  The `\` creates a mini-language that isn't understood by
   other line-based tools like `grep` and `awk`.
-  - YSH has `read --line`.
+  - TODO: YSH should have a mechanism to read buffered lines.
 - There's no way to tell if `$()` strips the trailing newline,.
   - YSH has `read --all`, as well as lastpipe being on.
 
@@ -51,7 +51,7 @@ Example:
 ## Summary of YSH features
 
 - `write`: `--qsn`, `--sep`, `--end`
-- `read`: `--qsn`, `--line`, `--lines`, and `--all` (or `--all-lines`?)
+- `read`: `--all` (future: `--line`, `--all-lines`?)
 - `$(string sub)` removes the trailing newline, if any
 - `@(array sub)` splits by IFS
   - TODO: should it split by `IFS=$'\n'`?
@@ -74,27 +74,19 @@ Here are some design notes on making the I/O builtins orthogonal and
 composable.  There should be clean ways to "round trip" data between the OS and
 YSH data structures.
 
-### Problem
+### File -> String -> File
 
-    # This will get messed up with newlines, and empty strings.
-    IFS=$'\n'
-    var lines1 = @(write -- @myarray)
-  
-    # This will give you back an array
-    var lines2 = @(write --qsn -- @myarray)
-  
-### Array -> QSN Lines -> Array
+    cat input.txt | read --all
 
-This is one way to make a copy of an array
+    # suppress the newline
+    write --end '' $_reply > output.txt
 
-    write --qsn -- @myarray | read --lines --qsn :otherarray
-  
-In contrast, this doesn't work when the elements have newlines:
+    diff input.txt output.txt  # should be equal
 
-    var myarray = :| 'bad\n' |
-    write -- @myarray | read --lines :otherarray
 
 ### File -> Array -> File
+
+TODO
 
     cat input.txt | read --all-lines :myarray
 
@@ -103,14 +95,9 @@ In contrast, this doesn't work when the elements have newlines:
 
     diff input.txt output.txt  # should be equal
 
-### File -> String -> File
+### Array -> J8 Lines -> Array
 
-    cat input.txt | read --all :x
-
-    # suppress the newline
-    write --end '' $x > output.txt
-
-    diff input.txt output.txt  # should be equal
+TODO
 
 ## Related
 

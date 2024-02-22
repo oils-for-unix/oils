@@ -126,7 +126,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   module                 guard against duplicate 'source'
                   is-main                false when sourcing a file
                   use                    change first word lookup
-  [I/O]           ysh-read               Buffered I/O with --line, --all, --j8
+  [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
                   write                  Like echo, with --, --sep, --end
                   fork   forkwait        Replace & and (), and takes a block

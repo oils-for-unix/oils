@@ -64,15 +64,6 @@ Failure with invalid input data:
     $ echo $?
     1
 
-### `read` builtin
-
-TODO:
-
-    read --line --j8 
-    read --all-lines --j8 
-    read --line --json
-    read --all-lines --json
-
 ## `json write` prints to `stdout`
 
 Usage:
