@@ -667,7 +667,7 @@ class WordParser(WordEmitter):
 
                 # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
                 if is_ysh_expr or not self.parse_opts.parse_backslash():
-                    p_die("Invalid char escape in C-style $'-string literal (parse_backslash)\n\t* use \\\\ to denote a \\ ?\n\t* 'chain'\"different\"$'literals' ?\n\t* (ysh) use u'- or b'-literal instead ?\n\t* (ysh) concat r'- ++ u'- or b'-literals ?", tok)
+                    p_die("Invalid char escape in C-style $'-string literal (parse_backslash, no verbatims)\n\t* use \\\\ to denote a \\ ?\n\t* 'chain'\"different\"$'literals' ?\n\t* (ysh) use u'- or b'-literal instead ?\n\t* (ysh) concat r'- ++ u'- or b'-literals ?", tok)
 
                 tokens.append(tok)
 
@@ -944,7 +944,7 @@ class WordParser(WordEmitter):
                         if (is_ysh_expr or
                                 not self.parse_opts.parse_backslash()):
                             p_die(
-                                "Invalid char escape in $variable expanding \"-string literal (parse_backslash)\n\tOnly allowed: \\\", \\$, or \\\\ to denote \", $, or \\\n\t* use \\\\ to denote a \\ ?\n\t* 'chain'\"different\"$'literals' ?\n\t* (ysh) concat \"- ++ u'- or b'-literals ?",
+                                "Invalid char escape in $variable expanding \"-string literal (parse_backslash, no verbatims)\n\tOnly allowed: \\\", \\$, or \\\\ to denote \", $, or \\\n\t* use \\\\ to denote a \\ ?\n\t* 'chain'\"different\"$'literals' ?\n\t* (ysh) concat \"- ++ u'- or b'-literals ?",
                                 self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_ysh_expr or not self.parse_opts.parse_dollar():
@@ -1611,7 +1611,7 @@ class WordParser(WordEmitter):
             ch = lexer.TokenSliceLeft(tok, 1)
             if not self.parse_opts.parse_backslash():
                 if not pyutil.IsValidCharEscape(ch):
-                    p_die("Invalid char escape (parse_backslash)\n\t* remove \ ?\n\t* use \\\\ to denote a \\ ?\n\t* use \"raw\" '-string-literal ?\n\t* use \"interpreted\" $'-string-literal ?\n\t* (ysh) use \"raw\" r'-string-literal ?\n\t* (ysh) use \"interpreted\" u'- or b'-string-literal ?",
+                    p_die("Invalid char escape (parse_backslash, no verbatims, no quotings)\n\t* remove \ ?\n\t* use \\\\ to denote a \\ ?\n\t* use \"raw\" '-string-literal ?\n\t* use \"interpreted\" $'-string-literal ?\n\t* (ysh) use \"raw\" r'-string-literal ?\n\t* (ysh) use \"interpreted\" u'- or b'-string-literal ?",
                           self.cur_token)
 
             part = word_part.EscapedLiteral(self.cur_token,
