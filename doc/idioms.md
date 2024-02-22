@@ -128,7 +128,7 @@ Instead, emit and consume [J8 Notation]($xref:j8-notation):
 - J8 strings are [JSON]($xref) strings, with an upgrade for byte string
   literals
 - [JSON8]($xref) is [JSON]($xref), with this same upgrade
-- [TSV8]($ref) is TSV with this upgrade (not yet implemented)
+- [TSV8]($xref) is TSV with this upgrade (not yet implemented)
 
 Custom parsing and serializing should be limited to "the edges" of your YSH
 programs.

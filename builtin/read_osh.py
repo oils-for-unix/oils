@@ -339,8 +339,6 @@ class Read(vm._Builtin):
         """
         Usage:
 
-          read --line       # sets _reply var
-          read --line (&x)  # sets x
           read --all        # sets _reply
           read --all (&x)   # sets x
 
@@ -371,29 +369,9 @@ class Read(vm._Builtin):
             raise error.Usage('got extra argument', next_loc)
 
         if arg.line:  # read --line is buffered, calls getline()
-
-            # Note that this can interfere with shell CODE on stdin.
-            line = self.stdin_.readline()
-            if len(line) == 0:  # EOF
-                return 1  # 'while read --line' loop
-
-            if not arg.with_eol:
-                if line.endswith('\r\n'):
-                    line = line[:-2]
-                elif line.endswith('\n'):
-                    line = line[:-1]
-
-            #if arg.q:
-            if 0:  # might return as --j8-word, --j8-line, or something
-                try:
-                    line = self._MaybeDecodeLine(line)
-                except error.Parse as e:
-                    self.errfmt.PrettyPrintError(e)
-                    return 1
-
-            #log('place %s', place)
-            self.mem.SetPlace(place, value.Str(line), blame_loc)
-            return 0
+            raise error.Usage(
+                "no longer supports --line; please use read -r instead (unbuffered I/O)",
+                next_loc)
 
         if arg.all:  # read --all
             contents = ReadAll()

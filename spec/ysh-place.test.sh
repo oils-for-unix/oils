@@ -25,7 +25,7 @@
 cat >tmp.sh <<'EOF'
 func f(place) {
   var x = 'f'
-  echo zzz | read --line (place)
+  echo zzz | read --all (place)
   echo "f x=$x"
 }
 
@@ -54,6 +54,7 @@ $SH tmp.sh
 f x=f
 fillPlace x=fillPlace
 p x=zzz
+
 global x=global
 ## END
 
@@ -101,7 +102,7 @@ func g() {
   var place = f()
 
   # Should fail when we try to use the place
-  echo zzz | read --line (place)
+  echo zzz | read --all (place)
 
   # This should also fail
   # call place->setValue('zzz')

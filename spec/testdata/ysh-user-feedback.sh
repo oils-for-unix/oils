@@ -16,10 +16,10 @@ EOF
 }
 
 # With bash-style readarray.  The -t is annoying.
-git-branch-merged | while read --line {
+git-branch-merged | while read -r line {
   # Note: this can't be 'const' because const is dynamic like 'readonly'.  And
   # we don't have block scope.
-  var line = _reply => trim()  # removing leading space
+  var line = line => trim()  # removing leading space
 
   # with glob: line ~~ '\**'           (awkward)
   # with regex: line ~ / %start '*' /  (not terrible, but somewhat complex)
@@ -41,8 +41,8 @@ if (len(branchList) === 0) {
 
 # With "append".  Hm read --lines isn't bad.
 var branches2 = :| |
-git-branch-merged | while read --line {
-  var line2 = _reply => trim()  # removing leading space
+git-branch-merged | while read -r line {
+  var line2 = line => trim()  # removing leading space
   if (line2 !== 'master' and not line2->startsWith('*')) {
     append $line2 (branches2)
   }

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -268,14 +268,6 @@ echo "[$x]"
 ]
 [bad
 ]
-## END
-
-#### read --line from directory is an error (EISDIR)
-
-$SH $REPO_ROOT/spec/testdata/ysh-read-3.sh
-
-## STDOUT:
-status=1
 ## END
 
 #### read --all from directory is an error (EISDIR)

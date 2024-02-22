@@ -7,8 +7,8 @@ seq 3 > tmp.txt
 
 proc read-lines (; out) {
   var lines = []
-  while read --line {
-    append $_reply (lines)
+  while read -r line {
+    append $line (lines)
 
     # Can also be:
     # call lines->append(_reply)
