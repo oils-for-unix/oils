@@ -303,12 +303,26 @@ def GetCType(t, param=False, local=False):
     elif isinstance(t, UnionType):
         # Special case for Optional[T] == Union[T, None]
         if len(t.items) != 2:
-            raise NotImplementedError('Expected Optional, got %s' % t)
+            raise NotImplementedError('Expected 2 items in Union, got %s' %
+                                      len(t.items))
 
-        if not isinstance(t.items[1], NoneTyp):
-            raise NotImplementedError('Expected Optional, got %s' % t)
+        t0 = t.items[0]
+        t1 = t.items[1]
 
-        c_type = GetCType(t.items[0])
+        c_type = None
+        if isinstance(t1, NoneTyp):  # Optional[T0]
+            c_type = GetCType(t.items[0])
+        else:
+            # Detect type alias defined in core/error.py
+            # IOError_OSError = Union[IOError, OSError]
+            t0_name = t0.type.fullname
+            t1_name = t1.type.fullname
+            if t0_name == 'builtins.IOError' and t1_name == 'builtins.OSError':
+                c_type = 'IOError_OSError'
+                is_pointer = True
+
+        if c_type is None:
+            raise NotImplementedError('Unexpected Union type %s' % t)
 
     elif isinstance(t, CallableType):
         # Function types are expanded

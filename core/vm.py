@@ -6,6 +6,7 @@ from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token
 from _devbuild.gen.value_asdl import value, value_t
+from core import error
 from core import pyos
 from mycpp.mylib import log
 
@@ -205,8 +206,8 @@ class _Executor(object):
         # type: (CommandSub) -> str
         return ''
 
-    def PushRedirects(self, redirects):
-        # type: (List[RedirValue]) -> bool
+    def PushRedirects(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> bool
         return True
 
     def PopRedirects(self, num_redirects):

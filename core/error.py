@@ -4,7 +4,11 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
 from _devbuild.gen.value_asdl import (value, value_t, value_str)
 
-from typing import Dict, NoReturn
+from typing import Dict, Union, NoReturn, TYPE_CHECKING
+
+# For storing errors in List[T]
+if TYPE_CHECKING:
+    IOError_OSError = Union[IOError, OSError]
 
 
 def _ValType(val):

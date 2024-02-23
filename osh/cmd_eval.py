@@ -1716,7 +1716,8 @@ class CommandEvaluator(object):
                 status = 1
 
             else:
-                if self.shell_ex.PushRedirects(redirects):
+                err_out = []  # type: List[error.IOError_OSError]
+                if self.shell_ex.PushRedirects(redirects, err_out):
                     # This pops redirects.  There is an asymmetry because applying
                     # redirects can fail.
                     with vm.ctx_Redirect(self.shell_ex, len(redirects)):

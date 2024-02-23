@@ -638,11 +638,11 @@ class ShellExecutor(vm._Executor):
         else:
             raise AssertionError()
 
-    def PushRedirects(self, redirects):
-        # type: (List[RedirValue]) -> bool
+    def PushRedirects(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> bool
         if len(redirects) == 0:  # Optimized to avoid allocs
             return True
-        return self.fd_state.Push(redirects)
+        return self.fd_state.Push(redirects, err_out)
 
     def PopRedirects(self, num_redirects):
         # type: (int) -> None

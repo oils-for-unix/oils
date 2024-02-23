@@ -488,8 +488,8 @@ class FdState(object):
                     posix.write(write_fd, arg.body)
                     posix.close(write_fd)
 
-    def Push(self, redirects):
-        # type: (List[RedirValue]) -> bool
+    def Push(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> bool
         """Apply a group of redirects and remember to undo them."""
 
         #log('> fd_state.Push %s', redirects)
@@ -503,6 +503,8 @@ class FdState(object):
                 try:
                     self._ApplyRedirect(r)
                 except (IOError, OSError) as e:
+                    err_out.append(e)
+                    # This can fail too
                     self.Pop()
                     return False  # for bad descriptor, etc.
         #log('done applying %d redirects', len(redirects))
