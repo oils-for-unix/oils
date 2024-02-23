@@ -94,11 +94,12 @@ class ProcessTest(unittest.TestCase):
 
         cmd_ev = CommandEvaluator()
 
-        self.fd_state.Push([r])
+        err_out = []
+        self.fd_state.Push([r], err_out)
         line1, _ = read_osh._ReadPortion(pyos.NEWLINE_CH, -1, cmd_ev)
         self.fd_state.Pop()
 
-        self.fd_state.Push([r])
+        self.fd_state.Push([r], err_out)
         line2, _ = read_osh._ReadPortion(pyos.NEWLINE_CH, -1, cmd_ev)
         self.fd_state.Pop()
 
