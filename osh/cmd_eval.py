@@ -1738,36 +1738,37 @@ class CommandEvaluator(object):
                         self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                         status = 1  # another redirect word eval error
                         check_errexit = True  # probably not necessary?
-
-            # If it was a real pipeline, compute status from @PIPESTATUS
-            pipe_status = cmd_st.pipe_status
-            # Note: bash/mksh set PIPESTATUS set even on non-pipelines. This
-            # makes it annoying to check both _process_sub_status and
-            # _pipeline_status
-
-            if pipe_status is not None:
-                # Tricky: _DoPipeline sets cmt_st.pipe_status and returns -1
-                # for a REAL pipeline (but not singleton pipelines)
-                assert status == -1, (
-                    "Shouldn't have redir errors when PIPESTATUS (status = %d)"
-                    % status)
-
-                self.mem.SetPipeStatus(pipe_status)
-
-                if self.exec_opts.pipefail():
-                    # The status is that of the last command that is non-zero.
-                    status = 0
-                    for i, st in enumerate(pipe_status):
-                        if st != 0:
-                            status = st
-                            errexit_loc = cmd_st.pipe_locs[i]
-                else:
-                    # The status is that of last command, period.
-                    status = pipe_status[-1]
-
-                if cmd_st.pipe_negated:
-                    status = 1 if status == 0 else 0
         # end with - we've waited for process subs
+
+        # If it was a real pipeline, compute status from ${PIPESTATUS[@]} aka
+        # @_pipeline_status
+        pipe_status = cmd_st.pipe_status
+        # Note: bash/mksh set PIPESTATUS set even on non-pipelines. This
+        # makes it annoying to check both _process_sub_status and
+        # _pipeline_status
+
+        if pipe_status is not None:
+            # Tricky: _DoPipeline sets cmt_st.pipe_status and returns -1
+            # for a REAL pipeline (but not singleton pipelines)
+            assert status == -1, (
+                "Shouldn't have redir errors when PIPESTATUS (status = %d)"
+                % status)
+
+            self.mem.SetPipeStatus(pipe_status)
+
+            if self.exec_opts.pipefail():
+                # The status is that of the last command that is non-zero.
+                status = 0
+                for i, st in enumerate(pipe_status):
+                    if st != 0:
+                        status = st
+                        errexit_loc = cmd_st.pipe_locs[i]
+            else:
+                # The status is that of last command, period.
+                status = pipe_status[-1]
+
+            if cmd_st.pipe_negated:
+                status = 1 if status == 0 else 0
 
         # Compute status from _process_sub_status
         if process_sub_st.codes is None:
