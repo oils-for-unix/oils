@@ -914,6 +914,19 @@ echo len=$[len(_reply)]
 len=1
 ## END
 
+#### decode integer larger than 2^32
+
+json=$(( 1 << 33 ))
+echo $json
+
+echo $json | json read
+pp line (_reply)
+
+## STDOUT:
+8589934592
+(Int)   8589934592
+## END
+
 #### round trip: read/write with ysh
 
 var file = "$REPO_ROOT/spec/testdata/bug.json"

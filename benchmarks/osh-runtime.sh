@@ -377,8 +377,13 @@ soil-run() {
 #
 
 compare-cpython() {
-  local -a a=( ../benchmark-data/osh-runtime/*.broome.2023* )
-  #local -a b=( ../benchmark-data/osh-runtime/*.lenny.2023* )
+  #local -a a=( ../benchmark-data/osh-runtime/*.lenny.2024* )
+  local -a a=( ../benchmark-data/osh-runtime/*.hoover.2024* )
+
+  # More of a diff here?
+  #local -a a=( ../benchmark-data/osh-runtime/*.broome.2023* )
+  # less diff here
+  #local -a a=( ../benchmark-data/osh-runtime/*.lenny.2023* )
 
   local dir=${a[-1]}
 
@@ -394,17 +399,25 @@ compare-cpython() {
 
   set +o errexit
 
+  local out_dir=_tmp/cpython-configure
+  mkdir -p $out_dir
+
   echo 'bash vs. dash'
-  diff -u --recursive $dir/{files-2,files-8} | diffstat
+  diff -u --recursive $dir/{files-2,files-8} > $out_dir/bash-vs-dash.txt
+  diffstat $out_dir/bash-vs-dash.txt
   echo
 
   echo 'bash vs. osh-py'
-  diff -u --recursive $dir/{files-2,files-14} | diffstat
+  diff -u --recursive $dir/{files-2,files-14} > $out_dir/bash-vs-osh-py.txt
+  diffstat $out_dir/bash-vs-osh-py.txt
   echo
 
   echo 'bash vs. osh-cpp'
-  diff -u --recursive $dir/{files-2,files-20} | diffstat
+  diff -u --recursive $dir/{files-2,files-20} > $out_dir/bash-vs-osh-cpp.txt
+  diffstat $out_dir/bash-vs-osh-cpp.txt
   echo
+
+  return
 
   diff -u $dir/{files-2,files-20}/STDOUT.txt
   echo
