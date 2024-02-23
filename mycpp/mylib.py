@@ -41,10 +41,27 @@ class BigInt(int):
     pass
 
 
+def BigIntStr(b):
+    # type: (BigInt) -> str
+    return str(b)
+
+
 # Can't use operator overloading
-def AddBig(a, b):
+
+
+def Add(a, b):
     # type: (BigInt, BigInt) -> BigInt
     return a + b
+
+
+def Subtract(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a - b
+
+
+def ShiftLeft(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a << b
 
 
 def NewDict():

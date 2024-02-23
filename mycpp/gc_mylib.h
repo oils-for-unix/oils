@@ -26,8 +26,18 @@ namespace mylib {
 // from int.
 typedef int64_t BigInt;
 
-inline BigInt AddBig(BigInt a, BigInt b) {
+BigStr* BigIntStr(BigInt b);
+
+inline BigInt Add(BigInt a, BigInt b) {
   return a + b;
+}
+
+inline BigInt Subtract(BigInt a, BigInt b) {
+  return a - b;
+}
+
+inline BigInt ShiftLeft(BigInt a, BigInt b) {
+  return a << b;
 }
 
 void InitCppOnly();
