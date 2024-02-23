@@ -128,7 +128,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   use                    change first word lookup
   [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
-                  write                  print line/arg, has -n, --sep, --end, --
+                  write                  print line/arg, has -n --sep --end --
                   fork   forkwait        Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
                   X dbg                  Only thing that can be used in funcs
