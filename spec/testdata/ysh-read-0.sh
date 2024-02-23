@@ -2,34 +2,34 @@
 echo 'read -r'
 seq 2 | {
   read -r
-  echo reply=$REPLY
+  echo REPLY=$REPLY
 
   read -r
-  echo reply=$REPLY
+  echo REPLY=$REPLY
 }
 echo
 
 echo 'read --line'
 seq 2 | {
   read --line
-  echo line=$_line
+  echo _reply=$_reply
 
   read --line
-  echo line=$_line
+  echo _reply=$_reply
 }
 echo
 
 echo 'Mixed'
 seq 4 | {
   read -r
-  echo reply=$REPLY
+  echo REPLY=$REPLY
 
   read -r
-  echo reply=$REPLY
+  echo REPLY=$REPLY
 
   read --line
-  echo line=$_line
+  echo _reply=$_reply
 
   read -r
-  echo reply=$REPLY
+  echo REPLY=$REPLY
 }
