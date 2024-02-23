@@ -207,8 +207,8 @@ class _Executor(object):
         return ''
 
     def PushRedirects(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> bool
-        return True
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        pass
 
     def PopRedirects(self, num_redirects, err_out):
         # type: (int, List[error.IOError_OSError]) -> None

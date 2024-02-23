@@ -489,7 +489,7 @@ class FdState(object):
                     posix.close(write_fd)
 
     def Push(self, redirects, err_out):
-        # type: (List[RedirValue], List[error.IOError_OSError]) -> bool
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
         """Apply a group of redirects and remember to undo them."""
 
         #log('> fd_state.Push %s', redirects)
@@ -506,9 +506,7 @@ class FdState(object):
                     err_out.append(e)
                     # This can fail too
                     self.Pop(err_out)
-                    return False  # for bad descriptor, etc.
-        #log('done applying %d redirects', len(redirects))
-        return True
+                    return  # for bad descriptor, etc.
 
     def PushStdinFromPipe(self, r):
         # type: (int) -> bool
@@ -539,7 +537,7 @@ class FdState(object):
                     err_out.append(e)
                     log('Error closing descriptor %d: %s', rf.orig_fd,
                         pyutil.strerror(e))
-                    raise
+                    return
             else:
                 try:
                     posix.dup2(rf.saved_fd, rf.orig_fd)
@@ -549,7 +547,7 @@ class FdState(object):
                         pyutil.strerror(e))
                     #log('fd state:')
                     #posix.system('ls -l /proc/%s/fd' % posix.getpid())
-                    raise
+                    return
                 posix.close(rf.saved_fd)
                 #log('dup2 %s %s', saved, orig)
 
@@ -1362,9 +1360,12 @@ class Pipeline(Job):
         r, w = self.last_pipe  # set in AddLast()
         posix.close(w)  # we will not write here
 
-        err_out = []  # type: List[error.IOError_OSError]
-        with ctx_Pipe(fd_state, r, err_out):
+        io_errors = []  # type: List[error.IOError_OSError]
+        with ctx_Pipe(fd_state, r, io_errors):
             cmd_ev.ExecuteAndCatch(last_node)
+        if len(io_errors):
+            e_die('Error setting up last part of pipeline: %s' %
+                  pyutil.strerror(io_errors[0]))
 
         # We won't read anymore.  If we don't do this, then 'cat' in 'cat
         # /dev/urandom | sleep 1' will never get SIGPIPE.

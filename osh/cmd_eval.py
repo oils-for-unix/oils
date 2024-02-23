@@ -71,6 +71,7 @@ from core import error
 from core import executor
 from core.error import e_die, e_die_status
 from core import pyos  # Time().  TODO: rename
+from core import pyutil
 from core import state
 from core import ui
 from core import util
@@ -1717,18 +1718,27 @@ class CommandEvaluator(object):
                 # Error evaluating redirect words
                 status = 1
 
+            # Translation fix: redirect I/O errors may happen in a C++
+            # destructor ~vm::ctx_Redirect, which means they must be signaled
+            # by out params, not exceptions.
+            io_errors = []  # type: List[error.IOError_OSError]
+
             # If we evaluated redirects, apply/push them
             if status == 0:
-                err_out = []  # type: List[error.IOError_OSError]
-                if not self.shell_ex.PushRedirects(redirects, err_out):
-                    # I/O error when applying redirects, e.g. bad file
-                    # descriptor.  TODO: do we need to show err_out?
+                self.shell_ex.PushRedirects(redirects, io_errors)
+                if len(io_errors):
+                    # core/process.py prints cryptic errors, so we repeat them
+                    # here.  e.g. Bad File Descriptor
+                    self.errfmt.PrintMessage(
+                        'I/O error applying redirect: %s' %
+                        pyutil.strerror(io_errors[0]),
+                        self.mem.GetFallbackLocation())
                     status = 1
 
             # If we applied redirects successfully, run the command_t, and pop
             # them.
             if status == 0:
-                with vm.ctx_Redirect(self.shell_ex, len(redirects), err_out):
+                with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
                     try:
                         status = self._Dispatch(node, cmd_st)
                         check_errexit = cmd_st.check_errexit
@@ -1738,6 +1748,12 @@ class CommandEvaluator(object):
                         self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                         status = 1  # another redirect word eval error
                         check_errexit = True  # probably not necessary?
+                if len(io_errors):
+                    # It would be better to point to the right redirect
+                    # operator, but we don't track it specifically
+                    e_die("Fatal error popping redirect: %s" %
+                          pyutil.strerror(io_errors[0]))
+
         # end with - we've waited for process subs
 
         # If it was a real pipeline, compute status from ${PIPESTATUS[@]} aka
@@ -1751,8 +1767,8 @@ class CommandEvaluator(object):
             # Tricky: _DoPipeline sets cmt_st.pipe_status and returns -1
             # for a REAL pipeline (but not singleton pipelines)
             assert status == -1, (
-                "Shouldn't have redir errors when PIPESTATUS (status = %d)"
-                % status)
+                "Shouldn't have redir errors when PIPESTATUS (status = %d)" %
+                status)
 
             self.mem.SetPipeStatus(pipe_status)
 
