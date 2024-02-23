@@ -505,7 +505,7 @@ class FdState(object):
                 except (IOError, OSError) as e:
                     err_out.append(e)
                     # This can fail too
-                    self.Pop()
+                    self.Pop(err_out)
                     return False  # for bad descriptor, etc.
         #log('done applying %d redirects', len(redirects))
         return True
@@ -526,8 +526,8 @@ class FdState(object):
         self._PushDup(r, redir_loc.Fd(0))
         return True
 
-    def Pop(self):
-        # type: () -> None
+    def Pop(self, err_out):
+        # type: (List[error.IOError_OSError]) -> None
         frame = self.stack.pop()
         #log('< Pop %s', frame)
         for rf in reversed(frame.saved):
@@ -536,6 +536,7 @@ class FdState(object):
                 try:
                     posix.close(rf.orig_fd)
                 except (IOError, OSError) as e:
+                    err_out.append(e)
                     log('Error closing descriptor %d: %s', rf.orig_fd,
                         pyutil.strerror(e))
                     raise
@@ -543,6 +544,7 @@ class FdState(object):
                 try:
                     posix.dup2(rf.saved_fd, rf.orig_fd)
                 except (IOError, OSError) as e:
+                    err_out.append(e)
                     log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd,
                         pyutil.strerror(e))
                     #log('fd state:')
@@ -1160,10 +1162,11 @@ class Process(Job):
 
 class ctx_Pipe(object):
 
-    def __init__(self, fd_state, fd):
-        # type: (FdState, int) -> None
+    def __init__(self, fd_state, fd, err_out):
+        # type: (FdState, int, List[error.IOError_OSError]) -> None
         fd_state.PushStdinFromPipe(fd)
         self.fd_state = fd_state
+        self.err_out = err_out
 
     def __enter__(self):
         # type: () -> None
@@ -1171,7 +1174,7 @@ class ctx_Pipe(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.fd_state.Pop()
+        self.fd_state.Pop(self.err_out)
 
 
 class Pipeline(Job):
@@ -1359,7 +1362,8 @@ class Pipeline(Job):
         r, w = self.last_pipe  # set in AddLast()
         posix.close(w)  # we will not write here
 
-        with ctx_Pipe(fd_state, r):
+        err_out = []  # type: List[error.IOError_OSError]
+        with ctx_Pipe(fd_state, r, err_out):
             cmd_ev.ExecuteAndCatch(last_node)
 
         # We won't read anymore.  If we don't do this, then 'cat' in 'cat

@@ -1720,7 +1720,8 @@ class CommandEvaluator(object):
                 if self.shell_ex.PushRedirects(redirects, err_out):
                     # This pops redirects.  There is an asymmetry because applying
                     # redirects can fail.
-                    with vm.ctx_Redirect(self.shell_ex, len(redirects)):
+                    with vm.ctx_Redirect(self.shell_ex, len(redirects),
+                                         err_out):
                         try:
                             status = self._Dispatch(node, cmd_st)
                             check_errexit = cmd_st.check_errexit
