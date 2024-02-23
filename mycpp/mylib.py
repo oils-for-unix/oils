@@ -36,6 +36,17 @@ def MaybeCollect():
     pass
 
 
+class BigInt(int):
+    """In Python, all integers are big.  In C++, only some are."""
+    pass
+
+
+# Can't use operator overloading
+def AddBig(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a + b
+
+
 def NewDict():
     """Make dictionaries ordered in Python, e.g. for JSON.
   

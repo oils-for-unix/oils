@@ -61,7 +61,7 @@ def _GetCTypeForCast(type_expr):
         subtype_name = type_expr.name
 
     # Hack for now
-    if subtype_name != 'int':
+    if subtype_name != 'int' and subtype_name != 'mylib::BigInt':
         subtype_name += '*'
     return subtype_name
 
@@ -223,6 +223,7 @@ def GetCType(t, param=False, local=False):
 
     elif isinstance(t, Instance):
         type_name = t.type.fullname
+        #log('** TYPE NAME %s', type_name)
 
         if type_name == 'builtins.int':
             c_type = 'int'
@@ -254,6 +255,12 @@ def GetCType(t, param=False, local=False):
                 params.append(GetCType(type_param))
             c_type = 'Dict<%s>' % ', '.join(params)
             is_pointer = True
+
+        elif 'mylib.BigInt' in type_name:
+            # also spelled mycpp.mylib.BigInt
+
+            c_type = 'mylib::BigInt'
+            # Not a pointer!
 
         elif type_name == 'typing.IO':
             c_type = 'mylib::File'

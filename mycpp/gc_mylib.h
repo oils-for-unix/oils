@@ -22,6 +22,14 @@ const int kIntBufSize = CHAR_BIT * sizeof(int) / 3 + 3;
 
 namespace mylib {
 
+// TODO: Make it arbitrary size.  Right now it's int64_t, which is distinct
+// from int.
+typedef int64_t BigInt;
+
+inline BigInt AddBig(BigInt a, BigInt b) {
+  return a + b;
+}
+
 void InitCppOnly();
 
 // Wrappers around our C++ APIs
