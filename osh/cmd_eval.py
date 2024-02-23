@@ -1700,6 +1700,9 @@ class CommandEvaluator(object):
         errexit_loc = loc.Missing  # type: loc_t
         check_errexit = True
 
+        status = 0
+
+        # wait() on process subs words
         with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):
             try:
                 redirects = self._EvalRedirects(node)
@@ -1712,63 +1715,66 @@ class CommandEvaluator(object):
                 self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                 redirects = None
 
-            if redirects is None:  # Error evaluating redirect words
+            if redirects is None:
+                # Error evaluating redirect words
                 status = 1
 
-            else:
+            # If we evaluated redirects, apply/push them
+            if status == 0:
                 err_out = []  # type: List[error.IOError_OSError]
-                if self.shell_ex.PushRedirects(redirects, err_out):
-                    # This pops redirects.  There is an asymmetry because applying
-                    # redirects can fail.
-                    with vm.ctx_Redirect(self.shell_ex, len(redirects),
-                                         err_out):
-                        try:
-                            status = self._Dispatch(node, cmd_st)
-                            check_errexit = cmd_st.check_errexit
-                        except error.FailGlob as e:
-                            if not e.HasLocation():  # Last resort!
-                                e.location = self.mem.GetFallbackLocation()
-                            self.errfmt.PrettyPrintError(e,
-                                                         prefix='failglob: ')
-                            status = 1
-                            check_errexit = True  # probably not necessary?
-
-                    # Compute status from @PIPESTATUS
-                    pipe_status = cmd_st.pipe_status
-
-                    if pipe_status is None:
-                        # bash/mksh set PIPESTATUS set even on non-pipelines
-                        # This makes it annoying to check both _process_sub_status and
-                        # _pipeline_status
-                        #self.mem.SetSimplePipeStatus(status)
-                        pass
-
-                    else:  # Did we run a pipeline?
-                        self.mem.SetPipeStatus(pipe_status)
-
-                        if self.exec_opts.pipefail():
-                            # The status is that of the last command that is non-zero.
-                            status = 0
-                            for i, st in enumerate(pipe_status):
-                                if st != 0:
-                                    status = st
-                                    errexit_loc = cmd_st.pipe_locs[i]
-                        else:
-                            # The status is that of last command, period.
-                            status = pipe_status[-1]
-
-                        if cmd_st.pipe_negated:
-                            status = 1 if status == 0 else 0
-
-                    if 0:
-                        if status == 1 and node.tag() == command_e.Simple:
-                            log('node %s', node)
-                        log('node %s status %d PIPE %s',
-                            command_str(node.tag()), status, pipe_status)
-
-                else:
+                if not self.shell_ex.PushRedirects(redirects, err_out):
                     # I/O error when applying redirects, e.g. bad file descriptor.
+                    # TODO: do we need to show err_out?
                     status = 1
+
+            # If we applied redirects successfully, run the command_t, and pop
+            # them.
+            if status == 0:
+                with vm.ctx_Redirect(self.shell_ex, len(redirects),
+                                     err_out):
+                    try:
+                        status = self._Dispatch(node, cmd_st)
+                        check_errexit = cmd_st.check_errexit
+                    except error.FailGlob as e:
+                        if not e.HasLocation():  # Last resort!
+                            e.location = self.mem.GetFallbackLocation()
+                        self.errfmt.PrettyPrintError(e,
+                                                     prefix='failglob: ')
+                        status = 1  # another redirect word eval error
+                        check_errexit = True  # probably not necessary?
+
+                # Compute status from @PIPESTATUS
+                pipe_status = cmd_st.pipe_status
+
+                if pipe_status is None:
+                    # bash/mksh set PIPESTATUS set even on non-pipelines
+                    # This makes it annoying to check both _process_sub_status and
+                    # _pipeline_status
+                    #self.mem.SetSimplePipeStatus(status)
+                    pass
+
+                else:  # Did we run a pipeline?
+                    self.mem.SetPipeStatus(pipe_status)
+
+                    if self.exec_opts.pipefail():
+                        # The status is that of the last command that is non-zero.
+                        status = 0
+                        for i, st in enumerate(pipe_status):
+                            if st != 0:
+                                status = st
+                                errexit_loc = cmd_st.pipe_locs[i]
+                    else:
+                        # The status is that of last command, period.
+                        status = pipe_status[-1]
+
+                    if cmd_st.pipe_negated:
+                        status = 1 if status == 0 else 0
+
+                if 0:
+                    if status == 1 and node.tag() == command_e.Simple:
+                        log('node %s', node)
+                    log('node %s status %d PIPE %s',
+                        command_str(node.tag()), status, pipe_status)
 
         # Compute status from _process_sub_status
         if process_sub_st.codes is None:
