@@ -293,7 +293,6 @@ echo "should not get here: x=${x:-<unset>}"
 ## BUG dash/mksh/zsh status: 0
 
 #### 64-bit integer doesn't overflow
-set -o nounset
 
 a=$(( 1 << 31 ))
 echo $a

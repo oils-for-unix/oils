@@ -777,20 +777,14 @@ class ArithEvaluator(object):
     def EvalWordToString(self, node):
         # type: (arith_expr_t) -> str
         """
-    Args:
-      node: arith_expr_t
+        Raises:
+          error.FatalRuntime if the expression isn't a string
+                             or if it contains a bare variable like a[x]
 
-    Returns:
-      str
+        These are allowed because they're unambiguous, unlike a[x]
 
-    Raises:
-      error.FatalRuntime if the expression isn't a string
-      Or if it contains a bare variable like a[x]
-
-    These are allowed because they're unambiguous, unlike a[x]
-
-    a[$x] a["$x"] a["x"] a['x']
-    """
+        a[$x] a["$x"] a["x"] a['x']
+        """
         UP_node = node
         if node.tag() == arith_expr_e.Word:  # $(( $x )) $(( ${x}${y} )), etc.
             w = cast(CompoundWord, UP_node)

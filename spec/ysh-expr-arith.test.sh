@@ -212,3 +212,31 @@ json write (~'3.5')
 ## status: 3
 ## STDOUT:
 ## END
+
+
+#### 64-bit integer doesn't overflow
+
+# same as spec/arith.test.sh case 38
+
+var a= 1 << 31 
+echo $a
+
+var b = a + a
+echo $b
+
+var c = b + a  
+echo $c
+
+var x = 1 << 62
+var y = x - 1
+echo "max positive = $[ x + y ]"
+
+#echo "overflow $[ x + x ]"
+
+## STDOUT:
+2147483648
+4294967296
+6442450944
+max positive = 9223372036854775807
+## END
+
