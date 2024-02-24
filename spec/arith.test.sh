@@ -317,13 +317,66 @@ max positive = 9223372036854775807
 ## END
 
 # mksh still uses int!
-
 ## BUG mksh STDOUT:
 -2147483648
 0
 -2147483648
 max positive = 2147483647
 ## END
+
+#### More 64-bit ops
+case $SH in dash) exit ;; esac
+
+#shopt -s strict_arith
+
+# This overflows - the extra 9 puts it above 2**31
+#echo $(( 12345678909 ))
+
+[[ 12345678909 = $(( 1 << 30 )) ]]
+echo eq=$?
+[[ 12345678909 = 12345678909 ]]
+echo eq=$?
+
+# Try both [ and [[
+[ 12345678909 -gt $(( 1 << 30 )) ]
+echo greater=$?
+[[ 12345678909 -gt $(( 1 << 30 )) ]]
+echo greater=$?
+
+[[ 12345678909 -ge $(( 1 << 30 )) ]]
+echo ge=$?
+[[ 12345678909 -ge 12345678909 ]]
+echo ge=$?
+
+[[ 12345678909 -le $(( 1 << 30 )) ]]
+echo le=$?
+[[ 12345678909 -le 12345678909 ]]
+echo le=$?
+
+## STDOUT:
+eq=1
+eq=0
+greater=0
+greater=0
+ge=0
+ge=0
+le=1
+le=0
+## END
+## N-I dash STDOUT:
+## END
+## BUG mksh STDOUT:
+eq=1
+eq=0
+greater=1
+greater=1
+ge=1
+ge=0
+le=0
+le=0
+## END
+
+# mksh still uses int!
 
 #### Invalid LValue
 a=9

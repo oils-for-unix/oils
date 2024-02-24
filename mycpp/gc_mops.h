@@ -38,8 +38,36 @@ inline BigInt Mul(BigInt a, BigInt b) {
   return a * b;
 }
 
+inline bool Equal(BigInt a, BigInt b) {
+  return a == b;
+}
+
+inline bool Greater(BigInt a, BigInt b) {
+  return a > b;
+}
+
 inline BigInt LShift(BigInt a, BigInt b) {
   return a << b;
+}
+
+inline BigInt RShift(BigInt a, BigInt b) {
+  return a >> b;
+}
+
+inline BigInt BitAnd(BigInt a, BigInt b) {
+  return a & b;
+}
+
+inline BigInt BitOr(BigInt a, BigInt b) {
+  return a | b;
+}
+
+inline BigInt BitXor(BigInt a, BigInt b) {
+  return a ^ b;
+}
+
+inline BigInt BitNot(BigInt a) {
+  return ~a;
 }
 
 }  // namespace mops

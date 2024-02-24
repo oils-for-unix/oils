@@ -323,6 +323,10 @@ class ArithEvaluator(object):
 
     def _StringToInteger(self, s, blame_loc):
         # type: (str, loc_t) -> int
+        return mops.BigTruncate(self._StringToBigInt(s, blame_loc))
+
+    def _StringToBigInt(self, s, blame_loc):
+        # type: (str, loc_t) -> mops.BigInt
         """Use bash-like rules to coerce a string to an integer.
 
         Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
@@ -341,14 +345,14 @@ class ArithEvaluator(object):
             except ValueError:
                 e_strict('Invalid hex constant %r' % s, blame_loc)
             # TODO: don't truncate
-            return mops.BigTruncate(integer)
+            return integer
 
         if s.startswith('0'):
             try:
                 integer = mops.ToBigInt(s, 8)
             except ValueError:
                 e_strict('Invalid octal constant %r' % s, blame_loc)
-            return mops.BigTruncate(integer)
+            return integer
 
         b, digits = mylib.split_once(s, '#')  # see if it has #
         if digits is not None:
@@ -381,7 +385,7 @@ class ArithEvaluator(object):
                 #integer = integer * base + digit
                 integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
                                    mops.BigInt(digit))
-            return mops.BigTruncate(integer)
+            return integer
 
         try:
             # Normal base 10 integer.  This includes negative numbers like '-42'.
@@ -395,7 +399,7 @@ class ArithEvaluator(object):
 
                 # Special case so we don't get EOF error
                 if len(s.strip()) == 0:
-                    return 0
+                    return mops.BigInt(0)
 
                 # For compatibility: Try to parse it as an expression and evaluate it.
                 a_parser = self.parse_ctx.MakeArithParser(s)
@@ -436,7 +440,7 @@ class ArithEvaluator(object):
                     # 42x is always fatal!
                     e_die("Invalid integer constant %r" % s, blame_loc)
 
-        return mops.BigTruncate(integer)
+        return integer
 
     def _ValToIntOrError(self, val, blame):
         # type: (value_t, arith_expr_t) -> int
@@ -905,8 +909,8 @@ class BoolEvaluator(ArithEvaluator):
                                 errfmt)
         self.always_strict = always_strict
 
-    def _StringToIntegerOrError(self, s, blame_word=None):
-        # type: (str, Optional[word_t]) -> int
+    def _StringToBigIntOrError(self, s, blame_word=None):
+        # type: (str, Optional[word_t]) -> mops.BigInt
         """Used by both [[ $x -gt 3 ]] and (( $x ))."""
         if blame_word:
             location = loc.Word(blame_word)  # type: loc_t
@@ -914,12 +918,12 @@ class BoolEvaluator(ArithEvaluator):
             location = loc.Missing
 
         try:
-            i = self._StringToInteger(s, location)
+            i = self._StringToBigInt(s, location)
         except error.Strict as e:
             if self.always_strict or self.exec_opts.strict_arith():
                 raise
             else:
-                i = 0
+                i = mops.BigInt(0)
         return i
 
     def _EvalCompoundWord(self, word, eval_flags=0):
@@ -1023,22 +1027,21 @@ class BoolEvaluator(ArithEvaluator):
                 if arg_type == bool_arg_type_e.Int:
                     # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
                     # Bash also allows [[ 1+2 -eq 3 ]].
-                    i1 = self._StringToIntegerOrError(s1, blame_word=node.left)
-                    i2 = self._StringToIntegerOrError(s2,
-                                                      blame_word=node.right)
+                    i1 = self._StringToBigIntOrError(s1, blame_word=node.left)
+                    i2 = self._StringToBigIntOrError(s2, blame_word=node.right)
 
                     if op_id == Id.BoolBinary_eq:
-                        return i1 == i2
+                        return mops.Equal(i1, i2)
                     if op_id == Id.BoolBinary_ne:
-                        return i1 != i2
+                        return not mops.Equal(i1, i2)
                     if op_id == Id.BoolBinary_gt:
-                        return i1 > i2
+                        return mops.Greater(i1, i2)
                     if op_id == Id.BoolBinary_ge:
-                        return i1 >= i2
+                        return mops.Greater(i1, i2) or mops.Equal(i1, i2)
                     if op_id == Id.BoolBinary_lt:
-                        return i1 < i2
+                        return mops.Greater(i2, i1)
                     if op_id == Id.BoolBinary_le:
-                        return i1 <= i2
+                        return mops.Greater(i2, i1) or mops.Equal(i1, i2)
 
                     raise AssertionError(op_id)  # should never happen
 
