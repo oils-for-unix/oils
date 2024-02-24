@@ -18,7 +18,7 @@ def run_tests():
     print('a = %d' % a)
 
     # the way to write 1 << 31
-    i1 = mops.ShiftLeft(mops.BigInt(1), mops.BigInt(31))
+    i1 = mops.LShift(mops.BigInt(1), mops.BigInt(31))
     i2 = mops.Add(i1, i1)
     i3 = mops.Add(i2, i1)
 
@@ -30,18 +30,18 @@ def run_tests():
     print('')
 
     # This overflows an int64_t
-    i4 = mops.ShiftLeft(mops.BigInt(1), mops.BigInt(63))
+    i4 = mops.LShift(mops.BigInt(1), mops.BigInt(63))
     #print('i4 = %s' % mops.BigIntStr(i4))
 
     # Max positive   (2 ^ (N-1)) - 1
-    x = mops.ShiftLeft(mops.BigInt(1), mops.BigInt(62))
-    y = mops.Subtract(x, mops.BigInt(1))
+    x = mops.LShift(mops.BigInt(1), mops.BigInt(62))
+    y = mops.Sub(x, mops.BigInt(1))
     max_positive = mops.Add(x, y)
     print('max_positive = %s' % mops.BigIntStr(max_positive))
 
     # Max negative   -2 ^ (N-1)
-    z = mops.Subtract(mops.BigInt(0), x)
-    max_negative = mops.Subtract(z, x)
+    z = mops.Sub(mops.BigInt(0), x)
+    max_negative = mops.Sub(z, x)
     print('max_negative = %s' % mops.BigIntStr(max_negative))
 
     # Round trip from string

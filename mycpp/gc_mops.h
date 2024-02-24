@@ -30,11 +30,11 @@ inline BigInt Add(BigInt a, BigInt b) {
   return a + b;
 }
 
-inline BigInt Subtract(BigInt a, BigInt b) {
+inline BigInt Sub(BigInt a, BigInt b) {
   return a - b;
 }
 
-inline BigInt ShiftLeft(BigInt a, BigInt b) {
+inline BigInt LShift(BigInt a, BigInt b) {
   return a << b;
 }
 

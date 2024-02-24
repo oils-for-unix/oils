@@ -53,37 +53,42 @@ def Add(a, b):
     return a + b
 
 
-def Subtract(a, b):
+def Sub(a, b):
     # type: (BigInt, BigInt) -> BigInt
     return a - b
 
 
-def Multiply(a, b):
+def Mul(a, b):
     # type: (BigInt, BigInt) -> BigInt
     return a * b
 
 
-# Question: does Oils behave like C remainder when it's positive?
-# Then we could be more efficient I think
-
-
-def PositiveDiv(a, b):
+def Div(a, b):
     # type: (BigInt, BigInt) -> BigInt
+    """
+    Divide, for positive integers only
+
+    Question: does Oils behave like C remainder when it's positive?  Then we
+    could be more efficient with a different layering?
+    """
     assert a >= 0 and b >= 0, (a, b)
     return a // b
 
 
-def PositiveMod(a, b):
+def Rem(a, b):
     # type: (BigInt, BigInt) -> BigInt
+    """
+    Remainder, for positive integers only
+    """
     assert a >= 0 and b >= 0, (a, b)
     return a % b
 
 
-def ShiftLeft(a, b):
+def LShift(a, b):
     # type: (BigInt, BigInt) -> BigInt
     return a << b
 
 
-def ShiftRight(a, b):
+def RShift(a, b):
     # type: (BigInt, BigInt) -> BigInt
     return a >> b

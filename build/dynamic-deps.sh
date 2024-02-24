@@ -56,6 +56,8 @@ pylib/collections_.py
 
 # lots of polymorphic stuff etc.
 mycpp/mylib.py
+# BigInt issue?
+mycpp/mops.py
 
 # TODO: move or remove these
 tools/deps.py
