@@ -256,10 +256,10 @@ def GetCType(t, param=False, local=False):
             c_type = 'Dict<%s>' % ', '.join(params)
             is_pointer = True
 
-        elif 'mylib.BigInt' in type_name:
+        elif 'mops.BigInt' in type_name:
             # also spelled mycpp.mylib.BigInt
 
-            c_type = 'mylib::BigInt'
+            c_type = 'mops::BigInt'
             # Not a pointer!
 
         elif type_name == 'typing.IO':

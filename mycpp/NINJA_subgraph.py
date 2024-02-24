@@ -24,6 +24,7 @@ def DefineTargets(ru):
         srcs=[
             'mycpp/bump_leak_heap.cc',
             'mycpp/gc_builtins.cc',
+            'mycpp/gc_mops.cc',
             'mycpp/gc_mylib.cc',
             'mycpp/gc_str.cc',
             'mycpp/hash.cc',
@@ -46,6 +47,7 @@ def DefineTargets(ru):
             'mycpp/gc_heap_test.cc',
             'mycpp/gc_stress_test.cc',
             'mycpp/gc_builtins_test.cc',
+            'mycpp/gc_mops_test.cc',
             'mycpp/gc_mylib_test.cc',
             'mycpp/gc_dict_test.cc',
             'mycpp/gc_list_test.cc',

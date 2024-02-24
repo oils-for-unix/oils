@@ -13,8 +13,8 @@
 #include "mycpp/gc_list.h"
 #include "mycpp/gc_dict.h"
 
+#include "mycpp/gc_mops.h"  // math ops
 #include "mycpp/gc_mylib.h"  // Python-like file I/O, etc.
-                             //
 #include "mycpp/hash.h"
 
 // clang-format on

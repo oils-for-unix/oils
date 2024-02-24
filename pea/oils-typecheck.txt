@@ -48,6 +48,7 @@ core/dev.py
 core/error.py
 core/executor.py
 core/main_loop.py
+core/num.py
 core/optview.py
 core/process.py
 core/pyos.py
