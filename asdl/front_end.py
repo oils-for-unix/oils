@@ -415,6 +415,7 @@ class ASDLParser(object):
 _PRIMITIVE_TYPES = [
     'string',
     'int',
+    'BigInt',
     'float',
     'bool',
 

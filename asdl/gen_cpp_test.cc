@@ -14,6 +14,7 @@ using typed_arith_asdl::arith_expr;    // variant type namespace
 using typed_arith_asdl::arith_expr_e;  // variant tag type
 using typed_arith_asdl::arith_expr_t;  // sum type
 
+using typed_arith_asdl::arith_expr__Big;
 using typed_arith_asdl::arith_expr__Const;
 using typed_arith_asdl::arith_expr__FuncCall;
 using typed_arith_asdl::arith_expr__Unary;
@@ -134,25 +135,32 @@ TEST pretty_print_test() {
   auto w1 = Alloc<typed_demo_asdl::word>(StrFromC("left"));
   auto w2 = Alloc<typed_demo_asdl::word>(StrFromC("right"));
   auto b = Alloc<bool_expr__Binary>(w1, w2);
-  //
-  log("sizeof b = %d", sizeof b);
-  log("");
+
   hnode_t* t1 = b->PrettyTree();
   ASSERT_EQ_FMT(hnode_e::Record, t1->tag(), "%d");
 
   auto f = mylib::Stdout();
   auto ast_f = Alloc<format::TextOutput>(f);
   format::PrintTree(t1, ast_f);
-
-  // typed_arith.asdl
-  auto c = Alloc<arith_expr__Const>(42);
-  hnode_t* t2 = c->PrettyTree();
-  ASSERT_EQ(hnode_e::Record, t2->tag());
+  printf("\n");
 
   log("bool_expr_str = %s", bool_expr_str(b->tag())->data_);
   ASSERT(str_equals0("bool_expr.Binary", bool_expr_str(b->tag())));
 
   ASSERT(str_equals0("Binary", bool_expr_str(b->tag(), false)));
+
+  // typed_arith.asdl
+  auto c = Alloc<arith_expr__Const>(42);
+  hnode_t* t2 = c->PrettyTree();
+  ASSERT_EQ(hnode_e::Record, t2->tag());
+  format::PrintTree(t2, ast_f);
+  printf("\n");
+
+  auto big = Alloc<arith_expr__Big>(mylib::BigInt(INT64_MAX));
+  hnode_t* t3 = big->PrettyTree();
+  ASSERT_EQ(hnode_e::Record, t3->tag());
+  format::PrintTree(t3, ast_f);
+  printf("\n");
 
   PASS();
 }

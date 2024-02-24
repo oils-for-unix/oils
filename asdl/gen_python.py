@@ -13,6 +13,7 @@ _ = log  # shut up lint
 _PRIMITIVES = {
     'string': 'str',
     'int': 'int',
+    'BigInt': 'mylib.BigInt',
     'float': 'float',
     'bool': 'bool',
     'any': 'Any',
@@ -83,6 +84,9 @@ def _DefaultValue(typ, mypy_type):
             return '-1'
 
         if type_name == 'int':
+            return '-1'
+
+        if type_name == 'BigInt':
             return '-1'
 
         if type_name == 'bool':

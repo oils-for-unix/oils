@@ -366,6 +366,7 @@ class InstancePrinter(object):
             elif case(value_e.Int):
                 val = cast(value.Int, UP_val)
                 # TODO: use pyj8.WriteInt(val.i, self.buf)
+                #self.buf.write(mylib.BigIntStr(val.i))
                 self.buf.write(str(val.i))
 
             elif case(value_e.Float):
