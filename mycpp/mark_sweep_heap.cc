@@ -24,7 +24,7 @@ void MarkSweepHeap::Init(int gc_threshold) {
   char* e;
   e = getenv("OILS_GC_THRESHOLD");
   if (e) {
-    int result;
+    int64_t result;
     if (StringToInteger(e, strlen(e), 10, &result)) {
       // Override collection threshold
       gc_threshold_ = result;
@@ -369,7 +369,7 @@ void MarkSweepHeap::PrintStats(int fd) {
 
 // Cleanup at the end of main() to remain ASAN-safe
 void MarkSweepHeap::MaybePrintStats() {
-  int stats_fd = -1;
+  int64_t stats_fd = -1;
   char* e = getenv("OILS_GC_STATS");
   if (e && strlen(e)) {  // env var set and non-empty
     stats_fd = STDERR_FILENO;

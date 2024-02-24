@@ -498,7 +498,7 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     const std::string& lit_s = lit_m.str();
     buf.append(lit_s);
 
-    int width = 0;
+    int64_t width = 0;
     bool zero_pad = false;
     bool pad_back = false;
     const std::csub_match& width_m = match[2];
@@ -519,7 +519,7 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
         pad_back = true;
         width *= -1;
       }
-      DCHECK(width >= 0 && width < kMaxFmtWidth);
+      DCHECK(0 <= width && width < kMaxFmtWidth);
     }
 
     char const* str_to_add = nullptr;

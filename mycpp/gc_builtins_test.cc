@@ -99,26 +99,37 @@ TEST float_test() {
 }
 
 // Wrapper for testing
-bool _StrToInteger(BigStr* s, int* result, int base) {
+bool _StrToInteger(BigStr* s, int64_t* result, int base) {
   return StringToInteger(s->data_, len(s), base, result);
 }
 
 TEST StringToInteger_test() {
-  int i;
+  int64_t i;
   bool ok;
+
+  // Empirically this is 4 4 8 on 32-bit and 4 8 8 on 64-bit
+  // We want the bigger numbers
+#if 0
+  log("sizeof(int) = %d", sizeof(int));
+  log("sizeof(long) = %ld", sizeof(long));
+  log("sizeof(long long) = %ld", sizeof(long long));
+  log("");
+  log("LONG_MAX = %ld", LONG_MAX);
+  log("LLONG_MAX = %lld", LLONG_MAX);
+#endif
 
   ok = _StrToInteger(StrFromC("345"), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT(345, i, "%d");
+  ASSERT_EQ_FMT((int64_t)345, i, "%ld");
 
   // Hack to test slicing.  Truncated "345" at "34".
   ok = _StrToInteger(StrFromC("345", 2), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT(34, i, "%d");
+  ASSERT_EQ_FMT((int64_t)34, i, "%ld");
 
-  ok = _StrToInteger(StrFromC("1234567890"), &i, 10);
+  ok = _StrToInteger(StrFromC("12345678909"), &i, 10);
   ASSERT(ok);
-  ASSERT(i == 1234567890);
+  ASSERT_EQ_FMT((int64_t)12345678909, i, "%ld");
 
   // overflow
   ok = _StrToInteger(StrFromC("12345678901234567890"), &i, 10);

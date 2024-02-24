@@ -118,36 +118,26 @@ BigStr* repr(BigStr* s) {
 }
 
 // Helper for str_to_int() that doesn't use exceptions.
-bool StringToInteger(const char* s, int length, int base, int* result) {
+bool StringToInteger(const char* s, int length, int base, int64_t* result) {
   if (length == 0) {
     return false;  // empty string isn't a valid integer
   }
 
-  // Empirically this is 4 4 8 on 32-bit and 4 8 8 on 64-bit
-  // We want the bigger numbers
-#if 0
-  log("sizeof(int) = %d", sizeof(int));
-  log("sizeof(long) = %ld", sizeof(long));
-  log("sizeof(long long) = %ld", sizeof(long long));
-  log("");
-  log("LONG_MAX = %ld", LONG_MAX);
-  log("LLONG_MAX = %lld", LLONG_MAX);
-#endif
+  // These should be the same type
+  static_assert(sizeof(long long) == sizeof(int64_t));
 
   char* pos;  // mutated by strtol
 
-  long v = strtol(s, &pos, base);
+  errno = 0;
+  long long v = strtoll(s, &pos, base);
 
-  // The problem with long long is that mycpp deals with C++ int
-  // long long v = strtoll(s, &pos, base);
-
-  // log("v = %ld", v);
-
-  switch (v) {
-  case LONG_MIN:
-    return false;  // underflow
-  case LONG_MAX:
-    return false;  // overflow
+  if (errno == ERANGE) {
+    switch (v) {
+    case LLONG_MIN:
+      return false;  // underflow
+    case LLONG_MAX:
+      return false;  // overflow
+    }
   }
 
   const char* end = s + length;
@@ -168,18 +158,9 @@ bool StringToInteger(const char* s, int length, int base, int* result) {
 }
 
 int to_int(BigStr* s, int base) {
-  int i;
+  int64_t i;
   if (StringToInteger(s->data_, len(s), base, &i)) {
-    return i;
-  } else {
-    throw Alloc<ValueError>();
-  }
-}
-
-int to_int(BigStr* s) {
-  int i;
-  if (StringToInteger(s->data_, len(s), 10, &i)) {
-    return i;
+    return i;  // truncated to int
   } else {
     throw Alloc<ValueError>();
   }

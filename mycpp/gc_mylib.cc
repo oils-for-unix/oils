@@ -260,13 +260,24 @@ BigStr* BufWriter::getvalue() {
 // BigInt
 //
 
-static const int kInt64BufSize = 32;  // more than twice as abig as kIntBufSize
-// Similar to str(int i) in gc_builtins
+static const int kInt64BufSize = 32;  // more than twice as big as kIntBufSize
+
+// Copied from gc_builtins - str(int i)
 BigStr* BigIntStr(BigInt b) {
   BigStr* s = OverAllocatedStr(kInt64BufSize);
   int length = snprintf(s->data(), kInt64BufSize, "%ld", b);
   s->MaybeShrink(length);
   return s;
+}
+
+// Copied from gc_builtins - to_int()
+BigInt ToBigInt(BigStr* s, int base) {
+  int64_t i;
+  if (StringToInteger(s->data_, len(s), base, &i)) {
+    return i;
+  } else {
+    throw Alloc<ValueError>();
+  }
 }
 
 }  // namespace mylib

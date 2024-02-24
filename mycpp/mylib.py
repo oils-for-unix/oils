@@ -257,9 +257,11 @@ def str_cmp(s1, s2):
     else:
         return 1
 
+
 #
 # Arbitrary precision integers (currently int64_t, rather than C int)
 #
+
 
 class BigInt(int):
     """In Python, all integers are big.  In C++, only some are."""
@@ -279,6 +281,11 @@ def BigIntToSmall(b):
 def SmallIntToBig(b):
     # type: (int) -> BigInt
     return b
+
+
+def ToBigInt(s, base=10):
+    # type: (str, int) -> BigInt
+    return BigInt(s, base)  # like int(s, base)
 
 
 # Can't use operator overloading
@@ -302,6 +309,7 @@ def Multiply(a, b):
 # Question: does Oils behave like C remainder when it's positive?
 # Then we could be more efficient I think
 
+
 def PositiveDiv(a, b):
     # type: (BigInt, BigInt) -> BigInt
     assert a >= 0 and b >= 0, (a, b)
@@ -322,7 +330,6 @@ def ShiftLeft(a, b):
 def ShiftRight(a, b):
     # type: (BigInt, BigInt) -> BigInt
     return a >> b
-
 
 
 class UniqueObjects(object):

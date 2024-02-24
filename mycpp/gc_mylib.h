@@ -334,6 +334,7 @@ inline Writer* Stderr() {
 typedef int64_t BigInt;
 
 BigStr* BigIntStr(BigInt b);
+BigInt ToBigInt(BigStr* s, int base = 10);
 
 inline int BigIntToSmall(BigInt b) {
   return static_cast<int>(b);
