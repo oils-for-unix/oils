@@ -34,6 +34,10 @@ inline BigInt Sub(BigInt a, BigInt b) {
   return a - b;
 }
 
+inline BigInt Mul(BigInt a, BigInt b) {
+  return a * b;
+}
+
 inline BigInt LShift(BigInt a, BigInt b) {
   return a << b;
 }

@@ -54,6 +54,7 @@ from frontend import consts
 from frontend import match
 from frontend import parse_lib
 from frontend import reader
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, switch, str_cmp
 from osh import bool_stat
@@ -336,26 +337,27 @@ class ArithEvaluator(object):
         """
         if s.startswith('0x'):
             try:
-                integer = int(s, 16)
+                integer = mops.ToBigInt(s, 16)
             except ValueError:
                 e_strict('Invalid hex constant %r' % s, blame_loc)
-            return integer
+            # TODO: don't truncate
+            return mops.BigTruncate(integer)
 
         if s.startswith('0'):
             try:
-                integer = int(s, 8)
+                integer = mops.ToBigInt(s, 8)
             except ValueError:
                 e_strict('Invalid octal constant %r' % s, blame_loc)
-            return integer
+            return mops.BigTruncate(integer)
 
         b, digits = mylib.split_once(s, '#')  # see if it has #
         if digits is not None:
             try:
-                base = int(b)
+                base = int(b)  # machine integer, not BigInt
             except ValueError:
                 e_strict('Invalid base for numeric constant %r' % b, blame_loc)
 
-            integer = 0
+            integer = mops.BigInt(0)
             for ch in digits:
                 if IsLower(ch):
                     digit = ord(ch) - ord('a') + 10
@@ -376,12 +378,14 @@ class ArithEvaluator(object):
                         'Digits %r out of range for base %d' % (digits, base),
                         blame_loc)
 
-                integer = integer * base + digit
-            return integer
+                #integer = integer * base + digit
+                integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
+                                   mops.BigInt(digit))
+            return mops.BigTruncate(integer)
 
         try:
             # Normal base 10 integer.  This includes negative numbers like '-42'.
-            integer = int(s)
+            integer = mops.ToBigInt(s)
         except ValueError:
             # doesn't look like an integer
 
@@ -412,7 +416,7 @@ class ArithEvaluator(object):
                     e_die("Invalid integer constant %r" % s, blame_loc)
 
                 if self.exec_opts.eval_unsafe_arith():
-                    integer = self.EvalToInt(node2)
+                    integer = mops.IntWiden(self.EvalToInt(node2))
                 else:
                     # BoolEvaluator doesn't have parse_ctx or mutable_opts
                     assert self.mutable_opts is not None
@@ -422,7 +426,7 @@ class ArithEvaluator(object):
                     with state.ctx_Option(self.mutable_opts,
                                           [option_i._allow_command_sub],
                                           False):
-                        integer = self.EvalToInt(node2)
+                        integer = mops.IntWiden(self.EvalToInt(node2))
 
             else:
                 if len(s.strip()) == 0 or match.IsValidVarName(s):
@@ -432,7 +436,7 @@ class ArithEvaluator(object):
                     # 42x is always fatal!
                     e_die("Invalid integer constant %r" % s, blame_loc)
 
-        return integer
+        return mops.BigTruncate(integer)
 
     def _ValToIntOrError(self, val, blame):
         # type: (value_t, arith_expr_t) -> int
