@@ -13,7 +13,7 @@ _ = log  # shut up lint
 _PRIMITIVES = {
     'string': 'str',
     'int': 'int',
-    'BigInt': 'mylib.BigInt',
+    'BigInt': 'mops.BigInt',
     'float': 'float',
     'bool': 'bool',
     'any': 'Any',

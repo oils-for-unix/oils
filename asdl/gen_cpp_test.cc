@@ -156,7 +156,7 @@ TEST pretty_print_test() {
   format::PrintTree(t2, ast_f);
   printf("\n");
 
-  auto big = Alloc<arith_expr__Big>(mylib::BigInt(INT64_MAX));
+  auto big = Alloc<arith_expr__Big>(mops::BigInt(INT64_MAX));
   hnode_t* t3 = big->PrettyTree();
   ASSERT_EQ(hnode_e::Record, t3->tag());
   format::PrintTree(t3, ast_f);

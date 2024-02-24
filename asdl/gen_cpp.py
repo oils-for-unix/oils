@@ -53,7 +53,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
 _PRIMITIVES = {
     'string': 'BigStr*',  # declared in containers.h
     'int': 'int',
-    'BigInt': 'mylib::BigInt',
+    'BigInt': 'mops::BigInt',
     'float': 'double',
     'bool': 'bool',
     'any': 'void*',
@@ -197,7 +197,7 @@ def _HNodeExpr(abbrev, typ, var_name):
             code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name
 
         elif type_name == 'BigInt':
-            code_str = 'Alloc<hnode::Leaf>(mylib::BigIntStr(%s), color_e::OtherConst)' % var_name
+            code_str = 'Alloc<hnode::Leaf>(mops::BigIntStr(%s), color_e::OtherConst)' % var_name
 
         elif type_name == 'float':
             code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name
