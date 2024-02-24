@@ -21,7 +21,7 @@ except ImportError:
     import os
     posix = os
 
-from typing import Tuple, Dict, Optional, Iterator, Any, TypeVar, IO, TYPE_CHECKING
+from typing import Tuple, Dict, Optional, Iterator, Any, TypeVar, TYPE_CHECKING
 
 # For conditional translation
 CPP = False

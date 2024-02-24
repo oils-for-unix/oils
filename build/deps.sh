@@ -184,7 +184,7 @@ readonly -a WEDGE_DEPS_FEDORA=(
   # glibc-devel
 )
 
-install-ubuntu-packages() {
+install-debian-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
   set -x  # show what needs sudo
@@ -197,10 +197,18 @@ install-ubuntu-packages() {
   test/spec-bin.sh install-shells-with-apt "$@"
 }
 
+install-ubuntu-packages() {
+  ### Debian and Ubuntu packages are the same; this function is suggested on the wiki
+  install-debian-packages "$@"
+}
+
 wedge-deps-debian() {
   # Install packages without prompt
-  # Debian and Ubuntu packages are the same
-  install-ubuntu-packages -y
+
+  # 2024-02 - there was an Ubuntu update, and we started needing this
+  sudo apt-get -y update
+
+  install-debian-packages -y
 }
 
 wedge-deps-fedora() {
