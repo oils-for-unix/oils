@@ -273,7 +273,7 @@ BigStr* BigIntStr(BigInt b) {
 // Copied from gc_builtins - to_int()
 BigInt ToBigInt(BigStr* s, int base) {
   int64_t i;
-  if (StringToInteger(s->data_, len(s), base, &i)) {
+  if (StringToInt64(s->data_, len(s), base, &i)) {
     return i;
   } else {
     throw Alloc<ValueError>();

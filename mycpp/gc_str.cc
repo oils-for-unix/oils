@@ -7,7 +7,7 @@
 
 #include "mycpp/common.h"
 #include "mycpp/gc_alloc.h"     // NewStr()
-#include "mycpp/gc_builtins.h"  // StringToInteger()
+#include "mycpp/gc_builtins.h"  // StringToInt()
 #include "mycpp/gc_list.h"      // join(), split() use it
 
 GLOBAL_STR(kEmptyString, "");
@@ -498,7 +498,7 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     const std::string& lit_s = lit_m.str();
     buf.append(lit_s);
 
-    int64_t width = 0;
+    int width = 0;
     bool zero_pad = false;
     bool pad_back = false;
     const std::csub_match& width_m = match[2];
@@ -508,11 +508,10 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
       if (width_s[0] == '0') {
         zero_pad = true;
         DCHECK(width_s.size() > 1);
-        ok = StringToInteger(width_s.c_str() + 1, width_s.size() - 1, 10,
-                             &width);
+        ok = StringToInt(width_s.c_str() + 1, width_s.size() - 1, 10, &width);
         DCHECK(ok);
       } else {
-        ok = StringToInteger(width_s.c_str(), width_s.size(), 10, &width);
+        ok = StringToInt(width_s.c_str(), width_s.size(), 10, &width);
         DCHECK(ok);
       }
       if (width < 0) {

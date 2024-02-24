@@ -117,8 +117,49 @@ BigStr* repr(BigStr* s) {
   return result;
 }
 
-// Helper for str_to_int() that doesn't use exceptions.
-bool StringToInteger(const char* s, int length, int base, int64_t* result) {
+// Helper functions that don't use exceptions.
+
+bool StringToInt(const char* s, int length, int base, int* result) {
+  if (length == 0) {
+    return false;  // empty string isn't a valid integer
+  }
+
+  // Note: sizeof(int) is often 4 bytes on both 32-bit and 64-bit
+  //       sizeof(long) is often 4 bytes on both 32-bit but 8 bytes on 64-bit
+  // static_assert(sizeof(long) == 8);
+
+  char* pos;  // mutated by strtol
+
+  errno = 0;
+  long v = strtol(s, &pos, base);
+
+  if (errno == ERANGE) {
+    switch (v) {
+    case LONG_MIN:
+      return false;  // underflow
+    case LONG_MAX:
+      return false;  // overflow
+    }
+  }
+
+  const char* end = s + length;
+  if (pos == end) {
+    *result = v;
+    return true;  // strtol() consumed ALL characters.
+  }
+
+  while (pos < end) {
+    if (!isspace(*pos)) {
+      return false;  // Trailing non-space
+    }
+    pos++;
+  }
+
+  *result = v;
+  return true;  // Trailing space is OK
+}
+
+bool StringToInt64(const char* s, int length, int base, int64_t* result) {
   if (length == 0) {
     return false;  // empty string isn't a valid integer
   }
@@ -158,8 +199,8 @@ bool StringToInteger(const char* s, int length, int base, int64_t* result) {
 }
 
 int to_int(BigStr* s, int base) {
-  int64_t i;
-  if (StringToInteger(s->data_, len(s), base, &i)) {
+  int i;
+  if (StringToInt(s->data_, len(s), base, &i)) {
     return i;  // truncated to int
   } else {
     throw Alloc<ValueError>();
