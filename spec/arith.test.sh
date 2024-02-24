@@ -292,12 +292,39 @@ echo "should not get here: x=${x:-<unset>}"
 ## BUG dash/mksh/zsh stdout: should not get here: x=5
 ## BUG dash/mksh/zsh status: 0
 
-#### Integer Overflow
+#### 64-bit integer doesn't overflow
 set -o nounset
-echo $(( 999999 * 999999 * 999999 * 999999 ))
-## stdout: 999996000005999996000001
-## BUG dash/bash/zsh stdout: -1996229794797103359
-## BUG mksh stdout: -15640831
+
+a=$(( 1 << 31 ))
+echo $a
+
+b=$(( a + a ))
+echo $b
+
+c=$(( b + a ))
+echo $c
+
+x=$(( 1 << 62 ))
+y=$(( x - 1 ))
+echo "max positive = $(( x + y ))"
+
+#echo "overflow $(( x + x ))"
+
+## STDOUT:
+2147483648
+4294967296
+6442450944
+max positive = 9223372036854775807
+## END
+
+# mksh still uses int!
+
+## BUG mksh STDOUT:
+-2147483648
+0
+-2147483648
+max positive = 2147483647
+## END
 
 #### Invalid LValue
 a=9
