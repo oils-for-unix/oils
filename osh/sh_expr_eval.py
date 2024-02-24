@@ -348,8 +348,8 @@ class ArithEvaluator(object):
                 e_strict('Invalid octal constant %r' % s, blame_loc)
             return integer
 
-        if '#' in s:
-            b, digits = mylib.split_once(s, '#')
+        b, digits = mylib.split_once(s, '#')  # see if it has #
+        if digits is not None:
             try:
                 base = int(b)
             except ValueError:

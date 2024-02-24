@@ -1856,6 +1856,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 key_type = GetCType(item_type.items[0])
                 val_type = GetCType(item_type.items[1])
 
+                #log('** %s key_type %s', item_type.items[0], key_type)
+                #log('** %s val_type %s', item_type.items[1], val_type)
+
                 # TODO(StackRoots): k, v
                 self.def_write_ind('  %s %s = it.Key();\n', key_type,
                                    index_items[0].name)

@@ -528,7 +528,7 @@ class PrettyPrinter(object):
 
         # This could be an optimized set an C++ bit set like
         # mark_sweep_heap.h, rather than a Dict
-        self.unique_objs = mylib.UniqueObjects()
+        #self.unique_objs = mylib.UniqueObjects()
 
         # first pass of object ID -> number of times references
 

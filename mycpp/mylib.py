@@ -21,7 +21,7 @@ except ImportError:
     import os
     posix = os
 
-from typing import Tuple, Dict, Optional, Any
+from typing import Tuple, Dict, Optional, Iterator, Any, TypeVar, TYPE_CHECKING
 
 # For conditional translation
 CPP = False
@@ -65,6 +65,7 @@ def ShiftLeft(a, b):
 
 
 def NewDict():
+    # type: () -> Dict[str, Any]
     """Make dictionaries ordered in Python, e.g. for JSON.
   
     In C++, our Dict implementation should be ordered.
@@ -83,15 +84,52 @@ def print_stderr(s):
     print(s, file=sys.stderr)
 
 
-if cStringIO:
-    #BufWriter = cStringIO.StringIO
-    BufLineReader = cStringIO.StringIO
-else:  # Python 3
-    #BufWriter = io.StringIO
-    BufLineReader = io.StringIO
+class LineReader:
+
+    def readline(self):
+        # type: () -> str
+        raise NotImplementedError()
+
+    def close(self):
+        # type: () -> None
+        raise NotImplementedError()
+
+    def isatty(self):
+        # type: () -> bool
+        raise NotImplementedError()
 
 
-class BufWriter:
+if TYPE_CHECKING:
+
+    class BufLineReader(LineReader):
+
+        def __init__(self, s):
+            # type: (str) -> None
+            pass
+else:
+    # Actual runtime
+    if cStringIO:
+        BufLineReader = cStringIO.StringIO
+    else:  # Python 3
+        BufLineReader = io.StringIO
+
+
+class Writer:
+
+    def write(self, s):
+        # type: (str) -> None
+        raise NotImplementedError()
+
+    def flush(self):
+        # type: () -> None
+        raise NotImplementedError()
+
+    def isatty(self):
+        # type: () -> bool
+        raise NotImplementedError()
+
+
+class BufWriter(Writer):
     """Mimic StringIO API, but add clear() so we can reuse objects.
 
     We can also add accelerators for directly writing numbers, to avoid
@@ -107,7 +145,7 @@ class BufWriter:
         self.parts.append(s)
 
     def getvalue(self):
-        # type: (str) -> None
+        # type: () -> str
         return ''.join(self.parts)
 
     def clear(self):
@@ -116,14 +154,17 @@ class BufWriter:
 
 
 def Stdout():
+    # type: () -> Writer
     return sys.stdout
 
 
 def Stderr():
+    # type: () -> Writer
     return sys.stderr
 
 
 def Stdin():
+    # type: () -> LineReader
     return sys.stdin
 
 
@@ -155,7 +196,7 @@ class tagswitch(object):
     """A ContextManager that translates to switch statement over ASDL types."""
 
     def __init__(self, node):
-        # type: (int) -> None
+        # type: (Any) -> None
         self.tag = node.tag()
 
     def __enter__(self):
@@ -171,7 +212,13 @@ class tagswitch(object):
         return self.tag in cases
 
 
+if TYPE_CHECKING:
+    K = TypeVar('K')
+    V = TypeVar('V')
+
+
 def iteritems(d):
+    # type: (Dict[K, V]) -> Iterator[Tuple[K, V]]
     """Make translation a bit easier."""
     return d.iteritems()
 
@@ -323,7 +370,7 @@ if 0:
     kStderr = 2
 
     def writeln(s, fd=kStdout):
-        # type: (str) -> None
+        # type: (str, int) -> None
         """Write a line.  The name is consistent with JavaScript writeln() and Rust.
 
         e.g.
