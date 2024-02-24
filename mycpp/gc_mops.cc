@@ -12,7 +12,7 @@ namespace mops {
 static const int kInt64BufSize = 32;  // more than twice as big as kIntBufSize
 
 // Copied from gc_builtins - str(int i)
-BigStr* BigIntStr(BigInt b) {
+BigStr* ToStr(BigInt b) {
   BigStr* s = OverAllocatedStr(kInt64BufSize);
   int length = snprintf(s->data(), kInt64BufSize, "%ld", b);
   s->MaybeShrink(length);

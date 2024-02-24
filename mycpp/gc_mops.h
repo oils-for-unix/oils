@@ -15,14 +15,14 @@ namespace mops {
 
 typedef int64_t BigInt;
 
-BigStr* BigIntStr(BigInt b);
+BigStr* ToStr(BigInt b);
 BigInt ToBigInt(BigStr* s, int base = 10);
 
-inline int BigIntToSmall(BigInt b) {
+inline int BigTruncate(BigInt b) {
   return static_cast<int>(b);
 }
 
-inline BigInt SmallIntToBig(int b) {
+inline BigInt IntWiden(int b) {
   return static_cast<BigInt>(b);
 }
 

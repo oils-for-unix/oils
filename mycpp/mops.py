@@ -25,24 +25,26 @@ class BigInt(int):
     pass
 
 
-def BigIntStr(b):
+def ToStr(b):
     # type: (BigInt) -> str
     return str(b)
-
-
-def BigIntToSmall(b):
-    # type: (BigInt) -> int
-    return b
-
-
-def SmallIntToBig(b):
-    # type: (int) -> BigInt
-    return b
 
 
 def ToBigInt(s, base=10):
     # type: (str, int) -> BigInt
     return BigInt(s, base)  # like int(s, base)
+
+
+def BigTruncate(b):
+    # type: (BigInt) -> int
+    """Only truncates in C++"""
+    return b
+
+
+def IntWiden(b):
+    # type: (int) -> BigInt
+    """Only widens in C++"""
+    return b
 
 
 # Can't use operator overloading
@@ -84,11 +86,47 @@ def Rem(a, b):
     return a % b
 
 
+def Equal(a, b):
+    # type: (BigInt, BigInt) -> bool
+    return a == b
+
+
+def Greater(a, b):
+    # type: (BigInt, BigInt) -> bool
+    return a > b
+
+
+# GreaterEq, Less, LessEq can all be expressed as the 2 ops above
+
+
 def LShift(a, b):
     # type: (BigInt, BigInt) -> BigInt
+    """
+    Any semantic issues here?  Signed left shift
+    """
     return a << b
 
 
 def RShift(a, b):
     # type: (BigInt, BigInt) -> BigInt
     return a >> b
+
+
+def BitAnd(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a & b
+
+
+def BitOr(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a | b
+
+
+def BitXor(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a ^ b
+
+
+def BitNot(a):
+    # type: (BigInt) -> BigInt
+    return ~a

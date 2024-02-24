@@ -197,7 +197,7 @@ def _HNodeExpr(abbrev, typ, var_name):
             code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name
 
         elif type_name == 'BigInt':
-            code_str = 'Alloc<hnode::Leaf>(mops::BigIntStr(%s), color_e::OtherConst)' % var_name
+            code_str = 'Alloc<hnode::Leaf>(mops::ToStr(%s), color_e::OtherConst)' % var_name
 
         elif type_name == 'float':
             code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name

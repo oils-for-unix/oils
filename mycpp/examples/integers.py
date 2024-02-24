@@ -24,39 +24,39 @@ def run_tests():
 
     # TODO: %d or %ld doesn't work, and won't work when it becomes arbitrary
     # size
-    print('i1 = %s' % mops.BigIntStr(i1))
-    print('i2 = %s' % mops.BigIntStr(i2))
-    print('i3 = %s' % mops.BigIntStr(i3))
+    print('i1 = %s' % mops.ToStr(i1))
+    print('i2 = %s' % mops.ToStr(i2))
+    print('i3 = %s' % mops.ToStr(i3))
     print('')
 
     # This overflows an int64_t
     i4 = mops.LShift(mops.BigInt(1), mops.BigInt(63))
-    #print('i4 = %s' % mops.BigIntStr(i4))
+    #print('i4 = %s' % mops.ToStr(i4))
 
     # Max positive   (2 ^ (N-1)) - 1
     x = mops.LShift(mops.BigInt(1), mops.BigInt(62))
     y = mops.Sub(x, mops.BigInt(1))
     max_positive = mops.Add(x, y)
-    print('max_positive = %s' % mops.BigIntStr(max_positive))
+    print('max_positive = %s' % mops.ToStr(max_positive))
 
     # Max negative   -2 ^ (N-1)
     z = mops.Sub(mops.BigInt(0), x)
     max_negative = mops.Sub(z, x)
-    print('max_negative = %s' % mops.BigIntStr(max_negative))
+    print('max_negative = %s' % mops.ToStr(max_negative))
 
     # Round trip from string
-    s1 = mops.BigIntStr(max_negative)
+    s1 = mops.ToStr(max_negative)
     print('max_negative string = %s' % s1)
 
     max_negative2 = mops.ToBigInt(s1)
-    print('max_negative2 = %s' % mops.BigIntStr(max_negative2))
+    print('max_negative2 = %s' % mops.ToStr(max_negative2))
 
     if max_negative == max_negative2:
         print('round trip equal')
 
-    big = mops.SmallIntToBig(a)
-    print('big = %s' % mops.BigIntStr(big))
-    small = mops.BigIntToSmall(big)
+    big = mops.IntWiden(a)
+    print('big = %s' % mops.ToStr(big))
+    small = mops.BigTruncate(big)
     print('small = %d' % small)
 
 
