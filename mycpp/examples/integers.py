@@ -37,6 +37,12 @@ def run_tests():
     y = mylib.Subtract(x, mylib.BigInt(1))
     max_positive = mylib.Add(x, y)
     print('max_positive = %s' % mylib.BigIntStr(max_positive))
+    print('')
+
+    big = mylib.SmallIntToBig(a)
+    print('big = %s' % mylib.BigIntStr(big))
+    small = mylib.BigIntToSmall(big)
+    print('small = %d' % small)
 
 
 def run_benchmarks():

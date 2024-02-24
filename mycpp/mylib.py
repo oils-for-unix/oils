@@ -36,34 +36,6 @@ def MaybeCollect():
     pass
 
 
-class BigInt(int):
-    """In Python, all integers are big.  In C++, only some are."""
-    pass
-
-
-def BigIntStr(b):
-    # type: (BigInt) -> str
-    return str(b)
-
-
-# Can't use operator overloading
-
-
-def Add(a, b):
-    # type: (BigInt, BigInt) -> BigInt
-    return a + b
-
-
-def Subtract(a, b):
-    # type: (BigInt, BigInt) -> BigInt
-    return a - b
-
-
-def ShiftLeft(a, b):
-    # type: (BigInt, BigInt) -> BigInt
-    return a << b
-
-
 def NewDict():
     # type: () -> Dict[str, Any]
     """Make dictionaries ordered in Python, e.g. for JSON.
@@ -71,6 +43,14 @@ def NewDict():
     In C++, our Dict implementation should be ordered.
     """
     return collections_.OrderedDict()
+
+
+def log(msg, *args):
+    # type: (str, *Any) -> None
+    """Print debug output to stderr."""
+    if args:
+        msg = msg % args
+    print(msg, file=sys.stderr)
 
 
 def print_stderr(s):
@@ -277,13 +257,72 @@ def str_cmp(s1, s2):
     else:
         return 1
 
+#
+# Arbitrary precision integers (currently int64_t, rather than C int)
+#
 
-def log(msg, *args):
-    # type: (str, *Any) -> None
-    """Print debug output to stderr."""
-    if args:
-        msg = msg % args
-    print(msg, file=sys.stderr)
+class BigInt(int):
+    """In Python, all integers are big.  In C++, only some are."""
+    pass
+
+
+def BigIntStr(b):
+    # type: (BigInt) -> str
+    return str(b)
+
+
+def BigIntToSmall(b):
+    # type: (BigInt) -> int
+    return b
+
+
+def SmallIntToBig(b):
+    # type: (int) -> BigInt
+    return b
+
+
+# Can't use operator overloading
+
+
+def Add(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a + b
+
+
+def Subtract(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a - b
+
+
+def Multiply(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a * b
+
+
+# Question: does Oils behave like C remainder when it's positive?
+# Then we could be more efficient I think
+
+def PositiveDiv(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    assert a >= 0 and b >= 0, (a, b)
+    return a // b
+
+
+def PositiveMod(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    assert a >= 0 and b >= 0, (a, b)
+    return a % b
+
+
+def ShiftLeft(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a << b
+
+
+def ShiftRight(a, b):
+    # type: (BigInt, BigInt) -> BigInt
+    return a >> b
+
 
 
 class UniqueObjects(object):

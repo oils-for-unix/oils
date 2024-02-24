@@ -34,15 +34,6 @@ void writeln(BigStr* s, int fd) {
 }
 #endif
 
-static const int kInt64BufSize = 32;  // more than twice as abig as kIntBufSize
-// Similar to str(int i) in gc_builtins
-BigStr* BigIntStr(BigInt b) {
-  BigStr* s = OverAllocatedStr(kInt64BufSize);
-  int length = snprintf(s->data(), kInt64BufSize, "%ld", b);
-  s->MaybeShrink(length);
-  return s;
-}
-
 class MutableStr : public BigStr {};
 
 MutableStr* NewMutableStr(int n) {
@@ -263,6 +254,19 @@ BigStr* BufWriter::getvalue() {
     len_ = -1;
     return s;
   }
+}
+
+//
+// BigInt
+//
+
+static const int kInt64BufSize = 32;  // more than twice as abig as kIntBufSize
+// Similar to str(int i) in gc_builtins
+BigStr* BigIntStr(BigInt b) {
+  BigStr* s = OverAllocatedStr(kInt64BufSize);
+  int length = snprintf(s->data(), kInt64BufSize, "%ld", b);
+  s->MaybeShrink(length);
+  return s;
 }
 
 }  // namespace mylib
