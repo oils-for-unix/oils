@@ -944,7 +944,7 @@ class WordParser(WordEmitter):
                         if (is_ysh_expr or
                                 not self.parse_opts.parse_backslash()):
                             p_die(
-                                "Invalid char escape in $variable expanding \"-string literal (parse_backslash, no verbatims)\n\tOnly allowed: \\\", \\$, or \\\\ to denote \", $, or \\\n\t* use \\\\ to denote a \\ ?\n\t* 'chain'\"different\"$'literals' ?\n\t* (ysh) concat \"- ++ u'- or b'-literals ?",
+                                "Invalid char escape in \"-string literal (parse_backslash, no verbatims)\n\tAllowed: \\\", \\$, or \\\\ to denote \", $, or \\\n\t* use \\\\ to denote a \\ ?\n\t* 'chain'\"different\"$'literals' ?\n\t* (ysh) concat \"- ++ u'- or b'-literals ?",
                                 self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_ysh_expr or not self.parse_opts.parse_dollar():
