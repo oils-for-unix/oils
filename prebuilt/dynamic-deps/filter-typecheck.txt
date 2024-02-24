@@ -2,6 +2,5 @@ __init__.py
 typing.py
 pylib/collections_.py
 mycpp/mylib.py
-mycpp/mops.py
 tools/deps.py
 tools/readlink.py

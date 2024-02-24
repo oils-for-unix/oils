@@ -3,21 +3,16 @@ Math operations, e.g. for arbitrary precision integers
 
 They are currently int64_t, rather than C int, but we want to upgrade to
 heap-allocated integers.
+
+Regular int ops can use the normal operators + - * /, or maybe i_add() if we
+really want.  Does that make code gen harder or worse?
+
+I suppose float ops could be + - * / too, but it feels nicer to develop a
+formal interface?
 """
 from __future__ import print_function
 
-# Rename:
-#
-# mops.big_add()
-# mops.big_lshift()
-#
-# mops.float_add()
-#
-# Regular int ops can use the normal operators, or maybe i_add() if we really
-# want.  That probably slows down code gen.
-
-# I suppose float ops could too, but it feels nicer to develop a formal
-# interface?
+from typing import cast
 
 
 class BigInt(int):
@@ -38,13 +33,13 @@ def ToBigInt(s, base=10):
 def BigTruncate(b):
     # type: (BigInt) -> int
     """Only truncates in C++"""
-    return b
+    return cast(int, b)
 
 
 def IntWiden(b):
     # type: (int) -> BigInt
     """Only widens in C++"""
-    return b
+    return cast(BigInt, b)
 
 
 # Can't use operator overloading
@@ -52,17 +47,17 @@ def IntWiden(b):
 
 def Add(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    return a + b
+    return cast(BigInt, a + b)
 
 
 def Sub(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    return a - b
+    return cast(BigInt, a - b)
 
 
 def Mul(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    return a * b
+    return cast(BigInt, a * b)
 
 
 def Div(a, b):
@@ -74,7 +69,7 @@ def Div(a, b):
     could be more efficient with a different layering?
     """
     assert a >= 0 and b >= 0, (a, b)
-    return a // b
+    return cast(BigInt, a // b)
 
 
 def Rem(a, b):
@@ -83,7 +78,7 @@ def Rem(a, b):
     Remainder, for positive integers only
     """
     assert a >= 0 and b >= 0, (a, b)
-    return a % b
+    return cast(BigInt, a % b)
 
 
 def Equal(a, b):
@@ -104,29 +99,29 @@ def LShift(a, b):
     """
     Any semantic issues here?  Signed left shift
     """
-    return a << b
+    return cast(BigInt, a << b)
 
 
 def RShift(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    return a >> b
+    return cast(BigInt, a >> b)
 
 
 def BitAnd(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    return a & b
+    return cast(BigInt, a & b)
 
 
 def BitOr(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    return a | b
+    return cast(BigInt, a | b)
 
 
 def BitXor(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    return a ^ b
+    return cast(BigInt, a ^ b)
 
 
 def BitNot(a):
     # type: (BigInt) -> BigInt
-    return ~a
+    return cast(BigInt, ~a)

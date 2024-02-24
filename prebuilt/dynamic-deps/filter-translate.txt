@@ -9,6 +9,7 @@ data_lang/py.*
 frontend/py.*\.py
 frontend/consts.py
 frontend/match.py
+mycpp/mops.py
 pgen2/grammar.py
 pgen2/pnode.py
 pylib/path_stat.py

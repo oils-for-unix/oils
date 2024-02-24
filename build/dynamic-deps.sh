@@ -56,8 +56,6 @@ pylib/collections_.py
 
 # lots of polymorphic stuff etc.
 mycpp/mylib.py
-# BigInt issue?
-mycpp/mops.py
 
 # TODO: move or remove these
 tools/deps.py
@@ -86,6 +84,8 @@ data_lang/py.*      # pyj8.py
 frontend/py.*\.py   # py_readline.py ported by hand to C++
 frontend/consts.py  # frontend/consts_gen.py
 frontend/match.py   # frontend/lexer_gen.py
+
+mycpp/mops.py       # Implemented in gc_mops.{h,cC}
 
 pgen2/grammar.py
 pgen2/pnode.py
