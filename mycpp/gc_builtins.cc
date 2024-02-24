@@ -136,10 +136,18 @@ bool StringToInt(const char* s, int length, int base, int* result) {
   if (errno == ERANGE) {
     switch (v) {
     case LONG_MIN:
-      return false;  // underflow
+      return false;  // underflow of long, which may be 64 bits
     case LONG_MAX:
-      return false;  // overflow
+      return false;  // overflow of long
     }
+  }
+
+  // It should ALSO fit in an int, not just a long
+  if (v > INT_MAX) {
+    return false;
+  }
+  if (v < INT_MIN) {
+    return false;
   }
 
   const char* end = s + length;

@@ -846,26 +846,24 @@ TEST test_str_to_int() {
   }
 
   bool caught;
-  if (sizeof(void*) == 4) {
-    int z = 0;
-    caught = false;
-    try {
-      z = to_int(StrFromC("2147483648"));
-      log("z = %d", z);
-    } catch (ValueError*) {
-      caught = true;
-    }
-    ASSERT(caught);
-
-    caught = false;
-    try {
-      z = to_int(StrFromC("-2147483649"));
-      log("z = %d", z);
-    } catch (ValueError*) {
-      caught = true;
-    }
-    ASSERT(caught);
+  int z = 0;
+  caught = false;
+  try {
+    z = to_int(StrFromC("2147483648"));
+    log("z = %d", z);
+  } catch (ValueError*) {
+    caught = true;
   }
+  ASSERT(caught);
+
+  caught = false;
+  try {
+    z = to_int(StrFromC("-2147483649"));
+    log("z = %d", z);
+  } catch (ValueError*) {
+    caught = true;
+  }
+  ASSERT(caught);
 
   PASS();
 }
