@@ -21,7 +21,7 @@ except ImportError:
     import os
     posix = os
 
-from typing import Tuple, Dict, Optional, Iterator, Any, TypeVar, TYPE_CHECKING
+from typing import Tuple, Dict, Optional, Iterator, Any, TypeVar, IO, TYPE_CHECKING
 
 # For conditional translation
 CPP = False
@@ -105,13 +105,24 @@ if TYPE_CHECKING:
 
         def __init__(self, s):
             # type: (str) -> None
-            pass
+            raise NotImplementedError()
+
+    def open(path):
+        # type: (str) -> LineReader
+
+        # TODO: should probably return mylib.File
+        # mylib.open() is currently only used in yaks/yaks_main and
+        # bin.osh_parse
+        raise NotImplementedError()
+
 else:
     # Actual runtime
     if cStringIO:
         BufLineReader = cStringIO.StringIO
     else:  # Python 3
         BufLineReader = io.StringIO
+
+    open = open
 
 
 class Writer:
@@ -166,10 +177,6 @@ def Stderr():
 def Stdin():
     # type: () -> LineReader
     return sys.stdin
-
-
-# mylib.open is the builtin, but we have different static types mylib.pyi
-open = open
 
 
 class switch(object):
