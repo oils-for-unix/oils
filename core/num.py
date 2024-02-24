@@ -1,19 +1,30 @@
 """num.py - math functions"""
 from __future__ import print_function
 
+from mycpp import mops
+
 
 def Exponent(x, y):
-    # type: (int, int) -> int
-    assert y >= 0, 'checked by caller'
+    # type: (mops.BigInt, mops.BigInt) -> mops.BigInt
 
-    result = 1
-    for i in xrange(y):
-        result *= x
+    # TODO: can we avoid this?
+    y_int = mops.BigTruncate(y)
+
+    assert y_int >= 0, 'checked by caller'
+
+    result = mops.BigInt(1)
+    for i in xrange(y_int):
+        result = mops.Mul(result, x)
     return result
 
 
-def IntDivide(x, y):
+def Exponent2(x, y):
     # type: (int, int) -> int
+    return mops.BigTruncate(Exponent(mops.IntWiden(x), mops.IntWiden(y)))
+
+
+def IntDivide(x, y):
+    # type: (mops.BigInt, mops.BigInt) -> mops.BigInt
     """
     Implementation that only uses the host language (Python or C++) to divide
     non-negative numbers.  Python rounds toward negative infinity, while C++
@@ -23,25 +34,31 @@ def IntDivide(x, y):
     """
     assert y != 0, 'checked by caller'
 
+    ZERO = mops.BigInt(0)
     sign = 1
 
-    if x < 0:
-        ax = -x
+    if mops.Greater(ZERO, x):
+        ax = mops.Negate(x)
         sign = -1
     else:
         ax = x
 
-    if y < 0:
-        ay = -y
-        sign *= -1
+    if mops.Greater(ZERO, y):
+        ay = mops.Negate(y)
+        sign = -sign
     else:
         ay = y
 
-    return sign * (ax / ay)
+    return mops.Mul(mops.IntWiden(sign), mops.Div(ax, ay))
+
+
+def IntDivide2(x, y):
+    # type: (int, int) -> int
+    return mops.BigTruncate(IntDivide(mops.IntWiden(x), mops.IntWiden(y)))
 
 
 def IntRemainder(x, y):
-    # type: (int, int) -> int
+    # type: (mops.BigInt, mops.BigInt) -> mops.BigInt
     """
     Implementation that only uses the host language (Python or C++) to divide
     non-negative numbers.
@@ -53,17 +70,24 @@ def IntRemainder(x, y):
     """
     assert y != 0, 'checked by caller'
 
-    if x < 0:
-        ax = -x
+    ZERO = mops.BigInt(0)
+
+    if mops.Greater(ZERO, x):
+        ax = mops.Negate(x)
         sign = -1
     else:
         ax = x
         sign = 1
 
-    if y < 0:
-        ay = -y
+    if mops.Greater(ZERO, y):
+        ay = mops.Negate(y)
     else:
         ay = y
 
     # Only use host language % on non-negative numbers.  Apply sign afteward.
-    return sign * (ax % ay)
+    return mops.Mul(mops.IntWiden(sign), mops.Rem(ax, ay))
+
+
+def IntRemainder2(x, y):
+    # type: (int, int) -> int
+    return mops.BigTruncate(IntRemainder(mops.IntWiden(x), mops.IntWiden(y)))

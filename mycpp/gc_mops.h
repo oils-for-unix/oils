@@ -5,6 +5,8 @@
 
 #include <stdint.h>
 
+#include "mycpp/common.h"  // DCHECK
+
 class BigStr;
 
 namespace mops {
@@ -30,6 +32,10 @@ inline BigInt FromBool(bool b) {
   return b ? BigInt(1) : BigInt(0);
 }
 
+inline BigInt Negate(BigInt b) {
+  return -b;
+}
+
 inline BigInt Add(BigInt a, BigInt b) {
   return a + b;
 }
@@ -40,6 +46,22 @@ inline BigInt Sub(BigInt a, BigInt b) {
 
 inline BigInt Mul(BigInt a, BigInt b) {
   return a * b;
+}
+
+inline BigInt Div(BigInt a, BigInt b) {
+  // Is the behavior of negative values defined in C++?  Avoid difference with
+  // Python.
+  DCHECK(a >= 0);
+  DCHECK(b >= 0);
+  return a / b;
+}
+
+inline BigInt Rem(BigInt a, BigInt b) {
+  // Is the behavior of negative values defined in C++?  Avoid difference with
+  // Python.
+  DCHECK(a >= 0);
+  DCHECK(b >= 0);
+  return a % b;
 }
 
 inline bool Equal(BigInt a, BigInt b) {

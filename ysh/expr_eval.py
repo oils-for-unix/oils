@@ -538,20 +538,20 @@ class ExprEvaluator(object):
                     # Disallow this to remove confusion between modulus and remainder
                     raise error.Expr("Divisor can't be negative", op)
 
-                return value.Int(num.IntRemainder(i1, i2))
+                return value.Int(num.IntRemainder2(i1, i2))
 
             # a // b   setvar a //= b
             elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
                 if i2 == 0:
                     raise error.Expr('Divide by zero', op)
-                return value.Int(num.IntDivide(i1, i2))
+                return value.Int(num.IntDivide2(i1, i2))
 
             # a ** b   setvar a **= b (ysh only)
             elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
                 # Same as sh_expr_eval.py
                 if i2 < 0:
                     raise error.Expr("Exponent can't be a negative number", op)
-                return value.Int(num.Exponent(i1, i2))
+                return value.Int(num.Exponent2(i1, i2))
 
             # Bitwise
             elif case(Id.Arith_Amp, Id.Arith_AmpEqual):

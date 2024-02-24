@@ -51,6 +51,11 @@ def FromBool(b):
 # Can't use operator overloading
 
 
+def Negate(b):
+    # type: (BigInt) -> BigInt
+    return cast(BigInt, -b)
+
+
 def Add(a, b):
     # type: (BigInt, BigInt) -> BigInt
     return cast(BigInt, a + b)

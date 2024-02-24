@@ -616,14 +616,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_SlashEqual:
                     if mops.Equal(rhs_big, ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_int = num.IntDivide(old_int, rhs)
-                    new_big = mops.IntWiden(new_int)  # TODO: BigInt
+                    new_big = num.IntDivide(old_big, rhs_big)
 
                 elif op_id == Id.Arith_PercentEqual:
                     if rhs == 0:
                         e_die('Divide by zero')  # TODO: location
-                    new_int = num.IntRemainder(old_int, rhs)
-                    new_big = mops.IntWiden(new_int)  # TODO: BigInt
+                    new_big = num.IntRemainder(old_big, rhs_big)
 
                 elif op_id == Id.Arith_DGreatEqual:
                     new_big = mops.RShift(old_big, rhs_big)
@@ -743,21 +741,18 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_Slash:
                     if mops.Equal(rhs_big, ZERO):
                         e_die('Divide by zero', loc.Arith(node.right))
-                    ret = num.IntDivide(lhs, rhs)
-                    result = mops.IntWiden(ret)  # TODO: big
+                    result = num.IntDivide(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_Percent:
                     if mops.Equal(rhs_big, ZERO):
                         e_die('Divide by zero', loc.Arith(node.right))
-                    ret = num.IntRemainder(lhs, rhs)
-                    result = mops.IntWiden(ret)  # TODO: big
+                    result = num.IntRemainder(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DStar:
                     if mops.Greater(ZERO, rhs_big):
                         e_die("Exponent can't be a negative number",
                               loc.Arith(node.right))
-                    ret = num.Exponent(lhs, rhs)
-                    result = mops.IntWiden(ret)  # TODO: big
+                    result = num.Exponent(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DEqual:
                     result = mops.FromBool(mops.Equal(lhs_big, rhs_big))
