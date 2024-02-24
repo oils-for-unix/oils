@@ -1056,12 +1056,11 @@ class CommandEvaluator(object):
                 arg = 0
             else:
                 try:
-                    # They all take integers.  NOTE: dash is the only shell that
-                    # disallows -1!  Others wrap to 255.
-                    arg = int(str_val.s)
+                    arg = int(str_val.s)  # all control flow takes an integer
                 except ValueError:
+                    # Either a bad argument, or integer overflow
                     e_die(
-                        '%r expected a number, got %r' %
+                        '%r expected a small integer, got %r' %
                         (lexer.TokenVal(keyword), str_val.s),
                         loc.Word(node.arg_word))
         else:

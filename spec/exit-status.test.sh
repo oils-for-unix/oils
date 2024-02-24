@@ -1,3 +1,6 @@
+## oils_failures_allowed: 3
+## compare_shells: bash dash mksh
+
 # Test numbers bigger than 255 (2^8 - 1) and bigger than 2^31 - 1
 # Shells differ in their behavior here.  bash silently converts.
 
@@ -83,7 +86,7 @@ status=257
 
 filter_err() {
   # check for bash/dash/mksh messages, and unwanted Python OverflowError
-  egrep -o 'Illegal number|bad number|return: can only|OverflowError'
+  egrep -o 'Illegal number|bad number|return: can only|expected a small integer|OverflowError'
   return 0
 }
 
@@ -107,12 +110,14 @@ cat err.txt | filter_err
 ## STDOUT:
 ## END
 
-# Other shells check this error, but let's just truncate deterministically
+# osh-cpp checks overflow, but osh-py doesn't
 
 ## STDOUT:
 status=255
-status=0
 status=1
+expected a small integer
+status=1
+expected a small integer
 ## END
 
 # dash uses '2' as its "bad status" status!
@@ -152,7 +157,7 @@ return: can only
 
 filter_err() {
   # check for bash/dash/mksh messages, and unwanted Python OverflowError
-  egrep -o 'Illegal number|bad number|return: can only|OverflowError'
+  egrep -o 'Illegal number|bad number|return: can only|expected a small integer|OverflowError'
   return 0
 }
 
@@ -173,8 +178,10 @@ cat err.txt | filter_err
 
 ## STDOUT:
 status=255
-status=0
 status=1
+expected a small integer
+status=1
+expected a small integer
 ## END
 
 ## OK dash STDOUT:
@@ -185,7 +192,7 @@ status=2
 Illegal number
 ## END
 
-# bash truncates it to 0 here
+# bash truncates it to 0 here, I guess it's using 64 bit integers
 ## OK bash STDOUT:
 status=255
 status=0

@@ -420,8 +420,7 @@ strict-options() {
 }
 
 exit-status() {
-  sh-spec spec/exit-status.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file exit-status "$@"
 }
 
 errexit() {
