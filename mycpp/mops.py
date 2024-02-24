@@ -42,6 +42,12 @@ def IntWiden(b):
     return cast(BigInt, b)
 
 
+def FromBool(b):
+    # type: (bool) -> BigInt
+    """Only widens in C++"""
+    return BigInt(1) if b else BigInt(0)
+
+
 # Can't use operator overloading
 
 

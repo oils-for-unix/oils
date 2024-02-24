@@ -26,6 +26,10 @@ inline BigInt IntWiden(int b) {
   return static_cast<BigInt>(b);
 }
 
+inline BigInt FromBool(bool b) {
+  return b ? BigInt(1) : BigInt(0);
+}
+
 inline BigInt Add(BigInt a, BigInt b) {
   return a + b;
 }
