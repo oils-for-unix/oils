@@ -321,10 +321,6 @@ class ArithEvaluator(object):
         # type: () -> None
         assert self.word_ev is not None
 
-    def _StringToInteger(self, s, blame_loc):
-        # type: (str, loc_t) -> int
-        return mops.BigTruncate(self._StringToBigInt(s, blame_loc))
-
     def _StringToBigInt(self, s, blame_loc):
         # type: (str, loc_t) -> mops.BigInt
         """Use bash-like rules to coerce a string to an integer.
@@ -443,7 +439,7 @@ class ArithEvaluator(object):
         return integer
 
     def _ValToIntOrError(self, val, blame):
-        # type: (value_t, arith_expr_t) -> int
+        # type: (value_t, arith_expr_t) -> mops.BigInt
         try:
             UP_val = val
             with tagswitch(val) as case:
@@ -455,18 +451,18 @@ class ArithEvaluator(object):
 
                 elif case(value_e.Int):
                     val = cast(value.Int, UP_val)
-                    return val.i
+                    return mops.IntWiden(val.i)
 
                 elif case(value_e.Str):
                     val = cast(value.Str, UP_val)
                     # calls e_strict
-                    return self._StringToInteger(val.s, loc.Arith(blame))
+                    return self._StringToBigInt(val.s, loc.Arith(blame))
 
         except error.Strict as e:
             if self.exec_opts.strict_arith():
                 raise
             else:
-                return 0
+                return mops.BigInt(0)
 
         # Arrays and associative arrays always fail -- not controlled by
         # strict_arith.
@@ -477,7 +473,7 @@ class ArithEvaluator(object):
             ui.ValType(val), loc.Arith(blame))
 
     def _EvalLhsAndLookupArith(self, node):
-        # type: (arith_expr_t) -> Tuple[int, sh_lvalue_t]
+        # type: (arith_expr_t) -> Tuple[mops.BigInt, sh_lvalue_t]
         """ For x = y  and   x += y  and  ++x """
 
         lval = self.EvalArithLhs(node)
@@ -521,7 +517,7 @@ class ArithEvaluator(object):
             if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
                 val = word_eval.DecayArray(val)
 
-        i = self._ValToIntOrError(val, node)
+        i = mops.BigTruncate(self._ValToIntOrError(val, node))
         return i
 
     def Eval(self, node):
@@ -561,7 +557,8 @@ class ArithEvaluator(object):
                 node = cast(arith_expr.UnaryAssign, UP_node)
 
                 op_id = node.op_id
-                old_int, lval = self._EvalLhsAndLookupArith(node.child)
+                old_big, lval = self._EvalLhsAndLookupArith(node.child)
+                old_int = mops.BigTruncate(old_big)
 
                 if op_id == Id.Node_PostDPlus:  # post-increment
                     new_int = old_int + 1
@@ -599,7 +596,8 @@ class ArithEvaluator(object):
                     self._Store(lval, rhs_int)
                     return value.Int(rhs_int)
 
-                old_int, lval = self._EvalLhsAndLookupArith(node.left)
+                old_big, lval = self._EvalLhsAndLookupArith(node.left)
+                old_int = mops.BigTruncate(old_big)
                 rhs = self.EvalToInt(node.right)
 
                 if op_id == Id.Arith_PlusEqual:
