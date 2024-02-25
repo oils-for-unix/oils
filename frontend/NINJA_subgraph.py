@@ -145,7 +145,8 @@ def NinjaGraph(ru):
     # if TYPE_CHECKING:
     #    from _devbuild.gen.value_asdl import value_t
     #
-    # In C++, it creates a forward declaration of namespace value_asdl { class value_t }
+    # In C++, it creates a forward declaration in the header namespace value_asdl { class value_t }
+    # But an #include in the .cc file, I guess for pretty printing?  Yes
     #
     # Questions:
     # - Do we need the deps at all?  We have different deps
@@ -156,7 +157,18 @@ def NinjaGraph(ru):
     # - What will we do when we switch to tagged pointers?  Then we can't
     # forward declare?
 
-    ru.asdl_library('frontend/syntax.asdl', deps=['//frontend/id_kind.asdl'])
+    ru.asdl_library(
+        'frontend/syntax.asdl',
+        deps=[
+            # #include in header file
+            # Problem: asdl_main.py hard-codes this dependency
+            '//frontend/id_kind.asdl',
+
+            # This is a circular dep.
+            # Hm it did not create a problem?  I guess only cc_library() deps
+            # can't be circular?
+            '//core/value.asdl',
+        ])
 
     ru.cc_binary('frontend/syntax_asdl_test.cc',
                  deps=['//frontend/syntax.asdl'],
