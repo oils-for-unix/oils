@@ -855,7 +855,7 @@ class Parser(_Parser):
         elif self.tok_id == Id.J8_Int:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Int(mops.ToBigInt(part))
+            return value.Int(mops.FromStr(part))
 
         elif self.tok_id == Id.J8_Float:
             part = self.s[self.start_pos:self.end_pos]

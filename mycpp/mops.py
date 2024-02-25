@@ -25,7 +25,7 @@ def ToStr(b):
     return str(b)
 
 
-def ToBigInt(s, base=10):
+def FromStr(s, base=10):
     # type: (str, int) -> BigInt
     return BigInt(s, base)  # like int(s, base)
 

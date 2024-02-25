@@ -165,7 +165,7 @@ class Int(vm._Callable):
                     raise error.Expr('Cannot convert %s to Int' % val.s,
                                      rd.BlamePos())
 
-                return value.Int(mops.ToBigInt(val.s))
+                return value.Int(mops.FromStr(val.s))
 
         raise error.TypeErr(val, 'int() expected Bool, Int, Float, or Str',
                             rd.BlamePos())

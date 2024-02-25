@@ -299,7 +299,7 @@ class SetToInt(_ArgAction):
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
         try:
-            i = mops.ToBigInt(arg)
+            i = mops.FromStr(arg)
         except ValueError:
             e_usage(
                 'expected integer after %s, got %r' % ('-' + self.name, arg),

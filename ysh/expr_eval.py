@@ -392,16 +392,16 @@ class ExprEvaluator(object):
 
         id_ = node.c.id
         if id_ == Id.Expr_DecInt:
-            return value.Int(mops.ToBigInt(c_under))
+            return value.Int(mops.FromStr(c_under))
         if id_ == Id.Expr_BinInt:
             assert c_under[:2] in ('0b', '0B'), c_under
-            return value.Int(mops.ToBigInt(c_under[2:], 2))
+            return value.Int(mops.FromStr(c_under[2:], 2))
         if id_ == Id.Expr_OctInt:
             assert c_under[:2] in ('0o', '0O'), c_under
-            return value.Int(mops.ToBigInt(c_under[2:], 8))
+            return value.Int(mops.FromStr(c_under[2:], 8))
         if id_ == Id.Expr_HexInt:
             assert c_under[:2] in ('0x', '0X'), c_under
-            return value.Int(mops.ToBigInt(c_under[2:], 16))
+            return value.Int(mops.FromStr(c_under[2:], 16))
 
         if id_ == Id.Expr_Float:
             # Note: float() in mycpp/gc_builtins.py currently uses strtod
@@ -425,7 +425,7 @@ class ExprEvaluator(object):
             return num.ToBig(ord(consts.LookupCharC(node.c.tval[1])))
         if id_ == Id.Char_UBraced:
             s = node.c.tval[3:-1]  # \u{123}
-            return value.Int(mops.ToBigInt(s, 16))
+            return value.Int(mops.FromStr(s, 16))
         if id_ == Id.Char_Pound:
             # TODO: accept UTF-8 code point instead of single byte
             byte = node.c.tval[2]  # the a in #'a'

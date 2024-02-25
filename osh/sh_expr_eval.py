@@ -337,7 +337,7 @@ class ArithEvaluator(object):
         """
         if s.startswith('0x'):
             try:
-                integer = mops.ToBigInt(s, 16)
+                integer = mops.FromStr(s, 16)
             except ValueError:
                 e_strict('Invalid hex constant %r' % s, blame_loc)
             # TODO: don't truncate
@@ -345,7 +345,7 @@ class ArithEvaluator(object):
 
         if s.startswith('0'):
             try:
-                integer = mops.ToBigInt(s, 8)
+                integer = mops.FromStr(s, 8)
             except ValueError:
                 e_strict('Invalid octal constant %r' % s, blame_loc)
             return integer
@@ -385,7 +385,7 @@ class ArithEvaluator(object):
 
         try:
             # Normal base 10 integer.  This includes negative numbers like '-42'.
-            integer = mops.ToBigInt(s)
+            integer = mops.FromStr(s)
         except ValueError:
             # doesn't look like an integer
 

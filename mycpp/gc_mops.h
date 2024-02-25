@@ -18,7 +18,7 @@ namespace mops {
 typedef int64_t BigInt;
 
 BigStr* ToStr(BigInt b);
-BigInt ToBigInt(BigStr* s, int base = 10);
+BigInt FromStr(BigStr* s, int base = 10);
 
 inline int BigTruncate(BigInt b) {
   return static_cast<int>(b);
