@@ -58,6 +58,17 @@ class LibStrTest(unittest.TestCase):
             self.assertEqual(codepoint, codepoint)
             end = start
 
+    def test_DecodeUtf8CharError(self):
+        CASES = [
+            ('Incomplete UTF-8 character', '\xC0'),
+            ('Invalid UTF-8 continuation byte', '\xC0\x01'),
+            ('Invalid start of UTF-8 character', '\xff'),
+        ]
+        for msg, input in CASES:
+            with self.assertRaises(error.Expr) as ctx:
+                string_ops.DecodeUtf8Char(input, 0)
+            self.assertEqual(ctx.exception.msg, msg)
+
     def test_PreviousUtf8Char(self):
         # The error messages could probably be improved for more consistency
         # with NextUtf8Char, at the expense of more complexity.

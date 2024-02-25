@@ -27,6 +27,7 @@ from typing import List, Tuple
 
 _ = log
 
+
 # TODO: Add details of the invalid character/byte here?
 
 INCOMPLETE_CHAR = 'Incomplete UTF-8 character'
@@ -58,13 +59,13 @@ def _ReadOneUnit(s, cursor):
     # type: (str, int) -> Tuple[int, int]
     """Helper for DecodeUtf8Char"""
     if cursor >= len(s):
-        e_strict(INCOMPLETE_CHAR, loc.Missing)
+        raise error.Expr(INCOMPLETE_CHAR, loc.Missing)
 
     b = ord(s[cursor])
     cursor += 1
 
     if b & 0b11000000 != 0b10000000:
-        e_strict(INVALID_CONT, loc.Missing)
+        raise error.Expr(INVALID_CONT, loc.Missing)
 
     return b & 0b00111111, cursor
 
@@ -444,7 +445,6 @@ def _PatSubAll(s, regex, replace_str):
 
 
 class GlobReplacer(object):
-
     def __init__(self, regex, replace_str, slash_tok):
         # type: (str, str, Token) -> None
 
