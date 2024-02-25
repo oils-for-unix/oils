@@ -130,7 +130,7 @@ def _ConvertToNumber(val):
 
 
 def _ConvertForBinaryOp(left, right):
-    # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
+    # type: (value_t, value_t) -> Tuple[coerced_t, mops.BigInt, mops.BigInt, float, float]
     """
     Returns one of
       value_e.Int or value_e.Float
@@ -138,27 +138,26 @@ def _ConvertForBinaryOp(left, right):
 
     To indicate which values the operation should be done on
     """
-    c1, i1_big, f1 = _ConvertToNumber(left)
-    c2, i2_big, f2 = _ConvertToNumber(right)
+    c1, i1, f1 = _ConvertToNumber(left)
+    c2, i2, f2 = _ConvertToNumber(right)
 
-    i1 = mops.BigTruncate(i1_big)
-    i2 = mops.BigTruncate(i2_big)
+    nope = mops.MINUS_ONE
 
     if c1 == coerced_e.Int and c2 == coerced_e.Int:
         return coerced_e.Int, i1, i2, -1.0, -1.0
 
     elif c1 == coerced_e.Int and c2 == coerced_e.Float:
-        return coerced_e.Float, -1, -1, float(i1), f2
+        return coerced_e.Float, nope, nope, mops.ToFloat(i1), f2
 
     elif c1 == coerced_e.Float and c2 == coerced_e.Int:
-        return coerced_e.Float, -1, -1, f1, float(i2)
+        return coerced_e.Float, nope, nope, f1, mops.ToFloat(i2)
 
     elif c1 == coerced_e.Float and c2 == coerced_e.Float:
-        return coerced_e.Float, -1, -1, f1, f2
+        return coerced_e.Float, nope, nope, f1, f2
 
     else:
         # No operation is valid
-        return coerced_e.Neither, -1, -1, -1.0, -1.0
+        return coerced_e.Neither, nope, nope, -1.0, -1.0
 
 
 class ExprEvaluator(object):
@@ -498,15 +497,15 @@ class ExprEvaluator(object):
         if c == coerced_e.Int:
             with switch(op_id) as case:
                 if case(Id.Arith_Plus, Id.Arith_PlusEqual):
-                    return num.ToBig(i1 + i2)
+                    return value.Int(mops.Add(i1, i2))
                 elif case(Id.Arith_Minus, Id.Arith_MinusEqual):
-                    return num.ToBig(i1 - i2)
+                    return value.Int(mops.Sub(i1, i2))
                 elif case(Id.Arith_Star, Id.Arith_StarEqual):
-                    return num.ToBig(i1 * i2)
+                    return value.Int(mops.Mul(i1, i2))
                 elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
-                    if i2 == 0:
+                    if mops.Equal(i2, mops.ZERO):
                         raise error.Expr('Divide by zero', op)
-                    return value.Float(float(i1) / float(i2))
+                    return value.Float(mops.ToFloat(i1) / mops.ToFloat(i2))
                 else:
                     raise AssertionError()
 
@@ -644,13 +643,13 @@ class ExprEvaluator(object):
         if c == coerced_e.Int:
             with switch(op.id) as case:
                 if case(Id.Arith_Less):
-                    return i1 < i2
+                    return mops.Greater(i2, i1)
                 elif case(Id.Arith_Great):
-                    return i1 > i2
+                    return mops.Greater(i1, i2)
                 elif case(Id.Arith_LessEqual):
-                    return i1 <= i2
+                    return mops.Greater(i2, i1) or mops.Equal(i1, i2)
                 elif case(Id.Arith_GreatEqual):
-                    return i1 >= i2
+                    return mops.Greater(i1, i2) or mops.Equal(i1, i2)
                 else:
                     raise AssertionError()
 
@@ -773,8 +772,8 @@ class ExprEvaluator(object):
                         if not left2.isdigit():
                             return value.Bool(False)
 
-                        return value.Bool(
-                            int(left2) == mops.BigTruncate(right.i))
+                        eq = mops.Equal(mops.FromStr(left2), right.i)
+                        return value.Bool(eq)
 
                 e_die('~== expects Str, Int, or Bool on the right', op)
 

@@ -224,6 +224,24 @@ pp line (x)
 (Int)   111122223333444455556666
 ## END
 
+#### 64-bit operations
+
+shopt -s ysh:upgrade
+
+var i = 1 << 32
+var s = str(i)
+
+echo "i = $i, s = $s"
+
+if (s ~== i) {
+  echo equal
+}
+
+## STDOUT:
+i = 4294967296, s = 4294967296
+equal
+## END
+
 #### 64-bit integer doesn't overflow
 
 # same as spec/arith.test.sh case 38
