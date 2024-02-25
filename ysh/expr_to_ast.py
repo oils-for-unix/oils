@@ -45,6 +45,7 @@ from _devbuild.gen.syntax_asdl import (
     Eggex,
     EggexFlag,
 )
+from _devbuild.gen.value_asdl import value
 from _devbuild.gen import grammar_nt
 from core.error import p_die
 from frontend import lexer
@@ -248,25 +249,25 @@ class Transformer(object):
             elif typ == grammar_nt.dq_string:
                 key = self.Expr(p_node.GetChild(0))
 
-            value = self.Expr(p_node.GetChild(2))
-            return key, value
+            val = self.Expr(p_node.GetChild(2))
+            return key, val
 
         tok0 = p_node.GetChild(0).tok
         id_ = tok0.id
 
         if id_ == Id.Expr_Name:
-            key = expr.Const(tok0)
+            key = expr.Const(tok0, value.Null)  # TODO
             if p_node.NumChildren() >= 3:
-                value = self.Expr(p_node.GetChild(2))
+                val = self.Expr(p_node.GetChild(2))
             else:
-                value = expr.Implicit
+                val = expr.Implicit
 
         if id_ == Id.Op_LBracket:  # {[x+y]: 'val'}
             key = self.Expr(p_node.GetChild(1))
-            value = self.Expr(p_node.GetChild(4))
-            return key, value
+            val = self.Expr(p_node.GetChild(4))
+            return key, val
 
-        return key, value
+        return key, val
 
     def _Dict(self, parent, p_node):
         # type: (PNode, PNode) -> expr.Dict
@@ -286,9 +287,9 @@ class Transformer(object):
 
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):
-            key, value = self._DictPair(p_node.GetChild(i))
+            key, val = self._DictPair(p_node.GetChild(i))
             keys.append(key)
-            values.append(value)
+            values.append(val)
 
         return expr.Dict(parent.tok, keys, values)
 
@@ -725,11 +726,11 @@ class Transformer(object):
 
             if id_ in (Id.Expr_DecInt, Id.Expr_BinInt, Id.Expr_OctInt,
                        Id.Expr_HexInt, Id.Expr_Float):
-                return expr.Const(tok)
+                return expr.Const(tok, value.Null)  # TODO
 
             if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False,
                        Id.Char_OneChar, Id.Char_UBraced, Id.Char_Pound):
-                return expr.Const(tok)
+                return expr.Const(tok, value.Null)  # TODO
 
             raise NotImplementedError(Id_str(id_))
 

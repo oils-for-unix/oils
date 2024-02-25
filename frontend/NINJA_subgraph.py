@@ -139,6 +139,23 @@ def NinjaGraph(ru):
 
     ru.asdl_library('frontend/types.asdl', pretty_print_methods=False)
 
+    # Uses core/value.asdl, but value.asdl also depeneds on frontend/syntax.asdl
+    #
+    # In Python, that an import line:
+    # if TYPE_CHECKING:
+    #    from _devbuild.gen.value_asdl import value_t
+    #
+    # In C++, it creates a forward declaration of namespace value_asdl { class value_t }
+    #
+    # Questions:
+    # - Do we need the deps at all?  We have different deps
+    #   - #include "hnode.asdl.h" - if pretty_print_methods
+    #   - #include "id_kind_asdl.h" - if app_types - TODO: should refactor this
+    #     - this is using by VALUE, not just by POINTER
+    # - Should we create a single asdl_library() target?
+    # - What will we do when we switch to tagged pointers?  Then we can't
+    # forward declare?
+
     ru.asdl_library('frontend/syntax.asdl', deps=['//frontend/id_kind.asdl'])
 
     ru.cc_binary('frontend/syntax_asdl_test.cc',
