@@ -58,6 +58,7 @@ from core.error import e_die
 from frontend import consts
 from frontend import lexer
 from frontend import location
+from mycpp import mops
 from mycpp.mylib import log, tagswitch, NewDict
 from osh import braces
 from osh import glob_
@@ -1645,8 +1646,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(word_part_e.ArithSub):
                 part = cast(word_part.ArithSub, UP_part)
-                num = self.arith_ev.EvalToInt(part.anode)
-                v = part_value.String(str(num), quoted, not quoted)
+                num = self.arith_ev.EvalToBigInt(part.anode)
+                v = part_value.String(mops.ToStr(num), quoted, not quoted)
                 part_vals.append(v)
 
             elif case(word_part_e.ExtGlob):

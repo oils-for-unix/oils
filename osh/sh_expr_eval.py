@@ -451,7 +451,7 @@ class ArithEvaluator(object):
 
                 elif case(value_e.Int):
                     val = cast(value.Int, UP_val)
-                    return mops.IntWiden(val.i)
+                    return val.i
 
                 elif case(value_e.Str):
                     val = cast(value.Str, UP_val)
@@ -603,9 +603,6 @@ class ArithEvaluator(object):
                 old_big, lval = self._EvalLhsAndLookupArith(node.left)
                 rhs_big = self.EvalToBigInt(node.right)
 
-                old_int = mops.BigTruncate(old_big)
-                rhs = mops.BigTruncate(rhs_big)
-
                 if op_id == Id.Arith_PlusEqual:
                     new_big = mops.Add(old_big, rhs_big)
                 elif op_id == Id.Arith_MinusEqual:
@@ -619,7 +616,7 @@ class ArithEvaluator(object):
                     new_big = num.IntDivide(old_big, rhs_big)
 
                 elif op_id == Id.Arith_PercentEqual:
-                    if rhs == 0:
+                    if mops.Equal(rhs_big, ZERO):
                         e_die('Divide by zero')  # TODO: location
                     new_big = num.IntRemainder(old_big, rhs_big)
 
@@ -729,8 +726,6 @@ class ArithEvaluator(object):
                 # Rest are integers
                 lhs_big = self.EvalToBigInt(node.left)
                 rhs_big = self.EvalToBigInt(node.right)
-                lhs = mops.BigTruncate(lhs_big)
-                rhs = mops.BigTruncate(rhs_big)
 
                 if op_id == Id.Arith_Plus:
                     result = mops.Add(lhs_big, rhs_big)

@@ -108,7 +108,8 @@ def Stringify(val, blame_loc, prefix=''):
 
         elif case(value_e.Int):
             val = cast(value.Int, UP_val)
-            s = mops.ToStr(val.i)  # Decimal '42', the only sensible representation
+            # e.g. decimal '42', the only sensible representation
+            s = mops.ToStr(val.i)
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
