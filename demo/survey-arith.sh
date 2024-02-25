@@ -64,25 +64,37 @@ bigint() {
   local big=11112222333344445555666677778888999
 
   # Big Int
+  echo 'python3'
   python3 -c "print($big)"
+  echo
 
   # Gets printed in scientific notation
+  echo 'node.js'
   nodejs -e "console.log($big)"
+  echo
 
   # Ditto, scientific
+  echo 'Lua'
   lua -e "print($big)"
+  echo
 
   # Scientific
   echo Perl
   perl -e "print $big"; echo
+  echo
 
   # Awk loses precision somehow, not sure what they're doing
   echo awk
   awk -e "END { print $big }" < /dev/null
+  echo
 
-  for sh in dash bash; do
+  local osh=_bin/cxx-dbg/osh
+  ninja $osh
+
+  for sh in dash bash mksh zsh $osh; do
     echo $sh
     $sh -c "echo \$(( $big ))"
+    echo
   done
 
   # None of the interpreters reject invalid input!  They tend to mangle the
