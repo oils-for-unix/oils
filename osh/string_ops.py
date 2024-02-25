@@ -16,6 +16,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import loc, Token, suffix_op
 from core import pyutil
 from core import ui
+from core import error
 from core.error import e_die, e_strict
 from mycpp.mylib import log
 from osh import glob_
@@ -54,7 +55,95 @@ def _Utf8CharLen(starting_byte):
         e_strict(INVALID_START, loc.Missing)
 
 
-def _NextUtf8Char(s, i):
+def _ReadOneUnit(s, cursor):
+    # type: (str, int) -> Tuple[int, int]
+    """Helper for DecodeUtf8Char"""
+    if cursor >= len(s):
+        e_strict(INCOMPLETE_CHAR, loc.Missing)
+
+    b = ord(s[cursor])
+    cursor += 1
+
+    if b & 0b11000000 != 0b10000000:
+        e_strict(INVALID_CONT, loc.Missing)
+
+    return b & 0b00111111, cursor
+
+
+def DecodeUtf8Char(s, start):
+    # type: (str, int) -> int
+    """Given a string and exclusive bounds [start, end), decode the Unicode
+    char within those bounds. If the bounds must not extend beyond the size of
+    the UTF-8 codepoint, otherwise we consider the codepoint to be invalid (and
+    return -1).
+
+    The start/end bounds are in bytes and should be found using a function like
+    NextUtf8Char or PreviousUtf8Char.
+
+    If the codepoint in invalid, we raise an `error.Expr`.
+
+    Known Issues:
+    - Doesn't raise issue on surrogate pairs
+    - Doesn't raise issue on non-shortest form encodings
+    """
+    # We use table 3.6 (reproduced below) from [0]. Note that table 3.6 is not
+    # sufficient for validating UTF-8 as it allows surrogate pairs and
+    # non-shortest form encodings. A correct decoder should follow the
+    # encodings in table 3.7 from [0].
+    #
+    # | Scalar Value               | 1st Byte | 2nd Byte | 3rd Byte | 4th Byte |
+    # +----------------------------+----------+----------+----------+----------+
+    # | 00000000 0xxxxxxx          | 0xxxxxxx |          |          |          |
+    # | 00000yyy yyxxxxxx          | 110yyyyy | 10xxxxxx |          |          |
+    # | zzzzyyyy yyxxxxxx          | 1110zzzz | 10yyyyyy | 10xxxxxx |          |
+    # | 000uuuuu zzzzyyyy yyxxxxxx | 11110uuu | 10uuzzzz | 10yyyyyy | 10xxxxxx |
+    #
+    # [0] https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf
+    assert 0 <= start < len(s)
+
+    b = ord(s[start])
+    cursor = start + 1
+
+    if b & 0b10000000 == 0:
+        return b & 0b01111111
+
+    if b & 0b11100000 == 0b11000000:
+        y = b & 0b00011111
+        y <<= 6
+
+        x, cursor = _ReadOneUnit(s, cursor)
+
+        return y | x
+
+    if b & 0b11110000 == 0b11100000:
+        z = b & 0b00001111
+        z <<= 12
+
+        y, cursor = _ReadOneUnit(s, cursor)
+        y <<= 6
+
+        x, cursor = _ReadOneUnit(s, cursor)
+
+        return z | x | y
+
+    if b & 0b11111000 == 0b11110000:
+        u = b & 0b00000111
+        u <<= 18
+
+        z, cursor = _ReadOneUnit(s, cursor)
+        z <<= 12
+
+        y, cursor = _ReadOneUnit(s, cursor)
+        y <<= 6
+
+        x, cursor = _ReadOneUnit(s, cursor)
+
+        return u | z | x | y
+
+    raise error.Expr(INVALID_START, loc.Missing)
+
+
+def NextUtf8Char(s, i):
     # type: (str, int) -> int
     """Given a string and a byte offset, returns the byte position after the
     character at this position.  Usually this is the position of the next
@@ -139,7 +228,7 @@ def CountUtf8Chars(s):
     num_bytes = len(s)
     i = 0
     while i < num_bytes:
-        i = _NextUtf8Char(s, i)
+        i = NextUtf8Char(s, i)
         num_chars += 1
     return num_chars
 
@@ -162,7 +251,7 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
             return i
             #raise RuntimeError('Out of bounds')
 
-        i = _NextUtf8Char(s, i)
+        i = NextUtf8Char(s, i)
 
     return i
 
@@ -277,7 +366,7 @@ def DoUnarySuffixOp(s, op_tok, arg, is_extglob):
                 return s[i:]
             if i >= n:
                 break
-            i = _NextUtf8Char(s, i)
+            i = NextUtf8Char(s, i)
         return s
 
     elif id_ == Id.VOp1_DPound:  # longest prefix
@@ -316,7 +405,7 @@ def DoUnarySuffixOp(s, op_tok, arg, is_extglob):
                 return s[:i]
             if i >= n:
                 break
-            i = _NextUtf8Char(s, i)
+            i = NextUtf8Char(s, i)
         return s
 
     else:

@@ -12,6 +12,7 @@ from core import state
 from core import vm
 from frontend import typed_args
 from mycpp.mylib import log, tagswitch
+from osh import string_ops
 from ysh import expr_eval
 from ysh import regex_translate
 from ysh import val_ops
@@ -40,114 +41,6 @@ class StartsWith(vm._Callable):
         res = string.startswith(match)
         return value.Bool(res)
 
-
-# TODO: move this to a unicode file?
-class UTF8Decoder:
-
-    def __init__(self, string):
-        # type: (str) -> None
-        self.string = string
-        self.cursor = 0
-
-    def _EncodingError(self):
-        # type: () -> NoReturn
-        raise error.TypeErrVerbose("Invalid UTF-8 string at byte index %d" % self.cursor,
-                                   loc.Missing)
-
-    def _ReadNextUnit(self):
-        # type: () -> int
-        if self.cursor >= len(self.string):
-            self._EncodingError()
-
-        b = ord(self.string[self.cursor])
-        self.cursor += 1
-
-        if b & 0b11000000 != 0b10000000:
-            self._EncodingError()
-
-        return b & 0b00111111
-
-    def Iter(self):
-        # type: () -> Iterator[Tuple[int, int]]
-        """
-        Iterate over a string yielding a tuple [byte_pos, codepoint].
-        byte_pos is the byte index of the **start** of the codepoint.
-        codepoint is an int following the def. from the UTF-8 standard.
-
-        Raises if the string is not valid UTF-8.
-        """
-        while True:
-            cursor = self.cursor
-            codepoint = self.ReadCodepoint()
-
-            if codepoint == -1:
-                return
-
-            yield cursor, codepoint
-
-    def ReadCodepoint(self):
-        # type: () -> int
-        """
-        Returns -1 if the entire string has been decoded.
-
-        Raises if the string is not valid UTF-8.
-
-        Decoding is done following chapter 3.9 in the UTF-8 standard:
-          https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf
-        """
-        if self.cursor >= len(self.string):
-            return -1
-
-        b = ord(self.string[self.cursor])
-        self.cursor += 1
-
-        if b & 0b10000000 == 0:
-            return b & 0b01111111
-
-        if b & 0b11100000 == 0b11000000:
-            y = b & 0b00011111
-            y <<= 6
-
-            x = self._ReadNextUnit()
-
-            return y | x
-
-        if b & 0b11110000 == 0b11100000:
-            z = b & 0b00001111
-            z <<= 12
-
-            y = self._ReadNextUnit()
-            y <<= 6
-
-            x = self._ReadNextUnit()
-
-            return z | x | y
-
-        if b & 0b11111000 == 0b11110000:
-            u = b & 0b00000111
-            u <<= 18
-
-            z = self._ReadNextUnit()
-            z <<= 12
-
-            y = self._ReadNextUnit()
-            y <<= 6
-
-            x = self._ReadNextUnit()
-
-            return u | z | x | y
-
-        self._EncodingError()
-        return -1  # Unreachable
-
-    def BytePosition(self):
-        # type: () -> int
-        """
-        Get byte position of the current character.
-        """
-        return self.cursor
-
-
 # From https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
 SPACES = [0x0020,  # SPACE
           0x00A0,  # NO-BREAK SPACE
@@ -173,9 +66,9 @@ def _IsSpace(codepoint):
     return codepoint in SPACES
 
 
-TRIM_BOTH = 0
 TRIM_LEFT = 1
 TRIM_RIGHT = 2
+TRIM_BOTH = 3
 
 
 class Trim(vm._Callable):
@@ -184,43 +77,52 @@ class Trim(vm._Callable):
         # type: (int) -> None
         self.trim = trim
 
+    def _Left(self, string):
+        # type: (str) -> int
+        i = 0
+        while i < len(string):
+            codepoint = string_ops.DecodeUtf8Char(string, i)
+            if not _IsSpace(codepoint):
+                break
+
+            try:
+                i = string_ops.NextUtf8Char(string, i)
+            except error.Strict as e:
+                raise error.Expr(e.msg, e.location)
+
+        return i
+
+    def _Right(self, string):
+        # type: (str) -> int
+        i = len(string)
+        while i > 0:
+            try:
+                prev = string_ops.PreviousUtf8Char(string, i)
+            except error.Strict as e:
+                raise error.Expr(e.msg, e.location)
+
+            codepoint = string_ops.DecodeUtf8Char(string, prev)
+            if not _IsSpace(codepoint):
+                break
+
+            i = prev
+
+        return i
+
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
         string = rd.PosStr()
         rd.Done()
 
-        decoder = UTF8Decoder(string)
-
-        # Move left to index of first non-whitespace codepoint and move right
-        # to index of last non-whitespace codepoint.
         left = 0
-        right = 0
-        done_left = False
-        for pos, codepoint in decoder.Iter():
-            is_space = _IsSpace(codepoint)
+        right = len(string)
+        if self.trim & TRIM_LEFT:
+            left = self._Left(string)
+        if self.trim & TRIM_RIGHT:
+            right = self._Right(string)
 
-            if is_space:
-                continue
-
-            if done_left:
-                right = pos
-            else:
-                left = pos
-                right = pos
-                done_left = True
-
-        # String is all whitespace and won't work with [start:end + 1] below
-        if left == right:
-            return value.Str("")
-
-        if self.trim == TRIM_LEFT:
-            right = len(string) - 1
-        if self.trim == TRIM_RIGHT:
-            left = 0
-
-        # Slice with [left, right] *inclusive*
-        res = string[left:right + 1]
+        res = string[left:right]
         return value.Str(res)
 
 
