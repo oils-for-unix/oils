@@ -356,7 +356,7 @@ def ExactlyEqual(left, right, blame_loc):
         elif case(value_e.Int):
             left = cast(value.Int, UP_left)
             right = cast(value.Int, UP_right)
-            return left.i == right.i
+            return mops.Equal(left.i, right.i)
 
         elif case(value_e.Float):
             # Note: could provide floatEquals(), and suggest it

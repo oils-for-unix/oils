@@ -7,12 +7,10 @@ heap-allocated integers.
 Regular int ops can use the normal operators + - * /, or maybe i_add() if we
 really want.  Does that make code gen harder or worse?
 
-I suppose float ops could be + - * / too, but it feels nicer to develop a
-formal interface?
+Float ops could be + - * / too, but it feels nicer to develop a formal
+interface?
 """
 from __future__ import print_function
-
-from typing import cast
 
 
 class BigInt(object):
@@ -20,6 +18,18 @@ class BigInt(object):
     def __init__(self, i):
         # type: (int) -> None
         self.i = i
+
+    def __eq__(self, other):
+        # Prevent possible mistakes.  Could do this with other operators
+        raise AssertionError('Use mops.Equal()')
+
+    def __gt__(self, other):
+        # Prevent possible mistakes.  Could do this with other operators
+        raise AssertionError('Use functions in mops.py')
+
+    def __ge__(self, other):
+        # Prevent possible mistakes.  Could do this with other operators
+        raise AssertionError('Use functions in mops.py')
 
 
 def ToStr(b):

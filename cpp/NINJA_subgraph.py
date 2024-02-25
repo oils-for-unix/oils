@@ -52,12 +52,9 @@ def NinjaGraph(ru):
         # Add tcmalloc for malloc_address_test
         matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])
 
-    ru.cc_binary(
-        'cpp/unicode_test.cc',
-        deps=[
-            '//mycpp/runtime'
-        ],
-        matrix=ninja_lib.COMPILERS_VARIANTS)
+    ru.cc_binary('cpp/unicode_test.cc',
+                 deps=['//mycpp/runtime'],
+                 matrix=ninja_lib.COMPILERS_VARIANTS)
 
     ru.cc_library(
         '//cpp/core',

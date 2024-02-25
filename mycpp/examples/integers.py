@@ -51,7 +51,8 @@ def run_tests():
     max_negative2 = mops.FromStr(s1)
     print('max_negative2 = %s' % mops.ToStr(max_negative2))
 
-    if max_negative == max_negative2:
+    #if max_negative == max_negative2:
+    if mops.Equal(max_negative, max_negative2):
         print('round trip equal')
 
     big = mops.IntWiden(a)
