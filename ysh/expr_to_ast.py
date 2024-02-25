@@ -734,21 +734,34 @@ class Transformer(object):
             # validation.
             c_under = tok_str.replace('_', '')
 
-            # TODO: Handle ValueError for all FromStr
             if id_ == Id.Expr_DecInt:
-                cval = value.Int(mops.FromStr(c_under))  # type: value_t
+                try:
+                    cval = value.Int(mops.FromStr(c_under))  # type: value_t
+                except ValueError:
+                    p_die('Decimal int constant is too large', tok)
             elif id_ == Id.Expr_BinInt:
                 assert c_under[:2] in ('0b', '0B'), c_under
-                cval = value.Int(mops.FromStr(c_under[2:], 2))
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 2))
+                except ValueError:
+                    p_die('Binary int constant is too large', tok)
             elif id_ == Id.Expr_OctInt:
                 assert c_under[:2] in ('0o', '0O'), c_under
-                cval = value.Int(mops.FromStr(c_under[2:], 8))
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 8))
+                except ValueError:
+                    p_die('Octal int constant is too large', tok)
             elif id_ == Id.Expr_HexInt:
                 assert c_under[:2] in ('0x', '0X'), c_under
-                cval = value.Int(mops.FromStr(c_under[2:], 16))
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 16))
+                except ValueError:
+                    p_die('Hex int constant is too large', tok)
 
             elif id_ == Id.Expr_Float:
-                # Note: float() in mycpp/gc_builtins.py currently uses strtod
+                # Note: float() in mycpp/gc_builtins.cc currently uses strtod
+                # I think this never raises ValueError, because the lexer
+                # should only accept strings that strtod() does?
                 cval = value.Float(float(c_under))
 
             elif id_ == Id.Expr_Null:
@@ -758,9 +771,16 @@ class Transformer(object):
             elif id_ == Id.Expr_False:
                 cval = value.Bool(False)
 
-            # These two could become STRINGS?
-            # Should we just have ord(\n) and so forth?  an ord('a') ?
-            # That's dynamic and not static?
+            # What to do with the char constants?
+            # \n  \u{3bc}  #'a'
+            # Are they integers or strings?
+            #
+            # Integers could be ord(\n), or strings could chr(\n)
+            # Or just remove them, with ord(u'\n') and chr(u'\n')
+            #
+            # I think this relies on small string optimization.  If we have it,
+            # then 1-4 byte characters are efficient, and don't require heap
+            # allocation.
 
             elif id_ == Id.Char_OneChar:
                 # TODO: look up integer directly?

@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+
 #### Minus operator is left associative
 
 var a = 1 - 0 - 1
@@ -213,15 +215,112 @@ json write (~'3.5')
 ## STDOUT:
 ## END
 
-#### Constants bigger than 64 bits
+#### Big float constants becomes inf and -inf, tiny become 0.0 and -0.0
 
-# TODO: test octal constants, numbers in strings, etc.
+$SH -c '
+var x = 0.12345
+pp line (x)
+'
+echo float=$?
 
-var x = 1111_2222_3333_4444_5555_6666
+$SH -c '
+# Becomes infinity
+var x = 0.123456789e1234567
 pp line (x)
 
+var x = -0.123456789e1234567
+pp line (x)
+'
+echo float=$?
+
+$SH -c '
+# Becomes infinity
+var x = 0.123456789e-1234567
+pp line (x)
+
+var x = -0.123456789e-1234567
+pp line (x)
+'
+echo float=$?
+
 ## STDOUT:
-(Int)   111122223333444455556666
+(Float)   0.12345
+float=0
+(Float)   inf
+(Float)   -inf
+float=0
+(Float)   0.0
+(Float)   -0.0
+float=0
+## END
+
+#### Int constants bigger than 64 bits
+
+# Decimal
+$SH -c '
+var x = 1111
+pp line (x)
+'
+echo dec=$?
+
+$SH -c '
+var x = 1111_2222_3333_4444_5555_6666
+pp line (x)
+'
+echo dec=$?
+
+# Binary
+$SH -c '
+var x = 0b11
+pp line (x)
+'
+echo bin=$?
+
+$SH -c '
+var x = 0b1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
+pp line (x)
+'
+echo bin=$?
+
+# Octal
+$SH -c '
+var x = 0o77
+pp line (x)
+'
+echo oct=$?
+
+$SH -c '
+var x = 0o1111_2222_3333_4444_5555_6666
+pp line (x)
+'
+echo oct=$?
+
+# Hex
+$SH -c '
+var x = 0xff
+pp line (x)
+'
+echo hex=$?
+
+$SH -c '
+var x = 0xaaaa_bbbb_cccc_dddd_eeee_ffff
+pp line (x)
+'
+echo hex=$?
+
+## STDOUT:
+(Int)   1111
+dec=0
+dec=2
+(Int)   3
+bin=0
+bin=2
+(Int)   63
+oct=0
+oct=2
+(Int)   255
+hex=0
+hex=2
 ## END
 
 #### 64-bit operations
