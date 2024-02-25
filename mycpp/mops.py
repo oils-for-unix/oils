@@ -33,6 +33,10 @@ class BigInt(object):
         raise AssertionError('Use functions in mops.py')
 
 
+ZERO = BigInt(0)
+ONE = BigInt(1)
+
+
 def ToStr(b):
     # type: (BigInt) -> str
     return str(b.i)

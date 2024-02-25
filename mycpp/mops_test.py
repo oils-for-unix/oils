@@ -28,6 +28,5 @@ class MopsTest(unittest.TestCase):
             self.fail('Expected error')
 
 
-
 if __name__ == '__main__':
     unittest.main()

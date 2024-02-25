@@ -357,7 +357,7 @@ class ArithEvaluator(object):
             except ValueError:
                 e_strict('Invalid base for numeric constant %r' % b, blame_loc)
 
-            integer = mops.BigInt(0)
+            integer = mops.ZERO
             for ch in digits:
                 if IsLower(ch):
                     digit = ord(ch) - ord('a') + 10
@@ -395,7 +395,7 @@ class ArithEvaluator(object):
 
                 # Special case so we don't get EOF error
                 if len(s.strip()) == 0:
-                    return mops.BigInt(0)
+                    return mops.ZERO
 
                 # For compatibility: Try to parse it as an expression and evaluate it.
                 a_parser = self.parse_ctx.MakeArithParser(s)
@@ -462,7 +462,7 @@ class ArithEvaluator(object):
             if self.exec_opts.strict_arith():
                 raise
             else:
-                return mops.BigInt(0)
+                return mops.ZERO
 
         # Arrays and associative arrays always fail -- not controlled by
         # strict_arith.
@@ -541,11 +541,6 @@ class ArithEvaluator(object):
         # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
         # to handle that as a special case.
 
-        # TODO: Declare these as global constants - mycpp doesn't like globals
-        # Could be mops::ZERO I suppose
-        ZERO = mops.BigInt(0)
-        ONE = mops.BigInt(1)
-
         UP_node = node
         with tagswitch(node) as case:
             if case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
@@ -566,19 +561,19 @@ class ArithEvaluator(object):
                 old_big, lval = self._EvalLhsAndLookupArith(node.child)
 
                 if op_id == Id.Node_PostDPlus:  # post-increment
-                    new_big = mops.Add(old_big, ONE)
+                    new_big = mops.Add(old_big, mops.ONE)
                     result = old_big
 
                 elif op_id == Id.Node_PostDMinus:  # post-decrement
-                    new_big = mops.Sub(old_big, ONE)
+                    new_big = mops.Sub(old_big, mops.ONE)
                     result = old_big
 
                 elif op_id == Id.Arith_DPlus:  # pre-increment
-                    new_big = mops.Add(old_big, ONE)
+                    new_big = mops.Add(old_big, mops.ONE)
                     result = new_big
 
                 elif op_id == Id.Arith_DMinus:  # pre-decrement
-                    new_big = mops.Sub(old_big, ONE)
+                    new_big = mops.Sub(old_big, mops.ONE)
                     result = new_big
 
                 else:
@@ -611,12 +606,12 @@ class ArithEvaluator(object):
                     new_big = mops.Mul(old_big, rhs_big)
 
                 elif op_id == Id.Arith_SlashEqual:
-                    if mops.Equal(rhs_big, ZERO):
+                    if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
                     new_big = num.IntDivide(old_big, rhs_big)
 
                 elif op_id == Id.Arith_PercentEqual:
-                    if mops.Equal(rhs_big, ZERO):
+                    if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
                     new_big = num.IntRemainder(old_big, rhs_big)
 
@@ -645,13 +640,13 @@ class ArithEvaluator(object):
                 if op_id == Id.Node_UnaryPlus:  # +i
                     result = i
                 elif op_id == Id.Node_UnaryMinus:  # -i
-                    result = mops.Sub(ZERO, i)
+                    result = mops.Sub(mops.ZERO, i)
 
                 elif op_id == Id.Arith_Bang:  # logical negation
-                    if mops.Equal(i, ZERO):
-                        result = ONE
+                    if mops.Equal(i, mops.ZERO):
+                        result = mops.ONE
                     else:
-                        result = ZERO
+                        result = mops.ZERO
                 elif op_id == Id.Arith_Tilde:  # bitwise complement
                     result = mops.BitNot(i)
                 else:
@@ -666,26 +661,26 @@ class ArithEvaluator(object):
                 # Short-circuit evaluation for || and &&.
                 if op_id == Id.Arith_DPipe:
                     lhs_big = self.EvalToBigInt(node.left)
-                    if mops.Equal(lhs_big, ZERO):
+                    if mops.Equal(lhs_big, mops.ZERO):
                         rhs_big = self.EvalToBigInt(node.right)
-                        if mops.Equal(rhs_big, ZERO):
-                            result = ZERO  # false
+                        if mops.Equal(rhs_big, mops.ZERO):
+                            result = mops.ZERO  # false
                         else:
-                            result = ONE  # true
+                            result = mops.ONE  # true
                     else:
-                        result = ONE  # true
+                        result = mops.ONE  # true
                     return value.Int(result)
 
                 if op_id == Id.Arith_DAmp:
                     lhs_big = self.EvalToBigInt(node.left)
-                    if mops.Equal(lhs_big, ZERO):
-                        result = ZERO  # false
+                    if mops.Equal(lhs_big, mops.ZERO):
+                        result = mops.ZERO  # false
                     else:
                         rhs_big = self.EvalToBigInt(node.right)
-                        if mops.Equal(rhs_big, ZERO):
-                            result = ZERO  # false
+                        if mops.Equal(rhs_big, mops.ZERO):
+                            result = mops.ZERO  # false
                         else:
-                            result = ONE  # true
+                            result = mops.ONE  # true
                     return value.Int(result)
 
                 if op_id == Id.Arith_LBracket:
@@ -734,17 +729,17 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_Star:
                     result = mops.Mul(lhs_big, rhs_big)
                 elif op_id == Id.Arith_Slash:
-                    if mops.Equal(rhs_big, ZERO):
+                    if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', loc.Arith(node.right))
                     result = num.IntDivide(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_Percent:
-                    if mops.Equal(rhs_big, ZERO):
+                    if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', loc.Arith(node.right))
                     result = num.IntRemainder(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DStar:
-                    if mops.Greater(ZERO, rhs_big):
+                    if mops.Greater(mops.ZERO, rhs_big):
                         e_die("Exponent can't be a negative number",
                               loc.Arith(node.right))
                     result = num.Exponent(lhs_big, rhs_big)
@@ -787,7 +782,7 @@ class ArithEvaluator(object):
                 node = cast(arith_expr.TernaryOp, UP_node)
 
                 cond = self.EvalToBigInt(node.cond)
-                if mops.Equal(cond, ZERO):
+                if mops.Equal(cond, mops.ZERO):
                     return self.Eval(node.false_expr)
                 else:
                     return self.Eval(node.true_expr)
@@ -939,7 +934,7 @@ class BoolEvaluator(ArithEvaluator):
             if self.always_strict or self.exec_opts.strict_arith():
                 raise
             else:
-                i = mops.BigInt(0)
+                i = mops.ZERO
         return i
 
     def _EvalCompoundWord(self, word, eval_flags=0):

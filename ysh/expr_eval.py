@@ -89,17 +89,17 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
 
 
 def _ConvertToInt(val, msg, blame_loc):
-    # type: (value_t, str, loc_t) -> int
+    # type: (value_t, str, loc_t) -> mops.BigInt
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Int):
             val = cast(value.Int, UP_val)
-            return mops.BigTruncate(val.i)
+            return val.i
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
             if match.LooksLikeInteger(val.s):
-                return int(val.s)
+                return mops.FromStr(val.s)
 
     raise error.TypeErr(val, msg, blame_loc)
 
@@ -452,7 +452,7 @@ class ExprEvaluator(object):
 
             elif case(Id.Arith_Tilde):
                 i = _ConvertToInt(val, '~ expected Int', node.op)
-                return num.ToBig(~i)
+                return value.Int(mops.BitNot(i))
 
             elif case(Id.Expr_Not):
                 b = val_ops.ToBool(val)
@@ -533,42 +533,42 @@ class ExprEvaluator(object):
 
             # a % b   setvar a %= b
             if case(Id.Arith_Percent, Id.Arith_PercentEqual):
-                if i2 == 0:
+                if mops.Equal(i2, mops.ZERO):
                     raise error.Expr('Divide by zero', op)
-                if i2 < 0:
+                if mops.Greater(mops.ZERO, i2):
                     # Disallow this to remove confusion between modulus and remainder
                     raise error.Expr("Divisor can't be negative", op)
 
-                return num.ToBig(num.IntRemainder2(i1, i2))
+                return value.Int(num.IntRemainder(i1, i2))
 
             # a // b   setvar a //= b
             elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
-                if i2 == 0:
+                if mops.Equal(i2, mops.ZERO):
                     raise error.Expr('Divide by zero', op)
-                return num.ToBig(num.IntDivide2(i1, i2))
+                return value.Int(num.IntDivide(i1, i2))
 
             # a ** b   setvar a **= b (ysh only)
             elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
                 # Same as sh_expr_eval.py
-                if i2 < 0:
+                if mops.Greater(mops.ZERO, i2):
                     raise error.Expr("Exponent can't be a negative number", op)
-                return num.ToBig(num.Exponent2(i1, i2))
+                return value.Int(num.Exponent(i1, i2))
 
             # Bitwise
-            elif case(Id.Arith_Amp, Id.Arith_AmpEqual):
-                return num.ToBig(i1 & i2)
+            elif case(Id.Arith_Amp, Id.Arith_AmpEqual):  # &
+                return value.Int(mops.BitAnd(i1, i2))
 
-            elif case(Id.Arith_Pipe, Id.Arith_PipeEqual):
-                return num.ToBig(i1 | i2)
+            elif case(Id.Arith_Pipe, Id.Arith_PipeEqual):  # |
+                return value.Int(mops.BitOr(i1, i2))
 
-            elif case(Id.Arith_Caret, Id.Arith_CaretEqual):
-                return num.ToBig(i1 ^ i2)
+            elif case(Id.Arith_Caret, Id.Arith_CaretEqual):  # ^
+                return value.Int(mops.BitXor(i1, i2))
 
-            elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):
-                return num.ToBig(i1 >> i2)
+            elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):  # >>
+                return value.Int(mops.RShift(i1, i2))
 
-            elif case(Id.Arith_DLess, Id.Arith_DLessEqual):
-                return num.ToBig(i1 << i2)
+            elif case(Id.Arith_DLess, Id.Arith_DLessEqual):  # <<
+                return value.Int(mops.LShift(i1, i2))
 
             else:
                 raise AssertionError(op.id)
