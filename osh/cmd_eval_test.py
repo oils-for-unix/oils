@@ -25,6 +25,7 @@ def InitEvaluator():
 
 
 class ExpansionTest(unittest.TestCase):
+
     def testBraceExpand(self):
         arena = test_lib.MakeArena('<cmd_eval_test.py>')
         c_parser = test_lib.InitCommandParser('echo _{a,b}_', arena=arena)
@@ -37,6 +38,7 @@ class ExpansionTest(unittest.TestCase):
 
 
 class VarOpTest(unittest.TestCase):
+
     def testVarOps(self):
         ev = InitEvaluator()  # initializes x=xxx and y=yyy
         left = None

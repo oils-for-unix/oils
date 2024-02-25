@@ -680,7 +680,7 @@ command language.  Each one takes various flags:
 
     cd -L .                      # follow symlinks
 
-    echo foo | read --line       # read a line of stdin
+    echo foo | read --all        # read all of stdin
     
 Here are some categories of builtin:
 
@@ -943,12 +943,12 @@ methods return new `List` objects:
 
 The `read` builtin can either set an implicit variable `_reply`:
 
-    whoami | read --line  # sets _reply
+    whoami | read --all  # sets _reply
 
 Or you can pass a `value.Place`, created with `&`
 
     var x                      # implicitly initialized to null
-    whoami | read --line (&x)  # mutate this "place"
+    whoami | read --all (&x)   # mutate this "place"
     echo who=$x  # => who=andy
 
 #### Quotation Types: value.Command (Block) and value.Expr

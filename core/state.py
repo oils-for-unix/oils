@@ -23,6 +23,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
 from asdl import runtime
 from core import error
 from core.error import e_usage, e_die
+from core import num
 from core import pyos
 from core import pyutil
 from core import optview
@@ -31,6 +32,7 @@ from core import util
 from frontend import consts
 from frontend import location
 from frontend import match
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr, tagswitch, iteritems, NewDict
 from osh import split
@@ -697,7 +699,7 @@ class _ArgFrame(object):
         return {
             # Easier to serialize value.BashArray than value.List
             'argv': value.BashArray(self.argv),
-            'num_shifted': value.Int(self.num_shifted),
+            'num_shifted': num.ToBig(self.num_shifted),
         }
 
     def GetArgNum(self, arg_num):
@@ -798,7 +800,7 @@ def _AddCallToken(d, token):
     if token is None:
         return
     d['call_source'] = value.Str(ui.GetLineSourceString(token.line))
-    d['call_line_num'] = value.Int(token.line.line_num)
+    d['call_line_num'] = num.ToBig(token.line.line_num)
     d['call_line'] = value.Str(token.line.content)
 
 
@@ -1839,7 +1841,7 @@ class Mem(object):
 
         # "Registers"
         if name == '_status':
-            return value.Int(self.TryStatus())
+            return num.ToBig(self.TryStatus())
 
         if name == '_error':
             return self.TryError()
@@ -1859,11 +1861,11 @@ class Mem(object):
             return value.BashArray(strs2)
 
         if name == '_pipeline_status':
-            items = [value.Int(i) for i in self.pipe_status[-1]]
+            items = [num.ToBig(i) for i in self.pipe_status[-1]]
             return value.List(items)
 
         if name == '_process_sub_status':  # Oil naming convention
-            items = [value.Int(i) for i in self.process_sub_status[-1]]
+            items = [num.ToBig(i) for i in self.process_sub_status[-1]]
             return value.List(items)
 
         if name == 'BASH_REMATCH':
@@ -1965,8 +1967,7 @@ class Mem(object):
             return value.Str(self.last_arg)
 
         if name == 'SECONDS':
-            seconds = int(time_.time() - self.seconds_start)
-            return value.Int(seconds)
+            return value.Int(mops.FromFloat(time_.time() - self.seconds_start))
 
         # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
         # fix this:

@@ -411,10 +411,10 @@ class _PrettyPrinter(object):
             node = cast(hnode.Record, UP_node)
             self._PrintRecord(node, f, indent)
 
-        elif tag == hnode_e.ObjectCycle:
-            node = cast(hnode.ObjectCycle, UP_node)
+        elif tag == hnode_e.AlreadySeen:
+            node = cast(hnode.AlreadySeen, UP_node)
             # ... means omitting second reference, while --- means a cycle
-            f.write('...0x%x' % node.heap_id)
+            f.write('...0x%s' % mylib.hex_lower(node.heap_id))
 
         else:
             raise AssertionError(node)
@@ -499,10 +499,10 @@ def _TrySingleLine(node, f, max_chars):
 
         return _TrySingleLineObj(node, f, max_chars)
 
-    elif tag == hnode_e.ObjectCycle:
-        node = cast(hnode.ObjectCycle, UP_node)
+    elif tag == hnode_e.AlreadySeen:
+        node = cast(hnode.AlreadySeen, UP_node)
         # ... means omitting second reference, while --- means a cycle
-        f.write('...0x%x' % node.heap_id)
+        f.write('...0x%s' % mylib.hex_lower(node.heap_id))
 
     else:
         raise AssertionError(node)

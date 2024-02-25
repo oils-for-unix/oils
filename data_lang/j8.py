@@ -43,6 +43,7 @@ from data_lang import pyj8
 # dependency issue: consts.py pulls in frontend/option_def.py
 from frontend import consts
 from frontend import match
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
@@ -367,7 +368,8 @@ class InstancePrinter(object):
             elif case(value_e.Int):
                 val = cast(value.Int, UP_val)
                 # TODO: use pyj8.WriteInt(val.i, self.buf)
-                self.buf.write(str(val.i))
+                #self.buf.write(mylib.BigIntStr(val.i))
+                self.buf.write(mops.ToStr(val.i))
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
@@ -529,7 +531,7 @@ class PrettyPrinter(object):
 
         # This could be an optimized set an C++ bit set like
         # mark_sweep_heap.h, rather than a Dict
-        self.unique_objs = mylib.UniqueObjects()
+        #self.unique_objs = mylib.UniqueObjects()
 
         # first pass of object ID -> number of times references
 
@@ -854,7 +856,7 @@ class Parser(_Parser):
         elif self.tok_id == Id.J8_Int:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Int(int(part))
+            return value.Int(mops.FromStr(part))
 
         elif self.tok_id == Id.J8_Float:
             part = self.s[self.start_pos:self.end_pos]

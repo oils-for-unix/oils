@@ -21,7 +21,7 @@ from core import vm
 from data_lang import j8_lite
 from frontend import args
 from frontend import consts
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
@@ -60,7 +60,7 @@ class Alias(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('alias', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('alias', cmd_val)
         argv = arg_r.Rest()
 
         if len(argv) == 0:
@@ -98,7 +98,7 @@ class UnAlias(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('unalias', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('unalias', cmd_val)
         argv = arg_r.Rest()
 
         if len(argv) == 0:
@@ -158,7 +158,7 @@ class Set(vm._Builtin):
 
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()  # skip 'set'
-        arg = flag_spec.ParseMore('set', arg_r)
+        arg = flag_util.ParseMore('set', arg_r)
 
         # 'set -o' shows options.  This is actually used by autoconf-generated
         # scripts!
@@ -189,7 +189,7 @@ class Shopt(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('shopt',
+        attrs, arg_r = flag_util.ParseCmdVal('shopt',
                                              cmd_val,
                                              accept_typed_args=True)
 
@@ -268,7 +268,7 @@ class Hash(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('hash', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('hash', cmd_val)
         arg = arg_types.hash(attrs.attrs)
 
         rest = arg_r.Rest()

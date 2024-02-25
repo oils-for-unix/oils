@@ -112,6 +112,7 @@ def assertFailCommandList(test, code_str):
 
 
 class SimpleCommandTest(unittest.TestCase):
+
     def testParseSimpleCommand1(self):
         node = assertParseSimpleCommand(self, 'ls foo')
         self.assertEqual(2, len(node.words), node.words)
@@ -120,8 +121,8 @@ class SimpleCommandTest(unittest.TestCase):
         self.assertEqual(2, len(node.words))
         self.assertEqual(1, len(node.more_env))
 
-        node = assertParseSimpleCommand(self,
-                                        'FOO=bar >output.txt SPAM=eggs ls foo')
+        node = assertParseSimpleCommand(
+            self, 'FOO=bar >output.txt SPAM=eggs ls foo')
         self.assertEqual(2, len(node.words))
         self.assertEqual(2, len(node.more_env))
         self.assertEqual(1, len(node.redirects))
@@ -165,6 +166,7 @@ class SimpleCommandTest(unittest.TestCase):
 
 
 class OldStaticParsing(object):
+
     def testRedirectsInShAssignment(self):
         err = _assert_ParseCommandListError(self, 'x=1 >/dev/null')
         err = _assert_ParseCommandListError(self, 'echo hi; x=1 >/dev/null')
@@ -384,6 +386,7 @@ EOF
 
 
 class ArrayTest(unittest.TestCase):
+
     def testArrayLiteral(self):
         # Empty array
         node = assert_ParseCommandList(self, 'empty=()')
@@ -413,6 +416,7 @@ class ArrayTest(unittest.TestCase):
 
 
 class RedirectTest(unittest.TestCase):
+
     def testParseRedirects1(self):
         node = assertParseSimpleCommand(self, '>out.txt cat 1>&2')
         self.assertEqual(1, len(node.words))
@@ -462,6 +466,7 @@ EOF
 
 
 class CommandParserTest(unittest.TestCase):
+
     def testParsePipeline(self):
         node = assertParsePipeline(self, 'ls foo')
         self.assertEqual(2, len(node.words))
@@ -686,8 +691,7 @@ case (x) {
         pattern1 = node.arms[1].pattern
         self.assertEqual(pat_e.Eggex, pattern1.tag())
 
-        node = assert_ParseCommandLine(
-            self, """\
+        node = assert_ParseCommandLine(self, """\
 case (x) {
   word { = x }
 }
@@ -722,8 +726,7 @@ case (x) {
         arm = node.arms[0]
         self.assertEqual(Id.Op_LParen, arm.left.id)
 
-        node = assert_ParseCommandLine(
-            self, """\
+        node = assert_ParseCommandLine(self, """\
 case (x) {
   (else) { = x }
 }
@@ -733,7 +736,6 @@ case (x) {
 
         arm = node.arms[0]
         self.assertEqual(Id.Op_LParen, arm.left.id)
-
 
     def testParseWhile(self):
         node = assert_ParseCommandList(
@@ -836,7 +838,8 @@ done
 
     def testParseTildeSub(self):
         node = assert_ParseCommandList(
-            self, "ls ~ ~root ~/src ~/src/foo ~root/src ~weird!name/blah!blah ")
+            self,
+            "ls ~ ~root ~/src ~/src/foo ~root/src ~weird!name/blah!blah ")
 
     def testParseDBracket(self):
         node = assert_ParseCommandList(self, '[[ $# -gt 1 ]]')
@@ -953,7 +956,8 @@ class NestedParensTest(unittest.TestCase):
         self.assertEqual(3, len(node.words))
 
     def testNestedComSub(self):
-        node = assertParseSimpleCommand(self, 'echo $(one$(echo two)one) three')
+        node = assertParseSimpleCommand(self,
+                                        'echo $(one$(echo two)one) three')
         self.assertEqual(3, len(node.words))
 
     def testArithSubWithin(self):
@@ -1121,6 +1125,7 @@ $( for ((i=0; i<3; ++i)); do
 
 
 class RealBugsTest(unittest.TestCase):
+
     def testGitBug(self):
         # Original bug from git codebase.  Case in subshell.
         node = assert_ParseCommandList(
@@ -1188,7 +1193,8 @@ echo foo #
         self.assertEqual('foo', s)
 
     def testChromeIfSubshell(self):
-        node = assert_ParseCommandList(self, """\
+        node = assert_ParseCommandList(
+            self, """\
 if true; then (
   echo hi
 )
@@ -1206,7 +1212,8 @@ while true; do {
         self.assertEqual(command_e.WhileUntil, node.tag())
         self.assertEqual(Id.KW_While, node.keyword.id)
 
-        node = assert_ParseCommandList(self, """\
+        node = assert_ParseCommandList(
+            self, """\
 if true; then (
   echo hi
 ) fi
@@ -1318,6 +1325,7 @@ errcmd=( "${SETUP_STATE["$err.cmd"]}" )
 
 
 class ErrorLocationsTest(unittest.TestCase):
+
     def testCommand(self):
         """Enumerating errors in cmd_parse.py."""
 
@@ -1479,7 +1487,6 @@ class ParserInteractionsTest(unittest.TestCase):
 
         next_id = c_parser.w_parser.LookPastSpace()
         self.assertEqual(next_id, Id.Unknown_Tok)
-
 
 
 if __name__ == '__main__':

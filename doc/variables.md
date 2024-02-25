@@ -255,10 +255,10 @@ These builtins are also "isolated" inside procs, using local scope:
 YSH Builtins:
 
 - [compadjust]($osh-help)
-- [run]($oil-help) `--assign-status`
+- [try]($oil-help) and `_status`
 
 <!-- TODO: should YSH builtins always behave the same way?  Isn't that a little
-faster? I think read --line and --all are not consistent.  -->
+faster? I think read --all is not consistent.  -->
 
 ### Reminder: Proc Scope is Flat
 

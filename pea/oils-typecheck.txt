@@ -48,6 +48,7 @@ core/dev.py
 core/error.py
 core/executor.py
 core/main_loop.py
+core/num.py
 core/optview.py
 core/process.py
 core/pyos.py
@@ -65,6 +66,7 @@ frontend/builtin_def.py
 frontend/consts.py
 frontend/flag_def.py
 frontend/flag_spec.py
+frontend/flag_util.py
 frontend/id_kind_def.py
 frontend/lexer.py
 frontend/lexer_def.py

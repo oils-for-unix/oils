@@ -27,7 +27,6 @@ from typing import List, Tuple
 
 _ = log
 
-
 # TODO: Add details of the invalid character/byte here?
 
 INCOMPLETE_CHAR = 'Incomplete UTF-8 character'
@@ -445,6 +444,7 @@ def _PatSubAll(s, regex, replace_str):
 
 
 class GlobReplacer(object):
+
     def __init__(self, regex, replace_str, slash_tok):
         # type: (str, str, Token) -> None
 

@@ -28,6 +28,7 @@ def _PrettyPrint(n):
 
 
 class BracesTest(unittest.TestCase):
+
     def testRangePartDetect(self):
         CASES = [
             ('', None),

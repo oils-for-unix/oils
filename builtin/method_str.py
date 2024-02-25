@@ -11,6 +11,7 @@ from core import error
 from core import state
 from core import vm
 from frontend import typed_args
+from mycpp import mops
 from mycpp.mylib import log, tagswitch
 from osh import string_ops
 from ysh import expr_eval
@@ -183,7 +184,7 @@ class SearchMatch(vm._Callable):
 
         # It's called 'pos', not 'start' like Python.  Python has 2 kinds of
         # 'start' in its regex API, which can be confusing.
-        pos = rd.NamedInt('pos', 0)
+        pos = mops.BigTruncate(rd.NamedInt('pos', 0))
         rd.Done()
 
         # Make it anchored
@@ -300,7 +301,7 @@ class Replace(vm._Callable):
                                     'expected substitution to be Str or Expr',
                                     rd.LeftParenToken())
 
-        count = rd.NamedInt("count", -1)
+        count = mops.BigTruncate(rd.NamedInt("count", -1))
         rd.Done()
 
         if count == 0:

@@ -24,7 +24,7 @@ line 10
 
 #### --debug-file
 $SH --debug-file $TMP/debug.txt -c 'true'
-grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
+grep 'Oils started with' $TMP/debug.txt >/dev/null && echo yes
 ## stdout: yes
 
 #### Filename quoting

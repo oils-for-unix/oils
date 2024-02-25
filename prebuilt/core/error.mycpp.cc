@@ -18,6 +18,7 @@ GLOBAL_STR(str9, " (pos %d-%d: %r)");
 
 namespace runtime {  // forward declare
 
+  class TraversalState;
 
 }  // forward declare namespace runtime
 
@@ -27,6 +28,19 @@ using hnode_asdl::hnode;
 extern int NO_SPID;
 hnode::Record* NewRecord(BigStr* node_type);
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
+class TraversalState {
+ public:
+  TraversalState();
+  Dict<int, bool>* seen;
+  Dict<int, int>* ref_count;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(2, sizeof(TraversalState));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(TraversalState)
+};
+
 extern BigStr* TRUE_STR;
 extern BigStr* FALSE_STR;
 
@@ -55,6 +69,11 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
   else {
     return Alloc<hnode::Leaf>(s, e_color);
   }
+}
+
+TraversalState::TraversalState() {
+  this->seen = Alloc<Dict<int, bool>>();
+  this->ref_count = Alloc<Dict<int, int>>();
 }
 BigStr* TRUE_STR = str3;
 BigStr* FALSE_STR = str4;
@@ -171,6 +190,10 @@ BigStr* Decode::Message() {
   end = min(len(this->s), (this->end_pos + 4));
   part = this->s->slice(start, end);
   return str_concat(this->msg, StrFormat(" (pos %d-%d: %r)", this->start_pos, this->end_pos, part));
+}
+
+BigStr* Decode::__str__() {
+  return this->Message();
 }
 
 Encode::Encode(BigStr* msg) {

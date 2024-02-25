@@ -15,7 +15,7 @@ from core import state
 from core import ui
 from core import vm
 from data_lang import j8
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
@@ -54,7 +54,7 @@ class Pp(_Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        arg, arg_r = flag_spec.ParseCmdVal('pp',
+        arg, arg_r = flag_util.ParseCmdVal('pp',
                                            cmd_val,
                                            accept_typed_args=True)
 
@@ -188,7 +188,7 @@ class Write(_Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('write', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('write', cmd_val)
         arg = arg_types.write(attrs.attrs)
         #print(arg)
 
@@ -234,7 +234,7 @@ class Fopen(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('fopen',
+        _, arg_r = flag_util.ParseCmdVal('fopen',
                                          cmd_val,
                                          accept_typed_args=True)
 

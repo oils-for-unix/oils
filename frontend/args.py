@@ -57,6 +57,7 @@ from _devbuild.gen.syntax_asdl import loc, loc_t, CompoundWord
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from core.error import e_usage
+from mycpp import mops
 from mycpp.mylib import log, tagswitch, iteritems
 
 _ = log
@@ -298,7 +299,7 @@ class SetToInt(_ArgAction):
     def _Value(self, arg, location):
         # type: (str, loc_t) -> value_t
         try:
-            i = int(arg)
+            i = mops.FromStr(arg)
         except ValueError:
             e_usage(
                 'expected integer after %s, got %r' % ('-' + self.name, arg),
@@ -306,7 +307,7 @@ class SetToInt(_ArgAction):
 
         # So far all our int values are > 0, so use -1 as the 'unset' value
         # corner case: this treats -0 as 0!
-        if i < 0:
+        if mops.Greater(mops.BigInt(0), i):
             e_usage('got invalid integer for %s: %s' % ('-' + self.name, arg),
                     location)
         return value.Int(i)

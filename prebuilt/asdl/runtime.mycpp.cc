@@ -37,27 +37,29 @@ GLOBAL_STR(str28, "\n");
 GLOBAL_STR(str29, "\n");
 GLOBAL_STR(str30, " ");
 GLOBAL_STR(str31, "UNTYPED any");
-GLOBAL_STR(str32, " ");
+GLOBAL_STR(str32, "...0x%s");
 GLOBAL_STR(str33, " ");
-GLOBAL_STR(str34, " %s:");
-GLOBAL_STR(str35, "UNTYPED any");
-GLOBAL_STR(str36, "[");
-GLOBAL_STR(str37, " ");
-GLOBAL_STR(str38, "]");
-GLOBAL_STR(str39, "\u001b[0;0m");
-GLOBAL_STR(str40, "\u001b[1m");
-GLOBAL_STR(str41, "\u001b[4m");
-GLOBAL_STR(str42, "\u001b[7m");
-GLOBAL_STR(str43, "\u001b[31m");
-GLOBAL_STR(str44, "\u001b[32m");
-GLOBAL_STR(str45, "\u001b[33m");
-GLOBAL_STR(str46, "\u001b[34m");
-GLOBAL_STR(str47, "&");
-GLOBAL_STR(str48, "&amp;");
-GLOBAL_STR(str49, "<");
-GLOBAL_STR(str50, "&lt;");
-GLOBAL_STR(str51, ">");
-GLOBAL_STR(str52, "&gt;");
+GLOBAL_STR(str34, " ");
+GLOBAL_STR(str35, " %s:");
+GLOBAL_STR(str36, "UNTYPED any");
+GLOBAL_STR(str37, "[");
+GLOBAL_STR(str38, " ");
+GLOBAL_STR(str39, "]");
+GLOBAL_STR(str40, "...0x%s");
+GLOBAL_STR(str41, "\u001b[0;0m");
+GLOBAL_STR(str42, "\u001b[1m");
+GLOBAL_STR(str43, "\u001b[4m");
+GLOBAL_STR(str44, "\u001b[7m");
+GLOBAL_STR(str45, "\u001b[31m");
+GLOBAL_STR(str46, "\u001b[32m");
+GLOBAL_STR(str47, "\u001b[33m");
+GLOBAL_STR(str48, "\u001b[34m");
+GLOBAL_STR(str49, "&");
+GLOBAL_STR(str50, "&amp;");
+GLOBAL_STR(str51, "<");
+GLOBAL_STR(str52, "&lt;");
+GLOBAL_STR(str53, ">");
+GLOBAL_STR(str54, "&gt;");
 
 namespace ansi {  // forward declare
 
@@ -98,6 +100,9 @@ BigStr* escape(BigStr* s);
 namespace j8_lite {  // declare
 
 BigStr* EncodeString(BigStr* s, bool unquoted_ok = false);
+BigStr* MaybeShellEncode(BigStr* s);
+BigStr* ShellEncode(BigStr* s);
+BigStr* YshEncode(BigStr* s, bool unquoted_ok = false);
 
 
 }  // declare namespace j8_lite
@@ -124,6 +129,11 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
   else {
     return Alloc<hnode::Leaf>(s, e_color);
   }
+}
+
+TraversalState::TraversalState() {
+  this->seen = Alloc<Dict<int, bool>>();
+  this->ref_count = Alloc<Dict<int, int>>();
 }
 BigStr* TRUE_STR = str3;
 BigStr* FALSE_STR = str4;
@@ -554,7 +564,13 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
         this->_PrintRecord(node, f, indent);
       }
       else {
-        assert(0);  // AssertionError
+        if (tag == hnode_e::AlreadySeen) {
+          hnode::AlreadySeen* node = static_cast<hnode::AlreadySeen*>(UP_node);
+          f->write(StrFormat("...0x%s", mylib::hex_lower(node->heap_id)));
+        }
+        else {
+          assert(0);  // AssertionError
+        }
       }
     }
   }
@@ -571,14 +587,14 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
       f->PushColor(color_e::TypeName);
       f->write(node->node_type);
       f->PopColor();
-      f->write(str32);
+      f->write(str33);
     }
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
       StackRoot _for(&val    );
       if (i != 0) {
-        f->write(str33);
+        f->write(str34);
       }
       if (!_TrySingleLine(val, f, max_chars)) {
         return false;
@@ -625,7 +641,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
       f->PushColor(color_e::External);
       // if not PYTHON
       {
-        f->write(str35);
+        f->write(str36);
       }
       // endif MYCPP
       f->PopColor();
@@ -633,19 +649,19 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
     else {
       if (tag == hnode_e::Array) {
         hnode::Array* node = static_cast<hnode::Array*>(UP_node);
-        f->write(str36);
+        f->write(str37);
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
           StackRoot _for(&item        );
           if (i != 0) {
-            f->write(str37);
+            f->write(str38);
           }
           if (!_TrySingleLine(item, f, max_chars)) {
             return false;
           }
         }
-        f->write(str38);
+        f->write(str39);
       }
       else {
         if (tag == hnode_e::Record) {
@@ -653,7 +669,13 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
           return _TrySingleLineObj(node, f, max_chars);
         }
         else {
-          assert(0);  // AssertionError
+          if (tag == hnode_e::AlreadySeen) {
+            hnode::AlreadySeen* node = static_cast<hnode::AlreadySeen*>(UP_node);
+            f->write(StrFormat("...0x%s", mylib::hex_lower(node->heap_id)));
+          }
+          else {
+            assert(0);  // AssertionError
+          }
         }
       }
     }
@@ -679,14 +701,14 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 
 namespace ansi {  // define
 
-BigStr* RESET = str39;
-BigStr* BOLD = str40;
-BigStr* UNDERLINE = str41;
-BigStr* REVERSE = str42;
-BigStr* RED = str43;
-BigStr* GREEN = str44;
-BigStr* YELLOW = str45;
-BigStr* BLUE = str46;
+BigStr* RESET = str41;
+BigStr* BOLD = str42;
+BigStr* UNDERLINE = str43;
+BigStr* REVERSE = str44;
+BigStr* RED = str45;
+BigStr* GREEN = str46;
+BigStr* YELLOW = str47;
+BigStr* BLUE = str48;
 
 }  // define namespace ansi
 
@@ -696,9 +718,9 @@ namespace cgi {  // define
 BigStr* escape(BigStr* s) {
   StackRoot _root0(&s);
 
-  s = s->replace(str47, str48);
   s = s->replace(str49, str50);
   s = s->replace(str51, str52);
+  s = s->replace(str53, str54);
   return s;
 }
 
@@ -714,6 +736,30 @@ BigStr* EncodeString(BigStr* s, bool unquoted_ok) {
     return s;
   }
   return fastfunc::J8EncodeString(s, 1);
+}
+
+BigStr* MaybeShellEncode(BigStr* s) {
+  StackRoot _root0(&s);
+
+  if (fastfunc::CanOmitQuotes(s)) {
+    return s;
+  }
+  return fastfunc::ShellEncodeString(s, 0);
+}
+
+BigStr* ShellEncode(BigStr* s) {
+  StackRoot _root0(&s);
+
+  return fastfunc::ShellEncodeString(s, 0);
+}
+
+BigStr* YshEncode(BigStr* s, bool unquoted_ok) {
+  StackRoot _root0(&s);
+
+  if ((unquoted_ok and fastfunc::CanOmitQuotes(s))) {
+    return s;
+  }
+  return fastfunc::ShellEncodeString(s, 1);
 }
 
 }  // define namespace j8_lite

@@ -8,6 +8,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
 from core import error
 from core.error import e_usage
 from frontend import location
+from mycpp import mops
 from mycpp import mylib
 
 from typing import Dict, List, Optional, cast
@@ -194,7 +195,7 @@ class Reader(object):
                             self.BlamePos())
 
     def _ToInt(self, val):
-        # type: (value_t) -> int
+        # type: (value_t) -> mops.BigInt
         if val.tag() == value_e.Int:
             return cast(value.Int, val).i
 
@@ -310,15 +311,15 @@ class Reader(object):
         return self._ToBool(val)
 
     def PosInt(self):
-        # type: () -> int
+        # type: () -> mops.BigInt
         val = self.PosValue()
         return self._ToInt(val)
 
     def OptionalInt(self, default_):
-        # type: (int) -> int
+        # type: (int) -> mops.BigInt
         val = self.OptionalValue()
         if val is None:
-            return default_
+            return mops.BigInt(default_)
         return self._ToInt(val)
 
     def PosFloat(self):
@@ -425,9 +426,9 @@ class Reader(object):
                             self._BlameNamed(param_name))
 
     def NamedInt(self, param_name, default_):
-        # type: (str, int) -> int
+        # type: (str, int) -> mops.BigInt
         if param_name not in self.named_args:
-            return default_
+            return mops.BigInt(default_)
 
         val = self.named_args[param_name]
         UP_val = val

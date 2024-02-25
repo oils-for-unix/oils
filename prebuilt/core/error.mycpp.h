@@ -264,6 +264,7 @@ class Decode {
  public:
   Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos);
   BigStr* Message();
+  BigStr* __str__();
   BigStr* msg;
   BigStr* s;
   int start_pos;

@@ -13,6 +13,7 @@ _ = log  # shut up lint
 _PRIMITIVES = {
     'string': 'str',
     'int': 'int',
+    'BigInt': 'mops.BigInt',
     'float': 'float',
     'bool': 'bool',
     'any': 'Any',
@@ -85,6 +86,9 @@ def _DefaultValue(typ, mypy_type):
         if type_name == 'int':
             return '-1'
 
+        if type_name == 'BigInt':
+            return 'mops.BigInt(-1)'
+
         if type_name == 'bool':
             return 'False'
 
@@ -126,6 +130,9 @@ def _HNodeExpr(abbrev, typ, var_name):
 
         elif type_name == 'int':
             code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
+        elif type_name == 'BigInt':
+            code_str = 'hnode.Leaf(mops.ToStr(%s), color_e.OtherConst)' % var_name
 
         elif type_name == 'float':
             code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
@@ -390,7 +397,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    heap_id = id(self)')
         self.Emit('    if heap_id in trav.seen:')
         # cut off recursion
-        self.Emit('      return hnode.ObjectCycle(heap_id)')
+        self.Emit('      return hnode.AlreadySeen(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
 
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
@@ -417,7 +424,7 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    heap_id = id(self)')
         self.Emit('    if heap_id in trav.seen:')
         # cut off recursion
-        self.Emit('      return hnode.ObjectCycle(heap_id)')
+        self.Emit('      return hnode.AlreadySeen(heap_id)')
         self.Emit('    trav.seen[heap_id] = True')
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
         self.Emit('    L = out_node.fields')

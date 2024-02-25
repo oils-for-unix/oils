@@ -142,6 +142,7 @@ def GlobUnescape(s):
 
 
 class _GlobParser(object):
+
     def __init__(self, lexer):
         # type: (SimpleLexer) -> None
         self.lexer = lexer
@@ -383,6 +384,7 @@ def GlobToERE(pat):
 
 
 class Globber(object):
+
     def __init__(self, exec_opts):
         # type: (optview.Exec) -> None
         self.exec_opts = exec_opts

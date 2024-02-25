@@ -61,7 +61,7 @@ def _GetCTypeForCast(type_expr):
         subtype_name = type_expr.name
 
     # Hack for now
-    if subtype_name != 'int':
+    if subtype_name != 'int' and subtype_name != 'mops::BigInt':
         subtype_name += '*'
     return subtype_name
 
@@ -223,6 +223,7 @@ def GetCType(t, param=False, local=False):
 
     elif isinstance(t, Instance):
         type_name = t.type.fullname
+        #log('** TYPE NAME %s', type_name)
 
         if type_name == 'builtins.int':
             c_type = 'int'
@@ -255,8 +256,14 @@ def GetCType(t, param=False, local=False):
             c_type = 'Dict<%s>' % ', '.join(params)
             is_pointer = True
 
+        elif 'BigInt' in type_name:
+            # also spelled mycpp.mylib.BigInt
+
+            c_type = 'mops::BigInt'
+            # Not a pointer!
+
         elif type_name == 'typing.IO':
-            c_type = 'void'
+            c_type = 'mylib::File'
             is_pointer = True
 
         elif type_name == 'typing.Iterator':
@@ -303,12 +310,26 @@ def GetCType(t, param=False, local=False):
     elif isinstance(t, UnionType):
         # Special case for Optional[T] == Union[T, None]
         if len(t.items) != 2:
-            raise NotImplementedError('Expected Optional, got %s' % t)
+            raise NotImplementedError('Expected 2 items in Union, got %s' %
+                                      len(t.items))
 
-        if not isinstance(t.items[1], NoneTyp):
-            raise NotImplementedError('Expected Optional, got %s' % t)
+        t0 = t.items[0]
+        t1 = t.items[1]
 
-        c_type = GetCType(t.items[0])
+        c_type = None
+        if isinstance(t1, NoneTyp):  # Optional[T0]
+            c_type = GetCType(t.items[0])
+        else:
+            # Detect type alias defined in core/error.py
+            # IOError_OSError = Union[IOError, OSError]
+            t0_name = t0.type.fullname
+            t1_name = t1.type.fullname
+            if t0_name == 'builtins.IOError' and t1_name == 'builtins.OSError':
+                c_type = 'IOError_OSError'
+                is_pointer = True
+
+        if c_type is None:
+            raise NotImplementedError('Unexpected Union type %s' % t)
 
     elif isinstance(t, CallableType):
         # Function types are expanded
@@ -722,6 +743,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # str(i) doesn't need new.  For now it's a free function.
             # TODO: rename int_to_str?  or BigStr::from_int()?
             if (callee_name not in ('str', 'bool', 'float') and
+                    'BigInt' not in callee_name and
                     isinstance(ret_type, Instance)):
 
                 ret_type_name = ret_type.type.name
@@ -1834,6 +1856,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 key_type = GetCType(item_type.items[0])
                 val_type = GetCType(item_type.items[1])
+
+                #log('** %s key_type %s', item_type.items[0], key_type)
+                #log('** %s val_type %s', item_type.items[1], val_type)
 
                 # TODO(StackRoots): k, v
                 self.def_write_ind('  %s %s = it.Key();\n', key_type,

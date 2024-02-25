@@ -12,6 +12,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
 
 from core import error
 from core import optview
+from core import num
 from core import state
 from core import ui
 from data_lang import j8
@@ -106,7 +107,7 @@ class CrashDumper(object):
             # render that.
             self.error['source'] = value.Str(
                 ui.GetLineSourceString(blame_tok.line))
-            self.error['line_num'] = value.Int(blame_tok.line.line_num)
+            self.error['line_num'] = num.ToBig(blame_tok.line.line_num)
             self.error['line'] = value.Str(blame_tok.line.content)
 
         # TODO: Collect functions, aliases, etc.
@@ -142,8 +143,8 @@ class CrashDumper(object):
             'argv_stack': value.List(self.argv_stack),
             'debug_stack': value.List(self.debug_stack),
             'error': value.Dict(self.error),
-            'status': value.Int(status),
-            'pid': value.Int(my_pid),
+            'status': num.ToBig(status),
+            'pid': num.ToBig(my_pid),
         }  # type: Dict[str, value_t]
 
         path = os_path.join(self.crash_dump_dir,
@@ -228,6 +229,14 @@ def _PrintShValue(val, buf):
             result = ' '.join(parts)
 
     buf.write(result)
+
+
+def PrintShellArgv(argv, buf):
+    # type: (List[str], mylib.BufWriter) -> None
+    for i, arg in enumerate(argv):
+        if i != 0:
+            buf.write(' ')
+        buf.write(j8_lite.MaybeShellEncode(arg))
 
 
 def _PrintYshArgv(argv, buf):
@@ -530,10 +539,7 @@ class Tracer(object):
             return
 
         # Legacy: Use SHELL encoding, NOT _PrintYshArgv()
-        for i, arg in enumerate(argv):
-            if i != 0:
-                buf.write(' ')
-            buf.write(j8_lite.MaybeShellEncode(arg))
+        PrintShellArgv(argv, buf)
         buf.write('\n')
         self.f.write(buf.getvalue())
 

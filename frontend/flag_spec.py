@@ -4,19 +4,14 @@ flag_spec.py -- Flag and arg defs for builtins.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (
-    cmd_value,
-    flag_type_e,
-    flag_type_t,
-)
-from _devbuild.gen.syntax_asdl import ArgList
+from _devbuild.gen.runtime_asdl import flag_type_e, flag_type_t
 from _devbuild.gen.value_asdl import (value, value_t)
-from core.error import e_usage
 from frontend import args
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import Union, List, Tuple, Dict, Any, Optional
+from typing import Union, List, Dict, Any, Optional
 
 _ = log
 
@@ -27,7 +22,7 @@ FLAG_SPEC_AND_MORE = {}
 
 def FlagSpec(builtin_name):
     # type: (str) -> _FlagSpec
-    """Define a flag language."""
+    """Define a flag parser."""
     arg_spec = _FlagSpec()
     FLAG_SPEC[builtin_name] = arg_spec
     return arg_spec
@@ -35,56 +30,13 @@ def FlagSpec(builtin_name):
 
 def FlagSpecAndMore(name, typed=True):
     # type: (str, bool) -> _FlagSpecAndMore
-    """For set, bin/oil.py ("main"), compgen -A, complete -A, etc."""
+    """Define a flag parser with -o +o options
+
+    For set, bin/oils_for_unix.py main, compgen -A, complete -A, etc.
+    """
     arg_spec = _FlagSpecAndMore()
     FLAG_SPEC_AND_MORE[name] = arg_spec
     return arg_spec
-
-
-def Parse(spec_name, arg_r):
-    # type: (str, args.Reader) -> args._Attributes
-    """Parse argv using a given FlagSpec."""
-    spec = FLAG_SPEC[spec_name]
-    return args.Parse(spec, arg_r)
-
-
-def _DoesNotAccept(arg_list):
-    # type: (Optional[ArgList]) -> None
-    """ Copy from frontend/typed_args.py, to break dependency """
-    if arg_list is not None:
-        e_usage('got unexpected typed args', arg_list.left)
-
-
-def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
-    # type: (str, cmd_value.Argv, bool) -> Tuple[args._Attributes, args.Reader]
-
-    if not accept_typed_args:
-        _DoesNotAccept(cmd_val.typed_args)
-
-    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
-    arg_r.Next()  # move past the builtin name
-
-    spec = FLAG_SPEC[spec_name]
-    return args.Parse(spec, arg_r), arg_r
-
-
-def ParseLikeEcho(spec_name, cmd_val):
-    # type: (str, cmd_value.Argv) -> Tuple[args._Attributes, args.Reader]
-
-    _DoesNotAccept(cmd_val.typed_args)
-
-    arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
-    arg_r.Next()  # move past the builtin name
-
-    spec = FLAG_SPEC[spec_name]
-    return args.ParseLikeEcho(spec, arg_r), arg_r
-
-
-def ParseMore(spec_name, arg_r):
-    # type: (str, args.Reader) -> args._Attributes
-    """Parse argv using a given FlagSpecAndMore."""
-    spec = FLAG_SPEC_AND_MORE[spec_name]
-    return args.ParseMore(spec, arg_r)
 
 
 def All():
@@ -148,7 +100,7 @@ def _Default(arg_type, arg_default=None):
         if isinstance(arg_default, bool):
             return value.Bool(arg_default)
         elif isinstance(arg_default, int):
-            return value.Int(arg_default)
+            return value.Int(mops.IntWiden(arg_default))
         elif isinstance(arg_default, str):
             return value.Str(arg_default)
         else:
@@ -160,7 +112,8 @@ def _Default(arg_type, arg_default=None):
         default = value.Bool(False)
 
     elif arg_type == args.Int:
-        default = value.Int(-1)  # positive values aren't allowed now
+        # positive values aren't allowed now
+        default = value.Int(mops.MINUS_ONE)
     elif arg_type == args.Float:
         default = value.Float(-1.0)  # ditto
     elif arg_type == args.String:

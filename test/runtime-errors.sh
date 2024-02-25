@@ -545,6 +545,10 @@ ambiguous_redirect_context() {
   echo 'SHOULD NOT REACH HERE'
 }
 
+bad_file_descriptor() {
+  : 1>&7
+}
+
 command_sub_errexit() {
   #set -o errexit
   shopt -s command_sub_errexit || true
@@ -1081,6 +1085,8 @@ all() {
     pipefail pipefail_group pipefail_subshell pipefail_no_words pipefail_func \
     pipefail_while pipefail_multiple \
     core_process osh_state \
+    ambiguous_redirect ambiguous_redirect_context \
+    bad_file_descriptor \
     nounset bad_var_ref \
     nounset_arith \
     array_arith undef_arith undef_arith2 \

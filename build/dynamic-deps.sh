@@ -85,6 +85,8 @@ frontend/py.*\.py   # py_readline.py ported by hand to C++
 frontend/consts.py  # frontend/consts_gen.py
 frontend/match.py   # frontend/lexer_gen.py
 
+mycpp/mops.py       # Implemented in gc_mops.{h,cC}
+
 pgen2/grammar.py
 pgen2/pnode.py
 

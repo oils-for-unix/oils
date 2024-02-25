@@ -16,6 +16,7 @@ from frontend import parse_lib
 
 
 class _MockReadlineHistory(object):
+
     def __init__(self, items):
         self.items = items
 
@@ -39,6 +40,7 @@ def _MakeHistoryEvaluator(history_items):
 
 
 class HistoryEvaluatorTest(unittest.TestCase):
+
     def testInvalidHistoryItems(self):
         hist_ev = _MakeHistoryEvaluator([
             '(',

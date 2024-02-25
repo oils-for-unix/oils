@@ -6,6 +6,7 @@ from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token
 from _devbuild.gen.value_asdl import value, value_t
+from core import error
 from core import pyos
 from mycpp.mylib import log
 
@@ -205,12 +206,12 @@ class _Executor(object):
         # type: (CommandSub) -> str
         return ''
 
-    def PushRedirects(self, redirects):
-        # type: (List[RedirValue]) -> bool
-        return True
+    def PushRedirects(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        pass
 
-    def PopRedirects(self, num_redirects):
-        # type: (int) -> None
+    def PopRedirects(self, num_redirects, err_out):
+        # type: (int, List[error.IOError_OSError]) -> None
         pass
 
     def PushProcessSub(self):
@@ -279,10 +280,11 @@ class ctx_Redirect(object):
       { seq 3 > foo.txt; echo 4; } > bar.txt
     """
 
-    def __init__(self, shell_ex, num_redirects):
-        # type: (_Executor, int) -> None
+    def __init__(self, shell_ex, num_redirects, err_out):
+        # type: (_Executor, int, List[error.IOError_OSError]) -> None
         self.shell_ex = shell_ex
         self.num_redirects = num_redirects
+        self.err_out = err_out
 
     def __enter__(self):
         # type: () -> None
@@ -290,7 +292,7 @@ class ctx_Redirect(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.shell_ex.PopRedirects(self.num_redirects)
+        self.shell_ex.PopRedirects(self.num_redirects, self.err_out)
 
 
 class ctx_ProcessSub(object):

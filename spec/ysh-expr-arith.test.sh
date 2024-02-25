@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+
 #### Minus operator is left associative
 
 var a = 1 - 0 - 1
@@ -212,3 +214,156 @@ json write (~'3.5')
 ## status: 3
 ## STDOUT:
 ## END
+
+#### Big float constants becomes inf and -inf, tiny become 0.0 and -0.0
+
+$SH -c '
+var x = 0.12345
+pp line (x)
+'
+echo float=$?
+
+$SH -c '
+# Becomes infinity
+var x = 0.123456789e1234567
+pp line (x)
+
+var x = -0.123456789e1234567
+pp line (x)
+'
+echo float=$?
+
+$SH -c '
+# Becomes infinity
+var x = 0.123456789e-1234567
+pp line (x)
+
+var x = -0.123456789e-1234567
+pp line (x)
+'
+echo float=$?
+
+## STDOUT:
+(Float)   0.12345
+float=0
+(Float)   inf
+(Float)   -inf
+float=0
+(Float)   0.0
+(Float)   -0.0
+float=0
+## END
+
+#### Int constants bigger than 64 bits
+
+# Decimal
+$SH -c '
+var x = 1111
+pp line (x)
+'
+echo dec=$?
+
+$SH -c '
+var x = 1111_2222_3333_4444_5555_6666
+pp line (x)
+'
+echo dec=$?
+
+# Binary
+$SH -c '
+var x = 0b11
+pp line (x)
+'
+echo bin=$?
+
+$SH -c '
+var x = 0b1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
+pp line (x)
+'
+echo bin=$?
+
+# Octal
+$SH -c '
+var x = 0o77
+pp line (x)
+'
+echo oct=$?
+
+$SH -c '
+var x = 0o1111_2222_3333_4444_5555_6666
+pp line (x)
+'
+echo oct=$?
+
+# Hex
+$SH -c '
+var x = 0xff
+pp line (x)
+'
+echo hex=$?
+
+$SH -c '
+var x = 0xaaaa_bbbb_cccc_dddd_eeee_ffff
+pp line (x)
+'
+echo hex=$?
+
+## STDOUT:
+(Int)   1111
+dec=0
+dec=2
+(Int)   3
+bin=0
+bin=2
+(Int)   63
+oct=0
+oct=2
+(Int)   255
+hex=0
+hex=2
+## END
+
+#### 64-bit operations
+
+shopt -s ysh:upgrade
+
+var i = 1 << 32
+var s = str(i)
+
+echo "i = $i, s = $s"
+
+if (s ~== i) {
+  echo equal
+}
+
+## STDOUT:
+i = 4294967296, s = 4294967296
+equal
+## END
+
+#### 64-bit integer doesn't overflow
+
+# same as spec/arith.test.sh case 38
+
+var a= 1 << 31 
+echo $a
+
+var b = a + a
+echo $b
+
+var c = b + a  
+echo $c
+
+var x = 1 << 62
+var y = x - 1
+echo "max positive = $[ x + y ]"
+
+#echo "overflow $[ x + x ]"
+
+## STDOUT:
+2147483648
+4294967296
+6442450944
+max positive = 9223372036854775807
+## END
+

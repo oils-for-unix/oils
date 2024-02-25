@@ -117,37 +117,76 @@ BigStr* repr(BigStr* s) {
   return result;
 }
 
-// Helper for str_to_int() that doesn't use exceptions.
-bool StringToInteger(const char* s, int length, int base, int* result) {
+// Helper functions that don't use exceptions.
+
+bool StringToInt(const char* s, int length, int base, int* result) {
   if (length == 0) {
     return false;  // empty string isn't a valid integer
   }
 
-  // Empirically this is 4 4 8 on 32-bit and 4 8 8 on 64-bit
-  // We want the bigger numbers
-#if 0
-  log("sizeof(int) = %d", sizeof(int));
-  log("sizeof(long) = %ld", sizeof(long));
-  log("sizeof(long long) = %ld", sizeof(long long));
-  log("");
-  log("LONG_MAX = %ld", LONG_MAX);
-  log("LLONG_MAX = %lld", LLONG_MAX);
-#endif
+  // Note: sizeof(int) is often 4 bytes on both 32-bit and 64-bit
+  //       sizeof(long) is often 4 bytes on both 32-bit but 8 bytes on 64-bit
+  // static_assert(sizeof(long) == 8);
 
   char* pos;  // mutated by strtol
 
+  errno = 0;
   long v = strtol(s, &pos, base);
 
-  // The problem with long long is that mycpp deals with C++ int
-  // long long v = strtoll(s, &pos, base);
+  if (errno == ERANGE) {
+    switch (v) {
+    case LONG_MIN:
+      return false;  // underflow of long, which may be 64 bits
+    case LONG_MAX:
+      return false;  // overflow of long
+    }
+  }
 
-  // log("v = %ld", v);
+  // It should ALSO fit in an int, not just a long
+  if (v > INT_MAX) {
+    return false;
+  }
+  if (v < INT_MIN) {
+    return false;
+  }
 
-  switch (v) {
-  case LONG_MIN:
-    return false;  // underflow
-  case LONG_MAX:
-    return false;  // overflow
+  const char* end = s + length;
+  if (pos == end) {
+    *result = v;
+    return true;  // strtol() consumed ALL characters.
+  }
+
+  while (pos < end) {
+    if (!isspace(*pos)) {
+      return false;  // Trailing non-space
+    }
+    pos++;
+  }
+
+  *result = v;
+  return true;  // Trailing space is OK
+}
+
+bool StringToInt64(const char* s, int length, int base, int64_t* result) {
+  if (length == 0) {
+    return false;  // empty string isn't a valid integer
+  }
+
+  // These should be the same type
+  static_assert(sizeof(long long) == sizeof(int64_t));
+
+  char* pos;  // mutated by strtol
+
+  errno = 0;
+  long long v = strtoll(s, &pos, base);
+
+  if (errno == ERANGE) {
+    switch (v) {
+    case LLONG_MIN:
+      return false;  // underflow
+    case LLONG_MAX:
+      return false;  // overflow
+    }
   }
 
   const char* end = s + length;
@@ -169,17 +208,8 @@ bool StringToInteger(const char* s, int length, int base, int* result) {
 
 int to_int(BigStr* s, int base) {
   int i;
-  if (StringToInteger(s->data_, len(s), base, &i)) {
-    return i;
-  } else {
-    throw Alloc<ValueError>();
-  }
-}
-
-int to_int(BigStr* s) {
-  int i;
-  if (StringToInteger(s->data_, len(s), 10, &i)) {
-    return i;
+  if (StringToInt(s->data_, len(s), base, &i)) {
+    return i;  // truncated to int
   } else {
     throw Alloc<ValueError>();
   }
