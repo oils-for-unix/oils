@@ -61,7 +61,7 @@ def _GetCTypeForCast(type_expr):
         subtype_name = type_expr.name
 
     # Hack for now
-    if subtype_name != 'int' and subtype_name != 'mylib::BigInt':
+    if subtype_name != 'int' and subtype_name != 'mops::BigInt':
         subtype_name += '*'
     return subtype_name
 
@@ -256,7 +256,7 @@ def GetCType(t, param=False, local=False):
             c_type = 'Dict<%s>' % ', '.join(params)
             is_pointer = True
 
-        elif 'mops.BigInt' in type_name:
+        elif 'BigInt' in type_name:
             # also spelled mycpp.mylib.BigInt
 
             c_type = 'mops::BigInt'
@@ -743,6 +743,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # str(i) doesn't need new.  For now it's a free function.
             # TODO: rename int_to_str?  or BigStr::from_int()?
             if (callee_name not in ('str', 'bool', 'float') and
+                    'BigInt' not in callee_name and
                     isinstance(ret_type, Instance)):
 
                 ret_type_name = ret_type.type.name

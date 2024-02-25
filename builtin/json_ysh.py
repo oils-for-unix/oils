@@ -14,6 +14,7 @@ from data_lang import j8
 from frontend import flag_util
 from frontend import args
 from frontend import typed_args
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
 
@@ -72,7 +73,7 @@ class Json(vm._Builtin):
             rd.Done()
 
             if arg_jw.pretty:  # C++ BUG Here!
-                indent = arg_jw.indent
+                indent = mops.BigTruncate(arg_jw.indent)
             else:
                 # How yajl works: if indent is -1, then everything is on one line.
                 indent = -1

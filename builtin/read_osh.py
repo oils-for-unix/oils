@@ -17,6 +17,7 @@ from core import vm
 from frontend import flag_util
 from frontend import reader
 from frontend import typed_args
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, STDIN_FILENO
 
@@ -409,7 +410,7 @@ class Read(vm._Builtin):
         bits = 0
         if self.stdin_.isatty():
             # -d and -n should be unbuffered
-            if arg.d is not None or arg.n >= 0:
+            if arg.d is not None or mops.BigTruncate(arg.n) >= 0:
                 bits |= pyos.TERM_ICANON
             if arg.s:  # silent
                 bits |= pyos.TERM_ECHO
@@ -427,13 +428,15 @@ class Read(vm._Builtin):
     def _Read(self, arg, names):
         # type: (arg_types.read, List[str]) -> int
 
-        if arg.N >= 0:  # read a certain number of bytes (-1 means unset)
+        # read a certain number of bytes (-1 means unset)
+        arg_N = mops.BigTruncate(arg.N)
+        if arg_N >= 0:
             if len(names):
                 name = names[0]
             else:
                 name = 'REPLY'  # default variable name
 
-            s = _ReadN(arg.N, self.cmd_ev)
+            s = _ReadN(arg_N, self.cmd_ev)
 
             state.BuiltinSetString(self.mem, name, s)
 
@@ -442,7 +445,7 @@ class Read(vm._Builtin):
                 state.BuiltinSetString(self.mem, names[i], '')
 
             # Did we read all the bytes we wanted?
-            return 0 if len(s) == arg.n else 1
+            return 0 if len(s) == arg_N else 1
 
         if len(names) == 0:
             names.append('REPLY')
@@ -472,7 +475,8 @@ class Read(vm._Builtin):
         join_next = False
         status = 0
         while True:
-            line, eof = _ReadPortion(delim_byte, arg.n, self.cmd_ev)
+            line, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n),
+                                     self.cmd_ev)
 
             if eof:
                 # status 1 to terminate loop.  (This is true even though we set

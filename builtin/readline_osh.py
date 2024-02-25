@@ -10,6 +10,7 @@ from core.error import e_usage
 from core import pyutil
 from core import vm
 from frontend import flag_util
+from mycpp import mops
 from mycpp import mylib
 
 from typing import Optional, TYPE_CHECKING
@@ -100,13 +101,14 @@ class History(vm._Builtin):
             return 0
 
         # Delete history entry by id number
-        if arg.d >= 0:
-            cmd_index = arg.d - 1
+        arg_d = mops.BigTruncate(arg.d)
+        if arg_d >= 0:
+            cmd_index = arg_d - 1
 
             try:
                 readline.remove_history_item(cmd_index)
             except ValueError:
-                e_usage("couldn't find item %d" % arg.d, loc.Missing)
+                e_usage("couldn't find item %d" % arg_d, loc.Missing)
 
             return 0
 

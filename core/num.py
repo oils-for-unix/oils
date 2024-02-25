@@ -38,7 +38,7 @@ def IntDivide(x, y):
 
     Oils rounds toward zero.
     """
-    assert y != 0, 'checked by caller'
+    assert y.i != 0, 'checked by caller'
 
     ZERO = mops.BigInt(0)
     sign = 1
@@ -74,7 +74,7 @@ def IntRemainder(x, y):
     Python % is modulus, while C % is remainder.  Both OSH and YSH % is
     remainder, like C.
     """
-    assert y != 0, 'checked by caller'
+    assert y.i != 0, 'checked by caller'
 
     ZERO = mops.BigInt(0)
 

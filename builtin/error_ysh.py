@@ -10,6 +10,7 @@ from core import state
 from core import vm
 from frontend import flag_util
 from frontend import typed_args
+from mycpp import mops
 from mycpp.mylib import log
 
 _ = log
@@ -159,7 +160,7 @@ class Error(vm._Builtin):
         # use status 3 for expressions and 4 for encode/decode, and 10 "leaves
         # room" for others.
         # The user is of course free to choose status 1.
-        status = rd.NamedInt('status', 10)
+        status = mops.BigTruncate(rd.NamedInt('status', 10))
 
         # attach rest of named args to _error Dict
         properties = rd.RestNamed()

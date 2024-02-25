@@ -8,6 +8,7 @@ from _devbuild.gen.runtime_asdl import flag_type_e, flag_type_t
 from _devbuild.gen.value_asdl import (value, value_t)
 from core import num
 from frontend import args
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
 
@@ -100,7 +101,7 @@ def _Default(arg_type, arg_default=None):
         if isinstance(arg_default, bool):
             return value.Bool(arg_default)
         elif isinstance(arg_default, int):
-            return value.Int(arg_default)
+            return value.Int(mops.IntWiden(arg_default))
         elif isinstance(arg_default, str):
             return value.Str(arg_default)
         else:

@@ -11,6 +11,7 @@ from mycpp.mylib import log
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 from frontend import flag_spec
+from mycpp import mops
 from mycpp.mylib import switch
 # This causes a circular build dependency!  That is annoying.
 # builtin_comp -> core/completion -> pylib/{os_path,path_stat,...} -> posix_
@@ -145,7 +146,7 @@ def _WriteDefaults(cc_f, defaults_name, defaults):
             v = '{.b = %s}' % ('true' if val.b else 'false')
         elif val.tag() == value_e.Int:
             typ = 'Int'
-            v = '{.i = %s}' % val.i
+            v = '{.i = %s}' % mops.BigTruncate(val.i)
         elif val.tag() == value_e.Float:
             typ = 'Float'
             # printing this to C++ is problematic
@@ -464,8 +465,9 @@ def main(argv):
 
     elif action == 'mypy':
         print("""
-from frontend.args import _Attributes
 from _devbuild.gen.value_asdl import value, value_e, value_t
+from frontend.args import _Attributes
+from mycpp import mops
 from typing import cast, Dict, Optional
 """)
         for spec_name in sorted(specs):
@@ -503,7 +505,7 @@ class %s(object):
                         tmp = 'val%d' % i
                         print('    %s = attrs[%r]' % (tmp, field_name))
                         print(
-                            '    self.%s = -1 if %s.tag() == value_e.Undef else cast(value.Int, %s).i  # type: int'
+                            '    self.%s = mops.BigInt(-1) if %s.tag() == value_e.Undef else cast(value.Int, %s).i  # type: mops.BigInt'
                             % (field_name, tmp, tmp))
 
                     elif case(flag_type_e.Float):

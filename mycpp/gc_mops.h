@@ -32,6 +32,11 @@ inline BigInt FromBool(bool b) {
   return b ? BigInt(1) : BigInt(0);
 }
 
+inline float ToFloat(BigInt b) {
+  // TODO: test this
+  return static_cast<float>(b);
+}
+
 inline BigInt FromFloat(float f) {
   // TODO: test this
   return static_cast<BigInt>(f);

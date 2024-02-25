@@ -76,6 +76,7 @@ from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
 from pylib import os_path
@@ -904,8 +905,9 @@ def Main(
     if flag.location_str is not None:
         src = source.Synthetic(flag.location_str)
         assert line_reader is not None
-        if flag.location_start_line != -1:
-            line_reader.SetLineOffset(flag.location_start_line)
+        location_start_line = mops.BigTruncate(flag.location_start_line)
+        if location_start_line != -1:
+            line_reader.SetLineOffset(location_start_line)
 
     arena.PushSource(src)
 

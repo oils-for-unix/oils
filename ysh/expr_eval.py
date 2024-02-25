@@ -94,7 +94,7 @@ def _ConvertToInt(val, msg, blame_loc):
     with tagswitch(val) as case:
         if case(value_e.Int):
             val = cast(value.Int, UP_val)
-            return val.i
+            return mops.BigTruncate(val.i)
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
@@ -110,7 +110,7 @@ def _ConvertToNumber(val):
     with tagswitch(val) as case:
         if case(value_e.Int):
             val = cast(value.Int, UP_val)
-            return coerced_e.Int, val.i, -1.0
+            return coerced_e.Int, mops.BigTruncate(val.i), -1.0
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
@@ -766,7 +766,8 @@ class ExprEvaluator(object):
                         if not left2.isdigit():
                             return value.Bool(False)
 
-                        return value.Bool(int(left2) == right.i)
+                        return value.Bool(
+                            int(left2) == mops.BigTruncate(right.i))
 
                 e_die('~== expects Str, Int, or Bool on the right', op)
 
@@ -870,8 +871,9 @@ class ExprEvaluator(object):
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, UP_index)
+                        i = mops.BigTruncate(index.i)
                         try:
-                            return value.Str(obj.s[index.i])
+                            return value.Str(obj.s[i])
                         except IndexError:
                             # TODO: expr.Subscript has no error location
                             raise error.Expr('index out of range', loc.Missing)
@@ -894,8 +896,9 @@ class ExprEvaluator(object):
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, UP_index)
+                        i = mops.BigTruncate(index.i)
                         try:
-                            return obj.items[index.i]
+                            return obj.items[i]
                         except IndexError:
                             # TODO: expr.Subscript has no error location
                             raise error.Expr('index out of range', loc.Missing)

@@ -26,7 +26,7 @@ def ToInt(val, msg, blame_loc):
     UP_val = val
     if val.tag() == value_e.Int:
         val = cast(value.Int, UP_val)
-        return val.i
+        return mops.BigTruncate(val.i)
 
     raise error.TypeErr(val, msg, blame_loc)
 
@@ -316,7 +316,7 @@ def ToBool(val):
 
         elif case(value_e.Int):
             val = cast(value.Int, UP_val)
-            return val.i != 0
+            return not mops.Equal(val.i, mops.BigInt(0))
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)

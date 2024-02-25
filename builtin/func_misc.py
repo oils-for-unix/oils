@@ -187,7 +187,7 @@ class Float(vm._Callable):
         with tagswitch(val) as case:
             if case(value_e.Int):
                 val = cast(value.Int, UP_val)
-                return value.Float(float(val.i))
+                return value.Float(mops.ToFloat(val.i))
 
             elif case(value_e.Float):
                 return val
