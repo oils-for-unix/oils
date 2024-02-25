@@ -35,6 +35,7 @@ class BigInt(object):
 
 ZERO = BigInt(0)
 ONE = BigInt(1)
+MINUS_ONE = BigInt(-1)
 
 
 def ToStr(b):

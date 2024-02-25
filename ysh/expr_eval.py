@@ -99,32 +99,34 @@ def _ConvertToInt(val, msg, blame_loc):
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
             if match.LooksLikeInteger(val.s):
+                # TODO: Handle ValueError
                 return mops.FromStr(val.s)
 
     raise error.TypeErr(val, msg, blame_loc)
 
 
 def _ConvertToNumber(val):
-    # type: (value_t) -> Tuple[coerced_t, int, float]
+    # type: (value_t) -> Tuple[coerced_t, mops.BigInt, float]
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Int):
             val = cast(value.Int, UP_val)
-            return coerced_e.Int, mops.BigTruncate(val.i), -1.0
+            return coerced_e.Int, val.i, -1.0
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
-            return coerced_e.Float, -1, val.f
+            return coerced_e.Float, mops.MINUS_ONE, val.f
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
             if match.LooksLikeInteger(val.s):
-                return coerced_e.Int, int(val.s), -1.0
+                # TODO: Handle ValueError
+                return coerced_e.Int, mops.FromStr(val.s), -1.0
 
             if match.LooksLikeFloat(val.s):
-                return coerced_e.Float, -1, float(val.s)
+                return coerced_e.Float, mops.MINUS_ONE, float(val.s)
 
-    return coerced_e.Neither, -1, -1.0
+    return coerced_e.Neither, mops.MINUS_ONE, -1.0
 
 
 def _ConvertForBinaryOp(left, right):
@@ -136,8 +138,11 @@ def _ConvertForBinaryOp(left, right):
 
     To indicate which values the operation should be done on
     """
-    c1, i1, f1 = _ConvertToNumber(left)
-    c2, i2, f2 = _ConvertToNumber(right)
+    c1, i1_big, f1 = _ConvertToNumber(left)
+    c2, i2_big, f2 = _ConvertToNumber(right)
+
+    i1 = mops.BigTruncate(i1_big)
+    i2 = mops.BigTruncate(i2_big)
 
     if c1 == coerced_e.Int and c2 == coerced_e.Int:
         return coerced_e.Int, i1, i2, -1.0, -1.0
@@ -390,6 +395,7 @@ class ExprEvaluator(object):
         # validation.  TODO: Do this at PARSE TIME / COMPILE TIME.
         c_under = node.c.tval.replace('_', '')
 
+        # TODO: Handle ValueError for all FromStr
         id_ = node.c.id
         if id_ == Id.Expr_DecInt:
             return value.Int(mops.FromStr(c_under))
@@ -425,6 +431,7 @@ class ExprEvaluator(object):
             return num.ToBig(ord(consts.LookupCharC(node.c.tval[1])))
         if id_ == Id.Char_UBraced:
             s = node.c.tval[3:-1]  # \u{123}
+            # ValueError shouldn't happen because lexer validates
             return value.Int(mops.FromStr(s, 16))
         if id_ == Id.Char_Pound:
             # TODO: accept UTF-8 code point instead of single byte
@@ -444,7 +451,7 @@ class ExprEvaluator(object):
             if case(Id.Arith_Minus):
                 c1, i1, f1 = _ConvertToNumber(val)
                 if c1 == coerced_e.Int:
-                    return num.ToBig(-i1)
+                    return value.Int(mops.Negate(i1))
                 if c1 == coerced_e.Float:
                     return value.Float(-f1)
                 raise error.TypeErr(val, 'Negation expected Int or Float',

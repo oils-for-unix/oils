@@ -213,6 +213,16 @@ json write (~'3.5')
 ## STDOUT:
 ## END
 
+#### Constants bigger than 64 bits
+
+# TODO: test octal constants, numbers in strings, etc.
+
+var x = 1111_2222_3333_4444_5555_6666
+pp line (x)
+
+## STDOUT:
+(Int)   111122223333444455556666
+## END
 
 #### 64-bit integer doesn't overflow
 

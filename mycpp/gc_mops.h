@@ -20,6 +20,7 @@ typedef int64_t BigInt;
 // For convenience
 extern const BigInt ZERO;
 extern const BigInt ONE;
+extern const BigInt MINUS_ONE;
 
 BigStr* ToStr(BigInt b);
 BigInt FromStr(BigStr* s, int base = 10);
