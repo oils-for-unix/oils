@@ -1064,6 +1064,20 @@ class CommandEvaluator(object):
                         '%r expected a small integer, got %r' %
                         (lexer.TokenVal(keyword), str_val.s),
                         loc.Word(node.arg_word))
+
+                # C++ int() does range checking, but Python doesn't.  So let's
+                # simulate it here for spec tests.
+                # TODO: could be mylib.ToMachineInt()?  Problem: 'int' in C/C++
+                # could be more than 4 bytes.  We are testing INT_MAX and
+                # INT_MIN in gc_builtins.cc - those could be hard-coded.
+                if mylib.PYTHON:
+                    max_int = (1 << 31) - 1
+                    min_int = -(1 << 31)
+                    if not (min_int <= arg <= max_int):
+                        e_die(
+                            '%r expected a small integer, got %r' %
+                            (lexer.TokenVal(keyword), str_val.s),
+                            loc.Word(node.arg_word))
         else:
             if keyword.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
                 arg = self.mem.LastStatus()

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 ## compare_shells: bash dash mksh
 
 # Test numbers bigger than 255 (2^8 - 1) and bigger than 2^31 - 1
@@ -107,6 +107,19 @@ $SH -c 'true; ( return 2147483649; )' 2> err.txt
 echo status=$?
 cat err.txt | filter_err
 
+echo
+echo '--- negative ---'
+
+# negative vlaues
+$SH -c 'true; ( return -2147483648; )' 2>err.txt
+echo status=$?
+cat err.txt | filter_err
+
+# negative vlaues
+$SH -c 'true; ( return -2147483649; )' 2>err.txt
+echo status=$?
+cat err.txt | filter_err
+
 ## STDOUT:
 ## END
 
@@ -118,19 +131,14 @@ status=1
 expected a small integer
 status=1
 expected a small integer
+
+--- negative ---
+status=0
+status=1
+expected a small integer
 ## END
 
-# dash uses '2' as its "bad status" status!
-
-## OK dash STDOUT:
-status=255
-status=2
-Illegal number
-status=2
-Illegal number
-## END
-
-# mksh uses '1' as its "bad status" status!
+# mksh behaves similarly, uses '1' as its "bad status" status!
 
 ## OK mksh STDOUT:
 status=255
@@ -138,12 +146,39 @@ status=1
 bad number
 status=1
 bad number
+
+--- negative ---
+status=0
+status=1
+bad number
 ## END
 
-# bash disallows return
+# dash is similar, but seems to reject negative numbers
+
+## OK dash STDOUT:
+status=255
+status=2
+Illegal number
+status=2
+Illegal number
+
+--- negative ---
+status=2
+Illegal number
+status=2
+Illegal number
+## END
+
+# bash disallows return at top level
 ## OK bash STDOUT:
 status=1
 return: can only
+status=1
+return: can only
+status=1
+return: can only
+
+--- negative ---
 status=1
 return: can only
 status=1
