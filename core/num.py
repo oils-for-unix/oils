@@ -1,7 +1,13 @@
 """num.py - math functions"""
 from __future__ import print_function
 
+from _devbuild.gen.value_asdl import value
 from mycpp import mops
+
+
+def ToBig(i):
+    # type: (int) -> value.Int
+    return value.Int(mops.IntWiden(i))
 
 
 def Exponent(x, y):

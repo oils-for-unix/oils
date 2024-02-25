@@ -70,6 +70,7 @@ from core import dev
 from core import error
 from core import executor
 from core.error import e_die, e_die_status
+from core import num
 from core import pyos  # Time().  TODO: rename
 from core import pyutil
 from core import state
@@ -1270,7 +1271,7 @@ class CommandEvaluator(object):
                 if name2:
                     self.mem.SetLocalName(name2, it2.SecondValue())
                 if i_name:
-                    self.mem.SetLocalName(i_name, value.Int(it2.Index()))
+                    self.mem.SetLocalName(i_name, num.ToBig(it2.Index()))
 
                 # increment index before handling continue, etc.
                 it2.Next()

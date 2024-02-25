@@ -9,9 +9,11 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_e, eggex_ops_t, regex_match_e,
                                       RegexMatch)
 from core import error
+from core import num
 from core import state
 from core import vm
 from frontend import typed_args
+from mycpp import mops
 from mycpp.mylib import log, tagswitch
 
 from typing import Optional, cast, TYPE_CHECKING
@@ -38,11 +40,11 @@ class _MatchCallable(vm._Callable):
         if group_index < num_groups:
             start = match.indices[2 * group_index]
             if self.to_return == S:
-                return value.Int(start)
+                return num.ToBig(start)
 
             end = match.indices[2 * group_index + 1]
             if self.to_return == E:
-                return value.Int(end)
+                return num.ToBig(end)
 
             if start == -1:
                 return value.Null
@@ -88,7 +90,8 @@ def _GetGroupIndex(group, ops, blame_loc):
     with tagswitch(group) as case:
         if case(value_e.Int):
             group = cast(value.Int, UP_group)
-            group_index = group.i
+            group_index_big = group.i
+            group_index = mops.BigTruncate(group_index_big)
 
         elif case(value_e.Str):
             group = cast(value.Str, UP_group)

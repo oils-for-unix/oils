@@ -9,6 +9,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, regex_match, RegexMatch)
 from core import error
 from core import ui
+from mycpp import mops
 from mycpp.mylib import tagswitch
 from ysh import regex_translate
 
@@ -107,7 +108,7 @@ def Stringify(val, blame_loc, prefix=''):
 
         elif case(value_e.Int):
             val = cast(value.Int, UP_val)
-            s = str(val.i)  # Decimal '42', the only sensible representation
+            s = mops.ToStr(val.i)  # Decimal '42', the only sensible representation
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
@@ -231,7 +232,9 @@ class RangeIterator(_ContainerIter):
 
     def FirstValue(self):
         # type: () -> value_t
-        return value.Int(self.val.lower + self.i)
+
+        # TODO: range should be BigInt too
+        return value.Int(mops.IntWiden(self.val.lower + self.i))
 
 
 class ListIterator(_ContainerIter):

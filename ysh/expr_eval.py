@@ -60,6 +60,7 @@ from frontend import location
 from frontend import typed_args
 from osh import braces
 from osh import word_compile
+from mycpp import mops
 from mycpp.mylib import log, NewDict, switch, tagswitch, print_stderr
 from ysh import func_proc
 from ysh import val_ops
@@ -391,16 +392,16 @@ class ExprEvaluator(object):
 
         id_ = node.c.id
         if id_ == Id.Expr_DecInt:
-            return value.Int(int(c_under))
+            return value.Int(mops.ToBigInt(c_under))
         if id_ == Id.Expr_BinInt:
             assert c_under[:2] in ('0b', '0B'), c_under
-            return value.Int(int(c_under[2:], 2))
+            return value.Int(mops.ToBigInt(c_under[2:], 2))
         if id_ == Id.Expr_OctInt:
             assert c_under[:2] in ('0o', '0O'), c_under
-            return value.Int(int(c_under[2:], 8))
+            return value.Int(mops.ToBigInt(c_under[2:], 8))
         if id_ == Id.Expr_HexInt:
             assert c_under[:2] in ('0x', '0X'), c_under
-            return value.Int(int(c_under[2:], 16))
+            return value.Int(mops.ToBigInt(c_under[2:], 16))
 
         if id_ == Id.Expr_Float:
             # Note: float() in mycpp/gc_builtins.py currently uses strtod
@@ -421,14 +422,14 @@ class ExprEvaluator(object):
         # These calculations could also be done at COMPILE TIME
         if id_ == Id.Char_OneChar:
             # TODO: look up integer directly?
-            return value.Int(ord(consts.LookupCharC(node.c.tval[1])))
+            return num.ToBig(ord(consts.LookupCharC(node.c.tval[1])))
         if id_ == Id.Char_UBraced:
             s = node.c.tval[3:-1]  # \u{123}
-            return value.Int(int(s, 16))
+            return value.Int(mops.ToBigInt(s, 16))
         if id_ == Id.Char_Pound:
             # TODO: accept UTF-8 code point instead of single byte
             byte = node.c.tval[2]  # the a in #'a'
-            return value.Int(ord(byte))  # It's an integer
+            return num.ToBig(ord(byte))  # It's an integer
 
         # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using it
         # yet.
@@ -443,7 +444,7 @@ class ExprEvaluator(object):
             if case(Id.Arith_Minus):
                 c1, i1, f1 = _ConvertToNumber(val)
                 if c1 == coerced_e.Int:
-                    return value.Int(-i1)
+                    return num.ToBig(-i1)
                 if c1 == coerced_e.Float:
                     return value.Float(-f1)
                 raise error.TypeErr(val, 'Negation expected Int or Float',
@@ -451,7 +452,7 @@ class ExprEvaluator(object):
 
             elif case(Id.Arith_Tilde):
                 i = _ConvertToInt(val, '~ expected Int', node.op)
-                return value.Int(~i)
+                return num.ToBig(~i)
 
             elif case(Id.Expr_Not):
                 b = val_ops.ToBool(val)
@@ -490,11 +491,11 @@ class ExprEvaluator(object):
         if c == coerced_e.Int:
             with switch(op_id) as case:
                 if case(Id.Arith_Plus, Id.Arith_PlusEqual):
-                    return value.Int(i1 + i2)
+                    return num.ToBig(i1 + i2)
                 elif case(Id.Arith_Minus, Id.Arith_MinusEqual):
-                    return value.Int(i1 - i2)
+                    return num.ToBig(i1 - i2)
                 elif case(Id.Arith_Star, Id.Arith_StarEqual):
-                    return value.Int(i1 * i2)
+                    return num.ToBig(i1 * i2)
                 elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
                     if i2 == 0:
                         raise error.Expr('Divide by zero', op)
@@ -538,36 +539,36 @@ class ExprEvaluator(object):
                     # Disallow this to remove confusion between modulus and remainder
                     raise error.Expr("Divisor can't be negative", op)
 
-                return value.Int(num.IntRemainder2(i1, i2))
+                return num.ToBig(num.IntRemainder2(i1, i2))
 
             # a // b   setvar a //= b
             elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
                 if i2 == 0:
                     raise error.Expr('Divide by zero', op)
-                return value.Int(num.IntDivide2(i1, i2))
+                return num.ToBig(num.IntDivide2(i1, i2))
 
             # a ** b   setvar a **= b (ysh only)
             elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
                 # Same as sh_expr_eval.py
                 if i2 < 0:
                     raise error.Expr("Exponent can't be a negative number", op)
-                return value.Int(num.Exponent2(i1, i2))
+                return num.ToBig(num.Exponent2(i1, i2))
 
             # Bitwise
             elif case(Id.Arith_Amp, Id.Arith_AmpEqual):
-                return value.Int(i1 & i2)
+                return num.ToBig(i1 & i2)
 
             elif case(Id.Arith_Pipe, Id.Arith_PipeEqual):
-                return value.Int(i1 | i2)
+                return num.ToBig(i1 | i2)
 
             elif case(Id.Arith_Caret, Id.Arith_CaretEqual):
-                return value.Int(i1 ^ i2)
+                return num.ToBig(i1 ^ i2)
 
             elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):
-                return value.Int(i1 >> i2)
+                return num.ToBig(i1 >> i2)
 
             elif case(Id.Arith_DLess, Id.Arith_DLessEqual):
-                return value.Int(i1 << i2)
+                return num.ToBig(i1 << i2)
 
             else:
                 raise AssertionError(op.id)

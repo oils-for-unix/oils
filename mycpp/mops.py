@@ -48,6 +48,12 @@ def FromBool(b):
     return BigInt(1) if b else BigInt(0)
 
 
+def FromFloat(f):
+    # type: (float) -> BigInt
+    """Used by Oils int(3.14) in Oils"""
+    return cast(BigInt, int(f))
+
+
 # Can't use operator overloading
 
 

@@ -77,8 +77,8 @@ module value
     # 'null' like JavaScript, just 'null'.
   | Null
   | Bool(bool b)
-  #| Int(BigInt i)
-  | Int(int i)
+  | Int(BigInt i)
+  #| Int(int i)
   | Float(float f)
   | List(List[value] items)
   | Dict(Dict[str, value] d)

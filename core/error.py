@@ -3,6 +3,7 @@ from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
 from _devbuild.gen.value_asdl import (value, value_t, value_str)
+from core import num
 
 from typing import Dict, Union, NoReturn, TYPE_CHECKING
 
@@ -180,7 +181,7 @@ class Structured(FatalRuntime):
         # before these required fields.  But we always want the required fields
         # to take precedence, so it makes sense.
 
-        self.properties['status'] = value.Int(self.ExitStatus())
+        self.properties['status'] = num.ToBig(self.ExitStatus())
         self.properties['message'] = value.Str(self.msg)
 
         return value.Dict(self.properties)

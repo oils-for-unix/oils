@@ -4,6 +4,7 @@ from __future__ import print_function
 
 from _devbuild.gen.value_asdl import (value, value_t)
 
+from core import num
 from core import vm
 from frontend import typed_args
 from mycpp.mylib import log
@@ -93,6 +94,6 @@ class IndexOf(vm._Callable):
         i = 0
         while i < len(li):
             if val_ops.ExactlyEqual(li[i], needle, rd.LeftParenToken()):
-                return value.Int(i)
+                return num.ToBig(i)
             i += 1
-        return value.Int(-1)
+        return num.ToBig(-1)

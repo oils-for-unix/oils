@@ -585,7 +585,7 @@ class ArithEvaluator(object):
                     raise AssertionError(op_id)
 
                 self._Store(lval, new_big)
-                return value.Int(mops.BigTruncate(result))
+                return value.Int(result)
 
             elif case(arith_expr_e.BinaryAssign):  # a=1, a+=5, a[1]+=5
                 node = cast(arith_expr.BinaryAssign, UP_node)
@@ -598,7 +598,7 @@ class ArithEvaluator(object):
                     rhs_big = self.EvalToBigInt(node.right)
 
                     self._Store(lval, rhs_big)
-                    return value.Int(mops.BigTruncate(rhs_big))
+                    return value.Int(rhs_big)
 
                 old_big, lval = self._EvalLhsAndLookupArith(node.left)
                 rhs_big = self.EvalToBigInt(node.right)
@@ -637,7 +637,7 @@ class ArithEvaluator(object):
                     raise AssertionError(op_id)  # shouldn't get here
 
                 self._Store(lval, new_big)
-                return value.Int(mops.BigTruncate(new_big))
+                return value.Int(new_big)
 
             elif case(arith_expr_e.Unary):
                 node = cast(arith_expr.Unary, UP_node)
@@ -660,7 +660,7 @@ class ArithEvaluator(object):
                 else:
                     raise AssertionError(op_id)  # shouldn't get here
 
-                return value.Int(mops.BigTruncate(result))
+                return value.Int(result)
 
             elif case(arith_expr_e.Binary):
                 node = cast(arith_expr.Binary, UP_node)
@@ -677,7 +677,7 @@ class ArithEvaluator(object):
                             result = ONE  # true
                     else:
                         result = ONE  # true
-                    return value.Int(mops.BigTruncate(result))
+                    return value.Int(result)
 
                 if op_id == Id.Arith_DAmp:
                     lhs_big = self.EvalToBigInt(node.left)
@@ -689,7 +689,7 @@ class ArithEvaluator(object):
                             result = ZERO  # false
                         else:
                             result = ONE  # true
-                    return value.Int(mops.BigTruncate(result))
+                    return value.Int(result)
 
                 if op_id == Id.Arith_LBracket:
                     # NOTE: Similar to bracket_op_e.ArrayIndex in osh/word_eval.py
@@ -724,7 +724,7 @@ class ArithEvaluator(object):
                 if op_id == Id.Arith_Comma:
                     self.EvalToBigInt(node.left)  # throw away result
                     result = self.EvalToBigInt(node.right)
-                    return value.Int(mops.BigTruncate(result))
+                    return value.Int(result)
 
                 # Rest are integers
                 lhs_big = self.EvalToBigInt(node.left)
@@ -786,7 +786,7 @@ class ArithEvaluator(object):
                 else:
                     raise AssertionError(op_id)
 
-                return value.Int(mops.BigTruncate(result))
+                return value.Int(result)
 
             elif case(arith_expr_e.TernaryOp):
                 node = cast(arith_expr.TernaryOp, UP_node)

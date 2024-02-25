@@ -87,7 +87,7 @@ def _DefaultValue(typ, mypy_type):
             return '-1'
 
         if type_name == 'BigInt':
-            return '-1'
+            return 'mops.BigInt(-1)'
 
         if type_name == 'bool':
             return 'False'
@@ -130,6 +130,9 @@ def _HNodeExpr(abbrev, typ, var_name):
 
         elif type_name == 'int':
             code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
+
+        elif type_name == 'BigInt':
+            code_str = 'hnode.Leaf(mops.ToStr(%s), color_e.OtherConst)' % var_name
 
         elif type_name == 'float':
             code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
