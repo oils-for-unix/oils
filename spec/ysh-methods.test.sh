@@ -130,25 +130,14 @@ status=3
 
 # u'\u0020' will crash!
 
+# From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
 var spaces = [
-  # From https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
-  b'\u{0020}',  # SPACE
-  b'\u{00A0}',  # NO-BREAK SPACE
-  b'\u{1680}',  # OGHAM SPACE MARK
-  b'\u{2000}',  # EN QUAD
-  b'\u{2001}',  # EM QUAD
-  b'\u{2002}',  # EN SPACE
-  b'\u{2003}',  # EM SPACE
-  b'\u{2004}',  # THREE-PER-EM SPACE
-  b'\u{2005}',  # FOUR-PER-EM SPACE
-  b'\u{2006}',  # SIX-PER-EM SPACE
-  b'\u{2007}',  # FIGURE SPACE
-  b'\u{2008}',  # PUNCTUATION SPACE
-  b'\u{2009}',  # THIN SPACE
-  b'\u{200A}',  # HAIR SPACE
-  b'\u{202F}',  # NARROW NO-BREAK SPACE
-  b'\u{205F}',  # MEDIUM MATHEMATICAL SPACE
-  b'\u{3000}',  # IDEOGRAPHIC SPACE
+  b'\u{0009}',  # Horizontal tab (\t)
+  b'\u{000B}',  # Vertical tab (\v)
+  b'\u{000C}',  # Form feed (\f)
+  b'\u{0020}',  # Normal space
+  b'\u{00A0}',  # No-break space 	<NBSP>
+  b'\u{FEFF}',  # Zero-width no-break space <ZWNBSP>
 ] => join('')
 
 echo $["$spaces YSH $spaces" => trim()]

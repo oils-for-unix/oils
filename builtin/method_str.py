@@ -42,24 +42,14 @@ class StartsWith(vm._Callable):
         res = string.startswith(match)
         return value.Bool(res)
 
-# From https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
-SPACES = [0x0020,  # SPACE
-          0x00A0,  # NO-BREAK SPACE
-          0x1680,  # OGHAM SPACE MARK
-          0x2000,  # EN QUAD
-          0x2001,  # EM QUAD
-          0x2002,  # EN SPACE
-          0x2003,  # EM SPACE
-          0x2004,  # THREE-PER-EM SPACE
-          0x2005,  # FOUR-PER-EM SPACE
-          0x2006,  # SIX-PER-EM SPACE
-          0x2007,  # FIGURE SPACE
-          0x2008,  # PUNCTUATION SPACE
-          0x2009,  # THIN SPACE
-          0x200A,  # HAIR SPACE
-          0x202F,  # NARROW NO-BREAK SPACE
-          0x205F,  # MEDIUM MATHEMATICAL SPACE
-          0x3000]  # IDEOGRAPHIC SPACE
+
+# From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
+SPACES = [0x0009,  # Horizontal tab (\t)
+          0x000B,  # Vertical tab (\v)
+          0x000C,  # Form feed (\f)
+          0x0020,  # Normal space
+          0x00A0,  # No-break space 	<NBSP>
+          0xFEFF]  # Zero-width no-break space <ZWNBSP>
 
 
 def _IsSpace(codepoint):
