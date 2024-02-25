@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 #
-# Survey division and modulus operators in variuos languages
+# Survey arithmetic in various languages
 #
 # Usage:
-#   demo/survey-divmod.sh <function name>
+#   demo/survey-arith.sh <function name>
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
-div() {
+# TODO:
+# - Test invariants
+# - OSH follows shells/awk/C
+# - YSH could disallow negative numbers
+
+divmod() {
   echo 'Python'
   python3 -c 'print(10 / -3); print(- 10 / 3)'
   python3 -c 'print(10 // -3); print(- 10 // 3)'
@@ -54,9 +59,34 @@ div() {
   done
 }
 
-# TODO:
-# - Test invariants
-# - OSH follows shells/awk/C
-# - YSH could disallow negative numbers
+bigint() {
+  # Bigger than 2**64
+  local big=11112222333344445555666677778888999
+
+  # Big Int
+  python3 -c "print($big)"
+
+  # Gets printed in scientific notation
+  nodejs -e "console.log($big)"
+
+  # Ditto, scientific
+  lua -e "print($big)"
+
+  # Scientific
+  echo Perl
+  perl -e "print $big"; echo
+
+  # Awk loses precision somehow, not sure what they're doing
+  echo awk
+  awk -e "END { print $big }" < /dev/null
+
+  for sh in dash bash; do
+    echo $sh
+    $sh -c "echo \$(( $big ))"
+  done
+
+  # None of the interpreters reject invalid input!  They tend to mangle the
+  # numbers.
+}
 
 "$@"

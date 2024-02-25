@@ -315,10 +315,8 @@ class Printf(vm._Builtin):
                         # %(...)T and %d share this complex integer conversion logic
 
                         try:
-                            d = int(
-                                s
-                            )  # note: spaces like ' -42 ' accepted and normalized
-
+                            # note: spaces like ' -42 ' accepted and normalized
+                            d = int(s)
                         except ValueError:
                             # 'a is interpreted as the ASCII value of 'a'
                             if len(s) >= 1 and s[0] in '\'"':
