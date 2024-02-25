@@ -488,7 +488,9 @@ module syntax
   expr =
     # a variable name to evaluate
     Var(Token name)  # TODO: add str var_name
-    # For null, Bool, Int, Float
+    # Constants are typically Null, Bool, Int, Float
+    #           and also Str for key in {key: 42}
+    # But string literals are SingleQuoted or DoubleQuoted
     # Python uses Num(object n), which doesn't respect our "LST" invariant.
   | Const(Token c, value val)
 

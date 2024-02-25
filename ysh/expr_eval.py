@@ -389,57 +389,7 @@ class ExprEvaluator(object):
 
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
-
-        # Remove underscores from 1_000_000.  The lexer is responsible for
-        # validation.  TODO: Do this at PARSE TIME / COMPILE TIME.
-        c_under = node.c.tval.replace('_', '')
-
-        # TODO: Handle ValueError for all FromStr
-        id_ = node.c.id
-        if id_ == Id.Expr_DecInt:
-            return value.Int(mops.FromStr(c_under))
-        if id_ == Id.Expr_BinInt:
-            assert c_under[:2] in ('0b', '0B'), c_under
-            return value.Int(mops.FromStr(c_under[2:], 2))
-        if id_ == Id.Expr_OctInt:
-            assert c_under[:2] in ('0o', '0O'), c_under
-            return value.Int(mops.FromStr(c_under[2:], 8))
-        if id_ == Id.Expr_HexInt:
-            assert c_under[:2] in ('0x', '0X'), c_under
-            return value.Int(mops.FromStr(c_under[2:], 16))
-
-        if id_ == Id.Expr_Float:
-            # Note: float() in mycpp/gc_builtins.py currently uses strtod
-            return value.Float(float(c_under))
-
-        if id_ == Id.Expr_Null:
-            return value.Null
-        if id_ == Id.Expr_True:
-            return value.Bool(True)
-        if id_ == Id.Expr_False:
-            return value.Bool(False)
-
-        if id_ == Id.Expr_Name:
-            # for {name: 'bob'}
-            # Maybe also :Symbol?
-            return value.Str(node.c.tval)
-
-        # These calculations could also be done at COMPILE TIME
-        if id_ == Id.Char_OneChar:
-            # TODO: look up integer directly?
-            return num.ToBig(ord(consts.LookupCharC(node.c.tval[1])))
-        if id_ == Id.Char_UBraced:
-            s = node.c.tval[3:-1]  # \u{123}
-            # ValueError shouldn't happen because lexer validates
-            return value.Int(mops.FromStr(s, 16))
-        if id_ == Id.Char_Pound:
-            # TODO: accept UTF-8 code point instead of single byte
-            byte = node.c.tval[2]  # the a in #'a'
-            return num.ToBig(ord(byte))  # It's an integer
-
-        # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using it
-        # yet.
-        raise AssertionError(id_)
+        return node.val
 
     def _EvalUnary(self, node):
         # type: (expr.Unary) -> value_t

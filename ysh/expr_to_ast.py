@@ -45,10 +45,13 @@ from _devbuild.gen.syntax_asdl import (
     Eggex,
     EggexFlag,
 )
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
 from core.error import p_die
+from core import num
+from frontend import consts
 from frontend import lexer
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 from ysh import expr_parse
@@ -256,7 +259,8 @@ class Transformer(object):
         id_ = tok0.id
 
         if id_ == Id.Expr_Name:
-            key = expr.Const(tok0, value.Null)  # TODO
+            key_str = value.Str(lexer.TokenVal(tok0))
+            key = expr.Const(tok0, key_str)
             if p_node.NumChildren() >= 3:
                 val = self.Expr(p_node.GetChild(2))
             else:
@@ -724,15 +728,58 @@ class Transformer(object):
             if id_ == Id.Expr_Name:
                 return expr.Var(tok)
 
-            if id_ in (Id.Expr_DecInt, Id.Expr_BinInt, Id.Expr_OctInt,
-                       Id.Expr_HexInt, Id.Expr_Float):
-                return expr.Const(tok, value.Null)  # TODO
+            tok_str = lexer.TokenVal(tok)
 
-            if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False,
-                       Id.Char_OneChar, Id.Char_UBraced, Id.Char_Pound):
-                return expr.Const(tok, value.Null)  # TODO
+            # Remove underscores from 1_000_000.  The lexer is responsible for
+            # validation.
+            c_under = tok_str.replace('_', '')
 
-            raise NotImplementedError(Id_str(id_))
+            # TODO: Handle ValueError for all FromStr
+            if id_ == Id.Expr_DecInt:
+                cval = value.Int(mops.FromStr(c_under))  # type: value_t
+            elif id_ == Id.Expr_BinInt:
+                assert c_under[:2] in ('0b', '0B'), c_under
+                cval = value.Int(mops.FromStr(c_under[2:], 2))
+            elif id_ == Id.Expr_OctInt:
+                assert c_under[:2] in ('0o', '0O'), c_under
+                cval = value.Int(mops.FromStr(c_under[2:], 8))
+            elif id_ == Id.Expr_HexInt:
+                assert c_under[:2] in ('0x', '0X'), c_under
+                cval = value.Int(mops.FromStr(c_under[2:], 16))
+
+            elif id_ == Id.Expr_Float:
+                # Note: float() in mycpp/gc_builtins.py currently uses strtod
+                cval = value.Float(float(c_under))
+
+            elif id_ == Id.Expr_Null:
+                cval = value.Null
+            elif id_ == Id.Expr_True:
+                cval = value.Bool(True)
+            elif id_ == Id.Expr_False:
+                cval = value.Bool(False)
+
+            # These two could become STRINGS?
+            # Should we just have ord(\n) and so forth?  an ord('a') ?
+            # That's dynamic and not static?
+
+            elif id_ == Id.Char_OneChar:
+                # TODO: look up integer directly?
+                cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
+            elif id_ == Id.Char_UBraced:
+                hex_str = tok_str[3:-1]  # \u{123}
+                # ValueError shouldn't happen because lexer validates
+                cval = value.Int(mops.FromStr(hex_str, 16))
+
+            # This could be a char integer?  Not sure
+            elif id_ == Id.Char_Pound:
+                # TODO: accept UTF-8 code point instead of single byte
+                byte = tok_str[2]  # the a in #'a'
+                cval = num.ToBig(ord(byte))  # It's an integer
+
+            else:
+                raise AssertionError(Id_str(id_))
+
+            return expr.Const(tok, cval)
 
     def _ArrayItem(self, p_node):
         # type: (PNode) -> expr_t
