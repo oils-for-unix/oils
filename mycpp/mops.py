@@ -19,16 +19,17 @@ class BigInt(object):
         # type: (int) -> None
         self.i = i
 
+    # Prevent possible mistakes.  Could do this with other operators
     def __eq__(self, other):
-        # Prevent possible mistakes.  Could do this with other operators
+        # type: (object) -> bool
         raise AssertionError('Use mops.Equal()')
 
     def __gt__(self, other):
-        # Prevent possible mistakes.  Could do this with other operators
+        # type: (object) -> bool
         raise AssertionError('Use functions in mops.py')
 
     def __ge__(self, other):
-        # Prevent possible mistakes.  Could do this with other operators
+        # type: (object) -> bool
         raise AssertionError('Use functions in mops.py')
 
 
