@@ -21,7 +21,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, Any, List, Optional, Tuple, NoReturn, Iterator
+from typing import cast, Any, List, Optional, Tuple
 
 _ = log
 
