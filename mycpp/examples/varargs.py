@@ -12,38 +12,38 @@ from mycpp.mylib import log, print_stderr
 
 from typing import Any
 
-
 CONST = "myconst"
 
+
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  log('constant string')
+    log('constant string')
 
-  print_stderr('stderr_line')
+    print_stderr('stderr_line')
 
-  # Positional args
-  log("log %d %s", 42, "LL")
+    # Positional args
+    log("log %d %s", 42, "LL")
 
-  # Escaped %%
-  log("[%%] %d %s", 42, "LL")
+    # Escaped %%
+    log("[%%] %d %s", 42, "LL")
 
-  log(CONST)
+    log(CONST)
 
 
 def run_benchmarks():
-  # type: () -> None
+    # type: () -> None
 
-  # Test the interpreted format strings vs. the compiler!
-  # This might not be enough to get over startup time
-  r = "'repr'" + ' "repr"'
-  for i in xrange(10000):
-    log("[%%] %d %s %r", 123456789, "string", r)
+    # Test the interpreted format strings vs. the compiler!
+    # This might not be enough to get over startup time
+    r = "'repr'" + ' "repr"'
+    for i in xrange(10000):
+        log("[%%] %d %s %r", 123456789, "string", r)
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()

@@ -9,6 +9,7 @@ import os
 #from mycpp.mylib import switch, str_switch, log
 from mycpp.mylib import switch, log
 
+
 def TestString(s):
     # type: (str) -> None
 
@@ -28,37 +29,37 @@ def TestString(s):
 
 
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  TestString('spam')
-  TestString('foo')
-  TestString('zzz')
+    TestString('spam')
+    TestString('foo')
+    TestString('zzz')
 
-  x = 5
-  with switch(x) as case:
-    if case(0):
-      print('zero')
-      print('zero')
+    x = 5
+    with switch(x) as case:
+        if case(0):
+            print('zero')
+            print('zero')
 
-    elif case(1, 2):
-      print('one or two')
+        elif case(1, 2):
+            print('one or two')
 
-    elif case(3, 4):
-      print('three or four')
+        elif case(3, 4):
+            print('three or four')
 
-    else:
-      print('default')
-      print('another')
+        else:
+            print('default')
+            print('another')
 
 
 def run_benchmarks():
-  # type: () -> None
-  raise NotImplementedError()
+    # type: () -> None
+    raise NotImplementedError()
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()

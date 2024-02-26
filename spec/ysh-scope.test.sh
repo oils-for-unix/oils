@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 # Demonstrations for users.  Could go in docs.
 
@@ -357,6 +357,38 @@ hi from mutate
 (Dict)   {"key":"mutated","key2":"mutated"}
 AFTER mutate
 (Dict)   {"key":"mutated","key2":"mutated"}
+## END
+
+#### setglobal a[i] inside proc
+
+shopt -s ysh:upgrade
+
+var a = [0]
+
+proc mutate {
+  var a = [1]  # shadows global var
+
+  echo 'hi from mutate'
+  setglobal a[0] = 42
+
+  pp line (a)
+}
+
+echo 'BEFORE mutate'
+pp line (a)
+
+mutate
+
+echo 'AFTER mutate'
+pp line (a)
+
+## STDOUT:
+BEFORE mutate
+(List)   [0]
+hi from mutate
+(List)   [42]
+AFTER mutate
+(List)   [42]
 ## END
 
 
