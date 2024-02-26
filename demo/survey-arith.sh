@@ -59,6 +59,9 @@ divmod() {
   done
 }
 
+# TODO:
+# - Add Julia, Erlang, Elixir
+
 bigint() {
   # Bigger than 2**64
   local big=11112222333344445555666677778888999
@@ -93,9 +96,14 @@ bigint() {
 
   for sh in dash bash mksh zsh $osh; do
     echo $sh
-    $sh -c "echo \$(( $big ))"
+    $sh -c "echo \$(( $big ))" || true
     echo
   done
+
+  # Julia has big integers
+  echo 'Julia'
+  demo/julia.sh julia -e "print($big)"; echo
+  echo
 
   # None of the interpreters reject invalid input!  They tend to mangle the
   # numbers.

@@ -36,8 +36,9 @@ def run_benchmarks():
 
   # Test the interpreted format strings vs. the compiler!
   # This might not be enough to get over startup time
-  for i in xrange(1000):
-    log("[%%] %d %s", 42, "LL")
+  r = "'repr'" + ' "repr"'
+  for i in xrange(10000):
+    log("[%%] %d %s %r", 123456789, "string", r)
 
 
 if __name__ == '__main__':

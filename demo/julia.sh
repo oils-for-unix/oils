@@ -16,12 +16,16 @@ download() {
 # TODO: should make a wedge that's lazy
 extract() {
   pushd _tmp
-  tar -x -z < julia-*.tar.gz
+  time tar -x -z < julia-*.tar.gz
   popd
 }
 
 julia() {
   _tmp/julia-*/bin/julia "$@"
+}
+
+demo() {
+  julia -e 'print("hi from Julia\n")'
 }
 
 "$@"
