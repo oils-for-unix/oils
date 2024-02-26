@@ -27,6 +27,32 @@ TEST bigint_test() {
   PASS();
 }
 
+TEST static_cast_test() {
+  // These conversion ops are currently implemented by static_cast<>
+
+  auto big = mops::BigInt{1} << 31;
+
+  // Turns into a negative number
+  int i = mops::BigTruncate(big);
+  log("i = %d", i);
+
+  // Truncates float to int.  TODO: Test out Oils behavior.
+  float f = 3.14f;
+  auto fbig = mops::FromFloat(f);
+  log("%f -> %ld", f, fbig);
+
+  f = 3.99f;
+  fbig = mops::FromFloat(f);
+  log("%f = %ld", f, fbig);
+
+  // OK this is an exact integer
+  f = mops::ToFloat(big);
+  log("f = %f", f);
+  ASSERT_EQ_FMT(f, 2147483648.0, "%f");
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -35,6 +61,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(bigint_test);
+  RUN_TEST(static_cast_test);
 
   gHeap.CleanProcessExit();
 

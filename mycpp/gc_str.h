@@ -130,8 +130,6 @@ class StrIter {
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
 
-bool maybe_str_equals(BigStr* left, BigStr* right);
-
 extern BigStr* kEmptyString;
 
 // GlobalStr notes:

@@ -419,6 +419,15 @@ bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
   return are_equal(t1, t2);
 }
 
+bool str_equals_c(const char* c_string, int c_len, BigStr* s) {
+  // Needs SmallStr change
+  if (len(s) == c_len) {
+    return memcmp(s->data_, c_string, c_len) == 0;
+  } else {
+    return false;
+  }
+}
+
 bool str_equals0(const char* c_string, BigStr* s) {
   int n = strlen(c_string);
   if (len(s) == n) {
