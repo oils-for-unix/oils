@@ -97,6 +97,7 @@ readonly MARKDOWN_DOCS=(
   qsn
   qtt
   j8-notation
+  pretty-printing
 
   doc-toolchain
   doc-plugins
