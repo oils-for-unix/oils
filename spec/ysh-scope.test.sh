@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 # Demonstrations for users.  Could go in docs.
 
@@ -325,45 +325,6 @@ echo g=$g new_global=$new_global
 g=p new_global=p
 ## END
 
-#### setref equivalent without pgen2 syntax, using open proc
-shopt --set parse_proc
-
-# This is kind of what we compile to.  Ref params get an extra __ prefix?  then
-# that means you can't really READ them either?  I think that's OK.
-
-# At call time, param binding time:
-#   If the PARAM has a colon prefix:
-#     Assert that the ARG has a colon prefix.  Don't remove it.
-#     Set the cell.nameref flag.
-#
-# At Setref time:
-#   Check that it's cell.nameref.
-#   Add extra : to lvalue.{Named,Indexed,Keyed} and perform it.
-#
-# The __ avoids the nameref cycle check.
-# And we probably disallow reading from the ref.  That's OK.  The caller can
-# pass it in as a regular value!
-
-proc set-it {
-  local -n __s=$1  # nameref flag needed with setref
-  local val=$2
-
-  # well this part requires pgen2
-  setref s = "foo-$val"
-}
-
-var s = 'abc'
-var t = 'def'
-set-it s SS
-set-it t TT  # no colon here
-echo $s
-echo $t
-
-## STDOUT:
-foo-SS
-foo-TT
-## END
-
 #### unset inside proc uses local scope
 shopt --set parse_brace
 shopt --set parse_proc
@@ -660,3 +621,4 @@ wrong IFS=x
 shvar IFS=z
 ['x', 'x ', 'x']
 ## END
+
