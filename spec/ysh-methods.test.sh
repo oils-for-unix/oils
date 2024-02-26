@@ -133,8 +133,10 @@ status=3
 # From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
 var spaces = [
   b'\u{0009}',  # Horizontal tab (\t)
+  b'\u{000A}',  # Newline (\n)
   b'\u{000B}',  # Vertical tab (\v)
   b'\u{000C}',  # Form feed (\f)
+  b'\u{000D}',  # Carriage return (\r)
   b'\u{0020}',  # Normal space
   b'\u{00A0}',  # No-break space 	<NBSP>
   b'\u{FEFF}',  # Zero-width no-break space <ZWNBSP>

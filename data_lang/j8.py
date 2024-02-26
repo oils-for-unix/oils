@@ -107,7 +107,6 @@ def ValueIdString(val):
         return ' 0x%s' % mylib.hex_lower(heap_id)
 
 
-# TODO: move this to a unicode file?
 def Utf8Encode(code):
     # type: (int) -> str
     """Return utf-8 encoded bytes from a unicode code point.

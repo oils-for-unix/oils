@@ -45,8 +45,10 @@ class StartsWith(vm._Callable):
 
 # From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
 SPACES = [0x0009,  # Horizontal tab (\t)
+          0x000A,  # Newline (\n)
           0x000B,  # Vertical tab (\v)
           0x000C,  # Form feed (\f)
+          0x000D,  # Carriage return (\r)
           0x0020,  # Normal space
           0x00A0,  # No-break space 	<NBSP>
           0xFEFF]  # Zero-width no-break space <ZWNBSP>
