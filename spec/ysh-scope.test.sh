@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 # Demonstrations for users.  Could go in docs.
 
@@ -324,6 +324,41 @@ echo g=$g new_global=$new_global
 ## STDOUT:
 g=p new_global=p
 ## END
+
+#### setglobal d[key] inside proc should mutate global (bug #1841)
+
+shopt -s ysh:upgrade
+
+var g = {}
+
+proc mutate {
+  var g = {}  # shadows global var
+
+  echo 'hi from mutate'
+  setglobal g.key = 'mutated'
+  setglobal g['key2'] = 'mutated'
+
+
+  pp line (g)
+}
+
+echo 'BEFORE mutate'
+pp line (g)
+
+mutate
+
+echo 'AFTER mutate'
+pp line (g)
+
+## STDOUT:
+BEFORE mutate
+(Dict)   {}
+hi from mutate
+(Dict)   {"key":"mutated","key2":"mutated"}
+AFTER mutate
+(Dict)   {"key":"mutated","key2":"mutated"}
+## END
+
 
 #### unset inside proc uses local scope
 shopt --set parse_brace
