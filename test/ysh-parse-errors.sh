@@ -1203,7 +1203,7 @@ test-for-parse-bare-word() {
   '
 }
 
-test-oils-issue-1118() {
+test-bug-1118() {
   set +o errexit
 
   # Originally pointed at 'for'
@@ -1234,7 +1234,7 @@ test-oils-issue-1118() {
   '
 }
 
-test-oils-issue-1850() {
+test-bug-1850() {
   _ysh-should-parse 'pp line (42); pp line (43)'
   #_osh-should-parse 'pp line (42); pp line (43)'
 
@@ -1395,11 +1395,40 @@ hi
 }
 
 test-bug-1826() {
-  return
+  #return
 
   read -r code_str << 'EOF'
 echo b'\xff'
 EOF
+
+  _parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = b'\xff'
+EOF
+
+  _parse-error "$code_str"
+
+  # Backslash ending the file
+
+  read -r code_str << 'EOF'
+echo b'\
+EOF
+  echo "[$code_str]"
+
+  _parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = b'\
+EOF
+  echo "[$code_str]"
+
+  _parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = $'\
+EOF
+  echo "[$code_str]"
 
   _parse-error "$code_str"
 }

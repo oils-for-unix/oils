@@ -599,13 +599,16 @@ J8_STR_DEF = [
     C("'", Id.Right_SingleQuote),  # end for J8
     _JSON_ONE_CHAR,
     C("\\'", Id.Char_OneChar),
+
+    # osh/word_parse.py relies on this.  It has to match $'', which uses _C_STRING_COMMON
+    C('\\', Id.Unknown_Backslash),
+
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
     R(r'''[^\\'\0]+''', Id.Char_Literals),
-    R(r'[^\0]', Id.Unknown_Tok),
 ]
 
 # For "JSON strings \" \u1234"
@@ -659,10 +662,6 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
     # e.g. 'foo', anything that's not a backslash escape or '
     R(r"[^\\'\0]+", Id.Char_Literals),
     C("'", Id.Right_SingleQuote),
-
-    # Backslash that ends the file!  Caught by re2c exhaustiveness check.  Parser
-    # will assert; should give a better syntax error.
-    C('\\\0', Id.Unknown_Tok),
 ]
 
 LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
