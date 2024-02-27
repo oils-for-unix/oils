@@ -488,15 +488,9 @@ _C_STRING_COMMON = [
     R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
     R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
-    # Backslash that ends a line.  Note '.' doesn't match a newline character.
-    C('\\\n', Id.Char_Literals),
-
     # e.g. \A is not an escape, and \x doesn't match a hex escape.  We allow it,
     # but a lint tool could warn about it.
     C('\\', Id.Unknown_Backslash),
-
-    # could be at the end of the line
-    #R('\\[uU]', Id.Unknown_BackslashU),
 ]
 
 ECHO_E_DEF = _C_STRING_COMMON + [
@@ -651,6 +645,10 @@ PS1_DEF = [
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
 LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
+    # Weird special case matching bash: backslash that ends a line.  We emit
+    # this token literally in OSH, but disable it in YSH.
+    C('\\\n', Id.Unknown_Backslash),
+
     # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
     # with no leading 0.
     R(OCTAL3_RE, Id.Char_Octal3),
