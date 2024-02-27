@@ -128,8 +128,6 @@ status=3
 
 #### Str => trim*(), unicode aware
 
-# u'\u0020' will crash!
-
 # From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
 var spaces = [
   b'\u{0009}',  # Horizontal tab (\t)
