@@ -80,8 +80,8 @@ class Trim(vm._Callable):
 
             try:
                 i = string_ops.NextUtf8Char(string, i)
-            except error.Strict as e:
-                raise error.Expr(e.msg, e.location)
+            except error.Strict:
+                assert False, "DecodeUtf8Char should have caught any encoding errors"
 
         return i
 
@@ -89,6 +89,8 @@ class Trim(vm._Callable):
         # type: (str) -> int
         i = len(string)
         while i > 0:
+            # For encoding errors, translate error.Strict to error.Expr to
+            # behave like the other builtin methods.
             try:
                 prev = string_ops.PreviousUtf8Char(string, i)
             except error.Strict as e:
