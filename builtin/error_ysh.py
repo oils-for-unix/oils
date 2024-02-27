@@ -86,54 +86,22 @@ class Try(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalCommand(cmd_val)
-        if cmd:
-            status = 0  # success by default
-            try:
-                with ctx_Try(self.mutable_opts):
-                    unused = self.cmd_ev.EvalCommand(cmd)
-            except error.Expr as e:
-                status = e.ExitStatus()
-            except error.ErrExit as e:
-                status = e.ExitStatus()
+        rd = typed_args.ReaderForProc(cmd_val)
+        cmd = rd.PosCommand()
 
-            except error.Structured as e:
-                status = e.ExitStatus()
-                self.mem.SetTryError(e.ToDict())
-
-            self.mem.SetTryStatus(status)
-            return 0
-
-        if arg_r.Peek() is None:
-            e_usage('expects a block or command argv', loc.Missing)
-
-        argv, locs = arg_r.Rest2()
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args)
-
+        status = 0  # success by default
         try:
-            # Temporarily turn ON errexit, but don't pass a SPID because we're
-            # ENABLING and not disabling.  Note that 'if try myproc' disables it and
-            # then enables it!
             with ctx_Try(self.mutable_opts):
-                # Pass do_fork=True.  Slight annoyance: the real value is a field of
-                # command.Simple().  See _NoForkLast() in CommandEvaluator.
-                # We have an extra fork (miss out on an optimization) of code
-                # like ( try ls ) or forkwait { try ls }, but that is NOT
-                # idiomatic code.  try is for procs/compound expressions.
-                cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-                status = self.shell_ex.RunSimpleCommand(
-                    cmd_val2, cmd_st, executor.DO_FORK)
-                #log('st %d', status)
+                unused = self.cmd_ev.EvalCommand(cmd)
         except error.Expr as e:
             status = e.ExitStatus()
         except error.ErrExit as e:
             status = e.ExitStatus()
+
         except error.Structured as e:
             status = e.ExitStatus()
             self.mem.SetTryError(e.ToDict())
 
-        # special variable
         self.mem.SetTryStatus(status)
         return 0
 
