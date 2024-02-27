@@ -314,7 +314,7 @@ errexit_multiple_processes() {
 
 _strict-errexit-case() {
   local code=$1
-  banner "[strict_errexit] $code"
+  case-banner "[strict_errexit] $code"
   _osh-error-1 \
     "set -o errexit; shopt -s strict_errexit; $code"
   echo

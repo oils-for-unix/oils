@@ -6,7 +6,7 @@
 # NOTE: No set -o errexit, etc.
 
 source test/common.sh
-source test/sh-assert.sh  # banner, _assert-sh-status
+source test/sh-assert.sh  # _assert-sh-status
 
 YSH=${YSH:-bin/ysh}
 

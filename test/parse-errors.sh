@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 source test/common.sh
-source test/sh-assert.sh  # banner, _assert-sh-status
+source test/sh-assert.sh  # _assert-sh-status
 
 # We can't really run with OSH=bash, because the exit status is often different
 
@@ -20,7 +20,7 @@ YSH=${YSH:-bin/ysh}
 # More detailed assertions - TODO: remove these?
 
 _assert-status-2() {
-  ### An interface where you can pass flags like -O parse_backslash
+  ### An interface where you can pass flags like -O test-parse_backslash
 
   local message=$0
   _assert-sh-status 2 $OSH $message "$@"
@@ -33,7 +33,7 @@ _assert-status-2-here() {
 _runtime-parse-error() {
   ### Assert that a parse error happens at runtime, e.g. for [ z z ]
 
-  banner "$@"
+  case-banner "$@"
   echo
   $OSH -c "$@"
 
@@ -49,7 +49,7 @@ _runtime-parse-error() {
 #
 
 # All in osh/word_parse.py
-patsub() {
+test-patsub() {
   set +o errexit
 
   _osh-should-parse 'echo ${x/}'
@@ -75,7 +75,7 @@ patsub() {
 }
 
 # osh/word_parse.py
-word-parse() {
+test-word-parse() {
   set +o errexit
 
   _osh-parse-error 'echo ${'
@@ -124,7 +124,7 @@ word-parse() {
   _osh-parse-error '${x:'
 }
 
-array-literal() {
+test-array-literal() {
   set +o errexit
 
   # Array literal with invalid TokenWord.
@@ -134,7 +134,7 @@ array-literal() {
   _osh-parse-error 'a=(1 ${2@} )'  # error in word inside array literal
 }
 
-arith-context() {
+test-arith-context() {
   set +o errexit
 
   # $(( ))
@@ -175,7 +175,7 @@ arith-context() {
 
 }
 
-arith-integration() {
+test-arith-integration() {
   set +o errexit
 
   # Regression: these were not parse errors, but should be!
@@ -200,7 +200,7 @@ arith-integration() {
   _osh-parse-error '${a[1+2 b]}'
 }
 
-arith-expr() {
+test-arith-expr() {
   set +o errexit
 
   # BUG: the token is off here
@@ -228,7 +228,7 @@ arith-expr() {
   #_osh-parse-error '$(( ++1 ))'
 }
 
-command-sub() {
+test-command-sub() {
   set +o errexit
   _osh-parse-error ' 
     echo line 2
@@ -252,7 +252,7 @@ command-sub() {
   _osh-parse-error 'echo `for x in`'
 }
 
-bool-expr() {
+test-bool-expr() {
   set +o errexit
 
   # Extra word
@@ -284,7 +284,7 @@ bool-expr() {
 }
 
 # These don't have any location information.
-test-builtin() {
+test-test-builtin() {
   set +o errexit
 
   # Some of these come from osh/bool_parse.py, and some from
@@ -311,7 +311,7 @@ test-builtin() {
   #_osh-parse-error '[ -o x ]'
 }
 
-printf-builtin() {
+test-printf-builtin() {
   set +o errexit
   _runtime-parse-error 'printf %'
   _runtime-parse-error 'printf [%Z]'
@@ -319,7 +319,7 @@ printf-builtin() {
   _runtime-parse-error 'printf -v "-invalid-" %s foo'
 }
 
-other-builtins() {
+test-other-builtins() {
   set +o errexit
 
   _runtime-parse-error 'shift 1 2'
@@ -337,7 +337,7 @@ other-builtins() {
   _runtime-parse-error 'getopts 'hc:' invalid-var-name'
 }
 
-quoted-strings() {
+test-quoted-strings() {
   set +o errexit
 
   _osh-parse-error '"unterminated double'
@@ -355,7 +355,7 @@ quoted-strings() {
   line 2"
 }
 
-braced-var-sub() {
+test-braced-var-sub() {
   set +o errexit
 
   # These should have ! for a prefix query
@@ -365,7 +365,7 @@ braced-var-sub() {
   _osh-parse-error 'echo ${x.}'
 }
 
-cmd-parse() {
+test-cmd-parse() {
   set +o errexit
 
   _osh-parse-error 'FOO=1 break'
@@ -393,20 +393,20 @@ cmd-parse() {
   _osh-parse-error '[ ( x ]'
 }
 
-append() {
-  # from spec/append.test.sh.  bash treats this as a runtime error, but it's a
+test-append() {
+  # from spec/test-append.test.sh.  bash treats this as a runtime error, but it's a
   # parse error in OSH.
   _osh-parse-error 'a[-1]+=(4 5)'
 }
 
-redirect() {
+test-redirect() {
   set +o errexit
 
   _osh-parse-error 'echo < <<'
   _osh-parse-error 'echo $( echo > >>  )'
 }
 
-simple-command() {
+test-simple-command() {
   set +o errexit
 
   _osh-parse-error 'PYTHONPATH=. FOO=(1 2) python'
@@ -423,19 +423,20 @@ simple-command() {
   _ysh-parse-error '=f(x)'
 }
 
-assign() {
+# Old code?  All these pass
+DISABLED-assign() {
   set +o errexit
+
   _osh-parse-error 'local name$x'
   _osh-parse-error 'local "ab"'
   _osh-parse-error 'local a.b'
 
   _osh-parse-error 'FOO=1 local foo=1'
-
 }
 
 # I can't think of any other here doc error conditions except arith/var/command
 # substitution, and unterminated.
-here-doc() {
+test-here-doc() {
   set +o errexit
 
   # Arith in here doc
@@ -456,7 +457,7 @@ EOF
 '
 }
 
-here-doc-delimiter() {
+test-here-doc-delimiter() {
   set +o errexit
 
   # NOTE: This is more like the case where.
@@ -475,7 +476,7 @@ here-doc-delimiter() {
   _osh-parse-error 'cat << $var/$(invalid)'
 }
 
-args-parse-builtin() {
+test-args-parse-builtin() {
   set +o errexit
   _runtime-parse-error 'read -x'  # invalid
   _runtime-parse-error 'builtin read -x'  # ditto
@@ -493,22 +494,21 @@ args-parse-builtin() {
   # - Oil flags: invalid long flag, boolean argument, etc.
 }
 
-# aiding the transition
-args-parse-more() {
+test-args-parse-more() {
   set +o errexit
   _runtime-parse-error 'set -z'
   _runtime-parse-error 'shopt -s foo'
   _runtime-parse-error 'shopt -z'
 }
 
-args-parse-main() {
+test-args-parse-main() {
   set +o errexit
   bin/osh --ast-format x
 
   bin/osh -o errexit +o oops
 }
 
-invalid-brace-ranges() {
+test-invalid-brace-ranges() {
   set +o errexit
 
   _osh-parse-error 'echo {1..3..-1}'
@@ -521,7 +521,7 @@ invalid-brace-ranges() {
   _osh-parse-error 'echo {z..a..1}'
 }
 
-extra-newlines() {
+test-extra-newlines() {
   set +o errexit
 
   _osh-parse-error '
@@ -603,7 +603,7 @@ extra-newlines() {
   '
 }
 
-ysh_c_strings() {
+test-ysh_c_strings() {
   set +o errexit
 
   # bash syntax
@@ -652,7 +652,7 @@ const bad = c'\xf'
 EOF
 }
 
-test_bug_1825_backslashes() {
+test-bug_1825_backslashes() {
   set +o errexit
 
   # Single backslash is accepted in OSH
@@ -680,12 +680,12 @@ setvar x = $'trailing\
 EOF
 }
 
-ysh_dq_strings() {
+test-ysh_dq_strings() {
   set +o errexit
 
   # Double quoted is an error
   _osh-should-parse 'echo "\z"'
-  _assert-status-2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
+  _assert-status-2 +O test-parse_backslash -n -c 'echo test-parse_backslash "\z"'
 
   _ysh-parse-error 'echo "\z"'  # not in Oil
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode
@@ -702,25 +702,25 @@ ysh_dq_strings() {
   _ysh-parse-error 'setvar x = "\z"'
 }
 
-ysh_bare_words() {
+test-ysh_bare_words() {
   set +o errexit
 
   _ysh-should-parse 'echo \$'
   _ysh-parse-error 'echo \z'
 }
 
-parse_backticks() {
+test-parse_backticks() {
   set +o errexit
 
   # These are allowed
   _osh-should-parse 'echo `echo hi`'
   _osh-should-parse 'echo "foo = `echo hi`"'
 
-  _assert-status-2 +O parse_backticks -n -c 'echo `echo hi`'
-  _assert-status-2 +O parse_backticks -n -c 'echo "foo = `echo hi`"'
+  _assert-status-2 +O test-parse_backticks -n -c 'echo `echo hi`'
+  _assert-status-2 +O test-parse_backticks -n -c 'echo "foo = `echo hi`"'
 }
 
-parse_dollar() {
+test-parse_dollar() {
   set +o errexit
 
   # The right way:
@@ -742,12 +742,12 @@ parse_dollar() {
   )
   for c in "${CASES[@]}"; do
     _osh-should-parse "$c"
-    _assert-status-2 +O parse_dollar -n -c "$c"
+    _assert-status-2 +O test-parse_dollar -n -c "$c"
     _ysh-parse-error "$c"
   done
 }
 
-parse_dparen() {
+test-parse_dparen() {
   set +o errexit
 
   # Bash (( construct
@@ -771,7 +771,7 @@ parse_dparen() {
   _ysh-should-parse 'if ( (1 > 0 and 43 > 42) ) { echo yes }'
 }
 
-invalid_parens() {
+test-invalid_parens() {
   set +o errexit
 
   # removed function sub syntax
@@ -779,7 +779,7 @@ invalid_parens() {
   _parse-error "$s"
   _ysh-parse-error "$s"
 
-  # requires parse_at
+  # requires test-parse_at
   local s='write -- @[sorted(x)]'
   _osh-parse-error "$s"  # this is a parse error, but BAD message!
   _ysh-should-parse "$s"
@@ -801,7 +801,7 @@ f() {
   _osh-parse-error "$s"
 }
 
-shell_for() {
+test-shell_for() {
   set +o errexit
 
   _osh-parse-error 'for x in &'
@@ -824,7 +824,7 @@ shell_for() {
 # Different source_t variants
 #
 
-nested_source_argvword() {
+test-nested_source_argvword() {
   # source.ArgvWord
   _runtime-parse-error '
   code="printf % x"
@@ -832,7 +832,7 @@ nested_source_argvword() {
   '
 }
 
-eval_parse_error() {
+test-eval_parse_error() {
   _runtime-parse-error '
   x="echo )"
   eval $x
@@ -845,7 +845,7 @@ trap_parse_error() {
   '
 }
 
-proc_func_reserved() {
+test-proc_func_reserved() {
   ### Prevents confusion
 
   set +o errexit
@@ -854,78 +854,13 @@ proc_func_reserved() {
   _osh-parse-error 'func f (x) { return (x) }'
 }
 
-# Note: PROMPT_COMMAND and PS1 are hard to trigger in this framework
-
-cases-in-strings() {
-  set +o errexit
-
-  cmd-parse
-  simple-command
-  command-sub
-  redirect
-  here-doc
-  here-doc-delimiter
-  append
-  extra-newlines
-
-  # Word
-  word-parse
-  array-literal
-  patsub
-  quoted-strings
-  braced-var-sub
-
-  # Arith
-  arith-context
-  arith-integration
-  arith-expr
-
-  bool-expr
-  test-builtin
-  printf-builtin
-  other-builtins
-
-  # frontend/args.py
-  args-parse-builtin
-  args-parse-main
-
-  invalid-brace-ranges  # osh/braces.py
-
-  append-builtin
-  blocks
-  parse_brace
-  regex_literals
-  proc_sig
-  proc_arg_list
-  ysh_c_strings
-  test_bug_1825_backslashes
-  ysh_dq_strings
-  ysh_bare_words
-
-  parse_backticks
-  parse_dollar
-  parse_backslash
-  parse_dparen
-
-  shell_for
-  parse_at
-  invalid_parens
-  nested_source_argvword
-
-  eval_parse_error
-  # should be status 2?
-  #trap_parse_error
-
-  proc_func_reserved
-}
-
 # Cases in their own file
 cases-in-files() {
   # Don't fail
   set +o errexit
 
   for t in test/parse-errors/*.sh; do
-    banner $t
+    case-banner $t
 
     $OSH $t
 
@@ -934,18 +869,40 @@ cases-in-files() {
       die "Expected status 2, got $status"
     fi
   done
+}
 
+cases-in-strings() {
+  # Error codes not checked, because we EXIT on failure
+  # So it's different than run-test-funcs, which other files use
+
+  # TODO: remove this
+  set +o errexit
+
+  list-test-funcs | while read -r test_func; do
+    echo
+    echo "*** Running parse error function $test_func ====="
+    echo
+
+    $0 $test_func
+  done
+}
+
+section-banner() {
+  echo
+  echo '///'
+  echo "/// $1"
+  echo '///'
+  echo
 }
 
 all() {
-  # TODO: Replace this with run-test-funcs
-  cases-in-strings
-
-  echo
-  echo ----------------------
-  echo
+  section-banner 'Cases in Files'
 
   cases-in-files
+
+  section-banner 'Cases in Functions, with strings'
+
+  cases-in-strings
 }
 
 all-with-bash() {

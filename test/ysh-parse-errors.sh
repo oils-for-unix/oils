@@ -4,7 +4,7 @@
 #   test/ysh-parse-errors.sh <function name>
 
 source test/common.sh
-source test/sh-assert.sh  # banner, _assert-sh-status
+source test/sh-assert.sh  # _assert-sh-status
 
 OSH=${OSH:-bin/osh}
 YSH=${YSH:-bin/ysh}

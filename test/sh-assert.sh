@@ -1,20 +1,20 @@
 # test/sh-assert.sh
 
-banner() {
+case-banner() {
   echo
   echo ===== CASE: "$@" =====
   echo
 }
 
 _assert-sh-status() {
-  ### The most general assertion
+  ### The most general assertion - EXIT on failure
 
   local expected_status=$1
   local sh=$2
   local message=$3
   shift 3
 
-  banner "$@"
+  case-banner "$@"
   echo
   $sh "$@"
   local status=$?
