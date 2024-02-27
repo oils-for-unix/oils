@@ -75,13 +75,13 @@ test-func-var-checker() {
 
   _should-parse '
   func f(x) {
-    setvar x = True
+    setvar x = true
   }
   '
 
   _parse-error '
   func f() {
-    setvar x = True
+    setvar x = true
   }
   '
 }

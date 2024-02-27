@@ -76,6 +76,7 @@ readonly MARKDOWN_DOCS=(
   getting-started
   known-differences
   error-handling
+  error-catalog
   json
   hay
   simple-word-eval

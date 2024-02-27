@@ -446,8 +446,8 @@ class VarChecker(object):
         if keyword_id == Id.KW_SetVar:
             if name not in top:
                 # Note: the solution could be setglobal, etc.
-                p_die("setvar couldn't find matching 'var %s'" % name,
-                      name_tok)
+                p_die("setvar couldn't find matching 'var %s' (OILS-ERR-10)" %
+                      name, name_tok)
 
 
 class ctx_VarChecker(object):

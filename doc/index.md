@@ -120,6 +120,7 @@ TODO:
 ## The Shared Oils Runtime
 
 - [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
+- [Oils Error Catalog, With Hints](error-catalog.html)
 - [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.
 - [Options](options.html) &dagger;.  Parsing and runtime options turn OSH into YSH.
 

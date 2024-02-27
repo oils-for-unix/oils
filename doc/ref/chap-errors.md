@@ -10,6 +10,8 @@ Errors
 
 This chapter in the [Oils Reference](index.html) describes **errors**.
 
+Related: [Oils Error Catalog, With Hints](../error-catalog.html).
+
 <div id="toc">
 </div>
 

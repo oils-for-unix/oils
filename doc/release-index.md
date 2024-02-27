@@ -74,6 +74,8 @@ These docs are **ready to read**:
   | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
   | [Language Influences](doc/language-influences.html)
   - Notes: [Novelties in OSH and YSH](doc/novelties.html) | [Warts](doc/warts.html)
+- Reference:
+  - [Oils Error Catalog, With Hints](doc/error-catalog.html)
 
 More:
 
