@@ -572,15 +572,6 @@ invalid-brace-ranges() {
   _error-case 'echo {z..a..1}'
 }
 
-append-builtin() {
-  set +o errexit
-
-  _runtime-parse-error 'append'
-  _runtime-parse-error 'append invalid-'
-
-  #_error-case 'push notarray'  # returns status 1
-}
-
 extra-newlines() {
   set +o errexit
 

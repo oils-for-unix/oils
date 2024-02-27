@@ -907,6 +907,8 @@ test-remainder() {
 test-append-usage-error() {
   _should-run 'append x ([])'
 
+  _expr-error-case 'append'
+
   _expr-error-case 'append x'  # Too few
 
   _expr-error-case 'append x ([], [])'  # Too many

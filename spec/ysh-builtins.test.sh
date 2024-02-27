@@ -34,7 +34,7 @@ argv.py @a
 
 #### append without typed arg
 append a b
-## status: 2
+## status: 3
 
 #### append passed invalid type
 s=''
