@@ -9,24 +9,6 @@ source test/sh-assert.sh  # banner, _assert-sh-status
 OSH=${OSH:-bin/osh}
 YSH=${YSH:-bin/ysh}
 
-_osh-should-parse() {
-  local message="Should parse under $OSH"
-  _assert-sh-status 0 $OSH "$message" \
-    -n -c "$@"
-}
-
-_ysh-should-parse() {
-  local message="Should parse under $YSH"
-  _assert-sh-status 0 $YSH "$message" \
-    -n -c "$@"
-}
-
-_ysh-parse-error() {
-  local message="Should NOT parse under $YSH"
-  _assert-sh-status 2 $YSH "$message" \
-    -n -c "$@"
-}
-
 #
 # Cases
 #

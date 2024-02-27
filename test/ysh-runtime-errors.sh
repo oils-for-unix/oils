@@ -14,24 +14,6 @@ YSH=${YSH:-bin/ysh}
 # Assertions
 #
 
-_osh-error-X() {
-  local expected_status=$1
-  shift
-
-  local message="Should FAIL under $OSH"
-  _assert-sh-status "$expected_status" "$OSH" "$message" \
-    -c "$@"
-}
-
-_ysh-error-X() {
-  local expected_status=$1
-  shift
-
-  local message=$0
-  _assert-sh-status $expected_status $YSH "$message" \
-    -c "$@"
-}
-
 _ysh-error-1() {
   ### Expect status 1
   _ysh-error-X 1 "$@"
@@ -40,12 +22,6 @@ _ysh-error-1() {
 _ysh-expr-error() {
   ### Expect status 3
   _ysh-error-X 3 "$@"
-}
-
-_ysh-should-run() {
-  local message="Should run under $YSH"
-  _assert-sh-status 0 $YSH "$message" \
-    -c "$@"
 }
 
 #

@@ -17,60 +17,6 @@ source test/sh-assert.sh  # banner, _assert-sh-status
 OSH=${OSH:-bin/osh}
 YSH=${YSH:-bin/ysh}
 
-#
-# Assertions
-#
-
-_osh-should-parse() {
-  ### Pass a string that should parse as $1
-
-  local message="Should parse with $OSH"
-  _assert-sh-status 0 $OSH "$message" \
-    -n -c "$@"
-}
-
-_osh-should-parse-here() {
-  ### Take stdin a here doc, pass it as first argument
-  _osh-should-parse "$(cat)"
-}
-
-_osh-parse-error() {
-  ### Pass a string that should NOT parse as $1
-  local message="Should NOT parse with $OSH"
-  _assert-sh-status 2 $OSH "$message" \
-    -n -c "$@"
-}
-
-_osh-parse-error-here() {
-  ### Take stdin a here doc, pass it as first argument
-  _osh-parse-error "$(cat)"
-}
-
-# YSH assertions
-
-_ysh-should-parse() {
-  local message='Should parse under YSH'
-  _assert-sh-status 0 $YSH "$message" \
-    -n -c "$@"
-}
-
-# So we can write single quoted strings in an easier way
-_ysh-should-parse-here() {
-  _ysh-should-parse "$(cat)"
-}
-
-_ysh-parse-error() {
-  ### Assert that a parse error happens with Oil options on
-  local message='Should NOT parse under YSH'
-  _assert-sh-status 2 $YSH "$message" \
-    -n -c "$@"
-}
-
-# So we can write single quoted strings in an easier way
-_ysh-parse-error-here() {
-  _ysh-parse-error "$(cat)"
-}
-
 # More detailed assertions - TODO: remove these?
 
 _assert-status-2() {
@@ -992,6 +938,7 @@ cases-in-files() {
 }
 
 all() {
+  # TODO: Replace this with run-test-funcs
   cases-in-strings
 
   echo

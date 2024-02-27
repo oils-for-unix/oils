@@ -16,18 +16,12 @@
 source test/common.sh
 source test/sh-assert.sh  # banner, _assert-sh-status
 
-# Note: many cases fail if this is overridden.
-SH=${SH:-bin/osh}
+# Note: should run in bash/dash mode, where we don't check errors
+OSH=${OSH:-bin/osh}
 
-# Also in test/ysh-runtime-errors.sh
-_osh-error-X() {
-  local expected_status=$1
-  shift
-
-  local message="Should FAIL under $SH"
-  _assert-sh-status $expected_status $OSH "$message" \
-    -c "$@"
-}
+#
+# Assertions
+#
 
 _osh-error-1() {
   ### Assert that a snippet fails with status 1
@@ -38,9 +32,38 @@ _osh-error-1() {
 _osh-error-2() {
   ### Assert that a snippet fails with status 2
 
-  local message="Should FAIL under $SH"
+  local message="Should FAIL under $OSH"
   _osh-error-X 2 "$@"
 }
+
+#
+# Special
+#
+
+
+_run-test-func() {
+  ### Run a function, and optionally assert status
+
+  local test_func=$1
+  local expected_status=${2:-}
+
+  echo
+  echo "===== TEST function: $test_func ====="
+  echo
+
+  $OSH $0 $test_func
+
+  status=$?
+  if test -n "$expected_status"; then
+    if test $status != $expected_status; then
+      die "*** Test $test_func -> status $status, expected $expected_status"
+    fi
+  fi
+
+  echo "    STATUS: $?"
+  echo
+}
+
 
 #
 # Test assertions
@@ -1075,27 +1098,6 @@ fallback_locations() {
 # TEST DRIVER
 #
 
-_run-test-func() {
-  local test_func=$1
-  local expected_status=${2:-}
-
-  echo
-  echo "===== TEST function: $test_func ====="
-  echo
-
-  $SH $0 $test_func
-
-  status=$?
-  if test -n "$expected_status"; then
-    if test $status != $expected_status; then
-      die "*** Test $test_func -> status $status, expected $expected_status"
-    fi
-  fi
-
-  echo "    STATUS: $?"
-  echo
-}
-
 all-tests() {
   # A messy grab-bag of styles
   # TODO: Rename with 'test-' prefix, and use run-test-funcs
@@ -1160,7 +1162,7 @@ all-tests() {
 
 all-tests-bash() {
   # This doesn't quite work, because exit codes are not the same
-  SH=bash all-tests
+  OSH=bash all-tests
 }
 
 all-tests-dash() {
@@ -1169,7 +1171,7 @@ all-tests-dash() {
   # Really it would be better to quote all the tests, and then they could be
   # passed through dash.
 
-  SH=dash all-tests
+  OSH=dash all-tests
 }
 
 soil-run-py() {
@@ -1185,7 +1187,7 @@ soil-run-cpp() {
   local osh=_bin/cxx-asan/osh
 
   ninja $osh
-  SH=$osh all-tests
+  OSH=$osh all-tests
 }
 
 run-for-release() {
