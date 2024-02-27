@@ -404,7 +404,7 @@ class EvalExpr(vm._Callable):
         return result
 
 
-class ToJ8(vm._Callable):
+class ToJson8(vm._Callable):
 
     def __init__(self, j8print, is_j8):
         # type: (j8.Printer, bool) -> None
@@ -430,7 +430,7 @@ class ToJ8(vm._Callable):
         return value.Str(buf.getvalue())
 
 
-class FromJ8(vm._Callable):
+class FromJson8(vm._Callable):
 
     def __init__(self, is_j8):
         # type: (bool) -> None

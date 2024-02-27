@@ -1155,8 +1155,8 @@ Example:
     # Print it as JSON
     write $[toJson(mystr)]  # => "pea\t42\n"
 
-    # J8 is the same, but it's not lossy for binary data
-    write $[toJ8(mystr)]  # => "pea\t42\n"
+    # JSON8 is the same, but it's not lossy for binary data
+    write $[toJson8(mystr)]  # => "pea\t42\n"
 
 ### Structured: JSON8, TSV8
 

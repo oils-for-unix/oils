@@ -382,13 +382,13 @@ What about write?  These would be the same:
     write --j8 -- $s
 
     write -- $[toJson(s)]
-    write -- $[toJ8(s)]
+    write -- $[toJson8(s)]
 
     write --json -- @strs
     write --j8 -- @strs
 
     write -- @[toJson(s) for s in strs]
-    write -- @[toJ8(s) for s in strs]
+    write -- @[toJson8(s) for s in strs]
 
 It's an argument for getting rid --json and --j8?  I already implemented them,
 but it makes the API smaller.
@@ -442,9 +442,9 @@ Examples:
     write --sep '' --end '' -- a b        # write 2 bytes
     write --sep $'\t' --end $'\n' -- a b  # TSV line
 
-You may want to use `toJ8()` or `toJson()` before writing:
+You may want to use `toJson8()` or `toJson()` before writing:
 
-    write -- $[toJ8(mystr)]
+    write -- $[toJson8(mystr)]
     write -- $[toJson(mystr)]
 
 
