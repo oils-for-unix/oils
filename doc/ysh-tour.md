@@ -584,7 +584,9 @@ commands use this style:
 
 Procs use this style (because of shell's *disabled `errexit` quirk*):
 
-    try myproc
+    try {
+      myproc
+    }
     if (_status !== 0) {
       echo 'failed'
     }

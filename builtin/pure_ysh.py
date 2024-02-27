@@ -249,11 +249,9 @@ class Append(vm._Builtin):
                                            cmd_val,
                                            accept_typed_args=True)
 
-        if not cmd_val.typed_args:  # eval (myblock)
-            raise error.Usage('expected a List as a typed arg', loc.Missing)
-
         rd = typed_args.ReaderForProc(cmd_val)
         val = rd.PosValue()
+        rd.Done()
 
         UP_val = val
         with tagswitch(val) as case:

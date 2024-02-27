@@ -904,6 +904,30 @@ test-remainder() {
   _expr-error-case 'var x = 5; setvar x %= -3'
 }
 
+test-append-usage-error() {
+  _should-run 'append x ([])'
+
+  _expr-error-case 'append x'  # Too few
+
+  _expr-error-case 'append x ([], [])'  # Too many
+}
+
+# Bad error location
+test-try-usage-error() {
+  _expr-error-case '
+var s = "README"
+case (s) {
+  README { echo hi }
+}
+echo hi
+
+try myproc
+if (_status !== 0) {
+  echo failed
+}
+'
+}
+
 
 soil-run() {
   # This is like run-test-funcs, except errexit is off here

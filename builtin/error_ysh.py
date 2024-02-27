@@ -88,6 +88,7 @@ class Try(vm._Builtin):
 
         rd = typed_args.ReaderForProc(cmd_val)
         cmd = rd.PosCommand()
+        rd.Done()
 
         status = 0  # success by default
         try:
