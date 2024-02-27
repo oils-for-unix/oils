@@ -18,7 +18,8 @@ from typing import (Callable, List, Dict, Tuple, Any, cast, TYPE_CHECKING)
 if TYPE_CHECKING:  # break circular dep
     from osh.word_parse import WordParser
     from core import optview
-    LeftFunc = Callable[['TdopParser', word_t, arith_expr_t, int], arith_expr_t]
+    LeftFunc = Callable[['TdopParser', word_t, arith_expr_t, int],
+                        arith_expr_t]
     NullFunc = Callable[['TdopParser', word_t, int], arith_expr_t]
 
 
@@ -243,6 +244,7 @@ if mylib.PYTHON:
 
 
 class TdopParser(object):
+
     def __init__(self, spec, w_parser, parse_opts):
         # type: (ParserSpec, WordParser, optview.Parse) -> None
         self.spec = spec

@@ -14,28 +14,28 @@ Later:
   - line wrapping -- do this later
   - would like CONTRIBUTORS here
 
-- Unify with ASDL pretty printing - TYG8
+- Unify with ASDL pretty printing - NIL8
    - {} [] are identical
    - () is for statically typed ASDL data
      (command.Simple blame_tok:(...) words:[ ])
      although we are also using [] for typed ASDL arrays, not just JSON
    - object IDs
-     - @0x123 can create an ID
-     - *0x123 can reference an ID
-       - or maybe <0x123> though that's longer
+     - @ x123 can create an ID
+     - ! x123 can reference an ID
    - <> can be for non-J8 data types?  For the = operator
    - 'hi \(name)' interpolation is useful for code
 
-- Common between JSON8 and TYG8 - for writing by hand
+- Common between JSON8 and NIL8 - for writing by hand
   - comments - # line or // line (JSON5 uses // line, following JS)
   - unquoted identifier names - TYG8 could be more relaxed for (+ 1 (* 3 4))
   - commas
     - JSON8 could have trailing commas rule
-    - TYG8 at least has no commas for [1 2 "hi"]
+    - NIL8 at least has no commas for [1 2 "hi"]
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.value_asdl import (value, value_e, value_t)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
+from _devbuild.gen.nil8_asdl import (nvalue, nvalue_t)
 
 from asdl import format as fmt
 from core import error
@@ -43,6 +43,7 @@ from data_lang import pyj8
 # dependency issue: consts.py pulls in frontend/option_def.py
 from frontend import consts
 from frontend import match
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems, NewDict, log
 
@@ -51,6 +52,15 @@ import fastfunc
 _ = log
 
 from typing import cast, Dict, List, Tuple, Optional
+
+
+# COPIED from ui.ValType() to break dep
+def ValType(val):
+    # type: (value_t) -> str
+    """For displaying type errors in the UI."""
+
+    return value_str(val.tag(), dot=False)
+
 
 if mylib.PYTHON:
 
@@ -95,6 +105,41 @@ def ValueIdString(val):
         return ''
     else:
         return ' 0x%s' % mylib.hex_lower(heap_id)
+
+
+def Utf8Encode(code):
+    # type: (int) -> str
+    """Return utf-8 encoded bytes from a unicode code point.
+
+    Based on https://stackoverflow.com/a/23502707
+    """
+    num_cont_bytes = 0
+
+    if code <= 0x7F:
+        return chr(code & 0x7F)  # ASCII
+
+    elif code <= 0x7FF:
+        num_cont_bytes = 1
+    elif code <= 0xFFFF:
+        num_cont_bytes = 2
+    elif code <= 0x10FFFF:
+        num_cont_bytes = 3
+
+    else:
+        return '\xEF\xBF\xBD'  # unicode replacement character
+
+    bytes_ = []  # type: List[int]
+    for _ in xrange(num_cont_bytes):
+        bytes_.append(0x80 | (code & 0x3F))
+        code >>= 6
+
+    b = (0x1E << (6 - num_cont_bytes)) | (code & (0x3F >> num_cont_bytes))
+    bytes_.append(b)
+    bytes_.reverse()
+
+    # mod 256 because Python ints don't wrap around!
+    tmp = [chr(b & 0xFF) for b in bytes_]
+    return ''.join(tmp)
 
 
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
@@ -322,7 +367,8 @@ class InstancePrinter(object):
             elif case(value_e.Int):
                 val = cast(value.Int, UP_val)
                 # TODO: use pyj8.WriteInt(val.i, self.buf)
-                self.buf.write(str(val.i))
+                #self.buf.write(mylib.BigIntStr(val.i))
+                self.buf.write(mops.ToStr(val.i))
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
@@ -448,14 +494,12 @@ class InstancePrinter(object):
                 if self.options & SHOW_NON_DATA:
                     # Similar to = operator, ui.DebugPrint()
                     # TODO: that prints value.Range in a special way
-                    from core import ui
-                    ysh_type = ui.ValType(val)
+                    ysh_type = ValType(val)
                     id_str = ValueIdString(val)
                     self.buf.write('<%s%s>' % (ysh_type, id_str))
                 else:
-                    from core import ui  # TODO: break dep
                     raise error.Encode("Can't serialize object of type %s" %
-                                       ui.ValType(val))
+                                       ValType(val))
 
 
 class PrettyPrinter(object):
@@ -486,7 +530,7 @@ class PrettyPrinter(object):
 
         # This could be an optimized set an C++ bit set like
         # mark_sweep_heap.h, rather than a Dict
-        self.unique_objs = mylib.UniqueObjects()
+        #self.unique_objs = mylib.UniqueObjects()
 
         # first pass of object ID -> number of times references
 
@@ -564,9 +608,6 @@ class LexerDecoder(object):
         # type: (Id_t, int) -> Tuple[Id_t, int, Optional[str]]
         """ Returns a string token and updates self.pos """
 
-        # TODO: break dep
-        from osh import string_ops
-
         while True:
             if left_id == Id.Left_DoubleQuote:
                 tok_id, str_end = match.MatchJsonStrToken(self.s, str_pos)
@@ -629,7 +670,7 @@ class LexerDecoder(object):
                         r"\u{%s} escape is illegal because it's in the surrogate range"
                         % h, str_end)
 
-                part = string_ops.Utf8Encode(i)
+                part = Utf8Encode(i)
 
             elif tok_id == Id.Char_YHex:  # J8 only
                 h = self.s[str_pos + 2:str_end]
@@ -653,12 +694,12 @@ class LexerDecoder(object):
                 i2 = int(h2, 16) - 0xDC00  # low surrogate
                 code_point = 0x10000 + (i1 << 10) + i2
 
-                part = string_ops.Utf8Encode(code_point)
+                part = Utf8Encode(code_point)
 
             elif tok_id == Id.Char_Unicode4:  # JSON only, unpaired
                 h = self.s[str_pos + 2:str_end]
                 i = int(h, 16)
-                part = string_ops.Utf8Encode(i)
+                part = Utf8Encode(i)
 
             else:
                 # Should never happen
@@ -814,7 +855,7 @@ class Parser(_Parser):
         elif self.tok_id == Id.J8_Int:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Int(int(part))
+            return value.Int(mops.FromStr(part))
 
         elif self.tok_id == Id.J8_Float:
             part = self.s[self.start_pos:self.end_pos]
@@ -860,55 +901,67 @@ class Nil8Parser(_Parser):
         # type: (str, bool) -> None
         _Parser.__init__(self, s, is_j8)
 
-    def _ParseRecord(self):
-        # type: () -> value_t
-        """
-        named = Identifier ':' value
+    if 0:
 
-        first = Identifier | Symbol
-        record = '(' first value* named* ')'
+        def _LookAhead(self):
+            # type: () -> Id_t
+            """
+            Don't need this right now
+            """
+            end_pos = self.end_pos  # look ahead from last token
+            while True:
+                tok_id, end_pos = match.MatchJ8Token(self.s, end_pos)
+                if tok_id not in (Id.Ignored_Space, Id.Ignored_Comment):
+                    break
+            return tok_id
+
+    def _ParseRecord(self):
+        # type: () -> nvalue_t
+        """
+        Yaks
+          (self->Next)             =>  (-> self Next)
+          (self->Next obj.field)   =>  ((-> self Next) (. obj field))
+
+          Similar to
+          ((identity identity) 42) => 42 in Clojure
+
+        ASDL
+          (Node left:(. x4beef2))
+          (Node left !x4beef2)
+
+        # Ambiguous because value can be identifier.
+        # We have to look ahead to and see if there's a colon :
+        field = 
+          Identifier ':' value
+        | value
+
+        record = '(' head field* ')'
 
         - Identifier | Symbol are treated the same, it's a side effect of
           the lexing style
-        - positional args come before named args
+        - do positional args come before named args
         - () is invalid?  Use [] for empty list
-
-        Note:
-        - ((identity identity) 42) => 42 in Clojure
-
-        So the first term isn't special.  I don't think we care though, since
-        we're not making a Lisp.  (NIL8 isn't Lisp)
         """
         assert self.tok_id == Id.J8_LParen, Id_str(self.tok_id)
 
-        items = []  # type: List[value_t]
-
-        self._Next()
-        if self.tok_id in (Id.J8_Identifier, Id.J8_Symbol):
-            part = self.s[self.start_pos:self.end_pos]
-            # This could be obj.0 in YSH
-            # Or it could be {name: Str, pos_args: List, named_args: Dict}
-            items.append(value.Str(part))
-        else:
-            raise self._Error('Expected Identifer or Symbol after ( in NIL8')
+        items = []  # type: List[nvalue_t]
 
         self._Next()
         if self.tok_id == Id.J8_RParen:
             self._Next()
-            return value.List(items)
+            return nvalue.List(items)
 
-        # Do we accept 10 only?
+        #log('TOK %s', Id_str(self.tok_id))
         while self.tok_id != Id.J8_RParen:
             items.append(self._ParseNil8())
-
-        # TODO:
+            #log('TOK 2 %s', Id_str(self.tok_id))
 
         self._Eat(Id.J8_RParen)
 
-        return value.List(items)
+        return nvalue.List(items)
 
     def _ParseList8(self):
-        # type: () -> value_t
+        # type: () -> nvalue_t
         """
         List8 = '[' value* ']'
 
@@ -916,12 +969,12 @@ class Nil8Parser(_Parser):
         """
         assert self.tok_id == Id.J8_LBracket, Id_str(self.tok_id)
 
-        items = []  # type: List[value_t]
+        items = []  # type: List[nvalue_t]
 
         self._Next()
         if self.tok_id == Id.J8_RBracket:
             self._Next()
-            return value.List(items)
+            return nvalue.List(items)
 
         #log('TOK %s', Id_str(self.tok_id))
         while self.tok_id != Id.J8_RBracket:
@@ -930,41 +983,51 @@ class Nil8Parser(_Parser):
 
         self._Eat(Id.J8_RBracket)
 
-        return value.List(items)
+        return nvalue.List(items)
 
     def _ParseNil8(self):
-        # type: () -> value_t
+        # type: () -> nvalue_t
         if self.tok_id == Id.J8_LParen:
-            return self._ParseRecord()
+            obj = self._ParseRecord()  # type: nvalue_t
+            #return obj
 
         elif self.tok_id == Id.J8_LBracket:
-            return self._ParseList8()
+            obj = self._ParseList8()
+            #return obj
 
         # Primitives are copied from J8 above.
         # TODO: We also want hex literals.
         elif self.tok_id == Id.J8_Null:
             self._Next()
-            return value.Null
+            obj = nvalue.Null
 
         elif self.tok_id == Id.J8_Bool:
-            b = value.Bool(self.s[self.start_pos] == 't')
+            b = nvalue.Bool(self.s[self.start_pos] == 't')
             self._Next()
-            return b
+            obj = b
 
         elif self.tok_id == Id.J8_Int:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Int(int(part))
+            obj = nvalue.Int(int(part))
 
         elif self.tok_id == Id.J8_Float:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Float(float(part))
+            obj = nvalue.Float(float(part))
 
         elif self.tok_id == Id.J8_String:
-            str_val = value.Str(self.decoded)
+            str_val = nvalue.Str(self.decoded)
             self._Next()
-            return str_val
+            obj = str_val
+
+        # <- etc.
+        elif self.tok_id in (Id.J8_Identifier, Id.J8_Operator, Id.J8_Colon,
+                             Id.J8_Comma):
+            # unquoted "word" treated like a string
+            part = self.s[self.start_pos:self.end_pos]
+            self._Next()
+            obj = nvalue.Symbol(part)
 
         elif self.tok_id == Id.Eol_Tok:
             raise self._Error('Unexpected EOF while parsing %s' %
@@ -974,11 +1037,34 @@ class Nil8Parser(_Parser):
             raise self._Error('Invalid token while parsing %s: %s' %
                               (self.lang_str, Id_str(self.tok_id)))
 
+        #log('YO %s', Id_str(self.tok_id))
+        if self.tok_id in (Id.J8_Operator, Id.J8_Colon, Id.J8_Comma):
+            #log('AT %s', Id_str(self.tok_id))
+
+            # key: "value" -> (: key "value")
+            part = self.s[self.start_pos:self.end_pos]
+            op = nvalue.Symbol(part)
+
+            self._Next()
+            operand2 = self._ParseNil8()
+            infix = nvalue.List([op, obj, operand2])  # type: nvalue_t
+            #print("--> INFIX %d %s" % (id(infix), infix))
+            return infix
+
+        #next_id = self._LookAhead()
+        #print('NEXT %s' % Id_str(next_id))
+
+        #raise AssertionError()
+        #print("--> OBJ %d %s" % (id(obj), obj))
+        return obj
+
     def ParseNil8(self):
-        # type: () -> value_t
+        # type: () -> nvalue_t
         """ Raises error.Decode. """
         self._Next()
+        #print('yo')
         obj = self._ParseNil8()
+        #print("==> %d %s" % (id(obj), obj))
         if self.tok_id != Id.Eol_Tok:
             raise self._Error('Unexpected trailing input')
         return obj

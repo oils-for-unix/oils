@@ -15,7 +15,7 @@ module hnode {
 
   hnode =
     # Used to prevent infinite loops
-    ObjectCycle(int heap_id)
+    AlreadySeen(int heap_id)
   | Record(str node_type, List[Field] fields,
            bool abbrev, str left, str right, List[hnode] unnamed_fields)
   | Array(List[hnode] children)

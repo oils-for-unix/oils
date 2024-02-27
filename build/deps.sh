@@ -184,7 +184,7 @@ readonly -a WEDGE_DEPS_FEDORA=(
   # glibc-devel
 )
 
-install-ubuntu-packages() {
+install-debian-packages() {
   ### Packages for build/py.sh all, building wedges, etc.
 
   set -x  # show what needs sudo
@@ -197,10 +197,18 @@ install-ubuntu-packages() {
   test/spec-bin.sh install-shells-with-apt "$@"
 }
 
+install-ubuntu-packages() {
+  ### Debian and Ubuntu packages are the same; this function is suggested on the wiki
+  install-debian-packages "$@"
+}
+
 wedge-deps-debian() {
   # Install packages without prompt
-  # Debian and Ubuntu packages are the same
-  install-ubuntu-packages -y
+
+  # 2024-02 - there was an Ubuntu update, and we started needing this
+  sudo apt-get -y update
+
+  install-debian-packages -y
 }
 
 wedge-deps-fedora() {
@@ -329,6 +337,14 @@ clone-mypy() {
   # TODO: verify commit checksum
 }
 
+copy-source-medo() {
+  mkdir -p $DEPS_SOURCE_DIR
+
+  # Copy the whole tree, including the .treeptr files
+  cp --verbose --recursive --no-target-directory \
+    deps/source.medo/ $DEPS_SOURCE_DIR/
+}
+
 fetch() {
   local py_only=${1:-}
 
@@ -341,11 +357,7 @@ fetch() {
   #     WEDGE
   #     re2c-3.0/  # expanded .tar.xz file
 
-  mkdir -p $DEPS_SOURCE_DIR
-
-  # Copy the whole tree, including the .treeptr files
-  cp --verbose --recursive --no-target-directory \
-    deps/source.medo/ $DEPS_SOURCE_DIR/
+  copy-source-medo
 
   download-to $DEPS_SOURCE_DIR/re2c "$RE2C_URL"
   download-to $DEPS_SOURCE_DIR/cmark "$CMARK_URL"

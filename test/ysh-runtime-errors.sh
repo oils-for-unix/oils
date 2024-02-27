@@ -898,6 +898,13 @@ test-str-replace() {
    _expr-error-case '= "foo" => replace("x", ^[42])'
 }
 
+test-remainder() {
+  # second number can't be negative
+  _expr-error-case '= 5 % -3'
+  _expr-error-case 'var x = 5; setvar x %= -3'
+}
+
+
 soil-run() {
   # This is like run-test-funcs, except errexit is off here
   run-test-funcs

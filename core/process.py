@@ -62,7 +62,7 @@ from posix_ import (
     O_TRUNC,
 )
 
-from typing import List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
+from typing import IO, List, Tuple, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
@@ -211,19 +211,22 @@ class FdState(object):
           IOError or OSError if the path can't be found.  (This is Python-induced wart)
         """
         fd_mode = O_RDONLY
-        return self._Open(path, 'r', fd_mode)
+        f = self._Open(path, 'r', fd_mode)
+
+        # Hacky downcast
+        return cast('mylib.LineReader', f)
 
     # used for util.DebugFile
     def OpenForWrite(self, path):
         # type: (str) -> mylib.Writer
         fd_mode = O_CREAT | O_RDWR
         f = self._Open(path, 'w', fd_mode)
-        # Hack to change mylib.LineReader into mylib.Writer.  In reality the file
-        # object supports both interfaces.
+
+        # Hacky downcast
         return cast('mylib.Writer', f)
 
     def _Open(self, path, c_mode, fd_mode):
-        # type: (str, str, int) -> mylib.LineReader
+        # type: (str, str, int) -> IO[str]
         fd = posix.open(path, fd_mode, 0o666)  # may raise OSError
 
         # Immediately move it to a new location
@@ -485,8 +488,8 @@ class FdState(object):
                     posix.write(write_fd, arg.body)
                     posix.close(write_fd)
 
-    def Push(self, redirects):
-        # type: (List[RedirValue]) -> bool
+    def Push(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
         """Apply a group of redirects and remember to undo them."""
 
         #log('> fd_state.Push %s', redirects)
@@ -500,10 +503,10 @@ class FdState(object):
                 try:
                     self._ApplyRedirect(r)
                 except (IOError, OSError) as e:
-                    self.Pop()
-                    return False  # for bad descriptor, etc.
-        #log('done applying %d redirects', len(redirects))
-        return True
+                    err_out.append(e)
+                    # This can fail too
+                    self.Pop(err_out)
+                    return  # for bad descriptor, etc.
 
     def PushStdinFromPipe(self, r):
         # type: (int) -> bool
@@ -521,8 +524,8 @@ class FdState(object):
         self._PushDup(r, redir_loc.Fd(0))
         return True
 
-    def Pop(self):
-        # type: () -> None
+    def Pop(self, err_out):
+        # type: (List[error.IOError_OSError]) -> None
         frame = self.stack.pop()
         #log('< Pop %s', frame)
         for rf in reversed(frame.saved):
@@ -531,18 +534,20 @@ class FdState(object):
                 try:
                     posix.close(rf.orig_fd)
                 except (IOError, OSError) as e:
+                    err_out.append(e)
                     log('Error closing descriptor %d: %s', rf.orig_fd,
                         pyutil.strerror(e))
-                    raise
+                    return
             else:
                 try:
                     posix.dup2(rf.saved_fd, rf.orig_fd)
                 except (IOError, OSError) as e:
+                    err_out.append(e)
                     log('dup2(%d, %d) error: %s', rf.saved_fd, rf.orig_fd,
                         pyutil.strerror(e))
                     #log('fd state:')
                     #posix.system('ls -l /proc/%s/fd' % posix.getpid())
-                    raise
+                    return
                 posix.close(rf.saved_fd)
                 #log('dup2 %s %s', saved, orig)
 
@@ -1155,10 +1160,11 @@ class Process(Job):
 
 class ctx_Pipe(object):
 
-    def __init__(self, fd_state, fd):
-        # type: (FdState, int) -> None
+    def __init__(self, fd_state, fd, err_out):
+        # type: (FdState, int, List[error.IOError_OSError]) -> None
         fd_state.PushStdinFromPipe(fd)
         self.fd_state = fd_state
+        self.err_out = err_out
 
     def __enter__(self):
         # type: () -> None
@@ -1166,7 +1172,7 @@ class ctx_Pipe(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.fd_state.Pop()
+        self.fd_state.Pop(self.err_out)
 
 
 class Pipeline(Job):
@@ -1354,8 +1360,12 @@ class Pipeline(Job):
         r, w = self.last_pipe  # set in AddLast()
         posix.close(w)  # we will not write here
 
-        with ctx_Pipe(fd_state, r):
+        io_errors = []  # type: List[error.IOError_OSError]
+        with ctx_Pipe(fd_state, r, io_errors):
             cmd_ev.ExecuteAndCatch(last_node)
+        if len(io_errors):
+            e_die('Error setting up last part of pipeline: %s' %
+                  pyutil.strerror(io_errors[0]))
 
         # We won't read anymore.  If we don't do this, then 'cat' in 'cat
         # /dev/urandom | sleep 1' will never get SIGPIPE.

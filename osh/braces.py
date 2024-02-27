@@ -46,6 +46,7 @@ NO_STEP = 0
 # The brace language has no syntax errors!  But we still need to abort the
 # parse.  TODO: Should we expose a strict version later?
 class _NotARange(Exception):
+
     def __init__(self, s):
         # type: (str) -> None
         pass
@@ -187,6 +188,7 @@ def _RangePartDetect(tok):
 
 
 class _StackFrame(object):
+
     def __init__(self, cur_parts):
         # type: (List[word_part_t]) -> None
         self.cur_parts = cur_parts

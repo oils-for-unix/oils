@@ -33,6 +33,7 @@ def InitEvaluator():
 
 
 class RegexTest(unittest.TestCase):
+
     def testSplitAssignArg(self):
         CASES = [
             ('s', ['s', None, None]),
@@ -57,6 +58,7 @@ class RegexTest(unittest.TestCase):
 
 
 class WordEvalTest(unittest.TestCase):
+
     def testEvalWordSequence_Errors(self):
         CASES = [
             'readonly a[x]=1',

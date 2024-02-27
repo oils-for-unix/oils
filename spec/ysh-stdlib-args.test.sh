@@ -1,15 +1,11 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 1
 
-# Can we do this entirely in user code, not as a builtin?
-#
-# The following is as close as possible to the python argparse which seems to work well
-
-#### Argparse bool option and positional
+#### Bool flag, positional args, more positional
 
 source --builtin args.ysh
 
-Args (&spec) {
+arg-parse (&spec) {
   flag -v --verbose ('bool')
   arg src
   arg dst
@@ -18,30 +14,76 @@ Args (&spec) {
 }
 #json write (spec)
 
-var argv = ['-v', 'src/path', 'dst/path']
+var argv = ['-v', 'src/path', 'dst/path', 'x', 'y', 'z']
 
-# TODO: need destructuring with var
-# var arg, i = parseArgs(spec, argv)
+var arg, i = parseArgs(spec, argv)
 
-var result = parseArgs(spec, argv)
-setvar arg, i = result
+pp line (arg)
+pp line (i)
 
-json write --pretty=F (arg)
-json write (i)
+if (arg.verbose) {
+  echo "$[arg.src] -> $[arg.dst]"
+  write -- @[arg.more]
+}
+
 ## STDOUT:
-{"verbose":true,"src":"src/path","dst":"dst/path","more":[]}
-3
+(Dict)   {"verbose":true,"src":"src/path","dst":"dst/path","more":["x","y","z"]}
+(Int)   6
+src/path -> dst/path
+x
+y
+z
 ## END
 
-#### Argparse basic help message
+#### Test multiple command lines against a parser
 
 source --builtin args.ysh
 
-Args (&spec) {
-  description = '''
+arg-parse (&spec) {
+  flag -v --verbose ('bool', false)
+  flag -c --count ('int', 120)
+  arg file
+}
+
+var argsCases = [
+  :| -v --count 120 example.sh |,
+  :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
+  :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
+]
+
+for args in (argsCases) {
+  var args_str = join(args, ' ')
+  echo "----------  $args_str  ----------"
+  echo "\$ bin/ysh example.sh $args_str"
+  pp line (parseArgs(spec, args))
+
+  echo
+}
+## STDOUT:
+----------  -v --count 120 example.sh  ----------
+$ bin/ysh example.sh -v --count 120 example.sh
+(List)   [{"verbose":true,"count":120,"file":"example.sh"},4]
+
+----------  -v --count 120 example.sh -v  ----------
+$ bin/ysh example.sh -v --count 120 example.sh -v
+(List)   [{"verbose":true,"count":120,"file":"example.sh"},5]
+
+----------  -v --count 120 example.sh -v --count 150  ----------
+$ bin/ysh example.sh -v --count 120 example.sh -v --count 150
+(List)   [{"verbose":true,"count":150,"file":"example.sh"},7]
+
+## END
+
+#### Basic help message
+
+source --builtin args.ysh
+
+arg-parse (&spec) {
+  # TODO: implement description, prog and help message
+  description '''
      Reference Implementation
   '''
-  prog = "program-name"
+  prog "program-name"
 
   arg -v --verbose (Bool, help = "Verbose")
   arg src
@@ -50,7 +92,7 @@ Args (&spec) {
 var argv = ['-h', 'src', 'dst']
 
 # Help
-var arg = parseArgs(spec, argv)
+var arg, _ = parseArgs(spec, argv)
 
 ## STDOUT:
 usage: program-name [-h] [-v] src dst
@@ -66,7 +108,7 @@ options:
  -v, --verbose        Verbose
 ## END
 
-#### Parse args using a JSON argspec
+#### Compare parseArgs() vs Python argparse
 
 source --builtin args.ysh
 
@@ -78,7 +120,7 @@ var spec = {
   args: [
     {name: 'file', type: 'str', help: 'File to check line lengths of'}
   ],
-  rest: false,
+  rest: null,
 }
 
 var argsCases = [
@@ -137,11 +179,11 @@ Namespace(filename='example.sh', count='150', verbose=True)
 
 ## END
 
-#### Args spec definitions
+#### Define spec and print it
 
 source --builtin args.ysh
 
-Args (&spec) {
+arg-parse (&spec) {
   flag -v --verbose ('bool')
   arg src
   arg dst
@@ -164,13 +206,11 @@ json write (spec)
   "args": [
     {
       "name": "src",
-      "type": "str",
       "default": null,
       "help": null
     },
     {
       "name": "dst",
-      "type": "str",
       "default": null,
       "help": null
     }
@@ -179,41 +219,3 @@ json write (spec)
 }
 ## END
 
-#### Args spec definitions driving argument parser
-
-source --builtin args.ysh
-
-Args (&spec) {
-  flag -v --verbose ('bool', false)
-  flag -c --count ('int', 120)
-  arg file
-}
-
-var argsCases = [
-  :| -v --count 120 example.sh |,
-  :| -v --count 120 example.sh -v |,  # duplicate flags are ignored
-  :| -v --count 120 example.sh -v --count 150 |,  # the last duplicate has precedence
-]
-
-for args in (argsCases) {
-  var args_str = args->join(" ")
-  echo "----------  $args_str  ----------"
-  echo "\$ bin/ysh example.sh $args_str"
-  pp line (parseArgs(spec, args))
-
-  echo
-}
-## STDOUT:
-----------  -v --count 120 example.sh  ----------
-$ bin/ysh example.sh -v --count 120 example.sh
-(List)   [{"verbose":true,"count":120,"file":"example.sh"},4]
-
-----------  -v --count 120 example.sh -v  ----------
-$ bin/ysh example.sh -v --count 120 example.sh -v
-(List)   [{"verbose":true,"count":120,"file":"example.sh"},5]
-
-----------  -v --count 120 example.sh -v --count 150  ----------
-$ bin/ysh example.sh -v --count 120 example.sh -v --count 150
-(List)   [{"verbose":true,"count":150,"file":"example.sh"},7]
-
-## END

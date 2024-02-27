@@ -173,31 +173,49 @@ show-usages() {
   wc -l $out
 }
 
-# 2023-08: 91 left
+# 2024-02: 36 usages.  Maybe use mylib.ToMachineInt() or mylib.ToInt32().  exit
+# status is a machine int?
+# Sometimes the lexer will validate, as with converting 2>&1
+
+int-convert() {
+  show-usages _tmp/int-convert \
+    egrep -n '\bint\(\b' $(metrics/source-code.sh osh-files)
+}
+
+# 2024-02: 83 left
 tval-all() {
   show-usages _tmp/tval-all \
     grep -n -w tval */*.py
 }
 
-# 2023-08: 28 left
+# 2024-02: 17 left
 tval-eval() {
   show-usages _tmp/tval-eval \
     grep -n -w tval */*_eval.py
 }
 
-# 2023-08: 72 left
+# TokenVal() is generally bad in evaluators.  However most of these are in
+# error paths, which is OK.
+#
+# 2024-02: 11 instances
+TokenVal-eval() {
+  show-usages _tmp/TokenVal-eval \
+    grep -n -w TokenVal */*_eval.py
+}
+
+# 2024-02: 71 left, mostly in ysh_ify which is the only thing that uses it
 spid-all() {
   show-usages _tmp/spid-all \
     egrep -n 'span_id|spid' */*.py
 }
 
-# 2023-08: 4 left
+# 2024-04: 4 left in ysh_ify
 spid-sig() {
   show-usages _tmp/spid-sig \
     egrep -n 'def.*(span_id|spid)' */*.py
 }
 
-# 2023-08: 14 usages
+# 2024-04: 12 usages, mostly ysh_ify
 no-spid() {
   show-usages _tmp/no-spid \
     egrep -n 'runtime.NO_SPID' */*.py
@@ -225,6 +243,10 @@ asdl-create() {
   fgrep -n 'CreateNull(alloc' */*.py */*/*.py \
     | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
+
+#
+# To improve code formatting
+#
 
 long-sigs() {
    # 32 of these

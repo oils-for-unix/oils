@@ -48,6 +48,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName)
 from core import error
 from core.error import e_die, e_die_status
+from core import num
 from core import pyutil
 from core import state
 from core import ui
@@ -59,6 +60,7 @@ from frontend import location
 from frontend import typed_args
 from osh import braces
 from osh import word_compile
+from mycpp import mops
 from mycpp.mylib import log, NewDict, switch, tagswitch, print_stderr
 from ysh import func_proc
 from ysh import val_ops
@@ -87,7 +89,7 @@ def LookupVar(mem, var_name, which_scopes, var_loc):
 
 
 def _ConvertToInt(val, msg, blame_loc):
-    # type: (value_t, str, loc_t) -> int
+    # type: (value_t, str, loc_t) -> mops.BigInt
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Int):
@@ -97,13 +99,14 @@ def _ConvertToInt(val, msg, blame_loc):
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
             if match.LooksLikeInteger(val.s):
-                return int(val.s)
+                # TODO: Handle ValueError
+                return mops.FromStr(val.s)
 
     raise error.TypeErr(val, msg, blame_loc)
 
 
 def _ConvertToNumber(val):
-    # type: (value_t) -> Tuple[coerced_t, int, float]
+    # type: (value_t) -> Tuple[coerced_t, mops.BigInt, float]
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Int):
@@ -112,21 +115,22 @@ def _ConvertToNumber(val):
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
-            return coerced_e.Float, -1, val.f
+            return coerced_e.Float, mops.MINUS_ONE, val.f
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
             if match.LooksLikeInteger(val.s):
-                return coerced_e.Int, int(val.s), -1.0
+                # TODO: Handle ValueError
+                return coerced_e.Int, mops.FromStr(val.s), -1.0
 
             if match.LooksLikeFloat(val.s):
-                return coerced_e.Float, -1, float(val.s)
+                return coerced_e.Float, mops.MINUS_ONE, float(val.s)
 
-    return coerced_e.Neither, -1, -1.0
+    return coerced_e.Neither, mops.MINUS_ONE, -1.0
 
 
 def _ConvertForBinaryOp(left, right):
-    # type: (value_t, value_t) -> Tuple[coerced_t, int, int, float, float]
+    # type: (value_t, value_t) -> Tuple[coerced_t, mops.BigInt, mops.BigInt, float, float]
     """
     Returns one of
       value_e.Int or value_e.Float
@@ -137,21 +141,23 @@ def _ConvertForBinaryOp(left, right):
     c1, i1, f1 = _ConvertToNumber(left)
     c2, i2, f2 = _ConvertToNumber(right)
 
+    nope = mops.MINUS_ONE
+
     if c1 == coerced_e.Int and c2 == coerced_e.Int:
         return coerced_e.Int, i1, i2, -1.0, -1.0
 
     elif c1 == coerced_e.Int and c2 == coerced_e.Float:
-        return coerced_e.Float, -1, -1, float(i1), f2
+        return coerced_e.Float, nope, nope, mops.ToFloat(i1), f2
 
     elif c1 == coerced_e.Float and c2 == coerced_e.Int:
-        return coerced_e.Float, -1, -1, f1, float(i2)
+        return coerced_e.Float, nope, nope, f1, mops.ToFloat(i2)
 
     elif c1 == coerced_e.Float and c2 == coerced_e.Float:
-        return coerced_e.Float, -1, -1, f1, f2
+        return coerced_e.Float, nope, nope, f1, f2
 
     else:
         # No operation is valid
-        return coerced_e.Neither, -1, -1, -1.0, -1.0
+        return coerced_e.Neither, nope, nope, -1.0, -1.0
 
 
 class ExprEvaluator(object):
@@ -383,55 +389,7 @@ class ExprEvaluator(object):
 
     def _EvalConst(self, node):
         # type: (expr.Const) -> value_t
-
-        # Remove underscores from 1_000_000.  The lexer is responsible for
-        # validation.  TODO: Do this at PARSE TIME / COMPILE TIME.
-        c_under = node.c.tval.replace('_', '')
-
-        id_ = node.c.id
-        if id_ == Id.Expr_DecInt:
-            return value.Int(int(c_under))
-        if id_ == Id.Expr_BinInt:
-            assert c_under[:2] in ('0b', '0B'), c_under
-            return value.Int(int(c_under[2:], 2))
-        if id_ == Id.Expr_OctInt:
-            assert c_under[:2] in ('0o', '0O'), c_under
-            return value.Int(int(c_under[2:], 8))
-        if id_ == Id.Expr_HexInt:
-            assert c_under[:2] in ('0x', '0X'), c_under
-            return value.Int(int(c_under[2:], 16))
-
-        if id_ == Id.Expr_Float:
-            # Note: float() in mycpp/gc_builtins.py currently uses strtod
-            return value.Float(float(c_under))
-
-        if id_ == Id.Expr_Null:
-            return value.Null
-        if id_ == Id.Expr_True:
-            return value.Bool(True)
-        if id_ == Id.Expr_False:
-            return value.Bool(False)
-
-        if id_ == Id.Expr_Name:
-            # for {name: 'bob'}
-            # Maybe also :Symbol?
-            return value.Str(node.c.tval)
-
-        # These calculations could also be done at COMPILE TIME
-        if id_ == Id.Char_OneChar:
-            # TODO: look up integer directly?
-            return value.Int(ord(consts.LookupCharC(node.c.tval[1])))
-        if id_ == Id.Char_UBraced:
-            s = node.c.tval[3:-1]  # \u{123}
-            return value.Int(int(s, 16))
-        if id_ == Id.Char_Pound:
-            # TODO: accept UTF-8 code point instead of single byte
-            byte = node.c.tval[2]  # the a in #'a'
-            return value.Int(ord(byte))  # It's an integer
-
-        # NOTE: We could allow Ellipsis for a[:, ...] here, but we're not using it
-        # yet.
-        raise AssertionError(id_)
+        return node.val
 
     def _EvalUnary(self, node):
         # type: (expr.Unary) -> value_t
@@ -442,7 +400,7 @@ class ExprEvaluator(object):
             if case(Id.Arith_Minus):
                 c1, i1, f1 = _ConvertToNumber(val)
                 if c1 == coerced_e.Int:
-                    return value.Int(-i1)
+                    return value.Int(mops.Negate(i1))
                 if c1 == coerced_e.Float:
                     return value.Float(-f1)
                 raise error.TypeErr(val, 'Negation expected Int or Float',
@@ -450,7 +408,7 @@ class ExprEvaluator(object):
 
             elif case(Id.Arith_Tilde):
                 i = _ConvertToInt(val, '~ expected Int', node.op)
-                return value.Int(~i)
+                return value.Int(mops.BitNot(i))
 
             elif case(Id.Expr_Not):
                 b = val_ops.ToBool(val)
@@ -489,15 +447,15 @@ class ExprEvaluator(object):
         if c == coerced_e.Int:
             with switch(op_id) as case:
                 if case(Id.Arith_Plus, Id.Arith_PlusEqual):
-                    return value.Int(i1 + i2)
+                    return value.Int(mops.Add(i1, i2))
                 elif case(Id.Arith_Minus, Id.Arith_MinusEqual):
-                    return value.Int(i1 - i2)
+                    return value.Int(mops.Sub(i1, i2))
                 elif case(Id.Arith_Star, Id.Arith_StarEqual):
-                    return value.Int(i1 * i2)
+                    return value.Int(mops.Mul(i1, i2))
                 elif case(Id.Arith_Slash, Id.Arith_SlashEqual):
-                    if i2 == 0:
+                    if mops.Equal(i2, mops.ZERO):
                         raise error.Expr('Divide by zero', op)
-                    return value.Float(float(i1) / float(i2))
+                    return value.Float(mops.ToFloat(i1) / mops.ToFloat(i2))
                 else:
                     raise AssertionError()
 
@@ -531,41 +489,42 @@ class ExprEvaluator(object):
 
             # a % b   setvar a %= b
             if case(Id.Arith_Percent, Id.Arith_PercentEqual):
-                if i2 == 0:
+                if mops.Equal(i2, mops.ZERO):
                     raise error.Expr('Divide by zero', op)
-                return value.Int(i1 % i2)
+                if mops.Greater(mops.ZERO, i2):
+                    # Disallow this to remove confusion between modulus and remainder
+                    raise error.Expr("Divisor can't be negative", op)
+
+                return value.Int(num.IntRemainder(i1, i2))
 
             # a // b   setvar a //= b
             elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
-                if i2 == 0:
+                if mops.Equal(i2, mops.ZERO):
                     raise error.Expr('Divide by zero', op)
-                return value.Int(i1 // i2)
+                return value.Int(num.IntDivide(i1, i2))
 
             # a ** b   setvar a **= b (ysh only)
             elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
                 # Same as sh_expr_eval.py
-                if i2 < 0:
+                if mops.Greater(mops.ZERO, i2):
                     raise error.Expr("Exponent can't be a negative number", op)
-                ret = 1
-                for i in xrange(i2):
-                    ret *= i1
-                return value.Int(ret)
+                return value.Int(num.Exponent(i1, i2))
 
             # Bitwise
-            elif case(Id.Arith_Amp, Id.Arith_AmpEqual):
-                return value.Int(i1 & i2)
+            elif case(Id.Arith_Amp, Id.Arith_AmpEqual):  # &
+                return value.Int(mops.BitAnd(i1, i2))
 
-            elif case(Id.Arith_Pipe, Id.Arith_PipeEqual):
-                return value.Int(i1 | i2)
+            elif case(Id.Arith_Pipe, Id.Arith_PipeEqual):  # |
+                return value.Int(mops.BitOr(i1, i2))
 
-            elif case(Id.Arith_Caret, Id.Arith_CaretEqual):
-                return value.Int(i1 ^ i2)
+            elif case(Id.Arith_Caret, Id.Arith_CaretEqual):  # ^
+                return value.Int(mops.BitXor(i1, i2))
 
-            elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):
-                return value.Int(i1 >> i2)
+            elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):  # >>
+                return value.Int(mops.RShift(i1, i2))
 
-            elif case(Id.Arith_DLess, Id.Arith_DLessEqual):
-                return value.Int(i1 << i2)
+            elif case(Id.Arith_DLess, Id.Arith_DLessEqual):  # <<
+                return value.Int(mops.LShift(i1, i2))
 
             else:
                 raise AssertionError(op.id)
@@ -634,13 +593,13 @@ class ExprEvaluator(object):
         if c == coerced_e.Int:
             with switch(op.id) as case:
                 if case(Id.Arith_Less):
-                    return i1 < i2
+                    return mops.Greater(i2, i1)
                 elif case(Id.Arith_Great):
-                    return i1 > i2
+                    return mops.Greater(i1, i2)
                 elif case(Id.Arith_LessEqual):
-                    return i1 <= i2
+                    return mops.Greater(i2, i1) or mops.Equal(i1, i2)
                 elif case(Id.Arith_GreatEqual):
-                    return i1 >= i2
+                    return mops.Greater(i1, i2) or mops.Equal(i1, i2)
                 else:
                     raise AssertionError()
 
@@ -763,7 +722,8 @@ class ExprEvaluator(object):
                         if not left2.isdigit():
                             return value.Bool(False)
 
-                        return value.Bool(int(left2) == right.i)
+                        eq = mops.Equal(mops.FromStr(left2), right.i)
+                        return value.Bool(eq)
 
                 e_die('~== expects Str, Int, or Bool on the right', op)
 
@@ -867,8 +827,9 @@ class ExprEvaluator(object):
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, UP_index)
+                        i = mops.BigTruncate(index.i)
                         try:
-                            return value.Str(obj.s[index.i])
+                            return value.Str(obj.s[i])
                         except IndexError:
                             # TODO: expr.Subscript has no error location
                             raise error.Expr('index out of range', loc.Missing)
@@ -891,8 +852,9 @@ class ExprEvaluator(object):
 
                     elif case2(value_e.Int):
                         index = cast(value.Int, UP_index)
+                        i = mops.BigTruncate(index.i)
                         try:
-                            return obj.items[index.i]
+                            return obj.items[i]
                         except IndexError:
                             # TODO: expr.Subscript has no error location
                             raise error.Expr('index out of range', loc.Missing)

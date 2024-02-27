@@ -7,7 +7,7 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.value_asdl import (value, value_t)
 from builtin import read_osh
 from core.error import e_die_status
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import lexer
 from frontend import match
 from frontend import typed_args
@@ -62,7 +62,7 @@ class Echo(vm._Builtin):
             typed_args.DoesNotAccept(cmd_val.typed_args)  # Disallow echo (42)
             arg = self._SimpleFlag()  # Avoid parsing -e -n
         else:
-            attrs, arg_r = flag_spec.ParseLikeEcho('echo', cmd_val)
+            attrs, arg_r = flag_util.ParseLikeEcho('echo', cmd_val)
             arg = arg_types.echo(attrs.attrs)
             argv = arg_r.Rest()
 
@@ -120,7 +120,7 @@ class MapFile(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('mapfile', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('mapfile', cmd_val)
         arg = arg_types.mapfile(attrs.attrs)
 
         var_name, _ = arg_r.Peek2()

@@ -47,12 +47,14 @@ from _devbuild.gen.value_asdl import (
 from core import alloc
 from core import error
 from core.error import e_die, e_die_status, e_strict, e_usage
+from core import num
 from core import state
 from core import ui
 from frontend import consts
 from frontend import match
 from frontend import parse_lib
 from frontend import reader
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch, switch, str_cmp
 from osh import bool_stat
@@ -319,8 +321,8 @@ class ArithEvaluator(object):
         # type: () -> None
         assert self.word_ev is not None
 
-    def _StringToInteger(self, s, blame_loc):
-        # type: (str, loc_t) -> int
+    def _StringToBigInt(self, s, blame_loc):
+        # type: (str, loc_t) -> mops.BigInt
         """Use bash-like rules to coerce a string to an integer.
 
         Runtime parsing enables silly stuff like $(( $(echo 1)$(echo 2) + 1 )) => 13
@@ -335,26 +337,27 @@ class ArithEvaluator(object):
         """
         if s.startswith('0x'):
             try:
-                integer = int(s, 16)
+                integer = mops.FromStr(s, 16)
             except ValueError:
                 e_strict('Invalid hex constant %r' % s, blame_loc)
+            # TODO: don't truncate
             return integer
 
         if s.startswith('0'):
             try:
-                integer = int(s, 8)
+                integer = mops.FromStr(s, 8)
             except ValueError:
                 e_strict('Invalid octal constant %r' % s, blame_loc)
             return integer
 
-        if '#' in s:
-            b, digits = mylib.split_once(s, '#')
+        b, digits = mylib.split_once(s, '#')  # see if it has #
+        if digits is not None:
             try:
-                base = int(b)
+                base = int(b)  # machine integer, not BigInt
             except ValueError:
                 e_strict('Invalid base for numeric constant %r' % b, blame_loc)
 
-            integer = 0
+            integer = mops.ZERO
             for ch in digits:
                 if IsLower(ch):
                     digit = ord(ch) - ord('a') + 10
@@ -375,12 +378,14 @@ class ArithEvaluator(object):
                         'Digits %r out of range for base %d' % (digits, base),
                         blame_loc)
 
-                integer = integer * base + digit
+                #integer = integer * base + digit
+                integer = mops.Add(mops.Mul(integer, mops.BigInt(base)),
+                                   mops.BigInt(digit))
             return integer
 
         try:
             # Normal base 10 integer.  This includes negative numbers like '-42'.
-            integer = int(s)
+            integer = mops.FromStr(s)
         except ValueError:
             # doesn't look like an integer
 
@@ -390,7 +395,7 @@ class ArithEvaluator(object):
 
                 # Special case so we don't get EOF error
                 if len(s.strip()) == 0:
-                    return 0
+                    return mops.ZERO
 
                 # For compatibility: Try to parse it as an expression and evaluate it.
                 a_parser = self.parse_ctx.MakeArithParser(s)
@@ -411,7 +416,7 @@ class ArithEvaluator(object):
                     e_die("Invalid integer constant %r" % s, blame_loc)
 
                 if self.exec_opts.eval_unsafe_arith():
-                    integer = self.EvalToInt(node2)
+                    integer = self.EvalToBigInt(node2)
                 else:
                     # BoolEvaluator doesn't have parse_ctx or mutable_opts
                     assert self.mutable_opts is not None
@@ -421,7 +426,7 @@ class ArithEvaluator(object):
                     with state.ctx_Option(self.mutable_opts,
                                           [option_i._allow_command_sub],
                                           False):
-                        integer = self.EvalToInt(node2)
+                        integer = self.EvalToBigInt(node2)
 
             else:
                 if len(s.strip()) == 0 or match.IsValidVarName(s):
@@ -434,12 +439,12 @@ class ArithEvaluator(object):
         return integer
 
     def _ValToIntOrError(self, val, blame):
-        # type: (value_t, arith_expr_t) -> int
+        # type: (value_t, arith_expr_t) -> mops.BigInt
         try:
             UP_val = val
             with tagswitch(val) as case:
-                if case(value_e.Undef
-                        ):  # 'nounset' already handled before got here
+                if case(value_e.Undef):
+                    # 'nounset' already handled before got here
                     # Happens upon a[undefined]=42, which unfortunately turns into a[0]=42.
                     e_strict('Undefined value in arithmetic context',
                              loc.Arith(blame))
@@ -450,14 +455,14 @@ class ArithEvaluator(object):
 
                 elif case(value_e.Str):
                     val = cast(value.Str, UP_val)
-                    return self._StringToInteger(
-                        val.s, loc.Arith(blame))  # calls e_strict
+                    # calls e_strict
+                    return self._StringToBigInt(val.s, loc.Arith(blame))
 
         except error.Strict as e:
             if self.exec_opts.strict_arith():
                 raise
             else:
-                return 0
+                return mops.ZERO
 
         # Arrays and associative arrays always fail -- not controlled by
         # strict_arith.
@@ -468,7 +473,7 @@ class ArithEvaluator(object):
             ui.ValType(val), loc.Arith(blame))
 
     def _EvalLhsAndLookupArith(self, node):
-        # type: (arith_expr_t) -> Tuple[int, sh_lvalue_t]
+        # type: (arith_expr_t) -> Tuple[mops.BigInt, sh_lvalue_t]
         """ For x = y  and   x += y  and  ++x """
 
         lval = self.EvalArithLhs(node)
@@ -493,12 +498,12 @@ class ArithEvaluator(object):
         return i, lval
 
     def _Store(self, lval, new_int):
-        # type: (sh_lvalue_t, int) -> None
-        val = value.Str(str(new_int))
+        # type: (sh_lvalue_t, mops.BigInt) -> None
+        val = value.Str(mops.ToStr(new_int))
         state.OshLanguageSetValue(self.mem, lval, val)
 
-    def EvalToInt(self, node):
-        # type: (arith_expr_t) -> int
+    def EvalToBigInt(self, node):
+        # type: (arith_expr_t) -> mops.BigInt
         """Used externally by ${a[i+1]} and ${a:start:len}.
 
         Also used internally.
@@ -506,8 +511,8 @@ class ArithEvaluator(object):
         val = self.Eval(node)
 
         # BASH_LINENO, arr (array name without strict_array), etc.
-        if val.tag() in (value_e.BashArray, value_e.BashAssoc
-                         ) and node.tag() == arith_expr_e.VarSub:
+        if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
+                node.tag() == arith_expr_e.VarSub):
             vsub = cast(SimpleVarSub, node)
             if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
                 val = word_eval.DecayArray(val)
@@ -515,22 +520,23 @@ class ArithEvaluator(object):
         i = self._ValToIntOrError(val, node)
         return i
 
+    def EvalToInt(self, node):
+        # type: (arith_expr_t) -> int
+        return mops.BigTruncate(self.EvalToBigInt(node))
+
     def Eval(self, node):
         # type: (arith_expr_t) -> value_t
         """
-    Args:
-      node: arith_expr_t
+        Returns:
+          None for Undef  (e.g. empty cell)  TODO: Don't return 0!
+          int for Str
+          List[int] for BashArray
+          Dict[str, str] for BashAssoc (TODO: Should we support this?)
 
-    Returns:
-      None for Undef  (e.g. empty cell)  TODO: Don't return 0!
-      int for Str
-      List[int] for BashArray
-      Dict[str, str] for BashAssoc (TODO: Should we support this?)
-
-    NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
-    bash, but don't do what you'd think.  'x' sometimes a variable name and
-    sometimes a key.
-    """
+        NOTE: (( A['x'] = 'x' )) and (( x = A['x'] )) are syntactically valid in
+        bash, but don't do what you'd think.  'x' sometimes a variable name and
+        sometimes a key.
+        """
         # OSH semantics: Variable NAMES cannot be formed dynamically; but INTEGERS
         # can.  ${foo:-3}4 is OK.  $? will be a compound word too, so we don't have
         # to handle that as a special case.
@@ -552,30 +558,29 @@ class ArithEvaluator(object):
                 node = cast(arith_expr.UnaryAssign, UP_node)
 
                 op_id = node.op_id
-                old_int, lval = self._EvalLhsAndLookupArith(node.child)
+                old_big, lval = self._EvalLhsAndLookupArith(node.child)
 
                 if op_id == Id.Node_PostDPlus:  # post-increment
-                    new_int = old_int + 1
-                    ret = old_int
+                    new_big = mops.Add(old_big, mops.ONE)
+                    result = old_big
 
                 elif op_id == Id.Node_PostDMinus:  # post-decrement
-                    new_int = old_int - 1
-                    ret = old_int
+                    new_big = mops.Sub(old_big, mops.ONE)
+                    result = old_big
 
                 elif op_id == Id.Arith_DPlus:  # pre-increment
-                    new_int = old_int + 1
-                    ret = new_int
+                    new_big = mops.Add(old_big, mops.ONE)
+                    result = new_big
 
                 elif op_id == Id.Arith_DMinus:  # pre-decrement
-                    new_int = old_int - 1
-                    ret = new_int
+                    new_big = mops.Sub(old_big, mops.ONE)
+                    result = new_big
 
                 else:
                     raise AssertionError(op_id)
 
-                #log('old %d new %d ret %d', old_int, new_int, ret)
-                self._Store(lval, new_int)
-                return value.Int(ret)
+                self._Store(lval, new_big)
+                return value.Int(result)
 
             elif case(arith_expr_e.BinaryAssign):  # a=1, a+=5, a[1]+=5
                 node = cast(arith_expr.BinaryAssign, UP_node)
@@ -585,66 +590,69 @@ class ArithEvaluator(object):
                     # Don't really need a span ID here, because tdop.CheckLhsExpr should
                     # have done all the validation.
                     lval = self.EvalArithLhs(node.left)
-                    rhs_int = self.EvalToInt(node.right)
+                    rhs_big = self.EvalToBigInt(node.right)
 
-                    self._Store(lval, rhs_int)
-                    return value.Int(rhs_int)
+                    self._Store(lval, rhs_big)
+                    return value.Int(rhs_big)
 
-                old_int, lval = self._EvalLhsAndLookupArith(node.left)
-                rhs = self.EvalToInt(node.right)
+                old_big, lval = self._EvalLhsAndLookupArith(node.left)
+                rhs_big = self.EvalToBigInt(node.right)
 
                 if op_id == Id.Arith_PlusEqual:
-                    new_int = old_int + rhs
+                    new_big = mops.Add(old_big, rhs_big)
                 elif op_id == Id.Arith_MinusEqual:
-                    new_int = old_int - rhs
+                    new_big = mops.Sub(old_big, rhs_big)
                 elif op_id == Id.Arith_StarEqual:
-                    new_int = old_int * rhs
+                    new_big = mops.Mul(old_big, rhs_big)
 
                 elif op_id == Id.Arith_SlashEqual:
-                    if rhs == 0:
+                    if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_int = old_int / rhs
+                    new_big = num.IntDivide(old_big, rhs_big)
 
                 elif op_id == Id.Arith_PercentEqual:
-                    if rhs == 0:
+                    if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_int = old_int % rhs
+                    new_big = num.IntRemainder(old_big, rhs_big)
 
                 elif op_id == Id.Arith_DGreatEqual:
-                    new_int = old_int >> rhs
+                    new_big = mops.RShift(old_big, rhs_big)
                 elif op_id == Id.Arith_DLessEqual:
-                    new_int = old_int << rhs
+                    new_big = mops.LShift(old_big, rhs_big)
                 elif op_id == Id.Arith_AmpEqual:
-                    new_int = old_int & rhs
+                    new_big = mops.BitAnd(old_big, rhs_big)
                 elif op_id == Id.Arith_PipeEqual:
-                    new_int = old_int | rhs
+                    new_big = mops.BitOr(old_big, rhs_big)
                 elif op_id == Id.Arith_CaretEqual:
-                    new_int = old_int ^ rhs
+                    new_big = mops.BitXor(old_big, rhs_big)
                 else:
                     raise AssertionError(op_id)  # shouldn't get here
 
-                self._Store(lval, new_int)
-                return value.Int(new_int)
+                self._Store(lval, new_big)
+                return value.Int(new_big)
 
             elif case(arith_expr_e.Unary):
                 node = cast(arith_expr.Unary, UP_node)
                 op_id = node.op_id
 
-                i = self.EvalToInt(node.child)
+                i = self.EvalToBigInt(node.child)
 
-                if op_id == Id.Node_UnaryPlus:
-                    ret = i
-                elif op_id == Id.Node_UnaryMinus:
-                    ret = -i
+                if op_id == Id.Node_UnaryPlus:  # +i
+                    result = i
+                elif op_id == Id.Node_UnaryMinus:  # -i
+                    result = mops.Sub(mops.ZERO, i)
 
                 elif op_id == Id.Arith_Bang:  # logical negation
-                    ret = 1 if i == 0 else 0
+                    if mops.Equal(i, mops.ZERO):
+                        result = mops.ONE
+                    else:
+                        result = mops.ZERO
                 elif op_id == Id.Arith_Tilde:  # bitwise complement
-                    ret = ~i
+                    result = mops.BitNot(i)
                 else:
                     raise AssertionError(op_id)  # shouldn't get here
 
-                return value.Int(ret)
+                return value.Int(result)
 
             elif case(arith_expr_e.Binary):
                 node = cast(arith_expr.Binary, UP_node)
@@ -652,22 +660,28 @@ class ArithEvaluator(object):
 
                 # Short-circuit evaluation for || and &&.
                 if op_id == Id.Arith_DPipe:
-                    lhs = self.EvalToInt(node.left)
-                    if lhs == 0:
-                        rhs = self.EvalToInt(node.right)
-                        ret = int(rhs != 0)
+                    lhs_big = self.EvalToBigInt(node.left)
+                    if mops.Equal(lhs_big, mops.ZERO):
+                        rhs_big = self.EvalToBigInt(node.right)
+                        if mops.Equal(rhs_big, mops.ZERO):
+                            result = mops.ZERO  # false
+                        else:
+                            result = mops.ONE  # true
                     else:
-                        ret = 1  # true
-                    return value.Int(ret)
+                        result = mops.ONE  # true
+                    return value.Int(result)
 
                 if op_id == Id.Arith_DAmp:
-                    lhs = self.EvalToInt(node.left)
-                    if lhs == 0:
-                        ret = 0  # false
+                    lhs_big = self.EvalToBigInt(node.left)
+                    if mops.Equal(lhs_big, mops.ZERO):
+                        result = mops.ZERO  # false
                     else:
-                        rhs = self.EvalToInt(node.right)
-                        ret = int(rhs != 0)
-                    return value.Int(ret)
+                        rhs_big = self.EvalToBigInt(node.right)
+                        if mops.Equal(rhs_big, mops.ZERO):
+                            result = mops.ZERO  # false
+                        else:
+                            result = mops.ONE  # true
+                    return value.Int(result)
 
                 if op_id == Id.Arith_LBracket:
                     # NOTE: Similar to bracket_op_e.ArrayIndex in osh/word_eval.py
@@ -677,7 +691,8 @@ class ArithEvaluator(object):
                     with tagswitch(left) as case:
                         if case(value_e.BashArray):
                             array_val = cast(value.BashArray, UP_left)
-                            index = self.EvalToInt(node.right)
+                            index = mops.BigTruncate(
+                                self.EvalToBigInt(node.right))
                             s = word_eval.GetArrayItem(array_val.strs, index)
 
                         elif case(value_e.BashAssoc):
@@ -699,78 +714,78 @@ class ArithEvaluator(object):
                     return val
 
                 if op_id == Id.Arith_Comma:
-                    self.EvalToInt(node.left)  # throw away result
-                    ret = self.EvalToInt(node.right)
-                    return value.Int(ret)
+                    self.EvalToBigInt(node.left)  # throw away result
+                    result = self.EvalToBigInt(node.right)
+                    return value.Int(result)
 
                 # Rest are integers
-                lhs = self.EvalToInt(node.left)
-                rhs = self.EvalToInt(node.right)
+                lhs_big = self.EvalToBigInt(node.left)
+                rhs_big = self.EvalToBigInt(node.right)
 
                 if op_id == Id.Arith_Plus:
-                    ret = lhs + rhs
+                    result = mops.Add(lhs_big, rhs_big)
                 elif op_id == Id.Arith_Minus:
-                    ret = lhs - rhs
+                    result = mops.Sub(lhs_big, rhs_big)
                 elif op_id == Id.Arith_Star:
-                    ret = lhs * rhs
+                    result = mops.Mul(lhs_big, rhs_big)
                 elif op_id == Id.Arith_Slash:
-                    if rhs == 0:
+                    if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', loc.Arith(node.right))
-
-                    ret = lhs / rhs
+                    result = num.IntDivide(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_Percent:
-                    if rhs == 0:
+                    if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', loc.Arith(node.right))
-
-                    ret = lhs % rhs
+                    result = num.IntRemainder(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DStar:
-                    if rhs < 0:
+                    if mops.Greater(mops.ZERO, rhs_big):
                         e_die("Exponent can't be a negative number",
                               loc.Arith(node.right))
-                    ret = 1
-                    for i in xrange(rhs):
-                        ret *= lhs
+                    result = num.Exponent(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DEqual:
-                    ret = int(lhs == rhs)
+                    result = mops.FromBool(mops.Equal(lhs_big, rhs_big))
                 elif op_id == Id.Arith_NEqual:
-                    ret = int(lhs != rhs)
+                    result = mops.FromBool(not mops.Equal(lhs_big, rhs_big))
                 elif op_id == Id.Arith_Great:
-                    ret = int(lhs > rhs)
+                    result = mops.FromBool(mops.Greater(lhs_big, rhs_big))
                 elif op_id == Id.Arith_GreatEqual:
-                    ret = int(lhs >= rhs)
+                    result = mops.FromBool(
+                        mops.Greater(lhs_big, rhs_big) or
+                        mops.Equal(lhs_big, rhs_big))
                 elif op_id == Id.Arith_Less:
-                    ret = int(lhs < rhs)
+                    result = mops.FromBool(mops.Greater(rhs_big, lhs_big))
                 elif op_id == Id.Arith_LessEqual:
-                    ret = int(lhs <= rhs)
+                    result = mops.FromBool(
+                        mops.Greater(rhs_big, lhs_big) or
+                        mops.Equal(lhs_big, rhs_big))
 
                 elif op_id == Id.Arith_Pipe:
-                    ret = lhs | rhs
+                    result = mops.BitOr(lhs_big, rhs_big)
                 elif op_id == Id.Arith_Amp:
-                    ret = lhs & rhs
+                    result = mops.BitAnd(lhs_big, rhs_big)
                 elif op_id == Id.Arith_Caret:
-                    ret = lhs ^ rhs
+                    result = mops.BitXor(lhs_big, rhs_big)
 
                 # Note: how to define shift of negative numbers?
                 elif op_id == Id.Arith_DLess:
-                    ret = lhs << rhs
+                    result = mops.LShift(lhs_big, rhs_big)
                 elif op_id == Id.Arith_DGreat:
-                    ret = lhs >> rhs
+                    result = mops.RShift(lhs_big, rhs_big)
                 else:
                     raise AssertionError(op_id)
 
-                return value.Int(ret)
+                return value.Int(result)
 
             elif case(arith_expr_e.TernaryOp):
                 node = cast(arith_expr.TernaryOp, UP_node)
 
-                cond = self.EvalToInt(node.cond)
-                if cond:  # nonzero
-                    return self.Eval(node.true_expr)
-                else:
+                cond = self.EvalToBigInt(node.cond)
+                if mops.Equal(cond, mops.ZERO):
                     return self.Eval(node.false_expr)
+                else:
+                    return self.Eval(node.true_expr)
 
             else:
                 raise AssertionError(node.tag())
@@ -780,20 +795,14 @@ class ArithEvaluator(object):
     def EvalWordToString(self, node):
         # type: (arith_expr_t) -> str
         """
-    Args:
-      node: arith_expr_t
+        Raises:
+          error.FatalRuntime if the expression isn't a string
+                             or if it contains a bare variable like a[x]
 
-    Returns:
-      str
+        These are allowed because they're unambiguous, unlike a[x]
 
-    Raises:
-      error.FatalRuntime if the expression isn't a string
-      Or if it contains a bare variable like a[x]
-
-    These are allowed because they're unambiguous, unlike a[x]
-
-    a[$x] a["$x"] a["x"] a['x']
-    """
+        a[$x] a["$x"] a["x"] a['x']
+        """
         UP_node = node
         if node.tag() == arith_expr_e.Word:  # $(( $x )) $(( ${x}${y} )), etc.
             w = cast(CompoundWord, UP_node)
@@ -830,7 +839,7 @@ class ArithEvaluator(object):
                     lval2 = sh_lvalue.Keyed(node.name, key, node.left)
                     lval = lval2
                 else:
-                    index = self.EvalToInt(node.index)
+                    index = mops.BigTruncate(self.EvalToBigInt(node.index))
                     lval3 = sh_lvalue.Indexed(node.name, index, node.left)
                     lval = lval3
 
@@ -877,7 +886,8 @@ class ArithEvaluator(object):
                         key = self.EvalWordToString(anode.right)
                         return sh_lvalue.Keyed(var_name, key, location)
                     else:
-                        index = self.EvalToInt(anode.right)
+                        index = mops.BigTruncate(self.EvalToBigInt(
+                            anode.right))
                         return sh_lvalue.Indexed(var_name, index, location)
 
         var_name, location = self._VarNameOrWord(anode)
@@ -910,8 +920,8 @@ class BoolEvaluator(ArithEvaluator):
                                 errfmt)
         self.always_strict = always_strict
 
-    def _StringToIntegerOrError(self, s, blame_word=None):
-        # type: (str, Optional[word_t]) -> int
+    def _StringToBigIntOrError(self, s, blame_word=None):
+        # type: (str, Optional[word_t]) -> mops.BigInt
         """Used by both [[ $x -gt 3 ]] and (( $x ))."""
         if blame_word:
             location = loc.Word(blame_word)  # type: loc_t
@@ -919,12 +929,12 @@ class BoolEvaluator(ArithEvaluator):
             location = loc.Missing
 
         try:
-            i = self._StringToInteger(s, location)
+            i = self._StringToBigInt(s, location)
         except error.Strict as e:
             if self.always_strict or self.exec_opts.strict_arith():
                 raise
             else:
-                i = 0
+                i = mops.ZERO
         return i
 
     def _EvalCompoundWord(self, word, eval_flags=0):
@@ -1028,22 +1038,21 @@ class BoolEvaluator(ArithEvaluator):
                 if arg_type == bool_arg_type_e.Int:
                     # NOTE: We assume they are constants like [[ 3 -eq 3 ]].
                     # Bash also allows [[ 1+2 -eq 3 ]].
-                    i1 = self._StringToIntegerOrError(s1, blame_word=node.left)
-                    i2 = self._StringToIntegerOrError(s2,
-                                                      blame_word=node.right)
+                    i1 = self._StringToBigIntOrError(s1, blame_word=node.left)
+                    i2 = self._StringToBigIntOrError(s2, blame_word=node.right)
 
                     if op_id == Id.BoolBinary_eq:
-                        return i1 == i2
+                        return mops.Equal(i1, i2)
                     if op_id == Id.BoolBinary_ne:
-                        return i1 != i2
+                        return not mops.Equal(i1, i2)
                     if op_id == Id.BoolBinary_gt:
-                        return i1 > i2
+                        return mops.Greater(i1, i2)
                     if op_id == Id.BoolBinary_ge:
-                        return i1 >= i2
+                        return mops.Greater(i1, i2) or mops.Equal(i1, i2)
                     if op_id == Id.BoolBinary_lt:
-                        return i1 < i2
+                        return mops.Greater(i2, i1)
                     if op_id == Id.BoolBinary_le:
-                        return i1 <= i2
+                        return mops.Greater(i2, i1) or mops.Equal(i1, i2)
 
                     raise AssertionError(op_id)  # should never happen
 

@@ -8,8 +8,9 @@ from core.error import e_die_status, e_usage
 from core import executor
 from core import state
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import typed_args
+from mycpp import mops
 from mycpp.mylib import log
 
 _ = log
@@ -81,7 +82,7 @@ class Try(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('try_',
+        _, arg_r = flag_util.ParseCmdVal('try_',
                                          cmd_val,
                                          accept_typed_args=True)
 
@@ -145,7 +146,7 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('error',
+        _, arg_r = flag_util.ParseCmdVal('error',
                                          cmd_val,
                                          accept_typed_args=True)
 
@@ -159,7 +160,7 @@ class Error(vm._Builtin):
         # use status 3 for expressions and 4 for encode/decode, and 10 "leaves
         # room" for others.
         # The user is of course free to choose status 1.
-        status = rd.NamedInt('status', 10)
+        status = mops.BigTruncate(rd.NamedInt('status', 10))
 
         # attach rest of named args to _error Dict
         properties = rd.RestNamed()
@@ -183,7 +184,7 @@ class BoolStatus(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        _, arg_r = flag_spec.ParseCmdVal('boolstatus', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('boolstatus', cmd_val)
 
         if arg_r.Peek() is None:
             e_usage('expected a command to run', loc.Missing)

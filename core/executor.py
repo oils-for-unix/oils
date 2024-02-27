@@ -638,17 +638,17 @@ class ShellExecutor(vm._Executor):
         else:
             raise AssertionError()
 
-    def PushRedirects(self, redirects):
-        # type: (List[RedirValue]) -> bool
+    def PushRedirects(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
         if len(redirects) == 0:  # Optimized to avoid allocs
-            return True
-        return self.fd_state.Push(redirects)
+            return
+        self.fd_state.Push(redirects, err_out)
 
-    def PopRedirects(self, num_redirects):
-        # type: (int) -> None
+    def PopRedirects(self, num_redirects, err_out):
+        # type: (int, List[error.IOError_OSError]) -> None
         if num_redirects == 0:  # Optimized to avoid allocs
             return
-        self.fd_state.Pop()
+        self.fd_state.Pop(err_out)
 
     def PushProcessSub(self):
         # type: () -> None

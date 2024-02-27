@@ -19,7 +19,7 @@ source devtools/common.sh  # banner
 source devtools/run-task.sh  # run-task
 
 # TODO: synchronize with metrics/source-code.sh
-readonly -a CODE_DIRS=(asdl bin builtin core data_lang frontend osh tools ysh)
+readonly -a CODE_DIRS=(asdl bin builtin core data_lang frontend osh tools yaks ysh)
 
 #
 # C++

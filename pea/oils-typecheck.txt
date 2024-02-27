@@ -2,6 +2,7 @@ _devbuild/gen/arg_types.py
 _devbuild/gen/grammar_nt.py
 _devbuild/gen/hnode_asdl.py
 _devbuild/gen/id_kind_asdl.py
+_devbuild/gen/nil8_asdl.py
 _devbuild/gen/option_asdl.py
 _devbuild/gen/runtime_asdl.py
 _devbuild/gen/syntax_asdl.py
@@ -47,6 +48,7 @@ core/dev.py
 core/error.py
 core/executor.py
 core/main_loop.py
+core/num.py
 core/optview.py
 core/process.py
 core/pyos.py
@@ -64,6 +66,7 @@ frontend/builtin_def.py
 frontend/consts.py
 frontend/flag_def.py
 frontend/flag_spec.py
+frontend/flag_util.py
 frontend/id_kind_def.py
 frontend/lexer.py
 frontend/lexer_def.py

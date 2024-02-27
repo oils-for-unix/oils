@@ -27,6 +27,7 @@ def _RunSplitCases(test, sp, cases):
 
 
 class SplitTest(unittest.TestCase):
+
     def testSpansToParts(self):
         sp = split.IfsSplitter(split.DEFAULT_IFS, '')
 

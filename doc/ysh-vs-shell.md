@@ -94,7 +94,7 @@ Raw strings can have an `r` prefix, like `echo r'C:\Program Files\'`.
 
 ### Builtin Commands and Functions
 
-- YSH adds long flags to builtin commands, like `read --line`.
+- YSH adds long flags to builtin commands, like `read --all`.
 - YSH has builtin functions like `join()`.
 
 ### Shell Options, `shvar`, Registers

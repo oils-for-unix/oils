@@ -37,6 +37,10 @@
 
 module syntax
 {
+  use core value {
+    value
+  }
+
   # More efficient than the List[bool] pattern we've been using
   BoolParamBox = (bool b)
   IntParamBox = (int i)
@@ -484,9 +488,11 @@ module syntax
   expr =
     # a variable name to evaluate
     Var(Token name)  # TODO: add str var_name
-    # For null, Bool, Int, Float
+    # Constants are typically Null, Bool, Int, Float
+    #           and also Str for key in {key: 42}
+    # But string literals are SingleQuoted or DoubleQuoted
     # Python uses Num(object n), which doesn't respect our "LST" invariant.
-  | Const(Token c)
+  | Const(Token c, value val)
 
     # read(&x)  json read (&x[0])
   | Place(Token blame_tok, str var_name, place_op* ops)

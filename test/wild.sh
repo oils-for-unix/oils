@@ -382,7 +382,7 @@ all-manifests() {
   # Most of these scripts have no extension.  So look at executable ones and
   # then see if the shebang ends with sh!
 
-  # NOTE: In Oil it would be nice if shebang-is-shell could be a function call.
+  # NOTE: In YSH it would be nice if shebang-is-shell could be a function call.
   # Don't need to fork every time.
   src=~/git/other/pixelb-scripts
   _manifest pixelb-scripts $src \
@@ -537,7 +537,7 @@ all() {
 }
 
 smoke-test() {
-  ### Smoke test on Oil's own source; takes a few seconds
+  ### Smoke test on Oils source; takes a few seconds
   all 'oil/'
 }
 

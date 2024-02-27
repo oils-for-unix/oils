@@ -8,6 +8,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from asdl import format as fmt
 from core import alloc
 from core.error import e_usage, e_die
+from core import num
 from core import state
 from core import ui
 from core import vm
@@ -386,7 +387,7 @@ class HayNode_(vm._Builtin):
                 # for the user to pass back to --location-str
                 result['location_str'] = value.Str(
                     ui.GetLineSourceString(line))
-                result['location_start_line'] = value.Int(line.line_num)
+                result['location_start_line'] = num.ToBig(line.line_num)
 
                 # Between { and }
                 code_str = alloc.SnipCodeBlock(brace_group.left,

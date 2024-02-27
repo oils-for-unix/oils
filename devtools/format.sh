@@ -61,8 +61,7 @@ yapf-known() {
 
   # TODO: add all of osh/
   time yapf-files \
-    {asdl,benchmarks,builtin,core,data_lang,frontend,mycpp,ysh}/*.py \
-    osh/*_eval.py osh/*_parse.py \
+    {asdl,benchmarks,builtin,core,data_lang,frontend,mycpp,osh,yaks,ysh}/*.py \
     */NINJA_subgraph.py
 }
 
@@ -89,6 +88,7 @@ readonly -a CPP_FILES=(
   mycpp/demo/*.{cc,h}
   demo/*.c
   doctools/*.{h,cc}
+  yaks/*.h
 
   # Could add pyext, but they have sort of a Python style
   # pyext/fanos.c

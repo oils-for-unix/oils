@@ -9,7 +9,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
 from core import error
 from core import state
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import location
 from frontend import typed_args
 from mycpp import mylib
@@ -70,7 +70,7 @@ class Shvar(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('shvar',
+        _, arg_r = flag_util.ParseCmdVal('shvar',
                                          cmd_val,
                                          accept_typed_args=True)
 
@@ -130,8 +130,8 @@ class Ctx(vm._Builtin):
         # type: () -> Dict[str, value_t]
         ctx = self.mem.GetContext()
         if ctx is None:
-            raise error.FatalRuntime(
-                3, "Could not find a context. Did you forget to 'ctx push'?",
+            raise error.Expr(
+                "Could not find a context. Did you forget to 'ctx push'?",
                 loc.Missing)
         return ctx
 
@@ -167,7 +167,7 @@ class Ctx(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         rd = typed_args.ReaderForProc(cmd_val)
-        _, arg_r = flag_spec.ParseCmdVal('ctx',
+        _, arg_r = flag_util.ParseCmdVal('ctx',
                                          cmd_val,
                                          accept_typed_args=True)
 
@@ -211,7 +211,7 @@ class PushRegisters(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('push-registers',
+        _, arg_r = flag_util.ParseCmdVal('push-registers',
                                          cmd_val,
                                          accept_typed_args=True)
 
@@ -245,7 +245,7 @@ class Append(vm._Builtin):
         # type: (cmd_value.Argv) -> int
 
         # This means we ignore -- , which is consistent
-        arg, arg_r = flag_spec.ParseCmdVal('append',
+        arg, arg_r = flag_util.ParseCmdVal('append',
                                            cmd_val,
                                            accept_typed_args=True)
 

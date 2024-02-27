@@ -697,7 +697,8 @@ def AddKinds(spec):
             # NIL8 only
             'LParen',
             'RParen',
-            'Symbol',
+            #'Symbol',
+            'Operator',
         ])
 
 

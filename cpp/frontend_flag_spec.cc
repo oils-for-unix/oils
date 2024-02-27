@@ -8,10 +8,8 @@
 // for definition of args::Reader, etc.
 #include "prebuilt/frontend/args.mycpp.h"
 
-namespace flag_spec {
+namespace flag_util {
 
-using arg_types::kFlagSpecs;
-using arg_types::kFlagSpecsAndMore;
 using runtime_asdl::flag_type_e;
 using value_asdl::value;
 using value_asdl::value_t;
@@ -191,6 +189,9 @@ flag_spec::_FlagSpecAndMore* CreateSpec2(FlagSpecAndMore_c* in) {
   return out;
 }
 
+using arg_types::kFlagSpecs;
+using arg_types::kFlagSpecsAndMore;
+
 flag_spec::_FlagSpec* LookupFlagSpec(BigStr* spec_name) {
   int i = 0;
   while (true) {
@@ -227,45 +228,4 @@ flag_spec::_FlagSpecAndMore* LookupFlagSpec2(BigStr* spec_name) {
   return nullptr;
 }
 
-args::_Attributes* Parse(BigStr* spec_name, args::Reader* arg_r) {
-  flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
-  assert(spec);  // should always be found
-
-  return args::Parse(spec, arg_r);
-}
-
-// With optional arg
-Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
-    bool accept_typed_args) {
-  // TODO: disallow typed args like frontend/flag_spec.py
-
-  auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
-  arg_r->Next();  // move past the builtin name
-
-  flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
-  assert(spec);  // should always be found
-  return Tuple2<args::_Attributes*, args::Reader*>(args::Parse(spec, arg_r),
-                                                   arg_r);
-}
-
-Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
-    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val) {
-  // TODO: disallow typed args like frontend/flag_spec.py
-
-  auto arg_r = Alloc<args::Reader>(cmd_val->argv, cmd_val->arg_locs);
-  arg_r->Next();  // move past the builtin name
-
-  flag_spec::_FlagSpec* spec = LookupFlagSpec(spec_name);
-  assert(spec);  // should always be found
-  return Tuple2<args::_Attributes*, args::Reader*>(
-      args::ParseLikeEcho(spec, arg_r), arg_r);
-}
-
-args::_Attributes* ParseMore(BigStr* spec_name, args::Reader* arg_r) {
-  flag_spec::_FlagSpecAndMore* spec = LookupFlagSpec2(spec_name);
-  assert(spec);
-  return args::ParseMore(spec, arg_r);
-}
-
-}  // namespace flag_spec
+}  // namespace flag_util

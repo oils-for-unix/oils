@@ -110,6 +110,13 @@ struct ObjHeader {
   }
 };
 
+inline int ObjectId(void* obj) {
+  ObjHeader* h = ObjHeader::FromObject(obj);
+
+  // pool_id is 2 bits, so shift the 28 bit obj_id past it.
+  return (h->obj_id << 2) + h->pool_id;
+}
+
 #define FIELD_MASK(header) (header).u_mask_npointers
 #define NUM_POINTERS(header) (header).u_mask_npointers
 

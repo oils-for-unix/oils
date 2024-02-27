@@ -39,12 +39,18 @@ def NinjaGraph(ru):
 
     ru.asdl_library(
         'core/runtime.asdl',
-        # 'use' dependency
-        deps=['//frontend/syntax.asdl', '//core/value.asdl'])
+        deps=[
+            # #include in header file
+            # Problem: asdl_main.py hard-codes this dependency
+            '//frontend/id_kind.asdl',
+            # #include in cc file from 'use' deps
+            '//frontend/syntax.asdl',
+            '//core/value.asdl'
+        ])
 
     ru.asdl_library(
         'core/value.asdl',
-        # 'use' dependency
+        # #include in cc file from 'use' deps
         deps=['//frontend/syntax.asdl', '//core/runtime.asdl'])
 
     ru.cc_binary('core/runtime_asdl_test.cc',

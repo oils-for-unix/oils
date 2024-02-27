@@ -14,6 +14,7 @@ from osh import prompt  # module under test
 
 
 class PromptTest(unittest.TestCase):
+
     def setUp(self):
         arena = test_lib.MakeArena('<ui_test.py>')
         mem = state.Mem('', [], arena, [])

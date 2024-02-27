@@ -4,7 +4,7 @@ core/shell.py -- Entry point for the shell interpreter.
 from __future__ import print_function
 
 from errno import ENOENT
-import time
+import time as time_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
@@ -32,7 +32,7 @@ from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 
 unused1 = flag_def
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import location
 from frontend import reader
 from frontend import parse_lib
@@ -76,6 +76,7 @@ from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
 from pylib import os_path
@@ -304,7 +305,7 @@ def Main(
     assert lang in ('osh', 'ysh'), lang
 
     try:
-        attrs = flag_spec.ParseMore('main', arg_r)
+        attrs = flag_util.ParseMore('main', arg_r)
     except error.Usage as e:
         print_stderr('%s usage error: %s' % (lang, e.msg))
         return 2
@@ -455,14 +456,14 @@ def Main(
 
     cmd_deps.debug_f = debug_f
 
-    # Not using datetime for dependency reasons.  TODO: maybe show the date at
-    # the beginning of the log, and then only show time afterward?  To save
-    # space, and make space for microseconds.  (datetime supports microseconds
-    # but time.strftime doesn't).
-    if mylib.PYTHON:
-        iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        debug_f.writeln('%s [%d] OSH started with argv %s' %
-                        (iso_stamp, my_pid, arg_r.argv))
+    now = time_.time()
+    iso_stamp = time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(now))
+
+    argv_buf = mylib.BufWriter()
+    dev.PrintShellArgv(arg_r.argv, argv_buf)
+
+    debug_f.writeln('%s [%d] Oils started with argv %s' %
+                    (iso_stamp, my_pid, argv_buf.getvalue()))
     if len(debug_path):
         debug_f.writeln('Writing logs to %r' % debug_path)
 
@@ -904,8 +905,9 @@ def Main(
     if flag.location_str is not None:
         src = source.Synthetic(flag.location_str)
         assert line_reader is not None
-        if flag.location_start_line != -1:
-            line_reader.SetLineOffset(flag.location_start_line)
+        location_start_line = mops.BigTruncate(flag.location_start_line)
+        if location_start_line != -1:
+            line_reader.SetLineOffset(location_start_line)
 
     arena.PushSource(src)
 

@@ -26,8 +26,8 @@ with SPLIT_REGEX = / digit+ / {
 }
 """
 
-from _devbuild.gen.runtime_asdl import ( scope_e, span_e, emit_i,
-                                        char_kind_i, state_i)
+from _devbuild.gen.runtime_asdl import (scope_e, span_e, emit_i, char_kind_i,
+                                        state_i)
 from _devbuild.gen.value_asdl import (value, value_e, value_t)
 from mycpp.mylib import log
 from core import pyutil
@@ -196,6 +196,7 @@ class SplitContext(object):
 
 
 class _BaseSplitter(object):
+
     def __init__(self, escape_chars):
         # type: (str) -> None
         self.escape_chars = escape_chars + '\\'  # Backslash is always escaped

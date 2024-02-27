@@ -11,7 +11,7 @@ source test/common.sh  # html-head
 
 # NOTE: Left to right evaluation would be nice on this!
 #
-# Rewrite in oil:
+# Rewrite in YSH:
 # 
 # sys.stdin.read() | sub( / "\x00" { any* } "\x01" /, html_escape) | write
 escape-segments() {

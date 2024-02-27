@@ -1203,7 +1203,7 @@ test-for-parse-bare-word() {
   '
 }
 
-test-oils-issue-1118() {
+test-bug-1118() {
   set +o errexit
 
   # Originally pointed at 'for'
@@ -1232,6 +1232,37 @@ test-oils-issue-1118() {
     setvar count += 1
   }
   '
+}
+
+test-bug-1850() {
+  _ysh-should-parse 'pp line (42); pp line (43)'
+  #_osh-should-parse 'pp line (42); pp line (43)'
+
+  return
+
+  # Extra word is bad
+  _ysh-parse-error 'pp line (42) extra'
+
+  # Bug -- newline or block should come after arg list
+  _ysh-parse-error 'pp line (42), echo'
+
+  # This properly checks a similar error.  It's in a word.
+  _ysh-parse-error 'pp line @(echo), echo'
+
+  # Common cases
+  _ysh-should-parse 'pp line (42)'
+  _ysh-should-parse 'pp line (42) '
+  _ysh-should-parse 'pp line (42);'
+  _ysh-should-parse 'pp line (42) { echo hi }'
+
+  return
+
+  # Original bug
+
+  # Accidental comma instead of ;
+  # Wow this is parsed horribly
+  # Why does this replace (42) with (43)
+  _ysh-parse-error 'pp line (42), pp line (43)'
 }
 
 test-proc-args() {
@@ -1362,6 +1393,46 @@ hi
 """bad
 '
 }
+
+test-bug-1826() {
+  #return
+
+  read -r code_str << 'EOF'
+echo b'\xff'
+EOF
+
+  _parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = b'\xff'
+EOF
+
+  _parse-error "$code_str"
+
+  # Backslash ending the file
+
+  read -r code_str << 'EOF'
+echo b'\
+EOF
+  echo "[$code_str]"
+
+  _parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = b'\
+EOF
+  echo "[$code_str]"
+
+  _parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = $'\
+EOF
+  echo "[$code_str]"
+
+  _parse-error "$code_str"
+}
+
 
 #
 # Entry Points

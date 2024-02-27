@@ -336,6 +336,114 @@ yes
 mu 956
 ## END
 
+#### Exponentiation with **
+var x = 2**3
+echo $x
+
+var y = 2.0 ** 3.0  # NOT SUPPORTED
+echo 'should not get here'
+
+## status: 3
+## STDOUT:
+8
+## END
+
+#### Float Division
+pp line (5/2)
+pp line (-5/2)
+pp line (5/-2)
+pp line (-5/-2)
+
+echo ---
+
+var x = 9
+setvar x /= 2
+pp line (x)
+
+var x = -9
+setvar x /= 2
+pp line (x)
+
+var x = 9
+setvar x /= -2
+pp line (x)
+
+var x = -9
+setvar x /= -2
+pp line (x)
+
+
+## STDOUT:
+(Float)   2.5
+(Float)   -2.5
+(Float)   -2.5
+(Float)   2.5
+---
+(Float)   4.5
+(Float)   -4.5
+(Float)   -4.5
+(Float)   4.5
+## END
+
+#### Integer Division (rounds toward zero)
+pp line (5//2)
+pp line (-5//2)
+pp line (5//-2)
+pp line (-5//-2)
+
+echo ---
+
+var x = 9
+setvar x //= 2
+pp line (x)
+
+var x = -9
+setvar x //= 2
+pp line (x)
+
+var x = 9
+setvar x //= -2
+pp line (x)
+
+var x = -9
+setvar x //= -2
+pp line (x)
+
+## STDOUT:
+(Int)   2
+(Int)   -2
+(Int)   -2
+(Int)   2
+---
+(Int)   4
+(Int)   -4
+(Int)   -4
+(Int)   4
+## END
+
+#### % operator is remainder
+pp line ( 5 % 3)
+pp line (-5 % 3)
+
+# negative divisor illegal (tested in test/ysh-runtime-errors.sh)
+#pp line ( 5 % -3)
+#pp line (-5 % -3)
+
+var z = 10
+setvar z %= 3
+pp line (z)
+
+var z = -10
+setvar z %= 3
+pp line (z)
+
+## STDOUT:
+(Int)   2
+(Int)   -2
+(Int)   1
+(Int)   -1
+## END
+
 #### Bitwise logical
 var a = 0b0101 & 0b0011
 echo $a
@@ -360,36 +468,6 @@ echo $b
 ## STDOUT:
 16
 1
-## END
-
-#### Exponentiation with **
-var x = 2**3
-echo $x
-
-var y = 2.0 ** 3.0  # NOT SUPPORTED
-echo 'should not get here'
-
-## status: 3
-## STDOUT:
-8
-## END
-
-#### Two Kinds of Division
-var x = 5/2
-echo $x
-var y = 5 // 2
-echo $y
-## STDOUT:
-2.5
-2
-## END
-
-#### mod operator
-= 5 % 3
-= -5 % 3
-## STDOUT:
-(Int)   2
-(Int)   1
 ## END
 
 #### multiline strings, list, tuple syntax for list, etc.

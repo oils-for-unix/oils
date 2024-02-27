@@ -8,7 +8,7 @@
 #include <unistd.h>    // STDERR_FILENO
 
 #include "_build/detected-cpp-config.h"  // for GC_TIMING
-#include "mycpp/gc_builtins.h"           // StringToInteger()
+#include "mycpp/gc_builtins.h"           // StringToInt()
 #include "mycpp/gc_slab.h"
 
 // TODO: Remove this guard when we have separate binaries
@@ -25,7 +25,7 @@ void MarkSweepHeap::Init(int gc_threshold) {
   e = getenv("OILS_GC_THRESHOLD");
   if (e) {
     int result;
-    if (StringToInteger(e, strlen(e), 10, &result)) {
+    if (StringToInt(e, strlen(e), 10, &result)) {
       // Override collection threshold
       gc_threshold_ = result;
     }
@@ -382,7 +382,7 @@ void MarkSweepHeap::MaybePrintStats() {
     if (e && strlen(e)) {
       // Try setting 'stats_fd'.  If there's an error, it will be unchanged, and
       // we don't PrintStats();
-      StringToInteger(e, strlen(e), 10, &stats_fd);
+      StringToInt(e, strlen(e), 10, &stats_fd);
     }
   }
 

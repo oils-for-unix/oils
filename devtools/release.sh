@@ -680,7 +680,7 @@ _releases-html-header() {
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Oil Releases</title>
+    <title>Oils Releases</title>
     <style>
 EOF
 
@@ -697,7 +697,7 @@ cat <<EOF
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
-    <h1>Oil Releases</h1>
+    <h1>Oils Releases</h1>
 
     <table class="release-table">
 EOF

@@ -63,6 +63,7 @@ def _Detect(test, word_str, expected):
 
 
 class WordTest(unittest.TestCase):
+
     def testDetectLocation(self):
         CASES = [
             ('foobar', (None, None, 0)),

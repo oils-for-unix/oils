@@ -16,6 +16,7 @@ using value_asdl::value;  // This is a bit ad hoc
 
 namespace runtime {  // forward declare
 
+  class TraversalState;
 
 }  // forward declare namespace runtime
 
@@ -53,6 +54,19 @@ using hnode_asdl::hnode;
 extern int NO_SPID;
 hnode::Record* NewRecord(BigStr* node_type);
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
+class TraversalState {
+ public:
+  TraversalState();
+  Dict<int, bool>* seen;
+  Dict<int, int>* ref_count;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(2, sizeof(TraversalState));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(TraversalState)
+};
+
 extern BigStr* TRUE_STR;
 extern BigStr* FALSE_STR;
 

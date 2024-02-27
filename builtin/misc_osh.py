@@ -14,7 +14,7 @@ from core import pyos
 from core import pyutil
 from core import util
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from mycpp import mylib
 from mycpp.mylib import log
 
@@ -92,7 +92,7 @@ class Help(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        attrs, arg_r = flag_spec.ParseCmdVal('help', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('help', cmd_val)
         #arg = arg_types.help(attrs.attrs)
 
         topic_id, blame_loc = arg_r.Peek2()

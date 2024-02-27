@@ -236,6 +236,7 @@ namespace %s {
         # TODO: Remove Any once we stop using it
         f.write("""\
 from asdl import pybase
+from mycpp import mops
 from typing import Optional, List, Tuple, Dict, Any, cast, TYPE_CHECKING
 """)
 

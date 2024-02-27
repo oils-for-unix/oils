@@ -285,7 +285,7 @@ Most of our C-like syntax can be attributed to JavaScript or Python.  But the
 `value.Place` type is created with the `&` operator, and should be familiar to
 C users:
 
-    $ echo hi | read --line (&myvar)
+    $ echo hi | read --all (&myvar)
     $ echo "myvar=$myvar"
     => myvar=hi
 

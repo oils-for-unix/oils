@@ -1,4 +1,4 @@
-// preamble.h: declarations to run osh_eval.cc
+// cpp/preamble.h: declarations to run oils_for_unix.mycpp
 
 #include <errno.h>
 #include <fcntl.h>     // e.g. F_DUPFD used directly
@@ -9,6 +9,7 @@
 #include "_gen/core/optview.h"
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
+#include "_gen/data_lang/nil8.asdl.h"
 #include "_gen/frontend/arg_types.h"
 #include "_gen/frontend/consts.h"
 #include "_gen/frontend/help_meta.h"

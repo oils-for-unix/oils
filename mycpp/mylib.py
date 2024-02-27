@@ -21,7 +21,7 @@ except ImportError:
     import os
     posix = os
 
-from typing import Tuple, Dict, Optional, Any
+from typing import Tuple, Dict, Optional, Iterator, Any, TypeVar, TYPE_CHECKING
 
 # For conditional translation
 CPP = False
@@ -37,11 +37,20 @@ def MaybeCollect():
 
 
 def NewDict():
+    # type: () -> Dict[str, Any]
     """Make dictionaries ordered in Python, e.g. for JSON.
   
     In C++, our Dict implementation should be ordered.
     """
     return collections_.OrderedDict()
+
+
+def log(msg, *args):
+    # type: (str, *Any) -> None
+    """Print debug output to stderr."""
+    if args:
+        msg = msg % args
+    print(msg, file=sys.stderr)
 
 
 def print_stderr(s):
@@ -55,15 +64,63 @@ def print_stderr(s):
     print(s, file=sys.stderr)
 
 
-if cStringIO:
-    #BufWriter = cStringIO.StringIO
-    BufLineReader = cStringIO.StringIO
-else:  # Python 3
-    #BufWriter = io.StringIO
-    BufLineReader = io.StringIO
+class LineReader:
+
+    def readline(self):
+        # type: () -> str
+        raise NotImplementedError()
+
+    def close(self):
+        # type: () -> None
+        raise NotImplementedError()
+
+    def isatty(self):
+        # type: () -> bool
+        raise NotImplementedError()
 
 
-class BufWriter:
+if TYPE_CHECKING:
+
+    class BufLineReader(LineReader):
+
+        def __init__(self, s):
+            # type: (str) -> None
+            raise NotImplementedError()
+
+    def open(path):
+        # type: (str) -> LineReader
+
+        # TODO: should probably return mylib.File
+        # mylib.open() is currently only used in yaks/yaks_main and
+        # bin.osh_parse
+        raise NotImplementedError()
+
+else:
+    # Actual runtime
+    if cStringIO:
+        BufLineReader = cStringIO.StringIO
+    else:  # Python 3
+        BufLineReader = io.StringIO
+
+    open = open
+
+
+class Writer:
+
+    def write(self, s):
+        # type: (str) -> None
+        raise NotImplementedError()
+
+    def flush(self):
+        # type: () -> None
+        raise NotImplementedError()
+
+    def isatty(self):
+        # type: () -> bool
+        raise NotImplementedError()
+
+
+class BufWriter(Writer):
     """Mimic StringIO API, but add clear() so we can reuse objects.
 
     We can also add accelerators for directly writing numbers, to avoid
@@ -79,7 +136,7 @@ class BufWriter:
         self.parts.append(s)
 
     def getvalue(self):
-        # type: (str) -> None
+        # type: () -> str
         return ''.join(self.parts)
 
     def clear(self):
@@ -88,26 +145,54 @@ class BufWriter:
 
 
 def Stdout():
+    # type: () -> Writer
     return sys.stdout
 
 
 def Stderr():
+    # type: () -> Writer
     return sys.stderr
 
 
 def Stdin():
+    # type: () -> LineReader
     return sys.stdin
 
 
-# mylib.open is the builtin, but we have different static types mylib.pyi
-open = open
-
-
 class switch(object):
-    """A ContextManager that translates to a C switch statement."""
+    """Translates to C switch on int.
+
+    with tagswitch(i) as case:
+        if case(42, 43):
+           print('hi')
+        elif case(99):
+           print('two')
+       else:
+           print('neither')
+    """
 
     def __init__(self, value):
         # type: (int) -> None
+        self.value = value
+
+    def __enter__(self):
+        # type: () -> switch
+        return self
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> bool
+        return False  # Allows a traceback to occur
+
+    def __call__(self, *cases):
+        # type: (*Any) -> bool
+        return self.value in cases
+
+
+class str_switch(object):
+    """Translates to fast dispatch on string length, then memcmp()."""
+
+    def __init__(self, value):
+        # type: (str) -> None
         self.value = value
 
     def __enter__(self):
@@ -127,7 +212,7 @@ class tagswitch(object):
     """A ContextManager that translates to switch statement over ASDL types."""
 
     def __init__(self, node):
-        # type: (int) -> None
+        # type: (Any) -> None
         self.tag = node.tag()
 
     def __enter__(self):
@@ -143,7 +228,13 @@ class tagswitch(object):
         return self.tag in cases
 
 
+if TYPE_CHECKING:
+    K = TypeVar('K')
+    V = TypeVar('V')
+
+
 def iteritems(d):
+    # type: (Dict[K, V]) -> Iterator[Tuple[K, V]]
     """Make translation a bit easier."""
     return d.iteritems()
 
@@ -194,14 +285,6 @@ def str_cmp(s1, s2):
         return -1
     else:
         return 1
-
-
-def log(msg, *args):
-    # type: (str, *Any) -> None
-    """Print debug output to stderr."""
-    if args:
-        msg = msg % args
-    print(msg, file=sys.stderr)
 
 
 class UniqueObjects(object):
@@ -295,7 +378,7 @@ if 0:
     kStderr = 2
 
     def writeln(s, fd=kStdout):
-        # type: (str) -> None
+        # type: (str, int) -> None
         """Write a line.  The name is consistent with JavaScript writeln() and Rust.
 
         e.g.

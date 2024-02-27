@@ -16,7 +16,17 @@ nvalue =
   | Bool(bool b)
   | Int(int i)
   | Float(float f)
+
+    # I wonder if we want nvalue.Char for translating to C?
+    # Could be literal \\ and \n and \'a' or something
+
+    # string literal e.g. "foo" or b'\yff'
   | Str(str s)
+
+    # either Identifier like func main
+    #     or operator like + or ++
+  | Symbol(str s)
+
   | List(List[nvalue] items)
   | Record(str name, List[nvalue] args, Dict[str, nvalue] named)
 }

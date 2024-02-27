@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Test the C++ translation of Oil.
+# Test the C++ translation of Oils.
 #
 # Usage:
 #   test/spec-cpp.sh <function name>

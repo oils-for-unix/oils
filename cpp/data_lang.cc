@@ -242,14 +242,14 @@ void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
 namespace j8 {
 
 int HeapValueId(value_asdl::value_t* val) {
-  ObjHeader* h = ObjHeader::FromObject(val);
-
+#ifndef OPTIMIZED
   // ASDL generates headers with HeapTag::Scanned, but HeapTag::FixedSize would
   // also be valid.
-  DCHECK(h->heap_tag != HeapTag::Global && h->heap_tag != HeapTag::Opaque);
+  ObjHeader* h = ObjHeader::FromObject(val);
+  DCHECK(h->heap_tag == HeapTag::Scanned || h->heap_tag == HeapTag::FixedSize);
+#endif
 
-  // pool_id is 2 bits, so shift the 28 bit obj_id past it.
-  return (h->obj_id << 2) + h->pool_id;
+  return ObjectId(val);
 }
 
 }  // namespace j8

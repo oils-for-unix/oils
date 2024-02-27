@@ -14,7 +14,7 @@ from core import main_loop
 from mycpp.mylib import log
 from core import pyos
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import signal_def
 from frontend import reader
 from mycpp import mylib
@@ -187,7 +187,7 @@ class Trap(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('trap', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('trap', cmd_val)
         arg = arg_types.trap(attrs.attrs)
 
         if arg.p:  # Print registered handlers
@@ -202,8 +202,8 @@ class Trap(vm._Builtin):
             return 0
 
         if arg.l:  # List valid signals and hooks
-            for name in _HOOK_NAMES:
-                print('   %s' % name)
+            for hook_name in _HOOK_NAMES:
+                print('   %s' % hook_name)
 
             signal_def.PrintSignals()
 

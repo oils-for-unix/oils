@@ -45,9 +45,13 @@ from _devbuild.gen.syntax_asdl import (
     Eggex,
     EggexFlag,
 )
+from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
 from core.error import p_die
+from core import num
+from frontend import consts
 from frontend import lexer
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 from ysh import expr_parse
@@ -248,25 +252,26 @@ class Transformer(object):
             elif typ == grammar_nt.dq_string:
                 key = self.Expr(p_node.GetChild(0))
 
-            value = self.Expr(p_node.GetChild(2))
-            return key, value
+            val = self.Expr(p_node.GetChild(2))
+            return key, val
 
         tok0 = p_node.GetChild(0).tok
         id_ = tok0.id
 
         if id_ == Id.Expr_Name:
-            key = expr.Const(tok0)
+            key_str = value.Str(lexer.TokenVal(tok0))
+            key = expr.Const(tok0, key_str)
             if p_node.NumChildren() >= 3:
-                value = self.Expr(p_node.GetChild(2))
+                val = self.Expr(p_node.GetChild(2))
             else:
-                value = expr.Implicit
+                val = expr.Implicit
 
         if id_ == Id.Op_LBracket:  # {[x+y]: 'val'}
             key = self.Expr(p_node.GetChild(1))
-            value = self.Expr(p_node.GetChild(4))
-            return key, value
+            val = self.Expr(p_node.GetChild(4))
+            return key, val
 
-        return key, value
+        return key, val
 
     def _Dict(self, parent, p_node):
         # type: (PNode, PNode) -> expr.Dict
@@ -286,9 +291,9 @@ class Transformer(object):
 
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):
-            key, value = self._DictPair(p_node.GetChild(i))
+            key, val = self._DictPair(p_node.GetChild(i))
             keys.append(key)
-            values.append(value)
+            values.append(val)
 
         return expr.Dict(parent.tok, keys, values)
 
@@ -723,15 +728,78 @@ class Transformer(object):
             if id_ == Id.Expr_Name:
                 return expr.Var(tok)
 
-            if id_ in (Id.Expr_DecInt, Id.Expr_BinInt, Id.Expr_OctInt,
-                       Id.Expr_HexInt, Id.Expr_Float):
-                return expr.Const(tok)
+            tok_str = lexer.TokenVal(tok)
 
-            if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False,
-                       Id.Char_OneChar, Id.Char_UBraced, Id.Char_Pound):
-                return expr.Const(tok)
+            # Remove underscores from 1_000_000.  The lexer is responsible for
+            # validation.
+            c_under = tok_str.replace('_', '')
 
-            raise NotImplementedError(Id_str(id_))
+            if id_ == Id.Expr_DecInt:
+                try:
+                    cval = value.Int(mops.FromStr(c_under))  # type: value_t
+                except ValueError:
+                    p_die('Decimal int constant is too large', tok)
+            elif id_ == Id.Expr_BinInt:
+                assert c_under[:2] in ('0b', '0B'), c_under
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 2))
+                except ValueError:
+                    p_die('Binary int constant is too large', tok)
+            elif id_ == Id.Expr_OctInt:
+                assert c_under[:2] in ('0o', '0O'), c_under
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 8))
+                except ValueError:
+                    p_die('Octal int constant is too large', tok)
+            elif id_ == Id.Expr_HexInt:
+                assert c_under[:2] in ('0x', '0X'), c_under
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 16))
+                except ValueError:
+                    p_die('Hex int constant is too large', tok)
+
+            elif id_ == Id.Expr_Float:
+                # Note: float() in mycpp/gc_builtins.cc currently uses strtod
+                # I think this never raises ValueError, because the lexer
+                # should only accept strings that strtod() does?
+                cval = value.Float(float(c_under))
+
+            elif id_ == Id.Expr_Null:
+                cval = value.Null
+            elif id_ == Id.Expr_True:
+                cval = value.Bool(True)
+            elif id_ == Id.Expr_False:
+                cval = value.Bool(False)
+
+            # What to do with the char constants?
+            # \n  \u{3bc}  #'a'
+            # Are they integers or strings?
+            #
+            # Integers could be ord(\n), or strings could chr(\n)
+            # Or just remove them, with ord(u'\n') and chr(u'\n')
+            #
+            # I think this relies on small string optimization.  If we have it,
+            # then 1-4 byte characters are efficient, and don't require heap
+            # allocation.
+
+            elif id_ == Id.Char_OneChar:
+                # TODO: look up integer directly?
+                cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
+            elif id_ == Id.Char_UBraced:
+                hex_str = tok_str[3:-1]  # \u{123}
+                # ValueError shouldn't happen because lexer validates
+                cval = value.Int(mops.FromStr(hex_str, 16))
+
+            # This could be a char integer?  Not sure
+            elif id_ == Id.Char_Pound:
+                # TODO: accept UTF-8 code point instead of single byte
+                byte = tok_str[2]  # the a in #'a'
+                cval = num.ToBig(ord(byte))  # It's an integer
+
+            else:
+                raise AssertionError(Id_str(id_))
+
+            return expr.Const(tok, cval)
 
     def _ArrayItem(self, p_node):
         # type: (PNode) -> expr_t

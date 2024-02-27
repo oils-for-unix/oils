@@ -1229,16 +1229,20 @@ class CommandParser(object):
         ate = self._Eat(Id.Lit_LBrace)
         left = word_.BraceToken(ate)
 
-        doc_token = None  # type: Token
+        doc_word = None  # type: word_t
         self._GetWord()
         if self.c_id == Id.Op_Newline:
             self._SetNext()
+            # Set a flag so we don't skip over ###
             with word_.ctx_EmitDocToken(self.w_parser):
                 self._GetWord()
 
         if self.c_id == Id.Ignored_Comment:
-            doc_token = cast(Token, self.cur_word)
+            doc_word = self.cur_word
             self._SetNext()
+
+        # Id.Ignored_Comment means it's a Token, or None
+        doc_token = cast(Token, doc_word)
 
         c_list = self._ParseCommandList()
 

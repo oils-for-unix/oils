@@ -9,6 +9,24 @@ from data_lang import j8
 from mycpp.mylib import log
 
 
+class FunctionsTest(unittest.TestCase):
+
+    def testUtf8Encode(self):
+        CASES = [
+            (u'\u0065'.encode('utf-8'), 0x0065),
+            (u'\u0100'.encode('utf-8'), 0x0100),
+            (u'\u1234'.encode('utf-8'), 0x1234),
+            (u'\U00020000'.encode('utf-8'), 0x00020000),
+            # Out of range gives Unicode replacement character.
+            ('\xef\xbf\xbd', 0x10020000),
+        ]
+
+        for expected, code_point in CASES:
+            print('')
+            print('Utf8Encode case %r %r' % (expected, code_point))
+            self.assertEqual(expected, j8.Utf8Encode(code_point))
+
+
 def _PrintTokens(lex):
     log('---')
     log('J8 Case %r', lex.s)
@@ -24,21 +42,24 @@ def _PrintTokens(lex):
     log('')
 
 
-class J8Test(unittest.TestCase):
-
-    def testJ8(self):
-        s = '{}'
-        p = j8.Parser(s, True)
-        obj = p.ParseValue()
-        print(obj)
+class Nil8Test(unittest.TestCase):
 
     def testNil8Errors(self):
         cases = [
-            '()',
-            '(42)',
-            '(:)',
+            #'()',
+            #'(42)',
+            #'(:)',
             # extra input
             '(command.Simple))',
+            '(',
+            '(obj.field',
+            '(obj.',
+
+            # Expected a value afterward
+            '(obj.)',
+            '(obj.:',
+            '(obj.:)',
+            '(obj.[)',
         ]
         for s in cases:
             p = j8.Nil8Parser(s, True)
@@ -49,10 +70,58 @@ class J8Test(unittest.TestCase):
             else:
                 self.fail('Expected error.Decode when parsing %r' % s)
 
+    def testNil8Operator(self):
+        # Should be equivalent!
+
+        cases = [
+            # These are equivalent, note that parens like (key: "value") add another layer
+            ('(: key "value")', 'key: "value"'),
+            ('((: k "v") (: k2 "v2"))', '(k: "v" k2: "v2")'),
+            ('(@ "str" x123)', '"str" @ x123'),
+            ('((! a b) c)', '( a ! b c)'),
+            ('(c (! a b))', '( c a ! b )'),
+            ('(. (. obj field1) field2)', 'obj.field1.field2'),
+            ('((-> obj method) (. obj field))', '(obj->method obj.field1)'),
+        ]
+        for prefix, infix in cases:
+            print()
+            print('PREFIX %s' % prefix)
+            p = j8.Nil8Parser(prefix, True)
+            obj1 = p.ParseNil8()
+            print(obj1)
+            log('len %d', len(obj1.items))
+
+            print()
+            print('INFIX %s' % infix)
+            p = j8.Nil8Parser(infix, True)
+            obj2 = p.ParseNil8()
+            print(obj2)
+            log('len %d', len(obj2.items))
+
+            self.assertEqual(obj1.tag(), obj2.tag(),
+                             '%s != %s' % (obj1.tag(), obj2.tag()))
+            self.assertEqual(len(obj1.items), len(obj2.items))
+
     def testNil8(self):
         cases = [
             '(unquoted)',
             '(command.Simple)',
+            '(f x)',
+            '(f 42 "hi")',
+            '((-> obj method) (. obj field))',
+
+            # address
+            '(@ x123 (Token "foo"))',
+            '(: key "value")',
+            '(. x123)',  # dereference, could be @
+
+            #'(Token "foo") @ x123',
+
+            # TODO: parse like infix
+            '(Token key:"value" k2:"v2")',
+
+            # Should be parsed like infix operator
+            '(key !x123)',
             '(<-)',  # symbol
             "(<- 1 b'hi')",  # any kinds of args
             "(<- 1 'hi' (f [1 2 3]))",  # symbol
@@ -69,6 +138,15 @@ class J8Test(unittest.TestCase):
             print(s)
             print('    %s' % obj)
             print()
+
+
+class J8Test(unittest.TestCase):
+
+    def testJ8(self):
+        s = '{}'
+        p = j8.Parser(s, True)
+        obj = p.ParseValue()
+        print(obj)
 
     def testLexerDecoder(self):
         lex = j8.LexerDecoder(r'{"hi": "bye \n"}', True)

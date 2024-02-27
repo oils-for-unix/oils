@@ -70,7 +70,9 @@ from core import dev
 from core import error
 from core import executor
 from core.error import e_die, e_die_status
+from core import num
 from core import pyos  # Time().  TODO: rename
+from core import pyutil
 from core import state
 from core import ui
 from core import util
@@ -1061,14 +1063,27 @@ class CommandEvaluator(object):
                 arg = 0
             else:
                 try:
-                    # They all take integers.  NOTE: dash is the only shell that
-                    # disallows -1!  Others wrap to 255.
-                    arg = int(str_val.s)
+                    arg = int(str_val.s)  # all control flow takes an integer
                 except ValueError:
+                    # Either a bad argument, or integer overflow
                     e_die(
-                        '%r expected a number, got %r' %
+                        '%r expected a small integer, got %r' %
                         (lexer.TokenVal(keyword), str_val.s),
                         loc.Word(node.arg_word))
+
+                # C++ int() does range checking, but Python doesn't.  So let's
+                # simulate it here for spec tests.
+                # TODO: could be mylib.ToMachineInt()?  Problem: 'int' in C/C++
+                # could be more than 4 bytes.  We are testing INT_MAX and
+                # INT_MIN in gc_builtins.cc - those could be hard-coded.
+                if mylib.PYTHON:
+                    max_int = (1 << 31) - 1
+                    min_int = -(1 << 31)
+                    if not (min_int <= arg <= max_int):
+                        e_die(
+                            '%r expected a small integer, got %r' %
+                            (lexer.TokenVal(keyword), str_val.s),
+                            loc.Word(node.arg_word))
         else:
             if keyword.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
                 arg = self.mem.LastStatus()
@@ -1276,7 +1291,7 @@ class CommandEvaluator(object):
                 if name2:
                     self.mem.SetLocalName(name2, it2.SecondValue())
                 if i_name:
-                    self.mem.SetLocalName(i_name, value.Int(it2.Index()))
+                    self.mem.SetLocalName(i_name, num.ToBig(it2.Index()))
 
                 # increment index before handling continue, etc.
                 it2.Next()
@@ -1706,7 +1721,9 @@ class CommandEvaluator(object):
         errexit_loc = loc.Missing  # type: loc_t
         check_errexit = True
 
-        with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):
+        status = 0
+
+        with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):  # for wait()
             try:
                 redirects = self._EvalRedirects(node)
             except error.RedirectEval as e:
@@ -1717,62 +1734,77 @@ class CommandEvaluator(object):
                     e.location = self.mem.GetFallbackLocation()
                 self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                 redirects = None
-
-            if redirects is None:  # Error evaluating redirect words
+            if redirects is None:
+                # Error evaluating redirect words
                 status = 1
 
-            else:
-                if self.shell_ex.PushRedirects(redirects):
-                    # This pops redirects.  There is an asymmetry because applying
-                    # redirects can fail.
-                    with vm.ctx_Redirect(self.shell_ex, len(redirects)):
-                        try:
-                            status = self._Dispatch(node, cmd_st)
-                            check_errexit = cmd_st.check_errexit
-                        except error.FailGlob as e:
-                            if not e.HasLocation():  # Last resort!
-                                e.location = self.mem.GetFallbackLocation()
-                            self.errfmt.PrettyPrintError(e,
-                                                         prefix='failglob: ')
-                            status = 1
-                            check_errexit = True  # probably not necessary?
+            # Translation fix: redirect I/O errors may happen in a C++
+            # destructor ~vm::ctx_Redirect, which means they must be signaled
+            # by out params, not exceptions.
+            io_errors = []  # type: List[error.IOError_OSError]
 
-                    # Compute status from @PIPESTATUS
-                    pipe_status = cmd_st.pipe_status
-
-                    if pipe_status is None:
-                        # bash/mksh set PIPESTATUS set even on non-pipelines
-                        # This makes it annoying to check both _process_sub_status and
-                        # _pipeline_status
-                        #self.mem.SetSimplePipeStatus(status)
-                        pass
-
-                    else:  # Did we run a pipeline?
-                        self.mem.SetPipeStatus(pipe_status)
-
-                        if self.exec_opts.pipefail():
-                            # The status is that of the last command that is non-zero.
-                            status = 0
-                            for i, st in enumerate(pipe_status):
-                                if st != 0:
-                                    status = st
-                                    errexit_loc = cmd_st.pipe_locs[i]
-                        else:
-                            # The status is that of last command, period.
-                            status = pipe_status[-1]
-
-                        if cmd_st.pipe_negated:
-                            status = 1 if status == 0 else 0
-
-                    if 0:
-                        if status == 1 and node.tag() == command_e.Simple:
-                            log('node %s', node)
-                        log('node %s status %d PIPE %s',
-                            command_str(node.tag()), status, pipe_status)
-
-                else:
-                    # I/O error when applying redirects, e.g. bad file descriptor.
+            # If we evaluated redirects, apply/push them
+            if status == 0:
+                self.shell_ex.PushRedirects(redirects, io_errors)
+                if len(io_errors):
+                    # core/process.py prints cryptic errors, so we repeat them
+                    # here.  e.g. Bad File Descriptor
+                    self.errfmt.PrintMessage(
+                        'I/O error applying redirect: %s' %
+                        pyutil.strerror(io_errors[0]),
+                        self.mem.GetFallbackLocation())
                     status = 1
+
+            # If we applied redirects successfully, run the command_t, and pop
+            # them.
+            if status == 0:
+                with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
+                    try:
+                        status = self._Dispatch(node, cmd_st)
+                        check_errexit = cmd_st.check_errexit
+                    except error.FailGlob as e:
+                        if not e.HasLocation():  # Last resort!
+                            e.location = self.mem.GetFallbackLocation()
+                        self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                        status = 1  # another redirect word eval error
+                        check_errexit = True  # probably not necessary?
+                if len(io_errors):
+                    # It would be better to point to the right redirect
+                    # operator, but we don't track it specifically
+                    e_die("Fatal error popping redirect: %s" %
+                          pyutil.strerror(io_errors[0]))
+
+        # end with - we've waited for process subs
+
+        # If it was a real pipeline, compute status from ${PIPESTATUS[@]} aka
+        # @_pipeline_status
+        pipe_status = cmd_st.pipe_status
+        # Note: bash/mksh set PIPESTATUS set even on non-pipelines. This
+        # makes it annoying to check both _process_sub_status and
+        # _pipeline_status
+
+        if pipe_status is not None:
+            # Tricky: _DoPipeline sets cmt_st.pipe_status and returns -1
+            # for a REAL pipeline (but not singleton pipelines)
+            assert status == -1, (
+                "Shouldn't have redir errors when PIPESTATUS (status = %d)" %
+                status)
+
+            self.mem.SetPipeStatus(pipe_status)
+
+            if self.exec_opts.pipefail():
+                # The status is that of the last command that is non-zero.
+                status = 0
+                for i, st in enumerate(pipe_status):
+                    if st != 0:
+                        status = st
+                        errexit_loc = cmd_st.pipe_locs[i]
+            else:
+                # The status is that of last command, period.
+                status = pipe_status[-1]
+
+            if cmd_st.pipe_negated:
+                status = 1 if status == 0 else 0
 
         # Compute status from _process_sub_status
         if process_sub_st.codes is None:

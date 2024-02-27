@@ -37,85 +37,87 @@ GLOBAL_STR(str28, "\n");
 GLOBAL_STR(str29, "\n");
 GLOBAL_STR(str30, " ");
 GLOBAL_STR(str31, "UNTYPED any");
-GLOBAL_STR(str32, " ");
+GLOBAL_STR(str32, "...0x%s");
 GLOBAL_STR(str33, " ");
-GLOBAL_STR(str34, " %s:");
-GLOBAL_STR(str35, "UNTYPED any");
-GLOBAL_STR(str36, "[");
-GLOBAL_STR(str37, " ");
-GLOBAL_STR(str38, "]");
-GLOBAL_STR(str39, "\u001b[0;0m");
-GLOBAL_STR(str40, "\u001b[1m");
-GLOBAL_STR(str41, "\u001b[4m");
-GLOBAL_STR(str42, "\u001b[7m");
-GLOBAL_STR(str43, "\u001b[31m");
-GLOBAL_STR(str44, "\u001b[32m");
-GLOBAL_STR(str45, "\u001b[33m");
-GLOBAL_STR(str46, "\u001b[34m");
-GLOBAL_STR(str47, "&");
-GLOBAL_STR(str48, "&amp;");
-GLOBAL_STR(str49, "<");
-GLOBAL_STR(str50, "&lt;");
-GLOBAL_STR(str51, ">");
-GLOBAL_STR(str52, "&gt;");
-GLOBAL_STR(str53, "<%s %r>");
-GLOBAL_STR(str54, "status");
-GLOBAL_STR(str55, "message");
-GLOBAL_STR(str56, "%s, got %s");
-GLOBAL_STR(str57, " (pos %d-%d: %r)");
-GLOBAL_STR(str58, "-");
-GLOBAL_STR(str59, "_");
-GLOBAL_STR(str60, "<_Attributes %s>");
-GLOBAL_STR(str61, "<args.Reader %r %d>");
-GLOBAL_STR(str62, "expected argument to %r");
-GLOBAL_STR(str63, "-");
-GLOBAL_STR(str64, "expected integer after %s, got %r");
+GLOBAL_STR(str34, " ");
+GLOBAL_STR(str35, " %s:");
+GLOBAL_STR(str36, "UNTYPED any");
+GLOBAL_STR(str37, "[");
+GLOBAL_STR(str38, " ");
+GLOBAL_STR(str39, "]");
+GLOBAL_STR(str40, "...0x%s");
+GLOBAL_STR(str41, "\u001b[0;0m");
+GLOBAL_STR(str42, "\u001b[1m");
+GLOBAL_STR(str43, "\u001b[4m");
+GLOBAL_STR(str44, "\u001b[7m");
+GLOBAL_STR(str45, "\u001b[31m");
+GLOBAL_STR(str46, "\u001b[32m");
+GLOBAL_STR(str47, "\u001b[33m");
+GLOBAL_STR(str48, "\u001b[34m");
+GLOBAL_STR(str49, "&");
+GLOBAL_STR(str50, "&amp;");
+GLOBAL_STR(str51, "<");
+GLOBAL_STR(str52, "&lt;");
+GLOBAL_STR(str53, ">");
+GLOBAL_STR(str54, "&gt;");
+GLOBAL_STR(str55, "<%s %r>");
+GLOBAL_STR(str56, "status");
+GLOBAL_STR(str57, "message");
+GLOBAL_STR(str58, "%s, got %s");
+GLOBAL_STR(str59, " (pos %d-%d: %r)");
+GLOBAL_STR(str60, "-");
+GLOBAL_STR(str61, "_");
+GLOBAL_STR(str62, "<_Attributes %s>");
+GLOBAL_STR(str63, "<args.Reader %r %d>");
+GLOBAL_STR(str64, "expected argument to %r");
 GLOBAL_STR(str65, "-");
-GLOBAL_STR(str66, "got invalid integer for %s: %s");
+GLOBAL_STR(str66, "expected integer after %s, got %r");
 GLOBAL_STR(str67, "-");
-GLOBAL_STR(str68, "expected number after %r, got %r");
+GLOBAL_STR(str68, "got invalid integer for %s: %s");
 GLOBAL_STR(str69, "-");
-GLOBAL_STR(str70, "got invalid float for %s: %s");
+GLOBAL_STR(str70, "expected number after %r, got %r");
 GLOBAL_STR(str71, "-");
-GLOBAL_STR(str72, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str72, "got invalid float for %s: %s");
 GLOBAL_STR(str73, "-");
-GLOBAL_STR(str74, "|");
-GLOBAL_STR(str75, "0");
-GLOBAL_STR(str76, "F");
-GLOBAL_STR(str77, "false");
-GLOBAL_STR(str78, "False");
-GLOBAL_STR(str79, "1");
-GLOBAL_STR(str80, "T");
-GLOBAL_STR(str81, "true");
-GLOBAL_STR(str82, "Talse");
-GLOBAL_STR(str83, "got invalid argument to boolean flag: %r");
-GLOBAL_STR(str84, "-");
-GLOBAL_STR(str85, "-");
-GLOBAL_STR(str86, "Invalid option %r");
-GLOBAL_STR(str87, "Expected argument for action");
-GLOBAL_STR(str88, "Invalid action name %r");
-GLOBAL_STR(str89, "--");
-GLOBAL_STR(str90, "--");
-GLOBAL_STR(str91, "=");
-GLOBAL_STR(str92, "got invalid flag %r");
-GLOBAL_STR(str93, "-");
-GLOBAL_STR(str94, "0");
-GLOBAL_STR(str95, "Z");
-GLOBAL_STR(str96, "-");
-GLOBAL_STR(str97, "doesn't accept flag %s");
+GLOBAL_STR(str74, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str75, "-");
+GLOBAL_STR(str76, "|");
+GLOBAL_STR(str77, "0");
+GLOBAL_STR(str78, "F");
+GLOBAL_STR(str79, "false");
+GLOBAL_STR(str80, "False");
+GLOBAL_STR(str81, "1");
+GLOBAL_STR(str82, "T");
+GLOBAL_STR(str83, "true");
+GLOBAL_STR(str84, "Talse");
+GLOBAL_STR(str85, "got invalid argument to boolean flag: %r");
+GLOBAL_STR(str86, "-");
+GLOBAL_STR(str87, "-");
+GLOBAL_STR(str88, "Invalid option %r");
+GLOBAL_STR(str89, "Expected argument for action");
+GLOBAL_STR(str90, "Invalid action name %r");
+GLOBAL_STR(str91, "--");
+GLOBAL_STR(str92, "--");
+GLOBAL_STR(str93, "=");
+GLOBAL_STR(str94, "got invalid flag %r");
+GLOBAL_STR(str95, "-");
+GLOBAL_STR(str96, "0");
+GLOBAL_STR(str97, "Z");
 GLOBAL_STR(str98, "-");
-GLOBAL_STR(str99, "+");
-GLOBAL_STR(str100, "+");
-GLOBAL_STR(str101, "doesn't accept option %s");
+GLOBAL_STR(str99, "doesn't accept flag %s");
+GLOBAL_STR(str100, "-");
+GLOBAL_STR(str101, "+");
 GLOBAL_STR(str102, "+");
-GLOBAL_STR(str103, "-");
-GLOBAL_STR(str104, "--");
-GLOBAL_STR(str105, "--");
-GLOBAL_STR(str106, "got invalid flag %r");
-GLOBAL_STR(str107, "-");
-GLOBAL_STR(str108, "+");
-GLOBAL_STR(str109, "got invalid flag %r");
-GLOBAL_STR(str110, "-");
+GLOBAL_STR(str103, "doesn't accept option %s");
+GLOBAL_STR(str104, "+");
+GLOBAL_STR(str105, "-");
+GLOBAL_STR(str106, "--");
+GLOBAL_STR(str107, "--");
+GLOBAL_STR(str108, "got invalid flag %r");
+GLOBAL_STR(str109, "-");
+GLOBAL_STR(str110, "+");
+GLOBAL_STR(str111, "got invalid flag %r");
+GLOBAL_STR(str112, "-");
 
 namespace ansi {  // forward declare
 
@@ -177,6 +179,9 @@ BigStr* escape(BigStr* s);
 namespace j8_lite {  // declare
 
 BigStr* EncodeString(BigStr* s, bool unquoted_ok = false);
+BigStr* MaybeShellEncode(BigStr* s);
+BigStr* ShellEncode(BigStr* s);
+BigStr* YshEncode(BigStr* s, bool unquoted_ok = false);
 
 
 }  // declare namespace j8_lite
@@ -411,6 +416,7 @@ class Decode {
  public:
   Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos);
   BigStr* Message();
+  BigStr* __str__();
   BigStr* msg;
   BigStr* s;
   int start_pos;
@@ -467,6 +473,11 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
   else {
     return Alloc<hnode::Leaf>(s, e_color);
   }
+}
+
+TraversalState::TraversalState() {
+  this->seen = Alloc<Dict<int, bool>>();
+  this->ref_count = Alloc<Dict<int, int>>();
 }
 BigStr* TRUE_STR = str3;
 BigStr* FALSE_STR = str4;
@@ -897,7 +908,13 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
         this->_PrintRecord(node, f, indent);
       }
       else {
-        assert(0);  // AssertionError
+        if (tag == hnode_e::AlreadySeen) {
+          hnode::AlreadySeen* node = static_cast<hnode::AlreadySeen*>(UP_node);
+          f->write(StrFormat("...0x%s", mylib::hex_lower(node->heap_id)));
+        }
+        else {
+          assert(0);  // AssertionError
+        }
       }
     }
   }
@@ -914,14 +931,14 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
       f->PushColor(color_e::TypeName);
       f->write(node->node_type);
       f->PopColor();
-      f->write(str32);
+      f->write(str33);
     }
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
       StackRoot _for(&val    );
       if (i != 0) {
-        f->write(str33);
+        f->write(str34);
       }
       if (!_TrySingleLine(val, f, max_chars)) {
         return false;
@@ -968,7 +985,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
       f->PushColor(color_e::External);
       // if not PYTHON
       {
-        f->write(str35);
+        f->write(str36);
       }
       // endif MYCPP
       f->PopColor();
@@ -976,19 +993,19 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
     else {
       if (tag == hnode_e::Array) {
         hnode::Array* node = static_cast<hnode::Array*>(UP_node);
-        f->write(str36);
+        f->write(str37);
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
           StackRoot _for(&item        );
           if (i != 0) {
-            f->write(str37);
+            f->write(str38);
           }
           if (!_TrySingleLine(item, f, max_chars)) {
             return false;
           }
         }
-        f->write(str38);
+        f->write(str39);
       }
       else {
         if (tag == hnode_e::Record) {
@@ -996,7 +1013,13 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
           return _TrySingleLineObj(node, f, max_chars);
         }
         else {
-          assert(0);  // AssertionError
+          if (tag == hnode_e::AlreadySeen) {
+            hnode::AlreadySeen* node = static_cast<hnode::AlreadySeen*>(UP_node);
+            f->write(StrFormat("...0x%s", mylib::hex_lower(node->heap_id)));
+          }
+          else {
+            assert(0);  // AssertionError
+          }
         }
       }
     }
@@ -1022,14 +1045,14 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 
 namespace ansi {  // define
 
-BigStr* RESET = str39;
-BigStr* BOLD = str40;
-BigStr* UNDERLINE = str41;
-BigStr* REVERSE = str42;
-BigStr* RED = str43;
-BigStr* GREEN = str44;
-BigStr* YELLOW = str45;
-BigStr* BLUE = str46;
+BigStr* RESET = str41;
+BigStr* BOLD = str42;
+BigStr* UNDERLINE = str43;
+BigStr* REVERSE = str44;
+BigStr* RED = str45;
+BigStr* GREEN = str46;
+BigStr* YELLOW = str47;
+BigStr* BLUE = str48;
 
 }  // define namespace ansi
 
@@ -1039,9 +1062,9 @@ namespace cgi {  // define
 BigStr* escape(BigStr* s) {
   StackRoot _root0(&s);
 
-  s = s->replace(str47, str48);
   s = s->replace(str49, str50);
   s = s->replace(str51, str52);
+  s = s->replace(str53, str54);
   return s;
 }
 
@@ -1057,6 +1080,30 @@ BigStr* EncodeString(BigStr* s, bool unquoted_ok) {
     return s;
   }
   return fastfunc::J8EncodeString(s, 1);
+}
+
+BigStr* MaybeShellEncode(BigStr* s) {
+  StackRoot _root0(&s);
+
+  if (fastfunc::CanOmitQuotes(s)) {
+    return s;
+  }
+  return fastfunc::ShellEncodeString(s, 0);
+}
+
+BigStr* ShellEncode(BigStr* s) {
+  StackRoot _root0(&s);
+
+  return fastfunc::ShellEncodeString(s, 0);
+}
+
+BigStr* YshEncode(BigStr* s, bool unquoted_ok) {
+  StackRoot _root0(&s);
+
+  if ((unquoted_ok and fastfunc::CanOmitQuotes(s))) {
+    return s;
+  }
+  return fastfunc::ShellEncodeString(s, 1);
 }
 
 }  // define namespace j8_lite
@@ -1132,8 +1179,8 @@ value::Dict* Structured::ToDict() {
   if (this->properties == nullptr) {
     this->properties = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
   }
-  this->properties->set(str54, Alloc<value::Int>(this->ExitStatus()));
-  this->properties->set(str55, Alloc<value::Str>(this->msg));
+  this->properties->set(str56, Alloc<value::Int>(this->ExitStatus()));
+  this->properties->set(str57, Alloc<value::Str>(this->msg));
   return Alloc<value::Dict>(this->properties);
 }
 
@@ -1171,6 +1218,10 @@ BigStr* Decode::Message() {
   end = min(len(this->s), (this->end_pos + 4));
   part = this->s->slice(start, end);
   return str_concat(this->msg, StrFormat(" (pos %d-%d: %r)", this->start_pos, this->end_pos, part));
+}
+
+BigStr* Decode::__str__() {
+  return this->Message();
 }
 
 Encode::Encode(BigStr* msg) {
@@ -1256,7 +1307,7 @@ void _Attributes::Set(BigStr* name, value_asdl::value_t* val) {
   StackRoot _root0(&name);
   StackRoot _root1(&val);
 
-  name = name->replace(str58, str59);
+  name = name->replace(str60, str61);
   this->attrs->set(name, val);
 }
 
@@ -1401,7 +1452,7 @@ bool _ArgAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attri
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(str63, this->name)), arg_r->Location());
+      e_usage(StrFormat("expected argument to %r", str_concat(str65, this->name)), arg_r->Location());
     }
   }
   val = this->_Value(arg, arg_r->Location());
@@ -1421,10 +1472,10 @@ value_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location)
     i = to_int(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str65, this->name), arg), location);
+    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str67, this->name), arg), location);
   }
   if (i < 0) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str67, this->name), arg), location);
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str69, this->name), arg), location);
   }
   return Alloc<value::Int>(i);
 }
@@ -1441,10 +1492,10 @@ value_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* locatio
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str69, this->name), arg), location);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str71, this->name), arg), location);
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str71, this->name), arg), location);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str73, this->name), arg), location);
   }
   return Alloc<value::Float>(f);
 }
@@ -1457,7 +1508,7 @@ value_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* locati
   StackRoot _root1(&location);
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str73, this->name), str74->join(this->valid)), location);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str75, this->name), str76->join(this->valid)), location);
   }
   return Alloc<value::Str>(arg);
 }
@@ -1473,11 +1524,11 @@ bool SetAttachedBool::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_
   StackRoot _root2(&out);
 
   if (attached_arg != nullptr) {
-    if ((str_equals(attached_arg, str75) || str_equals(attached_arg, str76) || str_equals(attached_arg, str77) || str_equals(attached_arg, str78))) {
+    if ((str_equals(attached_arg, str77) || str_equals(attached_arg, str78) || str_equals(attached_arg, str79) || str_equals(attached_arg, str80))) {
       b = false;
     }
     else {
-      if ((str_equals(attached_arg, str79) || str_equals(attached_arg, str80) || str_equals(attached_arg, str81) || str_equals(attached_arg, str82))) {
+      if ((str_equals(attached_arg, str81) || str_equals(attached_arg, str82) || str_equals(attached_arg, str83) || str_equals(attached_arg, str84))) {
         b = true;
       }
       else {
@@ -1515,7 +1566,7 @@ bool SetOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attrib
   StackRoot _root1(&arg_r);
   StackRoot _root2(&out);
 
-  b = maybe_str_equals(attached_arg, str84);
+  b = maybe_str_equals(attached_arg, str86);
   out->opt_changes->append((Alloc<Tuple2<BigStr*, bool>>(this->name, b)));
   return false;
 }
@@ -1543,7 +1594,7 @@ bool SetNamedOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   StackRoot _root4(&attr_name);
   StackRoot _root5(&changes);
 
-  b = maybe_str_equals(attached_arg, str85);
+  b = maybe_str_equals(attached_arg, str87);
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
@@ -1594,7 +1645,7 @@ bool SetNamedAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str87, loc::Missing);
+    e_usage(str89, loc::Missing);
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
@@ -1627,13 +1678,13 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str89)) {
+    if (maybe_str_equals(arg, str91)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if ((len(spec->actions_long) and arg->startswith(str90))) {
-      pos = arg->find(str91, 2);
+    if ((len(spec->actions_long) and arg->startswith(str92))) {
+      pos = arg->find(str93, 2);
       if (pos == -1) {
         suffix = nullptr;
         flag_name = arg->slice(2);
@@ -1651,15 +1702,15 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       continue;
     }
     else {
-      if ((arg->startswith(str93) and len(arg) > 1)) {
+      if ((arg->startswith(str95) and len(arg) > 1)) {
         n = len(arg);
         for (int i = 1; i < n; ++i) {
           ch = arg->at(i);
-          if (str_equals(ch, str94)) {
-            ch = str95;
+          if (str_equals(ch, str96)) {
+            ch = str97;
           }
           if (list_contains(spec->plus_flags, ch)) {
-            out->Set(ch, Alloc<value::Str>(str96));
+            out->Set(ch, Alloc<value::Str>(str98));
             continue;
           }
           if (list_contains(spec->arity0, ch)) {
@@ -1672,20 +1723,20 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str98, ch)), arg_r->Location());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str100, ch)), arg_r->Location());
         }
         arg_r->Next();
       }
       else {
-        if ((len(spec->plus_flags) and (arg->startswith(str99) and len(arg) > 1))) {
+        if ((len(spec->plus_flags) and (arg->startswith(str101) and len(arg) > 1))) {
           n = len(arg);
           for (int i = 1; i < n; ++i) {
             ch = arg->at(i);
             if (list_contains(spec->plus_flags, ch)) {
-              out->Set(ch, Alloc<value::Str>(str100));
+              out->Set(ch, Alloc<value::Str>(str102));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str102, ch)), arg_r->Location());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str104, ch)), arg_r->Location());
           }
           arg_r->Next();
         }
@@ -1713,7 +1764,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
     chars = arg->slice(1);
-    if ((arg->startswith(str103) and len(chars))) {
+    if ((arg->startswith(str105) and len(chars))) {
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
         BigStr* c = it.Value();
@@ -1759,12 +1810,12 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
   quit = false;
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str104)) {
+    if (maybe_str_equals(arg, str106)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if (arg->startswith(str105)) {
+    if (arg->startswith(str107)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
         e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
@@ -1773,14 +1824,14 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       arg_r->Next();
       continue;
     }
-    if (((arg->startswith(str107) or arg->startswith(str108)) and len(arg) > 1)) {
+    if (((arg->startswith(str109) or arg->startswith(str110)) and len(arg) > 1)) {
       char0 = arg->at(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         BigStr* ch = it.Value();
         StackRoot _for(&ch      );
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str110, ch)), arg_r->Location());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str112, ch)), arg_r->Location());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);

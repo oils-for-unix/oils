@@ -6,37 +6,60 @@ from __future__ import print_function
 
 import os
 
+#from mycpp.mylib import switch, str_switch, log
 from mycpp.mylib import switch, log
 
 
+def TestString(s):
+    # type: (str) -> None
+
+    print('''
+    with str_switch(s) as case:
+        # Problem: if you switch on length, do you duplicate the bogies
+        if case('spam', 'different len'):
+            print('ONE')
+            print('dupe')
+
+        elif case('foo'):
+            print('TWO')
+
+        else:
+            print('neither')
+            ''')
+
+
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  x = 5
-  with switch(x) as case:
-    if case(0):
-      print('zero')
-      print('zero')
+    TestString('spam')
+    TestString('foo')
+    TestString('zzz')
 
-    elif case(1, 2):
-      print('one or two')
+    x = 5
+    with switch(x) as case:
+        if case(0):
+            print('zero')
+            print('zero')
 
-    elif case(3, 4):
-      print('three or four')
+        elif case(1, 2):
+            print('one or two')
 
-    else:
-      print('default')
-      print('another')
+        elif case(3, 4):
+            print('three or four')
+
+        else:
+            print('default')
+            print('another')
 
 
 def run_benchmarks():
-  # type: () -> None
-  raise NotImplementedError()
+    # type: () -> None
+    raise NotImplementedError()
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()
