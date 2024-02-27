@@ -37,13 +37,13 @@ for OSH and YSH.
 
 ## Quotes
 
-### quotes
+### osh-string
 
 - Single quotes
 - Double Quotes
 - C-style strings: `$'\n'`
 
-Also see [oil-string]($oil-help).
+Also see [ysh-string](chap-expr-lang.html#ysh-string).
 
 ## Substitutions
 

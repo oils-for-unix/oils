@@ -62,7 +62,7 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-word-lang
-  [Quotes]        quotes        'abc'  $'\n'  "$var"
+  [Quotes]        osh-string    'abc'  $'line\n'  "$var"
   [Substitutions] com-sub       $(command)   `command`   @(split command)
                   var-sub       ${var}   $0   $9   
                   arith-sub     $((1 + 2))

@@ -25,12 +25,12 @@ If you see an error that you don't understand:
 1. Ask a question on `#oil-help` on [Zulip]($xref:zulip).  What's the problem,
    and what's the solution?
 1. Then `grep` the source code for the confusing error message.  Tag it with a
-   string like `OILS-ERR-43`, choosing a number that's greater than the last
-   one used.
+   string like `OILS-ERR-43`, picking a new number according to the conventions
+   below.
 1. Add a tagged section below, with hints and explanations.
    - Quote the error message.  You may want copy and paste from the output of
      `test/{parse,runtime,ysh-parse,ysh-runtime}-errors.sh`.  Add an HTML
-     comment `<!-- -->` about it if you do so.
+     comment `<!-- -->` about that.
    - Link to relevant sections in the [**Oils Reference**](ref/index.html).
 1. Optionally, add your name to the acknowledgements list at the end of this
    doc.
@@ -81,6 +81,10 @@ test/ysh-parse-errors.sh test-func-var-checker
 - Did you mean to use the [setglobal](ref/chap-cmd-lang.html#setglobal)
   keyword?
 
+Related help topics:
+
+- [setvar](ref/chap-cmd-lang.html#setvar)
+
 ### OILS-ERR-11
 
 <!--
@@ -98,6 +102,11 @@ test/ysh-parse-errors.sh ysh_c_strings (this may move)
   `b''` strings.
 - Did you mean something like `$'\n'`?  Only valid escapes are accepted in YSH.
 
+Related help topics:
+
+- [osh-string](ref/chap-word-lang.html#osh-string) (word language)
+- [ysh-string](ref/chap-expr-lang.html#ysh-string) (expression language)
+
 ### OILS-ERR-12
 
 <!--
@@ -113,6 +122,11 @@ test/ysh-parse-errors.sh ysh_dq_strings (this may move)
 
 - Did you mean `"\\z"`?  Backslashes must be escaped in double-quoted strings.
 - Did you mean something like `"\$"`?  Only valid escapes are accepted in YSH.
+
+Related help topics:
+
+- [osh-string](ref/chap-word-lang.html#osh-string) (word language)
+- [ysh-string](ref/chap-expr-lang.html#ysh-string) (expression language)
 
 ### OILS-ERR-13
 
