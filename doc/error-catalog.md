@@ -169,7 +169,7 @@ They're numbered starting from `200`.
 
 ### OILS-ERR-200
 
-Example TODO: Command not found.
+Example TODO
 
 ## Appendix
 
@@ -183,7 +183,7 @@ Example TODO: Command not found.
 - Expression errors (status 3)
 - User errors from the `error` builtin (status 10 is default)
 
-### Acknowledgments
+### Contributors
 
 (If you updated this doc, feel free to add your name to the end of this list.)
 
