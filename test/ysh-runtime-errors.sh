@@ -14,12 +14,12 @@ YSH=${YSH:-bin/ysh}
 # Assertions
 #
 
-_osh-error-case-X() {
+_osh-error-X() {
   local expected_status=$1
   shift
 
-  local message=$0
-  _assert-sh-status $expected_status $OSH "$message" \
+  local message="Should FAIL under $OSH"
+  _assert-sh-status "$expected_status" "$OSH" "$message" \
     -c "$@"
 }
 
@@ -80,19 +80,19 @@ test-word-eval-with-ysh-data() {
 
   _ysh-expr-error 'var d = {}; echo ${d:-}'
 
-  _osh-error-case-X 3 'var d = {}; echo ${#d}'
+  _osh-error-X 3 'var d = {}; echo ${#d}'
 
-  _osh-error-case-X 3 'var d = {}; echo ${d[0]}'
+  _osh-error-X 3 'var d = {}; echo ${d[0]}'
 
-  _osh-error-case-X 3 'var d = {}; echo ${d[@]:1:3}'
+  _osh-error-X 3 'var d = {}; echo ${d[@]:1:3}'
 
-  _osh-error-case-X 3 'var d = {}; echo ${!d}'
+  _osh-error-X 3 'var d = {}; echo ${!d}'
 
-  _osh-error-case-X 3 'var d = {}; echo ${!d[@]}'
+  _osh-error-X 3 'var d = {}; echo ${!d[@]}'
 
-  _osh-error-case-X 3 'var d = {}; echo ${d#prefix}'
+  _osh-error-X 3 'var d = {}; echo ${d#prefix}'
 
-  _osh-error-case-X 3 'var d = {}; echo ${d//a/b}'
+  _osh-error-X 3 'var d = {}; echo ${d//a/b}'
 
 }
 
@@ -294,7 +294,7 @@ hay eval :result {
 
 test-hay-osh() {
    # forgot parse_brace
-  _osh-error-case-X 2 '
+  _osh-error-X 2 '
 hay define package TASK
 
 package foo {
@@ -303,7 +303,7 @@ package foo {
 '
 
    # forgot parse_equals
-  _osh-error-case-X 127 '
+  _osh-error-X 127 '
 shopt --set parse_brace
 
 hay define package TASK

@@ -5,10 +5,10 @@
 # Usage:
 #   test/runtime-errors.sh <function name>
 #
-# Note that 'test/spec.sh -d' can also show errors clearly.
+# Note that 'test/spec.sh foo -v -d' can also show errors clearly.
 #
 # It's a mix of styles:
-# - Sometimes we assert errors with _error-case and the like.
+# - Sometimes we assert errors with _osh-error-1 etc., passing a shell string.
 # - Sometimes we just write a function without a wrapper.
 #
 # It would be nice to clean this up.
@@ -19,20 +19,48 @@ source test/sh-assert.sh  # banner, _assert-sh-status
 # Note: many cases fail if this is overridden.
 SH=${SH:-bin/osh}
 
-_error-case() {
-  ### Assert that a snippet fails with status 1
+# Also in test/ysh-runtime-errors.sh
+_osh-error-X() {
+  local expected_status=$1
+  shift
 
-  local message=$0
-  _assert-sh-status 1 $SH $message \
+  local message="Should FAIL under $SH"
+  _assert-sh-status $expected_status $OSH "$message" \
     -c "$@"
 }
 
-_error-case-2() {
+_osh-error-1() {
+  ### Assert that a snippet fails with status 1
+
+  _osh-error-X 1 "$@"
+}
+
+_osh-error-2() {
   ### Assert that a snippet fails with status 2
 
-  local message=$0
-  _assert-sh-status 2 $SH $message \
-    -c "$@"
+  local message="Should FAIL under $SH"
+  _osh-error-X 2 "$@"
+}
+
+#
+# Test assertions
+#
+
+test-FAIL() {
+  #set +o errexit
+
+  # Error function
+  _run-test-func source_bad_syntax
+
+  # Error string
+  _osh-error-1 'echo hi > /z'
+
+  return
+
+  # doesn't fail
+  _osh-error-2 'echo hi'
+
+  echo nope
 }
 
 #
@@ -264,7 +292,7 @@ errexit_multiple_processes() {
 _strict-errexit-case() {
   local code=$1
   banner "[strict_errexit] $code"
-  _error-case \
+  _osh-error-1 \
     "set -o errexit; shopt -s strict_errexit; $code"
   echo
 }
@@ -622,18 +650,18 @@ nounset_arith() {
 }
 
 divzero() {
-  _error-case 'echo $(( 1 / 0 ))'
-  _error-case 'echo $(( 1 % 0 ))'
+  _osh-error-1 'echo $(( 1 / 0 ))'
+  _osh-error-1 'echo $(( 1 % 0 ))'
 
-  _error-case 'zero=0; echo $(( 1 / zero ))'
-  _error-case 'zero=0; echo $(( 1 % zero ))'
+  _osh-error-1 'zero=0; echo $(( 1 / zero ))'
+  _osh-error-1 'zero=0; echo $(( 1 % zero ))'
 
-  _error-case '(( a = 1 / 0 )); echo non-fatal; exit 1'
-  _error-case '(( a = 1 % 0 )); echo non-fatal; exit 1'
+  _osh-error-1 '(( a = 1 / 0 )); echo non-fatal; exit 1'
+  _osh-error-1 '(( a = 1 % 0 )); echo non-fatal; exit 1'
 
   # fatal!
-  _error-case 'set -e; (( a = 1 / 0 ));'
-  _error-case 'set -e; (( a = 1 % 0 ));'
+  _osh-error-1 'set -e; (( a = 1 / 0 ));'
+  _osh-error-1 'set -e; (( a = 1 % 0 ));'
 }
 
 unsafe_arith_eval() {
@@ -643,8 +671,8 @@ unsafe_arith_eval() {
 }
 
 unset_expr() {
-  _error-case 'unset -v 1[1]'
-  _error-case-2 'unset -v 1+2'
+  _osh-error-1 'unset -v 1[1]'
+  _osh-error-2 'unset -v 1+2'
 }
 
 # Only dash flags this as an error.
@@ -778,18 +806,18 @@ array_assign_1() {
 }
 
 array_assign_2() {
-  _error-case 'readonly -a array=(1 2 3); array[0]=x'
+  _osh-error-1 'readonly -a array=(1 2 3); array[0]=x'
 
-  _error-case 'readonly -a array=(1 2 3); export array'
+  _osh-error-1 'readonly -a array=(1 2 3); export array'
 }
 
 readonly_assign() {
-  _error-case 'readonly x=1; x=2'
+  _osh-error-1 'readonly x=1; x=2'
 
-  _error-case 'readonly x=2; y=3 x=99'
+  _osh-error-1 'readonly x=2; y=3 x=99'
 
-  _error-case 'readonly x=2; declare x=99'
-  _error-case 'readonly x=2; export x=99'
+  _osh-error-1 'readonly x=2; declare x=99'
+  _osh-error-1 'readonly x=2; export x=99'
 }
 
 multiple_assign() {
@@ -1005,39 +1033,39 @@ control_flow_subshell() {
 
 fallback_locations() {
   # Redirect
-  _error-case 'echo hi > /'
+  _osh-error-1 'echo hi > /'
 
-  _error-case 's=x; (( s[0] ))' 
+  _osh-error-1 's=x; (( s[0] ))' 
 
-  _error-case 's=x; (( s[0] = 42 ))' 
+  _osh-error-1 's=x; (( s[0] = 42 ))' 
 
-  _error-case 'set -u; (( undef ))'
+  _osh-error-1 'set -u; (( undef ))'
 
-  _error-case '(( 3 ** -2 ))'
+  _osh-error-1 '(( 3 ** -2 ))'
   echo
 
   # DBracket
-  _error-case 'set -u; [[ $undef =~ . ]]'
+  _osh-error-1 'set -u; [[ $undef =~ . ]]'
 
   # No good fallback info here, we need it
-  _error-case '[[ $x =~ $(( 3 ** -2 )) ]]'
+  _osh-error-1 '[[ $x =~ $(( 3 ** -2 )) ]]'
 
-  _error-case-2 'type -x'  # correctly points to -x
-  _error-case-2 'use x'
+  _osh-error-2 'type -x'  # correctly points to -x
+  _osh-error-2 'use x'
 
   # Assign builtin
-  _error-case-2 'export -f'
+  _osh-error-2 'export -f'
 
-  _error-case 's=$(true) y=$(( 3 ** -2 ))'
+  _osh-error-1 's=$(true) y=$(( 3 ** -2 ))'
 
-  _error-case 'if s=$(true) y=$(( 3 ** -2 )); then echo hi; fi'
+  _osh-error-1 'if s=$(true) y=$(( 3 ** -2 )); then echo hi; fi'
 
-  _error-case 'shopt -s strict_arith; x=a; echo $(( x ))'
-  _error-case 'shopt -s strict_arith; x=a; echo $(( $x ))'
-  _error-case 'shopt -s strict_arith; x=a; [[ $x -gt 3 ]]'
-  _error-case 'shopt -s strict_arith; shopt -u eval_unsafe_arith; x=a; [[ $x -gt 3 ]]'
+  _osh-error-1 'shopt -s strict_arith; x=a; echo $(( x ))'
+  _osh-error-1 'shopt -s strict_arith; x=a; echo $(( $x ))'
+  _osh-error-1 'shopt -s strict_arith; x=a; [[ $x -gt 3 ]]'
+  _osh-error-1 'shopt -s strict_arith; shopt -u eval_unsafe_arith; x=a; [[ $x -gt 3 ]]'
 
-  _error-case 'shopt -s strict_arith; x=0xgg; echo $(( x ))'
+  _osh-error-1 'shopt -s strict_arith; x=0xgg; echo $(( x ))'
 
 
   echo done
@@ -1047,19 +1075,20 @@ fallback_locations() {
 # TEST DRIVER
 #
 
-_run_test() {
-  local t=$1
+_run-test-func() {
+  local test_func=$1
   local expected_status=${2:-}
 
-  echo "--------"
-  echo "    CASE: $t"
+  echo
+  echo "===== TEST function: $test_func ====="
+  echo
 
-  # Run in subshell so the whole thing doesn't exit
-  ( $t )
+  $SH $0 $test_func
+
   status=$?
   if test -n "$expected_status"; then
     if test $status != $expected_status; then
-      die "*** Test $t -> status $status, expected $expected_status"
+      die "*** Test $test_func -> status $status, expected $expected_status"
     fi
   fi
 
@@ -1067,12 +1096,11 @@ _run_test() {
   echo
 }
 
-all() {
+all-tests() {
   # A messy grab-bag of styles
+  # TODO: Rename with 'test-' prefix, and use run-test-funcs
 
-  # TODO: Could rename them with 'test-' prefix
-  #
-  # And then we want metadata for the status code?
+  # Do we want metadata for the status code?
   # test_nounset_0 ?
   # test_no_such_command_127
 
@@ -1104,10 +1132,10 @@ all() {
     bool_status bool_status_simple \
     fallback_locations; do
 
-    _run_test $t ''  # don't assert status
+    _run-test-func $t ''  # don't assert status
   done
 
-  # Tests that have _error-case assertions may be here
+  # Tests that have _osh-error-1 assertions may be here
   for t in \
     strict_errexit_1 \
     strict_errexit_conditionals \
@@ -1116,26 +1144,52 @@ all() {
     divzero; do
 
     # expect status 0
-    _run_test $t 0
+    _run-test-func $t 0
   done
 
   # Can't be done inside a loop!
-  _run_test control_flow 
+  _run-test-func control_flow 
 
-  # Test without inner assertions may be here.  _run_test is an "outer" assertion.
-  _run_test failed_command 1     # status 1
-  _run_test unsafe_arith_eval 1
-  _run_test no_such_command 127  # status 127
+  # Test without inner assertions may be here.  _run-test-func is an "outer" assertion.
+  _run-test-func failed_command 1     # status 1
+  _run-test-func unsafe_arith_eval 1
+  _run-test-func no_such_command 127  # status 127
 
   return 0
 }
 
-run-all-with-osh() {
-  bin/osh $0 all
+all-tests-bash() {
+  # This doesn't quite work, because exit codes are not the same
+  SH=bash all-tests
+}
+
+all-tests-dash() {
+  # This doesn't work at all, because we source test/common.sh, which has
+  # bash-func-names.
+  # Really it would be better to quote all the tests, and then they could be
+  # passed through dash.
+
+  SH=dash all-tests
+}
+
+soil-run-py() {
+  all-tests
+}
+
+soil-run-cpp() {
+  # TODO: There are some UBSAN errors, like downcasting mylib::LineReader.
+  # Is that a real problem?  Could be due to mylib::File.
+
+  #local osh=_bin/cxx-ubsan/osh
+
+  local osh=_bin/cxx-asan/osh
+
+  ninja $osh
+  SH=$osh all-tests
 }
 
 run-for-release() {
-  run-other-suite-for-release runtime-errors run-all-with-osh
+  run-other-suite-for-release runtime-errors all-tests
 }
 
 "$@"

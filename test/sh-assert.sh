@@ -18,7 +18,8 @@ _assert-sh-status() {
   echo
   $sh "$@"
   local status=$?
-  if test $status != $expected_status; then
+  if test "$status" != "$expected_status"; then
+    echo
     die "$message: expected status $expected_status, got $status"
   fi
 }

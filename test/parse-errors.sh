@@ -71,7 +71,7 @@ _ysh-parse-error-here() {
   _ysh-parse-error "$(cat)"
 }
 
-# More detailed assertions
+# More detailed assertions - TODO: remove these?
 
 _assert-status-2() {
   ### An interface where you can pass flags like -O parse_backslash
