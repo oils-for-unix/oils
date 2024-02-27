@@ -598,31 +598,31 @@ for j in '"\ud83e"' '"\udd26"' {
 "\udd26"
 ## END
 
-#### toJson() toJ8() - TODO: test difference
+#### toJson() toJson8() - TODO: test difference
 
 var obj = [42, 1.5, null, true, "hi"]
 
 echo $[toJson(obj)]
-echo $[toJ8(obj)]
+echo $[toJson8(obj)]
 
 ## STDOUT:
 [42,1.5,null,true,"hi"]
 [42,1.5,null,true,"hi"]
 ## END
 
-#### fromJson() fromJ8() - TODO: test difference
+#### fromJson() fromJson8() - TODO: test difference
 
 var message ='[42,1.5,null,true,"hi"]'
 
 pp line (fromJson(message))
-pp line (fromJ8(message))
+pp line (fromJson8(message))
 
 ## STDOUT:
 (List)   [42,1.5,null,true,"hi"]
 (List)   [42,1.5,null,true,"hi"]
 ## END
 
-#### User can handle errors - toJson() toJ8()
+#### User can handle errors - toJson() toJson8()
 shopt -s ysh:upgrade
 
 var obj = []
@@ -635,7 +635,7 @@ echo status=$_status
 echo "encode error $[_error.message]" | sed 's/0x[a-f0-9]\+/(object id)/'
 
 try {  # use different style
-  echo $[toJ8( /d+/ )]
+  echo $[toJson8( /d+/ )]
 }
 echo status=$_status
 echo "encode error $[_error.message]"
@@ -651,7 +651,7 @@ status=4
 encode error Can't serialize object of type Eggex
 ## END
 
-#### User can handle errors - fromJson() fromJ8()
+#### User can handle errors - fromJson() fromJson8()
 shopt -s ysh:upgrade
 
 var message ='[42,1.5,null,true,"hi"'
@@ -663,7 +663,7 @@ echo status=$_status
 echo "decode error $[_error.message]" | egrep -o '.*Expected.*RBracket'
 
 try {
-  var obj = fromJ8(message)
+  var obj = fromJson8(message)
 }
 echo status=$_status
 echo "decode error $[_error.message]" | egrep -o '.*Expected.*RBracket'
