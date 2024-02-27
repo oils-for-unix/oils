@@ -10,37 +10,40 @@ set -o errexit
 source test/common.sh
 source test/sh-assert.sh  # banner, _assert-sh-status
 
-# Run with SH=bash too
-SH=${SH:-bin/osh}
+# We can't really run with OSH=bash, because the exit status is often different
+
+# Although it would be nice to IGNORE errors and them some how preview errors.
+
+OSH=${OSH:-bin/osh}
 YSH=${YSH:-bin/ysh}
 
 #
 # Assertions
 #
 
-_should-parse() {
+_osh-should-parse() {
   ### Pass a string that should parse as $1
 
-  local message='Should parse under OSH'
-  _assert-sh-status 0 $SH "$message" \
+  local message="Should parse with $OSH"
+  _assert-sh-status 0 $OSH "$message" \
     -n -c "$@"
 }
 
-_should-parse-here() {
+_osh-should-parse-here() {
   ### Take stdin a here doc, pass it as first argument
-  _should-parse "$(cat)"
+  _osh-should-parse "$(cat)"
 }
 
-_error-case() {
+_osh-parse-error() {
   ### Pass a string that should NOT parse as $1
-  local message='Should NOT parse under OSH'
-  _assert-sh-status 2 $SH "$message" \
+  local message="Should NOT parse with $OSH"
+  _assert-sh-status 2 $OSH "$message" \
     -n -c "$@"
 }
 
-_error-case-here() {
+_osh-parse-error-here() {
   ### Take stdin a here doc, pass it as first argument
-  _error-case "$(cat)";
+  _osh-parse-error "$(cat)"
 }
 
 # YSH assertions
@@ -74,7 +77,7 @@ _assert-status-2() {
   ### An interface where you can pass flags like -O parse_backslash
 
   local message=$0
-  _assert-sh-status 2 $SH $message "$@"
+  _assert-sh-status 2 $OSH $message "$@"
 }
 
 _assert-status-2-here() {
@@ -86,7 +89,7 @@ _runtime-parse-error() {
 
   banner "$@"
   echo
-  $SH -c "$@"
+  $OSH -c "$@"
 
   # NOTE: This works with osh, not others.
   local status=$?
@@ -103,126 +106,126 @@ _runtime-parse-error() {
 patsub() {
   set +o errexit
 
-  _should-parse 'echo ${x/}'
-  _should-parse 'echo ${x//}'
+  _osh-should-parse 'echo ${x/}'
+  _osh-should-parse 'echo ${x//}'
 
-  _should-parse 'echo ${x/foo}'  # pat 'foo', no mode, replace empty
+  _osh-should-parse 'echo ${x/foo}'  # pat 'foo', no mode, replace empty
 
-  _should-parse 'echo ${x//foo}'  # pat 'foo', replace mode '/', replace empty
-  _should-parse 'echo ${x/%foo}'  # same as above
+  _osh-should-parse 'echo ${x//foo}'  # pat 'foo', replace mode '/', replace empty
+  _osh-should-parse 'echo ${x/%foo}'  # same as above
 
-  _should-parse 'echo ${x///foo}'
+  _osh-should-parse 'echo ${x///foo}'
 
-  _should-parse 'echo ${x///}'   # found and fixed bug
-  _should-parse 'echo ${x/%/}'   # pat '', replace mode '%', replace ''
+  _osh-should-parse 'echo ${x///}'   # found and fixed bug
+  _osh-should-parse 'echo ${x/%/}'   # pat '', replace mode '%', replace ''
 
-  _should-parse 'echo ${x////}'  # pat '/', replace mode '/', replace empty
-  _should-parse 'echo ${x/%//}'  # pat '', replace mode '%', replace '/'
+  _osh-should-parse 'echo ${x////}'  # pat '/', replace mode '/', replace empty
+  _osh-should-parse 'echo ${x/%//}'  # pat '', replace mode '%', replace '/'
 
   # Newline in replacement pattern
-  _should-parse 'echo ${x//foo/replace
+  _osh-should-parse 'echo ${x//foo/replace
 }'
-  _should-parse 'echo ${x//foo/replace$foo}'
+  _osh-should-parse 'echo ${x//foo/replace$foo}'
 }
 
 # osh/word_parse.py
 word-parse() {
   set +o errexit
 
-  _error-case 'echo ${'
+  _osh-parse-error 'echo ${'
 
   # This parses like a slice, but that's OK.  Maybe talk about arithmetic
   # expression.  Maybe say where it started?
-  _error-case '${foo:}'
+  _osh-parse-error '${foo:}'
 
-  _error-case 'echo ${a[@Z'
+  _osh-parse-error 'echo ${a[@Z'
 
-  _error-case 'echo ${x.}'
-  _error-case 'echo ${!x.}'
+  _osh-parse-error 'echo ${x.}'
+  _osh-parse-error 'echo ${!x.}'
 
   # Slicing
-  _error-case 'echo ${a:1;}'
-  _error-case 'echo ${a:1:2;}'
+  _osh-parse-error 'echo ${a:1;}'
+  _osh-parse-error 'echo ${a:1:2;}'
 
   # I don't seem to be able to tickle errors here
-  #_error-case 'echo ${a:-}'
-  #_error-case 'echo ${a#}'
+  #_osh-parse-error 'echo ${a:-}'
+  #_osh-parse-error 'echo ${a#}'
 
-  _error-case 'echo ${#a.'
+  _osh-parse-error 'echo ${#a.'
 
   # for (( ))
-  _error-case 'for (( i = 0; i < 10; i++ ;'
+  _osh-parse-error 'for (( i = 0; i < 10; i++ ;'
   # Hm not sure about this
-  _error-case 'for (( i = 0; i < 10; i++ /'
+  _osh-parse-error 'for (( i = 0; i < 10; i++ /'
 
-  _error-case 'echo @(extglob|foo'
+  _osh-parse-error 'echo @(extglob|foo'
 
   # Copied from osh/word_parse_test.py.  Bugs were found while writing
   # core/completion_test.py.
 
-  _error-case '${undef:-'
-  _error-case '${undef:-$'
-  _error-case '${undef:-$F'
+  _osh-parse-error '${undef:-'
+  _osh-parse-error '${undef:-$'
+  _osh-parse-error '${undef:-$F'
 
-  _error-case '${x@'
-  _error-case '${x@Q'
+  _osh-parse-error '${x@'
+  _osh-parse-error '${x@Q'
 
-  _error-case '${x%'
+  _osh-parse-error '${x%'
 
-  _error-case '${x/'
-  _error-case '${x/a/'
-  _error-case '${x/a/b'
-  _error-case '${x:'
+  _osh-parse-error '${x/'
+  _osh-parse-error '${x/a/'
+  _osh-parse-error '${x/a/b'
+  _osh-parse-error '${x:'
 }
 
 array-literal() {
   set +o errexit
 
   # Array literal with invalid TokenWord.
-  _error-case 'a=(1 & 2)'
-  _error-case 'a= (1 2)'
-  _error-case 'a=(1 2'
-  _error-case 'a=(1 ${2@} )'  # error in word inside array literal
+  _osh-parse-error 'a=(1 & 2)'
+  _osh-parse-error 'a= (1 2)'
+  _osh-parse-error 'a=(1 2'
+  _osh-parse-error 'a=(1 ${2@} )'  # error in word inside array literal
 }
 
 arith-context() {
   set +o errexit
 
   # $(( ))
-  _error-case 'echo $(( 1 + 2 ;'
-  _error-case 'echo $(( 1 + 2 );'
-  _error-case 'echo $(( '
-  _error-case 'echo $(( 1'
+  _osh-parse-error 'echo $(( 1 + 2 ;'
+  _osh-parse-error 'echo $(( 1 + 2 );'
+  _osh-parse-error 'echo $(( '
+  _osh-parse-error 'echo $(( 1'
 
   # Disable Oil stuff for osh_{parse,eval}.asan
   if false; then
     # Non-standard arith sub $[1 + 2]
-    _error-case 'echo $[ 1 + 2 ;'
+    _osh-parse-error 'echo $[ 1 + 2 ;'
 
     # What's going on here?   No location info?
-    _error-case 'echo $[ 1 + 2 /'
+    _osh-parse-error 'echo $[ 1 + 2 /'
 
-    _error-case 'echo $[ 1 + 2 / 3'
-    _error-case 'echo $['
+    _osh-parse-error 'echo $[ 1 + 2 / 3'
+    _osh-parse-error 'echo $['
   fi
 
   # (( ))
-  _error-case '(( 1 + 2 /'
-  _error-case '(( 1 + 2 )/'
-  _error-case '(( 1'
-  _error-case '(('
+  _osh-parse-error '(( 1 + 2 /'
+  _osh-parse-error '(( 1 + 2 )/'
+  _osh-parse-error '(( 1'
+  _osh-parse-error '(('
 
   # Should be an error
-  _error-case 'a[x+]=1'
+  _osh-parse-error 'a[x+]=1'
 
-  _error-case 'a[]=1'
+  _osh-parse-error 'a[]=1'
 
-  _error-case 'a[*]=1'
+  _osh-parse-error 'a[*]=1'
 
   # These errors are different because the arithmetic lexer mode has } but not
   # {.  May be changed later.
-  _error-case '(( a + { ))'
-  _error-case '(( a + } ))'
+  _osh-parse-error '(( a + { ))'
+  _osh-parse-error '(( a + } ))'
 
 }
 
@@ -230,108 +233,108 @@ arith-integration() {
   set +o errexit
 
   # Regression: these were not parse errors, but should be!
-  _error-case 'echo $((a b))'
-  _error-case '((a b))'
+  _osh-parse-error 'echo $((a b))'
+  _osh-parse-error '((a b))'
 
   # Empty arithmetic expressions
-  _should-parse 'for ((x=0; x<5; x++)); do echo $x; done'
-  _should-parse 'for ((; x<5; x++)); do echo $x; done'
-  _should-parse 'for ((; ; x++)); do echo $x; done'
-  _should-parse 'for ((; ;)); do echo $x; done'
+  _osh-should-parse 'for ((x=0; x<5; x++)); do echo $x; done'
+  _osh-should-parse 'for ((; x<5; x++)); do echo $x; done'
+  _osh-should-parse 'for ((; ; x++)); do echo $x; done'
+  _osh-should-parse 'for ((; ;)); do echo $x; done'
 
   # Extra tokens on the end of each expression
-  _error-case 'for ((x=0; x<5; x++ b)); do echo $x; done'
+  _osh-parse-error 'for ((x=0; x<5; x++ b)); do echo $x; done'
 
-  _error-case 'for ((x=0 b; x<5; x++)); do echo $x; done'
-  _error-case 'for ((x=0; x<5 b; x++)); do echo $x; done'
+  _osh-parse-error 'for ((x=0 b; x<5; x++)); do echo $x; done'
+  _osh-parse-error 'for ((x=0; x<5 b; x++)); do echo $x; done'
 
-  _error-case '${a:1+2 b}'
-  _error-case '${a:1+2:3+4 b}'
+  _osh-parse-error '${a:1+2 b}'
+  _osh-parse-error '${a:1+2:3+4 b}'
 
-  _error-case '${a[1+2 b]}'
+  _osh-parse-error '${a[1+2 b]}'
 }
 
 arith-expr() {
   set +o errexit
 
   # BUG: the token is off here
-  _error-case '$(( 1 + + ))'
+  _osh-parse-error '$(( 1 + + ))'
 
   # BUG: not a great error either
-  _error-case '$(( 1 2 ))'
+  _osh-parse-error '$(( 1 2 ))'
 
   # Triggered a crash!
-  _error-case '$(( - ; ))'
+  _osh-parse-error '$(( - ; ))'
 
   # NOTE: This is confusing, should point to ` for command context?
-  _error-case '$(( ` ))'
+  _osh-parse-error '$(( ` ))'
 
-  _error-case '$(( $ ))'
+  _osh-parse-error '$(( $ ))'
 
   # Invalid assignments
-  _error-case '$(( x+1 = 42 ))'
-  _error-case '$(( (x+42)++ ))'
-  _error-case '$(( ++(x+42) ))'
+  _osh-parse-error '$(( x+1 = 42 ))'
+  _osh-parse-error '$(( (x+42)++ ))'
+  _osh-parse-error '$(( ++(x+42) ))'
 
   # Note these aren't caught because '1' is an ArithWord like 0x$x
-  #_error-case '$(( 1 = foo ))'
-  #_error-case '$(( 1++ ))'
-  #_error-case '$(( ++1 ))'
+  #_osh-parse-error '$(( 1 = foo ))'
+  #_osh-parse-error '$(( 1++ ))'
+  #_osh-parse-error '$(( ++1 ))'
 }
 
 command-sub() {
   set +o errexit
-  _error-case ' 
+  _osh-parse-error ' 
     echo line 2
     echo $( echo '
-  _error-case ' 
+  _osh-parse-error ' 
     echo line 2
     echo ` echo '
 
   # This is source.Reparsed('backticks', ...)
 
   # Both unclosed
-  _error-case '
+  _osh-parse-error '
     echo line 2
     echo ` echo \` '
 
   # Only the inner one is unclosed
-  _error-case '
+  _osh-parse-error '
     echo line 2
     echo ` echo \`unclosed ` '
 
-  _error-case 'echo `for x in`'
+  _osh-parse-error 'echo `for x in`'
 }
 
 bool-expr() {
   set +o errexit
 
   # Extra word
-  _error-case '[[ a b ]]'
-  _error-case '[[ a "a"$(echo hi)"b" ]]'
+  _osh-parse-error '[[ a b ]]'
+  _osh-parse-error '[[ a "a"$(echo hi)"b" ]]'
 
   # Wrong error message
-  _error-case '[[ a == ]]'
+  _osh-parse-error '[[ a == ]]'
 
   if false; then
     # Invalid regex
     # These are currently only detected at runtime.
-    _error-case '[[ $var =~ * ]]'
-    _error-case '[[ $var =~ + ]]'
+    _osh-parse-error '[[ $var =~ * ]]'
+    _osh-parse-error '[[ $var =~ + ]]'
   fi
 
   # Unbalanced parens
-  _error-case '[[ ( 1 == 2 - ]]'
+  _osh-parse-error '[[ ( 1 == 2 - ]]'
 
-  _error-case '[[ == ]]'
-  _error-case '[[ ) ]]'
-  _error-case '[[ ( ]]'
+  _osh-parse-error '[[ == ]]'
+  _osh-parse-error '[[ ) ]]'
+  _osh-parse-error '[[ ( ]]'
 
-  _error-case '[[ ;;; ]]'
-  _error-case '[['
+  _osh-parse-error '[[ ;;; ]]'
+  _osh-parse-error '[['
 
   # Expected right )
-  _error-case '[[ ( a == b foo${var} ]]'
+  _osh-parse-error '[[ ( a == b foo${var} ]]'
 }
 
 # These don't have any location information.
@@ -359,7 +362,7 @@ test-builtin() {
   _runtime-parse-error '[ \( x -a -y -a z ]'
 
   # -o tests if an option is enabled.
-  #_error-case '[ -o x ]'
+  #_osh-parse-error '[ -o x ]'
 }
 
 printf-builtin() {
@@ -391,16 +394,16 @@ other-builtins() {
 quoted-strings() {
   set +o errexit
 
-  _error-case '"unterminated double'
+  _osh-parse-error '"unterminated double'
 
-  _error-case "'unterminated single"
+  _osh-parse-error "'unterminated single"
 
-  _error-case '
+  _osh-parse-error '
   "unterminated double multiline
   line 1
   line 2'
 
-  _error-case "
+  _osh-parse-error "
   'unterminated single multiline
   line 1
   line 2"
@@ -410,65 +413,65 @@ braced-var-sub() {
   set +o errexit
 
   # These should have ! for a prefix query
-  _error-case 'echo ${x*}'
-  _error-case 'echo ${x@}'
+  _osh-parse-error 'echo ${x*}'
+  _osh-parse-error 'echo ${x@}'
 
-  _error-case 'echo ${x.}'
+  _osh-parse-error 'echo ${x.}'
 }
 
 cmd-parse() {
   set +o errexit
 
-  _error-case 'FOO=1 break'
-  _error-case 'break 1 2'
+  _osh-parse-error 'FOO=1 break'
+  _osh-parse-error 'break 1 2'
 
-  _error-case 'x"y"() { echo hi; }'
+  _osh-parse-error 'x"y"() { echo hi; }'
 
-  _error-case 'function x"y" { echo hi; }'
+  _osh-parse-error 'function x"y" { echo hi; }'
 
-  _error-case '}'
+  _osh-parse-error '}'
 
-  _error-case 'case foo in *) echo '
-  _error-case 'case foo in x|) echo '
+  _osh-parse-error 'case foo in *) echo '
+  _osh-parse-error 'case foo in x|) echo '
 
-  _error-case 'ls foo|'
-  _error-case 'ls foo&&'
+  _osh-parse-error 'ls foo|'
+  _osh-parse-error 'ls foo&&'
 
-  _error-case 'foo()'
+  _osh-parse-error 'foo()'
 
   # parse_ignored
-  _should-parse 'break >out'
+  _osh-should-parse 'break >out'
   _ysh-parse-error 'break >out'
 
   # Unquoted (
-  _error-case '[ ( x ]'
+  _osh-parse-error '[ ( x ]'
 }
 
 append() {
   # from spec/append.test.sh.  bash treats this as a runtime error, but it's a
   # parse error in OSH.
-  _error-case 'a[-1]+=(4 5)'
+  _osh-parse-error 'a[-1]+=(4 5)'
 }
 
 redirect() {
   set +o errexit
 
-  _error-case 'echo < <<'
-  _error-case 'echo $( echo > >>  )'
+  _osh-parse-error 'echo < <<'
+  _osh-parse-error 'echo $( echo > >>  )'
 }
 
 simple-command() {
   set +o errexit
 
-  _error-case 'PYTHONPATH=. FOO=(1 2) python'
+  _osh-parse-error 'PYTHONPATH=. FOO=(1 2) python'
   # not statically detected after dynamic assignment
-  #_error-case 'echo foo FOO=(1 2)'
+  #_osh-parse-error 'echo foo FOO=(1 2)'
 
-  _error-case 'PYTHONPATH+=1 python'
+  _osh-parse-error 'PYTHONPATH+=1 python'
 
   # Space sensitivity: disallow =
-  _error-case '=var'
-  _error-case '=f(x)'
+  _osh-parse-error '=var'
+  _osh-parse-error '=f(x)'
 
   _ysh-parse-error '=var'
   _ysh-parse-error '=f(x)'
@@ -476,11 +479,11 @@ simple-command() {
 
 assign() {
   set +o errexit
-  _error-case 'local name$x'
-  _error-case 'local "ab"'
-  _error-case 'local a.b'
+  _osh-parse-error 'local name$x'
+  _osh-parse-error 'local "ab"'
+  _osh-parse-error 'local a.b'
 
-  _error-case 'FOO=1 local foo=1'
+  _osh-parse-error 'FOO=1 local foo=1'
 
 }
 
@@ -490,18 +493,18 @@ here-doc() {
   set +o errexit
 
   # Arith in here doc
-  _error-case 'cat <<EOF
+  _osh-parse-error 'cat <<EOF
 $(( 1 * ))  
 EOF
 '
 
   # Varsub in here doc
-  _error-case 'cat <<EOF
+  _osh-parse-error 'cat <<EOF
 invalid: ${a!}
 EOF
 '
 
-  _error-case 'cat <<EOF
+  _osh-parse-error 'cat <<EOF
 $(for x in )
 EOF
 '
@@ -511,19 +514,19 @@ here-doc-delimiter() {
   set +o errexit
 
   # NOTE: This is more like the case where.
-  _error-case 'cat << $(invalid here end)'
+  _osh-parse-error 'cat << $(invalid here end)'
 
   # TODO: Arith parser doesn't have location information
-  _error-case 'cat << $((1+2))'
-  _error-case 'cat << a=(1 2 3)'
-  _error-case 'cat << \a$(invalid)'
+  _osh-parse-error 'cat << $((1+2))'
+  _osh-parse-error 'cat << a=(1 2 3)'
+  _osh-parse-error 'cat << \a$(invalid)'
 
   # Actually the $invalid part should be highlighted... yeah an individual
   # part is the problem.
   #"cat << 'single'$(invalid)"
-  _error-case 'cat << "double"$(invalid)'
-  _error-case 'cat << ~foo/$(invalid)'
-  _error-case 'cat << $var/$(invalid)'
+  _osh-parse-error 'cat << "double"$(invalid)'
+  _osh-parse-error 'cat << ~foo/$(invalid)'
+  _osh-parse-error 'cat << $var/$(invalid)'
 }
 
 args-parse-builtin() {
@@ -537,7 +540,7 @@ args-parse-builtin() {
   _runtime-parse-error 'set -o errexit +o oops'
 
   # not implemented yet
-  #_error-case 'read -t x'  # expected floating point number
+  #_osh-parse-error 'read -t x'  # expected floating point number
 
   # TODO:
   # - invalid choice
@@ -562,43 +565,43 @@ args-parse-main() {
 invalid-brace-ranges() {
   set +o errexit
 
-  _error-case 'echo {1..3..-1}'
-  _error-case 'echo {1..3..0}'
-  _error-case 'echo {3..1..1}'
-  _error-case 'echo {3..1..0}'
-  _error-case 'echo {a..Z}'
-  _error-case 'echo {a..z..0}'
-  _error-case 'echo {a..z..-1}'
-  _error-case 'echo {z..a..1}'
+  _osh-parse-error 'echo {1..3..-1}'
+  _osh-parse-error 'echo {1..3..0}'
+  _osh-parse-error 'echo {3..1..1}'
+  _osh-parse-error 'echo {3..1..0}'
+  _osh-parse-error 'echo {a..Z}'
+  _osh-parse-error 'echo {a..z..0}'
+  _osh-parse-error 'echo {a..z..-1}'
+  _osh-parse-error 'echo {z..a..1}'
 }
 
 extra-newlines() {
   set +o errexit
 
-  _error-case '
+  _osh-parse-error '
   for
   do
   done
   '
 
-  _error-case '
+  _osh-parse-error '
   case
   in esac
   '
 
-  _error-case '
+  _osh-parse-error '
   while
   do
   done
   '
 
-  _error-case '
+  _osh-parse-error '
   if
   then
   fi
   '
 
-  _error-case '
+  _osh-parse-error '
   if true
   then
   elif
@@ -606,33 +609,33 @@ extra-newlines() {
   fi
   '
 
-  _error-case '
+  _osh-parse-error '
   case |
   in
   esac
   '
 
-  _error-case '
+  _osh-parse-error '
   case ;
   in
   esac
   '
 
-  _should-parse '
+  _osh-should-parse '
   if
   true
   then
   fi
   '
 
-  _should-parse '
+  _osh-should-parse '
   while
   false
   do
   done
   '
 
-  _should-parse '
+  _osh-should-parse '
   while
   true;
   false
@@ -640,13 +643,13 @@ extra-newlines() {
   done
   '
 
-  _should-parse '
+  _osh-should-parse '
   if true
   then
   fi
   '
 
-  _should-parse '
+  _osh-should-parse '
   while true;
         false
   do
@@ -658,7 +661,7 @@ ysh_c_strings() {
   set +o errexit
 
   # bash syntax
-  _should-parse-here <<'EOF'
+  _osh-should-parse-here <<'EOF'
 echo $'\u03bc'
 EOF
 
@@ -678,7 +681,7 @@ const bad = $'\u{03bc'
 EOF
 
   # Test single quoted
-  _should-parse-here <<'EOF'
+  _osh-should-parse-here <<'EOF'
 echo $'\z'
 EOF
   _ysh-parse-error-here <<'EOF'
@@ -690,7 +693,7 @@ const bad = $'\z'
 EOF
 
   # Octal not allowed
-  _should-parse-here <<'EOF'
+  _osh-should-parse-here <<'EOF'
 echo $'\101'
 EOF
   _ysh-parse-error-here <<'EOF'
@@ -707,7 +710,7 @@ test_bug_1825_backslashes() {
   set +o errexit
 
   # Single backslash is accepted in OSH
-  _should-parse-here <<'EOF'
+  _osh-should-parse-here <<'EOF'
 echo $'trailing\
 '
 EOF
@@ -735,18 +738,18 @@ ysh_dq_strings() {
   set +o errexit
 
   # Double quoted is an error
-  _should-parse 'echo "\z"'
+  _osh-should-parse 'echo "\z"'
   _assert-status-2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
 
   _ysh-parse-error 'echo "\z"'  # not in Oil
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode
 
   # C style escapes not respected
-  _should-parse 'echo "\u1234"'  # ok in OSH
+  _osh-should-parse 'echo "\u1234"'  # ok in OSH
   _ysh-parse-error 'echo "\u1234"'  # not in Oil
   _ysh-parse-error 'const bad = "\u1234"'
 
-  _should-parse 'echo "`echo hi`"'
+  _osh-should-parse 'echo "`echo hi`"'
   _ysh-parse-error 'echo "`echo hi`"'
   _ysh-parse-error 'const bad = "`echo hi`"'
 
@@ -764,8 +767,8 @@ parse_backticks() {
   set +o errexit
 
   # These are allowed
-  _should-parse 'echo `echo hi`'
-  _should-parse 'echo "foo = `echo hi`"'
+  _osh-should-parse 'echo `echo hi`'
+  _osh-should-parse 'echo "foo = `echo hi`"'
 
   _assert-status-2 +O parse_backticks -n -c 'echo `echo hi`'
   _assert-status-2 +O parse_backticks -n -c 'echo "foo = `echo hi`"'
@@ -792,7 +795,7 @@ parse_dollar() {
     'echo "${x:-$:}"'
   )
   for c in "${CASES[@]}"; do
-    _should-parse "$c"
+    _osh-should-parse "$c"
     _assert-status-2 +O parse_dollar -n -c "$c"
     _ysh-parse-error "$c"
   done
@@ -805,15 +808,15 @@ parse_dparen() {
   local bad
 
   bad='((1 > 0 && 43 > 42))'
-  _should-parse "$bad"
+  _osh-should-parse "$bad"
   _ysh-parse-error "$bad"
 
   bad='if ((1 > 0 && 43 > 42)); then echo yes; fi'
-  _should-parse "$bad"
+  _osh-should-parse "$bad"
   _ysh-parse-error "$bad"
 
   bad='for ((x = 1; x < 5; ++x)); do echo $x; done'
-  _should-parse "$bad"
+  _osh-should-parse "$bad"
   _ysh-parse-error "$bad"
 
   _ysh-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
@@ -832,7 +835,7 @@ invalid_parens() {
 
   # requires parse_at
   local s='write -- @[sorted(x)]'
-  _error-case "$s"  # this is a parse error, but BAD message!
+  _osh-parse-error "$s"  # this is a parse error, but BAD message!
   _ysh-should-parse "$s"
 
   local s='
@@ -840,7 +843,7 @@ f() {
   write -- @[sorted(x)]
 }
 '
-  _error-case "$s"
+  _osh-parse-error "$s"
   _ysh-should-parse "$s"
 
   # Analogous bad bug
@@ -849,26 +852,26 @@ f() {
   write -- @sorted (( z ))
 }
 '
-  _error-case "$s"
+  _osh-parse-error "$s"
 }
 
 shell_for() {
   set +o errexit
 
-  _error-case 'for x in &'
+  _osh-parse-error 'for x in &'
 
-  _error-case 'for (( i=0; i<10; i++ )) ls'
+  _osh-parse-error 'for (( i=0; i<10; i++ )) ls'
 
   # ( is invalid
-  _error-case 'for ( i=0; i<10; i++ )'
+  _osh-parse-error 'for ( i=0; i<10; i++ )'
 
-  _error-case 'for $x in 1 2 3; do echo $i; done'
-  _error-case 'for x.y in 1 2 3; do echo $i; done'
-  _error-case 'for x in 1 2 3; &'
-  _error-case 'for foo BAD'
+  _osh-parse-error 'for $x in 1 2 3; do echo $i; done'
+  _osh-parse-error 'for x.y in 1 2 3; do echo $i; done'
+  _osh-parse-error 'for x in 1 2 3; &'
+  _osh-parse-error 'for foo BAD'
 
   # BUG fix: var is a valid name
-  _should-parse 'for var in x; do echo $var; done'
+  _osh-should-parse 'for var in x; do echo $var; done'
 }
 
 #
@@ -901,8 +904,8 @@ proc_func_reserved() {
 
   set +o errexit
 
-  _error-case 'proc p (x) { echo hi }'
-  _error-case 'func f (x) { return (x) }'
+  _osh-parse-error 'proc p (x) { echo hi }'
+  _osh-parse-error 'func f (x) { return (x) }'
 }
 
 # Note: PROMPT_COMMAND and PS1 are hard to trigger in this framework
@@ -978,7 +981,7 @@ cases-in-files() {
   for t in test/parse-errors/*.sh; do
     banner $t
 
-    $SH $t
+    $OSH $t
 
     local status=$?
     if test $status != 2; then
@@ -998,6 +1001,11 @@ all() {
   cases-in-files
 }
 
+all-with-bash() {
+  # Fails quickly
+  OSH=bash all
+}
+
 soil-run-py() {
   ### run with Python. output _tmp/other/parse-errors.txt
 
@@ -1008,7 +1016,7 @@ soil-run-cpp() {
   ### Run with oils-for-unix
 
   ninja _bin/cxx-asan/osh
-  SH=_bin/cxx-asan/osh all
+  OSH=_bin/cxx-asan/osh all
 }
 
 release-oils-for-unix() {
@@ -1021,7 +1029,7 @@ release-oils-for-unix() {
   popd
 
   local suite_name=parse-errors-osh-cpp
-  SH=$dir/_bin/cxx-opt-sh/osh \
+  OSH=$dir/_bin/cxx-opt-sh/osh \
     run-other-suite-for-release $suite_name all
 }
 

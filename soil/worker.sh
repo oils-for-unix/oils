@@ -147,8 +147,8 @@ unit                test/unit.sh soil-run                        -
 arena               test/arena.sh soil-run                       -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh run-all-with-osh      -
-ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run          -
 ysh-parse-errors    test/ysh-parse-errors.sh soil-run-py         -
+ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run-py       -
 ysh-every-string    test/ysh-every-string.sh soil-run-py         -
 ysh-large           ysh/run.sh soil-run                          -
 json-errors         data_lang/json-errors.sh soil-run-py         -
@@ -280,6 +280,7 @@ preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed
 mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 ysh-parse-errors test/ysh-parse-errors.sh soil-run-cpp -
+ysh-runtime-errors test/ysh-runtime-errors.sh soil-run-cpp -
 ysh-every-string test/ysh-every-string.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
 json-errors      data_lang/json-errors.sh soil-run-cpp -

@@ -98,7 +98,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-word-lang
-  [String Lit]    str-literal   "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
+  [Quotes]        ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
                   triple-quoted """  r'''  u'''  b'''
                   X tagged-str  "<span id=$x>"html
   [Expression]    expr-sub      echo $[42 + a[i]]
