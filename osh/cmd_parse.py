@@ -2245,15 +2245,19 @@ class CommandParser(object):
             # on.
             if self.parse_opts.parse_proc():
                 return self.ParseYshProc()
-
-            # Otherwise silently pass. This is to support scripts like:
-            # $ bash -c 'proc() { echo p; }; proc'
+            else:
+                # 2024-02: This avoids bad syntax errors if you type YSH code
+                # into OSH
+                # proc p (x) { echo hi } would actually be parsed as a
+                # command.Simple!  Shell compatibility: quote 'proc'
+                p_die("proc is a YSH keyword, but this is OSH.", self.cur_word)
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
             if self.parse_opts.parse_func():
                 return self.ParseYshFunc()
-
-            # Otherwise silently pass, like for the procs.
+            else:
+                # Same reasoning as above, for 'proc'
+                p_die("func is a YSH keyword, but this is OSH.", self.cur_word)
 
         if self.c_id == Id.KW_Const and self.cmd_mode != cmd_mode_e.Shell:
             p_die("const can't be inside proc or func.  Use var instead.",

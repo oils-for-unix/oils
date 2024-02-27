@@ -894,6 +894,15 @@ trap_parse_error() {
   '
 }
 
+proc_func_reserved() {
+  ### Prevents confusion
+
+  set +o errexit
+
+  _error-case 'proc p (x) { echo hi }'
+  _error-case 'func f (x) { return (x) }'
+}
+
 # Note: PROMPT_COMMAND and PS1 are hard to trigger in this framework
 
 cases-in-strings() {
@@ -953,6 +962,8 @@ cases-in-strings() {
   eval_parse_error
   # should be status 2?
   #trap_parse_error
+
+  proc_func_reserved
 }
 
 # Cases in their own file
