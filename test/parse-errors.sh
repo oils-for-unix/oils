@@ -654,7 +654,7 @@ extra-newlines() {
   '
 }
 
-ysh_string_literals() {
+ysh_c_strings() {
   set +o errexit
 
   # bash syntax
@@ -682,6 +682,10 @@ EOF
 echo $'\z'
 EOF
   _ysh-parse-error-here <<'EOF'
+echo $'\z'
+EOF
+  # Expression mode
+  _ysh-parse-error-here <<'EOF'
 const bad = $'\z'
 EOF
 
@@ -696,27 +700,6 @@ EOF
   # \xH not allowed
   _ysh-parse-error-here <<'EOF'
 const bad = c'\xf'
-EOF
-
-  _should-parse 'echo "\z"'
-  # Double quoted is an error
-  _assert-status-2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
-  _ysh-parse-error 'echo "\z"'  # not in Oil
-  _ysh-parse-error 'const bad = "\z"'  # not in expression mode
-
-  # C style escapes not respected
-  _should-parse 'echo "\u1234"'  # ok in OSH
-  _ysh-parse-error 'echo "\u1234"'  # not in Oil
-  _ysh-parse-error 'const bad = "\u1234"'
-
-  _should-parse 'echo "`echo hi`"'
-  _ysh-parse-error 'echo "`echo hi`"'
-  _ysh-parse-error 'const bad = "`echo hi`"'
-
-  _ysh-parse-error 'setvar x = "\z"'
-
-  _ysh-parse-error-here <<'EOF'
-setvar x = $'\z'
 EOF
 }
 
@@ -746,7 +729,35 @@ EOF
 setvar x = $'trailing\
 '
 EOF
+}
 
+ysh_dq_strings() {
+  set +o errexit
+
+  # Double quoted is an error
+  _should-parse 'echo "\z"'
+  _assert-status-2 +O parse_backslash -n -c 'echo parse_backslash "\z"'
+
+  _ysh-parse-error 'echo "\z"'  # not in Oil
+  _ysh-parse-error 'const bad = "\z"'  # not in expression mode
+
+  # C style escapes not respected
+  _should-parse 'echo "\u1234"'  # ok in OSH
+  _ysh-parse-error 'echo "\u1234"'  # not in Oil
+  _ysh-parse-error 'const bad = "\u1234"'
+
+  _should-parse 'echo "`echo hi`"'
+  _ysh-parse-error 'echo "`echo hi`"'
+  _ysh-parse-error 'const bad = "`echo hi`"'
+
+  _ysh-parse-error 'setvar x = "\z"'
+}
+
+ysh_bare_words() {
+  set +o errexit
+
+  _ysh-should-parse 'echo \$'
+  _ysh-parse-error 'echo \z'
 }
 
 parse_backticks() {
@@ -937,8 +948,10 @@ cases-in-strings() {
   regex_literals
   proc_sig
   proc_arg_list
-  ysh_string_literals
+  ysh_c_strings
   test_bug_1825_backslashes
+  ysh_dq_strings
+  ysh_bare_words
 
   parse_backticks
   parse_dollar

@@ -29,7 +29,8 @@ If you see an error that you don't understand:
    one used.
 1. Add a tagged section below, with hints and explanations.
    - Quote the error message.  You may want copy and paste from the output of
-     `test/{parse,runtime,ysh-parse,ysh-runtime}-errors.sh`.
+     `test/{parse,runtime,ysh-parse,ysh-runtime}-errors.sh`.  Add an HTML
+     comment `<!-- -->` about it if you do so.
    - Link to relevant sections in the [**Oils Reference**](ref/index.html).
 1. Optionally, add your name to the acknowledgements list at the end of this
    doc.
@@ -64,6 +65,11 @@ These error codes start at `10`.
 
 ### OILS-ERR-10
 
+<!--
+Generated with:
+test/ysh-parse-errors.sh test-func-var-checker
+-->
+
 ```
       setvar x = true
              ^
@@ -77,7 +83,52 @@ These error codes start at `10`.
 
 ### OILS-ERR-11
 
-Invalid char escape.
+<!--
+Generated with:
+test/ysh-parse-errors.sh ysh_c_strings (this may move)
+-->
+
+```
+  echo $'\z'
+         ^
+[ -c flag ]:1: Invalid char escape in C-style string literal (OILS-ERR-11)
+```
+
+- Did you mean `$'\\z'`?  Backslashes must be escaped in `$''` and `u''` and
+  `b''` strings.
+- Did you mean something like `$'\n'`?  Only valid escapes are accepted in YSH.
+
+### OILS-ERR-12
+
+<!--
+Generated with:
+test/ysh-parse-errors.sh ysh_dq_strings (this may move)
+-->
+
+```
+  echo "\z"
+        ^
+[ -c flag ]:1: Invalid char escape in double quoted string (OILS-ERR-12)
+```
+
+- Did you mean `"\\z"`?  Backslashes must be escaped in double-quoted strings.
+- Did you mean something like `"\$"`?  Only valid escapes are accepted in YSH.
+
+### OILS-ERR-13
+
+<!--
+Generated with:
+test/ysh-parse-errors.sh ysh_bare_words (this may move)
+-->
+
+```
+  echo \z
+       ^~
+[ -c flag ]:1: Invalid char escape in unquoted word (OILS-ERR-13)
+```
+
+- Did you mean `\\z`?  Backslashes must be escaped in unquoted words.
+- Did you mean something like `\$`?  Only valid escapes are accepted in YSH.
 
 ## Runtime Errors - Traditional Shell
 
