@@ -34,16 +34,27 @@ echo -e \\
 echo -e '\'
 echo -e '\\'
 echo -e "\\"
+echo
+
+# backslash at end of line
+echo -e '\
+line2'
 ## STDOUT:
 \
 \
 \
 \
+
+\
+line2
 ## N-I dash STDOUT:
 -e \
 -e \
 -e \
 -e \
+
+-e \
+line2
 ## END
 
 #### echo builtin should disallow typed args - literal

@@ -51,6 +51,11 @@ _ysh-should-parse() {
     -n -c "$@"
 }
 
+# So we can write single quoted strings in an easier way
+_ysh-should-parse-here() {
+  _ysh-should-parse "$(cat)"
+}
+
 _ysh-parse-error() {
   ### Assert that a parse error happens with Oil options on
   local message='Should NOT parse under YSH'
@@ -661,15 +666,22 @@ extra-newlines() {
 ysh_string_literals() {
   set +o errexit
 
-  # OK in OSH
+  # bash syntax
   _should-parse-here <<'EOF'
+echo $'\u03bc'
+EOF
+
+  # Extension not allowed
+  _ysh-parse-error-here <<'EOF'
+echo $'\u{03bc}'
+EOF
+
+  # Bad syntax
+  _ysh-parse-error-here <<'EOF'
 echo $'\u{03bc'
 EOF
-  # Not with parse_backslash
-  _assert-status-2-here +O parse_backslash -n <<EOF
-echo parse_backslash $'\u{03bc'
-EOF
-  # Not in Oil
+
+  # Expression mode
   _ysh-parse-error-here <<'EOF'
 const bad = $'\u{03bc'
 EOF
@@ -714,6 +726,34 @@ EOF
 
   _ysh-parse-error-here <<'EOF'
 setvar x = $'\z'
+EOF
+}
+
+test_bug_1825_backslashes() {
+  set +o errexit
+
+  # Single backslash is accepted in OSH
+  _should-parse-here <<'EOF'
+echo $'trailing\
+'
+EOF
+
+  # Double backslash is right in YSH
+  _ysh-should-parse-here <<'EOF'
+echo $'trailing\\
+'
+EOF
+
+  # Single backslash is wrong in YSH
+  _ysh-parse-error-here <<'EOF'
+echo $'trailing\
+'
+EOF
+
+  # Also in expression mode
+  _ysh-parse-error-here <<'EOF'
+setvar x = $'trailing\
+'
 EOF
 
 }
@@ -897,22 +937,13 @@ cases-in-strings() {
   regex_literals
   proc_sig
   proc_arg_list
-  ysh_var
-  ysh_expr_more
-  ysh_hay_assign
   ysh_string_literals
+  test_bug_1825_backslashes
+
   parse_backticks
   parse_dollar
   parse_backslash
   parse_dparen
-  ysh_to_make_nicer
-  ysh_nested_proc
-  ysh_var_decl
-  ysh_place_mutation
-  ysh_case
-  ysh_for
-  ysh_for_parse_bare_word
-  oils_issue_1118
 
   shell_for
   parse_at
