@@ -685,7 +685,7 @@ test-ysh_dq_strings() {
 
   # Double quoted is an error
   _osh-should-parse 'echo "\z"'
-  _assert-status-2 +O test-parse_backslash -n -c 'echo test-parse_backslash "\z"'
+  _assert-status-2 +O parse_backslash -n -c 'echo test-parse_backslash "\z"'
 
   _ysh-parse-error 'echo "\z"'  # not in Oil
   _ysh-parse-error 'const bad = "\z"'  # not in expression mode
@@ -863,10 +863,12 @@ cases-in-files() {
     case-banner $t
 
     $OSH $t
-
     local status=$?
-    if test $status != 2; then
-      die "Expected status 2, got $status"
+
+    if test -z "${SH_ASSERT_DISABLE:-}"; then
+      if test $status != 2; then
+        die "Expected status 2, got $status"
+      fi
     fi
   done
 }
@@ -905,9 +907,16 @@ all() {
   cases-in-strings
 }
 
+# TODO: Something like test/parse-err-compare.sh
+
 all-with-bash() {
-  # Fails quickly
-  OSH=bash all
+  # override OSH and YSH
+  SH_ASSERT_DISABLE=1 OSH=bash YSH=bash all
+}
+
+all-with-dash() {
+  # override OSH and YSH
+  SH_ASSERT_DISABLE=1 OSH=dash YSH=dash all
 }
 
 soil-run-py() {

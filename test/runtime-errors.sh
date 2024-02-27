@@ -60,7 +60,7 @@ _run-test-func() {
     fi
   fi
 
-  echo "    STATUS: $?"
+  echo "----- STATUS: $?"
   echo
 }
 
@@ -1137,7 +1137,11 @@ all-tests() {
     _run-test-func $t ''  # don't assert status
   done
 
-  # Tests that have _osh-error-1 assertions may be here
+  # Can't be done inside a loop!
+  _run-test-func control_flow  ''
+
+  # Test with inner assertions like _osh-error-1 are here.
+  # _run-test-func is the "outer" assertion.
   for t in \
     strict_errexit_1 \
     strict_errexit_conditionals \
@@ -1145,14 +1149,9 @@ all-tests() {
     unset_expr \
     divzero; do
 
-    # expect status 0
-    _run-test-func $t 0
+    _run-test-func $t 0  # status 0
   done
 
-  # Can't be done inside a loop!
-  _run-test-func control_flow 
-
-  # Test without inner assertions may be here.  _run-test-func is an "outer" assertion.
   _run-test-func failed_command 1     # status 1
   _run-test-func unsafe_arith_eval 1
   _run-test-func no_such_command 127  # status 127
