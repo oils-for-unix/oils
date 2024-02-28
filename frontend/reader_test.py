@@ -47,7 +47,7 @@ class ReaderTest(unittest.TestCase):
         line2 = SourceLine(2, 'two', None)
 
         lines = [(line1, 0), (line2, 0)]
-        r3 = reader.VirtualLineReader(lines, a3)
+        r3 = reader.VirtualLineReader(a3, lines, False)
 
         for a in [a1, a2, a3]:
             a.PushSource(source.MainFile('reader_test.py'))

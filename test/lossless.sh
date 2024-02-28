@@ -38,7 +38,7 @@ test-here-doc() {
 
   # This is a known exception to the arena invariant.  The leading tabs aren't
   # preserved, because we don't need them for ysh-ify translation.
-  # _compare test/arena/here-dq-indented.sh
+  _compare test/arena/here-dq-indented.sh
 }
 
 test-tilde() {
@@ -72,7 +72,7 @@ DISABLED-test-wild() {
   cat $MANIFEST | xargs -n 2 -- $0 _compare-wild
 }
 
-test-big() {
+test-big-sh-files() {
   local num_files=0
   local num_passed=0
 
@@ -98,12 +98,8 @@ test-big() {
     num_files=$((num_files+1))
   done
 
-  # How do we handle this in tools/ysh_ify.py ?
-
-  # 8 of 10 passed!
   echo
   echo "$num_passed of $num_files files respect the arena invariant"
-  echo 'TODO: here docs broken!'
 }
 
 test-do-lossless-flag() {
@@ -132,7 +128,7 @@ cat <<-'HERE'
 	HERE
 EOF
 
-  # TODO: There will be a difference here
+  # TODO: May need to show difference with --tool tokens
   $OSH -n $here
   $OSH --do-lossless -n $here
 }

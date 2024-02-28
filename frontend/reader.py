@@ -9,10 +9,10 @@ reader.py - Read lines of input.
 """
 from __future__ import print_function
 
+from _devbuild.gen.id_kind_asdl import Id
+from core.error import p_die
 from mycpp import mylib
 from mycpp.mylib import log
-
-from core.error import p_die
 
 from typing import Optional, Tuple, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -121,19 +121,17 @@ def StringLineReader(s, arena):
 
 
 class VirtualLineReader(_Reader):
-    """Read from lines we already read from the OS.
+    """Allows re-reading from lines we already read from the OS.
 
-    Used for here docs and aliases.
+    Used by here docs.
     """
 
-    def __init__(self, lines, arena):
-        # type: (List[Tuple[SourceLine, int]], Arena) -> None
-        """
-        Args:
-          lines: List of (line_id, line) pairs
-        """
+    def __init__(self, arena, lines, do_lossless):
+        # type: (Arena, List[Tuple[SourceLine, int]], bool) -> None
         _Reader.__init__(self, arena)
         self.lines = lines
+        self.do_lossless = do_lossless
+
         self.num_lines = len(lines)
         self.pos = 0
 
@@ -146,6 +144,12 @@ class VirtualLineReader(_Reader):
         src_line, start_offset = self.lines[self.pos]
 
         self.pos += 1
+
+        # Maintain lossless invariant for STRIPPED tabs: add a Token to the
+        # arena invariant, but don't refer to it.
+        #if self.do_lossless:  # avoid garbage, doesn't affect correctness
+        self.arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line,
+                            src_line.content[:start_offset])
 
         # NOTE: we return a partial line, but we also want the lexer to create
         # tokens with the correct line_spans.  So we have to tell it 'start_offset'

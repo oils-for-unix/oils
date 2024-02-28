@@ -139,6 +139,7 @@ def _ReadHereLines(
 def _MakeLiteralHereLines(
         here_lines,  # type: List[Tuple[SourceLine, int]]
         arena,  # type: Arena
+        do_lossless,  # type: bool
 ):
     # type: (...) -> List[word_part_t]
     """Create a Token for each line.
@@ -151,9 +152,11 @@ def _MakeLiteralHereLines(
     tokens = []  # type: List[word_part_t]
     for src_line, start_offset in here_lines:
 
-        # TODO: If do_lossless or lossless_invariant, then add a FAKE token
-        # here.
-        # Could be Id.Ignored_Space or Id.Ignored_HereSpace
+        # Maintain lossless invariant for STRIPPED tabs: add a Token to the
+        # arena invariant, but don't refer to it.
+        #if do_lossless:  # avoid garbage, doesn't affect correctness
+        arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line,
+                       src_line.content[:start_offset])
 
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line, src_line.content[start_offset:])
@@ -177,18 +180,26 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
 
     if delim_quoted:
         # <<'EOF' and <<-'EOF' - Literal for each line.
-        h.stdin_parts = _MakeLiteralHereLines(here_lines, arena)
+        h.stdin_parts = _MakeLiteralHereLines(here_lines, arena,
+                                              parse_ctx.do_lossless)
     else:
         # <<EOF and <<-EOF - Parse as word
-        line_reader = reader.VirtualLineReader(here_lines, arena)
+        line_reader = reader.VirtualLineReader(arena, here_lines,
+                                               parse_ctx.do_lossless)
         w_parser = parse_ctx.MakeWordParserForHereDoc(line_reader)
         w_parser.ReadHereDocBody(h.stdin_parts)  # fills this in
 
-    end_line, end_pos = last_line
+    end_line, start_offset = last_line
+
+    # Maintain lossless invariant for STRIPPED tabs: add a Token to the
+    # arena invariant, but don't refer to it.
+    #if parse_ctx.do_lossless:  # avoid garbage, doesn't affect correctness
+    arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, end_line,
+                   end_line.content[:start_offset])
 
     # Create a Token with the end terminator.  Maintains the invariant that the
     # tokens "add up".
-    h.here_end_tok = arena.NewToken(Id.Undefined_Tok, end_pos,
+    h.here_end_tok = arena.NewToken(Id.Undefined_Tok, start_offset,
                                     len(end_line.content), end_line, '')
 
 
