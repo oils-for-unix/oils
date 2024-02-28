@@ -270,13 +270,13 @@ print-names() {
 }
 
 make-sed() {
-  awk '{ print "s/" $0 "/test-" $0 "/g;" }'
+  awk '{ print "s/" $0 "/unquoted-" $0 "/g;" }'
 }
 
-parse-errors() {
-  cat _tmp/p | print-names | make-sed | tee _tmp/sedp
+test-files() {
+  cat _tmp/r | print-names | make-sed | tee _tmp/sedr
 
-  sed -i -f _tmp/sedp test/parse-errors.sh
+  sed -i -f _tmp/sedr test/runtime-errors.sh
 }
 
 run-task "$@"

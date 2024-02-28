@@ -806,14 +806,6 @@ cases-in-files() {
   done
 }
 
-section-banner() {
-  echo
-  echo '///'
-  echo "/// $1"
-  echo '///'
-  echo
-}
-
 all() {
   section-banner 'Cases in Files'
 

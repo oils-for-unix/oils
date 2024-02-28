@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
 #
 # A file that tickles many runtime errors, to see the error message.
+# Sometimes spec tests are better - 'test/spec.sh smoke -v -d' can also show
+# errors clearly.
 #
 # Usage:
 #   test/runtime-errors.sh <function name>
 #
-# Note that 'test/spec.sh foo -v -d' can also show errors clearly.
-#
-# It's a mix of styles:
-# - Sometimes we assert errors with _osh-error-1 etc., passing a shell string.
-# - Sometimes we just write a function without a wrapper.
-#
-# It would be nice to clean this up.
+# TODO: Migrate the unquoted-* functions below to test-* functions, which means
+# adding assertions.
 
 source test/common.sh
 source test/sh-assert.sh  # banner, _assert-sh-status
@@ -19,9 +16,6 @@ source test/sh-assert.sh  # banner, _assert-sh-status
 # Note: should run in bash/dash mode, where we don't check errors
 OSH=${OSH:-bin/osh}
 YSH=${YSH:-bin/ysh}
-
-
-# TODO: get rid of _run-test-func
 
 _run-test-func() {
   ### Run a function, and optionally assert status
@@ -97,7 +91,7 @@ test-no_such_command_commandsub() {
   _osh-error-X 127 'set -o errexit; shopt -s command_sub_errexit; echo $(ZZZZZ); echo UNREACHABLE'
 }
 
-no_such_command_heredoc() {
+unquoted-no_such_command_heredoc() {
   set -o errexit
 
   # Note: bash gives the line of the beginning of the here doc!  Not the actual
@@ -415,7 +409,7 @@ test-strict_errexit_old() {
   _strict-errexit-case '! echo $(echo hi); echo "should not get here"'
 }
 
-pipefail() {
+unquoted-pipefail() {
   false | wc -l
 
   set -o errexit
@@ -425,7 +419,7 @@ pipefail() {
   echo 'SHOULD NOT GET HERE'
 }
 
-pipefail_no_words() {
+unquoted-pipefail_no_words() {
   set -o errexit
   set -o pipefail
 
@@ -435,7 +429,7 @@ pipefail_no_words() {
   echo done
 }
 
-pipefail_func() {
+unquoted-pipefail_func() {
   set -o errexit -o pipefail
   f42() {
     cat
@@ -452,7 +446,7 @@ pipefail_func() {
 
 # TODO: point to {.  It's the same sas a subshell so you don't know exactly
 # which command failed.
-pipefail_group() {
+unquoted-pipefail_group() {
   set -o errexit -o pipefail
   echo hi | { cat; sh -c 'exit 42'; } | wc
 
@@ -460,7 +454,7 @@ pipefail_group() {
 }
 
 # TODO: point to (
-pipefail_subshell() {
+unquoted-pipefail_subshell() {
   set -o errexit -o pipefail
   echo hi | (cat; sh -c 'exit 42') | wc
 
@@ -468,7 +462,7 @@ pipefail_subshell() {
 }
 
 # TODO: point to 'while'
-pipefail_while() {
+unquoted-pipefail_while() {
   set -o errexit -o pipefail
   seq 3 | while true; do
     read line
@@ -485,7 +479,7 @@ pipefail_while() {
 # TODO: These errors get interleaved and messed up.  Maybe we should always
 # print a single line from pipeline processes?  We should set their
 # ErrorFormatter?
-pipefail_multiple() {
+unquoted-pipefail_multiple() {
   set -o errexit -o pipefail
   { echo 'four'; sh -c 'exit 4'; } |
   { echo 'five'; sh -c 'exit 5'; } |
@@ -509,21 +503,24 @@ echo UNREACHABLE
 }
 
 # Errors from core/process.py
-core_process() {
+test-core_process() {
+  _osh-error-1 '
   echo foo > not/a/file
   echo foo > /etc/no-perms-for-this
+  '
 
   # DISABLED!  This messes up the toil log file!
   # echo hi 1>&3
 }
 
 # Errors from osh/state.py
-osh_state() {
+test-osh_state() {
   # $HOME is exported so it can't be an array
-  HOME=(a b)
+
+  _osh-error-1 'HOME=(a b)'
 }
 
-ambiguous_redirect() {
+unquoted-ambiguous_redirect() {
   echo foo > "$@"
   echo 'ambiguous redirect not fatal unless errexit'
 
@@ -533,7 +530,7 @@ ambiguous_redirect() {
 }
 
 # bash semantics.
-ambiguous_redirect_context() {
+unquoted-ambiguous_redirect_context() {
   # Problem: A WORD cannot fail.  Only a COMMAND can fail.
 
   # http://stackoverflow.com/questions/29532904/bash-subshell-errexit-semantics
@@ -565,11 +562,11 @@ ambiguous_redirect_context() {
   echo 'SHOULD NOT REACH HERE'
 }
 
-bad_file_descriptor() {
+unquoted-bad_file_descriptor() {
   : 1>&7
 }
 
-command_sub_errexit() {
+unquoted-command_sub_errexit() {
   #set -o errexit
   shopt -s command_sub_errexit || true
   shopt -s inherit_errexit || true
@@ -578,7 +575,7 @@ command_sub_errexit() {
   echo 'SHOULD NOT GET HERE'
 }
 
-process_sub_fail() {
+unquoted-process_sub_fail() {
   shopt -s process_sub_fail || true
   shopt -s inherit_errexit || true
   set -o errexit
@@ -594,7 +591,7 @@ myproc() {
   echo ---
 }
 
-bool_status() {
+unquoted-bool_status() {
   set -o errexit
 
   if try --allow-status-01 -- myproc; then
@@ -604,7 +601,7 @@ bool_status() {
   fi
 }
 
-bool_status_simple() {
+unquoted-bool_status_simple() {
   set -o errexit
 
   if try --allow-status-01 -- grep pat BAD; then
@@ -618,14 +615,14 @@ bool_status_simple() {
 # WORD ERRORS
 #
 
-nounset() {
+unquoted-nounset() {
   set -o nounset
   echo $x
 
   echo 'SHOULD NOT GET HERE'
 }
 
-bad_var_ref() {
+unquoted-bad_var_ref() {
   name='bad var name'
   echo ${!name}
 }
@@ -634,7 +631,7 @@ bad_var_ref() {
 # ARITHMETIC ERRORS
 #
 
-nounset_arith() {
+unquoted-nounset_arith() {
   set -o nounset
   echo $(( x ))
 
@@ -670,7 +667,7 @@ test-unset_expr() {
 }
 
 # Only dash flags this as an error.
-string_to_int_arith() {
+unquoted-string_to_int_arith() {
   local x='ZZZ'
   echo $(( x + 5 ))
 
@@ -682,34 +679,34 @@ string_to_int_arith() {
 }
 
 # Hm bash treats this as a fatal error
-string_to_hex() {
+unquoted-string_to_hex() {
   echo $(( 0xGG + 1 ))
 
   echo 'SHOULD NOT GET HERE'
 }
 
 # Hm bash treats this as a fatal error
-string_to_octal() {
+unquoted-string_to_octal() {
   echo $(( 018 + 1 ))
 
   echo 'SHOULD NOT GET HERE'
 }
 
 # Hm bash treats this as a fatal error
-string_to_intbase() {
+unquoted-string_to_intbase() {
   echo $(( 16#GG ))
 
   echo 'SHOULD NOT GET HERE'
 }
 
-undef_arith() {
+unquoted-undef_arith() {
   (( undef++ ))  # doesn't make sense
 
   # Can't assign to characters of string?  Is that strong?
   (( undef[42]++ ))
 }
 
-undef_arith2() {
+unquoted-undef_arith2() {
   a=()
 
   # undefined cell: This is kind of what happens in awk / "wok"
@@ -718,13 +715,13 @@ undef_arith2() {
   spec/bin/argv.py "${a[@]}"
 }
 
-array_arith() {
+unquoted-array_arith() {
   a=(1 2)
   (( a++ ))  # doesn't make sense
   echo "${a[@]}"
 }
 
-undef_assoc_array() {
+unquoted-undef_assoc_array() {
   declare -A A
   A['foo']=bar
   echo "${A['foo']}"
@@ -743,7 +740,7 @@ undef_assoc_array() {
   fi
 }
 
-patsub_bad_glob() {
+unquoted-patsub_bad_glob() {
   local x='abc'
   # inspired by git-completion.bash
   echo ${x//[^]}
@@ -755,7 +752,7 @@ patsub_bad_glob() {
 #
 
 # Only osh cares about this.
-string_to_int_bool() {
+unquoted-string_to_int_bool() {
   [[ a -eq 0 ]]
 
   shopt -s strict_arith
@@ -764,26 +761,26 @@ string_to_int_bool() {
   echo 'SHOULD NOT GET HERE'
 }
 
-strict_array() {
+unquoted-strict_array() {
   set -- 1 2
   echo foo > _tmp/"$@"
   shopt -s strict_array
   echo foo > _tmp/"$@"
 }
 
-strict_array_2() {
+unquoted-strict_array_2() {
   local foo="$@"
   shopt -s strict_array
   local foo="$@"
 }
 
-strict_array_3() {
+unquoted-strict_array_3() {
   local foo=${1:- "[$@]" }
   shopt -s strict_array
   local foo=${1:- "[$@]" }
 }
 
-strict_array_4() {
+unquoted-strict_array_4() {
   local -a x
   x[42]=99
   echo "x[42] = ${x[42]}"
@@ -794,18 +791,18 @@ strict_array_4() {
   y[42]=99
 }
 
-array_assign_1() {
+unquoted-array_assign_1() {
   s=1
   s[0]=x  # can't assign value
 }
 
-array_assign_2() {
+unquoted-array_assign_2() {
   _osh-error-1 'readonly -a array=(1 2 3); array[0]=x'
 
   _osh-error-1 'readonly -a array=(1 2 3); export array'
 }
 
-readonly_assign() {
+unquoted-readonly_assign() {
   _osh-error-1 'readonly x=1; x=2'
 
   _osh-error-1 'readonly x=2; y=3 x=99'
@@ -814,19 +811,19 @@ readonly_assign() {
   _osh-error-1 'readonly x=2; export x=99'
 }
 
-multiple_assign() {
+unquoted-multiple_assign() {
   readonly x=1
   # It blames x, not a!
   a=1 b=2 x=42
 }
 
-multiple_assign_2() {
+unquoted-multiple_assign_2() {
   readonly y
   local x=1 y=$(( x ))
   echo $y
 }
 
-string_as_array() {
+unquoted-string_as_array() {
   local str='foo'
   echo $str
   echo "${str[@]}"
@@ -836,7 +833,7 @@ string_as_array() {
 # BUILTINS
 #
 
-builtin_bracket() {
+unquoted-builtin_bracket() {
   set +o errexit
 
   # xxx is not a valid file descriptor
@@ -849,19 +846,19 @@ builtin_bracket() {
   #[ $((a/0)) -eq 0 ]
 }
 
-builtin_builtin() {
+unquoted-builtin_builtin() {
   set +o errexit
   builtin ls
 }
 
-builtin_source() {
+unquoted-builtin_source() {
   source
 
   bad=/nonexistent/path
   source $bad
 }
 
-builtin_cd() {
+unquoted-builtin_cd() {
   ( unset HOME
     cd
   )
@@ -881,11 +878,11 @@ builtin_cd() {
   )
 }
 
-builtin_pushd() {
+unquoted-builtin_pushd() {
   pushd /nonexistent
 }
 
-builtin_popd() {
+unquoted-builtin_popd() {
   popd  # empty dir stack
 
   (
@@ -898,7 +895,7 @@ builtin_popd() {
   )
 }
 
-builtin_unset() {
+unquoted-builtin_unset() {
   local x=x
   readonly a
 
@@ -906,23 +903,23 @@ builtin_unset() {
   unset -v x a
 }
 
-builtin_alias_unalias() {
+unquoted-builtin_alias_unalias() {
   alias zzz
   unalias zzz
 }
 
-builtin_help() {
+unquoted-builtin_help() {
   help zzz
 }
 
-builtin_trap() {
+unquoted-builtin_trap() {
   trap 
   trap EXIT
 
   trap zzz yyy
 }
 
-builtin_getopts() {
+unquoted-builtin_getopts() {
   getopts
   getopts 'a:' 
 
@@ -965,11 +962,11 @@ builtin_printf() {
 }
 
 
-builtin_wait() {
+unquoted-builtin_wait() {
   wait 1234578
 }
 
-builtin_exec() {
+unquoted-builtin_exec() {
   exec nonexistent-command 1 2 3
   echo $?
 }
@@ -978,7 +975,7 @@ builtin_exec() {
 # Strict options (see spec/strict_options.sh)
 #
 
-strict_word_eval_warnings() {
+unquoted-strict_word_eval_warnings() {
   # Warnings when 'set +o strict_word_eval' is OFF
 
   echo slice start negative
@@ -1000,7 +997,7 @@ strict_word_eval_warnings() {
   echo ${#s}
 }
 
-strict_arith_warnings() {
+unquoted-strict_arith_warnings() {
   local x='xx'
   echo $(( x + 1 ))
 
@@ -1013,15 +1010,17 @@ strict_arith_warnings() {
   echo 'done'
 }
 
-control_flow_subshell() {
+test-control_flow_subshell() {
+  _osh-error-1 '
   set -o errexit
   for i in $(seq 2); do
     echo $i
-    ( break; echo 'oops')
+    ( break; echo oops)
   done
+  '
 }
 
-fallback_locations() {
+test-fallback_locations() {
   # Redirect
   _osh-error-1 'echo hi > /'
 
@@ -1057,7 +1056,6 @@ fallback_locations() {
 
   _osh-error-1 'shopt -s strict_arith; x=0xgg; echo $(( x ))'
 
-
   echo done
 }
 
@@ -1065,45 +1063,39 @@ fallback_locations() {
 # TEST DRIVER
 #
 
-all-tests() {
-  run-test-funcs
+list-unquoted-funcs() {
+  ### These tests need assertions, with quoting
 
-  set -o
-  # When did it get turned on???
-  set +o errexit
+  compgen -A function | egrep '^unquoted-' 
+}
 
-  # No assertions.  Just showing the error.
-  for t in \
-    no_such_command_heredoc \
-    errexit_usage_error errexit_subshell errexit_pipeline errexit_dbracket errexit_alias \
-    errexit_one_process errexit_multiple_processes \
-    command_sub_errexit process_sub_fail \
-    pipefail pipefail_group pipefail_subshell pipefail_no_words pipefail_func \
-    pipefail_while pipefail_multiple \
-    core_process osh_state \
-    ambiguous_redirect ambiguous_redirect_context \
-    bad_file_descriptor \
-    nounset bad_var_ref \
-    nounset_arith \
-    array_arith undef_arith undef_arith2 \
-    undef_assoc_array \
-    string_to_int_arith string_to_hex string_to_octal \
-    string_to_intbase string_to_int_bool string_as_array \
-    array_assign_1 array_assign_2 readonly_assign \
-    multiple_assign multiple_assign_2 patsub_bad_glob \
-    builtin_bracket builtin_builtin builtin_source builtin_cd builtin_pushd \
-    builtin_popd builtin_unset builtin_alias_unalias builtin_help \
-    builtin_trap builtin_getopts builtin_wait \
-    builtin_exec \
-    strict_word_eval_warnings strict_arith_warnings \
-    control_flow_subshell \
-    bool_status bool_status_simple \
-    fallback_locations; do
-
-    _run-test-func $t ''  # don't assert status
+run-unquoted-funcs() {
+  local i=0
+  list-unquoted-funcs | ( while read -r test_func; do
+    _run-test-func $test_func ''  # don't assert status
+    i=$((i + 1))
   done
 
-  return 0
+  # Hacky subshell for $i
+  echo
+  echo "$0: $i unquoted functions run.  TODO: migrate to test-* to assert status"
+  )
+}
+
+all-tests() {
+
+  section-banner 'Runtime errors - Unquoted test functions'
+  # Legacy functions that don't check status
+  run-unquoted-funcs
+
+  section-banner 'Runtime errors - test functions'
+
+  # Run with strict mode
+  set -o nounset
+  set -o pipefail
+  set -o errexit
+
+  run-test-funcs
 }
 
 # TODO: could show these as separate text files in the CI

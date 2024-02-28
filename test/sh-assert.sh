@@ -1,5 +1,13 @@
 # test/sh-assert.sh
 
+section-banner() {
+  echo
+  echo '///'
+  echo "/// $1"
+  echo '///'
+  echo
+}
+
 case-banner() {
   echo
   echo ===== CASE: "$@" =====
