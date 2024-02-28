@@ -882,6 +882,19 @@ if (_status !== 0) {
 '
 }
 
+test-trim-utf8-error() {
+  _ysh-error-here-X 3 << 'EOF'
+  var badUtf = b'\yF9'
+
+  # error is missed
+  call " a$[badUtf]b " => trim()
+  echo status=$_status
+
+  # error is found
+  call "$[badUtf]b " => trim()
+EOF
+}
+
 soil-run-py() {
   run-test-funcs
 }
