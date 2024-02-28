@@ -56,32 +56,52 @@ This is sort of like the `ungetc()` I've seen in other shell lexers.
 
 ## Parsing Issues
 
-This section is about extra passes ("irregularities") at **parse time**.  In
+This section is about extra passes / "irregularities" at **parse time**.  In
 the "Runtime Issues" section below, we discuss cases that involve parsing after
 variable expansion, etc.
 
-### Where We Parse More Than Once (statically, and unfortunately)
+### Re-Parsing - Reading Text More Than Once
 
-This makes it harder to produce good error messages with source location info.
-It also implications for translation, because we break the "arena invariant".
+We try to avoid re-parsing, but it happens in 4 places.
 
-(1) **Array L-values** like `a[x+1]=foo`.  bash allows splitting arithmetic
-expressions across word boundaries: `a[x + 1]=foo`.  But I don't see this used,
-and it would significantly complicate the OSH parser.
+It complicates error messages with source location info.  It also implications
+for `--tool ysh-ify` and `--tool fmt`, because it affects the **"lossless invariant"**.
 
-(in `_MakeAssignPair` in `osh/cmd_parse.py`)
+This command is perhaps a quicker explanation than the text below:
 
-(2) **Backticks**.  There is an extra level of backslash quoting that may
-happen compared with `$()`.
+    $ grep do_lossless */*.py
+    ...
+    osh/cmd.py: ...
+    osh/word_parse.py: ...
 
-(in `_ReadCommandSubPart` in `osh/word_parse.py`)
+Where re-parse:
 
-### Where We Read More Than Once (`VirtualLineReader`)
+1. [Here documents]($xref:here-doc):  We first read lines, and then parse them.
+   - `VirtualLineReader` in [osh/cmd_parse.py]($oils-src)
+   - This is re-parsing from **lines**
 
-- [Here documents]($xref:here-doc):  We first read lines, and then parse them.
-- [alias]($help) expansion
+2. **Array L-values** like `a[x+1]=foo`.  bash allows splitting arithmetic
+   expressions across word boundaries: `a[x + 1]=foo`.  But I don't see this
+   used, and it would significantly complicate the OSH parser.
+   - `_MakeAssignPair` in [osh/cmd_parse.py]($oils-src) has `do_lossless` condition
+   - This is re-parsing from **tokens**
 
-### Extra Passes Over the LST
+3. **Backticks**.  There is an extra level of backslash quoting that may happen
+   compared with `$()`.
+   - `_ReadCommandSubPart` in [osh/word_parse.py]($oils-src) has `do_lossless`
+     condition
+   - This is re-parsing from **tokens**
+
+4. [alias]($help) expansion
+    - `SnipCodeString` in [osh/cmd_parse.py]($oils-src)
+   - This is re-parsing from **tokens**, but it only happens **after running**
+     something like `alias ls=foo`.  So it doesn't affect the lossless
+     invariant that `--tool ysh-ify` and `--tool fmt` use.
+
+### Revisiting Tokens, Not Text
+
+This is less problematic, since it doesn't affect error messages
+(`ctx_SourceCode`) or the lossless invariant.
 
 These are handled up front, but not in a single pass.
 
@@ -96,7 +116,9 @@ These are handled up front, but not in a single pass.
 - `myfunc() { echo hi; }` vs.  `myfunc=()  # an array`
 - `shopt -s parse_equals`: For `x = 1 + 2*3`
 
-### Where the Arena Invariant is Broken
+### Where the Lossless Invariant is Broken
+
+TODO: Remove this.
 
 - Here docs with `<<-`.  The leading tab is lost, because we don't need it for
   translation.

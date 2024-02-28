@@ -27,7 +27,7 @@ class ExprParseTest(unittest.TestCase):
 
         self.parse_ctx = test_lib.InitParseContext(arena=self.arena,
                                                    ysh_grammar=ysh_grammar,
-                                                   one_pass_parse=True)
+                                                   do_lossless=True)
 
     def _ParseOsh(self, code_str):
         """Parse a line of OSH, which can include Oil assignments."""

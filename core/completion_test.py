@@ -62,7 +62,7 @@ def _MakeRootCompleter(parse_ctx=None, comp_lookup=None):
 
     if not parse_ctx:
         parse_ctx = test_lib.InitParseContext(parse_opts=parse_opts,
-                                              one_pass_parse=True)
+                                              do_lossless=True)
         parse_ctx.Init_Trail(parse_lib.Trail())
 
     if 1:  # enable for details

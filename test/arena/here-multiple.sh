@@ -10,3 +10,14 @@ x=1
 OSH
 x = 1
 OIL
+
+osh0-oil3 << 'OSH' 2>&1 lossless-invariant 3<< 'OIL' "lossless"
+1
+2
+3
+OSH
+x
+y
+  zz
+OIL
+

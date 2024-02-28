@@ -144,7 +144,7 @@ lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
 oil-types           devtools/types.sh soil-run                   -
 unit                test/unit.sh soil-run                        -
-arena               test/arena.sh soil-run                       -
+lossless            test/lossless.sh soil-run                    -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh soil-run-py           -
 ysh-parse-errors    test/ysh-parse-errors.sh soil-run-py         -

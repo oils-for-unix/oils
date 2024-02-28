@@ -129,9 +129,9 @@ class VirtualLineReader(_Reader):
     def __init__(self, lines, arena):
         # type: (List[Tuple[SourceLine, int]], Arena) -> None
         """
-    Args:
-      lines: List of (line_id, line) pairs
-    """
+        Args:
+          lines: List of (line_id, line) pairs
+        """
         _Reader.__init__(self, arena)
         self.lines = lines
         self.num_lines = len(lines)

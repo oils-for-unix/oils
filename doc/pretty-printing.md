@@ -323,7 +323,9 @@ all.)
 
 - Show NIL8 commit with "infix rule"
 
-## Related Cool Stuff / Fun Computer Science Problems
+## Related 
+
+### Cool Stuff / Fun Computer Science Problems
 
 Zulip: "Fun Computer Science Problems"
 
@@ -360,4 +362,11 @@ Design / Research:
 
 - "Coarse Parsing" to build coarse YSH tree DIRECTLY
   - though if we have a shell parser, we might as well use it
+
+
+### Docs
+
+- [Parser( Architecture](parser-architecture.html) - describes issues like the
+  "lossless invariant", which is affected by "re-parsing".
+
 

@@ -1,14 +1,6 @@
 """
-alloc.py - FAILED attempt at memory management.
+alloc.py - strategies for managing SourceLine and Token
 
-TODO: Just use a straightforward graph and rely on the garbage collector.
-There's NO ARENA.
-
-The idea is to save the LST for functions, but discard it for commands that
-have already executed.  Each statement/function can be parsed into a separate
-Arena, and the entire Arena can be discarded at once.
-
-Also, we don't want to save comment lines.
 """
 
 from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine
@@ -93,12 +85,7 @@ class ctx_SourceCode(object):
 
 
 class Arena(object):
-    """A collection line spans and associated debug info.
-
-    Use Cases:
-    1. Error reporting
-    2. osh-to-oil Translation
-    """
+    """Manages source_t, SourceLine, Token."""
 
     def __init__(self, save_tokens=False):
         # type: (bool) -> None
@@ -277,3 +264,35 @@ class Arena(object):
         # type: () -> int
         """Return one past the last span ID."""
         return len(self.tokens)
+
+
+class LosslessArena(Arena):
+    """
+    TODO:
+
+    Has lossless invariant, for
+    --tool fmt
+    --tool ysh-ify
+
+    Retains all SourceLine and Token
+
+    Somehow disallow re-parsing?  Is that equivalent to ctx_SourceCode()?
+    """
+    pass
+
+
+class DynamicArena(Arena):
+    """
+    For batch and interactive shell
+
+    TODO:
+    - Test that SourceLine and Token are GC'd
+
+    However, it should support:
+    - SnipCodeString() for aliases
+    - SnipCodeBlock() for Hay
+
+    Neither of those are necessary in the LosslessArena?  We might have
+    different utilities there.
+    """
+    pass

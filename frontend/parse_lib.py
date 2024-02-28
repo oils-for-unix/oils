@@ -196,13 +196,13 @@ class ParseContext(object):
                  parse_opts,
                  aliases,
                  ysh_grammar,
-                 one_pass_parse=False):
+                 do_lossless=False):
         # type: (Arena, optview.Parse, Dict[str, str], Grammar, bool) -> None
         self.arena = arena
         self.parse_opts = parse_opts
         self.aliases = aliases
         self.ysh_grammar = ysh_grammar
-        self.one_pass_parse = one_pass_parse
+        self.do_lossless = do_lossless
 
         # NOTE: The transformer is really a pure function.
         if ysh_grammar:

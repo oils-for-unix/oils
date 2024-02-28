@@ -141,11 +141,20 @@ def _MakeLiteralHereLines(
         arena,  # type: Arena
 ):
     # type: (...) -> List[word_part_t]
-    """Create a line_span and a token for each line."""
+    """Create a Token for each line.
 
+    For <<'EOF' and <<-'EOF' - single quoted rule
+
+    <<- has non-zero start_offset
+    """
     # less precise type, because List[T] is an invariant type
     tokens = []  # type: List[word_part_t]
     for src_line, start_offset in here_lines:
+
+        # TODO: If do_lossless or lossless_invariant, then add a FAKE token
+        # here.
+        # Could be Id.Ignored_Space or Id.Ignored_HereSpace
+
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line, src_line.content[start_offset:])
         tokens.append(t)
@@ -166,10 +175,11 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
 
     here_lines, last_line = _ReadHereLines(line_reader, r, delimiter)
 
-    if delim_quoted:  # << 'EOF'
-        # Literal for each line.
+    if delim_quoted:
+        # <<'EOF' and <<-'EOF' - Literal for each line.
         h.stdin_parts = _MakeLiteralHereLines(here_lines, arena)
     else:
+        # <<EOF and <<-EOF - Parse as word
         line_reader = reader.VirtualLineReader(here_lines, arena)
         w_parser = parse_ctx.MakeWordParserForHereDoc(line_reader)
         w_parser.ReadHereDocBody(h.stdin_parts)  # fills this in
@@ -201,7 +211,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
         lhs = sh_lhs.Name(left_token, var_name)
 
-    elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
+    elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.do_lossless:
         var_name = lexer.TokenSliceRight(left_token, -1)
         if lexer.IsPlusEquals(close_token):
             op = assign_op_e.PlusEqual

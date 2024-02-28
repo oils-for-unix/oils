@@ -1059,7 +1059,7 @@ class WordParser(WordEmitter):
 
             right_token = c_parser.w_parser.cur_token
 
-        elif left_id == Id.Left_Backtick and self.parse_ctx.one_pass_parse:
+        elif left_id == Id.Left_Backtick and self.parse_ctx.do_lossless:
             # NOTE: This is an APPROXIMATE solution for translation ONLY.  See
             # test/osh2oil.
 

@@ -235,11 +235,9 @@ MAIN_SPEC.LongFlag('--completion-display', ['minimal', 'nice'], default='nice')
 
 MAIN_SPEC.LongFlag('--completion-demo')
 
-# $SH -n won't reparse a[x+1] and ``.  Note that $SH --tool automatically turns
-# it on.
-# TODO: Do we only need this for the "arena invariant"?  e.g. test/arena.sh I
-# think we can REMOVE it if we get rid of the arena.
-MAIN_SPEC.LongFlag('--one-pass-parse')
+# Debugging feature only.  $SH -n won't reparse a[x+1] and ``.  Note that $SH
+# --tool automatically turns it on.
+MAIN_SPEC.LongFlag('--do-lossless')
 
 MAIN_SPEC.LongFlag('--print-status')  # TODO: Replace with a shell hook
 MAIN_SPEC.LongFlag('--debug-file', args.String)

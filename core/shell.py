@@ -372,31 +372,31 @@ def Main(
 
     ysh_grammar = pyutil.LoadYshGrammar(loader)
 
-    if flag.one_pass_parse and not exec_opts.noexec():
+    if flag.do_lossless and not exec_opts.noexec():
         raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing)
 
     # Tools always use one pass parse
     # Note: osh --tool syntax-tree is like osh -n --one-pass-parse
-    one_pass_parse = True if len(flag.tool) else flag.one_pass_parse
+    do_lossless = True if len(flag.tool) else flag.do_lossless
 
     parse_ctx = parse_lib.ParseContext(arena,
                                        parse_opts,
                                        aliases,
                                        ysh_grammar,
-                                       one_pass_parse=one_pass_parse)
+                                       do_lossless=do_lossless)
 
     # Three ParseContext instances SHARE aliases.
     comp_arena = alloc.Arena()
     comp_arena.PushSource(source.Unused('completion'))
     trail1 = parse_lib.Trail()
-    # one_pass_parse needs to be turned on to complete inside backticks.  TODO:
+    # do_lossless needs to be turned on to complete inside backticks.  TODO:
     # fix the issue where ` gets erased because it's not part of
     # set_completer_delims().
     comp_ctx = parse_lib.ParseContext(comp_arena,
                                       parse_opts,
                                       aliases,
                                       ysh_grammar,
-                                      one_pass_parse=True)
+                                      do_lossless=True)
     comp_ctx.Init_Trail(trail1)
 
     hist_arena = alloc.Arena()

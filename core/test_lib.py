@@ -323,7 +323,7 @@ def InitParseContext(arena=None,
                      ysh_grammar=None,
                      aliases=None,
                      parse_opts=None,
-                     one_pass_parse=False):
+                     do_lossless=False):
     arena = arena or MakeArena('<test_lib>')
 
     if aliases is None:
@@ -337,7 +337,7 @@ def InitParseContext(arena=None,
                                        parse_opts,
                                        aliases,
                                        ysh_grammar,
-                                       one_pass_parse=one_pass_parse)
+                                       do_lossless=do_lossless)
 
     return parse_ctx
 

@@ -151,7 +151,7 @@ auto-machine2() {
 #           runtime-errors.txt
 #           tools-deps.txt
 #           osh-usage.txt
-#           arena.txt
+#           lossless.txt
 #         tarball/  # log of building and running the tarball?
 #       asan/       # spec tests or other?
 #                   # or it can be put under test/{spec,wild}
@@ -230,7 +230,7 @@ readonly -a MORE_TESTS=(
   ysh-runtime-errors
   ysh-parse-errors
   ysh-every-string
-  arena
+  lossless
   osh-usage tools-deps
   syscall
 )

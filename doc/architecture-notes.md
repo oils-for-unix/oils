@@ -108,8 +108,8 @@ Idea:
 
 - `ExecuteAndCatch` uses mem.CurrentLocation()
 - `Failglob` uses mem.CurrentLocation()
-- `mem.GetVar $LINENO` uses current_tok, but it can be buggy
-  - this is difference than BASH_LINENO, which is for the call stack!
+- `mem.GetVar $LINENO` uses `current_tok`, but it can be buggy
+  - this is difference than `BASH_LINENO`, which is for the call stack!
 
 Other:
 

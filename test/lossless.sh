@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 #
+# Test the lossless invariant, which is useful for --tool ysh-ify and --tool
+# fmt.
+#
 # Usage:
 #   test/arena.sh <function name>
 
@@ -12,10 +15,10 @@ source test/wild-runner.sh  # For MANIFEST, etc.
 
 _compare() {
   local path=$1
-  local osh=${2:-bin/osh}
+  local sh=${2:-bin/osh}
 
   mkdir -p _tmp/arena
-  $osh --tool arena $path > _tmp/arena/left.txt
+  $sh --tool arena $path > _tmp/arena/left.txt
   if diff -u $path _tmp/arena/left.txt; then
 	  echo "$path"
   else
@@ -26,15 +29,24 @@ _compare() {
 test-here-doc() {
   _compare test/arena/here-dq.sh
   _compare test/arena/here-sq.sh
+
+  # Hard test case!
   _compare test/arena/here-multiple.sh
 
   # This is a known exception to the arena invariant.  The leading tabs aren't
-  # preserved, because we don't need them for osh2oil translation.
-  #_compare test/arena/here-dq-indented.sh
+  # preserved, because we don't need them for ysh-ify translation.
+  _compare test/arena/here-dq-indented.sh
 }
 
 test-tilde() {
   _compare test/arena/tilde.sh
+}
+
+test-ysh() {
+  for file in ysh/testdata/*.ysh; do
+    echo "--- $file"
+    _compare $file bin/ysh
+  done
 }
 
 _compare-wild() {
@@ -82,6 +94,37 @@ test-big() {
   echo
   echo "$num_passed of $num_files files respect the arena invariant"
   echo 'TODO: here docs broken!'
+}
+
+test-do-lossless-flag() {
+
+  local sh_array='a[x+1]=1'
+
+  # This gives you arithmetic parsing
+  bin/osh -n -c "$sh_array"
+  # This gives you a sh_lhs.UnparsedIndex token!
+  bin/osh --do-lossless -n -c "$sh_array"
+
+  local backticks='`echo \`hostname\` zzz`'
+
+  # This gives you NESTED Id.Left_Backtick and Id.Backtick_Right
+  bin/osh -n -c "$backticks"
+
+  # This gives (an erroneous?) Lit_EscapedChar
+  bin/osh --do-lossless -n -c "$backticks"
+
+	local here=_tmp/lossless-here.sh 
+  cat >$here <<EOF
+cat <<-'HERE'
+	one     # tabs stripped
+		two   # 2 tabs
+	three
+	HERE
+EOF
+
+  # TODO: There will be a difference here
+  bin/osh -n $here
+  bin/osh --do-lossless -n $here
 }
 
 run-for-release() {
