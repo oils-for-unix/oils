@@ -13,12 +13,15 @@ set -o errexit
 source test/common.sh  # for run-other-suite-for-release
 source test/wild-runner.sh  # For MANIFEST, etc.
 
+OSH=${OSH:-bin/osh}
+YSH=${YSH:-bin/ysh}
+
 _compare() {
   local path=$1
   local sh=${2:-bin/osh}
 
   mkdir -p _tmp/arena
-  $sh --tool arena $path > _tmp/arena/left.txt
+  $sh --tool lossless-cat $path > _tmp/arena/left.txt
   if diff -u $path _tmp/arena/left.txt; then
 	  echo "$path"
   else
@@ -35,7 +38,7 @@ test-here-doc() {
 
   # This is a known exception to the arena invariant.  The leading tabs aren't
   # preserved, because we don't need them for ysh-ify translation.
-  _compare test/arena/here-dq-indented.sh
+  # _compare test/arena/here-dq-indented.sh
 }
 
 test-tilde() {
@@ -45,8 +48,15 @@ test-tilde() {
 test-ysh() {
   for file in ysh/testdata/*.ysh; do
     echo "--- $file"
-    _compare $file bin/ysh
+    _compare $file $YSH
   done
+}
+
+test-ysh-strings() {
+  # TODO: extract test cases from test/ysh-every-string.sh
+	# This includes multi-line strings
+
+  echo 
 }
 
 _compare-wild() {
@@ -101,17 +111,17 @@ test-do-lossless-flag() {
   local sh_array='a[x+1]=1'
 
   # This gives you arithmetic parsing
-  bin/osh -n -c "$sh_array"
+  $OSH -n -c "$sh_array"
   # This gives you a sh_lhs.UnparsedIndex token!
-  bin/osh --do-lossless -n -c "$sh_array"
+  $OSH --do-lossless -n -c "$sh_array"
 
   local backticks='`echo \`hostname\` zzz`'
 
   # This gives you NESTED Id.Left_Backtick and Id.Backtick_Right
-  bin/osh -n -c "$backticks"
+  $OSH -n -c "$backticks"
 
   # This gives (an erroneous?) Lit_EscapedChar
-  bin/osh --do-lossless -n -c "$backticks"
+  $OSH --do-lossless -n -c "$backticks"
 
 	local here=_tmp/lossless-here.sh 
   cat >$here <<EOF
@@ -123,8 +133,8 @@ cat <<-'HERE'
 EOF
 
   # TODO: There will be a difference here
-  bin/osh -n $here
-  bin/osh --do-lossless -n $here
+  $OSH -n $here
+  $OSH --do-lossless -n $here
 }
 
 run-for-release() {
@@ -133,6 +143,19 @@ run-for-release() {
 
 soil-run() {
   run-test-funcs
+}
+
+run-cpp() {
+  # Not automated now, but it speeds things up
+
+  local variant=opt  # also asan, ubsan
+
+  local osh=_bin/cxx-$variant/osh
+  local ysh=_bin/cxx-$variant/ysh
+
+  ninja $osh $ysh
+
+  OSH=$osh YSH=$ysh run-test-funcs
 }
 
 "$@"

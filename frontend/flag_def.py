@@ -215,7 +215,7 @@ MAIN_SPEC.LongFlag('--version')
 #   parse-glob - to debug parsing
 #   parse-printf
 MAIN_SPEC.LongFlag(
-    '--tool', ['tokens', 'arena', 'syntax-tree', 'ysh-ify', 'deps', 'cat-em'])
+    '--tool', ['tokens', 'lossless-cat', 'syntax-tree', 'ysh-ify', 'deps', 'cat-em'])
 
 MAIN_SPEC.ShortFlag('-i')  # interactive
 MAIN_SPEC.ShortFlag('-l')  # login - currently no-op

@@ -1081,8 +1081,8 @@ def Main(
         elif tool_name == 'tokens':
             ysh_ify.PrintTokens(arena)
 
-        elif tool_name == 'arena':  # for test/arena.sh
-            ysh_ify.PrintArena(arena)
+        elif tool_name == 'lossless-cat':  # for test/lossless.sh
+            ysh_ify.LosslessCat(arena)
 
         elif tool_name == 'ysh-ify':
             ysh_ify.Ysh_ify(arena, node)

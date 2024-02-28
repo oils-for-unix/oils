@@ -60,7 +60,7 @@ This section is about extra passes / "irregularities" at **parse time**.  In
 the "Runtime Issues" section below, we discuss cases that involve parsing after
 variable expansion, etc.
 
-### Re-Parsing - Reading Text More Than Once
+### Re-parsing - reading text more than once
 
 We try to avoid re-parsing, but it happens in 4 places.
 
@@ -86,13 +86,15 @@ Where re-parse:
    - `_MakeAssignPair` in [osh/cmd_parse.py]($oils-src) has `do_lossless` condition
    - This is re-parsing from **tokens**
 
-3. **Backticks**.  There is an extra level of backslash quoting that may happen
-   compared with `$()`.
+3. **Backticks**, the legacy form of `$(command sub)`.  There's an extra level
+   of backslash quoting that may happen compared with `$(command sub)`.
    - `_ReadCommandSubPart` in [osh/word_parse.py]($oils-src) has `do_lossless`
      condition
    - This is re-parsing from **tokens**
 
-4. [alias]($help) expansion
+### Re-parsing that doesn't affect the `ysh-ify` or `fmt` tools
+
+4. `alias` expansion
     - `SnipCodeString` in [osh/cmd_parse.py]($oils-src)
    - This is re-parsing from **tokens**, but it only happens **after running**
      something like `alias ls=foo`.  So it doesn't affect the lossless
@@ -100,16 +102,17 @@ Where re-parse:
 
 ### Revisiting Tokens, Not Text
 
-This is less problematic, since it doesn't affect error messages
-(`ctx_SourceCode`) or the lossless invariant.
-
-These are handled up front, but not in a single pass.
+These language constructs are handled statically, but not in a single pass of
+parsing:
 
 - Assignment vs. Env binding detection: `FOO=bar declare a[x]=1`.
   We make another pass with `_SplitSimpleCommandPrefix()`.
   - Related: `s=1` doesn't cause reparsing, but `a[x+1]=y` does.
 - Brace Detection in a few places: `echo {a,b}`
 - Tilde Detection: `echo ~bob`, `home=~bob`
+
+This is less problematic, since it doesn't affect error messages
+(`ctx_SourceCode`) or the lossless invariant.
 
 ### Lookahead in Recursive Descent Parsers
 

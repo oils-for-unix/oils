@@ -148,10 +148,11 @@ class Cursor(object):
         self.PrintUntilSpid(tok.span_id + 1)
 
 
-def PrintArena(arena):
+def LosslessCat(arena):
     # type: (alloc.Arena) -> None
     """
-    For testing the invariant that the spans "add up" to the original doc.
+    For testing the lossless invariant: the tokens "add up" to the original
+    doc.
     """
     cursor = Cursor(arena, mylib.Stdout())
     cursor.PrintUntilSpid(arena.LastSpanId())
