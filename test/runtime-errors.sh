@@ -18,28 +18,10 @@ source test/sh-assert.sh  # banner, _assert-sh-status
 
 # Note: should run in bash/dash mode, where we don't check errors
 OSH=${OSH:-bin/osh}
+YSH=${YSH:-bin/ysh}
 
-#
-# Assertions
-#
 
-_osh-error-1() {
-  ### Assert that a snippet fails with status 1
-
-  _osh-error-X 1 "$@"
-}
-
-_osh-error-2() {
-  ### Assert that a snippet fails with status 2
-
-  local message="Should FAIL under $OSH"
-  _osh-error-X 2 "$@"
-}
-
-#
-# Special
-#
-
+# TODO: get rid of _run-test-func
 
 _run-test-func() {
   ### Run a function, and optionally assert status
@@ -157,22 +139,16 @@ TODO-BUG-test-errexit_pipeline() {
   _osh-error-X 42 "$code"
 }
 
-errexit_dbracket() {
-  set -o errexit
-  [[ -n '' ]]
-  echo 'SHOULD NOT GET HERE'
+test-errexit_dbracket() {
+  _osh-error-1 'set -o errexit; [[ -n "" ]]; echo UNREACHABLE'
 }
 
 shopt -s expand_aliases
 # Why can't this be in the function?
 alias foo='echo hi; ls '
 
-errexit_alias() {
-  set -o errexit
-
-  type foo
-
-  foo /nonexistent
+test-errexit_alias() {
+  _osh-error-1 'set -o errexit; type foo; foo /nonexistent'
 }
 
 _sep() {
@@ -180,53 +156,44 @@ _sep() {
   echo '---------------------------'
 }
 
-errexit_one_process() {
+test-errexit_one_process() {
   # two quotations of same location: not found then errexit
-  bin/oil -c 'zz'
+  _ysh-error-X 127 'zz'
 
   _sep
 
   # two quotations, different location
-  bin/oil -c 'echo hi > ""'
+  _ysh-error-1 'echo hi > ""'
 
   _sep
 
-  bin/oil -c 'shopt -s failglob; echo *.ZZZZ'
+  _ysh-error-1 'shopt -s failglob; echo *.ZZZZ'
 
   _sep
 
-  # TODO: duplication quotation here
-  bin/oil -c 'cd /x'
+  _ysh-error-1 'cd /x'
 
   _sep
 
-  bin/osh -c './README.md; echo hi'
-
-  _sep
-
-  # TODO: duplication quotation here
-  bin/oil -c './README.md; echo hi'
+  # TODO: remove duplicate snippet
+  _ysh-error-X 126 './README.md; echo hi'
 
   # one location
-  bin/oil -c 'ls /x; echo $?'
+  _ysh-error-2 'ls /x; echo $?'
 
   _sep
 
-  bin/oil -c 'declare cmd=ls; $cmd /x; echo $?'
+  _ysh-error-2 'declare cmd=ls; $cmd /x; echo $?'
 
   _sep
 
   # one location
-  bin/oil -c 'echo $undef'
-
-  _sep
-
-  bin/oil -c 'try --allow-status-01 grep'
+  _ysh-error-1 'echo $undef'
 
   _sep
 
   # Show multiple "nested" errors, and then errexit
-  bin/osh -c '
+  _osh-error-1 '
 eval "("
 echo status=$?
 
@@ -241,76 +208,80 @@ echo DONE
   _sep
 
   # Primitives
-  bin/oil -c '[[ 0 -eq 1 ]]'
+  _ysh-error-1 '[[ 0 -eq 1 ]]'
 
   _sep
-  bin/oil -c '(( 0 ))'
+
+  _ysh-error-2 '(( 0 ))'
 }
 
-errexit_multiple_processes() {
+test-errexit_multiple_processes() {
   ### A representative set of errors.  For consolidating code quotations
 
-
   # command_sub_errexit.  Hm this gives 2 errors as well, because of inherit_errexit
-  bin/oil -c 'echo t=$(true) f=$(false; true)'
+  _ysh-error-1 'echo t=$(true) f=$(false; true)'
   #return
 
   _sep
 
-  bin/oil -c 'ls | false | wc -l'
+  # no pipefail
+  _ysh-should-run 'ls | false | wc -l'
 
   _sep
 
   # note: need trailing echo to prevent pipeline optimization
-  bin/oil -c 'ls | { echo hi; ( exit 42 ); } | wc -l; echo'
+  _ysh-error-X 42 'ls | { echo hi; ( exit 42 ); } | wc -l; echo'
 
   _sep
 
   # Showing errors for THREE PIDs here!  That is technically correct, but
   # noisy.
-  bin/oil -c '{ echo one; ( exit 42 ); } |\
+  _ysh-error-1 '{ echo one; ( exit 42 ); } |\
 { false; wc -l; }'
 
   _sep
 
   # realistic example
-  bin/oil -c '{ ls; false; } \
+  _ysh-error-1 '{ ls; false; } \
 | wc -l
 '
 
   _sep
 
   # Three errors!
-  bin/oil -c '{ ls; ( false; true ); } | wc -l; echo hi'
+  _ysh-error-1 '{ ls; ( false; true ); } | wc -l; echo hi'
 
   _sep
-  bin/oil -c 'ls <(sort YY) <(zz); echo hi'
+
+  _ysh-error-X 127 'ls <(sort YY) <(zz); echo hi'
 
   # 2 kinds of errors
   _sep
-  bin/oil -c 'zz <(sort YY) <(sort ZZ); echo hi'
+  _ysh-error-X 127 'zz <(sort YY) <(sort ZZ); echo hi'
 
   # This one has badly interleaved errors!
   _sep
-  bin/oil -c 'yy | zz'
+  _ysh-error-X 127 'yy | zz'
 
   _sep
-  bin/oil -c 'echo $([[ 0 -eq 1 ]])'
+  _ysh-error-1 'echo $([[ 0 -eq 1 ]])'
 
   _sep
-  bin/oil -c 'var y = $([[ 0 -eq 1 ]])'
+  _ysh-error-1 'var y = $([[ 0 -eq 1 ]])'
 }
 
 
 _strict-errexit-case() {
   local code=$1
+
   case-banner "[strict_errexit] $code"
+
   _osh-error-1 \
     "set -o errexit; shopt -s strict_errexit; $code"
   echo
 }
 
-strict_errexit_1() {
+test-strict_errexit_1() {
   # Test out all the location info
 
   _strict-errexit-case '! { echo 1; echo 2; }'
@@ -333,7 +304,7 @@ strict_errexit_1() {
                         if p { echo hi }'
 }
 
-strict_errexit_conditionals() {
+test-strict_errexit_conditionals() {
   # this works, even though this is a subshell
   _strict-errexit-case '
 myfunc() { return 1; }
@@ -405,7 +376,7 @@ done
 
 # OLD WAY OF BLAMING
 # Note: most of these don't fail
-strict_errexit_old() {
+test-strict_errexit_old() {
   # Test out all the location info
 
   # command.Pipeline.
@@ -521,12 +492,20 @@ pipefail_multiple() {
   { echo 'six'; sh -c 'exit 6'; }
 }
 
-# NOTE: This prints a WARNING in bash.  Not fatal in any shell except zsh.
-control_flow() {
-  break
-  continue
+test-control_flow() {
+  # This prints a WARNING in bash.  Not fatal in any shell except zsh.
+  _osh-error-X 0 '
+break
+continue
+echo UNREACHABLE
+'
 
-  echo 'SHOULD NOT GET HERE'
+  _osh-error-X 1 '
+shopt -s strict_control_flow
+break
+continue
+echo UNREACHABLE
+'
 }
 
 # Errors from core/process.py
@@ -662,7 +641,7 @@ nounset_arith() {
   echo 'SHOULD NOT GET HERE'
 }
 
-divzero() {
+test-divzero() {
   _osh-error-1 'echo $(( 1 / 0 ))'
   _osh-error-1 'echo $(( 1 % 0 ))'
 
@@ -677,13 +656,15 @@ divzero() {
   _osh-error-1 'set -e; (( a = 1 % 0 ));'
 }
 
-unsafe_arith_eval() {
+test-unsafe_arith_eval() {
+  _osh-error-1 '
   local e1=1+
   local e2="e1 + 5"
   echo $(( e2 ))  # recursively references e1
+  '
 }
 
-unset_expr() {
+test-unset_expr() {
   _osh-error-1 'unset -v 1[1]'
   _osh-error-2 'unset -v 1+2'
 }
@@ -1032,10 +1013,6 @@ strict_arith_warnings() {
   echo 'done'
 }
 
-strict_control_flow_warnings() {
-  break
-}
-
 control_flow_subshell() {
   set -o errexit
   for i in $(seq 2); do
@@ -1119,32 +1096,17 @@ all-tests() {
     builtin_trap builtin_getopts builtin_wait \
     builtin_exec \
     strict_word_eval_warnings strict_arith_warnings \
-    strict_control_flow_warnings control_flow_subshell \
+    control_flow_subshell \
     bool_status bool_status_simple \
     fallback_locations; do
 
     _run-test-func $t ''  # don't assert status
   done
 
-  # Can't be done inside a loop!
-  _run-test-func control_flow  ''
-
-  # Test with inner assertions like _osh-error-1 are here.
-  # _run-test-func is the "outer" assertion.
-  for t in \
-    strict_errexit_1 \
-    strict_errexit_conditionals \
-    strict_errexit_old \
-    unset_expr \
-    divzero; do
-
-    _run-test-func $t 0  # status 0
-  done
-
-  _run-test-func unsafe_arith_eval 1
-
   return 0
 }
+
+# TODO: could show these as separate text files in the CI
 
 with-bash() {
   SH_ASSERT_DISABLE=1 OSH=bash YSH=bash run-test-funcs

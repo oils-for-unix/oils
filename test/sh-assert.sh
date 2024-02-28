@@ -43,6 +43,14 @@ _osh-error-X() {
     -c "$@"
 }
 
+_osh-error-1() {
+  _osh-error-X 1 "$@"
+}
+
+_osh-error-2() {
+  _osh-error-X 2 "$@"
+}
+
 _ysh-error-X() {
   local expected_status=$1
   shift
@@ -50,6 +58,21 @@ _ysh-error-X() {
   local message=$0
   _assert-sh-status $expected_status $YSH "$message" \
     -c "$@"
+}
+
+_ysh-error-1() {
+  ### Expect status 1
+  _ysh-error-X 1 "$@"
+}
+
+_ysh-error-2() {
+  ### Expect status 2
+  _ysh-error-X 2 "$@"
+}
+
+_ysh-expr-error() {
+  ### Expect status 3
+  _ysh-error-X 3 "$@"
 }
 
 _osh-should-run() {

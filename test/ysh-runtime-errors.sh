@@ -13,20 +13,6 @@ source test/sh-assert.sh  # _assert-sh-status
 YSH=${YSH:-bin/ysh}
 
 #
-# Assertions
-#
-
-_ysh-error-1() {
-  ### Expect status 1
-  _ysh-error-X 1 "$@"
-}
-
-_ysh-expr-error() {
-  ### Expect status 3
-  _ysh-error-X 3 "$@"
-}
-
-#
 # Cases
 #
 

@@ -806,26 +806,6 @@ cases-in-files() {
   done
 }
 
-cases-in-strings() {
-  # Error codes not checked, because we EXIT on failure
-  # So it's different than run-test-funcs, which other files use
-
-  list-test-funcs | while read -r test_func; do
-    echo
-    echo "*** Running parse error function $test_func ====="
-    echo
-
-    $0 $test_func
-    local status=$?
-
-    # The assertions should be INSIDE, not outside
-    if test $status != 0; then
-      die "Expected status 0 from parse error function, got $status"
-    fi
-
-  done
-}
-
 section-banner() {
   echo
   echo '///'
@@ -841,7 +821,7 @@ all() {
 
   section-banner 'Cases in Functions, with strings'
 
-  cases-in-strings
+  run-test-funcs
 }
 
 # TODO: Something like test/parse-err-compare.sh
@@ -857,7 +837,9 @@ all-with-dash() {
 }
 
 soil-run-py() {
-  ### run with Python. output _tmp/other/parse-errors.txt
+  ### Run in CI with Python
+  
+  # output _tmp/other/parse-errors.txt
 
   all
 }
