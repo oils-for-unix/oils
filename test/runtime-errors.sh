@@ -64,19 +64,11 @@ _run-test-func() {
   echo
 }
 
-
-#
-# Test assertions
-#
-
 test-FAIL() {
-  #set +o errexit
-
-  # Error function
-  _run-test-func source_bad_syntax
+  ### Make sure the assertions work
 
   # Error string
-  _osh-error-1 'echo hi > /z'
+  _osh-error-1 'echo hi > /zzz'
 
   return
 
@@ -90,11 +82,11 @@ test-FAIL() {
 # PARSE ERRORS
 #
 
-source_bad_syntax() {
+test-source_bad_syntax() {
   cat >_tmp/bad-syntax.sh <<EOF
 if foo; echo ls; fi
 EOF
-  . _tmp/bad-syntax.sh
+  _osh-error-2 '. _tmp/bad-syntax.sh'
 }
 
 # NOTE:
@@ -102,10 +94,12 @@ EOF
 # - mksh: no line number
 # - zsh: line 2 of eval, which doesn't really help.
 # - dash: ditto, line 2 of eval
-eval_bad_syntax() {
-  local code='if foo; echo ls; fi'
-  eval "echo --
-        $code"
+test-eval_bad_syntax() {
+  _osh-error-2 '
+code="if foo; echo ls; fi"
+eval "echo --
+     $code"
+'
 }
 
 #
@@ -138,11 +132,8 @@ EOF
   echo 'SHOULD NOT GET HERE'
 }
 
-failed_command() {
-  set -o errexit
-  false
-
-  echo 'SHOULD NOT GET HERE'
+test-failed_command() {
+  _osh-error-1 'set -o errexit; false; echo UNREACHABLE'
 }
 
 # This quotes the same line of code twice, but maybe that's OK.  At least there
@@ -1099,12 +1090,11 @@ fallback_locations() {
 #
 
 all-tests() {
-  # A messy grab-bag of styles
-  # TODO: Rename with 'test-' prefix, and use run-test-funcs
+  run-test-funcs
 
-  # Do we want metadata for the status code?
-  # test_nounset_0 ?
-  # test_no_such_command_127
+  set -o
+  # When did it get turned on???
+  set +o errexit
 
   # No assertions.  Just showing the error.
   for t in \
@@ -1152,25 +1142,18 @@ all-tests() {
     _run-test-func $t 0  # status 0
   done
 
-  _run-test-func failed_command 1     # status 1
   _run-test-func unsafe_arith_eval 1
   _run-test-func no_such_command 127  # status 127
 
   return 0
 }
 
-all-tests-bash() {
-  # This doesn't quite work, because exit codes are not the same
-  OSH=bash all-tests
+with-bash() {
+  SH_ASSERT_DISABLE=1 OSH=bash YSH=bash run-test-funcs
 }
 
-all-tests-dash() {
-  # This doesn't work at all, because we source test/common.sh, which has
-  # bash-func-names.
-  # Really it would be better to quote all the tests, and then they could be
-  # passed through dash.
-
-  OSH=dash all-tests
+with-dash() {
+  SH_ASSERT_DISABLE=1 OSH=dash YSH=dash run-test-funcs
 }
 
 soil-run-py() {

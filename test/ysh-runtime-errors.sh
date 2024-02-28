@@ -3,7 +3,9 @@
 # Usage:
 #   test/ysh-runtime-errors.sh <function name>
 
-# NOTE: No set -o errexit, etc.
+set -o nounset
+set -o pipefail
+set -o errexit
 
 source test/common.sh
 source test/sh-assert.sh  # _assert-sh-status
@@ -38,8 +40,6 @@ test-no-typed-args() {
 }
 
 test-undefined-vars() {
-  set +o errexit
-
   _ysh-error-1 'echo hi; const y = 2 + x + 3'
   _ysh-error-1 'if (x) { echo hello }'
   _ysh-error-1 'if (${x}) { echo hi }'
@@ -52,8 +52,6 @@ test-undefined-vars() {
 }
 
 test-word-eval-with-ysh-data() {
-  set +o errexit
-
   _ysh-expr-error 'var d = {}; echo ${d:-}'
 
   _osh-error-X 3 'var d = {}; echo ${#d}'
@@ -73,8 +71,6 @@ test-word-eval-with-ysh-data() {
 }
 
 test-ysh-word-eval() {
-  set +o errexit
-
   # Wrong sigil
   _ysh-expr-error 'echo $[maybe("foo")]'
 
@@ -100,8 +96,6 @@ test-ysh-word-eval() {
 }
 
 test-ysh-expr-eval() {
-  set +o errexit
-
   _ysh-expr-error 'echo $[42 / 0 ]'
 
   _ysh-expr-error 'var d = {}; var item = d->nonexistent'
@@ -144,8 +138,6 @@ test-ysh-expr-eval-2() {
 }
 
 test-user-reported() {
-  set +o errexit
-
   #_ysh-error-1 'echo'
 
   # Issue #1118
@@ -339,8 +331,6 @@ EOF
 }
 
 test-eggex-2() {
-  set +o errexit
-
   _ysh-should-run "var sq = / 'foo'+ /"
 
   _ysh-should-run "$(cat <<'EOF'
