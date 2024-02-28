@@ -1,12 +1,35 @@
 Parser Architecture
 ===================
 
-This doc has rough notes on the architecture of the parser.  [How to Parse
-Shell Like a Programming Language][parse-shell] (on the blog) covers some of
-the same material and is more polished.
+This doc has rough notes on the architecture of the parser.
+
+[How to Parse Shell Like a Programming Language][parse-shell] (2019 blog post)
+covers some of the same material.  (As of 2024, it's still pretty accurate,
+although there have been minor changes.)
 
 <div id="toc">
 </div>
+
+## The Lossless Invariant
+
+The test suite [test/lossless.sh]($oils-src) invokes `osh --tool lossless-cat
+$file`.
+
+The `lossless-cat` tool does this:
+
+1. Parse the file
+1. Collect **all** tokens, from 0 to N
+1. Print the text of each token.
+
+Now, do the tokens "add up" to the original file?  That's what we call the
+*lossless invariant*.
+
+It will be the foundation for tools that statically understand shell:
+
+- `--tool ysh-ify` - change style of `do done` &rarr; `{ }`, etc.
+- `--tool fmt` - fix indentation, maybe some line wrapping
+
+The sections on **re-parsing** explain some obstacles which we had to overcome.
 
 ## Lexing
 
@@ -118,13 +141,6 @@ This is less problematic, since it doesn't affect error messages
 
 - `myfunc() { echo hi; }` vs.  `myfunc=()  # an array`
 - `shopt -s parse_equals`: For `x = 1 + 2*3`
-
-### Where the Lossless Invariant is Broken
-
-TODO: Remove this.
-
-- Here docs with `<<-`.  The leading tab is lost, because we don't need it for
-  translation.
 
 ### Where Parsers are Instantiated
 
