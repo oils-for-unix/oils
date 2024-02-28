@@ -127,7 +127,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   is-main                false when sourcing a file
                   use                    change first word lookup
   [I/O]           ysh-read               flags --all, -0
-                  ysh-echo               args on a line, no-flags simple_echo   <!-- after #1772: args on a line, no echo_flags, no bugs  -->
+                  ysh-echo               args on a line, simple_echo, no -enE   <!-- after #1772: args on a line, no -enE echo_flags bug  -->
                   write                  a line per arg, -- -n --sep --end
                   fork   forkwait        Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
