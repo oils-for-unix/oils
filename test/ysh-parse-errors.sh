@@ -3,6 +3,10 @@
 # Usage:
 #   test/ysh-parse-errors.sh <function name>
 
+set -o nounset
+set -o pipefail
+set -o errexit
+
 source test/common.sh
 source test/sh-assert.sh  # _assert-sh-status
 
@@ -14,8 +18,6 @@ YSH=${YSH:-bin/ysh}
 #
 
 test-return-args() {
-  set +o errexit
-
   _ysh-should-parse '
   func foo(x) {
     return (x)
@@ -48,8 +50,6 @@ test-return-args() {
 }
 
 test-func-var-checker() {
-  set +o errexit
-
   _ysh-should-parse '
   func f(x) {
     setvar x = true
@@ -183,8 +183,6 @@ test-sh-assign() {
 }
 
 test-ysh-var() {
-  set +o errexit
-
   # Unterminated
   _ysh-parse-error 'var x = 1 + '
 
@@ -209,7 +207,6 @@ EOF
 }
 
 test-ysh-expr() {
-  set +o errexit
   # old syntax
   _ysh-parse-error '= 5 mod 3'
 
@@ -267,7 +264,6 @@ test-proc-sig() {
 }
 
 test-regex-literals() {
-  #set +o errexit
   _ysh-parse-error 'var x = / ! /'
   _ysh-should-parse 'var x = / ![a-z] /'
 
@@ -443,8 +439,6 @@ hay eval :result {
 }
 
 test-parse-at() {
-  set +o errexit
-
   _ysh-parse-error 'echo @'
   _ysh-parse-error 'echo @@'
   _ysh-parse-error 'echo @{foo}'
@@ -453,8 +447,6 @@ test-parse-at() {
 }
 
 test-ysh-nested-proc-func() {
-  set +o errexit
-
   _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
   _ysh-parse-error 'func f() { echo 1; proc f { echo f }; echo 2 }'
   _ysh-parse-error 'proc p { echo 1; func f() { echo f }; echo 2 }'
@@ -651,8 +643,6 @@ test-fat-arrow() {
 
 # Backslash in UNQUOTED context
 test-parse-backslash() {
-  set +o errexit
-
   _ysh-should-parse 'echo \('
   _ysh-should-parse 'echo \;'
   _ysh-should-parse 'echo ~'
@@ -674,8 +664,6 @@ test-parse-backslash() {
 }
 
 test-make-these-nicer() {
-  set +o errexit
-
   # expects expression on right
   _ysh-parse-error '='
   _ysh-parse-error 'call'
@@ -692,8 +680,6 @@ test-make-these-nicer() {
 }
 
 test-var-decl() {
-  set +o errexit
-
   _ysh-parse-error '
   proc p(x) {
     echo hi
@@ -738,8 +724,6 @@ test-var-decl() {
 }
 
 test-setvar() {
-  set +o errexit
-
   _ysh-should-parse '
   proc p(x) {
     var y = 1
@@ -776,8 +760,6 @@ test-setvar() {
 }
 
 test-ysh-case() {
-  set +o errexit
-
   _ysh-should-parse '
   case (x) {
     (else) { = 1; }
@@ -1100,8 +1082,6 @@ word    { echo word; }
 }
 
 test-ysh-for() {
-  set +o errexit
-
   _ysh-should-parse '
   for x in (obj) {
     echo $x
@@ -1153,8 +1133,6 @@ test-ysh-for() {
 }
 
 test-for-parse-bare-word() {
-  set +o errexit
-
   _ysh-parse-error '
   for x in bare {
     echo $x
@@ -1181,8 +1159,6 @@ test-for-parse-bare-word() {
 }
 
 test-bug-1118() {
-  set +o errexit
-
   # Originally pointed at 'for'
   _ysh-parse-error '
   var snippets = [{status: 42}]
@@ -1243,8 +1219,6 @@ test-bug-1850() {
 }
 
 test-proc-args() {
-  set +o errexit
-
   _osh-should-parse 'json write (x)'
 
   _osh-should-parse 'echo $(json write (x))'  # relies on lexer.PushHint()
@@ -1416,12 +1390,10 @@ EOF
 #
 
 soil-run-py() {
-  # This is like run-test-funcs, except errexit is off here
   run-test-funcs
 }
 
 soil-run-cpp() {
-  # This is like run-test-funcs, except errexit is off here
   ninja _bin/cxx-asan/osh
   SH=_bin/cxx-asan/osh run-test-funcs
 }

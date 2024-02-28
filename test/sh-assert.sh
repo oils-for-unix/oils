@@ -16,8 +16,11 @@ _assert-sh-status() {
 
   case-banner "$@"
   echo
+
+  set +o errexit
   $sh "$@"
   local status=$?
+  set -o errexit
 
   if test -z "${SH_ASSERT_DISABLE:-}"; then
     if test "$status" != "$expected_status"; then

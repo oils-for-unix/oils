@@ -33,15 +33,7 @@ _assert-status-2-here() {
 _runtime-parse-error() {
   ### Assert that a parse error happens at runtime, e.g. for [ z z ]
 
-  case-banner "$@"
-  echo
-  $OSH -c "$@"
-
-  # NOTE: This works with osh, not others.
-  local status=$?
-  if test $status != 2; then
-    die "Expected status 2, got $status"
-  fi
+  _osh-error-X 2 "$@"
 }
 
 #
@@ -50,8 +42,6 @@ _runtime-parse-error() {
 
 # All in osh/word_parse.py
 test-patsub() {
-  set +o errexit
-
   _osh-should-parse 'echo ${x/}'
   _osh-should-parse 'echo ${x//}'
 
@@ -76,8 +66,6 @@ test-patsub() {
 
 # osh/word_parse.py
 test-word-parse() {
-  set +o errexit
-
   _osh-parse-error 'echo ${'
 
   # This parses like a slice, but that's OK.  Maybe talk about arithmetic
@@ -125,8 +113,6 @@ test-word-parse() {
 }
 
 test-array-literal() {
-  set +o errexit
-
   # Array literal with invalid TokenWord.
   _osh-parse-error 'a=(1 & 2)'
   _osh-parse-error 'a= (1 2)'
@@ -135,8 +121,6 @@ test-array-literal() {
 }
 
 test-arith-context() {
-  set +o errexit
-
   # $(( ))
   _osh-parse-error 'echo $(( 1 + 2 ;'
   _osh-parse-error 'echo $(( 1 + 2 );'
@@ -176,8 +160,6 @@ test-arith-context() {
 }
 
 test-arith-integration() {
-  set +o errexit
-
   # Regression: these were not parse errors, but should be!
   _osh-parse-error 'echo $((a b))'
   _osh-parse-error '((a b))'
@@ -201,8 +183,6 @@ test-arith-integration() {
 }
 
 test-arith-expr() {
-  set +o errexit
-
   # BUG: the token is off here
   _osh-parse-error '$(( 1 + + ))'
 
@@ -229,7 +209,6 @@ test-arith-expr() {
 }
 
 test-command-sub() {
-  set +o errexit
   _osh-parse-error ' 
     echo line 2
     echo $( echo '
@@ -253,8 +232,6 @@ test-command-sub() {
 }
 
 test-bool-expr() {
-  set +o errexit
-
   # Extra word
   _osh-parse-error '[[ a b ]]'
   _osh-parse-error '[[ a "a"$(echo hi)"b" ]]'
@@ -285,8 +262,6 @@ test-bool-expr() {
 
 # These don't have any location information.
 test-test-builtin() {
-  set +o errexit
-
   # Some of these come from osh/bool_parse.py, and some from
   # osh/builtin_bracket.py.
 
@@ -312,7 +287,6 @@ test-test-builtin() {
 }
 
 test-printf-builtin() {
-  set +o errexit
   _runtime-parse-error 'printf %'
   _runtime-parse-error 'printf [%Z]'
 
@@ -320,8 +294,6 @@ test-printf-builtin() {
 }
 
 test-other-builtins() {
-  set +o errexit
-
   _runtime-parse-error 'shift 1 2'
   _runtime-parse-error 'shift zzz'
 
@@ -338,8 +310,6 @@ test-other-builtins() {
 }
 
 test-quoted-strings() {
-  set +o errexit
-
   _osh-parse-error '"unterminated double'
 
   _osh-parse-error "'unterminated single"
@@ -356,8 +326,6 @@ test-quoted-strings() {
 }
 
 test-braced-var-sub() {
-  set +o errexit
-
   # These should have ! for a prefix query
   _osh-parse-error 'echo ${x*}'
   _osh-parse-error 'echo ${x@}'
@@ -366,8 +334,6 @@ test-braced-var-sub() {
 }
 
 test-cmd-parse() {
-  set +o errexit
-
   _osh-parse-error 'FOO=1 break'
   _osh-parse-error 'break 1 2'
 
@@ -400,15 +366,11 @@ test-append() {
 }
 
 test-redirect() {
-  set +o errexit
-
   _osh-parse-error 'echo < <<'
   _osh-parse-error 'echo $( echo > >>  )'
 }
 
 test-simple-command() {
-  set +o errexit
-
   _osh-parse-error 'PYTHONPATH=. FOO=(1 2) python'
   # not statically detected after dynamic assignment
   #_osh-parse-error 'echo foo FOO=(1 2)'
@@ -425,8 +387,6 @@ test-simple-command() {
 
 # Old code?  All these pass
 DISABLED-assign() {
-  set +o errexit
-
   _osh-parse-error 'local name$x'
   _osh-parse-error 'local "ab"'
   _osh-parse-error 'local a.b'
@@ -437,8 +397,6 @@ DISABLED-assign() {
 # I can't think of any other here doc error conditions except arith/var/command
 # substitution, and unterminated.
 test-here-doc() {
-  set +o errexit
-
   # Arith in here doc
   _osh-parse-error 'cat <<EOF
 $(( 1 * ))  
@@ -458,8 +416,6 @@ EOF
 }
 
 test-here-doc-delimiter() {
-  set +o errexit
-
   # NOTE: This is more like the case where.
   _osh-parse-error 'cat << $(invalid here end)'
 
@@ -477,7 +433,6 @@ test-here-doc-delimiter() {
 }
 
 test-args-parse-builtin() {
-  set +o errexit
   _runtime-parse-error 'read -x'  # invalid
   _runtime-parse-error 'builtin read -x'  # ditto
 
@@ -495,22 +450,18 @@ test-args-parse-builtin() {
 }
 
 test-args-parse-more() {
-  set +o errexit
   _runtime-parse-error 'set -z'
   _runtime-parse-error 'shopt -s foo'
   _runtime-parse-error 'shopt -z'
 }
 
-test-args-parse-main() {
-  set +o errexit
-  bin/osh --ast-format x
+DISABLED-args-parse-main() {
+  $OSH --ast-format x
 
-  bin/osh -o errexit +o oops
+  $OSH -o errexit +o oops
 }
 
 test-invalid-brace-ranges() {
-  set +o errexit
-
   _osh-parse-error 'echo {1..3..-1}'
   _osh-parse-error 'echo {1..3..0}'
   _osh-parse-error 'echo {3..1..1}'
@@ -522,8 +473,6 @@ test-invalid-brace-ranges() {
 }
 
 test-extra-newlines() {
-  set +o errexit
-
   _osh-parse-error '
   for
   do
@@ -604,8 +553,6 @@ test-extra-newlines() {
 }
 
 test-ysh_c_strings() {
-  set +o errexit
-
   # bash syntax
   _osh-should-parse-here <<'EOF'
 echo $'\u03bc'
@@ -653,8 +600,6 @@ EOF
 }
 
 test-bug_1825_backslashes() {
-  set +o errexit
-
   # Single backslash is accepted in OSH
   _osh-should-parse-here <<'EOF'
 echo $'trailing\
@@ -681,8 +626,6 @@ EOF
 }
 
 test-ysh_dq_strings() {
-  set +o errexit
-
   # Double quoted is an error
   _osh-should-parse 'echo "\z"'
   _assert-status-2 +O parse_backslash -n -c 'echo test-parse_backslash "\z"'
@@ -703,14 +646,11 @@ test-ysh_dq_strings() {
 }
 
 test-ysh_bare_words() {
-  set +o errexit
-
   _ysh-should-parse 'echo \$'
   _ysh-parse-error 'echo \z'
 }
 
 test-parse_backticks() {
-  set +o errexit
 
   # These are allowed
   _osh-should-parse 'echo `echo hi`'
@@ -721,7 +661,6 @@ test-parse_backticks() {
 }
 
 test-parse_dollar() {
-  set +o errexit
 
   # The right way:
   #   echo \$
@@ -748,7 +687,6 @@ test-parse_dollar() {
 }
 
 test-parse_dparen() {
-  set +o errexit
 
   # Bash (( construct
   local bad
@@ -772,11 +710,10 @@ test-parse_dparen() {
 }
 
 test-invalid_parens() {
-  set +o errexit
 
   # removed function sub syntax
   local s='write -- $f(x)'
-  _parse-error "$s"
+  _osh-parse-error "$s"
   _ysh-parse-error "$s"
 
   # requires test-parse_at
@@ -802,7 +739,6 @@ f() {
 }
 
 test-shell_for() {
-  set +o errexit
 
   _osh-parse-error 'for x in &'
 
@@ -848,26 +784,23 @@ trap_parse_error() {
 test-proc_func_reserved() {
   ### Prevents confusion
 
-  set +o errexit
-
   _osh-parse-error 'proc p (x) { echo hi }'
   _osh-parse-error 'func f (x) { return (x) }'
 }
 
 # Cases in their own file
 cases-in-files() {
-  # Don't fail
-  set +o errexit
+  for test_file in test/parse-errors/*.sh; do
+    case-banner "FILE $test_file"
 
-  for t in test/parse-errors/*.sh; do
-    case-banner $t
-
-    $OSH $t
+    set +o errexit
+    $OSH $test_file
     local status=$?
+    set -o errexit
 
     if test -z "${SH_ASSERT_DISABLE:-}"; then
       if test $status != 2; then
-        die "Expected status 2, got $status"
+        die "Expected status 2 from parse error file, got $status"
       fi
     fi
   done
@@ -877,15 +810,19 @@ cases-in-strings() {
   # Error codes not checked, because we EXIT on failure
   # So it's different than run-test-funcs, which other files use
 
-  # TODO: remove this
-  set +o errexit
-
   list-test-funcs | while read -r test_func; do
     echo
     echo "*** Running parse error function $test_func ====="
     echo
 
     $0 $test_func
+    local status=$?
+
+    # The assertions should be INSIDE, not outside
+    if test $status != 0; then
+      die "Expected status 0 from parse error function, got $status"
+    fi
+
   done
 }
 
