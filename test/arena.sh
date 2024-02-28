@@ -12,9 +12,10 @@ source test/wild-runner.sh  # For MANIFEST, etc.
 
 _compare() {
   local path=$1
+  local osh=${2:-bin/osh}
 
   mkdir -p _tmp/arena
-  bin/osh --tool arena $path > _tmp/arena/left.txt
+  $osh --tool arena $path > _tmp/arena/left.txt
   if diff -u $path _tmp/arena/left.txt; then
 	  echo "$path"
   else
@@ -47,6 +48,40 @@ _compare-wild() {
 DISABLED-test-wild() {
   wc -l $MANIFEST
   cat $MANIFEST | xargs -n 2 -- $0 _compare-wild
+}
+
+test-big() {
+  local num_files=0
+  local num_passed=0
+
+  local osh=bin/osh
+
+  if false; then
+    local osh_cpp=_bin/cxx-asan/osh
+    ninja $osh_cpp
+    osh=$osh_cpp
+  fi
+
+  for file in benchmarks/testdata/*; do
+    echo "--- $file"
+    echo
+    set +o errexit
+    time _compare $file $osh
+    local status=$?
+    set -o errexit
+
+    if test $status = 0; then
+      num_passed=$((num_passed+1))
+    fi
+    num_files=$((num_files+1))
+  done
+
+  # How do we handle this in tools/ysh_ify.py ?
+
+  # 8 of 10 passed!
+  echo
+  echo "$num_passed of $num_files files respect the arena invariant"
+  echo 'TODO: here docs broken!'
 }
 
 run-for-release() {

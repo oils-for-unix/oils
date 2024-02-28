@@ -122,7 +122,15 @@ it to users.
 **Motivation**: We already wrote an ad hoc pretty printer!  It seems like this
 should "obviously" be unified
 
-### Export the Oils Syntax Tree to Users with "NIL8"
+### OSH-YSH Code Formatter
+
+**Motivation** - Formatters are nice for users who don't know OSH/YSH well.  I
+don't know TypeScript well, and I had a good experience with `deno fmt`.  It
+reduces some mental load.
+
+- Requirement: Don't take responsibility for every formatting decision!
+
+### Experimental: Export the Oils Syntax Tree to Users with "NIL8"
 
 Elaboration on the above.
 
@@ -143,22 +151,20 @@ Note: the graph has layers like this:
 4. Then we have the Lossless Syntax Tree of `command_t word_t word_part_t
    expr_t`
 
-### OSH-YSH Code Formatter
+## Dependencies
 
-**Motivation** - Formatters are nice for users who don't know OSH/YSH well.  I
-don't know TypeScript well, and I had a good experience with `deno fmt`.  It
-reduces some mental load.
+- It makes sense to do printers (1) and then (2).  There's a natural extension.
+- (3) and (4) can be done in any order, or not at all.
+- The NIL8 printer (4) is **experimental**, and probably depends on significant
+  other work in Oils/YSH
 
-- Requirement: Don't take responsibility for every formatting decision!
+Risks:
 
-### Order of implementation
-
-It makes sense to do (1) and then (2).
-
-(3) and (4) can be done in any order, or not at all.
-
-Note: The first two printers are "engineering", but (3) and (4) are more
-**experimental**.  Especially (3).
+- The first two printers are "engineering"
+- The OSH/YSH has some non-trivial decisions, e.g. end-of-line comments (though
+  shell doesn't have block comments, which simplifies things)
+  - multi-line strings in YSH have a special rule -- the indentation of the
+    closing `'''` is significant
 
 ## Implementation Notes / Sketches
 
@@ -294,9 +300,9 @@ programming, rather than inventing ad hoc syntax every time.  String literals
 are a pain point: something people often implement badly, or don't implement at
 all.)
 
-## Non-Wrapping Printers - "Indenters"
+## Non-Wrapping Printers aka "Indenters"
 
-### Can be trivial, but use similar PPL IR?
+### Can it use a similar PPL IR, with a "trivial" linear formatter?
 
   Something like
   - First, do "Coarse Parsing" into `Comment | Code | StringLiteral` (this
@@ -334,3 +340,24 @@ Zulip: "Fun Computer Science Problems"
     translation with mycpp, which is a crappy program
   - Yaks goes along with the tagged pointer runtime.  We want to make a
     principled IR rather than just printing text.
+
+Design / Research:
+
+- Unified Code Representation?
+  - for execution (ignoring comments)
+  - for ysh-ify - VERY rough translation, doesn't respect semantics
+    - we use the "span ID" here - can we get rid of it to make tokens smaller?
+    - is the span ID affected by re-parsing / dynamic parsing?  Or can we
+      safely ignore that?
+  - for formatting - must respect comments
+    - does this also use the span ID?  Order may be important
+    - I think it builds an alternative tree with keywords and `() {}` and
+      comments, and may not need span ID
+    - might need the span ID
+      - when retrieving the node.left and node.right locations
+      - comparing comment tokens to others?
+      - test/arena.sh invariant - TODO: rename to SPAN invariant?
+
+- "Coarse Parsing" to build coarse YSH tree DIRECTLY
+  - though if we have a shell parser, we might as well use it
+

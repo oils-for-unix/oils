@@ -297,9 +297,9 @@ class OilPrinter(object):
     def DoRedirect(self, node, local_symbols):
         # type: (Redir, Dict[str, bool]) -> None
         """
-    Currently Unused
-    TODO: It would be nice to change here docs to <<< '''
-    """
+        Currently Unused
+        TODO: It would be nice to change here docs to <<< '''
+        """
         #print(node, file=sys.stderr)
         op_id = node.op.id
         self.cursor.PrintUntil(node.op)
