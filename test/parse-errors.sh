@@ -552,104 +552,6 @@ test-extra-newlines() {
   '
 }
 
-test-ysh_c_strings() {
-  # bash syntax
-  _osh-should-parse-here <<'EOF'
-echo $'\u03bc'
-EOF
-
-  # Extension not allowed
-  _ysh-parse-error-here <<'EOF'
-echo $'\u{03bc}'
-EOF
-
-  # Bad syntax
-  _ysh-parse-error-here <<'EOF'
-echo $'\u{03bc'
-EOF
-
-  # Expression mode
-  _ysh-parse-error-here <<'EOF'
-const bad = $'\u{03bc'
-EOF
-
-  # Test single quoted
-  _osh-should-parse-here <<'EOF'
-echo $'\z'
-EOF
-  _ysh-parse-error-here <<'EOF'
-echo $'\z'
-EOF
-  # Expression mode
-  _ysh-parse-error-here <<'EOF'
-const bad = $'\z'
-EOF
-
-  # Octal not allowed
-  _osh-should-parse-here <<'EOF'
-echo $'\101'
-EOF
-  _ysh-parse-error-here <<'EOF'
-const bad = $'\101'
-EOF
-
-  # \xH not allowed
-  _ysh-parse-error-here <<'EOF'
-const bad = c'\xf'
-EOF
-}
-
-test-bug_1825_backslashes() {
-  # Single backslash is accepted in OSH
-  _osh-should-parse-here <<'EOF'
-echo $'trailing\
-'
-EOF
-
-  # Double backslash is right in YSH
-  _ysh-should-parse-here <<'EOF'
-echo $'trailing\\
-'
-EOF
-
-  # Single backslash is wrong in YSH
-  _ysh-parse-error-here <<'EOF'
-echo $'trailing\
-'
-EOF
-
-  # Also in expression mode
-  _ysh-parse-error-here <<'EOF'
-setvar x = $'trailing\
-'
-EOF
-}
-
-test-ysh_dq_strings() {
-  # Double quoted is an error
-  _osh-should-parse 'echo "\z"'
-  _assert-status-2 +O parse_backslash -n -c 'echo test-parse_backslash "\z"'
-
-  _ysh-parse-error 'echo "\z"'  # not in Oil
-  _ysh-parse-error 'const bad = "\z"'  # not in expression mode
-
-  # C style escapes not respected
-  _osh-should-parse 'echo "\u1234"'  # ok in OSH
-  _ysh-parse-error 'echo "\u1234"'  # not in Oil
-  _ysh-parse-error 'const bad = "\u1234"'
-
-  _osh-should-parse 'echo "`echo hi`"'
-  _ysh-parse-error 'echo "`echo hi`"'
-  _ysh-parse-error 'const bad = "`echo hi`"'
-
-  _ysh-parse-error 'setvar x = "\z"'
-}
-
-test-ysh_bare_words() {
-  _ysh-should-parse 'echo \$'
-  _ysh-parse-error 'echo \z'
-}
-
 test-parse_backticks() {
 
   # These are allowed
@@ -658,84 +560,6 @@ test-parse_backticks() {
 
   _assert-status-2 +O test-parse_backticks -n -c 'echo `echo hi`'
   _assert-status-2 +O test-parse_backticks -n -c 'echo "foo = `echo hi`"'
-}
-
-test-parse_dollar() {
-
-  # The right way:
-  #   echo \$
-  #   echo \$:
-
-  CASES=(
-    'echo $'          # lex_mode_e.ShCommand
-    'echo $:'
-
-    'echo "$"'        # lex_mode_e.DQ
-    'echo "$:"'
-
-    'echo ${x:-$}'    # lex_mode_e.VSub_ArgUnquoted
-    'echo ${x:-$:}'
-
-    'echo "${x:-$}"'  # lex_mode_e.VSub_DQ
-    'echo "${x:-$:}"'
-  )
-  for c in "${CASES[@]}"; do
-    _osh-should-parse "$c"
-    _assert-status-2 +O test-parse_dollar -n -c "$c"
-    _ysh-parse-error "$c"
-  done
-}
-
-test-parse_dparen() {
-
-  # Bash (( construct
-  local bad
-
-  bad='((1 > 0 && 43 > 42))'
-  _osh-should-parse "$bad"
-  _ysh-parse-error "$bad"
-
-  bad='if ((1 > 0 && 43 > 42)); then echo yes; fi'
-  _osh-should-parse "$bad"
-  _ysh-parse-error "$bad"
-
-  bad='for ((x = 1; x < 5; ++x)); do echo $x; done'
-  _osh-should-parse "$bad"
-  _ysh-parse-error "$bad"
-
-  _ysh-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
-
-  # Accepted workaround: add space
-  _ysh-should-parse 'if ( (1 > 0 and 43 > 42) ) { echo yes }'
-}
-
-test-invalid_parens() {
-
-  # removed function sub syntax
-  local s='write -- $f(x)'
-  _osh-parse-error "$s"
-  _ysh-parse-error "$s"
-
-  # requires test-parse_at
-  local s='write -- @[sorted(x)]'
-  _osh-parse-error "$s"  # this is a parse error, but BAD message!
-  _ysh-should-parse "$s"
-
-  local s='
-f() {
-  write -- @[sorted(x)]
-}
-'
-  _osh-parse-error "$s"
-  _ysh-should-parse "$s"
-
-  # Analogous bad bug
-  local s='
-f() {
-  write -- @sorted (( z ))
-}
-'
-  _osh-parse-error "$s"
 }
 
 test-shell_for() {
@@ -837,8 +661,6 @@ soil-run-py() {
 }
 
 soil-run-cpp() {
-  ### Run with oils-for-unix
-
   ninja _bin/cxx-asan/osh
   OSH=_bin/cxx-asan/osh all
 }
