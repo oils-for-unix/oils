@@ -34,13 +34,17 @@ wedge-install() {
   local build_dir=$1
   local install_dir=$2
 
+  # 2024-02 - weird fix, I had to add "rlang" on Debian Bookworm.  Otherwise
+  # the smoke test for dplyr/tidyr would fail.
+
+  # Also consider adding ggplot.
   INSTALL_DEST=$install_dir Rscript -e \
-    'install.packages(c("dplyr", "tidyr", "stringr", "RUnit"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
+    'install.packages(c("rlang", "dplyr", "tidyr", "stringr", "RUnit"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
 }
 
 wedge-smoke-test() {
   local install_dir=$1
 
   R_LIBS_USER=$install_dir Rscript -e \
-    'library(dplyr); library(tidyr); library(stringr); library("RUnit"); print("OK")'
+    'library(rlang); library(dplyr); library(tidyr); library(stringr); library("RUnit"); print("OK")'
 }

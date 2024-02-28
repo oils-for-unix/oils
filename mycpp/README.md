@@ -150,6 +150,27 @@ else:
 return sig
 ```
 
+### Exceptions Can't Leave Destructors / Python `__exit__`
+
+Context managers like `with ctx_Foo():` translate to C++ constructors and
+destructors.
+
+In C++, a destructor can't "leave" an exception.  It results in a runtime error.
+
+You can throw and CATCH an exception WITHIN a destructor, but you can't let it
+propagate outside.
+
+This means you must be careful when coding the `__exit__` method.  For example,
+in `vm::ctx_Redirect`, we had this bug due to `IOError` being thrown and not
+caught when restoring/popping redirects.
+
+To fix the bug, we rewrote the code to use an out param
+`List[IOError_OSError]`.
+
+Related:
+
+- <https://akrzemi1.wordpress.com/2011/09/21/destructors-that-throw/>
+
 ## More Translation Notes
 
 ### "Creative Hacks"

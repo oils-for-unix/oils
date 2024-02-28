@@ -337,6 +337,14 @@ clone-mypy() {
   # TODO: verify commit checksum
 }
 
+copy-source-medo() {
+  mkdir -p $DEPS_SOURCE_DIR
+
+  # Copy the whole tree, including the .treeptr files
+  cp --verbose --recursive --no-target-directory \
+    deps/source.medo/ $DEPS_SOURCE_DIR/
+}
+
 fetch() {
   local py_only=${1:-}
 
@@ -349,11 +357,7 @@ fetch() {
   #     WEDGE
   #     re2c-3.0/  # expanded .tar.xz file
 
-  mkdir -p $DEPS_SOURCE_DIR
-
-  # Copy the whole tree, including the .treeptr files
-  cp --verbose --recursive --no-target-directory \
-    deps/source.medo/ $DEPS_SOURCE_DIR/
+  copy-source-medo
 
   download-to $DEPS_SOURCE_DIR/re2c "$RE2C_URL"
   download-to $DEPS_SOURCE_DIR/cmark "$CMARK_URL"

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 # Demonstrations for users.  Could go in docs.
 
@@ -325,44 +325,72 @@ echo g=$g new_global=$new_global
 g=p new_global=p
 ## END
 
-#### setref equivalent without pgen2 syntax, using open proc
-shopt --set parse_proc
+#### setglobal d[key] inside proc should mutate global (bug #1841)
 
-# This is kind of what we compile to.  Ref params get an extra __ prefix?  then
-# that means you can't really READ them either?  I think that's OK.
+shopt -s ysh:upgrade
 
-# At call time, param binding time:
-#   If the PARAM has a colon prefix:
-#     Assert that the ARG has a colon prefix.  Don't remove it.
-#     Set the cell.nameref flag.
-#
-# At Setref time:
-#   Check that it's cell.nameref.
-#   Add extra : to lvalue.{Named,Indexed,Keyed} and perform it.
-#
-# The __ avoids the nameref cycle check.
-# And we probably disallow reading from the ref.  That's OK.  The caller can
-# pass it in as a regular value!
+var g = {}
 
-proc set-it {
-  local -n __s=$1  # nameref flag needed with setref
-  local val=$2
+proc mutate {
+  var g = {}  # shadows global var
 
-  # well this part requires pgen2
-  setref s = "foo-$val"
+  echo 'hi from mutate'
+  setglobal g.key = 'mutated'
+  setglobal g['key2'] = 'mutated'
+
+
+  pp line (g)
 }
 
-var s = 'abc'
-var t = 'def'
-set-it s SS
-set-it t TT  # no colon here
-echo $s
-echo $t
+echo 'BEFORE mutate'
+pp line (g)
+
+mutate
+
+echo 'AFTER mutate'
+pp line (g)
 
 ## STDOUT:
-foo-SS
-foo-TT
+BEFORE mutate
+(Dict)   {}
+hi from mutate
+(Dict)   {"key":"mutated","key2":"mutated"}
+AFTER mutate
+(Dict)   {"key":"mutated","key2":"mutated"}
 ## END
+
+#### setglobal a[i] inside proc
+
+shopt -s ysh:upgrade
+
+var a = [0]
+
+proc mutate {
+  var a = [1]  # shadows global var
+
+  echo 'hi from mutate'
+  setglobal a[0] = 42
+
+  pp line (a)
+}
+
+echo 'BEFORE mutate'
+pp line (a)
+
+mutate
+
+echo 'AFTER mutate'
+pp line (a)
+
+## STDOUT:
+BEFORE mutate
+(List)   [0]
+hi from mutate
+(List)   [42]
+AFTER mutate
+(List)   [42]
+## END
+
 
 #### unset inside proc uses local scope
 shopt --set parse_brace
@@ -660,3 +688,4 @@ wrong IFS=x
 shvar IFS=z
 ['x', 'x ', 'x']
 ## END
+

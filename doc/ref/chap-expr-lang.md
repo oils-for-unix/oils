@@ -35,7 +35,7 @@ value can't be interpolated into words.
 
     #'a'   #'_'   \n   \\   \u{3bc}
 
-### str-literal
+### ysh-string
 
 Double quoted strings are identical to shell:
 

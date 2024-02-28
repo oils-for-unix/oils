@@ -51,31 +51,43 @@ Examples:
 
 ### try
 
-Run a block of code, stopping at the first error (i.e. errexit is enabled).
-Set the `_status` variable to the exit status of the block, and returns 0.
+Run a block of code, stopping at the first error.  In other words, shopt
+`errexit` is enabled.
+
+Set the `_status` variable to the exit status of the block, and return 0.
 
     try {
       ls /nonexistent
-
-      ls | wc -l
-
-      diff <(sort left.txt) <(sort right.txt)
-
-      var x = 1 / 0
     }
     if (_status !== 0) {
-      echo 'error'
+      echo 'ls failed'
     }
 
-    # Shortcut for a single command
-    try grep PATTERN FILE.txt
-    case $_status in
-      (0) echo 'found' ;;
-      (1) echo 'not found' ;;
-      (*) echo "error $_status" ;;
-    esac
+Handle expression errors:
 
-It may also set the `_error` register.
+    try {
+      var x = 42 / 0
+    }
+
+And errors from compound commands:
+
+    try {
+      ls | wc -l
+      diff <(sort left.txt) <(sort right.txt)
+    }
+
+The case statement can be useful:
+
+    try {
+      grep PATTERN FILE.txt
+    }
+    case (_status) {
+      (0)    { echo 'found' }
+      (1)    { echo 'not found' }
+      (else) { echo "grep returned status $_status" }
+    }
+
+The `try` builtin may also set the `_error` register.
 
 ### boolstatus
 
@@ -370,13 +382,13 @@ What about write?  These would be the same:
     write --j8 -- $s
 
     write -- $[toJson(s)]
-    write -- $[toJ8(s)]
+    write -- $[toJson8(s)]
 
     write --json -- @strs
     write --j8 -- @strs
 
     write -- @[toJson(s) for s in strs]
-    write -- @[toJ8(s) for s in strs]
+    write -- @[toJson8(s) for s in strs]
 
 It's an argument for getting rid --json and --j8?  I already implemented them,
 but it makes the API smaller.
@@ -430,9 +442,9 @@ Examples:
     write --sep '' --end '' -- a b        # write 2 bytes
     write --sep $'\t' --end $'\n' -- a b  # TSV line
 
-You may want to use `toJ8()` or `toJson()` before writing:
+You may want to use `toJson8()` or `toJson()` before writing:
 
-    write -- $[toJ8(mystr)]
+    write -- $[toJson8(mystr)]
     write -- $[toJson(mystr)]
 
 

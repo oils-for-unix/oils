@@ -8,7 +8,7 @@ spec/bin/argv.py @myarray
 echo len=$[len(myarray)]
 echo
 
-append myarray _ '1 2' ${myglobal:-default}
+append _ '1 2' ${myglobal:-default} (myarray)
 spec/bin/argv.py @myarray
 echo len=$[len(myarray)]
 echo

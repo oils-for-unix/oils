@@ -261,4 +261,22 @@ long-sigs-where() {
      | awk 'length($0) >= 110 { print }' | tee _tmp/long
 }
 
+#
+# Refactor tests
+#
+
+print-names() {
+  egrep -o '[a-zA-Z_-]+'
+}
+
+make-sed() {
+  awk '{ print "s/" $0 "/unquoted-" $0 "/g;" }'
+}
+
+test-files() {
+  cat _tmp/r | print-names | make-sed | tee _tmp/sedr
+
+  sed -i -f _tmp/sedr test/runtime-errors.sh
+}
+
 run-task "$@"

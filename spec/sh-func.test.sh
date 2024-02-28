@@ -148,14 +148,3 @@ echo status=$?
 status=42
 status=42
 ## END
-
-#### Functions can be named func or proc
-func() { echo f; }
-proc() { echo p; }
-
-func
-proc
-## STDOUT:
-f
-p
-## END

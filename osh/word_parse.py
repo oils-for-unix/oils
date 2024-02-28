@@ -667,7 +667,9 @@ class WordParser(WordEmitter):
 
                 # x = $'\z' is disallowed; ditto for echo $'\z' if shopt -u parse_backslash
                 if is_ysh_expr or not self.parse_opts.parse_backslash():
-                    p_die("Invalid char escape in C-style string literal", tok)
+                    p_die(
+                        "Invalid char escape in C-style string literal (OILS-ERR-11)",
+                        tok)
 
                 tokens.append(tok)
 
@@ -944,7 +946,7 @@ class WordParser(WordEmitter):
                         if (is_ysh_expr or
                                 not self.parse_opts.parse_backslash()):
                             p_die(
-                                "Invalid char escape in double quoted string",
+                                "Invalid char escape in double quoted string (OILS-ERR-12)",
                                 self.cur_token)
                     elif self.token_type == Id.Lit_Dollar:
                         if is_ysh_expr or not self.parse_opts.parse_dollar():
@@ -1611,7 +1613,7 @@ class WordParser(WordEmitter):
             ch = lexer.TokenSliceLeft(tok, 1)
             if not self.parse_opts.parse_backslash():
                 if not pyutil.IsValidCharEscape(ch):
-                    p_die('Invalid char escape (parse_backslash)',
+                    p_die('Invalid char escape in unquoted word (OILS-ERR-13)',
                           self.cur_token)
 
             part = word_part.EscapedLiteral(self.cur_token,

@@ -55,9 +55,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
-                  num-suffix    42 K Ki M Mi G Gi T Ti / ms us
+                  X num-suffix  42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
-                  str-literal   "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
+                  ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
                   triple-quoted """  r'''  u'''  b'''
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}
@@ -98,7 +98,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-word-lang
-  [String Lit]    str-literal   "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
+  [Quotes]        ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
                   triple-quoted """  r'''  u'''  b'''
                   X tagged-str  "<span id=$x>"html
   [Expression]    expr-sub      echo $[42 + a[i]]
@@ -276,8 +276,8 @@ X [Str]           strcmp()   X split()   shSplit()
   [Collections]   X copy()   X deepCopy()
   [Word]          glob()   maybe()
   [Math]          abs()   max()   min()   X round()   sum()
-  [Serialize]     toJ8()   fromJ8()
-                  toJson()   fromJson()
+  [Serialize]     toJson()   fromJson()
+                  toJson8()   fromJson8()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
 X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()

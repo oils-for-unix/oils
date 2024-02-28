@@ -3,6 +3,15 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 0
 
+#### try expects an argument
+
+try
+echo status=$?
+
+## status: 3
+## STDOUT:
+## END
+
 #### User errors behave like builtin errors
 func divide(a, b) {
   if (b === 0) {
@@ -49,7 +58,7 @@ proc p {
   echo $[divide(5, 0)]
 }
 
-try p
+try { p }
 echo status=$_status
 echo message=$[_error.message]
 
@@ -161,15 +170,11 @@ error ('error', status=0)
 ## STDOUT:
 ## END
 
-#### Two styles of try with error builtin behave the same way (bug)
+#### try { error oops }
 
 try { error oops }
 echo status=$_status
 
-try error oops
-echo status=$_status
-
 ## STDOUT:
-status=10
 status=10
 ## END

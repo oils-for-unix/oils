@@ -313,6 +313,47 @@ Returns 0 for an empty list.
 
 Note, you will need to `source --builtin list.ysh` to use this function.
 
+## Serialize
+
+### toJson()
+
+Convert an object in memory to JSON text:
+
+    = toJson({name: "alice"})
+    (Str)   '{"name": "alice"}'
+
+Similar to `json write ({name: "alice"})`.
+
+See [json-encode-err](chap-errors.html#json-encode-err) for errors.
+
+### fromJson()
+
+Convert JSON text to an object in memory:
+
+    = fromJson('{"name":"alice"}')
+    (Dict)   {"name": "alice"}
+
+Similar to `json read <<< '{"name": "alice"}'`.
+
+See [json-decode-err](chap-errors.html#json-decode-err) for errors.
+
+### toJson8()
+
+Like `toJson()`, but it also converts binary data (non-Unicode strings) to
+J8-style `b'foo \yff'` strings.
+
+In contrast, `toJson()` will do a lossy conversion with the Unicode replacement
+character.
+
+See [json8-encode-err](chap-errors.html#json8-encode-err) for errors.
+
+### fromJson8()
+
+Like `fromJson()`, but it also accepts binary data denoted by J8-style `b'foo
+\yff'` strings.
+
+See [json8-decode-err](chap-errors.html#json8-decode-err) for errors.
+
 ## Pattern
 
 ### `_group()`

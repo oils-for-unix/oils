@@ -285,8 +285,7 @@ class Read(vm._Builtin):
         self.errfmt = errfmt
         self.stdin_ = mylib.Stdin()
 
-    # Was --qsn, might be restored as --j8-word or --j8-line, but not until we
-    # have fromJ8Word() and so forth
+    # Was --qsn, might be restored as --j8-word or --j8-line
     if 0:
         #from data_lang import qsn_native
         def _MaybeDecodeLine(self, line):

@@ -845,11 +845,11 @@ def Main(
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
     j8print = j8.Printer()
-    _SetGlobalFunc(mem, 'toJ8', func_misc.ToJ8(j8print, True))
-    _SetGlobalFunc(mem, 'toJson', func_misc.ToJ8(j8print, False))
+    _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(j8print, True))
+    _SetGlobalFunc(mem, 'toJson', func_misc.ToJson8(j8print, False))
 
-    _SetGlobalFunc(mem, 'fromJ8', func_misc.FromJ8(True))
-    _SetGlobalFunc(mem, 'fromJson', func_misc.FromJ8(False))
+    _SetGlobalFunc(mem, 'fromJson8', func_misc.FromJson8(True))
+    _SetGlobalFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
     mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)

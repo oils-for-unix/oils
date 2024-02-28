@@ -160,10 +160,39 @@ def Stdin():
 
 
 class switch(object):
-    """A ContextManager that translates to a C switch statement."""
+    """Translates to C switch on int.
+
+    with tagswitch(i) as case:
+        if case(42, 43):
+           print('hi')
+        elif case(99):
+           print('two')
+       else:
+           print('neither')
+    """
 
     def __init__(self, value):
         # type: (int) -> None
+        self.value = value
+
+    def __enter__(self):
+        # type: () -> switch
+        return self
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> bool
+        return False  # Allows a traceback to occur
+
+    def __call__(self, *cases):
+        # type: (*Any) -> bool
+        return self.value in cases
+
+
+class str_switch(object):
+    """Translates to fast dispatch on string length, then memcmp()."""
+
+    def __init__(self, value):
+        # type: (str) -> None
         self.value = value
 
     def __enter__(self):

@@ -184,7 +184,7 @@ proc is_it_true() {
 # to make it work you have to 'try' the proc
 # and remove the brackets
 
-try is_it_true
+try { is_it_true }
 if (_status !== 0) {
   echo "could be anything really"
 }

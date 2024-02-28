@@ -55,7 +55,7 @@ Such errors include JSON/J8 encoding/decoding errors, and user errors from the
 `error` builtin.
 
     try {
-      echo $[toJ8( /d+/ )]  # invalid Eggex type
+      echo $[toJson( /d+/ )]  # invalid Eggex type
     }
     echo "failed: $[_error.message]"  # => failed: Can't serialize ...
 

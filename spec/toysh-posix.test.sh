@@ -172,8 +172,8 @@ chicken() { for i in "$@"; do echo =$i=; done;}
 chicken one abc dxf ghi
 
 echo ---
-func() { "$SH" -c 'IFS=x; for i in $@; do echo =$i=; done' blah "$@"; }
-func one "" two
+myfunc() { "$SH" -c 'IFS=x; for i in $@; do echo =$i=; done' blah "$@"; }
+myfunc one "" two
 
 ## STDOUT:
 =one=

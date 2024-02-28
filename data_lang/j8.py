@@ -152,7 +152,7 @@ assert pyj8.LOSSY_JSON == LOSSY_JSON
 
 class Printer(object):
     """
-    For json/j8 write (x), write (x), = operator, pp line (x)
+    For json/json8 write (x), write (x), = operator, pp line (x)
     """
 
     def __init__(self):
@@ -173,7 +173,7 @@ class Printer(object):
 
     def PrintMessage(self, val, buf, indent):
         # type: (value_t, mylib.BufWriter, int) -> None
-        """ For j8 write (x) and toJ8() 
+        """ For json8 write (x) and toJson8() 
 
         Caller must handle error.Encode
         """

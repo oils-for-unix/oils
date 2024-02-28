@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Survey Python and JS string and regex replacement APIs
+# Survey string APIs
 #
 # Usage:
-#   demo/survey-replace.sh <function name>
+#   demo/survey-str-api.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -11,7 +11,9 @@ set -o errexit
 
 source build/dev-shell.sh  # python3 in $PATH
 
-string() {
+# Python and JS string and regex replacement APIs
+
+string-replace() {
   echo 'STRING PYTHON'
   echo
 
@@ -42,7 +44,7 @@ string() {
   nodejs -e 'console.log("oils-for-unix".replace("", "++"))'
 }
 
-regex() {
+regex-replace() {
   echo 'REGEX PYTHON'
   echo
 
@@ -106,6 +108,18 @@ regex() {
   # m flag is like re.MULTILINE
   nodejs -e 'console.log("9-16-25\n100-200".replace(new RegExp("^(\\d+)", "gm"), "[$1]"))'
   echo
+}
+
+survey-trim() {
+  echo 'PYTHON'
+  echo
+
+  # TODO: Test other unicode chars
+  local str=' hi '
+
+  python3 -c 'import sys; s = sys.argv[1]; print("[%s] [%s]" % (s, s.strip()))' "$str"
+
+  nodejs -e 'var s = process.argv[1]; var t = s.trim(); console.log(`[${s}] [${t}]`);' "$str"
 }
 
 "$@"

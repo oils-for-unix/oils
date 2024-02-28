@@ -76,6 +76,7 @@ readonly MARKDOWN_DOCS=(
   getting-started
   known-differences
   error-handling
+  error-catalog
   json
   hay
   simple-word-eval
@@ -97,6 +98,7 @@ readonly MARKDOWN_DOCS=(
   qsn
   qtt
   j8-notation
+  pretty-printing
 
   doc-toolchain
   doc-plugins

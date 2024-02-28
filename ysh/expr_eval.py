@@ -369,7 +369,7 @@ class ExprEvaluator(object):
             named_args = {}  # type: Dict[str, value_t]
             arg_list = ArgList.CreateNull()  # There's no call site
             rd = typed_args.Reader(pos_args, named_args, arg_list)
-            rd.SetCallLocation(convert_tok)
+            rd.SetFallbackLocation(convert_tok)
             try:
                 val = self._CallFunc(func_val, rd)
             except error.FatalRuntime as e:

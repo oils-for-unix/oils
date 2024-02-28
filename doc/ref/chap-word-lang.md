@@ -14,12 +14,6 @@ for OSH and YSH.
 <div id="toc">
 </div>
 
-<h2 id="string-lit">String Literals</h2>
-
-### multi-str
-
-### j8-str
-
 <h2 id="expression">Expressions to Words</h2>
 
 ### expr-sub
@@ -37,13 +31,29 @@ for OSH and YSH.
 
 ## Quotes
 
-### quotes
+### osh-string
 
 - Single quotes
 - Double Quotes
 - C-style strings: `$'\n'`
 
-Also see [oil-string]($oil-help).
+TODO: elaborate
+
+### ysh-string
+
+YSH strings in the word language are the same as in the expression language.
+
+See [ysh-string in chap-expr-lang](chap-expr-lang.html#ysh-string).
+
+### triple-quoted
+
+Triple-quoted in the word language are the same as in the expression language.
+
+See [triple-quoted in chap-expr-lang](chap-expr-lang.html#triple-quoted).
+
+### tagged-str
+
+Not done.
 
 ## Substitutions
 

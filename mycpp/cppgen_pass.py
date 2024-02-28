@@ -1970,7 +1970,25 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent -= 1
         self.def_write_ind('}\n')
 
-    def _write_typeswitch(self, expr, o):
+    def _write_str_switch(self, expr, o):
+        """Write a switch statement over strings."""
+        assert len(expr.args) == 1, expr.args
+
+        self.def_write_ind('switch (')
+        self.accept(expr.args[0])
+        self.def_write(') {\n')
+
+        assert len(o.body.body) == 1, o.body.body
+        if_node = o.body.body[0]
+        assert isinstance(if_node, IfStmt), if_node
+
+        self.indent += 1
+        self._write_cases(if_node)
+
+        self.indent -= 1
+        self.def_write_ind('}\n')
+
+    def _write_tag_switch(self, expr, o):
         """Write a switch statement over ASDL types."""
         assert len(expr.args) == 1, expr.args
 
@@ -2033,10 +2051,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         expr = o.expr[0]
         assert isinstance(expr, CallExpr), expr
 
-        if expr.callee.name == 'switch':
+        callee_name = expr.callee.name
+        if callee_name == 'switch':
             self._write_switch(expr, o)
-        elif expr.callee.name == 'tagswitch':
-            self._write_typeswitch(expr, o)
+        elif callee_name == 'str_switch':
+            self._write_str_switch(expr, o)
+        elif callee_name == 'tagswitch':
+            self._write_tag_switch(expr, o)
         else:
             assert isinstance(expr, CallExpr), expr
             self.def_write_ind('{  // with\n')
