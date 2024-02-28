@@ -107,7 +107,7 @@ That is, `echo "$flag"` always has a few bugs: when `$flag` is `-e`, `-n`,
 
 So portable shell scripts use:
 
-    printf '%s\n' "$x"     # print $x "unmolested" in POSIX shell
+    printf '%s\n' "$x"     # print "unmolested" in POSIX shell
 
 We could have chosen to respect `echo -- $x`, but as YSH already has:
 
@@ -117,6 +117,7 @@ It allowed YSH to have:
 
     echo $x                # YES: an even shorter way
     write --sep ' ' -- $x  # synonym
+    write -- $x $y         # alternative (one line per arg)
 
 So `echo` is technically superfluous in YSH, but it's also short, familiar, and
 correct.
