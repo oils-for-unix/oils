@@ -106,17 +106,13 @@ eval "echo --
 # COMMAND ERRORS
 #
 
-no_such_command() {
-  set -o errexit
-  ZZZZZ
-
-  echo 'SHOULD NOT GET HERE'
+test-no_such_command() {
+  _osh-error-X 127 'set -o errexit; ZZZZZ; echo UNREACHABLE'
 }
 
-no_such_command_commandsub() {
-  set -o errexit
-  echo $(ZZZZZ)
-  echo 'SHOULD NOT GET HERE'
+test-no_such_command_commandsub() {
+  _osh-should-run 'set -o errexit; echo $(ZZZZZ); echo UNREACHABLE'
+  _osh-error-X 127 'set -o errexit; shopt -s command_sub_errexit; echo $(ZZZZZ); echo UNREACHABLE'
 }
 
 no_such_command_heredoc() {
@@ -138,24 +134,27 @@ test-failed_command() {
 
 # This quotes the same line of code twice, but maybe that's OK.  At least there
 # is different column information.
-errexit_usage_error() {
-  set -o errexit
-  type -z
+test-errexit_usage_error() {
+  _osh-error-2 'set -o errexit; type -z'
 }
 
-errexit_subshell() {
-  set -o errexit
-
+test-errexit_subshell() {
   # Note: for loops, while loops don't trigger errexit; their components do
-  ( echo subshell; exit 42; )
+  _osh-error-X 42 'set -o errexit; ( echo subshell; exit 42; )'
 }
 
-errexit_pipeline() {
-  set -o errexit
-  set -o pipefail
-
+TODO-BUG-test-errexit_pipeline() {
   # We don't blame the right location here
-  echo subshell | cat | exit 42 | wc -l
+
+  # BUG: what happnened here?  Is there a race?
+  local code='set -o errexit; set -o pipefail; echo subshell | cat | exit 42 | wc -l'
+
+  #local code='set -o errexit; set -o pipefail; echo subshell | cat | exit 42'
+
+  bash -c "$code"
+  echo status=$?
+
+  _osh-error-X 42 "$code"
 }
 
 errexit_dbracket() {
@@ -1098,7 +1097,7 @@ all-tests() {
 
   # No assertions.  Just showing the error.
   for t in \
-    no_such_command_commandsub no_such_command_heredoc \
+    no_such_command_heredoc \
     errexit_usage_error errexit_subshell errexit_pipeline errexit_dbracket errexit_alias \
     errexit_one_process errexit_multiple_processes \
     command_sub_errexit process_sub_fail \
@@ -1143,7 +1142,6 @@ all-tests() {
   done
 
   _run-test-func unsafe_arith_eval 1
-  _run-test-func no_such_command 127  # status 127
 
   return 0
 }

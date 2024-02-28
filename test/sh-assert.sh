@@ -34,7 +34,6 @@ _assert-sh-status() {
 # Assertions using _assert-sh-status
 #
 
-
 _osh-error-X() {
   local expected_status=$1
   shift
@@ -53,12 +52,11 @@ _ysh-error-X() {
     -c "$@"
 }
 
-#
-# Runtime errors
-#
-
-# These pass -c instead of -n -c
-# Not using _osh-should-run yet
+_osh-should-run() {
+  local message="Should run under $OSH"
+  _assert-sh-status 0 $OSH "$message" \
+    -c "$@"
+}
 
 _ysh-should-run() {
   local message="Should run under $YSH"
@@ -67,7 +65,7 @@ _ysh-should-run() {
 }
 
 #
-# Parse errors
+# Parse errors - pass -n -c, instead of -c
 #
 
 _osh-should-parse() {
