@@ -1,13 +1,6 @@
 from __future__ import print_function
 """
-osh2oil.py: Translate OSH to Oil.
-
-TODO: Turn this into 2 tools.
-
-ysh-prettify: May change the meaning of the code.  Should have a list of
-selectable rules.
-
-Files should already have shopt --set ysh:upgrade at the top
+ysh_ify.py: Roughly translate OSH to YSH.  Doesn't respect semantics.
 
 ESSENTIAL
 
@@ -43,9 +36,12 @@ Word:
   quote removal "$foo" -> $foo
   brace removal ${foo} and "${foo}" -> $foo
 
-TOOL ysh-format:
+--tool format
 
   fix indentation and spacing, like clang-format
+  can "lower" the LST to a rough representation with keywords / "first words",
+  { } ( ), and comments
+  - the "atoms" should not have newlines
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
@@ -95,8 +91,9 @@ if TYPE_CHECKING:
 
 
 class Cursor(object):
-    """Wrapper for printing/transforming a complete source file stored in a
-    single arena."""
+    """
+    API to print/transform a complete source file, stored in a single arena.
+    """
 
     def __init__(self, arena, f):
         # type: (alloc.Arena, mylib.Writer) -> None
@@ -153,8 +150,9 @@ class Cursor(object):
 
 def PrintArena(arena):
     # type: (alloc.Arena) -> None
-    """For testing the invariant that the spans "add up" to the original
-    doc."""
+    """
+    For testing the invariant that the spans "add up" to the original doc.
+    """
     cursor = Cursor(arena, mylib.Stdout())
     cursor.PrintUntilSpid(arena.LastSpanId())
 
@@ -174,10 +172,10 @@ def PrintTokens(arena):
     print_stderr('(%d tokens)' % len(arena.tokens))
 
 
-def PrintAsOil(arena, node):
+def Ysh_ify(arena, node):
     # type: (alloc.Arena, command_t) -> None
     cursor = Cursor(arena, mylib.Stdout())
-    fixer = OilPrinter(cursor, arena, mylib.Stdout())
+    fixer = YshPrinter(cursor, arena, mylib.Stdout())
     fixer.DoCommand(node, None, at_top_level=True)  # no local symbols yet
     fixer.End()
 
@@ -274,7 +272,7 @@ def _GetRhsStyle(w):
     return word_style_e.SQ
 
 
-class OilPrinter(object):
+class YshPrinter(object):
     """Prettify OSH to YSH."""
 
     def __init__(self, cursor, arena, f):
@@ -359,20 +357,20 @@ class OilPrinter(object):
     def DoShAssignment(self, node, at_top_level, local_symbols):
         # type: (command.ShAssignment, bool, Dict[str, bool]) -> None
         """
-    local_symbols:
-      - Add every 'local' declaration to it
-        - problem: what if you have local in an "if" ?
-        - we could treat it like nested scope and see what happens?  Do any
-          programs have a problem with it?
-          case/if/for/while/BraceGroup all define scopes or what?
-          You don't want inconsistency of variables that could be defined at
-          any point.
-          - or maybe you only need it within "if / case" ?  Well I guess
-            for/while can break out of the loop and cause problems.  A break is
-              an "if".
+        local_symbols:
+          - Add every 'local' declaration to it
+            - problem: what if you have local in an "if" ?
+            - we could treat it like nested scope and see what happens?  Do any
+              programs have a problem with it?
+              case/if/for/while/BraceGroup all define scopes or what?
+              You don't want inconsistency of variables that could be defined at
+              any point.
+              - or maybe you only need it within "if / case" ?  Well I guess
+                for/while can break out of the loop and cause problems.  A break is
+                  an "if".
 
-      - for subsequent
-    """
+          - for subsequent
+        """
         # Change RHS to expression language.  Bare words not allowed.  foo -> 'foo'
 
         has_rhs = False  # TODO: Should be on a per-variable basis.
@@ -395,8 +393,7 @@ class OilPrinter(object):
 
             # TODO: Avoid translating these
             has_array_index = [
-                pair.lhs.tag() == sh_lhs_e.UnparsedIndex
-                for pair in node.pairs
+                pair.lhs.tag() == sh_lhs_e.UnparsedIndex for pair in node.pairs
             ]
 
             # need semantic analysis.

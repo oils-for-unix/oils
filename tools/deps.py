@@ -22,9 +22,9 @@ class Visitor(object):
     # Like ast.NodeVisitor().generic_visit!
     def VisitChildren(self, node):
         """
-    Args:
-      node: an ASDL node.
-    """
+        Args:
+          node: an ASDL node.
+        """
         #print 'CHILD', node.ASDL_TYPE
 
         for name in node.__slots__:
@@ -50,21 +50,20 @@ class Visitor(object):
 
 class DepsVisitor(Visitor):
     """
-  Output:
+    Output:
 
-  type      name          resolved_name             source_path line_num
-  bin       cp            /usr/bin/cp               prog.sh     22
-  lib       functions.sh  /home/andy/src/functions  prog.sh     22
+    type      name          resolved_name             source_path line_num
+    bin       cp            /usr/bin/cp               prog.sh     22
+    lib       functions.sh  /home/andy/src/functions  prog.sh     22
 
-  TODO:
-  - Make this TSV2
-  - handle source and .
-  - flags like --path and --special exec
-  - need some knowledge of function scope.
-    f; f() { true; }  -- f is an exeternal binary!
-    g() { f; }; f() { true; }   -- f is a function!
-
-  """
+    TODO:
+    - Make this TSV2
+    - handle source and .
+    - flags like --path and --special exec
+    - need some knowledge of function scope.
+      f; f() { true; }  -- f is an exeternal binary!
+      g() { f; }; f() { true; }   -- f is a function!
+    """
 
     def __init__(self, f):
         Visitor.__init__(self)
@@ -73,7 +72,6 @@ class DepsVisitor(Visitor):
         self.f = f
 
     def _Visit(self, node):
-        """"""
         #log('VISIT %s', node.__class__.__name__)
 
         # NOTE: The tags are not unique!!!  We would need this:

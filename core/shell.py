@@ -1085,7 +1085,7 @@ def Main(
             ysh_ify.PrintArena(arena)
 
         elif tool_name == 'ysh-ify':
-            ysh_ify.PrintAsOil(arena, node)
+            ysh_ify.Ysh_ify(arena, node)
 
         elif tool_name == 'deps':
             if mylib.PYTHON:
