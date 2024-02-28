@@ -92,7 +92,8 @@ module syntax
   # - Get rid of span_id, and re-compute length on demand too
   #   - span_id is only used by tools/ysh_ify.py
   #   - but length is used when computing .tval
-  Token = (id id, int col, int length, int span_id, SourceLine? line, str tval)
+  # tval is omitted for many Kind.X in Lexer.Read()
+  Token = (id id, int col, int length, int span_id, SourceLine? line, str? tval)
 
   # Slight ASDL bug: CompoundWord has to be defined before using it as a shared
   # variant.  The _product_counter algorithm should be moved into a separate

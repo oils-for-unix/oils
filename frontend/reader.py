@@ -149,7 +149,7 @@ class VirtualLineReader(_Reader):
         # arena invariant, but don't refer to it.
         if self.do_lossless:  # avoid garbage, doesn't affect correctness
             self.arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line,
-                                src_line.content[:start_offset])
+                                None)
 
         # NOTE: we return a partial line, but we also want the lexer to create
         # tokens with the correct line_spans.  So we have to tell it 'start_offset'
