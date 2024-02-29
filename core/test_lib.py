@@ -239,8 +239,7 @@ def InitCommandEvaluator(parse_ctx=None,
     ext_prog = \
         ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
 
-    j8print = j8.Printer()
-    cmd_deps.dumper = dev.CrashDumper('', fd_state, j8print)
+    cmd_deps.dumper = dev.CrashDumper('', fd_state)
     cmd_deps.debug_f = debug_f
 
     splitter = split.SplitContext(mem)

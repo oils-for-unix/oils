@@ -148,8 +148,9 @@ class VirtualLineReader(_Reader):
         # Maintain lossless invariant for STRIPPED tabs: add a Token to the
         # arena invariant, but don't refer to it.
         if self.do_lossless:  # avoid garbage, doesn't affect correctness
-            self.arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line,
-                                None)
+            if start_offset != 0:
+                self.arena.NewToken(Id.Ignored_HereTabs, 0, start_offset,
+                                    src_line, None)
 
         # NOTE: we return a partial line, but we also want the lexer to create
         # tokens with the correct line_spans.  So we have to tell it 'start_offset'
