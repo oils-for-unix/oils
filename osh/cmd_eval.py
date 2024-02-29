@@ -1034,7 +1034,7 @@ class CommandEvaluator(object):
 
         if node.keyword.id == Id.Lit_Equals:  # = f(x)
             with vm.ctx_FlushStdout():
-                ui.DebugPrint(val)
+                ui.PrettyPrintValue(val, mylib.Stdout())
 
         return 0
 

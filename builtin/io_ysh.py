@@ -111,7 +111,7 @@ class Pp(_Builtin):
         elif action == 'line':
             # Print format for unit tests
 
-            # TODO: could be pp asdl (x, y, z)
+            # TODO: could be pp line (x, y, z)
             rd = typed_args.ReaderForProc(cmd_val)
             val = rd.PosValue()
             rd.Done()

@@ -188,10 +188,11 @@ class Printer(object):
         """
         self._Print(val, buf, indent, options=LOSSY_JSON)
 
-    def DebugPrint(self, val, f):
+    def PrettyPrint(self, val, f):
         # type: (value_t, mylib.Writer) -> None
-        """
-        For = operator.
+        """ For = operator.
+
+        TODO: Put this in another module.
         """
         # error.Encode should be impossible - we show cycles and non-data
         buf = mylib.BufWriter()
@@ -268,73 +269,83 @@ class InstancePrinter(object):
             self.spaces[num_spaces] = ' ' * num_spaces
         return self.spaces[num_spaces]
 
-    def _PrintList(self, val, level):
-        # type: (value.List, int) -> None
+    def _ItemIndent(self, level):
+        # type: (int) -> None
 
         if self.indent == -1:
-            bracket_indent = ''
-            item_indent = ''
-            maybe_newline = ''
-        else:
-            bracket_indent = self._GetIndent(level * self.indent)
-            item_indent = self._GetIndent((level + 1) * self.indent)
-            maybe_newline = '\n'
+            return
+
+        item_indent = self._GetIndent((level + 1) * self.indent)
+        self.buf.write(item_indent)
+
+    def _BracketIndent(self, level):
+        # type: (int) -> None
+
+        if self.indent == -1:
+            return
+
+        bracket_indent = self._GetIndent(level * self.indent)
+        self.buf.write(bracket_indent)
+
+    def _MaybeNewline(self):
+        # type: () -> None
+        if self.indent == -1:
+            return
+        self.buf.write('\n')
+
+    def _MaybeSpace(self):
+        # type: () -> None
+        if self.indent == -1:
+            return
+        self.buf.write(' ')
+
+    def _PrintList(self, val, level):
+        # type: (value.List, int) -> None
 
         if len(val.items) == 0:  # Special case like Python/JS
             self.buf.write('[]')
         else:
             self.buf.write('[')
-            self.buf.write(maybe_newline)
+            self._MaybeNewline()
             for i, item in enumerate(val.items):
                 if i != 0:
                     self.buf.write(',')
-                    self.buf.write(maybe_newline)
+                    self._MaybeNewline()
 
-                self.buf.write(item_indent)
+                self._ItemIndent(level)
                 self.Print(item, level + 1)
-            self.buf.write(maybe_newline)
+            self._MaybeNewline()
 
-            self.buf.write(bracket_indent)
+            self._BracketIndent(level)
             self.buf.write(']')
 
     def _PrintDict(self, val, level):
         # type: (value.Dict, int) -> None
 
-        if self.indent == -1:
-            bracket_indent = ''
-            item_indent = ''
-            maybe_newline = ''
-            maybe_space = ''
-        else:
-            bracket_indent = self._GetIndent(level * self.indent)
-            item_indent = self._GetIndent((level + 1) * self.indent)
-            maybe_newline = '\n'
-            maybe_space = ' '  # after colon
-
         if len(val.d) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
-            self.buf.write(maybe_newline)
+            self._MaybeNewline()
             i = 0
             for k, v in iteritems(val.d):
                 if i != 0:
                     self.buf.write(',')
-                    self.buf.write(maybe_newline)
+                    self._MaybeNewline()
 
-                self.buf.write(item_indent)
+                self._ItemIndent(level)
 
                 pyj8.WriteString(k, self.options, self.buf)
 
                 self.buf.write(':')
-                self.buf.write(maybe_space)
+                self._MaybeSpace()
 
                 self.Print(v, level + 1)
 
                 i += 1
 
-            self.buf.write(maybe_newline)
-            self.buf.write(bracket_indent)
+            self._MaybeNewline()
+            self._BracketIndent(level)
             self.buf.write('}')
 
     def Print(self, val, level=0):
@@ -344,16 +355,6 @@ class InstancePrinter(object):
         # It's like
         #    JSON.stringify(d, null, 0)
         # except we use -1, not 0.  0 can still have newlines.
-        if self.indent == -1:
-            bracket_indent = ''
-            item_indent = ''
-            maybe_newline = ''
-            maybe_space = ''
-        else:
-            bracket_indent = self._GetIndent(level * self.indent)
-            item_indent = self._GetIndent((level + 1) * self.indent)
-            maybe_newline = '\n'
-            maybe_space = ' '  # after colon
 
         UP_val = val
         with tagswitch(val) as case:
@@ -446,47 +447,47 @@ class InstancePrinter(object):
                 val = cast(value.BashArray, UP_val)
 
                 self.buf.write('[')
-                self.buf.write(maybe_newline)
+                self._MaybeNewline()
                 for i, s in enumerate(val.strs):
                     if i != 0:
                         self.buf.write(',')
-                        self.buf.write(maybe_newline)
+                        self._MaybeNewline()
 
-                    self.buf.write(item_indent)
+                    self._ItemIndent(level)
                     if s is None:
                         self.buf.write('null')
                     else:
                         pyj8.WriteString(s, self.options, self.buf)
 
-                self.buf.write(maybe_newline)
+                self._MaybeNewline()
 
-                self.buf.write(bracket_indent)
+                self._BracketIndent(level)
                 self.buf.write(']')
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
 
                 self.buf.write('{')
-                self.buf.write(maybe_newline)
+                self._MaybeNewline()
                 i = 0
                 for k2, v2 in iteritems(val.d):
                     if i != 0:
                         self.buf.write(',')
-                        self.buf.write(maybe_newline)
+                        self._MaybeNewline()
 
-                    self.buf.write(item_indent)
+                    self._ItemIndent(level)
 
                     pyj8.WriteString(k2, self.options, self.buf)
 
                     self.buf.write(':')
-                    self.buf.write(maybe_space)
+                    self._MaybeSpace()
 
                     pyj8.WriteString(v2, self.options, self.buf)
 
                     i += 1
 
-                self.buf.write(maybe_newline)
-                self.buf.write(bracket_indent)
+                self._MaybeNewline()
+                self._BracketIndent(level)
                 self.buf.write('}')
 
             else:

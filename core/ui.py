@@ -417,12 +417,12 @@ def PrintAst(node, flag):
         ast_f.write('\n')
 
 
-def DebugPrint(val):
-    # type: (value_t) -> None
-    """ For the = keyword """
+def PrettyPrintValue(val, f):
+    # type: (value_t, mylib.Writer) -> None
+    """For the = keyword"""
+
     ysh_type = ValType(val)
     id_str = j8.ValueIdString(val)
-    f = mylib.Stdout()
 
     UP_val = val
     with tagswitch(val) as case:
@@ -433,15 +433,17 @@ def DebugPrint(val):
             # Use () instead of <> as a hint that it's a "JSON value"
             f.write('(%s%s)   ' % (ysh_type, id_str))
 
-            j8print.DebugPrint(val, f)
+            # TODO: Wrap lines, and show color.  Use core/ansi.py
+            j8print.PrettyPrint(val, f)
 
         elif case(value_e.Range):
-            # Custom printing
             val = cast(value.Range, UP_val)
+
+            # Printing Range values more nicely.  Note that pp line (x) doesn't
+            # have this.
             f.write('(%s)   %d .. %d\n' % (ysh_type, val.lower, val.upper))
 
         else:
             # Just print object and ID.  Use <> to show that it's more like
             # a reference type.
-            # pp value (x) is more detailed, showing the "guts"
             f.write('<%s%s>\n' % (ysh_type, id_str))

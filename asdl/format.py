@@ -1,15 +1,12 @@
 """
 format.py -- Pretty print an ASDL data structure.
 
-Like encode.py, but uses text instead of binary.
-
-TODO:
+TODO: replace ad hoc line wrapper, e.g. _TrySingleLine
 
 - auto-abbreviation of single field things (minus location)
-
 - option to omit spaces for SQ, SQ, W?  It's all one thing.
 
-Places where we try a single line:
+Where we try wrap to a single line:
  - arrays
  - objects with name fields
  - abbreviated, unnamed fields
@@ -29,7 +26,7 @@ if mylib.PYTHON:
 
     def PrettyPrint(obj, f=None):
         # type: (Any, Optional[mylib.Writer]) -> None
-        """Print abbreviated tree in color, for unnit tests."""
+        """Print abbreviated tree in color.  For unit tests."""
         f = f if f else mylib.Stdout()
 
         ast_f = DetectConsoleOutput(f)
