@@ -10,6 +10,7 @@
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
 #include "_gen/data_lang/nil8.asdl.h"
+#include "_gen/data_lang/pretty.asdl.h"
 #include "_gen/frontend/arg_types.h"
 #include "_gen/frontend/consts.h"
 #include "_gen/frontend/help_meta.h"

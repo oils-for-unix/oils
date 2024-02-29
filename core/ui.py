@@ -23,10 +23,11 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from asdl import format as fmt
+from data_lang import pretty
 from frontend import lexer
 from frontend import location
 from mycpp import mylib
-from mycpp.mylib import print_stderr, tagswitch
+from mycpp.mylib import print_stderr, tagswitch, log
 from data_lang import j8
 from data_lang import j8_lite
 
@@ -36,6 +37,8 @@ if TYPE_CHECKING:
     from core import error
     from core.error import _ErrorWithLocation
     from mycpp.mylib import Writer
+
+_ = log
 
 
 def ValType(val):
@@ -431,6 +434,9 @@ def PrettyPrintValue(val, f):
                 value_e.Str, value_e.List, value_e.Dict):
             # Use () instead of <> as a hint that it's a "JSON value"
             f.write('(%s%s)   ' % (ysh_type, id_str))
+
+            # Unused STUB
+            doc = pretty.FromValue(val)
 
             buf = mylib.BufWriter()
 

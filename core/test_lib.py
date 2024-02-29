@@ -37,7 +37,6 @@ from core import state
 from core import ui
 from core import util
 from core import vm
-from data_lang import j8
 from frontend import lexer
 from frontend import location
 from frontend import parse_lib
