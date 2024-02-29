@@ -493,7 +493,6 @@ Kind GetKind(id_kind_asdl::Id_t id) {
             GenBuiltinLookup('LookupAssignBuiltin', 'assign', f)
             GenBuiltinLookup('LookupSpecialBuiltin', 'special', f)
 
-            from frontend import lexer_def  # break circular dep
             GenStringMembership('IsControlFlow', consts._CONTROL_FLOW_NAMES, f)
             GenIntStrLookup('ControlFlowName', consts._CONTROL_FLOW_LOOKUP, f)
 
