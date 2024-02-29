@@ -10,6 +10,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from core import ui
 from core.error import p_die
 from frontend import consts
+from frontend import lexer
 from frontend import reader
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
@@ -46,7 +47,7 @@ if mylib.PYTHON:
             #   rid of.
             if pnode.tok:
                 if isinstance(pnode.tok, Token):
-                    v = pnode.tok.tval
+                    v = lexer.TokenVal(pnode.tok)
                 else:
                     # e.g. CommandSub for x = $(echo hi)
                     v = repr(pnode.tok)

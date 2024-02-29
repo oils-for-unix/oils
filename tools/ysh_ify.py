@@ -991,7 +991,7 @@ class YshPrinter(object):
                     # Hm is this necessary though?  I think the only motivation is changing
                     # \{ and \( for macros.  And ' ' to be readable/visible.
                     t = node.token
-                    val = t.tval[1:]
+                    val = lexer.TokenSliceLeft(t, 1)
                     assert len(val) == 1, val
                     if val != '\n':
                         self.cursor.PrintUntil(t)

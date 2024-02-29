@@ -709,7 +709,7 @@ class Transformer(object):
                 tok = pnode.GetChild(0).tok
 
                 if tok.id == Id.VSub_DollarName:  # $foo is disallowed
-                    bare = tok.tval[1:]
+                    bare = lexer.TokenSliceLeft(tok, 1)
                     p_die(
                         'In expressions, remove $ and use `%s`, or sometimes "$%s"'
                         % (bare, bare), tok)
@@ -1081,7 +1081,7 @@ class Transformer(object):
         ty = TypeExpr.CreateNull()  # don't allocate children
 
         ty.tok = pnode.GetChild(0).tok
-        ty.name = ty.tok.tval  # TODO: TokenVal()
+        ty.name = lexer.TokenVal(ty.tok)
 
         n = pnode.NumChildren()
         if n == 1:
@@ -1309,7 +1309,7 @@ class Transformer(object):
                 # Can happen with multiline single-quoted strings
                 if len(tokens) > 1:
                     p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
-                if len(tokens[0].tval) > 1:
+                if tokens[0].length > 1:
                     p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
                 return tokens[0]
 
@@ -1323,7 +1323,7 @@ class Transformer(object):
             tok = p_node.tok
             if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
                 # For the a in a-z, 0 in 0-9
-                if len(tok.tval) != 1:
+                if tok.length != 1:
                     p_die(RANGE_POINT_TOO_LONG, tok)
                 return tok
 
@@ -1402,7 +1402,7 @@ class Transformer(object):
 
     def _NameInRegex(self, negated_tok, tok):
         # type: (Token, Token) -> re_t
-        tok_str = tok.tval
+        tok_str = lexer.TokenVal(tok)
         if tok_str == 'dot':
             if negated_tok:
                 p_die("Can't negate this symbol", tok)
@@ -1426,7 +1426,7 @@ class Transformer(object):
 
         And `d` is a literal 'd', not `digit`.
         """
-        tok_str = tok.tval
+        tok_str = lexer.TokenVal(tok)
 
         # A bare, unquoted character literal.  In the grammar, this is expressed as
         # range_char without an ending.
@@ -1485,9 +1485,10 @@ class Transformer(object):
 
             if tok.id == Id.Expr_Symbol:
                 # Validate symbols here, like we validate PerlClass, etc.
-                if tok.tval in ('%start', '%end', 'dot'):
+                tok_str = lexer.TokenVal(tok)
+                if tok_str in ('%start', '%end', 'dot'):
                     return tok
-                p_die("Unexpected token %r in regex" % tok.tval, tok)
+                p_die("Unexpected token %r in regex" % tok_str, tok)
 
             if tok.id == Id.Expr_At:
                 # | '@' Expr_Name

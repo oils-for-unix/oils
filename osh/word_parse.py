@@ -196,8 +196,6 @@ class WordParser(WordEmitter):
             self.parse_ctx.trail.AppendToken(self.cur_token)  # For completion
             self.next_lex_mode = lex_mode_e.Undefined
 
-            #log('_GetToken %s %r', Id_str(self.token_type), self.cur_token.tval)
-
     def _SetNext(self, lex_mode):
         # type: (lex_mode_t) -> None
         """Set the next lex state, but don't actually read a token.
@@ -1082,7 +1080,8 @@ class WordParser(WordEmitter):
                 #log("TOK %s", self.cur_token)
 
                 if self.token_type == Id.Backtick_Quoted:
-                    parts.append(self.cur_token.tval[1:])  # Remove leading \
+                    # Remove leading \
+                    parts.append(lexer.TokenSliceLeft(self.cur_token, 1))
 
                 elif self.token_type == Id.Backtick_DoubleQuote:
                     # Compatibility: If backticks are double quoted, then double quotes
@@ -1090,13 +1089,13 @@ class WordParser(WordEmitter):
                     # Shells aren't smart enough to match nested " and ` quotes (but OSH
                     # is)
                     if d_quoted:
-                        parts.append(
-                            self.cur_token.tval[1:])  # Remove leading \
+                        # Remove leading \
+                        parts.append(lexer.TokenSliceLeft(self.cur_token, 1))
                     else:
-                        parts.append(self.cur_token.tval)
+                        parts.append(lexer.TokenVal(self.cur_token))
 
                 elif self.token_type == Id.Backtick_Other:
-                    parts.append(self.cur_token.tval)
+                    parts.append(lexer.TokenVal(self.cur_token))
 
                 elif self.token_type == Id.Backtick_Right:
                     break
