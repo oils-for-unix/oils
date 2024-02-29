@@ -97,6 +97,33 @@ def GenStringLookup(type_name, func_name, pairs, f):
 """)
 
 
+def GenIntStrLookup(func_name, int2str, f):
+    # NOTE: quoting doesn't work, strings must be Identifier Names here
+
+    for i in sorted(int2str):
+        s = int2str[i]
+        f.write('GLOBAL_STR(k%s_%d, "%s");\n' % (func_name, i, s))
+
+    f.write("""\
+
+BigStr* %s(int i) {
+  switch (i) {
+""" % func_name)
+
+    for i in sorted(int2str):
+        s = int2str[i]
+        f.write('  case %d:\n' % i)
+        f.write('    return k%s_%d;\n' % (func_name, i))
+        f.write('    break;\n')
+    f.write("""\
+  default:
+    FAIL(kShouldNotGetHere);
+  }
+}
+
+""")
+
+
 def GenStringMembership(func_name, strs, f):
     groups = collections.defaultdict(list)
     for s in strs:
@@ -343,6 +370,7 @@ option_asdl::builtin_t LookupNormalBuiltin(BigStr* s);
 option_asdl::builtin_t LookupAssignBuiltin(BigStr* s);
 option_asdl::builtin_t LookupSpecialBuiltin(BigStr* s);
 bool IsControlFlow(BigStr* s);
+BigStr* ControlFlowName(int i);
 bool IsKeyword(BigStr* s);
 BigStr* LookupCharC(BigStr* c);
 BigStr* LookupCharPrompt(BigStr* c);
@@ -466,33 +494,18 @@ Kind GetKind(id_kind_asdl::Id_t id) {
             GenBuiltinLookup('LookupSpecialBuiltin', 'special', f)
 
             from frontend import lexer_def  # break circular dep
-            GenStringMembership('IsControlFlow', lexer_def.CONTROL_FLOW_NAMES,
-                                f)
+            GenStringMembership('IsControlFlow', consts._CONTROL_FLOW_NAMES, f)
+            GenIntStrLookup('ControlFlowName', consts._CONTROL_FLOW_LOOKUP, f)
+
             GenStringMembership('IsKeyword', consts.OSH_KEYWORD_NAMES, f)
 
             GenCharLookup('LookupCharC', consts._ONE_CHAR_C, f, required=True)
             GenCharLookup('LookupCharPrompt', consts._ONE_CHAR_PROMPT, f)
 
-            # OptionName() is a bit redundant with ADSL's debug print option_str(),
-            # but the latter should get stripped from the binary
-            out("""\
-BigStr* OptionName(option_asdl::option_t opt_num) {
-  const char* s;
-  switch (opt_num) {
-""")
-
+            opt_int2str = {}
             for opt in option_def.All():
-                out('  case %s:' % opt.index)
-                out('    s = "%s";' % opt.name)
-                out('    break;')
-
-            out("""\
-  default:
-    FAIL(kShouldNotGetHere);
-  }
-  return StrFromC(s);  // TODO-intern
-}
-""")
+                opt_int2str[opt.index] = opt.name
+            GenIntStrLookup('OptionName', opt_int2str, f)
 
             #
             # Generate a tightly packed 2D array for C, from a Python dict.

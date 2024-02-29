@@ -183,7 +183,7 @@ _EXTGLOB_BEGIN = [
     C('!(', Id.ExtGlob_Bang),
 ]
 
-_KEYWORDS = [
+KEYWORDS = [
     # NOTE: { is matched elsewhere
     C('[[', Id.KW_DLeftBracket),
     C('!', Id.KW_Bang),
@@ -215,7 +215,7 @@ _KEYWORDS = [
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
 # maintain compatibility with bash for the 'type' builtin.
-_CONTROL_FLOW = [
+CONTROL_FLOW = [
     C('break', Id.ControlFlow_Break),
     C('continue', Id.ControlFlow_Continue),
     C('return', Id.ControlFlow_Return),
@@ -250,8 +250,6 @@ EXPR_WORDS = [
     C('continue', Id.Expr_Continue),
     C('return', Id.Expr_Return),
 ]
-
-CONTROL_FLOW_NAMES = [name for _, name, _ in _CONTROL_FLOW]
 
 FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
 
@@ -318,7 +316,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
     # No leading descriptor (2 is implied)
     C(r'&>', Id.Redir_AndGreat),
     C(r'&>>', Id.Redir_AndDGreat),
-] + _KEYWORDS + _CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN
+] + KEYWORDS + CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN
 
 # Preprocessing before ShCommand
 LEXER_DEF[lex_mode_e.Backtick] = [
@@ -596,7 +594,6 @@ J8_STR_DEF = [
 
     # osh/word_parse.py relies on this.  It has to match $'', which uses _C_STRING_COMMON
     C('\\', Id.Unknown_Backslash),
-
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
     _ASCII_CONTROL,

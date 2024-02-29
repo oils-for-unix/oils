@@ -1088,7 +1088,7 @@ class CommandEvaluator(object):
             else:
                 arg = 1  # break or continue 1 level by default
 
-        self.tracer.OnControlFlow(keyword.tval, arg)
+        self.tracer.OnControlFlow(consts.ControlFlowName(keyword.id), arg)
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.

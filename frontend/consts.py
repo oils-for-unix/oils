@@ -42,7 +42,7 @@ VISIBLE_SHOPT_NUMS = option_def.VISIBLE_SHOPT_NUMS  # used to print
 BUILTIN_NAMES = builtin_def.BUILTIN_NAMES  # Used by builtin_comp.py
 
 # The 'compen' and 'type' builtins introspect on keywords and builtins.
-OSH_KEYWORD_NAMES = [name for _, name, _ in lexer_def._KEYWORDS]
+OSH_KEYWORD_NAMES = [name for _, name, _ in lexer_def.KEYWORDS]
 OSH_KEYWORD_NAMES.append('{')  # not in our lexer list
 
 
@@ -182,14 +182,21 @@ def OptionNum(s):
     return _OPTION_DICT.get(s, 0)  # 0 means not found
 
 
-#
-# osh/builtin_meta.py
-#
+_CONTROL_FLOW_NAMES = [name for _, name, _ in lexer_def.CONTROL_FLOW]
+_CONTROL_FLOW_LOOKUP = {}
+for _, name, id_ in lexer_def.CONTROL_FLOW:
+    _CONTROL_FLOW_LOOKUP[id_] = name
+
+
+def ControlFlowName(id_):
+    # type: (int) -> str
+    """For tracing"""
+    return _CONTROL_FLOW_LOOKUP[id_]
 
 
 def IsControlFlow(name):
     # type: (str) -> bool
-    return name in lexer_def.CONTROL_FLOW_NAMES
+    return name in _CONTROL_FLOW_NAMES
 
 
 def IsKeyword(name):
