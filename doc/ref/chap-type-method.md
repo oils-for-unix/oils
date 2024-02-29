@@ -79,15 +79,33 @@ The following matrix of signatures are supported by `replace()`:
 
 ### trim()   
 
-Respects unicode space.
+Remove the white-space from the _left and right_ ends of the string. This
+function is Unicode-aware.
+
+    = b' YSH\n' => trim()  # => "YSH"
+
+The following Unicode codepoints are considered white-space:
+
+ - U+0009 -- Horizontal tab (`\t`)
+ - U+000A -- Newline (`\n`)
+ - U+000B -- Vertical tab (`\v`)
+ - U+000C -- Form feed (`\f`)
+ - U+000D -- Carriage return (`\r`)
+ - U+0020 -- Normal space
+ - U+00A0 -- No-break space `<NBSP>`
+ - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
 
 ### trimLeft()   
 
-Respects unicode space.
+Similar to `trim()` but removes white-space _only from the left_.
+
+    = b' YSH\n' => trimLeft()  # => "YSH\n"
 
 ### trimRight()
 
-Respects unicode space.
+Similar to `trim()` but removes white-space _only from the right_.
+
+    = b' YSH\n' => trimRight()  # => " YSH"
 
 ### trimPrefix()   
 
