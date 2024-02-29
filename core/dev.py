@@ -69,11 +69,10 @@ class CrashDumper(object):
     One is constant at build time; the other is constant at runtime.
     """
 
-    def __init__(self, crash_dump_dir, fd_state, j8print):
-        # type: (str, process.FdState, j8.Printer) -> None
+    def __init__(self, crash_dump_dir, fd_state):
+        # type: (str, process.FdState) -> None
         self.crash_dump_dir = crash_dump_dir
         self.fd_state = fd_state
-        self.j8print = j8print
 
         # whether we should collect a dump, at the highest level of the stack
         self.do_collect = bool(crash_dump_dir)
@@ -152,7 +151,7 @@ class CrashDumper(object):
 
         # TODO: This should be JSON with unicode replacement char?
         buf = mylib.BufWriter()
-        self.j8print.PrintMessage(value.Dict(d), buf, 2)
+        j8.PrintMessage(value.Dict(d), buf, 2)
         json_str = buf.getvalue()
 
         try:

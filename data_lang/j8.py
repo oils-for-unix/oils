@@ -150,94 +150,78 @@ LOSSY_JSON = 1 << 3  # JSON is lossy
 assert pyj8.LOSSY_JSON == LOSSY_JSON
 
 
-class Printer(object):
+def _Print(val, buf, indent, options=0):
+    # type: (value_t, mylib.BufWriter, int, int) -> None
     """
-    For json/json8 write (x), write (x), = operator, pp line (x)
+    Args:
+      indent: number of spaces to indent, or -1 for everything on one line
     """
+    p = InstancePrinter(buf, indent, options)
+    p.Print(val)
 
-    def __init__(self):
-        # type: () -> None
-        pass
 
-    # Could be PrintMessage or PrintJsonMessage()
-    def _Print(self, val, buf, indent, options=0):
-        # type: (value_t, mylib.BufWriter, int, int) -> None
-        """
-        Args:
-          indent: number of spaces to indent, or -1 for everything on one line
-        """
-        p = InstancePrinter(buf, indent, options)
-        p.Print(val)
+def PrintMessage(val, buf, indent):
+    # type: (value_t, mylib.BufWriter, int) -> None
+    """ For json8 write (x) and toJson8() 
 
-    def PrintMessage(self, val, buf, indent):
-        # type: (value_t, mylib.BufWriter, int) -> None
-        """ For json8 write (x) and toJson8() 
+    Caller must handle error.Encode
+    """
+    _Print(val, buf, indent)
 
-        Caller must handle error.Encode
-        """
-        self._Print(val, buf, indent)
 
-    def PrintJsonMessage(self, val, buf, indent):
-        # type: (value_t, mylib.BufWriter, int) -> None
-        """ For json write (x) and toJson()
+def PrintJsonMessage(val, buf, indent):
+    # type: (value_t, mylib.BufWriter, int) -> None
+    """ For json write (x) and toJson()
 
-        Caller must handle error.Encode()
-        Doesn't decay to b'' strings - will use Unicode replacement char.
-        """
-        self._Print(val, buf, indent, options=LOSSY_JSON)
+    Caller must handle error.Encode()
+    Doesn't decay to b'' strings - will use Unicode replacement char.
+    """
+    _Print(val, buf, indent, options=LOSSY_JSON)
 
-    def PrettyPrint(self, val, f):
-        # type: (value_t, mylib.Writer) -> None
-        """ For = operator.
 
-        TODO: Put this in another module.
-        """
-        # error.Encode should be impossible - we show cycles and non-data
-        buf = mylib.BufWriter()
-        self._Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
-        f.write(buf.getvalue())
-        f.write('\n')
+def PrintLine(val, f):
+    # type: (value_t, mylib.Writer) -> None
+    """ For pp line (x) """
 
-    def PrintLine(self, val, f):
-        # type: (value_t, mylib.Writer) -> None
-        """ For pp line (x) """
+    # error.Encode should be impossible - we show cycles and non-data
+    buf = mylib.BufWriter()
+    _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
+    f.write(buf.getvalue())
+    f.write('\n')
 
-        # error.Encode should be impossible - we show cycles and non-data
-        buf = mylib.BufWriter()
-        self._Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
-        f.write(buf.getvalue())
-        f.write('\n')
 
-    def EncodeString(self, s, buf, unquoted_ok=False):
-        # type: (str, mylib.BufWriter, bool) -> None
-        """ For pp proc, etc."""
+def EncodeString(s, buf, unquoted_ok=False):
+    # type: (str, mylib.BufWriter, bool) -> None
+    """ For pp proc, etc."""
 
-        if unquoted_ok and fastfunc.CanOmitQuotes(s):
-            buf.write(s)
-            return
+    if unquoted_ok and fastfunc.CanOmitQuotes(s):
+        buf.write(s)
+        return
 
-        self._Print(value.Str(s), buf, -1)
+    _Print(value.Str(s), buf, -1)
 
-    def MaybeEncodeString(self, s):
-        # type: (str) -> str
-        """ For write --j8 $s  and compexport """
 
-        # TODO: add unquoted_ok here?
-        # /usr/local/foo-bar/x.y/a_b
+def MaybeEncodeString(s):
+    # type: (str) -> str
+    """ For write --json8 $s  and compexport """
 
-        buf = mylib.BufWriter()
-        self._Print(value.Str(s), buf, -1)
-        return buf.getvalue()
+    # TODO: add unquoted_ok here?
+    # /usr/local/foo-bar/x.y/a_b
 
-    def MaybeEncodeJsonString(self, s):
-        # type: (str) -> str
-        """ For write --json """
+    buf = mylib.BufWriter()
+    _Print(value.Str(s), buf, -1)
+    return buf.getvalue()
 
-        # TODO: add unquoted_ok here?
-        # /usr/local/foo-bar/x.y/a_b
-        buf = mylib.BufWriter()
-        self._Print(value.Str(s), buf, -1, options=LOSSY_JSON)
-        return buf.getvalue()
+
+def MaybeEncodeJsonString(s):
+    # type: (str) -> str
+    """ For write --json """
+
+    # TODO: add unquoted_ok here?
+    # /usr/local/foo-bar/x.y/a_b
+    buf = mylib.BufWriter()
+    _Print(value.Str(s), buf, -1, options=LOSSY_JSON)
+    return buf.getvalue()
 
 
 # DFS traversal state
@@ -356,14 +340,20 @@ class InstancePrinter(object):
 
             elif case(value_e.Int):
                 val = cast(value.Int, UP_val)
-                # TODO: use pyj8.WriteInt(val.i, self.buf)
-                #self.buf.write(mylib.BigIntStr(val.i))
+                # TODO: avoid intermediate allocation with
+                # self.buf.WriteBigInt(val.i)
+                #
+                # Or maybe we need pyj8.WriteBigInt() because truly BigInt may
+                # be of arbitrary length, and will need a growth strategy.
+                # Although that is not very common, so we could allocate in
+                # that case.
+
                 self.buf.write(mops.ToStr(val.i))
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
-
-                # TODO: use pyj8.WriteFloat(val.f, self.buf)
+                # TODO: avoid intrmediate allocation with
+                # self.buf.WriteFloat(val.f)
                 self.buf.write(str(val.f))
 
             elif case(value_e.Str):

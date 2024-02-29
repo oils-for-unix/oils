@@ -429,12 +429,19 @@ def PrettyPrintValue(val, f):
         # "JSON" data types will use J8 serialization
         if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                 value_e.Str, value_e.List, value_e.Dict):
-            j8print = j8.Printer()
             # Use () instead of <> as a hint that it's a "JSON value"
             f.write('(%s%s)   ' % (ysh_type, id_str))
 
+            buf = mylib.BufWriter()
+
             # TODO: Wrap lines, and show color.  Use core/ansi.py
-            j8print.PrettyPrint(val, f)
+            p = j8.InstancePrinter(buf, -1, j8.SHOW_CYCLES | j8.SHOW_NON_DATA)
+
+            # error.Encode should be impossible - we show cycles and non-data
+            p.Print(val)
+
+            f.write(buf.getvalue())
+            f.write('\n')
 
         elif case(value_e.Range):
             val = cast(value.Range, UP_val)

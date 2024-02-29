@@ -26,7 +26,6 @@ from core import state
 from core import ui
 from core import util
 from core import vm
-from data_lang import j8
 
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
@@ -475,12 +474,10 @@ def Main(
     # TODO: This is instantiation is duplicated in osh/word_eval.py
     globber = glob_.Globber(exec_opts)
 
-    j8print = j8.Printer()
-
     # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
     # stuffing too much into one, since a .json crash dump isn't a stream.
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
-    cmd_deps.dumper = dev.CrashDumper(crash_dump_dir, fd_state, j8print)
+    cmd_deps.dumper = dev.CrashDumper(crash_dump_dir, fd_state)
 
     comp_lookup = completion.Lookup()
 
@@ -844,9 +841,8 @@ def Main(
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
-    j8print = j8.Printer()
-    _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(j8print, True))
-    _SetGlobalFunc(mem, 'toJson', func_misc.ToJson8(j8print, False))
+    _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))
+    _SetGlobalFunc(mem, 'toJson', func_misc.ToJson8(False))
 
     _SetGlobalFunc(mem, 'fromJson8', func_misc.FromJson8(True))
     _SetGlobalFunc(mem, 'fromJson', func_misc.FromJson8(False))

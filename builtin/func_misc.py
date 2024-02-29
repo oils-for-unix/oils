@@ -406,9 +406,8 @@ class EvalExpr(vm._Callable):
 
 class ToJson8(vm._Callable):
 
-    def __init__(self, j8print, is_j8):
-        # type: (j8.Printer, bool) -> None
-        self.j8print = j8print
+    def __init__(self, is_j8):
+        # type: (bool) -> None
         self.is_j8 = is_j8
 
     def Call(self, rd):
@@ -420,9 +419,9 @@ class ToJson8(vm._Callable):
         buf = mylib.BufWriter()
         try:
             if self.is_j8:
-                self.j8print.PrintMessage(val, buf, -1)
+                j8.PrintMessage(val, buf, -1)
             else:
-                self.j8print.PrintJsonMessage(val, buf, -1)
+                j8.PrintJsonMessage(val, buf, -1)
         except error.Encode as e:
             # status code 4 is special, for encode/decode errors.
             raise error.Structured(4, e.Message(), rd.LeftParenToken())

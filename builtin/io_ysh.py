@@ -50,7 +50,6 @@ class Pp(_Builtin):
         self.procs = procs
         self.arena = arena
         self.stdout_ = mylib.Stdout()
-        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -119,7 +118,7 @@ class Pp(_Builtin):
             ysh_type = ui.ValType(val)
             self.stdout_.write('(%s)   ' % ysh_type)
 
-            self.j8print.PrintLine(val, self.stdout_)
+            j8.PrintLine(val, self.stdout_)
 
             status = 0
 
@@ -158,9 +157,9 @@ class Pp(_Builtin):
 
                 # Note: these should be attributes on value.Proc
                 buf = mylib.BufWriter()
-                self.j8print.EncodeString(name, buf, unquoted_ok=True)
+                j8.EncodeString(name, buf, unquoted_ok=True)
                 buf.write('\t')
-                self.j8print.EncodeString(doc, buf, unquoted_ok=True)
+                j8.EncodeString(doc, buf, unquoted_ok=True)
                 print(buf.getvalue())
 
             status = 0
@@ -184,7 +183,6 @@ class Write(_Builtin):
         # type: (state.Mem, ErrorFormatter) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.stdout_ = mylib.Stdout()
-        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -199,10 +197,10 @@ class Write(_Builtin):
             s = arg_r.Peek()
 
             if arg.json:
-                s = self.j8print.MaybeEncodeJsonString(s)
+                s = j8.MaybeEncodeJsonString(s)
 
             elif arg.j8:
-                s = self.j8print.MaybeEncodeString(s)
+                s = j8.MaybeEncodeString(s)
 
             self.stdout_.write(s)
 

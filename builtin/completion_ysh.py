@@ -23,7 +23,6 @@ class CompExport(vm._Builtin):
     def __init__(self, root_comp):
         # type: (completion.RootCompleter) -> None
         self.root_comp = root_comp
-        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -58,7 +57,7 @@ class CompExport(vm._Builtin):
             buf = mylib.BufWriter()
             for m in comp_matches:
                 # Note: everything is quoted, that seems simpler.
-                self.j8print.EncodeString(m, buf)
+                j8.EncodeString(m, buf)
                 print(buf.getvalue())
                 buf.clear()
 

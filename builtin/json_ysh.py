@@ -44,7 +44,6 @@ class Json(vm._Builtin):
         self.is_j8 = is_j8
         self.name = 'j8' if is_j8 else 'json'  # for error messages
 
-        self.j8print = j8.Printer()
         self.stdout_ = mylib.Stdout()
 
     def Run(self, cmd_val):
@@ -84,9 +83,9 @@ class Json(vm._Builtin):
 
             try:
                 if self.is_j8:
-                    self.j8print.PrintMessage(val, buf, indent)
+                    j8.PrintMessage(val, buf, indent)
                 else:
-                    self.j8print.PrintJsonMessage(val, buf, indent)
+                    j8.PrintJsonMessage(val, buf, indent)
             except error.Encode as e:
                 self.errfmt.PrintMessage(
                     '%s write: %s' % (self.name, e.Message()), action_loc)
