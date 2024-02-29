@@ -92,6 +92,17 @@ Oils:
 
 ## Summary of Four Printers
 
+![jq issues.json](https://app.oilshell.org/picdir/resize?name=11wsgpm__jq-issues.png&max-width=600)
+
+![node.js issues.json](https://app.oilshell.org/picdir/resize?name=13b35jj__nodejs-issues.png&max-width=600)
+
+![ysh issues.json](https://app.oilshell.org/picdir/resize?name=14qke97__ysh-issues.png&max-width=600)
+
+![osh -n](https://app.oilshell.org/picdir/resize?name=1lwb0bf__osh-n.png&max-width=600)
+
+![python node.js](https://app.oilshell.org/picdir/resize?name=uscdu6__python-nodejs.png&max-width=400)
+
+
 TODO: add screenshots of
 
 - node.js and jq

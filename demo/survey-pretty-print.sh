@@ -65,4 +65,17 @@ console.log(d)
   # - Lua and awk don't do any pretty printing AFAIK
 }
 
+issues() {
+  devtools/release-note.sh fetch-issues
+}
+
+nodejs-issues() {
+  cat _tmp/issues.json | nodejs -e \
+    'var fs = require("fs"); var stdin = fs.readFileSync(0, "utf-8"); console.log(JSON.parse(stdin));'
+}
+
+jq-issues() {
+  cat _tmp/issues.json | jq .
+}
+
 "$@"

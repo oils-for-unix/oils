@@ -23,6 +23,7 @@ class BigStr {
 
   BigStr* at(int i);
 
+  // TODO: take (start, end) for equality without allocation (not pos)
   int find(BigStr* needle, int pos = 0);
   int rfind(BigStr* needle);
 
@@ -40,6 +41,7 @@ class BigStr {
   BigStr* ljust(int width, BigStr* fillchar);
   BigStr* rjust(int width, BigStr* fillchar);
 
+  // Can take (start, end) so Tokens can be compared without allocation
   bool startswith(BigStr* s);
   bool endswith(BigStr* s);
 
@@ -51,6 +53,8 @@ class BigStr {
   List<BigStr*>* split(BigStr* sep, int max_split);
   List<BigStr*>* splitlines(bool keep);
 
+  // TODO: Move unicode functions out of mycpp runtime?  Because we won't match
+  // Python exactly
   bool isdigit();
   bool isalpha();
   bool isupper();

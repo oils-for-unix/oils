@@ -26,9 +26,47 @@ if TYPE_CHECKING:
 
 def IsPlusEquals(tok):
     # type: (Token) -> bool
-    """Common pattern to test if we got foo= or foo+="""
+    """Common pattern to test if we got foo= or foo+=
+
+    Note: can be replaced by s.find('+', index, index+1), which avoids
+    allocation.
+    """
     index = tok.col + tok.length - 2
     return tok.line.content[index] == '+'
+
+
+# Also: IsWhitespace, IsLeadingSpace
+
+def TokenEquals(tok, s):
+    # type: (Token, str) -> bool
+
+    # TODO: Use tok.line.content.find(substr, start, end)
+
+    raise NotImplementedError()
+
+
+def TokenContains(tok, substr):
+    # type: (Token, str) -> bool
+
+    # TODO: Use tok.line.content.find(substr, start, end)
+
+    raise NotImplementedError()
+
+
+def TokenStartsWith(tok, s):
+    # type: (Token, str) -> bool
+
+    # TODO: Use tok.line.content.startswith(substr, start, end)
+
+    raise NotImplementedError()
+
+
+def TokenEndsWith(tok, s):
+    # type: (Token, str) -> bool
+
+    # TODO: Use tok.line.content.startswith(substr, start, end)
+
+    raise NotImplementedError()
 
 
 def TokenVal(tok):
