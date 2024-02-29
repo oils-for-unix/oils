@@ -141,7 +141,7 @@ module syntax
   BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
       Token token,       # location for the name
-      str var_name,   # the name
+      str var_name,      # the name
       Token? prefix_op,  # prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op,
@@ -154,7 +154,7 @@ module syntax
   DoubleQuoted = (Token left, List[word_part] parts, Token right)
   SingleQuoted = (Token left, List[Token] tokens, Token right)
 
-  SimpleVarSub = (Token left, str var_name)
+  NameTok = (Token left, str var_name)
 
   CommandSub = (Token left_token, command child, Token right)
 
@@ -180,7 +180,7 @@ module syntax
   | EscapedLiteral(Token token, str ch)
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
-  | SimpleVarSub %SimpleVarSub
+  | SimpleVarSub %NameTok
   | BracedVarSub %BracedVarSub
     # For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %CommandSub
@@ -230,7 +230,7 @@ module syntax
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
-    VarSub %SimpleVarSub  # e.g. $(( x ))
+    VarSub %NameTok        # e.g. $(( x ))
   | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
@@ -476,7 +476,7 @@ module syntax
   Attribute = (expr obj, Token op, Token attr, expr_context ctx)
 
   y_lhs = 
-    Var(Token name)  # TODO: add str var_name
+    Var %NameTok
   | Subscript %Subscript
   | Attribute %Attribute
 
@@ -504,7 +504,7 @@ module syntax
     # / d+ ; ignorecase; %python /
   | Eggex %Eggex
 
-  | SimpleVarSub %SimpleVarSub
+  | SimpleVarSub %NameTok
   | BracedVarSub %BracedVarSub
   | CommandSub %CommandSub
   | SingleQuoted %SingleQuoted

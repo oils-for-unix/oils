@@ -15,6 +15,7 @@ from _devbuild.gen.syntax_asdl import (
     word_t,
     CompoundWord,
     Token,
+    NameTok,
     loc,
     loc_t,
     source,
@@ -28,7 +29,6 @@ from _devbuild.gen.syntax_asdl import (
     sh_lhs_e,
     sh_lhs_t,
     BracedVarSub,
-    SimpleVarSub,
 )
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.types_asdl import bool_arg_type_e
@@ -513,7 +513,7 @@ class ArithEvaluator(object):
         # BASH_LINENO, arr (array name without strict_array), etc.
         if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
                 node.tag() == arith_expr_e.VarSub):
-            vsub = cast(SimpleVarSub, node)
+            vsub = cast(NameTok, node)
             if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
                 val = word_eval.DecayArray(val)
 
@@ -544,7 +544,7 @@ class ArithEvaluator(object):
         UP_node = node
         with tagswitch(node) as case:
             if case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
-                vsub = cast(SimpleVarSub, UP_node)
+                vsub = cast(NameTok, UP_node)
                 val = self.mem.GetValue(vsub.var_name)
                 if val.tag() == value_e.Undef and self.exec_opts.nounset():
                     e_die('Undefined variable %r' % vsub.var_name, vsub.left)
@@ -855,7 +855,7 @@ class ArithEvaluator(object):
         UP_anode = anode
         with tagswitch(anode) as case:
             if case(arith_expr_e.VarSub):
-                tok = cast(SimpleVarSub, UP_anode)
+                tok = cast(NameTok, UP_anode)
                 return (tok.var_name, tok.left)
 
             elif case(arith_expr_e.Word):

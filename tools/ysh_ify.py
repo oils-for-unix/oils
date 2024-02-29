@@ -50,7 +50,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     CompoundWord,
     Token,
-    SimpleVarSub,
+    NameTok,
     BracedVarSub,
     CommandSub,
     DoubleQuoted,
@@ -749,7 +749,7 @@ class YshPrinter(object):
                 # Figure out the variable name, so we can translate
                 # - $var to (var)
                 # - "$var" to (var)
-                var_part = None  # type: SimpleVarSub
+                var_part = None  # type: NameTok
                 with tagswitch(to_match) as case:
                     if case(word_e.Compound):
                         w = cast(CompoundWord, to_match)
@@ -757,7 +757,7 @@ class YshPrinter(object):
 
                         with tagswitch(part0) as case2:
                             if case2(word_part_e.SimpleVarSub):
-                                var_part = cast(SimpleVarSub, part0)
+                                var_part = cast(NameTok, part0)
 
                             elif case2(word_part_e.DoubleQuoted):
                                 dq_part = cast(DoubleQuoted, part0)
@@ -769,8 +769,7 @@ class YshPrinter(object):
                                     # TODO: extract into a common function
                                     with tagswitch(dq_part0) as case3:
                                         if case3(word_part_e.SimpleVarSub):
-                                            var_part = cast(
-                                                SimpleVarSub, dq_part0)
+                                            var_part = cast(NameTok, dq_part0)
                                             #log("VAR PART %s", var_part)
 
                 if var_part:
@@ -915,7 +914,7 @@ class YshPrinter(object):
                     if len(dq_part.parts) == 1:
                         part0 = dq_part.parts[0]
                         if part0.tag() == word_part_e.SimpleVarSub:
-                            vsub_part = cast(SimpleVarSub, dq_part.parts[0])
+                            vsub_part = cast(NameTok, dq_part.parts[0])
                             if vsub_part.left.id == Id.VSub_At:
                                 self.cursor.PrintUntil(dq_part.left)
                                 self.cursor.SkipPast(
@@ -1030,7 +1029,7 @@ class YshPrinter(object):
                     self.DoWordPart(part, local_symbols, quoted=True)
 
             elif case(word_part_e.SimpleVarSub):
-                node = cast(SimpleVarSub, UP_node)
+                node = cast(NameTok, UP_node)
 
                 spid = node.left.span_id
                 op_id = node.left.id

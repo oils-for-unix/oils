@@ -4,11 +4,11 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
+    NameTok,
     loc,
     loc_t,
     DoubleQuoted,
     SingleQuoted,
-    SimpleVarSub,
     BracedVarSub,
     CommandSub,
     ShArrayLiteral,
@@ -26,7 +26,6 @@ from _devbuild.gen.syntax_asdl import (
     PosixClass,
     PerlClass,
     NameType,
-    y_lhs,
     y_lhs_t,
     Comprehension,
     Subscript,
@@ -715,7 +714,7 @@ class Transformer(object):
                         % (bare, bare), tok)
 
                 # $? is allowed
-                return SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
+                return NameTok(tok, lexer.TokenSliceLeft(tok, 1))
 
             else:
                 nt_name = self.number2symbol[typ]
@@ -829,7 +828,7 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    lhs_list.append(y_lhs.Var(e.name))
+                    lhs_list.append(NameTok(e.name, lexer.TokenVal(e.name)))
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)

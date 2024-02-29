@@ -10,17 +10,16 @@ from _devbuild.gen.syntax_asdl import (
     re_e,
     re_t,
     Token,
+    NameTok,
     word_part,
     SingleQuoted,
     DoubleQuoted,
     BracedVarSub,
-    SimpleVarSub,
     ShArrayLiteral,
     CommandSub,
     expr,
     expr_e,
     expr_t,
-    y_lhs,
     y_lhs_e,
     y_lhs_t,
     Attribute,
@@ -56,7 +55,6 @@ from core import vm
 from frontend import consts
 from frontend import lexer
 from frontend import match
-from frontend import location
 from frontend import typed_args
 from osh import braces
 from osh import word_compile
@@ -270,9 +268,8 @@ class ExprEvaluator(object):
         UP_lhs = lhs
         with tagswitch(lhs) as case:
             if case(y_lhs_e.Var):
-                lhs = cast(y_lhs.Var, UP_lhs)
-
-                return location.LName(lhs.name.tval)
+                lhs = cast(NameTok, UP_lhs)
+                return LeftName(lhs.var_name, lhs.left)
 
             elif case(y_lhs_e.Subscript):
                 lhs = cast(Subscript, UP_lhs)
@@ -1023,7 +1020,7 @@ class ExprEvaluator(object):
                 return value.Str(self.word_ev.EvalBracedVarSubToString(node))
 
             elif case(expr_e.SimpleVarSub):
-                node = cast(SimpleVarSub, UP_node)
+                node = cast(NameTok, UP_node)
                 return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
 
             elif case(expr_e.Unary):

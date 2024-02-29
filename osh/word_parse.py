@@ -54,11 +54,11 @@ from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
+    NameTok,
     loc,
     source,
     DoubleQuoted,
     SingleQuoted,
-    SimpleVarSub,
     BracedVarSub,
     CommandSub,
     ShArrayLiteral,
@@ -75,7 +75,6 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord,
     word_part,
     word_part_t,
-    y_lhs,
     y_lhs_e,
     arith_expr_t,
     command,
@@ -966,7 +965,7 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.VSub:
                 tok = self.cur_token
-                part = SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
+                part = NameTok(tok, lexer.TokenSliceLeft(tok, 1))
                 out_parts.append(part)
                 # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
                 # later.
@@ -1190,8 +1189,8 @@ class WordParser(WordEmitter):
             UP_lhs = lhs
             with tagswitch(lhs) as case:
                 if case(y_lhs_e.Var):
-                    lhs = cast(y_lhs.Var, UP_lhs)
-                    var_checker.Check(kw_token.id, lhs.name)
+                    lhs = cast(NameTok, UP_lhs)
+                    var_checker.Check(kw_token.id, lhs.left)
 
                 # Note: this does not cover cases like
                 # setvar (a[0])[1] = v
@@ -1745,9 +1744,9 @@ class WordParser(WordEmitter):
             elif self.token_kind == Kind.VSub:
                 vsub_token = self.cur_token
 
-                part = SimpleVarSub(vsub_token,
-                                    lexer.TokenSliceLeft(
-                                        vsub_token, 1))  # type: word_part_t
+                part = NameTok(vsub_token,
+                               lexer.TokenSliceLeft(vsub_token,
+                                                    1))  # type: word_part_t
                 w.parts.append(part)
 
             elif self.token_kind == Kind.ExtGlob:
