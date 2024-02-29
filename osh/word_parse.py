@@ -618,7 +618,10 @@ class WordParser(WordEmitter):
 
     def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_ysh_expr):
         # type: (lex_mode_t, Token, List[Token], bool) -> Token
-        """Used by expr_parse.py."""
+        """Appends to tokens
+
+        Used by expr_parse.py
+        """
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
         no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote

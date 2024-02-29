@@ -262,6 +262,7 @@ def RemoveLeadingSpaceSQ(tokens):
             tokens.pop()  # Remove the last part
 
     if to_strip is not None:
+        #log('SQ Stripping %r', to_strip)
         n = len(to_strip)
         for tok in tokens:
             if tok.id not in (Id.Lit_Chars, Id.Char_Literals,
@@ -277,4 +278,3 @@ def RemoveLeadingSpaceSQ(tokens):
             line_ended = False
             if tok.tval.endswith('\n'):
                 line_ended = True
-                #log('yes %r', tok.tval)

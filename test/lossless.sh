@@ -4,7 +4,7 @@
 # fmt.
 #
 # Usage:
-#   test/arena.sh <function name>
+#   test/lossless.sh <function name>
 
 set -o nounset
 set -o pipefail
@@ -20,9 +20,9 @@ _compare() {
   local path=$1
   local sh=${2:-bin/osh}
 
-  mkdir -p _tmp/arena
-  $sh --tool lossless-cat $path > _tmp/arena/left.txt
-  if diff -u $path _tmp/arena/left.txt; then
+  mkdir -p _tmp/lossless
+  $sh --tool lossless-cat $path > _tmp/lossless/left.txt
+  if diff -u $path _tmp/lossless/left.txt; then
 	  echo "$path"
   else
 	  return 1
@@ -30,23 +30,23 @@ _compare() {
 }
 
 test-here-doc() {
-  _compare test/arena/here-dq.sh
-  _compare test/arena/here-sq.sh
+  _compare test/lossless/here-dq.sh
+  _compare test/lossless/here-sq.sh
 
   # Hard test case!
-  _compare test/arena/here-multiple.sh
+  _compare test/lossless/here-multiple.sh
 
-  # This is a known exception to the arena invariant.  The leading tabs aren't
+  # This is a known exception to the lossless invariant.  The leading tabs aren't
   # preserved, because we don't need them for ysh-ify translation.
-  _compare test/arena/here-dq-indented.sh
+  _compare test/lossless/here-dq-indented.sh
 }
 
 test-tilde() {
-  _compare test/arena/tilde.sh
+  _compare test/lossless/tilde.sh
 }
 
 test-ysh() {
-  for file in ysh/testdata/*.ysh; do
+  for file in ysh/testdata/*.ysh test/lossless/*.ysh; do
     echo "--- $file"
     _compare $file $YSH
   done
@@ -99,7 +99,7 @@ test-big-sh-files() {
   done
 
   echo
-  echo "$num_passed of $num_files files respect the arena invariant"
+  echo "$num_passed of $num_files files respect the lossless invariant"
 }
 
 test-do-lossless-flag() {
@@ -134,7 +134,7 @@ EOF
 }
 
 run-for-release() {
-  run-other-suite-for-release arena run-test-funcs
+  run-other-suite-for-release lossless run-test-funcs
 }
 
 soil-run() {
