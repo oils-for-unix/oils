@@ -68,8 +68,9 @@ def PrintableString(s):
 
 def TokensEqual(left, right):
     # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
-    return (left.id == right.id and
-            lexer.TokenVal(left) == lexer.TokenVal(right))
+
+    # TODO: lexer.TokenVal(left) can fail because left.line is None
+    return left.id == right.id and left.tval == right.tval
 
 
 def TokenWordsEqual(left, right):
