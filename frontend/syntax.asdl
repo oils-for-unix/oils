@@ -459,8 +459,7 @@ module syntax
   TypeExpr = (Token tok, str name, List[TypeExpr] params)
 
   # LHS bindings in var/const, and eggex
-  # TODO: need str name, Token blame_tok
-  NameType = (Token name, TypeExpr? typ)
+  NameType = (Token left, str name, TypeExpr? typ)
 
   # TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   Comprehension = (List[NameType] lhs, expr iter, expr? cond)

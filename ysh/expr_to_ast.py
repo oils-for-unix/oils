@@ -434,7 +434,7 @@ class Transformer(object):
         if n == 3:
             typ = self._TypeExpr(p_node.GetChild(2))
 
-        return NameType(name_tok, typ)
+        return NameType(name_tok, lexer.TokenVal(name_tok), typ)
 
     def _NameTypeList(self, p_node):
         # type: (PNode) -> List[NameType]

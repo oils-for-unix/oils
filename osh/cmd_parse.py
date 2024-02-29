@@ -2292,7 +2292,7 @@ class CommandParser(object):
             self._SetNext()
             n8 = self.w_parser.ParseVarDecl(kw_token)
             for lhs in n8.lhs:
-                self.var_checker.Check(keyword_id, lhs.name)
+                self.var_checker.Check(keyword_id, lhs.left)
             return n8
 
         if self.c_id in (Id.KW_SetVar, Id.KW_SetGlobal):
@@ -2361,8 +2361,10 @@ class CommandParser(object):
                             self._SetNext()  # Somehow this is necessary
                             # TODO: Use BareDecl here.  Well, do that when we
                             # treat it as const or lazy.
-                            return command.VarDecl(None, [NameType(tok, None)],
-                                                   enode)
+                            return command.VarDecl(
+                                None,
+                                [NameType(tok, lexer.TokenVal(tok), None)],
+                                enode)
                         else:
                             self._SetNext()
                             self._GetWord()

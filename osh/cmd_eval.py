@@ -683,7 +683,8 @@ class CommandEvaluator(object):
         # x = 'foo' in Hay blocks
         if node.keyword is None:
             # Note: there's only one LHS
-            lval = location.LName(node.lhs[0].name.tval)
+            lhs0 = node.lhs[0]
+            lval = LeftName(lhs0.name, lhs0.left)
             assert node.rhs is not None, node
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
@@ -699,7 +700,7 @@ class CommandEvaluator(object):
             # var x, y does null initialization
             if node.rhs is None:
                 for i, lhs_val in enumerate(node.lhs):
-                    lval = location.LName(lhs_val.name.tval)
+                    lval = LeftName(lhs_val.name, lhs_val.left)
                     self.mem.SetNamed(lval,
                                       value.Null,
                                       scope_e.LocalOnly,
@@ -712,7 +713,8 @@ class CommandEvaluator(object):
 
             num_lhs = len(node.lhs)
             if num_lhs == 1:
-                lvals = [location.LName(node.lhs[0].name.tval)]
+                lhs0 = node.lhs[0]
+                lvals = [LeftName(lhs0.name, lhs0.left)]
                 rhs_vals = [right_val]
             else:
                 items = val_ops.ToList(
@@ -728,7 +730,7 @@ class CommandEvaluator(object):
                 lvals = []
                 rhs_vals = []
                 for i, lhs_val in enumerate(node.lhs):
-                    lval = location.LName(lhs_val.name.tval)
+                    lval = LeftName(lhs_val.name, lhs_val.left)
                     lvals.append(lval)
                     rhs_vals.append(items[i])
 
@@ -1546,7 +1548,7 @@ class CommandEvaluator(object):
                 node = cast(command.VarDecl, UP_node)
 
                 # Point to var name (bare assignment has no keyword)
-                self.mem.SetTokenForLine(node.lhs[0].name)
+                self.mem.SetTokenForLine(node.lhs[0].left)
                 status = self._DoVarDecl(node)
 
             elif case(command_e.Mutation):
