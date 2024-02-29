@@ -157,9 +157,7 @@ class Printer(object):
 
     def __init__(self):
         # type: () -> None
-
-        # TODO: should remove this in favor of BufWriter method
-        self.spaces = {0: ''}  # cache of strings with spaces
+        pass
 
     # Could be PrintMessage or PrintJsonMessage()
     def _Print(self, val, buf, indent, options=0):
@@ -168,7 +166,7 @@ class Printer(object):
         Args:
           indent: number of spaces to indent, or -1 for everything on one line
         """
-        p = InstancePrinter(buf, indent, options, self.spaces)
+        p = InstancePrinter(buf, indent, options)
         p.Print(val)
 
     def PrintMessage(self, val, buf, indent):
@@ -251,23 +249,16 @@ FINISHED = 2
 class InstancePrinter(object):
     """Print a value tree as J8/JSON."""
 
-    def __init__(self, buf, indent, options, spaces):
-        # type: (mylib.BufWriter, int, int, Dict[int, str]) -> None
+    def __init__(self, buf, indent, options):
+        # type: (mylib.BufWriter, int, int) -> None
         self.buf = buf
         self.indent = indent
         self.options = options
-        self.spaces = spaces
 
         # Key is vm.HeapValueId(val)
         # Value is always True
         # Dict[int, None] doesn't translate -- it would be nice to have a set()
         self.visited = {}  # type: Dict[int, int]
-
-    def _GetIndent(self, num_spaces):
-        # type: (int) -> str
-        if num_spaces not in self.spaces:
-            self.spaces[num_spaces] = ' ' * num_spaces
-        return self.spaces[num_spaces]
 
     def _ItemIndent(self, level):
         # type: (int) -> None
@@ -275,8 +266,7 @@ class InstancePrinter(object):
         if self.indent == -1:
             return
 
-        item_indent = self._GetIndent((level + 1) * self.indent)
-        self.buf.write(item_indent)
+        self.buf.write_spaces((level + 1) * self.indent)
 
     def _BracketIndent(self, level):
         # type: (int) -> None
@@ -284,8 +274,7 @@ class InstancePrinter(object):
         if self.indent == -1:
             return
 
-        bracket_indent = self._GetIndent(level * self.indent)
-        self.buf.write(bracket_indent)
+        self.buf.write_spaces(level * self.indent)
 
     def _MaybeNewline(self):
         # type: () -> None

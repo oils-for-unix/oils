@@ -144,10 +144,12 @@ TEST BufWriter_test() {
   // Create a new BufWriter to call getvalue() again
   writer = Alloc<mylib::BufWriter>();
   writer->write(foo);
+  writer->write_spaces(3);
+  writer->write_spaces(0);
   writer->write(bar);
 
   s = writer->getvalue();
-  ASSERT(str_equals0("foobar", s));
+  ASSERT(str_equals0("foo   bar", s));
   log("result = %s", s->data());
 
   writer->clear();

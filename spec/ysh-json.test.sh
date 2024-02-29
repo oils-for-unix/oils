@@ -986,7 +986,7 @@ b'\yf0\y9f\ya4\yff'
 declare -- z=$'\xf0\x9f\xa4\xff'
 ## END
 
-#### TYG8 token in JSON / JSON8
+#### NIL8 token in JSON / JSON8
 
 echo "(" | json read
 echo status=$?

@@ -241,6 +241,21 @@ void BufWriter::write(BigStr* s) {
   WriteRaw(s->data_, len(s));
 }
 
+void BufWriter::write_spaces(int n) {
+  if (n == 0) {
+    return;
+  }
+
+  EnsureMoreSpace(n);
+
+  char* dest = str_->data_ + len_;
+  for (int i = 0; i < n; ++i) {
+    dest[i] = ' ';
+  }
+  len_ += n;
+  str_->data_[len_] = '\0';
+}
+
 BigStr* BufWriter::getvalue() {
   DCHECK(is_valid_);  // Check for two INVALID getvalue() in a row
   is_valid_ = false;

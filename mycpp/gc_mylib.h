@@ -246,6 +246,7 @@ class BufWriter : public Writer {
   BufWriter() : Writer(), str_(nullptr), len_(0) {
   }
   void write(BigStr* s) override;
+  void write_spaces(int n);
   void clear() {  // Reuse this instance
     str_ = nullptr;
     len_ = 0;

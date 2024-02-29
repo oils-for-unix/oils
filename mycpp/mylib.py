@@ -135,6 +135,11 @@ class BufWriter(Writer):
         # type: (str) -> None
         self.parts.append(s)
 
+    def write_spaces(self, n):
+        # type: (int) -> None
+        """For JSON indenting.  Avoid intermediate allocations in C++."""
+        self.parts.append(' ' * n)
+
     def getvalue(self):
         # type: () -> str
         return ''.join(self.parts)
