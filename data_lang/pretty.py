@@ -33,7 +33,8 @@ def FromValue(val):
             return doc.Newline
 
         else:
-            raise AssertionError()
+            # TODO: handle more cases
+            return doc.Newline
 
 
 # vim: sw=4
