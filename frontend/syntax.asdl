@@ -473,7 +473,7 @@ module syntax
   Subscript = (Token left, expr obj, expr index)
 
   # Attributes are obj.attr, d->key, name::scope,
-  Attribute = (expr obj, Token op, Token attr, expr_context ctx)
+  Attribute = (expr obj, Token op, Token attr, str attr_name, expr_context ctx)
 
   y_lhs = 
     Var %NameTok
@@ -487,8 +487,7 @@ module syntax
   | Attribute(Token op, Token attr)
 
   expr =
-    # a variable name to evaluate
-    Var(Token name)  # TODO: add str var_name
+    Var(Token left, str name)  # a variable name to evaluate
     # Constants are typically Null, Bool, Int, Float
     #           and also Str for key in {key: 42}
     # But string literals are SingleQuoted or DoubleQuoted
@@ -504,7 +503,7 @@ module syntax
     # / d+ ; ignorecase; %python /
   | Eggex %Eggex
 
-  | SimpleVarSub %NameTok
+  | SimpleVarSub %NameTok  # $name is not an expr, but $? is
   | BracedVarSub %BracedVarSub
   | CommandSub %CommandSub
   | SingleQuoted %SingleQuoted

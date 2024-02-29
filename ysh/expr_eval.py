@@ -288,7 +288,7 @@ class ExprEvaluator(object):
                 # setvar mydict.key = 42
                 lval = self._EvalExpr(lhs.obj)
 
-                attr = value.Str(lhs.attr.tval)
+                attr = value.Str(lhs.attr_name)
                 return y_lvalue.Container(lval, attr)
 
             else:
@@ -889,7 +889,7 @@ class ExprEvaluator(object):
             # Later we may enforce that => is pure, and -> is for mutation and
             # I/O.
             if case(Id.Expr_RArrow, Id.Expr_RDArrow):
-                name = node.attr.tval
+                name = node.attr_name
                 # Look up builtin methods
                 type_methods = self.methods.get(o.tag())
                 vm_callable = (type_methods.get(name)
@@ -925,7 +925,7 @@ class ExprEvaluator(object):
                             node.attr)
 
             elif case(Id.Expr_Dot):  # d.key is like d['key']
-                name = node.attr.tval
+                name = node.attr_name
                 with tagswitch(o) as case2:
                     if case2(value_e.Dict):
                         o = cast(value.Dict, UP_o)
@@ -960,7 +960,7 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Var):
                 node = cast(expr.Var, UP_node)
-                return self._LookupVar(node.name.tval, node.name)
+                return self._LookupVar(node.name, node.left)
 
             elif case(expr_e.Place):
                 node = cast(expr.Place, UP_node)

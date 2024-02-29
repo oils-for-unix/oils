@@ -115,8 +115,8 @@ def _expr__Var(obj):
     p_node = runtime.NewRecord('Var')
     p_node.abbrev = True
 
-    assert obj.name.id == Id.Expr_Name, obj.name
-    n1 = runtime.NewLeaf(obj.name.tval, color_e.StringConst)
+    assert obj.left.id == Id.Expr_Name, obj.name
+    n1 = runtime.NewLeaf(obj.name, color_e.StringConst)
     p_node.unnamed_fields.append(n1)
     return p_node
 

@@ -472,7 +472,7 @@ def TokenForExpr(node):
 
         elif case(expr_e.Var):
             node = cast(expr.Var, UP_node)
-            return node.name
+            return node.left
 
         elif case(expr_e.CommandSub):
             node = cast(CommandSub, UP_node)

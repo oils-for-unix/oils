@@ -230,7 +230,8 @@ class Transformer(object):
 
         if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
-            return Attribute(base, op_tok, attr, expr_context_e.Store)
+            return Attribute(base, op_tok, attr, lexer.TokenVal(attr),
+                             expr_context_e.Store)
 
         raise AssertionError(Id_str(op_tok.id))
 
@@ -725,7 +726,7 @@ class Transformer(object):
             id_ = tok.id
 
             if id_ == Id.Expr_Name:
-                return expr.Var(tok)
+                return expr.Var(tok, lexer.TokenVal(tok))
 
             tok_str = lexer.TokenVal(tok)
 
@@ -828,7 +829,7 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    lhs_list.append(NameTok(e.name, lexer.TokenVal(e.name)))
+                    lhs_list.append(NameTok(e.left, e.name))
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
