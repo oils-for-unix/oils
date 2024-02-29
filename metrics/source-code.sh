@@ -19,7 +19,7 @@ filter-py() {
   grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py|NINJA_subgraph.py$'
 }
 
-readonly -a ASDL_FILES=( {frontend,core}/*.asdl )
+readonly -a OSH_ASDL=( {frontend,core}/*.asdl )
 
 # OSH and common
 osh-files() {
@@ -30,7 +30,7 @@ osh-files() {
 
   ls bin/oils_for_unix.py {osh,core,frontend}/*.py builtin/*_osh.py \
     pyext/*.c */*.pyi \
-    "${ASDL_FILES[@]}" \
+    "${OSH_ASDL[@]}" \
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$|os.pyi$'
 }
 
@@ -39,6 +39,7 @@ ysh-files() {
 }
 
 data-lang-files() {
+  ls data_lang/*.asdl
   ls data_lang/*.py | filter-py
   ls data_lang/*.{c,h} | egrep -v '_test'  # exclude j8_test_lib as well
 }
@@ -86,7 +87,7 @@ cloc-report() {
   echo
 
   echo 'ASDL SCHEMAS (non-blank non-comment lines)'
-  asdl-cloc "${ASDL_FILES[@]}"
+  asdl-cloc "${OSH_ASDL[@]}" data_lang/*.asdl
   echo
   echo
 

@@ -202,6 +202,27 @@ split-and-render() {
   log "$tmp_prefix -> (doctools/cmark) -> $out"
 }
 
+render-from-kate() {
+  ### Make it easier to configure Kate editor
+
+  # It want to pass an absolute path
+  # TODO: I can't figure out how to run this from Kate?
+
+  local full_path=$1
+
+  case $full_path in
+    $REPO_ROOT/*)
+      rel_path=${full_path#"$REPO_ROOT/"}
+      echo "relative path = $rel_path"
+      ;;
+    *)
+      die "$full_path should start with repo root $REPO_ROOT"
+      ;;
+  esac
+
+  split-and-render $rel_path
+}
+
 # Special case for README
 # Do NOT split because we don't want front matter in the markdown source.
 render-only() {
