@@ -240,7 +240,7 @@ X [Builtin Sub]   _buffer
   [Primitive] Bool   Int   Float   Str   Slice   Range   
   [Str]       X find(eggex)   replace()
               startsWith()   X endsWith()
-              X trim()   X trimLeft()   X trimRight()
+              trim()   trimLeft()   trimRight()
               X trimPrefix()   X trimSuffix()
               upper()   lower()  # ascii or unicode
               search()   leftMatch()              

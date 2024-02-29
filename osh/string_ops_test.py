@@ -24,12 +24,12 @@ class LibStrTest(unittest.TestCase):
         ]
         for expected_indexes, input_str in CASES:
             print()
-            print('_NextUtf8Char case %r %r' % (expected_indexes, input_str))
+            print('NextUtf8Char case %r %r' % (expected_indexes, input_str))
             i = 0
             actual_indexes = []
             while True:
                 try:
-                    i = string_ops._NextUtf8Char(input_str, i)
+                    i = string_ops.NextUtf8Char(input_str, i)
                     actual_indexes.append(i)
                     if i >= len(input_str):
                         break
@@ -37,6 +37,37 @@ class LibStrTest(unittest.TestCase):
                     actual_indexes.append(e.msg)
                     break
             self.assertEqual(expected_indexes, actual_indexes)
+
+    def test_DecodeNextUtf8Char(self):
+        s = '\x61\xC3\x8A\xE1\x82\xA0\xF0\x93\x80\x80'
+        codepoints = [0x61, 0xCA, 0x10A0, 0x13000]
+        start = 0
+        for codepoint in codepoints:
+            end = string_ops.NextUtf8Char(s, start)
+            codepoint = string_ops.DecodeUtf8Char(s, start)
+            self.assertEqual(codepoint, codepoint)
+            start = end
+
+    def test_DecodePrevUtf8Char(self):
+        s = '\x61\xC3\x8A\xE1\x82\xA0\xF0\x93\x80\x80'
+        codepoints = [0x61, 0xCA, 0x10A0, 0x13000]
+        end = len(s)
+        for codepoint in reversed(codepoints):
+            start = string_ops.PreviousUtf8Char(s, end)
+            codepoint = string_ops.DecodeUtf8Char(s, start)
+            self.assertEqual(codepoint, codepoint)
+            end = start
+
+    def test_DecodeUtf8CharError(self):
+        CASES = [
+            ('Incomplete UTF-8 character', '\xC0'),
+            ('Invalid UTF-8 continuation byte', '\xC0\x01'),
+            ('Invalid start of UTF-8 character', '\xff'),
+        ]
+        for msg, input in CASES:
+            with self.assertRaises(error.Expr) as ctx:
+                string_ops.DecodeUtf8Char(input, 0)
+            self.assertEqual(ctx.exception.msg, msg)
 
     def test_PreviousUtf8Char(self):
         # The error messages could probably be improved for more consistency

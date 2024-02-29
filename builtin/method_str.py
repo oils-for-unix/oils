@@ -13,6 +13,7 @@ from core import vm
 from frontend import typed_args
 from mycpp import mops
 from mycpp.mylib import log, tagswitch
+from osh import string_ops
 from ysh import expr_eval
 from ysh import regex_translate
 from ysh import val_ops
@@ -42,11 +43,66 @@ class StartsWith(vm._Callable):
         return value.Bool(res)
 
 
+# From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
+SPACES = [0x0009,  # Horizontal tab (\t)
+          0x000A,  # Newline (\n)
+          0x000B,  # Vertical tab (\v)
+          0x000C,  # Form feed (\f)
+          0x000D,  # Carriage return (\r)
+          0x0020,  # Normal space
+          0x00A0,  # No-break space 	<NBSP>
+          0xFEFF]  # Zero-width no-break space <ZWNBSP>
+
+
+def _IsSpace(codepoint):
+    # type: (int) -> bool
+    return codepoint in SPACES
+
+
+TRIM_LEFT = 1
+TRIM_RIGHT = 2
+TRIM_BOTH = 3
+
+
 class Trim(vm._Callable):
 
-    def __init__(self):
-        # type: () -> None
-        pass
+    def __init__(self, trim):
+        # type: (int) -> None
+        self.trim = trim
+
+    def _Left(self, string):
+        # type: (str) -> int
+        i = 0
+        while i < len(string):
+            codepoint = string_ops.DecodeUtf8Char(string, i)
+            if not _IsSpace(codepoint):
+                break
+
+            try:
+                i = string_ops.NextUtf8Char(string, i)
+            except error.Strict:
+                assert False, "DecodeUtf8Char should have caught any encoding errors"
+
+        return i
+
+    def _Right(self, string):
+        # type: (str) -> int
+        i = len(string)
+        while i > 0:
+            # For encoding errors, translate error.Strict to error.Expr to
+            # behave like the other builtin methods.
+            try:
+                prev = string_ops.PreviousUtf8Char(string, i)
+            except error.Strict as e:
+                raise error.Expr(e.msg, e.location)
+
+            codepoint = string_ops.DecodeUtf8Char(string, prev)
+            if not _IsSpace(codepoint):
+                break
+
+            i = prev
+
+        return i
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
@@ -54,11 +110,14 @@ class Trim(vm._Callable):
         string = rd.PosStr()
         rd.Done()
 
-        # TODO: Make this remove unicode spaces
-        # Note that we're not calling this function strip() because it doesn't
-        # implement Python's whole API.
-        # trim() is shorter and it's consistent with JavaScript.
-        res = string.strip()
+        left = 0
+        right = len(string)
+        if self.trim & TRIM_LEFT:
+            left = self._Left(string)
+        if self.trim & TRIM_RIGHT:
+            right = self._Right(string)
+
+        res = string[left:right]
         return value.Str(res)
 
 

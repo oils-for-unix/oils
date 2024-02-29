@@ -68,6 +68,10 @@ _ysh-error-X() {
     -c "$@"
 }
 
+_ysh-error-here-X() {
+  _ysh-error-X $1 "$(cat)"
+}
+
 _ysh-error-1() {
   ### Expect status 1
   _ysh-error-X 1 "$@"

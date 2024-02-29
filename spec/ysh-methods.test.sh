@@ -56,6 +56,138 @@ pp line ("abc" => startsWith("z"))
 = "abc" => startsWith("extra", "arg")
 ## status: 3
 
+#### Str => trim()
+echo $["" => trim()]
+echo $["  " => trim()]
+echo $["mystr" => trim()]
+echo $["  mystr" => trim()]
+echo $["mystr  " => trim()]
+echo $["  mystr  " => trim()]
+echo $["  my str  " => trim()]
+## STDOUT:
+
+
+mystr
+mystr
+mystr
+mystr
+my str
+## END
+
+#### Str => trimLeft()
+echo $["" => trimLeft()]
+echo $["  " => trimLeft()]
+echo $["mystr" => trimLeft()]
+echo $["  mystr" => trimLeft()]
+echo $["mystr  " => trimLeft()]
+echo $["  mystr  " => trimLeft()]
+echo $["  my str  " => trimLeft()]
+## STDOUT:
+
+
+mystr
+mystr
+mystr  
+mystr  
+my str  
+## END
+
+#### Str => trimRight()
+echo $["" => trimRight()]
+echo $["  " => trimRight()]
+echo $["mystr" => trimRight()]
+echo $["  mystr" => trimRight()]
+echo $["mystr  " => trimRight()]
+echo $["  mystr  " => trimRight()]
+echo $["  my str  " => trimRight()]
+## STDOUT:
+
+
+mystr
+  mystr
+mystr
+  mystr
+  my str
+## END
+
+#### Str => trim*(), too many args
+try { call "mystr" => trim("extra", "args") }
+echo status=$_status
+
+try { call "mystr" => trimLeft("extra", "args") }
+echo status=$_status
+
+try { call "mystr" => trimRight("extra", "args") }
+echo status=$_status
+## STDOUT:
+status=3
+status=3
+status=3
+## END
+
+
+#### Str => trim*(), unicode aware
+
+# From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
+var spaces = [
+  b'\u{0009}',  # Horizontal tab (\t)
+  b'\u{000A}',  # Newline (\n)
+  b'\u{000B}',  # Vertical tab (\v)
+  b'\u{000C}',  # Form feed (\f)
+  b'\u{000D}',  # Carriage return (\r)
+  b'\u{0020}',  # Normal space
+  b'\u{00A0}',  # No-break space 	<NBSP>
+  b'\u{FEFF}',  # Zero-width no-break space <ZWNBSP>
+] => join('')
+
+echo $["$spaces YSH $spaces" => trim()]
+## STDOUT:
+YSH
+## END
+
+#### Str => trim(), unicode decoding errors
+var badUtf = b'\yF9'
+
+echo trim
+
+# We only decode UTF until the first non-space char. So the bad UTF-8 is
+# missed.
+try { call " a$[badUtf]b " => trim() }
+echo status=$_status
+
+# These require trim to decode the badUtf, so an error is raised
+try { call "$[badUtf]b " => trim() }
+echo status=$_status
+try { call " a$[badUtf]" => trim() }
+echo status=$_status
+
+# Similarly, trim{Left,Right} will assume correct encoding until shown
+# otherwise.
+echo trimLeft
+try { call " a$[badUtf]" => trimLeft() }
+echo status=$_status
+try { call "$[badUtf]b " => trimLeft() }
+echo status=$_status
+
+echo trimRight
+try { call "$[badUtf]b " => trimRight() }
+echo status=$_status
+try { call " a$[badUtf]" => trimRight() }
+echo status=$_status
+
+## STDOUT:
+trim
+status=0
+status=3
+status=3
+trimLeft
+status=0
+status=3
+trimRight
+status=0
+status=3
+## END
+
 #### Missing method (Str->doesNotExist())
 = "abc"->doesNotExist()
 ## status: 3
