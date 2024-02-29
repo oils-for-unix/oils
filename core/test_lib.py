@@ -14,9 +14,10 @@ import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
 from _devbuild.gen.runtime_asdl import cmd_value, scope_e
-from _devbuild.gen.syntax_asdl import loc, source, SourceLine
+from _devbuild.gen.syntax_asdl import loc, source, SourceLine, Token
 from _devbuild.gen.value_asdl import value
 from asdl import pybase
+from asdl import runtime
 from builtin import assign_osh
 from builtin import completion_osh
 from builtin import hay_ysh
@@ -57,6 +58,13 @@ def MakeBuiltinArgv(argv):
 def Tok(id_, val):
     # TODO: Tests could use this directly
     return lexer.DummyToken(id_, val)
+
+
+def FakeToken(id_, val):
+    # type: (int, str) -> Token
+    src = source.Interactive
+    line = SourceLine(1, val, src)
+    return Token(id_, 0, len(val), runtime.NO_SPID, line, val)
 
 
 def PrintableString(s):
