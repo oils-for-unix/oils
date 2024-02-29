@@ -72,19 +72,18 @@ def _ReadOneUnit(s, cursor):
 
 def DecodeUtf8Char(s, start):
     # type: (str, int) -> int
-    """Given a string and exclusive bounds [start, end), decode the Unicode
-    char within those bounds. If the bounds must not extend beyond the size of
-    the UTF-8 codepoint, otherwise we consider the codepoint to be invalid (and
-    return -1).
+    """Given a string and start index, decode the Unicode char immidiately
+    following the start index. The start location is in bytes and should be
+    found using a function like NextUtf8Char or PreviousUtf8Char.
 
-    The start/end bounds are in bytes and should be found using a function like
-    NextUtf8Char or PreviousUtf8Char.
-
-    If the codepoint in invalid, we raise an `error.Expr`.
+    If the codepoint in invalid, we raise an `error.Expr`. (This is different
+    from {Next,Previous}Utf8Char which raises an `error.Strict` on encoding
+    errors.)
 
     Known Issues:
     - Doesn't raise issue on surrogate pairs
     - Doesn't raise issue on non-shortest form encodings
+    - Isn't very perfomant and allocates one-byte-strings for each byte
     """
     # We use table 3.6 (reproduced below) from [0]. Note that table 3.6 is not
     # sufficient for validating UTF-8 as it allows surrogate pairs and
