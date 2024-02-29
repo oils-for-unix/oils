@@ -72,7 +72,7 @@ def _ReadOneUnit(s, cursor):
 
 def DecodeUtf8Char(s, start):
     # type: (str, int) -> int
-    """Given a string and start index, decode the Unicode char immidiately
+    """Given a string and start index, decode the Unicode char immediately
     following the start index. The start location is in bytes and should be
     found using a function like NextUtf8Char or PreviousUtf8Char.
 
@@ -83,7 +83,7 @@ def DecodeUtf8Char(s, start):
     Known Issues:
     - Doesn't raise issue on surrogate pairs
     - Doesn't raise issue on non-shortest form encodings
-    - Isn't very perfomant and allocates one-byte-strings for each byte
+    - Isn't very performant and allocates one-byte-strings for each byte
     """
     # We use table 3.6 (reproduced below) from [0]. Note that table 3.6 is not
     # sufficient for validating UTF-8 as it allows surrogate pairs and
