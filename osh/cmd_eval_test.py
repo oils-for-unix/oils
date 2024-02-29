@@ -14,7 +14,7 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (BracedVarSub, suffix_op, CompoundWord)
 from core import test_lib
-from core.test_lib import Tok
+from frontend.lexer import DummyToken as Tok
 
 
 def InitEvaluator():

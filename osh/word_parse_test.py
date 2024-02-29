@@ -18,7 +18,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from asdl import format as fmt
 from core import error
 from core import test_lib
-from core.test_lib import Tok
+from core.test_lib import FakeTok
 from frontend import lexer
 from frontend import location
 from osh import word_
@@ -31,7 +31,7 @@ def _assertReadWordWithArena(test, w_parser):
 
     # Next word must be Eof_Real
     w2 = w_parser.ReadWord(lex_mode_e.ShCommand)
-    test.assertTrue(test_lib.TokensEqual(Tok(Id.Eof_Real, ''), w2), w2)
+    test.assertTrue(test_lib.TokensEqual(FakeTok(Id.Eof_Real, ''), w2), w2)
     return w
 
 

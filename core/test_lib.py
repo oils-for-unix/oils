@@ -55,12 +55,7 @@ def MakeBuiltinArgv(argv):
     return cmd_value.Argv(argv, [loc.Missing] * len(argv), None, None, None)
 
 
-def Tok(id_, val):
-    # TODO: Tests could use this directly
-    return lexer.DummyToken(id_, val)
-
-
-def FakeToken(id_, val):
+def FakeTok(id_, val):
     # type: (int, str) -> Token
     src = source.Interactive
     line = SourceLine(1, val, src)
@@ -80,22 +75,18 @@ def TokensEqual(left, right):
     if left.id != right.id:
         return False
 
-    return left.tval == right.tval
-
-    # TODO: lexer.DummyToken() doesn't give a SourceLine, so lexer.TokenVal()
-    # doesn't work
-    # Also some tokens don't have tval
-
     if left.line is not None:
         left_str = lexer.TokenVal(left)
     else:
-        left_str = left.tval
+        left_str = None
 
     if right.line is not None:
         right_str = lexer.TokenVal(right)
     else:
-        right_str = right.tval
+        right_str = None
 
+    # Better error message sometimes:
+    #assert left_str == right_str, '%r != %r' % (left_str, right_str)
     return left_str == right_str
 
 

@@ -9,7 +9,7 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import word_part_e, CompoundWord
 from asdl import format as fmt
-from core.test_lib import FakeToken
+from core.test_lib import FakeTok
 from mycpp.mylib import log
 from osh import braces  # module under test
 from osh import word_parse_test
@@ -44,7 +44,7 @@ class BracesTest(unittest.TestCase):
             ('z..a..-1', ('z', 'a', -1)),
         ]
         for s, expected in CASES:
-            tok = FakeToken(Id.Lit_Chars, s)
+            tok = FakeTok(Id.Lit_Chars, s)
             part = braces._RangePartDetect(tok)
             if expected is None:
                 self.assert_(part is None)

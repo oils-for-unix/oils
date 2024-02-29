@@ -9,9 +9,10 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str, Kind
 from _devbuild.gen.types_asdl import lex_mode_e
-from core.test_lib import Tok
-from mycpp.mylib import log
 from core import test_lib
+from core.test_lib import FakeTok
+from mycpp.mylib import log
+from frontend import lexer
 from frontend import lexer_def
 from frontend import consts
 from frontend import match
@@ -47,42 +48,42 @@ class LexerTest(unittest.TestCase):
         lexer = _InitLexer(CMD)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'ls'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'ls'), t)
         t = lexer.Read(lex_mode_e.ShCommand)
 
-        self.assertTokensEqual(Tok(Id.WS_Space, None), t)
+        self.assertTokensEqual(FakeTok(Id.WS_Space, ' '), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, '/'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, '/'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Op_Newline, None), t)
+        self.assertTokensEqual(FakeTok(Id.Op_Newline, '\n'), t)
 
         # Line two
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'ls'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'ls'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.WS_Space, None), t)
+        self.assertTokensEqual(FakeTok(Id.WS_Space, ' '), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, '/home/'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, '/home/'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Op_Newline, None), t)
+        self.assertTokensEqual(FakeTok(Id.Op_Newline, '\n'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Eof_Real, ''), t)
+        self.assertTokensEqual(FakeTok(Id.Eof_Real, ''), t)
 
         # Another EOF gives EOF
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Eof_Real, ''), t)
+        self.assertTokensEqual(FakeTok(Id.Eof_Real, ''), t)
 
     def testMode_VSub_ArgUnquoted(self):
         # Another EOF gives EOF
         lexer = _InitLexer("'hi'")
         t = lexer.Read(lex_mode_e.VSub_ArgUnquoted)
-        #self.assertTokensEqual(Tok(Id.Eof_Real, ''), t)
+        #self.assertTokensEqual(FakeTok(Id.Eof_Real, ''), t)
         #t = l.Read(lex_mode_e.VSub_ArgUnquoted)
         print(t)
 
@@ -90,54 +91,54 @@ class LexerTest(unittest.TestCase):
         lexer = _InitLexer('@(foo|bar)')
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.ExtGlob_At, '@('), t)
+        self.assertTokensEqual(FakeTok(Id.ExtGlob_At, '@('), t)
 
         t = lexer.Read(lex_mode_e.ExtGlob)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'foo'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'foo'), t)
 
         t = lexer.Read(lex_mode_e.ExtGlob)
-        self.assertTokensEqual(Tok(Id.Op_Pipe, None), t)
+        self.assertTokensEqual(FakeTok(Id.Op_Pipe, '|'), t)
 
         t = lexer.Read(lex_mode_e.ExtGlob)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'bar'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'bar'), t)
 
         t = lexer.Read(lex_mode_e.ExtGlob)
-        self.assertTokensEqual(Tok(Id.Op_RParen, None), t)
+        self.assertTokensEqual(FakeTok(Id.Op_RParen, ')'), t)
 
         # Individual cases
 
         lexer = _InitLexer('@(')
         t = lexer.Read(lex_mode_e.ExtGlob)
-        self.assertTokensEqual(Tok(Id.ExtGlob_At, '@('), t)
+        self.assertTokensEqual(FakeTok(Id.ExtGlob_At, '@('), t)
 
         lexer = _InitLexer('*(')
         t = lexer.Read(lex_mode_e.ExtGlob)
-        self.assertTokensEqual(Tok(Id.ExtGlob_Star, '*('), t)
+        self.assertTokensEqual(FakeTok(Id.ExtGlob_Star, '*('), t)
 
         lexer = _InitLexer('?(')
         t = lexer.Read(lex_mode_e.ExtGlob)
-        self.assertTokensEqual(Tok(Id.ExtGlob_QMark, '?('), t)
+        self.assertTokensEqual(FakeTok(Id.ExtGlob_QMark, '?('), t)
 
         lexer = _InitLexer('$')
         t = lexer.Read(lex_mode_e.ExtGlob)
-        self.assertTokensEqual(Tok(Id.Lit_Other, '$'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Other, '$'), t)
 
     def testMode_BashRegex(self):
         lexer = _InitLexer('(foo|bar)')
 
         t = lexer.Read(lex_mode_e.BashRegex)
-        self.assertTokensEqual(Tok(Id.Lit_Other, '('), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Other, '('), t)
 
         t = lexer.Read(lex_mode_e.BashRegex)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'foo'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'foo'), t)
 
         t = lexer.Read(lex_mode_e.BashRegex)
-        self.assertTokensEqual(Tok(Id.Lit_Other, '|'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Other, '|'), t)
 
     def testMode_DBracket(self):
         lex = _InitLexer('-z foo')
         t = lex.Read(lex_mode_e.DBracket)
-        self.assertTokensEqual(Tok(Id.BoolUnary_z, '-z'), t)
+        self.assertTokensEqual(FakeTok(Id.BoolUnary_z, '-z'), t)
         self.assertEqual(Kind.BoolUnary, consts.GetKind(t.id))
 
     def testMode_DollarSq(self):
@@ -145,11 +146,11 @@ class LexerTest(unittest.TestCase):
 
         t = lexer.Read(lex_mode_e.SQ_C)
         print(t)
-        self.assertTokensEqual(Tok(Id.Char_Literals, 'foo bar'), t)
+        self.assertTokensEqual(FakeTok(Id.Char_Literals, 'foo bar'), t)
 
         t = lexer.Read(lex_mode_e.SQ_C)
         print(t)
-        self.assertTokensEqual(Tok(Id.Char_OneChar, r'\n'), t)
+        self.assertTokensEqual(FakeTok(Id.Char_OneChar, r'\n'), t)
 
     def testMode_Backtick(self):
         CASES = [
@@ -230,10 +231,10 @@ class LexerTest(unittest.TestCase):
         lexer = _InitLexer('fun()')
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'fun'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'fun'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Op_LParen, None), t)
+        self.assertTokensEqual(FakeTok(Id.Op_LParen, '('), t)
 
         self.assertEqual(Id.Op_RParen,
                          lexer.LookPastSpace(lex_mode_e.ShCommand))
@@ -241,10 +242,10 @@ class LexerTest(unittest.TestCase):
         lexer = _InitLexer('fun ()')
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'fun'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'fun'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.WS_Space, None), t)
+        self.assertTokensEqual(FakeTok(Id.WS_Space, ' '), t)
 
         self.assertEqual(Id.Op_LParen,
                          lexer.LookPastSpace(lex_mode_e.ShCommand))
@@ -255,30 +256,30 @@ class LexerTest(unittest.TestCase):
         lexer.PushHint(Id.Op_RParen, Id.Right_ExtGlob)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.ExtGlob_At, '@('), t)
+        self.assertTokensEqual(FakeTok(Id.ExtGlob_At, '@('), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Right_ExtGlob, None), t)
+        self.assertTokensEqual(FakeTok(Id.Right_ExtGlob, ')'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Eof_Real, ''), t)
+        self.assertTokensEqual(FakeTok(Id.Eof_Real, ''), t)
 
     def testEmitCompDummy(self):
         lexer = _InitLexer('echo ')
         lexer.EmitCompDummy()
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'echo'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'echo'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.WS_Space, None), t)
+        self.assertTokensEqual(FakeTok(Id.WS_Space, ' '), t)
 
         # Right before EOF
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Lit_CompDummy, ''), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_CompDummy, ''), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(Tok(Id.Eof_Real, ''), t)
+        self.assertTokensEqual(FakeTok(Id.Eof_Real, ''), t)
 
 
 class LineLexerTest(unittest.TestCase):
@@ -296,7 +297,7 @@ class LineLexerTest(unittest.TestCase):
 
     def testReadOuter(self):
         l = test_lib.InitLineLexer('\n', self.arena)
-        self.assertTokensEqual(Tok(Id.Op_Newline, None),
+        self.assertTokensEqual(lexer.DummyToken(Id.Op_Newline, None),
                                l.Read(lex_mode_e.ShCommand))
 
     def testRead_VSub_ArgUnquoted(self):
@@ -310,23 +311,23 @@ class LineLexerTest(unittest.TestCase):
         self.assertEqual(Id.Unknown_Tok, l.LookPastSpace(lex_mode_e.ShCommand))
 
         l = test_lib.InitLineLexer('foo', self.arena)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'foo'),
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'foo'),
                                l.Read(lex_mode_e.ShCommand))
         self.assertEqual(Id.Unknown_Tok, l.LookPastSpace(lex_mode_e.ShCommand))
 
         l = test_lib.InitLineLexer('foo  bar', self.arena)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'foo'),
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'foo'),
                                l.Read(lex_mode_e.ShCommand))
         self.assertEqual(Id.Lit_Chars, l.LookPastSpace(lex_mode_e.ShCommand))
 
         # No lookahead; using the cursor!
         l = test_lib.InitLineLexer('fun(', self.arena)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'fun'),
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'fun'),
                                l.Read(lex_mode_e.ShCommand))
         self.assertEqual(Id.Op_LParen, l.LookPastSpace(lex_mode_e.ShCommand))
 
         l = test_lib.InitLineLexer('fun  (', self.arena)
-        self.assertTokensEqual(Tok(Id.Lit_Chars, 'fun'),
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'fun'),
                                l.Read(lex_mode_e.ShCommand))
         self.assertEqual(Id.Op_LParen, l.LookPastSpace(lex_mode_e.ShCommand))
 

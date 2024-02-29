@@ -8,8 +8,8 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import test_lib
-from core.test_lib import Tok
 from mycpp.mylib import log
+from frontend.lexer import DummyToken as Tok
 from frontend.lexer_def import LEXER_DEF
 from frontend import reader
 
