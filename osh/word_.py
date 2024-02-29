@@ -19,6 +19,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from frontend import consts
 from frontend import lexer
+from mycpp import mylib
 from mycpp.mylib import tagswitch, log
 from osh import word_compile
 
@@ -74,14 +75,15 @@ def _EvalWordPart(part):
 
         elif case(word_part_e.Literal):
             tok = cast(Token, UP_part)
-            return True, tok.tval, False
+            return True, lexer.TokenVal(tok), False
 
         elif case(word_part_e.EscapedLiteral):
             part = cast(word_part.EscapedLiteral, UP_part)
-            val = part.token.tval
-            assert len(val) == 2, val  # e.g. \*
-            assert val[0] == '\\'
-            s = val[1]
+            if mylib.PYTHON:
+                val = lexer.TokenVal(part.token)
+                assert len(val) == 2, val  # e.g. \*
+                assert val[0] == '\\'
+            s = lexer.TokenSliceLeft(part.token, 1)
             return True, s, True
 
         elif case(word_part_e.SingleQuoted):

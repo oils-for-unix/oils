@@ -426,8 +426,8 @@ class VarChecker(object):
         self.names.pop()
         self.tokens.pop()
 
-    def Check(self, keyword_id, name_tok):
-        # type: (Id_t, Token) -> None
+    def Check(self, keyword_id, var_name, blame_tok):
+        # type: (Id_t, str, Token) -> None
         """Check for declaration / mutation errors in proc and func.
 
         var x
@@ -456,19 +456,18 @@ class VarChecker(object):
             return
 
         top = self.names[-1]
-        name = name_tok.tval
         if keyword_id == Id.KW_Var:
-            if name in top:
-                p_die('%r was already declared' % name, name_tok)
+            if var_name in top:
+                p_die('%r was already declared' % var_name, blame_tok)
             else:
-                top[name] = keyword_id
+                top[var_name] = keyword_id
 
         if keyword_id == Id.KW_SetVar:
-            if name not in top:
+            if var_name not in top:
                 # Note: the solution could be setglobal, etc.
                 p_die(
                     "setvar couldn't find matching 'var %s' (OILS-ERR-10)" %
-                    name, name_tok)
+                    var_name, blame_tok)
 
 
 class ctx_VarChecker(object):
@@ -2094,12 +2093,12 @@ class CommandParser(object):
                     wp = sig.word
                     if wp:
                         for param in wp.params:
-                            # TODO: Check() should not look at tval
-                            name_tok = param.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            self.var_checker.Check(Id.KW_Var, param.name,
+                                                   param.blame_tok)
                         if wp.rest_of:
-                            name_tok = wp.rest_of.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            r = wp.rest_of
+                            self.var_checker.Check(Id.KW_Var, r.name,
+                                                   r.blame_tok)
                             # We COULD register __out here but it would require a different API.
                             #if param.prefix and param.prefix.id == Id.Arith_Colon:
                             #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
@@ -2107,24 +2106,26 @@ class CommandParser(object):
                     posit = sig.positional
                     if posit:
                         for param in posit.params:
-                            name_tok = param.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            self.var_checker.Check(Id.KW_Var, param.name,
+                                                   param.blame_tok)
                         if posit.rest_of:
-                            name_tok = posit.rest_of.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            r = posit.rest_of
+                            self.var_checker.Check(Id.KW_Var, r.name,
+                                                   r.blame_tok)
 
                     named = sig.named
                     if named:
                         for param in named.params:
-                            name_tok = param.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            self.var_checker.Check(Id.KW_Var, param.name,
+                                                   param.blame_tok)
                         if named.rest_of:
-                            name_tok = named.rest_of.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            r = named.rest_of
+                            self.var_checker.Check(Id.KW_Var, r.name,
+                                                   r.blame_tok)
 
                     if sig.block_param:
-                        name_tok = sig.block_param.blame_tok
-                        self.var_checker.Check(Id.KW_Var, name_tok)
+                        b = sig.block_param
+                        self.var_checker.Check(Id.KW_Var, b.name, b.blame_tok)
 
                 self._SetNext()
                 node.body = self.ParseBraceGroup()
@@ -2151,20 +2152,20 @@ class CommandParser(object):
             posit = node.positional
             if posit:
                 for param in posit.params:
-                    name_tok = param.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
+                    self.var_checker.Check(Id.KW_Var, param.name,
+                                           param.blame_tok)
                 if posit.rest_of:
-                    name_tok = posit.rest_of.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
+                    r = posit.rest_of
+                    self.var_checker.Check(Id.KW_Var, r.name, r.blame_tok)
 
             named = node.named
             if named:
                 for param in named.params:
-                    name_tok = param.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
+                    self.var_checker.Check(Id.KW_Var, param.name,
+                                           param.blame_tok)
                 if named.rest_of:
-                    name_tok = named.rest_of.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
+                    r = named.rest_of
+                    self.var_checker.Check(Id.KW_Var, r.name, r.blame_tok)
 
             self._SetNext()
             with ctx_CmdMode(self, cmd_mode_e.Func):
@@ -2292,7 +2293,7 @@ class CommandParser(object):
             self._SetNext()
             n8 = self.w_parser.ParseVarDecl(kw_token)
             for lhs in n8.lhs:
-                self.var_checker.Check(keyword_id, lhs.left)
+                self.var_checker.Check(keyword_id, lhs.name, lhs.left)
             return n8
 
         if self.c_id in (Id.KW_SetVar, Id.KW_SetGlobal):

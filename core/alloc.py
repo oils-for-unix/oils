@@ -104,6 +104,9 @@ class Arena(object):
 
     def SaveTokens(self):
         # type: () -> None
+        """
+        Used by --tool X.  Do we need LosslessArena?
+        """
         self.save_tokens = True
 
     def PushSource(self, src):

@@ -906,9 +906,6 @@ class UserSpec(object):
 def IsDollar(t):
     # type: (Token) -> bool
 
-    # First condition is for lex_mode_e.{ShCommand,DQ}.
-    #return t.id == Id.Lit_Dollar or (t.id == Id.Lit_Other and t.tval == '$')
-
     # We have rules for Lit_Dollar in
     # lex_mode_e.{ShCommand,DQ,VSub_ArgUnquoted,VSub_ArgDQ}
     return t.id == Id.Lit_Dollar

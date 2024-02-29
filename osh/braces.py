@@ -178,8 +178,11 @@ class _RangeParser(object):
 def _RangePartDetect(tok):
     # type: (Token) -> Optional[word_part.BracedRange]
     """Parse the token and return a new word_part if it looks like a range."""
-    lexer = match.BraceRangeLexer(tok.tval)
-    p = _RangeParser(lexer, tok)
+
+    # TODO: Fix unit tests
+    #lx = match.BraceRangeLexer(lexer.TokenVal(tok))
+    lx = match.BraceRangeLexer(tok.tval)
+    p = _RangeParser(lx, tok)
     try:
         part = p.Parse()
     except _NotARange as e:

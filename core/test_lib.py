@@ -69,8 +69,26 @@ def PrintableString(s):
 def TokensEqual(left, right):
     # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
 
-    # TODO: lexer.TokenVal(left) can fail because left.line is None
-    return left.id == right.id and left.tval == right.tval
+    if left.id != right.id:
+        return False
+
+    return left.tval == right.tval
+
+    # TODO: lexer.DummyToken() doesn't give a SourceLine, so lexer.TokenVal()
+    # doesn't work
+    # Also some tokens don't have tval
+
+    if left.line is not None:
+        left_str = lexer.TokenVal(left)
+    else:
+        left_str = left.tval
+
+    if right.line is not None:
+        right_str = lexer.TokenVal(right)
+    else:
+        right_str = right.tval
+
+    return left_str == right_str
 
 
 def TokenWordsEqual(left, right):

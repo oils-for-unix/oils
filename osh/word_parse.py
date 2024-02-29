@@ -1192,7 +1192,7 @@ class WordParser(WordEmitter):
             with tagswitch(lhs) as case:
                 if case(y_lhs_e.Var):
                     lhs = cast(NameTok, UP_lhs)
-                    var_checker.Check(kw_token.id, lhs.left)
+                    var_checker.Check(kw_token.id, lhs.var_name, lhs.left)
 
                 # Note: this does not cover cases like
                 # setvar (a[0])[1] = v
@@ -1202,14 +1202,14 @@ class WordParser(WordEmitter):
                 elif case(y_lhs_e.Subscript):
                     lhs = cast(Subscript, UP_lhs)
                     if lhs.obj.tag() == expr_e.Var:
-                        var_checker.Check(kw_token.id,
-                                          cast(expr.Var, lhs.obj).left)
+                        v = cast(expr.Var, lhs.obj)
+                        var_checker.Check(kw_token.id, v.name, v.left)
 
                 elif case(y_lhs_e.Attribute):
                     lhs = cast(Attribute, UP_lhs)
                     if lhs.obj.tag() == expr_e.Var:
-                        var_checker.Check(kw_token.id,
-                                          cast(expr.Var, lhs.obj).left)
+                        v = cast(expr.Var, lhs.obj)
+                        var_checker.Check(kw_token.id, v.name, v.left)
 
         # Let the CommandParser see the Op_Semi or Op_Newline.
         self.buffered_word = last_token
