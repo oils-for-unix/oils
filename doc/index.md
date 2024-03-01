@@ -143,6 +143,7 @@ Internal Architecture:
 
 - [Notes on Oils Architecture](architecture-notes.html)
   - [Parser Architecture](parser-architecture.html)
+- [Pretty Printing](pretty-printing.html) - March 2024 design notes.
 
 ## More
 

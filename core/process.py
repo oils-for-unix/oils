@@ -659,10 +659,10 @@ class ExternalProgram(object):
     ):
         # type: (...) -> None
         """
-    Args:
-      hijack_shebang: The path of an interpreter to run instead of the one
-        specified in the shebang line.  May be empty.
-    """
+        Args:
+          hijack_shebang: The path of an interpreter to run instead of the one
+            specified in the shebang line.  May be empty.
+        """
         self.hijack_shebang = hijack_shebang
         self.fd_state = fd_state
         self.errfmt = errfmt

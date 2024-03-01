@@ -295,11 +295,7 @@ class ParseContext(object):
 
     def _YshParser(self):
         # type: () -> expr_parse.ExprParser
-        return expr_parse.ExprParser(self, self.ysh_grammar, False)
-
-    def _TeaParser(self):
-        # type: () -> expr_parse.ExprParser
-        return expr_parse.ExprParser(self, self.ysh_grammar, True)
+        return expr_parse.ExprParser(self, self.ysh_grammar)
 
     def ParseVarDecl(self, kw_token, lexer):
         # type: (Token, Lexer) -> Tuple[command.VarDecl, Token]
