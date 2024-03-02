@@ -1,3 +1,5 @@
+## compare_shells: bash mksh zsh
+## oils_failures_allowed: 2
 
 #### no expansion
 echo {foo}
@@ -154,24 +156,83 @@ echo ~
 ## END
 
 #### Tilde expansion with brace expansion
-# NOTE: osh matches mksh.  Is that OK?
+
 # The brace expansion happens FIRST.  After that, the second token has tilde
 # FIRST, so it gets expanded.  The first token has an unexpanded tilde, because
 # it's not in the leading position.
-# NOTE: mksh gives different behavior!  So it probably doesn't matter that
-# much
+
 HOME=/home/bob
+
+# Command
+
 echo {foo~,~}/bar
-## stdout: foo~/bar /home/bob/bar
-## OK osh/mksh stdout: foo~/bar ~/bar
+
+# Loop
+
+for x in {foo~,~}/bar; do
+  echo -- $x
+done
+
+# Array
+
+a=({foo~,~}/bar)
+
+for y in "${a[@]}"; do
+  echo "== $y"
+done
+
+## STDOUT:
+foo~/bar /home/bob/bar
+-- foo~/bar
+-- /home/bob/bar
+== foo~/bar
+== /home/bob/bar
+## END
+
+## BUG mksh STDOUT:
+foo~/bar ~/bar
+-- foo~/bar
+-- ~/bar
+== foo~/bar
+== ~/bar
+## END
 
 #### Two kinds of tilde expansion
-# NOTE: osh matches mksh.  Is that OK?
-# ~/foo and ~bar
+
 HOME=/home/bob
+
+# Command
 echo ~{/src,root}
-## stdout: /home/bob/src /root
-## OK osh/mksh stdout: ~/src ~root
+
+# Loop
+
+for x in ~{/src,root}; do
+  echo -- $x
+done
+
+# Array
+
+a=(~{/src,root})
+
+for y in "${a[@]}"; do
+  echo "== $y"
+done
+
+## STDOUT:
+/home/bob/src /root
+-- /home/bob/src
+-- /root
+== /home/bob/src
+== /root
+## END
+
+## BUG mksh STDOUT:
+~/src ~root
+-- ~/src
+-- ~root
+== ~/src
+== ~root
+## END
 
 #### Tilde expansion come before var expansion
 HOME=/home/bob

@@ -485,8 +485,7 @@ dparen() {
 }
 
 brace-expansion() {
-  sh-spec spec/brace-expansion.test.sh \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file brace-expansion "$@"
 }
 
 regex() {
