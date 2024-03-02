@@ -34,16 +34,6 @@ osh-files() {
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$|os.pyi$'
 }
 
-ysh-files() {
-  ls ysh/*.{py,pgen2} builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
-}
-
-data-lang-files() {
-  ls data_lang/*.asdl
-  ls data_lang/*.py | filter-py
-  ls data_lang/*.{c,h} | egrep -v '_test'  # exclude j8_test_lib as well
-}
-
 # cloc doesn't understand ASDL files.
 # Use a wc-like format, filtering out blank lines and comments.
 asdl-cloc() {
@@ -68,21 +58,30 @@ print "%5d %s" % (total, "total")
 }
 
 cloc-report() {
-  echo 'OSH (non-blank non-comment lines)'
+  echo '(non-blank non-comment lines)'
+  echo
+
+  echo 'OSH'
   echo
   osh-files | xargs cloc --quiet "$@"
   echo
   echo
 
-  echo 'YSH (non-blank non-comment lines)'
+  echo 'YSH'
   echo
   ysh-files | xargs cloc --quiet "$@"
   echo
   echo
 
-  echo 'Data Languages (non-blank non-comment lines)'
+  echo 'Data Languages'
   echo
   data-lang-files | xargs cloc --quiet "$@"
+  echo
+  echo
+
+  echo 'Tools'
+  echo
+  tools-files | xargs cloc --quiet "$@"
   echo
   echo
 
@@ -178,12 +177,22 @@ osh-counts() {
     "$@"
 }
 
+ysh-files() {
+  ls ysh/*.{py,pgen2} builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
+}
+
 ysh-counts() {
   local count=$1
   shift
 
   ysh-files | $count \
     'YSH' 'Expression grammar, parser, evaluator, etc.' "$@"
+}
+
+data-lang-files() {
+  ls data_lang/*.asdl
+  ls data_lang/*.py | filter-py
+  ls data_lang/*.{c,h} | egrep -v '_test'  # exclude j8_test_lib as well
 }
 
 data-lang-counts() {
@@ -194,6 +203,17 @@ data-lang-counts() {
     'Data Languages' 'JSON, J8 Notation, ...' "$@"
 }
 
+tools-files() {
+  ls tools/*.py | filter-py
+}
+
+tools-counts() {
+  local count=$1
+  shift
+
+  tools-files | $count \
+    'Tools' '' "$@"
+}
 
 cpp-binding-files() {
   ls cpp/*.{cc,h} | egrep -v '_test.cc' 
@@ -313,6 +333,8 @@ _for-translation() {
 
   data-lang-counts $count "$@"
 
+  tools-counts $count "$@"
+
   spec-gold-counts $count "$@"
 
   gen-cpp-counts $count "$@"
@@ -327,6 +349,8 @@ _overview() {
   ysh-counts $count "$@"
 
   data-lang-counts $count "$@"
+
+  tools-counts $count "$@"
 
   ls stdlib/*.ysh | $count \
     "YSH stdlib" '' "$@"
@@ -373,9 +397,6 @@ _overview() {
     'Generated Python Code' \
     'For the Python App Bundle.' \
     "$@"
-
-  ls tools/*.py | filter-py | $count \
-    'Tools' '' "$@"
 
   ls {doctools,lazylex}/*.py doctools/*.{h,cc} | filter-py | $count \
     'Doc Tools' '' "$@"

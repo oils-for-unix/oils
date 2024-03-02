@@ -80,6 +80,7 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr, log
 from pylib import os_path
 from tools import deps
+from tools import fmt
 from tools import ysh_ify
 from ysh import expr_eval
 
@@ -1079,6 +1080,9 @@ def Main(
 
         elif tool_name == 'lossless-cat':  # for test/lossless.sh
             ysh_ify.LosslessCat(arena)
+
+        elif tool_name == 'fmt':
+            fmt.Format(arena, node)
 
         elif tool_name == 'ysh-ify':
             ysh_ify.Ysh_ify(arena, node)

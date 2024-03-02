@@ -214,9 +214,9 @@ MAIN_SPEC.LongFlag('--version')
 #   undefined-vars - a static analysis pass
 #   parse-glob - to debug parsing
 #   parse-printf
-MAIN_SPEC.LongFlag(
-    '--tool',
-    ['tokens', 'lossless-cat', 'syntax-tree', 'ysh-ify', 'deps', 'cat-em'])
+MAIN_SPEC.LongFlag('--tool', [
+    'tokens', 'lossless-cat', 'syntax-tree', 'fmt', 'ysh-ify', 'deps', 'cat-em'
+])
 
 MAIN_SPEC.ShortFlag('-i')  # interactive
 MAIN_SPEC.ShortFlag('-l')  # login - currently no-op

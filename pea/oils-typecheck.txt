@@ -4,6 +4,7 @@ _devbuild/gen/hnode_asdl.py
 _devbuild/gen/id_kind_asdl.py
 _devbuild/gen/nil8_asdl.py
 _devbuild/gen/option_asdl.py
+_devbuild/gen/pretty_asdl.py
 _devbuild/gen/runtime_asdl.py
 _devbuild/gen/syntax_asdl.py
 _devbuild/gen/types_asdl.py
@@ -60,6 +61,7 @@ core/util.py
 core/vm.py
 data_lang/j8.py
 data_lang/j8_lite.py
+data_lang/pretty.py
 data_lang/pyj8.py
 frontend/args.py
 frontend/builtin_def.py
@@ -78,6 +80,7 @@ frontend/py_readline.py
 frontend/reader.py
 frontend/signal_def.py
 frontend/typed_args.py
+mycpp/mops.py
 osh/arith_parse.py
 osh/bool_parse.py
 osh/bool_stat.py
@@ -101,6 +104,7 @@ pgen2/pnode.py
 pylib/cgi.py
 pylib/os_path.py
 pylib/path_stat.py
+tools/fmt.py
 tools/ysh_ify.py
 ysh/expr_eval.py
 ysh/expr_parse.py
