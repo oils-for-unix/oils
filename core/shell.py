@@ -705,18 +705,11 @@ def Main(
     #
 
     methods[value_e.Str] = {
-        'startsWith': method_str.StartsWith(),
-        'endsWith': None,  # TODO
-
-        # These functions are unicode aware
-        # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-        'trim': method_str.Trim(method_str.TRIM_BOTH),
-        'trimLeft': method_str.Trim(method_str.TRIM_LEFT),
-        'trimRight': method_str.Trim(method_str.TRIM_RIGHT),
-
-        # like Python 3.9 removeprefix() removesuffix()
-        'trimPrefix': None,
-        'trimSuffix': None,
+        'startsWith': method_str.HasAffix(method_str.START),
+        'endsWith': method_str.HasAffix(method_str.END),
+        'trim': method_str.Trim(method_str.START | method_str.END),
+        'trimStart': method_str.Trim(method_str.START),
+        'trimEnd': method_str.Trim(method_str.END),
 
         # These also have Unicode support
         'upper': method_str.Upper(),

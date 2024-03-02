@@ -26,100 +26,205 @@ from typing import cast, Any, List, Optional, Tuple
 _ = log
 
 
-class StartsWith(vm._Callable):
+def _StrMatchStart(s, p):
+    # type: (str, str) -> Tuple[bool, int, int]
+    """Returns the range of bytes in 's' that match string pattern `p`. the
+    pattern matches if 's' starts with all the characters in 'p'.
 
-    def __init__(self):
-        # type: () -> None
-        pass
+    The returned match result is the tuple "(matched, begin, end)". 'matched'
+    is true if the pattern matched. 'begin' and 'end' give the half-open range
+    "[begin, end)" of byte indices from 's' for the match, and are a valid but
+    empty range if 'match' is false.
+
+    Used for shell functions like 'trimStart' when trimming a prefix string.
+    """
+    if s.startswith(p):
+        return (True, 0, len(p))
+    else:
+        return (False, 0, 0)
+
+
+def _StrMatchEnd(s, p):
+    # type: (str, str) -> Tuple[bool, int, int]
+    """Returns a match result for the bytes in 's' that match string pattern
+    `p`. the pattern matches if 's' ends with all the characters in 'p'.
+
+    The returned match result is the tuple "(matched, begin, end)". 'matched'
+    is true if the pattern matched. 'begin' and 'end' give the half-open range
+    "[begin, end)" of byte indices from 's' for the match, and are a valid but
+    empty range if 'match' is false.
+
+    Used for shell functions like 'trimEnd' when trimming a suffix string.
+    """
+    len_s = len(s)
+    if s.endswith(p):
+        return (True, len_s - len(p), len_s)
+    else:
+        return (False, len_s, len_s)
+
+
+def _EggexMatchCommon(s, p, ere, empty_p):
+    # type: (str, value.Eggex, str, int) -> Tuple[bool, int, int]
+    cflags = regex_translate.LibcFlags(p.canonical_flags)
+    eflags = 0
+    indices = libc.regex_search(ere, cflags, s, eflags)
+    if indices is None:
+        return (False, empty_p, empty_p)
+
+    start = indices[0]
+    end = indices[1]
+
+    return (True, start, end)
+
+
+def _EggexMatchStart(s, p):
+    # type: (str, value.Eggex) -> Tuple[bool, int, int]
+    """Returns a match result for the bytes in 's' that match Eggex pattern
+    `p` when constrained to match at the start of the string.
+
+    Any capturing done by the Eggex pattern is ignored.
+
+    The returned match result is the tuple "(matched, begin, end)". 'matched'
+    is true if the pattern matched. 'begin' and 'end' give the half-open range
+    "[begin, end)" of byte indices from 's' for the match, and are a valid but
+    empty range if 'match' is false.
+
+    Used for shell functions like 'trimStart' when trimming with an Eggex
+    pattern.
+    """
+    ere = regex_translate.AsPosixEre(p)
+    if not ere.startswith('^'):
+        ere = '^' + ere
+    return _EggexMatchCommon(s, p, ere, 0)
+
+
+def _EggexMatchEnd(s, p):
+    # type: (str, value.Eggex) -> Tuple[bool, int, int]
+    """Like _EggexMatchStart, but matches against the end of the
+    string.
+    """
+    ere = regex_translate.AsPosixEre(p)
+    if not ere.endswith('$'):
+        ere = ere + '$'
+    return _EggexMatchCommon(s, p, ere, len(s))
+
+
+START = 0b01
+END = 0b10
+
+
+class HasAffix(vm._Callable):
+    """ Implements `startsWith()`, `endsWith()`. """
+
+    def __init__(self, anchor):
+        # type: (int) -> None
+        assert anchor in (START, END), ("Anchor must be START or END")
+        self.anchor = anchor
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        """
+        string => startsWith(pattern_str)   # => bool
+        string => startsWith(pattern_eggex) # => bool
+        string => endsWith(pattern_str)     # => bool
+        string => endsWith(pattern_eggex)   # => bool
+        """
 
         string = rd.PosStr()
-        match = rd.PosStr()
+        pattern_val = rd.PosValue()
+        pattern_str = None  # type: str
+        pattern_eggex = None  # type: value.Eggex
+        with tagswitch(pattern_val) as case:
+            if case(value_e.Eggex):
+                pattern_eggex = cast(value.Eggex, pattern_val)
+            elif case(value_e.Str):
+                pattern_str = cast(value.Str, pattern_val).s
+            else:
+                raise error.TypeErr(pattern_val,
+                                    'expected pattern to be Eggex or Str',
+                                    rd.LeftParenToken())
         rd.Done()
 
-        res = string.startswith(match)
-        return value.Bool(res)
+        matched = False
+        try:
+            if pattern_str is not None:
+                if self.anchor & START:
+                    matched, _, _ = _StrMatchStart(string, pattern_str)
+                else:
+                    matched, _, _ = _StrMatchEnd(string, pattern_str)
+            else:
+                assert pattern_eggex is not None
+                if self.anchor & START:
+                    matched, _, _ = _EggexMatchStart(string, pattern_eggex)
+                else:
+                    matched, _, _ = _EggexMatchEnd(string, pattern_eggex)
+        except error.Strict as e:
+            raise error.Expr(e.msg, e.location)
 
-
-# From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-SPACES = [
-    0x0009,  # Horizontal tab (\t)
-    0x000A,  # Newline (\n)
-    0x000B,  # Vertical tab (\v)
-    0x000C,  # Form feed (\f)
-    0x000D,  # Carriage return (\r)
-    0x0020,  # Normal space
-    0x00A0,  # No-break space 	<NBSP>
-    0xFEFF,  # Zero-width no-break space <ZWNBSP>
-]
-
-
-def _IsSpace(codepoint):
-    # type: (int) -> bool
-    return codepoint in SPACES
-
-
-TRIM_LEFT = 1
-TRIM_RIGHT = 2
-TRIM_BOTH = 3
+        return value.Bool(matched)
 
 
 class Trim(vm._Callable):
+    """ Implements `trimStart()`, `trimEnd()`, and `trim()` """
 
-    def __init__(self, trim):
+    def __init__(self, anchor):
         # type: (int) -> None
-        self.trim = trim
-
-    def _Left(self, string):
-        # type: (str) -> int
-        i = 0
-        while i < len(string):
-            codepoint = string_ops.DecodeUtf8Char(string, i)
-            if not _IsSpace(codepoint):
-                break
-
-            try:
-                i = string_ops.NextUtf8Char(string, i)
-            except error.Strict:
-                assert False, "DecodeUtf8Char should have caught any encoding errors"
-
-        return i
-
-    def _Right(self, string):
-        # type: (str) -> int
-        i = len(string)
-        while i > 0:
-            # For encoding errors, translate error.Strict to error.Expr to
-            # behave like the other builtin methods.
-            try:
-                prev = string_ops.PreviousUtf8Char(string, i)
-            except error.Strict as e:
-                raise error.Expr(e.msg, e.location)
-
-            codepoint = string_ops.DecodeUtf8Char(string, prev)
-            if not _IsSpace(codepoint):
-                break
-
-            i = prev
-
-        return i
+        assert anchor in (START, END, START
+                          | END), ("Anchor must be START, END, or START|END")
+        self.anchor = anchor
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        """
+        string => trimStart()               # => Str
+        string => trimEnd()                 # => Str
+        string => trim()                    # => Str
+        string => trimStart(pattern_str)    # => Str
+        string => trimEnd(pattern_str)      # => Str
+        string => trim(pattern_str)         # => Str
+        string => trimStart(pattern_eggex)  # => Str
+        string => trimEnd(pattern_eggex)    # => Str
+        string => trim(pattern_eggex)       # => Str
+        """
 
         string = rd.PosStr()
+        pattern_val = rd.OptionalValue()
+        pattern_str = None  # type: str
+        pattern_eggex = None  # type: value.Eggex
+        if pattern_val:
+            with tagswitch(pattern_val) as case:
+                if case(value_e.Eggex):
+                    pattern_eggex = cast(value.Eggex, pattern_val)
+                elif case(value_e.Str):
+                    pattern_str = cast(value.Str, pattern_val).s
+                else:
+                    raise error.TypeErr(pattern_val,
+                                        'expected pattern to be Eggex or Str',
+                                        rd.LeftParenToken())
         rd.Done()
 
-        left = 0
-        right = len(string)
-        if self.trim & TRIM_LEFT:
-            left = self._Left(string)
-        if self.trim & TRIM_RIGHT:
-            right = self._Right(string)
+        start = 0
+        end = len(string)
+        try:
+            if pattern_str is not None:
+                if self.anchor & START:
+                    _, _, start = _StrMatchStart(string, pattern_str)
+                if self.anchor & END:
+                    _, end, _ = _StrMatchEnd(string, pattern_str)
+            elif pattern_eggex is not None:
+                if self.anchor & START:
+                    _, _, start = _EggexMatchStart(string, pattern_eggex)
+                if self.anchor & END:
+                    _, end, _ = _EggexMatchEnd(string, pattern_eggex)
+            else:
+                if self.anchor & START:
+                    _, start = string_ops.StartsWithWhitespaceByteRange(string)
+                if self.anchor & END:
+                    end, _ = string_ops.EndsWithWhitespaceByteRange(string)
+        except error.Strict as e:
+            raise error.Expr(e.msg, e.location)
 
-        res = string[left:right]
+        res = string[start:end]
         return value.Str(res)
 
 

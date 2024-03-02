@@ -73,18 +73,47 @@ The following matrix of signatures are supported by `replace()`:
     s => replace(eggex_val, subst_str)
     s => replace(eggex_val, subst_expr)
 
-### startsWith()   
+### startsWith()
+
+Checks if a string starts with a pattern, returning true if it does or false if
+it does not.
+
+    = b'YSH123' => startsWith(b'YSH')  # => true
+    = b'123YSH' => startsWith(b'YSH')  # => false
+    = b'123YSH' => startsWith(/ d+ /)  # => true
+    = b'YSH123' => startsWith(/ d+ /)  # => false
+
+Matching is done based on bytes, not runes.
+
+    = b'\yce\ya3'                 # => (Str)   "Σ"
+    = 'Σ' => startsWith(b'\yce')  # => true
+    = 'Σ' => endsWith(b'\ya3')    # => true
 
 ### endsWith()
 
-### trim()   
+Like 'startsWith()` but returns true if the _end_ of the string matches.
 
-Remove the white-space from the _left and right_ ends of the string. This
-function is Unicode-aware.
+    = b'123YSH' => endsWith("YSH")  # => true
+    = b'YSH123' => endsWith(/ d+ /) # => true
 
-    = b' YSH\n' => trim()  # => "YSH"
+### trim()
 
-The following Unicode codepoints are considered white-space:
+Removes characters matching a pattern from the start and end of a string.
+With no arguments, whitespace is removed. When given a string or eggex pattern,
+that pattern is removed if it matches the start or end.
+
+    = b' YSH\n'    => trim()        # => "YSH"
+    = b'xxxYSHxxx' => trim('xxx')   # => "YSH"
+    = b'xxxYSH   ' => trim('xxx')   # => "YSH   "
+    = b'   YSHxxx' => trim('xxx')   # => "   YSH"
+    = b'   YSH   ' => trim('xxx')   # => "   YSH   "
+    = b'123YSH456' => trim(/ d+ /)  # => "YSH"
+
+#### A note on whitespace
+
+When stripping whitespace, Oils decodes the bytes in string as utf-8
+characters. Only the following Unicode codepoints are considered to be
+whitespace.
 
  - U+0009 -- Horizontal tab (`\t`)
  - U+000A -- Newline (`\n`)
@@ -95,23 +124,27 @@ The following Unicode codepoints are considered white-space:
  - U+00A0 -- No-break space `<NBSP>`
  - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
 
-### trimLeft()   
+While the Unicode standard defines other codepoints as being spaces, Oils
+limits itself to just these codepoints so that the specifcation is stable,
+and doesn't depend on an external standard that has reclassify characters.
 
-Similar to `trim()` but removes white-space _only from the left_.
+### trimStart()
 
-    = b' YSH\n' => trimLeft()  # => "YSH\n"
+Like `trim()` but only removes characters from the _start_ of the string.
 
-### trimRight()
+    = b' YSH\n'    => trimStart()        # => "YSH\n"
+    = b'xxxYSHxxx' => trimStart(b'xxx')  # => "YSHxxx"
+    = b'123YSH456' => trimStart(/ d+ /)  # => "YSH456"
 
-Similar to `trim()` but removes white-space _only from the right_.
+### trimEnd()
 
-    = b' YSH\n' => trimRight()  # => " YSH"
+Like `trim()` but only removes characters from the _end_ of the string.
 
-### trimPrefix()   
+    = b' YSH\n'    => trimEnd()        # => " YSH"
+    = b'xxxYSHxxx' => trimEnd(b'xxx')  # => "YxxxSH"
+    = b'123YSH456' => trimEnd(/ d+ /)  # => "123YSH"
 
-### trimSuffix()
-
-### upper()   
+### upper()
 
 Respects unicode.
 
@@ -309,7 +342,7 @@ Like `$()`, but useful in pure functions.
 
 An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
 
-    func renderPrompt(io) {    
+    func renderPrompt(io) {
       var parts = []
       call parts->append(io->promptval('w'))  # pass 'w' for \w
       call parts->append(io->promptval('$'))  # pass '$' for \$
