@@ -74,7 +74,7 @@ proc arg-parse (; place ; ; block_def) {
   call place->setValue(p)
 }
 
-proc flag (short, long ; type='bool', default=null, help=null) {
+proc flag (short, long ; type='bool' ; default=null, help=null) {
   ## Declare a flag within an `arg-parse`.
   ##
   ## Examples:
@@ -170,6 +170,19 @@ func parseArgs(spec, argv) {
 
   if (spec.rest) {
     setvar args[spec.rest] = rest
+  }
+
+  # Set defaults for flags and args
+  for flag in (spec.flags) {
+    if (flag.name not in args) {
+      setvar args[flag.name] = flag.default
+    }
+  }
+
+  for arg in (spec.args) {
+    if (arg.name not in args) {
+      setvar args[arg.name] = arg.default
+    }
   }
 
   return ([args, i])

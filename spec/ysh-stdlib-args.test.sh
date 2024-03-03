@@ -40,8 +40,8 @@ z
 source --builtin args.ysh
 
 arg-parse (&spec) {
-  flag -v --verbose ('bool', false)
-  flag -c --count ('int', 120)
+  flag -v --verbose ('bool', default=false)
+  flag -c --count ('int', default=120)
   arg file
 }
 
@@ -220,6 +220,23 @@ json write (spec)
 }
 ## END
 
+#### Default values
+source --builtin args.ysh
+
+arg-parse (&spec) {
+  flag -S --sanitize ('bool', default=false)
+  flag -v --verbose ('bool', default=false)
+  flag -P --max-procs ('int')  # Will set to null (the default default)
+
+  arg action (default="compile")
+}
+
+var opt, i = parseArgs(spec, [])
+
+pp line (opt)
+## STDOUT:
+(Dict)   {"sanitize":false,"verbose":false,"max-procs":null,"action":"compile"}
+## END
 
 #### Duplicate argument/flag names
 source --builtin args.ysh
