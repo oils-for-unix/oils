@@ -14,6 +14,46 @@ class Foo(object):
     self.s = 'mystr'
 
 
+def TestMethods():
+    # type: () -> None
+
+    s = 'a1bc'
+
+    if s.startswith(''):
+        print('empty yes')
+
+    if s.startswith('a1'):
+        print('a1 yes')
+
+    if not s.startswith('zz'):
+        print('zz no')
+
+    if s.endswith(''):
+        print('empty yes')
+
+    if s.endswith('bc'):
+        print('bc yes')
+
+    if s.endswith('c'):
+        print('bc yes')
+
+    if not s.endswith('zzzzzz'):
+        print('zzzzzz no')
+
+    # This file is out of date!  It thinks it happens in Python 3, but we have
+    # it in Python 2.7
+
+    # /home/andy/wedge/oils-for-unix.org/pkg/mypy/0.780/mypy/typeshed/stdlib/2/__builtin__.pyi:509: note: "startswith" of "str" defined here
+
+    # Fixed here - https://github.com/python/typeshed/blob/main/stdlib/builtins.pyi
+    #
+    # It can be fixed by patching, gah
+
+    # start pos
+    #if s.startswith('bc', start=2):
+    #    print('bc YES')
+
+
 def run_tests():
   # type: () -> None
 
@@ -79,6 +119,8 @@ def run_tests():
   # print(s[0:10:2])
   # print(s[1:10:2])
   print(s.upper())
+
+  TestMethods()
 
 
 def run_benchmarks():
