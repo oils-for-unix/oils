@@ -7,7 +7,7 @@ invalid_print.py
 
 
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  for i in xrange(3):
-    print('hi')
+    for i in xrange(3):
+        print('hi')

@@ -37,6 +37,7 @@ def IsPlusEquals(tok):
 
 # Also: IsWhitespace, IsLeadingSpace
 
+
 def TokenEquals(tok, s):
     # type: (Token, str) -> bool
 

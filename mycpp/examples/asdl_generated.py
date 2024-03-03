@@ -19,18 +19,19 @@ from typing import Optional, List
 
 
 class arith_expr_t(object):
-  def __init__(self):
-    # type: () -> None
-    """Empty constructor for ASDL."""
-    pass
+
+    def __init__(self):
+        # type: () -> None
+        """Empty constructor for ASDL."""
+        pass
 
 
 class arith_expr__Const(arith_expr_t):
 
-  def __init__(self, i):
-    # type: (int) -> None
-    arith_expr_t.__init__(self)
-    self.i = i
+    def __init__(self, i):
+        # type: (int) -> None
+        arith_expr_t.__init__(self)
+        self.i = i
 
 
 # This causes problems
@@ -39,26 +40,26 @@ class arith_expr__Const(arith_expr_t):
 
 
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  #x = arith_expr.Const(5)
-  x = arith_expr__Const(5)
-  log('x = %d', x.i)
+    #x = arith_expr.Const(5)
+    x = arith_expr__Const(5)
+    log('x = %d', x.i)
 
 
 def run_benchmarks():
-  # type: () -> None
-  i = 0
-  n = 1000000
-  while i < n:
-    x = arith_expr__Const(i)
-    i = i + 1
-    mylib.MaybeCollect()
+    # type: () -> None
+    i = 0
+    n = 1000000
+    while i < n:
+        x = arith_expr__Const(i)
+        i = i + 1
+        mylib.MaybeCollect()
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()

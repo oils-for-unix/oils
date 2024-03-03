@@ -23,56 +23,56 @@ from mycpp.mylib import log
 
 
 def Cartesian(dims, out):
-  # type: (List[str], List[str]) -> None
-  if len(dims) == 1:
-    for ch in dims[0]:
-      out.append(ch)
-  else:
-    rest = []  # type: List[str]
-    Cartesian(dims[1:], rest)
-    for ch in dims[0]:
-      for r in rest:
-        out.append(ch + r)  # join strings
+    # type: (List[str], List[str]) -> None
+    if len(dims) == 1:
+        for ch in dims[0]:
+            out.append(ch)
+    else:
+        rest = []  # type: List[str]
+        Cartesian(dims[1:], rest)
+        for ch in dims[0]:
+            for r in rest:
+                out.append(ch + r)  # join strings
 
 
 def run_tests():
-  # type: () -> None
-  out = []  # type: List[str]
+    # type: () -> None
+    out = []  # type: List[str]
 
-  #Cartesian(['ab'], out)
-  tmp = ['ab']
-  Cartesian(tmp, out)
+    #Cartesian(['ab'], out)
+    tmp = ['ab']
+    Cartesian(tmp, out)
 
-  for s in out:
-    print(s)
+    for s in out:
+        print(s)
 
-  print('--')
+    print('--')
 
-  out = []
+    out = []
 
-  #Cartesian(['ab', '-|_', 'ABC'], out)
-  # Do we need a tmp variable?
-  tmp2 = ['ab', '-|_', 'ABC']
-  Cartesian(tmp2, out)
-  for s in out:
-    print(s)
+    #Cartesian(['ab', '-|_', 'ABC'], out)
+    # Do we need a tmp variable?
+    tmp2 = ['ab', '-|_', 'ABC']
+    Cartesian(tmp2, out)
+    for s in out:
+        print(s)
 
 
 def run_benchmarks():
-  # type: () -> None
-  i = 0
-  n = 100000
-  while i < n:
-    out = []  # type: List[str]
-    Cartesian(['ab', '-|_', 'ABC'], out)
-    i = i + 1
+    # type: () -> None
+    i = 0
+    n = 100000
+    while i < n:
+        out = []  # type: List[str]
+        Cartesian(['ab', '-|_', 'ABC'], out)
+        i = i + 1
 
-    mylib.MaybeCollect()  # manual GC point
+        mylib.MaybeCollect()  # manual GC point
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()
