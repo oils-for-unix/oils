@@ -102,6 +102,8 @@ proc arg (name ; ; default=null, help=null) {
   ##     arg out (default="a.out", help="output file path")
   ##   }
 
+  # TODO: need to add required arguments
+
   ctx emit args ({name, default, help})
 }
 

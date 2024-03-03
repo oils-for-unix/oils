@@ -1186,3 +1186,62 @@ Flags:
 
 Bash has this, but OSH won't implement it.
 
+
+## Flags
+
+### parseArgs()
+
+YSH includes a `argparse`-like utility called `parseArgs`. This is intended to
+be used for command-line interfaces to programs.
+
+To use it, first import `args.ysh`:
+
+    source --builtin args.ysh
+
+Then, create an argument "spec":
+
+    arg-parse (&spec) {
+      flag -v --verbose (help="Verbosely")  # default is Bool, false
+
+      flag -P --max-procs ('int', default=-1, doc='''
+        Run at most P processes at a time
+        ''')
+
+      flag -i --invert ('bool', default=true, doc='''
+        Long multiline
+        Description
+        ''')
+
+      arg src (help='Source')
+      arg dest (help='Dest')
+      arg times (help='Foo')
+
+      rest files
+    }
+
+Finally, parse `ARGV` (or any other array of strings) with:
+
+    var opt, i = parseArgs(spec, ARGV)
+
+The returned `opt` is a `Dict` containing key-value pairs with the parsed
+values (or defaults) for each flag and argument. For example, given `ARGV = :|
+-v -P 12 |`, `opt` would be:
+
+    {
+        "verbose": true,
+        "max-procs": 12,
+        "invert": true,
+        "src": null,
+        "dest": null,
+        "times": null,
+        "files": [],
+    }
+
+`i` is the last parsed index into `ARGV` which is useful if you wanted to do
+further parsing of `ARGV` after `parseArgs`.
+
+Inside of `arg-parse`, there are three ways you can add to the spec:
+
+- `flag (short, long ; type='bool' ; default=null, help=null)` -- For "flags" like `--verbose` or `-N`
+- `arg (name ; ; default=null, help=null)` -- For positional arguments
+- `rest (name)` -- Take the remaining positional arguments and store them in `opts[name]`

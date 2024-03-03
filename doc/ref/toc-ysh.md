@@ -143,7 +143,7 @@ X [TSV8]          rows                   pick rows; dplyr filter()
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
                   summary                count, sum, histogram, etc. [ext]
-X [Flags]         Flags                  getopts replacement: flag arg
+  [Flags]         X Flags                getopts replacement: flag arg
                   parseArgs()            
 X [Testing]       describe               Test harness
                   assert                 takes an expression
