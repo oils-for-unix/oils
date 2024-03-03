@@ -7,11 +7,11 @@ source --builtin args.ysh
 arg-parse (&spec) {
   flag -v --verbose (help="Verbosely")  # default is Bool, false
 
-  flag -P --max-procs ('int', default=-1, doc='''
+  flag -P --max-procs ('int', default=-1, help='''
     Run at most P processes at a time
     ''')
 
-  flag -i --invert ('bool', default=true, doc='''
+  flag -i --invert ('bool', default=true, help='''
     Long multiline
     Description
     ''')
