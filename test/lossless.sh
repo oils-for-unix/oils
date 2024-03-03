@@ -29,20 +29,11 @@ _compare() {
   fi
 }
 
-test-here-doc() {
-  _compare test/lossless/here-dq.sh
-  _compare test/lossless/here-sq.sh
-
-  # Hard test case!
-  _compare test/lossless/here-multiple.sh
-
-  # This is a known exception to the lossless invariant.  The leading tabs aren't
-  # preserved, because we don't need them for ysh-ify translation.
-  _compare test/lossless/here-dq-indented.sh
-}
-
-test-tilde() {
-  _compare test/lossless/tilde.sh
+test-sh() {
+  for file in test/lossless/*; do
+    echo "--- $file"
+    _compare $file
+  done
 }
 
 test-ysh() {

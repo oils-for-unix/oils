@@ -233,6 +233,32 @@ def TildeDetect(UP_w):
         return None
 
     w = cast(CompoundWord, UP_w)
+    return TildeDetect2(w)
+
+
+def TildeDetect2(w):
+    # type: (CompoundWord) -> Optional[CompoundWord]
+    """
+    After brace expansion, we know we have a List[CompoundWord], not a
+    List[word_t]
+
+    TODO: Detect Lit_Tilde ~ and then Lit_Chars
+
+    I we don't need another regex; Lit_Chars is a superset of the old
+    Lit_TildeLike.  Simply find a / within it.
+
+    Test:
+
+    ~
+    ~/
+
+    ~bob
+    ~bob/
+
+    # This won't be Lit_Chars
+    ~bob#
+    ~bob#/
+    """
     if len(w.parts) == 0:  # ${a-} has no parts
         return None
 

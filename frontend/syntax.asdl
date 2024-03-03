@@ -1,13 +1,7 @@
 # Data types for the Oils AST, aka "Lossless Syntax Tree".
 #
 # Invariant: the source text can be reconstructed byte-for-byte from this
-# tree.  The test/arena.sh file partially verifies this.
-#
-# Exceptions:
-# - <<- here docs with leading tabs, since we don't want those for
-#   conversion.  We don't want files with mixed tabs and spaces.
-# - Distinguishing between function styles wasn't necessary:
-#   - foo() { } vs function foo { }  # ksh style
+# tree.  The test/lossless.sh suite verifies this.
 
 # We usually try to preserve the physical order of the source in the ASDL
 # fields.  One exception is the order of redirects:
