@@ -108,6 +108,24 @@ v=
 v=
 ## END
 
+#### "${v[@]+foo}" - even with NOUNSET
+set -u
+
+argv.py "${v[@]+foo}"
+echo status=$?
+## status: 0
+## OK dash status: 2
+## OK dash STDOUT:
+## END
+## OK dash STDERR:
+dash: 3: Bad substitution
+## END
+## STDOUT:
+[]
+status=0
+## END
+
+
 #### ${v-foo} and ${v:-foo} when set -u
 set -u
 v=v
