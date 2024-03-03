@@ -60,6 +60,17 @@ proc arg-parse (; place ; ; block_def) {
     setvar p.rest = null
   }
 
+  var names = {}
+  for items in ([p.flags, p.args]) {
+    for x in (items) {
+      if (x.name in names) {
+        error "Duplicate flag/arg name $[x.name] in spec" (status=3)
+      }
+
+      setvar names[x.name] = null
+    }
+  }
+
   call place->setValue(p)
 }
 
@@ -74,8 +85,13 @@ proc flag (short, long ; type='bool', default=null, help=null) {
   ##     flag -f --file ('str', help="File to process")
   ##   }
 
+  # TODO: handle only long flag or only short flag
+  # TODO: flag aliases
+
+  var name = long[2:]
+
   # TODO: type objects (ie. Bool, Int, Str)
-  ctx emit flags ({short, long, type, default, help})
+  ctx emit flags ({short, long, name, type, default, help})
 }
 
 proc arg (name ; ; default=null, help=null) {
@@ -106,16 +122,6 @@ proc rest (name) {
   ctx emit rest (name)
 }
 
-func __args_getFlagName(flag) {
-  if (flag.long) {
-    return (flag.long[2:])
-  } elif (flag.short) {
-    return (flag.short[1:])
-  }
-
-  error ('No flag.long or flag.short')
-}
-
 func parseArgs(spec, argv) {
   ## Given a spec created by `arg-parse`. Parse an array of strings `argv` per
   ## that spec.
@@ -143,8 +149,7 @@ func parseArgs(spec, argv) {
             }
           }
 
-          var name = __args_getFlagName(flag)
-          setvar args[name] = value
+          setvar args[flag.name] = value
         }
       }
     } elif (positionalPos >= len(spec.args)) {

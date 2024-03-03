@@ -114,8 +114,8 @@ source --builtin args.ysh
 
 var spec = {
   flags: [
-    {short: '-v', long: '--verbose', type: null, default: '', help: 'Enable verbose logging'},
-    {short: '-c', long: '--count', type: 'int', default: 80, help: 'Maximum line length'},
+    {short: '-v', long: '--verbose', name: 'verbose', type: null, default: '', help: 'Enable verbose logging'},
+    {short: '-c', long: '--count', name: 'count', type: 'int', default: 80, help: 'Maximum line length'},
   ],
   args: [
     {name: 'file', type: 'str', help: 'File to check line lengths of'}
@@ -198,6 +198,7 @@ json write (spec)
     {
       "short": "-v",
       "long": "--verbose",
+      "name": "verbose",
       "type": "bool",
       "default": null,
       "help": null
@@ -219,3 +220,14 @@ json write (spec)
 }
 ## END
 
+
+#### Duplicate argument/flag names
+source --builtin args.ysh
+
+arg-parse (&spec) {
+  flag -n --name
+  arg name
+}
+## status: 3
+## STDOUT:
+## END
