@@ -3,21 +3,23 @@
 # Usage:
 #   source --builtin args.sh
 #
-# Args :spec {
-#   flag -v --verbose "Verbosely"  # default is Bool, false
+# arg-parse (&spec) {
+#   flag -v --verbose (help="Verbosely")  # default is Bool, false
 #
-#   flag -P --max-procs '''
+#   flag -P --max-procs ('int', default=-1, doc='''
 #     Run at most P processes at a time
-#     ''' (Int, default=-1)
+#     ''')
 #
-#   flag -i --invert '''
+#   flag -i --invert ('bool', default=true, doc='''
 #     Long multiline
 #     Description
-#     ''' (Bool, default = true)
+#     ''')
 #
-#   arg src 'Source'
-#   arg src 'Dest'
-#   arg times 'Foo' (Int)
+#   arg src (help='Source')
+#   arg dest (help='Dest')
+#   arg times (help='Foo')
+#
+#   rest files
 # }
 #
 # var opt, i = parseArgs(spec, ARGV)
@@ -27,12 +29,6 @@
 # TODO: See list
 # - It would be nice to keep `flag` and `arg` private, injecting them into the
 #   proc namespace only within `Args`
-# - We need a mechanism to share state between Args and `flag`/`arg` that is
-#   run in the block passed to it
-#   - It would be nice if _this was a magic param?
-#     - it would be nice if 'flag' was a "method" on something?
-#     - that's what it's doing, it's mutating "self"
-#     - _this is the thing we're currently creating
 
 proc arg-parse (; place ; ; block_def) {
   ## Create an args spec which can be passed to parseArgs.
@@ -88,6 +84,7 @@ proc flag (short, long ; type='bool' ; default=null, help=null) {
   # TODO: handle only long flag or only short flag
   # TODO: flag aliases
 
+  # Should use "trimPrefix"
   var name = long[2:]
 
   # TODO: type objects (ie. Bool, Int, Str)

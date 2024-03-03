@@ -1,6 +1,37 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 1
 
+#### args.ysh example usage
+source --builtin args.ysh
+
+arg-parse (&spec) {
+  flag -v --verbose (help="Verbosely")  # default is Bool, false
+
+  flag -P --max-procs ('int', default=-1, doc='''
+    Run at most P processes at a time
+    ''')
+
+  flag -i --invert ('bool', default=true, doc='''
+    Long multiline
+    Description
+    ''')
+
+  arg src (help='Source')
+  arg dest (help='Dest')
+  arg times (help='Foo')
+
+  rest files
+}
+
+var opt, i = parseArgs(spec, :| -v -P 12 |)
+
+echo "Verbose $[opt.verbose]"
+pp line (opt)
+## STDOUT:
+Verbose true
+(Dict)   {"verbose":true,"max-procs":12,"files":[],"invert":true,"src":null,"dest":null,"times":null}
+## END
+
 #### Bool flag, positional args, more positional
 
 source --builtin args.ysh
