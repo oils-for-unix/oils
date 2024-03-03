@@ -29,6 +29,10 @@
 # TODO: See list
 # - It would be nice to keep `flag` and `arg` private, injecting them into the
 #   proc namespace only within `Args`
+# - We need "type object" to replace the strings 'int', 'bool', etc.
+# - flag builtin:
+#   - handle only long flag or only short flag
+#   - flag aliases
 
 proc arg-parse (; place ; ; block_def) {
   ## Create an args spec which can be passed to parseArgs.
@@ -70,7 +74,7 @@ proc arg-parse (; place ; ; block_def) {
   call place->setValue(p)
 }
 
-proc flag (short, long ; type='bool' ; default=null, help=null) {
+proc flag (short, long ; type='bool' ; default=null, help=null, required=false) {
   ## Declare a flag within an `arg-parse`.
   ##
   ## Examples:
@@ -81,17 +85,18 @@ proc flag (short, long ; type='bool' ; default=null, help=null) {
   ##     flag -f --file ('str', help="File to process")
   ##   }
 
-  # TODO: handle only long flag or only short flag
-  # TODO: flag aliases
+  # bool has a default of false, not null
+  if (type === 'bool' and default === null) {
+    setvar default = false
+  }
 
-  # Should use "trimPrefix"
+  # TODO: Should use "trimPrefix"
   var name = long[2:]
 
-  # TODO: type objects (ie. Bool, Int, Str)
-  ctx emit flags ({short, long, name, type, default, help})
+  ctx emit flags ({short, long, name, type, default, help, required})
 }
 
-proc arg (name ; ; default=null, help=null) {
+proc arg (name ; ; default=null, help=null, required=true) {
   ## Declare a positional argument within an `arg-parse`.
   ##
   ## Examples:
@@ -102,9 +107,7 @@ proc arg (name ; ; default=null, help=null) {
   ##     arg out (default="a.out", help="output file path")
   ##   }
 
-  # TODO: need to add required arguments
-
-  ctx emit args ({name, default, help})
+  ctx emit args ({name, default, help, required})
 }
 
 proc rest (name) {
@@ -134,9 +137,12 @@ func parseArgs(spec, argv) {
   var rest = []
 
   var value
+  var found
   while (i < argc) {
     var arg = argv[i]
     if (arg->startsWith('-')) {
+      setvar found = false
+
       for flag in (spec.flags) {
         if ( (flag.short and flag.short === arg) or
              (flag.long and flag.long === arg) ) {
@@ -144,16 +150,29 @@ func parseArgs(spec, argv) {
             ('bool') | (null) { setvar value = true }
             int {
               setvar i += 1
-              setvar value = int(argv[i])
+              if (i >= len(argv)) {
+                error "Expected integer after '$arg'" (status=2)
+              }
+
+              try { setvar value = int(argv[i]) }
+              if (_status !== 0) {
+                error "Expected integer after '$arg', got '$[argv[i]]'" (status=2)
+              }
             }
           }
 
           setvar args[flag.name] = value
+          setvar found = true
+          break
         }
+      }
+
+      if (not found) {
+        error "Unknown flag '$arg'" (status=2)
       }
     } elif (positionalPos >= len(spec.args)) {
       if (not spec.rest) {
-        error ("Too many arguments, unexpected '$arg'")
+        error "Too many arguments, unexpected '$arg'" (status=2)
       }
 
       call rest->append(arg)
@@ -174,12 +193,20 @@ func parseArgs(spec, argv) {
   # Set defaults for flags and args
   for flag in (spec.flags) {
     if (flag.name not in args) {
+      if (flag.required) {
+        error "Usage Error: Missing required flag $[flag.name]" (status=2)
+      }
+
       setvar args[flag.name] = flag.default
     }
   }
 
   for arg in (spec.args) {
     if (arg.name not in args) {
+      if (arg.required) {
+        error "Usage Error: Missing required argument $[arg.name]" (status=2)
+      }
+
       setvar args[arg.name] = arg.default
     }
   }

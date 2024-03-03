@@ -18,18 +18,17 @@ arg-parse (&spec) {
 
   arg src (help='Source')
   arg dest (help='Dest')
-  arg times (help='Foo')
 
   rest files
 }
 
-var opt, i = parseArgs(spec, :| -v -P 12 |)
+var opt, i = parseArgs(spec, :| mysrc -P 12 mydest a b c |)
 
 echo "Verbose $[opt.verbose]"
 pp line (opt)
 ## STDOUT:
-Verbose true
-(Dict)   {"verbose":true,"max-procs":12,"files":[],"invert":true,"src":null,"dest":null,"times":null}
+Verbose false
+(Dict)   {"src":"mysrc","max-procs":12,"dest":"mydest","files":["a","b","c"],"verbose":false,"invert":true}
 ## END
 
 #### Bool flag, positional args, more positional
@@ -231,20 +230,23 @@ json write (spec)
       "long": "--verbose",
       "name": "verbose",
       "type": "bool",
-      "default": null,
-      "help": null
+      "default": false,
+      "help": null,
+      "required": false
     }
   ],
   "args": [
     {
       "name": "src",
       "default": null,
-      "help": null
+      "help": null,
+      "required": true
     },
     {
       "name": "dst",
       "default": null,
-      "help": null
+      "help": null,
+      "required": true
     }
   ],
   "rest": "more"
@@ -259,7 +261,7 @@ arg-parse (&spec) {
   flag -v --verbose ('bool', default=false)
   flag -P --max-procs ('int')  # Will set to null (the default default)
 
-  arg action (default="compile")
+  arg action (default="compile", required=false)
 }
 
 var opt, i = parseArgs(spec, [])
@@ -278,4 +280,41 @@ arg-parse (&spec) {
 }
 ## status: 3
 ## STDOUT:
+## END
+
+#### Error cases
+source --builtin args.ysh
+
+arg-parse (&spec) {
+  flag -v --verbose
+  flag -n --num ('int', required=true)
+
+  arg action
+  arg other (required=false)
+}
+
+try { call parseArgs(spec, :| -n 10 action other extra |) }
+echo status=$_status
+
+try { call parseArgs(spec, :| -n |) }
+echo status=$_status
+
+try { call parseArgs(spec, :| -n -v |) }
+echo status=$_status
+
+try { = parseArgs(spec, :| -n 10 |) }
+echo status=$_status
+
+try { call parseArgs(spec, :| -v action |) }
+echo status=$_status
+
+try { call parseArgs(spec, :| --unknown |) }
+echo status=$_status
+## STDOUT:
+status=2
+status=2
+status=2
+status=2
+status=2
+status=2
 ## END

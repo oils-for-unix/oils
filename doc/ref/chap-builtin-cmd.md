@@ -1214,7 +1214,6 @@ Then, create an argument "spec":
 
       arg src (help='Source')
       arg dest (help='Dest')
-      arg times (help='Foo')
 
       rest files
     }
@@ -1224,17 +1223,16 @@ Finally, parse `ARGV` (or any other array of strings) with:
     var opt, i = parseArgs(spec, ARGV)
 
 The returned `opt` is a `Dict` containing key-value pairs with the parsed
-values (or defaults) for each flag and argument. For example, given `ARGV = :|
--v -P 12 |`, `opt` would be:
+values (or defaults) for each flag and argument. For example, given
+`ARGV = :| mysrc -P 12 mydest a b c |`, `opt` would be:
 
     {
-        "verbose": true,
+        "verbose": false,
         "max-procs": 12,
         "invert": true,
-        "src": null,
-        "dest": null,
-        "times": null,
-        "files": [],
+        "src": "mysrc",
+        "dest": "mydest",
+        "files": ["a", "b", "c"]
     }
 
 `i` is the last parsed index into `ARGV` which is useful if you wanted to do
@@ -1242,6 +1240,6 @@ further parsing of `ARGV` after `parseArgs`.
 
 Inside of `arg-parse`, there are three ways you can add to the spec:
 
-- `flag (short, long ; type='bool' ; default=null, help=null)` -- For "flags" like `--verbose` or `-N`
-- `arg (name ; ; default=null, help=null)` -- For positional arguments
+- `flag (short, long ; type='bool' ; default=null, help=null, required=false)` -- For "flags" like `--verbose` or `-N`
+- `arg (name ; ; default=null, help=null, required=true)` -- For positional arguments
 - `rest (name)` -- Take the remaining positional arguments and store them in `opts[name]`
