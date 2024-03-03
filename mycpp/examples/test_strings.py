@@ -54,6 +54,18 @@ def TestMethods():
     #if s.startswith('bc', start=2):
     #    print('bc YES')
 
+    # find(s, start, end) can be used to implement TokenStartsWith() and
+    # TokenEndsWith(), TokenEquals(), IsPlusEquals(), TokenContains(), etc.
+    i1 = s.find('b', 1)
+    i2 = s.find('b', 2)
+    i3 = s.find('b', 3)  # not found
+    print('i1 = %d, i2 = %d, i3 = %d' % (i1, i2, i3))
+
+    # TODO: Implement end index here
+    #j1 = s.find('b', 1, 3)
+    #j2 = s.find('b', 1, 2)
+    #print('j1 = %d, j2 = %d' % (j1, j2))
+
 
 def run_tests():
     # type: () -> None

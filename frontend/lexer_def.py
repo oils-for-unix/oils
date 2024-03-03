@@ -155,7 +155,11 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
     # NOTE: We could add anything 128 and above to this character class?  So
     # utf-8 characters don't get split?
     R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
+
+    # TODO: replace _TILDE_LIKE everywhere
     _TILDE_LIKE,
+    #C('/', Id.Lit_Slash),
+
     C(':', Id.Lit_Colon),  # for special PATH=a:~foo tilde detection
     C('$', Id.Lit_Dollar),  # shopt -u parse_dollar
     C('#', Id.Lit_Pound),  # For comments

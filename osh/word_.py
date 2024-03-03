@@ -258,6 +258,19 @@ def TildeDetect2(w):
     # This won't be Lit_Chars
     ~bob#
     ~bob#/
+
+    New algorithm:
+
+    Pattern for TildeDetect2 - all must be word_part.Literal
+
+        Lit_Tilde Lit_Chars? (Lit_Slash | %end)
+
+        Does not match: ~bob$x
+                        ~$x
+
+    Pattern for TildeDetectAssign()
+
+        Lit_Tilde Lit_Chars? (Lit_Slash | Lit_Colon | %end)
     """
     if len(w.parts) == 0:  # ${a-} has no parts
         return None
