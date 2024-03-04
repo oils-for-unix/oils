@@ -476,10 +476,12 @@ class TildeEvaluator(object):
 
         if result is None:
             if self.exec_opts.strict_tilde():
-                e_die("Error expanding tilde (e.g. invalid user)", part.token)
+                e_die("Error expanding tilde (e.g. invalid user)", part.left)
             else:
                 # Return ~ or ~user literally
-                return lexer.TokenVal(part.token)
+                result = '~'
+                if part.user_name is not None:
+                    result = result + part.user_name  # mycpp doesn't have +=
 
         return result
 

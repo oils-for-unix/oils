@@ -132,6 +132,8 @@ class WordTest(unittest.TestCase):
         assign_str = ':'.join(words)
         w = _assertReadWord(self, assign_str)
         word_.TildeDetectAssign(w)
+
+        print('DETECTED')
         print(w)
 
         actual = 0

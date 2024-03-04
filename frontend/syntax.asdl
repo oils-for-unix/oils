@@ -179,7 +179,8 @@ module syntax
     # For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %CommandSub
     # ~ or ~bob
-  | TildeSub(Token token, str? user_name)
+  | TildeSub(Token left, # always the tilde
+             Token? name, str? user_name)
   | ArithSub(Token left, arith_expr anode, Token right)
     # {a,b,c}
   | BracedTuple(List[CompoundWord] words)
