@@ -7,20 +7,21 @@ from __future__ import print_function
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.syntax_asdl import word_part_e
 
 from core import test_lib
 from mycpp.mylib import log
 from osh import cmd_parse  # reparse input
 from osh.cmd_parse_test import assertParseSimpleCommand
-from osh import word_parse_test  # parse words
+from osh.word_parse_test import _assertReadWord
 
 from osh import word_  # module under test
 
 
-def _Detect(test, word_str, expected):
+def _DetectAssign(test, word_str, expected):
     # TODO: This function could be moved to test_lib.
     log('-' * 80)
-    w = word_parse_test._assertReadWord(test, word_str)
+    w = _assertReadWord(test, word_str)
 
     actual = word_.DetectShAssignment(w)
     left_token, close_token, part_offset = actual
@@ -89,11 +90,61 @@ class WordTest(unittest.TestCase):
             ('a[x]=~', (Id.Lit_ArrayLhsOpen, Id.Lit_ArrayLhsClose, 3)),
         ]
         for word_str, expected in CASES:
-            _Detect(self, word_str, expected)
+            _DetectAssign(self, word_str, expected)
 
         # These don't parse, as they shouldn't.  But not the best error message.
         #w = assertReadWord(self, 'a[x]=(1 2 3)')
         #w = assertReadWord(self, 'a[x]+=(1 2 3)')
+
+    TILDE_WORDS = [
+        # These are tilde subs
+        (True, '~'),
+        (True, '~/'),
+        (True, '~/zz'),
+        (True, '~andy'),
+        (True, '~andy/'),
+        (True, '~andy/zz'),
+
+        # These are not
+        (False, '~bob#'),
+        (False, '~bob#/'),
+        (False, '~bob#/zz'),
+        (False, ''),
+        (False, 'foo'),
+    ]
+
+    def testTildeDetect(self):
+        for expected, word_str in self.TILDE_WORDS:
+            w = _assertReadWord(self, word_str)
+            detected = word_.TildeDetect(w)
+            print(detected)
+
+            if detected:
+                self.assertEqual(word_part_e.TildeSub, detected.parts[0].tag())
+                self.assertEqual(True, expected)
+            else:
+                self.assertEqual(False, expected)
+
+    def testTildeDetectAssignColons(self):
+        # x=~a:~b: etc.
+
+        words = [w for _, w in self.TILDE_WORDS]
+        assign_str = ':'.join(words)
+        w = _assertReadWord(self, assign_str)
+        word_.TildeDetectAssign(w)
+        print(w)
+
+        actual = 0
+        for part in w.parts:
+            if part.tag() == word_part_e.TildeSub:
+                actual += 1
+
+        log('tilde sub parts = %d', actual)
+
+        expected = sum(expected for expected, _ in self.TILDE_WORDS)
+        self.assertEqual(expected, actual)
+
+        print('')
 
     def testFastStrEval(self):
         node = assertParseSimpleCommand(self, "ls 'my dir' $x foo/$bar ")

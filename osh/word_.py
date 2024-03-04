@@ -305,7 +305,10 @@ def TildeDetect2(w):
 
 def TildeDetectAssign(w):
     # type: (CompoundWord) -> None
-    """MUTATES its argument."""
+    """Detects multiple tilde sub, like a=~:~/src:~bob
+
+    MUTATES its argument.
+    """
     parts = w.parts
     n = len(parts)
 
