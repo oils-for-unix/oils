@@ -231,22 +231,17 @@ json write (spec)
       "name": "verbose",
       "type": "bool",
       "default": false,
-      "help": null,
-      "required": false
+      "help": null
     }
   ],
   "args": [
     {
       "name": "src",
-      "default": null,
-      "help": null,
-      "required": true
+      "help": null
     },
     {
       "name": "dst",
-      "default": null,
-      "help": null,
-      "required": true
+      "help": null
     }
   ],
   "rest": "more"
@@ -260,15 +255,13 @@ arg-parse (&spec) {
   flag -S --sanitize ('bool', default=false)
   flag -v --verbose ('bool', default=false)
   flag -P --max-procs ('int')  # Will set to null (the default default)
-
-  arg action (default="compile", required=false)
 }
 
 var opt, i = parseArgs(spec, [])
 
 pp line (opt)
 ## STDOUT:
-(Dict)   {"sanitize":false,"verbose":false,"max-procs":null,"action":"compile"}
+(Dict)   {"sanitize":false,"verbose":false,"max-procs":null}
 ## END
 
 #### Duplicate argument/flag names

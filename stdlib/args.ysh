@@ -46,7 +46,7 @@ proc arg-parse (; place ; ; block_def) {
   ##
   ##   var flag, i = parseArgs(spec, ARGV)
 
-  var p = {}
+  var p = {flags: [], args: []}
   ctx push (p, block_def)
 
   # Validate that p.rest = [name] or null and reduce p.rest into name or null.
@@ -74,7 +74,7 @@ proc arg-parse (; place ; ; block_def) {
   call place->setValue(p)
 }
 
-proc flag (short, long ; type='bool' ; default=null, help=null, required=false) {
+proc flag (short, long ; type='bool' ; default=null, help=null) {
   ## Declare a flag within an `arg-parse`.
   ##
   ## Examples:
@@ -93,10 +93,10 @@ proc flag (short, long ; type='bool' ; default=null, help=null, required=false) 
   # TODO: Should use "trimPrefix"
   var name = long[2:]
 
-  ctx emit flags ({short, long, name, type, default, help, required})
+  ctx emit flags ({short, long, name, type, default, help})
 }
 
-proc arg (name ; ; default=null, help=null, required=true) {
+proc arg (name ; ; help=null) {
   ## Declare a positional argument within an `arg-parse`.
   ##
   ## Examples:
@@ -104,10 +104,9 @@ proc arg (name ; ; default=null, help=null, required=true) {
   ##   arg-parse (&spec) {
   ##     arg name
   ##     arg config (help="config file path")
-  ##     arg out (default="a.out", help="output file path")
   ##   }
 
-  ctx emit args ({name, default, help, required})
+  ctx emit args ({name, help})
 }
 
 proc rest (name) {
@@ -190,24 +189,17 @@ func parseArgs(spec, argv) {
     setvar args[spec.rest] = rest
   }
 
-  # Set defaults for flags and args
+  # Set defaults for flags
   for flag in (spec.flags) {
     if (flag.name not in args) {
-      if (flag.required) {
-        error "Usage Error: Missing required flag $[flag.name]" (status=2)
-      }
-
       setvar args[flag.name] = flag.default
     }
   }
 
+  # Raise error on missing args
   for arg in (spec.args) {
     if (arg.name not in args) {
-      if (arg.required) {
-        error "Usage Error: Missing required argument $[arg.name]" (status=2)
-      }
-
-      setvar args[arg.name] = arg.default
+      error "Usage Error: Missing required argument $[arg.name]" (status=2)
     }
   }
 

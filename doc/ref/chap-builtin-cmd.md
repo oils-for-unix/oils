@@ -1191,16 +1191,16 @@ Bash has this, but OSH won't implement it.
 
 ### parseArgs()
 
-YSH includes a `argparse`-like utility called `parseArgs`. This is intended to
-be used for command-line interfaces to programs.
+YSH includes a command-line argument parsing utility called `parseArgs`. This
+is intended to be used for command-line interfaces to YSH programs.
 
 To use it, first import `args.ysh`:
 
     source --builtin args.ysh
 
-Then, create an argument "spec":
+Then, create an argument parser:
 
-    arg-parse (&spec) {
+    arg-parse (&parser) {
       flag -v --verbose (help="Verbosely")  # default is Bool, false
 
       flag -P --max-procs ('int', default=-1, help='''
@@ -1220,9 +1220,9 @@ Then, create an argument "spec":
 
 Finally, parse `ARGV` (or any other array of strings) with:
 
-    var opt, i = parseArgs(spec, ARGV)
+    var args, last_idx = parseArgs(parser, ARGV)
 
-The returned `opt` is a `Dict` containing key-value pairs with the parsed
+The returned `args` is a `Dict` containing key-value pairs with the parsed
 values (or defaults) for each flag and argument. For example, given
 `ARGV = :| mysrc -P 12 mydest a b c |`, `opt` would be:
 
@@ -1235,11 +1235,11 @@ values (or defaults) for each flag and argument. For example, given
         "files": ["a", "b", "c"]
     }
 
-`i` is the last parsed index into `ARGV` which is useful if you wanted to do
-further parsing of `ARGV` after `parseArgs`.
+`last_idx` is the last parsed index into `ARGV` which is useful if you wanted
+to do further parsing of `ARGV` after `parseArgs`.
 
-Inside of `arg-parse`, there are three ways you can add to the spec:
+Inside of `arg-parse`, there are three ways you can add to the parser:
 
-- `flag (short, long ; type='bool' ; default=null, help=null, required=false)` -- For "flags" like `--verbose` or `-N`
-- `arg (name ; ; default=null, help=null, required=true)` -- For positional arguments
+- `flag (short, long ; type='bool' ; default=null, help=null)` -- For "flags" like `--verbose` or `-N`
+- `arg (name ; ; help=null)` -- For positional arguments
 - `rest (name)` -- Take the remaining positional arguments and store them in `opts[name]`
