@@ -252,7 +252,7 @@ def LeftTokenForWordPart(part):
 
         elif case(word_part_e.TildeSub):
             part = cast(word_part.TildeSub, UP_part)
-            return part.token
+            return part.left
 
         elif case(word_part_e.ArithSub):
             part = cast(word_part.ArithSub, UP_part)
@@ -327,7 +327,10 @@ def _RightTokenForWordPart(part):
 
         elif case(word_part_e.TildeSub):
             part = cast(word_part.TildeSub, UP_part)
-            return part.token
+            if part.name is not None:
+                return part.name  # ~bob/
+            else:
+                return part.left  # ~/
 
         elif case(word_part_e.ArithSub):
             part = cast(word_part.ArithSub, UP_part)

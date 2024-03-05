@@ -1059,6 +1059,10 @@ test-fallback_locations() {
   echo done
 }
 
+test-external_cmd_typed_args() {
+  _ysh-error-X 1 'cat ("myfile")'
+}
+
 #
 # TEST DRIVER
 #

@@ -28,6 +28,7 @@ def _assertReadWordWithArena(test, w_parser):
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w is not None
     fmt.PrettyPrint(w)
+    print('')
 
     # Next word must be Eof_Real
     w2 = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -36,7 +37,10 @@ def _assertReadWordWithArena(test, w_parser):
 
 
 def _assertReadWord(test, word_str, oil_at=False):
-    print('\n---', word_str)
+    print('')
+    print('--- %s' % word_str)
+    print('')
+
     arena = test_lib.MakeArena('word_parse_test.py')
     w_parser = test_lib.InitWordParser(word_str, arena=arena, oil_at=oil_at)
     w = _assertReadWordWithArena(test, w_parser)

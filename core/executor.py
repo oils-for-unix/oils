@@ -311,8 +311,9 @@ class ShellExecutor(vm._Executor):
         environ = self.mem.GetExported()  # Include temporary variables
 
         if cmd_val.typed_args:
-            e_die('Unexpected typed args passed to external command %r' % arg0,
-                  cmd_val.typed_args.left)
+            e_die(
+                '%r appears to be external. External commands don\'t accept typed args (OILS-ERR-200)'
+                % arg0, cmd_val.typed_args.left)
 
         # Resolve argv[0] BEFORE forking.
         if run_flags & USE_DEFAULT_PATH:

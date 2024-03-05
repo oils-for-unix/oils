@@ -310,6 +310,7 @@ class WordParser(WordEmitter):
             # read until }
             replace = self._ReadVarOpArg(
                 lex_mode_e.VSub_ArgUnquoted)  # type: rhs_word_t
+            #log('r 1 %r', replace)
         else:
             # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
             replace = rhs_word.Empty

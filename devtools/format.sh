@@ -66,7 +66,11 @@ yapf-known() {
 
 yapf-changed() {
   branch="${1:-master}"
-  yapf-files $(git diff --name-only .."$branch" '*.py')
+
+  #git diff --name-only .."$branch" '*.py'
+
+  git diff --name-only .."$branch" '*.py' \
+    | xargs --no-run-if-empty -- $0 yapf-files 
 }
 
 #

@@ -269,7 +269,7 @@ def AddKinds(spec):
             'Equals',  # For = f()
             'Dollar',  # detecting 'echo $'
             'DRightBracket',  # the ]] that matches [[, NOT a keyword
-            'TildeLike',  # tilde expansion
+            'Tilde',  # tilde expansion
             'Pound',  # for comment or VarOp state
             'TPound',  # for doc comments like ###
             'TDot',  # for multiline commands ...
