@@ -10,25 +10,25 @@ import sys
 
 
 def main(argv):
-  try:
-    stdout = argv[1]
-  except IndexError:
-    stdout = 'STDOUT'
+    try:
+        stdout = argv[1]
+    except IndexError:
+        stdout = 'STDOUT'
 
-  try:
-    stderr = argv[2]
-  except IndexError:
-    stderr = 'STDERR'
+    try:
+        stderr = argv[2]
+    except IndexError:
+        stderr = 'STDERR'
 
-  try:
-    status = int(argv[3])
-  except IndexError:
-    status = 0
+    try:
+        status = int(argv[3])
+    except IndexError:
+        status = 0
 
-  print(stdout)
-  print(stderr, file=sys.stderr)
-  return status
+    print(stdout)
+    print(stderr, file=sys.stderr)
+    return status
 
 
 if __name__ == '__main__':
-  sys.exit(main(sys.argv))
+    sys.exit(main(sys.argv))
