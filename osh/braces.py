@@ -31,6 +31,7 @@ from frontend import lexer
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
+from osh import word_
 
 from typing import List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -516,11 +517,20 @@ def BraceExpandWords(words):
                 # Would be nice to optimize, but we don't really know the structure
                 # ahead of time
                 parts_list = _BraceExpand(w.parts)
-                for p in parts_list:
-                    out.append(CompoundWord(p))
+                for parts in parts_list:
+                    w = CompoundWord(parts)
+
+                    # Now do tilde detection on brace-expanded word
+                    w2 = word_.TildeDetect2(w)
+                    if w2:
+                        out.append(w2)
+                    else:
+                        out.append(w)
 
             elif case(word_e.Compound):
                 w = cast(CompoundWord, UP_w)
+
+                # Already did tilde detection before expansion
                 out.append(w)
 
             else:

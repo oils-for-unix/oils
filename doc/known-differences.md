@@ -204,16 +204,6 @@ and `a{1...3} b{1...3}`.
 OSH considers them syntax errors and aborts all brace expansion, giving you
 the same thing back: `{a,b}{` and `{a,b}{1...3}`.
 
-
-### Tilde expansion and Brace expansion don't interact
-
-In bash, `{~bob,~jane}/src` will expand the home dirs of both people.  OSH
-doesn't do this because it separates parsing and evaluation.  By the time tilde
-expansion happens, we haven't *evaluated* the brace expansion.  We've only
-*parsed* it.
-
-(mksh agrees with OSH, but zsh agrees with bash.)
-
 ### Brackets should be escaped within Character Classes
 
 Don't use ambiguous syntax for a character class consisting of a single bracket
