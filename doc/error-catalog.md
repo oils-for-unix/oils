@@ -177,13 +177,15 @@ test/runtime-errors.sh test-external_cmd_typed_args
 ```
   cat ("myfile")
       ^
-[ -c flag ]:1: fatal: Unexpected typed args passed to external command 'cat' (OILS-ERR-200)
+[ -c flag ]:1: fatal: 'cat' appears to be external. External commands don't accept typed args (OILS-ERR-200)
 ```
 
-- External programs cannot accept [typed
-  arguments](ref/chap-cmd-lang.html#typed-arg). Try passing untyped arguments
-  instead. (eg. `cat myfile`)
-- Did misspell a [YSH proc](ref/chap-cmd-lang.html#proc-def)?
+- Builtin commands and user-defined procs may accept [typed
+  args](ref/chap-cmd-lang.html#typed-arg), but external commands never do.
+- Did you misspell a [YSH proc](ref/chap-cmd-lang.html#proc-def)? If a name is
+  not found, YSH assumes it's an external command.
+- Did you forget to source a file that contains the proc or shell function you
+  wanted to run?
 
 ## Appendix
 
