@@ -1284,10 +1284,13 @@ class Pipeline(Job):
             if pgid != INVALID_PGID:
                 proc.AddStateChange(SetPgid(pgid))
 
+            # Figure out the pid
             pid = proc.StartProcess(trace.PipelinePart)
             if i == 0 and pgid != INVALID_PGID:
                 # Mimic bash and use the PID of the first process as the group for the
                 # whole pipeline.
+
+                # TODO: self.pgid =
                 pgid = pid
 
             self.pids.append(pid)
@@ -1347,6 +1350,9 @@ class Pipeline(Job):
         """
         assert len(self.pids) == len(self.procs)
 
+        # This is tcsetpgrp()
+        # TODO: fix race condition -- I believe the first process could have
+        # stopped already, and thus getpgid() will fail
         self.job_control.MaybeGiveTerminal(posix.getpgid(self.pids[0]))
 
         # Run the last part of the pipeline IN PARALLEL with other processes.  It
