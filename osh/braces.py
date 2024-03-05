@@ -518,14 +518,14 @@ def BraceExpandWords(words):
                 # ahead of time
                 parts_list = _BraceExpand(w.parts)
                 for parts in parts_list:
-                    w = CompoundWord(parts)
+                    expanded = CompoundWord(parts)
 
                     # Now do tilde detection on brace-expanded word
-                    w2 = word_.TildeDetect2(w)
-                    if w2:
-                        out.append(w2)
+                    ti = word_.TildeDetect2(expanded)
+                    if ti:
+                        out.append(ti)
                     else:
-                        out.append(w)
+                        out.append(expanded)
 
             elif case(word_e.Compound):
                 w = cast(CompoundWord, UP_w)
