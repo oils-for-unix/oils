@@ -25,9 +25,8 @@ import sys
 
 from doctools.util import log
 from doctools import html_head
-
-from test import jsontemplate
 from test import wild_report
+from vendor import jsontemplate
 
 T = jsontemplate.Template
 

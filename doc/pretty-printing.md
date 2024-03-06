@@ -323,8 +323,11 @@ Risks:
 
 I added some stubs in the code:
 
-- [data_lang/pretty.asdl]($oil-src) - how we would express the IR
-- [data_lang/pretty.py]($oil-src) - YSH conversion.
+- [data_lang/pretty.asdl]($oils-src) - How we would express the IR
+- [data_lang/pretty.py]($oils-src) - YSH conversion.
+- [data_lang/pretty-benchmark.sh]($oils-src) - Our naive ASDL pretty printer is
+  slow.  It can take more than 3 seconds on a big file, vs. ~100ms to parse it.
+  (It does print over 100 MB of text though.)
 
 To generate Python code from the ASDL schema, run `build/py.sh all`.
 Otherwise, Oils is a plain Python 2 program, with a few C extensions.
@@ -335,6 +338,11 @@ For new contributors:
 
 - [Contributing]($wiki) on the wiki
 - [Where Contributors Have Problems]($wiki)
+
+There is also a stub for the formatter:
+
+- [tools/fmt.py]($oils-src) - Stub file for the formatter.
+  - Code copied from [tools/ysh_ify.py]($oils-src).
 
 ## Design Questions
 
@@ -378,19 +386,19 @@ worth it here.
 
 ### NIL8 - Uses cases for both Code and Data
 
-What is "NIL8"?  We don't know if's a good idea yet, but it may be part of [J8
-Notation](j8-notation.html).
+What is "NIL8"?  We don't know if it's a good idea yet, but it may be part of
+[J8 Notation](j8-notation.html).
 
 Think:
 
 - A mash-up of [JSON][] and S-expressions
   - *NIL8 Isn't Lisp*
   - *Narrow Intermediate Language*
-- WebAssembly text format.
-  - It can also be an IR for an **imperative** language, with a Lisp-y syntax.
+- WebAssembly text format
+  - An IR for an **imperative** language, with a Lisp-y syntax.
 - An **exterior** S-expression format
-  - Blog: [Oils is Exterior-First](https://www.oilshell.org/blog/2023/06/ysh-design.html))
-  - I posted POSE on lobste.rs for this reason:
+  - Blog: [Oils is Exterior-First](https://www.oilshell.org/blog/2023/06/ysh-design.html)
+  - I posted POSE (portable s-expressions) on lobste.rs for this reason:
     <https://lobste.rs/s/lwf4jv/pose_portable_s_expressions_pose_spec> (no
     comments)
 
