@@ -284,12 +284,12 @@ class Tracer(object):
     ):
         # type: (...) -> None
         """
-    Args:
-      parse_ctx: For parsing PS4.
-      exec_opts: For xtrace setting
-      mem: for retrieving PS4
-      word_ev: for evaluating PS4
-    """
+        Args:
+          parse_ctx: For parsing PS4.
+          exec_opts: For xtrace setting
+          mem: for retrieving PS4
+          word_ev: for evaluating PS4
+        """
         self.parse_ctx = parse_ctx
         self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
@@ -307,6 +307,9 @@ class Tracer(object):
         # Mutate objects to save allocations
         self.val_indent = value.Str('')
         self.val_punct = value.Str('')
+        # TODO: show something for root process by default?  INTERLEAVED output
+        # can be confusing, e.g. debugging traps in forkred subinterpreter
+        # created by a pipeline.
         self.val_pid_str = value.Str('')  # mutated by SetProcess
 
         # Can these be global constants?  I don't think we have that in ASDL yet.

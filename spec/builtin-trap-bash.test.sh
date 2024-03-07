@@ -231,6 +231,38 @@ subshell
 done
 ## END
 
+#### trap DEBUG run in forked shell interpreter for first part of pipeline?
+
+# TODO: bash runs the trap 3 times, and osh only twice.  I don't see why.
+
+#echo top PID=$$ BASHPID=$BASHPID
+
+debuglog() {
+  #echo "  PID=$$ BASHPID=$BASHPID LINENO=$1"
+  echo "  LINENO=$1"
+}
+trap 'debuglog $LINENO' DEBUG
+
+echo pipeline \
+  | cat
+echo ok
+
+## STDOUT:
+  LINENO=6
+  LINENO=7
+pipeline
+  LINENO=8
+ok
+## END
+
+## OK osh STDOUT:
+  LINENO=7
+pipeline
+  LINENO=8
+ok
+## END
+
+
 #### trap DEBUG and pipeline (lastpipe difference)
 debuglog() {
   echo "  [$@]"
