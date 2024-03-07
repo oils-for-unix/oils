@@ -143,11 +143,11 @@ X [TSV8]          rows                   pick rows; dplyr filter()
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
                   summary                count, sum, histogram, etc. [ext]
-  [Args]          X parser               argument parsing
-                  X flag
-                  X arg
-                  X rest
-                  X parseArgs()
+  [Args]          parser                 Argument parsing
+                  flag
+                  arg
+                  rest
+                  parseArgs()
 X [Testing]       describe               Test harness
                   assert                 takes an expression
 X [External Lang] BEGIN   END   when (awk)
