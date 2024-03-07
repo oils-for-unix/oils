@@ -3,7 +3,7 @@
 # Usage:
 #   source --builtin args.sh
 #
-# arg-parse (&spec) {
+# parser (&spec) {
 #   flag -v --verbose (help="Verbosely")  # default is Bool, false
 #
 #   flag -P --max-procs ('int', default=-1, doc='''
@@ -22,9 +22,9 @@
 #   rest files
 # }
 #
-# var opt, i = parseArgs(spec, ARGV)
+# var args = parseArgs(spec, ARGV)
 #
-# echo "Verbose $[opt.verbose]"
+# echo "Verbose $[args.verbose]"
 
 # TODO: See list
 # - It would be nice to keep `flag` and `arg` private, injecting them into the
@@ -34,17 +34,17 @@
 #   - handle only long flag or only short flag
 #   - flag aliases
 
-proc arg-parse (; place ; ; block_def) {
+proc parser (; place ; ; block_def) {
   ## Create an args spec which can be passed to parseArgs.
   ##
   ## Example:
   ##
   ##   # NOTE: &spec will create a variable named spec
-  ##   arg-parse (&spec) {
+  ##   parser (&spec) {
   ##     flag -v --verbose ('bool')
   ##   }
   ##
-  ##   var flag, i = parseArgs(spec, ARGV)
+  ##   var args = parseArgs(spec, ARGV)
 
   var p = {flags: [], args: []}
   ctx push (p, block_def)
@@ -71,6 +71,8 @@ proc arg-parse (; place ; ; block_def) {
     }
   }
 
+  # TODO: what about `flag --name` and then `arg name`?
+
   call place->setValue(p)
 }
 
@@ -89,6 +91,8 @@ proc flag (short, long ; type='bool' ; default=null, help=null) {
   if (type === 'bool' and default === null) {
     setvar default = false
   }
+
+  # TODO: validate `type`
 
   # TODO: Should use "trimPrefix"
   var name = long[2:]
@@ -124,10 +128,10 @@ proc rest (name) {
 }
 
 func parseArgs(spec, argv) {
-  ## Given a spec created by `arg-parse`. Parse an array of strings `argv` per
+  ## Given a spec created by `parser`. Parse an array of strings `argv` per
   ## that spec.
   ##
-  ## See `arg-parse` for examples of use.
+  ## See `parser` for examples of use.
 
   var i = 0
   var positionalPos = 0
@@ -203,5 +207,5 @@ func parseArgs(spec, argv) {
     }
   }
 
-  return ([args, i])
+  return (args)
 }
