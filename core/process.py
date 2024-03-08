@@ -1195,6 +1195,8 @@ class Pipeline(Job):
         self.pipe_status = []  # type: List[int]  # status in order
         self.status = -1  # for 'wait' jobs
 
+        self.pgid = INVALID_PGID
+
         # Optional for foreground
         self.last_thunk = None  # type: Tuple[CommandEvaluator, command_t]
         self.last_pipe = None  # type: Tuple[int, int]
@@ -1204,6 +1206,9 @@ class Pipeline(Job):
     def ProcessGroupId(self):
         # type: () -> int
         """Returns the group ID of this pipeline."""
+
+        # TODO: return self.pgid
+
         # This should only ever be called AFTER the pipeline has started
         assert len(self.pids) > 0
         return self.pids[0]  # First process is the group leader
@@ -1276,22 +1281,19 @@ class Pipeline(Job):
         # If we are creating a pipeline in a subshell or we aren't running with job
         # control, our children should remain in our inherited process group.
         # the pipelines's group ID.
-        pgid = INVALID_PGID
         if self.job_control.Enabled():
-            pgid = OWN_LEADER  # first process in pipeline is the leader
+            self.pgid = OWN_LEADER  # first process in pipeline is the leader
 
         for i, proc in enumerate(self.procs):
-            if pgid != INVALID_PGID:
-                proc.AddStateChange(SetPgid(pgid))
+            if self.pgid != INVALID_PGID:
+                proc.AddStateChange(SetPgid(self.pgid))
 
             # Figure out the pid
             pid = proc.StartProcess(trace.PipelinePart)
-            if i == 0 and pgid != INVALID_PGID:
-                # Mimic bash and use the PID of the first process as the group for the
+            if i == 0 and self.pgid != INVALID_PGID:
+                # Mimic bash and use the PID of the FIRST process as the group for the
                 # whole pipeline.
-
-                # TODO: self.pgid =
-                pgid = pid
+                self.pgid = pid
 
             self.pids.append(pid)
             self.pipe_status.append(-1)  # uninitialized
@@ -1353,7 +1355,7 @@ class Pipeline(Job):
         # This is tcsetpgrp()
         # TODO: fix race condition -- I believe the first process could have
         # stopped already, and thus getpgid() will fail
-        self.job_control.MaybeGiveTerminal(posix.getpgid(self.pids[0]))
+        self.job_control.MaybeGiveTerminal(self.pgid)
 
         # Run the last part of the pipeline IN PARALLEL with other processes.  It
         # may or may not fork:
@@ -1507,6 +1509,9 @@ class JobControl(object):
 
     def Enabled(self):
         # type: () -> bool
+
+        # TODO: get rid of this syscall?  SubProgramThunk should set a flag I
+        # think.
         curr_pid = posix.getpid()
         # Only the main shell should bother with job control functions.
         return curr_pid == self.shell_pid and self.shell_tty_fd != -1

@@ -330,12 +330,12 @@ class ShellExecutor(vm._Executor):
                                           environ)
             p = process.Process(thunk, self.job_control, self.job_list,
                                 self.tracer)
+
             if self.job_control.Enabled():
                 if self.fg_pipeline is not None:
-                    first_pid = self.fg_pipeline.pids[0]
-                    assert first_pid == posix.getpgid(
-                        first_pid), "Expected pipeline leader"
-                    change = process.SetPgid(first_pid)
+                    # If job control is enabled, this should be true
+                    assert self.fg_pipeline.pgid != process.INVALID_PGID
+                    change = process.SetPgid(self.fg_pipeline.pgid)
                     self.fg_pipeline = None  # clear to avoid confusion in subshells
                 else:
                     change = process.SetPgid(process.OWN_LEADER)
