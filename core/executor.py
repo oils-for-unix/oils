@@ -333,9 +333,11 @@ class ShellExecutor(vm._Executor):
 
             if self.job_control.Enabled():
                 if self.fg_pipeline is not None:
+                    pgid = self.fg_pipeline.ProcessGroupId()
                     # If job control is enabled, this should be true
-                    assert self.fg_pipeline.pgid != process.INVALID_PGID
-                    change = process.SetPgid(self.fg_pipeline.pgid)
+                    assert pgid != process.INVALID_PGID
+
+                    change = process.SetPgid(pgid)
                     self.fg_pipeline = None  # clear to avoid confusion in subshells
                 else:
                     change = process.SetPgid(process.OWN_LEADER)

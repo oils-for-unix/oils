@@ -839,7 +839,7 @@ class SubProgramThunk(Thunk):
             print('')
             status = 130  # 128 + 2
         except (IOError, OSError) as e:
-            print_stderr('osh I/O error (subprogram): %s' % pyutil.strerror(e))
+            print_stderr('oils I/O error (subprogram): %s' % pyutil.strerror(e))
             status = 2
 
         # If ProcessInit() doesn't turn off buffering, this is needed before
@@ -948,10 +948,10 @@ class Process(Job):
     def __init__(self, thunk, job_control, job_list, tracer):
         # type: (Thunk, JobControl, JobList, dev.Tracer) -> None
         """
-    Args:
-      thunk: Thunk instance
-      job_list: for process bookkeeping
-    """
+        Args:
+          thunk: Thunk instance
+          job_list: for process bookkeeping
+        """
         Job.__init__(self)
         assert isinstance(thunk, Thunk), thunk
         self.thunk = thunk
@@ -1206,12 +1206,7 @@ class Pipeline(Job):
     def ProcessGroupId(self):
         # type: () -> int
         """Returns the group ID of this pipeline."""
-
-        # TODO: return self.pgid
-
-        # This should only ever be called AFTER the pipeline has started
-        assert len(self.pids) > 0
-        return self.pids[0]  # First process is the group leader
+        return self.pgid
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -1615,7 +1610,6 @@ class JobList(object):
         mylib.dict_erase(self.child_procs, pid)
 
     if mylib.PYTHON:
-
         def AddPipeline(self, pi):
             # type: (Pipeline) -> None
             """For debugging only."""
