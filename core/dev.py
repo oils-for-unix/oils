@@ -271,7 +271,7 @@ class Tracer(object):
     Other hooks:
 
     - Command completion starts other processes
-    - Oil command constructs: BareDecl, VarDecl, Mutation, Expr
+    - YSH command constructs: BareDecl, VarDecl, Mutation, Expr
     """
 
     def __init__(
@@ -490,9 +490,9 @@ class Tracer(object):
             buf.write('\n')
             self.f.write(buf.getvalue())
 
-    def PrintMessage(self, message):
+    def OtherMessage(self, message):
         # type: (str) -> None
-        """Used when receiving signals."""
+        """Can be used when receiving signals."""
         buf = self._RichTraceBegin('!')
         if not buf:
             return

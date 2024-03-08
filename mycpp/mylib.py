@@ -64,6 +64,21 @@ def print_stderr(s):
     print(s, file=sys.stderr)
 
 
+class File:
+    """
+    TODO: This should define a read/write interface, and then LineReader() and
+    Writer() can possibly inherit it, with runtime assertions
+
+    Then we allow downcasting from File -> LineReader, like we currently do in
+    C++ in gc_mylib.h.
+
+    Inheritance can't express the structural Reader/Writer pattern of Go, which
+    would be better.  I suppose we could use File* everywhere, but having
+    fine-grained types is nicer.  And there will be very few casts.
+    """
+    pass
+
+
 class LineReader:
 
     def readline(self):

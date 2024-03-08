@@ -337,10 +337,10 @@ class ShellExecutor(vm._Executor):
                     # If job control is enabled, this should be true
                     assert pgid != process.INVALID_PGID
 
-                    change = process.SetPgid(pgid)
+                    change = process.SetPgid(pgid, self.tracer)
                     self.fg_pipeline = None  # clear to avoid confusion in subshells
                 else:
-                    change = process.SetPgid(process.OWN_LEADER)
+                    change = process.SetPgid(process.OWN_LEADER, self.tracer)
                 p.AddStateChange(change)
 
             status = p.RunProcess(self.waiter, trace.External(cmd_val.argv))
@@ -375,7 +375,7 @@ class ShellExecutor(vm._Executor):
         if UP_node.tag() == command_e.Pipeline:
             node = cast(command.Pipeline, UP_node)
             pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
-                                  self.job_control, self.job_list)
+                                  self.job_control, self.job_list, self.tracer)
             for child in node.children:
                 p = self._MakeProcess(child)
                 p.Init_ParentPipeline(pi)
@@ -395,7 +395,8 @@ class ShellExecutor(vm._Executor):
 
             p = self._MakeProcess(node)
             if self.job_control.Enabled():
-                p.AddStateChange(process.SetPgid(process.OWN_LEADER))
+                p.AddStateChange(
+                    process.SetPgid(process.OWN_LEADER, self.tracer))
 
             p.SetBackground()
             pid = p.StartProcess(trace.Fork)
@@ -407,8 +408,7 @@ class ShellExecutor(vm._Executor):
         # type: (command.Pipeline, CommandStatus) -> None
 
         pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
-                              self.job_control, self.job_list)
-        #self.job_list.AddPipeline(pi)
+                              self.job_control, self.job_list, self.tracer)
 
         # initialized with CommandStatus.CreateNull()
         pipe_locs = []  # type: List[loc_t]
@@ -442,7 +442,7 @@ class ShellExecutor(vm._Executor):
         # type: (command_t) -> int
         p = self._MakeProcess(node)
         if self.job_control.Enabled():
-            p.AddStateChange(process.SetPgid(process.OWN_LEADER))
+            p.AddStateChange(process.SetPgid(process.OWN_LEADER, self.tracer))
 
         return p.RunProcess(self.waiter, trace.ForkWait)
 
@@ -609,7 +609,7 @@ class ShellExecutor(vm._Executor):
         p.AddStateChange(redir)
 
         if self.job_control.Enabled():
-            p.AddStateChange(process.SetPgid(process.OWN_LEADER))
+            p.AddStateChange(process.SetPgid(process.OWN_LEADER, self.tracer))
 
         # Fork, letting the child inherit the pipe file descriptors.
         p.StartProcess(trace.ProcessSub)

@@ -89,6 +89,11 @@ class NullDebugFile(_DebugFile):
 
 
 class DebugFile(_DebugFile):
+    """Trivial wrapper with writeln() method
+
+    Can we turn this into a plain mylib::File?  Right now that type only exists
+    in C++, but it should probably exist in Python too.
+    """
 
     def __init__(self, f):
         # type: (mylib.Writer) -> None

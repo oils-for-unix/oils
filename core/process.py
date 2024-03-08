@@ -624,17 +624,18 @@ OWN_LEADER = 0
 
 class SetPgid(ChildStateChange):
 
-    def __init__(self, pgid):
-        # type: (int) -> None
+    def __init__(self, pgid, tracer):
+        # type: (int, dev.Tracer) -> None
         self.pgid = pgid
+        self.tracer = tracer
 
     def Apply(self):
         # type: () -> None
         try:
             posix.setpgid(0, self.pgid)
         except (IOError, OSError) as e:
-            print_stderr(
-                'osh: child failed to set process group for PID %d to %d: %s' %
+            self.tracer.OtherMessage(
+                'osh: child %d failed to set its process group to %d: %s' %
                 (posix.getpid(), self.pgid, pyutil.strerror(e)))
 
     def ApplyFromParent(self, proc):
@@ -642,7 +643,7 @@ class SetPgid(ChildStateChange):
         try:
             posix.setpgid(proc.pid, self.pgid)
         except (IOError, OSError) as e:
-            print_stderr(
+            self.tracer.OtherMessage(
                 'osh: parent failed to set process group for PID %d to %d: %s'
                 % (proc.pid, self.pgid, pyutil.strerror(e)))
 
@@ -1186,11 +1187,13 @@ class Pipeline(Job):
     foo | bar | read v
     """
 
-    def __init__(self, sigpipe_status_ok, job_control, job_list):
-        # type: (bool, JobControl, JobList) -> None
+    def __init__(self, sigpipe_status_ok, job_control, job_list, tracer):
+        # type: (bool, JobControl, JobList, dev.Tracer) -> None
         Job.__init__(self)
         self.job_control = job_control
         self.job_list = job_list
+        self.tracer = tracer
+
         self.procs = []  # type: List[Process]
         self.pids = []  # type: List[int]  # pids in order
         self.pipe_status = []  # type: List[int]  # status in order
@@ -1282,7 +1285,7 @@ class Pipeline(Job):
 
         for i, proc in enumerate(self.procs):
             if self.pgid != INVALID_PGID:
-                proc.AddStateChange(SetPgid(self.pgid))
+                proc.AddStateChange(SetPgid(self.pgid, self.tracer))
 
             # Figure out the pid
             pid = proc.StartProcess(trace.PipelinePart)
