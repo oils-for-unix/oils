@@ -51,6 +51,8 @@ class TrapState(object):
         # type: () -> None
         """SubProgramThunk uses this because traps aren't inherited."""
 
+        # TODO: we might not want to clear DEBUG hook, since bash doesn't
+        # appear to.  Also test ERR RETURN EXIT.
         self.hooks.clear()
         self.traps.clear()
 
