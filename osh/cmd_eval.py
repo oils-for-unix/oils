@@ -1464,7 +1464,7 @@ class CommandEvaluator(object):
 
         UP_node = node
         with tagswitch(node) as case:
-            if case(command_e.Simple):  # LEAF COMMAND
+            if case(command_e.Simple):  # LEAF command
                 node = cast(command.Simple, UP_node)
 
                 # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
@@ -1498,7 +1498,7 @@ class CommandEvaluator(object):
                 cmd_st.check_errexit = True
                 status = self.shell_ex.RunSubshell(node.child)
 
-            elif case(command_e.DBracket):  # LEAF COMMAND
+            elif case(command_e.DBracket):  # LEAF command
                 node = cast(command.DBracket, UP_node)
 
                 self.mem.SetTokenForLine(node.left)
@@ -1511,7 +1511,7 @@ class CommandEvaluator(object):
                 result = self.bool_ev.EvalB(node.expr)
                 status = 0 if result else 1
 
-            elif case(command_e.DParen):  # LEAF COMMAND
+            elif case(command_e.DParen):  # LEAF command
                 node = cast(command.DParen, UP_node)
 
                 self.mem.SetTokenForLine(node.left)
@@ -1524,51 +1524,54 @@ class CommandEvaluator(object):
                 i = self.arith_ev.EvalToInt(node.child)
                 status = 1 if i == 0 else 0
 
-            elif case(command_e.VarDecl):
+            elif case(command_e.ControlFlow):  # LEAF command
+                node = cast(command.ControlFlow, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
+                self._MaybeRunDebugTrap()
+
+                status = self._DoControlFlow(node)
+
+            elif case(command_e.VarDecl):  # LEAF command
                 node = cast(command.VarDecl, UP_node)
 
                 # Point to var name (bare assignment has no keyword)
                 self.mem.SetTokenForLine(node.lhs[0].left)
                 status = self._DoVarDecl(node)
 
-            elif case(command_e.Mutation):
+            elif case(command_e.Mutation):  # LEAF command
                 node = cast(command.Mutation, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
                 self._DoMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
 
-            elif case(command_e.ShAssignment):  # Only unqualified assignment
+            elif case(command_e.ShAssignment):  # LEAF command
                 node = cast(command.ShAssignment, UP_node)
 
                 self.mem.SetTokenForLine(node.pairs[0].left)
                 self._MaybeRunDebugTrap()
 
+                # Only unqualified assignment a=b
                 status = self._DoShAssignment(node, cmd_st)
 
-            elif case(command_e.Expr):
+            elif case(command_e.Expr):  # YSH LEAF command
                 node = cast(command.Expr, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)
+                # YSH debug trap?
+
                 status = self._DoExpr(node)
 
-            elif case(command_e.Retval):
+            elif case(command_e.Retval):  # YSH LEAF command
                 node = cast(command.Retval, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)
-                # I think we don't want the debug trap in func dialect, for
-                # speed?
+                # YSH debug trap?  I think we don't want the debug trap in func
+                # dialect, for speed?
 
                 val = self.expr_ev.EvalExpr(node.val, node.keyword)
                 raise vm.ValueControlFlow(node.keyword, val)
-
-            elif case(command_e.ControlFlow):
-                node = cast(command.ControlFlow, UP_node)
-
-                self.mem.SetTokenForLine(node.keyword)
-                # Debug trap?
-
-                status = self._DoControlFlow(node)
 
             # Note CommandList and DoGroup have no redirects, but BraceGroup does.
             # DoGroup has 'do' and 'done' spids for translation.

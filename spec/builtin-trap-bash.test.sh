@@ -120,7 +120,6 @@ debuglog() {
   echo "  [$@]"
 }
 
-
 trap 'debuglog $LINENO; return 42' DEBUG
 
 echo status=$?
@@ -132,15 +131,15 @@ echo status=$?
 ## status: 0
 
 ## STDOUT:
+  [7]
+status=0
   [8]
-status=0
-  [9]
 A
-  [10]
+  [9]
 status=0
-  [11]
+  [10]
 B
-  [12]
+  [11]
 status=0
 ## END
 
@@ -148,7 +147,7 @@ status=0
 
 ## OK osh status: 42
 ## OK osh STDOUT:
-  [8]
+  [7]
 ## END
 
 #### trap DEBUG with 'exit'
@@ -209,6 +208,31 @@ f
   [15]
   [17]
   [19]
+## END
+
+#### trap DEBUG and control flow
+
+debuglog() {
+  echo "  [$@]"
+}
+trap 'debuglog $LINENO' DEBUG
+
+while true; do
+  echo hello
+  break
+done
+
+## STDOUT:
+  [6]
+  [7]
+hello
+  [8]
+## END
+## STDOUT:
+  [6]
+  [7]
+hello
+  [8]
 ## END
 
 #### trap DEBUG and command sub / subshell
