@@ -1315,6 +1315,8 @@ class Mem(object):
     def ShouldRunDebugTrap(self):
         # type: () -> bool
 
+        # TODO: RunLastPart of pipeline can disable this
+
         # Don't recursively run DEBUG trap
         if self.running_debug_trap:
             return False

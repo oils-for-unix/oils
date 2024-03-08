@@ -243,19 +243,45 @@ debuglog() {
 }
 trap 'debuglog $LINENO' DEBUG
 
-echo "result =" $(echo command sub)
-( echo subshell )
+echo "result = $(echo command sub; echo two)"
+( echo subshell
+  echo two
+)
 echo done
 
 ## STDOUT:
   [8]
 result = command sub
+two
 subshell
-  [10]
+two
+  [12]
 done
 ## END
 
-#### trap DEBUG run in forked shell interpreter for first part of pipeline?
+#### trap DEBUG not run in forked interpreter for first pipeline part
+
+debuglog() {
+  #echo "  PID=$$ BASHPID=$BASHPID LINENO=$1"
+  echo "  LINENO=$1"
+}
+trap 'debuglog $LINENO' DEBUG
+
+{ echo pipe1;
+  echo pipe2; } \
+  | cat
+echo ok
+
+## STDOUT:
+  LINENO=8
+pipe1
+pipe2
+  LINENO=9
+ok
+## END
+
+#### One 'echo' in first pipeline part - why does bash behave differently from case above?
+
 # TODO: bash runs the trap 3 times, and osh only twice.  I don't see why.  Is
 # it because Process::Run() does trap_state.ClearForSubProgram()?  Probably
 #echo top PID=$$ BASHPID=$BASHPID
@@ -263,6 +289,9 @@ done
 
 debuglog() {
   #echo "  PID=$$ BASHPID=$BASHPID LINENO=$1"
+  #echo "  LINENO=$1 $BASH_COMMAND"
+  # LINENO=6 echo pipeline
+  # LINENO=7 cat
   echo "  LINENO=$1"
 }
 trap 'debuglog $LINENO' DEBUG
@@ -278,14 +307,12 @@ pipeline
   LINENO=8
 ok
 ## END
-
 ## OK osh STDOUT:
   LINENO=7
 pipeline
   LINENO=8
 ok
 ## END
-
 
 #### trap DEBUG and pipeline (lastpipe difference)
 debuglog() {
