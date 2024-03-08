@@ -831,8 +831,6 @@ class CommandEvaluator(object):
         # type: (command.Simple, CommandStatus) -> int
         cmd_st.check_errexit = True
 
-        self._MaybeRunDebugTrap()
-
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
         # redirected here, which screws up logging.  For example, 'echo hi
         # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
@@ -908,14 +906,6 @@ class CommandEvaluator(object):
         else:
             return self._Execute(node.child)
 
-    def _DoSentence(self, node):
-        # type: (command.Sentence) -> int
-        # Don't check_errexit since this isn't a real node!
-        if node.terminator.id == Id.Op_Semi:
-            return self._Execute(node.child)
-        else:
-            return self.shell_ex.RunBackgroundJob(node.child)
-
     def _DoPipeline(self, node, cmd_st):
         # type: (command.Pipeline, CommandStatus) -> int
         cmd_st.check_errexit = True
@@ -949,28 +939,6 @@ class CommandEvaluator(object):
             self.shell_ex.RunPipeline(node, cmd_st)
 
         return status
-
-    def _DoDBracket(self, node, cmd_st):
-        # type: (command.DBracket, CommandStatus) -> int
-        self._MaybeRunDebugTrap()
-
-        self.tracer.PrintSourceCode(node.left, node.right, self.arena)
-
-        cmd_st.check_errexit = True
-        cmd_st.show_code = True  # this is a "leaf" for errors
-        result = self.bool_ev.EvalB(node.expr)
-        return 0 if result else 1
-
-    def _DoDParen(self, node, cmd_st):
-        # type: (command.DParen, CommandStatus) -> int
-        self._MaybeRunDebugTrap()
-
-        self.tracer.PrintSourceCode(node.left, node.right, self.arena)
-
-        cmd_st.check_errexit = True
-        cmd_st.show_code = True  # this is a "leaf" for errors
-        i = self.arith_ev.EvalToInt(node.child)
-        return 1 if i == 0 else 0
 
     def _DoShAssignment(self, node, cmd_st):
         # type: (command.ShAssignment, CommandStatus) -> int
@@ -1008,8 +976,6 @@ class CommandEvaluator(object):
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
 
-        self._MaybeRunDebugTrap()
-
         # PATCH to be compatible with existing shells: If the assignment had a
         # command sub like:
         #
@@ -1039,11 +1005,6 @@ class CommandEvaluator(object):
                 ui.PrettyPrintValue(val, mylib.Stdout())
 
         return 0
-
-    def _DoRetval(self, node):
-        # type: (command.Retval) -> int
-        val = self.expr_ev.EvalExpr(node.val, node.keyword)
-        raise vm.ValueControlFlow(node.keyword, val)
 
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
@@ -1308,7 +1269,6 @@ class CommandEvaluator(object):
 
     def _DoForExpr(self, node):
         # type: (command.ForExpr) -> int
-        #self._MaybeRunDebugTrap()
 
         status = 0
 
@@ -1418,7 +1378,6 @@ class CommandEvaluator(object):
 
         to_match = self._EvalCaseArg(node.to_match, node.case_kw)
         fnmatch_flags = FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
-        self._MaybeRunDebugTrap()
 
         status = 0  # If there are no arms, it should be zero?
         matched = False
@@ -1505,7 +1464,7 @@ class CommandEvaluator(object):
 
         UP_node = node
         with tagswitch(node) as case:
-            if case(command_e.Simple):
+            if case(command_e.Simple):  # LEAF COMMAND
                 node = cast(command.Simple, UP_node)
 
                 # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
@@ -1513,6 +1472,8 @@ class CommandEvaluator(object):
                 # TODO: blame_tok should always be set.
                 if node.blame_tok is not None:
                     self.mem.SetTokenForLine(node.blame_tok)
+
+                self._MaybeRunDebugTrap()
                 status = self._DoSimple(node, cmd_st)
 
             elif case(command_e.ExpandedAlias):
@@ -1521,7 +1482,12 @@ class CommandEvaluator(object):
 
             elif case(command_e.Sentence):
                 node = cast(command.Sentence, UP_node)
-                status = self._DoSentence(node)
+
+                # Don't check_errexit since this isn't a leaf command
+                if node.terminator.id == Id.Op_Semi:
+                    status = self._Execute(node.child)
+                else:
+                    status = self.shell_ex.RunBackgroundJob(node.child)
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
@@ -1532,17 +1498,31 @@ class CommandEvaluator(object):
                 cmd_st.check_errexit = True
                 status = self.shell_ex.RunSubshell(node.child)
 
-            elif case(command_e.DBracket):
+            elif case(command_e.DBracket):  # LEAF COMMAND
                 node = cast(command.DBracket, UP_node)
 
                 self.mem.SetTokenForLine(node.left)
-                status = self._DoDBracket(node, cmd_st)
+                self._MaybeRunDebugTrap()
 
-            elif case(command_e.DParen):
+                self.tracer.PrintSourceCode(node.left, node.right, self.arena)
+
+                cmd_st.check_errexit = True
+                cmd_st.show_code = True  # this is a "leaf" for errors
+                result = self.bool_ev.EvalB(node.expr)
+                status = 0 if result else 1
+
+            elif case(command_e.DParen):  # LEAF COMMAND
                 node = cast(command.DParen, UP_node)
 
                 self.mem.SetTokenForLine(node.left)
-                status = self._DoDParen(node, cmd_st)
+                self._MaybeRunDebugTrap()
+
+                self.tracer.PrintSourceCode(node.left, node.right, self.arena)
+
+                cmd_st.check_errexit = True
+                cmd_st.show_code = True  # this is a "leaf" for errors
+                i = self.arith_ev.EvalToInt(node.child)
+                status = 1 if i == 0 else 0
 
             elif case(command_e.VarDecl):
                 node = cast(command.VarDecl, UP_node)
@@ -1562,6 +1542,8 @@ class CommandEvaluator(object):
                 node = cast(command.ShAssignment, UP_node)
 
                 self.mem.SetTokenForLine(node.pairs[0].left)
+                self._MaybeRunDebugTrap()
+
                 status = self._DoShAssignment(node, cmd_st)
 
             elif case(command_e.Expr):
@@ -1574,12 +1556,18 @@ class CommandEvaluator(object):
                 node = cast(command.Retval, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)
-                self._DoRetval(node)
+                # I think we don't want the debug trap in func dialect, for
+                # speed?
+
+                val = self.expr_ev.EvalExpr(node.val, node.keyword)
+                raise vm.ValueControlFlow(node.keyword, val)
 
             elif case(command_e.ControlFlow):
                 node = cast(command.ControlFlow, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)
+                # Debug trap?
+
                 status = self._DoControlFlow(node)
 
             # Note CommandList and DoGroup have no redirects, but BraceGroup does.
@@ -1636,6 +1624,7 @@ class CommandEvaluator(object):
 
                 # Needed for error, when the func is an existing variable name
                 self.mem.SetTokenForLine(node.name)
+
                 self._DoFunc(node)
                 status = 0
 
@@ -1656,6 +1645,7 @@ class CommandEvaluator(object):
 
                 # Must set location for 'case $LINENO'
                 self.mem.SetTokenForLine(node.case_kw)
+                self._MaybeRunDebugTrap()
                 status = self._DoCase(node)
 
             elif case(command_e.TimeBlock):
