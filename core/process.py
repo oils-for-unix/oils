@@ -839,7 +839,8 @@ class SubProgramThunk(Thunk):
             print('')
             status = 130  # 128 + 2
         except (IOError, OSError) as e:
-            print_stderr('oils I/O error (subprogram): %s' % pyutil.strerror(e))
+            print_stderr('oils I/O error (subprogram): %s' %
+                         pyutil.strerror(e))
             status = 2
 
         # If ProcessInit() doesn't turn off buffering, this is needed before
@@ -1347,6 +1348,9 @@ class Pipeline(Job):
         """
         assert len(self.pids) == len(self.procs)
 
+        # TODO: break circular dep.  Bit flags could go in ASDL or headers.
+        from osh import cmd_eval
+
         # This is tcsetpgrp()
         # TODO: fix race condition -- I believe the first process could have
         # stopped already, and thus getpgid() will fail
@@ -1363,9 +1367,12 @@ class Pipeline(Job):
         r, w = self.last_pipe  # set in AddLast()
         posix.close(w)  # we will not write here
 
+        # Fix lastpipe / job control / DEBUG trap interaction
+        cmd_flags = cmd_eval.NoDebugTrap if self.job_control.Enabled() else 0
         io_errors = []  # type: List[error.IOError_OSError]
         with ctx_Pipe(fd_state, r, io_errors):
-            cmd_ev.ExecuteAndCatch(last_node)
+            cmd_ev.ExecuteAndCatch(last_node, cmd_flags)
+
         if len(io_errors):
             e_die('Error setting up last part of pipeline: %s' %
                   pyutil.strerror(io_errors[0]))
@@ -1610,6 +1617,7 @@ class JobList(object):
         mylib.dict_erase(self.child_procs, pid)
 
     if mylib.PYTHON:
+
         def AddPipeline(self, pi):
             # type: (Pipeline) -> None
             """For debugging only."""

@@ -283,6 +283,8 @@ def _Init(opt_def):
         'eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
 
     # For implementing strict_errexit
+    # TODO: could be _no_command_sub / _no_process_sub, if we had to discourage
+    # "default True" options
     opt_def.Add('_allow_command_sub', default=True)
     opt_def.Add('_allow_process_sub', default=True)
 
@@ -298,6 +300,9 @@ def _Init(opt_def):
     # convenient place.
     opt_def.Add('_running_trap')
     opt_def.Add('_running_hay')
+
+    # For fixing lastpipe / job control / DEBUG trap interaction
+    opt_def.Add('_no_debug_trap')
 
     # shopt -s strict_arith, etc.
     for name in _STRICT_OPTION_NAMES:

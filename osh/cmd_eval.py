@@ -110,6 +110,7 @@ if TYPE_CHECKING:
 IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
+NoDebugTrap = 1 << 3
 
 
 def MakeBuiltinArgv(argv1):
@@ -1928,7 +1929,12 @@ class CommandEvaluator(object):
         err = None  # type: error.FatalRuntime
 
         try:
-            status = self._Execute(node)
+            if cmd_flags & NoDebugTrap:
+                with state.ctx_Option(self.mutable_opts,
+                                      [option_i._no_debug_trap], True):
+                    status = self._Execute(node)
+            else:
+                status = self._Execute(node)
         except vm.IntControlFlow as e:
             if cmd_flags & RaiseControlFlow:
                 raise  # 'eval break' and 'source return.sh', etc.
@@ -2032,6 +2038,12 @@ class CommandEvaluator(object):
     def _MaybeRunDebugTrap(self):
         # type: () -> None
         """If a DEBUG trap handler exists, run it."""
+
+        # Fix lastpipe / job control / DEBUG trap interaction
+        if self.exec_opts._no_debug_trap():
+            return
+
+        # Don't run recursively run traps, etc.
         if not self.mem.ShouldRunDebugTrap():
             return
 
