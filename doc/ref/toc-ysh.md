@@ -238,13 +238,12 @@ X [Builtin Sub]   _buffer
 </h2>
 
 ```chapter-links-type-method
-  [Primitive] Bool   Int   Float   Str   Slice   Range   
+  [Primitive] Bool   Int   Float   Str   Slice   Range
   [Str]       X find(eggex)   replace()
-              startsWith()   X endsWith()
-              trim()   trimLeft()   trimRight()
-              X trimPrefix()   X trimSuffix()
+              trim()   trimStart()   trimEnd()
+              startsWith()   endsWith()
               upper()   lower()  # ascii or unicode
-              search()   leftMatch()              
+              search()   leftMatch()
   [Match]     group()   start()   end()
               X groups()   X groupDict()
   [List]      append()   pop()   extend()   indexOf()
