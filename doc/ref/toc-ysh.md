@@ -59,12 +59,12 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
                   triple-quoted """  r'''  u'''  b'''
+                  str-template  ^"$a and $b" for Str::replace()
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}
                   range         1 .. n+1
                   block-literal ^(echo $PWD)
                   expr-lit      ^[1 + 2*3]
-                  X template    ^"$a and $b" for Str::replace()
                   X to-string   $[myobj]
                   X to-array    @[myobj]
   [Operators]     concat        s1 ++ s2,  L1 ++ L2
@@ -187,7 +187,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Interactive]   redefine_module        'module' builtin always returns 0
                   X redefine_const       Can consts be redefined?
   [Simplicity]    ... More Consistent Style
-                  simple_echo            echo takes 0 or 1 arguments
+                  simple_echo            echo doesn't accept flags -e -n
                   simple_eval_builtin    eval takes exactly 1 argument
                   simple_test_builtin    3 args or fewer; use test not [
                   X simple_trap          Function name only
@@ -200,7 +200,7 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_dparen (-u)      Is (( legacy arithmetic allowed?
                   parse_ignored (-u)     Parse, but ignore, certain redirects
                   parse_sh_arith (-u)    Allow legacy shell arithmetic
-                  X copy_env (-u)        Use $[ENV->PYTHONPATH] when false
+                  X copy_env (-u)        Use $[ENV.PYTHONPATH] when false
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
                                          ... getopts
@@ -211,6 +211,7 @@ X [External Lang] BEGIN   END   when (awk)
   [More Options]  _allow_command_sub     To implement strict_errexit, eval_unsafe_arith
                   _allow_process_sub     To implement strict_errexit
                   dynamic_scope          To implement 'proc'
+                  _no_debug_trap         Used in pipelines in job control shell
 ```
 
 <h2 id="special-var">

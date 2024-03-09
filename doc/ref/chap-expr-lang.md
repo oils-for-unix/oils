@@ -111,6 +111,17 @@ ambiguous:
         no leading whitespace
         '''
 
+### str-template
+
+String templates use the same syntax as double-quoted strings:
+
+    var mytemplate = ^"name = $name, age = $age"
+
+Related topics:
+
+- [Str => replace](chap-type-method.html#replace)
+- [ysh-string](chap-expr-lang.html#ysh-string)
+
 ### list-literal
 
 Lists have a Python-like syntax:
