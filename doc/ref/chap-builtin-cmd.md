@@ -1277,7 +1277,7 @@ The above example declares a flag "--verbose" and a short alias "-v".
 - `true` if the flag was passed at least once
 - `false` otherwise
 
-Flags can also accept values, for example, if you wanted to accept an integer count:
+Flags can also accept values. For example, if you wanted to accept an integer count:
 
     parser (&spec) {
       flag -N --count ('int')
@@ -1337,6 +1337,9 @@ Capture zero or more positional arguments not already captured by `arg`. So,
 for `ARGV = :| hello file.txt message.txt README.md |`, we would have
 `args.query = "file.txt"` and `args.files = ["file.txt", "message.txt",
 "README.md"]`.
+
+Without rest, passing extraneous arguments will raise an error in
+`parseArgs()`.
 
 `rest` can only be called _once_ within a `parser`. Calling it multiple times
 will raise an error in `parser`.
