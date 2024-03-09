@@ -143,7 +143,7 @@ X [TSV8]          rows                   pick rows; dplyr filter()
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
                   summary                count, sum, histogram, etc. [ext]
-  [Args]          parser                 Argument parsing
+  [Args Parser]   parser                 Parse command line arguments
                   flag
                   arg
                   rest

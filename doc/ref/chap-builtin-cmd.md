@@ -1187,7 +1187,7 @@ Flags:
 Bash has this, but OSH won't implement it.
 
 
-## Args
+## Args Parser
 
 YSH includes a command-line argument parsing utility called `parseArgs`. This
 is intended to be used for command-line interfaces to YSH programs.
@@ -1300,7 +1300,6 @@ Default values for an argument can be set with the `default` named argument.
     # => args.count = 2
     # => args.optimize = true
 
-
 Each name passed to `flag` must be unique to that specific `parser`. Calling
 `flag` with the same name twice will raise an error inside of `parser`.
 
@@ -1351,7 +1350,7 @@ strings (usually `ARGV`.)
 
 The returned `args` is a dictionary mapping the names of each `arg`, `flag` and
 `rest` to their captured values. (See the example at the [start of this
-topic](#Args).)
+topic](#Args-Parser).)
 
 `parseArgs` will raise an error if the `ARGV` is invalid per the parser
 specification. For example, if it's missing a required positional argument:
