@@ -265,12 +265,34 @@ pp line (args)
 #### Duplicate argument/flag names
 source --builtin args.ysh
 
-parser (&spec) {
-  flag -n --name
-  arg name
+try {
+  parser (&spec) {
+    flag -n --name
+    flag -N --name
+  }
 }
-## status: 3
+echo status=$_status
+
+try {
+  parser (&spec) {
+    flag -n --name
+    arg name
+  }
+}
+echo status=$_status
+
+try {
+  parser (&spec) {
+    arg name
+    flag -o --other
+    arg name
+  }
+}
+echo status=$_status
 ## STDOUT:
+status=3
+status=3
+status=3
 ## END
 
 #### Error cases
