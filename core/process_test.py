@@ -141,7 +141,7 @@ class ProcessTest(unittest.TestCase):
                                                ext_prog=self.ext_prog)
         print('BEFORE', os.listdir('/dev/fd'))
 
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
         p.Add(self._ExtProc(['ls']))
         p.Add(self._ExtProc(['cut', '-d', '.', '-f', '2']))
         p.Add(self._ExtProc(['sort']))
@@ -159,7 +159,7 @@ class ProcessTest(unittest.TestCase):
                                                ext_prog=self.ext_prog)
 
         Banner('ls | cut -d . -f 1 | head')
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
         p.Add(self._ExtProc(['ls']))
         p.Add(self._ExtProc(['cut', '-d', '.', '-f', '1']))
 
@@ -178,7 +178,7 @@ class ProcessTest(unittest.TestCase):
         thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state)
         thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state)
 
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
         p.Add(Process(thunk1, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk2, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk3, self.job_control, self.job_list, self.tracer))
@@ -208,7 +208,7 @@ class ProcessTest(unittest.TestCase):
         cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena,
                                                ext_prog=self.ext_prog)
 
-        pi = process.Pipeline(False, jc, self.job_list)
+        pi = process.Pipeline(False, jc, self.job_list, self.tracer)
 
         node1 = _CommandNode('/bin/echo testpipeline', self.arena)
         node2 = _CommandNode('cat', self.arena)
