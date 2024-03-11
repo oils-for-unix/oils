@@ -155,8 +155,8 @@ inline bool to_bool(int i) {
 
 bool str_contains(BigStr* haystack, BigStr* needle);
 
-// Used by 'with switch(s)'
-bool str_equals_c(const char* c_string, int c_len, BigStr* s);
+// Used by 'with str_switch(s)'
+bool str_equals_c(BigStr* s, const char* c_string, int c_len);
 
 // Only used by unit tests
 bool str_equals0(const char* c_string, BigStr* s);
