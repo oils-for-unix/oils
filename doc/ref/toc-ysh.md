@@ -4,10 +4,13 @@ css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
 preserve_anchor_case: yes
 ---
 
-OSH Table of Contents
-===
+YSH Table of Contents
+=====================
 
-These are links to topics in the [Oils Reference](index.html).
+[YSH]($xref) is shell with familiar syntax, JSON-like data structures, and
+more.  It handles errors properly.
+
+This page has links to topics in the [Oils Reference](index.html).
 
 Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 

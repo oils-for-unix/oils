@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-oil_doc.py: HTML processing for Oil documentation.
+oils_doc.py: HTML processing for Oil documentation.
 
 Plugins:
   ExpandLinks expands $xref, etc.

@@ -29,7 +29,7 @@ readonly URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 # https://pypi.org/project/Pygments/#history
 #
 # 7/2023: Download the wheel file
-# doctools/oil_doc.py OPTIONALLY uses this
+# doctools/oils_doc.py OPTIONALLY uses this
 #
 # It's only used in the blog, so let's just put it in the oilshell.org repo,
 # not the oil repo

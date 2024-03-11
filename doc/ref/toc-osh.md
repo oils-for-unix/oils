@@ -5,9 +5,11 @@ preserve_anchor_case: yes
 ---
 
 OSH Table of Contents
-===============
+=====================
 
-These are links to topics in the [Oils Reference](index.html).
+[OSH]($xref) is a POSIX- and [bash]($xref)-compatible shell.
+
+This page has links to topics in the [Oils Reference](index.html).
 
 Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
 

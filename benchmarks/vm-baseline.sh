@@ -148,8 +148,8 @@ soil-run() {
   rm -r -f $BASE_DIR
   mkdir -p $BASE_DIR
 
-  local -a oil_bin=( $OSH_CPP_NINJA_BUILD )
-  ninja "${oil_bin[@]}"
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  ninja "${osh_bin[@]}"
 
   local single_machine='no-host'
 
@@ -158,7 +158,7 @@ soil-run() {
 
   benchmarks/id.sh shell-provenance-2 \
     $single_machine $job_id _tmp \
-    bash dash bin/osh "${oil_bin[@]}"
+    bash dash bin/osh "${osh_bin[@]}"
 
   # TODO: measure* should use print-tasks | run-tasks
   local provenance=_tmp/provenance.txt
