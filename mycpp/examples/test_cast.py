@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-cast.py - For debugging a problem with StackRoots generation
+test_cast.py 
 """
 from __future__ import print_function
 
@@ -8,7 +8,7 @@ import os
 from typing import Tuple, cast
 
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import log, tagswitch
 
 
 class ColorOutput(object):
@@ -22,9 +22,9 @@ class ColorOutput(object):
     def WriteRaw(self, raw):
         # type: (Tuple[str, int]) -> None
         """
-    Write raw data without escaping, and without counting control codes in the
-    length.
-    """
+        Write raw data without escaping, and without counting control codes in the
+        length.
+        """
         s, num_chars = raw
         self.f.write(s)
         self.num_chars += num_chars
@@ -37,13 +37,77 @@ class ColorOutput(object):
         return f.getvalue(), self.num_chars
 
 
-def run_tests():
+def Test1():
     # type: () -> None
+    """For debugging a problem with StackRoots generation"""
+
     f = mylib.BufWriter()
     out = ColorOutput(f)
     out.WriteRaw(('yo', 2))
     s, num_chars = out.GetRaw()
     print(s)
+
+
+class value_t:
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def tag(self):
+        # type: () -> int
+        raise NotImplementedError()
+
+
+class value__Int(value_t):
+
+    def __init__(self, i):
+        # type: (int) -> None
+        self.i = i
+
+    def tag(self):
+        # type: () -> int
+        return 1
+
+
+class value__Eggex(value_t):
+
+    def __init__(self, ere):
+        # type: (str) -> None
+        self.ere = ere
+
+    def tag(self):
+        # type: () -> int
+        return 2
+
+
+def Test2():
+    # type: () -> None
+
+    # Inspired by HasAffix()
+
+    e = value__Eggex('[0-9]+')
+
+    pattern_val = e  # type: value_t
+
+    pattern_eggex = None  # type: value__Eggex
+    i = 42
+    with tagswitch(pattern_val) as case:
+        if case(1):  # Int
+            raise AssertionError()
+        elif case(2):
+            pattern_eggex = cast(value__Eggex, pattern_val)
+        else:
+            raise AssertionError()
+
+    print('eggex = %r' % pattern_eggex.ere)
+
+
+def run_tests():
+    # type: () -> None
+
+    Test1()
+    #Test2()
 
 
 def run_benchmarks():

@@ -1427,8 +1427,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # HACK: Distinguish between UP cast and DOWN cast.
                 # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
                 # _t is the base type, so that means it's an upcast.
-                if (isinstance(type_expr, NameExpr) and
-                        type_expr.name.endswith('_t')):
+                if 0:
+                    #if (isinstance(type_expr, NameExpr) and
+                    #    type_expr.name.endswith('_t')):
                     if self.decl:
                         self.local_var_list.append((lval.name, subtype_name))
                     self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
