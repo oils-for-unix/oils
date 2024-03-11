@@ -1908,7 +1908,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _write_cases(self, if_node):
+    def _collect_cases(self, if_node, out):
         """
         The MyPy AST has a recursive structure for if-elif-elif rather than a
         flat one.  It's a bit confusing.
@@ -1920,22 +1920,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         expr = if_node.expr[0]
         body = if_node.body[0]
 
-        # case 1:
-        # case 2:
-        # case 3: {
-        #   print('body')
-        # }
-        #   break;  // this indent is annoying but hard to get rid of
-        assert isinstance(expr, CallExpr), expr
-        for i, arg in enumerate(expr.args):
-            if i != 0:
-                self.def_write('\n')
-            self.def_write_ind('case ')
-            self.accept(arg)
-            self.def_write(': ')
-
-        self.accept(body)
-        self.def_write_ind('  break;\n')
+        out.append((expr, body))
 
         if if_node.else_body:
             first_of_block = if_node.else_body.body[0]
@@ -1945,12 +1930,30 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #   if 0:
 
             if isinstance(first_of_block, IfStmt):
-                self._write_cases(first_of_block)
+                self._collect_cases(first_of_block, out)
             else:
-                # end the recursion
+                # default case - no expression
+                out.append((None, if_node.else_body))
+
+    def _write_cases(self, cases):
+        """ Write a list of (expr, block) pairs """
+
+        for expr, body in cases:
+            if expr is not None:
+                assert isinstance(expr, CallExpr), expr
+                for i, arg in enumerate(expr.args):
+                    if i != 0:
+                        self.def_write('\n')
+                    self.def_write_ind('case ')
+                    self.accept(arg)
+                    self.def_write(': ')
+
+                self.accept(body)
+                self.def_write_ind('  break;\n')
+            else:
                 self.def_write_ind('default: ')
-                self.accept(if_node.else_body)  # the whole block
-                # no break here
+                self.accept(body)  # the whole block
+                # don't write 'break'
 
     def _write_switch(self, expr, o):
         """Write a switch statement over integers."""
@@ -1965,25 +1968,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        self._write_cases(if_node)
-
-        self.indent -= 1
-        self.def_write_ind('}\n')
-
-    def _write_str_switch(self, expr, o):
-        """Write a switch statement over strings."""
-        assert len(expr.args) == 1, expr.args
-
-        self.def_write_ind('switch (')
-        self.accept(expr.args[0])
-        self.def_write(') {\n')
-
-        assert len(o.body.body) == 1, o.body.body
-        if_node = o.body.body[0]
-        assert isinstance(if_node, IfStmt), if_node
-
-        self.indent += 1
-        self._write_cases(if_node)
+        cases = []
+        self._collect_cases(if_node, cases)
+        self._write_cases(cases)
 
         self.indent -= 1
         self.def_write_ind('}\n')
@@ -2001,7 +1988,35 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        self._write_cases(if_node)
+        cases = []
+        self._collect_cases(if_node, cases)
+        self._write_cases(cases)
+
+        self.indent -= 1
+        self.def_write_ind('}\n')
+
+    def _write_str_switch(self, expr, o):
+        """Write a switch statement over strings."""
+        assert len(expr.args) == 1, expr.args
+
+        self.def_write_ind('switch (len(')
+        self.accept(expr.args[0])
+        self.def_write(')) {\n')
+
+        assert len(o.body.body) == 1, o.body.body
+        if_node = o.body.body[0]
+        assert isinstance(if_node, IfStmt), if_node
+
+        self.indent += 1
+
+        cases = []
+        self._collect_cases(if_node, cases)
+
+        # TODO:
+        # - Every element must be a constant string
+        # - group by length
+
+        self.log('CASES %s', cases)
 
         self.indent -= 1
         self.def_write_ind('}\n')
@@ -2597,7 +2612,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if o.id == 'mycpp.mylib':
                 # These mylib functions are translated in a special way
-                if name in ('switch', 'tagswitch', 'iteritems', 'NewDict'):
+                if name in ('switch', 'tagswitch', 'str_switch', 'iteritems',
+                            'NewDict'):
                     continue
                 # STDIN_FILENO is #included
                 if name == 'STDIN_FILENO':

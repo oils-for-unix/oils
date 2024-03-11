@@ -6,8 +6,8 @@ from __future__ import print_function
 
 import os
 
-#from mycpp.mylib import switch, str_switch, log
-from mycpp.mylib import switch, log
+from mycpp.mylib import switch, str_switch, log
+#from mycpp.mylib import switch, log
 
 
 def TestString(s):
