@@ -1974,8 +1974,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # an error occurred
             return
         if default_block is False:
-            self.report_error(switch_expr,
-                              'switch got no else: for default block')
+            # This is too restrictive
+            #self.report_error(switch_expr,
+            #                  'switch got no else: for default block')
             return
 
         self.def_write_ind('default: ')
@@ -2056,6 +2057,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         """Write a switch statement over strings."""
         assert len(expr.args) == 1, expr.args
 
+        switch_expr = expr  # for later error
+
         switch_var = expr.args[0]
         if not isinstance(switch_var, NameExpr):
             self.report_error(
@@ -2103,6 +2106,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             self.def_write_ind('}\n')
             self.def_write_ind('  break;\n')
+
+        if default_block is None:
+            # an error occurred
+            return
+        if default_block is False:
+            self.report_error(switch_expr,
+                              'str_switch got no else: for default block')
+            return
 
         self.def_write('\n')
         self.def_write_ind('str_switch_default:\n')

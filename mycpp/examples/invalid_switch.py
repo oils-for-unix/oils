@@ -10,9 +10,10 @@ from mycpp.mylib import switch, str_switch, tagswitch
 def NoDefault():
     # type: () -> None
 
-    with switch(42) as case:
-        if case(42):
-            print('42')
+    s = "foo"
+    with str_switch(s) as case:
+        if case("bar"):
+            print('bar')
 
 
 def TagSwitch():
