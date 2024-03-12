@@ -744,29 +744,26 @@ def _DumpVarFrame(frame):
 
         # TODO:
         # - Use packle for crash dumps!  Then we can represent object cycles
+        #   - Right now the JSON serializer will probably crash
         #   - although BashArray and BashAssoc may need 'type' tags
         #     - they don't round trip correctly
         #     - maybe add value.Tombstone here or something?
         #   - value.{Func,Eggex,...} may have value.Tombstone and
         #   vm.ValueIdString()?
 
-        val = None  # type: value_t
         with tagswitch(cell.val) as case:
             if case(value_e.Undef):
                 cell_json['type'] = value.Str('Undef')
 
             elif case(value_e.Str):
-                val = cast(value.Str, cell.val)
                 cell_json['type'] = value.Str('Str')
-                cell_json['value'] = value.Str(val.s)
+                cell_json['value'] = cell.val
 
             elif case(value_e.BashArray):
-                val = cast(value.BashArray, cell.val)
                 cell_json['type'] = value.Str('BashArray')
                 cell_json['value'] = cell.val
 
             elif case(value_e.BashAssoc):
-                val = cast(value.BashAssoc, cell.val)
                 cell_json['type'] = value.Str('BashAssoc')
                 cell_json['value'] = cell.val
 

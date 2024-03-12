@@ -444,7 +444,8 @@ tree with "NIL8":
   **"lossless invariant"**, which is affected by *re-parsing*.
   - I recently updated it, and tested the invariant with
     [test/lossless.sh]($oils-src).
-- The repo [README]($oils-doc:README.html) has an overview of the code.
+- The repo [README]($oils-doc:oils-repo/README.html) has an overview of the
+  code.
 
 ### Fun Computer Science Problems in Oils
 

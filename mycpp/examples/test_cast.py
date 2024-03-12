@@ -83,8 +83,9 @@ class value__Eggex(value_t):
 
 def TestSwitchDowncast(val):
     # type: (value_t) -> None
-
-    # typical UP_ pattern
+    """
+    The common val -> UP_val -> val pattern
+    """
     UP_val = val
     with tagswitch(val) as case:
         if case(1):
@@ -93,6 +94,24 @@ def TestSwitchDowncast(val):
         elif case(2):
             val = cast(value__Eggex, UP_val)
             print('Eggex = %r' % val.ere)
+        else:
+            print('other')
+
+
+def TestSwitchDowncastBad(val):
+    # type: (value_t) -> None
+
+    #UP_val = val
+    with tagswitch(val) as case:
+        if case(1):
+            val = cast(value__Int, val)
+            print('Int')
+            #print('Int = %d' % val.i)
+        elif case(2):
+            val = cast(value__Eggex, val)
+            print('Eggex')
+            # If we enable this, then it fails to compile
+            #print('Eggex = %r' % val.ere)
         else:
             print('other')
 
@@ -125,7 +144,11 @@ def run_tests():
     TestCastBufWriter()
     TestSwitchDowncast(value__Eggex('[0-9]'))
     TestSwitchDowncast(value__Int(42))
-    #TestCastInSwitch()
+
+    TestSwitchDowncastBad(value__Eggex('[0-9]'))
+    TestSwitchDowncastBad(value__Int(42))
+
+    TestCastInSwitch()
 
 
 def run_benchmarks():

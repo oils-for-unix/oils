@@ -312,6 +312,6 @@ There are README files in many subdirectories, like
 * [oilshell.zulipchat.com][] is for any kind of discussion
 * Subscribe for updates:
   * [/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/)
-  * [@oilshellblog on Twitter](https://twitter.com/oilshellblog)
+  * [@oilsforunix on Twitter](https://twitter.com/oilsforunix)
 
 

@@ -1,17 +1,33 @@
 mycpp
 =====
  
-This is an experimental Python-to-C++ translator based on MyPy.  It only
-handles the small subset of Python that Oil uses.
+This is a Python-to-C++ translator based on MyPy.  It only
+handles the small subset of Python that we use in Oils.
 
 It's inspired by both mypyc and Shed Skin.  These posts give background:
 
 - [Brief Descriptions of a Python to C++ Translator](https://www.oilshell.org/blog/2022/05/mycpp.html)
 - [Oil Is Being Implemented "Middle Out"](https://www.oilshell.org/blog/2022/03/middle-out.html)
 
+As of March 2024, the translation to C++ is **done**.  So it's no longer
+experimental!
+
+However, it's still pretty **hacky**.  This doc exists mainly to explain the
+hacks.  (We may want to rewrite mycpp as "yaks", although it's low priority
+right now.)
+
+---
+
+Source for this doc: [mycpp/README.md]($oils-src).  The code is all in
+[mycpp/]($oils-src).
+
+
+<div id="toc">
+</div>
+
 ## Instructions
 
-### Translating and Compiling `oil-native`
+### Translating and Compiling `oils-cpp`
 
 Running `mycpp` is best done on a Debian / Ubuntu-ish machine.  Follow the
 instructions at <https://github.com/oilshell/oil/wiki/Contributing> to create
@@ -102,11 +118,188 @@ More work in this pass:
     void Foo:method() {
       ...
     }
+
     void Bar:method() {
       ...
     }
 
 Note: I really wish we were not using visitors, but that's inherited from MyPy.
+
+## mycpp Idioms / "Creative Hacks"
+
+Oils is written in typed Python 2.  It will run under a stock Python 2
+interpreter, and it will typecheck with stock MyPy.
+
+However, there are a few language features that don't map cleanly from typed
+Python to C++:
+
+- switch statements (unfortunately we don't have the Python 3 match statement)
+- C++ destructors - the RAII ptatern
+- casting - MyPy has one kind of cast; C++ has `static_cast` and
+  `reinterpret_cast`.  (We don't use C-style casting.)
+
+So this describes the idioms we use.  There are some hacks in
+[mycpp/cppgen_pass.py]($oils-src) to handle these cases, and also Python
+runtime equivalents in `mycpp/mylib.py`.
+
+### `with {,tag,str_}switch` &rarr; Switch statement
+
+We have three constructs that translate to a C++ switch statement.  They use a
+Python context manager `with Xswitch(obj) ...` as a little hack.
+
+Here are examples like the ones in [mycpp/examples/test_switch.py]($oils-src).
+(`ninja mycpp-logs-equal` translates, compiles, and tests all the examples.)
+
+Simple switch:
+
+    myint = 99
+    with switch(myint) as case:
+        if case(42, 43):
+            print('forties')
+        else:
+            print('other')
+
+Switch on **object type**, which goes well with ASDL sum types:
+
+    val = value.Str('foo)  # type: value_t
+    with tagswitch(val) as case:
+        if case(value_e.Str, value_e.Int):
+            print('string or int')
+        else:
+            print('other')
+
+We usually need to apply the `UP_val` pattern here, described in the next
+section.
+
+Switch on **string**, which generates a fast **two-level dispatch** -- first on
+length, and then with `str_equals_c()`:
+
+    s = 'foo'
+    with str_switch(s) as case:
+        if case("foo")
+            print('FOO')
+        else:
+            print('other')
+
+### `val` &rarr; `UP_val` &rarr; `val` Downcasting pattern
+
+Summary: variable names like `UP_*` are **special** in our Python code.
+
+Consider the downcasts marked BAD:
+
+    val = value.Str('foo)  # type: value_t
+
+    with tagswitch(obj) as case:
+        if case(value_e.Str):
+            val = cast(value.Str, val)  # BAD: conflicts with first declaration
+            print('s = %s' % val.s)
+
+        elif case(value_e.Int):
+            val = cast(value.Int, val)  # BAD: conflicts with both
+            print('i = %d' % val.i)
+
+        else:
+            print('other')
+
+MyPy allows this, but it translates to invalid C++ code.  C++ can't have a
+variable named `val`, with 2 related types `value_t` and `value::Str`.
+
+So we use this idiom instead, which takes advantage of **local vars in case
+blocks** in C++:
+
+    val = value.Str('foo')  # type: value_t
+
+    UP_val = val  # temporary variable that will be casted
+
+    with tagswitch(val) as case:
+        if case(value_e.Str):
+            val = cast(value.Str, UP_val)  # this works
+            print('s = %s' % val.s)
+
+        elif case(value_e.Int):
+            val = cast(value.Int, UP_val)  # also works
+            print('i = %d' % val.i)
+
+        else:
+            print('other')
+
+This translates to something like:
+
+    value_t* val = Alloc<value::Str>(str42);
+    value_t* UP_val = val;
+
+    switch (val->tag()) {
+        case value_e::Str: {
+            // DIFFERENT local var
+            value::Str* val = static_cast<value::Str>(UP_val);
+            print(StrFormat(str43, val->s))
+        }
+            break;
+        case value_e::Int: {
+            // ANOTHER DIFFERENT local var
+            value::Int* val = static_cast<value::Int>(UP_val);
+            print(StrFormat(str44, val->i))
+        }
+            break;
+        default:
+            print(str45);
+    }
+
+This works because there's no problem having **different** variables with the
+same name within each `case { }` block.
+
+Again, the names `UP_*` are **special**.  If the name doesn't start with `UP_`,
+the inner blocks will look like:
+
+        case value_e::Str: {
+            val = static_cast<value::Str>(val);  // BAD: val reused
+            print(StrFormat(str43, val->s))
+        }
+
+And they will fail to compile.  It's not valid C++ because the superclass
+`value_t` doesn't have a field `val->s`.  Only the subclass `value::Str` has
+it.
+
+(Note that Python has a single flat scope per function, while C++ has nested
+scopes.)
+
+### Python context manager &rarr; C++ constructor and destructor (RAII)
+
+This Python code:
+
+    with ctx_Foo(42):
+      f()
+
+translates to this C++ code:
+
+    {
+      ctx_Foo tmp(42);
+      f()
+
+      // destructor ~ctx_Foo implicitly called
+    }
+
+## Limitations Requiring Source Rewrites
+
+mycpp itself may cause limitations on expressiveness, or the C++ language may
+be able express what we want.
+
+- C++ doesn't have `try / except / else`, or `finally`
+  - Use the `with ctx_Foo` pattern instead.
+- `if mylist` tests if the pointer is non-NULL; use `if len(mylist)` for
+  non-empty test
+- Functions can have at most one keyword / optional argument.
+  - We generate two methods: `f(x)` which calls `f(x, y)` with the default
+    value of `y`
+  - If there are two or more optional arguments:
+    - For classes, you can use the "builder pattern", i.e. add an
+      `Init_MyMember()` method
+    - If the arguments are booleans, translate it to a single bitfield argument
+- C++ has nested scope and Python has flat function scope.  This can cause name
+  collisions.
+  - Could enforce this if it becomes a problem
+
+Also see `mycpp/examples/invalid_*` for Python code that fails to translate.
 
 ## WARNING: Assumptions Not Checked
 
@@ -122,7 +315,7 @@ We translate top level constants to statically initialized C data structures
 Even though `List` and `Dict` are mutable in general, you should **NOT** mutate
 these global instances!  The C++ code will break at runtime.
 
-### Gotcha about Returning Variants (Subclasses) of a type
+### Gotcha about Returning Variants (Subclasses) of a Type
 
 MyPy will accept this code:
 
@@ -173,21 +366,38 @@ Related:
 
 ## More Translation Notes
 
-### "Creative Hacks"
+### Hacky Heuristics
 
-- `with tagswitch(d) as case` &rarr; `switch / case`
-  - We don't have Python 3 pattern matching
-- Scope-based resource management
-  - `with ctx_Foo(...)` &rarr; C++ constructors and destructors
+- `callable(arg)` to either:
+  - function call `f(arg)`
+  - instantiation `Alloc<T>(arg)`
+- `name.attr` to either:
+  - `obj->member`
+  - `module::Func`
+- `cast(MyType, obj)` to either
+  - `static_cast<MyType*>(obj)`
+  - `reinterpret_cast<MyType*>(obj)`
+
+### Hacky Hard-Coded Names
+
+These are signs of coupling between mycpp and Oils, which ideally shouldn't
+exist.
+
+- `mycpp_main.py`
+  - `ModulesToCompile()` -- some files have to be ordered first, like the ASDL
+    runtime.
+    - TODO: Pea can respect parameter order?  So we do that outside the project?
+    - Another ordering constraint comes from **inheritance**.  The forward
+      declaration is NOT sufficient in that case.
+- `cppgen_pass.py`
+  - `_GetCastKind()` has some hard-coded names
+  - `AsdlType::Create()` is special cased to `::`, not `->`
+  - Default arguments e.g. `scope_e::Local` need a repeated `using`.
+
+Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
 
 ### Major Features
 
-- `callable(arg)` to either &rarr;
-  - function call `f(arg)`
-  - instantiation `Alloc<T>(arg)`
-- `name.attr` to either &rarr;
-  - `obj->member`
-  - `module::Func`
 - Python `int` and `bool` &rarr; C++ `int` and `bool`
   - `None` &rarr; `nullptr`
 - Statically Typed Python Collections
@@ -214,6 +424,9 @@ Related:
 - Python generators `Iterator[T]` &rarr; eager `List<T>` accumulators
 - Python Exceptions &rarr; C++ exceptions
 - Python Modules &rarr; C++ namespace (we assume a 2-level hierarchy)
+  - TODO: mycpp need real modules, because our `oils_for_unix.mycpp.cc`
+    translation unit is getting big.
+  - And `cpp/preamble.h` is a hack to work around the lack of modules.
 
 ### Minor Translations
 
@@ -246,44 +459,7 @@ Neither of them needs any rooting!  This is because we use **manual collection
 points** in the interpreter, and these functions don't call any functions that
 can collect.  They are "leaves" in the call tree.
 
-### Hard-Coded Names
-
-These are signs of coupling between mycpp and Oil, which ideally shouldn't
-exist.
-
-- `mycpp_main.py`
-  - `ModulesToCompile()` -- some files have to be ordered first, like the ASDL
-    runtime.
-    - TODO: Pea can respect parameter order?  So we do that outside the project?
-    - Another ordering constraint comes from **inheritance**.  The forward
-      declaration is NOT sufficient in that case.
-- `cppgen_pass.py`
-  - `_GetCastKind()` has some hard-coded names
-  - `AsdlType::Create()` is special cased to `::`, not `->`
-  - Default arguments e.g. `scope_e::Local` need a repeated `using`.
-
-Issue on mycpp improvements: <https://github.com/oilshell/oil/issues/568>
-
-## Limitations Requiring Source Rewrites
-
-### Due to the Translation or C++ language
-
-- C++ doesn't have `try / except / else`, or `finally`
-  - This usually requires some rewriting
-- `if mylist` tests if the pointer is non-NULL; use `if len(mylist)` for
-  non-empty test
-- Functions can have at most one keyword / optional argument.
-  - We generate two methods: `f(x)` which calls `f(x, y)` with the default
-    value of `y`
-  - If there are two or more optional arguments:
-    - For classes, you can use the "builder pattern", i.e. add an
-      `Init_MyMember()` method
-    - If the arguments are booleans, translate it to a single bitfield argument
-- C++ has nested scope and Python has flat function scope.  Can cause name
-  collisions.
-  - Could enforce this if it becomes a problem
-
-## C++
+## C++ Notes
 
 ### Gotchas
 

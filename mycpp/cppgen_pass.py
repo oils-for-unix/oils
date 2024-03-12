@@ -412,8 +412,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.virtual = virtual
         # local_vars: FuncDef node -> list of type, var
-        # This is different from member_vars because we collect it in the 'decl'
-        # phase.  But then write it in the definition phase.
+        # This is different from member_vars because we collect it in the
+        # 'decl' phase, and write it in the definition phase.
         self.local_vars = local_vars
         self.fmt_ids = fmt_ids
         self.field_gc = field_gc
@@ -1414,8 +1414,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                    c_type[:-1])
                 return
 
-            #    src = cast(source__SourcedFile, src)
-            # -> source__SourcedFile* src = static_cast<source__SourcedFile>(src)
+            # is_downcast_and_shadow idiom:
+            #
+            #    src = cast(source__SourcedFile, UP_src)
+            # -> source__SourcedFile* src = static_cast<source__SourcedFile>(UP_src)
+
             if callee.name == 'cast':
                 assert isinstance(lval, NameExpr)
                 call = o.rvalue
@@ -1424,19 +1427,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 cast_kind = _GetCastKind(self.module_path, subtype_name)
 
-                # HACK: Distinguish between UP cast and DOWN cast.
-                # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
-                # _t is the base type, so that means it's an upcast.
-                if 0:
-                    #if (isinstance(type_expr, NameExpr) and
-                    #    type_expr.name.endswith('_t')):
+                is_downcast_and_shadow = False
+                to_cast = call.args[1]
+                if isinstance(to_cast, NameExpr):
+                    if to_cast.name.startswith('UP_'):
+                        is_downcast_and_shadow = True
+
+                if is_downcast_and_shadow:
+                    # Declare NEW local variable inside case, which shadows it
+                    self.def_write_ind('%s %s = %s<%s>(', subtype_name,
+                                       lval.name, cast_kind, subtype_name)
+                else:
+                    # Normal variable
                     if self.decl:
                         self.local_var_list.append((lval.name, subtype_name))
                     self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
                                        subtype_name)
-                else:
-                    self.def_write_ind('%s %s = %s<%s>(', subtype_name,
-                                       lval.name, cast_kind, subtype_name)
 
                 self.accept(call.args[1])  # variable being casted
                 self.def_write(');\n')
