@@ -37,7 +37,8 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source $REPO_ROOT/test/common.sh  # $OSH
 
-readonly BASE_DIR=_tmp/perf
+# $REPO_ROOT needed since CPython configure changes dirs
+readonly BASE_DIR=$REPO_ROOT/_tmp/perf
 
 # TODO:
 # - kernel symbols.  Is that why there are a lot of [unknown] in opt mode?
@@ -412,6 +413,10 @@ profile-cpython-configure() {
   local mode=${2:-flat}
 
   local dir=$BASE_DIR/cpython-configure
+
+  # Fails because perf has to run as root
+  rm -r -f -v $dir || true
+
   mkdir -p $dir
 
   local -a cmd=( $osh $REPO_ROOT/Python-2.7.13/configure )
@@ -419,6 +424,28 @@ profile-cpython-configure() {
   pushd $dir
   profile-cpp 'cpython-configure' $mode "${cmd[@]}"
   popd
+}
+
+cpython-report() {
+  #perf report -i $BASE_DIR/cpython-configure.perf
+
+  # oils-for-unix is only 4.89% of time?  That's #5
+  # 48% in kernel
+  # 23% in cc1
+  #
+  # That means we're still a bit slow
+
+  # TODO: I want to change OVERALL percentages
+  #
+  # GC is 1.6% and let's say rooting is 3%.  That's 300 ms out of 10s
+  # GC can account for the whole thing
+  # I wonder if we can do GC while waiting for processes?  They might be tiny
+  # processes though
+
+  perf report -i $BASE_DIR/cpython-configure.perf \
+    -n --dso=oils-for-unix --percentage=relative
+
+  #perf report -i $BASE_DIR/cpython-configure.perf --sort=dso
 }
 
 local-test() {

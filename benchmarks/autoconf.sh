@@ -15,11 +15,12 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
+source benchmarks/cachegrind.sh  # with-cachegrind
+source benchmarks/callgrind.sh  # with-cachegrind
 source test/tsv-lib.sh  # $TAB
-#source test/common.sh  # log
-#source benchmarks/common.sh
 
 readonly BASE_DIR=_tmp/autoconf
+readonly PY_CONF=$REPO_ROOT/Python-2.7.13/configure
 
 #
 # Trying to measure allocation/GC overhead -- kinda failed because bumproot is
@@ -69,7 +70,7 @@ measure-alloc-overhead() {
       time-tsv --append
       "${flags[@]}"
       --field "$variant"
-      -- $osh $REPO_ROOT/Python-2.7.13/configure
+      -- $osh $PY_CONF
     )
 
     #echo "${time_argv[@]}"
@@ -99,9 +100,39 @@ measure-syscalls() {
     local counts=$base_dir/$sh_label.txt
 
     pushd $dir
-    strace -o $counts -c $sh_path $REPO_ROOT/Python-2.7.13/configure
+    strace -o $counts -c $sh_path $PY_CONF
     popd
   done
+}
+
+#
+# Cachegrind
+#
+
+measure-valgrind() {
+  local tool=$1
+
+  local osh=$REPO_ROOT/_bin/cxx-opt/osh
+
+  local base_dir=$REPO_ROOT/_tmp/$tool
+
+  local dir=$base_dir/cpython-configure
+
+  local out_file=$base_dir/cpython-configure.txt
+
+  mkdir -v -p $dir
+
+  pushd $dir
+  $tool $out_file $osh $PY_CONF
+  popd
+}
+
+measure-cachegrind() {
+  measure-valgrind with-cachegrind
+}
+
+measure-callgrind() {
+  measure-valgrind with-callgrind
 }
 
 "$@"
