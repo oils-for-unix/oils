@@ -100,6 +100,50 @@ def TestSwitchDowncast(val):
 
 def TestSwitchDowncastBad(val):
     # type: (value_t) -> None
+    """
+    TODO: Could we insert the UP_val automatically?
+
+    Possible rules:
+
+    (1) with tagswitch(cell.val) translates to
+
+        value_t* UP_val = cell->val;
+        switch (val) {
+
+    (2) You need MyPy casts sometimes
+
+    unrelated = None
+    with tagswitch(val) as case:
+        if case(value_e.Int):
+            val = cast(value.Int, val)
+            print('i = %d' % val.i)
+
+        elif case(value_e.Str):
+            unrelated = cast(str, obj)
+            print('String')
+
+    (3) Then the C++ casts would look like:
+
+    value_t* UP_val = cell->val;
+    switch (val) {
+        case value_e::Int {
+            # How do we know to generate a NEW var here, without the UP_val
+            # heuristic?
+            #
+            # OK well we can simply use the switch variable name?  It it
+            # matches, we create a new var.
+            #
+            # Technical problem: it's INSIDE a block, so we have to "look
+            # ahead" to the first thing in the block.
+
+            value::Int* val = static_cast<value::Int*>(val);
+        }
+        case value_e::Str {
+            // NOT a new variable
+            unrelated = static_cast<Str*>(obj);
+        }
+    }
+    """
 
     #UP_val = val
     with tagswitch(val) as case:

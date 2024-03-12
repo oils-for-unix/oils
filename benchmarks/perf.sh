@@ -33,9 +33,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-readonly BASE_DIR=_tmp/perf
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source test/common.sh  # $OSH
+source $REPO_ROOT/test/common.sh  # $OSH
+
+readonly BASE_DIR=_tmp/perf
 
 # TODO:
 # - kernel symbols.  Is that why there are a lot of [unknown] in opt mode?
@@ -171,7 +173,7 @@ profile-cpp() {
   mkdir -p $BASE_DIR
 
   # -E preserve environment like BENCHMARK=1
-  sudo -E $0 _record-cpp $name "$@";
+  sudo -E $REPO_ROOT/$0 _record-cpp $name "$@";
 
   case $mode in 
     (graph)
@@ -401,6 +403,28 @@ build-tar() {
   # - add OILS_GC_THRESHOLD=$big to avoid GC
 
   popd
+}
+
+profile-cpython-configure() {
+  ### borrowed from benchmarks/osh-runtime.sh
+
+  local osh=${1:-$REPO_ROOT/_bin/cxx-opt/osh}
+  local mode=${2:-flat}
+
+  local dir=$BASE_DIR/cpython-configure
+  mkdir -p $dir
+
+  local -a cmd=( $osh $REPO_ROOT/Python-2.7.13/configure )
+
+  pushd $dir
+  profile-cpp 'cpython-configure' $mode "${cmd[@]}"
+  popd
+}
+
+local-test() {
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+  profile-fib $REPO_ROOT/$osh flat
 }
 
 soil-run() {
