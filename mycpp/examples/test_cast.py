@@ -37,7 +37,7 @@ class ColorOutput(object):
         return f.getvalue(), self.num_chars
 
 
-def Test1():
+def TestCastBufWriter():
     # type: () -> None
     """For debugging a problem with StackRoots generation"""
 
@@ -81,7 +81,23 @@ class value__Eggex(value_t):
         return 2
 
 
-def Test2():
+def TestSwitchDowncast(val):
+    # type: (value_t) -> None
+
+    # typical UP_ pattern
+    UP_val = val
+    with tagswitch(val) as case:
+        if case(1):
+            val = cast(value__Int, UP_val)
+            print('Int = %d' % val.i)
+        elif case(2):
+            val = cast(value__Eggex, UP_val)
+            print('Eggex = %r' % val.ere)
+        else:
+            print('other')
+
+
+def TestCastInSwitch():
     # type: () -> None
 
     # Inspired by HasAffix()
@@ -106,8 +122,10 @@ def Test2():
 def run_tests():
     # type: () -> None
 
-    Test1()
-    #Test2()
+    TestCastBufWriter()
+    TestSwitchDowncast(value__Eggex('[0-9]'))
+    TestSwitchDowncast(value__Int(42))
+    #TestCastInSwitch()
 
 
 def run_benchmarks():
