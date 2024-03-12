@@ -540,9 +540,11 @@ tarball-links-row-html() {
 </tr>
 EOF
 
-  # we switched to .gz for oils for Unix
-  for name in oil-$version.tar.{gz,xz} \
+  # we switched to .gz for oils-for-unix
+  # note: legacy names for old releases
+  for name in \
     oils-for-unix-$version.tar.{gz,xz} \
+    oil-$version.tar.{gz,xz} \
     oil-native-$version.tar.xz; do
 
     local url="/download/$name"  # The server URL
