@@ -432,11 +432,8 @@ class WordParser(WordEmitter):
 
         elif op_kind == Kind.VOp2:  # / : [ ]
             if self.token_type == Id.VOp2_Slash:
-                patsub_op = self._ReadPatSubVarOp()
-
-                # awkwardness for mycpp; could fix
-                temp = cast(suffix_op_t, patsub_op)
-                part.suffix_op = temp
+                patsub_op = self._ReadPatSubVarOp()  # type: suffix_op_t
+                part.suffix_op = patsub_op
 
                 # Checked by the method above
                 assert self.token_type == Id.Right_DollarBrace, self.cur_token
