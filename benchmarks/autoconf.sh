@@ -112,11 +112,16 @@ measure-syscalls() {
 measure-valgrind() {
   local tool=$1
 
-  local osh=$REPO_ROOT/_bin/cxx-opt/osh
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+
+  # opt seems to give OK results, but I thought dbg was more accurate
+  local osh=$REPO_ROOT/$osh
 
   local base_dir=$REPO_ROOT/_tmp/$tool
 
   local dir=$base_dir/cpython-configure
+  rm -r -f -v $dir
 
   local out_file=$base_dir/cpython-configure.txt
 
@@ -132,7 +137,8 @@ measure-cachegrind() {
 }
 
 measure-callgrind() {
-  measure-valgrind with-callgrind
+  # This takes ~5 minutes, vs ~15 seconds uninstrumented
+  time measure-valgrind with-callgrind
 }
 
 "$@"
