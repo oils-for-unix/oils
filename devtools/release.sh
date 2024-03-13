@@ -8,9 +8,7 @@
 # Steps:
 #   edit oil-version.txt, build/doc.sh update-src-versions, bump devtools/release-note.sh
 #   $0 make-release-branch
-#   $0 quick-oil-tarball     # build FIRST tarball
-#   $0 test-oil-tar T        # extract, build, install
-#                            # for cpython-defs source scanning and dogfood
+#   $0 two-tarballs          # CPython, then oils-for-unix, which is INSTALLED
 #   demo/osh-debug.sh osh-for-release: Start a shell to dogfood
 #   build/cpython-defs.sh {oil-py-names,filter-methods}
 #     (regenerate C source)
@@ -87,6 +85,9 @@ ensure-smooth-build() {
 
 # For redoing a release.  This is everything until you have to 'git pull' the
 # benchmark-data repo to make reports.
+#
+# PRECONDITION: $0 two-tarballs was run manually, which runs
+# ensure-smooth-build.
 auto-machine1() {
   local resume=${1:-}  # workaround for spec test flakiness bug
   local resume2=${2:-}  # skip past spec sanity check
@@ -94,8 +95,6 @@ auto-machine1() {
   local resume4=${4:-}  # skip past full spec tests
 
   if test -z "$resume"; then
-    ensure-smooth-build
-
     $0 build-and-test
   fi 
 
@@ -321,19 +320,9 @@ build-and-test() {
   # Before doing anything
   test/lint.sh soil-run
 
-  build/py.sh all
   test/unit.sh run-for-release  # Python unit tests
 
-  # "Base state" for repo scripts
-  ./NINJA-config.sh
-
   test/coverage.sh run-for-release  # C++ unit tests
-
-  # oils-for-unix
-  devtools/release-native.sh make-tar
-  devtools/release-native.sh extract-for-benchmarks
-  # This builds the tarball from _tmp/native-tar-test
-  devtools/release-native.sh test-tar
 
   # App bundle
   _release-build
@@ -773,16 +762,36 @@ more-release-deps() {
   fi
 }
 
-quick-oil-tarball() {
-  # Can't delete _gen/_devbuild because there are source files there we want
-  rm -r -f --verbose _bin _build _release || true  # some permissions errors
-
+py-tarball() {
   local in=_release/oil.tar
   local out=_release/oil-$OIL_VERSION.tar.gz
 
   make $in
   time gzip -c $in > $out
   ls -l $out
+
+  test-oil-tar
+}
+
+native-tarball() {
+  # oils-for-unix
+  devtools/release-native.sh make-tar
+  # Also install as root
+  devtools/release-native.sh extract-for-benchmarks INSTALL
+}
+
+two-tarballs() {
+  ### First step of release.  Assume that CI passes
+
+  ensure-smooth-build
+
+  build/py.sh all
+  # "Base state" for repo scripts
+  ./NINJA-config.sh
+
+  py-tarball
+
+  native-tarball
 }
 
 upload-tmp() {
