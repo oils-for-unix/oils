@@ -309,7 +309,6 @@ ovm-tarball-tasks() {
 
   # notes:
   # - py-all needed to crawl dependencies to make tarball.
-  # - quick-oil-tarball deletes _release, so we have to put docs afterward
 
   # (task_name, script, action, result_html)
   cat <<EOF
@@ -322,8 +321,7 @@ osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
-make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
-test-tarball      devtools/release.sh test-oil-tar       -
+make-tarball      devtools/release.sh py-tarball         _release/oil.tar
 ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
 ref-check         build/doc.sh ref-check                 -

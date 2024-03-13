@@ -510,6 +510,7 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
         DCHECK(width_s.size() > 1);
         ok = StringToInt(width_s.c_str() + 1, width_s.size() - 1, 10, &width);
         DCHECK(ok);
+        (void)ok;  // silence unused var warning in opt
       } else {
         ok = StringToInt(width_s.c_str(), width_s.size(), 10, &width);
         DCHECK(ok);

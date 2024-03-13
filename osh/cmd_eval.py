@@ -1360,6 +1360,7 @@ class CommandEvaluator(object):
 
     def _DoIf(self, node):
         # type: (command.If) -> int
+        status = -1
 
         done = False
         for if_arm in node.arms:
@@ -1372,6 +1373,7 @@ class CommandEvaluator(object):
         if not done and node.else_action is not None:
             status = self._ExecuteList(node.else_action)
 
+        assert status != -1, 'Should have been initialized'
         return status
 
     def _DoCase(self, node):
@@ -1927,6 +1929,7 @@ class CommandEvaluator(object):
         is_errexit = False
 
         err = None  # type: error.FatalRuntime
+        status = -1  # uninitialized
 
         try:
             if cmd_flags & NoDebugTrap:
@@ -1982,6 +1985,8 @@ class CommandEvaluator(object):
                                              posix.getpid())
             else:
                 self.errfmt.PrettyPrintError(err, prefix='fatal: ')
+
+        assert status >= 0, 'Should have been initialized'
 
         # Problem: We have no idea here if a SUBSHELL (or pipeline comment) already
         # created a crash dump.  So we get 2 or more of them.
