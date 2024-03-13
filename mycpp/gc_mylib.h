@@ -32,6 +32,38 @@ inline void MaybeCollect() {
 
 void print_stderr(BigStr* s);
 
+inline int ByteAt(BigStr* s, int i) {
+  DCHECK(0 <= i);
+  DCHECK(i <= len(s));
+
+  return static_cast<unsigned char>(s->data_[i]);
+}
+
+inline int ByteEquals(int byte, BigStr* ch) {
+  DCHECK(0 <= byte);
+  DCHECK(byte < 256);
+
+  DCHECK(len(ch) == 1);
+
+  return byte == static_cast<unsigned char>(ch->data_[0]);
+}
+
+inline int ByteInSet(int byte, BigStr* byte_set) {
+  DCHECK(0 <= byte);
+  DCHECK(byte < 256);
+
+  int n = len(byte_set);
+  for (int i = 0; i < n; ++i) {
+    int b = static_cast<unsigned char>(byte_set->data_[i]);
+    if (byte == b) {
+      return true;
+    }
+  }
+  return false;
+}
+
+BigStr* JoinBytes(List<int>* byte_list);
+
 // const int kStdout = 1;
 // const int kStderr = 2;
 
@@ -106,14 +138,74 @@ inline BigStr* octal(int i) {
   return ::StrFromC(buf, len);
 }
 
-class LineReader {
+// Abstract type: Union of LineReader and Writer
+class File {
  public:
-  // Abstract type with no fields: unknown size
-  LineReader() {
+  File() {
   }
+  // Writer
+  virtual void write(BigStr* s) = 0;
+  virtual void flush() = 0;
+
+  // Reader
   virtual BigStr* readline() = 0;
+
+  // Both
   virtual bool isatty() = 0;
   virtual void close() = 0;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(File));
+  }
+
+  static constexpr uint32_t field_mask() {
+    return kZeroMask;
+  }
+};
+
+// Wrap a FILE* for read and write
+class CFile : public File {
+ public:
+  explicit CFile(FILE* f) : File(), f_(f) {
+  }
+  // Writer
+  void write(BigStr* s) override;
+  void flush() override;
+
+  // Reader
+  BigStr* readline() override;
+
+  // Both
+  bool isatty() override;
+  void close() override;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassFixed(field_mask(), sizeof(CFile));
+  }
+
+  static constexpr uint32_t field_mask() {
+    // not mutating field_mask because FILE* isn't a GC object
+    return File::field_mask();
+  }
+
+ private:
+  FILE* f_;
+
+  DISALLOW_COPY_AND_ASSIGN(CFile)
+};
+
+// Abstract File we can only read from.
+// TODO: can we get rid of DCHECK() and reinterpret_cast?
+class LineReader : public File {
+ public:
+  LineReader() : File() {
+  }
+  void write(BigStr* s) override {
+    CHECK(false);  // should not happen
+  }
+  void flush() override {
+    CHECK(false);  // should not happen
+  }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(LineReader));
@@ -149,50 +241,26 @@ class BufLineReader : public LineReader {
   DISALLOW_COPY_AND_ASSIGN(BufLineReader)
 };
 
-// Wrap a FILE*
-class CFileLineReader : public LineReader {
- public:
-  explicit CFileLineReader(FILE* f) : LineReader(), f_(f) {
-  }
-  virtual BigStr* readline();
-  virtual bool isatty();
-  void close() {
-    fclose(f_);
-  }
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(LineReader));
-  }
-
-  static constexpr uint32_t field_mask() {
-    // not mutating field_mask because FILE* isn't a GC object
-    return LineReader::field_mask();
-  }
-
- private:
-  FILE* f_;
-
-  DISALLOW_COPY_AND_ASSIGN(CFileLineReader)
-};
-
 extern LineReader* gStdin;
 
 inline LineReader* Stdin() {
   if (gStdin == nullptr) {
-    gStdin = Alloc<CFileLineReader>(stdin);
+    gStdin = reinterpret_cast<LineReader*>(Alloc<CFile>(stdin));
   }
   return gStdin;
 }
 
 LineReader* open(BigStr* path);
 
-class Writer {
+// Abstract File we can only write to.
+// TODO: can we get rid of DCHECK() and reinterpret_cast?
+class Writer : public File {
  public:
-  Writer() {
+  Writer() : File() {
   }
-  virtual void write(BigStr* s) = 0;
-  virtual void flush() = 0;
-  virtual bool isatty() = 0;
+  BigStr* readline() override {
+    CHECK(false);  // should not happen
+  }
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(Writer));
@@ -210,13 +278,48 @@ class BufWriter : public Writer {
   BufWriter() : Writer(), str_(nullptr), len_(0) {
   }
   void write(BigStr* s) override;
+  void write_spaces(int n);
+  void clear() {  // Reuse this instance
+    str_ = nullptr;
+    len_ = 0;
+    is_valid_ = true;
+  }
+  void close() override {
+  }
   void flush() override {
   }
   bool isatty() override {
     return false;
   }
-  // For cStringIO API
-  BigStr* getvalue();
+  BigStr* getvalue();  // part of cStringIO API
+
+  //
+  // Low Level API for C++ usage only
+  //
+
+  // Convenient API that avoids BigStr*
+  void WriteConst(const char* c_string);
+
+  // Potentially resizes the buffer.
+  void EnsureMoreSpace(int n);
+  // After EnsureMoreSpace(42), you can write 42 more bytes safely.
+  //
+  // Note that if you call EnsureMoreSpace(42), write 5 byte, and then
+  // EnsureMoreSpace(42) again, the amount of additional space reserved is 47.
+
+  // (Similar to vector::reserve(n), but it takes an integer to ADD to the
+  // capacity.)
+
+  uint8_t* LengthPointer();    // start + length
+  uint8_t* CapacityPointer();  // start + capacity
+  void SetLengthFrom(uint8_t* length_ptr);
+
+  int Length() {
+    return len_;
+  }
+
+  // Rewind to earlier position, future writes start there
+  void Truncate(int length);
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassFixed(field_mask(), sizeof(BufWriter));
@@ -228,39 +331,18 @@ class BufWriter : public Writer {
   }
 
  private:
-  void EnsureCapacity(int n);
+  void WriteRaw(char* s, int n);
 
-  void Extend(BigStr* s);
-  char* data();
-  char* end();
-  int capacity();
-
-  MutableStr* str_;
-  int len_;
+  MutableStr* str_;  // getvalue() turns this directly into Str*, no copying
+  int len_;          // how many bytes have been written so far
   bool is_valid_ = true;  // It becomes invalid after getvalue() is called
-};
-
-// Wrap a FILE*
-class CFileWriter : public Writer {
- public:
-  explicit CFileWriter(FILE* f) : Writer(), f_(f) {
-    // not mutating field_mask because FILE* is not a managed pointer
-  }
-  void write(BigStr* s) override;
-  void flush() override;
-  bool isatty() override;
-
- private:
-  FILE* f_;
-
-  DISALLOW_COPY_AND_ASSIGN(CFileWriter)
 };
 
 extern Writer* gStdout;
 
 inline Writer* Stdout() {
   if (gStdout == nullptr) {
-    gStdout = Alloc<CFileWriter>(stdout);
+    gStdout = reinterpret_cast<Writer*>(Alloc<CFile>(stdout));
     gHeap.RootGlobalVar(gStdout);
   }
   return gStdout;
@@ -270,7 +352,7 @@ extern Writer* gStderr;
 
 inline Writer* Stderr() {
   if (gStderr == nullptr) {
-    gStderr = Alloc<CFileWriter>(stderr);
+    gStderr = reinterpret_cast<Writer*>(Alloc<CFile>(stderr));
     gHeap.RootGlobalVar(gStderr);
   }
   return gStderr;

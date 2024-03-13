@@ -36,6 +36,10 @@ def main(argv):
         print('../pyext/%s.c' % mod_name)
         print('../cpp/fanos_shared.c')
 
+      elif mod_name == 'fastfunc':
+        print('../pyext/%s.c' % mod_name)
+        print('../data_lang/j8_libc.c')
+
       elif mod_name == 'posix_':
         print('../pyext/posixmodule.c')
 

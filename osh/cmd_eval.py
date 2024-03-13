@@ -68,8 +68,11 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
 
 from core import dev
 from core import error
+from core import executor
 from core.error import e_die, e_die_status
+from core import num
 from core import pyos  # Time().  TODO: rename
+from core import pyutil
 from core import state
 from core import ui
 from core import util
@@ -107,6 +110,7 @@ if TYPE_CHECKING:
 IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
+NoDebugTrap = 1 << 3
 
 
 def MakeBuiltinArgv(argv1):
@@ -567,15 +571,16 @@ class CommandEvaluator(object):
 
         return result
 
-    def _RunSimpleCommand(self, cmd_val, cmd_st, do_fork):
-        # type: (cmd_value_t, CommandStatus, bool) -> int
+    def _RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
+        # type: (cmd_value_t, CommandStatus, int) -> int
         """Private interface to run a simple command (including assignment)."""
         UP_cmd_val = cmd_val
         with tagswitch(UP_cmd_val) as case:
             if case(cmd_value_e.Argv):
                 cmd_val = cast(cmd_value.Argv, UP_cmd_val)
                 self.tracer.OnSimpleCommand(cmd_val.argv)
-                return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st, do_fork)
+                return self.shell_ex.RunSimpleCommand(cmd_val, cmd_st,
+                                                      run_flags)
 
             elif case(cmd_value_e.Assign):
                 cmd_val = cast(cmd_value.Assign, UP_cmd_val)
@@ -679,7 +684,8 @@ class CommandEvaluator(object):
         # x = 'foo' in Hay blocks
         if node.keyword is None:
             # Note: there's only one LHS
-            lval = location.LName(node.lhs[0].name.tval)
+            lhs0 = node.lhs[0]
+            lval = LeftName(lhs0.name, lhs0.left)
             assert node.rhs is not None, node
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
@@ -689,12 +695,17 @@ class CommandEvaluator(object):
                               flags=state.SetReadOnly)
 
         else:  # var or const
+            flags = (state.SetReadOnly
+                     if node.keyword.id == Id.KW_Const else 0)
+
             # var x, y does null initialization
             if node.rhs is None:
                 for i, lhs_val in enumerate(node.lhs):
-                    lval = location.LName(lhs_val.name.tval)
-                    # Note: not respecting const since they should be initialized
-                    self.mem.SetNamed(lval, value.Null, scope_e.LocalOnly)
+                    lval = LeftName(lhs_val.name, lhs_val.left)
+                    self.mem.SetNamed(lval,
+                                      value.Null,
+                                      scope_e.LocalOnly,
+                                      flags=flags)
                 return 0
 
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
@@ -703,7 +714,8 @@ class CommandEvaluator(object):
 
             num_lhs = len(node.lhs)
             if num_lhs == 1:
-                lvals = [location.LName(node.lhs[0].name.tval)]
+                lhs0 = node.lhs[0]
+                lvals = [LeftName(lhs0.name, lhs0.left)]
                 rhs_vals = [right_val]
             else:
                 items = val_ops.ToList(
@@ -719,12 +731,9 @@ class CommandEvaluator(object):
                 lvals = []
                 rhs_vals = []
                 for i, lhs_val in enumerate(node.lhs):
-                    lval = location.LName(lhs_val.name.tval)
+                    lval = LeftName(lhs_val.name, lhs_val.left)
                     lvals.append(lval)
                     rhs_vals.append(items[i])
-
-            flags = (state.SetReadOnly
-                     if node.keyword.id == Id.KW_Const else 0)
 
             for i, lval in enumerate(lvals):
                 rval = rhs_vals[i]
@@ -823,8 +832,6 @@ class CommandEvaluator(object):
         # type: (command.Simple, CommandStatus) -> int
         cmd_st.check_errexit = True
 
-        self._MaybeRunDebugTrap()
-
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
         # redirected here, which screws up logging.  For example, 'echo hi
         # >/dev/null 2>&1'.  We want to evaluate argv and log it BEFORE applying
@@ -868,20 +875,20 @@ class CommandEvaluator(object):
             # shells aren't consistent.
             # self.mem.SetLastArgument('')
 
+        run_flags = executor.DO_FORK if node.do_fork else 0
         # NOTE: RunSimpleCommand never returns when do_fork=False!
         if len(node.more_env):  # I think this guard is necessary?
             is_other_special = False  # TODO: There are other special builtins too!
             if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
                 # Special builtins have their temp env persisted.
                 self._EvalTempEnv(node.more_env, 0)
-                status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+                status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
             else:
                 with state.ctx_Temp(self.mem):
                     self._EvalTempEnv(node.more_env, state.SetExport)
-                    status = self._RunSimpleCommand(cmd_val, cmd_st,
-                                                    node.do_fork)
+                    status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
         else:
-            status = self._RunSimpleCommand(cmd_val, cmd_st, node.do_fork)
+            status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
         return status
 
@@ -899,14 +906,6 @@ class CommandEvaluator(object):
                 return self._Execute(node.child)
         else:
             return self._Execute(node.child)
-
-    def _DoSentence(self, node):
-        # type: (command.Sentence) -> int
-        # Don't check_errexit since this isn't a real node!
-        if node.terminator.id == Id.Op_Semi:
-            return self._Execute(node.child)
-        else:
-            return self.shell_ex.RunBackgroundJob(node.child)
 
     def _DoPipeline(self, node, cmd_st):
         # type: (command.Pipeline, CommandStatus) -> int
@@ -941,28 +940,6 @@ class CommandEvaluator(object):
             self.shell_ex.RunPipeline(node, cmd_st)
 
         return status
-
-    def _DoDBracket(self, node, cmd_st):
-        # type: (command.DBracket, CommandStatus) -> int
-        self._MaybeRunDebugTrap()
-
-        self.tracer.PrintSourceCode(node.left, node.right, self.arena)
-
-        cmd_st.check_errexit = True
-        cmd_st.show_code = True  # this is a "leaf" for errors
-        result = self.bool_ev.EvalB(node.expr)
-        return 0 if result else 1
-
-    def _DoDParen(self, node, cmd_st):
-        # type: (command.DParen, CommandStatus) -> int
-        self._MaybeRunDebugTrap()
-
-        self.tracer.PrintSourceCode(node.left, node.right, self.arena)
-
-        cmd_st.check_errexit = True
-        cmd_st.show_code = True  # this is a "leaf" for errors
-        i = self.arith_ev.EvalToInt(node.child)
-        return 1 if i == 0 else 0
 
     def _DoShAssignment(self, node, cmd_st):
         # type: (command.ShAssignment, CommandStatus) -> int
@@ -1000,8 +977,6 @@ class CommandEvaluator(object):
             self.mem.SetValue(lval, val, which_scopes, flags=flags)
             self.tracer.OnShAssignment(lval, pair.op, val, flags, which_scopes)
 
-        self._MaybeRunDebugTrap()
-
         # PATCH to be compatible with existing shells: If the assignment had a
         # command sub like:
         #
@@ -1028,14 +1003,9 @@ class CommandEvaluator(object):
 
         if node.keyword.id == Id.Lit_Equals:  # = f(x)
             with vm.ctx_FlushStdout():
-                ui.DebugPrint(val)
+                ui.PrettyPrintValue(val, mylib.Stdout())
 
         return 0
-
-    def _DoRetval(self, node):
-        # type: (command.Retval) -> int
-        val = self.expr_ev.EvalExpr(node.val, node.keyword)
-        raise vm.ValueControlFlow(node.keyword, val)
 
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
@@ -1053,21 +1023,34 @@ class CommandEvaluator(object):
                 arg = 0
             else:
                 try:
-                    # They all take integers.  NOTE: dash is the only shell that
-                    # disallows -1!  Others wrap to 255.
-                    arg = int(str_val.s)
+                    arg = int(str_val.s)  # all control flow takes an integer
                 except ValueError:
+                    # Either a bad argument, or integer overflow
                     e_die(
-                        '%r expected a number, got %r' %
+                        '%r expected a small integer, got %r' %
                         (lexer.TokenVal(keyword), str_val.s),
                         loc.Word(node.arg_word))
+
+                # C++ int() does range checking, but Python doesn't.  So let's
+                # simulate it here for spec tests.
+                # TODO: could be mylib.ToMachineInt()?  Problem: 'int' in C/C++
+                # could be more than 4 bytes.  We are testing INT_MAX and
+                # INT_MIN in gc_builtins.cc - those could be hard-coded.
+                if mylib.PYTHON:
+                    max_int = (1 << 31) - 1
+                    min_int = -(1 << 31)
+                    if not (min_int <= arg <= max_int):
+                        e_die(
+                            '%r expected a small integer, got %r' %
+                            (lexer.TokenVal(keyword), str_val.s),
+                            loc.Word(node.arg_word))
         else:
             if keyword.id in (Id.ControlFlow_Exit, Id.ControlFlow_Return):
                 arg = self.mem.LastStatus()
             else:
                 arg = 1  # break or continue 1 level by default
 
-        self.tracer.OnControlFlow(keyword.tval, arg)
+        self.tracer.OnControlFlow(consts.ControlFlowName(keyword.id), arg)
 
         # NOTE: A top-level 'return' is OK, unlike in bash.  If you can return
         # from a sourced script, it makes sense to return from a main script.
@@ -1268,7 +1251,7 @@ class CommandEvaluator(object):
                 if name2:
                     self.mem.SetLocalName(name2, it2.SecondValue())
                 if i_name:
-                    self.mem.SetLocalName(i_name, value.Int(it2.Index()))
+                    self.mem.SetLocalName(i_name, num.ToBig(it2.Index()))
 
                 # increment index before handling continue, etc.
                 it2.Next()
@@ -1287,7 +1270,6 @@ class CommandEvaluator(object):
 
     def _DoForExpr(self, node):
         # type: (command.ForExpr) -> int
-        #self._MaybeRunDebugTrap()
 
         status = 0
 
@@ -1397,7 +1379,6 @@ class CommandEvaluator(object):
 
         to_match = self._EvalCaseArg(node.to_match, node.case_kw)
         fnmatch_flags = FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
-        self._MaybeRunDebugTrap()
 
         status = 0  # If there are no arms, it should be zero?
         matched = False
@@ -1484,7 +1465,7 @@ class CommandEvaluator(object):
 
         UP_node = node
         with tagswitch(node) as case:
-            if case(command_e.Simple):
+            if case(command_e.Simple):  # LEAF command
                 node = cast(command.Simple, UP_node)
 
                 # for $LINENO, e.g.  PS4='+$SOURCE_NAME:$LINENO:'
@@ -1492,6 +1473,8 @@ class CommandEvaluator(object):
                 # TODO: blame_tok should always be set.
                 if node.blame_tok is not None:
                     self.mem.SetTokenForLine(node.blame_tok)
+
+                self._MaybeRunDebugTrap()
                 status = self._DoSimple(node, cmd_st)
 
             elif case(command_e.ExpandedAlias):
@@ -1500,7 +1483,12 @@ class CommandEvaluator(object):
 
             elif case(command_e.Sentence):
                 node = cast(command.Sentence, UP_node)
-                status = self._DoSentence(node)
+
+                # Don't check_errexit since this isn't a leaf command
+                if node.terminator.id == Id.Op_Semi:
+                    status = self._Execute(node.child)
+                else:
+                    status = self.shell_ex.RunBackgroundJob(node.child)
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
@@ -1511,55 +1499,80 @@ class CommandEvaluator(object):
                 cmd_st.check_errexit = True
                 status = self.shell_ex.RunSubshell(node.child)
 
-            elif case(command_e.DBracket):
+            elif case(command_e.DBracket):  # LEAF command
                 node = cast(command.DBracket, UP_node)
 
                 self.mem.SetTokenForLine(node.left)
-                status = self._DoDBracket(node, cmd_st)
+                self._MaybeRunDebugTrap()
 
-            elif case(command_e.DParen):
+                self.tracer.PrintSourceCode(node.left, node.right, self.arena)
+
+                cmd_st.check_errexit = True
+                cmd_st.show_code = True  # this is a "leaf" for errors
+                result = self.bool_ev.EvalB(node.expr)
+                status = 0 if result else 1
+
+            elif case(command_e.DParen):  # LEAF command
                 node = cast(command.DParen, UP_node)
 
                 self.mem.SetTokenForLine(node.left)
-                status = self._DoDParen(node, cmd_st)
+                self._MaybeRunDebugTrap()
 
-            elif case(command_e.VarDecl):
+                self.tracer.PrintSourceCode(node.left, node.right, self.arena)
+
+                cmd_st.check_errexit = True
+                cmd_st.show_code = True  # this is a "leaf" for errors
+                i = self.arith_ev.EvalToInt(node.child)
+                status = 1 if i == 0 else 0
+
+            elif case(command_e.ControlFlow):  # LEAF command
+                node = cast(command.ControlFlow, UP_node)
+
+                self.mem.SetTokenForLine(node.keyword)
+                self._MaybeRunDebugTrap()
+
+                status = self._DoControlFlow(node)
+
+            elif case(command_e.VarDecl):  # LEAF command
                 node = cast(command.VarDecl, UP_node)
 
                 # Point to var name (bare assignment has no keyword)
-                self.mem.SetTokenForLine(node.lhs[0].name)
+                self.mem.SetTokenForLine(node.lhs[0].left)
                 status = self._DoVarDecl(node)
 
-            elif case(command_e.Mutation):
+            elif case(command_e.Mutation):  # LEAF command
                 node = cast(command.Mutation, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)  # point to setvar/set
                 self._DoMutation(node)
                 status = 0  # if no exception is thrown, it succeeds
 
-            elif case(command_e.ShAssignment):  # Only unqualified assignment
+            elif case(command_e.ShAssignment):  # LEAF command
                 node = cast(command.ShAssignment, UP_node)
 
                 self.mem.SetTokenForLine(node.pairs[0].left)
+                self._MaybeRunDebugTrap()
+
+                # Only unqualified assignment a=b
                 status = self._DoShAssignment(node, cmd_st)
 
-            elif case(command_e.Expr):
+            elif case(command_e.Expr):  # YSH LEAF command
                 node = cast(command.Expr, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)
+                # YSH debug trap?
+
                 status = self._DoExpr(node)
 
-            elif case(command_e.Retval):
+            elif case(command_e.Retval):  # YSH LEAF command
                 node = cast(command.Retval, UP_node)
 
                 self.mem.SetTokenForLine(node.keyword)
-                self._DoRetval(node)
+                # YSH debug trap?  I think we don't want the debug trap in func
+                # dialect, for speed?
 
-            elif case(command_e.ControlFlow):
-                node = cast(command.ControlFlow, UP_node)
-
-                self.mem.SetTokenForLine(node.keyword)
-                status = self._DoControlFlow(node)
+                val = self.expr_ev.EvalExpr(node.val, node.keyword)
+                raise vm.ValueControlFlow(node.keyword, val)
 
             # Note CommandList and DoGroup have no redirects, but BraceGroup does.
             # DoGroup has 'do' and 'done' spids for translation.
@@ -1615,6 +1628,7 @@ class CommandEvaluator(object):
 
                 # Needed for error, when the func is an existing variable name
                 self.mem.SetTokenForLine(node.name)
+
                 self._DoFunc(node)
                 status = 0
 
@@ -1635,6 +1649,7 @@ class CommandEvaluator(object):
 
                 # Must set location for 'case $LINENO'
                 self.mem.SetTokenForLine(node.case_kw)
+                self._MaybeRunDebugTrap()
                 status = self._DoCase(node)
 
             elif case(command_e.TimeBlock):
@@ -1698,7 +1713,9 @@ class CommandEvaluator(object):
         errexit_loc = loc.Missing  # type: loc_t
         check_errexit = True
 
-        with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):
+        status = 0
+
+        with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):  # for wait()
             try:
                 redirects = self._EvalRedirects(node)
             except error.RedirectEval as e:
@@ -1709,62 +1726,77 @@ class CommandEvaluator(object):
                     e.location = self.mem.GetFallbackLocation()
                 self.errfmt.PrettyPrintError(e, prefix='failglob: ')
                 redirects = None
-
-            if redirects is None:  # Error evaluating redirect words
+            if redirects is None:
+                # Error evaluating redirect words
                 status = 1
 
-            else:
-                if self.shell_ex.PushRedirects(redirects):
-                    # This pops redirects.  There is an asymmetry because applying
-                    # redirects can fail.
-                    with vm.ctx_Redirect(self.shell_ex, len(redirects)):
-                        try:
-                            status = self._Dispatch(node, cmd_st)
-                            check_errexit = cmd_st.check_errexit
-                        except error.FailGlob as e:
-                            if not e.HasLocation():  # Last resort!
-                                e.location = self.mem.GetFallbackLocation()
-                            self.errfmt.PrettyPrintError(e,
-                                                         prefix='failglob: ')
-                            status = 1
-                            check_errexit = True  # probably not necessary?
+            # Translation fix: redirect I/O errors may happen in a C++
+            # destructor ~vm::ctx_Redirect, which means they must be signaled
+            # by out params, not exceptions.
+            io_errors = []  # type: List[error.IOError_OSError]
 
-                    # Compute status from @PIPESTATUS
-                    pipe_status = cmd_st.pipe_status
-
-                    if pipe_status is None:
-                        # bash/mksh set PIPESTATUS set even on non-pipelines
-                        # This makes it annoying to check both _process_sub_status and
-                        # _pipeline_status
-                        #self.mem.SetSimplePipeStatus(status)
-                        pass
-
-                    else:  # Did we run a pipeline?
-                        self.mem.SetPipeStatus(pipe_status)
-
-                        if self.exec_opts.pipefail():
-                            # The status is that of the last command that is non-zero.
-                            status = 0
-                            for i, st in enumerate(pipe_status):
-                                if st != 0:
-                                    status = st
-                                    errexit_loc = cmd_st.pipe_locs[i]
-                        else:
-                            # The status is that of last command, period.
-                            status = pipe_status[-1]
-
-                        if cmd_st.pipe_negated:
-                            status = 1 if status == 0 else 0
-
-                    if 0:
-                        if status == 1 and node.tag() == command_e.Simple:
-                            log('node %s', node)
-                        log('node %s status %d PIPE %s',
-                            command_str(node.tag()), status, pipe_status)
-
-                else:
-                    # I/O error when applying redirects, e.g. bad file descriptor.
+            # If we evaluated redirects, apply/push them
+            if status == 0:
+                self.shell_ex.PushRedirects(redirects, io_errors)
+                if len(io_errors):
+                    # core/process.py prints cryptic errors, so we repeat them
+                    # here.  e.g. Bad File Descriptor
+                    self.errfmt.PrintMessage(
+                        'I/O error applying redirect: %s' %
+                        pyutil.strerror(io_errors[0]),
+                        self.mem.GetFallbackLocation())
                     status = 1
+
+            # If we applied redirects successfully, run the command_t, and pop
+            # them.
+            if status == 0:
+                with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
+                    try:
+                        status = self._Dispatch(node, cmd_st)
+                        check_errexit = cmd_st.check_errexit
+                    except error.FailGlob as e:
+                        if not e.HasLocation():  # Last resort!
+                            e.location = self.mem.GetFallbackLocation()
+                        self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                        status = 1  # another redirect word eval error
+                        check_errexit = True  # probably not necessary?
+                if len(io_errors):
+                    # It would be better to point to the right redirect
+                    # operator, but we don't track it specifically
+                    e_die("Fatal error popping redirect: %s" %
+                          pyutil.strerror(io_errors[0]))
+
+        # end with - we've waited for process subs
+
+        # If it was a real pipeline, compute status from ${PIPESTATUS[@]} aka
+        # @_pipeline_status
+        pipe_status = cmd_st.pipe_status
+        # Note: bash/mksh set PIPESTATUS set even on non-pipelines. This
+        # makes it annoying to check both _process_sub_status and
+        # _pipeline_status
+
+        if pipe_status is not None:
+            # Tricky: _DoPipeline sets cmt_st.pipe_status and returns -1
+            # for a REAL pipeline (but not singleton pipelines)
+            assert status == -1, (
+                "Shouldn't have redir errors when PIPESTATUS (status = %d)" %
+                status)
+
+            self.mem.SetPipeStatus(pipe_status)
+
+            if self.exec_opts.pipefail():
+                # The status is that of the last command that is non-zero.
+                status = 0
+                for i, st in enumerate(pipe_status):
+                    if st != 0:
+                        status = st
+                        errexit_loc = cmd_st.pipe_locs[i]
+            else:
+                # The status is that of last command, period.
+                status = pipe_status[-1]
+
+            if cmd_st.pipe_negated:
+                status = 1 if status == 0 else 0
 
         # Compute status from _process_sub_status
         if process_sub_st.codes is None:
@@ -1897,7 +1929,12 @@ class CommandEvaluator(object):
         err = None  # type: error.FatalRuntime
 
         try:
-            status = self._Execute(node)
+            if cmd_flags & NoDebugTrap:
+                with state.ctx_Option(self.mutable_opts,
+                                      [option_i._no_debug_trap], True):
+                    status = self._Execute(node)
+            else:
+                status = self._Execute(node)
         except vm.IntControlFlow as e:
             if cmd_flags & RaiseControlFlow:
                 raise  # 'eval break' and 'source return.sh', etc.
@@ -2001,6 +2038,12 @@ class CommandEvaluator(object):
     def _MaybeRunDebugTrap(self):
         # type: () -> None
         """If a DEBUG trap handler exists, run it."""
+
+        # Fix lastpipe / job control / DEBUG trap interaction
+        if self.exec_opts._no_debug_trap():
+            return
+
+        # Don't run recursively run traps, etc.
         if not self.mem.ShouldRunDebugTrap():
             return
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python2
-"""Osh/word_compile.py.
+"""osh/word_compile.py.
 
-This functions in this file happens after parsing, but don't depend on
-any values at runtime.
+These functions are called after parsing, but don't depend on any runtime
+values.
 """
-from _devbuild.gen.id_kind_asdl import Id
+from _devbuild.gen.id_kind_asdl import Id, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
     SingleQuoted,
@@ -12,11 +12,9 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     word_part_t,
 )
-from mycpp.mylib import log
+from data_lang import j8
 from frontend import consts
-from osh import string_ops
-from mycpp.mylib import switch
-from data_lang import qsn_native  # IsWhitespace
+from mycpp.mylib import log, switch
 
 from typing import List, Optional, cast
 
@@ -62,9 +60,6 @@ def EvalCStringToken(tok):
     """This function is shared between echo -e and $''.
 
     $'' could use it at compile time, much like brace expansion in braces.py.
-
-    It's also used by read --qsn, hence Char_UBraced support
-    (TODO: will it be used by read --j8?)
     """
     id_ = tok.id
     value = tok.tval
@@ -72,8 +67,12 @@ def EvalCStringToken(tok):
     if 0:
         log('tok %s', tok)
 
-    if id_ in (Id.Char_Literals, Id.Unknown_Backslash):
+    if id_ in (Id.Char_Literals, Id.Unknown_Backslash, Id.Char_AsciiControl):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
+
+        # Char_AsciiControl is allowed in YSH code, for newlines in u''
+        # strings, just like r'' has
+        # TODO: could allow ONLY newline?
         return value
 
     # single quotes in the middle of a triple quoted string
@@ -100,7 +99,7 @@ def EvalCStringToken(tok):
             #raise AssertionError('Out of range')
         return chr(i)
 
-    elif id_ == Id.Char_Hex:
+    elif id_ in (Id.Char_Hex, Id.Char_YHex):
         s = value[2:]
         i = int(s, 16)
         return chr(i)
@@ -109,15 +108,15 @@ def EvalCStringToken(tok):
         s = value[2:]
         i = int(s, 16)
         #util.log('i = %d', i)
-        return string_ops.Utf8Encode(i)
+        return j8.Utf8Encode(i)
 
     elif id_ == Id.Char_UBraced:
         s = value[3:-1]  # \u{123}
         i = int(s, 16)
-        return string_ops.Utf8Encode(i)
+        return j8.Utf8Encode(i)
 
     else:
-        raise AssertionError()
+        raise AssertionError(Id_str(id_))
 
 
 def EvalSingleQuoted(part):
@@ -133,12 +132,10 @@ def EvalSingleQuoted(part):
         tmp = [t.tval for t in part.tokens]
         s = ''.join(tmp)
 
-    elif part.left.id in (Id.Left_DollarSingleQuote,
-                          Id.Left_DollarTSingleQuote):
+    elif part.left.id in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
+                          Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
+                          Id.Left_BTSingleQuote):
         # NOTE: This could be done at compile time
-
-        # TODO: Strip leading whitespace for ''' and r'''
-
         tmp = [EvalCStringToken(t) for t in part.tokens]
         s = ''.join(tmp)
 
@@ -151,10 +148,20 @@ def IsLeadingSpace(s):
     # type: (str) -> bool
     """Determines if the token before ''' etc. can be stripped.
 
-    Similar to qsn_native.IsWhitespace()
+    Similar to IsWhitespace()
     """
     for ch in s:
         if ch not in ' \t':
+            return False
+    return True
+
+
+def IsWhitespace(s):
+    # type: (str) -> bool
+    """Alternative to s.isspace() that doesn't have legacy \f \v codes.
+    """
+    for ch in s:
+        if ch not in ' \n\r\t':
             return False
     return True
 
@@ -185,7 +192,7 @@ def RemoveLeadingSpaceDQ(parts):
     if UP_first.tag() == word_part_e.Literal:
         first = cast(Token, UP_first)
         #log('T %s', first_part)
-        if qsn_native.IsWhitespace(first.tval):
+        if IsWhitespace(first.tval):
             # Remove the first part.  TODO: This could be expensive if there are many
             # lines.
             parts.pop(0)
@@ -222,9 +229,12 @@ def RemoveLeadingSpaceDQ(parts):
 
 def RemoveLeadingSpaceSQ(tokens):
     # type: (List[Token]) -> None
-    """In $''', we have Char_Literals \n In r''' and ''', we have Lit_Chars.
+    """
+    In $''', we have Char_Literals \n
+    In r''' and ''', we have Lit_Chars \n
+    In u''' and b''', we have Char_AsciiControl \n
 
-    \n.
+    Should make these more consistent.
     """
     if 0:
         log('--')
@@ -238,23 +248,25 @@ def RemoveLeadingSpaceSQ(tokens):
     line_ended = False
 
     first = tokens[0]
-    if first.id in (Id.Lit_Chars, Id.Char_Literals):
-        if qsn_native.IsWhitespace(first.tval):
+    if first.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
+        if IsWhitespace(first.tval):
             tokens.pop(0)  # Remove the first part
         if first.tval.endswith('\n'):
             line_ended = True
 
     last = tokens[-1]
     to_strip = None  # type: Optional[str]
-    if last.id in (Id.Lit_Chars, Id.Char_Literals):
+    if last.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
         if IsLeadingSpace(last.tval):
             to_strip = last.tval
             tokens.pop()  # Remove the last part
 
     if to_strip is not None:
+        #log('SQ Stripping %r', to_strip)
         n = len(to_strip)
         for tok in tokens:
-            if tok.id not in (Id.Lit_Chars, Id.Char_Literals):
+            if tok.id not in (Id.Lit_Chars, Id.Char_Literals,
+                              Id.Char_AsciiControl):
                 line_ended = False
                 continue
 
@@ -266,4 +278,3 @@ def RemoveLeadingSpaceSQ(tokens):
             line_ended = False
             if tok.tval.endswith('\n'):
                 line_ended = True
-                #log('yes %r', tok.tval)

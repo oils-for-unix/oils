@@ -138,25 +138,14 @@ class _FlagSpecAndMore {
   }
 };
 
+}  // namespace flag_spec
+
+namespace flag_util {
+
 // for testing only
 flag_spec::_FlagSpec* LookupFlagSpec(BigStr* spec_name);
 flag_spec::_FlagSpecAndMore* LookupFlagSpec2(BigStr* spec_name);
 
-args::_Attributes* Parse(BigStr* spec_name, args::Reader* arg_r);
-
-Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val);
-
-// With optional arg
-Tuple2<args::_Attributes*, args::Reader*> ParseCmdVal(
-    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val,
-    bool accept_typed_args);
-
-Tuple2<args::_Attributes*, args::Reader*> ParseLikeEcho(
-    BigStr* spec_name, runtime_asdl::cmd_value::Argv* cmd_val);
-
-args::_Attributes* ParseMore(BigStr* spec_name, args::Reader* arg_r);
-
-}  // namespace flag_spec
+}  // namespace flag_util
 
 #endif  // FRONTEND_FLAG_SPEC_H

@@ -5,10 +5,10 @@ from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import (CommandStatus, StatusArray, flow_e,
                                         flow_t)
 from _devbuild.gen.syntax_asdl import Token
-from _devbuild.gen.value_asdl import value, value_e, value_t
+from _devbuild.gen.value_asdl import value, value_t
+from core import error
 from core import pyos
-from mycpp import mylib
-from mycpp.mylib import log, tagswitch
+from mycpp.mylib import log
 
 from typing import List, Any, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -26,50 +26,6 @@ if TYPE_CHECKING:
     from core import state
 
 _ = log
-
-if mylib.PYTHON:
-
-    def HeapValueId(val):
-        # type: (value_t) -> int
-        """
-        Python's id() returns the address, which is up to 64 bits.
-
-        In C++ we can use the GC ID, which fits within 32 bits.
-        """
-        return id(val)
-
-
-def ValueId(val):
-    # type: (value_t) -> int
-    """
-    Return an integer ID for object that:
-
-    1. Can be used to determine whether 2 objects are the same, e.g. for
-       List, Dict, Func, Proc, etc.
-    2. Will help detect object cycles
-
-    Primitives types like Int and Float don't have this notion.  They're
-    immutable values that are copied and compared by value.
-    """
-    with tagswitch(val) as case:
-        if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
-                value_e.Str):
-            # These will not be on the heap if we switch to tagged pointers
-            # Str is handled conservatively - when we add small string
-            # optimization, some strings will be values, so we assume all are.
-            return -1
-        else:
-            return HeapValueId(val)
-
-
-def ValueIdString(val):
-    # type: (value_t) -> str
-    """Used by pp value (42) and = 42"""
-    heap_id = ValueId(val)  # could be -1
-    if heap_id == -1:
-        return ''
-    else:
-        return ' 0x%s' % mylib.hex_lower(heap_id)
 
 
 class ControlFlow(Exception):
@@ -226,8 +182,8 @@ class _Executor(object):
         """The 'builtin' builtin in osh/builtin_meta.py needs this."""
         return 0
 
-    def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
-        # type: (cmd_value.Argv, CommandStatus, bool, bool) -> int
+    def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
+        # type: (cmd_value.Argv, CommandStatus, int) -> int
         return 0
 
     def RunBackgroundJob(self, node):
@@ -250,12 +206,12 @@ class _Executor(object):
         # type: (CommandSub) -> str
         return ''
 
-    def PushRedirects(self, redirects):
-        # type: (List[RedirValue]) -> bool
-        return True
+    def PushRedirects(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
+        pass
 
-    def PopRedirects(self, num_redirects):
-        # type: (int) -> None
+    def PopRedirects(self, num_redirects, err_out):
+        # type: (int, List[error.IOError_OSError]) -> None
         pass
 
     def PushProcessSub(self):
@@ -324,10 +280,11 @@ class ctx_Redirect(object):
       { seq 3 > foo.txt; echo 4; } > bar.txt
     """
 
-    def __init__(self, shell_ex, num_redirects):
-        # type: (_Executor, int) -> None
+    def __init__(self, shell_ex, num_redirects, err_out):
+        # type: (_Executor, int, List[error.IOError_OSError]) -> None
         self.shell_ex = shell_ex
         self.num_redirects = num_redirects
+        self.err_out = err_out
 
     def __enter__(self):
         # type: () -> None
@@ -335,7 +292,7 @@ class ctx_Redirect(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.shell_ex.PopRedirects(self.num_redirects)
+        self.shell_ex.PopRedirects(self.num_redirects, self.err_out)
 
 
 class ctx_ProcessSub(object):

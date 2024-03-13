@@ -1,13 +1,7 @@
 # Data types for the Oils AST, aka "Lossless Syntax Tree".
 #
 # Invariant: the source text can be reconstructed byte-for-byte from this
-# tree.  The test/arena.sh file partially verifies this.
-#
-# Exceptions:
-# - <<- here docs with leading tabs, since we don't want those for
-#   conversion.  We don't want files with mixed tabs and spaces.
-# - Distinguishing between function styles wasn't necessary:
-#   - foo() { } vs function foo { }  # ksh style
+# tree.  The test/lossless.sh suite verifies this.
 
 # We usually try to preserve the physical order of the source in the ASDL
 # fields.  One exception is the order of redirects:
@@ -37,6 +31,10 @@
 
 module syntax
 {
+  use core value {
+    value
+  }
+
   # More efficient than the List[bool] pattern we've been using
   BoolParamBox = (bool b)
   IntParamBox = (int i)
@@ -88,7 +86,8 @@ module syntax
   # - Get rid of span_id, and re-compute length on demand too
   #   - span_id is only used by tools/ysh_ify.py
   #   - but length is used when computing .tval
-  Token = (id id, int col, int length, int span_id, SourceLine? line, str tval)
+  # tval is omitted for many Kind.X in Lexer.Read()
+  Token = (id id, int col, int length, int span_id, SourceLine? line, str? tval)
 
   # Slight ASDL bug: CompoundWord has to be defined before using it as a shared
   # variant.  The _product_counter algorithm should be moved into a separate
@@ -136,7 +135,7 @@ module syntax
   BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
       Token token,       # location for the name
-      str var_name,   # the name
+      str var_name,      # the name
       Token? prefix_op,  # prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op,
@@ -149,7 +148,7 @@ module syntax
   DoubleQuoted = (Token left, List[word_part] parts, Token right)
   SingleQuoted = (Token left, List[Token] tokens, Token right)
 
-  SimpleVarSub = (Token left, str var_name)
+  NameTok = (Token left, str var_name)
 
   CommandSub = (Token left_token, command child, Token right)
 
@@ -175,12 +174,13 @@ module syntax
   | EscapedLiteral(Token token, str ch)
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
-  | SimpleVarSub %SimpleVarSub
+  | SimpleVarSub %NameTok
   | BracedVarSub %BracedVarSub
     # For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %CommandSub
     # ~ or ~bob
-  | TildeSub(Token token, str? user_name)
+  | TildeSub(Token left, # always the tilde
+             Token? name, str? user_name)
   | ArithSub(Token left, arith_expr anode, Token right)
     # {a,b,c}
   | BracedTuple(List[CompoundWord] words)
@@ -225,7 +225,7 @@ module syntax
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
-    VarSub %SimpleVarSub  # e.g. $(( x ))
+    VarSub %NameTok        # e.g. $(( x ))
   | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
@@ -454,8 +454,7 @@ module syntax
   TypeExpr = (Token tok, str name, List[TypeExpr] params)
 
   # LHS bindings in var/const, and eggex
-  # TODO: need str name, Token blame_tok
-  NameType = (Token name, TypeExpr? typ)
+  NameType = (Token left, str name, TypeExpr? typ)
 
   # TODO: Inline this into GenExp and ListComp?  Just use a flag there?
   Comprehension = (List[NameType] lhs, expr iter, expr? cond)
@@ -468,10 +467,10 @@ module syntax
   Subscript = (Token left, expr obj, expr index)
 
   # Attributes are obj.attr, d->key, name::scope,
-  Attribute = (expr obj, Token op, Token attr, expr_context ctx)
+  Attribute = (expr obj, Token op, Token attr, str attr_name, expr_context ctx)
 
   y_lhs = 
-    Var(Token name)  # TODO: add str var_name
+    Var %NameTok
   | Subscript %Subscript
   | Attribute %Attribute
 
@@ -482,11 +481,12 @@ module syntax
   | Attribute(Token op, Token attr)
 
   expr =
-    # a variable name to evaluate
-    Var(Token name)  # TODO: add str var_name
-    # For null, Bool, Int, Float
+    Var(Token left, str name)  # a variable name to evaluate
+    # Constants are typically Null, Bool, Int, Float
+    #           and also Str for key in {key: 42}
+    # But string literals are SingleQuoted or DoubleQuoted
     # Python uses Num(object n), which doesn't respect our "LST" invariant.
-  | Const(Token c)
+  | Const(Token c, value val)
 
     # read(&x)  json read (&x[0])
   | Place(Token blame_tok, str var_name, place_op* ops)
@@ -497,7 +497,7 @@ module syntax
     # / d+ ; ignorecase; %python /
   | Eggex %Eggex
 
-  | SimpleVarSub %SimpleVarSub
+  | SimpleVarSub %NameTok  # $name is not an expr, but $? is
   | BracedVarSub %BracedVarSub
   | CommandSub %CommandSub
   | SingleQuoted %SingleQuoted

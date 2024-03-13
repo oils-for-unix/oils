@@ -98,6 +98,19 @@ It's great for prototyping.
   scratch, be ambitious.  For example, you might want to show us how to
   implement [nonlinear pipelines](https://github.com/oilshell/oil/issues/843).
 
+### I aim for 24 hour response time
+
+Please feel free to ping `andychu` on Zulip or Github if you're **waiting** for
+a pull request review!  (or to ask questions)
+
+Usually I can respond in 24 hours. I might be traveling, in which case I'll
+respond with something like *I hope to look at this by Tuesday*.
+
+I might have also **missed** your Github message, so it doesn't hurt to ping
+me.
+
+Thank you for the contributions!
+
 ### Docs
 
 The [Wiki](https://github.com/oilshell/oil/wiki) has many developer docs.  Feel
@@ -299,6 +312,6 @@ There are README files in many subdirectories, like
 * [oilshell.zulipchat.com][] is for any kind of discussion
 * Subscribe for updates:
   * [/r/oilshell on Reddit](https://www.reddit.com/r/oilshell/)
-  * [@oilshellblog on Twitter](https://twitter.com/oilshellblog)
+  * [@oilsforunix on Twitter](https://twitter.com/oilsforunix)
 
 

@@ -5,10 +5,12 @@ from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import loc
 from core import error
 from core.error import e_die_status, e_usage
+from core import executor
 from core import state
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import typed_args
+from mycpp import mops
 from mycpp.mylib import log
 
 _ = log
@@ -80,54 +82,27 @@ class Try(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('try_',
+        _, arg_r = flag_util.ParseCmdVal('try_',
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalCommand(cmd_val)
-        if cmd:
-            status = 0  # success by default
-            try:
-                with ctx_Try(self.mutable_opts):
-                    unused = self.cmd_ev.EvalCommand(cmd)
-            except error.Expr as e:
-                status = e.ExitStatus()
-            except error.ErrExit as e:
-                status = e.ExitStatus()
-            except error.UserError as e:
-                status = e.ExitStatus()
+        rd = typed_args.ReaderForProc(cmd_val)
+        cmd = rd.PosCommand()
+        rd.Done()
 
-            self.mem.SetTryStatus(status)
-            return 0
-
-        if arg_r.Peek() is None:
-            e_usage('expects a block or command argv', loc.Missing)
-
-        argv, locs = arg_r.Rest2()
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args)
-
+        status = 0  # success by default
         try:
-            # Temporarily turn ON errexit, but don't pass a SPID because we're
-            # ENABLING and not disabling.  Note that 'if try myproc' disables it and
-            # then enables it!
             with ctx_Try(self.mutable_opts):
-                # Pass do_fork=True.  Slight annoyance: the real value is a field of
-                # command.Simple().  See _NoForkLast() in CommandEvaluator.
-                # We have an extra fork (miss out on an optimization) of code
-                # like ( try ls ) or forkwait { try ls }, but that is NOT
-                # idiomatic code.  try is for procs/compound expressions.
-                cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-                status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
-                #log('st %d', status)
+                unused = self.cmd_ev.EvalCommand(cmd)
         except error.Expr as e:
             status = e.ExitStatus()
         except error.ErrExit as e:
             status = e.ExitStatus()
-        except error.UserError as e:
-            status = e.ExitStatus()
 
-        # special variable
+        except error.Structured as e:
+            status = e.ExitStatus()
+            self.mem.SetTryError(e.ToDict())
+
         self.mem.SetTryStatus(status)
         return 0
 
@@ -140,7 +115,7 @@ class Error(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('error',
+        _, arg_r = flag_util.ParseCmdVal('error',
                                          cmd_val,
                                          accept_typed_args=True)
 
@@ -150,14 +125,22 @@ class Error(vm._Builtin):
                               cmd_val.arg_locs[0])
 
         rd = typed_args.ReaderForProc(cmd_val)
-        status = rd.NamedInt('status', 1)
+        # Status 10 is distinct from what the Oils interpreter itself uses.  We
+        # use status 3 for expressions and 4 for encode/decode, and 10 "leaves
+        # room" for others.
+        # The user is of course free to choose status 1.
+        status = mops.BigTruncate(rd.NamedInt('status', 10))
+
+        # attach rest of named args to _error Dict
+        properties = rd.RestNamed()
         rd.Done()
 
         if status == 0:
             raise error.Usage('status must be a non-zero integer',
                               cmd_val.arg_locs[0])
 
-        raise error.UserError(status, message, cmd_val.arg_locs[0])
+        raise error.Structured(status, message, cmd_val.arg_locs[0],
+                               properties)
 
 
 class BoolStatus(vm._Builtin):
@@ -170,7 +153,7 @@ class BoolStatus(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        _, arg_r = flag_spec.ParseCmdVal('boolstatus', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('boolstatus', cmd_val)
 
         if arg_r.Peek() is None:
             e_usage('expected a command to run', loc.Missing)
@@ -180,7 +163,8 @@ class BoolStatus(vm._Builtin):
                                   cmd_val.pos_args, cmd_val.named_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, True)
+        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,
+                                                executor.DO_FORK)
 
         if status not in (0, 1):
             e_die_status(status,

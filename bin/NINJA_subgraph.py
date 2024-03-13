@@ -1,7 +1,6 @@
 """
 bin/NINJA_subgraph.py
 """
-
 from __future__ import print_function
 
 from build import ninja_lib
@@ -55,7 +54,8 @@ def NinjaGraph(ru):
                 'gen-oils-for-unix',
                 deps,
                 implicit=['_bin/shwrap/mycpp_main', RULES_PY],
-                variables=[('out_prefix', prefix), ('main_name', main_name)])
+                variables=[('out_prefix', prefix), ('main_name', main_name),
+                           ('preamble', 'cpp/preamble.h')])
 
         if main_name == 'oils_for_unix':
             # The main program!
@@ -74,8 +74,9 @@ def NinjaGraph(ru):
                      deps=[
                          '//bin/text_files',
                          '//cpp/core',
-                         '//cpp/libc',
+                         '//cpp/data_lang',
                          '//cpp/fanos',
+                         '//cpp/libc',
                          '//cpp/osh',
                          '//cpp/pgen2',
                          '//cpp/pylib',
@@ -83,6 +84,8 @@ def NinjaGraph(ru):
                          '//cpp/frontend_flag_spec',
                          '//cpp/frontend_match',
                          '//cpp/frontend_pyreadline',
+                         '//data_lang/nil8.asdl',
+                         '//data_lang/pretty.asdl',
                          '//frontend/arg_types',
                          '//frontend/consts',
                          '//frontend/help_meta',

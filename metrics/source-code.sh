@@ -19,7 +19,7 @@ filter-py() {
   grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py|NINJA_subgraph.py$'
 }
 
-readonly -a ASDL_FILES=( {frontend,core}/*.asdl )
+readonly -a OSH_ASDL=( {frontend,core}/*.asdl )
 
 # OSH and common
 osh-files() {
@@ -30,16 +30,8 @@ osh-files() {
 
   ls bin/oils_for_unix.py {osh,core,frontend}/*.py builtin/*_osh.py \
     pyext/*.c */*.pyi \
-    "${ASDL_FILES[@]}" \
+    "${OSH_ASDL[@]}" \
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$|os.pyi$'
-}
-
-ysh-files() {
-  ls ysh/*.{py,pgen2} builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
-}
-
-data-lang-files() {
-  ls data_lang/*.py  | filter-py
 }
 
 # cloc doesn't understand ASDL files.
@@ -66,26 +58,35 @@ print "%5d %s" % (total, "total")
 }
 
 cloc-report() {
-  echo 'OSH (non-blank non-comment lines)'
+  echo '(non-blank non-comment lines)'
+  echo
+
+  echo 'OSH'
   echo
   osh-files | xargs cloc --quiet "$@"
   echo
   echo
 
-  echo 'YSH (non-blank non-comment lines)'
+  echo 'YSH'
   echo
   ysh-files | xargs cloc --quiet "$@"
   echo
   echo
 
-  echo 'Data Languages (non-blank non-comment lines)'
+  echo 'Data Languages'
   echo
   data-lang-files | xargs cloc --quiet "$@"
   echo
   echo
 
+  echo 'Tools'
+  echo
+  tools-files | xargs cloc --quiet "$@"
+  echo
+  echo
+
   echo 'ASDL SCHEMAS (non-blank non-comment lines)'
-  asdl-cloc "${ASDL_FILES[@]}"
+  asdl-cloc "${OSH_ASDL[@]}" data_lang/*.asdl
   echo
   echo
 
@@ -152,7 +153,7 @@ category-html() {
 #
 
 # Note this style is OVERLY ABSTRACT, but it's hard to do better in shell.  We
-# want to parameterize over text and HTML.  In Oil I think we would use this:
+# want to parameterize over text and HTML.  In Oils I think we would use this:
 #
 # proc p1 {
 #   category 'OSH (and common libraries)' {
@@ -176,12 +177,22 @@ osh-counts() {
     "$@"
 }
 
+ysh-files() {
+  ls ysh/*.{py,pgen2} builtin/{func,method}*.py builtin/*_ysh.py | filter-py 
+}
+
 ysh-counts() {
   local count=$1
   shift
 
   ysh-files | $count \
     'YSH' 'Expression grammar, parser, evaluator, etc.' "$@"
+}
+
+data-lang-files() {
+  ls data_lang/*.asdl
+  ls data_lang/*.py | filter-py
+  ls data_lang/*.{c,h} | egrep -v '_test'  # exclude j8_test_lib as well
 }
 
 data-lang-counts() {
@@ -192,6 +203,17 @@ data-lang-counts() {
     'Data Languages' 'JSON, J8 Notation, ...' "$@"
 }
 
+tools-files() {
+  ls tools/*.py | filter-py
+}
+
+tools-counts() {
+  local count=$1
+  shift
+
+  tools-files | $count \
+    'Tools' '' "$@"
+}
 
 cpp-binding-files() {
   ls cpp/*.{cc,h} | egrep -v '_test.cc' 
@@ -257,17 +279,22 @@ code-generator-counts() {
 
   ls asdl/*.py | filter-py | grep -v -E 'arith_|tdop|_demo' | $count \
     'Zephyr ASDL' \
-    'A DSL for algebraic data types, borrowed from Python.  Oil is the most strongly typed Bourne shell implementation!' \
+    'A DSL for algebraic data types, borrowed from Python.  Oils is the most strongly typed Bourne shell implementation!' \
     "$@"
 
   ls pgen2/*.py | filter-py | $count \
     'pgen2 Parser Generator' \
-    'An LL(1) parser generator used to parse Oil expressions.  Also borrowed from CPython.' \
+    'An LL(1) parser generator used to parse YSH expressions.  Also borrowed from CPython.' \
     "$@"
 
   ls */*_gen.py | $count \
     'Other Code Generators' \
-    'In order to make Oil statically typed, we had to abandon Python reflection and use C++ source code generation instead.  The lexer, flag definitions, and constants can be easily compiled to C++.' \
+    'In order to make Oils statically typed, we had to abandon Python reflection and use C++ source code generation instead.  The lexer, flag definitions, and constants can be easily compiled to C++.' \
+    "$@"
+
+  ls yaks/*.py | filter-py | $count \
+    'Yaks' \
+    'Experimental replacement for mycpp' \
     "$@"
 }
 
@@ -306,6 +333,8 @@ _for-translation() {
 
   data-lang-counts $count "$@"
 
+  tools-counts $count "$@"
+
   spec-gold-counts $count "$@"
 
   gen-cpp-counts $count "$@"
@@ -320,6 +349,8 @@ _overview() {
   ysh-counts $count "$@"
 
   data-lang-counts $count "$@"
+
+  tools-counts $count "$@"
 
   ls stdlib/*.ysh | $count \
     "YSH stdlib" '' "$@"
@@ -366,9 +397,6 @@ _overview() {
     'Generated Python Code' \
     'For the Python App Bundle.' \
     "$@"
-
-  ls tools/*.py | filter-py | $count \
-    'Tools' '' "$@"
 
   ls {doctools,lazylex}/*.py doctools/*.{h,cc} | filter-py | $count \
     'Doc Tools' '' "$@"
@@ -451,12 +479,12 @@ num_files\tinteger' >$tmp_dir/INDEX.schema.tsv
 }
 
 for-translation-html() {
-  local title='Overview: Translating Oil to C++'
+  local title='Overview: Translating Oils to C++'
   counts-html for-translation "$title"
 }
 
 overview-html() {
-  local title='Overview of Oil Code'
+  local title='Overview of Oils Code'
   counts-html overview "$title"
 }
 

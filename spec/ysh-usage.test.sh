@@ -24,6 +24,25 @@ line 10
 
 #### --debug-file
 $SH --debug-file $TMP/debug.txt -c 'true'
-grep 'OSH started with' $TMP/debug.txt >/dev/null && echo yes
+grep 'Oils started with' $TMP/debug.txt >/dev/null && echo yes
 ## stdout: yes
 
+#### Filename quoting
+
+echo '(BAD' > no-quoting
+echo '(BAD' > 'with spaces.sh'
+echo '(BAD' > $'bad \xff'
+
+write -n '' > err.txt
+
+$SH no-quoting 2>>err.txt || true
+$SH 'with spaces.sh' 2>>err.txt || true
+$SH $'bad \xff' 2>>err.txt || true
+
+egrep --only-matching '^.*:1' err.txt
+
+## STDOUT:
+no-quoting:1
+"with spaces.sh":1
+b'bad \yff':1
+## END

@@ -420,7 +420,7 @@ func mymax (...args) {
 = mymax([5,6,7])  # => 7
 = mymax(5,6,7,8)  # error
 
-## status: 1
+## status: 10
 ## STDOUT:
 (Int)   6
 (Int)   7

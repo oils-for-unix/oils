@@ -11,9 +11,10 @@ from core import pyos
 from core import state
 from core import vm
 from data_lang import j8
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import args
 from frontend import typed_args
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
 
@@ -43,7 +44,6 @@ class Json(vm._Builtin):
         self.is_j8 = is_j8
         self.name = 'j8' if is_j8 else 'json'  # for error messages
 
-        self.j8print = j8.Printer()
         self.stdout_ = mylib.Stdout()
 
     def Run(self, cmd_val):
@@ -60,7 +60,7 @@ class Json(vm._Builtin):
             # NOTE slightly different flags
             # json write --surrogate-ok $'\udc00'
             # not valid for j8 write
-            attrs = flag_spec.Parse('json_write', arg_r)
+            attrs = flag_util.Parse('json_write', arg_r)
 
             arg_jw = arg_types.json_write(attrs.attrs)
 
@@ -72,13 +72,10 @@ class Json(vm._Builtin):
             rd.Done()
 
             if arg_jw.pretty:  # C++ BUG Here!
-                indent = arg_jw.indent
-                #log('arg_jw indent %d', indent)
-                extra_newline = False
+                indent = mops.BigTruncate(arg_jw.indent)
             else:
                 # How yajl works: if indent is -1, then everything is on one line.
                 indent = -1
-                extra_newline = True
 
             #log('json write indent %d', indent)
 
@@ -86,20 +83,19 @@ class Json(vm._Builtin):
 
             try:
                 if self.is_j8:
-                    self.j8print.PrintMessage(val, buf, indent)
+                    j8.PrintMessage(val, buf, indent)
                 else:
-                    self.j8print.PrintJsonMessage(val, buf, indent)
+                    j8.PrintJsonMessage(val, buf, indent)
             except error.Encode as e:
-                self.errfmt.PrintMessage('%s write: %s' % (self.name,
-                                                           e.Message()),
-                                         action_loc)
+                self.errfmt.PrintMessage(
+                    '%s write: %s' % (self.name, e.Message()), action_loc)
                 return 1
 
             self.stdout_.write(buf.getvalue())
             self.stdout_.write('\n')
 
         elif action == 'read':
-            attrs = flag_spec.Parse('json_read', arg_r)
+            attrs = flag_util.Parse('json_read', arg_r)
             arg_jr = arg_types.json_read(attrs.attrs)
             # TODO:
             # Respect -validate=F
@@ -130,21 +126,16 @@ class Json(vm._Builtin):
                                          posix.strerror(e.err_num))
                 return 1
 
-            if mylib.PYTHON:
-                p = j8.Parser(contents)
-                try:
-                    if self.is_j8:
-                        val = p.ParseJ8()
-                    else:
-                        val = p.ParseJson()
-                except error.Decode as err:
-                    # TODO: Need to show position info
-                    self.errfmt.Print_('%s read: %s' %
-                                       (self.name, err.Message()),
-                                       blame_loc=action_loc)
-                    return 1
+            p = j8.Parser(contents, self.is_j8)
+            try:
+                val = p.ParseValue()
+            except error.Decode as err:
+                # TODO: Need to show position info
+                self.errfmt.Print_('%s read: %s' % (self.name, err.Message()),
+                                   blame_loc=action_loc)
+                return 1
 
-                self.mem.SetPlace(place, val, blame_loc)
+            self.mem.SetPlace(place, val, blame_loc)
 
         else:
             raise error.Usage(_JSON_ACTION_ERROR, action_loc)

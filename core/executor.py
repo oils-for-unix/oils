@@ -21,6 +21,7 @@ from core import error
 from core import process
 from core.error import e_die, e_die_status
 from core import pyos
+from core import state
 from core import ui
 from core import vm
 from frontend import consts
@@ -85,6 +86,18 @@ class _ProcessSubFrame(object):
 
         status_array.codes = codes
         status_array.locs = locs
+
+
+# Big flgas for RunSimpleCommand
+DO_FORK = 1 << 1
+NO_CALL_PROCS = 1 << 2  # command ls suppresses function lookup
+USE_DEFAULT_PATH = 1 << 3  # for command -p ls changes the path
+
+# Copied from var.c in dash
+DEFAULT_PATH = [
+    '/usr/local/sbin', '/usr/local/bin', '/usr/sbin', '/usr/bin', '/sbin',
+    '/bin'
+]
 
 
 class ShellExecutor(vm._Executor):
@@ -202,13 +215,13 @@ class ShellExecutor(vm._Executor):
 
         return status
 
-    def RunSimpleCommand(self, cmd_val, cmd_st, do_fork, call_procs=True):
-        # type: (cmd_value.Argv, CommandStatus, bool, bool) -> int
+    def RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
+        # type: (cmd_value.Argv, CommandStatus, int) -> int
         """Run builtins, functions, external commands.
 
         Possible variations:
         - YSH might have different, simpler rules.  No special builtins, etc.
-        - YSH might have OILS_PATH = @( ... ) or something.
+        - YSH might have OILS_PATH = :| /bin /usr/bin | or something.
         - Interpreters might want to define all their own builtins.
 
         Args:
@@ -247,6 +260,7 @@ class ShellExecutor(vm._Executor):
             #  e_die_status(status, 'special builtin failed')
             return status
 
+        call_procs = not (run_flags & NO_CALL_PROCS)
         # Builtins like 'true' can be redefined as functions.
         if call_procs:
             proc_node = self.procs.get(arg0)
@@ -297,30 +311,36 @@ class ShellExecutor(vm._Executor):
         environ = self.mem.GetExported()  # Include temporary variables
 
         if cmd_val.typed_args:
-            e_die('Unexpected typed args passed to external command %r' % arg0,
-                  cmd_val.typed_args.left)
+            e_die(
+                '%r appears to be external. External commands don\'t accept typed args (OILS-ERR-200)'
+                % arg0, cmd_val.typed_args.left)
 
         # Resolve argv[0] BEFORE forking.
-        argv0_path = self.search_path.CachedLookup(arg0)
+        if run_flags & USE_DEFAULT_PATH:
+            argv0_path = state.LookupExecutable(arg0, DEFAULT_PATH)
+        else:
+            argv0_path = self.search_path.CachedLookup(arg0)
         if argv0_path is None:
             self.errfmt.Print_('%r not found' % arg0, arg0_loc)
             return 127
 
         # Normal case: ls /
-        if do_fork:
+        if run_flags & DO_FORK:
             thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val,
                                           environ)
             p = process.Process(thunk, self.job_control, self.job_list,
                                 self.tracer)
+
             if self.job_control.Enabled():
                 if self.fg_pipeline is not None:
-                    first_pid = self.fg_pipeline.pids[0]
-                    assert first_pid == posix.getpgid(
-                        first_pid), "Expected pipeline leader"
-                    change = process.SetPgid(first_pid)
+                    pgid = self.fg_pipeline.ProcessGroupId()
+                    # If job control is enabled, this should be true
+                    assert pgid != process.INVALID_PGID
+
+                    change = process.SetPgid(pgid, self.tracer)
                     self.fg_pipeline = None  # clear to avoid confusion in subshells
                 else:
-                    change = process.SetPgid(process.OWN_LEADER)
+                    change = process.SetPgid(process.OWN_LEADER, self.tracer)
                 p.AddStateChange(change)
 
             status = p.RunProcess(self.waiter, trace.External(cmd_val.argv))
@@ -355,7 +375,7 @@ class ShellExecutor(vm._Executor):
         if UP_node.tag() == command_e.Pipeline:
             node = cast(command.Pipeline, UP_node)
             pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
-                                  self.job_control, self.job_list)
+                                  self.job_control, self.job_list, self.tracer)
             for child in node.children:
                 p = self._MakeProcess(child)
                 p.Init_ParentPipeline(pi)
@@ -375,7 +395,8 @@ class ShellExecutor(vm._Executor):
 
             p = self._MakeProcess(node)
             if self.job_control.Enabled():
-                p.AddStateChange(process.SetPgid(process.OWN_LEADER))
+                p.AddStateChange(
+                    process.SetPgid(process.OWN_LEADER, self.tracer))
 
             p.SetBackground()
             pid = p.StartProcess(trace.Fork)
@@ -387,8 +408,7 @@ class ShellExecutor(vm._Executor):
         # type: (command.Pipeline, CommandStatus) -> None
 
         pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
-                              self.job_control, self.job_list)
-        #self.job_list.AddPipeline(pi)
+                              self.job_control, self.job_list, self.tracer)
 
         # initialized with CommandStatus.CreateNull()
         pipe_locs = []  # type: List[loc_t]
@@ -422,7 +442,7 @@ class ShellExecutor(vm._Executor):
         # type: (command_t) -> int
         p = self._MakeProcess(node)
         if self.job_control.Enabled():
-            p.AddStateChange(process.SetPgid(process.OWN_LEADER))
+            p.AddStateChange(process.SetPgid(process.OWN_LEADER, self.tracer))
 
         return p.RunProcess(self.waiter, trace.ForkWait)
 
@@ -589,7 +609,7 @@ class ShellExecutor(vm._Executor):
         p.AddStateChange(redir)
 
         if self.job_control.Enabled():
-            p.AddStateChange(process.SetPgid(process.OWN_LEADER))
+            p.AddStateChange(process.SetPgid(process.OWN_LEADER, self.tracer))
 
         # Fork, letting the child inherit the pipe file descriptors.
         p.StartProcess(trace.ProcessSub)
@@ -621,17 +641,17 @@ class ShellExecutor(vm._Executor):
         else:
             raise AssertionError()
 
-    def PushRedirects(self, redirects):
-        # type: (List[RedirValue]) -> bool
+    def PushRedirects(self, redirects, err_out):
+        # type: (List[RedirValue], List[error.IOError_OSError]) -> None
         if len(redirects) == 0:  # Optimized to avoid allocs
-            return True
-        return self.fd_state.Push(redirects)
+            return
+        self.fd_state.Push(redirects, err_out)
 
-    def PopRedirects(self, num_redirects):
-        # type: (int) -> None
+    def PopRedirects(self, num_redirects, err_out):
+        # type: (int, List[error.IOError_OSError]) -> None
         if num_redirects == 0:  # Optimized to avoid allocs
             return
-        self.fd_state.Pop()
+        self.fd_state.Pop(err_out)
 
     def PushProcessSub(self):
         # type: () -> None

@@ -18,6 +18,12 @@ TEST posix_test() {
   ASSERT(posix::getppid() > 0);
   ASSERT(posix::getuid() > 0);
 
+  int pgid = posix::getpgid(0);
+  log("pgid = %d", pgid);
+
+  // pgid = posix::getpgid(9999);
+  // log("pgid = %d", pgid);
+
   Tuple2<int, int> fds = posix::pipe();
   ASSERT(fds.at0() > 0);
   ASSERT(fds.at1() > 0);

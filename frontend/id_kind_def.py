@@ -52,10 +52,10 @@ class IdSpec(object):
     def _AddId(self, id_name, kind=None):
         # type: (str, Optional[int]) -> int
         """
-    Args:
-      id_name: e.g. BoolBinary_Equal
-      kind: override autoassignment.  For AddBoolBinaryForBuiltin
-    """
+        Args:
+          id_name: e.g. BoolBinary_Equal
+          kind: override autoassignment.  For AddBoolBinaryForBuiltin
+        """
         t = self.id_index
 
         self.id_str2int[id_name] = t
@@ -159,7 +159,8 @@ def AddKinds(spec):
     # A['foo'] A["foo"] A[$foo] A["$foo"] A[${foo}] A["${foo}"]
     spec.AddKind('Word', ['Compound'])
 
-    # Token IDs in Kind.Arith are first to make the TDOP precedence table small.
+    # Token IDs in Kind.Arith are first to make the TDOP precedence table
+    # small.
     #
     # NOTE: Could share Op_Pipe, Op_Amp, Op_DAmp, Op_Semi, Op_LParen, etc.
     # Actually all of Arith could be folded into Op, because we are using
@@ -236,7 +237,9 @@ def AddKinds(spec):
 
     spec.AddKind('Eol', ['Tok'])  # no more tokens on line (\0)
 
-    spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
+    # HereTabs is for stripping tabs on each line of <<- , while preserving the
+    # "lossless invariant"
+    spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment', 'HereTabs'])
 
     # Id.WS_Space is for lex_mode_e.ShCommand; Id.Ignored_Space is for
     # lex_mode_e.Arith
@@ -266,7 +269,7 @@ def AddKinds(spec):
             'Equals',  # For = f()
             'Dollar',  # detecting 'echo $'
             'DRightBracket',  # the ]] that matches [[, NOT a keyword
-            'TildeLike',  # tilde expansion
+            'Tilde',  # tilde expansion
             'Pound',  # for comment or VarOp state
             'TPound',  # for doc comments like ###
             'TDot',  # for multiline commands ...
@@ -390,10 +393,12 @@ def AddKinds(spec):
             'Octal3',
             'Octal4',
             'Unicode4',
-            'Unicode8',  # legacy
+            'SurrogatePair',  # JSON
+            'Unicode8',  # bash
             'UBraced',
             'Pound',  # YSH
             'Literals',
+            'AsciiControl',  # \x01-\x1f, what's disallowed in JSON
         ])
 
     # Regular expression primtiives.
@@ -433,14 +438,17 @@ def AddKinds(spec):
         [
             'DoubleQuote',
             'SingleQuote',  # ''
-            'RSingleQuote',  # r''
             'DollarSingleQuote',  # $'' for \n escapes
+            'RSingleQuote',  # r''
+            'USingleQuote',  # u''
+            'BSingleQuote',  # b''
 
             # Multiline versions
             'TDoubleQuote',  # """ """
             'TSingleQuote',  # ''' '''
             'RTSingleQuote',  # r''' '''
-            'DollarTSingleQuote',  # $''' '''
+            'UTSingleQuote',  # u''' '''
+            'BTSingleQuote',  # b''' '''
             'Backtick',  # `
             'DollarParen',  # $(
             'DollarBrace',  # ${
@@ -453,6 +461,7 @@ def AddKinds(spec):
             'CaretParen',  # ^( for Block literal in expression mode
             'CaretBracket',  # ^[ for Expr literal
             'CaretBrace',  # ^{ for Arglist
+            'CaretDoubleQuote',  # ^" for Template
             'ColonPipe',  # :| for word arrays
             'PercentParen',  # legacy %( for word arrays
         ])
@@ -612,16 +621,6 @@ def AddKinds(spec):
             'Call',
             'Proc',
             'Func',
-            'Class',
-            'Data',
-            'Enum',
-
-            # 'Match', 'With',  # matching
-            # not sure: yield
-            # mycpp
-            # 'Switch',
-            #   - 'init' (constructor) and maybe 'call'
-            # try except (no finally?)
 
             # builtins, NOT keywords: use, fork, wait, etc.
             # Things that don't affect parsing shouldn't be keywords.
@@ -675,23 +674,6 @@ def AddKinds(spec):
 
     spec.AddKind('Range', ['Int', 'Char', 'Dots', 'Other'])
 
-    # Note: not used now
-    spec.AddKind(
-        'QSN',
-        [
-            # LiteralBytes is a string, optimized for the common case
-            'LiteralBytes',
-            # A byte that we'll look at individually, e.g. \r \n, or just a low
-            # control code like \x01
-            'SpecialByte',
-            # UTF-8 sequences:
-            'Begin2',
-            'Begin3',
-            'Begin4',
-            'Cont',
-        ])
-
-    # Note: not used now
     spec.AddKind(
         'J8',
         [
@@ -701,22 +683,24 @@ def AddKinds(spec):
             'RBrace',
             'Comma',
             'Colon',
-
-            # Parsed
             'Null',
             'Bool',
             'Int',  # Number
             'Float',  # Number
 
-            # Low level tokens for "" b"" u""
-            'LeftQuote',
-            'LeftBQuote',
-            'LeftUQuote',
+            # High level tokens for "" b'' u''
+            # We don't distinguish them in the parser, because we parse JSON in
+            # the lexer.
+            'String',
 
-            # High level tokens for "" b"" u""
-            'AnyString',
-            'UString',  # unicode (no surrogate halves, no wtf-8)
-            'BString',
+            # JSON8 and NIL8
+            'Identifier',
+
+            # NIL8 only
+            'LParen',
+            'RParen',
+            #'Symbol',
+            'Operator',
         ])
 
 

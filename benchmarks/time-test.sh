@@ -167,9 +167,7 @@ EOF
 }
 
 test-rusage() {
-  # No assertions here yet
-
-  local out=_tmp/time-usage.csv
+  local out=_tmp/time-rusage.csv
   time-tool --tsv -o $out --rusage -- bash -c 'echo bash'
   cat $out | count-lines-and-cols 1 5
 
@@ -184,6 +182,16 @@ test-rusage() {
 
   #time-tool --tsv -o $out --rusage -- bin/osh -c 'echo osh'
   #cat $out
+}
+
+test-time-span() {
+  local out=_tmp/time-span.csv
+
+  time-tool --tsv -o $out --time-span --print-header
+  cat $out | count-lines-and-cols 1 4
+
+  time-tool --tsv -o $out --time-span -- bash -c 'echo bash'
+  cat $out | count-lines-and-cols 1 4
 }
 
 # Compare vs. /usr/bin/time.
@@ -252,7 +260,7 @@ test-time-helper() {
   echo
   
   # Error case
-  $th -z
+  $th -q
   assert $? -eq 2
 }
 

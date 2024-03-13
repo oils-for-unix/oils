@@ -108,21 +108,19 @@ YSH programs "talk about" these data languages, also called interchange formats
 or protocols.  In-memory data structures are *in service* of data languages on
 the wire, **not** the other way around.
 
-<!-- TODO: J8 Notation -->
-
-- [JSON](json.html): Currently supported only in the Python prototype of YSH.
-- [QSN](qsn.html): Quoted String Notation.  A human- and machine-readable
-  format for byte strings.
+- [J8 Notation](j8-notation.html).  An upgrade of JSON to bytes, strings,
+  lines, and structured data.
+  - [JSON](json.html).  Some usage details.
   - [Framing](framing.html)
 
 TODO:
 
-- J8 Notation &dagger;
 - Packle &dagger;
 
 ## The Shared Oils Runtime
 
 - [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html)
+- [Oils Error Catalog, With Hints](error-catalog.html)
 - [Tracing Execution](xtrace.html).  YSH enhances shell's `set -x`.
 - [Options](options.html) &dagger;.  Parsing and runtime options turn OSH into YSH.
 
@@ -135,8 +133,8 @@ Internal details:
 
 ## For Contributors
 
-- [README.md](README.html).  If you want to modify Oils, start here.  We
-  welcome contributions!
+- [README.md](oils-repo/README.html).  If you want to modify Oils, start here.
+  We welcome contributions!
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 - [Old Docs](old/index.html).  Drafts that may be deleted.
@@ -145,6 +143,9 @@ Internal Architecture:
 
 - [Notes on Oils Architecture](architecture-notes.html)
   - [Parser Architecture](parser-architecture.html)
+- [Pretty Printing](pretty-printing.html) - March 2024 design notes.
+- [mycpp/README](oils-repo/mycpp/README.html) - How we translate typed Python to
+  C++.
 
 ## More
 

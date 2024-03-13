@@ -26,7 +26,7 @@ from core import error
 from core.error import e_die, p_die
 from core import state
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import consts
 from frontend import lexer
 from frontend import match
@@ -35,7 +35,7 @@ from mycpp import mylib
 from mycpp.mylib import log
 from osh import sh_expr_eval
 from osh import word_compile
-from data_lang import qsn
+from data_lang import j8_lite
 
 import posix_ as posix
 
@@ -282,9 +282,11 @@ class Printf(vm._Builtin):
                             s = s[:precision]  # truncate
 
                     elif typ == 'q':
-                        # TODO: most shells give \' for single quote, while OSH gives $'\''
-                        # this could matter when SSH'ing
-                        s = qsn.maybe_shell_encode(s)
+                        # Most shells give \' for single quote, while OSH gives
+                        # $'\'' this could matter when SSH'ing.
+                        # Ditto for $'\\' vs. '\'
+
+                        s = j8_lite.MaybeShellEncode(s)
 
                     elif typ == 'b':
                         # Process just like echo -e, except \c handling is simpler.
@@ -313,10 +315,8 @@ class Printf(vm._Builtin):
                         # %(...)T and %d share this complex integer conversion logic
 
                         try:
-                            d = int(
-                                s
-                            )  # note: spaces like ' -42 ' accepted and normalized
-
+                            # note: spaces like ' -42 ' accepted and normalized
+                            d = int(s)
                         except ValueError:
                             # 'a is interpreted as the ASCII value of 'a'
                             if len(s) >= 1 and s[0] in '\'"':
@@ -456,9 +456,9 @@ class Printf(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         """
-    printf: printf [-v var] format [argument ...]
-    """
-        attrs, arg_r = flag_spec.ParseCmdVal('printf', cmd_val)
+        printf: printf [-v var] format [argument ...]
+        """
+        attrs, arg_r = flag_util.ParseCmdVal('printf', cmd_val)
         arg = arg_types.printf(attrs.attrs)
 
         fmt, fmt_loc = arg_r.ReadRequired2('requires a format string')

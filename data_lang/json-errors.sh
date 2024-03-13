@@ -41,6 +41,9 @@ test-parse-errors() {
 
   # Invalid token
   _error-case-X 1 'echo + | json read'
+
+  # TYG8 token, not JSON8 token
+  _error-case-X 1 'echo "(" | json read'
 }
 
 test-lex-errors() {
@@ -77,11 +80,9 @@ soil-run-py() {
 }
 
 soil-run-cpp() {
-  # This is like run-test-funcs, except errexit is off here
-  ninja _bin/cxx-asan/osh
-  #OSH=_bin/cxx-asan/osh run-test-funcs
-
-  echo TODO: enable
+  local osh=_bin/cxx-asan/osh
+  ninja $osh
+  OSH=$osh run-test-funcs
 }
 
 run-for-release() {

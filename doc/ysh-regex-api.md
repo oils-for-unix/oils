@@ -210,8 +210,7 @@ Eggexes can be composed by *splicing*.  Splicing works on expressions, not
 strings.
 
 Replacement will use shell's string literal syntax, rather than a new
-
-printf`-like mini-language.
+`printf`-like mini-language.
 
 ## Appendix: Python-like wrappers around the API
 

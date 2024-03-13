@@ -40,7 +40,7 @@ asdl-check() {
 }
 
 # NOTE: We're testing ASDL code generation with --strict because we might want
-# Oil to pass under --strict someday.
+# Oils to pass under --strict someday.
 typed-demo-asdl() {
   # We want to exclude ONLY pylib.collections_, but somehow --exclude
   # '.*collections_\.py' does not do it.  So --follow-imports=silent.  Tried

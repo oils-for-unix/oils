@@ -3,130 +3,135 @@
 # Usage:
 #   source --builtin args.sh
 #
-# Args :spec {
-#   flag -v --verbose "Verbosely"  # default is Bool, false
+# parser (&spec) {
+#   flag -v --verbose (help="Verbosely")  # default is Bool, false
 #
-#   flag -P --max-procs '''
+#   flag -P --max-procs ('int', default=-1, doc='''
 #     Run at most P processes at a time
-#     ''' (Int, default=-1)
+#     ''')
 #
-#   flag -i --invert '''
+#   flag -i --invert ('bool', default=true, doc='''
 #     Long multiline
 #     Description
-#     ''' (Bool, default = true)
+#     ''')
 #
-#   arg src 'Source'
-#   arg src 'Dest'
-#   arg times 'Foo' (Int)
+#   arg src (help='Source')
+#   arg dest (help='Dest')
+#   arg times (help='Foo')
+#
+#   rest files
 # }
 #
-# var opt, i = parseArgs(spec, ARGV)
+# var args = parseArgs(spec, ARGV)
 #
-# echo "Verbose $[opt.verbose]"
+# echo "Verbose $[args.verbose]"
 
 # TODO: See list
 # - It would be nice to keep `flag` and `arg` private, injecting them into the
 #   proc namespace only within `Args`
-# - We need a mechanism to share state between Args and `flag`/`arg` that is
-#   run in the block passed to it
-#   - It would be nice if _this was a magic param?
-#     - it would be nice if 'flag' was a "method" on something?
-#     - that's what it's doing, it's mutating "self"
-#     - _this is the thing we're currently creating
+# - We need "type object" to replace the strings 'int', 'bool', etc.
+# - flag builtin:
+#   - handle only long flag or only short flag
+#   - flag aliases
 
-proc Args ( ; out; ; block) {
+proc parser (; place ; ; block_def) {
   ## Create an args spec which can be passed to parseArgs.
   ##
   ## Example:
   ##
-  ##   # NOTE: :spec will create a variable named spec
-  ##   Args :spec {
+  ##   # NOTE: &spec will create a variable named spec
+  ##   parser (&spec) {
   ##     flag -v --verbose ('bool')
   ##   }
   ##
-  ##   var flag, i = parseArgs(spec, ARGV)
+  ##   var args = parseArgs(spec, ARGV)
 
-  var spec = {
-    flags: [],
-    args: [],
-    rest: null,
+  var p = {flags: [], args: []}
+  ctx push (p, block_def)
+
+  # Validate that p.rest = [name] or null and reduce p.rest into name or null.
+  if ('rest' in p) {
+    if (len(p.rest) > 1) {
+      error '`rest` was called more than once' (status=3)
+    } else {
+      setvar p.rest = p.rest[0]
+    }
+  } else {
+    setvar p.rest = null
   }
 
-  eval (block) | while read line {
-    json read (&parsed) <<< $line
-    var spec_frag = dict(parsed)
+  var names = {}
+  for items in ([p.flags, p.args]) {
+    for x in (items) {
+      if (x.name in names) {
+        error "Duplicate flag/arg name $[x.name] in spec" (status=3)
+      }
 
-    case (spec_frag.tag) {
-      flag {
-        call spec.flags->append(spec_frag.node)
-      }
-      arg {
-        call spec.args->append(spec_frag.node)
-      }
-      rest {
-        setvar spec.rest = spec_frag.node
-      }
+      setvar names[x.name] = null
     }
   }
-  call out->setValue(spec)
+
+  # TODO: what about `flag --name` and then `arg name`?
+
+  call place->setValue(p)
 }
 
-proc flag (short, long; type='bool', default=null) {
-  ## Declare a flag within an `Args`.
+proc flag (short, long ; type='bool' ; default=null, help=null) {
+  ## Declare a flag within an `arg-parse`.
   ##
   ## Examples:
   ##
-  ##   Args :spec {
+  ##   arg-parse (&spec) {
   ##     flag -v --verbose
   ##     flag -n --count ('int', default=1)
-  ##     flag -f --file ('str')
+  ##     flag -f --file ('str', help="File to process")
   ##   }
 
-  # TODO: help, make type take in a type object (ie. Bool, Int, Str)
-  json write --pretty=F ({ tag: 'flag', node: { short, long, type, default, help: null } })
+  # bool has a default of false, not null
+  if (type === 'bool' and default === null) {
+    setvar default = false
+  }
+
+  # TODO: validate `type`
+
+  # TODO: Should use "trimPrefix"
+  var name = long[2:]
+
+  ctx emit flags ({short, long, name, type, default, help})
 }
 
-proc arg (name) {
-  ## Declare a positional argument within an `Args`.
+proc arg (name ; ; help=null) {
+  ## Declare a positional argument within an `arg-parse`.
   ##
   ## Examples:
   ##
-  ##   Args :spec {
-  ##     arg file
+  ##   arg-parse (&spec) {
+  ##     arg name
+  ##     arg config (help="config file path")
   ##   }
 
-  # TODO: type, default and help
-  json write --pretty=F ({ tag: 'arg', node: { name, type: 'str', default: null, help: null } })
+  ctx emit args ({name, help})
 }
 
 proc rest (name) {
-  ## Take the remaining positional arguments within an `Args`.
+  ## Take the remaining positional arguments within an `arg-parse`.
   ##
   ## Examples:
   ##
-  ##   Args :grep {
+  ##   arg-parse (&grepSpec) {
   ##     arg query
   ##     rest files
   ##   }
 
-  json write --pretty=F ({ tag: 'rest', node: name })
-}
-
-func __args_getFlagName(flag) {
-  if (flag.long) {
-    return (flag.long[2:])
-  } elif (flag.short) {
-    return (flag.short[1:])
-  }
-
-  error ('No flag.long or flag.short')
+  # We emit instead of set to detect multiple invocations of "rest"
+  ctx emit rest (name)
 }
 
 func parseArgs(spec, argv) {
-  ## Given a spec created by `Args`. Parse an array of strings `argv` per that
-  ## spec.
+  ## Given a spec created by `parser`. Parse an array of strings `argv` per
+  ## that spec.
   ##
-  ## See `Args` for examples of use.
+  ## See `parser` for examples of use.
 
   var i = 0
   var positionalPos = 0
@@ -134,11 +139,13 @@ func parseArgs(spec, argv) {
   var args = {}
   var rest = []
 
-  # Would like to have: var value
-  var value = null
+  var value
+  var found
   while (i < argc) {
     var arg = argv[i]
     if (arg->startsWith('-')) {
+      setvar found = false
+
       for flag in (spec.flags) {
         if ( (flag.short and flag.short === arg) or
              (flag.long and flag.long === arg) ) {
@@ -146,28 +153,36 @@ func parseArgs(spec, argv) {
             ('bool') | (null) { setvar value = true }
             int {
               setvar i += 1
-              setvar value = int(argv[i])
+              if (i >= len(argv)) {
+                error "Expected integer after '$arg'" (status=2)
+              }
+
+              try { setvar value = int(argv[i]) }
+              if (_status !== 0) {
+                error "Expected integer after '$arg', got '$[argv[i]]'" (status=2)
+              }
             }
           }
 
-          var name = __args_getFlagName(flag)
-          setvar args[name] = value
+          setvar args[flag.name] = value
+          setvar found = true
+          break
         }
+      }
+
+      if (not found) {
+        error "Unknown flag '$arg'" (status=2)
       }
     } elif (positionalPos >= len(spec.args)) {
       if (not spec.rest) {
-        error ("Too many arguments, unexpected '$arg'")
+        error "Too many arguments, unexpected '$arg'" (status=2)
       }
 
       call rest->append(arg)
     } else {
       var pos = spec.args[positionalPos]
       setvar positionalPos += 1
-
-      case (pos.type) {
-        str { setvar value = arg }
-      }
-
+      setvar value = arg
       setvar args[pos.name] = value
     }
 
@@ -178,5 +193,19 @@ func parseArgs(spec, argv) {
     setvar args[spec.rest] = rest
   }
 
-  return ([args, i])
+  # Set defaults for flags
+  for flag in (spec.flags) {
+    if (flag.name not in args) {
+      setvar args[flag.name] = flag.default
+    }
+  }
+
+  # Raise error on missing args
+  for arg in (spec.args) {
+    if (arg.name not in args) {
+      error "Usage Error: Missing required argument $[arg.name]" (status=2)
+    }
+  }
+
+  return (args)
 }

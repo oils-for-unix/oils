@@ -61,14 +61,6 @@ SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
 
 _SIGNIFICANT_SPACE = R(r'[ \t]+', Id.WS_Space)
 
-# Tilde expansion chars are Lit_Chars, but WITHOUT the /.  The NEXT token (if
-# any) after this TildeLike token should start with a /.
-#
-# It would have been REALLY NICE to add an optional /? at the end of THIS
-# token, but we can't do that because of ${x//~/replace}.  The third / is not
-# part of the tilde sub!!!
-_TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
-
 _BACKSLASH = [
     # To be conservative, we could deny a set of chars similar to
     # _LITERAL_WHITELIST_REGEX, rather than allowing all the operator characters
@@ -149,13 +141,14 @@ LEXER_DEF[lex_mode_e.Comment] = [R(r'[^\n\0]*', Id.Ignored_Comment)]
 # TODO: Add + here because it's never special?  It's different for YSH though.
 
 # The range \x80-\xff makes sure that UTF-8 sequences are a single token.
-_LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_/.\-]+'
+_LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_.\-]+'
 
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
     # NOTE: We could add anything 128 and above to this character class?  So
     # utf-8 characters don't get split?
     R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
-    _TILDE_LIKE,
+    C('~', Id.Lit_Tilde),  # for tilde sub
+    C('/', Id.Lit_Slash),  # also for tilde sub
     C(':', Id.Lit_Colon),  # for special PATH=a:~foo tilde detection
     C('$', Id.Lit_Dollar),  # shopt -u parse_dollar
     C('#', Id.Lit_Pound),  # For comments
@@ -183,7 +176,7 @@ _EXTGLOB_BEGIN = [
     C('!(', Id.ExtGlob_Bang),
 ]
 
-_KEYWORDS = [
+KEYWORDS = [
     # NOTE: { is matched elsewhere
     C('[[', Id.KW_DLeftBracket),
     C('!', Id.KW_Bang),
@@ -211,16 +204,11 @@ _KEYWORDS = [
     C('call', Id.KW_Call),
     C('proc', Id.KW_Proc),
     C('func', Id.KW_Func),
-
-    # for future use
-    C('class', Id.KW_Class),
-    C('data', Id.KW_Data),
-    C('enum', Id.KW_Enum),
 ]
 
 # These are treated like builtins in bash, but keywords in OSH.  However, we
 # maintain compatibility with bash for the 'type' builtin.
-_CONTROL_FLOW = [
+CONTROL_FLOW = [
     C('break', Id.ControlFlow_Break),
     C('continue', Id.ControlFlow_Continue),
     C('return', Id.ControlFlow_Return),
@@ -255,8 +243,6 @@ EXPR_WORDS = [
     C('continue', Id.Expr_Continue),
     C('return', Id.Expr_Return),
 ]
-
-CONTROL_FLOW_NAMES = [name for _, name, _ in _CONTROL_FLOW]
 
 FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
 
@@ -323,7 +309,7 @@ LEXER_DEF[lex_mode_e.ShCommand] = [
     # No leading descriptor (2 is implied)
     C(r'&>', Id.Redir_AndGreat),
     C(r'&>>', Id.Redir_AndDGreat),
-] + _KEYWORDS + _CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN
+] + KEYWORDS + CONTROL_FLOW + _UNQUOTED + _EXTGLOB_BEGIN
 
 # Preprocessing before ShCommand
 LEXER_DEF[lex_mode_e.Backtick] = [
@@ -385,8 +371,11 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
     # NOTE: bash accounts for spaces and non-word punctuation like ; inside ()
     # and [].  We will avoid that and ask the user to extract a variable?
-    R(r'[a-zA-Z0-9_/-]+', Id.Lit_Chars),  # not including period
-    _TILDE_LIKE,  # bash weirdness: RHS of [[ x =~ ~ ]] is expanded
+    R(r'[a-zA-Z0-9_-]+', Id.Lit_Chars),  # not including period
+
+    # Tokens for Tilde sub.  bash weirdness: RHS of [[ x =~ ~ ]] is expanded
+    C('~', Id.Lit_Tilde),
+    C('/', Id.Lit_Slash),
     _SIGNIFICANT_SPACE,
 
     # Normally, \x evaluates to x.  But quoted regex metacharacters like \* should
@@ -419,11 +408,14 @@ LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
   _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + \
   _VARS + _EXTGLOB_BEGIN + [
 
-    _TILDE_LIKE,
+    # Token for Tilde sub
+    C('~', Id.Lit_Tilde),
+
+    # - doesn't match ~ for tilde sub
     # - doesn't match < and > so it doesn't eat <()
     # - doesn't match  @ ! ? + * so it doesn't eat _EXTGLOB_BEGIN -- ( alone it
     #   not enough
-    R(r'[^$`/}"\'\0\\#%<>@!?+*]+', Id.Lit_Chars),
+    R(r'[^$`~/}"\'\0\\#%<>@!?+*]+', Id.Lit_Chars),
     R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
@@ -461,16 +453,13 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 # 0x00012345 == \u{12345}
 # chr(0x00012345) == chr(\u{12345}) == $'\u{012345}'
 
-# We choose to match QSN (Rust) rather than Python or bash.
-# Technically it could be \u123456, because we're not embedded in a string, but
-# it's better to be consistent.
-
 _U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
 
 _X_CHAR_LOOSE = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)  # bash
 _X_CHAR_STRICT = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)  # YSH
 
 _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
+
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
 
 EXPR_CHARS = [
@@ -496,15 +485,9 @@ _C_STRING_COMMON = [
     R(r'\\U[0-9a-fA-F]{1,8}', Id.Char_Unicode8),
     R(r'\\[0abeEfrtnv\\]', Id.Char_OneChar),
 
-    # Backslash that ends a line.  Note '.' doesn't match a newline character.
-    C('\\\n', Id.Char_Literals),
-
     # e.g. \A is not an escape, and \x doesn't match a hex escape.  We allow it,
     # but a lint tool could warn about it.
     C('\\', Id.Unknown_Backslash),
-
-    # could be at the end of the line
-    #R('\\[uU]', Id.Unknown_BackslashU),
 ]
 
 ECHO_E_DEF = _C_STRING_COMMON + [
@@ -524,15 +507,46 @@ _JSON_INT = r'([1-9][0-9]*|[0-9])'  # Numbers can't start with leading 0
 _JSON_FRACTION = r'(\.[0-9]+)?'
 _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
+# R5RS extended alphabetic characters
+# https://groups.csail.mit.edu/mac/ftpdir/scheme-reports/r5rs-html/r5rs_4.html
+#
+#   ! $ % & * + - . / : < = > ? @ ^ _ ~
+
+# Description from Guile Scheme - https://www.gnu.org/software/guile/manual/html_node/Symbol-Read-Syntax.html
+#
+# "The read syntax for a symbol is a sequence of letters, digits, and extended
+# alphabetic characters, beginning with a character that cannot begin a
+# number. In addition, the special cases of +, -, and ... are read as symbols
+# even though numbers can begin with +, - or ."
+#
+# (They should have used regular languages!)
+
+# We take out $ and @ for our splicing syntax, i.e. $unquote and
+# @unquote-splicing.  And : for now because we use it for name:value.
+
+# Also note Scheme allows |a b| for symbols with funny chars, and Guile scheme
+# allows #{a b}#.  We could use `a b` or (symbol "a b").
+
+J8_SYMBOL_CHARS = r'!%&*+./<=>?^_~-'  # - is last for regex char class
+
+# yapf: disable
+J8_SYMBOL_RE = (
+    r'[a-zA-Z' + J8_SYMBOL_CHARS + ']' +
+    r'[a-zA-Z0-9' + J8_SYMBOL_CHARS + ']*')
+# yapf: enable
+
 J8_DEF = [
-    C('"', Id.J8_LeftQuote),
-    # j"" makes sense in YSH code, u"" makes sense in JSON
-    C('u"', Id.J8_LeftUQuote),
-    C('b"', Id.J8_LeftBQuote),
+    C('"', Id.Left_DoubleQuote),  # JSON string
+    # Three left quotes that are J8 only
+    C("u'", Id.Left_USingleQuote),  # unicode string
+    C("'", Id.Left_USingleQuote),  # '' is alias for u'' in data, not in code
+    C("b'", Id.Left_BSingleQuote),  # byte string
     C('[', Id.J8_LBracket),
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
     C('}', Id.J8_RBrace),
+    C('(', Id.J8_LParen),  # NIL8 only
+    C(')', Id.J8_RParen),  # NIL8 only
     C(',', Id.J8_Comma),
     C(':', Id.J8_Colon),
     C('null', Id.J8_Null),
@@ -541,33 +555,72 @@ J8_DEF = [
     R(_JSON_INT, Id.J8_Int),
     R(_JSON_INT + _JSON_FRACTION + _JSON_EXP, Id.J8_Float),
 
+    # Identifier names come AFTER null true false.
+    # - Happens to be the same as shell identifier # names.
+    # - Note that JS allows $ as an identifier, but we don't.
+    # - Used for dict keys / NIL8 field names.
+    R(VAR_NAME_RE, Id.J8_Identifier),
+
+    # Symbol is a SUPERSET of Identifier.  The first word in NIL8 can be can
+    # be either Symbol or plain Identifier, but field names can only be
+    # Identifier.  JSON8 only has Identifier.
+    #R(J8_SYMBOL_RE, Id.J8_Symbol),  # NIL8 only
+    R(r'[~!@$%^&*+=|:;./<>?-]+', Id.J8_Operator),  # NIL8 only
+
     # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),
+    # comment is # until end of line
+    # // comments are JavaScript style, but right now we might want them as
+    # symbols?
+    R(r'#[^\n\0]*', Id.Ignored_Comment),  # J8 only (JSON8, NIL8)
 
-    # TODO: AnyString, UString, and BString will also
-    # - additionally validate utf-8
-    # - decode
-    # I guess this takes 2 passes?
+    # This will reject ASCII control chars
     R(r'[^\0]', Id.Unknown_Tok),
 ]
+
+# Exclude control characters 0x00-0x1f, aka 0-31 in J8 data
+# But \n has to be allowed in multi-line strings
+_ASCII_CONTROL = R(r'[\x01-\x1F]', Id.Char_AsciiControl)
+
+# https://json.org list of chars, plus '
+_JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
 J8_STR_DEF = [
-    C('"', Id.Right_DoubleQuote),
+    C("'", Id.Right_SingleQuote),  # end for J8
+    _JSON_ONE_CHAR,
+    C("\\'", Id.Char_OneChar),
 
-    # https://json.org list of chars
-    R(r'\\["\\/bfnrt]', Id.Char_OneChar),
-    _U4_CHAR_STRICT,  # \u1234 - JSON only
+    # osh/word_parse.py relies on this.  It has to match $'', which uses _C_STRING_COMMON
+    C('\\', Id.Unknown_Backslash),
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
+    _ASCII_CONTROL,
 
-    # Exclude control characters 0x00-0x1f, aka 0-31
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\x00-\x1f]+', Id.Char_Literals),
+    R(r'''[^\\'\0]+''', Id.Char_Literals),
+]
 
-    # Should match control chars
+# For "JSON strings \" \u1234"
+JSON_STR_DEF = [
+    C('"', Id.Right_DoubleQuote),  # end for JSON
+    _JSON_ONE_CHAR,
+    _U4_CHAR_STRICT,  # \u1234 - JSON only
+
+    # High surrogate [\uD800, \uDC00)
+    # Low surrogate  [\uDC00, \uE000)
+    # This pattern makes it easier to decode.  Unpaired surrogates because Id.Char_Unicode4.
+    R(
+        r'\\u[dD][89aAbB][0-9a-fA-F][0-9a-fA-F]\\u[dD][cCdDeEfF][0-9a-fA-F][0-9a-fA-F]',
+        Id.Char_SurrogatePair),
+    _ASCII_CONTROL,
+
+    # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
+    R(r'[^\\"\0]+', Id.Char_Literals),
     R(r'[^\0]', Id.Unknown_Tok),
 ]
+
+LEXER_DEF[lex_mode_e.J8_Str] = J8_STR_DEF
 
 OCTAL3_RE = r'\\[0-7]{1,3}'
 
@@ -588,6 +641,10 @@ PS1_DEF = [
 # point of it is that supports other backslash escapes like \n!  It just
 # becomes a regular backslash.
 LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
+    # Weird special case matching bash: backslash that ends a line.  We emit
+    # this token literally in OSH, but disable it in YSH.
+    C('\\\n', Id.Unknown_Backslash),
+
     # Silly difference!  In echo -e, the syntax is \0377, but here it's $'\377',
     # with no leading 0.
     R(OCTAL3_RE, Id.Char_Octal3),
@@ -599,22 +656,6 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
     # e.g. 'foo', anything that's not a backslash escape or '
     R(r"[^\\'\0]+", Id.Char_Literals),
     C("'", Id.Right_SingleQuote),
-
-    # Backslash that ends the file!  Caught by re2c exhaustiveness check.  Parser
-    # will assert; should give a better syntax error.
-    C('\\\0', Id.Unknown_Tok),
-]
-
-# Should match the pure Python decoder in data_lang/qsn.py
-LEXER_DEF[lex_mode_e.QSN] = [
-    R(r'''\\[nrt0'"\\]''', Id.Char_OneChar),
-    _X_CHAR_STRICT,  # \xff
-    _U_BRACED_CHAR,  # \u{3bc}
-
-    # Like SQ_C, but literal newlines and tabs are illegal.
-    R(r"[^\\'\0\t\n]+", Id.Char_Literals),
-    C("'", Id.Right_SingleQuote),
-    R(r'[^\0]', Id.Unknown_Tok),
 ]
 
 LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
@@ -799,12 +840,16 @@ YSH_LEFT_UNQUOTED = [
     # In expression mode, we add the r'' and c'' prefixes for '' and $''.
     C("'", Id.Left_SingleQuote),
     C("r'", Id.Left_RSingleQuote),
+    C("u'", Id.Left_USingleQuote),
+    C("b'", Id.Left_BSingleQuote),
     C("$'", Id.Left_DollarSingleQuote),
+    C('^"', Id.Left_CaretDoubleQuote),
     C('"""', Id.Left_TDoubleQuote),
     # In expression mode, we add the r'' and c'' prefixes for '' and $''.
     C("'''", Id.Left_TSingleQuote),
     C("r'''", Id.Left_RTSingleQuote),
-    C("$'''", Id.Left_DollarTSingleQuote),
+    C("u'''", Id.Left_UTSingleQuote),
+    C("b'''", Id.Left_BTSingleQuote),
     C('@(', Id.Left_AtParen),  # Split Command Sub
     C('^(', Id.Left_CaretParen),  # Block literals in expression mode
     C('^[', Id.Left_CaretBracket),  # Expr literals

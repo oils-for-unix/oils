@@ -1,15 +1,12 @@
 """
 format.py -- Pretty print an ASDL data structure.
 
-Like encode.py, but uses text instead of binary.
-
-TODO:
+TODO: replace ad hoc line wrapper, e.g. _TrySingleLine
 
 - auto-abbreviation of single field things (minus location)
-
 - option to omit spaces for SQ, SQ, W?  It's all one thing.
 
-Places where we try a single line:
+Where we try wrap to a single line:
  - arrays
  - objects with name fields
  - abbreviated, unnamed fields
@@ -19,7 +16,7 @@ from typing import Tuple, List
 from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e,
                                       color_t)
 from core import ansi
-from data_lang import qsn
+from data_lang import j8_lite
 from pylib import cgi
 from mycpp import mylib
 
@@ -29,7 +26,7 @@ if mylib.PYTHON:
 
     def PrettyPrint(obj, f=None):
         # type: (Any, Optional[mylib.Writer]) -> None
-        """Print abbreviated tree in color, for unnit tests."""
+        """Print abbreviated tree in color.  For unit tests."""
         f = f if f else mylib.Stdout()
 
         ast_f = DetectConsoleOutput(f)
@@ -395,7 +392,7 @@ class _PrettyPrinter(object):
         if tag == hnode_e.Leaf:
             node = cast(hnode.Leaf, UP_node)
             f.PushColor(node.color)
-            f.write(qsn.maybe_encode(node.s))
+            f.write(j8_lite.EncodeString(node.s, unquoted_ok=True))
             f.PopColor()
 
         elif tag == hnode_e.External:
@@ -410,6 +407,11 @@ class _PrettyPrinter(object):
         elif tag == hnode_e.Record:
             node = cast(hnode.Record, UP_node)
             self._PrintRecord(node, f, indent)
+
+        elif tag == hnode_e.AlreadySeen:
+            node = cast(hnode.AlreadySeen, UP_node)
+            # ... means omitting second reference, while --- means a cycle
+            f.write('...0x%s' % mylib.hex_lower(node.heap_id))
 
         else:
             raise AssertionError(node)
@@ -464,7 +466,7 @@ def _TrySingleLine(node, f, max_chars):
     if tag == hnode_e.Leaf:
         node = cast(hnode.Leaf, UP_node)
         f.PushColor(node.color)
-        f.write(qsn.maybe_encode(node.s))
+        f.write(j8_lite.EncodeString(node.s, unquoted_ok=True))
         f.PopColor()
 
     elif tag == hnode_e.External:
@@ -493,6 +495,11 @@ def _TrySingleLine(node, f, max_chars):
         node = cast(hnode.Record, UP_node)
 
         return _TrySingleLineObj(node, f, max_chars)
+
+    elif tag == hnode_e.AlreadySeen:
+        node = cast(hnode.AlreadySeen, UP_node)
+        # ... means omitting second reference, while --- means a cycle
+        f.write('...0x%s' % mylib.hex_lower(node.heap_id))
 
     else:
         raise AssertionError(node)

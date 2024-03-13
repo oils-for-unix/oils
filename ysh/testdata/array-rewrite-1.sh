@@ -37,7 +37,7 @@ var regex2 = %(new1 new2)
 var flags2 = %()
 
 for r in @regex2; do
-  append :flags2 "--regex=$r"
+  append "--regex=$r" (flags2)
 done
 
 argv @flags2

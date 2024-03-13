@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.19.0 Quality
+Oils 0.21.0 Quality
 ===================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
@@ -59,8 +59,10 @@ This is a supplement to the [main release page](index.html).
   runtime errors.
 - [ysh-parse-errors](more-tests.wwz/suite-logs/ysh-parse-errors.txt).  YSH
   parse errors.
+- [ysh-every-string](more-tests.wwz/suite-logs/ysh-every-string.txt).  String
+  literal stress test.
 - [ysh-large](more-tests.wwz/suite-logs/ysh-large.txt)
-- [arena](more-tests.wwz/suite-logs/arena.txt).  Test an invariant of the parser.
+- [lossless](more-tests.wwz/suite-logs/lossles.txt).  Test an invariant of the parser.
 - [osh-usage](more-tests.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
 - [tools-deps](more-tests.wwz/suite-logs/tools-deps.txt).  Tests for a subcommand in
   progress.

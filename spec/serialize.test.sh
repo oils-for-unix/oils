@@ -1,4 +1,11 @@
-# Cross-cutting test of serialization formats.  That is, what QSTR should fix.
+## compare_shells: bash mksh zsh ash
+
+# dash doesn't have echo -e, $'', etc.
+
+# TODO: fix J8 bug causing failure
+
+# Cross-cutting test of serialization formats.  That is, what J8 Notation
+# should fix.
 #
 # TODO: Also see spec/xtrace for another use case.
 

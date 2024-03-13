@@ -436,9 +436,12 @@ echo hello >&7
 echo world >&7
 exec 7>&-
 cat "$TMP/f.txt"
-## status: 2
+
+## status: 1
 ## stdout-json: ""
-## OK mksh status: 1
+
+## OK dash status: 2
+
 ## BUG bash status: 0
 ## BUG bash stdout: hello
 

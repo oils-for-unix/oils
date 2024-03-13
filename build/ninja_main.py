@@ -26,6 +26,7 @@ from osh import NINJA_subgraph as osh_subgraph
 from mycpp import NINJA_subgraph as mycpp_subgraph
 from pea import NINJA_subgraph as pea_subgraph
 from prebuilt import NINJA_subgraph as prebuilt_subgraph
+from yaks import NINJA_subgraph as yaks_subgraph
 
 from vendor import ninja_syntax
 
@@ -73,6 +74,7 @@ def TarballManifest(cc_h_files):
   names.extend(glob('build/detect-*.c'))
 
   # TODO: crawl headers
+  # We can now use the headers=[] attribute
   names.extend(glob('mycpp/*.h'))
   names.extend(glob('cpp/*.h'))
 
@@ -318,8 +320,8 @@ def InitSteps(n):
   n.newline()
 
   n.rule('gen-oils-for-unix',
-         command='build/ninja-rules-py.sh gen-oils-for-unix $main_name $out_prefix $in',
-         description='gen-oils-for-unix $main_name $out_prefix $in')
+         command='build/ninja-rules-py.sh gen-oils-for-unix $main_name $out_prefix $preamble $in',
+         description='gen-oils-for-unix $main_name $out_prefix $preamble $in')
   n.newline()
 
 
@@ -375,6 +377,9 @@ def main(argv):
   ru.comment('')
 
   prebuilt_subgraph.NinjaGraph(ru)
+  ru.comment('')
+
+  yaks_subgraph.NinjaGraph(ru)
   ru.comment('')
 
 

@@ -17,7 +17,7 @@ source build/ninja-rules-cpp.sh
 
 readonly TEMP_DIR=_build/tmp
 
-oil-part() {
+oils-part() {
   ### Translate ASDL deps for unit tests
 
   local out_prefix=$1
@@ -31,7 +31,8 @@ oil-part() {
 
   mkdir -p $TEMP_DIR
 
-  local mypypath=$REPO_ROOT
+  # j8_lite depends on pyext/fastfunc.pyi
+  local mypypath=$REPO_ROOT:$REPO_ROOT/pyext
 
   local mycpp=_bin/shwrap/mycpp_main
 
@@ -48,7 +49,7 @@ oil-part() {
     echo "#define $guard"
     echo
     echo '#include "_gen/asdl/hnode.asdl.h"'
-    echo '#include "cpp/qsn.h"'
+    echo '#include "cpp/data_lang.h"'
     echo '#include "mycpp/runtime.h"'
     echo "$more_include"
 
@@ -69,12 +70,12 @@ EOF
 }
 
 readonly -a ASDL_FILES=(
-  $REPO_ROOT/{asdl/runtime,asdl/format,core/ansi,pylib/cgi,data_lang/qsn}.py \
+  $REPO_ROOT/{asdl/runtime,asdl/format,core/ansi,pylib/cgi,data_lang/j8_lite}.py \
 )
 
 asdl-runtime() {
   mkdir -p prebuilt/asdl $TEMP_DIR/asdl
-  oil-part \
+  oils-part \
     prebuilt/asdl/runtime.mycpp \
     $TEMP_DIR/asdl/runtime_raw.mycpp.h \
     ASDL_RUNTIME_MYCPP_H \
@@ -88,14 +89,17 @@ core-error() {
   # Depends on frontend/syntax_asdl
 
   mkdir -p prebuilt/core $TEMP_DIR/core
-  oil-part \
+  oils-part \
     prebuilt/core/error.mycpp \
     $TEMP_DIR/core/error.mycpp.h \
     CORE_ERROR_MYCPP_H \
     '
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
-#include "_gen/frontend/syntax.asdl.h"' \
+#include "_gen/frontend/syntax.asdl.h"
+
+using value_asdl::value;  // This is a bit ad hoc
+' \
     --to-header core.error \
     core/error.py
 }
@@ -104,7 +108,7 @@ frontend-args() {
   # Depends on core/runtime_asdl
 
   mkdir -p prebuilt/frontend $TEMP_DIR/frontend
-  oil-part \
+  oils-part \
     prebuilt/frontend/args.mycpp \
     $TEMP_DIR/frontend/args_raw.mycpp.h \
     FRONTEND_ARGS_MYCPP_H \
@@ -112,7 +116,10 @@ frontend-args() {
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
-#include "cpp/frontend_flag_spec.h"' \
+#include "cpp/frontend_flag_spec.h"
+
+using value_asdl::value;  // This is a bit ad hoc
+' \
     --to-header asdl.runtime \
     --to-header asdl.format \
     --to-header frontend.args \

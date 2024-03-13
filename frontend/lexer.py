@@ -26,9 +26,48 @@ if TYPE_CHECKING:
 
 def IsPlusEquals(tok):
     # type: (Token) -> bool
-    """Common pattern to test if we got foo= or foo+="""
+    """Common pattern to test if we got foo= or foo+=
+
+    Note: can be replaced by s.find('+', index, index+1), which avoids
+    allocation.
+    """
     index = tok.col + tok.length - 2
     return tok.line.content[index] == '+'
+
+
+# Also: IsWhitespace, IsLeadingSpace
+
+
+def TokenEquals(tok, s):
+    # type: (Token, str) -> bool
+
+    # TODO: Use tok.line.content.find(substr, start, end)
+
+    raise NotImplementedError()
+
+
+def TokenContains(tok, substr):
+    # type: (Token, str) -> bool
+
+    # TODO: Use tok.line.content.find(substr, start, end)
+
+    raise NotImplementedError()
+
+
+def TokenStartsWith(tok, s):
+    # type: (Token, str) -> bool
+
+    # TODO: Use tok.line.content.startswith(substr, start, end)
+
+    raise NotImplementedError()
+
+
+def TokenEndsWith(tok, s):
+    # type: (Token, str) -> bool
+
+    # TODO: Use tok.line.content.startswith(substr, start, end)
+
+    raise NotImplementedError()
 
 
 def TokenVal(tok):
@@ -51,6 +90,15 @@ def TokenSliceRight(tok, right_index):
     assert right_index < 0
     right = tok.col + tok.length + right_index
     return tok.line.content[tok.col:right]
+
+
+def TokenSlice(tok, left, right):
+    # type: (Token, int, int) -> str
+    """Slice token directly, without creating intermediate string."""
+    assert left > 0
+    start = tok.col + left
+    end = tok.col + tok.length + right
+    return tok.line.content[start:end]
 
 
 def DummyToken(id_, val):

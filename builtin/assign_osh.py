@@ -15,13 +15,13 @@ from core import error
 from core.error import e_usage
 from core import state
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import args
 from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
-from data_lang import qsn
+from data_lang import j8_lite
 
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -158,7 +158,8 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
 
         if val.tag() == value_e.Str:
             str_val = cast(value.Str, val)
-            decl.extend(["=", qsn.maybe_shell_encode(str_val.s)])
+            # TODO: Use fastfunc.ShellEncode()
+            decl.extend(["=", j8_lite.MaybeShellEncode(str_val.s)])
 
         elif val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, val)
@@ -183,14 +184,14 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
                         decl.extend([
                             " ", name, "[",
                             str(i), "]=",
-                            qsn.maybe_shell_encode(element)
+                            j8_lite.MaybeShellEncode(element)
                         ])
             else:
                 body = []  # type: List[str]
                 for element in array_val.strs:
                     if len(body) > 0:
                         body.append(" ")
-                    body.append(qsn.maybe_shell_encode(element))
+                    body.append(j8_lite.MaybeShellEncode(element))
                 decl.extend(["=(", ''.join(body), ")"])
 
         elif val.tag() == value_e.BashAssoc:
@@ -199,8 +200,10 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
             for key in sorted(assoc_val.d):
                 if len(body) > 0:
                     body.append(" ")
-                key_quoted = qsn.maybe_shell_encode(key, flags=qsn.MUST_QUOTE)
-                value_quoted = qsn.maybe_shell_encode(assoc_val.d[key])
+
+                key_quoted = j8_lite.ShellEncode(key)
+                value_quoted = j8_lite.MaybeShellEncode(assoc_val.d[key])
+
                 body.extend(["[", key_quoted, "]=", value_quoted])
             if len(body) > 0:
                 decl.extend(["=(", ''.join(body), ")"])
@@ -253,7 +256,7 @@ class Export(vm._AssignBuiltin):
         # type: (cmd_value.Assign) -> int
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()
-        attrs = flag_spec.Parse('export_', arg_r)
+        attrs = flag_util.Parse('export_', arg_r)
         arg = arg_types.export_(attrs.attrs)
         #arg = attrs
 
@@ -324,7 +327,7 @@ class Readonly(vm._AssignBuiltin):
         # type: (cmd_value.Assign) -> int
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()
-        attrs = flag_spec.Parse('readonly', arg_r)
+        attrs = flag_util.Parse('readonly', arg_r)
         arg = arg_types.readonly(attrs.attrs)
 
         if arg.p or len(cmd_val.pairs) == 0:
@@ -380,7 +383,7 @@ class NewVar(vm._AssignBuiltin):
         # type: (cmd_value.Assign) -> int
         arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
         arg_r.Next()
-        attrs = flag_spec.Parse('new_var', arg_r)
+        attrs = flag_util.Parse('new_var', arg_r)
         arg = arg_types.new_var(attrs.attrs)
 
         status = 0
@@ -516,7 +519,7 @@ class Unset(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('unset', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('unset', cmd_val)
         arg = arg_types.unset(attrs.attrs)
 
         argv, arg_locs = arg_r.Rest2()

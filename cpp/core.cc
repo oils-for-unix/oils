@@ -18,8 +18,9 @@
 #include <time.h>          // time()
 #include <unistd.h>        // getuid(), environ
 
-#include "_gen/cpp/build_stamp.h"  // gCommitHash
-#include "_gen/frontend/consts.h"  // gVersion
+#include "_build/detected-cpp-config.h"  // HAVE_PWENT
+#include "_gen/cpp/build_stamp.h"        // gCommitHash
+#include "_gen/frontend/consts.h"        // gVersion
 #include "cpp/embedded_file.h"
 
 extern char** environ;
@@ -76,20 +77,6 @@ Tuple2<int, int> ReadByte(int fd) {
   }
 }
 
-// For read --line
-// Note: this has the "FD 0 buffering issue".  See spec/ysh-place.test.sh, and
-// demo/compare-strace.sh.
-//
-// I think that's working as intended for read --line, but we should rewrite
-// pyos.Readline() to be consistent with this?  It reads one byte at a time,
-// which is not what we want.
-
-BigStr* ReadLineBuffered() {
-  BigStr* result = mylib::gStdin->readline();
-  // log("ReadLine() => [%s]", result->data_);
-  return result;
-}
-
 Dict<BigStr*, BigStr*>* Environ() {
   auto d = Alloc<Dict<BigStr*, BigStr*>>();
 
@@ -144,6 +131,7 @@ BigStr* GetHomeDir(BigStr* user_name) {
 }
 
 List<PasswdEntry*>* GetAllUsers() {
+#ifdef HAVE_PWENT
   auto* ret = NewList<PasswdEntry*>();
   struct passwd* entry = nullptr;
 
@@ -164,6 +152,12 @@ List<PasswdEntry*>* GetAllUsers() {
   endpwent();
 
   return ret;
+#else
+  fprintf(
+      stderr,
+      "Oils compiled without libc *pwent() functions.  Can't list users.\n");
+  return NewList<PasswdEntry*>();
+#endif
 }
 
 BigStr* GetUserName(int uid) {
@@ -396,18 +390,3 @@ grammar::Grammar* LoadYshGrammar(_ResourceLoader*) {
 }
 
 }  // namespace pyutil
-
-namespace vm {
-
-int HeapValueId(value_asdl::value_t* val) {
-  ObjHeader* h = ObjHeader::FromObject(val);
-
-  // ASDL generates headers with HeapTag::Scanned, but HeapTag::FixedSize would
-  // also be valid.
-  DCHECK(h->heap_tag != HeapTag::Global && h->heap_tag != HeapTag::Opaque);
-
-  // pool_id is 2 bits, so shift the 28 bit obj_id past it.
-  return (h->obj_id << 2) + h->pool_id;
-}
-
-}  // namespace vm

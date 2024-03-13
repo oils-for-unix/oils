@@ -13,6 +13,7 @@ _ = log  # shut up lint
 _PRIMITIVES = {
     'string': 'str',
     'int': 'int',
+    'BigInt': 'mops.BigInt',
     'float': 'float',
     'bool': 'bool',
     'any': 'Any',
@@ -85,6 +86,9 @@ def _DefaultValue(typ, mypy_type):
         if type_name == 'int':
             return '-1'
 
+        if type_name == 'BigInt':
+            return 'mops.BigInt(-1)'
+
         if type_name == 'bool':
             return 'False'
 
@@ -127,6 +131,9 @@ def _HNodeExpr(abbrev, typ, var_name):
         elif type_name == 'int':
             code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
 
+        elif type_name == 'BigInt':
+            code_str = 'hnode.Leaf(mops.ToStr(%s), color_e.OtherConst)' % var_name
+
         elif type_name == 'float':
             code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
 
@@ -145,7 +152,7 @@ def _HNodeExpr(abbrev, typ, var_name):
                                                                      var_name)
 
         else:
-            code_str = '%s.%s()' % (var_name, abbrev)
+            code_str = '%s.%s(trav=trav)' % (var_name, abbrev)
             none_guard = True
 
     else:
@@ -384,8 +391,15 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # PrettyTree
         #
 
-        self.Emit('  def PrettyTree(self):')
-        self.Emit('    # type: () -> hnode_t')
+        self.Emit('  def PrettyTree(self, trav=None):')
+        self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
+        self.Emit('    trav = trav or TraversalState()')
+        self.Emit('    heap_id = id(self)')
+        self.Emit('    if heap_id in trav.seen:')
+        # cut off recursion
+        self.Emit('      return hnode.AlreadySeen(heap_id)')
+        self.Emit('    trav.seen[heap_id] = True')
+
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
         self.Emit('    L = out_node.fields')
         self.Emit('')
@@ -404,8 +418,14 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         # _AbbreviatedTree
         #
 
-        self.Emit('  def _AbbreviatedTree(self):')
-        self.Emit('    # type: () -> hnode_t')
+        self.Emit('  def _AbbreviatedTree(self, trav=None):')
+        self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
+        self.Emit('    trav = trav or TraversalState()')
+        self.Emit('    heap_id = id(self)')
+        self.Emit('    if heap_id in trav.seen:')
+        # cut off recursion
+        self.Emit('      return hnode.AlreadySeen(heap_id)')
+        self.Emit('    trav.seen[heap_id] = True')
         self.Emit('    out_node = NewRecord(%r)' % pretty_cls_name)
         self.Emit('    L = out_node.fields')
 
@@ -417,15 +437,16 @@ class GenMyPyVisitor(visitor.AsdlVisitor):
         self.Emit('    return out_node')
         self.Emit('')
 
-        self.Emit('  def AbbreviatedTree(self):')
-        self.Emit('    # type: () -> hnode_t')
+        self.Emit('  def AbbreviatedTree(self, trav=None):')
+        self.Emit('    # type: (Optional[TraversalState]) -> hnode_t')
         abbrev_name = '_%s' % class_name
         if abbrev_name in self.abbrev_mod_entries:
             self.Emit('    p = %s(self)' % abbrev_name)
             # If the user function didn't return anything, fall back.
-            self.Emit('    return p if p else self._AbbreviatedTree()')
+            self.Emit(
+                '    return p if p else self._AbbreviatedTree(trav=trav)')
         else:
-            self.Emit('    return self._AbbreviatedTree()')
+            self.Emit('    return self._AbbreviatedTree(trav=trav)')
         self.Emit('')
 
     def VisitCompoundSum(self, sum, sum_name, depth):

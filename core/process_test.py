@@ -35,6 +35,14 @@ def _CommandNode(code_str, arena):
     return c_parser.ParseLogicalLine()
 
 
+class FakeJobControl(object):
+    def __init__(self, enabled):
+        self.enabled = enabled
+
+    def Enabled(self):
+        return self.enabled
+
+
 class ProcessTest(unittest.TestCase):
 
     def setUp(self):
@@ -94,13 +102,14 @@ class ProcessTest(unittest.TestCase):
 
         cmd_ev = CommandEvaluator()
 
-        self.fd_state.Push([r])
+        err_out = []
+        self.fd_state.Push([r], err_out)
         line1, _ = read_osh._ReadPortion(pyos.NEWLINE_CH, -1, cmd_ev)
-        self.fd_state.Pop()
+        self.fd_state.Pop(err_out)
 
-        self.fd_state.Push([r])
+        self.fd_state.Push([r], err_out)
         line2, _ = read_osh._ReadPortion(pyos.NEWLINE_CH, -1, cmd_ev)
-        self.fd_state.Pop()
+        self.fd_state.Pop(err_out)
 
         # sys.stdin.readline() would erroneously return 'two' because of buffering.
         self.assertEqual('one', line1)
@@ -132,7 +141,7 @@ class ProcessTest(unittest.TestCase):
                                                ext_prog=self.ext_prog)
         print('BEFORE', os.listdir('/dev/fd'))
 
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
         p.Add(self._ExtProc(['ls']))
         p.Add(self._ExtProc(['cut', '-d', '.', '-f', '2']))
         p.Add(self._ExtProc(['sort']))
@@ -150,7 +159,7 @@ class ProcessTest(unittest.TestCase):
                                                ext_prog=self.ext_prog)
 
         Banner('ls | cut -d . -f 1 | head')
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
         p.Add(self._ExtProc(['ls']))
         p.Add(self._ExtProc(['cut', '-d', '.', '-f', '1']))
 
@@ -169,7 +178,7 @@ class ProcessTest(unittest.TestCase):
         thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state)
         thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state)
 
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
         p.Add(Process(thunk1, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk2, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk3, self.job_control, self.job_list, self.tracer))
@@ -195,6 +204,42 @@ class ProcessTest(unittest.TestCase):
         # Or technically we could fork the whole interpreter for foo|bar|baz and
         # capture stdout of that interpreter.
 
+    def makeTestPipeline(self, jc):
+        cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena,
+                                               ext_prog=self.ext_prog)
+
+        pi = process.Pipeline(False, jc, self.job_list, self.tracer)
+
+        node1 = _CommandNode('/bin/echo testpipeline', self.arena)
+        node2 = _CommandNode('cat', self.arena)
+
+        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state)
+        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state)
+
+        pi.Add(Process(thunk1, jc, self.job_list, self.tracer))
+        pi.Add(Process(thunk2, jc, self.job_list, self.tracer))
+
+        return pi
+
+    def testPipelinePgidField(self):
+        jc = FakeJobControl(False)
+
+        pi = self.makeTestPipeline(jc)
+        self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
+
+        pi.StartPipeline(self.waiter)
+        # No pgid
+        self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
+
+        jc = FakeJobControl(True)
+
+        pi = self.makeTestPipeline(jc)
+        self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
+
+        pi.StartPipeline(self.waiter)
+        # first process is the process group leader
+        self.assertEqual(pi.pids[0], pi.ProcessGroupId())
+
     def testOpen(self):
         # Disabled because mycpp translation can't handle it.  We do this at a
         # higher layer.
@@ -210,3 +255,5 @@ class ProcessTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+# vim: sw=4

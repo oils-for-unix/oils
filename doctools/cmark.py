@@ -17,7 +17,7 @@ import sys
 
 from doctools import html_lib
 from doctools import doc_html  # templates
-from doctools import oil_doc
+from doctools import oils_doc
 
 # Geez find_library returns the filename and not the path?  Just hardcode it as
 # a workaround.
@@ -261,16 +261,16 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
   # First convert to HTML
   html = md2html(in_file.read())
 
-  # Now process HTML with oil_doc
+  # Now process HTML with oils_doc
   if use_fastlex:
     # Note: extract code BEFORE doing the HTML highlighting.
     if opts.code_block_output:
       with open(opts.code_block_output, 'w') as f:
         f.write('# %s: code blocks extracted from Markdown/HTML\n\n' %
                 opts.code_block_output)
-        text = oil_doc.ExtractCode(html, f)
+        text = oils_doc.ExtractCode(html, f)
 
-    html = oil_doc.RemoveComments(html)
+    html = oils_doc.RemoveComments(html)
 
     # Hack for allowing tables without <p> in cells, which CommonMark seems to
     # require?
@@ -278,11 +278,11 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
     html = html.replace('</pstrip></p>', '')
 
     # Expand $xref, etc.
-    html = oil_doc.ExpandLinks(html)
+    html = oils_doc.ExpandLinks(html)
 
     # <code> blocks
     # Including class=language-oil-help-topics
-    html = oil_doc.HighlightCode(html, meta.get('default_highlighter'),
+    html = oils_doc.HighlightCode(html, meta.get('default_highlighter'),
                                  debug_out=debug_out)
 
   # h2 is the title.  h1 is unused.

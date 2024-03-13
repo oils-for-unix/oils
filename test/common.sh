@@ -55,7 +55,7 @@ run-task-with-status() {
     --output $out_file \
     -- "$@" || true  # suppress failure
 
-  # TODO: Use rows like this with oil
+  # TODO: Use rows like this in YSH
   # '{"status": %x, "wall_secs": %e, "user_secs": %U, "kernel_secs": %S}' \
 }
 
@@ -65,6 +65,8 @@ list-test-funcs() {
 }
 
 run-test-funcs() {
+  ### EXIT on failure
+
   # for correct error handling, and to mutate $i
   #
   # Note: when I ran $t rather than $0 t, I seemed to tickle a bash lastpipe bug like this:
@@ -75,7 +77,7 @@ run-test-funcs() {
   local i=0
   local status=0
 
-  list-test-funcs | while read t; do
+  list-test-funcs | while read -r t; do
     echo "*** Running $t"
 
     set +o errexit

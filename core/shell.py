@@ -4,7 +4,7 @@ core/shell.py -- Entry point for the shell interpreter.
 from __future__ import print_function
 
 from errno import ENOENT
-import time
+import time as time_
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.option_asdl import option_i, builtin_i
@@ -26,13 +26,12 @@ from core import state
 from core import ui
 from core import util
 from core import vm
-from data_lang import j8
 
 from frontend import args
 from frontend import flag_def  # side effect: flags are defined!
 
 unused1 = flag_def
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import location
 from frontend import reader
 from frontend import parse_lib
@@ -76,10 +75,12 @@ from osh import sh_expr_eval
 from osh import split
 from osh import word_eval
 
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import print_stderr, log
 from pylib import os_path
 from tools import deps
+from tools import fmt
 from tools import ysh_ify
 from ysh import expr_eval
 
@@ -304,7 +305,7 @@ def Main(
     assert lang in ('osh', 'ysh'), lang
 
     try:
-        attrs = flag_spec.ParseMore('main', arg_r)
+        attrs = flag_util.ParseMore('main', arg_r)
     except error.Usage as e:
         print_stderr('%s usage error: %s' % (lang, e.msg))
         return 2
@@ -371,31 +372,31 @@ def Main(
 
     ysh_grammar = pyutil.LoadYshGrammar(loader)
 
-    if flag.one_pass_parse and not exec_opts.noexec():
+    if flag.do_lossless and not exec_opts.noexec():
         raise error.Usage('--one-pass-parse requires noexec (-n)', loc.Missing)
 
     # Tools always use one pass parse
     # Note: osh --tool syntax-tree is like osh -n --one-pass-parse
-    one_pass_parse = True if len(flag.tool) else flag.one_pass_parse
+    do_lossless = True if len(flag.tool) else flag.do_lossless
 
     parse_ctx = parse_lib.ParseContext(arena,
                                        parse_opts,
                                        aliases,
                                        ysh_grammar,
-                                       one_pass_parse=one_pass_parse)
+                                       do_lossless=do_lossless)
 
     # Three ParseContext instances SHARE aliases.
     comp_arena = alloc.Arena()
     comp_arena.PushSource(source.Unused('completion'))
     trail1 = parse_lib.Trail()
-    # one_pass_parse needs to be turned on to complete inside backticks.  TODO:
+    # do_lossless needs to be turned on to complete inside backticks.  TODO:
     # fix the issue where ` gets erased because it's not part of
     # set_completer_delims().
     comp_ctx = parse_lib.ParseContext(comp_arena,
                                       parse_opts,
                                       aliases,
                                       ysh_grammar,
-                                      one_pass_parse=True)
+                                      do_lossless=True)
     comp_ctx.Init_Trail(trail1)
 
     hist_arena = alloc.Arena()
@@ -455,14 +456,14 @@ def Main(
 
     cmd_deps.debug_f = debug_f
 
-    # Not using datetime for dependency reasons.  TODO: maybe show the date at
-    # the beginning of the log, and then only show time afterward?  To save
-    # space, and make space for microseconds.  (datetime supports microseconds
-    # but time.strftime doesn't).
-    if mylib.PYTHON:
-        iso_stamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        debug_f.writeln('%s [%d] OSH started with argv %s' %
-                        (iso_stamp, my_pid, arg_r.argv))
+    now = time_.time()
+    iso_stamp = time_.strftime("%Y-%m-%d %H:%M:%S", time_.localtime(now))
+
+    argv_buf = mylib.BufWriter()
+    dev.PrintShellArgv(arg_r.argv, argv_buf)
+
+    debug_f.writeln('%s [%d] Oils started with argv %s' %
+                    (iso_stamp, my_pid, argv_buf.getvalue()))
     if len(debug_path):
         debug_f.writeln('Writing logs to %r' % debug_path)
 
@@ -474,12 +475,10 @@ def Main(
     # TODO: This is instantiation is duplicated in osh/word_eval.py
     globber = glob_.Globber(exec_opts)
 
-    j8print = j8.Printer()
-
     # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
     # stuffing too much into one, since a .json crash dump isn't a stream.
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
-    cmd_deps.dumper = dev.CrashDumper(crash_dump_dir, fd_state, j8print)
+    cmd_deps.dumper = dev.CrashDumper(crash_dump_dir, fd_state)
 
     comp_lookup = completion.Lookup()
 
@@ -573,6 +572,7 @@ def Main(
     b[builtin_i.trap] = trap_osh.Trap(trap_state, parse_ctx, tracer, errfmt)
 
     b[builtin_i.shvar] = pure_ysh.Shvar(mem, search_path, cmd_ev)
+    b[builtin_i.ctx] = pure_ysh.Ctx(mem, cmd_ev)
     b[builtin_i.push_registers] = pure_ysh.PushRegisters(mem, cmd_ev)
 
     # Hay
@@ -656,7 +656,7 @@ def Main(
     b[builtin_i.times] = misc_osh.Times()
 
     b[builtin_i.json] = json_ysh.Json(mem, errfmt, False)
-    b[builtin_i.j8] = json_ysh.Json(mem, errfmt, True)
+    b[builtin_i.json8] = json_ysh.Json(mem, errfmt, True)
 
     ### Process builtins
     b[builtin_i.exec_] = process_osh.Exec(mem, ext_prog, fd_state, search_path,
@@ -705,18 +705,11 @@ def Main(
     #
 
     methods[value_e.Str] = {
-        'startsWith': method_str.StartsWith(),
-        'endsWith': None,  # TODO
-
-        # These functions are unicode aware
-        # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-        'trim': method_str.Trim(),
-        'trimLeft': None,
-        'trimRight': None,
-
-        # like Python 3.9 removeprefix() removesuffix()
-        'trimPrefix': None,
-        'trimSuffix': None,
+        'startsWith': method_str.HasAffix(method_str.START),
+        'endsWith': method_str.HasAffix(method_str.END),
+        'trim': method_str.Trim(method_str.START | method_str.END),
+        'trimStart': method_str.Trim(method_str.START),
+        'trimEnd': method_str.Trim(method_str.END),
 
         # These also have Unicode support
         'upper': method_str.Upper(),
@@ -727,7 +720,7 @@ def Main(
 
         # replace substring, OR an eggex
         # takes count=3, the max number of replacements to do.
-        'replace': None,
+        'replace': method_str.Replace(mem, expr_ev),
 
         # Like Python's re.search, except we put it on the string object
         # It's more consistent with Str->find(substring, pos=0)
@@ -744,7 +737,7 @@ def Main(
         'get': None,  # doesn't raise an error
         'erase': None,  # ensures it doesn't exist
         'keys': method_dict.Keys(),
-        'values': None,  # TODO
+        'values': method_dict.Values(),
 
         # I think items() isn't as necessary because dicts are ordered?
         # YSH code shouldn't use the List of Lists representation.
@@ -842,12 +835,11 @@ def Main(
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
-    j8print = j8.Printer()
-    _SetGlobalFunc(mem, 'toJ8', func_misc.ToJ8(j8print, True))
-    _SetGlobalFunc(mem, 'toJson', func_misc.ToJ8(j8print, False))
+    _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))
+    _SetGlobalFunc(mem, 'toJson', func_misc.ToJson8(False))
 
-    _SetGlobalFunc(mem, 'fromJ8', func_misc.FromJ8(True))
-    _SetGlobalFunc(mem, 'fromJson', func_misc.FromJ8(False))
+    _SetGlobalFunc(mem, 'fromJson8', func_misc.FromJson8(True))
+    _SetGlobalFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
     mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)
@@ -903,8 +895,9 @@ def Main(
     if flag.location_str is not None:
         src = source.Synthetic(flag.location_str)
         assert line_reader is not None
-        if flag.location_start_line != -1:
-            line_reader.SetLineOffset(flag.location_start_line)
+        location_start_line = mops.BigTruncate(flag.location_start_line)
+        if location_start_line != -1:
+            line_reader.SetLineOffset(location_start_line)
 
     arena.PushSource(src)
 
@@ -1078,11 +1071,14 @@ def Main(
         elif tool_name == 'tokens':
             ysh_ify.PrintTokens(arena)
 
-        elif tool_name == 'arena':  # for test/arena.sh
-            ysh_ify.PrintArena(arena)
+        elif tool_name == 'lossless-cat':  # for test/lossless.sh
+            ysh_ify.LosslessCat(arena)
+
+        elif tool_name == 'fmt':
+            fmt.Format(arena, node)
 
         elif tool_name == 'ysh-ify':
-            ysh_ify.PrintAsOil(arena, node)
+            ysh_ify.Ysh_ify(arena, node)
 
         elif tool_name == 'deps':
             if mylib.PYTHON:

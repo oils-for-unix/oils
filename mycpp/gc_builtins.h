@@ -125,14 +125,14 @@ BigStr* str(double d);
 
 BigStr* intern(BigStr* s);
 
-// Helper function: returns whether the string is a valid integer, and
-// populates the result.  (Also used by marksweep_heap.cc; could be moved
-// there)
-bool StringToInteger(const char* s, int len, int base, int* result);
+// Used by mark_sweep_heap and StrFormat
+bool StringToInt(const char* s, int len, int base, int* result);
+
+// Used by Oils integers
+bool StringToInt64(const char* s, int len, int base, int64_t* result);
 
 // String to integer, raising ValueError if invalid
-int to_int(BigStr* s);
-int to_int(BigStr* s, int base);
+int to_int(BigStr* s, int base = 10);
 
 BigStr* chr(int i);
 int ord(BigStr* s);
@@ -155,6 +155,9 @@ inline bool to_bool(int i) {
 
 bool str_contains(BigStr* haystack, BigStr* needle);
 
+// Used by 'with str_switch(s)'
+bool str_equals_c(BigStr* s, const char* c_string, int c_len);
+
 // Only used by unit tests
 bool str_equals0(const char* c_string, BigStr* s);
 
@@ -167,5 +170,6 @@ extern BigStr* kEmptyString;
 int hash(BigStr* s);
 
 int max(int a, int b);
+int min(int a, int b);
 
 #endif  // GC_BUILTINS_H

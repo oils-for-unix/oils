@@ -47,6 +47,7 @@ from core import state
 from core import ui
 from core import util
 from frontend import consts
+from frontend import lexer
 from frontend import location
 from frontend import reader
 from mycpp import mylib
@@ -906,9 +907,6 @@ class UserSpec(object):
 def IsDollar(t):
     # type: (Token) -> bool
 
-    # First condition is for lex_mode_e.{ShCommand,DQ}.
-    #return t.id == Id.Lit_Dollar or (t.id == Id.Lit_Other and t.tval == '$')
-
     # We have rules for Lit_Dollar in
     # lex_mode_e.{ShCommand,DQ,VSub_ArgUnquoted,VSub_ArgDQ}
     return t.id == Id.Lit_Dollar
@@ -1042,7 +1040,8 @@ class RootCompleter(object):
             if t2.id == Id.Left_DollarBrace and IsDummy(t1):
                 self.comp_ui_state.display_pos = t2.col + 2  # 2 for ${
                 for name in self.mem.VarNames():
-                    yield line_until_tab + name  # no need to quote var names
+                    # no need to quote var names
+                    yield line_until_tab + name
                 return
 
             # echo $P
@@ -1055,8 +1054,8 @@ class RootCompleter(object):
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):
-                        yield line_until_tab + name[
-                            n:]  # no need to quote var names
+                        # no need to quote var names
+                        yield line_until_tab + name[n:]
                 return
 
             # echo ${P
@@ -1066,8 +1065,8 @@ class RootCompleter(object):
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):
-                        yield line_until_tab + name[
-                            n:]  # no need to quote var names
+                        # no need to quote var names
+                        yield line_until_tab + name[n:]
                 return
 
             # echo $(( VAR
@@ -1077,8 +1076,8 @@ class RootCompleter(object):
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):
-                        yield line_until_tab + name[
-                            n:]  # no need to quote var names
+                        # no need to quote var names
+                        yield line_until_tab + name[n:]
                 return
 
         if len(trail.words) > 0:
@@ -1089,23 +1088,39 @@ class RootCompleter(object):
             # tokens, because otherwise f~a will complete.  Looking at word_part is
             # EXACTLY what we want.
             parts = trail.words[-1].parts
-            if (len(parts) == 2 and parts[0].tag() == word_part_e.Literal and
-                    parts[1].tag() == word_part_e.Literal and
-                    cast(Token, parts[0]).id == Id.Lit_TildeLike and
-                    cast(Token, parts[1]).id == Id.Lit_CompDummy):
-                t2 = cast(Token, parts[0])
+            if len(parts) > 0 and word_.LiteralId(parts[0]) == Id.Lit_Tilde:
+                #log('TILDE parts %s', parts)
 
-                # +1 for ~
-                self.comp_ui_state.display_pos = t2.col + 1
+                if (len(parts) == 2 and
+                        word_.LiteralId(parts[1]) == Id.Lit_CompDummy):
+                    tilde_tok = cast(Token, parts[0])
 
-                to_complete = t2.tval[1:]
-                n = len(to_complete)
-                for u in pyos.GetAllUsers():  # catch errors?
-                    name = u.pw_name
-                    if name.startswith(to_complete):
-                        s = line_until_tab + ShellQuoteB(name[n:]) + '/'
+                    # end of tilde
+                    self.comp_ui_state.display_pos = tilde_tok.col + 1
+
+                    to_complete = ''
+                    for u in pyos.GetAllUsers():
+                        name = u.pw_name
+                        s = line_until_tab + ShellQuoteB(name) + '/'
                         yield s
-                return
+                    return
+
+                if (len(parts) == 3 and
+                        word_.LiteralId(parts[1]) == Id.Lit_Chars and
+                        word_.LiteralId(parts[2]) == Id.Lit_CompDummy):
+
+                    chars_tok = cast(Token, parts[1])
+
+                    self.comp_ui_state.display_pos = chars_tok.col
+
+                    to_complete = lexer.TokenVal(chars_tok)
+                    n = len(to_complete)
+                    for u in pyos.GetAllUsers():  # catch errors?
+                        name = u.pw_name
+                        if name.startswith(to_complete):
+                            s = line_until_tab + ShellQuoteB(name[n:]) + '/'
+                            yield s
+                    return
 
         # echo hi > f<TAB>   (complete redirect arg)
         if len(trail.redirects) > 0:

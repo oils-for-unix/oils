@@ -1,7 +1,16 @@
 # spec/ysh-builtin-error
 
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
+
+#### try expects an argument
+
+try
+echo status=$?
+
+## status: 3
+## STDOUT:
+## END
 
 #### User errors behave like builtin errors
 func divide(a, b) {
@@ -22,11 +31,21 @@ echo status=$_status
 status=3
 ## END
 
-#### Error sets _error_message, which can be used by programs
+#### _error register is initially empty dict
+
+echo $[type(_error)]
+echo $[len(_error)]
+
+## STDOUT:
+Dict
+0
+## END
+
+#### Error sets _error.message, which can be used by programs
 
 func divide(a, b) {
   if (b === 0) {
-    error 'divide by zero' (status=3)
+    error "divide by zero: $a / $b" (status=3)
   }
   return (a / b)
 }
@@ -35,9 +54,47 @@ try { = divide(42, 0) }
 echo status=$_status
 echo message=$[_error.message]
 
+proc p {
+  echo $[divide(5, 0)]
+}
+
+try { p }
+echo status=$_status
+echo message=$[_error.message]
+
+# Design bug: this isn't caught!
+
+# try echo $[divide(3, 0]
+
 ## STDOUT:
 status=3
-message=divide by zero
+message=divide by zero: 42 / 0
+status=3
+message=divide by zero: 5 / 0
+## END
+
+#### error builtin adds named args as properties on _error Dict
+
+try {
+  error 'bad' (status=99)
+}
+pp line (_error)
+
+# Note: myData co
+try {
+  error 'bad' (status=99, myData={spam:'eggs'})
+}
+pp line (_error)
+
+try {
+  error 'bad' (status=99, message='cannot override')
+}
+pp line (_error)
+
+## STDOUT:
+(Dict)   {"status":99,"message":"bad"}
+(Dict)   {"myData":{"spam":"eggs"},"status":99,"message":"bad"}
+(Dict)   {"message":"bad","status":99}
 ## END
 
 #### Errors within multiple functions
@@ -58,7 +115,7 @@ func invertList(list) {
 }
 
 = invertList([1, 2, 0])
-## status: 1
+## status: 10
 ## STDOUT:
 ## END
 
@@ -77,21 +134,9 @@ try {
 ## STDOUT:
 ## END
 
-#### Error defaults status to 1
+#### Error defaults status to 10
 error 'some error'
-## status: 1
-## STDOUT:
-## END
-
-#### Error will object to an incorrect named arg
-error 'error' (status_typo=42)
-## status: 3
-## STDOUT:
-## END
-
-#### Error will object to an extraneous named arg
-error 'error' (status=42, other=100)
-## status: 3
+## status: 10
 ## STDOUT:
 ## END
 
@@ -125,15 +170,11 @@ error ('error', status=0)
 ## STDOUT:
 ## END
 
-#### Two styles of try with error builtin behave the same way (bug)
+#### try { error oops }
 
 try { error oops }
 echo status=$_status
 
-try error oops
-echo status=$_status
-
 ## STDOUT:
-status=1
-status=1
+status=10
 ## END

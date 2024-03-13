@@ -70,21 +70,21 @@ TEST flag_spec_test() {
 
   flag_spec::_FlagSpec* spec;
 
-  spec = flag_spec::LookupFlagSpec(StrFromC("new_var"));
+  spec = flag_util::LookupFlagSpec(StrFromC("new_var"));
   ASSERT(spec != nullptr);
 
-  spec = flag_spec::LookupFlagSpec(StrFromC("readonly"));
+  spec = flag_util::LookupFlagSpec(StrFromC("readonly"));
   ASSERT(spec != nullptr);
 
-  spec = flag_spec::LookupFlagSpec(StrFromC("zzz"));
+  spec = flag_util::LookupFlagSpec(StrFromC("zzz"));
   ASSERT(spec == nullptr);
 
   flag_spec::_FlagSpecAndMore* spec2;
 
-  spec2 = flag_spec::LookupFlagSpec2(StrFromC("main"));
+  spec2 = flag_util::LookupFlagSpec2(StrFromC("main"));
   ASSERT(spec2 != nullptr);
 
-  spec2 = flag_spec::LookupFlagSpec2(StrFromC("zzz"));
+  spec2 = flag_util::LookupFlagSpec2(StrFromC("zzz"));
   ASSERT(spec2 == nullptr);
 
   int i = 0;

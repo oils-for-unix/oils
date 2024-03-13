@@ -11,7 +11,12 @@ g() {
 }
 
 proc myproc {
-  ### Oil-style proc
+  ### YSH-style proc
   echo myproc
+}
+
+proc true {
+  ### Special quoting rule
+  echo hi
 }
 

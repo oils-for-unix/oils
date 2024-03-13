@@ -1,13 +1,6 @@
 from __future__ import print_function
 """
-osh2oil.py: Translate OSH to Oil.
-
-TODO: Turn this into 2 tools.
-
-ysh-prettify: May change the meaning of the code.  Should have a list of
-selectable rules.
-
-Files should already have shopt --set ysh:upgrade at the top
+ysh_ify.py: Roughly translate OSH to YSH.  Doesn't respect semantics.
 
 ESSENTIAL
 
@@ -43,9 +36,12 @@ Word:
   quote removal "$foo" -> $foo
   brace removal ${foo} and "${foo}" -> $foo
 
-TOOL ysh-format:
+--tool format
 
   fix indentation and spacing, like clang-format
+  can "lower" the LST to a rough representation with keywords / "first words",
+  { } ( ), and comments
+  - the "atoms" should not have newlines
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_str
@@ -54,7 +50,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     CompoundWord,
     Token,
-    SimpleVarSub,
+    NameTok,
     BracedVarSub,
     CommandSub,
     DoubleQuoted,
@@ -95,8 +91,9 @@ if TYPE_CHECKING:
 
 
 class Cursor(object):
-    """Wrapper for printing/transforming a complete source file stored in a
-    single arena."""
+    """
+    API to print/transform a complete source file, stored in a single arena.
+    """
 
     def __init__(self, arena, f):
         # type: (alloc.Arena, mylib.Writer) -> None
@@ -151,10 +148,12 @@ class Cursor(object):
         self.PrintUntilSpid(tok.span_id + 1)
 
 
-def PrintArena(arena):
+def LosslessCat(arena):
     # type: (alloc.Arena) -> None
-    """For testing the invariant that the spans "add up" to the original
-    doc."""
+    """
+    For testing the lossless invariant: the tokens "add up" to the original
+    doc.
+    """
     cursor = Cursor(arena, mylib.Stdout())
     cursor.PrintUntilSpid(arena.LastSpanId())
 
@@ -174,10 +173,10 @@ def PrintTokens(arena):
     print_stderr('(%d tokens)' % len(arena.tokens))
 
 
-def PrintAsOil(arena, node):
+def Ysh_ify(arena, node):
     # type: (alloc.Arena, command_t) -> None
     cursor = Cursor(arena, mylib.Stdout())
-    fixer = OilPrinter(cursor, arena, mylib.Stdout())
+    fixer = YshPrinter(cursor, arena, mylib.Stdout())
     fixer.DoCommand(node, None, at_top_level=True)  # no local symbols yet
     fixer.End()
 
@@ -274,7 +273,7 @@ def _GetRhsStyle(w):
     return word_style_e.SQ
 
 
-class OilPrinter(object):
+class YshPrinter(object):
     """Prettify OSH to YSH."""
 
     def __init__(self, cursor, arena, f):
@@ -297,9 +296,9 @@ class OilPrinter(object):
     def DoRedirect(self, node, local_symbols):
         # type: (Redir, Dict[str, bool]) -> None
         """
-    Currently Unused
-    TODO: It would be nice to change here docs to <<< '''
-    """
+        Currently Unused
+        TODO: It would be nice to change here docs to <<< '''
+        """
         #print(node, file=sys.stderr)
         op_id = node.op.id
         self.cursor.PrintUntil(node.op)
@@ -359,20 +358,20 @@ class OilPrinter(object):
     def DoShAssignment(self, node, at_top_level, local_symbols):
         # type: (command.ShAssignment, bool, Dict[str, bool]) -> None
         """
-    local_symbols:
-      - Add every 'local' declaration to it
-        - problem: what if you have local in an "if" ?
-        - we could treat it like nested scope and see what happens?  Do any
-          programs have a problem with it?
-          case/if/for/while/BraceGroup all define scopes or what?
-          You don't want inconsistency of variables that could be defined at
-          any point.
-          - or maybe you only need it within "if / case" ?  Well I guess
-            for/while can break out of the loop and cause problems.  A break is
-              an "if".
+        local_symbols:
+          - Add every 'local' declaration to it
+            - problem: what if you have local in an "if" ?
+            - we could treat it like nested scope and see what happens?  Do any
+              programs have a problem with it?
+              case/if/for/while/BraceGroup all define scopes or what?
+              You don't want inconsistency of variables that could be defined at
+              any point.
+              - or maybe you only need it within "if / case" ?  Well I guess
+                for/while can break out of the loop and cause problems.  A break is
+                  an "if".
 
-      - for subsequent
-    """
+          - for subsequent
+        """
         # Change RHS to expression language.  Bare words not allowed.  foo -> 'foo'
 
         has_rhs = False  # TODO: Should be on a per-variable basis.
@@ -395,8 +394,7 @@ class OilPrinter(object):
 
             # TODO: Avoid translating these
             has_array_index = [
-                pair.lhs.tag() == sh_lhs_e.UnparsedIndex
-                for pair in node.pairs
+                pair.lhs.tag() == sh_lhs_e.UnparsedIndex for pair in node.pairs
             ]
 
             # need semantic analysis.
@@ -751,7 +749,7 @@ class OilPrinter(object):
                 # Figure out the variable name, so we can translate
                 # - $var to (var)
                 # - "$var" to (var)
-                var_part = None  # type: SimpleVarSub
+                var_part = None  # type: NameTok
                 with tagswitch(to_match) as case:
                     if case(word_e.Compound):
                         w = cast(CompoundWord, to_match)
@@ -759,7 +757,7 @@ class OilPrinter(object):
 
                         with tagswitch(part0) as case2:
                             if case2(word_part_e.SimpleVarSub):
-                                var_part = cast(SimpleVarSub, part0)
+                                var_part = cast(NameTok, part0)
 
                             elif case2(word_part_e.DoubleQuoted):
                                 dq_part = cast(DoubleQuoted, part0)
@@ -771,8 +769,7 @@ class OilPrinter(object):
                                     # TODO: extract into a common function
                                     with tagswitch(dq_part0) as case3:
                                         if case3(word_part_e.SimpleVarSub):
-                                            var_part = cast(
-                                                SimpleVarSub, dq_part0)
+                                            var_part = cast(NameTok, dq_part0)
                                             #log("VAR PART %s", var_part)
 
                 if var_part:
@@ -917,7 +914,7 @@ class OilPrinter(object):
                     if len(dq_part.parts) == 1:
                         part0 = dq_part.parts[0]
                         if part0.tag() == word_part_e.SimpleVarSub:
-                            vsub_part = cast(SimpleVarSub, dq_part.parts[0])
+                            vsub_part = cast(NameTok, dq_part.parts[0])
                             if vsub_part.left.id == Id.VSub_At:
                                 self.cursor.PrintUntil(dq_part.left)
                                 self.cursor.SkipPast(
@@ -994,7 +991,7 @@ class OilPrinter(object):
                     # Hm is this necessary though?  I think the only motivation is changing
                     # \{ and \( for macros.  And ' ' to be readable/visible.
                     t = node.token
-                    val = t.tval[1:]
+                    val = lexer.TokenSliceLeft(t, 1)
                     assert len(val) == 1, val
                     if val != '\n':
                         self.cursor.PrintUntil(t)
@@ -1032,7 +1029,7 @@ class OilPrinter(object):
                     self.DoWordPart(part, local_symbols, quoted=True)
 
             elif case(word_part_e.SimpleVarSub):
-                node = cast(SimpleVarSub, UP_node)
+                node = cast(NameTok, UP_node)
 
                 spid = node.left.span_id
                 op_id = node.left.id

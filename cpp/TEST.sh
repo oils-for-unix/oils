@@ -40,13 +40,6 @@ pre-build() {
 }
 
 
-readonly -a GOOD_TESTS=(
-  cpp/qsn_test
-)
-
-readonly -a LEAKY_TESTS=(
-)
-
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
@@ -63,7 +56,7 @@ unit() {
 
     run-test-in-dir  cpp/core_test '' $variant  # has testdata
 
-    run-one-test     cpp/qsn_test '' $variant
+    run-one-test     cpp/data_lang_test '' $variant
 
     run-one-test     cpp/frontend_flag_spec_test '' $variant
 
@@ -97,7 +90,7 @@ coverage() {
 
   run-test-in-dir  cpp/core_test $compiler $variant  # has testdata
 
-  run-one-test     cpp/qsn_test $compiler $variant
+  run-one-test     cpp/data_lang_test $compiler $variant
 
   run-one-test     cpp/frontend_flag_spec_test $compiler $variant
 

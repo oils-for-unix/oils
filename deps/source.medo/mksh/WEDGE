@@ -1,0 +1,33 @@
+# Wedge definition for mksh
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# sourced
+WEDGE_NAME='mksh'
+WEDGE_VERSION='R52c'
+
+wedge-make() {
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  sh $src_dir/Build.sh
+}
+
+wedge-install() {
+  local build_dir=$1
+  local install_dir=$2
+
+  # There's no 'make install'
+  cp -v $build_dir/mksh $install_dir
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+
+  $install_dir/mksh -c 'echo "hi from mksh"'
+}

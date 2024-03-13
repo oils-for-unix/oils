@@ -15,7 +15,7 @@ source build/dev-shell.sh  # PYTHONPATH
 source devtools/release-version.sh  # for escape-segments
 
 readonly OILS_VERSION=$(head -n 1 oil-version.txt)
-readonly PREV_VERSION='0.18.0'
+readonly PREV_VERSION='0.20.0'
 
 # adapted from release-version.sh
 _git-changelog-body() {
@@ -99,7 +99,7 @@ comments_url: TODO
 published: no
 ---
 
-This is the latest version of Oil, a Unix shell that's our upgrade path from
+This is the latest version of Oils, a Unix shell that's our upgrade path from
 [bash][]:
 
 [bash]: \$xref

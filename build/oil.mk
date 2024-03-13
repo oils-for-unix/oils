@@ -52,6 +52,7 @@ _build/oil/bytecode-opy-manifest.txt: $(OIL_BYTECODE_DEPS) \
 	  cat build/oil-manifest.txt \
 	      _build/oil/opy-app-deps.txt; \
 	  $(ACTIONS_SH) help-manifest _devbuild/help; \
+	  $(ACTIONS_SH) ysh-stdlib-manifest; \
 	  $(ACTIONS_SH) pyc-version-manifest $@; \
 	} > $@
 

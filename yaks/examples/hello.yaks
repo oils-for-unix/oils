@@ -1,10 +1,17 @@
-(module "hello"
+# module name could also be osh.tdop, core.dev, etc.
+(module hello
 
-  (include "<stdio.h>")
+  #(include "<stdio.h>")
 
-  (func main [argv [List Str]]
-    (print (argv 1))
+  (func main [
+    [argv [List Str]]
+  ] => Int
+
+    # array indexing is ,
+    #(call print (argv,1))
+
+    # Uses the mycpp print function
+    (call print "hello")
     (return 42)
   )
 )
-

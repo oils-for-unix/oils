@@ -153,7 +153,7 @@ concept in shell.
 You can choose the quoting style that's most convenient to write a given
 string.
 
-#### Single-Quoted, Double-Quoted, and C-Style
+#### Double-Quoted, Single-Quoted, and J8 strings (like JSON)
 
 Double-quoted strings allow **interpolation with `$`**:
 
@@ -169,15 +169,19 @@ can't be expressed):
 
     echo 'c:\Program Files\'        # => c:\Program Files\
 
-C-style strings look like `$'foo'` and respect backslash **character escapes**:
+If you want C-style backslash **character escapes**, use a J8 string, which is
+like JSON, but with single quotes::
 
-    echo $' A is \x41 \n line two, with backslash \\'
+    echo u' A is \u{41} \n line two, with backslash \\'
     # =>
     #  A is A
     #  line two, with backslash \
 
-(The `$` before the quote doesn't mean "interpolation".  It's an unfortunate
-syntax collision that will be changed to JSON-style `j""` strings.)
+The `u''` strings are guaranteed to be valid Unicode (unlike JSON), but you can
+also use `b''` strings:
+
+    echo b'byte \yff'  # byte that's not valid unicode, like \xff in other languages
+                       # do not confuse with \u{ff}
 
 #### Multi-line Strings
 
@@ -202,14 +206,13 @@ three varieties, and leading whitespace is stripped in a convenient way.
     # $1.99
     # $2.00
 
-    sort <<< $'''
+    sort <<< u'''
     C\tD
     A\tB
-    '''
+    '''  # b''' strings also supported
     # =>
     # A        B
     # C        D
-
 
 (Use multiline strings instead of shell's [here docs]($xref:here-doc).)
 
@@ -581,7 +584,9 @@ commands use this style:
 
 Procs use this style (because of shell's *disabled `errexit` quirk*):
 
-    try myproc
+    try {
+      myproc
+    }
     if (_status !== 0) {
       echo 'failed'
     }
@@ -677,7 +682,7 @@ command language.  Each one takes various flags:
 
     cd -L .                      # follow symlinks
 
-    echo foo | read --line       # read a line of stdin
+    echo foo | read --all        # read all of stdin
     
 Here are some categories of builtin:
 
@@ -848,15 +853,12 @@ Floats are written like you'd expect:
 #### Str
 
 See the section above called *Three Kinds of String Literals*.  It described
-`'single quoted'`, `"double ${quoted}"`, and `$'c-style\n'` strings; as well as
-their multiline variants.
+`'single quoted'`, `"double ${quoted}"`, and `u'J8-style\n'` strings; as well
+as their multiline variants.
 
 Strings are UTF-8 encoded in memory, like strings in the [Go
 language](https://golang.org).  There isn't a separate string and unicode type,
 as in Python.
-
-(In the future, JSON-like *J8 Notation* will distinguish between strings and
-bytes on the wire.)
 
 Strings are **immutable**, as in Python and JavaScript.  This means they only
 have **transforming** methods:
@@ -943,12 +945,12 @@ methods return new `List` objects:
 
 The `read` builtin can either set an implicit variable `_reply`:
 
-    whoami | read --line  # sets _reply
+    whoami | read --all  # sets _reply
 
 Or you can pass a `value.Place`, created with `&`
 
     var x                      # implicitly initialized to null
-    whoami | read --line (&x)  # mutate this "place"
+    whoami | read --all (&x)   # mutate this "place"
     echo who=$x  # => who=andy
 
 #### Quotation Types: value.Command (Block) and value.Expr
@@ -1131,15 +1133,16 @@ UTF-8 is the foundation of our textual data languages.
 <!-- TODO: there's a runes() iterator which gives integer offsets, usable for
 slicing -->
 
-### Lines of Text (traditional), and QSN
+<!-- TODO: write about J8 notation -->
+
+### Lines of Text (traditional), and JSON/J8 Strings
 
 Traditional Unix tools like `grep` and `awk` operate on streams of lines.  YSH
-supports this style as well as any other shell.
+supports this style, just like any other shell.
 
-But YSH also has [QSN: Quoted String Notation][QSN], an interchange format
-which is borrowed from Rust's string literal notation.
+But YSH also has [J8 Notation][], a data format based on [JSON][].
 
-[QSN]: qsn.html
+[J8 Notation]: j8-notation.html
 
 It lets you encode arbitrary byte strings into a single (readable) line,
 including those with newlines and terminal escape sequences.
@@ -1147,20 +1150,17 @@ including those with newlines and terminal escape sequences.
 Example:
 
     # A line with a tab char in the middle
-    var mystr = $'pea\t' ++ $'42\n'
+    var mystr = u'pea\t' ++ u'42\n'
 
-    # Print it to stdout
-    write --qsn $mystr  # => 'pea\t42\n'
+    # Print it as JSON
+    write $[toJson(mystr)]  # => "pea\t42\n"
 
-    # Write and read
-    write --qsn $mystr h| read --qsn --line
-    if (_reply === mystr) {
-      echo 'serialized string to QSN and back'
-    }  # => serialized string to QSN and back
+    # JSON8 is the same, but it's not lossy for binary data
+    write $[toJson8(mystr)]  # => "pea\t42\n"
 
-### Structured: JSON, QTT
+### Structured: JSON8, TSV8
 
-**Tree-shaped** data can be read and written as [JSON][]:
+You can write and read **tree-shaped** as [JSON][]:
 
     var d = {key: 'value'}
     json write (d)                # dump variable d as JSON
@@ -1176,8 +1176,17 @@ Example:
     # =>
     # ['ale', 42]
 
-[JSON]: json.html
-[QTT]: qtt.html
+[JSON][] will lose information when strings have binary data, but the slight
+[JSON8]($xref) upgrade won't:
+
+    var b = {binary: $'\xff'}
+    json8 write (b)
+    # =>
+    # {
+    #   "binary": b'\yff'
+    # }
+
+[JSON]: $xref
 
 <!--
 TODO:
@@ -1185,8 +1194,8 @@ TODO:
 - Use json write (d) syntax
 -->
 
-**Table-shaped** data can be read and written as [QTT: Quoted, Typed
-Tables](qtt.html).  (TODO: not yet implemented.)
+**Table-shaped** data can be read and written as [TSV8]($xref).  (TODO: not yet
+implemented.)
 
 <!-- Figure out the API.  Does it work like JSON?
 
@@ -1203,7 +1212,6 @@ More later:
 - MessagePack (e.g. for shared library extension modules)
   - msgpack read, write?  I think user-defined function could be like this?
 - SASH: Simple and Strict HTML?  For easy processing
-- QTT: should also allow hex float representation for exactness
 -->
 
 ## The Runtime Shared by OSH and YSH
@@ -1269,7 +1277,7 @@ These concepts are central to YSH:
 
 1. Interleaved *word*, *command*, and *expression* languages.
 2. A standard library of *shell builtins*, as well as *builtin functions*
-3. Languages for *data*: JSON, QSN, and QTT
+3. Languages for *data*: J8 Notation, including JSON8 and TSV8
 4. A *runtime* shared by OSH and YSH
 
 ## Related Docs
@@ -1296,11 +1304,12 @@ The shared interpreter supports many shell constructs that are deprecated:
 
 - YSH code uses shell's `||` and `&&` in limited circumstances, since `errexit`
   is on by default.
-- Most of what's in `${}`, like `${!indirect}`.  Use YSH functions instead.
 - Assignment builtins like `local` and `declare`.  Use YSH keywords.
 - Boolean expressions like `[[ x =~ $pat ]]`.  Use YSH expressions.
 - Shell arithmetic like `$(( x + 1 ))` and `(( y = x ))`.  Use YSH expressions.
 - The `until` loop can always be replaced with a `while` loop
+- Most of what's in `${}` can be written in other ways.  For example
+  `${s#/tmp}` could be `s => removePrefix('/tmp')` (TODO).
 
 ### Not Yet Implemented
 
@@ -1325,10 +1334,9 @@ var x = 15 Mi                # units suffix
 
 Important builtins that aren't implemented:
 
-- `qtt` for [QTT](qtt.html) (analogous to JSON)
-  - selection, projection, sorting
 - `describe` for testing
 - `parseArgs()` to parse flags
+- Builtins for [TSV8]($xref) - selection, projection, sorting
 
 <!--
 

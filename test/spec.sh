@@ -291,8 +291,7 @@ globignore() {
 }
 
 arith() {
-  sh-spec spec/arith.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file arith "$@"
 }
 
 command-sub() {
@@ -421,8 +420,7 @@ strict-options() {
 }
 
 exit-status() {
-  sh-spec spec/exit-status.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file exit-status "$@"
 }
 
 errexit() {
@@ -487,8 +485,7 @@ dparen() {
 }
 
 brace-expansion() {
-  sh-spec spec/brace-expansion.test.sh \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file brace-expansion "$@"
 }
 
 regex() {
@@ -551,9 +548,7 @@ shell-grammar() {
 }
 
 serialize() {
-  # dash doesn't have echo -e, $'', etc.
-  sh-spec spec/serialize.test.sh \
-    $BASH $MKSH $ZSH $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file serialize "$@"
 }
 
 #
@@ -911,6 +906,10 @@ ysh-xtrace() {
 
 ysh-user-feedback() {
   run-file ysh-user-feedback "$@"
+}
+
+ysh-builtin-ctx() {
+  run-file ysh-builtin-ctx "$@"
 }
 
 ysh-builtin-error() {

@@ -23,13 +23,13 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from asdl import format as fmt
-from core import vm
+from data_lang import pretty
 from frontend import lexer
 from frontend import location
 from mycpp import mylib
-from mycpp.mylib import print_stderr, tagswitch
+from mycpp.mylib import print_stderr, tagswitch, log
 from data_lang import j8
-from data_lang import qsn
+from data_lang import j8_lite
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -37,6 +37,8 @@ if TYPE_CHECKING:
     from core import error
     from core.error import _ErrorWithLocation
     from mycpp.mylib import Writer
+
+_ = log
 
 
 def ValType(val):
@@ -135,13 +137,13 @@ def GetLineSourceString(line, quote_filename=False):
             # also handles characters that are unprintable in a terminal.
             s = src.path
             if quote_filename:
-                s = qsn.maybe_encode(s)
+                s = j8_lite.EncodeString(s, unquoted_ok=True)
         elif case(source_e.SourcedFile):
             src = cast(source.SourcedFile, UP_src)
             # ditto
             s = src.path
             if quote_filename:
-                s = qsn.maybe_encode(s)
+                s = j8_lite.EncodeString(s, unquoted_ok=True)
 
         elif case(source_e.ArgvWord):
             src = cast(source.ArgvWord, UP_src)
@@ -418,30 +420,43 @@ def PrintAst(node, flag):
         ast_f.write('\n')
 
 
-def DebugPrint(val):
-    # type: (value_t) -> None
+def PrettyPrintValue(val, f):
+    # type: (value_t, mylib.Writer) -> None
+    """For the = keyword"""
+
     ysh_type = ValType(val)
-    id_str = vm.ValueIdString(val)
-    f = mylib.Stdout()
+    id_str = j8.ValueIdString(val)
 
     UP_val = val
     with tagswitch(val) as case:
         # "JSON" data types will use J8 serialization
         if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                 value_e.Str, value_e.List, value_e.Dict):
-            j8print = j8.Printer()
             # Use () instead of <> as a hint that it's a "JSON value"
             f.write('(%s%s)   ' % (ysh_type, id_str))
 
-            j8print.DebugPrint(val, f)
+            # Unused STUB
+            doc = pretty.FromValue(val)
+
+            buf = mylib.BufWriter()
+
+            # TODO: Wrap lines, and show color.  Use core/ansi.py
+            p = j8.InstancePrinter(buf, -1, j8.SHOW_CYCLES | j8.SHOW_NON_DATA)
+
+            # error.Encode should be impossible - we show cycles and non-data
+            p.Print(val)
+
+            f.write(buf.getvalue())
+            f.write('\n')
 
         elif case(value_e.Range):
-            # Custom printing
             val = cast(value.Range, UP_val)
+
+            # Printing Range values more nicely.  Note that pp line (x) doesn't
+            # have this.
             f.write('(%s)   %d .. %d\n' % (ysh_type, val.lower, val.upper))
 
         else:
             # Just print object and ID.  Use <> to show that it's more like
             # a reference type.
-            # pp value (x) is more detailed, showing the "guts"
             f.write('<%s%s>\n' % (ysh_type, id_str))

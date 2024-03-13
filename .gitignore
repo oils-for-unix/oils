@@ -45,6 +45,7 @@ _deps/
 # Our Python extensions.  We need these at the top level to statically link
 # "import libc" in the "OVM tarball".
 fanos.so
+fastfunc.so
 fastlex.so
 libc.so
 line_input.so

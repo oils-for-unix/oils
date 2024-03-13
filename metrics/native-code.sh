@@ -135,11 +135,13 @@ compare-gcc-clang() {
     _bin/{clang,cxx}-dbg/oils-for-unix
     _bin/{clang,cxx}-opt/oils-for-unix.stripped
     _bin/cxx-{opt+bumpleak,opt+bumproot}/oils-for-unix.stripped
+    _bin/{clang,cxx}-opt/yaks/yaks_main.mycpp.stripped
+    _bin/cxx-{opt+bumpleak,opt+bumproot}/yaks/yaks_main.mycpp.stripped
     )
   ninja "${targets[@]}"
 
   mkdir -p _tmp/metrics
-  ls -l "${targets[@]}" | tee _tmp/metrics/compare-gcc-clang.txt
+  ls -l --sort=none "${targets[@]}" | tee _tmp/metrics/compare-gcc-clang.txt
 }
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)

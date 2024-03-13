@@ -12,7 +12,7 @@ from core import ui
 from core import vm
 from mycpp import mylib
 from mycpp.mylib import log, print_stderr
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import args
 from frontend import consts
 
@@ -298,7 +298,7 @@ class Complete(vm._Builtin):
         arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
         arg_r.Next()
 
-        attrs = flag_spec.ParseMore('complete', arg_r)
+        attrs = flag_util.ParseMore('complete', arg_r)
         arg = arg_types.complete(attrs.attrs)
         # TODO: process arg.opt_changes
 
@@ -350,7 +350,7 @@ class CompGen(vm._Builtin):
         arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
         arg_r.Next()
 
-        arg = flag_spec.ParseMore('compgen', arg_r)
+        arg = flag_util.ParseMore('compgen', arg_r)
 
         if arg_r.AtEnd():
             to_complete = ''
@@ -408,7 +408,7 @@ class CompOpt(vm._Builtin):
         arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
         arg_r.Next()
 
-        arg = flag_spec.ParseMore('compopt', arg_r)
+        arg = flag_util.ParseMore('compopt', arg_r)
 
         if not self.comp_state.currently_completing:  # bash also checks this.
             self.errfmt.Print_(
@@ -442,7 +442,7 @@ class CompAdjust(vm._Builtin):
         arg_r = args.Reader(cmd_val.argv, cmd_val.arg_locs)
         arg_r.Next()
 
-        attrs = flag_spec.ParseMore('compadjust', arg_r)
+        attrs = flag_util.ParseMore('compadjust', arg_r)
         arg = arg_types.compadjust(attrs.attrs)
         var_names = arg_r.Rest()  # Output variables to set
         for name in var_names:

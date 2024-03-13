@@ -43,7 +43,7 @@ set -o xtrace
 echo "$s"
 ## stdout-repr: 'a\x03b\x04c\x00d\n'
 ## STDERR:
-+ echo $'a\x03b\x04c\x00d'
++ echo $'a\u0003b\u0004c\u0000d'
 ## END
 ## OK bash stdout-repr: 'a\x03b\x04c\n'
 ## OK bash stderr-repr: "+ echo $'a\\003b\\004c'\n"
@@ -72,6 +72,16 @@ echo "$mu1" "$mu2"
 ## N-I dash stdout-json: ""
 ## N-I dash stderr-json: ""
 
+#### xtrace with paths
+set -o xtrace
+echo my-dir/my_file.cc
+## STDOUT:
+my-dir/my_file.cc
+## END
+## STDERR:
++ echo my-dir/my_file.cc
+## END
+
 #### xtrace with tabs
 case $SH in (dash) exit ;; esac
 
@@ -93,7 +103,7 @@ echo '1 2' \' \" \\
 1 2 ' " \
 ## END
 
-# Oil is different bceause backslashes require $'\\' and not '\', but that's OK
+# YSH is different because backslashes require $'\\' and not '\', but that's OK
 ## STDERR:
 + echo '1 2' $'\'' '"' $'\\'
 ## END
@@ -191,7 +201,7 @@ if [[ -d $dir ]]; then
 fi
 ## stdout-json: ""
 ## STDERR:
-+ dir='/'
++ dir=/
 + [[ -d $dir ]]
 + (( a = 42 ))
 ## END
@@ -340,5 +350,9 @@ ok
 ## END
 ## STDERR:
 [last=0] false
+[last=1] echo ok
+## END
+## OK osh STDERR:
+[last=0] 'false'
 [last=1] echo ok
 ## END

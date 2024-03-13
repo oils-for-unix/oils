@@ -37,120 +37,87 @@ GLOBAL_STR(str28, "\n");
 GLOBAL_STR(str29, "\n");
 GLOBAL_STR(str30, " ");
 GLOBAL_STR(str31, "UNTYPED any");
-GLOBAL_STR(str32, " ");
+GLOBAL_STR(str32, "...0x%s");
 GLOBAL_STR(str33, " ");
-GLOBAL_STR(str34, " %s:");
-GLOBAL_STR(str35, "UNTYPED any");
-GLOBAL_STR(str36, "[");
-GLOBAL_STR(str37, " ");
-GLOBAL_STR(str38, "]");
-GLOBAL_STR(str39, "\u001b[0;0m");
-GLOBAL_STR(str40, "\u001b[1m");
-GLOBAL_STR(str41, "\u001b[4m");
-GLOBAL_STR(str42, "\u001b[7m");
-GLOBAL_STR(str43, "\u001b[31m");
-GLOBAL_STR(str44, "\u001b[32m");
-GLOBAL_STR(str45, "\u001b[33m");
-GLOBAL_STR(str46, "\u001b[34m");
-GLOBAL_STR(str47, "&");
-GLOBAL_STR(str48, "&amp;");
-GLOBAL_STR(str49, "<");
-GLOBAL_STR(str50, "&lt;");
-GLOBAL_STR(str51, ">");
-GLOBAL_STR(str52, "&gt;");
-GLOBAL_STR(str53, "\\'\r\n\t\u0000");
-GLOBAL_STR(str54, "$'");
-GLOBAL_STR(str55, "'");
-GLOBAL_STR(str56, "'");
-GLOBAL_STR(str57, "");
-GLOBAL_STR(str58, "'");
-GLOBAL_STR(str59, "'");
-GLOBAL_STR(str60, "");
-GLOBAL_STR(str61, "'");
-GLOBAL_STR(str62, "'");
-GLOBAL_STR(str63, "");
-GLOBAL_STR(str64, "\\");
-GLOBAL_STR(str65, "\\\\");
-GLOBAL_STR(str66, "'");
-GLOBAL_STR(str67, "\\'");
-GLOBAL_STR(str68, "\n");
-GLOBAL_STR(str69, "\\n");
-GLOBAL_STR(str70, "\r");
-GLOBAL_STR(str71, "\\r");
-GLOBAL_STR(str72, "\t");
-GLOBAL_STR(str73, "\\t");
-GLOBAL_STR(str74, "\u0000");
-GLOBAL_STR(str75, "\\x00");
-GLOBAL_STR(str76, "");
-GLOBAL_STR(str77, "");
-GLOBAL_STR(str78, "");
-GLOBAL_STR(str79, "\\");
-GLOBAL_STR(str80, "\\\\");
-GLOBAL_STR(str81, "'");
-GLOBAL_STR(str82, "\\'");
-GLOBAL_STR(str83, "\n");
-GLOBAL_STR(str84, "\\n");
-GLOBAL_STR(str85, "\r");
-GLOBAL_STR(str86, "\\r");
-GLOBAL_STR(str87, "\t");
-GLOBAL_STR(str88, "\\t");
-GLOBAL_STR(str89, "\u0000");
-GLOBAL_STR(str90, "\\x00");
-GLOBAL_STR(str91, "<%s %r>");
-GLOBAL_STR(str92, "%s, got %s");
-GLOBAL_STR(str93, "-");
-GLOBAL_STR(str94, "_");
-GLOBAL_STR(str95, "<_Attributes %s>");
-GLOBAL_STR(str96, "<args.Reader %r %d>");
-GLOBAL_STR(str97, "expected argument to %r");
+GLOBAL_STR(str34, " ");
+GLOBAL_STR(str35, " %s:");
+GLOBAL_STR(str36, "UNTYPED any");
+GLOBAL_STR(str37, "[");
+GLOBAL_STR(str38, " ");
+GLOBAL_STR(str39, "]");
+GLOBAL_STR(str40, "...0x%s");
+GLOBAL_STR(str41, "\u001b[0;0m");
+GLOBAL_STR(str42, "\u001b[1m");
+GLOBAL_STR(str43, "\u001b[4m");
+GLOBAL_STR(str44, "\u001b[7m");
+GLOBAL_STR(str45, "\u001b[31m");
+GLOBAL_STR(str46, "\u001b[32m");
+GLOBAL_STR(str47, "\u001b[33m");
+GLOBAL_STR(str48, "\u001b[34m");
+GLOBAL_STR(str49, "&");
+GLOBAL_STR(str50, "&amp;");
+GLOBAL_STR(str51, "<");
+GLOBAL_STR(str52, "&lt;");
+GLOBAL_STR(str53, ">");
+GLOBAL_STR(str54, "&gt;");
+GLOBAL_STR(str55, "<%s %r>");
+GLOBAL_STR(str56, "status");
+GLOBAL_STR(str57, "message");
+GLOBAL_STR(str58, "%s, got %s");
+GLOBAL_STR(str59, " (pos %d-%d: %r)");
+GLOBAL_STR(str60, "-");
+GLOBAL_STR(str61, "_");
+GLOBAL_STR(str62, "<_Attributes %s>");
+GLOBAL_STR(str63, "<args.Reader %r %d>");
+GLOBAL_STR(str64, "expected argument to %r");
+GLOBAL_STR(str65, "-");
+GLOBAL_STR(str66, "expected integer after %s, got %r");
+GLOBAL_STR(str67, "-");
+GLOBAL_STR(str68, "got invalid integer for %s: %s");
+GLOBAL_STR(str69, "-");
+GLOBAL_STR(str70, "expected number after %r, got %r");
+GLOBAL_STR(str71, "-");
+GLOBAL_STR(str72, "got invalid float for %s: %s");
+GLOBAL_STR(str73, "-");
+GLOBAL_STR(str74, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str75, "-");
+GLOBAL_STR(str76, "|");
+GLOBAL_STR(str77, "0");
+GLOBAL_STR(str78, "F");
+GLOBAL_STR(str79, "false");
+GLOBAL_STR(str80, "False");
+GLOBAL_STR(str81, "1");
+GLOBAL_STR(str82, "T");
+GLOBAL_STR(str83, "true");
+GLOBAL_STR(str84, "Talse");
+GLOBAL_STR(str85, "got invalid argument to boolean flag: %r");
+GLOBAL_STR(str86, "-");
+GLOBAL_STR(str87, "-");
+GLOBAL_STR(str88, "Invalid option %r");
+GLOBAL_STR(str89, "Expected argument for action");
+GLOBAL_STR(str90, "Invalid action name %r");
+GLOBAL_STR(str91, "--");
+GLOBAL_STR(str92, "--");
+GLOBAL_STR(str93, "=");
+GLOBAL_STR(str94, "got invalid flag %r");
+GLOBAL_STR(str95, "-");
+GLOBAL_STR(str96, "0");
+GLOBAL_STR(str97, "Z");
 GLOBAL_STR(str98, "-");
-GLOBAL_STR(str99, "expected integer after %s, got %r");
+GLOBAL_STR(str99, "doesn't accept flag %s");
 GLOBAL_STR(str100, "-");
-GLOBAL_STR(str101, "got invalid integer for %s: %s");
-GLOBAL_STR(str102, "-");
-GLOBAL_STR(str103, "expected number after %r, got %r");
-GLOBAL_STR(str104, "-");
-GLOBAL_STR(str105, "got invalid float for %s: %s");
-GLOBAL_STR(str106, "-");
-GLOBAL_STR(str107, "got invalid argument %r to %r, expected one of: %s");
-GLOBAL_STR(str108, "-");
-GLOBAL_STR(str109, "|");
-GLOBAL_STR(str110, "0");
-GLOBAL_STR(str111, "F");
-GLOBAL_STR(str112, "false");
-GLOBAL_STR(str113, "False");
-GLOBAL_STR(str114, "1");
-GLOBAL_STR(str115, "T");
-GLOBAL_STR(str116, "true");
-GLOBAL_STR(str117, "Talse");
-GLOBAL_STR(str118, "got invalid argument to boolean flag: %r");
-GLOBAL_STR(str119, "-");
-GLOBAL_STR(str120, "-");
-GLOBAL_STR(str121, "Invalid option %r");
-GLOBAL_STR(str122, "Expected argument for action");
-GLOBAL_STR(str123, "Invalid action name %r");
-GLOBAL_STR(str124, "--");
-GLOBAL_STR(str125, "--");
-GLOBAL_STR(str126, "=");
-GLOBAL_STR(str127, "got invalid flag %r");
-GLOBAL_STR(str128, "-");
-GLOBAL_STR(str129, "0");
-GLOBAL_STR(str130, "Z");
-GLOBAL_STR(str131, "-");
-GLOBAL_STR(str132, "doesn't accept flag %s");
-GLOBAL_STR(str133, "-");
-GLOBAL_STR(str134, "+");
-GLOBAL_STR(str135, "+");
-GLOBAL_STR(str136, "doesn't accept option %s");
-GLOBAL_STR(str137, "+");
-GLOBAL_STR(str138, "-");
-GLOBAL_STR(str139, "--");
-GLOBAL_STR(str140, "--");
-GLOBAL_STR(str141, "got invalid flag %r");
-GLOBAL_STR(str142, "-");
-GLOBAL_STR(str143, "+");
-GLOBAL_STR(str144, "got invalid flag %r");
-GLOBAL_STR(str145, "-");
+GLOBAL_STR(str101, "+");
+GLOBAL_STR(str102, "+");
+GLOBAL_STR(str103, "doesn't accept option %s");
+GLOBAL_STR(str104, "+");
+GLOBAL_STR(str105, "-");
+GLOBAL_STR(str106, "--");
+GLOBAL_STR(str107, "--");
+GLOBAL_STR(str108, "got invalid flag %r");
+GLOBAL_STR(str109, "-");
+GLOBAL_STR(str110, "+");
+GLOBAL_STR(str111, "got invalid flag %r");
+GLOBAL_STR(str112, "-");
 
 namespace ansi {  // forward declare
 
@@ -162,16 +129,15 @@ namespace cgi {  // forward declare
 
 }  // forward declare namespace cgi
 
-namespace qsn {  // forward declare
+namespace j8_lite {  // forward declare
 
 
-}  // forward declare namespace qsn
+}  // forward declare namespace j8_lite
 
 namespace error {  // forward declare
 
   class _ErrorWithLocation;
   class Usage;
-  class Runtime;
   class Parse;
   class FailGlob;
   class RedirectEval;
@@ -179,10 +145,13 @@ namespace error {  // forward declare
   class Strict;
   class ErrExit;
   class Expr;
-  class UserError;
+  class Structured;
   class AssertionErr;
   class TypeErrVerbose;
   class TypeErr;
+  class Runtime;
+  class Decode;
+  class Encode;
 
 }  // forward declare namespace error
 
@@ -207,34 +176,15 @@ BigStr* escape(BigStr* s);
 
 }  // declare namespace cgi
 
-namespace qsn {  // declare
+namespace j8_lite {  // declare
 
-extern int BIT8_UTF8;
-extern int BIT8_U_ESCAPE;
-extern int BIT8_X_ESCAPE;
-extern int MUST_QUOTE;
-bool _encode(BigStr* s, int bit8_display, mylib::BufWriter* buf);
-BigStr* maybe_shell_encode(BigStr* s, int flags = 0);
-BigStr* maybe_encode(BigStr* s, int bit8_display = BIT8_UTF8);
-BigStr* encode(BigStr* s, int bit8_display = BIT8_UTF8);
-void _encode_bytes_x(BigStr* s, mylib::BufWriter* buf);
-extern int Ascii;
-extern int Begin2;
-extern int Begin3;
-extern int Begin4;
-extern int Cont;
-extern int Invalid;
-extern int Start;
-extern int B2_1;
-extern int B3_1;
-extern int B4_1;
-extern int B3_2;
-extern int B4_2;
-extern int B4_3;
-bool EncodeRunes(BigStr* s, int bit8_display, mylib::BufWriter* buf);
+BigStr* EncodeString(BigStr* s, bool unquoted_ok = false);
+BigStr* MaybeShellEncode(BigStr* s);
+BigStr* ShellEncode(BigStr* s);
+BigStr* YshEncode(BigStr* s, bool unquoted_ok = false);
 
 
-}  // declare namespace qsn
+}  // declare namespace j8_lite
 
 namespace error {  // declare
 
@@ -273,19 +223,6 @@ class Usage : public _ErrorWithLocation {
   }
 
   DISALLOW_COPY_AND_ASSIGN(Usage)
-};
-
-class Runtime {
- public:
-  Runtime(BigStr* msg);
-  BigStr* UserErrorString();
-  BigStr* msg;
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassScanned(1, sizeof(Runtime));
-  }
-
-  DISALLOW_COPY_AND_ASSIGN(Runtime)
 };
 
 class Parse : public _ErrorWithLocation {
@@ -398,19 +335,23 @@ class Expr : public FatalRuntime {
   DISALLOW_COPY_AND_ASSIGN(Expr)
 };
 
-class UserError : public FatalRuntime {
+class Structured : public FatalRuntime {
  public:
-  UserError(int status, BigStr* msg, syntax_asdl::loc_t* location);
+  Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties = nullptr);
+  value::Dict* ToDict();
+
+  Dict<BigStr*, value_asdl::value_t*>* properties;
   
   static constexpr uint32_t field_mask() {
-    return FatalRuntime::field_mask();
+    return FatalRuntime::field_mask()
+         | maskbit(offsetof(Structured, properties));
   }
 
   static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(field_mask(), sizeof(UserError));
+    return ObjHeader::ClassFixed(field_mask(), sizeof(Structured));
   }
 
-  DISALLOW_COPY_AND_ASSIGN(UserError)
+  DISALLOW_COPY_AND_ASSIGN(Structured)
 };
 
 class AssertionErr : public Expr {
@@ -458,6 +399,49 @@ class TypeErr : public TypeErrVerbose {
   DISALLOW_COPY_AND_ASSIGN(TypeErr)
 };
 
+class Runtime {
+ public:
+  Runtime(BigStr* msg);
+  BigStr* UserErrorString();
+  BigStr* msg;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(Runtime));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Runtime)
+};
+
+class Decode {
+ public:
+  Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos);
+  BigStr* Message();
+  BigStr* __str__();
+  BigStr* msg;
+  BigStr* s;
+  int start_pos;
+  int end_pos;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(2, sizeof(Decode));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Decode)
+};
+
+class Encode {
+ public:
+  Encode(BigStr* msg);
+  BigStr* Message();
+  BigStr* msg;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(1, sizeof(Encode));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(Encode)
+};
+
 [[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void e_strict(BigStr* msg, syntax_asdl::loc_t* location);
 [[noreturn]] void p_die(BigStr* msg, syntax_asdl::loc_t* location);
@@ -489,6 +473,11 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
   else {
     return Alloc<hnode::Leaf>(s, e_color);
   }
+}
+
+TraversalState::TraversalState() {
+  this->seen = Alloc<Dict<int, bool>>();
+  this->ref_count = Alloc<Dict<int, int>>();
 }
 BigStr* TRUE_STR = str3;
 BigStr* FALSE_STR = str4;
@@ -899,7 +888,7 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
   if (tag == hnode_e::Leaf) {
     hnode::Leaf* node = static_cast<hnode::Leaf*>(UP_node);
     f->PushColor(node->color);
-    f->write(qsn::maybe_encode(node->s));
+    f->write(j8_lite::EncodeString(node->s, true));
     f->PopColor();
   }
   else {
@@ -919,7 +908,13 @@ void _PrettyPrinter::PrintNode(hnode_asdl::hnode_t* node, format::ColorOutput* f
         this->_PrintRecord(node, f, indent);
       }
       else {
-        assert(0);  // AssertionError
+        if (tag == hnode_e::AlreadySeen) {
+          hnode::AlreadySeen* node = static_cast<hnode::AlreadySeen*>(UP_node);
+          f->write(StrFormat("...0x%s", mylib::hex_lower(node->heap_id)));
+        }
+        else {
+          assert(0);  // AssertionError
+        }
       }
     }
   }
@@ -936,14 +931,14 @@ bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_char
       f->PushColor(color_e::TypeName);
       f->write(node->node_type);
       f->PopColor();
-      f->write(str32);
+      f->write(str33);
     }
     i = 0;
     for (ListIter<hnode_asdl::hnode_t*> it(node->unnamed_fields); !it.Done(); it.Next(), ++i) {
       hnode_asdl::hnode_t* val = it.Value();
       StackRoot _for(&val    );
       if (i != 0) {
-        f->write(str33);
+        f->write(str34);
       }
       if (!_TrySingleLine(val, f, max_chars)) {
         return false;
@@ -981,7 +976,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
   if (tag == hnode_e::Leaf) {
     hnode::Leaf* node = static_cast<hnode::Leaf*>(UP_node);
     f->PushColor(node->color);
-    f->write(qsn::maybe_encode(node->s));
+    f->write(j8_lite::EncodeString(node->s, true));
     f->PopColor();
   }
   else {
@@ -990,7 +985,7 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
       f->PushColor(color_e::External);
       // if not PYTHON
       {
-        f->write(str35);
+        f->write(str36);
       }
       // endif MYCPP
       f->PopColor();
@@ -998,19 +993,19 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
     else {
       if (tag == hnode_e::Array) {
         hnode::Array* node = static_cast<hnode::Array*>(UP_node);
-        f->write(str36);
+        f->write(str37);
         i = 0;
         for (ListIter<hnode_asdl::hnode_t*> it(node->children); !it.Done(); it.Next(), ++i) {
           hnode_asdl::hnode_t* item = it.Value();
           StackRoot _for(&item        );
           if (i != 0) {
-            f->write(str37);
+            f->write(str38);
           }
           if (!_TrySingleLine(item, f, max_chars)) {
             return false;
           }
         }
-        f->write(str38);
+        f->write(str39);
       }
       else {
         if (tag == hnode_e::Record) {
@@ -1018,7 +1013,13 @@ bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_c
           return _TrySingleLineObj(node, f, max_chars);
         }
         else {
-          assert(0);  // AssertionError
+          if (tag == hnode_e::AlreadySeen) {
+            hnode::AlreadySeen* node = static_cast<hnode::AlreadySeen*>(UP_node);
+            f->write(StrFormat("...0x%s", mylib::hex_lower(node->heap_id)));
+          }
+          else {
+            assert(0);  // AssertionError
+          }
         }
       }
     }
@@ -1044,14 +1045,14 @@ void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f) {
 
 namespace ansi {  // define
 
-BigStr* RESET = str39;
-BigStr* BOLD = str40;
-BigStr* UNDERLINE = str41;
-BigStr* REVERSE = str42;
-BigStr* RED = str43;
-BigStr* GREEN = str44;
-BigStr* YELLOW = str45;
-BigStr* BLUE = str46;
+BigStr* RESET = str41;
+BigStr* BOLD = str42;
+BigStr* UNDERLINE = str43;
+BigStr* REVERSE = str44;
+BigStr* RED = str45;
+BigStr* GREEN = str46;
+BigStr* YELLOW = str47;
+BigStr* BLUE = str48;
 
 }  // define namespace ansi
 
@@ -1061,427 +1062,51 @@ namespace cgi {  // define
 BigStr* escape(BigStr* s) {
   StackRoot _root0(&s);
 
-  s = s->replace(str47, str48);
   s = s->replace(str49, str50);
   s = s->replace(str51, str52);
+  s = s->replace(str53, str54);
   return s;
 }
 
 }  // define namespace cgi
 
-namespace qsn {  // define
+namespace j8_lite {  // define
 
-int BIT8_UTF8 = 0;
-int BIT8_U_ESCAPE = 1;
-int BIT8_X_ESCAPE = 2;
-int MUST_QUOTE = 4;
 
-bool _encode(BigStr* s, int bit8_display, mylib::BufWriter* buf) {
+BigStr* EncodeString(BigStr* s, bool unquoted_ok) {
   StackRoot _root0(&s);
-  StackRoot _root1(&buf);
 
-  if (bit8_display == BIT8_X_ESCAPE) {
-    _encode_bytes_x(s, buf);
-    return true;
-  }
-  else {
-    return EncodeRunes(s, bit8_display, buf);
-  }
-}
-
-BigStr* maybe_shell_encode(BigStr* s, int flags) {
-  int quote;
-  int must_quote;
-  int bit8_display;
-  List<BigStr*>* parts = nullptr;
-  mylib::BufWriter* buf = nullptr;
-  bool valid_utf8;
-  BigStr* prefix = nullptr;
-  StackRoot _root0(&s);
-  StackRoot _root1(&parts);
-  StackRoot _root2(&buf);
-  StackRoot _root3(&prefix);
-
-  quote = 0;
-  must_quote = (flags & 4);
-  bit8_display = (flags & 3);
-  if (len(s) == 0) {
-    quote = 1;
-  }
-  else {
-    for (StrIter it(s); !it.Done(); it.Next()) {
-      BigStr* ch = it.Value();
-      StackRoot _for(&ch    );
-      if ((!must_quote and IsPlainChar(ch))) {
-        continue;
-      }
-      quote = 1;
-      if ((str_contains(str53, ch) or IsUnprintableLow(ch))) {
-        quote = 2;
-        break;
-      }
-    }
-  }
-  if (quote == 0) {
+  if ((unquoted_ok and fastfunc::CanOmitQuotes(s))) {
     return s;
   }
-  parts = Alloc<List<BigStr*>>();
-  buf = Alloc<mylib::BufWriter>();
-  valid_utf8 = _encode(s, bit8_display, buf);
-  parts->append(buf->getvalue());
-  if ((!valid_utf8 or quote == 2)) {
-    prefix = str54;
-  }
-  else {
-    prefix = str55;
-  }
-  parts->append(str56);
-  return str_concat(prefix, str57->join(parts));
+  return fastfunc::J8EncodeString(s, 1);
 }
 
-BigStr* maybe_encode(BigStr* s, int bit8_display) {
-  int quote;
-  List<BigStr*>* parts = nullptr;
-  mylib::BufWriter* buf = nullptr;
+BigStr* MaybeShellEncode(BigStr* s) {
   StackRoot _root0(&s);
-  StackRoot _root1(&parts);
-  StackRoot _root2(&buf);
 
-  quote = 0;
-  if (len(s) == 0) {
-    quote = 1;
-  }
-  else {
-    for (StrIter it(s); !it.Done(); it.Next()) {
-      BigStr* ch = it.Value();
-      StackRoot _for(&ch    );
-      if (IsPlainChar(ch)) {
-        continue;
-      }
-      quote = 1;
-    }
-  }
-  if (!quote) {
+  if (fastfunc::CanOmitQuotes(s)) {
     return s;
   }
-  parts = Alloc<List<BigStr*>>();
-  parts->append(str58);
-  buf = Alloc<mylib::BufWriter>();
-  _encode(s, bit8_display, buf);
-  parts->append(buf->getvalue());
-  parts->append(str59);
-  return str60->join(parts);
+  return fastfunc::ShellEncodeString(s, 0);
 }
 
-BigStr* encode(BigStr* s, int bit8_display) {
-  List<BigStr*>* parts = nullptr;
-  mylib::BufWriter* buf = nullptr;
+BigStr* ShellEncode(BigStr* s) {
   StackRoot _root0(&s);
-  StackRoot _root1(&parts);
-  StackRoot _root2(&buf);
 
-  parts = Alloc<List<BigStr*>>();
-  parts->append(str61);
-  buf = Alloc<mylib::BufWriter>();
-  _encode(s, bit8_display, buf);
-  parts->append(buf->getvalue());
-  parts->append(str62);
-  return str63->join(parts);
+  return fastfunc::ShellEncodeString(s, 0);
 }
 
-void _encode_bytes_x(BigStr* s, mylib::BufWriter* buf) {
-  BigStr* part = nullptr;
+BigStr* YshEncode(BigStr* s, bool unquoted_ok) {
   StackRoot _root0(&s);
-  StackRoot _root1(&buf);
-  StackRoot _root2(&part);
 
-  for (StrIter it(s); !it.Done(); it.Next()) {
-    BigStr* byte = it.Value();
-    StackRoot _for(&byte  );
-    if (str_equals(byte, str64)) {
-      part = str65;
-    }
-    else {
-      if (str_equals(byte, str66)) {
-        part = str67;
-      }
-      else {
-        if (str_equals(byte, str68)) {
-          part = str69;
-        }
-        else {
-          if (str_equals(byte, str70)) {
-            part = str71;
-          }
-          else {
-            if (str_equals(byte, str72)) {
-              part = str73;
-            }
-            else {
-              if (str_equals(byte, str74)) {
-                part = str75;
-              }
-              else {
-                if (IsUnprintableLow(byte)) {
-                  part = XEscape(byte);
-                }
-                else {
-                  if (IsUnprintableHigh(byte)) {
-                    part = XEscape(byte);
-                  }
-                  else {
-                    part = byte;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    buf->write(part);
+  if ((unquoted_ok and fastfunc::CanOmitQuotes(s))) {
+    return s;
   }
-}
-int Ascii = 0;
-int Begin2 = 1;
-int Begin3 = 2;
-int Begin4 = 3;
-int Cont = 4;
-int Invalid = 5;
-int Start = 0;
-int B2_1 = 1;
-int B3_1 = 2;
-int B4_1 = 3;
-int B3_2 = 4;
-int B4_2 = 5;
-int B4_3 = 6;
-
-bool EncodeRunes(BigStr* s, int bit8_display, mylib::BufWriter* buf) {
-  bool valid_utf8;
-  int state;
-  BigStr* r1 = nullptr;
-  BigStr* r2 = nullptr;
-  BigStr* r3 = nullptr;
-  int b;
-  int typ;
-  BigStr* out = nullptr;
-  int rune;
-  StackRoot _root0(&s);
-  StackRoot _root1(&buf);
-  StackRoot _root2(&r1);
-  StackRoot _root3(&r2);
-  StackRoot _root4(&r3);
-  StackRoot _root5(&out);
-
-  valid_utf8 = true;
-  state = Start;
-  r1 = str76;
-  r2 = str77;
-  r3 = str78;
-  for (StrIter it(s); !it.Done(); it.Next()) {
-    BigStr* byte = it.Value();
-    StackRoot _for(&byte  );
-    b = ord(byte);
-    if (b < 127) {
-      typ = Ascii;
-    }
-    else {
-      if ((b >> 6) == 2) {
-        typ = Cont;
-      }
-      else {
-        if ((b >> 5) == 6) {
-          typ = Begin2;
-        }
-        else {
-          if ((b >> 4) == 14) {
-            typ = Begin3;
-          }
-          else {
-            if ((b >> 3) == 30) {
-              typ = Begin4;
-            }
-            else {
-              typ = Invalid;
-            }
-          }
-        }
-      }
-    }
-    if (typ != Cont) {
-      if (state >= B2_1) {
-        valid_utf8 = false;
-        buf->write(XEscape(r1));
-      }
-      if (state >= B3_2) {
-        buf->write(XEscape(r2));
-      }
-      if (state >= B4_3) {
-        buf->write(XEscape(r3));
-      }
-    }
-    if (typ == Ascii) {
-      state = Start;
-      if (str_equals(byte, str79)) {
-        out = str80;
-      }
-      else {
-        if (str_equals(byte, str81)) {
-          out = str82;
-        }
-        else {
-          if (str_equals(byte, str83)) {
-            out = str84;
-          }
-          else {
-            if (str_equals(byte, str85)) {
-              out = str86;
-            }
-            else {
-              if (str_equals(byte, str87)) {
-                out = str88;
-              }
-              else {
-                if (str_equals(byte, str89)) {
-                  out = str90;
-                }
-                else {
-                  if (IsUnprintableLow(byte)) {
-                    if (bit8_display == BIT8_U_ESCAPE) {
-                      out = UEscape(ord(byte));
-                    }
-                    else {
-                      out = XEscape(byte);
-                    }
-                  }
-                  else {
-                    out = byte;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      buf->write(out);
-    }
-    else {
-      if (typ == Begin2) {
-        state = B2_1;
-        r1 = byte;
-      }
-      else {
-        if (typ == Begin3) {
-          state = B3_1;
-          r1 = byte;
-        }
-        else {
-          if (typ == Begin4) {
-            state = B4_1;
-            r1 = byte;
-          }
-          else {
-            if (typ == Invalid) {
-              state = Start;
-              buf->write(XEscape(byte));
-              valid_utf8 = false;
-            }
-            else {
-              if (typ == Cont) {
-                if (state == Start) {
-                  buf->write(XEscape(byte));
-                  valid_utf8 = false;
-                }
-                else {
-                  if (state == B2_1) {
-                    if (bit8_display == BIT8_UTF8) {
-                      out = str_concat(r1, byte);
-                    }
-                    else {
-                      rune = (ord(byte) & 63);
-                      rune |= ((ord(r1) & 31) << 6);
-                      out = UEscape(rune);
-                    }
-                    buf->write(out);
-                    state = Start;
-                  }
-                  else {
-                    if (state == B3_1) {
-                      r2 = byte;
-                      state = B3_2;
-                    }
-                    else {
-                      if (state == B3_2) {
-                        if (bit8_display == BIT8_UTF8) {
-                          out = str_concat(str_concat(r1, r2), byte);
-                        }
-                        else {
-                          rune = (ord(byte) & 63);
-                          rune |= ((ord(r2) & 63) << 6);
-                          rune |= ((ord(r1) & 15) << 12);
-                          out = UEscape(rune);
-                        }
-                        buf->write(out);
-                        state = Start;
-                      }
-                      else {
-                        if (state == B4_1) {
-                          r2 = byte;
-                          state = B4_2;
-                        }
-                        else {
-                          if (state == B4_2) {
-                            r3 = byte;
-                            state = B4_3;
-                          }
-                          else {
-                            if (state == B4_3) {
-                              if (bit8_display == BIT8_UTF8) {
-                                out = str_concat(str_concat(str_concat(r1, r2), r3), byte);
-                              }
-                              else {
-                                rune = (ord(byte) & 63);
-                                rune |= ((ord(r3) & 63) << 6);
-                                rune |= ((ord(r2) & 63) << 12);
-                                rune |= ((ord(r1) & 7) << 18);
-                                out = UEscape(rune);
-                              }
-                              buf->write(out);
-                              state = Start;
-                            }
-                            else {
-                              assert(0);  // AssertionError
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-              else {
-                assert(0);  // AssertionError
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  if (state >= B2_1) {
-    valid_utf8 = false;
-    buf->write(XEscape(r1));
-  }
-  if (state >= B3_2) {
-    buf->write(XEscape(r2));
-  }
-  if (state >= B4_3) {
-    buf->write(XEscape(r3));
-  }
-  return valid_utf8;
+  return fastfunc::ShellEncodeString(s, 1);
 }
 
-}  // define namespace qsn
+}  // define namespace j8_lite
 
 namespace error {  // define
 
@@ -1489,7 +1114,6 @@ using syntax_asdl::loc_e;
 using syntax_asdl::loc_t;
 using syntax_asdl::loc;
 using value_asdl::value;
-using value_asdl::value_e;
 using value_asdl::value_t;
 using value_asdl::value_str;
 
@@ -1520,14 +1144,6 @@ BigStr* _ErrorWithLocation::UserErrorString() {
 Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-Runtime::Runtime(BigStr* msg) {
-  this->msg = msg;
-}
-
-BigStr* Runtime::UserErrorString() {
-  return this->msg;
-}
-
 Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
@@ -1555,7 +1171,17 @@ ErrExit::ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, boo
 Expr::Expr(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
 }
 
-UserError::UserError(int status, BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
+Structured::Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties) : FatalRuntime(status, msg, location) {
+  this->properties = properties;
+}
+
+value::Dict* Structured::ToDict() {
+  if (this->properties == nullptr) {
+    this->properties = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
+  }
+  this->properties->set(str56, Alloc<value::Int>(this->ExitStatus()));
+  this->properties->set(str57, Alloc<value::Str>(this->msg));
+  return Alloc<value::Dict>(this->properties);
 }
 
 AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
@@ -1565,6 +1191,45 @@ TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : Expr
 }
 
 TypeErr::TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
+}
+
+Runtime::Runtime(BigStr* msg) {
+  this->msg = msg;
+}
+
+BigStr* Runtime::UserErrorString() {
+  return this->msg;
+}
+
+Decode::Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos) {
+  this->msg = msg;
+  this->s = s;
+  this->start_pos = start_pos;
+  this->end_pos = end_pos;
+}
+
+BigStr* Decode::Message() {
+  int start;
+  int end;
+  BigStr* part = nullptr;
+  StackRoot _root0(&part);
+
+  start = max(0, (this->start_pos - 4));
+  end = min(len(this->s), (this->end_pos + 4));
+  part = this->s->slice(start, end);
+  return str_concat(this->msg, StrFormat(" (pos %d-%d: %r)", this->start_pos, this->end_pos, part));
+}
+
+BigStr* Decode::__str__() {
+  return this->Message();
+}
+
+Encode::Encode(BigStr* msg) {
+  this->msg = msg;
+}
+
+BigStr* Encode::Message() {
+  return this->msg;
 }
 
 [[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location) {
@@ -1612,7 +1277,6 @@ using syntax_asdl::CompoundWord;
 using value_asdl::value;
 using value_asdl::value_e;
 using value_asdl::value_t;
-using value_asdl::value_str;
 using error::e_usage;
 int String = 1;
 int Int = 2;
@@ -1643,7 +1307,7 @@ void _Attributes::Set(BigStr* name, value_asdl::value_t* val) {
   StackRoot _root0(&name);
   StackRoot _root1(&val);
 
-  name = name->replace(str93, str94);
+  name = name->replace(str60, str61);
   this->attrs->set(name, val);
 }
 
@@ -1788,7 +1452,7 @@ bool _ArgAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attri
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(str98, this->name)), arg_r->Location());
+      e_usage(StrFormat("expected argument to %r", str_concat(str65, this->name)), arg_r->Location());
     }
   }
   val = this->_Value(arg, arg_r->Location());
@@ -1808,10 +1472,10 @@ value_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location)
     i = to_int(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str100, this->name), arg), location);
+    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str67, this->name), arg), location);
   }
   if (i < 0) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str102, this->name), arg), location);
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str69, this->name), arg), location);
   }
   return Alloc<value::Int>(i);
 }
@@ -1828,10 +1492,10 @@ value_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* locatio
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str104, this->name), arg), location);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str71, this->name), arg), location);
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str106, this->name), arg), location);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str73, this->name), arg), location);
   }
   return Alloc<value::Float>(f);
 }
@@ -1844,7 +1508,7 @@ value_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* locati
   StackRoot _root1(&location);
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str108, this->name), str109->join(this->valid)), location);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str75, this->name), str76->join(this->valid)), location);
   }
   return Alloc<value::Str>(arg);
 }
@@ -1860,11 +1524,11 @@ bool SetAttachedBool::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_
   StackRoot _root2(&out);
 
   if (attached_arg != nullptr) {
-    if ((str_equals(attached_arg, str110) || str_equals(attached_arg, str111) || str_equals(attached_arg, str112) || str_equals(attached_arg, str113))) {
+    if ((str_equals(attached_arg, str77) || str_equals(attached_arg, str78) || str_equals(attached_arg, str79) || str_equals(attached_arg, str80))) {
       b = false;
     }
     else {
-      if ((str_equals(attached_arg, str114) || str_equals(attached_arg, str115) || str_equals(attached_arg, str116) || str_equals(attached_arg, str117))) {
+      if ((str_equals(attached_arg, str81) || str_equals(attached_arg, str82) || str_equals(attached_arg, str83) || str_equals(attached_arg, str84))) {
         b = true;
       }
       else {
@@ -1902,7 +1566,7 @@ bool SetOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attrib
   StackRoot _root1(&arg_r);
   StackRoot _root2(&out);
 
-  b = maybe_str_equals(attached_arg, str119);
+  b = maybe_str_equals(attached_arg, str86);
   out->opt_changes->append((Alloc<Tuple2<BigStr*, bool>>(this->name, b)));
   return false;
 }
@@ -1930,7 +1594,7 @@ bool SetNamedOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   StackRoot _root4(&attr_name);
   StackRoot _root5(&changes);
 
-  b = maybe_str_equals(attached_arg, str120);
+  b = maybe_str_equals(attached_arg, str87);
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
@@ -1981,7 +1645,7 @@ bool SetNamedAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str122, loc::Missing);
+    e_usage(str89, loc::Missing);
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
@@ -2014,13 +1678,13 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str124)) {
+    if (maybe_str_equals(arg, str91)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if ((len(spec->actions_long) and arg->startswith(str125))) {
-      pos = arg->find(str126, 2);
+    if ((len(spec->actions_long) and arg->startswith(str92))) {
+      pos = arg->find(str93, 2);
       if (pos == -1) {
         suffix = nullptr;
         flag_name = arg->slice(2);
@@ -2038,15 +1702,15 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       continue;
     }
     else {
-      if ((arg->startswith(str128) and len(arg) > 1)) {
+      if ((arg->startswith(str95) and len(arg) > 1)) {
         n = len(arg);
         for (int i = 1; i < n; ++i) {
           ch = arg->at(i);
-          if (str_equals(ch, str129)) {
-            ch = str130;
+          if (str_equals(ch, str96)) {
+            ch = str97;
           }
           if (list_contains(spec->plus_flags, ch)) {
-            out->Set(ch, Alloc<value::Str>(str131));
+            out->Set(ch, Alloc<value::Str>(str98));
             continue;
           }
           if (list_contains(spec->arity0, ch)) {
@@ -2059,20 +1723,20 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str133, ch)), arg_r->Location());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str100, ch)), arg_r->Location());
         }
         arg_r->Next();
       }
       else {
-        if ((len(spec->plus_flags) and (arg->startswith(str134) and len(arg) > 1))) {
+        if ((len(spec->plus_flags) and (arg->startswith(str101) and len(arg) > 1))) {
           n = len(arg);
           for (int i = 1; i < n; ++i) {
             ch = arg->at(i);
             if (list_contains(spec->plus_flags, ch)) {
-              out->Set(ch, Alloc<value::Str>(str135));
+              out->Set(ch, Alloc<value::Str>(str102));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str137, ch)), arg_r->Location());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str104, ch)), arg_r->Location());
           }
           arg_r->Next();
         }
@@ -2100,7 +1764,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
     chars = arg->slice(1);
-    if ((arg->startswith(str138) and len(chars))) {
+    if ((arg->startswith(str105) and len(chars))) {
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
         BigStr* c = it.Value();
@@ -2146,12 +1810,12 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
   quit = false;
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str139)) {
+    if (maybe_str_equals(arg, str106)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if (arg->startswith(str140)) {
+    if (arg->startswith(str107)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
         e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
@@ -2160,14 +1824,14 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       arg_r->Next();
       continue;
     }
-    if (((arg->startswith(str142) or arg->startswith(str143)) and len(arg) > 1)) {
+    if (((arg->startswith(str109) or arg->startswith(str110)) and len(arg) > 1)) {
       char0 = arg->at(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         BigStr* ch = it.Value();
         StackRoot _for(&ch      );
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str145, ch)), arg_r->Location());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str112, ch)), arg_r->Location());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);

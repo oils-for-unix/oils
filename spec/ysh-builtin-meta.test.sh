@@ -28,6 +28,22 @@ grep -n -o value.Str out.txt
 2:value.Str
 ## END
 
+#### pp asdl can handle an object cycle
+
+shopt -s ysh:upgrade
+
+var d = {}
+setvar d.cycle = d
+
+pp line (d) | fgrep -o '{"cycle":'
+
+pp asdl (d) | fgrep -o 'cycle ...'
+
+## STDOUT:
+{"cycle":
+cycle ...
+## END
+
 #### pp line supports BashArray, BashAssoc
 
 declare -a array=(a b c)
@@ -89,21 +105,25 @@ array = (Cell exported:F readonly:F nameref:F val:(value.BashArray strs:[_ _ _ 4
 
 
 #### pp proc
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 
 # This has to be a separate file because sh_spec.py strips comments!
 . $REPO_ROOT/spec/testdata/doc-comments.sh
 
 pp proc
 echo ---
+
+# print one
 pp proc f
+
 ## STDOUT:
 proc_name	doc_comment
-f	'doc \' comment with " quotes'
-g	''
-myproc	'Oil-style proc'
+f	"doc ' comment with \" quotes"
+g	""
+myproc	"YSH-style proc"
+"true"	"Special quoting rule"
 ---
 proc_name	doc_comment
-f	'doc \' comment with " quotes'
+f	"doc ' comment with \" quotes"
 ## END
 

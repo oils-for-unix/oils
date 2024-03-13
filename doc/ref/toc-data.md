@@ -19,13 +19,15 @@ Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
   (<a class="group-link" href="chap-j8.html">j8</a>)
 </h2>
 
-```chapter-links-data-lang
-  [J8 Strings]   json-escape \n   surrogate-pair
-                 j8-escape \yff \u{03bc}
-                 b-prefix b""   j-prefix j"" 
-  [JSON8]        Null   Bool   Number   
-                 Json8String
-                 List   Dict
+```chapter-links-j8
+  [J8 Strings]   json-string "hi"   json-escape \" \\ \u1234
+                 surrogate-pair \ud83e\udd26
+                 u-prefix u'hi'   b-prefix b'hi'
+                 j8-escape \u{1f926} \yff
+                 no-prefix 'hi'
+  [JSON8]        json8-num   json8-str
+                 json8-list   json-dict
+                 json8-comment
   [TSV8]         column-attrs   column-types
 ```
 
@@ -50,6 +52,5 @@ All J8 notation is UTF-8.
   [JSON]   json-encode-err   json-decode-err
   [JSON8]  json8-encode-err   json8-decode-err
   [Packle] packle-encode-err   packle-decode-err   
-  [UTF8]   bad-byte   expected-start   expected-cont
-           incomplete-seq   overlong   bad-code-point
+  [UTF8]   utf8-encode-err   utf8-decode-err
 ```

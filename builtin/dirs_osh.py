@@ -8,7 +8,7 @@ from core import pyos
 from core import state
 from core import ui
 from core import vm
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import typed_args
 from mycpp.mylib import log
 from pylib import os_path
@@ -96,7 +96,7 @@ class Cd(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('cd',
+        attrs, arg_r = flag_util.ParseCmdVal('cd',
                                              cmd_val,
                                              accept_typed_args=True)
         arg = arg_types.cd(attrs.attrs)
@@ -197,7 +197,7 @@ class Pushd(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('pushd', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('pushd', cmd_val)
 
         dir_arg, dir_arg_loc = arg_r.Peek2()
         if dir_arg is None:
@@ -260,7 +260,7 @@ class Popd(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('pushd', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('pushd', cmd_val)
 
         extra, extra_loc = arg_r.Peek2()
         if extra is not None:
@@ -286,7 +286,7 @@ class Dirs(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('dirs', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('dirs', cmd_val)
         arg = arg_types.dirs(attrs.attrs)
 
         home_dir = state.MaybeString(self.mem, 'HOME')
@@ -320,7 +320,7 @@ class Pwd(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('pwd', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('pwd', cmd_val)
         arg = arg_types.pwd(attrs.attrs)
 
         # NOTE: 'pwd' will succeed even if the directory has disappeared.  Other

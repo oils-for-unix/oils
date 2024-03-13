@@ -14,9 +14,10 @@ import sys
 
 from _devbuild.gen.option_asdl import builtin_i, option_i
 from _devbuild.gen.runtime_asdl import cmd_value, scope_e
-from _devbuild.gen.syntax_asdl import loc, source, SourceLine
+from _devbuild.gen.syntax_asdl import loc, source, SourceLine, Token
 from _devbuild.gen.value_asdl import value
 from asdl import pybase
+from asdl import runtime
 from builtin import assign_osh
 from builtin import completion_osh
 from builtin import hay_ysh
@@ -37,7 +38,6 @@ from core import state
 from core import ui
 from core import util
 from core import vm
-from data_lang import j8
 from frontend import lexer
 from frontend import location
 from frontend import parse_lib
@@ -55,9 +55,11 @@ def MakeBuiltinArgv(argv):
     return cmd_value.Argv(argv, [loc.Missing] * len(argv), None, None, None)
 
 
-def Tok(id_, val):
-    # TODO: Tests could use this directly
-    return lexer.DummyToken(id_, val)
+def FakeTok(id_, val):
+    # type: (int, str) -> Token
+    src = source.Interactive
+    line = SourceLine(1, val, src)
+    return Token(id_, 0, len(val), runtime.NO_SPID, line, val)
 
 
 def PrintableString(s):
@@ -69,8 +71,23 @@ def PrintableString(s):
 
 def TokensEqual(left, right):
     # Ignoring location in CompoundObj.__eq__ now, but we might want this later.
-    return left.id == right.id and left.tval == right.tval
-    #return left == right
+
+    if left.id != right.id:
+        return False
+
+    if left.line is not None:
+        left_str = lexer.TokenVal(left)
+    else:
+        left_str = None
+
+    if right.line is not None:
+        right_str = lexer.TokenVal(right)
+    else:
+        right_str = None
+
+    # Better error message sometimes:
+    #assert left_str == right_str, '%r != %r' % (left_str, right_str)
+    return left_str == right_str
 
 
 def TokenWordsEqual(left, right):
@@ -239,8 +256,7 @@ def InitCommandEvaluator(parse_ctx=None,
     ext_prog = \
         ext_prog or process.ExternalProgram('', fd_state, errfmt, debug_f)
 
-    j8print = j8.Printer()
-    cmd_deps.dumper = dev.CrashDumper('', fd_state, j8print)
+    cmd_deps.dumper = dev.CrashDumper('', fd_state)
     cmd_deps.debug_f = debug_f
 
     splitter = split.SplitContext(mem)
@@ -323,7 +339,7 @@ def InitParseContext(arena=None,
                      ysh_grammar=None,
                      aliases=None,
                      parse_opts=None,
-                     one_pass_parse=False):
+                     do_lossless=False):
     arena = arena or MakeArena('<test_lib>')
 
     if aliases is None:
@@ -337,7 +353,7 @@ def InitParseContext(arena=None,
                                        parse_opts,
                                        aliases,
                                        ysh_grammar,
-                                       one_pass_parse=one_pass_parse)
+                                       do_lossless=do_lossless)
 
     return parse_ctx
 

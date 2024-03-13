@@ -207,7 +207,7 @@ run-all-and-log() {
   tsv-row 'status' 'elapsed_secs' 'test' 'test_HREF' > $tasks_tsv
 
   # There are no functions here, so disabline errexit is safe.
-  # Note: In Oil, this could use shopt { }.
+  # Note: In YSH, this could use shopt { }.
   set +o errexit
   time all-tests | xargs -n 1 -- $0 run-test-and-log $tasks_tsv
   status=$?
@@ -235,7 +235,7 @@ print-report() {
   local in_dir=${1:-_tmp/unit}
   local base_url='../../web'  # published at more_tests.wwz/unit/
 
-  html-head --title 'Oil Unit Test Results' \
+  html-head --title 'Oils Unit Test Results' \
     "$base_url/table/table-sort.js" \
     "$base_url/table/table-sort.css" \
     "$base_url/base.css" \

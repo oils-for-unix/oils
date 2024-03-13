@@ -1,4 +1,6 @@
-#
+## compare_shells: bash dash mksh zsh
+
+
 # Interesting interpretation of constants.
 #
 # "Constants with a leading 0 are interpreted as octal numbers. A leading ‘0x’
@@ -290,12 +292,91 @@ echo "should not get here: x=${x:-<unset>}"
 ## BUG dash/mksh/zsh stdout: should not get here: x=5
 ## BUG dash/mksh/zsh status: 0
 
-#### Integer Overflow
-set -o nounset
-echo $(( 999999 * 999999 * 999999 * 999999 ))
-## stdout: 999996000005999996000001
-## BUG dash/bash/zsh stdout: -1996229794797103359
-## BUG mksh stdout: -15640831
+#### 64-bit integer doesn't overflow
+
+a=$(( 1 << 31 ))
+echo $a
+
+b=$(( a + a ))
+echo $b
+
+c=$(( b + a ))
+echo $c
+
+x=$(( 1 << 62 ))
+y=$(( x - 1 ))
+echo "max positive = $(( x + y ))"
+
+#echo "overflow $(( x + x ))"
+
+## STDOUT:
+2147483648
+4294967296
+6442450944
+max positive = 9223372036854775807
+## END
+
+# mksh still uses int!
+## BUG mksh STDOUT:
+-2147483648
+0
+-2147483648
+max positive = 2147483647
+## END
+
+#### More 64-bit ops
+case $SH in dash) exit ;; esac
+
+#shopt -s strict_arith
+
+# This overflows - the extra 9 puts it above 2**31
+#echo $(( 12345678909 ))
+
+[[ 12345678909 = $(( 1 << 30 )) ]]
+echo eq=$?
+[[ 12345678909 = 12345678909 ]]
+echo eq=$?
+
+# Try both [ and [[
+[ 12345678909 -gt $(( 1 << 30 )) ]
+echo greater=$?
+[[ 12345678909 -gt $(( 1 << 30 )) ]]
+echo greater=$?
+
+[[ 12345678909 -ge $(( 1 << 30 )) ]]
+echo ge=$?
+[[ 12345678909 -ge 12345678909 ]]
+echo ge=$?
+
+[[ 12345678909 -le $(( 1 << 30 )) ]]
+echo le=$?
+[[ 12345678909 -le 12345678909 ]]
+echo le=$?
+
+## STDOUT:
+eq=1
+eq=0
+greater=0
+greater=0
+ge=0
+ge=0
+le=1
+le=0
+## END
+## N-I dash STDOUT:
+## END
+## BUG mksh STDOUT:
+eq=1
+eq=0
+greater=1
+greater=1
+ge=1
+ge=0
+le=0
+le=0
+## END
+
+# mksh still uses int!
 
 #### Invalid LValue
 a=9
@@ -623,4 +704,58 @@ status=2
 status=0
 status=1
 status=1
+## END
+
+#### Negative numbers with integer division /
+
+echo $(( 10 / 3))
+echo $((-10 / 3))
+echo $(( 10 / -3))
+echo $((-10 / -3))
+
+echo ---
+
+a=20
+: $(( a /= 3 ))
+echo $a
+
+a=-20
+: $(( a /= 3 ))
+echo $a
+
+a=20
+: $(( a /= -3 ))
+echo $a
+
+a=-20
+: $(( a /= -3 ))
+echo $a
+
+## STDOUT:
+3
+-3
+-3
+3
+---
+6
+-6
+-6
+6
+## END
+
+#### Negative numbers with %
+
+echo $(( 10 % 3))
+echo $((-10 % 3))
+echo $(( 10 % -3))
+echo $((-10 % -3))
+
+# Algorithm: Make both number spositive, then take the sign of the first
+# number?
+
+## STDOUT:
+1
+-1
+1
+-1
 ## END

@@ -8,6 +8,7 @@
 state.py - Interpreter state
 """
 from __future__ import print_function
+import time as time_  # avoid name conflict
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import option_i
@@ -22,6 +23,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
 from asdl import runtime
 from core import error
 from core.error import e_usage, e_die
+from core import num
 from core import pyos
 from core import pyutil
 from core import optview
@@ -30,8 +32,10 @@ from core import util
 from frontend import consts
 from frontend import location
 from frontend import match
+from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr, tagswitch, iteritems, NewDict
+from mycpp.mylib import (log, print_stderr, str_switch, tagswitch, iteritems,
+                         NewDict)
 from osh import split
 from pylib import os_path
 from pylib import path_stat
@@ -62,6 +66,30 @@ SetNameref = 1 << 4
 ClearNameref = 1 << 5
 
 
+def LookupExecutable(name, path_dirs, exec_required=True):
+    # type: (str, List[str], bool) -> Optional[str]
+    """
+    Returns either
+    - the name if it's a relative path that exists
+    - the executable name resolved against path_dirs
+    - None if not found
+    """
+    if '/' in name:
+        return name if path_stat.exists(name) else None
+
+    for path_dir in path_dirs:
+        full_path = os_path.join(path_dir, name)
+        if exec_required:
+            found = posix.access(full_path, X_OK)
+        else:
+            found = path_stat.exists(full_path)
+
+        if found:
+            return full_path
+
+    return None
+
+
 class SearchPath(object):
     """For looking up files in $PATH."""
 
@@ -87,20 +115,9 @@ class SearchPath(object):
         """
         Returns the path itself (if relative path), the resolved path, or None.
         """
-        if '/' in name:
-            return name if path_stat.exists(name) else None
-
-        for path_dir in self._GetPath():
-            full_path = os_path.join(path_dir, name)
-            if exec_required:
-                found = posix.access(full_path, X_OK)
-            else:
-                found = path_stat.exists(full_path)
-
-            if found:
-                return full_path
-
-        return None
+        return LookupExecutable(name,
+                                self._GetPath(),
+                                exec_required=exec_required)
 
     def LookupReflect(self, name, do_all):
         # type: (str, bool) -> List[str]
@@ -683,7 +700,7 @@ class _ArgFrame(object):
         return {
             # Easier to serialize value.BashArray than value.List
             'argv': value.BashArray(self.argv),
-            'num_shifted': value.Int(self.num_shifted),
+            'num_shifted': num.ToBig(self.num_shifted),
         }
 
     def GetArgNum(self, arg_num):
@@ -727,29 +744,26 @@ def _DumpVarFrame(frame):
 
         # TODO:
         # - Use packle for crash dumps!  Then we can represent object cycles
+        #   - Right now the JSON serializer will probably crash
         #   - although BashArray and BashAssoc may need 'type' tags
         #     - they don't round trip correctly
         #     - maybe add value.Tombstone here or something?
         #   - value.{Func,Eggex,...} may have value.Tombstone and
         #   vm.ValueIdString()?
 
-        val = None  # type: value_t
         with tagswitch(cell.val) as case:
             if case(value_e.Undef):
                 cell_json['type'] = value.Str('Undef')
 
             elif case(value_e.Str):
-                val = cast(value.Str, cell.val)
                 cell_json['type'] = value.Str('Str')
-                cell_json['value'] = value.Str(val.s)
+                cell_json['value'] = cell.val
 
             elif case(value_e.BashArray):
-                val = cast(value.BashArray, cell.val)
                 cell_json['type'] = value.Str('BashArray')
                 cell_json['value'] = cell.val
 
             elif case(value_e.BashAssoc):
-                val = cast(value.BashAssoc, cell.val)
                 cell_json['type'] = value.Str('BashAssoc')
                 cell_json['value'] = cell.val
 
@@ -784,7 +798,7 @@ def _AddCallToken(d, token):
     if token is None:
         return
     d['call_source'] = value.Str(ui.GetLineSourceString(token.line))
-    d['call_line_num'] = value.Int(token.line.line_num)
+    d['call_line_num'] = num.ToBig(token.line.line_num)
     d['call_line'] = value.Str(token.line.content)
 
 
@@ -970,7 +984,7 @@ class ctx_Registers(object):
         last = mem.last_status[-1]
         mem.last_status.append(last)
         mem.try_status.append(0)
-        mem.try_error.append(None)
+        mem.try_error.append(value.Dict({}))
 
         # TODO: We should also copy these values!  Turn the whole thing into a
         # frame.
@@ -1055,6 +1069,7 @@ class Mem(object):
         self.debug_stack = debug_stack
 
         self.pwd = None  # type: Optional[str]
+        self.seconds_start = time_.time()
 
         self.token_for_line = None  # type: Optional[Token]
         self.loc_for_expr = loc.Missing  # type: loc_t
@@ -1071,7 +1086,7 @@ class Mem(object):
         # - push-registers builtin
         self.last_status = [0]  # type: List[int]  # a stack
         self.try_status = [0]  # type: List[int]  # a stack
-        self.try_error = [None]  # type: List[Optional[value.Dict]]  # a stack
+        self.try_error = [value.Dict({})]  # type: List[value.Dict]  # a stack
         self.pipe_status = [[]]  # type: List[List[int]]  # stack
         self.process_sub_status = [[]]  # type: List[List[int]]  # stack
 
@@ -1083,6 +1098,9 @@ class Mem(object):
 
         self.running_debug_trap = False  # set by ctx_DebugTrap()
         self.is_main = True  # we start out in main
+
+        # For the ctx builtin
+        self.ctx_stack = []  # type: List[Dict[str, value_t]]
 
     def __repr__(self):
         # type: () -> str
@@ -1148,10 +1166,7 @@ class Mem(object):
 
                 elif case(debug_frame_e.Main):
                     frame = cast(debug_frame.Main, UP_frame)
-                    d = {
-                        'type': t_main,
-                        'dollar0': value.Str(frame.dollar0)
-                    }
+                    d = {'type': t_main, 'dollar0': value.Str(frame.dollar0)}
 
             debug_stack.append(value.Dict(d))
         return var_stack, argv_stack, debug_stack
@@ -1221,7 +1236,7 @@ class Mem(object):
         return self.try_status[-1]
 
     def TryError(self):
-        # type: () -> Optional[value.Dict]
+        # type: () -> value.Dict
         return self.try_error[-1]
 
     def PipeStatus(self):
@@ -1298,6 +1313,8 @@ class Mem(object):
     def ShouldRunDebugTrap(self):
         # type: () -> bool
 
+        # TODO: RunLastPart of pipeline can disable this
+
         # Don't recursively run DEBUG trap
         if self.running_debug_trap:
             return False
@@ -1367,6 +1384,10 @@ class Mem(object):
     def GetArgNum(self, arg_num):
         # type: (int) -> value_t
         if arg_num == 0:
+            # $0 may be overriden, eg. by Str => replace()
+            vars = self.var_stack[-1]
+            if "0" in vars and vars["0"].val.tag() != value_e.Undef:
+                return vars["0"].val
             return value.Str(self.dollar0)
 
         return self.argv_stack[-1].GetArgNum(arg_num)
@@ -1801,13 +1822,7 @@ class Mem(object):
 
     def GetValue(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> value_t
-        """Used by the WordEvaluator, ArithEvaluator, ysh/expr_eval.py, etc.
-
-        TODO:
-        - Many of these should be value.Int, not value.Str
-        - And even later _pipeline_status etc. should be lists of integers, not
-          strings
-        """
+        """Used by the WordEvaluator, ArithEvaluator, ExprEvaluator, etc."""
         assert isinstance(name, str), name
 
         if which_scopes == scope_e.Shopt:
@@ -1818,145 +1833,157 @@ class Mem(object):
         # COMPUTED_VARS = {'PIPESTATUS': 1, 'FUNCNAME': 1, ...}
         # if name not in COMPUTED_VARS: ...
 
-        if name == 'ARGV':
-            items = [value.Str(s)
-                     for s in self.GetArgv()]  # type: List[value_t]
-            return value.List(items)
+        with str_switch(name) as case:
+            if case('ARGV'):
+                # TODO: ARGV can be a normal mutable variable in YSH
+                items = [value.Str(s)
+                         for s in self.GetArgv()]  # type: List[value_t]
+                return value.List(items)
 
-        # "Registers"
-        if name == '_status':
-            return value.Int(self.TryStatus())
+            # "Registers"
+            elif case('_status'):
+                return num.ToBig(self.TryStatus())
 
-        if name == '_this_dir':
-            if len(self.this_dir) == 0:
-                # e.g. osh -c '' doesn't have it set
-                # Should we give a custom error here?
-                # If you're at the interactive shell, 'source mymodule.oil' will still
-                # work because 'source' sets it.
-                return value.Undef
+            elif case('_error'):
+                return self.TryError()
+
+            elif case('_this_dir'):
+                if len(self.this_dir) == 0:
+                    # e.g. osh -c '' doesn't have it set
+                    # Should we give a custom error here?
+                    # If you're at the interactive shell, 'source mymodule.oil' will still
+                    # work because 'source' sets it.
+                    return value.Undef
+                else:
+                    return value.Str(self.this_dir[-1])  # top of stack
+
+            elif case('PIPESTATUS'):
+                strs2 = [str(i)
+                         for i in self.pipe_status[-1]]  # type: List[str]
+                return value.BashArray(strs2)
+
+            elif case('_pipeline_status'):
+                items = [num.ToBig(i) for i in self.pipe_status[-1]]
+                return value.List(items)
+
+            elif case('_process_sub_status'):  # Oil naming convention
+                items = [num.ToBig(i) for i in self.process_sub_status[-1]]
+                return value.List(items)
+
+            elif case('BASH_REMATCH'):
+                top_match = self.regex_match[-1]
+                with tagswitch(top_match) as case2:
+                    if case2(regex_match_e.No):
+                        groups = []  # type: List[str]
+                    elif case2(regex_match_e.Yes):
+                        m = cast(RegexMatch, top_match)
+                        groups = util.RegexGroups(m.s, m.indices)
+                return value.BashArray(groups)
+
+            # Do lookup of system globals before looking at user variables.  Note: we
+            # could optimize this at compile-time like $?.  That would break
+            # ${!varref}, but it's already broken for $?.
+
+            elif case('FUNCNAME'):
+                # bash wants it in reverse order.  This is a little inefficient but we're
+                # not depending on deque().
+                strs = []  # type: List[str]
+                for frame in reversed(self.debug_stack):
+                    UP_frame = frame
+                    with tagswitch(frame) as case2:
+                        if case2(debug_frame_e.Call):
+                            frame = cast(debug_frame.Call, UP_frame)
+                            strs.append(frame.func_name)
+
+                        elif case2(debug_frame_e.Source):
+                            # bash doesn't tell you the filename sourced
+                            strs.append('source')
+
+                        elif case2(debug_frame_e.Main):
+                            strs.append('main')  # also bash behavior
+
+                return value.BashArray(strs)  # TODO: Reuse this object too?
+
+            # $BASH_SOURCE and $BASH_LINENO have OFF BY ONE design bugs:
+            #
+            # ${BASH_LINENO[$i]} is the line number in the source file
+            # (${BASH_SOURCE[$i+1]}) where ${FUNCNAME[$i]} was called (or
+            # ${BASH_LINENO[$i-1]} if referenced within another shell function).
+            #
+            # https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
+
+            elif case('BASH_SOURCE'):
+                strs = []
+                for frame in reversed(self.debug_stack):
+                    UP_frame = frame
+                    with tagswitch(frame) as case2:
+                        if case2(debug_frame_e.Call):
+                            frame = cast(debug_frame.Call, UP_frame)
+
+                            # Weird bash behavior
+                            assert frame.def_tok.line is not None
+                            source_str = ui.GetLineSourceString(
+                                frame.def_tok.line)
+                            strs.append(source_str)
+
+                        elif case2(debug_frame_e.Source):
+                            frame = cast(debug_frame.Source, UP_frame)
+                            # Is this right?
+                            strs.append(frame.source_name)
+
+                        elif case2(debug_frame_e.Main):
+                            frame = cast(debug_frame.Main, UP_frame)
+                            strs.append(frame.dollar0)
+
+                return value.BashArray(strs)  # TODO: Reuse this object too?
+
+            elif case('BASH_LINENO'):
+                strs = []
+                for frame in reversed(self.debug_stack):
+                    UP_frame = frame
+                    with tagswitch(frame) as case2:
+                        if case2(debug_frame_e.Call):
+                            frame = cast(debug_frame.Call, UP_frame)
+                            strs.append(_LineNumber(frame.call_tok))
+
+                        elif case2(debug_frame_e.Source):
+                            frame = cast(debug_frame.Source, UP_frame)
+                            strs.append(_LineNumber(frame.call_tok))
+
+                        elif case2(debug_frame_e.Main):
+                            # Bash does this to line up with 'main'
+                            strs.append('0')
+
+                return value.BashArray(strs)  # TODO: Reuse this object too?
+
+            elif case('LINENO'):
+                assert self.token_for_line is not None
+                # Reuse object with mutation
+                # TODO: maybe use interned GetLineNumStr?
+                self.line_num.s = str(self.token_for_line.line.line_num)
+                return self.line_num
+
+            elif case('BASHPID'):  # TODO: YSH io->getpid()
+                return value.Str(str(posix.getpid()))
+
+            elif case('_'):
+                return value.Str(self.last_arg)
+
+            elif case('SECONDS'):
+                return value.Int(
+                    mops.FromFloat(time_.time() - self.seconds_start))
+
             else:
-                return value.Str(self.this_dir[-1])  # top of stack
+                # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
+                # fix this:
+                # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
+                # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
+                #    We still need a ref_trail to detect cycles.
+                cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
+                if cell:
+                    return cell.val
 
-        if name == 'PIPESTATUS':
-            strs2 = [str(i) for i in self.pipe_status[-1]]  # type: List[str]
-            return value.BashArray(strs2)
-
-        if name == '_pipeline_status':
-            items = [value.Int(i) for i in self.pipe_status[-1]]
-            return value.List(items)
-
-        if name == '_process_sub_status':  # Oil naming convention
-            items = [value.Int(i) for i in self.process_sub_status[-1]]
-            return value.List(items)
-
-        if name == 'BASH_REMATCH':
-            top_match = self.regex_match[-1]
-            with tagswitch(top_match) as case:
-                if case(regex_match_e.No):
-                    groups = []  # type: List[str]
-                elif case(regex_match_e.Yes):
-                    m = cast(RegexMatch, top_match)
-                    groups = util.RegexGroups(m.s, m.indices)
-            return value.BashArray(groups)
-
-        # Do lookup of system globals before looking at user variables.  Note: we
-        # could optimize this at compile-time like $?.  That would break
-        # ${!varref}, but it's already broken for $?.
-
-        if name == 'FUNCNAME':
-            # bash wants it in reverse order.  This is a little inefficient but we're
-            # not depending on deque().
-            strs = []  # type: List[str]
-            for frame in reversed(self.debug_stack):
-                UP_frame = frame
-                with tagswitch(frame) as case:
-                    if case(debug_frame_e.Call):
-                        frame = cast(debug_frame.Call, UP_frame)
-                        strs.append(frame.func_name)
-
-                    elif case(debug_frame_e.Source):
-                        # bash doesn't tell you the filename sourced
-                        strs.append('source')
-
-                    elif case(debug_frame_e.Main):
-                        strs.append('main')  # also bash behavior
-
-            return value.BashArray(strs)  # TODO: Reuse this object too?
-
-        # $BASH_SOURCE and $BASH_LINENO have OFF BY ONE design bugs:
-        #
-        # ${BASH_LINENO[$i]} is the line number in the source file
-        # (${BASH_SOURCE[$i+1]}) where ${FUNCNAME[$i]} was called (or
-        # ${BASH_LINENO[$i-1]} if referenced within another shell function).
-        #
-        # https://www.gnu.org/software/bash/manual/html_node/Bash-Variables.html
-
-        if name == 'BASH_SOURCE':
-            strs = []
-            for frame in reversed(self.debug_stack):
-                UP_frame = frame
-                with tagswitch(frame) as case:
-                    if case(debug_frame_e.Call):
-                        frame = cast(debug_frame.Call, UP_frame)
-
-                        # Weird bash behavior
-                        assert frame.def_tok.line is not None
-                        source_str = ui.GetLineSourceString(frame.def_tok.line)
-                        strs.append(source_str)
-
-                    elif case(debug_frame_e.Source):
-                        frame = cast(debug_frame.Source, UP_frame)
-                        # Is this right?
-                        strs.append(frame.source_name)
-
-                    elif case(debug_frame_e.Main):
-                        frame = cast(debug_frame.Main, UP_frame)
-                        strs.append(frame.dollar0)
-
-            return value.BashArray(strs)  # TODO: Reuse this object too?
-
-        if name == 'BASH_LINENO':
-            strs = []
-            for frame in reversed(self.debug_stack):
-                UP_frame = frame
-                with tagswitch(frame) as case:
-                    if case(debug_frame_e.Call):
-                        frame = cast(debug_frame.Call, UP_frame)
-                        strs.append(_LineNumber(frame.call_tok))
-
-                    elif case(debug_frame_e.Source):
-                        frame = cast(debug_frame.Source, UP_frame)
-                        strs.append(_LineNumber(frame.call_tok))
-
-                    elif case(debug_frame_e.Main):
-                        # Bash does this to line up with 'main'
-                        strs.append('0')
-
-            return value.BashArray(strs)  # TODO: Reuse this object too?
-
-        if name == 'LINENO':
-            assert self.token_for_line is not None
-            # Reuse object with mutation
-            # TODO: maybe use interned GetLineNumStr?
-            self.line_num.s = str(self.token_for_line.line.line_num)
-            return self.line_num
-
-        if name == 'BASHPID':  # TODO: Oil name for it
-            return value.Str(str(posix.getpid()))
-
-        if name == '_':
-            return value.Str(self.last_arg)
-
-        # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to
-        # fix this:
-        # 1. Call self.unsafe_arith.ParseVarRef() -> BracedVarSub
-        # 2. Call self.unsafe_arith.GetNameref(bvs_part), and get a value_t
-        #    We still need a ref_trail to detect cycles.
-        cell, _, _ = self._ResolveNameOrRef(name, which_scopes)
-        if cell:
-            return cell.val
-
-        return value.Undef
+                return value.Undef
 
     def GetCell(self, name, which_scopes=scope_e.Shopt):
         # type: (str, scope_t) -> Cell
@@ -2190,6 +2217,21 @@ class Mem(object):
     def GetRegexMatch(self):
         # type: () -> regex_match_t
         return self.regex_match[-1]
+
+    def PushContextStack(self, context):
+        # type: (Dict[str, value_t]) -> None
+        self.ctx_stack.append(context)
+
+    def GetContext(self):
+        # type: () -> Optional[Dict[str, value_t]]
+        if len(self.ctx_stack):
+            return self.ctx_stack[-1]
+        return None
+
+    def PopContextStack(self):
+        # type: () -> Dict[str, value_t]
+        assert self.ctx_stack, "Empty context stack"
+        return self.ctx_stack.pop()
 
 
 #

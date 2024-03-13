@@ -12,13 +12,14 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
 
 from core import error
 from core import optview
+from core import num
 from core import state
 from core import ui
 from data_lang import j8
 from mycpp.mylib import log
 from frontend import location
 from osh import word_
-from data_lang import qsn
+from data_lang import j8_lite
 from pylib import os_path
 from mycpp import mylib
 from mycpp.mylib import tagswitch, iteritems
@@ -68,11 +69,10 @@ class CrashDumper(object):
     One is constant at build time; the other is constant at runtime.
     """
 
-    def __init__(self, crash_dump_dir, fd_state, j8print):
-        # type: (str, process.FdState, j8.Printer) -> None
+    def __init__(self, crash_dump_dir, fd_state):
+        # type: (str, process.FdState) -> None
         self.crash_dump_dir = crash_dump_dir
         self.fd_state = fd_state
-        self.j8print = j8print
 
         # whether we should collect a dump, at the highest level of the stack
         self.do_collect = bool(crash_dump_dir)
@@ -106,7 +106,7 @@ class CrashDumper(object):
             # render that.
             self.error['source'] = value.Str(
                 ui.GetLineSourceString(blame_tok.line))
-            self.error['line_num'] = value.Int(blame_tok.line.line_num)
+            self.error['line_num'] = num.ToBig(blame_tok.line.line_num)
             self.error['line'] = value.Str(blame_tok.line.content)
 
         # TODO: Collect functions, aliases, etc.
@@ -142,8 +142,8 @@ class CrashDumper(object):
             'argv_stack': value.List(self.argv_stack),
             'debug_stack': value.List(self.debug_stack),
             'error': value.Dict(self.error),
-            'status': value.Int(status),
-            'pid': value.Int(my_pid),
+            'status': num.ToBig(status),
+            'pid': num.ToBig(my_pid),
         }  # type: Dict[str, value_t]
 
         path = os_path.join(self.crash_dump_dir,
@@ -151,7 +151,7 @@ class CrashDumper(object):
 
         # TODO: This should be JSON with unicode replacement char?
         buf = mylib.BufWriter()
-        self.j8print.PrintMessage(value.Dict(d), buf, 2)
+        j8.PrintMessage(value.Dict(d), buf, 2)
         json_str = buf.getvalue()
 
         try:
@@ -194,21 +194,25 @@ class ctx_Tracer(object):
 
 def _PrintShValue(val, buf):
     # type: (value_t, mylib.BufWriter) -> None
-    """Using maybe_shell_encode() for legacy xtrace_details."""
+    """Print ShAssignment values.
 
-    # NOTE: This is a bit like _PrintVariables for declare -p
+    NOTE: This is a bit like _PrintVariables for declare -p
+    """
+    # I think this should never happen because it's for ShAssignment
     result = '?'
+
+    # Using maybe_shell_encode() because it's shell
     UP_val = val
     with tagswitch(val) as case:
         if case(value_e.Str):
             val = cast(value.Str, UP_val)
-            result = qsn.maybe_shell_encode(val.s)
+            result = j8_lite.MaybeShellEncode(val.s)
 
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
             parts = ['(']
             for s in val.strs:
-                parts.append(qsn.maybe_shell_encode(s))
+                parts.append(j8_lite.MaybeShellEncode(s))
             parts.append(')')
             result = ' '.join(parts)
 
@@ -216,21 +220,40 @@ def _PrintShValue(val, buf):
             val = cast(value.BashAssoc, UP_val)
             parts = ['(']
             for k, v in iteritems(val.d):
+                # key must be quoted
                 parts.append(
                     '[%s]=%s' %
-                    (qsn.maybe_shell_encode(k), qsn.maybe_shell_encode(v)))
+                    (j8_lite.ShellEncode(k), j8_lite.MaybeShellEncode(v)))
             parts.append(')')
             result = ' '.join(parts)
 
     buf.write(result)
 
 
-def _PrintArgv(argv, buf):
+def PrintShellArgv(argv, buf):
     # type: (List[str], mylib.BufWriter) -> None
-    """Uses QSN encoding without $ for xtrace_rich."""
+    for i, arg in enumerate(argv):
+        if i != 0:
+            buf.write(' ')
+        buf.write(j8_lite.MaybeShellEncode(arg))
+
+
+def _PrintYshArgv(argv, buf):
+    # type: (List[str], mylib.BufWriter) -> None
+
+    # We're printing $'hi\n' for OSH, but we might want to print u'hi\n' or
+    # b'\n' for YSH.  We could have a shopt --set xtrace_j8 or something.
+    #
+    # This used to be xtrace_rich, but I think that was too subtle.
+
     for arg in argv:
         buf.write(' ')
-        buf.write(qsn.maybe_encode(arg))
+        # TODO: use unquoted -> POSIX '' -> b''
+        # This would use JSON "", which CONFLICTS with shell.  So we need
+        # another function.
+        #j8.EncodeString(arg, buf, unquoted_ok=True)
+
+        buf.write(j8_lite.MaybeShellEncode(arg))
     buf.write('\n')
 
 
@@ -248,7 +271,7 @@ class Tracer(object):
     Other hooks:
 
     - Command completion starts other processes
-    - Oil command constructs: BareDecl, VarDecl, Mutation, Expr
+    - YSH command constructs: BareDecl, VarDecl, Mutation, Expr
     """
 
     def __init__(
@@ -261,12 +284,12 @@ class Tracer(object):
     ):
         # type: (...) -> None
         """
-    Args:
-      parse_ctx: For parsing PS4.
-      exec_opts: For xtrace setting
-      mem: for retrieving PS4
-      word_ev: for evaluating PS4
-    """
+        Args:
+          parse_ctx: For parsing PS4.
+          exec_opts: For xtrace setting
+          mem: for retrieving PS4
+          word_ev: for evaluating PS4
+        """
         self.parse_ctx = parse_ctx
         self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
@@ -284,6 +307,9 @@ class Tracer(object):
         # Mutate objects to save allocations
         self.val_indent = value.Str('')
         self.val_punct = value.Str('')
+        # TODO: show something for root process by default?  INTERLEAVED output
+        # can be confusing, e.g. debugging traps in forkred subinterpreter
+        # created by a pipeline.
         self.val_pid_str = value.Str('')  # mutated by SetProcess
 
         # Can these be global constants?  I don't think we have that in ASDL yet.
@@ -389,7 +415,7 @@ class Tracer(object):
             if case(trace_e.External):
                 why = cast(trace.External, UP_why)
                 buf.write('command %d:' % pid)
-                _PrintArgv(why.argv, buf)
+                _PrintYshArgv(why.argv, buf)
 
             # Everything below is the same.  Could use string literals?
             elif case(trace_e.ForkWait):
@@ -435,11 +461,11 @@ class Tracer(object):
         if buf:
             buf.write(label)
             if label == 'proc':
-                _PrintArgv(argv, buf)
+                _PrintYshArgv(argv, buf)
             elif label == 'source':
-                _PrintArgv(argv[1:], buf)
+                _PrintYshArgv(argv[1:], buf)
             elif label == 'wait':
-                _PrintArgv(argv[1:], buf)
+                _PrintYshArgv(argv[1:], buf)
             else:
                 buf.write('\n')
             self.f.write(buf.getvalue())
@@ -448,7 +474,10 @@ class Tracer(object):
 
     def PopMessage(self, label, arg):
         # type: (str, Optional[str]) -> None
-        """For synchronous constructs that aren't processes."""
+        """For synchronous constructs that aren't processes.
+
+        e.g. source or proc
+        """
         self._Dec()
 
         buf = self._RichTraceBegin('<')
@@ -456,13 +485,14 @@ class Tracer(object):
             buf.write(label)
             if arg is not None:
                 buf.write(' ')
-                buf.write(qsn.maybe_encode(arg))
+                # TODO: use unquoted -> POSIX '' -> b''
+                buf.write(j8_lite.MaybeShellEncode(arg))
             buf.write('\n')
             self.f.write(buf.getvalue())
 
-    def PrintMessage(self, message):
+    def OtherMessage(self, message):
         # type: (str) -> None
-        """Used when receiving signals."""
+        """Can be used when receiving signals."""
         buf = self._RichTraceBegin('!')
         if not buf:
             return
@@ -477,7 +507,7 @@ class Tracer(object):
         if not buf:
             return
         buf.write('exec')
-        _PrintArgv(argv, buf)
+        _PrintYshArgv(argv, buf)
         self.f.write(buf.getvalue())
 
     def OnBuiltin(self, builtin_id, argv):
@@ -489,7 +519,7 @@ class Tracer(object):
         if not buf:
             return
         buf.write('builtin')
-        _PrintArgv(argv, buf)
+        _PrintYshArgv(argv, buf)
         self.f.write(buf.getvalue())
 
     #
@@ -510,11 +540,8 @@ class Tracer(object):
         if self.exec_opts.xtrace_rich():
             return
 
-        # Legacy: Use SHELL encoding
-        for i, arg in enumerate(argv):
-            if i != 0:
-                buf.write(' ')
-            buf.write(qsn.maybe_shell_encode(arg))
+        # Legacy: Use SHELL encoding, NOT _PrintYshArgv()
+        PrintShellArgv(argv, buf)
         buf.write('\n')
         self.f.write(buf.getvalue())
 
@@ -556,7 +583,8 @@ class Tracer(object):
                 left = '%s[%d]' % (lval.name, lval.index)
             elif case(sh_lvalue_e.Keyed):
                 lval = cast(sh_lvalue.Keyed, UP_lval)
-                left = '%s[%s]' % (lval.name, qsn.maybe_shell_encode(lval.key))
+                left = '%s[%s]' % (lval.name, j8_lite.MaybeShellEncode(
+                    lval.key))
         buf.write(left)
 
         # Only two possibilities here

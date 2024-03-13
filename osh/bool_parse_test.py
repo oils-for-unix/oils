@@ -42,6 +42,7 @@ def _MakeParser(code_str):
 
 
 class BoolParserTest(unittest.TestCase):
+
     def testParseFactor(self):
         p = _MakeParser('foo')
         print(p.ParseFactor())

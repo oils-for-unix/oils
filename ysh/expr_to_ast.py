@@ -4,11 +4,11 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
+    NameTok,
     loc,
     loc_t,
     DoubleQuoted,
     SingleQuoted,
-    SimpleVarSub,
     BracedVarSub,
     CommandSub,
     ShArrayLiteral,
@@ -26,7 +26,6 @@ from _devbuild.gen.syntax_asdl import (
     PosixClass,
     PerlClass,
     NameType,
-    y_lhs,
     y_lhs_t,
     Comprehension,
     Subscript,
@@ -45,9 +44,13 @@ from _devbuild.gen.syntax_asdl import (
     Eggex,
     EggexFlag,
 )
+from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
 from core.error import p_die
+from core import num
+from frontend import consts
 from frontend import lexer
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 from ysh import expr_parse
@@ -227,7 +230,8 @@ class Transformer(object):
 
         if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
-            return Attribute(base, op_tok, attr, expr_context_e.Store)
+            return Attribute(base, op_tok, attr, lexer.TokenVal(attr),
+                             expr_context_e.Store)
 
         raise AssertionError(Id_str(op_tok.id))
 
@@ -248,25 +252,26 @@ class Transformer(object):
             elif typ == grammar_nt.dq_string:
                 key = self.Expr(p_node.GetChild(0))
 
-            value = self.Expr(p_node.GetChild(2))
-            return key, value
+            val = self.Expr(p_node.GetChild(2))
+            return key, val
 
         tok0 = p_node.GetChild(0).tok
         id_ = tok0.id
 
         if id_ == Id.Expr_Name:
-            key = expr.Const(tok0)
+            key_str = value.Str(lexer.TokenVal(tok0))
+            key = expr.Const(tok0, key_str)
             if p_node.NumChildren() >= 3:
-                value = self.Expr(p_node.GetChild(2))
+                val = self.Expr(p_node.GetChild(2))
             else:
-                value = expr.Implicit
+                val = expr.Implicit
 
         if id_ == Id.Op_LBracket:  # {[x+y]: 'val'}
             key = self.Expr(p_node.GetChild(1))
-            value = self.Expr(p_node.GetChild(4))
-            return key, value
+            val = self.Expr(p_node.GetChild(4))
+            return key, val
 
-        return key, value
+        return key, val
 
     def _Dict(self, parent, p_node):
         # type: (PNode, PNode) -> expr.Dict
@@ -286,9 +291,9 @@ class Transformer(object):
 
         n = p_node.NumChildren()
         for i in xrange(0, n, 2):
-            key, value = self._DictPair(p_node.GetChild(i))
+            key, val = self._DictPair(p_node.GetChild(i))
             keys.append(key)
-            values.append(value)
+            values.append(val)
 
         return expr.Dict(parent.tok, keys, values)
 
@@ -429,7 +434,7 @@ class Transformer(object):
         if n == 3:
             typ = self._TypeExpr(p_node.GetChild(2))
 
-        return NameType(name_tok, typ)
+        return NameType(name_tok, lexer.TokenVal(name_tok), typ)
 
     def _NameTypeList(self, p_node):
         # type: (PNode) -> List[NameType]
@@ -691,7 +696,11 @@ class Transformer(object):
                 return cast(BracedVarSub, pnode.GetChild(1).tok)
 
             elif typ == grammar_nt.dq_string:
-                return cast(DoubleQuoted, pnode.GetChild(1).tok)
+                s = cast(DoubleQuoted, pnode.GetChild(1).tok)
+                # sugar: ^"..." is short for ^["..."]
+                if pnode.GetChild(0).tok.id == Id.Left_CaretDoubleQuote:
+                    return expr.Literal(s)
+                return s
 
             elif typ == grammar_nt.sq_string:
                 return cast(SingleQuoted, pnode.GetChild(1).tok)
@@ -700,13 +709,13 @@ class Transformer(object):
                 tok = pnode.GetChild(0).tok
 
                 if tok.id == Id.VSub_DollarName:  # $foo is disallowed
-                    bare = tok.tval[1:]
+                    bare = lexer.TokenSliceLeft(tok, 1)
                     p_die(
                         'In expressions, remove $ and use `%s`, or sometimes "$%s"'
                         % (bare, bare), tok)
 
                 # $? is allowed
-                return SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
+                return NameTok(tok, lexer.TokenSliceLeft(tok, 1))
 
             else:
                 nt_name = self.number2symbol[typ]
@@ -717,17 +726,80 @@ class Transformer(object):
             id_ = tok.id
 
             if id_ == Id.Expr_Name:
-                return expr.Var(tok)
+                return expr.Var(tok, lexer.TokenVal(tok))
 
-            if id_ in (Id.Expr_DecInt, Id.Expr_BinInt, Id.Expr_OctInt,
-                       Id.Expr_HexInt, Id.Expr_Float):
-                return expr.Const(tok)
+            tok_str = lexer.TokenVal(tok)
 
-            if id_ in (Id.Expr_Null, Id.Expr_True, Id.Expr_False,
-                       Id.Char_OneChar, Id.Char_UBraced, Id.Char_Pound):
-                return expr.Const(tok)
+            # Remove underscores from 1_000_000.  The lexer is responsible for
+            # validation.
+            c_under = tok_str.replace('_', '')
 
-            raise NotImplementedError(Id_str(id_))
+            if id_ == Id.Expr_DecInt:
+                try:
+                    cval = value.Int(mops.FromStr(c_under))  # type: value_t
+                except ValueError:
+                    p_die('Decimal int constant is too large', tok)
+            elif id_ == Id.Expr_BinInt:
+                assert c_under[:2] in ('0b', '0B'), c_under
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 2))
+                except ValueError:
+                    p_die('Binary int constant is too large', tok)
+            elif id_ == Id.Expr_OctInt:
+                assert c_under[:2] in ('0o', '0O'), c_under
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 8))
+                except ValueError:
+                    p_die('Octal int constant is too large', tok)
+            elif id_ == Id.Expr_HexInt:
+                assert c_under[:2] in ('0x', '0X'), c_under
+                try:
+                    cval = value.Int(mops.FromStr(c_under[2:], 16))
+                except ValueError:
+                    p_die('Hex int constant is too large', tok)
+
+            elif id_ == Id.Expr_Float:
+                # Note: float() in mycpp/gc_builtins.cc currently uses strtod
+                # I think this never raises ValueError, because the lexer
+                # should only accept strings that strtod() does?
+                cval = value.Float(float(c_under))
+
+            elif id_ == Id.Expr_Null:
+                cval = value.Null
+            elif id_ == Id.Expr_True:
+                cval = value.Bool(True)
+            elif id_ == Id.Expr_False:
+                cval = value.Bool(False)
+
+            # What to do with the char constants?
+            # \n  \u{3bc}  #'a'
+            # Are they integers or strings?
+            #
+            # Integers could be ord(\n), or strings could chr(\n)
+            # Or just remove them, with ord(u'\n') and chr(u'\n')
+            #
+            # I think this relies on small string optimization.  If we have it,
+            # then 1-4 byte characters are efficient, and don't require heap
+            # allocation.
+
+            elif id_ == Id.Char_OneChar:
+                # TODO: look up integer directly?
+                cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
+            elif id_ == Id.Char_UBraced:
+                hex_str = tok_str[3:-1]  # \u{123}
+                # ValueError shouldn't happen because lexer validates
+                cval = value.Int(mops.FromStr(hex_str, 16))
+
+            # This could be a char integer?  Not sure
+            elif id_ == Id.Char_Pound:
+                # TODO: accept UTF-8 code point instead of single byte
+                byte = tok_str[2]  # the a in #'a'
+                cval = num.ToBig(ord(byte))  # It's an integer
+
+            else:
+                raise AssertionError(Id_str(id_))
+
+            return expr.Const(tok, cval)
 
     def _ArrayItem(self, p_node):
         # type: (PNode) -> expr_t
@@ -757,7 +829,7 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    lhs_list.append(y_lhs.Var(e.name))
+                    lhs_list.append(NameTok(e.left, e.name))
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
@@ -1009,7 +1081,7 @@ class Transformer(object):
         ty = TypeExpr.CreateNull()  # don't allocate children
 
         ty.tok = pnode.GetChild(0).tok
-        ty.name = ty.tok.tval  # TODO: TokenVal()
+        ty.name = lexer.TokenVal(ty.tok)
 
         n = pnode.NumChildren()
         if n == 1:
@@ -1237,7 +1309,7 @@ class Transformer(object):
                 # Can happen with multiline single-quoted strings
                 if len(tokens) > 1:
                     p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
-                if len(tokens[0].tval) > 1:
+                if tokens[0].length > 1:
                     p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
                 return tokens[0]
 
@@ -1251,7 +1323,7 @@ class Transformer(object):
             tok = p_node.tok
             if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
                 # For the a in a-z, 0 in 0-9
-                if len(tok.tval) != 1:
+                if tok.length != 1:
                     p_die(RANGE_POINT_TOO_LONG, tok)
                 return tok
 
@@ -1330,7 +1402,7 @@ class Transformer(object):
 
     def _NameInRegex(self, negated_tok, tok):
         # type: (Token, Token) -> re_t
-        tok_str = tok.tval
+        tok_str = lexer.TokenVal(tok)
         if tok_str == 'dot':
             if negated_tok:
                 p_die("Can't negate this symbol", tok)
@@ -1354,7 +1426,7 @@ class Transformer(object):
 
         And `d` is a literal 'd', not `digit`.
         """
-        tok_str = tok.tval
+        tok_str = lexer.TokenVal(tok)
 
         # A bare, unquoted character literal.  In the grammar, this is expressed as
         # range_char without an ending.
@@ -1413,9 +1485,10 @@ class Transformer(object):
 
             if tok.id == Id.Expr_Symbol:
                 # Validate symbols here, like we validate PerlClass, etc.
-                if tok.tval in ('%start', '%end', 'dot'):
+                tok_str = lexer.TokenVal(tok)
+                if tok_str in ('%start', '%end', 'dot'):
                     return tok
-                p_die("Unexpected token %r in regex" % tok.tval, tok)
+                p_die("Unexpected token %r in regex" % tok_str, tok)
 
             if tok.id == Id.Expr_At:
                 # | '@' Expr_Name

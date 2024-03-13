@@ -60,6 +60,8 @@ Array literals like `var a = :| ale bean |` instead of `local a=(ale bean)`
 **[Procs, Funcs, and Blocks](proc-func.html)** for modularity:
 
 - Shell functions are "upgraded" into procs, with typed and named parameters.
+  - Procs have truly local variables, like Python and JavaScript.  There's no
+    [dynamic scope]($xref:dynamic-scope) rule, as with shell functions.
 - Python-like pure funcs compute on "interior" data.
 - Ruby-like blocks enable reflection and metaprogramming.
   - Including declarative [Hay](hay.html) blocks
@@ -92,7 +94,7 @@ Raw strings can have an `r` prefix, like `echo r'C:\Program Files\'`.
 
 ### Builtin Commands and Functions
 
-- YSH adds long flags to builtin commands, like `read --line`.
+- YSH adds long flags to builtin commands, like `read --all`.
 - YSH has builtin functions like `join()`.
 
 ### Shell Options, `shvar`, Registers

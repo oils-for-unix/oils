@@ -185,7 +185,7 @@ format-image-stats() {
     <h1>Image Layers</h1>
 EOF
 
-  tsv2html $soil_dir/image-layers.tsv
+  tsv2html3 $soil_dir/image-layers.tsv
 
   # First column is number of bytes; ignore header
   local total_bytes=$(awk '
@@ -233,6 +233,7 @@ make-job-wwz() {
 
   zip -q -r $wwz \
     index.html \
+    _build/wedge/logs \
     _test \
     _tmp/{soil,spec,src-tree-www,wild-www,stateful,process-table,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,gc-cachegrind,perf,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
     _tmp/uftrace/{index.html,stage2} \
@@ -241,7 +242,13 @@ make-job-wwz() {
     _release/oil*.tar _release/VERSION/
 }
 
+test-collect-json() {
+  soil/collect_json.py _tmp/soil PATH
+}
+
 deploy-job-results() {
+  ### Copy .wwz, .tsv, and .json to a new dir
+
   local prefix=$1  # e.g. example.com/github-jobs/
   local subdir=$2  # e.g. example.com/github-jobs/1234/  # make this dir
   local job_name=$3  # e.g. example.com/github-jobs/1234/foo.wwz

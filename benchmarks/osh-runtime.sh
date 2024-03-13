@@ -342,8 +342,8 @@ soil-run() {
   extract
 
   # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
-  local -a oil_bin=( $OSH_CPP_NINJA_BUILD )
-  ninja "${oil_bin[@]}"
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  ninja "${osh_bin[@]}"
 
   local single_machine='no-host'
 
@@ -353,7 +353,7 @@ soil-run() {
   # Write _tmp/provenance.* and _tmp/{host,shell}-id
   shell-provenance-2 \
     $single_machine $job_id _tmp \
-    bash dash bin/osh "${oil_bin[@]}"
+    bash dash bin/osh "${osh_bin[@]}"
 
   local host_job_id="$single_machine.$job_id"
   local raw_out_dir="$BASE_DIR/raw.$host_job_id"
@@ -377,8 +377,13 @@ soil-run() {
 #
 
 compare-cpython() {
-  local -a a=( ../benchmark-data/osh-runtime/*.broome.2023* )
-  #local -a b=( ../benchmark-data/osh-runtime/*.lenny.2023* )
+  #local -a a=( ../benchmark-data/osh-runtime/*.lenny.2024* )
+  local -a a=( ../benchmark-data/osh-runtime/*.hoover.2024* )
+
+  # More of a diff here?
+  #local -a a=( ../benchmark-data/osh-runtime/*.broome.2023* )
+  # less diff here
+  #local -a a=( ../benchmark-data/osh-runtime/*.lenny.2023* )
 
   local dir=${a[-1]}
 
@@ -394,17 +399,25 @@ compare-cpython() {
 
   set +o errexit
 
+  local out_dir=_tmp/cpython-configure
+  mkdir -p $out_dir
+
   echo 'bash vs. dash'
-  diff -u --recursive $dir/{files-2,files-8} | diffstat
+  diff -u --recursive $dir/{files-2,files-8} > $out_dir/bash-vs-dash.txt
+  diffstat $out_dir/bash-vs-dash.txt
   echo
 
   echo 'bash vs. osh-py'
-  diff -u --recursive $dir/{files-2,files-14} | diffstat
+  diff -u --recursive $dir/{files-2,files-14} > $out_dir/bash-vs-osh-py.txt
+  diffstat $out_dir/bash-vs-osh-py.txt
   echo
 
   echo 'bash vs. osh-cpp'
-  diff -u --recursive $dir/{files-2,files-20} | diffstat
+  diff -u --recursive $dir/{files-2,files-20} > $out_dir/bash-vs-osh-cpp.txt
+  diffstat $out_dir/bash-vs-osh-cpp.txt
   echo
+
+  return
 
   diff -u $dir/{files-2,files-20}/STDOUT.txt
   echo

@@ -239,10 +239,13 @@ old_sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
 
 # Note: could add c"" too
-dq_string: (Left_DoubleQuote | Left_TDoubleQuote) Expr_CastedDummy Right_DoubleQuote
+dq_string: (Left_DoubleQuote | Left_TDoubleQuote | Left_CaretDoubleQuote) Expr_CastedDummy Right_DoubleQuote
 sq_string: (
-  Left_SingleQuote | Left_RSingleQuote | Left_DollarSingleQuote |
-  Left_TSingleQuote | Left_RTSingleQuote | Left_DollarTSingleQuote
+    Left_SingleQuote | Left_TSingleQuote 
+  | Left_RSingleQuote | Left_RTSingleQuote
+  | Left_DollarSingleQuote
+  | Left_USingleQuote | Left_UTSingleQuote 
+  | Left_BSingleQuote | Left_BTSingleQuote
 ) Expr_CastedDummy Right_SingleQuote
 
 braced_var_sub: '${' Expr_CastedDummy Right_DollarBrace
@@ -293,14 +296,17 @@ type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
 # in command subs.
 end_stmt: '}' | ';' | Op_Newline | Eof_Real 
 
+# TODO: allow -> to denote aliasing/mutation
 ysh_var_decl: name_type_list ['=' testlist] end_stmt
 
-# Note: this production is more precise as the following, but it's ambiguous :(
-#ysh_setvar: lhs augassign testlist end_stmt
-#          | lhs_list '=' testlist end_stmt
+# Note: this is more precise way of writing ysh_mutation, but it's ambiguous :(
+# ysh_mutation: lhs augassign testlist end_stmt
+#             | lhs_list '=' testlist end_stmt
 
 # Note: for YSH (not Tea), we could accept [':'] expr for setvar :out = 'foo'
 lhs_list: expr (',' expr)*
+
+# TODO: allow -> to denote aliasing/mutation
 ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
 
 # For json write (x)

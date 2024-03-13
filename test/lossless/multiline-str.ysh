@@ -1,0 +1,22 @@
+# This works, how come stripping spaces doesn't affect it?
+
+echo '''
+  sq 1
+  2
+  '''
+
+var x = 42
+echo """
+  dq $x
+  $[x + 1]
+  """
+  
+var a = '''
+  sq 1
+  2
+  '''
+
+var b = """
+  dq $x
+  $[x + 1]
+  """

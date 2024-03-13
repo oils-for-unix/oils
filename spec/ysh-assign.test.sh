@@ -281,9 +281,9 @@ proc readonly-var {
   echo x=$x
 }
 
-try eval 'local-var'
+try { eval 'local-var' }
 echo status=$_status
-try eval 'readonly-var'
+try { eval 'readonly-var' }
 echo status=$_status
 
 ## STDOUT:

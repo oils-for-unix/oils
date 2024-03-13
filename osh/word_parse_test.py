@@ -18,7 +18,7 @@ from _devbuild.gen.types_asdl import lex_mode_e
 from asdl import format as fmt
 from core import error
 from core import test_lib
-from core.test_lib import Tok
+from core.test_lib import FakeTok
 from frontend import lexer
 from frontend import location
 from osh import word_
@@ -28,15 +28,19 @@ def _assertReadWordWithArena(test, w_parser):
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w is not None
     fmt.PrettyPrint(w)
+    print('')
 
     # Next word must be Eof_Real
     w2 = w_parser.ReadWord(lex_mode_e.ShCommand)
-    test.assertTrue(test_lib.TokensEqual(Tok(Id.Eof_Real, ''), w2), w2)
+    test.assertTrue(test_lib.TokensEqual(FakeTok(Id.Eof_Real, ''), w2), w2)
     return w
 
 
 def _assertReadWord(test, word_str, oil_at=False):
-    print('\n---', word_str)
+    print('')
+    print('--- %s' % word_str)
+    print('')
+
     arena = test_lib.MakeArena('word_parse_test.py')
     w_parser = test_lib.InitWordParser(word_str, arena=arena, oil_at=oil_at)
     w = _assertReadWordWithArena(test, w_parser)
@@ -165,6 +169,7 @@ class LexerTest(unittest.TestCase):
 
 
 class WordParserTest(unittest.TestCase):
+
     def testStaticEvalWord(self):
         expr = r'\EOF'  # Quoted here doc delimiter
         w_parser = test_lib.InitWordParser(expr)
@@ -267,7 +272,8 @@ class WordParserTest(unittest.TestCase):
         op = _GetSuffixOp(self, w)
         self.assertUnquoted('pat', op.pat)
         self.assertUnquoted('replace', op.replace)
-        self.assertEqual(Id.Lit_Slash, op.replace_mode, Id_str(op.replace_mode))
+        self.assertEqual(Id.Lit_Slash, op.replace_mode,
+                         Id_str(op.replace_mode))
 
         w = _assertReadWord(self, '${var/%pat/replace}')  # prefix
         op = _GetSuffixOp(self, w)

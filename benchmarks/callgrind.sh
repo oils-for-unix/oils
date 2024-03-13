@@ -18,8 +18,19 @@ fib() {
     $osh benchmarks/compute/fib.sh 10 44
 }
 
+with-callgrind() {
+  local out_file=$1  # Ignored for now, same interface as with-cachegrind
+  shift
+
+  valgrind --tool=callgrind \
+    "$@"
+}
+
 install-kcachegrind() {
   sudo apt-get install kcachegrind
 }
 
-"$@"
+file=$(basename $0)
+if test $file = 'callgrind.sh'; then
+  "$@"
+fi

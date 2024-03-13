@@ -1,0 +1,39 @@
+# Wedge definition for bash
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# sourced
+WEDGE_NAME='bash'
+WEDGE_VERSION='4.4'
+
+wedge-make() {
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  # --without-bash-malloc for Alpine only -- musl libc incompatibility?
+  # https://patchwork.ozlabs.org/project/buildroot/patch/20170523171931.18744-1-dsabogalcc@gmail.com/
+  time $src_dir/configure --without-bash-malloc --prefix=$install_dir
+
+  time make
+}
+
+wedge-install() {
+  local build_dir=$1
+
+  pushd $build_dir
+
+  time make install
+
+  popd
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+
+  $install_dir/bin/bash -c 'echo "hi from bash"'
+}

@@ -7,7 +7,6 @@
 #include <sys/utsname.h>  // uname
 #include <unistd.h>       // getpid(), getuid(), environ
 
-#include "_gen/core/value.asdl.h"
 #include "cpp/embedded_file.h"
 #include "cpp/stdlib.h"         // posix::getcwd
 #include "mycpp/gc_builtins.h"  // IOError_OSError
@@ -327,6 +326,11 @@ TEST passwd_test() {
   ASSERT(username != nullptr);
 
   List<pyos::PasswdEntry*>* entries = pyos::GetAllUsers();
+  if (len(entries) == 0) {
+    fprintf(stderr, "No *pwent() functions, skipping tests\n");
+    PASS();
+  }
+
   pyos::PasswdEntry* me = nullptr;
   for (ListIter<pyos::PasswdEntry*> it(entries); !it.Done(); it.Next()) {
     pyos::PasswdEntry* entry = it.Value();
@@ -380,22 +384,6 @@ TEST asan_global_leak_test() {
   PASS();
 }
 
-using value_asdl::value;
-using value_asdl::value_t;
-
-TEST heap_id_test() {
-  value_t* val1 = Alloc<value::Str>(kEmptyString);
-  value_t* val2 = Alloc<value::Str>(kEmptyString);
-
-  int id1 = vm::HeapValueId(val1);
-  int id2 = vm::HeapValueId(val2);
-
-  log("id1 = %d, id2 = %d", id1, id2);
-  ASSERT(id1 != id2);
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -421,8 +409,6 @@ int main(int argc, char** argv) {
   RUN_TEST(passwd_test);
   RUN_TEST(dir_cache_key_test);
   RUN_TEST(asan_global_leak_test);
-
-  RUN_TEST(heap_id_test);
 
   gHeap.CleanProcessExit();
 

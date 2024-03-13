@@ -8,11 +8,13 @@ from _devbuild.gen.runtime_asdl import (scope_e)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 
 from core import error
+from core import num
 from core import ui
 from core import vm
 from data_lang import j8
 from frontend import match
 from frontend import typed_args
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import NewDict, iteritems, log, tagswitch
 from ysh import expr_eval
@@ -43,15 +45,15 @@ class Len(vm._Callable):
         with tagswitch(x) as case:
             if case(value_e.List):
                 x = cast(value.List, UP_x)
-                return value.Int(len(x.items))
+                return num.ToBig(len(x.items))
 
             elif case(value_e.Dict):
                 x = cast(value.Dict, UP_x)
-                return value.Int(len(x.d))
+                return num.ToBig(len(x.d))
 
             elif case(value_e.Str):
                 x = cast(value.Str, UP_x)
-                return value.Int(len(x.s))
+                return num.ToBig(len(x.s))
 
         raise error.TypeErr(x, 'len() expected Str, List, or Dict',
                             rd.BlamePos())
@@ -151,11 +153,11 @@ class Int(vm._Callable):
 
             elif case(value_e.Bool):
                 val = cast(value.Bool, UP_val)
-                return value.Int(int(val.b))
+                return value.Int(mops.FromBool(val.b))
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
-                return value.Int(int(val.f))
+                return value.Int(mops.FromFloat(val.f))
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
@@ -163,7 +165,7 @@ class Int(vm._Callable):
                     raise error.Expr('Cannot convert %s to Int' % val.s,
                                      rd.BlamePos())
 
-                return value.Int(int(val.s))
+                return value.Int(mops.FromStr(val.s))
 
         raise error.TypeErr(val, 'int() expected Bool, Int, Float, or Str',
                             rd.BlamePos())
@@ -185,7 +187,7 @@ class Float(vm._Callable):
         with tagswitch(val) as case:
             if case(value_e.Int):
                 val = cast(value.Int, UP_val)
-                return value.Float(float(val.i))
+                return value.Float(mops.ToFloat(val.i))
 
             elif case(value_e.Float):
                 return val
@@ -220,7 +222,7 @@ class Str_(vm._Callable):
         with tagswitch(val) as case:
             if case(value_e.Int):
                 val = cast(value.Int, UP_val)
-                return value.Str(str(val.i))
+                return value.Str(mops.ToStr(val.i))
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
@@ -402,11 +404,10 @@ class EvalExpr(vm._Callable):
         return result
 
 
-class ToJ8(vm._Callable):
+class ToJson8(vm._Callable):
 
-    def __init__(self, j8print, is_j8):
-        # type: (j8.Printer, bool) -> None
-        self.j8print = j8print
+    def __init__(self, is_j8):
+        # type: (bool) -> None
         self.is_j8 = is_j8
 
     def Call(self, rd):
@@ -416,15 +417,19 @@ class ToJ8(vm._Callable):
         rd.Done()
 
         buf = mylib.BufWriter()
-        if self.is_j8:
-            self.j8print.PrintMessage(val, buf, -1)
-        else:
-            self.j8print.PrintJsonMessage(val, buf, -1)
+        try:
+            if self.is_j8:
+                j8.PrintMessage(val, buf, -1)
+            else:
+                j8.PrintJsonMessage(val, buf, -1)
+        except error.Encode as e:
+            # status code 4 is special, for encode/decode errors.
+            raise error.Structured(4, e.Message(), rd.LeftParenToken())
 
         return value.Str(buf.getvalue())
 
 
-class FromJ8(vm._Callable):
+class FromJson8(vm._Callable):
 
     def __init__(self, is_j8):
         # type: (bool) -> None
@@ -436,14 +441,19 @@ class FromJ8(vm._Callable):
         s = rd.PosStr()
         rd.Done()
 
-        if mylib.PYTHON:  # TODO: translate j8.Parser
-            p = j8.Parser(s)
-
-            if self.is_j8:
-                val = p.ParseJ8()
-            else:
-                val = p.ParseJson()
-        else:
-            val = value.Null
+        p = j8.Parser(s, self.is_j8)
+        try:
+            val = p.ParseValue()
+        except error.Decode as e:
+            # Right now I'm not exposing the original string, because that
+            # could lead to a memory leak in the _error Dict.
+            # The message quotes part of the string, and we could improve
+            # that.  We could have a substring with context.
+            props = {
+                'start_pos': num.ToBig(e.start_pos),
+                'end_pos': num.ToBig(e.end_pos),
+            }  # type: Dict[str, value_t]
+            # status code 4 is special, for encode/decode errors.
+            raise error.Structured(4, e.Message(), rd.LeftParenToken(), props)
 
         return val

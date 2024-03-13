@@ -71,7 +71,9 @@ dump-distro() {
   fi
   echo
 
-  apt-cache policy r-base-core
+  if command -v apt-cache > /dev/null; then
+    apt-cache policy r-base-core
+  fi
 }
 
 dump-user-host() {
@@ -82,8 +84,13 @@ dump-user-host() {
   echo "PWD = $PWD"
   echo
 
-  echo -n 'hostname = '
-  hostname
+  if command -v hostname > /dev/null; then
+    echo -n 'hostname = '
+    hostname
+  else
+    # Fedora
+    echo 'hostname command missing'
+  fi
   echo
 
   uname -a

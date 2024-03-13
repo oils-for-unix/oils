@@ -1,6 +1,98 @@
 ## oils_failures_allowed: 0
 ## compare_shells: dash bash mksh zsh
 
+
+#### Print shell strings with weird chars: set and printf %q and ${x@Q}
+
+# bash declare -p will print binary data, which makes this invalid UTF-8!
+foo=$(/bin/echo -e 'a\nb\xffc'\'d)
+
+# let's test the easier \x01, which doesn't give bash problems
+foo=$(/bin/echo -e 'a\nb\x01c'\'d)
+
+# dash:
+#   only supports 'set'; prints it on multiple lines with binary data
+#   switches to "'" for single quotes, not \'
+# zsh:
+#   print binary data all the time, except for printf %q
+#   does print $'' strings
+# mksh:
+#   prints binary data for @Q
+#   prints $'' strings
+
+# All are very inconsistent.
+
+case $SH in dash|mksh|zsh) return ;; esac
+
+
+set | grep -A1 foo
+
+# Will print multi-line and binary data literally!
+#declare -p foo
+
+printf 'pf  %q\n' "$foo"
+
+echo '@Q ' ${foo@Q}
+
+## STDOUT:
+foo=$'a\nb\u0001c\'d'
+pf  $'a\nb\u0001c\'d'
+@Q  $'a\nb\u0001c\'d'
+## END
+
+## OK bash STDOUT:
+foo=$'a\nb\001c\'d'
+pf  $'a\nb\001c\'d'
+@Q  $'a\nb\001c\'d'
+## END
+
+## OK dash/mksh/zsh STDOUT:
+## END
+
+#### Print shell strings with normal chars: set and printf %q and ${x@Q}
+
+# There are variations on whether quotes are printed
+
+case $SH in dash|zsh) return ;; esac
+
+foo=spam
+
+set | grep -A1 foo
+
+# Will print multi-line and binary data literally!
+typeset -p foo
+
+printf 'pf  %q\n' "$foo"
+
+echo '@Q ' ${foo@Q}
+
+## STDOUT:
+foo=spam
+declare -- foo=spam
+pf  spam
+@Q  spam
+## END
+
+
+## OK bash STDOUT:
+foo=spam
+declare -- foo="spam"
+pf  spam
+@Q  'spam'
+## END
+
+## OK mksh STDOUT:
+foo=spam
+typeset foo=spam
+pf  spam
+@Q  spam
+## END
+
+## N-I dash/zsh STDOUT:
+## END
+
+
+
 #### command -v
 myfunc() { echo x; }
 command -v echo
@@ -107,7 +199,7 @@ command -V for
 echo status=$?
 
 ## STDOUT:
-ll is an alias for 'ls -l'
+ll is an alias for "ls -l"
 status=0
 echo is a shell builtin
 status=0
@@ -273,6 +365,35 @@ status=127
 status=127
 status=127
 ## END
+
+#### command -p (override existing program)
+# Tests whether command -p overrides the path
+# tr chosen because we need a simple non-builtin
+mkdir -p $TMP/bin
+echo "echo wrong" > $TMP/bin/tr
+chmod +x $TMP/bin/tr
+PATH="$TMP/bin:$PATH"
+echo aaa | tr "a" "b"
+echo aaa | command -p tr "a" "b"
+rm $TMP/bin/tr
+## STDOUT:
+wrong
+bbb
+## END
+
+#### command -p (hide tool in custom path)
+mkdir -p $TMP/bin
+echo "echo hello" > $TMP/bin/hello
+chmod +x $TMP/bin/hello
+export PATH=$TMP/bin
+command -p hello
+## status: 127 
+
+#### command -p (find hidden tool in default path)
+export PATH=''
+command -p ls
+## status: 0
+
 
 #### $(command type ls)
 type() { echo FUNCTION; }

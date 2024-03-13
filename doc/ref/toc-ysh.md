@@ -4,10 +4,13 @@ css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
 preserve_anchor_case: yes
 ---
 
-OSH Table of Contents
-===
+YSH Table of Contents
+=====================
 
-These are links to topics in the [Oils Reference](index.html).
+[YSH]($xref) is shell with familiar syntax, JSON-like data structures, and
+more.  It handles errors properly.
+
+This page has links to topics in the [Oils Reference](index.html).
 
 Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
@@ -55,16 +58,16 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
-                  num-suffix    42 K Ki M Mi G Gi T Ti / ms us
+                  X num-suffix  42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
-                  str-literal   r'[a-z]\n'  X j"line\n"  
-                  X multi-str   """  r'''  j"""
+                  ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
+                  triple-quoted """  r'''  u'''  b'''
+                  str-template  ^"$a and $b" for Str::replace()
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}
                   range         1 .. n+1
                   block-literal ^(echo $PWD)
                   expr-lit      ^[1 + 2*3]
-                  X template    ^"$a and $b" for Str::replace()
                   X to-string   $[myobj]
                   X to-array    @[myobj]
   [Operators]     concat        s1 ++ s2,  L1 ++ L2
@@ -98,8 +101,8 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-word-lang
-  [String Lit]    X multi-str   """  r'''  j"""
-                  X j8-str      j"byte \y00 unicode \u{123456}"
+  [Quotes]        ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
+                  triple-quoted """  r'''  u'''  b'''
                   X tagged-str  "<span id=$x>"html
   [Expression]    expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
@@ -115,19 +118,20 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 ```chapter-links-builtin-cmd
   [Memory]        append                 Add elements to end of array
                   pp                     asdl   cell   X gc-stats   line   proc
-  [Handle Errors] try                    Run with errexit and set _status
+  [Handle Errors] try                    Run with errexit, set _status _error
                   boolstatus             Enforce 0 or 1 exit status
                   error                  error 'failed' (status=2)
   [Shell State]   ysh-cd   ysh-shopt     compatible, and takes a block
                   shvar                  Temporary modify global settings
+                  ctx                    Share and update a temporary "context"
                   push-registers         Save registers like $?, PIPESTATUS
   [Modules]       runproc                Run a proc; use as main entry point
                   module                 guard against duplicate 'source'
                   is-main                false when sourcing a file
                   use                    change first word lookup
-  [I/O]           ysh-read               Buffered I/O with --line, --all, --qsn
+  [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
-                  write                  Like echo, with --, --sep, --end, ()
+                  write                  Like echo, with --, --sep, --end
                   fork   forkwait        Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
                   X dbg                  Only thing that can be used in funcs
@@ -135,15 +139,18 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Hay Config]    hay   haynode          For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
-                  j8                     read write
+                  json8                  read write
                   X packle               read write, Graph-shaped
 X [TSV8]          rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
                   summary                count, sum, histogram, etc. [ext]
-X [Flags]         Flags                  getopts replacement: flag arg
-                  parseArgs()            
+  [Args Parser]   parser                 Parse command line arguments
+                  flag
+                  arg
+                  rest
+                  parseArgs()
 X [Testing]       describe               Test harness
                   assert                 takes an expression
 X [External Lang] BEGIN   END   when (awk)
@@ -172,8 +179,8 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_equals           x = 'val' in Caps { } config blocks
                   parse_paren            if (x > 0) ...
                   parse_proc             proc p { ... }
-                  parse_raw_string       echo r'\' (command mode)
-                  parse_triple_quote     """  '''  r'''  $''' in command mode
+                  parse_triple_quote     """$x"""  '''x''' (command mode)
+                  parse_ysh_string       echo r'\' u'\\' b'\\' (command mode)
                   command_sub_errexit    Synchronous errexit check
                   process_sub_fail       Analogous to pipefail for process subs
                   sigpipe_status_ok      status 141 -> 0 in pipelines
@@ -186,20 +193,20 @@ X [External Lang] BEGIN   END   when (awk)
   [Interactive]   redefine_module        'module' builtin always returns 0
                   X redefine_const       Can consts be redefined?
   [Simplicity]    ... More Consistent Style
-                  simple_echo            echo takes 0 or 1 arguments
+                  simple_echo            echo doesn't accept flags -e -n
                   simple_eval_builtin    eval takes exactly 1 argument
                   simple_test_builtin    3 args or fewer; use test not [
                   X simple_trap          Function name only
   [YSH Breaking]  ... The Full YSH Language
                   parse_at_all           @ starting any word is an operator
-                  parse_backslash (-u)    Bad backslashes in $''
-                  parse_backticks (-u)    Legacy syntax `echo hi`
+                  parse_backslash (-u)    Allow bad backslashes in "" and $''
+                  parse_backticks (-u)    Allow legacy syntax `echo hi`
                   parse_bare_word (-u)   'case unquoted' and 'for x in unquoted'
-                  parse_dollar (-u)      Is $ allowed for \$?  Maybe $/d+/
+                  parse_dollar (-u)      Allow bare $ to mean \$  (maybe $/d+/)
                   parse_dparen (-u)      Is (( legacy arithmetic allowed?
                   parse_ignored (-u)     Parse, but ignore, certain redirects
-                  parse_sh_arith (-u)    Is legacy shell arithmetic allowed?
-                  X copy_env (-u)        Use $[ENV->PYTHONPATH] when false
+                  parse_sh_arith (-u)    Allow legacy shell arithmetic
+                  X copy_env (-u)        Use $[ENV.PYTHONPATH] when false
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias
                                          ... getopts
@@ -210,6 +217,7 @@ X [External Lang] BEGIN   END   when (awk)
   [More Options]  _allow_command_sub     To implement strict_errexit, eval_unsafe_arith
                   _allow_process_sub     To implement strict_errexit
                   dynamic_scope          To implement 'proc'
+                  _no_debug_trap         Used in pipelines in job control shell
 ```
 
 <h2 id="special-var">
@@ -219,7 +227,8 @@ X [External Lang] BEGIN   END   when (awk)
 ```chapter-links-special-var
   [YSH Vars]      ARGV   X ENV  X _ESCAPE
                   _this_dir
-  [YSH Status]    _status   _pipeline_status   _process_sub_status
+  [YSH Status]    _status   _error
+                  _pipeline_status   _process_sub_status
   [YSH Tracing]   SHX_indent   SHX_punct   SHX_pid_str
   [YSH read]      _reply
   [History]       YSH_HISTFILE
@@ -236,13 +245,12 @@ X [Builtin Sub]   _buffer
 </h2>
 
 ```chapter-links-type-method
-  [Primitive] Bool   Int   Float   Str   Slice   Range   
-  [Str]       X find(eggex)   X replace(eggex, template)
-              startsWith()   X endsWith()
-              X trim()   X trimLeft()   X trimRight()
-              X trimPrefix()   X trimSuffix()
+  [Primitive] Bool   Int   Float   Str   Slice   Range
+  [Str]       X find(eggex)   replace()
+              trim()   trimStart()   trimEnd()
+              startsWith()   endsWith()
               upper()   lower()  # ascii or unicode
-              search()   leftMatch()              
+              search()   leftMatch()
   [Match]     group()   start()   end()
               X groups()   X groupDict()
   [List]      append()   pop()   extend()   indexOf()
@@ -267,7 +275,7 @@ X [Guts]      heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()   type()
+  [Values]        len()   type()   X repeat()
   [Conversions]   bool()   int()   float()   str()   list()   dict()
                   X chr()   X ord()   X runes()
 X [Str]           strcmp()   X split()   shSplit()
@@ -275,8 +283,8 @@ X [Str]           strcmp()   X split()   shSplit()
   [Collections]   X copy()   X deepCopy()
   [Word]          glob()   maybe()
   [Math]          abs()   max()   min()   X round()   sum()
-  [Serialize]     toJ8()   fromJ8()
-                  toJson()   fromJson()
+  [Serialize]     toJson()   fromJson()
+                  toJson8()   fromJson8()
 X [J8 Decode]     J8.Bool()   J8.Int()  ...
 X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()

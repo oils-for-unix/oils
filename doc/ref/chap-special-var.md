@@ -36,20 +36,34 @@ It's useful for "relative imports".
 
 ## YSH Status
 
-### _status
+### `_status`
 
-Set by the `try` builtin.
+An `Int` that's set by the `try` builtin.
 
-    try ls /bad
-    if (_status !== 0) {
+    try {
+      ls /bad  # exits with status 2
+    }
+    if (_status !== 0) {  # _status is 2
       echo 'failed'
     }
 
-### _pipeline_status
+### `_error`
+
+A `Dict` that's set by the `try` builtin when catching certain errors.
+
+Such errors include JSON/J8 encoding/decoding errors, and user errors from the
+`error` builtin.
+
+    try {
+      echo $[toJson( /d+/ )]  # invalid Eggex type
+    }
+    echo "failed: $[_error.message]"  # => failed: Can't serialize ...
+
+### `_pipeline_status`
 
 Alias for [PIPESTATUS]($osh-help).
 
-### _process_sub_status
+### `_process_sub_status`
 
 The exit status of all the process subs in the last command.
 
@@ -65,11 +79,10 @@ The exit status of all the process subs in the last command.
 
 ### _reply
 
-YSH read sets this:
-
-    read --line < myfile
+YSH `read` sets this variable:
 
     read --all < myfile
+    echo $_reply
 
 ## Oils VM
 

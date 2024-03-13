@@ -4,8 +4,6 @@
 
 module hnode {
 
-  Field = (str name, hnode val)
-
   color =
     TypeName
   | StringConst
@@ -13,14 +11,20 @@ module hnode {
   | UserType  # e.g. for Id
   | External
 
+  Field = (str name, hnode val)
+
   hnode =
-    Record(str node_type, List[Field] fields,
+    # Used to prevent infinite loops
+    AlreadySeen(int heap_id)
+  | Record(str node_type, List[Field] fields,
            bool abbrev, str left, str right, List[hnode] unnamed_fields)
-    # TODO: for Dicts, children alternate k1 v1 k2 v2.  Use {}
   | Array(List[hnode] children)
   | Leaf(str s, color color)
-    # TODO: get rid of since Id is now in ASDL
+    # Used for a few value_t variants like value.BuiltinFunc, that point back
+    # to mycpp classes
   | External(any obj)
+
+  # TYG8 pretty-printing -- see doc/pretty-printing.md
 
   # Idea for bit flags for CreateNull().  NOT part of pretty printing / hnode.
   # We just use a single param alloc_lists=True now

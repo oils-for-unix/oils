@@ -1,0 +1,36 @@
+# Wedge definition for pyflakes
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+# sourced
+WEDGE_NAME='pyflakes'
+WEDGE_VERSION='2.4.0'
+
+wedge-make() {
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  # TODO: shouldn't have to do this?
+  mkdir -p $install_dir
+
+  cp --verbose --recursive --no-target-directory \
+    $src_dir/ $install_dir/
+}
+
+wedge-install() {
+  # nothing to do
+  true
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+
+  # TODO: It would be nice to run python2 -c 'import pyflakes', but we don't
+  # have a way to refer to python2 here.
+  ls -l $install_dir
+}

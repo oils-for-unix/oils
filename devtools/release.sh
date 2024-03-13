@@ -151,7 +151,7 @@ auto-machine2() {
 #           runtime-errors.txt
 #           tools-deps.txt
 #           osh-usage.txt
-#           arena.txt
+#           lossless.txt
 #         tarball/  # log of building and running the tarball?
 #       asan/       # spec tests or other?
 #                   # or it can be put under test/{spec,wild}
@@ -229,7 +229,8 @@ readonly -a MORE_TESTS=(
   parse-errors runtime-errors
   ysh-runtime-errors
   ysh-parse-errors
-  arena
+  ysh-every-string
+  lossless
   osh-usage tools-deps
   syscall
 )
@@ -679,7 +680,7 @@ _releases-html-header() {
 <html>
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Oil Releases</title>
+    <title>Oils Releases</title>
     <style>
 EOF
 
@@ -696,7 +697,7 @@ cat <<EOF
     <p id="home-link">
       <a href="/">oilshell.org</a>
     </p>
-    <h1>Oil Releases</h1>
+    <h1>Oils Releases</h1>
 
     <table class="release-table">
 EOF

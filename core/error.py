@@ -2,9 +2,14 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
-from _devbuild.gen.value_asdl import (value_t, value_str)
+from _devbuild.gen.value_asdl import (value, value_t, value_str)
+from core import num
 
-from typing import NoReturn
+from typing import Dict, Union, NoReturn, TYPE_CHECKING
+
+# For storing errors in List[T]
+if TYPE_CHECKING:
+    IOError_OSError = Union[IOError, OSError]
 
 
 def _ValType(val):
@@ -152,12 +157,34 @@ class Expr(FatalRuntime):
         FatalRuntime.__init__(self, 3, msg, location)
 
 
-class UserError(FatalRuntime):
-    """An exception created by users with the `error` builtin."""
+class Structured(FatalRuntime):
+    """An error that can be exposed via the _error Dict.
 
-    def __init__(self, status, msg, location):
-        # type: (int, str, loc_t) -> None
+    Including:
+    - Errors raised by the 'error' builtin
+    - J8 encode and decode errors.
+    """
+
+    def __init__(self, status, msg, location, properties=None):
+        # type: (int, str, loc_t, Dict[str, value_t]) -> None
         FatalRuntime.__init__(self, status, msg, location)
+        self.properties = properties
+
+    def ToDict(self):
+        # type: () -> value.Dict
+
+        if self.properties is None:
+            self.properties = {}
+
+        # Override status and message.
+        # The _error Dict order is a bit quirky -- the optional properties come
+        # before these required fields.  But we always want the required fields
+        # to take precedence, so it makes sense.
+
+        self.properties['status'] = num.ToBig(self.ExitStatus())
+        self.properties['message'] = value.Str(self.msg)
+
+        return value.Dict(self.properties)
 
 
 class AssertionErr(Expr):
@@ -224,10 +251,17 @@ class Decode(Exception):
     def Message(self):
         # type: () -> str
 
-        # Hack for context
-        part = self.s[self.start_pos - 10:self.end_pos + 10]
+        # Show 10 chars of context for now
+        start = max(0, self.start_pos - 4)
+        end = min(len(self.s), self.end_pos + 4)
+
+        part = self.s[start:end]
         return self.msg + ' (pos %d-%d: %r)' % (self.start_pos, self.end_pos,
                                                 part)
+
+    def __str__(self):
+        # type: () -> str
+        return self.Message()
 
 
 class Encode(Exception):

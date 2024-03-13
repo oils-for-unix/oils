@@ -14,9 +14,8 @@ from core.error import e_usage
 from core import state
 from core import ui
 from core import vm
-from data_lang import qsn
 from data_lang import j8
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
@@ -51,11 +50,10 @@ class Pp(_Builtin):
         self.procs = procs
         self.arena = arena
         self.stdout_ = mylib.Stdout()
-        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        arg, arg_r = flag_spec.ParseCmdVal('pp',
+        arg, arg_r = flag_util.ParseCmdVal('pp',
                                            cmd_val,
                                            accept_typed_args=True)
 
@@ -94,6 +92,7 @@ class Pp(_Builtin):
             rd.Done()
 
             tree = val.PrettyTree()
+            #tree = val.AbbreviatedTree()  # I used this to test cycle detection
 
             # TODO: ASDL should print the IDs.  And then they will be
             # line-wrapped.
@@ -111,7 +110,7 @@ class Pp(_Builtin):
         elif action == 'line':
             # Print format for unit tests
 
-            # TODO: could be pp asdl (x, y, z)
+            # TODO: could be pp line (x, y, z)
             rd = typed_args.ReaderForProc(cmd_val)
             val = rd.PosValue()
             rd.Done()
@@ -119,7 +118,7 @@ class Pp(_Builtin):
             ysh_type = ui.ValType(val)
             self.stdout_.write('(%s)   ' % ysh_type)
 
-            self.j8print.PrintLine(val, self.stdout_)
+            j8.PrintLine(val, self.stdout_)
 
             status = 0
 
@@ -139,7 +138,7 @@ class Pp(_Builtin):
             else:
                 names = sorted(self.procs)
 
-            # QTSV header
+            # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
                 proc = self.procs[name]  # must exist
@@ -156,9 +155,12 @@ class Pp(_Builtin):
                         doc = token.line.content[token.col + 1:token.col +
                                                  token.length]
 
-                # No limits on proc names
-                print('%s\t%s' %
-                      (qsn.maybe_encode(name), qsn.maybe_encode(doc)))
+                # Note: these should be attributes on value.Proc
+                buf = mylib.BufWriter()
+                j8.EncodeString(name, buf, unquoted_ok=True)
+                buf.write('\t')
+                j8.EncodeString(doc, buf, unquoted_ok=True)
+                print(buf.getvalue())
 
             status = 0
 
@@ -170,33 +172,23 @@ class Pp(_Builtin):
 
 class Write(_Builtin):
     """
-  write -- @strs
-  write --sep ' ' --end '' -- @strs
-  write -n -- @
-  write --qsn -- @strs   # argv serialization
-  write --qsn --sep $'\t' -- @strs   # this is like QTSV
-  """
+    write -- @strs
+    write --sep ' ' --end '' -- @strs
+    write -n -- @
+    write --j8 -- @strs   # argv serialization
+    write --j8 --sep $'\t' -- @strs   # this is like TSV8
+    """
 
     def __init__(self, mem, errfmt):
         # type: (state.Mem, ErrorFormatter) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.stdout_ = mylib.Stdout()
-        self.j8print = j8.Printer()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('write', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('write', cmd_val)
         arg = arg_types.write(attrs.attrs)
         #print(arg)
-
-        if arg.unicode == 'raw':
-            bit8_display = qsn.BIT8_UTF8
-        elif arg.unicode == 'u':
-            bit8_display = qsn.BIT8_U_ESCAPE
-        elif arg.unicode == 'x':
-            bit8_display = qsn.BIT8_X_ESCAPE
-        else:
-            raise AssertionError()
 
         i = 0
         while not arg_r.AtEnd():
@@ -204,11 +196,11 @@ class Write(_Builtin):
                 self.stdout_.write(arg.sep)
             s = arg_r.Peek()
 
-            if arg.j8:
-                s = self.j8print.MaybeEncodeString(s)
+            if arg.json:
+                s = j8.MaybeEncodeJsonString(s)
 
-            elif arg.qsn:
-                s = qsn.maybe_encode(s, bit8_display)
+            elif arg.j8:
+                s = j8.MaybeEncodeString(s)
 
             self.stdout_.write(s)
 
@@ -240,7 +232,7 @@ class Fopen(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('fopen',
+        _, arg_r = flag_util.ParseCmdVal('fopen',
                                          cmd_val,
                                          accept_typed_args=True)
 

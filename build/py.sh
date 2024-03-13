@@ -40,40 +40,12 @@ libedit-flags() {
   pkg-config --libs --cflags libedit
 }
 
-install-py2() {
-  set -x
-
-  # pyyaml: for yaml2json
-  # typing: because the build/cpython-defs tool
-  # flake8: for linting
-  # pygments: for doc rendering
-  python2 -m pip install pyyaml typing flake8 pygments
-
-  # not sure why this requires sudo and pip2 doesn't
-  # this doesn't work on our code
-  # sudo pip3 install flake8
-}
-
 install-py3() {
   pip3 install mypy
 }
 
 destroy-pip() {
   rm -r -f -v ~/.cache/pip ~/.local/lib/python2.7
-}
-
-# 2021-04: I have no idea why I need this on my Xenial machine
-# but the Travis continuous build doesn't need it.
-install-old-flake8() {
-  # Found by bisection and inspection of MY HOME DIR.  It makes the pip
-  # dependency resolver "work"...
-
-  pip install 'configparser==4.0.2'
-  pip install 'flake8==3.7.9'
-
-  # Test default version
-  unset PYTHONPATH
-  ~/.local/bin/flake8 --version
 }
 
 # Needed for the release process, but not the dev process.
@@ -172,6 +144,9 @@ py-codegen() {
   # depends on syntax.asdl
   gen-asdl-py 'core/runtime.asdl'
   gen-asdl-py 'core/value.asdl'
+  gen-asdl-py 'data_lang/nil8.asdl'
+  gen-asdl-py 'data_lang/pretty.asdl'
+
   gen-asdl-py 'tools/find/find.asdl'
 
   const-mypy-gen  # depends on bool_arg_type_e, generates Id_t
@@ -243,6 +218,9 @@ py-ext-test() {
   if test $status -eq 0; then
     log "OK $log_path"
   else
+    echo
+    cat $log_path
+    echo
     die "FAIL $log_path"
   fi
 }
@@ -251,6 +229,13 @@ pylibc() {
   rm -f libc.so
 
   py-ext libc pyext/setup_libc.py
+
+  # Skip unit tests on Alpine for now
+  # musl libc doesn't have extended globs
+  if uname -a | grep -F Alpine; then
+    return
+  fi
+
   py-ext-test pyext/libc_test.py "$@"
 }
 
@@ -259,6 +244,13 @@ fanos() {
 
   py-ext fanos pyext/setup_fanos.py
   py-ext-test pyext/fanos_test.py "$@"
+}
+
+fastfunc() {
+  rm -f fastfunc.so
+
+  py-ext fastfunc pyext/setup_fastfunc.py
+  py-ext-test pyext/fastfunc_test.py "$@"
 }
 
 #
@@ -372,6 +364,7 @@ py-extensions() {
   line-input
   posix_
   fanos
+  fastfunc
 }
 
 minimal() {

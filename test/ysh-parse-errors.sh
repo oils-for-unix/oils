@@ -3,67 +3,46 @@
 # Usage:
 #   test/ysh-parse-errors.sh <function name>
 
+set -o nounset
+set -o pipefail
+set -o errexit
+
 source test/common.sh
-source test/sh-assert.sh  # banner, _assert-sh-status
+source test/sh-assert.sh  # _assert-sh-status
 
 OSH=${OSH:-bin/osh}
 YSH=${YSH:-bin/ysh}
 
-_osh-should-parse() {
-  local message='Should parse under YSH'
-  _assert-sh-status 0 $OSH "$message" \
-    -n -c "$@"
-}
-
-_should-parse() {
-  local message='Should parse under YSH'
-  _assert-sh-status 0 $YSH "$message" \
-    -n -c "$@"
-}
-
-_parse-error() {
-  local message='Should NOT parse under YSH'
-  _assert-sh-status 2 $YSH "$message" \
-    -n -c "$@"
-}
-
-# Aliases
-_ysh-should-parse() {
-  _should-parse "$@"
-}
-
-_ysh-parse-error() {
-  _parse-error "$@"
-}
+#
+# Cases
+#
 
 test-return-args() {
-  set +o errexit
-
-  _should-parse '
+  _ysh-should-parse '
   func foo(x) {
     return (x)
   }
   '
 
-  _parse-error '
+  _ysh-parse-error '
   func foo(x) {
     return ()
   }
   '
 
-  _parse-error '
+  _ysh-parse-error '
   func foo(x) {
     return (named=x)
   }
   '
 
-  _parse-error '
+  _ysh-parse-error '
   func foo(x) {
     return (x, named=x)
   }
   '
 
-  _parse-error '
+  _ysh-parse-error '
   func foo(x) {
     return (x, x)
   }
@@ -71,30 +50,28 @@ test-return-args() {
 }
 
 test-func-var-checker() {
-  set +o errexit
-
-  _should-parse '
+  _ysh-should-parse '
   func f(x) {
-    setvar x = True
+    setvar x = true
   }
   '
 
-  _parse-error '
+  _ysh-parse-error '
   func f() {
-    setvar x = True
+    setvar x = true
   }
   '
 }
 
 test-arglist() {
-  _parse-error 'json write ()'
+  _ysh-parse-error 'json write ()'
 
-  _should-parse 'p (; n=42)'
-  _should-parse '= f(; n=42)'
+  _ysh-should-parse 'p (; n=42)'
+  _ysh-should-parse '= f(; n=42)'
 
-  _parse-error '= f(; 42)'
-  _parse-error '= f(; name)'
-  _parse-error '= f(; x for x in y)'
+  _ysh-parse-error '= f(; 42)'
+  _ysh-parse-error '= f(; name)'
+  _ysh-parse-error '= f(; x for x in y)'
 }
 
 
@@ -108,145 +85,142 @@ test-arglist() {
 #   - default value is null only?
 
 test-proc-sig() {
-  _should-parse 'proc p () { echo hi }'
-  _should-parse 'proc p (a) { echo hi }'
-  _should-parse 'proc p (out Ref) { echo hi }'
+  _ysh-should-parse 'proc p () { echo hi }'
+  _ysh-should-parse 'proc p (a) { echo hi }'
+  _ysh-should-parse 'proc p (out Ref) { echo hi }'
 
   # doesn't make sense I think -- they're all strings.  Types don't do any
   # dynamic validation, except 'out Ref' does change semantics
-  _parse-error 'proc p (a Int) { echo hi }'
+  _ysh-parse-error 'proc p (a Int) { echo hi }'
 
-  _parse-error 'proc p (w, ...) { echo hi }'
+  _ysh-parse-error 'proc p (w, ...) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest) { echo hi }'
+  _ysh-should-parse 'proc p (w, ...rest) { echo hi }'
 
   # Hm I guess this is fine
-  _should-parse 'proc p (; n Int=3) { echo hi }'
+  _ysh-should-parse 'proc p (; n Int=3) { echo hi }'
 
-  _should-parse 'proc p (out Ref; n Int=3) { echo hi }'
+  _ysh-should-parse 'proc p (out Ref; n Int=3) { echo hi }'
 
-  _should-parse 'proc p (; ; n Int=3) { echo hi }'
+  _ysh-should-parse 'proc p (; ; n Int=3) { echo hi }'
 
-  _should-parse 'proc p ( ; ; ; block) { echo hi }'
+  _ysh-should-parse 'proc p ( ; ; ; block) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest) { echo hi }'
-  _should-parse 'proc p (w, ...rest; t) { echo hi }'
+  _ysh-should-parse 'proc p (w, ...rest) { echo hi }'
+  _ysh-should-parse 'proc p (w, ...rest; t) { echo hi }'
 
-  _should-parse 'func p (p, ...rest) { echo hi }'
+  _ysh-should-parse 'func p (p, ...rest) { echo hi }'
 
-  _should-parse 'func p (p, ...rest; n, ...named) { echo hi }'
-  _should-parse 'func p (p, ...rest; n, ...named,) { echo hi }'
+  _ysh-should-parse 'func p (p, ...rest; n, ...named) { echo hi }'
+  _ysh-should-parse 'func p (p, ...rest; n, ...named,) { echo hi }'
 
-  _parse-error 'func p (p, ...rest; n, ...named, z) { echo hi }'
-  _parse-error 'func p (p, ...rest; n, ...named; ) { echo hi }'
+  _ysh-parse-error 'func p (p, ...rest; n, ...named, z) { echo hi }'
+  _ysh-parse-error 'func p (p, ...rest; n, ...named; ) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; pos, ...named) { echo hi }'
+  _ysh-should-parse 'proc p (w, ...rest; pos, ...named) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; pos, ...args; named=3, ...named) { echo hi }'
+  _ysh-should-parse 'proc p (w, ...rest; pos, ...args; named=3, ...named) { echo hi }'
 
-  _should-parse 'proc p (w=1, v=2; p=3, q=4; n=5, m=6) { echo hi }'
+  _ysh-should-parse 'proc p (w=1, v=2; p=3, q=4; n=5, m=6) { echo hi }'
 
-  _parse-error 'proc p (w Int Int) { echo hi }'
+  _ysh-parse-error 'proc p (w Int Int) { echo hi }'
 
-  _should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
+  _ysh-should-parse 'proc p (w=1, v=2; p Int=3, q List[Int] = [3, 4]; n Int=5, m Int = 6) { echo hi }'
 
-  _should-parse 'proc p (w, ...rest; t, ...args; n, ...named; block) { echo hi }'
+  _ysh-should-parse 'proc p (w, ...rest; t, ...args; n, ...named; block) { echo hi }'
 
-  _parse-error 'proc p ( ; ; ; b1, b2) { echo hi }'
-  _parse-error 'proc p ( ; ; ; b1, ...rest) { echo hi }'
-  _parse-error 'proc p ( ; ; ; b1 Str) { echo hi }'
+  _ysh-parse-error 'proc p ( ; ; ; b1, b2) { echo hi }'
+  _ysh-parse-error 'proc p ( ; ; ; b1, ...rest) { echo hi }'
+  _ysh-parse-error 'proc p ( ; ; ; b1 Str) { echo hi }'
 
   # Only Command type
-  _should-parse 'proc p ( ; ; ; b Command) { echo hi }'
+  _ysh-should-parse 'proc p ( ; ; ; b Command) { echo hi }'
 
   # bad param
-  _parse-error 'proc p ( ; ; ; b Command[Int]) { echo hi }'
+  _ysh-parse-error 'proc p ( ; ; ; b Command[Int]) { echo hi }'
 
-  _should-parse 'proc p ( ; ; ; ) { echo hi }'
+  _ysh-should-parse 'proc p ( ; ; ; ) { echo hi }'
 }
 
 test-proc-def() {
-  _parse-error 'proc p(w) { var w = foo }'
-  _parse-error 'proc p(w; p) { var p = foo }'
-  _parse-error 'proc p(w; p; n, n2) { var n2 = foo }'
-  _parse-error 'proc p(w; p; n, n2; b) { var b = foo }'
+  _ysh-parse-error 'proc p(w) { var w = foo }'
+  _ysh-parse-error 'proc p(w; p) { var p = foo }'
+  _ysh-parse-error 'proc p(w; p; n, n2) { var n2 = foo }'
+  _ysh-parse-error 'proc p(w; p; n, n2; b) { var b = foo }'
 }
 
 test-func-sig() {
-  _parse-error 'func f { echo hi }'
+  _ysh-parse-error 'func f { echo hi }'
 
-  _should-parse 'func f () { echo hi }'
+  _ysh-should-parse 'func f () { echo hi }'
 
-  _should-parse 'func f (a List[Int] = [3,4]) { echo hi }'
-  _should-parse 'func f (a, b, ...rest; c) { echo hi }'
-  _should-parse 'func f (a, b, ...rest; c, ...named) { echo hi }'
-  _parse-error 'func f (a, b, ...rest; c, ...named;) { echo hi }'
+  _ysh-should-parse 'func f (a List[Int] = [3,4]) { echo hi }'
+  _ysh-should-parse 'func f (a, b, ...rest; c) { echo hi }'
+  _ysh-should-parse 'func f (a, b, ...rest; c, ...named) { echo hi }'
+  _ysh-parse-error 'func f (a, b, ...rest; c, ...named;) { echo hi }'
 }
 
 test-func-def() {
-  _parse-error 'func f(p) { var p = foo }'
-  _parse-error 'func f(p; n) { var n = foo }'
+  _ysh-parse-error 'func f(p) { var p = foo }'
+  _ysh-parse-error 'func f(p; n) { var n = foo }'
 }
 
 test-sh-assign() {
-  _should-parse 'x=y'
-  _should-parse 'x=y echo hi'
-  _should-parse 'f() { x=y; }'
+  _ysh-should-parse 'x=y'
+  _ysh-should-parse 'x=y echo hi'
+  _ysh-should-parse 'f() { x=y; }'
 
   # Disallowed in YSH
-  _parse-error 'func f() { x=y; }'
-  _parse-error 'proc p { x=y; }'
+  _ysh-parse-error 'func f() { x=y; }'
+  _ysh-parse-error 'proc p { x=y; }'
 
   # Only proc and func disallow it
-  _should-parse '{ x=y; }'
-  _should-parse '( x=y; )'
+  _ysh-should-parse '{ x=y; }'
+  _ysh-should-parse '( x=y; )'
 
   _assert-sh-status 0 $YSH 'Expected it to parse' \
     -o ysh:upgrade -n -c 'x=y'
 }
 
 test-ysh-var() {
-  set +o errexit
-
   # Unterminated
-  _parse-error 'var x = 1 + '
+  _ysh-parse-error 'var x = 1 + '
 
-  _parse-error 'var x = * '
+  _ysh-parse-error 'var x = * '
 
-  _parse-error 'var x = @($(cat <<EOF
+  _ysh-parse-error 'var x = @($(cat <<EOF
 here doc
 EOF
 ))'
 
   # Hm we need a ; after var or setvar
-  _should-parse 'var x = $(var x = 1; )'
-  _should-parse '
+  _ysh-should-parse 'var x = $(var x = 1; )'
+  _ysh-should-parse '
   var x = $(var x = 1
 )'
   # This doesn't have it
-  _parse-error 'var x = $(var x = 1)'
+  _ysh-parse-error 'var x = $(var x = 1)'
 
   # Extra )
-  _parse-error 'var x = $(var x = 1; ))'
-  _parse-error 'var x = $(var x = 1; ) )'
+  _ysh-parse-error 'var x = $(var x = 1; ))'
+  _ysh-parse-error 'var x = $(var x = 1; ) )'
 }
 
 test-ysh-expr() {
-  set +o errexit
   # old syntax
-  _parse-error '= 5 mod 3'
+  _ysh-parse-error '= 5 mod 3'
 
-  _parse-error '= >>='
-  _parse-error '= %('
+  _ysh-parse-error '= >>='
+  _ysh-parse-error '= %('
 
   # Singleton tuples
-  _parse-error '= 42,'
-  _parse-error '= (42,)'
+  _ysh-parse-error '= 42,'
+  _ysh-parse-error '= (42,)'
 
   # Disallowed unconditionally
-  _parse-error '=a'
+  _ysh-parse-error '=a'
 
-  _parse-error '
+  _ysh-parse-error '
     var d = {}
     = d["foo", "bar"]
   '
@@ -254,106 +228,105 @@ test-ysh-expr() {
 
 test-ysh-expr-more() {
   # user must choose === or ~==
-  _parse-error 'if (5 == 5) { echo yes }'
+  _ysh-parse-error 'if (5 == 5) { echo yes }'
 
-  _should-parse 'echo $[join(x)]'
+  _ysh-should-parse 'echo $[join(x)]'
 
-  _parse-error 'echo $join(x)'
+  _ysh-parse-error 'echo $join(x)'
 
-  _should-parse 'echo @[split(x)]'
-  _should-parse 'echo @[split(x)] two'
+  _ysh-should-parse 'echo @[split(x)]'
+  _ysh-should-parse 'echo @[split(x)] two'
 
-  _parse-error 'echo @[split(x)]extra'
+  _ysh-parse-error 'echo @[split(x)]extra'
 
   # Old syntax to remove
-  #_parse-error 'echo @split("a")'
+  #_ysh-parse-error 'echo @split("a")'
 }
 
 
 test-blocks() {
-  _parse-error '>out { echo hi }'
-  _parse-error 'a=1 b=2 { echo hi }'
-  _parse-error 'break { echo hi }'
+  _ysh-parse-error '>out { echo hi }'
+  _ysh-parse-error 'a=1 b=2 { echo hi }'
+  _ysh-parse-error 'break { echo hi }'
   # missing semicolon
-  _parse-error 'cd / { echo hi } cd /'
+  _ysh-parse-error 'cd / { echo hi } cd /'
 }
 
 test-parse-brace() {
   # missing space
-  _parse-error 'if test -f foo{ echo hi }'
+  _ysh-parse-error 'if test -f foo{ echo hi }'
 }
 
 test-proc-sig() {
-  _parse-error 'proc f[] { echo hi }'
-  _parse-error 'proc : { echo hi }'
-  _parse-error 'proc foo::bar { echo hi }'
+  _ysh-parse-error 'proc f[] { echo hi }'
+  _ysh-parse-error 'proc : { echo hi }'
+  _ysh-parse-error 'proc foo::bar { echo hi }'
 }
 
 test-regex-literals() {
-  #set +o errexit
-  _parse-error 'var x = / ! /'
-  _should-parse 'var x = / ![a-z] /'
+  _ysh-parse-error 'var x = / ! /'
+  _ysh-should-parse 'var x = / ![a-z] /'
 
-  _should-parse 'var x = / !d /'
+  _ysh-should-parse 'var x = / !d /'
 
-  _parse-error 'var x = / !! /'
+  _ysh-parse-error 'var x = / !! /'
 
   # missing space between rangfes
-  _parse-error 'var x = /[a-zA-Z]/'
-  _parse-error 'var x = /[a-z0-9]/'
+  _ysh-parse-error 'var x = /[a-zA-Z]/'
+  _ysh-parse-error 'var x = /[a-z0-9]/'
 
-  _parse-error 'var x = /[a-zz]/'
+  _ysh-parse-error 'var x = /[a-zz]/'
 
   # can't have multichar ranges
-  _parse-error "var x = /['ab'-'z']/"
+  _ysh-parse-error "var x = /['ab'-'z']/"
 
   # range endpoints must be constants
-  _parse-error 'var x = /[$a-${z}]/'
+  _ysh-parse-error 'var x = /[$a-${z}]/'
 
   # These are too long too
-  _parse-error 'var x = /[abc]/'
+  _ysh-parse-error 'var x = /[abc]/'
 
   # Single chars not allowed, should be /['%_']/
-  _parse-error 'var x = /[% _]/'
+  _ysh-parse-error 'var x = /[% _]/'
 
 }
 
 test-hay-assign() {
-  _parse-error '
+  _ysh-parse-error '
 name = val
 '
 
-  _parse-error '
+  _ysh-parse-error '
 rule {
   x = 42
 }
 '
 
-  _parse-error '
+  _ysh-parse-error '
 RULE {
   x = 42
 }
 '
 
-  _should-parse '
+  _ysh-should-parse '
 Rule {
   x = 42
 }
 '
 
-  _should-parse '
+  _ysh-should-parse '
 Rule X Y {
   x = 42
 }
 '
 
-  _should-parse '
+  _ysh-should-parse '
 RULe {   # inconsistent but OK
   x = 42
 }
 '
 
-  _parse-error '
+  _ysh-parse-error '
 hay eval :result {
 
   Rule {
@@ -364,7 +337,7 @@ hay eval :result {
 }
 '
 
-  _parse-error '
+  _ysh-parse-error '
 hay define TASK
 
 TASK build {
@@ -373,7 +346,7 @@ TASK build {
 '
 
   # CODE node nested inside Attr node.
-  _parse-error '
+  _ysh-parse-error '
 hay define Package/TASK
 
 Package libc {
@@ -384,7 +357,7 @@ Package libc {
 }
 '
 
-  _parse-error '
+  _ysh-parse-error '
 hay define Rule
 
 Rule {
@@ -395,7 +368,7 @@ Rule {
   return
   # This is currently allowed, arguably shouldn't be
 
-  _parse-error '
+  _ysh-parse-error '
 hay define Rule
 
 Rule {
@@ -405,7 +378,7 @@ Rule {
 }
 
 test-hay-shell-assign() {
-  _parse-error '
+  _ysh-parse-error '
 hay define Package
 
 Package foo {
@@ -413,7 +386,7 @@ Package foo {
 }
 '
 
-  _parse-error '
+  _ysh-parse-error '
 hay define Package/User
 
 Package foo {
@@ -423,7 +396,7 @@ Package foo {
 }
 '
 
-  _should-parse '
+  _ysh-should-parse '
 hay define Package/SHELL/User
 
 Package foo {
@@ -436,7 +409,7 @@ Package foo {
 }
 '
 
-  _parse-error '
+  _ysh-parse-error '
 hay define Package/SHELL/User
 
 Package foo {
@@ -454,7 +427,7 @@ Package foo {
 
   # It's OK that this parses, we didn't use the CapsWord style
 
-  _parse-error '
+  _ysh-parse-error '
 hay define package user TASK
 
 hay eval :result {
@@ -466,65 +439,61 @@ hay eval :result {
 }
 
 test-parse-at() {
-  set +o errexit
-
-  _parse-error 'echo @'
-  _parse-error 'echo @@'
-  _parse-error 'echo @{foo}'
-  _parse-error 'echo @/foo/'
-  _parse-error 'echo @"foo"'
+  _ysh-parse-error 'echo @'
+  _ysh-parse-error 'echo @@'
+  _ysh-parse-error 'echo @{foo}'
+  _ysh-parse-error 'echo @/foo/'
+  _ysh-parse-error 'echo @"foo"'
 }
 
 test-ysh-nested-proc-func() {
-  set +o errexit
+  _ysh-parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-parse-error 'func f() { echo 1; proc f { echo f }; echo 2 }'
+  _ysh-parse-error 'proc p { echo 1; func f() { echo f }; echo 2 }'
+  _ysh-parse-error 'func f() { echo 1; func f2() { echo f }; echo 2 }'
 
-  _parse-error 'proc p { echo 1; proc f { echo f }; echo 2 }'
-  _parse-error 'func f() { echo 1; proc f { echo f }; echo 2 }'
-  _parse-error 'proc p { echo 1; func f() { echo f }; echo 2 }'
-  _parse-error 'func f() { echo 1; func f2() { echo f }; echo 2 }'
-
-  _parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
+  _ysh-parse-error 'proc p { echo 1; +weird() { echo f; }; echo 2 }'
 
   # ksh function
-  _parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
+  _ysh-parse-error 'proc p { echo 1; function f { echo f; }; echo 2 }'
 
-  _parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
+  _ysh-parse-error 'f() { echo 1; proc inner { echo inner; }; echo 2; }'
 
   # shell nesting is still allowed
-  _should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
+  _ysh-should-parse 'f() { echo 1; g() { echo g; }; echo 2; }'
 
-  _should-parse 'proc p() { shopt --unset errexit { false hi } }'
+  _ysh-should-parse 'proc p() { shopt --unset errexit { false hi } }'
 }
 
 test-int-literals() {
-  _should-parse '= 42'
-  _should-parse '= 42_0'
-  _parse-error '= 42_'
-  _parse-error '= 42_0_'
+  _ysh-should-parse '= 42'
+  _ysh-should-parse '= 42_0'
+  _ysh-parse-error '= 42_'
+  _ysh-parse-error '= 42_0_'
 
   # this is a var name
-  _should-parse '= _42'
+  _ysh-should-parse '= _42'
 }
 
 test-float-literals() {
-  _should-parse '= 42.0'
-  _should-parse '= 42_0.0'
-  _parse-error '= 42_.0'
+  _ysh-should-parse '= 42.0'
+  _ysh-should-parse '= 42_0.0'
+  _ysh-parse-error '= 42_.0'
 
-  _parse-error '= 42.'
-  _parse-error '= .333'
+  _ysh-parse-error '= 42.'
+  _ysh-parse-error '= .333'
 
-  _parse-error '= _42.0'
+  _ysh-parse-error '= _42.0'
 }
 
 test-place-expr() {
-  _should-parse 'setvar x.y = 42'
-  _parse-error 'setvar x+y = 42'
-  _parse-error 'setvar x->y = 42'
+  _ysh-should-parse 'setvar x.y = 42'
+  _ysh-parse-error 'setvar x+y = 42'
+  _ysh-parse-error 'setvar x->y = 42'
 }
 
 test-destructure() {
-  _parse-error '
+  _ysh-parse-error '
   func f() {
     const x, y = 3, 4
 
@@ -533,14 +502,14 @@ test-destructure() {
     setvar y = 6
   }'
 
-  _parse-error '
+  _ysh-parse-error '
   func f() {
     var x, y = 3, 4
 
     var y = 6
   }'
 
-  _parse-error '
+  _ysh-parse-error '
   func f() {
     var x, y = 3, 4
 
@@ -549,133 +518,131 @@ test-destructure() {
 }
 
 test-lazy-arg-list() {
-  _should-parse 'assert [42 === x]'
+  _ysh-should-parse 'assert [42 === x]'
 
-  _should-parse 'assert [ 42 === x ]'
-  _should-parse 'assert [42, 43]'
-  _should-parse 'assert [42, named=true]'
-  _should-parse 'assert [42, named=true]; echo hi'
+  _ysh-should-parse 'assert [ 42 === x ]'
+  _ysh-should-parse 'assert [42, 43]'
+  _ysh-should-parse 'assert [42, named=true]'
+  _ysh-should-parse 'assert [42, named=true]; echo hi'
 
-  _should-parse 'assert [42, named=true] { echo hi }'
+  _ysh-should-parse 'assert [42, named=true] { echo hi }'
 
   # Seems fine
-  _should-parse 'assert [42, named=true]{ echo hi }'
+  _ysh-should-parse 'assert [42, named=true]{ echo hi }'
 
   # I guess this legacy is still valid?  Or disallow explicitly
-  _should-parse 'assert *.[ch]'
-  _should-parse 'assert 42[ch]'
-  _should-parse 'echo[]'
+  _ysh-should-parse 'assert *.[ch]'
+  _ysh-should-parse 'assert 42[ch]'
+  _ysh-should-parse 'echo[]'
 
-  _parse-error 'assert [4'
-  _parse-error 'assert [ 4'
+  _ysh-parse-error 'assert [4'
+  _ysh-parse-error 'assert [ 4'
 
-  _should-parse 'json write (42) >out'
+  _ysh-should-parse 'json write (42) >out'
 
   # I guess this is OK
-  _should-parse 'json write >out (42)'
+  _ysh-should-parse 'json write >out (42)'
 
   # BUG
-  #_parse-error 'when (42) >out { echo hi }'
+  #_ysh-parse-error 'when (42) >out { echo hi }'
 
-  #_should-parse 'when (42) { echo hi } >out'
+  #_ysh-should-parse 'when (42) { echo hi } >out'
 
   # How to support this?  Maybe the CommandParser can test for i == 0 when it
   # gets Op_LBracket
 
   # legacy
-  _should-parse '[ x = y ]'
+  _ysh-should-parse '[ x = y ]'
 
 
   return
 
   # TODO: shouldn't allow extra words
-  _parse-error 'assert (42)extra'
-  _parse-error 'assert (42) extra'
+  _ysh-parse-error 'assert (42)extra'
+  _ysh-parse-error 'assert (42) extra'
 
 
-  _parse-error 'assert [42]extra'
-  _parse-error 'assert [42] extra'
+  _ysh-parse-error 'assert [42]extra'
+  _ysh-parse-error 'assert [42] extra'
 }
 
 test-place-expr() {
-  _should-parse 'read (&x)'
+  _ysh-should-parse 'read (&x)'
 
   # TODO: parse these into something
-  _parse-error 'read (&x[0])'
-  _parse-error 'read (&x[0][1])'
+  _ysh-parse-error 'read (&x[0])'
+  _ysh-parse-error 'read (&x[0][1])'
 
-  _parse-error 'read (&x.key.other)'
+  _ysh-parse-error 'read (&x.key.other)'
 
   # This is a runtime error, not a parse time error
-  _should-parse 'read (&x + 1)'
+  _ysh-should-parse 'read (&x + 1)'
 
-  _parse-error 'read (&42)'
-  _parse-error 'read (&+)'
+  _ysh-parse-error 'read (&42)'
+  _ysh-parse-error 'read (&+)'
 
   # Place expressions aren't parenthesized expressions
-  _parse-error 'read (&(x))'
+  _ysh-parse-error 'read (&(x))'
 }
 
 test-units-suffix() {
-  _parse-error '= 100 M M'
+  _ysh-parse-error '= 100 M M'
 
-  _parse-error '= 100 M; echo'
-  _parse-error '= 100 Mi; echo'
+  _ysh-parse-error '= 100 M; echo'
+  _ysh-parse-error '= 100 Mi; echo'
 
-  _parse-error '= 9.9 Mi; echo'
+  _ysh-parse-error '= 9.9 Mi; echo'
 
   # This is confusing, could disallow, or just rely on users not to type it
-  _parse-error '= 9.9e-1 Mi; echo'
+  _ysh-parse-error '= 9.9e-1 Mi; echo'
 
   # I don't like this, but it follows lexing rules I guess
-  _parse-error '= 100Mi'
+  _ysh-parse-error '= 100Mi'
 
-  _parse-error '= [100 Mi, 200 Mi]'
+  _ysh-parse-error '= [100 Mi, 200 Mi]'
 
-  _parse-error '= {[42 Ki]: 43 Ki}'
+  _ysh-parse-error '= {[42 Ki]: 43 Ki}'
 }
 
 test-type-expr() {
   # This is nicer
-  _should-parse 'var x: Int = f()'
+  _ysh-should-parse 'var x: Int = f()'
 
   # But colon is optional
-  _should-parse 'var x Int = f()'
+  _ysh-should-parse 'var x Int = f()'
 
   # Colon is noisy here because we have semi-colons
-  _should-parse 'proc p (; x Int, y Int; ) { echo hi }'
+  _ysh-should-parse 'proc p (; x Int, y Int; ) { echo hi }'
 
-  _should-parse 'func f (x Int, y Int; z Int = 0) { echo hi }'
+  _ysh-should-parse 'func f (x Int, y Int; z Int = 0) { echo hi }'
 
   # Hm should these be allowed, but discouraged?
-  #_should-parse 'func f (x Int, y Int; z: Int = 0) { echo hi }'
-  #_should-parse 'proc p (; x: Int, y: Int;) { echo hi }'
+  #_ysh-should-parse 'func f (x Int, y Int; z: Int = 0) { echo hi }'
+  #_ysh-should-parse 'proc p (; x: Int, y: Int;) { echo hi }'
 }
 
 test-no-const() {
-  _should-parse 'const x = 42'
+  _ysh-should-parse 'const x = 42'
 
   # Must be at the top level
-  _parse-error '
+  _ysh-parse-error '
   proc p {
     const x = 42
   }'
 
-  _parse-error '
+  _ysh-parse-error '
   func f() {
     const x = 42
   }'
 }
 
 test-fat-arrow() {
-  _should-parse 'var x = s => trim()'
-  _should-parse 'func f(x Int) => List[Int] { echo hi }'
+  _ysh-should-parse 'var x = s => trim()'
+  _ysh-should-parse 'func f(x Int) => List[Int] { echo hi }'
 }
 
 # Backslash in UNQUOTED context
 test-parse-backslash() {
-  set +o errexit
-
   _ysh-should-parse 'echo \('
   _ysh-should-parse 'echo \;'
   _ysh-should-parse 'echo ~'
@@ -697,8 +664,6 @@ test-parse-backslash() {
 }
 
 test-make-these-nicer() {
-  set +o errexit
-
   # expects expression on right
   _ysh-parse-error '='
   _ysh-parse-error 'call'
@@ -715,8 +680,6 @@ test-make-these-nicer() {
 }
 
 test-var-decl() {
-  set +o errexit
-
   _ysh-parse-error '
   proc p(x) {
     echo hi
@@ -761,8 +724,6 @@ test-var-decl() {
 }
 
 test-setvar() {
-  set +o errexit
-
   _ysh-should-parse '
   proc p(x) {
     var y = 1
@@ -799,8 +760,6 @@ test-setvar() {
 }
 
 test-ysh-case() {
-  set +o errexit
-
   _ysh-should-parse '
   case (x) {
     (else) { = 1; }
@@ -1123,8 +1082,6 @@ word    { echo word; }
 }
 
 test-ysh-for() {
-  set +o errexit
-
   _ysh-should-parse '
   for x in (obj) {
     echo $x
@@ -1176,8 +1133,6 @@ test-ysh-for() {
 }
 
 test-for-parse-bare-word() {
-  set +o errexit
-
   _ysh-parse-error '
   for x in bare {
     echo $x
@@ -1203,9 +1158,7 @@ test-for-parse-bare-word() {
   '
 }
 
-test-oils-issue-1118() {
-  set +o errexit
-
+test-bug-1118() {
   # Originally pointed at 'for'
   _ysh-parse-error '
   var snippets = [{status: 42}]
@@ -1234,9 +1187,38 @@ test-oils-issue-1118() {
   '
 }
 
-test-proc-args() {
-  set +o errexit
+test-bug-1850() {
+  _ysh-should-parse 'pp line (42); pp line (43)'
+  #_osh-should-parse 'pp line (42); pp line (43)'
 
+  return
+
+  # Extra word is bad
+  _ysh-parse-error 'pp line (42) extra'
+
+  # Bug -- newline or block should come after arg list
+  _ysh-parse-error 'pp line (42), echo'
+
+  # This properly checks a similar error.  It's in a word.
+  _ysh-parse-error 'pp line @(echo), echo'
+
+  # Common cases
+  _ysh-should-parse 'pp line (42)'
+  _ysh-should-parse 'pp line (42) '
+  _ysh-should-parse 'pp line (42);'
+  _ysh-should-parse 'pp line (42) { echo hi }'
+
+  return
+
+  # Original bug
+
+  # Accidental comma instead of ;
+  # Wow this is parsed horribly
+  # Why does this replace (42) with (43)
+  _ysh-parse-error 'pp line (42), pp line (43)'
+}
+
+test-proc-args() {
   _osh-should-parse 'json write (x)'
 
   _osh-should-parse 'echo $(json write (x))'  # relies on lexer.PushHint()
@@ -1279,42 +1261,309 @@ json write (x) {
 }
 
 test-eggex-capture() {
-  _should-parse '= / d+ /'
-  #_should-parse '= / <d+ : date> /'
-  _should-parse '= / < capture d+ as date > /'
-  _should-parse '= / < capture d+ as date: Int > /'
+  _ysh-should-parse '= / d+ /'
+  #_ysh-should-parse '= / <d+ : date> /'
+  _ysh-should-parse '= / < capture d+ as date > /'
+  _ysh-should-parse '= / < capture d+ as date: Int > /'
 
   # These keywords are taken in regular expressions, I guess that's OK.
-  _parse-error 'var capture = 42'
-  _parse-error 'var as = 42'
+  _ysh-parse-error 'var capture = 42'
+  _ysh-parse-error 'var as = 42'
 }
 
 
 test-eggex-flags() {
-  _should-parse '= / d+ ; reg_icase /'
-  _should-parse '= / d+ ; i /'  # shortcut
+  _ysh-should-parse '= / d+ ; reg_icase /'
+  _ysh-should-parse '= / d+ ; i /'  # shortcut
 
   # can't negate these
-  _parse-error '= / d+ ; !i /'
+  _ysh-parse-error '= / d+ ; !i /'
 
   # typo should be parse error
-  _parse-error '= / d+ ; reg_oops /'
+  _ysh-parse-error '= / d+ ; reg_oops /'
 
   # PCRE should not validate
-  _should-parse '= / d+ ; !i; PCRE /'
-  _should-parse '= / d+ ; reg_oops; PCRE /'
+  _ysh-should-parse '= / d+ ; !i; PCRE /'
+  _ysh-should-parse '= / d+ ; reg_oops; PCRE /'
 
   # ERE means is the default; it's POSIX ERE
   # Other option is PCRE
-  _should-parse '= / d+ ; i reg_newline ; ERE /'
-  _should-parse '= / d+ ; ; ERE /'
+  _ysh-should-parse '= / d+ ; i reg_newline ; ERE /'
+  _ysh-should-parse '= / d+ ; ; ERE /'
 
   # trailing ; is OK
-  _should-parse '= / d+ ; /'
+  _ysh-should-parse '= / d+ ; /'
 
   # doesn't make sense
-  _parse-error '= / d+ ; ; /'
-  _parse-error '= / d+ ; ; ; /'
+  _ysh-parse-error '= / d+ ; ; /'
+  _ysh-parse-error '= / d+ ; ; ; /'
+}
+
+test-string-literals() {
+  _ysh-should-parse "echo r'hi';"
+  #_ysh-parse-error "echo r'hi'bad"
+
+  _ysh-should-parse "echo u'hi'"
+  _ysh-should-parse "(echo u'hi')"
+
+  _ysh-parse-error "echo b'hi'trailing"
+  _ysh-parse-error "echo b'hi'#notcomment"
+
+  # This is valid shell, but not a comment
+  _ysh-should-parse "echo 'hi'#notcomment"
+
+}
+
+test-multiline-string() {
+  _ysh-should-parse "echo u'''
+hi
+'''
+"
+  _ysh-should-parse "echo b'''
+hi
+'''
+"
+
+  _ysh-parse-error "echo b'''
+hi
+''
+"
+
+  _ysh-parse-error "echo r'''
+hi
+'''bad
+"
+
+  _ysh-parse-error "echo u'''
+hi
+'''bad
+"
+
+  _ysh-parse-error 'echo """
+hi
+"""bad
+'
+}
+
+test-bug-1826() {
+  #return
+
+  read -r code_str << 'EOF'
+echo b'\xff'
+EOF
+
+  _ysh-parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = b'\xff'
+EOF
+
+  _ysh-parse-error "$code_str"
+
+  # Backslash ending the file
+
+  read -r code_str << 'EOF'
+echo b'\
+EOF
+  echo "[$code_str]"
+
+  _ysh-parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = b'\
+EOF
+  echo "[$code_str]"
+
+  _ysh-parse-error "$code_str"
+
+  read -r code_str << 'EOF'
+var s = $'\
+EOF
+  echo "[$code_str]"
+
+  _ysh-parse-error "$code_str"
+}
+
+test-ysh_c_strings() {
+  # bash syntax
+  _osh-should-parse-here <<'EOF'
+echo $'\u03bc'
+EOF
+
+  # Extension not allowed
+  _ysh-parse-error-here <<'EOF'
+echo $'\u{03bc}'
+EOF
+
+  # Bad syntax
+  _ysh-parse-error-here <<'EOF'
+echo $'\u{03bc'
+EOF
+
+  # Expression mode
+  _ysh-parse-error-here <<'EOF'
+const bad = $'\u{03bc'
+EOF
+
+  # Test single quoted
+  _osh-should-parse-here <<'EOF'
+echo $'\z'
+EOF
+  _ysh-parse-error-here <<'EOF'
+echo $'\z'
+EOF
+  # Expression mode
+  _ysh-parse-error-here <<'EOF'
+const bad = $'\z'
+EOF
+
+  # Octal not allowed
+  _osh-should-parse-here <<'EOF'
+echo $'\101'
+EOF
+  _ysh-parse-error-here <<'EOF'
+const bad = $'\101'
+EOF
+
+  # \xH not allowed
+  _ysh-parse-error-here <<'EOF'
+const bad = c'\xf'
+EOF
+}
+
+test-bug_1825_backslashes() {
+  # Single backslash is accepted in OSH
+  _osh-should-parse-here <<'EOF'
+echo $'trailing\
+'
+EOF
+
+  # Double backslash is right in YSH
+  _ysh-should-parse-here <<'EOF'
+echo $'trailing\\
+'
+EOF
+
+  # Single backslash is wrong in YSH
+  _ysh-parse-error-here <<'EOF'
+echo $'trailing\
+'
+EOF
+
+  # Also in expression mode
+  _ysh-parse-error-here <<'EOF'
+setvar x = $'trailing\
+'
+EOF
+}
+
+test-ysh_dq_strings() {
+  # Double quoted is an error
+  _osh-should-parse 'echo "\z"'
+
+  # status, sh, message
+  _assert-sh-status 2 "$OSH" $0 \
+    +O parse_backslash -n -c 'echo test-parse_backslash "\z"'
+
+  _ysh-parse-error 'echo "\z"'  # not in Oil
+  _ysh-parse-error 'const bad = "\z"'  # not in expression mode
+
+  # C style escapes not respected
+  _osh-should-parse 'echo "\u1234"'  # ok in OSH
+  _ysh-parse-error 'echo "\u1234"'  # not in Oil
+  _ysh-parse-error 'const bad = "\u1234"'
+
+  _osh-should-parse 'echo "`echo hi`"'
+  _ysh-parse-error 'echo "`echo hi`"'
+  _ysh-parse-error 'const bad = "`echo hi`"'
+
+  _ysh-parse-error 'setvar x = "\z"'
+}
+
+test-ysh_bare_words() {
+  _ysh-should-parse 'echo \$'
+  _ysh-parse-error 'echo \z'
+}
+
+test-parse_dollar() {
+  # The right way:
+  #   echo \$
+  #   echo \$:
+
+  CASES=(
+    'echo $'          # lex_mode_e.ShCommand
+    'echo $:'
+
+    'echo "$"'        # lex_mode_e.DQ
+    'echo "$:"'
+
+    'echo ${x:-$}'    # lex_mode_e.VSub_ArgUnquoted
+    'echo ${x:-$:}'
+
+    'echo "${x:-$}"'  # lex_mode_e.VSub_DQ
+    'echo "${x:-$:}"'
+  )
+  for c in "${CASES[@]}"; do
+
+    _osh-should-parse "$c"
+
+    # status, sh, message
+    _assert-sh-status 2 "$OSH" $0 \
+      +O test-parse_dollar -n -c "$c"
+
+    _ysh-parse-error "$c"
+  done
+}
+
+test-parse_dparen() {
+  # Bash (( construct
+  local bad
+
+  bad='((1 > 0 && 43 > 42))'
+  _osh-should-parse "$bad"
+  _ysh-parse-error "$bad"
+
+  bad='if ((1 > 0 && 43 > 42)); then echo yes; fi'
+  _osh-should-parse "$bad"
+  _ysh-parse-error "$bad"
+
+  bad='for ((x = 1; x < 5; ++x)); do echo $x; done'
+  _osh-should-parse "$bad"
+  _ysh-parse-error "$bad"
+
+  _ysh-should-parse 'if (1 > 0 and 43 > 42) { echo yes }'
+
+  # Accepted workaround: add space
+  _ysh-should-parse 'if ( (1 > 0 and 43 > 42) ) { echo yes }'
+}
+
+test-invalid_parens() {
+
+  # removed function sub syntax
+  local s='write -- $f(x)'
+  _osh-parse-error "$s"
+  _ysh-parse-error "$s"
+
+  # requires test-parse_at
+  local s='write -- @[sorted(x)]'
+  _osh-parse-error "$s"  # this is a parse error, but BAD message!
+  _ysh-should-parse "$s"
+
+  local s='
+f() {
+  write -- @[sorted(x)]
+}
+'
+  _osh-parse-error "$s"
+  _ysh-should-parse "$s"
+
+  # Analogous bad bug
+  local s='
+f() {
+  write -- @sorted (( z ))
+}
+'
+  _osh-parse-error "$s"
 }
 
 #
@@ -1322,14 +1571,12 @@ test-eggex-flags() {
 #
 
 soil-run-py() {
-  # This is like run-test-funcs, except errexit is off here
   run-test-funcs
 }
 
 soil-run-cpp() {
-  # This is like run-test-funcs, except errexit is off here
   ninja _bin/cxx-asan/osh
-  SH=_bin/cxx-asan/osh run-test-funcs
+  OSH=_bin/cxx-asan/osh run-test-funcs
 }
 
 run-for-release() {

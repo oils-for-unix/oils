@@ -4,23 +4,22 @@ from errno import EINTR
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import (span_e, cmd_value)
-from _devbuild.gen.syntax_asdl import source, loc, loc_t
+from _devbuild.gen.syntax_asdl import source, loc_t
 from _devbuild.gen.value_asdl import value, LeftName
 from core import alloc
 from core import error
-from core.error import e_usage, e_die
+from core.error import e_die
 from core import pyos
 from core import pyutil
 from core import state
 from core import ui
 from core import vm
-from data_lang import qsn_native
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import reader
 from frontend import typed_args
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, STDIN_FILENO
-from osh import word_compile
 
 import posix_ as posix
 
@@ -286,34 +285,39 @@ class Read(vm._Builtin):
         self.errfmt = errfmt
         self.stdin_ = mylib.Stdin()
 
-    def _MaybeDecodeLine(self, line):
-        # type: (str) -> str
-        """Raises error.Parse if line isn't valid."""
+    # Was --qsn, might be restored as --j8-word or --j8-line
+    if 0:
+        #from data_lang import qsn_native
+        def _MaybeDecodeLine(self, line):
+            # type: (str) -> str
+            """Raises error.Parse if line isn't valid."""
 
-        # Lines that don't start with a single quote aren't QSN.  They may
-        # contain a single quote internally, like:
-        #
-        # Fool's Gold
-        if not line.startswith("'"):
-            return line
+            # Lines that don't start with a single quote aren't QSN.  They may
+            # contain a single quote internally, like:
+            #
+            # Fool's Gold
+            if not line.startswith("'"):
+                return line
 
-        arena = self.parse_ctx.arena
-        line_reader = reader.StringLineReader(line, arena)
-        lexer = self.parse_ctx.MakeLexer(line_reader)
+            arena = self.parse_ctx.arena
+            line_reader = reader.StringLineReader(line, arena)
+            lexer = self.parse_ctx.MakeLexer(line_reader)
 
-        # The parser only yields valid tokens:
-        #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
-        # So we can use word_compile.EvalCStringToken, which is also used for
-        # $''.
-        # Important: we don't generate Id.Unknown_Backslash because that is valid
-        # in echo -e.  We just make it Id.Unknown_Tok?
+            # The parser only yields valid tokens:
+            #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
+            # So we can use word_compile.EvalCStringToken, which is also used for
+            # $''.
+            # Important: we don't generate Id.Unknown_Backslash because that is valid
+            # in echo -e.  We just make it Id.Unknown_Tok?
 
-        # TODO: read location info should know about stdin, and redirects, and
-        # pipelines?
-        with alloc.ctx_SourceCode(arena, source.Stdin('')):
-            tokens = qsn_native.Parse(lexer)
-        tmp = [word_compile.EvalCStringToken(t) for t in tokens]
-        return ''.join(tmp)
+            # TODO: read location info should know about stdin, and redirects, and
+            # pipelines?
+            with alloc.ctx_SourceCode(arena, source.Stdin('')):
+                #tokens = qsn_native.Parse(lexer)
+                pass
+            #tmp = [word_compile.EvalCStringToken(t) for t in tokens]
+            #return ''.join(tmp)
+            return ''
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -321,8 +325,12 @@ class Read(vm._Builtin):
             status = self._Run(cmd_val)
         except pyos.ReadError as e:  # different paths for read -d, etc.
             # don't quote code since YSH errexit will likely quote
-            self.errfmt.PrintMessage("read error: %s" %
+            self.errfmt.PrintMessage("Oils read error: %s" %
                                      posix.strerror(e.err_num))
+            status = 1
+        except (IOError, OSError) as e:  # different paths for read -d, etc.
+            self.errfmt.PrintMessage("Oils read I/O error: %s" %
+                                     pyutil.strerror(e))
             status = 1
         return status
 
@@ -331,8 +339,6 @@ class Read(vm._Builtin):
         """
         Usage:
 
-          read --line       # sets _reply var
-          read --line (&x)  # sets x
           read --all        # sets _reply
           read --all (&x)   # sets x
 
@@ -362,31 +368,10 @@ class Read(vm._Builtin):
         if next_arg is not None:
             raise error.Usage('got extra argument', next_loc)
 
-        # Don't respect any of the other options here?  This is buffered I/O.
-        if arg.line:  # read --line
-            # Use an optimized C implementation rather than ReadLineSlowly,
-            # which calls ReadByte() over and over.
-            line = pyos.ReadLineBuffered()
-            if len(line) == 0:  # EOF
-                return 1  # 'while read --line' loop
-
-            if not arg.with_eol:
-                if line.endswith('\r\n'):
-                    line = line[:-2]
-                elif line.endswith('\n'):
-                    line = line[:-1]
-
-            # TODO: This should be --j8 or --json
-            if arg.q:
-                try:
-                    line = self._MaybeDecodeLine(line)
-                except error.Parse as e:
-                    self.errfmt.PrettyPrintError(e)
-                    return 1
-
-            #log('place %s', place)
-            self.mem.SetPlace(place, value.Str(line), blame_loc)
-            return 0
+        if arg.line:  # read --line is buffered, calls getline()
+            raise error.Usage(
+                "no longer supports --line; please use read -r instead (unbuffered I/O)",
+                next_loc)
 
         if arg.all:  # read --all
             contents = ReadAll()
@@ -398,14 +383,14 @@ class Read(vm._Builtin):
 
     def _Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('read',
+        attrs, arg_r = flag_util.ParseCmdVal('read',
                                              cmd_val,
                                              accept_typed_args=True)
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
 
-        if arg.q and not arg.line:
-            e_usage('--qsn can only be used with --line', loc.Missing)
+        #if arg.q and not arg.line:
+        #    e_usage('--qsn can only be used with --line', loc.Missing)
 
         if arg.line or arg.all:
             return self._ReadYsh(arg, arg_r, cmd_val)
@@ -424,7 +409,7 @@ class Read(vm._Builtin):
         bits = 0
         if self.stdin_.isatty():
             # -d and -n should be unbuffered
-            if arg.d is not None or arg.n >= 0:
+            if arg.d is not None or mops.BigTruncate(arg.n) >= 0:
                 bits |= pyos.TERM_ICANON
             if arg.s:  # silent
                 bits |= pyos.TERM_ECHO
@@ -442,13 +427,15 @@ class Read(vm._Builtin):
     def _Read(self, arg, names):
         # type: (arg_types.read, List[str]) -> int
 
-        if arg.N >= 0:  # read a certain number of bytes (-1 means unset)
+        # read a certain number of bytes (-1 means unset)
+        arg_N = mops.BigTruncate(arg.N)
+        if arg_N >= 0:
             if len(names):
                 name = names[0]
             else:
                 name = 'REPLY'  # default variable name
 
-            s = _ReadN(arg.N, self.cmd_ev)
+            s = _ReadN(arg_N, self.cmd_ev)
 
             state.BuiltinSetString(self.mem, name, s)
 
@@ -457,7 +444,7 @@ class Read(vm._Builtin):
                 state.BuiltinSetString(self.mem, names[i], '')
 
             # Did we read all the bytes we wanted?
-            return 0 if len(s) == arg.n else 1
+            return 0 if len(s) == arg_N else 1
 
         if len(names) == 0:
             names.append('REPLY')
@@ -487,7 +474,8 @@ class Read(vm._Builtin):
         join_next = False
         status = 0
         while True:
-            line, eof = _ReadPortion(delim_byte, arg.n, self.cmd_ev)
+            line, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n),
+                                     self.cmd_ev)
 
             if eof:
                 # status 1 to terminate loop.  (This is true even though we set

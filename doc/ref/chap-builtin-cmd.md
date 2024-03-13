@@ -51,29 +51,43 @@ Examples:
 
 ### try
 
-Run a block of code, stopping at the first error (i.e. errexit is enabled).
-Set the `_status` variable to the exit status of the block, and returns 0.
+Run a block of code, stopping at the first error.  In other words, shopt
+`errexit` is enabled.
+
+Set the `_status` variable to the exit status of the block, and return 0.
 
     try {
       ls /nonexistent
-
-      ls | wc -l
-
-      diff <(sort left.txt) <(sort right.txt)
-
-      var x = 1 / 0
     }
     if (_status !== 0) {
-      echo 'error'
+      echo 'ls failed'
     }
 
-    # Shortcut for a single command
-    try grep PATTERN FILE.txt
-    case $_status in
-      (0) echo 'found' ;;
-      (1) echo 'not found' ;;
-      (*) echo "error $_status" ;;
-    esac
+Handle expression errors:
+
+    try {
+      var x = 42 / 0
+    }
+
+And errors from compound commands:
+
+    try {
+      ls | wc -l
+      diff <(sort left.txt) <(sort right.txt)
+    }
+
+The case statement can be useful:
+
+    try {
+      grep PATTERN FILE.txt
+    }
+    case (_status) {
+      (0)    { echo 'found' }
+      (1)    { echo 'not found' }
+      (else) { echo "grep returned status $_status" }
+    }
+
+The `try` builtin may also set the `_error` register.
 
 ### boolstatus
 
@@ -87,25 +101,53 @@ Runs a command and requires the exit code to be 0 or 1.
 
 ### error
 
-The `error` builtin raises a fatal error.  In YSH, it's customary to use it
-instead of `return 1`:
+The `error` builtin interrupts the shell program.  
+
+    error 'Missing /tmp'  # program fails with status 10
+
+Override the default status of `10` with a named argument:
+
+    error 'Missing /tmp' (status=99) 
+
+In YSH, it's customary to use `error` instead of `return 1`, since it provides
+more information:
 
     proc p {
       if ! test -d /tmp {
-        error 'Missing /tmp'
+        error 'Missing /tmp'  # more descriptive than return
       }
+      echo hi
     }
 
-The error can be caught with `try`:
+Handle the error with the `try` builtin:
 
-    try p
-    if (_status !== 0 {
-      echo 'failed'
+    try {
+      p
+    }
+    if (_status !== 0) {
+      echo $[_error.message]  # => Missing /tmp
     }
 
-By default, it fails with status 1.  You can change this with a typed arg:
+The integer `_status` is always set, and the Dict `_error` is set for all
+"structured" errors, which includes errors raised by the `try` builtin.
 
-   error 'Missing /tmp' (status=9)
+Special properties of `_error`:
+
+- `_error.message` - the positional string arg
+- `_error.status` - the named `status` arg, or the default 10
+
+You can attach other, arbitrary properties to the error:
+
+    error 'Oops' (path='foo.json')
+
+They are attached to `_error`:
+
+    try {
+      error 'Oops' (path='foo.json')
+    }
+    if (_status !== 0) {
+      echo $[_error.path]  # => foo.json
+    }
 
 ## Shell State
 
@@ -134,6 +176,65 @@ Execute a block with a global variable set.
       echo "ifs is $IFS"
     }
     echo "ifs restored to $IFS"
+
+### ctx
+
+Execute a block with a shared "context" that can be updated using the `ctx`
+built-in.
+
+    var mydict = {}
+    ctx push (mydict) {
+       # = mydict => {}
+       ctx set (mykey='myval')
+    }
+    # = mydict => { mykey: 'myval' }
+
+The context can be modified with `ctx set (key=val)`, which updates or inserts
+the value at the given key.
+
+The context can also be updated with `ctx emit field (value)`.
+
+    ctx push (mydict) {
+       # = mydict => {}
+       ctx emit mylist (0)
+       # = mydict => { mylist: [0] }
+       ctx emit mylist (1)
+    }
+    # = mydict => { mylist: [0, 1] }
+
+Contexts can be nested, resulting in a stack of contexts.
+
+    ctx push (mydict1) {
+        ctx set (dict=1)
+        ctx push (mydict2) {
+            ctx set (dict=2)
+        }
+    }
+    # = mydict1 => { dict: 1 }
+    # = mydict2 => { dict: 2 }
+
+`ctx` is useful for creating DSLs, such as a mini-parseArgs.
+
+    proc parser (; place ; ; block_def) {
+      var p = {}
+      ctx push (p, block_def)
+      call place->setValue(p)
+    }
+
+    proc flag (short_name, long_name; type; help) {
+      ctx emit flag ({short_name, long_name, type, help})
+    }
+
+    proc arg (name) {
+      ctx emit arg ({name})
+    }
+
+    parser (&spec) {
+      flag -t --tsv (Bool, help='Output as TSV')
+      flag -r --recursive (Bool, help='Recurse into the given directory')
+      flag -N --count (Int, help='Process no more than N files')
+      arg path
+    }
 
 ### push-registers
 
@@ -229,25 +330,101 @@ Also a declaration
 
 ### ysh-read
 
-YSH adds buffered, line-oriented I/O to shell's `read`.
+YSH adds long flags to shell's `read`:
+
+    read --all              # whole file including newline, in $_reply
+    read --all (&x)         # fills $x
+
+And a convenience:
+
+    read -0                 # read until NUL, synonym for read -r -d ''
+
+TODO: We used to have `read --line`, but buffered I/O doesn't mix with shell
+I/O, which is reads directly from file descriptors.
+
+<!--
+
+buffered, line-oriented I/O 
 
     read --line             # fills $_reply var with line
     read --line (&x)        # fills $x (&x is a place)
 
     read --line --with-eol  # keep the \n
-    read --line --qsn       # decode QSN too
 
-    read --all              # whole file including newline, in $_reply
-    read --all (&x)         # fills $x
+You may want to use `fromJ8()` or `fromJson()` after reading a line.
 
-    read -0                 # read until NUL, synonym for read -r -d ''
-
-When --qsn is passed, the line is check for an opening single quote.  If so,
-it's decoded as QSN.  The line must have a closing single quote, and there
-can't be any non-whitespace characters after it.
+TODO: read --netstr
+-->
 
 <!--
-TODO: read --netstr
+
+Problem with read --json -- there's also https://jsonlines.org, which allows
+
+    {"my": "line"}
+
+That can be done with
+
+    while read --line {
+      var record = fromJson(_reply)
+    }
+
+This is distinct from:
+
+    while read --line --j8 {
+      echo $_reply
+    }
+
+This allows unquoted.  Maybe it should be read --j8-line
+
+What about write?  These would be the same:
+
+    write --json -- $s
+    write --j8 -- $s
+
+    write -- $[toJson(s)]
+    write -- $[toJson8(s)]
+
+    write --json -- @strs
+    write --j8 -- @strs
+
+    write -- @[toJson(s) for s in strs]
+    write -- @[toJson8(s) for s in strs]
+
+It's an argument for getting rid --json and --j8?  I already implemented them,
+but it makes the API smaller.
+
+I guess the main thing would be to AVOID quoting sometimes?
+
+    $ write --j8 -- unquoted
+    unquoted
+
+    $ write --j8 -- $'\'' '"'
+    "'"
+    "\""
+
+I think this could be the shell style?
+
+    $ write --shell-str -- foo bar baz
+
+Or it could be
+
+    $ write -- @[toShellString(s) for s in strs]
+
+I want this to be "J8 Lines", but it can be done in pure YSH.  It's not built
+into the interpreter.
+
+  foo/bar
+ "hi"
+b'hi'
+u'hi'
+
+But what about
+
+ Fool's Gold
+a'hi'  # This feels like an error?
+a"hi"  # what about this?
+
+Technically we CAN read those as literal strings
 -->
 
 ### write
@@ -259,11 +436,23 @@ newline.
 
 Examples:
 
-    write -- ale bean        # write two lines
-    write --qsn -- ale bean  # QSN encode, guarantees two lines
-    write -n -- ale bean     # synonym for --end '', like echo -n
+    write -- ale bean         # write two lines
+
+    write -n -- ale bean      # synonym for --end '', like echo -n
     write --sep '' --end '' -- a b        # write 2 bytes
     write --sep $'\t' --end $'\n' -- a b  # TSV line
+
+You may want to use `toJson8()` or `toJson()` before writing:
+
+    write -- $[toJson8(mystr)]
+    write -- $[toJson(mystr)]
+
+
+<!--
+    write --json -- ale bean  # JSON encode, guarantees two lines
+    write --j8 -- ale bean    # J8 encode, guarantees two lines
+-->
+
 
 ### fork
 
@@ -300,6 +489,20 @@ Or use an explicit place:
 
     var x = ''
     json read (&x) < myfile.txt
+
+Related: [json-encode-err]() and [json-decode-error]()
+
+### json8
+
+Like `json`, but on the encoding side:
+
+- Falls back to `b'\yff'` instead of lossy Unicode replacement char
+
+On decoding side:
+
+- Understands `b'' u''` strings
+
+Related: [json8-encode-err]() and [json8-decode-error]()
 
 ## Testing
 
@@ -983,3 +1186,188 @@ Flags:
 
 Bash has this, but OSH won't implement it.
 
+
+## Args Parser
+
+YSH includes a command-line argument parsing utility called `parseArgs`. This
+is intended to be used for command-line interfaces to YSH programs.
+
+To use it, first import `args.ysh`:
+
+    source --builtin args.ysh
+
+Then, create an argument parser **spec**ification:
+
+    parser (&spec) {
+      flag -v --verbose (help="Verbosely")  # default is Bool, false
+
+      flag -P --max-procs ('int', default=-1, help='''
+        Run at most P processes at a time
+        ''')
+
+      flag -i --invert ('bool', default=true, help='''
+        Long multiline
+        Description
+        ''')
+
+      arg src (help='Source')
+      arg dest (help='Dest')
+
+      rest files
+    }
+
+Finally, parse `ARGV` (or any other array of strings) with:
+
+    var args = parseArgs(spec, ARGV)
+
+The returned `args` is a `Dict` containing key-value pairs with the parsed
+values (or defaults) for each flag and argument. For example, given
+`ARGV = :| mysrc -P 12 mydest a b c |`, `args` would be:
+
+    {
+        "verbose": false,
+        "max-procs": 12,
+        "invert": true,
+        "src": "mysrc",
+        "dest": "mydest",
+        "files": ["a", "b", "c"]
+    }
+
+### parser
+
+`parseArgs()` requires a parser specification to indicate how to parse the
+`ARGV` array. This specification should be constructed using the `parser` proc.
+
+    parser (&spec) {
+      flag -f --my-flag
+      arg myarg
+      rest otherArgs
+    }
+
+In the above example, `parser` takes in a place `&spec`, which will store the
+resulting specification and a block which is evaluated to build that
+specification.
+
+Inside of a `parser` block, you should call the following procs:
+
+- `flag` to add `--flag` options
+- `arg` to add positional arguments
+- `rest` to capture remaining positional arguments into a list
+
+`parser` will validate the parser specification for errors such as duplicate
+flag or argument names.
+
+    parser (&spec) {
+      flag -n --name
+      flag -n --name  # Duplicate!
+    }
+
+    # => raises "Duplicate flag/arg name 'name' in spec" (status = 3)
+
+### flag
+
+`flag` should be called within a `parser` block.
+
+    parser (&spec) {
+      flag -v --verbose
+    }
+
+The above example declares a flag "--verbose" and a short alias "-v".
+`parseArgs()` will then store a boolean value under `args.verbose`:
+- `true` if the flag was passed at least once
+- `false` otherwise
+
+Flags can also accept values. For example, if you wanted to accept an integer count:
+
+    parser (&spec) {
+      flag -N --count ('int')
+    }
+
+Calling `parseArgs` with `ARGV = :| -n 5 |` or `ARGV = :| --count 5 |` will
+store the integer `5` under `args.count`. If the user passes in a non-integer
+value like `ARGV = :| --count abc |`, `parseArgs` will raise an error.
+
+Default values for an argument can be set with the `default` named argument.
+
+    parser (&spec) {
+      flag -N --count ('int', default=2)
+
+      # Boolean flags can be given default values too
+      flag -O --optimize ('bool', default=true)
+    }
+
+    var args = parseArgs(spec, :| -n 3 |)
+    # => args.count = 2
+    # => args.optimize = true
+
+Each name passed to `flag` must be unique to that specific `parser`. Calling
+`flag` with the same name twice will raise an error inside of `parser`.
+
+<!-- TODO: how can we explicitly pass false to a boolean flag? -->
+<!-- TODO: how about --no-XXXX variants of flags? -->
+
+### arg
+
+`arg` should be called within a `parser` block.
+
+    parser (&spec) {
+      arg query
+      arg path
+    }
+
+The above example declares two positional arguments called "query" and "path".
+`parseArgs()` will then store strings under `args.query` and `args.path`. Order
+matters, so the first positional argument will be stored to `query` and the
+second to `path`. If not enough positional arguments are passed, then
+`parseArgs` will raise an error.
+
+Similar to `flag`, each `arg` name must be unique. Calling `arg` with the same
+name twice will cause `parser` to raise an error.
+
+### rest
+
+`rest` should be called within a `parser` block.
+
+    parser (&spec) {
+      arg query
+      rest files
+    }
+
+Capture zero or more positional arguments not already captured by `arg`. So,
+for `ARGV = :| hello file.txt message.txt README.md |`, we would have
+`args.query = "file.txt"` and `args.files = ["file.txt", "message.txt",
+"README.md"]`.
+
+Without rest, passing extraneous arguments will raise an error in
+`parseArgs()`.
+
+`rest` can only be called _once_ within a `parser`. Calling it multiple times
+will raise an error in `parser`.
+
+### parseArgs()
+
+Given a parser specification `spec` produced by `parser`, parse a list of
+strings (usually `ARGV`.)
+
+    var args = parseArgs(spec, ARGV)
+
+The returned `args` is a dictionary mapping the names of each `arg`, `flag` and
+`rest` to their captured values. (See the example at the [start of this
+topic](#Args-Parser).)
+
+`parseArgs` will raise an error if the `ARGV` is invalid per the parser
+specification. For example, if it's missing a required positional argument:
+
+    parser (&spec) {
+      arg path
+    }
+
+    var args = parseArgs(spec, [])
+    # => raises an error about the missing 'path' (status = 2)
+
+<!--
+TODO: Document chaining parsers / sub-commands
+      - Either will allow parser nesting
+      - Or can use `rest rest` and `parseArgs` again on `rest`
+TODO: Document the help named argument. Punting while we do not generate help messages
+-->

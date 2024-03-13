@@ -1,5 +1,7 @@
 #include "mycpp/gc_mylib.h"
 
+#include <unistd.h>
+
 #include "mycpp/gc_alloc.h"  // gHeap
 #include "mycpp/gc_str.h"
 #include "vendor/greatest.h"
@@ -142,11 +144,18 @@ TEST BufWriter_test() {
   // Create a new BufWriter to call getvalue() again
   writer = Alloc<mylib::BufWriter>();
   writer->write(foo);
+  writer->write_spaces(3);
+  writer->write_spaces(0);
   writer->write(bar);
 
   s = writer->getvalue();
-  ASSERT(str_equals0("foobar", s));
+  ASSERT(str_equals0("foo   bar", s));
   log("result = %s", s->data());
+
+  writer->clear();
+  writer->write(bar);
+  s = writer->getvalue();
+  ASSERT(str_equals0("bar", s));
 
   PASS();
 }
@@ -220,12 +229,12 @@ TEST files_test() {
 
   FILE* f = fopen("README.md", "r");
 
-  mylib::CFileLineReader* r = nullptr;
+  mylib::CFile* r = nullptr;
   BigStr* filename = nullptr;
   BigStr* filename2 = nullptr;
   StackRoots _roots({&r, &filename, &filename2});
 
-  r = Alloc<mylib::CFileLineReader>(f);
+  r = Alloc<mylib::CFile>(f);
   filename = StrFromC("README.md");
   filename2 = StrFromC("README.md ");
   // auto r = mylib::Stdin();
@@ -253,7 +262,7 @@ TEST files_test() {
   auto f3 = mylib::open(filename2->strip());
   ASSERT(f3 != nullptr);
 
-  auto w = Alloc<mylib::CFileWriter>(stdout);
+  auto w = Alloc<mylib::CFile>(stdout);
   w->write(StrFromC("stdout"));
   w->flush();
 
@@ -277,6 +286,28 @@ TEST for_test_coverage() {
   PASS();
 }
 
+TEST getc_demo() {
+  // CPython fileobject.c appears to use getc?  Is it buffered?
+  // Oh yeah I see a syscall read(0, "hi123")
+  // OK maybe I should just use getc instead of getline()?
+  // getline() has different buffering perhaps?
+
+  int fd[2];
+  ::pipe(fd);
+
+  ::dup2(fd[0], 0);
+
+  write(fd[1], "hi", 3);
+
+  int c = getc(stdin);
+  log("c = %c", c);
+
+  c = getc(stdin);
+  log("c = %c", c);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -293,6 +324,8 @@ int main(int argc, char** argv) {
   RUN_TEST(BufLineReader_test);
   RUN_TEST(files_test);
   RUN_TEST(for_test_coverage);
+
+  RUN_TEST(getc_demo);
 
   gHeap.CleanProcessExit();
 

@@ -1,4 +1,4 @@
-// preamble.h: declarations to run osh_eval.cc
+// cpp/preamble.h: declarations to run oils_for_unix.mycpp
 
 #include <errno.h>
 #include <fcntl.h>     // e.g. F_DUPFD used directly
@@ -9,6 +9,8 @@
 #include "_gen/core/optview.h"
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
+#include "_gen/data_lang/nil8.asdl.h"
+#include "_gen/data_lang/pretty.asdl.h"
 #include "_gen/frontend/arg_types.h"
 #include "_gen/frontend/consts.h"
 #include "_gen/frontend/help_meta.h"
@@ -19,6 +21,7 @@
 #include "_gen/frontend/types.asdl.h"
 #include "_gen/ysh/grammar_nt.h"
 #include "cpp/core.h"
+#include "cpp/data_lang.h"
 #include "cpp/fanos.h"
 #include "cpp/frontend_flag_spec.h"
 #include "cpp/frontend_match.h"
@@ -28,7 +31,6 @@
 #include "cpp/osh_tdop.h"
 #include "cpp/pgen2.h"
 #include "cpp/pylib.h"
-#include "cpp/qsn.h"
 #include "cpp/stdlib.h"
 #include "cpp/translation_stubs.h"
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures

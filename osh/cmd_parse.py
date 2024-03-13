@@ -139,13 +139,25 @@ def _ReadHereLines(
 def _MakeLiteralHereLines(
         here_lines,  # type: List[Tuple[SourceLine, int]]
         arena,  # type: Arena
+        do_lossless,  # type: bool
 ):
     # type: (...) -> List[word_part_t]
-    """Create a line_span and a token for each line."""
+    """Create a Token for each line.
 
+    For <<'EOF' and <<-'EOF' - single quoted rule
+
+    <<- has non-zero start_offset
+    """
     # less precise type, because List[T] is an invariant type
     tokens = []  # type: List[word_part_t]
     for src_line, start_offset in here_lines:
+
+        # Maintain lossless invariant for STRIPPED tabs: add a Token to the
+        # arena invariant, but don't refer to it.
+        if do_lossless:  # avoid garbage, doesn't affect correctness
+            arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line,
+                           None)
+
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line, src_line.content[start_offset:])
         tokens.append(t)
@@ -166,19 +178,27 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
 
     here_lines, last_line = _ReadHereLines(line_reader, r, delimiter)
 
-    if delim_quoted:  # << 'EOF'
-        # Literal for each line.
-        h.stdin_parts = _MakeLiteralHereLines(here_lines, arena)
+    if delim_quoted:
+        # <<'EOF' and <<-'EOF' - Literal for each line.
+        h.stdin_parts = _MakeLiteralHereLines(here_lines, arena,
+                                              parse_ctx.do_lossless)
     else:
-        line_reader = reader.VirtualLineReader(here_lines, arena)
+        # <<EOF and <<-EOF - Parse as word
+        line_reader = reader.VirtualLineReader(arena, here_lines,
+                                               parse_ctx.do_lossless)
         w_parser = parse_ctx.MakeWordParserForHereDoc(line_reader)
         w_parser.ReadHereDocBody(h.stdin_parts)  # fills this in
 
-    end_line, end_pos = last_line
+    end_line, start_offset = last_line
+
+    # Maintain lossless invariant for STRIPPED tabs: add a Token to the
+    # arena invariant, but don't refer to it.
+    if parse_ctx.do_lossless:  # avoid garbage, doesn't affect correctness
+        arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, end_line, None)
 
     # Create a Token with the end terminator.  Maintains the invariant that the
     # tokens "add up".
-    h.here_end_tok = arena.NewToken(Id.Undefined_Tok, end_pos,
+    h.here_end_tok = arena.NewToken(Id.Undefined_Tok, start_offset,
                                     len(end_line.content), end_line, '')
 
 
@@ -201,7 +221,7 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
 
         lhs = sh_lhs.Name(left_token, var_name)
 
-    elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.one_pass_parse:
+    elif left_token.id == Id.Lit_ArrayLhsOpen and parse_ctx.do_lossless:
         var_name = lexer.TokenSliceRight(left_token, -1)
         if lexer.IsPlusEquals(close_token):
             op = assign_op_e.PlusEqual
@@ -406,8 +426,8 @@ class VarChecker(object):
         self.names.pop()
         self.tokens.pop()
 
-    def Check(self, keyword_id, name_tok):
-        # type: (Id_t, Token) -> None
+    def Check(self, keyword_id, var_name, blame_tok):
+        # type: (Id_t, str, Token) -> None
         """Check for declaration / mutation errors in proc and func.
 
         var x
@@ -436,18 +456,18 @@ class VarChecker(object):
             return
 
         top = self.names[-1]
-        name = name_tok.tval
         if keyword_id == Id.KW_Var:
-            if name in top:
-                p_die('%r was already declared' % name, name_tok)
+            if var_name in top:
+                p_die('%r was already declared' % var_name, blame_tok)
             else:
-                top[name] = keyword_id
+                top[var_name] = keyword_id
 
         if keyword_id == Id.KW_SetVar:
-            if name not in top:
+            if var_name not in top:
                 # Note: the solution could be setglobal, etc.
-                p_die("setvar couldn't find matching 'var %s'" % name,
-                      name_tok)
+                p_die(
+                    "setvar couldn't find matching 'var %s' (OILS-ERR-10)" %
+                    var_name, blame_tok)
 
 
 class ctx_VarChecker(object):
@@ -1229,16 +1249,20 @@ class CommandParser(object):
         ate = self._Eat(Id.Lit_LBrace)
         left = word_.BraceToken(ate)
 
-        doc_token = None  # type: Token
+        doc_word = None  # type: word_t
         self._GetWord()
         if self.c_id == Id.Op_Newline:
             self._SetNext()
+            # Set a flag so we don't skip over ###
             with word_.ctx_EmitDocToken(self.w_parser):
                 self._GetWord()
 
         if self.c_id == Id.Ignored_Comment:
-            doc_token = cast(Token, self.cur_word)
+            doc_word = self.cur_word
             self._SetNext()
+
+        # Id.Ignored_Comment means it's a Token, or None
+        doc_token = cast(Token, doc_word)
 
         c_list = self._ParseCommandList()
 
@@ -2069,12 +2093,12 @@ class CommandParser(object):
                     wp = sig.word
                     if wp:
                         for param in wp.params:
-                            # TODO: Check() should not look at tval
-                            name_tok = param.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            self.var_checker.Check(Id.KW_Var, param.name,
+                                                   param.blame_tok)
                         if wp.rest_of:
-                            name_tok = wp.rest_of.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            r = wp.rest_of
+                            self.var_checker.Check(Id.KW_Var, r.name,
+                                                   r.blame_tok)
                             # We COULD register __out here but it would require a different API.
                             #if param.prefix and param.prefix.id == Id.Arith_Colon:
                             #  self.var_checker.Check(Id.KW_Var, '__' + param.name)
@@ -2082,24 +2106,26 @@ class CommandParser(object):
                     posit = sig.positional
                     if posit:
                         for param in posit.params:
-                            name_tok = param.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            self.var_checker.Check(Id.KW_Var, param.name,
+                                                   param.blame_tok)
                         if posit.rest_of:
-                            name_tok = posit.rest_of.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            r = posit.rest_of
+                            self.var_checker.Check(Id.KW_Var, r.name,
+                                                   r.blame_tok)
 
                     named = sig.named
                     if named:
                         for param in named.params:
-                            name_tok = param.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            self.var_checker.Check(Id.KW_Var, param.name,
+                                                   param.blame_tok)
                         if named.rest_of:
-                            name_tok = named.rest_of.blame_tok
-                            self.var_checker.Check(Id.KW_Var, name_tok)
+                            r = named.rest_of
+                            self.var_checker.Check(Id.KW_Var, r.name,
+                                                   r.blame_tok)
 
                     if sig.block_param:
-                        name_tok = sig.block_param.blame_tok
-                        self.var_checker.Check(Id.KW_Var, name_tok)
+                        b = sig.block_param
+                        self.var_checker.Check(Id.KW_Var, b.name, b.blame_tok)
 
                 self._SetNext()
                 node.body = self.ParseBraceGroup()
@@ -2126,20 +2152,20 @@ class CommandParser(object):
             posit = node.positional
             if posit:
                 for param in posit.params:
-                    name_tok = param.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
+                    self.var_checker.Check(Id.KW_Var, param.name,
+                                           param.blame_tok)
                 if posit.rest_of:
-                    name_tok = posit.rest_of.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
+                    r = posit.rest_of
+                    self.var_checker.Check(Id.KW_Var, r.name, r.blame_tok)
 
             named = node.named
             if named:
                 for param in named.params:
-                    name_tok = param.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
+                    self.var_checker.Check(Id.KW_Var, param.name,
+                                           param.blame_tok)
                 if named.rest_of:
-                    name_tok = named.rest_of.blame_tok
-                    self.var_checker.Check(Id.KW_Var, name_tok)
+                    r = named.rest_of
+                    self.var_checker.Check(Id.KW_Var, r.name, r.blame_tok)
 
             self._SetNext()
             with ctx_CmdMode(self, cmd_mode_e.Func):
@@ -2241,15 +2267,21 @@ class CommandParser(object):
             # on.
             if self.parse_opts.parse_proc():
                 return self.ParseYshProc()
-
-            # Otherwise silently pass. This is to support scripts like:
-            # $ bash -c 'proc() { echo p; }; proc'
+            else:
+                # 2024-02: This avoids bad syntax errors if you type YSH code
+                # into OSH
+                # proc p (x) { echo hi } would actually be parsed as a
+                # command.Simple!  Shell compatibility: quote 'proc'
+                p_die("proc is a YSH keyword, but this is OSH.",
+                      loc.Word(self.cur_word))
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
             if self.parse_opts.parse_func():
                 return self.ParseYshFunc()
-
-            # Otherwise silently pass, like for the procs.
+            else:
+                # Same reasoning as above, for 'proc'
+                p_die("func is a YSH keyword, but this is OSH.",
+                      loc.Word(self.cur_word))
 
         if self.c_id == Id.KW_Const and self.cmd_mode != cmd_mode_e.Shell:
             p_die("const can't be inside proc or func.  Use var instead.",
@@ -2261,7 +2293,7 @@ class CommandParser(object):
             self._SetNext()
             n8 = self.w_parser.ParseVarDecl(kw_token)
             for lhs in n8.lhs:
-                self.var_checker.Check(keyword_id, lhs.name)
+                self.var_checker.Check(keyword_id, lhs.name, lhs.left)
             return n8
 
         if self.c_id in (Id.KW_SetVar, Id.KW_SetGlobal):
@@ -2330,8 +2362,10 @@ class CommandParser(object):
                             self._SetNext()  # Somehow this is necessary
                             # TODO: Use BareDecl here.  Well, do that when we
                             # treat it as const or lazy.
-                            return command.VarDecl(None, [NameType(tok, None)],
-                                                   enode)
+                            return command.VarDecl(
+                                None,
+                                [NameType(tok, lexer.TokenVal(tok), None)],
+                                enode)
                         else:
                             self._SetNext()
                             self._GetWord()

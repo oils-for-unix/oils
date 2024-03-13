@@ -12,64 +12,64 @@ from typing import List
 
 
 def f(x, b=False):
-  # type: (int, bool) -> None
-  log("x = %d", x)
-  log("b = %d", b)
+    # type: (int, bool) -> None
+    log("x = %d", x)
+    log("b = %d", b)
 
 
 def g(x, s=''):
-  # type: (int, str) -> None
-  log("x = %d", x)
-  log("s = %r", s)
+    # type: (int, str) -> None
+    log("x = %d", x)
+    log("s = %r", s)
 
 
 class Foo(object):
 
-  def __init__(self, x, y=42):
-    # type: (int, int) -> None
-    self.x = x
-    self.y = y
+    def __init__(self, x, y=42):
+        # type: (int, int) -> None
+        self.x = x
+        self.y = y
 
-  def Print(self):
-    # type: () -> None
-    log("x = %d", self.x)
-    log("y = %d", self.y)
+    def Print(self):
+        # type: () -> None
+        log("x = %d", self.x)
+        log("y = %d", self.y)
 
 
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  f(5)
-  f(6, True)
-  f(7, b = True)
+    f(5)
+    f(6, True)
+    f(7, b=True)
 
-  g(99, s = 'foo')
+    g(99, s='foo')
 
-  f1 = Foo(8)
-  f2 = Foo(9, 43)
-  f3 = Foo(0, y = 44)
+    f1 = Foo(8)
+    f2 = Foo(9, 43)
+    f3 = Foo(0, y=44)
 
-  f1.Print()
-  f2.Print()
-  f3.Print()
+    f1.Print()
+    f2.Print()
+    f3.Print()
 
-  # TODO: Remove all the extra GLOBAL_STR() instances for log() and % !
+    # TODO: Remove all the extra GLOBAL_STR() instances for log() and % !
 
-  print("const")
-  print("print formatted = %d" % True)
+    print("const")
+    print("print formatted = %d" % True)
 
-  log("const")
-  log("log formatted = %d", True)
+    log("const")
+    log("log formatted = %d", True)
 
 
 def run_benchmarks():
-  # type: () -> None
-  raise NotImplementedError()
+    # type: () -> None
+    raise NotImplementedError()
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()

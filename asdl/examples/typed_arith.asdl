@@ -5,6 +5,7 @@ module arith {
   arith_expr =
     NoOp
   | Const(int i)  -- 
+  | Big(BigInt b)  -- 
   | Var(string name)  -- eval variable 
   | Unary(string op, arith_expr a)
   | Binary(string op, arith_expr left, arith_expr right)

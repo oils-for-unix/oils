@@ -24,6 +24,7 @@ def DefineTargets(ru):
         srcs=[
             'mycpp/bump_leak_heap.cc',
             'mycpp/gc_builtins.cc',
+            'mycpp/gc_mops.cc',
             'mycpp/gc_mylib.cc',
             'mycpp/gc_str.cc',
             'mycpp/hash.cc',
@@ -46,6 +47,7 @@ def DefineTargets(ru):
             'mycpp/gc_heap_test.cc',
             'mycpp/gc_stress_test.cc',
             'mycpp/gc_builtins_test.cc',
+            'mycpp/gc_mops_test.cc',
             'mycpp/gc_mylib_test.cc',
             'mycpp/gc_dict_test.cc',
             'mycpp/gc_list_test.cc',
@@ -163,11 +165,14 @@ def TranslatorSubgraph(ru, translator, ex):
     # But don't pass it on the command line.
     translator_wrapper = '_bin/shwrap/%s_main' % translator
 
-    n.build(raw,
-            'translate-%s' % translator,
-            to_translate,
-            implicit=[translator_wrapper],
-            variables=[('mypypath', '$NINJA_REPO_ROOT/mycpp')])
+    n.build(
+        raw,
+        'translate-%s' % translator,
+        to_translate,
+        implicit=[translator_wrapper],
+        # examples/parse uses pyext/fastfunc.pyi
+        variables=[('mypypath',
+                    '$NINJA_REPO_ROOT/mycpp:$NINJA_REPO_ROOT/pyext')])
 
     p = 'mycpp/examples/%s_preamble.h' % ex
     # Ninja empty string!
@@ -201,7 +206,7 @@ def TranslatorSubgraph(ru, translator, ex):
 
     deps = ['//mycpp/runtime']
     if ex == 'parse':
-        deps = deps + ['//mycpp/examples/expr.asdl']
+        deps = deps + ['//mycpp/examples/expr.asdl', '//cpp/data_lang']
 
     ru.cc_binary(
         main_cc_src,

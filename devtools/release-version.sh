@@ -11,7 +11,7 @@ source test/common.sh  # html-head
 
 # NOTE: Left to right evaluation would be nice on this!
 #
-# Rewrite in oil:
+# Rewrite in YSH:
 # 
 # sys.stdin.read() | sub( / "\x00" { any* } "\x01" /, html_escape) | write
 escape-segments() {
@@ -601,6 +601,10 @@ git-changelog-0.19.0() {
     > _release/VERSION/changelog.html
 }
 
+git-changelog-0.20.0() {
+  _git-changelog origin/release/0.19.0 release/0.20.0 \
+    > _release/VERSION/changelog.html
+}
 
 # For announcement.html
 html-redirect() {
@@ -1003,6 +1007,10 @@ announcement-0.18.0() {
 }
 
 announcement-0.19.0() {
+  write-no-announcement
+}
+
+announcement-0.20.0() {
   write-no-announcement
 }
 

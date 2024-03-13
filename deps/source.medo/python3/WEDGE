@@ -24,8 +24,15 @@ wedge-make() {
   # install'
   # And then Dockerfile.* may need the corresponding runtime deps
 
-  time $src_dir/configure --prefix=$install_dir
+  # --without-static-python added in 2021.  Makes the package smaller.
+  #
+  # https://github.com/python/cpython/commit/801bb0b5035f8eeafe389dc082c02dfafaa07f6a
+  # https://bugs.python.org/issue43103
 
+  time $src_dir/configure --prefix=$install_dir --without-static-libpython
+
+  # Note: not building in parallel, because wedges themselves can be built in
+  # parallel?
   time make
 
   popd

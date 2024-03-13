@@ -14,7 +14,7 @@ These internal details are subject to change.
 ## Links
 
 - [Contributing][] (wiki) helps you change the code for the first time.
-- [README](README.html) describes how the code is organized.
+- [README](oils-repo/README.html) describes how the code is organized.
 - [Interpreter State](interpreter-state.html) describes the interpreter's user-facing data
   structures.
 - [Parser Architecture](parser-architecture.html)
@@ -108,8 +108,8 @@ Idea:
 
 - `ExecuteAndCatch` uses mem.CurrentLocation()
 - `Failglob` uses mem.CurrentLocation()
-- `mem.GetVar $LINENO` uses current_tok, but it can be buggy
-  - this is difference than BASH_LINENO, which is for the call stack!
+- `mem.GetVar $LINENO` uses `current_tok`, but it can be buggy
+  - this is difference than `BASH_LINENO`, which is for the call stack!
 
 Other:
 

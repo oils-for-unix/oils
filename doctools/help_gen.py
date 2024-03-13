@@ -586,7 +586,7 @@ def TopicMetadata():
 
   elif action == 'ref-check':
     from doctools import cmark
-    from doctools import oil_doc
+    from doctools import oils_doc
     from doctools import ref_check
 
     chapters = []
@@ -606,7 +606,7 @@ def TopicMetadata():
         # language-chapter-links-*
 
         box_nodes = []
-        html = oil_doc.HighlightCode(html, None,
+        html = oils_doc.HighlightCode(html, None,
                                      debug_out=box_nodes)
         all_toc_nodes.append({'toc': filename, 'boxes': box_nodes})
 

@@ -9,6 +9,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, regex_match, RegexMatch)
 from core import error
 from core import ui
+from mycpp import mops
 from mycpp.mylib import tagswitch
 from ysh import regex_translate
 
@@ -25,7 +26,7 @@ def ToInt(val, msg, blame_loc):
     UP_val = val
     if val.tag() == value_e.Int:
         val = cast(value.Int, UP_val)
-        return val.i
+        return mops.BigTruncate(val.i)
 
     raise error.TypeErr(val, msg, blame_loc)
 
@@ -107,7 +108,8 @@ def Stringify(val, blame_loc, prefix=''):
 
         elif case(value_e.Int):
             val = cast(value.Int, UP_val)
-            s = str(val.i)  # Decimal '42', the only sensible representation
+            # e.g. decimal '42', the only sensible representation
+            s = mops.ToStr(val.i)
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
@@ -120,6 +122,11 @@ def Stringify(val, blame_loc, prefix=''):
         elif case(value_e.Eggex):
             val = cast(value.Eggex, UP_val)
             s = regex_translate.AsPosixEre(val)  # lazily converts to ERE
+
+        elif case(value_e.List):
+            raise error.TypeErrVerbose(
+                "%sgot a List, which can't be stringified. Perhaps use @ instead of $, or use join()"
+                % prefix, blame_loc)
 
         else:
             raise error.TypeErr(
@@ -226,7 +233,9 @@ class RangeIterator(_ContainerIter):
 
     def FirstValue(self):
         # type: () -> value_t
-        return value.Int(self.val.lower + self.i)
+
+        # TODO: range should be BigInt too
+        return value.Int(mops.IntWiden(self.val.lower + self.i))
 
 
 class ListIterator(_ContainerIter):
@@ -307,7 +316,7 @@ def ToBool(val):
 
         elif case(value_e.Int):
             val = cast(value.Int, UP_val)
-            return val.i != 0
+            return not mops.Equal(val.i, mops.BigInt(0))
 
         elif case(value_e.Float):
             val = cast(value.Float, UP_val)
@@ -347,7 +356,7 @@ def ExactlyEqual(left, right, blame_loc):
         elif case(value_e.Int):
             left = cast(value.Int, UP_left)
             right = cast(value.Int, UP_right)
-            return left.i == right.i
+            return mops.Equal(left.i, right.i)
 
         elif case(value_e.Float):
             # Note: could provide floatEquals(), and suggest it

@@ -5,6 +5,7 @@ word_eval.py - Evaluator for the word language.
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     Token,
+    NameTok,
     loc,
     loc_t,
     BracedVarSub,
@@ -16,7 +17,6 @@ from _devbuild.gen.syntax_asdl import (
     ShArrayLiteral,
     SingleQuoted,
     DoubleQuoted,
-    SimpleVarSub,
     word_e,
     word_t,
     CompoundWord,
@@ -53,11 +53,12 @@ from core import pyutil
 from core import state
 from core import ui
 from core import util
-from data_lang import qsn
+from data_lang import j8_lite
 from core.error import e_die
 from frontend import consts
 from frontend import lexer
 from frontend import location
+from mycpp import mops
 from mycpp.mylib import log, tagswitch, NewDict
 from osh import braces
 from osh import glob_
@@ -226,8 +227,9 @@ def _ValueToPartValue(val, quoted, part_loc):
             return part_value.Array(val.d.values())
 
         # Cases added for YSH
+        # value_e.List is also here - we use val_ops.stringify()s err message
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
-                  value_e.Eggex):
+                  value_e.Eggex, value_e.List):
             s = val_ops.Stringify(val, loc.Missing)
             return part_value.String(s, quoted, not quoted)
 
@@ -474,10 +476,12 @@ class TildeEvaluator(object):
 
         if result is None:
             if self.exec_opts.strict_tilde():
-                e_die("Error expanding tilde (e.g. invalid user)", part.token)
+                e_die("Error expanding tilde (e.g. invalid user)", part.left)
             else:
                 # Return ~ or ~user literally
-                return lexer.TokenVal(part.token)
+                result = '~'
+                if part.user_name is not None:
+                    result = result + part.user_name  # mycpp doesn't have +=
 
         return result
 
@@ -959,23 +963,26 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     p = prompt.replace('\x01', '').replace('\x02', '')
                     result = value.Str(p)
                 else:
-                    e_die("Can't use @P on %s" %
-                          ui.ValType(val))  # TODO: location
+                    e_die("Can't use @P on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_Q:
             with tagswitch(val) as case:
                 if case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-                    result = value.Str(qsn.maybe_shell_encode(str_val.s))
+
+                    # TODO: use fastfunc.ShellEncode or
+                    # fastfunc.PosixShellEncode()
+                    result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
                     # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
-                    tmp = [qsn.maybe_shell_encode(s) for s in array_val.strs]
+
+                    # TODO: should use fastfunc.ShellEncode
+                    tmp = [j8_lite.MaybeShellEncode(s) for s in array_val.strs]
                     result = value.Str(' '.join(tmp))
                 else:
-                    e_die("Can't use @Q on %s" %
-                          ui.ValType(val))  # TODO: location
+                    e_die("Can't use @Q on %s" % ui.ValType(val), op)
 
         elif op_id == Id.VOp0_a:
             # We're ONLY simluating -a and -A, not -r -x -n for now.  See
@@ -1450,7 +1457,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return self._ConcatPartVals(part_vals, part.left)
 
     def _EvalSimpleVarSub(self, part, part_vals, quoted):
-        # type: (SimpleVarSub, List[part_value_t], bool) -> None
+        # type: (NameTok, List[part_value_t], bool) -> None
 
         # TODO: use name
         token = part.left
@@ -1492,7 +1499,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(v)
 
     def EvalSimpleVarSubToString(self, node):
-        # type: (SimpleVarSub) -> str
+        # type: (NameTok) -> str
         """For double quoted strings in YSH expressions.
 
         Example: var x = "$foo-${foo}"
@@ -1623,7 +1630,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part_vals.append(sv)
 
             elif case(word_part_e.SimpleVarSub):
-                part = cast(SimpleVarSub, UP_part)
+                part = cast(NameTok, UP_part)
                 self._EvalSimpleVarSub(part, part_vals, quoted)
 
             elif case(word_part_e.BracedVarSub):
@@ -1641,8 +1648,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(word_part_e.ArithSub):
                 part = cast(word_part.ArithSub, UP_part)
-                num = self.arith_ev.EvalToInt(part.anode)
-                v = part_value.String(str(num), quoted, not quoted)
+                num = self.arith_ev.EvalToBigInt(part.anode)
+                v = part_value.String(mops.ToStr(num), quoted, not quoted)
                 part_vals.append(v)
 
             elif case(word_part_e.ExtGlob):

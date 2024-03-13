@@ -17,7 +17,7 @@ from core.error import e_usage, e_die_status
 from core import process  # W1_OK, W1_ECHILD
 from core import vm
 from mycpp.mylib import log, tagswitch, print_stderr
-from frontend import flag_spec
+from frontend import flag_util
 from frontend import typed_args
 
 import posix_ as posix
@@ -39,7 +39,7 @@ class Jobs(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        attrs, arg_r = flag_spec.ParseCmdVal('jobs', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('jobs', cmd_val)
         arg = arg_types.jobs(attrs.attrs)
 
         if arg.l:
@@ -79,6 +79,9 @@ class Fg(vm._Builtin):
             return 1
 
         pgid = job.ProcessGroupId()
+        assert pgid != process.INVALID_PGID, \
+            'Processes put in the background should have a PGID'
+
         # TODO: Print job ID rather than the PID
         log('Continue PID %d', pgid)
         # Put the job's process group back into the foreground. GiveTerminal() must
@@ -137,7 +140,7 @@ class Fork(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('fork',
+        _, arg_r = flag_util.ParseCmdVal('fork',
                                          cmd_val,
                                          accept_typed_args=True)
 
@@ -160,7 +163,7 @@ class ForkWait(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('forkwait',
+        _, arg_r = flag_util.ParseCmdVal('forkwait',
                                          cmd_val,
                                          accept_typed_args=True)
         arg, location = arg_r.Peek2()
@@ -186,7 +189,7 @@ class Exec(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('exec', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('exec', cmd_val)
 
         # Apply redirects in this shell.  # NOTE: Redirects were processed earlier.
         if arg_r.AtEnd():
@@ -243,7 +246,7 @@ class Wait(vm._Builtin):
 
     def _Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        attrs, arg_r = flag_spec.ParseCmdVal('wait', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('wait', cmd_val)
         arg = arg_types.wait(attrs.attrs)
 
         job_ids, arg_locs = arg_r.Rest2()

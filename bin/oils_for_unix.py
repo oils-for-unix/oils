@@ -185,7 +185,10 @@ def main(argv):
 
         # test this with prlimit --nproc=1 --pid=$$
         print_stderr('oils I/O error (main): %s' % posix.strerror(e.errno))
-        return 2  # dash gives status 2
+
+        # dash gives status 2.  Consider changing: it conflicts a bit with
+        # usage errors.
+        return 2
 
     # We don't catch RuntimeError (including AssertionError/NotImplementedError),
     # because those are simply bugs, and we want to see a Python stack trace.

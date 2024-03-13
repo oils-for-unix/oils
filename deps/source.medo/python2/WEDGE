@@ -37,13 +37,20 @@ wedge-install() {
 
   pushd $build_dir
 
-  # It makes a symlink called python3
+  # It makes a symlink called python2
   #
-  # NOTE: There's no option to strip the binary?
-  # The whole package is 265 MB, but 200 MB of it is the Python stdlib.
-  # Seemingly lots of __pycache__ dirs
-
+  # TODO: minimize the size?  There are some duplicate files
   time make install
+
+  # Size optimization, remove these 2 files
+  # /wedge/oils-for-unix.org/pkg/python2/2.7.18/lib/libpython2.7.a
+  # /wedge/oils-for-unix.org/pkg/python2/2.7.18/lib/python2.7/config/libpython2.7.a
+  #
+  # This is like --without-static-libpython in Python 3 
+  #   https://bugs.python.org/issue43103
+  # 
+  # but Python 2 doesn't support it
+  find $install_dir -name '*.a' | xargs rm -v -f
 
   popd
 }

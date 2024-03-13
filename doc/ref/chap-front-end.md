@@ -141,7 +141,9 @@ POSIX exit codes:
 
 Hint: Error checking often looks like this:
 
-    try ls /bad
+    try {
+      ls /bad
+    }
     if (_status !== 0) {
       echo 'failed'
     }

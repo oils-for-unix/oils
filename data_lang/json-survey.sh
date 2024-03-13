@@ -27,6 +27,38 @@ decode-int-float() {
   nodejs -e 'var val = JSON.parse("1e6"); console.log(typeof(val)); console.log(val)'
 }
 
+big-int() {
+  for i in $(seq 1000); do
+    echo -n 1234567890
+  done
+}
+
+# Hm, decoding integers and floats doesn't have overflow cases
+
+decode-huge-int() {
+  local i
+  i=$(big-int)
+  echo $i
+
+  # really big integer causes 100% CPU usage in Python 3
+  echo "$i" | python3 -c 'import json, sys; val = json.load(sys.stdin); print(type(val)); print(val)' 
+
+  # decodes to "Infinity"
+  echo "$i" | nodejs -e 'var fs = require("fs"); var stdin = fs.readFileSync(0, "utf-8"); console.log(JSON.parse(stdin));'
+}
+
+decode-huge-float() {
+  local f
+  f=$(big-int).99
+  echo $f
+
+  # decodes to "inf"
+  echo "$f" | python3 -c 'import json, sys; val = json.load(sys.stdin); print(type(val)); print(val)' 
+
+  # decodes to "Infinity"
+  echo "$f" | nodejs -e 'var fs = require("fs"); var stdin = fs.readFileSync(0, "utf-8"); console.log(JSON.parse(stdin));'
+}
+
 decode-syntax-errors() {
 
   python2 -c 'import json; val = json.loads("{3:4}"); print(type(val)); print(val)' || true
@@ -56,6 +88,72 @@ decode-empty-input() {
   nodejs -e 'var val = JSON.parse(""); console.log(typeof(val)); console.log(val)' || true
 }
 
+decode-trailing-data() {
+  # Extra data
+  python3 -c 'import json; val = json.loads("[]]"); print(type(val)); print(val)' || true
+
+  echo
+  echo
+
+  nodejs -e 'var val = JSON.parse("[]]"); console.log(typeof(val)); console.log(val)' || true
+}
+
+
+decode-invalid-escape() {
+  # single quoted escape not valid
+  cat >_tmp/json.txt <<'EOF'
+"\'"
+EOF
+  local json
+  json=$(cat _tmp/json.txt)
+
+  python3 -c 'import json, sys; val = json.loads(sys.argv[1]); print(type(val)); print(val)' \
+    "$json" || true
+
+  echo
+  echo
+
+  nodejs -e 'var val = JSON.parse(process.argv[1]); console.log(typeof(val)); console.log(val)' \
+    "$json" || true
+}
+
+encode-list-dict-indent() {
+  echo 'PYTHON'
+  python3 -c 'import json; val = {}; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = {"a": 42}; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = {"a": 42, "b": 43}; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = []; print(json.dumps(val, indent=4))'
+  python3 -c 'import json; val = [42]; print(json.dumps(val, indent=4))'
+  echo
+
+  echo 'JS'
+  nodejs -e 'var val = {}; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = {"a": 42}; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = {"a": 42, "b": 43}; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = []; console.log(JSON.stringify(val, null, 4))'
+  nodejs -e 'var val = [42]; console.log(JSON.stringify(val, null, 4))'
+  echo
+}
+
+encode-no-indent() {
+  echo 'PYTHON'
+
+  # has a space
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=None))'
+  # you control it like this
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, separators=[",", ":"]))'
+
+  # -1 and 0 are the same in Python
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=-1))'
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=0))'
+  echo
+
+  echo 'JS'
+  # -1 and 0 are the same in Python
+  nodejs -e 'var val = {"a": 42, "b": [1, 2, 3]}; console.log(JSON.stringify(val, null, -1))'
+  nodejs -e 'var val = {"a": 42, "b": [1, 2, 3]}; console.log(JSON.stringify(val, null, 0))'
+}
+
 encode-obj-cycles() {
   python3 -c 'import json; val = {}; val["k"] = val; print(json.dumps(val))' || true
   echo
@@ -72,6 +170,24 @@ encode-obj-cycles() {
 
   nodejs -e 'var val = []; val.push(val); console.log(JSON.stringify(val))' || true
   echo
+}
+
+multiple-refs() {
+  # Python prints a tree
+  python3 -c 'import json; mylist = [1,2,3]; val = [mylist, mylist]; print(repr(val)); print(json.dumps(val))'
+  echo
+
+  # Same with node.js
+  nodejs -e 'var mylist = [1,2,3]; var val = [mylist, mylist]; console.log(val); console.log(JSON.stringify(val))'
+  echo
+
+  # Same with Oils
+  bin/osh -c 'var mylist = [1,2,3]; var val = [mylist, mylist]; = val; json write (val); pp asdl (val)'
+  echo
+}
+
+oils-cycles() {
+  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp line (d); pp asdl (d); json write (d)'
 }
 
 surrogate-pair() {
@@ -141,6 +257,76 @@ encode-bad-type() {
   nodejs -e 'console.log(JSON.stringify(JSON));' || true
   nodejs -e 'function f() { return 42; }; console.log(JSON.stringify(f));' || true
   echo
+}
+
+encode-binary-data() {
+  # utf-8 codec can't decode byte -- so it does UTF-8 decoding during encoding,
+  # which makes sense
+  python2 -c 'import json; print(json.dumps(b"\xff"))' || true
+  echo
+
+  # can't serialize bytes type
+  python3 -c 'import json; print(json.dumps(b"\xff"))' || true
+  echo
+
+  # there is no bytes type?  \xff is a code point in JS
+  nodejs -e 'console.log(JSON.stringify("\xff"));' || true
+  nodejs -e 'console.log(JSON.stringify("\u{ff}"));' || true
+  echo
+}
+
+decode-utf8-in-surrogate-range() {
+  python2 -c 'b = "\xed\xa0\xbe"; print(repr(b.decode("utf-8")))'
+  echo
+
+  # Hm Python 3 gives an error here!
+  python3 -c 'b = b"\xed\xa0\xbe"; print(repr(b.decode("utf-8")))' || true
+  echo
+
+  # valid
+  nodejs -e 'var u = new Uint8Array([0xce, 0xbc]); var string = new TextDecoder("utf-8").decode(u); console.log(string);'
+  echo
+
+  # can't decode!
+  nodejs -e 'var u = new Uint8Array([0xed, 0xa0, 0xbe]); var string = new TextDecoder("utf-8").decode(u); console.log(string);'
+  echo
+}
+
+pairs() {
+  local nums
+  nums=$(seq $1)
+
+  echo -n '['
+  for i in $nums; do
+    echo -n '[42,'
+  done
+  echo -n '43]'
+  for i in $nums; do
+    echo -n ']'
+  done
+}
+
+decode-deeply-nested() {
+  local msg
+  msg=$(pairs 40200)
+
+  # RuntimeError
+  echo "$msg" | python2 -c 'import json, sys; print(repr(json.load(sys.stdin)))' || true
+
+  # RecursionError
+  echo "$msg" | python3 -c 'import json, sys; print(repr(json.load(sys.stdin)))' || true
+
+  # Hm node.js handles it fine?  Probably doesn't have a stackful parser.
+  # [ [ [ [Array] ] ] ]
+  echo "$msg" | nodejs -e 'var fs = require("fs"); var stdin = fs.readFileSync(0, "utf-8"); console.log(JSON.parse(stdin));' || true
+
+  echo "$msg" | bin/osh -c 'json read; = _reply' || true
+
+  # Hm this works past 40K in C++!  Then segmentation fault.  We could put an
+  # artifical limit on it.
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+  echo "$msg" | $osh -c 'json read; = _reply; echo $[len(_reply)]' || true
 }
 
 "$@"

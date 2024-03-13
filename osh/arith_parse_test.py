@@ -71,6 +71,7 @@ def testSyntaxError(expr):
 
 
 class ArithTest(unittest.TestCase):
+
     def testEval(self):
         testEvalExpr('(7)', 7)
 

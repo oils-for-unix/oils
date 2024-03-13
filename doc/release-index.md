@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.19.0
+Oils 0.21.0
 ===========
 
 <!-- NOTE: This file is published to /release/$VERSION/index.html -->
@@ -13,7 +13,7 @@ Oils 0.19.0
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.19.0 of Oils, a Unix shell.  To use it,
+This is the home page for version 0.21.0 of Oils, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build it and do a "smoke test", as described in [INSTALL][].
@@ -42,8 +42,7 @@ is the new, fast C++ build.
 
 ## Documentation
 
-These docs are **ready to read** (though there may be obsolete references to
-"Oil" rather than "YSH"):
+These docs are **ready to read**:
 
 - [Getting Started](doc/getting-started.html)
 - [FAQ on Documentation](doc/faq-doc.html).  **Look here if you can't find
@@ -68,15 +67,20 @@ These docs are **ready to read** (though there may be obsolete references to
   | [Simple Word Evaluation](doc/simple-word-eval.html)
   | [Variable Declaration, Mutation, and Scope](doc/variables.html)
   | [Hay - Custom Languages for Unix Systems](doc/hay.html)
+- Data Languages:
+  - [JSON](doc/json.html) | [J8 Notation](doc/j8-notation.html)
 - Language Design:
   - [Syntactic Concepts](doc/syntactic-concepts.html) 
   | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
   | [Language Influences](doc/language-influences.html)
   - Notes: [Novelties in OSH and YSH](doc/novelties.html) | [Warts](doc/warts.html)
+- Reference:
+  - [Oils Error Catalog, With Hints](doc/error-catalog.html)
 
 More:
 
 - [**All Docs**](doc/) about Oils (in progress).
+  - Including the [**Oils Reference**](doc/ref/index.html) (in progress)
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oils.  These versions may not be up-to-date.

@@ -119,10 +119,6 @@ id-kind() {
   sed --regexp-extended -i 's/id_kind[.]/id_kind_def./g' */*.py
 }
 
-import() {
-  sed --regexp-extended -i 's/from qsen_ import qsn/from qsn_ import qsn/' */*.py
-}
-
 options() {
   #sed -i 's/simple_echo/simple_echo/g' */*.{py,md,sh}
 
@@ -177,31 +173,49 @@ show-usages() {
   wc -l $out
 }
 
-# 2023-08: 91 left
+# 2024-02: 36 usages.  Maybe use mylib.ToMachineInt() or mylib.ToInt32().  exit
+# status is a machine int?
+# Sometimes the lexer will validate, as with converting 2>&1
+
+int-convert() {
+  show-usages _tmp/int-convert \
+    egrep -n '\bint\(\b' $(metrics/source-code.sh osh-files)
+}
+
+# 2024-02: 83 left
 tval-all() {
   show-usages _tmp/tval-all \
     grep -n -w tval */*.py
 }
 
-# 2023-08: 28 left
+# 2024-02: 17 left
 tval-eval() {
   show-usages _tmp/tval-eval \
     grep -n -w tval */*_eval.py
 }
 
-# 2023-08: 72 left
+# TokenVal() is generally bad in evaluators.  However most of these are in
+# error paths, which is OK.
+#
+# 2024-02: 11 instances
+TokenVal-eval() {
+  show-usages _tmp/TokenVal-eval \
+    grep -n -w TokenVal */*_eval.py
+}
+
+# 2024-02: 71 left, mostly in ysh_ify which is the only thing that uses it
 spid-all() {
   show-usages _tmp/spid-all \
     egrep -n 'span_id|spid' */*.py
 }
 
-# 2023-08: 4 left
+# 2024-04: 4 left in ysh_ify
 spid-sig() {
   show-usages _tmp/spid-sig \
     egrep -n 'def.*(span_id|spid)' */*.py
 }
 
-# 2023-08: 14 usages
+# 2024-04: 12 usages, mostly ysh_ify
 no-spid() {
   show-usages _tmp/no-spid \
     egrep -n 'runtime.NO_SPID' */*.py
@@ -230,6 +244,10 @@ asdl-create() {
     | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
 
+#
+# To improve code formatting
+#
+
 long-sigs() {
    # 32 of these
    egrep --no-filename '^[ ]*# type' */*.py \
@@ -241,6 +259,24 @@ long-sigs-where() {
    # jump to the file
    egrep -n '^[ ]*# type' */*.py \
      | awk 'length($0) >= 110 { print }' | tee _tmp/long
+}
+
+#
+# Refactor tests
+#
+
+print-names() {
+  egrep -o '[a-zA-Z_-]+'
+}
+
+make-sed() {
+  awk '{ print "s/" $0 "/unquoted-" $0 "/g;" }'
+}
+
+test-files() {
+  cat _tmp/r | print-names | make-sed | tee _tmp/sedr
+
+  sed -i -f _tmp/sedr test/runtime-errors.sh
 }
 
 run-task "$@"

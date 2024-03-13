@@ -10,6 +10,8 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source test/common.sh  # $OSH, log
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 dump-html-and-translate-file() {
   local rel_path=$1
   local abs_path=$2
@@ -112,22 +114,6 @@ filter-manifest() {
   fi
 }
 
-# Takes 3m 47s on 7 cores for 513K lines.
-# So that's like 230 seconds or so.  It should really take 1 second!
-
-parse-and-report() {
-  local manifest_regex=${1:-}  # egrep regex for manifest line
-  local func=${2:-dump-html-and-translate-file}
-
-  time {
-    #test/wild.sh write-manifest
-    test/wild.sh manifest-from-archive
-
-    filter-manifest "$manifest_regex" | parse-in-parallel $func
-    make-report "$manifest_regex"
-  }
-}
-
 dump-text-asts() {
   local manifest_regex=${1:-}  # egrep regex for manifest line
 
@@ -163,10 +149,8 @@ compare-asts() {
   cat $manifest | xargs -n 1 -- $0 compare-one-ast
 }
 
-# NOTE: This depends on test/jsontemplate.py.  Should we make that part of
-# 'deps'?
 wild-report() {
-  test/wild_report.py "$@"
+  PYTHONPATH=$REPO_ROOT $REPO_ROOT/test/wild_report.py "$@"
 }
 
 _link() {
@@ -197,6 +181,22 @@ make-report() {
   # TODO: Isn't this redundant?
   _link $PWD/web/osh-to-oil.{html,js} $out_dir
   _link $PWD/web _tmp
+}
+
+# Takes 3m 47s on 7 cores for 513K lines.
+# So that's like 230 seconds or so.  It should really take 1 second!
+
+parse-and-report() {
+  local manifest_regex=${1:-}  # egrep regex for manifest line
+  local func=${2:-dump-html-and-translate-file}
+
+  time {
+    #test/wild.sh write-manifest
+    test/wild.sh manifest-from-archive
+
+    filter-manifest "$manifest_regex" | parse-in-parallel $func
+    make-report "$manifest_regex"
+  }
 }
 
 if test "$(basename $0)" = 'wild-runner.sh'; then

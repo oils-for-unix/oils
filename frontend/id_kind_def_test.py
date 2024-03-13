@@ -14,8 +14,8 @@ import unittest
 
 from _devbuild.gen.id_kind_asdl import Id, Kind
 from frontend import consts
+from frontend.lexer import DummyToken as Tok
 from frontend.lexer_def import ID_SPEC
-from core.test_lib import Tok
 
 _kind_sizes = ID_SPEC.kind_sizes
 

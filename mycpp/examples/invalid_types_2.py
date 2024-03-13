@@ -12,21 +12,20 @@ from typing import List
 
 
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  x = 33  # type: List[int]
-  log('x = %d', x)
-
+    x = 33  # type: List[int]
+    log('x = %d', x)
 
 
 def run_benchmarks():
-  # type: () -> None
-  raise NotImplementedError()
+    # type: () -> None
+    raise NotImplementedError()
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()

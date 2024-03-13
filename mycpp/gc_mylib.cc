@@ -34,19 +34,28 @@ void writeln(BigStr* s, int fd) {
 }
 #endif
 
+BigStr* JoinBytes(List<int>* byte_list) {
+  int n = len(byte_list);
+  BigStr* result = NewStr(n);
+  for (int i = 0; i < n; ++i) {
+    result->data_[i] = byte_list->at(i);
+  }
+  return result;
+}
+
 class MutableStr : public BigStr {};
 
-MutableStr* NewMutableStr(int cap) {
+MutableStr* NewMutableStr(int n) {
   // In order for everything to work, MutableStr must be identical in layout to
   // BigStr. One easy way to achieve this is for MutableStr to have no members
   // and to inherit from BigStr.
   static_assert(sizeof(MutableStr) == sizeof(BigStr),
                 "BigStr and MutableStr must have same size");
-  return reinterpret_cast<MutableStr*>(NewStr(cap));
+  return reinterpret_cast<MutableStr*>(NewStr(n));
 }
 
 Tuple2<BigStr*, BigStr*> split_once(BigStr* s, BigStr* delim) {
-  assert(len(delim) == 1);
+  DCHECK(len(delim) == 1);
 
   const char* start = s->data_;  // note: this pointer may move
   char c = delim->data_[0];
@@ -82,10 +91,10 @@ LineReader* open(BigStr* path) {
     throw Alloc<IOError>(errno);
   }
 
-  return Alloc<CFileLineReader>(f);
+  return reinterpret_cast<LineReader*>(Alloc<CFile>(f));
 }
 
-BigStr* CFileLineReader::readline() {
+BigStr* CFile::readline() {
   char* line = nullptr;
   size_t allocated_size = 0;  // unused
 
@@ -108,7 +117,7 @@ BigStr* CFileLineReader::readline() {
   return result;
 }
 
-bool CFileLineReader::isatty() {
+bool CFile::isatty() {
   return ::isatty(fileno(f_));
 }
 
@@ -144,7 +153,7 @@ BigStr* BufLineReader::readline() {
 
   line = NewStr(line_len);
   memcpy(line->data_, s_->data_ + orig_pos, line_len);
-  assert(line->data_[line_len] == '\0');
+  DCHECK(line->data_[line_len] == '\0');
   return line;
 }
 
@@ -155,83 +164,109 @@ Writer* gStderr;
 // CFileWriter
 //
 
-void CFileWriter::write(BigStr* s) {
+void CFile::write(BigStr* s) {
   // note: throwing away the return value
   fwrite(s->data_, sizeof(char), len(s), f_);
 }
 
-void CFileWriter::flush() {
+void CFile::flush() {
   ::fflush(f_);
 }
 
-bool CFileWriter::isatty() {
-  return ::isatty(::fileno(f_));
+void CFile::close() {
+  ::fclose(f_);
 }
 
 //
 // BufWriter
 //
 
-char* BufWriter::data() {
-  assert(str_);
-  return str_->data_;
-}
+void BufWriter::EnsureMoreSpace(int n) {
+  if (str_ == nullptr) {
+    // TODO: we could make the default capacity big enough for a line, e.g. 128
+    // capacity: 128 -> 256 -> 512
+    str_ = NewMutableStr(n);
+    return;
+  }
 
-char* BufWriter::end() {
-  assert(str_);
-  return str_->data_ + len_;
-}
+  int current_cap = len(str_);
+  DCHECK(current_cap >= len_);
 
-int BufWriter::capacity() {
-  return str_ ? len(str_) : 0;
-}
+  int new_cap = len_ + n;
 
-void BufWriter::Extend(BigStr* s) {
-  const int n = len(s);
-
-  assert(capacity() >= len_ + n);
-
-  memcpy(end(), s->data_, n);
-  len_ += n;
-  data()[len_] = '\0';
-}
-
-// TODO: realloc() to new capacity instead of creating NewBuf()
-void BufWriter::EnsureCapacity(int cap) {
-  assert(capacity() >= len_);
-
-  if (capacity() < cap) {
-    auto* s = NewMutableStr(std::max(capacity() * 2, cap));
+  if (current_cap < new_cap) {
+    auto* s = NewMutableStr(std::max(current_cap * 2, new_cap));
     memcpy(s->data_, str_->data_, len_);
     s->data_[len_] = '\0';
     str_ = s;
   }
 }
 
-void BufWriter::write(BigStr* s) {
-  assert(is_valid_);  // Can't write() after getvalue()
+uint8_t* BufWriter::LengthPointer() {
+  // start + len
+  return reinterpret_cast<uint8_t*>(str_->data_) + len_;
+}
 
-  int n = len(s);
+uint8_t* BufWriter::CapacityPointer() {
+  // start + capacity
+  return reinterpret_cast<uint8_t*>(str_->data_) + str_->len_;
+}
+
+void BufWriter::SetLengthFrom(uint8_t* length_ptr) {
+  uint8_t* begin = reinterpret_cast<uint8_t*>(str_->data_);
+  DCHECK(length_ptr >= begin);  // we should have written some data
+
+  // Set the length, e.g. so we know where to resume writing from
+  len_ = length_ptr - begin;
+  // printf("SET LEN to %d\n", len_);
+}
+
+void BufWriter::Truncate(int length) {
+  len_ = length;
+}
+
+void BufWriter::WriteRaw(char* s, int n) {
+  DCHECK(is_valid_);  // Can't write() after getvalue()
 
   // write('') is a no-op, so don't create Buf if we don't need to
   if (n == 0) {
     return;
   }
 
-  if (str_ == nullptr) {
-    // TODO: we could make the default capacity big enough for a line, e.g. 128
-    // capacity: 128 -> 256 -> 512
-    str_ = NewMutableStr(n);
-  } else {
-    EnsureCapacity(len_ + n);
-  }
+  EnsureMoreSpace(n);
 
   // Append the contents to the buffer
-  Extend(s);
+  memcpy(str_->data_ + len_, s, n);
+  len_ += n;
+  str_->data_[len_] = '\0';
+}
+
+void BufWriter::WriteConst(const char* c_string) {
+  // meant for short strings like '"'
+  WriteRaw(const_cast<char*>(c_string), strlen(c_string));
+}
+
+void BufWriter::write(BigStr* s) {
+  WriteRaw(s->data_, len(s));
+}
+
+void BufWriter::write_spaces(int n) {
+  if (n == 0) {
+    return;
+  }
+
+  EnsureMoreSpace(n);
+
+  char* dest = str_->data_ + len_;
+  for (int i = 0; i < n; ++i) {
+    dest[i] = ' ';
+  }
+  len_ += n;
+  str_->data_[len_] = '\0';
 }
 
 BigStr* BufWriter::getvalue() {
-  assert(is_valid_);  // Check for two INVALID getvalue() in a row
+  DCHECK(is_valid_);  // Check for two INVALID getvalue() in a row
   is_valid_ = false;
 
   if (str_ == nullptr) {  // if no write() methods are called, the result is ""

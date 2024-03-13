@@ -311,6 +311,37 @@ Flags and translation preferences together:
 
     / digit+ ; ignorecase ; python /  # could translate to (?i)\d+
 
+In Oils, the following flags are currently supported:
+
+#### `reg_icase` / `i` (Ignore Case)
+
+Use this flag to ignore case when matching. For example, `/'foo'; i/` matches
+'FOO', but `/'foo'/` doesn't.
+
+#### `reg_newline` (Multiline)
+
+With this flag, `%end` will match before a newline and `%start` will match
+after a newline.
+
+    = u'abc123\n' ~ / digit %end ; reg_newline /    # true
+    = u'abc\n123' ~ / %start digit ; reg_newline /  # true
+
+Without the flag, `%start` and `%end` only match from the start or end of the
+string, respectively.
+
+    = u'abc123\n' ~ / digit %end /                  # false
+    = u'abc\n123' ~ / %start digit /                # false
+
+Newlines are also ignored in `dot` and `![abc]` patterns.
+
+    = u'\n' ~ / . /                                 # true
+    = u'\n' ~ / !digit /                            # true
+
+Without this flag, the newline `\n` is treated as an ordinary character.
+
+    = u'\n' ~ / . ; reg_newline /                   # false
+    = u'\n' ~ / !digit ; reg_newline /              # false
+
 ### Multiline Syntax
 
 You can spread regexes over multiple lines and add comments:

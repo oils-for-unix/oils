@@ -52,6 +52,19 @@ EOF
   tsv-add-const-column host_name $(hostname) < _tmp/add.tsv
 }
 
+test-tsv2html() {
+  cat >_tmp/test2.tsv <<EOF
+name
+carol
+EOF
+
+  tsv2html _tmp/test2.tsv
+
+  # This test passes on my desktop, but 'other-tests' Soil image doesn't have
+  # python3 yet.
+  #tsv2html3 _tmp/test2.tsv
+}
+
 soil-run() {
   run-test-funcs
 }

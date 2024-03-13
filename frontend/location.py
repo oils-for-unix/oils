@@ -26,8 +26,8 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     word_part_t,
     CompoundWord,
-    SimpleVarSub,
     Token,
+    NameTok,
     ShArrayLiteral,
     SingleQuoted,
     DoubleQuoted,
@@ -181,7 +181,7 @@ def TokenForArith(node):
     UP_node = node
     with tagswitch(node) as case:
         if case(arith_expr_e.VarSub):
-            vsub = cast(SimpleVarSub, UP_node)
+            vsub = cast(NameTok, UP_node)
             # $(( x ))
             return vsub.left
 
@@ -239,7 +239,7 @@ def LeftTokenForWordPart(part):
             return part.left
 
         elif case(word_part_e.SimpleVarSub):
-            part = cast(SimpleVarSub, UP_part)
+            part = cast(NameTok, UP_part)
             return part.left
 
         elif case(word_part_e.BracedVarSub):
@@ -252,7 +252,7 @@ def LeftTokenForWordPart(part):
 
         elif case(word_part_e.TildeSub):
             part = cast(word_part.TildeSub, UP_part)
-            return part.token
+            return part.left
 
         elif case(word_part_e.ArithSub):
             part = cast(word_part.ArithSub, UP_part)
@@ -313,7 +313,7 @@ def _RightTokenForWordPart(part):
             return part.right  # right "
 
         elif case(word_part_e.SimpleVarSub):
-            part = cast(SimpleVarSub, UP_part)
+            part = cast(NameTok, UP_part)
             # left and right are the same for $myvar
             return part.left
 
@@ -327,7 +327,10 @@ def _RightTokenForWordPart(part):
 
         elif case(word_part_e.TildeSub):
             part = cast(word_part.TildeSub, UP_part)
-            return part.token
+            if part.name is not None:
+                return part.name  # ~bob/
+            else:
+                return part.left  # ~/
 
         elif case(word_part_e.ArithSub):
             part = cast(word_part.ArithSub, UP_part)
@@ -472,7 +475,7 @@ def TokenForExpr(node):
 
         elif case(expr_e.Var):
             node = cast(expr.Var, UP_node)
-            return node.name
+            return node.left
 
         elif case(expr_e.CommandSub):
             node = cast(CommandSub, UP_node)
@@ -495,7 +498,7 @@ def TokenForExpr(node):
             return node.left
 
         elif case(expr_e.SimpleVarSub):
-            node = cast(SimpleVarSub, UP_node)
+            node = cast(NameTok, UP_node)
             return node.left
 
         elif case(expr_e.Unary):

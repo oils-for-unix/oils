@@ -42,13 +42,71 @@ raw-vm-tasks() {
 
   # (task_name, script, action, result_html)
   cat <<EOF
-os-info          soil/diagnose.sh os-info         -
-dump-env         soil/diagnose.sh dump-env        -
-perf-install     benchmarks/perf.sh soil-install  -
+os-info          soil/diagnose.sh os-info             -
+dump-env         soil/diagnose.sh dump-env            -
+perf-install     benchmarks/perf.sh soil-install      -
 wait-for-tarball soil/wait.sh for-cpp-tarball         -
 test-tar         devtools/release-native.sh test-tar  -
 perf-profiles    benchmarks/perf.sh soil-run      _tmp/perf/index.html
 EOF
+}
+
+# Oh there is a large list of pre-installed software
+# https://github.com/actions/runner-images#available-images
+# https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2004-Readme.md
+# https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md
+#
+# 1. System deps for building wedges - ninja, cmake, libreadline-dev, etc.
+# 2. fetch wedges - re2c, cmark, python2, python3, MyPy, pyflakes
+#    - Python 3.10 desired for "pea"
+# 3. build them
+# 4. build Oils with them
+
+dev-setup-for() {
+  local distro=$1
+  # (task_name, script, action, result_html)
+
+  cat <<EOF
+os-info          soil/diagnose.sh os-info           -
+dump-env         soil/diagnose.sh dump-env          -
+wedge-deps       build/deps.sh wedge-deps-$distro   -
+fetch            build/deps.sh fetch                -
+install-wedges   build/deps.sh install-wedges-fast  _build/wedge/logs/index.html
+py-all-and-ninja soil/worker.sh py-all-and-ninja    -
+smoke-test       build/dev-setup-test.sh smoke-test -
+wedge-report     build/deps.sh wedge-report         -
+EOF
+}
+
+spec-bin-for() {
+  local distro=$1
+  cat <<EOF
+os-info          soil/diagnose.sh os-info             -
+dump-env         soil/diagnose.sh dump-env            -
+wedge-deps       build/deps.sh wedge-deps-$distro     -
+fetch            build/deps.sh fetch                  -
+spec-bin         build/deps.sh install-spec-bin-fast  _build/wedge/logs/index.html
+EOF
+}
+
+dev-setup-debian-tasks() {
+  # (task_name, script, action, result_html)
+
+  dev-setup-for debian
+  #spec-bin-for debian
+}
+
+dev-setup-fedora-tasks() {
+  # (task_name, script, action, result_html)
+
+  dev-setup-for fedora
+}
+
+dev-setup-alpine-tasks() {
+  # (task_name, script, action, result_html)
+
+  dev-setup-for alpine
+  #spec-bin-for alpine
 }
 
 pea-tasks() {
@@ -68,7 +126,6 @@ py-source        build/py.sh py-source       -
 check-types      pea/TEST.sh check-types     -
 run-tests        pea/TEST.sh run-tests       -
 parse-all        pea/TEST.sh parse-all       -
-yaks             yaks/TEST.sh soil-run       -
 EOF
 }
 
@@ -87,11 +144,12 @@ lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
 oil-types           devtools/types.sh soil-run                   -
 unit                test/unit.sh soil-run                        -
-arena               test/arena.sh soil-run                       -
+lossless            test/lossless.sh soil-run                    -
 parse-errors        test/parse-errors.sh soil-run-py             -
-runtime-errors      test/runtime-errors.sh run-all-with-osh      -
-ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run          -
+runtime-errors      test/runtime-errors.sh soil-run-py           -
 ysh-parse-errors    test/ysh-parse-errors.sh soil-run-py         -
+ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run-py       -
+ysh-every-string    test/ysh-every-string.sh soil-run-py         -
 ysh-large           ysh/run.sh soil-run                          -
 json-errors         data_lang/json-errors.sh soil-run-py         -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
@@ -204,13 +262,12 @@ EOF
 
 cpp-small-tasks() {
 
-  # TODO: remove tarball
-
-  # Build the tarball toward the beginning
+  # yaks could be moved to pea/ image once it has python2-dev
   cat <<EOF
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+yaks             yaks/TEST.sh soil-run                 -
 oils-cpp-smoke   build/native.sh soil-run              -
 cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
 headless         client/run.sh soil-run-cpp            -
@@ -222,7 +279,10 @@ line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/
 preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
 mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
 parse-errors     test/parse-errors.sh soil-run-cpp     -
+runtime-errors   test/runtime-errors.sh soil-run-cpp   -
 ysh-parse-errors test/ysh-parse-errors.sh soil-run-cpp -
+ysh-runtime-errors test/ysh-runtime-errors.sh soil-run-cpp -
+ysh-every-string test/ysh-every-string.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
 json-errors      data_lang/json-errors.sh soil-run-cpp -
 EOF
@@ -264,6 +324,7 @@ osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
 make-tarball      devtools/release.sh quick-oil-tarball  _release/oil.tar
 test-tarball      devtools/release.sh test-oil-tar       -
+ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
 ref-check         build/doc.sh ref-check                 -
 EOF
@@ -344,8 +405,8 @@ run-tasks() {
   if command -v cc > /dev/null; then
     build/py.sh time-helper
   else
-    echo 'test time-tsv'
-    time-tsv -o /tmp/echo.tsv --append -- echo hi
+    echo 'test time-tsv3'
+    time-tsv3 -o /tmp/echo.tsv --append -- echo hi
 
     echo '/tmp/echo.tsv:'
     cat /tmp/echo.tsv
@@ -386,7 +447,7 @@ run-tasks() {
     esac
 
     local -a argv=(
-      time-tsv -o $tsv --append
+      time-tsv3 -o $tsv --append
         --field $task_name --field $script --field $action
         --field $result_html -- 
         "${timeout[@]}" "$script" "$action"
@@ -527,6 +588,9 @@ job-main() {
 
 JOB-dummy() { job-main 'dummy'; }
 JOB-raw-vm() { job-main 'raw-vm'; }
+JOB-dev-setup-debian() { job-main 'dev-setup-debian'; }
+JOB-dev-setup-fedora() { job-main 'dev-setup-fedora'; }
+JOB-dev-setup-alpine() { job-main 'dev-setup-alpine'; }
 
 JOB-dev-minimal() { job-main 'dev-minimal'; }
 JOB-interactive() { job-main 'interactive'; }
@@ -551,7 +615,8 @@ JOB-wild() { job-main 'wild'; }
 JOB-maybe-merge() { job-main 'maybe-merge'; }
 
 list-jobs() {
-  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge'
+  # dev-setup-fedora for Fedora, disable
+  compgen -A function | grep -- '^JOB-' | sed 's/^JOB-//g' | egrep -v 'maybe-merge|dev-setup-fedora|dev-setup-alpine'
 }
 
 "$@"

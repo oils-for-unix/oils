@@ -31,6 +31,7 @@ from frontend import lexer
 from frontend import match
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
+from osh import word_
 
 from typing import List, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -46,6 +47,7 @@ NO_STEP = 0
 # The brace language has no syntax errors!  But we still need to abort the
 # parse.  TODO: Should we expose a strict version later?
 class _NotARange(Exception):
+
     def __init__(self, s):
         # type: (str) -> None
         pass
@@ -177,8 +179,9 @@ class _RangeParser(object):
 def _RangePartDetect(tok):
     # type: (Token) -> Optional[word_part.BracedRange]
     """Parse the token and return a new word_part if it looks like a range."""
-    lexer = match.BraceRangeLexer(tok.tval)
-    p = _RangeParser(lexer, tok)
+
+    lx = match.BraceRangeLexer(lexer.TokenVal(tok))
+    p = _RangeParser(lx, tok)
     try:
         part = p.Parse()
     except _NotARange as e:
@@ -187,6 +190,7 @@ def _RangePartDetect(tok):
 
 
 class _StackFrame(object):
+
     def __init__(self, cur_parts):
         # type: (List[word_part_t]) -> None
         self.cur_parts = cur_parts
@@ -513,11 +517,20 @@ def BraceExpandWords(words):
                 # Would be nice to optimize, but we don't really know the structure
                 # ahead of time
                 parts_list = _BraceExpand(w.parts)
-                for p in parts_list:
-                    out.append(CompoundWord(p))
+                for parts in parts_list:
+                    expanded = CompoundWord(parts)
+
+                    # Now do tilde detection on brace-expanded word
+                    ti = word_.TildeDetect2(expanded)
+                    if ti:
+                        out.append(ti)
+                    else:
+                        out.append(expanded)
 
             elif case(word_e.Compound):
                 w = cast(CompoundWord, UP_w)
+
+                # Already did tilde detection before expansion
                 out.append(w)
 
             else:

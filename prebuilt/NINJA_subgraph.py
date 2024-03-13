@@ -16,12 +16,42 @@ def NinjaGraph(ru):
 
     # These files are checked in.  See prebuilt/translate.sh includes
 
+    # TODO: Because of J8 notation, prebuilt/translate.sh will
+    # include
+    #
+    #    data_lang/j8_lite.py
+    #
+    # And then it calls:
+    #
+    #    fastfunc.J8EncodeString()
+    #    match.CanOmitQuotes() or fastlex.CanOmitQuotes()
+    #
+    # So that means that we need may want a cc_library()
+    #   data_lang/j8_lite_deps
+    #
+    # That includes both
+    #
+    #   //data_lang/j8  # header only C library
+    #   //pyext/fastfunc
+    #   //cpp/frontend_match  or //pyext/fastlex
+    #
+    # So prebuilt/ and oils-for-unix depend on //data_lang/j8_lite
+    # That makes sense
+    #
+    # or maybe it's pyext/j8_lite_deps.{h,cc}
+    # That kind makes sense
+    #
+    # And is it OK for the main binary to depend on that?
+    # The problem is that you will pull in TWO COPIES of the huge match.asdl.h
+    # header
+    # This can bloat the binary size.  But it will be mostly unused.
+
     ru.cc_library(
         '//prebuilt/asdl/runtime.mycpp',
         srcs=['prebuilt/asdl/runtime.mycpp.cc'],
         deps=[
             '//asdl/hnode.asdl',
-            # Should //cpp/qsn exist?
+            '//cpp/data_lang',  # for fastfunc
         ])
 
     ru.cc_library(
@@ -29,8 +59,9 @@ def NinjaGraph(ru):
         srcs=['prebuilt/core/error.mycpp.cc'],
         deps=[
             '//asdl/hnode.asdl',
+            '//core/value.asdl',
             '//frontend/syntax.asdl',
-            # Should //cpp/qsn exist?
+            '//cpp/data_lang',  # for fastfunc
         ])
 
     ru.cc_library(
@@ -40,6 +71,6 @@ def NinjaGraph(ru):
             '//asdl/hnode.asdl',
             '//core/runtime.asdl',
             '//frontend/syntax.asdl',
+            '//cpp/data_lang',  # for fastfunc
             '//cpp/frontend_flag_spec',
-            # Should //cpp/qsn exist?
         ])

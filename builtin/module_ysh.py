@@ -9,7 +9,7 @@ from core import state
 from core import ui
 from core import vm
 from frontend import args
-from frontend import flag_spec
+from frontend import flag_util
 from mycpp.mylib import log
 
 from typing import Dict, cast, TYPE_CHECKING
@@ -47,7 +47,7 @@ class Module(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_spec.ParseCmdVal('module', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('module', cmd_val)
         name, _ = arg_r.ReadRequired2('requires a name')
         #log('modules %s', self.modules)
         if name in self.modules:

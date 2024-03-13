@@ -11,10 +11,14 @@ GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
 GLOBAL_STR(str5, "<%s %r>");
-GLOBAL_STR(str6, "%s, got %s");
+GLOBAL_STR(str6, "status");
+GLOBAL_STR(str7, "message");
+GLOBAL_STR(str8, "%s, got %s");
+GLOBAL_STR(str9, " (pos %d-%d: %r)");
 
 namespace runtime {  // forward declare
 
+  class TraversalState;
 
 }  // forward declare namespace runtime
 
@@ -24,6 +28,19 @@ using hnode_asdl::hnode;
 extern int NO_SPID;
 hnode::Record* NewRecord(BigStr* node_type);
 hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color);
+class TraversalState {
+ public:
+  TraversalState();
+  Dict<int, bool>* seen;
+  Dict<int, int>* ref_count;
+
+  static constexpr ObjHeader obj_header() {
+    return ObjHeader::ClassScanned(2, sizeof(TraversalState));
+  }
+
+  DISALLOW_COPY_AND_ASSIGN(TraversalState)
+};
+
 extern BigStr* TRUE_STR;
 extern BigStr* FALSE_STR;
 
@@ -53,6 +70,11 @@ hnode::Leaf* NewLeaf(BigStr* s, hnode_asdl::color_t e_color) {
     return Alloc<hnode::Leaf>(s, e_color);
   }
 }
+
+TraversalState::TraversalState() {
+  this->seen = Alloc<Dict<int, bool>>();
+  this->ref_count = Alloc<Dict<int, int>>();
+}
 BigStr* TRUE_STR = str3;
 BigStr* FALSE_STR = str4;
 
@@ -64,7 +86,6 @@ using syntax_asdl::loc_e;
 using syntax_asdl::loc_t;
 using syntax_asdl::loc;
 using value_asdl::value;
-using value_asdl::value_e;
 using value_asdl::value_t;
 using value_asdl::value_str;
 
@@ -95,14 +116,6 @@ BigStr* _ErrorWithLocation::UserErrorString() {
 Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
-Runtime::Runtime(BigStr* msg) {
-  this->msg = msg;
-}
-
-BigStr* Runtime::UserErrorString() {
-  return this->msg;
-}
-
 Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
 }
 
@@ -130,7 +143,17 @@ ErrExit::ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, boo
 Expr::Expr(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
 }
 
-UserError::UserError(int status, BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(status, msg, location) {
+Structured::Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties) : FatalRuntime(status, msg, location) {
+  this->properties = properties;
+}
+
+value::Dict* Structured::ToDict() {
+  if (this->properties == nullptr) {
+    this->properties = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
+  }
+  this->properties->set(str6, Alloc<value::Int>(this->ExitStatus()));
+  this->properties->set(str7, Alloc<value::Str>(this->msg));
+  return Alloc<value::Dict>(this->properties);
 }
 
 AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
@@ -140,6 +163,45 @@ TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : Expr
 }
 
 TypeErr::TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
+}
+
+Runtime::Runtime(BigStr* msg) {
+  this->msg = msg;
+}
+
+BigStr* Runtime::UserErrorString() {
+  return this->msg;
+}
+
+Decode::Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos) {
+  this->msg = msg;
+  this->s = s;
+  this->start_pos = start_pos;
+  this->end_pos = end_pos;
+}
+
+BigStr* Decode::Message() {
+  int start;
+  int end;
+  BigStr* part = nullptr;
+  StackRoot _root0(&part);
+
+  start = max(0, (this->start_pos - 4));
+  end = min(len(this->s), (this->end_pos + 4));
+  part = this->s->slice(start, end);
+  return str_concat(this->msg, StrFormat(" (pos %d-%d: %r)", this->start_pos, this->end_pos, part));
+}
+
+BigStr* Decode::__str__() {
+  return this->Message();
+}
+
+Encode::Encode(BigStr* msg) {
+  this->msg = msg;
+}
+
+BigStr* Encode::Message() {
+  return this->msg;
 }
 
 [[noreturn]] void e_usage(BigStr* msg, syntax_asdl::loc_t* location) {

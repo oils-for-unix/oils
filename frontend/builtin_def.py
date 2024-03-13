@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-"""Frontend/builtin_def.py.
+"""frontend/builtin_def.py.
 
 Metadata:
 
@@ -50,7 +50,7 @@ _NORMAL_BUILTINS = [
     # YSH
     #
     'append',
-    'write', 'json', 'j8', 'pp',
+    'write', 'json', 'json8', 'pp',
     'hay', 'haynode',
     'module', 'use',
     'error',
@@ -60,6 +60,7 @@ _NORMAL_BUILTINS = [
     'fork', 'forkwait',
     'fopen',
     'shvar',
+    'ctx',
 
     'runproc',
     'boolstatus',

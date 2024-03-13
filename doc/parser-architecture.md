@@ -1,12 +1,35 @@
 Parser Architecture
 ===================
 
-This doc has rough notes on the architecture of the parser.  [How to Parse
-Shell Like a Programming Language][parse-shell] (on the blog) covers some of
-the same material and is more polished.
+This doc has rough notes on the architecture of the parser.
+
+[How to Parse Shell Like a Programming Language][parse-shell] (2019 blog post)
+covers some of the same material.  (As of 2024, it's still pretty accurate,
+although there have been minor changes.)
 
 <div id="toc">
 </div>
+
+## The Lossless Invariant
+
+The test suite [test/lossless.sh]($oils-src) invokes `osh --tool lossless-cat
+$file`.
+
+The `lossless-cat` tool does this:
+
+1. Parse the file
+1. Collect **all** tokens, from 0 to N
+1. Print the text of each token.
+
+Now, do the tokens "add up" to the original file?  That's what we call the
+*lossless invariant*.
+
+It will be the foundation for tools that statically understand shell:
+
+- `--tool ysh-ify` - change style of `do done` &rarr; `{ }`, etc.
+- `--tool fmt` - fix indentation, maybe some line wrapping
+
+The sections on **re-parsing** explain some obstacles which we had to overcome.
 
 ## Lexing
 
@@ -56,34 +79,54 @@ This is sort of like the `ungetc()` I've seen in other shell lexers.
 
 ## Parsing Issues
 
-This section is about extra passes ("irregularities") at **parse time**.  In
+This section is about extra passes / "irregularities" at **parse time**.  In
 the "Runtime Issues" section below, we discuss cases that involve parsing after
 variable expansion, etc.
 
-### Where We Parse More Than Once (statically, and unfortunately)
+### Re-parsing - reading text more than once
 
-This makes it harder to produce good error messages with source location info.
-It also implications for translation, because we break the "arena invariant".
+We try to avoid re-parsing, but it happens in 4 places.
 
-(1) **Array L-values** like `a[x+1]=foo`.  bash allows splitting arithmetic
-expressions across word boundaries: `a[x + 1]=foo`.  But I don't see this used,
-and it would significantly complicate the OSH parser.
+It complicates error messages with source location info.  It also implications
+for `--tool ysh-ify` and `--tool fmt`, because it affects the **"lossless invariant"**.
 
-(in `_MakeAssignPair` in `osh/cmd_parse.py`)
+This command is perhaps a quicker explanation than the text below:
 
-(2) **Backticks**.  There is an extra level of backslash quoting that may
-happen compared with `$()`.
+    $ grep do_lossless */*.py
+    ...
+    osh/cmd.py: ...
+    osh/word_parse.py: ...
 
-(in `_ReadCommandSubPart` in `osh/word_parse.py`)
+Where re-parse:
 
-### Where We Read More Than Once (`VirtualLineReader`)
+1. [Here documents]($xref:here-doc):  We first read lines, and then parse them.
+   - `VirtualLineReader` in [osh/cmd_parse.py]($oils-src)
+   - This is re-parsing from **lines**
 
-- [Here documents]($xref:here-doc):  We first read lines, and then parse them.
-- [alias]($help) expansion
+2. **Array L-values** like `a[x+1]=foo`.  bash allows splitting arithmetic
+   expressions across word boundaries: `a[x + 1]=foo`.  But I don't see this
+   used, and it would significantly complicate the OSH parser.
+   - `_MakeAssignPair` in [osh/cmd_parse.py]($oils-src) has `do_lossless` condition
+   - This is re-parsing from **tokens**
 
-### Extra Passes Over the LST
+3. **Backticks**, the legacy form of `$(command sub)`.  There's an extra level
+   of backslash quoting that may happen compared with `$(command sub)`.
+   - `_ReadCommandSubPart` in [osh/word_parse.py]($oils-src) has `do_lossless`
+     condition
+   - This is re-parsing from **tokens**
 
-These are handled up front, but not in a single pass.
+### Re-parsing that doesn't affect the `ysh-ify` or `fmt` tools
+
+4. `alias` expansion
+    - `SnipCodeString` in [osh/cmd_parse.py]($oils-src)
+   - This is re-parsing from **tokens**, but it only happens **after running**
+     something like `alias ls=foo`.  So it doesn't affect the lossless
+     invariant that `--tool ysh-ify` and `--tool fmt` use.
+
+### Revisiting Tokens, Not Text
+
+These language constructs are handled statically, but not in a single pass of
+parsing:
 
 - Assignment vs. Env binding detection: `FOO=bar declare a[x]=1`.
   We make another pass with `_SplitSimpleCommandPrefix()`.
@@ -91,15 +134,13 @@ These are handled up front, but not in a single pass.
 - Brace Detection in a few places: `echo {a,b}`
 - Tilde Detection: `echo ~bob`, `home=~bob`
 
+This is less problematic, since it doesn't affect error messages
+(`ctx_SourceCode`) or the lossless invariant.
+
 ### Lookahead in Recursive Descent Parsers
 
 - `myfunc() { echo hi; }` vs.  `myfunc=()  # an array`
 - `shopt -s parse_equals`: For `x = 1 + 2*3`
-
-### Where the Arena Invariant is Broken
-
-- Here docs with `<<-`.  The leading tab is lost, because we don't need it for
-  translation.
 
 ### Where Parsers are Instantiated
 

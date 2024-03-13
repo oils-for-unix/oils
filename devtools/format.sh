@@ -59,11 +59,18 @@ yapf-files() {
 yapf-known() {
   ### yapf some files that have been normalized
 
-  # TODO: add all of osh/
   time yapf-files \
-    {asdl,builtin,core,data_lang,frontend,mycpp,ysh}/*.py \
-    osh/*_eval.py osh/*_parse.py \
+    {asdl,benchmarks,builtin,core,data_lang,frontend,mycpp,mycpp/examples,osh,spec/*,yaks,ysh}/*.py \
     */NINJA_subgraph.py
+}
+
+yapf-changed() {
+  branch="${1:-master}"
+
+  #git diff --name-only .."$branch" '*.py'
+
+  git diff --name-only .."$branch" '*.py' \
+    | xargs --no-run-if-empty -- $0 yapf-files 
 }
 
 #
@@ -79,11 +86,12 @@ readonly -a CPP_FILES=(
   {asdl,core}/*.cc
   benchmarks/*.c
   cpp/*.{c,cc,h}
-  data_lang/*.cc
+  data_lang/*.{c,cc,h}
   mycpp/*.{cc,h} 
   mycpp/demo/*.{cc,h}
   demo/*.c
   doctools/*.{h,cc}
+  yaks/*.h
 
   # Could add pyext, but they have sort of a Python style
   # pyext/fanos.c

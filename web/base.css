@@ -17,6 +17,7 @@
   body {
     margin: 0 auto;
     line-height: 1.4;  /* http://bettermotherfuckingwebsite.com/ */
+    font-size: large;  /* 2024-01 - all pages deserve this */
   }
 
   .skinny { width: 30em; }  /* Most blog posts */

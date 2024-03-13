@@ -1,7 +1,7 @@
 // core.h: Replacement for core/*.py
 
-#ifndef LEAKY_CORE_H
-#define LEAKY_CORE_H
+#ifndef CORE_H
+#define CORE_H
 
 #include <pwd.h>  // passwd
 #include <signal.h>
@@ -18,7 +18,6 @@
   #include <atomic>
 #endif
 
-#include "_gen/core/value.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/pgen2.h"
 #include "mycpp/runtime.h"
@@ -271,10 +270,4 @@ grammar::Grammar* LoadYshGrammar(_ResourceLoader*);
 
 }  // namespace pyutil
 
-namespace vm {
-
-int HeapValueId(value_asdl::value_t* val);
-
-}  // namespace vm
-
-#endif  // LEAKY_CORE_H
+#endif  // CORE_H

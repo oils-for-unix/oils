@@ -220,6 +220,51 @@ typeset -x test_var3=333
 typeset test_var5=555
 ## END
 
+#### declare -p doesn't print binary data, but can be loaded into bash
+
+# bash prints binary data!
+case $SH in bash|mksh) exit ;; esac
+
+unquoted='foo'
+sq='foo bar'
+bash1=$'\x1f'  # ASCII control char
+bash2=$'\xfe\xff'  # Invalid UTF-8
+
+s1=$unquoted
+s2=$sq
+s3=$bash1
+s4=$bash2
+
+declare -a a=("$unquoted" "$sq" "$bash1" "$bash2")
+declare -A A=(["$unquoted"]="$sq" ["$bash1"]="$bash2")
+
+#echo lengths ${#s1} ${#s2} ${#s3} ${#s4} ${#a[@]} ${#A[@]}
+
+declare -p s1 s2 s3 s4 a A | tee tmp.bash
+
+echo ---
+
+bash -c 'source tmp.bash; echo "$s1 $s2"; echo -n "$s3" "$s4" | od -A n -t x1'
+echo bash=$?
+
+## STDOUT:
+declare -- s1=foo
+declare -- s2='foo bar'
+declare -- s3=$'\u001f'
+declare -- s4=$'\xfe\xff'
+declare -a a=(foo 'foo bar' $'\u001f' $'\xfe\xff')
+declare -A A=([$'\u001f']=$'\xfe\xff' ['foo']='foo bar')
+---
+foo foo bar
+ 1f 20 fe ff
+bash=0
+## END
+
+## N-I bash/mksh STDOUT:
+## END
+
+
+
 #### declare -p var
 # BUG? bash doesn't output anything for 'local/readonly -p var', which seems to
 #   contradict with manual.  Besides, 'export -p var' is not described in
@@ -388,7 +433,7 @@ declare -A test_var7=()
 
 #### declare -pnrx var
 # Note: Bash ignores other flags (-nrx) when variable names are supplied while
-#   Oil uses other flags to select variables.  Bash's behavior is documented.
+#   OSH uses other flags to select variables.  Bash's behavior is documented.
 test_var1=111
 readonly test_var2=222
 export test_var3=333

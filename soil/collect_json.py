@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
 collect_json.py: Dump files and selected environment variables as JSON.
 """

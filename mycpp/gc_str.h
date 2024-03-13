@@ -23,12 +23,12 @@ class BigStr {
 
   BigStr* at(int i);
 
+  // TODO: take (start, end) for equality without allocation (not pos)
   int find(BigStr* needle, int pos = 0);
   int rfind(BigStr* needle);
 
   BigStr* slice(int begin);
   BigStr* slice(int begin, int end);
-  BigStr* slice(int begin, int end, int step);
 
   BigStr* strip();
   // Used for CommandSub in osh/cmd_exec.py
@@ -41,16 +41,20 @@ class BigStr {
   BigStr* ljust(int width, BigStr* fillchar);
   BigStr* rjust(int width, BigStr* fillchar);
 
+  // Can take (start, end) so Tokens can be compared without allocation
   bool startswith(BigStr* s);
   bool endswith(BigStr* s);
 
   BigStr* replace(BigStr* old, BigStr* new_str);
+  BigStr* replace(BigStr* old, BigStr* new_str, int count);
   BigStr* join(List<BigStr*>* items);
 
   List<BigStr*>* split(BigStr* sep);
   List<BigStr*>* split(BigStr* sep, int max_split);
   List<BigStr*>* splitlines(bool keep);
 
+  // TODO: Move unicode functions out of mycpp runtime?  Because we won't match
+  // Python exactly
   bool isdigit();
   bool isalpha();
   bool isupper();
@@ -129,8 +133,6 @@ class StrIter {
 
   DISALLOW_COPY_AND_ASSIGN(StrIter)
 };
-
-bool maybe_str_equals(BigStr* left, BigStr* right);
 
 extern BigStr* kEmptyString;
 

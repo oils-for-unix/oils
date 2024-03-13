@@ -18,9 +18,27 @@ time-tsv() {
   $REPO_ROOT/benchmarks/time_.py --tsv "$@"
 }
 
+time-tsv3() {
+  ### Maybe run with python3, our CI VMs don't have python2
+
+  # Some Soil tasks like dev-setup-* and raw-vm run on the VM, with python3, not python2
+  # Others run in a container with python2, not python3 (this may go away)
+
+  if command -v python3 >/dev/null; then
+    python3 $REPO_ROOT/benchmarks/time_.py --tsv "$@"
+  else
+    $REPO_ROOT/benchmarks/time_.py --tsv "$@"
+  fi
+}
+
 tsv2html() {
   ### Convert TSV to an HTML table
   $REPO_ROOT/web/table/csv2html.py --tsv "$@"
+}
+
+tsv2html3() {
+  ### Convert TSV to an HTML table
+  python3 $REPO_ROOT/web/table/csv2html.py --tsv "$@"
 }
 
 tsv-row() {
@@ -47,6 +65,21 @@ here-schema-tsv() {
     echo "${one}${TAB}${two}"
   done
 }
+
+here-schema-tsv-3col() {
+  ### As above, with 3 cols
+  while read -r one two three; do
+    echo "${one}${TAB}${two}${TAB}${three}"
+  done
+}
+
+here-schema-tsv-4col() {
+  ### As above, with 4 cols
+  while read -r one two three four; do
+    echo "${one}${TAB}${two}${TAB}${three}${TAB}${four}"
+  done
+}
+
 
 tsv-concat() {
   devtools/tsv_concat.py "$@"
