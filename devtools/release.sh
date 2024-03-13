@@ -327,6 +327,7 @@ build-and-test() {
   # App bundle
   _release-build
 
+  # TODO: test oils-for-unix in Alpine chroot too.
   # NOTE: Need test/alpine.sh download;extract;setup-dns,add-oil-build-deps,
   # etc.
   if test -n "$HAVE_ROOT"; then
