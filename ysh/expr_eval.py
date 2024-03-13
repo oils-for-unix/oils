@@ -234,6 +234,7 @@ class ExprEvaluator(object):
 
                     elif case(value_e.Dict):
                         obj = cast(value.Dict, UP_obj)
+                        index = -1  # silence C++ warning
                         key = val_ops.ToStr(lval.index,
                                             'Dict index should be Str',
                                             loc.Missing)
@@ -253,6 +254,7 @@ class ExprEvaluator(object):
                 with tagswitch(obj) as case:
                     if case(value_e.List):
                         obj = cast(value.List, UP_obj)
+                        assert index != -1, 'Should have been initialized'
                         obj.items[index] = new_val_
 
                     elif case(value_e.Dict):

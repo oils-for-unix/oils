@@ -86,6 +86,7 @@ class _MatchCallable(vm._Callable):
 def _GetGroupIndex(group, ops, blame_loc):
     # type: (value_t, eggex_ops_t, loc_t) -> int
     UP_group = group
+    group_index = -1
 
     with tagswitch(group) as case:
         if case(value_e.Int):
@@ -104,7 +105,6 @@ def _GetGroupIndex(group, ops, blame_loc):
                         blame_loc)
                 elif case2(eggex_ops_e.Yes):
                     ops = cast(eggex_ops.Yes, UP_ops)
-                    group_index = -1
                     for i, name in enumerate(ops.capture_names):
                         if name == group.s:
                             group_index = i + 1  # 1-based
@@ -116,6 +116,8 @@ def _GetGroupIndex(group, ops, blame_loc):
         else:
             # TODO: add method name to this error
             raise error.TypeErr(group, 'expected Int or Str', blame_loc)
+
+    assert group_index != -1, 'Should have been initialized'
     return group_index
 
 
