@@ -93,6 +93,12 @@ def ByteInSet(byte, byte_set):
     return chr(byte) in byte_set
 
 
+def JoinBytes(byte_list):
+    # type: (List[int]) -> str
+
+    return ''.join(chr(b) for b in byte_list)
+
+
 class File:
     """
     TODO: This should define a read/write interface, and then LineReader() and

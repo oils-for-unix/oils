@@ -54,6 +54,8 @@ inline int ByteInSet(int byte, BigStr* byte_set) {
   return false;
 }
 
+BigStr* JoinBytes(List<int>* byte_list);
+
 // const int kStdout = 1;
 // const int kStderr = 2;
 

@@ -177,11 +177,20 @@ def TestBytes2():
 
     banner('TestBytes2')
 
-    b = []  # type: List[str]
+    b = []  # type: List[int]
+    ch = []  # type: List[str]
     for i in xrange(256):
-        b.append(chr(i))
+        b.append(i)
+        ch.append(chr(i))
 
-    all_bytes = ''.join(b)
+    all_bytes = ''.join(ch)
+
+    b2 = mylib.JoinBytes(b)
+    if all_bytes == b2:
+        print('== EQUAL')
+    else:
+        raise AssertionError('should be equal')
+
     n = len(all_bytes)
     print('len = %d' % n)
     #print('[%s]' % all_bytes)
