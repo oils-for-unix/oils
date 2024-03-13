@@ -68,8 +68,11 @@ compare() {
   # with OSH
   { time $bin $0 match-many "$@"; } >$dir/osh-stdout.txt 2>$dir/osh-time.txt
 
+  # OSH without cache
+  { time OILS_REGEX_CACHE_SIZE=0 $bin $0 match-many "$@"; } >$dir/osh-nocache-stdout.txt 2>$dir/osh-nocache-time.txt
+
   # should have equal output except for version
-  diff $dir/*-stdout.txt || true
+  diff $dir/{bash,osh}-stdout.txt || true
 
   # show timings
   head $dir/*-time.txt
