@@ -1,10 +1,15 @@
 Oils for Unix
 =============
 
-This is the pure C++ tarball for Oils.  (In contrast to the "executable spec",
-it has no CPython code).
+Oils is a small tool that unifies shell, Python, regexes, JSON, and YAML.  It's
+our upgrade path from bash to a better language and runtime!  
 
-To use it, run
+    https://www.oilshell.org/
+
+This is fast shell in C++, completed in 2024.  Its source code is generated
+from a reference implementation in Python, but it relies on no Python code.
+
+To use it, run:
 
     ./configure     # detects whether GNU readline is installed, etc.
 
@@ -20,14 +25,15 @@ Then try:
 
     osh -n -c 'echo hi'  # parse a script
 
-Send feedback to:
+    ysh -c 'json write ({foo: 42})'
+
+Feedback:
 
     https://github.com/oilshell/oil/issues
 
-(TODO: Replace this with INSTALL.txt)
 
-
-## More build configuration
+More build configuration
+------------------------
 
 You can pass the compiler and build variant to _build/oils.sh:
 
