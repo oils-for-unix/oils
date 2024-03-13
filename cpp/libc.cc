@@ -44,7 +44,7 @@ RegexCache::RegexCache(int capacity) : capacity_(capacity), access_list_() {
   char* e = getenv("OILS_REGEX_CACHE_SIZE");
   if (e) {
     int result;
-    if (StringToInteger(e, strlen(e), 10, &result)) {
+    if (StringToInt(e, strlen(e), 10, &result)) {
       capacity_ = result;
     }
   }
