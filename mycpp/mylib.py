@@ -63,6 +63,33 @@ def print_stderr(s):
     """
     print(s, file=sys.stderr)
 
+#
+# Byte Operations avoid excessive allocations with string algorithms
+#
+
+def ByteAt(s, i):
+    # type: (str, int) -> int
+    """i must be in bounds."""
+
+    # This simplifies the C++ implementation
+    assert 0 <= i, 'No negative indices'
+    assert i < len(s), 'No negative indices'
+
+    return ord(s[i])
+
+
+def ByteEqualsStr(byte, ch):
+    # type: (int,  str) -> bool
+    assert len(ch) == 1, ch
+
+    return byte == ord(ch)
+
+
+def ByteInSet(byte, byte_set):
+    # type: (int, str) -> bool
+
+    return chr(byte) in byte_set
+
 
 class File:
     """

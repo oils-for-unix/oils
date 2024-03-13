@@ -103,7 +103,7 @@ BigStr* BigStr::at(int i) {
   if (i < 0) {
     i = length + i;
   }
-  DCHECK(i >= 0);
+  DCHECK(0 <= i);
   DCHECK(i < length);  // had a problem here!
 
   BigStr* result = NewStr(1);

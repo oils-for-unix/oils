@@ -5,7 +5,17 @@ strings.py
 from __future__ import print_function
 
 import os
+from mycpp import mylib
 from mycpp.mylib import log
+
+from typing import List
+
+
+def banner(s):
+    # type: (str) -> None
+    print('')
+    print('=== %s ===' % s)
+    print('')
 
 
 class Foo(object):
@@ -67,8 +77,10 @@ def TestMethods():
     #print('j1 = %d, j2 = %d' % (j1, j2))
 
 
-def run_tests():
+def TestFormat():
     # type: () -> None
+
+    banner('TestFormat')
 
     print('foo' + 'bar')
     print('foo' * 3)
@@ -133,7 +145,79 @@ def run_tests():
     # print(s[1:10:2])
     print(s.upper())
 
+
+def TestByteOperations():
+    # type: () -> None
+    banner('TestByteOperations')
+
+    s = 'foo' * 10
+
+    i = 0
+    n = len(s)
+    total = 0
+    total2 = 0
+    while i < n:
+        byte = ord(s[i])
+        byte2 = mylib.ByteAt(s, i)
+
+        total += byte
+        total2 += byte2
+
+        i += 1
+
+    if total != total2:
+        raise AssertionError()
+
+    print('total = %d' % total)
+    print('total2 = %d' % total2)
+
+
+def TestBytes2():
+    # type: () -> None
+
+    banner('TestBytes2')
+
+    b = []  # type: List[str]
+    for i in xrange(256):
+        b.append(chr(i))
+
+    all_bytes = ''.join(b)
+    n = len(all_bytes)
+    print('len = %d' % n)
+    #print('[%s]' % all_bytes)
+
+    i = 0
+    while i < n:
+        byte = mylib.ByteAt(all_bytes, i)
+        #log('byte = %d', byte)
+
+        if mylib.ByteEqualsStr(byte, '['):
+            print('LEFT')
+        if mylib.ByteEqualsStr(byte, ']'):
+            print('RIGHT')
+        if mylib.ByteEqualsStr(byte, '\\'):
+            print('BACKSLASH')
+
+        # TODO: get rid of JSON crap
+        #if mylib.ByteEqualsStr(byte, '\xff'):
+        #    print('0xff')
+
+        if mylib.ByteEqualsStr(byte, chr(255)):
+            print('0xff')
+
+        if mylib.ByteInSet(byte, 'abcXYZ'):
+            print('abcXYZ')
+
+        i += 1
+
+
+def run_tests():
+    # type: () -> None
+
+    TestFormat()
     TestMethods()
+    TestByteOperations()
+    TestBytes2()
 
 
 def run_benchmarks():
