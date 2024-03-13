@@ -30,8 +30,17 @@ and benchmarks.
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
-Note: `oil-$VERSION` is the slow Python build, while `oils-for-unix-$VERSION`
-is the new, fast C++ build.
+**[Oils Packaging Guidelines]($wiki)**:
+
+- The `oils-for-unix` tarball is the fast shell in C++, completed in
+  2024.  The distro package should be called `oils-for-unix`.
+- The `oil` tarball is the slow reference interpreter based on CPython.
+  - Don't rename old distro packages.  They can remain `oil`.
+  - It's not worth packaging `oil` in new distros.  It may be removed at some
+    point.
+- The project is now called **Oils**, or [Oils for
+  Unix](https://www.oilshell.org/blog/2023/03/rename.html).  There is no more
+  `oil`!
 
 ## What's New
 

@@ -222,11 +222,12 @@ profile-fib() {
   profile-cpp 'fib' $mode "${cmd[@]}"
 }
 
-profile-execute() {
+# Hm this is dominated by GC, not regex?
+profile-parse-help() {
   local osh=${1:-_bin/cxx-opt/osh}
-  local mode=${2:-graph}
+  local mode=${2:-flat}
 
-  local -a cmd=( $osh benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/mypy.txt )
+  local -a cmd=( $osh benchmarks/parse-help/pure-excerpt.sh parse_help_file benchmarks/parse-help/clang.txt )
 
   profile-cpp 'parse-help' $mode "${cmd[@]}"
 }
@@ -471,6 +472,7 @@ soil-run() {
 
   profile-fib $OSH flat
   profile-osh-parse $OSH flat
+  profile-parse-help $OSH flat
 
   print-index > $BASE_DIR/index.html
 
