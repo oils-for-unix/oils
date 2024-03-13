@@ -26,7 +26,10 @@ match-many() {
 
   declare -a REGEXES=()
   for i in $(seq $num_pat); do
-    REGEXES[i]="$i?($i*)$i+"  # last char is modified with ? then * and +
+    #REGEXES[i]="$i?($i*)$i+"  # last char is modified with ? then * and +
+
+    # char classes are expensive to compile
+    REGEXES[i]="$i?($i*)$i+[a-zA-Z_]?"  # last char is modified with ? then * and +
   done
 
   echo "${REGEXES[@]}"
