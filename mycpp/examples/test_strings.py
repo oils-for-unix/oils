@@ -180,19 +180,28 @@ def TestBytes2():
     b = []  # type: List[int]
     ch = []  # type: List[str]
     for i in xrange(256):
-        b.append(i)
-        ch.append(chr(i))
+        # Shuffle it a bit, make it a better test
+        j = 255 - i
+        if j == 2:
+            j = 0
+
+        b.append(j)
+        ch.append(chr(j))
+
+    print('len(b) = %d' % len(b))
+    print('len(ch) = %d' % len(ch))
 
     all_bytes = ''.join(ch)
 
     b2 = mylib.JoinBytes(b)
     if all_bytes == b2:
-        print('== EQUAL')
+        print('EQUAL ==')
     else:
         raise AssertionError('should be equal')
 
     n = len(all_bytes)
-    print('len = %d' % n)
+    print('len(all_bytes) = %d' % n)
+    print('')
     #print('[%s]' % all_bytes)
 
     i = 0
@@ -218,6 +227,8 @@ def TestBytes2():
             print('abcXYZ')
 
         i += 1
+
+    print('')
 
 
 def run_tests():

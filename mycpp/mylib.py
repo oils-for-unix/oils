@@ -83,12 +83,14 @@ def ByteAt(s, i):
 def ByteEquals(byte, ch):
     # type: (int,  str) -> bool
     assert len(ch) == 1, ch
+    assert 0 <= byte < 256, byte
 
     return byte == ord(ch)
 
 
 def ByteInSet(byte, byte_set):
     # type: (int, str) -> bool
+    assert 0 <= byte < 256, byte
 
     return chr(byte) in byte_set
 

@@ -35,15 +35,23 @@ void print_stderr(BigStr* s);
 inline int ByteAt(BigStr* s, int i) {
   DCHECK(0 <= i);
   DCHECK(i <= len(s));
+
   return static_cast<unsigned char>(s->data_[i]);
 }
 
 inline int ByteEquals(int byte, BigStr* ch) {
+  DCHECK(0 <= byte);
+  DCHECK(byte < 256);
+
   DCHECK(len(ch) == 1);
+
   return byte == static_cast<unsigned char>(ch->data_[0]);
 }
 
 inline int ByteInSet(int byte, BigStr* byte_set) {
+  DCHECK(0 <= byte);
+  DCHECK(byte < 256);
+
   int n = len(byte_set);
   for (int i = 0; i < n; ++i) {
     int b = static_cast<unsigned char>(byte_set->data_[i]);

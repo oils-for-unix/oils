@@ -38,7 +38,7 @@ BigStr* JoinBytes(List<int>* byte_list) {
   int n = len(byte_list);
   BigStr* result = NewStr(n);
   for (int i = 0; i < n; ++i) {
-    result->data_[i] = byte_list->index(i);
+    result->data_[i] = byte_list->at(i);
   }
   return result;
 }
