@@ -112,10 +112,12 @@ measure-syscalls() {
 measure-valgrind() {
   local tool=$1
 
-  local osh=_bin/cxx-opt/osh
+  # opt seems to give OK results, but I thought dbg was more accurate
+  #local osh=_bin/cxx-opt/osh
+  local osh=_bin/cxx-dbg/osh
+
   ninja $osh
 
-  # opt seems to give OK results, but I thought dbg was more accurate
   local osh=$REPO_ROOT/$osh
 
   local base_dir=$REPO_ROOT/_tmp/$tool
@@ -137,7 +139,8 @@ measure-cachegrind() {
 }
 
 measure-callgrind() {
-  # This takes ~5 minutes, vs ~15 seconds uninstrumented
+  # This takes ~5 minutes with opt binary, ~6:43 with dbg
+  # vs ~15 seconds uninstrumented
   time measure-valgrind with-callgrind
 }
 

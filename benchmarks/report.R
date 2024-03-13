@@ -572,7 +572,8 @@ RuntimeReport = function(in_dir, out_dir) {
   WriteSimpleProvenance(provenance, out_dir)
 
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
-                                   `osh-native` = 0))
+                                   `osh-native` = 0, py_bash_ratio = 2,
+                                   native_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
   writeTsv(max_rss, file.path(out_dir, 'max_rss'))  # default is OK
 
