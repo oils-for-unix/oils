@@ -191,18 +191,18 @@ def TestBytes2():
         byte = mylib.ByteAt(all_bytes, i)
         #log('byte = %d', byte)
 
-        if mylib.ByteEqualsStr(byte, '['):
+        if mylib.ByteEquals(byte, '['):
             print('LEFT')
-        if mylib.ByteEqualsStr(byte, ']'):
+        if mylib.ByteEquals(byte, ']'):
             print('RIGHT')
-        if mylib.ByteEqualsStr(byte, '\\'):
+        if mylib.ByteEquals(byte, '\\'):
             print('BACKSLASH')
 
         # TODO: get rid of JSON crap
         #if mylib.ByteEqualsStr(byte, '\xff'):
         #    print('0xff')
 
-        if mylib.ByteEqualsStr(byte, chr(255)):
+        if mylib.ByteEquals(byte, chr(255)):
             print('0xff')
 
         if mylib.ByteInSet(byte, 'abcXYZ'):

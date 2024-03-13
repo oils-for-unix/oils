@@ -38,7 +38,7 @@ inline int ByteAt(BigStr* s, int i) {
   return static_cast<unsigned char>(s->data_[i]);
 }
 
-inline int ByteEqualsStr(int byte, BigStr* ch) {
+inline int ByteEquals(int byte, BigStr* ch) {
   DCHECK(len(ch) == 1);
   return byte == static_cast<unsigned char>(ch->data_[0]);
 }

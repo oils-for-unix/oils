@@ -63,9 +63,11 @@ def print_stderr(s):
     """
     print(s, file=sys.stderr)
 
+
 #
 # Byte Operations avoid excessive allocations with string algorithms
 #
+
 
 def ByteAt(s, i):
     # type: (str, int) -> int
@@ -78,7 +80,7 @@ def ByteAt(s, i):
     return ord(s[i])
 
 
-def ByteEqualsStr(byte, ch):
+def ByteEquals(byte, ch):
     # type: (int,  str) -> bool
     assert len(ch) == 1, ch
 

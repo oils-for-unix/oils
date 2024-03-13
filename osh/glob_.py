@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core import pyutil
 from frontend import match
+from mycpp import mylib
 from mycpp.mylib import log, print_stderr
 
 from typing import List, Tuple, cast, TYPE_CHECKING
@@ -41,17 +42,22 @@ def LooksLikeGlob(s):
     i = 0
     n = len(s)
     while i < n:
-        c = s[i]
-        if c == '\\':
+        c = mylib.ByteAt(s, i)
+
+        if mylib.ByteEquals(c, '\\'):
             i += 1
-        elif c == '*' or c == '?':
+
+        elif mylib.ByteEquals(c, '*') or mylib.ByteEquals(c, '?'):
             return True
-        elif c == '[':
+
+        elif mylib.ByteEquals(c, '['):
             left_bracket = True
-        elif c == ']' and left_bracket:
+
+        elif mylib.ByteEquals(c, ']') and left_bracket:
             # It has at least one pair of balanced [].  Not bothering to check stray
             # [ or ].
             return True
+
         i += 1
     return False
 
