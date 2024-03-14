@@ -429,4 +429,14 @@ compare-cpython() {
   echo
 }
 
+# TODO:
+#
+# - Run locally, reproduce GC_TIMING - this is not in the release build
+#   - it seems to say only 143 ms total GC time, but we're seeing 1.5+ seconds
+#   slowdown on Cpython configure vs. bash
+#   - I want a local run that automates it, and returns PERCENTAGES for elapsed
+#   time, sys time, user time
+# - We also might not want to amortize free() inside Allocate()
+#   - #ifdef LAZY_FREE I think!  That might show a big slowdown with free
+
 "$@"

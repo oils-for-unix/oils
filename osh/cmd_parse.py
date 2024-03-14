@@ -710,6 +710,9 @@ class CommandParser(object):
         # which would make the code below faster.  But small string optimization
         # would also speed it up, since redirects are small.
 
+        # One way to do this is with Kind.Redir and Kind.RedirNamed, and then
+        # possibly "unify" the IDs by subtracting a constant like 8 or 16?
+
         op_val = lexer.TokenVal(op_tok)
         if op_val[0] == '{':
             pos = op_val.find('}')
