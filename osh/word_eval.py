@@ -1223,9 +1223,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _EvalBracedVarSub(self, part, part_vals, quoted):
         # type: (BracedVarSub, List[part_value_t], bool) -> None
         """
-    Args:
-      part_vals: output param to append to.
-    """
+        Args:
+          part_vals: output param to append to.
+        """
         # We have different operators that interact in a non-obvious order.
         #
         # 1. bracket_op: value -> value, with side effect on vsub_state
@@ -1417,7 +1417,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     def _ConcatPartVals(self, part_vals, location):
         # type: (List[part_value_t], loc_t) -> str
-        """Helper."""
+
         strs = []  # type: List[str]
         for part_val in part_vals:
             UP_part_val = part_val

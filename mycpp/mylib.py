@@ -22,7 +22,7 @@ except ImportError:
     posix = os
 
 from typing import (Tuple, List, Dict, Optional, Iterator, Any, TypeVar,
-                    TYPE_CHECKING)
+                    Generic, TYPE_CHECKING)
 
 # For conditional translation
 CPP = False
@@ -284,6 +284,41 @@ class tagswitch(object):
     def __call__(self, *cases):
         # type: (*Any) -> bool
         return self.tag in cases
+
+
+if TYPE_CHECKING:
+    # Doesn't work
+    T = TypeVar('T')
+    class StackArray(Generic[T]):
+        def __init__(self):
+            self.items = []  # type: List[T]
+
+        def append(self, item):
+            # type: (T) -> None
+            self.items.append(item)
+
+        def pop(self):
+            # type: () -> T
+            return self.items.pop()
+
+    # Doesn't work, this is only for primitive types
+    #StackArray = NewType('StackArray', list)
+
+
+def MakeStackArray(item_type):
+    # type: (TypeVar) -> StackArray[item_type]
+    """
+    Convenience "constructor" used like this:
+
+        myarray = MakeStackArray(int)
+
+    The idiom could also be
+
+        myarray = cast('StackArray[int]', [])
+
+    But that's uglier.
+    """
+    return cast('StackArray[item_type]', [])
 
 
 if TYPE_CHECKING:

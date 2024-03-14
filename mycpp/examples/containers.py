@@ -6,8 +6,9 @@ from __future__ import print_function
 
 import os
 from mycpp.mylib import log, NewDict, iteritems
+#from mycpp.mylib import StackArray, MakeStackArray
 
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, cast
 
 gstr = 'foo'  # type: str
 glist_int = [1, 2]  # type: List[int]
@@ -210,6 +211,24 @@ def run_tests():
     ContainsDemo()
     log('')
 
+    a = [] # type: List[int]
+    a.append(42)
+
+    if 0:
+        from mycpp import mylib
+        b = mylib.MakeStackArray(int)
+
+        #b = cast('StackArray[int]', [])
+        b.append(42)
+
+        # correct type error!
+        #b.append('foo')
+
+        b.pop()
+
+        # correct type error!
+        #a = b
+
 
 def run_benchmarks():
     # type: () -> None
@@ -232,4 +251,5 @@ if __name__ == '__main__':
     else:
         run_tests()
 
-# vim: sw=2
+# vim: sw=4
+

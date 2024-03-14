@@ -116,13 +116,19 @@ def _EvalWordPart(part):
 def FastStrEval(w):
     # type: (CompoundWord) -> Optional[str]
     """
+    Detects common case 
+
+    (1) CompoundWord([LiteralPart(Id.LitChars)])
+        For echo -e, test x -lt 0, etc.
+    (2) single quoted word like 'foo'
+
     TODO:
-    - Detect common case of CompoundWord([LiteralPart(Id.LitChars)])
-      For echo -e, test x -lt 0, etc.
-    - Store lexer.TokenVal() result in word_part.Literal(Token tok, str? sval)
-    - In EvalWordSequence2, append once to strs and locs, and short-circuit the
-      rest of the loop.  
-      - Do it in all public APIs: EvalWordTo{String,Pattern}()
+    - remove tval - word_part.Literal(Token tok, str? sval) -> becomes sval
+
+    Other patterns we could detect are:
+    (1) "foo"
+    (2) "$var" and "${var}" - I think these are very common in OSH code (but not YSH)
+        - I think val_ops.Stringify() can handle all the errors
     """
     if len(w.parts) != 1:
         return None
@@ -158,6 +164,7 @@ def FastStrEval(w):
         elif case(word_part_e.SingleQuoted):
             part0 = cast(SingleQuoted, UP_part0)
             # TODO: SingleQuoted should have lazy (str? sval) field
+            # This would only affect multi-line strings though?
             return word_compile.EvalSingleQuoted(part0)
 
         else:
