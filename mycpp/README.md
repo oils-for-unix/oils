@@ -279,6 +279,71 @@ translates to this C++ code:
       // destructor ~ctx_Foo implicitly called
     }
 
+## MyPy "Shimming" Technique
+
+We have an interesting way of "writing Python and C++ at the same time":
+
+1. First, all Python code must pass the MyPy type checker, and run with a stock
+   Python 2 interpreter.
+   - This is the source of truth &mdash; the source of our semantics.
+1. We translate most `.py` files to C++, **except** some files, in particular
+   [mycpp/mylib.py]($oils-src) and files starting with `py` like
+   `core/{pyos.pyutil}.py`.
+1. In C++, we can substitute custom implementations with the properties we
+   want, like `Dict<K, V>` being ordered, `BigInt` being distinct from C `int`,
+   `BufWriter` being efficient, etc.
+
+The MyPy type system is very powerful!  It lets us do all this.
+
+### NewDict() for ordered dicts
+
+Dicts in Python 2 aren't ordered, but we make them ordered at **runtime** by
+using `mylib.NewDict()`, which returns `collections_.OrderedDict`.
+
+The **static type** is still `Dict[K, V]`, but change the "spec" to be an
+ordered dict.
+
+In C++, `Dict<K, V>` is implemented as an ordered dict.  (Note: we don't
+implement preserving order on deletion, which seems OK.)
+
+- TODO: `iteritems()` could go away
+
+### StackArray[T]
+
+TODO: describe this when it works.
+
+### BigInt
+
+- In Python, it's simply defined a a class with an integer, in
+  [mylib/mops.py]($oils-src).
+- In C++, it's currently `typedef int64_t BigInt`, but we want to make it a big
+  integer.
+
+### ByteAt(), ByteEquals(), ...
+
+Hand optimization to reduce 1-byte strings.  For IFS algorithm,
+`LooksLikeGlob()`, `GlobUnescape()`.
+
+### File / LineReader / BufWriter
+
+TODO: describe how this works.
+
+Can it be more type safe?  I think we can cast `File` to both `LineReader` and
+`BufWriter`.
+
+Or can we invert the relationship, so `File` derives from **both** LineReader
+and BufWriter?
+
+### Fast JSON - avoid intermediate allocations
+
+- `pyj8.WriteString()` is shimmed so we don't create encoded J8 string objects,
+  only to throw them away and write to `mylib.BufWriter`.  Instead, we append
+  an encoded strings **directly** to the `BufWriter`.
+- Likewise, we have `BufWriter::write_spaces` to avoid temporary allocations
+  when writing indents.
+  - This could be generalized to `BufWriter::write_repeated(' ', 42)`.
+- We may also want `BufWriter::write_slice()`
+
 ## Limitations Requiring Source Rewrites
 
 mycpp itself may cause limitations on expressiveness, or the C++ language may
