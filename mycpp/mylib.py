@@ -22,7 +22,7 @@ except ImportError:
     posix = os
 
 from typing import (Tuple, List, Dict, Optional, Iterator, Any, TypeVar,
-                    Generic, TYPE_CHECKING)
+                    Generic, cast, TYPE_CHECKING)
 
 # For conditional translation
 CPP = False
