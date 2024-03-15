@@ -158,7 +158,7 @@ TEST malloc_address_test() {
   // int alloc_size = 4080;
   // int alloc_size = 1;
 
-  #define NUM_ALLOCS 20
+#define NUM_ALLOCS 20
   char *p[NUM_ALLOCS];
   for (int i = 0; i < NUM_ALLOCS; ++i) {
     p[i] = static_cast<char *>(malloc(alloc_size));

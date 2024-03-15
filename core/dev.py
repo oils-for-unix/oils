@@ -16,13 +16,13 @@ from core import num
 from core import state
 from core import ui
 from data_lang import j8
-from mycpp.mylib import log
 from frontend import location
 from osh import word_
 from data_lang import j8_lite
 from pylib import os_path
+from mycpp import mops
 from mycpp import mylib
-from mycpp.mylib import tagswitch, iteritems
+from mycpp.mylib import tagswitch, iteritems, print_stderr, log
 
 import posix_ as posix
 
@@ -38,6 +38,8 @@ if TYPE_CHECKING:
     from frontend.parse_lib import ParseContext
     from osh.word_eval import NormalWordEvaluator
     from osh.cmd_eval import CommandEvaluator
+
+_ = log
 
 
 class CrashDumper(object):
@@ -165,7 +167,7 @@ class CrashDumper(object):
         # TODO: mylib.Writer() needs close()?  Also for DebugFile()
         #f.close()
 
-        log('[%d] Wrote crash dump to %s', my_pid, path)
+        print_stderr('[%d] Wrote crash dump to %s' % (my_pid, path))
 
 
 class ctx_Tracer(object):
@@ -257,8 +259,108 @@ def _PrintYshArgv(argv, buf):
     buf.write('\n')
 
 
+class MultiTracer(object):
+    """ Manages multi-process tracing and dumping.
+
+    Use case:
+
+    TODO: write a shim for everything that autoconf starts out with
+
+    (1) How do you discover what is shelled out to? 
+        - you need a MULTIPROCESS tracing and MULTIPROCESS errors
+
+    OILS_TRACE_DIR=_tmp/foo OILS_TRACE_STREAMS=xtrace:completion:gc \
+    OILS_TRACE_DUMPS=crash:argv0 \
+      osh ./configure
+
+    - Streams are written continuously, they are O(n)
+    - Dumps are written once per shell process, they are O(1). This includes metrics.
+
+    (2) Use that dump to generate stubs in _tmp/stubs
+        They will invoke benchmarks/time-helper, so we get timing and memory use
+        for each program. 
+
+    (3) ORIG_PATH=$PATH PATH=_tmp/stubs:$PATH osh ./configure
+
+    THen the stub looks like this?
+
+    #!/bin/sh 
+    # _tmp/stubs/cc1
+
+    PATH=$ORIG_PATH time-helper -x -e -- cc1 "$@"
+    """
+
+    def __init__(self, out_dir, dumps, streams, fd_state):
+        # type: (str, str, str, process.FdState) -> None
+        """
+
+        out_dir could be auto-generated from root PID?
+        I guess we are not d
+        """
+        # All of these may be empty string
+        self.out_dir = out_dir
+        self.dumps = dumps
+        self.streams = streams
+        self.fd_state = fd_state
+
+        # This is what we consider an O(1) metric.  Technically a shell program
+        # could run forever and keep invoking different binaries, but that is
+        # unlikely.  I guess we could limit it to 1,000 or 10,000 artifically
+        # or something.
+        self.hist_argv0 = {}  # type: Dict[str, int]
+
+    def EmitArgv0(self, argv0):
+        # type: (str) -> None
+        if argv0 not in self.hist_argv0:
+            self.hist_argv0[argv0] = 1
+        else:
+            # TODO: mycpp doesn't allow +=
+            self.hist_argv0[argv0] = self.hist_argv0[argv0] + 1
+
+    def WriteDumps(self):
+        # type: () -> None
+        if len(self.out_dir) == 0:
+            return
+
+        my_pid = posix.getpid()  # Get fresh PID here
+
+        # TSV8 table might be nicer for this
+
+        metric_argv0 = []  # type: List[value_t]
+        for argv0, count in iteritems(self.hist_argv0):
+            a = value.Str(argv0)
+            c = value.Int(mops.IntWiden(count))
+            d = {'argv0': a, 'count': c}
+            metric_argv0.append(value.Dict(d))
+
+        # Other things we need: the reason for the crash!  _ErrorWithLocation is
+        # required I think.
+        j = {
+            'metric_argv0': value.List(metric_argv0),
+        }  # type: Dict[str, value_t]
+
+        path = os_path.join(self.out_dir, '%d-argv0.json' % my_pid)
+
+        buf = mylib.BufWriter()
+        j8.PrintMessage(value.Dict(j), buf, 2)
+        json8_str = buf.getvalue()
+
+        try:
+            f = self.fd_state.OpenForWrite(path)
+        except (IOError, OSError) as e:
+            # Ignore error
+            return
+
+        f.write(json8_str)
+
+        # TODO: mylib.Writer() needs close()?  Also for DebugFile()
+        #f.close()
+
+        print_stderr('[%d] Wrote metrics dump to %s' % (my_pid, path))
+
+
 class Tracer(object):
-    """For shell's set -x, and Oil's hierarchical, parsable tracing.
+    """For OSH set -x, and YSH hierarchical, parsable tracing.
 
     See doc/xtrace.md for details.
 
@@ -281,20 +383,18 @@ class Tracer(object):
             mutable_opts,  # type: state.MutableOpts
             mem,  # type: state.Mem
             f,  # type: util._DebugFile
+            mtrace,  # type: MultiTracer
     ):
         # type: (...) -> None
         """
-        Args:
-          parse_ctx: For parsing PS4.
-          exec_opts: For xtrace setting
-          mem: for retrieving PS4
-          word_ev: for evaluating PS4
+        trace_dir comes from OILS_TRACE_DIR
         """
         self.parse_ctx = parse_ctx
         self.exec_opts = exec_opts
         self.mutable_opts = mutable_opts
         self.mem = mem
         self.f = f  # can be stderr, the --debug-file, etc.
+        self.mtrace = mtrace
 
         self.word_ev = None  # type: NormalWordEvaluator
 
@@ -402,6 +502,16 @@ class Tracer(object):
 
     def OnProcessStart(self, pid, why):
         # type: (int, trace_t) -> None
+
+        UP_why = why
+        with tagswitch(why) as case:
+            if case(trace_e.External):
+                why = cast(trace.External, UP_why)
+
+                # There is the empty argv case of $(true), but it's never external
+                assert len(why.argv) > 0
+                self.mtrace.EmitArgv0(why.argv[0])
+
         buf = self._RichTraceBegin('|')
         if not buf:
             return
@@ -409,7 +519,6 @@ class Tracer(object):
         # TODO: ProcessSub and PipelinePart are commonly command.Simple, and also
         # Fork/ForkWait through the BraceGroup.  We could print those argv arrays.
 
-        UP_why = why
         with tagswitch(why) as case:
             # Synchronous cases
             if case(trace_e.External):

@@ -36,6 +36,7 @@ def _CommandNode(code_str, arena):
 
 
 class FakeJobControl(object):
+
     def __init__(self, enabled):
         self.enabled = enabled
 
@@ -60,8 +61,10 @@ class ProcessTest(unittest.TestCase):
         signal_safe = pyos.InitSignalSafe()
         self.trap_state = trap_osh.TrapState(signal_safe)
 
+        fd_state = None
+        multi_trace = dev.MultiTracer('', '', '', fd_state)
         self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem,
-                                 mylib.Stderr())
+                                 mylib.Stderr(), multi_trace)
         self.waiter = process.Waiter(self.job_list, exec_opts, self.trap_state,
                                      self.tracer)
         errfmt = ui.ErrorFormatter()
@@ -141,7 +144,8 @@ class ProcessTest(unittest.TestCase):
                                                ext_prog=self.ext_prog)
         print('BEFORE', os.listdir('/dev/fd'))
 
-        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
+        p = process.Pipeline(False, self.job_control, self.job_list,
+                             self.tracer)
         p.Add(self._ExtProc(['ls']))
         p.Add(self._ExtProc(['cut', '-d', '.', '-f', '2']))
         p.Add(self._ExtProc(['sort']))
@@ -159,7 +163,8 @@ class ProcessTest(unittest.TestCase):
                                                ext_prog=self.ext_prog)
 
         Banner('ls | cut -d . -f 1 | head')
-        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
+        p = process.Pipeline(False, self.job_control, self.job_list,
+                             self.tracer)
         p.Add(self._ExtProc(['ls']))
         p.Add(self._ExtProc(['cut', '-d', '.', '-f', '1']))
 
@@ -178,7 +183,8 @@ class ProcessTest(unittest.TestCase):
         thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state)
         thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state)
 
-        p = process.Pipeline(False, self.job_control, self.job_list, self.tracer)
+        p = process.Pipeline(False, self.job_control, self.job_list,
+                             self.tracer)
         p.Add(Process(thunk1, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk2, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk3, self.job_control, self.job_list, self.tracer))

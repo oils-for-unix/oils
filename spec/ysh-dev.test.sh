@@ -1,4 +1,31 @@
 
+#### argv0 trace
+
+OILS_TRACE_DIR=$TMP $SH -c '
+
+# No argv does not crash
+$(true)
+
+echo internal
+
+/bin/echo x1
+
+/bin/true
+
+/bin/echo x2
+'
+
+# For now just check that it parses
+for j in $TMP/*.json; do
+  python3 -m json.tool $j >/dev/null
+done
+
+## STDOUT:
+internal
+x1
+x2
+## END
+
 #### crash dump
 
 rm -f $TMP/*.json

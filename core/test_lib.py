@@ -276,7 +276,9 @@ def InitCommandEvaluator(parse_ctx=None,
                                        assign_builtins, arena, cmd_deps,
                                        trap_state, signal_safe)
 
-    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
+    multi_trace = dev.MultiTracer('', '', '', fd_state)
+    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f,
+                        multi_trace)
     waiter = process.Waiter(job_list, exec_opts, trap_state, tracer)
 
     hay_state = hay_ysh.HayState()

@@ -538,8 +538,6 @@ def TokenForExpr(node):
             node = cast(expr.Tuple, UP_node)
             return node.left
 
-            return node.left
-
         elif case(expr_e.Dict):
             node = cast(expr.Dict, UP_node)
             return node.left

@@ -445,7 +445,14 @@ def Main(
         trace_f = debug_f
     else:
         trace_f = util.DebugFile(mylib.Stderr())
-    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
+
+    trace_dir = environ.get('OILS_TRACE_DIR', '')
+    dumps = environ.get('OILS_TRACE_DUMPS', '')
+    streams = environ.get('OILS_TRACE_STREAMS', '')
+    multi_trace = dev.MultiTracer(trace_dir, dumps, streams, fd_state)
+
+    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f,
+                        multi_trace)
     fd_state.tracer = tracer  # circular dep
 
     signal_safe = pyos.InitSignalSafe()
@@ -475,8 +482,7 @@ def Main(
     # TODO: This is instantiation is duplicated in osh/word_eval.py
     globber = glob_.Globber(exec_opts)
 
-    # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
-    # stuffing too much into one, since a .json crash dump isn't a stream.
+    # This could just be OILS_TRACE_DUMPS='crash:argv0'
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
     cmd_deps.dumper = dev.CrashDumper(crash_dump_dir, fd_state)
 
@@ -1103,6 +1109,8 @@ def Main(
             status = e.status
     mut_status = IntParamBox(status)
     cmd_ev.MaybeRunExitTrap(mut_status)
+
+    multi_trace.WriteDumps()
 
     # NOTE: We haven't closed the file opened with fd_state.Open
     return mut_status.i
