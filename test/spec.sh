@@ -349,8 +349,7 @@ introspect() {
 }
 
 tilde() {
-  sh-spec spec/tilde.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file tilde "$@"
 }
 
 var-op-test() {

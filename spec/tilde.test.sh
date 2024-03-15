@@ -1,3 +1,5 @@
+## compare_shells: bash dash mksh zsh
+## oils_failures_allowed: 1
 
 #### ~ expansion in assignment
 HOME=/home/bob
@@ -170,3 +172,15 @@ echo status=$?
 status=0
 ## END
 ## OK zsh stdout-json: ""
+
+#### temp assignment x=~ env
+
+HOME=/home/bar
+
+xx=~ env | grep xx=
+xx=~root env | grep xx=
+
+## STDOUT:
+xx=/home/bar
+xx=/root
+## END
