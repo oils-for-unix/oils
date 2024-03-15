@@ -160,6 +160,11 @@ measure-callgrind() {
 # - We also might not want to amortize free() inside Allocate()
 #   - #ifdef LAZY_FREE I think!  That might show a big slowdown with free
 
+patch-pyconf() {
+  # temporary
+  echo 'times > $SH_BENCHMARK_TIMES' >> $PY_CONF
+}
+
 measure-elapsed() {
   local osh=_bin/cxx-opt/osh
   ninja $osh
@@ -198,6 +203,7 @@ measure-elapsed() {
     #echo "${time_argv[@]}"
 
     _OILS_GC_VERBOSE=1 OILS_GC_STATS_FD=99 \
+      SH_BENCHMARK_TIMES=$base_dir/$sh_label.times.txt \
       "${time_argv[@]}" \
       99>$base_dir/$sh_label.gc-stats.txt
 
@@ -206,5 +212,63 @@ measure-elapsed() {
     popd
   done
 }
+
+### Why is clone() taking longer according to strace?
+
+fork-tasks() {
+  echo "bash${TAB}bash"
+  echo "dash${TAB}dash"
+
+  # Hm this is noisy, but cxx-opt-sh does seem slower
+  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh"
+  echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt-sh/osh"
+}
+
+measure-fork() {
+  fork-tasks | while read -r sh_label sh_path; do
+    #case $sh_label in bash|dash) continue ;; esac
+
+    echo "=== $sh_path ==="
+
+    # Builtin is very fast
+    #time $sh_path -c 'for i in $(seq 100); do true; done'
+
+    # Hm this is very noisy
+    # TODO use hyperfine?
+    time $sh_path -c 'for i in $(seq 100); do /bin/true; done'
+
+    case $sh_label in
+      osh)
+        # Oops, we are not symlinking to the .stripped binary!
+        # This is explicitly done for symbols and benchmarking.
+        # Hm does that make it slower then?
+
+        ls -l -L $sh_path
+        ldd $sh_path
+        ;;
+    esac
+  done
+}
+
+# $ head _tmp/elapsed/*.times.txt
+# ==> _tmp/elapsed/bash.times.txt <==
+# 0m0.213s 0m0.477s
+# 0m8.233s 0m2.931s
+# 
+# ==> _tmp/elapsed/dash.times.txt <==
+# 0m0.217s 0m0.463s
+# 0m8.281s 0m2.922s
+# 
+# ==> _tmp/elapsed/osh.times.txt <==
+# 0m0.360s 0m0.720s
+# 0m8.790s 0m2.960s
+
+# shell user time - GC and allocs
+# shell system time - ???
+# child user time - ???
+#   TODO: count how many processes this is.  
+#   It's more than 500 ms
+#   Is that 500 processes, and 1 ms per process?
+
 
 "$@"

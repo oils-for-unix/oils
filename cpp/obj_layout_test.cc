@@ -130,6 +130,11 @@ TEST slab_growth() {
 }
 
 TEST malloc_address_test() {
+  struct timespec start, end;
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start) < 0) {
+    FAIL("clock_gettime failed");
+  }
+
   // glibc gives us blocks of 32 bytes!
   // 1. diff = -240
   // 2. diff = 94064
@@ -153,8 +158,9 @@ TEST malloc_address_test() {
   // int alloc_size = 4080;
   // int alloc_size = 1;
 
-  char *p[20];
-  for (int i = 0; i < 20; ++i) {
+  #define NUM_ALLOCS 20
+  char *p[NUM_ALLOCS];
+  for (int i = 0; i < NUM_ALLOCS; ++i) {
     p[i] = static_cast<char *>(malloc(alloc_size));
     if (i != 0) {
       char *prev = p[i - 1];
@@ -162,9 +168,16 @@ TEST malloc_address_test() {
     }
   }
 
-  for (int i = 0; i < 20; ++i) {
+  for (int i = 0; i < NUM_ALLOCS; ++i) {
     free(p[i]);
   }
+
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) < 0) {
+    FAIL("clock_gettime failed");
+  }
+
+  log("start %d %d", start.tv_sec, start.tv_nsec);
+  log("end %d %d", end.tv_sec, end.tv_nsec);
 
   PASS();
 }

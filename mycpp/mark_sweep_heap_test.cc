@@ -311,6 +311,39 @@ TEST hybrid_root_test() {
   PASS();
 }
 
+TEST timing_test() {
+  // This is what GC_TIMING does
+
+  struct timespec start, end;
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start) < 0) {
+    FAIL("clock_gettime failed");
+  }
+
+  // Run with ASAN; opt makes this instant
+  uint64_t n = 0;
+  for (int i = 0; i < 10000; ++i) {
+    for (int j = 0; j < 10000; ++j) {
+      n += i + j;
+    }
+  }
+  log("n = %ld", n);
+
+  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end) < 0) {
+    FAIL("clock_gettime failed");
+  }
+
+  log("start %d %d", start.tv_sec, start.tv_nsec);
+  log("end %d %d", end.tv_sec, end.tv_nsec);
+
+  double start_secs = start.tv_sec + start.tv_nsec / 1e9;
+  double end_secs = end.tv_sec + end.tv_nsec / 1e9;
+  double gc_millis = (end_secs - start_secs) * 1000.0;
+
+  log("    %.1f ms GC", gc_millis);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char **argv) {
@@ -328,6 +361,7 @@ int main(int argc, char **argv) {
   RUN_SUITE(pool_alloc);
 
   RUN_TEST(hybrid_root_test);
+  RUN_TEST(timing_test);
 
   gHeap.CleanProcessExit();
 
