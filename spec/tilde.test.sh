@@ -178,9 +178,11 @@ status=0
 HOME=/home/bar
 
 xx=~ env | grep xx=
-xx=~root env | grep xx=
+
+# Does it respect the colon rule too?
+xx=~root:~:~ env | grep xx=
 
 ## STDOUT:
 xx=/home/bar
-xx=/root
+xx=/root:/home/bar:/home/bar
 ## END

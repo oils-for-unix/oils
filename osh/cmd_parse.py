@@ -270,10 +270,9 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     if offset == n:
         rhs = rhs_word.Empty  # type: rhs_word_t
     else:
-        # tmp2 is for intersection of C++/MyPy type systems
-        tmp2 = CompoundWord(parts[offset:])
-        word_.TildeDetectAssign(tmp2)
-        rhs = tmp2
+        w = CompoundWord(parts[offset:])
+        word_.TildeDetectAssign(w)
+        rhs = w
 
     return AssignPair(left_token, lhs, op, rhs)
 
@@ -303,11 +302,13 @@ def _AppendMoreEnv(preparsed_list, more_env):
         n = len(parts)
         offset = preparsed.part_offset
         if offset == n:
-            val = rhs_word.Empty  # type: rhs_word_t
+            rhs = rhs_word.Empty  # type: rhs_word_t
         else:
-            val = CompoundWord(parts[offset:])
+            w = CompoundWord(parts[offset:])
+            word_.TildeDetectAssign(w)
+            rhs = w
 
-        more_env.append(EnvPair(left_token, var_name, val))
+        more_env.append(EnvPair(left_token, var_name, rhs))
 
 
 def _SplitSimpleCommandPrefix(words):
