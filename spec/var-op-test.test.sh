@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+## compare_shells: bash dash mksh zsh
 
 #### Lazy Evaluation of Alternative
 i=0
@@ -108,11 +110,11 @@ v=
 v=
 ## END
 
-#### "${v[@]+foo}" - even with NOUNSET
+#### "${v[@]+foo}" with NOUNSET & no variable is quiet
 set -u
 
-argv.py "${v[@]+foo}"
-echo status=$?
+echo v="${v[@]+foo}"
+echo v="${v[@]:+foo}"
 ## status: 0
 ## OK dash status: 2
 ## OK dash STDOUT:
@@ -121,8 +123,8 @@ echo status=$?
 dash: 3: Bad substitution
 ## END
 ## STDOUT:
-[]
-status=0
+v=
+v=
 ## END
 
 
