@@ -477,6 +477,10 @@ def TokenForExpr(node):
             node = cast(expr.Var, UP_node)
             return node.left
 
+        elif case(expr_e.Place):
+            node = cast(expr.Place, UP_node)
+            return node.blame_tok
+
         elif case(expr_e.CommandSub):
             node = cast(CommandSub, UP_node)
             return node.left_token
