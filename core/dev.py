@@ -290,12 +290,10 @@ class MultiTracer(object):
     PATH=$ORIG_PATH time-helper -x -e -- cc1 "$@"
     """
 
-    def __init__(self, out_dir, dumps, streams, fd_state):
-        # type: (str, str, str, process.FdState) -> None
+    def __init__(self, shell_pid, out_dir, dumps, streams, fd_state):
+        # type: (int, str, str, str, process.FdState) -> None
         """
-
         out_dir could be auto-generated from root PID?
-        I guess we are not d
         """
         # All of these may be empty string
         self.out_dir = out_dir
@@ -303,13 +301,15 @@ class MultiTracer(object):
         self.streams = streams
         self.fd_state = fd_state
 
+        self.this_pid = shell_pid
+
         # This is what we consider an O(1) metric.  Technically a shell program
         # could run forever and keep invoking different binaries, but that is
         # unlikely.  I guess we could limit it to 1,000 or 10,000 artifically
         # or something.
         self.hist_argv0 = {}  # type: Dict[str, int]
 
-    def OnNewProcess(self, pid):
+    def OnNewProcess(self, child_pid):
         # type: (int) -> None
         """
         Right now we call this from
@@ -318,11 +318,16 @@ class MultiTracer(object):
 
         TODO: do we need a compound PID?
         """
+        self.this_pid = child_pid
         # each process keep track of direct children
         self.hist_argv0.clear()
 
     def EmitArgv0(self, argv0):
         # type: (str) -> None
+
+        # TODO: Should we have word 0 in the source, and the FILE the $PATH
+        # lookup resolved to?
+
         if argv0 not in self.hist_argv0:
             self.hist_argv0[argv0] = 1
         else:
@@ -333,8 +338,6 @@ class MultiTracer(object):
         # type: () -> None
         if len(self.out_dir) == 0:
             return
-
-        my_pid = posix.getpid()  # Get fresh PID here
 
         # TSV8 table might be nicer for this
 
@@ -348,10 +351,12 @@ class MultiTracer(object):
         # Other things we need: the reason for the crash!  _ErrorWithLocation is
         # required I think.
         j = {
+            'pid': value.Int(mops.IntWiden(self.this_pid)),
             'metric_argv0': value.List(metric_argv0),
         }  # type: Dict[str, value_t]
 
-        path = os_path.join(self.out_dir, '%d-argv0.json' % my_pid)
+        # dumps are named $PID.$channel.json
+        path = os_path.join(self.out_dir, '%d.argv0.json' % self.this_pid)
 
         buf = mylib.BufWriter()
         j8.PrintMessage(value.Dict(j), buf, 2)
@@ -366,7 +371,7 @@ class MultiTracer(object):
         f.write(json8_str)
         f.close()
 
-        print_stderr('[%d] Wrote metrics dump to %s' % (my_pid, path))
+        print_stderr('[%d] Wrote metrics dump to %s' % (self.this_pid, path))
 
 
 class Tracer(object):
@@ -568,13 +573,13 @@ class Tracer(object):
         buf.write('process %d: status %d\n' % (pid, status))
         self.f.write(buf.getvalue())
 
-    def OnNewProcess(self, pid):
+    def OnNewProcess(self, child_pid):
         # type: (int) -> None
         """All trace lines have a PID prefix, except those from the root
         process."""
-        self.val_pid_str.s = ' %d' % pid
+        self.val_pid_str.s = ' %d' % child_pid
         self._Inc()
-        self.multi_trace.OnNewProcess(pid)
+        self.multi_trace.OnNewProcess(child_pid)
 
     def PushMessage(self, label, argv):
         # type: (str, Optional[List[str]]) -> None

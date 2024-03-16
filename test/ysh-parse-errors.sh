@@ -1583,5 +1583,8 @@ run-for-release() {
   run-other-suite-for-release ysh-parse-errors run-test-funcs
 }
 
-"$@"
+filename=$(basename $0)
+if test $filename = 'ysh-parse-errors.sh'; then
+  "$@"
+fi
 

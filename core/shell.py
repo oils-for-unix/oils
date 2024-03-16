@@ -449,7 +449,7 @@ def Main(
     trace_dir = environ.get('OILS_TRACE_DIR', '')
     dumps = environ.get('OILS_TRACE_DUMPS', '')
     streams = environ.get('OILS_TRACE_STREAMS', '')
-    multi_trace = dev.MultiTracer(trace_dir, dumps, streams, fd_state)
+    multi_trace = dev.MultiTracer(my_pid, trace_dir, dumps, streams, fd_state)
 
     tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f,
                         multi_trace)

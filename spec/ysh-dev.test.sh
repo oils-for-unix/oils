@@ -15,7 +15,14 @@ echo internal
 /bin/echo x2
 
 # Not getting anything here?
-( echo subshell; /bin/false; /bin/false )
+# NOFORKLAST optimization messes things up if the last command is external
+# Though turning this off means that measuring performance changes performance
+
+#( echo "("; /bin/false; /bin/false; echo ")" )
+( echo "("; /bin/false; /bin/false )
+
+a=$(echo "\$("; /bin/true; /bin/true; echo ")")
+echo "$a"
 
 /bin/echo x3
 '
@@ -30,7 +37,9 @@ done
 internal
 x1
 x2
-subshell
+(
+$(
+)
 x3
 ## END
 

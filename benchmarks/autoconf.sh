@@ -95,6 +95,8 @@ strace-tasks() {
 
 measure-syscalls() {
   local base_dir=$REPO_ROOT/_tmp/strace
+  rm -r -f -v $base_dir
+
   strace-tasks | while read -r sh_label sh_path; do
     local dir=$base_dir/$sh_label
     mkdir -p $dir
@@ -102,8 +104,30 @@ measure-syscalls() {
     local counts=$base_dir/$sh_label.txt
 
     pushd $dir
-    strace -o $counts -c $sh_path $PY_CONF
+    #strace -o $counts -c $sh_path $PY_CONF
+    # See how many external processes are started?
+    #strace -o $counts -ff -e execve $sh_path $PY_CONF
+    strace -o $counts -ff $sh_path $PY_CONF
     popd
+  done
+}
+
+grep-exec() {
+  local sh=$1
+  egrep --no-filename -o 'execve\("[^"]+' _tmp/strace/$sh.txt* 
+}
+
+analyze-strace() {
+  #local sh=${1:-bash}
+  for sh in bash dash osh; do
+    echo "=== $sh ==="
+    echo
+
+    ls _tmp/strace/$sh.txt* | wc -l
+    echo
+    grep-exec $sh | wc -l
+    echo
+    grep-exec $sh | sort | uniq -c | sort -n | tail -n 20
   done
 }
 
@@ -161,6 +185,8 @@ measure-callgrind() {
 #   - #ifdef LAZY_FREE I think!  That might show a big slowdown with free
 
 patch-pyconf() {
+  #sed -i $'s/ac_compile=\'$CC/ac_compile=\'times; $CC/g' $PY_CONF
+
   # temporary
   echo 'times > $SH_BENCHMARK_TIMES' >> $PY_CONF
 }
@@ -176,7 +202,7 @@ measure-elapsed() {
   mkdir -p $trace_dir
 
   strace-tasks | while read -r sh_label sh_path; do
-    case $sh_label in bash|dash) continue ;; esac
+    #case $sh_label in bash|dash) continue ;; esac
 
     local dir=$base_dir/$sh_label
     mkdir -p $dir
@@ -206,13 +232,14 @@ measure-elapsed() {
 
     #echo "${time_argv[@]}"
 
+    # 1269 argv0.json files created
+    # we can miss some via NOLASTFORK optimization
+      #OILS_TRACE_DIR=$trace_dir \
+
     _OILS_GC_VERBOSE=1 OILS_GC_STATS_FD=99 \
-      OILS_TRACE_DIR=$trace_dir \
       SH_BENCHMARK_TIMES=$base_dir/$sh_label.times.txt \
       "${time_argv[@]}" \
       99>$base_dir/$sh_label.gc-stats.txt
-
-    local counts=$base_dir/$sh_label.txt
 
     popd
   done
@@ -274,5 +301,29 @@ measure-fork() {
 #   TODO: count how many processes this is.  
 #   It's more than 500 ms
 #   Is that 500 processes, and 1 ms per process?
+
+fork-time() {
+  local osh=_bin/cxx-opt/osh
+
+  $osh -c 'time for i in {1..1000}; do true; done'
+  echo
+
+  $osh -c 'time for i in {1..1000}; do ( true ); done'
+  echo
+
+  # Does this increase fork time or no?
+  # Hm I can only get the forks up to 306ms for 1000, or 300 us
+  # But the HereDocWriter does dup() and so forth
+  $osh -c '
+echo ysh-parse
+time for i in {1..40}; do
+  . test/ysh-parse-errors.sh
+done
+times
+time for i in {1..1000}; do
+  ( true )
+done'
+  echo
+}
 
 "$@"
