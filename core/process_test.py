@@ -21,6 +21,8 @@ from mycpp.mylib import log
 from core import state
 from mycpp import mylib
 
+import posix_ as posix
+
 Process = process.Process
 ExternalThunk = process.ExternalThunk
 
@@ -62,7 +64,7 @@ class ProcessTest(unittest.TestCase):
         self.trap_state = trap_osh.TrapState(signal_safe)
 
         fd_state = None
-        multi_trace = dev.MultiTracer('', '', '', fd_state)
+        multi_trace = dev.MultiTracer(posix.getpid(), '', '', '', fd_state)
         self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem,
                                  mylib.Stderr(), multi_trace)
         self.waiter = process.Waiter(self.job_list, exec_opts, self.trap_state,
