@@ -309,6 +309,18 @@ class MultiTracer(object):
         # or something.
         self.hist_argv0 = {}  # type: Dict[str, int]
 
+    def OnNewProcess(self, pid):
+        # type: (int) -> None
+        """
+        Right now we call this from
+           Process::StartProcess -> tracer.SetChildPid()
+        It would be more accurate to call it from SubProgramThunk.
+
+        TODO: do we need a compound PID?
+        """
+        # each process keep track of direct children
+        self.hist_argv0.clear()
+
     def EmitArgv0(self, argv0):
         # type: (str) -> None
         if argv0 not in self.hist_argv0:
@@ -352,9 +364,7 @@ class MultiTracer(object):
             return
 
         f.write(json8_str)
-
-        # TODO: mylib.Writer() needs close()?  Also for DebugFile()
-        #f.close()
+        f.close()
 
         print_stderr('[%d] Wrote metrics dump to %s' % (my_pid, path))
 
@@ -383,7 +393,7 @@ class Tracer(object):
             mutable_opts,  # type: state.MutableOpts
             mem,  # type: state.Mem
             f,  # type: util._DebugFile
-            mtrace,  # type: MultiTracer
+            multi_trace,  # type: MultiTracer
     ):
         # type: (...) -> None
         """
@@ -394,7 +404,7 @@ class Tracer(object):
         self.mutable_opts = mutable_opts
         self.mem = mem
         self.f = f  # can be stderr, the --debug-file, etc.
-        self.mtrace = mtrace
+        self.multi_trace = multi_trace
 
         self.word_ev = None  # type: NormalWordEvaluator
 
@@ -502,7 +512,9 @@ class Tracer(object):
 
     def OnProcessStart(self, pid, why):
         # type: (int, trace_t) -> None
-
+        """
+        In parent, Process::StartProcess calls us with child PID
+        """
         UP_why = why
         with tagswitch(why) as case:
             if case(trace_e.External):
@@ -510,7 +522,7 @@ class Tracer(object):
 
                 # There is the empty argv case of $(true), but it's never external
                 assert len(why.argv) > 0
-                self.mtrace.EmitArgv0(why.argv[0])
+                self.multi_trace.EmitArgv0(why.argv[0])
 
         buf = self._RichTraceBegin('|')
         if not buf:
@@ -556,12 +568,13 @@ class Tracer(object):
         buf.write('process %d: status %d\n' % (pid, status))
         self.f.write(buf.getvalue())
 
-    def SetProcess(self, pid):
+    def OnNewProcess(self, pid):
         # type: (int) -> None
         """All trace lines have a PID prefix, except those from the root
         process."""
         self.val_pid_str.s = ' %d' % pid
         self._Inc()
+        self.multi_trace.OnNewProcess(pid)
 
     def PushMessage(self, label, argv):
         # type: (str, Optional[List[str]]) -> None

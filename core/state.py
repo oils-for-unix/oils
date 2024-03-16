@@ -74,6 +74,9 @@ def LookupExecutable(name, path_dirs, exec_required=True):
     - the executable name resolved against path_dirs
     - None if not found
     """
+    if len(name) == 0:  # special case for "$(true)"
+        return None
+
     if '/' in name:
         return name if path_stat.exists(name) else None
 
@@ -124,6 +127,9 @@ class SearchPath(object):
         """
         Like LookupOne(), with an option for 'type -a' to return all paths.
         """
+        if len(name) == 0:  # special case for "$(true)"
+            return []
+
         if '/' in name:
             if path_stat.exists(name):
                 return [name]

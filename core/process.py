@@ -795,11 +795,17 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
     """A subprogram that can be executed in another process."""
 
-    def __init__(self, cmd_ev, node, trap_state, inherit_errexit=True):
-        # type: (CommandEvaluator, command_t, trap_osh.TrapState, bool) -> None
+    def __init__(self,
+                 cmd_ev,
+                 node,
+                 trap_state,
+                 multi_trace,
+                 inherit_errexit=True):
+        # type: (CommandEvaluator, command_t, trap_osh.TrapState, dev.MultiTracer, bool) -> None
         self.cmd_ev = cmd_ev
         self.node = node
         self.trap_state = trap_state
+        self.multi_trace = multi_trace
         self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
     def UserString(self):
@@ -847,6 +853,8 @@ class SubProgramThunk(Thunk):
         # If ProcessInit() doesn't turn off buffering, this is needed before
         # _exit()
         pyos.FlushStdout()
+
+        self.multi_trace.WriteDumps()
 
         # We do NOT want to raise SystemExit here.  Otherwise dev.Tracer::Pop()
         # gets called in BOTH processes.
@@ -1062,7 +1070,7 @@ class Process(Job):
             pyos.Sigaction(SIGTTOU, SIG_DFL)
             pyos.Sigaction(SIGTTIN, SIG_DFL)
 
-            self.tracer.SetProcess(pid)
+            self.tracer.OnNewProcess(pid)
             # clear foreground pipeline for subshells
             self.thunk.Run()
             # Never returns

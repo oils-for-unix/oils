@@ -24,7 +24,7 @@ env OILS_HIJACK_SHEBANG=1 $SH tmp.oil
 hi
 ## END
 
-#### Tea keywords don't interfere with Oil expressions
+#### Tea keywords don't interfere with YSH expressions
 
 var d = {data: 'foo'}
 
@@ -91,4 +91,21 @@ if
 elif
 ## END
 
+#### don't execute empty command
 
+shopt --set ysh:all
+
+set -x
+
+try {
+  type -a ''
+}
+echo "type -a returned $_status"
+
+$(true)
+echo nope
+
+## status: 127
+## STDOUT:
+type -a returned 1
+## END

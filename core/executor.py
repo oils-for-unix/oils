@@ -134,6 +134,7 @@ class ShellExecutor(vm._Executor):
         self.ext_prog = ext_prog
         self.waiter = waiter
         self.tracer = tracer
+        self.multi_trace = tracer.multi_trace
         self.job_control = job_control
         # sleep 5 & puts a (PID, job#) entry here.  And then "jobs" displays it.
         self.job_list = job_list
@@ -186,6 +187,7 @@ class ShellExecutor(vm._Executor):
         thunk = process.SubProgramThunk(self.cmd_ev,
                                         node,
                                         self.trap_state,
+                                        self.multi_trace,
                                         inherit_errexit=inherit_errexit)
         p = process.Process(thunk, self.job_control, self.job_list,
                             self.tracer)

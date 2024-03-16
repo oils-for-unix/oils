@@ -172,6 +172,10 @@ class Writer:
         # type: () -> bool
         raise NotImplementedError()
 
+    def close(self):
+        # type: () -> None
+        raise NotImplementedError()
+
 
 class BufWriter(Writer):
     """Mimic StringIO API, but add clear() so we can reuse objects.
@@ -200,6 +204,13 @@ class BufWriter(Writer):
     def clear(self):
         # type: () -> None
         del self.parts[:]
+
+    def close(self):
+        # type: () -> None
+
+        # No-op for now - we could invalidate write()?
+
+        pass
 
 
 def Stdout():
@@ -289,7 +300,9 @@ class tagswitch(object):
 if TYPE_CHECKING:
     # Doesn't work
     T = TypeVar('T')
+
     class StackArray(Generic[T]):
+
         def __init__(self):
             self.items = []  # type: List[T]
 

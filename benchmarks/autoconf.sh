@@ -170,9 +170,13 @@ measure-elapsed() {
   ninja $osh
 
   local base_dir=$REPO_ROOT/_tmp/elapsed
+  rm -r -f -v $base_dir
+
+  local trace_dir=$base_dir/oils-trace
+  mkdir -p $trace_dir
 
   strace-tasks | while read -r sh_label sh_path; do
-    #case $sh_label in bash|dash) continue ;; esac
+    case $sh_label in bash|dash) continue ;; esac
 
     local dir=$base_dir/$sh_label
     mkdir -p $dir
@@ -203,6 +207,7 @@ measure-elapsed() {
     #echo "${time_argv[@]}"
 
     _OILS_GC_VERBOSE=1 OILS_GC_STATS_FD=99 \
+      OILS_TRACE_DIR=$trace_dir \
       SH_BENCHMARK_TIMES=$base_dir/$sh_label.times.txt \
       "${time_argv[@]}" \
       99>$base_dir/$sh_label.gc-stats.txt

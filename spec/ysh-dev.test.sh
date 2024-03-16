@@ -13,10 +13,16 @@ echo internal
 /bin/true
 
 /bin/echo x2
+
+# Not getting anything here?
+( echo subshell; /bin/false; /bin/false )
+
+/bin/echo x3
 '
 
 # For now just check that it parses
 for j in $TMP/*.json; do
+  #echo "$j" >&2
   python3 -m json.tool $j >/dev/null
 done
 
@@ -24,6 +30,8 @@ done
 internal
 x1
 x2
+subshell
+x3
 ## END
 
 #### crash dump
