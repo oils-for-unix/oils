@@ -35,6 +35,10 @@ argv.py X${unset=x$@x}X  # If you want OSH to split, write this
 ['Xx1 2', '3 4xX']
 ['Xx1', '2', '3', '4xX']
 ## END
+## OK zsh STDOUT:
+['Xx1 2 3 4xX']
+['Xx1 2 3 4xX']
+## END
 
 #### Quoted with array as default value
 set -- '1 2' '3 4'
@@ -63,6 +67,10 @@ argv.py "$unset"
 ## END
 ## OK osh STDOUT:
 ['Xx1 2', '3 4xX']
+['x1 2 3 4x']
+## END
+## OK zsh STDOUT:
+['Xx1 2 3 4xX']
 ['x1 2 3 4x']
 ## END
 
@@ -214,6 +222,8 @@ a3=plus
 ['plus']
 ## END
 ## N-I dash stdout-json: ""
+## N-I zsh stdout-json: "empty=\na1=\n"
+## N-I zsh status: 1
 
 #### $@ and - and +
 echo argv=${@-minus}
@@ -226,7 +236,7 @@ argv=
 argv=minus
 argv=
 ## END
-## BUG dash STDOUT:
+## BUG dash/zsh STDOUT:
 argv=
 argv=plus
 argv=minus
@@ -252,6 +262,17 @@ echo assoc=${assoc[@]:+plus}
 ## STDOUT:
 empty=minus
 empty=
+assoc=v
+assoc=plus
+---
+empty=minus
+empty=
+assoc=v
+assoc=plus
+## END
+## N-I zsh STDOUT:
+empty=
+empty=plus
 assoc=v
 assoc=plus
 ---
@@ -308,6 +329,8 @@ echo ${#arr[@]}
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+## N-I zsh status: 1
+## N-I zsh stdout-json: "0\n"
 
 #### assoc array ${arr["k"]=x}
 # note: this also works in zsh
