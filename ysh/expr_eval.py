@@ -56,7 +56,6 @@ from frontend import lexer
 from frontend import match
 from frontend import typed_args
 from osh import braces
-from osh import word_compile
 from mycpp import mops
 from mycpp.mylib import log, NewDict, switch, tagswitch, print_stderr
 from ysh import func_proc
@@ -1014,7 +1013,7 @@ class ExprEvaluator(object):
 
             elif case(expr_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)
-                return value.Str(word_compile.EvalSingleQuoted(node))
+                return value.Str(node.sval)
 
             elif case(expr_e.BracedVarSub):
                 node = cast(BracedVarSub, UP_node)
@@ -1215,7 +1214,7 @@ class EggexEvaluator(object):
             elif case(class_literal_term_e.SingleQuoted):
                 term = cast(SingleQuoted, UP_term)
 
-                s = word_compile.EvalSingleQuoted(term)
+                s = term.sval
                 char_code_tok = term.left
 
             elif case(class_literal_term_e.Splice):
@@ -1306,7 +1305,7 @@ class EggexEvaluator(object):
             elif case(re_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)
 
-                s = word_compile.EvalSingleQuoted(node)
+                s = node.sval
                 return re.LiteralChars(node.left, s)
 
             elif case(re_e.Splice):

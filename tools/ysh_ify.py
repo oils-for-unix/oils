@@ -1020,8 +1020,7 @@ class YshPrinter(object):
                 # $'\n' is '\n'
                 # TODO: Should print until right_spid
                 # left_spid, right_spid = node.spids
-                if len(node.tokens):  # Empty string has no tokens
-                    self.cursor.PrintIncluding(node.tokens[-1])
+                self.cursor.PrintUntil(node.right)
 
             elif case(word_part_e.DoubleQuoted):
                 node = cast(DoubleQuoted, UP_node)

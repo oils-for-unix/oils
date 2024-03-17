@@ -65,8 +65,8 @@ def _SingleQuoted(obj):
     p_node = runtime.NewRecord('SQ')
     p_node.abbrev = True
 
-    for token in obj.tokens:
-        p_node.unnamed_fields.append(token.AbbreviatedTree())
+    n2 = runtime.NewLeaf(obj.sval, color_e.StringConst)
+    p_node.unnamed_fields.append(n2)
     return p_node
 
 

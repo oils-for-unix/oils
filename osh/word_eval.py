@@ -64,7 +64,6 @@ from osh import braces
 from osh import glob_
 from osh import string_ops
 from osh import word_
-from osh import word_compile
 from ysh import expr_eval
 from ysh import val_ops
 
@@ -1605,8 +1604,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(word_part_e.SingleQuoted):
                 part = cast(SingleQuoted, UP_part)
-                s = word_compile.EvalSingleQuoted(part)
-                v = part_value.String(s, True, False)
+                v = part_value.String(part.sval, True, False)
                 part_vals.append(v)
 
             elif case(word_part_e.DoubleQuoted):

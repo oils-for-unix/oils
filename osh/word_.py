@@ -21,7 +21,6 @@ from frontend import consts
 from frontend import lexer
 from mycpp import mylib
 from mycpp.mylib import tagswitch, log
-from osh import word_compile
 
 from typing import Tuple, Optional, List, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -88,9 +87,7 @@ def _EvalWordPart(part):
 
         elif case(word_part_e.SingleQuoted):
             part = cast(SingleQuoted, UP_part)
-            tmp = [t.tval for t in part.tokens]  # on its own line for mycpp
-            s = ''.join(tmp)
-            return True, s, True
+            return True, part.sval, True
 
         elif case(word_part_e.DoubleQuoted):
             part = cast(DoubleQuoted, UP_part)
@@ -165,7 +162,7 @@ def FastStrEval(w):
             part0 = cast(SingleQuoted, UP_part0)
             # TODO: SingleQuoted should have lazy (str? sval) field
             # This would only affect multi-line strings though?
-            return word_compile.EvalSingleQuoted(part0)
+            return part0.sval
 
         else:
             # e.g. DoubleQuoted can't be optimized to a string, because it

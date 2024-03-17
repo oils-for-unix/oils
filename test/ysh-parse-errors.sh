@@ -1572,6 +1572,10 @@ test-eggex() {
   _osh-parse-error '= /%start do %end \n/'
   _osh-parse-error '= /%start dot %end \z/'
   _osh-parse-error '= /%start dot %end \n \u{}/'
+
+  _osh-should-parse "= /['a'-'z']/"
+  _osh-parse-error "= /['a'-'']/"
+  _osh-parse-error "= /['a'-'zz']/"
 }
 
 #

@@ -146,7 +146,9 @@ module syntax
   # - Look at left token ID for $'' c'' vs r'' '' e.g. Id.Left_DollarSingleQuote
   # - And """ and ''' e.g. Id.Left_TDoubleQuote
   DoubleQuoted = (Token left, List[word_part] parts, Token right)
-  SingleQuoted = (Token left, List[Token] tokens, Token right)
+  # TODO: replace List[Token] with str sval, since you have left and right
+  #SingleQuoted = (Token left, List[Token] tokens, Token right)
+  SingleQuoted = (Token left, str sval, Token right)
 
   # TODO: NameTok -> TokenWithStr everywhere
   NameTok = (Token left, str var_name)
@@ -171,6 +173,7 @@ module syntax
   word_part = 
     ShArrayLiteral %ShArrayLiteral
   | BashAssocLiteral(Token left, List[AssocPair] pairs, Token right)
+  #| Literal %TokenWithStr
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
