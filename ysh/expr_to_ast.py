@@ -1406,7 +1406,7 @@ class Transformer(object):
         if tok_str == 'dot':
             if negated_tok:
                 p_die("Can't negate this symbol", tok)
-            return tok
+            return re.Primitive(tok, Id.Re_Dot)
 
         if tok_str in POSIX_CLASSES:
             return PosixClass(negated_tok, tok_str)
@@ -1475,8 +1475,14 @@ class Transformer(object):
             tok = p_atom.GetChild(0).tok
 
             # Special punctuation
-            if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Expr_Dollar):
-                return tok
+            if tok.id == Id.Expr_Dot:  # .
+                return re.Primitive(tok, Id.Re_Dot)
+
+            if tok.id == Id.Arith_Caret:  # ^
+                return re.Primitive(tok, Id.Re_Start)
+
+            if tok.id == Id.Expr_Dollar:  # $
+                return re.Primitive(tok, Id.Re_End)
 
             # TODO: d digit can turn into PosixClass and PerlClass right here!
             # It's parsing.
@@ -1486,8 +1492,10 @@ class Transformer(object):
             if tok.id == Id.Expr_Symbol:
                 # Validate symbols here, like we validate PerlClass, etc.
                 tok_str = lexer.TokenVal(tok)
-                if tok_str in ('%start', '%end', 'dot'):
-                    return tok
+                if tok_str == '%start':
+                    return re.Primitive(tok, Id.Re_Start)
+                if tok_str == '%end':
+                    return re.Primitive(tok, Id.Re_End)
                 p_die("Unexpected token %r in regex" % tok_str, tok)
 
             if tok.id == Id.Expr_At:

@@ -1566,6 +1566,14 @@ f() {
   _osh-parse-error "$s"
 }
 
+test-eggex() {
+  _osh-should-parse '= /%start dot %end \n \u{ff}/'
+  _osh-parse-error '= /%star dot %end \n/'
+  _osh-parse-error '= /%start do %end \n/'
+  _osh-parse-error '= /%start dot %end \z/'
+  _osh-parse-error '= /%start dot %end \n \u{}/'
+}
+
 #
 # Entry Points
 #

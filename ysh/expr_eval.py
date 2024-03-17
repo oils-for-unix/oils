@@ -1311,28 +1311,6 @@ class EggexEvaluator(object):
                 node = cast(Token, UP_node)
 
                 id_ = node.id
-                tval = node.tval
-
-                if id_ == Id.Expr_Dot:
-                    return re.Primitive(Id.Re_Dot)
-
-                if id_ == Id.Arith_Caret:  # ^
-                    return re.Primitive(Id.Re_Start)
-
-                if id_ == Id.Expr_Dollar:  # $
-                    return re.Primitive(Id.Re_End)
-
-                if id_ == Id.Expr_Name:
-                    if tval == 'dot':
-                        return re.Primitive(Id.Re_Dot)
-                    raise NotImplementedError(tval)
-
-                if id_ == Id.Expr_Symbol:
-                    if tval == '%start':
-                        return re.Primitive(Id.Re_Start)
-                    if tval == '%end':
-                        return re.Primitive(Id.Re_End)
-                    raise NotImplementedError(tval)
 
                 # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
                 kind = consts.GetKind(id_)
@@ -1383,6 +1361,7 @@ class EggexEvaluator(object):
             else:
                 # These are evaluated at translation time
 
+                # case(re_e.Primitive)
                 # case(re_e.PosixClass)
                 # case(re_e.PerlClass)
                 return node

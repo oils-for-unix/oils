@@ -627,7 +627,7 @@ module syntax
   # Right now we do them in _EvalRegex, though many transformations could be
   # done as constant evaluation.
 
-  | Primitive(id id)  # . dot etc.
+  | Primitive(Token blame_tok, id id)  # . dot etc.
     # String substitutions are evaluated into literals
   | LiteralChars(str s, Token blame_tok)
 }
