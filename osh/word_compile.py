@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
 from data_lang import j8
 from frontend import consts
 from frontend import lexer
+from mycpp import mylib
 from mycpp.mylib import log, switch
 
 from typing import List, Optional, cast
@@ -126,6 +127,7 @@ def EvalSingleQuoted2(id_, tokens):
     elif id_ in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
                  Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
                  Id.Left_BTSingleQuote):
+        # TODO: RemoveLeadingSpaceSQ must not modify tval
         #tmp = [EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens]
         tmp = [EvalCStringToken(t.id, t.tval) for t in tokens]
         s = ''.join(tmp)
@@ -135,24 +137,30 @@ def EvalSingleQuoted2(id_, tokens):
     return s
 
 
-def IsLeadingSpace(s):
-    # type: (str) -> bool
+def IsLeadingSpace(tok):
+    # type: (Token) -> bool
     """Determines if the token before ''' etc. can be stripped.
 
     Similar to IsWhitespace()
     """
-    for ch in s:
-        if ch not in ' \t':
+    start = tok.col
+    end = tok.col + tok.length
+    for i in xrange(start, end):
+        b = mylib.ByteAt(tok.line.content, i)
+        if not mylib.ByteInSet(b, ' \t'):
             return False
     return True
 
 
-def IsWhitespace(s):
-    # type: (str) -> bool
+def IsWhitespace(tok):
+    # type: (Token) -> bool
     """Alternative to s.isspace() that doesn't have legacy \f \v codes.
     """
-    for ch in s:
-        if ch not in ' \n\r\t':
+    start = tok.col
+    end = tok.col + tok.length
+    for i in xrange(start, end):
+        b = mylib.ByteAt(tok.line.content, i)
+        if not mylib.ByteInSet(b, ' \n\r\t'):
             return False
     return True
 
@@ -183,7 +191,7 @@ def RemoveLeadingSpaceDQ(parts):
     if UP_first.tag() == word_part_e.Literal:
         first = cast(Token, UP_first)
         #log('T %s', first_part)
-        if IsWhitespace(first.tval):
+        if IsWhitespace(first):
             # Remove the first part.  TODO: This could be expensive if there are many
             # lines.
             parts.pop(0)
@@ -194,7 +202,7 @@ def RemoveLeadingSpaceDQ(parts):
     to_strip = None  # type: Optional[str]
     if UP_last.tag() == word_part_e.Literal:
         last = cast(Token, UP_last)
-        if IsLeadingSpace(last.tval):
+        if IsLeadingSpace(last):
             to_strip = last.tval
             parts.pop()  # Remove the last part
 
@@ -221,11 +229,16 @@ def RemoveLeadingSpaceDQ(parts):
 def RemoveLeadingSpaceSQ(tokens):
     # type: (List[Token]) -> None
     """
-    In $''', we have Char_Literals \n
-    In r''' and ''', we have Lit_Chars \n
-    In u''' and b''', we have Char_AsciiControl \n
+    Mutates tokens so whitespace is stripped.
+    Must respect lossless invariant - see test/lossless/multiline-str.sh
 
-    Should make these more consistent.
+    TODO: We need to INSERT Id.Ignored_LeadingSpace tokens.
+    That means creating new tokens probably.
+
+    Quirk to make more consistent:
+      In $''', we have Char_Literals \n
+      In r''' and ''', we have Lit_Chars \n
+      In u''' and b''', we have Char_AsciiControl \n
     """
     if 0:
         log('--')
@@ -238,17 +251,21 @@ def RemoveLeadingSpaceSQ(tokens):
 
     line_ended = False
 
+    # var x = '''    # strip initial newline/whitespace
+    #   x
+    #   '''
     first = tokens[0]
     if first.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
-        if IsWhitespace(first.tval):
+        if IsWhitespace(first):
             tokens.pop(0)  # Remove the first part
-        if first.tval.endswith('\n'):
+        if lexer.TokenEndsWith(first, '\n'):
             line_ended = True
 
+    # Figure out what to strip, based on last token
     last = tokens[-1]
     to_strip = None  # type: Optional[str]
     if last.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
-        if IsLeadingSpace(last.tval):
+        if IsLeadingSpace(last):
             to_strip = last.tval
             tokens.pop()  # Remove the last part
 
@@ -267,5 +284,5 @@ def RemoveLeadingSpaceSQ(tokens):
                     tok.tval = tok.tval[n:]
 
             line_ended = False
-            if tok.tval.endswith('\n'):
+            if lexer.TokenEndsWith(tok, '\n'):
                 line_ended = True
