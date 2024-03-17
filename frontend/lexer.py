@@ -27,11 +27,11 @@ if TYPE_CHECKING:
 def IsPlusEquals(tok):
     # type: (Token) -> bool
     """Common pattern to test if we got foo= or foo+=
-
-    Note: can be replaced by s.find('+', index, index+1), which avoids
-    allocation.
     """
     index = tok.col + tok.length - 2
+
+    # TODO: can be replaced by s.find('+', index, index+1), which avoids
+    # allocation.
     return tok.line.content[index] == '+'
 
 
@@ -57,16 +57,14 @@ def TokenContains(tok, substr):
 def TokenStartsWith(tok, s):
     # type: (Token, str) -> bool
 
-    # TODO: Use tok.line.content.startswith(substr, start, end)
-
+    # TODO: Use tok.line.content.find(s, start, len(s))
     raise NotImplementedError()
 
 
 def TokenEndsWith(tok, s):
     # type: (Token, str) -> bool
 
-    # TODO: Use tok.line.content.startswith(substr, start, end)
-
+    # TODO: Use tok.line.content.find(s, end-len(s), end)
     raise NotImplementedError()
 
 

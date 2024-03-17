@@ -15,13 +15,38 @@ GLOBAL_STR(kEmptyString, "");
 static const std::regex gStrFmtRegex("([^%]*)(?:%(-?[0-9]*)(.))?");
 static const int kMaxFmtWidth = 256;  // arbitrary...
 
-int BigStr::find(BigStr* needle, int pos) {
-  int length = len(this);
-  DCHECK(len(needle) == 1);  // Oil's usage
-  char c = needle->data_[0];
-  for (int i = pos; i < length; ++i) {
-    if (data_[i] == c) {
-      return i;
+int BigStr::find(BigStr* needle, int start, int end) {
+  if (end == -1) {
+    end = len(this);
+  }
+  int needle_len = len(needle);
+
+  if (needle_len > (end - start)) {
+    return -1;  // needle is too long to be found (Python behavior)
+  }
+
+  if (needle_len == 1) {
+    char c = needle->data_[0];
+    // For 'aaa'.find('a', 0, 1)
+    // end = 1, needle_len = 1, last_start = 1 which means we go through once
+    for (int i = start; i < end; ++i) {
+      if (data_[i] == c) {
+        return i;
+      }
+    }
+  } else {
+    // Note: this works for finding the empty string.  Empty string is found in
+    // empty range like [5, 5), but not in [5, 4)
+
+    // For 'aaa'.find('aa', 0, 2)
+    // end = 2, needle_len = 2, last_start = 1 which means we go through once
+
+    int last_start = end - needle_len + 1;
+    // could use a smarter substring search algorithm
+    for (int i = start; i < last_start; ++i) {
+      if (memcmp(data_ + i, needle->data_, needle_len) == 0) {
+        return i;
+      }
     }
   }
   return -1;
@@ -29,7 +54,7 @@ int BigStr::find(BigStr* needle, int pos) {
 
 int BigStr::rfind(BigStr* needle) {
   int length = len(this);
-  DCHECK(len(needle) == 1);  // Oil's usage
+  DCHECK(len(needle) == 1);  // Oils usage
   char c = needle->data_[0];
   for (int i = length - 1; i >= 0; --i) {
     if (data_[i] == c) {

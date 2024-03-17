@@ -66,15 +66,34 @@ def TestMethods():
 
     # find(s, start, end) can be used to implement TokenStartsWith() and
     # TokenEndsWith(), TokenEquals(), IsPlusEquals(), TokenContains(), etc.
-    i1 = s.find('b', 1)
-    i2 = s.find('b', 2)
-    i3 = s.find('b', 3)  # not found
-    print('i1 = %d, i2 = %d, i3 = %d' % (i1, i2, i3))
 
-    # TODO: Implement end index here
-    #j1 = s.find('b', 1, 3)
-    #j2 = s.find('b', 1, 2)
-    #print('j1 = %d, j2 = %d' % (j1, j2))
+    s = 'aaa-bb-cc'
+    substrs = [
+        'aa',
+        'b',
+        'z',
+        'aaaa',  # too long
+        '',
+    ]
+    for substr in substrs:
+        for start in xrange(0, len(s)):
+            pos = s.find(substr, start)
+            print('%s find %s start:%d => %d' % (s, substr, start, pos))
+
+    print('---')
+
+    for substr in substrs:
+        for end in xrange(0, len(s)):
+            pos = s.find(substr, 0, end)
+            print('%s find %s end:%d => %d' % (s, substr, end, pos))
+
+    print('---')
+
+    # empty string test
+    for start in xrange(0, 3):
+        for end in xrange(0, 3):
+            pos = s.find('', start, end)
+            print('%s find empty [%d, %d) => %d' % (s, start, end, pos))
 
 
 def TestFormat():

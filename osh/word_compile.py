@@ -48,8 +48,8 @@ def EvalCharLiteralForRegex(tok):
             # Id.Expr_Name: [a-z] is ['a'-'Z'], and [a z] is ['a' 'Z']
             # Id.Expr_DecInt: [0-9] is ['0'-'9'], and [0 9] is ['0' '9']
 
-            assert len(tok.tval) == 1, tok
-            return CharCode(tok, ord(tok.tval[0]), False)
+            assert len(value) == 1, tok
+            return CharCode(tok, ord(value[0]), False)
 
         else:
             raise AssertionError(tok)
