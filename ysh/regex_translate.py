@@ -6,7 +6,7 @@ from _devbuild.gen.syntax_asdl import (
     PosixClass,
     PerlClass,
     CharCode,
-    char_class_term,
+    CharRange,
     char_class_term_e,
     char_class_term_t,
     re,
@@ -107,8 +107,8 @@ def _CharClassTermToEre(term, parts, special_char_flags):
 
     UP_term = term
     with tagswitch(term) as case:
-        if case(char_class_term_e.Range):
-            term = cast(char_class_term.Range, UP_term)
+        if case(char_class_term_e.CharRange):
+            term = cast(CharRange, UP_term)
 
             # Create our own flags
             range_no_special = [0]

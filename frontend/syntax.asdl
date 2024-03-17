@@ -557,33 +557,31 @@ module syntax
   # e.g. d w s
   PerlClass = (Token? negated, str name)
 
+  # Char Sets and Ranges both use Char Codes
+  # with u_braced == true : \u{ff}
+  # with u_braced == false: \xff \\ 'a' a '0' 0
+  # ERE doesn't make a distinction, but compiling to Python/PCRE can use it
+  CharCode = (Token blame_tok, int i, bool u_braced)
+  CharRange = (CharCode start, CharCode end)
+
   # Note: .NET has && in character classes, making it a recursive language
 
   class_literal_term = 
     PosixClass %PosixClass
   | PerlClass %PerlClass
-    # [a-z]   ~[a-z]   TODO: Doesn't respect LST invariant
-
-  | Range(Token start, Token end)
-  | CharLiteral(Token tok)
+  | CharRange %CharRange
+  | CharCode %CharCode
 
   | SingleQuoted %SingleQuoted
     # @chars
   | Splice(Token name, str var_name)
-
-  # Char Sets and Ranges both use Char Codes
-  # with u_braced == true : \u{ff}
-  # with u_braced == false: \xff \\ 'a' a '0' 0
-  # ERE doesn't make a distinction, but compiling to Python/PCRE can use it
-  CharCode = (int i, bool u_braced, Token blame_tok)
 
   # evaluated version of class_literal_term (could be in runtime.asdl)
   char_class_term =
     PosixClass %PosixClass
   | PerlClass %PerlClass
 
-  | Range(CharCode start, CharCode end)
-
+  | CharRange %CharRange
     # For [ \x00 \\ ]
   | CharCode %CharCode
 

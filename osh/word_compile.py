@@ -32,16 +32,16 @@ def EvalCharLiteralForRegex(tok):
         if case(Id.Char_UBraced):
             s = value[3:-1]  # \u{123}
             i = int(s, 16)
-            return CharCode(i, True, tok)  # u_braced
+            return CharCode(tok, i, True)  # u_braced
 
         elif case(Id.Char_OneChar):  # \'
             one_char_str = consts.LookupCharC(value[1])
-            return CharCode(ord(one_char_str), False, tok)
+            return CharCode(tok, ord(one_char_str), False)
 
         elif case(Id.Char_Hex):
             s = value[2:]
             i = int(s, 16)
-            return CharCode(i, False, tok)
+            return CharCode(tok, i, False)
 
         elif case(Id.Lit_Chars, Id.Expr_Name, Id.Expr_DecInt):
             # Id.Lit_Chars: Token in single quoted string ['a'] is Id.Lit_Chars
@@ -49,7 +49,7 @@ def EvalCharLiteralForRegex(tok):
             # Id.Expr_DecInt: [0-9] is ['0'-'9'], and [0 9] is ['0' '9']
 
             assert len(tok.tval) == 1, tok
-            return CharCode(ord(tok.tval[0]), False, tok)
+            return CharCode(tok, ord(tok.tval[0]), False)
 
         else:
             raise AssertionError(tok)

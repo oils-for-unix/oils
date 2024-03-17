@@ -27,11 +27,11 @@ from _devbuild.gen.syntax_asdl import (
     class_literal_term,
     class_literal_term_e,
     class_literal_term_t,
-    char_class_term,
     char_class_term_t,
     PosixClass,
     PerlClass,
     CharCode,
+    CharRange,
     ArgList,
     Eggex,
 )
@@ -1189,20 +1189,17 @@ class EggexEvaluator(object):
 
         with tagswitch(term) as case:
 
-            if case(class_literal_term_e.CharLiteral):
-                term = cast(class_literal_term.CharLiteral, UP_term)
+            if case(class_literal_term_e.CharCode):
+                term = cast(CharCode, UP_term)
 
-                # What about \0?
-                # At runtime, ERE should disallow it.  But we can also disallow it here.
-                out.append(word_compile.EvalCharLiteralForRegex(term.tok))
+                # What about \0?  At runtime, ERE should disallow it.  But we
+                # can also disallow it here.
+                out.append(term)
                 return
 
-            elif case(class_literal_term_e.Range):
-                term = cast(class_literal_term.Range, UP_term)
-
-                cp_start = word_compile.EvalCharLiteralForRegex(term.start)
-                cp_end = word_compile.EvalCharLiteralForRegex(term.end)
-                out.append(char_class_term.Range(cp_start, cp_end))
+            elif case(class_literal_term_e.CharRange):
+                term = cast(CharRange, UP_term)
+                out.append(term)
                 return
 
             elif case(class_literal_term_e.PosixClass):
@@ -1238,7 +1235,7 @@ class EggexEvaluator(object):
                     "Use unquoted char literal for byte %d, which is >= 128"
                     " (avoid confusing a set of bytes with a sequence)" %
                     char_int, char_code_tok)
-            out.append(CharCode(char_int, False, char_code_tok))
+            out.append(CharCode(char_code_tok, char_int, False))
 
     def EvalE(self, node):
         # type: (re_t) -> re_t

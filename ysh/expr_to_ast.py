@@ -43,6 +43,7 @@ from _devbuild.gen.syntax_asdl import (
     Func,
     Eggex,
     EggexFlag,
+    CharRange,
 )
 from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
@@ -1292,7 +1293,7 @@ class Transformer(object):
     # Regex Language
     #
 
-    def _RangeChar(self, p_node):
+    def _RangeTok(self, p_node):
         # type: (PNode) -> Token
         """An endpoint of a range (single char)
 
@@ -1341,7 +1342,8 @@ class Transformer(object):
                 return cast(SingleQuoted, p_child.GetChild(1).tok)
 
             if typ == grammar_nt.char_literal:
-                return class_literal_term.CharLiteral(p_node.GetChild(0).tok)
+                tok = p_node.GetChild(0).tok
+                return word_compile.EvalCharLiteralForRegex(tok)
 
             raise NotImplementedError()
         else:
@@ -1371,9 +1373,11 @@ class Transformer(object):
 
             # 'a'-'z' etc.
             if n == 3 and p_node.GetChild(1).tok.id == Id.Arith_Minus:
-                start = self._RangeChar(p_node.GetChild(0))
-                end = self._RangeChar(p_node.GetChild(2))
-                return class_literal_term.Range(start, end)
+                tok1 = self._RangeTok(p_node.GetChild(0))
+                tok2 = self._RangeTok(p_node.GetChild(2))
+                code1 = word_compile.EvalCharLiteralForRegex(tok1)
+                code2 = word_compile.EvalCharLiteralForRegex(tok2)
+                return CharRange(code1, code2)
 
         else:
             if first.tok.id == Id.Expr_At:
@@ -1439,7 +1443,7 @@ class Transformer(object):
 
             if negated_tok:  # [~d] is not allowed, only [~digit]
                 p_die("Can't negate this symbol", tok)
-            return class_literal_term.CharLiteral(tok)
+            return word_compile.EvalCharLiteralForRegex(tok)
 
         # digit, word, but not d, w, etc.
         if tok_str in POSIX_CLASSES:
