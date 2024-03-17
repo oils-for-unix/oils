@@ -617,8 +617,11 @@ class WordParser(WordEmitter):
 
     def ReadSingleQuoted(self, lex_mode, left_token, out_tokens, is_ysh_expr):
         # type: (lex_mode_t, Token, List[Token], bool) -> Token
-        """Appends to tokens; returns last token, used by expr_parse.py
+        """Appends to out_tokens; returns last token
+
+        Used by expr_parse.py
         """
+        # TODO: Remove and use out_tokens
         tokens = []  # type: List[Token]
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'

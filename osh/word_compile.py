@@ -11,7 +11,6 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     word_part_t,
 )
-from asdl import runtime
 from data_lang import j8
 from frontend import consts
 from frontend import lexer
@@ -286,9 +285,9 @@ def RemoveLeadingSpaceSQ(tokens):
     #log('SQ Stripping %r', to_strip)
     n = len(to_strip)
 
-    log('--')
+    #log('--')
     for tok in tokens:  # line_ended reset on every iteration
-        log('tok %s', tok)
+        #log('tok %s', tok)
         # Strip leading space on tokens that begin lines, by bumping start col
         if tok.col == 0 and lexer.TokenStartsWith(tok, to_strip):
             tok.col = n
