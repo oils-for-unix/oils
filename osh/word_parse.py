@@ -609,18 +609,17 @@ class WordParser(WordEmitter):
         """Internal method to read a word_part."""
         tokens = []  # type: List[Token]
         # In command mode, we never disallow backslashes like '\'
-        self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
+        right_quote = self.ReadSingleQuoted(lex_mode, left_token, tokens,
+                                            False)
         sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
-        right_quote = self.cur_token
         node = SingleQuoted(left_token, sval, right_quote)
         return node
 
-    def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_ysh_expr):
+    def ReadSingleQuoted(self, lex_mode, left_token, out_tokens, is_ysh_expr):
         # type: (lex_mode_t, Token, List[Token], bool) -> Token
-        """Appends to tokens
-
-        Used by expr_parse.py
+        """Appends to tokens; returns last token, used by expr_parse.py
         """
+        tokens = []  # type: List[Token]
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
         no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
@@ -718,6 +717,7 @@ class WordParser(WordEmitter):
                         r"%s escape is illegal because it's in the surrogate range"
                         % lexer.TokenVal(tok), tok)
 
+        out_tokens.extend(tokens)
         return self.cur_token
 
     def _ReadDoubleQuotedLeftParts(self):

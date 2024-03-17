@@ -11,6 +11,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     word_part_t,
 )
+from asdl import runtime
 from data_lang import j8
 from frontend import consts
 from frontend import lexer
@@ -121,15 +122,25 @@ def EvalSingleQuoted2(id_, tokens):
     """ Done at parse time """
     if id_ in (Id.Left_SingleQuote, Id.Left_RSingleQuote, Id.Left_TSingleQuote,
                Id.Left_RTSingleQuote):
-        tmp = [t.tval for t in tokens]
+        tmp = [
+            lexer.TokenVal(t) for t in tokens
+            if t.id != Id.Ignored_LeadingSpace
+        ]
         s = ''.join(tmp)
 
     elif id_ in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
                  Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
                  Id.Left_BTSingleQuote):
-        # TODO: RemoveLeadingSpaceSQ must not modify tval
-        #tmp = [EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens]
-        tmp = [EvalCStringToken(t.id, t.tval) for t in tokens]
+        if 0:
+            for t in tokens:
+                print('T %s' % t)
+
+        tmp = [
+            EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens
+            if t.id != Id.Ignored_LeadingSpace
+        ]
+
+        #tmp = [EvalCStringToken(t.id, t.tval) for t in tokens]
         s = ''.join(tmp)
 
     else:
@@ -232,8 +243,8 @@ def RemoveLeadingSpaceSQ(tokens):
 
     Must respect lossless invariant - see test/lossless/multiline-str.sh
 
-    TODO: We need to INSERT Id.Ignored_LeadingSpace tokens.  That means
-    creating new tokens probably.
+    For now we create NEW Id.Ignored_LeadingSpace tokens, and are NOT in the
+    arena.
 
     Quirk to make more consistent:
       In $''', we have Char_Literals \n
@@ -266,7 +277,7 @@ def RemoveLeadingSpaceSQ(tokens):
     to_strip = None  # type: Optional[str]
     if last.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
         if IsLeadingSpace(last):
-            to_strip = last.tval
+            to_strip = lexer.TokenVal(last)
             tokens.pop()  # Remove the last part
 
     if to_strip is None:
@@ -274,21 +285,38 @@ def RemoveLeadingSpaceSQ(tokens):
 
     #log('SQ Stripping %r', to_strip)
     n = len(to_strip)
-    for tok in tokens:
+    new_tokens = []  # type: List[Token]
+    for tok in tokens:  # line_ended reset on every iteration
+
         if tok.id not in (Id.Lit_Chars, Id.Char_Literals,
                           Id.Char_AsciiControl):
             line_ended = False
+            new_tokens.append(tok)
             continue
 
-        if line_ended:
-            if lexer.TokenStartsWith(tok, to_strip):
-                # MUTATING the token here
-                tok.tval = tok.tval[n:]
+        if line_ended and lexer.TokenStartsWith(tok, to_strip):
+            # Problem: the arena already has the unstripped token, through
+            # arena.NewToken()
+            #
+            # We simply create 2 new tokens here for EvalSingleQuoted2() to
+            # see.  They become garbage because that function computes
+            # SingleQuoted.sval and throws away the tokens.
+            #
+            # ysh --tool fmt may have to call this function again?
 
-        line_ended = False
-        if lexer.TokenEndsWith(tok, '\n'):
-            line_ended = True
+            #log('col = %d, length = %d, n = %d', tok.col, tok.length, n)
+            space_tok = Token(Id.Ignored_LeadingSpace, tok.col, n,
+                              runtime.NO_SPID, tok.line, None)
+            new_tokens.append(space_tok)
 
-    # TODO: return new tokens
-    return tokens
+            if tok.length > n:
+                stripped_tok = Token(tok.id, tok.col + n, tok.length - n,
+                                     runtime.NO_SPID, tok.line, None)
+                new_tokens.append(stripped_tok)
+        else:
+            new_tokens.append(tok)
 
+        line_ended = lexer.TokenEndsWith(tok, '\n')
+
+    #log('NEW %s', new_tokens)
+    return new_tokens
