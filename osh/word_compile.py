@@ -14,6 +14,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from data_lang import j8
 from frontend import consts
+from frontend import lexer
 from mycpp.mylib import log, switch
 
 from typing import List, Optional, cast
@@ -30,16 +31,17 @@ def EvalCharLiteralForRegex(tok):
 
     with switch(id_) as case:
         if case(Id.Char_UBraced):
-            s = value[3:-1]  # \u{123}
+            s = lexer.TokenSlice(tok, 3, -1)  # \u{123}
             i = int(s, 16)
             return CharCode(tok, i, True)  # u_braced
 
         elif case(Id.Char_OneChar):  # \'
+            # value[1] -> mylib.ByteAt()
             one_char_str = consts.LookupCharC(value[1])
             return CharCode(tok, ord(one_char_str), False)
 
         elif case(Id.Char_Hex):
-            s = value[2:]
+            s = lexer.TokenSliceLeft(tok, 2)
             i = int(s, 16)
             return CharCode(tok, i, False)
 
@@ -49,6 +51,7 @@ def EvalCharLiteralForRegex(tok):
             # Id.Expr_DecInt: [0-9] is ['0'-'9'], and [0 9] is ['0' '9']
 
             assert len(value) == 1, tok
+            # value[0] -> mylib.ByteAt()
             return CharCode(tok, ord(value[0]), False)
 
         else:
@@ -113,28 +116,23 @@ def EvalCStringToken(id_, value):
         raise AssertionError(Id_str(id_))
 
 
-def EvalSingleQuoted(part):
-    # type: (SingleQuoted) -> str
-    if part.left.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
-                        Id.Left_TSingleQuote, Id.Left_RTSingleQuote):
-
-        # TODO: Strip leading whitespace for ''' and r'''
-        if 0:
-            for t in part.tokens:
-                log('sq tok %s', t)
-
-        tmp = [t.tval for t in part.tokens]
+def EvalSingleQuoted2(id_, tokens):
+    # type: (Id_t, List[Token]) -> str
+    """ Done at parse time """
+    if id_ in (Id.Left_SingleQuote, Id.Left_RSingleQuote, Id.Left_TSingleQuote,
+               Id.Left_RTSingleQuote):
+        tmp = [t.tval for t in tokens]
         s = ''.join(tmp)
 
-    elif part.left.id in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
-                          Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
-                          Id.Left_BTSingleQuote):
-        # NOTE: This could be done at compile time
-        tmp = [EvalCStringToken(t.id, t.tval) for t in part.tokens]
+    elif id_ in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
+                 Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
+                 Id.Left_BTSingleQuote):
+        #tmp = [EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens]
+        tmp = [EvalCStringToken(t.id, t.tval) for t in tokens]
         s = ''.join(tmp)
 
     else:
-        raise AssertionError(part.left.id)
+        raise AssertionError(id_)
     return s
 
 
@@ -211,7 +209,7 @@ def RemoveLeadingSpaceDQ(parts):
             p = cast(Token, UP_p)
 
             if line_ended:
-                if p.tval.startswith(to_strip):
+                if lexer.TokenStartsWith(p, to_strip):
                     # MUTATING the part here
                     p.tval = p.tval[n:]
 
@@ -265,7 +263,7 @@ def RemoveLeadingSpaceSQ(tokens):
                 continue
 
             if line_ended:
-                if tok.tval.startswith(to_strip):
+                if lexer.TokenStartsWith(tok, to_strip):
                     # MUTATING the token here
                     tok.tval = tok.tval[n:]
 

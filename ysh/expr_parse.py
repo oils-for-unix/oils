@@ -16,6 +16,7 @@ from mycpp import mylib
 from mycpp.mylib import log, tagswitch
 from osh import braces
 from osh import word_
+from osh import word_compile
 from pgen2 import parse
 from pgen2.pnode import PNodeAllocator
 
@@ -307,7 +308,8 @@ def _PushOilTokens(parse_ctx, gr, p, lex):
             last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
                                                    True)
 
-            sq_part = SingleQuoted(left_token, tokens, last_token)
+            sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
+            sq_part = SingleQuoted(left_token, sval, last_token)
 
             typ = Id.Expr_CastedDummy
             opaque = cast(Token, sq_part)  # HACK for expr_to_ast

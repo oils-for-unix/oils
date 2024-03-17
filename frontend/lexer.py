@@ -37,9 +37,6 @@ def IsPlusEquals(tok):
     return tok.line.content.find('+', i, i + 1) != -1
 
 
-# Also: IsWhitespace, IsLeadingSpace
-
-
 def TokenContains(tok, substr):
     # type: (Token, str) -> bool
     return tok.line.content.find(substr, tok.col, tok.col + tok.length) != -1
@@ -54,16 +51,16 @@ def TokenEquals(tok, s):
 
 def TokenStartsWith(tok, s):
     # type: (Token, str) -> bool
-
-    # TODO: Use tok.line.content.find(s, start, len(s))
-    raise NotImplementedError()
+    return tok.line.content.find(s, tok.col, tok.col + len(s)) != -1
 
 
 def TokenEndsWith(tok, s):
     # type: (Token, str) -> bool
+    end = tok.col + tok.length
+    return tok.line.content.find(s, end - len(s), end) != -1
 
-    # TODO: Use tok.line.content.find(s, end-len(s), end)
-    raise NotImplementedError()
+
+# Also: IsWhitespace, IsLeadingSpace
 
 
 def TokenVal(tok):
@@ -76,22 +73,23 @@ def TokenSliceLeft(tok, left_index):
     # type: (Token, int) -> str
     """Slice token directly, without creating intermediate string."""
     assert left_index > 0
-    left = tok.col + left_index
-    return tok.line.content[left:tok.col + tok.length]
+    start = tok.col + left_index
+    return tok.line.content[start:tok.col + tok.length]
 
 
 def TokenSliceRight(tok, right_index):
     # type: (Token, int) -> str
     """Slice token directly, without creating intermediate string."""
     assert right_index < 0
-    right = tok.col + tok.length + right_index
-    return tok.line.content[tok.col:right]
+    end = tok.col + tok.length + right_index
+    return tok.line.content[tok.col:end]
 
 
 def TokenSlice(tok, left, right):
     # type: (Token, int, int) -> str
     """Slice token directly, without creating intermediate string."""
-    assert left > 0
+    assert left > 0, left
+    assert right < 0, right
     start = tok.col + left
     end = tok.col + tok.length + right
     return tok.line.content[start:end]

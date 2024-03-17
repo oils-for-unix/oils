@@ -187,6 +187,16 @@ class TokenFunctionsTest(unittest.TestCase):
         self.assertEqual(True, lexer.TokenEquals(tok, 'echo'))
         self.assertEqual(False, lexer.TokenEquals(tok, 'ech'))
 
+        self.assertEqual(True, lexer.TokenStartsWith(tok, ''))
+        self.assertEqual(True, lexer.TokenStartsWith(tok, 'e'))
+        self.assertEqual(True, lexer.TokenStartsWith(tok, 'ech'))
+        self.assertEqual(False, lexer.TokenStartsWith(tok, 'cho'))
+
+        self.assertEqual(True, lexer.TokenEndsWith(tok, ''))
+        self.assertEqual(False, lexer.TokenEndsWith(tok, 'ech'))
+        self.assertEqual(True, lexer.TokenEndsWith(tok, 'cho'))
+        self.assertEqual(True, lexer.TokenEndsWith(tok, 'o'))
+
     def testIsPlusEquals(self):
         arena = test_lib.MakeArena('<lexer_test.py>')
         _, lx = test_lib.InitLexer('foo+=b"', arena)

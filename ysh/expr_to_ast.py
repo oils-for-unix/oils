@@ -43,6 +43,7 @@ from _devbuild.gen.syntax_asdl import (
     Func,
     Eggex,
     EggexFlag,
+    CharCode,
     CharRange,
     TokenWithStr,
 )
@@ -1294,7 +1295,26 @@ class Transformer(object):
     # Regex Language
     #
 
-    def _RangeTok(self, p_node):
+    def _RangeCharSingleQuoted(self, p_node):
+        # type: (PNode) -> Optional[CharCode]
+
+        assert p_node.typ == grammar_nt.range_char, p_node
+        typ = p_node.GetChild(0).typ
+
+        # 'a' in 'a'-'b'
+        if ISNONTERMINAL(typ) and typ == grammar_nt.sq_string:
+            sq_part = cast(SingleQuoted, p_node.GetChild(0).GetChild(1).tok)
+            n = len(sq_part.sval)
+            if n == 0:
+                p_die("Quoted range char can't be empty",
+                      loc.WordPart(sq_part))
+            elif n == 1:
+                return CharCode(sq_part.left, ord(sq_part.sval[0]), False)
+            else:
+                p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
+        return None
+
+    def _OtherRangeToken(self, p_node):
         # type: (PNode) -> Token
         """An endpoint of a range (single char)
 
@@ -1302,39 +1322,28 @@ class Transformer(object):
                     a-z         0-9           'a'-'z'     \x00-\xff
         """
         assert p_node.typ == grammar_nt.range_char, p_node
+
         typ = p_node.GetChild(0).typ
         if ISNONTERMINAL(typ):
-            # 'a' in 'a'-'b'
-            if typ == grammar_nt.sq_string:
-                sq_part = cast(SingleQuoted,
-                               p_node.GetChild(0).GetChild(1).tok)
-                tokens = sq_part.tokens
-                # Can happen with multiline single-quoted strings
-                if len(tokens) > 1:
-                    p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
-                if tokens[0].length > 1:
-                    p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
-                return tokens[0]
+            # \x00 in /[\x00 - \x20]/
+            assert typ == grammar_nt.char_literal, typ
+            tok = p_node.GetChild(0).GetChild(0).tok
+            return tok
 
-            if typ == grammar_nt.char_literal:
-                tok = p_node.GetChild(0).GetChild(0).tok
-                return tok
+        tok = p_node.tok
+        # a in a-z is Expr_Name
+        # 0 in 0-9 is Expr_DecInt
+        assert tok.id in (Id.Expr_Name, Id.Expr_DecInt), tok
 
-            raise NotImplementedError()
-        else:
-            # Expr_Name or Expr_DecInt
-            tok = p_node.tok
-            if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
-                # For the a in a-z, 0 in 0-9
-                if tok.length != 1:
-                    p_die(RANGE_POINT_TOO_LONG, tok)
-                return tok
-
-            raise NotImplementedError()
+        if tok.length != 1:
+            p_die(RANGE_POINT_TOO_LONG, tok)
+        return tok
 
     def _NonRangeChars(self, p_node):
         # type: (PNode) -> class_literal_term_t
-        """\" \u1234 '#'."""
+        """
+        \" \u1234 '#'
+        """
         assert p_node.typ == grammar_nt.range_char, p_node
         typ = p_node.GetChild(0).typ
         if ISNONTERMINAL(typ):
@@ -1374,10 +1383,18 @@ class Transformer(object):
 
             # 'a'-'z' etc.
             if n == 3 and p_node.GetChild(1).tok.id == Id.Arith_Minus:
-                tok1 = self._RangeTok(p_node.GetChild(0))
-                tok2 = self._RangeTok(p_node.GetChild(2))
-                code1 = word_compile.EvalCharLiteralForRegex(tok1)
-                code2 = word_compile.EvalCharLiteralForRegex(tok2)
+                left = p_node.GetChild(0)
+                right = p_node.GetChild(2)
+
+                code1 = self._RangeCharSingleQuoted(left)
+                if code1 is None:
+                    tok1 = self._OtherRangeToken(left)
+                    code1 = word_compile.EvalCharLiteralForRegex(tok1)
+
+                code2 = self._RangeCharSingleQuoted(right)
+                if code2 is None:
+                    tok2 = self._OtherRangeToken(right)
+                    code2 = word_compile.EvalCharLiteralForRegex(tok2)
                 return CharRange(code1, code2)
 
         else:
@@ -1428,10 +1445,7 @@ class Transformer(object):
 
     def _NameInClass(self, negated_tok, tok):
         # type: (Token, Token) -> class_literal_term_t
-        """Like the above, but 'dot' doesn't mean anything.
-
-        And `d` is a literal 'd', not `digit`.
-        """
+        """Like the above, but 'dot' and 'd' don't mean anything within []"""
         tok_str = lexer.TokenVal(tok)
 
         # A bare, unquoted character literal.  In the grammar, this is expressed as

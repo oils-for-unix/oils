@@ -610,8 +610,9 @@ class WordParser(WordEmitter):
         tokens = []  # type: List[Token]
         # In command mode, we never disallow backslashes like '\'
         self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
+        sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
         right_quote = self.cur_token
-        node = SingleQuoted(left_token, tokens, right_quote)
+        node = SingleQuoted(left_token, sval, right_quote)
         return node
 
     def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_ysh_expr):
@@ -762,7 +763,7 @@ class WordParser(WordEmitter):
 
         sq_part = self._ReadSingleQuoted(left_tok, lexer_mode)
 
-        if (len(sq_part.tokens) == 0 and self.lexer.ByteLookAhead() == "'"):
+        if (len(sq_part.sval) == 0 and self.lexer.ByteLookAhead() == "'"):
             self._SetNext(lex_mode_e.ShCommand)
             self._GetToken()
 
@@ -829,7 +830,7 @@ class WordParser(WordEmitter):
             # Got empty '' or r'' and there's a ' after
             # u'' and b'' are handled in _ReadYshSingleQuoted
             if (triple_left_id != Id.Undefined_Tok and
-                    triple_out is not None and len(sq_part.tokens) == 0 and
+                    triple_out is not None and len(sq_part.sval) == 0 and
                     self.lexer.ByteLookAhead() == "'"):
 
                 self._SetNext(lex_mode_e.ShCommand)
