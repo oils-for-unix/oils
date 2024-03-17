@@ -23,35 +23,33 @@ if TYPE_CHECKING:
     from core.alloc import Arena
     from frontend.reader import _Reader
 
+#
+# Optimized Token functions that use str.find(substr, start, end) to avoid
+# allocation of temporary slice
+#
+
 
 def IsPlusEquals(tok):
     # type: (Token) -> bool
     """Common pattern to test if we got foo= or foo+=
     """
-    index = tok.col + tok.length - 2
-
-    # TODO: can be replaced by s.find('+', index, index+1), which avoids
-    # allocation.
-    return tok.line.content[index] == '+'
+    i = tok.col + tok.length - 2  # 'foo+='[-2] is '+'
+    return tok.line.content.find('+', i, i + 1) != -1
 
 
 # Also: IsWhitespace, IsLeadingSpace
 
 
-def TokenEquals(tok, s):
-    # type: (Token, str) -> bool
-
-    # TODO: Use tok.line.content.find(substr, start, end)
-
-    raise NotImplementedError()
-
-
 def TokenContains(tok, substr):
     # type: (Token, str) -> bool
+    return tok.line.content.find(substr, tok.col, tok.col + tok.length) != -1
 
-    # TODO: Use tok.line.content.find(substr, start, end)
 
-    raise NotImplementedError()
+def TokenEquals(tok, s):
+    # type: (Token, str) -> bool
+    if len(s) != tok.length:
+        return False
+    return TokenContains(tok, s)
 
 
 def TokenStartsWith(tok, s):

@@ -638,7 +638,7 @@ class WordParser(WordEmitter):
                 tok = self.cur_token
                 # Happens in lex_mode_e.SQ: 'one\two' is ambiguous, should be
                 # r'one\two' or c'one\\two'
-                if no_backslashes and '\\' in tok.tval:
+                if no_backslashes and lexer.TokenContains(tok, '\\'):
                     p_die(
                         r"Strings with backslashes should look like r'\n' or u'\n' or b'\n'",
                         tok)
@@ -1974,24 +1974,26 @@ class WordParser(WordEmitter):
                     #
                     #     echo u'\u{3bc}' b'\yff' works
 
-                    if (self.parse_opts.parse_ysh_string() and
-                            self.cur_token.tval in ('r', 'u', 'b')):
-
-                        if self.cur_token.tval == 'r':
+                    tok = self.cur_token
+                    if self.parse_opts.parse_ysh_string():
+                        if lexer.TokenEquals(tok, 'r'):
                             left_id = Id.Left_RSingleQuote
-                        elif self.cur_token.tval == 'u':
+                        elif lexer.TokenEquals(tok, 'u'):
                             left_id = Id.Left_USingleQuote
-                        else:
+                        elif lexer.TokenEquals(tok, 'b'):
                             left_id = Id.Left_BSingleQuote
+                        else:
+                            left_id = Id.Undefined_Tok
 
-                        # skip the r, and then 'foo' will be read as normal
-                        self._SetNext(lex_mode_e.ShCommand)
+                        if left_id != Id.Undefined_Tok:
+                            # skip the r, and then 'foo' will be read as normal
+                            self._SetNext(lex_mode_e.ShCommand)
 
-                        self._GetToken()
-                        assert self.token_type == Id.Left_SingleQuote, self.token_type
+                            self._GetToken()
+                            assert self.token_type == Id.Left_SingleQuote, self.token_type
 
-                        # Read the word in a different lexer mode
-                        return self._ReadYshSingleQuoted(left_id)
+                            # Read the word in a different lexer mode
+                            return self._ReadYshSingleQuoted(left_id)
 
                 return self._ReadCompoundWord(lex_mode)
 
