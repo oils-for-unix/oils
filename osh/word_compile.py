@@ -27,7 +27,7 @@ def EvalCharLiteralForRegex(tok):
     Similar logic as below.
     """
     id_ = tok.id
-    value = tok.tval
+    value = lexer.TokenVal(tok)
 
     with switch(id_) as case:
         if case(Id.Char_UBraced):
@@ -121,11 +121,7 @@ def EvalSingleQuoted2(id_, tokens):
     """ Done at parse time """
     if id_ in (Id.Left_SingleQuote, Id.Left_RSingleQuote, Id.Left_TSingleQuote,
                Id.Left_RTSingleQuote):
-        tmp = [
-            lexer.TokenVal(t) for t in tokens
-            if t.id != Id.Ignored_LeadingSpace
-        ]
-        s = ''.join(tmp)
+        strs = [lexer.TokenVal(t) for t in tokens]
 
     elif id_ in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
                  Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
@@ -134,17 +130,11 @@ def EvalSingleQuoted2(id_, tokens):
             for t in tokens:
                 print('T %s' % t)
 
-        tmp = [
-            EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens
-            if t.id != Id.Ignored_LeadingSpace
-        ]
-
-        #tmp = [EvalCStringToken(t.id, t.tval) for t in tokens]
-        s = ''.join(tmp)
+        strs = [EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens]
 
     else:
         raise AssertionError(id_)
-    return s
+    return ''.join(strs)
 
 
 def _TokenConsistsOf(tok, byte_set):
@@ -173,26 +163,18 @@ def _IsTrailingSpace(tok):
     return _TokenConsistsOf(tok, ' \n\r\t')
 
 
-# Whitespace stripping algorithm
+# Whitespace trimming algorithms:
 #
-# - First token should be WHITESPACE* NEWLINE.  Omit it
-# - Last token should be WHITESPACE*
-#   - Then go through all the other tokens that are AFTER token that ends with \n
-#   - if tok.tval[:n] is the same as the last token, then STRIP THAT PREFIX
-# - Do you need to set a flag on the SingleQuoted part?
-#
-# TODO: do this all at compile time?
-
-# These functions may mutate tok.tval.  TODO: mutate the parts instead, after
-# we remove .tval
-
+# 1. Trim what's after opening ''' or """, if it's whitespace
+# 2. Determine what's before closing ''' or """ -- this is what you strip
+# 3. Strip each line by mutating the token
+#    - Change the ID from Id.Lit_Chars -> Id.Lit_CharsWithoutPrefix to maintain
+#      the lossless invariant
 
 def RemoveLeadingSpaceDQ(parts):
     # type: (List[word_part_t]) -> None
     if len(parts) <= 1:  # We need at least 2 parts to strip anything
         return
-
-    line_ended = False  # Think of it as a tiny state machine
 
     # The first token may have a newline
     UP_first = parts[0]
@@ -203,35 +185,33 @@ def RemoveLeadingSpaceDQ(parts):
             # Remove the first part.  TODO: This could be expensive if there are many
             # lines.
             parts.pop(0)
-        if lexer.TokenEndsWith(first, '\n'):
-            line_ended = True
 
     UP_last = parts[-1]
     to_strip = None  # type: Optional[str]
     if UP_last.tag() == word_part_e.Literal:
         last = cast(Token, UP_last)
         if _IsLeadingSpace(last):
-            to_strip = last.tval
+            to_strip = lexer.TokenVal(last)
             parts.pop()  # Remove the last part
 
-    if to_strip is not None:
-        n = len(to_strip)
-        for part in parts:
-            if part.tag() != word_part_e.Literal:
-                line_ended = False
-                continue
+    if to_strip is None:
+        return
 
-            lit_tok = cast(Token, part)
-
-            if line_ended:
-                if lexer.TokenStartsWith(lit_tok, to_strip):
-                    # MUTATING the part here
-                    lit_tok.tval = lit_tok.tval[n:]
-
+    n = len(to_strip)
+    for part in parts:
+        if part.tag() != word_part_e.Literal:
             line_ended = False
-            if lexer.TokenEndsWith(lit_tok, '\n'):
-                line_ended = True
-                #log('%s', p)
+            continue
+
+        lit_tok = cast(Token, part)
+
+        if lit_tok.col == 0 and lexer.TokenStartsWith(lit_tok, to_strip):
+            # MUTATING the part here
+            # TODO: remove tval dependency
+            lit_tok.tval = lit_tok.tval[n:]
+
+            lit_tok.col = n
+            lit_tok.length -= n
 
 
 def RemoveLeadingSpaceSQ(tokens):
