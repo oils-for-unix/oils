@@ -4,7 +4,7 @@
 These functions are called after parsing, but don't depend on any runtime
 values.
 """
-from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
     SingleQuoted,
@@ -55,18 +55,12 @@ def EvalCharLiteralForRegex(tok):
             raise AssertionError(tok)
 
 
-def EvalCStringToken(tok):
-    # type: (Token) -> Optional[str]
+def EvalCStringToken(id_, value):
+    # type: (Id_t, str) -> Optional[str]
     """This function is shared between echo -e and $''.
 
     $'' could use it at compile time, much like brace expansion in braces.py.
     """
-    id_ = tok.id
-    value = tok.tval
-
-    if 0:
-        log('tok %s', tok)
-
     if id_ in (Id.Char_Literals, Id.Unknown_Backslash, Id.Char_AsciiControl):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
 
@@ -136,7 +130,7 @@ def EvalSingleQuoted(part):
                           Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
                           Id.Left_BTSingleQuote):
         # NOTE: This could be done at compile time
-        tmp = [EvalCStringToken(t) for t in part.tokens]
+        tmp = [EvalCStringToken(t.id, t.tval) for t in part.tokens]
         s = ''.join(tmp)
 
     else:

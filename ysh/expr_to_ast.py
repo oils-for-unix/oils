@@ -1476,7 +1476,7 @@ class Transformer(object):
                 tok = p_atom.GetChild(0).tok
                 # Must be Id.Char_{OneChar,Hex,UBraced}
                 assert consts.GetKind(tok.id) == Kind.Char
-                s = word_compile.EvalCStringToken(tok)
+                s = word_compile.EvalCStringToken(tok.id, tok.tval)
                 return re.LiteralChars(tok, s)
 
             raise NotImplementedError(typ)

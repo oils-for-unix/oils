@@ -438,7 +438,7 @@ module syntax
   # - Equivalence classes are [=
 
   printf_part =
-    Literal(Token token)
+    Literal %TokenWithStr
     # flags are 0 hyphen space + #
     # type is 's' for %s, etc.
   | Percent(List[Token] flags, Token? width, Token? precision, Token type)

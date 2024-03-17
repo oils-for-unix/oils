@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     loc_t,
     source,
     Token,
+    TokenWithStr,
     CompoundWord,
     printf_part,
     printf_part_e,
@@ -139,7 +140,8 @@ class _FormatStringParser(object):
                 # parse time.
                 # Users should use $'' or the future static printf ${x %.3f}.
 
-                parts.append(printf_part.Literal(self.cur_token))
+                tok = self.cur_token
+                parts.append(TokenWithStr(tok, lexer.TokenVal(tok)))
 
             elif self.token_type == Id.Format_Percent:
                 parts.append(self._ParseFormatStr())
@@ -187,12 +189,11 @@ class Printf(vm._Builtin):
             for part in parts:  # loop over parsed format string
                 UP_part = part
                 if part.tag() == printf_part_e.Literal:
-                    part = cast(printf_part.Literal, UP_part)
-                    token = part.token
-                    if token.id == Id.Format_EscapedPercent:
+                    part = cast(TokenWithStr, UP_part)
+                    if part.tok.id == Id.Format_EscapedPercent:
                         s = '%'
                     else:
-                        s = word_compile.EvalCStringToken(token)
+                        s = word_compile.EvalCStringToken(part.tok.id, part.s)
                     out.append(s)
 
                 elif part.tag() == printf_part_e.Percent:
@@ -298,10 +299,7 @@ class Printf(vm._Builtin):
                             if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                                 break
 
-                            # Note: DummyToken is OK because EvalCStringToken() doesn't have
-                            # any syntax errors.
-                            tok = lexer.DummyToken(id_, tok_val)
-                            p = word_compile.EvalCStringToken(tok)
+                            p = word_compile.EvalCStringToken(id_, tok_val)
 
                             # Unusual behavior: '\c' aborts processing!
                             if p is None:

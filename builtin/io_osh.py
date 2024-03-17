@@ -8,7 +8,6 @@ from _devbuild.gen.value_asdl import (value, value_t)
 from builtin import read_osh
 from core.error import e_die_status
 from frontend import flag_util
-from frontend import lexer
 from frontend import match
 from frontend import typed_args
 from core import optview
@@ -78,10 +77,7 @@ class Echo(vm._Builtin):
                     if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                         break
 
-                    # Note: DummyToken is OK because EvalCStringToken() doesn't have any
-                    # syntax errors.
-                    tok = lexer.DummyToken(id_, s)
-                    p = word_compile.EvalCStringToken(tok)
+                    p = word_compile.EvalCStringToken(id_, s)
 
                     # Unusual behavior: '\c' prints what is there and aborts processing!
                     if p is None:
