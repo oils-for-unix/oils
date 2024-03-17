@@ -148,7 +148,9 @@ module syntax
   DoubleQuoted = (Token left, List[word_part] parts, Token right)
   SingleQuoted = (Token left, List[Token] tokens, Token right)
 
+  # TODO: NameTok -> TokenWithStr everywhere
   NameTok = (Token left, str var_name)
+  TokenWithStr = (Token tok, str s)
 
   CommandSub = (Token left_token, command child, Token right)
 
@@ -587,10 +589,9 @@ module syntax
 
   # NOTE: modifier is unused now, can represent L or P
   re_repeat =
-    Op(Token op)
-  | Num(Token times)
-    # dot{1,2}
-  | Range(Token? lower, Token? upper)
+    Op %Token  # + * ?
+  | Num %TokenWithStr  # {3}
+  | Range(Token? left, str lower, str upper, Token? right)  # dot{1,2}
   # Haven't implemented the modifier, e.g. x{+ P}
   # | Num(Token times, id modifier)
   # | Range(Token? lower, Token? upper, id modifier)
@@ -605,6 +606,7 @@ module syntax
   | CharClass(bool negated, List[char_class_term] terms)
 
     # @D
+    # TODO: Splice %NameTok
   | Splice(Token name, str var_name)
 
   | SingleQuoted %SingleQuoted

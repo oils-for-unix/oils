@@ -14,12 +14,14 @@ from _devbuild.gen.syntax_asdl import (
     re_repeat,
     re_repeat_e,
     EggexFlag,
+    Token,
+    TokenWithStr,
 )
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.value_asdl import value
 from core.error import e_die, p_die
 from frontend import lexer
-from mycpp.mylib import log, tagswitch
+from mycpp.mylib import log, tagswitch, switch
 from osh import glob_  # for ExtendedRegexEscape
 
 from typing import List, Optional, TYPE_CHECKING, cast
@@ -221,28 +223,26 @@ def _AsPosixEre(node, parts, capture_names):
         UP_op = op
 
         if op_tag == re_repeat_e.Op:
-            op = cast(re_repeat.Op, UP_op)
-            op_id = op.op.id
-            if op_id == Id.Arith_Plus:
-                parts.append('+')
-            elif op_id == Id.Arith_Star:
-                parts.append('*')
-            elif op_id == Id.Arith_QMark:
-                parts.append('?')
-            else:
-                raise AssertionError(op_id)
+            op = cast(Token, UP_op)
+            with switch(op.id) as case:
+                if case(Id.Arith_Plus):
+                    parts.append('+')
+                elif case(Id.Arith_Star):
+                    parts.append('*')
+                elif case(Id.Arith_QMark):
+                    parts.append('?')
+                else:
+                    raise AssertionError(op.id)
             return
 
         if op_tag == re_repeat_e.Num:
-            op = cast(re_repeat.Num, UP_op)
-            parts.append('{%s}' % op.times.tval)
+            op = cast(TokenWithStr, UP_op)
+            parts.append('{%s}' % op.s)
             return
 
         if op_tag == re_repeat_e.Range:
             op = cast(re_repeat.Range, UP_op)
-            lower = op.lower.tval if op.lower else ''
-            upper = op.upper.tval if op.upper else ''
-            parts.append('{%s,%s}' % (lower, upper))
+            parts.append('{%s,%s}' % (op.lower, op.upper))
             return
 
         raise NotImplementedError(op_tag)

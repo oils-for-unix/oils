@@ -44,6 +44,7 @@ from _devbuild.gen.syntax_asdl import (
     Eggex,
     EggexFlag,
     CharRange,
+    TokenWithStr,
 )
 from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
@@ -1574,7 +1575,7 @@ class Transformer(object):
         id_ = tok.id
         # a+
         if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
-            return re_repeat.Op(tok)
+            return tok
 
         if id_ == Id.Op_LBrace:
             p_range = p_repeat.GetChild(1)
@@ -1588,18 +1589,24 @@ class Transformer(object):
 
             n = p_range.NumChildren()
             if n == 1:  # {3}
-                return re_repeat.Num(p_range.GetChild(0).tok)
+                tok = p_range.GetChild(0).tok
+                return TokenWithStr(tok, lexer.TokenVal(tok))
 
             if n == 2:
                 if p_range.GetChild(0).tok.id == Id.Expr_DecInt:  # {,3}
-                    return re_repeat.Range(p_range.GetChild(0).tok, None)
+                    left = p_range.GetChild(0).tok
+                    return re_repeat.Range(left, lexer.TokenVal(left), '',
+                                           None)
                 else:  # {1,}
-                    return re_repeat.Range(None, p_range.GetChild(1).tok)
+                    right = p_range.GetChild(1).tok
+                    return re_repeat.Range(None, '', lexer.TokenVal(right),
+                                           right)
 
             if n == 3:  # {1,3}
-                return re_repeat.Range(
-                    p_range.GetChild(0).tok,
-                    p_range.GetChild(2).tok)
+                left = p_range.GetChild(0).tok
+                right = p_range.GetChild(2).tok
+                return re_repeat.Range(left, lexer.TokenVal(left),
+                                       lexer.TokenVal(right), right)
 
             raise AssertionError(n)
 
