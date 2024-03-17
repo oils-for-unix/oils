@@ -2,7 +2,7 @@
 """expr_eval.py."""
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
@@ -52,7 +52,6 @@ from core import pyutil
 from core import state
 from core import ui
 from core import vm
-from frontend import consts
 from frontend import lexer
 from frontend import match
 from frontend import typed_args
@@ -1307,22 +1306,11 @@ class EggexEvaluator(object):
                     self._EvalClassLiteralTerm(t, new_terms)
                 return re.CharClass(node.negated, new_terms)
 
-            elif case(re_e.Token):
-                node = cast(Token, UP_node)
-
-                id_ = node.id
-
-                # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
-                kind = consts.GetKind(id_)
-                assert kind == Kind.Char, id_
-                s = word_compile.EvalCStringToken(node)
-                return re.LiteralChars(s, node)
-
             elif case(re_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)
 
                 s = word_compile.EvalSingleQuoted(node)
-                return re.LiteralChars(s, node.left)
+                return re.LiteralChars(node.left, s)
 
             elif case(re_e.Splice):
                 node = cast(re.Splice, UP_node)
@@ -1332,8 +1320,8 @@ class EggexEvaluator(object):
                 with tagswitch(val) as case:
                     if case(value_e.Str):
                         val = cast(value.Str, UP_val)
-                        to_splice = re.LiteralChars(val.s,
-                                                    node.name)  # type: re_t
+                        to_splice = re.LiteralChars(node.name,
+                                                    val.s)  # type: re_t
 
                     elif case(value_e.Eggex):
                         val = cast(value.Eggex, UP_val)

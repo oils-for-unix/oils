@@ -1,7 +1,7 @@
 """expr_to_ast.py."""
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.syntax_asdl import (
     Token,
     NameTok,
@@ -53,6 +53,7 @@ from frontend import lexer
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
+from osh import word_compile
 from ysh import expr_parse
 from ysh import regex_translate
 
@@ -1467,7 +1468,11 @@ class Transformer(object):
                 return cast(SingleQuoted, p_child.GetChild(1).tok)
 
             if typ == grammar_nt.char_literal:
-                return p_atom.GetChild(0).tok
+                tok = p_atom.GetChild(0).tok
+                # Must be Id.Char_{OneChar,Hex,UBraced}
+                assert consts.GetKind(tok.id) == Kind.Char
+                s = word_compile.EvalCStringToken(tok)
+                return re.LiteralChars(tok, s)
 
             raise NotImplementedError(typ)
 
@@ -1484,9 +1489,8 @@ class Transformer(object):
             if tok.id == Id.Expr_Dollar:  # $
                 return re.Primitive(tok, Id.Re_End)
 
-            # TODO: d digit can turn into PosixClass and PerlClass right here!
-            # It's parsing.
             if tok.id == Id.Expr_Name:
+                # d digit -> PosixClass PerlClass etc.
                 return self._NameInRegex(None, tok)
 
             if tok.id == Id.Expr_Symbol:

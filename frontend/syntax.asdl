@@ -598,8 +598,7 @@ module syntax
   # | Range(Token? lower, Token? upper, id modifier)
 
   re = 
-    # e.g.  .  ^  $  %begin  \u123
-    Token %Token
+    Primitive(Token blame_tok, id id)  # . ^ $   dot %start %end
   | PosixClass %PosixClass
   | PerlClass %PerlClass
     # syntax [ $x \n ]
@@ -623,11 +622,6 @@ module syntax
   | Capture(re child, Token? name, Token? func_name)
   | Backtracking(bool negated, Token name, re child)
 
-  # These nodes are never parsed; they're part of execution.
-  # Right now we do them in _EvalRegex, though many transformations could be
-  # done as constant evaluation.
-
-  | Primitive(Token blame_tok, id id)  # . dot etc.
-    # String substitutions are evaluated into literals
-  | LiteralChars(str s, Token blame_tok)
+    # \u{ff} is parsed as this, but SingleQuoted also evaluates to it
+  | LiteralChars(Token blame_tok, str s)
 }
