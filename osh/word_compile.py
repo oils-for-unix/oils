@@ -259,8 +259,6 @@ def RemoveLeadingSpaceSQ(tokens):
     if len(tokens) <= 1:  # We need at least 2 parts to strip anything
         return
 
-    line_ended = False
-
     # var x = '''    # strip initial newline/whitespace
     #   x
     #   '''
@@ -268,8 +266,6 @@ def RemoveLeadingSpaceSQ(tokens):
     if first.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
         if _IsTrailingSpace(first):
             tokens.pop(0)  # Remove the first part
-        if lexer.TokenEndsWith(first, '\n'):
-            line_ended = True
 
     # Figure out what to strip, based on last token
     last = tokens[-1]
@@ -292,5 +288,7 @@ def RemoveLeadingSpaceSQ(tokens):
         if tok.col == 0 and lexer.TokenStartsWith(tok, to_strip):
             tok.col = n
             tok.length -= n
-            #tok.id = Id.Lit_CharsWithoutPrefix
+            # Lit_Chars -> Lit_CharsWithoutPrefix
+            # Char_Literals -> Char_LitStripped
+            #
             #log('STRIP tok %s', tok)
