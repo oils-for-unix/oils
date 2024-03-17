@@ -148,7 +148,7 @@ def EvalSingleQuoted2(id_, tokens):
     return s
 
 
-def TokenConsistsOf(tok, byte_set):
+def _TokenConsistsOf(tok, byte_set):
     # type: (Token, str) -> bool
     start = tok.col
     end = tok.col + tok.length
@@ -159,19 +159,19 @@ def TokenConsistsOf(tok, byte_set):
     return True
 
 
-def IsLeadingSpace(tok):
+def _IsLeadingSpace(tok):
     # type: (Token) -> bool
-    """Determines if the token before ''' etc. can be stripped.
+    """ Determine if the token before ''' etc. is space to trim """
+    return _TokenConsistsOf(tok, ' \t')
 
-    Similar to IsWhitespace()
+
+def _IsTrailingSpace(tok):
+    # type: (Token) -> bool
+    """ Determine if the space/newlines after ''' should be trimmed
+
+    Like s.isspace(), without legacy \f \v and Unicode.
     """
-    return TokenConsistsOf(tok, ' \t')
-
-
-def IsWhitespace(tok):
-    # type: (Token) -> bool
-    """Like s.isspace(), without legacy \f \v and nicode."""
-    return TokenConsistsOf(tok, ' \n\r\t')
+    return _TokenConsistsOf(tok, ' \n\r\t')
 
 
 # Whitespace stripping algorithm
@@ -200,7 +200,7 @@ def RemoveLeadingSpaceDQ(parts):
     if UP_first.tag() == word_part_e.Literal:
         first = cast(Token, UP_first)
         #log('T %s', first_part)
-        if IsWhitespace(first):
+        if _IsTrailingSpace(first):
             # Remove the first part.  TODO: This could be expensive if there are many
             # lines.
             parts.pop(0)
@@ -211,7 +211,7 @@ def RemoveLeadingSpaceDQ(parts):
     to_strip = None  # type: Optional[str]
     if UP_last.tag() == word_part_e.Literal:
         last = cast(Token, UP_last)
-        if IsLeadingSpace(last):
+        if _IsLeadingSpace(last):
             to_strip = last.tval
             parts.pop()  # Remove the last part
 
@@ -236,7 +236,7 @@ def RemoveLeadingSpaceDQ(parts):
 
 
 def RemoveLeadingSpaceSQ(tokens):
-    # type: (List[Token]) -> List[Token]
+    # type: (List[Token]) -> None
     """Strip leading whitespace from tokens.
 
     May return original list unmodified, or a new list.
@@ -258,7 +258,7 @@ def RemoveLeadingSpaceSQ(tokens):
         log('--')
 
     if len(tokens) <= 1:  # We need at least 2 parts to strip anything
-        return tokens
+        return
 
     line_ended = False
 
@@ -267,7 +267,7 @@ def RemoveLeadingSpaceSQ(tokens):
     #   '''
     first = tokens[0]
     if first.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
-        if IsWhitespace(first):
+        if _IsTrailingSpace(first):
             tokens.pop(0)  # Remove the first part
         if lexer.TokenEndsWith(first, '\n'):
             line_ended = True
@@ -276,47 +276,22 @@ def RemoveLeadingSpaceSQ(tokens):
     last = tokens[-1]
     to_strip = None  # type: Optional[str]
     if last.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
-        if IsLeadingSpace(last):
+        if _IsLeadingSpace(last):
             to_strip = lexer.TokenVal(last)
             tokens.pop()  # Remove the last part
 
     if to_strip is None:
-        return tokens  # Return original unmodified
+        return
 
     #log('SQ Stripping %r', to_strip)
     n = len(to_strip)
-    new_tokens = []  # type: List[Token]
+
+    log('--')
     for tok in tokens:  # line_ended reset on every iteration
-
-        if tok.id not in (Id.Lit_Chars, Id.Char_Literals,
-                          Id.Char_AsciiControl):
-            line_ended = False
-            new_tokens.append(tok)
-            continue
-
-        if line_ended and lexer.TokenStartsWith(tok, to_strip):
-            # Problem: the arena already has the unstripped token, through
-            # arena.NewToken()
-            #
-            # We simply create 2 new tokens here for EvalSingleQuoted2() to
-            # see.  They become garbage because that function computes
-            # SingleQuoted.sval and throws away the tokens.
-            #
-            # ysh --tool fmt may have to call this function again?
-
-            #log('col = %d, length = %d, n = %d', tok.col, tok.length, n)
-            space_tok = Token(Id.Ignored_LeadingSpace, tok.col, n,
-                              runtime.NO_SPID, tok.line, None)
-            new_tokens.append(space_tok)
-
-            if tok.length > n:
-                stripped_tok = Token(tok.id, tok.col + n, tok.length - n,
-                                     runtime.NO_SPID, tok.line, None)
-                new_tokens.append(stripped_tok)
-        else:
-            new_tokens.append(tok)
-
-        line_ended = lexer.TokenEndsWith(tok, '\n')
-
-    #log('NEW %s', new_tokens)
-    return new_tokens
+        log('tok %s', tok)
+        # Strip leading space on tokens that begin lines, by bumping start col
+        if tok.col == 0 and lexer.TokenStartsWith(tok, to_strip):
+            tok.col = n
+            tok.length -= n
+            #tok.id = Id.Lit_CharsWithoutPrefix
+            #log('STRIP tok %s', tok)

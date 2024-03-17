@@ -251,6 +251,7 @@ def AddKinds(spec):
         'Lit',
         [
             'Chars',
+            'CharsWithoutPrefix',  # for stripping leading whitespace
             'VarLike',
             'ArrayLhsOpen',
             'ArrayLhsClose',

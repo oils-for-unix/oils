@@ -696,7 +696,7 @@ class WordParser(WordEmitter):
         # Remove space from '''  r'''  $''' in both expression mode and command mode
         if left_token.id in (Id.Left_TSingleQuote, Id.Left_RTSingleQuote,
                              Id.Left_UTSingleQuote, Id.Left_BTSingleQuote):
-            tokens = word_compile.RemoveLeadingSpaceSQ(tokens)
+            word_compile.RemoveLeadingSpaceSQ(tokens)
 
         # Validation after lexing - same 2 checks in j8.LexerDecoder
         is_u_string = left_token.id in (Id.Left_USingleQuote,
