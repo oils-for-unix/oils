@@ -623,7 +623,7 @@ class LexerDecoder(object):
             # Now handle each kind of token
             #
 
-            if tok_id == Id.Char_Literals:  # JSON and J8
+            if tok_id == Id.Lit_Chars:  # JSON and J8
                 part = self.s[str_pos:str_end]
                 if not pyj8.PartIsUtf8(self.s, str_pos, str_end):
                     # Syntax error because JSON must be valid UTF-8

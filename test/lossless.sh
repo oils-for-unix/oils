@@ -30,7 +30,7 @@ _compare() {
 }
 
 test-sh() {
-  for file in test/lossless/*; do
+  for file in test/lossless/*.sh; do
     echo "--- $file"
     _compare $file
   done

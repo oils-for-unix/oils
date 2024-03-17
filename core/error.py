@@ -230,7 +230,7 @@ class Runtime(Exception):
 class Decode(Exception):
     """
     List of J8 errors errors:
-    - message isn't UTF-8 - Id.Char_Literals - need loc
+    - message isn't UTF-8 - Id.Lit_Chars - need loc
     - Invalid token Id.Unkown_Tok - need loc
     - Unclosed double quote string -- need loc
     - Parse error, e.g. [}{]

@@ -158,7 +158,7 @@ class LexerTest(unittest.TestCase):
 
         t = lexer.Read(lex_mode_e.SQ_C)
         print(t)
-        self.assertTokensEqual(FakeTok(Id.Char_Literals, 'foo bar'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'foo bar'), t)
 
         t = lexer.Read(lex_mode_e.SQ_C)
         print(t)

@@ -400,7 +400,6 @@ def AddKinds(spec):
             'Unicode8',  # bash
             'UBraced',
             'Pound',  # YSH
-            'Literals',
             'AsciiControl',  # \x01-\x1f, what's disallowed in JSON
         ])
 

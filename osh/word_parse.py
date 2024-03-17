@@ -636,7 +636,7 @@ class WordParser(WordEmitter):
             self._SetNext(lex_mode)
             self._GetToken()
 
-            # Kind.Char emitted in DOLLAR_SQ state
+            # Kind.Char emitted in lex_mode.SQ_C
             if self.token_kind in (Kind.Lit, Kind.Char):
                 tok = self.cur_token
                 # Happens in lex_mode_e.SQ: 'one\two' is ambiguous, should be

@@ -5,7 +5,7 @@ from __future__ import print_function
 import time as time_  # avoid name conflict
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind, Kind_t
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import (
     loc,
@@ -131,9 +131,8 @@ class _FormatStringParser(object):
         self._Next(lex_mode_e.PrintfOuter)
         parts = []  # type: List[printf_part_t]
         while True:
-            if (self.token_kind == Kind.Char or
-                    self.token_type == Id.Format_EscapedPercent or
-                    self.token_type == Id.Unknown_Backslash):
+            if (self.token_kind in (Kind.Lit, Kind.Char) or self.token_type
+                    in (Id.Format_EscapedPercent, Id.Unknown_Backslash)):
 
                 # Note: like in echo -e, we don't fail with Unknown_Backslash here
                 # when shopt -u parse_backslash because it's at runtime rather than
@@ -151,7 +150,7 @@ class _FormatStringParser(object):
                 break
 
             else:
-                raise AssertionError(self.token_type)
+                raise AssertionError(Id_str(self.token_type))
 
             self._Next(lex_mode_e.PrintfOuter)
 

@@ -5,11 +5,11 @@ It consists of a series of lexer modes, each with a regex -> Id mapping.
 
 After changing this file, run:
 
-    build/dev.sh all
+    build/py.sh all
 
 or at least:
 
-    build/dev.sh fastlex
+    build/py.sh fastlex
 
 Input Handling
 --------------
@@ -497,7 +497,7 @@ ECHO_E_DEF = _C_STRING_COMMON + [
     C(r'\c', Id.Char_Stop),
 
     # e.g. 'foo', anything that's not a backslash escape
-    R(r'[^\\\0]+', Id.Char_Literals),
+    R(r'[^\\\0]+', Id.Lit_Chars),
 ]
 
 # https://json.org/
@@ -598,7 +598,7 @@ J8_STR_DEF = [
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'''[^\\'\0]+''', Id.Char_Literals),
+    R(r'''[^\\'\0]+''', Id.Lit_Chars),
 ]
 
 # For "JSON strings \" \u1234"
@@ -616,7 +616,7 @@ JSON_STR_DEF = [
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\0]+', Id.Char_Literals),
+    R(r'[^\\"\0]+', Id.Lit_Chars),
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 
@@ -654,13 +654,13 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
     C(r'\"', Id.Char_OneChar),
 
     # e.g. 'foo', anything that's not a backslash escape or '
-    R(r"[^\\'\0]+", Id.Char_Literals),
+    R(r"[^\\'\0]+", Id.Lit_Chars),
     C("'", Id.Right_SingleQuote),
 ]
 
 LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
     R(OCTAL3_RE, Id.Char_Octal3),
-    R(r"[^%\\\0]+", Id.Char_Literals),
+    R(r"[^%\\\0]+", Id.Lit_Chars),
     C('%%', Id.Format_EscapedPercent),
     C('%', Id.Format_Percent),
 ]

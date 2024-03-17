@@ -64,7 +64,7 @@ def EvalCStringToken(id_, value):
 
     $'' could use it at compile time, much like brace expansion in braces.py.
     """
-    if id_ in (Id.Char_Literals, Id.Unknown_Backslash, Id.Char_AsciiControl):
+    if id_ in (Id.Lit_Chars, Id.Unknown_Backslash, Id.Char_AsciiControl):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
 
         # Char_AsciiControl is allowed in YSH code, for newlines in u''
@@ -246,8 +246,7 @@ def RemoveLeadingSpaceSQ(tokens):
     arena.
 
     Quirk to make more consistent:
-      In $''', we have Char_Literals \n
-      In r''' and ''', we have Lit_Chars \n
+      In $''' and r''' and ''', we have Lit_Chars \n
       In u''' and b''', we have Char_AsciiControl \n
     """
     if 0:
@@ -263,14 +262,14 @@ def RemoveLeadingSpaceSQ(tokens):
     #   x
     #   '''
     first = tokens[0]
-    if first.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
+    if first.id in (Id.Lit_Chars, Id.Char_AsciiControl):
         if _IsTrailingSpace(first):
             tokens.pop(0)  # Remove the first part
 
     # Figure out what to strip, based on last token
     last = tokens[-1]
     to_strip = None  # type: Optional[str]
-    if last.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
+    if last.id in (Id.Lit_Chars, Id.Char_AsciiControl):
         if _IsLeadingSpace(last):
             to_strip = lexer.TokenVal(last)
             tokens.pop()  # Remove the last part
@@ -288,7 +287,7 @@ def RemoveLeadingSpaceSQ(tokens):
         if tok.col == 0 and lexer.TokenStartsWith(tok, to_strip):
             tok.col = n
             tok.length -= n
+            # TODO:
             # Lit_Chars -> Lit_CharsWithoutPrefix
-            # Char_Literals -> Char_LitStripped
             #
             #log('STRIP tok %s', tok)
