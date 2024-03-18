@@ -45,7 +45,6 @@ from _devbuild.gen.syntax_asdl import (
     EggexFlag,
     CharCode,
     CharRange,
-    TokenWithStr,
 )
 from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt

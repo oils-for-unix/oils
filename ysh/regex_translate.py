@@ -15,7 +15,6 @@ from _devbuild.gen.syntax_asdl import (
     re_repeat_e,
     EggexFlag,
     Token,
-    TokenWithStr,
 )
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.value_asdl import value
