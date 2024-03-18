@@ -1275,7 +1275,7 @@ class EggexEvaluator(object):
                 convert_func = None  # type: Optional[value_t]
                 convert_tok = None  # type: Optional[Token]
                 if node.func_name:
-                    func_name = lexer.TokenVal(node.func_name)
+                    func_name = lexer.LazyStr(node.func_name)
                     func_val = self.mem.GetValue(func_name)
                     with tagswitch(func_val) as case:
                         if case(value_e.Func, value_e.BuiltinFunc):

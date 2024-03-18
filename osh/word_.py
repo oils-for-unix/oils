@@ -74,7 +74,7 @@ def _EvalWordPart(part):
 
         elif case(word_part_e.Literal):
             tok = cast(Token, UP_part)
-            return True, lexer.TokenVal(tok), False
+            return True, lexer.LazyStr(tok), False
 
         elif case(word_part_e.EscapedLiteral):
             part = cast(word_part.EscapedLiteral, UP_part)

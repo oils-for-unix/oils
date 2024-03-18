@@ -11,6 +11,8 @@ TEST sizeof_syntax() {
   log("alignof(Token) = %d", alignof(syntax_asdl::Token));
   log("alignof(Token*) = %d", alignof(syntax_asdl::Token *));
 
+  log("sizeof(BracedVarSub) = %d", sizeof(syntax_asdl::BracedVarSub));
+
   // Reordered to be 16 bytes
   log("sizeof(runtime_asdl::Cell) = %d", sizeof(runtime_asdl::Cell));
 
