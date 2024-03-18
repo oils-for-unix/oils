@@ -1604,7 +1604,7 @@ class Transformer(object):
             n = p_range.NumChildren()
             if n == 1:  # {3}
                 tok = p_range.GetChild(0).tok
-                return TokenWithStr(tok, lexer.TokenVal(tok))
+                return tok  # different operator than + * ?
 
             if n == 2:
                 if p_range.GetChild(0).tok.id == Id.Expr_DecInt:  # {,3}

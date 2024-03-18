@@ -61,7 +61,7 @@ def FakeTok(id_, val):
     # type: (int, str) -> Token
     src = source.Interactive
     line = SourceLine(1, val, src)
-    return Token(id_, 0, len(val), runtime.NO_SPID, line, val)
+    return Token(id_, 0, len(val), runtime.NO_SPID, line, None)
 
 
 def PrintableString(s):

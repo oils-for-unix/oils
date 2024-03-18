@@ -13,8 +13,8 @@ class UiTest(unittest.TestCase):
     def testErrorFormatter(self):
         arena = test_lib.MakeArena('')
         line_id = arena.AddLine('[line one]', 1)
-        spid1 = arena.NewToken(-1, 0, 2, line_id, '').span_id
-        spid2 = arena.NewToken(-1, 2, 2, line_id, '').span_id
+        spid1 = arena.NewToken(-1, 0, 2, line_id).span_id
+        spid2 = arena.NewToken(-1, 2, 2, line_id).span_id
 
         tok1 = arena.GetToken(spid1)
         tok2 = arena.GetToken(spid2)

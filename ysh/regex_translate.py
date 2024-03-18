@@ -231,13 +231,10 @@ def _AsPosixEre(node, parts, capture_names):
                     parts.append('*')
                 elif case(Id.Arith_QMark):
                     parts.append('?')
+                elif case(Id.Expr_DecInt):
+                    parts.append('{%s}' % lexer.LazyStr(op))
                 else:
                     raise AssertionError(op.id)
-            return
-
-        if op_tag == re_repeat_e.Num:
-            op = cast(TokenWithStr, UP_op)
-            parts.append('{%s}' % op.s)
             return
 
         if op_tag == re_repeat_e.Range:
