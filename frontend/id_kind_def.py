@@ -236,9 +236,7 @@ def AddKinds(spec):
 
     spec.AddKind('Eol', ['Tok'])  # no more tokens on line (\0)
 
-    # HereTabs is for stripping tabs on each line of <<- , while preserving the
-    # "lossless invariant"
-    spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment', 'HereTabs'])
+    spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
 
     # Id.WS_Space is for lex_mode_e.ShCommand; Id.Ignored_Space is for
     # lex_mode_e.Arith

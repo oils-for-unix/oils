@@ -159,7 +159,7 @@ def _MakeLiteralHereLines(
         # here docs, but it's more complex with double quoted EOF docs.
 
         if do_lossless:  # avoid garbage, doesn't affect correctness
-            arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line)
+            arena.NewToken(Id.Lit_CharsWithoutPrefix, start_offset, 0, src_line)
 
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line)
@@ -197,7 +197,7 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
     # Maintain lossless invariant for STRIPPED tabs: add a Token to the
     # arena invariant, but don't refer to it.
     if parse_ctx.do_lossless:  # avoid garbage, doesn't affect correctness
-        arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, end_line)
+        arena.NewToken(Id.Lit_CharsWithoutPrefix, start_offset, 0, end_line)
 
     # Create a Token with the end terminator.  Maintains the invariant that the
     # tokens "add up".
