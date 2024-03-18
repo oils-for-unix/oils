@@ -1594,7 +1594,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part = cast(Token, UP_part)
                 # Split if it's in a substitution.
                 # That is: echo is not split, but ${foo:-echo} is split
-                v = part_value.String(part.tval, quoted, is_subst)
+                v = part_value.String(lexer.LazyStr(part), quoted, is_subst)
                 part_vals.append(v)
 
             elif case(word_part_e.EscapedLiteral):

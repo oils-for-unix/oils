@@ -155,11 +155,10 @@ def _MakeLiteralHereLines(
         # Maintain lossless invariant for STRIPPED tabs: add a Token to the
         # arena invariant, but don't refer to it.
         if do_lossless:  # avoid garbage, doesn't affect correctness
-            arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line,
-                           None)
+            arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line)
 
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
-                           src_line, src_line.content[start_offset:])
+                           src_line)
         tokens.append(t)
     return tokens
 
@@ -194,12 +193,12 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
     # Maintain lossless invariant for STRIPPED tabs: add a Token to the
     # arena invariant, but don't refer to it.
     if parse_ctx.do_lossless:  # avoid garbage, doesn't affect correctness
-        arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, end_line, None)
+        arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, end_line)
 
     # Create a Token with the end terminator.  Maintains the invariant that the
     # tokens "add up".
     h.here_end_tok = arena.NewToken(Id.Undefined_Tok, start_offset,
-                                    len(end_line.content), end_line, '')
+                                    len(end_line.content), end_line)
 
 
 def _MakeAssignPair(parse_ctx, preparsed, arena):
@@ -2355,7 +2354,7 @@ class CommandParser(object):
                 part0 = parts[0]
                 if part0.tag() == word_part_e.Literal:
                     tok = cast(Token, part0)
-                    if (match.IsValidVarName(tok.tval) and
+                    if (match.IsValidVarName(lexer.LazyStr(tok)) and
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
                         assert tok.id == Id.Lit_Chars, tok
 

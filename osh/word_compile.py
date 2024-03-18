@@ -171,6 +171,7 @@ def _IsTrailingSpace(tok):
 #    - Change the ID from Id.Lit_Chars -> Id.Lit_CharsWithoutPrefix to maintain
 #      the lossless invariant
 
+
 def RemoveLeadingSpaceDQ(parts):
     # type: (List[word_part_t]) -> None
     if len(parts) <= 1:  # We need at least 2 parts to strip anything
@@ -206,12 +207,15 @@ def RemoveLeadingSpaceDQ(parts):
         lit_tok = cast(Token, part)
 
         if lit_tok.col == 0 and lexer.TokenStartsWith(lit_tok, to_strip):
+            # TODO: Lexer should not populate this!
+            assert lit_tok.tval is None, lit_tok.tval
+
             # MUTATING the part here
-            # TODO: remove tval dependency
-            lit_tok.tval = lit_tok.tval[n:]
+            #lit_tok.tval = lit_tok.tval[n:]
 
             lit_tok.col = n
             lit_tok.length -= n
+            #log('n = %d, %s', n, lit_tok)
 
 
 def RemoveLeadingSpaceSQ(tokens):

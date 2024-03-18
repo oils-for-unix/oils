@@ -609,7 +609,7 @@ module syntax
   | CharClass(bool negated, List[char_class_term] terms)
 
     # @D
-    # TODO: Splice %NameTok
+    # TODO: Splice %Token
   | Splice(Token name, str var_name)
 
   | SingleQuoted %SingleQuoted

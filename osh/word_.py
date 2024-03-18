@@ -119,9 +119,6 @@ def FastStrEval(w):
         For echo -e, test x -lt 0, etc.
     (2) single quoted word like 'foo'
 
-    TODO:
-    - remove tval - word_part.Literal(Token tok, str? sval) -> becomes sval
-
     Other patterns we could detect are:
     (1) "foo"
     (2) "$var" and "${var}" - I think these are very common in OSH code (but not YSH)
@@ -142,16 +139,7 @@ def FastStrEval(w):
                 #   Right now it's Lit_Chars (e.g. ls -l) and [ and ] because I
                 #   know those are common
                 #   { } are not as common
-
-                #if part0.line is None:
-                #    log("part0 %s", part0)
-
-                # TODO: word_part.Literal should have lazy (str? sval) field
-
-                # TODO: instances created by lexer.DummyToken() don't have
-                # tok.line field, so they can't use lexer.TokenVal()
-                return part0.tval
-                #return lexer.TokenVal(part0)
+                return lexer.LazyStr(part0)
 
             else:
                 # e.g. Id.Lit_Star needs to be glob expanded

@@ -10,7 +10,7 @@ lexer.py - Library for lexing.
 
 from _devbuild.gen.syntax_asdl import Token, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
-from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str, Kind
+from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str
 from asdl import runtime
 from mycpp.mylib import log
 from frontend import consts
@@ -18,7 +18,7 @@ from frontend import match
 
 unused = log, Id_str
 
-from typing import List, Tuple, Optional, Counter, TYPE_CHECKING
+from typing import List, Tuple, Counter, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.alloc import Arena
     from frontend.reader import _Reader
@@ -95,6 +95,43 @@ def TokenSlice(tok, left, right):
     return tok.line.content[start:end]
 
 
+def LazyStr(tok):
+    # type: (Token) -> str
+    """
+    Most tokens do NOT need strings.  We want to avoid allocations.
+
+    Some tokens that need it:
+
+    - word_part.Literal
+    - Currently NameTok
+      - SimpleVarSub %NameTok - $foo - is TokenSliceLeft(x, 1)
+        - need to ensure this at Id level perhaps
+      - arith_expr.VarSub %NameTok
+      - y_lhs.Var %NameTok
+
+    - re.Splice(Token name, str_name)
+    - word_part.Splice(Token blame_tok, str var_name)
+      - conflicts with word_part.Literal
+    - class_literal_term.Splice
+
+    - currently %TokenWithStar
+      - printf_part.Literal %TokenWithStr
+      - re_repeat.Num %TokenWithStr conflicts with Op %Token
+
+    Other:
+    - SingleQuoted should have lazy sval, NOT at the token level
+
+    """
+    if tok.tval is None:
+        if tok.id == Id.VSub_DollarName:
+            # Special case for SimpleVarSub - completion also relies on this
+            tok.tval = TokenSliceLeft(tok, 1)
+        else:
+            tok.tval = TokenVal(tok)
+
+    return tok.tval
+
+
 def DummyToken(id_, val):
     # type: (int, str) -> Token
 
@@ -151,7 +188,7 @@ class LineLexer(object):
         else:
             src_line = self.src_line
 
-        return self.arena.NewToken(id_, self.line_pos, 0, src_line, '')
+        return self.arena.NewToken(id_, self.line_pos, 0, src_line)
 
     def LookAheadOne(self, lex_mode):
         # type: (lex_mode_t) -> Id_t
@@ -277,19 +314,6 @@ class LineLexer(object):
         # TODO: can inline this function with formula on 16-bit Id.
         kind = consts.GetKind(tok_type)
 
-        # Save on allocations!  We often don't look at the token value.
-        # Whitelist doesn't work well?  Use blacklist for now.
-        # - Kind.KW is sometimes a literal in a word
-        # - Kind.Right is for " in here docs.  Lexer isn't involved.
-        # - Got an error with Kind.Left too that I don't understand
-        # - Kind.ControlFlow doesn't work because we word_.StaticEval()
-        # if kind in (Kind.Lit, Kind.VSub, Kind.Redir, Kind.Char, Kind.Backtick, Kind.KW, Kind.Right):
-        if kind in (Kind.Arith, Kind.Op, Kind.VTest, Kind.VOp0, Kind.VOp2,
-                    Kind.VOp3, Kind.WS, Kind.Ignored, Kind.Eof):
-            tok_val = None  # type: Optional[str]
-        else:
-            tok_val = line_str[line_pos:end_pos]
-
         # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
         # want it to be "low level".  The only thing fabricated here is a newline
         # added at the last line, so we don't end with \0.
@@ -298,8 +322,7 @@ class LineLexer(object):
             self.replace_last_token = False
 
         tok_len = end_pos - line_pos
-        t = self.arena.NewToken(tok_type, line_pos, tok_len, self.src_line,
-                                tok_val)
+        t = self.arena.NewToken(tok_type, line_pos, tok_len, self.src_line)
 
         self.line_pos = end_pos
         return t
