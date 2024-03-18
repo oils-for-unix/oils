@@ -76,14 +76,24 @@ module syntax
 
   SourceLine = (int line_num, str content, source src)
 
-  # Two ways to make Token smaller:
-  # - remove .tval field.  If necessary, the string value could be manually
-  #   computed and attached to specific LST nodes.
-  #   - or is it easier to compute on demand?
-  # - Get rid of span_id, and re-compute length on demand too
+  # Ways to make Token 24 bytes:
+  # - Get rid of span_id
   #   - span_id is only used by tools/ysh_ify.py
-  #   - but length is used when computing .tval
-  # tval is omitted for many Kind.X in Lexer.Read()
+  # - Limit length to 16-bits (64K)
+  #   - large Lit_Chars tokens can be repeated in the lexer, or simply produce
+  #   an ERROR.  Need to check the error.
+  # - Introduce BigToken with the big_tok.tval field, which we use with
+  #   lexer.LazyStr()
+  #   - It will be 32 bytes rather than 24
+  #   - loc = Token %Token | BigToken %BigToken
+  #   - Which tokens need to be big?
+  #     - Id.Lit_{Chars,VarLike,...} - word_part.Literal
+  #     - SingleQuoted does not store tokens; it stores a string
+  #     - Id.Arith_VarLike - arith_expr.Var
+  #     - Id.VSub_{DollarName,Number} - SimpleVarSub
+  #     - Id.VSub_Name - BracedVarSub
+  #     - Id.Expr_Name - expr.Var
+  #   - TODO: could instrument lexer.LazyVal with a histogram?
   Token = (id id, int col, int length, int span_id, SourceLine? line, str? tval)
 
   # Slight ASDL bug: CompoundWord has to be defined before using it as a shared

@@ -74,7 +74,11 @@ def _EvalWordPart(part):
 
         elif case(word_part_e.Literal):
             tok = cast(Token, UP_part)
-            return True, lexer.LazyStr(tok), False
+            # Weird performance issue: if we change this to lexer.LazyStr(),
+            # the parser slows down, e.g. on configure-coreutils from 805 B
+            # irefs to ~830 B.  The real issue is that we should avoid calling
+            # this from CommandParser - for the Hay node.
+            return True, lexer.TokenVal(tok), False
 
         elif case(word_part_e.EscapedLiteral):
             part = cast(word_part.EscapedLiteral, UP_part)
