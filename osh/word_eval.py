@@ -1458,14 +1458,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _EvalSimpleVarSub(self, part, part_vals, quoted):
         # type: (SimpleVarSub, List[part_value_t], bool) -> None
 
-        # TODO: use name
-        token = part.left
-        var_name = part.var_name
+        token = part.tok
 
         vsub_state = VarSubState.CreateNull()
 
         # 1. Evaluate from (var_name, var_num, Token) -> defined, value
         if token.id == Id.VSub_DollarName:
+            var_name = lexer.LazyStr(token)
             # TODO: Special case for LINENO
             val = self.mem.GetValue(var_name)
             if val.tag() in (value_e.BashArray, value_e.BashAssoc):
@@ -1478,7 +1477,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         % var_name, token)
 
         elif token.id == Id.VSub_Number:
-            var_num = int(var_name)
+            var_num = int(lexer.LazyStr(token))
             val = self._EvalVarNum(var_num)
 
         else:
@@ -1505,7 +1504,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         """
         part_vals = []  # type: List[part_value_t]
         self._EvalSimpleVarSub(node, part_vals, False)
-        return self._ConcatPartVals(part_vals, node.left)
+        return self._ConcatPartVals(part_vals, node.tok)
 
     def _EvalExtGlob(self, part, part_vals):
         # type: (word_part.ExtGlob, List[part_value_t]) -> None

@@ -147,8 +147,8 @@ module syntax
   # Consider making str? sval LAZY, like lexer.LazyStr(tok)
   SingleQuoted = (Token left, str sval, Token right)
 
-  # Id.VSub_DollarName $foo
-  SimpleVarSub = (Token left, str var_name)
+  # e.g. Id.VSub_QMark, Id.VSub_DollarName $foo with lexer.LazyStr()
+  SimpleVarSub = (Token tok)
 
   CommandSub = (Token left_token, command child, Token right)
 

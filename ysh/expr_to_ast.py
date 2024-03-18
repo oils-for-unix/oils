@@ -718,7 +718,7 @@ class Transformer(object):
                         % (bare, bare), tok)
 
                 # $? is allowed
-                return SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
+                return SimpleVarSub(tok)
 
             else:
                 nt_name = self.number2symbol[typ]

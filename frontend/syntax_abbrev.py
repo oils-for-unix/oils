@@ -72,15 +72,20 @@ def _SingleQuoted(obj):
 
 def _SimpleVarSub(obj):
     # type: (SimpleVarSub) -> hnode_t
-    p_node = runtime.NewRecord('N')
+    p_node = runtime.NewRecord('$')
     p_node.abbrev = True
 
-    if obj.left.id != Id.VSub_Name:
-        n1 = runtime.NewLeaf(Id_str(obj.left.id), color_e.OtherConst)
+    if obj.tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $myvar or $1
+        # We want to show the variable name
+        # _AbbreviateToken(obj.tok, p_node.unnamed_fields)
+        tok = obj.tok
+        # Omit $
+        var_name = tok.line.content[tok.col + 1:tok.col + tok.length]
+        n1 = runtime.NewLeaf(var_name, color_e.StringConst)
         p_node.unnamed_fields.append(n1)
-
-    n2 = runtime.NewLeaf(obj.var_name, color_e.StringConst)
-    p_node.unnamed_fields.append(n2)
+    else:  # $?
+        n1 = runtime.NewLeaf(Id_str(obj.tok.id), color_e.OtherConst)
+        p_node.unnamed_fields.append(n1)
 
     return p_node
 

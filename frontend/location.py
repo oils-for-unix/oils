@@ -240,7 +240,7 @@ def LeftTokenForWordPart(part):
 
         elif case(word_part_e.SimpleVarSub):
             part = cast(SimpleVarSub, UP_part)
-            return part.left
+            return part.tok
 
         elif case(word_part_e.BracedVarSub):
             part = cast(BracedVarSub, UP_part)
@@ -315,7 +315,7 @@ def _RightTokenForWordPart(part):
         elif case(word_part_e.SimpleVarSub):
             part = cast(SimpleVarSub, UP_part)
             # left and right are the same for $myvar
-            return part.left
+            return part.tok
 
         elif case(word_part_e.BracedVarSub):
             part = cast(BracedVarSub, UP_part)
@@ -503,7 +503,7 @@ def TokenForExpr(node):
 
         elif case(expr_e.SimpleVarSub):
             node = cast(SimpleVarSub, UP_node)
-            return node.left
+            return node.tok
 
         elif case(expr_e.Unary):
             node = cast(expr.Unary, UP_node)

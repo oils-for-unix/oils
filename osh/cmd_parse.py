@@ -159,7 +159,8 @@ def _MakeLiteralHereLines(
         # here docs, but it's more complex with double quoted EOF docs.
 
         if do_lossless:  # avoid garbage, doesn't affect correctness
-            arena.NewToken(Id.Lit_CharsWithoutPrefix, start_offset, 0, src_line)
+            arena.NewToken(Id.Lit_CharsWithoutPrefix, start_offset, 0,
+                           src_line)
 
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line)

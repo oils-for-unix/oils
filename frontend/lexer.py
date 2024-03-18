@@ -104,7 +104,7 @@ def LazyStr(tok):
     Note: SingleQuoted could have lazy sval, NOT at the token level.
     """
     if tok.tval is None:
-        if tok.id == Id.VSub_DollarName:
+        if tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $x or $2
             # Special case for SimpleVarSub - completion also relies on this
             tok.tval = TokenSliceLeft(tok, 1)
         else:
