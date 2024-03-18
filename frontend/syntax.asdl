@@ -150,9 +150,7 @@ module syntax
   #SingleQuoted = (Token left, List[Token] tokens, Token right)
   SingleQuoted = (Token left, str sval, Token right)
 
-  # TODO: NameTok -> TokenWithStr everywhere
   NameTok = (Token left, str var_name)
-  TokenWithStr = (Token tok, str s)
 
   CommandSub = (Token left_token, command child, Token right)
 
@@ -173,7 +171,6 @@ module syntax
   word_part = 
     ShArrayLiteral %ShArrayLiteral
   | BashAssocLiteral(Token left, List[AssocPair] pairs, Token right)
-  #| Literal %TokenWithStr
   | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
@@ -441,7 +438,7 @@ module syntax
   # - Equivalence classes are [=
 
   printf_part =
-    Literal %TokenWithStr
+    Literal %Token
     # flags are 0 hyphen space + #
     # type is 's' for %s, etc.
   | Percent(List[Token] flags, Token? width, Token? precision, Token type)

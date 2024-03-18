@@ -139,8 +139,7 @@ class _FormatStringParser(object):
                 # parse time.
                 # Users should use $'' or the future static printf ${x %.3f}.
 
-                tok = self.cur_token
-                parts.append(TokenWithStr(tok, lexer.TokenVal(tok)))
+                parts.append(self.cur_token)
 
             elif self.token_type == Id.Format_Percent:
                 parts.append(self._ParseFormatStr())
@@ -188,11 +187,11 @@ class Printf(vm._Builtin):
             for part in parts:  # loop over parsed format string
                 UP_part = part
                 if part.tag() == printf_part_e.Literal:
-                    part = cast(TokenWithStr, UP_part)
-                    if part.tok.id == Id.Format_EscapedPercent:
+                    part = cast(Token, UP_part)
+                    if part.id == Id.Format_EscapedPercent:
                         s = '%'
                     else:
-                        s = word_compile.EvalCStringToken(part.tok.id, part.s)
+                        s = word_compile.EvalCStringToken(part.id, lexer.LazyStr(part))
                     out.append(s)
 
                 elif part.tag() == printf_part_e.Percent:
