@@ -74,7 +74,7 @@ def NullConstant(p, w, bp):
     # type: (TdopParser, word_t, int) -> arith_expr_t
     name_tok = word_.LooksLikeArithVar(w)
     if name_tok:
-        return NameTok(name_tok, lexer.TokenVal(name_tok))
+        return name_tok
 
     # Id.Word_Compound in the spec ensures this cast is valid
     return cast(CompoundWord, w)

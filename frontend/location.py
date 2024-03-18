@@ -181,9 +181,9 @@ def TokenForArith(node):
     UP_node = node
     with tagswitch(node) as case:
         if case(arith_expr_e.VarSub):
-            vsub = cast(NameTok, UP_node)
+            vsub = cast(Token, UP_node)
             # $(( x ))
-            return vsub.left
+            return vsub
 
         elif case(arith_expr_e.Word):
             w = cast(CompoundWord, UP_node)

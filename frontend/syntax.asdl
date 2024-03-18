@@ -227,7 +227,7 @@ module syntax
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
-    VarSub %NameTok        # e.g. $(( x ))  Id.Arith_VarLike
+    VarSub %Token          # e.g. $(( x ))  Id.Arith_VarLike
   | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
