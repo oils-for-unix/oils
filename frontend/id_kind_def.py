@@ -6,10 +6,9 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-id_kind_def.py - Id and Kind definitions, used for Token, Word, Nodes, etc.
+id_kind_def.py - Id and Kind definitions, stored in Token
 
-NOTE: If this changes, the lexer may need to be recompiled with
-build/codegen.sh lexer.
+NOTE: If this file changes, rebuild it with build/py.sh all
 """
 from __future__ import print_function
 

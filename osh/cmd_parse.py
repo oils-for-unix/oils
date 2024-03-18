@@ -154,6 +154,10 @@ def _MakeLiteralHereLines(
 
         # Maintain lossless invariant for STRIPPED tabs: add a Token to the
         # arena invariant, but don't refer to it.
+        #
+        # Note: We could use Lit_CharsWithoutPrefix for 'single quoted' EOF
+        # here docs, but it's more complex with double quoted EOF docs.
+
         if do_lossless:  # avoid garbage, doesn't affect correctness
             arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line)
 

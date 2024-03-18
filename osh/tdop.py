@@ -4,11 +4,9 @@ tdop.py - Library for expression parsing.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (loc, arith_expr, arith_expr_e,
-                                       arith_expr_t, word_t, CompoundWord,
-                                       SimpleVarSub)
+                                       arith_expr_t, word_t, CompoundWord)
 from core.error import p_die
 from core import ui
-from frontend import lexer
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 from osh import word_
