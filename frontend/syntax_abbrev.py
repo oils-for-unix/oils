@@ -11,12 +11,12 @@ from asdl import runtime
 
 def _AbbreviateToken(tok, out):
     # type: (Token, List[hnode_t]) -> None
-    if tok.id != Id.Lit_Chars:
+    if tok.id in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix):
+        tok_str = tok.line.content[tok.col : tok.col+tok.length]
+        n1 = runtime.NewLeaf(tok_str, color_e.StringConst)
+    else:
         n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
-        out.append(n1)
-
-    n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
-    out.append(n2)
+    out.append(n1)
 
 
 def _Token(obj):
@@ -80,7 +80,7 @@ def _SimpleVarSub(obj):
         # _AbbreviateToken(obj.tok, p_node.unnamed_fields)
         tok = obj.tok
         # Omit $
-        var_name = tok.line.content[tok.col + 1:tok.col + tok.length]
+        var_name = tok.line.content[tok.col+1 : tok.col+tok.length]
         n1 = runtime.NewLeaf(var_name, color_e.StringConst)
         p_node.unnamed_fields.append(n1)
     else:  # $?
