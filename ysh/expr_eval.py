@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import (
     re_e,
     re_t,
     Token,
-    NameTok,
+    SimpleVarSub,
     word_part,
     SingleQuoted,
     DoubleQuoted,
@@ -1020,7 +1020,7 @@ class ExprEvaluator(object):
                 return value.Str(self.word_ev.EvalBracedVarSubToString(node))
 
             elif case(expr_e.SimpleVarSub):
-                node = cast(NameTok, UP_node)
+                node = cast(SimpleVarSub, UP_node)
                 return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
 
             elif case(expr_e.Unary):

@@ -150,7 +150,8 @@ module syntax
   #SingleQuoted = (Token left, List[Token] tokens, Token right)
   SingleQuoted = (Token left, str sval, Token right)
 
-  NameTok = (Token left, str var_name)
+  # Id.VSub_DollarName $foo
+  SimpleVarSub = (Token left, str var_name)
 
   CommandSub = (Token left_token, command child, Token right)
 
@@ -176,7 +177,9 @@ module syntax
   | EscapedLiteral(Token token, str ch)
   | SingleQuoted %SingleQuoted
   | DoubleQuoted %DoubleQuoted
-  | SimpleVarSub %NameTok
+    # Could be SimpleVarSub %Token that's VSub_DollarName, but let's not
+    # confuse with the comon word_part.Literal is common for wno
+  | SimpleVarSub %SimpleVarSub
   | BracedVarSub %BracedVarSub
     # For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %CommandSub
@@ -196,7 +199,7 @@ module syntax
 
     # YSH word_part extensions
 
-    # @myarray
+    # @myarray - Id.Lit_Splice (could be optimized to %Token)
   | Splice(Token blame_tok, str var_name)
     # $[d.key], etc.
   | ExprSub(Token left, expr child, Token right)
@@ -222,7 +225,7 @@ module syntax
 
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs =
-    Name(Token left, str name)
+    Name(Token left, str name)  # Lit_VarLike foo=
   | IndexedName(Token left, str name, arith_expr index)
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
@@ -500,7 +503,7 @@ module syntax
   | Eggex %Eggex
 
     # $name is not an expr, but $? is, e.g. Id.VSub_QMark
-  | SimpleVarSub %NameTok
+  | SimpleVarSub %SimpleVarSub
   | BracedVarSub %BracedVarSub
   | CommandSub %CommandSub
   | SingleQuoted %SingleQuoted
@@ -577,7 +580,7 @@ module syntax
 
   | SingleQuoted %SingleQuoted
     # @chars
-  | Splice(Token name, str var_name)
+  | Splice(Token name, str var_name)  # coudl be Splice %Token
 
   # evaluated version of class_literal_term (could be in runtime.asdl)
   char_class_term =
@@ -606,8 +609,7 @@ module syntax
   | CharClass(bool negated, List[char_class_term] terms)
 
     # @D
-    # TODO: Splice %Token
-  | Splice(Token name, str var_name)
+  | Splice(Token name, str var_name)  # TODO: Splice %Token
 
   | SingleQuoted %SingleQuoted
 

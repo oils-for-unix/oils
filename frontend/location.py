@@ -27,7 +27,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part_t,
     CompoundWord,
     Token,
-    NameTok,
+    SimpleVarSub,
     ShArrayLiteral,
     SingleQuoted,
     DoubleQuoted,
@@ -239,7 +239,7 @@ def LeftTokenForWordPart(part):
             return part.left
 
         elif case(word_part_e.SimpleVarSub):
-            part = cast(NameTok, UP_part)
+            part = cast(SimpleVarSub, UP_part)
             return part.left
 
         elif case(word_part_e.BracedVarSub):
@@ -313,7 +313,7 @@ def _RightTokenForWordPart(part):
             return part.right  # right "
 
         elif case(word_part_e.SimpleVarSub):
-            part = cast(NameTok, UP_part)
+            part = cast(SimpleVarSub, UP_part)
             # left and right are the same for $myvar
             return part.left
 
@@ -502,7 +502,7 @@ def TokenForExpr(node):
             return node.left
 
         elif case(expr_e.SimpleVarSub):
-            node = cast(NameTok, UP_node)
+            node = cast(SimpleVarSub, UP_node)
             return node.left
 
         elif case(expr_e.Unary):

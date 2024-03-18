@@ -70,8 +70,8 @@ def _SingleQuoted(obj):
     return p_node
 
 
-def _NameTok(obj):
-    # type: (NameTok) -> hnode_t
+def _SimpleVarSub(obj):
+    # type: (SimpleVarSub) -> hnode_t
     p_node = runtime.NewRecord('N')
     p_node.abbrev = True
 

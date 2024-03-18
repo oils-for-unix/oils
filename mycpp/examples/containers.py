@@ -211,7 +211,7 @@ def run_tests():
     ContainsDemo()
     log('')
 
-    a = [] # type: List[int]
+    a = []  # type: List[int]
     a.append(42)
 
     if 0:
@@ -252,4 +252,3 @@ if __name__ == '__main__':
         run_tests()
 
 # vim: sw=4
-

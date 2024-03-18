@@ -54,7 +54,7 @@ from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
-    NameTok,
+    SimpleVarSub,
     loc,
     source,
     DoubleQuoted,
@@ -968,7 +968,7 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.VSub:
                 tok = self.cur_token
-                part = NameTok(tok, lexer.TokenSliceLeft(tok, 1))
+                part = SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
                 out_parts.append(part)
                 # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
                 # later.
@@ -1748,9 +1748,9 @@ class WordParser(WordEmitter):
             elif self.token_kind == Kind.VSub:
                 vsub_token = self.cur_token
 
-                part = NameTok(vsub_token,
-                               lexer.TokenSliceLeft(vsub_token,
-                                                    1))  # type: word_part_t
+                part = SimpleVarSub(vsub_token,
+                                    lexer.TokenSliceLeft(
+                                        vsub_token, 1))  # type: word_part_t
                 w.parts.append(part)
 
             elif self.token_kind == Kind.ExtGlob:

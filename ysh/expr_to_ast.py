@@ -4,7 +4,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.syntax_asdl import (
     Token,
-    NameTok,
+    SimpleVarSub,
     loc,
     loc_t,
     DoubleQuoted,
@@ -718,7 +718,7 @@ class Transformer(object):
                         % (bare, bare), tok)
 
                 # $? is allowed
-                return NameTok(tok, lexer.TokenSliceLeft(tok, 1))
+                return SimpleVarSub(tok, lexer.TokenSliceLeft(tok, 1))
 
             else:
                 nt_name = self.number2symbol[typ]

@@ -190,7 +190,8 @@ class Printf(vm._Builtin):
                     if part.id == Id.Format_EscapedPercent:
                         s = '%'
                     else:
-                        s = word_compile.EvalCStringToken(part.id, lexer.LazyStr(part))
+                        s = word_compile.EvalCStringToken(
+                            part.id, lexer.LazyStr(part))
                     out.append(s)
 
                 elif part.tag() == printf_part_e.Percent:

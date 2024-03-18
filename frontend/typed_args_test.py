@@ -22,8 +22,8 @@ class TypedArgsTest(unittest.TestCase):
         ltok = arena.NewToken(-1, 3, 1, line_id)
         rtok = arena.NewToken(-1, 4, 1, line_id)
         pos_exprs = [
-            expr.Const(arena.NewToken(-1, 4 + 2 * i, 1, line_id),
-                       value.Null) for i in range(7)
+            expr.Const(arena.NewToken(-1, 4 + 2 * i, 1, line_id), value.Null)
+            for i in range(7)
         ]
         arg_list = ArgList(ltok, pos_exprs, None, [], rtok)
 

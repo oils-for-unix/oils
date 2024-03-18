@@ -5,7 +5,7 @@ word_eval.py - Evaluator for the word language.
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     Token,
-    NameTok,
+    SimpleVarSub,
     loc,
     loc_t,
     BracedVarSub,
@@ -1456,7 +1456,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return self._ConcatPartVals(part_vals, part.left)
 
     def _EvalSimpleVarSub(self, part, part_vals, quoted):
-        # type: (NameTok, List[part_value_t], bool) -> None
+        # type: (SimpleVarSub, List[part_value_t], bool) -> None
 
         # TODO: use name
         token = part.left
@@ -1498,7 +1498,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(v)
 
     def EvalSimpleVarSubToString(self, node):
-        # type: (NameTok) -> str
+        # type: (SimpleVarSub) -> str
         """For double quoted strings in YSH expressions.
 
         Example: var x = "$foo-${foo}"
@@ -1628,7 +1628,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part_vals.append(sv)
 
             elif case(word_part_e.SimpleVarSub):
-                part = cast(NameTok, UP_part)
+                part = cast(SimpleVarSub, UP_part)
                 self._EvalSimpleVarSub(part, part_vals, quoted)
 
             elif case(word_part_e.BracedVarSub):

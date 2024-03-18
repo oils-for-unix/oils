@@ -97,30 +97,11 @@ def TokenSlice(tok, left, right):
 
 def LazyStr(tok):
     # type: (Token) -> str
-    """
-    Most tokens do NOT need strings.  We want to avoid allocations.
+    """Materialize the tval on demand, with special case for $myvar.
 
-    Some tokens that need it:
+    Most tokens do NOT need strings.  We avoid allocating them in the lexer.
 
-    - word_part.Literal
-    - Currently NameTok
-      - SimpleVarSub %NameTok - $foo - is TokenSliceLeft(x, 1)
-        - need to ensure this at Id level perhaps
-      - arith_expr.VarSub %NameTok
-      - y_lhs.Var %NameTok
-
-    - re.Splice(Token name, str_name)
-    - word_part.Splice(Token blame_tok, str var_name)
-      - conflicts with word_part.Literal
-    - class_literal_term.Splice
-
-    - currently %TokenWithStar
-      - printf_part.Literal %TokenWithStr
-      - re_repeat.Num %TokenWithStr conflicts with Op %Token
-
-    Other:
-    - SingleQuoted should have lazy sval, NOT at the token level
-
+    Note: SingleQuoted could have lazy sval, NOT at the token level.
     """
     if tok.tval is None:
         if tok.id == Id.VSub_DollarName:
