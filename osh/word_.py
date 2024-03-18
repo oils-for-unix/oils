@@ -79,6 +79,7 @@ def _EvalWordPart(part):
             # irefs to ~830 B.  The real issue is that we should avoid calling
             # this from CommandParser - for the Hay node.
             return True, lexer.TokenVal(tok), False
+            #return True, lexer.LazyStr(tok), False
 
         elif case(word_part_e.EscapedLiteral):
             part = cast(word_part.EscapedLiteral, UP_part)

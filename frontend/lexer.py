@@ -8,7 +8,7 @@
 lexer.py - Library for lexing.
 """
 
-from _devbuild.gen.syntax_asdl import Token, SourceLine
+from _devbuild.gen.syntax_asdl import Token, WideToken, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str
 from asdl import runtime
@@ -95,6 +95,14 @@ def TokenSlice(tok, left, right):
     return tok.line.content[start:end]
 
 
+def LazyStr2(tok):
+    # type: (WideToken) -> str
+    """
+    TODO: Remove .tval from Token; use WideToken instead
+    """
+    return ''
+
+
 def LazyStr(tok):
     # type: (Token) -> str
     """Materialize the tval on demand, with special case for $myvar.
@@ -103,6 +111,9 @@ def LazyStr(tok):
 
     Note: SingleQuoted could have lazy sval, NOT at the token level.
     """
+    if 0:
+        LAZY_ID_HIST[tok.id] += 1
+
     if tok.tval is None:
         if tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $x or $2
             # Special case for SimpleVarSub - completion also relies on this
@@ -441,11 +452,12 @@ class Lexer(object):
             if t.id != Id.Ignored_LineCont:
                 break
 
-        #ID_HIST[t.id] += 1
-        #log('> Read() Returning %s', t)
+        if 0:
+            ID_HIST[t.id] += 1
         return t
 
 
-if 0:  # mylib.PYTHON: not: breaks tarball build
+if 0:  # mylib.PYTHON: note: breaks tarball build
     import collections
     ID_HIST = collections.Counter()  # type: Counter[Id_t]
+    LAZY_ID_HIST = collections.Counter()  # type: Counter[Id_t]

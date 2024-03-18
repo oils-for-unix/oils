@@ -105,6 +105,7 @@ class Cursor(object):
 
     You use the hash table to go from next_token_id .. TokenId(until_token).
     """
+
     def __init__(self, arena, f):
         # type: (alloc.Arena, mylib.Writer) -> None
         self.arena = arena
@@ -494,8 +495,7 @@ class YshPrinter(object):
 
                         # Now omit ]
                         tok2 = location.RightTokenForWord(word2)
-                        rbrack_tok = location.LeftTokenForWord(
-                                last_word)
+                        rbrack_tok = location.LeftTokenForWord(last_word)
 
                         # Skip the space token before ]
                         self.cursor.PrintIncluding(tok2)
