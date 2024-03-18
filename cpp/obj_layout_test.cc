@@ -10,8 +10,15 @@ TEST sizeof_syntax() {
   log("sizeof(Token) = %d", sizeof(syntax_asdl::Token));
   log("alignof(Token) = %d", alignof(syntax_asdl::Token));
   log("alignof(Token*) = %d", alignof(syntax_asdl::Token *));
+  log("");
 
+  // 2024-03 - both of these are 64 bytes
   log("sizeof(BracedVarSub) = %d", sizeof(syntax_asdl::BracedVarSub));
+  log("sizeof(command::Simple) = %d", sizeof(syntax_asdl::command::Simple));
+  log("");
+
+  // Only 8 bytes
+  log("sizeof(CompoundWord) = %d", sizeof(syntax_asdl::CompoundWord));
 
   // Reordered to be 16 bytes
   log("sizeof(runtime_asdl::Cell) = %d", sizeof(runtime_asdl::Cell));

@@ -393,7 +393,7 @@ class WordParser(WordEmitter):
 
             part.suffix_op = suffix_op.Unary(tok, arg_word)
 
-        elif op_kind == Kind.VOpOil:
+        elif op_kind == Kind.VOpYsh:
             tok = self.cur_token
             arg_word = self._ReadVarOpArg(arg_lex_mode)
             if self.token_type != Id.Right_DollarBrace:

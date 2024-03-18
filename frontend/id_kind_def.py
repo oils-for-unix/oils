@@ -547,7 +547,7 @@ def AddKinds(spec):
         ])
 
     spec.AddKindPairs(
-        'VOpOil',
+        'VOpYsh',
         [
             ('Pipe', '|'),  # ${x|html}
             ('Space', ' '),  # ${x %.3f}

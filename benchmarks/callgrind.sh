@@ -23,6 +23,9 @@ fib() {
 }
 
 parse-cpython-configure() {
+  # Goal: eliminate string slicing in this workload!  It should just be
+  # creating fixed size Tokens, syntax.asdl nodes, and List<T>
+
   build-and-run -n --ast-format none Python-2.7.13/configure
 }
 

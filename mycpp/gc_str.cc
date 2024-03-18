@@ -152,7 +152,7 @@ BigStr* BigStr::slice(int begin, int end) {
   int new_len = end - begin;
   DCHECK(0 <= new_len && new_len <= length);
 
-  BigStr* result = NewStr(new_len);
+  BigStr* result = NewStr(new_len);  // has kEmptyString optimization
   memcpy(result->data_, data_ + begin, new_len);
 
   return result;

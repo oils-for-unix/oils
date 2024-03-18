@@ -660,6 +660,7 @@ TEST test_str_slice() {
   {
     BigStr* s1 = s0->slice(6, 6);
     ASSERT(str_equals(s1, StrFromC("")));
+    ASSERT(kEmptyString == s1);
     ShowString(s1);
   }
 

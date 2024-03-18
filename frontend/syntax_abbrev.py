@@ -13,7 +13,7 @@ def _AbbreviateToken(tok, out):
     # type: (Token, List[hnode_t]) -> None
     if tok.id in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.VSub_Name,
                   Id.VSub_Number):
-        tok_str = tok.line.content[tok.col : tok.col+tok.length]
+        tok_str = tok.line.content[tok.col:tok.col + tok.length]
         n1 = runtime.NewLeaf(tok_str, color_e.StringConst)
     else:
         n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
@@ -81,7 +81,7 @@ def _SimpleVarSub(obj):
         # _AbbreviateToken(obj.tok, p_node.unnamed_fields)
         tok = obj.tok
         # Omit $
-        var_name = tok.line.content[tok.col+1 : tok.col+tok.length]
+        var_name = tok.line.content[tok.col + 1:tok.col + tok.length]
         n1 = runtime.NewLeaf(var_name, color_e.StringConst)
         p_node.unnamed_fields.append(n1)
     else:  # $?

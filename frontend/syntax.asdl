@@ -132,7 +132,7 @@ module syntax
   BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
       Token token,       # location for the name
-      str var_name,      # the name
+      str var_name,      # the name - TODO: remove this, use LazyStr() instead
       Token? prefix_op,  # prefix # or ! operators
       bracket_op? bracket_op,
       suffix_op? suffix_op,
@@ -223,6 +223,7 @@ module syntax
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs =
     Name(Token left, str name)  # Lit_VarLike foo=
+                                # TODO: Could be Name %Token
   | IndexedName(Token left, str name, arith_expr index)
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
@@ -262,6 +263,7 @@ module syntax
 
   assign_op = Equal | PlusEqual
   AssignPair = (Token left, sh_lhs lhs, assign_op op, rhs_word rhs)
+  # TODO: could put Id.Lit_VarLike foo= into LazyStr() with -1 slice
   EnvPair = (Token left, str name, rhs_word val)
 
   condition = 

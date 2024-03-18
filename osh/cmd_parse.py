@@ -876,6 +876,11 @@ class CommandParser(object):
                                 tok)
 
                     # Is the first word a Hay Attr word?
+                    #
+                    # Can we remove this StaticEval() call, and just look
+                    # inside Token?  I think once we get rid of SHELL nodes,
+                    # this will be simpler.
+
                     ok, word_str, quoted = word_.StaticEval(w)
                     # Foo { a = 1 } is OK, but not foo { a = 1 } or FOO { a = 1 }
                     if (ok and len(word_str) and word_str[0].isupper() and

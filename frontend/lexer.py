@@ -142,7 +142,6 @@ class LineLexer(object):
 
     def Reset(self, src_line, line_pos):
         # type: (SourceLine, int) -> None
-        #assert line, repr(line)  # can't be empty or None
         self.src_line = src_line
         self.line_pos = line_pos
 
@@ -245,7 +244,7 @@ class LineLexer(object):
             {}
         """
         pos = self.line_pos - unread
-        assert pos > 0
+        assert pos > 0, pos
         tok_type, _ = match.OneToken(lex_mode_e.FuncParens,
                                      self.src_line.content, pos)
         return tok_type == Id.LookAhead_FuncParens
@@ -292,7 +291,6 @@ class LineLexer(object):
             # LineLexer tells Lexer to read a new line.
             return self.eol_tok
 
-        # TODO: can inline this function with formula on 16-bit Id.
         kind = consts.GetKind(tok_type)
 
         # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
@@ -316,10 +314,10 @@ class Lexer(object):
     def __init__(self, line_lexer, line_reader):
         # type: (LineLexer, _Reader) -> None
         """
-    Args:
-      line_lexer: Underlying object to get tokens from
-      line_reader: get new lines from here
-    """
+        Args:
+          line_lexer: Underlying object to get tokens from
+          line_reader: get new lines from here
+        """
         self.line_lexer = line_lexer
         self.line_reader = line_reader
 
@@ -440,8 +438,6 @@ class Lexer(object):
         # type: (lex_mode_t) -> Token
         while True:
             t = self._Read(lex_mode)
-            # TODO: Change to ALL IGNORED types, once you have SPACE_TOK.  This means
-            # we don't have to handle them in the VSub_1/VSub_2/etc. states.
             if t.id != Id.Ignored_LineCont:
                 break
 
