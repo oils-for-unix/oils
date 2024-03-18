@@ -115,7 +115,13 @@ class Cursor(object):
             if span.line is None:
                 continue
 
-            piece = span.line.content[span.col:span.col + span.length]
+            # Special case for recovering stripped leading space!
+            # See osh/word_compile.py
+            start_index = (0 if span.id == Id.Lit_CharsWithoutPrefix else
+                           span.col)
+            end_index = span.col + span.length
+
+            piece = span.line.content[start_index:end_index]
             self.f.write(piece)
 
         self.next_span_id = until_span_id

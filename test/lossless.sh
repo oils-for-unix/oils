@@ -38,13 +38,6 @@ test-sh() {
 
 test-ysh() {
   for file in ysh/testdata/*.ysh test/lossless/*.ysh; do
-    case $file in
-      # TODO: enable this
-      test/lossless/multiline-str.ysh)
-        continue
-        ;;
-    esac
-
     echo "--- $file"
     _compare $file $YSH
   done

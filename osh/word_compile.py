@@ -64,7 +64,8 @@ def EvalCStringToken(id_, value):
 
     $'' could use it at compile time, much like brace expansion in braces.py.
     """
-    if id_ in (Id.Lit_Chars, Id.Unknown_Backslash, Id.Char_AsciiControl):
+    if id_ in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.Unknown_Backslash,
+               Id.Char_AsciiControl):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
 
         # Char_AsciiControl is allowed in YSH code, for newlines in u''
@@ -210,12 +211,13 @@ def RemoveLeadingSpaceDQ(parts):
             # TODO: Lexer should not populate this!
             assert lit_tok.tval is None, lit_tok.tval
 
-            # MUTATING the part here
-            #lit_tok.tval = lit_tok.tval[n:]
-
             lit_tok.col = n
             lit_tok.length -= n
             #log('n = %d, %s', n, lit_tok)
+
+            assert lit_tok.id == Id.Lit_Chars, lit_tok
+            # --tool lossless-cat has a special case for this
+            lit_tok.id = Id.Lit_CharsWithoutPrefix
 
 
 def RemoveLeadingSpaceSQ(tokens):
@@ -271,7 +273,9 @@ def RemoveLeadingSpaceSQ(tokens):
         if tok.col == 0 and lexer.TokenStartsWith(tok, to_strip):
             tok.col = n
             tok.length -= n
-            # TODO:
-            # Lit_Chars -> Lit_CharsWithoutPrefix
-            #
+
+            assert tok.id == Id.Lit_Chars, tok
+            # --tool lossless-cat has a special case for this
+            tok.id = Id.Lit_CharsWithoutPrefix
+
             #log('STRIP tok %s', tok)

@@ -1,7 +1,7 @@
 # Data types for the Oils AST, aka "Lossless Syntax Tree".
 #
-# Invariant: the source text can be reconstructed byte-for-byte from this
-# tree.  The test/lossless.sh suite verifies this.
+# Invariant: the source text can be reconstructed byte-for-byte from this tree.
+# The test/lossless.sh suite verifies this.
 
 # We usually try to preserve the physical order of the source in the ASDL
 # fields.  One exception is the order of redirects:
@@ -18,8 +18,6 @@
 
 # Possible refactorings:
 #
-#   printf_part = Literal %Token | ...
-#
 #   # %CompoundWord as first class variant:
 #   bool_expr = WordTest %CompoundWord | ...
 #
@@ -27,7 +25,6 @@
 #   string_part = ...  # subset of word_part
 #
 #   - Distinguish word_t with BracedTree vs. those without?  seq_word_t?
-#   - Remove command.NoOp ?
 
 module syntax
 {
@@ -146,8 +143,8 @@ module syntax
   # - Look at left token ID for $'' c'' vs r'' '' e.g. Id.Left_DollarSingleQuote
   # - And """ and ''' e.g. Id.Left_TDoubleQuote
   DoubleQuoted = (Token left, List[word_part] parts, Token right)
-  # TODO: replace List[Token] with str sval, since you have left and right
-  #SingleQuoted = (Token left, List[Token] tokens, Token right)
+
+  # Consider making str? sval LAZY, like lexer.LazyStr(tok)
   SingleQuoted = (Token left, str sval, Token right)
 
   # Id.VSub_DollarName $foo
