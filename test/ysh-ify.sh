@@ -226,6 +226,11 @@ test-bracket-builtin() {
     '[ ! -z "$foo" ] || die' \
     'test ! -z $foo || die'
 
+  # Don't touch this invalid code?
+  check-osh2ysh \
+    '[ ] || die' \
+    '[ ] || die'
+
   check-osh2ysh '
 if [ "$foo" -eq 3 ]; then
   echo yes

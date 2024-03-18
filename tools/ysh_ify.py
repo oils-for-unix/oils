@@ -93,8 +93,18 @@ if TYPE_CHECKING:
 class Cursor(object):
     """
     API to print/transform a complete source file, stored in a single arena.
-    """
 
+    TODO: Can we remove PrintUntilSpid() and SkipUntilSpid() and just use token
+    EQUALITY?  Get rid of span ID altogether.
+
+    In, core/alloc.py, SnipCodeBlock() and SnipCodeString work on lines.  They
+    don't iterate over tokens.
+
+    Or add a separate hash table of Token -> span ID?  That makes sense because
+    we need that kind of "address hash" for type checking anyway.
+
+    You use the hash table to go from next_token_id .. TokenId(until_token).
+    """
     def __init__(self, arena, f):
         # type: (alloc.Arena, mylib.Writer) -> None
         self.arena = arena
@@ -448,6 +458,76 @@ class YshPrinter(object):
             if i != n - 1:
                 self.f.write(',')
 
+    def _DoSimple(self, node, local_symbols):
+        # type: (command.Simple, Dict[str, bool]) -> None
+
+        # How to preserve spaces between words?  Do you want to do it?
+        # Well you need to test this:
+        #
+        # echo foo \
+        #   bar
+
+        if len(node.more_env):
+            # We only need to transform the right side, not left side.
+            for pair in node.more_env:
+                self.DoRhsWord(pair.val, local_symbols)
+
+        if len(node.words):
+            first_word = node.words[0]
+            ok, val, quoted = word_.StaticEval(first_word)
+            word0_tok = location.LeftTokenForWord(first_word)
+            if ok and not quoted:
+                if val == '[' and len(node.words) >= 3:
+                    word2 = node.words[-2]
+                    last_word = node.words[-1]
+
+                    # Check if last word is ]
+                    ok, val, quoted = word_.StaticEval(last_word)
+                    if ok and not quoted and val == ']':
+                        # Replace [ with 'test'
+                        self.cursor.PrintUntil(word0_tok)
+                        self.cursor.SkipPast(word0_tok)
+                        self.f.write('test')
+
+                        for w in node.words[1:-1]:
+                            self.DoWordInCommand(w, local_symbols)
+
+                        # Now omit ]
+                        tok2 = location.RightTokenForWord(word2)
+                        rbrack_tok = location.LeftTokenForWord(
+                                last_word)
+
+                        # Skip the space token before ]
+                        self.cursor.PrintIncluding(tok2)
+                        # ] takes one spid
+                        self.cursor.SkipPast(rbrack_tok)
+                        return
+                    else:
+                        raise RuntimeError('Got [ without ]')
+
+                elif val == '.':
+                    self.cursor.PrintUntil(word0_tok)
+                    self.cursor.SkipPast(word0_tok)
+                    self.f.write('source')
+                    return
+
+        for w in node.words:
+            self.DoWordInCommand(w, local_symbols)
+
+        # It would be nice to convert here docs to multi-line strings
+        for r in node.redirects:
+            self.DoRedirect(r, local_symbols)
+
+        # TODO: Print the terminator.  Could be \n or ;
+        # Need to print env like PYTHONPATH = 'foo' && ls
+        # Need to print redirects:
+        # < > are the same.  << is here string, and >> is assignment.
+        # append is >+
+
+        # TODO: static_eval of simple command
+        # - [ -> "test".  Eliminate trailing ].
+        # - . -> source, etc.
+
     def DoCommand(self, node, local_symbols, at_top_level=False):
         # type: (command_t, Dict[str, bool], bool) -> None
 
@@ -457,8 +537,8 @@ class YshPrinter(object):
             if case(command_e.CommandList):
                 node = cast(command.CommandList, UP_node)
 
-                # TODO: How to distinguish between echo hi; echo bye; and on separate
-                # lines
+                # TODO: How to distinguish between echo hi; echo bye; and on
+                # separate lines
                 for child in node.children:
                     self.DoCommand(child,
                                    local_symbols,
@@ -467,69 +547,7 @@ class YshPrinter(object):
             elif case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
 
-                # How to preserve spaces between words?  Do you want to do it?
-                # Well you need to test this:
-                #
-                # echo foo \
-                #   bar
-
-                if len(node.more_env):
-                    # We only need to transform the right side, not left side.
-                    for pair in node.more_env:
-                        self.DoRhsWord(pair.val, local_symbols)
-
-                if len(node.words):
-                    first_word = node.words[0]
-                    ok, val, quoted = word_.StaticEval(first_word)
-                    word0_tok = location.LeftTokenForWord(first_word)
-                    if ok and not quoted:
-                        if val == '[':
-                            last_word = node.words[-1]
-                            # Check if last word is ]
-                            ok, val, quoted = word_.StaticEval(last_word)
-                            if ok and not quoted and val == ']':
-                                # Replace [ with 'test'
-                                self.cursor.PrintUntil(word0_tok)
-                                self.cursor.SkipPast(word0_tok)
-                                self.f.write('test')
-
-                                for w in node.words[1:-1]:
-                                    self.DoWordInCommand(w, local_symbols)
-
-                                # Now omit ]
-                                rbrack_tok = location.LeftTokenForWord(
-                                    last_word)
-                                # Skip the space token before ]
-                                self.cursor.PrintUntilSpid(rbrack_tok.span_id -
-                                                           1)
-                                self.cursor.SkipPast(
-                                    rbrack_tok)  # ] takes one spid
-                                return
-                            else:
-                                raise RuntimeError('Got [ without ]')
-
-                        elif val == '.':
-                            self.cursor.PrintUntil(word0_tok)
-                            self.cursor.SkipPast(word0_tok)
-                            self.f.write('source')
-                            return
-
-                for w in node.words:
-                    self.DoWordInCommand(w, local_symbols)
-
-                # It would be nice to convert here docs to multi-line strings
-                for r in node.redirects:
-                    self.DoRedirect(r, local_symbols)
-
-                # TODO: Print the terminator.  Could be \n or ;
-                # Need to print env like PYTHONPATH = 'foo' && ls
-                # Need to print redirects:
-                # < > are the same.  << is here string, and >> is assignment.
-                # append is >+
-
-                # TODO: static_eval of simple command
-                # - [ -> "test".  Eliminate trailing ].
-                # - . -> source, etc.
+                self._DoSimple(node, local_symbols)
 
             elif case(command_e.ShAssignment):
                 node = cast(command.ShAssignment, UP_node)
@@ -692,6 +710,7 @@ class YshPrinter(object):
                 # if foo; then -> if foo {
                 # elif foo; then -> } elif foo {
                 for i, arm in enumerate(node.arms):
+                    # TODO: remove this usage of spids
                     elif_spid = arm.spids[0]
                     then_spid = arm.spids[1]
 
