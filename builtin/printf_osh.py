@@ -13,7 +13,6 @@ from _devbuild.gen.syntax_asdl import (
     loc_t,
     source,
     Token,
-    TokenWithStr,
     CompoundWord,
     printf_part,
     printf_part_e,

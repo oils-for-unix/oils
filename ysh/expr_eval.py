@@ -268,8 +268,8 @@ class ExprEvaluator(object):
         UP_lhs = lhs
         with tagswitch(lhs) as case:
             if case(y_lhs_e.Var):
-                lhs = cast(NameTok, UP_lhs)
-                return LeftName(lhs.var_name, lhs.left)
+                lhs = cast(Token, UP_lhs)
+                return LeftName(lexer.LazyStr(lhs), lhs)
 
             elif case(y_lhs_e.Subscript):
                 lhs = cast(Subscript, UP_lhs)

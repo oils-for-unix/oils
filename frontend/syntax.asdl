@@ -227,7 +227,7 @@ module syntax
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
-    VarSub %NameTok        # e.g. $(( x ))
+    VarSub %NameTok        # e.g. $(( x ))  Id.Arith_VarLike
   | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
@@ -472,7 +472,7 @@ module syntax
   Attribute = (expr obj, Token op, Token attr, str attr_name, expr_context ctx)
 
   y_lhs = 
-    Var %NameTok
+    Var %Token  # Id.Expr_Name
   | Subscript %Subscript
   | Attribute %Attribute
 
@@ -499,7 +499,8 @@ module syntax
     # / d+ ; ignorecase; %python /
   | Eggex %Eggex
 
-  | SimpleVarSub %NameTok  # $name is not an expr, but $? is
+    # $name is not an expr, but $? is, e.g. Id.VSub_QMark
+  | SimpleVarSub %NameTok
   | BracedVarSub %BracedVarSub
   | CommandSub %CommandSub
   | SingleQuoted %SingleQuoted

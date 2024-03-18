@@ -1193,8 +1193,8 @@ class WordParser(WordEmitter):
             UP_lhs = lhs
             with tagswitch(lhs) as case:
                 if case(y_lhs_e.Var):
-                    lhs = cast(NameTok, UP_lhs)
-                    var_checker.Check(kw_token.id, lhs.var_name, lhs.left)
+                    lhs = cast(Token, UP_lhs)
+                    var_checker.Check(kw_token.id, lexer.LazyStr(lhs), lhs)
 
                 # Note: this does not cover cases like
                 # setvar (a[0])[1] = v
