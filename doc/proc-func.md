@@ -818,7 +818,9 @@ code shared.  This code is mostly in [ysh/func_proc.py]($oils-src).
 
 ### Related
 
-- [Block Literals](block-literals.html)
+- [Variable Declaration, Mutation, and Scope](variables.html) - in particular,
+  procs don't have [dynamic scope]($xref:dynamic-scope).
+- [Block Literals](block-literals.html) (in progress)
 
 <!--
 

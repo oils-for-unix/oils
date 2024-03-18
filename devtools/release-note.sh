@@ -65,12 +65,27 @@ issues-table() {
   cat _tmp/issues.json | devtools/services/github_issues.py
 }
 
+readonly DATE_DIR=$(date +%Y/%m)
+readonly BLOG_DIR="../oilshell.org/blog/$DATE_DIR"
+
 write-template() {
   ### New blog post
 
-  local date=$(date +%Y/%m)
-  local out=../oilshell.org/blog/$date/_release-$OILS_VERSION.md
+  local out=$BLOG_DIR/_release-$OILS_VERSION.md
   print-template > $out
+  echo "Wrote $out"
+}
+
+write-zulip-thread() {
+  local bot_email=$1
+  local bot_api_key=$2
+  
+  local out=$BLOG_DIR/release-thread.txt
+  devtools/services/zulip.sh print-thread \
+    "$bot_email" "$bot_api_key" oil-dev "Oils $OILS_VERSION Release" \
+    | tee $out
+
+  echo
   echo "Wrote $out"
 }
 

@@ -44,8 +44,8 @@ print-thread() {
   # Get these from Zulip web interface
   local bot_email=$1
   local bot_api_key=$2
-  local stream=${3:-'oil-documentation'}
-  local subject=${4:-'Quick Guide to Procs and Funcs (and Blocks)'}
+  local stream=${3:-'oil-dev'}
+  local subject=${4:-'Test thread'}
 
   # https://stackoverflow.com/questions/28164849/using-jq-to-parse-and-display-multiple-fields-in-a-json-serially/31791436
 
