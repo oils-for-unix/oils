@@ -11,12 +11,13 @@ from asdl import runtime
 
 def _AbbreviateToken(tok, out):
     # type: (Token, List[hnode_t]) -> None
-    if tok.id != Id.Lit_Chars:
+    if tok.id in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.VSub_Name,
+                  Id.VSub_Number):
+        tok_str = tok.line.content[tok.col:tok.col + tok.length]
+        n1 = runtime.NewLeaf(tok_str, color_e.StringConst)
+    else:
         n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
-        out.append(n1)
-
-    n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
-    out.append(n2)
+    out.append(n1)
 
 
 def _Token(obj):
@@ -65,22 +66,27 @@ def _SingleQuoted(obj):
     p_node = runtime.NewRecord('SQ')
     p_node.abbrev = True
 
-    for token in obj.tokens:
-        p_node.unnamed_fields.append(token.AbbreviatedTree())
+    n2 = runtime.NewLeaf(obj.sval, color_e.StringConst)
+    p_node.unnamed_fields.append(n2)
     return p_node
 
 
-def _NameTok(obj):
-    # type: (NameTok) -> hnode_t
-    p_node = runtime.NewRecord('N')
+def _SimpleVarSub(obj):
+    # type: (SimpleVarSub) -> hnode_t
+    p_node = runtime.NewRecord('$')
     p_node.abbrev = True
 
-    if obj.left.id != Id.VSub_Name:
-        n1 = runtime.NewLeaf(Id_str(obj.left.id), color_e.OtherConst)
+    if obj.tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $myvar or $1
+        # We want to show the variable name
+        # _AbbreviateToken(obj.tok, p_node.unnamed_fields)
+        tok = obj.tok
+        # Omit $
+        var_name = tok.line.content[tok.col + 1:tok.col + tok.length]
+        n1 = runtime.NewLeaf(var_name, color_e.StringConst)
         p_node.unnamed_fields.append(n1)
-
-    n2 = runtime.NewLeaf(obj.var_name, color_e.StringConst)
-    p_node.unnamed_fields.append(n2)
+    else:  # $?
+        n1 = runtime.NewLeaf(Id_str(obj.tok.id), color_e.OtherConst)
+        p_node.unnamed_fields.append(n1)
 
     return p_node
 

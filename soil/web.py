@@ -45,7 +45,7 @@ import os
 import re
 import sys
 from doctools import html_head
-from test import jsontemplate
+from vendor import jsontemplate
 
 
 def log(msg, *args):

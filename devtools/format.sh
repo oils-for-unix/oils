@@ -59,15 +59,18 @@ yapf-files() {
 yapf-known() {
   ### yapf some files that have been normalized
 
-  # TODO: add all of osh/
   time yapf-files \
-    {asdl,benchmarks,builtin,core,data_lang,frontend,mycpp,osh,yaks,ysh}/*.py \
+    {asdl,benchmarks,builtin,core,data_lang,frontend,mycpp,mycpp/examples,osh,spec/*,yaks,ysh}/*.py \
     */NINJA_subgraph.py
 }
 
 yapf-changed() {
   branch="${1:-master}"
-  yapf-files $(git diff --name-only .."$branch" '*.py')
+
+  #git diff --name-only .."$branch" '*.py'
+
+  git diff --name-only .."$branch" '*.py' \
+    | xargs --no-run-if-empty -- $0 yapf-files 
 }
 
 #

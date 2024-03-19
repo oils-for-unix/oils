@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-fib() {
+build-and-run() {
   # Hm dbg build seems to give more exact info
   local osh=_bin/cxx-dbg/osh
   #local osh=_bin/cxx-opt/osh
@@ -15,11 +15,33 @@ fib() {
   ninja $osh
 
   valgrind --tool=callgrind \
-    $osh benchmarks/compute/fib.sh 10 44
+    $osh "$@"
+}
+
+fib() {
+  build-and-run benchmarks/compute/fib.sh 10 44
+}
+
+parse-cpython-configure() {
+  # Goal: eliminate string slicing in this workload!  It should just be
+  # creating fixed size Tokens, syntax.asdl nodes, and List<T>
+
+  build-and-run -n --ast-format none Python-2.7.13/configure
+}
+
+with-callgrind() {
+  local out_file=$1  # Ignored for now, same interface as with-cachegrind
+  shift
+
+  valgrind --tool=callgrind \
+    "$@"
 }
 
 install-kcachegrind() {
   sudo apt-get install kcachegrind
 }
 
-"$@"
+file=$(basename $0)
+if test $file = 'callgrind.sh'; then
+  "$@"
+fi

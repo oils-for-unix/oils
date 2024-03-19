@@ -44,6 +44,18 @@ tasks:
       cd oil
       soil/sourcehut.sh publish-html-assuming-ssh-key pea
 
+  - job-reset-2: |
+      cd oil
+      soil/host-shim.sh job-reset
+
+  - cpp-small: |
+      cd oil
+      soil/host-shim.sh run-job-uke podman $PWD cpp-small
+
+  - publish-cpp-small: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key cpp-small
+
       #  - cpp-coverage: |
       #      cd oil
       #      soil/host-shim.sh run-job-uke podman $PWD cpp-coverage
@@ -59,5 +71,5 @@ tasks:
 
   - did-all-succeed: |
       cd oil
-      soil/host-shim.sh did-all-succeed dummy pea
+      soil/host-shim.sh did-all-succeed dummy pea cpp-small
       #soil/host-shim.sh did-all-succeed pea cpp-coverage dummy

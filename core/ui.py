@@ -387,12 +387,29 @@ def PrintAst(node, flag):
         print_stderr('AST not printed.')
         if 0:
             from _devbuild.gen.id_kind_asdl import Id_str
-            from frontend.lexer import ID_HIST
+            from frontend.lexer import ID_HIST, LAZY_ID_HIST
+
+            print(LAZY_ID_HIST)
+            print(len(LAZY_ID_HIST))
+
             for id_, count in ID_HIST.most_common(10):
                 print('%8d %s' % (count, Id_str(id_)))
             print()
             total = sum(ID_HIST.values())
-            print('%8d total tokens returned' % total)
+            uniq = len(ID_HIST)
+            print('%8d total tokens' % total)
+            print('%8d unique tokens IDs' % uniq)
+            print()
+
+            for id_, count in LAZY_ID_HIST.most_common(10):
+                print('%8d %s' % (count, Id_str(id_)))
+            print()
+            total = sum(LAZY_ID_HIST.values())
+            uniq = len(LAZY_ID_HIST)
+            print('%8d total tokens' % total)
+            print('%8d tokens with LazyVal()' % total)
+            print('%8d unique tokens IDs' % uniq)
+            print()
 
     else:  # text output
         f = mylib.Stdout()

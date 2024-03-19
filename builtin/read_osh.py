@@ -304,7 +304,7 @@ class Read(vm._Builtin):
             lexer = self.parse_ctx.MakeLexer(line_reader)
 
             # The parser only yields valid tokens:
-            #     Char_Literals, Char_OneChar, Char_Hex, Char_UBraced
+            #     Char_OneChar, Char_Hex, Char_UBraced
             # So we can use word_compile.EvalCStringToken, which is also used for
             # $''.
             # Important: we don't generate Id.Unknown_Backslash because that is valid

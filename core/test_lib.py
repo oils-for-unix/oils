@@ -50,6 +50,8 @@ from osh import word_eval
 from ysh import expr_eval
 from mycpp import mylib
 
+import posix_ as posix
+
 
 def MakeBuiltinArgv(argv):
     return cmd_value.Argv(argv, [loc.Missing] * len(argv), None, None, None)
@@ -59,7 +61,7 @@ def FakeTok(id_, val):
     # type: (int, str) -> Token
     src = source.Interactive
     line = SourceLine(1, val, src)
-    return Token(id_, 0, len(val), runtime.NO_SPID, line, val)
+    return Token(id_, 0, len(val), runtime.NO_SPID, line, None)
 
 
 def PrintableString(s):
@@ -276,7 +278,9 @@ def InitCommandEvaluator(parse_ctx=None,
                                        assign_builtins, arena, cmd_deps,
                                        trap_state, signal_safe)
 
-    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f)
+    multi_trace = dev.MultiTracer(posix.getpid(), '', '', '', fd_state)
+    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, debug_f,
+                        multi_trace)
     waiter = process.Waiter(job_list, exec_opts, trap_state, tracer)
 
     hay_state = hay_ysh.HayState()

@@ -14,54 +14,53 @@ from mycpp.mylib import log
 
 
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  # NOTE: Output is meant to be inspected
-  if mylib.CPP:
-    log('CPP')
-  else:
-    log('CPP')
+    # NOTE: Output is meant to be inspected
+    if mylib.CPP:
+        log('CPP')
+    else:
+        log('CPP')
 
-  if mylib.PYTHON:
-    log('PYTHON')
-  else:
-    log('PYTHON')
+    if mylib.PYTHON:
+        log('PYTHON')
+    else:
+        log('PYTHON')
 
-  if 0:
-    log('ZERO')
+    if 0:
+        log('ZERO')
 
-  log('int = %d', int('123'))
-  log('bool = %d', bool(42))
+    log('int = %d', int('123'))
+    log('bool = %d', bool(42))
 
-  mylist = []  # type: List[int]
+    mylist = []  # type: List[int]
 
-  #if mylist:  # translation time error
-  if len(mylist):
-    print('mylist')
+    #if mylist:  # translation time error
+    if len(mylist):
+        print('mylist')
 
-  # translation error
-  #x = 1 if mylist else 2
-  x = 1 if len(mylist) else 2
+    # translation error
+    #x = 1 if mylist else 2
+    x = 1 if len(mylist) else 2
 
-  log("x = %d", x)
+    log("x = %d", x)
 
-
-  # Expressions where parens are needed
-  a = False
-  if a and (False or True):
-    print('yes')
-  else:
-    print('no')
+    # Expressions where parens are needed
+    a = False
+    if a and (False or True):
+        print('yes')
+    else:
+        print('no')
 
 
 def run_benchmarks():
-  # type: () -> None
-  raise NotImplementedError()
+    # type: () -> None
+    raise NotImplementedError()
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()

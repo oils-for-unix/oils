@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from core import pyutil
 from frontend import match
+from mycpp import mylib
 from mycpp.mylib import log, print_stderr
 
 from typing import List, Tuple, cast, TYPE_CHECKING
@@ -41,17 +42,22 @@ def LooksLikeGlob(s):
     i = 0
     n = len(s)
     while i < n:
-        c = s[i]
-        if c == '\\':
+        c = mylib.ByteAt(s, i)
+
+        if mylib.ByteEquals(c, '\\'):
             i += 1
-        elif c == '*' or c == '?':
+
+        elif mylib.ByteEquals(c, '*') or mylib.ByteEquals(c, '?'):
             return True
-        elif c == '[':
+
+        elif mylib.ByteEquals(c, '['):
             left_bracket = True
-        elif c == ']' and left_bracket:
+
+        elif mylib.ByteEquals(c, ']') and left_bracket:
             # It has at least one pair of balanced [].  Not bothering to check stray
             # [ or ].
             return True
+
         i += 1
     return False
 
@@ -113,24 +119,26 @@ def GlobUnescape(s):
     word_eval _JoinElideEscape and EvalWordToString you have to build two
     'parallel' strings -- one escaped and one not.
     """
-    unescaped = []  # type: List[str]
+    unescaped = []  # type: List[int]
     i = 0
     n = len(s)
     while i < n:
-        c = s[i]
-        if c == '\\' and i != n - 1:
+        c = mylib.ByteAt(s, i)
+
+        if mylib.ByteEquals(c, '\\') and i != n - 1:
             # Suppressed this to fix bug #698, #628 is still there.
             assert i != n - 1, 'Trailing backslash: %r' % s
             i += 1
-            c2 = s[i]
-            if c2 in GLOB_META_CHARS:
+            c2 = mylib.ByteAt(s, i)
+
+            if mylib.ByteInSet(c2, GLOB_META_CHARS):
                 unescaped.append(c2)
             else:
                 raise AssertionError("Unexpected escaped character %r" % c2)
         else:
             unescaped.append(c)
         i += 1
-    return ''.join(unescaped)
+    return mylib.JoinBytes(unescaped)
 
 
 # For ${x//foo*/y}, we need to glob patterns, but fnmatch doesn't give you the

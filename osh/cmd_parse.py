@@ -154,12 +154,16 @@ def _MakeLiteralHereLines(
 
         # Maintain lossless invariant for STRIPPED tabs: add a Token to the
         # arena invariant, but don't refer to it.
+        #
+        # Note: We could use Lit_CharsWithoutPrefix for 'single quoted' EOF
+        # here docs, but it's more complex with double quoted EOF docs.
+
         if do_lossless:  # avoid garbage, doesn't affect correctness
-            arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, src_line,
-                           None)
+            arena.NewToken(Id.Lit_CharsWithoutPrefix, start_offset, 0,
+                           src_line)
 
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
-                           src_line, src_line.content[start_offset:])
+                           src_line)
         tokens.append(t)
     return tokens
 
@@ -194,12 +198,12 @@ def _ParseHereDocBody(parse_ctx, r, line_reader, arena):
     # Maintain lossless invariant for STRIPPED tabs: add a Token to the
     # arena invariant, but don't refer to it.
     if parse_ctx.do_lossless:  # avoid garbage, doesn't affect correctness
-        arena.NewToken(Id.Ignored_HereTabs, 0, start_offset, end_line, None)
+        arena.NewToken(Id.Lit_CharsWithoutPrefix, start_offset, 0, end_line)
 
     # Create a Token with the end terminator.  Maintains the invariant that the
     # tokens "add up".
     h.here_end_tok = arena.NewToken(Id.Undefined_Tok, start_offset,
-                                    len(end_line.content), end_line, '')
+                                    len(end_line.content), end_line)
 
 
 def _MakeAssignPair(parse_ctx, preparsed, arena):
@@ -270,10 +274,9 @@ def _MakeAssignPair(parse_ctx, preparsed, arena):
     if offset == n:
         rhs = rhs_word.Empty  # type: rhs_word_t
     else:
-        # tmp2 is for intersection of C++/MyPy type systems
-        tmp2 = CompoundWord(parts[offset:])
-        word_.TildeDetectAssign(tmp2)
-        rhs = tmp2
+        w = CompoundWord(parts[offset:])
+        word_.TildeDetectAssign(w)
+        rhs = w
 
     return AssignPair(left_token, lhs, op, rhs)
 
@@ -303,11 +306,13 @@ def _AppendMoreEnv(preparsed_list, more_env):
         n = len(parts)
         offset = preparsed.part_offset
         if offset == n:
-            val = rhs_word.Empty  # type: rhs_word_t
+            rhs = rhs_word.Empty  # type: rhs_word_t
         else:
-            val = CompoundWord(parts[offset:])
+            w = CompoundWord(parts[offset:])
+            word_.TildeDetectAssign(w)
+            rhs = w
 
-        more_env.append(EnvPair(left_token, var_name, val))
+        more_env.append(EnvPair(left_token, var_name, rhs))
 
 
 def _SplitSimpleCommandPrefix(words):
@@ -709,6 +714,9 @@ class CommandParser(object):
         # which would make the code below faster.  But small string optimization
         # would also speed it up, since redirects are small.
 
+        # One way to do this is with Kind.Redir and Kind.RedirNamed, and then
+        # possibly "unify" the IDs by subtracting a constant like 8 or 16?
+
         op_val = lexer.TokenVal(op_tok)
         if op_val[0] == '{':
             pos = op_val.find('}')
@@ -868,6 +876,11 @@ class CommandParser(object):
                                 tok)
 
                     # Is the first word a Hay Attr word?
+                    #
+                    # Can we remove this StaticEval() call, and just look
+                    # inside Token?  I think once we get rid of SHELL nodes,
+                    # this will be simpler.
+
                     ok, word_str, quoted = word_.StaticEval(w)
                     # Foo { a = 1 } is OK, but not foo { a = 1 } or FOO { a = 1 }
                     if (ok and len(word_str) and word_str[0].isupper() and
@@ -2351,7 +2364,7 @@ class CommandParser(object):
                 part0 = parts[0]
                 if part0.tag() == word_part_e.Literal:
                     tok = cast(Token, part0)
-                    if (match.IsValidVarName(tok.tval) and
+                    if (match.IsValidVarName(lexer.LazyStr(tok)) and
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
                         assert tok.id == Id.Lit_Chars, tok
 

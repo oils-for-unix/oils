@@ -8,9 +8,9 @@
 lexer.py - Library for lexing.
 """
 
-from _devbuild.gen.syntax_asdl import Token, SourceLine
+from _devbuild.gen.syntax_asdl import Token, WideToken, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
-from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str, Kind
+from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str
 from asdl import runtime
 from mycpp.mylib import log
 from frontend import consts
@@ -18,55 +18,49 @@ from frontend import match
 
 unused = log, Id_str
 
-from typing import List, Tuple, Optional, Counter, TYPE_CHECKING
+from typing import List, Tuple, Counter, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.alloc import Arena
     from frontend.reader import _Reader
+
+#
+# Optimized Token functions that use str.find(substr, start, end) to avoid
+# allocation of temporary slice
+#
 
 
 def IsPlusEquals(tok):
     # type: (Token) -> bool
     """Common pattern to test if we got foo= or foo+=
-
-    Note: can be replaced by s.find('+', index, index+1), which avoids
-    allocation.
     """
-    index = tok.col + tok.length - 2
-    return tok.line.content[index] == '+'
-
-
-# Also: IsWhitespace, IsLeadingSpace
-
-def TokenEquals(tok, s):
-    # type: (Token, str) -> bool
-
-    # TODO: Use tok.line.content.find(substr, start, end)
-
-    raise NotImplementedError()
+    i = tok.col + tok.length - 2  # 'foo+='[-2] is '+'
+    return tok.line.content.find('+', i, i + 1) != -1
 
 
 def TokenContains(tok, substr):
     # type: (Token, str) -> bool
+    return tok.line.content.find(substr, tok.col, tok.col + tok.length) != -1
 
-    # TODO: Use tok.line.content.find(substr, start, end)
 
-    raise NotImplementedError()
+def TokenEquals(tok, s):
+    # type: (Token, str) -> bool
+    if len(s) != tok.length:
+        return False
+    return TokenContains(tok, s)
 
 
 def TokenStartsWith(tok, s):
     # type: (Token, str) -> bool
-
-    # TODO: Use tok.line.content.startswith(substr, start, end)
-
-    raise NotImplementedError()
+    return tok.line.content.find(s, tok.col, tok.col + len(s)) != -1
 
 
 def TokenEndsWith(tok, s):
     # type: (Token, str) -> bool
+    end = tok.col + tok.length
+    return tok.line.content.find(s, end - len(s), end) != -1
 
-    # TODO: Use tok.line.content.startswith(substr, start, end)
 
-    raise NotImplementedError()
+# Also: IsWhitespace, IsLeadingSpace
 
 
 def TokenVal(tok):
@@ -79,25 +73,55 @@ def TokenSliceLeft(tok, left_index):
     # type: (Token, int) -> str
     """Slice token directly, without creating intermediate string."""
     assert left_index > 0
-    left = tok.col + left_index
-    return tok.line.content[left:tok.col + tok.length]
+    start = tok.col + left_index
+    return tok.line.content[start:tok.col + tok.length]
 
 
 def TokenSliceRight(tok, right_index):
     # type: (Token, int) -> str
     """Slice token directly, without creating intermediate string."""
     assert right_index < 0
-    right = tok.col + tok.length + right_index
-    return tok.line.content[tok.col:right]
+    end = tok.col + tok.length + right_index
+    return tok.line.content[tok.col:end]
 
 
 def TokenSlice(tok, left, right):
     # type: (Token, int, int) -> str
     """Slice token directly, without creating intermediate string."""
-    assert left > 0
+    assert left > 0, left
+    assert right < 0, right
     start = tok.col + left
     end = tok.col + tok.length + right
     return tok.line.content[start:end]
+
+
+def LazyStr2(tok):
+    # type: (WideToken) -> str
+    """
+    TODO: Remove .tval from Token; use WideToken instead
+    """
+    return ''
+
+
+def LazyStr(tok):
+    # type: (Token) -> str
+    """Materialize the tval on demand, with special case for $myvar.
+
+    Most tokens do NOT need strings.  We avoid allocating them in the lexer.
+
+    Note: SingleQuoted could have lazy sval, NOT at the token level.
+    """
+    if 0:
+        LAZY_ID_HIST[tok.id] += 1
+
+    if tok.tval is None:
+        if tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $x or $2
+            # Special case for SimpleVarSub - completion also relies on this
+            tok.tval = TokenSliceLeft(tok, 1)
+        else:
+            tok.tval = TokenVal(tok)
+
+    return tok.tval
 
 
 def DummyToken(id_, val):
@@ -129,7 +153,6 @@ class LineLexer(object):
 
     def Reset(self, src_line, line_pos):
         # type: (SourceLine, int) -> None
-        #assert line, repr(line)  # can't be empty or None
         self.src_line = src_line
         self.line_pos = line_pos
 
@@ -156,7 +179,7 @@ class LineLexer(object):
         else:
             src_line = self.src_line
 
-        return self.arena.NewToken(id_, self.line_pos, 0, src_line, '')
+        return self.arena.NewToken(id_, self.line_pos, 0, src_line)
 
     def LookAheadOne(self, lex_mode):
         # type: (lex_mode_t) -> Id_t
@@ -232,7 +255,7 @@ class LineLexer(object):
             {}
         """
         pos = self.line_pos - unread
-        assert pos > 0
+        assert pos > 0, pos
         tok_type, _ = match.OneToken(lex_mode_e.FuncParens,
                                      self.src_line.content, pos)
         return tok_type == Id.LookAhead_FuncParens
@@ -279,21 +302,7 @@ class LineLexer(object):
             # LineLexer tells Lexer to read a new line.
             return self.eol_tok
 
-        # TODO: can inline this function with formula on 16-bit Id.
         kind = consts.GetKind(tok_type)
-
-        # Save on allocations!  We often don't look at the token value.
-        # Whitelist doesn't work well?  Use blacklist for now.
-        # - Kind.KW is sometimes a literal in a word
-        # - Kind.Right is for " in here docs.  Lexer isn't involved.
-        # - Got an error with Kind.Left too that I don't understand
-        # - Kind.ControlFlow doesn't work because we word_.StaticEval()
-        # if kind in (Kind.Lit, Kind.VSub, Kind.Redir, Kind.Char, Kind.Backtick, Kind.KW, Kind.Right):
-        if kind in (Kind.Arith, Kind.Op, Kind.VTest, Kind.VOp0, Kind.VOp2,
-                    Kind.VOp3, Kind.WS, Kind.Ignored, Kind.Eof):
-            tok_val = None  # type: Optional[str]
-        else:
-            tok_val = line_str[line_pos:end_pos]
 
         # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
         # want it to be "low level".  The only thing fabricated here is a newline
@@ -303,8 +312,7 @@ class LineLexer(object):
             self.replace_last_token = False
 
         tok_len = end_pos - line_pos
-        t = self.arena.NewToken(tok_type, line_pos, tok_len, self.src_line,
-                                tok_val)
+        t = self.arena.NewToken(tok_type, line_pos, tok_len, self.src_line)
 
         self.line_pos = end_pos
         return t
@@ -317,10 +325,10 @@ class Lexer(object):
     def __init__(self, line_lexer, line_reader):
         # type: (LineLexer, _Reader) -> None
         """
-    Args:
-      line_lexer: Underlying object to get tokens from
-      line_reader: get new lines from here
-    """
+        Args:
+          line_lexer: Underlying object to get tokens from
+          line_reader: get new lines from here
+        """
         self.line_lexer = line_lexer
         self.line_reader = line_reader
 
@@ -441,16 +449,15 @@ class Lexer(object):
         # type: (lex_mode_t) -> Token
         while True:
             t = self._Read(lex_mode)
-            # TODO: Change to ALL IGNORED types, once you have SPACE_TOK.  This means
-            # we don't have to handle them in the VSub_1/VSub_2/etc. states.
             if t.id != Id.Ignored_LineCont:
                 break
 
-        #ID_HIST[t.id] += 1
-        #log('> Read() Returning %s', t)
+        if 0:
+            ID_HIST[t.id] += 1
         return t
 
 
-if 0:  # mylib.PYTHON: not: breaks tarball build
+if 0:  # mylib.PYTHON: note: breaks tarball build
     import collections
     ID_HIST = collections.Counter()  # type: Counter[Id_t]
+    LAZY_ID_HIST = collections.Counter()  # type: Counter[Id_t]

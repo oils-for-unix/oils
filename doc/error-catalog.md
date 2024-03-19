@@ -169,7 +169,23 @@ They're numbered starting from `200`.
 
 ### OILS-ERR-200
 
-Example TODO
+<!--
+Generated with:
+test/runtime-errors.sh test-external_cmd_typed_args
+-->
+
+```
+  cat ("myfile")
+      ^
+[ -c flag ]:1: fatal: 'cat' appears to be external. External commands don't accept typed args (OILS-ERR-200)
+```
+
+- Builtin commands and user-defined procs may accept [typed
+  args](ref/chap-cmd-lang.html#typed-arg), but external commands never do.
+- Did you misspell a [YSH proc](ref/chap-cmd-lang.html#proc-def)? If a name is
+  not found, YSH assumes it's an external command.
+- Did you forget to source a file that contains the proc or shell function you
+  wanted to run?
 
 ## Appendix
 

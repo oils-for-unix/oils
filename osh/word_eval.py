@@ -5,7 +5,7 @@ word_eval.py - Evaluator for the word language.
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     Token,
-    NameTok,
+    SimpleVarSub,
     loc,
     loc_t,
     BracedVarSub,
@@ -64,7 +64,6 @@ from osh import braces
 from osh import glob_
 from osh import string_ops
 from osh import word_
-from osh import word_compile
 from ysh import expr_eval
 from ysh import val_ops
 
@@ -476,10 +475,12 @@ class TildeEvaluator(object):
 
         if result is None:
             if self.exec_opts.strict_tilde():
-                e_die("Error expanding tilde (e.g. invalid user)", part.token)
+                e_die("Error expanding tilde (e.g. invalid user)", part.left)
             else:
                 # Return ~ or ~user literally
-                return lexer.TokenVal(part.token)
+                result = '~'
+                if part.user_name is not None:
+                    result = result + part.user_name  # mycpp doesn't have +=
 
         return result
 
@@ -1221,9 +1222,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _EvalBracedVarSub(self, part, part_vals, quoted):
         # type: (BracedVarSub, List[part_value_t], bool) -> None
         """
-    Args:
-      part_vals: output param to append to.
-    """
+        Args:
+          part_vals: output param to append to.
+        """
         # We have different operators that interact in a non-obvious order.
         #
         # 1. bracket_op: value -> value, with side effect on vsub_state
@@ -1415,7 +1416,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     def _ConcatPartVals(self, part_vals, location):
         # type: (List[part_value_t], loc_t) -> str
-        """Helper."""
+
         strs = []  # type: List[str]
         for part_val in part_vals:
             UP_part_val = part_val
@@ -1455,16 +1456,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return self._ConcatPartVals(part_vals, part.left)
 
     def _EvalSimpleVarSub(self, part, part_vals, quoted):
-        # type: (NameTok, List[part_value_t], bool) -> None
+        # type: (SimpleVarSub, List[part_value_t], bool) -> None
 
-        # TODO: use name
-        token = part.left
-        var_name = part.var_name
+        token = part.tok
 
         vsub_state = VarSubState.CreateNull()
 
         # 1. Evaluate from (var_name, var_num, Token) -> defined, value
         if token.id == Id.VSub_DollarName:
+            var_name = lexer.LazyStr(token)
             # TODO: Special case for LINENO
             val = self.mem.GetValue(var_name)
             if val.tag() in (value_e.BashArray, value_e.BashAssoc):
@@ -1477,7 +1477,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         % var_name, token)
 
         elif token.id == Id.VSub_Number:
-            var_num = int(var_name)
+            var_num = int(lexer.LazyStr(token))
             val = self._EvalVarNum(var_num)
 
         else:
@@ -1497,14 +1497,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
         part_vals.append(v)
 
     def EvalSimpleVarSubToString(self, node):
-        # type: (NameTok) -> str
+        # type: (SimpleVarSub) -> str
         """For double quoted strings in YSH expressions.
 
         Example: var x = "$foo-${foo}"
         """
         part_vals = []  # type: List[part_value_t]
         self._EvalSimpleVarSub(node, part_vals, False)
-        return self._ConcatPartVals(part_vals, node.left)
+        return self._ConcatPartVals(part_vals, node.tok)
 
     def _EvalExtGlob(self, part, part_vals):
         # type: (word_part.ExtGlob, List[part_value_t]) -> None
@@ -1513,7 +1513,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         if op.id == Id.ExtGlob_Comma:
             op_str = '@('
         else:
-            op_str = lexer.TokenVal(op)
+            op_str = lexer.LazyStr(op)
         # Do NOT split these.
         part_vals.append(part_value.String(op_str, False, False))
 
@@ -1593,7 +1593,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part = cast(Token, UP_part)
                 # Split if it's in a substitution.
                 # That is: echo is not split, but ${foo:-echo} is split
-                v = part_value.String(part.tval, quoted, is_subst)
+                v = part_value.String(lexer.LazyStr(part), quoted, is_subst)
                 part_vals.append(v)
 
             elif case(word_part_e.EscapedLiteral):
@@ -1603,8 +1603,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(word_part_e.SingleQuoted):
                 part = cast(SingleQuoted, UP_part)
-                s = word_compile.EvalSingleQuoted(part)
-                v = part_value.String(s, True, False)
+                v = part_value.String(part.sval, True, False)
                 part_vals.append(v)
 
             elif case(word_part_e.DoubleQuoted):
@@ -1628,7 +1627,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part_vals.append(sv)
 
             elif case(word_part_e.SimpleVarSub):
-                part = cast(NameTok, UP_part)
+                part = cast(SimpleVarSub, UP_part)
                 self._EvalSimpleVarSub(part, part_vals, quoted)
 
             elif case(word_part_e.BracedVarSub):

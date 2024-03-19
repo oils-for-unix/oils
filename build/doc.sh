@@ -21,6 +21,9 @@ REPO_ROOT=$(cd $THIS_DIR/.. && pwd)
 readonly REPO_ROOT
 
 
+readonly HTML_BASE_DIR=_release/VERSION
+
+
 log() {
   echo "$@" 1>&2
 }
@@ -167,7 +170,7 @@ split-and-render() {
   local rel_path=${src%'.md'}  # doc/known-differences
   local tmp_prefix=_tmp/$rel_path  # temp dir for splitting
 
-  local out=${2:-_release/VERSION/$rel_path.html}
+  local out=${2:-$HTML_BASE_DIR/$rel_path.html}
   local web_url=${3:-'../web'}
 
   mkdir -v -p $(dirname $out) $tmp_prefix
@@ -202,12 +205,31 @@ split-and-render() {
   log "$tmp_prefix -> (doctools/cmark) -> $out"
 }
 
+render-from-kate() {
+  ### Make it easier to configure Kate editor
+
+  # It want to pass an absolute path
+  # TODO: I can't figure out how to run this from Kate?
+
+  local full_path=$1
+
+  case $full_path in
+    $REPO_ROOT/*)
+      rel_path=${full_path#"$REPO_ROOT/"}
+      echo "relative path = $rel_path"
+      ;;
+    *)
+      die "$full_path should start with repo root $REPO_ROOT"
+      ;;
+  esac
+
+  split-and-render $rel_path
+}
+
 # Special case for README
 # Do NOT split because we don't want front matter in the markdown source.
 render-only() {
   local src=${1:-README.md}
-  local css_files=${2:-'../web/manual.css ../web/toc.css'}
-  local title=${3:-'Oils Source Code'}
 
   local name
   case $src in 
@@ -222,8 +244,11 @@ render-only() {
       ;;
   esac
 
+  local out=${2:-$HTML_BASE_DIR/doc/$name.html}
+  local css_files=${3:-'../web/manual.css ../web/toc.css'}
+  local title=${4:-'Oils Source Code'}
+
   local prefix=_tmp/doc/$name
-  local out=_release/VERSION/doc/$name.html
 
   local meta=${prefix}_meta.json 
   cat >$meta <<EOF
@@ -242,8 +267,18 @@ EOF
 }
 
 special() {
-  render-only 'README.md' '../web/base.css ../web/manual.css ../web/toc.css' 'Oils Source Code'
-  render-only 'INSTALL.txt' '../web/base.css ../web/install.css' 'Installing Oils'
+  # TODO: do all READMEs
+  split-and-render mycpp/README.md \
+    $HTML_BASE_DIR/doc/oils-repo/mycpp/README.html \
+    ../../../web
+
+  local web_dir='../../web'
+  render-only 'README.md' $HTML_BASE_DIR/doc/oils-repo/README.html \
+    "$web_dir/base.css $web_dir/manual.css $web_dir/toc.css" 'Oils Source Code'
+
+  local web_dir='../web'
+  render-only 'INSTALL.txt' '' \
+    "$web_dir/base.css $web_dir/install.css" 'Installing Oils'
 
   # These pages aren't in doc/
   split-and-render doc/release-index.md _tmp/release-index.html
@@ -505,9 +540,11 @@ tarball-links-row-html() {
 </tr>
 EOF
 
-  # we switched to .gz for oils for Unix
-  for name in oil-$version.tar.{gz,xz} \
+  # we switched to .gz for oils-for-unix
+  # note: legacy names for old releases
+  for name in \
     oils-for-unix-$version.tar.{gz,xz} \
+    oil-$version.tar.{gz,xz} \
     oil-native-$version.tar.xz; do
 
     local url="/download/$name"  # The server URL

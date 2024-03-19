@@ -157,3 +157,12 @@ json write (spec)
   ]
 }
 ## END
+
+#### ctx with value.Place, not List/Dict (error location bug fix)
+
+ctx push (&p) {
+  true
+}
+## status: 3
+## STDOUT:
+## END

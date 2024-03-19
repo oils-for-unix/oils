@@ -6,10 +6,9 @@
 #
 #   http://www.apache.org/licenses/LICENSE-2.0
 """
-id_kind_def.py - Id and Kind definitions, used for Token, Word, Nodes, etc.
+id_kind_def.py - Id and Kind definitions, stored in Token
 
-NOTE: If this changes, the lexer may need to be recompiled with
-build/codegen.sh lexer.
+NOTE: If this file changes, rebuild it with build/py.sh all
 """
 from __future__ import print_function
 
@@ -237,9 +236,7 @@ def AddKinds(spec):
 
     spec.AddKind('Eol', ['Tok'])  # no more tokens on line (\0)
 
-    # HereTabs is for stripping tabs on each line of <<- , while preserving the
-    # "lossless invariant"
-    spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment', 'HereTabs'])
+    spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
 
     # Id.WS_Space is for lex_mode_e.ShCommand; Id.Ignored_Space is for
     # lex_mode_e.Arith
@@ -249,6 +246,7 @@ def AddKinds(spec):
         'Lit',
         [
             'Chars',
+            'CharsWithoutPrefix',  # for stripping leading whitespace
             'VarLike',
             'ArrayLhsOpen',
             'ArrayLhsClose',
@@ -269,7 +267,7 @@ def AddKinds(spec):
             'Equals',  # For = f()
             'Dollar',  # detecting 'echo $'
             'DRightBracket',  # the ]] that matches [[, NOT a keyword
-            'TildeLike',  # tilde expansion
+            'Tilde',  # tilde expansion
             'Pound',  # for comment or VarOp state
             'TPound',  # for doc comments like ###
             'TDot',  # for multiline commands ...
@@ -397,7 +395,6 @@ def AddKinds(spec):
             'Unicode8',  # bash
             'UBraced',
             'Pound',  # YSH
-            'Literals',
             'AsciiControl',  # \x01-\x1f, what's disallowed in JSON
         ])
 
@@ -550,7 +547,7 @@ def AddKinds(spec):
         ])
 
     spec.AddKindPairs(
-        'VOpOil',
+        'VOpYsh',
         [
             ('Pipe', '|'),  # ${x|html}
             ('Space', ' '),  # ${x %.3f}

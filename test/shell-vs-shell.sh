@@ -24,7 +24,7 @@ cmark() {
 }
 
 highlight-code() {
-  PYTHONPATH=. doctools/oil_doc.py highlight "$@"
+  PYTHONPATH=. doctools/oils_doc.py highlight "$@"
 }
 
 desc() {

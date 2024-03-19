@@ -232,6 +232,9 @@ test-invalid-examples() {
       */invalid_global.py)
         expected_status=2
         ;;
+      */invalid_switch.py)
+        expected_status=5
+        ;;
     esac
 
     if test $status -ne $expected_status; then

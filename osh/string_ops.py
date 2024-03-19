@@ -27,7 +27,6 @@ from typing import List, Tuple
 
 _ = log
 
-
 # TODO: Add details of the invalid character/byte here?
 
 INCOMPLETE_CHAR = 'Incomplete UTF-8 character'
@@ -255,6 +254,93 @@ def AdvanceUtf8Chars(s, num_chars, byte_offset):
     return i
 
 
+# Limited Unicode codepoints for whitespace characters.
+# Oils intentionally does not include characters from <USP>, as that set
+# depends on the version of the Unicode standard used.
+#
+# See discussion on the original pull request which added this list here:
+#
+#   https://github.com/oilshell/oil/pull/1836#issuecomment-1942173520
+#
+# See also the Mozilla Javascript documentation, and the note on how
+# changes to the standard affected Javascript:
+#
+#     https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
+
+SPACES = [
+    0x0009,  # Horizontal tab (\t)
+    0x000A,  # Newline (\n)
+    0x000B,  # Vertical tab (\v)
+    0x000C,  # Form feed (\f)
+    0x000D,  # Carriage return (\r)
+    0x0020,  # Normal space
+    0x00A0,  # No-break space <NBSP>
+    0xFEFF,  # Zero-width no-break space <ZWNBSP>
+]
+
+
+def _IsSpace(codepoint):
+    # type: (int) -> bool
+    return codepoint in SPACES
+
+
+def StartsWithWhitespaceByteRange(s):
+    # type: (str) -> Tuple[int, int]
+    """Returns the range of 's' which has leading whitespace characters.
+
+    If 's' has no leading whitespace, an valid but empty range is returned.
+
+    The returned range is given as byte positions, and is a half-open range
+    "[start, end)" which is returned as a tuple.
+
+    Used for shell functions like 'trimStart' to match then trim whitespace.
+    """
+    len_s = len(s)
+    i = 0
+    while i < len_s:
+        codepoint = DecodeUtf8Char(s, i)
+        if not _IsSpace(codepoint):
+            break
+
+        try:
+            i = NextUtf8Char(s, i)
+        except error.Strict:
+            assert False, "DecodeUtf8Char should have caught any encoding errors"
+
+    start = 0
+    end = i
+    return (start, end)
+
+
+def EndsWithWhitespaceByteRange(s):
+    # type: (str) -> Tuple[int, int]
+    """Returns the range of 's' which has trailing whitespace characters.
+
+    If 's' has no leading whitespace, an valid but empty range is returned.
+
+    The returned range is given as byte positions, and is a half-open range
+    "[start, end)" which is returned as a tuple.
+
+    Used for shell functions like 'trimEnd' to match then trim whitespace.
+    """
+    len_s = len(s)
+    i = len_s
+    while i > 0:
+        # TODO: Gracefully handle surrogate pairs and overlong encodings when
+        # finding the start of each character.
+        prev = PreviousUtf8Char(s, i)
+
+        codepoint = DecodeUtf8Char(s, prev)
+        if not _IsSpace(codepoint):
+            break
+
+        i = prev
+
+    start = i
+    end = len_s
+    return (start, end)
+
+
 # Implementation without Python regex:
 #
 # (1) PatSub: I think we fill in GlobToExtendedRegex, then use regcomp and
@@ -444,6 +530,7 @@ def _PatSubAll(s, regex, replace_str):
 
 
 class GlobReplacer(object):
+
     def __init__(self, regex, replace_str, slash_tok):
         # type: (str, str, Token) -> None
 

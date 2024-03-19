@@ -79,6 +79,9 @@ class Fg(vm._Builtin):
             return 1
 
         pgid = job.ProcessGroupId()
+        assert pgid != process.INVALID_PGID, \
+            'Processes put in the background should have a PGID'
+
         # TODO: Print job ID rather than the PID
         log('Continue PID %d', pgid)
         # Put the job's process group back into the foreground. GiveTerminal() must

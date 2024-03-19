@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.20.0
+Oils 0.21.0
 ===========
 
 <!-- NOTE: This file is published to /release/$VERSION/index.html -->
@@ -13,7 +13,7 @@ Oils 0.20.0
 <!-- REPLACE_WITH_DATE -->
 </span>
 
-This is the home page for version 0.20.0 of Oils, a Unix shell.  To use it,
+This is the home page for version 0.21.0 of Oils, a Unix shell.  To use it,
 
 1. Download a source tarball.
 2. Build it and do a "smoke test", as described in [INSTALL][].
@@ -30,8 +30,17 @@ and benchmarks.
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
-Note: `oil-$VERSION` is the slow Python build, while `oils-for-unix-$VERSION`
-is the new, fast C++ build.
+**[Oils Packaging Guidelines]($wiki)**:
+
+- The `oils-for-unix` tarball is the fast shell in C++, completed in
+  2024.  The distro package should be called `oils-for-unix`.
+- The `oil` tarball is the slow reference interpreter based on CPython.
+  - Don't rename old distro packages.  They can remain `oil`.
+  - It's not worth packaging `oil` in new distros.  It may be removed at some
+    point.
+- The project is now called **Oils**, or [Oils for
+  Unix](https://www.oilshell.org/blog/2023/03/rename.html).  There is no more
+  `oil`!
 
 ## What's New
 

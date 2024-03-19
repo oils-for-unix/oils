@@ -2,6 +2,7 @@
 cppgen.py - AST pass to that prints C++ code
 """
 import io
+import itertools
 import json  # for "C escaping"
 
 from typing import overload, Union, Optional, Dict
@@ -385,8 +386,8 @@ def GetCReturnType(t) -> Tuple[str, bool, Optional[str]]:
 
 def PythonStringLiteral(s: str) -> str:
     """
-  Returns a properly quoted string.
-  """
+    Returns a properly quoted string.
+    """
     # MyPy does bad escaping. Decode and push through json to get something
     # workable in C++.
     return json.dumps(format_strings.DecodeMyPyString(s))
@@ -411,8 +412,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.virtual = virtual
         # local_vars: FuncDef node -> list of type, var
-        # This is different from member_vars because we collect it in the 'decl'
-        # phase.  But then write it in the definition phase.
+        # This is different from member_vars because we collect it in the
+        # 'decl' phase, and write it in the definition phase.
         self.local_vars = local_vars
         self.fmt_ids = fmt_ids
         self.field_gc = field_gc
@@ -1413,8 +1414,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                    c_type[:-1])
                 return
 
-            #    src = cast(source__SourcedFile, src)
-            # -> source__SourcedFile* src = static_cast<source__SourcedFile>(src)
+            # is_downcast_and_shadow idiom:
+            #
+            #    src = cast(source__SourcedFile, UP_src)
+            # -> source__SourcedFile* src = static_cast<source__SourcedFile>(UP_src)
+
             if callee.name == 'cast':
                 assert isinstance(lval, NameExpr)
                 call = o.rvalue
@@ -1423,18 +1427,22 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 cast_kind = _GetCastKind(self.module_path, subtype_name)
 
-                # HACK: Distinguish between UP cast and DOWN cast.
-                # osh/cmd_parse.py _MakeAssignPair does an UP cast within branches.
-                # _t is the base type, so that means it's an upcast.
-                if (isinstance(type_expr, NameExpr) and
-                        type_expr.name.endswith('_t')):
+                is_downcast_and_shadow = False
+                to_cast = call.args[1]
+                if isinstance(to_cast, NameExpr):
+                    if to_cast.name.startswith('UP_'):
+                        is_downcast_and_shadow = True
+
+                if is_downcast_and_shadow:
+                    # Declare NEW local variable inside case, which shadows it
+                    self.def_write_ind('%s %s = %s<%s>(', subtype_name,
+                                       lval.name, cast_kind, subtype_name)
+                else:
+                    # Normal variable
                     if self.decl:
                         self.local_var_list.append((lval.name, subtype_name))
                     self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
                                        subtype_name)
-                else:
-                    self.def_write_ind('%s %s = %s<%s>(', subtype_name,
-                                       lval.name, cast_kind, subtype_name)
 
                 self.accept(call.args[1])  # variable being casted
                 self.def_write(');\n')
@@ -1908,10 +1916,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _write_cases(self, if_node):
+    def _collect_cases(self, if_node, out):
         """
         The MyPy AST has a recursive structure for if-elif-elif rather than a
         flat one.  It's a bit confusing.
+
+        Appends (expr, block) cases to out param, and returns the default
+        block, which has no expression.
+
+        default block may be None.
+
+        Returns False if there is no default block.
         """
         assert isinstance(if_node, IfStmt), if_node
         assert len(if_node.expr) == 1, if_node.expr
@@ -1920,22 +1935,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         expr = if_node.expr[0]
         body = if_node.body[0]
 
-        # case 1:
-        # case 2:
-        # case 3: {
-        #   print('body')
-        # }
-        #   break;  // this indent is annoying but hard to get rid of
-        assert isinstance(expr, CallExpr), expr
-        for i, arg in enumerate(expr.args):
-            if i != 0:
-                self.def_write('\n')
-            self.def_write_ind('case ')
-            self.accept(arg)
-            self.def_write(': ')
+        if not isinstance(expr, CallExpr):
+            self.report_error(expr,
+                              'Expected call like case(x), got %s' % expr)
+            return
 
-        self.accept(body)
-        self.def_write_ind('  break;\n')
+        out.append((expr, body))
 
         if if_node.else_body:
             first_of_block = if_node.else_body.body[0]
@@ -1945,12 +1950,45 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #   if 0:
 
             if isinstance(first_of_block, IfStmt):
-                self._write_cases(first_of_block)
+                return self._collect_cases(first_of_block, out)
             else:
-                # end the recursion
-                self.def_write_ind('default: ')
-                self.accept(if_node.else_body)  # the whole block
-                # no break here
+                # default case - no expression
+                return if_node.else_body
+
+        return False  # NO DEFAULT BLOCK - Different than None
+
+    def _write_cases(self, switch_expr, cases, default_block):
+        """ Write a list of (expr, block) pairs """
+
+        for expr, body in cases:
+            assert expr is not None, expr
+            if not isinstance(expr, CallExpr):
+                self.report_error(expr,
+                                  'Expected call like case(x), got %s' % expr)
+                return
+
+            for i, arg in enumerate(expr.args):
+                if i != 0:
+                    self.def_write('\n')
+                self.def_write_ind('case ')
+                self.accept(arg)
+                self.def_write(': ')
+
+            self.accept(body)
+            self.def_write_ind('  break;\n')
+
+        if default_block is None:
+            # an error occurred
+            return
+        if default_block is False:
+            # This is too restrictive
+            #self.report_error(switch_expr,
+            #                  'switch got no else: for default block')
+            return
+
+        self.def_write_ind('default: ')
+        self.accept(default_block)
+        # don't write 'break'
 
     def _write_switch(self, expr, o):
         """Write a switch statement over integers."""
@@ -1965,25 +2003,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        self._write_cases(if_node)
-
-        self.indent -= 1
-        self.def_write_ind('}\n')
-
-    def _write_str_switch(self, expr, o):
-        """Write a switch statement over strings."""
-        assert len(expr.args) == 1, expr.args
-
-        self.def_write_ind('switch (')
-        self.accept(expr.args[0])
-        self.def_write(') {\n')
-
-        assert len(o.body.body) == 1, o.body.body
-        if_node = o.body.body[0]
-        assert isinstance(if_node, IfStmt), if_node
-
-        self.indent += 1
-        self._write_cases(if_node)
+        cases = []
+        default_block = self._collect_cases(if_node, cases)
+        self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
         self.def_write_ind('}\n')
@@ -2001,7 +2023,109 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert isinstance(if_node, IfStmt), if_node
 
         self.indent += 1
-        self._write_cases(if_node)
+        cases = []
+        default_block = self._collect_cases(if_node, cases)
+        self._write_cases(expr, cases, default_block)
+
+        self.indent -= 1
+        self.def_write_ind('}\n')
+
+    def _str_switch_cases(self, cases):
+        cases2 = []
+        for expr, body in cases:
+            if not isinstance(expr, CallExpr):
+                # non-fatal check from _collect_cases
+                break
+
+            args = expr.args
+            if len(args) != 1:
+                self.report_error(
+                    expr,
+                    'str_switch can only have case("x"), not case("x", "y")' %
+                    args)
+                break
+
+            if not isinstance(args[0], StrExpr):
+                self.report_error(
+                    expr,
+                    'str_switch can only be used with constant strings, got %s'
+                    % args[0])
+                break
+
+            s = args[0].value
+            cases2.append((len(s), s, body))
+
+        # Sort by string length
+        cases2.sort(key=lambda pair: pair[0])
+        grouped = itertools.groupby(cases2, key=lambda pair: pair[0])
+        return grouped
+
+    def _write_str_switch(self, expr, o):
+        """Write a switch statement over strings."""
+        assert len(expr.args) == 1, expr.args
+
+        switch_expr = expr  # for later error
+
+        switch_var = expr.args[0]
+        if not isinstance(switch_var, NameExpr):
+            self.report_error(
+                expr.args[0],
+                'str_switch(x) accepts only a variable name, got %s' %
+                switch_var)
+            return
+
+        self.def_write_ind('switch (len(%s)) {\n' % switch_var.name)
+
+        # There can only be one thing under 'with str_switch'
+        assert len(o.body.body) == 1, o.body.body
+        if_node = o.body.body[0]
+        assert isinstance(if_node, IfStmt), if_node
+
+        self.indent += 1
+
+        cases = []
+        default_block = self._collect_cases(if_node, cases)
+
+        grouped_cases = self._str_switch_cases(cases)
+        # Warning: this consumes internal iterator
+        #self.log('grouped %s', list(grouped_cases))
+
+        for str_len, group in grouped_cases:
+            self.def_write_ind('case %s: {\n' % str_len)
+            if_num = 0
+            for _, case_str, block in group:
+                self.indent += 1
+
+                else_str = '' if if_num == 0 else 'else '
+                self.def_write_ind('%sif (str_equals_c(%s, %s, %d)) ' %
+                                   (else_str, switch_var.name,
+                                    PythonStringLiteral(case_str), str_len))
+                self.accept(block)
+
+                self.indent -= 1
+                if_num += 1
+
+            self.indent += 1
+            self.def_write_ind('else {\n')
+            self.def_write_ind('  goto str_switch_default;\n')
+            self.def_write_ind('}\n')
+            self.indent -= 1
+
+            self.def_write_ind('}\n')
+            self.def_write_ind('  break;\n')
+
+        if default_block is None:
+            # an error occurred
+            return
+        if default_block is False:
+            self.report_error(switch_expr,
+                              'str_switch got no else: for default block')
+            return
+
+        self.def_write('\n')
+        self.def_write_ind('str_switch_default:\n')
+        self.def_write_ind('default: ')
+        self.accept(default_block)
 
         self.indent -= 1
         self.def_write_ind('}\n')
@@ -2597,7 +2721,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             if o.id == 'mycpp.mylib':
                 # These mylib functions are translated in a special way
-                if name in ('switch', 'tagswitch', 'iteritems', 'NewDict'):
+                if name in ('switch', 'tagswitch', 'str_switch', 'iteritems',
+                            'NewDict'):
                     continue
                 # STDIN_FILENO is #included
                 if name == 'STDIN_FILENO':

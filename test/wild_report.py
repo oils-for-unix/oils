@@ -9,7 +9,7 @@ import optparse
 import os
 import sys
 
-import jsontemplate
+from vendor import jsontemplate
 
 # JSON Template Evaluation:
 #

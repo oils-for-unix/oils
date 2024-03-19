@@ -1566,6 +1566,18 @@ f() {
   _osh-parse-error "$s"
 }
 
+test-eggex() {
+  _osh-should-parse '= /%start dot %end \n \u{ff}/'
+  _osh-parse-error '= /%star dot %end \n/'
+  _osh-parse-error '= /%start do %end \n/'
+  _osh-parse-error '= /%start dot %end \z/'
+  _osh-parse-error '= /%start dot %end \n \u{}/'
+
+  _osh-should-parse "= /['a'-'z']/"
+  _osh-parse-error "= /['a'-'']/"
+  _osh-parse-error "= /['a'-'zz']/"
+}
+
 #
 # Entry Points
 #
@@ -1583,5 +1595,8 @@ run-for-release() {
   run-other-suite-for-release ysh-parse-errors run-test-funcs
 }
 
-"$@"
+filename=$(basename $0)
+if test $filename = 'ysh-parse-errors.sh'; then
+  "$@"
+fi
 

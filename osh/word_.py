@@ -21,7 +21,6 @@ from frontend import consts
 from frontend import lexer
 from mycpp import mylib
 from mycpp.mylib import tagswitch, log
-from osh import word_compile
 
 from typing import Tuple, Optional, List, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -75,7 +74,12 @@ def _EvalWordPart(part):
 
         elif case(word_part_e.Literal):
             tok = cast(Token, UP_part)
+            # Weird performance issue: if we change this to lexer.LazyStr(),
+            # the parser slows down, e.g. on configure-coreutils from 805 B
+            # irefs to ~830 B.  The real issue is that we should avoid calling
+            # this from CommandParser - for the Hay node.
             return True, lexer.TokenVal(tok), False
+            #return True, lexer.LazyStr(tok), False
 
         elif case(word_part_e.EscapedLiteral):
             part = cast(word_part.EscapedLiteral, UP_part)
@@ -88,9 +92,7 @@ def _EvalWordPart(part):
 
         elif case(word_part_e.SingleQuoted):
             part = cast(SingleQuoted, UP_part)
-            tmp = [t.tval for t in part.tokens]  # on its own line for mycpp
-            s = ''.join(tmp)
-            return True, s, True
+            return True, part.sval, True
 
         elif case(word_part_e.DoubleQuoted):
             part = cast(DoubleQuoted, UP_part)
@@ -116,13 +118,16 @@ def _EvalWordPart(part):
 def FastStrEval(w):
     # type: (CompoundWord) -> Optional[str]
     """
-    TODO:
-    - Detect common case of CompoundWord([LiteralPart(Id.LitChars)])
-      For echo -e, test x -lt 0, etc.
-    - Store lexer.TokenVal() result in word_part.Literal(Token tok, str? sval)
-    - In EvalWordSequence2, append once to strs and locs, and short-circuit the
-      rest of the loop.  
-      - Do it in all public APIs: EvalWordTo{String,Pattern}()
+    Detects common case 
+
+    (1) CompoundWord([LiteralPart(Id.LitChars)])
+        For echo -e, test x -lt 0, etc.
+    (2) single quoted word like 'foo'
+
+    Other patterns we could detect are:
+    (1) "foo"
+    (2) "$var" and "${var}" - I think these are very common in OSH code (but not YSH)
+        - I think val_ops.Stringify() can handle all the errors
     """
     if len(w.parts) != 1:
         return None
@@ -139,16 +144,7 @@ def FastStrEval(w):
                 #   Right now it's Lit_Chars (e.g. ls -l) and [ and ] because I
                 #   know those are common
                 #   { } are not as common
-
-                #if part0.line is None:
-                #    log("part0 %s", part0)
-
-                # TODO: word_part.Literal should have lazy (str? sval) field
-
-                # TODO: instances created by lexer.DummyToken() don't have
-                # tok.line field, so they can't use lexer.TokenVal()
-                return part0.tval
-                #return lexer.TokenVal(part0)
+                return lexer.LazyStr(part0)
 
             else:
                 # e.g. Id.Lit_Star needs to be glob expanded
@@ -158,7 +154,8 @@ def FastStrEval(w):
         elif case(word_part_e.SingleQuoted):
             part0 = cast(SingleQuoted, UP_part0)
             # TODO: SingleQuoted should have lazy (str? sval) field
-            return word_compile.EvalSingleQuoted(part0)
+            # This would only affect multi-line strings though?
+            return part0.sval
 
         else:
             # e.g. DoubleQuoted can't be optimized to a string, because it
@@ -187,15 +184,6 @@ def StaticEval(UP_w):
         strs.append(s)
     #log('StaticEval parts %s', w.parts)
     return True, ''.join(strs), quoted
-
-
-def _MakeTildeSub(tok):
-    # type: (Token) -> word_part.TildeSub
-    if tok.length == 1:
-        user_name = None  # type: Optional[str]
-    else:
-        user_name = lexer.TokenSliceLeft(tok, 1)
-    return word_part.TildeSub(tok, user_name)
 
 
 # From bash, general.c, unquoted_tilde_word():
@@ -233,66 +221,171 @@ def TildeDetect(UP_w):
         return None
 
     w = cast(CompoundWord, UP_w)
+    return TildeDetect2(w)
+
+
+def TildeDetect2(w):
+    # type: (CompoundWord) -> Optional[CompoundWord]
+    """If tilde sub is detected, returns a new CompoundWord.
+
+    Accepts CompoundWord, not word_t.  After brace expansion, we know we have a
+    List[CompoundWord].
+
+    Tilde detection:
+
+    YES:
+        ~       ~/   
+        ~bob    ~bob/
+
+    NO:
+        ~bob#    ~bob#/
+        ~bob$x
+        ~$x
+
+    Pattern to match (all must be word_part_e.Literal):
+
+        Lit_Tilde Lit_Chars? (Lit_Slash | %end)
+    """
     if len(w.parts) == 0:  # ${a-} has no parts
         return None
 
     part0 = w.parts[0]
-    if LiteralId(part0) != Id.Lit_TildeLike:
-        return None
+    id0 = LiteralId(part0)
+    if id0 != Id.Lit_Tilde:
+        return None  # $x is not TildeSub
 
     tok0 = cast(Token, part0)
-    tilde_sub = _MakeTildeSub(tok0)
-    new_parts = [tilde_sub]  # type: List[word_part_t]
 
-    if len(w.parts) == 1:  # can't be zero
+    new_parts = []  # type: List[word_part_t]
+
+    if len(w.parts) == 1:  # ~
+        new_parts.append(word_part.TildeSub(tok0, None, None))
         return CompoundWord(new_parts)
 
-    part1 = w.parts[1]
-    id_ = LiteralId(part1)
-
-    # Lit_Slash is for ${x-~/foo}
-    if id_ == Id.Lit_Slash:  # we handled ${x//~/} delimiter earlier,
+    id1 = LiteralId(w.parts[1])
+    if id1 == Id.Lit_Slash:  # ~/
+        new_parts.append(word_part.TildeSub(tok0, None, None))
         new_parts.extend(w.parts[1:])
         return CompoundWord(new_parts)
 
-    # Lit_Chars is for ~/foo,
-    if id_ == Id.Lit_Chars and cast(Token, part1).tval.startswith('/'):
-        new_parts.extend(w.parts[1:])
+    if id1 != Id.Lit_Chars:
+        return None  # ~$x is not TildeSub
+
+    tok1 = cast(Token, w.parts[1])
+
+    if len(w.parts) == 2:  # ~foo
+        new_parts.append(word_part.TildeSub(tok0, tok1, lexer.TokenVal(tok1)))
         return CompoundWord(new_parts)
 
-    # It could be something like '~foo:bar', which doesn't have a slash.
-    return None
+    id2 = LiteralId(w.parts[2])
+    if id2 != Id.Lit_Slash:  # ~foo$x is not TildeSub
+        return None
+
+    new_parts.append(word_part.TildeSub(tok0, tok1, lexer.TokenVal(tok1)))
+    new_parts.extend(w.parts[2:])
+    return CompoundWord(new_parts)
 
 
 def TildeDetectAssign(w):
     # type: (CompoundWord) -> None
-    """MUTATES its argument."""
+    """Detects multiple tilde sub, like a=~:~/src:~bob
+
+    MUTATES its argument.
+
+    Pattern for to match (all must be word_part_e.Literal):
+
+        Lit_Tilde Lit_Chars? (Lit_Slash | Lit_Colon | %end)
+    """
     parts = w.parts
+
+    # Bail out EARLY if there are no ~ at all
+    has_tilde = False
+    for part in parts:
+        if LiteralId(part) == Id.Lit_Tilde:
+            has_tilde = True
+            break
+    if not has_tilde:
+        return  # Avoid further work and allocations
+
+    # Avoid IndexError, since we have to look ahead up to 2 tokens
+    parts.append(None)
+    parts.append(None)
+
+    new_parts = []  # type: List[word_part_t]
+
+    tilde_could_be_next = True  # true at first, and true after :
+
+    i = 0
     n = len(parts)
 
-    parts.append(None)  # sentinel
-    do_expand = True
-    for i in xrange(n):
-        cur = parts[i]
+    while i < n:
+        part0 = parts[i]
+        if part0 is None:
+            break
 
-        # Replace with tilde sub
-        if do_expand and LiteralId(cur) == Id.Lit_TildeLike:
-            next_part = parts[i + 1]
-            if next_part:
-                is_tilde = (LiteralId(next_part) == Id.Lit_Colon or
-                            (LiteralId(next_part) == Id.Lit_Chars and
-                             cast(Token, next_part).tval.startswith('/')))
-            else:
-                is_tilde = True  # you can expand :~
+        #log('i = %d', i)
+        #log('part0 %s', part0)
 
-            if is_tilde:
-                tok = cast(Token, cur)
-                parts[i] = _MakeTildeSub(tok)
+        # Skip tilde in middle of word, like a=foo~bar
+        if tilde_could_be_next and LiteralId(part0) == Id.Lit_Tilde:
+            # If ~ ends the string, we have
+            part1 = parts[i + 1]
+            part2 = parts[i + 2]
 
-        # For next iteration
-        do_expand = LiteralId(cur) == Id.Lit_Colon
+            tok0 = cast(Token, part0)
 
-    parts.pop()  # remove sentinel
+            if part1 is None:  # x=foo:~
+                new_parts.append(word_part.TildeSub(tok0, None, None))
+                break  # at end
+
+            id1 = LiteralId(part1)
+
+            if id1 in (Id.Lit_Slash, Id.Lit_Colon):  # x=foo:~/ or x=foo:~:
+                new_parts.append(word_part.TildeSub(tok0, None, None))
+                new_parts.append(part1)
+                i += 2
+                continue
+
+            if id1 != Id.Lit_Chars:
+                new_parts.append(part0)  # unchanged
+                new_parts.append(part1)  # ...
+                i += 2
+                continue  # x=foo:~$x is not tilde sub
+
+            tok1 = cast(Token, part1)
+
+            if part2 is None:  # x=foo:~foo
+                # consume both
+                new_parts.append(
+                    word_part.TildeSub(tok0, tok1, lexer.TokenVal(tok1)))
+                break  # at end
+
+            id2 = LiteralId(part2)
+            if id2 not in (Id.Lit_Slash, Id.Lit_Colon):  # x=foo:~foo$x
+                new_parts.append(part0)  # unchanged
+                new_parts.append(part1)  # ...
+                new_parts.append(part2)  # ...
+                i += 3
+                continue
+
+            new_parts.append(
+                word_part.TildeSub(tok0, tok1, lexer.TokenVal(tok1)))
+            new_parts.append(part2)
+            i += 3
+
+            tilde_could_be_next = (id2 == Id.Lit_Colon)
+
+        else:
+            new_parts.append(part0)
+            i += 1
+
+            tilde_could_be_next = (LiteralId(part0) == Id.Lit_Colon)
+
+    parts.pop()
+    parts.pop()
+
+    # Mutate argument
+    w.parts = new_parts
 
 
 def TildeDetectAll(words):

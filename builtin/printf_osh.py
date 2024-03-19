@@ -5,7 +5,7 @@ from __future__ import print_function
 import time as time_  # avoid name conflict
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind, Kind_t
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import (
     loc,
@@ -130,16 +130,15 @@ class _FormatStringParser(object):
         self._Next(lex_mode_e.PrintfOuter)
         parts = []  # type: List[printf_part_t]
         while True:
-            if (self.token_kind == Kind.Char or
-                    self.token_type == Id.Format_EscapedPercent or
-                    self.token_type == Id.Unknown_Backslash):
+            if (self.token_kind in (Kind.Lit, Kind.Char) or self.token_type
+                    in (Id.Format_EscapedPercent, Id.Unknown_Backslash)):
 
                 # Note: like in echo -e, we don't fail with Unknown_Backslash here
                 # when shopt -u parse_backslash because it's at runtime rather than
                 # parse time.
                 # Users should use $'' or the future static printf ${x %.3f}.
 
-                parts.append(printf_part.Literal(self.cur_token))
+                parts.append(self.cur_token)
 
             elif self.token_type == Id.Format_Percent:
                 parts.append(self._ParseFormatStr())
@@ -149,7 +148,7 @@ class _FormatStringParser(object):
                 break
 
             else:
-                raise AssertionError(self.token_type)
+                raise AssertionError(Id_str(self.token_type))
 
             self._Next(lex_mode_e.PrintfOuter)
 
@@ -187,12 +186,12 @@ class Printf(vm._Builtin):
             for part in parts:  # loop over parsed format string
                 UP_part = part
                 if part.tag() == printf_part_e.Literal:
-                    part = cast(printf_part.Literal, UP_part)
-                    token = part.token
-                    if token.id == Id.Format_EscapedPercent:
+                    part = cast(Token, UP_part)
+                    if part.id == Id.Format_EscapedPercent:
                         s = '%'
                     else:
-                        s = word_compile.EvalCStringToken(token)
+                        s = word_compile.EvalCStringToken(
+                            part.id, lexer.LazyStr(part))
                     out.append(s)
 
                 elif part.tag() == printf_part_e.Percent:
@@ -298,10 +297,7 @@ class Printf(vm._Builtin):
                             if id_ == Id.Eol_Tok:  # Note: This is really a NUL terminator
                                 break
 
-                            # Note: DummyToken is OK because EvalCStringToken() doesn't have
-                            # any syntax errors.
-                            tok = lexer.DummyToken(id_, tok_val)
-                            p = word_compile.EvalCStringToken(tok)
+                            p = word_compile.EvalCStringToken(id_, tok_val)
 
                             # Unusual behavior: '\c' aborts processing!
                             if p is None:

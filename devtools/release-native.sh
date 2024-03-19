@@ -48,6 +48,8 @@ make-tar() {
 }
 
 test-tar() {
+  local install=${1:-}
+
   local tmp=_tmp/native-tar-test  # like oil-tar-test
   rm -r -f $tmp
   mkdir -p $tmp
@@ -56,10 +58,17 @@ test-tar() {
 
   pushd oils-for-unix-$OIL_VERSION
   build/native.sh tarball-demo
+
+  if test -n "$install"; then
+    sudo ./install
+  fi
+
   popd
 }
 
 extract-for-benchmarks() {
+  local install=${1:-}
+
   local tar=$PWD/_release/oils-for-unix.tar
   local dest='../benchmark-data/src'
   mkdir -p $dest
@@ -77,6 +86,12 @@ extract-for-benchmarks() {
   ./configure
   _build/oils.sh '' dbg
   _build/oils.sh '' opt
+
+  build/native.sh tarball-demo
+
+  if test -n "$install"; then
+    sudo ./install
+  fi
   popd
 
   git add oils-for-unix-$OIL_VERSION

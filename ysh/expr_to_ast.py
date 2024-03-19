@@ -1,10 +1,10 @@
 """expr_to_ast.py."""
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.syntax_asdl import (
     Token,
-    NameTok,
+    SimpleVarSub,
     loc,
     loc_t,
     DoubleQuoted,
@@ -43,6 +43,8 @@ from _devbuild.gen.syntax_asdl import (
     Func,
     Eggex,
     EggexFlag,
+    CharCode,
+    CharRange,
 )
 from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
@@ -53,6 +55,7 @@ from frontend import lexer
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
+from osh import word_compile
 from ysh import expr_parse
 from ysh import regex_translate
 
@@ -715,7 +718,7 @@ class Transformer(object):
                         % (bare, bare), tok)
 
                 # $? is allowed
-                return NameTok(tok, lexer.TokenSliceLeft(tok, 1))
+                return SimpleVarSub(tok)
 
             else:
                 nt_name = self.number2symbol[typ]
@@ -829,7 +832,7 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    lhs_list.append(NameTok(e.left, e.name))
+                    lhs_list.append(e.left)
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
@@ -1291,7 +1294,26 @@ class Transformer(object):
     # Regex Language
     #
 
-    def _RangeChar(self, p_node):
+    def _RangeCharSingleQuoted(self, p_node):
+        # type: (PNode) -> Optional[CharCode]
+
+        assert p_node.typ == grammar_nt.range_char, p_node
+        typ = p_node.GetChild(0).typ
+
+        # 'a' in 'a'-'b'
+        if ISNONTERMINAL(typ) and typ == grammar_nt.sq_string:
+            sq_part = cast(SingleQuoted, p_node.GetChild(0).GetChild(1).tok)
+            n = len(sq_part.sval)
+            if n == 0:
+                p_die("Quoted range char can't be empty",
+                      loc.WordPart(sq_part))
+            elif n == 1:
+                return CharCode(sq_part.left, ord(sq_part.sval[0]), False)
+            else:
+                p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
+        return None
+
+    def _OtherRangeToken(self, p_node):
         # type: (PNode) -> Token
         """An endpoint of a range (single char)
 
@@ -1299,39 +1321,28 @@ class Transformer(object):
                     a-z         0-9           'a'-'z'     \x00-\xff
         """
         assert p_node.typ == grammar_nt.range_char, p_node
+
         typ = p_node.GetChild(0).typ
         if ISNONTERMINAL(typ):
-            # 'a' in 'a'-'b'
-            if typ == grammar_nt.sq_string:
-                sq_part = cast(SingleQuoted,
-                               p_node.GetChild(0).GetChild(1).tok)
-                tokens = sq_part.tokens
-                # Can happen with multiline single-quoted strings
-                if len(tokens) > 1:
-                    p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
-                if tokens[0].length > 1:
-                    p_die(RANGE_POINT_TOO_LONG, loc.WordPart(sq_part))
-                return tokens[0]
+            # \x00 in /[\x00 - \x20]/
+            assert typ == grammar_nt.char_literal, typ
+            tok = p_node.GetChild(0).GetChild(0).tok
+            return tok
 
-            if typ == grammar_nt.char_literal:
-                tok = p_node.GetChild(0).GetChild(0).tok
-                return tok
+        tok = p_node.tok
+        # a in a-z is Expr_Name
+        # 0 in 0-9 is Expr_DecInt
+        assert tok.id in (Id.Expr_Name, Id.Expr_DecInt), tok
 
-            raise NotImplementedError()
-        else:
-            # Expr_Name or Expr_DecInt
-            tok = p_node.tok
-            if tok.id in (Id.Expr_Name, Id.Expr_DecInt):
-                # For the a in a-z, 0 in 0-9
-                if tok.length != 1:
-                    p_die(RANGE_POINT_TOO_LONG, tok)
-                return tok
-
-            raise NotImplementedError()
+        if tok.length != 1:
+            p_die(RANGE_POINT_TOO_LONG, tok)
+        return tok
 
     def _NonRangeChars(self, p_node):
         # type: (PNode) -> class_literal_term_t
-        """\" \u1234 '#'."""
+        """
+        \" \u1234 '#'
+        """
         assert p_node.typ == grammar_nt.range_char, p_node
         typ = p_node.GetChild(0).typ
         if ISNONTERMINAL(typ):
@@ -1340,7 +1351,8 @@ class Transformer(object):
                 return cast(SingleQuoted, p_child.GetChild(1).tok)
 
             if typ == grammar_nt.char_literal:
-                return class_literal_term.CharLiteral(p_node.GetChild(0).tok)
+                tok = p_node.GetChild(0).tok
+                return word_compile.EvalCharLiteralForRegex(tok)
 
             raise NotImplementedError()
         else:
@@ -1370,9 +1382,19 @@ class Transformer(object):
 
             # 'a'-'z' etc.
             if n == 3 and p_node.GetChild(1).tok.id == Id.Arith_Minus:
-                start = self._RangeChar(p_node.GetChild(0))
-                end = self._RangeChar(p_node.GetChild(2))
-                return class_literal_term.Range(start, end)
+                left = p_node.GetChild(0)
+                right = p_node.GetChild(2)
+
+                code1 = self._RangeCharSingleQuoted(left)
+                if code1 is None:
+                    tok1 = self._OtherRangeToken(left)
+                    code1 = word_compile.EvalCharLiteralForRegex(tok1)
+
+                code2 = self._RangeCharSingleQuoted(right)
+                if code2 is None:
+                    tok2 = self._OtherRangeToken(right)
+                    code2 = word_compile.EvalCharLiteralForRegex(tok2)
+                return CharRange(code1, code2)
 
         else:
             if first.tok.id == Id.Expr_At:
@@ -1406,7 +1428,7 @@ class Transformer(object):
         if tok_str == 'dot':
             if negated_tok:
                 p_die("Can't negate this symbol", tok)
-            return tok
+            return re.Primitive(tok, Id.Re_Dot)
 
         if tok_str in POSIX_CLASSES:
             return PosixClass(negated_tok, tok_str)
@@ -1422,10 +1444,7 @@ class Transformer(object):
 
     def _NameInClass(self, negated_tok, tok):
         # type: (Token, Token) -> class_literal_term_t
-        """Like the above, but 'dot' doesn't mean anything.
-
-        And `d` is a literal 'd', not `digit`.
-        """
+        """Like the above, but 'dot' and 'd' don't mean anything within []"""
         tok_str = lexer.TokenVal(tok)
 
         # A bare, unquoted character literal.  In the grammar, this is expressed as
@@ -1438,7 +1457,7 @@ class Transformer(object):
 
             if negated_tok:  # [~d] is not allowed, only [~digit]
                 p_die("Can't negate this symbol", tok)
-            return class_literal_term.CharLiteral(tok)
+            return word_compile.EvalCharLiteralForRegex(tok)
 
         # digit, word, but not d, w, etc.
         if tok_str in POSIX_CLASSES:
@@ -1467,7 +1486,11 @@ class Transformer(object):
                 return cast(SingleQuoted, p_child.GetChild(1).tok)
 
             if typ == grammar_nt.char_literal:
-                return p_atom.GetChild(0).tok
+                tok = p_atom.GetChild(0).tok
+                # Must be Id.Char_{OneChar,Hex,UBraced}
+                assert consts.GetKind(tok.id) == Kind.Char
+                s = word_compile.EvalCStringToken(tok.id, lexer.TokenVal(tok))
+                return re.LiteralChars(tok, s)
 
             raise NotImplementedError(typ)
 
@@ -1475,19 +1498,26 @@ class Transformer(object):
             tok = p_atom.GetChild(0).tok
 
             # Special punctuation
-            if tok.id in (Id.Expr_Dot, Id.Arith_Caret, Id.Expr_Dollar):
-                return tok
+            if tok.id == Id.Expr_Dot:  # .
+                return re.Primitive(tok, Id.Re_Dot)
 
-            # TODO: d digit can turn into PosixClass and PerlClass right here!
-            # It's parsing.
+            if tok.id == Id.Arith_Caret:  # ^
+                return re.Primitive(tok, Id.Re_Start)
+
+            if tok.id == Id.Expr_Dollar:  # $
+                return re.Primitive(tok, Id.Re_End)
+
             if tok.id == Id.Expr_Name:
+                # d digit -> PosixClass PerlClass etc.
                 return self._NameInRegex(None, tok)
 
             if tok.id == Id.Expr_Symbol:
                 # Validate symbols here, like we validate PerlClass, etc.
                 tok_str = lexer.TokenVal(tok)
-                if tok_str in ('%start', '%end', 'dot'):
-                    return tok
+                if tok_str == '%start':
+                    return re.Primitive(tok, Id.Re_Start)
+                if tok_str == '%end':
+                    return re.Primitive(tok, Id.Re_End)
                 p_die("Unexpected token %r in regex" % tok_str, tok)
 
             if tok.id == Id.Expr_At:
@@ -1558,7 +1588,7 @@ class Transformer(object):
         id_ = tok.id
         # a+
         if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
-            return re_repeat.Op(tok)
+            return tok
 
         if id_ == Id.Op_LBrace:
             p_range = p_repeat.GetChild(1)
@@ -1572,18 +1602,24 @@ class Transformer(object):
 
             n = p_range.NumChildren()
             if n == 1:  # {3}
-                return re_repeat.Num(p_range.GetChild(0).tok)
+                tok = p_range.GetChild(0).tok
+                return tok  # different operator than + * ?
 
             if n == 2:
                 if p_range.GetChild(0).tok.id == Id.Expr_DecInt:  # {,3}
-                    return re_repeat.Range(p_range.GetChild(0).tok, None)
+                    left = p_range.GetChild(0).tok
+                    return re_repeat.Range(left, lexer.TokenVal(left), '',
+                                           None)
                 else:  # {1,}
-                    return re_repeat.Range(None, p_range.GetChild(1).tok)
+                    right = p_range.GetChild(1).tok
+                    return re_repeat.Range(None, '', lexer.TokenVal(right),
+                                           right)
 
             if n == 3:  # {1,3}
-                return re_repeat.Range(
-                    p_range.GetChild(0).tok,
-                    p_range.GetChild(2).tok)
+                left = p_range.GetChild(0).tok
+                right = p_range.GetChild(2).tok
+                return re_repeat.Range(left, lexer.TokenVal(left),
+                                       lexer.TokenVal(right), right)
 
             raise AssertionError(n)
 

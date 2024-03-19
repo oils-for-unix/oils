@@ -15,13 +15,38 @@ GLOBAL_STR(kEmptyString, "");
 static const std::regex gStrFmtRegex("([^%]*)(?:%(-?[0-9]*)(.))?");
 static const int kMaxFmtWidth = 256;  // arbitrary...
 
-int BigStr::find(BigStr* needle, int pos) {
-  int length = len(this);
-  DCHECK(len(needle) == 1);  // Oil's usage
-  char c = needle->data_[0];
-  for (int i = pos; i < length; ++i) {
-    if (data_[i] == c) {
-      return i;
+int BigStr::find(BigStr* needle, int start, int end) {
+  if (end == -1) {
+    end = len(this);
+  }
+  int needle_len = len(needle);
+
+  if (needle_len > (end - start)) {
+    return -1;  // needle is too long to be found (Python behavior)
+  }
+
+  if (needle_len == 1) {
+    char c = needle->data_[0];
+    // For 'aaa'.find('a', 0, 1)
+    // end = 1, needle_len = 1, last_start = 1 which means we go through once
+    for (int i = start; i < end; ++i) {
+      if (data_[i] == c) {
+        return i;
+      }
+    }
+  } else {
+    // Note: this works for finding the empty string.  Empty string is found in
+    // empty range like [5, 5), but not in [5, 4)
+
+    // For 'aaa'.find('aa', 0, 2)
+    // end = 2, needle_len = 2, last_start = 1 which means we go through once
+
+    int last_start = end - needle_len + 1;
+    // could use a smarter substring search algorithm
+    for (int i = start; i < last_start; ++i) {
+      if (memcmp(data_ + i, needle->data_, needle_len) == 0) {
+        return i;
+      }
     }
   }
   return -1;
@@ -29,7 +54,7 @@ int BigStr::find(BigStr* needle, int pos) {
 
 int BigStr::rfind(BigStr* needle) {
   int length = len(this);
-  DCHECK(len(needle) == 1);  // Oil's usage
+  DCHECK(len(needle) == 1);  // Oils usage
   char c = needle->data_[0];
   for (int i = length - 1; i >= 0; --i) {
     if (data_[i] == c) {
@@ -103,7 +128,7 @@ BigStr* BigStr::at(int i) {
   if (i < 0) {
     i = length + i;
   }
-  DCHECK(i >= 0);
+  DCHECK(0 <= i);
   DCHECK(i < length);  // had a problem here!
 
   BigStr* result = NewStr(1);
@@ -127,7 +152,7 @@ BigStr* BigStr::slice(int begin, int end) {
   int new_len = end - begin;
   DCHECK(0 <= new_len && new_len <= length);
 
-  BigStr* result = NewStr(new_len);
+  BigStr* result = NewStr(new_len);  // has kEmptyString optimization
   memcpy(result->data_, data_ + begin, new_len);
 
   return result;
@@ -510,6 +535,7 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
         DCHECK(width_s.size() > 1);
         ok = StringToInt(width_s.c_str() + 1, width_s.size() - 1, 10, &width);
         DCHECK(ok);
+        (void)ok;  // silence unused var warning in opt
       } else {
         ok = StringToInt(width_s.c_str(), width_s.size(), 10, &width);
         DCHECK(ok);

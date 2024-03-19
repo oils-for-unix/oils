@@ -19,11 +19,11 @@ class TypedArgsTest(unittest.TestCase):
     def testReaderPosArgs(self):
         arena = test_lib.MakeArena('')
         line_id = arena.AddLine('foo(a, b, c, d, e, f, g)', 1)
-        ltok = arena.NewToken(-1, 3, 1, line_id, '')
-        rtok = arena.NewToken(-1, 4, 1, line_id, '')
+        ltok = arena.NewToken(-1, 3, 1, line_id)
+        rtok = arena.NewToken(-1, 4, 1, line_id)
         pos_exprs = [
-            expr.Const(arena.NewToken(-1, 4 + 2 * i, 1, line_id, ''),
-                       value.Null) for i in range(7)
+            expr.Const(arena.NewToken(-1, 4 + 2 * i, 1, line_id), value.Null)
+            for i in range(7)
         ]
         arg_list = ArgList(ltok, pos_exprs, None, [], rtok)
 
@@ -99,9 +99,9 @@ class TypedArgsTest(unittest.TestCase):
         # Dummy call. Not testing error messages here.
         arena = test_lib.MakeArena('')
         line_id = arena.AddLine('foo(;)', 1)
-        ltok = arena.NewToken(-1, 0, 3, line_id, '')
-        rtok = arena.NewToken(-1, 0, 4, line_id, '')
-        semi_tok = arena.NewToken(-1, 0, 5, line_id, '')
+        ltok = arena.NewToken(-1, 0, 3, line_id)
+        rtok = arena.NewToken(-1, 0, 4, line_id)
+        semi_tok = arena.NewToken(-1, 0, 5, line_id)
         arg_list = ArgList(ltok, [], semi_tok, [], rtok)
 
         kwargs = {

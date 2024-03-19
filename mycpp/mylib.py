@@ -21,7 +21,8 @@ except ImportError:
     import os
     posix = os
 
-from typing import Tuple, Dict, Optional, Iterator, Any, TypeVar, TYPE_CHECKING
+from typing import (Tuple, List, Dict, Optional, Iterator, Any, TypeVar,
+                    Generic, cast, TYPE_CHECKING)
 
 # For conditional translation
 CPP = False
@@ -62,6 +63,58 @@ def print_stderr(s):
     caught at the top level.
     """
     print(s, file=sys.stderr)
+
+
+#
+# Byte Operations avoid excessive allocations with string algorithms
+#
+
+
+def ByteAt(s, i):
+    # type: (str, int) -> int
+    """i must be in bounds."""
+
+    # This simplifies the C++ implementation
+    assert 0 <= i, 'No negative indices'
+    assert i < len(s), 'No negative indices'
+
+    return ord(s[i])
+
+
+def ByteEquals(byte, ch):
+    # type: (int,  str) -> bool
+    assert len(ch) == 1, ch
+    assert 0 <= byte < 256, byte
+
+    return byte == ord(ch)
+
+
+def ByteInSet(byte, byte_set):
+    # type: (int, str) -> bool
+    assert 0 <= byte < 256, byte
+
+    return chr(byte) in byte_set
+
+
+def JoinBytes(byte_list):
+    # type: (List[int]) -> str
+
+    return ''.join(chr(b) for b in byte_list)
+
+
+class File:
+    """
+    TODO: This should define a read/write interface, and then LineReader() and
+    Writer() can possibly inherit it, with runtime assertions
+
+    Then we allow downcasting from File -> LineReader, like we currently do in
+    C++ in gc_mylib.h.
+
+    Inheritance can't express the structural Reader/Writer pattern of Go, which
+    would be better.  I suppose we could use File* everywhere, but having
+    fine-grained types is nicer.  And there will be very few casts.
+    """
+    pass
 
 
 class LineReader:
@@ -119,6 +172,10 @@ class Writer:
         # type: () -> bool
         raise NotImplementedError()
 
+    def close(self):
+        # type: () -> None
+        raise NotImplementedError()
+
 
 class BufWriter(Writer):
     """Mimic StringIO API, but add clear() so we can reuse objects.
@@ -147,6 +204,13 @@ class BufWriter(Writer):
     def clear(self):
         # type: () -> None
         del self.parts[:]
+
+    def close(self):
+        # type: () -> None
+
+        # No-op for now - we could invalidate write()?
+
+        pass
 
 
 def Stdout():
@@ -231,6 +295,43 @@ class tagswitch(object):
     def __call__(self, *cases):
         # type: (*Any) -> bool
         return self.tag in cases
+
+
+if TYPE_CHECKING:
+    # Doesn't work
+    T = TypeVar('T')
+
+    class StackArray(Generic[T]):
+
+        def __init__(self):
+            self.items = []  # type: List[T]
+
+        def append(self, item):
+            # type: (T) -> None
+            self.items.append(item)
+
+        def pop(self):
+            # type: () -> T
+            return self.items.pop()
+
+    # Doesn't work, this is only for primitive types
+    #StackArray = NewType('StackArray', list)
+
+
+def MakeStackArray(item_type):
+    # type: (TypeVar) -> StackArray[item_type]
+    """
+    Convenience "constructor" used like this:
+
+        myarray = MakeStackArray(int)
+
+    The idiom could also be
+
+        myarray = cast('StackArray[int]', [])
+
+    But that's uglier.
+    """
+    return cast('StackArray[item_type]', [])
 
 
 if TYPE_CHECKING:

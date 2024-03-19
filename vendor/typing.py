@@ -26,6 +26,8 @@ NoReturn = None
 Callable = None
 Counter = None  # for ID_HIST
 
+Generic = None  # for StackArray[T]
+
 TYPE_CHECKING = False
 
 

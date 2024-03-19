@@ -342,8 +342,8 @@ soil-run() {
   extract
 
   # could add _bin/cxx-bumpleak/oils-for-unix, although sometimes it's slower
-  local -a oil_bin=( $OSH_CPP_NINJA_BUILD )
-  ninja "${oil_bin[@]}"
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD )
+  ninja "${osh_bin[@]}"
 
   local single_machine='no-host'
 
@@ -353,7 +353,7 @@ soil-run() {
   # Write _tmp/provenance.* and _tmp/{host,shell}-id
   shell-provenance-2 \
     $single_machine $job_id _tmp \
-    bash dash bin/osh "${oil_bin[@]}"
+    bash dash bin/osh "${osh_bin[@]}"
 
   local host_job_id="$single_machine.$job_id"
   local raw_out_dir="$BASE_DIR/raw.$host_job_id"

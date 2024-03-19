@@ -269,6 +269,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo ~r')
         print(comp)
         m = list(r.Matches(comp))
+
         # This test isn't hermetic, but I think root should be on all systems.
         self.assert_('echo ~root/' in m, 'Got %s' % m)
 

@@ -239,12 +239,12 @@ class Arena(object):
         assert found_right, "Couldn't find right token"
         return ''.join(pieces)
 
-    def NewToken(self, id_, col, length, src_line, val):
-        # type: (int, int, int, SourceLine, str) -> Token
+    def NewToken(self, id_, col, length, src_line):
+        # type: (int, int, int, SourceLine) -> Token
         span_id = self.num_tokens  # spids are just array indices
         self.num_tokens += 1
 
-        tok = Token(id_, col, length, span_id, src_line, val)
+        tok = Token(id_, col, length, span_id, src_line, None)
         if self.save_tokens:
             self.tokens.append(tok)
         return tok

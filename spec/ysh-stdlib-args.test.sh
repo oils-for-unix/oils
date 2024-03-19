@@ -1,11 +1,41 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 1
 
+#### args.ysh example usage
+source --builtin args.ysh
+
+parser (&spec) {
+  flag -v --verbose (help="Verbosely")  # default is Bool, false
+
+  flag -P --max-procs ('int', default=-1, help='''
+    Run at most P processes at a time
+    ''')
+
+  flag -i --invert ('bool', default=true, help='''
+    Long multiline
+    Description
+    ''')
+
+  arg src (help='Source')
+  arg dest (help='Dest')
+
+  rest files
+}
+
+var args = parseArgs(spec, :| mysrc -P 12 mydest a b c |)
+
+echo "Verbose $[args.verbose]"
+pp line (args)
+## STDOUT:
+Verbose false
+(Dict)   {"src":"mysrc","max-procs":12,"dest":"mydest","files":["a","b","c"],"verbose":false,"invert":true}
+## END
+
 #### Bool flag, positional args, more positional
 
 source --builtin args.ysh
 
-arg-parse (&spec) {
+parser (&spec) {
   flag -v --verbose ('bool')
   arg src
   arg dst
@@ -16,32 +46,30 @@ arg-parse (&spec) {
 
 var argv = ['-v', 'src/path', 'dst/path', 'x', 'y', 'z']
 
-var arg, i = parseArgs(spec, argv)
+var args = parseArgs(spec, argv)
 
-pp line (arg)
-pp line (i)
+pp line (args)
 
-if (arg.verbose) {
-  echo "$[arg.src] -> $[arg.dst]"
-  write -- @[arg.more]
+if (args.verbose) {
+  echo "$[args.src] -> $[args.dst]"
+  write -- @[args.more]
 }
 
 ## STDOUT:
 (Dict)   {"verbose":true,"src":"src/path","dst":"dst/path","more":["x","y","z"]}
-(Int)   6
 src/path -> dst/path
 x
 y
 z
 ## END
 
-#### Test multiple command lines against a parser
+#### Test multiple ARGVs against a parser
 
 source --builtin args.ysh
 
-arg-parse (&spec) {
-  flag -v --verbose ('bool', false)
-  flag -c --count ('int', 120)
+parser (&spec) {
+  flag -v --verbose ('bool', default=false)
+  flag -c --count ('int', default=120)
   arg file
 }
 
@@ -62,15 +90,15 @@ for args in (argsCases) {
 ## STDOUT:
 ----------  -v --count 120 example.sh  ----------
 $ bin/ysh example.sh -v --count 120 example.sh
-(List)   [{"verbose":true,"count":120,"file":"example.sh"},4]
+(Dict)   {"verbose":true,"count":120,"file":"example.sh"}
 
 ----------  -v --count 120 example.sh -v  ----------
 $ bin/ysh example.sh -v --count 120 example.sh -v
-(List)   [{"verbose":true,"count":120,"file":"example.sh"},5]
+(Dict)   {"verbose":true,"count":120,"file":"example.sh"}
 
 ----------  -v --count 120 example.sh -v --count 150  ----------
 $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
-(List)   [{"verbose":true,"count":150,"file":"example.sh"},7]
+(Dict)   {"verbose":true,"count":150,"file":"example.sh"}
 
 ## END
 
@@ -78,7 +106,7 @@ $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
 
 source --builtin args.ysh
 
-arg-parse (&spec) {
+parser (&spec) {
   # TODO: implement description, prog and help message
   description '''
      Reference Implementation
@@ -92,7 +120,7 @@ arg-parse (&spec) {
 var argv = ['-h', 'src', 'dst']
 
 # Help
-var arg, _ = parseArgs(spec, argv)
+var args = parseArgs(spec, argv)
 
 ## STDOUT:
 usage: program-name [-h] [-v] src dst
@@ -114,8 +142,8 @@ source --builtin args.ysh
 
 var spec = {
   flags: [
-    {short: '-v', long: '--verbose', type: null, default: '', help: 'Enable verbose logging'},
-    {short: '-c', long: '--count', type: 'int', default: 80, help: 'Maximum line length'},
+    {short: '-v', long: '--verbose', name: 'verbose', type: null, default: '', help: 'Enable verbose logging'},
+    {short: '-c', long: '--count', name: 'count', type: 'int', default: 80, help: 'Maximum line length'},
   ],
   args: [
     {name: 'file', type: 'str', help: 'File to check line lengths of'}
@@ -158,21 +186,21 @@ for args in (argsCases) {
 ## STDOUT:
 ----------  -v --count 120 example.sh  ----------
 $ bin/ysh example.sh -v --count 120 example.sh
-(List)   [{"verbose":true,"count":120,"file":"example.sh"},4]
+(Dict)   {"verbose":true,"count":120,"file":"example.sh"}
 
 $ python3 example.py -v --count 120 example.sh
 Namespace(filename='example.sh', count='120', verbose=True)
 
 ----------  -v --count 120 example.sh -v  ----------
 $ bin/ysh example.sh -v --count 120 example.sh -v
-(List)   [{"verbose":true,"count":120,"file":"example.sh"},5]
+(Dict)   {"verbose":true,"count":120,"file":"example.sh"}
 
 $ python3 example.py -v --count 120 example.sh -v
 Namespace(filename='example.sh', count='120', verbose=True)
 
 ----------  -v --count 120 example.sh -v --count 150  ----------
 $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
-(List)   [{"verbose":true,"count":150,"file":"example.sh"},7]
+(Dict)   {"verbose":true,"count":150,"file":"example.sh"}
 
 $ python3 example.py -v --count 120 example.sh -v --count 150
 Namespace(filename='example.sh', count='150', verbose=True)
@@ -183,7 +211,7 @@ Namespace(filename='example.sh', count='150', verbose=True)
 
 source --builtin args.ysh
 
-arg-parse (&spec) {
+parser (&spec) {
   flag -v --verbose ('bool')
   arg src
   arg dst
@@ -198,20 +226,19 @@ json write (spec)
     {
       "short": "-v",
       "long": "--verbose",
+      "name": "verbose",
       "type": "bool",
-      "default": null,
+      "default": false,
       "help": null
     }
   ],
   "args": [
     {
       "name": "src",
-      "default": null,
       "help": null
     },
     {
       "name": "dst",
-      "default": null,
       "help": null
     }
   ],
@@ -219,3 +246,88 @@ json write (spec)
 }
 ## END
 
+#### Default values
+source --builtin args.ysh
+
+parser (&spec) {
+  flag -S --sanitize ('bool', default=false)
+  flag -v --verbose ('bool', default=false)
+  flag -P --max-procs ('int')  # Will set to null (the default default)
+}
+
+var args = parseArgs(spec, [])
+
+pp line (args)
+## STDOUT:
+(Dict)   {"sanitize":false,"verbose":false,"max-procs":null}
+## END
+
+#### Duplicate argument/flag names
+source --builtin args.ysh
+
+try {
+  parser (&spec) {
+    flag -n --name
+    flag -N --name
+  }
+}
+echo status=$_status
+
+try {
+  parser (&spec) {
+    flag -n --name
+    arg name
+  }
+}
+echo status=$_status
+
+try {
+  parser (&spec) {
+    arg name
+    flag -o --other
+    arg name
+  }
+}
+echo status=$_status
+## STDOUT:
+status=3
+status=3
+status=3
+## END
+
+#### Error cases
+source --builtin args.ysh
+
+parser (&spec) {
+  flag -v --verbose
+  flag -n --num ('int', required=true)
+
+  arg action
+  arg other (required=false)
+}
+
+try { call parseArgs(spec, :| -n 10 action other extra |) }
+echo status=$_status
+
+try { call parseArgs(spec, :| -n |) }
+echo status=$_status
+
+try { call parseArgs(spec, :| -n -v |) }
+echo status=$_status
+
+try { = parseArgs(spec, :| -n 10 |) }
+echo status=$_status
+
+try { call parseArgs(spec, :| -v action |) }
+echo status=$_status
+
+try { call parseArgs(spec, :| --unknown |) }
+echo status=$_status
+## STDOUT:
+status=2
+status=2
+status=2
+status=2
+status=2
+status=2
+## END

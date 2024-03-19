@@ -54,7 +54,7 @@ from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
-    NameTok,
+    SimpleVarSub,
     loc,
     source,
     DoubleQuoted,
@@ -310,6 +310,7 @@ class WordParser(WordEmitter):
             # read until }
             replace = self._ReadVarOpArg(
                 lex_mode_e.VSub_ArgUnquoted)  # type: rhs_word_t
+            #log('r 1 %r', replace)
         else:
             # e.g. ${v/a} is the same as ${v/a/}  -- empty replacement string
             replace = rhs_word.Empty
@@ -392,7 +393,7 @@ class WordParser(WordEmitter):
 
             part.suffix_op = suffix_op.Unary(tok, arg_word)
 
-        elif op_kind == Kind.VOpOil:
+        elif op_kind == Kind.VOpYsh:
             tok = self.cur_token
             arg_word = self._ReadVarOpArg(arg_lex_mode)
             if self.token_type != Id.Right_DollarBrace:
@@ -431,11 +432,8 @@ class WordParser(WordEmitter):
 
         elif op_kind == Kind.VOp2:  # / : [ ]
             if self.token_type == Id.VOp2_Slash:
-                patsub_op = self._ReadPatSubVarOp()
-
-                # awkwardness for mycpp; could fix
-                temp = cast(suffix_op_t, patsub_op)
-                part.suffix_op = temp
+                patsub_op = self._ReadPatSubVarOp()  # type: suffix_op_t
+                part.suffix_op = patsub_op
 
                 # Checked by the method above
                 assert self.token_type == Id.Right_DollarBrace, self.cur_token
@@ -611,17 +609,20 @@ class WordParser(WordEmitter):
         """Internal method to read a word_part."""
         tokens = []  # type: List[Token]
         # In command mode, we never disallow backslashes like '\'
-        self.ReadSingleQuoted(lex_mode, left_token, tokens, False)
-        right_quote = self.cur_token
-        node = SingleQuoted(left_token, tokens, right_quote)
+        right_quote = self.ReadSingleQuoted(lex_mode, left_token, tokens,
+                                            False)
+        sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
+        node = SingleQuoted(left_token, sval, right_quote)
         return node
 
-    def ReadSingleQuoted(self, lex_mode, left_token, tokens, is_ysh_expr):
+    def ReadSingleQuoted(self, lex_mode, left_token, out_tokens, is_ysh_expr):
         # type: (lex_mode_t, Token, List[Token], bool) -> Token
-        """Appends to tokens
+        """Appends to out_tokens; returns last token
 
         Used by expr_parse.py
         """
+        # TODO: Remove and use out_tokens
+        tokens = []  # type: List[Token]
 
         # echo '\' is allowed, but x = '\' is invalid, in favor of x = r'\'
         no_backslashes = is_ysh_expr and left_token.id == Id.Left_SingleQuote
@@ -635,12 +636,12 @@ class WordParser(WordEmitter):
             self._SetNext(lex_mode)
             self._GetToken()
 
-            # Kind.Char emitted in DOLLAR_SQ state
+            # Kind.Char emitted in lex_mode.SQ_C
             if self.token_kind in (Kind.Lit, Kind.Char):
                 tok = self.cur_token
                 # Happens in lex_mode_e.SQ: 'one\two' is ambiguous, should be
                 # r'one\two' or c'one\\two'
-                if no_backslashes and '\\' in tok.tval:
+                if no_backslashes and lexer.TokenContains(tok, '\\'):
                     p_die(
                         r"Strings with backslashes should look like r'\n' or u'\n' or b'\n'",
                         tok)
@@ -719,6 +720,7 @@ class WordParser(WordEmitter):
                         r"%s escape is illegal because it's in the surrogate range"
                         % lexer.TokenVal(tok), tok)
 
+        out_tokens.extend(tokens)
         return self.cur_token
 
     def _ReadDoubleQuotedLeftParts(self):
@@ -764,7 +766,7 @@ class WordParser(WordEmitter):
 
         sq_part = self._ReadSingleQuoted(left_tok, lexer_mode)
 
-        if (len(sq_part.tokens) == 0 and self.lexer.ByteLookAhead() == "'"):
+        if (len(sq_part.sval) == 0 and self.lexer.ByteLookAhead() == "'"):
             self._SetNext(lex_mode_e.ShCommand)
             self._GetToken()
 
@@ -831,7 +833,7 @@ class WordParser(WordEmitter):
             # Got empty '' or r'' and there's a ' after
             # u'' and b'' are handled in _ReadYshSingleQuoted
             if (triple_left_id != Id.Undefined_Tok and
-                    triple_out is not None and len(sq_part.tokens) == 0 and
+                    triple_out is not None and len(sq_part.sval) == 0 and
                     self.lexer.ByteLookAhead() == "'"):
 
                 self._SetNext(lex_mode_e.ShCommand)
@@ -966,7 +968,7 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.VSub:
                 tok = self.cur_token
-                part = NameTok(tok, lexer.TokenSliceLeft(tok, 1))
+                part = SimpleVarSub(tok)
                 out_parts.append(part)
                 # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
                 # later.
@@ -1191,8 +1193,8 @@ class WordParser(WordEmitter):
             UP_lhs = lhs
             with tagswitch(lhs) as case:
                 if case(y_lhs_e.Var):
-                    lhs = cast(NameTok, UP_lhs)
-                    var_checker.Check(kw_token.id, lhs.var_name, lhs.left)
+                    lhs = cast(Token, UP_lhs)
+                    var_checker.Check(kw_token.id, lexer.LazyStr(lhs), lhs)
 
                 # Note: this does not cover cases like
                 # setvar (a[0])[1] = v
@@ -1746,9 +1748,7 @@ class WordParser(WordEmitter):
             elif self.token_kind == Kind.VSub:
                 vsub_token = self.cur_token
 
-                part = NameTok(vsub_token,
-                               lexer.TokenSliceLeft(vsub_token,
-                                                    1))  # type: word_part_t
+                part = SimpleVarSub(vsub_token)  # type: word_part_t
                 w.parts.append(part)
 
             elif self.token_kind == Kind.ExtGlob:
@@ -1976,24 +1976,26 @@ class WordParser(WordEmitter):
                     #
                     #     echo u'\u{3bc}' b'\yff' works
 
-                    if (self.parse_opts.parse_ysh_string() and
-                            self.cur_token.tval in ('r', 'u', 'b')):
-
-                        if self.cur_token.tval == 'r':
+                    tok = self.cur_token
+                    if self.parse_opts.parse_ysh_string():
+                        if lexer.TokenEquals(tok, 'r'):
                             left_id = Id.Left_RSingleQuote
-                        elif self.cur_token.tval == 'u':
+                        elif lexer.TokenEquals(tok, 'u'):
                             left_id = Id.Left_USingleQuote
-                        else:
+                        elif lexer.TokenEquals(tok, 'b'):
                             left_id = Id.Left_BSingleQuote
+                        else:
+                            left_id = Id.Undefined_Tok
 
-                        # skip the r, and then 'foo' will be read as normal
-                        self._SetNext(lex_mode_e.ShCommand)
+                        if left_id != Id.Undefined_Tok:
+                            # skip the r, and then 'foo' will be read as normal
+                            self._SetNext(lex_mode_e.ShCommand)
 
-                        self._GetToken()
-                        assert self.token_type == Id.Left_SingleQuote, self.token_type
+                            self._GetToken()
+                            assert self.token_type == Id.Left_SingleQuote, self.token_type
 
-                        # Read the word in a different lexer mode
-                        return self._ReadYshSingleQuoted(left_id)
+                            # Read the word in a different lexer mode
+                            return self._ReadYshSingleQuoted(left_id)
 
                 return self._ReadCompoundWord(lex_mode)
 

@@ -1,4 +1,48 @@
 
+#### argv0 trace
+
+OILS_TRACE_DIR=$TMP $SH -c '
+
+# No argv does not crash
+$(true)
+
+echo internal
+
+/bin/echo x1
+
+/bin/true
+
+/bin/echo x2
+
+# Not getting anything here?
+# NOFORKLAST optimization messes things up if the last command is external
+# Though turning this off means that measuring performance changes performance
+
+#( echo "("; /bin/false; /bin/false; echo ")" )
+( echo "("; /bin/false; /bin/false )
+
+a=$(echo "\$("; /bin/true; /bin/true; echo ")")
+echo "$a"
+
+/bin/echo x3
+'
+
+# For now just check that it parses
+for j in $TMP/*.json; do
+  #echo "$j" >&2
+  python3 -m json.tool $j >/dev/null
+done
+
+## STDOUT:
+internal
+x1
+x2
+(
+$(
+)
+x3
+## END
+
 #### crash dump
 
 rm -f $TMP/*.json

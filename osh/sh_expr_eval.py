@@ -15,7 +15,6 @@ from _devbuild.gen.syntax_asdl import (
     word_t,
     CompoundWord,
     Token,
-    NameTok,
     loc,
     loc_t,
     source,
@@ -51,6 +50,7 @@ from core import num
 from core import state
 from core import ui
 from frontend import consts
+from frontend import lexer
 from frontend import match
 from frontend import parse_lib
 from frontend import reader
@@ -513,8 +513,8 @@ class ArithEvaluator(object):
         # BASH_LINENO, arr (array name without strict_array), etc.
         if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
                 node.tag() == arith_expr_e.VarSub):
-            vsub = cast(NameTok, node)
-            if word_eval.ShouldArrayDecay(vsub.var_name, self.exec_opts):
+            vsub = cast(Token, node)
+            if word_eval.ShouldArrayDecay(lexer.LazyStr(vsub), self.exec_opts):
                 val = word_eval.DecayArray(val)
 
         i = self._ValToIntOrError(val, node)
@@ -544,10 +544,11 @@ class ArithEvaluator(object):
         UP_node = node
         with tagswitch(node) as case:
             if case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
-                vsub = cast(NameTok, UP_node)
-                val = self.mem.GetValue(vsub.var_name)
+                vsub = cast(Token, UP_node)
+                var_name = lexer.LazyStr(vsub)
+                val = self.mem.GetValue(var_name)
                 if val.tag() == value_e.Undef and self.exec_opts.nounset():
-                    e_die('Undefined variable %r' % vsub.var_name, vsub.left)
+                    e_die('Undefined variable %r' % var_name, vsub)
                 return val
 
             elif case(arith_expr_e.Word):  # $(( $x )) $(( ${x}${y} )), etc.
@@ -855,8 +856,8 @@ class ArithEvaluator(object):
         UP_anode = anode
         with tagswitch(anode) as case:
             if case(arith_expr_e.VarSub):
-                tok = cast(NameTok, UP_anode)
-                return (tok.var_name, tok.left)
+                tok = cast(Token, UP_anode)
+                return (lexer.LazyStr(tok), tok)
 
             elif case(arith_expr_e.Word):
                 w = cast(CompoundWord, UP_anode)

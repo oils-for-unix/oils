@@ -2,7 +2,7 @@
 """expr_eval.py."""
 from __future__ import print_function
 
-from _devbuild.gen.id_kind_asdl import Id, Kind
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import (
     re_e,
     re_t,
     Token,
-    NameTok,
+    SimpleVarSub,
     word_part,
     SingleQuoted,
     DoubleQuoted,
@@ -27,11 +27,11 @@ from _devbuild.gen.syntax_asdl import (
     class_literal_term,
     class_literal_term_e,
     class_literal_term_t,
-    char_class_term,
     char_class_term_t,
     PosixClass,
     PerlClass,
     CharCode,
+    CharRange,
     ArgList,
     Eggex,
 )
@@ -52,12 +52,10 @@ from core import pyutil
 from core import state
 from core import ui
 from core import vm
-from frontend import consts
 from frontend import lexer
 from frontend import match
 from frontend import typed_args
 from osh import braces
-from osh import word_compile
 from mycpp import mops
 from mycpp.mylib import log, NewDict, switch, tagswitch, print_stderr
 from ysh import func_proc
@@ -234,6 +232,7 @@ class ExprEvaluator(object):
 
                     elif case(value_e.Dict):
                         obj = cast(value.Dict, UP_obj)
+                        index = -1  # silence C++ warning
                         key = val_ops.ToStr(lval.index,
                                             'Dict index should be Str',
                                             loc.Missing)
@@ -253,6 +252,7 @@ class ExprEvaluator(object):
                 with tagswitch(obj) as case:
                     if case(value_e.List):
                         obj = cast(value.List, UP_obj)
+                        assert index != -1, 'Should have been initialized'
                         obj.items[index] = new_val_
 
                     elif case(value_e.Dict):
@@ -268,8 +268,8 @@ class ExprEvaluator(object):
         UP_lhs = lhs
         with tagswitch(lhs) as case:
             if case(y_lhs_e.Var):
-                lhs = cast(NameTok, UP_lhs)
-                return LeftName(lhs.var_name, lhs.left)
+                lhs = cast(Token, UP_lhs)
+                return LeftName(lexer.LazyStr(lhs), lhs)
 
             elif case(y_lhs_e.Subscript):
                 lhs = cast(Subscript, UP_lhs)
@@ -1013,14 +1013,14 @@ class ExprEvaluator(object):
 
             elif case(expr_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)
-                return value.Str(word_compile.EvalSingleQuoted(node))
+                return value.Str(node.sval)
 
             elif case(expr_e.BracedVarSub):
                 node = cast(BracedVarSub, UP_node)
                 return value.Str(self.word_ev.EvalBracedVarSubToString(node))
 
             elif case(expr_e.SimpleVarSub):
-                node = cast(NameTok, UP_node)
+                node = cast(SimpleVarSub, UP_node)
                 return value.Str(self.word_ev.EvalSimpleVarSubToString(node))
 
             elif case(expr_e.Unary):
@@ -1188,20 +1188,17 @@ class EggexEvaluator(object):
 
         with tagswitch(term) as case:
 
-            if case(class_literal_term_e.CharLiteral):
-                term = cast(class_literal_term.CharLiteral, UP_term)
+            if case(class_literal_term_e.CharCode):
+                term = cast(CharCode, UP_term)
 
-                # What about \0?
-                # At runtime, ERE should disallow it.  But we can also disallow it here.
-                out.append(word_compile.EvalCharLiteralForRegex(term.tok))
+                # What about \0?  At runtime, ERE should disallow it.  But we
+                # can also disallow it here.
+                out.append(term)
                 return
 
-            elif case(class_literal_term_e.Range):
-                term = cast(class_literal_term.Range, UP_term)
-
-                cp_start = word_compile.EvalCharLiteralForRegex(term.start)
-                cp_end = word_compile.EvalCharLiteralForRegex(term.end)
-                out.append(char_class_term.Range(cp_start, cp_end))
+            elif case(class_literal_term_e.CharRange):
+                term = cast(CharRange, UP_term)
+                out.append(term)
                 return
 
             elif case(class_literal_term_e.PosixClass):
@@ -1217,7 +1214,7 @@ class EggexEvaluator(object):
             elif case(class_literal_term_e.SingleQuoted):
                 term = cast(SingleQuoted, UP_term)
 
-                s = word_compile.EvalSingleQuoted(term)
+                s = term.sval
                 char_code_tok = term.left
 
             elif case(class_literal_term_e.Splice):
@@ -1237,7 +1234,7 @@ class EggexEvaluator(object):
                     "Use unquoted char literal for byte %d, which is >= 128"
                     " (avoid confusing a set of bytes with a sequence)" %
                     char_int, char_code_tok)
-            out.append(CharCode(char_int, False, char_code_tok))
+            out.append(CharCode(char_code_tok, char_int, False))
 
     def EvalE(self, node):
         # type: (re_t) -> re_t
@@ -1278,7 +1275,7 @@ class EggexEvaluator(object):
                 convert_func = None  # type: Optional[value_t]
                 convert_tok = None  # type: Optional[Token]
                 if node.func_name:
-                    func_name = lexer.TokenVal(node.func_name)
+                    func_name = lexer.LazyStr(node.func_name)
                     func_val = self.mem.GetValue(func_name)
                     with tagswitch(func_val) as case:
                         if case(value_e.Func, value_e.BuiltinFunc):
@@ -1305,44 +1302,11 @@ class EggexEvaluator(object):
                     self._EvalClassLiteralTerm(t, new_terms)
                 return re.CharClass(node.negated, new_terms)
 
-            elif case(re_e.Token):
-                node = cast(Token, UP_node)
-
-                id_ = node.id
-                tval = node.tval
-
-                if id_ == Id.Expr_Dot:
-                    return re.Primitive(Id.Re_Dot)
-
-                if id_ == Id.Arith_Caret:  # ^
-                    return re.Primitive(Id.Re_Start)
-
-                if id_ == Id.Expr_Dollar:  # $
-                    return re.Primitive(Id.Re_End)
-
-                if id_ == Id.Expr_Name:
-                    if tval == 'dot':
-                        return re.Primitive(Id.Re_Dot)
-                    raise NotImplementedError(tval)
-
-                if id_ == Id.Expr_Symbol:
-                    if tval == '%start':
-                        return re.Primitive(Id.Re_Start)
-                    if tval == '%end':
-                        return re.Primitive(Id.Re_End)
-                    raise NotImplementedError(tval)
-
-                # Must be Id.Char_{OneChar,Hex,Unicode4,Unicode8}
-                kind = consts.GetKind(id_)
-                assert kind == Kind.Char, id_
-                s = word_compile.EvalCStringToken(node)
-                return re.LiteralChars(s, node)
-
             elif case(re_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)
 
-                s = word_compile.EvalSingleQuoted(node)
-                return re.LiteralChars(s, node.left)
+                s = node.sval
+                return re.LiteralChars(node.left, s)
 
             elif case(re_e.Splice):
                 node = cast(re.Splice, UP_node)
@@ -1352,8 +1316,8 @@ class EggexEvaluator(object):
                 with tagswitch(val) as case:
                     if case(value_e.Str):
                         val = cast(value.Str, UP_val)
-                        to_splice = re.LiteralChars(val.s,
-                                                    node.name)  # type: re_t
+                        to_splice = re.LiteralChars(node.name,
+                                                    val.s)  # type: re_t
 
                     elif case(value_e.Eggex):
                         val = cast(value.Eggex, UP_val)
@@ -1381,6 +1345,7 @@ class EggexEvaluator(object):
             else:
                 # These are evaluated at translation time
 
+                # case(re_e.Primitive)
                 # case(re_e.PosixClass)
                 # case(re_e.PerlClass)
                 return node

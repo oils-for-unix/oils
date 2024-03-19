@@ -11,6 +11,7 @@ from core import test_lib
 from mycpp.mylib import log
 from frontend.lexer import DummyToken as Tok
 from frontend.lexer_def import LEXER_DEF
+from frontend import lexer
 from frontend import reader
 
 
@@ -20,10 +21,10 @@ def _PrintfOuterTokens(fmt):
     parse_ctx = test_lib.InitParseContext()
     arena = test_lib.MakeArena('<lexer_test.py>')
     line_reader = reader.StringLineReader(fmt, arena)
-    lexer = parse_ctx.MakeLexer(line_reader)
+    lx = parse_ctx.MakeLexer(line_reader)
 
     while True:
-        t = lexer.Read(lex_mode_e.PrintfOuter)
+        t = lx.Read(lex_mode_e.PrintfOuter)
         print(t)
         if t.id in (Id.Eof_Real, Id.Eol_Tok):
             break
@@ -166,6 +167,49 @@ class TokenTest(unittest.TestCase):
 
         # Get x, then Id.Eof_Real because there are no more lines
         _PrintfOuterTokens('x\0')
+
+
+class TokenFunctionsTest(unittest.TestCase):
+
+    def testContainsEquals(self):
+        arena = test_lib.MakeArena('<lexer_test.py>')
+        _, lx = test_lib.InitLexer('echo "hi $name"', arena)
+
+        tok = lx.Read(lex_mode_e.ShCommand)
+        print(tok)
+
+        self.assertEqual(True, lexer.TokenContains(tok, 'echo'))
+        self.assertEqual(True, lexer.TokenContains(tok, 'ech'))
+        self.assertEqual(True, lexer.TokenContains(tok, 'cho'))
+        self.assertEqual(True, lexer.TokenContains(tok, 'c'))
+        self.assertEqual(True, lexer.TokenContains(tok, ''))
+
+        self.assertEqual(True, lexer.TokenEquals(tok, 'echo'))
+        self.assertEqual(False, lexer.TokenEquals(tok, 'ech'))
+
+        self.assertEqual(True, lexer.TokenStartsWith(tok, ''))
+        self.assertEqual(True, lexer.TokenStartsWith(tok, 'e'))
+        self.assertEqual(True, lexer.TokenStartsWith(tok, 'ech'))
+        self.assertEqual(False, lexer.TokenStartsWith(tok, 'cho'))
+
+        self.assertEqual(True, lexer.TokenEndsWith(tok, ''))
+        self.assertEqual(False, lexer.TokenEndsWith(tok, 'ech'))
+        self.assertEqual(True, lexer.TokenEndsWith(tok, 'cho'))
+        self.assertEqual(True, lexer.TokenEndsWith(tok, 'o'))
+
+    def testIsPlusEquals(self):
+        arena = test_lib.MakeArena('<lexer_test.py>')
+        _, lx = test_lib.InitLexer('foo+=b"', arena)
+
+        tok = lx.Read(lex_mode_e.ShCommand)
+        print(tok)
+        self.assertEqual(True, lexer.IsPlusEquals(tok))
+
+        _, lx = test_lib.InitLexer('foo=b"', arena)
+
+        tok = lx.Read(lex_mode_e.ShCommand)
+        print(tok)
+        self.assertEqual(False, lexer.IsPlusEquals(tok))
 
 
 if __name__ == '__main__':

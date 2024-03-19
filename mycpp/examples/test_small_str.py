@@ -4,29 +4,30 @@ from __future__ import print_function
 import os
 from mycpp.mylib import log
 
+
 def f(s):
     # type: (str) -> str
     return s[1].upper()
 
 
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  #a = 'foo' + 'bar'
-  a = 'food'
-  print(a.upper())
+    #a = 'foo' + 'bar'
+    a = 'food'
+    print(a.upper())
 
-  print(f(a))
+    print(f(a))
 
 
 def run_benchmarks():
-  # type: () -> None
-  pass
+    # type: () -> None
+    pass
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()

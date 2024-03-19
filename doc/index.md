@@ -133,8 +133,8 @@ Internal details:
 
 ## For Contributors
 
-- [README.md](README.html).  If you want to modify Oils, start here.  We
-  welcome contributions!
+- [README.md](oils-repo/README.html).  If you want to modify Oils, start here.
+  We welcome contributions!
 - [Doc Toolchain](doc-toolchain.html) and [Doc Plugins](doc-plugins.html).
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 - [Old Docs](old/index.html).  Drafts that may be deleted.
@@ -143,6 +143,9 @@ Internal Architecture:
 
 - [Notes on Oils Architecture](architecture-notes.html)
   - [Parser Architecture](parser-architecture.html)
+- [Pretty Printing](pretty-printing.html) - March 2024 design notes.
+- [mycpp/README](oils-repo/mycpp/README.html) - How we translate typed Python to
+  C++.
 
 ## More
 

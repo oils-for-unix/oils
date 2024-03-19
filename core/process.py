@@ -624,17 +624,18 @@ OWN_LEADER = 0
 
 class SetPgid(ChildStateChange):
 
-    def __init__(self, pgid):
-        # type: (int) -> None
+    def __init__(self, pgid, tracer):
+        # type: (int, dev.Tracer) -> None
         self.pgid = pgid
+        self.tracer = tracer
 
     def Apply(self):
         # type: () -> None
         try:
             posix.setpgid(0, self.pgid)
         except (IOError, OSError) as e:
-            print_stderr(
-                'osh: child failed to set process group for PID %d to %d: %s' %
+            self.tracer.OtherMessage(
+                'osh: child %d failed to set its process group to %d: %s' %
                 (posix.getpid(), self.pgid, pyutil.strerror(e)))
 
     def ApplyFromParent(self, proc):
@@ -642,7 +643,7 @@ class SetPgid(ChildStateChange):
         try:
             posix.setpgid(proc.pid, self.pgid)
         except (IOError, OSError) as e:
-            print_stderr(
+            self.tracer.OtherMessage(
                 'osh: parent failed to set process group for PID %d to %d: %s'
                 % (proc.pid, self.pgid, pyutil.strerror(e)))
 
@@ -659,10 +660,10 @@ class ExternalProgram(object):
     ):
         # type: (...) -> None
         """
-    Args:
-      hijack_shebang: The path of an interpreter to run instead of the one
-        specified in the shebang line.  May be empty.
-    """
+        Args:
+          hijack_shebang: The path of an interpreter to run instead of the one
+            specified in the shebang line.  May be empty.
+        """
         self.hijack_shebang = hijack_shebang
         self.fd_state = fd_state
         self.errfmt = errfmt
@@ -794,11 +795,17 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
     """A subprogram that can be executed in another process."""
 
-    def __init__(self, cmd_ev, node, trap_state, inherit_errexit=True):
-        # type: (CommandEvaluator, command_t, trap_osh.TrapState, bool) -> None
+    def __init__(self,
+                 cmd_ev,
+                 node,
+                 trap_state,
+                 multi_trace,
+                 inherit_errexit=True):
+        # type: (CommandEvaluator, command_t, trap_osh.TrapState, dev.MultiTracer, bool) -> None
         self.cmd_ev = cmd_ev
         self.node = node
         self.trap_state = trap_state
+        self.multi_trace = multi_trace
         self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
 
     def UserString(self):
@@ -839,12 +846,15 @@ class SubProgramThunk(Thunk):
             print('')
             status = 130  # 128 + 2
         except (IOError, OSError) as e:
-            print_stderr('osh I/O error (subprogram): %s' % pyutil.strerror(e))
+            print_stderr('oils I/O error (subprogram): %s' %
+                         pyutil.strerror(e))
             status = 2
 
         # If ProcessInit() doesn't turn off buffering, this is needed before
         # _exit()
         pyos.FlushStdout()
+
+        self.multi_trace.WriteDumps()
 
         # We do NOT want to raise SystemExit here.  Otherwise dev.Tracer::Pop()
         # gets called in BOTH processes.
@@ -948,10 +958,10 @@ class Process(Job):
     def __init__(self, thunk, job_control, job_list, tracer):
         # type: (Thunk, JobControl, JobList, dev.Tracer) -> None
         """
-    Args:
-      thunk: Thunk instance
-      job_list: for process bookkeeping
-    """
+        Args:
+          thunk: Thunk instance
+          job_list: for process bookkeeping
+        """
         Job.__init__(self)
         assert isinstance(thunk, Thunk), thunk
         self.thunk = thunk
@@ -1060,7 +1070,7 @@ class Process(Job):
             pyos.Sigaction(SIGTTOU, SIG_DFL)
             pyos.Sigaction(SIGTTIN, SIG_DFL)
 
-            self.tracer.SetProcess(pid)
+            self.tracer.OnNewProcess(pid)
             # clear foreground pipeline for subshells
             self.thunk.Run()
             # Never returns
@@ -1185,15 +1195,19 @@ class Pipeline(Job):
     foo | bar | read v
     """
 
-    def __init__(self, sigpipe_status_ok, job_control, job_list):
-        # type: (bool, JobControl, JobList) -> None
+    def __init__(self, sigpipe_status_ok, job_control, job_list, tracer):
+        # type: (bool, JobControl, JobList, dev.Tracer) -> None
         Job.__init__(self)
         self.job_control = job_control
         self.job_list = job_list
+        self.tracer = tracer
+
         self.procs = []  # type: List[Process]
         self.pids = []  # type: List[int]  # pids in order
         self.pipe_status = []  # type: List[int]  # status in order
         self.status = -1  # for 'wait' jobs
+
+        self.pgid = INVALID_PGID
 
         # Optional for foreground
         self.last_thunk = None  # type: Tuple[CommandEvaluator, command_t]
@@ -1204,9 +1218,7 @@ class Pipeline(Job):
     def ProcessGroupId(self):
         # type: () -> int
         """Returns the group ID of this pipeline."""
-        # This should only ever be called AFTER the pipeline has started
-        assert len(self.pids) > 0
-        return self.pids[0]  # First process is the group leader
+        return self.pgid
 
     def DisplayJob(self, job_id, f, style):
         # type: (int, mylib.Writer, int) -> None
@@ -1276,19 +1288,19 @@ class Pipeline(Job):
         # If we are creating a pipeline in a subshell or we aren't running with job
         # control, our children should remain in our inherited process group.
         # the pipelines's group ID.
-        pgid = INVALID_PGID
         if self.job_control.Enabled():
-            pgid = OWN_LEADER  # first process in pipeline is the leader
+            self.pgid = OWN_LEADER  # first process in pipeline is the leader
 
         for i, proc in enumerate(self.procs):
-            if pgid != INVALID_PGID:
-                proc.AddStateChange(SetPgid(pgid))
+            if self.pgid != INVALID_PGID:
+                proc.AddStateChange(SetPgid(self.pgid, self.tracer))
 
+            # Figure out the pid
             pid = proc.StartProcess(trace.PipelinePart)
-            if i == 0 and pgid != INVALID_PGID:
-                # Mimic bash and use the PID of the first process as the group for the
+            if i == 0 and self.pgid != INVALID_PGID:
+                # Mimic bash and use the PID of the FIRST process as the group for the
                 # whole pipeline.
-                pgid = pid
+                self.pgid = pid
 
             self.pids.append(pid)
             self.pipe_status.append(-1)  # uninitialized
@@ -1347,7 +1359,13 @@ class Pipeline(Job):
         """
         assert len(self.pids) == len(self.procs)
 
-        self.job_control.MaybeGiveTerminal(posix.getpgid(self.pids[0]))
+        # TODO: break circular dep.  Bit flags could go in ASDL or headers.
+        from osh import cmd_eval
+
+        # This is tcsetpgrp()
+        # TODO: fix race condition -- I believe the first process could have
+        # stopped already, and thus getpgid() will fail
+        self.job_control.MaybeGiveTerminal(self.pgid)
 
         # Run the last part of the pipeline IN PARALLEL with other processes.  It
         # may or may not fork:
@@ -1360,9 +1378,12 @@ class Pipeline(Job):
         r, w = self.last_pipe  # set in AddLast()
         posix.close(w)  # we will not write here
 
+        # Fix lastpipe / job control / DEBUG trap interaction
+        cmd_flags = cmd_eval.NoDebugTrap if self.job_control.Enabled() else 0
         io_errors = []  # type: List[error.IOError_OSError]
         with ctx_Pipe(fd_state, r, io_errors):
-            cmd_ev.ExecuteAndCatch(last_node)
+            cmd_ev.ExecuteAndCatch(last_node, cmd_flags)
+
         if len(io_errors):
             e_die('Error setting up last part of pipeline: %s' %
                   pyutil.strerror(io_errors[0]))
@@ -1501,6 +1522,9 @@ class JobControl(object):
 
     def Enabled(self):
         # type: () -> bool
+
+        # TODO: get rid of this syscall?  SubProgramThunk should set a flag I
+        # think.
         curr_pid = posix.getpid()
         # Only the main shell should bother with job control functions.
         return curr_pid == self.shell_pid and self.shell_tty_fd != -1

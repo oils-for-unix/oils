@@ -12,6 +12,7 @@ from core import error
 from core import state
 from core import test_lib
 from core import ui
+from frontend import lexer
 
 from osh import word_
 
@@ -200,7 +201,7 @@ def assertHereDocToken(test, expected_token_val, node):
     """A sanity check for some ad hoc tests."""
     test.assertEqual(1, len(node.redirects))
     h = node.redirects[0].arg
-    test.assertEqual(expected_token_val, h.stdin_parts[0].tval)
+    test.assertEqual(expected_token_val, lexer.LazyStr(h.stdin_parts[0]))
 
 
 class HereDocTest(unittest.TestCase):
@@ -874,7 +875,7 @@ fi
         self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
         right = node.expr.right
         self.assertEqual(5, len(right.parts))
-        self.assertEqual('(', right.parts[0].tval)
+        self.assertEqual('(', lexer.LazyStr(right.parts[0]))
 
         # TODO: Implement BASH_REGEX_CHARS
         return
@@ -1278,10 +1279,8 @@ $'abc\ndef'
         w = node.words[0]
         self.assertEqual(1, len(w.parts))
         p = w.parts[0]
-        self.assertEqual(3, len(p.tokens))
-        self.assertEqual(Id.Char_Literals, p.tokens[0].id)
-        self.assertEqual(Id.Char_OneChar, p.tokens[1].id)
-        self.assertEqual(Id.Char_Literals, p.tokens[2].id)
+
+        self.assertEqual('abc\ndef', p.sval)
 
     def testArithConstants(self):
         # Found in Gherkin

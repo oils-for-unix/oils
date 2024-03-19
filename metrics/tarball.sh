@@ -57,10 +57,29 @@ linecount-pydeps() {
 }
 
 _oils-cpp() {
-  find _tmp/native-tar-test -name '*.cc' -o -name '*.h'
+  # The CI runs devtools/release-native.sh test-tar
+  find . \( -name '*.cc' -o -name '*.h' \) -a -printf '%P\n'
 }
 
 linecount-oils-cpp() {
+  local first=_tmp/native-tar-test 
+
+  # The release runs extract-for-benchmarks
+  local version
+  version=$(head -n 1 oil-version.txt)
+  local second="../benchmark-data/src/oils-for-unix-$version"
+
+  local dir
+  if test -d "$first"; then
+    dir=$first
+  elif test -d "$second"; then
+    dir=$second
+  else
+    die "Couldn't find $first or $second"
+  fi
+
+  pushd $dir > /dev/null
+
   if command -v cloc; then  # CI might not have it
     _cloc-header
     _oils-cpp | xargs cloc
@@ -70,6 +89,7 @@ linecount-oils-cpp() {
   _wc-header
   _oils-cpp | sort | uniq | xargs wc -l | sort -n
 
+  popd > /dev/null
 }
 
 # Without generated code.  This is a fair comparison against bash, because

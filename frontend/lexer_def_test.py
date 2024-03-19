@@ -54,7 +54,7 @@ class LexerTest(unittest.TestCase):
         self.assertTokensEqual(FakeTok(Id.WS_Space, ' '), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(FakeTok(Id.Lit_Chars, '/'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Slash, '/'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
         self.assertTokensEqual(FakeTok(Id.Op_Newline, '\n'), t)
@@ -67,7 +67,13 @@ class LexerTest(unittest.TestCase):
         self.assertTokensEqual(FakeTok(Id.WS_Space, ' '), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
-        self.assertTokensEqual(FakeTok(Id.Lit_Chars, '/home/'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Slash, '/'), t)
+
+        t = lexer.Read(lex_mode_e.ShCommand)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'home'), t)
+
+        t = lexer.Read(lex_mode_e.ShCommand)
+        self.assertTokensEqual(FakeTok(Id.Lit_Slash, '/'), t)
 
         t = lexer.Read(lex_mode_e.ShCommand)
         self.assertTokensEqual(FakeTok(Id.Op_Newline, '\n'), t)
@@ -81,11 +87,17 @@ class LexerTest(unittest.TestCase):
 
     def testMode_VSub_ArgUnquoted(self):
         # Another EOF gives EOF
-        lexer = _InitLexer("'hi'")
-        t = lexer.Read(lex_mode_e.VSub_ArgUnquoted)
-        #self.assertTokensEqual(FakeTok(Id.Eof_Real, ''), t)
-        #t = l.Read(lex_mode_e.VSub_ArgUnquoted)
+        lx = _InitLexer("'hi'")
+        t = lx.Read(lex_mode_e.VSub_ArgUnquoted)
         print(t)
+
+        self.assertTokensEqual(FakeTok(Id.Left_SingleQuote, "'"), t)
+
+        lx = _InitLexer("~root")
+        t = lx.Read(lex_mode_e.VSub_ArgUnquoted)
+        print(t)
+
+        self.assertTokensEqual(FakeTok(Id.Lit_Tilde, '~'), t)
 
     def testMode_ExtGlob(self):
         lexer = _InitLexer('@(foo|bar)')
@@ -146,7 +158,7 @@ class LexerTest(unittest.TestCase):
 
         t = lexer.Read(lex_mode_e.SQ_C)
         print(t)
-        self.assertTokensEqual(FakeTok(Id.Char_Literals, 'foo bar'), t)
+        self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'foo bar'), t)
 
         t = lexer.Read(lex_mode_e.SQ_C)
         print(t)

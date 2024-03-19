@@ -182,18 +182,6 @@ int-convert() {
     egrep -n '\bint\(\b' $(metrics/source-code.sh osh-files)
 }
 
-# 2024-02: 83 left
-tval-all() {
-  show-usages _tmp/tval-all \
-    grep -n -w tval */*.py
-}
-
-# 2024-02: 17 left
-tval-eval() {
-  show-usages _tmp/tval-eval \
-    grep -n -w tval */*_eval.py
-}
-
 # TokenVal() is generally bad in evaluators.  However most of these are in
 # error paths, which is OK.
 #
@@ -201,6 +189,11 @@ tval-eval() {
 TokenVal-eval() {
   show-usages _tmp/TokenVal-eval \
     grep -n -w TokenVal */*_eval.py
+}
+
+TokenVal-all() {
+  show-usages _tmp/TokenVal-all \
+    grep -n -w TokenVal */*.py
 }
 
 # 2024-02: 71 left, mostly in ysh_ify which is the only thing that uses it

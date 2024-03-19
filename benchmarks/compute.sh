@@ -411,8 +411,8 @@ soil-run() {
   mkdir -p $BASE_DIR
 
   # Test the one that's IN TREE, NOT in ../benchmark-data
-  local -a oil_bin=( $OSH_CPP_NINJA_BUILD _bin/cxx-opt+bumpleak/osh)
-  ninja "${oil_bin[@]}"
+  local -a osh_bin=( $OSH_CPP_NINJA_BUILD _bin/cxx-opt+bumpleak/osh)
+  ninja "${osh_bin[@]}"
 
   local single_machine='no-host'
 
@@ -426,7 +426,7 @@ soil-run() {
 
   benchmarks/id.sh shell-provenance-2 \
     $single_machine $job_id _tmp \
-    bash dash python2 "${oil_bin[@]}"
+    bash dash python2 "${osh_bin[@]}"
 
   local provenance=_tmp/provenance.txt
   local host_job_id="$single_machine.$job_id"

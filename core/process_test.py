@@ -21,6 +21,8 @@ from mycpp.mylib import log
 from core import state
 from mycpp import mylib
 
+import posix_ as posix
+
 Process = process.Process
 ExternalThunk = process.ExternalThunk
 
@@ -33,6 +35,15 @@ def Banner(msg):
 def _CommandNode(code_str, arena):
     c_parser = test_lib.InitCommandParser(code_str, arena=arena)
     return c_parser.ParseLogicalLine()
+
+
+class FakeJobControl(object):
+
+    def __init__(self, enabled):
+        self.enabled = enabled
+
+    def Enabled(self):
+        return self.enabled
 
 
 class ProcessTest(unittest.TestCase):
@@ -52,8 +63,10 @@ class ProcessTest(unittest.TestCase):
         signal_safe = pyos.InitSignalSafe()
         self.trap_state = trap_osh.TrapState(signal_safe)
 
+        fd_state = None
+        multi_trace = dev.MultiTracer(posix.getpid(), '', '', '', fd_state)
         self.tracer = dev.Tracer(None, exec_opts, mutable_opts, mem,
-                                 mylib.Stderr())
+                                 mylib.Stderr(), multi_trace)
         self.waiter = process.Waiter(self.job_list, exec_opts, self.trap_state,
                                      self.tracer)
         errfmt = ui.ErrorFormatter()
@@ -133,7 +146,8 @@ class ProcessTest(unittest.TestCase):
                                                ext_prog=self.ext_prog)
         print('BEFORE', os.listdir('/dev/fd'))
 
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list,
+                             self.tracer)
         p.Add(self._ExtProc(['ls']))
         p.Add(self._ExtProc(['cut', '-d', '.', '-f', '2']))
         p.Add(self._ExtProc(['sort']))
@@ -151,7 +165,8 @@ class ProcessTest(unittest.TestCase):
                                                ext_prog=self.ext_prog)
 
         Banner('ls | cut -d . -f 1 | head')
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list,
+                             self.tracer)
         p.Add(self._ExtProc(['ls']))
         p.Add(self._ExtProc(['cut', '-d', '.', '-f', '1']))
 
@@ -166,11 +181,12 @@ class ProcessTest(unittest.TestCase):
         node2 = _CommandNode('head', self.arena)
         node3 = _CommandNode('sort --reverse', self.arena)
 
-        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state)
-        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state)
-        thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state)
+        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state, None)
+        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state, None)
+        thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state, None)
 
-        p = process.Pipeline(False, self.job_control, self.job_list)
+        p = process.Pipeline(False, self.job_control, self.job_list,
+                             self.tracer)
         p.Add(Process(thunk1, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk2, self.job_control, self.job_list, self.tracer))
         p.Add(Process(thunk3, self.job_control, self.job_list, self.tracer))
@@ -196,6 +212,42 @@ class ProcessTest(unittest.TestCase):
         # Or technically we could fork the whole interpreter for foo|bar|baz and
         # capture stdout of that interpreter.
 
+    def makeTestPipeline(self, jc):
+        cmd_ev = test_lib.InitCommandEvaluator(arena=self.arena,
+                                               ext_prog=self.ext_prog)
+
+        pi = process.Pipeline(False, jc, self.job_list, self.tracer)
+
+        node1 = _CommandNode('/bin/echo testpipeline', self.arena)
+        node2 = _CommandNode('cat', self.arena)
+
+        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state, None)
+        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state, None)
+
+        pi.Add(Process(thunk1, jc, self.job_list, self.tracer))
+        pi.Add(Process(thunk2, jc, self.job_list, self.tracer))
+
+        return pi
+
+    def testPipelinePgidField(self):
+        jc = FakeJobControl(False)
+
+        pi = self.makeTestPipeline(jc)
+        self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
+
+        pi.StartPipeline(self.waiter)
+        # No pgid
+        self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
+
+        jc = FakeJobControl(True)
+
+        pi = self.makeTestPipeline(jc)
+        self.assertEqual(process.INVALID_PGID, pi.ProcessGroupId())
+
+        pi.StartPipeline(self.waiter)
+        # first process is the process group leader
+        self.assertEqual(pi.pids[0], pi.ProcessGroupId())
+
     def testOpen(self):
         # Disabled because mycpp translation can't handle it.  We do this at a
         # higher layer.
@@ -211,3 +263,5 @@ class ProcessTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+# vim: sw=4

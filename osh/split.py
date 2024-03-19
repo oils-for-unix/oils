@@ -234,8 +234,8 @@ class IfsSplitter(_BaseSplitter):
         other_chars = self.ifs_other
 
         n = len(s)
-        spans = [
-        ]  # type: List[Span] # NOTE: in C, could reserve() this to len(s)
+        # NOTE: in C, could reserve() this to len(s)
+        spans = []  # type: List[Span]
 
         if n == 0:
             return spans  # empty
@@ -245,7 +245,7 @@ class IfsSplitter(_BaseSplitter):
         # This can't really be handled by the state machine.
 
         i = 0
-        while i < n and s[i] in self.ifs_whitespace:
+        while i < n and mylib.ByteInSet(mylib.ByteAt(s, i), ws_chars):
             i += 1
 
         # Append an ignored span.
@@ -260,17 +260,20 @@ class IfsSplitter(_BaseSplitter):
         state = state_i.Start
         while state != state_i.Done:
             if i < n:
-                c = s[i]
-                if c in ws_chars:
+                byte = mylib.ByteAt(s, i)
+
+                if mylib.ByteInSet(byte, ws_chars):
                     ch = char_kind_i.DE_White
-                elif c in other_chars:
+                elif mylib.ByteInSet(byte, other_chars):
                     ch = char_kind_i.DE_Gray
-                elif allow_escape and c == '\\':
+                elif allow_escape and mylib.ByteEquals(byte, '\\'):
                     ch = char_kind_i.Backslash
                 else:
                     ch = char_kind_i.Black
+
             elif i == n:
                 ch = char_kind_i.Sentinel  # one more iterations for the end of string
+
             else:
                 raise AssertionError()  # shouldn't happen
 
@@ -280,8 +283,8 @@ class IfsSplitter(_BaseSplitter):
                                      (state, ch))
 
             if 0:
-                log('i %d c %r ch %s current: %s next: %s %s', i, c, ch, state,
-                    new_state, action)
+                log('i %d byte %r ch %s current: %s next: %s %s', i, byte, ch,
+                    state, new_state, action)
 
             if action == emit_i.Part:
                 spans.append((span_e.Black, i))
@@ -289,8 +292,8 @@ class IfsSplitter(_BaseSplitter):
                 spans.append((span_e.Delim, i))  # ignored delimiter
             elif action == emit_i.Empty:
                 spans.append((span_e.Delim, i))  # ignored delimiter
-                spans.append(
-                    (span_e.Black, i))  # EMPTY part that is NOT ignored
+                # EMPTY part that is NOT ignored
+                spans.append((span_e.Black, i))
             elif action == emit_i.Escape:
                 spans.append((span_e.Backslash, i))  # \
             elif action == emit_i.Nothing:

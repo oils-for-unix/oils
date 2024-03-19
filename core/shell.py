@@ -80,6 +80,7 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr, log
 from pylib import os_path
 from tools import deps
+from tools import fmt
 from tools import ysh_ify
 from ysh import expr_eval
 
@@ -444,7 +445,14 @@ def Main(
         trace_f = debug_f
     else:
         trace_f = util.DebugFile(mylib.Stderr())
-    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f)
+
+    trace_dir = environ.get('OILS_TRACE_DIR', '')
+    dumps = environ.get('OILS_TRACE_DUMPS', '')
+    streams = environ.get('OILS_TRACE_STREAMS', '')
+    multi_trace = dev.MultiTracer(my_pid, trace_dir, dumps, streams, fd_state)
+
+    tracer = dev.Tracer(parse_ctx, exec_opts, mutable_opts, mem, trace_f,
+                        multi_trace)
     fd_state.tracer = tracer  # circular dep
 
     signal_safe = pyos.InitSignalSafe()
@@ -474,8 +482,7 @@ def Main(
     # TODO: This is instantiation is duplicated in osh/word_eval.py
     globber = glob_.Globber(exec_opts)
 
-    # This could just be OILS_DEBUG_STREAMS='debug crash' ?  That might be
-    # stuffing too much into one, since a .json crash dump isn't a stream.
+    # This could just be OILS_TRACE_DUMPS='crash:argv0'
     crash_dump_dir = environ.get('OILS_CRASH_DUMP_DIR', '')
     cmd_deps.dumper = dev.CrashDumper(crash_dump_dir, fd_state)
 
@@ -704,18 +711,11 @@ def Main(
     #
 
     methods[value_e.Str] = {
-        'startsWith': method_str.StartsWith(),
-        'endsWith': None,  # TODO
-
-        # These functions are unicode aware
-        # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-        'trim': method_str.Trim(method_str.TRIM_BOTH),
-        'trimLeft': method_str.Trim(method_str.TRIM_LEFT),
-        'trimRight': method_str.Trim(method_str.TRIM_RIGHT),
-
-        # like Python 3.9 removeprefix() removesuffix()
-        'trimPrefix': None,
-        'trimSuffix': None,
+        'startsWith': method_str.HasAffix(method_str.START),
+        'endsWith': method_str.HasAffix(method_str.END),
+        'trim': method_str.Trim(method_str.START | method_str.END),
+        'trimStart': method_str.Trim(method_str.START),
+        'trimEnd': method_str.Trim(method_str.END),
 
         # These also have Unicode support
         'upper': method_str.Upper(),
@@ -1080,6 +1080,9 @@ def Main(
         elif tool_name == 'lossless-cat':  # for test/lossless.sh
             ysh_ify.LosslessCat(arena)
 
+        elif tool_name == 'fmt':
+            fmt.Format(arena, node)
+
         elif tool_name == 'ysh-ify':
             ysh_ify.Ysh_ify(arena, node)
 
@@ -1106,6 +1109,8 @@ def Main(
             status = e.status
     mut_status = IntParamBox(status)
     cmd_ev.MaybeRunExitTrap(mut_status)
+
+    multi_trace.WriteDumps()
 
     # NOTE: We haven't closed the file opened with fd_state.Open
     return mut_status.i

@@ -1,6 +1,7 @@
 # spec/ysh-methods
 
 ## our_shell: ysh
+## oils_failures_allowed: 2
 
 #### => operator for pure computation is allowed (may be mandatory later)
 
@@ -37,98 +38,226 @@ K1/K2
 K1/K2
 ## END
 
-#### Str => startsWith()
-pp line ("abc" => startsWith(""))
-pp line ("abc" => startsWith("a"))
-pp line ("abc" => startsWith("z"))
+#### Str => startsWith(Str) and endsWith(Str), simple
+func test(s, p) { echo $[s => startsWith(p)] $[s => endsWith(p)] }
+
+call test('', '')
+call test('abc', '')
+call test('abc', 'a')
+call test('abc', 'b')
+call test('abc', 'c')
+call test('abc', 'z')
+call test('', 'abc')
 ## status: 0
 ## STDOUT:
-(Bool)   true
-(Bool)   true
-(Bool)   false
+true true
+true true
+true false
+false false
+false true
+false false
+false false
+## END
+
+#### Str => startsWith(Str) and endsWith(Str), matches bytes not runes
+func test(s, p) { echo $[s => startsWith(p)] $[s => endsWith(p)] }
+
+call test(b'\yce\ya3', u'\u{03a3}')
+call test(b'\yce\ya3', b'\yce')
+call test(b'\yce\ya3', b'\ya3')
+call test(b'\yce', b'\yce')
+## status: 0
+## STDOUT:
+true true
+true false
+false true
+true true
+## END
+
+#### Str => startsWith(Str) and endsWith(Str), eggex
+func test(s, p) { echo $[s => startsWith(p)] $[s => endsWith(p)] }
+
+call test('abc', / d+ /)
+call test('abc', / [ a b c ] /)
+call test('abc', / 'abc' /)
+call test('cba', / d+ /)
+call test('cba', / [ a b c ] /)
+call test('cba', / 'abc' /)
+## status: 0
+## STDOUT:
+false false
+true true
+true true
+false false
+true true
+false false
+## END
+
+#### Str => startsWith(Str) and endsWith(Str), eggex with anchors
+func test(s, p) { echo $[s => startsWith(p)] $[s => endsWith(p)] }
+
+call test('ab', / %start 'a' /)
+call test('ab', / 'a' %end /)
+call test('ab', / %start 'a' %end /)
+call test('ab', / %start 'b' /)
+call test('ab', / 'b' %end /)
+call test('ab', / %start 'b' %end /)
+## status: 0
+## STDOUT:
+true false
+false false
+false false
+false false
+false true
+false false
+## END
+
+#### Str => startsWith(Str) and endsWith(Str), eggex matches bytes not runes
+func test(s, p) { echo $[s => startsWith(p)] $[s => endsWith(p)] }
+
+call test(u'\u{03a3}', / dot /)
+call test(u'\u{03a3}', / ![z] /)
+call test(b'\yce', / dot /)   # Fails: eggex does not match bytes
+call test(b'\yce', / ![z] /)  # Fails: eggex does not match bytes
+## status: 0
+## STDOUT:
+true true
+true true
+true true
+true true
 ## END
 
 #### Str => startsWith(), no args
-= "abc" => startsWith()
+= 'abc' => startsWith()
 ## status: 3
 
 #### Str => startsWith(), too many args
-= "abc" => startsWith("extra", "arg")
+= 'abc' => startsWith('extra', 'arg')
 ## status: 3
 
-#### Str => trim()
-echo $["" => trim()]
-echo $["  " => trim()]
-echo $["mystr" => trim()]
-echo $["  mystr" => trim()]
-echo $["mystr  " => trim()]
-echo $["  mystr  " => trim()]
-echo $["  my str  " => trim()]
+#### Str => endsWith(), no args
+= 'abc' => endsWith()
+## status: 3
+
+#### Str => endsWith(), too many args
+= 'abc' => endsWith('extra', 'arg')
+## status: 3
+
+#### Str => trim*() with no args trims whitespace
+func test(s) { write --sep ', ' --j8 $[s => trimStart()] $[s => trimEnd()] $[s => trim()] }
+
+call test("")
+call test("  ")
+call test("mystr")
+call test("  mystr")
+call test("mystr  ")
+call test("  mystr  ")
+call test("  my str  ")
+## status: 0
 ## STDOUT:
-
-
-mystr
-mystr
-mystr
-mystr
-my str
+"", "", ""
+"", "", ""
+"mystr", "mystr", "mystr"
+"mystr", "  mystr", "mystr"
+"mystr  ", "mystr", "mystr"
+"mystr  ", "  mystr", "mystr"
+"my str  ", "  my str", "my str"
 ## END
 
-#### Str => trimLeft()
-echo $["" => trimLeft()]
-echo $["  " => trimLeft()]
-echo $["mystr" => trimLeft()]
-echo $["  mystr" => trimLeft()]
-echo $["mystr  " => trimLeft()]
-echo $["  mystr  " => trimLeft()]
-echo $["  my str  " => trimLeft()]
+#### Str => trim*() with a simple string pattern trims pattern
+func test(s, p) { write --sep ', ' --j8 $[s => trimStart(p)] $[s => trimEnd(p)] $[s => trim(p)] }
+
+call test(''         , 'xyz')
+call test('   '      , 'xyz')
+call test('xy'       , 'xyz')
+call test('yz'       , 'xyz')
+call test('xyz'      , 'xyz')
+call test('xyzxyz'   , 'xyz')
+call test('xyzxyzxyz', 'xyz')
+## status: 0
 ## STDOUT:
-
-
-mystr
-mystr
-mystr  
-mystr  
-my str  
+"", "", ""
+"   ", "   ", "   "
+"xy", "xy", "xy"
+"yz", "yz", "yz"
+"", "", ""
+"xyz", "xyz", ""
+"xyzxyz", "xyzxyz", "xyz"
 ## END
 
-#### Str => trimRight()
-echo $["" => trimRight()]
-echo $["  " => trimRight()]
-echo $["mystr" => trimRight()]
-echo $["  mystr" => trimRight()]
-echo $["mystr  " => trimRight()]
-echo $["  mystr  " => trimRight()]
-echo $["  my str  " => trimRight()]
+#### Str => trim*() with a string pattern trims bytes not runes
+func test(s, p) { write --sep ', ' --j8 $[s => trimStart(p)] $[s => trimEnd(p)] $[s => trim(p)] }
+
+call test(b'\yce\ya3', u'\u{03a3}')
+call test(b'\yce\ya3', b'\yce')
+call test(b'\yce\ya3', b'\ya3')
+## status: 0
 ## STDOUT:
-
-
-mystr
-  mystr
-mystr
-  mystr
-  my str
+"", "", ""
+b'\ya3', "Σ", b'\ya3'
+"Σ", b'\yce', b'\yce'
 ## END
 
-#### Str => trim*(), too many args
-try { call "mystr" => trim("extra", "args") }
-echo status=$_status
+#### Str => trim*() with an eggex pattern trims pattern
+func test(s, p) { write --sep ', ' --j8 $[s => trimStart(p)] $[s => trimEnd(p)] $[s => trim(p)] }
 
-try { call "mystr" => trimLeft("extra", "args") }
-echo status=$_status
-
-try { call "mystr" => trimRight("extra", "args") }
-echo status=$_status
+call test(''         , / 'xyz' /)
+call test('   '      , / 'xyz' /)
+call test('xy'       , / 'xyz' /)
+call test('yz'       , / 'xyz' /)
+call test('xyz'      , / 'xyz' /)
+call test('xyzxyz'   , / 'xyz' /)
+call test('xyzxyzxyz', / 'xyz' /)
+call test('xyzabcxyz', / 'xyz' /)
+call test('xyzabcxyz', / %start 'xyz' /)
+call test('xyzabcxyz', / 'xyz' %end /)
+call test('123abc123', / d+ /)
+## status: 0
 ## STDOUT:
-status=3
-status=3
-status=3
+"", "", ""
+"   ", "   ", "   "
+"xy", "xy", "xy"
+"yz", "yz", "yz"
+"", "", ""
+"xyz", "xyz", ""
+"xyzxyz", "xyzxyz", "xyz"
+"abcxyz", "xyzabc", "abc"
+"abcxyz", "xyzabcxyz", "abcxyz"
+"xyzabcxyz", "xyzabc", "xyzabc"
+"abc123", "123abc", "abc"
 ## END
 
+#### Str => trim*() with an eggex pattern trims bytes not runes
+func test(s, p) { write --sep ', ' --j8 $[s => trimStart(p)] $[s => trimEnd(p)] $[s => trim(p)] }
 
-#### Str => trim*(), unicode aware
+call test(u'\u{03a3}', / dot /)   # Fails: eggex does not match bytes, so entire rune is trimmed.
+call test(u'\u{03a3}', / ![z] /)  # Fails: eggex does not match bytes, so entire rune is trimmed.
+call test(b'\yce', / dot /)       # Fails: eggex does not match bytes, so nothing is trimmed.
+call test(b'\yce', / ![z] /)      # Fails: eggex does not match bytes, so nothing is trimmed.
+## status: 0
+## STDOUT:
+b'\ya3', b'\yce', ""
+b'\ya3', b'\yce', ""
+"", "", ""
+"", "", ""
+## END
 
-# From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
+#### Str => trim(), too many args
+= 'mystr' => trim('extra', 'args')
+## status: 3
+
+#### Str => trimStart(), too many args
+= 'mystr' => trimStart('extra', 'args')
+## status: 3
+
+#### Str => trimEnd(), too many args
+= 'mystr' => trimEnd('extra', 'args')
+## status: 3
+
+#### Str => trim(), unicode whitespace aware
+
+# Supported set of whitespace characters. The full set of Unicode whitespace
+# characters is not supported. See comments in the implementation.
 var spaces = [
   b'\u{0009}',  # Horizontal tab (\t)
   b'\u{000A}',  # Newline (\n)
@@ -141,11 +270,12 @@ var spaces = [
 ] => join('')
 
 echo $["$spaces YSH $spaces" => trim()]
+## status: 0
 ## STDOUT:
 YSH
 ## END
 
-#### Str => trim(), unicode decoding errors
+#### Str => trim*(), unicode decoding errors
 var badUtf = b'\yF9'
 
 echo trim
@@ -163,16 +293,16 @@ echo status=$_status
 
 # Similarly, trim{Left,Right} will assume correct encoding until shown
 # otherwise.
-echo trimLeft
-try { call " a$[badUtf]" => trimLeft() }
+echo trimStart
+try { call " a$[badUtf]" => trimStart() }
 echo status=$_status
-try { call "$[badUtf]b " => trimLeft() }
+try { call "$[badUtf]b " => trimStart() }
 echo status=$_status
 
-echo trimRight
-try { call "$[badUtf]b " => trimRight() }
+echo trimEnd
+try { call "$[badUtf]b " => trimEnd() }
 echo status=$_status
-try { call " a$[badUtf]" => trimRight() }
+try { call " a$[badUtf]" => trimEnd() }
 echo status=$_status
 
 ## STDOUT:
@@ -180,17 +310,13 @@ trim
 status=0
 status=3
 status=3
-trimLeft
+trimStart
 status=0
 status=3
-trimRight
+trimEnd
 status=0
 status=3
 ## END
-
-#### Missing method (Str->doesNotExist())
-= "abc"->doesNotExist()
-## status: 3
 
 #### Dict => keys()
 var en2fr = {}

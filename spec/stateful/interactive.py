@@ -13,81 +13,82 @@ from harness import register, expect_prompt
 
 @register()
 def syntax_error(sh):
-  'syntax error makes status=2'
+    'syntax error makes status=2'
 
-  sh.sendline('syntax ) error')
+    sh.sendline('syntax ) error')
 
-  #time.sleep(0.1)
+    #time.sleep(0.1)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
+    sh.sendline('echo status=$?')
 
-  if sh.shell_label == 'mksh':
-    # mksh gives status=1, and zsh doesn't give anything?
-    sh.expect('status=1')
-  else:
-    sh.expect('status=2')  # osh, bash, dash
+    if sh.shell_label == 'mksh':
+        # mksh gives status=1, and zsh doesn't give anything?
+        sh.expect('status=1')
+    else:
+        sh.expect('status=2')  # osh, bash, dash
 
 
 @register()
 def bg_proc_notify(sh):
-  'notification about background process (issue 1093)'
+    'notification about background process (issue 1093)'
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('sleep 0.1 &')
-  if sh.shell_label == 'bash':
-    # e.g. [1] 12345
-    # not using trailing + because pexpect doc warns about that case
-    # dash doesn't print this
-    sh.expect(r'\[\d+\]')
+    sh.sendline('sleep 0.1 &')
+    if sh.shell_label == 'bash':
+        # e.g. [1] 12345
+        # not using trailing + because pexpect doc warns about that case
+        # dash doesn't print this
+        sh.expect(r'\[\d+\]')
 
-  sh.sendline('sleep 0.2 &')
-  if sh.shell_label == 'bash':
-    # e.g. [1] 12345
-    # not using trailing + because pexpect doc warns about that case
-    # dash doesn't print this
-    sh.expect(r'\[\d+\]')
+    sh.sendline('sleep 0.2 &')
+    if sh.shell_label == 'bash':
+        # e.g. [1] 12345
+        # not using trailing + because pexpect doc warns about that case
+        # dash doesn't print this
+        sh.expect(r'\[\d+\]')
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  # Wait until after it stops and then hit enter
-  time.sleep(0.4)
-  sh.sendline('')
-  sh.expect(r'.*Done.*Done.*')
+    # Wait until after it stops and then hit enter
+    time.sleep(0.4)
+    sh.sendline('')
+    sh.expect(r'.*Done.*Done.*')
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=0')
+    sh.sendline('echo status=$?')
+    sh.expect('status=0')
+
 
 @register()
 def bg_pipeline_notify(sh):
-  'notification about background pipeline (issue 1093)'
+    'notification about background pipeline (issue 1093)'
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('sleep 0.1 | cat &')
+    sh.sendline('sleep 0.1 | cat &')
 
-  if sh.shell_label == 'bash':
-    # e.g. [1] 12345
-    # not using trailing + because pexpect doc warns about that case
-    # dash doesn't print this
-    sh.expect(r'\[\d+\]')
+    if sh.shell_label == 'bash':
+        # e.g. [1] 12345
+        # not using trailing + because pexpect doc warns about that case
+        # dash doesn't print this
+        sh.expect(r'\[\d+\]')
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  time.sleep(0.2)
-  sh.sendline('')
+    time.sleep(0.2)
+    sh.sendline('')
 
-  sh.expect(r'.*Done.*')
+    sh.expect(r'.*Done.*')
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=0')
+    sh.sendline('echo status=$?')
+    sh.expect('status=0')
 
 
 if __name__ == '__main__':
-  try:
-    sys.exit(harness.main(sys.argv))
-  except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)
+    try:
+        sys.exit(harness.main(sys.argv))
+    except RuntimeError as e:
+        print('FATAL: %s' % e, file=sys.stderr)
+        sys.exit(1)

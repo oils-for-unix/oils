@@ -5,11 +5,11 @@ It consists of a series of lexer modes, each with a regex -> Id mapping.
 
 After changing this file, run:
 
-    build/dev.sh all
+    build/py.sh all
 
 or at least:
 
-    build/dev.sh fastlex
+    build/py.sh fastlex
 
 Input Handling
 --------------
@@ -60,14 +60,6 @@ def R(pat, tok_type):
 SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
 
 _SIGNIFICANT_SPACE = R(r'[ \t]+', Id.WS_Space)
-
-# Tilde expansion chars are Lit_Chars, but WITHOUT the /.  The NEXT token (if
-# any) after this TildeLike token should start with a /.
-#
-# It would have been REALLY NICE to add an optional /? at the end of THIS
-# token, but we can't do that because of ${x//~/replace}.  The third / is not
-# part of the tilde sub!!!
-_TILDE_LIKE = R(r'~[a-zA-Z0-9_.-]*', Id.Lit_TildeLike)
 
 _BACKSLASH = [
     # To be conservative, we could deny a set of chars similar to
@@ -149,13 +141,14 @@ LEXER_DEF[lex_mode_e.Comment] = [R(r'[^\n\0]*', Id.Ignored_Comment)]
 # TODO: Add + here because it's never special?  It's different for YSH though.
 
 # The range \x80-\xff makes sure that UTF-8 sequences are a single token.
-_LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_/.\-]+'
+_LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_.\-]+'
 
 _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
     # NOTE: We could add anything 128 and above to this character class?  So
     # utf-8 characters don't get split?
     R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
-    _TILDE_LIKE,
+    C('~', Id.Lit_Tilde),  # for tilde sub
+    C('/', Id.Lit_Slash),  # also for tilde sub
     C(':', Id.Lit_Colon),  # for special PATH=a:~foo tilde detection
     C('$', Id.Lit_Dollar),  # shopt -u parse_dollar
     C('#', Id.Lit_Pound),  # For comments
@@ -378,8 +371,11 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
     # NOTE: bash accounts for spaces and non-word punctuation like ; inside ()
     # and [].  We will avoid that and ask the user to extract a variable?
-    R(r'[a-zA-Z0-9_/-]+', Id.Lit_Chars),  # not including period
-    _TILDE_LIKE,  # bash weirdness: RHS of [[ x =~ ~ ]] is expanded
+    R(r'[a-zA-Z0-9_-]+', Id.Lit_Chars),  # not including period
+
+    # Tokens for Tilde sub.  bash weirdness: RHS of [[ x =~ ~ ]] is expanded
+    C('~', Id.Lit_Tilde),
+    C('/', Id.Lit_Slash),
     _SIGNIFICANT_SPACE,
 
     # Normally, \x evaluates to x.  But quoted regex metacharacters like \* should
@@ -412,11 +408,14 @@ LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
   _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + \
   _VARS + _EXTGLOB_BEGIN + [
 
-    _TILDE_LIKE,
+    # Token for Tilde sub
+    C('~', Id.Lit_Tilde),
+
+    # - doesn't match ~ for tilde sub
     # - doesn't match < and > so it doesn't eat <()
     # - doesn't match  @ ! ? + * so it doesn't eat _EXTGLOB_BEGIN -- ( alone it
     #   not enough
-    R(r'[^$`/}"\'\0\\#%<>@!?+*]+', Id.Lit_Chars),
+    R(r'[^$`~/}"\'\0\\#%<>@!?+*]+', Id.Lit_Chars),
     R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
@@ -498,7 +497,7 @@ ECHO_E_DEF = _C_STRING_COMMON + [
     C(r'\c', Id.Char_Stop),
 
     # e.g. 'foo', anything that's not a backslash escape
-    R(r'[^\\\0]+', Id.Char_Literals),
+    R(r'[^\\\0]+', Id.Lit_Chars),
 ]
 
 # https://json.org/
@@ -599,7 +598,7 @@ J8_STR_DEF = [
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'''[^\\'\0]+''', Id.Char_Literals),
+    R(r'''[^\\'\0]+''', Id.Lit_Chars),
 ]
 
 # For "JSON strings \" \u1234"
@@ -617,7 +616,7 @@ JSON_STR_DEF = [
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\0]+', Id.Char_Literals),
+    R(r'[^\\"\0]+', Id.Lit_Chars),
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 
@@ -655,13 +654,13 @@ LEXER_DEF[lex_mode_e.SQ_C] = _C_STRING_COMMON + [
     C(r'\"', Id.Char_OneChar),
 
     # e.g. 'foo', anything that's not a backslash escape or '
-    R(r"[^\\'\0]+", Id.Char_Literals),
+    R(r"[^\\'\0]+", Id.Lit_Chars),
     C("'", Id.Right_SingleQuote),
 ]
 
 LEXER_DEF[lex_mode_e.PrintfOuter] = _C_STRING_COMMON + [
     R(OCTAL3_RE, Id.Char_Octal3),
-    R(r"[^%\\\0]+", Id.Char_Literals),
+    R(r"[^%\\\0]+", Id.Lit_Chars),
     C('%%', Id.Format_EscapedPercent),
     C('%', Id.Format_Percent),
 ]
@@ -701,7 +700,7 @@ LEXER_DEF[lex_mode_e.VSub_1] = [
 LEXER_DEF[lex_mode_e.VSub_2] = \
     ID_SPEC.LexerPairs(Kind.VTest) + \
     ID_SPEC.LexerPairs(Kind.VOp0) + \
-    ID_SPEC.LexerPairs(Kind.VOpOil) + \
+    ID_SPEC.LexerPairs(Kind.VOpYsh) + \
     ID_SPEC.LexerPairs(Kind.VOp1) + \
     ID_SPEC.LexerPairs(Kind.VOp2) + \
     ID_SPEC.LexerPairs(Kind.VOp3) + [

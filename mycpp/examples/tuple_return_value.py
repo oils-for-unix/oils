@@ -13,43 +13,42 @@ from typing import Tuple, List
 
 
 def f(x):
-  # type: (int) -> Tuple[int, str]
+    # type: (int) -> Tuple[int, str]
 
-  i = x + 42
-  s = 'foo bar'
+    i = x + 42
+    s = 'foo bar'
 
-  return i, s[1:]
+    return i, s[1:]
 
 
 def run_tests():
-  # type: () -> None
+    # type: () -> None
 
-  i, s = f(0)
-  log("i = %d", i)
-  log("s = %s", s)
+    i, s = f(0)
+    log("i = %d", i)
+    log("s = %s", s)
 
-  items = []  # type: List[Tuple[int, str]]
-  items.append((43, 'bar'))
-  log('length = %d', len(items))
+    items = []  # type: List[Tuple[int, str]]
+    items.append((43, 'bar'))
+    log('length = %d', len(items))
 
-
-  mytuple = (44, 'spam')
-  myint, mystr = mytuple
+    mytuple = (44, 'spam')
+    myint, mystr = mytuple
 
 
 def run_benchmarks():
-  # type: () -> None
+    # type: () -> None
 
-  for i in xrange(1000000):
-    j, s = f(i)
-    if j == 100000:
-      print(str(i))
-    mylib.MaybeCollect()
+    for i in xrange(1000000):
+        j, s = f(i)
+        if j == 100000:
+            print(str(i))
+        mylib.MaybeCollect()
 
 
 if __name__ == '__main__':
-  if os.getenv('BENCHMARK'):
-    log('Benchmarking...')
-    run_benchmarks()
-  else:
-    run_tests()
+    if os.getenv('BENCHMARK'):
+        log('Benchmarking...')
+        run_benchmarks()
+    else:
+        run_tests()

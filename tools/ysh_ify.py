@@ -50,7 +50,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     CompoundWord,
     Token,
-    NameTok,
+    SimpleVarSub,
     BracedVarSub,
     CommandSub,
     DoubleQuoted,
@@ -93,6 +93,17 @@ if TYPE_CHECKING:
 class Cursor(object):
     """
     API to print/transform a complete source file, stored in a single arena.
+
+    TODO: Can we remove PrintUntilSpid() and SkipUntilSpid() and just use token
+    EQUALITY?  Get rid of span ID altogether.
+
+    In, core/alloc.py, SnipCodeBlock() and SnipCodeString work on lines.  They
+    don't iterate over tokens.
+
+    Or add a separate hash table of Token -> span ID?  That makes sense because
+    we need that kind of "address hash" for type checking anyway.
+
+    You use the hash table to go from next_token_id .. TokenId(until_token).
     """
 
     def __init__(self, arena, f):
@@ -115,7 +126,13 @@ class Cursor(object):
             if span.line is None:
                 continue
 
-            piece = span.line.content[span.col:span.col + span.length]
+            # Special case for recovering stripped leading space!
+            # See osh/word_compile.py
+            start_index = (0 if span.id == Id.Lit_CharsWithoutPrefix else
+                           span.col)
+            end_index = span.col + span.length
+
+            piece = span.line.content[start_index:end_index]
             self.f.write(piece)
 
         self.next_span_id = until_span_id
@@ -442,6 +459,75 @@ class YshPrinter(object):
             if i != n - 1:
                 self.f.write(',')
 
+    def _DoSimple(self, node, local_symbols):
+        # type: (command.Simple, Dict[str, bool]) -> None
+
+        # How to preserve spaces between words?  Do you want to do it?
+        # Well you need to test this:
+        #
+        # echo foo \
+        #   bar
+
+        if len(node.more_env):
+            # We only need to transform the right side, not left side.
+            for pair in node.more_env:
+                self.DoRhsWord(pair.val, local_symbols)
+
+        if len(node.words):
+            first_word = node.words[0]
+            ok, val, quoted = word_.StaticEval(first_word)
+            word0_tok = location.LeftTokenForWord(first_word)
+            if ok and not quoted:
+                if val == '[' and len(node.words) >= 3:
+                    word2 = node.words[-2]
+                    last_word = node.words[-1]
+
+                    # Check if last word is ]
+                    ok, val, quoted = word_.StaticEval(last_word)
+                    if ok and not quoted and val == ']':
+                        # Replace [ with 'test'
+                        self.cursor.PrintUntil(word0_tok)
+                        self.cursor.SkipPast(word0_tok)
+                        self.f.write('test')
+
+                        for w in node.words[1:-1]:
+                            self.DoWordInCommand(w, local_symbols)
+
+                        # Now omit ]
+                        tok2 = location.RightTokenForWord(word2)
+                        rbrack_tok = location.LeftTokenForWord(last_word)
+
+                        # Skip the space token before ]
+                        self.cursor.PrintIncluding(tok2)
+                        # ] takes one spid
+                        self.cursor.SkipPast(rbrack_tok)
+                        return
+                    else:
+                        raise RuntimeError('Got [ without ]')
+
+                elif val == '.':
+                    self.cursor.PrintUntil(word0_tok)
+                    self.cursor.SkipPast(word0_tok)
+                    self.f.write('source')
+                    return
+
+        for w in node.words:
+            self.DoWordInCommand(w, local_symbols)
+
+        # It would be nice to convert here docs to multi-line strings
+        for r in node.redirects:
+            self.DoRedirect(r, local_symbols)
+
+        # TODO: Print the terminator.  Could be \n or ;
+        # Need to print env like PYTHONPATH = 'foo' && ls
+        # Need to print redirects:
+        # < > are the same.  << is here string, and >> is assignment.
+        # append is >+
+
+        # TODO: static_eval of simple command
+        # - [ -> "test".  Eliminate trailing ].
+        # - . -> source, etc.
+
     def DoCommand(self, node, local_symbols, at_top_level=False):
         # type: (command_t, Dict[str, bool], bool) -> None
 
@@ -451,8 +537,8 @@ class YshPrinter(object):
             if case(command_e.CommandList):
                 node = cast(command.CommandList, UP_node)
 
-                # TODO: How to distinguish between echo hi; echo bye; and on separate
-                # lines
+                # TODO: How to distinguish between echo hi; echo bye; and on
+                # separate lines
                 for child in node.children:
                     self.DoCommand(child,
                                    local_symbols,
@@ -461,69 +547,7 @@ class YshPrinter(object):
             elif case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
 
-                # How to preserve spaces between words?  Do you want to do it?
-                # Well you need to test this:
-                #
-                # echo foo \
-                #   bar
-
-                if len(node.more_env):
-                    # We only need to transform the right side, not left side.
-                    for pair in node.more_env:
-                        self.DoRhsWord(pair.val, local_symbols)
-
-                if len(node.words):
-                    first_word = node.words[0]
-                    ok, val, quoted = word_.StaticEval(first_word)
-                    word0_tok = location.LeftTokenForWord(first_word)
-                    if ok and not quoted:
-                        if val == '[':
-                            last_word = node.words[-1]
-                            # Check if last word is ]
-                            ok, val, quoted = word_.StaticEval(last_word)
-                            if ok and not quoted and val == ']':
-                                # Replace [ with 'test'
-                                self.cursor.PrintUntil(word0_tok)
-                                self.cursor.SkipPast(word0_tok)
-                                self.f.write('test')
-
-                                for w in node.words[1:-1]:
-                                    self.DoWordInCommand(w, local_symbols)
-
-                                # Now omit ]
-                                rbrack_tok = location.LeftTokenForWord(
-                                    last_word)
-                                # Skip the space token before ]
-                                self.cursor.PrintUntilSpid(rbrack_tok.span_id -
-                                                           1)
-                                self.cursor.SkipPast(
-                                    rbrack_tok)  # ] takes one spid
-                                return
-                            else:
-                                raise RuntimeError('Got [ without ]')
-
-                        elif val == '.':
-                            self.cursor.PrintUntil(word0_tok)
-                            self.cursor.SkipPast(word0_tok)
-                            self.f.write('source')
-                            return
-
-                for w in node.words:
-                    self.DoWordInCommand(w, local_symbols)
-
-                # It would be nice to convert here docs to multi-line strings
-                for r in node.redirects:
-                    self.DoRedirect(r, local_symbols)
-
-                # TODO: Print the terminator.  Could be \n or ;
-                # Need to print env like PYTHONPATH = 'foo' && ls
-                # Need to print redirects:
-                # < > are the same.  << is here string, and >> is assignment.
-                # append is >+
-
-                # TODO: static_eval of simple command
-                # - [ -> "test".  Eliminate trailing ].
-                # - . -> source, etc.
+                self._DoSimple(node, local_symbols)
 
             elif case(command_e.ShAssignment):
                 node = cast(command.ShAssignment, UP_node)
@@ -686,6 +710,7 @@ class YshPrinter(object):
                 # if foo; then -> if foo {
                 # elif foo; then -> } elif foo {
                 for i, arm in enumerate(node.arms):
+                    # TODO: remove this usage of spids
                     elif_spid = arm.spids[0]
                     then_spid = arm.spids[1]
 
@@ -749,7 +774,7 @@ class YshPrinter(object):
                 # Figure out the variable name, so we can translate
                 # - $var to (var)
                 # - "$var" to (var)
-                var_part = None  # type: NameTok
+                var_part = None  # type: SimpleVarSub
                 with tagswitch(to_match) as case:
                     if case(word_e.Compound):
                         w = cast(CompoundWord, to_match)
@@ -757,7 +782,7 @@ class YshPrinter(object):
 
                         with tagswitch(part0) as case2:
                             if case2(word_part_e.SimpleVarSub):
-                                var_part = cast(NameTok, part0)
+                                var_part = cast(SimpleVarSub, part0)
 
                             elif case2(word_part_e.DoubleQuoted):
                                 dq_part = cast(DoubleQuoted, part0)
@@ -769,12 +794,13 @@ class YshPrinter(object):
                                     # TODO: extract into a common function
                                     with tagswitch(dq_part0) as case3:
                                         if case3(word_part_e.SimpleVarSub):
-                                            var_part = cast(NameTok, dq_part0)
+                                            var_part = cast(
+                                                SimpleVarSub, dq_part0)
                                             #log("VAR PART %s", var_part)
 
                 if var_part:
                     self.f.write(' (')
-                    self.f.write(var_part.var_name)
+                    self.f.write(lexer.LazyStr(var_part.tok))
                     self.f.write(') ')
 
                 self.cursor.SkipPast(node.arms_start)  # Skip past 'in'
@@ -914,8 +940,8 @@ class YshPrinter(object):
                     if len(dq_part.parts) == 1:
                         part0 = dq_part.parts[0]
                         if part0.tag() == word_part_e.SimpleVarSub:
-                            vsub_part = cast(NameTok, dq_part.parts[0])
-                            if vsub_part.left.id == Id.VSub_At:
+                            vsub_part = cast(SimpleVarSub, dq_part.parts[0])
+                            if vsub_part.tok.id == Id.VSub_At:
                                 self.cursor.PrintUntil(dq_part.left)
                                 self.cursor.SkipPast(
                                     dq_part.right)  # " then $@ then "
@@ -923,11 +949,11 @@ class YshPrinter(object):
                                 return  # Done replacing
 
                             # "$1" -> $1, "$foo" -> $foo
-                            if vsub_part.left.id in (Id.VSub_Number,
-                                                     Id.VSub_DollarName):
+                            if vsub_part.tok.id in (Id.VSub_Number,
+                                                    Id.VSub_DollarName):
                                 self.cursor.PrintUntil(dq_part.left)
                                 self.cursor.SkipPast(dq_part.right)
-                                self.f.write(lexer.TokenVal(vsub_part.left))
+                                self.f.write(lexer.TokenVal(vsub_part.tok))
                                 return
 
                         # Single arith sub, command sub, etc.
@@ -1020,8 +1046,7 @@ class YshPrinter(object):
                 # $'\n' is '\n'
                 # TODO: Should print until right_spid
                 # left_spid, right_spid = node.spids
-                if len(node.tokens):  # Empty string has no tokens
-                    self.cursor.PrintIncluding(node.tokens[-1])
+                self.cursor.PrintUntil(node.right)
 
             elif case(word_part_e.DoubleQuoted):
                 node = cast(DoubleQuoted, UP_node)
@@ -1029,30 +1054,30 @@ class YshPrinter(object):
                     self.DoWordPart(part, local_symbols, quoted=True)
 
             elif case(word_part_e.SimpleVarSub):
-                node = cast(NameTok, UP_node)
+                node = cast(SimpleVarSub, UP_node)
 
-                spid = node.left.span_id
-                op_id = node.left.id
+                spid = node.tok.span_id
+                op_id = node.tok.id
 
                 if op_id == Id.VSub_DollarName:
-                    self.cursor.PrintIncluding(node.left)
+                    self.cursor.PrintIncluding(node.tok)
 
                 elif op_id == Id.VSub_Number:
-                    self.cursor.PrintIncluding(node.left)
+                    self.cursor.PrintIncluding(node.tok)
 
                 elif op_id == Id.VSub_At:  # $@ -- handled quoted case above
                     self.f.write('$[join(ARGV)]')
-                    self.cursor.SkipPast(node.left)
+                    self.cursor.SkipPast(node.tok)
 
                 elif op_id == Id.VSub_Star:  # $*
                     # PEDANTIC: Depends if quoted or unquoted
                     self.f.write('$[join(ARGV)]')
-                    self.cursor.SkipPast(node.left)
+                    self.cursor.SkipPast(node.tok)
 
                 elif op_id == Id.VSub_Pound:  # $#
                     # len(ARGV) ?
                     self.f.write('$Argc')
-                    self.cursor.SkipPast(node.left)
+                    self.cursor.SkipPast(node.tok)
 
                 else:
                     pass

@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.20.0 Quality
+Oils 0.21.0 Quality
 ===================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
@@ -62,7 +62,7 @@ This is a supplement to the [main release page](index.html).
 - [ysh-every-string](more-tests.wwz/suite-logs/ysh-every-string.txt).  String
   literal stress test.
 - [ysh-large](more-tests.wwz/suite-logs/ysh-large.txt)
-- [lossless](more-tests.wwz/suite-logs/lossles.txt).  Test an invariant of the parser.
+- [lossless](more-tests.wwz/suite-logs/lossless.txt).  Test an invariant of the parser.
 - [osh-usage](more-tests.wwz/suite-logs/osh-usage.txt).  Misc tests of the `osh` binary.
 - [tools-deps](more-tests.wwz/suite-logs/tools-deps.txt).  Tests for a subcommand in
   progress.

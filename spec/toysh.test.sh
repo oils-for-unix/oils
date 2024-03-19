@@ -94,7 +94,7 @@ a b c d
 ## BUG mksh status: 1
 
 
-#### Brace Expansion (known difference)
+#### Brace Expansion
 # http://landley.net/notes.html#04-01-2020
 
 HOME=/home/foo
@@ -104,12 +104,12 @@ echo \{~,~root}/pwd
 echo ""{~,~root}/pwd
 
 ## STDOUT:
-~/pwd ~root/pwd
+/home/foo/pwd /root/pwd
 {~,~root}/pwd
 ~/pwd ~root/pwd
 ## END
-## OK bash STDOUT:
-/home/foo/pwd /root/pwd
+## OK mksh STDOUT:
+~/pwd ~root/pwd
 {~,~root}/pwd
 ~/pwd ~root/pwd
 ## END

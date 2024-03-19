@@ -349,8 +349,7 @@ introspect() {
 }
 
 tilde() {
-  sh-spec spec/tilde.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file tilde "$@"
 }
 
 var-op-test() {
@@ -484,8 +483,7 @@ dparen() {
 }
 
 brace-expansion() {
-  sh-spec spec/brace-expansion.test.sh \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file brace-expansion "$@"
 }
 
 regex() {

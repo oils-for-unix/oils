@@ -1,8 +1,18 @@
-# This works, how come stripping spaces doesn't affect it?
+# Command Mode
 
 echo '''
-  sq 1
+  single quoted
   2
+  '''
+
+echo r'''
+  raw
+  str
+  '''
+
+echo u'''
+  J8
+  \u{3bc}
   '''
 
 var x = 42
@@ -10,13 +20,25 @@ echo """
   dq $x
   $[x + 1]
   """
+
+# Expression Mode
   
-var a = '''
-  sq 1
+var x = '''
+  single quoted
   2
   '''
 
-var b = """
+var x = r'''
+  raw
+  str
+  '''
+
+var x = u'''
+  J8
+  \u{3bc}
+  '''
+
+var x = """
   dq $x
   $[x + 1]
   """

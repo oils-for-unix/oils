@@ -11,7 +11,6 @@ import time
 import harness
 from harness import register, expect_prompt
 
-
 #
 # Test Cases
 #
@@ -69,260 +68,261 @@ from harness import register, expect_prompt
 
 @register()
 def sigusr1_trapped_prompt(sh):
-  'Trapped SIGUSR1 while waiting at prompt (bug 1080)'
+    'Trapped SIGUSR1 while waiting at prompt (bug 1080)'
 
-  # Notes on shell behavior:
-  # bash and dash:
-  # - If there are multiple USR1 signals, only one handler is run.
-  # - The handlers aren't run in between PS1 and PS2.  There has to be another
-  #   command.  So it's run in the InteractiveLoop and not the LineReader.
-  # zsh and mksh:
-  # - It's printed immediately!  You don't even have to hit ENTER.  That's
-  #   probably because the line editor is integrated in both shells.
-  # I think it's OK t match bash and dash.
+    # Notes on shell behavior:
+    # bash and dash:
+    # - If there are multiple USR1 signals, only one handler is run.
+    # - The handlers aren't run in between PS1 and PS2.  There has to be another
+    #   command.  So it's run in the InteractiveLoop and not the LineReader.
+    # zsh and mksh:
+    # - It's printed immediately!  You don't even have to hit ENTER.  That's
+    #   probably because the line editor is integrated in both shells.
+    # I think it's OK t match bash and dash.
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline("trap 'echo zzz-USR1' USR1")
-  expect_prompt(sh)
+    sh.sendline("trap 'echo zzz-USR1' USR1")
+    expect_prompt(sh)
 
-  sh.kill(signal.SIGUSR1)
+    sh.kill(signal.SIGUSR1)
 
-  # send an empty line
-  sh.sendline('')
-  sh.expect('zzz-USR1')
+    # send an empty line
+    sh.sendline('')
+    sh.expect('zzz-USR1')
 
 
 @register()
 def sigmultiple_trapped_prompt(sh):
-  'Trapped USR1 and USR2 while waiting at prompt'
+    'Trapped USR1 and USR2 while waiting at prompt'
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline("trap 'echo zzz-USR1' USR1")
-  expect_prompt(sh)
-  sh.sendline("trap 'echo zzz-USR2' USR2")
-  expect_prompt(sh)
+    sh.sendline("trap 'echo zzz-USR1' USR1")
+    expect_prompt(sh)
+    sh.sendline("trap 'echo zzz-USR2' USR2")
+    expect_prompt(sh)
 
-  sh.kill(signal.SIGUSR1)
-  time.sleep(0.1) # pause for a bit to avoid racing on signal order in osh-cpp
-  sh.kill(signal.SIGUSR2)
+    sh.kill(signal.SIGUSR1)
+    time.sleep(
+        0.1)  # pause for a bit to avoid racing on signal order in osh-cpp
+    sh.kill(signal.SIGUSR2)
 
-  sh.sendline('echo hi')
+    sh.sendline('echo hi')
 
-  sh.expect('zzz-USR1')
-  sh.expect('zzz-USR2')
-  sh.sendline('hi')
+    sh.expect('zzz-USR1')
+    sh.expect('zzz-USR2')
+    sh.sendline('hi')
 
 
 @register()
 def sighup_trapped_wait(sh):
-  'trapped SIGHUP during wait builtin'
+    'trapped SIGHUP during wait builtin'
 
-  sh.sendline("trap 'echo HUP' HUP")
-  expect_prompt(sh)
-  sh.sendline('sleep 1 &')
-  # TODO: expect something like [1] 24370
-  sh.sendline('wait')
+    sh.sendline("trap 'echo HUP' HUP")
+    expect_prompt(sh)
+    sh.sendline('sleep 1 &')
+    # TODO: expect something like [1] 24370
+    sh.sendline('wait')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  sh.kill(signal.SIGHUP)
+    sh.kill(signal.SIGHUP)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=129')
+    sh.sendline('echo status=$?')
+    sh.expect('status=129')
 
 
 @register()
 def sigint_trapped_wait(sh):
-  'trapped SIGINT during wait builtin'
+    'trapped SIGINT during wait builtin'
 
-  # This is different than Ctrl-C during wait builtin, because it's trapped!
+    # This is different than Ctrl-C during wait builtin, because it's trapped!
 
-  sh.sendline("trap 'echo INT' INT")
-  sh.sendline('sleep 1 &')
-  sh.sendline('wait')
+    sh.sendline("trap 'echo INT' INT")
+    sh.sendline('sleep 1 &')
+    sh.sendline('wait')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # simulate window size change
-  sh.kill(signal.SIGINT)
+    # simulate window size change
+    sh.kill(signal.SIGINT)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=130')
+    sh.sendline('echo status=$?')
+    sh.expect('status=130')
 
 
 @register()
 def ctrl_c_after_removing_sigint_trap(sh):
-  'Ctrl-C after removing SIGINT trap (issue 1607)'
+    'Ctrl-C after removing SIGINT trap (issue 1607)'
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=0')
+    sh.sendline('echo status=$?')
+    sh.expect('status=0')
 
-  sh.sendintr()  # SIGINT
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('trap - SIGINT')
-  expect_prompt(sh)
+    sh.sendline('trap - SIGINT')
+    expect_prompt(sh)
 
-  # Why do we need this?  Weird race condition
-  # I would have thought expect_prompt() should be enough synchronization
-  time.sleep(0.1)
+    # Why do we need this?  Weird race condition
+    # I would have thought expect_prompt() should be enough synchronization
+    time.sleep(0.1)
 
-  sh.sendintr()  # SIGINT
-  expect_prompt(sh)
+    sh.sendintr()  # SIGINT
+    expect_prompt(sh)
 
-  # bash, zsh, mksh give status 130, dash and OSH gives 0
-  #sh.sendline('echo status=$?')
-  #sh.expect('status=130')
+    # bash, zsh, mksh give status 130, dash and OSH gives 0
+    #sh.sendline('echo status=$?')
+    #sh.expect('status=130')
 
-  sh.sendline('echo hi')
-  sh.expect('hi')
-  expect_prompt(sh)
+    sh.sendline('echo hi')
+    sh.expect('hi')
+    expect_prompt(sh)
 
 
 @register()
 def sigwinch_trapped_wait(sh):
-  'trapped SIGWINCH during wait builtin'
+    'trapped SIGWINCH during wait builtin'
 
-  sh.sendline("trap 'echo WINCH' WINCH")
-  sh.sendline('sleep 1 &')
-  sh.sendline('wait')
+    sh.sendline("trap 'echo WINCH' WINCH")
+    sh.sendline('sleep 1 &')
+    sh.sendline('wait')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # simulate window size change
-  sh.kill(signal.SIGWINCH)
+    # simulate window size change
+    sh.kill(signal.SIGWINCH)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=156')
+    sh.sendline('echo status=$?')
+    sh.expect('status=156')
 
 
 @register()
 def sigwinch_untrapped_wait(sh):
-  'untrapped SIGWINCH during wait builtin (issue 1067)'
+    'untrapped SIGWINCH during wait builtin (issue 1067)'
 
-  sh.sendline('sleep 1 &')
-  sh.sendline('wait')
+    sh.sendline('sleep 1 &')
+    sh.sendline('wait')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # simulate window size change
-  sh.kill(signal.SIGWINCH)
+    # simulate window size change
+    sh.kill(signal.SIGWINCH)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=0')
+    sh.sendline('echo status=$?')
+    sh.expect('status=0')
 
 
 # dash and mksh don't have pipestatus
 @register(skip_shells=['dash', 'mksh'])
 def sigwinch_untrapped_wait_n(sh):
-  'untrapped SIGWINCH during wait -n'
+    'untrapped SIGWINCH during wait -n'
 
-  sh.sendline('sleep 1 &')
-  sh.sendline('wait -n')
+    sh.sendline('sleep 1 &')
+    sh.sendline('wait -n')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # simulate window size change
-  sh.kill(signal.SIGWINCH)
+    # simulate window size change
+    sh.kill(signal.SIGWINCH)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=0')
+    sh.sendline('echo status=$?')
+    sh.expect('status=0')
 
 
 # dash and mksh don't have pipestatus
 @register()
 def sigwinch_untrapped_wait_pid(sh):
-  'untrapped SIGWINCH during wait $!'
+    'untrapped SIGWINCH during wait $!'
 
-  sh.sendline('sleep 1 &')
-  sh.sendline('wait $!')
+    sh.sendline('sleep 1 &')
+    sh.sendline('wait $!')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # simulate window size change
-  sh.kill(signal.SIGWINCH)
+    # simulate window size change
+    sh.kill(signal.SIGWINCH)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=0')
+    sh.sendline('echo status=$?')
+    sh.expect('status=0')
 
 
 @register()
 def sigwinch_untrapped_external(sh):
-  'untrapped SIGWINCH during external command'
+    'untrapped SIGWINCH during external command'
 
-  sh.sendline('sleep 0.5')  # slower than timeout
+    sh.sendline('sleep 0.5')  # slower than timeout
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # simulate window size change
-  sh.kill(signal.SIGWINCH)
+    # simulate window size change
+    sh.kill(signal.SIGWINCH)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=0')
+    sh.sendline('echo status=$?')
+    sh.expect('status=0')
 
 
 # dash doesn't have pipestatus
 @register(skip_shells=['dash'])
 def sigwinch_untrapped_pipeline(sh):
-  'untrapped SIGWINCH during pipeline'
+    'untrapped SIGWINCH during pipeline'
 
-  sh.sendline('sleep 0.5 | echo x')  # slower than timeout
+    sh.sendline('sleep 0.5 | echo x')  # slower than timeout
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # simulate window size change
-  sh.kill(signal.SIGWINCH)
+    # simulate window size change
+    sh.kill(signal.SIGWINCH)
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo pipestatus=${PIPESTATUS[@]}')
-  sh.expect('pipestatus=0 0')
+    sh.sendline('echo pipestatus=${PIPESTATUS[@]}')
+    sh.expect('pipestatus=0 0')
 
 
 @register()
 def t1(sh):
-  'Ctrl-C during external command'
+    'Ctrl-C during external command'
 
-  sh.sendline('sleep 5')
+    sh.sendline('sleep 5')
 
-  time.sleep(0.1)
-  sh.sendintr()  # SIGINT
+    time.sleep(0.1)
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=130')
+    sh.sendline('echo status=$?')
+    sh.expect('status=130')
 
 
 @register(skip_shells=['mksh'])
 def t4(sh):
-  'Ctrl-C during pipeline'
-  sh.sendline('sleep 5 | cat')
+    'Ctrl-C during pipeline'
+    sh.sendline('sleep 5 | cat')
 
-  time.sleep(0.1)
-  sh.sendintr()  # SIGINT
+    time.sleep(0.1)
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=130')
+    sh.sendline('echo status=$?')
+    sh.expect('status=130')
 
 
 # TODO:
@@ -331,125 +331,126 @@ def t4(sh):
 # - Expand to trapped and untrapped
 # - Expand to Ctrl-C vs. SIGWINCH
 
+
 @register()
 def t2(sh):
-  'Ctrl-C during read builtin'
+    'Ctrl-C during read builtin'
 
-  sh.sendline('read myvar')
+    sh.sendline('read myvar')
 
-  time.sleep(0.1)
-  sh.sendintr()  # SIGINT
+    time.sleep(0.1)
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=130')
+    sh.sendline('echo status=$?')
+    sh.expect('status=130')
 
 
 @register()
 def read_d(sh):
-  'Ctrl-C during read -d'
+    'Ctrl-C during read -d'
 
-  sh.sendline('read -d :')
+    sh.sendline('read -d :')
 
-  time.sleep(0.1)
-  sh.sendintr()  # SIGINT
+    time.sleep(0.1)
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=130')
+    sh.sendline('echo status=$?')
+    sh.expect('status=130')
 
 
 @register()
 def c_wait(sh):
-  'Ctrl-C (untrapped) during wait builtin'
+    'Ctrl-C (untrapped) during wait builtin'
 
-  sh.sendline('sleep 5 &')
-  sh.sendline('wait')
+    sh.sendline('sleep 5 &')
+    sh.sendline('wait')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
-  sh.sendintr()  # SIGINT
+    # TODO: actually send Ctrl-C through the terminal, not SIGINT?
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=130')
+    sh.sendline('echo status=$?')
+    sh.expect('status=130')
 
 
 @register()
 def c_wait_n(sh):
-  'Ctrl-C (untrapped) during wait -n builtin'
+    'Ctrl-C (untrapped) during wait -n builtin'
 
-  sh.sendline('sleep 5 &')
-  sh.sendline('wait -n')
+    sh.sendline('sleep 5 &')
+    sh.sendline('wait -n')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
-  sh.sendintr()  # SIGINT
+    # TODO: actually send Ctrl-C through the terminal, not SIGINT?
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  sh.expect('status=130')
+    sh.sendline('echo status=$?')
+    sh.expect('status=130')
 
 
 @register()
 def c_wait_line(sh):
-  'Ctrl-C (untrapped) cancels entire interactive line'
+    'Ctrl-C (untrapped) cancels entire interactive line'
 
-  # the echo should be cancelled
-  sh.sendline('sleep 10 & wait; echo status=$?')
+    # the echo should be cancelled
+    sh.sendline('sleep 10 & wait; echo status=$?')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
-  sh.sendintr()  # SIGINT
+    # TODO: actually send Ctrl-C through the terminal, not SIGINT?
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo done=$?')
-  sh.expect('done=130')
+    sh.sendline('echo done=$?')
+    sh.expect('done=130')
 
 
 @register()
 def t5(sh):
-  'Ctrl-C during Command Sub (issue 467)'
-  sh.sendline('`sleep 5`')
+    'Ctrl-C during Command Sub (issue 467)'
+    sh.sendline('`sleep 5`')
 
-  time.sleep(0.1)
-  sh.sendintr()  # SIGINT
+    time.sleep(0.1)
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo status=$?')
-  # TODO: This should be status 130 like bash
-  sh.expect('status=130')
+    sh.sendline('echo status=$?')
+    # TODO: This should be status 130 like bash
+    sh.expect('status=130')
 
 
 @register()
 def loop_break(sh):
-  'Ctrl-C (untrapped) exits loop'
+    'Ctrl-C (untrapped) exits loop'
 
-  sh.sendline('while true; do continue; done')
+    sh.sendline('while true; do continue; done')
 
-  time.sleep(0.1)
+    time.sleep(0.1)
 
-  # TODO: actually send Ctrl-C through the terminal, not SIGINT?
-  sh.sendintr()  # SIGINT
+    # TODO: actually send Ctrl-C through the terminal, not SIGINT?
+    sh.sendintr()  # SIGINT
 
-  expect_prompt(sh)
+    expect_prompt(sh)
 
-  sh.sendline('echo done=$?')
-  sh.expect('done=130')
+    sh.sendline('echo done=$?')
+    sh.expect('done=130')
 
 
 if __name__ == '__main__':
-  try:
-    sys.exit(harness.main(sys.argv))
-  except RuntimeError as e:
-    print('FATAL: %s' % e, file=sys.stderr)
-    sys.exit(1)
+    try:
+        sys.exit(harness.main(sys.argv))
+    except RuntimeError as e:
+        print('FATAL: %s' % e, file=sys.stderr)
+        sys.exit(1)

@@ -109,15 +109,49 @@ TEST test_str_creation() {
 }
 
 TEST test_str_find() {
-  BigStr* s = StrFromC("abc-abc");
-  ASSERT_EQ(-1, s->find(StrFromC("x")));
-  ASSERT_EQ(-1, s->rfind(StrFromC("x")));
+  BigStr* s = StrFromC("abc-abc\xff");
+  ASSERT_EQ_FMT(-1, s->find(StrFromC("x")), "%d");
+  ASSERT_EQ_FMT(-1, s->rfind(StrFromC("x")), "%d");
 
-  ASSERT_EQ(0, s->find(StrFromC("a")));
-  ASSERT_EQ(2, s->find(StrFromC("c")));
+  // find() 1 byte
+  ASSERT_EQ_FMT(0, s->find(StrFromC("a")), "%d");
+  ASSERT_EQ_FMT(2, s->find(StrFromC("c")), "%d");
 
-  ASSERT_EQ(4, s->rfind(StrFromC("a")));
-  ASSERT_EQ(6, s->rfind(StrFromC("c")));
+  // find() from starting pos
+  ASSERT_EQ_FMT(4, s->find(StrFromC("a"), 4), "%d");
+  ASSERT_EQ_FMT(6, s->find(StrFromC("c"), 4), "%d");
+
+  ASSERT_EQ_FMT(-1, s->find(StrFromC("a"), 7), "%d");
+  ASSERT_EQ_FMT(-1, s->find(StrFromC("c"), 7), "%d");
+
+  // rfind() 1 byte
+  ASSERT_EQ_FMT(4, s->rfind(StrFromC("a")), "%d");
+  ASSERT_EQ_FMT(6, s->rfind(StrFromC("c")), "%d");
+
+  // end before finding it
+  ASSERT_EQ_FMT(-1, s->find(StrFromC("a"), 0, 0), "%d");
+  ASSERT_EQ_FMT(-1, s->find(StrFromC("c"), 0, 2), "%d");
+
+  // find multiple bytes
+  ASSERT_EQ_FMT(0, s->find(StrFromC("abc")), "%d");
+  ASSERT_EQ_FMT(4, s->find(StrFromC("abc"), 1), "%d");
+
+  // find empty string
+  ASSERT_EQ_FMT(0, s->find(kEmptyString), "%d");
+  ASSERT_EQ_FMT(5, s->find(kEmptyString, 5), "%d");
+
+  // Empty string not found in degenerate range
+  ASSERT_EQ_FMT(-1, s->find(kEmptyString, 5, 4), "%d");
+
+  ASSERT_EQ_FMT(5, s->find(kEmptyString, 5, 5), "%d");
+  ASSERT_EQ_FMT(5, s->find(kEmptyString, 5, 6), "%d");
+
+  // Not used by Oils
+  // ASSERT_EQ_FMT(4, s->rfind(StrFromC("abc")), "%d");
+
+  ASSERT_EQ_FMT(7, s->find(StrFromC("\xff")), "%d");
+  ASSERT_EQ_FMT(7, s->rfind(StrFromC("\xff")), "%d");
+  ASSERT_EQ_FMT(-1, s->rfind(StrFromC("\xfe")), "%d");
 
   PASS();
 }
@@ -626,6 +660,7 @@ TEST test_str_slice() {
   {
     BigStr* s1 = s0->slice(6, 6);
     ASSERT(str_equals(s1, StrFromC("")));
+    ASSERT(kEmptyString == s1);
     ShowString(s1);
   }
 

@@ -4,16 +4,17 @@
 These functions are called after parsing, but don't depend on any runtime
 values.
 """
-from _devbuild.gen.id_kind_asdl import Id, Id_str
+from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
-    SingleQuoted,
     CharCode,
     word_part_e,
     word_part_t,
 )
 from data_lang import j8
 from frontend import consts
+from frontend import lexer
+from mycpp import mylib
 from mycpp.mylib import log, switch
 
 from typing import List, Optional, cast
@@ -26,48 +27,45 @@ def EvalCharLiteralForRegex(tok):
     Similar logic as below.
     """
     id_ = tok.id
-    value = tok.tval
+    value = lexer.TokenVal(tok)
 
     with switch(id_) as case:
         if case(Id.Char_UBraced):
-            s = value[3:-1]  # \u{123}
+            s = lexer.TokenSlice(tok, 3, -1)  # \u{123}
             i = int(s, 16)
-            return CharCode(i, True, tok)  # u_braced
+            return CharCode(tok, i, True)  # u_braced
 
         elif case(Id.Char_OneChar):  # \'
+            # value[1] -> mylib.ByteAt()
             one_char_str = consts.LookupCharC(value[1])
-            return CharCode(ord(one_char_str), False, tok)
+            return CharCode(tok, ord(one_char_str), False)
 
         elif case(Id.Char_Hex):
-            s = value[2:]
+            s = lexer.TokenSliceLeft(tok, 2)
             i = int(s, 16)
-            return CharCode(i, False, tok)
+            return CharCode(tok, i, False)
 
         elif case(Id.Lit_Chars, Id.Expr_Name, Id.Expr_DecInt):
             # Id.Lit_Chars: Token in single quoted string ['a'] is Id.Lit_Chars
             # Id.Expr_Name: [a-z] is ['a'-'Z'], and [a z] is ['a' 'Z']
             # Id.Expr_DecInt: [0-9] is ['0'-'9'], and [0 9] is ['0' '9']
 
-            assert len(tok.tval) == 1, tok
-            return CharCode(ord(tok.tval[0]), False, tok)
+            assert len(value) == 1, tok
+            # value[0] -> mylib.ByteAt()
+            return CharCode(tok, ord(value[0]), False)
 
         else:
             raise AssertionError(tok)
 
 
-def EvalCStringToken(tok):
-    # type: (Token) -> Optional[str]
+def EvalCStringToken(id_, value):
+    # type: (Id_t, str) -> Optional[str]
     """This function is shared between echo -e and $''.
 
     $'' could use it at compile time, much like brace expansion in braces.py.
     """
-    id_ = tok.id
-    value = tok.tval
-
-    if 0:
-        log('tok %s', tok)
-
-    if id_ in (Id.Char_Literals, Id.Unknown_Backslash, Id.Char_AsciiControl):
+    if id_ in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.Unknown_Backslash,
+               Id.Char_AsciiControl):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
 
         # Char_AsciiControl is allowed in YSH code, for newlines in u''
@@ -119,65 +117,60 @@ def EvalCStringToken(tok):
         raise AssertionError(Id_str(id_))
 
 
-def EvalSingleQuoted(part):
-    # type: (SingleQuoted) -> str
-    if part.left.id in (Id.Left_SingleQuote, Id.Left_RSingleQuote,
-                        Id.Left_TSingleQuote, Id.Left_RTSingleQuote):
+def EvalSingleQuoted2(id_, tokens):
+    # type: (Id_t, List[Token]) -> str
+    """ Done at parse time """
+    if id_ in (Id.Left_SingleQuote, Id.Left_RSingleQuote, Id.Left_TSingleQuote,
+               Id.Left_RTSingleQuote):
+        strs = [lexer.TokenVal(t) for t in tokens]
 
-        # TODO: Strip leading whitespace for ''' and r'''
+    elif id_ in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
+                 Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
+                 Id.Left_BTSingleQuote):
         if 0:
-            for t in part.tokens:
-                log('sq tok %s', t)
+            for t in tokens:
+                print('T %s' % t)
 
-        tmp = [t.tval for t in part.tokens]
-        s = ''.join(tmp)
-
-    elif part.left.id in (Id.Left_DollarSingleQuote, Id.Left_USingleQuote,
-                          Id.Left_BSingleQuote, Id.Left_UTSingleQuote,
-                          Id.Left_BTSingleQuote):
-        # NOTE: This could be done at compile time
-        tmp = [EvalCStringToken(t) for t in part.tokens]
-        s = ''.join(tmp)
+        strs = [EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens]
 
     else:
-        raise AssertionError(part.left.id)
-    return s
+        raise AssertionError(id_)
+    return ''.join(strs)
 
 
-def IsLeadingSpace(s):
-    # type: (str) -> bool
-    """Determines if the token before ''' etc. can be stripped.
-
-    Similar to IsWhitespace()
-    """
-    for ch in s:
-        if ch not in ' \t':
+def _TokenConsistsOf(tok, byte_set):
+    # type: (Token, str) -> bool
+    start = tok.col
+    end = tok.col + tok.length
+    for i in xrange(start, end):
+        b = mylib.ByteAt(tok.line.content, i)
+        if not mylib.ByteInSet(b, byte_set):
             return False
     return True
 
 
-def IsWhitespace(s):
-    # type: (str) -> bool
-    """Alternative to s.isspace() that doesn't have legacy \f \v codes.
+def _IsLeadingSpace(tok):
+    # type: (Token) -> bool
+    """ Determine if the token before ''' etc. is space to trim """
+    return _TokenConsistsOf(tok, ' \t')
+
+
+def _IsTrailingSpace(tok):
+    # type: (Token) -> bool
+    """ Determine if the space/newlines after ''' should be trimmed
+
+    Like s.isspace(), without legacy \f \v and Unicode.
     """
-    for ch in s:
-        if ch not in ' \n\r\t':
-            return False
-    return True
+    return _TokenConsistsOf(tok, ' \n\r\t')
 
 
-# Whitespace stripping algorithm
+# Whitespace trimming algorithms:
 #
-# - First token should be WHITESPACE* NEWLINE.  Omit it
-# - Last token should be WHITESPACE*
-#   - Then go through all the other tokens that are AFTER token that ends with \n
-#   - if tok.tval[:n] is the same as the last token, then STRIP THAT PREFIX
-# - Do you need to set a flag on the SingleQuoted part?
-#
-# TODO: do this all at compile time?
-
-# These functions may mutate tok.tval.  TODO: mutate the parts instead, after
-# we remove .tval
+# 1. Trim what's after opening ''' or """, if it's whitespace
+# 2. Determine what's before closing ''' or """ -- this is what you strip
+# 3. Strip each line by mutating the token
+#    - Change the ID from Id.Lit_Chars -> Id.Lit_CharsWithoutPrefix to maintain
+#      the lossless invariant
 
 
 def RemoveLeadingSpaceDQ(parts):
@@ -185,56 +178,62 @@ def RemoveLeadingSpaceDQ(parts):
     if len(parts) <= 1:  # We need at least 2 parts to strip anything
         return
 
-    line_ended = False  # Think of it as a tiny state machine
-
     # The first token may have a newline
     UP_first = parts[0]
     if UP_first.tag() == word_part_e.Literal:
         first = cast(Token, UP_first)
         #log('T %s', first_part)
-        if IsWhitespace(first.tval):
+        if _IsTrailingSpace(first):
             # Remove the first part.  TODO: This could be expensive if there are many
             # lines.
             parts.pop(0)
-        if first.tval.endswith('\n'):
-            line_ended = True
 
     UP_last = parts[-1]
     to_strip = None  # type: Optional[str]
     if UP_last.tag() == word_part_e.Literal:
         last = cast(Token, UP_last)
-        if IsLeadingSpace(last.tval):
-            to_strip = last.tval
+        if _IsLeadingSpace(last):
+            to_strip = lexer.TokenVal(last)
             parts.pop()  # Remove the last part
 
-    if to_strip is not None:
-        n = len(to_strip)
-        for UP_p in parts:
-            if UP_p.tag() != word_part_e.Literal:
-                line_ended = False
-                continue
+    if to_strip is None:
+        return
 
-            p = cast(Token, UP_p)
-
-            if line_ended:
-                if p.tval.startswith(to_strip):
-                    # MUTATING the part here
-                    p.tval = p.tval[n:]
-
+    n = len(to_strip)
+    for part in parts:
+        if part.tag() != word_part_e.Literal:
             line_ended = False
-            if p.tval.endswith('\n'):
-                line_ended = True
-                #log('%s', p)
+            continue
+
+        lit_tok = cast(Token, part)
+
+        if lit_tok.col == 0 and lexer.TokenStartsWith(lit_tok, to_strip):
+            # TODO: Lexer should not populate this!
+            assert lit_tok.tval is None, lit_tok.tval
+
+            lit_tok.col = n
+            lit_tok.length -= n
+            #log('n = %d, %s', n, lit_tok)
+
+            assert lit_tok.id == Id.Lit_Chars, lit_tok
+            # --tool lossless-cat has a special case for this
+            lit_tok.id = Id.Lit_CharsWithoutPrefix
 
 
 def RemoveLeadingSpaceSQ(tokens):
     # type: (List[Token]) -> None
-    """
-    In $''', we have Char_Literals \n
-    In r''' and ''', we have Lit_Chars \n
-    In u''' and b''', we have Char_AsciiControl \n
+    """Strip leading whitespace from tokens.
 
-    Should make these more consistent.
+    May return original list unmodified, or a new list.
+
+    Must respect lossless invariant - see test/lossless/multiline-str.sh
+
+    For now we create NEW Id.Ignored_LeadingSpace tokens, and are NOT in the
+    arena.
+
+    Quirk to make more consistent:
+      In $''' and r''' and ''', we have Lit_Chars \n
+      In u''' and b''', we have Char_AsciiControl \n
     """
     if 0:
         log('--')
@@ -245,36 +244,38 @@ def RemoveLeadingSpaceSQ(tokens):
     if len(tokens) <= 1:  # We need at least 2 parts to strip anything
         return
 
-    line_ended = False
-
+    # var x = '''    # strip initial newline/whitespace
+    #   x
+    #   '''
     first = tokens[0]
-    if first.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
-        if IsWhitespace(first.tval):
+    if first.id in (Id.Lit_Chars, Id.Char_AsciiControl):
+        if _IsTrailingSpace(first):
             tokens.pop(0)  # Remove the first part
-        if first.tval.endswith('\n'):
-            line_ended = True
 
+    # Figure out what to strip, based on last token
     last = tokens[-1]
     to_strip = None  # type: Optional[str]
-    if last.id in (Id.Lit_Chars, Id.Char_Literals, Id.Char_AsciiControl):
-        if IsLeadingSpace(last.tval):
-            to_strip = last.tval
+    if last.id in (Id.Lit_Chars, Id.Char_AsciiControl):
+        if _IsLeadingSpace(last):
+            to_strip = lexer.TokenVal(last)
             tokens.pop()  # Remove the last part
 
-    if to_strip is not None:
-        #log('SQ Stripping %r', to_strip)
-        n = len(to_strip)
-        for tok in tokens:
-            if tok.id not in (Id.Lit_Chars, Id.Char_Literals,
-                              Id.Char_AsciiControl):
-                line_ended = False
-                continue
+    if to_strip is None:
+        return
 
-            if line_ended:
-                if tok.tval.startswith(to_strip):
-                    # MUTATING the token here
-                    tok.tval = tok.tval[n:]
+    #log('SQ Stripping %r', to_strip)
+    n = len(to_strip)
 
-            line_ended = False
-            if tok.tval.endswith('\n'):
-                line_ended = True
+    #log('--')
+    for tok in tokens:  # line_ended reset on every iteration
+        #log('tok %s', tok)
+        # Strip leading space on tokens that begin lines, by bumping start col
+        if tok.col == 0 and lexer.TokenStartsWith(tok, to_strip):
+            tok.col = n
+            tok.length -= n
+
+            assert tok.id == Id.Lit_Chars, tok
+            # --tool lossless-cat has a special case for this
+            tok.id = Id.Lit_CharsWithoutPrefix
+
+            #log('STRIP tok %s', tok)

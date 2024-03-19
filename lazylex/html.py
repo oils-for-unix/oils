@@ -374,7 +374,7 @@ def ToText(s, left_pos=0, right_pos=0):
   Given HTML, return text by unquoting &gt; and &lt; etc.
 
   Used by:
-    doctools/oil_doc.py: PygmentsPlugin
+    doctools/oils_doc.py: PygmentsPlugin
     doctool/make_help.py: HelpIndexCards
 
   In the latter case, we cold process some tags, like:

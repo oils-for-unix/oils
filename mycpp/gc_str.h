@@ -23,8 +23,7 @@ class BigStr {
 
   BigStr* at(int i);
 
-  // TODO: take (start, end) for equality without allocation (not pos)
-  int find(BigStr* needle, int pos = 0);
+  int find(BigStr* needle, int start = 0, int end = -1);
   int rfind(BigStr* needle);
 
   BigStr* slice(int begin);

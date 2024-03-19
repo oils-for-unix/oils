@@ -20,6 +20,34 @@ TODO
 
 ## Traps
 
+### DEBUG
+
+Runs code before "leaf" commands, like
+
+    echo hi
+    a=b
+    [[ x -eq y ]]
+    (( a = 42 ))
+
+But not before `{`:
+
+    { echo one; echo two; }
+
+---
+
+See the [Quirks doc](../quirks.html) for an interaction between the `DEBUG`
+trap, pipelines, and interactive shells.
+
+### ERR
+
+TODO
+
+### EXIT
+
+TODO
+
+### RETURN
+
 TODO
 
 ## Words

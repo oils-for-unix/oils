@@ -109,18 +109,22 @@ inline void write(int fd, BigStr* s) {
 }
 
 inline void setpgid(pid_t pid, pid_t pgid) {
-  pid_t ret = ::setpgid(pid, pgid);
+  int ret = ::setpgid(pid, pgid);
   if (ret < 0) {
     throw Alloc<OSError>(errno);
   }
 }
 
 inline int getpgid(pid_t pid) {
-  return ::getpgid(pid);
+  pid_t ret = ::getpgid(pid);
+  if (ret < 0) {
+    throw Alloc<OSError>(errno);
+  }
+  return ret;
 }
 
 inline void tcsetpgrp(int fd, pid_t pgid) {
-  pid_t ret = ::tcsetpgrp(fd, pgid);
+  int ret = ::tcsetpgrp(fd, pgid);
   if (ret < 0) {
     throw Alloc<OSError>(errno);
   }

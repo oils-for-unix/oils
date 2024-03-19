@@ -5,7 +5,7 @@ default_highlighter: oils-sh
 OSH Quirks
 ==========
 
-This document describes corner cases in OSH for compatibility.
+This document describes corner cases in OSH.
 
 Related: [Known Differences](known-differences.html).
 
@@ -43,6 +43,54 @@ Errors:
 
     declare -A x=(one two)  # inconsistent
     declare -a x=(['k']=v)  # inconsistent
+
+## Interactive Shell
+
+### With job control, the DEBUG trap is disabled for the last part of a pipeline
+
+First, some background.  These two shell features are fundamentally
+incompatible:
+
+- Job control: e.g. putting a pipeline in a process group, so it can be
+  suspended and cancelled all at once.
+- `shopt -s lastpipe` semantics: the last part of a pipeline can (sometimes) be
+  run in the current shell.
+  - [OSH]($xref) uses it by default because it makes `echo hi | read myvar` work.  So
+    [OSH]($xref) is like [zsh]($xref), but unlike [bash](xref).
+
+As evidence of this incompatibility, note that:
+
+- [bash]($xref) simply ignores the `shopt -s lastpipe` setting in job control
+  shells
+- [zsh]($xref) doesn't allow you to suspend some pipelines
+
+---
+
+Now that we have that background, note that there's is a **third** feature that
+interacts: the `DEBUG` trap.
+
+[OSH]($xref) emulates the [bash]($xref) `DEBUG` trap, which runs before "leaf"
+commands like `echo hi`, `a=b`, etc.
+
+If we run this trap before the last part of a pipeline, **and** that part is
+run in the current shell (`lastpipe`), then the DEBUG trap makes an existing
+race condition worse.
+
+For example, in
+
+    echo hi | cat
+
+there's nothing stopping `echo hi` from finishing before `cat` is even started,
+which means that `cat` can't join the process group of the leader.
+
+So we simply disable the `DEBUG` trap for the last part of the pipeline, but
+**only** when job control is enabled.  This won't affect debugging batch
+programs.
+
+Related issues in other shells:
+
+- bash: <https://superuser.com/questions/1084406/chained-pipes-in-bash-throws-operation-not-permitted>
+- fish: <https://github.com/fish-shell/fish-shell/issues/7474>
 
 
 <!--

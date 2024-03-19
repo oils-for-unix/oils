@@ -28,6 +28,7 @@ def _assertReadWordWithArena(test, w_parser):
     w = w_parser.ReadWord(lex_mode_e.ShCommand)
     assert w is not None
     fmt.PrettyPrint(w)
+    print('')
 
     # Next word must be Eof_Real
     w2 = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -36,7 +37,10 @@ def _assertReadWordWithArena(test, w_parser):
 
 
 def _assertReadWord(test, word_str, oil_at=False):
-    print('\n---', word_str)
+    print('')
+    print('--- %s' % word_str)
+    print('')
+
     arena = test_lib.MakeArena('word_parse_test.py')
     w_parser = test_lib.InitWordParser(word_str, arena=arena, oil_at=oil_at)
     w = _assertReadWordWithArena(test, w_parser)
@@ -78,9 +82,9 @@ def _GetPrefixOp(test, w):
 
 
 def _GetVarSub(test, w):
-    """Get a single transform op."""
     test.assertEqual(1, len(w.parts))
-    return w.parts[0]
+    part = w.parts[0]
+    return lexer.LazyStr(part.token)
 
 
 class ArenaTest(unittest.TestCase):
@@ -177,11 +181,11 @@ class WordParserTest(unittest.TestCase):
 
     def testDisambiguatePrefix(self):
         w = _assertReadWord(self, '${#}')
-        self.assertEqual('#', _GetVarSub(self, w).token.tval)
+        self.assertEqual('#', _GetVarSub(self, w))
         w = _assertReadWord(self, '${!}')
-        self.assertEqual('!', _GetVarSub(self, w).token.tval)
+        self.assertEqual('!', _GetVarSub(self, w))
         w = _assertReadWord(self, '${?}')
-        self.assertEqual('?', _GetVarSub(self, w).token.tval)
+        self.assertEqual('?', _GetVarSub(self, w))
 
         w = _assertReadWord(self, '${var}')
 
@@ -194,7 +198,7 @@ class WordParserTest(unittest.TestCase):
 
         # Length of length
         w = _assertReadWord(self, '${##}')
-        self.assertEqual('#', _GetVarSub(self, w).token.tval)
+        self.assertEqual('#', _GetVarSub(self, w))
         self.assertEqual(Id.VSub_Pound, _GetPrefixOp(self, w))
 
         w = _assertReadWord(self, '${array[0]}')
@@ -445,7 +449,7 @@ class WordParserTest(unittest.TestCase):
         w_parser = test_lib.InitWordParser(code)
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
-        self.assertEqual('foo', w.parts[0].tval)
+        self.assertEqual('foo', lexer.LazyStr(w.parts[0]))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
@@ -453,7 +457,7 @@ class WordParserTest(unittest.TestCase):
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
-        self.assertEqual('bar', w.parts[0].tval)
+        self.assertEqual('bar', lexer.LazyStr(w.parts[0]))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
@@ -471,11 +475,15 @@ class WordParserTest(unittest.TestCase):
 
         w = w_parser.ReadWord(lex_mode_e.BashRegex)
         assert w
-        self.assertEqual('(', w.parts[0].tval)
-        self.assertEqual('foo', w.parts[1].tval)
-        self.assertEqual('|', w.parts[2].tval)
-        self.assertEqual('bar', w.parts[3].tval)
-        self.assertEqual(')', w.parts[4].tval)
+
+        def _Part(w, i):
+            return lexer.LazyStr(w.parts[i])
+
+        self.assertEqual('(', _Part(w, 0))
+        self.assertEqual('foo', _Part(w, 1))
+        self.assertEqual('|', _Part(w, 2))
+        self.assertEqual('bar', _Part(w, 3))
+        self.assertEqual(')', _Part(w, 4))
         self.assertEqual(5, len(w.parts))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -544,7 +552,7 @@ ls bar
             self.assertEqual(1, len(w.parts))
             part = w.parts[0]
             self.assertEqual(id_, part.id)
-            self.assertEqual(val, part.tval)
+            self.assertEqual(val, lexer.LazyStr(part))
 
         print('--MULTI')
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -572,23 +580,26 @@ ls bar
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         self.assertEqual(word_e.Operator, w.tag())
         self.assertEqual(Id.Eof_Real, w.id)
-        self.assertEqual('', w.tval)
+        self.assertEqual('', lexer.LazyStr(w))
 
     def testUnicode(self):
         words = 'z \xce\xbb \xe4\xb8\x89 \xf0\x9f\x98\x98'
 
+        def _Part(w, i):
+            return lexer.LazyStr(w.parts[i])
+
         w_parser = test_lib.InitWordParser(words)
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
-        self.assertEqual('z', w.parts[0].tval)
+        self.assertEqual('z', _Part(w, 0))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
-        self.assertEqual('\xce\xbb', w.parts[0].tval)
+        self.assertEqual('\xce\xbb', _Part(w, 0))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
-        self.assertEqual('\xe4\xb8\x89', w.parts[0].tval)
+        self.assertEqual('\xe4\xb8\x89', _Part(w, 0))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
-        self.assertEqual('\xf0\x9f\x98\x98', w.parts[0].tval)
+        self.assertEqual('\xf0\x9f\x98\x98', _Part(w, 0))
 
     def testParseErrorLocation(self):
         w = _assertSpanForWord(self, 'a=(1 2 3)')

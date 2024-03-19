@@ -22,7 +22,7 @@ class AllocTest(unittest.TestCase):
         line = arena.AddLine('line 2', 2)
         self.assertEqual(2, line.line_num)
 
-        tok = arena.NewToken(Id.Undefined_Tok, -1, -1, -1, '')
+        tok = arena.NewToken(Id.Undefined_Tok, -1, -1, -1)
         self.assertEqual(0, tok.span_id)
 
         arena.PopSource()
