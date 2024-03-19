@@ -118,21 +118,21 @@ v=
 v=
 ## END
 
-#### "${v[@]+foo}" with NOUNSET & no variable is quiet
+#### "${a[@]+foo}" and "${a[@]:+foo}" undefined, with set -u
+case $SH in dash) exit ;; esac
+
 set -u
 
-echo v="${v[@]+foo}"
-echo v="${v[@]:+foo}"
+echo array="${array[@]+foo}"
+echo array="${array[@]:+foo}"
 ## status: 0
-## OK dash status: 2
-## OK dash STDOUT:
-## END
-## OK dash STDERR:
-dash: 3: Bad substitution
-## END
+
 ## STDOUT:
-v=
-v=
+array=
+array=
+## END
+
+## N-I dash STDOUT:
 ## END
 
 
@@ -270,18 +270,21 @@ empty=
 assoc=v
 assoc=plus
 ## END
-## N-I zsh STDOUT:
+
+## BUG zsh STDOUT:
 empty=
 empty=plus
-assoc=v
-assoc=plus
+assoc=minus
+assoc=
 ---
 empty=minus
 empty=
-assoc=v
-assoc=plus
+assoc=minus
+assoc=
 ## END
-## N-I dash/mksh stdout-json: ""
+
+## N-I dash/mksh STDOUT:
+## END
 
 
 #### Error when empty
