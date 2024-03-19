@@ -353,8 +353,7 @@ tilde() {
 }
 
 var-op-test() {
-  sh-spec spec/var-op-test.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file var-op-test "$@"
 }
 
 var-op-len() {

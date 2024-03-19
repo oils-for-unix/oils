@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+## compare_shells: bash dash mksh zsh
 
 #### Lazy Evaluation of Alternative
 i=0
@@ -33,6 +35,10 @@ argv.py X${unset=x$@x}X  # If you want OSH to split, write this
 ['Xx1 2', '3 4xX']
 ['Xx1', '2', '3', '4xX']
 ## END
+## OK zsh STDOUT:
+['Xx1 2 3 4xX']
+['Xx1 2 3 4xX']
+## END
 
 #### Quoted with array as default value
 set -- '1 2' '3 4'
@@ -61,6 +67,10 @@ argv.py "$unset"
 ## END
 ## OK osh STDOUT:
 ['Xx1 2', '3 4xX']
+['x1 2 3 4x']
+## END
+## OK zsh STDOUT:
+['Xx1 2 3 4xX']
 ['x1 2 3 4x']
 ## END
 
@@ -107,6 +117,24 @@ v=foo
 v=
 v=
 ## END
+
+#### "${a[@]+foo}" and "${a[@]:+foo}" undefined, with set -u
+case $SH in dash) exit ;; esac
+
+set -u
+
+echo array="${array[@]+foo}"
+echo array="${array[@]:+foo}"
+## status: 0
+
+## STDOUT:
+array=
+array=
+## END
+
+## N-I dash STDOUT:
+## END
+
 
 #### ${v-foo} and ${v:-foo} when set -u
 set -u
@@ -194,6 +222,8 @@ a3=plus
 ['plus']
 ## END
 ## N-I dash stdout-json: ""
+## N-I zsh stdout-json: "empty=\na1=\n"
+## N-I zsh status: 1
 
 #### $@ and - and +
 echo argv=${@-minus}
@@ -206,7 +236,7 @@ argv=
 argv=minus
 argv=
 ## END
-## BUG dash STDOUT:
+## BUG dash/zsh STDOUT:
 argv=
 argv=plus
 argv=minus
@@ -240,7 +270,21 @@ empty=
 assoc=v
 assoc=plus
 ## END
-## N-I dash/mksh stdout-json: ""
+
+## BUG zsh STDOUT:
+empty=
+empty=plus
+assoc=minus
+assoc=
+---
+empty=minus
+empty=
+assoc=minus
+assoc=
+## END
+
+## N-I dash/mksh STDOUT:
+## END
 
 
 #### Error when empty
@@ -288,6 +332,8 @@ echo ${#arr[@]}
 ## END
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
+## N-I zsh status: 1
+## N-I zsh stdout-json: "0\n"
 
 #### assoc array ${arr["k"]=x}
 # note: this also works in zsh
