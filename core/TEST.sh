@@ -12,11 +12,10 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/common.sh
 
 unit() {
-  run-one-test 'core/optview_test' '' asan
-  echo
-
-  run-one-test 'core/runtime_asdl_test' '' asan
-  echo
+  for variant in asan ubsan; do
+    run-one-test 'core/optview_test' '' $variant
+    run-one-test 'core/runtime_asdl_test' '' $variant
+  done
 }
 
 "$@"

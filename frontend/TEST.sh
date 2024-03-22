@@ -16,6 +16,7 @@ unit() {
 
   run-one-test 'frontend/arg_types_test' '' asan
   run-one-test 'frontend/arg_types_test' '' asan+gcalways
+  run-one-test 'frontend/arg_types_test' '' ubsan
 }
 
 "$@"

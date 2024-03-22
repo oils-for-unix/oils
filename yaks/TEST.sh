@@ -7,9 +7,16 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source build/dev-shell.sh  # python3 in PATH
 source devtools/run-task.sh
 source test/common.sh  # run-test-funcs
+
+unit() {
+  run-one-test 'yaks/yaks_runtime_test' '' asan
+  run-one-test 'frontend/arg_types_test' '' ubsan
+}
 
 build() {
   build/py.sh gen-asdl-py 'yaks/yaks.asdl'

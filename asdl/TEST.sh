@@ -18,14 +18,10 @@ source test/common.sh      # run-one-test
 unit() {
   ### Run unit tests
 
-  run-one-test 'asdl/gen_cpp_test' '' asan
-  echo
-
-  run-one-test 'asdl/gc_test' '' asan
-  echo
-
-  run-one-test 'asdl/gc_test' '' asan+gcalways
-  echo
+  for variant in asan asan+gcalways ubsan; do
+    run-one-test 'asdl/gen_cpp_test' '' $variant
+    run-one-test 'asdl/gc_test' '' $variant
+  done
 }
 
 #
