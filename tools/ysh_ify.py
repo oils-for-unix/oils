@@ -160,9 +160,15 @@ class Cursor(object):
     def PrintUntil(self, tok):
         # type: (Token) -> None
         span_id = self.arena.GetSpanId(tok)
-        if 0:
-            tok2 = self.arena.GetToken(span_id)
-            assert tok == tok2
+
+        # Test invariant
+        if mylib.PYTHON:
+            arena_tok = self.arena.GetToken(span_id)
+            if tok != arena_tok:
+                raise AssertionError(
+                    '%s %d %d != %s %d %d' %
+                    (tok, span_id, id(tok), arena_tok,
+                     self.arena.GetSpanId(arena_tok), id(arena_tok)))
 
         self._PrintUntilSpid(span_id)
 

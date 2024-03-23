@@ -258,6 +258,7 @@ class Arena(object):
         """Reuse the last span ID."""
         if self.save_tokens:
             self.tokens.pop()
+            self.num_tokens -= 1
 
     def GetToken(self, span_id):
         # type: (int) -> Token
