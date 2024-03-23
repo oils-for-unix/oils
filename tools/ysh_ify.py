@@ -158,6 +158,11 @@ class Cursor(object):
 
     def PrintUntil(self, tok):
         # type: (Token) -> None
+        span_id = self.arena.GetSpanId(tok)
+        if 0:
+            tok2 = self.arena.GetToken(span_id)
+            assert tok == tok2
+
         self.PrintUntilSpid(tok.span_id)
 
     def PrintIncluding(self, tok):

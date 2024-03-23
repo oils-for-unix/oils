@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine
 from asdl import runtime
 from mycpp.mylib import log
 
-from typing import List, Any
+from typing import List, Dict, Any
 
 _ = log
 
@@ -95,6 +95,9 @@ class Arena(object):
         # indexed by span_id
         self.tokens = []  # type: List[Token]
         self.num_tokens = 0
+
+        # Only used in tools
+        self.span_id_lookup = {}  # type: Dict[Token, int]
 
         # All lines that haven't been discarded.  For LST formatting.
         self.lines_list = []  # type: List[SourceLine]
@@ -247,6 +250,7 @@ class Arena(object):
         tok = Token(id_, col, length, span_id, src_line, None)
         if self.save_tokens:
             self.tokens.append(tok)
+            #self.span_id_lookup[tok] = span_id
         return tok
 
     def UnreadOne(self):
@@ -262,6 +266,15 @@ class Arena(object):
         assert span_id < len(self.tokens), \
           'Span ID out of range: %d is greater than %d' % (span_id, len(self.tokens))
         return self.tokens[span_id]
+
+    def GetSpanId(self, tok):
+        # type: (Token) -> int
+        """
+        Sequence number, not ID
+        """
+        return -1
+        #assert tok in self.span_id_lookup
+        #return self.span_id_lookup[tok]
 
     def LastSpanId(self):
         # type: () -> int

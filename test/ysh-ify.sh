@@ -11,7 +11,7 @@ set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 source devtools/run-task.sh
-source test/common.sh
+source test/common.sh  # $OSH
 
 readonly TEMP_DIR=_tmp
 
@@ -19,7 +19,7 @@ prettify-one() {
   local file=$1
 
   set +o errexit
-  bin/osh --tool ysh-ify "$file"
+  $OSH --tool ysh-ify "$file"
   local status=$?
   set +o errexit
 
@@ -48,6 +48,16 @@ run-all() {
 
 soil-run() {
   run-all
+}
+
+soil-run-cpp() {
+  ### Not used yet, but it works
+
+  local osh=_bin/cxx-asan/osh
+  ninja $osh
+
+  #OSH=$osh run-test-funcs
+  OSH=$osh run-all
 }
 
 run-for-release() {

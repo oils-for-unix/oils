@@ -1315,7 +1315,7 @@ class CommandParser(object):
                          ;
         """
         words = []  # type: List[CompoundWord]
-        # The span_id of any semi-colon, so we can remove it.
+        # The token of any semi-colon, so we can remove it.
         semi_tok = None  # type: Optional[Token]
 
         while True:
