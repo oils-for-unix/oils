@@ -667,6 +667,25 @@ TEST test_dict_ordering() {
   PASS();
 }
 
+TEST test_hash() {
+  int i = 0;
+  int j = 0;
+  log("&i = %p", &i);
+  log("&j = %p", &j);
+
+  unsigned h1 = hash_key(&i);
+  log("h1 = %d", h1);
+  unsigned h2 = hash_key(&i);
+  log("h2 = %d", h2);
+  unsigned h3 = hash_key(&j);
+  log("h3 = %d", h3);
+
+  ASSERT_EQ_FMT(h1, h2, "%d");
+  ASSERT(h1 != h3);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -689,6 +708,8 @@ int main(int argc, char** argv) {
 
   RUN_TEST(dict_methods_test);
   RUN_TEST(dict_iters_test);
+
+  RUN_TEST(test_hash);
 
   gHeap.CleanProcessExit();
 

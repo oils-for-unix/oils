@@ -24,6 +24,7 @@ bool keys_equal(int left, int right);
 bool keys_equal(BigStr* left, BigStr* right);
 bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
 bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
+bool keys_equal(void* left, void* right);
 
 namespace id_kind_asdl {
 enum class Kind;

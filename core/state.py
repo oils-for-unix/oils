@@ -1199,13 +1199,13 @@ class Mem(object):
         if self.running_debug_trap:
             return
 
-        if tok.span_id == runtime.NO_SPID:
-            # NOTE: This happened in the osh-runtime benchmark for yash.
-            log('Warning: span_id undefined in SetTokenForLine')
+        #if tok.span_id == runtime.NO_SPID:
+        # NOTE: This happened in the osh-runtime benchmark for yash.
+        #log('Warning: span_id undefined in SetTokenForLine')
 
-            #import traceback
-            #traceback.print_stack()
-            return
+        #import traceback
+        #traceback.print_stack()
+        #return
 
         self.token_for_line = tok
 

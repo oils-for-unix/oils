@@ -147,11 +147,13 @@ class Cursor(object):
 
     def SkipUntil(self, tok):
         # type: (Token) -> None
-        self._SkipUntilSpid(tok.span_id)
+        span_id = self.arena.GetSpanId(tok)
+        self._SkipUntilSpid(span_id)
 
     def SkipPast(self, tok):
         # type: (Token) -> None
-        self._SkipUntilSpid(tok.span_id + 1)
+        span_id = self.arena.GetSpanId(tok)
+        self._SkipUntilSpid(span_id + 1)
 
     def PrintUntil(self, tok):
         # type: (Token) -> None
@@ -160,11 +162,12 @@ class Cursor(object):
             tok2 = self.arena.GetToken(span_id)
             assert tok == tok2
 
-        self._PrintUntilSpid(tok.span_id)
+        self._PrintUntilSpid(span_id)
 
     def PrintIncluding(self, tok):
         # type: (Token) -> None
-        self._PrintUntilSpid(tok.span_id + 1)
+        span_id = self.arena.GetSpanId(tok)
+        self._PrintUntilSpid(span_id + 1)
 
     def PrintUntilEnd(self):
         # type: () -> None
@@ -708,11 +711,6 @@ class YshPrinter(object):
             elif case(command_e.If):
                 node = cast(command.If, UP_node)
 
-                if node.else_kw:
-                    else_spid = node.else_kw.span_id
-                else:
-                    else_spid = runtime.NO_SPID
-
                 # if foo; then -> if foo {
                 # elif foo; then -> } elif foo {
                 for i, arm in enumerate(node.arms):
@@ -935,11 +933,6 @@ class YshPrinter(object):
                     # NOTE: In double quoted case, this is the begin and end quote.
                     # Do we need a HereDoc part?
 
-                    right_spid = dq_part.right.span_id
-
-                    # This is not set in the case of here docs?  Why not?
-                    assert right_spid != runtime.NO_SPID, right_spid
-
                     if len(dq_part.parts) == 1:
                         part0 = dq_part.parts[0]
                         if part0.tag() == word_part_e.SimpleVarSub:
@@ -1029,17 +1022,7 @@ class YshPrinter(object):
 
             elif case(word_part_e.Literal):
                 node = cast(Token, UP_node)
-
-                # Print it literally.
-                # TODO: We might want to do it all on the word level though.  For
-                # example, foo"bar" becomes "foobar" in oil.
-                spid = node.span_id
-                if spid == runtime.NO_SPID:
-                    #raise RuntimeError('%s has no span_id' % node.token)
-                    # TODO: Fix word_.TildeDetect to construct proper tokens.
-                    log('WARNING: %s has no span_id' % node)
-                else:
-                    self.cursor.PrintIncluding(node)
+                self.cursor.PrintIncluding(node)
 
             elif case(word_part_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)
@@ -1059,7 +1042,6 @@ class YshPrinter(object):
             elif case(word_part_e.SimpleVarSub):
                 node = cast(SimpleVarSub, UP_node)
 
-                spid = node.tok.span_id
                 op_id = node.tok.id
 
                 if op_id == Id.VSub_DollarName:

@@ -14,5 +14,6 @@ unsigned hash_key(BigStr* s);
 unsigned hash_key(int n);
 unsigned hash_key(Tuple2<int, int>* t1);
 unsigned hash_key(Tuple2<BigStr*, int>* t1);
+unsigned hash_key(void* p);  // e.g. for Dict<Token*, int>
 
 #endif  // MYCPP_HASH_H

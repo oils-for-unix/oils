@@ -250,7 +250,7 @@ class Arena(object):
         tok = Token(id_, col, length, span_id, src_line, None)
         if self.save_tokens:
             self.tokens.append(tok)
-            #self.span_id_lookup[tok] = span_id
+            self.span_id_lookup[tok] = span_id
         return tok
 
     def UnreadOne(self):
@@ -269,12 +269,11 @@ class Arena(object):
 
     def GetSpanId(self, tok):
         # type: (Token) -> int
-        """
-        Sequence number, not ID
-        """
-        return -1
-        #assert tok in self.span_id_lookup
-        #return self.span_id_lookup[tok]
+        """Given a Token, returns its a sequence number"""
+        #return tok.span_id
+        #return -1
+        assert tok in self.span_id_lookup
+        return self.span_id_lookup[tok]
 
     def LastSpanId(self):
         # type: () -> int
