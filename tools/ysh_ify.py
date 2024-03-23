@@ -89,6 +89,8 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from core import alloc
 
+_ = log
+
 
 class Cursor(object):
     """

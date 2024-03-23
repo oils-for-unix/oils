@@ -20,7 +20,6 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
                                       sh_lvalue_e, sh_lvalue_t, LeftName,
                                       y_lvalue_e, regex_match, regex_match_e,
                                       regex_match_t, RegexMatch)
-from asdl import runtime
 from core import error
 from core.error import e_usage, e_die
 from core import num
@@ -50,6 +49,8 @@ if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
     from core import alloc
     from osh import sh_expr_eval
+
+_ = log
 
 # This was derived from bash --norc -c 'argv "$COMP_WORDBREAKS".
 # Python overwrites this to something Python-specific in Modules/readline.c, so

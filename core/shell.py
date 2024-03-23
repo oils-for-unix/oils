@@ -1063,7 +1063,9 @@ def Main(
     tool_name = 'syntax-tree' if exec_opts.noexec() else flag.tool
 
     if len(tool_name):
-        arena.SaveTokens()
+        # Don't save tokens becaues it's slow
+        if tool_name != 'syntax-tree':
+            arena.SaveTokens()
 
         try:
             node = main_loop.ParseWholeFile(c_parser)
@@ -1072,6 +1074,7 @@ def Main(
             return 2
 
         if tool_name == 'syntax-tree':
+            # Don't save tokens here, because it's slower
             ui.PrintAst(node, flag)
 
         elif tool_name == 'tokens':
