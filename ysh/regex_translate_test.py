@@ -6,7 +6,6 @@ import unittest
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import EggexFlag, Token, source, SourceLine
 
-from asdl import runtime
 from core import error
 from ysh import regex_translate
 
@@ -16,7 +15,7 @@ def _Name(s):
     #return lexer.DummyToken(Id.Expr_Name, s)
     src = source.Stdin('')
     source_line = SourceLine(1, s, src)
-    return Token(Id.Expr_Name, 0, len(s), runtime.NO_SPID, source_line, None)
+    return Token(Id.Expr_Name, 0, len(s), source_line, None)
 
 
 class RegexTranslateTest(unittest.TestCase):

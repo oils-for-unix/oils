@@ -123,7 +123,7 @@ module syntax
   # WordParser._GetToken() appends to it.  But we can just use TokenVal() to
   # create garbage there.
 
-  Token = (id id, int col, int length, int span_id, SourceLine? line, str? tval)
+  Token = (id id, int col, int length, SourceLine? line, str? tval)
 
   # TODO: Make id and length uint16_t values.  Then WideToken will have 24
   # bytes + 8 byte GC header.

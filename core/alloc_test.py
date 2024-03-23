@@ -15,6 +15,7 @@ class AllocTest(unittest.TestCase):
 
     def testArena(self):
         arena = self.arena
+        arena.SaveTokens()
         arena.PushSource(source.MainFile('one.oil'))
 
         line = arena.AddLine('line 1', 1)
@@ -23,7 +24,7 @@ class AllocTest(unittest.TestCase):
         self.assertEqual(2, line.line_num)
 
         tok = arena.NewToken(Id.Undefined_Tok, -1, -1, -1)
-        self.assertEqual(0, tok.span_id)
+        self.assertEqual(0, arena.GetSpanId(tok))
 
         arena.PopSource()
 

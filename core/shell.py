@@ -1074,7 +1074,6 @@ def Main(
             return 2
 
         if tool_name == 'syntax-tree':
-            # Don't save tokens here, because it's slower
             ui.PrintAst(node, flag)
 
         elif tool_name == 'tokens':

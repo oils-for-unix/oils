@@ -11,7 +11,6 @@ lexer.py - Library for lexing.
 from _devbuild.gen.syntax_asdl import Token, WideToken, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str
-from asdl import runtime
 from mycpp.mylib import log
 from frontend import consts
 from frontend import match
@@ -129,7 +128,7 @@ def DummyToken(id_, val):
 
     col = -1
     length = -1
-    return Token(id_, col, length, runtime.NO_SPID, None, val)
+    return Token(id_, col, length, None, val)
 
 
 class LineLexer(object):

@@ -244,11 +244,11 @@ class Arena(object):
 
     def NewToken(self, id_, col, length, src_line):
         # type: (int, int, int, SourceLine) -> Token
-        span_id = self.num_tokens  # spids are just array indices
-        self.num_tokens += 1
-
-        tok = Token(id_, col, length, span_id, src_line, None)
+        tok = Token(id_, col, length, src_line, None)
         if self.save_tokens:
+            span_id = self.num_tokens
+            self.num_tokens += 1
+
             self.tokens.append(tok)
             self.span_id_lookup[tok] = span_id
         return tok
@@ -258,7 +258,6 @@ class Arena(object):
         """Reuse the last span ID."""
         if self.save_tokens:
             self.tokens.pop()
-        self.num_tokens -= 1
 
     def GetToken(self, span_id):
         # type: (int) -> Token
