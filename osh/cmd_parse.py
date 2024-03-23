@@ -1791,7 +1791,7 @@ class CommandParser(object):
             body = self.ParseBraceGroup()
             self._GetWord()
 
-            arm = IfArm(elif_kw, cond, None, body.children, [elif_kw.span_id])
+            arm = IfArm(elif_kw, cond, None, body.children, None)
             arms.append(arm)
 
         self._GetWord()
@@ -1825,7 +1825,7 @@ class CommandParser(object):
         body1 = self.ParseBraceGroup()
         # Every arm has 1 spid, unlike shell-style
         # TODO: We could get the spids from the brace group.
-        arm = IfArm(if_kw, cond, None, body1.children, [if_kw.span_id])
+        arm = IfArm(if_kw, cond, None, body1.children, None)
 
         if_node.arms.append(arm)
 
@@ -1854,8 +1854,7 @@ class CommandParser(object):
             then_kw = word_.AsKeywordToken(ate)
 
             body = self._ParseCommandList()
-            arm = IfArm(elif_kw, cond, then_kw, body.children,
-                        [elif_kw.span_id, then_kw.span_id])
+            arm = IfArm(elif_kw, cond, then_kw, body.children, then_kw)
 
             arms.append(arm)
 
@@ -1908,8 +1907,7 @@ class CommandParser(object):
         body = self._ParseCommandList()
 
         # First arm
-        arm = IfArm(if_kw, cond, then_kw, body.children,
-                    [if_kw.span_id, then_kw.span_id])
+        arm = IfArm(if_kw, cond, then_kw, body.children, then_kw)
         if_node.arms.append(arm)
 
         # 2nd to Nth arm

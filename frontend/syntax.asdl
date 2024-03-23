@@ -356,7 +356,8 @@ module syntax
   # In YSH, the then keyword is not used (replaced by braces {})
   IfArm = (
       Token keyword, condition cond, Token? then_kw, List[command] action,
-      List[int] spids)
+      # then_tok used in ysh-ify
+      Token? then_tok)
 
   for_iter =
     Args                          # for x; do echo $x; done # implicit "$@"

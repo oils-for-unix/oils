@@ -22,4 +22,4 @@ def Format(arena, node):
     TODO: implement formatter (on a coarse tree)
     """
     cursor = ysh_ify.Cursor(arena, mylib.Stdout())
-    cursor.PrintUntilSpid(arena.LastSpanId())
+    cursor.PrintUntilEnd()

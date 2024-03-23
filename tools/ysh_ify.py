@@ -94,9 +94,6 @@ class Cursor(object):
     """
     API to print/transform a complete source file, stored in a single arena.
 
-    TODO: Can we remove PrintUntilSpid() and SkipUntilSpid() and just use token
-    EQUALITY?  Get rid of span ID altogether.
-
     In, core/alloc.py, SnipCodeBlock() and SnipCodeString work on lines.  They
     don't iterate over tokens.
 
@@ -112,7 +109,7 @@ class Cursor(object):
         self.f = f
         self.next_span_id = 0
 
-    def PrintUntilSpid(self, until_span_id):
+    def _PrintUntilSpid(self, until_span_id):
         # type: (int) -> None
 
         # Sometimes we add +1
@@ -137,7 +134,7 @@ class Cursor(object):
 
         self.next_span_id = until_span_id
 
-    def SkipUntilSpid(self, next_span_id):
+    def _SkipUntilSpid(self, next_span_id):
         # type: (int) -> None
         """Skip everything before next_span_id.
 
@@ -150,11 +147,11 @@ class Cursor(object):
 
     def SkipUntil(self, tok):
         # type: (Token) -> None
-        self.SkipUntilSpid(tok.span_id)
+        self._SkipUntilSpid(tok.span_id)
 
     def SkipPast(self, tok):
         # type: (Token) -> None
-        self.SkipUntilSpid(tok.span_id + 1)
+        self._SkipUntilSpid(tok.span_id + 1)
 
     def PrintUntil(self, tok):
         # type: (Token) -> None
@@ -163,11 +160,15 @@ class Cursor(object):
             tok2 = self.arena.GetToken(span_id)
             assert tok == tok2
 
-        self.PrintUntilSpid(tok.span_id)
+        self._PrintUntilSpid(tok.span_id)
 
     def PrintIncluding(self, tok):
         # type: (Token) -> None
-        self.PrintUntilSpid(tok.span_id + 1)
+        self._PrintUntilSpid(tok.span_id + 1)
+
+    def PrintUntilEnd(self):
+        # type: () -> None
+        self._PrintUntilSpid(self.arena.LastSpanId())
 
 
 def LosslessCat(arena):
@@ -177,7 +178,7 @@ def LosslessCat(arena):
     doc.
     """
     cursor = Cursor(arena, mylib.Stdout())
-    cursor.PrintUntilSpid(arena.LastSpanId())
+    cursor.PrintUntilEnd()
 
 
 def PrintTokens(arena):
@@ -313,7 +314,7 @@ class YshPrinter(object):
     def End(self):
         # type: () -> None
         """Make sure we print until the end of the file."""
-        self.cursor.PrintUntilSpid(self.arena.LastSpanId())
+        self.cursor.PrintUntilEnd()
 
     def DoRedirect(self, node, local_symbols):
         # type: (Redir, Dict[str, bool]) -> None
@@ -715,19 +716,18 @@ class YshPrinter(object):
                 # if foo; then -> if foo {
                 # elif foo; then -> } elif foo {
                 for i, arm in enumerate(node.arms):
-                    # TODO: remove this usage of spids
-                    elif_spid = arm.spids[0]
-                    then_spid = arm.spids[1]
+                    elif_tok = arm.keyword
+                    then_tok = arm.then_tok
 
                     if i != 0:  # 'if' not 'elif' on the first arm
-                        self.cursor.PrintUntilSpid(elif_spid)
+                        self.cursor.PrintUntil(elif_tok)
                         self.f.write('} ')
 
                     cond = arm.cond
                     if cond.tag() == condition_e.Shell:
                         commands = cast(condition.Shell, cond).commands
-                        if len(commands) == 1 and commands[0].tag(
-                        ) == command_e.Sentence:
+                        if (len(commands) == 1 and
+                                commands[0].tag() == command_e.Sentence):
                             sentence = cast(command.Sentence, commands[0])
                             self.DoCommand(sentence, local_symbols)
 
@@ -738,8 +738,8 @@ class YshPrinter(object):
                             for child in commands:
                                 self.DoCommand(child, local_symbols)
 
-                    self.cursor.PrintUntilSpid(then_spid)
-                    self.cursor.SkipUntilSpid(then_spid + 1)
+                    self.cursor.PrintUntil(then_tok)
+                    self.cursor.SkipPast(then_tok)
                     self.f.write('{')
 
                     for child in arm.action:
@@ -749,7 +749,7 @@ class YshPrinter(object):
                 if len(node.else_action):
                     self.cursor.PrintUntil(node.else_kw)
                     self.f.write('} ')
-                    self.cursor.PrintUntilSpid(node.else_kw.span_id + 1)
+                    self.cursor.PrintIncluding(node.else_kw)
                     self.f.write(' {')
 
                     for child in node.else_action:
@@ -766,8 +766,6 @@ class YshPrinter(object):
                 to_match = None  # type: word_t
                 with tagswitch(node.to_match) as case:
                     if case(case_arg_e.YshExpr):
-                        #self.cursor.PrintUntilSpid(arms_end_spid)
-                        #self.cursor.SkipUntilSpid(arms_end_spid + 1)
                         return
                     elif case(case_arg_e.Word):
                         to_match = cast(case_arg.Word, node.to_match).w
