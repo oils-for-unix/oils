@@ -301,8 +301,6 @@ class LineLexer(object):
             # LineLexer tells Lexer to read a new line.
             return self.eol_tok
 
-        kind = consts.GetKind(tok_type)
-
         # NOTE: We're putting the arena hook in LineLexer and not Lexer because we
         # want it to be "low level".  The only thing fabricated here is a newline
         # added at the last line, so we don't end with \0.

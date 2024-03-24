@@ -244,6 +244,8 @@ class Arena(object):
 
     def NewToken(self, id_, col, length, src_line):
         # type: (int, int, int, SourceLine) -> Token
+
+        # TODO: check that length is less than 2^16 here, for C++ uint16_t
         tok = Token(id_, col, length, src_line, None)
         if self.save_tokens:
             span_id = self.num_tokens
