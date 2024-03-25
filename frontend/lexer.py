@@ -12,7 +12,6 @@ from _devbuild.gen.syntax_asdl import Token, WideToken, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str
 from mycpp.mylib import log
-from frontend import consts
 from frontend import match
 
 unused = log, Id_str
