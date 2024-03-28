@@ -1,6 +1,6 @@
 #### Long Token - 65535 bytes
 
-python3 -c 'print("echo -n %s" % ("x" * 65535))' > tmp.sh
+python2 -c 'print("echo -n %s" % ("x" * 65535))' > tmp.sh
 $SH tmp.sh > out
 wc --bytes out
 
@@ -10,7 +10,7 @@ wc --bytes out
 
 #### Token that's too long for Oils - 65536 bytes
 
-python3 -c 'print("echo -n %s" % ("x" * 65536))' > tmp.sh
+python2 -c 'print("echo -n %s" % ("x" * 65536))' > tmp.sh
 $SH tmp.sh > out
 echo status=$?
 wc --bytes out
