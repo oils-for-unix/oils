@@ -1572,7 +1572,9 @@ class Transformer(object):
                 if tok.id == Id.Arith_Colon:
                     func_name = p_atom.GetChild(i + 1).tok
 
-                return re.Capture(regex, as_name, lexer.MakeWide(func_name))
+                return re.Capture(
+                    regex, as_name,
+                    (lexer.MakeWide(func_name) if func_name else None))
 
             if tok.id == Id.Arith_Colon:
                 # | ':' '(' regex ')'
