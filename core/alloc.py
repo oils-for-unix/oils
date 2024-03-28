@@ -3,8 +3,9 @@ alloc.py - strategies for managing SourceLine and Token
 
 """
 
-from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine
+from _devbuild.gen.syntax_asdl import source_t, Token, SourceLine, loc
 from asdl import runtime
+from core import error
 from mycpp.mylib import log
 
 from typing import List, Dict, Any
@@ -244,6 +245,11 @@ class Arena(object):
 
     def NewToken(self, id_, col, length, src_line):
         # type: (int, int, int, SourceLine) -> Token
+
+        if length >= 65536:
+            raise error.Parse(
+                '',  # ignored message
+                loc.TokenTooLong(src_line, id_, length, col))
 
         # TODO: check that length is less than 2^16 here, for C++ uint16_t
         tok = Token(id_, col, length, src_line, None)

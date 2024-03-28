@@ -1,5 +1,32 @@
+#### Long Token - 65535 bytes
 
-#### Bad var sub
+python3 -c 'print("echo -n %s" % ("x" * 65535))' > tmp.sh
+$SH tmp.sh > out
+wc --bytes out
+
+## STDOUT:
+65535 out
+## END
+
+#### Token that's too long for Oils - 65536 bytes
+
+python3 -c 'print("echo -n %s" % ("x" * 65536))' > tmp.sh
+$SH tmp.sh > out
+echo status=$?
+wc --bytes out
+
+## STDOUT:
+status=2
+0 out
+## END
+
+## OK dash/bash/mksh status: 0
+## OK dash/bash/mksh STDOUT:
+status=0
+65536 out
+## END
+
+#### $% is not a parse error
 echo $%
 ## stdout: $%
 
@@ -149,10 +176,11 @@ echo len=${#a[@]}
 #### array literal inside loop is a parse error
 f() {
   for x in a=(); do
-    echo $x
+    echo x=$x
   done
   echo done
 }
+f
 ## status: 2
 ## stdout-json: ""
 ## OK mksh status: 1
@@ -165,6 +193,7 @@ f() {
       ;;
   esac
 }
+f
 ## status: 2
 ## stdout-json: ""
 ## OK mksh status: 1

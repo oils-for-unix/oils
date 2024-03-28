@@ -146,6 +146,8 @@ module syntax
   | Arith(arith_expr a)
     # e.g. for errexit blaming
   | Command(command c)
+    # the location of a token that's too long
+  | TokenTooLong(SourceLine line, id id, int length, int col)
 
   debug_frame = 
     Main(str dollar0)

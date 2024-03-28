@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from _devbuild.gen import arg_types
     from core import error
     from core.error import _ErrorWithLocation
-    from mycpp.mylib import Writer
 
 _ = log
 
@@ -92,7 +91,7 @@ def PrettyDir(dir_name, home_dir):
 
 
 def _PrintCodeExcerpt(line, col, length, f):
-    # type: (str, int, int, Writer) -> None
+    # type: (str, int, int, mylib.Writer) -> None
 
     buf = mylib.BufWriter()
 
@@ -108,6 +107,34 @@ def _PrintCodeExcerpt(line, col, length, f):
 
     # Do this all in a single write() call so it's less likely to be
     # interleaved.  See test/runtime-errors.sh errexit_multiple_processes
+    f.write(buf.getvalue())
+
+
+def _PrintTokenTooLong(loc_tok, f):
+    # type: (loc.TokenTooLong, mylib.Writer) -> None
+    line = loc_tok.line
+    col = loc_tok.col
+
+    buf = mylib.BufWriter()
+
+    buf.write('  ')
+    # Only print 10 characters, since it's probably very long
+    buf.write(line.content[:col + 10].rstrip())
+    buf.write('\n  ')
+
+    # preserve tabs, like _PrintCodeExcerpt
+    for c in line.content[:col]:
+        buf.write('\t' if c == '\t' else ' ')
+
+    buf.write('^\n')
+
+    source_str = GetLineSourceString(loc_tok.line, quote_filename=True)
+    buf.write(
+        '%s:%d: Token starting at column %d is too long: %d bytes (%s)\n' %
+        (source_str, line.line_num, loc_tok.col, loc_tok.length,
+         Id_str(loc_tok.id)))
+
+    # single write() call
     f.write(buf.getvalue())
 
 
@@ -222,6 +249,10 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     - and turn on "stack" tracing?  For 'source' and more?
     """
     f = mylib.Stderr()
+    if blame_loc.tag() == loc_e.TokenTooLong:
+        _PrintTokenTooLong(cast(loc.TokenTooLong, blame_loc), f)
+        return
+
     blame_tok = location.TokenFor(blame_loc)
     if blame_tok is None:  # When does this happen?
         f.write('[??? no location ???] %s%s\n' % (prefix, msg))
