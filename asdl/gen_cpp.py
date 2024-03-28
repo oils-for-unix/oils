@@ -332,6 +332,10 @@ class ClassDefVisitor(visitor.AsdlVisitor):
             self._EmitEnum(sum, name, depth, strong=False, is_simple=True)
             self.Emit('typedef int %s_t;' % name)
             self.Emit('')
+        elif 'uint16' in sum.generate:
+            self._EmitEnum(sum, name, depth, strong=False, is_simple=True)
+            self.Emit('typedef uint16_t %s_t;' % name)
+            self.Emit('')
         else:
             self._EmitEnum(sum, name, depth, strong=True)
 
@@ -755,7 +759,7 @@ class MethodDefVisitor(visitor.AsdlVisitor):
         self.Emit('}', depth)
 
     def VisitSimpleSum(self, sum, name, depth):
-        if 'integers' in sum.generate:
+        if 'integers' in sum.generate or 'uint16' in sum.generate:
             self._EmitStrFunction(sum, name, depth, strong=False, simple=True)
         else:
             self._EmitStrFunction(sum, name, depth, strong=True)

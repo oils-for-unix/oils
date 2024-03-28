@@ -128,7 +128,7 @@ module syntax
   # So uint16 id implies truncation.  We happen to know there are less than
   # 2^16 IDs, but it's not checked.  Yaks could check it.
 
-  Token = (uint16 id, uint16 length, int col, SourceLine? line, str? tval)
+  Token = (id id, uint16 length, int col, SourceLine? line, str? tval)
 
   WideToken = (id id, int length, int col, SourceLine? line, str? tval)
 

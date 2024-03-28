@@ -117,6 +117,7 @@ def _SumIsSimple(variant_list):
 _CODE_GEN_OPTIONS = [
     'no_namespace_suffix',  # Id.Foo instead of Id_e.Foo
     'integers',  # integer builtin_i instead of strongly typed builtin_e
+    'uint16',  # like integers, but use uint16_t instead
     'bit_set',  # not implemented: 1 << n instead of n
 
     # probably don't need this

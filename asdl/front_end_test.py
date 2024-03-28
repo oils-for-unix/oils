@@ -76,6 +76,9 @@ module foo {
   color3 = Red | Green
            generate [integers]
 
+  color4 = Blue | Purple
+           generate [uint16]
+
   -- New optional lists
   spam = (Optional[List[int]] pipe_status)
   -- Nicer way of writing it

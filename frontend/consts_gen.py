@@ -26,8 +26,9 @@ def _CreateModule(id_spec, ids):
     from asdl import ast
 
     id_variants = [ast.Constructor(name) for name, _ in ids]
+    # Pack it in 16 bits
     id_sum = ast.SimpleSum(id_variants,
-                           generate=['integers', 'no_namespace_suffix'])
+                           generate=['uint16', 'no_namespace_suffix'])
 
     kind_variants = [ast.Constructor(name) for name in id_spec.kind_name_list]
     kind_sum = ast.SimpleSum(kind_variants, generate=['no_namespace_suffix'])
@@ -256,6 +257,8 @@ def main(argv):
             f.write("""\
 #ifndef ID_KIND_ASDL_H
 #define ID_KIND_ASDL_H
+
+#include <stdint.h>  // uint16_t
 
 class BigStr;
 

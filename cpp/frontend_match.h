@@ -5,12 +5,19 @@
 
 #include "_gen/frontend/id_kind.asdl.h"  // syntax.asdl depends on this
 #include "mycpp/runtime.h"
-using id_kind_asdl::Id_t;  // TODO: proper ASDL modules
+// Disabled, see hack below
+// using id_kind_asdl::Id_t;
 
 #include "_gen/frontend/syntax.asdl.h"
 #include "_gen/frontend/types.asdl.h"
 
 namespace match {
+
+// Horrible hack that is OK because we know there are less than 2^16 Token IDs
+// uint16_t and int are interchangeable.
+// These functions will return an int, not uint16_t.  And then
+// syntax_asdl::Token() stores a uint16_t.
+typedef int Id_t;
 
 using types_asdl::lex_mode_t;
 
