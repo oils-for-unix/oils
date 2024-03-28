@@ -103,7 +103,7 @@ argv.py "${with_icc+set}" = set
 ['', '=', 'set']
 ## END
      
-#### ${v+foo} and ${v:+foo} when set -u
+#### ${s+foo} and ${s:+foo} when set -u
 set -u
 v=v
 echo v=${v:+foo}
@@ -118,18 +118,49 @@ v=
 v=
 ## END
 
+#### "${array[@]} with set -u (bash is outlier)
+case $SH in dash) exit ;; esac
+
+set -u
+
+typeset -a empty
+empty=()
+
+echo empty /"${empty[@]}"/
+echo undefined /"${undefined[@]}"/
+
+## status: 1
+## STDOUT:
+empty //
+## END
+
+## BUG bash status: 0
+## BUG bash STDOUT:
+empty //
+undefined //
+## END
+
+# empty array is unset in mksh
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+## END
+
+## N-I dash status: 0
+## N-I dash STDOUT:
+## END
+
+
 #### "${a[@]+foo}" and "${a[@]:+foo}" undefined, with set -u
 case $SH in dash) exit ;; esac
 
 set -u
 
-echo array="${array[@]+foo}"
-echo array="${array[@]:+foo}"
-## status: 0
+echo plus /"${array[@]+foo}"/
+echo plus colon /"${array[@]:+foo}"/
 
 ## STDOUT:
-array=
-array=
+plus //
+plus colon //
 ## END
 
 ## N-I dash STDOUT:

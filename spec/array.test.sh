@@ -28,9 +28,10 @@ empty=()
 argv.py ${empty[@]:-not one} "${empty[@]:-not one}"
 ## stdout: ['not', 'one', 'not one']
 
-#### nounset with empty array (design bug, makes it hard to use arrays)
+#### nounset / set -u with empty array (bug in bash 4.3, fixed in 4.4)
+
 # http://lists.gnu.org/archive/html/help-bash/2017-09/msg00005.html
-# NOTE: This used to be a bug in bash 4.3, but is fixed in bash 4.4.
+
 set -o nounset
 empty=()
 argv.py "${empty[@]}"

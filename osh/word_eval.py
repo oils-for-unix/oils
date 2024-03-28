@@ -620,6 +620,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     is_falsey = False
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
+                # TODO: allow undefined
                 is_falsey = len(val.strs) == 0
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
