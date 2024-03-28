@@ -523,7 +523,7 @@ module syntax
   Attribute = (expr obj, Token op, Token attr, str attr_name, expr_context ctx)
 
   y_lhs = 
-    Var %Token  # Id.Expr_Name
+    Var %WideToken  # Id.Expr_Name
   | Subscript %Subscript
   | Attribute %Attribute
 

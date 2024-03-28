@@ -10,6 +10,7 @@ from _devbuild.gen.syntax_asdl import (
     re_e,
     re_t,
     Token,
+    WideToken,
     SimpleVarSub,
     word_part,
     SingleQuoted,
@@ -268,8 +269,8 @@ class ExprEvaluator(object):
         UP_lhs = lhs
         with tagswitch(lhs) as case:
             if case(y_lhs_e.Var):
-                lhs = cast(Token, UP_lhs)
-                return LeftName(lexer.LazyStr(lhs), lhs)
+                lhs = cast(WideToken, UP_lhs)
+                return LeftName(lexer.LazyStr2(lhs), lexer.MakeSlim(lhs))
 
             elif case(y_lhs_e.Subscript):
                 lhs = cast(Subscript, UP_lhs)

@@ -54,6 +54,7 @@ from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
+    WideToken,
     SimpleVarSub,
     loc,
     source,
@@ -1193,8 +1194,9 @@ class WordParser(WordEmitter):
             UP_lhs = lhs
             with tagswitch(lhs) as case:
                 if case(y_lhs_e.Var):
-                    lhs = cast(Token, UP_lhs)
-                    var_checker.Check(kw_token.id, lexer.LazyStr(lhs), lhs)
+                    lhs = cast(WideToken, UP_lhs)
+                    var_checker.Check(kw_token.id, lexer.LazyStr2(lhs),
+                                      lexer.MakeSlim(lhs))
 
                 # Note: this does not cover cases like
                 # setvar (a[0])[1] = v

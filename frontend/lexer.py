@@ -61,6 +61,24 @@ def TokenEndsWith(tok, s):
 # Also: IsWhitespace, IsLeadingSpace
 
 
+def TokenVal2(tok):
+    # type: (WideToken) -> str
+    """
+    TODO: Finish WideToken refactoring; use TokenVal() everywhere
+    """
+    return tok.line.content[tok.col:tok.col + tok.length]
+
+
+def TokenSliceLeft2(tok, left_index):
+    # type: (WideToken, int) -> str
+    """
+    TODO: Finish WideToken refactoring; use TokenSliceLeft() everywhere
+    """
+    assert left_index > 0
+    start = tok.col + left_index
+    return tok.line.content[start:tok.col + tok.length]
+
+
 def TokenVal(tok):
     # type: (Token) -> str
     """Compute string value on demand."""
@@ -93,12 +111,32 @@ def TokenSlice(tok, left, right):
     return tok.line.content[start:end]
 
 
+def MakeWide(tok):
+    # type: (Token) -> WideToken
+    return WideToken(tok.id, tok.length, tok.col, tok.line, None)
+
+
+def MakeSlim(tok):
+    # type: (WideToken) -> Token
+    return Token(tok.id, tok.length, tok.col, tok.line, None)
+
+
 def LazyStr2(tok):
     # type: (WideToken) -> str
     """
-    TODO: Remove .tval from Token; use WideToken instead
+    TODO: replace LazyStr everywhere
     """
-    return ''
+    if 0:
+        LAZY_ID_HIST[tok.id] += 1
+
+    if tok.tval is None:
+        if tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $x or $2
+            # Special case for SimpleVarSub - completion also relies on this
+            tok.tval = TokenSliceLeft2(tok, 1)
+        else:
+            tok.tval = TokenVal2(tok)
+
+    return tok.tval
 
 
 def LazyStr(tok):

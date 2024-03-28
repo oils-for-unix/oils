@@ -832,7 +832,7 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    lhs_list.append(e.left)
+                    lhs_list.append(lexer.MakeWide(e.left))
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
