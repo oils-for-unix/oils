@@ -150,7 +150,7 @@ undefined //
 ## END
 
 
-#### "${a[@]+foo}" and "${a[@]:+foo}" undefined, with set -u
+#### "${undefined[@]+foo}" and "${undefined[@]:+foo}", with set -u
 case $SH in dash) exit ;; esac
 
 set -u
@@ -166,6 +166,111 @@ plus colon //
 ## N-I dash STDOUT:
 ## END
 
+#### "${a[@]+foo}" and "${a[@]:+foo}" - operators are equivalent on arrays?
+
+case $SH in dash) exit ;; esac
+
+echo '+ ' /"${array[@]+foo}"/
+echo '+:' /"${array[@]:+foo}"/
+echo
+
+typeset -a array
+array=()
+
+echo '+ ' /"${array[@]+foo}"/
+echo '+:' /"${array[@]:+foo}"/
+echo
+
+array=('')
+
+echo '+ ' /"${array[@]+foo}"/
+echo '+:' /"${array[@]:+foo}"/
+echo
+
+array=(spam eggs)
+
+echo '+ ' /"${array[@]+foo}"/
+echo '+:' /"${array[@]:+foo}"/
+echo
+
+
+## STDOUT:
++  //
++: //
+
++  //
++: //
+
++  /foo/
++: /foo/
+
++  /foo/
++: /foo/
+
+## END
+
+## BUG mksh STDOUT:
++  //
++: //
+
++  //
++: //
+
++  /foo/
++: //
+
++  /foo/
++: /foo/
+
+## END
+
+## BUG zsh STDOUT:
++  //
++: //
+
++  /foo/
++: //
+
++  /foo/
++: /foo/
+
++  /foo/
++: /foo/
+
+## END
+
+## N-I dash STDOUT:
+## END
+
+
+
+#### Nix idiom ${!hooksSlice+"${!hooksSlice}"} - was workaround for obsolete bash 4.3 bug
+
+case $SH in dash|mksh|zsh) exit ;; esac
+
+# https://oilshell.zulipchat.com/#narrow/stream/307442-nix/topic/Replacing.20bash.20with.20osh.20in.20Nixpkgs.20stdenv
+
+argv.py ${!hooksSlice+"${!hooksSlice}"}
+
+declare -a hookSlice=()
+
+argv.py ${!hooksSlice+"${!hooksSlice}"}
+
+foo=42
+bar=43
+
+declare -a hookSlice=(foo bar spam eggs)
+
+argv.py ${!hooksSlice+"${!hooksSlice}"}
+
+## STDOUT:
+[]
+[]
+[]
+## END
+
+## OK dash/mksh/zsh STDOUT:
+## END
 
 #### ${v-foo} and ${v:-foo} when set -u
 set -u

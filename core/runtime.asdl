@@ -48,7 +48,7 @@ module runtime
   coerced = Int | Float | Neither
 
   # evaluation state for BracedVarSub 
-  VarSubState = (bool join_array, bool is_type_query)
+  VarSubState = (bool join_array, bool is_type_query, bool has_test_op)
 
   # A Cell is a wrapper for a value.
   # TODO: add location for declaration for 'assigning const' error

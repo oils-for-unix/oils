@@ -1020,7 +1020,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             UP_val = val
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
-                    val = self._EmptyBashArrayOrError(part.token)
+                    if not vsub_state.has_test_op:
+                        val = self._EmptyBashArrayOrError(part.token)
                 elif case2(value_e.Str):
                     val = cast(value.Str, UP_val)
                     e_die("Can't index string with @", loc.WordPart(part))
@@ -1034,7 +1035,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             UP_val = val
             with tagswitch(val) as case2:
                 if case2(value_e.Undef):
-                    val = self._EmptyBashArrayOrError(part.token)
+                    if not vsub_state.has_test_op:
+                        val = self._EmptyBashArrayOrError(part.token)
                 elif case2(value_e.Str):
                     val = cast(value.Str, UP_val)
                     e_die("Can't index string with *", loc.WordPart(part))
@@ -1298,29 +1300,33 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # $* decays
             val = self._EvalSpecialVar(part.token.id, quoted, vsub_state)
 
-        # Type query ${array@a} is a STRING, not an array
-        # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
-        # ${array[@]@Q}
-        # TODO: An IR for ${} might simplify these lengthy conditions
         suffix_op_ = part.suffix_op
-        if (suffix_op_ and suffix_op_.tag() == suffix_op_e.Nullary and
-                cast(Token, suffix_op_).id == Id.VOp0_a):
-            vsub_state.is_type_query = True
+        if suffix_op_:
+            UP_op = suffix_op_
+            with tagswitch(suffix_op_) as case:
+                if case(suffix_op_e.Nullary):
+                    suffix_op_ = cast(Token, UP_op)
+
+                    # Type query ${array@a} is a STRING, not an array
+                    # NOTE: ${array@Q} is ${array[0]@Q} in bash, which is different than
+                    # ${array[@]@Q}
+                    if suffix_op_.id == Id.VOp0_a:
+                        vsub_state.is_type_query = True
+
+                elif case(suffix_op_e.Unary):
+                    suffix_op_ = cast(suffix_op.Unary, UP_op)
+
+                    # Do the _EmptyStrOrError/_EmptyBashArrayOrError up front, EXCEPT in
+                    # the case of Kind.VTest
+                    if consts.GetKind(suffix_op_.op.id) == Kind.VTest:
+                        vsub_state.has_test_op = True
 
         # 2. Bracket Op
         val = self._EvalBracketOp(val, part, quoted, vsub_state, vtest_place)
 
-        # Do the _EmptyStrOrError up front here, EXCEPT in the case of Kind.VTest
-        suffix_is_test = False
-        UP_op = suffix_op_
-        if suffix_op_ is not None and suffix_op_.tag() == suffix_op_e.Unary:
-            suffix_op_ = cast(suffix_op.Unary, UP_op)
-            if consts.GetKind(suffix_op_.op.id) == Kind.VTest:
-                suffix_is_test = True
-
         if part.prefix_op:
             if part.prefix_op.id == Id.VSub_Pound:  # ${#var} for length
-                if not suffix_is_test:  # undef -> '' BEFORE length
+                if not vsub_state.has_test_op:  # undef -> '' BEFORE length
                     val = self._EmptyStrOrError(val, part.token)
 
                 val = self._Length(val, part.token)
@@ -1330,9 +1336,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 return  # EARLY EXIT: nothing else can come after length
 
             elif part.prefix_op.id == Id.VSub_Bang:
-                if part.bracket_op and part.bracket_op.tag(
-                ) == bracket_op_e.WholeArray:
-                    if suffix_is_test:
+                if (part.bracket_op and
+                        part.bracket_op.tag() == bracket_op_e.WholeArray):
+                    if vsub_state.has_test_op:
                         # ${!a[@]-'default'} is a non-fatal runtime error in bash.  Here
                         # it's fatal.
                         op_tok = cast(suffix_op.Unary, UP_op).op
@@ -1354,14 +1360,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = self._EvalVarRef(val, part.token, quoted, vsub_state,
                                            vtest_place)
 
-                    if not suffix_is_test:  # undef -> '' AFTER indirection
+                    if not vsub_state.has_test_op:  # undef -> '' AFTER indirection
                         val = self._EmptyStrOrError(val, part.token)
 
             else:
                 raise AssertionError(part.prefix_op)
 
         else:
-            if not suffix_is_test:  # undef -> '' if no prefix op
+            if not vsub_state.has_test_op:  # undef -> '' if no prefix op
                 val = self._EmptyStrOrError(val, part.token)
 
         quoted2 = False  # another bit for @Q
