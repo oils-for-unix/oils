@@ -32,6 +32,7 @@ def _CreateModule(id_spec, ids):
     kind_variants = [ast.Constructor(name) for name in id_spec.kind_name_list]
     kind_sum = ast.SimpleSum(kind_variants, generate=['no_namespace_suffix'])
 
+    # Id = Word_Compound | Arith_Semi | Arith_Comma | ...
     id_ = ast.TypeDecl('Id', id_sum)
     kind_ = ast.TypeDecl('Kind', kind_sum)
 

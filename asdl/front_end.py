@@ -415,6 +415,7 @@ class ASDLParser(object):
 _PRIMITIVE_TYPES = [
     'string',
     'int',
+    'uint16',  # used for Token length - should we generalize this?
     'BigInt',
     'float',
     'bool',

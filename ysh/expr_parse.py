@@ -71,14 +71,16 @@ def _Classify(gr, tok):
     # calling make_label() and make_first().  See classify() in
     # opy/pgen2/driver.py.
 
-    # TODO: use something more efficient than a Dict
-    if tok.id in gr.tokens:
-        return gr.tokens[tok.id]
+    id_ = tok.id  # mycpp fix: we need C++ to do uint16_t -> int conversion
 
-    if tok.id == Id.Unknown_DEqual:
+    # TODO: use something more efficient than a Dict
+    if id_ in gr.tokens:
+        return gr.tokens[id_]
+
+    if id_ == Id.Unknown_DEqual:
         p_die('Use === to be exact, or ~== to convert types', tok)
 
-    if tok.id == Id.Unknown_Tok:
+    if id_ == Id.Unknown_Tok:
         type_str = ''
     else:
         type_str = ' (%s)' % ui.PrettyId(tok.id)
@@ -100,12 +102,11 @@ _OTHER_BALANCE = {
 # yapf: enable
 
 
-def _PushOilTokens(parse_ctx, gr, p, lex):
+def _PushYshTokens(parse_ctx, gr, p, lex):
     # type: (ParseContext, Grammar, parse.Parser, Lexer) -> Token
     """Push tokens onto pgen2's parser.
 
-    Returns the last token so it can be reused/seen by the
-    CommandParser.
+    Returns the last token so it can be reused/seen by the CommandParser.
     """
     #log('keywords = %s', gr.keywords)
     #log('tokens = %s', gr.tokens)
@@ -339,7 +340,7 @@ class ExprParser(object):
         # Reuse the parser
         self.push_parser.setup(start_symbol, self.pnode_alloc)
         try:
-            last_token = _PushOilTokens(self.parse_ctx, self.gr,
+            last_token = _PushYshTokens(self.parse_ctx, self.gr,
                                         self.push_parser, lexer)
         except parse.ParseError as e:
             #log('ERROR %s', e)

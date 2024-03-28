@@ -53,6 +53,7 @@ class CEnumVisitor(visitor.AsdlVisitor):
 _PRIMITIVES = {
     'string': 'BigStr*',  # declared in containers.h
     'int': 'int',
+    'uint16': 'uint16_t',
     'BigInt': 'mops::BigInt',
     'float': 'double',
     'bool': 'bool',
@@ -148,9 +149,7 @@ def _DefaultValue(typ, conditional=True):
     elif isinstance(typ, ast.NamedType):
         type_name = typ.name
 
-        if type_name == 'int':
-            default = '-1'
-        elif type_name == 'BigInt':
+        if type_name in ('int', 'uint16', 'BigInt'):
             default = '-1'
         elif type_name == 'id':  # hard-coded HACK
             default = '-1'
@@ -193,7 +192,7 @@ def _HNodeExpr(abbrev, typ, var_name):
         if type_name == 'bool':
             code_str = "Alloc<hnode::Leaf>(%s ? runtime::TRUE_STR : runtime::FALSE_STR, color_e::OtherConst)" % var_name
 
-        elif type_name == 'int':
+        elif type_name in ('int', 'uint16'):
             code_str = 'Alloc<hnode::Leaf>(str(%s), color_e::OtherConst)' % var_name
 
         elif type_name == 'BigInt':

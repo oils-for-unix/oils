@@ -13,6 +13,7 @@ _ = log  # shut up lint
 _PRIMITIVES = {
     'string': 'str',
     'int': 'int',
+    'uint16': 'int',
     'BigInt': 'mops.BigInt',
     'float': 'float',
     'bool': 'bool',
@@ -128,7 +129,7 @@ def _HNodeExpr(abbrev, typ, var_name):
         if type_name == 'bool':
             code_str = "hnode.Leaf('T' if %s else 'F', color_e.OtherConst)" % var_name
 
-        elif type_name == 'int':
+        elif type_name in ('int', 'uint16'):
             code_str = 'hnode.Leaf(str(%s), color_e.OtherConst)' % var_name
 
         elif type_name == 'BigInt':
