@@ -1572,7 +1572,7 @@ class Transformer(object):
                 if tok.id == Id.Arith_Colon:
                     func_name = p_atom.GetChild(i + 1).tok
 
-                return re.Capture(regex, as_name, func_name)
+                return re.Capture(regex, as_name, lexer.MakeWide(func_name))
 
             if tok.id == Id.Arith_Colon:
                 # | ':' '(' regex ')'
@@ -1603,7 +1603,7 @@ class Transformer(object):
             n = p_range.NumChildren()
             if n == 1:  # {3}
                 tok = p_range.GetChild(0).tok
-                return tok  # different operator than + * ?
+                return lexer.MakeWide(tok)  # different operator than + * ?
 
             if n == 2:
                 if p_range.GetChild(0).tok.id == Id.Expr_DecInt:  # {,3}

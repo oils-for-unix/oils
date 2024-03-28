@@ -4,7 +4,7 @@ module value
 {
   # import from frontend/syntax.asdl
   use frontend syntax {
-    loc Token
+    loc Token WideToken
     expr command
     DoubleQuoted
     re proc_sig 
@@ -48,7 +48,7 @@ module value
     # for BASH_REMATCH or ~ with a string
     No
     # These lists are indexed by group number, and will have None entries
-  | Yes(List[value?] convert_funcs, List[Token?] convert_toks,
+  | Yes(List[value?] convert_funcs, List[WideToken?] convert_toks,
         List[str?] capture_names)
 
   RegexMatch = (str s, List[int] indices, eggex_ops ops)
@@ -90,7 +90,7 @@ module value
     # expr is spliced
     # / d+; ignorecase / -> '[[:digit:]]+' REG_ICASE
   | Eggex(re spliced, str canonical_flags,
-          List[value?] convert_funcs, List[Token?] convert_toks,
+          List[value?] convert_funcs, List[WideToken?] convert_toks,
           # str? is because some groups are not named
           str? as_ere, List[str?] capture_names)
 

@@ -515,7 +515,8 @@ class ArithEvaluator(object):
         if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
                 node.tag() == arith_expr_e.VarSub):
             vsub = cast(WideToken, node)
-            if word_eval.ShouldArrayDecay(lexer.LazyStr2(vsub), self.exec_opts):
+            if word_eval.ShouldArrayDecay(lexer.LazyStr2(vsub),
+                                          self.exec_opts):
                 val = word_eval.DecayArray(val)
 
         i = self._ValToIntOrError(val, node)

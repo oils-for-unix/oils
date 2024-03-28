@@ -642,7 +642,8 @@ module syntax
 
   # NOTE: modifier is unused now, can represent L or P
   re_repeat =
-    Op %Token  # + * ? or Expr_DecInt for x{3}
+    Op %Token  # + * ? 
+  | Num %WideToken  # Expr_DecInt for x{3}
   | Range(Token? left, str lower, str upper, Token? right)  # dot{1,2}
   # Haven't implemented the modifier, e.g. x{+ P}
   # | Num(Token times, id modifier)
@@ -670,7 +671,7 @@ module syntax
   | Group(re child)
     # convert_func is filled in on evaluation
     # TODO: name and func_name can be expanded to strings
-  | Capture(re child, Token? name, Token? func_name)
+  | Capture(re child, Token? name, WideToken? func_name)
   | Backtracking(bool negated, Token name, re child)
 
     # \u{ff} is parsed as this, but SingleQuoted also evaluates to it

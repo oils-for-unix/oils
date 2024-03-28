@@ -4,7 +4,7 @@ func_eggex.py
 """
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_t, Token
+from _devbuild.gen.syntax_asdl import loc_t, WideToken
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_e, eggex_ops_t, regex_match_e,
                                       RegexMatch)
@@ -52,7 +52,7 @@ class _MatchCallable(vm._Callable):
                 val = value.Str(match.s[start:end])  # type: value_t
 
                 convert_func = None  # type: Optional[value_t]
-                convert_tok = None  # type: Optional[Token]
+                convert_tok = None  # type: Optional[WideToken]
                 with tagswitch(match.ops) as case:
                     if case(eggex_ops_e.Yes):
                         ops = cast(eggex_ops.Yes, match.ops)
