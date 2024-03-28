@@ -141,6 +141,7 @@ module syntax
   loc = 
     Missing  # equivalent of runtime.NO_SPID
   | Token %Token
+  | WideToken %WideToken
     # Very common case: argv arrays need original location
   | ArgWord %CompoundWord
   | WordPart(word_part p)
@@ -271,12 +272,12 @@ module syntax
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs =
     Name(Token left, str name)  # Lit_VarLike foo=
-                                # TODO: Could be Name %Token
+                                # TODO: Could be Name %WideToken
   | IndexedName(Token left, str name, arith_expr index)
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
-    VarSub %Token          # e.g. $(( x ))  Id.Arith_VarLike
+    VarSub %WideToken          # e.g. $(( x ))  Id.Arith_VarLike
   | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
@@ -489,7 +490,7 @@ module syntax
   # - Equivalence classes are [=
 
   printf_part =
-    Literal %Token
+    Literal %WideToken
     # flags are 0 hyphen space + #
     # type is 's' for %s, etc.
   | Percent(List[Token] flags, Token? width, Token? precision, Token type)
@@ -657,7 +658,7 @@ module syntax
   | CharClass(bool negated, List[char_class_term] terms)
 
     # @D
-  | Splice(Token name, str var_name)  # TODO: Splice %Token
+  | Splice(Token name, str var_name)  # TODO: Splice %WideToken
 
   | SingleQuoted %SingleQuoted
 

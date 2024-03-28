@@ -27,6 +27,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part_t,
     CompoundWord,
     Token,
+    WideToken,
     SimpleVarSub,
     ShArrayLiteral,
     SingleQuoted,
@@ -42,6 +43,7 @@ from _devbuild.gen.syntax_asdl import (
     Eggex,
 )
 from _devbuild.gen.value_asdl import LeftName
+from frontend import lexer
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
 
@@ -76,6 +78,10 @@ def TokenFor(loc_):
                 return tok
             else:
                 return None
+
+        elif case(loc_e.WideToken):
+            wide_tok = cast(WideToken, UP_location)
+            return lexer.MakeSlim(wide_tok)
 
         elif case(loc_e.ArgWord):
             w = cast(CompoundWord, UP_location)
@@ -181,9 +187,9 @@ def TokenForArith(node):
     UP_node = node
     with tagswitch(node) as case:
         if case(arith_expr_e.VarSub):
-            vsub = cast(Token, UP_node)
+            vsub = cast(WideToken, UP_node)
             # $(( x ))
-            return vsub
+            return lexer.MakeSlim(vsub)
 
         elif case(arith_expr_e.Word):
             w = cast(CompoundWord, UP_node)

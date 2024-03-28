@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     loc_t,
     source,
     Token,
+    WideToken,
     CompoundWord,
     printf_part,
     printf_part_e,
@@ -138,7 +139,7 @@ class _FormatStringParser(object):
                 # parse time.
                 # Users should use $'' or the future static printf ${x %.3f}.
 
-                parts.append(self.cur_token)
+                parts.append(lexer.MakeWide(self.cur_token))
 
             elif self.token_type == Id.Format_Percent:
                 parts.append(self._ParseFormatStr())
@@ -186,12 +187,12 @@ class Printf(vm._Builtin):
             for part in parts:  # loop over parsed format string
                 UP_part = part
                 if part.tag() == printf_part_e.Literal:
-                    part = cast(Token, UP_part)
+                    part = cast(WideToken, UP_part)
                     if part.id == Id.Format_EscapedPercent:
                         s = '%'
                     else:
                         s = word_compile.EvalCStringToken(
-                            part.id, lexer.LazyStr(part))
+                            part.id, lexer.LazyStr2(part))
                     out.append(s)
 
                 elif part.tag() == printf_part_e.Percent:
