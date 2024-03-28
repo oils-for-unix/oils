@@ -15,7 +15,7 @@ def _Name(s):
     #return lexer.DummyToken(Id.Expr_Name, s)
     src = source.Stdin('')
     source_line = SourceLine(1, s, src)
-    return Token(Id.Expr_Name, 0, len(s), source_line, None)
+    return Token(Id.Expr_Name, len(s), 0, source_line, None)
 
 
 class RegexTranslateTest(unittest.TestCase):

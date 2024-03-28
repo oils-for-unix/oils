@@ -127,7 +127,7 @@ def DummyToken(id_, val):
 
     col = -1
     length = -1
-    return Token(id_, col, length, None, val)
+    return Token(id_, length, col, None, val)
 
 
 class LineLexer(object):

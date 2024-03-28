@@ -251,8 +251,7 @@ class Arena(object):
                 '',  # ignored message
                 loc.TokenTooLong(src_line, id_, length, col))
 
-        # TODO: check that length is less than 2^16 here, for C++ uint16_t
-        tok = Token(id_, col, length, src_line, None)
+        tok = Token(id_, length, col, src_line, None)
         if self.save_tokens:
             span_id = self.num_tokens
             self.num_tokens += 1
