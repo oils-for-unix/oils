@@ -11,7 +11,7 @@ TEST lexer_test() {
 
   match::SimpleLexer* lex = match::BraceRangeLexer(StrFromC("{-1..22}"));
 
-  List<Tuple2<Id_t, BigStr*>*>* toks = lex->Tokens();
+  auto toks = lex->Tokens();
   for (int i = 0; i < len(toks); i++) {
     auto* t = toks->at(i);
     int id = t->at0();
