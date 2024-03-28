@@ -54,13 +54,15 @@ show
 ['foo bar', 'baz']
 ## END
 
-#### Same as above with set -u
+#### Similar to above with set -u
 show() {
   echo show
 
   # bash gives an error here - !hookSlice unbound, even though preHooks exists
   # OSH currently does the "logical" thing
-  argv.py ${!hooksSlice}
+
+  # NOT testing this -- I think this is WHAT NIX WORKS AROUND WITH
+  #argv.py ${!hooksSlice}
 
   argv.py ${!hooksSlice+"${!hooksSlice}"}
 }
@@ -76,9 +78,10 @@ show
 
 ## STDOUT:
 show
+[]
+show
+['foo bar', 'baz']
 ## END
-## status: 1
-
 
 #### ${!ref} to undefined array
 
