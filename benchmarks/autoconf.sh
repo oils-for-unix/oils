@@ -93,41 +93,62 @@ strace-tasks() {
   echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh"
 }
 
+readonly AUTOCONF_DIR=_tmp/autoconf
+
 measure-syscalls() {
-  local base_dir=$REPO_ROOT/_tmp/strace
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
+
+  local base_dir=$REPO_ROOT/$AUTOCONF_DIR
+
   rm -r -f -v $base_dir
 
   strace-tasks | while read -r sh_label sh_path; do
     local dir=$base_dir/$sh_label
     mkdir -p $dir
 
-    local counts=$base_dir/$sh_label.txt
+    local counts_dir=$base_dir/$sh_label
+    mkdir -p $counts_dir
 
     pushd $dir
     #strace -o $counts -c $sh_path $PY_CONF
     # See how many external processes are started?
     #strace -o $counts -ff -e execve $sh_path $PY_CONF
-    strace -o $counts -ff $sh_path $PY_CONF
+    strace -o $counts_dir/syscalls -ff $sh_path $PY_CONF
     popd
   done
 }
 
+# --- _tmp/autoconf/bash
+# 6047
+# 4621
+# --- _tmp/autoconf/dash
+# 6088
+# 4627
+# --- _tmp/autoconf/osh
+# 5691
+# 4631
+#
+# Woah we start fewer processes!  But are not faster?
+
 grep-exec() {
-  local sh=$1
-  egrep --no-filename -o 'execve\("[^"]+' _tmp/strace/$sh.txt* 
+  egrep --no-filename -o 'execve\("[^"]+' "$@"
 }
 
-analyze-strace() {
-  #local sh=${1:-bash}
-  for sh in bash dash osh; do
-    echo "=== $sh ==="
+count-processes() {
+  for sh_dir in $AUTOCONF_DIR/*; do
+    echo "--- $sh_dir"
+    ls $sh_dir/* | wc -l
+    grep-exec $sh_dir/syscalls.* | wc -l
     echo
 
-    ls _tmp/strace/$sh.txt* | wc -l
-    echo
-    grep-exec $sh | wc -l
-    echo
-    grep-exec $sh | sort | uniq -c | sort -n | tail -n 20
+    if false; then
+      grep-exec $sh_dir/syscalls.* | sort | uniq -c | sort -n | tail -n 20
+      echo
+    fi
+
   done
 }
 
