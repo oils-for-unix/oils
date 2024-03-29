@@ -300,6 +300,8 @@ def AddKinds(spec):
             'DPipe',  # ||
             'Semi',  # ;
             'DSemi',  # ;; for case
+            'SemiAmp',  # ;& for case
+            'DSemiAmp',  # ;;& for case
             'LParen',  # For subshell.  Not Kind.Left because it's NOT a WordPart.
             'RParen',  # Default, will be translated to Id.Right_*
             'DLeftParen',

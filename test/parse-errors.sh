@@ -630,6 +630,42 @@ cases-in-files() {
   done
 }
 
+test-case() {
+  readonly -a YES=(
+    'case $x in foo) echo ;; esac'
+    #'case $x in foo) echo ;& esac'
+    #'case $x in foo) echo ;;& esac'
+  )
+
+  readonly -a NO=(
+    ';&'
+    'echo ;&'
+    'echo ;;&'
+  )
+
+  for c in "${YES[@]}"; do
+    echo "--- test-case YES $c"
+
+    _osh-should-parse "$c"
+    echo
+
+    bash -n -c "$c"
+    echo bash=$?
+  done
+
+  for c in "${NO[@]}"; do
+    echo "--- test-case NO $c"
+
+    _osh-parse-error "$c"
+
+    set +o errexit
+    bash -n -c "$c"
+    echo bash=$?
+    set -o errexit
+  done
+
+}
+
 all() {
   section-banner 'Cases in Files'
 

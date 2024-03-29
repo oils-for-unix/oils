@@ -160,7 +160,10 @@ _UNQUOTED = _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + _VARS + [
     C('&&', Id.Op_DAmp),
     C('||', Id.Op_DPipe),
     C(';', Id.Op_Semi),
+    # Case terminators
     C(';;', Id.Op_DSemi),
+    C(';&', Id.Op_SemiAmp),
+    C(';;&', Id.Op_DSemiAmp),
     C('(', Id.Op_LParen),
     C(')', Id.Op_RParen),
     R(r'[^\0]', Id.Lit_Other),  # any other single char is a literal
