@@ -6,8 +6,15 @@
 #   benchmarks/autoconf.sh <function name>
 #
 # Examples:
-#   $0 measure-alloc-overhead
+#   $0 patch-pyconf    # times builtin
+#   $0 measure-times   # time-tsv with gc stats
+#   $0 report-times    # times builtin
+#
 #   $0 measure-syscalls
+#   $0 report-processes
+#
+# Simpler:
+#   $0 measure-rusage  # time-tsv
 
 set -o nounset
 set -o pipefail
@@ -19,13 +26,13 @@ source benchmarks/cachegrind.sh  # with-cachegrind
 source benchmarks/callgrind.sh  # with-cachegrind
 source test/tsv-lib.sh  # $TAB
 
-readonly BASE_DIR=_tmp/autoconf
+readonly BASE_DIR=$REPO_ROOT/_tmp/autoconf
 readonly PY_CONF=$REPO_ROOT/Python-2.7.13/configure
 
 #
 # Trying to measure allocation/GC overhead 
 #
-# This doesn't help because bumpleak/bumproot are **slower** on bigger heaps.
+# This DOES NOT HELP because bumpleak/bumproot are **slower** on bigger heaps.
 # There's less cache locality!
 #
 
@@ -43,7 +50,7 @@ cpython-setup() {
 }
 
 measure-alloc-overhead() {
-  local base_dir=$REPO_ROOT/$BASE_DIR/cpython-configure
+  local base_dir=$BASE_DIR/alloc-overhead
   rm -r -f -v $base_dir
 
   cpython-configure-tasks | while read -r variant osh; do
@@ -84,16 +91,58 @@ measure-alloc-overhead() {
 }
 
 #
+# Compare bash/dash/osh locally
+#
+
+measure-rusage() {
+  local base_dir=$BASE_DIR/rusage
+  rm -r -f -v $base_dir
+
+  shell-tasks | while read -r sh_label sh_path; do
+
+    local task_dir=$base_dir/$sh_label
+
+    mkdir -p $task_dir
+    pushd $task_dir > /dev/null
+
+    local -a flags=(
+        --output "$base_dir/$sh_label.tsv" 
+        --rusage
+    )
+
+    local -a time_argv
+
+    time_argv=(
+      time-tsv --print-header
+      "${flags[@]}"
+      --field sh_label
+    )
+    "${time_argv[@]}"
+
+    time_argv=(
+      time-tsv --append
+      "${flags[@]}"
+      --field "$sh_label"
+      -- $sh_path $PY_CONF
+    )
+
+    #echo "${time_argv[@]}"
+    "${time_argv[@]}"
+
+    popd > /dev/null
+
+  done
+}
+
+#
 # Now try strace
 #
 
-strace-tasks() {
+shell-tasks() {
   echo "bash${TAB}bash"
   echo "dash${TAB}dash"
   echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh"
 }
-
-readonly AUTOCONF_DIR=_tmp/autoconf
 
 measure-syscalls() {
   local osh=_bin/cxx-opt/osh
@@ -101,11 +150,11 @@ measure-syscalls() {
 
   ninja $osh
 
-  local base_dir=$REPO_ROOT/$AUTOCONF_DIR
+  local base_dir=$BASE_DIR/syscalls
 
   rm -r -f -v $base_dir
 
-  strace-tasks | while read -r sh_label sh_path; do
+  shell-tasks | while read -r sh_label sh_path; do
     local dir=$base_dir/$sh_label
     mkdir -p $dir
 
@@ -137,8 +186,8 @@ grep-exec() {
   egrep --no-filename -o 'execve\("[^"]+' "$@"
 }
 
-count-processes() {
-  for sh_dir in $AUTOCONF_DIR/*; do
+report-processes() {
+  for sh_dir in $BASE_DIR/syscalls/*; do
     echo "--- $sh_dir"
     ls $sh_dir/* | wc -l
     grep-exec $sh_dir/syscalls.* | wc -l
@@ -212,17 +261,17 @@ patch-pyconf() {
   echo 'times > $SH_BENCHMARK_TIMES' >> $PY_CONF
 }
 
-measure-elapsed() {
+measure-times() {
   local osh=_bin/cxx-opt/osh
   ninja $osh
 
-  local base_dir=$REPO_ROOT/_tmp/elapsed
+  local base_dir=$BASE_DIR/times
   rm -r -f -v $base_dir
 
   local trace_dir=$base_dir/oils-trace
   mkdir -p $trace_dir
 
-  strace-tasks | while read -r sh_label sh_path; do
+  shell-tasks | while read -r sh_label sh_path; do
     #case $sh_label in bash|dash) continue ;; esac
 
     local dir=$base_dir/$sh_label
@@ -264,6 +313,13 @@ measure-elapsed() {
 
     popd
   done
+}
+
+report-times() {
+  head $BASE_DIR/times/*.tsv
+  echo
+  head $BASE_DIR/times/*.times.txt
+  echo
 }
 
 ### Why is clone() taking longer according to strace?
