@@ -54,7 +54,6 @@ from _devbuild.gen.types_asdl import (lex_mode_t, lex_mode_e)
 from _devbuild.gen.syntax_asdl import (
     BoolParamBox,
     Token,
-    WideToken,
     SimpleVarSub,
     loc,
     source,
@@ -913,8 +912,7 @@ class WordParser(WordEmitter):
             else:
                 raise AssertionError(self.cur_token)
 
-        return word_part.ExtGlob(WideToken(left_token, None), arms,
-                                 right_token)
+        return word_part.ExtGlob(left_token, arms, right_token)
 
     def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
         # type: (Optional[Token], bool, List[word_part_t]) -> None
@@ -957,7 +955,7 @@ class WordParser(WordEmitter):
                             p_die("Literal $ should be quoted like \$",
                                   self.cur_token)
 
-                    part = WideToken(self.cur_token, None)
+                    part = self.cur_token
                 out_parts.append(part)
 
             elif self.token_kind == Kind.Left:
@@ -970,7 +968,7 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.VSub:
                 tok = self.cur_token
-                part = SimpleVarSub(WideToken(tok, None))
+                part = SimpleVarSub(tok)
                 out_parts.append(part)
                 # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
                 # later.
@@ -981,7 +979,7 @@ class WordParser(WordEmitter):
                     num_end_tokens += 1
 
                 # In a here doc, the right quote is literal!
-                out_parts.append(WideToken(self.cur_token, None))
+                out_parts.append(self.cur_token)
 
             elif self.token_kind == Kind.Eof:
                 if left_token:
@@ -1195,9 +1193,8 @@ class WordParser(WordEmitter):
             UP_lhs = lhs
             with tagswitch(lhs) as case:
                 if case(y_lhs_e.Var):
-                    lhs = cast(WideToken, UP_lhs)
-                    var_checker.Check(kw_token.id, lexer.LazyStr2(lhs),
-                                      lhs.tok)
+                    lhs = cast(Token, UP_lhs)
+                    var_checker.Check(kw_token.id, lexer.LazyStr(lhs), lhs)
 
                 # Note: this does not cover cases like
                 # setvar (a[0])[1] = v
@@ -1625,7 +1622,7 @@ class WordParser(WordEmitter):
             part = word_part.EscapedLiteral(self.cur_token,
                                             ch)  # type: word_part_t
         else:
-            part = WideToken(self.cur_token, None)
+            part = self.cur_token
 
         if is_first and self.token_type == Id.Lit_VarLike:  # foo=
             parts.append(part)
@@ -1751,8 +1748,7 @@ class WordParser(WordEmitter):
             elif self.token_kind == Kind.VSub:
                 vsub_token = self.cur_token
 
-                part = SimpleVarSub(WideToken(vsub_token,
-                                              None))  # type: word_part_t
+                part = SimpleVarSub(vsub_token)  # type: word_part_t
                 w.parts.append(part)
 
             elif self.token_kind == Kind.ExtGlob:

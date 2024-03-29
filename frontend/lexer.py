@@ -96,26 +96,38 @@ def TokenSlice(tok, left, right):
 def LazyStr2(tok):
     # type: (WideToken) -> str
     """
-    TODO: rename to LazyStr()
+    TODO: Remove .tval from Token; use WideToken instead
+    """
+    return ''
+
+
+def LazyStr(tok):
+    # type: (Token) -> str
+    """Materialize the tval on demand, with special case for $myvar.
+
+    Most tokens do NOT need strings.  We avoid allocating them in the lexer.
+
+    Note: SingleQuoted could have lazy sval, NOT at the token level.
     """
     if 0:
         LAZY_ID_HIST[tok.id] += 1
 
-    if tok.lazy_str is None:
-        if tok.tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $x or $2
+    if tok.tval is None:
+        if tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $x or $2
             # Special case for SimpleVarSub - completion also relies on this
-            tok.lazy_str = TokenSliceLeft(tok.tok, 1)
+            tok.tval = TokenSliceLeft(tok, 1)
         else:
-            tok.lazy_str = TokenVal(tok.tok)
+            tok.tval = TokenVal(tok)
 
-    return tok.lazy_str
+    return tok.tval
 
 
 def DummyToken(id_, val):
     # type: (int, str) -> Token
 
-    # No line
-    return Token(id_, -1, -1, None)
+    col = -1
+    length = -1
+    return Token(id_, length, col, None, val)
 
 
 class LineLexer(object):

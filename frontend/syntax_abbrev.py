@@ -76,16 +76,16 @@ def _SimpleVarSub(obj):
     p_node = runtime.NewRecord('$')
     p_node.abbrev = True
 
-    tok = obj.tok.tok
-    if tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $myvar or $1
+    if obj.tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $myvar or $1
         # We want to show the variable name
         # _AbbreviateToken(obj.tok, p_node.unnamed_fields)
+        tok = obj.tok
         # Omit $
         var_name = tok.line.content[tok.col + 1:tok.col + tok.length]
         n1 = runtime.NewLeaf(var_name, color_e.StringConst)
         p_node.unnamed_fields.append(n1)
     else:  # $?
-        n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
+        n1 = runtime.NewLeaf(Id_str(obj.tok.id), color_e.OtherConst)
         p_node.unnamed_fields.append(n1)
 
     return p_node
@@ -127,19 +127,17 @@ def _expr__Var(obj):
     return p_node
 
 
-if 0:  # TODO: remove tok.tval usage
+def _expr__Const(obj):
+    # type: (expr.Const) -> hnode_t
+    p_node = runtime.NewRecord('Const')
+    p_node.abbrev = True
 
-    def _expr__Const(obj):
-        # type: (expr.Const) -> hnode_t
-        p_node = runtime.NewRecord('Const')
-        p_node.abbrev = True
+    tok = obj.c
+    out = p_node.unnamed_fields
 
-        tok = obj.c
-        out = p_node.unnamed_fields
+    n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
+    out.append(n1)
 
-        n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
-        out.append(n1)
-
-        n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
-        out.append(n2)
-        return p_node
+    n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
+    out.append(n2)
+    return p_node

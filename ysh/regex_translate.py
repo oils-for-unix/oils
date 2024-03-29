@@ -15,7 +15,6 @@ from _devbuild.gen.syntax_asdl import (
     re_repeat_e,
     EggexFlag,
     Token,
-    WideToken,
 )
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.value_asdl import value
@@ -231,14 +230,10 @@ def _AsPosixEre(node, parts, capture_names):
                     parts.append('*')
                 elif case(Id.Arith_QMark):
                     parts.append('?')
+                elif case(Id.Expr_DecInt):
+                    parts.append('{%s}' % lexer.LazyStr(op))
                 else:
                     raise AssertionError(op.id)
-            return
-
-        if op_tag == re_repeat_e.Num:
-            op = cast(WideToken, UP_op)
-            assert op.tok.id == Id.Expr_DecInt, op
-            parts.append('{%s}' % lexer.LazyStr2(op))
             return
 
         if op_tag == re_repeat_e.Range:

@@ -118,19 +118,19 @@ module syntax
   # WordParser._GetToken() appends to it.  But we can just use TokenVal() to
   # create garbage there.
 
-  # Token: Pack id and length into 32 bits, with special uint16 type.
-  #        We also transpose (id, col, length) -> (id, length, col) for C
-  #        struct packing.
+  # Pack id and length into 32 bits with special uint16 type.
+  # TODO: This breaks ASDL pretty printing of Id type!
+
+  # We transpose (id, col, length) -> (id, length, col) for C struct packing.
 
   # Note that ASDL generates:
   #    typedef int Id_t;
   # So uint16 id implies truncation.  We happen to know there are less than
   # 2^16 IDs, but it's not checked.  Yaks could check it.
 
-  Token = (id id, uint16 length, int col, SourceLine? line)
+  Token = (id id, uint16 length, int col, SourceLine? line, str? tval)
 
-  # Use WideToken to avoid allocating string value repeatedly
-  WideToken = (Token tok, str? lazy_str)
+  WideToken = (id id, int length, int col, SourceLine? line, str? tval)
 
   # Slight ASDL bug: CompoundWord has to be defined before using it as a shared
   # variant.  The _product_counter algorithm should be moved into a separate
@@ -196,7 +196,7 @@ module syntax
   SingleQuoted = (Token left, str sval, Token right)
 
   # e.g. Id.VSub_QMark, Id.VSub_DollarName $foo with lexer.LazyStr()
-  SimpleVarSub = (WideToken tok)
+  SimpleVarSub = (Token tok)
 
   CommandSub = (Token left_token, command child, Token right)
 
@@ -217,7 +217,7 @@ module syntax
   word_part = 
     ShArrayLiteral %ShArrayLiteral
   | BashAssocLiteral(Token left, List[AssocPair] pairs, Token right)
-  | Literal %WideToken
+  | Literal %Token
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
   | SingleQuoted %SingleQuoted
@@ -238,8 +238,9 @@ module syntax
     # {a..f} or {a..f..2} or {a..f..-2}
     # the whole range is one Token,
   | BracedRange(Token blame_tok, id kind, str start, str end, int step)
-    # extended globs are parsed statically, unlike globs
-  | ExtGlob(WideToken op, List[CompoundWord] arms, Token right)
+    # note: optional int may need special handling in ASDL
+  # extended globs are parsed statically, unlike globs
+  | ExtGlob(Token op, List[CompoundWord] arms, Token right)
 
     # YSH word_part extensions
 
@@ -270,12 +271,12 @@ module syntax
   # Note: the name 'foo' is derived from token value 'foo=' or 'foo+='
   sh_lhs =
     Name(Token left, str name)  # Lit_VarLike foo=
-                                # TODO: Could be Name %WideToken
+                                # TODO: Could be Name %Token
   | IndexedName(Token left, str name, arith_expr index)
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
-    VarSub %WideToken          # e.g. $(( x ))  Id.Arith_VarLike
+    VarSub %Token          # e.g. $(( x ))  Id.Arith_VarLike
   | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
@@ -488,7 +489,7 @@ module syntax
   # - Equivalence classes are [=
 
   printf_part =
-    Literal %WideToken
+    Literal %Token
     # flags are 0 hyphen space + #
     # type is 's' for %s, etc.
   | Percent(List[Token] flags, Token? width, Token? precision, Token type)
@@ -522,7 +523,7 @@ module syntax
   Attribute = (expr obj, Token op, Token attr, str attr_name, expr_context ctx)
 
   y_lhs = 
-    Var %WideToken  # Id.Expr_Name
+    Var %Token  # Id.Expr_Name
   | Subscript %Subscript
   | Attribute %Attribute
 
@@ -640,8 +641,7 @@ module syntax
 
   # NOTE: modifier is unused now, can represent L or P
   re_repeat =
-    Op %Token  # + * ? 
-  | Num %WideToken  # Expr_DecInt for x{3}
+    Op %Token  # + * ? or Expr_DecInt for x{3}
   | Range(Token? left, str lower, str upper, Token? right)  # dot{1,2}
   # Haven't implemented the modifier, e.g. x{+ P}
   # | Num(Token times, id modifier)
@@ -657,7 +657,7 @@ module syntax
   | CharClass(bool negated, List[char_class_term] terms)
 
     # @D
-  | Splice(Token name, str var_name)  # TODO: Splice %WideToken
+  | Splice(Token name, str var_name)  # TODO: Splice %Token
 
   | SingleQuoted %SingleQuoted
 
@@ -669,7 +669,7 @@ module syntax
   | Group(re child)
     # convert_func is filled in on evaluation
     # TODO: name and func_name can be expanded to strings
-  | Capture(re child, Token? name, WideToken? func_name)
+  | Capture(re child, Token? name, Token? func_name)
   | Backtracking(bool negated, Token name, re child)
 
     # \u{ff} is parsed as this, but SingleQuoted also evaluates to it

@@ -13,7 +13,6 @@ from _devbuild.gen.syntax_asdl import (
     CompoundWord,
     loc,
     loc_t,
-    WideToken,
 )
 from _devbuild.gen.value_asdl import value
 from builtin import hay_ysh
@@ -472,8 +471,7 @@ class ShellExecutor(vm._Executor):
                     simple.redirects[0].op.id == Id.Redir_Less):
                 # change it to __cat < file
                 # TODO: change to 'internal cat' (issue 1013)
-                tok = WideToken(lexer.DummyToken(Id.Lit_Chars, '__cat'),
-                                '__cat')
+                tok = lexer.DummyToken(Id.Lit_Chars, '__cat')
                 cat_word = CompoundWord([tok])
                 # MUTATE the command.Simple node.  This will only be done the first
                 # time in the parent process.

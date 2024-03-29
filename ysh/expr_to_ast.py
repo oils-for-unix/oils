@@ -4,7 +4,6 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str, Kind
 from _devbuild.gen.syntax_asdl import (
     Token,
-    WideToken,
     SimpleVarSub,
     loc,
     loc_t,
@@ -719,7 +718,7 @@ class Transformer(object):
                         % (bare, bare), tok)
 
                 # $? is allowed
-                return SimpleVarSub(WideToken(tok, None))
+                return SimpleVarSub(tok)
 
             else:
                 nt_name = self.number2symbol[typ]
@@ -833,7 +832,7 @@ class Transformer(object):
             with tagswitch(e) as case:
                 if case(expr_e.Var):
                     e = cast(expr.Var, UP_e)
-                    lhs_list.append(WideToken(e.left, None))
+                    lhs_list.append(e.left)
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
@@ -1573,9 +1572,7 @@ class Transformer(object):
                 if tok.id == Id.Arith_Colon:
                     func_name = p_atom.GetChild(i + 1).tok
 
-                return re.Capture(
-                    regex, as_name,
-                    (WideToken(func_name, None) if func_name else None))
+                return re.Capture(regex, as_name, func_name)
 
             if tok.id == Id.Arith_Colon:
                 # | ':' '(' regex ')'
@@ -1606,7 +1603,7 @@ class Transformer(object):
             n = p_range.NumChildren()
             if n == 1:  # {3}
                 tok = p_range.GetChild(0).tok
-                return WideToken(tok, None)
+                return tok  # different operator than + * ?
 
             if n == 2:
                 if p_range.GetChild(0).tok.id == Id.Expr_DecInt:  # {,3}

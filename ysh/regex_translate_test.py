@@ -4,16 +4,18 @@ from __future__ import print_function
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import EggexFlag
+from _devbuild.gen.syntax_asdl import EggexFlag, Token, source, SourceLine
 
 from core import error
-from core.test_lib import FakeTok
 from ysh import regex_translate
 
 
 def _Name(s):
     # Doesn't work
-    return FakeTok(Id.Expr_Name, s)
+    #return lexer.DummyToken(Id.Expr_Name, s)
+    src = source.Stdin('')
+    source_line = SourceLine(1, s, src)
+    return Token(Id.Expr_Name, len(s), 0, source_line, None)
 
 
 class RegexTranslateTest(unittest.TestCase):

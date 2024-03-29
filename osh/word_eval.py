@@ -5,7 +5,6 @@ word_eval.py - Evaluator for the word language.
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     Token,
-    WideToken,
     SimpleVarSub,
     loc,
     loc_t,
@@ -1471,8 +1470,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         vsub_state = VarSubState.CreateNull()
 
         # 1. Evaluate from (var_name, var_num, Token) -> defined, value
-        if token.tok.id == Id.VSub_DollarName:
-            var_name = lexer.LazyStr2(token)
+        if token.id == Id.VSub_DollarName:
+            var_name = lexer.LazyStr(token)
             # TODO: Special case for LINENO
             val = self.mem.GetValue(var_name)
             if val.tag() in (value_e.BashArray, value_e.BashAssoc):
@@ -1482,17 +1481,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     e_die(
                         "Array %r can't be referred to as a scalar (without @ or *)"
-                        % var_name, token.tok)
+                        % var_name, token)
 
-        elif token.tok.id == Id.VSub_Number:
-            var_num = int(lexer.LazyStr2(token))
+        elif token.id == Id.VSub_Number:
+            var_num = int(lexer.LazyStr(token))
             val = self._EvalVarNum(var_num)
 
         else:
-            val = self._EvalSpecialVar(token.tok.id, quoted, vsub_state)
+            val = self._EvalSpecialVar(token.id, quoted, vsub_state)
 
         #log('SIMPLE %s', part)
-        val = self._EmptyStrOrError(val, token.tok)
+        val = self._EmptyStrOrError(val, token)
         UP_val = val
         if val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, UP_val)
@@ -1512,15 +1511,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
         """
         part_vals = []  # type: List[part_value_t]
         self._EvalSimpleVarSub(node, part_vals, False)
-        return self._ConcatPartVals(part_vals, node.tok.tok)
+        return self._ConcatPartVals(part_vals, node.tok)
 
     def _EvalExtGlob(self, part, part_vals):
         # type: (word_part.ExtGlob, List[part_value_t]) -> None
         """Evaluate @($x|'foo'|$(hostname)) and flatten it."""
-        if part.op.tok.id == Id.ExtGlob_Comma:
+        op = part.op
+        if op.id == Id.ExtGlob_Comma:
             op_str = '@('
         else:
-            op_str = lexer.LazyStr2(part.op)
+            op_str = lexer.LazyStr(op)
         # Do NOT split these.
         part_vals.append(part_value.String(op_str, False, False))
 
@@ -1597,10 +1597,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                       loc.WordPart(part))
 
             elif case(word_part_e.Literal):
-                part = cast(WideToken, UP_part)
+                part = cast(Token, UP_part)
                 # Split if it's in a substitution.
                 # That is: echo is not split, but ${foo:-echo} is split
-                v = part_value.String(lexer.LazyStr2(part), quoted, is_subst)
+                v = part_value.String(lexer.LazyStr(part), quoted, is_subst)
                 part_vals.append(v)
 
             elif case(word_part_e.EscapedLiteral):

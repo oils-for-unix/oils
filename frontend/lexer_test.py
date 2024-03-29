@@ -34,7 +34,7 @@ def _PrintfOuterTokens(fmt):
 
 def _PrintToken(t):
     #print(t)
-    print('%20s %r' % (Id_str(t.id), lexer.TokenVal(t)))
+    print('%20s %r' % (Id_str(t.id), t.tval))
 
 
 def _PrintAllTokens(lx, lex_mode):

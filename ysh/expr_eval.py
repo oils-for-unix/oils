@@ -10,7 +10,6 @@ from _devbuild.gen.syntax_asdl import (
     re_e,
     re_t,
     Token,
-    WideToken,
     SimpleVarSub,
     word_part,
     SingleQuoted,
@@ -269,8 +268,8 @@ class ExprEvaluator(object):
         UP_lhs = lhs
         with tagswitch(lhs) as case:
             if case(y_lhs_e.Var):
-                lhs = cast(WideToken, UP_lhs)
-                return LeftName(lexer.LazyStr2(lhs), lhs.tok)
+                lhs = cast(Token, UP_lhs)
+                return LeftName(lexer.LazyStr(lhs), lhs)
 
             elif case(y_lhs_e.Subscript):
                 lhs = cast(Subscript, UP_lhs)
@@ -360,18 +359,18 @@ class ExprEvaluator(object):
         return val
 
     def CallConvertFunc(self, func_val, arg, convert_tok, call_loc):
-        # type: (value_t, value_t, WideToken, loc_t) -> value_t
+        # type: (value_t, value_t, Token, loc_t) -> value_t
         """ For Eggex captures """
         with state.ctx_YshExpr(self.mutable_opts):
             pos_args = [arg]
             named_args = {}  # type: Dict[str, value_t]
             arg_list = ArgList.CreateNull()  # There's no call site
             rd = typed_args.Reader(pos_args, named_args, arg_list)
-            rd.SetFallbackLocation(convert_tok.tok)
+            rd.SetFallbackLocation(convert_tok)
             try:
                 val = self._CallFunc(func_val, rd)
             except error.FatalRuntime as e:
-                func_name = lexer.LazyStr2(convert_tok)
+                func_name = lexer.TokenVal(convert_tok)
                 self.errfmt.Print_(
                     'Fatal error calling Eggex conversion func %r from this Match accessor'
                     % func_name, call_loc)
@@ -1170,7 +1169,7 @@ class EggexEvaluator(object):
         self.mem = mem
         self.canonical_flags = canonical_flags
         self.convert_funcs = []  # type: List[Optional[value_t]]
-        self.convert_toks = []  # type: List[Optional[WideToken]]
+        self.convert_toks = []  # type: List[Optional[Token]]
 
     def _LookupVar(self, name, var_loc):
         # type: (str, loc_t) -> value_t
@@ -1274,9 +1273,9 @@ class EggexEvaluator(object):
             elif case(re_e.Capture):  # Identical to Group
                 node = cast(re.Capture, UP_node)
                 convert_func = None  # type: Optional[value_t]
-                convert_tok = None  # type: Optional[WideToken]
+                convert_tok = None  # type: Optional[Token]
                 if node.func_name:
-                    func_name = lexer.LazyStr2(node.func_name)
+                    func_name = lexer.LazyStr(node.func_name)
                     func_val = self.mem.GetValue(func_name)
                     with tagswitch(func_val) as case:
                         if case(value_e.Func, value_e.BuiltinFunc):
@@ -1286,7 +1285,7 @@ class EggexEvaluator(object):
                             raise error.TypeErr(
                                 func_val,
                                 "Expected %r to be a func" % func_name,
-                                node.func_name.tok)
+                                node.func_name)
 
                 self.convert_funcs.append(convert_func)
                 self.convert_toks.append(convert_tok)

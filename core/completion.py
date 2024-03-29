@@ -37,7 +37,7 @@ import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (CompoundWord, word_part_e, word_t,
-                                       redir_param_e, Token, WideToken)
+                                       redir_param_e, Token)
 from _devbuild.gen.runtime_asdl import (scope_e, comp_action_e, comp_action_t)
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e)
@@ -922,8 +922,8 @@ def WordEndsWithCompDummy(w):
     last_part = w.parts[-1]
     UP_part = last_part
     if last_part.tag() == word_part_e.Literal:
-        last_part = cast(WideToken, UP_part)
-        return last_part.tok.id == Id.Lit_CompDummy
+        last_part = cast(Token, UP_part)
+        return last_part.id == Id.Lit_CompDummy
     else:
         return False
 
@@ -1050,7 +1050,8 @@ class RootCompleter(object):
                 # readline splits at ':' so we have to prepend '-$' to every completed
                 # variable name.
                 self.comp_ui_state.display_pos = t2.col + 1  # 1 for $
-                to_complete = lexer.TokenSliceLeft(t2, 1)  # s[1:]
+                # computes s[1:] for Id.VSub_DollarName
+                to_complete = lexer.LazyStr(t2)
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):
@@ -1061,7 +1062,7 @@ class RootCompleter(object):
             # echo ${P
             if t2.id == Id.VSub_Name and IsDummy(t1):
                 self.comp_ui_state.display_pos = t2.col  # no offset
-                to_complete = lexer.TokenVal(t2)
+                to_complete = lexer.LazyStr(t2)
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):
@@ -1072,7 +1073,7 @@ class RootCompleter(object):
             # echo $(( VAR
             if t2.id == Id.Lit_ArithVarLike and IsDummy(t1):
                 self.comp_ui_state.display_pos = t2.col  # no offset
-                to_complete = lexer.TokenVal(t2)
+                to_complete = lexer.LazyStr(t2)
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):
@@ -1093,7 +1094,7 @@ class RootCompleter(object):
 
                 if (len(parts) == 2 and
                         word_.LiteralId(parts[1]) == Id.Lit_CompDummy):
-                    tilde_tok = cast(WideToken, parts[0]).tok
+                    tilde_tok = cast(Token, parts[0])
 
                     # end of tilde
                     self.comp_ui_state.display_pos = tilde_tok.col + 1
@@ -1109,11 +1110,11 @@ class RootCompleter(object):
                         word_.LiteralId(parts[1]) == Id.Lit_Chars and
                         word_.LiteralId(parts[2]) == Id.Lit_CompDummy):
 
-                    chars_wide = cast(WideToken, parts[1])
+                    chars_tok = cast(Token, parts[1])
 
-                    self.comp_ui_state.display_pos = chars_wide.tok.col
+                    self.comp_ui_state.display_pos = chars_tok.col
 
-                    to_complete = lexer.LazyStr2(chars_wide)
+                    to_complete = lexer.TokenVal(chars_tok)
                     n = len(to_complete)
                     for u in pyos.GetAllUsers():  # catch errors?
                         name = u.pw_name

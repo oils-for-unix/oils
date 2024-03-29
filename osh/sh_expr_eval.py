@@ -15,7 +15,6 @@ from _devbuild.gen.syntax_asdl import (
     word_t,
     CompoundWord,
     Token,
-    WideToken,
     loc,
     loc_t,
     source,
@@ -514,9 +513,8 @@ class ArithEvaluator(object):
         # BASH_LINENO, arr (array name without strict_array), etc.
         if (val.tag() in (value_e.BashArray, value_e.BashAssoc) and
                 node.tag() == arith_expr_e.VarSub):
-            vsub = cast(WideToken, node)
-            if word_eval.ShouldArrayDecay(lexer.LazyStr2(vsub),
-                                          self.exec_opts):
+            vsub = cast(Token, node)
+            if word_eval.ShouldArrayDecay(lexer.LazyStr(vsub), self.exec_opts):
                 val = word_eval.DecayArray(val)
 
         i = self._ValToIntOrError(val, node)
@@ -546,11 +544,11 @@ class ArithEvaluator(object):
         UP_node = node
         with tagswitch(node) as case:
             if case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
-                vsub = cast(WideToken, UP_node)
-                var_name = lexer.LazyStr2(vsub)
+                vsub = cast(Token, UP_node)
+                var_name = lexer.LazyStr(vsub)
                 val = self.mem.GetValue(var_name)
                 if val.tag() == value_e.Undef and self.exec_opts.nounset():
-                    e_die('Undefined variable %r' % var_name, vsub.tok)
+                    e_die('Undefined variable %r' % var_name, vsub)
                 return val
 
             elif case(arith_expr_e.Word):  # $(( $x )) $(( ${x}${y} )), etc.
@@ -858,8 +856,8 @@ class ArithEvaluator(object):
         UP_anode = anode
         with tagswitch(anode) as case:
             if case(arith_expr_e.VarSub):
-                tok = cast(WideToken, UP_anode)
-                return (lexer.LazyStr2(tok), tok.tok)
+                tok = cast(Token, UP_anode)
+                return (lexer.LazyStr(tok), tok)
 
             elif case(arith_expr_e.Word):
                 w = cast(CompoundWord, UP_anode)

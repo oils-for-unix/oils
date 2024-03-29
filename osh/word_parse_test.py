@@ -84,7 +84,7 @@ def _GetPrefixOp(test, w):
 def _GetVarSub(test, w):
     test.assertEqual(1, len(w.parts))
     part = w.parts[0]
-    return lexer.TokenVal(part.token)
+    return lexer.LazyStr(part.token)
 
 
 class ArenaTest(unittest.TestCase):
@@ -126,7 +126,7 @@ single quoted'\
 """, s)
 
         # Just snip one token
-        s = arena.SnipCodeString(w.parts[0].tok, w.parts[0].tok)
+        s = arena.SnipCodeString(w.parts[0], w.parts[0])
 
         print('s = %r' % s)
         self.assertEqual('hi', s)
@@ -152,8 +152,8 @@ class LexerTest(unittest.TestCase):
         w3 = w_parser.ReadWord(lex_mode_e.ShCommand)
         print(w3)
 
-        self.assertEqual(False, lexer.IsPlusEquals(w3.parts[0].tok))
-        self.assertEqual('foo', lexer.TokenSliceRight(w3.parts[0].tok, -1))
+        self.assertEqual(False, lexer.IsPlusEquals(w3.parts[0]))
+        self.assertEqual('foo', lexer.TokenSliceRight(w3.parts[0], -1))
 
         expr = 'ls; foo+=X'
         w_parser = test_lib.InitWordParser(expr, arena=arena)
@@ -164,8 +164,8 @@ class LexerTest(unittest.TestCase):
         w3 = w_parser.ReadWord(lex_mode_e.ShCommand)
         print(w3)
 
-        self.assertEqual(True, lexer.IsPlusEquals(w3.parts[0].tok))
-        self.assertEqual('foo', lexer.TokenSliceRight(w3.parts[0].tok, -2))
+        self.assertEqual(True, lexer.IsPlusEquals(w3.parts[0]))
+        self.assertEqual('foo', lexer.TokenSliceRight(w3.parts[0], -2))
 
 
 class WordParserTest(unittest.TestCase):
@@ -449,7 +449,7 @@ class WordParserTest(unittest.TestCase):
         w_parser = test_lib.InitWordParser(code)
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
-        self.assertEqual('foo', lexer.LazyStr2(w.parts[0]))
+        self.assertEqual('foo', lexer.LazyStr(w.parts[0]))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
@@ -457,7 +457,7 @@ class WordParserTest(unittest.TestCase):
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
-        self.assertEqual('bar', lexer.LazyStr2(w.parts[0]))
+        self.assertEqual('bar', lexer.LazyStr(w.parts[0]))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
@@ -477,7 +477,7 @@ class WordParserTest(unittest.TestCase):
         assert w
 
         def _Part(w, i):
-            return lexer.LazyStr2(w.parts[i])
+            return lexer.LazyStr(w.parts[i])
 
         self.assertEqual('(', _Part(w, 0))
         self.assertEqual('foo', _Part(w, 1))
@@ -551,8 +551,8 @@ ls bar
         def assertWord(w, id_, val):
             self.assertEqual(1, len(w.parts))
             part = w.parts[0]
-            self.assertEqual(id_, part.tok.id)
-            self.assertEqual(val, lexer.LazyStr2(part))
+            self.assertEqual(id_, part.id)
+            self.assertEqual(val, lexer.LazyStr(part))
 
         print('--MULTI')
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
@@ -564,6 +564,7 @@ ls bar
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         self.assertEqual(word_e.Operator, w.tag())
         self.assertEqual(Id.Op_Newline, w.id)
+        self.assertEqual(None, w.tval)
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assertWord(w, Id.Lit_Chars, 'ls')
@@ -574,17 +575,18 @@ ls bar
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         self.assertEqual(word_e.Operator, w.tag())
         self.assertEqual(Id.Op_Newline, w.id)
+        self.assertEqual(None, w.tval)
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         self.assertEqual(word_e.Operator, w.tag())
         self.assertEqual(Id.Eof_Real, w.id)
-        self.assertEqual('', lexer.TokenVal(w))
+        self.assertEqual('', lexer.LazyStr(w))
 
     def testUnicode(self):
         words = 'z \xce\xbb \xe4\xb8\x89 \xf0\x9f\x98\x98'
 
         def _Part(w, i):
-            return lexer.LazyStr2(w.parts[i])
+            return lexer.LazyStr(w.parts[i])
 
         w_parser = test_lib.InitWordParser(words)
         w = w_parser.ReadWord(lex_mode_e.ShCommand)

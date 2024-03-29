@@ -4,8 +4,7 @@ tdop.py - Library for expression parsing.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (loc, arith_expr, arith_expr_e,
-                                       arith_expr_t, word_t, CompoundWord,
-                                       WideToken)
+                                       arith_expr_t, word_t, CompoundWord)
 from core.error import p_die
 from core import ui
 from mycpp import mylib
@@ -73,7 +72,7 @@ def NullConstant(p, w, bp):
     # type: (TdopParser, word_t, int) -> arith_expr_t
     name_tok = word_.LooksLikeArithVar(w)
     if name_tok:
-        return WideToken(name_tok, None)
+        return name_tok
 
     # Id.Word_Compound in the spec ensures this cast is valid
     return cast(CompoundWord, w)
