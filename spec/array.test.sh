@@ -421,12 +421,34 @@ echo "${#a[0]}" "${#a[0]/1/xxx}"
 ## status: 2
 ## OK bash/mksh status: 1
 
-#### Array subscript not allowed on string
+#### ${mystr[@]} and ${mystr[*]} are no-ops
 s='abc'
 echo ${s[@]}
-## BUG bash/mksh status: 0
-## BUG bash/mksh stdout: abc
-## status: 1
+echo ${s[*]}
+## STDOUT:
+abc
+abc
+## END
+
+#### ${mystr[@]} and ${mystr[*]} disallowed with strict_array
+
+$SH -c 'shopt -s strict_array; s="abc"; echo ${s[@]}'
+echo status=$?
+
+$SH -c 'shopt -s strict_array; s="abc"; echo ${s[*]}'
+echo status=$?
+
+## status: 0
+## STDOUT:
+status=1
+status=1
+## END
+## N-I bash/mksh STDOUT:
+abc
+status=0
+abc
+status=0
+## END
 
 #### Create a "user" array out of the argv array
 set -- 'a b' 'c'

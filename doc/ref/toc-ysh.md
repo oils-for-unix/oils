@@ -166,7 +166,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Strictness]    ... More Runtime Errors
                   strict_argv            No empty argv
                   strict_arith           Fatal parse errors (on by default)
-                  strict_array           Arrays don't decay to strings
+                  strict_array           Arrays and strings aren't confused
                   strict_control_flow    Disallow misplaced keyword, empty arg
                   strict_errexit         Disallow code that ignores failure
                   strict_nameref         trap invalid variable names

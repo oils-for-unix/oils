@@ -442,6 +442,12 @@ def PrintAst(node, flag):
             print('%8d unique tokens IDs' % uniq)
             print()
 
+        if 0:
+            from osh.word_parse import WORD_HIST
+            #print(WORD_HIST)
+            for desc, count in WORD_HIST.most_common(20):
+                print('%8d %s' % (count, desc))
+
     else:  # text output
         f = mylib.Stdout()
 

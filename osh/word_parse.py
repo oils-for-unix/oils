@@ -1841,6 +1841,10 @@ class WordParser(WordEmitter):
             p_die('Unexpected parts after triple quoted string',
                   loc.WordPart(w.parts[-1]))
 
+        if 0:
+            from _devbuild.gen.syntax_asdl import word_part_str
+            word_key = ' '.join(word_part_str(p.tag()) for p in w.parts)
+            WORD_HIST[word_key] += 1
         return w
 
     def _ReadArithWord(self):
@@ -2110,3 +2114,8 @@ class WordParser(WordEmitter):
     def Multiline(self, b):
         # type: (bool) -> None
         self.multiline = b
+
+
+if 0:
+    import collections
+    WORD_HIST = collections.Counter()

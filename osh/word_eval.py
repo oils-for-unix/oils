@@ -1035,12 +1035,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if not vsub_state.has_test_op:
                         val = self._EmptyBashArrayOrError(part.token)
                 elif case2(value_e.Str):
-                    val = cast(value.Str, UP_val)
-                    e_die("Can't index string with @", loc.WordPart(part))
+                    if self.exec_opts.strict_array():
+                        e_die("Can't index string with @", loc.WordPart(part))
                 elif case2(value_e.BashArray):
-                    val = cast(value.BashArray, UP_val)
-                    # TODO: Is this a no-op?  Just leave 'val' alone.
-                    val = value.BashArray(val.strs)
+                    pass  # no-op
 
         elif op_id == Id.Arith_Star:
             vsub_state.join_array = True  # both ${a[*]} and "${a[*]}" decay
@@ -1050,13 +1048,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     if not vsub_state.has_test_op:
                         val = self._EmptyBashArrayOrError(part.token)
                 elif case2(value_e.Str):
-                    val = cast(value.Str, UP_val)
-                    e_die("Can't index string with *", loc.WordPart(part))
+                    if self.exec_opts.strict_array():
+                        e_die("Can't index string with *", loc.WordPart(part))
                 elif case2(value_e.BashArray):
-                    val = cast(value.BashArray, UP_val)
-                    # TODO: Is this a no-op?  Just leave 'val' alone.
-                    # ${a[*]} or "${a[*]}" :  vsub_state.join_array is always true
-                    val = value.BashArray(val.strs)
+                    pass  # no-op
 
         else:
             raise AssertionError(op_id)  # unknown
@@ -1834,6 +1829,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             # Could we additionally optimize a=$b, if we know $b isn't an array
             # etc.?
+
+        # Note: these empty lists are hot in fib benchmark
 
         part_vals = []  # type: List[part_value_t]
         for p in w.parts:
