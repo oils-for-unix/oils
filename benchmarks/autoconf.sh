@@ -26,7 +26,8 @@ source benchmarks/cachegrind.sh  # with-cachegrind
 source benchmarks/callgrind.sh  # with-cachegrind
 source test/tsv-lib.sh  # $TAB
 
-readonly BASE_DIR=$REPO_ROOT/_tmp/autoconf
+readonly BASE_DIR_RELATIVE=_tmp/autoconf
+readonly BASE_DIR=$REPO_ROOT/$BASE_DIR_RELATIVE
 readonly PY_CONF=$REPO_ROOT/Python-2.7.13/configure
 
 #
@@ -186,8 +187,45 @@ grep-exec() {
   egrep --no-filename -o 'execve\("[^"]+' "$@"
 }
 
+# andy@hoover:~/git/oilshell/oil$ benchmarks/autoconf.sh report-syscalls
+# --- _tmp/autoconf/syscalls/bash
+#      2592 _tmp/autoconf/syscalls/bash/syscalls.903220
+#      2608 _tmp/autoconf/syscalls/bash/syscalls.898727
+#      2632 _tmp/autoconf/syscalls/bash/syscalls.898387
+#      2679 _tmp/autoconf/syscalls/bash/syscalls.898292
+#      2853 _tmp/autoconf/syscalls/bash/syscalls.898927
+#      2873 _tmp/autoconf/syscalls/bash/syscalls.898334
+#      2920 _tmp/autoconf/syscalls/bash/syscalls.898895
+#      3204 _tmp/autoconf/syscalls/bash/syscalls.898664
+#    112549 _tmp/autoconf/syscalls/bash/syscalls.897471
+#   1360223 total
+# 
+# --- _tmp/autoconf/syscalls/dash
+#      2592 _tmp/autoconf/syscalls/dash/syscalls.909344
+#      2607 _tmp/autoconf/syscalls/dash/syscalls.904921
+#      2630 _tmp/autoconf/syscalls/dash/syscalls.904581
+#      2683 _tmp/autoconf/syscalls/dash/syscalls.904486
+#      2851 _tmp/autoconf/syscalls/dash/syscalls.905109
+#      2873 _tmp/autoconf/syscalls/dash/syscalls.904528
+#      2920 _tmp/autoconf/syscalls/dash/syscalls.905088
+#      3204 _tmp/autoconf/syscalls/dash/syscalls.904858
+#    112922 _tmp/autoconf/syscalls/dash/syscalls.903626
+#   1372118 total
+# 
+# --- _tmp/autoconf/syscalls/osh
+#     2592 _tmp/autoconf/syscalls/osh/syscalls.915226
+#     2607 _tmp/autoconf/syscalls/osh/syscalls.910993
+#     2630 _tmp/autoconf/syscalls/osh/syscalls.910647
+#     2679 _tmp/autoconf/syscalls/osh/syscalls.910561
+#     2851 _tmp/autoconf/syscalls/osh/syscalls.911162
+#     2873 _tmp/autoconf/syscalls/osh/syscalls.910599
+#     2920 _tmp/autoconf/syscalls/osh/syscalls.911143
+#     3204 _tmp/autoconf/syscalls/osh/syscalls.910936
+#    72921 _tmp/autoconf/syscalls/osh/syscalls.909769
+#  1211074 total
+
 report-processes() {
-  for sh_dir in $BASE_DIR/syscalls/*; do
+  for sh_dir in $BASE_DIR_RELATIVE/syscalls/*; do
     echo "--- $sh_dir"
     ls $sh_dir/* | wc -l
     grep-exec $sh_dir/syscalls.* | wc -l
@@ -198,6 +236,17 @@ report-processes() {
       echo
     fi
 
+  done
+}
+
+report-syscalls() {
+  # Hm this is instructive, the shell itself makes the most syscalls
+  # And fewer than other shells?
+
+  for sh_dir in $BASE_DIR_RELATIVE/syscalls/*; do
+    echo "--- $sh_dir"
+    wc -l $sh_dir/syscalls.* | sort -n | tail
+    echo
   done
 }
 
@@ -320,7 +369,84 @@ report-times() {
   echo
   head $BASE_DIR/times/*.times.txt
   echo
+
+  print-times-tsv  | tee $BASE_DIR/times/report.txt
 }
+
+print-times-tsv() {
+  python2 -c '
+import os, re, sys
+
+def PrintRow(row):
+  print("\t".join(row))
+
+PrintRow(["sh_label", "who", "what", "seconds"])
+
+for path in sys.argv[1:]:
+  filename = os.path.basename(path)
+  shell = filename.split(".")[0]
+
+  f = open(path)
+  s = f.read()
+
+  secs = re.findall("0m([0-9.]+)s", s)
+  assert len(secs) == 4, secs
+
+  PrintRow([shell, "self", "user", secs[0]])
+  PrintRow([shell, "self", "sys", secs[1]])
+  PrintRow([shell, "child", "user", secs[2]])
+  PrintRow([shell, "child", "sys", secs[3]])
+
+  ' $BASE_DIR/times/*.times.txt
+}
+
+compare-dim() {
+  # 8% more child system time
+  local who=${1:-child}
+  local what=${2:-user}
+
+  echo "=== $who $what ==="
+
+  cat $BASE_DIR/times/report.txt | awk -v "who=$who" -v "what=$what" '
+  BEGIN { 
+    OFMT = "%.3f"
+    TAB = "\t"
+
+    i = 0
+
+    print "shell", TAB, "secs", TAB, "ratio", TAB, "diff"
+  }
+  $2 == who && $3 == what {
+    if (i == 0) {
+      first_secs = $4
+    }
+    i++
+
+    secs = $4
+    ratio = secs / first_secs
+    diff = secs - first_secs
+
+    #print $1 " " $2 " " $3 " " $4
+
+    # Need commas for OFMT to work correctly?
+
+    print $1, TAB, secs, TAB, ratio, TAB, diff
+  }
+  '
+
+  echo
+}
+
+compare-times() {
+  compare-dim self user
+
+  compare-dim self sys
+
+  compare-dim child user
+
+  compare-dim child sys
+}
+
 
 ### Why is clone() taking longer according to strace?
 
