@@ -261,7 +261,7 @@ def LeftTokenForWordPart(part):
 
         elif case(word_part_e.ExtGlob):
             part = cast(word_part.ExtGlob, UP_part)
-            return part.op
+            return part.op.tok
 
         elif case(word_part_e.BracedRange):
             part = cast(word_part.BracedRange, UP_part)

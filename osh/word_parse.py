@@ -913,7 +913,8 @@ class WordParser(WordEmitter):
             else:
                 raise AssertionError(self.cur_token)
 
-        return word_part.ExtGlob(left_token, arms, right_token)
+        return word_part.ExtGlob(WideToken(left_token, None), arms,
+                                 right_token)
 
     def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
         # type: (Optional[Token], bool, List[word_part_t]) -> None

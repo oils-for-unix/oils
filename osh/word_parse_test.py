@@ -84,7 +84,7 @@ def _GetPrefixOp(test, w):
 def _GetVarSub(test, w):
     test.assertEqual(1, len(w.parts))
     part = w.parts[0]
-    return lexer.LazyStr(part.token)
+    return lexer.TokenVal(part.token)
 
 
 class ArenaTest(unittest.TestCase):
@@ -449,7 +449,7 @@ class WordParserTest(unittest.TestCase):
         w_parser = test_lib.InitWordParser(code)
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
-        self.assertEqual('foo', lexer.LazyStr(w.parts[0].tok))
+        self.assertEqual('foo', lexer.LazyStr2(w.parts[0]))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
@@ -457,7 +457,7 @@ class WordParserTest(unittest.TestCase):
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
-        self.assertEqual('bar', lexer.LazyStr(w.parts[0].tok))
+        self.assertEqual('bar', lexer.LazyStr2(w.parts[0]))
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assert w
@@ -580,13 +580,13 @@ ls bar
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         self.assertEqual(word_e.Operator, w.tag())
         self.assertEqual(Id.Eof_Real, w.id)
-        self.assertEqual('', lexer.LazyStr(w))
+        self.assertEqual('', lexer.TokenVal(w))
 
     def testUnicode(self):
         words = 'z \xce\xbb \xe4\xb8\x89 \xf0\x9f\x98\x98'
 
         def _Part(w, i):
-            return lexer.LazyStr(w.parts[i].tok)
+            return lexer.LazyStr2(w.parts[i])
 
         w_parser = test_lib.InitWordParser(words)
         w = w_parser.ReadWord(lex_mode_e.ShCommand)

@@ -1517,11 +1517,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _EvalExtGlob(self, part, part_vals):
         # type: (word_part.ExtGlob, List[part_value_t]) -> None
         """Evaluate @($x|'foo'|$(hostname)) and flatten it."""
-        op = part.op
-        if op.id == Id.ExtGlob_Comma:
+        if part.op.tok.id == Id.ExtGlob_Comma:
             op_str = '@('
         else:
-            op_str = lexer.LazyStr(op)
+            op_str = lexer.LazyStr2(part.op)
         # Do NOT split these.
         part_vals.append(part_value.String(op_str, False, False))
 
