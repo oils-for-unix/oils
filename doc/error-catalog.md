@@ -187,6 +187,27 @@ test/runtime-errors.sh test-external_cmd_typed_args
 - Did you forget to source a file that contains the proc or shell function you
   wanted to run?
 
+### OILS-ERR-201
+
+<!--
+Generated with:
+test/runtime-errors.sh test-arith_ops_str
+-->
+
+```
+  = "100" + "10a"
+          ^
+[ -c flag ]:1: fatal: Binary operator expected numbers, got Str and Str (OILS-ERR-201)
+```
+
+- The `+`, `-`, `*` and `/` operators are intended to represent their
+  _arithmetic_ counterparts.
+- The arithmetic operators can be used on strings, provided that they are
+  formatted as numbers. You can explicitly parse a string into a number with the
+  [`int()`](ref/chap-builtin-func.html#int) and
+  [`float()`](ref/chap-builtin-func.html#float) functions.
+- Use `++` if you intended to _concatentate_ strings or lists.
+
 ## Appendix
 
 ### Kinds of Errors from Oils

@@ -1063,6 +1063,17 @@ test-external_cmd_typed_args() {
   _ysh-error-X 1 'cat ("myfile")'
 }
 
+test-arith_ops_str() {
+  _ysh-error-X 3 '= "100" + "10a"'
+  _ysh-error-X 3 '= "100" - "10a"'
+  _ysh-error-X 3 '= "100" * "10a"'
+  _ysh-error-X 3 '= "100" / "10a"'
+  _ysh-error-X 3 'var a = "100"; setvar a += "10a"'
+  _ysh-error-X 3 'var a = "100"; setvar a -= "10a"'
+  _ysh-error-X 3 'var a = "100"; setvar a *= "10a"'
+  _ysh-error-X 3 'var a = "100"; setvar a /= "10a"'
+}
+
 #
 # TEST DRIVER
 #
