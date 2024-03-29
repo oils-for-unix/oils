@@ -127,17 +127,19 @@ def _expr__Var(obj):
     return p_node
 
 
-def _expr__Const(obj):
-    # type: (expr.Const) -> hnode_t
-    p_node = runtime.NewRecord('Const')
-    p_node.abbrev = True
+if 0:  # TODO: remove tok.tval usage
 
-    tok = obj.c
-    out = p_node.unnamed_fields
+    def _expr__Const(obj):
+        # type: (expr.Const) -> hnode_t
+        p_node = runtime.NewRecord('Const')
+        p_node.abbrev = True
 
-    n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
-    out.append(n1)
+        tok = obj.c
+        out = p_node.unnamed_fields
 
-    n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
-    out.append(n2)
-    return p_node
+        n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
+        out.append(n1)
+
+        n2 = runtime.NewLeaf(tok.tval, color_e.StringConst)
+        out.append(n2)
+        return p_node

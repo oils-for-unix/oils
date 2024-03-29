@@ -1050,8 +1050,7 @@ class RootCompleter(object):
                 # readline splits at ':' so we have to prepend '-$' to every completed
                 # variable name.
                 self.comp_ui_state.display_pos = t2.col + 1  # 1 for $
-                # computes s[1:] for Id.VSub_DollarName
-                to_complete = lexer.LazyStr(t2)
+                to_complete = lexer.TokenSliceLeft(t2, 1)  # s[1:]
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):
@@ -1062,7 +1061,7 @@ class RootCompleter(object):
             # echo ${P
             if t2.id == Id.VSub_Name and IsDummy(t1):
                 self.comp_ui_state.display_pos = t2.col  # no offset
-                to_complete = lexer.LazyStr(t2)
+                to_complete = lexer.TokenVal(t2)
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):
@@ -1073,7 +1072,7 @@ class RootCompleter(object):
             # echo $(( VAR
             if t2.id == Id.Lit_ArithVarLike and IsDummy(t1):
                 self.comp_ui_state.display_pos = t2.col  # no offset
-                to_complete = lexer.LazyStr(t2)
+                to_complete = lexer.TokenVal(t2)
                 n = len(to_complete)
                 for name in self.mem.VarNames():
                     if name.startswith(to_complete):

@@ -564,7 +564,6 @@ ls bar
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         self.assertEqual(word_e.Operator, w.tag())
         self.assertEqual(Id.Op_Newline, w.id)
-        self.assertEqual(None, w.tval)
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         assertWord(w, Id.Lit_Chars, 'ls')
@@ -575,7 +574,6 @@ ls bar
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         self.assertEqual(word_e.Operator, w.tag())
         self.assertEqual(Id.Op_Newline, w.id)
-        self.assertEqual(None, w.tval)
 
         w = w_parser.ReadWord(lex_mode_e.ShCommand)
         self.assertEqual(word_e.Operator, w.tag())

@@ -209,9 +209,6 @@ def RemoveLeadingSpaceDQ(parts):
         lit_tok = cast(WideToken, part).tok
 
         if lit_tok.col == 0 and lexer.TokenStartsWith(lit_tok, to_strip):
-            # TODO: Lexer should not populate this!
-            assert lit_tok.tval is None, lit_tok.tval
-
             lit_tok.col = n
             lit_tok.length -= n
             #log('n = %d, %s', n, lit_tok)

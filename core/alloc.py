@@ -251,7 +251,7 @@ class Arena(object):
                 '',  # ignored message
                 loc.TokenTooLong(src_line, id_, length, col))
 
-        tok = Token(id_, length, col, src_line, None)
+        tok = Token(id_, length, col, src_line)
         if self.save_tokens:
             span_id = self.num_tokens
             self.num_tokens += 1
