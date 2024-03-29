@@ -1584,7 +1584,8 @@ class CommandParser(object):
         self._NewlineOk()
 
         self._GetWord()
-        if self.c_id not in (Id.Op_DSemi, Id.KW_Esac):
+        if self.c_id not in (Id.Op_DSemi, Id.Op_SemiAmp, Id.Op_DSemiAmp,
+                             Id.KW_Esac):
             c_list = self._ParseCommandTerm()
             action_children = c_list.children
         else:
@@ -1594,7 +1595,7 @@ class CommandParser(object):
         self._GetWord()
         if self.c_id == Id.KW_Esac:  # missing last ;;
             pass
-        elif self.c_id == Id.Op_DSemi:
+        elif self.c_id in (Id.Op_DSemi, Id.Op_SemiAmp, Id.Op_DSemiAmp):
             dsemi_tok = word_.AsOperatorToken(self.cur_word)
             self._SetNext()
         else:
@@ -2576,7 +2577,10 @@ class CommandParser(object):
           syntax_asdl.command
         """
         # Token types that will end the command term.
-        END_LIST = [self.eof_id, Id.Right_Subshell, Id.Lit_RBrace, Id.Op_DSemi]
+        END_LIST = [
+            self.eof_id, Id.Right_Subshell, Id.Lit_RBrace, Id.Op_DSemi,
+            Id.Op_SemiAmp, Id.Op_DSemiAmp
+        ]
 
         # NOTE: This is similar to _ParseCommandLine.
         #

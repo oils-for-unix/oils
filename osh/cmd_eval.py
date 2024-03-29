@@ -1383,7 +1383,11 @@ class CommandEvaluator(object):
         fnmatch_flags = FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
 
         status = 0  # If there are no arms, it should be zero?
-        matched = False
+
+        done = False  # Should we try the next arm?
+
+        # For &; terminator - not just case fallthrough, but IGNORE the condition!
+        ignore_next_cond = False
 
         for case_arm in node.arms:
             with tagswitch(case_arm.pattern) as case:
@@ -1394,15 +1398,34 @@ class CommandEvaluator(object):
 
                     pat_words = cast(pat.Words, case_arm.pattern)
 
-                    for pat_word in pat_words.words:
-                        word_val = self.word_ev.EvalWordToString(
-                            pat_word, word_eval.QUOTE_FNMATCH)
+                    this_arm_matches = False
+                    if ignore_next_cond:  # Special handling for ;&
+                        this_arm_matches = True
+                        ignore_next_cond = False
+                    else:
+                        for pat_word in pat_words.words:
+                            word_val = self.word_ev.EvalWordToString(
+                                pat_word, word_eval.QUOTE_FNMATCH)
 
-                        if libc.fnmatch(word_val.s, to_match_str.s,
-                                        fnmatch_flags):
-                            status = self._ExecuteList(case_arm.action)
-                            matched = True  # TODO: Parse ;;& and for fallthrough and such?
-                            break
+                            if libc.fnmatch(word_val.s, to_match_str.s,
+                                            fnmatch_flags):
+                                this_arm_matches = True
+                                break  # Stop at first pattern
+
+                    if this_arm_matches:
+                        status = self._ExecuteList(case_arm.action)
+                        done = True
+
+                        # ;& and ;;& only apply to shell-style case
+                        if case_arm.right:
+                            id_ = case_arm.right.id
+                            if id_ == Id.Op_SemiAmp:
+                                # very weird semantic
+                                ignore_next_cond = True
+                                done = False
+                            elif id_ == Id.Op_DSemiAmp:
+                                # Keep going until next pattern
+                                done = False
 
                 elif case(pat_e.YshExprs):
                     pat_exprs = cast(pat.YshExprs, case_arm.pattern)
@@ -1414,7 +1437,7 @@ class CommandEvaluator(object):
                         if val_ops.ExactlyEqual(expr_val, to_match,
                                                 case_arm.left):
                             status = self._ExecuteList(case_arm.action)
-                            matched = True
+                            done = True
                             break
 
                 elif case(pat_e.Eggex):
@@ -1423,18 +1446,18 @@ class CommandEvaluator(object):
 
                     if val_ops.MatchRegex(to_match, eggex_val, self.mem):
                         status = self._ExecuteList(case_arm.action)
-                        matched = True
+                        done = True
                         break
 
                 elif case(pat_e.Else):
                     status = self._ExecuteList(case_arm.action)
-                    matched = True
+                    done = True
                     break
 
                 else:
                     raise AssertionError()
 
-            if matched:  # first match wins
+            if done:  # first match wins
                 break
 
         return status

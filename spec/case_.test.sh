@@ -1,6 +1,8 @@
 
-## compare_shells: bash dash mksh
-## oils_failures_allowed: 3
+## compare_shells: bash dash mksh zsh
+## oils_failures_allowed: 1
+
+# Note: zsh passes most of these tests too
 
 #### Case statement
 case a in
@@ -23,7 +25,7 @@ loop
 
 #### Case statement with ;;&
 # ;;& keeps testing conditions
-# NOTE: ;& and ;;& are bash 4 only, no on Mac
+# NOTE: ;& and ;;& are bash 4 only, not on Mac
 case a in
   a) echo A ;;&
   *) echo star ;;&
@@ -37,19 +39,36 @@ star2
 ## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
+## N-I zsh stdout-json: ""
+## N-I zsh status: 1
 
 #### Case statement with ;&
 # ;& ignores the next condition.  Why would that be useful?
-case a in
-  a) echo A ;&
-  XX) echo two ;&
-  YY) echo three ;;
-esac
+
+for x in aa bb cc dd zz; do
+  case $x in
+    aa) echo aa ;&
+    bb) echo bb ;&
+    cc) echo cc ;;
+    dd) echo dd ;;
+  esac
+  echo --
+done
+
 ## status: 0
 ## STDOUT:
-A
-two
-three
+aa
+bb
+cc
+--
+bb
+cc
+--
+cc
+--
+dd
+--
+--
 ## END
 ## N-I dash stdout-json: ""
 ## N-I dash status: 2
@@ -75,6 +94,7 @@ case "$x" in
   $pat) echo match ;;
 esac
 ## stdout: match
+## BUG zsh stdout-json: ""
 
 #### Quoted literal in glob pattern
 x='[ab].py'
@@ -175,4 +195,5 @@ in esac
 ## END
 ## status: 2
 ## OK mksh status: 1
+## OK zsh status: 127
 

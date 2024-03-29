@@ -632,9 +632,12 @@ cases-in-files() {
 
 test-case() {
   readonly -a YES=(
+    # Right is optional
+    'case $x in foo) echo
+esac'
     'case $x in foo) echo ;; esac'
-    #'case $x in foo) echo ;& esac'
-    #'case $x in foo) echo ;;& esac'
+    'case $x in foo) echo ;& esac'
+    'case $x in foo) echo ;;& esac'
   )
 
   readonly -a NO=(
