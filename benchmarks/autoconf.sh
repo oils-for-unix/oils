@@ -364,15 +364,6 @@ measure-times() {
   done
 }
 
-report-times() {
-  head $BASE_DIR/times/*.tsv
-  echo
-  head $BASE_DIR/times/*.times.txt
-  echo
-
-  print-times-tsv  | tee $BASE_DIR/times/report.txt
-}
-
 print-times-tsv() {
   python2 -c '
 import os, re, sys
@@ -397,6 +388,10 @@ for path in sys.argv[1:]:
   PrintRow([shell, "child", "user", secs[2]])
   PrintRow([shell, "child", "sys", secs[3]])
 
+  # Non-normalized, but OK
+  total_secs = sum(float(s) for s in secs)
+  PrintRow([shell, "both", "both", str(total_secs)])
+
   ' $BASE_DIR/times/*.times.txt
 }
 
@@ -407,37 +402,39 @@ compare-dim() {
 
   echo "=== $who $what ==="
 
-  cat $BASE_DIR/times/report.txt | awk -v "who=$who" -v "what=$what" '
+  # Annoying
+  # https://www.math.utah.edu/docs/info/gawk_8.html
+  # "If, for some reason, you need to force a number to be converted to a
+  # string, concatenate the empty string, "", with that number. To force a
+  # string to be converted to a number, add zero to that string."
+
+  cat $BASE_DIR/inner-times.tsv | awk -v "who=$who" -v "what=$what" '
   BEGIN { 
-    OFMT = "%.3f"
     TAB = "\t"
 
     i = 0
 
-    print "shell", TAB, "secs", TAB, "ratio", TAB, "diff"
+    printf "%s\t%s\t%s\t%s\n", "shell", "secs", "ratio", "diff secs"
   }
   $2 == who && $3 == what {
     if (i == 0) {
-      first_secs = $4
+      first_secs = $4 + 0
     }
     i++
 
-    secs = $4
+    secs = $4 + 0
     ratio = secs / first_secs
     diff = secs - first_secs
 
-    #print $1 " " $2 " " $3 " " $4
-
     # Need commas for OFMT to work correctly?
-
-    print $1, TAB, secs, TAB, ratio, TAB, diff
+    printf "%s\t%5.3f\t%5.3f\t%5.3f\n", $1, secs, ratio, diff
   }
   '
 
   echo
 }
 
-compare-times() {
+compare-inner() {
   compare-dim self user
 
   compare-dim self sys
@@ -445,8 +442,58 @@ compare-times() {
   compare-dim child user
 
   compare-dim child sys
+
+  compare-dim both both
 }
 
+compare-outer() {
+  echo "=== outer times ==="
+  awk '
+  BEGIN {
+    i = 0
+
+    printf "%s\t%s\t%s\t%s\n", "shell", "elapsed", "ratio", "diff secs"
+  }
+  i == 0 {
+    #print "Skipping header"
+    i++
+    next
+  }
+  i >= 1 { 
+    if (i == 1) {
+      first_elapsed = $2 + 0
+      first_user = $3 + 0
+      first_sys = $4 + 0
+    }
+
+    elapsed = $2 + 0
+    sh_label = $6
+
+    ratio = elapsed / first_elapsed
+    diff = elapsed - first_elapsed
+
+    printf "%s\t%5.3f\t%5.3f\t%5.3f\n", sh_label, elapsed, ratio, diff
+
+    i++
+  }
+  ' $BASE_DIR/outer-times.tsv
+}
+
+report-times() {
+  head $BASE_DIR/times/*.tsv
+  echo
+  head $BASE_DIR/times/*.times.txt
+  echo
+
+  tsv-concat $BASE_DIR/times/*.tsv | tee $BASE_DIR/outer-times.tsv
+  #return
+
+  print-times-tsv  | tee $BASE_DIR/inner-times.tsv
+
+  compare-inner
+
+  compare-outer
+}
 
 ### Why is clone() taking longer according to strace?
 
