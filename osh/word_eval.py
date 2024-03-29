@@ -38,6 +38,7 @@ from _devbuild.gen.runtime_asdl import (
     a_index_e,
     VTestPlace,
     VarSubState,
+    Piece,
 )
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.value_asdl import (
@@ -210,11 +211,11 @@ def _ValueToPartValue(val, quoted, part_loc):
         if case(value_e.Undef):
             # This happens in the case of ${undef+foo}.  We skipped _EmptyStrOrError,
             # but we have to append to the empty string.
-            return part_value.String('', quoted, not quoted)
+            return Piece('', quoted, not quoted)
 
         elif case(value_e.Str):
             val = cast(value.Str, UP_val)
-            return part_value.String(val.s, quoted, not quoted)
+            return Piece(val.s, quoted, not quoted)
 
         elif case(value_e.BashArray):
             val = cast(value.BashArray, UP_val)
@@ -230,7 +231,7 @@ def _ValueToPartValue(val, quoted, part_loc):
         elif case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
                   value_e.Eggex, value_e.List):
             s = val_ops.Stringify(val, loc.Missing)
-            return part_value.String(s, quoted, not quoted)
+            return Piece(s, quoted, not quoted)
 
         else:
             raise error.TypeErr(val, "Can't substitute into word",
@@ -240,7 +241,7 @@ def _ValueToPartValue(val, quoted, part_loc):
 
 
 def _MakeWordFrames(part_vals):
-    # type: (List[part_value_t]) -> List[List[Tuple[str, bool, bool]]]
+    # type: (List[part_value_t]) -> List[List[Piece]]
     """A word evaluates to a flat list of part_value (String or Array).  frame
     is a portion that results in zero or more args.  It can never be joined.
     This idea exists because of arrays like "$@" and "${a[@]}".
@@ -259,7 +260,7 @@ def _MakeWordFrames(part_vals):
       [ ('2 3', True, False) ]
       [ ('4', True, False), ('y', False, True) ]
 
-    Note: A frame is a 3-tuple that's identical to part_value.String()?  Maybe we
+    Note: A frame is a 3-tuple that's identical to Piece()?  Maybe we
     should make that top level type.
 
     TODO:
@@ -273,7 +274,7 @@ def _MakeWordFrames(part_vals):
 
     And then change _EvalWordFrame(pieces: List[Piece], start: int, end: int)
     """
-    current = []  # type: List[Tuple[str, bool, bool]]
+    current = []  # type: List[Piece]
     frames = [current]
 
     for p in part_vals:
@@ -281,8 +282,8 @@ def _MakeWordFrames(part_vals):
 
         with tagswitch(p) as case:
             if case(part_value_e.String):
-                p = cast(part_value.String, UP_p)
-                current.append((p.s, p.quoted, p.do_split))
+                p = cast(Piece, UP_p)
+                current.append(p)
 
             elif case(part_value_e.Array):
                 p = cast(part_value.Array, UP_p)
@@ -294,12 +295,12 @@ def _MakeWordFrames(part_vals):
 
                     # Arrays parts are always quoted; otherwise they would have decayed to
                     # a string.
-                    portion = (s, True, False)
+                    piece = Piece(s, True, False)
                     if is_first:
-                        current.append(portion)
+                        current.append(piece)
                         is_first = False
                     else:
-                        current = [portion]
+                        current = [piece]
                         frames.append(current)  # singleton frame
 
             else:
@@ -317,7 +318,7 @@ def _DecayPartValuesToString(part_vals, join_char):
         UP_p = p
         with tagswitch(p) as case:
             if case(part_value_e.String):
-                p = cast(part_value.String, UP_p)
+                p = cast(Piece, UP_p)
                 out.append(p.s)
             elif case(part_value_e.Array):
                 p = cast(part_value.Array, UP_p)
@@ -1128,7 +1129,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # of (DoubleQuoted [Literal '']).  This is better but it means we
         # have to check for it.
         if len(parts) == 0:
-            v = part_value.String('', True, False)
+            v = Piece('', True, False)
             part_vals.append(v)
             return
 
@@ -1295,8 +1296,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         part_vals.append(part_value.Array(names))
                     else:
                         sep = self.splitter.GetJoinChar()
-                        part_vals.append(
-                            part_value.String(sep.join(names), quoted, True))
+                        part_vals.append(Piece(sep.join(names), quoted, True))
                     return  # EARLY RETURN
 
             var_name = part.var_name
@@ -1341,7 +1341,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     val = self._EmptyStrOrError(val, part.token)
 
                 n = self._Length(val, part.token)
-                part_vals.append(part_value.String(str(n), quoted, False))
+                part_vals.append(Piece(str(n), quoted, False))
                 return  # EARLY EXIT: nothing else can come after length
 
             elif part.prefix_op.id == Id.VSub_Bang:
@@ -1426,7 +1426,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val = array_val
 
         # For example, ${a} evaluates to value.Str(), but we want a
-        # part_value.String().
+        # Piece().
         part_val = _ValueToPartValue(val, quoted or quoted2, part)
         part_vals.append(part_val)
 
@@ -1438,7 +1438,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             UP_part_val = part_val
             with tagswitch(part_val) as case:
                 if case(part_value_e.String):
-                    part_val = cast(part_value.String, UP_part_val)
+                    part_val = cast(Piece, UP_part_val)
                     s = part_val.s
 
                 elif case(part_value_e.Array):
@@ -1531,15 +1531,14 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
             op_str = lexer.LazyStr(op)
         # Do NOT split these.
-        part_vals.append(part_value.String(op_str, False, False))
+        part_vals.append(Piece(op_str, False, False))
 
         for i, w in enumerate(part.arms):
             if i != 0:
-                part_vals.append(part_value.String('|', False,
-                                                   False))  # separator
+                part_vals.append(Piece('|', False, False))  # separator
             # FLATTEN the tree of extglob "arms".
             self._EvalWordToParts(w, part_vals, EXTGLOB_NESTED)
-        part_vals.append(part_value.String(')', False, False))  # closing )
+        part_vals.append(Piece(')', False, False))  # closing )
 
     def _TranslateExtGlob(self, part_vals, w, glob_parts, fnmatch_parts):
         # type: (List[part_value_t], CompoundWord, List[str], List[str]) -> None
@@ -1552,7 +1551,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             UP_part_val = part_val
             with tagswitch(part_val) as case:
                 if case(part_value_e.String):
-                    part_val = cast(part_value.String, UP_part_val)
+                    part_val = cast(Piece, UP_part_val)
                     if part_val.quoted and not self.exec_opts.noglob():
                         s = glob_.GlobEscape(part_val.s)
                     else:
@@ -1609,17 +1608,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part = cast(Token, UP_part)
                 # Split if it's in a substitution.
                 # That is: echo is not split, but ${foo:-echo} is split
-                v = part_value.String(lexer.LazyStr(part), quoted, is_subst)
+                v = Piece(lexer.LazyStr(part), quoted, is_subst)
                 part_vals.append(v)
 
             elif case(word_part_e.EscapedLiteral):
                 part = cast(word_part.EscapedLiteral, UP_part)
-                v = part_value.String(part.ch, True, False)
+                v = Piece(part.ch, True, False)
                 part_vals.append(v)
 
             elif case(word_part_e.SingleQuoted):
                 part = cast(SingleQuoted, UP_part)
-                v = part_value.String(part.sval, True, False)
+                v = Piece(part.sval, True, False)
                 part_vals.append(v)
 
             elif case(word_part_e.DoubleQuoted):
@@ -1655,14 +1654,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # We never parse a quoted string into a TildeSub.
                 assert not quoted
                 s = self.tilde_ev.Eval(part)
-                v = part_value.String(s, True,
-                                      False)  # NOT split even when unquoted!
+                v = Piece(s, True, False)  # NOT split even when unquoted!
                 part_vals.append(v)
 
             elif case(word_part_e.ArithSub):
                 part = cast(word_part.ArithSub, UP_part)
                 num = self.arith_ev.EvalToBigInt(part.anode)
-                v = part_value.String(mops.ToStr(num), quoted, not quoted)
+                v = Piece(mops.ToStr(num), quoted, not quoted)
                 part_vals.append(v)
 
             elif case(word_part_e.ExtGlob):
@@ -1698,7 +1696,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         UP_w = w
         with tagswitch(w) as case:
             if case(rhs_word_e.Empty):
-                part_vals.append(part_value.String('', quoted, not quoted))
+                part_vals.append(Piece('', quoted, not quoted))
 
             elif case(rhs_word_e.Compound):
                 w = cast(CompoundWord, UP_w)
@@ -1774,7 +1772,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             UP_part_val = part_val
             with tagswitch(part_val) as case:
                 if case(part_value_e.String):
-                    part_val = cast(part_value.String, UP_part_val)
+                    part_val = cast(Piece, UP_part_val)
                     s = part_val.s
                     if part_val.quoted:
                         if eval_flags & QUOTE_FNMATCH:
@@ -1928,18 +1926,18 @@ class AbstractWordEvaluator(StringWordEvaluator):
         return self.EvalWordToString(w)
 
     def _EvalWordFrame(self, frame, argv):
-        # type: (List[Tuple[str, bool, bool]], List[str]) -> None
+        # type: (List[Piece], List[str]) -> None
         all_empty = True
         all_quoted = True
         any_quoted = False
 
         #log('--- frame %s', frame)
 
-        for s, quoted, _ in frame:
-            if len(s):
+        for piece in frame:
+            if len(piece.s):
                 all_empty = False
 
-            if quoted:
+            if piece.quoted:
                 any_quoted = True
             else:
                 all_quoted = False
@@ -1951,7 +1949,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # If every frag is quoted, e.g. "$a$b" or any part in "${a[@]}"x, then
         # don't do word splitting or globbing.
         if all_quoted:
-            tmp = [s for s, _, _ in frame]
+            tmp = [piece.s for piece in frame]
             a = ''.join(tmp)
             argv.append(a)
             return
@@ -1960,16 +1958,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         # Array of strings, some of which are BOTH IFS-escaped and GLOB escaped!
         frags = []  # type: List[str]
-        for frag, quoted, do_split in frame:
-            if will_glob and quoted:
-                frag = glob_.GlobEscape(frag)
+        for piece in frame:
+            if will_glob and piece.quoted:
+                frag = glob_.GlobEscape(piece.s)
             else:
                 # If we have a literal \, then we turn it into \\\\.
                 # Splitting takes \\\\ -> \\
                 # Globbing takes \\ to \ if it doesn't match
-                frag = _BackslashEscape(frag)
+                frag = _BackslashEscape(piece.s)
 
-            if do_split:
+            if piece.do_split:
                 frag = _BackslashEscape(frag)
             else:
                 frag = self.splitter.Escape(frag)
@@ -2013,7 +2011,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         argv = []  # type: List[str]
         for frame in frames:
             if len(frame):  # empty array gives empty frame!
-                tmp = [s for (s, _, _) in frame]
+                tmp = [piece.s for piece in frame]
                 argv.append(''.join(tmp))  # no split or glob
         #log('argv: %s', argv)
         return argv
@@ -2158,7 +2156,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # disallows such expressions at parse time.
             for frame in frames:
                 if len(frame):  # empty array gives empty frame!
-                    tmp = [s for (s, _, _) in frame]
+                    tmp = [piece.s for piece in frame]
                     strs.append(''.join(tmp))  # no split or glob
                     locs.append(w)
 
@@ -2226,7 +2224,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 val0 = part_vals[0]
                 UP_val0 = val0
                 if val0.tag() == part_value_e.String:
-                    val0 = cast(part_value.String, UP_val0)
+                    val0 = cast(Piece, UP_val0)
                     if not val0.quoted:
                         builtin_id = consts.LookupAssignBuiltin(val0.s)
                         if builtin_id != consts.NO_INDEX:
@@ -2305,13 +2303,13 @@ class NormalWordEvaluator(AbstractWordEvaluator):
             strs = self.splitter.SplitForWordEval(stdout_str)
             return part_value.Array(strs)
         else:
-            return part_value.String(stdout_str, quoted, not quoted)
+            return Piece(stdout_str, quoted, not quoted)
 
     def _EvalProcessSub(self, cs_part):
-        # type: (CommandSub) -> part_value.String
+        # type: (CommandSub) -> Piece
         dev_path = self.shell_ex.RunProcessSub(cs_part)
         # pretend it's quoted; no split or glob
-        return part_value.String(dev_path, True, False)
+        return Piece(dev_path, True, False)
 
 
 _DUMMY = '__NO_COMMAND_SUB__'
@@ -2350,12 +2348,12 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
         if cs_part.left_token.id == Id.Left_AtParen:
             return part_value.Array([_DUMMY])
         else:
-            return part_value.String(_DUMMY, quoted, not quoted)
+            return Piece(_DUMMY, quoted, not quoted)
 
     def _EvalProcessSub(self, cs_part):
-        # type: (CommandSub) -> part_value.String
+        # type: (CommandSub) -> Piece
         # pretend it's quoted; no split or glob
-        return part_value.String('__NO_PROCESS_SUB__', True, False)
+        return Piece('__NO_PROCESS_SUB__', True, False)
 
 
 # vim: sw=4

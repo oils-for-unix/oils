@@ -42,6 +42,7 @@ from _devbuild.gen.runtime_asdl import (
     scope_t,
     part_value,
     part_value_t,
+    Piece,
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName)
@@ -318,7 +319,7 @@ class ExprEvaluator(object):
         with switch(part.left.id) as case:
             if case(Id.Left_DollarBracket):  # $[join(x)]
                 s = val_ops.Stringify(val, loc.WordPart(part))
-                return part_value.String(s, False, False)
+                return Piece(s, False, False)
 
             elif case(Id.Lit_AtLBracket):  # @[split(x)]
                 strs = val_ops.ToShellArray(val,

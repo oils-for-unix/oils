@@ -30,14 +30,15 @@ module runtime
            List[str] argv, List[CompoundWord] arg_locs,
            List[AssignArg] pairs)
 
+  # - Single or double quoted parts get neither split or globbed.
+  # - Bare words like echo or *.py are globbed, but NOT split with IFS.
+  # - Unquoted Substitutions are split and globbed.
+  Piece = (str s, bool quoted, bool do_split)
+
   # A parse-time word_part from syntax.asdl is evaluated to a runtime
   # part_value.
   part_value = 
-
-    # - Single or double quoted parts get neither split or globbed.
-    # - Bare words like echo or *.py are globbed, but NOT split with IFS.
-    # - Unquoted Substitutions are split and globbed.
-    String(str s, bool quoted, bool do_split)
+    String %Piece
 
     # "$@" or "${a[@]}" # never globbed or split (though other shells
     # split them)
