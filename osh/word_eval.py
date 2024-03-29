@@ -5,6 +5,7 @@ word_eval.py - Evaluator for the word language.
 from _devbuild.gen.id_kind_asdl import Id, Kind, Kind_str
 from _devbuild.gen.syntax_asdl import (
     Token,
+    WideToken,
     SimpleVarSub,
     loc,
     loc_t,
@@ -1481,7 +1482,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     e_die(
                         "Array %r can't be referred to as a scalar (without @ or *)"
-                        % var_name, token)
+                        % var_name, token.tok)
 
         elif token.tok.id == Id.VSub_Number:
             var_num = int(lexer.LazyStr2(token))
@@ -1511,7 +1512,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         """
         part_vals = []  # type: List[part_value_t]
         self._EvalSimpleVarSub(node, part_vals, False)
-        return self._ConcatPartVals(part_vals, node.tok)
+        return self._ConcatPartVals(part_vals, node.tok.tok)
 
     def _EvalExtGlob(self, part, part_vals):
         # type: (word_part.ExtGlob, List[part_value_t]) -> None
@@ -1597,10 +1598,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                       loc.WordPart(part))
 
             elif case(word_part_e.Literal):
-                part = cast(Token, UP_part)
+                part = cast(WideToken, UP_part)
                 # Split if it's in a substitution.
                 # That is: echo is not split, but ${foo:-echo} is split
-                v = part_value.String(lexer.LazyStr(part), quoted, is_subst)
+                v = part_value.String(lexer.LazyStr2(part), quoted, is_subst)
                 part_vals.append(v)
 
             elif case(word_part_e.EscapedLiteral):

@@ -550,7 +550,7 @@ class ArithEvaluator(object):
                 var_name = lexer.LazyStr2(vsub)
                 val = self.mem.GetValue(var_name)
                 if val.tag() == value_e.Undef and self.exec_opts.nounset():
-                    e_die('Undefined variable %r' % var_name, vsub)
+                    e_die('Undefined variable %r' % var_name, vsub.tok)
                 return val
 
             elif case(arith_expr_e.Word):  # $(( $x )) $(( ${x}${y} )), etc.

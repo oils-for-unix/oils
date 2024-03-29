@@ -7,6 +7,7 @@ values.
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
+    WideToken,
     CharCode,
     word_part_e,
     word_part_t,
@@ -181,7 +182,7 @@ def RemoveLeadingSpaceDQ(parts):
     # The first token may have a newline
     UP_first = parts[0]
     if UP_first.tag() == word_part_e.Literal:
-        first = cast(Token, UP_first)
+        first = cast(WideToken, UP_first).tok
         #log('T %s', first_part)
         if _IsTrailingSpace(first):
             # Remove the first part.  TODO: This could be expensive if there are many
@@ -191,7 +192,7 @@ def RemoveLeadingSpaceDQ(parts):
     UP_last = parts[-1]
     to_strip = None  # type: Optional[str]
     if UP_last.tag() == word_part_e.Literal:
-        last = cast(Token, UP_last)
+        last = cast(WideToken, UP_last).tok
         if _IsLeadingSpace(last):
             to_strip = lexer.TokenVal(last)
             parts.pop()  # Remove the last part
@@ -205,7 +206,7 @@ def RemoveLeadingSpaceDQ(parts):
             line_ended = False
             continue
 
-        lit_tok = cast(Token, part)
+        lit_tok = cast(WideToken, part).tok
 
         if lit_tok.col == 0 and lexer.TokenStartsWith(lit_tok, to_strip):
             # TODO: Lexer should not populate this!

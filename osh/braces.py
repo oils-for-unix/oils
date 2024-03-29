@@ -18,6 +18,7 @@ from __future__ import print_function
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     Token,
+    WideToken,
     CompoundWord,
     word,
     word_e,
@@ -236,8 +237,8 @@ def BraceDetect(w):
         append = True
         UP_part = part
         if part.tag() == word_part_e.Literal:
-            part = cast(Token, UP_part)
-            id_ = part.id
+            part = cast(WideToken, UP_part)
+            id_ = part.tok.id
             if id_ == Id.Lit_LBrace:
                 # Save prefix parts.  Start new parts list.
                 new_frame = _StackFrame(cur_parts)
@@ -274,7 +275,7 @@ def BraceDetect(w):
                     # lexed as a single Lit_Chars token.
                     part2 = cur_parts[0]
                     if part2.tag() == word_part_e.Literal:
-                        tok = cast(Token, part2)
+                        tok = cast(WideToken, part2).tok
                         if tok.id == Id.Lit_Chars:
                             range_part = _RangePartDetect(tok)
                             if range_part:
@@ -458,7 +459,7 @@ def _ExpandPart(
 
                     # TODO: Does it help to preserve location info?
                     # t = Token(Id.Lit_Chars, expand_part.locs[0], s)
-                    t = lexer.DummyToken(Id.Lit_Chars, s)
+                    t = WideToken(lexer.DummyToken(Id.Lit_Chars, s), s)
 
                     out_parts_.append(t)
                     out_parts_.extend(suffix)

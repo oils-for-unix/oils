@@ -1286,7 +1286,7 @@ class EggexEvaluator(object):
                             raise error.TypeErr(
                                 func_val,
                                 "Expected %r to be a func" % func_name,
-                                node.func_name)
+                                node.func_name.tok)
 
                 self.convert_funcs.append(convert_func)
                 self.convert_toks.append(convert_tok)

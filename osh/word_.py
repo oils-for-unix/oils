@@ -5,6 +5,7 @@ word.py - Utility functions for words, e.g. treating them as "tokens".
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_t, Kind_t
 from _devbuild.gen.syntax_asdl import (
     Token,
+    WideToken,
     CompoundWord,
     DoubleQuoted,
     SingleQuoted,
@@ -37,7 +38,7 @@ def LiteralId(p):
     """
     UP_part = p
     if p.tag() == word_part_e.Literal:
-        return cast(Token, UP_part).id
+        return cast(WideToken, UP_part).tok.id
     else:
         return Id.Undefined_Tok  # unequal to any other Id
 
@@ -73,12 +74,12 @@ def _EvalWordPart(part):
             return False, '', False
 
         elif case(word_part_e.Literal):
-            tok = cast(Token, UP_part)
+            tok = cast(WideToken, UP_part)
             # Weird performance issue: if we change this to lexer.LazyStr(),
             # the parser slows down, e.g. on configure-coreutils from 805 B
             # irefs to ~830 B.  The real issue is that we should avoid calling
             # this from CommandParser - for the Hay node.
-            return True, lexer.TokenVal(tok), False
+            return True, lexer.TokenVal(tok.tok), False
             #return True, lexer.LazyStr(tok), False
 
         elif case(word_part_e.EscapedLiteral):
@@ -136,15 +137,16 @@ def FastStrEval(w):
     UP_part0 = part0
     with tagswitch(part0) as case:
         if case(word_part_e.Literal):
-            part0 = cast(Token, UP_part0)
+            part0 = cast(WideToken, UP_part0)
 
-            if part0.id in (Id.Lit_Chars, Id.Lit_LBracket, Id.Lit_RBracket):
+            if part0.tok.id in (Id.Lit_Chars, Id.Lit_LBracket,
+                                Id.Lit_RBracket):
                 # Could add more tokens in this case
                 #   e.g. + is Lit_Other, and it's a Token in 'expr'
                 #   Right now it's Lit_Chars (e.g. ls -l) and [ and ] because I
                 #   know those are common
                 #   { } are not as common
-                return lexer.LazyStr(part0)
+                return lexer.LazyStr2(part0)
 
             else:
                 # e.g. Id.Lit_Star needs to be glob expanded
@@ -254,7 +256,7 @@ def TildeDetect2(w):
     if id0 != Id.Lit_Tilde:
         return None  # $x is not TildeSub
 
-    tok0 = cast(Token, part0)
+    tok0 = cast(WideToken, part0).tok
 
     new_parts = []  # type: List[word_part_t]
 
@@ -271,7 +273,7 @@ def TildeDetect2(w):
     if id1 != Id.Lit_Chars:
         return None  # ~$x is not TildeSub
 
-    tok1 = cast(Token, w.parts[1])
+    tok1 = cast(WideToken, w.parts[1]).tok
 
     if len(w.parts) == 2:  # ~foo
         new_parts.append(word_part.TildeSub(tok0, tok1, lexer.TokenVal(tok1)))
@@ -332,7 +334,7 @@ def TildeDetectAssign(w):
             part1 = parts[i + 1]
             part2 = parts[i + 2]
 
-            tok0 = cast(Token, part0)
+            tok0 = cast(WideToken, part0).tok
 
             if part1 is None:  # x=foo:~
                 new_parts.append(word_part.TildeSub(tok0, None, None))
@@ -352,7 +354,7 @@ def TildeDetectAssign(w):
                 i += 2
                 continue  # x=foo:~$x is not tilde sub
 
-            tok1 = cast(Token, part1)
+            tok1 = cast(WideToken, part1).tok
 
             if part2 is None:  # x=foo:~foo
                 # consume both
@@ -446,7 +448,7 @@ def LooksLikeArithVar(UP_w):
     if LiteralId(UP_part0) != Id.Lit_ArithVarLike:
         return None
 
-    return cast(Token, UP_part0)
+    return cast(WideToken, UP_part0).tok
 
 
 def IsVarLike(w):
@@ -496,18 +498,18 @@ def DetectShAssignment(w):
     UP_part0 = w.parts[0]
     id0 = LiteralId(UP_part0)
     if id0 == Id.Lit_VarLike:
-        tok = cast(Token, UP_part0)
+        tok = cast(WideToken, UP_part0).tok
         return tok, no_token, 1  # everything after first token is the value
 
     if id0 == Id.Lit_ArrayLhsOpen:
-        tok0 = cast(Token, UP_part0)
+        tok0 = cast(WideToken, UP_part0).tok
         # NOTE that a[]=x should be an error.  We don't want to silently decay.
         if n < 2:
             return no_token, no_token, 0
         for i in xrange(1, n):
             UP_part = w.parts[i]
             if LiteralId(UP_part) == Id.Lit_ArrayLhsClose:
-                tok_close = cast(Token, UP_part)
+                tok_close = cast(WideToken, UP_part).tok
                 return tok0, tok_close, i + 1
 
     # Nothing detected.  Could be 'foobar' or a[x+1+2/' without the closing ].
@@ -556,7 +558,7 @@ def IsControlFlow(w):
 
     token_kind = consts.GetKind(token_type)
     if token_kind == Kind.ControlFlow:
-        return token_kind, cast(Token, UP_part0)
+        return token_kind, cast(WideToken, UP_part0).tok
 
     return Kind.Undefined, no_token
 
@@ -577,7 +579,7 @@ def LiteralToken(UP_w):
 
     part0 = w.parts[0]
     if part0.tag() == word_part_e.Literal:
-        return cast(Token, part0)
+        return cast(WideToken, part0).tok
 
     return None
 
@@ -614,9 +616,9 @@ def AsKeywordToken(UP_w):
 
     part = w.parts[0]
     assert part.tag() == word_part_e.Literal, part
-    tok = cast(Token, part)
-    assert consts.GetKind(tok.id) == Kind.KW, tok
-    return tok
+    tok = cast(WideToken, part)
+    assert consts.GetKind(tok.tok.id) == Kind.KW, tok
+    return tok.tok
 
 
 def AsOperatorToken(word):
@@ -741,7 +743,9 @@ def IsVarSub(w):
 # Doesn't translate with mycpp because of dynamic %
 def ErrorWord(error_str):
     # type: (str) -> CompoundWord
-    t = lexer.DummyToken(Id.Lit_Chars, error_str)
+
+    # TODO: simplify this
+    t = WideToken(lexer.DummyToken(Id.Lit_Chars, error_str), error_str)
     return CompoundWord([t])
 
 

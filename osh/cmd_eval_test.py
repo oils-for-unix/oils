@@ -12,7 +12,8 @@ cmd_eval_test.py: Tests for cmd_eval.py
 import unittest
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import (BracedVarSub, suffix_op, CompoundWord)
+from _devbuild.gen.syntax_asdl import (BracedVarSub, suffix_op, CompoundWord,
+                                       WideToken)
 from core import test_lib
 from frontend.lexer import DummyToken as Tok
 
@@ -61,7 +62,7 @@ class VarOpTest(unittest.TestCase):
         print(part_vals)
 
         # Now add some ops
-        part = Tok(Id.Lit_Chars, 'default')
+        part = WideToken(Tok(Id.Lit_Chars, 'default'), 'default')
         arg_word = CompoundWord([part])
         op_tok = Tok(Id.VTest_ColonHyphen, ':-')
         test_op = suffix_op.Unary(op_tok, arg_word)

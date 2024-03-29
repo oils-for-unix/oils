@@ -37,7 +37,7 @@ import time as time_
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import (CompoundWord, word_part_e, word_t,
-                                       redir_param_e, Token)
+                                       redir_param_e, Token, WideToken)
 from _devbuild.gen.runtime_asdl import (scope_e, comp_action_e, comp_action_t)
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e)
@@ -922,8 +922,8 @@ def WordEndsWithCompDummy(w):
     last_part = w.parts[-1]
     UP_part = last_part
     if last_part.tag() == word_part_e.Literal:
-        last_part = cast(Token, UP_part)
-        return last_part.id == Id.Lit_CompDummy
+        last_part = cast(WideToken, UP_part)
+        return last_part.tok.id == Id.Lit_CompDummy
     else:
         return False
 
@@ -1094,7 +1094,7 @@ class RootCompleter(object):
 
                 if (len(parts) == 2 and
                         word_.LiteralId(parts[1]) == Id.Lit_CompDummy):
-                    tilde_tok = cast(Token, parts[0])
+                    tilde_tok = cast(WideToken, parts[0]).tok
 
                     # end of tilde
                     self.comp_ui_state.display_pos = tilde_tok.col + 1
@@ -1110,11 +1110,11 @@ class RootCompleter(object):
                         word_.LiteralId(parts[1]) == Id.Lit_Chars and
                         word_.LiteralId(parts[2]) == Id.Lit_CompDummy):
 
-                    chars_tok = cast(Token, parts[1])
+                    chars_wide = cast(WideToken, parts[1])
 
-                    self.comp_ui_state.display_pos = chars_tok.col
+                    self.comp_ui_state.display_pos = chars_wide.tok.col
 
-                    to_complete = lexer.TokenVal(chars_tok)
+                    to_complete = lexer.LazyStr2(chars_wide)
                     n = len(to_complete)
                     for u in pyos.GetAllUsers():  # catch errors?
                         name = u.pw_name

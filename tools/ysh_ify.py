@@ -50,6 +50,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     CompoundWord,
     Token,
+    WideToken,
     SimpleVarSub,
     BracedVarSub,
     CommandSub,
@@ -1029,8 +1030,8 @@ class YshPrinter(object):
                         self.f.write("'%s'" % val)
 
             elif case(word_part_e.Literal):
-                node = cast(Token, UP_node)
-                self.cursor.PrintIncluding(node)
+                node = cast(WideToken, UP_node)
+                self.cursor.PrintIncluding(node.tok)
 
             elif case(word_part_e.SingleQuoted):
                 node = cast(SingleQuoted, UP_node)

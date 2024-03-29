@@ -39,6 +39,7 @@ from _devbuild.gen.syntax_asdl import (
     word_t,
     CompoundWord,
     Token,
+    WideToken,
     word_part_e,
     word_part_t,
     rhs_word,
@@ -164,7 +165,7 @@ def _MakeLiteralHereLines(
 
         t = arena.NewToken(Id.Lit_Chars, start_offset, len(src_line.content),
                            src_line)
-        tokens.append(t)
+        tokens.append(WideToken(t, None))
     return tokens
 
 
@@ -869,11 +870,11 @@ class CommandParser(object):
                     # Disallow leading =a because it's confusing
                     part0 = w.parts[0]
                     if part0.tag() == word_part_e.Literal:
-                        tok = cast(Token, part0)
-                        if tok.id == Id.Lit_Equals:
+                        tok = cast(WideToken, part0)
+                        if tok.tok.id == Id.Lit_Equals:
                             p_die(
                                 "=word isn't allowed.  Hint: add a space after =, or quote it",
-                                tok)
+                                tok.tok)
 
                     # Is the first word a Hay Attr word?
                     #
@@ -2022,7 +2023,7 @@ class CommandParser(object):
         part0 = word0.parts[0]
         # If we got a non-empty string from ShFunctionName, this should be true.
         assert part0.tag() == word_part_e.Literal
-        blame_tok = cast(Token, part0)  # for ctx_VarChecker
+        blame_tok = cast(WideToken, part0).tok  # for ctx_VarChecker
 
         self._SetNext()  # move past function name
 
@@ -2361,10 +2362,10 @@ class CommandParser(object):
             if self.parse_opts.parse_equals() and len(parts) == 1:
                 part0 = parts[0]
                 if part0.tag() == word_part_e.Literal:
-                    tok = cast(Token, part0)
-                    if (match.IsValidVarName(lexer.LazyStr(tok)) and
+                    wide_tok = cast(WideToken, part0)
+                    if (match.IsValidVarName(lexer.LazyStr2(wide_tok)) and
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
-                        assert tok.id == Id.Lit_Chars, tok
+                        assert wide_tok.tok.id == Id.Lit_Chars, wide_tok
 
                         if len(self.hay_attrs_stack
                                ) and self.hay_attrs_stack[-1]:
@@ -2373,10 +2374,10 @@ class CommandParser(object):
                             self._SetNext()  # Somehow this is necessary
                             # TODO: Use BareDecl here.  Well, do that when we
                             # treat it as const or lazy.
-                            return command.VarDecl(
-                                None,
-                                [NameType(tok, lexer.TokenVal(tok), None)],
-                                enode)
+                            return command.VarDecl(None, [
+                                NameType(wide_tok.tok,
+                                         lexer.LazyStr2(wide_tok), None)
+                            ], enode)
                         else:
                             self._SetNext()
                             self._GetWord()

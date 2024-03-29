@@ -5,7 +5,7 @@ import libc
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (
     CompoundWord,
-    Token,
+    WideToken,
     word_part_e,
     glob_part,
     glob_part_e,
@@ -69,7 +69,7 @@ def LooksLikeStaticGlob(w):
     left_bracket = False
     for part in w.parts:
         if part.tag() == word_part_e.Literal:
-            id_ = cast(Token, part).id
+            id_ = cast(WideToken, part).tok.id
             if id_ in (Id.Lit_Star, Id.Lit_QMark):
                 return True
             elif id_ == Id.Lit_LBracket:

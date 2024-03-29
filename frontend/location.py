@@ -78,10 +78,6 @@ def TokenFor(loc_):
             else:
                 return None
 
-        elif case(loc_e.WideToken):
-            wide_tok = cast(WideToken, UP_location)
-            return wide_tok.tok
-
         elif case(loc_e.ArgWord):
             w = cast(CompoundWord, UP_location)
             return LeftTokenForWord(w)
@@ -228,8 +224,8 @@ def LeftTokenForWordPart(part):
             return part.left
 
         elif case(word_part_e.Literal):
-            tok = cast(Token, UP_part)
-            return tok
+            part = cast(WideToken, UP_part)
+            return part.tok
 
         elif case(word_part_e.EscapedLiteral):
             part = cast(word_part.EscapedLiteral, UP_part)
@@ -301,9 +297,8 @@ def _RightTokenForWordPart(part):
             return part.right
 
         elif case(word_part_e.Literal):
-            tok = cast(Token, UP_part)
-            # Just use the token
-            return tok
+            part = cast(WideToken, UP_part)
+            return part.tok
 
         elif case(word_part_e.EscapedLiteral):
             part = cast(word_part.EscapedLiteral, UP_part)
@@ -508,7 +503,7 @@ def TokenForExpr(node):
 
         elif case(expr_e.SimpleVarSub):
             node = cast(SimpleVarSub, UP_node)
-            return node.tok
+            return node.tok.tok
 
         elif case(expr_e.Unary):
             node = cast(expr.Unary, UP_node)

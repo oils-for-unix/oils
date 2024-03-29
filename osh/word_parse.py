@@ -956,7 +956,7 @@ class WordParser(WordEmitter):
                             p_die("Literal $ should be quoted like \$",
                                   self.cur_token)
 
-                    part = self.cur_token
+                    part = WideToken(self.cur_token, None)
                 out_parts.append(part)
 
             elif self.token_kind == Kind.Left:
@@ -980,7 +980,7 @@ class WordParser(WordEmitter):
                     num_end_tokens += 1
 
                 # In a here doc, the right quote is literal!
-                out_parts.append(self.cur_token)
+                out_parts.append(WideToken(self.cur_token, None))
 
             elif self.token_kind == Kind.Eof:
                 if left_token:
@@ -1624,7 +1624,7 @@ class WordParser(WordEmitter):
             part = word_part.EscapedLiteral(self.cur_token,
                                             ch)  # type: word_part_t
         else:
-            part = self.cur_token
+            part = WideToken(self.cur_token, None)
 
         if is_first and self.token_type == Id.Lit_VarLike:  # foo=
             parts.append(part)

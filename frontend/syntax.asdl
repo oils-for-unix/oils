@@ -142,7 +142,6 @@ module syntax
   loc = 
     Missing  # equivalent of runtime.NO_SPID
   | Token %Token
-  | WideToken %WideToken
     # Very common case: argv arrays need original location
   | ArgWord %CompoundWord
   | WordPart(word_part p)
@@ -219,7 +218,7 @@ module syntax
   word_part = 
     ShArrayLiteral %ShArrayLiteral
   | BashAssocLiteral(Token left, List[AssocPair] pairs, Token right)
-  | Literal %Token
+  | Literal %WideToken
     # escaped case is separate so the evaluator doesn't have to check token ID
   | EscapedLiteral(Token token, str ch)
   | SingleQuoted %SingleQuoted
