@@ -809,7 +809,7 @@ class YshPrinter(object):
 
                 if var_part:
                     self.f.write(' (')
-                    self.f.write(lexer.LazyStr(var_part.tok))
+                    self.f.write(lexer.LazyStr2(var_part.tok))
                     self.f.write(') ')
 
                 self.cursor.SkipPast(node.arms_start)  # Skip past 'in'
@@ -945,7 +945,7 @@ class YshPrinter(object):
                         part0 = dq_part.parts[0]
                         if part0.tag() == word_part_e.SimpleVarSub:
                             vsub_part = cast(SimpleVarSub, dq_part.parts[0])
-                            if vsub_part.tok.id == Id.VSub_At:
+                            if vsub_part.tok.tok.id == Id.VSub_At:
                                 self.cursor.PrintUntil(dq_part.left)
                                 self.cursor.SkipPast(
                                     dq_part.right)  # " then $@ then "
@@ -953,11 +953,11 @@ class YshPrinter(object):
                                 return  # Done replacing
 
                             # "$1" -> $1, "$foo" -> $foo
-                            if vsub_part.tok.id in (Id.VSub_Number,
-                                                    Id.VSub_DollarName):
+                            if vsub_part.tok.tok.id in (Id.VSub_Number,
+                                                        Id.VSub_DollarName):
                                 self.cursor.PrintUntil(dq_part.left)
                                 self.cursor.SkipPast(dq_part.right)
-                                self.f.write(lexer.TokenVal(vsub_part.tok))
+                                self.f.write(lexer.TokenVal(vsub_part.tok.tok))
                                 return
 
                         # Single arith sub, command sub, etc.
@@ -1050,27 +1050,27 @@ class YshPrinter(object):
             elif case(word_part_e.SimpleVarSub):
                 node = cast(SimpleVarSub, UP_node)
 
-                op_id = node.tok.id
+                op_id = node.tok.tok.id
 
                 if op_id == Id.VSub_DollarName:
-                    self.cursor.PrintIncluding(node.tok)
+                    self.cursor.PrintIncluding(node.tok.tok)
 
                 elif op_id == Id.VSub_Number:
-                    self.cursor.PrintIncluding(node.tok)
+                    self.cursor.PrintIncluding(node.tok.tok)
 
                 elif op_id == Id.VSub_At:  # $@ -- handled quoted case above
                     self.f.write('$[join(ARGV)]')
-                    self.cursor.SkipPast(node.tok)
+                    self.cursor.SkipPast(node.tok.tok)
 
                 elif op_id == Id.VSub_Star:  # $*
                     # PEDANTIC: Depends if quoted or unquoted
                     self.f.write('$[join(ARGV)]')
-                    self.cursor.SkipPast(node.tok)
+                    self.cursor.SkipPast(node.tok.tok)
 
                 elif op_id == Id.VSub_Pound:  # $#
                     # len(ARGV) ?
                     self.f.write('$Argc')
-                    self.cursor.SkipPast(node.tok)
+                    self.cursor.SkipPast(node.tok.tok)
 
                 else:
                     pass

@@ -1470,8 +1470,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         vsub_state = VarSubState.CreateNull()
 
         # 1. Evaluate from (var_name, var_num, Token) -> defined, value
-        if token.id == Id.VSub_DollarName:
-            var_name = lexer.LazyStr(token)
+        if token.tok.id == Id.VSub_DollarName:
+            var_name = lexer.LazyStr2(token)
             # TODO: Special case for LINENO
             val = self.mem.GetValue(var_name)
             if val.tag() in (value_e.BashArray, value_e.BashAssoc):
@@ -1483,15 +1483,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         "Array %r can't be referred to as a scalar (without @ or *)"
                         % var_name, token)
 
-        elif token.id == Id.VSub_Number:
-            var_num = int(lexer.LazyStr(token))
+        elif token.tok.id == Id.VSub_Number:
+            var_num = int(lexer.LazyStr2(token))
             val = self._EvalVarNum(var_num)
 
         else:
-            val = self._EvalSpecialVar(token.id, quoted, vsub_state)
+            val = self._EvalSpecialVar(token.tok.id, quoted, vsub_state)
 
         #log('SIMPLE %s', part)
-        val = self._EmptyStrOrError(val, token)
+        val = self._EmptyStrOrError(val, token.tok)
         UP_val = val
         if val.tag() == value_e.BashArray:
             array_val = cast(value.BashArray, UP_val)

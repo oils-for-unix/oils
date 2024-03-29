@@ -130,7 +130,8 @@ module syntax
 
   Token = (id id, uint16 length, int col, SourceLine? line, str? tval)
 
-  WideToken = (id id, int length, int col, SourceLine? line, str? tval)
+  #WideToken = (id id, int length, int col, SourceLine? line, str? tval)
+  WideToken = (Token tok, str? lazy_str)
 
   # Slight ASDL bug: CompoundWord has to be defined before using it as a shared
   # variant.  The _product_counter algorithm should be moved into a separate
@@ -197,7 +198,7 @@ module syntax
   SingleQuoted = (Token left, str sval, Token right)
 
   # e.g. Id.VSub_QMark, Id.VSub_DollarName $foo with lexer.LazyStr()
-  SimpleVarSub = (Token tok)
+  SimpleVarSub = (WideToken tok)
 
   CommandSub = (Token left_token, command child, Token right)
 

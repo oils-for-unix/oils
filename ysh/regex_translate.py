@@ -237,7 +237,7 @@ def _AsPosixEre(node, parts, capture_names):
 
         if op_tag == re_repeat_e.Num:
             op = cast(WideToken, UP_op)
-            assert op.id == Id.Expr_DecInt, op
+            assert op.tok.id == Id.Expr_DecInt, op
             parts.append('{%s}' % lexer.LazyStr2(op))
             return
 

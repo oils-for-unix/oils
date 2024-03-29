@@ -969,7 +969,7 @@ class WordParser(WordEmitter):
 
             elif self.token_kind == Kind.VSub:
                 tok = self.cur_token
-                part = SimpleVarSub(tok)
+                part = SimpleVarSub(WideToken(tok, None))
                 out_parts.append(part)
                 # NOTE: parsing "$f(x)" would BREAK CODE.  Could add a more for it
                 # later.
@@ -1196,7 +1196,7 @@ class WordParser(WordEmitter):
                 if case(y_lhs_e.Var):
                     lhs = cast(WideToken, UP_lhs)
                     var_checker.Check(kw_token.id, lexer.LazyStr2(lhs),
-                                      lexer.MakeSlim(lhs))
+                                      lhs.tok)
 
                 # Note: this does not cover cases like
                 # setvar (a[0])[1] = v
@@ -1750,7 +1750,8 @@ class WordParser(WordEmitter):
             elif self.token_kind == Kind.VSub:
                 vsub_token = self.cur_token
 
-                part = SimpleVarSub(vsub_token)  # type: word_part_t
+                part = SimpleVarSub(WideToken(vsub_token,
+                                              None))  # type: word_part_t
                 w.parts.append(part)
 
             elif self.token_kind == Kind.ExtGlob:

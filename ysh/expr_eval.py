@@ -270,7 +270,7 @@ class ExprEvaluator(object):
         with tagswitch(lhs) as case:
             if case(y_lhs_e.Var):
                 lhs = cast(WideToken, UP_lhs)
-                return LeftName(lexer.LazyStr2(lhs), lexer.MakeSlim(lhs))
+                return LeftName(lexer.LazyStr2(lhs), lhs.tok)
 
             elif case(y_lhs_e.Subscript):
                 lhs = cast(Subscript, UP_lhs)
@@ -367,7 +367,7 @@ class ExprEvaluator(object):
             named_args = {}  # type: Dict[str, value_t]
             arg_list = ArgList.CreateNull()  # There's no call site
             rd = typed_args.Reader(pos_args, named_args, arg_list)
-            rd.SetFallbackLocation(lexer.MakeSlim(convert_tok))
+            rd.SetFallbackLocation(convert_tok.tok)
             try:
                 val = self._CallFunc(func_val, rd)
             except error.FatalRuntime as e:

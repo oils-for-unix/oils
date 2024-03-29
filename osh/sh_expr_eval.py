@@ -859,7 +859,7 @@ class ArithEvaluator(object):
         with tagswitch(anode) as case:
             if case(arith_expr_e.VarSub):
                 tok = cast(WideToken, UP_anode)
-                return (lexer.LazyStr2(tok), lexer.MakeSlim(tok))
+                return (lexer.LazyStr2(tok), tok.tok)
 
             elif case(arith_expr_e.Word):
                 w = cast(CompoundWord, UP_anode)

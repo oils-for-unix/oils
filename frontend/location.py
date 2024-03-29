@@ -43,7 +43,6 @@ from _devbuild.gen.syntax_asdl import (
     Eggex,
 )
 from _devbuild.gen.value_asdl import LeftName
-from frontend import lexer
 from mycpp.mylib import log
 from mycpp.mylib import tagswitch
 
@@ -81,7 +80,7 @@ def TokenFor(loc_):
 
         elif case(loc_e.WideToken):
             wide_tok = cast(WideToken, UP_location)
-            return lexer.MakeSlim(wide_tok)
+            return wide_tok.tok
 
         elif case(loc_e.ArgWord):
             w = cast(CompoundWord, UP_location)
@@ -189,7 +188,7 @@ def TokenForArith(node):
         if case(arith_expr_e.VarSub):
             vsub = cast(WideToken, UP_node)
             # $(( x ))
-            return lexer.MakeSlim(vsub)
+            return vsub.tok
 
         elif case(arith_expr_e.Word):
             w = cast(CompoundWord, UP_node)
@@ -246,7 +245,7 @@ def LeftTokenForWordPart(part):
 
         elif case(word_part_e.SimpleVarSub):
             part = cast(SimpleVarSub, UP_part)
-            return part.tok
+            return part.tok.tok
 
         elif case(word_part_e.BracedVarSub):
             part = cast(BracedVarSub, UP_part)
@@ -321,7 +320,7 @@ def _RightTokenForWordPart(part):
         elif case(word_part_e.SimpleVarSub):
             part = cast(SimpleVarSub, UP_part)
             # left and right are the same for $myvar
-            return part.tok
+            return part.tok.tok
 
         elif case(word_part_e.BracedVarSub):
             part = cast(BracedVarSub, UP_part)

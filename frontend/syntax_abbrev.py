@@ -76,16 +76,16 @@ def _SimpleVarSub(obj):
     p_node = runtime.NewRecord('$')
     p_node.abbrev = True
 
-    if obj.tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $myvar or $1
+    tok = obj.tok.tok
+    if tok.id in (Id.VSub_DollarName, Id.VSub_Number):  # $myvar or $1
         # We want to show the variable name
         # _AbbreviateToken(obj.tok, p_node.unnamed_fields)
-        tok = obj.tok
         # Omit $
         var_name = tok.line.content[tok.col + 1:tok.col + tok.length]
         n1 = runtime.NewLeaf(var_name, color_e.StringConst)
         p_node.unnamed_fields.append(n1)
     else:  # $?
-        n1 = runtime.NewLeaf(Id_str(obj.tok.id), color_e.OtherConst)
+        n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
         p_node.unnamed_fields.append(n1)
 
     return p_node

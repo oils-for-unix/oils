@@ -139,7 +139,7 @@ class _FormatStringParser(object):
                 # parse time.
                 # Users should use $'' or the future static printf ${x %.3f}.
 
-                parts.append(lexer.MakeWide(self.cur_token))
+                parts.append(WideToken(self.cur_token, None))
 
             elif self.token_type == Id.Format_Percent:
                 parts.append(self._ParseFormatStr())
@@ -188,11 +188,11 @@ class Printf(vm._Builtin):
                 UP_part = part
                 if part.tag() == printf_part_e.Literal:
                     part = cast(WideToken, UP_part)
-                    if part.id == Id.Format_EscapedPercent:
+                    if part.tok.id == Id.Format_EscapedPercent:
                         s = '%'
                     else:
                         s = word_compile.EvalCStringToken(
-                            part.id, lexer.LazyStr2(part))
+                            part.tok.id, lexer.LazyStr2(part))
                     out.append(s)
 
                 elif part.tag() == printf_part_e.Percent:
