@@ -393,8 +393,8 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
 
 # others: redirects?
 
-#### here doc
-shopt --set oil:upgrade
+#### Here doc
+shopt --set ysh:upgrade
 shopt --unset errexit
 set -x
 
@@ -416,9 +416,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## END
 ## STDERR:
 . builtin ':' begin
-| here doc 12345
 | command 12345: tac
-; process 12345: status 0
 ; process 12345: status 0
 . builtin set '+x'
 ## END
@@ -427,7 +425,7 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 
 # BUG: This trace shows an extra process?
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --unset errexit
 set -x
 
@@ -450,13 +448,34 @@ yy
 zz
 ## END
 ## STDERR:
-| here doc 12345
-| here doc 12345
 | command 12345: cat - /dev/fd/3
 ; process 12345: status 0
-; process 12345: status 0
-; process 12345: status 0
 . builtin set '+x'
+## END
+
+#### Here doc greater than 4096 bytes
+
+{
+  echo 'wc -l <<EOF'
+  seq 2000
+  echo 'EOF'
+} > big-here.sh
+
+wc -l big-here.sh
+
+$SH -o ysh:upgrade -x big-here.sh 2>err.txt
+
+sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
+
+## STDOUT:
+2002 big-here.sh
+2000
+## END
+## STDERR:
+| here doc 12345
+| command 12345: wc -l
+; process 12345: status 0
+; process 12345: status 0
 ## END
 
 #### Control Flow

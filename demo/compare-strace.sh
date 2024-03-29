@@ -10,6 +10,10 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+readonly BASE_DIR=_tmp/survey-strace
+
+OSH=${OSH:-bin/osh}
+
 banner() {
   echo
   echo
@@ -41,6 +45,52 @@ redir() {
     local code='true > _tmp/out.txt'
     redir-strace $sh -c "$code"
   done
+}
+
+here-strace() {
+  local sh=$1
+  local dir
+  dir=$BASE_DIR/$(basename $sh)
+  # Not shifting
+
+  mkdir -v -p $dir
+
+  # -ff because it's a pipeline
+  strace -ff -o $dir/here -e 'open,close,fcntl,read,write,fork,execve' -- "$@"
+}
+
+here() {
+  mkdir -v -p $BASE_DIR
+
+  if false; then
+    # osh-cpp doesn't have $(dirname) in wrapper script
+    OSH=_bin/cxx-dbg/osh
+    ninja $OSH
+  fi
+
+  for sh in dash bash mksh $OSH; do
+
+    banner "$sh"
+
+    #local code='exec 3>_tmp/3.txt; echo hello >&3; exec 3>&-; cat _tmp/3.txt'
+
+    #local code='exec 4>_tmp/4.txt; echo hello >&4; exec 4>&-; cat _tmp/4.txt'
+    #local code='true 2>&1'
+
+    cat > $BASE_DIR/here.sh <<SHELL
+tac <<EOF
+one
+two
+three
+EOF
+SHELL
+
+    here-strace $sh $BASE_DIR/here.sh
+  done
+
+  if command -v tree; then
+    tree $BASE_DIR
+  fi
 }
 
 io-strace() {
@@ -142,8 +192,6 @@ interactive() {
 #
 # Translation tests
 #
-
-readonly BASE_DIR=_tmp/strace
 
 _compare-native() {
   local code=$1

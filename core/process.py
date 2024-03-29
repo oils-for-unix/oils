@@ -466,10 +466,14 @@ class FdState(object):
 
                 thunk = _HereDocWriterThunk(write_fd, arg.body)
 
-                # TODO: Use PIPE_SIZE to save a process in the case of small here docs,
-                # which are the common case.  (dash does this.)
-                start_process = True
-                #start_process = False
+                # Use PIPE_SIZE to save a process in the case of small here
+                # docs, which are the common case.  (dash does this.)
+
+                # TODO: instrument this to see how often it happens?
+                start_process = len(arg.body) > 4096
+
+                #log('BODY %d', len(arg.body))
+                #start_process = True
 
                 if start_process:
                     here_proc = Process(thunk, self.job_control, self.job_list,

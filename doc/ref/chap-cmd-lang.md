@@ -94,6 +94,11 @@ below the matching pattern.
         ;;
     esac
 
+For bash compatibility, the `;;` terminator can be substituted with either:
+
+- `;&`   - fall through to next arm, ignoring the condition
+- `;;&`  - fall through to next arm, respecting the condition
+
 <h3 id="if" class="osh-topic">if</h3>
 
 Test if a command exited with status zero (true).  If so, execute the
