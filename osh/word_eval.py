@@ -261,6 +261,17 @@ def _MakeWordFrames(part_vals):
 
     Note: A frame is a 3-tuple that's identical to part_value.String()?  Maybe we
     should make that top level type.
+
+    TODO:
+    - Instead of List[List[Piece]], where List[Piece] is a Frame
+    - Change this representation to
+      Frames = (List[Piece] pieces, List[int] break_indices) 
+      # where break_indices are the end
+
+      Consider a common case like "$x" or "${x}" - I think this a lot more
+      efficient?
+
+    And then change _EvalWordFrame(pieces: List[Piece], start: int, end: int)
     """
     current = []  # type: List[Tuple[str, bool, bool]]
     frames = [current]
@@ -706,7 +717,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             raise AssertionError(tok.id)
 
     def _Length(self, val, token):
-        # type: (value_t, Token) -> value_t
+        # type: (value_t, Token) -> int
         """Returns the length of the value, for ${#var}"""
         UP_val = val
         with tagswitch(val) as case:
@@ -732,7 +743,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         # NOTE: Doesn't make the command exit with 1; it just returns a
                         # length of -1.
                         self.errfmt.PrettyPrintError(e, prefix='warning: ')
-                        return value.Str('-1')
+                        return -1
 
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
@@ -750,7 +761,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 raise error.TypeErr(
                     val, "Length op expected Str, BashArray, BashAssoc", token)
 
-        return value.Str(str(length))
+        return length
 
     def _Keys(self, val, token):
         # type: (value_t, Token) -> value_t
@@ -1329,10 +1340,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 if not vsub_state.has_test_op:  # undef -> '' BEFORE length
                     val = self._EmptyStrOrError(val, part.token)
 
-                val = self._Length(val, part.token)
-                # assume it's not quoted
-                part_val = _ValueToPartValue(val, False, part)
-                part_vals.append(part_val)
+                n = self._Length(val, part.token)
+                part_vals.append(part_value.String(str(n), quoted, False))
                 return  # EARLY EXIT: nothing else can come after length
 
             elif part.prefix_op.id == Id.VSub_Bang:
