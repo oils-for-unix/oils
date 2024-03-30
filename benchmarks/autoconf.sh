@@ -364,14 +364,14 @@ measure-times() {
   done
 }
 
-print-times-tsv() {
+inner-long-tsv() {
   python2 -c '
 import os, re, sys
 
 def PrintRow(row):
   print("\t".join(row))
 
-PrintRow(["sh_label", "who", "what", "seconds"])
+PrintRow(["shell", "who", "what", "seconds"])
 
 for path in sys.argv[1:]:
   filename = os.path.basename(path)
@@ -408,7 +408,7 @@ compare-dim() {
   # string, concatenate the empty string, "", with that number. To force a
   # string to be converted to a number, add zero to that string."
 
-  cat $BASE_DIR/inner-times.tsv | awk -v "who=$who" -v "what=$what" '
+  cat $BASE_DIR/times-long.tsv | awk -v "who=$who" -v "what=$what" '
   BEGIN { 
     TAB = "\t"
 
@@ -434,7 +434,10 @@ compare-dim() {
   echo
 }
 
-compare-inner() {
+compare-times() {
+  log "INNER"
+  log ''
+
   compare-dim self user
 
   compare-dim self sys
@@ -444,15 +447,26 @@ compare-inner() {
   compare-dim child sys
 
   compare-dim both both
+
+  # outer
+  log "OUTER"
+  log ''
+
+  compare-dim both elapsed
+
+  # These kinda match
+  return
+  compare-dim both user
+  compare-dim both sys
 }
 
-compare-outer() {
-  echo "=== outer times ==="
+outer-long-tsv() {
+  log "=== outer times ==="
   awk '
   BEGIN {
     i = 0
 
-    printf "%s\t%s\t%s\t%s\n", "shell", "elapsed", "ratio", "diff secs"
+    printf "%s\t%s\t%s\t%s\n", "shell", "who", "what", "seconds"
   }
   i == 0 {
     #print "Skipping header"
@@ -460,23 +474,18 @@ compare-outer() {
     next
   }
   i >= 1 { 
-    if (i == 1) {
-      first_elapsed = $2 + 0
-      first_user = $3 + 0
-      first_sys = $4 + 0
-    }
-
     elapsed = $2 + 0
+    user = $3 + 0
+    sys = $4 + 0
     sh_label = $6
 
-    ratio = elapsed / first_elapsed
-    diff = elapsed - first_elapsed
-
-    printf "%s\t%5.3f\t%5.3f\t%5.3f\n", sh_label, elapsed, ratio, diff
+    printf "%s\t%s\t%s\t%5.3f\n", sh_label, "both", "elapsed", elapsed
+    printf "%s\t%s\t%s\t%5.3f\n", sh_label, "both", "user", user
+    printf "%s\t%s\t%s\t%5.3f\n", sh_label, "both", "sys", sys
 
     i++
   }
-  ' $BASE_DIR/outer-times.tsv
+  ' $BASE_DIR/outer-wide.tsv
 }
 
 report-times() {
@@ -485,14 +494,16 @@ report-times() {
   head $BASE_DIR/times/*.times.txt
   echo
 
-  tsv-concat $BASE_DIR/times/*.tsv | tee $BASE_DIR/outer-times.tsv
-  #return
+  inner-long-tsv  | tee $BASE_DIR/inner-long.tsv
+  echo
 
-  print-times-tsv  | tee $BASE_DIR/inner-times.tsv
+  tsv-concat $BASE_DIR/times/*.tsv | tee $BASE_DIR/outer-wide.tsv
+  outer-long-tsv | tee $BASE_DIR/outer-long.tsv
+  echo
 
-  compare-inner
+  tsv-concat $BASE_DIR/{inner,outer}-long.tsv | tee $BASE_DIR/times-long.tsv
 
-  compare-outer
+  compare-times
 }
 
 ### Why is clone() taking longer according to strace?
