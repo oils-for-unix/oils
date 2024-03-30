@@ -200,13 +200,13 @@ test/runtime-errors.sh test-arith_ops_str
 [ -c flag ]:1: fatal: Binary operator expected numbers, got Str and Str (OILS-ERR-201)
 ```
 
-- The `+`, `-`, `*` and `/` operators are intended to represent their
-  _arithmetic_ counterparts.
-- The arithmetic operators can be used on strings, provided that they are
-  formatted as numbers. You can explicitly parse a string into a number with the
+- Use `++` if you intended to _concatenate_ strings or lists.
+- The arithmetic operators (`+`, `-`, `*`, `/`) may be used on strings,
+  provided that they are formatted as numbers. For example, `= '10' + '1'` will
+  result in `(Int) 11`.
+- You can explicitly parse a string into a number with the
   [`int()`](ref/chap-builtin-func.html#int) and
   [`float()`](ref/chap-builtin-func.html#float) functions.
-- Use `++` if you intended to _concatentate_ strings or lists.
 
 ## Appendix
 
