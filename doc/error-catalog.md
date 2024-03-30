@@ -195,18 +195,22 @@ test/runtime-errors.sh test-arith_ops_str
 -->
 
 ```
-  = "100" + "10a"
-          ^
-[ -c flag ]:1: fatal: Binary operator expected numbers, got Str and Str (OILS-ERR-201)
+  = "age: " + 100
+            ^
+[ -c flag ]:1: fatal: Binary operator expected numbers, got Str and Int (OILS-ERR-201)
+
+  = 100 + myvar
+        ^
+[ -c flag ]:2: fatal: Binary operator expected numbers, got Int and Str (OILS-ERR-201)
 ```
 
-- Use `++` if you intended to _concatenate_ strings or lists.
-- The arithmetic operators (`+`, `-`, `*`, `/`) may be used on strings,
-  provided that they are formatted as numbers. For example, `= '10' + '1'` will
-  result in `(Int) 11`.
-- You can explicitly parse a string into a number with the
-  [`int()`](ref/chap-builtin-func.html#int) and
-  [`float()`](ref/chap-builtin-func.html#float) functions.
+- Did you mean to use `++` to concatenate strings/lists?
+- The arithmetic operators (`+`, `-`, `*`, `/`) may be used with strings,
+  provided that they are formatted as numbers. For example, `= 10 + '1'  # =>
+  (Int) 11`. However, if you are operating on user provided input, it may be a
+  better idea to first parse that input with
+  [`int()`](ref/chap-builtin-func.html#int) or
+  [`float()`](ref/chap-builtin-func.html#float).
 
 ## Appendix
 
