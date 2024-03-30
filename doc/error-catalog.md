@@ -195,9 +195,9 @@ test/runtime-errors.sh test-arith_ops_str
 -->
 
 ```
-  = "age: " + 100
+  = "age: " + "100"
             ^
-[ -c flag ]:1: fatal: Binary operator expected numbers, got Str and Int (OILS-ERR-201)
+[ -c flag ]:1: fatal: Binary operator expected numbers, got Str and Str (OILS-ERR-201)
 
   = 100 + myvar
         ^

@@ -1072,7 +1072,7 @@ test-arith_ops_str() {
   _ysh-error-X 3 'var a = "100"; setvar a -= "10a"'
   _ysh-error-X 3 'var a = "100"; setvar a *= "10a"'
   _ysh-error-X 3 'var a = "100"; setvar a /= "10a"'
-  _ysh-error-X 3 '= "age: " + 100'
+  _ysh-error-X 3 '= "age: " + "100"'
   _ysh-error-X 3 'var myvar = "a string"
 = 100 + myvar'
 }
