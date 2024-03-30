@@ -187,6 +187,30 @@ test/runtime-errors.sh test-external_cmd_typed_args
 - Did you forget to source a file that contains the proc or shell function you
   wanted to run?
 
+### OILS-ERR-201
+
+<!--
+Generated with:
+test/runtime-errors.sh test-arith_ops_str
+-->
+
+```
+  = "age: " + "100"
+            ^
+[ -c flag ]:1: fatal: Binary operator expected numbers, got Str and Str (OILS-ERR-201)
+
+  = 100 + myvar
+        ^
+[ -c flag ]:2: fatal: Binary operator expected numbers, got Int and Str (OILS-ERR-201)
+```
+
+- Did you mean to use `++` to concatenate strings/lists?
+- The arithmetic operators [can coerce string operands to
+  numbers](ref/chap-expr-lang.html#ysh-arith). However, if you are operating on
+  user provided input, it may be a better idea to first parse that input with
+  [`int()`](ref/chap-builtin-func.html#int) or
+  [`float()`](ref/chap-builtin-func.html#float).
+
 ## Appendix
 
 ### Kinds of Errors from Oils

@@ -474,7 +474,7 @@ class ExprEvaluator(object):
 
         else:
             raise error.TypeErrVerbose(
-                'Binary operator expected numbers, got %s and %s' %
+                'Binary operator expected numbers, got %s and %s (OILS-ERR-201)' %
                 (ui.ValType(left), ui.ValType(right)), op)
 
     def _ArithIntOnly(self, left, right, op):
