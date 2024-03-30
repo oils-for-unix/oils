@@ -209,7 +209,32 @@ Note that these are distinct from `!  &&  ||`.
 
 ### ysh-arith
 
-    +  -  *  /   //   %   **
+YSH supports most of the arithmetic operators from Python. Notably, `%` differs
+from python as it represents remainder in YSH.
+
+Use `+ - *` for `Int` or `Float` addition, subtraction and multiplication. If
+any of the operands are `Float`s, then the output will also be a `Float`.
+
+Use `/` and `//` for `Float` division and `Int` division, respectively. `/`
+will _always_ result in a `Float`, meanwhile `//` will _always_ result in an
+`Int`.
+
+    = 1 / 2   # => (Float) 0.5
+    = 1 // 2  # => (Int) 0
+
+Use `%` to compute the _remainder_ of integer division. The left operand must
+be an `Int` and the right a _positive_ `Int`.
+
+    = 1 % 2  # -> (Int) 1
+    = -4 % 2  # -> (Int) 0
+
+Use `**` for exponentiation. The left operand must be an `Int` and the right a
+_positive_ `Int`.
+
+All arithmetic operators may coerce either of their operands from strings to a
+number, provided those strings are formatted as numbers.
+
+    = 10 + '1' # => (Int) 11
 
 ### ysh-bitwise
 

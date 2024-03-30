@@ -205,10 +205,9 @@ test/runtime-errors.sh test-arith_ops_str
 ```
 
 - Did you mean to use `++` to concatenate strings/lists?
-- The arithmetic operators (`+`, `-`, `*`, `/`) may be used with strings,
-  provided that they are formatted as numbers. For example, `= 10 + '1'  # =>
-  (Int) 11`. However, if you are operating on user provided input, it may be a
-  better idea to first parse that input with
+- The arithmetic operators [can coerce string operands to
+  numbers](ref/chap-expr-lang.html#ysh-arith). However, if you are operating on
+  user provided input, it may be a better idea to first parse that input with
   [`int()`](ref/chap-builtin-func.html#int) or
   [`float()`](ref/chap-builtin-func.html#float).
 
