@@ -11,7 +11,9 @@
 #   $0 report-times    # times builtin
 #
 #   $0 measure-syscalls
+#   $0 report-syscalls
 #   $0 report-processes
+#   $0 report-external
 #
 # Simpler:
 #   $0 measure-rusage  # time-tsv
@@ -231,11 +233,17 @@ report-processes() {
     grep-exec $sh_dir/syscalls.* | wc -l
     echo
 
-    if false; then
-      grep-exec $sh_dir/syscalls.* | sort | uniq -c | sort -n | tail -n 20
-      echo
-    fi
+  done
+}
 
+report-external() {
+  local n=${1:-5}
+
+  for sh_dir in $BASE_DIR_RELATIVE/syscalls/*; do
+    echo "--- $sh_dir"
+
+    grep-exec $sh_dir/syscalls.* | sort | uniq -c | sort -n | tail -n $n
+    echo
   done
 }
 

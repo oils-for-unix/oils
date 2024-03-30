@@ -469,10 +469,9 @@ class FdState(object):
                 # Use PIPE_SIZE to save a process in the case of small here
                 # docs, which are the common case.  (dash does this.)
 
-                # TODO: instrument this to see how often it happens?
+                # Note: could instrument this to see how often it happens.
+                # Though strace -ff can also work.
                 start_process = len(arg.body) > 4096
-
-                #log('BODY %d', len(arg.body))
                 #start_process = True
 
                 if start_process:
