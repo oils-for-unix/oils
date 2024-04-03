@@ -123,7 +123,7 @@ yes
 ## END
 
 #### Positional captures with _group
-shopt -s ysh:all
+shopt -s ysh:upgrade
 
 var x = 'zz 2020-08-20'
 

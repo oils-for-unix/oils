@@ -150,7 +150,7 @@ _sep() {
   echo '---------------------------'
 }
 
-test-errexit_one_process() {
+test-errexit-one-process() {
   # two quotations of same location: not found then errexit
   _ysh-error-X 127 'zz'
 
@@ -200,16 +200,20 @@ echo DONE
 '
 
   _sep
+  _osh-error-1 'shopt --set ysh:upgrade; [[ 0 -eq 1 ]]'
 
-  # Primitives
-  _ysh-error-1 '[[ 0 -eq 1 ]]'
+  # not parsed
+  _ysh-error-2 '[[ 0 -eq 1 ]]'
 
   _sep
 
+  _osh-error-1 'shopt --set ysh:upgrade; (( 0 ))'
+
+  # not parsed
   _ysh-error-2 '(( 0 ))'
 }
 
-test-errexit_multiple_processes() {
+test-errexit-multiple-processes() {
   ### A representative set of errors.  For consolidating code quotations
 
   # command_sub_errexit.  Hm this gives 2 errors as well, because of inherit_errexit
@@ -258,10 +262,10 @@ test-errexit_multiple_processes() {
   _ysh-error-X 127 'yy | zz'
 
   _sep
-  _ysh-error-1 'echo $([[ 0 -eq 1 ]])'
+  _osh-error-1 'shopt -s ysh:upgrade; echo $([[ 0 -eq 1 ]])'
 
   _sep
-  _ysh-error-1 'var y = $([[ 0 -eq 1 ]])'
+  _osh-error-1 'shopt -s ysh:upgrade; var y = $([[ 0 -eq 1 ]])'
 }
 
 
@@ -293,7 +297,7 @@ test-strict_errexit_1() {
   _strict-errexit-case 'until { echo 1; echo 2; }; do echo UNTIL; done'
 
   # Must be separate lines for parsing options to take effect
-  _strict-errexit-case 'shopt -s oil:upgrade
+  _strict-errexit-case 'shopt -s ysh:upgrade
                         proc p { echo p }
                         if p { echo hi }'
 }
