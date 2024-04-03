@@ -188,7 +188,6 @@ set -o pipefail
 shopt -s command_sub_errexit
 shopt -u dashglob
 shopt -s errexit
-shopt -u expand_aliases
 shopt -s inherit_errexit
 shopt -s nounset
 shopt -s nullglob
@@ -609,25 +608,6 @@ shopt -s dashglob
 shopt -u simple_word_eval
 ## END
 
-#### oil:upgrade disables aliases
-
-alias x='echo hi'
-x
-
-shopt --set oil:upgrade
-shopt --unset errexit
-x
-echo status=$?
-
-shopt --set expand_aliases
-x
-
-## STDOUT:
-hi
-status=127
-hi
-## END
-
 #### sigpipe_status_ok
 
 status_141() {
@@ -814,3 +794,21 @@ OK
 alias on
 OK
 ## END
+
+#### expand_aliases turned off only in ysh:all
+
+alias e=echo
+e normal
+
+shopt -s ysh:upgrade
+e upgrade
+
+shopt -s ysh:all
+e all
+
+## status: 127
+## STDOUT:
+normal
+upgrade
+## END
+

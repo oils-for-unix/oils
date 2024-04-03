@@ -188,7 +188,6 @@ X [External Lang] BEGIN   END   when (awk)
                   xtrace_rich            Hierarchical and process tracing
                   xtrace_details (-u)    Disable most tracing with +
                   dashglob (-u)          Disabled to avoid files like -rf
-                  expand_aliases (-u)    Whether aliases are expanded
                   redefine_proc (-u)     Can procs be redefined?
   [Interactive]   redefine_module        'module' builtin always returns 0
                   X redefine_const       Can consts be redefined?
@@ -206,6 +205,7 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_dparen (-u)      Is (( legacy arithmetic allowed?
                   parse_ignored (-u)     Parse, but ignore, certain redirects
                   parse_sh_arith (-u)    Allow legacy shell arithmetic
+                  expand_aliases (-u)    Whether aliases are expanded
                   X copy_env (-u)        Use $[ENV.PYTHONPATH] when false
                   X old_builtins (-u)    local/declare/etc.  pushd/popd/dirs
                                          ... source  unset  printf  [un]alias

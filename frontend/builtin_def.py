@@ -73,8 +73,8 @@ class _Builtin(object):
     def __init__(self, index, name, enum_name=None, kind='normal'):
         # type: (int, str, Optional[str], str) -> None
         """
-    kind: normal, special, assign
-    """
+        kind: normal, special, assign
+        """
         self.index = index
         self.name = name  # e.g. : or [
         self.enum_name = enum_name or name  # e.g. builtin_num::colon

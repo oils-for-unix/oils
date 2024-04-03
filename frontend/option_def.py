@@ -111,10 +111,6 @@ _BASIC_RUNTIME_OPTIONS = [
     # Don't reparse program data as globs
     ('dashglob', True),  # do globs return files starting with - ?
 
-    # Turn this off so we can statically parse.  Because bash has it off
-    # non-interactively, this shouldn't break much.
-    ('expand_aliases', True),
-
     # TODO: Should these be in strict mode?
     # The logic was that strict_errexit improves your bash programs, but these
     # would lead you to remove error handling.  But the same could be said for
@@ -144,6 +140,10 @@ _AGGRESSIVE_RUNTIME_OPTIONS = [
     ('simple_test_builtin', False),
 
     # TODO: simple_trap
+
+    # Turn aliases off so we can statically parse.  bash has it off
+    # non-interactively, sothis shouldn't break much.
+    ('expand_aliases', True),
 ]
 
 # Stuff that doesn't break too many programs.
