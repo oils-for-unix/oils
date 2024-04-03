@@ -202,6 +202,7 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_backticks (-u)    Allow legacy syntax `echo hi`
                   parse_bare_word (-u)   'case unquoted' and 'for x in unquoted'
                   parse_dollar (-u)      Allow bare $ to mean \$  (maybe $/d+/)
+                  parse_dbracket (-u)    Is legacy [[ allowed?
                   parse_dparen (-u)      Is (( legacy arithmetic allowed?
                   parse_ignored (-u)     Parse, but ignore, certain redirects
                   parse_sh_arith (-u)    Allow legacy shell arithmetic

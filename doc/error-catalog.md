@@ -144,6 +144,35 @@ test/ysh-parse-errors.sh ysh_bare_words (this may move)
 - Did you mean `\\z`?  Backslashes must be escaped in unquoted words.
 - Did you mean something like `\$`?  Only valid escapes are accepted in YSH.
 
+### OILS-ERR-14
+
+<!--
+Generated with:
+test/ysh-parse-errors.sh test-parse-dparen
+-->
+
+```
+  if ((1 > 0 && 43 > 42)); then echo yes; fi
+     ^~
+[ -c flag ]:1: Bash (( not allowed in YSH (parse_dparen, OILS-ERR-14 explains wart)
+```
+
+Two likely causes:
+
+- Do you need to rewrite bash arithmetic as YSH arithmetic (which is
+  Python-like)?
+- Do you need to work around an [unfortunate wart](warts.html#two-left-parens-should-be-separated-by-space) in YSH?
+
+Examples:
+
+    if (1 > 0 and 43 > 42) {  # YSH-style
+      echo yes
+    }
+  
+    if ( (x + 1) < n) {  # space between ( ( avoids ((
+      echo yes
+    }
+
 ## Runtime Errors - Traditional Shell
 
 These errors may occur in shells like [bash]($xref) and [zsh]($xref).

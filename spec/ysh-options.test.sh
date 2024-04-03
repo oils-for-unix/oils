@@ -812,3 +812,23 @@ normal
 upgrade
 ## END
 
+#### [[ isn't allowed in ysh
+[[ 3 == 3 ]]
+echo status=$?
+
+shopt -s ysh:upgrade
+[[ 3 == 3 ]]
+echo status=$?
+
+shopt -s ysh:all
+[[ 3 == 3 ]]
+echo status=$?
+
+[[ 0 == 0 ]]
+echo status=$?
+
+## status: 2
+## STDOUT:
+status=0
+status=0
+## END

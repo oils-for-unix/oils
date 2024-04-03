@@ -1980,13 +1980,17 @@ class CommandParser(object):
             return n5
 
         if self.c_id == Id.KW_DLeftBracket:
+            if not self.parse_opts.parse_dbracket():
+                p_die('Bash [[ not allowed in YSH (parse_dbracket)',
+                      loc.Word(self.cur_word))
             n6 = self.ParseDBracket()
             n6.redirects = self._ParseRedirectList()
             return n6
         if self.c_id == Id.Op_DLeftParen:
             if not self.parse_opts.parse_dparen():
-                p_die('You may want a space between parens (parse_dparen)',
-                      loc.Word(self.cur_word))
+                p_die(
+                    'Bash (( not allowed in YSH (parse_dparen, OILS-ERR-14 explains wart)',
+                    loc.Word(self.cur_word))
             n7 = self.ParseDParen()
             n7.redirects = self._ParseRedirectList()
             return n7

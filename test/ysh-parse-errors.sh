@@ -1515,7 +1515,7 @@ test-parse_dollar() {
   done
 }
 
-test-parse_dparen() {
+test-parse-dparen() {
   # Bash (( construct
   local bad
 
