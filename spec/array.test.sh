@@ -263,13 +263,41 @@ argv.py "${a[@]}"
 # bash parses, but doesn't execute.
 # mksh gives syntax error -- parses differently with 'export'
 # osh no longer parses this statically.
-export PYTHONPATH=(a b c)
-export PYTHONPATH=a  # NOTE: in bash, this doesn't work afterward!
+
+export PYTHONPATH
+
+PYTHONPATH=mystr  # NOTE: in bash, this doesn't work afterward!
 printenv.py PYTHONPATH
-## stdout-json: ""
+
+PYTHONPATH=(myarray)
+printenv.py PYTHONPATH
+
+PYTHONPATH=(a b c)
+printenv.py PYTHONPATH
+
+## status: 0
+## STDOUT:
+mystr
+None
+None
+## END
+
+#### strict_array prevents exporting array
+
+shopt -s strict_array
+
+export PYTHONPATH
+PYTHONPATH=(a b c)
+printenv.py PYTHONPATH
+
 ## status: 1
-## OK bash stdout: None
-## OK bash status: 0
+## STDOUT:
+## END
+
+## N-I bash/mksh status: 0
+## N-I bash/mksh STDOUT:
+None
+## END
 
 #### Arrays can't be used as env bindings
 # Hm bash it treats it as a string!

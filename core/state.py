@@ -1666,8 +1666,9 @@ class Mem(object):
 
         if cell.val.tag() not in (value_e.Undef, value_e.Str):
             if cell.exported:
-                # TODO: error context
-                e_die("Only strings can be exported", lval.blame_loc)
+                if self.exec_opts.strict_array():
+                    e_die("Only strings can be exported (strict_array)",
+                          lval.blame_loc)
             if cell.nameref:
                 e_die("nameref must be a string", lval.blame_loc)
 

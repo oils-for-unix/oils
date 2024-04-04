@@ -178,16 +178,11 @@ class MemTest(unittest.TestCase):
         self.assertEqual(['1', '2', '3'],
                          mem.var_stack[0]['COMPREPLY'].val.strs)
 
-        # export COMPREPLY
-        try:
-            mem.SetValue(location.LName('COMPREPLY'),
-                         None,
-                         scope_e.Dynamic,
-                         flags=state.SetExport)
-        except error.FatalRuntime as e:
-            pass
-        else:
-            self.fail("Expected failure")
+        # export COMPREPLY - allowed when strict_array not set
+        mem.SetValue(location.LName('COMPREPLY'),
+                     None,
+                     scope_e.Dynamic,
+                     flags=state.SetExport)
 
         # readonly r=1
         mem.SetValue(location.LName('r'),
