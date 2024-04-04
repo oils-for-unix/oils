@@ -288,7 +288,8 @@ l o c a
 ## N-I zsh status: 1
 ## N-I zsh stdout-json: ""
 
-#### export+=array disallowed
+#### export+=array disallowed (strict_array)
+shopt -s strict_array
 
 export e+=(e x)
 echo "${e[@]}"
@@ -296,7 +297,7 @@ echo "${e[@]}"
 ## status: 1
 ## STDOUT:
 ## END
-## BUG bash status: 0
-## BUG bash STDOUT:
+## N-I bash status: 0
+## N-I bash STDOUT:
 e x
 ## END
