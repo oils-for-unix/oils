@@ -292,6 +292,8 @@ brace
 ## END
 
 #### Test varargs and blocks
+shopt --set parse_proc
+
 proc DUMP(...a;...b;...c; d) {
   echo @a
   echo @b
