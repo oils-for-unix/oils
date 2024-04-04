@@ -291,3 +291,21 @@ loop
 brace
 ## END
 
+#### Test varargs and blocks
+proc DUMP(...a;...b;...c; d) {
+  echo @a
+  echo @b
+  for i, k, v in (c) {
+    echo "$i - $k - $v"
+  }
+  # TODO : figure out how to inspect blocks
+}
+DUMP a b c ('d', 'e', 'f', h = "i", j = "k") {
+  echo 0
+}
+## STDOUT:
+a b c
+d e f
+0 - h - i
+1 - j - k
+## END
