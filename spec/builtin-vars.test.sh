@@ -190,9 +190,12 @@ new=$PATH
 test "$old" = "$new" && echo "not changed"
 ## stdout: not changed
 
-#### can't export array
+#### can't export array (strict_array)
+shopt -s strict_array
+
 typeset -a a
 a=(1 2 3)
+
 export a
 printenv.py a
 ## STDOUT:
@@ -206,9 +209,12 @@ None
 ## OK osh status: 1
 ## OK osh stdout-json: ""
 
-#### can't export associative array
+#### can't export associative array (strict_array)
+shopt -s strict_array
+
 typeset -A a
 a["foo"]=bar
+
 export a
 printenv.py a
 ## STDOUT:
