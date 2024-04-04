@@ -355,7 +355,7 @@ def _BindTyped(
             num_params += len(rest_val)
             mem.SetLocalName(lval, value.List(rest_val))
         else:
-            if num_args > num_params:
+            if num_args > num_params + (1 if block_param else 0):
                 # Too many arguments.
                 raise error.Expr(
                     "%r takes %d typed args, but got %d" %
