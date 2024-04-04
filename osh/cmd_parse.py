@@ -1989,7 +1989,7 @@ class CommandParser(object):
         if self.c_id == Id.Op_DLeftParen:
             if not self.parse_opts.parse_dparen():
                 p_die(
-                    'Bash (( not allowed in YSH (parse_dparen, OILS-ERR-14 explains wart)',
+                    'Bash (( not allowed in YSH (parse_dparen, see OILS-ERR-14 for wart)',
                     loc.Word(self.cur_word))
             n7 = self.ParseDParen()
             n7.redirects = self._ParseRedirectList()

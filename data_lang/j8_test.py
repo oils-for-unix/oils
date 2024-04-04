@@ -57,8 +57,8 @@ class Nil8Test(unittest.TestCase):
 
             # Expected a value afterward
             '(obj.)',
-            '(obj.:',
-            '(obj.:)',
+            '(obj.+',
+            '(obj.+)',
             '(obj.[)',
         ]
         for s in cases:

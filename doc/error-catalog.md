@@ -154,7 +154,7 @@ test/ysh-parse-errors.sh test-parse-dparen
 ```
   if ((1 > 0 && 43 > 42)); then echo yes; fi
      ^~
-[ -c flag ]:1: Bash (( not allowed in YSH (parse_dparen, OILS-ERR-14 explains wart)
+[ -c flag ]:1: Bash (( not allowed in YSH (parse_dparen, see OILS-ERR-14 for wart)
 ```
 
 Two likely causes:

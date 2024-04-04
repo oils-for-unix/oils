@@ -128,7 +128,7 @@ json write (_reply)
 echo '{"name": "bob", "age": 42, "ok":true}' | json read
 json write (_reply)
 
-echo '{"name": {}, "age": {}}' | json read
+echo '{"name": {}, "age": {}, "x":-1, "y": -0}' | json read
 json write (_reply)
 
 ## STDOUT:
@@ -144,7 +144,9 @@ json write (_reply)
 }
 {
   "name": {},
-  "age": {}
+  "age": {},
+  "x": -1,
+  "y": 0
 }
 ## END
 

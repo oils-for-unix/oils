@@ -506,7 +506,7 @@ ECHO_E_DEF = _C_STRING_COMMON + [
 # https://json.org/
 
 # Note that [0-9] has to come second, because Python chooses the first match.
-_JSON_INT = r'([1-9][0-9]*|[0-9])'  # Numbers can't start with leading 0
+_JSON_INT = r'-?([1-9][0-9]*|[0-9])'  # Numbers can't start with leading 0
 _JSON_FRACTION = r'(\.[0-9]+)?'
 _JSON_EXP = r'([eE][-+]?[0-9]+)?'
 
@@ -568,7 +568,7 @@ J8_DEF = [
     # be either Symbol or plain Identifier, but field names can only be
     # Identifier.  JSON8 only has Identifier.
     #R(J8_SYMBOL_RE, Id.J8_Symbol),  # NIL8 only
-    R(r'[~!@$%^&*+=|:;./<>?-]+', Id.J8_Operator),  # NIL8 only
+    R(r'[~!@$%^&*+=|;./<>?-]+', Id.J8_Operator),  # NIL8 only
 
     # TODO: emit Id.Ignored_Newline to count lines for error messages?
     R(r'[ \r\n\t]+', Id.Ignored_Space),
