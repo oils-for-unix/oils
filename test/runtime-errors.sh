@@ -517,11 +517,13 @@ test-core_process() {
   # echo hi 1>&3
 }
 
-# Errors from osh/state.py
-test-osh_state() {
-  # $HOME is exported so it can't be an array
+# Errors from core/state.py
+test-core-state() {
 
-  _osh-error-1 'HOME=(a b)'
+  _osh-should-run 'HOME=(a b)'
+
+  # $HOME is an exported string, so it shouldn't be changed to an array
+  _osh-error-1 'shopt --set strict_array; HOME=(a b)'
 }
 
 unquoted-ambiguous_redirect() {
