@@ -330,37 +330,19 @@ def _BindTyped(
     num_args = len(pos_args)
     num_params = 0
 
-    i = 0
-
     if group:
         for p in group.params:
-            if i < num_args:
-                val = pos_args[i]
+            if num_params < num_args:
+                val = pos_args[num_params]
             else:
-                val = defaults[i]
+                val = defaults[num_params]
                 if val is None:
                     raise error.Expr(
                         "%r wasn't passed typed param %r" %
                         (code_name, p.name), blame_loc)
 
             mem.SetLocalName(LeftName(p.name, p.blame_tok), val)
-            i += 1
-        num_params += len(group.params)
-
-    # Special case: treat block param like the next positional arg
-    if block_param:
-        if i < num_args:
-            val = pos_args[i]
-        else:
-            val = defaults[i]
-            if val is None:
-                raise error.Expr(
-                    "%r wasn't passed block param %r" %
-                    (code_name, block_param.name), blame_loc)
-
-        mem.SetLocalName(LeftName(block_param.name, block_param.blame_tok),
-                         val)
-        num_params += 1
+            num_params += 1
 
     # ...rest
 
@@ -369,14 +351,30 @@ def _BindTyped(
         if rest:
             lval = LeftName(rest.name, rest.blame_tok)
 
-            rest_val = value.List(pos_args[num_params:])
-            mem.SetLocalName(lval, rest_val)
+            rest_val = pos_args[num_params:-1] if block_param else pos_args[num_params:]
+            num_params += len(rest_val)
+            mem.SetLocalName(lval, value.List(rest_val))
         else:
             if num_args > num_params:
                 # Too many arguments.
                 raise error.Expr(
                     "%r takes %d typed args, but got %d" %
                     (code_name, num_params, num_args), blame_loc)
+
+    # Special case: treat block param like the next positional arg
+    if block_param:
+        if num_params < num_args:
+            val = pos_args[num_params]
+        else:
+            val = defaults[num_params]
+            if val is None:
+                raise error.Expr(
+                    "%r wasn't passed block param %r" %
+                    (code_name, block_param.name), blame_loc)
+
+        mem.SetLocalName(LeftName(block_param.name, block_param.blame_tok),
+                         val)
+        num_params += 1
 
 
 def _BindNamed(
