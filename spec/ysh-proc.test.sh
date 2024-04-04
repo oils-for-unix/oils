@@ -292,7 +292,7 @@ brace
 ## END
 
 #### Test varargs and blocks
-shopt --set parse_proc
+shopt --set ysh:upgrade
 
 proc DUMP(...a;...b;...c; d) {
   echo @a
