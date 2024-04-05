@@ -61,7 +61,7 @@ func mutexDestroy(mutex) {
 ## A queue that have producers and consumers
 func jobQueueNew(...jobs) {
   var mutex = semaNew(1)
-  var full = semaNew(0)
+  var full = semaNew(len(jobs))
   var queue = {
     internal: jobs,
     mutex: mutex,
