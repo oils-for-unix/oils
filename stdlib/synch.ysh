@@ -8,6 +8,7 @@ module stdlib/synch || return 0
 
 func semaNew(value) {
   # WARN: this section should be critical but for now it's not
+  # A solution may be retry on fail.
   #====================
   var sema = $(mktemp -u)
   mkfifo $sema
@@ -100,7 +101,7 @@ func RWUnLockWrite(lock) {
 ### BoundedBuffer ###
 #####################
 # https://www.youtube.com/watch?v=Qx3P2wazwI0&t=705s
-func boundedBufferNew(capacity, ...jobs) {
+func boundedBufferNew(capacity, jobs) {
   if (len(jobs) >= capacity) {
     echo "Too many jobs ($jobs) to initialize in a job buffer of capacity $capacity!"
     exit 1
