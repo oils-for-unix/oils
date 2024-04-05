@@ -11,7 +11,7 @@ func semaNew(value) {
   # A solution may be retry on fail.
   #====================
   var sema = $(mktemp -u)
-  mkfifo $sema
+  mkfifo $sema # TODO: retry on fail to avoid random clash
   #====================
   call semaUp(sema, delta = value)
   return (sema)
@@ -175,4 +175,31 @@ func bufferDestroy(buf) {
   call mutexDestroy(buf.mutex)
 }
 
-# TODO: Conditional Variables, Channels.
+###########################
+### ConditionalVariable ###
+###########################
+func condVarNew() {
+  var cv = {
+    mutex: mutexNew(),
+    sema: semaNew(0),
+  }
+  return (cv)
+}
+
+func condVarWait(cv) {
+  call mutexRelease(cv.mutex)
+  call semaDown(cv.sema)
+  call mutexAcquire(cv.mutex)
+}
+
+# WARN: this does not follow the strict semantic of conditional variable, but at least for my case it's usable. 
+func condVarSignal(cv) {
+  call semaUp(cv.sema)
+}
+
+func condVarDestroy(cv) {
+  call mutexAcquire(cv.mutex)
+  call semaDestroy(cv.sema)
+  call mutexDestroy(cv.mutex)
+}
+# TODO: Channels.
