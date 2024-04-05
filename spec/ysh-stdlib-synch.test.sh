@@ -39,8 +39,11 @@ call semaDestroy(s)
 #### semaphore init and multiple down
 source --builtin synch.ysh
 
-var s = semaNew(4)
-
+var s = semaNew(3)
+{
+  sleep 1
+  call semaUp(sema) 
+} &
 call semaDown(s)
 call semaDown(s)
 call semaDown(s)
