@@ -100,6 +100,7 @@ func RWUnLockWrite(lock) {
   call mutexRelease(lock.writeLock)
 }
 
+# BUG: both bounded buffer and buffer is bugged as there's no shared memory between shell jobs 
 #####################
 ### BoundedBuffer ###
 #####################
