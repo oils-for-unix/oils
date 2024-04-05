@@ -55,34 +55,42 @@ func mutexDestroy(mutex) {
   call semaDestroy(mutex)
 }
 
-################
-### JobQueue ###
-################
-## A queue that have producers and consumers
-func jobQueueNew(...jobs) {
+#####################
+### BoundedBuffer ###
+#####################
+# https://www.youtube.com/watch?v=Qx3P2wazwI0&t=705s
+func boundedBufferNew(capacity, ...jobs) {
+  if (len(jobs) >= capacity) {
+    echo "Too many jobs ($jobs) to initialize in a job buffer of capacity $capacity!"
+    exit 1
+  }
   var mutex = semaNew(1)
+  var empty = semaNew(capacity - len(jobs))
   var full = semaNew(len(jobs))
-  var queue = {
+  var buf = {
     internal: jobs,
     mutex: mutex,
+    empty: empty
     full: full
   }
-  return (queue)
+  return (buf)
 }
 
-func jobQueueProduce(queue, job) {
-  call mutexAcquire(queue.mutex)
-  call queue->append(job)
-  call semaUp(queue.full)
-  call mutexRelease(queue.mutex)
+func boundedBufferProduce(buf, job) {
+  call semaDown(buf.empty)
+  call mutexAcquire(buf.mutex)
+  call buf.internal->append(job)
+  call mutexRelease(buf.mutex)
+  call semaUp(buf.full)
 }
 
-func jobQueueConsume(queue) {
-  call mutexAcquire(queue.mutex)
-  call semaDown(queue.full)
-  # NOTE: since we semaDown, queue can't be empty
-  var ret = queue->pop(job)
-  call mutexRelease(queue.mutex)
+func boundedBufferConsume(buf) {
+  call semaDown(buf.full)
+  call mutexAcquire(buf.mutex)
+  # NOTE: since we semaDown, buf can't be empty
+  var ret = buf.internal->pop(job)
+  call mutexRelease(buf.mutex)
+  call semaUp(buf.empty)
   return (ret)
 }
 
