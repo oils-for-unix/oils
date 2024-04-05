@@ -73,13 +73,13 @@ func jobQueueNew(...jobs) {
 func jobQueueProduce(queue, job) {
   call mutexAcquire(queue.mutex)
   call queue->append(job)
-  call mutexRelease(queue.mutex)
   call semaUp(queue.full)
+  call mutexRelease(queue.mutex)
 }
 
 func jobQueueConsume(queue) {
-  call semaDown(queue.full)
   call mutexAcquire(queue.mutex)
+  call semaDown(queue.full)
   # NOTE: since we semaDown, queue can't be empty
   var ret = queue->pop(job)
   call mutexRelease(queue.mutex)
