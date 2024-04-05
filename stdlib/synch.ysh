@@ -2,25 +2,52 @@
 
 module stdlib/synch || return 0
 
+#################
+### Semaphore ###
+#################
+
 func semaNew(value) {
   var sema = $(mktemp -u)
   mkfifo $sema
-  {
-    for _ in (0 .. value) {
-      echo 1 > $sema
-    }
-  } &
+  call semaUp(sema, delta = value)
   return (sema)
 }
 
-proc semaDown(sema) {
+func semaDown(sema) {
   cat $sema > /dev/null
 }
 
-proc semaUp(sema) {
-  echo 1 > $sema
+func semaUp(sema; delta = 1) {
+  {
+    for _ in (0 .. delta) {
+      echo 1 > $sema
+    }
+  } &
 }
 
-proc semaDestroy(sema) {
+func semaDestroy(sema) {
   rm $sema
+}
+
+# NOTE: all synchronization primitives except semaphore is implementation agnostic, meaning we may replace another implementation for semaphore in the future and all other synchronization primitives still work
+
+#############
+### Mutex ###
+#############
+
+func mutexNew() {
+  var mutex = semaNew(1)
+  return (mutex)
+} 
+
+func mutexAcquire(mutex) {
+  call semaDown(mutex)
+}
+
+func mutexRelease(mutex) {
+  call semaUp(mutex)
+}
+
+func mutexDestroy(mutex) {
+  call semaDestroy(mutex)
 }
