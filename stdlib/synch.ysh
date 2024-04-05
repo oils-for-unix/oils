@@ -7,7 +7,7 @@ module stdlib/synch || return 0
 #################
 
 func semaNew(value) {
-   # WARN: this section should be critical but for now it's not
+  # WARN: this section should be critical but for now it's not
   #====================
   var sema = $(mktemp -u)
   mkfifo $sema
