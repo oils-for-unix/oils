@@ -62,38 +62,38 @@ func mutexDestroy(mutex) {
 
 func RWLockNew() {
   return ({
-    counter: 0
-    counterLock: mutexNew()
-    writeLock: mutexNew()
+    counter: 0,
+    counterLock: mutexNew(),
+    writeLock: mutexNew(),
   })
 } 
 
 func RWLockRead(lock) {
-  mutexAcquire(lock.counterLock)
+  call mutexAcquire(lock.counterLock)
   setvar lock.counter += 1
   if (lock.counter === 1) {
     # First reader should ensure no writer is present
-    mutexAcquire(lock.writeLock)
+    call mutexAcquire(lock.writeLock)
   }
-  mutexRelease(lock.counterLock)
+  call mutexRelease(lock.counterLock)
 }
 
 func RWUnLockRead(lock) {
-  mutexAcquire(lock.counterLock)
+  call mutexAcquire(lock.counterLock)
   setvar lock.counter -= 1
   if (lock.counter === 0) {
     # First reader should ensure no writer is present
-    mutexRelease(lock.writeLock)
+    call mutexRelease(lock.writeLock)
   }
-  mutexRelease(lock.counterLock)
+  call mutexRelease(lock.counterLock)
 }
 
 func RWLockWrite(lock) {
-  mutexAcquire(lock.writeLock)
+  call mutexAcquire(lock.writeLock)
 }
 
 func RWUnLockWrite(lock) {
-  mutexRelease(lock.writeLock)
+  call mutexRelease(lock.writeLock)
 }
 
 #####################
@@ -108,8 +108,8 @@ func boundedBufferNew(capacity, ...jobs) {
   var buf = {
     internal: jobs,
     mutex: mutexNew(),
-    empty: semaNew(capacity - len(jobs))
-    full: semaNew(len(jobs))
+    empty: semaNew(capacity - len(jobs)),
+    full: semaNew(len(jobs)),
   }
   return (buf)
 }
@@ -147,7 +147,7 @@ func bufferNew(...jobs) {
   var buf = {
     internal: jobs,
     mutex: mutexNew(),
-    full: semaNew(len(jobs))
+    full: semaNew(len(jobs)),
   }
   return (buf)
 }
