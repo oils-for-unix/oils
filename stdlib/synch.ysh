@@ -94,6 +94,13 @@ func boundedBufferConsume(buf) {
   return (ret)
 }
 
+func boundedBufferDestroy(buf) {
+  call mutexAcquire(buf.mutex)
+  call semaDestroy(buf.full)
+  call semaDestroy(buf.empty)
+  call mutexDestroy(buf.mutex)
+}
+
 ##############
 ### Buffer ###
 ##############
@@ -123,6 +130,12 @@ func bufferConsume(buf) {
   var ret = buf.internal->pop(job)
   call mutexRelease(buf.mutex)
   return (ret)
+}
+
+func bufferDestroy(buf) {
+  call mutexAcquire(buf.mutex)
+  call semaDestroy(buf.full)
+  call mutexDestroy(buf.mutex)
 }
 
 # TODO: Channels, RWLocks.
