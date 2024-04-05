@@ -1,0 +1,26 @@
+#!/usr/bin/env ysh
+
+module stdlib/synch || return 0
+
+func semaNew(value) {
+  var sema = $(mktemp -u)
+  mkfifo $sema
+  {
+    for _ in (0 .. value) {
+      echo 1 > $sema
+    }
+  } &
+  return (sema)
+}
+
+proc semaDown(sema) {
+  cat $sema > /dev/null
+}
+
+proc semaUp(sema) {
+  echo 1 > $sema
+}
+
+proc semaDestroy(sema) {
+  rm $sema
+}
