@@ -10,27 +10,32 @@ func semaNew(value) {
   # WARN: this section should be critical but for now it's not
   # A solution may be retry on fail.
   #====================
-  var sema = $(mktemp -u)
-  mkfifo $sema # TODO: retry on fail to avoid random clash
+  var fifo = $(mktemp -u)
+  mkfifo $fifo
   #====================
+  exec {sema}<>$fifo
+  rm -f $fifo
   call semaUp(sema, delta = value)
   return (sema)
 }
 
 func semaDown(sema) {
-  head -c 1 $sema > /dev/null
+  read <&$sema
+  echo down
 }
 
 func semaUp(sema; delta = 1) {
   {
     for _ in (0 .. delta) {
-      echo -n -e '1' > $sema
+      echo >&$sema;
+      echo up
     }
   } &
 }
 
 func semaDestroy(sema) {
-  rm $sema
+  exec {sema}>&-
+  exec {sema}<&-
 }
 
 # NOTE: all synchronization primitives except semaphore is implementation agnostic, meaning we may replace another implementation for semaphore in the future and all other synchronization primitives still work
