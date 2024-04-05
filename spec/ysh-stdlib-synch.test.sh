@@ -7,6 +7,7 @@ source --builtin synch.ysh
 
 var s = semaNew(1)
 { 
+  sleep 0.5
   call semaDown(s)
   echo 1
 } &
@@ -16,12 +17,14 @@ var s = semaNew(1)
   echo 2
 } &
 { 
-  sleep 2
+  sleep 1.5
   call semaDown(s)
   echo 3
 } &
+sleep 2
 echo 4
 call semaUp(s)
+sleep 0.5
 echo 5
 call semaUp(s)
 call semaDestroy(s)

@@ -21,14 +21,12 @@ func semaNew(value) {
 
 func semaDown(sema) {
   read <&$sema
-  echo down
 }
 
 func semaUp(sema; delta = 1) {
   {
     for _ in (0 .. delta) {
       echo >&$sema;
-      echo up
     }
   } &
 }
