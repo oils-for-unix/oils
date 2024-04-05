@@ -174,4 +174,4 @@ func bufferDestroy(buf) {
   call mutexDestroy(buf.mutex)
 }
 
-# TODO: Channels.
+# TODO: Conditional Variables, Channels.
