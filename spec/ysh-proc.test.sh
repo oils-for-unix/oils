@@ -322,7 +322,6 @@ proc doIt(;...args) {
     var a = args[0]
     echo $a
     var argsRest = args[1:]
-    # call argsRest->append(blk)
     doIt (...argsRest)
   }
 }
