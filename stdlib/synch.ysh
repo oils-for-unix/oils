@@ -55,4 +55,35 @@ func mutexDestroy(mutex) {
   call semaDestroy(mutex)
 }
 
+################
+### JobQueue ###
+################
+## A queue that have producers and consumers
+func jobQueueNew(...jobs) {
+  var mutex = semaNew(1)
+  var full = semaNew(0)
+  var queue = {
+    internal: jobs,
+    mutex: mutex,
+    full: full
+  }
+  return (queue)
+}
+
+func jobQueueProduce(queue, job) {
+  call mutexAcquire(queue.mutex)
+  call queue->append(job)
+  call mutexRelease(queue.mutex)
+  call semaUp(queue.full)
+}
+
+func jobQueueConsume(queue) {
+  call semaDown(queue.full)
+  call mutexAcquire(queue.mutex)
+  # NOTE: since we semaDown, queue can't be empty
+  var ret = queue->pop(job)
+  call mutexRelease(queue.mutex)
+  return (ret)
+}
+
 # TODO: Channels, RWLocks.
