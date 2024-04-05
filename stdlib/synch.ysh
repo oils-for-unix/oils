@@ -55,6 +55,47 @@ func mutexDestroy(mutex) {
   call semaDestroy(mutex)
 }
 
+##############
+### RWLock ###
+##############
+# https://youtu.be/7zI_4CKk-3Y?t=205
+
+func RWLockNew() {
+  return ({
+    counter: 0
+    counterLock: mutexNew()
+    writeLock: mutexNew()
+  })
+} 
+
+func RWLockRead(lock) {
+  mutexAcquire(lock.counterLock)
+  setvar lock.counter += 1
+  if (lock.counter === 1) {
+    # First reader should ensure no writer is present
+    mutexAcquire(lock.writeLock)
+  }
+  mutexRelease(lock.counterLock)
+}
+
+func RWUnLockRead(lock) {
+  mutexAcquire(lock.counterLock)
+  setvar lock.counter -= 1
+  if (lock.counter === 0) {
+    # First reader should ensure no writer is present
+    mutexRelease(lock.writeLock)
+  }
+  mutexRelease(lock.counterLock)
+}
+
+func RWLockWrite(lock) {
+  mutexAcquire(lock.writeLock)
+}
+
+func RWUnLockWrite(lock) {
+  mutexRelease(lock.writeLock)
+}
+
 #####################
 ### BoundedBuffer ###
 #####################
@@ -64,14 +105,11 @@ func boundedBufferNew(capacity, ...jobs) {
     echo "Too many jobs ($jobs) to initialize in a job buffer of capacity $capacity!"
     exit 1
   }
-  var mutex = semaNew(1)
-  var empty = semaNew(capacity - len(jobs))
-  var full = semaNew(len(jobs))
   var buf = {
     internal: jobs,
-    mutex: mutex,
-    empty: empty
-    full: full
+    mutex: mutexNew(),
+    empty: semaNew(capacity - len(jobs))
+    full: semaNew(len(jobs))
   }
   return (buf)
 }
@@ -106,12 +144,10 @@ func boundedBufferDestroy(buf) {
 ##############
 # Same as bounded buffer but unbounded
 func bufferNew(...jobs) {
-  var mutex = semaNew(1)
-  var full = semaNew(len(jobs))
   var buf = {
     internal: jobs,
-    mutex: mutex,
-    full: full
+    mutex: mutexNew(),
+    full: semaNew(len(jobs))
   }
   return (buf)
 }
@@ -138,4 +174,4 @@ func bufferDestroy(buf) {
   call mutexDestroy(buf.mutex)
 }
 
-# TODO: Channels, RWLocks.
+# TODO: Channels.
