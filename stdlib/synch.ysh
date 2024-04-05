@@ -127,7 +127,7 @@ func boundedBufferConsume(buf) {
   call semaDown(buf.full)
   call mutexAcquire(buf.mutex)
   # NOTE: since we semaDown, buf can't be empty
-  var ret = buf.internal->pop(job)
+  var ret = buf.internal->pop()
   call mutexRelease(buf.mutex)
   call semaUp(buf.empty)
   return (ret)
@@ -164,7 +164,7 @@ func bufferConsume(buf) {
   call semaDown(buf.full)
   call mutexAcquire(buf.mutex)
   # NOTE: since we semaDown, buf can't be empty
-  var ret = buf.internal->pop(job)
+  var ret = buf.internal->pop()
   call mutexRelease(buf.mutex)
   return (ret)
 }
