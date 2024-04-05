@@ -6,26 +6,31 @@
 source --builtin synch.ysh
 
 var s = semaNew(1)
-
 { 
   call semaDown(s)
   echo 1
 } &
-
-sleep 0.1
-
 { 
+  sleep 1
   call semaDown(s)
   echo 2
 } &
-
-echo 3
+{ 
+  sleep 2
+  call semaDown(s)
+  echo 3
+} &
+echo 4
+call semaUp(s)
+echo 5
 call semaUp(s)
 call semaDestroy(s)
 ## STDOUT:
 1
-3
+4
 2
+5
+3
 ## END
 
 #### semaphore init and multiple down
