@@ -94,4 +94,35 @@ func boundedBufferConsume(buf) {
   return (ret)
 }
 
+##############
+### Buffer ###
+##############
+# Same as bounded buffer but unbounded
+func bufferNew(...jobs) {
+  var mutex = semaNew(1)
+  var full = semaNew(len(jobs))
+  var buf = {
+    internal: jobs,
+    mutex: mutex,
+    full: full
+  }
+  return (buf)
+}
+
+func bufferProduce(buf, job) {
+  call mutexAcquire(buf.mutex)
+  call buf.internal->append(job)
+  call mutexRelease(buf.mutex)
+  call semaUp(buf.full)
+}
+
+func bufferConsume(buf) {
+  call semaDown(buf.full)
+  call mutexAcquire(buf.mutex)
+  # NOTE: since we semaDown, buf can't be empty
+  var ret = buf.internal->pop(job)
+  call mutexRelease(buf.mutex)
+  return (ret)
+}
+
 # TODO: Channels, RWLocks.
