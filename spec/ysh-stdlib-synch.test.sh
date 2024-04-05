@@ -28,4 +28,18 @@ call semaDestroy(s)
 2
 ## END
 
+#### semaphore init and multiple down
+source --builtin synch.ysh
+
+var s = semaNew(4)
+
+call semaDown(s)
+call semaDown(s)
+call semaDown(s)
+call semaDown(s)
+echo yes
+## STDOUT:
+yes
+## END
+
 # TODO: add test case for mutex and jobqueue

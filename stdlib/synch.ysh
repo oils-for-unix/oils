@@ -18,13 +18,13 @@ func semaNew(value) {
 }
 
 func semaDown(sema) {
-  cat $sema > /dev/null
+  head -c 1 $sema > /dev/null
 }
 
 func semaUp(sema; delta = 1) {
   {
     for _ in (0 .. delta) {
-      echo 1 > $sema
+      echo -n -e '1' > $sema
     }
   } &
 }
