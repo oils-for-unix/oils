@@ -381,8 +381,9 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     C('/', Id.Lit_Slash),
     _SIGNIFICANT_SPACE,
 
-    # Normally, \x evaluates to x.  But quoted regex metacharacters like \* should
-    # evaluate to \*.  Compare with ( | ).
+    # Prevent say \* from being Lit_EscapedChar, which evaluates *.
+    # In regexes, we want \* to evaluate to \*.
+    # Compare with ( | ).
     R(r'\\[*+?.^$\[\]]', Id.Lit_RegexMeta),
 
     # NOTE: ( | and ) aren't operators!

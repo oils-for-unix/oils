@@ -167,11 +167,11 @@ def _AsPosixEre(node, parts, capture_names):
 
     if tag == re_e.Primitive:
         node = cast(re.Primitive, UP_node)
-        if node.id == Id.Re_Dot:
+        if node.id == Id.Eggex_Dot:
             parts.append('.')
-        elif node.id == Id.Re_Start:
+        elif node.id == Id.Eggex_Start:
             parts.append('^')
-        elif node.id == Id.Re_End:
+        elif node.id == Id.Eggex_End:
             parts.append('$')
         else:
             raise AssertionError(node.id)

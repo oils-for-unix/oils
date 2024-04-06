@@ -1428,7 +1428,7 @@ class Transformer(object):
         if tok_str == 'dot':
             if negated_tok:
                 p_die("Can't negate this symbol", tok)
-            return re.Primitive(tok, Id.Re_Dot)
+            return re.Primitive(tok, Id.Eggex_Dot)
 
         if tok_str in POSIX_CLASSES:
             return PosixClass(negated_tok, tok_str)
@@ -1499,13 +1499,13 @@ class Transformer(object):
 
             # Special punctuation
             if tok.id == Id.Expr_Dot:  # .
-                return re.Primitive(tok, Id.Re_Dot)
+                return re.Primitive(tok, Id.Eggex_Dot)
 
             if tok.id == Id.Arith_Caret:  # ^
-                return re.Primitive(tok, Id.Re_Start)
+                return re.Primitive(tok, Id.Eggex_Start)
 
             if tok.id == Id.Expr_Dollar:  # $
-                return re.Primitive(tok, Id.Re_End)
+                return re.Primitive(tok, Id.Eggex_End)
 
             if tok.id == Id.Expr_Name:
                 # d digit -> PosixClass PerlClass etc.
@@ -1515,9 +1515,9 @@ class Transformer(object):
                 # Validate symbols here, like we validate PerlClass, etc.
                 tok_str = lexer.TokenVal(tok)
                 if tok_str == '%start':
-                    return re.Primitive(tok, Id.Re_Start)
+                    return re.Primitive(tok, Id.Eggex_Start)
                 if tok_str == '%end':
-                    return re.Primitive(tok, Id.Re_End)
+                    return re.Primitive(tok, Id.Eggex_End)
                 p_die("Unexpected token %r in regex" % tok_str, tok)
 
             if tok.id == Id.Expr_At:

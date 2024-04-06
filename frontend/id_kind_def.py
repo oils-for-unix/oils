@@ -255,6 +255,8 @@ def AddKinds(spec):
             'AtLBraceDot',  # @{.myproc arg1} should be builtin_sub
             'Other',
             'EscapedChar',
+            # Don't need this?  Lit_Other?
+            # Or Lit_Foo
             'RegexMeta',
             'LBracket',
             'RBracket',  # for assoc array literals, static globs
@@ -400,9 +402,14 @@ def AddKinds(spec):
             'AsciiControl',  # \x01-\x1f, what's disallowed in JSON
         ])
 
-    # Regular expression primtiives.
+    # Regular expression primitives.
+
+    # For lex_mode_e.BashRegex
+    # Bash treats ( | ) as special, and space is allowed within ()
+    spec.AddKind('Regex', ['LParen', 'RParen', 'Pipe', 'Space'])
+
     spec.AddKind(
-        'Re',
+        'Eggex',
         [
             'Start',  # ^ or %start
             'End',  # $ or %end

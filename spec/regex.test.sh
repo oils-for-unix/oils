@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 6
 ## compare_shells: bash zsh
 
 #
@@ -375,19 +375,23 @@ one
 two
 ## END
 
-#### unquoted (a b) as pattern, (a b|c)
+#### unquoted (a  b) as pattern, (a  b|c)
 
-if [[ 'a b' =~ (a b) ]]; then
+if [[ 'a  b' =~ (a  b) ]]; then
   echo one
+fi
+
+if [[ 'a b' =~ (a  b) ]]; then
+  echo BAD
 fi
 
 if [[ 'a b' =~ (a b|c) ]]; then
   echo two
 fi
 
-# I think spaces are only allowed within |
+# I think spaces are only allowed within ()
 
-if [[ ' c' =~ (a| c) ]]; then
+if [[ '  c' =~ (a|  c) ]]; then
   echo three
 fi
 
@@ -408,6 +412,55 @@ fi
 one
 ## END
 ## N-I zsh status: 1
+
+#### Operator chars ; & but not |
+
+# Hm semicolon is still an operator in bash
+$SH <<'EOF'
+[[ ';' =~ ; ]] && echo two
+EOF
+echo semi=$?
+
+# Also here
+#
+# So do we use lex_mode_e.Outer and handle ( ) then?
+
+# And do we need a mode for Lit_Space instead of WS_Space inside ( )?  This
+# could be it
+
+$SH <<'EOF'
+[[ '&' =~ & ]] && echo two
+EOF
+echo amp=$?
+
+# Oh I guess this is not a bug?  regcomp doesn't reject this trivial regex?
+$SH <<'EOF'
+[[ '|' =~ | ]] && echo pipe1
+[[ 'a' =~ | ]] && echo pipe2
+EOF
+echo pipe=$?
+
+$SH <<'EOF'
+[[ '|' =~ a| ]] && echo four
+EOF
+echo pipe=$?
+
+## STDOUT:
+semi=2
+amp=2
+pipe1
+pipe2
+pipe=0
+four
+pipe=0
+## END
+
+## BUG zsh STDOUT:
+semi=1
+amp=1
+pipe=1
+pipe=1
+## END
 
 #### Parse error with 2 words
 

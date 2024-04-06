@@ -231,19 +231,31 @@ class BoolParser(object):
                 self._Next()
                 op = self.bool_id
 
-                is_regex = t2_bool_id == Id.BoolBinary_EqualTilde
-                if is_regex:
+                if t2_bool_id == Id.BoolBinary_EqualTilde:
+                    # TODO: use this grammar?  Does it match bash?  We have
+                    # space within ()
+                    #
+                    # Borrow from osh/braces.py
+                    #
+                    # RegexPart =
+                    #   WORD
+                    # | RegexGroup
+                    #
+                    # RegexGroup =
+                    #  '(' (RegexPart | SPACE)* ')'
+                    #
+                    # Special lexing:
+                    #
+                    # - Id.Regex_{LParen,RParen,Pipe}
+                    # - Remove Id.Lit_RegexMeta?
+                    # - Id.WS_Space -> Id.Lit_space?
+                    #   - Id.Regex_Space can potentially end the word -- yes
+
                     self._Next(lex_mode=lex_mode_e.BashRegex)
                 else:
                     self._Next()
 
                 right = self.cur_word
-                if is_regex:
-                    # NOTE: StaticEval for checking regex syntax isn't enough.  We could
-                    # need to pass do_ere so that the quoted parts get escaped.
-                    #ok, s, unused_quoted = word_.StaticEval(right)
-                    pass
-
                 self._Next()
 
                 tilde = word_.TildeDetect(left)
