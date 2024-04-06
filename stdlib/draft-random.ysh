@@ -4,10 +4,13 @@ module stdlib/random || return 0
 
 func randomIntByBytes(byteSize = 4) { # defaults to 32-bit ints
   var num_str = $(od -vAn -N$byteSize -tu$byteSize < /dev/urandom | tr -d '[:space:]')
-  echo $num_str
   return (num_str => int())
 }
 
 func randomString(len) {
   return ($(head -c $len /dev/urandom))
+}
+
+func randomBool() {
+  return (randomIntByBytes(1) < 128)
 }
