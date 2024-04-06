@@ -5,29 +5,29 @@
 #### semaphore
 source --builtin synch.ysh
 
-var s = semaNew(1)
+var s = sema-new(1)
 { 
   sleep 0.5
-  call semaDown(s)
+  call sema-down(s)
   echo 1
 } &
 { 
   sleep 1
-  call semaDown(s)
+  call sema-down(s)
   echo 2
 } &
 { 
   sleep 1.5
-  call semaDown(s)
+  call sema-down(s)
   echo 3
 } &
 sleep 2
 echo 4
-call semaUp(s)
+call sema-up(s)
 sleep 0.5
 echo 5
-call semaUp(s)
-call semaDestroy(s)
+call sema-up(s)
+call sema-destroy(s)
 ## STDOUT:
 1
 4
@@ -39,15 +39,15 @@ call semaDestroy(s)
 #### semaphore init and multiple down
 source --builtin synch.ysh
 
-var s = semaNew(3)
+var s = sema-new(3)
 {
   sleep 1
-  call semaUp(s) 
+  call sema-up(s) 
 } &
-call semaDown(s)
-call semaDown(s)
-call semaDown(s)
-call semaDown(s)
+call sema-down(s)
+call sema-down(s)
+call sema-down(s)
+call sema-down(s)
 echo yes
 ## STDOUT:
 yes

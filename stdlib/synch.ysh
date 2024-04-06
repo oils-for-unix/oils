@@ -6,7 +6,7 @@ module stdlib/synch || return 0
 ### FIFO File Desriptors ###
 ############################
 
-func fifoFdNew() {
+func fifo-fd-new() {
   # WARN: this section should be critical but for now it's not
   # A solution may be retry on fail.
   #====================
@@ -17,7 +17,7 @@ func fifoFdNew() {
   return (fifo)
 }
 
-func fifoFdDestroy(fd) {
+func fifo-fd-destroy(fd) {
   var fifoFile = $(readlink /proc/$$/fd/$fd)
   exec {fd}>-
   exec {fd}<-
@@ -28,49 +28,49 @@ func fifoFdDestroy(fd) {
 ### Semaphore ###
 #################
 
-func semaNew(value) {
-  var sema = fifoFdNew()
-  call semaUp(sema, delta = value)
+func sema-new(value) {
+  var sema = fifo-fd-new()
+  call sema-up(sema, delta = value)
   return (sema)
 }
 
-func semaDown(sema) {
+func sema-down(sema) {
   read <$sema
 }
 
-func semaUp(sema; delta = 1) {
-  {
+func sema-up(sema; delta = 1) {
+  fork {
     for _ in (0 .. delta) {
       echo >$sema
     }
-  } &
+  }
 }
 
-func semaDestroy(sema) {
-  call fifoFdDestroy(sema)
+func sema-destroy(sema) {
+  call fifo-fd-destroy(sema)
 }
 
-# NOTE: all synchronization primitives except semaphore and buffers are implementation agnostic, meaning we may replace another implementation for semaphore in the future and all other synchronization primitives still work
+# NOTE: all synchronization primitives except semaphore and channels are implementation agnostic, meaning we may replace another implementation for semaphore in the future and all other synchronization primitives still work
 
 #############
 ### Mutex ###
 #############
 
-func mutexNew() {
-  var mutex = semaNew(1)
+func mutex-new() {
+  var mutex = sema-new(1)
   return (mutex)
 } 
 
-func mutexAcquire(mutex) {
-  call semaDown(mutex)
+func mutex-acqure(mutex) {
+  call sema-down(mutex)
 }
 
-func mutexRelease(mutex) {
-  call semaUp(mutex)
+func mutex-release(mutex) {
+  call sema-up(mutex)
 }
 
-func mutexDestroy(mutex) {
-  call semaDestroy(mutex)
+func mutex-destroy(mutex) {
+  call sema-destroy(mutex)
 }
 
 ##############
@@ -78,99 +78,92 @@ func mutexDestroy(mutex) {
 ##############
 # https://youtu.be/7zI_4CKk-3Y?t=205
 
-func RWLockNew() {
+func RW-lock-new() {
   return ({
     counter: 0,
-    counterLock: mutexNew(),
-    writeLock: mutexNew(),
+    counterLock: mutex-new(),
+    writeLock: mutex-new(),
   })
 } 
 
-func RWLockRead(lock) {
-  call mutexAcquire(lock.counterLock)
+func RW-lock-read(lock) {
+  call mutex-acqure(lock.counterLock)
   setvar lock.counter += 1
   if (lock.counter === 1) {
     # First reader should ensure no writer is present
-    call mutexAcquire(lock.writeLock)
+    call mutex-acqure(lock.writeLock)
   }
-  call mutexRelease(lock.counterLock)
+  call mutex-release(lock.counterLock)
 }
 
-func RWUnLockRead(lock) {
-  call mutexAcquire(lock.counterLock)
+func RW-unlock-read(lock) {
+  call mutex-acqure(lock.counterLock)
   setvar lock.counter -= 1
   if (lock.counter === 0) {
     # First reader should ensure no writer is present
-    call mutexRelease(lock.writeLock)
+    call mutex-release(lock.writeLock)
   }
-  call mutexRelease(lock.counterLock)
+  call mutex-release(lock.counterLock)
 }
 
-func RWLockWrite(lock) {
-  call mutexAcquire(lock.writeLock)
+func RW-lock-write(lock) {
+  call mutex-acqure(lock.writeLock)
 }
 
-func RWUnLockWrite(lock) {
-  call mutexRelease(lock.writeLock)
+func RW-unlock-write(lock) {
+  call mutex-release(lock.writeLock)
 }
 
-##############
-### Buffer ###
-##############
-# Same as bounded buffer but unbounded
-func bufferNew(...chunks) {
-  var buf = fifoFdNew()
-  {
+###############
+### Channel ###
+###############
+func channel-new(...chunks) {
+  var chan = fifo-fd-new()
+  call channel-produce(chan, ...chunks)
+  return (chan)
+}
+
+func channel-produce(chan, ...chunks) {
+  fork {
     for chunk in (chunks) {
-      json write --pretty=F (chunk) >$buf
-      echo Produced $chunk
+      json write --pretty=F (chunk) >$chan
     }
-  } &
-  return (buf)
+  }
 }
 
-func bufferProduce(buf, chunk) {
-  {
-    json write --pretty=F (chunk) >$buf
-    echo Produced $chunk
-  } &
-}
-
-func bufferConsume(buf) {
-  head -n 1 < $buf | json read (&chunk) 
-  echo Reading $chunk
+func channel-consume(chan) {
+  head -n 1 < $chan | json read (&chunk) 
   return (chunk)
 }
 
-func bufferDestroy(buf) {
-  call fifoFdDestroy(buf)
+func channel-destroy(chan) {
+  call fifo-fd-destroy(chan)
 }
 
 ###########################
 ### ConditionalVariable ###
 ###########################
-func condVarNew() {
+func cond-var-new() {
   var cv = {
-    mutex: mutexNew(),
-    sema: semaNew(0),
+    mutex: mutex-new(),
+    sema: sema-new(0),
   }
   return (cv)
 }
 
-func condVarWait(cv) {
-  call mutexRelease(cv.mutex)
-  call semaDown(cv.sema)
-  call mutexAcquire(cv.mutex)
+func cond-var-wait(cv) {
+  call mutex-release(cv.mutex)
+  call sema-down(cv.sema)
+  call mutex-acqure(cv.mutex)
 }
 
 # WARN: this does not follow the strict semantic of conditional variable, but at least for my case it's usable. 
-func condVarSignal(cv) {
-  call semaUp(cv.sema)
-  echo Signaling
+func cond-var-signal(cv) {
+  call sema-up(cv.sema)
 }
 
-func condVarDestroy(cv) {
-  call mutexAcquire(cv.mutex)
-  call semaDestroy(cv.sema)
-  call mutexDestroy(cv.mutex)
+func cond-var-destroy(cv) {
+  call mutex-acqure(cv.mutex)
+  call sema-destroy(cv.sema)
+  call mutex-destroy(cv.mutex)
 }
