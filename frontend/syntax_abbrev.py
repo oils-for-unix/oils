@@ -11,13 +11,11 @@ from asdl import runtime
 
 def _AbbreviateToken(tok, out):
     # type: (Token, List[hnode_t]) -> None
-    if tok.id in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.VSub_Name,
-                  Id.VSub_Number):
-        tok_str = tok.line.content[tok.col:tok.col + tok.length]
-        n1 = runtime.NewLeaf(tok_str, color_e.StringConst)
-    else:
-        n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
+    tok_str = tok.line.content[tok.col:tok.col + tok.length]
+    n1 = runtime.NewLeaf(Id_str(tok.id), color_e.OtherConst)
     out.append(n1)
+    n2 = runtime.NewLeaf(tok_str, color_e.StringConst)
+    out.append(n2)
 
 
 def _Token(obj):

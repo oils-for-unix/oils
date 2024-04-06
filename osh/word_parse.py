@@ -180,10 +180,21 @@ class WordParser(WordEmitter):
         # type: () -> None
         """Call this when you need to make a decision based on any of:
 
-        self.token_type self.token_kind self.cur_token  # contents
+        self.token_type
+        self.token_kind
+        self.cur_token
         """
         if self.next_lex_mode != lex_mode_e.Undefined:
+            # lex_mode_e.BashRegexFakeInner
+            #
+            # TODO: If we're in this mode, then use lex_mode_e.BashRegex.  But
+            # do this translation so we don't end a word:
+            #    Id.WS_Space -> Id.Lit_Chars
+            # Also a bash quirk:
+            #    Id.Op_Less, Id.Op_Great -> Id.Lit_Chars
+
             self.cur_token = self.lexer.Read(self.next_lex_mode)
+
             self.token_type = self.cur_token.id
             self.token_kind = consts.GetKind(self.token_type)
 

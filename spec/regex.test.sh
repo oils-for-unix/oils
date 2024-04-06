@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 7
 ## compare_shells: bash zsh
 
 #
@@ -130,17 +130,6 @@ true
 ## stdout-json: ""
 ## status: 2
 ## OK zsh status: 1
-
-#### Regex with char class containing space
-# For some reason it doesn't work without parens?
-[[ 'ba ba ' =~ ([a b]+) ]] && echo true
-## stdout: true
-
-#### Operators and space lose meaning inside ()
-[[ '< >' =~ (< >) ]] && echo true
-## stdout: true
-## N-I zsh stdout-json: ""
-## N-I zsh status: 1
 
 #### Regex with |
 [[ 'bar' =~ foo|bar ]] && echo true
@@ -401,6 +390,58 @@ two
 three
 ## END
 
+#### Multiple adjacent () groups
+
+if [[ 'a-b-c-d' =~ a-(b|  >>)-c-( ;|[de])|ff|gg ]]; then
+  argv.py "${BASH_REMATCH[@]}"
+fi
+
+if [[ ff =~ a-(b|  >>)-c-( ;|[de])|ff|gg ]]; then
+  argv.py "${BASH_REMATCH[@]}"
+fi
+
+## STDOUT:
+['a-b-c-d', 'b', 'd']
+['ff', '', '']
+## END
+
+## BUG zsh status: 1
+## BUG zsh STDOUT:
+four
+## END
+
+#### unquoted [a  b] as pattern, [a  b|c]
+
+$SH <<'EOF'
+[[ a =~ [ab] ]] && echo yes
+EOF
+echo "[ab]=$?"
+
+$SH <<'EOF'
+[[ a =~ [a b] ]] && echo yes
+EOF
+echo "[a b]=$?"
+
+$SH <<'EOF'
+[[ a =~ ([a b]) ]] && echo yes
+EOF
+echo "[a b]=$?"
+
+## STDOUT:
+yes
+[ab]=0
+[a b]=2
+yes
+[a b]=0
+## END
+
+## OK zsh STDOUT:
+yes
+[ab]=0
+[a b]=1
+yes
+[a b]=0
+## END
 
 #### c|a unquoted
 
@@ -445,6 +486,19 @@ $SH <<'EOF'
 EOF
 echo pipe=$?
 
+# This is probably special because > operator is inside foo [[ a > b ]]
+$SH <<'EOF'
+[[ '<>' =~ <> ]] && echo angle
+EOF
+echo angle=$?
+
+# Bug: OSH allowed this!
+$SH <<'EOF'
+[[ $'a\nb' =~ a
+b ]] && echo newline
+EOF
+echo newline=$?
+
 ## STDOUT:
 semi=2
 amp=2
@@ -453,6 +507,8 @@ pipe2
 pipe=0
 four
 pipe=0
+angle=2
+newline=2
 ## END
 
 ## BUG zsh STDOUT:
@@ -460,6 +516,8 @@ semi=1
 amp=1
 pipe=1
 pipe=1
+angle=1
+newline=1
 ## END
 
 
@@ -543,3 +601,10 @@ m=(
 status=1
 m=
 ## END
+
+#### Operators and space lose meaning inside ()
+[[ '< >' =~ (< >) ]] && echo true
+## stdout: true
+## N-I zsh stdout-json: ""
+## N-I zsh status: 1
+

@@ -24,7 +24,11 @@ module types {
   | Arith
   | ExtGlob
   | VSub_1 | VSub_2 | VSub_ArgUnquoted | VSub_ArgDQ
-  | BashRegex | BashRegexChars
+
+    # BashRegexFakeInner doesn't have regexes -- the WordParser does a
+    # translation from BashRegex
+  | BashRegex | BashRegexFakeInner
+
   | FuncParens  # for Id.LookAhead_FuncParens
 
   # Two for printf builtin
