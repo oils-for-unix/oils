@@ -80,9 +80,8 @@ proc mutex-destroy(; mutex) {
 proc RW-lock-new(; out_lock) {
   mutex-new (&counterLock)
   mutex-new (&writeLock)
-  var counter = 0
   call out_lock->setValue({
-    counter,
+    counter: 0,
     counterLock,
     writeLock,
   })
