@@ -650,6 +650,8 @@ unquoted-nounset_arith() {
 
 test-divzero() {
   _osh-error-1 'echo $(( 1 / 0 ))'
+  # Better location
+  _osh-error-1 'echo $(( 1 / (3 -3 ) ))'
   _osh-error-1 'echo $(( 1 % 0 ))'
 
   _osh-error-1 'zero=0; echo $(( 1 / zero ))'

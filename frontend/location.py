@@ -195,10 +195,7 @@ def TokenForArith(node):
 
         elif case(arith_expr_e.Binary):
             node = cast(arith_expr.Binary, UP_node)
-
-            # TODO: should blame op
-            # blaming left is arbitrary, but better than nothing
-            return TokenForArith(node.left)
+            return TokenForArith(node.op)
 
         elif case(arith_expr_e.TernaryOp):
             node = cast(arith_expr.TernaryOp, UP_node)

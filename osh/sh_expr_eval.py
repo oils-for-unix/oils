@@ -659,7 +659,7 @@ class ArithEvaluator(object):
 
             elif case(arith_expr_e.Binary):
                 node = cast(arith_expr.Binary, UP_node)
-                op_id = node.op_id
+                op_id = node.op.id
 
                 # Short-circuit evaluation for || and &&.
                 if op_id == Id.Arith_DPipe:
@@ -733,12 +733,12 @@ class ArithEvaluator(object):
                     result = mops.Mul(lhs_big, rhs_big)
                 elif op_id == Id.Arith_Slash:
                     if mops.Equal(rhs_big, mops.ZERO):
-                        e_die('Divide by zero', loc.Arith(node.right))
+                        e_die('Divide by zero', node.op)
                     result = num.IntDivide(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_Percent:
                     if mops.Equal(rhs_big, mops.ZERO):
-                        e_die('Divide by zero', loc.Arith(node.right))
+                        e_die('Divide by zero', node.op)
                     result = num.IntRemainder(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DStar:
@@ -884,7 +884,7 @@ class ArithEvaluator(object):
         UP_anode = anode
         if anode.tag() == arith_expr_e.Binary:
             anode = cast(arith_expr.Binary, UP_anode)
-            if anode.op_id == Id.Arith_LBracket:
+            if anode.op.id == Id.Arith_LBracket:
                 var_name, blame_loc = self._VarNameOrWord(anode.left)
 
                 # (( 1[2] = 3 )) isn't valid

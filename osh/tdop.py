@@ -4,7 +4,8 @@ tdop.py - Library for expression parsing.
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t
 from _devbuild.gen.syntax_asdl import (loc, arith_expr, arith_expr_e,
-                                       arith_expr_t, word_t, CompoundWord)
+                                       arith_expr_t, word_e, word_t,
+                                       CompoundWord, Token)
 from core.error import p_die
 from core import ui
 from mycpp import mylib
@@ -46,7 +47,7 @@ def CheckLhsExpr(node, blame_word):
     UP_node = node
     if node.tag() == arith_expr_e.Binary:
         node = cast(arith_expr.Binary, UP_node)
-        if node.op_id == Id.Arith_LBracket and IsIndexable(node.left):
+        if node.op.id == Id.Arith_LBracket and IsIndexable(node.left):
             return
         # But a[0][0] = 1 is NOT valid.
 
@@ -115,8 +116,11 @@ def LeftError(p, t, left, rbp):
 def LeftBinaryOp(p, w, left, rbp):
     # type: (TdopParser, word_t, arith_expr_t, int) -> arith_expr_t
     """Normal binary operator like 1+2 or 2*3, etc."""
-    # TODO: w should be a Token, and we should extract the token from it.
-    return arith_expr.Binary(word_.ArithId(w), left, p.ParseUntil(rbp))
+
+    assert w.tag() == word_e.Operator, w
+    tok = cast(Token, w)
+
+    return arith_expr.Binary(tok, left, p.ParseUntil(rbp))
 
 
 def LeftAssign(p, w, left, rbp):

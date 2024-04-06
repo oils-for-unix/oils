@@ -4,13 +4,14 @@ arith_parse.py - Parse shell arithmetic, which is based on C.
 """
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.syntax_asdl import (loc, arith_expr, arith_expr_t, word_t)
+from _devbuild.gen.syntax_asdl import (loc, arith_expr, arith_expr_t, word_e,
+                                       word_t, Token)
 from core.error import p_die
 from osh import tdop
 from osh import word_
 from mycpp import mylib
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from osh.tdop import TdopParser, ParserSpec
 
@@ -77,7 +78,9 @@ def LeftIndex(p, w, left, unused_bp):
     index = p.ParseUntil(0)  # ] has bp = -1
     p.Eat(Id.Arith_RBracket)
 
-    return arith_expr.Binary(word_.ArithId(w), left, index)
+    assert w.tag() == word_e.Operator, w
+    tok = cast(Token, w)
+    return arith_expr.Binary(tok, left, index)
 
 
 def LeftTernary(p, t, left, bp):

@@ -805,7 +805,7 @@ for ((i=0; i<5; ++i)); do
 done
 """)
         self.assertEqual(Id.Arith_Equal, node.init.op_id)
-        self.assertEqual(Id.Arith_Less, node.cond.op_id)
+        self.assertEqual(Id.Arith_Less, node.cond.op.id)
         self.assertEqual(Id.Arith_DPlus, node.update.op_id)
         self.assertEqual(command_e.DoGroup, node.body.tag())
 
@@ -817,7 +817,7 @@ for ((i=0; i<5; ++i)) do
 done
 """)
         self.assertEqual(Id.Arith_Equal, node.init.op_id)
-        self.assertEqual(Id.Arith_Less, node.cond.op_id)
+        self.assertEqual(Id.Arith_Less, node.cond.op.id)
         self.assertEqual(Id.Arith_DPlus, node.update.op_id)
         self.assertEqual(command_e.DoGroup, node.body.tag())
 

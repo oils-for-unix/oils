@@ -284,7 +284,7 @@ module syntax
 
   | Unary(id op_id, arith_expr child)
     # TODO: op should be token, e.g. for divide by zero
-  | Binary(id op_id, arith_expr left, arith_expr right)
+  | Binary(Token op, arith_expr left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
 
   bool_expr =
