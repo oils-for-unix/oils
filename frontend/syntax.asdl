@@ -240,6 +240,8 @@ module syntax
   | BracedRange(Token blame_tok, id kind, str start, str end, int step)
     # extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, List[CompoundWord] arms, Token right)
+    # Could this be combined with ExtGlob?
+  | BashRegex(Token left, List[CompoundWord] arms, Token right)
 
     # YSH word_part extensions
 

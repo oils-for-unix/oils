@@ -925,6 +925,50 @@ class WordParser(WordEmitter):
 
         return word_part.ExtGlob(left_token, arms, right_token)
 
+    def _ReadBashRegex(self):
+        # type: () -> word_part.BashRegex
+        """
+        """
+        left_token = self.cur_token
+        right_token = None  # type: Token
+        arms = []  # type: List[CompoundWord]
+
+        self.lexer.PushHint(Id.Op_RParen, Id.Right_BashRegex)
+        self._SetNext(lex_mode_e.BashRegex)  # advance past LEFT
+
+        read_word = False  # did we just a read a word?  To handle @(||).
+
+        while True:
+            self._GetToken()
+
+            if self.token_type == Id.Right_ExtGlob:
+                if not read_word:
+                    arms.append(CompoundWord([]))
+                right_token = self.cur_token
+                break
+
+            elif self.token_type == Id.Op_Pipe:
+                if not read_word:
+                    arms.append(CompoundWord([]))
+                read_word = False
+                self._SetNext(lex_mode_e.BashRegex)
+
+            # lex mode EXTGLOB should only produce these 4 kinds of tokens
+            elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
+                                     Kind.BashRegex):
+                w = self._ReadCompoundWord(lex_mode_e.BashRegex)
+                arms.append(w)
+                read_word = True
+
+            elif self.token_kind == Kind.Eof:
+                p_die('Unexpected EOF reading extended glob that began here',
+                      left_token)
+
+            else:
+                raise AssertionError(self.cur_token)
+
+        return word_part.BashRegex(left_token, arms, right_token)
+
     def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
         # type: (Optional[Token], bool, List[word_part_t]) -> None
         """
@@ -1782,6 +1826,10 @@ class WordParser(WordEmitter):
 
                 else:
                     part = self._ReadExtGlob()
+                w.parts.append(part)
+
+            elif self.token_kind == Kind.BashRegex:
+                part = self._ReadBashRegex()
                 w.parts.append(part)
 
             elif self.token_kind == Kind.Left:
