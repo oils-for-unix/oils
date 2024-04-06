@@ -2,9 +2,9 @@
 
 module stdlib/synch || return 0
 
-############################
-### FIFO File Desriptors ###
-############################
+#
+# FIFO File Desriptors
+#
 
 proc fifo-fd-new(; out_fd) {
   # WARN: this section should be critical but for now it's not
@@ -24,9 +24,9 @@ proc fifo-fd-destroy(; fd) {
   rm $fifoFile
 }
 
-#################
-### Semaphore ###
-#################
+#
+# Semaphore
+#
 
 proc sema-new(; value, out_sema) {
   fifo-fd-new (&sema)
