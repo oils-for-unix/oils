@@ -2,11 +2,13 @@
 
 module stdlib/random || return 0
 
+# TODO: Big ints?
 func randomIntByBytes(byteSize = 4) { # defaults to 32-bit ints
   var num_str = $(od -vAn -N$byteSize -tu$byteSize < /dev/urandom | tr -d '[:space:]')
   return (num_str => int())
 }
 
+# TODO: Random stirng chosen from a charset?
 func randomString(len) {
   return ($(head -c $len /dev/urandom))
 }
