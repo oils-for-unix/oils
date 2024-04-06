@@ -194,6 +194,7 @@ class WordParser(WordEmitter):
             #    Id.Op_Less, Id.Op_Great -> Id.Lit_Chars
 
             self.cur_token = self.lexer.Read(self.next_lex_mode)
+            #log('_GetToken %s', self.cur_token)
 
             self.token_type = self.cur_token.id
             self.token_kind = consts.GetKind(self.token_type)
@@ -909,7 +910,7 @@ class WordParser(WordEmitter):
                 read_word = False
                 self._SetNext(lex_mode_e.ExtGlob)
 
-            # lex mode EXTGLOB should only produce these 4 kinds of tokens
+            # lex_mode_e.ExtGlob should only produce these 4 kinds of tokens
             elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
                                      Kind.ExtGlob):
                 w = self._ReadCompoundWord(lex_mode_e.ExtGlob)
@@ -925,23 +926,31 @@ class WordParser(WordEmitter):
 
         return word_part.ExtGlob(left_token, arms, right_token)
 
-    def _ReadBashRegex(self):
+    def _ReadBashRegexPart(self):
         # type: () -> word_part.BashRegex
         """
+        Assuming we got (, read until )
+        TODO: test unclosed (
         """
         left_token = self.cur_token
+        assert left_token.id == Id.BashRegex_LParen, left_token
+
         right_token = None  # type: Token
         arms = []  # type: List[CompoundWord]
 
-        self.lexer.PushHint(Id.Op_RParen, Id.Right_BashRegex)
+        self.lexer.PushHint(Id.BashRegex_RParen, Id.Right_BashRegex)
         self._SetNext(lex_mode_e.BashRegex)  # advance past LEFT
 
         read_word = False  # did we just a read a word?  To handle @(||).
 
+        #log('tok1 %s', self.cur_token)
         while True:
             self._GetToken()
+            #log('tok2 %s', self.cur_token)
 
-            if self.token_type == Id.Right_ExtGlob:
+            # ) or space ends the word part
+            #if self.token_type == Id.BashRegex_RParen:
+            if self.token_type == Id.Right_BashRegex:
                 if not read_word:
                     arms.append(CompoundWord([]))
                 right_token = self.cur_token
@@ -953,7 +962,7 @@ class WordParser(WordEmitter):
                 read_word = False
                 self._SetNext(lex_mode_e.BashRegex)
 
-            # lex mode EXTGLOB should only produce these 4 kinds of tokens
+            # lex_mode_e.BashRegex should only produce these 4 kinds of tokens
             elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
                                      Kind.BashRegex):
                 w = self._ReadCompoundWord(lex_mode_e.BashRegex)
@@ -961,7 +970,7 @@ class WordParser(WordEmitter):
                 read_word = True
 
             elif self.token_kind == Kind.Eof:
-                p_die('Unexpected EOF reading extended glob that began here',
+                p_die('Unexpected EOF reading bash regex that began here',
                       left_token)
 
             else:
@@ -1828,8 +1837,9 @@ class WordParser(WordEmitter):
                     part = self._ReadExtGlob()
                 w.parts.append(part)
 
-            elif self.token_kind == Kind.BashRegex:
-                part = self._ReadBashRegex()
+            elif self.token_kind == Kind.BashRegex:  # Opening (
+                part = self._ReadBashRegexPart()
+                #log('PART %s', part)
                 w.parts.append(part)
 
             elif self.token_kind == Kind.Left:
@@ -1988,7 +1998,7 @@ class WordParser(WordEmitter):
             assert self.token_kind in (Kind.VSub, Kind.Lit, Kind.History,
                                        Kind.Left, Kind.KW, Kind.ControlFlow,
                                        Kind.BoolUnary, Kind.BoolBinary,
-                                       Kind.ExtGlob), 'Unhandled token kind'
+                                       Kind.ExtGlob, Kind.BashRegex), 'Unhandled token kind'
 
             if (word_mode == lex_mode_e.ShCommandBrack and
                     self.parse_opts.parse_bracket() and

@@ -264,6 +264,7 @@ class BoolParser(object):
                 if t2_bool_id == Id.BoolBinary_EqualTilde:
                     self._Next(lex_mode=lex_mode_e.BashRegex)
                     right = self.ParseRegex()
+                    #log('RIGHT %s', right)
                 else:
                     self._Next()
                     right = self.cur_word

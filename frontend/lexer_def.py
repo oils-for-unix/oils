@@ -396,9 +396,9 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     #R(r'\\[*+?.^$\[\]]', Id.Lit_RegexOp),
 
     # TODO: Id.Regex_{LParen,RParen,Pipe}
-    C('(', Id.Lit_Other),
-    C(')', Id.Lit_Other),
-    C('|', Id.Lit_Other),
+    C('(', Id.BashRegex_LParen),
+    C(')', Id.BashRegex_RParen),
+    C('|', Id.BashRegex_Pipe),
 
     # NOTE: ( | and ) aren't operators!
     # This can conflict with closing ) though
