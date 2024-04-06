@@ -19,8 +19,8 @@ proc fifo-fd-new(; out_fd) {
 
 proc fifo-fd-destroy(; fd) {
   var fifoFile = $(readlink /proc/$$/fd/$fd)
+  # NOTE: No need to close both end of a pipe.
   exec {fd}>&-
-  exec {fd}<&-
   rm $fifoFile
 }
 
