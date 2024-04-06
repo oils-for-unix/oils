@@ -399,11 +399,10 @@ def AddKinds(spec):
             'AsciiControl',  # \x01-\x1f, what's disallowed in JSON
         ])
 
-    # Regular expression primitives.
-
     # For lex_mode_e.BashRegex
     # Bash treats ( | ) as special, and space is allowed within ()
-    spec.AddKind('Regex', ['LParen', 'RParen', 'Pipe', 'Space'])
+    # Note Id.Op_RParen -> Id.Right_BashRegex with lexer hint
+    spec.AddKind('BashRegex', ['LParen'])
 
     spec.AddKind(
         'Eggex',
@@ -487,6 +486,7 @@ def AddKinds(spec):
             'CasePat',  # )
             'ShArrayLiteral',  # )
             'ExtGlob',  # )
+            'BashRegex',  # )
             'BlockLiteral',  # } that matches &{ echo hi }
         ])
 

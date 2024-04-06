@@ -264,7 +264,9 @@ test-bool-expr() {
   _osh-parse-error '[[ ( a == b foo${var} ]]'
 }
 
-test-regex() {
+test-regex-nix() {
+  ### Based on Nix bug
+
   # Nix idiom - added space
   _osh-should-parse '
 if [[ ! (" ${params[*]} " =~ " -shared " || " ${params[*]} " =~ " -static " ) ]]; then
@@ -278,9 +280,6 @@ if [[ (foo =~ (x) ) ]]; then
   echo hi
 fi
 '
-  return
-  # TODO: fix bugs
-
   # Nix idiom - reduced
   _osh-should-parse '
 if [[ (foo =~ x) ]]; then
@@ -294,8 +293,37 @@ if [[ ! (" ${params[*]} " =~ " -shared " || " ${params[*]} " =~ " -static ") ]];
   echo hi
 fi
 '
-
 }
+
+test-regex-pipe() {
+  # Pipe in outer expression - it becomes Lit_Other, which is fine
+
+  # Well we need a special rule for this probably
+  local s='[[ a =~ b|c ]]'
+  bash -n -c "$s"
+  _osh-should-parse "$s"
+}
+
+test-regex-space() {
+  _osh-should-parse '[[ a =~ (b c) ]]'
+  _osh-should-parse '[[ a =~ (a b)(c d) ]]'
+}
+
+test-regex-right-paren() {
+  # BashRegex lexer mode
+  _osh-should-parse '[[ a =~ b ]]'
+  _osh-should-parse '[[ a =~ (b) ]]'  # this is a regex
+  _osh-should-parse '[[ (a =~ b) ]]'  # this is grouping
+  _osh-should-parse '[[ (a =~ (b)) ]]'  # regex and grouping!
+
+  return
+  # Similar thing for extglob
+  _osh-should-parse '[[ a == b ]]'
+  _osh-should-parse '[[ a == @(b) ]]'  # this is a regex
+  _osh-should-parse '[[ (a == b) ]]'  # this is grouping
+  _osh-should-parse '[[ (a == @(b)) ]]'  # regex and grouping!
+}
+
 
 # These don't have any location information.
 test-test-builtin() {

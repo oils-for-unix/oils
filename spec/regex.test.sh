@@ -1,4 +1,4 @@
-## oils_failures_allowed: 7
+## oils_failures_allowed: 2
 ## compare_shells: bash zsh
 
 #

@@ -386,22 +386,16 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     # and outside?
     _SIGNIFICANT_SPACE,
 
-    # This is not necessary because of the glob_.ExtendedRegexEscape() logic.
-    #
-    # On the RHS, \* and "*" are the same.  So it doesn't make sense to lex
-    # "literally", since we do the same transformation either way.
+    # Analogous to Id.ExtGlob_* - we need to change lexer modes when we hit this
+    C('(', Id.BashRegex_LParen),
 
-    # Prevent say \* from being Id.Lit_EscapedChar, which evaluates to *.
-    # In regexes, we want \* to evaluate to \*.
-    #R(r'\\[*+?.^$\[\]]', Id.Lit_RegexOp),
+    # Not special, this is like lex_mode_e.Outer
+    C(')', Id.Op_RParen),
 
-    # TODO: Id.Regex_{LParen,RParen,Pipe}
-    C('(', Id.Lit_Other),
-    C(')', Id.Lit_Other),
+    # Special rule: unquoted | is allowed in regexes
     C('|', Id.Lit_Other),
 
-    # NOTE: ( | and ) aren't operators!
-    # This can conflict with closing ) though
+    # TODO: Relax & ; -- these are not accepted
     R(r'[^\0]', Id.Lit_Other),  # Everything else is a literal
 ] + _BACKSLASH  # These have to come after RegexMeta
 
