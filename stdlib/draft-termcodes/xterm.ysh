@@ -83,6 +83,20 @@ func withBg(text, color) {
   }
 }
 
+const FONT_NORMAL      = 0
+const FONT_BOLD        = 1
+const FONT_FAINT       = 2
+const FONT_ITALICIZED  = 3
+const FONT_UNDERLINED  = 4
+const FONT_BLINK       = 5
+const FONT_INVERSE     = 7
+const FONT_INVISIBLE   = 8
+const FONT_CROSSED_OUT = 9
+
+func withStyle(text, style) {
+  return ("${TERM_CSI}${style}m${text}${TERM_CSI}m")
+}
+
 func withLink(caption, address) {
   return ("$TERM_ESC]8;;$address$TERM_ESC\\$caption$TERM_ESC]8;;$TERM_ESC\\")
 }
