@@ -776,7 +776,7 @@ EOF
 
   # SINGLE quotes fixes it
   _osh-should-run-here <<'EOF'
-declare -A assoc; key=k; unset 'assoc["$key"]'
+declare -A assoc; key=k; unset 'assoc[$key]'
 EOF
 
   # Wrap in eval to see how it composes

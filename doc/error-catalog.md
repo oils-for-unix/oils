@@ -201,7 +201,63 @@ test/runtime-errors.sh test-command-not-found
 
 ### OILS-ERR-101
 
-TODO: Assoc arrays Undecidable error
+<!--
+Generated with:
+test/runtime-errors.sh test-assoc-array
+-->
+
+Let's look at **three** instances of this error.
+
+```
+  declare -A assoc; assoc[x]=1
+                    ^~~~~~
+[ -c flag ]:1: fatal: Assoc array keys must be strings: $x 'x' "$x" etc. (OILS-ERR-101)
+```
+
+- Is `x` a string?  Then add quotes: `assoc['x']=1`
+- Is `x` a variable?  Then write: `assoc[$x]=1`
+
+---
+
+Same idea here:
+
+```
+  declare -A assoc; echo ${assoc[x]}
+                                 ^
+[ -c flag ]:1: fatal: Assoc array keys must be strings: $x 'x' "$x" etc. (OILS-ERR-101)
+```
+
+- Is `x` a string?  Then add quotes: `${assoc['x']}`
+- Is `x` a variable?  Then write: `${assoc[$x]}`
+
+---
+
+The third example is **tricky** because `unset` takes a **string**.  There's an
+extra level of parsing, which:
+
+- Implies an extra level of quoting
+- Causes OSH to display the following **nested** error message
+
+```
+  assoc[k]
+       ^
+[ dynamic LHS word at line 1 of [ -c flag ] ]:1
+
+  declare -A assoc; key=k; unset "assoc[$key]"
+                                 ^
+[ -c flag ]:1: fatal: Assoc array keys must be strings: $x 'x' "$x" etc. (OILS-ERR-101)
+```
+
+To fix it, consider using **single quotes**:
+
+    unset 'assoc[$key]'
+
+---
+
+- This is the error in [Parsing Bash is
+  Undecidable](https://www.oilshell.org/blog/2016/10/20.html) (2016)
+- Also mentioned in [Known Differences](known-differences.html)
+
 
 ## Runtime Errors - Oils and YSH
 

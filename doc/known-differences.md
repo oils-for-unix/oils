@@ -83,8 +83,10 @@ Yes:
 
 When unquoted, the period causes an ambiguity with respect to regular arrays
 vs. associative arrays.  See [Parsing Bash is
-Undecidable](http://www.oilshell.org/blog/2016/10/20.html).
+Undecidable](https://www.oilshell.org/blog/2016/10/20.html) (2016).
 
+- [OILS-ERR-101](error-catalog.html#oils-err-101) explains more ways to fix
+  this.
 
 ### Subshell in command sub
 

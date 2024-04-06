@@ -816,7 +816,7 @@ class ArithEvaluator(object):
             # It is a string or var name?
             # (It's parsed as arith_expr.VarSub)
             e_die(
-                "Associative array keys must be strings: $x 'x' \"$x\" etc. (OILS-ERR-101)",
+                "Assoc array keys must be strings: $x 'x' \"$x\" etc. (OILS-ERR-101)",
                 blame_loc)
 
     def EvalShellLhs(self, node, which_scopes):
