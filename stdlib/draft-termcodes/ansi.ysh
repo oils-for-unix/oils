@@ -54,7 +54,7 @@ func sgr24(color_hex) {
   return ("2;$r;$g;$b")
 }
 
-func withFg(color, text) {
+func withFg(text, color) {
   if (type(color) === 'Str') {
     return ("${TERM_CSI}38;${color}m${text}${TERM_CSI}m")
   } else { # 4-bit color
@@ -68,7 +68,7 @@ func withFg(color, text) {
   }
 }
 
-func withBg(color, text) {
+func withBg(text, color) {
   if (type(color) === 'Str') {
     return ("$TERM_ESC[48;${color}m${text}$TERM_ESC[m")
   } else { # 4-bit color
@@ -82,7 +82,7 @@ func withBg(color, text) {
   }
 }
 
-func withLink(address, caption) {
+func withLink(caption, address) {
   return ("${TERM_CSI}8;;$address$TERM_ESC\\$caption${TERM_CSI}8;;$TERM_ESC\\")
 }
 
