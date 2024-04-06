@@ -2,41 +2,55 @@
 
 module stdlib/synch || return 0
 
-#################
-### Semaphore ###
-#################
+############################
+### FIFO File Desriptors ###
+############################
 
-func semaNew(value) {
+func fifoFdNew() {
   # WARN: this section should be critical but for now it's not
   # A solution may be retry on fail.
   #====================
   var fifo = $(mktemp -u)
   mkfifo $fifo
   #====================
-  exec {sema}<>$fifo
-  rm -f $fifo
+  exec {fd}<>$fifo
+  return (fifo)
+}
+
+func fifoFdDestroy(fd) {
+  var fifoFile = $(readlink /proc/$$/fd/$fd)
+  exec {fd}>-
+  exec {fd}<-
+  rm $fifoFile
+}
+
+#################
+### Semaphore ###
+#################
+
+func semaNew(value) {
+  var sema = fifoFdNew()
   call semaUp(sema, delta = value)
   return (sema)
 }
 
 func semaDown(sema) {
-  read <&$sema
+  read <$sema
 }
 
 func semaUp(sema; delta = 1) {
   {
     for _ in (0 .. delta) {
-      echo >&$sema;
+      echo >$sema
     }
   } &
 }
 
 func semaDestroy(sema) {
-  exec {sema}>&-
-  exec {sema}<&-
+  call fifoFdDestroy(sema)
 }
 
-# NOTE: all synchronization primitives except semaphore is implementation agnostic, meaning we may replace another implementation for semaphore in the future and all other synchronization primitives still work
+# NOTE: all synchronization primitives except semaphore and buffers are implementation agnostic, meaning we may replace another implementation for semaphore in the future and all other synchronization primitives still work
 
 #############
 ### Mutex ###
@@ -100,83 +114,37 @@ func RWUnLockWrite(lock) {
   call mutexRelease(lock.writeLock)
 }
 
-# BUG: both bounded buffer and buffer is bugged as there's no shared memory between shell jobs 
-#####################
-### BoundedBuffer ###
-#####################
-# https://www.youtube.com/watch?v=Qx3P2wazwI0&t=705s
-func boundedBufferNew(capacity, jobs) {
-  if (len(jobs) >= capacity) {
-    echo "Too many jobs ($jobs) to initialize in a job buffer of capacity $capacity!"
-    exit 1
-  }
-  var buf = {
-    internal: jobs,
-    mutex: mutexNew(),
-    empty: semaNew(capacity - len(jobs)),
-    full: semaNew(len(jobs)),
-  }
-  return (buf)
-}
-
-func boundedBufferProduce(buf, job) {
-  call semaDown(buf.empty)
-  call mutexAcquire(buf.mutex)
-  call buf.internal->append(job)
-  call mutexRelease(buf.mutex)
-  call semaUp(buf.full)
-}
-
-func boundedBufferConsume(buf) {
-  call semaDown(buf.full)
-  call mutexAcquire(buf.mutex)
-  # NOTE: since we semaDown, buf can't be empty
-  var ret = buf.internal->pop()
-  call mutexRelease(buf.mutex)
-  call semaUp(buf.empty)
-  return (ret)
-}
-
-func boundedBufferDestroy(buf) {
-  call mutexAcquire(buf.mutex)
-  call semaDestroy(buf.full)
-  call semaDestroy(buf.empty)
-  call mutexDestroy(buf.mutex)
-}
-
 ##############
 ### Buffer ###
 ##############
 # Same as bounded buffer but unbounded
-func bufferNew(...jobs) {
-  var buf = {
-    internal: jobs,
-    mutex: mutexNew(),
-    full: semaNew(len(jobs)),
-  }
+func bufferNew(...chunks) {
+  var buf = fifoFdNew()
+  {
+    for chunk in (chunks) {
+      json write --pretty=F (chunk) >$buf
+      echo Produced $chunk
+    }
+  } &
   return (buf)
 }
 
-func bufferProduce(buf, job) {
-  call mutexAcquire(buf.mutex)
-  call buf.internal->append(job)
-  call mutexRelease(buf.mutex)
-  call semaUp(buf.full)
+func bufferProduce(buf, chunk) {
+  {
+    json write --pretty=F (chunk) >$buf
+    echo Produced $chunk
+  } &
 }
 
 func bufferConsume(buf) {
-  call semaDown(buf.full)
-  call mutexAcquire(buf.mutex)
-  # NOTE: since we semaDown, buf can't be empty
-  var ret = buf.internal->pop()
-  call mutexRelease(buf.mutex)
-  return (ret)
+  # BUG: This is broken now as json round-tripping with `--pretty=F` is failing
+  head -n 1 < $buf | tr -d '\n' | json read (&chunk) 
+  echo Reading $chunk
+  return (chunk)
 }
 
 func bufferDestroy(buf) {
-  call mutexAcquire(buf.mutex)
-  call semaDestroy(buf.full)
-  call mutexDestroy(buf.mutex)
+  call fifoFdDestroy(buf)
 }
 
 ###########################
@@ -199,6 +167,7 @@ func condVarWait(cv) {
 # WARN: this does not follow the strict semantic of conditional variable, but at least for my case it's usable. 
 func condVarSignal(cv) {
   call semaUp(cv.sema)
+  echo Signaling
 }
 
 func condVarDestroy(cv) {
@@ -206,4 +175,5 @@ func condVarDestroy(cv) {
   call semaDestroy(cv.sema)
   call mutexDestroy(cv.mutex)
 }
+
 # TODO: Channels.
