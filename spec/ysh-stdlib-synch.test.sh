@@ -3,7 +3,7 @@
 ## our_shell: ysh
 
 #### semaphore
-source --builtin synch.ysh
+source --builtin draft-synch.ysh
 
 sema-new (1, &s)
 fork { 
@@ -37,7 +37,7 @@ sema-destroy (s)
 ## END
 
 #### semaphore init and multiple down
-source --builtin synch.ysh
+source --builtin draft-synch.ysh
 
 sema-new (3, &s)
 fork {
