@@ -692,6 +692,10 @@ ysh-stdlib-testing() {
   run-file ysh-stdlib-testing "$@"
 }
 
+ysh-stdlib-synch() {
+  run-file ysh-stdlib-synch "$@"
+}
+
 ysh-source() {
   run-file ysh-source "$@"
 }
