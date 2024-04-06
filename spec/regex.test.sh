@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
 ## compare_shells: bash zsh
 
 #
@@ -375,13 +375,70 @@ one
 two
 ## END
 
-#### Is unquoted (a b) allowed as pattern?
+#### unquoted (a b) as pattern, (a b|c)
 
 if [[ 'a b' =~ (a b) ]]; then
-  echo yes
+  echo one
+fi
+
+if [[ 'a b' =~ (a b|c) ]]; then
+  echo two
+fi
+
+# I think spaces are only allowed within |
+
+if [[ ' c' =~ (a| c) ]]; then
+  echo three
 fi
 
 ## STDOUT:
-yes
+one
+two
+three
 ## END
 
+
+#### c|a unquoted
+
+if [[ a =~ c|a ]]; then
+  echo one
+fi
+
+## STDOUT:
+one
+## END
+## N-I zsh status: 1
+
+#### Parse error with 2 words
+
+if [[ a =~ c a ]]; then
+  echo one
+fi
+
+## status: 2
+## STDOUT:
+## END
+
+## BUG zsh status: 1
+## BUG zsh STDOUT:
+one
+## END
+
+#### make a lisp example
+
+str='(hi)'
+[[ "${str}" =~ ^^([][{}\(\)^@])|^(~@)|(\"(\\.|[^\\\"])*\")|^(;[^$'\n']*)|^([~\'\`])|^([^][ ~\`\'\";{}\(\)^@\,]+)|^[,]|^[[:space:]]+ ]]
+echo status=$?
+
+m=${BASH_REMATCH[0]}
+echo m=$m
+
+## STDOUT:
+status=0
+m=(
+## END
+
+## BUG zsh STDOUT:
+status=1
+m=
+## END
