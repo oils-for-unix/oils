@@ -18,7 +18,7 @@ proc fifo-fd-new(; out_fd) {
 }
 
 proc fifo-fd-destroy(; fd) {
-  var fdlink = /proc/$$/fd/$fd
+  var fdlink = "/proc/$$/fd/$fd"
   if test -L $fdlink {
     var fifoFile = $(readlink $fdlink)
     # NOTE: No need to close both end of a pipe.
