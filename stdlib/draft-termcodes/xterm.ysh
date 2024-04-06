@@ -4,7 +4,7 @@ module stdlib/termcodes || return 0
 
 # NOTE: Reference
 # - https://en.wikipedia.org/wiki/ANSI_escape_code#C0_control_codes
-# - invisible-island.net/xterm/ctlseqs/ctlseqs.html
+# - https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 
 const TERM_BEL = u'\u{07}'
 const TERM_BS  = u'\u{08}'
