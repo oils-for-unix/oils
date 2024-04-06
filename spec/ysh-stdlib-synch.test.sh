@@ -42,7 +42,7 @@ source --builtin synch.ysh
 var s = semaNew(3)
 {
   sleep 1
-  call semaUp(sema) 
+  call semaUp(s) 
 } &
 call semaDown(s)
 call semaDown(s)
@@ -53,4 +53,4 @@ echo yes
 yes
 ## END
 
-# TODO: add test case for mutex and jobqueue
+# TODO: add test case for mutex and other sync primitives
