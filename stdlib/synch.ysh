@@ -14,13 +14,13 @@ proc fifo-fd-new(; out_fd) {
   mkfifo $fifo
   #====================
   exec {fd}<>$fifo
-  call out_fd->setValue(fifo)
+  call out_fd->setValue(fd)
 }
 
 proc fifo-fd-destroy(; fd) {
   var fifoFile = $(readlink /proc/$$/fd/$fd)
-  exec {fd}>-
-  exec {fd}<-
+  exec {fd}>&-
+  exec {fd}<&-
   rm $fifoFile
 }
 
@@ -35,13 +35,13 @@ proc sema-new(; value, out_sema) {
 }
 
 proc sema-down(; sema) {
-  read <$sema
+  read <&$sema
 }
 
 proc sema-up(; sema, delta = 1) {
   fork {
     for _ in (0 .. delta) {
-      echo >$sema
+      echo >&$sema
     }
   }
 }
