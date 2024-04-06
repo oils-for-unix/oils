@@ -3,7 +3,7 @@
 module stdlib/synch || return 0
 
 #
-# FIFO File Desriptors
+# FIFO File Descriptors
 #
 
 proc fifo-fd-new(; out_fd) {
@@ -31,7 +31,7 @@ proc fifo-fd-destroy(; fd) {
 }
 
 #
-# Semaphore
+# Semaphores
 #
 
 proc sema-new(; value, out_sema) {
