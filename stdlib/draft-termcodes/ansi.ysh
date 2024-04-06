@@ -64,13 +64,13 @@ func withFg(text, color) {
     } else {
       setvar sgr4_id += 90 - 8
     }
-    return ("$TERM_ESC[${sgr4_id}m${text}$TERM_ESC[m")
+    return ("${TERM_CSI}${sgr4_id}m${text}${TERM_CSI}m")
   }
 }
 
 func withBg(text, color) {
   if (type(color) === 'Str') {
-    return ("$TERM_ESC[48;${color}m${text}$TERM_ESC[m")
+    return ("${TERM_CSI}48;${color}m${text}${TERM_CSI}m")
   } else { # 4-bit color
     var sgr4_id = color[0]
     if (sgr4_id < 8) {
@@ -78,12 +78,12 @@ func withBg(text, color) {
     } else {
       setvar sgr4_id += 100 - 8
     }
-    return ("$TERM_ESC[;${sgr4_id}m${text}$TERM_ESC[m")
+    return ("${TERM_CSI};${sgr4_id}m${text}${TERM_CSI}m")
   }
 }
 
 func withLink(caption, address) {
-  return ("${TERM_CSI}8;;$address$TERM_ESC\\$caption${TERM_CSI}8;;$TERM_ESC\\")
+  return ("$TERM_ESC]8;;$address$TERM_ESC\\$caption$TERM_ESC]8;;$TERM_ESC\\")
 }
 
 proc bell() {
