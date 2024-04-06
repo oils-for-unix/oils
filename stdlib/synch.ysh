@@ -137,8 +137,7 @@ func bufferProduce(buf, chunk) {
 }
 
 func bufferConsume(buf) {
-  # BUG: This is broken now as json round-tripping with `--pretty=F` is failing
-  head -n 1 < $buf | tr -d '\n' | json read (&chunk) 
+  head -n 1 < $buf | json read (&chunk) 
   echo Reading $chunk
   return (chunk)
 }
