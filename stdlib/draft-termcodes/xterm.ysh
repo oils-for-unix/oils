@@ -92,32 +92,32 @@ proc bell() {
 }
 
 # TODO: use some language constructs to generate these biolerplates
-proc cursor-up() { # CUU
-  write -n "${TERM_CSI}nA"
+proc cursor-up(; n) { # CUU
+  write -n "${TERM_CSI}${n}A"
 }
 
-proc cursor-down() { # CUD
-  write -n "${TERM_CSI}nB"
+proc cursor-down(; n) { # CUD
+  write -n "${TERM_CSI}${n}B"
 }
 
-proc cursor-forward() { # CUF
-  write -n "${TERM_CSI}nC"
+proc cursor-forward(; n) { # CUF
+  write -n "${TERM_CSI}${n}C"
 }
 
-proc cursor-back() { # CUB
-  write -n "${TERM_CSI}nD"
+proc cursor-back(; n) { # CUB
+  write -n "${TERM_CSI}${n}D"
 }
 
-proc cursor-next-line() { # CNL
-  write -n "${TERM_CSI}nE"
+proc cursor-next-line(; n) { # CNL
+  write -n "${TERM_CSI}${n}E"
 }
 
-proc cursor-previous-line() { # CPL
-  write -n "${TERM_CSI}nF"
+proc cursor-previous-line(; n) { # CPL
+  write -n "${TERM_CSI}${n}F"
 }
 
-proc cursor-horizontal-absolute() { # CHA
-  write -n "${TERM_CSI}nG"
+proc cursor-horizontal-absolute(; n) { # CHA
+  write -n "${TERM_CSI}${n}G"
 }
 
 proc cursor-position(; row, col) { # CUP
