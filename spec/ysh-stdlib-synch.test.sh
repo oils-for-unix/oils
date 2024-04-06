@@ -2,6 +2,17 @@
 
 ## our_shell: ysh
 
+#### fifo pipe double closes
+fifo-fd-new (&fd)
+try fifo-fd-destroy (fd)
+echo $_status
+try fifo-fd-destroy (fd)
+echo $_status
+## STDOUT:
+0
+1
+## END
+
 #### semaphore syncrhonizing async jobs
 source --builtin draft-synch.ysh
 

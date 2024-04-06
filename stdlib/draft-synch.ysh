@@ -24,6 +24,9 @@ proc fifo-fd-destroy(; fd) {
     # NOTE: No need to close both end of a pipe.
     exec {fd}>&-
     rm $fifoFile
+  } else {
+    echo "Double Destroying the fd $fd twice!" 1>&2
+    exit 1
   }
 }
 
