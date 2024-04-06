@@ -12,6 +12,7 @@ const TERM_LF  = u'\u{0A}'
 const TERM_FF  = u'\u{0C}'
 const TERM_CR  = u'\u{0D}'
 const TERM_ESC = u'\u{1B}'
+const TERM_CSI = "$TERM_ESC["
 
 func srgRgb(r, g, b) {
   var channelName = ['Red', 'Green', 'Blue']
@@ -55,7 +56,7 @@ func sgr24(color_hex) {
 
 func withFg(color, text) {
   if (type(color) === 'Str') {
-    return ("$TERM_ESC[38;${color}m${text}$TERM_ESC[m")
+    return ("${TERM_CSI}38;${color}m${text}${TERM_CSI}m")
   } else { # 4-bit color
     var sgr4_id = color[0]
     if (sgr4_id < 8) {
@@ -82,9 +83,51 @@ func withBg(color, text) {
 }
 
 func withLink(address, caption) {
-  return ("$TERM_ESC]8;;$address$TERM_ESC\\$caption$TERM_ESC]8;;$TERM_ESC\\")
+  return ("${TERM_CSI}8;;$address$TERM_ESC\\$caption${TERM_CSI}8;;$TERM_ESC\\")
 }
 
 proc bell() {
-  echo $TERM_BEL
+  write -n $TERM_BEL
+}
+
+proc cursor-up() { # CUU
+  write -n "${TERM_CSI}nA"
+}
+
+proc cursor-down() { # CUD
+  write -n "${TERM_CSI}nB"
+}
+
+proc cursor-forward() { # CUF
+  write -n "${TERM_CSI}nC"
+}
+
+proc cursor-back() { # CUB
+  write -n "${TERM_CSI}nD"
+}
+
+proc cursor-next-line() { # CNL
+  write -n "${TERM_CSI}nE"
+}
+
+proc cursor-previous-line() { # CPL
+  write -n "${TERM_CSI}nF"
+}
+
+proc cursor-horizontal-absolute() { # CHA
+  write -n "${TERM_CSI}nG"
+}
+
+proc cursor-position(; row, col) { # CUP
+  write -n "$TERM_CSI$row;${col}H"
+}
+
+# NOTE: Clears part of the screen. If n is 0 (or missing), clear from cursor to end of screen. If n is 1, clear from cursor to beginning of the screen. If n is 2, clear entire screen (and moves cursor to upper left on DOS ANSI.SYS). If n is 3, clear entire screen and delete all lines saved in the scrollback buffer (this feature was added for xterm and is supported by other terminal applications).
+proc erase-in-display(; n) { # ED
+  write -n "$TERM_CSI${n}J"
+}
+
+# NOTE: Erases part of the line. If n is 0 (or missing), clear from cursor to the end of the line. If n is 1, clear from cursor to beginning of the line. If n is 2, clear entire line. Cursor position does not change.
+proc erase-in-line(; n) { # EL
+  write -n "$TERM_CSI${n}K"
 }
