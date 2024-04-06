@@ -487,8 +487,7 @@ brace-expansion() {
 }
 
 regex() {
-  sh-spec spec/regex.test.sh --oils-failures-allowed 2 \
-    $BASH $ZSH $OSH_LIST "$@"
+  run-file regex "$@"
 }
 
 process-sub() {

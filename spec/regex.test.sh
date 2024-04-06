@@ -1,3 +1,6 @@
+## oils_failures_allowed: 4
+## compare_shells: bash zsh
+
 #
 # Only bash and zsh seem to implement [[ foo =~ '' ]]
 #
@@ -354,3 +357,31 @@ echo status=$?
 status=0
 status=1
 ## END
+
+
+#### Bug: Nix idiom with closing ) next to pattern
+
+if [[ ! (" ${params[*]} " =~ " -shared " || " ${params[*]} " =~ " -static ") ]]; then
+  echo one
+fi
+
+# Reduced idiom
+if [[ (foo =~ foo) ]]; then
+  echo two
+fi
+
+## STDOUT:
+one
+two
+## END
+
+#### Is unquoted (a b) allowed as pattern?
+
+if [[ 'a b' =~ (a b) ]]; then
+  echo yes
+fi
+
+## STDOUT:
+yes
+## END
+

@@ -260,6 +260,39 @@ test-bool-expr() {
   _osh-parse-error '[[ ( a == b foo${var} ]]'
 }
 
+test-regex() {
+  # Nix idiom - added space
+  _osh-should-parse '
+if [[ ! (" ${params[*]} " =~ " -shared " || " ${params[*]} " =~ " -static " ) ]]; then
+  echo hi
+fi
+'
+
+  # (x) is part of the regex
+  _osh-should-parse '
+if [[ (foo =~ (x) ) ]]; then
+  echo hi
+fi
+'
+  return
+  # TODO: fix bugs
+
+  # Nix idiom - reduced
+  _osh-should-parse '
+if [[ (foo =~ x) ]]; then
+  echo hi
+fi
+'
+
+  # Nix idiom - original
+  _osh-should-parse '
+if [[ ! (" ${params[*]} " =~ " -shared " || " ${params[*]} " =~ " -static ") ]]; then
+  echo hi
+fi
+'
+
+}
+
 # These don't have any location information.
 test-test-builtin() {
   # Some of these come from osh/bool_parse.py, and some from

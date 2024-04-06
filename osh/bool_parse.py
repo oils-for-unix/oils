@@ -231,8 +231,6 @@ class BoolParser(object):
                 self._Next()
                 op = self.bool_id
 
-                # TODO: Need to change to lex_mode_e.BashRegex.
-                # _Next(lex_mode) then?
                 is_regex = t2_bool_id == Id.BoolBinary_EqualTilde
                 if is_regex:
                     self._Next(lex_mode=lex_mode_e.BashRegex)

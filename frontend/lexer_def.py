@@ -368,7 +368,7 @@ LEXER_DEF[lex_mode_e.ExtGlob] = \
 # TODO: For testing, write a script to extract and save regexes... and compile
 # them with regcomp.  I've only seen constant regexes.
 #
-# From code: ( | ) are treated special.
+# bash code: ( | ) are special
 
 LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
@@ -386,6 +386,7 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     R(r'\\[*+?.^$\[\]]', Id.Lit_RegexMeta),
 
     # NOTE: ( | and ) aren't operators!
+    # This can conflict with closing ) though
     R(r'[^\0]', Id.Lit_Other),  # Everything else is a literal
 ] + _BACKSLASH  # These have to come after RegexMeta
 
