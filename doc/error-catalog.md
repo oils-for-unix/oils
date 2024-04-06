@@ -182,11 +182,26 @@ we can start a new section, like `300`.)
 
 ### OILS-ERR-100
 
-Example TODO: Command not found.
+<!--
+Generated with:
+test/runtime-errors.sh test-command-not-found
+-->
 
-- Is the file in your `$PATH`?  That variable controls where the shell shell
-  looks for executable files.
-- Did you misspell a shell function or YSH `proc`?
+```
+  findz
+  ^~~~~
+[ -c flag ]:1: 'findz' not found (OILS-ERR-100)
+```
+
+- Did you misspell a command name?
+- Did you misspell a shell function or a YSH `proc`?
+- Is the file in your `$PATH`?  The `PATH` variable is a colon-separated list
+  of directories, where executable files may live.
+- Is `findz` file executable bit set?  (`chmod +x`)
+
+### OILS-ERR-101
+
+TODO: Assoc arrays Undecidable error
 
 ## Runtime Errors - Oils and YSH
 

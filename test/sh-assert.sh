@@ -51,6 +51,11 @@ _osh-error-X() {
     -c "$@"
 }
 
+_osh-error-here-X() {
+  _osh-error-X $1 "$(cat)"
+}
+
+
 _osh-error-1() {
   _osh-error-X 1 "$@"
 }
@@ -129,7 +134,7 @@ _ysh-parse-error() {
 }
 
 #
-# Here doc variants of parse errors, so we can write single quoted strings in a
+# Here doc variants, so we can write single quoted strings in a
 # more readable way
 #
 
@@ -148,4 +153,14 @@ _ysh-should-parse-here() {
 _ysh-parse-error-here() {
   _ysh-parse-error "$(cat)"
 }
+
+_osh-should-run-here() {
+  _osh-should-run "$(cat)"
+}
+
+_ysh-should-run-here() {
+  _ysh-should-run "$(cat)"
+}
+
+
 

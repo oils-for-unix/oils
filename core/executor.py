@@ -323,7 +323,7 @@ class ShellExecutor(vm._Executor):
         else:
             argv0_path = self.search_path.CachedLookup(arg0)
         if argv0_path is None:
-            self.errfmt.Print_('%r not found' % arg0, arg0_loc)
+            self.errfmt.Print_('%r not found (OILS-ERR-100)' % arg0, arg0_loc)
             return 127
 
         # Normal case: ls /

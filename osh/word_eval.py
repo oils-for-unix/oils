@@ -1088,7 +1088,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case2(value_e.BashAssoc):
                 assoc_val = cast(value.BashAssoc, UP_val)
-                key = self.arith_ev.EvalWordToString(anode)
+                # Location could also be attached to bracket_op?  But
+                # arith_expr.VarSub works OK too
+                key = self.arith_ev.EvalWordToString(
+                    anode, blame_loc=location.TokenForArith(anode))
+
                 vtest_place.index = a_index.Str(key)  # out param
                 s = assoc_val.d.get(key)
 

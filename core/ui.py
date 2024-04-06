@@ -175,6 +175,8 @@ def GetLineSourceString(line, quote_filename=False):
         elif case(source_e.ArgvWord):
             src = cast(source.ArgvWord, UP_src)
 
+            # Note: _PrintWithLocation() uses this more specifically
+
             # TODO: check loc.Missing; otherwise get Token from loc_t, then line
             blame_tok = location.TokenFor(src.location)
             if blame_tok is None:
@@ -186,7 +188,6 @@ def GetLineSourceString(line, quote_filename=False):
                     line, quote_filename=quote_filename)
                 s = '[ %s word at line %d of %s ]' % (src.what, line_num,
                                                       outer_source)
-            # Note: _PrintCodeExcerpt called above
 
         elif case(source_e.Variable):
             src = cast(source.Variable, UP_src)
@@ -265,26 +266,55 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
 
     if show_code:
         UP_src = src
-        # LValue/backticks is the only case where we don't print this
-        if src.tag() == source_e.Reparsed:
-            src = cast(source.Reparsed, UP_src)
-            span2 = src.left_token
-            line_num = span2.line.line_num
 
-            # We want the excerpt to look like this:
-            #   a[x+]=1
-            #       ^
-            # Rather than quoting the internal buffer:
-            #   x+
-            #     ^
-            line2 = span2.line.content
-            lbracket_col = span2.col + span2.length
-            # NOTE: The inner line number is always 1 because of reparsing.  We
-            # overwrite it with the original span.
-            _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
+        with tagswitch(src) as case:
+            if case(source_e.Reparsed):
+                # Special case for LValue/backticks
 
-        else:
-            _PrintCodeExcerpt(line, blame_tok.col, blame_tok.length, f)
+                # We want the excerpt to look like this:
+                #   a[x+]=1
+                #       ^
+                # Rather than quoting the internal buffer:
+                #   x+
+                #     ^
+
+                # Show errors:
+                #   test/parse-errors.sh text-arith-context
+
+                src = cast(source.Reparsed, UP_src)
+                tok2 = src.left_token
+                line_num = tok2.line.line_num
+
+                line2 = tok2.line.content
+                lbracket_col = tok2.col + tok2.length
+                # NOTE: The inner line number is always 1 because of reparsing.
+                # We overwrite it with the original token.
+                _PrintCodeExcerpt(line2, orig_col + lbracket_col, 1, f)
+
+            elif case(source_e.ArgvWord):
+                src = cast(source.ArgvWord, UP_src)
+                # Special case for eval, unset, printf -v, etc.
+
+                # Show errors:
+                #   test/runtime-errors.sh test-assoc-array
+
+                #print('OUTER blame_loc', blame_loc)
+                #print('OUTER tok', blame_tok)
+                #print('INNER src.location', src.location)
+
+                # Print code and location for MOST SPECIFIC location
+                _PrintCodeExcerpt(line, blame_tok.col, blame_tok.length, f)
+                source_str = GetLineSourceString(blame_tok.line,
+                                                 quote_filename=True)
+                f.write('%s:%d\n' % (source_str, line_num))
+                f.write('\n')
+
+                # Now print OUTER location, with error message
+                _PrintWithLocation(prefix, msg, src.location, show_code)
+                return
+
+            else:
+                _PrintCodeExcerpt(line, blame_tok.col, blame_tok.length, f)
 
     source_str = GetLineSourceString(blame_tok.line, quote_filename=True)
 

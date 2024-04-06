@@ -150,6 +150,10 @@ _sep() {
   echo '---------------------------'
 }
 
+test-command-not-found() {
+  _osh-error-X 127 'findz'
+}
+
 test-errexit-one-process() {
   # two quotations of same location: not found then errexit
   _ysh-error-X 127 'zz'
@@ -727,23 +731,61 @@ unquoted-array_arith() {
   echo "${a[@]}"
 }
 
-unquoted-undef_assoc_array() {
+unquoted-undef-assoc-array() {
   declare -A A
   A['foo']=bar
   echo "${A['foo']}"
 
-  # TODO: none of this is implemented!
-  if false; then
-    A['spam']+=1
-    A['spam']+=1
+  A['spam']+=1
+  A['spam']+=1
 
-    spec/bin/argv.py "${A[@]}"
+  spec/bin/argv.py "${A[@]}"
 
-    (( A['spam']++ ))
-    (( A['spam']++ ))
+  (( A['spam']+=5 ))
 
-    spec/bin/argv.py "${A[@]}"
-  fi
+  spec/bin/argv.py "${A[@]}"
+}
+
+test-assoc-array() {
+  _osh-error-1 'declare -A assoc; assoc[x]=1'
+  _osh-should-run 'declare -A assoc; assoc[$key]=1'
+
+  # double quotes
+  _osh-should-run 'declare -A assoc; assoc["x"]=1'
+
+  # single quotes
+  _osh-should-run-here <<'EOF'
+declare -A assoc; assoc['x']=1
+EOF
+
+  _osh-error-1 'declare -A assoc; echo ${assoc[x]}'
+  _osh-should-run 'declare -A assoc; echo ${assoc["x"]}'
+  _osh-should-run 'declare -A assoc; echo ${assoc[$key]}'
+
+  _osh-error-1 'declare -A assoc; key=k; unset assoc[$key]'
+  # quotes removed
+  _osh-error-1 'declare -A assoc; key=k; unset "assoc[$key]"'
+
+  # Like Samuel's Nix error
+  # unset -v "hardeningEnableMap[$flag]"
+  _osh-error-here-X 1 <<'EOF'
+declare -A assoc; key=k; unset "assoc[$key]"
+EOF
+
+  # SINGLE quotes fixes it
+  _osh-should-run-here <<'EOF'
+declare -A assoc; key=k; unset 'assoc["$key"]'
+EOF
+
+  # Wrap in eval to see how it composes
+  _osh-error-here-X 1 <<'EOF'
+eval 'declare -A assoc; assoc[x]=1'
+EOF
+
+  _osh-error-here-X 1 <<'EOF'
+eval 'declare -A assoc; unset "assoc[x]"'
+EOF
+
 }
 
 unquoted-patsub_bad_glob() {

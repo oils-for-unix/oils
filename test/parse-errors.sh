@@ -148,6 +148,10 @@ test-arith-context() {
   # Should be an error
   _osh-parse-error 'a[x+]=1'
 
+  # Check what happens when you wrap
+  # This could use more detail - it needs the eval location
+  _osh-error-2 'eval a[x+]=1'
+
   _osh-parse-error 'a[]=1'
 
   _osh-parse-error 'a[*]=1'

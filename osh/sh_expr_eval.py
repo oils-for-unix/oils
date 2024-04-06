@@ -8,6 +8,7 @@
 """
 sh_expr_eval.py -- Shell boolean and arithmetic expressions.
 """
+from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import scope_t
@@ -51,6 +52,7 @@ from core import state
 from core import ui
 from frontend import consts
 from frontend import lexer
+from frontend import location
 from frontend import match
 from frontend import parse_lib
 from frontend import reader
@@ -793,8 +795,8 @@ class ArithEvaluator(object):
 
         raise AssertionError('for -Wreturn-type in C++')
 
-    def EvalWordToString(self, node):
-        # type: (arith_expr_t) -> str
+    def EvalWordToString(self, node, blame_loc=loc.Missing):
+        # type: (arith_expr_t, loc_t) -> str
         """
         Raises:
           error.FatalRuntime if the expression isn't a string
@@ -810,8 +812,12 @@ class ArithEvaluator(object):
             val = self.word_ev.EvalWordToString(w)
             return val.s
         else:
-            # TODO: location info for original
-            e_die("Associative array keys must be strings: $x 'x' \"$x\" etc.")
+            # A[x] is the "Parsing Bash is Undecidable" problem
+            # It is a string or var name?
+            # (It's parsed as arith_expr.VarSub)
+            e_die(
+                "Associative array keys must be strings: $x 'x' \"$x\" etc. (OILS-ERR-101)",
+                blame_loc)
 
     def EvalShellLhs(self, node, which_scopes):
         # type: (sh_lhs_t, scope_t) -> sh_lvalue_t
@@ -836,7 +842,9 @@ class ArithEvaluator(object):
                 assert node.name is not None
 
                 if self.mem.IsBashAssoc(node.name):
-                    key = self.EvalWordToString(node.index)
+                    key = self.EvalWordToString(node.index,
+                                                blame_loc=node.left)
+                    # node.left points to A[ in A[x]=1
                     lval2 = sh_lvalue.Keyed(node.name, key, node.left)
                     lval = lval2
                 else:
@@ -851,8 +859,9 @@ class ArithEvaluator(object):
 
     def _VarNameOrWord(self, anode):
         # type: (arith_expr_t) -> Tuple[Optional[str], loc_t]
-        """Returns a variable name if the arith node can be interpreted that
-        way."""
+        """
+        Returns a variable name if the arith node can be interpreted that way.
+        """
         UP_anode = anode
         with tagswitch(anode) as case:
             if case(arith_expr_e.VarSub):
@@ -876,27 +885,29 @@ class ArithEvaluator(object):
         if anode.tag() == arith_expr_e.Binary:
             anode = cast(arith_expr.Binary, UP_anode)
             if anode.op_id == Id.Arith_LBracket:
-                var_name, location = self._VarNameOrWord(anode.left)
+                var_name, blame_loc = self._VarNameOrWord(anode.left)
 
                 # (( 1[2] = 3 )) isn't valid
                 if not match.IsValidVarName(var_name):
-                    e_die('Invalid variable name %r' % var_name, location)
+                    e_die('Invalid variable name %r' % var_name, blame_loc)
 
                 if var_name is not None:
                     if self.mem.IsBashAssoc(var_name):
-                        key = self.EvalWordToString(anode.right)
-                        return sh_lvalue.Keyed(var_name, key, location)
+                        arith_loc = location.TokenForArith(anode)
+                        key = self.EvalWordToString(anode.right,
+                                                    blame_loc=arith_loc)
+                        return sh_lvalue.Keyed(var_name, key, blame_loc)
                     else:
                         index = mops.BigTruncate(self.EvalToBigInt(
                             anode.right))
-                        return sh_lvalue.Indexed(var_name, index, location)
+                        return sh_lvalue.Indexed(var_name, index, blame_loc)
 
-        var_name, location = self._VarNameOrWord(anode)
+        var_name, blame_loc = self._VarNameOrWord(anode)
         if var_name is not None:
-            return LeftName(var_name, location)
+            return LeftName(var_name, blame_loc)
 
         # e.g. unset 'x-y'.  status 2 for runtime parse error
-        e_die_status(2, 'Invalid LHS to modify', location)
+        e_die_status(2, 'Invalid LHS to modify', blame_loc)
 
 
 class BoolEvaluator(ArithEvaluator):

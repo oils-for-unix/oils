@@ -496,12 +496,12 @@ class Unset(vm._Builtin):
     def _UnsetVar(self, arg, location, proc_fallback):
         # type: (str, loc_t, bool) -> bool
         """
-    Returns:
-      bool: whether the 'unset' builtin should succeed with code 0.
-    """
+        Returns:
+          bool: whether the 'unset' builtin should succeed with code 0.
+        """
         lval = self.unsafe_arith.ParseLValue(arg, location)
 
-        #log('lval %s', lval)
+        #log('unsafe lval %s', lval)
         found = False
         try:
             found = self.mem.Unset(lval, scope_e.Shopt)
