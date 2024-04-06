@@ -254,10 +254,8 @@ def AddKinds(spec):
             'AtLBracket',  # @[split(x)]
             'AtLBraceDot',  # @{.myproc arg1} should be builtin_sub
             'Other',
-            'EscapedChar',
-            # Don't need this?  Lit_Other?
-            # Or Lit_Foo
-            'RegexMeta',
+            'EscapedChar',  # \* is escaped
+            'RegexOp',  # \* is literal
             'LBracket',
             'RBracket',  # for assoc array literals, static globs
             'Star',

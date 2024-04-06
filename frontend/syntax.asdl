@@ -238,8 +238,7 @@ module syntax
     # {a..f} or {a..f..2} or {a..f..-2}
     # the whole range is one Token,
   | BracedRange(Token blame_tok, id kind, str start, str end, int step)
-    # note: optional int may need special handling in ASDL
-  # extended globs are parsed statically, unlike globs
+    # extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, List[CompoundWord] arms, Token right)
 
     # YSH word_part extensions

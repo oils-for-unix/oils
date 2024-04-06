@@ -135,10 +135,13 @@ LEXER_DEF = {}  # TODO: Should be a list so we enforce order.
 # docs, etc.
 LEXER_DEF[lex_mode_e.Comment] = [R(r'[^\n\0]*', Id.Ignored_Comment)]
 
-# A whitelist for efficiency.  The shell language says that "anything else" is
-# a literal character.  In other words, a single $ \ or ! is a literal, not a
-# syntax error.  It's defined negatively, but let's define positive runs here.
-# TODO: Add + here because it's never special?  It's different for YSH though.
+# A whitelist to make bigger Lit_Chars tokens.  We don't want one byte at a time.
+#
+# The shell language says that "anything other byte" is a literal character --
+# for example, unquoted $ \ ! are literal, not a syntax error.
+#
+# That is, a literal is defined NEGATIVELY, for a single characters.  But here
+# we define a SUBSET of literal chars POSITIVELY.
 
 # The range \x80-\xff makes sure that UTF-8 sequences are a single token.
 _LITERAL_WHITELIST_REGEX = r'[\x80-\xffa-zA-Z0-9_.\-]+'
@@ -371,20 +374,26 @@ LEXER_DEF[lex_mode_e.ExtGlob] = \
 # bash code: ( | ) are special
 
 LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
-
-    # NOTE: bash accounts for spaces and non-word punctuation like ; inside ()
-    # and [].  We will avoid that and ask the user to extract a variable?
-    R(r'[a-zA-Z0-9_-]+', Id.Lit_Chars),  # not including period
+    # Like lex_mode_e.Outer
+    R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
 
     # Tokens for Tilde sub.  bash weirdness: RHS of [[ x =~ ~ ]] is expanded
     C('~', Id.Lit_Tilde),
     C('/', Id.Lit_Slash),
+
+    # Id.WS_Space delimits words.
+    # TODO: define this conditionally, because it's the difference inside ()
+    # and outside?
     _SIGNIFICANT_SPACE,
 
-    # Prevent say \* from being Lit_EscapedChar, which evaluates *.
+    # Prevent say \* from being Id.Lit_EscapedChar, which evaluates to *.
     # In regexes, we want \* to evaluate to \*.
-    # Compare with ( | ).
-    R(r'\\[*+?.^$\[\]]', Id.Lit_RegexMeta),
+    R(r'\\[*+?.^$\[\]]', Id.Lit_RegexOp),
+
+    # TODO: Id.Regex_{LParen,RParen,Pipe}
+    C('(', Id.Lit_Other),
+    C(')', Id.Lit_Other),
+    C('|', Id.Lit_Other),
 
     # NOTE: ( | and ) aren't operators!
     # This can conflict with closing ) though

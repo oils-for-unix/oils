@@ -189,11 +189,41 @@ class BoolParser(object):
         else:
             return self.ParseFactor()
 
+    def ParseRegex(self):
+        # type: () -> word_t
+        """
+        On the RHS of =~, gash treats ( | ) as literals, and allows spaces
+        within ().
+
+            Regex      = RegexPart*
+            RegexPart  = WORD | RegexGroup
+            RegexGroup = '(' (RegexPart | SPACE)* ')'
+
+        Borrow from osh/braces.py
+        
+        Special lexing:
+        
+        - Id.Regex_{LParen,RParen,Pipe}
+        - Remove Id.Lit_RegexMeta?
+        - Id.WS_Space -> Id.Lit_space?
+          - Id.Regex_Space can potentially end the word -- yes
+
+        TODO: harmonize with ExtGlob?
+
+        - Differences, that's a word_part.ExtGlob
+        - inside +(fo | bar), you have your own lexer modes
+        - the difference is that regexes have two more lexer modes
+          - outside () because \* evaluates to \*, and space ends the word
+          - inside () where space does not end the word
+        """
+        return self.cur_word
+
     def ParseFactor(self):
         # type: () -> bool_expr_t
         """
         Factor  : WORD
                 | UNARY_OP WORD
+                | WORD =~ Regex
                 | WORD BINARY_OP WORD
                 | '(' Expr ')'
         """
@@ -232,30 +262,12 @@ class BoolParser(object):
                 op = self.bool_id
 
                 if t2_bool_id == Id.BoolBinary_EqualTilde:
-                    # TODO: use this grammar?  Does it match bash?  We have
-                    # space within ()
-                    #
-                    # Borrow from osh/braces.py
-                    #
-                    # RegexPart =
-                    #   WORD
-                    # | RegexGroup
-                    #
-                    # RegexGroup =
-                    #  '(' (RegexPart | SPACE)* ')'
-                    #
-                    # Special lexing:
-                    #
-                    # - Id.Regex_{LParen,RParen,Pipe}
-                    # - Remove Id.Lit_RegexMeta?
-                    # - Id.WS_Space -> Id.Lit_space?
-                    #   - Id.Regex_Space can potentially end the word -- yes
-
                     self._Next(lex_mode=lex_mode_e.BashRegex)
+                    right = self.ParseRegex()
                 else:
                     self._Next()
+                    right = self.cur_word
 
-                right = self.cur_word
                 self._Next()
 
                 tilde = word_.TildeDetect(left)

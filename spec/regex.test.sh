@@ -417,7 +417,7 @@ one
 
 # Hm semicolon is still an operator in bash
 $SH <<'EOF'
-[[ ';' =~ ; ]] && echo two
+[[ ';' =~ ; ]] && echo semi
 EOF
 echo semi=$?
 
@@ -429,7 +429,7 @@ echo semi=$?
 # could be it
 
 $SH <<'EOF'
-[[ '&' =~ & ]] && echo two
+[[ '&' =~ & ]] && echo amp
 EOF
 echo amp=$?
 
@@ -460,6 +460,54 @@ semi=1
 amp=1
 pipe=1
 pipe=1
+## END
+
+
+
+#### Quotes '' "" $'' $"" in pattern
+
+$SH <<'EOF'
+[[ '|' =~ '|' ]] && echo sq
+EOF
+echo sq=$?
+
+$SH <<'EOF'
+[[ '|' =~ "|" ]] && echo dq
+EOF
+echo dq=$?
+
+$SH <<'EOF'
+[[ '|' =~ $'|' ]] && echo dollar-sq
+EOF
+echo dollar-sq=$?
+
+$SH <<'EOF'
+[[ '|' =~ $"|" ]] && echo dollar-dq
+EOF
+echo dollar-dq=$?
+
+## STDOUT:
+sq
+sq=0
+dq
+dq=0
+dollar-sq
+dollar-sq=0
+dollar-dq
+dollar-dq=0
+## END
+
+
+#### Unicode in pattern
+
+$SH <<'EOF'
+[[ μ =~ μ ]] && echo mu
+EOF
+echo mu=$?
+
+## STDOUT:
+mu
+mu=0
 ## END
 
 #### Parse error with 2 words
