@@ -2,29 +2,29 @@
 
 ## our_shell: ysh
 
-#### semaphore
+#### semaphore syncrhonizing async jobs
 source --builtin draft-synch.ysh
 
 sema-new (1, &s)
 fork { 
-  sleep 0.5
+  sleep 0.2
   sema-down (s)
   echo 1
 }
 fork { 
-  sleep 1
+  sleep 0.4
   sema-down (s)
   echo 2
 }
 fork { 
-  sleep 1.5
+  sleep 0.6
   sema-down (s)
   echo 3
 }
-sleep 2
+sleep 0.8
 echo 4
 sema-up (s)
-sleep 0.5
+sleep 0.2
 echo 5
 sema-up (s)
 sema-destroy (s)
@@ -36,12 +36,12 @@ sema-destroy (s)
 3
 ## END
 
-#### semaphore init and multiple down
+#### semaphore init with 3, async up once and multiple down
 source --builtin draft-synch.ysh
 
 sema-new (3, &s)
 fork {
-  sleep 1
+  sleep 0.2
   sema-up (s) 
 }
 sema-down (s)
