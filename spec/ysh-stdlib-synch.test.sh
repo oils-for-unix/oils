@@ -3,6 +3,8 @@
 ## our_shell: ysh
 
 #### fifo pipe double closes
+source --builtin draft-synch.ysh
+
 fifo-fd-new (&fd)
 try fifo-fd-destroy (fd)
 echo $_status
