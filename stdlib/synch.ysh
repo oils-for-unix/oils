@@ -6,7 +6,7 @@ module stdlib/synch || return 0
 ### FIFO File Desriptors ###
 ############################
 
-func fifo-fd-new() {
+proc fifo-fd-new(; out_fd) {
   # WARN: this section should be critical but for now it's not
   # A solution may be retry on fail.
   #====================
@@ -14,10 +14,10 @@ func fifo-fd-new() {
   mkfifo $fifo
   #====================
   exec {fd}<>$fifo
-  return (fifo)
+  call out_fd->setValue(fifo)
 }
 
-func fifo-fd-destroy(fd) {
+proc fifo-fd-destroy(; fd) {
   var fifoFile = $(readlink /proc/$$/fd/$fd)
   exec {fd}>-
   exec {fd}<-
@@ -28,17 +28,17 @@ func fifo-fd-destroy(fd) {
 ### Semaphore ###
 #################
 
-func sema-new(value) {
-  var sema = fifo-fd-new()
-  call sema-up(sema, delta = value)
-  return (sema)
+proc sema-new(; value, out_sema) {
+  fifo-fd-new (&sema)
+  sema-up (sema, value)
+  call out_sema->setValue(sema)
 }
 
-func sema-down(sema) {
+proc sema-down(; sema) {
   read <$sema
 }
 
-func sema-up(sema; delta = 1) {
+proc sema-up(; sema, delta = 1) {
   fork {
     for _ in (0 .. delta) {
       echo >$sema
@@ -46,8 +46,8 @@ func sema-up(sema; delta = 1) {
   }
 }
 
-func sema-destroy(sema) {
-  call fifo-fd-destroy(sema)
+proc sema-destroy(; sema) {
+  fifo-fd-destroy (sema)
 }
 
 # NOTE: all synchronization primitives except semaphore and channels are implementation agnostic, meaning we may replace another implementation for semaphore in the future and all other synchronization primitives still work
@@ -56,21 +56,20 @@ func sema-destroy(sema) {
 ### Mutex ###
 #############
 
-func mutex-new() {
-  var mutex = sema-new(1)
-  return (mutex)
+proc mutex-new(; out_mutex) {
+  sema-new (1, out_mutex)
 } 
 
-func mutex-acqure(mutex) {
-  call sema-down(mutex)
+proc mutex-acqure(; mutex) {
+  sema-down (mutex)
 }
 
-func mutex-release(mutex) {
-  call sema-up(mutex)
+proc mutex-release(; mutex) {
+  sema-up (mutex)
 }
 
-func mutex-destroy(mutex) {
-  call sema-destroy(mutex)
+proc mutex-destroy(; mutex) {
+  sema-destroy (mutex)
 }
 
 ##############
@@ -78,92 +77,68 @@ func mutex-destroy(mutex) {
 ##############
 # https://youtu.be/7zI_4CKk-3Y?t=205
 
-func RW-lock-new() {
-  return ({
-    counter: 0,
-    counterLock: mutex-new(),
-    writeLock: mutex-new(),
+proc RW-lock-new(; out_lock) {
+  mutex-new (&counterLock)
+  mutex-new (&writeLock)
+  var counter = 0
+  call out_lock->setValue({
+    counter,
+    counterLock,
+    writeLock,
   })
 } 
 
-func RW-lock-read(lock) {
-  call mutex-acqure(lock.counterLock)
+proc RW-lock-read(; lock) {
+  mutex-acqure (lock.counterLock)
   setvar lock.counter += 1
   if (lock.counter === 1) {
     # First reader should ensure no writer is present
-    call mutex-acqure(lock.writeLock)
+    mutex-acqure (lock.writeLock)
   }
-  call mutex-release(lock.counterLock)
+  mutex-release (lock.counterLock)
 }
 
-func RW-unlock-read(lock) {
-  call mutex-acqure(lock.counterLock)
+proc RW-unlock-read(lock) {
+  mutex-acqure (lock.counterLock)
   setvar lock.counter -= 1
   if (lock.counter === 0) {
     # First reader should ensure no writer is present
-    call mutex-release(lock.writeLock)
+    mutex-release (lock.writeLock)
   }
-  call mutex-release(lock.counterLock)
+  mutex-release (lock.counterLock)
 }
 
-func RW-lock-write(lock) {
-  call mutex-acqure(lock.writeLock)
+proc RW-lock-write(lock) {
+  mutex-acqure (lock.writeLock)
 }
 
-func RW-unlock-write(lock) {
-  call mutex-release(lock.writeLock)
-}
-
-###############
-### Channel ###
-###############
-func channel-new(...chunks) {
-  var chan = fifo-fd-new()
-  call channel-produce(chan, ...chunks)
-  return (chan)
-}
-
-func channel-produce(chan, ...chunks) {
-  fork {
-    for chunk in (chunks) {
-      json write --pretty=F (chunk) >$chan
-    }
-  }
-}
-
-func channel-consume(chan) {
-  head -n 1 < $chan | json read (&chunk) 
-  return (chunk)
-}
-
-func channel-destroy(chan) {
-  call fifo-fd-destroy(chan)
+proc RW-unlock-write(lock) {
+  mutex-release (lock.writeLock)
 }
 
 ###########################
 ### ConditionalVariable ###
 ###########################
-func cond-var-new() {
-  var cv = {
-    mutex: mutex-new(),
-    sema: sema-new(0),
-  }
-  return (cv)
+proc cond-var-new(; out_var) {
+  var mutex
+  mutex-new (&mutex)
+  sema-new (0, &sema)
+  call out_var->setValue({ mutex, sema })
 }
 
-func cond-var-wait(cv) {
-  call mutex-release(cv.mutex)
-  call sema-down(cv.sema)
-  call mutex-acqure(cv.mutex)
+proc cond-var-wait(cv) {
+  mutex-release (cv.mutex)
+  sema-down (cv.sema)
+  mutex-acqure (cv.mutex)
 }
 
 # WARN: this does not follow the strict semantic of conditional variable, but at least for my case it's usable. 
-func cond-var-signal(cv) {
-  call sema-up(cv.sema)
+proc cond-var-signal(cv) {
+  sema-up (cv.sema)
 }
 
-func cond-var-destroy(cv) {
-  call mutex-acqure(cv.mutex)
-  call sema-destroy(cv.sema)
-  call mutex-destroy(cv.mutex)
+proc cond-var-destroy(cv) {
+  mutex-acqure (cv.mutex)
+  sema-destroy (cv.sema)
+  mutex-destroy (cv.mutex)
 }
