@@ -1,0 +1,5 @@
+func randomInt(; byteSize = 4) { # defaults to 32-bit ints
+  var ret = $(od -vAn -N$byteSize -tu$byteSize < /dev/urandom | tr -d '[:space:]') => int()
+  return (ret)
+}
+
