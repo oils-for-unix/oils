@@ -91,6 +91,7 @@ proc bell() {
   write -n $TERM_BEL
 }
 
+# TODO: use some language constructs to generate these biolerplates
 proc cursor-up() { # CUU
   write -n "${TERM_CSI}nA"
 }
