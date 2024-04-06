@@ -83,15 +83,27 @@ func withBg(text, color) {
   }
 }
 
-const FONT_NORMAL      = 0
-const FONT_BOLD        = 1
-const FONT_FAINT       = 2
-const FONT_ITALICIZED  = 3
-const FONT_UNDERLINED  = 4
-const FONT_BLINK       = 5
-const FONT_INVERSE     = 7
-const FONT_INVISIBLE   = 8
-const FONT_CROSSED_OUT = 9
+const STYLE_NORMAL            = 0
+const STYLE_BOLD              = 1
+const STYLE_FAINT             = 2
+const STYLE_ITALICIZED        = 3
+const STYLE_UNDERLINED        = 4
+const STYLE_BLINK             = 5
+const STYLE_INVERSE           = 7
+const STYLE_INVISIBLE         = 8
+const STYLE_CROSSED_OUT       = 9
+const STYLE_DOUBLY_UNDERLINED = 21
+
+# TODO: 
+# - What exaclty does 22 do? 
+# - The following doesn't seem to work as expected because they alter the style from that point on and there's no way to revert them.
+
+# const FONT_NOT_ITALICIZED    = 23
+# const FONT_NOT_UNDERLINED    = 24
+# const FONT_NOT_BLINK         = 25
+# const FONT_NOT_INVERSE       = 27
+# const FONT_NOT_INVISIBLE     = 28
+# const FONT_NOT_CROSSED_OUT   = 29
 
 func withStyle(text, style) {
   return ("${TERM_CSI}${style}m${text}${TERM_CSI}m")
