@@ -6,9 +6,13 @@
 source --builtin draft-synch.ysh
 
 fifo-fd-new (&fd)
-try fifo-fd-destroy (fd)
+try {
+  fifo-fd-destroy (fd)
+}
 echo $_status
-try fifo-fd-destroy (fd)
+try {
+  fifo-fd-destroy (fd)
+}
 echo $_status
 ## STDOUT:
 0
