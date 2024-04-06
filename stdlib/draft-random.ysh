@@ -8,3 +8,6 @@ func randomIntByBytes(byteSize = 4) { # defaults to 32-bit ints
   return (num_str => int())
 }
 
+func randomString(len) {
+  return ($(head -c $len /dev/urandom))
+}
