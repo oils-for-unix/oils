@@ -57,9 +57,13 @@ func withFg(color, text) {
   if (type(color) === 'Str') {
     return ("$TERM_ESC[38;${color}m${text}$TERM_ESC[m")
   } else { # 4-bit color
-    var sgr3_id = color[0]
-    echo Unimplemented
-    exit 1
+    var sgr4_id = color[0]
+    if (sgr4_id < 8) {
+      setvar sgr4_id += 30
+    } else {
+      setvar sgr4_id += 90 - 8
+    }
+    return ("$TERM_ESC[${sgr4_id}m${text}$TERM_ESC[m")
   }
 }
 
@@ -67,15 +71,20 @@ func withBg(color, text) {
   if (type(color) === 'Str') {
     return ("$TERM_ESC[48;${color}m${text}$TERM_ESC[m")
   } else { # 4-bit color
-    var sgr3_id = color[0]
-    echo Unimplemented
-    exit 1
+    var sgr4_id = color[0]
+    if (sgr4_id < 8) {
+      setvar sgr4_id += 40
+    } else {
+      setvar sgr4_id += 100 - 8
+    }
+    return ("$TERM_ESC[;${sgr4_id}m${text}$TERM_ESC[m")
   }
 }
 
 func withLink(address, caption) {
   return ("$TERM_ESC]8;;$address$TERM_ESC\\$caption$TERM_ESC]8;;$TERM_ESC\\")
 }
+
 proc bell() {
   echo $TERM_BEL
 }
