@@ -10,13 +10,10 @@ try {
   fifo-fd-destroy (fd)
 }
 echo $_status
-try {
-  fifo-fd-destroy (fd)
-}
-echo $_status
+fifo-fd-destroy (fd)
+## status: 1
 ## STDOUT:
 0
-1
 ## END
 
 #### semaphore syncrhonizing async jobs
