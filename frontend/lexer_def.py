@@ -386,9 +386,14 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     # and outside?
     _SIGNIFICANT_SPACE,
 
+    # This is not necessary because of the glob_.ExtendedRegexEscape() logic.
+    #
+    # On the RHS, \* and "*" are the same.  So it doesn't make sense to lex
+    # "literally", since we do the same transformation either way.
+
     # Prevent say \* from being Id.Lit_EscapedChar, which evaluates to *.
     # In regexes, we want \* to evaluate to \*.
-    R(r'\\[*+?.^$\[\]]', Id.Lit_RegexOp),
+    #R(r'\\[*+?.^$\[\]]', Id.Lit_RegexOp),
 
     # TODO: Id.Regex_{LParen,RParen,Pipe}
     C('(', Id.Lit_Other),

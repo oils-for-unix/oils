@@ -407,7 +407,8 @@ fi
 
 ## BUG zsh status: 1
 ## BUG zsh STDOUT:
-four
+['']
+['']
 ## END
 
 #### unquoted [a  b] as pattern, [a  b|c]
