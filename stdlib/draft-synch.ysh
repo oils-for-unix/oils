@@ -1,10 +1,9 @@
 #!/usr/bin/env ysh
+# vim:foldmethod=marker
 
 module stdlib/synch || return 0
 
-#
-# General utilities for fds
-#
+# General utilities for fds {{{
 
 # Tests whether the fd is opened
 func fdTest(fd) {
@@ -27,10 +26,8 @@ proc fd-destroy(; fd) {
     exit 1
   }
 }
-
-#
-# FIFO File Descriptors
-#
+# }}}
+# FIFO File Descriptors {{{
 
 proc fifo-fd-new(; out_fd) {
   # WARN: this section should be critical but for now it's not
@@ -47,9 +44,8 @@ proc fifo-fd-destroy (; fd) {
   fd-destroy (fd)
 }
 
-#
-# Semaphores
-#
+# }}}
+# Semaphores {{{
 
 proc sema-new(; value, out_sema) {
   fifo-fd-new (&sema)
@@ -73,9 +69,8 @@ proc sema-destroy(; sema) {
   fifo-fd-destroy (sema)
 }
 
-#
-# Mutex
-#
+# }}}
+# Mutex {{{
 
 proc mutex-new(; out_mutex) {
   sema-new (1, out_mutex)
@@ -93,8 +88,8 @@ proc mutex-destroy(; mutex) {
   sema-destroy (mutex)
 }
 
-#
-# Channels
+# }}}
+# Channels {{{
 # - Pipeline but you can send multiple objects across pipelines
 # - Has to manually ensure the number of sent/received blocks are same across each side.
 # - Blocks, no buffering
@@ -142,9 +137,8 @@ proc channel-destroy(; chan) {
   mutex-destroy (chan.write_lock)
 }
 
-#
-# RWLock
-#
+# }}}
+# RWLock {{{
 
 proc rw-lock-new(; out_lock) {
   var lockfile = $(mktemp)
@@ -191,3 +185,5 @@ proc rw-lock-destroy(; lock) {
     rm $[lock.lockfile]
   }
 }
+
+# }}}

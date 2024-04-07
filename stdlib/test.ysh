@@ -1,0 +1,16 @@
+#!/usr/bin/env ysh
+
+source ./draft-synch.ysh
+
+rw-lock-new (&lk)
+
+fork {
+  rw-lock-exclusive (lk)
+  sleep 5
+  rw-unlock (lk)
+}
+sleep 0.1
+rw-lock-exclusive (lk)
+echo 1
+rw-unlock (lk)
+wait
