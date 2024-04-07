@@ -324,8 +324,6 @@ proc exh-channel-destroy(; chan) {
   # Ensures no one else is working
   mutex-acquire (chan.read_lock)
   mutex-acquire (chan.write_lock)
-  rw-lock-exclusive (chan.will_write)
-  rw-lock-exclusive (chan.message_count)
   # Clean up
   fifo-fd-destroy (chan.pipe)
   rw-lock-destroy (chan.message_count)
