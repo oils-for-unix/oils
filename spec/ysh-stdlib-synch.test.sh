@@ -87,6 +87,7 @@ for i in (0..16) {
 }
 
 echo $sum
+channel-destroy (ch)
 ## STDOUT:
 24
 ## END
@@ -122,4 +123,36 @@ rw-lock-destroy (lk)
 2
 2
 3
+## END
+
+#### Produce many value and exhaust the exhaust the channel once for all, and reuse it
+source --builtin draft-synch.ysh
+
+exh-channel-new (&ch)
+
+for i in (0..4) {
+  fork { 
+    for j in (0..4) { 
+      echo $j | exh-channel-in (ch)
+    }
+  }
+}
+
+sleep 0.5
+exh-channel-exhaust (ch, &out)
+var sum = 0
+for i in (out) {
+  setvar sum += cur
+}
+echo $sum
+# Reuses the channel
+fork {
+      echo "yes!" | exh-channel-in (ch)
+}
+exh-channel-out (ch)
+echo
+exh-channel-destroy (ch)
+## STDOUT:
+24
+yes!
 ## END
