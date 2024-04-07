@@ -148,6 +148,7 @@ for _ in (0..3) {
 sleep 0.1
 write -n y
 wait
+rw-lock-destroy (l)
 write
 ## STDOUT:
 wwwywww
