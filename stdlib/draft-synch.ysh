@@ -108,25 +108,25 @@ proc channel-new(; out_chan) {
 }
 
 proc channel-in(; chan) {
-  var data = $(cat) # consume everything from input
-  var data_len = len(data)
+  var msg = $(cat) # consume everything from input
+  var msg_len = len(msg)
   mutex-acquire (chan.write_lock)
-  write -n ${data_len}${ZERO_CHAR}${data} >&$[chan.pipe]
+  write -n ${msg_len}${ZERO_CHAR}${msg} >&$[chan.pipe]
   mutex-release (chan.write_lock)
 }
 
 proc channel-out(; chan) {
-  var data_len = ""
+  var msg_len = ""
   mutex-acquire (chan.read_lock)
   while (true) {
     read -n 1 next_char <&$[chan.pipe]
     if (next_char !== ZERO_CHAR) {
-      setvar data_len = data_len ++ next_char
+      setvar msg_len = msg_len ++ next_char
     } else {
       break
     }
   }
-  read -n $data_len chunk <&$[chan.pipe]
+  read -n $msg_len chunk <&$[chan.pipe]
   write -n $chunk
   mutex-release (chan.read_lock)
 }
@@ -191,8 +191,8 @@ proc rw-unlock(; lock) {
 # Performs an lock-guarded write on a lock's file
 proc rw-lock-swap-pipe(; lock) {
   rw-lock-exclusive (lock)
-  rw-lock-read-out
-  rw-lock-write-in
+  rw-lock-read-out (lock)
+  rw-lock-write-in (lock)
   rw-unlock (lock)
 }
 
@@ -216,7 +216,9 @@ proc exh-channel-new(; out_chan) {
   rw-lock-new (&message_count)
   # a lock indicating if there's upcoming writes
   rw-lock-new (&will_write)
-  write -n 0 | rw-lock-write-in (&exhaust_lock)
+  rw-lock-exclusive (message_count)
+  write -n 0 | rw-lock-write-in (message_count)
+  rw-unlock (message_count)
   call out_chan->setValue({
     write_lock,
     read_lock,
@@ -227,8 +229,8 @@ proc exh-channel-new(; out_chan) {
 }
 
 proc exh-channel-in(; chan) {
-  var data = $(cat) # consume everything from input
-  var data_len = len(data)
+  var msg = $(cat) # consume everything from input
+  var msg_len = len(msg)
   # NOTE: the below can be abstracted out to a 2-direction pipe
   # This is a pretty common pattern in bash.
   # However there's no way to refer to a proc for now
@@ -244,23 +246,23 @@ proc exh-channel-in(; chan) {
   #################################################
   rw-lock-shared (chan.will_write)
   mutex-acquire (chan.write_lock)
-  write -n $data_len$ZERO_CHAR$data >&$[chan.pipe]
+  write -n $msg_len$ZERO_CHAR$msg >&$[chan.pipe]
   mutex-release (chan.write_lock)
   rw-unlock (chan.will_write)
 }
 
 proc exh-channel-out(; chan) {
-  var data_len = ""
+  var msg_len = ""
   mutex-acquire (chan.read_lock)
   while (true) {
     read -n 1 next_char <&$[chan.pipe]
     if (next_char !== ZERO_CHAR) {
-      setvar data_len = data_len ++ next_char
+      setvar msg_len = msg_len ++ next_char
     } else {
       break
     }
   }
-  read -n $data_len chunk <&$[chan.pipe]
+  read -n $msg_len chunk <&$[chan.pipe]
   write -n $chunk
   mutex-release (chan.read_lock)
 }
@@ -268,9 +270,9 @@ proc exh-channel-out(; chan) {
 proc exh-channel-exhaust(; chan, out_ret) {
   var ret = []
   rw-lock-exclusive (chan.will_write)
-  rw-lock-read-out | json read (&num_data)
+  rw-lock-read-out (chan.message_count) | json read (&num_msg)
 
-  for _ in (0..num_data) {
+  for _ in (0..num_msg) {
     call ret->append($(exh-channel-out))
   }
   rw-unlock (chan.will_write)
