@@ -67,4 +67,26 @@ echo yes
 yes
 ## END
 
-# TODO: add test case for mutex and other sync primitives
+#### channel reads and writes
+source --builtin draft-synch.ysh
+
+channel-new (&ch)
+
+for i in (0..4) {
+  fork { 
+    for j in (0..4) { 
+      echo $j | channel-pipe-in (ch)
+    }
+  }
+}
+
+var sum = 0
+for i in (0..16) {
+  var cur = $(channel-pipe-out (ch)) => int()
+  setvar sum += cur
+}
+
+echo $sum
+## STDOUT:
+24
+## END
