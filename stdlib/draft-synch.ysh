@@ -153,10 +153,20 @@ proc rw-lock-new(; out_lock) {
   call out_lock->setValue(lock)
 }
 
+proc rw-lock-read-out(; lock) {
+  # TODO: ensure we're actually holding the shared/exclusive lock
+  cat <&lock.fd
+}
+
+proc rw-lock-write-in(; lock) {
+  # TODO: ensure we're actually holding the exclusive lock
+  cat >&lock.fd
+}
+
 # NOTE: to change the type of a lock to T, e.g. from shared to exclusive, just call rw-lock-{T} again. 
 proc rw-lock-shared(; lock) {
   if (lock.fd === null) {
-    exec {lock_fd}<>$[lock.lockfile]
+    exec {lock_fd}<$[lock.lockfile]
     setvar lock.fd = lock_fd
   }
   flock -s $[lock.fd]
@@ -170,23 +180,20 @@ proc rw-lock-exclusive(; lock) {
   flock -x $[lock.fd]
 }
 
-proc rw-try-lock-exclusive(; lock) {
-  if (lock.fd === null) {
-    exec {lock_fd}<>$[lock.lockfile]
-    setvar lock.fd = lock_fd
-  }
-  try {
-    flock -x -n $[lock.fd]
-  }
-  return $_status
-}
-
 proc rw-unlock(; lock) {
   if (lock.fd === null) {
     echo "not locked"
     exit 1
   }
   flock -u $[lock.fd]
+}
+
+# Performs an lock-guarded write on a lock's file
+proc rw-lock-swap-pipe(; lock) {
+  rw-lock-exclusive (lock)
+  rw-lock-read-out
+  rw-lock-write-in
+  rw-unlock (lock)
 }
 
 proc rw-lock-destroy(; lock) {
@@ -205,23 +212,40 @@ proc exh-channel-new(; out_chan) {
   mutex-new (&write_lock)
   mutex-new (&read_lock)
   fifo-fd-new (&pipe)
-  rw-lock-new (&exhaust_lock)
+  # a counter on how many information we have on the pipe
+  rw-lock-new (&message_count)
+  # a lock indicating if there's upcoming writes
+  rw-lock-new (&will_write)
+  write -n 0 | rw-lock-write-in (&exhaust_lock)
   call out_chan->setValue({
     write_lock,
     read_lock,
     pipe,
-    exhaust_lock,
+    message_count,
+    will_write,
   })
 }
 
 proc exh-channel-in(; chan) {
   var data = $(cat) # consume everything from input
   var data_len = len(data)
+  # NOTE: the below can be abstracted out to a 2-direction pipe
+  # This is a pretty common pattern in bash
+  #################################################
+  fifo-fd-new (&fd)
+  rw-lock-swap-pipe (chan.message_count) <&$fd | {
+    var cnt
+    json read (&cnt)
+    setvar cnt += 1
+    echo $cnt
+  } >&$fd
+  fifo-fd-destroy (fd)
+  #################################################
+  rw-lock-shared (chan.will_write)
   mutex-acquire (chan.write_lock)
-  rw-lock-shared (chan.exhaust_lock)
-  write -n ${data_len}${ZERO_CHAR}${data} >&$[chan.pipe]
-  rw-unlock (chan.exhaust_lock)
+  write -n $data_len$ZERO_CHAR$data >&$[chan.pipe]
   mutex-release (chan.write_lock)
+  rw-unlock (chan.will_write)
 }
 
 proc exh-channel-out(; chan) {
@@ -242,17 +266,13 @@ proc exh-channel-out(; chan) {
 
 proc exh-channel-exhaust(; chan, out_ret) {
   var ret = []
-  while(true) {
-    try {
-      rw-try-lock-exclusive (chan.exhaust_lock)
-    }
-    if (_status === 0) {
-      break
-    }
-    var buf = $(exh-channel-out (chan))
-    call ret->append(buf)
+  rw-lock-exclusive (chan.will_write)
+  rw-lock-read-out | json read (&num_data)
+
+  for _ in (0..num_data) {
+    call ret->append($(exh-channel-out))
   }
-  rw-unlock (chan.exhaust_lock)
+  rw-unlock (chan.will_write)
   call out_ret->setValue(ret)
 }
 
@@ -261,8 +281,10 @@ proc exh-channel-destroy(; chan) {
   mutex-acquire (chan.read_lock)
   mutex-acquire (chan.write_lock)
   rw-lock-exclusive (chan.exhaust_lock)
+  rw-lock-exclusive (chan.message_count)
   # Clean up
   fifo-fd-destroy (chan.pipe)
+  rw-lock-destroy (chan.message_count)
   rw-lock-destroy (chan.exhaust_lock)
   mutex-destroy (chan.write_lock)
   mutex-destroy (chan.read_lock)
