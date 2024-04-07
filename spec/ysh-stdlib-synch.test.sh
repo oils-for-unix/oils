@@ -153,7 +153,7 @@ write
 wwwywww
 ## END
 
-#### Produce many value and exhaust the exhaust the channel once for all, and reuse it
+#### Produce many value and exhaust the channel, and then reuse it
 source --builtin draft-synch.ysh
 
 exh-channel-new (&ch)
