@@ -5,19 +5,18 @@ module stdlib/synch || return 0
 
 # General utilities for fds {{{
 
-# Tests whether the fd is opened
-func fdTest(fd) {
-  var fdlink = "/proc/$$/fd/$fd"
-  if test -L $fdlink {
-    return (true)
-  } else {
-    return (false)
-  }
+# Get fdInfo, returns null if fd doesn't exist
+proc get-fd-info(; fd, out_fd_info) {
+  call out_fd_info->setValue($(cat /proc/$BASHPID/fdinfo/$fd))
 }
 
 proc fd-destroy(; fd) {
-  if (fdTest(fd)) {
-    var fifoFile = $(readlink "/proc/$$/fd/$fd")
+  var fd_info = ""
+  try {
+    get-fd-info (fd, &fd_info)
+  }
+  if (_status === 0) {
+    var fifoFile = $(readlink "/proc/$BASHPID/fd/$fd")
     # NOTE: No need to close both end of a pipe.
     exec {fd}>&-
     rm $fifoFile
@@ -154,15 +153,29 @@ proc rw-lock-new(; out_lock) {
 }
 
 proc rw-lock-read-out(; lock) {
-  # TODO: ensure we're actually holding the shared/exclusive lock
-  # if (lock.fd != null) ...
-  cat $[lock.lockfile]
+  try {
+    get-fd-info (lock.fd, &lock_fd_info)
+  }
+  if (_status === 0) {
+    # TODO: ensure lock is held with correct permission
+    cat $[lock.lockfile]
+  } else {
+    echo "No lock held at $[lock.fd]" 1>&2
+    exit 1
+  }
 }
 
 proc rw-lock-write-in(; lock) {
-  # TODO: ensure we're actually holding the exclusive lock
-  # if (lock.fd != null) ...
-  cat > $[lock.lockfile]
+  try {
+    get-fd-info (lock.fd, &lock_fd_info)
+  }
+  if (_status === 0) {
+    # TODO: ensure lock is held with correct permission
+    cat > $[lock.lockfile]
+  } else {
+    echo "No lock held at $[lock.fd]" 1>&2
+    exit 1
+  }
 }
 
 # NOTE: to change the type of a lock to T, e.g. from shared to exclusive, just call rw-lock-{T} again. 
@@ -178,12 +191,18 @@ proc rw-lock-exclusive(; lock) {
   flock -x $[lock.fd]
 }
 
-# TODO: detect if locking
 proc rw-unlock(; lock) {
-  var lock_fd = lock.fd
-  setvar lock.fd = null
-  flock -u $lock_fd
-  exec {lock_fd}<&-
+  try {
+    get-fd-info (lock.fd, &lock_fd_info)
+  }
+  if (_status === 0) {
+    var lock_fd = lock.fd
+    flock -u $lock_fd
+    exec {lock_fd}<&-
+  } else {
+    echo "No lock held at $[lock.fd]" 1>&2
+    exit 1
+  }
 }
 
 proc rw-lock-destroy(; lock) {
