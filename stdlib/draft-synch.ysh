@@ -230,7 +230,8 @@ proc exh-channel-in(; chan) {
   var data = $(cat) # consume everything from input
   var data_len = len(data)
   # NOTE: the below can be abstracted out to a 2-direction pipe
-  # This is a pretty common pattern in bash
+  # This is a pretty common pattern in bash.
+  # However there's no way to refer to a proc for now
   #################################################
   fifo-fd-new (&fd)
   rw-lock-swap-pipe (chan.message_count) <&$fd | {
