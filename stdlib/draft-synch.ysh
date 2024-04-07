@@ -60,6 +60,7 @@ proc sema-destroy(; sema) {
 # Channel
 # - Pipeline but you can send multiple objects across pipelines
 # - Has to manually ensure the number of sent/received blocks are same across each side.
+# - Blocks, no buffering
 
 proc channel-new(; out_chan) {
   sema-new (1, &write_lock)
