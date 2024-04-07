@@ -75,14 +75,14 @@ channel-new (&ch)
 for i in (0..4) {
   fork { 
     for j in (0..4) { 
-      echo $j | channel-pipe-in (ch)
+      echo $j | channel-in (ch)
     }
   }
 }
 
 var sum = 0
 for i in (0..16) {
-  var cur = $(channel-pipe-out (ch)) => int()
+  var cur = $(channel-out (ch)) => int()
   setvar sum += cur
 }
 
