@@ -66,14 +66,36 @@ proc sema-destroy(; sema) {
 }
 
 #
+# Mutex
+#
+
+proc mutex-new(; out_mutex) {
+  sema-new (1, out_mutex)
+} 
+
+proc mutex-acquire(; mutex) {
+  sema-down (mutex)
+}
+
+proc mutex-release(; mutex) {
+  sema-up (mutex)
+}
+
+proc mutex-destroy(; mutex) {
+  sema-destroy (mutex)
+}
+
+#
 # Channels
 # - Pipeline but you can send multiple objects across pipelines
 # - Has to manually ensure the number of sent/received blocks are same across each side.
 # - Blocks, no buffering
 
+const ZERO_CHAR = u'\u{0}'
+
 proc channel-new(; out_chan) {
-  sema-new (1, &write_lock)
-  sema-new (1, &read_lock)
+  mutex-new (&write_lock)
+  mutex-new (&read_lock)
   fifo-fd-new (&pipe)
   call out_chan->setValue({
     write_lock,
@@ -82,18 +104,17 @@ proc channel-new(; out_chan) {
   })
 }
 
-const ZERO_CHAR = u'\u{0}'
 proc channel-in(; chan) {
   var data = $(cat) # consume everything from input
   var data_len = len(data)
-  sema-down (chan.write_lock)
+  mutex-acquire (chan.write_lock)
   write -n ${data_len}${ZERO_CHAR}${data} >&$[chan.pipe]
-  sema-up (chan.write_lock)
+  mutex-release (chan.write_lock)
 }
 
 proc channel-out(; chan) {
   var data_len = ""
-  sema-down (chan.read_lock)
+  mutex-acquire (chan.read_lock)
   while (true) {
     read -n 1 next_char <&$[chan.pipe]
     if (next_char !== ZERO_CHAR) {
@@ -104,11 +125,11 @@ proc channel-out(; chan) {
   }
   read -n $data_len chunk <&$[chan.pipe]
   write -n $chunk
-  sema-up (chan.read_lock)
+  mutex-release (chan.read_lock)
 }
 
 proc channel-destroy(; chan) {
   fifo-fd-destroy (chan.pipe)
-  sema-destroy (chan.read_lock)
-  sema-destroy (chan.write_lock)
+  mutex-destroy (chan.read_lock)
+  mutex-destroy (chan.write_lock)
 }
