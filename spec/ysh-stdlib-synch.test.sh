@@ -90,3 +90,36 @@ echo $sum
 ## STDOUT:
 24
 ## END
+
+#### RWLock multiple shared lock and free, one exclusive lock
+source --builtin draft-synch.ysh
+
+rw-lock-new (&lk)
+
+fork {
+  rw-lock-shared (lk)
+  echo 1
+  sleep 0.3
+  rw-unlock (lk)
+}
+for _ in (0..3) {
+  fork {
+    sleep 0.1
+    rw-lock-shared (lk)
+    echo 2
+    sleep 0.2
+    rw-unlock (lk)
+  }
+}
+sleep 0.1
+rw-lock-exclusive (lk)
+echo 3
+rw-unlock (lk)
+rw-lock-destroy (lk)
+## STDOUT:
+1
+2
+2
+2
+3
+## END
