@@ -116,6 +116,7 @@ proc mutex-destroy(; mutex) {
 # - Pipeline but you can send multiple objects across pipelines
 # - Has to manually ensure the number of sent/received blocks are same across each side.
 # - Blocks, no buffering
+# - Backed by a modified net-string implementation
 
 const ZERO_CHAR = u'\u{0}'
 
@@ -130,6 +131,10 @@ proc channel-new(; out_chan) {
   })
 }
 
+# NOTE: I would love to optimize this a bit more, for example netstring of size n 
+# now takes log_10(n) over head. We can certainly do this better by byte encoding
+# It would be log_128(n) (using 1 bit for indicating the number ends)
+# That's a ln 128 / ln 10 which is roughly twice less overhead.
 proc channel-in(; chan) {
   var msg = $(cat) # consume everything from input
   var msg_len = len(msg)
