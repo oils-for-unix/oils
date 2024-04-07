@@ -153,6 +153,7 @@ proc rw-lock-new(; out_lock) {
   call out_lock->setValue(lock)
 }
 
+# NOTE: to change the type of a lock to T, e.g. from shared to exclusive, just call rw-lock-{T} again. 
 proc rw-lock-shared(; lock) {
   if (lock.fd === null) {
     exec {lock_fd}<>$[lock.lockfile]
@@ -178,11 +179,6 @@ proc rw-try-lock-exclusive(; lock) {
     flock -x -n $[lock.fd]
   }
   return $_status
-}
-
-proc rw-lock-promote(; lock) {
-  rw-unlock (lock)
-  rw-lock-exclusive (lock)
 }
 
 proc rw-unlock(; lock) {
