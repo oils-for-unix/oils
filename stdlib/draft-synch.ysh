@@ -224,11 +224,8 @@ proc rw-unlock(; lock) {
 }
 
 proc rw-lock-destroy(; lock) {
-  if (lock.fd !== null) {
-    fd-destroy (lock.fd)
-  } else {
-    rm $[lock.lockfile]
-  }
+  rw-lock-exclusive (lock)
+  fd-destroy (lock.fd)
 }
 
 proc rw-lock-swap-fn(; lock, fn) {
