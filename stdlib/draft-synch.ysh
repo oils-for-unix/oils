@@ -155,12 +155,12 @@ proc rw-lock-new(; out_lock) {
 
 proc rw-lock-read-out(; lock) {
   # TODO: ensure we're actually holding the shared/exclusive lock
-  cat <&lock.fd
+  cat <&$[lock.fd]
 }
 
 proc rw-lock-write-in(; lock) {
   # TODO: ensure we're actually holding the exclusive lock
-  cat >&lock.fd
+  cat >&$[lock.fd]
 }
 
 # NOTE: to change the type of a lock to T, e.g. from shared to exclusive, just call rw-lock-{T} again. 
