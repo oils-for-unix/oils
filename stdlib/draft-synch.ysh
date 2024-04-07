@@ -18,7 +18,7 @@ proc fifo-fd-new(; out_fd) {
 }
 
 # Tests whether the fd is opened
-func fifo-fd-test(; fd) {
+func fifoFdTest(fd) {
   var fdlink = "/proc/$$/fd/$fd"
   if test -L $fdlink {
     return (true)
@@ -28,7 +28,7 @@ func fifo-fd-test(; fd) {
 }
 
 proc fifo-fd-destroy(; fd) {
-  if (fifo-fd-test(fd)) {
+  if (fifoFdTest(fd)) {
     var fifoFile = $(readlink "/proc/$$/fd/$fd")
     # NOTE: No need to close both end of a pipe.
     exec {fd}>&-
