@@ -74,7 +74,7 @@ proc channel-new(; out_chan) {
 }
 
 const ZERO_CHAR = u'\u{0}'
-proc channel-in (; chan) {
+proc channel-in(; chan) {
   var data = $(cat) # consume everything from input
   var data_len = len(data)
   sema-down (chan.write_lock)
@@ -82,7 +82,7 @@ proc channel-in (; chan) {
   sema-up (chan.write_lock)
 }
 
-proc channel-out (; chan) {
+proc channel-out(; chan) {
   var data_len = ""
   sema-down (chan.read_lock)
   while (true) {
