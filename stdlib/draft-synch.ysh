@@ -155,45 +155,35 @@ proc rw-lock-new(; out_lock) {
 
 proc rw-lock-read-out(; lock) {
   # TODO: ensure we're actually holding the shared/exclusive lock
+  # if (lock.fd != null) ...
   cat $[lock.lockfile]
 }
 
 proc rw-lock-write-in(; lock) {
   # TODO: ensure we're actually holding the exclusive lock
+  # if (lock.fd != null) ...
   cat > $[lock.lockfile]
 }
 
 # NOTE: to change the type of a lock to T, e.g. from shared to exclusive, just call rw-lock-{T} again. 
 proc rw-lock-shared(; lock) {
-  if (lock.fd === null) {
-    exec {lock_fd}<$[lock.lockfile]
-    setvar lock.fd = lock_fd
-  }
+  exec {lock_fd}<$[lock.lockfile]
+  setvar lock.fd = lock_fd
   flock -s $[lock.fd]
 }
 
 proc rw-lock-exclusive(; lock) {
-  if (lock.fd === null) {
-    exec {lock_fd}<>$[lock.lockfile]
-    setvar lock.fd = lock_fd
-  }
+  exec {lock_fd}<>$[lock.lockfile]
+  setvar lock.fd = lock_fd
   flock -x $[lock.fd]
 }
 
+# TODO: detect if locking
 proc rw-unlock(; lock) {
-  if (lock.fd === null) {
-    echo "not locked"
-    exit 1
-  }
-  flock -u $[lock.fd]
-}
-
-# Performs an lock-guarded write on a lock's file
-proc rw-lock-swap-pipe(; lock) {
-  rw-lock-exclusive (lock)
-  rw-lock-read-out (lock)
-  rw-lock-write-in (lock)
-  rw-unlock (lock)
+  var lock_fd = lock.fd
+  setvar lock.fd = null
+  flock -u $lock_fd
+  exec {lock_fd}<&-
 }
 
 proc rw-lock-destroy(; lock) {
@@ -203,6 +193,18 @@ proc rw-lock-destroy(; lock) {
     rm $[lock.lockfile]
   }
 }
+
+# TODO: rename this to swap-fn
+proc rw-lock-swap-f(; lock, fn) {
+  rw-lock-exclusive (lock)
+  var swapped = $(rw-lock-read-out (lock)) => fn()
+  write -n $swapped | rw-lock-write-in (lock)
+  rw-unlock (lock)
+}
+
+# TODO: Performs an lock-guarded write on a lock's file
+# The issue is we need to know when to close the pipe
+# proc rw-lock-swap-pipe(; lock)
 
 # }}}
 # Exhaustable Channels {{{
@@ -228,22 +230,17 @@ proc exh-channel-new(; out_chan) {
   })
 }
 
+func __synch_exh_channel_inc_untyped (buf) {
+  var typed = buf => int()
+  var swapped = typed + 1
+  var untyped = "$[swapped]"
+  return (untyped)
+}
+
 proc exh-channel-in(; chan) {
   var msg = $(cat) # consume everything from input
   var msg_len = len(msg)
-  # NOTE: the below can be abstracted out to a 2-direction pipe
-  # This is a pretty common pattern in bash.
-  # However there's no way to refer to a proc for now
-  #################################################
-  fifo-fd-new (&fd)
-  rw-lock-swap-pipe (chan.message_count) <&$fd | {
-    var cnt
-    json read (&cnt)
-    setvar cnt += 1
-    echo $cnt
-  } >&$fd
-  fifo-fd-destroy (fd)
-  #################################################
+  rw-lock-swap-f (chan.message_count, __synch_exh_channel_inc_untyped)
   rw-lock-shared (chan.will_write)
   mutex-acquire (chan.write_lock)
   write -n $msg_len$ZERO_CHAR$msg >&$[chan.pipe]
@@ -251,9 +248,8 @@ proc exh-channel-in(; chan) {
   rw-unlock (chan.will_write)
 }
 
-proc exh-channel-out(; chan) {
+proc __exh_channel_out_no_lock(; chan) {
   var msg_len = ""
-  mutex-acquire (chan.read_lock)
   while (true) {
     read -n 1 next_char <&$[chan.pipe]
     if (next_char !== ZERO_CHAR) {
@@ -264,17 +260,29 @@ proc exh-channel-out(; chan) {
   }
   read -n $msg_len chunk <&$[chan.pipe]
   write -n $chunk
+}
+
+proc exh-channel-out(; chan) {
+  mutex-acquire (chan.read_lock)
+  __exh_channel_out_no_lock (chan)
   mutex-release (chan.read_lock)
 }
 
 proc exh-channel-exhaust(; chan, out_ret) {
-  var ret = []
+  # No body should send anything to the channel from now on
   rw-lock-exclusive (chan.will_write)
+  # Count how many message we have
+  rw-lock-exclusive (chan.message_count)
   rw-lock-read-out (chan.message_count) | json read (&num_msg)
+  write -n 0 | rw-lock-write-in (chan.message_count)
+  rw-unlock (chan.message_count)
 
+  var ret = []
+  mutex-acquire (chan.read_lock)
   for _ in (0..num_msg) {
-    call ret->append($(exh-channel-out))
+    call ret->append($(__exh_channel_out_no_lock (chan)))
   }
+  mutex-release (chan.read_lock)
   rw-unlock (chan.will_write)
   call out_ret->setValue(ret)
 }
@@ -283,12 +291,12 @@ proc exh-channel-destroy(; chan) {
   # Ensures no one else is working
   mutex-acquire (chan.read_lock)
   mutex-acquire (chan.write_lock)
-  rw-lock-exclusive (chan.exhaust_lock)
+  rw-lock-exclusive (chan.will_write)
   rw-lock-exclusive (chan.message_count)
   # Clean up
   fifo-fd-destroy (chan.pipe)
   rw-lock-destroy (chan.message_count)
-  rw-lock-destroy (chan.exhaust_lock)
+  rw-lock-destroy (chan.will_write)
   mutex-destroy (chan.write_lock)
   mutex-destroy (chan.read_lock)
 }

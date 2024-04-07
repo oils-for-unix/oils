@@ -170,7 +170,7 @@ sleep 0.5
 exh-channel-exhaust (ch, &out)
 var sum = 0
 for i in (out) {
-  setvar sum += cur
+  setvar sum += i
 }
 echo $sum
 # Reuses the channel
