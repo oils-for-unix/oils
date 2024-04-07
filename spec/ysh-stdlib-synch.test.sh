@@ -125,6 +125,34 @@ rw-lock-destroy (lk)
 3
 ## END
 
+#### Reading and writing rw-lock
+source --builtin draft-synch.ysh
+
+rw-lock-new (&l)
+fork {
+  rw-lock-exclusive (l)
+  write -n 'w' | rw-lock-write-in (l)
+  rw-unlock (l)
+}
+sleep 0.1
+
+for _ in (0..3) {
+  fork {
+    rw-lock-shared (l)
+    rw-lock-read-out (l)
+    sleep 0.2
+    rw-lock-read-out (l)
+    rw-unlock (l)
+  }
+}
+sleep 0.1
+write -n y
+wait
+write
+## STDOUT:
+wwwywww
+## END
+
 #### Produce many value and exhaust the exhaust the channel once for all, and reuse it
 source --builtin draft-synch.ysh
 
