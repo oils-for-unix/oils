@@ -10,6 +10,30 @@ proc get-fd-info(; fd, out_fd_info) {
   call out_fd_info->setValue($(cat /proc/$BASHPID/fdinfo/$fd))
 }
 
+proc get-fd-flag(; fd, out_fd_flag) {
+  get-fd-info (fd, &fd_info)
+  if (fd_info ~ / 'flags:' \t <capture digit+> /) {
+    call out_fd_flag->setValue(_match(1))
+  } else {
+    echo "Can't find flags in fdinfo:"
+    echo $fd_info
+    exit 1
+  }
+}
+
+# O_RDONLY (00), O_WRONLY (01) & O_RDWR (02) 
+func isFdRead(fd) {
+  # HACK: this take one octal number direct from the number string,
+  # since currently there's no way to convert number bits in std.
+  get-fd-flag (fd, &fd_flag)
+  return (fd_flag[-1] === "0" or fd_flag[-1] === "2" )
+}
+
+func isFdWrite (fd) {
+  get-fd-flag (fd, &fd_flag)
+  return (fd_flag[-1] === "1" or fd_flag[-1] === "2")
+}
+
 proc fd-destroy(; fd) {
   var fd_info = ""
   try {
@@ -153,27 +177,21 @@ proc rw-lock-new(; out_lock) {
 }
 
 proc rw-lock-read-out(; lock) {
-  try {
-    get-fd-info (lock.fd, &lock_fd_info)
-  }
-  if (_status === 0) {
+  if (isFdRead(lock.fd)) {
     # TODO: ensure lock is held with correct permission
     cat $[lock.lockfile]
   } else {
-    echo "No lock held at $[lock.fd]" 1>&2
+    echo "No rwlock held at $[lock.fd]" 1>&2
     exit 1
   }
 }
 
 proc rw-lock-write-in(; lock) {
-  try {
-    get-fd-info (lock.fd, &lock_fd_info)
-  }
-  if (_status === 0) {
+  if (isFdWrite(lock.fd)) {
     # TODO: ensure lock is held with correct permission
     cat > $[lock.lockfile]
   } else {
-    echo "No lock held at $[lock.fd]" 1>&2
+    echo "No exclusive lock held at rwlock $[lock.fd]" 1>&2
     exit 1
   }
 }
@@ -200,7 +218,7 @@ proc rw-unlock(; lock) {
     flock -u $lock_fd
     exec {lock_fd}<&-
   } else {
-    echo "No lock held at $[lock.fd]" 1>&2
+    echo "No rwlock held at $[lock.fd]" 1>&2
     exit 1
   }
 }
