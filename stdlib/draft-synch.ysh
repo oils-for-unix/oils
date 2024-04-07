@@ -132,9 +132,13 @@ proc channel-out(; chan) {
 }
 
 proc channel-destroy(; chan) {
+  # Ensures no one else is working
+  mutex-acquire (chan.read_lock)
+  mutex-acquire (chan.write_lock)
+  # Clean up
   fifo-fd-destroy (chan.pipe)
-  mutex-destroy (chan.read_lock)
   mutex-destroy (chan.write_lock)
+  mutex-destroy (chan.read_lock)
 }
 
 # }}}
@@ -165,6 +169,17 @@ proc rw-lock-exclusive(; lock) {
   flock -x $[lock.fd]
 }
 
+proc rw-try-lock-exclusive(; lock) {
+  if (lock.fd === null) {
+    exec {lock_fd}<>$[lock.lockfile]
+    setvar lock.fd = lock_fd
+  }
+  try {
+    flock -x -n $[lock.fd]
+  }
+  return $_status
+}
+
 proc rw-lock-promote(; lock) {
   rw-unlock (lock)
   rw-lock-exclusive (lock)
@@ -186,4 +201,74 @@ proc rw-lock-destroy(; lock) {
   }
 }
 
+# }}}
+# Exhaustable Channels {{{
+# Channels but exhaustable
+
+proc exh-channel-new(; out_chan) {
+  mutex-new (&write_lock)
+  mutex-new (&read_lock)
+  fifo-fd-new (&pipe)
+  rw-lock-new (&exhaust_lock)
+  call out_chan->setValue({
+    write_lock,
+    read_lock,
+    pipe,
+    exhaust_lock,
+  })
+}
+
+proc exh-channel-in(; chan) {
+  var data = $(cat) # consume everything from input
+  var data_len = len(data)
+  mutex-acquire (chan.write_lock)
+  rw-lock-shared (chan.exhaust_lock)
+  write -n ${data_len}${ZERO_CHAR}${data} >&$[chan.pipe]
+  rw-unlock (chan.exhaust_lock)
+  mutex-release (chan.write_lock)
+}
+
+proc exh-channel-out(; chan) {
+  var data_len = ""
+  mutex-acquire (chan.read_lock)
+  while (true) {
+    read -n 1 next_char <&$[chan.pipe]
+    if (next_char !== ZERO_CHAR) {
+      setvar data_len = data_len ++ next_char
+    } else {
+      break
+    }
+  }
+  read -n $data_len chunk <&$[chan.pipe]
+  write -n $chunk
+  mutex-release (chan.read_lock)
+}
+
+proc exh-channel-exhaust(; chan, out_ret) {
+  var ret = []
+  while(true) {
+    try {
+      rw-try-lock-exclusive (chan.exhaust_lock)
+    }
+    if (_status === 0) {
+      break
+    }
+    var buf = $(exh-channel-out (chan))
+    call ret->append(buf)
+  }
+  rw-unlock (chan.exhaust_lock)
+  call out_ret->setValue(ret)
+}
+
+proc exh-channel-destroy(; chan) {
+  # Ensures no one else is working
+  mutex-acquire (chan.read_lock)
+  mutex-acquire (chan.write_lock)
+  rw-lock-exclusive (chan.exhaust_lock)
+  # Clean up
+  fifo-fd-destroy (chan.pipe)
+  rw-lock-destroy (chan.exhaust_lock)
+  mutex-destroy (chan.write_lock)
+  mutex-destroy (chan.read_lock)
+}
 # }}}
