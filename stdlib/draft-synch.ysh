@@ -17,10 +17,19 @@ proc fifo-fd-new(; out_fd) {
   call out_fd->setValue(fd)
 }
 
-proc fifo-fd-destroy(; fd) {
+# Tests whether the fd is opened
+func fifo-fd-test(; fd) {
   var fdlink = "/proc/$$/fd/$fd"
   if test -L $fdlink {
-    var fifoFile = $(readlink $fdlink)
+    return (true)
+  } else {
+    return (false)
+  }
+}
+
+proc fifo-fd-destroy(; fd) {
+  if (fifo-fd-test(fd)) {
+    var fifoFile = $(readlink "/proc/$$/fd/$fd")
     # NOTE: No need to close both end of a pipe.
     exec {fd}>&-
     rm $fifoFile
