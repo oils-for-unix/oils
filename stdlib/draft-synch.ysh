@@ -3,6 +3,32 @@
 module stdlib/synch || return 0
 
 #
+# General utilities for fds
+#
+
+# Tests whether the fd is opened
+func fdTest(fd) {
+  var fdlink = "/proc/$$/fd/$fd"
+  if test -L $fdlink {
+    return (true)
+  } else {
+    return (false)
+  }
+}
+
+proc fd-destroy(; fd) {
+  if (fdTest(fd)) {
+    var fifoFile = $(readlink "/proc/$$/fd/$fd")
+    # NOTE: No need to close both end of a pipe.
+    exec {fd}>&-
+    rm $fifoFile
+  } else {
+    echo "Double Destroying the fd $fd twice!" 1>&2
+    exit 1
+  }
+}
+
+#
 # FIFO File Descriptors
 #
 
@@ -17,26 +43,8 @@ proc fifo-fd-new(; out_fd) {
   call out_fd->setValue(fd)
 }
 
-# Tests whether the fd is opened
-func fifoFdTest(fd) {
-  var fdlink = "/proc/$$/fd/$fd"
-  if test -L $fdlink {
-    return (true)
-  } else {
-    return (false)
-  }
-}
-
-proc fifo-fd-destroy(; fd) {
-  if (fifoFdTest(fd)) {
-    var fifoFile = $(readlink "/proc/$$/fd/$fd")
-    # NOTE: No need to close both end of a pipe.
-    exec {fd}>&-
-    rm $fifoFile
-  } else {
-    echo "Double Destroying the fd $fd twice!" 1>&2
-    exit 1
-  }
+proc fifo-fd-destroy (; fd) {
+  fd-destroy (fd)
 }
 
 #
@@ -132,4 +140,54 @@ proc channel-destroy(; chan) {
   fifo-fd-destroy (chan.pipe)
   mutex-destroy (chan.read_lock)
   mutex-destroy (chan.write_lock)
+}
+
+#
+# RWLock
+#
+
+proc rw-lock-new(; out_lock) {
+  var lockfile = $(mktemp)
+  var lock = {
+    fd: null,
+    lockfile,
+  }
+  call out_lock->setValue(lock)
+}
+
+proc rw-lock-shared(; lock) {
+  if (lock.fd === null) {
+    exec {lock_fd}<>$[lock.lockfile]
+    setvar lock.fd = lock_fd
+  }
+  flock -s $[lock.fd]
+}
+
+proc rw-lock-exclusive(; lock) {
+  if (lock.fd === null) {
+    exec {lock_fd}<>$[lock.lockfile]
+    setvar lock.fd = lock_fd
+  }
+  flock -x $[lock.fd]
+}
+
+proc rw-lock-promote(; lock) {
+  rw-unlock (lock)
+  rw-lock-exclusive (lock)
+}
+
+proc rw-unlock(; lock) {
+  if (lock.fd === null) {
+    echo "not locked"
+    exit 1
+  }
+  flock -u $[lock.fd]
+}
+
+proc rw-lock-destroy(; lock) {
+  if (lock.fd !== null) {
+    fd-destroy (lock.fd)
+  } else {
+    rm $[lock.lockfile]
+  }
 }
