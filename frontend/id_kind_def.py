@@ -489,6 +489,8 @@ def AddKinds(spec):
             'ExtGlob',  # )
             'BashRegex',  # )
             'BlockLiteral',  # } that matches &{ echo hi }
+            # Two kinds of right paren
+            #'DBracketGroup',  # ) in [[ (a =~ (b)) ]]
         ])
 
     spec.AddKind('ExtGlob', ['Comma', 'At', 'Star', 'Plus', 'QMark', 'Bang'])

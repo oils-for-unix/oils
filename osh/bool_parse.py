@@ -289,6 +289,7 @@ class BoolParser(object):
                 return bool_expr.WordTest(w)
 
         if self.bool_id == Id.Op_LParen:
+            #self.w_parser.lexer.PushHint(Id.Op_RParen, Id.Right_DBracketGroup)
             self._Next()
             node = self.ParseExpr()
             if self.bool_id != Id.Op_RParen:
