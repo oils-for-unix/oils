@@ -194,8 +194,7 @@ proc rw-lock-destroy(; lock) {
   }
 }
 
-# TODO: rename this to swap-fn
-proc rw-lock-swap-f(; lock, fn) {
+proc rw-lock-swap-fn(; lock, fn) {
   rw-lock-exclusive (lock)
   var swapped = $(rw-lock-read-out (lock)) => fn()
   write -n $swapped | rw-lock-write-in (lock)
@@ -240,7 +239,7 @@ func __synch_exh_channel_inc_untyped (buf) {
 proc exh-channel-in(; chan) {
   var msg = $(cat) # consume everything from input
   var msg_len = len(msg)
-  rw-lock-swap-f (chan.message_count, __synch_exh_channel_inc_untyped)
+  rw-lock-swap-fn (chan.message_count, __synch_exh_channel_inc_untyped)
   rw-lock-shared (chan.will_write)
   mutex-acquire (chan.write_lock)
   write -n $msg_len$ZERO_CHAR$msg >&$[chan.pipe]
