@@ -312,7 +312,7 @@ proc exh-channel-exhaust(; chan, out_ret) {
   rw-lock-exclusive (chan.will_write)
   # Count how many message we have
   rw-lock-exclusive (chan.message_count)
-  rw-lock-read-out (chan.message_count) | json read (&num_msg)
+  rw-lock-read-out (chan.message_count) | json8 read (&num_msg)
   write -n 0 | rw-lock-write-in (chan.message_count)
   rw-unlock (chan.message_count)
 
