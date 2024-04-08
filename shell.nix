@@ -53,8 +53,17 @@ let
   #   Clang for coverage too
 
   # nixpkgs: busybox linux only; no smoosh
+
+  # busybox links xargs, we need that to run tests, though
+  busybox_no_symlinks = busybox.override {
+     extraConfig = ''
+       CONFIG_INSTALL_APPLET_DONT y
+       CONFIG_INSTALL_APPLET_SYMLINKS n
+     '';
+   };
+
   # could append something like: ++ lib.optionals stdenv.isLinux [ busybox ]
-  spec_tests = [ bash dash mksh zsh busybox ];
+  spec_tests = [ bash dash mksh zsh busybox_no_symlinks];
 
   static_analysis = [
     mypy # This is the Python 3 version
