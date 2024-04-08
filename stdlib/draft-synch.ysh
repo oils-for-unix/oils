@@ -117,6 +117,7 @@ proc mutex-destroy(; mutex) {
 # - Has to manually ensure the number of sent/received blocks are same across each side.
 # - Blocks, no buffering
 # - Backed by a modified net-string implementation
+#   - We may may modify this to replace with an implementation that allows streaming, however.
 
 const ZERO_CHAR = u'\u{0}'
 
