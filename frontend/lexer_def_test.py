@@ -139,7 +139,7 @@ class LexerTest(unittest.TestCase):
         lexer = _InitLexer('(foo|bar)')
 
         t = lexer.Read(lex_mode_e.BashRegex)
-        self.assertTokensEqual(FakeTok(Id.BashRegexGroup_LParen, '('), t)
+        self.assertTokensEqual(FakeTok(Id.BashRegex_LParen, '('), t)
 
         t = lexer.Read(lex_mode_e.BashRegex)
         self.assertTokensEqual(FakeTok(Id.Lit_Chars, 'foo'), t)
