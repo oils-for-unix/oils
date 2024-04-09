@@ -26,6 +26,33 @@ proc delim-num-pipe-out (; out_num) {
   call out_num->setValue(num_str => int())
 }
 
+
+# Netstring {{{
+proc netstring-pipe-in () {
+  var msg = $(cat) # consume everything from input
+  delim-num-pipe-in (len(msg))
+  write -n -- "$msg"
+}
+
+proc netstring-pipe-out() {
+  delim-num-pipe-out (&msg_len)
+  read -n $msg_len msg
+  write -n -- "$msg"
+}
+
+# NOTE: No way to refer to procs, I wrap them around funcs for now.
+func __pipe_netstring_pipe_in_wrap() {
+  netstring-pipe-in
+}
+func __pipe_netstring_pipe_out_wrap() {
+  netstring-pipe-out
+}
+const Pipe_Methods_NetString = {
+  in_pipe: __pipe_netstring_pipe_in_wrap,
+  out_pipe: __pipe_netstring_pipe_out_wrap,
+}
+# }}}
+# Blocked NetString {{{
 proc blocked-netstring-pipe-in (; block_size) {
   while (true) {
     var chunk
@@ -50,29 +77,18 @@ proc blocked-netstring-pipe-out (; block_size) {
   }
 }
 
-# Netstring {{{
-proc netstring-pipe-in () {
-  var msg = $(cat) # consume everything from input
-  delim-num-pipe-in (len(msg))
-  write -n -- "$msg"
+
+func __pipe_blocked_netstring_pipe_in_wrap(block_size) {
+  blocked-netstring-pipe-in (block_size)
+}
+func __pipe_blocked_pipe_out_wrap(block_size) {
+  blocked-netstring-pipe-out (block_size)
 }
 
-proc netstring-pipe-out() {
-  delim-num-pipe-out (&msg_len)
-  read -n $msg_len msg
-  write -n -- "$msg"
-}
-
-# NOTE: No way to refer to procs, I wrap them around funcs for now.
-func __pipe_netstring_pipe_in_wrap() {
-  netstring-pipe-in
-}
-func __pipe_netstring_pipe_out_wrap() {
-  netstring-pipe-out
+func __pipe_methods_blocked_netstring(blocksize) {
+  return ({
+    in_pipe: __pipe_netstring_pipe_in_wrap,
+    out_pipe: __pipe_netstring_pipe_out_wrap,
+  })
 }
 # }}}
-
-const Pipe_Methods_NetString = {
-  in_pipe: __pipe_netstring_pipe_in_wrap,
-  out_pipe: __pipe_netstring_pipe_out_wrap,
-}

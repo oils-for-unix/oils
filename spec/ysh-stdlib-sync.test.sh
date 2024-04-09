@@ -95,15 +95,7 @@ channel-destroy (ch)
 #### channel but backed by blocked pipe
 source --builtin draft-sync.ysh
 
-setglobal block_size = 4  
-func blockPipeInWrap() {
-  blocked-netstring-pipe-in (block_size)
-}
-func blockPipeOutWrap() {
-  blocked-netstring-pipe-out (block_size)
-}
-
-channel-new (&ch, blockPipeInWrap, blockPipeOutWrap)
+channel-new (&ch, __pipe_methods_blocked_netstring(4))
 
 var sent = "I-am-a-pretty-damn-long-string-that-need-to-be-blocked"
 

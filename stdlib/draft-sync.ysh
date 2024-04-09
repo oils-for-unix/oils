@@ -56,9 +56,12 @@ proc mutex-destroy(; mutex) {
 # - Backed by a modified net-string implementation
 #   - We may may modify this to replace with an implementation that allows streaming, however.
 
-proc channel-new(;out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_out = __pipe_netstring_pipe_out_wrap, ) {
+proc channel-new(;out_chan, methods = null) {
 # NOTE: Wait for dicts to be able to be set for default fields
 # proc channel-new(;out_chan, methods = Pipe_Methods_NetString) {
+  if (methods === null) {
+    setvar methods = Pipe_Methods_NetString
+  }
   mutex-new (&write_lock)
   mutex-new (&read_lock)
   fifo-fd-new (&pipe)
@@ -66,10 +69,7 @@ proc channel-new(;out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_out = 
     write_lock,
     read_lock,
     pipe,
-    methods: {
-      in_pipe: pipe_in,
-      out_pipe: pipe_out,
-    },
+    methods,
   })
 }
 
@@ -179,7 +179,10 @@ proc atom-swap-fn(; lock, fn) {
 # Exhaustable Channels {{{
 # Channels but exhaustable
 
-proc exh-channel-new(; out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_out = __pipe_netstring_pipe_out_wrap) {
+proc exh-channel-new(; out_chan, methods = null) {
+  if (methods === null) {
+    setvar methods = Pipe_Methods_NetString
+  }
   mutex-new (&write_lock)
   mutex-new (&read_lock)
   fifo-fd-new (&pipe)
@@ -194,10 +197,7 @@ proc exh-channel-new(; out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_o
     write_lock,
     read_lock,
     pipe,
-    methods: {
-      in_pipe: pipe_in,
-      out_pipe: pipe_out,
-    },
+    methods,
     message_count,
     will_write,
   })
