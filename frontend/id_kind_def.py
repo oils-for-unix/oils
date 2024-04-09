@@ -402,7 +402,7 @@ def AddKinds(spec):
     # For lex_mode_e.BashRegex
     # Bash treats ( | ) as special, and space is allowed within ()
     # Note Id.Op_RParen -> Id.Right_BashRegex with lexer hint
-    spec.AddKind('BashRegex', ['LParen'])
+    spec.AddKind('BashRegexGroup', ['LParen'])
 
     spec.AddKind(
         'Eggex',
@@ -486,7 +486,7 @@ def AddKinds(spec):
             'CasePat',  # )
             'ShArrayLiteral',  # )
             'ExtGlob',  # )
-            'BashRegex',  # )
+            'BashRegexGroup',  # )
             'BlockLiteral',  # } that matches &{ echo hi }
         ])
 

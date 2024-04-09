@@ -1576,7 +1576,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     raise AssertionError()
 
     def _EvalBashRegex(self, part, part_vals):
-        # type: (word_part.BashRegex, List[part_value_t]) -> None
+        # type: (word_part.BashRegexGroup, List[part_value_t]) -> None
         """
         A part of a word in parens, e.g. $prefix(bash(regex)(nested))$suffix
         """
@@ -1683,8 +1683,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 self._EvalExtGlob(part, part_vals2)  # flattens tree
                 part_vals.append(part_value.ExtGlob(part_vals2))
 
-            elif case(word_part_e.BashRegex):
-                part = cast(word_part.BashRegex, UP_part)
+            elif case(word_part_e.BashRegexGroup):
+                part = cast(word_part.BashRegexGroup, UP_part)
                 self._EvalBashRegex(part, part_vals)
 
             elif case(word_part_e.Splice):

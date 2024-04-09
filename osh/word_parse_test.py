@@ -467,29 +467,6 @@ class WordParserTest(unittest.TestCase):
         assert w
         self.assertEqual(Id.Eof_Real, w.id)
 
-    def testReadRegex(self):
-        # Test that we get Id.Op_Newline
-        code = '(foo|bar)'
-        w_parser = test_lib.InitWordParser(code)
-        w_parser.next_lex_mode = lex_mode_e.BashRegex  # needed at beginning
-
-        w = w_parser.ReadWord(lex_mode_e.BashRegex)
-        assert w
-
-        def _Part(w, i):
-            return lexer.LazyStr(w.parts[i])
-
-        self.assertEqual('(', _Part(w, 0))
-        self.assertEqual('foo', _Part(w, 1))
-        self.assertEqual('|', _Part(w, 2))
-        self.assertEqual('bar', _Part(w, 3))
-        self.assertEqual(')', _Part(w, 4))
-        self.assertEqual(5, len(w.parts))
-
-        w = w_parser.ReadWord(lex_mode_e.ShCommand)
-        assert w
-        self.assertEqual(Id.Eof_Real, w.id)
-
     def testReadArithWord(self):
         w = _assertReadWord(self, '$(( (1+2) ))')
         child = w.parts[0].anode

@@ -381,13 +381,12 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     C('~', Id.Lit_Tilde),
     C('/', Id.Lit_Slash),
 
-    # Id.WS_Space delimits words.
-    # TODO: define this conditionally, because it's the difference inside ()
-    # and outside?
+    # Id.WS_Space delimits words.  In lex_mode_e.BashRegexFakeInner, we
+    # translate them to Id.Lit_Chars.
     _SIGNIFICANT_SPACE,
 
     # Analogous to Id.ExtGlob_* - we need to change lexer modes when we hit this
-    C('(', Id.BashRegex_LParen),
+    C('(', Id.BashRegexGroup_LParen),
 
     # Not special, this is like lex_mode_e.Outer
     C(')', Id.Op_RParen),

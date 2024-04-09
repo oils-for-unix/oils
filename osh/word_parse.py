@@ -184,31 +184,31 @@ class WordParser(WordEmitter):
         self.token_kind
         self.cur_token
         """
-        if self.next_lex_mode != lex_mode_e.Undefined:
+        if self.next_lex_mode == lex_mode_e.Undefined:
+            return  # _SetNext() not called, so do nothing
 
-            is_fake = self.next_lex_mode == lex_mode_e.BashRegexFakeInner
-            real_mode = (lex_mode_e.BashRegex
-                         if is_fake else self.next_lex_mode)
+        is_fake = self.next_lex_mode == lex_mode_e.BashRegexFakeInner
+        real_mode = (lex_mode_e.BashRegex if is_fake else self.next_lex_mode)
 
-            self.cur_token = self.lexer.Read(real_mode)
+        self.cur_token = self.lexer.Read(real_mode)
 
-            # MUTATE TOKEN for fake lexer mode.
-            # This is for crazy stuff bash allows, like [[ s =~ (< >) ]]
-            if (is_fake and self.cur_token.id
-                    in (Id.WS_Space, Id.Op_Less, Id.Op_Great)):
-                self.cur_token.id = Id.Lit_Chars
+        # MUTATE TOKEN for fake lexer mode.
+        # This is for crazy stuff bash allows, like [[ s =~ (< >) ]]
+        if (is_fake and
+                self.cur_token.id in (Id.WS_Space, Id.Op_Less, Id.Op_Great)):
+            self.cur_token.id = Id.Lit_Chars
 
-            self.token_type = self.cur_token.id
-            self.token_kind = consts.GetKind(self.token_type)
+        self.token_type = self.cur_token.id
+        self.token_kind = consts.GetKind(self.token_type)
 
-            # number of consecutive newlines, ignoring whitespace
-            if self.token_type == Id.Op_Newline:
-                self.newline_state += 1
-            elif self.token_kind != Kind.WS:
-                self.newline_state = 0
+        # number of consecutive newlines, ignoring whitespace
+        if self.token_type == Id.Op_Newline:
+            self.newline_state += 1
+        elif self.token_kind != Kind.WS:
+            self.newline_state = 0
 
-            self.parse_ctx.trail.AppendToken(self.cur_token)  # For completion
-            self.next_lex_mode = lex_mode_e.Undefined
+        self.parse_ctx.trail.AppendToken(self.cur_token)  # For completion
+        self.next_lex_mode = lex_mode_e.Undefined
 
     def _SetNext(self, lex_mode):
         # type: (lex_mode_t) -> None
@@ -928,19 +928,19 @@ class WordParser(WordEmitter):
 
         return word_part.ExtGlob(left_token, arms, right_token)
 
-    def _ReadBashRegexPart(self):
-        # type: () -> word_part.BashRegex
+    def _ReadBashRegexGroup(self):
+        # type: () -> word_part.BashRegexGroup
         """
         Assuming we got (, read until )
         TODO: test unclosed (
         """
         left_token = self.cur_token
-        assert left_token.id == Id.BashRegex_LParen, left_token
+        assert left_token.id == Id.BashRegexGroup_LParen, left_token
 
         right_token = None  # type: Token
         arms = []  # type: List[CompoundWord]
 
-        self.lexer.PushHint(Id.Op_RParen, Id.Right_BashRegex)
+        self.lexer.PushHint(Id.Op_RParen, Id.Right_BashRegexGroup)
         self._SetNext(lex_mode_e.BashRegex)  # advance past LEFT
 
         read_word = False  # did we just a read a word?  To handle @(||).
@@ -949,7 +949,7 @@ class WordParser(WordEmitter):
             self._GetToken()
             #log('tok2 %s', self.cur_token)
 
-            if self.token_type == Id.Right_BashRegex:
+            if self.token_type == Id.Right_BashRegexGroup:
                 if not read_word:
                     arms.append(CompoundWord([]))
                 right_token = self.cur_token
@@ -957,7 +957,7 @@ class WordParser(WordEmitter):
 
             # lex_mode_e.BashRegex should only produce these 4 kinds of tokens
             elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
-                                     Kind.BashRegex):
+                                     Kind.BashRegexGroup):
 
                 # Fake lexer mode that translates Id.WS_Space to Id.Lit_Chars
                 # To allow bash style [[ s =~ (a b) ]]
@@ -972,7 +972,7 @@ class WordParser(WordEmitter):
             else:
                 raise AssertionError(self.cur_token)
 
-        return word_part.BashRegex(left_token, arms, right_token)
+        return word_part.BashRegexGroup(left_token, arms, right_token)
 
     def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
         # type: (Optional[Token], bool, List[word_part_t]) -> None
@@ -1833,8 +1833,8 @@ class WordParser(WordEmitter):
                     part = self._ReadExtGlob()
                 w.parts.append(part)
 
-            elif self.token_kind == Kind.BashRegex:  # Opening (
-                part = self._ReadBashRegexPart()
+            elif self.token_kind == Kind.BashRegexGroup:  # Opening (
+                part = self._ReadBashRegexGroup()
                 w.parts.append(part)
 
             elif self.token_kind == Kind.Left:
@@ -1990,11 +1990,10 @@ class WordParser(WordEmitter):
             return None
 
         else:
-            assert self.token_kind in (Kind.VSub, Kind.Lit, Kind.History,
-                                       Kind.Left, Kind.KW, Kind.ControlFlow,
-                                       Kind.BoolUnary, Kind.BoolBinary,
-                                       Kind.ExtGlob,
-                                       Kind.BashRegex), 'Unhandled token kind'
+            assert self.token_kind in (
+                Kind.VSub, Kind.Lit, Kind.History, Kind.Left, Kind.KW,
+                Kind.ControlFlow, Kind.BoolUnary, Kind.BoolBinary,
+                Kind.ExtGlob, Kind.BashRegexGroup), 'Unhandled token kind'
 
             if (word_mode == lex_mode_e.ShCommandBrack and
                     self.parse_opts.parse_bracket() and

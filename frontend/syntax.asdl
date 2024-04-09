@@ -241,7 +241,7 @@ module syntax
     # extended globs are parsed statically, unlike globs
   | ExtGlob(Token op, List[CompoundWord] arms, Token right)
     # similar to ExtGlob, but different evaluation
-  | BashRegex(Token left, List[CompoundWord] arms, Token right)
+  | BashRegexGroup(Token left, List[CompoundWord] arms, Token right)
 
     # YSH word_part extensions
 

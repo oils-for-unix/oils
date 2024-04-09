@@ -874,16 +874,7 @@ fi
         node = assert_ParseCommandList(self, '[[ foo =~ (foo|bar) ]]')
         self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
         right = node.expr.right
-        self.assertEqual(5, len(right.parts))
-        self.assertEqual('(', lexer.LazyStr(right.parts[0]))
-
-        # TODO: Implement BASH_REGEX_CHARS
-        return
-        node = assert_ParseCommandList(self, '[[ "< >" =~ (< >) ]]')
-        self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
-
-        node = assert_ParseCommandList(self, '[[ "ba ba" =~ ([a b]+) ]]')
-        self.assertEqual(Id.BoolBinary_EqualTilde, node.expr.op_id)
+        self.assertEqual(1, len(right.parts))
 
     def testParseIf(self):
         node = assert_ParseCommandList(self, 'if true; then echo yes; fi')
