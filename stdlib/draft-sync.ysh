@@ -4,6 +4,7 @@
 module stdlib/sync || return 0
 
 source --builtin draft-descriptor.ysh
+source --builtin draft-pipe.ysh
 
 # Semaphores {{{
 
@@ -58,7 +59,9 @@ proc mutex-destroy(; mutex) {
 
 const ZERO_CHAR = u'\u{0}'
 
-proc channel-new(; out_chan) {
+proc channel-new(;out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_out = __pipe_netstring_pipe_out_wrap, ) {
+# NOTE: Wait for dicts to be able to be set for default fields
+# proc channel-new(;out_chan, methods = Pipe_Methods_NetString) {
   mutex-new (&write_lock)
   mutex-new (&read_lock)
   fifo-fd-new (&pipe)
@@ -66,35 +69,27 @@ proc channel-new(; out_chan) {
     write_lock,
     read_lock,
     pipe,
+    methods: {
+      in_pipe: pipe_in,
+      out_pipe: pipe_out,
+    },
   })
 }
 
-# NOTE: I would love to optimize this a bit more, for example netstring of size n 
-# now takes log_10(n) over head. We can certainly do this better by byte encoding
-# It would be log_128(n) (using 1 bit for indicating the number ends)
-# That's a ln 128 / ln 10 which is roughly twice less overhead.
 proc channel-in(; chan) {
-  var msg = $(cat) # consume everything from input
-  var msg_len = len(msg)
   mutex-acquire (chan.write_lock)
-  write -n ${msg_len}${ZERO_CHAR}${msg} >&$[chan.pipe]
+  {
+    call chan.methods.in_pipe()
+  } >&$[chan.pipe]
   mutex-release (chan.write_lock)
 }
 
 proc channel-out(; chan) {
-  var msg_len = ""
-  mutex-acquire (chan.read_lock)
-  while (true) {
-    read -n 1 next_char <&$[chan.pipe]
-    if (next_char !== ZERO_CHAR) {
-      setvar msg_len = msg_len ++ next_char
-    } else {
-      break
-    }
-  }
-  read -n $msg_len chunk <&$[chan.pipe]
-  write -n $chunk
-  mutex-release (chan.read_lock)
+  mutex-acquire (chan.write_lock)
+  {
+    call chan.methods.out_pipe()
+  } <&$[chan.pipe]
+  mutex-release (chan.write_lock)
 }
 
 proc channel-destroy(; chan) {
