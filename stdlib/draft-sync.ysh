@@ -2,7 +2,6 @@
 # vim:foldmethod=marker
 
 module stdlib/sync || return 0
-
 source --builtin draft-descriptor.ysh
 source --builtin draft-pipe.ysh
 
@@ -56,8 +55,6 @@ proc mutex-destroy(; mutex) {
 # - Blocks, no buffering
 # - Backed by a modified net-string implementation
 #   - We may may modify this to replace with an implementation that allows streaming, however.
-
-const ZERO_CHAR = u'\u{0}'
 
 proc channel-new(;out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_out = __pipe_netstring_pipe_out_wrap, ) {
 # NOTE: Wait for dicts to be able to be set for default fields

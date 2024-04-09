@@ -1,30 +1,73 @@
 #!/usr/bin/env ysh
 # vim:foldmethod=marker
+
 module stdlib/pipe || return 0
 
-# Netstring {{{
+const __pipe_NUM_DELIM = u'$'
+
 # NOTE: I would love to optimize this a bit more, for example netstring of size n 
 # now takes log_10(n) over head. We can certainly do this better by byte encoding
 # It would be log_128(n) (using 1 bit for indicating the number ends)
 # That's a ln 128 / ln 10 which is roughly twice less overhead.
-proc netstring-pipe-in () {
-  var msg = $(cat) # consume everything from input
-  write -n $[len(msg)]${ZERO_CHAR}${msg}
+proc zero-delim-num-pipe-in (; num) {
+  write -n $num$__pipe_NUM_DELIM
 }
 
-proc netstring-pipe-out() {
-  var msg_len = ""
+proc zero-delim-num-pipe-out (; out_num) {
+  var num_str = ""
   while (true) {
     read -n 1 next_char
-    if (next_char !== ZERO_CHAR) {
-      setvar msg_len = msg_len ++ next_char
+    if (next_char !== __pipe_NUM_DELIM) {
+      setvar num_str = num_str ++ next_char
     } else {
       break
     }
   }
-  read -n $msg_len chunk
-  write -n $chunk
+  call out_num->setValue(num_str => int())
 }
+
+proc blocked-pipe-in (; block_size) {
+  while (true) {
+    read -n $block_size chunk
+    var last_chunk = len(chunk) !== block_size
+    if (last_chunk) {
+      write -n 1
+      zero-delim-num-pipe-in (len(last_chunk))
+      write -n ${chunk}
+      break
+    } else {
+      write -n 0
+      write -n ${chunk}
+    }
+  }
+}
+
+proc blocked-pipe-out (; block_size) {
+  while (true) {
+    read -n 1 last_chunk
+    if (last_chunk) {
+      zero-delim-num-pipe-out (&len_last_chunk)
+      read -n $len_last_chunk
+      break
+    } else {
+      read -n $block_size chunk
+    }
+  }
+}
+
+# Netstring {{{
+proc netstring-pipe-in () {
+  var msg = $(cat) # consume everything from input
+  zero-delim-num-pipe-in (len(msg))
+  write -n $msg
+}
+
+proc netstring-pipe-out() {
+  zero-delim-num-pipe-out (&msg_len)
+  read -n $msg_len msg
+  write -n $msg
+}
+
 # NOTE: No way to refer to procs, I wrap them around funcs for now.
 func __pipe_netstring_pipe_in_wrap() {
   netstring-pipe-in
