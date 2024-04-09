@@ -95,28 +95,28 @@ channel-destroy (ch)
 #### RWLock multiple shared lock and free, one exclusive lock
 source --builtin draft-sync.ysh
 
-rw-lock-new (&lk)
+atom-new (&lk)
 
 fork {
-  rw-lock-shared (lk)
+  atom-lock-shared (lk)
   echo 1
   sleep 0.3
-  rw-unlock (lk)
+  atom-unlock (lk)
 }
 for _ in (0..3) {
   fork {
     sleep 0.1
-    rw-lock-shared (lk)
+    atom-lock-shared (lk)
     echo 2
     sleep 0.2
-    rw-unlock (lk)
+    atom-unlock (lk)
   }
 }
 sleep 0.1
-rw-lock-exclusive (lk)
+atom-lock-exclusive (lk)
 echo 3
-rw-unlock (lk)
-rw-lock-destroy (lk)
+atom-unlock (lk)
+atom-destroy (lk)
 ## STDOUT:
 1
 2
@@ -125,30 +125,30 @@ rw-lock-destroy (lk)
 3
 ## END
 
-#### Reading and writing rw-lock
+#### Reading and writing atom
 source --builtin draft-sync.ysh
 
-rw-lock-new (&l)
+atom-new (&l)
 fork {
-  rw-lock-exclusive (l)
-  write -n 'w' | rw-lock-write-in (l)
-  rw-unlock (l)
+  atom-lock-exclusive (l)
+  write -n 'w' | atom-write-in (l)
+  atom-unlock (l)
 }
 sleep 0.1
 
 for _ in (0..3) {
   fork {
-    rw-lock-shared (l)
-    rw-lock-read-out (l)
+    atom-lock-shared (l)
+    atom-read-out (l)
     sleep 0.2
-    rw-lock-read-out (l)
-    rw-unlock (l)
+    atom-read-out (l)
+    atom-unlock (l)
   }
 }
 sleep 0.1
 write -n y
 wait
-rw-lock-destroy (l)
+atom-destroy (l)
 write
 ## STDOUT:
 wwwywww

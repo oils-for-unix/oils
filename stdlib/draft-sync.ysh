@@ -103,9 +103,9 @@ proc channel-destroy(; chan) {
 }
 
 # }}}
-# RWLock {{{
+# Atom {{{
 
-proc rw-lock-new(; out_lock) {
+proc atom-new(; out_lock) {
   var lockfile = $(mktemp)
   var lock = {
     fd: null,
@@ -114,7 +114,7 @@ proc rw-lock-new(; out_lock) {
   call out_lock->setValue(lock)
 }
 
-proc rw-lock-read-out(; lock) {
+proc atom-read-out(; lock) {
   if (isFdRead(lock.fd)) {
     # TODO: ensure lock is held with correct permission
     cat $[lock.lockfile]
@@ -124,7 +124,7 @@ proc rw-lock-read-out(; lock) {
   }
 }
 
-proc rw-lock-write-in(; lock) {
+proc atom-write-in(; lock) {
   if (isFdWrite(lock.fd)) {
     # TODO: ensure lock is held with correct permission
     cat > $[lock.lockfile]
@@ -134,20 +134,20 @@ proc rw-lock-write-in(; lock) {
   }
 }
 
-# NOTE: to change the type of a lock to T, e.g. from shared to exclusive, just call rw-lock-{T} again. 
-proc rw-lock-shared(; lock) {
+# NOTE: to change the type of a lock to T, e.g. from shared to exclusive, just call atom-{T} again. 
+proc atom-lock-shared(; lock) {
   exec {lock_fd}<$[lock.lockfile]
   setvar lock.fd = lock_fd
   flock -s $[lock.fd]
 }
 
-proc rw-lock-exclusive(; lock) {
+proc atom-lock-exclusive(; lock) {
   exec {lock_fd}<>$[lock.lockfile]
   setvar lock.fd = lock_fd
   flock -x $[lock.fd]
 }
 
-proc rw-unlock(; lock) {
+proc atom-unlock(; lock) {
   var lock_fd_info
   try {
     setvar lock_fd_info = getFdInfo(lock.fd)
@@ -162,21 +162,21 @@ proc rw-unlock(; lock) {
   }
 }
 
-proc rw-lock-destroy(; lock) {
-  rw-lock-exclusive (lock)
+proc atom-destroy(; lock) {
+  atom-lock-exclusive (lock)
   fd-destroy-and-rm-file $[lock.fd]
 }
 
-proc rw-lock-swap-fn(; lock, fn) {
-  rw-lock-exclusive (lock)
-  var swapped = $(rw-lock-read-out (lock)) => fn()
-  write -n $swapped | rw-lock-write-in (lock)
-  rw-unlock (lock)
+proc atom-swap-fn(; lock, fn) {
+  atom-lock-exclusive (lock)
+  var swapped = $(atom-read-out (lock)) => fn()
+  write -n $swapped | atom-write-in (lock)
+  atom-unlock (lock)
 }
 
 # TODO: Performs an lock-guarded write on a lock's file
 # The issue is we need to know when to close the pipe
-# proc rw-lock-swap-pipe(; lock)
+# proc atom-swap-pipe(; lock)
 
 # }}}
 # Exhaustable Channels {{{
@@ -187,12 +187,12 @@ proc exh-channel-new(; out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_o
   mutex-new (&read_lock)
   fifo-fd-new (&pipe)
   # a counter on how many information we have on the pipe
-  rw-lock-new (&message_count)
+  atom-new (&message_count)
   # a lock indicating if there's upcoming writes
-  rw-lock-new (&will_write)
-  rw-lock-exclusive (message_count)
-  write -n 0 | rw-lock-write-in (message_count)
-  rw-unlock (message_count)
+  atom-new (&will_write)
+  atom-lock-exclusive (message_count)
+  write -n 0 | atom-write-in (message_count)
+  atom-unlock (message_count)
   call out_chan->setValue({
     write_lock,
     read_lock,
@@ -215,14 +215,14 @@ func __sync_exh_channel_inc_untyped (buf) {
 }
 
 proc exh-channel-in(; chan) {
-  rw-lock-swap-fn (chan.message_count, __sync_exh_channel_inc_untyped)
-  rw-lock-shared (chan.will_write)
+  atom-swap-fn (chan.message_count, __sync_exh_channel_inc_untyped)
+  atom-lock-shared (chan.will_write)
   mutex-acquire (chan.write_lock)
   {
     call chan.methods.in_pipe()
   } >&$[chan.pipe]
   mutex-release (chan.write_lock)
-  rw-unlock (chan.will_write)
+  atom-unlock (chan.will_write)
 }
 
 proc __exh_channel_out_no_lock(; chan) {
@@ -239,12 +239,12 @@ proc exh-channel-out(; chan) {
 
 proc exh-channel-exhaust(; chan, out_ret) {
   # No body should send anything to the channel from now on
-  rw-lock-exclusive (chan.will_write)
+  atom-lock-exclusive (chan.will_write)
   # Count how many message we have
-  rw-lock-exclusive (chan.message_count)
-  rw-lock-read-out (chan.message_count) | json8 read (&num_msg)
-  write -n 0 | rw-lock-write-in (chan.message_count)
-  rw-unlock (chan.message_count)
+  atom-lock-exclusive (chan.message_count)
+  atom-read-out (chan.message_count) | json8 read (&num_msg)
+  write -n 0 | atom-write-in (chan.message_count)
+  atom-unlock (chan.message_count)
 
   var ret = []
   mutex-acquire (chan.read_lock)
@@ -252,7 +252,7 @@ proc exh-channel-exhaust(; chan, out_ret) {
     call ret->append($(__exh_channel_out_no_lock (chan)))
   }
   mutex-release (chan.read_lock)
-  rw-unlock (chan.will_write)
+  atom-unlock (chan.will_write)
   call out_ret->setValue(ret)
 }
 
@@ -262,8 +262,8 @@ proc exh-channel-destroy(; chan) {
   mutex-acquire (chan.write_lock)
   # Clean up
   fifo-fd-destroy (chan.pipe)
-  rw-lock-destroy (chan.message_count)
-  rw-lock-destroy (chan.will_write)
+  atom-destroy (chan.message_count)
+  atom-destroy (chan.will_write)
   mutex-destroy (chan.write_lock)
   mutex-destroy (chan.read_lock)
 }
