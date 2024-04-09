@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 5
-## compare_shells: dash bash mksh zsh ash
+## compare_shells: bash mksh zsh ash
 
 #### read line from here doc
 
@@ -235,18 +235,41 @@ echo abcxyz | { read -n 3; echo reply=$REPLY; }
 echo '  a b  ' | (read; echo "[$REPLY]")
 echo '  a b  ' | (read myvar; echo "[$myvar]")
 
+echo '  a b  \
+  line2' | (read; echo "[$REPLY]")
+echo '  a b  \
+  line2' | (read myvar; echo "[$myvar]")
+
+# Now test with -r
+echo '  a b  \
+  line2' | (read -r; echo "[$REPLY]")
+echo '  a b  \
+  line2' | (read -r myvar; echo "[$myvar]")
+
 ## STDOUT:
 [  a b  ]
 [a b]
+[  a b    line2]
+[a b    line2]
+[  a b  \]
+[a b  \]
 ## END
 ## N-I dash stdout:
 ## BUG mksh/zsh STDOUT:
 [a b]
 [a b]
+[a b    line2]
+[a b    line2]
+[a b  \]
+[a b  \]
 ## END
 ## BUG dash STDOUT:
 []
 [a b  ]
+[]
+[a b    line2]
+[]
+[a b  \]
 ## END
 
 #### read -n vs. -N

@@ -449,12 +449,15 @@ class Read(vm._Builtin):
 
         if len(names) == 0:
             names.append('REPLY')
+            do_split = False
+        else:
+            do_split = True
 
         # leftover words assigned to the last name
         if arg.a is not None:
-            max_results = 0  # no max
+            max_results = 0  # array can hold all parts
         else:
-            max_results = len(names)
+            max_results = len(names)  # the number of parts that were passed
 
         if arg.Z:  # -0 is synonym for -r -d ''
             raw = True
@@ -469,8 +472,7 @@ class Read(vm._Builtin):
             else:
                 delim_byte = pyos.NEWLINE_CH  # read a line
 
-        # We have to read more than one line if there is a line continuation (and
-        # it's not -r).
+        # Read MORE THAN ONE line for \ line continuation (and not read -r)
         parts = []  # type: List[mylib.BufWriter]
         join_next = False
         status = 0
