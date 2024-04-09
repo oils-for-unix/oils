@@ -46,11 +46,13 @@ readonly RE2C_URL="https://github.com/skvadrik/re2c/releases/download/$RE2C_VERS
 readonly CMARK_VERSION=0.29.0
 readonly CMARK_URL="https://github.com/commonmark/cmark/archive/$CMARK_VERSION.tar.gz"
 
+readonly PY_FTP_MIRROR="${PY_FTP_MIRROR:-https://www.python.org/ftp}"
+
 readonly PY2_VERSION=2.7.18
-readonly PY2_URL="https://www.python.org/ftp/python/2.7.18/Python-$PY2_VERSION.tar.xz"
+readonly PY2_URL="$PY_FTP_MIRROR/python/$PY2_VERSION/Python-$PY2_VERSION.tar.xz"
 
 readonly PY3_VERSION=3.10.4
-readonly PY3_URL="https://www.python.org/ftp/python/3.10.4/Python-$PY3_VERSION.tar.xz"
+readonly PY3_URL="$PY_FTP_MIRROR/python/$PY3_VERSION/Python-$PY3_VERSION.tar.xz"
 
 readonly BASH_VER=4.4  # don't clobber BASH_VERSION
 readonly BASH_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH_VER.tar.gz"
