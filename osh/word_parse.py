@@ -1839,7 +1839,7 @@ class WordParser(WordEmitter):
                     part = self._ReadBashRegexGroup()
                     w.parts.append(part)
                 else:
-                    assert self.token_type == Id.BashRegex_LParen
+                    assert self.token_type == Id.BashRegex_AllowedInParens
                     p_die('Invalid token in bash regex', self.cur_token)
 
             elif self.token_kind == Kind.Left:
