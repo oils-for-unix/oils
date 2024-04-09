@@ -943,16 +943,12 @@ class WordParser(WordEmitter):
         self.lexer.PushHint(Id.Op_RParen, Id.Right_BashRegexGroup)
         self._SetNext(lex_mode_e.BashRegexFakeInner)  # advance past LEFT
 
-        read_word = False  # did we just a read a word?  To handle @(||).
-
         #log('tok1 %s', self.cur_token)
         while True:
             self._GetToken()
             #log('tok2 %s', self.cur_token)
 
             if self.token_type == Id.Right_BashRegexGroup:
-                if not read_word:
-                    arms.append(CompoundWord([]))
                 right_token = self.cur_token
                 break
 
@@ -964,10 +960,9 @@ class WordParser(WordEmitter):
                 # To allow bash style [[ s =~ (a b) ]]
                 w = self._ReadCompoundWord(lex_mode_e.BashRegexFakeInner)
                 arms.append(w)
-                read_word = True
 
             elif self.token_kind == Kind.Eof:
-                p_die('Unexpected EOF reading bash regex that began here',
+                p_die('Unexpected EOF reading bash regex group that began here',
                       left_token)
 
             else:
