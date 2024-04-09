@@ -1719,7 +1719,7 @@ class JobList(object):
             return previous
 
         # TODO: Add support for job specs based on prefixes of process argv.
-        m = util.simple_regex_search(r'^%([0-9]+)$', job_spec)
+        m = util.RegexSearch(r'^%([0-9]+)$', job_spec)
         if m is not None:
             assert len(m) == 2
             job_id = int(m[1])

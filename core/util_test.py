@@ -22,7 +22,7 @@ class UtilTest(unittest.TestCase):
         n = util.NullDebugFile()
         n.write('foo')
 
-    def testSimpleRegexSearch(self):
+    def testRegexSearch(self):
         cases = [
             ('([a-z]+)([0-9]+)', 'foo123', ['foo123', 'foo', '123']),
             (r'.*\.py', 'foo.py', ['foo.py']),
@@ -35,6 +35,14 @@ class UtilTest(unittest.TestCase):
             None if IS_DARWIN else (r'', '', ['']),
             (r'^$', '', ['']),
             (r'^.$', '', None),
+
+            (r'(a*)(b*)', '', ['', '', '']),
+            (r'(a*)(b*)', 'aa', ['aa', 'aa', '']),
+            (r'(a*)(b*)', 'bb', ['bb', '', 'bb']),
+            (r'(a*)(b*)', 'aabb', ['aabb', 'aa', 'bb']),
+
+            (r'(a*(z)?)|(b*)', 'aaz', ['aaz', 'aaz', 'z', '']),
+            (r'(a*(z)?)|(b*)', 'bb', ['bb', '', '', 'bb']),
         ]
 
         # TODO:
@@ -49,7 +57,7 @@ class UtilTest(unittest.TestCase):
 
         for pat, s, expected in filter(None, cases):
             #print('CASE %s' % pat)
-            actual = util.simple_regex_search(pat, s)
+            actual = util.RegexSearch(pat, s)
             #print('actual %r' % actual)
             self.assertEqual(expected, actual)
 

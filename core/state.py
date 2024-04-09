@@ -1885,7 +1885,7 @@ class Mem(object):
                         groups = []  # type: List[str]
                     elif case2(regex_match_e.Yes):
                         m = cast(RegexMatch, top_match)
-                        groups = util.RegexGroups(m.s, m.indices)
+                        groups = util.RegexGroupStrings(m.s, m.indices)
                 return value.BashArray(groups)
 
             # Do lookup of system globals before looking at user variables.  Note: we

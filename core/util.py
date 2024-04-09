@@ -16,30 +16,37 @@ from mycpp import mylib
 
 import libc
 
-from typing import List
+from typing import List, Optional
 
 
-def RegexGroups(s, indices):
+def RegexGroupStrings(s, indices):
     # type: (str, List[int]) -> List[str]
+    """
+    For BASH_REMATCH: returns empty string for unmatched group
+    """
     groups = []  # type: List[str]
     n = len(indices)
     for i in xrange(n / 2):
         start = indices[2 * i]
         end = indices[2 * i + 1]
         if start == -1:
-            groups.append(None)
+            groups.append('')
         else:
             groups.append(s[start:end])
     return groups
 
 
-def simple_regex_search(pat, s):
-    # type: (str, str) -> List[str]
-    """Convenience wrapper around libc."""
+def RegexSearch(pat, s):
+    # type: (str, str) -> Optional[List[str]]
+    """Search a string for pattern.
+
+    Return None for no match, or a list of groups that match.  Used for some
+    runtime parsing.
+    """
     indices = libc.regex_search(pat, 0, s, 0)
     if indices is None:
         return None
-    return RegexGroups(s, indices)
+    return RegexGroupStrings(s, indices)
 
 
 class UserExit(Exception):

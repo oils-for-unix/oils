@@ -36,8 +36,10 @@ class RegexTest(unittest.TestCase):
 
     def testSplitAssignArg(self):
         CASES = [
-            ('s', ['s', None, None]),
-            ('value', ['value', None, None]),
+            # var name, op, value
+            ('s', ['s', '', '']),
+            ('value', ['value', '', '']),
+
             ('s!', None),
             ('!', None),
             ('=s', None),
@@ -49,7 +51,7 @@ class RegexTest(unittest.TestCase):
         ]
 
         for s, expected in CASES:
-            actual = util.simple_regex_search(word_eval.ASSIGN_ARG_RE, s)
+            actual = util.RegexSearch(word_eval.ASSIGN_ARG_RE, s)
             if actual is None:
                 self.assertEqual(expected, actual)  # no match
             else:

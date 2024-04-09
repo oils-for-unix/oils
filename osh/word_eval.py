@@ -169,7 +169,7 @@ def _SplitAssignArg(arg, blame_word):
     """
     # Note: it would be better to cache regcomp(), but we don't have an API for
     # that, and it probably isn't a bottleneck now
-    m = util.simple_regex_search(ASSIGN_ARG_RE, arg)
+    m = util.RegexSearch(ASSIGN_ARG_RE, arg)
     if m is None:
         e_die("Assignment builtin expected NAME=value, got %r" % arg,
               blame_word)
@@ -178,7 +178,8 @@ def _SplitAssignArg(arg, blame_word):
     # m[2] is used for grouping; ERE doesn't have non-capturing groups
 
     op = m[3]
-    if op is not None and len(op):  # declare NAME=
+    assert op is not None, op
+    if len(op):  # declare NAME=
         val = value.Str(m[4])  # type: Optional[value_t]
         append = op[0] == '+'
     else:  # declare NAME
