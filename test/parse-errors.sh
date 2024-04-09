@@ -305,8 +305,21 @@ test-regex-pipe() {
 }
 
 test-regex-space() {
+  # initial space
+  _osh-should-parse '[[ a =~ ( ) ]]'
   _osh-should-parse '[[ a =~ (b c) ]]'
   _osh-should-parse '[[ a =~ (a b)(c d) ]]'
+
+  # Hm bash allows newline inside (), but not outside
+  # I feel like we don't need to duplicate this
+
+  local s='[[ a =~ (b
+c) ]]'
+  bash -n -c "$s"
+  echo bash=$?
+  return
+
+  _osh-should-parse "$s"
 }
 
 test-regex-right-paren() {

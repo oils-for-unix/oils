@@ -374,7 +374,7 @@ LEXER_DEF[lex_mode_e.ExtGlob] = \
 # bash code: ( | ) are special
 
 LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
-    # Like lex_mode_e.Outer
+    # Like lex_mode_e.ShCommand
     R(_LITERAL_WHITELIST_REGEX, Id.Lit_Chars),
 
     # Tokens for Tilde sub.  bash weirdness: RHS of [[ x =~ ~ ]] is expanded
@@ -393,6 +393,15 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
 
     # Special rule: unquoted | is allowed in regexes
     C('|', Id.Lit_Other),
+
+    # Copied and adapted from _UNQUOTED
+    # \n & ; < > are parse errors OUTSIDE a group   [[ s =~ ; ]]
+    #            but become allowed INSIDE a group  [[ s =~ (;) ]]
+    #C('\n', Id.Op_Newline),
+    #C('&', Id.Op_Amp),
+    #C(';', Id.Op_Semi),
+    #C('>', Id.Op_Great),
+    #C('<', Id.Op_Less),
 
     # TODO: Relax & ; -- these are not accepted
     R(r'[^\0]', Id.Lit_Other),  # Everything else is a literal

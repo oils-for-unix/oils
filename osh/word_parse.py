@@ -941,10 +941,11 @@ class WordParser(WordEmitter):
         arms = []  # type: List[CompoundWord]
 
         self.lexer.PushHint(Id.Op_RParen, Id.Right_BashRegexGroup)
-        self._SetNext(lex_mode_e.BashRegex)  # advance past LEFT
+        self._SetNext(lex_mode_e.BashRegexFakeInner)  # advance past LEFT
 
         read_word = False  # did we just a read a word?  To handle @(||).
 
+        #log('tok1 %s', self.cur_token)
         while True:
             self._GetToken()
             #log('tok2 %s', self.cur_token)
