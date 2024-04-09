@@ -182,7 +182,7 @@ proc rw-lock-swap-fn(; lock, fn) {
 # Exhaustable Channels {{{
 # Channels but exhaustable
 
-proc exh-channel-new(; out_chan) {
+proc exh-channel-new(; out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_out = __pipe_netstring_pipe_out_wrap) {
   mutex-new (&write_lock)
   mutex-new (&read_lock)
   fifo-fd-new (&pipe)
@@ -197,6 +197,10 @@ proc exh-channel-new(; out_chan) {
     write_lock,
     read_lock,
     pipe,
+    methods: {
+      in_pipe: pipe_in,
+      out_pipe: pipe_out,
+    },
     message_count,
     will_write,
   })
@@ -211,28 +215,20 @@ func __sync_exh_channel_inc_untyped (buf) {
 }
 
 proc exh-channel-in(; chan) {
-  var msg = $(cat) # consume everything from input
-  var msg_len = len(msg)
   rw-lock-swap-fn (chan.message_count, __sync_exh_channel_inc_untyped)
   rw-lock-shared (chan.will_write)
   mutex-acquire (chan.write_lock)
-  write -n $msg_len$ZERO_CHAR$msg >&$[chan.pipe]
+  {
+    call chan.methods.in_pipe()
+  } >&$[chan.pipe]
   mutex-release (chan.write_lock)
   rw-unlock (chan.will_write)
 }
 
 proc __exh_channel_out_no_lock(; chan) {
-  var msg_len = ""
-  while (true) {
-    read -n 1 next_char <&$[chan.pipe]
-    if (next_char !== ZERO_CHAR) {
-      setvar msg_len = msg_len ++ next_char
-    } else {
-      break
-    }
-  }
-  read -n $msg_len chunk <&$[chan.pipe]
-  write -n $chunk
+  {
+    call chan.methods.out_pipe()
+  } <&$[chan.pipe]
 }
 
 proc exh-channel-out(; chan) {
