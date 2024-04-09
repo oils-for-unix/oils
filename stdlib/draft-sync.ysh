@@ -1,7 +1,7 @@
 #!/usr/bin/env ysh
 # vim:foldmethod=marker
 
-module stdlib/synch || return 0
+module stdlib/sync || return 0
 
 source --builtin draft-descriptor.ysh
 
@@ -208,7 +208,7 @@ proc exh-channel-new(; out_chan) {
 }
 
 # TODO: when lambda landed, this can be refactor to a parse chained to an inc.
-func __synch_exh_channel_inc_untyped (buf) {
+func __sync_exh_channel_inc_untyped (buf) {
   var typed = buf => int()
   var swapped = typed + 1
   var untyped = "$[swapped]"
@@ -218,7 +218,7 @@ func __synch_exh_channel_inc_untyped (buf) {
 proc exh-channel-in(; chan) {
   var msg = $(cat) # consume everything from input
   var msg_len = len(msg)
-  rw-lock-swap-fn (chan.message_count, __synch_exh_channel_inc_untyped)
+  rw-lock-swap-fn (chan.message_count, __sync_exh_channel_inc_untyped)
   rw-lock-shared (chan.will_write)
   mutex-acquire (chan.write_lock)
   write -n $msg_len$ZERO_CHAR$msg >&$[chan.pipe]

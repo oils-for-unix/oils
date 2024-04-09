@@ -1,9 +1,9 @@
-# spec/ysh-stdlib
+# spec/ysh-stdlib-sync
 
 ## our_shell: ysh
 
 #### fifo pipe double closes
-source --builtin draft-synch.ysh
+source --builtin draft-sync.ysh
 
 fifo-fd-new (&fd)
 try {
@@ -17,7 +17,7 @@ fifo-fd-destroy (fd)
 ## END
 
 #### semaphore syncrhonizing async jobs
-source --builtin draft-synch.ysh
+source --builtin draft-sync.ysh
 
 sema-new (1, &s)
 fork { 
@@ -51,7 +51,7 @@ sema-destroy (s)
 ## END
 
 #### semaphore init with 3, async up once and multiple down
-source --builtin draft-synch.ysh
+source --builtin draft-sync.ysh
 
 sema-new (3, &s)
 fork {
@@ -68,7 +68,7 @@ yes
 ## END
 
 #### channel reads and writes
-source --builtin draft-synch.ysh
+source --builtin draft-sync.ysh
 
 channel-new (&ch)
 
@@ -93,7 +93,7 @@ channel-destroy (ch)
 ## END
 
 #### RWLock multiple shared lock and free, one exclusive lock
-source --builtin draft-synch.ysh
+source --builtin draft-sync.ysh
 
 rw-lock-new (&lk)
 
@@ -126,7 +126,7 @@ rw-lock-destroy (lk)
 ## END
 
 #### Reading and writing rw-lock
-source --builtin draft-synch.ysh
+source --builtin draft-sync.ysh
 
 rw-lock-new (&l)
 fork {
@@ -155,7 +155,7 @@ wwwywww
 ## END
 
 #### Produce many value and exhaust the channel, and then reuse it
-source --builtin draft-synch.ysh
+source --builtin draft-sync.ysh
 
 exh-channel-new (&ch)
 
