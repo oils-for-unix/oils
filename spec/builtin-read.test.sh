@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 4
 ## compare_shells: dash bash mksh zsh ash
 
 #### Read builtin
@@ -66,7 +66,7 @@ echo "[$x/$y/$z]"
 ## stdout: [A/B/C D E]
 ## status: 0
 
-#### Read builtin with not enough variables
+#### read builtin with too few variables
 set -o errexit
 set -o nounset  # hm this doesn't change it
 read x y z <<EOF
@@ -76,7 +76,7 @@ echo /$x/$y/$z/
 ## stdout: /A/B//
 ## status: 0
 
-#### Read -n (with $REPLY)
+#### read -n (with $REPLY)
 echo 12345 > $TMP/readn.txt
 read -n 4 x < $TMP/readn.txt
 read -n 2 < $TMP/readn.txt  # Do it again with no variable
@@ -90,6 +90,87 @@ IFS= TMOUT= read -n 1 char < "$TMP/readn.txt"
 argv.py "$char"
 ## stdout: ['X']
 ## N-I dash/zsh stdout: ['']
+
+#### read -n doesn't strip whitespace (bug fix)
+case $SH in dash|zsh) exit ;; esac
+
+echo '  a b  ' | (read -n 4; echo "[$REPLY]")
+echo '  a b  ' | (read -n 5; echo "[$REPLY]")
+echo '  a b  ' | (read -n 6; echo "[$REPLY]")
+echo
+
+echo 'three vars'
+echo '  a b  ' | (read -n 4 x y z; echo "[$x] [$y] [$z]")
+echo '  a b  ' | (read -n 5 x y z; echo "[$x] [$y] [$z]")
+echo '  a b  ' | (read -n 6 x y z; echo "[$x] [$y] [$z]")
+
+## STDOUT:
+[  a ]
+[  a b]
+[  a b ]
+
+three vars
+[a] [] []
+[a] [b] []
+[a] [b] []
+## END
+
+## N-I dash/zsh STDOUT:
+## END
+
+## BUG mksh STDOUT:
+[a]
+[a b]
+[a b]
+
+three vars
+[a] [] []
+[a] [b] []
+[a] [b] []
+## END
+
+#### read -d -n - respects delimiter and splits
+
+case $SH in dash|zsh|ash) exit ;; esac
+
+echo 'delim c'
+echo '  a b c ' | (read -d 'c' -n 3; echo "[$REPLY]")
+echo '  a b c ' | (read -d 'c' -n 4; echo "[$REPLY]")
+echo '  a b c ' | (read -d 'c' -n 5; echo "[$REPLY]")
+echo
+
+echo 'three vars'
+echo '  a b c ' | (read -d 'c' -n 3 x y z; echo "[$x] [$y] [$z]")
+echo '  a b c ' | (read -d 'c' -n 4 x y z; echo "[$x] [$y] [$z]")
+echo '  a b c ' | (read -d 'c' -n 5 x y z; echo "[$x] [$y] [$z]")
+
+## STDOUT:
+delim c
+[  a]
+[  a ]
+[  a b]
+
+three vars
+[a] [] []
+[a] [] []
+[a] [b] []
+## END
+
+## N-I dash/zsh/ash STDOUT:
+## END
+
+## BUG mksh STDOUT:
+delim c
+[a]
+[a]
+[a b]
+
+three vars
+[a] [] []
+[a] [] []
+[a] [b] []
+## END
+
 
 #### read -n with invalid arg
 read -n not_a_number

@@ -427,7 +427,8 @@ class Read(vm._Builtin):
     def _Read(self, arg, names):
         # type: (arg_types.read, List[str]) -> int
 
-        # read a certain number of bytes (-1 means unset)
+        # read a certain number of bytes, NOT respecting delimiter (-1 means
+        # unset)
         arg_N = mops.BigTruncate(arg.N)
         if arg_N >= 0:
             if len(names):
@@ -474,7 +475,7 @@ class Read(vm._Builtin):
         join_next = False
         status = 0
         while True:
-            line, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n),
+            chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n),
                                      self.cmd_ev)
 
             if eof:
@@ -482,12 +483,12 @@ class Read(vm._Builtin):
                 # variables).
                 status = 1
 
-            #log('LINE %r', line)
-            if len(line) == 0:
+            #log('LINE %r', chunk)
+            if len(chunk) == 0:
                 break
 
-            spans = self.splitter.SplitForRead(line, not raw)
-            done, join_next = _AppendParts(line, spans, max_results, join_next,
+            spans = self.splitter.SplitForRead(chunk, not raw)
+            done, join_next = _AppendParts(chunk, spans, max_results, join_next,
                                            parts)
 
             #log('PARTS %s continued %s', parts, continued)
