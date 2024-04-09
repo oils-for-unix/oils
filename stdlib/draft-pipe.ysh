@@ -9,11 +9,11 @@ const __pipe_NUM_DELIM = u'$'
 # now takes log_10(n) over head. We can certainly do this better by byte encoding
 # It would be log_128(n) (using 1 bit for indicating the number ends)
 # That's a ln 128 / ln 10 which is roughly twice less overhead.
-proc zero-delim-num-pipe-in (; num) {
+proc delim-num-pipe-in (; num) {
   write -n $num$__pipe_NUM_DELIM
 }
 
-proc zero-delim-num-pipe-out (; out_num) {
+proc delim-num-pipe-out (; out_num) {
   var num_str = ""
   while (true) {
     read -n 1 next_char
@@ -32,7 +32,7 @@ proc blocked-pipe-in (; block_size) {
     var last_chunk = len(chunk) !== block_size
     if (last_chunk) {
       write -n 1
-      zero-delim-num-pipe-in (len(last_chunk))
+      delim-num-pipe-in (len(last_chunk))
       write -n ${chunk}
       break
     } else {
@@ -46,7 +46,7 @@ proc blocked-pipe-out (; block_size) {
   while (true) {
     read -n 1 last_chunk
     if (last_chunk) {
-      zero-delim-num-pipe-out (&len_last_chunk)
+      delim-num-pipe-out (&len_last_chunk)
       read -n $len_last_chunk
       break
     } else {
@@ -58,12 +58,12 @@ proc blocked-pipe-out (; block_size) {
 # Netstring {{{
 proc netstring-pipe-in () {
   var msg = $(cat) # consume everything from input
-  zero-delim-num-pipe-in (len(msg))
+  delim-num-pipe-in (len(msg))
   write -n $msg
 }
 
 proc netstring-pipe-out() {
-  zero-delim-num-pipe-out (&msg_len)
+  delim-num-pipe-out (&msg_len)
   read -n $msg_len msg
   write -n $msg
 }
