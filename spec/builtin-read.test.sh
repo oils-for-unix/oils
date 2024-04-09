@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 2
 ## compare_shells: bash mksh zsh ash
 
 #### read line from here doc

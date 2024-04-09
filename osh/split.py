@@ -102,8 +102,7 @@ class SplitContext(object):
         # type: (str) -> IfsSplitter
         """Based on the current stack frame, get the splitter."""
         if ifs is None:
-            # Like _ESCAPER, this has dynamic scope!  See the real value with
-            # getvar()
+            # Like _ESCAPER, this has dynamic scope!
             val = self.mem.GetValue('IFS', scope_e.Dynamic)
 
             UP_val = val
@@ -117,7 +116,7 @@ class SplitContext(object):
                     # TODO: Raise proper error
                     raise AssertionError("IFS shouldn't be an array")
 
-        sp = self.splitters.get(ifs)
+        sp = self.splitters.get(ifs)  # cache lookup
         if sp is None:
             # Figure out what kind of splitter we should instantiate.
 
@@ -189,9 +188,14 @@ class SplitContext(object):
                 log('SPAN %s', span)
         return _SpansToParts(s, spans)
 
-    def SplitForRead(self, line, allow_escape):
-        # type: (str, bool) -> List[Span]
-        sp = self._GetSplitter()
+    def SplitForRead(self, line, allow_escape, do_split):
+        # type: (str, bool, bool) -> List[Span]
+
+        # None: use the default splitter, consulting $IFS
+        # ''  : forces IFS='' behavior
+        ifs = None if do_split else ''
+
+        sp = self._GetSplitter(ifs=ifs)
         return sp.Split(line, allow_escape)
 
 

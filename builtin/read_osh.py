@@ -431,33 +431,37 @@ class Read(vm._Builtin):
         # unset)
         arg_N = mops.BigTruncate(arg.N)
         if arg_N >= 0:
+            s = _ReadN(arg_N, self.cmd_ev)
+
             if len(names):
-                name = names[0]
+                name = names[0]  # ignore other names
+
+                # Clear extra names, as bash does
+                for i in xrange(1, len(names)):
+                    state.BuiltinSetString(self.mem, names[i], '')
             else:
                 name = 'REPLY'  # default variable name
 
-            s = _ReadN(arg_N, self.cmd_ev)
-
             state.BuiltinSetString(self.mem, name, s)
-
-            # Clear extra names, as bash does
-            for i in xrange(1, len(names)):
-                state.BuiltinSetString(self.mem, names[i], '')
 
             # Did we read all the bytes we wanted?
             return 0 if len(s) == arg_N else 1
 
-        if len(names) == 0:
-            names.append('REPLY')
-            do_split = False
-        else:
-            do_split = True
+        do_split = False
 
-        # leftover words assigned to the last name
+        if len(names):
+            do_split = True  # read myvar does word splitting
+        else:
+            # read without args does NOT split, and fills in $REPLY
+            names.append('REPLY')
+
         if arg.a is not None:
             max_results = 0  # array can hold all parts
+            do_split = True
         else:
-            max_results = len(names)  # the number of parts that were passed
+            # Assign one part to each variable name; leftovers are assigned to
+            # the last name
+            max_results = len(names)
 
         if arg.Z:  # -0 is synonym for -r -d ''
             raw = True
@@ -478,7 +482,7 @@ class Read(vm._Builtin):
         status = 0
         while True:
             chunk, eof = _ReadPortion(delim_byte, mops.BigTruncate(arg.n),
-                                     self.cmd_ev)
+                                      self.cmd_ev)
 
             if eof:
                 # status 1 to terminate loop.  (This is true even though we set
@@ -489,9 +493,9 @@ class Read(vm._Builtin):
             if len(chunk) == 0:
                 break
 
-            spans = self.splitter.SplitForRead(chunk, not raw)
-            done, join_next = _AppendParts(chunk, spans, max_results, join_next,
-                                           parts)
+            spans = self.splitter.SplitForRead(chunk, not raw, do_split)
+            done, join_next = _AppendParts(chunk, spans, max_results,
+                                           join_next, parts)
 
             #log('PARTS %s continued %s', parts, continued)
             if done:
