@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## compare_shells: bash zsh
 
 #
@@ -463,12 +463,12 @@ $SH <<'EOF'
 EOF
 echo semi=$?
 
-# Also here
-#
-# So do we use lex_mode_e.Outer and handle ( ) then?
+$SH <<'EOF'
+[[ ';' =~ (;) ]] && echo semi paren
+EOF
+echo semi paren=$?
 
-# And do we need a mode for Lit_Space instead of WS_Space inside ( )?  This
-# could be it
+echo
 
 $SH <<'EOF'
 [[ '&' =~ & ]] && echo amp
@@ -502,6 +502,9 @@ echo newline=$?
 
 ## STDOUT:
 semi=2
+semi paren
+semi paren=0
+
 amp=2
 pipe1
 pipe2
@@ -514,6 +517,8 @@ newline=2
 
 ## BUG zsh STDOUT:
 semi=1
+semi paren=1
+
 amp=1
 pipe=1
 pipe=1

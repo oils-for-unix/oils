@@ -386,7 +386,7 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     _SIGNIFICANT_SPACE,
 
     # Analogous to Id.ExtGlob_* - we need to change lexer modes when we hit this
-    C('(', Id.BashRegexGroup_LParen),
+    C('(', Id.BashRegex_LParen),
 
     # Not special, this is like lex_mode_e.Outer
     C(')', Id.Op_RParen),
@@ -397,11 +397,11 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     # Copied and adapted from _UNQUOTED
     # \n & ; < > are parse errors OUTSIDE a group   [[ s =~ ; ]]
     #            but become allowed INSIDE a group  [[ s =~ (;) ]]
-    #C('\n', Id.Op_Newline),
-    #C('&', Id.Op_Amp),
-    #C(';', Id.Op_Semi),
-    #C('>', Id.Op_Great),
-    #C('<', Id.Op_Less),
+    C('\n', Id.BashRegex_AllowedInParens),
+    C('&', Id.BashRegex_AllowedInParens),
+    C(';', Id.BashRegex_AllowedInParens),
+    C('>', Id.BashRegex_AllowedInParens),
+    C('<', Id.BashRegex_AllowedInParens),
 
     # TODO: Relax & ; -- these are not accepted
     R(r'[^\0]', Id.Lit_Other),  # Everything else is a literal

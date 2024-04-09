@@ -194,8 +194,8 @@ class WordParser(WordEmitter):
 
         # MUTATE TOKEN for fake lexer mode.
         # This is for crazy stuff bash allows, like [[ s =~ (< >) ]]
-        if (is_fake and
-                self.cur_token.id in (Id.WS_Space, Id.Op_Less, Id.Op_Great)):
+        if (is_fake and self.cur_token.id
+                in (Id.WS_Space, Id.BashRegex_AllowedInParens)):
             self.cur_token.id = Id.Lit_Chars
 
         self.token_type = self.cur_token.id
@@ -935,7 +935,7 @@ class WordParser(WordEmitter):
         TODO: test unclosed (
         """
         left_token = self.cur_token
-        assert left_token.id == Id.BashRegexGroup_LParen, left_token
+        assert left_token.id == Id.BashRegex_LParen, left_token
 
         right_token = None  # type: Token
         arms = []  # type: List[CompoundWord]
@@ -958,7 +958,7 @@ class WordParser(WordEmitter):
 
             # lex_mode_e.BashRegex should only produce these 4 kinds of tokens
             elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
-                                     Kind.BashRegexGroup):
+                                     Kind.BashRegex):
 
                 # Fake lexer mode that translates Id.WS_Space to Id.Lit_Chars
                 # To allow bash style [[ s =~ (a b) ]]
@@ -1834,9 +1834,13 @@ class WordParser(WordEmitter):
                     part = self._ReadExtGlob()
                 w.parts.append(part)
 
-            elif self.token_kind == Kind.BashRegexGroup:  # Opening (
-                part = self._ReadBashRegexGroup()
-                w.parts.append(part)
+            elif self.token_kind == Kind.BashRegex:
+                if self.token_type == Id.BashRegex_LParen:  # Opening (
+                    part = self._ReadBashRegexGroup()
+                    w.parts.append(part)
+                else:
+                    assert self.token_type == Id.BashRegex_LParen
+                    p_die('Invalid token in bash regex', self.cur_token)
 
             elif self.token_kind == Kind.Left:
                 try_triple_quote = (self.parse_opts.parse_triple_quote() and
@@ -1991,10 +1995,11 @@ class WordParser(WordEmitter):
             return None
 
         else:
-            assert self.token_kind in (
-                Kind.VSub, Kind.Lit, Kind.History, Kind.Left, Kind.KW,
-                Kind.ControlFlow, Kind.BoolUnary, Kind.BoolBinary,
-                Kind.ExtGlob, Kind.BashRegexGroup), 'Unhandled token kind'
+            assert self.token_kind in (Kind.VSub, Kind.Lit, Kind.History,
+                                       Kind.Left, Kind.KW, Kind.ControlFlow,
+                                       Kind.BoolUnary, Kind.BoolBinary,
+                                       Kind.ExtGlob,
+                                       Kind.BashRegex), 'Unhandled token kind'
 
             if (word_mode == lex_mode_e.ShCommandBrack and
                     self.parse_opts.parse_bracket() and

@@ -317,7 +317,6 @@ test-regex-space() {
 c) ]]'
   bash -n -c "$s"
   echo bash=$?
-  return
 
   _osh-should-parse "$s"
 }
