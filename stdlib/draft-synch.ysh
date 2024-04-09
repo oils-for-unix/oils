@@ -3,71 +3,8 @@
 
 module stdlib/synch || return 0
 
-# General utilities for fds {{{
+source --builtin draft-descriptor.ysh
 
-# Get fdInfo, returns null if fd doesn't exist
-proc get-fd-info(; fd, out_fd_info) {
-  call out_fd_info->setValue($(cat /proc/$BASHPID/fdinfo/$fd))
-}
-
-proc get-fd-flag(; fd, out_fd_flag) {
-  get-fd-info (fd, &fd_info)
-  if (fd_info ~ / 'flags:' \t <capture digit+> /) {
-    call out_fd_flag->setValue(_match(1))
-  } else {
-    echo "Can't find flags in fdinfo:"
-    echo $fd_info
-    exit 1
-  }
-}
-
-# O_RDONLY (00), O_WRONLY (01) & O_RDWR (02) 
-func isFdRead(fd) {
-  # HACK: this take one octal number direct from the number string,
-  # since currently there's no way to convert number bits in std.
-  get-fd-flag (fd, &fd_flag)
-  return (fd_flag[-1] === "0" or fd_flag[-1] === "2" )
-}
-
-func isFdWrite (fd) {
-  get-fd-flag (fd, &fd_flag)
-  return (fd_flag[-1] === "1" or fd_flag[-1] === "2")
-}
-
-proc fd-destroy(; fd) {
-  var fd_info = ""
-  try {
-    get-fd-info (fd, &fd_info)
-  }
-  if (_status === 0) {
-    var fifoFile = $(readlink "/proc/$BASHPID/fd/$fd")
-    # NOTE: No need to close both end of a pipe.
-    exec {fd}>&-
-    rm $fifoFile
-  } else {
-    echo "Double Destroying the fd $fd twice!" 1>&2
-    exit 1
-  }
-}
-# }}}
-# FIFO File Descriptors {{{
-
-proc fifo-fd-new(; out_fd) {
-  # WARN: this section should be critical but for now it's not
-  # A solution may be retry on fail.
-  #====================
-  var fifo = $(mktemp -u)
-  mkfifo $fifo
-  #====================
-  exec {fd}<>$fifo
-  call out_fd->setValue(fd)
-}
-
-proc fifo-fd-destroy (; fd) {
-  fd-destroy (fd)
-}
-
-# }}}
 # Semaphores {{{
 
 proc sema-new(; value, out_sema) {
@@ -216,8 +153,9 @@ proc rw-lock-exclusive(; lock) {
 }
 
 proc rw-unlock(; lock) {
+  var lock_fd_info
   try {
-    get-fd-info (lock.fd, &lock_fd_info)
+    setvar lock_fd_info = getFdInfo(lock.fd)
   }
   if (_status === 0) {
     var lock_fd = lock.fd
@@ -231,7 +169,7 @@ proc rw-unlock(; lock) {
 
 proc rw-lock-destroy(; lock) {
   rw-lock-exclusive (lock)
-  fd-destroy (lock.fd)
+  fd-destroy-and-rm-file $[lock.fd]
 }
 
 proc rw-lock-swap-fn(; lock, fn) {

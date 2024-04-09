@@ -1,0 +1,89 @@
+#!/usr/bin/env ysh
+# vim:foldmethod=marker
+
+module stdlib/descriptor || return 0
+
+# General utilities for file descriptors {{{
+
+# NOTE: we need a proper exception system. 
+func getFdFile(fd) {
+  var fd_file
+  try {
+    setvar fd_file = $(readlink "/proc/$BASHPID/fd/$fd")
+  }
+  if (_status === 0) {
+    return (fd_file)
+  } else {
+    {
+      echo "File descriptor $fd is not opened by process $BASHPID!"
+    } >&2
+    exit 1
+  }
+}
+
+func getFdInfo(fd) {
+  var fd_info = "/proc/$BASHPID/fdinfo/$fd"
+  if test -f $fd_info {
+    return ($(cat $fd_info))
+  } else {
+    {
+      echo "File descriptor $fd is not opened by process $BASHPID!"
+    } >&2
+    exit 1
+  }
+}
+
+func getFdFlag(fd) {
+  var fd_info = getFdInfo(fd)
+  if (fd_info ~ / 'flags:' \t <capture digit+> /) {
+    return (_match(1))
+  } else {
+    {
+      echo "Can't find flags in for file descriptor $fd of process $BASHPID, here's the content:"
+      echo $fd_info
+    } >&2
+    exit 1
+  }
+}
+
+# O_RDONLY (00), O_WRONLY (01) & O_RDWR (02) 
+func isFdRead(fd) {
+  # HACK: this take one octal number direct from the number string,
+  # since currently there's no way to convert number bits in std.
+  var fd_flag = getFdFlag(fd)
+  return (fd_flag[-1] === "0" or fd_flag[-1] === "2" )
+}
+
+func isFdWrite (fd) {
+  var fd_flag = getFdFlag(fd)
+  return (fd_flag[-1] === "1" or fd_flag[-1] === "2")
+}
+
+# More strict than the standard version
+proc fd-destroy-and-rm-file(fd) {
+  var fd_file = getFdFile(fd)
+  # NOTE: bash treat >&- and <&- the same, not sure for ysh's case
+  # REFERENCE: https://unix.stackexchange.com/questions/131801/closing-a-file-descriptor-vs
+  exec {fd}>&-
+  rm $fd_file
+}
+
+# }}}
+# FIFO File Descriptors {{{
+
+proc fifo-fd-new(; out_fd) {
+  # WARN: this section should be critical but for now it's not
+  # A solution may be retry on fail.
+  #====================
+  var fifo = $(mktemp -u)
+  mkfifo $fifo
+  #====================
+  exec {fd}<>$fifo
+  call out_fd->setValue(fd)
+}
+
+proc fifo-fd-destroy (; fd) {
+  fd-destroy-and-rm-file $fd
+}
+
+# }}}
