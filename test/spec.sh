@@ -184,8 +184,12 @@ builtin-eval-source() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
-builtin-io() {
-  run-file builtin-io "$@"
+builtin-echo() {
+  run-file builtin-echo "$@"
+}
+
+builtin-read() {
+  run-file builtin-read "$@"
 }
 
 nul-bytes() {
