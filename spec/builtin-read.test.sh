@@ -1,7 +1,7 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 5
 ## compare_shells: dash bash mksh zsh ash
 
-#### Read builtin
+#### read line from here doc
 
 # NOTE: there are TABS below
 read x <<EOF
@@ -12,7 +12,7 @@ echo "[$x]"
 ## stdout: [A		B C D E]
 ## status: 0
 
-#### Read from empty file
+#### read from empty file
 echo -n '' > $TMP/empty.txt
 read x < $TMP/empty.txt
 argv.py "status=$?" "$x"
@@ -49,14 +49,20 @@ status=0
 status=2
 ## END
 
-#### Read builtin with no newline.
-# This is odd because the variable is populated successfully.  OSH/Oil might
+#### read builtin with no newline returns status 1
+
+# This is odd because the variable is populated successfully.  OSH/YSH might
 # need a separate put reading feature that doesn't use IFS.
-echo -n ZZZ | { read x; echo $?; echo $x; }
-## stdout-json: "1\nZZZ\n"
+
+echo -n ZZZ | { read x; echo status=$?; echo $x; }
+
+## STDOUT:
+status=1
+ZZZ
+## END
 ## status: 0
 
-#### Read builtin with multiple variables
+#### read builtin splits value across multiple vars
 # NOTE: there are TABS below
 read x y z <<EOF
 A		B C D E 
@@ -99,6 +105,12 @@ echo '  a b  ' | (read -n 5; echo "[$REPLY]")
 echo '  a b  ' | (read -n 6; echo "[$REPLY]")
 echo
 
+echo 'one var strips whitespace'
+echo '  a b  ' | (read -n 4 myvar; echo "[$myvar]")
+echo '  a b  ' | (read -n 5 myvar; echo "[$myvar]")
+echo '  a b  ' | (read -n 6 myvar; echo "[$myvar]")
+echo
+
 echo 'three vars'
 echo '  a b  ' | (read -n 4 x y z; echo "[$x] [$y] [$z]")
 echo '  a b  ' | (read -n 5 x y z; echo "[$x] [$y] [$z]")
@@ -108,6 +120,11 @@ echo '  a b  ' | (read -n 6 x y z; echo "[$x] [$y] [$z]")
 [  a ]
 [  a b]
 [  a b ]
+
+one var strips whitespace
+[a]
+[a b]
+[a b]
 
 three vars
 [a] [] []
@@ -119,6 +136,11 @@ three vars
 ## END
 
 ## BUG mksh STDOUT:
+[a]
+[a b]
+[a b]
+
+one var strips whitespace
 [a]
 [a b]
 [a b]
@@ -139,6 +161,12 @@ echo '  a b c ' | (read -d 'c' -n 4; echo "[$REPLY]")
 echo '  a b c ' | (read -d 'c' -n 5; echo "[$REPLY]")
 echo
 
+echo 'one var'
+echo '  a b c ' | (read -d 'c' -n 3 myvar; echo "[$myvar]")
+echo '  a b c ' | (read -d 'c' -n 4 myvar; echo "[$myvar]")
+echo '  a b c ' | (read -d 'c' -n 5 myvar; echo "[$myvar]")
+echo
+
 echo 'three vars'
 echo '  a b c ' | (read -d 'c' -n 3 x y z; echo "[$x] [$y] [$z]")
 echo '  a b c ' | (read -d 'c' -n 4 x y z; echo "[$x] [$y] [$z]")
@@ -149,6 +177,11 @@ delim c
 [  a]
 [  a ]
 [  a b]
+
+one var
+[a]
+[a]
+[a b]
 
 three vars
 [a] [] []
@@ -161,6 +194,11 @@ three vars
 
 ## BUG mksh STDOUT:
 delim c
+[a]
+[a]
+[a b]
+
+one var
 [a]
 [a]
 [a b]
@@ -190,12 +228,26 @@ echo abcxyz | { read -n 3; echo reply=$REPLY; }
 # zsh appears to hang with -k
 ## N-I zsh stdout-json: ""
 
-#### Read uses $REPLY (without -n)
-echo 123 > $TMP/readreply.txt
-read < $TMP/readreply.txt
-echo $REPLY
-## stdout: 123
+#### read without args uses $REPLY, no splitting occurs (without -n)
+
+# mksh and zsh implement splitting with $REPLY, bash/ash don't
+
+echo '  a b  ' | (read; echo "[$REPLY]")
+echo '  a b  ' | (read myvar; echo "[$myvar]")
+
+## STDOUT:
+[  a b  ]
+[a b]
+## END
 ## N-I dash stdout:
+## BUG mksh/zsh STDOUT:
+[a b]
+[a b]
+## END
+## BUG dash STDOUT:
+[]
+[a b  ]
+## END
 
 #### read -n vs. -N
 # dash, ash and zsh do not implement read -N
@@ -338,7 +390,7 @@ b
 ## END
 ## N-I dash/zsh stdout-json: ""
 
-#### Read with IFS=$'\n'
+#### read with IFS=$'\n'
 # The leading spaces are stripped if they appear in IFS.
 IFS=$(echo -e '\n')
 read var <<EOF
@@ -349,7 +401,7 @@ echo "[$var]"
 ## stdout: [  a b c]
 ## N-I dash stdout: [a b c]
 
-#### Read multiple lines with IFS=:
+#### read multiple lines with IFS=:
 # The leading spaces are stripped if they appear in IFS.
 # IFS chars are escaped with :.
 tmp=$TMP/$(basename $SH)-read-ifs.txt
@@ -364,7 +416,7 @@ read a b c d < $tmp
 printf "%s\n" "[$a|$b|$c|$d]"
 ## stdout: [  \a |b: c|d  e|]
 
-#### Read with IFS=''
+#### read with IFS=''
 IFS=''
 read x y <<EOF
   a b c d
@@ -372,7 +424,8 @@ EOF
 echo "[$x|$y]"
 ## stdout: [  a b c d|]
 
-#### Read should not respect C escapes.
+#### read does not respect C backslash escapes
+
 # bash doesn't respect these, but other shells do.  Gah!  I think bash
 # behavior makes more sense.  It only escapes IFS.
 echo '\a \b \c \d \e \f \g \h \x65 \145 \i' > $TMP/read-c.txt
@@ -383,7 +436,7 @@ echo $line
 ## BUG dash/zsh stdout-json: "\u0007 \u0008\n"
 ## BUG mksh stdout-json: "\u0007 \u0008 d \u001b \u000c g h e 145 i\n"
 
-#### Read builtin uses dynamic scope
+#### dynamic scope used to set vars
 f() {
   read head << EOF
 ref: refs/heads/dev/andy
