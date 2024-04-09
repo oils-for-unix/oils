@@ -92,6 +92,31 @@ channel-destroy (ch)
 24
 ## END
 
+#### channel but backed by blocked pipe
+source --builtin draft-sync.ysh
+
+setglobal block_size = 4  
+func blockPipeInWrap() {
+  blocked-netstring-pipe-in (block_size)
+}
+func blockPipeOutWrap() {
+  blocked-netstring-pipe-out (block_size)
+}
+
+channel-new (&ch, blockPipeInWrap, blockPipeOutWrap)
+
+var sent = "I-am-a-pretty-damn-long-string-that-need-to-be-blocked"
+
+fork {
+  write -n -- "$sent" | channel-in (ch)
+}
+
+var received = $(channel-out (ch))
+echo $[received === sent]
+## STDOUT:
+true
+## END
+
 #### RWLock multiple shared lock and free, one exclusive lock
 source --builtin draft-sync.ysh
 

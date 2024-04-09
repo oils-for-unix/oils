@@ -167,7 +167,7 @@ proc atom-destroy(; lock) {
 proc atom-swap-fn(; lock, fn) {
   atom-lock-exclusive (lock)
   var swapped = $(atom-read-out (lock)) => fn()
-  write -n $swapped | atom-write-in (lock)
+  write -n -- "$swapped" | atom-write-in (lock)
   atom-unlock (lock)
 }
 
@@ -188,7 +188,7 @@ proc exh-channel-new(; out_chan, pipe_in = __pipe_netstring_pipe_in_wrap, pipe_o
   # a lock indicating if there's upcoming writes
   atom-new (&will_write)
   atom-lock-exclusive (message_count)
-  write -n 0 | atom-write-in (message_count)
+  write -n -- 0 | atom-write-in (message_count)
   atom-unlock (message_count)
   call out_chan->setValue({
     write_lock,
@@ -240,7 +240,7 @@ proc exh-channel-exhaust(; chan, out_ret) {
   # Count how many message we have
   atom-lock-exclusive (chan.message_count)
   atom-read-out (chan.message_count) | json8 read (&num_msg)
-  write -n 0 | atom-write-in (chan.message_count)
+  write -n -- 0 | atom-write-in (chan.message_count)
   atom-unlock (chan.message_count)
 
   var ret = []
