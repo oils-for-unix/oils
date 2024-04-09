@@ -391,9 +391,6 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     # Not special, this is like lex_mode_e.Outer
     C(')', Id.Op_RParen),
 
-    # Special rule: unquoted | is allowed in regexes
-    C('|', Id.Lit_Other),
-
     # Copied and adapted from _UNQUOTED
     # \n & ; < > are parse errors OUTSIDE a group   [[ s =~ ; ]]
     #            but become allowed INSIDE a group  [[ s =~ (;) ]]
@@ -403,8 +400,8 @@ LEXER_DEF[lex_mode_e.BashRegex] = _LEFT_SUBS + _LEFT_UNQUOTED + _VARS + [
     C('>', Id.BashRegex_AllowedInParens),
     C('<', Id.BashRegex_AllowedInParens),
 
-    # TODO: Relax & ; -- these are not accepted
-    R(r'[^\0]', Id.Lit_Other),  # Everything else is a literal
+    # e.g. | is Id.Lit_Other, not pipe operator
+    R(r'[^\0]', Id.Lit_Other),  # like _UNQUOTED, any other byte is literal
 ] + _BACKSLASH  # These have to come after RegexMeta
 
 LEXER_DEF[lex_mode_e.DQ] = _DQ_BACKSLASH + [
