@@ -1,3 +1,4 @@
+## oils_failures_allowed: 2
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -269,7 +270,7 @@ g
 
 #### Procs defined inside compound statements (with redefine_proc)
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --set redefine_proc_func
 
 for x in 1 2 {
@@ -289,5 +290,54 @@ p
 ## STDOUT:
 loop
 brace
+## END
+
+#### Pass through all 4 kinds of args
+
+shopt --set ysh:upgrade
+
+proc p2 (...words; ...typed; ...named; block) {
+  pp line (words)
+  pp line (typed)
+  pp line (named)
+  pp line (block)
+}
+
+proc p1 (...words; ...typed; ...named; block) {
+  p2 @words (...typed; ...named; block)
+}
+
+p2 a b ('c', 'd', n=99) {
+  echo block
+}
+
+# Same thing
+var block = ^(echo hi)
+p2 a b ('c', 'd', n=99; block)
+
+# what happens when you do this?
+p2 a b ('c', 'd', n=99; block) {
+  echo duplicate
+}
+
+## STDOUT:
+## END
+
+#### Block arg
+shopt --set ysh:upgrade
+
+proc p ( ; ; ; block) {
+  eval (block)
+}
+
+p { echo a }
+
+var block = ^(echo b)
+
+# Hm this is ignored?  Duplicate?  Doesn't take
+p (block) { echo c }
+
+## STDOUT:
+a
 ## END
 

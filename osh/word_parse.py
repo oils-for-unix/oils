@@ -1650,7 +1650,7 @@ class WordParser(WordEmitter):
 
         arg_list = ArgList.CreateNull(alloc_lists=True)
         arg_list.left = self.cur_token
-        self.parse_ctx.ParseYshArgList(self.lexer, arg_list, start_symbol)
+        self.parse_ctx.ParseProcCallArgs(self.lexer, arg_list, start_symbol)
         return arg_list
 
     def _MaybeReadWordPart(self, is_first, lex_mode, parts):

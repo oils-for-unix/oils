@@ -212,7 +212,7 @@ class Transformer(object):
         if op_tok.id == Id.Op_LParen:
             lparen = op_tok
             rparen = p_trailer.GetChild(-1).tok
-            arglist = ArgList(lparen, [], None, [], rparen)
+            arglist = ArgList(lparen, [], None, [], None, rparen)
             if p_trailer.NumChildren() == 2:  # ()
                 return expr.FuncCall(base, arglist)
 
@@ -1057,20 +1057,21 @@ class Transformer(object):
             arglist.semi_tok = p_node.GetChild(i).tok
             self._ArgGroup(p_node.GetChild(i + 1), True, arglist)
 
-    def ToArgList(self, pnode, arglist):
+    def ProcCallArgs(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
         """
         ysh_eager_arglist: '(' [arglist] ')'
         ysh_lazy_arglist: '[' [arglist] ']'
         """
-        if pnode.NumChildren() == 2:  # f()
+        n = pnode.NumChildren()
+        if n == 2:  # f()
             return
 
-        assert pnode.NumChildren() == 3
-        p = pnode.GetChild(1)  # the X in '( X )'
+        if n >= 3:
+            p = pnode.GetChild(1)  # the X in '( X )'
 
-        assert p.typ == grammar_nt.arglist
-        self._ArgList(p, arglist)
+            assert p.typ == grammar_nt.arglist
+            self._ArgList(p, arglist)
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> TypeExpr

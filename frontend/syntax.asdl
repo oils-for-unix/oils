@@ -209,6 +209,7 @@ module syntax
   ArgList = (
      Token left, List[expr] pos_args,
      Token? semi_tok, List[NamedArg] named_args,
+     expr? block_expr,
      Token right
   )
 

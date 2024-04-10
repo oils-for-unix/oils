@@ -309,8 +309,13 @@ lhs_list: expr (',' expr)*
 # TODO: allow -> to denote aliasing/mutation
 ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
 
-# For json write (x)
-ysh_eager_arglist: '(' [arglist] ')'
+# proc arg lists, like:
+#     json write (x, indent=1)
+#     cd /tmp ( ; ; ^(echo hi))
+#
+# What about:
+#      myproc /tmp [ ; ; ^(echo hi)] - I guess this doesn't make sense?
+ysh_eager_arglist: '(' [arglist] [';' argument] ')'
 ysh_lazy_arglist: '[' [arglist] ']'
 
 #
