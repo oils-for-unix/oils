@@ -327,31 +327,31 @@ This section may help experienced shell users understand YSH.
 
 Shell:
 
-    g=G                        # global variable
-    readonly c=C               # global constant
+    g=G                         # global variable
+    readonly c=C                # global constant
 
     myfunc() {
-      local x=X                # local variable
-      readonly y=Y             # local constant
+      local x=X                 # local variable
+      readonly y=Y              # local constant
 
-      x=mutated                # mutate local
-      g=mutated                # mutate global
-      newglobal=G              # create new global
+      x=mutated                 # mutate local
+      g=mutated                 # mutate global
+      newglobal=G               # create new global
 
-      caller_var=mutated       # dynamic scope (YSH doesn't have this)
+      caller_var=mutated        # dynamic scope (YSH doesn't have this)
     }
 
 YSH:
 
-    var g = 'G'                # global variable (discouraged)
-    const c = 'C'              # global constant
+    var g = 'G'                 # global variable (discouraged)
+    const c = 'C'               # global constant
 
     proc myproc {
-      var x = 'L'              # local variable
+      var x = 'L'               # local variable
 
-      setvar x = 'mutated'     # mutate local
-      setglobal g = 'mutated'  # mutate global
-      setvar newglobal = 'G'   # create new global
+      setvar x = 'mutated'      # mutate local
+      setglobal g = 'mutated'   # mutate global
+      setglobal newglobal = 'G' # create new global
     }
 
 ## Appendix B: Problems With Top-Level Scope In Other Languages
