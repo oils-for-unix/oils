@@ -1576,30 +1576,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 else:
                     raise AssertionError()
 
-    def _EvalBashRegex(self, part, part_vals):
-        # type: (word_part.BashRegexGroup, List[part_value_t]) -> None
-        """
-        A part of a word in parens, e.g. $prefix(bash(regex)(nested))$suffix
-        """
-        part_vals.append(Piece('(', False, False))  # not quoted
-        for i, w in enumerate(part.arms):
-            self._EvalWordToParts(w, part_vals, 0)
-        part_vals.append(Piece(')', False, False))
-
     def _EvalWordPart(self, part, part_vals, flags):
         # type: (word_part_t, List[part_value_t], int) -> None
-        """Evaluate a word part.
+        """Evaluate a word part, appending to part_vals
 
         Called by _EvalWordToParts, EvalWordToString, and _EvalDoubleQuoted.
-
-        Args:
-          part: What to evaluate
-          part_vals: Output parameter.
-          quoted: was the part quoted like "$x"
-          is_subst: do_split
-
-        Returns:
-          None
         """
         quoted = bool(flags & QUOTED)
         is_subst = bool(flags & IS_SUBST)
@@ -1686,7 +1667,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             elif case(word_part_e.BashRegexGroup):
                 part = cast(word_part.BashRegexGroup, UP_part)
-                self._EvalBashRegex(part, part_vals)
+
+                part_vals.append(Piece('(', False, False))  # not quoted
+                if part.child:
+                    self._EvalWordToParts(part.child, part_vals, 0)
+                part_vals.append(Piece(')', False, False))
 
             elif case(word_part_e.Splice):
                 part = cast(word_part.Splice, UP_part)

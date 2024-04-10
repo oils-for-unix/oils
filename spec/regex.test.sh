@@ -400,13 +400,28 @@ if [[ ff =~ a-(b|  >>)-c-( ;|[de])|ff|gg ]]; then
   argv.py "${BASH_REMATCH[@]}"
 fi
 
+# empty group ()
+
+if [[ zz =~ ([a-z]+)() ]]; then
+  argv.py "${BASH_REMATCH[@]}"
+fi
+
+# nested empty group
+if [[ zz =~ ([a-z]+)(()z) ]]; then
+  argv.py "${BASH_REMATCH[@]}"
+fi
+
 ## STDOUT:
 ['a-b-c-d', 'b', 'd']
 ['ff', '', '']
+['zz', 'zz', '']
+['zz', 'z', 'z', '']
 ## END
 
 ## BUG zsh status: 1
 ## BUG zsh STDOUT:
+['']
+['']
 ['']
 ['']
 ## END

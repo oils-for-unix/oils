@@ -328,6 +328,7 @@ test-regex-right-paren() {
   _osh-should-parse '[[ (a =~ b) ]]'  # this is grouping
   _osh-should-parse '[[ (a =~ (b)) ]]'  # regex and grouping!
 
+  _osh-parse-error '[[ (a =~ ('  # EOF
   _osh-parse-error '[[ (a =~ (b'  # EOF
 
   return

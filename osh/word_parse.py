@@ -931,8 +931,8 @@ class WordParser(WordEmitter):
     def _ReadBashRegexGroup(self):
         # type: () -> word_part.BashRegexGroup
         """
-        Assuming we got (, read until )
-        TODO: test unclosed (
+        Grammar:
+        BashRegexGroup = '(' WORD? ')
         """
         left_token = self.cur_token
         assert left_token.id == Id.BashRegex_LParen, left_token
@@ -943,32 +943,24 @@ class WordParser(WordEmitter):
         self.lexer.PushHint(Id.Op_RParen, Id.Right_BashRegexGroup)
         self._SetNext(lex_mode_e.BashRegexFakeInner)  # advance past LEFT
 
-        #log('tok1 %s', self.cur_token)
-        while True:
+        self._GetToken()
+        if self.token_type == Id.Right_BashRegexGroup:  # empty ()
+            return word_part.BashRegexGroup(left_token, None, self.cur_token)
+
+        # lex_mode_e.BashRegex should only produce these 4 kinds of tokens
+        if self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub, Kind.BashRegex):
+            # Fake lexer mode that translates Id.WS_Space to Id.Lit_Chars
+            # To allow bash style [[ s =~ (a b) ]]
+            w = self._ReadCompoundWord(lex_mode_e.BashRegexFakeInner)
+            arms.append(w)
+
             self._GetToken()
-            #log('tok2 %s', self.cur_token)
+            if self.token_type != Id.Right_BashRegexGroup:
+                p_die('Expected ) to close bash regex group', self.cur_token)
 
-            if self.token_type == Id.Right_BashRegexGroup:
-                right_token = self.cur_token
-                break
+            return word_part.BashRegexGroup(left_token, w, self.cur_token)
 
-            # lex_mode_e.BashRegex should only produce these 4 kinds of tokens
-            elif self.token_kind in (Kind.Lit, Kind.Left, Kind.VSub,
-                                     Kind.BashRegex):
-
-                # Fake lexer mode that translates Id.WS_Space to Id.Lit_Chars
-                # To allow bash style [[ s =~ (a b) ]]
-                w = self._ReadCompoundWord(lex_mode_e.BashRegexFakeInner)
-                arms.append(w)
-
-            elif self.token_kind == Kind.Eof:
-                p_die('Unexpected EOF reading bash regex group that began here',
-                      left_token)
-
-            else:
-                raise AssertionError(self.cur_token)
-
-        return word_part.BashRegexGroup(left_token, arms, right_token)
+        p_die('Expected word after ( opening bash regex group', self.cur_token)
 
     def _ReadLikeDQ(self, left_token, is_ysh_expr, out_parts):
         # type: (Optional[Token], bool, List[word_part_t]) -> None
@@ -2184,3 +2176,5 @@ class WordParser(WordEmitter):
 if 0:
     import collections
     WORD_HIST = collections.Counter()
+
+# vim: sw=4
