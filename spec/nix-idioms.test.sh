@@ -154,3 +154,44 @@ declare -x NIX_LDFLAGS_foo=" -Lone/lib64"
 declare -x NIX_LDFLAGS_foo=' -Lone/lib64'
 ## END
 
+#### let idiom can be written in POSIX shell - eval ": \$(( ))"
+
+for i in 0 1 2; do
+  echo i=$i
+
+  NIX_ENFORCE_NO_NATIVE=$i
+
+  outputVar=NIX_ENFORCE_NO_NATIVE_x86_64_unknown_linux_gnu
+  inputVar=NIX_ENFORCE_NO_NATIVE
+
+  # Original Nix idiom
+
+  if test -n "$BASH_VERSION"; then
+    let "${outputVar} |= ${!inputVar:-0}" "1"
+  else
+    # OSH alternative
+    eval ": \$(( ${outputVar} |= ${!inputVar:-0} ))"
+  fi
+
+  echo NIX_ENFORCE_NO_NATIVE=$NIX_ENFORCE_NO_NATIVE
+  echo NIX_ENFORCE_NO_NATIVE_x86_64_unknown_linux_gnu=$NIX_ENFORCE_NO_NATIVE_x86_64_unknown_linux_gnu
+  echo
+
+done
+
+
+## STDOUT:
+i=0
+NIX_ENFORCE_NO_NATIVE=0
+NIX_ENFORCE_NO_NATIVE_x86_64_unknown_linux_gnu=0
+
+i=1
+NIX_ENFORCE_NO_NATIVE=1
+NIX_ENFORCE_NO_NATIVE_x86_64_unknown_linux_gnu=1
+
+i=2
+NIX_ENFORCE_NO_NATIVE=2
+NIX_ENFORCE_NO_NATIVE_x86_64_unknown_linux_gnu=3
+
+## END
+
