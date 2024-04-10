@@ -349,14 +349,14 @@ class Read(vm._Builtin):
         """
         place = None  # type: value.Place
 
-        if cmd_val.typed_args:  # read --line (&x)
+        if cmd_val.typed_args:  # read --flag (&x)
             rd = typed_args.ReaderForProc(cmd_val)
             place = rd.PosPlace()
             rd.Done()
 
             blame_loc = cmd_val.typed_args.left  # type: loc_t
 
-        else:  # read --line
+        else:  # read --flag
             var_name = '_reply'
 
             #log('VAR %s', var_name)
@@ -372,6 +372,12 @@ class Read(vm._Builtin):
             raise error.Usage(
                 "no longer supports --line; please use read -r instead (unbuffered I/O)",
                 next_loc)
+
+        num_bytes = mops.BigTruncate(arg.num_bytes)
+        if num_bytes != -1:  # read --num-bytes
+            contents = _ReadN(num_bytes, self.cmd_ev)
+            self.mem.SetPlace(place, value.Str(contents), blame_loc)
+            return 0
 
         if arg.all:  # read --all
             contents = ReadAll()
@@ -392,12 +398,12 @@ class Read(vm._Builtin):
         #if arg.q and not arg.line:
         #    e_usage('--qsn can only be used with --line', loc.Missing)
 
-        if arg.line or arg.all:
+        if arg.line or arg.all or mops.BigTruncate(arg.num_bytes) != -1:
             return self._ReadYsh(arg, arg_r, cmd_val)
 
         if cmd_val.typed_args:
             raise error.Usage(
-                "doesn't accept typed args without --line or --all",
+                "doesn't accept typed args without --all, or --num-bytes",
                 cmd_val.typed_args.left)
 
         if arg.t >= 0.0:

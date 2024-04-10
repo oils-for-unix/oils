@@ -211,6 +211,23 @@ Yes:
     read --all           # sets $_reply
     read --all (&myvar)  # sets $myvar
 
+### Read a Number of Bytes
+
+No:
+
+    read -n 3            # slow because it respects -d delim
+                         # also strips whitespace
+
+Better:
+
+    read -N 3            # good behavior, but easily confused with -n
+
+Yes:
+
+    read --num-bytes 3           # sets $_reply
+    read --num-bytes 3 (&myvar)  # sets $myvar
+
+
 ### Read Until `\0` (consume `find -print0`)
 
 No:

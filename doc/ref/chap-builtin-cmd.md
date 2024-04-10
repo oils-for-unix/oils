@@ -332,8 +332,11 @@ Also a declaration
 
 YSH adds long flags to shell's `read`:
 
-    read --all              # whole file including newline, in $_reply
-    read --all (&x)         # fills $x
+    read --all               # whole file including newline, fills $_reply
+    read --all (&x)          # fills $x
+
+    read --num-bytes 3       # read N bytes, fills _reply
+    read --num-bytes 3 (&x)  # fills $x
 
 And a convenience:
 

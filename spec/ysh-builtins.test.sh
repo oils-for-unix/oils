@@ -278,6 +278,21 @@ echo status=$?
 status=1
 ## END
 
+#### read --num-bytes
+
+echo '  a b ' | read --num-bytes 4; echo "reply=[$_reply]"
+echo '  a b ' | read --num-bytes 5; echo "reply=[$_reply]"
+
+echo '  a b ' | read --num-bytes 4 (&x); echo "x=[$x]"
+echo '  a b ' | read --num-bytes 5 (&x); echo "x=[$x]"
+
+## STDOUT:
+reply=[  a ]
+reply=[  a b]
+x=[  a ]
+x=[  a b]
+## END
+
 #### read -0 is like read -r -d ''
 set -o errexit
 
