@@ -56,7 +56,7 @@ static int  the_index = 0;
 static int  the_length = 0;
 static int  the_char = 0;
 static int  the_byte = 0;
-static char* the_input;
+static const char* the_input;
 
 
 /*
@@ -88,7 +88,7 @@ static int cont() {
 /*
     Initialize the UTF-8 decoder. The decoder is not reentrant,
 */
-void utf8_decode_init(char p[], int length) {
+void utf8_decode_init(const char p[], int length) {
     the_index = 0;
     the_input = p;
     the_length = length;
@@ -104,6 +104,12 @@ int utf8_decode_at_byte() {
     return the_byte;
 }
 
+/*
+    Get the current index. (Byte we will read next)
+*/
+int utf8_decode_at_index() {
+    return the_index;
+}
 
 /*
     Get the current character offset. This is generally used in error reporting.

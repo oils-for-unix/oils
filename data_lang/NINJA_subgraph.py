@@ -21,9 +21,18 @@ def NinjaGraph(ru):
     ru.cc_library('//data_lang/utf8_impls/utf8_decode',
                   srcs=['data_lang/utf8_impls/utf8_decode.c'])
 
+    n.rule(
+        'sh',
+        command='sh $in',
+        description='Run shell script passed to $in')
+    n.newline()
+    n.build("_gen/test/utf8/decoder-exhaustive.inc", "sh", inputs=["data_lang/utf8_decoder_tests_gen.sh"], implicit=["data_lang/utf8_decoder_tests_gen.py"])
+    n.newline()
+
     ru.cc_binary(
         'data_lang/utf8_test.cc',
         deps=['//data_lang/utf8_impls/utf8_decode'],
+        implicit=["_gen/test/utf8/decoder-exhaustive.inc"],
         # Add tcmalloc for malloc_address_test
         matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])
 

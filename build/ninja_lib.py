@@ -429,6 +429,10 @@ class Rules(object):
       headers.extend(self.cc_libs[label].generated_headers)
     return headers
 
+  def run_script(self, script_path, outputs):
+    self.n.build(outputs, "sh", [script_path])
+    self.n.newline()
+
   def asdl_library(self, asdl_path, deps = None,
       pretty_print_methods=True):
 

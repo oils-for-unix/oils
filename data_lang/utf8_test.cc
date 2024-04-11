@@ -1,4 +1,96 @@
-#include <inttypes.h>
+/*
+This file contains functions to exhaustively test our decoder. We could try
+iterating through all 4-byte sequences, although that would require ~4 billion
+cases, which is slow and wasteful. A large number of those ~4 billion cases are
+uninteresting and do not help to test our decoder. For example, <41 41 41 C0>
+("A, A, A, invalid byte") is uninteresting compared to tests for <41> ("A") and
+<C0> ("invalid byte").
+
+What are the interesting cases we want to test? To answer that question, let's
+note some properties of `decode`:
+
+ 1. decode(encode(x)) = x (for a valid Unicode string x) -- "Inverse of
+encoding"
+ 2. decode(x) fails <==> x is not a valid Unicode string
+
+Invariant (1) can be checked by iterating through all U+00 .. U+10FFFF
+codepoints (except for surrogates.) Invariant (2) requires that we collect all
+possible error states. There are two major classes. I call them "valid bit
+distributions" and "invalid bit distributions."
+
+## Checking Valid Bit Distributions
+
+  Table 3-6 from Unicode Standard 15.0.0 Ch3 [0]. UTF-8 bit distribution
+
++----------------------------+----------+----------+----------+----------+
+| Scalar Value               | 1st Byte | 2nd Byte | 3rd Byte | 4th Byte |
++----------------------------+----------+----------+----------+----------+
+| 00000000 0xxxxxxx          | 0xxxxxxx |          |          |          |
+| 00000yyy yyxxxxxx          | 110yyyyy | 10xxxxxx |          |          |
+| zzzzyyyy yyxxxxxx          | 1110zzzz | 10yyyyyy | 10xxxxxx |          |
+| 000uuuuu zzzzyyyy yyxxxxxx | 11110uuu | 10uuzzzz | 10yyyyyy | 10xxxxxx |
++----------------------------+----------+----------+----------+----------+
+
+[0]: https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf
+
+This gives 2**7 + 2**11 + 2**16 + 2**21 = 2164864 valid bit distributions.
+
+Of these 0x10FFFF - 2048 + 1 are valid encodings. The rest are one of the
+following errors:
+
+Surrogates are the results of encoding codepoints in the range U+D800 to
+U+DFFF. This gives a total of 2048 surrogates.
+
+Overlongs take the form:
+  1100_000x 10xx_xxxx                       -- 2**7
+  1110_0000 100x_xxxx 10xx_xxxx             -- 2**11
+  1111_0000 1000_xxxx 10xx_xxxx 10xx_xxxx   -- 2**18
+
+For a total of 264320 overlongs
+
+Over 10FFFF encodings take the form:
+  1111_0101 10xx_xxxx 10xx_xxxx 10xx_xxxx   -- 2**18
+  1111_0110 10xx_xxxx 10xx_xxxx 10xx_xxxx   -- 2**18
+  1111_0111 10xx_xxxx 10xx_xxxx 10xx_xxxx   -- 2**18
+
+For a total 786432 of too large values
+
+To verify, that adds to total of 2164864 values, equal to the number predicted
+by our bit distribution.
+
+## Invalid Encodings or Violations of the Bit Distribution
+
+I have enumerated all invalid sequences, *up to the number of bytes required to
+determine the validity*:
+  10xx_xxxx
+
+  110x_xxxx 0xxx_xxxx
+  110x_xxxx 11xx_xxxx
+
+  1110_xxxx 0xxx_xxxx
+  1110_xxxx 11xx_xxxx
+  1110_xxxx 10xx_xxxx 0xxx_xxxx
+  1110_xxxx 10xx_xxxx 11xx_xxxx
+
+  1111_0xxx 0xxx_xxxx
+  1111_0xxx 11xx_xxxx
+  1111_0xxx 10xx_xxxx 0xxx_xxxx
+  1111_0xxx 10xx_xxxx 11xx_xxxx
+  1111_0xxx 10xx_xxxx 10xx_xxxx 0xxx_xxxx
+  1111_0xxx 10xx_xxxx 10xx_xxxx 11xx_xxxx
+
+  1111_1xxx
+
+This gives 6597192 possible "minimal invalid encoding sequences."
+
+Combining the valid and invalid sequences we have 8762056 "interesting" cases.
+This is _much_ lower than 2**32, while still exhaustively testing our
+implementations of `decode(x)`. We generate these exhaustive tests for each
+decoder in data_lang/utf8_decoder_tests_gen.py, which results in the
+_gen/test/utf8/decoder-exhaustive.inc file #include-ed below.
+*/
+
+#include <algorithm>
 
 #include "data_lang/utf8_impls/bjoern_dfa.h"
 #include "data_lang/utf8_impls/utf8_decode.h"
@@ -8,7 +100,6 @@
 
 // Copied from UTF-8 proc
 // https://github.com/JuliaStrings/utf8proc/blob/master/utf8proc.c#L177
-
 int utf8proc_encode_char(uint32_t uc, uint8_t* dst) {
   if (uc < 0x80) {
     dst[0] = (uint8_t)uc;
@@ -34,6 +125,64 @@ int utf8proc_encode_char(uint32_t uc, uint8_t* dst) {
     return 0;
 }
 
+enum utf8_decode_result {
+  UTF8_DECODE_OK = 0,
+  UTF8_DECODE_ERROR = -1,
+};
+
+const char *utf8_decode_result_str(int value) {
+  switch (value) {
+    case UTF8_DECODE_OK: return "UTF8_DECODE_OK";
+    case UTF8_DECODE_ERROR: return "UTF8_DECODE_ERROR";
+    default: return NULL;
+  }
+}
+
+/**
+ * Decode the next codepoint from a string.
+ *
+ * Will write to `string` to post-increment and `codepoint` for the result.
+ * `codepoint` may not be valid if the result != UTF8_DECODE_OK.
+ */
+utf8_decode_result bjorn_utf8_next(const uint8_t** string, uint32_t *codepoint) {
+  uint32_t state = 0;
+
+  while (decode(&state, codepoint, **string) && **string) {
+    *string += 1;
+  }
+
+  if (state != UTF8_ACCEPT) {
+    return UTF8_DECODE_ERROR;
+  }
+
+  *string += 1;
+
+  return UTF8_DECODE_OK;
+}
+
+utf8_decode_result crockford_utf8_next(const uint8_t** string, uint32_t *codepoint) {
+  const char* s = reinterpret_cast<const char*>(*string);
+  utf8_decode_init(s, std::max(strlen(s), 1UL));
+
+  int c = utf8_decode_next();
+  switch (c) {
+  case UTF8_END:
+    return UTF8_DECODE_ERROR;
+
+  case UTF8_ERROR:
+    return UTF8_DECODE_ERROR;
+
+  default:
+    *codepoint = c;
+    *string += utf8_decode_at_index();
+    return UTF8_DECODE_OK;
+  }
+}
+
+// Exhaustive tests for the UTF8 decoder are generated by
+// data_lang/utf8_decoder_tests_gen.py when building this file using ninja.
+#include "_gen/test/utf8/decoder-exhaustive.inc"
+
 void printCodePoints(const uint8_t* s) {
   uint32_t codepoint;
   uint32_t state = 0;
@@ -53,7 +202,7 @@ TEST dfa_test() {
   PASS();
 }
 
-uint32_t num_code_points = 17 * 1 << 16;
+uint32_t num_code_points = 0x10FFFF;
 
 // uint32_t num_code_points = 1 << 21;  // DFA has 983,040 disagreements
 
@@ -337,12 +486,23 @@ GREATEST_MAIN_DEFS();
 int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
-  RUN_TEST(dfa_test);
-  RUN_TEST(decode_all_test);
-  RUN_TEST(exhaustive_test);
-  RUN_TEST(enumerate_utf8_test);
-  RUN_TEST(crockford_test);
+#define RUN_EXHAUSTIVE_TEST(decoder)                      \
+  RUN_TEST(decoder##_utf8_decoder_identity);              \
+  RUN_TEST(decoder##_utf8_decoder_surrogates);            \
+  RUN_TEST(decoder##_utf8_decoder_overlong);              \
+  RUN_TEST(decoder##_utf8_decoder_too_large);             \
+  RUN_TEST(decoder##_utf8_decoder_bad_bit_distribution);
+
+  RUN_EXHAUSTIVE_TEST(bjorn)
+  RUN_EXHAUSTIVE_TEST(crockford)
+
   RUN_TEST(surrogate_test);
+  RUN_TEST(loop_all_test);
+  RUN_TEST(crockford_test);
+  RUN_TEST(enumerate_utf8_test);
+  RUN_TEST(exhaustive_test);
+  RUN_TEST(decode_all_test);
+  RUN_TEST(dfa_test);
 
   GREATEST_MAIN_END();
   return 0;
