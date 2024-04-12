@@ -197,7 +197,7 @@ class Transformer(object):
     def _Trailer(self, base, p_trailer):
         # type: (expr_t, PNode) -> expr_t
         """
-        Trailer: ( '(' [arglist] ')' | '[' subscriptlist ']'
+        trailer: ( '(' [arglist] ')' | '[' subscriptlist ']'
                  | '.' NAME | '->' NAME | '::' NAME
                  )
         """
@@ -415,9 +415,7 @@ class Transformer(object):
 
     def _NameType(self, p_node):
         # type: (PNode) -> NameType
-        """
-        name_type: Expr_Name [':'] [type_expr]
-        """
+        """ name_type: Expr_Name [':'] [type_expr] """
         name_tok = p_node.GetChild(0).tok
         typ = None  # type: Optional[TypeExpr]
 
@@ -431,7 +429,7 @@ class Transformer(object):
 
     def _NameTypeList(self, p_node):
         # type: (PNode) -> List[NameType]
-        """name_type_list: name_type (',' name_type)*"""
+        """ name_type_list: name_type (',' name_type)* """
         assert p_node.typ == grammar_nt.name_type_list
         results = []  # type: List[NameType]
 
@@ -511,7 +509,7 @@ class Transformer(object):
 
     def Expr(self, pnode):
         # type: (PNode) -> expr_t
-        """Transform expressions (as opposed to statements)."""
+        """Transform expressions (as opposed to statements)"""
         typ = pnode.typ
 
         #
@@ -860,8 +858,7 @@ class Transformer(object):
 
     def MakeMutation(self, p_node):
         # type: (PNode) -> command.Mutation
-        """Parse tree to LST
-        
+        """
         ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
         """
         typ = p_node.typ
@@ -889,7 +886,6 @@ class Transformer(object):
         """
         eggex: '/' regex [';' re_flag* [';' Expr_Name] ] '/'
         """
-        n = p_node.NumChildren()
         left = p_node.GetChild(0).tok
         regex = self._Regex(p_node.GetChild(1))
 
@@ -949,8 +945,7 @@ class Transformer(object):
 
     def _Argument(self, p_node, after_semi, arglist):
         # type: (PNode, bool, ArgList) -> None
-        """Parse tree to LST
-
+        """
         argument: (
           test [comp_for]
         | test '=' test  # named arg
@@ -1026,8 +1021,8 @@ class Transformer(object):
         if n == 0:
             return
 
-        p0 = p_node.GetChild(0)
         i = 0
+        p0 = p_node.GetChild(0)
         if p0.typ == grammar_nt.arg_group:
             self._ArgGroup(p0, False, arglist)
             i += 1
@@ -1063,8 +1058,6 @@ class Transformer(object):
         """
         assert pnode.typ == grammar_nt.type_expr, pnode.typ
 
-        #self.p_printer.Print(pnode)
-
         ty = TypeExpr.CreateNull()  # don't allocate children
 
         ty.tok = pnode.GetChild(0).tok
@@ -1098,8 +1091,6 @@ class Transformer(object):
         default_val = None  # type: expr_t
         type_ = None  # type: TypeExpr
 
-        #self.p_printer.Print(pnode)
-
         if n == 1:
             # proc p(a)
             pass
@@ -1127,8 +1118,6 @@ class Transformer(object):
           [ (param | '...' Expr_Name) [,] ]
         """
         assert p_node.typ == grammar_nt.param_group, p_node
-
-        #self.p_printer.Print(p_node)
 
         params = []  # type: List[Param]
         rest_of = None  # type: Optional[RestParam]
@@ -1164,8 +1153,6 @@ class Transformer(object):
         """
         typ = p_node.typ
         assert typ == grammar_nt.ysh_proc
-
-        #self.p_printer.Print(p_node)
 
         n = p_node.NumChildren()
         if n == 1:  # proc f {
@@ -1248,8 +1235,7 @@ class Transformer(object):
 
     def YshFunc(self, p_node, out):
         # type: (PNode, Func) -> None
-        """Parse tree to LST
-
+        """
         ysh_func: Expr_Name '(' [param_group] [';' param_group] ')'
         """
         assert p_node.typ == grammar_nt.ysh_func
@@ -1276,7 +1262,7 @@ class Transformer(object):
             out.named = self._ParamGroup(child)
 
     #
-    # Regex Language
+    # Eggex Language
     #
 
     def _RangeCharSingleQuoted(self, p_node):
@@ -1641,16 +1627,16 @@ class Transformer(object):
         """
         assert p_node.typ == grammar_nt.regex
 
-        if p_node.NumChildren() == 1:
-            return self._ReAlt(p_node.GetChild(0))
-
-        # NOTE: We're losing the | and or operators
-        alts = []  # type: List[re_t]
         n = p_node.NumChildren()
+        alts = []  # type: List[re_t]
         for i in xrange(0, n, 2):  # was children[::2]
             c = p_node.GetChild(i)
             alts.append(self._ReAlt(c))
-        return re.Alt(alts)
+
+        if len(alts) == 1:
+            return alts[0]
+        else:
+            return re.Alt(alts)
 
 
 # vim: sw=4
