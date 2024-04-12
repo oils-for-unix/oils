@@ -118,7 +118,7 @@ def MakeBuiltinArgv(argv1):
     argv = ['']  # dummy for argv[0]
     argv.extend(argv1)
     missing = None  # type: CompoundWord
-    return cmd_value.Argv(argv, [missing] * len(argv), None, None, None)
+    return cmd_value.Argv(argv, [missing] * len(argv), None, None, None, None)
 
 
 class Deps(object):

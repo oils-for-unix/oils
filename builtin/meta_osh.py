@@ -280,7 +280,8 @@ class Command(vm._Builtin):
             return status
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args)
+                                  cmd_val.pos_args, cmd_val.named_args,
+                                  cmd_val.block_val)
 
         # If we respected do_fork here instead of passing True, the case
         # 'command date | wc -l' would take 2 processes instead of 3.  But no other
@@ -299,7 +300,7 @@ def _ShiftArgv(cmd_val):
     # type: (cmd_value.Argv) -> cmd_value.Argv
     return cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
                           cmd_val.typed_args, cmd_val.pos_args,
-                          cmd_val.named_args)
+                          cmd_val.named_args, cmd_val.block_val)
 
 
 class Builtin(vm._Builtin):
@@ -360,7 +361,8 @@ class RunProc(vm._Builtin):
             return 1
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args)
+                                  cmd_val.pos_args, cmd_val.named_args,
+                                  cmd_val.block_val)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,

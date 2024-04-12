@@ -13,6 +13,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, ProcDefaults,
                                       LeftName)
 
 from core import error
+from core.error import e_die
 from core import state
 from core import vm
 from frontend import lexer
@@ -112,31 +113,34 @@ def EvalProcDefaults(expr_ev, sig):
     else:
         pos_defaults = None  # in case there's a block param
 
-    # Block param is treated like another positional param, so you can also
-    # pass it
-    #    cd /tmp (myblock)
-    if sig.block_param:
-        exp = sig.block_param.default_val
-        if exp:
-            val = expr_ev.EvalExpr(exp, sig.block_param.blame_tok)
-            # TODO: it can only be ^() or null
-            if val.tag() not in (value_e.Null, value_e.Command):
-                raise error.TypeErr(
-                    val, "Default value for block should be Command or Null",
-                    sig.block_param.blame_tok)
-        else:
-            val = None  # no default, different than value.Null
-
-        if pos_defaults is None:
-            pos_defaults = []
-        pos_defaults.append(val)
-
     if sig.named:
         named_defaults = _EvalNamedDefaults(expr_ev, sig.named.params)
     else:
         named_defaults = None
 
-    return ProcDefaults(word_defaults, pos_defaults, named_defaults)
+    # cd /tmp (; ; myblock)
+    if sig.block_param:
+        exp = sig.block_param.default_val
+        if exp:
+            block_default = expr_ev.EvalExpr(exp, sig.block_param.blame_tok)
+            # It can only be ^() or null
+            if block_default.tag() not in (value_e.Null, value_e.Command):
+                raise error.TypeErr(
+                    val, "Default value for block should be Command or Null",
+                    sig.block_param.blame_tok)
+        else:
+            block_default = None  # no default, different than value.Null
+    else:
+        block_default = None
+
+    # TEMPORARY: old behavior
+    if block_default:
+        if pos_defaults is None:
+            pos_defaults = []
+        pos_defaults.append(block_default)
+
+    return ProcDefaults(word_defaults, pos_defaults, named_defaults,
+                        block_default)
 
 
 def _EvalPosArgs(expr_ev, exprs, pos_args):
@@ -249,12 +253,22 @@ def EvalTypedArgsToProc(
                 if ty.named_args is not None:
                     cmd_val.named_args = _EvalNamedArgs(expr_ev, ty.named_args)
 
-    # Pass the unevaluated block.
+        if ty.block_expr and node.block:
+            e_die("Can't accept both block expression and block literal",
+                  node.block.brace_group.left)
+
+        # p ( ; ; block) is an expression to be evaluated
+        if ty.block_expr:
+            # TODO: evaluate it
+            pass
+
+    # p { echo hi } is an unevaluated block
     if node.block:
+        # TODO: conslidate value.Block (holds LiteralBlock) and value.Command
         cmd_val.pos_args.append(value.Block(node.block))
 
-        # Important invariant: cmd_val look the same for
-        #   eval (^(echo hi))
+        # Add location info so the cmd_val looks the same for both:
+        #   eval (; ; ^(echo hi))
         #   eval { echo hi }
         if not cmd_val.typed_args:
             cmd_val.typed_args = ArgList.CreateNull()
@@ -544,3 +558,6 @@ def CallUserFunc(
             raise AssertionError('IntControlFlow in func')
 
     raise AssertionError('unreachable')
+
+
+# vim: sw=4

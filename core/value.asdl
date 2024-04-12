@@ -21,8 +21,9 @@ module value
 
   ProcDefaults = (
     List[value]? for_word,  # all of them are value.Str
-    List[value]? for_typed,  # block default is also here
+    List[value]? for_typed,
     Dict[str, value]? for_named,
+    value? for_block,
   )
 
   LeftName = (str name, loc blame_loc)

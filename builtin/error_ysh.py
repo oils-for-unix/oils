@@ -160,7 +160,8 @@ class BoolStatus(vm._Builtin):
 
         argv, locs = arg_r.Rest2()
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args)
+                                  cmd_val.pos_args, cmd_val.named_args,
+                                  cmd_val.block_val)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,

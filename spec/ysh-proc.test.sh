@@ -300,7 +300,9 @@ proc p2 (...words; ...typed; ...named; block) {
   pp line (words)
   pp line (typed)
   pp line (named)
-  pp line (block)
+  #pp line (block)
+  # To avoid <Block 0x??> - could change pp line
+  echo $[type(block)]
 }
 
 proc p1 (...words; ...typed; ...named; block) {
@@ -310,6 +312,7 @@ proc p1 (...words; ...typed; ...named; block) {
 p2 a b ('c', 'd', n=99) {
   echo literal
 }
+echo
 
 # Same thing
 var block = ^(echo expression)
@@ -317,9 +320,10 @@ var block = ^(echo expression)
 # Note: you need the second explicit ;
 
 p2 a b ('c', 'd'; n=99; block)
+echo
 
 # what happens when you do this?
-p2 a b ('c', 'd', n=99; block) {
+p2 a b ('c', 'd'; n=99; block) {
   echo duplicate
 }
 

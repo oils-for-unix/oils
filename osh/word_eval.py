@@ -2161,7 +2161,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     strs.append(''.join(tmp))  # no split or glob
                     locs.append(w)
 
-        return cmd_value.Argv(strs, locs, None, None, None)
+        return cmd_value.Argv(strs, locs, None, None, None, None)
 
     def EvalWordSequence2(self, words, allow_assign=False):
         # type: (List[CompoundWord], bool) -> cmd_value_t
@@ -2258,7 +2258,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # A non-assignment command.
         # NOTE: Can't look up builtins here like we did for assignment, because
         # functions can override builtins.
-        return cmd_value.Argv(strs, locs, None, None, None)
+        return cmd_value.Argv(strs, locs, None, None, None, None)
 
     def EvalWordSequence(self, words):
         # type: (List[CompoundWord]) -> List[str]
