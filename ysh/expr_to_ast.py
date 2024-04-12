@@ -329,16 +329,17 @@ class Transformer(object):
             raise AssertionError()
 
         if id0 == Id.Op_LParen:
-            if n == 1:  # parenthesized expression like (x+1) or (x)
+            # Parenthesized expression like (x+1) or (x)
+            if n == 1:
                 return self.Expr(p_node.GetChild(0))
 
-            # (1,)  (1, 2)  etc.
+            # Tuples (1,)  (1, 2)  etc. - TODO: should be a list literal?
             if p_node.GetChild(1).typ == Id.Arith_Comma:
                 return self._Tuple(p_node)
 
-            raise NotImplementedError('testlist_comp')
+            raise AssertionError()
 
-        if id0 == Id.Op_LBracket:
+        if id0 == Id.Op_LBracket:  # List [1,2,3]
             elts = []  # type: List[expr_t]
             for i in xrange(0, n, 2):  # skip commas
                 elts.append(self.Expr(p_node.GetChild(i)))
@@ -410,7 +411,7 @@ class Transformer(object):
             p_die("unix suffix implemented", parent.GetChild(1).tok)
             #return self.Expr(parent.GetChild(0))
 
-        raise NotImplementedError(Id_str(id_))
+        raise AssertionError(Id_str(id_))
 
     def _NameType(self, p_node):
         # type: (PNode) -> NameType
@@ -931,7 +932,8 @@ class Transformer(object):
 
             if typ == grammar_nt.pat_else:
                 return pat.Else
-            elif typ == grammar_nt.pat_exprs:
+
+            if typ == grammar_nt.pat_exprs:
                 exprs = []  # type: List[expr_t]
                 for i in xrange(pattern.NumChildren()):
                     child = pattern.GetChild(i)
@@ -940,10 +942,10 @@ class Transformer(object):
                         exprs.append(expr)
                 return pat.YshExprs(exprs)
 
-        elif typ == grammar_nt.eggex:
+        if typ == grammar_nt.eggex:
             return self._Eggex(pattern)
 
-        raise NotImplementedError()
+        raise AssertionError()
 
     def _Argument(self, p_node, after_semi, arglist):
         # type: (PNode, bool, ArgList) -> None
@@ -1554,7 +1556,7 @@ class Transformer(object):
 
             return re.Capture(regex, as_name, func_name)
 
-        raise NotImplementedError(typ0)
+        raise AssertionError(typ0)
 
     def _RepeatOp(self, p_repeat):
         # type: (PNode) -> re_repeat_t
@@ -1601,45 +1603,47 @@ class Transformer(object):
 
         raise AssertionError(id_)
 
+    def _ReAlt(self, p_node):
+        # type: (PNode) -> re_t
+        """
+        re_alt: (re_atom [repeat_op])+
+        """
+        assert p_node.typ == grammar_nt.re_alt
+
+        i = 0
+        n = p_node.NumChildren()
+        seq = []  # type: List[re_t]
+        while i < n:
+            r = self._ReAtom(p_node.GetChild(i))
+            i += 1
+            if i < n and p_node.GetChild(i).typ == grammar_nt.repeat_op:
+                repeat_op = self._RepeatOp(p_node.GetChild(i))
+                r = re.Repeat(r, repeat_op)
+                i += 1
+            seq.append(r)
+
+        if len(seq) == 1:
+            return seq[0]
+        else:
+            return re.Seq(seq)
+
     def _Regex(self, p_node):
         # type: (PNode) -> re_t
-        typ = p_node.typ
+        """
+        regex: [re_alt] (('|'|'or') re_alt)*
+        """
+        assert p_node.typ == grammar_nt.regex
 
-        if typ == grammar_nt.regex:
-            # regex: [re_alt] (('|'|'or') re_alt)*
+        if p_node.NumChildren() == 1:
+            return self._ReAlt(p_node.GetChild(0))
 
-            if p_node.NumChildren() == 1:
-                return self._Regex(p_node.GetChild(0))
-
-            # NOTE: We're losing the | and or operators
-            alts = []  # type: List[re_t]
-            n = p_node.NumChildren()
-            for i in xrange(0, n, 2):  # was children[::2]
-                c = p_node.GetChild(i)
-                alts.append(self._Regex(c))
-            return re.Alt(alts)
-
-        if typ == grammar_nt.re_alt:
-            # re_alt: (re_atom [repeat_op])+
-            i = 0
-            n = p_node.NumChildren()
-            seq = []  # type: List[re_t]
-            while i < n:
-                r = self._ReAtom(p_node.GetChild(i))
-                i += 1
-                if i < n and p_node.GetChild(i).typ == grammar_nt.repeat_op:
-                    repeat_op = self._RepeatOp(p_node.GetChild(i))
-                    r = re.Repeat(r, repeat_op)
-                    i += 1
-                seq.append(r)
-
-            if len(seq) == 1:
-                return seq[0]
-            else:
-                return re.Seq(seq)
-
-        nt_name = self.number2symbol[typ]
-        raise NotImplementedError(nt_name)
+        # NOTE: We're losing the | and or operators
+        alts = []  # type: List[re_t]
+        n = p_node.NumChildren()
+        for i in xrange(0, n, 2):  # was children[::2]
+            c = p_node.GetChild(i)
+            alts.append(self._ReAlt(c))
+        return re.Alt(alts)
 
 
 # vim: sw=4
