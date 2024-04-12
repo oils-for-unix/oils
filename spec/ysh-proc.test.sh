@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -292,6 +292,23 @@ loop
 brace
 ## END
 
+#### Block can be passed literally, or as expression in third arg group
+shopt --set ysh:upgrade
+
+proc p ( ; ; ; block) {
+  eval (block)
+}
+
+p { echo literal }
+
+var block = ^(echo expression)
+p (; ; block)
+
+## STDOUT:
+literal
+expression
+## END
+
 #### Pass through all 4 kinds of args
 
 shopt --set ysh:upgrade
@@ -327,24 +344,16 @@ p2 a b ('c', 'd'; n=99; block) {
   echo duplicate
 }
 
+## status: 1
 ## STDOUT:
+(List)   ["a","b"]
+(List)   ["c","d"]
+(Dict)   {"n":99}
+Block
+
+(List)   ["a","b"]
+(List)   ["c","d"]
+(Dict)   {"n":99}
+Command
+
 ## END
-
-#### Block arg
-shopt --set ysh:upgrade
-
-proc p ( ; ; ; block) {
-  eval (block)
-}
-
-p { echo a }
-
-var block = ^(echo b)
-
-# Hm this is ignored?  Duplicate?  Doesn't take
-p (block) { echo c }
-
-## STDOUT:
-a
-## END
-

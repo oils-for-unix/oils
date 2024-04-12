@@ -23,14 +23,14 @@ def DoesNotAccept(arg_list):
         e_usage('got unexpected typed args', arg_list.left)
 
 
-def OptionalCommand(cmd_val):
+def OptionalBlock(cmd_val):
     # type: (cmd_value.Argv) -> Optional[command_t]
     """Helper for shopt, etc."""
 
     cmd = None  # type: Optional[command_t]
     if cmd_val.typed_args:
         r = ReaderForProc(cmd_val)
-        cmd = r.OptionalCommand()
+        cmd = r.OptionalBlock()
         r.Done()
     return cmd
 
@@ -57,7 +57,7 @@ def ReaderForProc(cmd_val):
     arg_list = (cmd_val.typed_args
                 if cmd_val.typed_args is not None else ArgList.CreateNull())
 
-    rd = Reader(pos_args, named_args, arg_list)
+    rd = Reader(pos_args, named_args, cmd_val.block_arg, arg_list)
 
     # Fix location info bug with 'try' or try foo' -- it should get a typed arg
     rd.SetFallbackLocation(cmd_val.arg_locs[0])
@@ -102,14 +102,20 @@ class Reader(object):
       ReaderForProc()
     """
 
-    def __init__(self, pos_args, named_args, arg_list, is_bound=False):
-        # type: (List[value_t], Dict[str, value_t], ArgList, bool) -> None
+    def __init__(self,
+                 pos_args,
+                 named_args,
+                 block_arg,
+                 arg_list,
+                 is_bound=False):
+        # type: (List[value_t], Dict[str, value_t], Optional[value_t], ArgList, bool) -> None
         self.pos_args = pos_args
         self.pos_consumed = 0
         # TODO: Add LHS of attribute expression to value.BoundFunc and pass
         # that through to here?
         self.is_bound = is_bound
         self.named_args = named_args
+        self.block_arg = block_arg
 
         # Note: may be ArgList.CreateNull()
         self.arg_list = arg_list
@@ -283,6 +289,19 @@ class Reader(object):
         if val.tag() == value_e.Command:
             return cast(value.Command, val).c
 
+        # eval (myblock) uses this
+        if val.tag() == value_e.Block:
+            return cast(value.Block, val).block.brace_group
+
+        raise error.TypeErr(val,
+                            'Arg %d should be a Command' % self.pos_consumed,
+                            self.BlamePos())
+
+    def _ToBlock(self, val):
+        # type: (value_t) -> command_t
+        if val.tag() == value_e.Command:
+            return cast(value.Command, val).c
+
         # Special case for hay
         # Foo { x = 1 }
         if val.tag() == value_e.Block:
@@ -365,29 +384,38 @@ class Reader(object):
         val = self.PosValue()
         return self._ToIO(val)
 
-    def PosExpr(self):
-        # type: () -> expr_t
-        val = self.PosValue()
-        return self._ToExpr(val)
-
     def PosCommand(self):
         # type: () -> command_t
         val = self.PosValue()
         return self._ToCommand(val)
 
-    def OptionalCommand(self):
+    def PosExpr(self):
+        # type: () -> expr_t
+        val = self.PosValue()
+        return self._ToExpr(val)
+
+    #
+    # Block arg
+    #
+
+    def RequiredBlock(self):
+        # type: () -> command_t
+        if self.block_arg is None:
+            raise error.TypeErrVerbose('Expected a block arg',
+                                       self.LeastSpecificLocation())
+        return self._ToBlock(self.block_arg)
+
+    def OptionalBlock(self):
         # type: () -> Optional[command_t]
-        val = self.OptionalValue()
-        if val is None:
+        if self.block_arg is None:
             return None
-        return self._ToCommand(val)
+        return self._ToBlock(self.block_arg)
 
     def OptionalLiteralBlock(self):
         # type: () -> Optional[LiteralBlock]
-        val = self.OptionalValue()
-        if val is None:
+        if self.block_arg is None:
             return None
-        return self._ToLiteralBlock(val)
+        return self._ToLiteralBlock(self.block_arg)
 
     def RestPos(self):
         # type: () -> List[value_t]

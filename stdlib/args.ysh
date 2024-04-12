@@ -47,7 +47,7 @@ proc parser (; place ; ; block_def) {
   ##   var args = parseArgs(spec, ARGV)
 
   var p = {flags: [], args: []}
-  ctx push (p, block_def)
+  ctx push (p; ; block_def)
 
   # Validate that p.rest = [name] or null and reduce p.rest into name or null.
   if ('rest' in p) {

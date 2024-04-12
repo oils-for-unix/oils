@@ -107,7 +107,7 @@ echo status=$_status
 #### mini-parseArgs
 proc parser (; place ; ; block_def) {
   var p = {}
-  ctx push (p, block_def)
+  ctx push (p; ; block_def)
   call place->setValue(p)
 }
 

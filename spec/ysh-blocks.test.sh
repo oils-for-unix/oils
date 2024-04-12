@@ -129,10 +129,10 @@ two
 shopt -s oil:all
 
 # literal
-cd /tmp (^(echo $PWD))
+cd /tmp (; ; ^(echo $PWD))
 
 const myblock = ^(echo $PWD)
-cd /tmp (myblock)
+cd /tmp (; ; myblock)
 
 ## STDOUT:
 /tmp

@@ -148,7 +148,7 @@ class Cd(vm._Builtin):
         # Other shells use global variables.
         self.mem.SetPwd(real_dest_dir)
 
-        cmd = typed_args.OptionalCommand(cmd_val)
+        cmd = typed_args.OptionalBlock(cmd_val)
         if cmd:
             out_errs = []  # type: List[bool]
             with ctx_CdBlock(self.dir_stack, real_dest_dir, self.mem,

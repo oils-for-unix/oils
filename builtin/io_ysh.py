@@ -236,7 +236,7 @@ class Fopen(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalCommand(cmd_val)
+        cmd = typed_args.OptionalBlock(cmd_val)
         if not cmd:
             raise error.Usage('expected a block', loc.Missing)
 

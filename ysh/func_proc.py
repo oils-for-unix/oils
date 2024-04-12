@@ -17,6 +17,7 @@ from core.error import e_die
 from core import state
 from core import vm
 from frontend import lexer
+from frontend import location
 from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log, NewDict
@@ -133,11 +134,6 @@ def EvalProcDefaults(expr_ev, sig):
             block_default = None  # no default, different than value.Null
     else:
         block_default = None
-
-    # TEMPORARY: old behavior
-    if pos_defaults is None:
-        pos_defaults = []
-    pos_defaults.append(block_default)
 
     return ProcDefaults(word_defaults, pos_defaults, named_defaults,
                         block_default)
@@ -259,17 +255,17 @@ def EvalTypedArgsToProc(
 
         # p ( ; ; block) is an expression to be evaluated
         if ty.block_expr:
-            # TODO: evaluate it
-            pass
+            # fallback location is (
+            cmd_val.block_arg = expr_ev.EvalExpr(ty.block_expr, ty.left)
 
     # p { echo hi } is an unevaluated block
     if node.block:
         # TODO: conslidate value.Block (holds LiteralBlock) and value.Command
-        cmd_val.pos_args.append(value.Block(node.block))
+        cmd_val.block_arg = value.Block(node.block)
 
         # Add location info so the cmd_val looks the same for both:
-        #   eval (; ; ^(echo hi))
-        #   eval { echo hi }
+        #   cd /tmp (; ; ^(echo hi))
+        #   cd /tmp { echo hi }
         if not cmd_val.typed_args:
             cmd_val.typed_args = ArgList.CreateNull()
 
@@ -330,7 +326,6 @@ def _BindWords(
 def _BindTyped(
         code_name,  # type: str
         group,  # type: Optional[ParamGroup]
-        block_param,  # type: Optional[Param]
         defaults,  # type: List[value_t]
         pos_args,  # type: Optional[List[value_t]]
         mem,  # type: state.Mem
@@ -360,21 +355,6 @@ def _BindTyped(
             mem.SetLocalName(LeftName(p.name, p.blame_tok), val)
             i += 1
         num_params += len(group.params)
-
-    # Special case: treat block param like the next positional arg
-    if block_param:
-        if i < num_args:
-            val = pos_args[i]
-        else:
-            val = defaults[i]
-            if val is None:
-                raise error.Expr(
-                    "%r wasn't passed block param %r" %
-                    (code_name, block_param.name), blame_loc)
-
-        mem.SetLocalName(LeftName(block_param.name, block_param.blame_tok),
-                         val)
-        num_params += 1
 
     # ...rest
 
@@ -443,8 +423,8 @@ def _BindFuncArgs(func, rd, mem):
     ### Handle positional args
 
     if node.positional:
-        _BindTyped(func.name, node.positional, None, func.pos_defaults,
-                   rd.pos_args, mem, blame_loc)
+        _BindTyped(func.name, node.positional, func.pos_defaults, rd.pos_args,
+                   mem, blame_loc)
     else:
         if rd.pos_args is not None:
             num_pos = len(rd.pos_args)
@@ -503,12 +483,12 @@ def BindProcArgs(proc, cmd_val, mem):
 
     ### Handle typed positional args.  This includes a block arg, if any.
 
-    if cmd_val.typed_args:
+    if cmd_val.typed_args:  # blame ( of call site
         blame_loc = cmd_val.typed_args.left
 
-    if sig.positional or sig.block_param:
-        _BindTyped(proc.name, sig.positional, sig.block_param,
-                   proc.defaults.for_typed, cmd_val.pos_args, mem, blame_loc)
+    if sig.positional:  # or sig.block_param:
+        _BindTyped(proc.name, sig.positional, proc.defaults.for_typed,
+                   cmd_val.pos_args, mem, blame_loc)
     else:
         if cmd_val.pos_args is not None:
             num_pos = len(cmd_val.pos_args)
@@ -517,9 +497,9 @@ def BindProcArgs(proc, cmd_val, mem):
                     "Proc %r takes no typed args, but got %d" %
                     (proc.name, num_pos), blame_loc)
 
-    ### Handle typed named args.
+    ### Handle typed named args
 
-    if cmd_val.typed_args:
+    if cmd_val.typed_args:  # blame ; of call site if possible
         semi = cmd_val.typed_args.semi_tok
         if semi is not None:
             blame_loc = semi
@@ -534,6 +514,35 @@ def BindProcArgs(proc, cmd_val, mem):
                 raise error.Expr(
                     "Proc %r takes no named args, but got %d" %
                     (proc.name, num_named), blame_loc)
+
+    # Maybe blame second ; of call site.  Because value_t doesn't generally
+    # have location info, as opposed to expr_t.
+    if cmd_val.typed_args:
+        semi = cmd_val.typed_args.semi_tok2
+        if semi is not None:
+            blame_loc = semi
+
+    ### Handle block arg
+
+    block_param = sig.block_param
+    block_arg = cmd_val.block_arg
+
+    if block_param:
+        if block_arg is None:
+            block_arg = proc.defaults.for_block
+        if block_arg is None:
+            raise error.Expr(
+                "%r wasn't passed block param %r" %
+                (proc.name, block_param.name), blame_loc)
+
+        mem.SetLocalName(LeftName(block_param.name, block_param.blame_tok),
+                         block_arg)
+
+    else:
+        if block_arg is not None:
+            raise error.Expr(
+                "Proc %r doesn't accept a block argument" % proc.name,
+                blame_loc)
 
 
 def CallUserFunc(

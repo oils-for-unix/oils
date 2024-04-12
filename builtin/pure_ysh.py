@@ -74,7 +74,7 @@ class Shvar(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalCommand(cmd_val)
+        cmd = typed_args.OptionalBlock(cmd_val)
         if not cmd:
             # TODO: I think shvar LANG=C should just mutate
             # But should there be a whitelist?
@@ -176,7 +176,7 @@ class Ctx(vm._Builtin):
 
         if verb == "push":
             context = rd.PosDict()
-            block = rd.PosCommand()
+            block = rd.RequiredBlock()
             rd.Done()
             arg_r.AtEnd()
 
@@ -215,7 +215,7 @@ class PushRegisters(vm._Builtin):
                                          cmd_val,
                                          accept_typed_args=True)
 
-        cmd = typed_args.OptionalCommand(cmd_val)
+        cmd = typed_args.OptionalBlock(cmd_val)
         if not cmd:
             raise error.Usage('expected a block', loc.Missing)
 

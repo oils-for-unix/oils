@@ -3,19 +3,20 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 1
 
-#### Eval a command literal
+#### Eval does not take a literal block - can restore this later
 
 var b = ^(echo obj)
 eval (b)
 
 eval (^(echo command literal))
 
+# Doesn't work because it's a positional arg
 eval { echo block }
 
+## status: 3
 ## STDOUT:
 obj
 command literal
-block
 ## END
 
 

@@ -342,7 +342,7 @@ class ExprEvaluator(object):
             with state.ctx_Registers(self.mem):  # to sandbox globals
                 named_args = {}  # type: Dict[str, value_t]
                 arg_list = ArgList.CreateNull()  # There's no call site
-                rd = typed_args.Reader(pos_args, named_args, arg_list)
+                rd = typed_args.Reader(pos_args, named_args, None, arg_list)
 
                 try:
                     val = func_proc.CallUserFunc(func_val, rd, self.mem,
@@ -366,7 +366,7 @@ class ExprEvaluator(object):
             pos_args = [arg]
             named_args = {}  # type: Dict[str, value_t]
             arg_list = ArgList.CreateNull()  # There's no call site
-            rd = typed_args.Reader(pos_args, named_args, arg_list)
+            rd = typed_args.Reader(pos_args, named_args, None, arg_list)
             rd.SetFallbackLocation(convert_tok)
             try:
                 val = self._CallFunc(func_val, rd)
@@ -474,8 +474,8 @@ class ExprEvaluator(object):
 
         else:
             raise error.TypeErrVerbose(
-                'Binary operator expected numbers, got %s and %s (OILS-ERR-201)' %
-                (ui.ValType(left), ui.ValType(right)), op)
+                'Binary operator expected numbers, got %s and %s (OILS-ERR-201)'
+                % (ui.ValType(left), ui.ValType(right)), op)
 
     def _ArithIntOnly(self, left, right, op):
         # type: (value_t, value_t, Token) -> value_t
@@ -782,7 +782,7 @@ class ExprEvaluator(object):
             if case(value_e.Func, value_e.BuiltinFunc):
                 to_call = func
                 pos_args, named_args = func_proc._EvalArgList(self, node.args)
-                rd = typed_args.Reader(pos_args, named_args, node.args)
+                rd = typed_args.Reader(pos_args, named_args, None, node.args)
 
             elif case(value_e.BoundFunc):
                 func = cast(value.BoundFunc, UP_func)
@@ -793,6 +793,7 @@ class ExprEvaluator(object):
                                                               me=func.me)
                 rd = typed_args.Reader(pos_args,
                                        named_args,
+                                       None,
                                        node.args,
                                        is_bound=True)
             else:

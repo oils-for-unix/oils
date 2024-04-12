@@ -200,7 +200,7 @@ class Transformer(object):
         if typ0 == Id.Op_LParen:
             lparen = tok0
             rparen = p_trailer.GetChild(-1).tok
-            arglist = ArgList(lparen, [], None, [], None, rparen)
+            arglist = ArgList(lparen, [], None, [], None, None, rparen)
             if p_trailer.NumChildren() == 2:  # ()
                 return expr.FuncCall(base, arglist)
 
@@ -1063,6 +1063,7 @@ class Transformer(object):
 
         child = p_node.GetChild(i)
         if child.typ == Id.Op_Semi:
+            arglist.semi_tok2 = child.tok
             i += 1
 
         if i >= n:
