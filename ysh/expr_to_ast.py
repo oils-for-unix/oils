@@ -1332,20 +1332,21 @@ class Transformer(object):
         \" \u1234 '#'
         """
         assert p_node.typ == grammar_nt.range_char, p_node
-        typ = p_node.GetChild(0).typ
-        if ISNONTERMINAL(typ):
-            p_child = p_node.GetChild(0)
-            if typ == grammar_nt.sq_string:
-                return cast(SingleQuoted, p_child.GetChild(1).tok)
 
-            if typ == grammar_nt.char_literal:
-                tok = p_node.GetChild(0).tok
-                return word_compile.EvalCharLiteralForRegex(tok)
+        child0 = p_node.GetChild(0)
+        typ0 = p_node.GetChild(0).typ
 
-            raise NotImplementedError()
-        else:
+        if typ0 == grammar_nt.sq_string:
+            return cast(SingleQuoted, child0.GetChild(1).tok)
+
+        if typ0 == grammar_nt.char_literal:
+            return word_compile.EvalCharLiteralForRegex(child0.tok)
+
+        if typ0 == Id.Expr_Name:
             # Look up PerlClass and PosixClass
-            return self._NameInClass(None, p_node.GetChild(0).tok)
+            return self._NameInClass(None, child0.tok)
+
+        raise AssertionError()
 
     def _ClassLiteralTerm(self, p_node):
         # type: (PNode) -> class_literal_term_t
@@ -1358,17 +1359,18 @@ class Transformer(object):
         """
         assert p_node.typ == grammar_nt.class_literal_term, p_node
 
-        first = p_node.GetChild(0)
-        typ = first.typ
+        typ0 = p_node.GetChild(0).typ
 
-        if ISNONTERMINAL(typ):
+        if typ0 == grammar_nt.range_char:
             n = p_node.NumChildren()
 
-            if n == 1 and typ == grammar_nt.range_char:
+            if n == 1:
                 return self._NonRangeChars(p_node.GetChild(0))
 
             # 'a'-'z' etc.
-            if n == 3 and p_node.GetChild(1).tok.id == Id.Arith_Minus:
+            if n == 3:
+                assert p_node.GetChild(1).typ == Id.Arith_Minus, p_node
+
                 left = p_node.GetChild(0)
                 right = p_node.GetChild(2)
 
@@ -1383,20 +1385,19 @@ class Transformer(object):
                     code2 = word_compile.EvalCharLiteralForRegex(tok2)
                 return CharRange(code1, code2)
 
-        else:
-            if first.tok.id == Id.Expr_At:
-                tok1 = p_node.GetChild(1).tok
-                return class_literal_term.Splice(tok1, lexer.TokenVal(tok1))
+            raise AssertionError()
 
-            if first.tok.id == Id.Expr_Bang:
-                return self._NameInClass(
-                    p_node.GetChild(0).tok,
-                    p_node.GetChild(1).tok)
+        if typ0 == Id.Expr_At:
+            tok1 = p_node.GetChild(1).tok
+            return class_literal_term.Splice(tok1, lexer.TokenVal(tok1))
 
-            raise AssertionError(p_node.GetChild(0).tok.id)
+        if typ0 == Id.Expr_Bang:
+            return self._NameInClass(
+                p_node.GetChild(0).tok,
+                p_node.GetChild(1).tok)
 
-        nt_name = self.number2symbol[typ]
-        raise NotImplementedError(nt_name)
+        p_die("This kind of class literal term isn't implemented",
+              p_node.GetChild(0).tok)
 
     def _ClassLiteral(self, p_node):
         # type: (PNode) -> List[class_literal_term_t]
