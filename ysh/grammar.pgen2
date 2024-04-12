@@ -198,7 +198,7 @@ argument: (
     test [comp_for]
     # named arg
   | test '=' test
-    # splat.  Note we're using prefix syntax to be consistent with Python, JS,
+    # splat.  The ... goes before, not after, to be consistent with Python, JS,
     # and the prefix @ operator.
   | '...' test
 )
@@ -206,7 +206,10 @@ argument: (
 # The grammar at call sites is less restrictive than at declaration sites.
 # ... can appear anywhere.  Keyword args can appear anywhere too.
 arg_group: argument (',' argument)* [',']
-arglist: [arg_group] [';' arg_group]
+arglist: (
+       [arg_group]
+  [';' [arg_group]]
+)
 
 
 # YSH patch: test_nocond -> or_test.  I believe this was trying to prevent the
@@ -315,7 +318,7 @@ ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
 #
 # What about:
 #      myproc /tmp [ ; ; ^(echo hi)] - I guess this doesn't make sense?
-ysh_eager_arglist: '(' [arglist] [';' argument] ')'
+ysh_eager_arglist: '(' [arglist] ')'
 ysh_lazy_arglist: '[' [arglist] ']'
 
 #

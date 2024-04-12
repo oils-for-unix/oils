@@ -65,10 +65,27 @@ test-func-var-checker() {
 
 test-arglist() {
   _ysh-parse-error 'json write ()'
+  _ysh-should-parse 'json write (42, indent=1)'
+  _ysh-should-parse 'json write (42; indent=2)'
 
   _ysh-should-parse 'p (; n=42)'
   _ysh-should-parse '= f(; n=42)'
 
+  # Allowed because the named section can be empty
+  _ysh-should-parse 'p (;)'
+  _ysh-should-parse '= f(;)'
+  _ysh-should-parse 'p (42;)'
+  _ysh-should-parse '= f(42;)'
+
+
+  # TODO: blocks
+  #_ysh-should-parse 'p (42; n=42; block)'
+  #_ysh-should-parse 'p (42; ; block)'
+
+  #_ysh-parse-error 'p (42; n=42; bad=3)'
+  #_ysh-parse-error 'p (42; n=42; ...bad)'
+
+  # Positional args can't appear in the named section
   _ysh-parse-error '= f(; 42)'
   _ysh-parse-error '= f(; name)'
   _ysh-parse-error '= f(; x for x in y)'

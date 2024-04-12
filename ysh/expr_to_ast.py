@@ -943,6 +943,17 @@ class Transformer(object):
 
         raise AssertionError()
 
+    def _BlockArg(self, p_node):
+        # type: (PNode) -> expr_t
+
+        n = p_node.NumChildren()
+        if n == 1:
+            child = p_node.GetChild(0)
+            return self.Expr(child)
+
+        # It can only be an expression, not a=42, or ...expr
+        p_die('Invalid block expression argument', p_node.tok)
+
     def _Argument(self, p_node, after_semi, arglist):
         # type: (PNode, bool, ArgList) -> None
         """
@@ -1015,21 +1026,30 @@ class Transformer(object):
         # type: (PNode, ArgList) -> None
         """For both funcs and procs
 
-        arglist: [arg_group] [';' arg_group]
+        arglist: (
+               [arg_group]
+          [';' [arg_group]]
+        )
         """
         n = p_node.NumChildren()
         if n == 0:
             return
 
         i = 0
-        p0 = p_node.GetChild(0)
-        if p0.typ == grammar_nt.arg_group:
-            self._ArgGroup(p0, False, arglist)
+        if i < n:
+            p0 = p_node.GetChild(0)
+            if p0.typ == grammar_nt.arg_group:  # Fill in positional args
+                self._ArgGroup(p0, False, arglist)
+                i += 1
+
+        if i < n:
+            assert p_node.GetChild(i).typ == Id.Op_Semi
+            arglist.semi_tok = p_node.GetChild(i).tok
             i += 1
 
-        if n >= 2:
-            arglist.semi_tok = p_node.GetChild(i).tok
-            self._ArgGroup(p_node.GetChild(i + 1), True, arglist)
+        if i < n:
+            assert p_node.GetChild(i).typ == grammar_nt.arg_group
+            self._ArgGroup(p_node.GetChild(i), True, arglist)
 
     def ProcCallArgs(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
@@ -1042,14 +1062,16 @@ class Transformer(object):
             return
 
         if n == 3:
-            p = pnode.GetChild(1)  # the X in '( X )'
+            child1 = pnode.GetChild(1)  # the X in '( X )'
+            assert child1.typ == grammar_nt.arglist, n
 
-            assert p.typ == grammar_nt.arglist
-            self._ArgList(p, arglist)
+            self._ArgList(child1, arglist)
 
         if n == 5:
+            #child3 = pnode.GetChild(3)
+            #assert child3.typ == grammar_nt.argument
+            #arglist.block_expr = self._BlockArg(child3)
             pass
-            #self._Argument(pnode.GetChild(3), True)
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> TypeExpr

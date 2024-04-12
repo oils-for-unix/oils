@@ -308,12 +308,15 @@ proc p1 (...words; ...typed; ...named; block) {
 }
 
 p2 a b ('c', 'd', n=99) {
-  echo block
+  echo literal
 }
 
 # Same thing
-var block = ^(echo hi)
-p2 a b ('c', 'd', n=99; block)
+var block = ^(echo expression)
+
+# Note: you need the second explicit ;
+
+p2 a b ('c', 'd'; n=99; block)
 
 # what happens when you do this?
 p2 a b ('c', 'd', n=99; block) {
