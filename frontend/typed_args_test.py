@@ -25,7 +25,7 @@ class TypedArgsTest(unittest.TestCase):
             expr.Const(arena.NewToken(-1, 4 + 2 * i, 1, line_id), value.Null)
             for i in range(7)
         ]
-        arg_list = ArgList(ltok, pos_exprs, None, [], rtok)
+        arg_list = ArgList(ltok, pos_exprs, None, [], None, rtok)
 
         # Not enough args...
         reader = typed_args.Reader([], {}, arg_list, False)
@@ -102,7 +102,7 @@ class TypedArgsTest(unittest.TestCase):
         ltok = arena.NewToken(-1, 0, 3, line_id)
         rtok = arena.NewToken(-1, 0, 4, line_id)
         semi_tok = arena.NewToken(-1, 0, 5, line_id)
-        arg_list = ArgList(ltok, [], semi_tok, [], rtok)
+        arg_list = ArgList(ltok, [], semi_tok, [], None, rtok)
 
         kwargs = {
             'hot': value.Int(0xc0ffee),

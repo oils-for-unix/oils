@@ -494,7 +494,7 @@ class Transformer(object):
 
         n = parent.NumChildren()
 
-        if ISNONTERMINAL(typ0):
+        if typ0 == grammar_nt.expr:
             if n == 3:  # a[1:2]
                 lower = self.Expr(parent.GetChild(0))
                 upper = self.Expr(parent.GetChild(2))
@@ -504,12 +504,13 @@ class Transformer(object):
             else:  # a[1]
                 return self.Expr(parent.GetChild(0))
         else:
-            assert parent.GetChild(0).tok.id == Id.Arith_Colon
+            assert typ0 == Id.Arith_Colon
             lower = None
             if n == 1:  # a[:]
                 upper = None
             else:  # a[:3]
                 upper = self.Expr(parent.GetChild(1))
+
         return expr.Slice(lower, parent.GetChild(0).tok, upper)
 
     def Expr(self, pnode):
@@ -1049,7 +1050,7 @@ class Transformer(object):
         if n == 2:  # f()
             return
 
-        if n >= 3:
+        if n == 3:
             p = pnode.GetChild(1)  # the X in '( X )'
 
             assert p.typ == grammar_nt.arglist
