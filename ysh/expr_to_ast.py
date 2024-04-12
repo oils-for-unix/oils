@@ -240,21 +240,18 @@ class Transformer(object):
 
     def _DictPair(self, p_node):
         # type: (PNode) -> Tuple[expr_t, expr_t]
-        """dict_pair: ( Expr_Name [':' test] |
-
-        '[' testlist ']' ':' test )
+        """
+        dict_pair: ( Expr_Name [':' test]
+                   | '[' testlist ']' ':' test )
+                   | sq_string ':' test 
+                   | dq_string ':' test )
         """
         assert p_node.typ == grammar_nt.dict_pair
 
         typ = p_node.GetChild(0).typ
 
-        if ISNONTERMINAL(typ):  # for sq_string
-            # Note: Could inline these cases instead of going through self.Expr.
-            if typ == grammar_nt.sq_string:
-                key = self.Expr(p_node.GetChild(0))  # type: expr_t
-            elif typ == grammar_nt.dq_string:
-                key = self.Expr(p_node.GetChild(0))
-
+        if typ in (grammar_nt.sq_string, grammar_nt.dq_string):
+            key = self.Expr(p_node.GetChild(0))  # type: expr_t
             val = self.Expr(p_node.GetChild(2))
             return key, val
 
@@ -278,16 +275,13 @@ class Transformer(object):
 
     def _Dict(self, parent, p_node):
         # type: (PNode, PNode) -> expr.Dict
-        """Parse tree to LST
-        
-        dict: dict_pair (',' dict_pair)* [',']
-        dict2: dict_pair (comma_newline dict_pair)* [comma_newline]
         """
-        if not ISNONTERMINAL(p_node.typ):
-            assert p_node.tok.id == Id.Op_RBrace
+        dict: dict_pair (comma_newline dict_pair)* [comma_newline]
+        """
+        if p_node.typ == Id.Op_RBrace:  # {}
             return expr.Dict(parent.tok, [], [])
 
-        #assert p_node.typ == grammar_nt.dict
+        assert p_node.typ == grammar_nt.dict
 
         keys = []  # type: List[expr_t]
         values = []  # type: List[expr_t]
@@ -390,7 +384,7 @@ class Transformer(object):
         if id_ == Id.Op_LBrace:
             # atom: ... | '{' [Op_Newline] [dict] '}'
             i = 1
-            if parent.GetChild(i).tok.id == Id.Op_Newline:
+            if parent.GetChild(i).typ == Id.Op_Newline:
                 i += 1
             return self._Dict(parent, parent.GetChild(i))
 
@@ -527,7 +521,7 @@ class Transformer(object):
         if ISNONTERMINAL(typ):
 
             #
-            # Oil Entry Points / Additions
+            # YSH Entry Points / Additions
             #
 
             if typ == grammar_nt.ysh_expr:  # for if/while
@@ -804,19 +798,6 @@ class Transformer(object):
 
             return expr.Const(tok, cval)
 
-    def _ArrayItem(self, p_node):
-        # type: (PNode) -> expr_t
-        assert p_node.typ == grammar_nt.array_item
-
-        child0 = p_node.GetChild(0)
-        typ0 = child0.typ
-        if ISNONTERMINAL(typ0):
-            return self.Expr(child0)
-        else:
-            if child0.tok.id == Id.Op_LParen:  # (x+1)
-                return self.Expr(p_node.GetChild(1))
-            return self.Expr(child0)  # $1 ${x} etc.
-
     def _LhsExprList(self, p_node):
         # type: (PNode) -> List[y_lhs_t]
         """lhs_list: expr (',' expr)*"""
@@ -841,7 +822,7 @@ class Transformer(object):
                 elif case(expr_e.Attribute):
                     e = cast(Attribute, UP_e)
                     if e.op.id != Id.Expr_Dot:
-                        # e.g. setvar obj->method is not valid
+                        # e.g. setvar obj.method is not valid
                         p_die("Can't assign to this attribute expr", e.op)
                     lhs_list.append(e)
 
@@ -925,7 +906,7 @@ class Transformer(object):
             i += 1
             while True:
                 current = p_node.GetChild(i)
-                if not ISNONTERMINAL(current.typ):
+                if current.typ != grammar_nt.re_flag:
                     break
                 flags.append(self._EggexFlag(current))
                 i += 1
@@ -1005,6 +986,7 @@ class Transformer(object):
                     pos_args.append(spread_expr)
                 return
 
+            # Note: generator expression not implemented
             if p_node.GetChild(1).typ == grammar_nt.comp_for:
                 child = p_node.GetChild(0)
                 if after_semi:
@@ -1034,7 +1016,7 @@ class Transformer(object):
         """
         for i in xrange(p_node.NumChildren()):
             p_child = p_node.GetChild(i)
-            if ISNONTERMINAL(p_child.typ):
+            if p_child.typ == grammar_nt.argument:
                 self._Argument(p_child, after_semi, arglist)
 
     def _ArgList(self, p_node, arglist):
@@ -1049,7 +1031,7 @@ class Transformer(object):
 
         p0 = p_node.GetChild(0)
         i = 0
-        if ISNONTERMINAL(p0.typ):
+        if p0.typ == grammar_nt.arg_group:
             self._ArgGroup(p0, False, arglist)
             i += 1
 
@@ -1060,7 +1042,7 @@ class Transformer(object):
     def ProcCallArgs(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
         """
-        ysh_eager_arglist: '(' [arglist] ')'
+        ysh_eager_arglist: '(' [arglist] [';' argument] ')'
         ysh_lazy_arglist: '[' [arglist] ']'
         """
         n = pnode.NumChildren()
@@ -1072,6 +1054,10 @@ class Transformer(object):
 
             assert p.typ == grammar_nt.arglist
             self._ArgList(p, arglist)
+
+        if n == 5:
+            pass
+            #self._Argument(pnode.GetChild(3), True)
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> TypeExpr
@@ -1299,11 +1285,12 @@ class Transformer(object):
         # type: (PNode) -> Optional[CharCode]
 
         assert p_node.typ == grammar_nt.range_char, p_node
-        typ = p_node.GetChild(0).typ
 
         # 'a' in 'a'-'b'
-        if ISNONTERMINAL(typ) and typ == grammar_nt.sq_string:
-            sq_part = cast(SingleQuoted, p_node.GetChild(0).GetChild(1).tok)
+
+        child0 = p_node.GetChild(0)
+        if child0.typ == grammar_nt.sq_string:
+            sq_part = cast(SingleQuoted, child0.GetChild(1).tok)
             n = len(sq_part.sval)
             if n == 0:
                 p_die("Quoted range char can't be empty",
@@ -1323,11 +1310,10 @@ class Transformer(object):
         """
         assert p_node.typ == grammar_nt.range_char, p_node
 
-        typ = p_node.GetChild(0).typ
-        if ISNONTERMINAL(typ):
+        child0 = p_node.GetChild(0)
+        if child0.typ == grammar_nt.char_literal:
             # \x00 in /[\x00 - \x20]/
-            assert typ == grammar_nt.char_literal, typ
-            tok = p_node.GetChild(0).GetChild(0).tok
+            tok = child0.GetChild(0).tok
             return tok
 
         tok = p_node.tok
@@ -1362,8 +1348,7 @@ class Transformer(object):
 
     def _ClassLiteralTerm(self, p_node):
         # type: (PNode) -> class_literal_term_t
-        """Parse tree to LST
-
+        """
         class_literal_term:
           range_char ['-' range_char ] 
         | '@' Expr_Name  # splice
@@ -1531,10 +1516,10 @@ class Transformer(object):
                 # | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
                 n = p_atom.NumChildren()
                 if n == 2:
-                    typ = p_atom.GetChild(1).typ
-                    if ISNONTERMINAL(typ):
-                        return re.CharClassLiteral(
-                            True, self._ClassLiteral(p_atom.GetChild(1)))
+                    child1 = p_atom.GetChild(1)
+                    if child1.typ == grammar_nt.class_literal:
+                        return re.CharClassLiteral(True,
+                                                   self._ClassLiteral(child1))
                     else:
                         return self._NameInRegex(tok, p_atom.GetChild(1).tok)
                 else:
