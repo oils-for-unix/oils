@@ -1462,110 +1462,107 @@ class Transformer(object):
         """
         assert p_atom.typ == grammar_nt.re_atom, p_atom.typ
 
-        typ = p_atom.GetChild(0).typ
+        child0 = p_atom.GetChild(0)
 
-        if ISNONTERMINAL(typ):
-            p_child = p_atom.GetChild(0)
-            if typ == grammar_nt.class_literal:
-                return re.CharClassLiteral(False, self._ClassLiteral(p_child))
+        typ0 = p_atom.GetChild(0).typ
+        tok0 = p_atom.GetChild(0).tok
 
-            if typ == grammar_nt.sq_string:
-                return cast(SingleQuoted, p_child.GetChild(1).tok)
+        # Non-terminals
 
-            if typ == grammar_nt.char_literal:
-                tok = p_atom.GetChild(0).tok
-                # Must be Id.Char_{OneChar,Hex,UBraced}
-                assert consts.GetKind(tok.id) == Kind.Char
-                s = word_compile.EvalCStringToken(tok.id, lexer.TokenVal(tok))
-                return re.LiteralChars(tok, s)
+        if typ0 == grammar_nt.class_literal:
+            return re.CharClassLiteral(False, self._ClassLiteral(child0))
 
-            raise NotImplementedError(typ)
+        if typ0 == grammar_nt.sq_string:
+            return cast(SingleQuoted, child0.GetChild(1).tok)
 
-        else:
-            tok = p_atom.GetChild(0).tok
+        if typ0 == grammar_nt.char_literal:
+            # Must be Id.Char_{OneChar,Hex,UBraced}
+            assert consts.GetKind(tok0.id) == Kind.Char
+            s = word_compile.EvalCStringToken(tok0.id, lexer.TokenVal(tok0))
+            return re.LiteralChars(tok0, s)
 
-            # Special punctuation
-            if tok.id == Id.Expr_Dot:  # .
-                return re.Primitive(tok, Id.Eggex_Dot)
+        # Special punctuation
+        if typ0 == Id.Expr_Dot:  # .
+            return re.Primitive(tok0, Id.Eggex_Dot)
 
-            if tok.id == Id.Arith_Caret:  # ^
-                return re.Primitive(tok, Id.Eggex_Start)
+        if typ0 == Id.Arith_Caret:  # ^
+            return re.Primitive(tok0, Id.Eggex_Start)
 
-            if tok.id == Id.Expr_Dollar:  # $
-                return re.Primitive(tok, Id.Eggex_End)
+        if typ0 == Id.Expr_Dollar:  # $
+            return re.Primitive(tok0, Id.Eggex_End)
 
-            if tok.id == Id.Expr_Name:
-                # d digit -> PosixClass PerlClass etc.
-                return self._NameInRegex(None, tok)
+        if typ0 == Id.Expr_Name:
+            # d digit -> PosixClass PerlClass etc.
+            return self._NameInRegex(None, tok0)
 
-            if tok.id == Id.Expr_Symbol:
-                # Validate symbols here, like we validate PerlClass, etc.
-                tok_str = lexer.TokenVal(tok)
-                if tok_str == '%start':
-                    return re.Primitive(tok, Id.Eggex_Start)
-                if tok_str == '%end':
-                    return re.Primitive(tok, Id.Eggex_End)
-                p_die("Unexpected token %r in regex" % tok_str, tok)
+        if typ0 == Id.Expr_Symbol:
+            # Validate symbols here, like we validate PerlClass, etc.
+            tok_str = lexer.TokenVal(tok0)
+            if tok_str == '%start':
+                return re.Primitive(tok0, Id.Eggex_Start)
+            if tok_str == '%end':
+                return re.Primitive(tok0, Id.Eggex_End)
+            p_die("Unexpected token %r in regex" % tok_str, tok0)
 
-            if tok.id == Id.Expr_At:
-                # | '@' Expr_Name
-                tok = p_atom.GetChild(1).tok
-                return re.Splice(tok, lexer.TokenVal(tok))
+        if typ0 == Id.Expr_At:
+            # | '@' Expr_Name
+            tok1 = p_atom.GetChild(1).tok
+            return re.Splice(tok0, lexer.TokenVal(tok1))
 
-            if tok.id == Id.Expr_Bang:
-                # | '!' (Expr_Name | class_literal)
-                # | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
-                n = p_atom.NumChildren()
-                if n == 2:
-                    child1 = p_atom.GetChild(1)
-                    if child1.typ == grammar_nt.class_literal:
-                        return re.CharClassLiteral(True,
-                                                   self._ClassLiteral(child1))
-                    else:
-                        return self._NameInRegex(tok, p_atom.GetChild(1).tok)
+        if typ0 == Id.Expr_Bang:
+            # | '!' (Expr_Name | class_literal)
+            # | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
+            n = p_atom.NumChildren()
+            if n == 2:
+                child1 = p_atom.GetChild(1)
+                if child1.typ == grammar_nt.class_literal:
+                    return re.CharClassLiteral(True,
+                                               self._ClassLiteral(child1))
                 else:
-                    # Note: !! conflicts with shell history
-                    p_die(
-                        "Backtracking with !! isn't implemented (requires Python/PCRE)",
-                        p_atom.GetChild(1).tok)
+                    return self._NameInRegex(tok0, p_atom.GetChild(1).tok)
+            else:
+                # Note: !! conflicts with shell history
+                p_die(
+                    "Backtracking with !! isn't implemented (requires Python/PCRE)",
+                    p_atom.GetChild(1).tok)
 
-            if tok.id == Id.Op_LParen:
-                # | '(' regex ')'
+        if typ0 == Id.Op_LParen:
+            # | '(' regex ')'
 
-                # Note: in ERE (d+) is the same as <d+>.  That is, Group becomes
-                # Capture.
-                return re.Group(self._Regex(p_atom.GetChild(1)))
+            # Note: in ERE (d+) is the same as <d+>.  That is, Group becomes
+            # Capture.
+            return re.Group(self._Regex(p_atom.GetChild(1)))
 
-            if tok.id == Id.Arith_Less:
-                # | '<' 'capture' regex ['as' Expr_Name] [':' Expr_Name] '>'
+        if typ0 == Id.Arith_Less:
+            # | '<' 'capture' regex ['as' Expr_Name] [':' Expr_Name] '>'
 
-                n = p_atom.NumChildren()
-                assert n == 4 or n == 6 or n == 8, n
+            n = p_atom.NumChildren()
+            assert n == 4 or n == 6 or n == 8, n
 
-                # < capture d+ >
-                regex = self._Regex(p_atom.GetChild(2))
+            # < capture d+ >
+            regex = self._Regex(p_atom.GetChild(2))
 
-                as_name = None  # type: Optional[Token]
-                func_name = None  # type: Optional[Token]
+            as_name = None  # type: Optional[Token]
+            func_name = None  # type: Optional[Token]
 
-                i = 3  # points at any of   >   as   :
+            i = 3  # points at any of   >   as   :
 
-                tok = p_atom.GetChild(i).tok
-                if tok.id == Id.Expr_As:
-                    as_name = p_atom.GetChild(i + 1).tok
-                    i += 2
+            tok = p_atom.GetChild(i).tok
+            if tok.id == Id.Expr_As:
+                as_name = p_atom.GetChild(i + 1).tok
+                i += 2
 
-                tok = p_atom.GetChild(i).tok
-                if tok.id == Id.Arith_Colon:
-                    func_name = p_atom.GetChild(i + 1).tok
-
-                return re.Capture(regex, as_name, func_name)
-
+            tok = p_atom.GetChild(i).tok
             if tok.id == Id.Arith_Colon:
-                # | ':' '(' regex ')'
-                raise NotImplementedError(Id_str(tok.id))
+                func_name = p_atom.GetChild(i + 1).tok
 
+            return re.Capture(regex, as_name, func_name)
+
+        if typ0 == Id.Arith_Colon:
+            # | ':' '(' regex ')'
             raise NotImplementedError(Id_str(tok.id))
+
+        raise NotImplementedError(Id_str(tok.id))
 
     def _RepeatOp(self, p_repeat):
         # type: (PNode) -> re_repeat_t
