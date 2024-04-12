@@ -207,10 +207,11 @@ class Transformer(object):
                  | '.' NAME | '->' NAME | '::' NAME
                  )
         """
-        op_tok = p_trailer.GetChild(0).tok
+        tok0 = p_trailer.GetChild(0).tok
+        typ0 = p_trailer.GetChild(0).typ
 
-        if op_tok.id == Id.Op_LParen:
-            lparen = op_tok
+        if typ0 == Id.Op_LParen:
+            lparen = tok0
             rparen = p_trailer.GetChild(-1).tok
             arglist = ArgList(lparen, [], None, [], None, rparen)
             if p_trailer.NumChildren() == 2:  # ()
@@ -221,7 +222,7 @@ class Transformer(object):
             self._ArgList(p, arglist)
             return expr.FuncCall(base, arglist)
 
-        if op_tok.id == Id.Op_LBracket:
+        if typ0 == Id.Op_LBracket:
             p_args = p_trailer.GetChild(1)
             assert p_args.typ == grammar_nt.subscriptlist
             n = p_args.NumChildren()
@@ -229,14 +230,14 @@ class Transformer(object):
                 p_die("Only 1 subscript is accepted", p_args.GetChild(1).tok)
 
             a = p_args.GetChild(0)
-            return Subscript(op_tok, base, self._Subscript(a))
+            return Subscript(tok0, base, self._Subscript(a))
 
-        if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
+        if typ0 in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
-            return Attribute(base, op_tok, attr, lexer.TokenVal(attr),
+            return Attribute(base, tok0, attr, lexer.TokenVal(attr),
                              expr_context_e.Store)
 
-        raise AssertionError(Id_str(op_tok.id))
+        raise AssertionError(typ0)
 
     def _DictPair(self, p_node):
         # type: (PNode) -> Tuple[expr_t, expr_t]
@@ -317,12 +318,12 @@ class Transformer(object):
 
     def _TestlistComp(self, parent, p_node, id0):
         # type: (PNode, PNode, Id_t) -> expr_t
-        """Parse tree to LST
-        
+        """
         testlist_comp:
           (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
         """
         assert p_node.typ == grammar_nt.testlist_comp
+
         n = p_node.NumChildren()
         if n > 1 and p_node.GetChild(1).typ == grammar_nt.comp_for:
             elt = self.Expr(p_node.GetChild(0))
@@ -338,7 +339,7 @@ class Transformer(object):
                 return self.Expr(p_node.GetChild(0))
 
             # (1,)  (1, 2)  etc.
-            if p_node.GetChild(1).tok.id == Id.Arith_Comma:
+            if p_node.GetChild(1).typ == Id.Arith_Comma:
                 return self._Tuple(p_node)
 
             raise NotImplementedError('testlist_comp')
@@ -364,8 +365,8 @@ class Transformer(object):
         if id_ == Id.Op_LParen:
             # atom: '(' [yield_expr|testlist_comp] ')' | ...
             if n == 2:  # () is a tuple
-                assert (parent.GetChild(1).tok.id == Id.Op_RParen
-                        ), parent.GetChild(1)
+                assert (
+                    parent.GetChild(1).typ == Id.Op_RParen), parent.GetChild(1)
                 return expr.Tuple(tok, [], expr_context_e.Store)
 
             return self._TestlistComp(parent, parent.GetChild(1), id_)
@@ -374,7 +375,7 @@ class Transformer(object):
             # atom: ... | '[' [testlist_comp] ']' | ...
 
             if n == 2:  # []
-                assert (parent.GetChild(1).tok.id == Id.Op_RBracket
+                assert (parent.GetChild(1).typ == Id.Op_RBracket
                         ), parent.GetChild(1)
                 return expr.List(tok, [],
                                  expr_context_e.Store)  # unused expr_context_e
@@ -696,7 +697,7 @@ class Transformer(object):
             elif typ == grammar_nt.dq_string:
                 s = cast(DoubleQuoted, pnode.GetChild(1).tok)
                 # sugar: ^"..." is short for ^["..."]
-                if pnode.GetChild(0).tok.id == Id.Left_CaretDoubleQuote:
+                if pnode.GetChild(0).typ == Id.Left_CaretDoubleQuote:
                     return expr.Literal(s)
                 return s
 
@@ -1143,11 +1144,12 @@ class Transformer(object):
             child = p_node.GetChild(i)
             if child.typ == grammar_nt.param:
                 params.append(self._Param(child))
-            elif child.tok.id == Id.Expr_Ellipsis:
+
+            elif child.typ == Id.Expr_Ellipsis:
                 tok = p_node.GetChild(i + 1).tok
                 rest_of = RestParam(tok, lexer.TokenVal(tok))
+
             i += 2
-            #log('i %d n %d', i, n)
 
         return ParamGroup(params, rest_of)
 
@@ -1548,22 +1550,18 @@ class Transformer(object):
 
             i = 3  # points at any of   >   as   :
 
-            tok = p_atom.GetChild(i).tok
-            if tok.id == Id.Expr_As:
+            typ = p_atom.GetChild(i).typ
+            if typ == Id.Expr_As:
                 as_name = p_atom.GetChild(i + 1).tok
                 i += 2
 
-            tok = p_atom.GetChild(i).tok
-            if tok.id == Id.Arith_Colon:
+            typ = p_atom.GetChild(i).typ
+            if typ == Id.Arith_Colon:
                 func_name = p_atom.GetChild(i + 1).tok
 
             return re.Capture(regex, as_name, func_name)
 
-        if typ0 == Id.Arith_Colon:
-            # | ':' '(' regex ')'
-            raise NotImplementedError(Id_str(tok.id))
-
-        raise NotImplementedError(Id_str(tok.id))
+        raise NotImplementedError(typ0)
 
     def _RepeatOp(self, p_repeat):
         # type: (PNode) -> re_repeat_t
@@ -1571,9 +1569,9 @@ class Transformer(object):
 
         tok = p_repeat.GetChild(0).tok
         id_ = tok.id
-        # a+
+
         if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
-            return tok
+            return tok  # a+  a*  a?
 
         if id_ == Id.Op_LBrace:
             p_range = p_repeat.GetChild(1)
@@ -1591,7 +1589,7 @@ class Transformer(object):
                 return tok  # different operator than + * ?
 
             if n == 2:
-                if p_range.GetChild(0).tok.id == Id.Expr_DecInt:  # {,3}
+                if p_range.GetChild(0).typ == Id.Expr_DecInt:  # {,3}
                     left = p_range.GetChild(0).tok
                     return re_repeat.Range(left, lexer.TokenVal(left), '',
                                            None)
