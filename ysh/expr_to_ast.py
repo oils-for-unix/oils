@@ -1560,6 +1560,10 @@ class Transformer(object):
 
     def _RepeatOp(self, p_repeat):
         # type: (PNode) -> re_repeat_t
+        """
+        repeat_op: '+' | '*' | '?' 
+                 | '{' [Expr_Name] ('+' | '*' | '?' | repeat_range) '}'
+        """
         assert p_repeat.typ == grammar_nt.repeat_op, p_repeat
 
         tok = p_repeat.GetChild(0).tok
@@ -1569,8 +1573,11 @@ class Transformer(object):
             return tok  # a+  a*  a?
 
         if id_ == Id.Op_LBrace:
-            p_range = p_repeat.GetChild(1)
-            assert p_range.typ == grammar_nt.repeat_range, p_range
+            child1 = p_repeat.GetChild(1)
+            if child1.typ != grammar_nt.repeat_range:
+                # e.g. dot{N *} is .*?
+                p_die("Perl-style repetition isn't implemented with libc",
+                      child1.tok)
 
             # repeat_range: (
             #     Expr_DecInt [',']
@@ -1578,24 +1585,24 @@ class Transformer(object):
             #   | Expr_DecInt ',' Expr_DecInt
             # )
 
-            n = p_range.NumChildren()
+            n = child1.NumChildren()
             if n == 1:  # {3}
-                tok = p_range.GetChild(0).tok
+                tok = child1.GetChild(0).tok
                 return tok  # different operator than + * ?
 
             if n == 2:
-                if p_range.GetChild(0).typ == Id.Expr_DecInt:  # {,3}
-                    left = p_range.GetChild(0).tok
+                if child1.GetChild(0).typ == Id.Expr_DecInt:  # {,3}
+                    left = child1.GetChild(0).tok
                     return re_repeat.Range(left, lexer.TokenVal(left), '',
                                            None)
                 else:  # {1,}
-                    right = p_range.GetChild(1).tok
+                    right = child1.GetChild(1).tok
                     return re_repeat.Range(None, '', lexer.TokenVal(right),
                                            right)
 
             if n == 3:  # {1,3}
-                left = p_range.GetChild(0).tok
-                right = p_range.GetChild(2).tok
+                left = child1.GetChild(0).tok
+                right = child1.GetChild(2).tok
                 return re_repeat.Range(left, lexer.TokenVal(left),
                                        lexer.TokenVal(right), right)
 

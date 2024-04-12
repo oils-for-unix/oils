@@ -1576,6 +1576,14 @@ test-eggex() {
   _osh-should-parse "= /['a'-'z']/"
   _osh-parse-error "= /['a'-'']/"
   _osh-parse-error "= /['a'-'zz']/"
+
+  _osh-parse-error '= /dot{N *} /'
+
+  # Could validate the Id.Expr_Name
+  _osh-parse-error '= /dot{zzz *} /'
+
+  # This could be allowed, but currently isn't
+  _osh-parse-error '= /dot{*} /'
 }
 
 #
