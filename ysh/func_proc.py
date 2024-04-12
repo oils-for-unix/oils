@@ -126,7 +126,8 @@ def EvalProcDefaults(expr_ev, sig):
             # It can only be ^() or null
             if block_default.tag() not in (value_e.Null, value_e.Command):
                 raise error.TypeErr(
-                    val, "Default value for block should be Command or Null",
+                    block_default,
+                    "Default value for block should be Command or Null",
                     sig.block_param.blame_tok)
         else:
             block_default = None  # no default, different than value.Null
@@ -134,10 +135,9 @@ def EvalProcDefaults(expr_ev, sig):
         block_default = None
 
     # TEMPORARY: old behavior
-    if block_default:
-        if pos_defaults is None:
-            pos_defaults = []
-        pos_defaults.append(block_default)
+    if pos_defaults is None:
+        pos_defaults = []
+    pos_defaults.append(block_default)
 
     return ProcDefaults(word_defaults, pos_defaults, named_defaults,
                         block_default)
