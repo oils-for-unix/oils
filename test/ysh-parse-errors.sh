@@ -73,7 +73,7 @@ test-arglist() {
   _ysh-should-parse '= toJson(42, indent=1)'
   _ysh-should-parse '= toJson(42; indent=2)'
 
-  # Named gropu only
+  # Named group only
   _ysh-should-parse 'p (; n=true)'
   _ysh-should-parse '= f(; n=true)'
 
@@ -88,12 +88,12 @@ test-arglist() {
   _ysh-parse-error '= f(42; n=true; block)'
   _ysh-parse-error '= f(42; ; block)'
 
-  # TODO: Block expressions in proc arg lists
-  #_ysh-should-parse 'p (42; n=true; block)'
-  #_ysh-should-parse 'p (42; ; block)'
+  # Block expressions in proc arg lists
+  _ysh-should-parse 'p (42; n=true; block)'
+  _ysh-should-parse 'p (42; ; block)'
 
-  #_ysh-parse-error 'p (42; n=42; bad=3)'
-  #_ysh-parse-error 'p (42; n=42; ...bad)'
+  _ysh-parse-error 'p (42; n=42; bad=3)'
+  _ysh-parse-error 'p (42; n=42; ...bad)'
 
   # Positional args can't appear in the named section
   _ysh-parse-error '= f(; 42)'

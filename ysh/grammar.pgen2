@@ -210,6 +210,11 @@ arglist: (
        [arg_group]
   [';' [arg_group]]
 )
+arglist3: (
+       [arg_group]
+  [';' [arg_group]]
+  [';' [argument]]   # procs have an extra block argument
+)
 
 
 # YSH patch: test_nocond -> or_test.  I believe this was trying to prevent the
@@ -318,7 +323,7 @@ ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
 #
 # What about:
 #      myproc /tmp [ ; ; ^(echo hi)] - I guess this doesn't make sense?
-ysh_eager_arglist: '(' [arglist] ')'
+ysh_eager_arglist: '(' [arglist3] ')'
 ysh_lazy_arglist: '[' [arglist] ']'
 
 #

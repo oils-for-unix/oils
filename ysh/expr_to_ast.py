@@ -1021,31 +1021,61 @@ class Transformer(object):
                [arg_group]
           [';' [arg_group]]
         )
+
+        arglist3: ...
         """
         n = p_node.NumChildren()
         if n == 0:
             return
 
         i = 0
-        if i < n:
-            p0 = p_node.GetChild(0)
-            if p0.typ == grammar_nt.arg_group:  # Fill in positional args
-                self._ArgGroup(p0, False, arglist)
-                i += 1
 
-        if i < n:
-            assert p_node.GetChild(i).typ == Id.Op_Semi
-            arglist.semi_tok = p_node.GetChild(i).tok
+        if i >= n:
+            return
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.arg_group:
+            self._ArgGroup(child, False, arglist)
             i += 1
 
-        if i < n:
-            assert p_node.GetChild(i).typ == grammar_nt.arg_group
-            self._ArgGroup(p_node.GetChild(i), True, arglist)
+        if i >= n:
+            return
+        child = p_node.GetChild(i)
+        if child.typ == Id.Op_Semi:
+            arglist.semi_tok = child.tok
+            i += 1
+
+        # Named args after first semi-colon
+        if i >= n:
+            return
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.arg_group:
+            self._ArgGroup(child, True, arglist)
+            i += 1
+
+        #
+        # Special third group may have block expression - only for arglist3,
+        # used for procs!
+        #
+
+        if i >= n:
+            return
+        assert p_node.typ == grammar_nt.arglist3, p_node
+
+        child = p_node.GetChild(i)
+        if child.typ == Id.Op_Semi:
+            i += 1
+
+        if i >= n:
+            return
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.argument:
+            arglist.block_expr = self._BlockArg(child)
+            i += 1
 
     def ProcCallArgs(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
         """
-        ysh_eager_arglist: '(' [arglist] [';' argument] ')'
+        ysh_eager_arglist: '(' [arglist3] ')'
         ysh_lazy_arglist: '[' [arglist] ']'
         """
         n = pnode.NumChildren()
@@ -1054,15 +1084,11 @@ class Transformer(object):
 
         if n == 3:
             child1 = pnode.GetChild(1)  # the X in '( X )'
-            assert child1.typ == grammar_nt.arglist, n
 
             self._ArgList(child1, arglist)
+            return
 
-        if n == 5:
-            #child3 = pnode.GetChild(3)
-            #assert child3.typ == grammar_nt.argument
-            #arglist.block_expr = self._BlockArg(child3)
-            pass
+        raise AssertionError()
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> TypeExpr
