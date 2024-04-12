@@ -16,6 +16,7 @@ import marshal
 
 from mycpp.mylib import log
 from mycpp import mylib
+from pgen2 import token
 
 from typing import TYPE_CHECKING
 
@@ -47,9 +48,9 @@ class Grammar(object):
     The instance variables are as follows:
 
     symbol2number -- a dict mapping symbol names to numbers.  Symbol
-                     numbers are always 256 or higher, to distinguish
-                     them from token numbers, which are between 0 and
-                     255 (inclusive).
+                     numbers are always NT_OFFSET or higher, to distinguish
+                     them from token numbers, which are between 0 and 255
+                     (inclusive).
 
     number2symbol -- a dict mapping numbers to symbol names;
                      these two are each other's inverse.
@@ -105,7 +106,7 @@ class Grammar(object):
         self.keywords = {}  # type: Dict[str, int]
         self.tokens = {}  # type: Dict[int, int]
         self.symbol2label = {}  # type: Dict[str, int]
-        self.start = 256
+        self.start = token.NT_OFFSET
 
     if mylib.PYTHON:
       def dump(self, f):

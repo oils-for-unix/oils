@@ -92,6 +92,8 @@ POSIX_CLASSES = [
 
 RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
 
+POS_ARG_MISPLACED = "Positional arg can't appear in group of named args"
+
 # Copied from pgen2/token.py to avoid dependency.
 NT_OFFSET = 256
 
@@ -105,25 +107,16 @@ if mylib.PYTHON:
 
         names = {}
 
-        #from _devbuild.gen.id_kind_asdl import _Id_str
-        # This is a dictionary
-
-        # _Id_str()
-
         for id_name, k in lexer_def.ID_SPEC.id_str2int.items():
             # Hm some are out of range
             #assert k < 256, (k, id_name)
 
-            # HACK: Cut it off at 256 now!  Expr/Arith/Op doesn't go higher than
-            # that.  TODO: Change NT_OFFSET?  That might affect C code though.
-            # Best to keep everything fed to pgen under 256.  This only affects
-            # pretty printing.
-            if k < 256:
+            # TODO: Some tokens have values greater than NT_OFFSET
+            if k < NT_OFFSET:
                 names[k] = id_name
 
         for k, v in ysh_grammar.number2symbol.items():
-            # eval_input == 256.  Remove?
-            assert k >= 256, (k, v)
+            assert k >= NT_OFFSET, (k, v)
             names[k] = v
 
         return names
@@ -971,8 +964,7 @@ class Transformer(object):
         if n == 1:
             child = p_node.GetChild(0)
             if after_semi:
-                p_die('Positional args must come before the semi-colon',
-                      child.tok)
+                p_die(POS_ARG_MISPLACED, child.tok)
             arg = self.Expr(child)
             pos_args.append(arg)
             return
@@ -993,8 +985,7 @@ class Transformer(object):
             if p_node.GetChild(1).typ == grammar_nt.comp_for:
                 child = p_node.GetChild(0)
                 if after_semi:
-                    p_die('Positional args must come before the semi-colon',
-                          child.tok)
+                    p_die(POS_ARG_MISPLACED, child.tok)
 
                 elt = self.Expr(child)
                 comp = self._CompFor(p_node.GetChild(1))

@@ -357,7 +357,7 @@ def make_label(tok_def, gr, label):
             if value in gr.keywords:
                 return gr.keywords[value]
             else:
-                gr.labels.append(token.NAME)  # arbitrary number < 256
+                gr.labels.append(token.NAME)  # arbitrary number < NT_OFFSET
                 gr.keywords[value] = ilabel
                 return ilabel
 
@@ -405,7 +405,7 @@ def MakeGrammar(f, tok_def=None):
 
   gr = grammar.Grammar()
   for name in names:
-      i = 256 + len(gr.symbol2number)
+      i = token.NT_OFFSET + len(gr.symbol2number)
       gr.symbol2number[name] = i
       gr.number2symbol[i] = name
 

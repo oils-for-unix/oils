@@ -14,6 +14,7 @@ _ = log
 
 from typing import TYPE_CHECKING, Optional, Any, List
 from pgen2.pnode import PNode, PNodeAllocator
+from pgen2 import token
 
 if TYPE_CHECKING:
   from _devbuild.gen.syntax_asdl import Token
@@ -137,7 +138,7 @@ class Parser(object):
                 t = self.grammar.labels[ilab]
                 if ilabel == ilab:
                     # Look it up in the list of labels
-                    assert t < 256, t
+                    assert t < token.NT_OFFSET, t
                     # Shift a token; we're done with it
                     self.shift(typ, opaque, newstate)
                     # Pop while we are in an accept-only state
@@ -162,7 +163,7 @@ class Parser(object):
 
                     # Done with this token
                     return False
-                elif t >= 256:
+                elif t >= token.NT_OFFSET:
                     # See if it's a symbol and if we're in its first set
                     itsdfa = self.grammar.dfas[t]
                     _, itsfirst = itsdfa
