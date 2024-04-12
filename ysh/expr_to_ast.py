@@ -129,12 +129,6 @@ if mylib.PYTHON:
         return names
 
 
-def ISNONTERMINAL(x):
-    # type: (int) -> bool
-    assert isinstance(x, int), x
-    return x >= NT_OFFSET
-
-
 class Transformer(object):
     """Homogeneous parse tree -> heterogeneous AST ("lossless syntax tree")
 
@@ -518,287 +512,286 @@ class Transformer(object):
         # type: (PNode) -> expr_t
         """Transform expressions (as opposed to statements)."""
         typ = pnode.typ
-        tok = pnode.tok
 
-        if ISNONTERMINAL(typ):
+        #
+        # YSH Entry Points / Additions
+        #
 
-            #
-            # YSH Entry Points / Additions
-            #
+        if typ == grammar_nt.ysh_expr:  # for if/while
+            # ysh_expr: '(' testlist ')'
+            return self.Expr(pnode.GetChild(1))
 
-            if typ == grammar_nt.ysh_expr:  # for if/while
-                # ysh_expr: '(' testlist ')'
-                return self.Expr(pnode.GetChild(1))
+        if typ == grammar_nt.command_expr:
+            # return_expr: testlist end_stmt
+            return self.Expr(pnode.GetChild(0))
 
-            if typ == grammar_nt.command_expr:
-                # return_expr: testlist end_stmt
+        #
+        # Python-like Expressions / Operators
+        #
+
+        if typ == grammar_nt.atom:
+            if pnode.NumChildren() == 1:
+                return self.Expr(pnode.GetChild(0))
+            return self._Atom(pnode)
+
+        if typ == grammar_nt.testlist:
+            # testlist: test (',' test)* [',']
+            return self._Tuple(pnode)
+
+        if typ == grammar_nt.test:
+            # test: or_test ['if' or_test 'else' test] | lambdef
+            if pnode.NumChildren() == 1:
                 return self.Expr(pnode.GetChild(0))
 
-            #
-            # Python-like Expressions / Operators
-            #
+            # TODO: Handle lambdef
 
-            if typ == grammar_nt.atom:
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
-                return self._Atom(pnode)
+            test = self.Expr(pnode.GetChild(2))
+            body = self.Expr(pnode.GetChild(0))
+            orelse = self.Expr(pnode.GetChild(4))
+            return expr.IfExp(test, body, orelse)
 
-            if typ == grammar_nt.testlist:
-                # testlist: test (',' test)* [',']
-                return self._Tuple(pnode)
+        if typ == grammar_nt.lambdef:
+            # lambdef: '|' [name_type_list] '|' test
 
-            if typ == grammar_nt.test:
-                # test: or_test ['if' or_test 'else' test] | lambdef
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
+            n = pnode.NumChildren()
+            if n == 4:
+                params = self._NameTypeList(pnode.GetChild(1))
+            else:
+                params = []
 
-                # TODO: Handle lambdef
+            body = self.Expr(pnode.GetChild(n - 1))
+            return expr.Lambda(params, body)
 
-                test = self.Expr(pnode.GetChild(2))
-                body = self.Expr(pnode.GetChild(0))
-                orelse = self.Expr(pnode.GetChild(4))
-                return expr.IfExp(test, body, orelse)
+        #
+        # Operators with Precedence
+        #
 
-            if typ == grammar_nt.lambdef:
-                # lambdef: '|' [name_type_list] '|' test
+        if typ == grammar_nt.or_test:
+            # or_test: and_test ('or' and_test)*
+            return self._LeftAssoc(pnode)
 
-                n = pnode.NumChildren()
-                if n == 4:
-                    params = self._NameTypeList(pnode.GetChild(1))
-                else:
-                    params = []
+        if typ == grammar_nt.and_test:
+            # and_test: not_test ('and' not_test)*
+            return self._LeftAssoc(pnode)
 
-                body = self.Expr(pnode.GetChild(n - 1))
-                return expr.Lambda(params, body)
+        if typ == grammar_nt.not_test:
+            # not_test: 'not' not_test | comparison
+            if pnode.NumChildren() == 1:
+                return self.Expr(pnode.GetChild(0))
 
-            #
-            # Operators with Precedence
-            #
+            op_tok = pnode.GetChild(0).tok  # not
+            return expr.Unary(op_tok, self.Expr(pnode.GetChild(1)))
 
-            if typ == grammar_nt.or_test:
-                # or_test: and_test ('or' and_test)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.comparison:
+            if pnode.NumChildren() == 1:
+                return self.Expr(pnode.GetChild(0))
 
-            if typ == grammar_nt.and_test:
-                # and_test: not_test ('and' not_test)*
-                return self._LeftAssoc(pnode)
+            return self._CompareChain(pnode)
 
-            if typ == grammar_nt.not_test:
-                # not_test: 'not' not_test | comparison
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
+        elif typ == grammar_nt.range_expr:
+            n = pnode.NumChildren()
+            if n == 1:
+                return self.Expr(pnode.GetChild(0))
 
-                op_tok = pnode.GetChild(0).tok  # not
-                return expr.Unary(op_tok, self.Expr(pnode.GetChild(1)))
+            if n == 3:
+                return expr.Range(self.Expr(pnode.GetChild(0)),
+                                  pnode.GetChild(1).tok,
+                                  self.Expr(pnode.GetChild(2)))
 
-            elif typ == grammar_nt.comparison:
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
+            raise AssertionError(n)
 
-                return self._CompareChain(pnode)
+        elif typ == grammar_nt.expr:
+            # expr: xor_expr ('|' xor_expr)*
+            return self._LeftAssoc(pnode)
 
-            elif typ == grammar_nt.range_expr:
-                n = pnode.NumChildren()
-                if n == 1:
-                    return self.Expr(pnode.GetChild(0))
+        if typ == grammar_nt.xor_expr:
+            # xor_expr: and_expr ('xor' and_expr)*
+            return self._LeftAssoc(pnode)
 
-                if n == 3:
-                    return expr.Range(self.Expr(pnode.GetChild(0)),
-                                      pnode.GetChild(1).tok,
-                                      self.Expr(pnode.GetChild(2)))
+        if typ == grammar_nt.and_expr:  # a & b
+            # and_expr: shift_expr ('&' shift_expr)*
+            return self._LeftAssoc(pnode)
 
-                raise AssertionError(n)
+        elif typ == grammar_nt.shift_expr:
+            # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+            return self._LeftAssoc(pnode)
 
-            elif typ == grammar_nt.expr:
-                # expr: xor_expr ('|' xor_expr)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.arith_expr:
+            # arith_expr: term (('+'|'-') term)*
+            return self._LeftAssoc(pnode)
 
-            if typ == grammar_nt.xor_expr:
-                # xor_expr: and_expr ('xor' and_expr)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.term:
+            # term: factor (('*'|'/'|'div'|'mod') factor)*
+            return self._LeftAssoc(pnode)
 
-            if typ == grammar_nt.and_expr:  # a & b
-                # and_expr: shift_expr ('&' shift_expr)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.factor:
+            # factor: ('+'|'-'|'~') factor | power
+            # the power would have already been reduced
+            if pnode.NumChildren() == 1:
+                return self.Expr(pnode.GetChild(0))
 
-            elif typ == grammar_nt.shift_expr:
-                # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-                return self._LeftAssoc(pnode)
+            assert pnode.NumChildren() == 2
+            op = pnode.GetChild(0)
+            e = pnode.GetChild(1)
 
-            elif typ == grammar_nt.arith_expr:
-                # arith_expr: term (('+'|'-') term)*
-                return self._LeftAssoc(pnode)
+            assert isinstance(op.tok, Token)
+            return expr.Unary(op.tok, self.Expr(e))
 
-            elif typ == grammar_nt.term:
-                # term: factor (('*'|'/'|'div'|'mod') factor)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.power:
+            # power: atom trailer* ['**' factor]
 
-            elif typ == grammar_nt.factor:
-                # factor: ('+'|'-'|'~') factor | power
-                # the power would have already been reduced
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
-
-                assert pnode.NumChildren() == 2
-                op = pnode.GetChild(0)
-                e = pnode.GetChild(1)
-
-                assert isinstance(op.tok, Token)
-                return expr.Unary(op.tok, self.Expr(e))
-
-            elif typ == grammar_nt.power:
-                # power: atom trailer* ['**' factor]
-
-                node = self.Expr(pnode.GetChild(0))
-                if pnode.NumChildren() == 1:  # No trailers
-                    return node
-
-                # Support a->startswith(b) and mydict.key
-                n = pnode.NumChildren()
-                i = 1
-                while i < n and ISNONTERMINAL(pnode.GetChild(i).typ):
-                    node = self._Trailer(node, pnode.GetChild(i))
-                    i += 1
-
-                if i != n:  # ['**' factor]
-                    op_tok = pnode.GetChild(i).tok
-                    assert op_tok.id == Id.Arith_DStar, op_tok
-                    factor = self.Expr(pnode.GetChild(i + 1))
-                    node = expr.Binary(op_tok, node, factor)
-
+            node = self.Expr(pnode.GetChild(0))
+            if pnode.NumChildren() == 1:  # No trailers
                 return node
 
-            elif typ == grammar_nt.literal_expr:
-                inner = self.Expr(pnode.GetChild(1))
-                return expr.Literal(inner)
+            # Support a->startswith(b) and mydict.key
+            n = pnode.NumChildren()
+            i = 1
+            while i < n and pnode.GetChild(i).typ == grammar_nt.trailer:
+                node = self._Trailer(node, pnode.GetChild(i))
+                i += 1
 
-            elif typ == grammar_nt.eggex:
-                return self._Eggex(pnode)
+            if i != n:  # ['**' factor]
+                op_tok = pnode.GetChild(i).tok
+                assert op_tok.id == Id.Arith_DStar, op_tok
+                factor = self.Expr(pnode.GetChild(i + 1))
+                node = expr.Binary(op_tok, node, factor)
 
-            elif typ == grammar_nt.ysh_expr_sub:
-                return self.Expr(pnode.GetChild(0))
+            return node
 
-            #
-            # YSH Lexer Modes
-            #
+        elif typ == grammar_nt.literal_expr:
+            inner = self.Expr(pnode.GetChild(1))
+            return expr.Literal(inner)
 
-            elif typ == grammar_nt.sh_array_literal:
-                return cast(ShArrayLiteral, pnode.GetChild(1).tok)
+        elif typ == grammar_nt.eggex:
+            return self._Eggex(pnode)
 
-            elif typ == grammar_nt.old_sh_array_literal:
-                return cast(ShArrayLiteral, pnode.GetChild(1).tok)
+        elif typ == grammar_nt.ysh_expr_sub:
+            return self.Expr(pnode.GetChild(0))
 
-            elif typ == grammar_nt.sh_command_sub:
-                return cast(CommandSub, pnode.GetChild(1).tok)
+        #
+        # YSH Lexer Modes
+        #
 
-            elif typ == grammar_nt.braced_var_sub:
-                return cast(BracedVarSub, pnode.GetChild(1).tok)
+        elif typ == grammar_nt.sh_array_literal:
+            return cast(ShArrayLiteral, pnode.GetChild(1).tok)
 
-            elif typ == grammar_nt.dq_string:
-                s = cast(DoubleQuoted, pnode.GetChild(1).tok)
-                # sugar: ^"..." is short for ^["..."]
-                if pnode.GetChild(0).typ == Id.Left_CaretDoubleQuote:
-                    return expr.Literal(s)
-                return s
+        elif typ == grammar_nt.old_sh_array_literal:
+            return cast(ShArrayLiteral, pnode.GetChild(1).tok)
 
-            elif typ == grammar_nt.sq_string:
-                return cast(SingleQuoted, pnode.GetChild(1).tok)
+        elif typ == grammar_nt.sh_command_sub:
+            return cast(CommandSub, pnode.GetChild(1).tok)
 
-            elif typ == grammar_nt.simple_var_sub:
-                tok = pnode.GetChild(0).tok
+        elif typ == grammar_nt.braced_var_sub:
+            return cast(BracedVarSub, pnode.GetChild(1).tok)
 
-                if tok.id == Id.VSub_DollarName:  # $foo is disallowed
-                    bare = lexer.TokenSliceLeft(tok, 1)
-                    p_die(
-                        'In expressions, remove $ and use `%s`, or sometimes "$%s"'
-                        % (bare, bare), tok)
+        elif typ == grammar_nt.dq_string:
+            s = cast(DoubleQuoted, pnode.GetChild(1).tok)
+            # sugar: ^"..." is short for ^["..."]
+            if pnode.GetChild(0).typ == Id.Left_CaretDoubleQuote:
+                return expr.Literal(s)
+            return s
 
-                # $? is allowed
-                return SimpleVarSub(tok)
+        elif typ == grammar_nt.sq_string:
+            return cast(SingleQuoted, pnode.GetChild(1).tok)
 
-            else:
-                nt_name = self.number2symbol[typ]
-                raise AssertionError("PNode type %d (%s) wasn't handled" %
-                                     (typ, nt_name))
+        elif typ == grammar_nt.simple_var_sub:
+            tok = pnode.GetChild(0).tok
 
-        else:  # Terminals should have a token
-            id_ = tok.id
+            if tok.id == Id.VSub_DollarName:  # $foo is disallowed
+                bare = lexer.TokenSliceLeft(tok, 1)
+                p_die(
+                    'In expressions, remove $ and use `%s`, or sometimes "$%s"'
+                    % (bare, bare), tok)
 
-            if id_ == Id.Expr_Name:
-                return expr.Var(tok, lexer.TokenVal(tok))
+            # $? is allowed
+            return SimpleVarSub(tok)
 
-            tok_str = lexer.TokenVal(tok)
+        #
+        # Terminals
+        #
 
-            # Remove underscores from 1_000_000.  The lexer is responsible for
-            # validation.
-            c_under = tok_str.replace('_', '')
+        tok = pnode.tok
+        if typ == Id.Expr_Name:
+            return expr.Var(tok, lexer.TokenVal(tok))
 
-            if id_ == Id.Expr_DecInt:
-                try:
-                    cval = value.Int(mops.FromStr(c_under))  # type: value_t
-                except ValueError:
-                    p_die('Decimal int constant is too large', tok)
-            elif id_ == Id.Expr_BinInt:
-                assert c_under[:2] in ('0b', '0B'), c_under
-                try:
-                    cval = value.Int(mops.FromStr(c_under[2:], 2))
-                except ValueError:
-                    p_die('Binary int constant is too large', tok)
-            elif id_ == Id.Expr_OctInt:
-                assert c_under[:2] in ('0o', '0O'), c_under
-                try:
-                    cval = value.Int(mops.FromStr(c_under[2:], 8))
-                except ValueError:
-                    p_die('Octal int constant is too large', tok)
-            elif id_ == Id.Expr_HexInt:
-                assert c_under[:2] in ('0x', '0X'), c_under
-                try:
-                    cval = value.Int(mops.FromStr(c_under[2:], 16))
-                except ValueError:
-                    p_die('Hex int constant is too large', tok)
+        # Everything else is an expr.Const
+        tok_str = lexer.TokenVal(tok)
+        # Remove underscores from 1_000_000.  The lexer is responsible for
+        # validation.
+        c_under = tok_str.replace('_', '')
 
-            elif id_ == Id.Expr_Float:
-                # Note: float() in mycpp/gc_builtins.cc currently uses strtod
-                # I think this never raises ValueError, because the lexer
-                # should only accept strings that strtod() does?
-                cval = value.Float(float(c_under))
+        if typ == Id.Expr_DecInt:
+            try:
+                cval = value.Int(mops.FromStr(c_under))  # type: value_t
+            except ValueError:
+                p_die('Decimal int constant is too large', tok)
 
-            elif id_ == Id.Expr_Null:
-                cval = value.Null
-            elif id_ == Id.Expr_True:
-                cval = value.Bool(True)
-            elif id_ == Id.Expr_False:
-                cval = value.Bool(False)
+        elif typ == Id.Expr_BinInt:
+            assert c_under[:2] in ('0b', '0B'), c_under
+            try:
+                cval = value.Int(mops.FromStr(c_under[2:], 2))
+            except ValueError:
+                p_die('Binary int constant is too large', tok)
 
-            # What to do with the char constants?
-            # \n  \u{3bc}  #'a'
-            # Are they integers or strings?
-            #
-            # Integers could be ord(\n), or strings could chr(\n)
-            # Or just remove them, with ord(u'\n') and chr(u'\n')
-            #
-            # I think this relies on small string optimization.  If we have it,
-            # then 1-4 byte characters are efficient, and don't require heap
-            # allocation.
+        elif typ == Id.Expr_OctInt:
+            assert c_under[:2] in ('0o', '0O'), c_under
+            try:
+                cval = value.Int(mops.FromStr(c_under[2:], 8))
+            except ValueError:
+                p_die('Octal int constant is too large', tok)
 
-            elif id_ == Id.Char_OneChar:
-                # TODO: look up integer directly?
-                cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
-            elif id_ == Id.Char_UBraced:
-                hex_str = tok_str[3:-1]  # \u{123}
-                # ValueError shouldn't happen because lexer validates
-                cval = value.Int(mops.FromStr(hex_str, 16))
+        elif typ == Id.Expr_HexInt:
+            assert c_under[:2] in ('0x', '0X'), c_under
+            try:
+                cval = value.Int(mops.FromStr(c_under[2:], 16))
+            except ValueError:
+                p_die('Hex int constant is too large', tok)
 
-            # This could be a char integer?  Not sure
-            elif id_ == Id.Char_Pound:
-                # TODO: accept UTF-8 code point instead of single byte
-                byte = tok_str[2]  # the a in #'a'
-                cval = num.ToBig(ord(byte))  # It's an integer
+        elif typ == Id.Expr_Float:
+            # Note: float() in mycpp/gc_builtins.cc currently uses strtod
+            # I think this never raises ValueError, because the lexer
+            # should only accept strings that strtod() does?
+            cval = value.Float(float(c_under))
 
-            else:
-                raise AssertionError(Id_str(id_))
+        elif typ == Id.Expr_Null:
+            cval = value.Null
 
-            return expr.Const(tok, cval)
+        elif typ == Id.Expr_True:
+            cval = value.Bool(True)
+
+        elif typ == Id.Expr_False:
+            cval = value.Bool(False)
+
+        # What to do with the char constants?
+        # \n  \u{3bc}  #'a'
+        # Are they integers or strings?
+        #
+        # Integers could be ord(\n), or strings could chr(\n)
+        # Or just remove them, with ord(u'\n') and chr(u'\n')
+        #
+        # I think this relies on small string optimization.  If we have it,
+        # then 1-4 byte characters are efficient, and don't require heap
+        # allocation.
+
+        elif typ == Id.Char_OneChar:
+            # TODO: look up integer directly?
+            cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
+        elif typ == Id.Char_UBraced:
+            hex_str = tok_str[3:-1]  # \u{123}
+            # ValueError shouldn't happen because lexer validates
+            cval = value.Int(mops.FromStr(hex_str, 16))
+
+        # This could be a char integer?  Not sure
+        elif typ == Id.Char_Pound:
+            # TODO: accept UTF-8 code point instead of single byte
+            byte = tok_str[2]  # the a in #'a'
+            cval = num.ToBig(ord(byte))  # It's an integer
+
+        else:
+            raise AssertionError(typ)
+
+        return expr.Const(tok, cval)
 
     def _LhsExprList(self, p_node):
         # type: (PNode) -> List[y_lhs_t]
