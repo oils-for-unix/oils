@@ -16,7 +16,6 @@ import marshal
 
 from mycpp.mylib import log
 from mycpp import mylib
-from pgen2 import token
 
 from typing import TYPE_CHECKING
 
@@ -106,7 +105,7 @@ class Grammar(object):
         self.keywords = {}  # type: Dict[str, int]
         self.tokens = {}  # type: Dict[int, int]
         self.symbol2label = {}  # type: Dict[str, int]
-        self.start = token.NT_OFFSET  # Oils note: this init is arbitrary?
+        self.start = 256  # TODO: move to pgen.NT_OFFSET, breaks OVM tarball
 
     if mylib.PYTHON:
       def dump(self, f):
