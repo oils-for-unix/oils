@@ -968,7 +968,8 @@ class ctx_ProcCall(object):
             # TODO: procs get argv
             # - open: the args
             # - closed: always empty
-            frame['ARGV'] = _MakeArgvCell(argv)
+            #frame['ARGV'] = _MakeArgvCell(argv)
+            pass
 
         mem.var_stack.append(frame)
 
