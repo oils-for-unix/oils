@@ -961,15 +961,14 @@ class ctx_ProcCall(object):
         frame = NewDict()  # type: Dict[str, Cell]
 
         assert argv is not None
-        if True:
+        if proc.sh_compat:
             # shell function
             mem.argv_stack.append(_ArgFrame(argv))
         else:
-            # TODO: procs get argv
-            # - open: the args
-            # - closed: always empty
-            #frame['ARGV'] = _MakeArgvCell(argv)
-            pass
+            # procs
+            # - open: is equivalent to ...ARGV
+            # - closed: ARGV is empty list
+            frame['ARGV'] = _MakeArgvCell(argv)
 
         mem.var_stack.append(frame)
 
@@ -982,6 +981,7 @@ class ctx_ProcCall(object):
         # 'if p' should be allowed.
         self.mem = mem
         self.mutable_opts = mutable_opts
+        self.sh_compat = proc.sh_compat
 
     def __enter__(self):
         # type: () -> None
@@ -993,8 +993,8 @@ class ctx_ProcCall(object):
         self.mem.PopCall()
         self.mem.var_stack.pop()
 
-        # TODO: do this conditionally
-        self.mem.argv_stack.pop()
+        if self.sh_compat:
+            self.mem.argv_stack.pop()
 
 
 class ctx_Temp(object):
@@ -1112,7 +1112,7 @@ class Mem(object):
 
         frame = NewDict()  # type: Dict[str, Cell]
 
-        #frame['ARGV'] = _MakeArgvCell(argv)
+        frame['ARGV'] = _MakeArgvCell(argv)
 
         self.var_stack = [frame]
 
@@ -1879,14 +1879,8 @@ class Mem(object):
         # if name not in COMPUTED_VARS: ...
 
         with str_switch(name) as case:
-            if case('ARGV'):
-                # TODO: ARGV can be a normal mutable variable in YSH
-                items = [value.Str(s)
-                         for s in self.GetArgv()]  # type: List[value_t]
-                return value.List(items)
-
             # "Registers"
-            elif case('_status'):
+            if case('_status'):
                 return num.ToBig(self.TryStatus())
 
             elif case('_error'):

@@ -429,12 +429,12 @@ p2 x=
 ## END
 
 #### unset composes when you turn on dynamic scope
-shopt -s oil:all
+shopt -s ysh:all
 
-proc unset-two {
+proc unset-two (v, w) {
   shopt --set dynamic_scope {
-    unset $1 
-    unset $2
+    unset $v
+    unset $w
   }
 }
 

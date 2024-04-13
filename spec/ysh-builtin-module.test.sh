@@ -38,13 +38,13 @@ status=0
 ## END
 
 #### runproc
-shopt --set parse_proc
+shopt --set parse_proc parse_at
 
 f() {
   write -- f "$@"
 }
 proc p {
-  write -- p "$@"
+  write -- p @ARGV
 }
 runproc f 1 2
 echo status=$?

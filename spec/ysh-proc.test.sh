@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -42,7 +42,7 @@ builtin set -- a b c
 foo x y z
 ## STDOUT:
 ARGV x y z
-dollar-at x y z
+dollar-at a b c
 ## END
 
 #### Closed proc has empty "$@" or ARGV
@@ -60,7 +60,7 @@ params
 x
 y
 z
-['dollar-at']
+['dollar-at', 'a', 'b', 'c']
 ['ARGV']
 ## END
 
@@ -157,10 +157,10 @@ p x (:| a b |, {bob: 42}, a = 5)
 ## END
 
 #### Proc name-with-hyphen
-shopt --set parse_proc
+shopt --set parse_proc parse_at
 
 proc name-with-hyphen {
-  echo "$@"
+  echo @ARGV
 }
 name-with-hyphen x y z
 ## STDOUT:
@@ -369,24 +369,24 @@ argv.py @ARGV
 
 set -- 'a b' c
 argv.py "$@"
-argv.py @ARGV
+argv.py @ARGV  # separate from the argv stack
 
 f() {
   argv.py "$@"
-  argv.py @ARGV
+  argv.py @ARGV  # separate from the argv stack
 }
 f 1 '2 3'
 ## STDOUT:
 []
 []
 ['a b', 'c']
-['a b', 'c']
+[]
 ['1', '2 3']
-['1', '2 3']
+[]
 ## END
 
 
-#### Mutating global and local ARGV
+#### Mutating global ARGV
 
 $SH -c '
 shopt -s ysh:upgrade
@@ -397,11 +397,23 @@ argv.py global @ARGV
 call ARGV->append("GG")
 
 argv.py global @ARGV
+'
+## STDOUT:
+['global']
+['global', 'GG']
+## END
+
+#### Mutating local ARGV
+
+$SH -c '
+shopt -s ysh:upgrade
+
+argv.py global @ARGV
 
 proc p {
-  argv.py local @ARGV
+  argv.py @ARGV
   call ARGV->append("LL")
-  argv.py local @ARGV
+  argv.py @ARGV
 }
 
 p local @ARGV
@@ -412,9 +424,8 @@ argv.py global @ARGV
 
 ## STDOUT:
 ['global', 'a b', 'c']
-['global', 'a b', 'c', 'GG']
-['local', 'a b', 'c', 'GG']
-['local', 'a b', 'c', 'GG', 'LL']
-['global', 'a b', 'c', 'GG', 'LL']
+['local', 'a b', 'c']
+['local', 'a b', 'c', 'LL']
+['global', 'a b', 'c']
 ## END
 
