@@ -465,8 +465,7 @@ This table shows simpler, more common cases.
 Like funcs, procs have 2 kinds of typed args/params: positional and named.
 
 But they may also have **string aka word** args/params, and a **block**
-arg/param.  (The block param is passed as a typed, positional arg, although
-this detail usually doesn't matter.)
+arg/param.
 
 In general, a proc signature has 4 sections, like this:
 
@@ -479,13 +478,18 @@ In general, a proc signature has 4 sections, like this:
       echo 'body'
     }
 
-In general, a proc call looks like:
+In general, a proc call looks like this:
 
     var pos_args = [3, 4]
     var named_args = {foo: 'bar'}
+
     p /bin /tmp (1, 2, ...pos_args; n1=43, ...named_args) {
       echo 'block'
     }
+
+The block can also be passed as an expression after a second semicolon:
+
+    p /bin /tmp (1, 2, ...pos_args; n1=43, ...named_args; block)
 
 <!--
 - Block is really last positional arg: `cd /tmp { echo $PWD }`
@@ -604,7 +608,7 @@ Some simpler examples:
 <td>
 
     proc my-cd (dest; ; ; block) {
-      cd $dest (block)
+      cd $dest (; ; block)
     }
 
 </td>
@@ -788,9 +792,6 @@ In summary:
 is wrong.
 	* and they take blocks.
 
-One issue is that procs take block arguments but not funcs.  This is something
-of a syntactic issue.  But I don't think it's that high priority.
-
 -->
 
 ## Summary
@@ -823,9 +824,7 @@ code shared.  This code is mostly in [ysh/func_proc.py]($oils-src).
 - [Block Literals](block-literals.html) (in progress)
 
 <!--
-
 TODO: any reference topics?
-
 -->
 
 <!--

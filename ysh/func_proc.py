@@ -17,7 +17,6 @@ from core.error import e_die
 from core import state
 from core import vm
 from frontend import lexer
-from frontend import location
 from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log, NewDict
