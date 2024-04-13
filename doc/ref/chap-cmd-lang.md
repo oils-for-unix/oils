@@ -385,12 +385,20 @@ That is, it's single arg of type `value.Expr`.
 
 ### block-arg
 
-Blocks can be passed to builtins (and procs eventually):
+Blocks can be passed to simple commands, either literally:
 
     cd /tmp {
       echo $PWD  # prints /tmp
     }
     echo $PWD
+
+Or as an expression:
+
+    var block = ^(echo $PWD)
+    cd /tmp (; ; block)
+
+Note that `cd` has no typed or named arguments, so the two semicolons are
+preceded by nothing.
 
 Compare with [sh-block]($osh-help).
 
@@ -497,11 +505,29 @@ The `call` keyword evaluates an expression and throws away the result:
 ### proc-def
 
 Procs are shell-like functions, but with named parameters, and without dynamic
-scope (TODO):
+scope.
 
-    proc copy(src, dest) {
+Here's a simple proc:
+
+    proc my-cp (src, dest) {
       cp --verbose --verbose $src $dest
     }
+
+Here's the most general form:
+
+    proc p (
+      w1, w2, ...rest_words;
+      t1, t2, ...rest_typed;
+      n1, n2, ...rest_named;
+      block) {
+
+      = w1
+      = t1
+      = n1
+      = block
+    }
+
+See the [Guide to Procs and Funcs](../proc-func.html) for details.
 
 Compare with [sh-func]($osh-help).
 

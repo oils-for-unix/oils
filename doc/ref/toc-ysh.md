@@ -35,7 +35,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 ```chapter-links-cmd-lang
   [YSH Simple]    typed-arg     json write (x)
                   lazy-expr-arg assert [42 === x]
-                  block-arg     cd /tmp { echo $PWD }
+                  block-arg     cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
   [YSH Assign]    const   var   setvar   setglobal
   [YSH Expr]      equal =       = 1 + 2*3
                   call          call mylist->append(42)
