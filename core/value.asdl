@@ -133,6 +133,7 @@ module value
     # leak, like glob().
   | IO(any cmd_ev, any prompt_ev)
 
+    # Do we need this?
     # _guts->heapId() can be used to detect object cycles.
     # It's considered impure; it depends on VM implementation details.  The =
     # operator and 'pp value' also print the heap ID.
@@ -145,14 +146,14 @@ module value
   | BuiltinFunc(any callable)
   | BoundFunc(value me, value func)
 
-    # command.ShFunction and command.Proc evaluate to ProcValue.
-    # Procs have default args to evaluate, and no dynamic scope.
+    # command.ShFunction and command.Proc evaluate to value.Proc
+    # They each have name, name_tok, and body.
     #
-    # TODO: this can also have frame.
-    # Perhaps divide this into Proc and ShFunction
+    # YSH procs disable dynamic scope, have default args to evaluate, and
+    # different @ARGV.
 
   | Proc(str name, Token name_tok, proc_sig sig, command body,
-         ProcDefaults? defaults, bool dynamic_scope)
+         ProcDefaults? defaults, bool sh_compat)
 
     # module may be a frame where defined
   | Func(str name, Func parsed,

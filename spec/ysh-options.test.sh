@@ -135,30 +135,6 @@ hi
 hi
 ## END
 
-#### ARGV is similar to "$@"
-shopt -s parse_at
-argv.py "$@"
-argv.py @ARGV
-#argv.py "${ARGV[@]}"  # not useful, but it works!
-
-set -- 'a b' c
-argv.py "$@"
-argv.py @ARGV
-
-f() {
-  argv.py "$@"
-  argv.py @ARGV
-}
-f 1 '2 3'
-## STDOUT:
-[]
-[]
-['a b', 'c']
-['a b', 'c']
-['1', '2 3']
-['1', '2 3']
-## END
-
 #### shopt -s strict:all
 shopt -s strict:all
 # normal option names

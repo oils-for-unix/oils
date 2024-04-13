@@ -939,12 +939,25 @@ class ctx_FuncCall(object):
 
 
 class ctx_ProcCall(object):
-    """For proc calls."""
+    """For proc calls, including shell functions."""
 
     def __init__(self, mem, mutable_opts, proc, argv):
         # type: (Mem, MutableOpts, value.Proc, List[str]) -> None
+
+        # TODO:
+        # - argv stack shouldn't be used for procs
+        #   - we can bind a real variable @A if we want
+        # - procs should be in the var namespace
+        #
+        # should we separate procs and shell functions?
+        # - dynamic scope is one difference
+        # - '$@" shift etc. are another difference
+
         mem.PushCall(proc.name, proc.name_tok, argv)
-        mutable_opts.PushDynamicScope(proc.dynamic_scope)
+
+        # Dynamic scope is only for shell functions
+        mutable_opts.PushDynamicScope(proc.sh_compat)
+
         # It may have been disabled with ctx_ErrExit for 'if echo $(false)', but
         # 'if p' should be allowed.
         self.mem = mem

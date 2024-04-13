@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -30,25 +30,28 @@ f a b  # status 2
 status=42
 ## END
 
-#### Open proc has "$@"
-shopt -s oil:all
+#### Open proc has ARGV
+shopt -s ysh:all
 proc foo { 
-  write ARGV "$@"
+  echo ARGV @ARGV
+  # do we care about this?  I think we want to syntactically remove it from YSH
+  # but it can still be used for legacy
+  echo dollar-at "$@"
 }
 builtin set -- a b c
 foo x y z
 ## STDOUT:
-ARGV
-x
-y
-z
+ARGV x y z
+dollar-at x y z
 ## END
 
-#### Closed proc doesn't have "$@"
-shopt -s oil:all
+#### Closed proc has empty "$@" or ARGV
+shopt -s ysh:all
+
 proc foo(d, e, f) { 
   write params $d $e $f
-  write ARGV "$@"
+  argv.py dollar-at "$@"
+  argv.py ARGV @ARGV
 }
 builtin set -- a b c
 foo x y z
@@ -57,9 +60,9 @@ params
 x
 y
 z
-ARGV
+['dollar-at']
+['ARGV']
 ## END
-
 
 #### Proc with default args
 shopt --set parse_proc
@@ -75,7 +78,7 @@ x=foo
 #### Proc with word params
 shopt --set parse_proc
 
-# doesn't require oil:all
+# doesn't require ysh:all
 proc f(x, y, z) {
   echo $x $y $z
   var ret = 42
@@ -97,7 +100,7 @@ status=42
 # func(**opt)  # Assumes keyword args match?
 # parse :grep_opts :opt @ARGV
 
-shopt -s oil:all
+shopt -s ysh:all
 
 proc f(...names) {
   write names: @names
@@ -357,3 +360,61 @@ Block
 Command
 
 ## END
+
+#### Global and local ARGV, like "$@"
+shopt -s parse_at
+argv.py "$@"
+argv.py @ARGV
+#argv.py "${ARGV[@]}"  # not useful, but it works!
+
+set -- 'a b' c
+argv.py "$@"
+argv.py @ARGV
+
+f() {
+  argv.py "$@"
+  argv.py @ARGV
+}
+f 1 '2 3'
+## STDOUT:
+[]
+[]
+['a b', 'c']
+['a b', 'c']
+['1', '2 3']
+['1', '2 3']
+## END
+
+
+#### Mutating global and local ARGV
+
+$SH -c '
+shopt -s ysh:upgrade
+
+argv.py global @ARGV
+
+# should not be ignored
+call ARGV->append("global")
+
+argv.py global @ARGV
+
+proc p {
+  argv.py @ARGV
+  call ARGV->append("local")
+  argv.py @ARGV
+}
+
+p local @ARGV
+
+argv.py global @ARGV
+
+' dummy0 'a b' c
+
+## STDOUT:
+['global', 'a b', 'c']
+['global', 'a b', 'c', 'global']
+['local', 'a b', 'c']
+['local', 'a b', 'c', 'local']
+['global', 'a b', 'c', 'global']
+## END
+
