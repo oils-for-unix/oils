@@ -1902,10 +1902,11 @@ class Mem(object):
                 return value.BashArray(strs2)
 
             elif case('_pipeline_status'):
-                items = [num.ToBig(i) for i in self.pipe_status[-1]]
+                items = [num.ToBig(i)
+                         for i in self.pipe_status[-1]]  # type: List[value_t]
                 return value.List(items)
 
-            elif case('_process_sub_status'):  # Oil naming convention
+            elif case('_process_sub_status'):  # YSH naming convention
                 items = [num.ToBig(i) for i in self.process_sub_status[-1]]
                 return value.List(items)
 
