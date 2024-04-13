@@ -926,7 +926,11 @@ class ctx_FuncCall(object):
 
     def __init__(self, mem, func):
         # type: (Mem, value.Func) -> None
-        mem.PushCall(func.name, func.parsed.name, None)
+
+        frame = NewDict()  # type: Dict[str, Cell]
+        mem.var_stack.append(frame)
+
+        mem.PushCall(func.name, func.parsed.name)
         self.mem = mem
 
     def __enter__(self):
@@ -935,7 +939,8 @@ class ctx_FuncCall(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.mem.PopCall(False)
+        self.mem.PopCall()
+        self.mem.var_stack.pop()
 
 
 class ctx_ProcCall(object):
@@ -953,7 +958,21 @@ class ctx_ProcCall(object):
         # - dynamic scope is one difference
         # - '$@" shift etc. are another difference
 
-        mem.PushCall(proc.name, proc.name_tok, argv)
+        frame = NewDict()  # type: Dict[str, Cell]
+
+        assert argv is not None
+        if True:
+            # shell function
+            mem.argv_stack.append(_ArgFrame(argv))
+        else:
+            # TODO: procs get argv
+            # - open: the args
+            # - closed: always empty
+            frame['ARGV'] = _MakeArgvCell(argv)
+
+        mem.var_stack.append(frame)
+
+        mem.PushCall(proc.name, proc.name_tok)
 
         # Dynamic scope is only for shell functions
         mutable_opts.PushDynamicScope(proc.sh_compat)
@@ -970,7 +989,11 @@ class ctx_ProcCall(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mutable_opts.PopDynamicScope()
-        self.mem.PopCall(True)
+        self.mem.PopCall()
+        self.mem.var_stack.pop()
+
+        # TODO: do this conditionally
+        self.mem.argv_stack.pop()
 
 
 class ctx_Temp(object):
@@ -1054,10 +1077,14 @@ class ctx_ThisDir(object):
             self.mem.this_dir.pop()
 
 
+def _MakeArgvCell(argv):
+    # type: (List[str]) -> Cell
+    items = [value.Str(a) for a in argv]  # type: List[value_t]
+    return Cell(False, False, False, value.List(items))
+
+
 class Mem(object):
     """For storing variables.
-
-    Mem is better than "Env" -- Env implies OS stuff.
 
     Callers:
       User code: assigning and evaluating variables, in command context or
@@ -1079,8 +1106,13 @@ class Mem(object):
         self.unsafe_arith = None  # type: sh_expr_eval.UnsafeArith
 
         self.dollar0 = dollar0
+        # If you only use YSH procs and funcs, this will remain at length 1.
         self.argv_stack = [_ArgFrame(argv)]
+
         frame = NewDict()  # type: Dict[str, Cell]
+
+        #frame['ARGV'] = _MakeArgvCell(argv)
+
         self.var_stack = [frame]
 
         # The debug_stack isn't strictly necessary for execution.  We use it
@@ -1297,8 +1329,8 @@ class Mem(object):
     # Call Stack
     #
 
-    def PushCall(self, func_name, def_tok, argv):
-        # type: (str, Token, Optional[List[str]]) -> None
+    def PushCall(self, func_name, def_tok):
+        # type: (str, Token) -> None
         """Push argv, var, and debug stack frames.
 
         Currently used for proc and func calls.  TODO: New func evaluator may
@@ -1308,27 +1340,18 @@ class Mem(object):
           def_tok: Token where proc or func was defined, used to compute
                    BASH_SOURCE.
         """
-        if argv is not None:
-            self.argv_stack.append(_ArgFrame(argv))
-        frame = NewDict()  # type: Dict[str, Cell]
-        self.var_stack.append(frame)
-
         # self.token_for_line can be None?
         self.debug_stack.append(
             debug_frame.Call(self.token_for_line, def_tok, func_name))
 
-    def PopCall(self, should_pop_argv_stack):
-        # type: (bool) -> None
+    def PopCall(self):
+        # type: () -> None
         """
         Args:
           should_pop_argv_stack: Pass False if PushCall was given None for argv
+          True for proc, False for func
         """
         self.debug_stack.pop()
-
-        self.var_stack.pop()
-
-        if should_pop_argv_stack:
-            self.argv_stack.pop()
 
     def ShouldRunDebugTrap(self):
         # type: () -> bool
@@ -2378,3 +2401,6 @@ def GetInteger(mem, name):
         raise error.Runtime("$%s doesn't look like an integer, got %r" %
                             (name, s))
     return i
+
+
+# vim: sw=4

@@ -394,14 +394,14 @@ shopt -s ysh:upgrade
 argv.py global @ARGV
 
 # should not be ignored
-call ARGV->append("global")
+call ARGV->append("GG")
 
 argv.py global @ARGV
 
 proc p {
-  argv.py @ARGV
-  call ARGV->append("local")
-  argv.py @ARGV
+  argv.py local @ARGV
+  call ARGV->append("LL")
+  argv.py local @ARGV
 }
 
 p local @ARGV
@@ -412,9 +412,9 @@ argv.py global @ARGV
 
 ## STDOUT:
 ['global', 'a b', 'c']
-['global', 'a b', 'c', 'global']
-['local', 'a b', 'c']
-['local', 'a b', 'c', 'local']
-['global', 'a b', 'c', 'global']
+['global', 'a b', 'c', 'GG']
+['local', 'a b', 'c', 'GG']
+['local', 'a b', 'c', 'GG', 'LL']
+['global', 'a b', 'c', 'GG', 'LL']
 ## END
 
