@@ -812,15 +812,29 @@ class CommandParser(object):
 
         YSH grammar:
 
-        simple_command = 
-            cmd_prefix* word+ typed_args? BraceGroup? cmd_suffix*
+        redirect = redir_op WORD
+        item = WORD | redirect
 
         typed_args =
           '(' arglist ')'
         | '[' arglist ']'
 
-        Notably, redirects shouldn't appear after between typed args and
+        simple_command = 
+            cmd_prefix* item+ typed_args? BraceGroup? cmd_suffix*
+
+        Notably, redirects shouldn't appear after typed args, or after
         BraceGroup.
+
+        Examples:
+
+        This is an assignment:
+           foo=1 >out
+
+        This is a command.Simple
+           >out
+
+        What about
+          >out (42)
         """
         redirects = []  # type: List[Redir]
         words = []  # type: List[CompoundWord]
@@ -1070,8 +1084,7 @@ class CommandParser(object):
 
     def ParseSimpleCommand(self):
         # type: () -> command_t
-        """Fixed transcription of the POSIX grammar (TODO: port to
-        grammar/Shell.g)
+        """Fixed transcription of the POSIX grammar
 
         io_file        : '<'       filename
                        | LESSAND   filename

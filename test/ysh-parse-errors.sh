@@ -586,17 +586,6 @@ test-lazy-arg-list() {
 
   # legacy
   _ysh-should-parse '[ x = y ]'
-
-
-  return
-
-  # TODO: shouldn't allow extra words
-  _ysh-parse-error 'assert (42)extra'
-  _ysh-parse-error 'assert (42) extra'
-
-
-  _ysh-parse-error 'assert [42]extra'
-  _ysh-parse-error 'assert [42] extra'
 }
 
 test-place-expr() {
@@ -1249,6 +1238,32 @@ test-bug-1850() {
   # Wow this is parsed horribly
   # Why does this replace (42) with (43)
   _ysh-parse-error 'pp line (42), pp line (43)'
+}
+
+test-bug-1850-more() {
+  ### Regression
+
+  return
+
+  # TODO: shouldn't allow extra words
+  _ysh-parse-error 'assert (42)extra'
+  _ysh-parse-error 'assert (42) extra'
+
+
+  _ysh-parse-error 'assert [42]extra'
+  _ysh-parse-error 'assert [42] extra'
+}
+
+test-command-simple-more() {
+  _ysh-should-parse 'foo=1'
+
+  _ysh-parse-error 'foo=1 >out (42)'
+
+  _ysh-parse-error 'foo=1 (42)'
+
+  _ysh-should-parse 'foo=1 cmd (42)'
+
+  _ysh-should-parse 'foo=1 cmd >out (42)'
 }
 
 test-proc-args() {
