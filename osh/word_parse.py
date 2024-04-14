@@ -1938,7 +1938,7 @@ class WordParser(WordEmitter):
         """Helper function for ReadWord()."""
 
         # Change the pseudo lexer mode to a real lexer mode
-        if word_mode == lex_mode_e.ShCommandBrack:
+        if word_mode == lex_mode_e.ShCommandFakeBrack:
             lex_mode = lex_mode_e.ShCommand
         else:
             lex_mode = word_mode
@@ -1988,7 +1988,7 @@ class WordParser(WordEmitter):
                                        Kind.ExtGlob,
                                        Kind.BashRegex), 'Unhandled token kind'
 
-            if (word_mode == lex_mode_e.ShCommandBrack and
+            if (word_mode == lex_mode_e.ShCommandFakeBrack and
                     self.parse_opts.parse_bracket() and
                     self.token_type == Id.Lit_LBracket):
                 # Change [ from Kind.Lit -> Kind.Op
@@ -2122,7 +2122,8 @@ class WordParser(WordEmitter):
 
         This is a stateful wrapper for the stateless _ReadWord function.
         """
-        assert word_mode in (lex_mode_e.ShCommand, lex_mode_e.ShCommandBrack,
+        assert word_mode in (lex_mode_e.ShCommand,
+                             lex_mode_e.ShCommandFakeBrack,
                              lex_mode_e.DBracket, lex_mode_e.BashRegex)
 
         if self.buffered_word:  # For integration with pgen2

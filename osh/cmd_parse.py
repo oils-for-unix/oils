@@ -612,8 +612,7 @@ class CommandParser(object):
         self.c_kind = Kind.Undefined
         self.c_id = Id.Undefined_Tok
 
-        self.pending_here_docs = [
-        ]  # type: List[Redir]  # should have HereLiteral arg
+        self.pending_here_docs = []  # type: List[Redir]
 
     def ResetInputObjects(self):
         # type: () -> None
@@ -636,7 +635,7 @@ class CommandParser(object):
 
     def _SetNextBrack(self):
         # type: () -> None
-        self.next_lex_mode = lex_mode_e.ShCommandBrack
+        self.next_lex_mode = lex_mode_e.ShCommandFakeBrack
 
     def _GetWord(self):
         # type: () -> None
@@ -664,6 +663,7 @@ class CommandParser(object):
             self.cur_word = w
 
             self.c_kind = word_.CommandKind(self.cur_word)
+            # Has special case for Id.Lit_{LBrace,RBrace,Equals}
             self.c_id = word_.CommandId(self.cur_word)
             self.next_lex_mode = lex_mode_e.Undefined
 
@@ -1816,8 +1816,8 @@ class CommandParser(object):
 
     def _ParseYshIf(self, if_kw, cond):
         # type: (Token, condition_t) -> command.If
-        """if test -f foo {
-
+        """
+        if test -f foo {
                      # ^ we parsed up to here
           echo foo
         } elif test -f bar; test -f spam {
@@ -1901,8 +1901,8 @@ class CommandParser(object):
         if_node.if_kw = if_kw
         self._SetNext()  # past 'if'
 
-        if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace(
-        ) == Id.Op_LParen:
+        if (self.parse_opts.parse_paren() and
+                self.w_parser.LookPastSpace() == Id.Op_LParen):
             # if (x + 1)
             enode = self.w_parser.ParseYshExprForCommand()
             cond = condition.YshExpr(enode)  # type: condition_t

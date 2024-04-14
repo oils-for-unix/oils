@@ -371,12 +371,6 @@ def AddKinds(spec):
             'Func',  # For function literals
             'Capture',
             'As',
-
-            # Tea-specific
-            'While',
-            'Break',
-            'Continue',
-            'Return'
         ])
 
     # For C-escaped strings.

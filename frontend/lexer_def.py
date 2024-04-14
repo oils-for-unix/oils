@@ -231,7 +231,6 @@ EXPR_WORDS = [
     C('or', Id.Expr_Or),
     C('not', Id.Expr_Not),
     C('for', Id.Expr_For),
-    C('while', Id.Expr_While),
     C('is', Id.Expr_Is),
     C('in', Id.Expr_In),
     C('if', Id.Expr_If),
@@ -244,11 +243,6 @@ EXPR_WORDS = [
     C('capture', Id.Expr_Capture),
     # / <capture d+ as date> /
     C('as', Id.Expr_As),
-
-    # Tea Control Flow Operators
-    C('break', Id.Expr_Break),
-    C('continue', Id.Expr_Continue),
-    C('return', Id.Expr_Return),
 ]
 
 FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
