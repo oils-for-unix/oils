@@ -701,10 +701,9 @@ def CommandId(w):
             if token_type == Id.Undefined_Tok:
                 return Id.Word_Compound
 
-            elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals,
-                                Id.ControlFlow_Return):
-                # OSH and YSH recognize:  {  }
-                # YSH recognizes:         =  return
+            # { } are for YSH braces, = is for the = keyword
+            # TODO: Should we use Op_{LBrace,RBrace} and Kind.Op when parse_brace?
+            elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals):
                 return token_type
 
             token_kind = consts.GetKind(token_type)

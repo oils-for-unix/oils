@@ -236,7 +236,8 @@ EXPR_WORDS = [
     C('if', Id.Expr_If),
     C('else', Id.Expr_Else),
 
-    # for function literals
+    # Unused: could be for function literals, although we also have
+    # |x| x+1 lambdas
     C('func', Id.Expr_Func),
 
     # / <capture d+/
