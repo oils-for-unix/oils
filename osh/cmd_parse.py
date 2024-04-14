@@ -846,37 +846,18 @@ class CommandParser(object):
         i = 0
         while True:
             self._GetWord()
-            if self.c_kind == Kind.Redir:
+
+            # If we got { }, change it to something that's not Kind.Word
+            kind2 = self.c_kind
+            if (kind2 == Kind.Word and self.parse_opts.parse_brace() and
+                    self.c_id in (Id.Lit_LBrace, Id.Lit_RBrace)):
+                kind2 = Kind.Op
+
+            if kind2 == Kind.Redir:
                 node = self.ParseRedirect()
                 redirects.append(node)
 
-            elif self.c_kind == Kind.Word:
-                if self.parse_opts.parse_brace():
-                    # Treat { and } more like operators
-                    if self.c_id == Id.Lit_LBrace:
-                        if self.allow_block:  # Disabled for if/while condition, etc.
-
-                            # allow x = 42
-                            self.hay_attrs_stack.append(first_word_caps)
-                            brace_group = self.ParseBraceGroup()
-
-                            # So we can get the source code back later
-                            lines = self.arena.SaveLinesAndDiscard(
-                                brace_group.left, brace_group.right)
-                            block = LiteralBlock(brace_group, lines)
-
-                            self.hay_attrs_stack.pop()
-
-                        if 0:
-                            print('--')
-                            block.PrettyPrint()
-                            print('\n--')
-                        break
-                    elif self.c_id == Id.Lit_RBrace:
-                        # Another thing: { echo hi }
-                        # We're DONE!!!
-                        break
-
+            elif kind2 == Kind.Word:
                 w = cast(CompoundWord, self.cur_word)  # Kind.Word ensures this
 
                 if i == 0:
@@ -941,6 +922,22 @@ class CommandParser(object):
 
             self._SetNextBrack()  # Allow bracket for SECOND word on
             i += 1
+
+        if (self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace and
+                # Disabled for if/while condition, etc.
+                self.allow_block):
+
+            # allow x = 42
+            self.hay_attrs_stack.append(first_word_caps)
+            brace_group = self.ParseBraceGroup()
+
+            # So we can get the source code back later
+            lines = self.arena.SaveLinesAndDiscard(brace_group.left,
+                                                   brace_group.right)
+            block = LiteralBlock(brace_group, lines)
+
+            self.hay_attrs_stack.pop()
+
         return redirects, words, typed_args, block
 
     def _MaybeExpandAliases(self, words):
@@ -1747,7 +1744,7 @@ class CommandParser(object):
         arms = []  # type: List[CaseArm]
         while True:
             self._GetWord()
-            if self.c_id == Id.KW_Esac:  # this is Kind.Word
+            if self.c_id == Id.KW_Esac:
                 break
             # case arm should begin with a pattern word or (
             if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
@@ -2750,3 +2747,6 @@ class CommandParser(object):
             node = self.pending_here_docs[0]  # Just show the first one?
             h = cast(redir_param.HereDoc, node.arg)
             p_die('Unterminated here doc began here', loc.Word(h.here_begin))
+
+
+# vim: sw=4
