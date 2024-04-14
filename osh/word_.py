@@ -637,6 +637,7 @@ def AsOperatorToken(word):
 
 def ArithId(w):
     # type: (word_t) -> Id_t
+    """Used by shell arithmetic parsing."""
     if w.tag() == word_e.Operator:
         tok = cast(Token, w)
         return tok.id
@@ -684,6 +685,7 @@ def BoolId(w):
 
 def CommandId(w):
     # type: (word_t) -> Id_t
+    """Used by CommandParser."""
     UP_w = w
     with tagswitch(w) as case:
         if case(word_e.Operator):
@@ -721,6 +723,7 @@ def CommandKind(w):
     """The CommandKind is for coarse-grained decisions in the CommandParser."""
     if w.tag() == word_e.Operator:
         tok = cast(Token, w)
+        # CommandParser uses Kind.Redir, Kind.Op, Kind.Eof, etc.
         return consts.GetKind(tok.id)
 
     # NOTE: This is a bit inconsistent with CommandId, because we never
