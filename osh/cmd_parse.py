@@ -2269,12 +2269,14 @@ class CommandParser(object):
 
                          # YSH extensions
                          | proc NAME ...
+                         | typed proc NAME ...
+                         | func NAME ...
                          | const ...
                          | var ...
                          | setglobal ...
                          | setref ...
                          | setvar ...
-                         | _ EXPR
+                         | call EXPR
                          | = EXPR
                          ;
 
@@ -2397,8 +2399,8 @@ class CommandParser(object):
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
                         assert tok.id == Id.Lit_Chars, tok
 
-                        if len(self.hay_attrs_stack
-                               ) and self.hay_attrs_stack[-1]:
+                        if (len(self.hay_attrs_stack) and
+                                self.hay_attrs_stack[-1]):
                             # Note: no static var_checker.Check() for bare assignment
                             enode = self.w_parser.ParseBareDecl()
                             self._SetNext()  # Somehow this is necessary
@@ -2476,13 +2478,11 @@ class CommandParser(object):
     def ParseAndOr(self):
         # type: () -> command_t
         self._GetWord()
-        if self.c_id == Id.Word_Compound:
-            first_word_tok = word_.LiteralToken(self.cur_word)
-            if first_word_tok is not None and first_word_tok.id == Id.Lit_TDot:
-                # We got '...', so parse in multiline mode
-                self._SetNext()
-                with word_.ctx_Multiline(self.w_parser):
-                    return self._ParseAndOr()
+        if self.c_id == Id.Lit_TDot:
+            # We got '...', so parse in multiline mode
+            self._SetNext()
+            with word_.ctx_Multiline(self.w_parser):
+                return self._ParseAndOr()
 
         # Parse in normal mode, not multiline
         return self._ParseAndOr()
