@@ -952,6 +952,13 @@ class CommandParser(object):
 
             self.hay_attrs_stack.pop()
 
+        self._GetWord()
+
+        # Allow redirects after block, e.g.
+        #    cd /tmp { echo $PWD } > out.txt
+        if self.c_kind == Kind.Redir:
+            redirects.extend(self._ParseRedirectList())
+
         return redirects, words, typed_args, block
 
     def _MaybeExpandAliases(self, words):

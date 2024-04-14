@@ -355,21 +355,13 @@ Note that time is a KEYWORD, not a builtin!
 
 ### typed-arg
 
-Internal commands (procs and builtins) accept typed arguments.
+Internal commands (procs and builtins) accept typed arguments in parentheses:
 
     json write (myobj)
 
-Block literals have a special syntax:
+Redirects can also appear after the typed args:
 
-    cd /tmp {
-      echo $PWD
-    }
-
-This is equivalent to:
-
-    var cmd = ^(echo $PWD)  # unevaluated command
-
-    cd /tmp (cmd)  # pass typed arg
+    json write (myobj) >out.txt
 
 ### lazy-expr-arg
 
@@ -382,6 +374,10 @@ Are syntactic sugar for:
     assert (^[42 === x])
 
 That is, it's single arg of type `value.Expr`.
+
+Redirects can also appear after the lazy typed args:
+
+    assert [42 ===x] >out.txt
 
 ### block-arg
 
@@ -402,6 +398,11 @@ preceded by nothing.
 
 Compare with [sh-block]($osh-help).
 
+Redirects can appear after the block arg:
+
+    cd /tmp {
+      echo $PWD  # prints /tmp
+    } >out.txt
 
 ## YSH Assign
 
