@@ -176,6 +176,12 @@ test-proc-def() {
   _ysh-parse-error 'proc p(w; p; n, n2; b) { var b = foo }'
 }
 
+test-typed-proc() {
+  _ysh-should-parse 'typed proc p(words) { echo hi }'
+  _ysh-parse-error 'typed zzz p(words) { echo hi }'
+  _ysh-parse-error 'typed p(words) { echo hi }'
+}
+
 test-func-sig() {
   _ysh-parse-error 'func f { echo hi }'
 

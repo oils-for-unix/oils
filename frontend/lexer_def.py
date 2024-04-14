@@ -209,6 +209,7 @@ KEYWORDS = [
     C('setglobal', Id.KW_SetGlobal),
     C('call', Id.KW_Call),
     C('proc', Id.KW_Proc),
+    C('typed', Id.KW_Typed),
     C('func', Id.KW_Func),
 ]
 

@@ -429,3 +429,25 @@ argv.py global @ARGV
 ['global', 'a b', 'c']
 ## END
 
+
+#### typed proc allows all kinds of args
+shopt -s ysh:upgrade
+
+typed proc p (w; t; n; block) {
+  pp line (w)
+  pp line (t)
+  pp line (n)
+  echo $[type(block)]
+}
+
+p word (42, n=99) {
+  echo block
+}
+
+
+## STDOUT:
+(Str)   "word"
+(Int)   42
+(Int)   99
+Block
+## END

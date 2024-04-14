@@ -2292,6 +2292,18 @@ class CommandParser(object):
                 p_die("proc is a YSH keyword, but this is OSH.",
                       loc.Word(self.cur_word))
 
+        if self.c_id == Id.KW_Typed:  # typed proc p () { ... }
+            self._SetNext()
+            self._GetWord()
+            if self.c_id != Id.KW_Proc:
+                p_die("Expected 'proc' after 'typed'", loc.Word(self.cur_word))
+
+            if self.parse_opts.parse_proc():
+                return self.ParseYshProc()
+            else:
+                p_die("typed is a YSH keyword, but this is OSH.",
+                      loc.Word(self.cur_word))
+
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
             if self.parse_opts.parse_func():
                 return self.ParseYshFunc()

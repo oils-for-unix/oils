@@ -623,6 +623,7 @@ def AddKinds(spec):
             # later: Auto?
             'Call',
             'Proc',
+            'Typed',
             'Func',
 
             # builtins, NOT keywords: use, fork, wait, etc.
