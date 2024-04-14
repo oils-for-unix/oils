@@ -885,44 +885,58 @@ class CommandParser(object):
 
                 words.append(w)
 
-            elif self.c_id == Id.Op_LParen:
-                # 1. Check that there's a preceding space
-                prev_byte = self.lexer.ByteLookBack()
-                if prev_byte not in (SPACE_CH, TAB_CH):
-                    if self.parse_opts.parse_at():
-                        p_die('Space required before (',
-                              loc.Word(self.cur_word))
-                    else:
-                        # inline func call like @sorted(x) is invalid in OSH, but the
-                        # solution isn't a space
-                        p_die(
-                            'Unexpected left paren (might need a space before it)',
-                            loc.Word(self.cur_word))
-
-                # 2. Check that it's not ().  We disallow this because it's a no-op and
-                #    there could be confusion with shell func defs.
-                # For some reason we need to call lexer.LookPastSpace, not
-                # w_parser.LookPastSpace.  I think this is because we're at (, which is
-                # an operator token.  All the other cases are like 'x=', which is PART
-                # of a word, and we don't know if it will end.
-                next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
-                if next_id == Id.Op_RParen:
-                    p_die('Empty arg list not allowed',
-                          loc.Word(self.cur_word))
-
-                typed_args = self.w_parser.ParseProcCallArgs(
-                    grammar_nt.ysh_eager_arglist)
-
-            elif self.c_id == Id.Op_LBracket:  # only when parse_bracket set
-                typed_args = self.w_parser.ParseProcCallArgs(
-                    grammar_nt.ysh_lazy_arglist)
-
             else:
                 break
 
             self._SetNextBrack()  # Allow bracket for SECOND word on
             i += 1
 
+        # my-cmd (x) or my-cmd [x]
+        self._GetWord()
+        if self.c_id == Id.Op_LParen:
+            # 1. Check that there's a preceding space
+            prev_byte = self.lexer.ByteLookBack()
+            if prev_byte not in (SPACE_CH, TAB_CH):
+                if self.parse_opts.parse_at():
+                    p_die('Space required before (',
+                          loc.Word(self.cur_word))
+                else:
+                    # inline func call like @sorted(x) is invalid in OSH, but the
+                    # solution isn't a space
+                    p_die(
+                        'Unexpected left paren (might need a space before it)',
+                        loc.Word(self.cur_word))
+
+            # 2. Check that it's not ().  We disallow this because it's a no-op and
+            #    there could be confusion with shell func defs.
+            # For some reason we need to call lexer.LookPastSpace, not
+            # w_parser.LookPastSpace.  I think this is because we're at (, which is
+            # an operator token.  All the other cases are like 'x=', which is PART
+            # of a word, and we don't know if it will end.
+            next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
+            if next_id == Id.Op_RParen:
+                p_die('Empty arg list not allowed',
+                      loc.Word(self.cur_word))
+
+            typed_args = self.w_parser.ParseProcCallArgs(
+                grammar_nt.ysh_eager_arglist)
+
+            self._SetNext()
+
+        elif self.c_id == Id.Op_LBracket:  # only when parse_bracket set
+            typed_args = self.w_parser.ParseProcCallArgs(
+                grammar_nt.ysh_lazy_arglist)
+
+            self._SetNext()
+
+        self._GetWord()
+
+        # Allow redirects after typed args, e.g.
+        #    json write (x) > out.txt
+        if self.c_kind == Kind.Redir:
+            redirects.extend(self._ParseRedirectList())
+
+        # my-cmd { echo hi }   my-cmd (x) { echo hi }   ...
         if (self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace and
                 # Disabled for if/while condition, etc.
                 self.allow_block):

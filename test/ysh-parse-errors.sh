@@ -272,10 +272,9 @@ test-ysh-expr-more() {
 
   _ysh-parse-error 'echo @[split(x)]extra'
 
-  # Old syntax to remove
-  #_ysh-parse-error 'echo @split("a")'
+  # Old syntax that's now invalid
+  _ysh-parse-error 'echo @split("a")'
 }
-
 
 test-blocks() {
   _ysh-parse-error '>out { echo hi }'
@@ -1213,8 +1212,6 @@ test-bug-1850() {
   _ysh-should-parse 'pp line (42); pp line (43)'
   #_osh-should-parse 'pp line (42); pp line (43)'
 
-  return
-
   # Extra word is bad
   _ysh-parse-error 'pp line (42) extra'
 
@@ -1230,25 +1227,18 @@ test-bug-1850() {
   _ysh-should-parse 'pp line (42);'
   _ysh-should-parse 'pp line (42) { echo hi }'
 
-  return
-
   # Original bug
 
   # Accidental comma instead of ;
-  # Wow this is parsed horribly
-  # Why does this replace (42) with (43)
+  # Wow this is parsed horribly - (42) replaced (43)
   _ysh-parse-error 'pp line (42), pp line (43)'
 }
 
 test-bug-1850-more() {
   ### Regression
 
-  return
-
-  # TODO: shouldn't allow extra words
   _ysh-parse-error 'assert (42)extra'
   _ysh-parse-error 'assert (42) extra'
-
 
   _ysh-parse-error 'assert [42]extra'
   _ysh-parse-error 'assert [42] extra'
