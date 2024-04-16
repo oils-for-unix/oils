@@ -52,6 +52,7 @@ from core.error import p_die
 from core import num
 from frontend import consts
 from frontend import lexer
+from frontend import location
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
@@ -785,6 +786,28 @@ class Transformer(object):
 
         return expr.Const(tok, cval)
 
+    def _CheckLhs(self, lhs):
+        # type: (expr_t) -> None
+
+        UP_lhs = lhs
+        with tagswitch(lhs) as case:
+            if case(expr_e.Var):
+                # OK - e.g. setvar a.b.c[i] = 42
+                pass
+
+            elif case(expr_e.Subscript):
+                lhs = cast(Subscript, UP_lhs)
+                self._CheckLhs(lhs.obj)  # recurse on LHS
+
+            elif case(expr_e.Attribute):
+                lhs = cast(Attribute, UP_lhs)
+                self._CheckLhs(lhs.obj)  # recurse on LHS
+
+            else:
+                # Illegal - e.g. setglobal {}["key"] = 42
+                p_die("Subscript and Attribute not allowed on this LHS expression",
+                      location.TokenForExpr(lhs))
+
     def _LhsExprList(self, p_node):
         # type: (PNode) -> List[y_lhs_t]
         """lhs_list: expr (',' expr)*"""
@@ -792,8 +815,9 @@ class Transformer(object):
 
         lhs_list = []  # type: List[y_lhs_t]
         n = p_node.NumChildren()
-        for i in xrange(0, n, 2):  # was children[::2]
+        for i in xrange(0, n, 2):
             p = p_node.GetChild(i)
+            #self.p_printer.Print(p)
 
             e = self.Expr(p)
             UP_e = e
@@ -804,12 +828,14 @@ class Transformer(object):
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
+                    self._CheckLhs(e)
                     lhs_list.append(e)
 
                 elif case(expr_e.Attribute):
                     e = cast(Attribute, UP_e)
+                    self._CheckLhs(e)
                     if e.op.id != Id.Expr_Dot:
-                        # e.g. setvar obj.method is not valid
+                        # e.g. setvar obj->method is not valid
                         p_die("Can't assign to this attribute expr", e.op)
                     lhs_list.append(e)
 

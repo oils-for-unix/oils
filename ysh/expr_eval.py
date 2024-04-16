@@ -263,9 +263,51 @@ class ExprEvaluator(object):
             else:
                 raise AssertionError()
 
-    def _EvalLhsExpr(self, lhs):
-        # type: (y_lhs_t) -> y_lvalue_t
+    def _EvalLeftLocalOrGlobal(self, lhs, which_scopes):
+        # type: (expr_t, scope_t) -> value_t
+        """Evaluate the LEFT MOST part, respecting setvar/setglobal.
 
+        Consider this statement:
+
+            setglobal g[a[i]] = 42
+
+        - The g is always global, never local.  It's the thing to be mutated.
+        - The a can be local or global
+        """
+        UP_lhs = lhs
+        with tagswitch(lhs) as case:
+            if case(expr_e.Var):
+                lhs = cast(expr.Var, UP_lhs)
+
+                # respect setvar/setglobal with which_scopes
+                return LookupVar(self.mem, lhs.name, which_scopes, lhs.left)
+
+            elif case(expr_e.Subscript):
+                lhs = cast(Subscript, UP_lhs)
+
+                # recursive call
+                obj = self._EvalLeftLocalOrGlobal(lhs.obj, which_scopes)
+                index = self._EvalExpr(lhs.index)
+
+                return self._EvalSubscript(obj, index)
+
+            elif case(expr_e.Attribute):
+                lhs = cast(Attribute, UP_lhs)
+                assert lhs.op.id == Id.Expr_Dot
+
+                # recursive call
+                obj = self._EvalLeftLocalOrGlobal(lhs.obj, which_scopes)
+                return self._EvalDot(lhs, obj)
+
+            else:
+                # Shouldn't happen because of Transformer._CheckLhs
+                raise AssertionError()
+
+    def _EvalLhsExpr(self, lhs, which_scopes):
+        # type: (y_lhs_t, scope_t) -> y_lvalue_t
+        """
+        Handle setvar x, setvar a[i], ... setglobal x, setglobal a[i]
+        """
         UP_lhs = lhs
         with tagswitch(lhs) as case:
             if case(y_lhs_e.Var):
@@ -277,9 +319,8 @@ class ExprEvaluator(object):
                 # setvar mylist[0] = 42
                 # setvar mydict['key'] = 42
 
-                lval = self._EvalExpr(lhs.obj)
+                lval = self._EvalLeftLocalOrGlobal(lhs.obj, which_scopes)
                 index = self._EvalExpr(lhs.index)
-                #log('index %s', index)
                 return y_lvalue.Container(lval, index)
 
             elif case(y_lhs_e.Attribute):
@@ -287,7 +328,7 @@ class ExprEvaluator(object):
                 assert lhs.op.id == Id.Expr_Dot
 
                 # setvar mydict.key = 42
-                lval = self._EvalExpr(lhs.obj)
+                lval = self._EvalLeftLocalOrGlobal(lhs.obj, which_scopes)
 
                 attr = value.Str(lhs.attr_name)
                 return y_lvalue.Container(lval, attr)
@@ -304,11 +345,11 @@ class ExprEvaluator(object):
             val = self._EvalExpr(node)
         return val
 
-    def EvalLhsExpr(self, lhs):
-        # type: (y_lhs_t) -> y_lvalue_t
+    def EvalLhsExpr(self, lhs, which_scopes):
+        # type: (y_lhs_t, scope_t) -> y_lvalue_t
         """Public API for _EvalLhsExpr to ensure command_sub_errexit"""
         with state.ctx_YshExpr(self.mutable_opts):
-            lval = self._EvalLhsExpr(lhs)
+            lval = self._EvalLhsExpr(lhs, which_scopes)
         return lval
 
     def EvalExprSub(self, part):
@@ -802,11 +843,8 @@ class ExprEvaluator(object):
 
         return self._CallFunc(to_call, rd)
 
-    def _EvalSubscript(self, node):
-        # type: (Subscript) -> value_t
-
-        obj = self._EvalExpr(node.obj)
-        index = self._EvalExpr(node.index)
+    def _EvalSubscript(self, obj, index):
+        # type: (value_t, value_t) -> value_t
 
         UP_obj = obj
         UP_index = index
@@ -880,6 +918,29 @@ class ExprEvaluator(object):
         raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
                             loc.Missing)
 
+    def _EvalDot(self, node, obj):
+        # type: (Attribute, value_t) -> value_t
+        """ obj.attr on RHS or LHS
+
+        setvar x = obj.attr
+        setglobal g[obj.attr] = 42
+        """
+        UP_obj = obj
+        with tagswitch(obj) as case:
+            if case(value_e.Dict):
+                obj = cast(value.Dict, UP_obj)
+                attr_name = node.attr_name
+                try:
+                    result = obj.d[attr_name]
+                except KeyError:
+                    raise error.Expr('Dict entry %r not found' % attr_name,
+                                     node.op)
+
+            else:
+                raise error.TypeErr(obj, 'Dot operator expected Dict', node.op)
+
+        return result
+
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
 
@@ -927,21 +988,7 @@ class ExprEvaluator(object):
                             node.attr)
 
             elif case(Id.Expr_Dot):  # d.key is like d['key']
-                name = node.attr_name
-                with tagswitch(o) as case2:
-                    if case2(value_e.Dict):
-                        o = cast(value.Dict, UP_o)
-                        try:
-                            result = o.d[name]
-                        except KeyError:
-                            raise error.Expr('Dict entry %r not found' % name,
-                                             node.op)
-
-                    else:
-                        raise error.TypeErr(o, 'Dot operator expected Dict',
-                                            node.op)
-
-                return result
+                return self._EvalDot(node, o)
 
             else:
                 raise AssertionError(node.op)
@@ -1138,7 +1185,9 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Subscript):
                 node = cast(Subscript, UP_node)
-                return self._EvalSubscript(node)
+                obj = self._EvalExpr(node.obj)
+                index = self._EvalExpr(node.index)
+                return self._EvalSubscript(obj, index)
 
             elif case(expr_e.Attribute):  # obj->method or mydict.key
                 node = cast(Attribute, UP_node)

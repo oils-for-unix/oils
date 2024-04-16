@@ -760,7 +760,7 @@ class CommandEvaluator(object):
 
             num_lhs = len(node.lhs)
             if num_lhs == 1:
-                lvals = [self.expr_ev.EvalLhsExpr(node.lhs[0])]
+                lvals = [self.expr_ev.EvalLhsExpr(node.lhs[0], which_scopes)]
                 rhs_vals = [right_val]
             else:
                 items = val_ops.ToList(
@@ -776,7 +776,8 @@ class CommandEvaluator(object):
                 lvals = []
                 rhs_vals = []
                 for i, lhs_val in enumerate(node.lhs):
-                    lvals.append(self.expr_ev.EvalLhsExpr(lhs_val))
+                    lvals.append(
+                        self.expr_ev.EvalLhsExpr(lhs_val, which_scopes))
                     rhs_vals.append(items[i])
 
             for i, lval in enumerate(lvals):
@@ -823,7 +824,7 @@ class CommandEvaluator(object):
             # Checked in the parser
             assert len(node.lhs) == 1
 
-            aug_lval = self.expr_ev.EvalLhsExpr(node.lhs[0])
+            aug_lval = self.expr_ev.EvalLhsExpr(node.lhs[0], which_scopes)
             val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
 
             self.expr_ev.EvalAugmented(aug_lval, val, node.op, which_scopes)

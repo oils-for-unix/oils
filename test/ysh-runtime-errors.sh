@@ -895,6 +895,28 @@ test-trim-utf8-error() {
 EOF
 }
 
+test-setglobal() {
+   _ysh-should-run '
+var a = [0]
+setglobal a[1-1] = 42
+pp line (a)
+   '
+
+   _ysh-expr-error '
+var a = [0]
+setglobal a[a.bad] = 42
+pp line (a)
+   '
+
+   _ysh-should-run '
+var d = {e:{f:0}}
+setglobal d.e.f = 42
+pp line (d)
+setglobal d.e.f += 1
+pp line (d)
+   '
+}
+
 soil-run-py() {
   run-test-funcs
 }

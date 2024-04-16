@@ -518,10 +518,24 @@ test-float-literals() {
   _ysh-parse-error '= _42.0'
 }
 
-test-place-expr() {
-  _ysh-should-parse 'setvar x.y = 42'
+test-lhs-expr() {
+  _ysh-should-parse 'setvar x.y[z] = 42'
+  _ysh-should-parse 'setvar a[i][j] = 42'
+
+  _ysh-should-parse 'setvar a[i], d.key = 42, 43'
+  _ysh-parse-error 'setvar a[i], 3 = 42, 43'
+  _ysh-parse-error 'setvar a[i], {}["key"] = 42, 43'
+
   _ysh-parse-error 'setvar x+y = 42'
+
+  # method call
   _ysh-parse-error 'setvar x->y = 42'
+
+  # this is allowed
+  _ysh-should-parse 'setglobal a[{k:3}["k"]]  = 42'
+
+  _ysh-parse-error 'setglobal {}["k"] = 42'
+  _ysh-parse-error 'setglobal [1,2][0] = 42'
 }
 
 test-destructure() {
