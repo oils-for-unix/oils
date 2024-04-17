@@ -53,6 +53,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import vm
+from data_lang import j8
 from frontend import lexer
 from frontend import match
 from frontend import typed_args
@@ -1027,8 +1028,11 @@ class ExprEvaluator(object):
                 else:
                     stdout_str = self.shell_ex.RunCommandSub(node)
                     if id_ == Id.Left_AtParen:  # @(seq 3)
-                        # TODO: Should use J8 lines
+                        # YSH splitting algorithm: does not depend on IFS
+                        #strs = j8.SplitJ8Lines(stdout_str)
+
                         strs = self.splitter.SplitForWordEval(stdout_str)
+
                         items = [value.Str(s)
                                  for s in strs]  # type: List[value_t]
                         return value.List(items)

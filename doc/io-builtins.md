@@ -45,7 +45,7 @@ These are discussed in more detail the [strings](strings.html) doc.
 
 Example:
 
-    hostname | read --all :x
+    hostname | read --all (&x)
     write -- $x
 
 ## Summary of YSH features

@@ -149,17 +149,17 @@ class J8Test(unittest.TestCase):
         print(obj)
 
     def testLexerDecoder(self):
-        lex = j8.LexerDecoder(r'{"hi": "bye \n"}', True)
+        lex = j8.LexerDecoder(r'{"hi": "bye \n"}', True, 'J8')
         _PrintTokens(lex)
 
-        lex = j8.LexerDecoder(r"{u'unicode': b'bytes \y1f \yff'}", True)
+        lex = j8.LexerDecoder(r"{u'unicode': b'bytes \y1f \yff'}", True, 'J8')
         _PrintTokens(lex)
 
         lex = j8.LexerDecoder(
-            r'{"mu \u03BC \u0001":' + r"b'mu \u{03bc} \u{2620}'", True)
+            r'{"mu \u03BC \u0001":' + r"b'mu \u{03bc} \u{2620}'", True, 'J8')
         _PrintTokens(lex)
 
-        lex = j8.LexerDecoder(r'{"x": [1, 2, 3.14, true]}', True)
+        lex = j8.LexerDecoder(r'{"x": [1, 2, 3.14, true]}', True, 'J8')
         _PrintTokens(lex)
 
         lex = j8.LexerDecoder(
@@ -167,11 +167,11 @@ class J8Test(unittest.TestCase):
         [
           1e9, 1e-9, -1e9, -1E-9, 42
         ]
-        ''', True)
+        ''', True, 'J8')
         _PrintTokens(lex)
 
         try:
-            lex = j8.LexerDecoder('"\x01"', True)
+            lex = j8.LexerDecoder('"\x01"', True, 'J8')
             _PrintTokens(lex)
         except error.Decode as e:
             print(e)
@@ -179,7 +179,7 @@ class J8Test(unittest.TestCase):
             self.fail('Expected failure')
 
         try:
-            lex = j8.LexerDecoder('"\x1f"', True)
+            lex = j8.LexerDecoder('"\x1f"', True, 'J8')
             _PrintTokens(lex)
         except error.Decode as e:
             print(e)
@@ -197,11 +197,11 @@ class J8Test(unittest.TestCase):
             '(Node left:(-> 123))',
         ]
         for s in cases:
-            lex = j8.LexerDecoder(s, True)
+            lex = j8.LexerDecoder(s, True, 'J8')
             _PrintTokens(lex)
 
     def testErrorMessagePosition(self):
-        lex = j8.LexerDecoder("[ u'hi']", False)
+        lex = j8.LexerDecoder("[ u'hi']", False, 'J8')
         try:
             _PrintTokens(lex)
         except error.Decode as e:

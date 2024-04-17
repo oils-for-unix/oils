@@ -916,6 +916,35 @@ pp line (d)
    '
 }
 
+test-command-sub-j8() {
+  return
+
+  # quotes that don't match
+  _ysh-error-here-X 2 <<'EOF'
+var lines = @(
+  echo "\"unbalanced"
+)
+pp line (lines)
+EOF
+
+  # syntax error inside quotes
+  _ysh-error-here-X 2 <<'EOF'
+var lines = @(
+  echo '"\"'
+)
+pp line (lines)
+EOF
+
+  # unquoted line isn't valid UTF-8
+  _ysh-error-here-X 2 <<'EOF'
+var lines = @(
+  echo $'\xff'
+)
+pp line (lines)
+EOF
+
+}
+
 soil-run-py() {
   run-test-funcs
 }

@@ -543,11 +543,11 @@ class LexerDecoder(object):
     string
     """
 
-    def __init__(self, s, is_j8):
-        # type: (str, bool) -> None
+    def __init__(self, s, is_j8, lang_str):
+        # type: (str, bool, str) -> None
         self.s = s
         self.is_j8 = is_j8
-        self.lang_str = "NIL8"
+        self.lang_str = lang_str
 
         self.pos = 0
         # Reuse this instance to save GC objects.  JSON objects could have
@@ -698,7 +698,7 @@ class _Parser(object):
         self.is_j8 = is_j8
         self.lang_str = "J8" if is_j8 else "JSON"
 
-        self.lexer = LexerDecoder(s, is_j8)
+        self.lexer = LexerDecoder(s, is_j8, self.lang_str)
         self.tok_id = Id.Undefined_Tok
         self.start_pos = 0
         self.end_pos = 0
@@ -1048,6 +1048,64 @@ class Nil8Parser(_Parser):
         if self.tok_id != Id.Eol_Tok:
             raise self._Error('Unexpected trailing input')
         return obj
+
+
+# types of lines
+UNQUOTED = 0
+SINGLE = 1
+DOUBLE = 2
+
+def SplitJ8Lines(s):
+    # type: (str) -> List[str]
+    """Used by @(echo split command sub)
+
+    3 Errors
+
+    - quotes don't match on a line
+    - J8 syntax error inside quotes
+    - unquoted line isn't utf-8
+
+    Note that blank lines are IGNORED
+
+    Notes:
+    - This is related to TSV8?  Similar rules.  Does TSV8 have empty cells?
+      - It might have the - alias for empty cell?
+    """
+    lines = s.split('\n')
+    strs = []  # type: List[str]
+    for line in lines:
+        # strip leading and trailing whitespace, no matter what
+        line = line.strip()
+
+        if len(line) == 0:
+            # always skip blank lines - empty strings should be "" or ''
+            continue
+
+        left_type = UNQUOTED
+        if (line.startswith("u'") or line.startswith("b'") or line.startswith("'")):
+            left_type = SINGLE
+        elif line.startswith('"'):
+            left_type = DOUBLE
+
+        right_type = UNQUOTED
+        if line.endswith("'"):
+            right_type = SINGLE
+        elif line.endswith('"'):
+            right_type = DOUBLE
+
+        if left_type != right_type:
+            # TODO: position
+            raise error.Decode("Mismatched quotes in J8 Lines", line, 0, 0)
+
+        if left_type == UNQUOTED:
+            # TODO: validate UTF-8
+            out_str = line
+        else:
+            # Decode j8
+            out_str = line
+        strs.append(out_str)
+
+    return strs
 
 
 # vim: sw=4

@@ -54,6 +54,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import util
+from data_lang import j8
 from data_lang import j8_lite
 from core.error import e_die
 from frontend import consts
@@ -2300,7 +2301,10 @@ class NormalWordEvaluator(AbstractWordEvaluator):
     def _EvalCommandSub(self, cs_part, quoted):
         # type: (CommandSub, bool) -> part_value_t
         stdout_str = self.shell_ex.RunCommandSub(cs_part)
+
         if cs_part.left_token.id == Id.Left_AtParen:
+            # YSH splitting algorithm: does not depend on IFS
+            #strs = j8.SplitJ8Lines(stdout_str)
             strs = self.splitter.SplitForWordEval(stdout_str)
             return part_value.Array(strs)
         else:

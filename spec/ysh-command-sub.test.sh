@@ -66,16 +66,28 @@ c
 
 #### @() decodes J8 Lines
 
+# syntax errors - TODO: document this in doc/chap-errors
+
+# - quotes that don't match
+# - syntax error inside quotes
+# - unquoted line isn't valid UTF-8
+
 var b = @(
+  # spaces stripped here
   echo "  unquoted ";
-  # I guess this is allowed
-  echo $'binary \xff';
+
+  # Not allowed, since unquoted lines should be UTF-8
+  #echo $'binary \xff';
+
   echo '"json\n\u03bc"';
   echo "u'j8 u \\u{3bc}'";
-  echo "b'j8 b \\y{ff'";
+  echo "b'j8 b \\yff'";
+
+  # no quotes is same as u''
+  echo "'j8 u \\u{3bc}'";
 )
 
-pp line (b)
+json write (b)
 
 ## STDOUT:
 ## END
