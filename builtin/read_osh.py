@@ -518,8 +518,6 @@ class Read(vm._Builtin):
                 else:
                     s = ''  # if there are too many variables
                 var_name = names[i]
-                if var_name.startswith(':'):
-                    var_name = var_name[1:]
                 #log('read: %s = %s', var_name, s)
                 state.BuiltinSetString(self.mem, var_name, s)
 

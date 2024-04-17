@@ -145,30 +145,6 @@ status=2
 status=2
 ## END
 
-#### read :x :y is allowed
-shopt --set parse_proc
-
-echo 'foo bar' | read :x :y
-echo x=$x y=$y
-
-proc p {
-  # If these aren't here, it will LEAK because 'read' uses DYNAMIC SCOPE.
-  # TODO: Change semantics of : to be enforce that a local exists too?
-  var x = ''
-  var y = ''
-  echo 'spam eggs' | read x :y  # OPTIONAL
-  echo x=$x y=$y
-}
-p
-
-echo x=$x y=$y
-
-## STDOUT:
-x=foo y=bar
-x=spam y=eggs
-x=foo y=bar
-## END
-
 #### read (&x) is usage error
 
 var x = null  # allow no initialization
