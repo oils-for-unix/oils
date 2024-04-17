@@ -209,7 +209,7 @@ test-EvalExpr-calls() {
     setvar d[len(42)] = "foo"
   '
 
-  _ysh-expr-error '
+  _ysh-error-X 2 '
     var d = {}
     setvar len(42).z = "foo"
   '
@@ -226,7 +226,6 @@ test-EvalExpr-calls() {
   _ysh-expr-error 'while (len(42)) { echo hi }'
 
   _ysh-expr-error 'for x in (len(42)) { echo $x }'
-
 }
 
 
