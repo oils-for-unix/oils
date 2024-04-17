@@ -805,8 +805,9 @@ class Transformer(object):
 
             else:
                 # Illegal - e.g. setglobal {}["key"] = 42
-                p_die("Subscript and Attribute not allowed on this LHS expression",
-                      location.TokenForExpr(lhs))
+                p_die(
+                    "Subscript/Attribute not allowed on this LHS expression",
+                    location.TokenForExpr(lhs))
 
     def _LhsExprList(self, p_node):
         # type: (PNode) -> List[y_lhs_t]

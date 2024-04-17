@@ -63,7 +63,6 @@ json write ([{k: 'v', k2: 'v2'}, {}])
 #### json write compact format
 shopt --set parse_proc
 
-# TODO: ORDER of keys should be PRESERVED
 var mydict = {name: "bob", age: 30}
 
 json write --pretty=0 (mydict)
@@ -600,28 +599,59 @@ for j in '"\ud83e"' '"\udd26"' {
 "\udd26"
 ## END
 
-#### toJson() toJson8() - TODO: test difference
+#### toJson() toJson8()
 
-var obj = [42, 1.5, null, true, "hi"]
+var obj = [42, 1.5, null, true, "hi", b'\yf0']
 
 echo $[toJson(obj)]
 echo $[toJson8(obj)]
 
+var obj2 = [3, 4]
+echo $[toJson(obj2, space=0)]  # same as the default
+echo $[toJson8(obj2, space=0)]
+
+echo $[toJson(obj2, space=2)]
+echo $[toJson8(obj2, space=2)]
+
+# fully specify this behavior
+echo $[toJson(obj2, space=-2)]
+echo $[toJson8(obj2, space=-2)]
+
 ## STDOUT:
-[42,1.5,null,true,"hi"]
-[42,1.5,null,true,"hi"]
+[42,1.5,null,true,"hi","�"]
+[42,1.5,null,true,"hi",b'\yf0']
+[3,4]
+[3,4]
+[
+  3,
+  4
+]
+[
+  3,
+  4
+]
+[3,4]
+[3,4]
 ## END
 
-#### fromJson() fromJson8() - TODO: test difference
+#### fromJson() fromJson8()
 
-var message ='[42,1.5,null,true,"hi"]'
+var m1 = '[42,1.5,null,true,"hi"]'
 
-pp line (fromJson(message))
-pp line (fromJson8(message))
+# JSON8 message
+var m2 = '[42,1.5,null,true,"hi",' ++ "u''" ++ ']'
 
+pp line (fromJson8(m1))
+pp line (fromJson(m1))
+
+pp line (fromJson8(m2))
+pp line (fromJson(m2))  # fails
+
+## status: 4
 ## STDOUT:
 (List)   [42,1.5,null,true,"hi"]
 (List)   [42,1.5,null,true,"hi"]
+(List)   [42,1.5,null,true,"hi",""]
 ## END
 
 #### User can handle errors - toJson() toJson8()
