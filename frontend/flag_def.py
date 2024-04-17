@@ -482,15 +482,6 @@ PUSH_REGISTERS_SPEC = FlagSpec('push-registers')
 FOPEN_SPEC = FlagSpec('fopen')
 
 #
-# Tea
-#
-
-TEA_MAIN_SPEC = FlagSpec('tea_main')
-TEA_MAIN_SPEC.ShortFlag('-n', args.Bool)  # Parse
-TEA_MAIN_SPEC.ShortFlag('-c', args.String)  # Command snippet
-TEA_MAIN_SPEC.LongFlag('--translate', args.Bool)
-
-#
 # JSON
 #
 
@@ -503,6 +494,7 @@ JSON_WRITE_SPEC.LongFlag('--pretty',
                          default=True,
                          help='Whitespace in output (default true)')
 
+# Unused:
 # JSON has the questionable decision of allowing (unpaired) surrogate like
 # \udc00.
 # When encoding, we try to catch the error on OUR side, rather than letting it
@@ -519,8 +511,3 @@ JSON_WRITE_SPEC.LongFlag('--indent',
                          help='Indent JSON by this amount')
 
 JSON_READ_SPEC = FlagSpec('json_read')
-# yajl has this option
-JSON_READ_SPEC.LongFlag('--validate',
-                        args.Bool,
-                        default=True,
-                        help='Validate UTF-8')

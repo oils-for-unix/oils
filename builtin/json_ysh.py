@@ -96,9 +96,7 @@ class Json(vm._Builtin):
 
         elif action == 'read':
             attrs = flag_util.Parse('json_read', arg_r)
-            arg_jr = arg_types.json_read(attrs.attrs)
-            # TODO:
-            # Respect -validate=F
+            #arg_jr = arg_types.json_read(attrs.attrs)
 
             if cmd_val.typed_args:  # json read (&x)
                 rd = typed_args.ReaderForProc(cmd_val)
