@@ -482,7 +482,8 @@ The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible
 Write JSON:
 
     var d = {name: 'bob', age: 42}
-    json write (d)
+    json write (d)           # default indentation of 2
+    json write (d, space=0)  # no indentation
 
 Read JSON:
 

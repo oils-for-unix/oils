@@ -68,39 +68,25 @@ Failure with invalid input data:
 
 Usage:
 
-    json write FLAGS* (EXPR)
+    json write (EXPR, space=2)
     
     EXPR is an expression that evaluates to a serializable object.
 
-    Flags:
-      --indent=2     Indentation size
-      --pretty=true  Whether to add newlines for readability
+    space is the number of spaces that object and array entries are indented
+    by.  If it's 0 or less, then no newlines or spaces are printed.
 
 Examples:
 
-    # Create a Dict.  As in JavaScript, keys don't require quotes.
-    $ var d = {name: "bob", age: 42}
+    $ var d = {name: "bob", age: 42}  # create Dict
 
-    # Print the Dict as JSON.  By default, newlines are added for readability,
-    # with 2 space indentation.
-    $ json write (d)
+    $ json write (d)  # print as JSON, with 2 space indent
     {
       "name": "bob",
       "count": 42
     }
 
-    $ json write --indent 4 (d)
-    {
-        "name": "bob",
-        "count": 42
-    }
-
-    $ json write --pretty=F (d)
-    {"name": "bob", "count": 42}
-
-Notes:
-
-- `--indent` is ignored if `--pretty` is false.
+    $ json write (d, space=0)  # no indent at all
+    {"name":"bob","count":42}
 
 ### `write` builtin
 

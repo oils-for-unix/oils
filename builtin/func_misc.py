@@ -417,7 +417,7 @@ class ToJson8(vm._Callable):
         space = mops.BigTruncate(rd.NamedInt('space', 0))
         rd.Done()
 
-        # Convert from external JS-like API to internal.
+        # Convert from external JS-like API to internal API.
         if space <= 0:
             indent = -1
         else:
