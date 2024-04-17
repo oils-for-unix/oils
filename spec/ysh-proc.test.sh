@@ -134,10 +134,10 @@ shopt --set ysh:upgrade
 
 # TODO: duplicate param names aren't allowed
 proc p (a; mylist, mydict; opt Int = 42) {
-  json write --pretty=F (a)
-  json write --pretty=F (mylist)
-  json write --pretty=F (mydict)
-  #json write --pretty=F (opt)
+  pp line (a)
+  pp line (mylist)
+  pp line (mydict)
+  #pp line (opt)
 }
 
 p WORD ([1,2,3], {name: 'bob'})
@@ -147,13 +147,13 @@ echo ---
 p x (:| a b |, {bob: 42}, a = 5)
 
 ## STDOUT:
-"WORD"
-[1,2,3]
-{"name":"bob"}
+(Str)   "WORD"
+(List)   [1,2,3]
+(Dict)   {"name":"bob"}
 ---
-"x"
-["a","b"]
-{"bob":42}
+(Str)   "x"
+(List)   ["a","b"]
+(Dict)   {"bob":42}
 ## END
 
 #### Proc name-with-hyphen
