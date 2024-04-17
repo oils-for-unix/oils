@@ -53,7 +53,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import vm
-from data_lang import j8
+#from data_lang import j8
 from frontend import lexer
 from frontend import match
 from frontend import typed_args

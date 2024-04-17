@@ -54,7 +54,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import util
-from data_lang import j8
+#from data_lang import j8
 from data_lang import j8_lite
 from core.error import e_die
 from frontend import consts

@@ -61,7 +61,7 @@ test-read() {
 test-json-read() {
   rm -v nohup.out || true
 
-  run-shell bin/osh -c 'json read :x'
+  run-shell bin/osh -c 'json read'
 }
 
 soil-run() {
