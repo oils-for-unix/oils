@@ -59,7 +59,7 @@ def R(pat, tok_type):
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.
 SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
 
-# Separates words
+# Separates words (\r it not whitespace here)
 _SIGNIFICANT_SPACE = R(r'[ \t]+', Id.WS_Space)
 
 _BACKSLASH = [
@@ -915,7 +915,7 @@ EXPR_OPS = [
 _EXPR_NEWLINE_COMMENT = [
     C('\n', Id.Op_Newline),
     R(r'#[^\n\0]*', Id.Ignored_Comment),
-    # \r may go with Op_Newline?
+    # Like lex_mode_e.Arith, \r is whitespace even without \n
     R(r'[ \t\r]+', Id.Ignored_Space),
 ]
 

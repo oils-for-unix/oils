@@ -117,6 +117,24 @@ EOF
     "$json" || true
 }
 
+decode-whitespace() {
+  # e.g. is carriage return whitespace?  Yes, it is allowed
+  local json=$'{"age":\r42}'
+
+  # neither \f nor \v is allowed
+  #local json=$'{"age":\f42}'
+  #local json=$'{"age":\v42}'
+
+  python3 -c 'import json, sys; val = json.loads(sys.argv[1]); print(type(val)); print(val)' \
+    "$json" || true
+
+  echo
+  echo
+
+  nodejs -e 'var val = JSON.parse(process.argv[1]); console.log(typeof(val)); console.log(val)' \
+    "$json" || true
+}
+
 encode-list-dict-indent() {
   echo 'PYTHON'
   python3 -c 'import json; val = {}; print(json.dumps(val, indent=4))'
