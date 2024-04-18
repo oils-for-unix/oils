@@ -1070,6 +1070,14 @@ def SplitJ8Lines(s):
     Notes:
     - This is related to TSV8?  Similar rules.  Does TSV8 have empty cells?
       - It might have the - alias for empty cell?
+
+    Can we write this like a lexer, to preserve positions?
+
+    We just need a significant newline character, and then maybe an "outer"
+    lexer mode with \n and whitespace?
+
+    Or we can also just reuse the same LexerDecoder for each line?  Reset()?
+    Then we get the line number for free.
     """
     lines = s.split('\n')
     strs = []  # type: List[str]
@@ -1098,7 +1106,9 @@ def SplitJ8Lines(s):
             raise error.Decode("Mismatched quotes in J8 Lines", line, 0, 0)
 
         if left_type == UNQUOTED:
-            # TODO: validate UTF-8
+            if not pyj8.PartIsUtf8(line, 0, len(line)):
+                # TODO: error
+                pass
             out_str = line
         else:
             # Decode j8

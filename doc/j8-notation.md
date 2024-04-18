@@ -395,10 +395,11 @@ I think using unquoted keys is a good enough signal, or MIME type.
 
 For example, to represent represent 4 filenames, simply use 4 lines:
 
-      dir/my-filename.txt       # unquoted string is JS name and . - /
+      dir/my-filename.txt       # unquoted string must be UTF-8
      "dir/with spaces.txt"      # JSON-style
     b'dir/with bytes \yff.txt'  # J8-style
     u'dir/unicode \u{3bc}'
+     ''                         # empty string
 
 Literal control characters like newlines are illegal in J8 strings, which means
 that they always occupy **one** physical line.
@@ -406,6 +407,8 @@ that they always occupy **one** physical line.
 - Leading spaces on each line are ignored, which allows aligning the quotes.
 - Trailing spaces are also ignored, to aid readability.  That is, significant
   spaces must appear in quotes.
+- Lines that have only whitespace are ignored.  Empty strings are written like
+  `"" b'' u'' ''`.
 
 *J8 Lines* can be viewed as a degenerate case of TSV8, described in the next
 section.

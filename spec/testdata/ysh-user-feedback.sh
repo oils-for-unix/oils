@@ -15,7 +15,7 @@ git-branch-merged() {
 EOF
 }
 
-# With bash-style readarray.  The -t is annoying.
+# With bash-style readarray.  The -t to remove trailing newline is annoying.
 git-branch-merged | while read -r line {
   # Note: this can't be 'const' because const is dynamic like 'readonly'.  And
   # we don't have block scope.
@@ -27,9 +27,9 @@ git-branch-merged | while read -r line {
   if (line !== 'master' and not line => startsWith('*')) {
     echo $line
   }
-} | readarray -t :branches
+} | readarray -t branches
 
-# TODO: I think we want read --lines :branches ?  Then we don't need this
+# TODO: I think we want read --lines (&branches)?  Then we don't need this
 # conversion.
 var branchList = :| "${branches[@]}" |
 
@@ -43,7 +43,7 @@ if (len(branchList) === 0) {
 var branches2 = :| |
 git-branch-merged | while read -r line {
   var line2 = line => trim()  # removing leading space
-  if (line2 !== 'master' and not line2->startsWith('*')) {
+  if (line2 !== 'master' and not line2 => startsWith('*')) {
     append $line2 (branches2)
   }
 }
