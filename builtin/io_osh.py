@@ -122,9 +122,6 @@ class MapFile(vm._Builtin):
         var_name, _ = arg_r.Peek2()
         if var_name is None:
             var_name = 'MAPFILE'
-        else:
-            if var_name.startswith(':'):
-                var_name = var_name[1:]
 
         lines = []  # type: List[str]
         while True:
