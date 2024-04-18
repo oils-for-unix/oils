@@ -1,4 +1,4 @@
-#include <ctype.h>  // isspace()
+#include <ctype.h>  // isprint()
 #include <errno.h>  // errno
 #include <float.h>  // DBL_MIN, DBL_MAX
 #include <math.h>   // INFINITY
@@ -157,7 +157,7 @@ bool StringToInt(const char* s, int length, int base, int* result) {
   }
 
   while (pos < end) {
-    if (!isspace(*pos)) {
+    if (!IsAsciiWhitespace(*pos)) {
       return false;  // Trailing non-space
     }
     pos++;
@@ -196,7 +196,7 @@ bool StringToInt64(const char* s, int length, int base, int64_t* result) {
   }
 
   while (pos < end) {
-    if (!isspace(*pos)) {
+    if (!IsAsciiWhitespace(*pos)) {
       return false;  // Trailing non-space
     }
     pos++;

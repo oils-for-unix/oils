@@ -145,14 +145,18 @@ TEST StringToInteger_test() {
   ASSERT(i == -123);
 
   // Leading space is OK!
-  ok = _StringToInt64(StrFromC(" -123"), &i, 10);
+  ok = _StringToInt64(StrFromC("\n\t -123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Trailing space is OK!
-  ok = _StringToInt64(StrFromC(" -123  "), &i, 10);
+  ok = _StringToInt64(StrFromC(" -123  \t\n"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
+
+  // \v is not space
+  ok = _StringToInt64(StrFromC(" -123  \v"), &i, 10);
+  ASSERT(!ok);
 
   // Empty string isn't an integer
   ok = _StringToInt64(StrFromC(""), &i, 10);

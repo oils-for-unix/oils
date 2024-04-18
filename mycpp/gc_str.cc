@@ -326,9 +326,16 @@ enum class StripWhere {
 
 const int kWhitespace = -1;
 
-bool OmitChar(uint8_t ch, int what) {
+bool OmitChar(int ch, int what) {
   if (what == kWhitespace) {
-    return isspace(ch);
+    // Intentional incompatibility with Python, where say \v is whitespace
+    // '\v'.strip() == ''
+    //
+    // But it is consistent with the JSON spec [ \t\r\n] and the rules in
+    // frontend/lexer_def.py
+    //
+    // Note that the YSH is separate, and Str => trim() respects Unicode.
+    return IsAsciiWhitespace(ch);
   } else {
     return what == ch;
   }
