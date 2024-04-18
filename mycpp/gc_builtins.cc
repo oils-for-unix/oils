@@ -1,4 +1,3 @@
-#include <ctype.h>  // isprint()
 #include <errno.h>  // errno
 #include <float.h>  // DBL_MIN, DBL_MAX
 #include <math.h>   // INFINITY
@@ -71,7 +70,9 @@ BigStr* intern(BigStr* s) {
   return s;
 }
 
-// Print quoted string.  TODO: use C-style strings (YSTR)
+// Print quoted string.  Called by StrFormat('%r').
+// TODO: consider using J8 notation instead, since error messages show that
+// string.
 BigStr* repr(BigStr* s) {
   // Worst case: \0 becomes 4 bytes as '\\x00', and then two quote bytes.
   int n = len(s);
@@ -89,7 +90,7 @@ BigStr* repr(BigStr* s) {
   // From PyString_Repr()
   *p++ = quote;
   for (int i = 0; i < n; ++i) {
-    char c = s->data_[i];
+    unsigned char c = static_cast<unsigned char>(s->data_[i]);
     if (c == quote || c == '\\') {
       *p++ = '\\';
       *p++ = c;
@@ -102,9 +103,12 @@ BigStr* repr(BigStr* s) {
     } else if (c == '\r') {
       *p++ = '\\';
       *p++ = 'r';
-    } else if (isprint(c)) {
+    } else if (0x20 <= c && c < 0x80) {
       *p++ = c;
-    } else {  // Unprintable is \xff
+    } else {
+      // Unprintable becomes \xff.
+      // TODO: Consider \yff.  This is similar to J8 strings, but we don't
+      // decode UTF-8.
       sprintf(p, "\\x%02x", c & 0xff);
       p += 4;
     }

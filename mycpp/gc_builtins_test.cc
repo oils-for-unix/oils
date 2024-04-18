@@ -22,6 +22,20 @@ TEST print_test() {
   PASS();
 }
 
+TEST repr_test() {
+  print(repr(StrFromC("")));
+  print(repr(StrFromC("hi\n")));
+
+  // Hm we're not printing \y00 here, could do that I suppose.
+  // This function is used for error messages.
+  print(repr(StrFromC("\x02 foo bar \xff \xfe \t")));
+
+  // Uses double quotes
+  print(repr(StrFromC("this isn't cool")));
+
+  PASS();
+}
+
 TEST bool_test() {
   ASSERT_EQ(false, to_bool(kEmptyString));
   ASSERT_EQ(true, to_bool(StrFromC("a")));
@@ -344,6 +358,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(print_test);
+  RUN_TEST(repr_test);
 
   RUN_TEST(bool_test);
   RUN_TEST(int_test);
