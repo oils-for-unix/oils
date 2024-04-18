@@ -1131,12 +1131,6 @@ class J8LinesParser(_Parser):
         return lines
 
 
-# types of lines
-UNQUOTED = 0
-SINGLE = 1
-DOUBLE = 2
-
-
 def SplitJ8Lines(s):
     # type: (str) -> List[str]
     """Used by @(echo split command sub)
@@ -1164,45 +1158,5 @@ def SplitJ8Lines(s):
     p = J8LinesParser(s)
     # raises error.Decode
     return p.Parse()
-
-    lines = s.split('\n')
-    strs = []  # type: List[str]
-    for line in lines:
-        # strip leading and trailing whitespace, no matter what
-        line = line.strip()
-
-        if len(line) == 0:
-            # always skip blank lines - empty strings should be "" or ''
-            continue
-
-        left_type = UNQUOTED
-        if (line.startswith("u'") or line.startswith("b'") or
-                line.startswith("'")):
-            left_type = SINGLE
-        elif line.startswith('"'):
-            left_type = DOUBLE
-
-        right_type = UNQUOTED
-        if line.endswith("'"):
-            right_type = SINGLE
-        elif line.endswith('"'):
-            right_type = DOUBLE
-
-        if left_type != right_type:
-            # TODO: position
-            raise error.Decode("Mismatched quotes in J8 Lines", line, 0, 0)
-
-        if left_type == UNQUOTED:
-            if not pyj8.PartIsUtf8(line, 0, len(line)):
-                # TODO: error
-                pass
-            out_str = line
-        else:
-            # Decode j8
-            out_str = line
-        strs.append(out_str)
-
-    return strs
-
 
 # vim: sw=4

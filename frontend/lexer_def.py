@@ -59,6 +59,7 @@ def R(pat, tok_type):
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.
 SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
 
+# Separates words
 _SIGNIFICANT_SPACE = R(r'[ \t]+', Id.WS_Space)
 
 _BACKSLASH = [
@@ -596,6 +597,7 @@ J8_DEF = _J8_LEFT + [
 ]
 
 J8_LINES_DEF = _J8_LEFT + [
+    # not sure if we want \r here - same with lex_mode_e.Expr
     R(r'[ \r\t]+', Id.WS_Space),
     R(r'[\n]', Id.Op_Newline),
 
@@ -913,10 +915,11 @@ EXPR_OPS = [
 _EXPR_NEWLINE_COMMENT = [
     C('\n', Id.Op_Newline),
     R(r'#[^\n\0]*', Id.Ignored_Comment),
+    # \r may go with Op_Newline?
     R(r'[ \t\r]+', Id.Ignored_Space),
 ]
 
-_WHITESPACE = r'[ \t\r\n]*'  # not including legacy \f \v
+_WHITESPACE = r'[ \t\r\n]*'  # ASCII whitespace doesn't have legacy \f \v
 
 # Python allows 0 to be written 00 or 0_0_0, which is weird.  But let's be
 # consistent, and avoid '00' turning into a float!

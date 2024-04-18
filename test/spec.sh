@@ -196,6 +196,10 @@ nul-bytes() {
   run-file nul-bytes "$@"
 }
 
+whitespace() {
+  run-file whitespace "$@"
+}
+
 # Special bash printf things like -v and %q.  Portable stuff goes in builtin-io.
 builtin-printf() {
   run-file builtin-printf "$@"
