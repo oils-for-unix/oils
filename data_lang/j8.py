@@ -576,7 +576,19 @@ class LexerDecoder(object):
                     "Comments aren't part of JSON; you may want 'json8 read'",
                     end_pos)
 
-        # Non-string tokens like { } null etc.
+        if tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
+                      Id.Left_USingleQuote):
+            return self._DecodeString(tok_id, end_pos)
+
+        self.pos = end_pos
+        return tok_id, end_pos, None
+
+    def J8LinesNext(self):
+        # type: () -> Tuple[Id_t, int, Optional[str]]
+        """ Like Next(), but for J8 Lines """
+
+        tok_id, end_pos = match.MatchJ8LinesToken(self.s, self.pos)
+
         if tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
                       Id.Left_USingleQuote):
             return self._DecodeString(tok_id, end_pos)
@@ -1050,10 +1062,80 @@ class Nil8Parser(_Parser):
         return obj
 
 
+class J8LinesParser(_Parser):
+    """
+    Line-based grammar:
+
+        j8_line  = Space? string Space? (Op_Newline | Eof_Real)
+        string = J8_String
+               | (Lit_Chars (Space (Lit_Chars | Left-*) )*
+
+    where Lit_Chars is valid UTF-8
+
+    Note that "" and u'' here are not a decoded string, because the line
+    started with literals:
+
+        foo "" u''
+
+    Using the grammar style preserves location info, reduces allocations.
+
+    - TODO: We something like LexerDecoder, but with a J8_LINES mode
+    - _Parser should take the outer lexer.
+    """
+
+    def __init__(self, s):
+        # type: (str) -> None
+        _Parser.__init__(self, s, True)
+
+    def ParseLine(self):
+        # type: () -> Optional[str]
+        pass
+
+    def _Parse(self):
+        # type: () -> List[str]
+
+        log('tok_id %s', Id_str(self.tok_id))
+
+        if self.tok_id == Id.WS_Space:
+            self._Next()
+
+        if self.tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
+                      Id.Left_USingleQuote):
+            #tok_id, end_pos, s = self._DecodeString(tok_id, end_pos)
+            #log('s %r', s)
+            pass
+
+        if self.tok_id == Id.WS_Space:
+            self._Next()
+        pass
+        return None
+
+    def _Show(self, s):
+        # type: (str) -> None
+        log('%s tok_id %s %d-%d', s, Id_str(self.tok_id), self.start_pos,
+                self.end_pos)
+
+    def Parse(self):
+        # type: () -> List[str]
+        """ Raises error.Decode. """
+
+        self._Show('1')
+
+        # TODO: J8LinesNext()
+        self._Next()
+        self._Show('2')
+        lines = self._Parse()
+
+        if self.tok_id != Id.Eol_Tok:
+            raise self._Error('Unexpected trailing input')
+        return lines
+
+
 # types of lines
 UNQUOTED = 0
 SINGLE = 1
 DOUBLE = 2
+
 
 def SplitJ8Lines(s):
     # type: (str) -> List[str]
@@ -1079,6 +1161,10 @@ def SplitJ8Lines(s):
     Or we can also just reuse the same LexerDecoder for each line?  Reset()?
     Then we get the line number for free.
     """
+    p = J8LinesParser(s)
+    # raises error.Decode
+    return p.Parse()
+
     lines = s.split('\n')
     strs = []  # type: List[str]
     for line in lines:
@@ -1090,7 +1176,8 @@ def SplitJ8Lines(s):
             continue
 
         left_type = UNQUOTED
-        if (line.startswith("u'") or line.startswith("b'") or line.startswith("'")):
+        if (line.startswith("u'") or line.startswith("b'") or
+                line.startswith("'")):
             left_type = SINGLE
         elif line.startswith('"'):
             left_type = DOUBLE

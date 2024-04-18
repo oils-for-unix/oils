@@ -131,6 +131,12 @@ def _MatchJ8Token_Fast(line, start_pos):
     return tok_type, end_pos
 
 
+def _MatchJ8LinesToken_Fast(line, start_pos):
+    # type: (str, int) -> Tuple[Id_t, int]
+    tok_type, end_pos = fastlex.MatchJ8LinesToken(line, start_pos)
+    return tok_type, end_pos
+
+
 def _MatchJ8StrToken_Fast(line, start_pos):
     # type: (str, int) -> Tuple[Id_t, int]
     tok_type, end_pos = fastlex.MatchJ8StrToken(line, start_pos)
@@ -152,6 +158,7 @@ if fastlex:
     BRACE_RANGE_MATCHER = _MatchBraceRangeToken_Fast
 
     MatchJ8Token = _MatchJ8Token_Fast
+    MatchJ8LinesToken = _MatchJ8LinesToken_Fast
     MatchJ8StrToken = _MatchJ8StrToken_Fast
     MatchJsonStrToken = _MatchJsonStrToken_Fast
 
@@ -168,6 +175,7 @@ else:
     BRACE_RANGE_MATCHER = _MatchTokenSlow(lexer_def.BRACE_RANGE_DEF)
 
     MatchJ8Token = _MatchTokenSlow(lexer_def.J8_DEF)
+    MatchJ8LinesToken = _MatchTokenSlow(lexer_def.J8_LINES_DEF)
     MatchJ8StrToken = _MatchTokenSlow(lexer_def.J8_STR_DEF)
     MatchJsonStrToken = _MatchTokenSlow(lexer_def.JSON_STR_DEF)
 

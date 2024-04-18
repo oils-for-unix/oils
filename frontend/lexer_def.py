@@ -549,12 +549,15 @@ J8_SYMBOL_RE = (
     r'[a-zA-Z0-9' + J8_SYMBOL_CHARS + ']*')
 # yapf: enable
 
-J8_DEF = [
+_J8_LEFT = [
     C('"', Id.Left_DoubleQuote),  # JSON string
     # Three left quotes that are J8 only
     C("u'", Id.Left_USingleQuote),  # unicode string
     C("'", Id.Left_USingleQuote),  # '' is alias for u'' in data, not in code
     C("b'", Id.Left_BSingleQuote),  # byte string
+]
+
+J8_DEF = _J8_LEFT + [
     C('[', Id.J8_LBracket),
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
@@ -590,6 +593,14 @@ J8_DEF = [
 
     # This will reject ASCII control chars
     R(r'[^\0]', Id.Unknown_Tok),
+]
+
+J8_LINES_DEF = _J8_LEFT + [
+    R(r'[ \r\t]+', Id.WS_Space),
+    R(r'[\n]', Id.Op_Newline),
+
+    # not space or ' or " or EOF
+    R(r'''[^ \r\t'"\0]+''', Id.Lit_Chars),
 ]
 
 # Exclude control characters 0x00-0x1f, aka 0-31 in J8 data
