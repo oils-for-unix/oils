@@ -1162,6 +1162,11 @@ class J8LinesParser(_Parser):
                 prev_start = self.start_pos
 
                 self._NextForLines()
+
+                # It would be nicer if "middle" Id.WS_Space tokens didn't have
+                # \r, but we're sticking with the JSON spec definition of
+                # whitespace.  (As another data point, CPython on Unix allows
+                # \r in the middle of expressions, treating it as whitespace.)
                 if self.tok_id in (Id.Op_Newline, Id.Eol_Tok):
                     break
 

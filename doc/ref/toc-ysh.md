@@ -24,7 +24,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-front-end
   [Usage]         bundle-usage   ysh-usage
-  [YSH Lexing]    ascii-whitespace [ \t\r\n]
+  [Lexing]        ascii-whitespace [ \t\r\n]
                   doc-comment ###   multiline-command ...
   [Tools]         cat-em
 ```

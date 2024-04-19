@@ -208,6 +208,34 @@ Exceptions:
   - The default `$IFS` doesn't include `\r`.
 - YSH `trim()` functions also respect Unicode space.
 
+<h3 id="ascii-control-chars" class="osh-ysh-topic">ascii-control-chars</h3>
+
+The ASCII control chars have byte values `0x00` to `0x1F`.  This set includes 3
+whitespace chars:
+
+- tab - `\t` aka `0x09`
+- newline - `\n` aka `0x0a`
+- carriage return - `\r` aka `0x0d`
+
+(It doesn't include the space - `0x20`.)
+
+General rules:
+
+- In J8 **data** languages, control chars other than whitespace are illegal.
+  This is consistent with the JSON spec.
+- In **source code**, control chars are allowed (but discouraged).
+  - For example, we don't check for control chars in unquoted OSH words, or YSH
+    string literals.  They are treated like printable chars.
+
+Note about `NUL` aka `0x00`:
+
+- The NUL byte is often used to terminate buffers, i.e. as a sentinel for
+  [re2c](https://re2c.org) lexing.  This means that data after the NUL will be
+  ignored.
+   - J8 **data** input is read all at once, i.e. **not** split into lines.  So
+     everything after the first NUL may be ignored.
+   - Shell **source code** is split into lines.
+
 <h3 id="doc-comment" class="ysh-topic">doc-comment</h3>
 
 Doc comments look like this:
