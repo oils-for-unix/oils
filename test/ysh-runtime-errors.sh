@@ -948,16 +948,11 @@ EOF
   _ysh-error-here-X 4 <<'EOF'
 write @(echo '"hello \z"')
 EOF
-  return
 
   # unquoted line isn't valid UTF-8
-  _ysh-error-here-X 2 <<'EOF'
-var lines = @(
-  echo $'\xff'
-)
-pp line (lines)
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo $'foo \xff-bar spam')
 EOF
-
 }
 
 soil-run-py() {

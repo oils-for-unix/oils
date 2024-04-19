@@ -593,6 +593,13 @@ class LexerDecoder(object):
                       Id.Left_USingleQuote):
             return self._DecodeString(tok_id, end_pos)
 
+        # Check that UNQUOTED lines are valid UTF-8.  (_DecodeString() does
+        # this for quoted strings.)
+        if (tok_id == Id.Lit_Chars and
+                not pyj8.PartIsUtf8(self.s, self.pos, end_pos)):
+            raise self._Error(
+                'Invalid UTF-8 in %s string literal' % self.lang_str, end_pos)
+
         self.pos = end_pos
         return tok_id, end_pos, None
 
@@ -638,12 +645,9 @@ class LexerDecoder(object):
             if tok_id == Id.Lit_Chars:  # JSON and J8
                 part = self.s[str_pos:str_end]
                 if not pyj8.PartIsUtf8(self.s, str_pos, str_end):
-                    # Syntax error because JSON must be valid UTF-8
-                    # Limit context to 20 chars arbitrarily
-                    snippet = self.s[str_pos:str_pos + 20]
                     raise self._Error(
-                        'Invalid UTF-8 in %s string literal: %r' %
-                        (self.lang_str, snippet), str_end)
+                        'Invalid UTF-8 in %s string literal' % self.lang_str,
+                        str_end)
 
             # TODO: would be nice to avoid allocation in all these cases.
             # But LookupCharC() would have to change.
