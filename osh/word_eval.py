@@ -54,7 +54,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import util
-#from data_lang import j8
+from data_lang import j8
 from data_lang import j8_lite
 from core.error import e_die
 from frontend import consts
@@ -2304,8 +2304,13 @@ class NormalWordEvaluator(AbstractWordEvaluator):
 
         if cs_part.left_token.id == Id.Left_AtParen:
             # YSH splitting algorithm: does not depend on IFS
-            #strs = j8.SplitJ8Lines(stdout_str)
-            strs = self.splitter.SplitForWordEval(stdout_str)
+            try:
+                strs = j8.SplitJ8Lines(stdout_str)
+            except error.Decode as e:
+                # status code 4 is special, for encode/decode errors.
+                raise error.Structured(4, e.Message(), cs_part.left_token)
+
+            #strs = self.splitter.SplitForWordEval(stdout_str)
             return part_value.Array(strs)
         else:
             return Piece(stdout_str, quoted, not quoted)

@@ -583,7 +583,7 @@ class LexerDecoder(object):
         self.pos = end_pos
         return tok_id, end_pos, None
 
-    def J8LinesNext(self):
+    def NextForLines(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
         """ Like Next(), but for J8 Lines """
 
@@ -734,13 +734,18 @@ class _Parser(object):
     def _Eat(self, tok_id):
         # type: (Id_t) -> None
 
-        # TODO: Need location info
         if self.tok_id != tok_id:
             #log('position %r %d-%d %r', self.s, self.start_pos,
             #    self.end_pos, self.s[self.start_pos:self.end_pos])
             raise self._Error("Expected %s, got %s" %
                               (Id_str(tok_id), Id_str(self.tok_id)))
         self._Next()
+
+    def _NextForLines(self):
+        # type: () -> None
+        """Like _Next, but use the J8 Lines lexer."""
+        self.start_pos = self.end_pos
+        self.tok_id, self.end_pos, self.decoded = self.lexer.NextForLines()
 
     def _Error(self, msg):
         # type: (str) -> error.Decode
@@ -1063,71 +1068,118 @@ class Nil8Parser(_Parser):
 
 
 class J8LinesParser(_Parser):
-    """
-    Line-based grammar:
+    """Decode lines from a string with newlines.
 
-        j8_line  = Space? string Space? (Op_Newline | Eof_Real)
-        string = J8_String
-               | (Lit_Chars (Space (Lit_Chars | Left-*) )*
+    We specify this with a grammar, to preserve location info and to reduce
+    allocations.  (But note that unquoted_line is more like a LOOP than it is
+    grammatical.)
+
+    Grammar:
+
+        end           = Op_Newline | Eol_Tok
+
+        empty_line    = WS_Space? end
+
+        # special case: read until end token, but REMOVE trailing WS_Space
+        unquoted_line = WS_Space? Lit_Chars ANY* WS_Space? end
+
+        j8_line       = WS_Space? J8_String WS_Space? end
+
+        lines         = (empty_line | unquoted_line | j8_line)*
 
     where Lit_Chars is valid UTF-8
 
-    Note that "" and u'' here are not a decoded string, because the line
-    started with literals:
+    Notes:
+
+    (1) We disallow multiple strings on a line, like:
+
+        "json" "json2"
+        "json" unquoted
+
+    (2) Internal quotes are allowed on unquoted lines.  Consider this line:
 
         foo "" u''
 
-    Using the grammar style preserves location info, reduces allocations.
+    The "" and u'' are not a decoded string, because the line started with
+    Id.Lit_Chars literals.
 
-    - TODO: We something like LexerDecoder, but with a J8_LINES mode
-    - _Parser should take the outer lexer.
+    (3) This is related to TSV8?  Similar rules.  Does TSV8 have empty cells?
+        Does it have - for empty cell?
     """
 
     def __init__(self, s):
         # type: (str) -> None
         _Parser.__init__(self, s, True)
 
-    def ParseLine(self):
-        # type: () -> Optional[str]
-        pass
-
-    def _Parse(self):
-        # type: () -> List[str]
-
-        log('tok_id %s', Id_str(self.tok_id))
-
-        if self.tok_id == Id.WS_Space:
-            self._Next()
-
-        if self.tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
-                      Id.Left_USingleQuote):
-            #tok_id, end_pos, s = self._DecodeString(tok_id, end_pos)
-            #log('s %r', s)
-            pass
-
-        if self.tok_id == Id.WS_Space:
-            self._Next()
-        pass
-        return None
-
     def _Show(self, s):
         # type: (str) -> None
         log('%s tok_id %s %d-%d', s, Id_str(self.tok_id), self.start_pos,
-                self.end_pos)
+            self.end_pos)
+
+    def _ParseLine(self, out):
+        # type: (List[str]) -> None
+        """ May append a line to 'out' """
+        #self._Show('1')
+        if self.tok_id == Id.WS_Space:
+            self._NextForLines()
+
+        # Empty line - return without doing anything
+        if self.tok_id in (Id.Op_Newline, Id.Eol_Tok):
+            self._NextForLines()
+            return
+
+        # Quoted string on line
+        if self.tok_id == Id.J8_String:
+            out.append(self.decoded)
+            self._NextForLines()
+
+            if self.tok_id == Id.WS_Space:  # trailing whitespace
+                self._NextForLines()
+
+            if self.tok_id not in (Id.Op_Newline, Id.Eol_Tok):
+                raise self._Error('Unexpected text after J8 Line (%s)' %
+                                  Id_str(self.tok_id))
+
+            self._NextForLines()
+            return
+
+        # Unquoted line
+        if self.tok_id == Id.Lit_Chars:
+            # '  unquoted "" text on line  '   # read every token until end
+            string_start = self.start_pos
+            while True:
+                # for stripping whitespace
+                prev_id = self.tok_id
+                prev_start = self.start_pos
+
+                self._NextForLines()
+                if self.tok_id in (Id.Op_Newline, Id.Eol_Tok):
+                    break
+
+            if prev_id == Id.WS_Space:
+                string_end = prev_start  # remove trailing whitespace
+            else:
+                string_end = self.start_pos
+
+            out.append(self.s[string_start:string_end])
+
+            self._NextForLines()  # past newline
+            return
+
+        raise AssertionError(Id_str(self.tok_id))
 
     def Parse(self):
         # type: () -> List[str]
         """ Raises error.Decode. """
+        self._NextForLines()
 
-        self._Show('1')
-
-        # TODO: J8LinesNext()
-        self._Next()
-        self._Show('2')
-        lines = self._Parse()
+        lines = []  # type: List[str]
+        while self.tok_id != Id.Eol_Tok:
+            self._ParseLine(lines)
 
         if self.tok_id != Id.Eol_Tok:
-            raise self._Error('Unexpected trailing input')
+            raise self._Error('Unexpected trailing input in J8 Lines')
+
         return lines
 
 
@@ -1135,28 +1187,16 @@ def SplitJ8Lines(s):
     # type: (str) -> List[str]
     """Used by @(echo split command sub)
 
-    3 Errors
+    Raises:
+      error.Decode
 
-    - quotes don't match on a line
-    - J8 syntax error inside quotes
+    3 Errors:
+    - J8 string syntax error inside quotes
+    - Extra input on line
     - unquoted line isn't utf-8
-
-    Note that blank lines are IGNORED
-
-    Notes:
-    - This is related to TSV8?  Similar rules.  Does TSV8 have empty cells?
-      - It might have the - alias for empty cell?
-
-    Can we write this like a lexer, to preserve positions?
-
-    We just need a significant newline character, and then maybe an "outer"
-    lexer mode with \n and whitespace?
-
-    Or we can also just reuse the same LexerDecoder for each line?  Reset()?
-    Then we get the line number for free.
     """
     p = J8LinesParser(s)
-    # raises error.Decode
     return p.Parse()
+
 
 # vim: sw=4

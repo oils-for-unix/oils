@@ -917,23 +917,38 @@ pp line (d)
 }
 
 test-command-sub-j8() {
-  return
+  _ysh-should-run-here <<'EOF'
+write @(echo ' "json\tstring"  '; echo; echo " b'j8' "; echo ' unquoted ';)
+EOF
+  #return
 
   # quotes that don't match
-  _ysh-error-here-X 2 <<'EOF'
+  _ysh-error-here-X 4 <<'EOF'
 var lines = @(
-  echo "\"unbalanced"
+  echo '"unbalanced'
 )
 pp line (lines)
+EOF
+
+  # error in word language
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo '"unbalanced')
+EOF
+
+  # can't have two strings on a line
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo '"json" "nope"')
+EOF
+
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo '"json" unquoted')
 EOF
 
   # syntax error inside quotes
-  _ysh-error-here-X 2 <<'EOF'
-var lines = @(
-  echo '"\"'
-)
-pp line (lines)
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo '"hello \z"')
 EOF
+  return
 
   # unquoted line isn't valid UTF-8
   _ysh-error-here-X 2 <<'EOF'

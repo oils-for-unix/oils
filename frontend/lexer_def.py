@@ -602,7 +602,7 @@ J8_LINES_DEF = _J8_LEFT + [
     R(r'[\n]', Id.Op_Newline),
 
     # not space or ' or " or EOF
-    R(r'''[^ \r\t'"\0]+''', Id.Lit_Chars),
+    R(r'''[^ \t\r\n'"\0]+''', Id.Lit_Chars),
 ]
 
 # Exclude control characters 0x00-0x1f, aka 0-31 in J8 data
