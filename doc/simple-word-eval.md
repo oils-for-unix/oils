@@ -99,7 +99,7 @@ In YSH, the following constructs always evaluate to **one argument**:
 
 
 <!--
-Related help topics: [com-sub]($help), [var-sub]($help), [arith-sub]($help).
+Related help topics: [command-sub]($help), [var-sub]($help), [arith-sub]($help).
 Not shown: [tilde-sub]($help).
 -->
 
