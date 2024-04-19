@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   data_lang/json-errors.sh <function name>
+#   data_lang/j8-errors.sh <function name>
 
 # NOTE: No set -o errexit, etc.
 
@@ -100,6 +100,46 @@ test-cpython() {
     | python3 -c 'import json, sys; json.loads(sys.stdin.read())' || true
 }
 
+test-j8-lines() {
+  _ysh-should-run-here <<'EOF'
+write @(echo ' "json\tstring"  '; echo; echo " b'j8' "; echo ' unquoted ';)
+EOF
+  #return
+
+  # quotes that don't match - in expression mode
+  _ysh-error-here-X 4 <<'EOF'
+var lines = @(
+  echo '"unbalanced'
+)
+pp line (lines)
+EOF
+
+  # error in word language
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo '"unbalanced')
+EOF
+
+  # can't have two strings on a line
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo '"json" "nope"')
+EOF
+
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo '"json" unquoted')
+EOF
+
+  # syntax error inside quotes
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo '"hello \z"')
+EOF
+
+  # unquoted line isn't valid UTF-8
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo $'foo \xff-bar spam')
+EOF
+}
+
+
 
 #
 # Entry points
@@ -116,7 +156,7 @@ soil-run-cpp() {
 }
 
 run-for-release() {
-  run-other-suite-for-release json-errors run-test-funcs
+  run-other-suite-for-release j8-errors run-test-funcs
 }
 
 "$@"

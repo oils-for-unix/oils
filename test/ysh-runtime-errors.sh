@@ -765,7 +765,7 @@ test-json() {
   _ysh-error-X 3 'json read (&x, 43)'
 }
 
-# For decoding errors, see data_lang/json-errors.sh
+# For decoding errors, see data_lang/j8-errors.sh
 
 test-error-builtin() {
 
@@ -914,45 +914,6 @@ pp line (d)
 setglobal d.e.f += 1
 pp line (d)
    '
-}
-
-test-command-sub-j8() {
-  _ysh-should-run-here <<'EOF'
-write @(echo ' "json\tstring"  '; echo; echo " b'j8' "; echo ' unquoted ';)
-EOF
-  #return
-
-  # quotes that don't match
-  _ysh-error-here-X 4 <<'EOF'
-var lines = @(
-  echo '"unbalanced'
-)
-pp line (lines)
-EOF
-
-  # error in word language
-  _ysh-error-here-X 4 <<'EOF'
-write @(echo '"unbalanced')
-EOF
-
-  # can't have two strings on a line
-  _ysh-error-here-X 4 <<'EOF'
-write @(echo '"json" "nope"')
-EOF
-
-  _ysh-error-here-X 4 <<'EOF'
-write @(echo '"json" unquoted')
-EOF
-
-  # syntax error inside quotes
-  _ysh-error-here-X 4 <<'EOF'
-write @(echo '"hello \z"')
-EOF
-
-  # unquoted line isn't valid UTF-8
-  _ysh-error-here-X 4 <<'EOF'
-write @(echo $'foo \xff-bar spam')
-EOF
 }
 
 soil-run-py() {

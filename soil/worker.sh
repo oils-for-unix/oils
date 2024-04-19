@@ -151,7 +151,7 @@ ysh-parse-errors    test/ysh-parse-errors.sh soil-run-py         -
 ysh-runtime-errors  test/ysh-runtime-errors.sh soil-run-py       -
 ysh-every-string    test/ysh-every-string.sh soil-run-py         -
 ysh-large           ysh/run.sh soil-run                          -
-json-errors         data_lang/json-errors.sh soil-run-py         -
+j8-errors           data_lang/j8-errors.sh soil-run-py           -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
 osh-minimal         test/spec-py.sh osh-minimal                  _tmp/spec/osh-minimal/index.html
 headless            client/run.sh soil-run-py                    -
@@ -284,7 +284,7 @@ ysh-parse-errors test/ysh-parse-errors.sh soil-run-cpp -
 ysh-runtime-errors test/ysh-runtime-errors.sh soil-run-cpp -
 ysh-every-string test/ysh-every-string.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
-json-errors      data_lang/json-errors.sh soil-run-cpp -
+j8-errors        data_lang/j8-errors.sh soil-run-cpp   -
 EOF
 }
 
