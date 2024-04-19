@@ -180,6 +180,34 @@ A backslash `\` at the end of a line continues the line without executing it:
        /usr/lib \
        ~/src        # A single command split over three lines
 
+<h3 id="ascii-whitespace" class="osh-ysh-topic">ascii-whitespace</h3>
+
+In most places, Oils uses the same definition of ASCII whitespace as JSON.
+That is, any of these 4 bytes are considered whitespace:
+
+    [ \t\r\n]  # space, tab, carriage return, newline
+
+Sometimes newlines are significant, e.g. after shell commands.  Then the set of
+whitespace characters is:
+
+    [ \t\r]
+
+(We don't handle the Windows `\r\n` sequence in a special way.  Instead, `\r`
+is often treated like space and tab.)
+
+Examples:
+
+- Inside shell arithmetic `$(( 1 + 2 ))`, ASCII whitespace is ignored.
+- Inside YSH expressions `42 + a[i] * f(x)`, ASCII whitespace is ignored.
+
+Exceptions:
+
+- Carriage return `\r` may not always be whitespace.
+  - It can appear in an unquoted shell words, a rule that all POSIX shells
+    follow.
+  - The default `$IFS` doesn't include `\r`.
+- YSH `trim()` functions also respect Unicode space.
+
 <h3 id="doc-comment" class="ysh-topic">doc-comment</h3>
 
 Doc comments look like this:

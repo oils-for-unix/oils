@@ -24,7 +24,8 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-front-end
   [Usage]         bundle-usage   ysh-usage
-  [YSH Lexing]    doc-comment ###   multiline-command ...
+  [YSH Lexing]    ascii-whitespace [ \t\r\n]
+                  doc-comment ###   multiline-command ...
   [Tools]         cat-em
 ```
 
@@ -104,9 +105,10 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Quotes]        ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
                   triple-quoted """  r'''  u'''  b'''
                   X tagged-str  "<span id=$x>"html
-  [Expression]    expr-sub      echo $[42 + a[i]]
+  [Substitutions] expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
                   var-splice    @myarray @ARGV
+                  command-sub   @(split command)
   [Formatting]    X ysh-printf  ${x %.3f}
                   X ysh-format  ${x|html}
 ```

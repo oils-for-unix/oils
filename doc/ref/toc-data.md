@@ -25,6 +25,7 @@ Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
                  u-prefix u'hi'   b-prefix b'hi'
                  j8-escape \u{1f926} \yff
                  no-prefix 'hi'
+  [J8 Lines]     unquoted-line
   [JSON8]        json8-num   json8-str
                  json8-list   json-dict
                  json8-comment
@@ -49,8 +50,9 @@ All J8 notation is UTF-8.
 </h2>
 
 ```chapter-links-errors
-  [JSON]   json-encode-err   json-decode-err
-  [JSON8]  json8-encode-err   json8-decode-err
-  [Packle] packle-encode-err   packle-decode-err   
-  [UTF8]   utf8-encode-err   utf8-decode-err
+  [J8 Lines]  j8-lines-decode-err
+  [JSON]      json-encode-err   json-decode-err
+  [JSON8]     json8-encode-err   json8-decode-err
+  [Packle]    packle-encode-err   packle-decode-err   
+  [UTF8]      utf8-encode-err   utf8-decode-err
 ```

@@ -57,17 +57,34 @@ Not done.
 
 ## Substitutions
 
-### com-sub
+### command-sub
 
-Evaluates to the stdout of a command.  If a trailing newline is returned, it's
-stripped:
+Executes a command and captures its stdout.
+
+OSH has shell-compatible command sub like `$(echo hi)`.  If a trailing newline
+is returned, it's removed:
 
     $ hostname
     example.com
 
-    $ x=$(hostname)
-    $ echo $x
-    example.com
+    $ echo "/tmp/$(hostname)"
+    /tmp/example.com
+
+YSH has spliced command subs, enabled by `shopt --set parse_at`.  The reuslt is
+a **List** of strings, rather than a single string.
+
+    $ write -- @(echo foo; echo 'with spaces')
+    foo
+    with-spaces
+
+The command's stdout parsed as the "J8 Lines" format, where each line is
+either:
+
+1. An unquoted string, which must be valid UTF-8
+2. A quoted J8 string (JSON style `""` or J8-style `b'' u'' ''`)
+3. An **ignored** empty line
+
+See [J8 Notation](../j8-notation.html) for more details.
 
 ### var-sub
 
