@@ -599,6 +599,9 @@ class LexerDecoder(object):
                 not pyj8.PartIsUtf8(self.s, self.pos, end_pos)):
             raise self._Error(
                 'Invalid UTF-8 in %s string literal' % self.lang_str, end_pos)
+        if tok_id == Id.Char_AsciiControl:
+            raise self._Error(
+                "J8 Lines can't have unescaped ASCII control chars", end_pos)
 
         self.pos = end_pos
         return tok_id, end_pos, None
@@ -627,7 +630,7 @@ class LexerDecoder(object):
                     str_end)
             if tok_id == Id.Char_AsciiControl:
                 raise self._Error(
-                    "ASCII control chars are illegal in %s strings" %
+                    "%s strings can't have unescaped ASCII control chars" %
                     self.lang_str, str_end)
 
             if tok_id in (Id.Right_SingleQuote, Id.Right_DoubleQuote):

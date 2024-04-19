@@ -596,24 +596,28 @@ J8_DEF = _J8_LEFT + [
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 
+# Exclude control characters 0x00-0x1f, aka 0-31 in J8 data only (not YSH code)
+_ASCII_CONTROL = R(r'[\x01-\x1F]', Id.Char_AsciiControl)
+
 J8_LINES_DEF = _J8_LEFT + [
     # not sure if we want \r here - same with lex_mode_e.Expr
     R(r'[ \r\t]+', Id.WS_Space),
     R(r'[\n]', Id.Op_Newline),
 
-    # not space or ' or " or EOF
-    R(r'''[^ \t\r\n'"\0]+''', Id.Lit_Chars),
-]
+    # doesn't match \t, which means tabs are allowed in the middle of unquoted
+    # lines
+    _ASCII_CONTROL,
 
-# Exclude control characters 0x00-0x1f, aka 0-31 in J8 data
-# But \n has to be allowed in multi-line strings
-_ASCII_CONTROL = R(r'[\x01-\x1F]', Id.Char_AsciiControl)
+    # not space or ' or " or ASCII control or EOF
+    R(r'''[^ \t\r\n'"\x00-\x1F]+''', Id.Lit_Chars),
+]
 
 # https://json.org list of chars, plus '
 _JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 
 # Union of escapes that "" u"" b"" accept.  Validation is separate.
-J8_STR_DEF = [
+
+_J8_STR_COMMON = [
     C("'", Id.Right_SingleQuote),  # end for J8
     _JSON_ONE_CHAR,
     C("\\'", Id.Char_OneChar),
@@ -622,10 +626,13 @@ J8_STR_DEF = [
     C('\\', Id.Unknown_Backslash),
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
-    _ASCII_CONTROL,
+]
 
-    # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'''[^\\'\x00-\x1F]+''', Id.Lit_Chars),
+# ASCII control characters are disallowed in DATA, but not CODE!
+J8_STR_DEF = _J8_STR_COMMON + [
+    _ASCII_CONTROL,
+    # will match invalid UTF-8 - we have a separate validation step
+    R(r"[^\\'\x00-\x1F]+", Id.Lit_Chars),
 ]
 
 # For "JSON strings \" \u1234"
@@ -647,7 +654,12 @@ JSON_STR_DEF = [
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 
-LEXER_DEF[lex_mode_e.J8_Str] = J8_STR_DEF
+LEXER_DEF[lex_mode_e.J8_Str] = _J8_STR_COMMON + [
+    # don't produce Char_AsciiControl tokens - that's only for data
+
+    # will match invalid UTF-8 - we have a separate validation step
+    R(r"[^\\'\0]+", Id.Lit_Chars),
+]
 
 OCTAL3_RE = r'\\[0-7]{1,3}'
 

@@ -133,9 +133,14 @@ EOF
 write @(echo '"hello \z"')
 EOF
 
-  # unquoted line isn't valid UTF-8
+  # unquoted line must be valid UTF-8
   _ysh-error-here-X 4 <<'EOF'
 write @(echo $'foo \xff-bar spam')
+EOF
+
+  # unquoted line can't have ASCII control chars
+  _ysh-error-here-X 4 <<'EOF'
+write @(echo $'foo \x01-bar spam')
 EOF
 }
 
