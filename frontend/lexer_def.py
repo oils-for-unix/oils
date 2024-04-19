@@ -625,7 +625,7 @@ J8_STR_DEF = [
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'''[^\\'\0]+''', Id.Lit_Chars),
+    R(r'''[^\\'\x00-\x1F]+''', Id.Lit_Chars),
 ]
 
 # For "JSON strings \" \u1234"
@@ -643,7 +643,7 @@ JSON_STR_DEF = [
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\0]+', Id.Lit_Chars),
+    R(r'[^\\"\x00-\x1F]+', Id.Lit_Chars),
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 

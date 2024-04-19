@@ -10,9 +10,6 @@ set -o errexit
 source test/common.sh
 source test/sh-assert.sh  # _assert-sh-status
 
-OSH=${OSH:-bin/osh}
-YSH=${YSH:-bin/ysh}
-
 #
 # Cases
 #

@@ -5,11 +5,8 @@
 
 # NOTE: No set -o errexit, etc.
 
-source test/common.sh  # $OSH
+source test/common.sh  # $OSH, $YSH
 source test/sh-assert.sh  # banner, _assert-sh-status
-
-# Test JSON in OSH.  Should be the same in YSH.
-#OSH=${OSH:-bin/osh}
 
 _error-case-X() {
   local expected_status=$1
@@ -42,23 +39,47 @@ test-parse-errors() {
   # Invalid token
   _error-case-X 1 'echo + | json read'
 
-  # TYG8 token, not JSON8 token
+  # NIL8 token, not JSON8 token
   _error-case-X 1 'echo "(" | json read'
+
+  # Extra input after valid message
+  _ysh-error-here-X 1 << 'EOF'
+echo '{}[ ' | json read
+EOF
+
 }
 
 test-lex-errors() {
+  # ASCII control chars outside are disallowed
+  _ysh-error-here-X 1 << 'EOF'
+echo $'\x02' | json read
+EOF
+
   # Unclosed quote
   _error-case-X 1 'echo [\" | json read'
 
   # EOL in middle of string
   _error-case-X 1 'echo -n [\" | json read'
 
-  # Invalid unicode
+   # Invalid string escape
+  _ysh-error-here-X 1 << 'EOF'
+echo '"hi \z bye"' | json read
+EOF
 
-  json=$'"\xce"'  # part of mu = \u03bc
-  echo "json=$json"
-  json=${json//'"'/'\"'}  # shell escape
-  _error-case-X 1 $'echo -n '$json' | json read'
+
+  # Invalid unicode in string
+  _ysh-error-here-X 1 << 'EOF'
+# part of mu = \u03bc
+echo $' "\xce" ' | json read
+EOF
+
+  #return
+
+  # Invalid ASCII control chars inside string
+  _ysh-error-here-X 1 << 'EOF'
+echo $'"foo \x01 "' | json read
+pp line (_reply)
+EOF
 }
 
 test-encode() {
@@ -70,6 +91,15 @@ test-encode() {
   # But not pp line (L)
   _error-case-X 1 'var L = []; call L->append(/d+/); j8 write (L)'
 }
+
+test-cpython() {
+  # control char is error in Python
+  echo $'"foo \x01 "' \
+    | python3 -c 'import json, sys; json.loads(sys.stdin.read())' || true
+  echo $' \x01' \
+    | python3 -c 'import json, sys; json.loads(sys.stdin.read())' || true
+}
+
 
 #
 # Entry points

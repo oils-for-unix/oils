@@ -613,6 +613,8 @@ class LexerDecoder(object):
             else:
                 tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
 
+            #log('String tok %s', Id_str(tok_id))
+
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?
                 raise self._Error(

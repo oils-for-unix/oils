@@ -10,8 +10,6 @@ set -o errexit
 source test/common.sh
 source test/sh-assert.sh  # _assert-sh-status
 
-YSH=${YSH:-bin/ysh}
-
 #
 # Cases
 #
@@ -767,45 +765,7 @@ test-json() {
   _ysh-error-X 3 'json read (&x, 43)'
 }
 
-test-json-decode() {
-   # Unclosed "
-  _ysh-error-here-X 1 << 'EOF'
-echo '"foo' | json read
-EOF
-
-   # Invalid string escape
-  _ysh-error-here-X 1 << 'EOF'
-echo '"hi \z bye"' | json read
-EOF
-
-   # Unclosed {
-  _ysh-error-here-X 1 << 'EOF'
-echo '{ "key": [1, 2] [ ' | json read
-EOF
-
-  # Extra input after valid message
-  _ysh-error-here-X 1 << 'EOF'
-echo '{}[ ' | json read
-EOF
-
-  # ASCII control chars outside are disallowed
-  _ysh-error-here-X 1 << 'EOF'
-echo $'\x01' | json read
-EOF
-
-  # control char is error in Python
-  echo $'"foo \x01 "' \
-    | python3 -c 'import json, sys; json.loads(sys.stdin.read())' || true
-  echo $' \x01' \
-    | python3 -c 'import json, sys; json.loads(sys.stdin.read())' || true
-
-  return
-
-  # ASCII control chars inside strings
-  _ysh-error-here-X 3 << 'EOF'
-echo $'"foo \x01 "' | json read
-EOF
-}
+# For decoding errors, see data_lang/json-errors.sh
 
 test-error-builtin() {
 
