@@ -550,6 +550,10 @@ class LexerDecoder(object):
         self.lang_str = lang_str
 
         self.pos = 0
+
+        # current line being lexed -- for error messages
+        self.cur_line_num = 1
+
         # Reuse this instance to save GC objects.  JSON objects could have
         # thousands of strings.
         self.decoded = mylib.BufWriter()
@@ -558,7 +562,7 @@ class LexerDecoder(object):
         # type: (str, int) -> error.Decode
 
         # Use the current position as start pos
-        return error.Decode(msg, self.s, self.pos, end_pos)
+        return error.Decode(msg, self.s, self.pos, end_pos, self.cur_line_num)
 
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
@@ -579,6 +583,10 @@ class LexerDecoder(object):
         if tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
                       Id.Left_USingleQuote):
             return self._DecodeString(tok_id, end_pos)
+
+        if tok_id == Id.Ignored_Newline:
+            #log('LINE %d', self.cur_line_num)
+            self.cur_line_num += 1
 
         self.pos = end_pos
         return tok_id, end_pos, None
@@ -602,6 +610,10 @@ class LexerDecoder(object):
         if tok_id == Id.Char_AsciiControl:
             raise self._Error(
                 "J8 Lines can't have unescaped ASCII control chars", end_pos)
+
+        if tok_id == Id.J8_Newline:
+            #log('LINE %d', self.cur_line_num)
+            self.cur_line_num += 1
 
         self.pos = end_pos
         return tok_id, end_pos, None
@@ -758,7 +770,8 @@ class _Parser(object):
 
     def _ParseError(self, msg):
         # type: (str) -> error.Decode
-        return error.Decode(msg, self.s, self.start_pos, self.end_pos)
+        return error.Decode(msg, self.s, self.start_pos, self.end_pos,
+                            self.lexer.cur_line_num)
 
 
 class Parser(_Parser):

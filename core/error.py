@@ -229,7 +229,7 @@ class Runtime(Exception):
 
 class Decode(Exception):
     """
-    List of J8 errors errors:
+    List of J8 errors:
     - message isn't UTF-8 - Id.Lit_Chars - need loc
     - Invalid token Id.Unkown_Tok - need loc
     - Unclosed double quote string -- need loc
@@ -241,12 +241,13 @@ class Decode(Exception):
       - "" doesn't accept \\yff or \\u{123456}
     """
 
-    def __init__(self, msg, s, start_pos, end_pos):
-        # type: (str, str, int, int) -> None
+    def __init__(self, msg, s, start_pos, end_pos, line_num):
+        # type: (str, str, int, int, int) -> None
         self.msg = msg
         self.s = s  # string being decoded
         self.start_pos = start_pos
         self.end_pos = end_pos
+        self.line_num = line_num
 
     def Message(self):
         # type: () -> str
@@ -256,8 +257,8 @@ class Decode(Exception):
         end = min(len(self.s), self.end_pos + 4)
 
         part = self.s[start:end]
-        return self.msg + ' (pos %d-%d: %r)' % (self.start_pos, self.end_pos,
-                                                part)
+        return self.msg + ' (line %d, offset %d-%d: %r)' % (
+            self.line_num, self.start_pos, self.end_pos, part)
 
     def __str__(self):
         # type: () -> str

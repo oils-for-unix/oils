@@ -26,10 +26,40 @@ _expr-error-case() {
 # Cases
 #
 
-test-parse-errors() {
-  #echo OSH=$OSH
-  #set +o errexit
+test-line-numbers() {
+  # J8 string
+  _osh-error-here-X 1 << 'EOF'
+echo '
+{
+  "a": 99,
+  "foo\z": 42
+}
+' | json read
+EOF
 
+  # JSON
+  _osh-error-here-X 1 << 'EOF'
+echo '
+{
+  "foo": 42 oops
+}
+' | json read
+EOF
+
+  # J8 Lines
+  _ysh-error-here-X 4 << 'EOF'
+proc p {
+  echo unquoted
+  echo
+  echo
+  echo ' "hi" oops'  # line 4 error
+}
+
+write -- @(p)
+EOF
+}
+
+test-parse-errors() {
   # Unexpected EOF
   _error-case-X 1 'echo "" | json read'
 
