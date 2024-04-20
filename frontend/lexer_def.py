@@ -622,14 +622,15 @@ _J8_STR_COMMON = [
     C("\\'", Id.Char_OneChar),  # since ' ends, allow \'
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
+
+    # osh/word_parse.py relies on this.  It has to be consistent with $''
+    # lexing, which uses _C_STRING_COMMON
+    C('\\', Id.Unknown_Backslash),
 ]
 
 # Lexer for J8 strings in CODE.
 LEXER_DEF[lex_mode_e.J8_Str] = _J8_STR_COMMON + [
     # Don't produce Char_AsciiControl tokens - that's only for data
-
-    # osh/word_parse.py relies on this.  It has to match $'', which uses _C_STRING_COMMON
-    C('\\', Id.Unknown_Backslash),
 
     # will match invalid UTF-8 - we have a separate validation step
     R(r"[^\\'\0]+", Id.Lit_Chars),
@@ -641,7 +642,6 @@ J8_STR_DEF = _J8_STR_COMMON + [
     _ASCII_CONTROL,
     # will match invalid UTF-8 - we have a separate validation step
     R(r"[^\\'\x00-\x1F]+", Id.Lit_Chars),
-    R(r'[^\0]', Id.Unknown_Tok),  # e.g. the \ before bad \z
 ]
 
 # Lexer for JSON string data - e.g. "json \" \u1234"
@@ -656,11 +656,11 @@ JSON_STR_DEF = [
     R(
         r'\\u[dD][89aAbB][0-9a-fA-F][0-9a-fA-F]\\u[dD][cCdDeEfF][0-9a-fA-F][0-9a-fA-F]',
         Id.Char_SurrogatePair),
+    C('\\', Id.Unknown_Backslash),  # e.g. the \ before bad \z
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
     R(r'[^\\"\x00-\x1F]+', Id.Lit_Chars),
-    R(r'[^\0]', Id.Unknown_Tok),  # e.g. the \ before bad \z
 ]
 
 OCTAL3_RE = r'\\[0-7]{1,3}'

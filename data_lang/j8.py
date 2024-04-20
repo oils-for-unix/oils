@@ -623,10 +623,9 @@ class LexerDecoder(object):
                 raise self._Error(
                     'Unexpected EOF while lexing %s string' % self.lang_str,
                     str_end)
-            if tok_id == Id.Unknown_Tok:
-                # e.g. invalid backslash
+            if tok_id == Id.Unknown_Backslash:
                 raise self._Error(
-                    'Unknown token while lexing %s string' % self.lang_str,
+                    'Bad backslash escape in %s string' % self.lang_str,
                     str_end)
             if tok_id == Id.Char_AsciiControl:
                 raise self._Error(
