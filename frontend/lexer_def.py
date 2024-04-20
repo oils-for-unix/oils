@@ -615,27 +615,36 @@ J8_LINES_DEF = _J8_LEFT + [
 # https://json.org list of chars, plus '
 _JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 
-# Union of escapes that "" u"" b"" accept.  Validation is separate.
-
+# b'' u'' strings - what's common between code and data.
 _J8_STR_COMMON = [
     C("'", Id.Right_SingleQuote),  # end for J8
     _JSON_ONE_CHAR,
-    C("\\'", Id.Char_OneChar),
-
-    # osh/word_parse.py relies on this.  It has to match $'', which uses _C_STRING_COMMON
-    C('\\', Id.Unknown_Backslash),
+    C("\\'", Id.Char_OneChar),  # since ' ends, allow \'
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
 ]
 
+# Lexer for J8 strings in CODE.
+LEXER_DEF[lex_mode_e.J8_Str] = _J8_STR_COMMON + [
+    # Don't produce Char_AsciiControl tokens - that's only for data
+
+    # osh/word_parse.py relies on this.  It has to match $'', which uses _C_STRING_COMMON
+    C('\\', Id.Unknown_Backslash),
+
+    # will match invalid UTF-8 - we have a separate validation step
+    R(r"[^\\'\0]+", Id.Lit_Chars),
+]
+
+# Lexer for J8 string data.
 # ASCII control characters are disallowed in DATA, but not CODE!
 J8_STR_DEF = _J8_STR_COMMON + [
     _ASCII_CONTROL,
     # will match invalid UTF-8 - we have a separate validation step
     R(r"[^\\'\x00-\x1F]+", Id.Lit_Chars),
+    R(r'[^\0]', Id.Unknown_Tok),  # e.g. the \ before bad \z
 ]
 
-# For "JSON strings \" \u1234"
+# Lexer for JSON string data - e.g. "json \" \u1234"
 JSON_STR_DEF = [
     C('"', Id.Right_DoubleQuote),  # end for JSON
     _JSON_ONE_CHAR,
@@ -651,14 +660,7 @@ JSON_STR_DEF = [
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
     R(r'[^\\"\x00-\x1F]+', Id.Lit_Chars),
-    R(r'[^\0]', Id.Unknown_Tok),
-]
-
-LEXER_DEF[lex_mode_e.J8_Str] = _J8_STR_COMMON + [
-    # don't produce Char_AsciiControl tokens - that's only for data
-
-    # will match invalid UTF-8 - we have a separate validation step
-    R(r"[^\\'\0]+", Id.Lit_Chars),
+    R(r'[^\0]', Id.Unknown_Tok),  # e.g. the \ before bad \z
 ]
 
 OCTAL3_RE = r'\\[0-7]{1,3}'

@@ -49,36 +49,57 @@ EOF
 
 }
 
-test-lex-errors() {
-  # ASCII control chars outside are disallowed
-  _ysh-error-here-X 1 << 'EOF'
+test-ascii-control() {
+  # Disallowed ASCII control chars OUTSIDE string
+  _osh-error-here-X 1 << 'EOF'
 echo $'\x02' | json read
 EOF
+  # JSON
+  _ysh-error-here-X 1 << 'EOF'
+echo $'"foo \x01 "' | json read
+pp line (_reply)
+EOF
+  # J8
+  _ysh-error-here-X 1 << 'EOF'
+var invalid = b'\y01'
+echo $["u'foo" ++ invalid ++ "'"] | json8 read
+pp line (_reply)
+EOF
+}
 
-  # Unclosed quote
-  _error-case-X 1 'echo [\" | json read'
+test-str-unclosed-quote() {
+  # JSON
+  _osh-error-here-X 1 << 'EOF'
+echo -n '["' | json read
+EOF
+  # J8
+  _osh-error-here-X 1 << 'EOF'
+echo -n "[b'" | json8 read
+EOF
+}
 
-  # EOL in middle of string
-  _error-case-X 1 'echo -n [\" | json read'
-
-   # Invalid string escape
+test-str-bad-escape() {
+   # Invalid string escape JSON
   _ysh-error-here-X 1 << 'EOF'
 echo '"hi \z bye"' | json read
 EOF
+  _ysh-error-here-X 1 << 'EOF'
+var invalid = r'\z'
+echo $["u'hi" ++ invalid ++ "bye'"] | json8 read
+EOF
+return
+}
 
-
-  # Invalid unicode in string
+test-str-invalid-utf8() {
+  # JSON
   _ysh-error-here-X 1 << 'EOF'
 # part of mu = \u03bc
 echo $' "\xce" ' | json read
 EOF
-
-  #return
-
-  # Invalid ASCII control chars inside string
+  # J8
   _ysh-error-here-X 1 << 'EOF'
-echo $'"foo \x01 "' | json read
-pp line (_reply)
+var invalid = b'\yce'
+echo $["u'" ++ invalid ++ "'"] | json8 read
 EOF
 }
 
