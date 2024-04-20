@@ -1,7 +1,7 @@
 """
-lexer_def.py -- A lexer for both OSH and YSH.
+lexer_def.py - Lexing for OSH, YSH, and J8 Notation.
 
-It consists of a series of lexer modes, each with a regex -> Id mapping.
+The OSH/YSH lexer has lexer modes, each with a regex -> Id mapping.
 
 After changing this file, run:
 
@@ -18,14 +18,15 @@ Every line is NUL terminated:
 
     'one\n\0' 'last line\0'
 
-which means that no regexes below should match \0.  The core/lexer_gen.py code
-generator adds and extra rule for \0.
+which means that no regexes below should match \0.
 
 For example, use [^'\0]+ instead of [^']+ .
 
 If this rule isn't followed, we would read uninitialized memory past the
 sentinel.  Python's regex engine knows where the end of the input string is, so
 it doesn't require need a sentinel like \0.
+
+The frontend/lexer_gen.py generator adds a pattern mapping \0 to Id.Eol_Tok.
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
@@ -584,9 +585,9 @@ J8_DEF = _J8_LEFT + [
     # Identifier.  JSON8 only has Identifier.
     #R(J8_SYMBOL_RE, Id.J8_Symbol),  # NIL8 only
     R(r'[~!@$%^&*+=|;./<>?-]+', Id.J8_Operator),  # NIL8 only
-
-    # TODO: emit Id.Ignored_Newline to count lines for error messages?
-    R(r'[ \r\n\t]+', Id.Ignored_Space),
+    R(r'[ \r\t]+', Id.Ignored_Space),
+    # A separate token, to count lines for error messages
+    C('\n', Id.Ignored_Newline),
     # comment is # until end of line
     # // comments are JavaScript style, but right now we might want them as
     # symbols?
@@ -602,7 +603,7 @@ _ASCII_CONTROL = R(r'[\x01-\x1F]', Id.Char_AsciiControl)
 J8_LINES_DEF = _J8_LEFT + [
     # not sure if we want \r here - same with lex_mode_e.Expr
     R(r'[ \r\t]+', Id.WS_Space),
-    R(r'[\n]', Id.Op_Newline),
+    R(r'[\n]', Id.J8_Newline),
 
     # doesn't match \t, which means tabs are allowed in the middle of unquoted
     # lines

@@ -236,7 +236,8 @@ def AddKinds(spec):
 
     spec.AddKind('Eol', ['Tok'])  # no more tokens on line (\0)
 
-    spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment'])
+    # Ignored_Newline is for J8 lexing to count lines
+    spec.AddKind('Ignored', ['LineCont', 'Space', 'Comment', 'Newline'])
 
     # Id.WS_Space is for lex_mode_e.ShCommand; Id.Ignored_Space is for
     # lex_mode_e.Arith
@@ -687,12 +688,14 @@ def AddKinds(spec):
             'Float',  # Number
 
             # High level tokens for "" b'' u''
-            # We don't distinguish them in the parser, because we parse JSON in
-            # the lexer.
+            # We don't distinguish them in the parser, because we recognize
+            # strings in the lexer.
             'String',
 
             # JSON8 and NIL8
             'Identifier',
+            'Newline',  # J8 Lines only, similar to Op_Newline
+            'Tab',  # Reserved for TSV8
 
             # NIL8 only
             'LParen',

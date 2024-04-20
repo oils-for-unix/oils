@@ -722,7 +722,7 @@ class _Parser(object):
         self.tok_id = Id.Undefined_Tok
         self.start_pos = 0
         self.end_pos = 0
-        self.decoded = ''
+        self.decoded = ''  # decoded J8 string
 
     def _Next(self):
         # type: () -> None
@@ -731,7 +731,8 @@ class _Parser(object):
         while True:
             self.start_pos = self.end_pos
             self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
-            if self.tok_id not in (Id.Ignored_Space, Id.Ignored_Comment):
+            if self.tok_id not in (Id.Ignored_Space, Id.Ignored_Newline,
+                                   Id.Ignored_Comment):
                 break
             # TODO: add Ignored_Newline to count lines, and show line numbers
             # in errors messages.  The position of the last newline and a token
@@ -745,8 +746,8 @@ class _Parser(object):
         if self.tok_id != tok_id:
             #log('position %r %d-%d %r', self.s, self.start_pos,
             #    self.end_pos, self.s[self.start_pos:self.end_pos])
-            raise self._Error("Expected %s, got %s" %
-                              (Id_str(tok_id), Id_str(self.tok_id)))
+            raise self._ParseError("Expected %s, got %s" %
+                                   (Id_str(tok_id), Id_str(self.tok_id)))
         self._Next()
 
     def _NextForLines(self):
@@ -755,7 +756,7 @@ class _Parser(object):
         self.start_pos = self.end_pos
         self.tok_id, self.end_pos, self.decoded = self.lexer.NextForLines()
 
-    def _Error(self, msg):
+    def _ParseError(self, msg):
         # type: (str) -> error.Decode
         return error.Decode(msg, self.s, self.start_pos, self.end_pos)
 
@@ -875,12 +876,12 @@ class Parser(_Parser):
             return str_val
 
         elif self.tok_id == Id.Eol_Tok:
-            raise self._Error('Unexpected EOF while parsing %s' %
-                              self.lang_str)
+            raise self._ParseError('Unexpected EOF while parsing %s' %
+                                   self.lang_str)
 
         else:  # Id.Unknown_Tok, Id.J8_{LParen,RParen}
-            raise self._Error('Invalid token while parsing %s: %s' %
-                              (self.lang_str, Id_str(self.tok_id)))
+            raise self._ParseError('Invalid token while parsing %s: %s' %
+                                   (self.lang_str, Id_str(self.tok_id)))
 
     def ParseValue(self):
         # type: () -> value_t
@@ -888,7 +889,7 @@ class Parser(_Parser):
         self._Next()
         obj = self._ParseValue()
         if self.tok_id != Id.Eol_Tok:
-            raise self._Error('Unexpected trailing input')
+            raise self._ParseError('Unexpected trailing input')
         return obj
 
 
@@ -916,7 +917,8 @@ class Nil8Parser(_Parser):
             end_pos = self.end_pos  # look ahead from last token
             while True:
                 tok_id, end_pos = match.MatchJ8Token(self.s, end_pos)
-                if tok_id not in (Id.Ignored_Space, Id.Ignored_Comment):
+                if tok_id not in (Id.Ignored_Space, Id.Ignored_Newline,
+                                  Id.Ignored_Comment):
                     break
             return tok_id
 
@@ -1035,12 +1037,12 @@ class Nil8Parser(_Parser):
             obj = nvalue.Symbol(part)
 
         elif self.tok_id == Id.Eol_Tok:
-            raise self._Error('Unexpected EOF while parsing %s' %
-                              self.lang_str)
+            raise self._ParseError('Unexpected EOF while parsing %s' %
+                                   self.lang_str)
 
         else:  # Id.Unknown_Tok, Id.J8_{LParen,RParen}
-            raise self._Error('Invalid token while parsing %s: %s' %
-                              (self.lang_str, Id_str(self.tok_id)))
+            raise self._ParseError('Invalid token while parsing %s: %s' %
+                                   (self.lang_str, Id_str(self.tok_id)))
 
         #log('YO %s', Id_str(self.tok_id))
         if self.tok_id in (Id.J8_Operator, Id.J8_Colon, Id.J8_Comma):
@@ -1071,7 +1073,7 @@ class Nil8Parser(_Parser):
         obj = self._ParseNil8()
         #print("==> %d %s" % (id(obj), obj))
         if self.tok_id != Id.Eol_Tok:
-            raise self._Error('Unexpected trailing input')
+            raise self._ParseError('Unexpected trailing input')
         return obj
 
 
@@ -1084,7 +1086,7 @@ class J8LinesParser(_Parser):
 
     Grammar:
 
-        end           = Op_Newline | Eol_Tok
+        end           = J8_Newline | Eol_Tok
 
         empty_line    = WS_Space? end
 
@@ -1132,7 +1134,7 @@ class J8LinesParser(_Parser):
             self._NextForLines()
 
         # Empty line - return without doing anything
-        if self.tok_id in (Id.Op_Newline, Id.Eol_Tok):
+        if self.tok_id in (Id.J8_Newline, Id.Eol_Tok):
             self._NextForLines()
             return
 
@@ -1144,9 +1146,9 @@ class J8LinesParser(_Parser):
             if self.tok_id == Id.WS_Space:  # trailing whitespace
                 self._NextForLines()
 
-            if self.tok_id not in (Id.Op_Newline, Id.Eol_Tok):
-                raise self._Error('Unexpected text after J8 Line (%s)' %
-                                  Id_str(self.tok_id))
+            if self.tok_id not in (Id.J8_Newline, Id.Eol_Tok):
+                raise self._ParseError('Unexpected text after J8 Line (%s)' %
+                                       Id_str(self.tok_id))
 
             self._NextForLines()
             return
@@ -1166,7 +1168,7 @@ class J8LinesParser(_Parser):
                 # \r, but we're sticking with the JSON spec definition of
                 # whitespace.  (As another data point, CPython on Unix allows
                 # \r in the middle of expressions, treating it as whitespace.)
-                if self.tok_id in (Id.Op_Newline, Id.Eol_Tok):
+                if self.tok_id in (Id.J8_Newline, Id.Eol_Tok):
                     break
 
             if prev_id == Id.WS_Space:
@@ -1191,7 +1193,7 @@ class J8LinesParser(_Parser):
             self._ParseLine(lines)
 
         if self.tok_id != Id.Eol_Tok:
-            raise self._Error('Unexpected trailing input in J8 Lines')
+            raise self._ParseError('Unexpected trailing input in J8 Lines')
 
         return lines
 
