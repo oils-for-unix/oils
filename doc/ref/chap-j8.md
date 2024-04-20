@@ -125,7 +125,8 @@ it's easy to confuse single quotes and double quotes.
 
 "J8 Lines" is a format built on top of J8 strings.  Each line is either:
 
-1. An unquoted string, which must be valid UTF-8
+1. An unquoted string, which must be valid UTF-8.  Whitespace is allowed, but
+   not other ASCII control chars.
 2. A quoted J8 string (JSON style `""` or J8-style `b'' u'' ''`)
 3. An **ignored** empty line
 
