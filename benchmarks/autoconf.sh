@@ -142,8 +142,7 @@ measure-rusage() {
 #
 
 shell-tasks() {
-  echo "bash${TAB}bash"
-  echo "dash${TAB}dash"
+  echo "bash${TAB}/usr/bin/bash"
   echo "osh${TAB}$REPO_ROOT/_bin/cxx-opt/osh"
 }
 
@@ -169,6 +168,180 @@ measure-syscalls() {
     # See how many external processes are started?
     #strace -o $counts -ff -e execve $sh_path $PY_CONF
     strace -o $counts_dir/syscalls -ff $sh_path $PY_CONF
+    popd
+  done
+}
+
+measure-hw-counters() {
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
+
+  local base_dir=$BASE_DIR/hw-counters
+
+  rm -r -f -v $base_dir
+
+  shell-tasks | while read -r sh_label sh_path; do
+    local dir=$base_dir/$sh_label
+    mkdir -p $dir
+
+    pushd $dir
+    perf stat $sh_path $PY_CONF > /dev/null
+    popd
+  done
+}
+
+measure-hw-counters2() {
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
+
+  local base_dir=$BASE_DIR/hw-counters2
+
+  rm -r -f -v $base_dir
+
+  shell-tasks | while read -r sh_label sh_path; do
+    local dir=$base_dir/$sh_label
+    mkdir -p $dir
+
+    pushd $dir
+	local prog='
+	hardware:instructions:1e6 {
+		@[pid, comm, probe] = count() 
+	}
+	hardware:cycles:1e6 {
+		@[pid, comm, probe] = count() 
+	}
+	'
+	sudo bpftrace -e "$prog" -c "$sh_path $PY_CONF" -o counters.txt > /dev/null
+    popd
+  done
+}
+
+measure-exits() {
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
+
+  local base_dir=$BASE_DIR/exits
+
+  rm -r -f -v $base_dir
+
+  shell-tasks | while read -r sh_label sh_path; do
+    local dir=$base_dir/$sh_label
+    mkdir -p $dir
+
+    pushd $dir
+	sudo /usr/bin/python3 /home/melvin/bcc/tools/exitsnoop.py > $dir/exit-log.txt &
+	local snoop_pid=$!
+	$sh_path $PY_CONF > /dev/null
+	kill $snoop_pid
+	awk '{print $1" "$5}' exit-log.txt | /home/melvin/child-stats.py $sh_label
+    popd
+  done
+}
+
+measure-faults() {
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
+
+  local base_dir=$BASE_DIR/faults
+
+  rm -r -f -v $base_dir
+
+  shell-tasks | while read -r sh_label sh_path; do
+    local dir=$base_dir/$sh_label
+    mkdir -p $dir
+
+    pushd $dir
+	local prog='
+	kfunc:vmlinux:__handle_mm_fault {
+		@faults[comm] = count();
+		@fault_start[pid] = nsecs;
+	}
+	kretfunc:vmlinux:__handle_mm_fault {
+		@fault_time[pid, comm] += nsecs - @fault_start[pid];
+	}
+	END {
+		clear(@fault_start);
+	}
+	'
+	sudo bpftrace -e "$prog" -c "$sh_path $PY_CONF" -o faults.txt > /dev/null
+    popd
+	sudo chown -R $(whoami) $dir
+  done
+}
+
+measure-fork-to-exec() {
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
+
+  local base_dir=$BASE_DIR/fork-to-exec
+
+  rm -r -f -v $base_dir
+
+  shell-tasks | while read -r sh_label sh_path; do
+    local dir=$base_dir/$sh_label
+    mkdir -p $dir
+    pushd $dir
+    local prog="
+    kprobe:sched_fork
+    {
+		printf(\"fork() from %s\n\", comm);
+	}
+    tracepoint:syscalls:sys_exit_clone
+    {
+		@fork_time[pid] = nsecs;
+    }
+    tracepoint:syscalls:sys_enter_execve
+    /comm == \"$sh_label\"/
+    {
+		@exec_time[pid, comm] = nsecs;
+    }
+    tracepoint:syscalls:sys_exit_execve
+    {
+		@new_comm[pid] = comm;
+    }
+    END {
+  	for (\$kv : @exec_time) {
+  		if (@fork_time[\$kv.0.0] != 0) {
+  			printf(\"%ld (%s -> %s) %lld us\n\", \$kv.0.0, \$kv.0.1, @new_comm[\$kv.0.0], (\$kv.1 - @fork_time[\$kv.0.0]) / 1e3);
+  		}
+  	}
+  	clear(@exec_time);
+  	clear(@new_comm);
+  	clear(@fork_time);
+    }
+    "
+    sudo bpftrace -e "$prog" -c "$sh_path $PY_CONF" -o trace.txt > /dev/null
+    popd
+    sudo chown -R $(whoami) $dir
+  done
+}
+
+measure-sort() {
+  local osh=_bin/cxx-opt/osh
+  #local osh=_bin/cxx-dbg/osh
+
+  ninja $osh
+
+  local base_dir=$BASE_DIR/hw-counters
+
+  rm -r -f -v $base_dir
+
+  shell-tasks | while read -r sh_label sh_path; do
+    local dir=$base_dir/$sh_label
+    mkdir -p $dir
+
+    pushd $dir
+    perf stat $sh_path -c 'cat /home/melvin/big.txt | sort > /dev/null'
     popd
   done
 }
