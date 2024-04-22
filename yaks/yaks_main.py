@@ -108,7 +108,8 @@ def main(argv):
             # ui._PrintCodeExcerpt()
             # Could also be in error
 
-            print(e.Message(), file=sys.stderr)
+            if mylib.PYTHON:
+                print(e.Message(), file=sys.stderr)
             return 1
 
         #print(obj)
