@@ -567,7 +567,7 @@ eggexes **and** valid POSIX EREs:
 If "eggex" sounds too much like "regex" to you, simply say "egg expression".
 It won't be confused with "regular expression" or "regex".
 
-### How Do Eggexes Compare with [Perl 6 Regexes][perl6-regex] and the [Rosie Pattern Language][rosie]?
+### How Do Eggexes Compare with [Raku Regexes][raku-regex] and the [Rosie Pattern Language][rosie]?
 
 All three languages support pattern composition and have quoted literals.  And
 they have the goal of improving upon Perl 5 regex syntax, which has made its
@@ -583,7 +583,7 @@ Python, etc.  That means they **cannot** be used this way.
 
 [rosie]: https://rosie-lang.org/
 
-[perl6-regex]: https://docs.perl6.org/language/regexes
+[raku-regex]: https://docs.raku.org/language/regexes
 
 ### What About Eggex versus Parsing Expression Grammars?  (PEGs)
 
