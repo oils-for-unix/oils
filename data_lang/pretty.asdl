@@ -1,19 +1,15 @@
+# Pretty printing "documents". A `doc` encodes printing instructions, including
+# choices between multiple possible layouts.
 
 module pretty
 {
 
-# Skeleton for something like "Strictly Pretty", e.g.
-#
-# https://justinpombrio.net/2024/02/23/a-twist-on-Wadlers-printer.html
-# https://lobste.rs/s/1r0aak/twist_on_wadler_s_printer
-#
-# https://lobste.rs/s/aevptj/why_is_prettier_rock_solid
-#
-
 doc =
     Newline
-  | Text(str s, int width)
-  | Indent(int ind, List[doc] children)
-  | Cat(doc left, doc right)
-}
+  | Text(str string)
+  | Indent(int indent, doc node)
+  | Concat(List[doc] nodes)
 
+DocFragment = (doc node, int indent, bool flat)
+
+}

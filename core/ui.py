@@ -519,9 +519,6 @@ def PrettyPrintValue(val, f):
             # Use () instead of <> as a hint that it's a "JSON value"
             f.write('(%s%s)   ' % (ysh_type, id_str))
 
-            # Unused STUB
-            doc = pretty.FromValue(val)
-
             buf = mylib.BufWriter()
 
             # TODO: Wrap lines, and show color.  Use core/ansi.py
