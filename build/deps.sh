@@ -123,7 +123,7 @@ rm-oils-crap() {
 readonly -a WEDGE_DEPS_DEBIAN=(
     wget tree gawk 
     g++ ninja-build cmake
-    libreadline-dev 
+    libreadline-dev systemtap-sdt-dev
     "${PY3_BUILD_DEPS[@]}"
 )
 

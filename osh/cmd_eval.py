@@ -84,7 +84,7 @@ from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
 from mycpp import mylib
-from mycpp.mylib import log, switch, tagswitch
+from mycpp.mylib import log, probe, switch, tagswitch
 from ysh import expr_eval
 from ysh import func_proc
 from ysh import val_ops
@@ -681,6 +681,7 @@ class CommandEvaluator(object):
 
     def _DoVarDecl(self, node):
         # type: (command.VarDecl) -> int
+        probe('cmd_eval', '_DoVarDecl_enter')
         # x = 'foo' in Hay blocks
         if node.keyword is None:
             # Note: there's only one LHS
@@ -706,6 +707,7 @@ class CommandEvaluator(object):
                                       value.Null,
                                       scope_e.LocalOnly,
                                       flags=flags)
+                probe('cmd_eval', '_DoVarDecl_exit')
                 return 0
 
             right_val = self.expr_ev.EvalExpr(node.rhs, loc.Missing)
@@ -724,6 +726,7 @@ class CommandEvaluator(object):
 
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
+                    probe('cmd_eval', '_DoVarDecl_exit')
                     raise error.Expr(
                         'Got %d places on the left, but %d values on right' %
                         (num_lhs, num_rhs), node.keyword)
@@ -739,10 +742,12 @@ class CommandEvaluator(object):
                 rval = rhs_vals[i]
                 self.mem.SetNamed(lval, rval, scope_e.LocalOnly, flags=flags)
 
+        probe('cmd_eval', '_DoVarDecl_exit')
         return 0
 
     def _DoMutation(self, node):
         # type: (command.Mutation) -> None
+        probe('cmd_eval', '_DoMutation_enter')
 
         with switch(node.keyword.id) as case2:
             if case2(Id.KW_SetVar):
@@ -750,6 +755,7 @@ class CommandEvaluator(object):
             elif case2(Id.KW_SetGlobal):
                 which_scopes = scope_e.GlobalOnly
             else:
+                probe('cmd_eval', '_DoMutation_exit')
                 raise AssertionError(node.keyword.id)
 
         if node.op.id == Id.Arith_Equal:
@@ -769,6 +775,7 @@ class CommandEvaluator(object):
 
                 num_rhs = len(items)
                 if num_lhs != num_rhs:
+                    probe('cmd_eval', '_DoMutation_exit')
                     raise error.Expr(
                         'Got %d places on the left, but %d values on the right'
                         % (num_lhs, num_rhs), node.keyword)
@@ -813,11 +820,13 @@ class CommandEvaluator(object):
                             obj.d[key] = rval
 
                         else:
+                            probe('cmd_eval', '_DoMutation_exit')
                             raise error.TypeErr(
                                 obj, "obj[index] expected List or Dict",
                                 loc.Missing)
 
                 else:
+                    probe('cmd_eval', '_DoMutation_exit')
                     raise AssertionError()
 
         else:
@@ -829,8 +838,11 @@ class CommandEvaluator(object):
 
             self.expr_ev.EvalAugmented(aug_lval, val, node.op, which_scopes)
 
+        probe('cmd_eval', '_DoMutation_exit')
+
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
+        probe('cmd_eval', '_DoSimple_enter')
         cmd_st.check_errexit = True
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
@@ -891,10 +903,12 @@ class CommandEvaluator(object):
         else:
             status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
+        probe('cmd_eval', '_DoSimple_exit')
         return status
 
     def _DoExpandedAlias(self, node):
         # type: (command.ExpandedAlias) -> int
+        probe('cmd_eval', '_DoExpandedAlias_enter')
         # Expanded aliases need redirects and env bindings from the calling
         # context, as well as redirects in the expansion!
 
@@ -904,12 +918,15 @@ class CommandEvaluator(object):
         if len(node.more_env):
             with state.ctx_Temp(self.mem):
                 self._EvalTempEnv(node.more_env, state.SetExport)
+                probe('cmd_eval', '_DoExpandedAlias_exit')
                 return self._Execute(node.child)
         else:
+            probe('cmd_eval', '_DoExpandedAlias_exit')
             return self._Execute(node.child)
 
     def _DoPipeline(self, node, cmd_st):
         # type: (command.Pipeline, CommandStatus) -> int
+        probe('cmd_eval', '_DoPipeline_enter')
         cmd_st.check_errexit = True
         for op in node.ops:
             if op.id != Id.Op_Pipe:
@@ -940,10 +957,12 @@ class CommandEvaluator(object):
         else:
             self.shell_ex.RunPipeline(node, cmd_st)
 
+        probe('cmd_eval', '_DoPipeline_exit')
         return status
 
     def _DoShAssignment(self, node, cmd_st):
         # type: (command.ShAssignment, CommandStatus) -> int
+        probe('cmd_eval', '_DoShAssignment_enter')
         assert len(node.pairs) >= 1, node
 
         # x=y is 'neutered' inside 'proc'
@@ -992,12 +1011,15 @@ class CommandEvaluator(object):
         if self.check_command_sub_status:
             last_status = self.mem.LastStatus()
             self._CheckStatus(last_status, cmd_st, node, loc.Missing)
+            probe('cmd_eval', '_DoShAssignment_exit')
             return last_status  # A global assignment shouldn't clear $?.
         else:
+            probe('cmd_eval', '_DoShAssignment_exit')
             return 0
 
     def _DoExpr(self, node):
         # type: (command.Expr) -> int
+        probe('cmd_eval', '_DoExpr_enter')
 
         # call f(x) or = f(x)
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
@@ -1006,10 +1028,12 @@ class CommandEvaluator(object):
             with vm.ctx_FlushStdout():
                 ui.PrettyPrintValue(val, mylib.Stdout())
 
+        probe('cmd_eval', '_DoExpr_exit')
         return 0
 
     def _DoControlFlow(self, node):
         # type: (command.ControlFlow) -> int
+        probe('cmd_eval', '_DoControlFlow_enter')
         keyword = node.keyword
 
         if node.arg_word:  # Evaluate the argument
@@ -1041,6 +1065,7 @@ class CommandEvaluator(object):
                     max_int = (1 << 31) - 1
                     min_int = -(1 << 31)
                     if not (min_int <= arg <= max_int):
+                        probe('cmd_eval', '_DoControlFlow_exit')
                         e_die(
                             '%r expected a small integer, got %r' %
                             (lexer.TokenVal(keyword), str_val.s),
@@ -1059,13 +1084,16 @@ class CommandEvaluator(object):
                 self.loop_level == 0):
             msg = 'Invalid control flow at top level'
             if self.exec_opts.strict_control_flow():
+                probe('cmd_eval', '_DoControlFlow_exit')
                 e_die(msg, keyword)
             else:
                 # Only print warnings, never fatal.
                 # Bash oddly only exits 1 for 'return', but no other shell does.
                 self.errfmt.PrefixPrint(msg, 'warning: ', keyword)
+                probe('cmd_eval', '_DoControlFlow_exit')
                 return 0
 
+        probe('cmd_eval', '_DoControlFlow_exit')
         if keyword.id == Id.ControlFlow_Exit:
             # handled differently than other control flow
             raise util.UserExit(arg)
@@ -1076,6 +1104,7 @@ class CommandEvaluator(object):
         # type: (command.AndOr, CommandStatus) -> int
         # NOTE: && and || have EQUAL precedence in command mode.  See case #13
         # in dbracket.test.sh.
+        probe('cmd_eval', '_DoAndOr_enter')
 
         left = node.children[0]
 
@@ -1113,10 +1142,12 @@ class CommandEvaluator(object):
 
             i += 1
 
+        probe('cmd_eval', '_DoAndOr_exit')
         return status
 
     def _DoWhileUntil(self, node):
         # type: (command.WhileUntil) -> int
+        probe('cmd_eval', '_DoWhileUntil_enter')
         status = 0
         with ctx_LoopLevel(self):
             while True:
@@ -1135,12 +1166,15 @@ class CommandEvaluator(object):
                     if action == flow_e.Break:
                         break
                     elif action == flow_e.Raise:
+                        probe('cmd_eval', '_DoWhileUntil_exit')
                         raise
 
+        probe('cmd_eval', '_DoWhileUntil_exit')
         return status
 
     def _DoForEach(self, node):
         # type: (command.ForEach) -> int
+        probe('cmd_eval', '_DoForEach_enter')
 
         # for the 2 kinds of shell loop
         iter_list = None  # type: List[str]
@@ -1191,6 +1225,7 @@ class CommandEvaluator(object):
                         name1 = location.LName(node.iter_names[1])
                     else:
                         # This is similar to a parse error
+                        probe('cmd_eval', '_DoForEach_exit')
                         e_die_status(
                             2,
                             'List iteration expects at most 2 loop variables',
@@ -1222,12 +1257,14 @@ class CommandEvaluator(object):
                         i_name = location.LName(node.iter_names[0])
                         name1 = location.LName(node.iter_names[1])
                     else:
+                        probe('cmd_eval', '_DoForEach_exit')
                         e_die_status(
                             2,
                             'Range iteration expects at most 2 loop variables',
                             node.keyword)
 
                 else:
+                    probe('cmd_eval', '_DoForEach_exit')
                     raise error.TypeErr(val, 'for loop expected List or Dict',
                                         node.keyword)
         else:
@@ -1241,6 +1278,7 @@ class CommandEvaluator(object):
                 name1 = location.LName(node.iter_names[1])
             else:
                 # This is similar to a parse error
+                probe('cmd_eval', '_DoForEach_exit')
                 e_die_status(
                     2, 'Argv iteration expects at most 2 loop variables',
                     node.keyword)
@@ -1267,10 +1305,12 @@ class CommandEvaluator(object):
                     elif action == flow_e.Raise:
                         raise
 
+        probe('cmd_eval', '_DoForEach_exit')
         return status
 
     def _DoForExpr(self, node):
         # type: (command.ForExpr) -> int
+        probe('cmd_eval', '_DoForExpr_enter')
 
         status = 0
 
@@ -1298,27 +1338,34 @@ class CommandEvaluator(object):
                     if action == flow_e.Break:
                         break
                     elif action == flow_e.Raise:
+                        probe('cmd_eval', '_DoForExpr_exit')
                         raise
 
                 if update:
                     self.arith_ev.Eval(update)
 
+        probe('cmd_eval', '_DoForExpr_exit')
         return status
 
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
+        probe('cmd_eval', '_DoShFunction_enter')
         if node.name in self.procs and not self.exec_opts.redefine_proc_func():
+            probe('cmd_eval', '_DoShFunction_exit')
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
         self.procs[node.name] = value.Proc(node.name, node.name_tok,
                                            proc_sig.Open, node.body, None,
                                            True)
+        probe('cmd_eval', '_DoShFunction_exit')
 
     def _DoProc(self, node):
         # type: (Proc) -> None
+        probe('cmd_eval', '_DoProc_enter')
         proc_name = lexer.TokenVal(node.name)
         if proc_name in self.procs and not self.exec_opts.redefine_proc_func():
+            probe('cmd_eval', '_DoProc_exit')
             e_die(
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,
                 node.name)
@@ -1332,9 +1379,11 @@ class CommandEvaluator(object):
         # no dynamic scope
         self.procs[proc_name] = value.Proc(proc_name, node.name, node.sig,
                                            node.body, proc_defaults, False)
+        probe('cmd_eval', '_DoProc_exit')
 
     def _DoFunc(self, node):
         # type: (Func) -> None
+        probe('cmd_eval', '_DoFunc_enter')
         name = lexer.TokenVal(node.name)
         lval = location.LName(name)
 
@@ -1346,6 +1395,7 @@ class CommandEvaluator(object):
                 did_unset = self.mem.Unset(lval, scope_e.LocalOnly)
                 assert did_unset, name
             else:
+                probe('cmd_eval', '_DoFunc_exit')
                 e_die(
                     "Func %s was already defined (redefine_proc_func)" % name,
                     node.name)
@@ -1358,9 +1408,11 @@ class CommandEvaluator(object):
                           func_val,
                           scope_e.LocalOnly,
                           flags=state.SetReadOnly)
+        probe('cmd_eval', '_DoFunc_exit')
 
     def _DoIf(self, node):
         # type: (command.If) -> int
+        probe('cmd_eval', '_DoIf_enter')
         status = -1
 
         done = False
@@ -1375,10 +1427,12 @@ class CommandEvaluator(object):
             status = self._ExecuteList(node.else_action)
 
         assert status != -1, 'Should have been initialized'
+        probe('cmd_eval', '_DoIf_exit')
         return status
 
     def _DoCase(self, node):
         # type: (command.Case) -> int
+        probe('cmd_eval', '_DoCase_enter')
 
         to_match = self._EvalCaseArg(node.to_match, node.case_kw)
         fnmatch_flags = FNM_CASEFOLD if self.exec_opts.nocasematch() else 0
@@ -1456,11 +1510,13 @@ class CommandEvaluator(object):
                     break
 
                 else:
+                    probe('cmd_eval', '_DoCase_exit')
                     raise AssertionError()
 
             if done:  # first match wins
                 break
 
+        probe('cmd_eval', '_DoCase_exit')
         return status
 
     def _DoTimeBlock(self, node):
@@ -1482,6 +1538,7 @@ class CommandEvaluator(object):
 
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
+        probe('cmd_eval', '_Dispatch_enter')
         """Switch on the command_t variants and execute them."""
 
         # If we call RunCommandSub in a recursive call to the executor, this will
@@ -1598,6 +1655,7 @@ class CommandEvaluator(object):
                 # dialect, for speed?
 
                 val = self.expr_ev.EvalExpr(node.val, node.keyword)
+                probe('cmd_eval', '_Dispatch_exit')
                 raise vm.ValueControlFlow(node.keyword, val)
 
             # Note CommandList and DoGroup have no redirects, but BraceGroup does.
@@ -1683,10 +1741,12 @@ class CommandEvaluator(object):
                 status = self._DoTimeBlock(node)
 
             else:
+                probe('cmd_eval', '_Dispatch_exit')
                 raise NotImplementedError(node.tag())
 
         # Return to caller.  Note the only case that didn't set it was Pipeline,
         # which set cmd_st.pipe_status.
+        probe('cmd_eval', '_Dispatch_exit')
         return status
 
     def RunPendingTraps(self):
@@ -1939,6 +1999,7 @@ class CommandEvaluator(object):
         Note: To do what optimize does, dash has EV_EXIT flag and yash has a
         finally_exit boolean.  We use a different algorithm.
         """
+        probe('cmd_eval', 'ExecuteAndCatch_enter')
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
             self._NoForkLast(node)  # turn the last ones into exec
@@ -1984,6 +2045,7 @@ class CommandEvaluator(object):
                     status = 1
         except error.Parse as e:
             self.dumper.MaybeRecord(self, e)  # Do this before unwinding stack
+            probe('cmd_eval', 'ExecuteAndCatch_exit')
             raise
         except error.ErrExit as e:
             err = e
@@ -2017,6 +2079,7 @@ class CommandEvaluator(object):
         self.dumper.MaybeDump(status)
 
         self.mem.SetLastStatus(status)
+        probe('cmd_eval', 'ExecuteAndCatch_exit')
         return is_return, is_fatal
 
     def EvalCommand(self, block):

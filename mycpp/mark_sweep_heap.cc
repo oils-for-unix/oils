@@ -3,6 +3,7 @@
 #include <inttypes.h>  // PRId64
 #include <stdlib.h>    // getenv()
 #include <string.h>    // strlen()
+#include <sys/sdt.h>   // STDERR_FILENO
 #include <sys/time.h>  // gettimeofday()
 #include <time.h>      // clock_gettime(), CLOCK_PROCESS_CPUTIME_ID
 #include <unistd.h>    // STDERR_FILENO
@@ -65,14 +66,17 @@ BumpLeakHeap gBumpLeak;
 // Allocate and update stats
 // TODO: Make this interface nicer.
 void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, int* pool_id) {
+  DTRACE_PROBE1(gc, alloc_enter, num_bytes);
   // log("Allocate %d", num_bytes);
   #ifndef NO_POOL_ALLOC
   if (num_bytes <= pool1_.kMaxObjSize) {
     *pool_id = 1;
+    DTRACE_PROBE(gc, alloc_exit);
     return pool1_.Allocate(obj_id);
   }
   if (num_bytes <= pool2_.kMaxObjSize) {
     *pool_id = 2;
+    DTRACE_PROBE(gc, alloc_exit);
     return pool2_.Allocate(obj_id);
   }
   *pool_id = 0;  // malloc(), not a pool
@@ -83,6 +87,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, int* pool_id) {
   // These only work with GC off -- OILS_GC_THRESHOLD=[big]
   #ifdef BUMP_SMALL
   if (num_bytes <= 48) {
+    DTRACE_PROBE(gc, alloc_exit);
     return gBumpLeak.Allocate(num_bytes);
   }
   #endif
@@ -112,6 +117,7 @@ void* MarkSweepHeap::Allocate(size_t num_bytes, int* obj_id, int* pool_id) {
   num_allocated_++;
   bytes_allocated_ += num_bytes;
 
+  DTRACE_PROBE(gc, alloc_exit);
   return result;
 }
 
@@ -212,6 +218,7 @@ void MarkSweepHeap::TraceChildren() {
 }
 
 void MarkSweepHeap::Sweep() {
+  DTRACE_PROBE(gc, sweep_enter);
   #ifndef NO_POOL_ALLOC
   pool1_.Sweep();
   pool2_.Sweep();
@@ -239,9 +246,11 @@ void MarkSweepHeap::Sweep() {
 
   num_collections_++;
   max_survived_ = std::max(max_survived_, num_live());
+  DTRACE_PROBE1(gc, sweep_exit, num_collections_);
 }
 
 int MarkSweepHeap::Collect() {
+  DTRACE_PROBE(gc, collect_enter);
   #ifdef GC_TIMING
   struct timespec start, end;
   if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start) < 0) {
@@ -324,6 +333,7 @@ int MarkSweepHeap::Collect() {
   }
   #endif
 
+  DTRACE_PROBE(gc_collect, exit);
   return num_live();  // for unit tests only
 }
 

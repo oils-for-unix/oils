@@ -40,7 +40,7 @@ from data_lang import j8_lite
 from frontend import location
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr, tagswitch, iteritems
+from mycpp.mylib import log, print_stderr, probe, tagswitch, iteritems
 
 import posix_ as posix
 from posix_ import (
@@ -684,6 +684,7 @@ class ExternalProgram(object):
 
     def _Exec(self, argv0_path, argv, argv0_loc, environ, should_retry):
         # type: (str, List[str], loc_t, Dict[str, str], bool) -> None
+        probe('ExternalProgram', 'Exec_enter')
         if len(self.hijack_shebang):
             opened = True
             try:
@@ -710,6 +711,7 @@ class ExternalProgram(object):
                         pass
 
         try:
+            probe('ExternalProgram', 'Exec_exit')
             posix.execve(argv0_path, argv, environ)
         except (IOError, OSError) as e:
             # Run with /bin/sh when ENOEXEC error (no shebang).  All shells do this.
@@ -742,6 +744,7 @@ class ExternalProgram(object):
                 # consistent with mksh and zsh.
                 status = 127
 
+            probe('ExternalProgram', 'Exec_exit')
             posix._exit(status)
         # NO RETURN
 
@@ -792,6 +795,8 @@ class ExternalThunk(Thunk):
     def Run(self):
         # type: () -> None
         """An ExternalThunk is run in parent for the exec builtin."""
+        # No exit probe here bevause of the exec
+        probe('ExternalThunk', 'Run_enter')
         self.ext_prog.Exec(self.argv0_path, self.cmd_val, self.environ)
 
 
@@ -823,6 +828,7 @@ class SubProgramThunk(Thunk):
 
     def Run(self):
         # type: () -> None
+        probe('SubProgramThunk', 'Run_enter')
         #self.errfmt.OneLineErrExit()  # don't quote code in child processes
 
         # TODO: break circular dep.  Bit flags could go in ASDL or headers.
@@ -862,6 +868,7 @@ class SubProgramThunk(Thunk):
         # We do NOT want to raise SystemExit here.  Otherwise dev.Tracer::Pop()
         # gets called in BOTH processes.
         # The crash dump seems to be unaffected.
+        probe('SubProgramThunk', 'Run_exit')
         posix._exit(status)
 
 
@@ -888,12 +895,14 @@ class _HereDocWriterThunk(Thunk):
     def Run(self):
         # type: () -> None
         """do_exit: For small pipelines."""
+        probe('HereDocWriterThunk', 'Run_enter')
         #log('Writing %r', self.body_str)
         posix.write(self.w, self.body_str)
         #log('Wrote %r', self.body_str)
         posix.close(self.w)
         #log('Closed %d', self.w)
 
+        probe('HereDocWriterThunk', 'Run_exit')
         posix._exit(0)
 
 
@@ -1876,19 +1885,24 @@ class Waiter(object):
         | Done(int pid, int status)  -- process done
         | EINTR(bool sigint)         -- may or may not retry
         """
+        probe('Process', 'WaitForOne_enter')
         pid, status = pyos.WaitPid(waitpid_options)
         if pid == 0:  # WNOHANG passed, and no state changes
+            probe('Process', 'WaitForOne_again')
             return W1_AGAIN
         elif pid < 0:  # error case
             err_num = status
             #log('waitpid() error => %d %s', e.errno, pyutil.strerror(e))
             if err_num == ECHILD:
+                probe('Process', 'WaitForOne_echild')
                 return W1_ECHILD  # nothing to wait for caller should stop
             elif err_num == EINTR:  # Bug #858 fix
                 #log('WaitForOne() => %d', self.trap_state.GetLastSignal())
+                probe('Process', 'WaitForOne_eintr')
                 return self.signal_safe.LastSignal()  # e.g. 1 for SIGHUP
             else:
                 # The signature of waitpid() means this shouldn't happen
+                probe('Process', 'WaitForOne_exit')
                 raise AssertionError()
 
         # All child processes are supposed to be in this dict.  But this may
@@ -1898,6 +1912,7 @@ class Waiter(object):
         # any knowledge of such processes, so print a warning.
         if pid not in self.job_list.child_procs:
             print_stderr("osh: PID %d stopped, but osh didn't start it" % pid)
+            probe('Process', 'WaitForOne_exit')
             return W1_OK
 
         proc = self.job_list.child_procs[pid]
@@ -1928,10 +1943,12 @@ class Waiter(object):
             proc.WhenStopped(stop_sig)
 
         else:
+            probe('Process', 'WaitForOne_exit')
             raise AssertionError(status)
 
         self.last_status = status  # for wait -n
         self.tracer.OnProcessEnd(pid, status)
+        probe('Process', 'WaitForOne_exit')
         return W1_OK
 
     def PollNotifications(self):

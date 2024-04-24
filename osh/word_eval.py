@@ -61,7 +61,7 @@ from frontend import consts
 from frontend import lexer
 from frontend import location
 from mycpp import mops
-from mycpp.mylib import log, tagswitch, NewDict
+from mycpp.mylib import log, probe, tagswitch, NewDict
 from osh import braces
 from osh import glob_
 from osh import string_ops
@@ -565,6 +565,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # - If it's $@ in a normal context, return a STRING, which then will be
         # subject to splitting.
 
+        probe('word_eval', '_EvalSpecialVar_enter')
         if op_id in (Id.VSub_At, Id.VSub_Star):
             argv = self.mem.GetArgv()
             val = value.BashArray(argv)  # type: value_t
@@ -580,6 +581,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         else:
             val = self.mem.GetSpecialVar(op_id)
 
+        probe('word_eval', '_EvalSpecialVar_exit')
         return val
 
     def _ApplyTestOp(
@@ -799,24 +801,30 @@ class AbstractWordEvaluator(StringWordEvaluator):
         Args:
           blame_tok: 'foo' for ${!foo}
         """
+        probe('word_eval', '_EvalVarRef_enter')
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.Undef):
+                probe('word_eval', '_EvalVarRef_exit')
                 return value.Undef  # ${!undef} is just weird bash behavior
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 bvs_part = self.unsafe_arith.ParseVarRef(val.s, blame_tok)
+                probe('word_eval', '_EvalVarRef_exit')
                 return self._VarRefValue(bvs_part, quoted, vsub_state,
                                          vtest_place)
 
             elif case(value_e.BashArray):  # caught earlier but OK
+                probe('word_eval', '_EvalVarRef_exit')
                 e_die('Indirect expansion of array')
 
             elif case(value_e.BashAssoc):  # caught earlier but OK
+                probe('word_eval', '_EvalVarRef_exit')
                 e_die('Indirect expansion of assoc array')
 
             else:
+                probe('word_eval', '_EvalVarRef_exit')
                 raise error.TypeErr(val, 'Var Ref op expected Str', blame_tok)
 
     def _ApplyUnarySuffixOp(self, val, op):
@@ -1129,13 +1137,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # Special case for "".  The parser outputs (DoubleQuoted []), instead
         # of (DoubleQuoted [Literal '']).  This is better but it means we
         # have to check for it.
+        probe('word_eval', '_EvalDoubleQuoted_enter')
         if len(parts) == 0:
             v = Piece('', True, False)
             part_vals.append(v)
+            probe('word_eval', '_EvalDoubleQuoted_exit')
             return
 
         for p in parts:
             self._EvalWordPart(p, part_vals, QUOTED)
+        probe('word_eval', '_EvalDoubleQuoted_exit')
 
     def EvalDoubleQuotedToString(self, dq_part):
         # type: (DoubleQuoted) -> str
@@ -1178,6 +1189,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _EvalBracketOp(self, val, part, quoted, vsub_state, vtest_place):
         # type: (value_t, BracedVarSub, bool, VarSubState, VTestPlace) -> value_t
 
+        probe('word_eval', '_EvalBracketOp_enter')
         if part.bracket_op:
             with tagswitch(part.bracket_op) as case:
                 if case(bracket_op_e.WholeArray):
@@ -1203,6 +1215,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         "Array %r can't be referred to as a scalar (without @ or *)"
                         % var_name, loc.WordPart(part))
 
+        probe('word_eval', '_EvalBracketOp_enter')
         return val
 
     def _VarRefValue(self, part, quoted, vsub_state, vtest_place):
@@ -1276,6 +1289,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # suffix ops are applied.  If we take the length with a prefix op, the
         # distinction is ignored.
 
+        probe('word_eval', '_EvalBracedVarSub_enter')
         var_name = None  # type: Optional[str]  # used throughout the function
         vtest_place = VTestPlace(var_name, None)  # For ${foo=default}
         vsub_state = VarSubState.CreateNull()  # for $*, ${a[*]}, etc.
@@ -1298,6 +1312,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     else:
                         sep = self.splitter.GetJoinChar()
                         part_vals.append(Piece(sep.join(names), quoted, True))
+                    probe('word_eval', '_EvalBracedVarSub_exit')
                     return  # EARLY RETURN
 
             var_name = part.var_name
@@ -1343,6 +1358,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 n = self._Length(val, part.token)
                 part_vals.append(Piece(str(n), quoted, False))
+                probe('word_eval', '_EvalBracedVarSub_exit')
                 return  # EARLY EXIT: nothing else can come after length
 
             elif part.prefix_op.id == Id.VSub_Bang:
@@ -1374,6 +1390,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         val = self._EmptyStrOrError(val, part.token)
 
             else:
+                probe('word_eval', '_EvalBracedVarSub_exit')
                 raise AssertionError(part.prefix_op)
 
         else:
@@ -1396,6 +1413,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                              vtest_place, part.token):
                             # e.g. to evaluate ${undef:-'default'}, we already appended
                             # what we need
+                            probe('word_eval', '_EvalBracedVarSub_exit')
                             return
 
                     else:
@@ -1415,6 +1433,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     e_die('Not implemented', op.tok)
 
                 else:
+                    probe('word_eval', '_EvalBracedVarSub_exit')
                     raise AssertionError()
 
         # After applying suffixes, process join_array here.
@@ -1430,6 +1449,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # Piece().
         part_val = _ValueToPartValue(val, quoted or quoted2, part)
         part_vals.append(part_val)
+        probe('word_eval', '_EvalBracedVarSub_exit')
 
     def _ConcatPartVals(self, part_vals, location):
         # type: (List[part_value_t], loc_t) -> str
@@ -1475,6 +1495,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _EvalSimpleVarSub(self, part, part_vals, quoted):
         # type: (SimpleVarSub, List[part_value_t], bool) -> None
 
+        probe('word_eval', '_EvalSimpleVarSub_enter')
         token = part.tok
 
         vsub_state = VarSubState.CreateNull()
@@ -1512,6 +1533,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         v = _ValueToPartValue(val, quoted, part)
         part_vals.append(v)
+        probe('word_eval', '_EvalSimpleVarSub_exit')
 
     def EvalSimpleVarSubToString(self, node):
         # type: (SimpleVarSub) -> str
@@ -1526,6 +1548,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _EvalExtGlob(self, part, part_vals):
         # type: (word_part.ExtGlob, List[part_value_t]) -> None
         """Evaluate @($x|'foo'|$(hostname)) and flatten it."""
+        probe('word_eval', '_EvalExtGlob_enter')
         op = part.op
         if op.id == Id.ExtGlob_Comma:
             op_str = '@('
@@ -1540,6 +1563,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # FLATTEN the tree of extglob "arms".
             self._EvalWordToParts(w, part_vals, EXTGLOB_NESTED)
         part_vals.append(Piece(')', False, False))  # closing )
+        probe('word_eval', '_EvalExtGlob_exit')
 
     def _TranslateExtGlob(self, part_vals, w, glob_parts, fnmatch_parts):
         # type: (List[part_value_t], CompoundWord, List[str], List[str]) -> None
@@ -1583,6 +1607,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         Called by _EvalWordToParts, EvalWordToString, and _EvalDoubleQuoted.
         """
+        probe('word_eval', '_EvalWordPart_enter')
         quoted = bool(flags & QUOTED)
         is_subst = bool(flags & IS_SUBST)
 
@@ -1689,8 +1714,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
             else:
                 raise AssertionError(part.tag())
 
+        probe('word_eval', '_EvalWordPart_exit')
+
     def _EvalRhsWordToParts(self, w, part_vals, eval_flags=0):
         # type: (rhs_word_t, List[part_value_t], int) -> None
+        probe('word_eval', '_EvalRhsWordToParts_enter')
         quoted = bool(eval_flags & QUOTED)
 
         UP_w = w
@@ -1704,6 +1732,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
             else:
                 raise AssertionError()
+
+        probe('word_eval', '_EvalRhsWordToParts_exit')
 
     def _EvalWordToParts(self, w, part_vals, eval_flags=0):
         # type: (CompoundWord, List[part_value_t], int) -> None
@@ -1721,6 +1751,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # 1. It can't have an array
         # 2. Word splitting of unquoted words isn't respected
 
+        probe('word_eval', '_EvalWordToParts_enter')
         word_part_vals = []  # type: List[part_value_t]
         has_extglob = False
         for p in w.parts:
@@ -1749,6 +1780,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 results = []  # type: List[str]
                 n = self.globber.ExpandExtended(glob_pat, fnmatch_pat, results)
                 if n < 0:
+                    probe('word_eval', '_EvalWordToParts_exit')
                     raise error.FailGlob(
                         'Extended glob %r matched no files' % fnmatch_pat, w)
 
@@ -1761,6 +1793,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 e_die('Extended glob not allowed in this word', w)
         else:
             part_vals.extend(word_part_vals)
+
+        probe('word_eval', '_EvalWordToParts_exit')
 
     def _PartValsToString(self, part_vals, w, eval_flags, strs):
         # type: (List[part_value_t], CompoundWord, int, List[str]) -> None
@@ -1929,6 +1963,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
     def _EvalWordFrame(self, frame, argv):
         # type: (List[Piece], List[str]) -> None
+        probe('word_eval', '_EvalWordFrame_enter')
         all_empty = True
         all_quoted = True
         any_quoted = False
@@ -1946,6 +1981,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         # Elision of ${empty}${empty} but not $empty"$empty" or $empty""
         if all_empty and not any_quoted:
+            probe('word_eval', '_EvalWordFrame_exit')
             return
 
         # If every frag is quoted, e.g. "$a$b" or any part in "${a[@]}"x, then
@@ -1954,6 +1990,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             tmp = [piece.s for piece in frame]
             a = ''.join(tmp)
             argv.append(a)
+            probe('word_eval', '__EvalWordFrame_exit')
             return
 
         will_glob = not self.exec_opts.noglob()
@@ -1985,6 +2022,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # Add it back and don't bother globbing.
         if len(args) == 0 and any_quoted:
             argv.append('')
+            probe('word_eval', '_EvalWordFrame_exit')
             return
 
         #log('split args: %r', args)
@@ -1993,10 +2031,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 n = self.globber.Expand(a, argv)
                 if n < 0:
                     # TODO: location info, with span IDs carried through the frame
+                    probe('word_eval', '_EvalWordFrame_exit')
                     raise error.FailGlob('Pattern %r matched no files' % a,
                                          loc.Missing)
             else:
                 argv.append(glob_.GlobUnescape(a))
+
+        probe('word_eval', '_EvalWordFrame_exit')
 
     def _EvalWordToArgv(self, w):
         # type: (CompoundWord) -> List[str]
@@ -2007,6 +2048,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         Example: declare -"${a[@]}" b=(1 2)
         where a is [x b=a d=a]
         """
+        probe('word_eval', '_EvalWordToArgv_enter')
         part_vals = []  # type: List[part_value_t]
         self._EvalWordToParts(w, part_vals, 0)  # not double quoted
         frames = _MakeWordFrames(part_vals)
@@ -2016,6 +2058,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 tmp = [piece.s for piece in frame]
                 argv.append(''.join(tmp))  # no split or glob
         #log('argv: %s', argv)
+        probe('word_eval', '_EvalWordToArgv_exit')
         return argv
 
     def _EvalAssignBuiltin(self, builtin_id, arg0, words):
@@ -2032,6 +2075,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # There is also command -p, but we haven't implemented it.  Maybe just punt
         # on it.  Punted on 'builtin' and 'command' for now too.
 
+        probe('word_eval', '_EvalAssignBuiltin_enter')
         eval_to_pairs = True  # except for -f and -F
         started_pairs = False
 
@@ -2102,7 +2146,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         else:
                             flags.append(arg)
 
-        return cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
+        ret = cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
+        probe('word_eval', '_EvalAssignBuiltin_exit')
+        return ret
 
     def SimpleEvalWordSequence2(self, words, allow_assign):
         # type: (List[CompoundWord], bool) -> cmd_value_t
@@ -2300,6 +2346,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
 
     def _EvalCommandSub(self, cs_part, quoted):
         # type: (CommandSub, bool) -> part_value_t
+        probe('word_eval', '_EvalCommandSub_enter')
         stdout_str = self.shell_ex.RunCommandSub(cs_part)
 
         if cs_part.left_token.id == Id.Left_AtParen:
@@ -2311,14 +2358,18 @@ class NormalWordEvaluator(AbstractWordEvaluator):
                 raise error.Structured(4, e.Message(), cs_part.left_token)
 
             #strs = self.splitter.SplitForWordEval(stdout_str)
+            probe('word_eval', '_EvalCommandSub_exit')
             return part_value.Array(strs)
         else:
+            probe('word_eval', '_EvalCommandSub_exit')
             return Piece(stdout_str, quoted, not quoted)
 
     def _EvalProcessSub(self, cs_part):
         # type: (CommandSub) -> Piece
+        probe('word_eval', '_EvalProcessSub_enter')
         dev_path = self.shell_ex.RunProcessSub(cs_part)
         # pretend it's quoted; no split or glob
+        probe('word_eval', '_EvalProcessSub_exit')
         return Piece(dev_path, True, False)
 
 

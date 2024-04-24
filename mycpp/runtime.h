@@ -19,4 +19,6 @@
 
 // clang-format on
 
+#include <sys/sdt.h>
+
 #endif  // MYCPP_RUNTIME_H
