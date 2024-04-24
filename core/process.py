@@ -40,7 +40,7 @@ from data_lang import j8_lite
 from frontend import location
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr, tagswitch, iteritems
+from mycpp.mylib import log, print_stderr, tagswitch, iteritems, probe
 
 import posix_ as posix
 from posix_ import (
@@ -823,6 +823,7 @@ class SubProgramThunk(Thunk):
 
     def Run(self):
         # type: () -> None
+        probe("SubProgramThunk.Run", "enter")
         #self.errfmt.OneLineErrExit()  # don't quote code in child processes
 
         # TODO: break circular dep.  Bit flags could go in ASDL or headers.
@@ -862,6 +863,7 @@ class SubProgramThunk(Thunk):
         # We do NOT want to raise SystemExit here.  Otherwise dev.Tracer::Pop()
         # gets called in BOTH processes.
         # The crash dump seems to be unaffected.
+        probe("SubProgramThunk.Run", "exit")
         posix._exit(status)
 
 
