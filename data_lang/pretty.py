@@ -48,6 +48,7 @@ _ = log
 # - hook up the printer in core/ui.py::PrettyPrintValue
 # - run the linter
 # - what's with `_ = log`?
+# - string width
 
 LOSSY_JSON = True
 
@@ -126,20 +127,20 @@ def _ValueToDoc(val):
             return doc.Text("null")
 
         elif case(value_e.Bool):
-            val = cast(value.Bool, val)
-            return doc.Text("true" if val.b else "false")
+            b = cast(value.Bool, val).b
+            return doc.Text("true" if b else "false")
 
         elif case(value_e.Int):
-            val = cast(value.Int, val)
-            return doc.Text(mops.ToStr(val.i))
+            i = cast(value.Int, val).i
+            return doc.Text(mops.ToStr(i))
 
         elif case(value_e.Float):
-            val = cast(value.Float, val)
-            return doc.Text(str(val.f))
+            f = cast(value.Float, val).f
+            return doc.Text(str(f))
 
         elif case(value_e.Str):
-            val = cast(value.Str, val)
-            return doc.Text(fastfunc.J8EncodeString(val.s, LOSSY_JSON))
+            s = cast(value.Str, val).s
+            return doc.Text(fastfunc.J8EncodeString(s, LOSSY_JSON))
 
         else:
             # TODO: handle more cases
