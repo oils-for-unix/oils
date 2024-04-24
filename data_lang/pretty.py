@@ -30,7 +30,7 @@ maximum line width.)
 
 from __future__ import print_function
 
-from _devbuild.gen.pretty_asdl import doc, doc_e, doc_t, DocFragment
+from _devbuild.gen.pretty_asdl import doc, doc_e, doc_t, DocFragment, Measure, MeasuredDoc
 from _devbuild.gen.value_asdl import value, value_e, value_t
 
 from typing import cast, List #, Tuple # Dict, Optional
@@ -38,7 +38,7 @@ from typing import cast, List #, Tuple # Dict, Optional
 import fastfunc
 
 from mycpp import mops
-from mycpp.mylib import log, tagswitch, BufWriter
+from mycpp.mylib import log, tagswitch, BufWriter, iteritems
 
 _ = log
 
@@ -49,8 +49,123 @@ _ = log
 # - run the linter
 # - what's with `_ = log`?
 # - string width
+# - contributing page: PRs are squash-merged with a descriptive tag like [json]
+
+# QUESTIONS:
+# - Is there a better way to do Option[int] than -1 as a sentinel?
+# - Is there a way to have methods on an ASDL product type?
 
 LOSSY_JSON = True
+
+
+################
+# Measurements #
+################
+
+def _StrWidth(string):
+    # type: (str) -> int
+    return len(string) #TODO
+
+def _EmptyMeasure():
+    # type: () -> Measure
+    return Measure(0, -1)
+
+def _TextMeasure(string):
+    # type: (str) -> Measure
+    return Measure(_StrWidth(string), -1)
+
+def _NewlineMeasure():
+    # type: () -> Measure
+    return Measure(0, 0)
+
+def _FlattenMeasure(measure):
+    # type: (Measure) -> Measure
+    return Measure(measure.flat, -1)
+
+def _AddMeasure(m1, m2):
+    # type: (Measure, Measure) -> Measure
+    if m1.nonflat != -1:
+        return Measure(m1.flat + m2.flat, m1.nonflat)
+    elif m2.nonflat != -1:
+        return Measure(m1.flat + m2.flat, m1.flat + m2.nonflat)
+    else:
+        return Measure(m1.flat + m2.flat, -1)
+
+def _SuffixLen(measure):
+    # type: (Measure) -> int
+    """The width until the earliest possible newline, or end of document."""
+    if measure.nonflat != -1:
+        return measure.nonflat
+    else:
+        return measure.flat
+
+
+####################
+# Doc Construction #
+####################
+
+def _Text(string):
+    # type: (str) -> MeasuredDoc
+    """Print `string` (which must contain newlines)."""
+    return MeasuredDoc(doc.Text(string), _TextMeasure(string))
+
+def _Break(string):
+    # type: (str) -> MeasuredDoc
+    """If in `flat` mode, print `string`, otherwise print `\n`."""
+    return MeasuredDoc(
+        doc.Break(string),
+        _AddMeasure(_TextMeasure(string), _NewlineMeasure()))
+
+def _Indent(indent, mdoc):
+    # type: (int, MeasuredDoc) -> MeasuredDoc
+    """Add `indent` spaces after every newline in `mdoc`."""
+    return MeasuredDoc(doc.Indent(indent, mdoc), mdoc.measure)
+
+def _Concat(mdocs):
+    # type: (List[MeasuredDoc]) -> MeasuredDoc
+    """Print the docs in order (with no spacing in between)."""
+    measure = _EmptyMeasure()
+    for mdoc in mdocs:
+        measure = _AddMeasure(measure, mdoc.measure)
+    return MeasuredDoc(doc.Concat(mdocs), measure)
+
+def _Group(mdoc):
+    # type: (MeasuredDoc) -> MeasuredDoc
+    """Print `mdoc`. Do so in flat mode if it will fit on the current line."""
+    return MeasuredDoc(doc.Group(mdoc), mdoc.measure)
+
+def _Surrounded(open, indent, mdoc, close):
+    # type: (str, int, MeasuredDoc, str) -> MeasuredDoc
+    """Print one of two options (using '[' and ']' for open and close):
+
+    ```
+    [mdoc]
+    ------
+    [
+        mdoc
+    ]
+    ```
+    """
+    return _Group(_Concat([
+        _Text(open),
+        _Indent(4, _Concat([_Break(""), mdoc])),
+        _Break(""),
+        _Text(close)]))
+
+def _Join(items, sep, space):
+    # type: (List[MeasuredDoc], str, str) -> MeasuredDoc
+    """Join `items`, using either 'sep+space' or 'sep+newline' between them."""
+    seq = [items[0]]
+    for item in items[1:]:
+        seq.append(_Text(sep))
+        seq.append(_Break(space))
+        seq.append(item)
+    return _Concat(seq)
+
+
+###################
+# Pretty Printing #
+###################
 
 class PrettyPrinter(object):
     """Pretty print an Oils value.
@@ -66,85 +181,146 @@ class PrettyPrinter(object):
         # type: () -> None
         """Construct a PrettyPrinter with default configuration options.
 
-        Use the Init_*() methods for configuration before printing."""
+        Use the Set*() methods for configuration before printing."""
         self.max_width = PrettyPrinter.DEFAULT_MAX_WIDTH
 
-    def Init_MaxWidth(self, max_width):
+    def SetMaxWidth(self, max_width):
         # type: (int) -> None
         self.max_width = max_width
 
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
-
         document = _ValueToDoc(val)
         self._PrintDoc(document, buf)
 
+    def _Fits(self, prefix_len, group, suffix_measure):
+        # type: (int, doc.Group, Measure) -> bool
+        """Will `group` fit flat on the current line?"""
+        measure = _AddMeasure(_FlattenMeasure(group.mdoc.measure), suffix_measure)
+        return prefix_len + _SuffixLen(measure) <= self.max_width
+
     def _PrintDoc(self, document, buf):
-        # type: (doc_t, BufWriter) -> None
+        # type: (MeasuredDoc, BufWriter) -> None
         """Pretty print a `pretty.doc` to a BufWriter."""
 
-        fragments = [DocFragment(document, 0, False)]
+        # The width of the text we've printed so far on the current line
+        prefix_len = 0
+        # A _stack_ of document fragments to print. Each fragment contains:
+        # - A MeasuredDoc (doc node and its measure, saying how "big" it is)
+        # - The indentation level to print this doc node at.
+        # - Is this doc node being printed in flat mode?
+        # - The measure _from just after the doc node, to the end of the entire document_.
+        fragments = [DocFragment(_Group(document), 0, False, _EmptyMeasure())]
 
         while len(fragments) > 0:
             frag = fragments.pop()
-            with tagswitch(frag.node) as case:
+            with tagswitch(frag.mdoc.doc) as case:
 
-                if case(doc_e.Newline):
-                    if frag.flat:
-                        buf.write(' ')
+                if case(doc_e.Text):
+                    text = cast(doc.Text, frag.mdoc.doc)
+                    buf.write(text.string)
+                    prefix_len += frag.mdoc.measure.flat
+
+                elif case(doc_e.Break):
+                    if frag.is_flat:
+                        break_str = cast(doc.Break, frag.mdoc.doc).string
+                        buf.write(break_str)
+                        prefix_len += frag.mdoc.measure.flat
                     else:
                         buf.write('\n')
                         buf.write_spaces(frag.indent)
-
-                elif case(doc_e.Text):
-                    text = cast(doc.Text, frag.node)
-                    buf.write(text.string)
+                        prefix_len = frag.indent
 
                 elif case(doc_e.Indent):
-                    indented = cast(doc.Indent, frag.node)
+                    indented = cast(doc.Indent, frag.mdoc.doc)
                     fragments.append(DocFragment(
-                        indented.node,
+                        indented.mdoc,
                         frag.indent + indented.indent,
-                        frag.flat
-                    ))
+                        frag.is_flat,
+                        frag.measure))
 
                 elif case(doc_e.Concat):
-                    concat = cast(doc.Concat, frag.node)
-                    for node in reversed(concat.nodes):
+                    concat = cast(doc.Concat, frag.mdoc.doc)
+                    measure = frag.measure
+                    for mdoc in reversed(concat.mdocs):
                         fragments.append(DocFragment(
-                            node,
+                            mdoc,
                             frag.indent,
-                            frag.flat
-                        ))
+                            frag.is_flat,
+                            measure))
+                        measure = _AddMeasure(mdoc.measure, measure)
+
+                elif case(doc_e.Group):
+                    group = cast(doc.Group, frag.mdoc.doc)
+                    flat = self._Fits(prefix_len, group, frag.measure)
+                    fragments.append(DocFragment(
+                        group.mdoc,
+                        frag.indent,
+                        flat,
+                        frag.measure))
+
+
+################
+# Value -> Doc #
+################
 
 def _ValueToDoc(val):
-    # type: (value_t) -> doc_t
+    # type: (value_t) -> MeasuredDoc
     """Convert an Oils value into a `doc`, which can then be pretty printed."""
 
     with tagswitch(val) as case:
         if case(value_e.Null):
-            return doc.Text("null")
+            return _Text("null")
 
         elif case(value_e.Bool):
             b = cast(value.Bool, val).b
-            return doc.Text("true" if b else "false")
+            return _Text("true" if b else "false")
 
         elif case(value_e.Int):
             i = cast(value.Int, val).i
-            return doc.Text(mops.ToStr(i))
+            return _Text(mops.ToStr(i))
 
         elif case(value_e.Float):
             f = cast(value.Float, val).f
-            return doc.Text(str(f))
+            return _Text(str(f))
 
         elif case(value_e.Str):
             s = cast(value.Str, val).s
-            return doc.Text(fastfunc.J8EncodeString(s, LOSSY_JSON))
+            return _Text(fastfunc.J8EncodeString(s, LOSSY_JSON))
+
+        elif case(value_e.List):
+            vlist = cast(value.List, val)
+
+            # # For cycle detection
+            # heap_id = HeapValueId(val)
+
+            if len(vlist.items) == 0:
+                return _Text("[]")
+
+            mdocs = [_ValueToDoc(item) for item in vlist.items]
+            return _Surrounded("[", 4, _Join(mdocs, ",", " "), "]")
+
+        elif case(value_e.Dict):
+            vdict = cast(value.Dict, val)
+
+            # # For cycle detection
+            # heap_id = HeapValueId(val)
+
+            if len(vdict.d) == 0:
+                return _Text("{}")
+
+            mdocs = []
+            for k, v in iteritems(vdict.d):
+                mdocs.append(_Concat([
+                    _Text(fastfunc.J8EncodeString(k, LOSSY_JSON)),
+                    _Text(":"),
+                    _Indent(4, _Group(_Concat([_Break(" "), _ValueToDoc(v)])))]))
+            return _Surrounded("{", 4, _Join(mdocs, ",", " "), "}")
 
         else:
             # TODO: handle more cases
-            return doc.Newline
+            return _Break("")
 
 
 # vim: sw=4
