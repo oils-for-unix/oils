@@ -64,6 +64,7 @@ _ = log
 # - Indentation level: hard-coded? Option? How to set?
 # - How to construct BashArray and BashAssoc values for testing?
 #   (I'm using ParseValue)
+# - How to construct cyclic values for testing?
 
 LOSSY_JSON = True
 
@@ -144,49 +145,6 @@ def _Group(mdoc):
     """Print `mdoc`. Do so in flat mode if it will fit on the current line."""
     return MeasuredDoc(doc.Group(mdoc), mdoc.measure)
 
-def _Surrounded(open, indent, mdoc, close):
-    # type: (str, int, MeasuredDoc, str) -> MeasuredDoc
-    """Print one of two options (using '[' and ']' for open and close):
-
-    ```
-    [mdoc]
-    ------
-    [
-        mdoc
-    ]
-    ```
-    """
-    return _Group(_Concat([
-        _Text(open),
-        _Indent(indent, _Concat([_Break(""), mdoc])),
-        _Break(""),
-        _Text(close)]))
-
-def _Join(items, sep, space):
-    # type: (List[MeasuredDoc], str, str) -> MeasuredDoc
-    """Join `items`, using either 'sep+space' or 'sep+newline' between them."""
-    seq = [items[0]]
-    for item in items[1:]:
-        seq.append(_Text(sep))
-        seq.append(_Break(space))
-        seq.append(item)
-    return _Concat(seq)
-
-def _JoinPair(left, indent, sep, space, right):
-    # type: (MeasuredDoc, int, str, str, MeasuredDoc) -> MeasuredDoc
-    """Print one of two options (using ':' and '_' for sep and space):
-    ```
-    left:_right
-    ------
-    left:
-        right
-    ```
-    """
-    return _Concat([
-        left,
-        _Text(sep),
-        _Indent(indent, _Group(_Concat([_Break(space), right])))])
-
 
 ###################
 # Pretty Printing #
@@ -216,7 +174,8 @@ class PrettyPrinter(object):
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
-        document = _ValueToDoc(val)
+        constructor = _DocConstructor()
+        document = constructor.Value(val)
         self._PrintDoc(document, buf)
 
     def _Fits(self, prefix_len, group, suffix_measure):
@@ -298,86 +257,143 @@ class PrettyPrinter(object):
 # Value -> Doc #
 ################
 
-def _StringToDoc(s):
-    # type: (str) -> MeasuredDoc
-    return _Text(fastfunc.J8EncodeString(s, LOSSY_JSON))
+class _DocConstructor:
+    """Converts Oil values into `doc`s, which can then be pretty printed."""
 
-def _ValueToDoc(val):
-    # type: (value_t) -> MeasuredDoc
-    """Convert an Oils value into a `doc`, which can then be pretty printed."""
+    def __init__(self):
+        # type: () -> None
+        self.indent = 4
+        self.max_depth = None
 
-    with tagswitch(val) as case:
-        if case(value_e.Null):
-            return _Text("null")
+    def Surrounded(self, open, mdoc, close):
+        # type: (str, MeasuredDoc, str) -> MeasuredDoc
+        """Print one of two options (using '[' and ']' for open and close):
+    
+        ```
+        [mdoc]
+        ------
+        [
+            mdoc
+        ]
+        ```
+        """
+        return _Group(_Concat([
+            _Text(open),
+            _Indent(self.indent, _Concat([_Break(""), mdoc])),
+            _Break(""),
+            _Text(close)]))
+    
+    def Join(self, items, sep, space):
+        # type: (List[MeasuredDoc], str, str) -> MeasuredDoc
+        """Join `items`, using either 'sep+space' or 'sep+newline' between them."""
+        seq = [items[0]]
+        for item in items[1:]:
+            seq.append(_Text(sep))
+            seq.append(_Break(space))
+            seq.append(item)
+        return _Concat(seq)
+    
+    def JoinPair(self, left, sep, space, right):
+        # type: (MeasuredDoc, str, str, MeasuredDoc) -> MeasuredDoc
+        """Print one of two options (using ':' and '_' for sep and space):
+        ```
+        left:_right
+        ------
+        left:
+            right
+        ```
+        """
+        return _Concat([
+            left,
+            _Text(sep),
+            _Indent(self.indent, _Group(_Concat([_Break(space), right])))])
 
-        elif case(value_e.Bool):
-            b = cast(value.Bool, val).b
-            return _Text("true" if b else "false")
+    def String(self, s):
+        # type: (str) -> MeasuredDoc
+        return _Text(fastfunc.J8EncodeString(s, LOSSY_JSON))
 
-        elif case(value_e.Int):
-            i = cast(value.Int, val).i
-            return _Text(mops.ToStr(i))
+    def List(self, vlist):
+        # type: (value.List) -> MeasuredDoc
+        if len(vlist.items) == 0:
+            return _Text("[]")
+        mdocs = [self.Value(item) for item in vlist.items]
+        return self.Surrounded("[", self.Join(mdocs, ",", " "), "]")
 
-        elif case(value_e.Float):
-            f = cast(value.Float, val).f
-            return _Text(str(f))
+    def Dict(self, vdict):
+        # type: (value.Dict) -> MeasuredDoc
+        if len(vdict.d) == 0:
+            return _Text("{}")
+        mdocs = []
+        for k, v in iteritems(vdict.d):
+            mdocs.append(
+                self.JoinPair(self.String(k), ":", " ", self.Value(v)))
+        return self.Surrounded("{", self.Join(mdocs, ",", " "), "}")
 
-        elif case(value_e.Str):
-            s = cast(value.Str, val).s
-            return _StringToDoc(s)
+    def BashArray(self, varray):
+        # type: (value.BashArray) -> MeasuredDoc
+        if len(varray.strs) == 0:
+            return _Text("[]")
+        mdocs = []
+        for s in varray.strs:
+            if s is None:
+                mdocs.append(self.String(s))
+            else:
+                mdocs.append(_Text("null"))
+        return self.Surrounded("[", self.Join(mdocs, ",", " "), "]")
 
-        elif case(value_e.List):
-            vlist = cast(value.List, val)
+    def BashAssoc(self, vassoc):
+        # type: (value.BashAssoc) -> MeasuredDoc
+        if len(vassoc.d) == 0:
+            return _Text("{}")
+        mdocs = []
+        for k2, v2 in iteritems(vassoc.d):
+            mdocs.append(
+                self.JoinPair(self.String(k2), ":", " ", self.String(v2)))
+        return self.Surrounded("{", self.Join(mdocs, ",", " "), "}")
 
-            # # For cycle detection
-            # heap_id = HeapValueId(val)
+    def Value(self, val):
+        # type: (value_t) -> MeasuredDoc
+        """Convert an Oils value into a `doc`, which can then be pretty printed."""
 
-            if len(vlist.items) == 0:
-                return _Text("[]")
+        with tagswitch(val) as case:
+            if case(value_e.Null):
+                return _Text("null")
 
-            mdocs = [_ValueToDoc(item) for item in vlist.items]
-            return _Surrounded("[", 4, _Join(mdocs, ",", " "), "]")
+            elif case(value_e.Bool):
+                b = cast(value.Bool, val).b
+                return _Text("true" if b else "false")
 
-        elif case(value_e.Dict):
-            vdict = cast(value.Dict, val)
+            elif case(value_e.Int):
+                i = cast(value.Int, val).i
+                return _Text(mops.ToStr(i))
 
-            # # For cycle detection
-            # heap_id = HeapValueId(val)
+            elif case(value_e.Float):
+                f = cast(value.Float, val).f
+                return _Text(str(f))
 
-            if len(vdict.d) == 0:
-                return _Text("{}")
+            elif case(value_e.Str):
+                s = cast(value.Str, val).s
+                return self.String(s)
 
-            mdocs = []
-            for k, v in iteritems(vdict.d):
-                mdocs.append(
-                    _JoinPair(_StringToDoc(k), 4, ":", " ", _ValueToDoc(v)))
-            return _Surrounded("{", 4, _Join(mdocs, ",", " "), "}")
+            elif case(value_e.List):
+                vlist = cast(value.List, val)
+                return self.List(vlist)
 
-        elif case(value_e.BashArray):
-            varray = cast(value.BashArray, val)
-            if len(varray.strs) == 0:
-                return _Text("[]")
+            elif case(value_e.Dict):
+                vdict = cast(value.Dict, val)
+                return self.Dict(vdict)
 
-            mdocs = []
-            for s in varray.strs:
-                if s is None:
-                    mdocs.append(_StringToDoc(s))
-                else:
-                    mdocs.append(_Text("null"))
-            return _Surrounded("[", 4, _Join(mdocs, ",", " "), "]")
+            elif case(value_e.BashArray):
+                varray = cast(value.BashArray, val)
+                return self.BashArray(varray)
 
-        elif case(value_e.BashAssoc):
-            vassoc = cast(value.BashAssoc, val)
+            elif case(value_e.BashAssoc):
+                vassoc = cast(value.BashAssoc, val)
+                return self.BashAssoc(vassoc)
 
-            mdocs = []
-            for k2, v2 in iteritems(vassoc.d):
-                mdocs.append(
-                    _JoinPair(_StringToDoc(k2), 4, ":", " ", _StringToDoc(v2)))
-            return _Surrounded("{", 4, _Join(mdocs, ",", " "), "}")
-
-        else:
-            ysh_type = value_str(val.tag(), dot=False)
-            id_str = ValueIdString(val)
-            return _Text("<" + ysh_type + id_str + ">")
+            else:
+                ysh_type = value_str(val.tag(), dot=False)
+                id_str = ValueIdString(val)
+                return _Text("<" + ysh_type + id_str + ">")
 
 # vim: sw=4
