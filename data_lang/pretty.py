@@ -28,11 +28,17 @@ maximum line width.)
 # - https://lobste.rs/s/1r0aak/twist_on_wadler_s_printer
 # - https://lobste.rs/s/aevptj/why_is_prettier_rock_solid
 
+# ~~~ Algorithm Description ~~~
+#
+# [FILL]
+
+
 from __future__ import print_function
 
 from _devbuild.gen.pretty_asdl import doc, doc_e, doc_t, DocFragment, Measure, MeasuredDoc
-from _devbuild.gen.value_asdl import value, value_e, value_t
+from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 
+from data_lang.j8 import ValueIdString
 from typing import cast, List #, Tuple # Dict, Optional
 
 import fastfunc
@@ -50,10 +56,14 @@ _ = log
 # - what's with `_ = log`?
 # - string width
 # - contributing page: PRs are squash-merged with a descriptive tag like [json]
+# - fill in ~Algorithm Description~
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel?
 # - Is there a way to have methods on an ASDL product type?
+# - Indentation level: hard-coded? Option? How to set?
+# - How to construct BashArray and BashAssoc values for testing?
+#   (I'm using ParseValue)
 
 LOSSY_JSON = True
 
@@ -148,7 +158,7 @@ def _Surrounded(open, indent, mdoc, close):
     """
     return _Group(_Concat([
         _Text(open),
-        _Indent(4, _Concat([_Break(""), mdoc])),
+        _Indent(indent, _Concat([_Break(""), mdoc])),
         _Break(""),
         _Text(close)]))
 
@@ -161,6 +171,21 @@ def _Join(items, sep, space):
         seq.append(_Break(space))
         seq.append(item)
     return _Concat(seq)
+
+def _JoinPair(left, indent, sep, space, right):
+    # type: (MeasuredDoc, int, str, str, MeasuredDoc) -> MeasuredDoc
+    """Print one of two options (using ':' and '_' for sep and space):
+    ```
+    left:_right
+    ------
+    left:
+        right
+    ```
+    """
+    return _Concat([
+        left,
+        _Text(sep),
+        _Indent(indent, _Group(_Concat([_Break(space), right])))])
 
 
 ###################
@@ -211,6 +236,7 @@ class PrettyPrinter(object):
         # - The indentation level to print this doc node at.
         # - Is this doc node being printed in flat mode?
         # - The measure _from just after the doc node, to the end of the entire document_.
+        #   (Call this the _suffix measure)
         fragments = [DocFragment(_Group(document), 0, False, _EmptyMeasure())]
 
         while len(fragments) > 0:
@@ -241,6 +267,11 @@ class PrettyPrinter(object):
                         frag.measure))
 
                 elif case(doc_e.Concat):
+                    # If we encounter Concat([A, B, C]) with a suffix measure M,
+                    # we need to push A,B,C onto the stack in reverse order:
+                    # - C, with suffix measure = B.measure + A.measure + M
+                    # - B, with suffix measure = A.measure + M
+                    # - A, with suffix measure = M
                     concat = cast(doc.Concat, frag.mdoc.doc)
                     measure = frag.measure
                     for mdoc in reversed(concat.mdocs):
@@ -252,6 +283,8 @@ class PrettyPrinter(object):
                         measure = _AddMeasure(mdoc.measure, measure)
 
                 elif case(doc_e.Group):
+                    # If the group would fit on the current line when printed
+                    # flat, do so. Otherwise, print it non-flat.
                     group = cast(doc.Group, frag.mdoc.doc)
                     flat = self._Fits(prefix_len, group, frag.measure)
                     fragments.append(DocFragment(
@@ -264,6 +297,10 @@ class PrettyPrinter(object):
 ################
 # Value -> Doc #
 ################
+
+def _StringToDoc(s):
+    # type: (str) -> MeasuredDoc
+    return _Text(fastfunc.J8EncodeString(s, LOSSY_JSON))
 
 def _ValueToDoc(val):
     # type: (value_t) -> MeasuredDoc
@@ -287,7 +324,7 @@ def _ValueToDoc(val):
 
         elif case(value_e.Str):
             s = cast(value.Str, val).s
-            return _Text(fastfunc.J8EncodeString(s, LOSSY_JSON))
+            return _StringToDoc(s)
 
         elif case(value_e.List):
             vlist = cast(value.List, val)
@@ -312,15 +349,35 @@ def _ValueToDoc(val):
 
             mdocs = []
             for k, v in iteritems(vdict.d):
-                mdocs.append(_Concat([
-                    _Text(fastfunc.J8EncodeString(k, LOSSY_JSON)),
-                    _Text(":"),
-                    _Indent(4, _Group(_Concat([_Break(" "), _ValueToDoc(v)])))]))
+                mdocs.append(
+                    _JoinPair(_StringToDoc(k), 4, ":", " ", _ValueToDoc(v)))
+            return _Surrounded("{", 4, _Join(mdocs, ",", " "), "}")
+
+        elif case(value_e.BashArray):
+            varray = cast(value.BashArray, val)
+            if len(varray.strs) == 0:
+                return _Text("[]")
+
+            mdocs = []
+            for s in varray.strs:
+                if s is None:
+                    mdocs.append(_StringToDoc(s))
+                else:
+                    mdocs.append(_Text("null"))
+            return _Surrounded("[", 4, _Join(mdocs, ",", " "), "]")
+
+        elif case(value_e.BashAssoc):
+            vassoc = cast(value.BashAssoc, val)
+
+            mdocs = []
+            for k2, v2 in iteritems(vassoc.d):
+                mdocs.append(
+                    _JoinPair(_StringToDoc(k2), 4, ":", " ", _StringToDoc(v2)))
             return _Surrounded("{", 4, _Join(mdocs, ",", " "), "}")
 
         else:
-            # TODO: handle more cases
-            return _Break("")
-
+            ysh_type = value_str(val.tag(), dot=False)
+            id_str = ValueIdString(val)
+            return _Text("<" + ysh_type + id_str + ">")
 
 # vim: sw=4
