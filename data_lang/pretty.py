@@ -38,8 +38,8 @@ from __future__ import print_function
 from _devbuild.gen.pretty_asdl import doc, doc_e, doc_t, DocFragment, Measure, MeasuredDoc
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 
-from data_lang.j8 import ValueIdString
-from typing import cast, List #, Tuple # Dict, Optional
+from data_lang.j8 import ValueIdString, HeapValueId
+from typing import cast, List, Dict, Callable #, Tuple Optional
 
 import fastfunc
 
@@ -59,14 +59,13 @@ _ = log
 # - fill in ~Algorithm Description~
 
 # QUESTIONS:
-# - Is there a better way to do Option[int] than -1 as a sentinel?
-# - Is there a way to have methods on an ASDL product type?
+# - Is there a better way to do Option[int] than -1 as a sentinel? NO
+# - Is there a way to have methods on an ASDL product type? NO
 # - Indentation level: hard-coded? Option? How to set?
 # - How to construct BashArray and BashAssoc values for testing?
 #   (I'm using ParseValue)
 # - How to construct cyclic values for testing?
-
-LOSSY_JSON = True
+# - max_depth vs. cycle detection. Turn cycle detection off if there's a max_depth?
 
 
 ################
@@ -159,6 +158,8 @@ class PrettyPrinter(object):
     """
 
     DEFAULT_MAX_WIDTH = 80
+    DEFAULT_INDENTATION = 4
+    DEFAULT_MAX_DEPTH = -1
 
     def __init__(self):
         # type: () -> None
@@ -166,15 +167,25 @@ class PrettyPrinter(object):
 
         Use the Set*() methods for configuration before printing."""
         self.max_width = PrettyPrinter.DEFAULT_MAX_WIDTH
+        self.indent = PrettyPrinter.DEFAULT_INDENTATION
+        self.max_depth = PrettyPrinter.DEFAULT_MAX_DEPTH
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
         self.max_width = max_width
 
+    def SetIndent(self, indent):
+        # type: (int) -> None
+        self.indent = indent
+
+    def SetMaxDepth(self, max_depth):
+        # type: (int) -> None
+        self.max_depth = max_depth
+
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
-        constructor = _DocConstructor()
+        constructor = _DocConstructor(self.indent, self.max_depth)
         document = constructor.Value(val)
         self._PrintDoc(document, buf)
 
@@ -257,15 +268,60 @@ class PrettyPrinter(object):
 # Value -> Doc #
 ################
 
+class _CycleDetector:
+    def __init__(self, max_depth):
+        # type: (int) -> None
+        self.visited = {} # type: Dict[int, str]
+        self.label = 'a'
+        self.max_depth = max_depth
+        self.depth = 0
+
+    def _NextLabel(self):
+        # type: () -> str
+        label = self.label
+        # There _really_ shouldn't be more than 26 independent cycles in one
+        # value...
+        self.label = chr(ord(self.label) + 1)
+        return label
+
+    def Visit(self, heap_id, callback):
+        # type: (int, Callable[[], MeasuredDoc]) -> MeasuredDoc
+
+        if self.max_depth != -1 and self.depth >= self.max_depth:
+            return _Text("...")
+        elif heap_id in self.visited:
+            label = self.visited[heap_id]
+            if label is None:
+                label = self._NextLabel()
+                self.visited[heap_id] = label
+            return _Text("*" + label)
+        else:
+            self.visited[heap_id] = None
+            self.depth += 1
+            document = callback()
+            self.depth -= 1
+            label = self.visited[heap_id]
+            if label is None:
+                del self.visited[heap_id]
+                return document
+            else:
+                return _Concat([_Text("&" + label + " "), document])
+
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
 
-    def __init__(self):
-        # type: () -> None
-        self.indent = 4
-        self.max_depth = None
+    def __init__(self, indent, max_depth):
+        # type: (int, int) -> None
+        self.indent = indent
+        self.max_depth = max_depth
 
-    def Surrounded(self, open, mdoc, close):
+    def Value(self, val):
+        # type: (value_t) -> MeasuredDoc
+        """Convert an Oils value into a `doc`, which can then be pretty printed."""
+        self.cycle_detector = _CycleDetector(self.max_depth)
+        return self._Value(val)
+
+    def _Surrounded(self, open, mdoc, close):
         # type: (str, MeasuredDoc, str) -> MeasuredDoc
         """Print one of two options (using '[' and ']' for open and close):
     
@@ -283,7 +339,7 @@ class _DocConstructor:
             _Break(""),
             _Text(close)]))
     
-    def Join(self, items, sep, space):
+    def _Join(self, items, sep, space):
         # type: (List[MeasuredDoc], str, str) -> MeasuredDoc
         """Join `items`, using either 'sep+space' or 'sep+newline' between them."""
         seq = [items[0]]
@@ -293,7 +349,7 @@ class _DocConstructor:
             seq.append(item)
         return _Concat(seq)
     
-    def JoinPair(self, left, sep, space, right):
+    def _JoinPair(self, left, sep, space, right):
         # type: (MeasuredDoc, str, str, MeasuredDoc) -> MeasuredDoc
         """Print one of two options (using ':' and '_' for sep and space):
         ```
@@ -308,52 +364,51 @@ class _DocConstructor:
             _Text(sep),
             _Indent(self.indent, _Group(_Concat([_Break(space), right])))])
 
-    def String(self, s):
+    def _String(self, s):
         # type: (str) -> MeasuredDoc
-        return _Text(fastfunc.J8EncodeString(s, LOSSY_JSON))
+        return _Text(fastfunc.J8EncodeString(s, True)) # lossy_json=True
 
-    def List(self, vlist):
+    def _List(self, vlist):
         # type: (value.List) -> MeasuredDoc
         if len(vlist.items) == 0:
             return _Text("[]")
-        mdocs = [self.Value(item) for item in vlist.items]
-        return self.Surrounded("[", self.Join(mdocs, ",", " "), "]")
+        mdocs = [self._Value(item) for item in vlist.items]
+        return self._Surrounded("[", self._Join(mdocs, ",", " "), "]")
 
-    def Dict(self, vdict):
+    def _Dict(self, vdict):
         # type: (value.Dict) -> MeasuredDoc
         if len(vdict.d) == 0:
             return _Text("{}")
         mdocs = []
         for k, v in iteritems(vdict.d):
             mdocs.append(
-                self.JoinPair(self.String(k), ":", " ", self.Value(v)))
-        return self.Surrounded("{", self.Join(mdocs, ",", " "), "}")
+                self._JoinPair(self._String(k), ":", " ", self._Value(v)))
+        return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
-    def BashArray(self, varray):
+    def _BashArray(self, varray):
         # type: (value.BashArray) -> MeasuredDoc
         if len(varray.strs) == 0:
             return _Text("[]")
         mdocs = []
         for s in varray.strs:
             if s is None:
-                mdocs.append(self.String(s))
+                mdocs.append(self._String(s))
             else:
                 mdocs.append(_Text("null"))
-        return self.Surrounded("[", self.Join(mdocs, ",", " "), "]")
+        return self._Surrounded("[", self._Join(mdocs, ",", " "), "]")
 
-    def BashAssoc(self, vassoc):
+    def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
         if len(vassoc.d) == 0:
             return _Text("{}")
         mdocs = []
         for k2, v2 in iteritems(vassoc.d):
             mdocs.append(
-                self.JoinPair(self.String(k2), ":", " ", self.String(v2)))
-        return self.Surrounded("{", self.Join(mdocs, ",", " "), "}")
+                self._JoinPair(self._String(k2), ":", " ", self._String(v2)))
+        return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
-    def Value(self, val):
+    def _Value(self, val):
         # type: (value_t) -> MeasuredDoc
-        """Convert an Oils value into a `doc`, which can then be pretty printed."""
 
         with tagswitch(val) as case:
             if case(value_e.Null):
@@ -373,23 +428,27 @@ class _DocConstructor:
 
             elif case(value_e.Str):
                 s = cast(value.Str, val).s
-                return self.String(s)
+                return self._String(s)
 
             elif case(value_e.List):
                 vlist = cast(value.List, val)
-                return self.List(vlist)
+                return self.cycle_detector.Visit(
+                    HeapValueId(vlist),
+                    lambda: self._List(vlist))
 
             elif case(value_e.Dict):
                 vdict = cast(value.Dict, val)
-                return self.Dict(vdict)
+                return self.cycle_detector.Visit(
+                    HeapValueId(vdict),
+                    lambda: self._Dict(vdict))
 
             elif case(value_e.BashArray):
                 varray = cast(value.BashArray, val)
-                return self.BashArray(varray)
+                return self._BashArray(varray)
 
             elif case(value_e.BashAssoc):
                 vassoc = cast(value.BashAssoc, val)
-                return self.BashAssoc(vassoc)
+                return self._BashAssoc(vassoc)
 
             else:
                 ysh_type = value_str(val.tag(), dot=False)

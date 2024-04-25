@@ -1,7 +1,8 @@
 #!/usr/bin/env python2
 
 import unittest
-from data_lang import pretty  # module under test
+# module under test
+from data_lang.pretty import PrettyPrinter, MeasuredDoc, _CycleDetector, _Concat, _Text
 
 from data_lang import j8
 from _devbuild.gen.value_asdl import value, value_t
@@ -14,7 +15,7 @@ def IntValue(i):
 class PrettyTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.printer = pretty.PrettyPrinter()
+        cls.printer = PrettyPrinter()
 
     def assertPretty(self, width, value_str, expected):
         # type: (int, str, str) -> None
@@ -70,6 +71,54 @@ class PrettyTest(unittest.TestCase):
             29,
             '{"x":100, "y":200, "z":300}',
             '{\n    "x": 100,\n    "y": 200,\n    "z": 300\n}')
+
+class GraphPrinter:
+    def __init__(self, graph, max_depth):
+        # type: (List[Tuple[int, int]], int) -> None
+        self.cycle_detector = _CycleDetector(max_depth)
+        self.graph = graph
+
+    def PrintGraph(self):
+        # type: () -> str
+        document = self._ShowNodeCyclic(0)
+        printer = PrettyPrinter()
+        buf = mylib.BufWriter()
+        printer._PrintDoc(document, buf)
+        return buf.getvalue()
+
+    def _ShowNodeCyclic(self, node):
+        # type: int -> MeasuredDoc
+        return self.cycle_detector.Visit(node, lambda: self._ShowNode(node))
+
+    def _ShowNode(self, node):
+        # type: int -> MeasuredDoc
+        return _Concat([
+            _Text("("),
+            self._ShowNodeCyclic(self.graph[node][0]),
+            _Text(", "),
+            self._ShowNodeCyclic(self.graph[node][1]),
+            _Text(")")])
+
+class CycleDetectorTest(unittest.TestCase):
+    """Test displaying a directed graph, where each vertex `i` has two out-edges `graph[i]`."""
+
+    def testMaxDepth(self):
+        # Test displaying a deep graph at max_depth=3
+        graph = [[1, 1], [2, 2], [3, 3], [1, 1]]
+        self.assertEqual(
+            GraphPrinter(graph, 3).PrintGraph(),
+            "(((..., ...), (..., ...)), ((..., ...), (..., ...)))")
+
+    def testCycleDetection(self):
+        # Test displaying this spaghetti graph:
+        # root -> (a, c)
+        #    a -> (a, a)
+        #    b -> (b, c)
+        #    c -> (a, b)
+        graph = [[1, 2], [1, 1], [1, 3], [3, 2]]
+        self.assertEqual(
+            GraphPrinter(graph, -1).PrintGraph(),
+            "(&a (*a, *a), &c (*a, &b (*b, *c)))")
 
 if __name__ == '__main__':
     unittest.main()
