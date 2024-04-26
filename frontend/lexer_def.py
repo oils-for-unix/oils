@@ -102,6 +102,9 @@ _LEFT_SUBS = [
     C('`', Id.Left_Backtick),
     C('$(', Id.Left_DollarParen),
     C('${', Id.Left_DollarBrace),
+    # Parse zsh syntax, but don't execute it.
+    # The examples we've seen so far are like ${(%):-} and ${(m)
+    R(r'\$\{\([^)\0]+\)', Id.Left_DollarBraceZsh),
     C('$((', Id.Left_DollarDParen),
     C('$[', Id.Left_DollarBracket),
 ]
@@ -417,6 +420,15 @@ _VS_ARG_COMMON = [
     C('%', Id.Lit_Percent),  # for patsdub suffix (not Id.VOp1_Percent)
     C('}', Id.Right_DollarBrace),  # For var sub "${a}"
     C('$', Id.Lit_Dollar),  # completion of var names relies on this
+]
+
+# We don't execute zsh var subs, but to find the closing } properly, we need to
+# to recognize \} and '}' and "}" $'}' etc.
+LEXER_DEF[lex_mode_e.VSub_Zsh] = \
+  _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + \
+  [
+    C('}', Id.Right_DollarBrace),  # For var sub "${a}"
+    R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
 # Kind.{Lit,Ignored,VSub,Left,Right,Eof}

@@ -1,5 +1,4 @@
 ## compare_shells: bash zsh mksh
-## oils_failures_allowed: 2
 
 #### git-completion snippet
 
@@ -23,4 +22,24 @@ if false; then
 fi
 
 ## STDOUT:
+## END
+
+#### zsh var sub is rejected at runtime
+
+echo z ${(m)foo} z
+echo status=$?
+
+## status: 1
+## STDOUT:
+## END
+
+## OK zsh status: 0
+## OK zsh STDOUT:
+z z
+status=0
+## END
+
+## OK bash status: 0
+## OK bash STDOUT:
+status=1
 ## END
