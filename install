@@ -27,19 +27,19 @@ readonly OILS_PATH=_bin/cxx-opt-sh/oils-for-unix.stripped
 
 
 log() {
-  # indent it a bit
-  echo "    $@" 1>&2
+  # 4 space indent
+  echo "    $@" > &2
 }
 
 die() {
-  echo "FATAL install error: $@" 1>&2
+  echo "FATAL install error: $@" > &2
   exit 1
 }
 
 my_install() {
   ### A bit like install -v.  OpenBSD doesn't have -v
 
-  echo "    $@"  # 4 space indent
+  echo "  + install $@" >& 2
   install "$@"
 }
 
@@ -65,11 +65,11 @@ install_bin_and_links() {
   bin_dest_dir="${DESTDIR}${PREFIX}/bin"
   bin_dest="$bin_dest_dir/$bin_new_name"
 
-  if ! install -v -d "$bin_dest_dir"; then
+  if ! my_install -d "$bin_dest_dir"; then
     die "Couldn't create $bin_dest_dir"
   fi
 
-  if ! install -v "$bin_src" "$bin_dest"; then
+  if ! my_install "$bin_src" "$bin_dest"; then
     die "Couldn't install $bin_src -> $bin_dest"
   fi
   log "Installed $bin_dest"
