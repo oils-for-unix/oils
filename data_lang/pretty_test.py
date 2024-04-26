@@ -73,9 +73,9 @@ class PrettyTest(unittest.TestCase):
             '{\n    "x": 100,\n    "y": 200,\n    "z": 300\n}')
 
 class GraphPrinter:
-    def __init__(self, graph, max_depth):
-        # type: (List[Tuple[int, int]], int) -> None
-        self.cycle_detector = _CycleDetector(max_depth)
+    def __init__(self, graph):
+        # type: (List[Tuple[int, int]]) -> None
+        self.cycle_detector = _CycleDetector()
         self.graph = graph
 
     def PrintGraph(self):
@@ -102,13 +102,6 @@ class GraphPrinter:
 class CycleDetectorTest(unittest.TestCase):
     """Test displaying a directed graph, where each vertex `i` has two out-edges `graph[i]`."""
 
-    def testMaxDepth(self):
-        # Test displaying a deep graph at max_depth=3
-        graph = [[1, 1], [2, 2], [3, 3], [1, 1]]
-        self.assertEqual(
-            GraphPrinter(graph, 3).PrintGraph(),
-            "(((..., ...), (..., ...)), ((..., ...), (..., ...)))")
-
     def testCycleDetection(self):
         # Test displaying this spaghetti graph:
         # root -> (a, c)
@@ -117,7 +110,7 @@ class CycleDetectorTest(unittest.TestCase):
         #    c -> (a, b)
         graph = [[1, 2], [1, 1], [1, 3], [3, 2]]
         self.assertEqual(
-            GraphPrinter(graph, -1).PrintGraph(),
+            GraphPrinter(graph).PrintGraph(),
             "(&a (*a, *a), &c (*a, &b (*b, *c)))")
 
 if __name__ == '__main__':

@@ -57,6 +57,8 @@ _ = log
 # - string width
 # - contributing page: PRs are squash-merged with a descriptive tag like [json]
 # - fill in ~Algorithm Description~
+# - Unquote identifier-y dict keys
+# - Add some color
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
@@ -66,6 +68,7 @@ _ = log
 #   (I'm using ParseValue)
 # - How to construct cyclic values for testing?
 # - max_depth vs. cycle detection. Turn cycle detection off if there's a max_depth?
+#   NO MAX DEPTH
 
 
 ################
@@ -168,7 +171,6 @@ class PrettyPrinter(object):
         Use the Set*() methods for configuration before printing."""
         self.max_width = PrettyPrinter.DEFAULT_MAX_WIDTH
         self.indent = PrettyPrinter.DEFAULT_INDENTATION
-        self.max_depth = PrettyPrinter.DEFAULT_MAX_DEPTH
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
@@ -178,14 +180,10 @@ class PrettyPrinter(object):
         # type: (int) -> None
         self.indent = indent
 
-    def SetMaxDepth(self, max_depth):
-        # type: (int) -> None
-        self.max_depth = max_depth
-
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
-        constructor = _DocConstructor(self.indent, self.max_depth)
+        constructor = _DocConstructor(self.indent)
         document = constructor.Value(val)
         self._PrintDoc(document, buf)
 
@@ -269,12 +267,10 @@ class PrettyPrinter(object):
 ################
 
 class _CycleDetector:
-    def __init__(self, max_depth):
-        # type: (int) -> None
+    def __init__(self):
+        # type: () -> None
         self.visited = {} # type: Dict[int, str]
         self.label = 'a'
-        self.max_depth = max_depth
-        self.depth = 0
 
     def _NextLabel(self):
         # type: () -> str
@@ -287,9 +283,7 @@ class _CycleDetector:
     def Visit(self, heap_id, callback):
         # type: (int, Callable[[], MeasuredDoc]) -> MeasuredDoc
 
-        if self.max_depth != -1 and self.depth >= self.max_depth:
-            return _Text("...")
-        elif heap_id in self.visited:
+        if heap_id in self.visited:
             label = self.visited[heap_id]
             if label is None:
                 label = self._NextLabel()
@@ -297,9 +291,7 @@ class _CycleDetector:
             return _Text("*" + label)
         else:
             self.visited[heap_id] = None
-            self.depth += 1
             document = callback()
-            self.depth -= 1
             label = self.visited[heap_id]
             if label is None:
                 del self.visited[heap_id]
@@ -310,15 +302,14 @@ class _CycleDetector:
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
 
-    def __init__(self, indent, max_depth):
-        # type: (int, int) -> None
+    def __init__(self, indent):
+        # type: (int) -> None
         self.indent = indent
-        self.max_depth = max_depth
 
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
-        self.cycle_detector = _CycleDetector(self.max_depth)
+        self.cycle_detector = _CycleDetector()
         return self._Value(val)
 
     def _Surrounded(self, open, mdoc, close):
