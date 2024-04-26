@@ -39,7 +39,6 @@ pre-build() {
   build/py.sh fastmatch
 }
 
-
 unit() {
   ### Run unit tests in this dir; used by test/cpp-unit.sh
 
