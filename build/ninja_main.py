@@ -225,7 +225,9 @@ main() {
 
   cd $out_dir
   for symlink in osh ysh; do
-    ln -s -f -v $out_name $symlink
+    # like ln -v, which we can't use portably
+    echo "    $symlink -> $out_name"
+    ln -s -f $out_name $symlink
   done
 }
 

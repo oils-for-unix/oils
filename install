@@ -36,6 +36,13 @@ die() {
   exit 1
 }
 
+my_install() {
+  ### A bit like install -v.  OpenBSD doesn't have -v
+
+  echo "    $@"  # 4 space indent
+  install "$@"
+}
+
 install_bin_and_links() {
   ### Install an executable and symlinks.
 
@@ -90,13 +97,13 @@ install_bin_and_links() {
   # e.g. /usr/local/share/man/man1
   man_dest_dir="${DESTDIR}${DATAROOTDIR}/man/man1"
 
-  if ! install -v -d "$man_dest_dir"; then
+  if ! my_install -d "$man_dest_dir"; then
     die "Couldn't create $man_dest_dir"
   fi
   log "Installed man page"
 
   # -t to install to a directory and make them, -m so it's not executable
-  if ! install -v -m 644 doc/osh.1 "$man_dest_dir"; then
+  if ! my_install -m 644 doc/osh.1 "$man_dest_dir"; then
     die "Couldn't install man page"
   fi
 }
