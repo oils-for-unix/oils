@@ -100,12 +100,12 @@ install_bin_and_links() {
   if ! my_install -d "$man_dest_dir"; then
     die "Couldn't create $man_dest_dir"
   fi
-  log "Installed man page"
 
-  # -t to install to a directory and make them, -m so it's not executable
+  # -m so it's not executable
   if ! my_install -m 644 doc/osh.1 "$man_dest_dir"; then
     die "Couldn't install man page"
   fi
+  log "Installed man page"
 }
 
 if test -f "$OVM_PATH"; then
