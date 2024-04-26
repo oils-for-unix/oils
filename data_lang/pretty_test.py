@@ -16,6 +16,7 @@ class PrettyTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.printer = PrettyPrinter()
+        cls.printer.SetIndent(2)
 
     def assertPretty(self, width, value_str, expected):
         # type: (int, str, str) -> None
@@ -24,6 +25,14 @@ class PrettyTest(unittest.TestCase):
         buf = mylib.BufWriter()
         self.printer.SetMaxWidth(width)
         self.printer.PrintValue(val, buf)
+        actual = buf.getvalue()
+        if actual != expected:
+            # Print the different with real newlines, for easier reading.
+            print("ACTUAL:")
+            print(actual)
+            print("EXPECTED:")
+            print(expected)
+            print("END")
         self.assertEqual(buf.getvalue(), expected)
 
     def testNull(self):
@@ -60,7 +69,31 @@ class PrettyTest(unittest.TestCase):
         self.assertPretty(
             10,
             "[100, 200, 300]",
-            "[\n    100,\n    200,\n    300\n]")
+            "\n".join([
+                "[",
+                "  100,",
+                "  200,",
+                "  300",
+                "]"
+            ]))
+        self.assertPretty(
+            20,
+            "[[100, 200, 300], [100, 200, 300]]",
+            "\n".join([
+                "[",
+                "  [100, 200, 300],",
+                "  [100, 200, 300]",
+                "]"
+            ]))
+        self.assertPretty(
+            19,
+            "[[100, 200, 300], [100, 200, 300]]",
+            "\n".join([
+                "[",
+                "  [100, 200, 300],",
+                "  [100, 200, 300]",
+                "]"
+            ]))
 
     def testDict(self):
         self.assertPretty(
@@ -70,7 +103,61 @@ class PrettyTest(unittest.TestCase):
         self.assertPretty(
             29,
             '{"x":100, "y":200, "z":300}',
-            '{\n    "x": 100,\n    "y": 200,\n    "z": 300\n}')
+            "\n".join([
+                '{',
+                '  "x": 100,',
+                '  "y": 200,',
+                '  "z": 300',
+                '}'
+            ]))
+        self.assertPretty(
+            51,
+            '''{
+                "letters": {"1": "A", "2": "B", "3": "C"},
+                "numbers": {"1": "one", "2": "two", "3": "three"}
+            }''',
+            "\n".join([
+                '{',
+                '  "letters": {"1": "A", "2": "B", "3": "C"},',
+                '  "numbers": {"1": "one", "2": "two", "3": "three"}',
+                '}'
+            ]))
+        self.assertPretty(
+            44,
+            '''{
+                "letters": {"1": "A", "2": "B", "3": "C"},
+                "numbers": {"1": "one", "2": "two", "3": "three"}
+            }''',
+            "\n".join([
+                '{',
+                '  "letters": {"1": "A", "2": "B", "3": "C"},',
+                '  "numbers": {',
+                '    "1": "one",',
+                '    "2": "two",',
+                '    "3": "three"',
+                '  }',
+                '}'
+            ]))
+        self.assertPretty(
+            43,
+            '''{
+                "letters": {"1": "A", "2": "B", "3": "C"},
+                "numbers": {"1": "one", "2": "two", "3": "three"}
+            }''',
+            "\n".join([
+                '{',
+                '  "letters": {',
+                '    "1": "A",',
+                '    "2": "B",',
+                '    "3": "C"',
+                '  },',
+                '  "numbers": {',
+                '    "1": "one",',
+                '    "2": "two",',
+                '    "3": "three"',
+                '  }',
+                '}'
+            ]))
 
 class GraphPrinter:
     def __init__(self, graph):

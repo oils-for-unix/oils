@@ -49,13 +49,14 @@ from mycpp.mylib import log, tagswitch, BufWriter, iteritems
 _ = log
 
 # TODO:
-# - options: max_depth, max_lines, stuff about cycles, LOSSY_JSON
+# Later:
 # - clean up imports (is there a lint that checks for unused imports?)
 # - hook up the printer in core/ui.py::PrettyPrintValue
 # - run the linter
 # - what's with `_ = log`?
-# - string width
 # - contributing page: PRs are squash-merged with a descriptive tag like [json]
+# Now:
+# - string width
 # - fill in ~Algorithm Description~
 # - Unquote identifier-y dict keys
 # - Add some color
@@ -87,9 +88,9 @@ def _TextMeasure(string):
     # type: (str) -> Measure
     return Measure(_StrWidth(string), -1)
 
-def _NewlineMeasure():
-    # type: () -> Measure
-    return Measure(0, 0)
+def _BreakMeasure(string):
+    # type: (str) -> Measure
+    return Measure(_StrWidth(string), 0)
 
 def _FlattenMeasure(measure):
     # type: (Measure) -> Measure
@@ -125,9 +126,7 @@ def _Text(string):
 def _Break(string):
     # type: (str) -> MeasuredDoc
     """If in `flat` mode, print `string`, otherwise print `\n`."""
-    return MeasuredDoc(
-        doc.Break(string),
-        _AddMeasure(_TextMeasure(string), _NewlineMeasure()))
+    return MeasuredDoc(doc.Break(string), _BreakMeasure(string))
 
 def _Indent(indent, mdoc):
     # type: (int, MeasuredDoc) -> MeasuredDoc
@@ -339,21 +338,6 @@ class _DocConstructor:
             seq.append(_Break(space))
             seq.append(item)
         return _Concat(seq)
-    
-    def _JoinPair(self, left, sep, space, right):
-        # type: (MeasuredDoc, str, str, MeasuredDoc) -> MeasuredDoc
-        """Print one of two options (using ':' and '_' for sep and space):
-        ```
-        left:_right
-        ------
-        left:
-            right
-        ```
-        """
-        return _Concat([
-            left,
-            _Text(sep),
-            _Indent(self.indent, _Group(_Concat([_Break(space), right])))])
 
     def _String(self, s):
         # type: (str) -> MeasuredDoc
@@ -372,8 +356,7 @@ class _DocConstructor:
             return _Text("{}")
         mdocs = []
         for k, v in iteritems(vdict.d):
-            mdocs.append(
-                self._JoinPair(self._String(k), ":", " ", self._Value(v)))
+            mdocs.append(_Concat([self._String(k), _Text(": "), self._Value(v)]))
         return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
     def _BashArray(self, varray):
@@ -394,8 +377,7 @@ class _DocConstructor:
             return _Text("{}")
         mdocs = []
         for k2, v2 in iteritems(vassoc.d):
-            mdocs.append(
-                self._JoinPair(self._String(k2), ":", " ", self._String(v2)))
+            mdocs.append(_Concat([self._String(k2), _Text(": "), self._String(v2)]))
         return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
     def _Value(self, val):
