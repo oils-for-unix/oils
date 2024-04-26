@@ -28,11 +28,11 @@ readonly OILS_PATH=_bin/cxx-opt-sh/oils-for-unix.stripped
 
 log() {
   # 4 space indent
-  echo "    $@" > &2
+  echo "    $@" >& 2
 }
 
 die() {
-  echo "FATAL install error: $@" > &2
+  echo "FATAL install error: $@" >& 2
   exit 1
 }
 
