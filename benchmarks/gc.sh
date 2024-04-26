@@ -182,6 +182,7 @@ print-cachegrind-tasks() {
     "_bin/cxx-opt/osh${TAB}mut+alloc"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free"
     "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc"
+    "_bin/cxx-opt/osh${TAB}mut+alloc+free+gc+exit"
   )
 
   local id=0
