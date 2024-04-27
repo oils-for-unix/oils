@@ -2,6 +2,7 @@
 
 #include <ctype.h>  // isalpha(), isdigit()
 #include <stdarg.h>
+#include <sys/sdt.h>
 
 #include <regex>
 
@@ -517,6 +518,7 @@ unsigned BigStr::hash(HashFunc h) {
 }
 
 static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
+  DTRACE_PROBE1(mycpp, _StrFormat_enter, fmt);
   auto beg = std::cregex_iterator(fmt, fmt + fmt_len, gStrFmtRegex);
   auto end = std::cregex_iterator();
 
@@ -618,7 +620,9 @@ static inline BigStr* _StrFormat(const char* fmt, int fmt_len, va_list args) {
     }
   }
 
-  return StrFromC(buf.c_str(), buf.size());
+  auto s = StrFromC(buf.c_str(), buf.size());
+  DTRACE_PROBE(mycpp, _StrFormat_exit);
+  return s;
 }
 
 BigStr* StrIter::Value() {  // similar to at()

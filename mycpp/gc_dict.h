@@ -12,6 +12,8 @@
 #ifndef MYCPP_GC_DICT_H
 #define MYCPP_GC_DICT_H
 
+#include <sys/sdt.h>
+
 #include "mycpp/comparators.h"
 #include "mycpp/gc_builtins.h"
 #include "mycpp/gc_list.h"
@@ -35,12 +37,14 @@ const int kTooSmall = -4;
 // Helper for keys() and values()
 template <typename T>
 List<T>* ListFromDictSlab(Slab<T>* slab, int n) {
+  DTRACE_PROBE1(mycpp, ListFromDictSlab_enter, n);
   List<T>* result = Alloc<List<T>>();
   result->reserve(n);
 
   for (int i = 0; i < n; ++i) {
     result->append(slab->items_[i]);
   }
+  DTRACE_PROBE(mycpp, ListFromDictSlab_exit);
   return result;
 }
 
@@ -206,7 +210,9 @@ inline bool dict_contains(const Dict<K, V>* haystack, K needle) {
 
 template <typename K, typename V>
 void Dict<K, V>::reserve(int num_desired) {
+  DTRACE_PROBE1(mycpp, Dict_reserve_enter, num_desired);
   if (capacity_ >= num_desired) {
+    DTRACE_PROBE(mycpp, Dict_reserve_exit);
     return;  // Don't do anything if there's already enough space.
   }
 
@@ -238,34 +244,44 @@ void Dict<K, V>::reserve(int num_desired) {
       set(old_k->items_[i], old_v->items_[i]);
     }
   }
+  DTRACE_PROBE(mycpp, Dict_reserve_exit);
 }
 
 template <typename K, typename V>
 V Dict<K, V>::at(K key) const {
+  DTRACE_PROBE(mycpp, Dict_at_enter);
   int kv_index = find_kv_index(key);
   if (kv_index == kNotFound) {
+    DTRACE_PROBE(mycpp, Dict_at_exit);
     throw Alloc<KeyError>();
   } else {
+    DTRACE_PROBE(mycpp, Dict_at_exit);
     return values_->items_[kv_index];
   }
 }
 
 template <typename K, typename V>
 V Dict<K, V>::get(K key) const {
+  DTRACE_PROBE(mycpp, Dict_get_enter);
   int kv_index = find_kv_index(key);
   if (kv_index == kNotFound) {
+    DTRACE_PROBE(mycpp, Dict_get_exit);
     return nullptr;
   } else {
+    DTRACE_PROBE(mycpp, Dict_get_exit);
     return values_->items_[kv_index];
   }
 }
 
 template <typename K, typename V>
 V Dict<K, V>::get(K key, V default_val) const {
+  DTRACE_PROBE(mycpp, Dict_get_enter);
   int kv_index = find_kv_index(key);
   if (kv_index == kNotFound) {
+    DTRACE_PROBE(mycpp, Dict_get_exit);
     return default_val;
   } else {
+    DTRACE_PROBE(mycpp, Dict_get_exit);
     return values_->items_[kv_index];
   }
 }
@@ -282,6 +298,7 @@ List<V>* Dict<K, V>::values() const {
 
 template <typename K, typename V>
 void Dict<K, V>::clear() {
+  DTRACE_PROBE(mycpp, Dict_clear_enter);
   // Maintain invariant
   for (int i = 0; i < index_len_; ++i) {
     index_->items_[i] = kEmptyEntry;
@@ -294,6 +311,7 @@ void Dict<K, V>::clear() {
     memset(values_->items_, 0, len_ * sizeof(V));  // zero for GC scan
   }
   len_ = 0;
+  DTRACE_PROBE(mycpp, Dict_clear_exit);
 }
 
 // TODO:
@@ -304,7 +322,9 @@ void Dict<K, V>::clear() {
 //   This will enable duplicate copies of the string to be garbage collected
 template <typename K, typename V>
 int Dict<K, V>::hash_and_probe(K key) const {
+  DTRACE_PROBE(mycpp, Dict_hash_and_probe_enter);
   if (capacity_ == 0) {
+    DTRACE_PROBE(mycpp, Dict_hash_and_probe_exit);
     return kTooSmall;
   }
 
@@ -329,6 +349,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
     if (kv_index >= 0) {
       unsigned h2 = hash_key(keys_->items_[kv_index]);
       if (h == h2 && keys_equal(keys_->items_[kv_index], key)) {
+        DTRACE_PROBE(mycpp, Dict_hash_and_probe_exit);
         return slot;
       }
     }
@@ -338,6 +359,7 @@ int Dict<K, V>::hash_and_probe(K key) const {
         slot = open_slot;
       }
       // If there isn't room in the entry arrays, tell the caller to resize.
+      DTRACE_PROBE(mycpp, Dict_hash_and_probe_exit);
       return len_ < capacity_ ? slot : kTooSmall;
     }
 
@@ -355,9 +377,11 @@ int Dict<K, V>::hash_and_probe(K key) const {
   }
 
   if (open_slot != -1) {
+    DTRACE_PROBE(mycpp, Dict_hash_and_probe_exit);
     return len_ < capacity_ ? open_slot : kTooSmall;
   }
 
+  DTRACE_PROBE(mycpp, Dict_hash_and_probe_exit);
   return kTooSmall;
 }
 

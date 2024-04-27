@@ -2,6 +2,7 @@
 #define MYCPP_GC_LIST_H
 
 #include <string.h>  // memcpy
+#include <sys/sdt.h>
 
 #include <algorithm>  // sort() is templated
 
@@ -195,9 +196,11 @@ List<T>* NewList(T item, int times) {
 
 template <typename T>
 void List<T>::append(T item) {
+  DTRACE_PROBE(mycpp, List_append_enter);
   reserve(len_ + 1);
   slab_->items_[len_] = item;
   ++len_;
+  DTRACE_PROBE(mycpp, List_append_exit);
 }
 
 template <typename T>
@@ -229,6 +232,7 @@ List<T>* List<T>::slice(int begin) {
 // L[begin:end]
 template <typename T>
 List<T>* List<T>::slice(int begin, int end) {
+  DTRACE_PROBE2(mycpp, List_slice_enter, begin, end);
   SLICE_ADJUST(begin, end, len_);
 
   DCHECK(0 <= begin && begin <= len_);
@@ -243,6 +247,7 @@ List<T>* List<T>::slice(int begin, int end) {
   // Faster than append() in a loop
   memcpy(result->slab_->items_, slab_->items_ + begin, new_len * sizeof(T));
   result->len_ = new_len;
+  DTRACE_PROBE(mycpp, List_slice_exit);
 
   return result;
 }
@@ -250,10 +255,12 @@ List<T>* List<T>::slice(int begin, int end) {
 // Ensure that there's space for a number of items
 template <typename T>
 void List<T>::reserve(int num_desired) {
+  DTRACE_PROBE1(mycpp, List_reserve_enter, num_desired);
   // log("reserve capacity = %d, n = %d", capacity_, n);
 
   // Don't do anything if there's already enough space.
   if (capacity_ >= num_desired) {
+    DTRACE_PROBE(mycpp, List_reserve_exit);
     return;
   }
 
@@ -273,11 +280,13 @@ void List<T>::reserve(int num_desired) {
     memcpy(new_slab->items_, slab_->items_, len_ * sizeof(T));
   }
   slab_ = new_slab;
+  DTRACE_PROBE(mycpp, List_reserve_exit);
 }
 
 // Implements L[i] = item
 template <typename T>
 void List<T>::set(int i, T item) {
+  DTRACE_PROBE1(mycpp, List_set_enter, i);
   if (i < 0) {
     i = len_ + i;
   }
@@ -286,22 +295,26 @@ void List<T>::set(int i, T item) {
   DCHECK(i < capacity_);
 
   slab_->items_[i] = item;
+  DTRACE_PROBE(mycpp, List_set_exit);
 }
 
 // Implements L[i]
 template <typename T>
 T List<T>::at(int i) {
+  DTRACE_PROBE(mycpp, List_at_enter);
   if (i < 0) {
     int j = len_ + i;
     if (j >= len_ || j < 0) {
       throw Alloc<IndexError>();
     }
+    DTRACE_PROBE(mycpp, List_at_exit);
     return slab_->items_[j];
   }
 
   if (i >= len_ || i < 0) {
     throw Alloc<IndexError>();
   }
+  DTRACE_PROBE(mycpp, List_at_exit);
   return slab_->items_[i];
 }
 
@@ -321,19 +334,24 @@ int List<T>::index(T value) {
 // https://stackoverflow.com/questions/12600330/pop-back-return-value
 template <typename T>
 T List<T>::pop() {
+  DTRACE_PROBE(mycpp, List_pop_enter);
   if (len_ == 0) {
+    DTRACE_PROBE(mycpp, List_pop_exit);
     throw Alloc<IndexError>();
   }
   len_--;
   T result = slab_->items_[len_];
   slab_->items_[len_] = 0;  // zero for GC scan
+  DTRACE_PROBE(mycpp, List_pop_exit);
   return result;
 }
 
 // Used in osh/word_parse.py to remove from front
 template <typename T>
 T List<T>::pop(int i) {
+  DTRACE_PROBE1(mycpp, List_pop_enter, i);
   if (len_ < i) {
+    DTRACE_PROBE(mycpp, List_pop_exit);
     throw Alloc<IndexError>();
   }
 
@@ -350,26 +368,32 @@ T List<T>::pop(int i) {
   */
 
   slab_->items_[len_] = 0;  // zero for GC scan
+  DTRACE_PROBE(mycpp, List_pop_exit);
   return result;
 }
 
 template <typename T>
 void List<T>::remove(T x) {
+  DTRACE_PROBE(mycpp, List_remove_enter);
   int idx = this->index(x);
   this->pop(idx);  // unused
+  DTRACE_PROBE(mycpp, List_remove_exit);
 }
 
 template <typename T>
 void List<T>::clear() {
+  DTRACE_PROBE(mycpp, List_clear_enter);
   if (slab_) {
     memset(slab_->items_, 0, len_ * sizeof(T));  // zero for GC scan
   }
   len_ = 0;
+  DTRACE_PROBE(mycpp, List_clear_exit);
 }
 
 // Used in osh/string_ops.py
 template <typename T>
 void List<T>::reverse() {
+  DTRACE_PROBE(mycpp, List_reverse_enter);
   for (int i = 0; i < len_ / 2; ++i) {
     // log("swapping %d and %d", i, n-i);
     T tmp = slab_->items_[i];
@@ -377,11 +401,13 @@ void List<T>::reverse() {
     slab_->items_[i] = slab_->items_[j];
     slab_->items_[j] = tmp;
   }
+  DTRACE_PROBE(mycpp, List_reverse_exit);
 }
 
 // Extend this list with multiple elements.
 template <typename T>
 void List<T>::extend(List<T>* other) {
+  DTRACE_PROBE(mycpp, List_extend_enter);
   int n = other->len_;
   int new_len = len_ + n;
   reserve(new_len);
@@ -390,6 +416,7 @@ void List<T>::extend(List<T>* other) {
     set(len_ + i, other->slab_->items_[i]);
   }
   len_ = new_len;
+  DTRACE_PROBE(mycpp, List_extend_exit);
 }
 
 inline bool _cmp(BigStr* a, BigStr* b) {
@@ -398,7 +425,9 @@ inline bool _cmp(BigStr* a, BigStr* b) {
 
 template <typename T>
 void List<T>::sort() {
+  DTRACE_PROBE(mycpp, List_sort_enter);
   std::sort(slab_->items_, slab_->items_ + len_, _cmp);
+  DTRACE_PROBE(mycpp, List_sort_exit);
 }
 
 // TODO: mycpp can just generate the constructor instead?
@@ -411,12 +440,15 @@ List<T>* list_repeat(T item, int times) {
 // e.g. 'a' in ['a', 'b', 'c']
 template <typename T>
 inline bool list_contains(List<T>* haystack, T needle) {
+  DTRACE_PROBE(mycpp, List_contains_enter);
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
     if (are_equal(haystack->at(i), needle)) {
+      DTRACE_PROBE(mycpp, List_contains_exit);
       return true;
     }
   }
+  DTRACE_PROBE(mycpp, List_contains_enter);
   return false;
 }
 
