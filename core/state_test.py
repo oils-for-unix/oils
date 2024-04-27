@@ -14,6 +14,7 @@ from core import test_lib
 from core import state  # module under test
 from frontend import lexer
 from frontend import location
+from mycpp.mylib import NewDict
 
 
 def _InitMem():
@@ -33,15 +34,28 @@ def _InitMem():
 
 class MemTest(unittest.TestCase):
 
+    def _PushShellCall(self, mem, name, tok, argv):
+        """ simulate shell function """
+        mem.argv_stack.append(state._ArgFrame(argv))
+        frame = NewDict()
+        mem.var_stack.append(frame)
+        mem.PushCall(name, tok)
+
+    def _PopShellCall(self, mem):
+        """ simulate shell function """
+        mem.PopCall()
+        mem.var_stack.pop()
+        mem.argv_stack.pop()
+
     def testGet(self):
         mem = _InitMem()
 
         tok_a = lexer.DummyToken(Id.Lit_Chars, 'a')
         tok_a.line = SourceLine(1, 'a b', source.Interactive)
 
-        mem.PushCall('my-func', tok_a, ['a', 'b'])
+        self._PushShellCall(mem, 'my-func', tok_a, ['a', 'b'])
         print(mem.GetValue('HOME'))
-        mem.PopCall(True)
+        self._PopShellCall(mem)
         print(mem.GetValue('NONEXISTENT'))
 
     def testSearchPath(self):
@@ -103,7 +117,7 @@ class MemTest(unittest.TestCase):
         tok_two = lexer.DummyToken(Id.Lit_Chars, 'TWO')
         tok_two.line = SourceLine(1, 'TWO', source.Interactive)
 
-        mem.PushCall('my-func', tok_one, ['ONE'])
+        self._PushShellCall(mem, 'my-func', tok_one, ['ONE'])
         self.assertEqual(2, len(mem.var_stack))  # internal details
 
         # local x=y
@@ -111,7 +125,7 @@ class MemTest(unittest.TestCase):
         self.assertEqual('y', mem.var_stack[-1]['x'].val.s)
 
         # New frame
-        mem.PushCall('my-func', tok_two, ['TWO'])
+        self._PushShellCall(mem, 'my-func', tok_two, ['TWO'])
         self.assertEqual(3, len(mem.var_stack))  # internal details
 
         # x=y -- test out dynamic scope
@@ -300,13 +314,13 @@ class MemTest(unittest.TestCase):
         tok_a = lexer.DummyToken(Id.Lit_Chars, 'a')
         tok_a.line = SourceLine(1, 'a b', src)
 
-        mem.PushCall('my-func', tok_a, ['a', 'b'])
+        self._PushShellCall(mem, 'my-func', tok_a, ['a', 'b'])
         self.assertEqual(['a', 'b'], mem.GetArgv())
 
         tok_x = lexer.DummyToken(Id.Lit_Chars, 'x')
         tok_x.line = SourceLine(2, 'x y', src)
 
-        mem.PushCall('my-func', tok_x, ['x', 'y'])
+        self._PushShellCall(mem, 'my-func', tok_x, ['x', 'y'])
         self.assertEqual(['x', 'y'], mem.GetArgv())
 
         status = mem.Shift(1)
@@ -321,7 +335,7 @@ class MemTest(unittest.TestCase):
         self.assertEqual([], mem.GetArgv())
         self.assertEqual(1, status)  # error
 
-        mem.PopCall(True)
+        self._PopShellCall(mem)
         self.assertEqual(['a', 'b'], mem.GetArgv())
 
     def testArgv2(self):

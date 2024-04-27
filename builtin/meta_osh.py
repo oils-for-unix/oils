@@ -63,11 +63,11 @@ class Eval(vm._Builtin):
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
-        if cmd_val.typed_args:  # eval (myblock)
+        if cmd_val.typed_args:  # eval (mycmd)
             rd = typed_args.ReaderForProc(cmd_val)
-            block = rd.PosCommand()
+            cmd = rd.PosCommand()
             rd.Done()
-            return self.cmd_ev.EvalCommand(block)
+            return self.cmd_ev.EvalCommand(cmd)
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_util.ParseCmdVal('eval', cmd_val)
@@ -280,7 +280,8 @@ class Command(vm._Builtin):
             return status
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args)
+                                  cmd_val.pos_args, cmd_val.named_args,
+                                  cmd_val.block_arg)
 
         # If we respected do_fork here instead of passing True, the case
         # 'command date | wc -l' would take 2 processes instead of 3.  But no other
@@ -299,7 +300,7 @@ def _ShiftArgv(cmd_val):
     # type: (cmd_value.Argv) -> cmd_value.Argv
     return cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
                           cmd_val.typed_args, cmd_val.pos_args,
-                          cmd_val.named_args)
+                          cmd_val.named_args, cmd_val.block_arg)
 
 
 class Builtin(vm._Builtin):
@@ -360,7 +361,8 @@ class RunProc(vm._Builtin):
             return 1
 
         cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args)
+                                  cmd_val.pos_args, cmd_val.named_args,
+                                  cmd_val.block_arg)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
         return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,

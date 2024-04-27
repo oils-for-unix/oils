@@ -148,7 +148,7 @@ class Fork(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        cmd = typed_args.OptionalCommand(cmd_val)
+        cmd = typed_args.OptionalBlock(cmd_val)
         if cmd is None:
             e_usage('expected a block', loc.Missing)
 
@@ -170,7 +170,7 @@ class ForkWait(vm._Builtin):
         if arg is not None:
             e_usage('got unexpected argument %r' % arg, location)
 
-        cmd = typed_args.OptionalCommand(cmd_val)
+        cmd = typed_args.OptionalBlock(cmd_val)
         if cmd is None:
             e_usage('expected a block', loc.Missing)
 
@@ -205,7 +205,7 @@ class Exec(vm._Builtin):
 
         # shift off 'exec', and remove typed args because they don't apply
         c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:], None, None,
-                            None)
+                            None, None)
 
         self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
         # makes mypy and C++ compiler happy

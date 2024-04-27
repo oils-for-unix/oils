@@ -7,6 +7,7 @@ readonly __TEST_COMMON_SH=1
 
 # Used by test/{gold,osh-usage,stateful,wild-runner}
 OSH=${OSH:-'bin/osh'}
+YSH=${YSH:-'bin/ysh'}
 
 # For xargs -P in spec-runner.sh, wild-runner.sh.
 # If we have 2 cores or less (as on CI machines), use them all.  Otherwise save
@@ -268,4 +269,11 @@ export-osh-cpp() {
   export OSH=$osh
   log "Exported OSH=$OSH"
 }
+
+# Used by {mycpp,cpp}/TEST.sh
+can-compile-32-bit() {
+  # Try compiling a basic file
+  c++ -m32 -o /dev/null build/detect-cc.c
+}
+
 

@@ -23,7 +23,7 @@ zz 1
 ## END
 
 #### help topics that are linked
-help com-sub | grep -o chap-word-lang.html
+help command-sub | grep -o chap-word-lang.html
 echo status=$?
 
 help read | grep -o chap-builtin-cmd.html

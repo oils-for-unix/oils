@@ -117,6 +117,24 @@ EOF
     "$json" || true
 }
 
+decode-whitespace() {
+  # e.g. is carriage return whitespace?  Yes, it is allowed
+  local json=$'{"age":\r42}'
+
+  # neither \f nor \v is allowed
+  #local json=$'{"age":\f42}'
+  #local json=$'{"age":\v42}'
+
+  python3 -c 'import json, sys; val = json.loads(sys.argv[1]); print(type(val)); print(val)' \
+    "$json" || true
+
+  echo
+  echo
+
+  nodejs -e 'var val = JSON.parse(process.argv[1]); console.log(typeof(val)); console.log(val)' \
+    "$json" || true
+}
+
 encode-list-dict-indent() {
   echo 'PYTHON'
   python3 -c 'import json; val = {}; print(json.dumps(val, indent=4))'
@@ -135,6 +153,31 @@ encode-list-dict-indent() {
   echo
 }
 
+encode-default() {
+  echo 'PYTHON'
+  python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val))'
+  echo
+
+  echo 'JS'
+  nodejs -e 'var val = {"a": 42, "b": [1, 2, 3]}; console.log(JSON.stringify(val))'
+  echo
+
+  # Hm we indent by default, maybe we should change this
+  #
+  # I think the = operator indents by default, but json/json8 don't?
+  #
+  # PYTHON
+  # {"a": 42, "b": [1, 2, 3]}
+  # 
+  # JS
+  # {"a":42,"b":[1,2,3]}
+
+  # Single knob design:
+  #
+  # json write (x)            # space=2 by default
+  # json write (x, space=0)   # like JS
+}
+
 encode-no-indent() {
   echo 'PYTHON'
 
@@ -142,16 +185,34 @@ encode-no-indent() {
   python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=None))'
   # you control it like this
   python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, separators=[",", ":"]))'
+  echo
 
-  # -1 and 0 are the same in Python
+  # Python: -1 and 0 both mean zero indent, but MULTIPLE lines
   python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=-1))'
+  echo
   python3 -c 'import json; val = {"a": 42, "b": [1, 2, 3]}; print(json.dumps(val, indent=0))'
   echo
 
   echo 'JS'
-  # -1 and 0 are the same in Python
+
+  # JS: -1 and 0 both print on ONE LINE
+  # Second arg is "replacer", which I don't think we need
   nodejs -e 'var val = {"a": 42, "b": [1, 2, 3]}; console.log(JSON.stringify(val, null, -1))'
   nodejs -e 'var val = {"a": 42, "b": [1, 2, 3]}; console.log(JSON.stringify(val, null, 0))'
+  # third arg can be a string too
+  nodejs -e 'var val = {"a": 42, "b": [1, 2, 3]}; console.log(JSON.stringify(val, null, "\t"))'
+
+  # Python has indent=0 vs indent=None, and it has separators=[",", ";"]
+  # JS has indent=1 and indent="\t" etc.
+  #   - it also clamps strings/indents to 10 chars or less
+
+  # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
+  # indent less than 1 means "no space"
+  #
+  # Which behavior should OSH have for 0 and -1?
+  #
+  # Does indent=0 and indent=null and indent=" " make sense?
+  # I think it could
 }
 
 encode-obj-cycles() {

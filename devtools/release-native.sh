@@ -66,6 +66,14 @@ test-tar() {
   popd
 }
 
+test-install-tar() {
+  ### test that sudo ./install works
+
+  # This is run in the raw-vm soil task
+
+  test-tar T
+}
+
 extract-for-benchmarks() {
   local install=${1:-}
 

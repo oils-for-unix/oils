@@ -179,7 +179,7 @@ class SplitContext(object):
         # type: (str, Optional[str]) -> List[str]
         """Split used by word evaluation.
 
-        Also used by the explicit @split() function.
+        Also used by the explicit shSplit() function.
         """
         sp = self._GetSplitter(ifs=ifs)
         spans = sp.Split(s, True)

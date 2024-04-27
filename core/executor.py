@@ -225,9 +225,6 @@ class ShellExecutor(vm._Executor):
         - YSH might have different, simpler rules.  No special builtins, etc.
         - YSH might have OILS_PATH = :| /bin /usr/bin | or something.
         - Interpreters might want to define all their own builtins.
-
-        Args:
-          call_procs: whether to look up procs.
         """
         argv = cmd_val.argv
         if len(cmd_val.arg_locs):
@@ -265,6 +262,11 @@ class ShellExecutor(vm._Executor):
         call_procs = not (run_flags & NO_CALL_PROCS)
         # Builtins like 'true' can be redefined as functions.
         if call_procs:
+            # TODO: Look shell functions in self.sh_funcs, but procs are
+            # value.Proc in the var namespace.
+            # Pitfall: What happens if there are two of the same name?  I guess
+            # that's why you have = and 'type' inspect them
+
             proc_node = self.procs.get(arg0)
             if proc_node is not None:
                 if self.exec_opts.strict_errexit():
@@ -685,3 +687,6 @@ class ShellExecutor(vm._Executor):
 
         # The CommandEvaluator could have a ProcessSubStack, which supports Push(),
         # Pop(), and Top() of VALUES rather than GC objects?
+
+
+# vim: sw=4

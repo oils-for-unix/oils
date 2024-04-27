@@ -167,10 +167,19 @@ TEST test_str_strip() {
     ASSERT(str_equals(result, StrFromC("")));
   }
 
+  // carriage return is space, consistent with JSON spec and lexing rules in
+  // frontend/lexer_def.py
   {
-    BigStr* result = (StrFromC("\n #"))->lstrip();
+    BigStr* result = (StrFromC("\n\r #"))->lstrip();
     ShowString(result);
     ASSERT(str_equals(result, StrFromC("#")));
+  }
+
+  // but \v vertical tab is not
+  {
+    BigStr* result = (StrFromC("\v #"))->lstrip();
+    ShowString(result);
+    ASSERT(str_equals(result, StrFromC("\v #")));
   }
 
   {

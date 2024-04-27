@@ -64,7 +64,7 @@ x=4
 #### Named args with ...rest
 func f(; x=3, ...named) {
   echo x=$x
-  json write --pretty=F (named)
+  pp line (named)
 }
 
 call f()
@@ -75,11 +75,11 @@ call f(x=4, y=5)
 
 ## STDOUT:
 x=3
-{}
+(Dict)   {}
 x=4
-{}
+(Dict)   {}
 x=4
-{"y":5}
+(Dict)   {"y":5}
 ## END
 
 #### Spread/splat of named args: f(...more)
@@ -104,8 +104,8 @@ call f(; ...args)
 #### Multiple spreads
 
 func f(...pos; ...named) {
-  json write --pretty=F (pos)
-  json write --pretty=F (named)
+  pp line (pos)
+  pp line (named)
 }
 
 var a = [1,2,3]
@@ -115,8 +115,8 @@ var e = {p: 5, q: 6}
 call f(...a, ...a; ...d, ...e)
 
 ## STDOUT:
-[1,2,3,1,2,3]
-{"m":"spam","n":"no","p":5,"q":6}
+(List)   [1,2,3,1,2,3]
+(Dict)   {"m":"spam","n":"no","p":5,"q":6}
 ## END
 
 
@@ -315,7 +315,6 @@ func fib(n) {
 }
 
 json write (fib(10))
-#json write --pretty=F (cache)
 json write (cache)
 
 ## STDOUT:

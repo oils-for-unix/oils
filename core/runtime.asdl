@@ -24,7 +24,9 @@ module runtime
     Argv(List[str] argv, List[CompoundWord] arg_locs,
          ArgList? typed_args,
          # Evaluated args, similar to typed_args.py Reader
-         List[value]? pos_args, Dict[str, value]? named_args)
+         List[value]? pos_args, Dict[str, value]? named_args,
+         # block_arg comes from either p (; ; myblock) or p { echo b }
+         value? block_arg)
 
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,

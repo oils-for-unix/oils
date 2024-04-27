@@ -335,6 +335,7 @@ properties:
 1. No backslashes or single quotes.  (All other required escapes are control
    characters.)
 
+
 ## JSON8 - Tree-Shaped Records
 
 Now that we've defined J8 strings, we can define JSON8, an obvious extension of
@@ -391,23 +392,31 @@ I think using unquoted keys is a good enough signal, or MIME type.
 
 ## J8 Lines - Lines of Text
 
-*J8 Lines* is another format built on J8 strings.
+*J8 Lines* is another format built on J8 strings.  Each line is either:
 
-For example, to represent represent 4 filenames, simply use 4 lines:
+1. An unquoted string, which must be valid UTF-8.  Whitespace is allowed, but
+   not other ASCII control chars.
+2. A quoted J8 string (JSON style `""` or J8-style `b'' u''`)
+3. An **ignored** empty line
 
-      dir/my-filename.txt       # unquoted string is JS name and . - /
-     "dir/with spaces.txt"      # JSON-style
+In all cases, leading and trailing whitespace is ignored.
+
+---
+
+For example, 6 strings with weird characters could be represented like this:
+
+      dir/with spaces.txt       # unquoted string must be UTF-8
+     "dir/with newline \n.txt"  # JSON-style 
     b'dir/with bytes \yff.txt'  # J8-style
     u'dir/unicode \u{3bc}'
+                                # ignored empty line
+     ''                         # empty string, not ignored
+     'dir/unicode \u{3bc}'      # no prefix implies u''
 
-Literal control characters like newlines are illegal in J8 strings, which means
-that they always occupy **one** physical line.
+Note that J8 strings always occupy **one** physical line, because they can't
+contain unescaped control characters, including newlines.
 
-- Leading spaces on each line are ignored, which allows aligning the quotes.
-- Trailing spaces are also ignored, to aid readability.  That is, significant
-  spaces must appear in quotes.
-
-*J8 Lines* can be viewed as a degenerate case of TSV8, described in the next
+*J8 Lines* can be viewed as a simpler case of TSV8, described in the next
 section.
 
 <!--
@@ -416,10 +425,11 @@ TODO: show grammar, which disallows anything but significant tabs/newlines, and
 insignificant spaces)
 -->
 
-### Related
+#### Related
 
-- <https://jsonlines.org/> - this allows not just strings, any value like `{}`
-  and `[]`
+- <https://jsonlines.org/> allows not just strings, but any value like `{}` and
+  `[]`.  We could define an obvious "JSON8 Lines" format, which is different
+  than "J8 Lines".
 
 ## TSV8 - Table-Shaped Text
 

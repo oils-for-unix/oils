@@ -15,6 +15,16 @@ Related: [Oils Error Catalog, With Hints](../error-catalog.html).
 <div id="toc">
 </div>
 
+## J8 Lines
+
+### j8-lines-decode-err
+
+J8 Lines is used by `@(split command sub)`, and has these errors:
+
+1. An unquoted line is not valid UTF-8.
+1. A J8 quoted string has a syntax error (e.g. no closing quote, invalid
+   backslash escape)
+1. A line has extra text after a quoted string, e.g. `"mystr" extra`.
 
 ## JSON
 

@@ -1,3 +1,4 @@
+## oils_failures_allowed: 0
 
 #### Open proc (any number of args)
 shopt --set parse_proc
@@ -29,25 +30,28 @@ f a b  # status 2
 status=42
 ## END
 
-#### Open proc has "$@"
-shopt -s oil:all
+#### Open proc has ARGV
+shopt -s ysh:all
 proc foo { 
-  write ARGV "$@"
+  echo ARGV @ARGV
+  # do we care about this?  I think we want to syntactically remove it from YSH
+  # but it can still be used for legacy
+  echo dollar-at "$@"
 }
 builtin set -- a b c
 foo x y z
 ## STDOUT:
-ARGV
-x
-y
-z
+ARGV x y z
+dollar-at a b c
 ## END
 
-#### Closed proc doesn't have "$@"
-shopt -s oil:all
+#### Closed proc has empty "$@" or ARGV
+shopt -s ysh:all
+
 proc foo(d, e, f) { 
   write params $d $e $f
-  write ARGV "$@"
+  argv.py dollar-at "$@"
+  argv.py ARGV @ARGV
 }
 builtin set -- a b c
 foo x y z
@@ -56,9 +60,9 @@ params
 x
 y
 z
-ARGV
+['dollar-at', 'a', 'b', 'c']
+['ARGV']
 ## END
-
 
 #### Proc with default args
 shopt --set parse_proc
@@ -74,7 +78,7 @@ x=foo
 #### Proc with word params
 shopt --set parse_proc
 
-# doesn't require oil:all
+# doesn't require ysh:all
 proc f(x, y, z) {
   echo $x $y $z
   var ret = 42
@@ -96,7 +100,7 @@ status=42
 # func(**opt)  # Assumes keyword args match?
 # parse :grep_opts :opt @ARGV
 
-shopt -s oil:all
+shopt -s ysh:all
 
 proc f(...names) {
   write names: @names
@@ -130,10 +134,10 @@ shopt --set ysh:upgrade
 
 # TODO: duplicate param names aren't allowed
 proc p (a; mylist, mydict; opt Int = 42) {
-  json write --pretty=F (a)
-  json write --pretty=F (mylist)
-  json write --pretty=F (mydict)
-  #json write --pretty=F (opt)
+  pp line (a)
+  pp line (mylist)
+  pp line (mydict)
+  #pp line (opt)
 }
 
 p WORD ([1,2,3], {name: 'bob'})
@@ -143,20 +147,20 @@ echo ---
 p x (:| a b |, {bob: 42}, a = 5)
 
 ## STDOUT:
-"WORD"
-[1,2,3]
-{"name":"bob"}
+(Str)   "WORD"
+(List)   [1,2,3]
+(Dict)   {"name":"bob"}
 ---
-"x"
-["a","b"]
-{"bob":42}
+(Str)   "x"
+(List)   ["a","b"]
+(Dict)   {"bob":42}
 ## END
 
 #### Proc name-with-hyphen
-shopt --set parse_proc
+shopt --set parse_proc parse_at
 
 proc name-with-hyphen {
-  echo "$@"
+  echo @ARGV
 }
 name-with-hyphen x y z
 ## STDOUT:
@@ -269,7 +273,7 @@ g
 
 #### Procs defined inside compound statements (with redefine_proc)
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 shopt --set redefine_proc_func
 
 for x in 1 2 {
@@ -291,3 +295,159 @@ loop
 brace
 ## END
 
+#### Block can be passed literally, or as expression in third arg group
+shopt --set ysh:upgrade
+
+proc p ( ; ; ; block) {
+  eval (block)
+}
+
+p { echo literal }
+
+var block = ^(echo expression)
+p (; ; block)
+
+## STDOUT:
+literal
+expression
+## END
+
+#### Pass through all 4 kinds of args
+
+shopt --set ysh:upgrade
+
+proc p2 (...words; ...typed; ...named; block) {
+  pp line (words)
+  pp line (typed)
+  pp line (named)
+  #pp line (block)
+  # To avoid <Block 0x??> - could change pp line
+  echo $[type(block)]
+}
+
+proc p1 (...words; ...typed; ...named; block) {
+  p2 @words (...typed; ...named; block)
+}
+
+p2 a b ('c', 'd', n=99) {
+  echo literal
+}
+echo
+
+# Same thing
+var block = ^(echo expression)
+
+# Note: you need the second explicit ;
+
+p2 a b ('c', 'd'; n=99; block)
+echo
+
+# what happens when you do this?
+p2 a b ('c', 'd'; n=99; block) {
+  echo duplicate
+}
+
+## status: 1
+## STDOUT:
+(List)   ["a","b"]
+(List)   ["c","d"]
+(Dict)   {"n":99}
+Block
+
+(List)   ["a","b"]
+(List)   ["c","d"]
+(Dict)   {"n":99}
+Command
+
+## END
+
+#### Global and local ARGV, like "$@"
+shopt -s parse_at
+argv.py "$@"
+argv.py @ARGV
+#argv.py "${ARGV[@]}"  # not useful, but it works!
+
+set -- 'a b' c
+argv.py "$@"
+argv.py @ARGV  # separate from the argv stack
+
+f() {
+  argv.py "$@"
+  argv.py @ARGV  # separate from the argv stack
+}
+f 1 '2 3'
+## STDOUT:
+[]
+[]
+['a b', 'c']
+[]
+['1', '2 3']
+[]
+## END
+
+
+#### Mutating global ARGV
+
+$SH -c '
+shopt -s ysh:upgrade
+
+argv.py global @ARGV
+
+# should not be ignored
+call ARGV->append("GG")
+
+argv.py global @ARGV
+'
+## STDOUT:
+['global']
+['global', 'GG']
+## END
+
+#### Mutating local ARGV
+
+$SH -c '
+shopt -s ysh:upgrade
+
+argv.py global @ARGV
+
+proc p {
+  argv.py @ARGV
+  call ARGV->append("LL")
+  argv.py @ARGV
+}
+
+p local @ARGV
+
+argv.py global @ARGV
+
+' dummy0 'a b' c
+
+## STDOUT:
+['global', 'a b', 'c']
+['local', 'a b', 'c']
+['local', 'a b', 'c', 'LL']
+['global', 'a b', 'c']
+## END
+
+
+#### typed proc allows all kinds of args
+shopt -s ysh:upgrade
+
+typed proc p (w; t; n; block) {
+  pp line (w)
+  pp line (t)
+  pp line (n)
+  echo $[type(block)]
+}
+
+p word (42, n=99) {
+  echo block
+}
+
+
+## STDOUT:
+(Str)   "word"
+(Int)   42
+(Int)   99
+Block
+## END

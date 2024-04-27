@@ -543,13 +543,17 @@ class LexerDecoder(object):
     string
     """
 
-    def __init__(self, s, is_j8):
-        # type: (str, bool) -> None
+    def __init__(self, s, is_j8, lang_str):
+        # type: (str, bool, str) -> None
         self.s = s
         self.is_j8 = is_j8
-        self.lang_str = "NIL8"
+        self.lang_str = lang_str
 
         self.pos = 0
+
+        # current line being lexed -- for error messages
+        self.cur_line_num = 1
+
         # Reuse this instance to save GC objects.  JSON objects could have
         # thousands of strings.
         self.decoded = mylib.BufWriter()
@@ -558,7 +562,7 @@ class LexerDecoder(object):
         # type: (str, int) -> error.Decode
 
         # Use the current position as start pos
-        return error.Decode(msg, self.s, self.pos, end_pos)
+        return error.Decode(msg, self.s, self.pos, end_pos, self.cur_line_num)
 
     def Next(self):
         # type: () -> Tuple[Id_t, int, Optional[str]]
@@ -576,10 +580,40 @@ class LexerDecoder(object):
                     "Comments aren't part of JSON; you may want 'json8 read'",
                     end_pos)
 
-        # Non-string tokens like { } null etc.
         if tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
                       Id.Left_USingleQuote):
             return self._DecodeString(tok_id, end_pos)
+
+        if tok_id == Id.Ignored_Newline:
+            #log('LINE %d', self.cur_line_num)
+            self.cur_line_num += 1
+
+        self.pos = end_pos
+        return tok_id, end_pos, None
+
+    def NextForLines(self):
+        # type: () -> Tuple[Id_t, int, Optional[str]]
+        """ Like Next(), but for J8 Lines """
+
+        tok_id, end_pos = match.MatchJ8LinesToken(self.s, self.pos)
+
+        if tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
+                      Id.Left_USingleQuote):
+            return self._DecodeString(tok_id, end_pos)
+
+        # Check that UNQUOTED lines are valid UTF-8.  (_DecodeString() does
+        # this for quoted strings.)
+        if (tok_id == Id.Lit_Chars and
+                not pyj8.PartIsUtf8(self.s, self.pos, end_pos)):
+            raise self._Error(
+                'Invalid UTF-8 in %s string literal' % self.lang_str, end_pos)
+        if tok_id == Id.Char_AsciiControl:
+            raise self._Error(
+                "J8 Lines can't have unescaped ASCII control chars", end_pos)
+
+        if tok_id == Id.J8_Newline:
+            #log('LINE %d', self.cur_line_num)
+            self.cur_line_num += 1
 
         self.pos = end_pos
         return tok_id, end_pos, None
@@ -594,19 +628,20 @@ class LexerDecoder(object):
             else:
                 tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
 
+            #log('String tok %s', Id_str(tok_id))
+
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?
                 raise self._Error(
                     'Unexpected EOF while lexing %s string' % self.lang_str,
                     str_end)
-            if tok_id == Id.Unknown_Tok:
-                # e.g. invalid backslash
+            if tok_id == Id.Unknown_Backslash:
                 raise self._Error(
-                    'Unknown token while lexing %s string' % self.lang_str,
+                    'Bad backslash escape in %s string' % self.lang_str,
                     str_end)
             if tok_id == Id.Char_AsciiControl:
                 raise self._Error(
-                    "ASCII control chars are illegal in %s strings" %
+                    "%s strings can't have unescaped ASCII control chars" %
                     self.lang_str, str_end)
 
             if tok_id in (Id.Right_SingleQuote, Id.Right_DoubleQuote):
@@ -626,12 +661,9 @@ class LexerDecoder(object):
             if tok_id == Id.Lit_Chars:  # JSON and J8
                 part = self.s[str_pos:str_end]
                 if not pyj8.PartIsUtf8(self.s, str_pos, str_end):
-                    # Syntax error because JSON must be valid UTF-8
-                    # Limit context to 20 chars arbitrarily
-                    snippet = self.s[str_pos:str_pos + 20]
                     raise self._Error(
-                        'Invalid UTF-8 in %s string literal: %r' %
-                        (self.lang_str, snippet), str_end)
+                        'Invalid UTF-8 in %s string literal' % self.lang_str,
+                        str_end)
 
             # TODO: would be nice to avoid allocation in all these cases.
             # But LookupCharC() would have to change.
@@ -698,11 +730,11 @@ class _Parser(object):
         self.is_j8 = is_j8
         self.lang_str = "J8" if is_j8 else "JSON"
 
-        self.lexer = LexerDecoder(s, is_j8)
+        self.lexer = LexerDecoder(s, is_j8, self.lang_str)
         self.tok_id = Id.Undefined_Tok
         self.start_pos = 0
         self.end_pos = 0
-        self.decoded = ''
+        self.decoded = ''  # decoded J8 string
 
     def _Next(self):
         # type: () -> None
@@ -711,7 +743,8 @@ class _Parser(object):
         while True:
             self.start_pos = self.end_pos
             self.tok_id, self.end_pos, self.decoded = self.lexer.Next()
-            if self.tok_id not in (Id.Ignored_Space, Id.Ignored_Comment):
+            if self.tok_id not in (Id.Ignored_Space, Id.Ignored_Newline,
+                                   Id.Ignored_Comment):
                 break
             # TODO: add Ignored_Newline to count lines, and show line numbers
             # in errors messages.  The position of the last newline and a token
@@ -722,17 +755,23 @@ class _Parser(object):
     def _Eat(self, tok_id):
         # type: (Id_t) -> None
 
-        # TODO: Need location info
         if self.tok_id != tok_id:
             #log('position %r %d-%d %r', self.s, self.start_pos,
             #    self.end_pos, self.s[self.start_pos:self.end_pos])
-            raise self._Error("Expected %s, got %s" %
-                              (Id_str(tok_id), Id_str(self.tok_id)))
+            raise self._ParseError("Expected %s, got %s" %
+                                   (Id_str(tok_id), Id_str(self.tok_id)))
         self._Next()
 
-    def _Error(self, msg):
+    def _NextForLines(self):
+        # type: () -> None
+        """Like _Next, but use the J8 Lines lexer."""
+        self.start_pos = self.end_pos
+        self.tok_id, self.end_pos, self.decoded = self.lexer.NextForLines()
+
+    def _ParseError(self, msg):
         # type: (str) -> error.Decode
-        return error.Decode(msg, self.s, self.start_pos, self.end_pos)
+        return error.Decode(msg, self.s, self.start_pos, self.end_pos,
+                            self.lexer.cur_line_num)
 
 
 class Parser(_Parser):
@@ -850,12 +889,12 @@ class Parser(_Parser):
             return str_val
 
         elif self.tok_id == Id.Eol_Tok:
-            raise self._Error('Unexpected EOF while parsing %s' %
-                              self.lang_str)
+            raise self._ParseError('Unexpected EOF while parsing %s' %
+                                   self.lang_str)
 
         else:  # Id.Unknown_Tok, Id.J8_{LParen,RParen}
-            raise self._Error('Invalid token while parsing %s: %s' %
-                              (self.lang_str, Id_str(self.tok_id)))
+            raise self._ParseError('Invalid token while parsing %s: %s' %
+                                   (self.lang_str, Id_str(self.tok_id)))
 
     def ParseValue(self):
         # type: () -> value_t
@@ -863,7 +902,7 @@ class Parser(_Parser):
         self._Next()
         obj = self._ParseValue()
         if self.tok_id != Id.Eol_Tok:
-            raise self._Error('Unexpected trailing input')
+            raise self._ParseError('Unexpected trailing input')
         return obj
 
 
@@ -891,7 +930,8 @@ class Nil8Parser(_Parser):
             end_pos = self.end_pos  # look ahead from last token
             while True:
                 tok_id, end_pos = match.MatchJ8Token(self.s, end_pos)
-                if tok_id not in (Id.Ignored_Space, Id.Ignored_Comment):
+                if tok_id not in (Id.Ignored_Space, Id.Ignored_Newline,
+                                  Id.Ignored_Comment):
                     break
             return tok_id
 
@@ -1010,12 +1050,12 @@ class Nil8Parser(_Parser):
             obj = nvalue.Symbol(part)
 
         elif self.tok_id == Id.Eol_Tok:
-            raise self._Error('Unexpected EOF while parsing %s' %
-                              self.lang_str)
+            raise self._ParseError('Unexpected EOF while parsing %s' %
+                                   self.lang_str)
 
         else:  # Id.Unknown_Tok, Id.J8_{LParen,RParen}
-            raise self._Error('Invalid token while parsing %s: %s' %
-                              (self.lang_str, Id_str(self.tok_id)))
+            raise self._ParseError('Invalid token while parsing %s: %s' %
+                                   (self.lang_str, Id_str(self.tok_id)))
 
         #log('YO %s', Id_str(self.tok_id))
         if self.tok_id in (Id.J8_Operator, Id.J8_Colon, Id.J8_Comma):
@@ -1046,8 +1086,145 @@ class Nil8Parser(_Parser):
         obj = self._ParseNil8()
         #print("==> %d %s" % (id(obj), obj))
         if self.tok_id != Id.Eol_Tok:
-            raise self._Error('Unexpected trailing input')
+            raise self._ParseError('Unexpected trailing input')
         return obj
+
+
+class J8LinesParser(_Parser):
+    """Decode lines from a string with newlines.
+
+    We specify this with a grammar, to preserve location info and to reduce
+    allocations.  (But note that unquoted_line is more like a LOOP than it is
+    grammatical.)
+
+    Grammar:
+
+        end           = J8_Newline | Eol_Tok
+
+        empty_line    = WS_Space? end
+
+        # special case: read until end token, but REMOVE trailing WS_Space
+        unquoted_line = WS_Space? Lit_Chars ANY* WS_Space? end
+
+        j8_line       = WS_Space? J8_String WS_Space? end
+
+        lines         = (empty_line | unquoted_line | j8_line)*
+
+    where Lit_Chars is valid UTF-8
+
+    Notes:
+
+    (1) We disallow multiple strings on a line, like:
+
+        "json" "json2"
+        "json" unquoted
+
+    (2) Internal quotes are allowed on unquoted lines.  Consider this line:
+
+        foo "" u''
+
+    The "" and u'' are not a decoded string, because the line started with
+    Id.Lit_Chars literals.
+
+    (3) This is related to TSV8?  Similar rules.  Does TSV8 have empty cells?
+        Does it have - for empty cell?
+    """
+
+    def __init__(self, s):
+        # type: (str) -> None
+        _Parser.__init__(self, s, True)
+
+    def _Show(self, s):
+        # type: (str) -> None
+        log('%s tok_id %s %d-%d', s, Id_str(self.tok_id), self.start_pos,
+            self.end_pos)
+
+    def _ParseLine(self, out):
+        # type: (List[str]) -> None
+        """ May append a line to 'out' """
+        #self._Show('1')
+        if self.tok_id == Id.WS_Space:
+            self._NextForLines()
+
+        # Empty line - return without doing anything
+        if self.tok_id in (Id.J8_Newline, Id.Eol_Tok):
+            self._NextForLines()
+            return
+
+        # Quoted string on line
+        if self.tok_id == Id.J8_String:
+            out.append(self.decoded)
+            self._NextForLines()
+
+            if self.tok_id == Id.WS_Space:  # trailing whitespace
+                self._NextForLines()
+
+            if self.tok_id not in (Id.J8_Newline, Id.Eol_Tok):
+                raise self._ParseError('Unexpected text after J8 Line (%s)' %
+                                       Id_str(self.tok_id))
+
+            self._NextForLines()
+            return
+
+        # Unquoted line
+        if self.tok_id == Id.Lit_Chars:
+            # '  unquoted "" text on line  '   # read every token until end
+            string_start = self.start_pos
+            while True:
+                # for stripping whitespace
+                prev_id = self.tok_id
+                prev_start = self.start_pos
+
+                self._NextForLines()
+
+                # It would be nicer if "middle" Id.WS_Space tokens didn't have
+                # \r, but we're sticking with the JSON spec definition of
+                # whitespace.  (As another data point, CPython on Unix allows
+                # \r in the middle of expressions, treating it as whitespace.)
+                if self.tok_id in (Id.J8_Newline, Id.Eol_Tok):
+                    break
+
+            if prev_id == Id.WS_Space:
+                string_end = prev_start  # remove trailing whitespace
+            else:
+                string_end = self.start_pos
+
+            out.append(self.s[string_start:string_end])
+
+            self._NextForLines()  # past newline
+            return
+
+        raise AssertionError(Id_str(self.tok_id))
+
+    def Parse(self):
+        # type: () -> List[str]
+        """ Raises error.Decode. """
+        self._NextForLines()
+
+        lines = []  # type: List[str]
+        while self.tok_id != Id.Eol_Tok:
+            self._ParseLine(lines)
+
+        if self.tok_id != Id.Eol_Tok:
+            raise self._ParseError('Unexpected trailing input in J8 Lines')
+
+        return lines
+
+
+def SplitJ8Lines(s):
+    # type: (str) -> List[str]
+    """Used by @(echo split command sub)
+
+    Raises:
+      error.Decode
+
+    3 Errors:
+    - J8 string syntax error inside quotes
+    - Extra input on line
+    - unquoted line isn't utf-8
+    """
+    p = J8LinesParser(s)
+    return p.Parse()
 
 
 # vim: sw=4

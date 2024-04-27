@@ -77,7 +77,7 @@ class ProcessTest(unittest.TestCase):
 
     def _ExtProc(self, argv):
         arg_vec = cmd_value.Argv(argv, [loc.Missing] * len(argv), None, None,
-                                 None)
+                                 None, None)
         argv0_path = None
         for path_entry in ['/bin', '/usr/bin']:
             full_path = os.path.join(path_entry, argv[0])

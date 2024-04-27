@@ -325,7 +325,7 @@ class ParseContext(object):
 
         return ast_node, last_token
 
-    def ParseYshArgList(self, lx, out, start_symbol):
+    def ParseProcCallArgs(self, lx, out, start_symbol):
         # type: (Lexer, ArgList, int) -> None
         """ json write (x, foo=1) and assert [42 === x] """
 
@@ -336,7 +336,7 @@ class ParseContext(object):
             if 0:
                 self.p_printer.Print(pnode)
 
-            self.tr.ToArgList(pnode, out)
+            self.tr.ProcCallArgs(pnode, out)
             out.right = last_token
 
     def ParseYshExpr(self, lx, start_symbol):

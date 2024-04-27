@@ -196,6 +196,31 @@ fastlex_MatchJ8Token(PyObject *self, PyObject *args) {
 }
 
 static PyObject *
+fastlex_MatchJ8LinesToken(PyObject *self, PyObject *args) {
+  unsigned char* line;
+  int line_len;
+
+  int start_pos;
+  if (!PyArg_ParseTuple(args, "s#i", &line, &line_len, &start_pos)) {
+    return NULL;
+  }
+
+  // Bounds checking.
+  if (start_pos > line_len) {
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid MatchJ8LinesToken call (start_pos = %d, line_len = %d)",
+                 start_pos, line_len);
+    return NULL;
+  }
+
+  int id;
+  int end_pos;
+  MatchJ8LinesToken(line, line_len, start_pos, &id, &end_pos);
+  return Py_BuildValue("(ii)", id, end_pos);
+}
+
+
+static PyObject *
 fastlex_MatchJ8StrToken(PyObject *self, PyObject *args) {
   unsigned char* line;
   int line_len;
@@ -304,6 +329,8 @@ static PyMethodDef methods[] = {
   {"MatchBraceRangeToken", fastlex_MatchBraceRangeToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchJ8Token", fastlex_MatchJ8Token, METH_VARARGS,
+   "(line, start_pos) -> (id, end_pos)."},
+  {"MatchJ8LinesToken", fastlex_MatchJ8LinesToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},
   {"MatchJ8StrToken", fastlex_MatchJ8StrToken, METH_VARARGS,
    "(line, start_pos) -> (id, end_pos)."},

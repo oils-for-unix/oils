@@ -1,5 +1,5 @@
 #### cd with block
-shopt -s oil:all
+shopt -s ysh:all
 
 const saved = "$PWD"
 
@@ -79,7 +79,7 @@ one
 ## END
 
 #### cd with block exits with status 0
-shopt -s oil:all
+shopt -s ysh:all
 cd / {
   echo block
 
@@ -94,7 +94,7 @@ status=0
 ## END
 
 #### block doesn't have its own scope
-shopt -s oil:all
+shopt -s ysh:all
 var x = 1
 echo "x=$x"
 cd / {
@@ -107,6 +107,33 @@ echo "x=$x"
 x=1
 x=42
 x=42
+## END
+
+#### redirects allowed in words, typed args, and after block
+shopt -s ysh:upgrade
+
+rm -f out
+touch out
+
+cd /tmp >>out {
+  echo 1 $PWD
+}
+
+cd /tmp >>out (; ; ^(echo 2 $PWD))
+
+cd /tmp (; ; ^(echo 3 $PWD)) >>out
+
+cd /tmp {
+  echo 4 $PWD
+} >> out
+
+cat out
+
+## STDOUT:
+1 /tmp
+2 /tmp
+3 /tmp
+4 /tmp
 ## END
 
 #### block literal in expression mode: ^(echo $PWD)
@@ -129,10 +156,10 @@ two
 shopt -s oil:all
 
 # literal
-cd /tmp (^(echo $PWD))
+cd /tmp (; ; ^(echo $PWD))
 
 const myblock = ^(echo $PWD)
-cd /tmp (myblock)
+cd /tmp (; ; myblock)
 
 ## STDOUT:
 /tmp

@@ -482,7 +482,8 @@ The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible
 Write JSON:
 
     var d = {name: 'bob', age: 42}
-    json write (d)
+    json write (d)           # default indentation of 2
+    json write (d, space=0)  # no indentation
 
 Read JSON:
 
@@ -1045,7 +1046,7 @@ Examples:
 
     help               # this help
     help echo          # help on the 'echo' builtin
-    help com-sub       # help on command sub $(date)
+    help command-sub   # help on command sub $(date)
 
     help oils-usage    # identical to oils-for-unix --help
     help osh-usage     #              osh --help

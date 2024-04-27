@@ -292,7 +292,6 @@ proc show-tokens (s) {
     }
     # TODO: add groups()
     #var groups = [m => group(1), m => group(2), m => group(3)]
-    #json write --pretty=F (groups)
     echo "$[m => group(1)]/$[m => group(2)]/$[m => group(3)]/"
 
     echo

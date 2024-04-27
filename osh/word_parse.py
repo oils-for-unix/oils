@@ -480,6 +480,17 @@ class WordParser(WordEmitter):
         # Now look for ops
         return part
 
+    def _ReadZshVarSub(self, left_token):
+        # type: (Token) -> word_part.ZshVarSub
+
+        self._SetNext(lex_mode_e.VSub_Zsh)  # Move past ${(foo)
+
+        # Can be empty
+        w = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh, Id.Right_DollarBrace,
+                                    True)
+        self._GetToken()
+        return word_part.ZshVarSub(left_token, w, self.cur_token)
+
     def ReadBracedVarSub(self, left_token):
         # type: (Token) -> Tuple[BracedVarSub, Token]
         """   For YSH expressions like var x = ${x:-"default"}.  """
@@ -875,6 +886,9 @@ class WordParser(WordEmitter):
 
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.ShCommand)
+
+        if self.token_type == Id.Left_DollarBraceZsh:
+            return self._ReadZshVarSub(self.cur_token)
 
         raise AssertionError(self.cur_token)
 
@@ -1650,7 +1664,7 @@ class WordParser(WordEmitter):
 
         arg_list = ArgList.CreateNull(alloc_lists=True)
         arg_list.left = self.cur_token
-        self.parse_ctx.ParseYshArgList(self.lexer, arg_list, start_symbol)
+        self.parse_ctx.ParseProcCallArgs(self.lexer, arg_list, start_symbol)
         return arg_list
 
     def _MaybeReadWordPart(self, is_first, lex_mode, parts):
@@ -1938,7 +1952,7 @@ class WordParser(WordEmitter):
         """Helper function for ReadWord()."""
 
         # Change the pseudo lexer mode to a real lexer mode
-        if word_mode == lex_mode_e.ShCommandBrack:
+        if word_mode == lex_mode_e.ShCommandFakeBrack:
             lex_mode = lex_mode_e.ShCommand
         else:
             lex_mode = word_mode
@@ -1988,7 +2002,7 @@ class WordParser(WordEmitter):
                                        Kind.ExtGlob,
                                        Kind.BashRegex), 'Unhandled token kind'
 
-            if (word_mode == lex_mode_e.ShCommandBrack and
+            if (word_mode == lex_mode_e.ShCommandFakeBrack and
                     self.parse_opts.parse_bracket() and
                     self.token_type == Id.Lit_LBracket):
                 # Change [ from Kind.Lit -> Kind.Op
@@ -2122,7 +2136,8 @@ class WordParser(WordEmitter):
 
         This is a stateful wrapper for the stateless _ReadWord function.
         """
-        assert word_mode in (lex_mode_e.ShCommand, lex_mode_e.ShCommandBrack,
+        assert word_mode in (lex_mode_e.ShCommand,
+                             lex_mode_e.ShCommandFakeBrack,
                              lex_mode_e.DBracket, lex_mode_e.BashRegex)
 
         if self.buffered_word:  # For integration with pgen2

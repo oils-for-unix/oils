@@ -64,15 +64,7 @@ def _EvalWordPart(part):
     """
     UP_part = part
     with tagswitch(part) as case:
-        if case(word_part_e.ShArrayLiteral):
-            # Array literals aren't good for any of our use cases.  TODO: Rename
-            # EvalWordToString?
-            return False, '', False
-
-        elif case(word_part_e.BashAssocLiteral):
-            return False, '', False
-
-        elif case(word_part_e.Literal):
+        if case(word_part_e.Literal):
             tok = cast(Token, UP_part)
             # Weird performance issue: if we change this to lexer.LazyStr(),
             # the parser slows down, e.g. on configure-coreutils from 805 B
@@ -105,10 +97,12 @@ def _EvalWordPart(part):
 
             return True, ''.join(strs), True  # At least one part was quoted!
 
-        elif case(word_part_e.CommandSub, word_part_e.SimpleVarSub,
-                  word_part_e.BracedVarSub, word_part_e.TildeSub,
-                  word_part_e.ArithSub, word_part_e.ExtGlob,
-                  word_part_e.Splice, word_part_e.ExprSub):
+        elif case(word_part_e.ShArrayLiteral, word_part_e.BashAssocLiteral,
+                  word_part_e.ZshVarSub, word_part_e.CommandSub,
+                  word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
+                  word_part_e.TildeSub, word_part_e.ArithSub,
+                  word_part_e.ExtGlob, word_part_e.Splice,
+                  word_part_e.ExprSub):
             return False, '', False
 
         else:
@@ -637,6 +631,7 @@ def AsOperatorToken(word):
 
 def ArithId(w):
     # type: (word_t) -> Id_t
+    """Used by shell arithmetic parsing."""
     if w.tag() == word_e.Operator:
         tok = cast(Token, w)
         return tok.id
@@ -684,6 +679,7 @@ def BoolId(w):
 
 def CommandId(w):
     # type: (word_t) -> Id_t
+    """Used by CommandParser."""
     UP_w = w
     with tagswitch(w) as case:
         if case(word_e.Operator):
@@ -693,25 +689,29 @@ def CommandId(w):
         elif case(word_e.Compound):
             w = cast(CompoundWord, UP_w)
 
-            # Has to be a single literal part
+            # Fine-grained categorization of SINGLE literal parts
             if len(w.parts) != 1:
-                return Id.Word_Compound
+                return Id.Word_Compound  # generic word
 
             token_type = LiteralId(w.parts[0])
             if token_type == Id.Undefined_Tok:
-                return Id.Word_Compound
+                return Id.Word_Compound  # Not Kind.Lit, generic word
 
-            elif token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals,
-                                Id.ControlFlow_Return):
-                # OSH and YSH recognize:  {  }
-                # YSH recognizes:         =  return
+            if token_type in (Id.Lit_LBrace, Id.Lit_RBrace, Id.Lit_Equals,
+                              Id.Lit_TDot):
+                # - { } are for YSH braces
+                # - = is for the = keyword
+                # - ... is to start multiline mode
+                #
+                # TODO: Should we use Op_{LBrace,RBrace} and Kind.Op when
+                # parse_brace?  Lit_Equals could be KW_Equals?
                 return token_type
 
             token_kind = consts.GetKind(token_type)
             if token_kind == Kind.KW:
-                return token_type
+                return token_type  # Id.KW_Var, etc.
 
-            return Id.Word_Compound
+            return Id.Word_Compound  # generic word
 
         else:
             raise AssertionError(w.tag())
@@ -719,14 +719,26 @@ def CommandId(w):
 
 def CommandKind(w):
     # type: (word_t) -> Kind_t
-    """The CommandKind is for coarse-grained decisions in the CommandParser."""
+    """The CommandKind is for coarse-grained decisions in the CommandParser.
+
+    NOTE: This is inconsistent with CommandId(), because we never return
+    Kind.KW or Kind.Lit.  But the CommandParser is easier to write this way.
+
+    For example, these are valid redirects to a Kind.Word, and the parser
+    checks:
+
+      echo hi > =
+      echo hi > {
+
+    Invalid:
+      echo hi > (
+      echo hi > ;
+    """
     if w.tag() == word_e.Operator:
         tok = cast(Token, w)
+        # CommandParser uses Kind.Redir, Kind.Op, Kind.Eof, etc.
         return consts.GetKind(tok.id)
 
-    # NOTE: This is a bit inconsistent with CommandId, because we never
-    # return Kind.KW (or Kind.Lit).  But the CommandParser is easier to write
-    # this way.
     return Kind.Word
 
 

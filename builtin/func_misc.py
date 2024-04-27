@@ -414,14 +414,21 @@ class ToJson8(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         val = rd.PosValue()
+        space = mops.BigTruncate(rd.NamedInt('space', 0))
         rd.Done()
+
+        # Convert from external JS-like API to internal API.
+        if space <= 0:
+            indent = -1
+        else:
+            indent = space
 
         buf = mylib.BufWriter()
         try:
             if self.is_j8:
-                j8.PrintMessage(val, buf, -1)
+                j8.PrintMessage(val, buf, indent)
             else:
-                j8.PrintJsonMessage(val, buf, -1)
+                j8.PrintJsonMessage(val, buf, indent)
         except error.Encode as e:
             # status code 4 is special, for encode/decode errors.
             raise error.Structured(4, e.Message(), rd.LeftParenToken())
@@ -457,3 +464,6 @@ class FromJson8(vm._Callable):
             raise error.Structured(4, e.Message(), rd.LeftParenToken(), props)
 
         return val
+
+
+# vim: sw=2

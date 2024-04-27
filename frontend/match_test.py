@@ -59,6 +59,21 @@ class MatchTest(unittest.TestCase):
             lex = match.SimpleLexer(match.MatchJ8Token, s)
             _PrintTokens(lex)
 
+    def testJ8LinesLexer(self):
+        cases = [
+            ' "hello"',
+            " u'hi",
+            " b'hi",
+            " 'hi",
+            ' multiple words ',
+        ]
+
+        for s in cases:
+            log('---')
+            log('J8 LINES CASE %r', s)
+            lex = match.SimpleLexer(match.MatchJ8LinesToken, s)
+            _PrintTokens(lex)
+
     def testJ8StrLexer(self):
         cases = [
             '"hi"',

@@ -223,7 +223,7 @@ class Shopt(vm._Builtin):
             self.mutable_opts.ShowShoptOptions(opt_names)
             return 0
 
-        cmd = typed_args.OptionalCommand(cmd_val)
+        cmd = typed_args.OptionalBlock(cmd_val)
         if cmd:
             opt_nums = []  # type: List[int]
             for opt_name in opt_names:

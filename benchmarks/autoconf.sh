@@ -186,7 +186,8 @@ measure-syscalls() {
 # Woah we start fewer processes!  But are not faster?
 
 grep-exec() {
-  egrep --no-filename -o 'execve\("[^"]+' "$@"
+  # --max-count 1 - only report one execve per process
+  egrep --no-filename --max-count 1 -o 'execve\("[^"]+' "$@"
 }
 
 # andy@hoover:~/git/oilshell/oil$ benchmarks/autoconf.sh report-syscalls

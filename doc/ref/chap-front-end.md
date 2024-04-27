@@ -180,6 +180,62 @@ A backslash `\` at the end of a line continues the line without executing it:
        /usr/lib \
        ~/src        # A single command split over three lines
 
+<h3 id="ascii-whitespace" class="osh-ysh-topic">ascii-whitespace</h3>
+
+In most places, Oils uses the same definition of ASCII whitespace as JSON.
+That is, any of these 4 bytes are considered whitespace:
+
+    [ \t\r\n]  # space, tab, carriage return, newline
+
+Sometimes newlines are significant, e.g. after shell commands.  Then the set of
+whitespace characters is:
+
+    [ \t\r]
+
+(We don't handle the Windows `\r\n` sequence in a special way.  Instead, `\r`
+is often treated like space and tab.)
+
+Examples:
+
+- Inside shell arithmetic `$(( 1 + 2 ))`, ASCII whitespace is ignored.
+- Inside YSH expressions `42 + a[i] * f(x)`, ASCII whitespace is ignored.
+
+Exceptions:
+
+- Carriage return `\r` may not always be whitespace.
+  - It can appear in an unquoted shell words, a rule that all POSIX shells
+    follow.
+  - The default `$IFS` doesn't include `\r`.
+- YSH `trim()` functions also respect Unicode space.
+
+<h3 id="ascii-control-chars" class="osh-ysh-topic">ascii-control-chars</h3>
+
+The ASCII control chars have byte values `0x00` to `0x1F`.  This set includes 3
+whitespace chars:
+
+- tab - `\t` aka `0x09`
+- newline - `\n` aka `0x0a`
+- carriage return - `\r` aka `0x0d`
+
+(It doesn't include the space - `0x20`.)
+
+General rules:
+
+- In J8 **data** languages, control chars other than whitespace are illegal.
+  This is consistent with the JSON spec.
+- In **source code**, control chars are allowed (but discouraged).
+  - For example, we don't check for control chars in unquoted OSH words, or YSH
+    string literals.  They are treated like printable chars.
+
+Note about `NUL` aka `0x00`:
+
+- The NUL byte is often used to terminate buffers, i.e. as a sentinel for
+  [re2c](https://re2c.org) lexing.  This means that data after the NUL will be
+  ignored.
+   - J8 **data** input is read all at once, i.e. **not** split into lines.  So
+     everything after the first NUL may be ignored.
+   - Shell **source code** is split into lines.
+
 <h3 id="doc-comment" class="ysh-topic">doc-comment</h3>
 
 Doc comments look like this:

@@ -612,8 +612,7 @@ class CommandParser(object):
         self.c_kind = Kind.Undefined
         self.c_id = Id.Undefined_Tok
 
-        self.pending_here_docs = [
-        ]  # type: List[Redir]  # should have HereLiteral arg
+        self.pending_here_docs = []  # type: List[Redir]
 
     def ResetInputObjects(self):
         # type: () -> None
@@ -636,7 +635,7 @@ class CommandParser(object):
 
     def _SetNextBrack(self):
         # type: () -> None
-        self.next_lex_mode = lex_mode_e.ShCommandBrack
+        self.next_lex_mode = lex_mode_e.ShCommandFakeBrack
 
     def _GetWord(self):
         # type: () -> None
@@ -664,6 +663,7 @@ class CommandParser(object):
             self.cur_word = w
 
             self.c_kind = word_.CommandKind(self.cur_word)
+            # Has special case for Id.Lit_{LBrace,RBrace,Equals}
             self.c_id = word_.CommandId(self.cur_word)
             self.next_lex_mode = lex_mode_e.Undefined
 
@@ -812,15 +812,29 @@ class CommandParser(object):
 
         YSH grammar:
 
-        simple_command = 
-            cmd_prefix* word+ typed_args? BraceGroup? cmd_suffix*
+        redirect = redir_op WORD
+        item = WORD | redirect
 
         typed_args =
           '(' arglist ')'
         | '[' arglist ']'
 
-        Notably, redirects shouldn't appear after between typed args and
+        simple_command = 
+            cmd_prefix* item+ typed_args? BraceGroup? cmd_suffix*
+
+        Notably, redirects shouldn't appear after typed args, or after
         BraceGroup.
+
+        Examples:
+
+        This is an assignment:
+           foo=1 >out
+
+        This is a command.Simple
+           >out
+
+        What about
+          >out (42)
         """
         redirects = []  # type: List[Redir]
         words = []  # type: List[CompoundWord]
@@ -832,37 +846,18 @@ class CommandParser(object):
         i = 0
         while True:
             self._GetWord()
-            if self.c_kind == Kind.Redir:
+
+            # If we got { }, change it to something that's not Kind.Word
+            kind2 = self.c_kind
+            if (kind2 == Kind.Word and self.parse_opts.parse_brace() and
+                    self.c_id in (Id.Lit_LBrace, Id.Lit_RBrace)):
+                kind2 = Kind.Op
+
+            if kind2 == Kind.Redir:
                 node = self.ParseRedirect()
                 redirects.append(node)
 
-            elif self.c_kind == Kind.Word:
-                if self.parse_opts.parse_brace():
-                    # Treat { and } more like operators
-                    if self.c_id == Id.Lit_LBrace:
-                        if self.allow_block:  # Disabled for if/while condition, etc.
-
-                            # allow x = 42
-                            self.hay_attrs_stack.append(first_word_caps)
-                            brace_group = self.ParseBraceGroup()
-
-                            # So we can get the source code back later
-                            lines = self.arena.SaveLinesAndDiscard(
-                                brace_group.left, brace_group.right)
-                            block = LiteralBlock(brace_group, lines)
-
-                            self.hay_attrs_stack.pop()
-
-                        if 0:
-                            print('--')
-                            block.PrettyPrint()
-                            print('\n--')
-                        break
-                    elif self.c_id == Id.Lit_RBrace:
-                        # Another thing: { echo hi }
-                        # We're DONE!!!
-                        break
-
+            elif kind2 == Kind.Word:
                 w = cast(CompoundWord, self.cur_word)  # Kind.Word ensures this
 
                 if i == 0:
@@ -890,43 +885,80 @@ class CommandParser(object):
 
                 words.append(w)
 
-            elif self.c_id == Id.Op_LParen:
-                # 1. Check that there's a preceding space
-                prev_byte = self.lexer.ByteLookBack()
-                if prev_byte not in (SPACE_CH, TAB_CH):
-                    if self.parse_opts.parse_at():
-                        p_die('Space required before (',
-                              loc.Word(self.cur_word))
-                    else:
-                        # inline func call like @sorted(x) is invalid in OSH, but the
-                        # solution isn't a space
-                        p_die(
-                            'Unexpected left paren (might need a space before it)',
-                            loc.Word(self.cur_word))
-
-                # 2. Check that it's not ().  We disallow this because it's a no-op and
-                #    there could be confusion with shell func defs.
-                # For some reason we need to call lexer.LookPastSpace, not
-                # w_parser.LookPastSpace.  I think this is because we're at (, which is
-                # an operator token.  All the other cases are like 'x=', which is PART
-                # of a word, and we don't know if it will end.
-                next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
-                if next_id == Id.Op_RParen:
-                    p_die('Empty arg list not allowed',
-                          loc.Word(self.cur_word))
-
-                typed_args = self.w_parser.ParseProcCallArgs(
-                    grammar_nt.ysh_eager_arglist)
-
-            elif self.c_id == Id.Op_LBracket:  # only when parse_bracket set
-                typed_args = self.w_parser.ParseProcCallArgs(
-                    grammar_nt.ysh_lazy_arglist)
-
             else:
                 break
 
             self._SetNextBrack()  # Allow bracket for SECOND word on
             i += 1
+
+        # my-cmd (x) or my-cmd [x]
+        self._GetWord()
+        if self.c_id == Id.Op_LParen:
+            # 1. Check that there's a preceding space
+            prev_byte = self.lexer.ByteLookBack()
+            if prev_byte not in (SPACE_CH, TAB_CH):
+                if self.parse_opts.parse_at():
+                    p_die('Space required before (',
+                          loc.Word(self.cur_word))
+                else:
+                    # inline func call like @sorted(x) is invalid in OSH, but the
+                    # solution isn't a space
+                    p_die(
+                        'Unexpected left paren (might need a space before it)',
+                        loc.Word(self.cur_word))
+
+            # 2. Check that it's not ().  We disallow this because it's a no-op and
+            #    there could be confusion with shell func defs.
+            # For some reason we need to call lexer.LookPastSpace, not
+            # w_parser.LookPastSpace.  I think this is because we're at (, which is
+            # an operator token.  All the other cases are like 'x=', which is PART
+            # of a word, and we don't know if it will end.
+            next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
+            if next_id == Id.Op_RParen:
+                p_die('Empty arg list not allowed',
+                      loc.Word(self.cur_word))
+
+            typed_args = self.w_parser.ParseProcCallArgs(
+                grammar_nt.ysh_eager_arglist)
+
+            self._SetNext()
+
+        elif self.c_id == Id.Op_LBracket:  # only when parse_bracket set
+            typed_args = self.w_parser.ParseProcCallArgs(
+                grammar_nt.ysh_lazy_arglist)
+
+            self._SetNext()
+
+        self._GetWord()
+
+        # Allow redirects after typed args, e.g.
+        #    json write (x) > out.txt
+        if self.c_kind == Kind.Redir:
+            redirects.extend(self._ParseRedirectList())
+
+        # my-cmd { echo hi }   my-cmd (x) { echo hi }   ...
+        if (self.parse_opts.parse_brace() and self.c_id == Id.Lit_LBrace and
+                # Disabled for if/while condition, etc.
+                self.allow_block):
+
+            # allow x = 42
+            self.hay_attrs_stack.append(first_word_caps)
+            brace_group = self.ParseBraceGroup()
+
+            # So we can get the source code back later
+            lines = self.arena.SaveLinesAndDiscard(brace_group.left,
+                                                   brace_group.right)
+            block = LiteralBlock(brace_group, lines)
+
+            self.hay_attrs_stack.pop()
+
+        self._GetWord()
+
+        # Allow redirects after block, e.g.
+        #    cd /tmp { echo $PWD } > out.txt
+        if self.c_kind == Kind.Redir:
+            redirects.extend(self._ParseRedirectList())
+
         return redirects, words, typed_args, block
 
     def _MaybeExpandAliases(self, words):
@@ -1070,8 +1102,7 @@ class CommandParser(object):
 
     def ParseSimpleCommand(self):
         # type: () -> command_t
-        """Fixed transcription of the POSIX grammar (TODO: port to
-        grammar/Shell.g)
+        """Fixed transcription of the POSIX grammar
 
         io_file        : '<'       filename
                        | LESSAND   filename
@@ -1734,7 +1765,7 @@ class CommandParser(object):
         arms = []  # type: List[CaseArm]
         while True:
             self._GetWord()
-            if self.c_id == Id.KW_Esac:  # this is Kind.Word
+            if self.c_id == Id.KW_Esac:
                 break
             # case arm should begin with a pattern word or (
             if self.c_kind != Kind.Word and self.c_id != Id.Op_LParen:
@@ -1803,8 +1834,8 @@ class CommandParser(object):
 
     def _ParseYshIf(self, if_kw, cond):
         # type: (Token, condition_t) -> command.If
-        """if test -f foo {
-
+        """
+        if test -f foo {
                      # ^ we parsed up to here
           echo foo
         } elif test -f bar; test -f spam {
@@ -1888,8 +1919,8 @@ class CommandParser(object):
         if_node.if_kw = if_kw
         self._SetNext()  # past 'if'
 
-        if self.parse_opts.parse_paren() and self.w_parser.LookPastSpace(
-        ) == Id.Op_LParen:
+        if (self.parse_opts.parse_paren() and
+                self.w_parser.LookPastSpace() == Id.Op_LParen):
             # if (x + 1)
             enode = self.w_parser.ParseYshExprForCommand()
             cond = condition.YshExpr(enode)  # type: condition_t
@@ -2256,12 +2287,14 @@ class CommandParser(object):
 
                          # YSH extensions
                          | proc NAME ...
+                         | typed proc NAME ...
+                         | func NAME ...
                          | const ...
                          | var ...
                          | setglobal ...
                          | setref ...
                          | setvar ...
-                         | _ EXPR
+                         | call EXPR
                          | = EXPR
                          ;
 
@@ -2290,6 +2323,18 @@ class CommandParser(object):
                 # proc p (x) { echo hi } would actually be parsed as a
                 # command.Simple!  Shell compatibility: quote 'proc'
                 p_die("proc is a YSH keyword, but this is OSH.",
+                      loc.Word(self.cur_word))
+
+        if self.c_id == Id.KW_Typed:  # typed proc p () { ... }
+            self._SetNext()
+            self._GetWord()
+            if self.c_id != Id.KW_Proc:
+                p_die("Expected 'proc' after 'typed'", loc.Word(self.cur_word))
+
+            if self.parse_opts.parse_proc():
+                return self.ParseYshProc()
+            else:
+                p_die("typed is a YSH keyword, but this is OSH.",
                       loc.Word(self.cur_word))
 
         if self.c_id == Id.KW_Func:  # func f(x) { ... }
@@ -2372,8 +2417,8 @@ class CommandParser(object):
                             self.w_parser.LookPastSpace() == Id.Lit_Equals):
                         assert tok.id == Id.Lit_Chars, tok
 
-                        if len(self.hay_attrs_stack
-                               ) and self.hay_attrs_stack[-1]:
+                        if (len(self.hay_attrs_stack) and
+                                self.hay_attrs_stack[-1]):
                             # Note: no static var_checker.Check() for bare assignment
                             enode = self.w_parser.ParseBareDecl()
                             self._SetNext()  # Somehow this is necessary
@@ -2451,13 +2496,11 @@ class CommandParser(object):
     def ParseAndOr(self):
         # type: () -> command_t
         self._GetWord()
-        if self.c_id == Id.Word_Compound:
-            first_word_tok = word_.LiteralToken(self.cur_word)
-            if first_word_tok is not None and first_word_tok.id == Id.Lit_TDot:
-                # We got '...', so parse in multiline mode
-                self._SetNext()
-                with word_.ctx_Multiline(self.w_parser):
-                    return self._ParseAndOr()
+        if self.c_id == Id.Lit_TDot:
+            # We got '...', so parse in multiline mode
+            self._SetNext()
+            with word_.ctx_Multiline(self.w_parser):
+                return self._ParseAndOr()
 
         # Parse in normal mode, not multiline
         return self._ParseAndOr()
@@ -2725,3 +2768,6 @@ class CommandParser(object):
             node = self.pending_here_docs[0]  # Just show the first one?
             h = cast(redir_param.HereDoc, node.arg)
             p_die('Unterminated here doc began here', loc.Word(h.here_begin))
+
+
+# vim: sw=4

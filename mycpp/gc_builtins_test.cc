@@ -22,6 +22,20 @@ TEST print_test() {
   PASS();
 }
 
+TEST repr_test() {
+  print(repr(StrFromC("")));
+  print(repr(StrFromC("hi\n")));
+
+  // Hm we're not printing \y00 here, could do that I suppose.
+  // This function is used for error messages.
+  print(repr(StrFromC("\x02 foo bar \xff \xfe \t")));
+
+  // Uses double quotes
+  print(repr(StrFromC("this isn't cool")));
+
+  PASS();
+}
+
 TEST bool_test() {
   ASSERT_EQ(false, to_bool(kEmptyString));
   ASSERT_EQ(true, to_bool(StrFromC("a")));
@@ -145,14 +159,18 @@ TEST StringToInteger_test() {
   ASSERT(i == -123);
 
   // Leading space is OK!
-  ok = _StringToInt64(StrFromC(" -123"), &i, 10);
+  ok = _StringToInt64(StrFromC("\n\t -123"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
 
   // Trailing space is OK!
-  ok = _StringToInt64(StrFromC(" -123  "), &i, 10);
+  ok = _StringToInt64(StrFromC(" -123  \t\n"), &i, 10);
   ASSERT(ok);
   ASSERT(i == -123);
+
+  // \v is not space
+  ok = _StringToInt64(StrFromC(" -123  \v"), &i, 10);
+  ASSERT(!ok);
 
   // Empty string isn't an integer
   ok = _StringToInt64(StrFromC(""), &i, 10);
@@ -340,6 +358,7 @@ int main(int argc, char** argv) {
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(print_test);
+  RUN_TEST(repr_test);
 
   RUN_TEST(bool_test);
   RUN_TEST(int_test);

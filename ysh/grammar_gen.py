@@ -16,7 +16,7 @@ from mycpp.mylib import log
 from frontend import lexer
 from frontend import lexer_def
 from frontend import reader
-from pgen2 import parse, pgen
+from pgen2 import parse, pgen, token
 
 
 class OilTokenDef(object):
@@ -30,7 +30,7 @@ class OilTokenDef(object):
         """e.g. translate Expr_Name in the grammar to 178."""
         id_ = getattr(Id, label)
         #log('Id %s = %d', id_, id_)
-        assert id_ < 256, id_
+        assert id_ < token.NT_OFFSET, id_
         return id_
 
     def GetKeywordNum(self, s):
@@ -42,7 +42,7 @@ class OilTokenDef(object):
         id_ = self.keyword_ops.get(s)
         if id_ is None:
             return None
-        assert id_ < 256, id_
+        assert id_ < token.NT_OFFSET, id_
         return id_
 
     def GetOpNum(self, op_str):
@@ -55,7 +55,7 @@ class OilTokenDef(object):
         """
         # Fail if not there
         id_ = self.ops.get(op_str) or self.more_ops[op_str]
-        assert id_ < 256, id_
+        assert id_ < token.NT_OFFSET, id_
         return id_
 
 

@@ -26,16 +26,13 @@ json write (s)
 
 #### json write ARRAY
 json write (:|foo.cc foo.h|)
-json write --indent 0 (['foo.cc', 'foo.h'])
+json write (['foo.cc', 'foo.h'], space=0)
 ## STDOUT:
 [
   "foo.cc",
   "foo.h"
 ]
-[
-"foo.cc",
-"foo.h"
-]
+["foo.cc","foo.h"]
 ## END
 
 #### json write Dict
@@ -60,18 +57,19 @@ json write ([{k: 'v', k2: 'v2'}, {}])
 ]
 ## END
 
-#### json write compact format
+#### json write space=0, space=4
 shopt --set parse_proc
 
-# TODO: ORDER of keys should be PRESERVED
 var mydict = {name: "bob", age: 30}
 
-json write --pretty=0 (mydict)
-# ignored
-json write --pretty=F --indent 4 (mydict)
+json write (mydict, space=0)
+json write (mydict, space=4)
 ## STDOUT:
 {"name":"bob","age":30}
-{"name":"bob","age":30}
+{
+    "name": "bob",
+    "age": 30
+}
 ## END
 
 #### json write in command sub
@@ -205,7 +203,7 @@ obj bracket 1
 ## END
 
 #### json write expression
-json write --pretty=0 ([1,2,3])
+json write ([1,2,3], space=0)
 echo status=$?
 
 json write (5, 6)  # to many args
@@ -277,7 +275,7 @@ var mydict = {foo: "bar"}
 var top = {k: mylist, k2: mylist, k3: mydict, k4: mydict}
 
 # BUG!
-json write --pretty=F (top)
+json write (top, space=0)
 
 ## STDOUT:
 {"k":[1,2,3],"k2":[1,2,3],"k3":{"foo":"bar"},"k4":{"foo":"bar"}}
@@ -512,7 +510,7 @@ pp line (x)
 
 var obj = [42, 1.5, null, true, "hi", b'\yff\yfe\b\n""']
 
-json8 write --pretty=F (obj) > j
+json8 write (obj, space=0) > j
 
 cat j
 
@@ -600,28 +598,59 @@ for j in '"\ud83e"' '"\udd26"' {
 "\udd26"
 ## END
 
-#### toJson() toJson8() - TODO: test difference
+#### toJson() toJson8()
 
-var obj = [42, 1.5, null, true, "hi"]
+var obj = [42, 1.5, null, true, "hi", b'\yf0']
 
 echo $[toJson(obj)]
 echo $[toJson8(obj)]
 
+var obj2 = [3, 4]
+echo $[toJson(obj2, space=0)]  # same as the default
+echo $[toJson8(obj2, space=0)]
+
+echo $[toJson(obj2, space=2)]
+echo $[toJson8(obj2, space=2)]
+
+# fully specify this behavior
+echo $[toJson(obj2, space=-2)]
+echo $[toJson8(obj2, space=-2)]
+
 ## STDOUT:
-[42,1.5,null,true,"hi"]
-[42,1.5,null,true,"hi"]
+[42,1.5,null,true,"hi","�"]
+[42,1.5,null,true,"hi",b'\yf0']
+[3,4]
+[3,4]
+[
+  3,
+  4
+]
+[
+  3,
+  4
+]
+[3,4]
+[3,4]
 ## END
 
-#### fromJson() fromJson8() - TODO: test difference
+#### fromJson() fromJson8()
 
-var message ='[42,1.5,null,true,"hi"]'
+var m1 = '[42,1.5,null,true,"hi"]'
 
-pp line (fromJson(message))
-pp line (fromJson8(message))
+# JSON8 message
+var m2 = '[42,1.5,null,true,"hi",' ++ "u''" ++ ']'
 
+pp line (fromJson8(m1))
+pp line (fromJson(m1))
+
+pp line (fromJson8(m2))
+pp line (fromJson(m2))  # fails
+
+## status: 4
 ## STDOUT:
 (List)   [42,1.5,null,true,"hi"]
 (List)   [42,1.5,null,true,"hi"]
+(List)   [42,1.5,null,true,"hi",""]
 ## END
 
 #### User can handle errors - toJson() toJson8()

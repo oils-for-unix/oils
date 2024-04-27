@@ -47,9 +47,9 @@ class Grammar(object):
     The instance variables are as follows:
 
     symbol2number -- a dict mapping symbol names to numbers.  Symbol
-                     numbers are always 256 or higher, to distinguish
-                     them from token numbers, which are between 0 and
-                     255 (inclusive).
+                     numbers are always NT_OFFSET or higher, to distinguish
+                     them from token numbers, which are between 0 and 255
+                     (inclusive).
 
     number2symbol -- a dict mapping numbers to symbol names;
                      these two are each other's inverse.
@@ -75,7 +75,7 @@ class Grammar(object):
                      are used to mark state transitions (arcs) in the
                      DFAs.
 
-                     Oil patch: this became List[int] where int is the
+                     Oils patch: this became List[int] where int is the
                      token/symbol number.
 
     start         -- the number of the grammar's start symbol.
@@ -99,20 +99,20 @@ class Grammar(object):
 
         self.states = []  # type: states_t
         self.dfas = {}  # type: Dict[int, dfa_t]
-        # Oil patch: used to be [(0, "EMPTY")].  I suppose 0 is a special value?
+        # Oils patch: used to be [(0, "EMPTY")].  I suppose 0 is a special value?
         # Or is it ENDMARKER?
         self.labels = [0]  # type: List[int]
         self.keywords = {}  # type: Dict[str, int]
         self.tokens = {}  # type: Dict[int, int]
         self.symbol2label = {}  # type: Dict[str, int]
-        self.start = 256
+        self.start = 256  # TODO: move to pgen.NT_OFFSET, breaks OVM tarball
 
     if mylib.PYTHON:
       def dump(self, f):
           # type: (IO[str]) -> None
           """Dump the grammar tables to a marshal file.
 
-          Oil patch: changed pickle to marshal.
+          Oils patch: changed pickle to marshal.
 
           dump() recursively changes all dict to OrderedDict, so the pickled file
           is not exactly the same as what was passed in to dump(). load() uses the

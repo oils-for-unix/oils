@@ -10,6 +10,7 @@ import sys
 
 from _devbuild.gen import yaks_asdl
 from asdl import format as fmt
+from core import error
 from data_lang import j8
 from mycpp import mylib
 from yaks import transform
@@ -88,7 +89,28 @@ def main(argv):
         contents = ''.join(lines)
 
         p = j8.Nil8Parser(contents, True)
-        nval = p.ParseNil8()
+
+        try:
+            nval = p.ParseNil8()
+        except error.Decode as e:
+            # print e.SourceLine() ?
+
+            # Do we also want ~~~ ^ ~~~ type of hints?
+            # Or just ^ and ^~~~~ ?
+            #
+            # I think the default is the former
+            #
+            # Data could perhaps use ~~~^
+
+            # factor this out of core/ui.py
+            # print util.LocationAsciiArt(e.begin_col, e.end_col) ?
+
+            # ui._PrintCodeExcerpt()
+            # Could also be in error
+
+            if mylib.PYTHON:
+                print(e.Message(), file=sys.stderr)
+            return 1
 
         #print(obj)
 

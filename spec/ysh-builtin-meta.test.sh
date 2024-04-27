@@ -1,5 +1,96 @@
 ## oils_failures_allowed: 1
 
+#### runproc
+shopt --set parse_proc parse_at
+
+f() {
+  write -- f "$@"
+}
+proc p {
+  write -- p @ARGV
+}
+runproc f 1 2
+echo status=$?
+
+runproc p 3 4
+echo status=$?
+
+runproc invalid 5 6
+echo status=$?
+
+runproc
+echo status=$?
+
+## STDOUT:
+f
+1
+2
+status=0
+p
+3
+4
+status=0
+status=1
+status=2
+## END
+
+
+#### runproc typed args
+shopt --set parse_brace parse_proc
+
+proc p {
+  echo 'hi from p'
+}
+
+# The block is ignored for now
+runproc p { 
+  echo myblock 
+}
+echo
+
+proc ty (w; t; n; block) {
+  echo 'ty'
+  pp line (w)
+  pp line (t)
+  pp line (n)
+  echo $[type(block)]
+}
+
+ty a (42; n=99; ^(echo ty))
+echo
+
+runproc ty a (42; n=99; ^(echo ty))
+echo
+
+runproc ty a (42; n=99) {
+  echo 'ty gets literal'
+}
+
+# TODO: Command vs. Block vs. Literal Block should be unified
+
+## STDOUT:
+hi from p
+
+ty
+(Str)   "a"
+(Int)   42
+(Int)   99
+Command
+
+ty
+(Str)   "a"
+(Int)   42
+(Int)   99
+Command
+
+ty
+(Str)   "a"
+(Int)   42
+(Int)   99
+Block
+## END
+
+
 #### pp asdl
 
 shopt -s ysh:upgrade

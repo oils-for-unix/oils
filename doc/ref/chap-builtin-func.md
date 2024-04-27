@@ -319,10 +319,15 @@ Note, you will need to `source --builtin list.ysh` to use this function.
 
 Convert an object in memory to JSON text:
 
-    = toJson({name: "alice"})
-    (Str)   '{"name": "alice"}'
+    $ = toJson({name: "alice"})
+    (Str)   '{"name":"alice"}'
 
-Similar to `json write ({name: "alice"})`.
+Add indentation by passing the `space` param:
+
+    $ = toJson([42], space=2)
+    (Str)   "[\n  42\n]"
+
+Similar to `json write (x)`, except the default value of `space` is 0.
 
 See [json-encode-err](chap-errors.html#json-encode-err) for errors.
 

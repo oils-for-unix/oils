@@ -110,11 +110,11 @@ echo $[0 and 42]
 echo $[0.0 or 0.5]
 echo $[0.0 and 0.5]
 
-json write --pretty=false (["a"] or [])
-json write --pretty=false (["a"] and [])
+pp line (["a"] or [])
+pp line (["a"] and [])
 
-json write --pretty=false ({"d": 1} or {})
-json write --pretty=false ({"d": 1} and {})
+pp line ({"d": 1} or {})
+pp line ({"d": 1} and {})
 
 echo $[0 or 0.0 or false or [] or {} or "OR"]
 echo $[1 and 1.0 and true and [5] and {"d":1} and "AND"]
@@ -157,10 +157,10 @@ y
 0
 0.5
 0.0
-["a"]
-[]
-{"d":1}
-{}
+(List)   ["a"]
+(List)   []
+(Dict)   {"d":1}
+(Dict)   {}
 OR
 AND
 (BashArray)   ["1","2","3"]

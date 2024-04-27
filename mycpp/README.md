@@ -524,6 +524,36 @@ Neither of them needs any rooting!  This is because we use **manual collection
 points** in the interpreter, and these functions don't call any functions that
 can collect.  They are "leaves" in the call tree.
 
+## The mycpp Runtime 
+
+The mycpp translator targets a runtime that's written from scratch.  It
+implements garbage-collected data structures like:
+
+- Typed records
+  - Python classes
+  - ASDL product and sum types
+- `Str` (immutable, as in Python)
+- `List<T>`
+- `Dict<K, V>`
+- `Tuple2<A, B>`, `Tuple3<A, B, C>`, ...
+
+It also has functions based on CPython's:
+
+- `mycpp/gc_builtins.{h,cc}` corresponds roughly to Python's `__builtin__`
+  module, e.g. `int()` and `str()`
+- `mycpp/gc_mylib.{h,cc}` corresponds `mylib.py` 
+  - `mylib.BufWriter` is a bit like `cStringIO.StringIO`
+
+### Differences from CPython
+
+- Integers either C `int` or `mylib.BigInt`, not Python's arbitrary size
+  integers
+- `NUL` bytes are allowed in arguments to syscalls like `open()`, unlike in
+  CPython
+- `s.strip()` is defined in terms of ASCII whitespace, which does not include
+  say `\v`.
+  - This is done to be consistent with JSON and J8 Notation.
+
 ## C++ Notes
 
 ### Gotchas
@@ -551,10 +581,3 @@ In addition to classes, templates, exceptions, etc. mentioned above, we use:
 - `const`
 - Smart pointers
 
-## Notes on the Runtime (`mylib`)
-
-- A `Str` is immutable, and can be used as a key to a `Dict` (at the Python
-  level), and thus an `AssocArray` (at the Oil level).
-- A `BufWriter` is mutable.  It's an alias for `cStringIO.StringIO()`.  You
-  build it with repeated calls to`write()`, and then call `getvalue()` at the
-  end.

@@ -926,7 +926,11 @@ class ctx_FuncCall(object):
 
     def __init__(self, mem, func):
         # type: (Mem, value.Func) -> None
-        mem.PushCall(func.name, func.parsed.name, None)
+
+        frame = NewDict()  # type: Dict[str, Cell]
+        mem.var_stack.append(frame)
+
+        mem.PushCall(func.name, func.parsed.name)
         self.mem = mem
 
     def __enter__(self):
@@ -935,20 +939,49 @@ class ctx_FuncCall(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        self.mem.PopCall(False)
+        self.mem.PopCall()
+        self.mem.var_stack.pop()
 
 
 class ctx_ProcCall(object):
-    """For proc calls."""
+    """For proc calls, including shell functions."""
 
     def __init__(self, mem, mutable_opts, proc, argv):
         # type: (Mem, MutableOpts, value.Proc, List[str]) -> None
-        mem.PushCall(proc.name, proc.name_tok, argv)
-        mutable_opts.PushDynamicScope(proc.dynamic_scope)
+
+        # TODO:
+        # - argv stack shouldn't be used for procs
+        #   - we can bind a real variable @A if we want
+        # - procs should be in the var namespace
+        #
+        # should we separate procs and shell functions?
+        # - dynamic scope is one difference
+        # - '$@" shift etc. are another difference
+
+        frame = NewDict()  # type: Dict[str, Cell]
+
+        assert argv is not None
+        if proc.sh_compat:
+            # shell function
+            mem.argv_stack.append(_ArgFrame(argv))
+        else:
+            # procs
+            # - open: is equivalent to ...ARGV
+            # - closed: ARGV is empty list
+            frame['ARGV'] = _MakeArgvCell(argv)
+
+        mem.var_stack.append(frame)
+
+        mem.PushCall(proc.name, proc.name_tok)
+
+        # Dynamic scope is only for shell functions
+        mutable_opts.PushDynamicScope(proc.sh_compat)
+
         # It may have been disabled with ctx_ErrExit for 'if echo $(false)', but
         # 'if p' should be allowed.
         self.mem = mem
         self.mutable_opts = mutable_opts
+        self.sh_compat = proc.sh_compat
 
     def __enter__(self):
         # type: () -> None
@@ -957,7 +990,11 @@ class ctx_ProcCall(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mutable_opts.PopDynamicScope()
-        self.mem.PopCall(True)
+        self.mem.PopCall()
+        self.mem.var_stack.pop()
+
+        if self.sh_compat:
+            self.mem.argv_stack.pop()
 
 
 class ctx_Temp(object):
@@ -1041,10 +1078,14 @@ class ctx_ThisDir(object):
             self.mem.this_dir.pop()
 
 
+def _MakeArgvCell(argv):
+    # type: (List[str]) -> Cell
+    items = [value.Str(a) for a in argv]  # type: List[value_t]
+    return Cell(False, False, False, value.List(items))
+
+
 class Mem(object):
     """For storing variables.
-
-    Mem is better than "Env" -- Env implies OS stuff.
 
     Callers:
       User code: assigning and evaluating variables, in command context or
@@ -1066,8 +1107,13 @@ class Mem(object):
         self.unsafe_arith = None  # type: sh_expr_eval.UnsafeArith
 
         self.dollar0 = dollar0
+        # If you only use YSH procs and funcs, this will remain at length 1.
         self.argv_stack = [_ArgFrame(argv)]
+
         frame = NewDict()  # type: Dict[str, Cell]
+
+        frame['ARGV'] = _MakeArgvCell(argv)
+
         self.var_stack = [frame]
 
         # The debug_stack isn't strictly necessary for execution.  We use it
@@ -1284,8 +1330,8 @@ class Mem(object):
     # Call Stack
     #
 
-    def PushCall(self, func_name, def_tok, argv):
-        # type: (str, Token, Optional[List[str]]) -> None
+    def PushCall(self, func_name, def_tok):
+        # type: (str, Token) -> None
         """Push argv, var, and debug stack frames.
 
         Currently used for proc and func calls.  TODO: New func evaluator may
@@ -1295,27 +1341,18 @@ class Mem(object):
           def_tok: Token where proc or func was defined, used to compute
                    BASH_SOURCE.
         """
-        if argv is not None:
-            self.argv_stack.append(_ArgFrame(argv))
-        frame = NewDict()  # type: Dict[str, Cell]
-        self.var_stack.append(frame)
-
         # self.token_for_line can be None?
         self.debug_stack.append(
             debug_frame.Call(self.token_for_line, def_tok, func_name))
 
-    def PopCall(self, should_pop_argv_stack):
-        # type: (bool) -> None
+    def PopCall(self):
+        # type: () -> None
         """
         Args:
           should_pop_argv_stack: Pass False if PushCall was given None for argv
+          True for proc, False for func
         """
         self.debug_stack.pop()
-
-        self.var_stack.pop()
-
-        if should_pop_argv_stack:
-            self.argv_stack.pop()
 
     def ShouldRunDebugTrap(self):
         # type: () -> bool
@@ -1842,14 +1879,8 @@ class Mem(object):
         # if name not in COMPUTED_VARS: ...
 
         with str_switch(name) as case:
-            if case('ARGV'):
-                # TODO: ARGV can be a normal mutable variable in YSH
-                items = [value.Str(s)
-                         for s in self.GetArgv()]  # type: List[value_t]
-                return value.List(items)
-
             # "Registers"
-            elif case('_status'):
+            if case('_status'):
                 return num.ToBig(self.TryStatus())
 
             elif case('_error'):
@@ -1871,10 +1902,11 @@ class Mem(object):
                 return value.BashArray(strs2)
 
             elif case('_pipeline_status'):
-                items = [num.ToBig(i) for i in self.pipe_status[-1]]
+                items = [num.ToBig(i)
+                         for i in self.pipe_status[-1]]  # type: List[value_t]
                 return value.List(items)
 
-            elif case('_process_sub_status'):  # Oil naming convention
+            elif case('_process_sub_status'):  # YSH naming convention
                 items = [num.ToBig(i) for i in self.process_sub_status[-1]]
                 return value.List(items)
 
@@ -2365,3 +2397,6 @@ def GetInteger(mem, name):
         raise error.Runtime("$%s doesn't look like an integer, got %r" %
                             (name, s))
     return i
+
+
+# vim: sw=4

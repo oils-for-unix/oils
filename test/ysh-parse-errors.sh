@@ -10,9 +10,6 @@ set -o errexit
 source test/common.sh
 source test/sh-assert.sh  # _assert-sh-status
 
-OSH=${OSH:-bin/osh}
-YSH=${YSH:-bin/ysh}
-
 #
 # Cases
 #
@@ -66,9 +63,36 @@ test-func-var-checker() {
 test-arglist() {
   _ysh-parse-error 'json write ()'
 
-  _ysh-should-parse 'p (; n=42)'
-  _ysh-should-parse '= f(; n=42)'
+  # named args allowed in first group
+  _ysh-should-parse 'json write (42, indent=1)'
+  _ysh-should-parse 'json write (42; indent=2)'
 
+  _ysh-should-parse '= toJson(42, indent=1)'
+  _ysh-should-parse '= toJson(42; indent=2)'
+
+  # Named group only
+  _ysh-should-parse 'p (; n=true)'
+  _ysh-should-parse '= f(; n=true)'
+
+  # Empty named group
+  _ysh-should-parse 'p (;)'
+  _ysh-should-parse '= f(;)'
+
+  _ysh-should-parse 'p (42;)'
+  _ysh-should-parse '= f(42;)'
+
+  # No block group in func arg lists
+  _ysh-parse-error '= f(42; n=true; block)'
+  _ysh-parse-error '= f(42; ; block)'
+
+  # Block expressions in proc arg lists
+  _ysh-should-parse 'p (42; n=true; block)'
+  _ysh-should-parse 'p (42; ; block)'
+
+  _ysh-parse-error 'p (42; n=42; bad=3)'
+  _ysh-parse-error 'p (42; n=42; ...bad)'
+
+  # Positional args can't appear in the named section
   _ysh-parse-error '= f(; 42)'
   _ysh-parse-error '= f(; name)'
   _ysh-parse-error '= f(; x for x in y)'
@@ -147,6 +171,12 @@ test-proc-def() {
   _ysh-parse-error 'proc p(w; p) { var p = foo }'
   _ysh-parse-error 'proc p(w; p; n, n2) { var n2 = foo }'
   _ysh-parse-error 'proc p(w; p; n, n2; b) { var b = foo }'
+}
+
+test-typed-proc() {
+  _ysh-should-parse 'typed proc p(words) { echo hi }'
+  _ysh-parse-error 'typed zzz p(words) { echo hi }'
+  _ysh-parse-error 'typed p(words) { echo hi }'
 }
 
 test-func-sig() {
@@ -239,10 +269,9 @@ test-ysh-expr-more() {
 
   _ysh-parse-error 'echo @[split(x)]extra'
 
-  # Old syntax to remove
-  #_ysh-parse-error 'echo @split("a")'
+  # Old syntax that's now invalid
+  _ysh-parse-error 'echo @split("a")'
 }
-
 
 test-blocks() {
   _ysh-parse-error '>out { echo hi }'
@@ -486,10 +515,24 @@ test-float-literals() {
   _ysh-parse-error '= _42.0'
 }
 
-test-place-expr() {
-  _ysh-should-parse 'setvar x.y = 42'
+test-lhs-expr() {
+  _ysh-should-parse 'setvar x.y[z] = 42'
+  _ysh-should-parse 'setvar a[i][j] = 42'
+
+  _ysh-should-parse 'setvar a[i], d.key = 42, 43'
+  _ysh-parse-error 'setvar a[i], 3 = 42, 43'
+  _ysh-parse-error 'setvar a[i], {}["key"] = 42, 43'
+
   _ysh-parse-error 'setvar x+y = 42'
+
+  # method call
   _ysh-parse-error 'setvar x->y = 42'
+
+  # this is allowed
+  _ysh-should-parse 'setglobal a[{k:3}["k"]]  = 42'
+
+  _ysh-parse-error 'setglobal {}["k"] = 42'
+  _ysh-parse-error 'setglobal [1,2][0] = 42'
 }
 
 test-destructure() {
@@ -553,17 +596,6 @@ test-lazy-arg-list() {
 
   # legacy
   _ysh-should-parse '[ x = y ]'
-
-
-  return
-
-  # TODO: shouldn't allow extra words
-  _ysh-parse-error 'assert (42)extra'
-  _ysh-parse-error 'assert (42) extra'
-
-
-  _ysh-parse-error 'assert [42]extra'
-  _ysh-parse-error 'assert [42] extra'
 }
 
 test-place-expr() {
@@ -1191,8 +1223,6 @@ test-bug-1850() {
   _ysh-should-parse 'pp line (42); pp line (43)'
   #_osh-should-parse 'pp line (42); pp line (43)'
 
-  return
-
   # Extra word is bad
   _ysh-parse-error 'pp line (42) extra'
 
@@ -1208,14 +1238,33 @@ test-bug-1850() {
   _ysh-should-parse 'pp line (42);'
   _ysh-should-parse 'pp line (42) { echo hi }'
 
-  return
-
   # Original bug
 
   # Accidental comma instead of ;
-  # Wow this is parsed horribly
-  # Why does this replace (42) with (43)
+  # Wow this is parsed horribly - (42) replaced (43)
   _ysh-parse-error 'pp line (42), pp line (43)'
+}
+
+test-bug-1850-more() {
+  ### Regression
+
+  _ysh-parse-error 'assert (42)extra'
+  _ysh-parse-error 'assert (42) extra'
+
+  _ysh-parse-error 'assert [42]extra'
+  _ysh-parse-error 'assert [42] extra'
+}
+
+test-command-simple-more() {
+  _ysh-should-parse 'foo=1'
+
+  _ysh-parse-error 'foo=1 >out (42)'
+
+  _ysh-parse-error 'foo=1 (42)'
+
+  _ysh-should-parse 'foo=1 cmd (42)'
+
+  _ysh-should-parse 'foo=1 cmd >out (42)'
 }
 
 test-proc-args() {
@@ -1576,6 +1625,14 @@ test-eggex() {
   _osh-should-parse "= /['a'-'z']/"
   _osh-parse-error "= /['a'-'']/"
   _osh-parse-error "= /['a'-'zz']/"
+
+  _osh-parse-error '= /dot{N *} /'
+
+  # Could validate the Id.Expr_Name
+  _osh-parse-error '= /dot{zzz *} /'
+
+  # This could be allowed, but currently isn't
+  _osh-parse-error '= /dot{*} /'
 }
 
 #

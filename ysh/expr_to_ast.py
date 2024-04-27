@@ -52,6 +52,7 @@ from core.error import p_die
 from core import num
 from frontend import consts
 from frontend import lexer
+from frontend import location
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, tagswitch
@@ -92,6 +93,8 @@ POSIX_CLASSES = [
 
 RANGE_POINT_TOO_LONG = "Range start/end shouldn't have more than one character"
 
+POS_ARG_MISPLACED = "Positional arg can't appear in group of named args"
+
 # Copied from pgen2/token.py to avoid dependency.
 NT_OFFSET = 256
 
@@ -105,34 +108,19 @@ if mylib.PYTHON:
 
         names = {}
 
-        #from _devbuild.gen.id_kind_asdl import _Id_str
-        # This is a dictionary
-
-        # _Id_str()
-
         for id_name, k in lexer_def.ID_SPEC.id_str2int.items():
             # Hm some are out of range
             #assert k < 256, (k, id_name)
 
-            # HACK: Cut it off at 256 now!  Expr/Arith/Op doesn't go higher than
-            # that.  TODO: Change NT_OFFSET?  That might affect C code though.
-            # Best to keep everything fed to pgen under 256.  This only affects
-            # pretty printing.
-            if k < 256:
+            # TODO: Some tokens have values greater than NT_OFFSET
+            if k < NT_OFFSET:
                 names[k] = id_name
 
         for k, v in ysh_grammar.number2symbol.items():
-            # eval_input == 256.  Remove?
-            assert k >= 256, (k, v)
+            assert k >= NT_OFFSET, (k, v)
             names[k] = v
 
         return names
-
-
-def ISNONTERMINAL(x):
-    # type: (int) -> bool
-    assert isinstance(x, int), x
-    return x >= NT_OFFSET
 
 
 class Transformer(object):
@@ -203,16 +191,17 @@ class Transformer(object):
     def _Trailer(self, base, p_trailer):
         # type: (expr_t, PNode) -> expr_t
         """
-        Trailer: ( '(' [arglist] ')' | '[' subscriptlist ']'
+        trailer: ( '(' [arglist] ')' | '[' subscriptlist ']'
                  | '.' NAME | '->' NAME | '::' NAME
                  )
         """
-        op_tok = p_trailer.GetChild(0).tok
+        tok0 = p_trailer.GetChild(0).tok
+        typ0 = p_trailer.GetChild(0).typ
 
-        if op_tok.id == Id.Op_LParen:
-            lparen = op_tok
+        if typ0 == Id.Op_LParen:
+            lparen = tok0
             rparen = p_trailer.GetChild(-1).tok
-            arglist = ArgList(lparen, [], None, [], rparen)
+            arglist = ArgList(lparen, [], None, [], None, None, rparen)
             if p_trailer.NumChildren() == 2:  # ()
                 return expr.FuncCall(base, arglist)
 
@@ -221,7 +210,7 @@ class Transformer(object):
             self._ArgList(p, arglist)
             return expr.FuncCall(base, arglist)
 
-        if op_tok.id == Id.Op_LBracket:
+        if typ0 == Id.Op_LBracket:
             p_args = p_trailer.GetChild(1)
             assert p_args.typ == grammar_nt.subscriptlist
             n = p_args.NumChildren()
@@ -229,32 +218,29 @@ class Transformer(object):
                 p_die("Only 1 subscript is accepted", p_args.GetChild(1).tok)
 
             a = p_args.GetChild(0)
-            return Subscript(op_tok, base, self._Subscript(a))
+            return Subscript(tok0, base, self._Subscript(a))
 
-        if op_tok.id in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
+        if typ0 in (Id.Expr_Dot, Id.Expr_RArrow, Id.Expr_RDArrow):
             attr = p_trailer.GetChild(1).tok  # will be Id.Expr_Name
-            return Attribute(base, op_tok, attr, lexer.TokenVal(attr),
+            return Attribute(base, tok0, attr, lexer.TokenVal(attr),
                              expr_context_e.Store)
 
-        raise AssertionError(Id_str(op_tok.id))
+        raise AssertionError(typ0)
 
     def _DictPair(self, p_node):
         # type: (PNode) -> Tuple[expr_t, expr_t]
-        """dict_pair: ( Expr_Name [':' test] |
-
-        '[' testlist ']' ':' test )
+        """
+        dict_pair: ( Expr_Name [':' test]
+                   | '[' testlist ']' ':' test )
+                   | sq_string ':' test 
+                   | dq_string ':' test )
         """
         assert p_node.typ == grammar_nt.dict_pair
 
         typ = p_node.GetChild(0).typ
 
-        if ISNONTERMINAL(typ):  # for sq_string
-            # Note: Could inline these cases instead of going through self.Expr.
-            if typ == grammar_nt.sq_string:
-                key = self.Expr(p_node.GetChild(0))  # type: expr_t
-            elif typ == grammar_nt.dq_string:
-                key = self.Expr(p_node.GetChild(0))
-
+        if typ in (grammar_nt.sq_string, grammar_nt.dq_string):
+            key = self.Expr(p_node.GetChild(0))  # type: expr_t
             val = self.Expr(p_node.GetChild(2))
             return key, val
 
@@ -278,16 +264,13 @@ class Transformer(object):
 
     def _Dict(self, parent, p_node):
         # type: (PNode, PNode) -> expr.Dict
-        """Parse tree to LST
-        
-        dict: dict_pair (',' dict_pair)* [',']
-        dict2: dict_pair (comma_newline dict_pair)* [comma_newline]
         """
-        if not ISNONTERMINAL(p_node.typ):
-            assert p_node.tok.id == Id.Op_RBrace
+        dict: dict_pair (comma_newline dict_pair)* [comma_newline]
+        """
+        if p_node.typ == Id.Op_RBrace:  # {}
             return expr.Dict(parent.tok, [], [])
 
-        #assert p_node.typ == grammar_nt.dict
+        assert p_node.typ == grammar_nt.dict
 
         keys = []  # type: List[expr_t]
         values = []  # type: List[expr_t]
@@ -323,12 +306,12 @@ class Transformer(object):
 
     def _TestlistComp(self, parent, p_node, id0):
         # type: (PNode, PNode, Id_t) -> expr_t
-        """Parse tree to LST
-        
+        """
         testlist_comp:
           (test|star_expr) ( comp_for | (',' (test|star_expr))* [','] )
         """
         assert p_node.typ == grammar_nt.testlist_comp
+
         n = p_node.NumChildren()
         if n > 1 and p_node.GetChild(1).typ == grammar_nt.comp_for:
             elt = self.Expr(p_node.GetChild(0))
@@ -340,16 +323,17 @@ class Transformer(object):
             raise AssertionError()
 
         if id0 == Id.Op_LParen:
-            if n == 1:  # parenthesized expression like (x+1) or (x)
+            # Parenthesized expression like (x+1) or (x)
+            if n == 1:
                 return self.Expr(p_node.GetChild(0))
 
-            # (1,)  (1, 2)  etc.
-            if p_node.GetChild(1).tok.id == Id.Arith_Comma:
+            # Tuples (1,)  (1, 2)  etc. - TODO: should be a list literal?
+            if p_node.GetChild(1).typ == Id.Arith_Comma:
                 return self._Tuple(p_node)
 
-            raise NotImplementedError('testlist_comp')
+            raise AssertionError()
 
-        if id0 == Id.Op_LBracket:
+        if id0 == Id.Op_LBracket:  # List [1,2,3]
             elts = []  # type: List[expr_t]
             for i in xrange(0, n, 2):  # skip commas
                 elts.append(self.Expr(p_node.GetChild(i)))
@@ -370,8 +354,8 @@ class Transformer(object):
         if id_ == Id.Op_LParen:
             # atom: '(' [yield_expr|testlist_comp] ')' | ...
             if n == 2:  # () is a tuple
-                assert (parent.GetChild(1).tok.id == Id.Op_RParen
-                        ), parent.GetChild(1)
+                assert (
+                    parent.GetChild(1).typ == Id.Op_RParen), parent.GetChild(1)
                 return expr.Tuple(tok, [], expr_context_e.Store)
 
             return self._TestlistComp(parent, parent.GetChild(1), id_)
@@ -380,7 +364,7 @@ class Transformer(object):
             # atom: ... | '[' [testlist_comp] ']' | ...
 
             if n == 2:  # []
-                assert (parent.GetChild(1).tok.id == Id.Op_RBracket
+                assert (parent.GetChild(1).typ == Id.Op_RBracket
                         ), parent.GetChild(1)
                 return expr.List(tok, [],
                                  expr_context_e.Store)  # unused expr_context_e
@@ -390,7 +374,7 @@ class Transformer(object):
         if id_ == Id.Op_LBrace:
             # atom: ... | '{' [Op_Newline] [dict] '}'
             i = 1
-            if parent.GetChild(i).tok.id == Id.Op_Newline:
+            if parent.GetChild(i).typ == Id.Op_Newline:
                 i += 1
             return self._Dict(parent, parent.GetChild(i))
 
@@ -421,13 +405,11 @@ class Transformer(object):
             p_die("unix suffix implemented", parent.GetChild(1).tok)
             #return self.Expr(parent.GetChild(0))
 
-        raise NotImplementedError(Id_str(id_))
+        raise AssertionError(Id_str(id_))
 
     def _NameType(self, p_node):
         # type: (PNode) -> NameType
-        """
-        name_type: Expr_Name [':'] [type_expr]
-        """
+        """ name_type: Expr_Name [':'] [type_expr] """
         name_tok = p_node.GetChild(0).tok
         typ = None  # type: Optional[TypeExpr]
 
@@ -441,7 +423,7 @@ class Transformer(object):
 
     def _NameTypeList(self, p_node):
         # type: (PNode) -> List[NameType]
-        """name_type_list: name_type (',' name_type)*"""
+        """ name_type_list: name_type (',' name_type)* """
         assert p_node.typ == grammar_nt.name_type_list
         results = []  # type: List[NameType]
 
@@ -500,7 +482,7 @@ class Transformer(object):
 
         n = parent.NumChildren()
 
-        if ISNONTERMINAL(typ0):
+        if typ0 == grammar_nt.expr:
             if n == 3:  # a[1:2]
                 lower = self.Expr(parent.GetChild(0))
                 upper = self.Expr(parent.GetChild(2))
@@ -510,312 +492,321 @@ class Transformer(object):
             else:  # a[1]
                 return self.Expr(parent.GetChild(0))
         else:
-            assert parent.GetChild(0).tok.id == Id.Arith_Colon
+            assert typ0 == Id.Arith_Colon
             lower = None
             if n == 1:  # a[:]
                 upper = None
             else:  # a[:3]
                 upper = self.Expr(parent.GetChild(1))
+
         return expr.Slice(lower, parent.GetChild(0).tok, upper)
 
     def Expr(self, pnode):
         # type: (PNode) -> expr_t
-        """Transform expressions (as opposed to statements)."""
+        """Transform expressions (as opposed to statements)"""
         typ = pnode.typ
-        tok = pnode.tok
 
-        if ISNONTERMINAL(typ):
+        #
+        # YSH Entry Points / Additions
+        #
 
-            #
-            # Oil Entry Points / Additions
-            #
+        if typ == grammar_nt.ysh_expr:  # for if/while
+            # ysh_expr: '(' testlist ')'
+            return self.Expr(pnode.GetChild(1))
 
-            if typ == grammar_nt.ysh_expr:  # for if/while
-                # ysh_expr: '(' testlist ')'
-                return self.Expr(pnode.GetChild(1))
+        if typ == grammar_nt.command_expr:
+            # return_expr: testlist end_stmt
+            return self.Expr(pnode.GetChild(0))
 
-            if typ == grammar_nt.command_expr:
-                # return_expr: testlist end_stmt
+        #
+        # Python-like Expressions / Operators
+        #
+
+        if typ == grammar_nt.atom:
+            if pnode.NumChildren() == 1:
+                return self.Expr(pnode.GetChild(0))
+            return self._Atom(pnode)
+
+        if typ == grammar_nt.testlist:
+            # testlist: test (',' test)* [',']
+            return self._Tuple(pnode)
+
+        if typ == grammar_nt.test:
+            # test: or_test ['if' or_test 'else' test] | lambdef
+            if pnode.NumChildren() == 1:
                 return self.Expr(pnode.GetChild(0))
 
-            #
-            # Python-like Expressions / Operators
-            #
+            # TODO: Handle lambdef
 
-            if typ == grammar_nt.atom:
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
-                return self._Atom(pnode)
+            test = self.Expr(pnode.GetChild(2))
+            body = self.Expr(pnode.GetChild(0))
+            orelse = self.Expr(pnode.GetChild(4))
+            return expr.IfExp(test, body, orelse)
 
-            if typ == grammar_nt.testlist:
-                # testlist: test (',' test)* [',']
-                return self._Tuple(pnode)
+        if typ == grammar_nt.lambdef:
+            # lambdef: '|' [name_type_list] '|' test
 
-            if typ == grammar_nt.test:
-                # test: or_test ['if' or_test 'else' test] | lambdef
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
+            n = pnode.NumChildren()
+            if n == 4:
+                params = self._NameTypeList(pnode.GetChild(1))
+            else:
+                params = []
 
-                # TODO: Handle lambdef
+            body = self.Expr(pnode.GetChild(n - 1))
+            return expr.Lambda(params, body)
 
-                test = self.Expr(pnode.GetChild(2))
-                body = self.Expr(pnode.GetChild(0))
-                orelse = self.Expr(pnode.GetChild(4))
-                return expr.IfExp(test, body, orelse)
+        #
+        # Operators with Precedence
+        #
 
-            if typ == grammar_nt.lambdef:
-                # lambdef: '|' [name_type_list] '|' test
+        if typ == grammar_nt.or_test:
+            # or_test: and_test ('or' and_test)*
+            return self._LeftAssoc(pnode)
 
-                n = pnode.NumChildren()
-                if n == 4:
-                    params = self._NameTypeList(pnode.GetChild(1))
-                else:
-                    params = []
+        if typ == grammar_nt.and_test:
+            # and_test: not_test ('and' not_test)*
+            return self._LeftAssoc(pnode)
 
-                body = self.Expr(pnode.GetChild(n - 1))
-                return expr.Lambda(params, body)
+        if typ == grammar_nt.not_test:
+            # not_test: 'not' not_test | comparison
+            if pnode.NumChildren() == 1:
+                return self.Expr(pnode.GetChild(0))
 
-            #
-            # Operators with Precedence
-            #
+            op_tok = pnode.GetChild(0).tok  # not
+            return expr.Unary(op_tok, self.Expr(pnode.GetChild(1)))
 
-            if typ == grammar_nt.or_test:
-                # or_test: and_test ('or' and_test)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.comparison:
+            if pnode.NumChildren() == 1:
+                return self.Expr(pnode.GetChild(0))
 
-            if typ == grammar_nt.and_test:
-                # and_test: not_test ('and' not_test)*
-                return self._LeftAssoc(pnode)
+            return self._CompareChain(pnode)
 
-            if typ == grammar_nt.not_test:
-                # not_test: 'not' not_test | comparison
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
+        elif typ == grammar_nt.range_expr:
+            n = pnode.NumChildren()
+            if n == 1:
+                return self.Expr(pnode.GetChild(0))
 
-                op_tok = pnode.GetChild(0).tok  # not
-                return expr.Unary(op_tok, self.Expr(pnode.GetChild(1)))
+            if n == 3:
+                return expr.Range(self.Expr(pnode.GetChild(0)),
+                                  pnode.GetChild(1).tok,
+                                  self.Expr(pnode.GetChild(2)))
 
-            elif typ == grammar_nt.comparison:
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
+            raise AssertionError(n)
 
-                return self._CompareChain(pnode)
+        elif typ == grammar_nt.expr:
+            # expr: xor_expr ('|' xor_expr)*
+            return self._LeftAssoc(pnode)
 
-            elif typ == grammar_nt.range_expr:
-                n = pnode.NumChildren()
-                if n == 1:
-                    return self.Expr(pnode.GetChild(0))
+        if typ == grammar_nt.xor_expr:
+            # xor_expr: and_expr ('xor' and_expr)*
+            return self._LeftAssoc(pnode)
 
-                if n == 3:
-                    return expr.Range(self.Expr(pnode.GetChild(0)),
-                                      pnode.GetChild(1).tok,
-                                      self.Expr(pnode.GetChild(2)))
+        if typ == grammar_nt.and_expr:  # a & b
+            # and_expr: shift_expr ('&' shift_expr)*
+            return self._LeftAssoc(pnode)
 
-                raise AssertionError(n)
+        elif typ == grammar_nt.shift_expr:
+            # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+            return self._LeftAssoc(pnode)
 
-            elif typ == grammar_nt.expr:
-                # expr: xor_expr ('|' xor_expr)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.arith_expr:
+            # arith_expr: term (('+'|'-') term)*
+            return self._LeftAssoc(pnode)
 
-            if typ == grammar_nt.xor_expr:
-                # xor_expr: and_expr ('xor' and_expr)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.term:
+            # term: factor (('*'|'/'|'div'|'mod') factor)*
+            return self._LeftAssoc(pnode)
 
-            if typ == grammar_nt.and_expr:  # a & b
-                # and_expr: shift_expr ('&' shift_expr)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.factor:
+            # factor: ('+'|'-'|'~') factor | power
+            # the power would have already been reduced
+            if pnode.NumChildren() == 1:
+                return self.Expr(pnode.GetChild(0))
 
-            elif typ == grammar_nt.shift_expr:
-                # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-                return self._LeftAssoc(pnode)
+            assert pnode.NumChildren() == 2
+            op = pnode.GetChild(0)
+            e = pnode.GetChild(1)
 
-            elif typ == grammar_nt.arith_expr:
-                # arith_expr: term (('+'|'-') term)*
-                return self._LeftAssoc(pnode)
+            assert isinstance(op.tok, Token)
+            return expr.Unary(op.tok, self.Expr(e))
 
-            elif typ == grammar_nt.term:
-                # term: factor (('*'|'/'|'div'|'mod') factor)*
-                return self._LeftAssoc(pnode)
+        elif typ == grammar_nt.power:
+            # power: atom trailer* ['**' factor]
 
-            elif typ == grammar_nt.factor:
-                # factor: ('+'|'-'|'~') factor | power
-                # the power would have already been reduced
-                if pnode.NumChildren() == 1:
-                    return self.Expr(pnode.GetChild(0))
-
-                assert pnode.NumChildren() == 2
-                op = pnode.GetChild(0)
-                e = pnode.GetChild(1)
-
-                assert isinstance(op.tok, Token)
-                return expr.Unary(op.tok, self.Expr(e))
-
-            elif typ == grammar_nt.power:
-                # power: atom trailer* ['**' factor]
-
-                node = self.Expr(pnode.GetChild(0))
-                if pnode.NumChildren() == 1:  # No trailers
-                    return node
-
-                # Support a->startswith(b) and mydict.key
-                n = pnode.NumChildren()
-                i = 1
-                while i < n and ISNONTERMINAL(pnode.GetChild(i).typ):
-                    node = self._Trailer(node, pnode.GetChild(i))
-                    i += 1
-
-                if i != n:  # ['**' factor]
-                    op_tok = pnode.GetChild(i).tok
-                    assert op_tok.id == Id.Arith_DStar, op_tok
-                    factor = self.Expr(pnode.GetChild(i + 1))
-                    node = expr.Binary(op_tok, node, factor)
-
+            node = self.Expr(pnode.GetChild(0))
+            if pnode.NumChildren() == 1:  # No trailers
                 return node
 
-            elif typ == grammar_nt.literal_expr:
-                inner = self.Expr(pnode.GetChild(1))
-                return expr.Literal(inner)
+            # Support a->startswith(b) and mydict.key
+            n = pnode.NumChildren()
+            i = 1
+            while i < n and pnode.GetChild(i).typ == grammar_nt.trailer:
+                node = self._Trailer(node, pnode.GetChild(i))
+                i += 1
 
-            elif typ == grammar_nt.eggex:
-                return self._Eggex(pnode)
+            if i != n:  # ['**' factor]
+                op_tok = pnode.GetChild(i).tok
+                assert op_tok.id == Id.Arith_DStar, op_tok
+                factor = self.Expr(pnode.GetChild(i + 1))
+                node = expr.Binary(op_tok, node, factor)
 
-            elif typ == grammar_nt.ysh_expr_sub:
-                return self.Expr(pnode.GetChild(0))
+            return node
 
-            #
-            # YSH Lexer Modes
-            #
+        elif typ == grammar_nt.literal_expr:
+            inner = self.Expr(pnode.GetChild(1))
+            return expr.Literal(inner)
 
-            elif typ == grammar_nt.sh_array_literal:
-                return cast(ShArrayLiteral, pnode.GetChild(1).tok)
+        elif typ == grammar_nt.eggex:
+            return self._Eggex(pnode)
 
-            elif typ == grammar_nt.old_sh_array_literal:
-                return cast(ShArrayLiteral, pnode.GetChild(1).tok)
+        elif typ == grammar_nt.ysh_expr_sub:
+            return self.Expr(pnode.GetChild(0))
 
-            elif typ == grammar_nt.sh_command_sub:
-                return cast(CommandSub, pnode.GetChild(1).tok)
+        #
+        # YSH Lexer Modes
+        #
 
-            elif typ == grammar_nt.braced_var_sub:
-                return cast(BracedVarSub, pnode.GetChild(1).tok)
+        elif typ == grammar_nt.sh_array_literal:
+            return cast(ShArrayLiteral, pnode.GetChild(1).tok)
 
-            elif typ == grammar_nt.dq_string:
-                s = cast(DoubleQuoted, pnode.GetChild(1).tok)
-                # sugar: ^"..." is short for ^["..."]
-                if pnode.GetChild(0).tok.id == Id.Left_CaretDoubleQuote:
-                    return expr.Literal(s)
-                return s
+        elif typ == grammar_nt.old_sh_array_literal:
+            return cast(ShArrayLiteral, pnode.GetChild(1).tok)
 
-            elif typ == grammar_nt.sq_string:
-                return cast(SingleQuoted, pnode.GetChild(1).tok)
+        elif typ == grammar_nt.sh_command_sub:
+            return cast(CommandSub, pnode.GetChild(1).tok)
 
-            elif typ == grammar_nt.simple_var_sub:
-                tok = pnode.GetChild(0).tok
+        elif typ == grammar_nt.braced_var_sub:
+            return cast(BracedVarSub, pnode.GetChild(1).tok)
 
-                if tok.id == Id.VSub_DollarName:  # $foo is disallowed
-                    bare = lexer.TokenSliceLeft(tok, 1)
-                    p_die(
-                        'In expressions, remove $ and use `%s`, or sometimes "$%s"'
-                        % (bare, bare), tok)
+        elif typ == grammar_nt.dq_string:
+            s = cast(DoubleQuoted, pnode.GetChild(1).tok)
+            # sugar: ^"..." is short for ^["..."]
+            if pnode.GetChild(0).typ == Id.Left_CaretDoubleQuote:
+                return expr.Literal(s)
+            return s
 
-                # $? is allowed
-                return SimpleVarSub(tok)
+        elif typ == grammar_nt.sq_string:
+            return cast(SingleQuoted, pnode.GetChild(1).tok)
 
-            else:
-                nt_name = self.number2symbol[typ]
-                raise AssertionError("PNode type %d (%s) wasn't handled" %
-                                     (typ, nt_name))
+        elif typ == grammar_nt.simple_var_sub:
+            tok = pnode.GetChild(0).tok
 
-        else:  # Terminals should have a token
-            id_ = tok.id
+            if tok.id == Id.VSub_DollarName:  # $foo is disallowed
+                bare = lexer.TokenSliceLeft(tok, 1)
+                p_die(
+                    'In expressions, remove $ and use `%s`, or sometimes "$%s"'
+                    % (bare, bare), tok)
 
-            if id_ == Id.Expr_Name:
-                return expr.Var(tok, lexer.TokenVal(tok))
+            # $? is allowed
+            return SimpleVarSub(tok)
 
-            tok_str = lexer.TokenVal(tok)
+        #
+        # Terminals
+        #
 
-            # Remove underscores from 1_000_000.  The lexer is responsible for
-            # validation.
-            c_under = tok_str.replace('_', '')
+        tok = pnode.tok
+        if typ == Id.Expr_Name:
+            return expr.Var(tok, lexer.TokenVal(tok))
 
-            if id_ == Id.Expr_DecInt:
-                try:
-                    cval = value.Int(mops.FromStr(c_under))  # type: value_t
-                except ValueError:
-                    p_die('Decimal int constant is too large', tok)
-            elif id_ == Id.Expr_BinInt:
-                assert c_under[:2] in ('0b', '0B'), c_under
-                try:
-                    cval = value.Int(mops.FromStr(c_under[2:], 2))
-                except ValueError:
-                    p_die('Binary int constant is too large', tok)
-            elif id_ == Id.Expr_OctInt:
-                assert c_under[:2] in ('0o', '0O'), c_under
-                try:
-                    cval = value.Int(mops.FromStr(c_under[2:], 8))
-                except ValueError:
-                    p_die('Octal int constant is too large', tok)
-            elif id_ == Id.Expr_HexInt:
-                assert c_under[:2] in ('0x', '0X'), c_under
-                try:
-                    cval = value.Int(mops.FromStr(c_under[2:], 16))
-                except ValueError:
-                    p_die('Hex int constant is too large', tok)
+        # Everything else is an expr.Const
+        tok_str = lexer.TokenVal(tok)
+        # Remove underscores from 1_000_000.  The lexer is responsible for
+        # validation.
+        c_under = tok_str.replace('_', '')
 
-            elif id_ == Id.Expr_Float:
-                # Note: float() in mycpp/gc_builtins.cc currently uses strtod
-                # I think this never raises ValueError, because the lexer
-                # should only accept strings that strtod() does?
-                cval = value.Float(float(c_under))
+        if typ == Id.Expr_DecInt:
+            try:
+                cval = value.Int(mops.FromStr(c_under))  # type: value_t
+            except ValueError:
+                p_die('Decimal int constant is too large', tok)
 
-            elif id_ == Id.Expr_Null:
-                cval = value.Null
-            elif id_ == Id.Expr_True:
-                cval = value.Bool(True)
-            elif id_ == Id.Expr_False:
-                cval = value.Bool(False)
+        elif typ == Id.Expr_BinInt:
+            assert c_under[:2] in ('0b', '0B'), c_under
+            try:
+                cval = value.Int(mops.FromStr(c_under[2:], 2))
+            except ValueError:
+                p_die('Binary int constant is too large', tok)
 
-            # What to do with the char constants?
-            # \n  \u{3bc}  #'a'
-            # Are they integers or strings?
-            #
-            # Integers could be ord(\n), or strings could chr(\n)
-            # Or just remove them, with ord(u'\n') and chr(u'\n')
-            #
-            # I think this relies on small string optimization.  If we have it,
-            # then 1-4 byte characters are efficient, and don't require heap
-            # allocation.
+        elif typ == Id.Expr_OctInt:
+            assert c_under[:2] in ('0o', '0O'), c_under
+            try:
+                cval = value.Int(mops.FromStr(c_under[2:], 8))
+            except ValueError:
+                p_die('Octal int constant is too large', tok)
 
-            elif id_ == Id.Char_OneChar:
-                # TODO: look up integer directly?
-                cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
-            elif id_ == Id.Char_UBraced:
-                hex_str = tok_str[3:-1]  # \u{123}
-                # ValueError shouldn't happen because lexer validates
-                cval = value.Int(mops.FromStr(hex_str, 16))
+        elif typ == Id.Expr_HexInt:
+            assert c_under[:2] in ('0x', '0X'), c_under
+            try:
+                cval = value.Int(mops.FromStr(c_under[2:], 16))
+            except ValueError:
+                p_die('Hex int constant is too large', tok)
 
-            # This could be a char integer?  Not sure
-            elif id_ == Id.Char_Pound:
-                # TODO: accept UTF-8 code point instead of single byte
-                byte = tok_str[2]  # the a in #'a'
-                cval = num.ToBig(ord(byte))  # It's an integer
+        elif typ == Id.Expr_Float:
+            # Note: float() in mycpp/gc_builtins.cc currently uses strtod
+            # I think this never raises ValueError, because the lexer
+            # should only accept strings that strtod() does?
+            cval = value.Float(float(c_under))
 
-            else:
-                raise AssertionError(Id_str(id_))
+        elif typ == Id.Expr_Null:
+            cval = value.Null
 
-            return expr.Const(tok, cval)
+        elif typ == Id.Expr_True:
+            cval = value.Bool(True)
 
-    def _ArrayItem(self, p_node):
-        # type: (PNode) -> expr_t
-        assert p_node.typ == grammar_nt.array_item
+        elif typ == Id.Expr_False:
+            cval = value.Bool(False)
 
-        child0 = p_node.GetChild(0)
-        typ0 = child0.typ
-        if ISNONTERMINAL(typ0):
-            return self.Expr(child0)
+        # What to do with the char constants?
+        # \n  \u{3bc}  #'a'
+        # Are they integers or strings?
+        #
+        # Integers could be ord(\n), or strings could chr(\n)
+        # Or just remove them, with ord(u'\n') and chr(u'\n')
+        #
+        # I think this relies on small string optimization.  If we have it,
+        # then 1-4 byte characters are efficient, and don't require heap
+        # allocation.
+
+        elif typ == Id.Char_OneChar:
+            # TODO: look up integer directly?
+            cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
+        elif typ == Id.Char_UBraced:
+            hex_str = tok_str[3:-1]  # \u{123}
+            # ValueError shouldn't happen because lexer validates
+            cval = value.Int(mops.FromStr(hex_str, 16))
+
+        # This could be a char integer?  Not sure
+        elif typ == Id.Char_Pound:
+            # TODO: accept UTF-8 code point instead of single byte
+            byte = tok_str[2]  # the a in #'a'
+            cval = num.ToBig(ord(byte))  # It's an integer
+
         else:
-            if child0.tok.id == Id.Op_LParen:  # (x+1)
-                return self.Expr(p_node.GetChild(1))
-            return self.Expr(child0)  # $1 ${x} etc.
+            raise AssertionError(typ)
+
+        return expr.Const(tok, cval)
+
+    def _CheckLhs(self, lhs):
+        # type: (expr_t) -> None
+
+        UP_lhs = lhs
+        with tagswitch(lhs) as case:
+            if case(expr_e.Var):
+                # OK - e.g. setvar a.b.c[i] = 42
+                pass
+
+            elif case(expr_e.Subscript):
+                lhs = cast(Subscript, UP_lhs)
+                self._CheckLhs(lhs.obj)  # recurse on LHS
+
+            elif case(expr_e.Attribute):
+                lhs = cast(Attribute, UP_lhs)
+                self._CheckLhs(lhs.obj)  # recurse on LHS
+
+            else:
+                # Illegal - e.g. setglobal {}["key"] = 42
+                p_die("Subscript/Attribute not allowed on this LHS expression",
+                      location.TokenForExpr(lhs))
 
     def _LhsExprList(self, p_node):
         # type: (PNode) -> List[y_lhs_t]
@@ -824,8 +815,9 @@ class Transformer(object):
 
         lhs_list = []  # type: List[y_lhs_t]
         n = p_node.NumChildren()
-        for i in xrange(0, n, 2):  # was children[::2]
+        for i in xrange(0, n, 2):
             p = p_node.GetChild(i)
+            #self.p_printer.Print(p)
 
             e = self.Expr(p)
             UP_e = e
@@ -836,10 +828,12 @@ class Transformer(object):
 
                 elif case(expr_e.Subscript):
                     e = cast(Subscript, UP_e)
+                    self._CheckLhs(e)
                     lhs_list.append(e)
 
                 elif case(expr_e.Attribute):
                     e = cast(Attribute, UP_e)
+                    self._CheckLhs(e)
                     if e.op.id != Id.Expr_Dot:
                         # e.g. setvar obj->method is not valid
                         p_die("Can't assign to this attribute expr", e.op)
@@ -883,8 +877,7 @@ class Transformer(object):
 
     def MakeMutation(self, p_node):
         # type: (PNode) -> command.Mutation
-        """Parse tree to LST
-        
+        """
         ysh_mutation: lhs_list (augassign | '=') testlist end_stmt
         """
         typ = p_node.typ
@@ -912,7 +905,6 @@ class Transformer(object):
         """
         eggex: '/' regex [';' re_flag* [';' Expr_Name] ] '/'
         """
-        n = p_node.NumChildren()
         left = p_node.GetChild(0).tok
         regex = self._Regex(p_node.GetChild(1))
 
@@ -925,7 +917,7 @@ class Transformer(object):
             i += 1
             while True:
                 current = p_node.GetChild(i)
-                if not ISNONTERMINAL(current.typ):
+                if current.typ != grammar_nt.re_flag:
                     break
                 flags.append(self._EggexFlag(current))
                 i += 1
@@ -955,7 +947,8 @@ class Transformer(object):
 
             if typ == grammar_nt.pat_else:
                 return pat.Else
-            elif typ == grammar_nt.pat_exprs:
+
+            if typ == grammar_nt.pat_exprs:
                 exprs = []  # type: List[expr_t]
                 for i in xrange(pattern.NumChildren()):
                     child = pattern.GetChild(i)
@@ -964,15 +957,25 @@ class Transformer(object):
                         exprs.append(expr)
                 return pat.YshExprs(exprs)
 
-        elif typ == grammar_nt.eggex:
+        if typ == grammar_nt.eggex:
             return self._Eggex(pattern)
 
-        raise NotImplementedError()
+        raise AssertionError()
+
+    def _BlockArg(self, p_node):
+        # type: (PNode) -> expr_t
+
+        n = p_node.NumChildren()
+        if n == 1:
+            child = p_node.GetChild(0)
+            return self.Expr(child)
+
+        # It can only be an expression, not a=42, or ...expr
+        p_die('Invalid block expression argument', p_node.tok)
 
     def _Argument(self, p_node, after_semi, arglist):
         # type: (PNode, bool, ArgList) -> None
-        """Parse tree to LST
-
+        """
         argument: (
           test [comp_for]
         | test '=' test  # named arg
@@ -987,8 +990,7 @@ class Transformer(object):
         if n == 1:
             child = p_node.GetChild(0)
             if after_semi:
-                p_die('Positional args must come before the semi-colon',
-                      child.tok)
+                p_die(POS_ARG_MISPLACED, child.tok)
             arg = self.Expr(child)
             pos_args.append(arg)
             return
@@ -1005,11 +1007,11 @@ class Transformer(object):
                     pos_args.append(spread_expr)
                 return
 
+            # Note: generator expression not implemented
             if p_node.GetChild(1).typ == grammar_nt.comp_for:
                 child = p_node.GetChild(0)
                 if after_semi:
-                    p_die('Positional args must come before the semi-colon',
-                          child.tok)
+                    p_die(POS_ARG_MISPLACED, child.tok)
 
                 elt = self.Expr(child)
                 comp = self._CompFor(p_node.GetChild(1))
@@ -1034,43 +1036,86 @@ class Transformer(object):
         """
         for i in xrange(p_node.NumChildren()):
             p_child = p_node.GetChild(i)
-            if ISNONTERMINAL(p_child.typ):
+            if p_child.typ == grammar_nt.argument:
                 self._Argument(p_child, after_semi, arglist)
 
     def _ArgList(self, p_node, arglist):
         # type: (PNode, ArgList) -> None
         """For both funcs and procs
 
-        arglist: [arg_group] [';' arg_group]
+        arglist: (
+               [arg_group]
+          [';' [arg_group]]
+        )
+
+        arglist3: ...
         """
         n = p_node.NumChildren()
         if n == 0:
             return
 
-        p0 = p_node.GetChild(0)
         i = 0
-        if ISNONTERMINAL(p0.typ):
-            self._ArgGroup(p0, False, arglist)
+
+        if i >= n:
+            return
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.arg_group:
+            self._ArgGroup(child, False, arglist)
             i += 1
 
-        if n >= 2:
-            arglist.semi_tok = p_node.GetChild(i).tok
-            self._ArgGroup(p_node.GetChild(i + 1), True, arglist)
+        if i >= n:
+            return
+        child = p_node.GetChild(i)
+        if child.typ == Id.Op_Semi:
+            arglist.semi_tok = child.tok
+            i += 1
 
-    def ToArgList(self, pnode, arglist):
+        # Named args after first semi-colon
+        if i >= n:
+            return
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.arg_group:
+            self._ArgGroup(child, True, arglist)
+            i += 1
+
+        #
+        # Special third group may have block expression - only for arglist3,
+        # used for procs!
+        #
+
+        if i >= n:
+            return
+        assert p_node.typ == grammar_nt.arglist3, p_node
+
+        child = p_node.GetChild(i)
+        if child.typ == Id.Op_Semi:
+            arglist.semi_tok2 = child.tok
+            i += 1
+
+        if i >= n:
+            return
+        child = p_node.GetChild(i)
+        if child.typ == grammar_nt.argument:
+            arglist.block_expr = self._BlockArg(child)
+            i += 1
+
+    def ProcCallArgs(self, pnode, arglist):
         # type: (PNode, ArgList) -> None
         """
-        ysh_eager_arglist: '(' [arglist] ')'
+        ysh_eager_arglist: '(' [arglist3] ')'
         ysh_lazy_arglist: '[' [arglist] ']'
         """
-        if pnode.NumChildren() == 2:  # f()
+        n = pnode.NumChildren()
+        if n == 2:  # f()
             return
 
-        assert pnode.NumChildren() == 3
-        p = pnode.GetChild(1)  # the X in '( X )'
+        if n == 3:
+            child1 = pnode.GetChild(1)  # the X in '( X )'
 
-        assert p.typ == grammar_nt.arglist
-        self._ArgList(p, arglist)
+            self._ArgList(child1, arglist)
+            return
+
+        raise AssertionError()
 
     def _TypeExpr(self, pnode):
         # type: (PNode) -> TypeExpr
@@ -1078,8 +1123,6 @@ class Transformer(object):
         type_expr: Expr_Name [ '[' type_expr (',' type_expr)* ']' ]
         """
         assert pnode.typ == grammar_nt.type_expr, pnode.typ
-
-        #self.p_printer.Print(pnode)
 
         ty = TypeExpr.CreateNull()  # don't allocate children
 
@@ -1114,8 +1157,6 @@ class Transformer(object):
         default_val = None  # type: expr_t
         type_ = None  # type: TypeExpr
 
-        #self.p_printer.Print(pnode)
-
         if n == 1:
             # proc p(a)
             pass
@@ -1144,8 +1185,6 @@ class Transformer(object):
         """
         assert p_node.typ == grammar_nt.param_group, p_node
 
-        #self.p_printer.Print(p_node)
-
         params = []  # type: List[Param]
         rest_of = None  # type: Optional[RestParam]
 
@@ -1155,11 +1194,12 @@ class Transformer(object):
             child = p_node.GetChild(i)
             if child.typ == grammar_nt.param:
                 params.append(self._Param(child))
-            elif child.tok.id == Id.Expr_Ellipsis:
+
+            elif child.typ == Id.Expr_Ellipsis:
                 tok = p_node.GetChild(i + 1).tok
                 rest_of = RestParam(tok, lexer.TokenVal(tok))
+
             i += 2
-            #log('i %d n %d', i, n)
 
         return ParamGroup(params, rest_of)
 
@@ -1179,8 +1219,6 @@ class Transformer(object):
         """
         typ = p_node.typ
         assert typ == grammar_nt.ysh_proc
-
-        #self.p_printer.Print(p_node)
 
         n = p_node.NumChildren()
         if n == 1:  # proc f {
@@ -1263,8 +1301,7 @@ class Transformer(object):
 
     def YshFunc(self, p_node, out):
         # type: (PNode, Func) -> None
-        """Parse tree to LST
-
+        """
         ysh_func: Expr_Name '(' [param_group] [';' param_group] ')'
         """
         assert p_node.typ == grammar_nt.ysh_func
@@ -1291,18 +1328,19 @@ class Transformer(object):
             out.named = self._ParamGroup(child)
 
     #
-    # Regex Language
+    # Eggex Language
     #
 
     def _RangeCharSingleQuoted(self, p_node):
         # type: (PNode) -> Optional[CharCode]
 
         assert p_node.typ == grammar_nt.range_char, p_node
-        typ = p_node.GetChild(0).typ
 
         # 'a' in 'a'-'b'
-        if ISNONTERMINAL(typ) and typ == grammar_nt.sq_string:
-            sq_part = cast(SingleQuoted, p_node.GetChild(0).GetChild(1).tok)
+
+        child0 = p_node.GetChild(0)
+        if child0.typ == grammar_nt.sq_string:
+            sq_part = cast(SingleQuoted, child0.GetChild(1).tok)
             n = len(sq_part.sval)
             if n == 0:
                 p_die("Quoted range char can't be empty",
@@ -1322,11 +1360,10 @@ class Transformer(object):
         """
         assert p_node.typ == grammar_nt.range_char, p_node
 
-        typ = p_node.GetChild(0).typ
-        if ISNONTERMINAL(typ):
+        child0 = p_node.GetChild(0)
+        if child0.typ == grammar_nt.char_literal:
             # \x00 in /[\x00 - \x20]/
-            assert typ == grammar_nt.char_literal, typ
-            tok = p_node.GetChild(0).GetChild(0).tok
+            tok = child0.GetChild(0).tok
             return tok
 
         tok = p_node.tok
@@ -1344,25 +1381,25 @@ class Transformer(object):
         \" \u1234 '#'
         """
         assert p_node.typ == grammar_nt.range_char, p_node
-        typ = p_node.GetChild(0).typ
-        if ISNONTERMINAL(typ):
-            p_child = p_node.GetChild(0)
-            if typ == grammar_nt.sq_string:
-                return cast(SingleQuoted, p_child.GetChild(1).tok)
 
-            if typ == grammar_nt.char_literal:
-                tok = p_node.GetChild(0).tok
-                return word_compile.EvalCharLiteralForRegex(tok)
+        child0 = p_node.GetChild(0)
+        typ0 = p_node.GetChild(0).typ
 
-            raise NotImplementedError()
-        else:
+        if typ0 == grammar_nt.sq_string:
+            return cast(SingleQuoted, child0.GetChild(1).tok)
+
+        if typ0 == grammar_nt.char_literal:
+            return word_compile.EvalCharLiteralForRegex(child0.tok)
+
+        if typ0 == Id.Expr_Name:
             # Look up PerlClass and PosixClass
-            return self._NameInClass(None, p_node.GetChild(0).tok)
+            return self._NameInClass(None, child0.tok)
+
+        raise AssertionError()
 
     def _ClassLiteralTerm(self, p_node):
         # type: (PNode) -> class_literal_term_t
-        """Parse tree to LST
-
+        """
         class_literal_term:
           range_char ['-' range_char ] 
         | '@' Expr_Name  # splice
@@ -1371,17 +1408,18 @@ class Transformer(object):
         """
         assert p_node.typ == grammar_nt.class_literal_term, p_node
 
-        first = p_node.GetChild(0)
-        typ = first.typ
+        typ0 = p_node.GetChild(0).typ
 
-        if ISNONTERMINAL(typ):
+        if typ0 == grammar_nt.range_char:
             n = p_node.NumChildren()
 
-            if n == 1 and typ == grammar_nt.range_char:
+            if n == 1:
                 return self._NonRangeChars(p_node.GetChild(0))
 
             # 'a'-'z' etc.
-            if n == 3 and p_node.GetChild(1).tok.id == Id.Arith_Minus:
+            if n == 3:
+                assert p_node.GetChild(1).typ == Id.Arith_Minus, p_node
+
                 left = p_node.GetChild(0)
                 right = p_node.GetChild(2)
 
@@ -1396,20 +1434,19 @@ class Transformer(object):
                     code2 = word_compile.EvalCharLiteralForRegex(tok2)
                 return CharRange(code1, code2)
 
-        else:
-            if first.tok.id == Id.Expr_At:
-                tok1 = p_node.GetChild(1).tok
-                return class_literal_term.Splice(tok1, lexer.TokenVal(tok1))
+            raise AssertionError()
 
-            if first.tok.id == Id.Expr_Bang:
-                return self._NameInClass(
-                    p_node.GetChild(0).tok,
-                    p_node.GetChild(1).tok)
+        if typ0 == Id.Expr_At:
+            tok1 = p_node.GetChild(1).tok
+            return class_literal_term.Splice(tok1, lexer.TokenVal(tok1))
 
-            raise AssertionError(p_node.GetChild(0).tok.id)
+        if typ0 == Id.Expr_Bang:
+            return self._NameInClass(
+                p_node.GetChild(0).tok,
+                p_node.GetChild(1).tok)
 
-        nt_name = self.number2symbol[typ]
-        raise NotImplementedError(nt_name)
+        p_die("This kind of class literal term isn't implemented",
+              p_node.GetChild(0).tok)
 
     def _ClassLiteral(self, p_node):
         # type: (PNode) -> List[class_literal_term_t]
@@ -1475,124 +1512,124 @@ class Transformer(object):
         """
         assert p_atom.typ == grammar_nt.re_atom, p_atom.typ
 
-        typ = p_atom.GetChild(0).typ
+        child0 = p_atom.GetChild(0)
 
-        if ISNONTERMINAL(typ):
-            p_child = p_atom.GetChild(0)
-            if typ == grammar_nt.class_literal:
-                return re.CharClassLiteral(False, self._ClassLiteral(p_child))
+        typ0 = p_atom.GetChild(0).typ
+        tok0 = p_atom.GetChild(0).tok
 
-            if typ == grammar_nt.sq_string:
-                return cast(SingleQuoted, p_child.GetChild(1).tok)
+        # Non-terminals
 
-            if typ == grammar_nt.char_literal:
-                tok = p_atom.GetChild(0).tok
-                # Must be Id.Char_{OneChar,Hex,UBraced}
-                assert consts.GetKind(tok.id) == Kind.Char
-                s = word_compile.EvalCStringToken(tok.id, lexer.TokenVal(tok))
-                return re.LiteralChars(tok, s)
+        if typ0 == grammar_nt.class_literal:
+            return re.CharClassLiteral(False, self._ClassLiteral(child0))
 
-            raise NotImplementedError(typ)
+        if typ0 == grammar_nt.sq_string:
+            return cast(SingleQuoted, child0.GetChild(1).tok)
 
-        else:
-            tok = p_atom.GetChild(0).tok
+        if typ0 == grammar_nt.char_literal:
+            # Must be Id.Char_{OneChar,Hex,UBraced}
+            assert consts.GetKind(tok0.id) == Kind.Char
+            s = word_compile.EvalCStringToken(tok0.id, lexer.TokenVal(tok0))
+            return re.LiteralChars(tok0, s)
 
-            # Special punctuation
-            if tok.id == Id.Expr_Dot:  # .
-                return re.Primitive(tok, Id.Eggex_Dot)
+        # Special punctuation
+        if typ0 == Id.Expr_Dot:  # .
+            return re.Primitive(tok0, Id.Eggex_Dot)
 
-            if tok.id == Id.Arith_Caret:  # ^
-                return re.Primitive(tok, Id.Eggex_Start)
+        if typ0 == Id.Arith_Caret:  # ^
+            return re.Primitive(tok0, Id.Eggex_Start)
 
-            if tok.id == Id.Expr_Dollar:  # $
-                return re.Primitive(tok, Id.Eggex_End)
+        if typ0 == Id.Expr_Dollar:  # $
+            return re.Primitive(tok0, Id.Eggex_End)
 
-            if tok.id == Id.Expr_Name:
-                # d digit -> PosixClass PerlClass etc.
-                return self._NameInRegex(None, tok)
+        if typ0 == Id.Expr_Name:
+            # d digit -> PosixClass PerlClass etc.
+            return self._NameInRegex(None, tok0)
 
-            if tok.id == Id.Expr_Symbol:
-                # Validate symbols here, like we validate PerlClass, etc.
-                tok_str = lexer.TokenVal(tok)
-                if tok_str == '%start':
-                    return re.Primitive(tok, Id.Eggex_Start)
-                if tok_str == '%end':
-                    return re.Primitive(tok, Id.Eggex_End)
-                p_die("Unexpected token %r in regex" % tok_str, tok)
+        if typ0 == Id.Expr_Symbol:
+            # Validate symbols here, like we validate PerlClass, etc.
+            tok_str = lexer.TokenVal(tok0)
+            if tok_str == '%start':
+                return re.Primitive(tok0, Id.Eggex_Start)
+            if tok_str == '%end':
+                return re.Primitive(tok0, Id.Eggex_End)
+            p_die("Unexpected token %r in regex" % tok_str, tok0)
 
-            if tok.id == Id.Expr_At:
-                # | '@' Expr_Name
-                tok = p_atom.GetChild(1).tok
-                return re.Splice(tok, lexer.TokenVal(tok))
+        if typ0 == Id.Expr_At:
+            # | '@' Expr_Name
+            tok1 = p_atom.GetChild(1).tok
+            return re.Splice(tok0, lexer.TokenVal(tok1))
 
-            if tok.id == Id.Expr_Bang:
-                # | '!' (Expr_Name | class_literal)
-                # | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
-                n = p_atom.NumChildren()
-                if n == 2:
-                    typ = p_atom.GetChild(1).typ
-                    if ISNONTERMINAL(typ):
-                        return re.CharClassLiteral(
-                            True, self._ClassLiteral(p_atom.GetChild(1)))
-                    else:
-                        return self._NameInRegex(tok, p_atom.GetChild(1).tok)
+        if typ0 == Id.Expr_Bang:
+            # | '!' (Expr_Name | class_literal)
+            # | '!' '!' Expr_Name (Expr_Name | Expr_DecInt | '(' regex ')')
+            n = p_atom.NumChildren()
+            if n == 2:
+                child1 = p_atom.GetChild(1)
+                if child1.typ == grammar_nt.class_literal:
+                    return re.CharClassLiteral(True,
+                                               self._ClassLiteral(child1))
                 else:
-                    # Note: !! conflicts with shell history
-                    p_die(
-                        "Backtracking with !! isn't implemented (requires Python/PCRE)",
-                        p_atom.GetChild(1).tok)
+                    return self._NameInRegex(tok0, p_atom.GetChild(1).tok)
+            else:
+                # Note: !! conflicts with shell history
+                p_die(
+                    "Backtracking with !! isn't implemented (requires Python/PCRE)",
+                    p_atom.GetChild(1).tok)
 
-            if tok.id == Id.Op_LParen:
-                # | '(' regex ')'
+        if typ0 == Id.Op_LParen:
+            # | '(' regex ')'
 
-                # Note: in ERE (d+) is the same as <d+>.  That is, Group becomes
-                # Capture.
-                return re.Group(self._Regex(p_atom.GetChild(1)))
+            # Note: in ERE (d+) is the same as <d+>.  That is, Group becomes
+            # Capture.
+            return re.Group(self._Regex(p_atom.GetChild(1)))
 
-            if tok.id == Id.Arith_Less:
-                # | '<' 'capture' regex ['as' Expr_Name] [':' Expr_Name] '>'
+        if typ0 == Id.Arith_Less:
+            # | '<' 'capture' regex ['as' Expr_Name] [':' Expr_Name] '>'
 
-                n = p_atom.NumChildren()
-                assert n == 4 or n == 6 or n == 8, n
+            n = p_atom.NumChildren()
+            assert n == 4 or n == 6 or n == 8, n
 
-                # < capture d+ >
-                regex = self._Regex(p_atom.GetChild(2))
+            # < capture d+ >
+            regex = self._Regex(p_atom.GetChild(2))
 
-                as_name = None  # type: Optional[Token]
-                func_name = None  # type: Optional[Token]
+            as_name = None  # type: Optional[Token]
+            func_name = None  # type: Optional[Token]
 
-                i = 3  # points at any of   >   as   :
+            i = 3  # points at any of   >   as   :
 
-                tok = p_atom.GetChild(i).tok
-                if tok.id == Id.Expr_As:
-                    as_name = p_atom.GetChild(i + 1).tok
-                    i += 2
+            typ = p_atom.GetChild(i).typ
+            if typ == Id.Expr_As:
+                as_name = p_atom.GetChild(i + 1).tok
+                i += 2
 
-                tok = p_atom.GetChild(i).tok
-                if tok.id == Id.Arith_Colon:
-                    func_name = p_atom.GetChild(i + 1).tok
+            typ = p_atom.GetChild(i).typ
+            if typ == Id.Arith_Colon:
+                func_name = p_atom.GetChild(i + 1).tok
 
-                return re.Capture(regex, as_name, func_name)
+            return re.Capture(regex, as_name, func_name)
 
-            if tok.id == Id.Arith_Colon:
-                # | ':' '(' regex ')'
-                raise NotImplementedError(Id_str(tok.id))
-
-            raise NotImplementedError(Id_str(tok.id))
+        raise AssertionError(typ0)
 
     def _RepeatOp(self, p_repeat):
         # type: (PNode) -> re_repeat_t
+        """
+        repeat_op: '+' | '*' | '?' 
+                 | '{' [Expr_Name] ('+' | '*' | '?' | repeat_range) '}'
+        """
         assert p_repeat.typ == grammar_nt.repeat_op, p_repeat
 
         tok = p_repeat.GetChild(0).tok
         id_ = tok.id
-        # a+
+
         if id_ in (Id.Arith_Plus, Id.Arith_Star, Id.Arith_QMark):
-            return tok
+            return tok  # a+  a*  a?
 
         if id_ == Id.Op_LBrace:
-            p_range = p_repeat.GetChild(1)
-            assert p_range.typ == grammar_nt.repeat_range, p_range
+            child1 = p_repeat.GetChild(1)
+            if child1.typ != grammar_nt.repeat_range:
+                # e.g. dot{N *} is .*?
+                p_die("Perl-style repetition isn't implemented with libc",
+                      child1.tok)
 
             # repeat_range: (
             #     Expr_DecInt [',']
@@ -1600,24 +1637,24 @@ class Transformer(object):
             #   | Expr_DecInt ',' Expr_DecInt
             # )
 
-            n = p_range.NumChildren()
+            n = child1.NumChildren()
             if n == 1:  # {3}
-                tok = p_range.GetChild(0).tok
+                tok = child1.GetChild(0).tok
                 return tok  # different operator than + * ?
 
             if n == 2:
-                if p_range.GetChild(0).tok.id == Id.Expr_DecInt:  # {,3}
-                    left = p_range.GetChild(0).tok
+                if child1.GetChild(0).typ == Id.Expr_DecInt:  # {,3}
+                    left = child1.GetChild(0).tok
                     return re_repeat.Range(left, lexer.TokenVal(left), '',
                                            None)
                 else:  # {1,}
-                    right = p_range.GetChild(1).tok
+                    right = child1.GetChild(1).tok
                     return re_repeat.Range(None, '', lexer.TokenVal(right),
                                            right)
 
             if n == 3:  # {1,3}
-                left = p_range.GetChild(0).tok
-                right = p_range.GetChild(2).tok
+                left = child1.GetChild(0).tok
+                right = child1.GetChild(2).tok
                 return re_repeat.Range(left, lexer.TokenVal(left),
                                        lexer.TokenVal(right), right)
 
@@ -1625,45 +1662,47 @@ class Transformer(object):
 
         raise AssertionError(id_)
 
+    def _ReAlt(self, p_node):
+        # type: (PNode) -> re_t
+        """
+        re_alt: (re_atom [repeat_op])+
+        """
+        assert p_node.typ == grammar_nt.re_alt
+
+        i = 0
+        n = p_node.NumChildren()
+        seq = []  # type: List[re_t]
+        while i < n:
+            r = self._ReAtom(p_node.GetChild(i))
+            i += 1
+            if i < n and p_node.GetChild(i).typ == grammar_nt.repeat_op:
+                repeat_op = self._RepeatOp(p_node.GetChild(i))
+                r = re.Repeat(r, repeat_op)
+                i += 1
+            seq.append(r)
+
+        if len(seq) == 1:
+            return seq[0]
+        else:
+            return re.Seq(seq)
+
     def _Regex(self, p_node):
         # type: (PNode) -> re_t
-        typ = p_node.typ
+        """
+        regex: [re_alt] (('|'|'or') re_alt)*
+        """
+        assert p_node.typ == grammar_nt.regex
 
-        if typ == grammar_nt.regex:
-            # regex: [re_alt] (('|'|'or') re_alt)*
+        n = p_node.NumChildren()
+        alts = []  # type: List[re_t]
+        for i in xrange(0, n, 2):  # was children[::2]
+            c = p_node.GetChild(i)
+            alts.append(self._ReAlt(c))
 
-            if p_node.NumChildren() == 1:
-                return self._Regex(p_node.GetChild(0))
-
-            # NOTE: We're losing the | and or operators
-            alts = []  # type: List[re_t]
-            n = p_node.NumChildren()
-            for i in xrange(0, n, 2):  # was children[::2]
-                c = p_node.GetChild(i)
-                alts.append(self._Regex(c))
+        if len(alts) == 1:
+            return alts[0]
+        else:
             return re.Alt(alts)
-
-        if typ == grammar_nt.re_alt:
-            # re_alt: (re_atom [repeat_op])+
-            i = 0
-            n = p_node.NumChildren()
-            seq = []  # type: List[re_t]
-            while i < n:
-                r = self._ReAtom(p_node.GetChild(i))
-                i += 1
-                if i < n and p_node.GetChild(i).typ == grammar_nt.repeat_op:
-                    repeat_op = self._RepeatOp(p_node.GetChild(i))
-                    r = re.Repeat(r, repeat_op)
-                    i += 1
-                seq.append(r)
-
-            if len(seq) == 1:
-                return seq[0]
-            else:
-                return re.Seq(seq)
-
-        nt_name = self.number2symbol[typ]
-        raise NotImplementedError(nt_name)
 
 
 # vim: sw=4

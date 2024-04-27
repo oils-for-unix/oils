@@ -1,9 +1,11 @@
 #!/usr/bin/env python2
+from __future__ import print_function
 """osh/word_compile.py.
 
 These functions are called after parsing, but don't depend on any runtime
 values.
 """
+
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.syntax_asdl import (
     Token,
@@ -64,13 +66,8 @@ def EvalCStringToken(id_, value):
 
     $'' could use it at compile time, much like brace expansion in braces.py.
     """
-    if id_ in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.Unknown_Backslash,
-               Id.Char_AsciiControl):
+    if id_ in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.Unknown_Backslash):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
-
-        # Char_AsciiControl is allowed in YSH code, for newlines in u''
-        # strings, just like r'' has
-        # TODO: could allow ONLY newline?
         return value
 
     # single quotes in the middle of a triple quoted string
@@ -230,15 +227,17 @@ def RemoveLeadingSpaceSQ(tokens):
 
     For now we create NEW Id.Ignored_LeadingSpace tokens, and are NOT in the
     arena.
-
-    Quirk to make more consistent:
-      In $''' and r''' and ''', we have Lit_Chars \n
-      In u''' and b''', we have Char_AsciiControl \n
     """
     if 0:
         log('--')
         for tok in tokens:
-            log('tok %s', tok)
+            #log('tok %s', tok)
+            import sys
+            from asdl import format as fmt
+            ast_f = fmt.DetectConsoleOutput(mylib.Stderr())
+            tree = tok.AbbreviatedTree()
+            fmt.PrintTree(tree, ast_f)
+            print('', file=sys.stderr)
         log('--')
 
     if len(tokens) <= 1:  # We need at least 2 parts to strip anything
@@ -248,14 +247,14 @@ def RemoveLeadingSpaceSQ(tokens):
     #   x
     #   '''
     first = tokens[0]
-    if first.id in (Id.Lit_Chars, Id.Char_AsciiControl):
+    if first.id == Id.Lit_Chars:
         if _IsTrailingSpace(first):
             tokens.pop(0)  # Remove the first part
 
     # Figure out what to strip, based on last token
     last = tokens[-1]
     to_strip = None  # type: Optional[str]
-    if last.id in (Id.Lit_Chars, Id.Char_AsciiControl):
+    if last.id == Id.Lit_Chars:
         if _IsLeadingSpace(last):
             to_strip = lexer.TokenVal(last)
             tokens.pop()  # Remove the last part

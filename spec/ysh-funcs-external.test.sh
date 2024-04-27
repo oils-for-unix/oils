@@ -4,7 +4,7 @@
 #### JSON func on top of proc
 
 proc myadd {
-  json read :args
+  json read (&args)
 
   # convenient!
   fopen >&2 {
@@ -14,7 +14,7 @@ proc myadd {
   json write (args[0] + args[1])
 }
 
-echo '[1, 2]' | myadd | json read :result
+echo '[1, 2]' | myadd | json read (&result)
 
 # TODO:
 # Rewrite this as:

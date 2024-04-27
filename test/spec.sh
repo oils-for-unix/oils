@@ -196,6 +196,10 @@ nul-bytes() {
   run-file nul-bytes "$@"
 }
 
+whitespace() {
+  run-file whitespace "$@"
+}
+
 # Special bash printf things like -v and %q.  Portable stuff goes in builtin-io.
 builtin-printf() {
   run-file builtin-printf "$@"
@@ -936,6 +940,10 @@ ysh-dev() {
 
 nix-idioms() {
   run-file nix-idioms "$@"
+}
+
+zsh-idioms() {
+  run-file zsh-idioms "$@"
 }
 
 ble-idioms() {

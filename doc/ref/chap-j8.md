@@ -121,6 +121,32 @@ Single-quoted strings without a `u` or `b` prefix are implicitly `u''`.
 They should be avoided in contexts where `""` strings may also appear, because
 it's easy to confuse single quotes and double quotes.
 
+## J8 Lines
+
+"J8 Lines" is a format built on top of J8 strings.  Each line is either:
+
+1. An unquoted string, which must be valid UTF-8.  Whitespace is allowed, but
+   not other ASCII control chars.
+2. A quoted J8 string (JSON style `""` or J8-style `b'' u'' ''`)
+3. An **ignored** empty line
+
+In all cases, leading and trailing whitespace is ignored.
+
+### unquoted-line
+
+Any line that doesn't begin with `"` or `b'` or `u'` is an unquoted line.
+Examples:
+
+    foo bar
+    C:\Program Files\
+    internal "quotes" aren't special
+
+In contrast, these are quoted lines, and must be valid J8 strings:
+
+    "json-style J8 string"
+    b'this is b style'
+    u'this is u style'
+    
 ## JSON8
 
 JSON8 is JSON with 4 more things allowed:

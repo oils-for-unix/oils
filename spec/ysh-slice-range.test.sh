@@ -63,7 +63,7 @@ import json, sys; a = [1, 2, 3, 4, 5]; print(json.dumps(eval(sys.argv[1])))' $1
 }
 
 show-ysh() {
-  eval "var a = [1, 2, 3, 4, 5]; json write --pretty=F ($1)"
+  eval "var a = [1, 2, 3, 4, 5]; json write ($1, space=0)"
 }
 
 compare() {

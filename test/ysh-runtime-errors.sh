@@ -10,8 +10,6 @@ set -o errexit
 source test/common.sh
 source test/sh-assert.sh  # _assert-sh-status
 
-YSH=${YSH:-bin/ysh}
-
 #
 # Cases
 #
@@ -209,7 +207,7 @@ test-EvalExpr-calls() {
     setvar d[len(42)] = "foo"
   '
 
-  _ysh-expr-error '
+  _ysh-error-X 2 '
     var d = {}
     setvar len(42).z = "foo"
   '
@@ -226,7 +224,6 @@ test-EvalExpr-calls() {
   _ysh-expr-error 'while (len(42)) { echo hi }'
 
   _ysh-expr-error 'for x in (len(42)) { echo $x }'
-
 }
 
 
@@ -768,6 +765,8 @@ test-json() {
   _ysh-error-X 3 'json read (&x, 43)'
 }
 
+# For decoding errors, see data_lang/j8-errors.sh
+
 test-error-builtin() {
 
   _ysh-error-X 2 'error '
@@ -893,6 +892,28 @@ test-trim-utf8-error() {
   # error is found
   call "$[badUtf]b " => trim()
 EOF
+}
+
+test-setglobal() {
+   _ysh-should-run '
+var a = [0]
+setglobal a[1-1] = 42
+pp line (a)
+   '
+
+   _ysh-expr-error '
+var a = [0]
+setglobal a[a.bad] = 42
+pp line (a)
+   '
+
+   _ysh-should-run '
+var d = {e:{f:0}}
+setglobal d.e.f = 42
+pp line (d)
+setglobal d.e.f += 1
+pp line (d)
+   '
 }
 
 soil-run-py() {

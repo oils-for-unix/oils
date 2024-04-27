@@ -25,10 +25,10 @@ class TypedArgsTest(unittest.TestCase):
             expr.Const(arena.NewToken(-1, 4 + 2 * i, 1, line_id), value.Null)
             for i in range(7)
         ]
-        arg_list = ArgList(ltok, pos_exprs, None, [], rtok)
+        arg_list = ArgList(ltok, pos_exprs, None, [], None, None, rtok)
 
         # Not enough args...
-        reader = typed_args.Reader([], {}, arg_list, False)
+        reader = typed_args.Reader([], {}, None, arg_list, False)
         self.assertRaises(error.TypeErrVerbose, reader.PosStr)
 
         pos_args = [
@@ -45,7 +45,7 @@ class TypedArgsTest(unittest.TestCase):
             value.Int(0xbeef),
             value.Str('bar'),
         ]
-        reader = typed_args.Reader(list(pos_args), {}, arg_list, False)
+        reader = typed_args.Reader(list(pos_args), {}, None, arg_list, False)
 
         # Haven't all the args
         with self.assertRaises(error.TypeErrVerbose) as cm:
@@ -66,7 +66,7 @@ class TypedArgsTest(unittest.TestCase):
         self.assertEqual(pos_exprs[3].c, e.location)
 
         # Normal operation from here on
-        reader = typed_args.Reader(pos_args, {}, arg_list, False)
+        reader = typed_args.Reader(pos_args, {}, None, arg_list, False)
         arg = reader.PosInt()
         self.assertEqual(0xc0ffee, arg)
 
@@ -102,7 +102,7 @@ class TypedArgsTest(unittest.TestCase):
         ltok = arena.NewToken(-1, 0, 3, line_id)
         rtok = arena.NewToken(-1, 0, 4, line_id)
         semi_tok = arena.NewToken(-1, 0, 5, line_id)
-        arg_list = ArgList(ltok, [], semi_tok, [], rtok)
+        arg_list = ArgList(ltok, [], semi_tok, [], None, None, rtok)
 
         kwargs = {
             'hot': value.Int(0xc0ffee),
@@ -119,7 +119,7 @@ class TypedArgsTest(unittest.TestCase):
             'b': value.Int(0xbeef),
             'c': value.Str('bar'),
         }
-        reader = typed_args.Reader([], kwargs, arg_list, False)
+        reader = typed_args.Reader([], kwargs, None, arg_list, False)
 
         # Haven't processed any args yet...
         self.assertRaises(error.TypeErrVerbose, reader.Done)

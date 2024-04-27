@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 # Demonstrations for users.  Could go in docs.
 
@@ -332,35 +332,33 @@ shopt -s ysh:upgrade
 var g = {}
 
 proc mutate {
-  var g = {}  # shadows global var
+  var g = {'local': 1}  # shadows global var
 
-  echo 'hi from mutate'
   setglobal g.key = 'mutated'
   setglobal g['key2'] = 'mutated'
 
-
+  echo 'local that is ignored'
   pp line (g)
 }
 
-echo 'BEFORE mutate'
+echo 'BEFORE mutate global'
 pp line (g)
 
 mutate
 
-echo 'AFTER mutate'
+echo 'AFTER mutate global'
 pp line (g)
 
 ## STDOUT:
-BEFORE mutate
+BEFORE mutate global
 (Dict)   {}
-hi from mutate
-(Dict)   {"key":"mutated","key2":"mutated"}
-AFTER mutate
+local that is ignored
+(Dict)   {"local":1}
+AFTER mutate global
 (Dict)   {"key":"mutated","key2":"mutated"}
 ## END
 
 #### setglobal a[i] inside proc
-
 shopt -s ysh:upgrade
 
 var a = [0]
@@ -368,29 +366,101 @@ var a = [0]
 proc mutate {
   var a = [1]  # shadows global var
 
-  echo 'hi from mutate'
+  echo 'local that is ignored'
   setglobal a[0] = 42
 
   pp line (a)
 }
 
-echo 'BEFORE mutate'
+echo 'BEFORE mutate global'
 pp line (a)
 
 mutate
 
-echo 'AFTER mutate'
+echo 'AFTER mutate global'
 pp line (a)
 
 ## STDOUT:
-BEFORE mutate
+BEFORE mutate global
 (List)   [0]
-hi from mutate
-(List)   [42]
-AFTER mutate
+local that is ignored
+(List)   [1]
+AFTER mutate global
 (List)   [42]
 ## END
 
+#### setglobal a[i] += and d.key +=
+shopt -s ysh:upgrade
+
+var mylist = [0]
+var mydict = {k: 0}
+
+proc mutate {
+  # these locals are ignored
+  var mylist = []
+  var mydict = {}
+
+  setglobal mylist[0] += 5
+  setglobal mydict['k'] += 5
+}
+
+mutate
+
+pp line (mylist)
+pp line (mydict)
+
+## STDOUT:
+(List)   [5]
+(Dict)   {"k":5}
+## END
+
+#### setglobal a[i] - i can be local or global
+shopt -s ysh:upgrade
+
+var mylist = [0, 1]
+var mydict = {k: 0, n: 1}
+
+var i = 0
+var key = 'k'
+
+proc mutate1 {
+  var mylist = []  # IGNORED
+  var mydict = {}  # IGNORED
+
+  var i = 1
+  var key = 'n'
+
+  setglobal mylist[i] = 11
+  setglobal mydict[key] = 11
+}
+
+# Same thing without locals
+proc mutate2 {
+  var mylist = []  # IGNORED
+  var mydict = {}  # IGNORED
+
+  setglobal mylist[i] = 22
+  setglobal mydict[key] = 22
+}
+
+mutate1
+
+pp line (mylist)
+pp line (mydict)
+echo
+
+mutate2
+
+pp line (mylist)
+pp line (mydict)
+
+## STDOUT:
+(List)   [0,11]
+(Dict)   {"k":0,"n":11}
+
+(List)   [22,11]
+(Dict)   {"k":22,"n":11}
+## END
 
 #### unset inside proc uses local scope
 shopt --set parse_brace
@@ -429,12 +499,12 @@ p2 x=
 ## END
 
 #### unset composes when you turn on dynamic scope
-shopt -s oil:all
+shopt -s ysh:all
 
-proc unset-two {
+proc unset-two (v, w) {
   shopt --set dynamic_scope {
-    unset $1 
-    unset $2
+    unset $v
+    unset $w
   }
 }
 

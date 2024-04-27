@@ -54,6 +54,7 @@ from core import pyutil
 from core import state
 from core import ui
 from core import util
+from data_lang import j8
 from data_lang import j8_lite
 from core.error import e_die
 from frontend import consts
@@ -1685,6 +1686,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part_val = self.expr_ev.EvalExprSub(part)
                 part_vals.append(part_val)
 
+            elif case(word_part_e.ZshVarSub):
+                part = cast(word_part.ZshVarSub, UP_part)
+                e_die("ZSH var subs are parsed, but can't be evaluated",
+                      part.left)
+
             else:
                 raise AssertionError(part.tag())
 
@@ -2161,7 +2167,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     strs.append(''.join(tmp))  # no split or glob
                     locs.append(w)
 
-        return cmd_value.Argv(strs, locs, None, None, None)
+        return cmd_value.Argv(strs, locs, None, None, None, None)
 
     def EvalWordSequence2(self, words, allow_assign=False):
         # type: (List[CompoundWord], bool) -> cmd_value_t
@@ -2258,7 +2264,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # A non-assignment command.
         # NOTE: Can't look up builtins here like we did for assignment, because
         # functions can override builtins.
-        return cmd_value.Argv(strs, locs, None, None, None)
+        return cmd_value.Argv(strs, locs, None, None, None, None)
 
     def EvalWordSequence(self, words):
         # type: (List[CompoundWord]) -> List[str]
@@ -2300,8 +2306,16 @@ class NormalWordEvaluator(AbstractWordEvaluator):
     def _EvalCommandSub(self, cs_part, quoted):
         # type: (CommandSub, bool) -> part_value_t
         stdout_str = self.shell_ex.RunCommandSub(cs_part)
+
         if cs_part.left_token.id == Id.Left_AtParen:
-            strs = self.splitter.SplitForWordEval(stdout_str)
+            # YSH splitting algorithm: does not depend on IFS
+            try:
+                strs = j8.SplitJ8Lines(stdout_str)
+            except error.Decode as e:
+                # status code 4 is special, for encode/decode errors.
+                raise error.Structured(4, e.Message(), cs_part.left_token)
+
+            #strs = self.splitter.SplitForWordEval(stdout_str)
             return part_value.Array(strs)
         else:
             return Piece(stdout_str, quoted, not quoted)

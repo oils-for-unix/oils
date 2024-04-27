@@ -87,8 +87,9 @@ frontend/match.py   # frontend/lexer_gen.py
 
 mycpp/mops.py       # Implemented in gc_mops.{h,cC}
 
-pgen2/grammar.py
+pgen2/grammar.py    # These files are re-done in C++
 pgen2/pnode.py
+pgen2/token.py
 
 # should be py_path_stat.py, because it's ported by hand to C++
 pylib/path_stat.py

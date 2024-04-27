@@ -24,7 +24,7 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
 ```chapter-links-front-end
   [Usage]         osh-usage   config   startup   line-editing   prompt
                   exit-codes
-  [Lexing]        comment #   line-continuation \
+  [Lexing]        comment #   line-continuation \   ascii-whitespace [ \t\r\n]
 ```
 
 <h2 id="cmd-lang">
@@ -65,7 +65,7 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
 
 ```chapter-links-word-lang
   [Quotes]        osh-string    'abc'  $'line\n'  "$var"
-  [Substitutions] com-sub       $(command)   `command`   @(split command)
+  [Substitutions] command-sub   $(command)   `command`
                   var-sub       ${var}   $0   $9   
                   arith-sub     $((1 + 2))
                   tilde-sub     ~/src

@@ -261,7 +261,7 @@ class TdopParser(object):
     def CurrentId(self):
         # type: () -> Id_t
         """Glue used by the WordParser to check for extra tokens."""
-        return word_.CommandId(self.cur_word)
+        return word_.ArithId(self.cur_word)
 
     def AtToken(self, token_type):
         # type: (Id_t) -> bool

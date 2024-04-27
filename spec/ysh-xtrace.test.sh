@@ -56,15 +56,15 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt >&2
 ## END
 
 #### proc and shell function
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 set -x
 
 shfunc() {
   : $1
 }
 
-proc p {
-  : $1
+proc p (x) {
+  : $x
 }
 
 shfunc 1

@@ -43,6 +43,37 @@ yaks() {
   PYTHONPATH='.:vendor' yaks/yaks_main.py "$@"
 }
 
+BAD=(
+  # should be a module
+  '(print "hi")'
+  '+'
+
+  # Unexpected EOF
+  '(print'
+
+  # Unexpected trailing input
+  '(print)oops'
+
+  # This one works
+  #'(module foo)'
+)
+
+
+# the transformer raises AssertionError
+
+test-syntax-errors() {
+  for b in "${BAD[@]}"; do
+    local src=_tmp/bad.yaks
+
+    echo "$b" >$src
+
+    echo "$b"
+    yaks cpp $src || true
+    echo
+
+  done
+}
+
 test-hello() {
   yaks cpp yaks/examples/hello.yaks
 

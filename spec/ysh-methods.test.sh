@@ -413,16 +413,16 @@ call a->reverse()
 call b->reverse()
 call c->reverse()
 
-json write --pretty=F (empty)
-json write --pretty=F (a)
-json write --pretty=F (b)
-json write --pretty=F (c)
+pp line (empty)
+pp line (a)
+pp line (b)
+pp line (c)
 
 ## STDOUT:
-[]
-[0]
-[3,1,2]
-["world","hello"]
+(List)   []
+(List)   [0]
+(List)   [3,1,2]
+(List)   ["world","hello"]
 ## END
 
 #### List->reverse() from iterator

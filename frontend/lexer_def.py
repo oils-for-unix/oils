@@ -1,7 +1,7 @@
 """
-lexer_def.py -- A lexer for both OSH and YSH.
+lexer_def.py - Lexing for OSH, YSH, and J8 Notation.
 
-It consists of a series of lexer modes, each with a regex -> Id mapping.
+The OSH/YSH lexer has lexer modes, each with a regex -> Id mapping.
 
 After changing this file, run:
 
@@ -18,14 +18,15 @@ Every line is NUL terminated:
 
     'one\n\0' 'last line\0'
 
-which means that no regexes below should match \0.  The core/lexer_gen.py code
-generator adds and extra rule for \0.
+which means that no regexes below should match \0.
 
 For example, use [^'\0]+ instead of [^']+ .
 
 If this rule isn't followed, we would read uninitialized memory past the
 sentinel.  Python's regex engine knows where the end of the input string is, so
 it doesn't require need a sentinel like \0.
+
+The frontend/lexer_gen.py generator adds a pattern mapping \0 to Id.Eol_Tok.
 """
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Kind
@@ -59,6 +60,7 @@ def R(pat, tok_type):
 # We need the [^\0]* because the re2c translation assumes it's anchored like $.
 SHOULD_HIJACK_RE = r'#![^\0]*sh[ \t\r\n][^\0]*'
 
+# Separates words (\r it not whitespace here)
 _SIGNIFICANT_SPACE = R(r'[ \t]+', Id.WS_Space)
 
 _BACKSLASH = [
@@ -100,6 +102,9 @@ _LEFT_SUBS = [
     C('`', Id.Left_Backtick),
     C('$(', Id.Left_DollarParen),
     C('${', Id.Left_DollarBrace),
+    # Parse zsh syntax, but don't execute it.
+    # The examples we've seen so far are like ${(%):-} and ${(m)
+    R(r'\$\{\([^)\0]+\)', Id.Left_DollarBraceZsh),
     C('$((', Id.Left_DollarDParen),
     C('$[', Id.Left_DollarBracket),
 ]
@@ -209,6 +214,7 @@ KEYWORDS = [
     C('setglobal', Id.KW_SetGlobal),
     C('call', Id.KW_Call),
     C('proc', Id.KW_Proc),
+    C('typed', Id.KW_Typed),
     C('func', Id.KW_Func),
 ]
 
@@ -230,24 +236,19 @@ EXPR_WORDS = [
     C('or', Id.Expr_Or),
     C('not', Id.Expr_Not),
     C('for', Id.Expr_For),
-    C('while', Id.Expr_While),
     C('is', Id.Expr_Is),
     C('in', Id.Expr_In),
     C('if', Id.Expr_If),
     C('else', Id.Expr_Else),
 
-    # for function literals
+    # Unused: could be for function literals, although we also have
+    # |x| x+1 lambdas
     C('func', Id.Expr_Func),
 
     # / <capture d+/
     C('capture', Id.Expr_Capture),
     # / <capture d+ as date> /
     C('as', Id.Expr_As),
-
-    # Tea Control Flow Operators
-    C('break', Id.Expr_Break),
-    C('continue', Id.Expr_Continue),
-    C('return', Id.Expr_Return),
 ]
 
 FD_VAR_NAME = r'\{' + VAR_NAME_RE + r'\}'
@@ -421,7 +422,16 @@ _VS_ARG_COMMON = [
     C('$', Id.Lit_Dollar),  # completion of var names relies on this
 ]
 
-# Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
+# We don't execute zsh var subs, but to find the closing } properly, we need to
+# to recognize \} and '}' and "}" $'}' etc.
+LEXER_DEF[lex_mode_e.VSub_Zsh] = \
+  _BACKSLASH + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + \
+  [
+    C('}', Id.Right_DollarBrace),  # For var sub "${a}"
+    R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
+]
+
+# Kind.{Lit,Ignored,VSub,Left,Right,Eof}
 LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
   _BACKSLASH + _VS_ARG_COMMON + _LEFT_SUBS + _LEFT_UNQUOTED + _LEFT_PROCSUB + \
   _VARS + _EXTGLOB_BEGIN + [
@@ -437,7 +447,7 @@ LEXER_DEF[lex_mode_e.VSub_ArgUnquoted] = \
     R(r'[^\0]', Id.Lit_Other),  # e.g. "$", must be last
 ]
 
-# Kind.{LIT,IGNORED,VS,LEFT,RIGHT,Eof}
+# Kind.{Lit,Ignored,VSub,Left,Right,Eof}
 LEXER_DEF[lex_mode_e.VSub_ArgDQ] = \
   _DQ_BACKSLASH +  _VS_ARG_COMMON + _LEFT_SUBS + _VARS + [
 
@@ -553,12 +563,15 @@ J8_SYMBOL_RE = (
     r'[a-zA-Z0-9' + J8_SYMBOL_CHARS + ']*')
 # yapf: enable
 
-J8_DEF = [
+_J8_LEFT = [
     C('"', Id.Left_DoubleQuote),  # JSON string
     # Three left quotes that are J8 only
     C("u'", Id.Left_USingleQuote),  # unicode string
     C("'", Id.Left_USingleQuote),  # '' is alias for u'' in data, not in code
     C("b'", Id.Left_BSingleQuote),  # byte string
+]
+
+J8_DEF = _J8_LEFT + [
     C('[', Id.J8_LBracket),
     C(']', Id.J8_RBracket),
     C('{', Id.J8_LBrace),
@@ -584,9 +597,9 @@ J8_DEF = [
     # Identifier.  JSON8 only has Identifier.
     #R(J8_SYMBOL_RE, Id.J8_Symbol),  # NIL8 only
     R(r'[~!@$%^&*+=|;./<>?-]+', Id.J8_Operator),  # NIL8 only
-
-    # TODO: emit Id.Ignored_Newline to count lines for error messages?
-    R(r'[ \r\n\t]+', Id.Ignored_Space),
+    R(r'[ \r\t]+', Id.Ignored_Space),
+    # A separate token, to count lines for error messages
+    C('\n', Id.Ignored_Newline),
     # comment is # until end of line
     # // comments are JavaScript style, but right now we might want them as
     # symbols?
@@ -596,30 +609,55 @@ J8_DEF = [
     R(r'[^\0]', Id.Unknown_Tok),
 ]
 
-# Exclude control characters 0x00-0x1f, aka 0-31 in J8 data
-# But \n has to be allowed in multi-line strings
+# Exclude control characters 0x00-0x1f, aka 0-31 in J8 data only (not YSH code)
 _ASCII_CONTROL = R(r'[\x01-\x1F]', Id.Char_AsciiControl)
+
+J8_LINES_DEF = _J8_LEFT + [
+    # not sure if we want \r here - same with lex_mode_e.Expr
+    R(r'[ \r\t]+', Id.WS_Space),
+    R(r'[\n]', Id.J8_Newline),
+
+    # doesn't match \t, which means tabs are allowed in the middle of unquoted
+    # lines
+    _ASCII_CONTROL,
+
+    # not space or ' or " or ASCII control or EOF
+    R(r'''[^ \t\r\n'"\x00-\x1F]+''', Id.Lit_Chars),
+]
 
 # https://json.org list of chars, plus '
 _JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 
-# Union of escapes that "" u"" b"" accept.  Validation is separate.
-J8_STR_DEF = [
+# b'' u'' strings - what's common between code and data.
+_J8_STR_COMMON = [
     C("'", Id.Right_SingleQuote),  # end for J8
     _JSON_ONE_CHAR,
-    C("\\'", Id.Char_OneChar),
-
-    # osh/word_parse.py relies on this.  It has to match $'', which uses _C_STRING_COMMON
-    C('\\', Id.Unknown_Backslash),
+    C("\\'", Id.Char_OneChar),  # since ' ends, allow \'
     R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
     _U_BRACED_CHAR,  # \u{123456} - J8 only
-    _ASCII_CONTROL,
 
-    # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'''[^\\'\0]+''', Id.Lit_Chars),
+    # osh/word_parse.py relies on this.  It has to be consistent with $''
+    # lexing, which uses _C_STRING_COMMON
+    C('\\', Id.Unknown_Backslash),
 ]
 
-# For "JSON strings \" \u1234"
+# Lexer for J8 strings in CODE.
+LEXER_DEF[lex_mode_e.J8_Str] = _J8_STR_COMMON + [
+    # Don't produce Char_AsciiControl tokens - that's only for data
+
+    # will match invalid UTF-8 - we have a separate validation step
+    R(r"[^\\'\0]+", Id.Lit_Chars),
+]
+
+# Lexer for J8 string data.
+# ASCII control characters are disallowed in DATA, but not CODE!
+J8_STR_DEF = _J8_STR_COMMON + [
+    _ASCII_CONTROL,
+    # will match invalid UTF-8 - we have a separate validation step
+    R(r"[^\\'\x00-\x1F]+", Id.Lit_Chars),
+]
+
+# Lexer for JSON string data - e.g. "json \" \u1234"
 JSON_STR_DEF = [
     C('"', Id.Right_DoubleQuote),  # end for JSON
     _JSON_ONE_CHAR,
@@ -631,14 +669,12 @@ JSON_STR_DEF = [
     R(
         r'\\u[dD][89aAbB][0-9a-fA-F][0-9a-fA-F]\\u[dD][cCdDeEfF][0-9a-fA-F][0-9a-fA-F]',
         Id.Char_SurrogatePair),
+    C('\\', Id.Unknown_Backslash),  # e.g. the \ before bad \z
     _ASCII_CONTROL,
 
     # Note: This will match INVALID UTF-8.  UTF-8 validation is another step.
-    R(r'[^\\"\0]+', Id.Lit_Chars),
-    R(r'[^\0]', Id.Unknown_Tok),
+    R(r'[^\\"\x00-\x1F]+', Id.Lit_Chars),
 ]
-
-LEXER_DEF[lex_mode_e.J8_Str] = J8_STR_DEF
 
 OCTAL3_RE = r'\\[0-7]{1,3}'
 
@@ -906,10 +942,11 @@ EXPR_OPS = [
 _EXPR_NEWLINE_COMMENT = [
     C('\n', Id.Op_Newline),
     R(r'#[^\n\0]*', Id.Ignored_Comment),
+    # Like lex_mode_e.Arith, \r is whitespace even without \n
     R(r'[ \t\r]+', Id.Ignored_Space),
 ]
 
-_WHITESPACE = r'[ \t\r\n]*'  # not including legacy \f \v
+_WHITESPACE = r'[ \t\r\n]*'  # ASCII whitespace doesn't have legacy \f \v
 
 # Python allows 0 to be written 00 or 0_0_0, which is weird.  But let's be
 # consistent, and avoid '00' turning into a float!

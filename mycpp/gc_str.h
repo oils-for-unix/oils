@@ -208,4 +208,12 @@ inline int len(const Str s) {
       {.len_ = sizeof(val) - 1, .hash_ = 0, .is_hashed_ = 0, .data_ = val}}; \
   Str name(reinterpret_cast<BigStr*>(&_##name.obj));
 
+// Helper function that's consistent with JSON definition of ASCII whitespace,
+// e.g.
+// {"age": \t 42} is OK
+// {"age": \v 42} is NOT OK
+inline bool IsAsciiWhitespace(int ch) {
+  return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
+}
+
 #endif  // MYCPP_GC_STR_H
