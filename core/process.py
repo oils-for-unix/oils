@@ -1154,7 +1154,8 @@ class Process(Job):
                     print_stderr('[%d] Done PID %d' % (self.job_id, self.pid))
 
                 self.job_list.RemoveJob(self.job_id)
-                self.job_list.RemoveChildProcess(self.pid)
+
+            self.job_list.RemoveChildProcess(self.pid)
 
             if not self.in_background:
                 self.job_control.MaybeTakeTerminal()
