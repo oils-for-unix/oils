@@ -51,6 +51,11 @@ and benchmarks.
 
 ## Documentation
 
+- The [**Oils Reference**](doc/ref/index.html) (in progress)
+  - Table of contents for [OSH](doc/ref/toc-osh.html) | [YSH](doc/ref/toc-ysh.html)
+    | [Data Languages](doc/ref/toc-data.html)
+- [**All Docs**](doc/) about Oils (in progress).
+
 These docs are **ready to read**:
 
 - [Getting Started](doc/getting-started.html)
@@ -64,6 +69,7 @@ These docs are **ready to read**:
 - YSH:
   - Intro: [A Tour of YSH](doc/ysh-tour.html)
   | [A Feel For YSH Syntax](doc/syntax-feelings.html) 
+  | [YSH Style Guide](doc/style-guide.html) 
   | [YSH vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
   | [What Breaks When You Upgrade to YSH](doc/upgrade-breakage.html)
   | [YSH Language FAQ](doc/ysh-faq.html)
@@ -88,8 +94,6 @@ These docs are **ready to read**:
 
 More:
 
-- [**All Docs**](doc/) about Oils (in progress).
-  - Including the [**Oils Reference**](doc/ref/index.html) (in progress)
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
   [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
   page has other ways of getting Oils.  These versions may not be up-to-date.

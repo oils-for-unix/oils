@@ -351,10 +351,6 @@ update-src-versions() {
     doc/osh.1
 }
 
-oil-grammar() {
-  PYTHONPATH=. ysh/cmd_parse.py "$@"
-}
-
 #
 # Test Tools
 #
@@ -609,7 +605,7 @@ add-date-and-links() {
   '
 }
 
-modify-pages() {
+patch-release-pages() {
   local release_date
   release_date=$(cat _build/release-date.txt)
 
@@ -617,6 +613,13 @@ modify-pages() {
 
   add-date-and-links $release_date < _tmp/release-index.html > $root/index.html
   add-date-and-links $release_date < _tmp/release-quality.html > $root/quality.html
+}
+
+copy-release-pages() {
+  ### For testing without releasing
+
+  cat < _tmp/release-index.html > $root/index.html
+  cat < _tmp/release-quality.html > $root/quality.html
 }
 
 run-for-release() {
@@ -636,7 +639,7 @@ run-for-release() {
   all-ref
   all-redirects  # backward compat
 
-  modify-pages
+  patch-release-pages
 
   # Problem: You can't preview it without .wwz!
   # Maybe have local redirects VERSION/test/wild/ to 
