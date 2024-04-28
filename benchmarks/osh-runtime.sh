@@ -34,6 +34,7 @@ tarballs() {
 tcc-0.9.26.tar.bz2
 yash-2.46.tar.xz
 ocaml-4.06.0.tar.xz
+openvswitch-3.3.0.tar.gz
 EOF
 }
 
@@ -45,7 +46,7 @@ download() {
 
 extract() {
   set -x
-  time for f in $TAR_DIR/*.{bz2,xz}; do
+  time for f in $TAR_DIR/*.{gz,bz2,xz}; do
     tar -x --directory $TAR_DIR --file $f 
   done
   set +x
@@ -105,6 +106,9 @@ run-tasks() {
 
         local conf_dir
         case $workload in
+          *.openvswitch)
+            conf_dir='openvswitch-3.3.0'
+            ;;
           *.ocaml)
             conf_dir='ocaml-4.06.0'
             ;;
@@ -182,6 +186,7 @@ print-tasks() {
     abuild-print-help
 
     configure.cpython
+    configure.openvswitch
     configure.ocaml
     configure.tcc
     configure.yash
@@ -190,8 +195,9 @@ print-tasks() {
   if test -n "${QUICKLY:-}"; then
     # Just do the first two
     workloads=(
-      hello-world
-      abuild-print-help
+      configure.openvswitch
+      #hello-world
+      #abuild-print-help
     )
   fi
 
