@@ -575,7 +575,7 @@ RuntimeReport = function(in_dir, out_dir) {
                                    `osh-native` = 0, py_bash_ratio = 2,
                                    native_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
-  writeTsv(max_rss, file.path(out_dir, 'max_rss'))  # default is OK
+  writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision)
 
   precision2 = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),
                                default = 0)
