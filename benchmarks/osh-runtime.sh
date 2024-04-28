@@ -34,7 +34,7 @@ tarballs() {
 tcc-0.9.26.tar.bz2
 yash-2.46.tar.xz
 ocaml-4.06.0.tar.xz
-openvswitch-3.3.0.tar.gz
+util-linux-2.40.tar.xz
 EOF
 }
 
@@ -46,7 +46,7 @@ download() {
 
 extract() {
   set -x
-  time for f in $TAR_DIR/*.{gz,bz2,xz}; do
+  time for f in $TAR_DIR/*.{bz2,xz}; do
     tar -x --directory $TAR_DIR --file $f 
   done
   set +x
@@ -101,14 +101,17 @@ run-tasks() {
         working_dir=$files_out_dir
         ;;
 
+      configure.util-linux)
+        # flag needed to avoid sqlite3 dep error message
+        argv=( $TAR_DIR/util-linux-2.40/configure --disable-liblastlog2 )
+        working_dir=$files_out_dir
+        ;;
+
       configure.*)
         argv=( ./configure )
 
         local conf_dir
         case $workload in
-          *.openvswitch)
-            conf_dir='openvswitch-3.3.0'
-            ;;
           *.ocaml)
             conf_dir='ocaml-4.06.0'
             ;;
@@ -122,6 +125,7 @@ run-tasks() {
             die "Invalid workload $workload"
         esac
 
+        # These are run in-tree?
         working_dir=$TAR_DIR/$conf_dir
         ;;
 
@@ -186,7 +190,7 @@ print-tasks() {
     abuild-print-help
 
     configure.cpython
-    configure.openvswitch
+    configure.util-linux
     configure.ocaml
     configure.tcc
     configure.yash
@@ -195,7 +199,7 @@ print-tasks() {
   if test -n "${QUICKLY:-}"; then
     # Just do the first two
     workloads=(
-      configure.openvswitch
+      configure.util-linux
       #hello-world
       #abuild-print-help
     )
