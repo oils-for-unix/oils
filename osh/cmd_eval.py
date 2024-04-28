@@ -1139,7 +1139,60 @@ class CommandEvaluator(object):
 
         return status
 
+    def _DoForEachWord(self, node):
+        # type: (command.ForEach) -> int
+
+        it2 = val_ops.ArrayIter(
+            self.word_ev.EvalWordSequence(
+                braces.BraceExpandWords(cast(for_iter.Words, node.iterable).words)))
+
+        n = len(node.iter_names)
+        assert n > 0
+
+        i_name = None  # type: Optional[LeftName]
+        if n == 1:
+            name1 = location.LName(node.iter_names[0])
+        elif n == 2:
+            i_name = location.LName(node.iter_names[0])
+            name1 = location.LName(node.iter_names[1])
+        else:
+            # This is similar to a parse error
+            e_die_status(
+                2, 'Argv iteration expects at most 2 loop variables',
+                node.keyword)
+
+        status = 0  # in case we loop zero times
+        with ctx_LoopLevel(self):
+            while not it2.Done():
+                self.mem.SetLocalName(name1, it2.FirstValue())
+                if i_name:
+                    self.mem.SetLocalName(i_name, num.ToBig(it2.Index()))
+
+                # increment index before handling continue, etc.
+                it2.Next()
+
+                try:
+                    status = self._Execute(node.body)  # last one wins
+                except vm.IntControlFlow as e:
+                    status = 0
+                    action = e.HandleLoop()
+                    if action == flow_e.Break:
+                        break
+                    elif action == flow_e.Raise:
+                        raise
+
+        return status
+
     def _DoForEach(self, node):
+        # type: (command.ForEach) -> int
+
+        with tagswitch(node.iterable) as case:
+            if case(for_iter_e.Words):
+                return self._DoForEachWord(node)
+
+        return self._DoForEach2(node)
+
+    def _DoForEach2(self, node):
         # type: (command.ForEach) -> int
 
         # for the 2 kinds of shell loop
@@ -1157,9 +1210,7 @@ class CommandEvaluator(object):
                 iter_list = self.mem.GetArgv()
 
             elif case(for_iter_e.Words):
-                iterable = cast(for_iter.Words, UP_iterable)
-                words = braces.BraceExpandWords(iterable.words)
-                iter_list = self.word_ev.EvalWordSequence(words)
+                return self._DoForEachWord(node)
 
             elif case(for_iter_e.YshExpr):
                 iterable = cast(for_iter.YshExpr, UP_iterable)

@@ -2169,7 +2169,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         return cmd_value.Argv(strs, locs, None, None, None, None)
 
-    def EvalWordSequence2(self, words, allow_assign=False):
+    def EvalWordSequence2(self, words_noroot, allow_assign=False):
         # type: (List[CompoundWord], bool) -> cmd_value_t
         """Turns a list of Words into a list of strings.
 
@@ -2182,7 +2182,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
           argv: list of string arguments, or None if there was an eval error
         """
         if self.exec_opts.simple_word_eval():
-            return self.SimpleEvalWordSequence2(words, allow_assign)
+            return self.SimpleEvalWordSequence2(words_noroot, allow_assign)
 
         # Parse time:
         # 1. brace expansion.  TODO: Do at parse time.
@@ -2201,7 +2201,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         locs = []  # type: List[CompoundWord]
 
         n = 0
-        for i, w in enumerate(words):
+        for i, w in enumerate(words_noroot):
             fast_str = word_.FastStrEval(w)
             if fast_str is not None:
                 strs.append(fast_str)
@@ -2212,7 +2212,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     builtin_id = consts.LookupAssignBuiltin(fast_str)
                     if builtin_id != consts.NO_INDEX:
                         return self._EvalAssignBuiltin(builtin_id, fast_str,
-                                                       words)
+                                                       words_noroot)
                 continue
 
             part_vals = []  # type: List[part_value_t]
@@ -2236,7 +2236,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         builtin_id = consts.LookupAssignBuiltin(val0.s)
                         if builtin_id != consts.NO_INDEX:
                             return self._EvalAssignBuiltin(
-                                builtin_id, val0.s, words)
+                                builtin_id, val0.s, words_noroot)
 
             if 0:
                 log('')

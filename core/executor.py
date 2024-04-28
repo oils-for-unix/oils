@@ -226,30 +226,30 @@ class ShellExecutor(vm._Executor):
         - YSH might have OILS_PATH = :| /bin /usr/bin | or something.
         - Interpreters might want to define all their own builtins.
         """
-        argv = cmd_val.argv
+        argv_noroot = cmd_val.argv
         if len(cmd_val.arg_locs):
-            arg0_loc = cmd_val.arg_locs[0]  # type: loc_t
+            arg0_loc_noroot = cmd_val.arg_locs[0]  # type: loc_t
         else:
-            arg0_loc = loc.Missing
+            arg0_loc_noroot = loc.Missing
 
         # This happens when you write "$@" but have no arguments.
-        if len(argv) == 0:
+        if len(argv_noroot) == 0:
             if self.exec_opts.strict_argv():
-                e_die("Command evaluated to an empty argv array", arg0_loc)
+                e_die("Command evaluated to an empty argv array", arg0_loc_noroot)
             else:
                 return 0  # status 0, or skip it?
 
-        arg0 = argv[0]
+        arg0_noroot = argv_noroot[0]
 
-        builtin_id = consts.LookupAssignBuiltin(arg0)
+        builtin_id = consts.LookupAssignBuiltin(arg0_noroot)
         if builtin_id != consts.NO_INDEX:
             # command readonly is disallowed, for technical reasons.  Could relax it
             # later.
             self.errfmt.Print_("Can't run assignment builtin recursively",
-                               arg0_loc)
+                               arg0_loc_noroot)
             return 1
 
-        builtin_id = consts.LookupSpecialBuiltin(arg0)
+        builtin_id = consts.LookupSpecialBuiltin(arg0_noroot)
         if builtin_id != consts.NO_INDEX:
             cmd_st.show_code = True  # this is a "leaf" for errors
             status = self.RunBuiltin(builtin_id, cmd_val)
@@ -267,7 +267,7 @@ class ShellExecutor(vm._Executor):
             # Pitfall: What happens if there are two of the same name?  I guess
             # that's why you have = and 'type' inspect them
 
-            proc_node = self.procs.get(arg0)
+            proc_node = self.procs.get(arg0_noroot)
             if proc_node is not None:
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()
@@ -279,9 +279,9 @@ class ShellExecutor(vm._Executor):
                         e_die(
                             "Can't run a proc while errexit is disabled. "
                             "Use 'try' or wrap it in a process with $0 myproc",
-                            arg0_loc)
+                            arg0_loc_noroot)
 
-                with dev.ctx_Tracer(self.tracer, 'proc', argv):
+                with dev.ctx_Tracer(self.tracer, 'proc', argv_noroot):
                     # NOTE: Functions could call 'exit 42' directly, etc.
                     status = self.cmd_ev.RunProc(proc_node, cmd_val)
                 return status
@@ -289,10 +289,10 @@ class ShellExecutor(vm._Executor):
         # Notes:
         # - procs shadow hay names
         # - hay names shadow normal builtins?  Should we limit to CAPS or no?
-        if self.hay_state.Resolve(arg0):
+        if self.hay_state.Resolve(arg0_noroot):
             return self.RunBuiltin(builtin_i.haynode, cmd_val)
 
-        builtin_id = consts.LookupNormalBuiltin(arg0)
+        builtin_id = consts.LookupNormalBuiltin(arg0_noroot)
 
         if self.exec_opts._running_hay():
             # Hay: limit the builtins that can be run
@@ -304,8 +304,8 @@ class ShellExecutor(vm._Executor):
                 cmd_st.show_code = True  # this is a "leaf" for errors
                 return self.RunBuiltin(builtin_id, cmd_val)
 
-            self.errfmt.Print_('Unknown command %r while running hay' % arg0,
-                               arg0_loc)
+            self.errfmt.Print_('Unknown command %r while running hay' % arg0_noroot,
+                               arg0_loc_noroot)
             return 127
 
         if builtin_id != consts.NO_INDEX:
@@ -317,15 +317,16 @@ class ShellExecutor(vm._Executor):
         if cmd_val.typed_args:
             e_die(
                 '%r appears to be external. External commands don\'t accept typed args (OILS-ERR-200)'
-                % arg0, cmd_val.typed_args.left)
+                % arg0_noroot, cmd_val.typed_args.left)
 
         # Resolve argv[0] BEFORE forking.
         if run_flags & USE_DEFAULT_PATH:
-            argv0_path = state.LookupExecutable(arg0, DEFAULT_PATH)
+            argv0_path = state.LookupExecutable(arg0_noroot, DEFAULT_PATH)
         else:
-            argv0_path = self.search_path.CachedLookup(arg0)
+            argv0_path = self.search_path.CachedLookup(arg0_noroot)
         if argv0_path is None:
-            self.errfmt.Print_('%r not found (OILS-ERR-100)' % arg0, arg0_loc)
+            self.errfmt.Print_('%r not found (OILS-ERR-100)' % arg0_noroot,
+                               arg0_loc_noroot)
             return 127
 
         # Normal case: ls /

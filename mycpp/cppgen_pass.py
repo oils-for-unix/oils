@@ -421,7 +421,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.decl = decl
         self.forward_decl = forward_decl
-        self.stack_roots_warn = stack_roots_warn
+        self.stack_roots_warn = 10
 
         self.unique_id = 0
 
@@ -2829,7 +2829,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                            '', self.current_func_node.name, len(roots)))
 
                 for i, r in enumerate(roots):
-                    self.def_write_ind('StackRoot _root%d(&%s);\n' % (i, r))
+                    if not r.startswith('UP_') and 'noroot' not in r:
+                        self.def_write_ind('StackRoot _root%d(&%s);\n' % (i, r))
 
                 self.def_write('\n')
 

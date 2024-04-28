@@ -764,6 +764,11 @@ class Thunk(object):
         """Display for the 'jobs' list."""
         raise NotImplementedError()
 
+    def WillExec(self):
+        # type: () -> bool
+        """Returns true if the thunk will exec"""
+        return False
+
     def __repr__(self):
         # type: () -> str
         return self.UserString()
@@ -788,6 +793,11 @@ class ExternalThunk(Thunk):
         # We could switch the former but I'm not sure it's necessary.
         tmp = [j8_lite.MaybeShellEncode(a) for a in self.cmd_val.argv]
         return '[process] %s' % ' '.join(tmp)
+
+    def WillExec(self):
+        # type: () -> bool
+        """Returns true if the thunk will exec"""
+        return True
 
     def Run(self):
         # type: () -> None
@@ -1073,7 +1083,9 @@ class Process(Job):
             pyos.Sigaction(SIGTTOU, SIG_DFL)
             pyos.Sigaction(SIGTTIN, SIG_DFL)
 
-            self.tracer.OnNewProcess(pid)
+            if not self.thunk.WillExec():
+                self.tracer.OnNewProcess(pid)
+
             # clear foreground pipeline for subshells
             self.thunk.Run()
             # Never returns

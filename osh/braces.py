@@ -505,10 +505,10 @@ def _BraceExpand(parts):
         return _ExpandPart(parts, first_alt_index, suffixes)
 
 
-def BraceExpandWords(words):
+def BraceExpandWords(words_noroot):
     # type: (List[word_t]) -> List[CompoundWord]
-    out = []  # type: List[CompoundWord]
-    for w in words:
+    out_noroot = []  # type: List[CompoundWord]
+    for w in words_noroot:
         UP_w = w
         with tagswitch(w) as case:
             if case(word_e.BracedTree):
@@ -523,17 +523,17 @@ def BraceExpandWords(words):
                     # Now do tilde detection on brace-expanded word
                     ti = word_.TildeDetect2(expanded)
                     if ti:
-                        out.append(ti)
+                        out_noroot.append(ti)
                     else:
-                        out.append(expanded)
+                        out_noroot.append(expanded)
 
             elif case(word_e.Compound):
                 w = cast(CompoundWord, UP_w)
 
                 # Already did tilde detection before expansion
-                out.append(w)
+                out_noroot.append(w)
 
             else:
                 raise AssertionError(w.tag())
 
-    return out
+    return out_noroot
