@@ -27,6 +27,41 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+osh-runtime() {
+  # Extract and compile the tarball
+  devtools/release-native.sh test-tar
+  # TODO: compile time-helper.c
+
+  # TODO: call benchmarks/osh-runtime to measure
+  #
+  # Upload TSV files
+  # Where?
+}
+
+demo() {
+  local oils_version
+  oils_version=$(head -n 1 oil-version.txt)
+
+  # Extract and compile the tarball
+  # Similar to devtools/release-native.sh test-tar
+
+  local tmp=_tmp/xshar-demo
+  mkdir -p $tmp
+
+  pushd $tmp
+  tar -x < ../../_release/oils-for-unix.tar
+
+  pushd oils-for-unix-$oils_version
+  build/native.sh tarball-demo
+
+  # TODO: use benchmarks/time_.py
+  # TODO: compile time-helper.c
+  time _bin/cxx-opt-sh/osh -c 'sleep 0.1; echo "hi from osh"'
+  popd
+
+  popd
+}
+
 main() {
   # TODO
   #

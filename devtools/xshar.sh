@@ -53,7 +53,7 @@ change_dir() {
 }
 
 extract_data() {
-  base64 -d >tmp.tar.gz <<'XSHAR_DATA'
+  base64 -d <<'XSHAR_DATA' | tar -x -z
 EOF
 
   # Print code that extracts here doc
@@ -61,8 +61,6 @@ EOF
 
   cat <<EOF
 XSHAR_DATA
-
-  tar -x -z < tmp.tar.gz
 }
 
 change_dir
@@ -91,11 +89,36 @@ create() {
   print-shell $tar $main > $out
   chmod +x $out
   ls -l $out
+  echo
 }
 
 create-hello() {
   find yaks/ -name '*.py' | xargs -- $0 create devtools/hello-xshar.sh 
-  ls -l _release
+  ls -l -h _release
+}
+
+test-oils-manifest() {
+  echo '_release/oils-for-unix.tar'
+
+  echo 'oil-version.txt'
+
+  # TODO: need osh --tool shell-deps for these
+
+  echo 'devtools/release-native.sh'
+  echo 'benchmarks/time_.py'
+  echo 'benchmarks/time-helper.c'
+
+  # extracted tarball
+  #find _deps/osh-runtime/util-linux-2.40
+
+  # we could include Python-2.7.13 too
+}
+
+create-test-oils() {
+  devtools/release-native.sh make-tar
+
+  test-oils-manifest | xargs -- $0 create devtools/test-oils.sh 
+  ls -l -h _release
 }
 
 soil-run-hello() {
@@ -104,7 +127,12 @@ soil-run-hello() {
 }
 
 soil-run-test-oils() {
-  echo TODO
+  create-test-oils
+
+  # Run it twice to test that SKIP_REBUILD works
+  for x in 1 2; do
+    XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar demo a b c
+  done
 }
 
 run-task "$@"

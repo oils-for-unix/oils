@@ -149,6 +149,7 @@ main() {
 
   echo
   echo "$0: Building oils-for-unix: $out"
+  echo "$0: PWD = $PWD"
   echo
 ''', file=f)
 
