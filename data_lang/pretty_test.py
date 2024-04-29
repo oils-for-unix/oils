@@ -17,6 +17,7 @@ class PrettyTest(unittest.TestCase):
     def setUpClass(cls):
         cls.printer = PrettyPrinter()
         cls.printer.SetIndent(2)
+        cls.printer.SetUseStyles(False)
 
     def assertPretty(self, width, value_str, expected):
         # type: (int, str, str) -> None

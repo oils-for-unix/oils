@@ -40,6 +40,7 @@ from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 
 from data_lang.j8 import ValueIdString, HeapValueId
 from typing import cast, List, Dict, Callable #, Tuple Optional
+from core import ansi
 
 import fastfunc
 import re
@@ -59,12 +60,13 @@ _ = log
 # - [ ] fill in ~Algorithm Description~
 # - [ ] hook up the printer in core/ui.py::PrettyPrintValue
 # - [ ] test cyclic values
+# - [ ] test styles (how?)
 # Now:
 # - [ ] string width
 # - [x] Unquote identifier-y dict keys
-# - [ ] Add some style
+# - [x] Add some style
 # - [ ] Test BashArray and BashAssoc
-# - [ ] Show cycles as '...'
+# - [ ] Show cycles as [...]/{...}
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
@@ -76,7 +78,12 @@ _ = log
 # - max_depth vs. cycle detection. Turn cycle detection off if there's a max_depth?
 #   NO MAX DEPTH
 
-IDENTIFIER_REGEX = re.compile("^[_a-zA-Z][a-zA-Z0-9]*$")
+UNQUOTED_KEY_REGEX = re.compile("^[_a-zA-Z][a-zA-Z0-9]*$")
+KEY_STYLE = ansi.GREEN
+NUMBER_STYLE = ansi.YELLOW
+NULL_STYLE = ansi.BOLD + ansi.RED
+BOOL_STYLE = ansi.BOLD + ansi.BLUE
+CYCLE_STYLE = ansi.BOLD + ansi.YELLOW
 
 ################
 # Measurements #
@@ -167,6 +174,7 @@ class PrettyPrinter(object):
 
     DEFAULT_MAX_WIDTH = 80
     DEFAULT_INDENTATION = 4
+    DEFAULT_USE_STYLES = True
 
     def __init__(self):
         # type: () -> None
@@ -175,6 +183,7 @@ class PrettyPrinter(object):
         Use the Set*() methods for configuration before printing."""
         self.max_width = PrettyPrinter.DEFAULT_MAX_WIDTH
         self.indent = PrettyPrinter.DEFAULT_INDENTATION
+        self.use_styles = PrettyPrinter.DEFAULT_USE_STYLES
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
@@ -189,10 +198,15 @@ class PrettyPrinter(object):
         """Set the number of spaces per indentation level."""
         self.indent = indent
 
+    def SetUseStyles(self, use_styles):
+        # type: (bool) -> None
+        """If true, print with ansi colors and styles. Otherwise print plainly."""
+        self.use_styles = use_styles
+
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
-        constructor = _DocConstructor(self.indent)
+        constructor = _DocConstructor(self.indent, self.use_styles)
         document = constructor.Value(val)
         self._PrintDoc(document, buf)
 
@@ -311,15 +325,27 @@ class _CycleDetector:
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
 
-    def __init__(self, indent):
-        # type: (int) -> None
+    def __init__(self, indent, use_styles):
+        # type: (int, bool) -> None
         self.indent = indent
+        self.use_styles = use_styles
 
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
         self.cycle_detector = _CycleDetector()
         return self._Value(val)
+
+    def _Styled(self, style, mdoc):
+        # type: (str, MeasuredDoc) -> MeasuredDoc
+        """Apply the ANSI style string to the given node, if use_styles is set."""
+        if self.use_styles:
+            return _Concat([
+                MeasuredDoc(doc.Text(style), _EmptyMeasure()),
+                mdoc,
+                MeasuredDoc(doc.Text(ansi.RESET), _EmptyMeasure())])
+        else:
+            return mdoc
 
     def _Surrounded(self, open, mdoc, close):
         # type: (str, MeasuredDoc, str) -> MeasuredDoc
@@ -351,10 +377,10 @@ class _DocConstructor:
 
     def _Key(self, s):
         # type: (str) -> MeasuredDoc
-        if IDENTIFIER_REGEX.match(s):
-            return _Text(s)
+        if UNQUOTED_KEY_REGEX.match(s):
+            return self._Styled(KEY_STYLE, _Text(s))
         else:
-            return _Text(fastfunc.J8EncodeString(s, True)) # lossy_json=True
+            return self._Styled(KEY_STYLE, _Text(fastfunc.J8EncodeString(s, True))) # lossy_json=True
 
     def _String(self, s):
         # type: (str) -> MeasuredDoc
@@ -402,19 +428,19 @@ class _DocConstructor:
 
         with tagswitch(val) as case:
             if case(value_e.Null):
-                return _Text("null")
+                return self._Styled(NULL_STYLE, _Text("null"))
 
             elif case(value_e.Bool):
                 b = cast(value.Bool, val).b
-                return _Text("true" if b else "false")
+                return self._Styled(BOOL_STYLE, _Text("true" if b else "false"))
 
             elif case(value_e.Int):
                 i = cast(value.Int, val).i
-                return _Text(mops.ToStr(i))
+                return self._Styled(NUMBER_STYLE, _Text(mops.ToStr(i)))
 
             elif case(value_e.Float):
                 f = cast(value.Float, val).f
-                return _Text(str(f))
+                return self._Styled(NUMBER_STYLE, _Text(str(f)))
 
             elif case(value_e.Str):
                 s = cast(value.Str, val).s
