@@ -2,11 +2,13 @@
 
 import unittest
 # module under test
-from data_lang.pretty import PrettyPrinter, MeasuredDoc, _CycleDetector, _Concat, _Text
+from data_lang.pretty import (PrettyPrinter, MeasuredDoc, _CycleDetector,
+    _Concat, _Text, NULL_STYLE, NUMBER_STYLE)
 
 from data_lang import j8
 from _devbuild.gen.value_asdl import value, value_t
 from mycpp import mylib, mops
+from core import ansi
 
 def IntValue(i):
     # type: (int) -> value_t
@@ -61,6 +63,15 @@ class PrettyTest(unittest.TestCase):
         self.assertPretty(10,
             '"\\"For the `n`\'th time,\\" she said."',
             '"\\"For the `n`\'th time,\\" she said."')
+
+    def testStyles(self):
+        self.printer.SetUseStyles(True)
+        self.assertPretty(
+            20,
+            '[null, "ok", 15]',
+            '[' + NULL_STYLE + 'null' + ansi.RESET + ', "ok", '
+                + NUMBER_STYLE + '15' + ansi.RESET + ']')
+        self.printer.SetUseStyles(False)
 
     def testList(self):
         self.assertPretty(
