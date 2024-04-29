@@ -42,6 +42,7 @@ from data_lang.j8 import ValueIdString, HeapValueId
 from typing import cast, List, Dict, Callable #, Tuple Optional
 
 import fastfunc
+import re
 
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, BufWriter, iteritems
@@ -50,16 +51,20 @@ _ = log
 
 # TODO:
 # Later:
-# - clean up imports (is there a lint that checks for unused imports?)
-# - hook up the printer in core/ui.py::PrettyPrintValue
-# - run the linter
-# - what's with `_ = log`?
-# - contributing page: PRs are squash-merged with a descriptive tag like [json]
+# - [ ] clean up imports (is there a lint that checks for unused imports?)
+# - [ ] run the linter
+# - [ ] what's with `_ = log`?
+# - [ ] contributing page: PRs are squash-merged with a descriptive tag like [json]
+# Between:
+# - [ ] fill in ~Algorithm Description~
+# - [ ] hook up the printer in core/ui.py::PrettyPrintValue
+# - [ ] test cyclic values
 # Now:
-# - string width
-# - fill in ~Algorithm Description~
-# - Unquote identifier-y dict keys
-# - Add some color
+# - [ ] string width
+# - [x] Unquote identifier-y dict keys
+# - [ ] Add some style
+# - [ ] Test BashArray and BashAssoc
+# - [ ] Show cycles as '...'
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
@@ -71,6 +76,7 @@ _ = log
 # - max_depth vs. cycle detection. Turn cycle detection off if there's a max_depth?
 #   NO MAX DEPTH
 
+IDENTIFIER_REGEX = re.compile("^[_a-zA-Z][a-zA-Z0-9]*$")
 
 ################
 # Measurements #
@@ -343,6 +349,13 @@ class _DocConstructor:
             seq.append(item)
         return _Concat(seq)
 
+    def _Key(self, s):
+        # type: (str) -> MeasuredDoc
+        if IDENTIFIER_REGEX.match(s):
+            return _Text(s)
+        else:
+            return _Text(fastfunc.J8EncodeString(s, True)) # lossy_json=True
+
     def _String(self, s):
         # type: (str) -> MeasuredDoc
         return _Text(fastfunc.J8EncodeString(s, True)) # lossy_json=True
@@ -360,7 +373,7 @@ class _DocConstructor:
             return _Text("{}")
         mdocs = []
         for k, v in iteritems(vdict.d):
-            mdocs.append(_Concat([self._String(k), _Text(": "), self._Value(v)]))
+            mdocs.append(_Concat([self._Key(k), _Text(": "), self._Value(v)]))
         return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
     def _BashArray(self, varray):
@@ -381,7 +394,7 @@ class _DocConstructor:
             return _Text("{}")
         mdocs = []
         for k2, v2 in iteritems(vassoc.d):
-            mdocs.append(_Concat([self._String(k2), _Text(": "), self._String(v2)]))
+            mdocs.append(_Concat([self._Key(k2), _Text(": "), self._String(v2)]))
         return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
     def _Value(self, val):

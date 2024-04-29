@@ -97,41 +97,41 @@ class PrettyTest(unittest.TestCase):
 
     def testDict(self):
         self.assertPretty(
-            30,
+            24,
             '{"x":100, "y":200, "z":300}',
-            '{"x": 100, "y": 200, "z": 300}')
+            '{x: 100, y: 200, z: 300}')
         self.assertPretty(
-            29,
+            23,
             '{"x":100, "y":200, "z":300}',
             "\n".join([
                 '{',
-                '  "x": 100,',
-                '  "y": 200,',
-                '  "z": 300',
+                '  x: 100,',
+                '  y: 200,',
+                '  z: 300',
                 '}'
             ]))
         self.assertPretty(
-            51,
+            49,
             '''{
                 "letters": {"1": "A", "2": "B", "3": "C"},
                 "numbers": {"1": "one", "2": "two", "3": "three"}
             }''',
             "\n".join([
                 '{',
-                '  "letters": {"1": "A", "2": "B", "3": "C"},',
-                '  "numbers": {"1": "one", "2": "two", "3": "three"}',
+                '  letters: {"1": "A", "2": "B", "3": "C"},',
+                '  numbers: {"1": "one", "2": "two", "3": "three"}',
                 '}'
             ]))
         self.assertPretty(
-            44,
+            42,
             '''{
                 "letters": {"1": "A", "2": "B", "3": "C"},
                 "numbers": {"1": "one", "2": "two", "3": "three"}
             }''',
             "\n".join([
                 '{',
-                '  "letters": {"1": "A", "2": "B", "3": "C"},',
-                '  "numbers": {',
+                '  letters: {"1": "A", "2": "B", "3": "C"},',
+                '  numbers: {',
                 '    "1": "one",',
                 '    "2": "two",',
                 '    "3": "three"',
@@ -139,19 +139,19 @@ class PrettyTest(unittest.TestCase):
                 '}'
             ]))
         self.assertPretty(
-            43,
+            41,
             '''{
                 "letters": {"1": "A", "2": "B", "3": "C"},
                 "numbers": {"1": "one", "2": "two", "3": "three"}
             }''',
             "\n".join([
                 '{',
-                '  "letters": {',
+                '  letters: {',
                 '    "1": "A",',
                 '    "2": "B",',
                 '    "3": "C"',
                 '  },',
-                '  "numbers": {',
+                '  numbers: {',
                 '    "1": "one",',
                 '    "2": "two",',
                 '    "3": "three"',
