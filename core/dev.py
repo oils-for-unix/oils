@@ -426,6 +426,7 @@ class Tracer(object):
         # can be confusing, e.g. debugging traps in forkred subinterpreter
         # created by a pipeline.
         self.val_pid_str = value.Str('')  # mutated by SetProcess
+        self.pid = -1
 
         # Can these be global constants?  I don't think we have that in ASDL yet.
         self.lval_indent = location.LName('SHX_indent')
@@ -471,6 +472,9 @@ class Tracer(object):
         assert self.exec_opts.xtrace()  # We shouldn't call this unless it's on
 
         # TODO: Remove allocation for [] ?
+        if self.pid != -1:
+            self.val_pid_str.s = ' %d' % self.pid
+
         with state.ctx_Option(self.mutable_opts, [option_i.xtrace], False):
             with state.ctx_Temp(self.mem):
                 self.mem.SetNamed(self.lval_indent, self.val_indent,
@@ -577,7 +581,7 @@ class Tracer(object):
         # type: (int) -> None
         """All trace lines have a PID prefix, except those from the root
         process."""
-        self.val_pid_str.s = ' %d' % child_pid
+        self.pid = child_pid
         self._Inc()
         self.multi_trace.OnNewProcess(child_pid)
 
