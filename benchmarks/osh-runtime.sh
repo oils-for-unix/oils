@@ -341,6 +341,10 @@ EOF
 EOF
 }
 
+test-oils-run() {
+  echo 'Hello from benchmarks/osh-runtime.sh'
+}
+
 soil-run() {
   ### Run it on just this machine, and make a report
 

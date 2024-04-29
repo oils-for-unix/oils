@@ -110,19 +110,23 @@ test-oils-manifest() {
   echo 'benchmarks/time_.py'
   echo 'benchmarks/time-helper.c'
 
-  # TODO: need osh --tool shell-deps for these
+  # TODO: implement shell-deps tool
+  #
+  # osh --tool shell-deps build/py.sh
   echo 'build/dev-shell.sh'
   echo 'build/py.sh'
   echo 'build/common.sh'
-  echo 'devtools/release-native.sh'
-  echo 'devtools/run-task.sh'
 
-  # extracted tarball
-  #find _deps/osh-runtime/util-linux-2.40
-  #echo '_deps/osh-runtime/util-linux-2.40/configure'
-
-  # This is not enough
-  #echo 'Python-2.7.13/configure'
+  # osh --tool shell-deps benchmarks/osh-runtime.sh
+  # copied from benchmarks/osh-runtime.sh
+  cat <<'EOF'
+benchmarks/osh-runtime.sh
+benchmarks/common.sh
+benchmarks/id.sh
+soil/common.sh
+test/common.sh
+test/tsv-lib.sh
+EOF
 
   find Python-2.7.13/
 }
@@ -145,9 +149,11 @@ soil-run-test-oils() {
   create-test-oils
 
   # Run it twice to test that SKIP_REBUILD works
-  for x in 1 2; do
-    XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar demo a b c
-  done
+  #for x in 1 2; do
+  #  XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar demo a b c
+  #done
+
+  XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar osh-runtime a
 }
 
 run-task "$@"
