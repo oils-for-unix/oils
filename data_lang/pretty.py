@@ -161,7 +161,6 @@ class PrettyPrinter(object):
 
     DEFAULT_MAX_WIDTH = 80
     DEFAULT_INDENTATION = 4
-    DEFAULT_MAX_DEPTH = -1
 
     def __init__(self):
         # type: () -> None
@@ -173,10 +172,15 @@ class PrettyPrinter(object):
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
+        """Set the maximum line width.
+
+        Pretty printing will attempt to (but does not guarantee) fitting within this width.
+        """
         self.max_width = max_width
 
     def SetIndent(self, indent):
         # type: (int) -> None
+        """Set the number of spaces per indentation level."""
         self.indent = indent
 
     def PrintValue(self, val, buf):
@@ -343,14 +347,14 @@ class _DocConstructor:
         # type: (str) -> MeasuredDoc
         return _Text(fastfunc.J8EncodeString(s, True)) # lossy_json=True
 
-    def _List(self, vlist):
+    def _ValueList(self, vlist):
         # type: (value.List) -> MeasuredDoc
         if len(vlist.items) == 0:
             return _Text("[]")
         mdocs = [self._Value(item) for item in vlist.items]
         return self._Surrounded("[", self._Join(mdocs, ",", " "), "]")
 
-    def _Dict(self, vdict):
+    def _ValueDict(self, vdict):
         # type: (value.Dict) -> MeasuredDoc
         if len(vdict.d) == 0:
             return _Text("{}")
@@ -407,13 +411,13 @@ class _DocConstructor:
                 vlist = cast(value.List, val)
                 return self.cycle_detector.Visit(
                     HeapValueId(vlist),
-                    lambda: self._List(vlist))
+                    lambda: self._ValueList(vlist))
 
             elif case(value_e.Dict):
                 vdict = cast(value.Dict, val)
                 return self.cycle_detector.Visit(
                     HeapValueId(vdict),
-                    lambda: self._Dict(vdict))
+                    lambda: self._ValueDict(vdict))
 
             elif case(value_e.BashArray):
                 varray = cast(value.BashArray, val)
