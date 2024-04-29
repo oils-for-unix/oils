@@ -37,6 +37,12 @@ class BumpLeakHeap {
 #endif
   }
 
+  void ClearRoots() {
+#ifdef BUMP_ROOT
+    roots_.clear();
+#endif
+  }
+
   void RootGlobalVar(void* root) {
   }
 

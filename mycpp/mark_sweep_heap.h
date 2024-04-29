@@ -206,6 +206,10 @@ class MarkSweepHeap {
     roots_.pop_back();
   }
 
+  void ClearRoots() {
+    roots_.clear();
+  }
+
   void RootGlobalVar(void* root) {
     global_roots_.push_back(reinterpret_cast<RawObject*>(root));
   }

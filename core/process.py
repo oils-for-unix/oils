@@ -830,6 +830,7 @@ class SubProgramThunk(Thunk):
 
         # signal handlers aren't inherited
         self.trap_state.ClearForSubProgram()
+        mylib.ClearRoots()
 
         # NOTE: may NOT return due to exec().
         if not self.inherit_errexit:

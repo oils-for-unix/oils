@@ -37,6 +37,11 @@ def MaybeCollect():
     pass
 
 
+def ClearRoots():
+    # type: () -> None
+    pass
+
+
 def NewDict():
     # type: () -> Dict[str, Any]
     """Make dictionaries ordered in Python, e.g. for JSON.

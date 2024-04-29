@@ -30,6 +30,10 @@ inline void MaybeCollect() {
   gHeap.MaybeCollect();
 }
 
+inline void ClearRoots() {
+  gHeap.ClearRoots();
+}
+
 void print_stderr(BigStr* s);
 
 inline int ByteAt(BigStr* s, int i) {
