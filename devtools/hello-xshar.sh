@@ -10,7 +10,8 @@ set -o pipefail
 set -o errexit
 
 main() {
-  echo "args $@"
+  echo "args: $@"
+  echo "git commit: $XSHAR_GIT_COMMIT"
 
   echo 'hello-xshar.sh: listing files'
   echo

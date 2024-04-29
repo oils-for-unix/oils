@@ -29,16 +29,27 @@ print-shell() {
   local tar=$1
   local main=$2
 
-  cat <<'EOF'
+  # Same as soil/worker.sh
+  local git_commit
+  git_commit=$(git log -n 1 --pretty='format:%H')
+
+  sed "s/__GIT_COMMIT__/$git_commit/" <<'EOF'
 #!/bin/sh
 
-change_dir() {
-  local name
-  name=$(basename $0)  # e.g. hello-xshar.xshar
+export XSHAR_REPO=oilshell/oil
+export XSHAR_GIT_COMMIT=__GIT_COMMIT__
 
-  local dir=/tmp/$name.$$
-  mkdir -p "$dir"
-  cd "$dir"
+name=$(basename $0)  # e.g. hello-xshar.xshar
+default_dir=/tmp/$name.$$
+
+# User can override this, and then _build/oils.sh can use SKIP_REBUILD to make
+# it faster.  Multiple runs without compiling.
+
+export XSHAR_DIR=${XSHAR_DIR:-$default_dir}
+
+change_dir() {
+  mkdir -p "$XSHAR_DIR"
+  cd "$XSHAR_DIR"
 }
 
 extract_data() {
@@ -82,11 +93,18 @@ create() {
   ls -l $out
 }
 
-demo() {
+create-hello() {
   find yaks/ -name '*.py' | xargs -- $0 create devtools/hello-xshar.sh 
   ls -l _release
+}
 
+soil-run-hello() {
+  create-hello
   _release/hello-xshar.xshar main a b c
+}
+
+soil-run-test-oils() {
+  echo TODO
 }
 
 run-task "$@"

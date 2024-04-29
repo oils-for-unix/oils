@@ -250,6 +250,8 @@ dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 oils-cpp-smoke   build/native.sh soil-run              -
 make-tar         devtools/release-native.sh make-tar   _release/oils-for-unix.tar
+xshar-hello      devtools/xshar.sh soil-run-hello      _release/hello-xshar.xshar
+xshar-test-oils  devtools/xshar.sh soil-run-test-oils  _release/test-oils.xshar
 build-times      build/native.sh measure-build-times   -
 EOF
 
