@@ -42,6 +42,10 @@ demo() {
   local oils_version
   oils_version=$(head -n 1 oil-version.txt)
 
+  local time_py="$PWD/benchmarks/time_.py"
+
+  build/py.sh time-helper
+
   # Extract and compile the tarball
   # Similar to devtools/release-native.sh test-tar
 
@@ -56,10 +60,17 @@ demo() {
 
   # TODO: use benchmarks/time_.py
   # TODO: compile time-helper.c
-  time _bin/cxx-opt-sh/osh -c 'sleep 0.1; echo "hi from osh"'
+
+  local osh=$PWD/_bin/cxx-opt-sh/osh 
+
+  $time_py --tsv --rusage -o demo.tsv -- $osh -c 'sleep 0.1; echo "hi from osh"'
+  cat demo.tsv
+
   popd
 
   popd
+
+  #time OILS_GC_STATS=1 $osh Python-2.7.13/configure
 }
 
 main() {

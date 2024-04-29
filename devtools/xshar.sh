@@ -73,7 +73,7 @@ EOF
 
 create() {
   local main=${1:-devtools/test-oils.sh}
-  # Include the main file
+  local manifest=$2
   #shift
 
   local name
@@ -81,7 +81,9 @@ create() {
 
   local tar=_tmp/$name.tar.gz
 
-  tar --create --gzip --file $tar "$main" "$@"
+  # Need --files-from because we can run out of ARGV!
+
+  tar --create --gzip --files-from $manifest --file $tar "$main"
   ls -l $tar
 
   local out=_release/$name.xshar 
@@ -93,7 +95,10 @@ create() {
 }
 
 create-hello() {
-  find yaks/ -name '*.py' | xargs -- $0 create devtools/hello-xshar.sh 
+  local tmp=_tmp/hello-manifest.txt
+  find yaks/ -name '*.py' > $tmp
+  create devtools/hello-xshar.sh $tmp
+
   ls -l -h _release
 }
 
@@ -102,22 +107,32 @@ test-oils-manifest() {
 
   echo 'oil-version.txt'
 
-  # TODO: need osh --tool shell-deps for these
-
-  echo 'devtools/release-native.sh'
   echo 'benchmarks/time_.py'
   echo 'benchmarks/time-helper.c'
 
+  # TODO: need osh --tool shell-deps for these
+  echo 'build/dev-shell.sh'
+  echo 'build/py.sh'
+  echo 'build/common.sh'
+  echo 'devtools/release-native.sh'
+  echo 'devtools/run-task.sh'
+
   # extracted tarball
   #find _deps/osh-runtime/util-linux-2.40
+  #echo '_deps/osh-runtime/util-linux-2.40/configure'
 
-  # we could include Python-2.7.13 too
+  # This is not enough
+  #echo 'Python-2.7.13/configure'
+
+  find Python-2.7.13/
 }
 
 create-test-oils() {
   devtools/release-native.sh make-tar
 
-  test-oils-manifest | xargs -- $0 create devtools/test-oils.sh 
+  local tmp=_tmp/test-oils-manifest.txt
+  test-oils-manifest > $tmp
+  create devtools/test-oils.sh $tmp
   ls -l -h _release
 }
 
