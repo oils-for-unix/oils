@@ -60,13 +60,14 @@ _ = log
 # - [ ] fill in ~Algorithm Description~
 # - [ ] hook up the printer in core/ui.py::PrettyPrintValue
 # - [ ] test cyclic values
-# - [ ] test styles (how?)
+# - [x] test styles (how?)
+# - [ ] tabular alignment for list elements
 # Now:
 # - [ ] string width
 # - [x] Unquote identifier-y dict keys
 # - [x] Add some style
 # - [ ] Test BashArray and BashAssoc
-# - [ ] Show cycles as [...]/{...}
+# - [x] Show cycles as [...]/{...}
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
@@ -289,39 +290,6 @@ class PrettyPrinter(object):
 # Value -> Doc #
 ################
 
-class _CycleDetector:
-    def __init__(self):
-        # type: () -> None
-        self.visited = {} # type: Dict[int, str]
-        self.label = 'a'
-
-    def _NextLabel(self):
-        # type: () -> str
-        label = self.label
-        # There _really_ shouldn't be more than 26 independent cycles in one
-        # value...
-        self.label = chr(ord(self.label) + 1)
-        return label
-
-    def Visit(self, heap_id, callback):
-        # type: (int, Callable[[], MeasuredDoc]) -> MeasuredDoc
-
-        if heap_id in self.visited:
-            label = self.visited[heap_id]
-            if label is None:
-                label = self._NextLabel()
-                self.visited[heap_id] = label
-            return _Text("*" + label)
-        else:
-            self.visited[heap_id] = None
-            document = callback()
-            label = self.visited[heap_id]
-            if label is None:
-                del self.visited[heap_id]
-                return document
-            else:
-                return _Concat([_Text("&" + label + " "), document])
-
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
 
@@ -333,7 +301,7 @@ class _DocConstructor:
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
-        self.cycle_detector = _CycleDetector()
+        self.visiting = {} # type: Dict[int, bool]
         return self._Value(val)
 
     def _Styled(self, style, mdoc):
@@ -448,15 +416,31 @@ class _DocConstructor:
 
             elif case(value_e.List):
                 vlist = cast(value.List, val)
-                return self.cycle_detector.Visit(
-                    HeapValueId(vlist),
-                    lambda: self._ValueList(vlist))
+                heap_id = HeapValueId(vlist)
+                if self.visiting.get(heap_id, False):
+                    return _Concat([
+                        _Text("["),
+                        self._Styled(CYCLE_STYLE, _Text("...")),
+                        _Text("]")])
+                else:
+                    self.visiting[heap_id] = True
+                    result = self._ValueList(vlist)
+                    self.visiting[heap_id] = False
+                    return result
 
             elif case(value_e.Dict):
                 vdict = cast(value.Dict, val)
-                return self.cycle_detector.Visit(
-                    HeapValueId(vdict),
-                    lambda: self._ValueDict(vdict))
+                heap_id = HeapValueId(vdict)
+                if self.visiting.get(heap_id, False):
+                    return _Concat([
+                        _Text("{"),
+                        self._Styled(CYCLE_STYLE, _Text("...")),
+                        _Text("}")])
+                else:
+                    self.visiting[heap_id] = True
+                    result = self._ValueDict(vdict)
+                    self.visiting[heap_id] = False
+                    return result
 
             elif case(value_e.BashArray):
                 varray = cast(value.BashArray, val)
