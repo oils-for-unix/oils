@@ -508,13 +508,17 @@ RuntimeReport = function(in_dir, out_dir) {
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
     select(-c(elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     left_join(label_lookup, by = c('sh_path')) %>%
-    select(-c(sh_path)) ->
+    select(-c(sh_path)) %>%
+    # we want to compare workloads on adjacent rows
+    arrange(workload) -> 
     details
 
   times %>%
     select(c(task_id, host_name, sh_path, workload, minor_faults, major_faults, swaps, in_block, out_block, signals, voluntary_ctx, involuntary_ctx)) %>%
     left_join(label_lookup, by = c('sh_path')) %>%
-    select(-c(sh_path)) ->
+    select(-c(sh_path)) %>%
+    # we want to compare workloads on adjacent rows
+    arrange(workload) -> 
     details_io
 
   Log('details')
@@ -607,8 +611,7 @@ RuntimeReport = function(in_dir, out_dir) {
                                default = 0)
   writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision3)
 
-  details %>% arrange(workload) -> details_sorted
-  writeTsv(details_sorted, file.path(out_dir, 'details'), precision3)
+  writeTsv(details, file.path(out_dir, 'details'), precision3)
   writeTsv(details_io, file.path(out_dir, 'details_io'))
 
   Log('Wrote %s', out_dir)
