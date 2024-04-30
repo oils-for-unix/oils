@@ -138,6 +138,7 @@ run-tasks() {
       time-tsv 
         --output "$raw_out_dir/times.tsv" --append 
         --rusage
+        --rusage-2
         --field "$task_id"
         --field "$host_name" --field "$sh_path"
         --field "$workload"
@@ -199,9 +200,9 @@ print-tasks() {
   if test -n "${QUICKLY:-}"; then
     # Just do the first two
     workloads=(
-      configure.util-linux
-      #hello-world
-      #abuild-print-help
+      #configure.util-linux
+      hello-world
+      abuild-print-help
     )
   fi
 
@@ -225,6 +226,7 @@ measure() {
   # Write header of the TSV file that is appended to.
   time-tsv -o $tsv_out --print-header \
     --rusage \
+    --rusage-2 \
     --field task_id \
     --field host_name --field sh_path \
     --field workload
@@ -304,6 +306,12 @@ EOF
   tsv2html $in_dir/elapsed.tsv
 
   cmark <<EOF
+### Major Page Faults
+EOF
+
+  tsv2html $in_dir/page_faults.tsv
+
+  cmark <<EOF
 ### Memory Usage (Max Resident Set Size in MB)
 EOF
   tsv2html $in_dir/max_rss.tsv
@@ -318,6 +326,10 @@ EOF
 EOF
   tsv2html $in_dir/details.tsv
 
+  cmark <<EOF
+### I/O Details
+EOF
+  tsv2html $in_dir/details_io.tsv
 
   cmark <<'EOF'
 

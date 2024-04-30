@@ -501,7 +501,7 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # Join with provenance for host label and shell label
   times %>%
-    select(-c(status)) %>%
+    select(c(elapsed_secs, user_secs, sys_secs, max_rss_KiB, task_id, host_name, sh_path, workload)) %>%
     mutate(elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
@@ -511,10 +511,16 @@ RuntimeReport = function(in_dir, out_dir) {
     select(-c(sh_path)) ->
     details
 
+  times %>%
+    select(c(task_id, host_name, sh_path, workload, minor_faults, major_faults, swaps, in_block, out_block, signals, voluntary_ctx, involuntary_ctx)) %>%
+    left_join(label_lookup, by = c('sh_path')) %>%
+    select(-c(sh_path)) ->
+    details_io
+
   Log('details')
   print(details)
 
-  # Sort by osh elapsed ms.
+  # Elapsed time comparison
   details %>%
     select(-c(task_id, user_ms, sys_ms, max_rss_MB)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
@@ -530,6 +536,22 @@ RuntimeReport = function(in_dir, out_dir) {
   Log('elapsed')
   print(elapsed)
 
+  # Page Faults Comparison
+  details_io %>%
+    select(c(host_name, shell_label, workload, major_faults)) %>%
+    spread(key = shell_label, value = major_faults) %>%
+    mutate(py_bash_ratio = `osh-cpython` / bash) %>%
+    mutate(native_bash_ratio = `osh-native` / bash) %>%
+    arrange(workload, host_name) %>%
+    select(c(workload, host_name,
+             bash, dash, `osh-cpython`, `osh-native`,
+             py_bash_ratio, native_bash_ratio)) ->
+    page_faults
+
+  Log('page_faults')
+  print(page_faults)
+
+  # Max RSS comparison
   details %>%
     select(-c(task_id, elapsed_ms, user_ms, sys_ms)) %>%
     spread(key = shell_label, value = max_rss_MB) %>%
@@ -576,6 +598,7 @@ RuntimeReport = function(in_dir, out_dir) {
                                    `osh-native` = 0, py_bash_ratio = 2,
                                    native_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
+  writeTsv(page_faults, file.path(out_dir, 'page_faults'), precision)
 
   precision2 = ColumnPrecision(list(py_bash_ratio = 2, native_bash_ratio = 2))
   writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision2)
@@ -584,6 +607,7 @@ RuntimeReport = function(in_dir, out_dir) {
                                default = 0)
   writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision3)
   writeTsv(details, file.path(out_dir, 'details'), precision3)
+  writeTsv(details_io, file.path(out_dir, 'details_io'))
 
   Log('Wrote %s', out_dir)
 }
