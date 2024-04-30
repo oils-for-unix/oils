@@ -536,10 +536,10 @@ RuntimeReport = function(in_dir, out_dir) {
   Log('elapsed')
   print(elapsed)
 
-  # Page Faults Comparison
+  # Minor Page Faults Comparison
   details_io %>%
-    select(c(host_name, shell_label, workload, major_faults)) %>%
-    spread(key = shell_label, value = major_faults) %>%
+    select(c(host_name, shell_label, workload, minor_faults)) %>%
+    spread(key = shell_label, value = minor_faults) %>%
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
     arrange(workload, host_name) %>%

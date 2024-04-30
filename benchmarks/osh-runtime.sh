@@ -306,7 +306,7 @@ EOF
   tsv2html $in_dir/elapsed.tsv
 
   cmark <<EOF
-### Major Page Faults
+### Minor Page Faults
 EOF
 
   tsv2html $in_dir/page_faults.tsv
