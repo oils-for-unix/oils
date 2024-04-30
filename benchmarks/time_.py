@@ -81,6 +81,12 @@ def Options():
         default=False,
         action='store_true',
         help='Also show user time, system time, and max resident set size')
+    p.add_option(
+        '--rusage-2',
+        dest='rusage_2',
+        default=False,
+        action='store_true',
+        help='Also show page faults, context switches, etc.')
     p.add_option('--time-span',
                  dest='time_span',
                  default=False,
@@ -118,7 +124,7 @@ def Options():
         default=False,
         action='store_true',
         help=
-        'Print an XSV header, respecting --time-span, --rusage, --stdout, --field, and --tsv'
+        'Print an XSV header, respecting --time-span, --rusage, --rusage-2, --stdout, --field, and --tsv'
     )
     return p
 
@@ -149,6 +155,8 @@ def main(argv):
             names.extend(['start_time', 'end_time'])
         if opts.rusage:
             names.extend(['user_secs', 'sys_secs', 'max_rss_KiB'])
+        if opts.rusage_2:
+            names.extend(['minor_faults', 'major_faults', 'swaps', 'in_block', 'out_block', 'signals', 'voluntary_ctx', 'involuntary_ctx'])
         if opts.stdout:
             names.append('stdout_md5sum')
         names.extend(opts.fields)
@@ -184,6 +192,8 @@ def main(argv):
         # %S: sys time
         # %M: Max RSS
         time_argv.extend(['-U', '-S', '-M'])
+    if opts.rusage_2:
+        time_argv.extend(['-m'])
 
     time_argv.append('--')
     time_argv.extend(child_argv)

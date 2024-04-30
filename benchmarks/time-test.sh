@@ -56,12 +56,15 @@ test-csv() {
 
   time-tool -o $out --field a --field b -- echo hi
   cat $out | count-lines-and-cols 1 4 ,
+  echo csv fields=$?
 
   time-tool -o $out --rusage -- echo hi
   cat $out | count-lines-and-cols 1 5 ,
+  echo csv rusage=$?
 
   time-tool -o $out --rusage --field a --field b -- echo hi
   cat $out | count-lines-and-cols 1 7 ,
+  echo csv rusage fields=$?
 }
 
 test-tsv() {
@@ -75,9 +78,18 @@ test-tsv() {
 
   time-tool --tsv -o $out --field a --field b -- echo hi
   cat $out | count-lines-and-cols 1 4 
+  echo fields=$?
 
   time-tool --tsv -o $out --rusage --field a --field b -- echo hi
   cat $out | count-lines-and-cols 1 7
+  echo rusage=$?
+
+  time-tool --tsv -o $out --print-header \
+    --rusage-2
+  time-tool --tsv -o $out --append \
+    --rusage-2 -- echo hi
+  cat $out | count-lines-and-cols 2 10
+  echo rusage-2=$?
 }
 
 test-append() {

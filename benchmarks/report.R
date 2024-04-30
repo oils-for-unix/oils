@@ -571,16 +571,19 @@ RuntimeReport = function(in_dir, out_dir) {
 
   WriteSimpleProvenance(provenance, out_dir)
 
+  # milliseconds don't need decimal digit
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
                                    `osh-native` = 0, py_bash_ratio = 2,
                                    native_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
-  writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision)
 
-  precision2 = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),
+  precision2 = ColumnPrecision(list(py_bash_ratio = 2, native_bash_ratio = 2))
+  writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision2)
+
+  precision3 = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),
                                default = 0)
-  writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision2)
-  writeTsv(details, file.path(out_dir, 'details'), precision2)
+  writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision3)
+  writeTsv(details, file.path(out_dir, 'details'), precision3)
 
   Log('Wrote %s', out_dir)
 }
