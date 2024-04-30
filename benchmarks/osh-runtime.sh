@@ -294,46 +294,67 @@ EOF
   cmark <<'EOF'
 ## OSH Runtime Performance
 
-Source code: [oil/benchmarks/osh-runtime.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-runtime.sh)
+Source code: [benchmarks/osh-runtime.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-runtime.sh)
+
+- [Elapsed Time](#elapsed-time)
+- [Minor Page Faults](#page-faults)
+- [Memory Usage](#memory-usage)
+- [GC Stats](#gc-stats)
+- [rusage Details](#rusage-details)
+- [More Details](#more-details)
+- [Shell and Host](#shell-and-host)
+
+<a name="elapsed-time" />
 
 ### Elapsed Time by Shell (milliseconds)
 
 Some benchmarks call many external tools, while some exercise the shell
-interpreter itself.  Parse time is included.
-
-Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
+interpreter itself.
 EOF
   tsv2html $in_dir/elapsed.tsv
 
   cmark <<EOF
+<a name="page-faults" />
+
 ### Minor Page Faults
 EOF
 
   tsv2html $in_dir/page_faults.tsv
 
   cmark <<EOF
+<a name="memory-usage" />
+
 ### Memory Usage (Max Resident Set Size in MB)
+
+Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
 EOF
   tsv2html $in_dir/max_rss.tsv
 
   cmark <<EOF
+<a name="gc-stats" />
+
 ### GC Stats
 EOF
   tsv2html $in_dir/gc_stats.tsv
 
   cmark <<EOF
-### Details of All Tasks
+<a name="rusage-details" />
+
+### rusage Details
 EOF
   tsv2html $in_dir/details.tsv
 
   cmark <<EOF
-### I/O Details
+<a name="more-details" />
+
+### More Details
 EOF
   tsv2html $in_dir/details_io.tsv
 
   cmark <<'EOF'
+<a name="shell-and-host" />
 
-### Shell and Host Details
+### Shell and Host
 EOF
   tsv2html $in_dir/shells.tsv
   tsv2html $in_dir/hosts.tsv

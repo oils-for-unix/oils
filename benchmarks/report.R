@@ -606,7 +606,9 @@ RuntimeReport = function(in_dir, out_dir) {
   precision3 = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),
                                default = 0)
   writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision3)
-  writeTsv(details, file.path(out_dir, 'details'), precision3)
+
+  details %>% arrange(workload) -> details_sorted
+  writeTsv(details_sorted, file.path(out_dir, 'details'), precision3)
   writeTsv(details_io, file.path(out_dir, 'details_io'))
 
   Log('Wrote %s', out_dir)
