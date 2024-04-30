@@ -22,6 +22,7 @@ class PrettyTest(unittest.TestCase):
         cls.printer = PrettyPrinter()
         cls.printer.SetIndent(2)
         cls.printer.SetUseStyles(False)
+        cls.printer.SetShowTypePrefix(False)
 
     def assertPretty(self, width, value_str, expected):
         # type: (int, str, str) -> None
@@ -91,6 +92,18 @@ class PrettyTest(unittest.TestCase):
                 u']'
             ]).encode('utf-8')
         )
+
+    def testTypePrefix(self):
+        self.printer.SetShowTypePrefix(True)
+        self.assertPretty(
+            25,
+            '[null, "ok", 15]',
+            '(List)   [null, "ok", 15]')
+        self.assertPretty(
+            24,
+            '[null, "ok", 15]',
+            '(List)\n[null, "ok", 15]')
+        self.printer.SetShowTypePrefix(False)
 
     def testList(self):
         self.assertPretty(

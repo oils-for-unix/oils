@@ -42,6 +42,7 @@ from data_lang.j8 import ValueIdString, HeapValueId
 from typing import cast, List, Dict, Callable #, Tuple Optional
 from core import ansi
 from libc import wcswidth
+from frontend import match
 
 import fastfunc
 import re
@@ -55,23 +56,31 @@ _ = log
 # Later:
 # - [ ] clean up imports (is there a lint that checks for unused imports?)
 # - [ ] run the linter
-# - [ ] what's with `_ = log`?
+# - [x] what's with `_ = log`?
 # - [ ] contributing page: PRs are squash-merged with a descriptive tag like [json]
 # Between:
 # - [ ] fill in ~Algorithm Description~
-# - [ ] hook up the printer in core/ui.py::PrettyPrintValue
-# - [ ] test cyclic values
 # - [x] test styles (how?)
 # - [ ] tabular alignment for list elements
 # - [x] float prints with '.'
-# - [ ] print type at top level, newline after type if multiline
+# - [ ] chore: bash completion (devtools/completion)
+# - [ ] fix C++ errors
 # Now:
 # - [x] string width
 # - [x] Unquote identifier-y dict keys
 # - [x] Add some style
 # - [ ] Test BashArray and BashAssoc
+# - [ ] test cyclic values
+# - [x] spec tests: test/spec.sh ysh-slice-range (etc.)
+#       test/spec-py.sh ysh-all
+#       can change tests to `pp line` if failing
 # - [x] Show cycles as [...]/{...}
-# - [ ] DetectConsoleOutput to only print styles to terminal
+# - [x] DetectConsoleOutput to only print styles to terminal
+# - [x] IsValidVarName instead of regex
+# - [x] hook up the printer in core/ui.py::PrettyPrintValue
+# - [x] set width using get_terminal_width() (check for -1)
+#       always use width, even if it's very wide; if -1 (not terminal) default to 80
+# - [x] print type at top level, newline after type if multiline
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
@@ -83,7 +92,6 @@ _ = log
 # - max_depth vs. cycle detection. Turn cycle detection off if there's a max_depth?
 #   NO MAX DEPTH
 
-UNQUOTED_KEY_REGEX = re.compile("^[_a-zA-Z][a-zA-Z0-9]*$")
 KEY_STYLE = ansi.GREEN
 NUMBER_STYLE = ansi.YELLOW
 NULL_STYLE = ansi.BOLD + ansi.RED
@@ -180,6 +188,7 @@ class PrettyPrinter(object):
     DEFAULT_MAX_WIDTH = 80
     DEFAULT_INDENTATION = 4
     DEFAULT_USE_STYLES = True
+    DEFAULT_SHOW_TYPE_PREFIX = True
 
     def __init__(self):
         # type: () -> None
@@ -189,6 +198,7 @@ class PrettyPrinter(object):
         self.max_width = PrettyPrinter.DEFAULT_MAX_WIDTH
         self.indent = PrettyPrinter.DEFAULT_INDENTATION
         self.use_styles = PrettyPrinter.DEFAULT_USE_STYLES
+        self.show_type_prefix = PrettyPrinter.DEFAULT_SHOW_TYPE_PREFIX
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
@@ -208,10 +218,17 @@ class PrettyPrinter(object):
         """If true, print with ansi colors and styles. Otherwise print plainly."""
         self.use_styles = use_styles
 
+    def SetShowTypePrefix(self, show_type_prefix):
+        # type: (bool) -> None
+        """Set whether or not to print a type before the top-level value.
+
+        E.g. `(Bool)   true`"""
+        self.show_type_prefix = show_type_prefix
+
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
-        constructor = _DocConstructor(self.indent, self.use_styles)
+        constructor = _DocConstructor(self.indent, self.use_styles, self.show_type_prefix)
         document = constructor.Value(val)
         self._PrintDoc(document, buf)
 
@@ -297,16 +314,25 @@ class PrettyPrinter(object):
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
 
-    def __init__(self, indent, use_styles):
-        # type: (int, bool) -> None
+    def __init__(self, indent, use_styles, show_type_prefix):
+        # type: (int, bool, bool) -> None
         self.indent = indent
         self.use_styles = use_styles
+        self.show_type_prefix = show_type_prefix
 
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
         self.visiting = {} # type: Dict[int, bool]
-        return self._Value(val)
+        if self.show_type_prefix:
+            ysh_type = value_str(val.tag(), dot=False)
+            return _Group(_Concat([
+                _Text("(" + ysh_type + ")"),
+                _Break("   "),
+                self._Value(val)
+            ]))
+        else:
+            return self._Value(val)
 
     def _Styled(self, style, mdoc):
         # type: (str, MeasuredDoc) -> MeasuredDoc
@@ -349,7 +375,7 @@ class _DocConstructor:
 
     def _Key(self, s):
         # type: (str) -> MeasuredDoc
-        if UNQUOTED_KEY_REGEX.match(s):
+        if match.IsValidVarName(s):
             return self._Styled(KEY_STYLE, _Text(s))
         else:
             return self._Styled(KEY_STYLE, _Text(fastfunc.J8EncodeString(s, True))) # lossy_json=True
@@ -417,6 +443,11 @@ class _DocConstructor:
             elif case(value_e.Str):
                 s = cast(value.Str, val).s
                 return self._String(s)
+
+            elif case(value_e.Range):
+                r = cast(value.Range, val)
+                return self._Styled(NUMBER_STYLE,
+                    _Concat([_Text(str(r.lower)), _Text(" .. "), _Text(str(r.upper))]))
 
             elif case(value_e.List):
                 vlist = cast(value.List, val)

@@ -30,6 +30,8 @@ from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, log
 from data_lang import j8
 from data_lang import j8_lite
+from data_lang import pretty
+from libc import get_terminal_width
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -508,36 +510,16 @@ def PrettyPrintValue(val, f):
     # type: (value_t, mylib.Writer) -> None
     """For the = keyword"""
 
-    ysh_type = ValType(val)
-    id_str = j8.ValueIdString(val)
+    printer = pretty.PrettyPrinter()
+    printer.SetUseStyles(f.isatty())
+    try:
+        width = get_terminal_width()
+        if width > 0:
+            printer.SetMaxWidth(width)
+    except (IOError, OSError):
+        pass
 
-    UP_val = val
-    with tagswitch(val) as case:
-        # "JSON" data types will use J8 serialization
-        if case(value_e.Null, value_e.Bool, value_e.Int, value_e.Float,
-                value_e.Str, value_e.List, value_e.Dict):
-            # Use () instead of <> as a hint that it's a "JSON value"
-            f.write('(%s%s)   ' % (ysh_type, id_str))
-
-            buf = mylib.BufWriter()
-
-            # TODO: Wrap lines, and show color.  Use core/ansi.py
-            p = j8.InstancePrinter(buf, -1, j8.SHOW_CYCLES | j8.SHOW_NON_DATA)
-
-            # error.Encode should be impossible - we show cycles and non-data
-            p.Print(val)
-
-            f.write(buf.getvalue())
-            f.write('\n')
-
-        elif case(value_e.Range):
-            val = cast(value.Range, UP_val)
-
-            # Printing Range values more nicely.  Note that pp line (x) doesn't
-            # have this.
-            f.write('(%s)   %d .. %d\n' % (ysh_type, val.lower, val.upper))
-
-        else:
-            # Just print object and ID.  Use <> to show that it's more like
-            # a reference type.
-            f.write('<%s%s>\n' % (ysh_type, id_str))
+    buf = mylib.BufWriter()
+    printer.PrintValue(val, buf)
+    f.write(buf.getvalue())
+    f.write('\n')
