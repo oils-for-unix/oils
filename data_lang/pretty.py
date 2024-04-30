@@ -63,8 +63,10 @@ _ = log
 # - [ ] test cyclic values
 # - [x] test styles (how?)
 # - [ ] tabular alignment for list elements
+# - [x] float prints with '.'
+# - [ ] print type at top level, newline after type if multiline
 # Now:
-# - [ ] string width
+# - [x] string width
 # - [x] Unquote identifier-y dict keys
 # - [x] Add some style
 # - [ ] Test BashArray and BashAssoc
@@ -94,8 +96,6 @@ CYCLE_STYLE = ansi.BOLD + ansi.YELLOW
 
 def _StrWidth(string):
     # type: (str) -> int
-    # TODO: temporary print
-    print("?", string)
     return wcswidth(string)
 
 def _EmptyMeasure():

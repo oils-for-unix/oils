@@ -2,6 +2,7 @@
 # coding=utf8
 
 import unittest
+import libc
 # module under test
 from data_lang.pretty import (PrettyPrinter, MeasuredDoc,
     _Concat, _Text, NULL_STYLE, NUMBER_STYLE)
@@ -10,7 +11,6 @@ from data_lang import j8
 from _devbuild.gen.value_asdl import value, value_t
 from mycpp import mylib, mops
 from core import ansi
-from libc import wcswidth
 
 def IntValue(i):
     # type: (int) -> value_t
@@ -76,13 +76,20 @@ class PrettyTest(unittest.TestCase):
         self.printer.SetUseStyles(False)
 
     def testWideChars(self):
-        #print("WIDTH", wcswidth(u"worldμ".encode('utf-8')))
         self.assertPretty(
-            20,
-            u'["Hello", "worldμ"]'.encode('utf-8'),
-            u'["Hello", "worldμ"]'.encode('utf-8')
-            #u'["世界", "您好"]'.encode('utf-8'),
-            #u'["世界", "您好"]'.encode('utf-8')
+            16,
+            u'["世界", "您好"]'.encode('utf-8'),
+            u'["世界", "您好"]'.encode('utf-8')
+        )
+        self.assertPretty(
+            15,
+            u'["世界", "您好"]'.encode('utf-8'),
+            '\n'.join([
+                u'[',
+                u'  "世界",',
+                u'  "您好"',
+                u']'
+            ]).encode('utf-8')
         )
 
     def testList(self):
@@ -200,4 +207,6 @@ class PrettyTest(unittest.TestCase):
 #             "(&a (*a, *a), &c (*a, &b (*b, *c)))")
 
 if __name__ == '__main__':
+    # To simulate the OVM_MAIN patch in pythonrun.c
+    libc.cpython_reset_locale()
     unittest.main()
