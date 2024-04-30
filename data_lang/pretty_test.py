@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# coding=utf8
 
 import unittest
 # module under test
@@ -9,6 +10,7 @@ from data_lang import j8
 from _devbuild.gen.value_asdl import value, value_t
 from mycpp import mylib, mops
 from core import ansi
+from libc import wcswidth
 
 def IntValue(i):
     # type: (int) -> value_t
@@ -72,6 +74,16 @@ class PrettyTest(unittest.TestCase):
             '[' + NULL_STYLE + 'null' + ansi.RESET + ', "ok", '
                 + NUMBER_STYLE + '15' + ansi.RESET + ']')
         self.printer.SetUseStyles(False)
+
+    def testWideChars(self):
+        #print("WIDTH", wcswidth(u"worldμ".encode('utf-8')))
+        self.assertPretty(
+            20,
+            u'["Hello", "worldμ"]'.encode('utf-8'),
+            u'["Hello", "worldμ"]'.encode('utf-8')
+            #u'["世界", "您好"]'.encode('utf-8'),
+            #u'["世界", "您好"]'.encode('utf-8')
+        )
 
     def testList(self):
         self.assertPretty(

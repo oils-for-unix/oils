@@ -41,6 +41,7 @@ from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 from data_lang.j8 import ValueIdString, HeapValueId
 from typing import cast, List, Dict, Callable #, Tuple Optional
 from core import ansi
+from libc import wcswidth
 
 import fastfunc
 import re
@@ -68,6 +69,7 @@ _ = log
 # - [x] Add some style
 # - [ ] Test BashArray and BashAssoc
 # - [x] Show cycles as [...]/{...}
+# - [ ] DetectConsoleOutput to only print styles to terminal
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
@@ -92,7 +94,9 @@ CYCLE_STYLE = ansi.BOLD + ansi.YELLOW
 
 def _StrWidth(string):
     # type: (str) -> int
-    return len(string) #TODO
+    # TODO: temporary print
+    print("?", string)
+    return wcswidth(string)
 
 def _EmptyMeasure():
     # type: () -> Measure
