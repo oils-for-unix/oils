@@ -1,7 +1,7 @@
 # spec/ysh-methods
 
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### => operator for pure computation is allowed (may be mandatory later)
 
@@ -315,6 +315,27 @@ status=0
 status=3
 trimEnd
 status=0
+status=3
+## END
+
+#### Str => trim*(), unicode decoding incorrect
+var badStrs = [
+  b'\yF4\yA2\yA4\yB0',  # Too large of a codepoint
+  b'\yED\yBF\y80',      # Surrogate
+  b'\yC1\y81',          # Overlong
+  b'\y80', b'\yFF',     # Does not match UTF8 bit pattern
+]
+
+for badStr in (badStrs) {
+  try { call badStr => trim() }
+  echo status=$_status
+}
+
+## STDOUT:
+status=3
+status=3
+status=3
+status=3
 status=3
 ## END
 
