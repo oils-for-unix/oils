@@ -28,6 +28,11 @@
 (Str)   "single quoted"
 ## END
 
+#### Range
+var x = 1..100
+= x
+## stdout: (Range)   1 .. 100
+
 #### Bash Array
 declare -a array_0=()
 declare -a array_1=(hello)
