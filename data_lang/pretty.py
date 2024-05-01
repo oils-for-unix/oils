@@ -45,7 +45,6 @@ from libc import wcswidth
 from frontend import match
 
 import fastfunc
-import re
 
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, BufWriter, iteritems
@@ -64,13 +63,13 @@ _ = log
 # - [ ] tabular alignment for list elements
 # - [x] float prints with '.'
 # - [ ] chore: bash completion (devtools/completion)
-# - [ ] fix C++ errors
 # Now:
 # - [x] string width
 # - [x] Unquote identifier-y dict keys
 # - [x] Add some style
 # - [ ] Test BashArray and BashAssoc
 # - [ ] test cyclic values
+# - [ ] fix C++ errors
 # - [x] spec tests: test/spec.sh ysh-slice-range (etc.)
 #       test/spec-py.sh ysh-all
 #       can change tests to `pp line` if failing
@@ -81,6 +80,8 @@ _ = log
 # - [x] set width using get_terminal_width() (check for -1)
 #       always use width, even if it's very wide; if -1 (not terminal) default to 80
 # - [x] print type at top level, newline after type if multiline
+# - [ ] format with yapf
+# - [ ] write docs. Maybe in doc/*.md
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
