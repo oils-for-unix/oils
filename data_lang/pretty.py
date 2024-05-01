@@ -10,7 +10,7 @@ maximum line width.)
 
 # ~~~ Architecture ~~~
 #
-# Based on a string version of the algorithm from Wadler's "A Prettier Printer".
+# Based on a version of the algorithm from Wadler's "A Prettier Printer".
 #
 # Pretty printing proceeds in two phases:
 #
@@ -35,11 +35,11 @@ maximum line width.)
 
 from __future__ import print_function
 
-from _devbuild.gen.pretty_asdl import doc, doc_e, doc_t, DocFragment, Measure, MeasuredDoc
+from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 
 from data_lang.j8 import ValueIdString, HeapValueId
-from typing import cast, List, Dict, Callable #, Tuple Optional
+from typing import cast, List, Dict
 from core import ansi
 from libc import wcswidth
 from frontend import match
@@ -62,8 +62,8 @@ _ = log
 # - [ ] chore: bash completion (devtools/completion)
 # - [ ] fix C++ errors
 # Now:
-# - [ ] run the linter
-# - [ ] clean up imports (is there a lint that checks for unused imports?)
+# - [x] run the linter
+# - [x] clean up imports (is there a lint that checks for unused imports?)
 # - [x] string width
 # - [x] Unquote identifier-y dict keys
 # - [x] Add some style

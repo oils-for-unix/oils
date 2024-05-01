@@ -4,8 +4,7 @@
 import unittest
 import libc
 # module under test
-from data_lang.pretty import (PrettyPrinter, MeasuredDoc,
-    _Concat, _Text, NULL_STYLE, NUMBER_STYLE)
+from data_lang.pretty import (PrettyPrinter, NULL_STYLE, NUMBER_STYLE)
 
 from data_lang import j8
 from _devbuild.gen.value_asdl import value, value_t
@@ -202,22 +201,6 @@ class PrettyTest(unittest.TestCase):
                 '  }',
                 '}'
             ]))
-
-# TODO: Revive this test, in a place where we can construct cyclic values.
-#
-# class CycleDetectorTest(unittest.TestCase):
-#     """Test displaying a directed graph, where each vertex `i` has two out-edges `graph[i]`."""
-#
-#     def testCycleDetection(self):
-#         # Test displaying this spaghetti graph:
-#         # root -> (a, c)
-#         #    a -> (a, a)
-#         #    b -> (b, c)
-#         #    c -> (a, b)
-#         graph = [[1, 2], [1, 1], [1, 3], [3, 2]]
-#         self.assertEqual(
-#             GraphPrinter(graph).PrintGraph(),
-#             "(&a (*a, *a), &c (*a, &b (*b, *c)))")
 
 if __name__ == '__main__':
     # To simulate the OVM_MAIN patch in pythonrun.c

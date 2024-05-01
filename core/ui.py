@@ -21,16 +21,14 @@ from _devbuild.gen.syntax_asdl import (
     source,
     source_e,
 )
-from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
+from _devbuild.gen.value_asdl import (value_t, value_str)
 from asdl import format as fmt
 from data_lang import pretty
 from frontend import lexer
 from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, log
-from data_lang import j8
 from data_lang import j8_lite
-from data_lang import pretty
 from libc import get_terminal_width
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
