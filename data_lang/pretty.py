@@ -67,7 +67,7 @@ _ = log
 # - [x] string width
 # - [x] Unquote identifier-y dict keys
 # - [x] Add some style
-# - [ ] Test BashArray and BashAssoc
+# - [x] Test BashArray and BashAssoc
 # - [ ] test cyclic values
 # - [ ] fix C++ errors
 # - [x] spec tests: test/spec.sh ysh-slice-range (etc.)
@@ -346,12 +346,12 @@ class _DocConstructor:
         else:
             return mdoc
 
-    def _Surrounded(self, open, mdoc, close):
-        # type: (str, MeasuredDoc, str) -> MeasuredDoc
-        """Print one of two options (using '[' and ']' for open and close):
+    def _Surrounded(self, open, sep, mdoc, close):
+        # type: (str, str, MeasuredDoc, str) -> MeasuredDoc
+        """Print one of two options (using '[', '_', ']' for open, sep, close):
     
         ```
-        [mdoc]
+        [_mdoc]
         ------
         [
             mdoc
@@ -360,7 +360,7 @@ class _DocConstructor:
         """
         return _Group(_Concat([
             _Text(open),
-            _Indent(self.indent, _Concat([_Break(""), mdoc])),
+            _Indent(self.indent, _Concat([_Break(sep), mdoc])),
             _Break(""),
             _Text(close)]))
     
@@ -390,7 +390,7 @@ class _DocConstructor:
         if len(vlist.items) == 0:
             return _Text("[]")
         mdocs = [self._Value(item) for item in vlist.items]
-        return self._Surrounded("[", self._Join(mdocs, ",", " "), "]")
+        return self._Surrounded("[", "", self._Join(mdocs, ",", " "), "]")
 
     def _ValueDict(self, vdict):
         # type: (value.Dict) -> MeasuredDoc
@@ -399,28 +399,32 @@ class _DocConstructor:
         mdocs = []
         for k, v in iteritems(vdict.d):
             mdocs.append(_Concat([self._Key(k), _Text(": "), self._Value(v)]))
-        return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
+        return self._Surrounded("{", "", self._Join(mdocs, ",", " "), "}")
 
     def _BashArray(self, varray):
         # type: (value.BashArray) -> MeasuredDoc
         if len(varray.strs) == 0:
-            return _Text("[]")
+            return _Text("(BashArray)")
         mdocs = []
         for s in varray.strs:
             if s is None:
-                mdocs.append(self._String(s))
-            else:
                 mdocs.append(_Text("null"))
-        return self._Surrounded("[", self._Join(mdocs, ",", " "), "]")
+            else:
+                mdocs.append(self._String(s))
+        return self._Surrounded("(BashArray", " ", self._Join(mdocs, "", " "), ")")
 
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
         if len(vassoc.d) == 0:
-            return _Text("{}")
+            return _Text("(BashAssoc)")
         mdocs = []
         for k2, v2 in iteritems(vassoc.d):
-            mdocs.append(_Concat([self._Key(k2), _Text(": "), self._String(v2)]))
-        return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
+            mdocs.append(_Concat([
+                _Text("["),
+                self._String(k2),
+                _Text("]="),
+                self._String(v2)]))
+        return self._Surrounded("(BashAssoc", " ", self._Join(mdocs, "", " "), ")")
 
     def _Value(self, val):
         # type: (value_t) -> MeasuredDoc
