@@ -81,3 +81,46 @@ declare assoc_long=([Lorem]=ipsum [dolor]="sit amet," ['consectetur adipiscing']
     ["do"]="eiusmod."
 )
 ## END
+
+#### Simple Cycles
+var cyclic_array = ["one", "two", "three"]
+setvar cyclic_array[2] = cyclic_array
+var cyclic_dict = {"dead_end": null}
+setvar cyclic_dict["live_end"] = cyclic_dict
+= cyclic_array
+= cyclic_dict
+## STDOUT:
+(List)   ["one", "two", [...]]
+(Dict)   {dead_end: null, live_end: {...}}
+## END
+
+#### Complex Cycles
+var dict = {}
+setvar dict["nothing"] = null
+var simple_cycle = [["dummy"]]
+setvar simple_cycle[0][0] = simple_cycle
+setvar dict["simple_cycle"] = simple_cycle
+var tricky_cycle = ["dummy"]
+setvar tricky_cycle[0] = dict
+setvar dict["tricky_cycle"] = tricky_cycle
+var dag = [1, 2, "dummy"]
+setvar dag[2] = dag
+setvar dict["dag"] = [dag, dag]
+var alpha = {}
+var omega = {}
+setvar alpha["omega"] = omega
+setvar omega["alpha"] = alpha
+setvar dict["key_alpha"] = alpha
+setvar dict["key_omega"] = omega
+= dict
+## STDOUT:
+(Dict)
+{
+    nothing: null,
+    simple_cycle: [[[...]]],
+    tricky_cycle: [{...}],
+    dag: [[1, 2, [...]], [1, 2, [...]]],
+    key_alpha: {omega: {alpha: {...}}},
+    key_omega: {alpha: {omega: {...}}}
+}
+## END

@@ -53,23 +53,22 @@ _ = log
 
 # TODO:
 # Later:
-# - [ ] clean up imports (is there a lint that checks for unused imports?)
-# - [ ] run the linter
 # - [x] what's with `_ = log`?
 # - [ ] contributing page: PRs are squash-merged with a descriptive tag like [json]
 # Between:
-# - [ ] fill in ~Algorithm Description~
 # - [x] test styles (how?)
 # - [ ] tabular alignment for list elements
 # - [x] float prints with '.'
 # - [ ] chore: bash completion (devtools/completion)
+# - [ ] fix C++ errors
 # Now:
+# - [ ] run the linter
+# - [ ] clean up imports (is there a lint that checks for unused imports?)
 # - [x] string width
 # - [x] Unquote identifier-y dict keys
 # - [x] Add some style
 # - [x] Test BashArray and BashAssoc
-# - [ ] test cyclic values
-# - [ ] fix C++ errors
+# - [x] test cyclic values
 # - [x] spec tests: test/spec.sh ysh-slice-range (etc.)
 #       test/spec-py.sh ysh-all
 #       can change tests to `pp line` if failing
@@ -82,6 +81,8 @@ _ = log
 # - [x] print type at top level, newline after type if multiline
 # - [ ] format with yapf
 # - [ ] write docs. Maybe in doc/*.md
+# - [ ] fill in ~Algorithm Description~
+# - [ ] More extensive pp testing in pretty_test.py
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
