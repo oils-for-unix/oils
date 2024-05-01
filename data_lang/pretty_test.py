@@ -18,6 +18,7 @@ def IntValue(i):
 class PrettyTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        # Use settings that make testing easier.
         cls.printer = PrettyPrinter()
         cls.printer.SetIndent(2)
         cls.printer.SetUseStyles(False)

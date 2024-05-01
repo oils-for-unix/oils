@@ -3,9 +3,9 @@
 """
 Pretty print Oils values (and later other data/languages as well).
 
-(Pretty printing means intelligently choosing whitespace including indentation
+Pretty printing means intelligently choosing whitespace including indentation
 and newline placement, to attempt to display data nicely while staying within a
-maximum line width.)
+maximum line width.
 """
 
 # ~~~ Architecture ~~~
@@ -28,9 +28,71 @@ maximum line width.)
 # - https://lobste.rs/s/1r0aak/twist_on_wadler_s_printer
 # - https://lobste.rs/s/aevptj/why_is_prettier_rock_solid
 
-# ~~~ Algorithm Description ~~~
+# ~~~ Pretty Printing Overview ~~~
 #
-# [FILL]
+# If you're just using this file, you don't need to know how pretty printing
+# works. Just call `PrettyPrinter().PrintValue()`. However if you want to change
+# or extend how values are printed, you'll need to know, so here's an overview.
+#
+# Start with Walder's "A Prettier Printer", which this is based off of:
+# https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf
+#
+# ~ Constructors ~
+#
+# There are just a few constructors for `doc`, from which everything else is
+# built from.
+#
+# Text(string) prints like:
+# |string
+#
+# Break(string) prints like:
+# |string
+# or like a newline:
+# |
+# |
+# (It does the latter if printed in "flat" mode, and the former otherwise. See
+# Group for details.)
+#
+# Concat(a, b) prints like:
+# |AAAAA
+# |AAABBB
+# |BBBBB
+#
+# Indent(3, a) prints like:
+# |AAAAA
+# |   AAAAA
+# |   AAAAA
+# (notice that the first line isn't indented)
+#
+# Group(a) makes a decision. It either:
+# - Prints `a` "flat", meaning that (i) every Break inside of it is printed as a
+#   string instead of as a newline, and (ii) every Group nested inside of it is
+#   printed flat.
+# - Prints `a` normally, meaning that (i) the Breaks inside of it are printed as
+#   newlines, and (ii) the Groups inside of it make their own decision about
+#   whether to be flat.
+# It makes this decision greedily. If the current line would not overflow if the
+# group printed flat, then it will print flat. This takes into account not only
+# the group itself, but the content before and after it on the same line.
+#
+# ~ Measures ~
+#
+# The algorithm used here is close to the one originally described by Wadler,
+# but it precomputes a "measure" for each node in the `doc`. This "measure"
+# allows each Groups to decide whether to print flat or not without needing to
+# look ahead per the standard algorithm. A measure has two pieces of
+# information:
+#
+# - Measure.flat is the width of the doc if it's printed flat.
+# - Measure.nonflat is the width of the doc until the _earliest possible_
+#   newline, or -1 if it doesn't contain a Break.
+#
+# Measures are used in two steps. First, they're computed bottom-up on the
+# `doc`, measuring the size of each node. Later, _PrintDoc() stores a measure in
+# each DocFragment. These Measures measure something different: the width from
+# the doc _to the end of the entire doc tree_. This second set of Measures (the
+# ones in the DocFragments) are computed top-down, and they're used to decide
+# for each Group whether to use flat mode or not, without needing to scan ahead.
 
 
 from __future__ import print_function
@@ -59,7 +121,7 @@ _ = log
 # - [x] test styles (how?)
 # - [ ] tabular alignment for list elements
 # - [x] float prints with '.'
-# - [ ] chore: bash completion (devtools/completion)
+# - [-] chore: bash completion (devtools/completion)
 # - [ ] fix C++ errors
 # Now:
 # - [x] run the linter
@@ -80,9 +142,11 @@ _ = log
 #       always use width, even if it's very wide; if -1 (not terminal) default to 80
 # - [x] print type at top level, newline after type if multiline
 # - [ ] format with yapf
-# - [ ] write docs. Maybe in doc/*.md
-# - [ ] fill in ~Algorithm Description~
-# - [ ] More extensive pp testing in pretty_test.py
+# - [x] write docs. Maybe in doc/*.md
+# - [x] fill in ~Algorithm Description~
+# - [x] More extensive pp testing in pretty_test.py
+# - [ ] Proofread
+# - [ ] Clean up this todo list
 
 # QUESTIONS:
 # - Is there a better way to do Option[int] than -1 as a sentinel? NO
@@ -110,22 +174,21 @@ def _StrWidth(string):
 
 def _EmptyMeasure():
     # type: () -> Measure
+    """The measure of an empty doc."""
     return Measure(0, -1)
-
-def _TextMeasure(string):
-    # type: (str) -> Measure
-    return Measure(_StrWidth(string), -1)
-
-def _BreakMeasure(string):
-    # type: (str) -> Measure
-    return Measure(_StrWidth(string), 0)
 
 def _FlattenMeasure(measure):
     # type: (Measure) -> Measure
+    """The measure if its document is rendered flat."""
     return Measure(measure.flat, -1)
 
-def _AddMeasure(m1, m2):
+def _ConcatMeasure(m1, m2):
     # type: (Measure, Measure) -> Measure
+    """Compute the measure of concatenated docs.
+
+    If m1 and m2 are the measures of doc1 and doc2,
+    then _ConcatMeasure(m1, m2) is the measure of doc.Concat([doc1, doc2]).
+    This concatenation is associative but not commutative."""
     if m1.nonflat != -1:
         return Measure(m1.flat + m2.flat, m1.nonflat)
     elif m2.nonflat != -1:
@@ -148,13 +211,13 @@ def _SuffixLen(measure):
 
 def _Text(string):
     # type: (str) -> MeasuredDoc
-    """Print `string` (which must contain newlines)."""
-    return MeasuredDoc(doc.Text(string), _TextMeasure(string))
+    """Print `string` (which must not contain a newline)."""
+    return MeasuredDoc(doc.Text(string), Measure(_StrWidth(string), -1))
 
 def _Break(string):
     # type: (str) -> MeasuredDoc
     """If in `flat` mode, print `string`, otherwise print `\n`."""
-    return MeasuredDoc(doc.Break(string), _BreakMeasure(string))
+    return MeasuredDoc(doc.Break(string), Measure(_StrWidth(string), 0))
 
 def _Indent(indent, mdoc):
     # type: (int, MeasuredDoc) -> MeasuredDoc
@@ -163,15 +226,15 @@ def _Indent(indent, mdoc):
 
 def _Concat(mdocs):
     # type: (List[MeasuredDoc]) -> MeasuredDoc
-    """Print the docs in order (with no spacing in between)."""
+    """Print the mdocs in order (with no space in between)."""
     measure = _EmptyMeasure()
     for mdoc in mdocs:
-        measure = _AddMeasure(measure, mdoc.measure)
+        measure = _ConcatMeasure(measure, mdoc.measure)
     return MeasuredDoc(doc.Concat(mdocs), measure)
 
 def _Group(mdoc):
     # type: (MeasuredDoc) -> MeasuredDoc
-    """Print `mdoc`. Do so in flat mode if it will fit on the current line."""
+    """Print `mdoc`. Use flat mode if `mdoc` will fit on the current line."""
     return MeasuredDoc(doc.Group(mdoc), mdoc.measure)
 
 
@@ -182,9 +245,8 @@ def _Group(mdoc):
 class PrettyPrinter(object):
     """Pretty print an Oils value.
 
-    Uses a strict version of the algorithm from Wadler's "A Prettier Printer".
+    Uses a version of the algorithm from Wadler's "A Prettier Printer".
     (https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf)
-    (https://lindig.github.io/papers/strictly-pretty-2000.pdf)
     """
 
     DEFAULT_MAX_WIDTH = 80
@@ -206,7 +268,8 @@ class PrettyPrinter(object):
         # type: (int) -> None
         """Set the maximum line width.
 
-        Pretty printing will attempt to (but does not guarantee) fitting within this width.
+        Pretty printing will attempt to (but does not guarantee to) fit the doc
+        within this width.
         """
         self.max_width = max_width
 
@@ -217,7 +280,7 @@ class PrettyPrinter(object):
 
     def SetUseStyles(self, use_styles):
         # type: (bool) -> None
-        """If true, print with ansi colors and styles. Otherwise print plainly."""
+        """If true, print with ansi colors and styles. Otherwise print with plain text."""
         self.use_styles = use_styles
 
     def SetShowTypePrefix(self, show_type_prefix):
@@ -237,7 +300,7 @@ class PrettyPrinter(object):
     def _Fits(self, prefix_len, group, suffix_measure):
         # type: (int, doc.Group, Measure) -> bool
         """Will `group` fit flat on the current line?"""
-        measure = _AddMeasure(_FlattenMeasure(group.mdoc.measure), suffix_measure)
+        measure = _ConcatMeasure(_FlattenMeasure(group.mdoc.measure), suffix_measure)
         return prefix_len + _SuffixLen(measure) <= self.max_width
 
     def _PrintDoc(self, document, buf):
@@ -251,7 +314,7 @@ class PrettyPrinter(object):
         # - The indentation level to print this doc node at.
         # - Is this doc node being printed in flat mode?
         # - The measure _from just after the doc node, to the end of the entire document_.
-        #   (Call this the _suffix measure)
+        #   (Call this the suffix_measure)
         fragments = [DocFragment(_Group(document), 0, False, _EmptyMeasure())]
 
         while len(fragments) > 0:
@@ -284,9 +347,9 @@ class PrettyPrinter(object):
                 elif case(doc_e.Concat):
                     # If we encounter Concat([A, B, C]) with a suffix measure M,
                     # we need to push A,B,C onto the stack in reverse order:
-                    # - C, with suffix measure = B.measure + A.measure + M
-                    # - B, with suffix measure = A.measure + M
-                    # - A, with suffix measure = M
+                    # - C, with suffix_measure = B.measure + A.measure + M
+                    # - B, with suffix_measure = A.measure + M
+                    # - A, with suffix_measure = M
                     concat = cast(doc.Concat, frag.mdoc.doc)
                     measure = frag.measure
                     for mdoc in reversed(concat.mdocs):
@@ -295,7 +358,7 @@ class PrettyPrinter(object):
                             frag.indent,
                             frag.is_flat,
                             measure))
-                        measure = _AddMeasure(mdoc.measure, measure)
+                        measure = _ConcatMeasure(mdoc.measure, measure)
 
                 elif case(doc_e.Group):
                     # If the group would fit on the current line when printed
@@ -375,31 +438,32 @@ class _DocConstructor:
             seq.append(item)
         return _Concat(seq)
 
-    def _Key(self, s):
+    def _DictKey(self, s):
         # type: (str) -> MeasuredDoc
         if match.IsValidVarName(s):
             return self._Styled(KEY_STYLE, _Text(s))
         else:
             return self._Styled(KEY_STYLE, _Text(fastfunc.J8EncodeString(s, True))) # lossy_json=True
 
-    def _String(self, s):
+    def _StringLiteral(self, s):
         # type: (str) -> MeasuredDoc
         return _Text(fastfunc.J8EncodeString(s, True)) # lossy_json=True
 
-    def _ValueList(self, vlist):
+    def _YshList(self, vlist):
         # type: (value.List) -> MeasuredDoc
+        """Print a string literal."""
         if len(vlist.items) == 0:
             return _Text("[]")
         mdocs = [self._Value(item) for item in vlist.items]
         return self._Surrounded("[", "", self._Join(mdocs, ",", " "), "]")
 
-    def _ValueDict(self, vdict):
+    def _YshDict(self, vdict):
         # type: (value.Dict) -> MeasuredDoc
         if len(vdict.d) == 0:
             return _Text("{}")
         mdocs = []
         for k, v in iteritems(vdict.d):
-            mdocs.append(_Concat([self._Key(k), _Text(": "), self._Value(v)]))
+            mdocs.append(_Concat([self._DictKey(k), _Text(": "), self._Value(v)]))
         return self._Surrounded("{", "", self._Join(mdocs, ",", " "), "}")
 
     def _BashArray(self, varray):
@@ -411,7 +475,7 @@ class _DocConstructor:
             if s is None:
                 mdocs.append(_Text("null"))
             else:
-                mdocs.append(self._String(s))
+                mdocs.append(self._StringLiteral(s))
         return self._Surrounded("(BashArray", " ", self._Join(mdocs, "", " "), ")")
 
     def _BashAssoc(self, vassoc):
@@ -422,9 +486,9 @@ class _DocConstructor:
         for k2, v2 in iteritems(vassoc.d):
             mdocs.append(_Concat([
                 _Text("["),
-                self._String(k2),
+                self._StringLiteral(k2),
                 _Text("]="),
-                self._String(v2)]))
+                self._StringLiteral(v2)]))
         return self._Surrounded("(BashAssoc", " ", self._Join(mdocs, "", " "), ")")
 
     def _Value(self, val):
@@ -448,7 +512,7 @@ class _DocConstructor:
 
             elif case(value_e.Str):
                 s = cast(value.Str, val).s
-                return self._String(s)
+                return self._StringLiteral(s)
 
             elif case(value_e.Range):
                 r = cast(value.Range, val)
@@ -465,7 +529,7 @@ class _DocConstructor:
                         _Text("]")])
                 else:
                     self.visiting[heap_id] = True
-                    result = self._ValueList(vlist)
+                    result = self._YshList(vlist)
                     self.visiting[heap_id] = False
                     return result
 
@@ -479,7 +543,7 @@ class _DocConstructor:
                         _Text("}")])
                 else:
                     self.visiting[heap_id] = True
-                    result = self._ValueDict(vdict)
+                    result = self._YshDict(vdict)
                     self.visiting[heap_id] = False
                     return result
 
