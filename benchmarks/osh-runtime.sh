@@ -92,6 +92,10 @@ run-tasks() {
         argv=( testdata/osh-runtime/hello_world.sh )
         ;;
 
+      bin-true)
+        argv=( testdata/osh-runtime/bin_true.sh )
+        ;;
+
       abuild-print-help)
         argv=( testdata/osh-runtime/abuild -h )
         ;;
@@ -188,6 +192,7 @@ print-tasks() {
 
   local -a workloads=(
     hello-world
+    bin-true
     abuild-print-help
 
     configure.cpython
@@ -202,7 +207,8 @@ print-tasks() {
     workloads=(
       #configure.util-linux
       hello-world
-      abuild-print-help
+      bin-true
+      #abuild-print-help
     )
   fi
 
