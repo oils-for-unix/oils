@@ -201,6 +201,14 @@ readonly -a ALL_WORKLOADS=(
   abuild-print-help
 )
 
+print-workloads() {
+  ### for help
+
+  for w in "${ALL_WORKLOADS[@]}"; do
+    echo "    $w"
+  done
+}
+
 print-tasks() {
   local host_name=$1  
   local osh_native=$2
@@ -452,7 +460,7 @@ test-oils-run() {
 
   # e.g. 2024-05-01__10-11-12.ci-vm-name
   local raw_out_dir="$BASE_DIR/$job_id.$host_name"
-  mkdir -p $raw_out_dir $BASE_DIR/stage1
+  mkdir -p $raw_out_dir
 
   # Similar to 'measure', for soil-run and release
   print-tasks-xshar $host_name $osh $num_iters $num_shells $num_workloads \
@@ -460,6 +468,12 @@ test-oils-run() {
 
   # Note: 'stage1' in soil-run is a trivial concatenation, so we can create input for
   # benchmarks/report.R.  We don't need that here
+
+  # TODO: upload
+  # _tmp/
+  #   osh-runtime/
+  #   shell-id/
+  #   host-id/
 }
 
 soil-run() {

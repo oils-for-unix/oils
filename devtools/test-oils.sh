@@ -37,11 +37,71 @@ FLAG_num_iters=1  # iterations
 FLAG_num_shells=1
 FLAG_num_workloads=1
 
+print-help() {
+  # Other flags:
+  #
+  # --host       host to upload to?
+  # --auth       allow writing to host
+  # --no-taskset disable taskset?
+
+  local xshar_path=test-oils.xshar  # hard-coded for now
+
+  cat <<EOF
+Usage: $xshar_path ACTION FLAGS*
+
+Actions:
+
+  osh-runtime (only one supported)
+
+  Flags:
+    -n --num-iters (default: 1)  Run everything this number of times.
+
+    -s --num-shells              Run the first N of osh, bash, dash
+
+    -w --num-workloads           Run the first N of the workloads
+
+  Workloads:
+EOF
+  benchmarks/osh-runtime.sh print-workloads
+  cat <<EOF
+
+Example:
+
+  $xshar_path osh-runtime --num-iters 2 --num-shells 2 --num-workloads 3
+
+will run this benchmark matrix 2 times:
+
+  (osh, bash) X (hello-world, bin-true, configure-cpython)
+
+About xshar:
+
+  This is a self-extracting executable.  It contains:
+
+  1. The oils-for-unix tarball, which can be compiled on any machine easily
+  2. Benchmarking scripts
+  3. This harness, which compiles the tarball, accepts flags, runs benchmarks.
+
+EOF
+}
+
+print-version() {
+  echo "$0 was built from git commit ${XSHAR_GIT_COMMIT:-?}"
+}
+
 parse-flags-osh-runtime() {
   ### Sets global vars FLAG_*
 
   while test $# -ne 0; do
     case "$1" in
+      -v|--version)
+        print-version
+        exit
+        ;;
+      -h|--help)
+        print-help
+        exit
+        ;;
+
       -n|--num-iters)
         if test $# -eq 1; then
           die "-n / --num-iters requires an argument"
@@ -110,6 +170,8 @@ osh-runtime() {
 }
 
 demo() {
+  ### Show how we compile the code
+
   local time_py="$PWD/benchmarks/time_.py"
 
   build/py.sh time-helper
@@ -139,18 +201,19 @@ demo() {
   #time OILS_GC_STATS=1 $osh Python-2.7.13/configure
 }
 
-main() {
-  # TODO
-  #
-  # - Extract oils tarball, compile it
-  # - Run "$@"
-  #
-  # test-oils.xshar benchmarks/osh-runtime.sh xshar-main
-  #
-  # - benchmarks/osh-runtime.sh will create TSV files
-  # - then it can upload them to a server
+if test $# -eq 0; then
+  print-help
+else
+  case "$1" in
+    -v|--version)
+      print-version
+      exit
+      ;;
+    -h|--help)
+      print-help
+      exit
+      ;;
+  esac
 
-  echo 'Hello from test-oils.sh'
-}
-
-"$@"
+  "$@"
+fi

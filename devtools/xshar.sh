@@ -153,14 +153,13 @@ soil-run-hello() {
 soil-run-test-oils() {
   create-test-oils
 
-  # Run it twice to test that SKIP_REBUILD works
-  #for x in 1 2; do
-  #  XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar demo a b c
-  #done
-
   # Demo of flag parsing
   XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar osh-runtime \
     --num-iters 1 --num-shells 1 --num-workloads 1
+
+  # Run it twice to test that SKIP_REBUILD works
+  XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar --help
+  XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar --version
 }
 
 run-task "$@"
