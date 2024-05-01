@@ -91,7 +91,7 @@ dump-shell-id() {
     */osh*)
       local commit_hash=$out_dir/git-commit-hash.txt
 
-      if test -n "$XSHAR_GIT_COMMIT"; then
+      if test -n "${XSHAR_GIT_COMMIT:-}"; then
         echo "$XSHAR_GIT_COMMIT" > $commit_hash
       else
         local branch

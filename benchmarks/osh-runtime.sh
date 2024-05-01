@@ -384,8 +384,8 @@ test-oils-run() {
   local osh=$1
 
   local time_py=$XSHAR_DIR/benchmarks/time_.py
-  $time_py --tsv --rusage -o _tmp/smoke.tsv -- \
-    $osh -c 'sleep 0.01; echo "hi from benchmarks/osh-runtime.sh"'
+  $time_py --tsv --rusage -- \
+    $osh -c 'echo "smoke test: hi from benchmarks/osh-runtime.sh"'
 
   local single_machine='no-host'
 
