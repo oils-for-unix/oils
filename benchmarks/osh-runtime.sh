@@ -381,7 +381,32 @@ EOF
 }
 
 test-oils-run() {
-  echo 'Hello from benchmarks/osh-runtime.sh'
+  local osh=$1
+
+  local time_py=$XSHAR_DIR/benchmarks/time_.py
+  $time_py --tsv --rusage -o _tmp/smoke.tsv -- \
+    $osh -c 'sleep 0.01; echo "hi from benchmarks/osh-runtime.sh"'
+
+  local single_machine='no-host'
+
+  local job_id
+  job_id=$(print-job-id)
+
+  # Write _tmp/provenance.* and _tmp/{host,shell}-id
+  shell-provenance-2 \
+    $single_machine $job_id _tmp \
+    bash dash $osh
+
+  local host_job_id="$single_machine.$job_id"
+  local raw_out_dir="$BASE_DIR/raw.$host_job_id"
+  mkdir -p $raw_out_dir $BASE_DIR/stage1
+
+  return
+
+  measure $single_machine $raw_out_dir $OSH_CPP_NINJA_BUILD
+
+  # Trivial concatenation for 1 machine
+  stage1 '' $single_machine
 }
 
 soil-run() {

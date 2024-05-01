@@ -180,6 +180,9 @@ def main(argv):
 
     if opts.output:
         time_argv.extend(['-o', opts.output])
+    else:
+        # for consistency
+        time_argv.extend(['-o', '/dev/stdout'])
 
     # %x: exit status
     # %e: elapsed

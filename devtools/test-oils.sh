@@ -30,7 +30,32 @@ set -o errexit
 OILS_VERSION=$(head -n 1 oil-version.txt)
 
 osh-runtime() {
-  benchmarks/osh-runtime.sh test-oils-run
+  # $XSHAR_DIR looks like like $REPO_ROOT
+
+  local time_py="$XSHAR_DIR/benchmarks/time_.py"
+  build/py.sh time-helper
+
+  # Extract and compile the tarball
+  # Similar to devtools/release-native.sh test-tar
+  local tmp=_tmp/oils-tar
+  mkdir -p $tmp
+
+  pushd $tmp
+  tar -x < ../../_release/oils-for-unix.tar
+
+  pushd oils-for-unix-$OILS_VERSION
+  build/native.sh tarball-demo
+
+  local osh=$PWD/_bin/cxx-opt-sh/osh 
+
+  # Smoke test
+  $time_py --tsv --rusage -- \
+    $osh -c 'echo "smoke test: osh and time_.py"'
+
+  popd
+  popd
+
+  benchmarks/osh-runtime.sh test-oils-run $osh
 }
 
 demo() {

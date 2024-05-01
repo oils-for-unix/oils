@@ -116,6 +116,7 @@ test-oils-manifest() {
   echo 'build/dev-shell.sh'
   echo 'build/py.sh'
   echo 'build/common.sh'
+  echo 'devtools/run-task.sh'
 
   # osh --tool shell-deps benchmarks/osh-runtime.sh
   # copied from benchmarks/osh-runtime.sh
@@ -127,6 +128,7 @@ soil/common.sh
 test/common.sh
 test/tsv-lib.sh
 EOF
+  echo 'benchmarks/gc_stats_to_tsv.py'
 
   find Python-2.7.13/
 }
