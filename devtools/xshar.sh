@@ -129,6 +129,9 @@ test/common.sh
 test/tsv-lib.sh
 EOF
   echo 'benchmarks/gc_stats_to_tsv.py'
+  echo 'devtools/tsv_concat.py'
+
+  find testdata/osh-runtime
 
   find Python-2.7.13/
 }
@@ -155,7 +158,9 @@ soil-run-test-oils() {
   #  XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar demo a b c
   #done
 
-  XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar osh-runtime a
+  # Demo of flag parsing
+  XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar osh-runtime \
+    --num-iters 1 --num-shells 1 --num-workloads 1
 }
 
 run-task "$@"

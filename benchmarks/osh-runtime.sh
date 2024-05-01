@@ -186,30 +186,31 @@ run-tasks() {
   done
 }
 
+readonly -a ALL_WORKLOADS=(
+  hello-world
+  bin-true
+  abuild-print-help
+
+  configure.cpython
+  configure.util-linux
+  configure.ocaml
+  configure.tcc
+  configure.yash
+)
+
 print-tasks() {
   local host_name=$1  
   local osh_native=$2
 
-  local -a workloads=(
-    hello-world
-    bin-true
-    abuild-print-help
-
-    configure.cpython
-    configure.util-linux
-    configure.ocaml
-    configure.tcc
-    configure.yash
-  )
-
   if test -n "${QUICKLY:-}"; then
-    # Just do the first two
     workloads=(
-      #configure.util-linux
       hello-world
       bin-true
+      #configure.util-linux
       #abuild-print-help
     )
+  else
+    workloads=( "${ALL_WORKLOADS[@]}" )
   fi
 
   for sh_path in bash dash bin/osh $osh_native; do
@@ -219,11 +220,34 @@ print-tasks() {
   done
 }
 
-measure() {
+print-tasks-xshar() {
+  local host_name=$1  
+  local osh_native=$2
+
+  if test -n "${QUICKLY:-}"; then
+    workloads=(
+      hello-world
+      bin-true
+      #configure.util-linux
+      #abuild-print-help
+    )
+  else
+    workloads=( "${ALL_WORKLOADS[@]}" )
+  fi
+
+  for sh_path in bash dash $osh_native; do
+    for workload in "${workloads[@]}"; do
+      tsv-row $host_name $sh_path $workload
+    done
+  done
+}
+
+
+run-tasks-wrapper() {
+  ### reads tasks from stdin
+
   local host_name=$1  # 'no-host' or 'lenny'
   local raw_out_dir=$2
-  local osh_native=$3  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA
-  local out_dir=${4:-$BASE_DIR}  # ../benchmark-data/osh-runtime or _tmp/osh-runtime
 
   mkdir -v -p $raw_out_dir
 
@@ -237,9 +261,10 @@ measure() {
     --field host_name --field sh_path \
     --field workload
 
+  # reads tasks from stdin
   # run-tasks outputs 3 things: raw times.tsv, per-task STDOUT and files, and
   # per-task GC stats
-  print-tasks $host_name $osh_native | run-tasks $raw_out_dir
+  run-tasks $raw_out_dir
 
   # Turn individual files into a TSV, adding host
   benchmarks/gc_stats_to_tsv.py $raw_out_dir/gc-*.txt \
@@ -247,6 +272,15 @@ measure() {
     > $raw_out_dir/gc_stats.tsv
 
   cp -v _tmp/provenance.tsv $raw_out_dir
+}
+
+measure() {
+  ### For release and CI
+  local host_name=$1  # 'no-host' or 'lenny'
+  local raw_out_dir=$2  # _tmp/osh-runtime or ../../benchmark-data/osh-runtime
+  local osh_native=$3  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA
+
+  print-tasks $host_name $osh_native | run-tasks-wrapper $host_name $raw_out_dir
 }
 
 stage1() {
@@ -383,6 +417,11 @@ EOF
 test-oils-run() {
   local osh=$1
 
+  # flags passed by caller
+  local num_iters=${2:-1}
+  local num_shells=${3:-1}
+  local num_workloads=${4:-1}
+
   local time_py=$XSHAR_DIR/benchmarks/time_.py
   $time_py --tsv --rusage -- \
     $osh -c 'echo "smoke test: hi from benchmarks/osh-runtime.sh"'
@@ -401,9 +440,9 @@ test-oils-run() {
   local raw_out_dir="$BASE_DIR/raw.$host_job_id"
   mkdir -p $raw_out_dir $BASE_DIR/stage1
 
-  return
-
-  measure $single_machine $raw_out_dir $OSH_CPP_NINJA_BUILD
+  # Similar to 'measure', for soil-run and release
+  QUICKLY=1 print-tasks-xshar $single_machine $osh \
+    | run-tasks-wrapper $single_machine $raw_out_dir
 
   # Trivial concatenation for 1 machine
   stage1 '' $single_machine

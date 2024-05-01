@@ -27,12 +27,62 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source test/common.sh  # die
+
 OILS_VERSION=$(head -n 1 oil-version.txt)
+
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
+FLAG_num_iters=1  # iterations
+FLAG_num_shells=1
+FLAG_num_workloads=1
+
+parse-flags-osh-runtime() {
+  ### Sets global vars FLAG_*
+
+  while test $# -ne 0; do
+    case "$1" in
+      -n|--num-iters)
+        if test $# -eq 1; then
+          die "-n / --num-iters requires an argument"
+        fi
+        shift
+        FLAG_num_iters=$1
+        ;;
+
+      -s|--num-shells)
+        if test $# -eq 1; then
+          die "-s / --num-shells requires an argument"
+        fi
+        shift
+        FLAG_num_shells=$1
+        ;;
+
+      -w|--num-workloads)
+        if test $# -eq 1; then
+          die "-w / --num-workloads requires an argument"
+        fi
+        shift
+        FLAG_num_shells=$1
+        ;;
+
+      *)
+        die "Invalid flag '$1'"
+        ;;
+    esac
+    shift
+  done
+}
 
 osh-runtime() {
   # $XSHAR_DIR looks like like $REPO_ROOT
 
-  local time_py="$XSHAR_DIR/benchmarks/time_.py"
+  parse-flags-osh-runtime "$@"
+  echo num_iters=$FLAG_num_iters
+  echo num_shells=$FLAG_num_shells
+  echo num_workloads=$FLAG_num_workloads
+
+  local time_py="${XSHAR_DIR:-$REPO_ROOT}/benchmarks/time_.py"
   build/py.sh time-helper
 
   # Extract and compile the tarball
@@ -55,7 +105,8 @@ osh-runtime() {
   popd
   popd
 
-  benchmarks/osh-runtime.sh test-oils-run $osh
+  benchmarks/osh-runtime.sh test-oils-run $osh \
+    $FLAG_num_shells $FLAG_num_workloads $FLAG_num_iters
 }
 
 demo() {
