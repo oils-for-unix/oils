@@ -1410,8 +1410,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # Hack for declaration vs. definition.  TODO: clean this up
                 prefix = '' if self.current_func_node else 'auto* '
 
-                self.def_write_ind('%s%s = Alloc<%s>();\n', prefix, lval.name,
+                self.def_write_ind('%s%s = Alloc<%s>(', prefix, lval.name,
                                    c_type[:-1])
+                if len(o.rvalue.args) > 0:
+                    self.accept(o.rvalue.args[0])
+
+                self.def_write(');\n')
                 return
 
             # is_downcast_and_shadow idiom:

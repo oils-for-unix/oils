@@ -2174,7 +2174,7 @@ class Mem(object):
         # - If an exported variable is changed.
         # - If the set of exported variables changes.
 
-        exported = {}  # type: Dict[str, str]
+        exported = NewDict(16)  # type: Dict[str, str]
         # Search from globals up.  Names higher on the stack will overwrite names
         # lower on the stack.
         for scope in self.var_stack:

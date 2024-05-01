@@ -37,8 +37,8 @@ def MaybeCollect():
     pass
 
 
-def NewDict():
-    # type: () -> Dict[str, Any]
+def NewDict(*args):
+    # type: (Any) -> Dict[str, Any]
     """Make dictionaries ordered in Python, e.g. for JSON.
   
     In C++, our Dict implementation should be ordered.

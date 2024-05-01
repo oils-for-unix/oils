@@ -86,6 +86,16 @@ class Dict {
         values_(nullptr) {
   }
 
+  Dict(int initial_size)
+      : len_(0),
+        capacity_(0),
+        index_len_(0),
+        index_(nullptr),
+        keys_(nullptr),
+        values_(nullptr) {
+		reserve(initial_size);
+  }
+
   Dict(std::initializer_list<K> keys, std::initializer_list<V> values)
       : len_(0),
         capacity_(0),
