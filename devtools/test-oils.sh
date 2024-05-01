@@ -37,6 +37,8 @@ FLAG_num_iters=1  # iterations
 FLAG_num_shells=1
 FLAG_num_workloads=1
 
+readonly XSHAR_NAME=test-oils.xshar  # hard-coded for now
+
 print-help() {
   # Other flags:
   #
@@ -44,14 +46,19 @@ print-help() {
   # --auth       allow writing to host
   # --no-taskset disable taskset?
 
-  local xshar_path=test-oils.xshar  # hard-coded for now
-
   cat <<EOF
-Usage: $xshar_path ACTION FLAGS*
+Usage: $XSHAR_NAME ACTION FLAGS*
+
+This is a self-extracting, executable shell archive (xshar) to test Oils.  It
+contains:
+
+  1. The oils-for-unix tarball, which can be compiled on any machine
+  2. Test / benchmark scripts and their dependencies
+  3. This harness, which compiles the tarball, accepts flags, runs benchmarks.
 
 Actions:
 
-  osh-runtime (only one supported)
+  osh-runtime (currently the only one)
 
   Flags:
     -n --num-iters (default: 1)  Run everything this number of times.
@@ -67,25 +74,27 @@ EOF
 
 Example:
 
-  $xshar_path osh-runtime --num-iters 2 --num-shells 2 --num-workloads 3
+  $XSHAR_NAME osh-runtime --num-iters 2 --num-shells 2 --num-workloads 3
 
 will run this benchmark matrix 2 times:
 
   (osh, bash) X (hello-world, bin-true, configure-cpython)
 
-About xshar:
+xshar runtime dependencies:
 
-  This is a self-extracting executable.  It contains:
+  - base64, tar, gzip - for unpacking the payload
 
-  1. The oils-for-unix tarball, which can be compiled on any machine easily
-  2. Benchmarking scripts
-  3. This harness, which compiles the tarball, accepts flags, runs benchmarks.
+osh-runtime dependencies:
 
+  - C++ compiler, for oils-for-unix and benchmarks/time-helper.c
+    - On OS X, the compiler comes with XCode
+  - python2 for - benchmarks/time_.py, tsv*.py, gc_stats*.py
+  - curl for uploading results via HTTP
 EOF
 }
 
 print-version() {
-  echo "$0 was built from git commit ${XSHAR_GIT_COMMIT:-?}"
+  echo "$XSHAR_NAME was built from git commit ${XSHAR_GIT_COMMIT:-?}"
 }
 
 parse-flags-osh-runtime() {
@@ -167,6 +176,29 @@ osh-runtime() {
 
   benchmarks/osh-runtime.sh test-oils-run $osh \
     $FLAG_num_shells $FLAG_num_workloads $FLAG_num_iters
+
+  # TODO: upload these with curl
+  #
+  # _tmp/
+  #   osh-runtime/
+  #   shell-id/
+  #   host-id/
+  #
+  # Either as individual files:
+  #
+  # curl \
+  #    --form client=$XSHAR_NAME \
+  #    --form file1=@_tmp/foo \
+  #    --form file2=@_tmp/bar \
+  #    http://travis-ci.oilshell.org/untrusted/
+  #
+  # Or as a .wwz or .zip file?
+  #
+  # wwup can either write the .wwz literally, or it can unpack it with zipfile
+  # module.  (Beware of file system traversal issues!)
+  #
+  # Then enhance devtools/src_tree.py to make a nicer view of the tree,
+  # including TSV files rendered as HTML.
 }
 
 demo() {

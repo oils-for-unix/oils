@@ -468,12 +468,6 @@ test-oils-run() {
 
   # Note: 'stage1' in soil-run is a trivial concatenation, so we can create input for
   # benchmarks/report.R.  We don't need that here
-
-  # TODO: upload
-  # _tmp/
-  #   osh-runtime/
-  #   shell-id/
-  #   host-id/
 }
 
 soil-run() {
