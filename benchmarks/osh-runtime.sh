@@ -186,16 +186,19 @@ run-tasks() {
   done
 }
 
+# Sorted by priority for test-oils.sh osh-runtime --num-shells 3
+
 readonly -a ALL_WORKLOADS=(
   hello-world
   bin-true
-  abuild-print-help
 
   configure.cpython
   configure.util-linux
   configure.ocaml
   configure.tcc
   configure.yash
+
+  abuild-print-help
 )
 
 print-tasks() {
@@ -224,24 +227,34 @@ print-tasks-xshar() {
   local host_name=$1  
   local osh_native=$2
 
-  if test -n "${QUICKLY:-}"; then
-    workloads=(
-      hello-world
-      bin-true
-      #configure.util-linux
-      #abuild-print-help
-    )
-  else
-    workloads=( "${ALL_WORKLOADS[@]}" )
-  fi
+  local num_iters=${3:-1}
+  local num_shells=${4:-1}
+  local num_workloads=${5:-1}
 
-  for sh_path in bash dash $osh_native; do
-    for workload in "${workloads[@]}"; do
-      tsv-row $host_name $sh_path $workload
+  local s=0
+  local w=0
+
+  for i in $(seq $num_iters); do
+
+    for sh_path in $osh_native bash dash; do
+
+      for workload in "${ALL_WORKLOADS[@]}"; do
+        tsv-row $host_name $sh_path $workload
+
+        w=$(( w + 1 ))  # cut off at specified workloads
+        if test $w -eq $num_workloads; then
+          break
+        fi
+      done
+
+      s=$(( s + 1 ))  # cut off as specified shells
+      if test $s -eq $num_shells; then
+        break
+      fi
+
     done
   done
 }
-
 
 run-tasks-wrapper() {
   ### reads tasks from stdin
@@ -426,26 +439,27 @@ test-oils-run() {
   $time_py --tsv --rusage -- \
     $osh -c 'echo "smoke test: hi from benchmarks/osh-runtime.sh"'
 
-  local single_machine='no-host'
+  local host_name
+  host_name=$(hostname)
 
   local job_id
   job_id=$(print-job-id)
 
   # Write _tmp/provenance.* and _tmp/{host,shell}-id
   shell-provenance-2 \
-    $single_machine $job_id _tmp \
+    $host_name $job_id _tmp \
     bash dash $osh
 
-  local host_job_id="$single_machine.$job_id"
-  local raw_out_dir="$BASE_DIR/raw.$host_job_id"
+  # e.g. 2024-05-01__10-11-12.ci-vm-name
+  local raw_out_dir="$BASE_DIR/$job_id.$host_name"
   mkdir -p $raw_out_dir $BASE_DIR/stage1
 
   # Similar to 'measure', for soil-run and release
-  QUICKLY=1 print-tasks-xshar $single_machine $osh \
-    | run-tasks-wrapper $single_machine $raw_out_dir
+  print-tasks-xshar $host_name $osh $num_iters $num_shells $num_workloads \
+    | run-tasks-wrapper $host_name $raw_out_dir
 
-  # Trivial concatenation for 1 machine
-  stage1 '' $single_machine
+  # Note: 'stage1' in soil-run is a trivial concatenation, so we can create input for
+  # benchmarks/report.R.  We don't need that here
 }
 
 soil-run() {
