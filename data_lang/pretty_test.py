@@ -105,6 +105,7 @@ class PrettyTest(unittest.TestCase):
         self.printer.SetShowTypePrefix(False)
 
     def testList(self):
+        self.assertPretty(20, "[]", "[]")
         self.assertPretty(
             20,
             "[100, 200, 300]",
@@ -139,6 +140,7 @@ class PrettyTest(unittest.TestCase):
             ]))
 
     def testDict(self):
+        self.assertPretty(24, "{}", "{}")
         self.assertPretty(
             24,
             '{"x":100, "y":200, "z":300}',
@@ -201,6 +203,208 @@ class PrettyTest(unittest.TestCase):
                 '  }',
                 '}'
             ]))
+
+    def testEverythingAtOnce(self):
+        everything = u"""{
+            'primitives': {
+                'simple_primitives': [null, false, true],
+                'numeric_primitives': [-123456789, 123.456789],
+                'stringy_primitives': 'string'
+            },
+            'compounds': [
+                [1, 2, 3],
+                {'dict': 'ionary'}
+            ],
+            'variety-pack': [
+                null,
+                ['Los', 'pollitos', 'dicen', 'pío', 'pío', 'pío'],
+                [1, [2, [3, [4, [5, [6]]]]]],
+                [[[[[5], 4], 3], 2], 1]
+            ]
+        }""".encode('utf-8')
+        self.assertPretty(54, everything,
+            "\n".join([
+                '{',
+                '  primitives: {',
+                '    simple_primitives: [null, false, true],',
+                '    numeric_primitives: [-123456789, 123.456789],',
+                '    stringy_primitives: "string"',
+                '  },',
+                '  compounds: [[1, 2, 3], {dict: "ionary"}],',
+                '  "variety-pack": [',
+                '    null,',
+                '    ["Los", "pollitos", "dicen", "pío", "pío", "pío"],',
+                '    [1, [2, [3, [4, [5, [6]]]]]],',
+                '    [[[[[5], 4], 3], 2], 1]',
+                '  ]',
+                '}'
+            ]))
+        self.assertPretty(49, everything,
+            "\n".join([
+                '{',
+                '  primitives: {',
+                '    simple_primitives: [null, false, true],',
+                '    numeric_primitives: [-123456789, 123.456789],',
+                '    stringy_primitives: "string"',
+                '  },',
+                '  compounds: [[1, 2, 3], {dict: "ionary"}],',
+                '  "variety-pack": [',
+                '    null,',
+                '    [',
+                '      "Los",',
+                '      "pollitos",',
+                '      "dicen",',
+                '      "pío",',
+                '      "pío",',
+                '      "pío"',
+                '    ],',
+                '    [1, [2, [3, [4, [5, [6]]]]]],',
+                '    [[[[[5], 4], 3], 2], 1]',
+                '  ]',
+                '}'
+            ]))
+        self.assertPretty(43, everything,
+            "\n".join([
+                '{',
+                '  primitives: {',
+                '    simple_primitives: [null, false, true],',
+                '    numeric_primitives: [',
+                '      -123456789,',
+                '      123.456789',
+                '    ],',
+                '    stringy_primitives: "string"',
+                '  },',
+                '  compounds: [[1, 2, 3], {dict: "ionary"}],',
+                '  "variety-pack": [',
+                '    null,',
+                '    [',
+                '      "Los",',
+                '      "pollitos",',
+                '      "dicen",',
+                '      "pío",',
+                '      "pío",',
+                '      "pío"',
+                '    ],',
+                '    [1, [2, [3, [4, [5, [6]]]]]],',
+                '    [[[[[5], 4], 3], 2], 1]',
+                '  ]',
+                '}'
+            ]))
+        self.assertPretty(33, everything,
+            "\n".join([
+                '{',
+                '  primitives: {',
+                '    simple_primitives: [',
+                '      null,',
+                '      false,',
+                '      true',
+                '    ],',
+                '    numeric_primitives: [',
+                '      -123456789,',
+                '      123.456789',
+                '    ],',
+                '    stringy_primitives: "string"',
+                '  },',
+                '  compounds: [',
+                '    [1, 2, 3],',
+                '    {dict: "ionary"}',
+                '  ],',
+                '  "variety-pack": [',
+                '    null,',
+                '    [',
+                '      "Los",',
+                '      "pollitos",',
+                '      "dicen",',
+                '      "pío",',
+                '      "pío",',
+                '      "pío"',
+                '    ],',
+                '    [1, [2, [3, [4, [5, [6]]]]]],',
+                '    [[[[[5], 4], 3], 2], 1]',
+                '  ]',
+                '}'
+            ]))
+        self.assertPretty(32, everything,
+            "\n".join([
+                '{',
+                '  primitives: {',
+                '    simple_primitives: [',
+                '      null,',
+                '      false,',
+                '      true',
+                '    ],',
+                '    numeric_primitives: [',
+                '      -123456789,',
+                '      123.456789',
+                '    ],',
+                '    stringy_primitives: "string"',
+                '  },',
+                '  compounds: [',
+                '    [1, 2, 3],',
+                '    {dict: "ionary"}',
+                '  ],',
+                '  "variety-pack": [',
+                '    null,',
+                '    [',
+                '      "Los",',
+                '      "pollitos",',
+                '      "dicen",',
+                '      "pío",',
+                '      "pío",',
+                '      "pío"',
+                '    ],',
+                '    [',
+                '      1,',
+                '      [2, [3, [4, [5, [6]]]]]',
+                '    ],',
+                '    [[[[[5], 4], 3], 2], 1]',
+                '  ]',
+                '}'
+            ]))
+        self.assertPretty(26, everything,
+            "\n".join([
+                '{',
+                '  primitives: {',
+                '    simple_primitives: [',
+                '      null,',
+                '      false,',
+                '      true',
+                '    ],',
+                '    numeric_primitives: [',
+                '      -123456789,',
+                '      123.456789',
+                '    ],',
+                '    stringy_primitives: "string"',
+                '  },',
+                '  compounds: [',
+                '    [1, 2, 3],',
+                '    {dict: "ionary"}',
+                '  ],',
+                '  "variety-pack": [',
+                '    null,',
+                '    [',
+                '      "Los",',
+                '      "pollitos",',
+                '      "dicen",',
+                '      "pío",',
+                '      "pío",',
+                '      "pío"',
+                '    ],',
+                '    [',
+                '      1,',
+                '      [',
+                '        2,',
+                '        [3, [4, [5, [6]]]]',
+                '      ]',
+                '    ],',
+                '    [',
+                '      [[[[5], 4], 3], 2],',
+                '      1',
+                '    ]',
+                '  ]',
+                '}'
+            ]))
+
 
 if __name__ == '__main__':
     # To simulate the OVM_MAIN patch in pythonrun.c
