@@ -501,7 +501,8 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # Join with provenance for host label and shell label
   times %>%
-    select(c(elapsed_secs, user_secs, sys_secs, max_rss_KiB, task_id, host_name, sh_path, workload)) %>%
+    select(c(elapsed_secs, user_secs, sys_secs, max_rss_KiB, task_id,
+             host_name, sh_path, workload)) %>%
     mutate(elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
@@ -557,7 +558,7 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # Max RSS comparison
   details %>%
-    select(-c(task_id, elapsed_ms, user_ms, sys_ms)) %>%
+    select(c(host_name, shell_label, workload, max_rss_MB)) %>%
     spread(key = shell_label, value = max_rss_MB) %>%
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
@@ -576,8 +577,13 @@ RuntimeReport = function(in_dir, out_dir) {
     select(-c(task_id)) ->
     gc_details
 
+  Log('GC details')
+  print(gc_details)
+  Log('')
+
   Log('GC stats')
   print(gc_stats)
+  Log('')
 
   gc_stats %>%
     left_join(gc_details, by = c('join_id', 'host_name')) %>%
@@ -594,6 +600,7 @@ RuntimeReport = function(in_dir, out_dir) {
 
   Log('After GC stats')
   print(gc_stats)
+  Log('')
 
   WriteSimpleProvenance(provenance, out_dir)
 
