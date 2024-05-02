@@ -23,6 +23,8 @@ doc =
   | Concat(List[MeasuredDoc] mdocs)
   | Group(MeasuredDoc mdoc)
 
+# Used internally while pretty printing.
+# See comments in PrettyPrinter._PrintDoc.
 DocFragment = (MeasuredDoc mdoc, int indent, bool is_flat, Measure measure)
 
 }

@@ -18,14 +18,6 @@ maximum line width.
 #
 # This separation keeps the details of the data you want to print separate from
 # the printing algorithm.
-#
-# Some relevant links:
-#
-# - https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf
-# - https://lindig.github.io/papers/strictly-pretty-2000.pdf
-# - https://justinpombrio.net/2024/02/23/a-twist-on-Wadlers-printer.html
-# - https://lobste.rs/s/1r0aak/twist_on_wadler_s_printer
-# - https://lobste.rs/s/aevptj/why_is_prettier_rock_solid
 
 # ~~~ Pretty Printing Overview ~~~
 #
@@ -33,8 +25,17 @@ maximum line width.
 # works. Just call `PrettyPrinter().PrintValue()`. However if you want to change
 # or extend how values are printed, you'll need to know, so here's an overview.
 #
-# Start with Walder's "A Prettier Printer", which this is based off of:
+# You may want to first read Walder's "A Prettier Printer", which this is based
+# off of:
 # https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf
+#
+# Some additional reading, though only tangentially related:
+#
+# - https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf
+# - https://lindig.github.io/papers/strictly-pretty-2000.pdf
+# - https://justinpombrio.net/2024/02/23/a-twist-on-Wadlers-printer.html
+# - https://lobste.rs/s/1r0aak/twist_on_wadler_s_printer
+# - https://lobste.rs/s/aevptj/why_is_prettier_rock_solid
 #
 # ~ Constructors ~
 #
@@ -61,7 +62,6 @@ maximum line width.
 # |AAAAA
 # |   AAAAA
 # |   AAAAA
-# (notice that the first line isn't indented)
 #
 # Group(a) makes a decision. It either:
 # - Prints `a` "flat", meaning that (i) every Break inside of it is printed as a
@@ -79,8 +79,7 @@ maximum line width.
 # The algorithm used here is close to the one originally described by Wadler,
 # but it precomputes a "measure" for each node in the `doc`. This "measure"
 # allows each Groups to decide whether to print flat or not without needing to
-# look ahead per the standard algorithm. A measure has two pieces of
-# information:
+# look ahead per Wadler's algorithm. A measure has two pieces of information:
 #
 # - Measure.flat is the width of the doc if it's printed flat.
 # - Measure.nonflat is the width of the doc until the _earliest possible_
@@ -97,17 +96,15 @@ from __future__ import print_function
 
 from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
-
 from data_lang.j8 import ValueIdString, HeapValueId
 from typing import cast, List, Dict
 from core import ansi
 from libc import wcswidth
 from frontend import match
-
-import fastfunc
-
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, BufWriter, iteritems
+import fastfunc
+
 
 _ = log
 
@@ -207,11 +204,7 @@ def _Group(mdoc):
 
 
 class PrettyPrinter(object):
-    """Pretty print an Oils value.
-
-    Uses a version of the algorithm from Wadler's "A Prettier Printer".
-    (https://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf)
-    """
+    """Pretty print an Oils value."""
 
     DEFAULT_MAX_WIDTH = 80
     DEFAULT_INDENTATION = 4
@@ -395,7 +388,17 @@ class _DocConstructor:
 
     def _Join(self, items, sep, space):
         # type: (List[MeasuredDoc], str, str) -> MeasuredDoc
-        """Join `items`, using either 'sep+space' or 'sep+newline' between them."""
+        """Join `items`, using either 'sep+space' or 'sep+newline' between them.
+
+        E.g., if sep and space are ',' and '_', print one of these two cases:
+        ```
+        first,_second,_third
+        ------
+        first,
+        second,
+        third
+        ```
+        """
         seq = [items[0]]
         for item in items[1:]:
             seq.append(_Text(sep))

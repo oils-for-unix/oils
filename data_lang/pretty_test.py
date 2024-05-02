@@ -34,10 +34,12 @@ class PrettyTest(unittest.TestCase):
         # type: (int, str, str) -> None
         parser = j8.Parser(value_str, True)
         val = parser.ParseValue()
+
         buf = mylib.BufWriter()
         self.printer.SetMaxWidth(width)
         self.printer.PrintValue(val, buf)
         actual = buf.getvalue()
+
         if actual != expected:
             # Print the different with real newlines, for easier reading.
             print("ACTUAL:")

@@ -1,11 +1,11 @@
 ### Pretty Printing Unit Tests
 
 # This is a set of unit tests for pretty printing.
-
+#
 # Each test case has three parts: a printing `Width`, an `Input` value string,
 # and an `Expect`ed result. It ensures that:
-
-# PrettyPrinter.PrintValue(width, j8.Parser.ParseValue(value)) == expected
+#
+#     PrettyPrinter.PrintValue(width, j8.Parser.ParseValue(value)) == expected
 
 # Vim syntax highlighting:
 #     syn match section "#.*$"
@@ -172,12 +172,12 @@ Expect
 
 ## Full width characters
 
-Width  > 16
 Input  > ["世界", "您好"]
+
+Width  > 16
 Expect > ["世界", "您好"]
 
 Width  > 15
-Input  > ["世界", "您好"]
 Expect
 > [
 >   "世界",
