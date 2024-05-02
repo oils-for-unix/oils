@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-
 """
 Pretty print Oils values (and later other data/languages as well).
 
@@ -94,7 +93,6 @@ maximum line width.
 # ones in the DocFragments) are computed top-down, and they're used to decide
 # for each Group whether to use flat mode or not, without needing to scan ahead.
 
-
 from __future__ import print_function
 
 from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
@@ -123,19 +121,23 @@ CYCLE_STYLE = ansi.BOLD + ansi.YELLOW
 # Measurements #
 ################
 
+
 def _StrWidth(string):
     # type: (str) -> int
     return wcswidth(string)
+
 
 def _EmptyMeasure():
     # type: () -> Measure
     """The measure of an empty doc."""
     return Measure(0, -1)
 
+
 def _FlattenMeasure(measure):
     # type: (Measure) -> Measure
     """The measure if its document is rendered flat."""
     return Measure(measure.flat, -1)
+
 
 def _ConcatMeasure(m1, m2):
     # type: (Measure, Measure) -> Measure
@@ -151,6 +153,7 @@ def _ConcatMeasure(m1, m2):
     else:
         return Measure(m1.flat + m2.flat, -1)
 
+
 def _SuffixLen(measure):
     # type: (Measure) -> int
     """The width until the earliest possible newline, or end of document."""
@@ -164,20 +167,24 @@ def _SuffixLen(measure):
 # Doc Construction #
 ####################
 
+
 def _Text(string):
     # type: (str) -> MeasuredDoc
     """Print `string` (which must not contain a newline)."""
     return MeasuredDoc(doc.Text(string), Measure(_StrWidth(string), -1))
+
 
 def _Break(string):
     # type: (str) -> MeasuredDoc
     """If in `flat` mode, print `string`, otherwise print `\n`."""
     return MeasuredDoc(doc.Break(string), Measure(_StrWidth(string), 0))
 
+
 def _Indent(indent, mdoc):
     # type: (int, MeasuredDoc) -> MeasuredDoc
     """Add `indent` spaces after every newline in `mdoc`."""
     return MeasuredDoc(doc.Indent(indent, mdoc), mdoc.measure)
+
 
 def _Concat(mdocs):
     # type: (List[MeasuredDoc]) -> MeasuredDoc
@@ -186,6 +193,7 @@ def _Concat(mdocs):
     for mdoc in mdocs:
         measure = _ConcatMeasure(measure, mdoc.measure)
     return MeasuredDoc(doc.Concat(mdocs), measure)
+
 
 def _Group(mdoc):
     # type: (MeasuredDoc) -> MeasuredDoc
@@ -196,6 +204,7 @@ def _Group(mdoc):
 ###################
 # Pretty Printing #
 ###################
+
 
 class PrettyPrinter(object):
     """Pretty print an Oils value.
@@ -248,14 +257,16 @@ class PrettyPrinter(object):
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
-        constructor = _DocConstructor(self.indent, self.use_styles, self.show_type_prefix)
+        constructor = _DocConstructor(self.indent, self.use_styles,
+                                      self.show_type_prefix)
         document = constructor.Value(val)
         self._PrintDoc(document, buf)
 
     def _Fits(self, prefix_len, group, suffix_measure):
         # type: (int, doc.Group, Measure) -> bool
         """Will `group` fit flat on the current line?"""
-        measure = _ConcatMeasure(_FlattenMeasure(group.mdoc.measure), suffix_measure)
+        measure = _ConcatMeasure(_FlattenMeasure(group.mdoc.measure),
+                                 suffix_measure)
         return prefix_len + _SuffixLen(measure) <= self.max_width
 
     def _PrintDoc(self, document, buf):
@@ -293,11 +304,10 @@ class PrettyPrinter(object):
 
                 elif case(doc_e.Indent):
                     indented = cast(doc.Indent, frag.mdoc.doc)
-                    fragments.append(DocFragment(
-                        indented.mdoc,
-                        frag.indent + indented.indent,
-                        frag.is_flat,
-                        frag.measure))
+                    fragments.append(
+                        DocFragment(indented.mdoc,
+                                    frag.indent + indented.indent,
+                                    frag.is_flat, frag.measure))
 
                 elif case(doc_e.Concat):
                     # If we encounter Concat([A, B, C]) with a suffix measure M,
@@ -308,11 +318,9 @@ class PrettyPrinter(object):
                     concat = cast(doc.Concat, frag.mdoc.doc)
                     measure = frag.measure
                     for mdoc in reversed(concat.mdocs):
-                        fragments.append(DocFragment(
-                            mdoc,
-                            frag.indent,
-                            frag.is_flat,
-                            measure))
+                        fragments.append(
+                            DocFragment(mdoc, frag.indent, frag.is_flat,
+                                        measure))
                         measure = _ConcatMeasure(mdoc.measure, measure)
 
                 elif case(doc_e.Group):
@@ -320,16 +328,15 @@ class PrettyPrinter(object):
                     # flat, do so. Otherwise, print it non-flat.
                     group = cast(doc.Group, frag.mdoc.doc)
                     flat = self._Fits(prefix_len, group, frag.measure)
-                    fragments.append(DocFragment(
-                        group.mdoc,
-                        frag.indent,
-                        flat,
-                        frag.measure))
+                    fragments.append(
+                        DocFragment(group.mdoc, frag.indent, flat,
+                                    frag.measure))
 
 
 ################
 # Value -> Doc #
 ################
+
 
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
@@ -343,14 +350,15 @@ class _DocConstructor:
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
-        self.visiting = {} # type: Dict[int, bool]
+        self.visiting = {}  # type: Dict[int, bool]
         if self.show_type_prefix:
             ysh_type = value_str(val.tag(), dot=False)
-            return _Group(_Concat([
-                _Text("(" + ysh_type + ")"),
-                _Break("   "),
-                self._Value(val)
-            ]))
+            return _Group(
+                _Concat([
+                    _Text("(" + ysh_type + ")"),
+                    _Break("   "),
+                    self._Value(val)
+                ]))
         else:
             return self._Value(val)
 
@@ -359,9 +367,9 @@ class _DocConstructor:
         """Apply the ANSI style string to the given node, if use_styles is set."""
         if self.use_styles:
             return _Concat([
-                MeasuredDoc(doc.Text(style), _EmptyMeasure()),
-                mdoc,
-                MeasuredDoc(doc.Text(ansi.RESET), _EmptyMeasure())])
+                MeasuredDoc(doc.Text(style), _EmptyMeasure()), mdoc,
+                MeasuredDoc(doc.Text(ansi.RESET), _EmptyMeasure())
+            ])
         else:
             return mdoc
 
@@ -377,12 +385,14 @@ class _DocConstructor:
         ]
         ```
         """
-        return _Group(_Concat([
-            _Text(open),
-            _Indent(self.indent, _Concat([_Break(sep), mdoc])),
-            _Break(""),
-            _Text(close)]))
-    
+        return _Group(
+            _Concat([
+                _Text(open),
+                _Indent(self.indent, _Concat([_Break(sep), mdoc])),
+                _Break(""),
+                _Text(close)
+            ]))
+
     def _Join(self, items, sep, space):
         # type: (List[MeasuredDoc], str, str) -> MeasuredDoc
         """Join `items`, using either 'sep+space' or 'sep+newline' between them."""
@@ -398,11 +408,13 @@ class _DocConstructor:
         if match.IsValidVarName(s):
             return self._Styled(KEY_STYLE, _Text(s))
         else:
-            return self._Styled(KEY_STYLE, _Text(fastfunc.J8EncodeString(s, True))) # lossy_json=True
+            return self._Styled(KEY_STYLE,
+                                _Text(fastfunc.J8EncodeString(
+                                    s, True)))  # lossy_json=True
 
     def _StringLiteral(self, s):
         # type: (str) -> MeasuredDoc
-        return _Text(fastfunc.J8EncodeString(s, True)) # lossy_json=True
+        return _Text(fastfunc.J8EncodeString(s, True))  # lossy_json=True
 
     def _YshList(self, vlist):
         # type: (value.List) -> MeasuredDoc
@@ -418,7 +430,10 @@ class _DocConstructor:
             return _Text("{}")
         mdocs = []
         for k, v in iteritems(vdict.d):
-            mdocs.append(_Concat([self._DictKey(k), _Text(": "), self._Value(v)]))
+            mdocs.append(
+                _Concat([self._DictKey(k),
+                         _Text(": "),
+                         self._Value(v)]))
         return self._Surrounded("{", "", self._Join(mdocs, ",", " "), "}")
 
     def _BashArray(self, varray):
@@ -431,7 +446,8 @@ class _DocConstructor:
                 mdocs.append(_Text("null"))
             else:
                 mdocs.append(self._StringLiteral(s))
-        return self._Surrounded("(BashArray", " ", self._Join(mdocs, "", " "), ")")
+        return self._Surrounded("(BashArray", " ", self._Join(mdocs, "", " "),
+                                ")")
 
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
@@ -439,12 +455,15 @@ class _DocConstructor:
             return _Text("(BashAssoc)")
         mdocs = []
         for k2, v2 in iteritems(vassoc.d):
-            mdocs.append(_Concat([
-                _Text("["),
-                self._StringLiteral(k2),
-                _Text("]="),
-                self._StringLiteral(v2)]))
-        return self._Surrounded("(BashAssoc", " ", self._Join(mdocs, "", " "), ")")
+            mdocs.append(
+                _Concat([
+                    _Text("["),
+                    self._StringLiteral(k2),
+                    _Text("]="),
+                    self._StringLiteral(v2)
+                ]))
+        return self._Surrounded("(BashAssoc", " ", self._Join(mdocs, "", " "),
+                                ")")
 
     def _Value(self, val):
         # type: (value_t) -> MeasuredDoc
@@ -455,7 +474,8 @@ class _DocConstructor:
 
             elif case(value_e.Bool):
                 b = cast(value.Bool, val).b
-                return self._Styled(BOOL_STYLE, _Text("true" if b else "false"))
+                return self._Styled(BOOL_STYLE,
+                                    _Text("true" if b else "false"))
 
             elif case(value_e.Int):
                 i = cast(value.Int, val).i
@@ -471,8 +491,13 @@ class _DocConstructor:
 
             elif case(value_e.Range):
                 r = cast(value.Range, val)
-                return self._Styled(NUMBER_STYLE,
-                    _Concat([_Text(str(r.lower)), _Text(" .. "), _Text(str(r.upper))]))
+                return self._Styled(
+                    NUMBER_STYLE,
+                    _Concat([
+                        _Text(str(r.lower)),
+                        _Text(" .. "),
+                        _Text(str(r.upper))
+                    ]))
 
             elif case(value_e.List):
                 vlist = cast(value.List, val)
@@ -481,7 +506,8 @@ class _DocConstructor:
                     return _Concat([
                         _Text("["),
                         self._Styled(CYCLE_STYLE, _Text("...")),
-                        _Text("]")])
+                        _Text("]")
+                    ])
                 else:
                     self.visiting[heap_id] = True
                     result = self._YshList(vlist)
@@ -495,7 +521,8 @@ class _DocConstructor:
                     return _Concat([
                         _Text("{"),
                         self._Styled(CYCLE_STYLE, _Text("...")),
-                        _Text("}")])
+                        _Text("}")
+                    ])
                 else:
                     self.visiting[heap_id] = True
                     result = self._YshDict(vdict)
@@ -514,5 +541,6 @@ class _DocConstructor:
                 ysh_type = value_str(val.tag(), dot=False)
                 id_str = ValueIdString(val)
                 return _Text("<" + ysh_type + id_str + ">")
+
 
 # vim: sw=4

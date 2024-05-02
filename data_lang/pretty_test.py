@@ -14,11 +14,14 @@ from core import ansi
 
 TEST_DATA_FILENAME = os.path.join(os.path.dirname(__file__), "pretty_test.txt")
 
+
 def IntValue(i):
     # type: (int) -> value_t
     return value.Int(mops.IntWiden(i))
 
+
 class PrettyTest(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         # Use settings that make testing easier.
@@ -63,7 +66,9 @@ class PrettyTest(unittest.TestCase):
                             chunks[-1][1].append(parts[1])
                         break
                 else:
-                    raise Exception("Invalid pretty printing test case line. Lines must start with one of: Width, Input, Expect, >, #", line)
+                    raise Exception(
+                        "Invalid pretty printing test case line. Lines must start with one of: Width, Input, Expect, >, #",
+                        line)
 
         test_cases = []
         width = 80
@@ -85,22 +90,14 @@ class PrettyTest(unittest.TestCase):
     def testStyles(self):
         self.printer.SetUseStyles(True)
         self.assertPretty(
-            20,
-            '[null, "ok", 15]',
-            '[' + NULL_STYLE + 'null' + ansi.RESET + ', "ok", '
-                + NUMBER_STYLE + '15' + ansi.RESET + ']')
+            20, '[null, "ok", 15]', '[' + NULL_STYLE + 'null' + ansi.RESET +
+            ', "ok", ' + NUMBER_STYLE + '15' + ansi.RESET + ']')
         self.printer.SetUseStyles(False)
 
     def testTypePrefix(self):
         self.printer.SetShowTypePrefix(True)
-        self.assertPretty(
-            25,
-            '[null, "ok", 15]',
-            '(List)   [null, "ok", 15]')
-        self.assertPretty(
-            24,
-            '[null, "ok", 15]',
-            '(List)\n[null, "ok", 15]')
+        self.assertPretty(25, '[null, "ok", 15]', '(List)   [null, "ok", 15]')
+        self.assertPretty(24, '[null, "ok", 15]', '(List)\n[null, "ok", 15]')
         self.printer.SetShowTypePrefix(False)
 
 
