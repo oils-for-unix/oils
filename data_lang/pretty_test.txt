@@ -1,0 +1,388 @@
+### Pretty Printing Unit Tests
+
+# This is a set of unit tests for pretty printing.
+
+# Each test case has three parts: a printing `Width`, an `Input` value string,
+# and an `Expect`ed result. It ensures that:
+
+# PrettyPrinter.PrintValue(width, j8.Parser.ParseValue(value)) == expected
+
+# Vim syntax highlighting:
+#     syn match section "#.*$"
+#     syn keyword kw Input Expect Width
+#     syn match punct '^>'
+#     syn match punct ' >'
+#     hi def link section Constant
+#     hi def link punct   Statement
+#     hi def link kw      PreProc
+# (Place in ~/.config/nvim/syntax/pretty_tests.vim,
+#  then enable with :set syntax=parser_ll1_tests)
+
+## Primitives
+
+Width  > 10
+
+Input  > null
+Expect > null
+
+Input  > true
+Expect > true
+
+Input  > false
+Expect > false
+
+Input  > 0
+Expect > 0
+
+Input  > -123
+Expect > -123
+
+Input  > 123456789123456789123456789
+Expect > 123456789123456789123456789
+
+Input  > 0.0
+Expect > 0.0
+
+Input  > 1.00
+Expect > 1.0
+
+Input  > -0.000
+Expect > -0.0
+
+Input  > 2.99792458e8
+Expect > 299792458.0
+
+Input  >   "hello"
+Expect > "hello"
+
+Input  > "\"For the `n`'th time,\" she said."
+Expect > "\"For the `n`'th time,\" she said."
+
+## Lists
+
+Width  > 20
+Input  > []
+Expect > []
+
+Input  > [100, 200, 300]
+
+Width  > 20
+Expect > [100, 200, 300]
+
+Width  > 10
+Expect
+> [
+>   100,
+>   200,
+>   300
+> ]
+
+Input  > [[100, 200, 300], [100, 200, 300]]
+
+Width  > 20
+Expect
+> [
+>   [100, 200, 300],
+>   [100, 200, 300]
+> ]
+
+Width  > 17
+Expect
+> [
+>   [
+>     100,
+>     200,
+>     300
+>   ],
+>   [100, 200, 300]
+> ]
+
+Width  > 16
+Expect
+> [
+>   [
+>     100,
+>     200,
+>     300
+>   ],
+>   [
+>     100,
+>     200,
+>     300
+>   ]
+> ]
+
+## Dictionaries
+
+Width  > 10
+Input  > {}
+Expect > {}
+
+Input  > {"x":100, "y":200, "z":300}
+
+Width  > 24
+Expect > {x: 100, y: 200, z: 300}
+
+Width  > 23
+Expect
+> {
+>   x: 100,
+>   y: 200,
+>   z: 300
+> }
+
+Input
+> {
+>     "letters": {"1": "A", "2": "B", "3": "C"},
+>     "numbers": {"1": "one", "2": "two", "3": "three"}
+> }
+
+Width > 49
+Expect
+> {
+>   letters: {"1": "A", "2": "B", "3": "C"},
+>   numbers: {"1": "one", "2": "two", "3": "three"}
+> }
+
+Width > 42
+Expect
+> {
+>   letters: {"1": "A", "2": "B", "3": "C"},
+>   numbers: {
+>     "1": "one",
+>     "2": "two",
+>     "3": "three"
+>   }
+> }
+
+Width > 41
+Expect
+> {
+>   letters: {
+>     "1": "A",
+>     "2": "B",
+>     "3": "C"
+>   },
+>   numbers: {
+>     "1": "one",
+>     "2": "two",
+>     "3": "three"
+>   }
+> }
+
+## Full width characters
+
+Width  > 16
+Input  > ["世界", "您好"]
+Expect > ["世界", "您好"]
+
+Width  > 15
+Input  > ["世界", "您好"]
+Expect
+> [
+>   "世界",
+>   "您好"
+> ]
+
+## Everything at once
+
+Input
+> {
+>     'primitives': {
+>         'simple_primitives': [null, false, true],
+>         'numeric_primitives': [-123456789, 123.456789],
+>         'stringy_primitives': 'string'
+>     },
+>     'compounds': [
+>         [1, 2, 3],
+>         {'dict': 'ionary'}
+>     ],
+>     'variety-pack': [
+>         null,
+>         ['Los', 'pollitos', 'dicen', 'pío', 'pío', 'pío'],
+>         [1, [2, [3, [4, [5, [6]]]]]],
+>         [[[[[5], 4], 3], 2], 1]
+>     ]
+> }
+
+Width > 54
+Expect
+> {
+>   primitives: {
+>     simple_primitives: [null, false, true],
+>     numeric_primitives: [-123456789, 123.456789],
+>     stringy_primitives: "string"
+>   },
+>   compounds: [[1, 2, 3], {dict: "ionary"}],
+>   "variety-pack": [
+>     null,
+>     ["Los", "pollitos", "dicen", "pío", "pío", "pío"],
+>     [1, [2, [3, [4, [5, [6]]]]]],
+>     [[[[[5], 4], 3], 2], 1]
+>   ]
+> }
+
+Width > 49
+Expect
+> {
+>   primitives: {
+>     simple_primitives: [null, false, true],
+>     numeric_primitives: [-123456789, 123.456789],
+>     stringy_primitives: "string"
+>   },
+>   compounds: [[1, 2, 3], {dict: "ionary"}],
+>   "variety-pack": [
+>     null,
+>     [
+>       "Los",
+>       "pollitos",
+>       "dicen",
+>       "pío",
+>       "pío",
+>       "pío"
+>     ],
+>     [1, [2, [3, [4, [5, [6]]]]]],
+>     [[[[[5], 4], 3], 2], 1]
+>   ]
+> }
+
+Width > 43
+Expect
+> {
+>   primitives: {
+>     simple_primitives: [null, false, true],
+>     numeric_primitives: [
+>       -123456789,
+>       123.456789
+>     ],
+>     stringy_primitives: "string"
+>   },
+>   compounds: [[1, 2, 3], {dict: "ionary"}],
+>   "variety-pack": [
+>     null,
+>     [
+>       "Los",
+>       "pollitos",
+>       "dicen",
+>       "pío",
+>       "pío",
+>       "pío"
+>     ],
+>     [1, [2, [3, [4, [5, [6]]]]]],
+>     [[[[[5], 4], 3], 2], 1]
+>   ]
+> }
+
+Width > 33
+Expect
+> {
+>   primitives: {
+>     simple_primitives: [
+>       null,
+>       false,
+>       true
+>     ],
+>     numeric_primitives: [
+>       -123456789,
+>       123.456789
+>     ],
+>     stringy_primitives: "string"
+>   },
+>   compounds: [
+>     [1, 2, 3],
+>     {dict: "ionary"}
+>   ],
+>   "variety-pack": [
+>     null,
+>     [
+>       "Los",
+>       "pollitos",
+>       "dicen",
+>       "pío",
+>       "pío",
+>       "pío"
+>     ],
+>     [1, [2, [3, [4, [5, [6]]]]]],
+>     [[[[[5], 4], 3], 2], 1]
+>   ]
+> }
+
+Width > 32
+Expect
+> {
+>   primitives: {
+>     simple_primitives: [
+>       null,
+>       false,
+>       true
+>     ],
+>     numeric_primitives: [
+>       -123456789,
+>       123.456789
+>     ],
+>     stringy_primitives: "string"
+>   },
+>   compounds: [
+>     [1, 2, 3],
+>     {dict: "ionary"}
+>   ],
+>   "variety-pack": [
+>     null,
+>     [
+>       "Los",
+>       "pollitos",
+>       "dicen",
+>       "pío",
+>       "pío",
+>       "pío"
+>     ],
+>     [
+>       1,
+>       [2, [3, [4, [5, [6]]]]]
+>     ],
+>     [[[[[5], 4], 3], 2], 1]
+>   ]
+> }
+
+Width > 26
+Expect
+> {
+>   primitives: {
+>     simple_primitives: [
+>       null,
+>       false,
+>       true
+>     ],
+>     numeric_primitives: [
+>       -123456789,
+>       123.456789
+>     ],
+>     stringy_primitives: "string"
+>   },
+>   compounds: [
+>     [1, 2, 3],
+>     {dict: "ionary"}
+>   ],
+>   "variety-pack": [
+>     null,
+>     [
+>       "Los",
+>       "pollitos",
+>       "dicen",
+>       "pío",
+>       "pío",
+>       "pío"
+>     ],
+>     [
+>       1,
+>       [
+>         2,
+>         [3, [4, [5, [6]]]]
+>       ]
+>     ],
+>     [
+>       [[[[5], 4], 3], 2],
+>       1
+>     ]
+>   ]
+> }
