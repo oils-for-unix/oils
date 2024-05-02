@@ -121,8 +121,13 @@ rm-oils-crap() {
 # PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
 # as well
 readonly -a WEDGE_DEPS_DEBIAN=(
-    wget tree gawk 
-    g++ ninja-build cmake
+    bzip2 
+    wget
+    tree
+    gawk 
+    g++ 
+    ninja-build
+    cmake
     libreadline-dev 
     "${PY3_BUILD_DEPS[@]}"
 )
