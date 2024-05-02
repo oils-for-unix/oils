@@ -16,7 +16,7 @@
 #     hi def link punct   Statement
 #     hi def link kw      PreProc
 # (Place in ~/.config/nvim/syntax/pretty_tests.vim,
-#  then enable with :set syntax=parser_ll1_tests)
+#  then enable with :set syntax=pretty_tests.vim)
 
 ## Primitives
 
