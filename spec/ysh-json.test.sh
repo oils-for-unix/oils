@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## tags: dev-minimal
 
 #### usage errors
@@ -592,9 +592,9 @@ for j in '"\ud83e"' '"\udd26"' {
 }
 
 ## STDOUT:
-(Str)   b'\ya0\ybe'
+(Str)   b'\yed\ya0\ybe'
 "\ud83e"
-(Str)   b'\yb4\ya6'
+(Str)   b'\yed\yb4\ya6'
 "\udd26"
 ## END
 
