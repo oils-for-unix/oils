@@ -113,51 +113,6 @@ from mycpp.mylib import log, tagswitch, BufWriter, iteritems
 
 _ = log
 
-# TODO:
-# Later:
-# - [x] what's with `_ = log`?
-# - [ ] contributing page: PRs are squash-merged with a descriptive tag like [json]
-# Between:
-# - [x] test styles (how?)
-# - [ ] tabular alignment for list elements
-# - [x] float prints with '.'
-# - [-] chore: bash completion (devtools/completion)
-# - [ ] fix C++ errors
-# Now:
-# - [x] run the linter
-# - [x] clean up imports (is there a lint that checks for unused imports?)
-# - [x] string width
-# - [x] Unquote identifier-y dict keys
-# - [x] Add some style
-# - [x] Test BashArray and BashAssoc
-# - [x] test cyclic values
-# - [x] spec tests: test/spec.sh ysh-slice-range (etc.)
-#       test/spec-py.sh ysh-all
-#       can change tests to `pp line` if failing
-# - [x] Show cycles as [...]/{...}
-# - [x] DetectConsoleOutput to only print styles to terminal
-# - [x] IsValidVarName instead of regex
-# - [x] hook up the printer in core/ui.py::PrettyPrintValue
-# - [x] set width using get_terminal_width() (check for -1)
-#       always use width, even if it's very wide; if -1 (not terminal) default to 80
-# - [x] print type at top level, newline after type if multiline
-# - [ ] format with yapf
-# - [x] write docs. Maybe in doc/*.md
-# - [x] fill in ~Algorithm Description~
-# - [x] More extensive pp testing in pretty_test.py
-# - [ ] Proofread
-# - [ ] Clean up this todo list
-
-# QUESTIONS:
-# - Is there a better way to do Option[int] than -1 as a sentinel? NO
-# - Is there a way to have methods on an ASDL product type? NO
-# - Indentation level: hard-coded? Option? How to set?
-# - How to construct BashArray and BashAssoc values for testing?
-#   (I'm using ParseValue)
-# - How to construct cyclic values for testing?
-# - max_depth vs. cycle detection. Turn cycle detection off if there's a max_depth?
-#   NO MAX DEPTH
-
 KEY_STYLE = ansi.GREEN
 NUMBER_STYLE = ansi.YELLOW
 NULL_STYLE = ansi.BOLD + ansi.RED
