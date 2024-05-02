@@ -1,33 +1,31 @@
 
 module nil8
 {
+  # Very similar to core/value.asdl, which JSON8 is deserialized to.
+  #
+  # Right now we're keeping them separate because we want to write a standalone
+  # Yaks compiler, with no dependency on Oils.
+  #
+  # Later I think that Null Bool Int Float Str can either be:
+  # - defined as shared constants
+  # - be "inlined" inside any sum type, because of pointer tagging
 
-# Very similar to core/value.asdl, which JSON8 is deserialized to.
-#
-# Right now we're keeping them separate because we want to write a standalone
-# Yaks compiler, with no dependency on Oils.
-#
-# Later I think that Null Bool Int Float Str can either be:
-# - defined as shared constants
-# - be "inlined" inside any sum type, because of pointer tagging
+  nvalue =
+      Null
+    | Bool(bool b)
+    | Int(int i)
+    | Float(float f)
 
-nvalue =
-    Null
-  | Bool(bool b)
-  | Int(int i)
-  | Float(float f)
+      # I wonder if we want nvalue.Char for translating to C?
+      # Could be literal \\ and \n and \'a' or something
 
-    # I wonder if we want nvalue.Char for translating to C?
-    # Could be literal \\ and \n and \'a' or something
+      # string literal e.g. "foo" or b'\yff'
+    | Str(str s)
 
-    # string literal e.g. "foo" or b'\yff'
-  | Str(str s)
+      # either Identifier like func main
+      #     or operator like + or ++
+    | Symbol(str s)
 
-    # either Identifier like func main
-    #     or operator like + or ++
-  | Symbol(str s)
-
-  | List(List[nvalue] items)
-  | Record(str name, List[nvalue] args, Dict[str, nvalue] named)
+    | List(List[nvalue] items)
+    | Record(str name, List[nvalue] args, Dict[str, nvalue] named)
 }
-

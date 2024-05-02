@@ -27,7 +27,7 @@ Later:
 
 - Common between JSON8 and NIL8 - for writing by hand
   - comments - # line or // line (JSON5 uses // line, following JS)
-  - unquoted identifier names - TYG8 could be more relaxed for (+ 1 (* 3 4))
+  - unquoted identifier names - NIL8 could be more relaxed for (+ 1 (* 3 4))
   - commas
     - JSON8 could have trailing commas rule
     - NIL8 at least has no commas for [1 2 "hi"]

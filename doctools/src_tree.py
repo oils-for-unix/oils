@@ -277,7 +277,7 @@ def DebugPrint(node, indent=0):
 
 
 def UpdateNodes(node, path_parts, attrs):
-  """Similar to test/wild_report.y"""
+  """Similar to test/wild_report.py"""
 
   first = path_parts[0]
   rest = path_parts[1:]
@@ -290,6 +290,7 @@ def UpdateNodes(node, path_parts, attrs):
       node.dirs[first] = child
 
     UpdateNodes(child, rest, attrs)
+    # TODO: Update subtree_stats
 
   else:
     # leaf node
@@ -297,6 +298,14 @@ def UpdateNodes(node, path_parts, attrs):
 
 
 def MakeTree(stdin, root_node):
+  """
+  Reads a stream of lines
+  Each line contains a path and key=value attrs
+
+  - Doesn't handle filenames with spaces
+  - Doesn't handle empty dirs that are leaves (since only files are first
+    class)
+  """
   for line in sys.stdin:
     parts = line.split()
     path = parts[0]
