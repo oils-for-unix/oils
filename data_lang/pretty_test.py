@@ -1,16 +1,16 @@
 #!/usr/bin/env python2
 # coding=utf8
 
-import unittest
-import libc
 import os
-# module under test
-from data_lang.pretty import (PrettyPrinter, NULL_STYLE, NUMBER_STYLE)
+import unittest
 
-from data_lang import j8
 from _devbuild.gen.value_asdl import value, value_t
-from mycpp import mylib, mops
 from core import ansi
+from data_lang import j8
+from data_lang import pretty  # module under test
+from mycpp import mylib, mops
+
+import libc
 
 TEST_DATA_FILENAME = os.path.join(os.path.dirname(__file__), "pretty_test.txt")
 
@@ -25,7 +25,7 @@ class PrettyTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Use settings that make testing easier.
-        cls.printer = PrettyPrinter()
+        cls.printer = pretty.PrettyPrinter()
         cls.printer.SetIndent(2)
         cls.printer.SetUseStyles(False)
         cls.printer.SetShowTypePrefix(False)
@@ -92,8 +92,8 @@ class PrettyTest(unittest.TestCase):
     def testStyles(self):
         self.printer.SetUseStyles(True)
         self.assertPretty(
-            20, '[null, "ok", 15]', '[' + NULL_STYLE + 'null' + ansi.RESET +
-            ', "ok", ' + NUMBER_STYLE + '15' + ansi.RESET + ']')
+            20, '[null, "ok", 15]', '[' + ansi.BOLD + ansi.RED + 'null' + ansi.RESET +
+            ', "ok", ' + ansi.YELLOW + '15' + ansi.RESET + ']')
         self.printer.SetUseStyles(False)
 
     def testTypePrefix(self):
