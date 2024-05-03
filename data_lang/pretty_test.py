@@ -93,7 +93,8 @@ class PrettyTest(unittest.TestCase):
         self.printer.SetUseStyles(True)
         self.assertPretty(
             20, '[null, "ok", 15]', '[' + ansi.BOLD + ansi.RED + 'null' +
-            ansi.RESET + ', "ok", ' + ansi.YELLOW + '15' + ansi.RESET + ']')
+            ansi.RESET + ", " + ansi.GREEN + '"ok"' + ansi.RESET + ", " +
+            ansi.YELLOW + '15' + ansi.RESET + ']')
         self.printer.SetUseStyles(False)
 
     def testTypePrefix(self):

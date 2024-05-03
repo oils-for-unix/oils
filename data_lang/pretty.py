@@ -335,11 +335,12 @@ class _DocConstructor:
         self.visiting = {}  # type: Dict[int, bool]
 
         # These can be configurable later
-        self.key_style = ansi.GREEN
         self.number_style = ansi.YELLOW
         self.null_style = ansi.BOLD + ansi.RED
         self.bool_style = ansi.BOLD + ansi.BLUE
-        self.cycle_style = ansi.BOLD + ansi.YELLOW
+        self.string_style = ansi.GREEN
+        self.cycle_style = ansi.BOLD + ansi.MAGENTA
+        self.type_style = ansi.CYAN
 
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
@@ -367,12 +368,12 @@ class _DocConstructor:
         else:
             return mdoc
 
-    def _Surrounded(self, open, sep, mdoc, close):
-        # type: (str, str, MeasuredDoc, str) -> MeasuredDoc
-        """Print one of two options (using '[', '_', ']' for open, sep, close):
+    def _Surrounded(self, open, mdoc, close):
+        # type: (str, MeasuredDoc, str) -> MeasuredDoc
+        """Print one of two options (using '[', ']' for open, close):
     
         ```
-        [_mdoc]
+        [mdoc]
         ------
         [
             mdoc
@@ -382,6 +383,27 @@ class _DocConstructor:
         return _Group(
             _Concat([
                 _Text(open),
+                _Indent(self.indent, _Concat([_Break(""), mdoc])),
+                _Break(""),
+                _Text(close)
+            ]))
+
+    def _SurroundedAndPrefixed(self, open, prefix, sep, mdoc, close):
+        # type: (str, MeasuredDoc, str, MeasuredDoc, str) -> MeasuredDoc
+        """Print one of two options
+        (using '[', 'prefix', ':', 'mdoc', ']' for open, prefix, sep, mdoc, close):
+
+        ```
+        [prefix:mdoc]
+        ------
+        [prefix
+            mdoc
+        ]
+        ```
+        """
+        return _Group(
+            _Concat([
+                _Text(open), prefix,
                 _Indent(self.indent, _Concat([_Break(sep), mdoc])),
                 _Break(""),
                 _Text(close)
@@ -410,15 +432,20 @@ class _DocConstructor:
     def _DictKey(self, s):
         # type: (str) -> MeasuredDoc
         if match.IsValidVarName(s):
-            return self._Styled(self.key_style, _Text(s))
+            return _Text(s)
         else:
-            return self._Styled(self.key_style,
-                                _Text(fastfunc.J8EncodeString(
-                                    s, True)))  # lossy_json=True
+            return _Text(fastfunc.J8EncodeString(s, True))  # lossy_json=True
 
     def _StringLiteral(self, s):
         # type: (str) -> MeasuredDoc
-        return _Text(fastfunc.J8EncodeString(s, True))  # lossy_json=True
+        return self._Styled(self.string_style,
+                            _Text(fastfunc.J8EncodeString(
+                                s, True)))  # lossy_json=True
+
+    def _BashStringLiteral(self, s):
+        # type: (str) -> MeasuredDoc
+        return self._Styled(self.string_style,
+                            _Text(fastfunc.ShellEncodeString(s, 0)))
 
     def _YshList(self, vlist):
         # type: (value.List) -> MeasuredDoc
@@ -426,7 +453,7 @@ class _DocConstructor:
         if len(vlist.items) == 0:
             return _Text("[]")
         mdocs = [self._Value(item) for item in vlist.items]
-        return self._Surrounded("[", "", self._Join(mdocs, ",", " "), "]")
+        return self._Surrounded("[", self._Join(mdocs, ",", " "), "]")
 
     def _YshDict(self, vdict):
         # type: (value.Dict) -> MeasuredDoc
@@ -438,36 +465,38 @@ class _DocConstructor:
                 _Concat([self._DictKey(k),
                          _Text(": "),
                          self._Value(v)]))
-        return self._Surrounded("{", "", self._Join(mdocs, ",", " "), "}")
+        return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
     def _BashArray(self, varray):
         # type: (value.BashArray) -> MeasuredDoc
+        typename = self._Styled(self.type_style, _Text("BashArray"))
         if len(varray.strs) == 0:
-            return _Text("(BashArray)")
+            return _Concat([_Text("("), typename, _Text(")")])
         mdocs = []  # type: List[MeasuredDoc]
         for s in varray.strs:
             if s is None:
                 mdocs.append(_Text("null"))
             else:
-                mdocs.append(self._StringLiteral(s))
-        return self._Surrounded("(BashArray", " ", self._Join(mdocs, "", " "),
-                                ")")
+                mdocs.append(self._BashStringLiteral(s))
+        return self._SurroundedAndPrefixed("(", typename, " ",
+                                           self._Join(mdocs, "", " "), ")")
 
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
+        typename = self._Styled(self.type_style, _Text("BashAssoc"))
         if len(vassoc.d) == 0:
-            return _Text("(BashAssoc)")
+            return _Concat([_Text("("), typename, _Text(")")])
         mdocs = []  # type: List[MeasuredDoc]
         for k2, v2 in iteritems(vassoc.d):
             mdocs.append(
                 _Concat([
                     _Text("["),
-                    self._StringLiteral(k2),
+                    self._BashStringLiteral(k2),
                     _Text("]="),
-                    self._StringLiteral(v2)
+                    self._BashStringLiteral(v2)
                 ]))
-        return self._Surrounded("(BashAssoc", " ", self._Join(mdocs, "", " "),
-                                ")")
+        return self._SurroundedAndPrefixed("(", typename, " ",
+                                           self._Join(mdocs, "", " "), ")")
 
     def _Value(self, val):
         # type: (value_t) -> MeasuredDoc
@@ -544,7 +573,8 @@ class _DocConstructor:
             else:
                 ysh_type = value_str(val.tag(), dot=False)
                 id_str = ValueIdString(val)
-                return _Text("<" + ysh_type + id_str + ">")
+                return self._Styled(self.type_style,
+                                    _Text("<" + ysh_type + id_str + ">"))
 
 
 # vim: sw=4

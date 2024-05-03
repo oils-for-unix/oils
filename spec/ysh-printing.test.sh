@@ -47,21 +47,21 @@ do eiusmod.)
 = array_long
 ## STDOUT:
 (BashArray)   (BashArray)
-(BashArray)   (BashArray "hello")
-(BashArray)   (BashArray "world" null "*.py")
+(BashArray)   (BashArray 'hello')
+(BashArray)   (BashArray 'world' null '*.py')
 (BashArray)
 (BashArray
-    "Lorem"
-    "ipsum"
-    "dolor"
-    "sit"
-    "amet,"
-    "consectetur"
-    "adipiscing"
-    "elit,"
-    "sed"
-    "do"
-    "eiusmod."
+    'Lorem'
+    'ipsum'
+    'dolor'
+    'sit'
+    'amet,'
+    'consectetur'
+    'adipiscing'
+    'elit,'
+    'sed'
+    'do'
+    'eiusmod.'
 )
 ## END
 
@@ -76,14 +76,14 @@ declare assoc_long=([Lorem]=ipsum [dolor]="sit amet," ['consectetur adipiscing']
 = assoc_long
 ## STDOUT:
 (BashAssoc)   (BashAssoc)
-(BashAssoc)   (BashAssoc ["1"]="one")
-(BashAssoc)   (BashAssoc ["1"]="one" ["two"]="2" ["3"]="three")
+(BashAssoc)   (BashAssoc ['1']='one')
+(BashAssoc)   (BashAssoc ['1']='one' ['two']='2' ['3']='three')
 (BashAssoc)
 (BashAssoc
-    ["Lorem"]="ipsum"
-    ["dolor"]="sit amet,"
-    ["consectetur adipiscing"]="elit, sed"
-    ["do"]="eiusmod."
+    ['Lorem']='ipsum'
+    ['dolor']='sit amet,'
+    ['consectetur adipiscing']='elit, sed'
+    ['do']='eiusmod.'
 )
 ## END
 
