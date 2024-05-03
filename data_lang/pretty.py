@@ -345,7 +345,7 @@ class _DocConstructor:
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
-        self.visiting.clear()  # type: Dict[int, bool]
+        self.visiting.clear()
         if self.show_type_prefix:
             ysh_type = value_str(val.tag(), dot=False)
             return _Group(
