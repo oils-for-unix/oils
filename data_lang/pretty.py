@@ -105,7 +105,6 @@ from typing import cast, List, Dict
 import fastfunc
 import libc
 
-
 _ = log
 
 ################
@@ -195,7 +194,6 @@ def _Group(mdoc):
 ###################
 # Pretty Printing #
 ###################
-
 
 _DEFAULT_MAX_WIDTH = 80
 _DEFAULT_INDENTATION = 4
