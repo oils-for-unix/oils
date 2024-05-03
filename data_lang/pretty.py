@@ -108,12 +108,6 @@ import libc
 
 _ = log
 
-KEY_STYLE = ansi.GREEN
-NUMBER_STYLE = ansi.YELLOW
-NULL_STYLE = ansi.BOLD + ansi.RED
-BOOL_STYLE = ansi.BOLD + ansi.BLUE
-CYCLE_STYLE = ansi.BOLD + ansi.YELLOW
-
 ################
 # Measurements #
 ################
@@ -342,6 +336,13 @@ class _DocConstructor:
         self.show_type_prefix = show_type_prefix
         self.visiting = {}  # type: Dict[int, bool]
 
+        # These can be configurable later
+        self.key_style = ansi.GREEN
+        self.number_style = ansi.YELLOW
+        self.null_style = ansi.BOLD + ansi.RED
+        self.bool_style = ansi.BOLD + ansi.BLUE
+        self.cycle_style = ansi.BOLD + ansi.YELLOW
+
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
@@ -411,9 +412,9 @@ class _DocConstructor:
     def _DictKey(self, s):
         # type: (str) -> MeasuredDoc
         if match.IsValidVarName(s):
-            return self._Styled(KEY_STYLE, _Text(s))
+            return self._Styled(self.key_style, _Text(s))
         else:
-            return self._Styled(KEY_STYLE,
+            return self._Styled(self.key_style,
                                 _Text(fastfunc.J8EncodeString(
                                     s, True)))  # lossy_json=True
 
@@ -475,20 +476,20 @@ class _DocConstructor:
 
         with tagswitch(val) as case:
             if case(value_e.Null):
-                return self._Styled(NULL_STYLE, _Text("null"))
+                return self._Styled(self.null_style, _Text("null"))
 
             elif case(value_e.Bool):
                 b = cast(value.Bool, val).b
-                return self._Styled(BOOL_STYLE,
+                return self._Styled(self.bool_style,
                                     _Text("true" if b else "false"))
 
             elif case(value_e.Int):
                 i = cast(value.Int, val).i
-                return self._Styled(NUMBER_STYLE, _Text(mops.ToStr(i)))
+                return self._Styled(self.number_style, _Text(mops.ToStr(i)))
 
             elif case(value_e.Float):
                 f = cast(value.Float, val).f
-                return self._Styled(NUMBER_STYLE, _Text(str(f)))
+                return self._Styled(self.number_style, _Text(str(f)))
 
             elif case(value_e.Str):
                 s = cast(value.Str, val).s
@@ -497,7 +498,7 @@ class _DocConstructor:
             elif case(value_e.Range):
                 r = cast(value.Range, val)
                 return self._Styled(
-                    NUMBER_STYLE,
+                    self.number_style,
                     _Concat([
                         _Text(str(r.lower)),
                         _Text(" .. "),
@@ -510,7 +511,7 @@ class _DocConstructor:
                 if self.visiting.get(heap_id, False):
                     return _Concat([
                         _Text("["),
-                        self._Styled(CYCLE_STYLE, _Text("...")),
+                        self._Styled(self.cycle_style, _Text("...")),
                         _Text("]")
                     ])
                 else:
@@ -525,7 +526,7 @@ class _DocConstructor:
                 if self.visiting.get(heap_id, False):
                     return _Concat([
                         _Text("{"),
-                        self._Styled(CYCLE_STYLE, _Text("...")),
+                        self._Styled(self.cycle_style, _Text("...")),
                         _Text("}")
                     ])
                 else:
