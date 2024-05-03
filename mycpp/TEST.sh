@@ -14,7 +14,7 @@ source build/common.sh
 source build/ninja-rules-cpp.sh
 source devtools/common.sh
 source soil/common.sh  # find-dir-html
-source test/common.sh  # run-test-bin
+source test/common.sh  # run-test-bin, can-compile-32-bit
 
 # in case binaries weren't built
 shopt -s failglob

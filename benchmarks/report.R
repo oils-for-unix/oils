@@ -501,20 +501,31 @@ RuntimeReport = function(in_dir, out_dir) {
 
   # Join with provenance for host label and shell label
   times %>%
-    select(-c(status)) %>%
+    select(c(elapsed_secs, user_secs, sys_secs, max_rss_KiB, task_id,
+             host_name, sh_path, workload)) %>%
     mutate(elapsed_ms = elapsed_secs * 1000,
            user_ms = user_secs * 1000,
            sys_ms = sys_secs * 1000,
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
     select(-c(elapsed_secs, user_secs, sys_secs, max_rss_KiB)) %>%
     left_join(label_lookup, by = c('sh_path')) %>%
-    select(-c(sh_path)) ->
+    select(-c(sh_path)) %>%
+    # we want to compare workloads on adjacent rows
+    arrange(workload) -> 
     details
+
+  times %>%
+    select(c(task_id, host_name, sh_path, workload, minor_faults, major_faults, swaps, in_block, out_block, signals, voluntary_ctx, involuntary_ctx)) %>%
+    left_join(label_lookup, by = c('sh_path')) %>%
+    select(-c(sh_path)) %>%
+    # we want to compare workloads on adjacent rows
+    arrange(workload) -> 
+    details_io
 
   Log('details')
   print(details)
 
-  # Sort by osh elapsed ms.
+  # Elapsed time comparison
   details %>%
     select(-c(task_id, user_ms, sys_ms, max_rss_MB)) %>%
     spread(key = shell_label, value = elapsed_ms) %>%
@@ -530,8 +541,24 @@ RuntimeReport = function(in_dir, out_dir) {
   Log('elapsed')
   print(elapsed)
 
+  # Minor Page Faults Comparison
+  details_io %>%
+    select(c(host_name, shell_label, workload, minor_faults)) %>%
+    spread(key = shell_label, value = minor_faults) %>%
+    mutate(py_bash_ratio = `osh-cpython` / bash) %>%
+    mutate(native_bash_ratio = `osh-native` / bash) %>%
+    arrange(workload, host_name) %>%
+    select(c(workload, host_name,
+             bash, dash, `osh-cpython`, `osh-native`,
+             py_bash_ratio, native_bash_ratio)) ->
+    page_faults
+
+  Log('page_faults')
+  print(page_faults)
+
+  # Max RSS comparison
   details %>%
-    select(-c(task_id, elapsed_ms, user_ms, sys_ms)) %>%
+    select(c(host_name, shell_label, workload, max_rss_MB)) %>%
     spread(key = shell_label, value = max_rss_MB) %>%
     mutate(py_bash_ratio = `osh-cpython` / bash) %>%
     mutate(native_bash_ratio = `osh-native` / bash) %>%
@@ -550,8 +577,13 @@ RuntimeReport = function(in_dir, out_dir) {
     select(-c(task_id)) ->
     gc_details
 
+  Log('GC details')
+  print(gc_details)
+  Log('')
+
   Log('GC stats')
   print(gc_stats)
+  Log('')
 
   gc_stats %>%
     left_join(gc_details, by = c('join_id', 'host_name')) %>%
@@ -568,19 +600,26 @@ RuntimeReport = function(in_dir, out_dir) {
 
   Log('After GC stats')
   print(gc_stats)
+  Log('')
 
   WriteSimpleProvenance(provenance, out_dir)
 
+  # milliseconds don't need decimal digit
   precision = ColumnPrecision(list(bash = 0, dash = 0, `osh-cpython` = 0,
                                    `osh-native` = 0, py_bash_ratio = 2,
                                    native_bash_ratio = 2))
   writeTsv(elapsed, file.path(out_dir, 'elapsed'), precision)
-  writeTsv(max_rss, file.path(out_dir, 'max_rss'))  # default is OK
+  writeTsv(page_faults, file.path(out_dir, 'page_faults'), precision)
 
-  precision2 = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),
+  precision2 = ColumnPrecision(list(py_bash_ratio = 2, native_bash_ratio = 2))
+  writeTsv(max_rss, file.path(out_dir, 'max_rss'), precision2)
+
+  precision3 = ColumnPrecision(list(max_rss_MB = 1, allocated_MB = 1),
                                default = 0)
-  writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision2)
-  writeTsv(details, file.path(out_dir, 'details'), precision2)
+  writeTsv(gc_stats, file.path(out_dir, 'gc_stats'), precision3)
+
+  writeTsv(details, file.path(out_dir, 'details'), precision3)
+  writeTsv(details_io, file.path(out_dir, 'details_io'))
 
   Log('Wrote %s', out_dir)
 }

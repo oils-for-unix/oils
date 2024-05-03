@@ -1,5 +1,5 @@
 
-## oils_failures_allowed: 3
+## oils_failures_allowed: 9
 ## compare_shells: bash
 
 #### complete with no args and complete -p both print completion spec
@@ -162,6 +162,38 @@ PATH
 PWD
 ## END
 
+#### compgen -e with global/local exported vars
+export v1_global=0
+f() {
+  local v2_local=0
+  export v2_local
+  compgen -e v
+}
+f
+## STDOUT:
+v1_global
+v2_local
+## END
+
+#### compgen -e on known, but unexported, var
+unexported=0
+compgen -e unexported
+## status: 1
+## stdout-json: ""
+
+#### compgen -e on unknown var
+compgen -e __nonexistent__
+## status: 1
+## stdout-json: ""
+
+#### compgen -e P
+cd > /dev/null  # for some reason in bash, this makes PIPESTATUS appear!
+compgen -e P | grep -E '^PATH|PWD' | sort
+## STDOUT:
+PATH
+PWD
+## END
+
 #### compgen with actions: function / variable / file 
 mkdir -p $TMP/compgen2
 touch $TMP/compgen2/{PA,Q}_FILE
@@ -267,6 +299,47 @@ echo status=$?
 eval
 status=0
 while
+status=0
+## END
+
+#### compgen -k by itself shows all reserved shell keywords
+compgen -k | grep -E '^(\!|\[\[|\]\]|case|coproc|do|done|elif|else|esac|fi|for|function|if|in|select|then|time|until|while|\{|\})$' | sort
+## STDOUT:
+!
+[[
+]]
+case
+coproc
+do
+done
+elif
+else
+esac
+fi
+for
+function
+if
+in
+select
+then
+time
+until
+while
+{
+}
+## END
+
+#### compgen -k completes reserved shell keywords
+compgen -k do | sort
+echo status=$?
+compgen -k el | sort
+echo status=$?
+## STDOUT:
+do
+done
+status=0
+elif
+else
 status=0
 ## END
 

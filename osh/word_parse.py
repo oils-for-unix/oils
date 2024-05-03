@@ -480,6 +480,17 @@ class WordParser(WordEmitter):
         # Now look for ops
         return part
 
+    def _ReadZshVarSub(self, left_token):
+        # type: (Token) -> word_part.ZshVarSub
+
+        self._SetNext(lex_mode_e.VSub_Zsh)  # Move past ${(foo)
+
+        # Can be empty
+        w = self._ReadCompoundWord3(lex_mode_e.VSub_Zsh, Id.Right_DollarBrace,
+                                    True)
+        self._GetToken()
+        return word_part.ZshVarSub(left_token, w, self.cur_token)
+
     def ReadBracedVarSub(self, left_token):
         # type: (Token) -> Tuple[BracedVarSub, Token]
         """   For YSH expressions like var x = ${x:-"default"}.  """
@@ -875,6 +886,9 @@ class WordParser(WordEmitter):
 
         if self.token_type == Id.Left_DollarBracket:
             return self._ReadExprSub(lex_mode_e.ShCommand)
+
+        if self.token_type == Id.Left_DollarBraceZsh:
+            return self._ReadZshVarSub(self.cur_token)
 
         raise AssertionError(self.cur_token)
 

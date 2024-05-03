@@ -23,7 +23,7 @@ module types {
 
   | Arith
   | ExtGlob
-  | VSub_1 | VSub_2 | VSub_ArgUnquoted | VSub_ArgDQ
+  | VSub_1 | VSub_2 | VSub_ArgUnquoted | VSub_ArgDQ | VSub_Zsh
 
     # BashRegexFakeInner (no regex list) is for parens in patterns
     #   [[ s =~ (< >) ]]

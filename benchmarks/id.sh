@@ -89,10 +89,16 @@ dump-shell-id() {
   # Add extra repository info for osh.
   case $sh_path in
     */osh*)
-      local branch
-      branch=$(git rev-parse --abbrev-ref HEAD)
-      echo $branch > $out_dir/git-branch.txt
-      git rev-parse $branch > $out_dir/git-commit-hash.txt
+      local commit_hash=$out_dir/git-commit-hash.txt
+
+      if test -n "${XSHAR_GIT_COMMIT:-}"; then
+        echo "$XSHAR_GIT_COMMIT" > $commit_hash
+      else
+        local branch
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        echo $branch > $out_dir/git-branch.txt
+        git rev-parse $branch > $commit_hash
+      fi
       ;;
   esac
 

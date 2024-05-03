@@ -64,15 +64,7 @@ def _EvalWordPart(part):
     """
     UP_part = part
     with tagswitch(part) as case:
-        if case(word_part_e.ShArrayLiteral):
-            # Array literals aren't good for any of our use cases.  TODO: Rename
-            # EvalWordToString?
-            return False, '', False
-
-        elif case(word_part_e.BashAssocLiteral):
-            return False, '', False
-
-        elif case(word_part_e.Literal):
+        if case(word_part_e.Literal):
             tok = cast(Token, UP_part)
             # Weird performance issue: if we change this to lexer.LazyStr(),
             # the parser slows down, e.g. on configure-coreutils from 805 B
@@ -105,10 +97,12 @@ def _EvalWordPart(part):
 
             return True, ''.join(strs), True  # At least one part was quoted!
 
-        elif case(word_part_e.CommandSub, word_part_e.SimpleVarSub,
-                  word_part_e.BracedVarSub, word_part_e.TildeSub,
-                  word_part_e.ArithSub, word_part_e.ExtGlob,
-                  word_part_e.Splice, word_part_e.ExprSub):
+        elif case(word_part_e.ShArrayLiteral, word_part_e.BashAssocLiteral,
+                  word_part_e.ZshVarSub, word_part_e.CommandSub,
+                  word_part_e.SimpleVarSub, word_part_e.BracedVarSub,
+                  word_part_e.TildeSub, word_part_e.ArithSub,
+                  word_part_e.ExtGlob, word_part_e.Splice,
+                  word_part_e.ExprSub):
             return False, '', False
 
         else:

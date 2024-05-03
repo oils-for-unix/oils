@@ -239,7 +239,7 @@ make-job-wwz() {
     _tmp/uftrace/{index.html,stage2} \
     web/{base,src-tree,spec-tests,spec-cpp,line-counts,benchmarks,wild}.css web/ajax.js \
     web/table/table-sort.{css,js} \
-    _release/oil*.tar _release/VERSION/
+    _release/oil*.tar _release/*.xshar _release/VERSION/
 }
 
 test-collect-json() {

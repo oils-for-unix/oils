@@ -34,6 +34,7 @@ tarballs() {
 tcc-0.9.26.tar.bz2
 yash-2.46.tar.xz
 ocaml-4.06.0.tar.xz
+util-linux-2.40.tar.xz
 EOF
 }
 
@@ -60,6 +61,9 @@ extract() {
 run-tasks() {
   local raw_out_dir=$1
   raw_out_dir="$PWD/$raw_out_dir"  # because we change dirs
+
+  # Bug fix for dynamic scoping!
+  local host_name sh_path workload
 
   local task_id=0
   while read -r host_name sh_path workload; do
@@ -91,12 +95,22 @@ run-tasks() {
         argv=( testdata/osh-runtime/hello_world.sh )
         ;;
 
+      bin-true)
+        argv=( testdata/osh-runtime/bin_true.sh )
+        ;;
+
       abuild-print-help)
         argv=( testdata/osh-runtime/abuild -h )
         ;;
 
       configure.cpython)
         argv=( $PY27_DIR/configure )
+        working_dir=$files_out_dir
+        ;;
+
+      configure.util-linux)
+        # flag needed to avoid sqlite3 dep error message
+        argv=( $TAR_DIR/util-linux-2.40/configure --disable-liblastlog2 )
         working_dir=$files_out_dir
         ;;
 
@@ -118,6 +132,7 @@ run-tasks() {
             die "Invalid workload $workload"
         esac
 
+        # These are run in-tree?
         working_dir=$TAR_DIR/$conf_dir
         ;;
 
@@ -130,6 +145,7 @@ run-tasks() {
       time-tsv 
         --output "$raw_out_dir/times.tsv" --append 
         --rusage
+        --rusage-2
         --field "$task_id"
         --field "$host_name" --field "$sh_path"
         --field "$workload"
@@ -173,26 +189,42 @@ run-tasks() {
   done
 }
 
+# Sorted by priority for test-oils.sh osh-runtime --num-shells 3
+
+readonly -a ALL_WORKLOADS=(
+  hello-world
+  bin-true
+
+  configure.cpython
+  configure.util-linux
+  configure.ocaml
+  configure.tcc
+  configure.yash
+
+  abuild-print-help
+)
+
+print-workloads() {
+  ### for help
+
+  for w in "${ALL_WORKLOADS[@]}"; do
+    echo "    $w"
+  done
+}
+
 print-tasks() {
   local host_name=$1  
   local osh_native=$2
 
-  local -a workloads=(
-    hello-world
-    abuild-print-help
-
-    configure.cpython
-    configure.ocaml
-    configure.tcc
-    configure.yash
-  )
-
   if test -n "${QUICKLY:-}"; then
-    # Just do the first two
     workloads=(
       hello-world
-      abuild-print-help
+      bin-true
+      #configure.util-linux
+      #abuild-print-help
     )
+  else
+    workloads=( "${ALL_WORKLOADS[@]}" )
   fi
 
   for sh_path in bash dash bin/osh $osh_native; do
@@ -202,11 +234,44 @@ print-tasks() {
   done
 }
 
-measure() {
+print-tasks-xshar() {
+  local host_name=$1  
+  local osh_native=$2
+
+  local num_iters=${3:-1}
+  local num_shells=${4:-1}
+  local num_workloads=${5:-1}
+
+  local s=0
+  local w=0
+
+  for i in $(seq $num_iters); do
+
+    for sh_path in $osh_native bash dash; do
+
+      for workload in "${ALL_WORKLOADS[@]}"; do
+        tsv-row $host_name $sh_path $workload
+
+        w=$(( w + 1 ))  # cut off at specified workloads
+        if test $w -eq $num_workloads; then
+          break
+        fi
+      done
+
+      s=$(( s + 1 ))  # cut off as specified shells
+      if test $s -eq $num_shells; then
+        break
+      fi
+
+    done
+  done
+}
+
+run-tasks-wrapper() {
+  ### reads tasks from stdin
+
   local host_name=$1  # 'no-host' or 'lenny'
   local raw_out_dir=$2
-  local osh_native=$3  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA
-  local out_dir=${4:-$BASE_DIR}  # ../benchmark-data/osh-runtime or _tmp/osh-runtime
 
   mkdir -v -p $raw_out_dir
 
@@ -215,13 +280,15 @@ measure() {
   # Write header of the TSV file that is appended to.
   time-tsv -o $tsv_out --print-header \
     --rusage \
+    --rusage-2 \
     --field task_id \
     --field host_name --field sh_path \
     --field workload
 
+  # reads tasks from stdin
   # run-tasks outputs 3 things: raw times.tsv, per-task STDOUT and files, and
   # per-task GC stats
-  print-tasks $host_name $osh_native | run-tasks $raw_out_dir
+  run-tasks $raw_out_dir
 
   # Turn individual files into a TSV, adding host
   benchmarks/gc_stats_to_tsv.py $raw_out_dir/gc-*.txt \
@@ -229,6 +296,16 @@ measure() {
     > $raw_out_dir/gc_stats.tsv
 
   cp -v _tmp/provenance.tsv $raw_out_dir
+}
+
+measure() {
+  ### For release and CI
+  local host_name=$1  # 'no-host' or 'lenny'
+  local raw_out_dir=$2  # _tmp/osh-runtime or ../../benchmark-data/osh-runtime
+  local osh_native=$3  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA
+
+  print-tasks "$host_name" "$osh_native" \
+    | run-tasks-wrapper "$host_name" "$raw_out_dir"
 }
 
 stage1() {
@@ -282,36 +359,67 @@ EOF
   cmark <<'EOF'
 ## OSH Runtime Performance
 
-Source code: [oil/benchmarks/osh-runtime.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-runtime.sh)
+Source code: [benchmarks/osh-runtime.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-runtime.sh)
+
+- [Elapsed Time](#elapsed-time)
+- [Minor Page Faults](#page-faults)
+- [Memory Usage](#memory-usage)
+- [GC Stats](#gc-stats)
+- [rusage Details](#rusage-details)
+- [More Details](#more-details)
+- [Shell and Host](#shell-and-host)
+
+<a name="elapsed-time" />
 
 ### Elapsed Time by Shell (milliseconds)
 
 Some benchmarks call many external tools, while some exercise the shell
-interpreter itself.  Parse time is included.
-
-Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
+interpreter itself.
 EOF
   tsv2html $in_dir/elapsed.tsv
 
   cmark <<EOF
+<a name="page-faults" />
+
+### Minor Page Faults
+EOF
+
+  tsv2html $in_dir/page_faults.tsv
+
+  cmark <<EOF
+<a name="memory-usage" />
+
 ### Memory Usage (Max Resident Set Size in MB)
+
+Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
 EOF
   tsv2html $in_dir/max_rss.tsv
 
   cmark <<EOF
+<a name="gc-stats" />
+
 ### GC Stats
 EOF
   tsv2html $in_dir/gc_stats.tsv
 
   cmark <<EOF
-### Details of All Tasks
+<a name="rusage-details" />
+
+### rusage Details
 EOF
   tsv2html $in_dir/details.tsv
 
+  cmark <<EOF
+<a name="more-details" />
+
+### More Details
+EOF
+  tsv2html $in_dir/details_io.tsv
 
   cmark <<'EOF'
+<a name="shell-and-host" />
 
-### Shell and Host Details
+### Shell and Host
 EOF
   tsv2html $in_dir/shells.tsv
   tsv2html $in_dir/hosts.tsv
@@ -329,6 +437,41 @@ EOF
   </body>
 </html>
 EOF
+}
+
+test-oils-run() {
+  local osh=$1
+
+  # flags passed by caller
+  local num_iters=${2:-1}
+  local num_shells=${3:-1}
+  local num_workloads=${4:-1}
+
+  local time_py=$XSHAR_DIR/benchmarks/time_.py
+  $time_py --tsv --rusage -- \
+    $osh -c 'echo "smoke test: hi from benchmarks/osh-runtime.sh"'
+
+  local host_name
+  host_name=$(hostname)
+
+  local job_id
+  job_id=$(print-job-id)
+
+  # Write _tmp/provenance.* and _tmp/{host,shell}-id
+  shell-provenance-2 \
+    $host_name $job_id _tmp \
+    bash dash $osh
+
+  # e.g. 2024-05-01__10-11-12.ci-vm-name
+  local raw_out_dir="$BASE_DIR/$job_id.$host_name"
+  mkdir -p $raw_out_dir
+
+  # Similar to 'measure', for soil-run and release
+  print-tasks-xshar $host_name $osh $num_iters $num_shells $num_workloads \
+    | run-tasks-wrapper $host_name $raw_out_dir
+
+  # Note: 'stage1' in soil-run is a trivial concatenation, so we can create input for
+  # benchmarks/report.R.  We don't need that here
 }
 
 soil-run() {

@@ -76,8 +76,3 @@ die() {
   log "$0: FATAL: $@"
   exit 1
 }
-
-can-compile-32-bit() {
-  # Try compiling a basic file
-  c++ -m32 -o /dev/null build/detect-cc.c
-}

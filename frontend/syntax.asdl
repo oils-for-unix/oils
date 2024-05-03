@@ -227,6 +227,7 @@ module syntax
     # confuse with the comon word_part.Literal is common for wno
   | SimpleVarSub %SimpleVarSub
   | BracedVarSub %BracedVarSub
+  | ZshVarSub (Token left, CompoundWord ignored, Token right)
     # For command sub and process sub: $(...)  <(...)  >(...)
   | CommandSub %CommandSub
     # ~ or ~bob

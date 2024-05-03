@@ -946,6 +946,10 @@ nix-idioms() {
   run-file nix-idioms "$@"
 }
 
+zsh-idioms() {
+  run-file zsh-idioms "$@"
+}
+
 ble-idioms() {
   sh-spec spec/ble-idioms.test.sh \
     $BASH $ZSH $MKSH $BUSYBOX_ASH $OSH_LIST "$@"

@@ -183,6 +183,10 @@ run-tasks() {
                benchmarks/parse-help/mypy.txt )
         ;;
 
+      ex.bin-true)
+        argv=( testdata/osh-runtime/bin_true.sh )
+        ;;
+
     esac
 
     local out_dir=$BASE_DIR/raw/$task
@@ -200,6 +204,7 @@ print-tasks() {
     parse.abuild
     ex.bashcomp-excerpt
     ex.compute-fib
+    ex.bin-true
   )
 
   for task in "${tasks[@]}"; do

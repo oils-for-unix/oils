@@ -34,6 +34,7 @@ typedef struct Spec_t {
   bool U;  // %U user time
   bool S;  // %S system time
   bool M;  // %M maxrss
+  bool m;  // page faults, context switches, etc.
   int argc;
   char **argv;
 } Spec;
@@ -126,6 +127,16 @@ int time_helper(Spec *spec, FILE *f) {
   if (spec->M) {
     int_cell(f, d, usage.ru_maxrss);
   }
+  if (spec->m) {
+    int_cell(f, d, usage.ru_minflt);
+    int_cell(f, d, usage.ru_majflt);
+    int_cell(f, d, usage.ru_nswap);
+    int_cell(f, d, usage.ru_inblock);
+    int_cell(f, d, usage.ru_oublock);
+    int_cell(f, d, usage.ru_nsignals);
+    int_cell(f, d, usage.ru_nvcsw);
+    int_cell(f, d, usage.ru_nivcsw);
+  }
 
   return exit_status;
 }
@@ -138,7 +149,7 @@ int main(int argc, char **argv) {
   // http://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html
   // + means to be strict about flag parsing.
   int c;
-  while ((c = getopt(argc, argv, "+o:ad:vxeyzUSM")) != -1) {
+  while ((c = getopt(argc, argv, "+o:ad:vxeyzUSMm")) != -1) {
     switch (c) {
     case 'o':
       spec.out_path = optarg;
@@ -166,6 +177,8 @@ int main(int argc, char **argv) {
     case 'z':
       spec.z = true;
       break;
+
+      // --rusage
     case 'U':
       spec.U = true;
       break;
@@ -174,6 +187,10 @@ int main(int argc, char **argv) {
       break;
     case 'M':
       spec.M = true;
+      break;
+
+    case 'm':  // --rusage-2
+      spec.m = true;
       break;
 
     case '?':  // getopt library will print error

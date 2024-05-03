@@ -449,6 +449,7 @@ def AddKinds(spec):
             'Backtick',  # `
             'DollarParen',  # $(
             'DollarBrace',  # ${
+            'DollarBraceZsh',  # ${(foo)
             'DollarDParen',  # $((
             'DollarBracket',  # $[ - synonym for $(( in bash and zsh
             'DollarDoubleQuote',  # $" for bash localized strings

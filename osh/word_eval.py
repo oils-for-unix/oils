@@ -1686,6 +1686,11 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 part_val = self.expr_ev.EvalExprSub(part)
                 part_vals.append(part_val)
 
+            elif case(word_part_e.ZshVarSub):
+                part = cast(word_part.ZshVarSub, UP_part)
+                e_die("ZSH var subs are parsed, but can't be evaluated",
+                      part.left)
+
             else:
                 raise AssertionError(part.tag())
 
