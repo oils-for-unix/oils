@@ -29,7 +29,7 @@ from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, log
 from data_lang import j8_lite
-from libc import get_terminal_width
+import libc
 
 from typing import List, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
@@ -511,7 +511,7 @@ def PrettyPrintValue(val, f):
     printer = pretty.PrettyPrinter()
     printer.SetUseStyles(f.isatty())
     try:
-        width = get_terminal_width()
+        width = libc.get_terminal_width()
         if width > 0:
             printer.SetMaxWidth(width)
     except (IOError, OSError):

@@ -97,13 +97,13 @@ from __future__ import print_function
 from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 from data_lang.j8 import ValueIdString, HeapValueId
-from typing import cast, List, Dict
 from core import ansi
-from libc import wcswidth
 from frontend import match
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, BufWriter, iteritems
+from typing import cast, List, Dict
 import fastfunc
+import libc
 
 
 _ = log
@@ -121,7 +121,7 @@ CYCLE_STYLE = ansi.BOLD + ansi.YELLOW
 
 def _StrWidth(string):
     # type: (str) -> int
-    return wcswidth(string)
+    return libc.wcswidth(string)
 
 
 def _EmptyMeasure():
@@ -203,23 +203,24 @@ def _Group(mdoc):
 ###################
 
 
+_DEFAULT_MAX_WIDTH = 80
+_DEFAULT_INDENTATION = 4
+_DEFAULT_USE_STYLES = True
+_DEFAULT_SHOW_TYPE_PREFIX = True
+
+
 class PrettyPrinter(object):
     """Pretty print an Oils value."""
-
-    DEFAULT_MAX_WIDTH = 80
-    DEFAULT_INDENTATION = 4
-    DEFAULT_USE_STYLES = True
-    DEFAULT_SHOW_TYPE_PREFIX = True
 
     def __init__(self):
         # type: () -> None
         """Construct a PrettyPrinter with default configuration options.
 
         Use the Set*() methods for configuration before printing."""
-        self.max_width = PrettyPrinter.DEFAULT_MAX_WIDTH
-        self.indent = PrettyPrinter.DEFAULT_INDENTATION
-        self.use_styles = PrettyPrinter.DEFAULT_USE_STYLES
-        self.show_type_prefix = PrettyPrinter.DEFAULT_SHOW_TYPE_PREFIX
+        self.max_width = _DEFAULT_MAX_WIDTH
+        self.indent = _DEFAULT_INDENTATION
+        self.use_styles = _DEFAULT_USE_STYLES
+        self.show_type_prefix = _DEFAULT_SHOW_TYPE_PREFIX
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
@@ -339,11 +340,12 @@ class _DocConstructor:
         self.indent = indent
         self.use_styles = use_styles
         self.show_type_prefix = show_type_prefix
+        self.visiting = {}  # type: Dict[int, bool]
 
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
-        self.visiting = {}  # type: Dict[int, bool]
+        self.visiting.clear()  # type: Dict[int, bool]
         if self.show_type_prefix:
             ysh_type = value_str(val.tag(), dot=False)
             return _Group(
@@ -431,7 +433,7 @@ class _DocConstructor:
         # type: (value.Dict) -> MeasuredDoc
         if len(vdict.d) == 0:
             return _Text("{}")
-        mdocs = []
+        mdocs = []  # type: List[MeasuredDoc]
         for k, v in iteritems(vdict.d):
             mdocs.append(
                 _Concat([self._DictKey(k),
@@ -443,7 +445,7 @@ class _DocConstructor:
         # type: (value.BashArray) -> MeasuredDoc
         if len(varray.strs) == 0:
             return _Text("(BashArray)")
-        mdocs = []
+        mdocs = []  # type: List[MeasuredDoc]
         for s in varray.strs:
             if s is None:
                 mdocs.append(_Text("null"))
@@ -456,7 +458,7 @@ class _DocConstructor:
         # type: (value.BashAssoc) -> MeasuredDoc
         if len(vassoc.d) == 0:
             return _Text("(BashAssoc)")
-        mdocs = []
+        mdocs = []  # type: List[MeasuredDoc]
         for k2, v2 in iteritems(vassoc.d):
             mdocs.append(
                 _Concat([
