@@ -81,12 +81,11 @@ def Options():
         default=False,
         action='store_true',
         help='Also show user time, system time, and max resident set size')
-    p.add_option(
-        '--rusage-2',
-        dest='rusage_2',
-        default=False,
-        action='store_true',
-        help='Also show page faults, context switches, etc.')
+    p.add_option('--rusage-2',
+                 dest='rusage_2',
+                 default=False,
+                 action='store_true',
+                 help='Also show page faults, context switches, etc.')
     p.add_option('--time-span',
                  dest='time_span',
                  default=False,
@@ -156,7 +155,10 @@ def main(argv):
         if opts.rusage:
             names.extend(['user_secs', 'sys_secs', 'max_rss_KiB'])
         if opts.rusage_2:
-            names.extend(['minor_faults', 'major_faults', 'swaps', 'in_block', 'out_block', 'signals', 'voluntary_ctx', 'involuntary_ctx'])
+            names.extend([
+                'minor_faults', 'major_faults', 'swaps', 'in_block',
+                'out_block', 'signals', 'voluntary_ctx', 'involuntary_ctx'
+            ])
         if opts.stdout:
             names.append('stdout_md5sum')
         names.extend(opts.fields)
