@@ -469,23 +469,23 @@ class _DocConstructor:
 
     def _BashArray(self, varray):
         # type: (value.BashArray) -> MeasuredDoc
-        typename = self._Styled(self.type_style, _Text("BashArray"))
+        type_name = self._Styled(self.type_style, _Text("BashArray"))
         if len(varray.strs) == 0:
-            return _Concat([_Text("("), typename, _Text(")")])
+            return _Concat([_Text("("), type_name, _Text(")")])
         mdocs = []  # type: List[MeasuredDoc]
         for s in varray.strs:
             if s is None:
                 mdocs.append(_Text("null"))
             else:
                 mdocs.append(self._BashStringLiteral(s))
-        return self._SurroundedAndPrefixed("(", typename, " ",
+        return self._SurroundedAndPrefixed("(", type_name, " ",
                                            self._Join(mdocs, "", " "), ")")
 
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
-        typename = self._Styled(self.type_style, _Text("BashAssoc"))
+        type_name = self._Styled(self.type_style, _Text("BashAssoc"))
         if len(vassoc.d) == 0:
-            return _Concat([_Text("("), typename, _Text(")")])
+            return _Concat([_Text("("), type_name, _Text(")")])
         mdocs = []  # type: List[MeasuredDoc]
         for k2, v2 in iteritems(vassoc.d):
             mdocs.append(
@@ -495,7 +495,7 @@ class _DocConstructor:
                     _Text("]="),
                     self._BashStringLiteral(v2)
                 ]))
-        return self._SurroundedAndPrefixed("(", typename, " ",
+        return self._SurroundedAndPrefixed("(", type_name, " ",
                                            self._Join(mdocs, "", " "), ")")
 
     def _Value(self, val):
