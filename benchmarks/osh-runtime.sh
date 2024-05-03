@@ -62,6 +62,9 @@ run-tasks() {
   local raw_out_dir=$1
   raw_out_dir="$PWD/$raw_out_dir"  # because we change dirs
 
+  # Bug fix for dynamic scoping!
+  local host_name sh_path workload
+
   local task_id=0
   while read -r host_name sh_path workload; do
 
@@ -301,7 +304,8 @@ measure() {
   local raw_out_dir=$2  # _tmp/osh-runtime or ../../benchmark-data/osh-runtime
   local osh_native=$3  # $OSH_CPP_NINJA_BUILD or $OSH_CPP_BENCHMARK_DATA
 
-  print-tasks $host_name $osh_native | run-tasks-wrapper $host_name $raw_out_dir
+  print-tasks "$host_name" "$osh_native" \
+    | run-tasks-wrapper "$host_name" "$raw_out_dir"
 }
 
 stage1() {
