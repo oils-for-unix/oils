@@ -91,7 +91,8 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
   //
   // UTF-8 encoded runes and invalid bytes
   //
-  Utf8Result_t result = utf8_decode(*p_in);
+  Utf8Result_t result;
+  utf8_decode(*p_in, &result);
 
   if (result.error == UTF8_OK) {
     memcpy(*p_out, *p_in, result.bytes_read);

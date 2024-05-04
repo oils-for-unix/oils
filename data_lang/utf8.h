@@ -66,9 +66,7 @@ typedef struct Utf8Result {
 } Utf8Result_t;
 
 static inline void _cont(const unsigned char *input, Utf8Result_t *result) {
-  if (result->error) {
-    return;
-  }
+  if (result->error) return;
 
   int byte = input[result->bytes_read];
   if (byte == '\0') {
@@ -94,77 +92,79 @@ static inline void _cont(const unsigned char *input, Utf8Result_t *result) {
  * If there was a surrogate, overlong or codepoint to large error then
  * `result.codepoint` will contain the recovered value.
  */
-static inline Utf8Result_t utf8_decode(const unsigned char *input) {
-  Utf8Result_t result = {UTF8_OK, 0, 0};
+static inline void utf8_decode(const unsigned char *input, Utf8Result_t *result) {
+  result->error = UTF8_OK;
+  result->codepoint = 0;
+  result->bytes_read = 0;
 
   int first = *input;
   if (first == '\0') {
-    result.error = UTF8_ERR_END_OF_STREAM;
-    return result;
+    result->error = UTF8_ERR_END_OF_STREAM;
+    return;
   }
-  result.bytes_read = 1;
+  result->bytes_read = 1;
 
   if ((first & 0x80) == 0) {
     // 1-byte long (ASCII subset)
-    result.codepoint = first;
-    return result;
+    result->codepoint = first;
+    return;
   }
 
   if ((first & 0xE0) == 0xC0) {
     // 2-bytes long
-    result.codepoint = first & 0x1F;
+    result->codepoint = first & 0x1F;
 
-    _cont(input, &result);
-    if (result.error) return result;
+    _cont(input, result);
+    if (result->error) return;
 
-    if (result.codepoint < 0x80) {
-      result.error = UTF8_ERR_OVERLONG;
+    if (result->codepoint < 0x80) {
+      result->error = UTF8_ERR_OVERLONG;
     }
 
-    return result;
+    return;
   }
 
   if ((first & 0xF0) == 0xE0) {
     // 3-bytes long
-    result.codepoint = first & 0x0F;
+    result->codepoint = first & 0x0F;
 
-    _cont(input, &result);
-    _cont(input, &result);
-    if (result.error) return result;
+    _cont(input, result);
+    _cont(input, result);
+    if (result->error) return;
 
-    if (result.codepoint < 0x800) {
-      result.error = UTF8_ERR_OVERLONG;
+    if (result->codepoint < 0x800) {
+      result->error = UTF8_ERR_OVERLONG;
     }
 
-    if (0xD800 <= result.codepoint && result.codepoint <= 0xDFFF) {
-      result.error = UTF8_ERR_SURROGATE;
+    if (0xD800 <= result->codepoint && result->codepoint <= 0xDFFF) {
+      result->error = UTF8_ERR_SURROGATE;
     }
 
-    return result;
+    return;
   }
 
   if ((first & 0xF8) == 0xF0) {
     // 4-bytes long
-    result.codepoint = first & 0x07;
+    result->codepoint = first & 0x07;
 
-    _cont(input, &result);
-    _cont(input, &result);
-    _cont(input, &result);
-    if (result.error) return result;
+    _cont(input, result);
+    _cont(input, result);
+    _cont(input, result);
+    if (result->error) return;
 
-    if (result.codepoint < 0x10000) {
-      result.error = UTF8_ERR_OVERLONG;
+    if (result->codepoint < 0x10000) {
+      result->error = UTF8_ERR_OVERLONG;
     }
 
-    if (result.codepoint > 0x10FFFF) {
-      result.error = UTF8_ERR_TOO_LARGE;
+    if (result->codepoint > 0x10FFFF) {
+      result->error = UTF8_ERR_TOO_LARGE;
     }
 
-    return result;
+    return;
   }
 
-  result.error = UTF8_ERR_BAD_ENCODING;
-  return result;
+  result->error = UTF8_ERR_BAD_ENCODING;
+  return;
 }
 
 #endif  // DATA_LANG_UTF8_H

@@ -338,7 +338,8 @@ TEST identity_test() {
   uint8_t buf[5] = {0};
   for (uint32_t cp = 1; cp < 0x10FFFF; ++cp) {
     int len = utf8proc_encode_char(cp, buf);
-    Utf8Result result = utf8_decode(buf);
+    Utf8Result result;
+    utf8_decode(buf, &result);
 
     if (cp < 0xD800 || cp > 0xDFFF) {
       ASSERT_EQ(result.error, UTF8_OK);
@@ -354,10 +355,11 @@ TEST identity_test() {
 
 TEST overlong_test() {
   // All encode U+41 ('A')
-  Utf8Result ok = utf8_decode((unsigned char*)"\x41");
-  Utf8Result overlong2 = utf8_decode((unsigned char*)"\xC1\x81");
-  Utf8Result overlong3 = utf8_decode((unsigned char*)"\xE0\x81\x81");
-  Utf8Result overlong4 = utf8_decode((unsigned char*)"\xF0\x80\x81\x81");
+  Utf8Result ok, overlong2, overlong3, overlong4;
+  utf8_decode((unsigned char*)"\x41", &ok);
+  utf8_decode((unsigned char*)"\xC1\x81", &overlong2);
+  utf8_decode((unsigned char*)"\xE0\x81\x81", &overlong3);
+  utf8_decode((unsigned char*)"\xF0\x80\x81\x81", &overlong4);
 
   ASSERT_EQ(ok.error, UTF8_OK);
   ASSERT_EQ(overlong2.error, UTF8_ERR_OVERLONG);
@@ -387,7 +389,8 @@ TEST too_large_test() {
   //
   //  -> 11110100 10010001 10000100 10010001
   //   = F4 91 84 91
-  Utf8Result result = utf8_decode((unsigned char*)"\xF4\x91\x84\x91");
+  Utf8Result result;
+  utf8_decode((unsigned char*)"\xF4\x91\x84\x91", &result);
 
   ASSERT_EQ(result.error, UTF8_ERR_TOO_LARGE);
   ASSERT_EQ(result.codepoint, 0x111111);
@@ -397,6 +400,8 @@ TEST too_large_test() {
 }
 
 TEST truncated_test() {
+  Utf8Result result;
+
   constexpr const int NUM_INPUTS = 6;
   const char *inputs[NUM_INPUTS] = {
     "\xC5",
@@ -408,13 +413,13 @@ TEST truncated_test() {
   };
 
   for (int i = 0; i < NUM_INPUTS; i++) {
-    Utf8Result result = utf8_decode((unsigned char*)inputs[i]);
+    utf8_decode((unsigned char*)inputs[i], &result);
     ASSERT_EQ(result.error, UTF8_ERR_TRUNCATED_BYTES);
     ASSERT_EQ(result.bytes_read, strlen(inputs[i]));
   }
 
   // End of stream is separate from truncated
-  Utf8Result result = utf8_decode((unsigned char*)"");
+  utf8_decode((unsigned char*)"", &result);
   ASSERT_EQ(result.error, UTF8_ERR_END_OF_STREAM);
   ASSERT_EQ(result.bytes_read, 0);
 
