@@ -23,7 +23,7 @@ def NinjaGraph(ru):
 
     ru.cc_binary(
         'data_lang/utf8_test.cc',
-        deps=['//data_lang/utf8_impls/utf8_decode'],
+        deps=['//data_lang/utf8_impls/utf8_decode', '//data_lang/utf8'],
         # Add tcmalloc for malloc_address_test
         matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])
 
@@ -38,6 +38,12 @@ def NinjaGraph(ru):
         '//data_lang/j8',
         srcs=[],
         headers=['data_lang/j8.h'],
+        deps=['//data_lang/utf8'],
+    )
+    ru.cc_library(
+        '//data_lang/utf8',
+        srcs=[],
+        headers=['data_lang/utf8.h'],
         deps=[],
     )
 
