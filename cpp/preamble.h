@@ -36,6 +36,7 @@
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
 
 // TODO: Why do we need these?
+using pretty_asdl::doc;
 using runtime_asdl::cmd_value;
 using syntax_asdl::command;
 using syntax_asdl::expr;
