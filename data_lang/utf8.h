@@ -136,7 +136,7 @@ static inline Utf8Result_t utf8_decode(const unsigned char *input) {
       result.error = UTF8_ERR_OVERLONG;
     }
 
-    if (result.codepoint >= 0xD800 && result.codepoint <= 0xDFFF) {
+    if (0xD800 <= result.codepoint && result.codepoint <= 0xDFFF) {
       result.error = UTF8_ERR_SURROGATE;
     }
 
