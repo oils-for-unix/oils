@@ -320,6 +320,7 @@ def main(argv):
 
     # First generate ALL C++ declarations / "headers".
     # class Foo { void method(); }; class Bar { void method(); };
+    call_graph = {}
     for name, module in to_compile:
         #log('decl name %s', name)
         if name in to_header:
@@ -337,6 +338,7 @@ def main(argv):
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
+        call_graph.update(p3.call_graph)
 
     log('\tmycpp pass: IMPL')
 
@@ -350,7 +352,8 @@ def main(argv):
                                   local_vars=local_vars,
                                   fmt_ids=fmt_ids,
                                   field_gc=field_gc,
-                                  stack_roots_warn=opts.stack_roots_warn)
+                                  stack_roots_warn=opts.stack_roots_warn,
+                                  call_graph=call_graph)
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 

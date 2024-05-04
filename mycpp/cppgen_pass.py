@@ -405,7 +405,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  field_gc=None,
                  decl=False,
                  forward_decl=False,
-                 stack_roots_warn=None):
+                 stack_roots_warn=None,
+                 call_graph=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -429,6 +430,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.local_var_list = []  # Collected at assignment
         self.prepend_to_block = None  # For writing vars after {
         self.current_func_node = None
+        self.current_func_name = None
         self.current_stmt_node = None
         # Temporary lists to use as output params for generators
         self.yield_accumulators = {
@@ -445,6 +447,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_method_name = None
 
         self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
+        self.module_aliases: Dict[str, str] = {}
 
         # HACK for conditional import inside mylib.PYTHON
         # in core/shell.py
@@ -455,6 +458,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.errors_keep_going: List[Tuple[str, int, str]] = []
 
         self.writing_default_arg = False
+
+        self.call_graph: Dict[str, Dict[str, int]] = call_graph or {}
 
     def log(self, msg, *args):
         ind_str = self.indent * '  '
@@ -542,6 +547,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
         # Skip some stdlib stuff.  A lot of it is brought in by 'import
         # typing'.
+        self.full_module_name = o.fullname
         if o.fullname in ('__future__', 'sys', 'types', 'typing', 'abc',
                           '_ast', 'ast', '_weakrefset', 'collections',
                           'cStringIO', 're', 'builtins'):
@@ -756,7 +762,85 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         return False
 
+    def add_to_call_graph(self, o):
+        full_callee = None
+        if isinstance(o.callee, NameExpr):
+            full_callee = self.current_func_name
+
+        elif isinstance(o.callee, MemberExpr):
+            if isinstance(o.callee.expr, NameExpr):
+                is_module = (isinstance(o.callee.expr, NameExpr) and
+                             o.callee.expr.name in self.imported_names)
+                if is_module:
+                    full_callee = '%s.%s' % (self.module_aliases.get(o.callee.expr.name, o.callee.expr.name), o.callee.name)
+
+                elif o.callee.expr.name == 'self':
+                    assert self.current_class_name
+                    full_callee = '%s.%s.%s' % (self.full_module_name, self.current_class_name, o.callee.name)
+
+                else:
+                    local_type = None
+                    for name, _, t in self.local_var_list:
+                        if name == o.callee.expr.name:
+                            local_type = t
+                            break
+
+                    if local_type:
+                        if isinstance(local_type, Instance):
+                            full_callee = '%s.%s' % (local_type.type.fullname, o.callee.expr.name)
+
+                        elif isinstance(local_type, UnionType):
+                            assert len(local_type.items) == 2
+                            full_callee = '%s.%s' % (local_type.items[0].type.fullname, o.callee.expr.name)
+
+                        else:
+                            # XXX primitive type or string. don't care.
+                            pass
+
+                    else:
+                        # XXX context or exception handler. probably safe to ignore.
+                        pass
+
+            else:
+                t = self.types[o.callee.expr]
+                if isinstance(t, Instance):
+                    full_callee = '%s.%s' % (t.type.fullname, o.callee.name)
+
+                elif isinstance(t, UnionType):
+                    assert len(t.items) == 2
+                    full_callee = '%s.%s' % (t.items[0].type.fullname, o.callee.name)
+
+                else:
+                    # XXX mostly constructors of things that we don't care about.
+                    pass
+
+        else:
+            # XXX don't care.
+            pass
+
+        if full_callee:
+            self.call_graph[self.current_func_name][full_callee] = 1
+
+    def call_path_exists(self, src, dst, visited):
+        """Do a DFS from src to dst. Returns true if a path was found."""
+
+        visited.add(src)
+        if src not in self.call_graph:
+            return False
+
+        for neighbor in self.call_graph[src]:
+            if neighbor == dst:
+                return True
+
+            if neighbor not in visited and self.call_path_exists(neighbor, dst, visited):
+                return True
+
+        return False
+
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
+        if self.decl and self.current_func_name:
+            self.add_to_call_graph(o)
+
         if o.callee.name == 'isinstance':
             assert len(o.args) == 2, o.args
             obj = o.args[0]
@@ -1289,7 +1373,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 item_c_type = GetCType(item_type)
                 # declare it at the top of the function
                 if self.decl:
-                    self.local_var_list.append((lval_item.name, item_c_type))
+                    self.local_var_list.append((lval_item.name, item_c_type, item_type))
                 self.def_write_ind('%s', lval_item.name)
             else:
                 # Could be MemberExpr like self.foo, self.bar = baz
@@ -1389,6 +1473,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # problem, but I believe that's gone now.
 
             callee = o.rvalue.callee
+            if self.decl and self.current_func_name:
+                self.add_to_call_graph(o.rvalue)
 
             if callee.name == 'NewDict':
                 lval_type = self.types[lval]
@@ -1403,7 +1489,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                 c_type = GetCType(lval_type)
                 if self.decl:
-                    self.local_var_list.append((lval.name, c_type))
+                    self.local_var_list.append((lval.name, c_type, lval_type))
 
                 assert c_type.endswith('*')
 
@@ -1444,7 +1530,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 else:
                     # Normal variable
                     if self.decl:
-                        self.local_var_list.append((lval.name, subtype_name))
+                        self.local_var_list.append((lval.name, subtype_name, subtype_name.replace('::', '.')))
                     self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
                                        subtype_name)
 
@@ -1485,7 +1571,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if self.current_func_node:
                 self.def_write_ind('%s = ', lval.name)
                 if self.decl:
-                    self.local_var_list.append((lval.name, c_type))
+                    self.local_var_list.append((lval.name, c_type, lval_type))
             else:
                 # globals always get a type -- they're not mutated
                 self.def_write_ind('%s %s = ', c_type, lval.name)
@@ -1721,6 +1807,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         reverse = False
+        need_roots = self.call_path_exists(self.current_func_name,
+                'mycpp.mylib.MaybeCollect',
+                set({}))
 
         # for i, x in enumerate(...):
         index0_name = None
@@ -1824,7 +1913,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if index0_name:
             # can't initialize two things in a for loop, so do it on a separate line
             if self.decl:
-                self.local_var_list.append((index0_name, 'int'))
+                self.local_var_list.append((index0_name, 'int', None))
             self.def_write_ind('%s = 0;\n', index0_name)
             index_update = ', ++%s' % index0_name
         else:
@@ -1854,7 +1943,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # it's called in a loop by _ExecuteList().  Although the 'child'
             # variable is already live by other means.
             # TODO: Test how much this affects performance.
-            if CTypeIsManaged(c_item_type):
+            if CTypeIsManaged(c_item_type) and need_roots:
                 self.def_write_ind('  StackRoot _for(&')
                 self.accept(index_expr)
                 self.def_write_ind(');\n')
@@ -2318,7 +2407,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # only do it in one place.  TODO: Check if locals are used in
             # __init__ after allocation.
             if update_locals:
-                self.local_var_list.append((arg_name, c_type))
+                self.local_var_list.append((arg_name, c_type, arg_type))
 
             # We can't use __str__ on these Argument objects?  That seems like an
             # oversight
@@ -2392,12 +2481,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # write default values in the declaration only
             write_defaults=self.decl)
 
+        # XXX ewww fix scoping so we don't have to do this weird reset
+        func_name = o.name
+        if self.current_class_name:
+            func_name = '%s.%s' % (self.current_class_name, o.name)
+
+        func_name = '%s.%s' % (self.full_module_name, func_name)
+        self.current_func_name = func_name
+
         if self.decl:
+            assert func_name not in self.call_graph, func_name
+            self.call_graph[func_name] = {}
+
             self.always_write(');\n')
             self.accept(
                 o.body)  # Collect member_vars, but don't write anything
 
             self.current_func_node = None
+            self.current_func_name = None
             return
 
         self.def_write(') ')
@@ -2409,11 +2510,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             #log('local_vars %s', self.local_vars[o])
             self.prepend_to_block = [
                 (lval_name, c_type, lval_name in arg_names)
-                for (lval_name, c_type) in self.local_vars[o]
+                for (lval_name, c_type, _) in self.local_vars[o]
             ]
 
         self.accept(o.body)
         self.current_func_node = None
+        self.current_func_name = None
 
     def visit_overloaded_func_def(self,
                                   o: 'mypy.nodes.OverloadedFuncDef') -> T:
@@ -2707,8 +2809,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         for name, alias in o.names:
             if alias:
                 self.imported_names.add(alias)
+                self.module_aliases[alias] = '%s.%s' % (o.id, alias)
             else:
                 self.imported_names.add(name)
+                self.module_aliases[name] = '%s.%s' % (o.id, name)
 
         if o.id in ('__future__', 'typing'):
             return  # do nothing
@@ -2821,11 +2925,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             roots = []  # keep it sorted
             for lval_name, c_type, is_param in self.prepend_to_block:
                 #self.log('%s %s %s', lval_name, c_type, is_param)
-                if lval_name not in roots and CTypeIsManaged(c_type):
+                if not is_param and lval_name not in roots and CTypeIsManaged(c_type):
                     roots.append(lval_name)
             #self.log('roots %s', roots)
 
-            if len(roots):
+            need_roots = self.current_func_name.startswith('core.shell.') or self.call_path_exists(
+                    self.current_func_name,
+                    'mycpp.mylib.MaybeCollect',
+                    set({}))
+
+            if len(roots) and need_roots:
                 if (self.stack_roots_warn and
                         len(roots) > self.stack_roots_warn):
                     log('WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'
