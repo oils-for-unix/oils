@@ -101,7 +101,8 @@ core-error() {
 using value_asdl::value;  // This is a bit ad hoc
 ' \
     --to-header core.error \
-    core/error.py
+    core/error.py \
+    core/num.py
 }
 
 frontend-args() {
@@ -125,6 +126,7 @@ using value_asdl::value;  // This is a bit ad hoc
     --to-header frontend.args \
     "${ASDL_FILES[@]}" \
     core/error.py \
+    core/num.py \
     frontend/args.py
 }
 
