@@ -933,6 +933,10 @@ ysh-dev() {
   run-file ysh-dev "$@"
 }
 
+ysh-printing() {
+  run-file ysh-printing "$@"
+}
+
 
 #
 # More OSH
