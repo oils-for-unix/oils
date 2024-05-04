@@ -54,12 +54,14 @@ GLOBAL_STR(str45, "\u001b[31m");
 GLOBAL_STR(str46, "\u001b[32m");
 GLOBAL_STR(str47, "\u001b[33m");
 GLOBAL_STR(str48, "\u001b[34m");
-GLOBAL_STR(str49, "&");
-GLOBAL_STR(str50, "&amp;");
-GLOBAL_STR(str51, "<");
-GLOBAL_STR(str52, "&lt;");
-GLOBAL_STR(str53, ">");
-GLOBAL_STR(str54, "&gt;");
+GLOBAL_STR(str49, "\u001b[35m");
+GLOBAL_STR(str50, "\u001b[36m");
+GLOBAL_STR(str51, "&");
+GLOBAL_STR(str52, "&amp;");
+GLOBAL_STR(str53, "<");
+GLOBAL_STR(str54, "&lt;");
+GLOBAL_STR(str55, ">");
+GLOBAL_STR(str56, "&gt;");
 
 namespace ansi {  // forward declare
 
@@ -86,6 +88,8 @@ extern BigStr* RED;
 extern BigStr* GREEN;
 extern BigStr* YELLOW;
 extern BigStr* BLUE;
+extern BigStr* MAGENTA;
+extern BigStr* CYAN;
 
 
 }  // declare namespace ansi
@@ -209,7 +213,10 @@ int ColorOutput::NumChars() {
 }
 
 Tuple2<BigStr*, int> ColorOutput::GetRaw() {
-  mylib::BufWriter* f = static_cast<mylib::BufWriter*>(this->f);
+  mylib::BufWriter* f = nullptr;
+  StackRoot _root0(&f);
+
+  f = static_cast<mylib::BufWriter*>(this->f);
   return Tuple2<BigStr*, int>(f->getvalue(), this->num_chars);
 }
 
@@ -709,6 +716,8 @@ BigStr* RED = str45;
 BigStr* GREEN = str46;
 BigStr* YELLOW = str47;
 BigStr* BLUE = str48;
+BigStr* MAGENTA = str49;
+BigStr* CYAN = str50;
 
 }  // define namespace ansi
 
@@ -718,9 +727,9 @@ namespace cgi {  // define
 BigStr* escape(BigStr* s) {
   StackRoot _root0(&s);
 
-  s = s->replace(str49, str50);
   s = s->replace(str51, str52);
   s = s->replace(str53, str54);
+  s = s->replace(str55, str56);
   return s;
 }
 

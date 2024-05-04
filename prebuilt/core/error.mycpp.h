@@ -262,13 +262,14 @@ class Runtime {
 
 class Decode {
  public:
-  Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos);
+  Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos, int line_num);
   BigStr* Message();
   BigStr* __str__();
   BigStr* msg;
   BigStr* s;
   int start_pos;
   int end_pos;
+  int line_num;
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(Decode));

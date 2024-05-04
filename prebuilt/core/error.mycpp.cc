@@ -14,7 +14,7 @@ GLOBAL_STR(str5, "<%s %r>");
 GLOBAL_STR(str6, "status");
 GLOBAL_STR(str7, "message");
 GLOBAL_STR(str8, "%s, got %s");
-GLOBAL_STR(str9, " (pos %d-%d: %r)");
+GLOBAL_STR(str9, " (line %d, offset %d-%d: %r)");
 
 namespace runtime {  // forward declare
 
@@ -151,7 +151,7 @@ value::Dict* Structured::ToDict() {
   if (this->properties == nullptr) {
     this->properties = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
   }
-  this->properties->set(str6, Alloc<value::Int>(this->ExitStatus()));
+  this->properties->set(str6, num::ToBig(this->ExitStatus()));
   this->properties->set(str7, Alloc<value::Str>(this->msg));
   return Alloc<value::Dict>(this->properties);
 }
@@ -173,11 +173,12 @@ BigStr* Runtime::UserErrorString() {
   return this->msg;
 }
 
-Decode::Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos) {
+Decode::Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos, int line_num) {
   this->msg = msg;
   this->s = s;
   this->start_pos = start_pos;
   this->end_pos = end_pos;
+  this->line_num = line_num;
 }
 
 BigStr* Decode::Message() {
@@ -189,7 +190,7 @@ BigStr* Decode::Message() {
   start = max(0, (this->start_pos - 4));
   end = min(len(this->s), (this->end_pos + 4));
   part = this->s->slice(start, end);
-  return str_concat(this->msg, StrFormat(" (pos %d-%d: %r)", this->start_pos, this->end_pos, part));
+  return str_concat(this->msg, StrFormat(" (line %d, offset %d-%d: %r)", this->line_num, this->start_pos, this->end_pos, part));
 }
 
 BigStr* Decode::__str__() {
