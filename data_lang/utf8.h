@@ -6,10 +6,6 @@
 #include <stdint.h> // uint32_t
 #include <stddef.h> // size_t
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  *              ---- Quick reference about the encoding ----
  *
@@ -170,9 +166,5 @@ static inline Utf8Result_t utf8_decode(const unsigned char *input) {
   result.error = UTF8_ERR_BAD_ENCODING;
   return result;
 }
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // DATA_LANG_UTF8_H
