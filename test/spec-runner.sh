@@ -35,14 +35,12 @@ write-suite-manifests() {
       case $suite in
         osh) echo $name >& $osh ;;
         ysh) echo $name >& $ysh ;;
-        tea) echo $name >& $tea ;;
         disabled) ;;  # ignore
         *)   die "Invalid suite $suite" ;;
       esac
     done 
   } {osh}>_tmp/spec/SUITE-osh.txt \
     {ysh}>_tmp/spec/SUITE-ysh.txt \
-    {tea}>_tmp/spec/SUITE-tea.txt \
     {needs_terminal}>_tmp/spec/SUITE-needs-terminal.txt
 
   # These are kind of pseudo-suites, not the main 3
@@ -67,7 +65,7 @@ diff-manifest() {
   #LC_ALL=C
   #export LANG LC_COLLATE LC_ALL
 
-  for suite in osh ysh tea interactive osh-minimal; do
+  for suite in osh ysh interactive osh-minimal; do
     echo
     echo [$suite]
     echo
@@ -79,7 +77,7 @@ diff-manifest() {
 dispatch-one() {
   # Determines what binaries to compare against: compare-py | compare-cpp | release-alpine 
   local compare_mode=${1:-compare-py}
-  # Which subdir of _tmp/spec: osh-py ysh-py osh-cpp ysh-cpp smoosh tea
+  # Which subdir of _tmp/spec: osh-py ysh-py osh-cpp ysh-cpp smoosh
   local spec_subdir=${2:-osh-py}
   local spec_name=$3
   shift 3  # rest are more flags

@@ -368,6 +368,8 @@ Source code: [benchmarks/osh-runtime.sh](https://github.com/oilshell/oil/tree/ma
 - [More Details](#more-details)
 - [Shell and Host](#shell-and-host)
 
+[Raw files](-wwz-index)
+
 <a name="elapsed-time" />
 
 ### Elapsed Time by Shell (milliseconds)
@@ -424,8 +426,6 @@ EOF
   tsv2html $in_dir/hosts.tsv
 
   cmark <<'EOF'
----
-[raw files](-wwz-index)
 
   </body>
 </html>

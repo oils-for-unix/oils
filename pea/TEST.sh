@@ -237,7 +237,7 @@ _par-pickle() {
 # frontend/
 # osh/
 # ysh/
-# Smaller: pgen2/ pylib/ tea/ tools/
+# Smaller: pgen2/ pylib/ tools/
 #
 # And modules are acyclic, and can compile on their own with dependencies.  If
 # you pick random .py files and spit out header files, I think they won't compile.

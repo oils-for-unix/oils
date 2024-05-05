@@ -379,6 +379,8 @@ run under cachegrind for stable metrics.
 
 Source code: [oil/benchmarks/osh-parser.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-parser.sh)
 
+[Raw files](-wwz-index)
+
 ### Summary
 
 #### Instructions Per Line (via cachegrind)
@@ -460,8 +462,6 @@ EOF
   csv2html $in_dir/raw-data.csv
 
   cmark << 'EOF'
----
-[raw files](-wwz-index)
 
   </body>
 </html>
