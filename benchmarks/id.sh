@@ -14,7 +14,6 @@ readonly REPO_ROOT
 
 source build/common.sh  # for $CLANG
 source benchmarks/common.sh
-source soil/common.sh  # find-dir-html
 source test/tsv-lib.sh  # tsv-row
 
 print-job-id() {
@@ -184,9 +183,6 @@ publish-shell-id() {
 
   echo $hash > $dest/HASH.txt
 
-  # for .wwz file
-  find-dir-html "$dest"
-
   log "Published shell ID to $dest"
 
   echo $id
@@ -273,9 +269,6 @@ publish-host-id() {
   cp --no-target-directory --recursive $src/ $dest/
 
   echo $hash > $dest/HASH.txt
-
-  # for .wwz file
-  find-dir-html "$dest"
 
   log "Published host ID to $dest"
 
