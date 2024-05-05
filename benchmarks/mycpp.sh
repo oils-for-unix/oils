@@ -14,7 +14,6 @@ readonly REPO_ROOT
 
 source benchmarks/common.sh
 source build/dev-shell.sh  # R_LIBS_USER
-source soil/common.sh  # find-dir-html
 source test/tsv-lib.sh  # tsv2html
 
 print-report() {
@@ -65,12 +64,9 @@ EOF
 
   tsv2html $in_dir/sys_time.tsv
 
-
-  # This file is benchmarks.wwz/mycpp-examples/ or _tmp/mycpp-examples/
-  # The link only exists in the latter case
   cmark << 'EOF'
 ---
-[raw benchmark files](raw/benchmark/index.html)
+[raw benchmark files](raw/benchmark/-wwz-index)
 
 EOF
 
@@ -116,10 +112,6 @@ soil-run() {
   benchmarks/report.R mycpp $base_dir/raw $dir2
 
   benchmarks/report.sh stage3 $base_dir mycpp
-
-  # The data is in _test/tasks; we could move it to _test/benchmarks/mycpp/ or
-  # something
-  find-dir-html $base_dir/raw/benchmark
 }
 
 "$@"

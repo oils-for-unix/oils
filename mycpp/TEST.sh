@@ -13,7 +13,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/common.sh
 source build/ninja-rules-cpp.sh
 source devtools/common.sh
-source soil/common.sh  # find-dir-html
 source test/common.sh  # run-test-bin, can-compile-32-bit
 
 # in case binaries weren't built
@@ -302,9 +301,6 @@ soil-run() {
   $0 test-translator
   local status=$?
   set -o errexit
-
-  # Write _test/mycpp-examples.html, used by soil/woker.sh
-  find-dir-html _test mycpp-examples
 
   return $status
 }

@@ -9,8 +9,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source soil/common.sh  # find-dir-html
-
 all-tests() {
   asdl/TEST.sh unit
 
@@ -40,9 +38,6 @@ soil-run() {
   $0 all-tests
   local status=$?
   set -o errexit
-
-  # Logs in _test/cxx-asan, etc.
-  find-dir-html _test cpp-unit
 
   return $status
 }

@@ -13,7 +13,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source benchmarks/common.sh  # tsv-concat
 source benchmarks/id.sh  # print-job-id
-source soil/common.sh  # find-dir-html
 source test/common.sh
 source test/tsv-lib.sh  # tsv-row
 
@@ -424,16 +423,10 @@ EOF
   tsv2html $in_dir/shells.tsv
   tsv2html $in_dir/hosts.tsv
 
-  # Only show files.html link on a single machine
-  if test -f $(dirname $in_dir)/files.html; then
-    cmark <<'EOF'
+  cmark <<'EOF'
 ---
+[raw files](-wwz-index)
 
-[raw files](files.html)
-EOF
-  fi
-
-  cat <<EOF
   </body>
 </html>
 EOF
@@ -508,9 +501,6 @@ soil-run() {
   stage1 '' $single_machine
 
   benchmarks/report.sh stage2 $BASE_DIR
-
-  # Make _tmp/osh-parser/files.html, so index.html can potentially link to it
-  find-dir-html _tmp/osh-runtime files
 
   benchmarks/report.sh stage3 $BASE_DIR
 }
