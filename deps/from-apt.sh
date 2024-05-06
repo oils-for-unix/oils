@@ -70,6 +70,9 @@ layer-wedge-builder() {
     # requires path in uftrace source
     libpython3.7
 
+    # for USDT probes
+    systemtap-sdt-dev
+
     # Dependencies for building our own Python3 wedge.  Otherwise 'pip install'
     # won't work.
     # TODO: We should move 'pip install' to build time.
@@ -208,6 +211,9 @@ cpp-small() {
 
     # for test/ltrace
     ltrace
+
+    # for USDT probes
+    systemtap-sdt-dev
   )
 
   apt-install "${packages[@]}"
