@@ -168,7 +168,7 @@ bool PartIsUtf8(BigStr* s, int start, int end) {
   Utf8Result result;
 
   for (int i = start; i < end;) {
-    utf8_decode(reinterpret_cast<unsigned char*>(&s->data_[i]), &result);
+    utf8_decode(reinterpret_cast<unsigned char*>(s->data_ + i), &result);
     if (result.error) {
       return false;
     }

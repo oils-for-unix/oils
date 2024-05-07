@@ -69,7 +69,7 @@ func_PartIsUtf8(PyObject *self, PyObject *args) {
 
   Utf8Result_t result;
   for (int i = start; i < end;) {
-    utf8_decode(&in.data[i], &result);
+    utf8_decode(in.data + i, &result);
     if (result.error) {
       return PyBool_FromLong(0);
     }
