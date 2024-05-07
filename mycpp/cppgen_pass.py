@@ -757,6 +757,28 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         return False
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
+        if o.callee.name == 'probe':
+            assert len(o.args) >= 2 and len(o.args) < 13, o.args
+            assert isinstance(o.args[0], mypy.nodes.StrExpr), o.args[0]
+            assert isinstance(o.args[1], mypy.nodes.StrExpr), o.args[1]
+            arity = len(o.args) - 2
+            macro = 'DTRACE_PROBE'
+            if arity > 0:
+                macro = 'DTRACE_PROBE%d' % arity
+
+            self.def_write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
+
+            for arg in o.args[2:]:
+                arg_type = self.types[arg]
+                self.def_write(', ')
+                if isinstance(arg_type, Instance) and arg_type.type.fullname == 'builtins.str':
+                    self.def_write('%s->data()' % arg.name)
+                else:
+                    self.accept(arg)
+
+            self.def_write(')')
+            return
+
         if o.callee.name == 'isinstance':
             assert len(o.args) == 2, o.args
             obj = o.args[0]
@@ -2722,7 +2744,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if o.id == 'mycpp.mylib':
                 # These mylib functions are translated in a special way
                 if name in ('switch', 'tagswitch', 'str_switch', 'iteritems',
-                            'NewDict'):
+                            'NewDict', 'probe'):
                     continue
                 # STDIN_FILENO is #included
                 if name == 'STDIN_FILENO':

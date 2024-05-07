@@ -43,6 +43,8 @@ Optional features:
   --without-readline            Don't compile with readline, even if it's available.
                                 The shell won't have any interactive features.
   --readline=DIR                An alternative readline installation to link against
+  --with-systemtap-sdt          Fail unless systemtap-sdt is available.
+  --without-systemtap-sdt       Don't compile with systemtap-sdt, even if it's available.
 EOF
 }
 
@@ -62,12 +64,16 @@ FLAG_datarootdir=''  # default initialized after processing flags
 FLAG_with_readline=''  # Fail if it's not available.
 FLAG_without_readline=''  # Don't even check if it's available
 FLAG_readline=''
+FLAG_with_systemtap_sdt=''  # Fail if it's not available.
+FLAG_without_systemtap_sdt=''  # Don't even check if it's available
 
 # These variables are set by detect_readline and used by echo_cpp and
 # echo_shell_vars
-detected_readline=''
+detected_deps=''
 have_readline=''
 readline_dir=''
+
+have_systemtap_sdt=''
 
 parse_flags() {
   while true; do
@@ -98,6 +104,14 @@ parse_flags() {
         fi
         shift
         FLAG_readline=$1
+        ;;
+
+      --with-systemtap_sdt)
+        FLAG_with_systemtap_sdt=1
+        ;;
+
+      --without-systemtap_sdt)
+        FLAG_without_systemtap_sdt=1
         ;;
 
       # TODO: Maybe prefix only needs to be part of the install step?  I'm not
@@ -204,7 +218,7 @@ cc_header_file() {
 }
 
 detect_readline() {
-  detected_readline=1  # for assertions in echo_shell_vars and echo_cpp
+  detected_deps=1  # for assertions in echo_shell_vars and echo_cpp
 
   # User disabled readline
   if test -n "$FLAG_without_readline"; then
@@ -237,8 +251,21 @@ detect_readline() {
   fi
 }
 
+detect_systemtap_sdt() {
+  detected_deps=1  # for assertions in echo_shell_vars and echo_cpp
+
+  if test -n "$FLAG_without_systemtap_sdt"; then
+    return
+  fi
+
+  if cc_quiet build/detect-systemtap-sdt.c; then
+    have_systemtap_sdt=1
+    return
+  fi
+}
+
 echo_shell_vars() {
-  if test "$detected_readline" != 1; then
+  if test "$detected_deps" != 1; then
     die 'called echo_shell_vars before detecting readline.'
   fi
   if test "$have_readline" = 1; then
@@ -248,6 +275,11 @@ echo_shell_vars() {
     echo 'HAVE_READLINE='
     # Present a consistent interface to build/ninja-rules-cpp.sh
     echo 'READLINE_DIR='
+  fi
+  if test "$have_systemtap_sdt" = 1; then
+    echo 'HAVE_SYSTEMTAP_SDT=1'
+  else
+    echo 'HAVE_SYSTEMTAP_SDT='
   fi
   echo "PREFIX=$FLAG_prefix"
   echo "DATAROOTDIR=$FLAG_datarootdir"
@@ -381,7 +413,7 @@ EOF
 }
 
 echo_cpp() {
-  if test "$detected_readline" != 1; then
+  if test "$detected_deps" != 1; then
     die 'called echo_cpp before detecting readline.'
   fi
   # Dev builds can use non-portable clock_gettime()
@@ -394,6 +426,12 @@ echo_cpp() {
     echo '#define HAVE_READLINE 1'
   else
     echo '/* #undef HAVE_READLINE */'
+  fi
+
+  if test "$have_systemtap_sdt" = 1; then
+    echo '#define HAVE_SYSTEMTAP_SDT 1'
+  else
+    echo '/* #undef HAVE_SYSTEMTAP_SDT */'
   fi
 
   # Check if pwent is callable. E.g. bionic libc (Android) doesn't have it
@@ -418,6 +456,8 @@ main() {
 
   # Sets globals $have_readline and $readline_dir
   detect_readline
+
+  detect_systemtap_sdt
 
   # Generate configuration for oil-native
   local cpp_out=_build/detected-cpp-config.h
