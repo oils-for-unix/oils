@@ -3,7 +3,7 @@
 #include "cpp/data_lang.h"
 
 #include "data_lang/j8.h"
-#include "data_lang/utf8_impls/bjoern_dfa.h"
+#include "data_lang/utf8.h"
 
 // TODO: remove duplication
 #define LOSSY_JSON (1 << 3)
@@ -165,20 +165,18 @@ BigStr* ShellEncodeString(BigStr* s, int ysh_fallback) {
 namespace pyj8 {
 
 bool PartIsUtf8(BigStr* s, int start, int end) {
-  uint32_t codepoint;
-  uint32_t state = UTF8_ACCEPT;
+  Utf8Result result;
 
-  for (int i = start; i < end; ++i) {
-    // This var or a static_cast<> is necessary.  Should really change BigStr*
-    // to use unsigned type
-    uint8_t c = s->data_[i];
-    decode(&state, &codepoint, c);
-    if (state == UTF8_REJECT) {
+  for (int i = start; i < end;) {
+    utf8_decode(reinterpret_cast<unsigned char*>(&s->data_[i]), &result);
+    if (result.error) {
       return false;
     }
+
+    i += result.bytes_read;
   }
 
-  return state == UTF8_ACCEPT;
+  return true;
 }
 
 void WriteString(BigStr* s, int options, mylib::BufWriter* buf) {
