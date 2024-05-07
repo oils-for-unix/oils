@@ -94,11 +94,6 @@ def NinjaGraph(ru):
             '//data_lang/j8',
             '//mycpp/runtime',
         ],
-        # This includes in the release tarball.  (It doesn't change any
-        # compiler command lines, which don't include header files)
-        headers=[
-            'data_lang/utf8_impls/bjoern_dfa.h',
-        ],
     )
 
     ru.cc_binary('cpp/data_lang_test.cc',
