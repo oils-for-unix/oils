@@ -440,7 +440,7 @@ test-oils-run() {
   local num_shells=${3:-1}
   local num_workloads=${4:-1}
 
-  local time_py=$XSHAR_DIR/benchmarks/time_.py
+  local time_py=${XSHAR_DIR:-$REPO_ROOT}/benchmarks/time_.py
   $time_py --tsv --rusage -- \
     $osh -c 'echo "smoke test: hi from benchmarks/osh-runtime.sh"'
 
@@ -449,6 +449,9 @@ test-oils-run() {
 
   local job_id
   job_id=$(print-job-id)
+
+  # Fresh build
+  rm -r -f -v $BASE_DIR _tmp/{shell,host}-id
 
   # Write _tmp/provenance.* and _tmp/{host,shell}-id
   shell-provenance-2 \
@@ -462,6 +465,13 @@ test-oils-run() {
   # Similar to 'measure', for soil-run and release
   print-tasks-xshar $host_name $osh $num_iters $num_shells $num_workloads \
     | run-tasks-wrapper $host_name $raw_out_dir
+  echo
+
+  local wwz=_tmp/osh-runtime.wwz 
+  zip -r $wwz $BASE_DIR/* _tmp/{shell,host}-id
+
+  unzip -l $wwz
+  echo
 
   # Note: 'stage1' in soil-run is a trivial concatenation, so we can create input for
   # benchmarks/report.R.  We don't need that here

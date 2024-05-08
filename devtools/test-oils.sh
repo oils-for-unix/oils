@@ -36,6 +36,9 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 FLAG_num_iters=1  # iterations
 FLAG_num_shells=1
 FLAG_num_workloads=1
+FLAG_upload=''
+FLAG_subdir=''
+FLAG_url=http://travis-ci.oilshell.org/wwup.cgi
 
 readonly XSHAR_NAME=test-oils.xshar  # hard-coded for now
 
@@ -67,6 +70,14 @@ Actions:
 
     -w --num-workloads           Run the first N of the workloads
 
+    -u --upload                  Upload .wwz results to the CI server
+
+    --subdir                     Subdirectory for the wwz. results
+                                 default: git-\$commit
+
+    --url                        Upload to this URL
+                                 default: $FLAG_url
+
   Workloads:
 EOF
   benchmarks/osh-runtime.sh print-workloads
@@ -89,7 +100,8 @@ osh-runtime dependencies:
   - C++ compiler, for oils-for-unix and benchmarks/time-helper.c
     - On OS X, the compiler comes with XCode
   - python2 for - benchmarks/time_.py, tsv*.py, gc_stats*.py
-  - curl for uploading results via HTTP
+  - zip for creating the .wwz payload
+  - curl for uploading it via HTTP
 EOF
 }
 
@@ -135,6 +147,26 @@ parse-flags-osh-runtime() {
         FLAG_num_shells=$1
         ;;
 
+      -u|--upload)
+        FLAG_upload=T
+        ;;
+
+      --subdir)
+        if test $# -eq 1; then
+          die "--subdir requires an argument"
+        fi
+        shift
+        FLAG_subdir=$1
+        ;;
+
+      --url)
+        if test $# -eq 1; then
+          die "--url requires an argument"
+        fi
+        shift
+        FLAG_url=$1
+        ;;
+
       *)
         die "Invalid flag '$1'"
         ;;
@@ -176,6 +208,22 @@ osh-runtime() {
 
   benchmarks/osh-runtime.sh test-oils-run $osh \
     $FLAG_num_shells $FLAG_num_workloads $FLAG_num_iters
+
+  if test -n "$FLAG_upload"; then
+
+    local subdir
+    if test -n "$FLAG_subdir"; then
+      subdir=$FLAG_subdir
+    else
+      subdir="git-${XSHAR_GIT_COMMIT:-unknown}"
+    fi
+
+    curl --verbose \
+      --form "payload-type=osh-runtime" \
+      --form "subdir=$subdir" \
+      --form "wwz=@_tmp/osh-runtime.wwz" \
+      $FLAG_url
+  fi
 
   # TODO: upload these with curl
   #
