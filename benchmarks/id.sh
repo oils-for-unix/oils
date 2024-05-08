@@ -211,19 +211,27 @@ dump-host-id() {
   # We care about the kernel and the CPU architecture.
   # There is a lot of redundant information there.
   uname -m > $out_dir/machine.txt
-  # machine
-  { uname --kernel-release 
-    uname --kernel-version
+
+  {
+    # Short flags work on OS X too
+    uname -s  # --kernel-name
+    uname -r  # --kernel-release
+    uname -v  # --kernel-version
   } > $out_dir/kernel.txt
 
   _dump-if-exists /etc/lsb-release $out_dir/lsb-release.txt
 
   # remove the cpu MHz field, which changes a lot
-  grep -i -v 'cpu mhz' /proc/cpuinfo > $out_dir/cpuinfo.txt
+  if test -e /proc/cpuinfo; then
+    grep -i -v 'cpu mhz' /proc/cpuinfo > $out_dir/cpuinfo.txt
+  fi
+
   # mem info doesn't make a difference?  I guess it's just nice to check that
   # it's not swapping.  But shouldn't be part of the hash.
 
-  grep '^MemTotal' /proc/meminfo > $out_dir/meminfo.txt
+  if test -e /proc/meminfo; then
+    grep '^MemTotal' /proc/meminfo > $out_dir/meminfo.txt
+  fi
 
   #head $out_dir/* 1>&2  # don't write to stdout
 }
