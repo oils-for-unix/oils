@@ -30,8 +30,8 @@ class PrettyTest(unittest.TestCase):
         cls.printer.SetUseStyles(False)
         cls.printer.SetShowTypePrefix(False)
 
-    def assertPretty(self, width, value_str, expected):
-        # type: (int, str, str) -> None
+    def assertPretty(self, width, value_str, expected, lineno = None):
+        # type: (int, str, str, Optional[int]) -> None
         parser = j8.Parser(value_str, True)
         val = parser.ParseValue()
 
@@ -42,18 +42,20 @@ class PrettyTest(unittest.TestCase):
 
         if actual != expected:
             # Print the different with real newlines, for easier reading.
-            print("ACTUAL:")
-            print(actual)
-            print("EXPECTED:")
-            print(expected)
-            print("END")
+            print "ACTUAL:"
+            print actual
+            print "EXPECTED:"
+            print expected
+            print "END"
+            if lineno is not None:
+                print "ON LINE", lineno + 1
         self.assertEqual(buf.getvalue(), expected)
 
     def testsFromFile(self):
-        chunks = [(None, [])]
-        for line in open(TEST_DATA_FILENAME).read().splitlines():
+        chunks = [(None, -1, [])]
+        for lineno, line in enumerate(open(TEST_DATA_FILENAME).read().splitlines()):
             if line.startswith("> "):
-                chunks[-1][1].append(line[2:])
+                chunks[-1][2].append(line[2:])
             elif line.startswith("#"):
                 pass
             elif line.strip() == "":
@@ -62,10 +64,10 @@ class PrettyTest(unittest.TestCase):
                 for keyword in ["Width", "Input", "Expect"]:
                     if line.startswith(keyword):
                         if chunks[-1][0] != keyword:
-                            chunks.append((keyword, []))
+                            chunks.append((keyword, lineno, []))
                         parts = line.split(" > ", 1)
                         if len(parts) == 2:
-                            chunks[-1][1].append(parts[1])
+                            chunks[-1][2].append(parts[1])
                         break
                 else:
                     raise Exception(
@@ -75,19 +77,19 @@ class PrettyTest(unittest.TestCase):
         test_cases = []
         width = 80
         value = ""
-        for (keyword, lines) in chunks:
+        for (keyword, lineno, lines) in chunks:
             block = "\n".join(lines)
             if keyword == "Width":
                 width = int(block)
             elif keyword == "Input":
                 value = block
             elif keyword == "Expect":
-                test_cases.append((width, value, block))
+                test_cases.append((width, value, block, lineno))
             else:
                 pass
 
-        for (width, value, expected) in test_cases:
-            self.assertPretty(width, value, expected)
+        for (width, value, expected, lineno) in test_cases:
+            self.assertPretty(width, value, expected, lineno)
 
     def testStyles(self):
         self.printer.SetUseStyles(True)
