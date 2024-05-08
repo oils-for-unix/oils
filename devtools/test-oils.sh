@@ -27,6 +27,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source benchmarks/id.sh
 source test/common.sh  # die
 
 OILS_VERSION=$(head -n 1 oil-version.txt)
@@ -206,12 +207,27 @@ osh-runtime() {
   popd
   popd
 
-  benchmarks/osh-runtime.sh test-oils-run $osh \
+  local job_id host_name
+  # this form used by benchmarks to name raw TSV
+  job_id=$(print-job-id)  # benchmarks/id.sh
+  host_name=$(hostname)
+
+  benchmarks/osh-runtime.sh test-oils-run $osh $job_id $host_name \
     $FLAG_num_shells $FLAG_num_workloads $FLAG_num_iters
 
-  if test -n "$FLAG_upload"; then
+  # /uuu/
+  #   osh-runtime/
+  #     $FLAG_subdir/     # Human-readable label
+  #     git-$hash/  # For PRs
+  #       $(date).$machine.wwz/
+  #         osh-runtime/
+  #           times.tsv
+  #           gc_stats.tsv
+  #           provenance.tsv
+  #         shell-id/
+  #         host-id/
 
-    local wwz=_tmp/osh-runtime.wwz 
+  if test -n "$FLAG_upload"; then
 
     if ! command -v zip >/dev/null; then
       echo "$0: zip command not found.  It's needed to upload benchmark results."
@@ -219,22 +235,32 @@ osh-runtime() {
       return 1
     fi
 
-    # Only zip the first level of osh-runtime
-    zip -r $wwz _tmp/osh-runtime/* _tmp/{shell,host}-id
+    local wwz_name="${job_id}.${host_name}.wwz"
 
-    unzip -l $wwz
+    # Only zip the first level of osh-runtime
+    pushd _tmp
+    zip -r $wwz_name osh-runtime/* shell-id/ host-id/
+    popd
+
+    local wwz_path=_tmp/$wwz_name
+    unzip -l $wwz_path
 
     local subdir
     if test -n "$FLAG_subdir"; then
       subdir=$FLAG_subdir
     else
-      subdir="git-${XSHAR_GIT_COMMIT:-unknown}"
+      if test -n "${XSHAR_GIT_COMMIT:-}"; then
+        local suffix=${XSHAR_GIT_COMMIT:0:8}  # like benchmarks/id.sh
+        subdir="git-$suffix"
+      else
+        subdir=unknown
+      fi
     fi
 
     curl --verbose \
       --form "payload-type=osh-runtime" \
       --form "subdir=$subdir" \
-      --form "wwz=@_tmp/osh-runtime.wwz" \
+      --form "wwz=@$wwz_path" \
       $FLAG_url
   fi
 
