@@ -213,7 +213,7 @@ osh-runtime() {
   host_name=$(hostname)
 
   benchmarks/osh-runtime.sh test-oils-run $osh $job_id $host_name \
-    $FLAG_num_shells $FLAG_num_workloads $FLAG_num_iters
+    $FLAG_num_iters $FLAG_num_shells $FLAG_num_workloads
 
   # /uuu/
   #   osh-runtime/
