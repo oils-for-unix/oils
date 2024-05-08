@@ -12,11 +12,11 @@
 #     syn keyword kw Input Expect Width
 #     syn match punct '^>'
 #     syn match punct ' >'
-#     hi def link section Constant
-#     hi def link punct   Statement
-#     hi def link kw      PreProc
+#     hi def link section Comment
+#     hi def link punct   Delimiter
+#     hi def link kw      Keyword
 # (Place in ~/.config/nvim/syntax/pretty_tests.vim,
-#  then enable with :set syntax=pretty_tests.vim)
+#  then enable with :set syntax=pretty_tests)
 
 ## Primitives
 
@@ -69,12 +69,19 @@ Input  > [100, 200, 300]
 Width  > 20
 Expect > [100, 200, 300]
 
+Width  > 12
+Expect
+> [
+>     100,
+>     200, 300
+> ]
+
 Width  > 10
 Expect
 > [
->   100,
->   200,
->   300
+>     100,
+>     200,
+>     300
 > ]
 
 Input  > [[100, 200, 300], [100, 200, 300]]
@@ -82,34 +89,33 @@ Input  > [[100, 200, 300], [100, 200, 300]]
 Width  > 20
 Expect
 > [
->   [100, 200, 300],
->   [100, 200, 300]
+>     [100, 200, 300],
+>     [100, 200, 300]
 > ]
 
-Width  > 17
+Width  > 19
 Expect
 > [
->   [
->     100,
->     200,
->     300
->   ],
->   [100, 200, 300]
+>     [
+>         100, 200,
+>         300
+>     ],
+>     [100, 200, 300]
 > ]
 
-Width  > 16
+Width  > 11
 Expect
 > [
->   [
->     100,
->     200,
->     300
->   ],
->   [
->     100,
->     200,
->     300
->   ]
+>     [
+>         100,
+>         200,
+>         300
+>     ],
+>     [
+>         100,
+>         200,
+>         300
+>     ]
 > ]
 
 ## Dictionaries
@@ -126,9 +132,9 @@ Expect > {x: 100, y: 200, z: 300}
 Width  > 23
 Expect
 > {
->   x: 100,
->   y: 200,
->   z: 300
+>     x: 100,
+>     y: 200,
+>     z: 300
 > }
 
 Input
@@ -137,37 +143,37 @@ Input
 >     "numbers": {"1": "one", "2": "two", "3": "three"}
 > }
 
-Width > 49
+Width > 51
 Expect
 > {
->   letters: {"1": "A", "2": "B", "3": "C"},
->   numbers: {"1": "one", "2": "two", "3": "three"}
+>     letters: {"1": "A", "2": "B", "3": "C"},
+>     numbers: {"1": "one", "2": "two", "3": "three"}
 > }
 
-Width > 42
+Width > 44
 Expect
 > {
->   letters: {"1": "A", "2": "B", "3": "C"},
->   numbers: {
->     "1": "one",
->     "2": "two",
->     "3": "three"
->   }
+>     letters: {"1": "A", "2": "B", "3": "C"},
+>     numbers: {
+>         "1": "one",
+>         "2": "two",
+>         "3": "three"
+>     }
 > }
 
-Width > 41
+Width > 43
 Expect
 > {
->   letters: {
->     "1": "A",
->     "2": "B",
->     "3": "C"
->   },
->   numbers: {
->     "1": "one",
->     "2": "two",
->     "3": "three"
->   }
+>     letters: {
+>         "1": "A",
+>         "2": "B",
+>         "3": "C"
+>     },
+>     numbers: {
+>         "1": "one",
+>         "2": "two",
+>         "3": "three"
+>     }
 > }
 
 ## Full width characters
@@ -180,9 +186,82 @@ Expect > ["世界", "您好"]
 Width  > 15
 Expect
 > [
->   "世界",
->   "您好"
+>     "世界",
+>     "您好"
 > ]
+
+## Tabular alignment
+
+Input  > ["aaaaaaa", "bbb", "ccccc"]
+
+Width  > 27
+Expect > ["aaaaaaa", "bbb", "ccccc"]
+
+Width > 26
+Expect
+> [
+>     "aaaaaaa", "bbb",
+>     "ccccc"
+> ]
+
+Width > 21
+Expect
+> [
+>     "aaaaaaa", "bbb",
+>     "ccccc"
+> ]
+
+Width > 20
+Expect
+> [
+>     "aaaaaaa",
+>     "bbb",
+>     "ccccc"
+> ]
+
+Input  > ["aaa", "bbbbbbb", "ccccc"]
+
+Width  > 27
+Expect > ["aaa", "bbbbbbb", "ccccc"]
+
+Width  > 26
+Expect
+> [
+>     "aaa",     "bbbbbbb",
+>     "ccccc"
+> ]
+
+Input  > ["aaaaa", "bbbbbbb", "ccc"]
+
+Width  > 27
+Expect > ["aaaaa", "bbbbbbb", "ccc"]
+
+Width  > 26
+Expect
+> [
+>     "aaaaa",   "bbbbbbb",
+>     "ccc"
+> ]
+
+Input  > { "simple_primitives": [null, false, true] }
+Width  > 30
+Expect
+> {
+>     simple_primitives: [
+>         null, false, true
+>     ]
+> }
+
+# elements are too big for tabular alignment
+Input > ["aaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbb", "cccccccccccccccccccc"]
+Width > 30
+Expect
+> [
+>     "aaaaaaaaaaaaaaaaaaa",
+>     "bbbbbbbbbbbbbbbbbbbbb",
+>     "cccccccccccccccccccc"
+> ]
+
 
 ## Everything at once
 
@@ -205,184 +284,173 @@ Input
 >     ]
 > }
 
-Width > 54
+Width > 58
 Expect
 > {
->   primitives: {
->     simple_primitives: [null, false, true],
->     numeric_primitives: [-123456789, 123.456789],
->     stringy_primitives: "string"
->   },
->   compounds: [[1, 2, 3], {dict: "ionary"}],
->   "variety-pack": [
->     null,
->     ["Los", "pollitos", "dicen", "pío", "pío", "pío"],
->     [1, [2, [3, [4, [5, [6]]]]]],
->     [[[[[5], 4], 3], 2], 1]
->   ]
-> }
-
-Width > 49
-Expect
-> {
->   primitives: {
->     simple_primitives: [null, false, true],
->     numeric_primitives: [-123456789, 123.456789],
->     stringy_primitives: "string"
->   },
->   compounds: [[1, 2, 3], {dict: "ionary"}],
->   "variety-pack": [
->     null,
->     [
->       "Los",
->       "pollitos",
->       "dicen",
->       "pío",
->       "pío",
->       "pío"
->     ],
->     [1, [2, [3, [4, [5, [6]]]]]],
->     [[[[[5], 4], 3], 2], 1]
->   ]
-> }
-
-Width > 43
-Expect
-> {
->   primitives: {
->     simple_primitives: [null, false, true],
->     numeric_primitives: [
->       -123456789,
->       123.456789
->     ],
->     stringy_primitives: "string"
->   },
->   compounds: [[1, 2, 3], {dict: "ionary"}],
->   "variety-pack": [
->     null,
->     [
->       "Los",
->       "pollitos",
->       "dicen",
->       "pío",
->       "pío",
->       "pío"
->     ],
->     [1, [2, [3, [4, [5, [6]]]]]],
->     [[[[[5], 4], 3], 2], 1]
->   ]
-> }
-
-Width > 33
-Expect
-> {
->   primitives: {
->     simple_primitives: [
->       null,
->       false,
->       true
->     ],
->     numeric_primitives: [
->       -123456789,
->       123.456789
->     ],
->     stringy_primitives: "string"
->   },
->   compounds: [
->     [1, 2, 3],
->     {dict: "ionary"}
->   ],
->   "variety-pack": [
->     null,
->     [
->       "Los",
->       "pollitos",
->       "dicen",
->       "pío",
->       "pío",
->       "pío"
->     ],
->     [1, [2, [3, [4, [5, [6]]]]]],
->     [[[[[5], 4], 3], 2], 1]
->   ]
-> }
-
-Width > 32
-Expect
-> {
->   primitives: {
->     simple_primitives: [
->       null,
->       false,
->       true
->     ],
->     numeric_primitives: [
->       -123456789,
->       123.456789
->     ],
->     stringy_primitives: "string"
->   },
->   compounds: [
->     [1, 2, 3],
->     {dict: "ionary"}
->   ],
->   "variety-pack": [
->     null,
->     [
->       "Los",
->       "pollitos",
->       "dicen",
->       "pío",
->       "pío",
->       "pío"
->     ],
->     [
->       1,
->       [2, [3, [4, [5, [6]]]]]
->     ],
->     [[[[[5], 4], 3], 2], 1]
->   ]
-> }
-
-Width > 26
-Expect
-> {
->   primitives: {
->     simple_primitives: [
->       null,
->       false,
->       true
->     ],
->     numeric_primitives: [
->       -123456789,
->       123.456789
->     ],
->     stringy_primitives: "string"
->   },
->   compounds: [
->     [1, 2, 3],
->     {dict: "ionary"}
->   ],
->   "variety-pack": [
->     null,
->     [
->       "Los",
->       "pollitos",
->       "dicen",
->       "pío",
->       "pío",
->       "pío"
->     ],
->     [
->       1,
->       [
->         2,
->         [3, [4, [5, [6]]]]
->       ]
->     ],
->     [
->       [[[[5], 4], 3], 2],
->       1
+>     primitives: {
+>         simple_primitives: [null, false, true],
+>         numeric_primitives: [-123456789, 123.456789],
+>         stringy_primitives: "string"
+>     },
+>     compounds: [[1, 2, 3], {dict: "ionary"}],
+>     "variety-pack": [
+>         null,
+>         ["Los", "pollitos", "dicen", "pío", "pío", "pío"],
+>         [1, [2, [3, [4, [5, [6]]]]]],
+>         [[[[[5], 4], 3], 2], 1]
 >     ]
->   ]
+> }
+
+Width > 53
+Expect
+> {
+>     primitives: {
+>         simple_primitives: [null, false, true],
+>         numeric_primitives: [-123456789, 123.456789],
+>         stringy_primitives: "string"
+>     },
+>     compounds: [[1, 2, 3], {dict: "ionary"}],
+>     "variety-pack": [
+>         null,
+>         [
+>             "Los",      "pollitos", "dicen",
+>             "pío",      "pío",      "pío"
+>         ],
+>         [1, [2, [3, [4, [5, [6]]]]]],
+>         [[[[[5], 4], 3], 2], 1]
+>     ]
+> }
+
+Width > 47
+Expect
+> {
+>     primitives: {
+>         simple_primitives: [null, false, true],
+>         numeric_primitives: [
+>             -123456789, 123.456789
+>         ],
+>         stringy_primitives: "string"
+>     },
+>     compounds: [[1, 2, 3], {dict: "ionary"}],
+>     "variety-pack": [
+>         null,
+>         [
+>             "Los",      "pollitos", "dicen",
+>             "pío",      "pío",      "pío"
+>         ],
+>         [1, [2, [3, [4, [5, [6]]]]]],
+>         [[[[[5], 4], 3], 2], 1]
+>     ]
+> }
+
+Width > 37
+Expect
+> {
+>     primitives: {
+>         simple_primitives: [
+>             null, false, true
+>         ],
+>         numeric_primitives: [
+>             -123456789, 123.456789
+>         ],
+>         stringy_primitives: "string"
+>     },
+>     compounds: [
+>         [1, 2, 3],
+>         {dict: "ionary"}
+>     ],
+>     "variety-pack": [
+>         null,
+>         [
+>             "Los",      "pollitos",
+>             "dicen",    "pío",
+>             "pío",      "pío"
+>         ],
+>         [1, [2, [3, [4, [5, [6]]]]]],
+>         [[[[[5], 4], 3], 2], 1]
+>     ]
+> }
+
+Width > 36
+Expect
+> {
+>     primitives: {
+>         simple_primitives: [
+>             null, false, true
+>         ],
+>         numeric_primitives: [
+>             -123456789, 123.456789
+>         ],
+>         stringy_primitives: "string"
+>     },
+>     compounds: [
+>         [1, 2, 3],
+>         {dict: "ionary"}
+>     ],
+>     "variety-pack": [
+>         null,
+>         [
+>             "Los",      "pollitos",
+>             "dicen",    "pío",
+>             "pío",      "pío"
+>         ],
+>         [
+>             1,
+>             [2, [3, [4, [5, [6]]]]]
+>         ],
+>         [[[[[5], 4], 3], 2], 1]
+>     ]
+> }
+
+Width > 30
+Expect
+> {
+>     primitives: {
+>         simple_primitives: [
+>             null, false, true
+>         ],
+>         numeric_primitives: [
+>             -123456789,
+>             123.456789
+>         ],
+>         stringy_primitives: "string"
+>     },
+>     compounds: [
+>         [1, 2, 3],
+>         {dict: "ionary"}
+>     ],
+>     "variety-pack": [
+>         null,
+>         [
+>             "Los",
+>             "pollitos",
+>             "dicen",    "pío",
+>             "pío",      "pío"
+>         ],
+>         [
+>             1,
+>             [
+>                 2,
+>                 [
+>                     3,
+>                     [
+>                         4,
+>                         [
+>                             5,
+>                             [
+>                                 6
+>                             ]
+>                         ]
+>                     ]
+>                 ]
+>             ]
+>         ],
+>         [
+>             [
+>                 [[[5], 4], 3],
+>                 2
+>             ],
+>             1
+>         ]
+>     ]
 > }

@@ -26,7 +26,6 @@ class PrettyTest(unittest.TestCase):
     def setUpClass(cls):
         # Use settings that make testing easier.
         cls.printer = pretty.PrettyPrinter()
-        cls.printer.SetIndent(2)
         cls.printer.SetUseStyles(False)
         cls.printer.SetShowTypePrefix(False)
 
