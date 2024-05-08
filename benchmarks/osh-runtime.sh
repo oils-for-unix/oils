@@ -467,12 +467,6 @@ test-oils-run() {
     | run-tasks-wrapper $host_name $raw_out_dir
   echo
 
-  local wwz=_tmp/osh-runtime.wwz 
-  zip -r $wwz $BASE_DIR/* _tmp/{shell,host}-id
-
-  unzip -l $wwz
-  echo
-
   # Note: 'stage1' in soil-run is a trivial concatenation, so we can create input for
   # benchmarks/report.R.  We don't need that here
 }

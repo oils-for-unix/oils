@@ -211,6 +211,19 @@ osh-runtime() {
 
   if test -n "$FLAG_upload"; then
 
+    local wwz=_tmp/osh-runtime.wwz 
+
+    if ! command -v zip >/dev/null; then
+      echo "$0: zip command not found.  It's needed to upload benchmark results."
+      # For now, don't return 1, because the CI will fail
+      return 1
+    fi
+
+    # Only zip the first level of osh-runtime
+    zip -r $wwz _tmp/osh-runtime/* _tmp/{shell,host}-id
+
+    unzip -l $wwz
+
     local subdir
     if test -n "$FLAG_subdir"; then
       subdir=$FLAG_subdir
