@@ -258,9 +258,10 @@ osh-runtime() {
 
     local wwz_name="${job_id}.${host_name}.wwz"
 
-    # Only zip the first level of osh-runtime
     pushd _tmp
-    zip -r $wwz_name osh-runtime/* shell-id/ host-id/
+    # Only zip metadata files in osh-runtime, so we don't serve untrusted stuff
+    zip -r $wwz_name \
+      osh-runtime/*.txt osh-runtime/raw/*.tsv shell-id/ host-id/
     popd
 
     local wwz_path=_tmp/$wwz_name
