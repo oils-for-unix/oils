@@ -82,7 +82,6 @@ create() {
   local tar=_tmp/$name.tar.gz
 
   # Need --files-from because we can run out of ARGV!
-
   tar --create --gzip --files-from $manifest --file $tar "$main"
   ls -l $tar
 
@@ -131,9 +130,9 @@ EOF
   echo 'benchmarks/gc_stats_to_tsv.py'
   echo 'devtools/tsv_concat.py'
 
-  find testdata/osh-runtime
+  find testdata/osh-runtime -type f
 
-  find Python-2.7.13/
+  find Python-2.7.13/ -type f
 }
 
 create-test-oils() {

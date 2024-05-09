@@ -39,10 +39,6 @@ ysh-version-text() {
   maybe-show /etc/lsb-release
 }
 
-tea-version-text() {
-  ysh-version-text
-}
-
 # TODO: Refactor this so you get the shells
 # test/sh_spec.py --shells
 # And then do 'bash dash mksh zsh ash' IF they exist?

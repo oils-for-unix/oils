@@ -13,7 +13,6 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source benchmarks/common.sh  # tsv-concat
 source benchmarks/id.sh  # print-job-id
-source soil/common.sh  # find-dir-html
 source test/common.sh
 source test/tsv-lib.sh  # tsv-row
 
@@ -369,6 +368,8 @@ Source code: [benchmarks/osh-runtime.sh](https://github.com/oilshell/oil/tree/ma
 - [More Details](#more-details)
 - [Shell and Host](#shell-and-host)
 
+[Raw files](-wwz-index)
+
 <a name="elapsed-time" />
 
 ### Elapsed Time by Shell (milliseconds)
@@ -424,16 +425,8 @@ EOF
   tsv2html $in_dir/shells.tsv
   tsv2html $in_dir/hosts.tsv
 
-  # Only show files.html link on a single machine
-  if test -f $(dirname $in_dir)/files.html; then
-    cmark <<'EOF'
----
+  cmark <<'EOF'
 
-[raw files](files.html)
-EOF
-  fi
-
-  cat <<EOF
   </body>
 </html>
 EOF
@@ -447,7 +440,7 @@ test-oils-run() {
   local num_shells=${3:-1}
   local num_workloads=${4:-1}
 
-  local time_py=$XSHAR_DIR/benchmarks/time_.py
+  local time_py=${XSHAR_DIR:-$REPO_ROOT}/benchmarks/time_.py
   $time_py --tsv --rusage -- \
     $osh -c 'echo "smoke test: hi from benchmarks/osh-runtime.sh"'
 
@@ -456,6 +449,9 @@ test-oils-run() {
 
   local job_id
   job_id=$(print-job-id)
+
+  # Fresh build
+  rm -r -f -v $BASE_DIR _tmp/{shell,host}-id
 
   # Write _tmp/provenance.* and _tmp/{host,shell}-id
   shell-provenance-2 \
@@ -469,6 +465,7 @@ test-oils-run() {
   # Similar to 'measure', for soil-run and release
   print-tasks-xshar $host_name $osh $num_iters $num_shells $num_workloads \
     | run-tasks-wrapper $host_name $raw_out_dir
+  echo
 
   # Note: 'stage1' in soil-run is a trivial concatenation, so we can create input for
   # benchmarks/report.R.  We don't need that here
@@ -508,9 +505,6 @@ soil-run() {
   stage1 '' $single_machine
 
   benchmarks/report.sh stage2 $BASE_DIR
-
-  # Make _tmp/osh-parser/files.html, so index.html can potentially link to it
-  find-dir-html _tmp/osh-runtime files
 
   benchmarks/report.sh stage3 $BASE_DIR
 }

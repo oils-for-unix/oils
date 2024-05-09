@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## tags: dev-minimal
 
 #### usage errors
@@ -576,26 +576,31 @@ json write (c4)
 
 #### round trip: decode surrogate half and encode
 
-# TODO: Weird Python allows this to be decoded, but I think the Bjoern state
-# machine will not!
-
 shopt -s ysh:upgrade
 
 for j in '"\ud83e"' '"\udd26"' {
   var s = fromJson(j)
+  write -- "$j"
   pp line (s)
 
-  # TODO: modify DFA to return the code point in the surrogate range, and
-  # print it in JSON mode
-  # j8 mode could possibly use byte strings
-  json write (s)
+  write -n 'json ';  json write (s)
+
+  write -n 'json8 '; json8 write (s)
+
+  echo
 }
 
 ## STDOUT:
-(Str)   b'\ya0\ybe'
 "\ud83e"
-(Str)   b'\yb4\ya6'
+(Str)   b'\yed\ya0\ybe'
+json "\ud83e"
+json8 b'\yed\ya0\ybe'
+
 "\udd26"
+(Str)   b'\yed\yb4\ya6'
+json "\udd26"
+json8 b'\yed\yb4\ya6'
+
 ## END
 
 #### toJson() toJson8()

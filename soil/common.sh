@@ -50,28 +50,6 @@ table-sort-html-head() {
     "$web_base_url/table/table-sort.css?cache=0" "$web_base_url/table/table-sort.js?cache=0" 
 }
 
-# Used by mycpp/build.sh and benchmarks/auto.sh
-find-dir-html() {
-  local dir=$1
-  local out_name=${2:-index}
-
-  #local txt=$dir/$out_name.txt
-  #find $dir -type f | sort > $txt
-  #echo "Wrote $txt"
-
-  local html=$dir/$out_name.html
-
-  # Note: no HTML escaping.  Would be nice for Oil.
-  find $dir -type f | sort | gawk -v dir="$dir" '
-  match($0, dir "/(.*)", m) {
-    url = m[1]
-    printf("<a href=\"%s\">%s</a> <br/>\n", url, url)
-  }
-  ' > $html
-
-  log "Wrote $html"
-}
-
 git-commit-dir() {
   local prefix=$1
 

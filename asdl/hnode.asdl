@@ -24,7 +24,7 @@ module hnode {
     # to mycpp classes
   | External(any obj)
 
-  # TYG8 pretty-printing -- see doc/pretty-printing.md
+  # NIL8 pretty-printing -- see doc/pretty-printing.md
 
   # Idea for bit flags for CreateNull().  NOT part of pretty printing / hnode.
   # We just use a single param alloc_lists=True now

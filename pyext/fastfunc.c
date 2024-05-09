@@ -7,7 +7,7 @@
 
 #include "data_lang/j8.h"  // CanOmitQuotes
 #include "data_lang/j8_libc.h"
-#include "data_lang/utf8_impls/bjoern_dfa.h"
+#include "data_lang/utf8.h"
 
 #include <Python.h>
 
@@ -67,20 +67,17 @@ func_PartIsUtf8(PyObject *self, PyObject *args) {
   assert(0 <= start);
   assert(end <= in.len);
 
-  uint32_t codepoint;
-  uint32_t state = UTF8_ACCEPT;
-
-  for (int i = start; i < end; ++i) {
-    // This var or a static_cast<> is necessary.  Should really change BigStr*
-    // to use unsigned type
-    unsigned char c = in.data[i];
-    decode(&state, &codepoint, c);
-    if (state == UTF8_REJECT) {
+  Utf8Result_t result;
+  for (int i = start; i < end;) {
+    utf8_decode(in.data + i, &result);
+    if (result.error) {
       return PyBool_FromLong(0);
     }
+
+    i += result.bytes_read;
   }
 
-  return PyBool_FromLong(state == UTF8_ACCEPT);
+  return PyBool_FromLong(1);
 }
 
 static PyObject *

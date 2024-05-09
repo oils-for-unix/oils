@@ -84,7 +84,7 @@ from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
 from mycpp import mylib
-from mycpp.mylib import log, switch, tagswitch
+from mycpp.mylib import log, probe, switch, tagswitch
 from ysh import expr_eval
 from ysh import func_proc
 from ysh import val_ops
@@ -831,6 +831,7 @@ class CommandEvaluator(object):
 
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
+        probe('cmd_eval', '_DoSimple_enter')
         cmd_st.check_errexit = True
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
@@ -891,6 +892,7 @@ class CommandEvaluator(object):
         else:
             status = self._RunSimpleCommand(cmd_val, cmd_st, run_flags)
 
+        probe('cmd_eval', '_DoSimple_exit', status)
         return status
 
     def _DoExpandedAlias(self, node):
@@ -1487,6 +1489,7 @@ class CommandEvaluator(object):
         # If we call RunCommandSub in a recursive call to the executor, this will
         # be set true (if strict_errexit is false).  But it only lasts for one
         # command.
+        probe('cmd_eval', '_Dispatch', node.tag())
         self.check_command_sub_status = False
 
         UP_node = node

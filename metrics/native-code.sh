@@ -106,14 +106,6 @@ collect-and-report() {
   else
     echo 'R not detected' | tee $base_dir/overview.txt
   fi
-
-  # For CI
-  cat >$base_dir/index.html <<'EOF'
-<a href="overview.txt">overview.txt</a> <br/>
-<a href="compileunits.tsv">compileunits.tsv</a> <br/>
-<a href="symbols.tsv">symbols.tsv</a> <br/>
-<a href="symbols.txt">symbols.txt</a> <br/>
-EOF
 }
 
 oils-for-unix() {

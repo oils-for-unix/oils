@@ -12,7 +12,9 @@ YSH=${YSH:-'bin/ysh'}
 # For xargs -P in spec-runner.sh, wild-runner.sh.
 # If we have 2 cores or less (as on CI machines), use them all.  Otherwise save
 # 1 for multitasking.
-nproc=$(nproc)
+
+# Portability e.g. OS X - assume 1 processor when nproc not available
+nproc=$(nproc 2>/dev/null || echo 1)
 MAX_PROCS=${MAX_PROCS:-"$(( nproc <= 2 ? nproc : nproc - 1 ))"}
 
 # Like PYTHONPATH, but for running R scripts

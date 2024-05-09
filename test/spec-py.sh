@@ -72,11 +72,6 @@ ysh-stdlib-regress() {
   test/spec.sh ysh-stdlib --ovm-bin-dir $REPO_ROOT/_bin "$@"
 }
 
-tea-all() {
-  # $suite $compare_mode $spec_subdir
-  test/spec-runner.sh all-parallel tea compare-py tea
-}
-
 osh-minimal() {
   ### Some tests that work on the minimal build.  Run by Soil.
 
@@ -91,7 +86,6 @@ osh-minimal() {
 
 osh-all-serial() { MAX_PROCS=1 $0 osh-all "$@"; }
 ysh-all-serial() { MAX_PROCS=1 $0 ysh-all "$@"; }
-tea-all-serial() { MAX_PROCS=1 $0 tea-all "$@"; }
 osh-minimal-serial() { MAX_PROCS=1 $0 osh-minimal "$@"; }
 
 interactive-osh() {

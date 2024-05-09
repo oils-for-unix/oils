@@ -54,70 +54,72 @@ GLOBAL_STR(str45, "\u001b[31m");
 GLOBAL_STR(str46, "\u001b[32m");
 GLOBAL_STR(str47, "\u001b[33m");
 GLOBAL_STR(str48, "\u001b[34m");
-GLOBAL_STR(str49, "&");
-GLOBAL_STR(str50, "&amp;");
-GLOBAL_STR(str51, "<");
-GLOBAL_STR(str52, "&lt;");
-GLOBAL_STR(str53, ">");
-GLOBAL_STR(str54, "&gt;");
-GLOBAL_STR(str55, "<%s %r>");
-GLOBAL_STR(str56, "status");
-GLOBAL_STR(str57, "message");
-GLOBAL_STR(str58, "%s, got %s");
-GLOBAL_STR(str59, " (pos %d-%d: %r)");
-GLOBAL_STR(str60, "-");
-GLOBAL_STR(str61, "_");
-GLOBAL_STR(str62, "<_Attributes %s>");
-GLOBAL_STR(str63, "<args.Reader %r %d>");
-GLOBAL_STR(str64, "expected argument to %r");
-GLOBAL_STR(str65, "-");
-GLOBAL_STR(str66, "expected integer after %s, got %r");
+GLOBAL_STR(str49, "\u001b[35m");
+GLOBAL_STR(str50, "\u001b[36m");
+GLOBAL_STR(str51, "&");
+GLOBAL_STR(str52, "&amp;");
+GLOBAL_STR(str53, "<");
+GLOBAL_STR(str54, "&lt;");
+GLOBAL_STR(str55, ">");
+GLOBAL_STR(str56, "&gt;");
+GLOBAL_STR(str57, "<%s %r>");
+GLOBAL_STR(str58, "status");
+GLOBAL_STR(str59, "message");
+GLOBAL_STR(str60, "%s, got %s");
+GLOBAL_STR(str61, " (line %d, offset %d-%d: %r)");
+GLOBAL_STR(str62, "-");
+GLOBAL_STR(str63, "_");
+GLOBAL_STR(str64, "<_Attributes %s>");
+GLOBAL_STR(str65, "<args.Reader %r %d>");
+GLOBAL_STR(str66, "expected argument to %r");
 GLOBAL_STR(str67, "-");
-GLOBAL_STR(str68, "got invalid integer for %s: %s");
+GLOBAL_STR(str68, "expected integer after %s, got %r");
 GLOBAL_STR(str69, "-");
-GLOBAL_STR(str70, "expected number after %r, got %r");
+GLOBAL_STR(str70, "got invalid integer for %s: %s");
 GLOBAL_STR(str71, "-");
-GLOBAL_STR(str72, "got invalid float for %s: %s");
+GLOBAL_STR(str72, "expected number after %r, got %r");
 GLOBAL_STR(str73, "-");
-GLOBAL_STR(str74, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str74, "got invalid float for %s: %s");
 GLOBAL_STR(str75, "-");
-GLOBAL_STR(str76, "|");
-GLOBAL_STR(str77, "0");
-GLOBAL_STR(str78, "F");
-GLOBAL_STR(str79, "false");
-GLOBAL_STR(str80, "False");
-GLOBAL_STR(str81, "1");
-GLOBAL_STR(str82, "T");
-GLOBAL_STR(str83, "true");
-GLOBAL_STR(str84, "Talse");
-GLOBAL_STR(str85, "got invalid argument to boolean flag: %r");
-GLOBAL_STR(str86, "-");
-GLOBAL_STR(str87, "-");
-GLOBAL_STR(str88, "Invalid option %r");
-GLOBAL_STR(str89, "Expected argument for action");
-GLOBAL_STR(str90, "Invalid action name %r");
-GLOBAL_STR(str91, "--");
-GLOBAL_STR(str92, "--");
-GLOBAL_STR(str93, "=");
-GLOBAL_STR(str94, "got invalid flag %r");
-GLOBAL_STR(str95, "-");
-GLOBAL_STR(str96, "0");
-GLOBAL_STR(str97, "Z");
-GLOBAL_STR(str98, "-");
-GLOBAL_STR(str99, "doesn't accept flag %s");
+GLOBAL_STR(str76, "got invalid argument %r to %r, expected one of: %s");
+GLOBAL_STR(str77, "-");
+GLOBAL_STR(str78, "|");
+GLOBAL_STR(str79, "0");
+GLOBAL_STR(str80, "F");
+GLOBAL_STR(str81, "false");
+GLOBAL_STR(str82, "False");
+GLOBAL_STR(str83, "1");
+GLOBAL_STR(str84, "T");
+GLOBAL_STR(str85, "true");
+GLOBAL_STR(str86, "Talse");
+GLOBAL_STR(str87, "got invalid argument to boolean flag: %r");
+GLOBAL_STR(str88, "-");
+GLOBAL_STR(str89, "-");
+GLOBAL_STR(str90, "Invalid option %r");
+GLOBAL_STR(str91, "Expected argument for action");
+GLOBAL_STR(str92, "Invalid action name %r");
+GLOBAL_STR(str93, "--");
+GLOBAL_STR(str94, "--");
+GLOBAL_STR(str95, "=");
+GLOBAL_STR(str96, "got invalid flag %r");
+GLOBAL_STR(str97, "-");
+GLOBAL_STR(str98, "0");
+GLOBAL_STR(str99, "Z");
 GLOBAL_STR(str100, "-");
-GLOBAL_STR(str101, "+");
-GLOBAL_STR(str102, "+");
-GLOBAL_STR(str103, "doesn't accept option %s");
+GLOBAL_STR(str101, "doesn't accept flag %s");
+GLOBAL_STR(str102, "-");
+GLOBAL_STR(str103, "+");
 GLOBAL_STR(str104, "+");
-GLOBAL_STR(str105, "-");
-GLOBAL_STR(str106, "--");
-GLOBAL_STR(str107, "--");
-GLOBAL_STR(str108, "got invalid flag %r");
-GLOBAL_STR(str109, "-");
-GLOBAL_STR(str110, "+");
-GLOBAL_STR(str111, "got invalid flag %r");
-GLOBAL_STR(str112, "-");
+GLOBAL_STR(str105, "doesn't accept option %s");
+GLOBAL_STR(str106, "+");
+GLOBAL_STR(str107, "-");
+GLOBAL_STR(str108, "--");
+GLOBAL_STR(str109, "--");
+GLOBAL_STR(str110, "got invalid flag %r");
+GLOBAL_STR(str111, "-");
+GLOBAL_STR(str112, "+");
+GLOBAL_STR(str113, "got invalid flag %r");
+GLOBAL_STR(str114, "-");
 
 namespace ansi {  // forward declare
 
@@ -155,6 +157,11 @@ namespace error {  // forward declare
 
 }  // forward declare namespace error
 
+namespace num {  // forward declare
+
+
+}  // forward declare namespace num
+
 namespace ansi {  // declare
 
 extern BigStr* RESET;
@@ -165,6 +172,8 @@ extern BigStr* RED;
 extern BigStr* GREEN;
 extern BigStr* YELLOW;
 extern BigStr* BLUE;
+extern BigStr* MAGENTA;
+extern BigStr* CYAN;
 
 
 }  // declare namespace ansi
@@ -414,13 +423,14 @@ class Runtime {
 
 class Decode {
  public:
-  Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos);
+  Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos, int line_num);
   BigStr* Message();
   BigStr* __str__();
   BigStr* msg;
   BigStr* s;
   int start_pos;
   int end_pos;
+  int line_num;
 
   static constexpr ObjHeader obj_header() {
     return ObjHeader::ClassScanned(2, sizeof(Decode));
@@ -450,6 +460,19 @@ class Encode {
 
 
 }  // declare namespace error
+
+namespace num {  // declare
+
+value::Int* ToBig(int i);
+mops::BigInt Exponent(mops::BigInt x, mops::BigInt y);
+int Exponent2(int x, int y);
+mops::BigInt IntDivide(mops::BigInt x, mops::BigInt y);
+int IntDivide2(int x, int y);
+mops::BigInt IntRemainder(mops::BigInt x, mops::BigInt y);
+int IntRemainder2(int x, int y);
+
+
+}  // declare namespace num
 
 namespace runtime {  // define
 
@@ -553,7 +576,10 @@ int ColorOutput::NumChars() {
 }
 
 Tuple2<BigStr*, int> ColorOutput::GetRaw() {
-  mylib::BufWriter* f = static_cast<mylib::BufWriter*>(this->f);
+  mylib::BufWriter* f = nullptr;
+  StackRoot _root0(&f);
+
+  f = static_cast<mylib::BufWriter*>(this->f);
   return Tuple2<BigStr*, int>(f->getvalue(), this->num_chars);
 }
 
@@ -1053,6 +1079,8 @@ BigStr* RED = str45;
 BigStr* GREEN = str46;
 BigStr* YELLOW = str47;
 BigStr* BLUE = str48;
+BigStr* MAGENTA = str49;
+BigStr* CYAN = str50;
 
 }  // define namespace ansi
 
@@ -1062,9 +1090,9 @@ namespace cgi {  // define
 BigStr* escape(BigStr* s) {
   StackRoot _root0(&s);
 
-  s = s->replace(str49, str50);
   s = s->replace(str51, str52);
   s = s->replace(str53, str54);
+  s = s->replace(str55, str56);
   return s;
 }
 
@@ -1179,8 +1207,8 @@ value::Dict* Structured::ToDict() {
   if (this->properties == nullptr) {
     this->properties = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
   }
-  this->properties->set(str56, Alloc<value::Int>(this->ExitStatus()));
-  this->properties->set(str57, Alloc<value::Str>(this->msg));
+  this->properties->set(str58, num::ToBig(this->ExitStatus()));
+  this->properties->set(str59, Alloc<value::Str>(this->msg));
   return Alloc<value::Dict>(this->properties);
 }
 
@@ -1201,11 +1229,12 @@ BigStr* Runtime::UserErrorString() {
   return this->msg;
 }
 
-Decode::Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos) {
+Decode::Decode(BigStr* msg, BigStr* s, int start_pos, int end_pos, int line_num) {
   this->msg = msg;
   this->s = s;
   this->start_pos = start_pos;
   this->end_pos = end_pos;
+  this->line_num = line_num;
 }
 
 BigStr* Decode::Message() {
@@ -1217,7 +1246,7 @@ BigStr* Decode::Message() {
   start = max(0, (this->start_pos - 4));
   end = min(len(this->s), (this->end_pos + 4));
   part = this->s->slice(start, end);
-  return str_concat(this->msg, StrFormat(" (pos %d-%d: %r)", this->start_pos, this->end_pos, part));
+  return str_concat(this->msg, StrFormat(" (line %d, offset %d-%d: %r)", this->line_num, this->start_pos, this->end_pos, part));
 }
 
 BigStr* Decode::__str__() {
@@ -1269,6 +1298,86 @@ BigStr* Encode::Message() {
 
 }  // define namespace error
 
+namespace num {  // define
+
+using value_asdl::value;
+
+value::Int* ToBig(int i) {
+  return Alloc<value::Int>(mops::IntWiden(i));
+}
+
+mops::BigInt Exponent(mops::BigInt x, mops::BigInt y) {
+  int y_int;
+  mops::BigInt result;
+  y_int = mops::BigTruncate(y);
+  result = mops::BigInt(1);
+  for (int i = 0; i < y_int; ++i) {
+    result = mops::Mul(result, x);
+  }
+  return result;
+}
+
+int Exponent2(int x, int y) {
+  return mops::BigTruncate(Exponent(mops::IntWiden(x), mops::IntWiden(y)));
+}
+
+mops::BigInt IntDivide(mops::BigInt x, mops::BigInt y) {
+  mops::BigInt ZERO;
+  int sign;
+  mops::BigInt ax;
+  mops::BigInt ay;
+  ZERO = mops::BigInt(0);
+  sign = 1;
+  if (mops::Greater(ZERO, x)) {
+    ax = mops::Negate(x);
+    sign = -1;
+  }
+  else {
+    ax = x;
+  }
+  if (mops::Greater(ZERO, y)) {
+    ay = mops::Negate(y);
+    sign = -sign;
+  }
+  else {
+    ay = y;
+  }
+  return mops::Mul(mops::IntWiden(sign), mops::Div(ax, ay));
+}
+
+int IntDivide2(int x, int y) {
+  return mops::BigTruncate(IntDivide(mops::IntWiden(x), mops::IntWiden(y)));
+}
+
+mops::BigInt IntRemainder(mops::BigInt x, mops::BigInt y) {
+  mops::BigInt ZERO;
+  mops::BigInt ax;
+  int sign;
+  mops::BigInt ay;
+  ZERO = mops::BigInt(0);
+  if (mops::Greater(ZERO, x)) {
+    ax = mops::Negate(x);
+    sign = -1;
+  }
+  else {
+    ax = x;
+    sign = 1;
+  }
+  if (mops::Greater(ZERO, y)) {
+    ay = mops::Negate(y);
+  }
+  else {
+    ay = y;
+  }
+  return mops::Mul(mops::IntWiden(sign), mops::Rem(ax, ay));
+}
+
+int IntRemainder2(int x, int y) {
+  return mops::BigTruncate(IntRemainder(mops::IntWiden(x), mops::IntWiden(y)));
+}
+
+}  // define namespace num
+
 namespace args {  // define
 
 using syntax_asdl::loc;
@@ -1307,7 +1416,7 @@ void _Attributes::Set(BigStr* name, value_asdl::value_t* val) {
   StackRoot _root0(&name);
   StackRoot _root1(&val);
 
-  name = name->replace(str60, str61);
+  name = name->replace(str62, str63);
   this->attrs->set(name, val);
 }
 
@@ -1452,7 +1561,7 @@ bool _ArgAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attri
     arg_r->Next();
     arg = arg_r->Peek();
     if (arg == nullptr) {
-      e_usage(StrFormat("expected argument to %r", str_concat(str65, this->name)), arg_r->Location());
+      e_usage(StrFormat("expected argument to %r", str_concat(str67, this->name)), arg_r->Location());
     }
   }
   val = this->_Value(arg, arg_r->Location());
@@ -1464,18 +1573,18 @@ SetToInt::SetToInt(BigStr* name) : _ArgAction(name, false, nullptr) {
 }
 
 value_asdl::value_t* SetToInt::_Value(BigStr* arg, syntax_asdl::loc_t* location) {
-  int i;
+  mops::BigInt i;
   StackRoot _root0(&arg);
   StackRoot _root1(&location);
 
   try {
-    i = to_int(arg);
+    i = mops::FromStr(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str67, this->name), arg), location);
+    e_usage(StrFormat("expected integer after %s, got %r", str_concat(str69, this->name), arg), location);
   }
-  if (i < 0) {
-    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str69, this->name), arg), location);
+  if (mops::Greater(mops::BigInt(0), i)) {
+    e_usage(StrFormat("got invalid integer for %s: %s", str_concat(str71, this->name), arg), location);
   }
   return Alloc<value::Int>(i);
 }
@@ -1492,10 +1601,10 @@ value_asdl::value_t* SetToFloat::_Value(BigStr* arg, syntax_asdl::loc_t* locatio
     f = to_float(arg);
   }
   catch (ValueError*) {
-    e_usage(StrFormat("expected number after %r, got %r", str_concat(str71, this->name), arg), location);
+    e_usage(StrFormat("expected number after %r, got %r", str_concat(str73, this->name), arg), location);
   }
   if (f < 0) {
-    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str73, this->name), arg), location);
+    e_usage(StrFormat("got invalid float for %s: %s", str_concat(str75, this->name), arg), location);
   }
   return Alloc<value::Float>(f);
 }
@@ -1508,7 +1617,7 @@ value_asdl::value_t* SetToString::_Value(BigStr* arg, syntax_asdl::loc_t* locati
   StackRoot _root1(&location);
 
   if ((this->valid != nullptr and !list_contains(this->valid, arg))) {
-    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str75, this->name), str76->join(this->valid)), location);
+    e_usage(StrFormat("got invalid argument %r to %r, expected one of: %s", arg, str_concat(str77, this->name), str78->join(this->valid)), location);
   }
   return Alloc<value::Str>(arg);
 }
@@ -1524,11 +1633,11 @@ bool SetAttachedBool::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_
   StackRoot _root2(&out);
 
   if (attached_arg != nullptr) {
-    if ((str_equals(attached_arg, str77) || str_equals(attached_arg, str78) || str_equals(attached_arg, str79) || str_equals(attached_arg, str80))) {
+    if ((str_equals(attached_arg, str79) || str_equals(attached_arg, str80) || str_equals(attached_arg, str81) || str_equals(attached_arg, str82))) {
       b = false;
     }
     else {
-      if ((str_equals(attached_arg, str81) || str_equals(attached_arg, str82) || str_equals(attached_arg, str83) || str_equals(attached_arg, str84))) {
+      if ((str_equals(attached_arg, str83) || str_equals(attached_arg, str84) || str_equals(attached_arg, str85) || str_equals(attached_arg, str86))) {
         b = true;
       }
       else {
@@ -1566,7 +1675,7 @@ bool SetOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attrib
   StackRoot _root1(&arg_r);
   StackRoot _root2(&out);
 
-  b = maybe_str_equals(attached_arg, str86);
+  b = maybe_str_equals(attached_arg, str88);
   out->opt_changes->append((Alloc<Tuple2<BigStr*, bool>>(this->name, b)));
   return false;
 }
@@ -1594,7 +1703,7 @@ bool SetNamedOption::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   StackRoot _root4(&attr_name);
   StackRoot _root5(&changes);
 
-  b = maybe_str_equals(attached_arg, str87);
+  b = maybe_str_equals(attached_arg, str89);
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
@@ -1645,7 +1754,7 @@ bool SetNamedAction::OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_A
   arg_r->Next();
   arg = arg_r->Peek();
   if (arg == nullptr) {
-    e_usage(str89, loc::Missing);
+    e_usage(str91, loc::Missing);
   }
   attr_name = arg;
   if ((len(this->names) and !list_contains(this->names, attr_name))) {
@@ -1678,13 +1787,13 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
   out = Alloc<_Attributes>(spec->defaults);
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str91)) {
+    if (maybe_str_equals(arg, str93)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if ((len(spec->actions_long) and arg->startswith(str92))) {
-      pos = arg->find(str93, 2);
+    if ((len(spec->actions_long) and arg->startswith(str94))) {
+      pos = arg->find(str95, 2);
       if (pos == -1) {
         suffix = nullptr;
         flag_name = arg->slice(2);
@@ -1702,15 +1811,15 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
       continue;
     }
     else {
-      if ((arg->startswith(str95) and len(arg) > 1)) {
+      if ((arg->startswith(str97) and len(arg) > 1)) {
         n = len(arg);
         for (int i = 1; i < n; ++i) {
           ch = arg->at(i);
-          if (str_equals(ch, str96)) {
-            ch = str97;
+          if (str_equals(ch, str98)) {
+            ch = str99;
           }
           if (list_contains(spec->plus_flags, ch)) {
-            out->Set(ch, Alloc<value::Str>(str98));
+            out->Set(ch, Alloc<value::Str>(str100));
             continue;
           }
           if (list_contains(spec->arity0, ch)) {
@@ -1723,20 +1832,20 @@ args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r) {
             action->OnMatch(attached_arg, arg_r, out);
             break;
           }
-          e_usage(StrFormat("doesn't accept flag %s", str_concat(str100, ch)), arg_r->Location());
+          e_usage(StrFormat("doesn't accept flag %s", str_concat(str102, ch)), arg_r->Location());
         }
         arg_r->Next();
       }
       else {
-        if ((len(spec->plus_flags) and (arg->startswith(str101) and len(arg) > 1))) {
+        if ((len(spec->plus_flags) and (arg->startswith(str103) and len(arg) > 1))) {
           n = len(arg);
           for (int i = 1; i < n; ++i) {
             ch = arg->at(i);
             if (list_contains(spec->plus_flags, ch)) {
-              out->Set(ch, Alloc<value::Str>(str102));
+              out->Set(ch, Alloc<value::Str>(str104));
               continue;
             }
-            e_usage(StrFormat("doesn't accept option %s", str_concat(str104, ch)), arg_r->Location());
+            e_usage(StrFormat("doesn't accept option %s", str_concat(str106, ch)), arg_r->Location());
           }
           arg_r->Next();
         }
@@ -1764,7 +1873,7 @@ args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
     chars = arg->slice(1);
-    if ((arg->startswith(str105) and len(chars))) {
+    if ((arg->startswith(str107) and len(chars))) {
       done = false;
       for (StrIter it(chars); !it.Done(); it.Next()) {
         BigStr* c = it.Value();
@@ -1810,12 +1919,12 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
   quit = false;
   while (!arg_r->AtEnd()) {
     arg = arg_r->Peek();
-    if (maybe_str_equals(arg, str106)) {
+    if (maybe_str_equals(arg, str108)) {
       out->saw_double_dash = true;
       arg_r->Next();
       break;
     }
-    if (arg->startswith(str107)) {
+    if (arg->startswith(str109)) {
       action = spec->actions_long->get(arg->slice(2));
       if (action == nullptr) {
         e_usage(StrFormat("got invalid flag %r", arg), arg_r->Location());
@@ -1824,14 +1933,14 @@ args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* ar
       arg_r->Next();
       continue;
     }
-    if (((arg->startswith(str109) or arg->startswith(str110)) and len(arg) > 1)) {
+    if (((arg->startswith(str111) or arg->startswith(str112)) and len(arg) > 1)) {
       char0 = arg->at(0);
       for (StrIter it(arg->slice(1)); !it.Done(); it.Next()) {
         BigStr* ch = it.Value();
         StackRoot _for(&ch      );
         action = spec->actions_short->get(ch);
         if (action == nullptr) {
-          e_usage(StrFormat("got invalid flag %r", str_concat(str112, ch)), arg_r->Location());
+          e_usage(StrFormat("got invalid flag %r", str_concat(str114, ch)), arg_r->Location());
         }
         attached_arg = list_contains(spec->plus_flags, ch) ? char0 : nullptr;
         quit = action->OnMatch(attached_arg, arg_r, out);

@@ -475,6 +475,13 @@ class UniqueObjects(object):
     # Note: self.memo.clear() doesn't appear to be used
 
 
+def probe(provider, name, *args):
+    # type: (str, str, Any) -> None
+    """Create a probe for use with profilers like linux perf and ebpf or dtrace."""
+    # Noop. Just a marker for mycpp to emit a DTRACE_PROBE()
+    return
+
+
 if 0:
     # Prototype of Unix file descriptor I/O, compared with FILE* libc I/O.
     # Doesn't seem like we need this now.

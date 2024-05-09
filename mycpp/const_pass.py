@@ -163,6 +163,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         self.log('CallExpr')
         self.accept(o.callee)  # could be f() or obj.method()
+        if o.callee.name == 'probe':
+            # don't generate constants for probe names
+            return
 
         self.indent += 1
         for arg in o.args:

@@ -129,6 +129,7 @@ readonly -a WEDGE_DEPS_DEBIAN=(
     ninja-build
     cmake
     libreadline-dev 
+    systemtap-sdt-dev
     "${PY3_BUILD_DEPS[@]}"
 )
 

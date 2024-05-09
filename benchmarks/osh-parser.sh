@@ -18,7 +18,6 @@ readonly REPO_ROOT
 
 source benchmarks/common.sh  # die
 source benchmarks/cachegrind.sh  # with-cachgrind
-source soil/common.sh  # find-dir-html
 source test/tsv-lib.sh  # tsv2html
 source test/common.sh  # die
 
@@ -380,6 +379,8 @@ run under cachegrind for stable metrics.
 
 Source code: [oil/benchmarks/osh-parser.sh](https://github.com/oilshell/oil/tree/master/benchmarks/osh-parser.sh)
 
+[Raw files](-wwz-index)
+
 ### Summary
 
 #### Instructions Per Line (via cachegrind)
@@ -460,16 +461,8 @@ EOF
 EOF
   csv2html $in_dir/raw-data.csv
 
-  # Only show files.html link on a single machine
-  if test -f $(dirname $in_dir)/files.html; then
-    cmark << 'EOF'
----
-[raw files](files.html)
+  cmark << 'EOF'
 
-EOF
-  fi
-
-  cat <<EOF
   </body>
 </html>
 EOF
@@ -508,9 +501,6 @@ soil-run() {
   stage1 '' $single_machine
 
   benchmarks/report.sh stage2 $BASE_DIR
-
-  # Make _tmp/osh-parser/files.html, so index.html can potentially link to it
-  find-dir-html _tmp/osh-parser files
 
   benchmarks/report.sh stage3 $BASE_DIR
 }

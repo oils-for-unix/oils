@@ -114,11 +114,6 @@ preprocessed() {
   mkdir -p $dir
   cp -v "${files[@]}" $dir
 
-  cat >$dir/index.html <<EOF
-<a href="cxx-dbg.txt">cxx-dbg.txt</a> <br/>
-<a href="cxx-opt.txt">cxx-opt.txt</a> <br/>
-EOF
-
   head -n 100 $dir/*.txt
 }
 
@@ -496,11 +491,6 @@ write-reports() {
   for-translation-html > $out_dir/for-translation.html
 
   overview-html > $out_dir/overview.html
-
-  cat >$out_dir/index.html <<EOF
-<a href="for-translation.html">for-translation</a> <br/>
-<a href="overview.html">overview</a> <br/>
-EOF
 
   ls -l $out_dir
 }

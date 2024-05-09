@@ -14,7 +14,7 @@ source soil/common.sh
 # - Put this into soil/other-tests too!
 
 all() {
-  find-dir-html _tmp/spec
+  echo TODO
 }
 
 "$@"

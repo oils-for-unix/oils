@@ -2,9 +2,9 @@
 #define DATA_LANG_J8_H
 
 #include <stdio.h>   // sprintf
-#include <string.h>  // memcmp
+#include <string.h>  // memcmp, memcpy, strlen
 
-#include "data_lang/utf8_impls/bjoern_dfa.h"
+#include "data_lang/utf8.h"
 
 #define J8_OUT(ch) \
   **p_out = (ch);  \
@@ -16,16 +16,15 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
   //   *p_in may be advanced by 1 to 4 bytes (depending on whether it's UTF-8)
   //   *p_out may be advanced by 1 to 6 bytes (depending on escaping)
 
-  // IMPORTANT: J8EncodeOne(), BourneShellEncodeOne(), BashDollarEncodeOne()
-  // all call Bjoern DFA decode(), and there's a subtle issue where p_in MUST
-  // have a NUL terminator is required. This is so INCOMPLETE UTF-8 sequences
-  // are terminated with an INVALID byte that the state machine can accept, and
+  // IMPORTANT: J8EncodeOne(), BourneShellEncodeOne(), BashDollarEncodeOne() all
+  // call utf8_decode() which require that p_in MUST have a NUL terminator. This
+  // is so INCOMPLETE UTF-8 sequences are terminated with an INVALID byte, and
   // 0x00 can only be ITSELF, never part of a sequence. An alternative would be
   // to do more bounds checks in these functions.
 
   // CALLER MUST CHECK that we are able to write up to 6 bytes!
   //   Because the longest output is \u001f or \u{1f} for control chars, since
-  //   we don't escapes like \u{1f926} right now
+  //   we don't emit escapes like \u{1f926} right now
   //
   // j8_escape: Whether to use j8 escapes, i.e. LOSSLESS encoding of data
   //   \yff instead of Unicode replacement char
@@ -90,46 +89,41 @@ static inline int J8EncodeOne(unsigned char** p_in, unsigned char** p_out,
   //
   // UTF-8 encoded runes and invalid bytes
   //
-  unsigned char* start = *p_in;  // save start position
-  uint32_t codepoint = 0;
-  uint32_t state = UTF8_ACCEPT;
+  Utf8Result_t result;
+  utf8_decode(*p_in, &result);
 
-  while (1) {
-    decode(&state, &codepoint, ch);
-    // printf("  state %d\n", state);
-    switch (state) {
-    case UTF8_REJECT: {
-      if (j8_escape) {
-        int n = sprintf((char*)*p_out, "\\y%02x", *start);
-        *p_out += n;
-      } else {
-        // Unicode replacement char is U+FFFD, so write encoded form
-        // >>> '\ufffd'.encode('utf-8')
-        // b'\xef\xbf\xbd'
-        J8_OUT('\xef');
-        J8_OUT('\xbf');
-        J8_OUT('\xbd');
-      }
-      (*p_in) = start;  // REWIND because we might have consumed NUL terminator!
-      (*p_in)++;        // Advance past the byte we wrote
-      return 1;
-    }
-    case UTF8_ACCEPT: {
-      (*p_in)++;
-      // printf("start %p p_in %p\n", start, *p_in);
-      while (start < *p_in) {
-        J8_OUT(*start);
-        start++;
-      }
-      return 0;
-    }
-    default:
-      (*p_in)++;  // advance, next UTF8_ACCEPT will write it
-      ch = **p_in;
-      break;
-    }
+  if (result.error == UTF8_OK) {
+    memcpy(*p_out, *p_in, result.bytes_read);
+    *p_in += result.bytes_read;
+    *p_out += result.bytes_read;
+    return 0;
   }
-  // Unreachable
+
+  // We have a UTF-8 decoding error. This is handled one of three ways:
+  //  1. Losslessly encode as J8 byte literals (only applicable in J8)
+  //  2. Try to encode a lone surrogate
+  //  3. Insert a Unicode replacement char
+
+  if (j8_escape) {
+    int n = sprintf((char*)*p_out, "\\y%02x", ch);
+    *p_in += 1;
+    *p_out += n;
+  } else if (result.error == UTF8_ERR_SURROGATE) {
+    int n = sprintf((char*)*p_out, "\\u%04x", result.codepoint);
+    *p_in += result.bytes_read;
+    *p_out += n;
+    return 1;
+  } else {
+    // Unicode replacement char is U+FFFD, so write encoded form
+    // >>> '\ufffd'.encode('utf-8')
+    // b'\xef\xbf\xbd'
+    J8_OUT('\xef');
+    J8_OUT('\xbf');
+    J8_OUT('\xbd');
+    *p_in += 1;  // Advance past the byte we wrote
+  }
+
+  return 1;
 }
 
 // Like the above, but
@@ -158,7 +152,7 @@ static inline void BashDollarEncodeOne(unsigned char** p_in,
   case '\t': J8_OUT('\\'); J8_OUT('t'); (*p_in)++; return;
   case '\'': J8_OUT('\\'); J8_OUT('\''); (*p_in)++; return;
   }
-  // clang-format off
+  // clang-format on
 
   //
   // Unprintable ASCII control codes
@@ -175,46 +169,18 @@ static inline void BashDollarEncodeOne(unsigned char** p_in,
   //
   // UTF-8 encoded runes and invalid bytes
   //
-  unsigned char* start = *p_in;  // save start position
-  uint32_t codepoint = 0;
-  uint32_t state = UTF8_ACCEPT;
-
-  while (1) {
-    // unsigned char byte = **p_in;
-    decode(&state, &codepoint, ch);
-    // printf("  state %d    ch %d\n", state, ch);
-    switch (state) {
-      // BUG: we don't reject IMMEDIATELY
-      //
-      // We could be in another state for up to 4 chars
-      // And then we hit REJECT
-      // And then we need to output \yff\yff\yff\yff
-      // OK that's actually SIXTEEN at once?
-
-    case UTF8_REJECT: {
-      int n = sprintf((char*)*p_out, "\\x%02x", *start);
-      *p_out += n;
-      (*p_in) = start;  // REWIND because we might have consumed NUL terminator!
-      (*p_in)++;        // Advance past the byte we wrote
-      return;
-    }
-    case UTF8_ACCEPT: {
-      (*p_in)++;
-      // printf("start %p p_in %p\n", start, *p_in);
-      while (start < *p_in) {
-        J8_OUT(*start);
-        start++;
-      }
-      return;
-    }
-    default:
-      (*p_in)++;  // advance, next UTF8_ACCEPT will write it
-      ch = **p_in;
-      // printf(" => ch %d\n", ch);
-      break;
-    }
+  Utf8Result_t result;
+  utf8_decode(*p_in, &result);
+  if (result.error == UTF8_OK) {
+    memcpy(*p_out, *p_in, result.bytes_read);
+    *p_in += result.bytes_read;
+    *p_out += result.bytes_read;
+  } else {
+    // If not a valid UTF-8 byte sequence, losslessly encode the bad bytes
+    int n = sprintf((char*)*p_out, "\\x%02x", **p_in);
+    *p_out += n;
+    *p_in += 1; // Advance past the byte we wrote
   }
-  // Unreachable
 }
 
 // BourneShellEncodeOne rules:
@@ -239,33 +205,16 @@ static inline int BourneShellEncodeOne(unsigned char** p_in,
   }
 
   // UTF-8 encoded runes and invalid bytes
-  unsigned char* start = *p_in;  // save start position
-  uint32_t codepoint = 0;
-  uint32_t state = UTF8_ACCEPT;
-
-  while (1) {
-    decode(&state, &codepoint, ch);
-    // printf("  state %d\n", state);
-    switch (state) {
-    case UTF8_REJECT: {
-      return 1;
-    }
-    case UTF8_ACCEPT: {
-      (*p_in)++;
-      // printf("start %p p_in %p\n", start, *p_in);
-      while (start < *p_in) {
-        J8_OUT(*start);
-        start++;
-      }
-      return 0;
-    }
-    default:
-      (*p_in)++;  // advance, next UTF8_ACCEPT will write it
-      ch = **p_in;
-      break;
-    }
+  Utf8Result_t result;
+  utf8_decode(*p_in, &result);
+  if (result.error == UTF8_OK) {
+    memcpy(*p_out, *p_in, result.bytes_read);
+    *p_in += result.bytes_read;
+    *p_out += result.bytes_read;
+    return 0;
+  } else {
+    return 1;
   }
-  // Unreachable
 }
 
 // Right now \u001f and \u{1f} are the longest output sequences for a byte.

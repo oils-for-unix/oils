@@ -203,13 +203,13 @@ os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 id-test          benchmarks/id-test.sh soil-run        -
-native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/index.html
+native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/
 osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/osh-parser/index.html
 osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/index.html
-mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/index.html
+mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/-wwz-index
 EOF
 }
 
@@ -271,15 +271,15 @@ dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 yaks             yaks/TEST.sh soil-run                 -
 oils-cpp-smoke   build/native.sh soil-run              -
-cpp-unit         test/cpp-unit.sh soil-run             _test/cpp-unit.html
+cpp-unit         test/cpp-unit.sh soil-run             _test/-wwz-index
 headless         client/run.sh soil-run-cpp            -
 asan             test/asan.sh soil-run                 -
 ltrace           test/ltrace.sh soil-run               -
 micro-syntax     doctools/micro-syntax.sh soil-run     -
 src-tree         doctools/src-tree.sh soil-run         _tmp/src-tree-www/index.html
-line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/index.html
-preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/index.html
-mycpp-examples   mycpp/TEST.sh soil-run                _test/mycpp-examples.html
+line-counts      metrics/source-code.sh write-reports  _tmp/metrics/line-counts/-wwz-index
+preprocessed     metrics/source-code.sh preprocessed   _tmp/metrics/preprocessed/-wwz-index
+mycpp-examples   mycpp/TEST.sh soil-run                _test/-wwz-index
 parse-errors     test/parse-errors.sh soil-run-cpp     -
 runtime-errors   test/runtime-errors.sh soil-run-cpp   -
 ysh-parse-errors test/ysh-parse-errors.sh soil-run-cpp -
