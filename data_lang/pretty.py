@@ -196,8 +196,9 @@ def _Group(mdoc):
 def _IfFlat(flat_mdoc, nonflat_mdoc):
     # type: (MeasuredDoc, MeasuredDoc) -> MeasuredDoc
     """If in flat mode, print `flat_mdoc` otherwise print `nonflat_mdoc`."""
-    return MeasuredDoc(doc.IfFlat(flat_mdoc, nonflat_mdoc),
-            Measure(flat_mdoc.measure.flat, nonflat_mdoc.measure.nonflat))
+    return MeasuredDoc(
+        doc.IfFlat(flat_mdoc, nonflat_mdoc),
+        Measure(flat_mdoc.measure.flat, nonflat_mdoc.measure.nonflat))
 
 
 ###################
@@ -342,8 +343,9 @@ class PrettyPrinter(object):
                         subdoc = if_flat.flat_mdoc
                     else:
                         subdoc = if_flat.nonflat_mdoc
-                    fragments.append(DocFragment(
-                        subdoc, frag.indent, frag.is_flat, frag.measure))
+                    fragments.append(
+                        DocFragment(subdoc, frag.indent, frag.is_flat,
+                                    frag.measure))
 
 
 ################
@@ -354,7 +356,8 @@ class PrettyPrinter(object):
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
 
-    def __init__(self, indent, use_styles, show_type_prefix, max_tabular_width):
+    def __init__(self, indent, use_styles, show_type_prefix,
+                 max_tabular_width):
         # type: (int, bool, bool, int) -> None
         self.indent = indent
         self.use_styles = use_styles
