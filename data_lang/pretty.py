@@ -502,7 +502,7 @@ class _DocConstructor:
 
         sep_width = _StrWidth(sep)
         if max_flat_len + sep_width + 1 <= self.max_tabular_width:
-            tabular_seq = []
+            tabular_seq = [] # type: List[MeasuredDoc]
             for item in items[:-1]:
                 padding = max_flat_len - item.measure.flat + 1
                 tabular_seq.append(item)
