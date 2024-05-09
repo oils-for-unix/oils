@@ -265,6 +265,17 @@ print-tasks-xshar() {
   done
 }
 
+test-print-tasks-xshar() {
+  print-tasks-xshar $(hostname) osh 1 1 1
+  echo
+  print-tasks-xshar $(hostname) osh 1 2 1
+  echo
+  print-tasks-xshar $(hostname) osh 1 2 2
+  echo
+  print-tasks-xshar $(hostname) osh 1 2 3
+  echo
+}
+
 run-tasks-wrapper() {
   ### reads tasks from stdin
 
@@ -458,7 +469,8 @@ test-oils-run() {
   mkdir -p $raw_out_dir
 
   # Similar to 'measure', for soil-run and release
-  print-tasks-xshar $host_name $osh $num_iters $num_shells $num_workloads \
+  print-tasks-xshar $host_name $osh \
+      $num_iters $num_shells $num_workloads \
     | tee $BASE_DIR/tasks.txt
 
   run-tasks-wrapper $host_name $raw_out_dir < $BASE_DIR/tasks.txt
