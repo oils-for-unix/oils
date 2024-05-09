@@ -124,7 +124,8 @@ Source code: [oil/benchmarks/vm-baseline.sh](https://github.com/oilshell/oil/tre
 Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
 
 EOF
-  tsv2html $in_dir/vm-baseline.tsv
+  # highlight OSH lines
+  tsv2html --css-class-pattern 'special ^osh' $in_dir/vm-baseline.tsv
 
   # R code doesn't generate this
   if false; then
