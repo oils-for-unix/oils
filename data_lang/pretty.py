@@ -103,7 +103,7 @@ from core import ansi
 from frontend import match
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, BufWriter, iteritems
-from typing import cast, List, Dict, Optional
+from typing import cast, List, Dict
 import fastfunc
 import libc
 

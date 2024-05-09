@@ -9,6 +9,7 @@ from core import ansi
 from data_lang import j8
 from data_lang import pretty  # module under test
 from mycpp import mylib, mops
+from typing import Optional
 
 import libc
 
