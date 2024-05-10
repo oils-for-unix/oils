@@ -36,12 +36,12 @@ INVALID_START = 'Invalid start of UTF-8 character'
 
 # Error types returned by fastfunc.Utf8DecodeOne
 # Derived from Utf8Error enum from data_lang/utf8.h
-UTF8_ERR_OVERLONG = -1         # Encodes a codepoint in more bytes than necessary
-UTF8_ERR_SURROGATE = -2        # Encodes a codepoint in the surrogate range (0xD800 to 0xDFFF)
-UTF8_ERR_TOO_LARGE = -3        # Encodes a value greater than the max codepoint U+10FFFF
-UTF8_ERR_BAD_ENCODING = -4     # Encoding doesn't conform to the UTF-8 bit patterns
+UTF8_ERR_OVERLONG = -1  # Encodes a codepoint in more bytes than necessary
+UTF8_ERR_SURROGATE = -2  # Encodes a codepoint in the surrogate range (0xD800 to 0xDFFF)
+UTF8_ERR_TOO_LARGE = -3  # Encodes a value greater than the max codepoint U+10FFFF
+UTF8_ERR_BAD_ENCODING = -4  # Encoding doesn't conform to the UTF-8 bit patterns
 UTF8_ERR_TRUNCATED_BYTES = -5  # It looks like there is another codepoint, but it has been truncated
-UTF8_ERR_END_OF_STREAM = -6    # We are at the end of the string. (input_len = 0)
+UTF8_ERR_END_OF_STREAM = -6  # We are at the end of the string. (input_len = 0)
 
 
 def Utf8Error_str(error):
@@ -109,7 +109,9 @@ def DecodeUtf8Char(s, start):
     """
     codepoint_or_error, _bytes_read = fastfunc.Utf8DecodeOne(s, start)
     if codepoint_or_error < 0:
-        raise error.Expr("%s at %d" % (Utf8Error_str(codepoint_or_error), start), loc.Missing)
+        raise error.Expr(
+            "%s at %d" % (Utf8Error_str(codepoint_or_error), start),
+            loc.Missing)
     return codepoint_or_error
 
 
@@ -124,7 +126,8 @@ def NextUtf8Char(s, i):
     """
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
-        raise error.Expr("%s at %d" % (Utf8Error_str(codepoint_or_error), i), loc.Missing)
+        raise error.Expr("%s at %d" % (Utf8Error_str(codepoint_or_error), i),
+                         loc.Missing)
     return i + bytes_read
 
 

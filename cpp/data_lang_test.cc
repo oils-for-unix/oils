@@ -127,11 +127,11 @@ TEST heap_id_test() {
 }
 
 TEST utf8_decode_one_test() {
-#define ASSERT_DECODE(codepoint, bytes_read, string, start)                \
-  do {                                                                     \
-    Tuple2<int, int> result = fastfunc::Utf8DecodeOne((string), (start));  \
-    ASSERT_EQ(result.at0(), (codepoint));                                  \
-    ASSERT_EQ(result.at1(), (bytes_read));                                 \
+#define ASSERT_DECODE(codepoint, bytes_read, string, start)               \
+  do {                                                                    \
+    Tuple2<int, int> result = fastfunc::Utf8DecodeOne((string), (start)); \
+    ASSERT_EQ(result.at0(), (codepoint));                                 \
+    ASSERT_EQ(result.at1(), (bytes_read));                                \
   } while (false)
 
   BigStr* s = StrFromC("h\xE2\xA1\x80\xC5\x81");
