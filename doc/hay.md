@@ -144,7 +144,7 @@ languages, you can read Hay.
 [Nix][] has a [functional language][nix-lang] to configure Linux distros.  In
 contrast, Hay is multi-paradigm and imperative.
 
-[nix-lang]: https://nixos.wiki/wiki/Nix_Expression_Language
+[nix-lang]: https://wiki.nixos.org/wiki/Nix_Expression_Language
 
 The [Starlark][] language is a dialect of Python used by the [Bazel][] build
 system.  It uses imperative code to specify build graph variants, and you can

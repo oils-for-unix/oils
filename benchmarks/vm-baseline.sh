@@ -12,8 +12,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+
 source test/common.sh  # log
 source benchmarks/common.sh
+source test/tsv-lib.sh  # tsv2html
 
 readonly BASE_DIR=_tmp/vm-baseline
 
@@ -65,7 +68,7 @@ demo() {
   mkdir -p $dir1 $dir2
   
   benchmarks/virtual_memory.py baseline ${job_dirs[-1]} \
-    > $dir1/vm-baseline.csv
+    > $dir1/vm-baseline.tsv
 
   benchmarks/report.R vm-baseline $dir1 $dir2
 }
@@ -96,7 +99,7 @@ stage1() {
   fi
 
   benchmarks/virtual_memory.py baseline "${raw[@]}" \
-    | tee $out/vm-baseline.csv
+    | tee $out/vm-baseline.tsv
 }
 
 print-report() {
@@ -121,14 +124,14 @@ Source code: [oil/benchmarks/vm-baseline.sh](https://github.com/oilshell/oil/tre
 Memory usage is measured in MB (powers of 10), not MiB (powers of 2).
 
 EOF
-  csv2html $in_dir/vm-baseline.csv
+  tsv2html $in_dir/vm-baseline.tsv
 
   # R code doesn't generate this
   if false; then
     cmark <<< '### Shell and Host Details'
 
-    csv2html $in_dir/shells.csv
-    csv2html $in_dir/hosts.csv
+    tsv2html $in_dir/shells.tsv
+    tsv2html $in_dir/hosts.tsv
   fi
 
   cat <<EOF

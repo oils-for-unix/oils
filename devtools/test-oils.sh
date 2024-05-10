@@ -40,6 +40,7 @@ FLAG_num_workloads=1
 FLAG_upload=''
 FLAG_subdir=''
 FLAG_url=http://travis-ci.oilshell.org/wwup.cgi
+FLAG_dry_run=''
 
 readonly XSHAR_NAME=test-oils.xshar  # hard-coded for now
 
@@ -78,6 +79,8 @@ Actions:
 
     --url                        Upload to this URL
                                  default: $FLAG_url
+
+    --dry-run                    Print out tasks, but don't execute them
 
   Workloads:
 EOF
@@ -145,7 +148,7 @@ parse-flags-osh-runtime() {
           die "-w / --num-workloads requires an argument"
         fi
         shift
-        FLAG_num_shells=$1
+        FLAG_num_workloads=$1
         ;;
 
       -u|--upload)
@@ -166,6 +169,10 @@ parse-flags-osh-runtime() {
         fi
         shift
         FLAG_url=$1
+        ;;
+
+      --dry-run)
+        FLAG_dry_run=T
         ;;
 
       *)
@@ -212,6 +219,20 @@ osh-runtime() {
   job_id=$(print-job-id)  # benchmarks/id.sh
   host_name=$(hostname)
 
+
+  if test -n "$FLAG_dry_run"; then
+    echo
+    echo '--- Tasks that would be run ---'
+    echo
+
+    benchmarks/osh-runtime.sh print-tasks-xshar $host_name $osh \
+      $FLAG_num_iters $FLAG_num_shells $FLAG_num_workloads
+
+    echo
+
+    return
+  fi
+
   benchmarks/osh-runtime.sh test-oils-run $osh $job_id $host_name \
     $FLAG_num_iters $FLAG_num_shells $FLAG_num_workloads
 
@@ -237,9 +258,10 @@ osh-runtime() {
 
     local wwz_name="${job_id}.${host_name}.wwz"
 
-    # Only zip the first level of osh-runtime
     pushd _tmp
-    zip -r $wwz_name osh-runtime/* shell-id/ host-id/
+    # Only zip metadata files in osh-runtime, so we don't serve untrusted stuff
+    zip -r $wwz_name \
+      osh-runtime/*.txt osh-runtime/raw/*.tsv shell-id/ host-id/
     popd
 
     local wwz_path=_tmp/$wwz_name
