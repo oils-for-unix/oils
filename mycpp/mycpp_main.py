@@ -4,6 +4,7 @@ mycpp_main.py - Translate a subset of Python to C++, using MyPy's typed AST.
 """
 from __future__ import print_function
 
+import json
 import optparse
 import os
 import sys
@@ -339,6 +340,10 @@ def main(argv):
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
         call_graph.update(p3.call_graph)
+
+    if 0:
+        with open('_tmp/mycpp_call_graph.json', 'w') as graph_f:
+            json.dump(call_graph, graph_f, indent=2)
 
     log('\tmycpp pass: IMPL')
 
