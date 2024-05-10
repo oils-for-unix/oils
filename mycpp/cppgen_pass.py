@@ -401,7 +401,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  f,
                  virtual=None,
                  local_vars=None,
-                 fmt_ids=None,
                  field_gc=None,
                  decl=False,
                  forward_decl=False,
@@ -415,9 +414,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # This is different from member_vars because we collect it in the
         # 'decl' phase, and write it in the definition phase.
         self.local_vars = local_vars
-        self.fmt_ids = fmt_ids
         self.field_gc = field_gc
-        self.fmt_funcs = io.StringIO()
 
         self.decl = decl
         self.forward_decl = forward_decl
@@ -583,12 +580,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     isinstance(node.expr, StrExpr)):
                 continue
             self.accept(node)
-
-        # Write fmtX() functions inside the namespace.
-        if self.decl:
-            self.always_write('\n')
-            self.always_write(self.fmt_funcs.getvalue())
-            self.fmt_funcs = io.StringIO()  # clear it for the next file
 
         if self.forward_decl:
             self.indent -= 1
