@@ -107,10 +107,10 @@ def DecodeUtf8Char(s, start):
     from {Next,Previous}Utf8Char which raises an `error.Strict` on encoding
     errors.)
     """
-    codepoint_or_error, _bytes_read = fastfunc.Utf8DecodeOne(s, start)
+    codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, start)
     if codepoint_or_error < 0:
         raise error.Expr(
-            "%s at %d" % (Utf8Error_str(codepoint_or_error), start),
+            "%s at %d" % (Utf8Error_str(codepoint_or_error), start + bytes_read),
             loc.Missing)
     return codepoint_or_error
 
@@ -126,8 +126,8 @@ def NextUtf8Char(s, i):
     """
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
-        raise error.Expr("%s at %d" % (Utf8Error_str(codepoint_or_error), i),
-                         loc.Missing)
+        raise error.Strict("%s at %d" % (Utf8Error_str(codepoint_or_error), i),
+                           loc.Missing)
     return i + bytes_read
 
 
