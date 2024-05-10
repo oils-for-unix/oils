@@ -123,7 +123,6 @@ def NextUtf8Char(s, i):
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
         e_strict("%s at %d" % (Utf8Error_str(codepoint_or_error), i), loc.Missing)
-        return i + 1
     return i + bytes_read
 
 
