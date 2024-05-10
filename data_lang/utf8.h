@@ -41,22 +41,22 @@ typedef enum Utf8Error {
   UTF8_OK = 0,
 
   // Encodes a codepoint in more bytes than necessary
-  UTF8_ERR_OVERLONG,
+  UTF8_ERR_OVERLONG = 1,
 
   // Encodes a codepoint in the surrogate range (0xD800 to 0xDFFF, inclusive)
-  UTF8_ERR_SURROGATE,
+  UTF8_ERR_SURROGATE = 2,
 
   // Encodes a value greater than the max codepoint U+10FFFF
-  UTF8_ERR_TOO_LARGE,
+  UTF8_ERR_TOO_LARGE = 3,
 
   // Encoding doesn't conform to the UTF-8 bit patterns
-  UTF8_ERR_BAD_ENCODING,
+  UTF8_ERR_BAD_ENCODING = 4,
 
   // It looks like there is another codepoint, but it has been truncated.
-  UTF8_ERR_TRUNCATED_BYTES,
+  UTF8_ERR_TRUNCATED_BYTES = 5,
 
   // We are at the end of the string. (input_len = 0)
-  UTF8_ERR_END_OF_STREAM,
+  UTF8_ERR_END_OF_STREAM = 6,
 } Utf8Error_t;
 
 typedef struct Utf8Result {
