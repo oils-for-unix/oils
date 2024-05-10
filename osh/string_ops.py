@@ -82,21 +82,6 @@ def _Utf8CharLen(starting_byte):
         e_strict(INVALID_START, loc.Missing)
 
 
-def _ReadOneUnit(s, cursor):
-    # type: (str, int) -> Tuple[int, int]
-    """Helper for DecodeUtf8Char"""
-    if cursor >= len(s):
-        raise error.Expr(INCOMPLETE_CHAR, loc.Missing)
-
-    b = ord(s[cursor])
-    cursor += 1
-
-    if b & 0b11000000 != 0b10000000:
-        raise error.Expr(INVALID_CONT, loc.Missing)
-
-    return b & 0b00111111, cursor
-
-
 def DecodeUtf8Char(s, start):
     # type: (str, int) -> int
     """Given a string and start index, decode the Unicode char immediately
@@ -126,8 +111,8 @@ def NextUtf8Char(s, i):
     """
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
-        raise error.Strict("%s at %d" % (Utf8Error_str(codepoint_or_error), i),
-                           loc.Missing)
+        e_strict("%s at %d" % (Utf8Error_str(codepoint_or_error), i), loc.Missing)
+        return i + 1
     return i + bytes_read
 
 

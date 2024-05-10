@@ -105,7 +105,7 @@ echo -${s:1:3}-
 --
 ## END
 ## STDERR:
-[??? no location ???] warning: Invalid start of UTF-8 character
+[??? no location ???] warning: Utf8 Error: Bad Encoding at 0
 ## END
 ## BUG bash/mksh/zsh status: 0
 ## BUG bash/mksh/zsh STDOUT:

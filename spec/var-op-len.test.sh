@@ -45,12 +45,12 @@ true  # exit 0
 -1
 -1
 7
-[ stdin ]:3: warning: Incomplete UTF-8 character
-[ stdin ]:3: warning: Incomplete UTF-8 character
-[ stdin ]:3: warning: Incomplete UTF-8 character
-[ stdin ]:3: warning: Incomplete UTF-8 character
-[ stdin ]:3: warning: Incomplete UTF-8 character
-[ stdin ]:3: warning: Incomplete UTF-8 character
+[ stdin ]:3: warning: Utf8 Error: Truncated Bytes at 2
+[ stdin ]:3: warning: Utf8 Error: Truncated Bytes at 5
+[ stdin ]:3: warning: Utf8 Error: Truncated Bytes at 5
+[ stdin ]:3: warning: Utf8 Error: Truncated Bytes at 9
+[ stdin ]:3: warning: Utf8 Error: Truncated Bytes at 9
+[ stdin ]:3: warning: Utf8 Error: Truncated Bytes at 9
 ## END
 # zsh behavior actually matches bash!
 ## BUG bash/zsh stderr-json: ""
@@ -113,21 +113,21 @@ true
 -1
 -1
 -1
-[ stdin ]:3: warning: Invalid start of UTF-8 character
-[ stdin ]:3: warning: Invalid start of UTF-8 character
-[ stdin ]:3: warning: Invalid start of UTF-8 character
-[ stdin ]:3: warning: Invalid UTF-8 continuation byte
-[ stdin ]:3: warning: Invalid start of UTF-8 character
-[ stdin ]:3: warning: Invalid start of UTF-8 character
-[ stdin ]:3: warning: Invalid UTF-8 continuation byte
-[ stdin ]:3: warning: Invalid UTF-8 continuation byte
-[ stdin ]:3: warning: Invalid start of UTF-8 character
-[ stdin ]:3: warning: Invalid start of UTF-8 character
-[ stdin ]:3: warning: Invalid UTF-8 continuation byte
-[ stdin ]:3: warning: Invalid UTF-8 continuation byte
-[ stdin ]:3: warning: Invalid UTF-8 continuation byte
-[ stdin ]:3: warning: Invalid start of UTF-8 character
-[ stdin ]:3: warning: Invalid start of UTF-8 character
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 0
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 1
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 2
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 2
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 4
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 5
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 5
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 5
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 8
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 9
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 9
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 9
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 9
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 13
+[ stdin ]:3: warning: Utf8 Error: Bad Encoding at 13
 ## END
 ## BUG bash/zsh stderr-json: ""
 ## BUG bash/zsh STDOUT:
