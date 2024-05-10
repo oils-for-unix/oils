@@ -140,6 +140,11 @@ TRANSLATE_FILES = {
         'mycpp/testpkg/module2.py',
         'mycpp/examples/modules.py',
     ],
+    'test_root_call_graph': [
+        'mycpp/testpkg/module1.py',
+        'mycpp/testpkg/module2.py',
+        'mycpp/examples/test_root_call_graph.py',
+    ],
     'parse': [],  # added dynamically from mycpp/examples/parse.translate.txt
 }
 

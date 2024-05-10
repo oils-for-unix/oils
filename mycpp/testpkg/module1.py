@@ -1,6 +1,9 @@
 """
 module1.py
 """
+from __future__ import print_function
+
+import mylib
 from mylib import log
 from testpkg import module2
 
@@ -29,8 +32,16 @@ class Cat(object):
     # type: () -> None
     log('cat')
 
+  def ThingThatCollects(self):
+    # type: () -> None
+    mylib.MaybeCollect()
+
   def AbstractMethod(self):
     # type: () -> None
     raise NotImplementedError()
 
 
+def does_collect(s):
+    # type: (str) -> None
+    print(s)
+    module2.func3()
