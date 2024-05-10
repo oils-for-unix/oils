@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 """
-container_types.py
+test_root_call_graph.py
 """
 from __future__ import print_function
 
@@ -12,7 +12,7 @@ from testpkg import module1
 from typing import List
 
 
-def foo():
+def DoesCollect():
     # type: () -> None
     s = 'foo'
     f = [] # type: List[str]
@@ -32,7 +32,7 @@ def bar():
 
 def baz():
     # type: () -> None
-    foo()
+    DoesCollect()
     print('baz')
 
 
@@ -48,16 +48,61 @@ def from_import2(cat):
     print('it worked again')
 
 
-def run_tests():
+def FunctionModuleTest():
     # type: () -> None
-
-    foo()
+    DoesCollect()
     bar()
     baz()
     from_import1()
     cat = module1.Cat()
     from_import2(cat)
     module1.does_collect(bar())
+
+
+def DoWorkThatCollects(item):
+    # type: (str) -> None
+
+    mylib.MaybeCollect()
+
+
+def MainLoop(n):
+    # type: (int) -> None
+
+    # Create some strings
+    big_list = []  # type: List[str]
+    for i in xrange(n):
+        # quadratically sized
+        big_list.append('loop' * i)
+
+    for i, item in enumerate(big_list):
+        if i % 3 == 0:
+            big_list[i] = None
+
+        if i % 5 == 0:
+            DoWorkThatCollects(item)
+
+    m = 0
+    for item in big_list:
+        if item is not None:
+            m += 1
+    print('%d items remaining out of %d' % (m, n))
+
+
+def VirtualFunctionTest():
+    # type: () -> None
+
+    # Not doing virtual functions yet.
+
+    MainLoop(1000)
+
+
+def run_tests():
+    # type: () -> None
+
+    FunctionModuleTest()
+
+    VirtualFunctionTest()
+
 
 
 def run_benchmarks():
