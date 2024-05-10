@@ -19,6 +19,7 @@ from core import ui
 from core import error
 from core.error import e_die, e_strict
 from mycpp.mylib import log
+from mycpp import mylib
 from osh import glob_
 
 import libc
@@ -92,6 +93,12 @@ def DecodeUtf8Char(s, start):
     from {Next,Previous}Utf8Char which raises an `error.Strict` on encoding
     errors.)
     """
+    # The data_lang/utf8.h decoder treats nul-bytes as an end of string
+    # sentinel. However, they may not be the end of the string here. So we must
+    # special case the nul-byte.
+    if mylib.ByteAt(s, start) == 0:
+        return 0
+
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, start)
     if codepoint_or_error < 0:
         raise error.Expr(
@@ -109,6 +116,10 @@ def NextUtf8Char(s, i):
 
     Validates UTF-8.
     """
+    # Like in DecodeUtf8Char, this must be special-cased.
+    if mylib.ByteAt(s, i) == 0:
+        return 1
+
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
         e_strict("%s at %d" % (Utf8Error_str(codepoint_or_error), i), loc.Missing)
@@ -151,7 +162,7 @@ def PreviousUtf8Char(s, i):
 
     while i > 0:
         i -= 1
-        byte_as_int = ord(s[i])
+        byte_as_int = mylib.ByteAt(s, i)
         if (byte_as_int >> 6) != 0b10:
             offset = orig_i - i
             if offset != _Utf8CharLen(byte_as_int):
