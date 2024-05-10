@@ -765,7 +765,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def add_to_call_graph(self, o):
         full_callee = None
         if isinstance(o.callee, NameExpr):
-            full_callee = self.current_func_name
+            full_callee = o.callee.fullname
 
         elif isinstance(o.callee, MemberExpr):
             if isinstance(o.callee.expr, NameExpr):
@@ -832,6 +832,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def call_path_exists(self, src, dst, visited):
         """Do a DFS from src to dst. Returns true if a path was found."""
+
+        if self.decl or self.forward_decl:
+            return False
 
         visited.add(src)
         if src not in self.call_graph:
