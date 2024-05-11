@@ -161,6 +161,9 @@ BigStr* ShellEncodeString(BigStr* s, int ysh_fallback) {
 }
 
 Tuple2<int, int> Utf8DecodeOne(BigStr* s, int start) {
+  // Bounds check for safety. start can equal length because the string has a
+  // nul-terminator. So utf8_decode(s + len(s)) is valid and would decode that
+  // terminator (also setting UTF8_ERR_END_OF_STREAM).
   assert(0 <= start && start <= len(s));
 
   const unsigned char* string = reinterpret_cast<unsigned char*>(s->data());

@@ -89,7 +89,10 @@ func_Utf8DecodeOne(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "s#i", &string, &length, &start)) {
     return NULL;
   }
-  // Bounds check for safety
+
+  // Bounds check for safety. start can equal length because the string has a
+  // nul-terminator. So utf8_decode(s + len(s)) is valid and would decode that
+  // terminator (also setting UTF8_ERR_END_OF_STREAM).
   assert(0 <= start && start <= length);
 
   Utf8Result_t decode_result;
