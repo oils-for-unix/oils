@@ -1,7 +1,6 @@
 """
 cppgen.py - AST pass to that prints C++ code
 """
-import io
 import itertools
 import json  # for "C escaping"
 
