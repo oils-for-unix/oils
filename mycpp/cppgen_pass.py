@@ -2666,7 +2666,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # List of field mask expressions
             mask_bits = []
-            full_class_name = _StripMycpp(o.fullname)
+            full_class_name = _StripMycpp(o.fullname).replace('.', '::')
             if self.virtual.CanReorderFields(full_class_name):
                 # No inheritance, so we are free to REORDER member vars, putting
                 # pointers at the front.
