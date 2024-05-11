@@ -1,7 +1,7 @@
 # spec/ysh-methods
 
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### => operator for pure computation is allowed (may be mandatory later)
 
@@ -318,7 +318,7 @@ status=0
 status=3
 ## END
 
-#### Str => trim*(), unicode decoding incorrect
+#### Str => trimStart(), unicode decoding incorrect
 var badStrs = [
   b'\yF4\yA2\yA4\yB0',  # Too large of a codepoint
   b'\yED\yBF\y80',      # Surrogate
@@ -327,7 +327,29 @@ var badStrs = [
 ]
 
 for badStr in (badStrs) {
-  try { call badStr => trim() }
+  try { call badStr => trimStart() }
+  echo status=$_status
+}
+
+## STDOUT:
+status=3
+status=3
+status=3
+status=3
+status=3
+## END
+
+#### Str => trimEnd(), unicode decoding incorrect
+# Tests the backwards UTF-8 decoder
+var badStrs = [
+  b'\yF4\yA2\yA4\yB0',  # Too large of a codepoint
+  b'\yED\yBF\y80',      # Surrogate
+  b'\yC1\y81',          # Overlong
+  b'\y80', b'\yFF',     # Does not match UTF8 bit pattern
+]
+
+for badStr in (badStrs) {
+  try { call badStr => trimEnd() }
   echo status=$_status
 }
 

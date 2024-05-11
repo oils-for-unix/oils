@@ -1,5 +1,7 @@
 #include "cpp/data_lang.h"
 
+#include <stdio.h>
+
 #include "_gen/core/value.asdl.h"
 #include "data_lang/j8_libc.h"  // for comparison
 #include "data_lang/j8_test_lib.h"
@@ -124,6 +126,41 @@ TEST heap_id_test() {
   PASS();
 }
 
+TEST utf8_decode_one_test() {
+#define ASSERT_DECODE(codepoint, bytes_read, string, start)               \
+  do {                                                                    \
+    Tuple2<int, int> result = fastfunc::Utf8DecodeOne((string), (start)); \
+    ASSERT_EQ(result.at0(), (codepoint));                                 \
+    ASSERT_EQ(result.at1(), (bytes_read));                                \
+  } while (false)
+
+  BigStr* s = StrFromC("h\xE2\xA1\x80\xC5\x81");
+  ASSERT_DECODE('h', 1, s, 0);
+  ASSERT_DECODE(0x2840, 3, s, 1);
+  ASSERT_DECODE(0x141, 2, s, 4);
+
+  // UTF8_ERR_END_OF_STREAM = 6
+  ASSERT_DECODE(-6, 0, s, 6);
+
+  // UTF8_ERR_OVERLONG = 1
+  ASSERT_DECODE(-1, 2, StrFromC("\xC1\x81"), 0);
+
+  // UTF8_ERR_SURROGATE = 2
+  ASSERT_DECODE(-2, 3, StrFromC("\xED\xBF\x80"), 0);
+
+  // UTF8_ERR_TOO_LARGE = 3
+  ASSERT_DECODE(-3, 4, StrFromC("\xF4\xA0\x80\x80"), 0);
+
+  // UTF8_ERR_BAD_ENCODING = 4
+  ASSERT_DECODE(-4, 2, StrFromC("\xC2\xFF"), 0);
+
+  // UTF8_ERR_TRUNCATED_BYTES = 5
+  ASSERT_DECODE(-5, 1, StrFromC("\xC2"), 0);
+
+  PASS();
+#undef ASSERT_DECODE
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -135,6 +172,7 @@ int main(int argc, char** argv) {
   RUN_TEST(WriteString_test);
   RUN_TEST(compare_c_test);
   RUN_TEST(heap_id_test);
+  RUN_TEST(utf8_decode_one_test);
 
   gHeap.CleanProcessExit();
 

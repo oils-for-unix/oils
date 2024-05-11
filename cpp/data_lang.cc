@@ -160,6 +160,26 @@ BigStr* ShellEncodeString(BigStr* s, int ysh_fallback) {
   return buf->getvalue();
 }
 
+Tuple2<int, int> Utf8DecodeOne(BigStr* s, int start) {
+  // Bounds check for safety. start can equal length because the string has a
+  // nul-terminator. So utf8_decode(s + len(s)) is valid and would decode that
+  // terminator (also setting UTF8_ERR_END_OF_STREAM).
+  assert(0 <= start && start <= len(s));
+
+  const unsigned char* string = reinterpret_cast<unsigned char*>(s->data());
+
+  Utf8Result_t decode_result;
+  utf8_decode(string + start, &decode_result);
+  int32_t codepoint_or_error;
+  if (decode_result.error) {
+    codepoint_or_error = -decode_result.error;
+  } else {
+    codepoint_or_error = decode_result.codepoint;
+  }
+
+  return Tuple2<int, int>(codepoint_or_error, decode_result.bytes_read);
+}
+
 }  // namespace fastfunc
 
 namespace pyj8 {
