@@ -33,6 +33,17 @@ class UnsupportedException(Exception):
     pass
 
 
+def _StripMycpp(name):
+    """
+    Strip the prefix 'mycpp.' from a fully resolved class, module, or function name.
+    This makes names compatible with the examples that use testpkg.
+    """
+    if name.startswith('mycpp.'):
+        return name[6:]
+
+    return name
+
+
 def _SkipAssignment(var_name):
     """
     Skip at the top level:
@@ -824,11 +835,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             raise AssertionError()
 
         if full_callee:
-            if full_callee.startswith('mycpp.'):
-                # For compatability with testpkg...
-                full_callee = full_callee[6:]
-
-            self.call_graph[self.current_func_name][full_callee] = 1
+            self.call_graph[self.current_func_name][_StripMycpp(full_callee)] = 1
 
     def call_path_exists(self, src, dst, visited):
         """Do a DFS from src to dst. Returns true if a path was found."""
@@ -1422,6 +1429,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Declare constant strings.  They have to be at the top level.
         if self.decl and self.indent == 0 and len(o.lvalues) == 1:
             lval = o.lvalues[0]
+
             c_type = GetCType(self.types[lval])
             if not _SkipAssignment(lval.name):
                 self.always_write('extern %s %s;\n', c_type, lval.name)
@@ -2463,9 +2471,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.name == '__repr__':  # Don't translate
             return
 
+        full_class_name = None
+        if self.current_class_name:
+            full_class_name = '%s.%s' % (self.full_module_name, self.current_class_name)
+            full_class_name = _StripMycpp(full_class_name).replace('.', '::')
+
         # No function prototypes when forward declaring.
         if self.forward_decl:
-            self.virtual.OnMethod(self.current_class_name, o.name)
+            self.virtual.OnMethod(full_class_name, o.name)
             return
 
         func_name = o.name
@@ -2475,7 +2488,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.local_var_list = []  # Make a new instance to collect from
             self.local_vars[o] = self.local_var_list
 
-            if self.virtual.IsVirtual(self.current_class_name, o.name):
+            if self.virtual.IsVirtual(full_class_name, o.name):
                 virtual = 'virtual '
 
         if not self.decl and self.current_class_name:
@@ -2516,16 +2529,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if self.current_class_name:
             func_name = '%s.%s' % (self.current_class_name, o.name)
 
-        func_name = '%s.%s' % (self.full_module_name, func_name)
-        if func_name.startswith('mycpp.'):
-            # For compatability with testpkg...
-            func_name = func_name[6:]
-
+        func_name = _StripMycpp('%s.%s' % (self.full_module_name, func_name))
         self.current_func_name = func_name
 
         if self.decl:
             assert func_name not in self.call_graph, func_name
             self.call_graph[func_name] = {}
+            if self.virtual.IsVirtual(full_class_name, o.name):
+                key = (full_class_name, o.name)
+                base = self.virtual.virtuals[key]
+                if base:
+                    full_base = '%s::%s' % (base[0], base[1])
+                    full_base = _StripMycpp(full_base.replace('::', '.'))
+                    if full_base in self.call_graph:
+                        self.call_graph[full_base][func_name] = 1
 
             self.always_write(');\n')
             self.accept(
@@ -2563,16 +2580,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(b, NameExpr):
                 # TODO: inherit from std::exception?
                 if b.name != 'object' and b.name != 'Exception':
-                    base_class_name = b.name
+                    base_class_name = b.fullname
             elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
                 assert isinstance(b.expr, NameExpr), b
-                base_class_name = '%s::%s' % (b.expr.name, b.name)
+                base_class_name = '%s.%s' % (b.expr.fullname, b.name)
+
+        if base_class_name:
+            base_class_name = _StripMycpp(base_class_name).replace('.', '::')
 
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
             self.always_write_ind('class %s;\n', o.name)
             if base_class_name:
-                self.virtual.OnSubclass(base_class_name, o.name)
+                full_sub = _StripMycpp(o.fullname).replace('.', '::')
+
+                self.virtual.OnSubclass(base_class_name, full_sub)
             # Visit class body so we get method declarations
             self.current_class_name = o.name
             self._write_body(o.defs.body)
@@ -2586,7 +2608,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # e.g. class TextOutput : public ColorOutput
             if base_class_name:
-                self.always_write(' : public %s', base_class_name)
+                if '::' in base_class_name:
+                    self.always_write(' : public %s', base_class_name[base_class_name.index('::'):])
+                else:
+                    self.always_write(' : public %s', base_class_name)
 
             self.always_write(' {\n')
             self.always_write_ind(' public:\n')
@@ -2641,7 +2666,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # List of field mask expressions
             mask_bits = []
-            if self.virtual.CanReorderFields(o.name):
+            full_class_name = _StripMycpp(o.fullname)
+            if self.virtual.CanReorderFields(full_class_name):
                 # No inheritance, so we are free to REORDER member vars, putting
                 # pointers at the front.
 
@@ -2665,7 +2691,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # The field mask of a derived class is unioned with its base's
                 # field mask.
                 if base_class_name:
-                    mask_bits.append('%s::field_mask()' % base_class_name)
+                    if '::' in base_class_name:
+                        mask_bits.append('%s::field_mask()' % base_class_name[base_class_name.index('::'):])
+                    else:
+                        mask_bits.append('%s::field_mask()' % base_class_name)
 
                 for name in sorted(self.member_vars):
                     c_type = GetCType(self.member_vars[name])
@@ -2771,7 +2800,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                 callee.name == '__init__'):
                             base_constructor_args = expr.args
                             #log('ARGS %s', base_constructor_args)
-                            self.def_write(' : %s(', base_class_name)
+                            if '::' in base_class_name:
+                                self.def_write(' : %s(', base_class_name[base_class_name.index('::'):])
+                            else:
+                                self.def_write(' : %s(', base_class_name)
+
                             for i, arg in enumerate(base_constructor_args):
                                 if i == 0:
                                     continue  # Skip 'this'

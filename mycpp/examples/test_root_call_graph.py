@@ -12,6 +12,17 @@ from testpkg import module1
 from typing import List
 
 
+class Lion(module1.Cat):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def AbstractMethod(self):
+        # type: () -> None
+        mylib.MaybeCollect()
+
+
 def DoesCollect():
     # type: () -> None
     s = 'foo'
@@ -88,12 +99,16 @@ def MainLoop(n):
     print('%d items remaining out of %d' % (m, n))
 
 
-def VirtualFunctionTest():
-    # type: () -> None
+def VirtualFunctionTest(cat):
+    # type: (module1.Cat) -> None
 
     # Not doing virtual functions yet.
 
-    MainLoop(1000)
+    int_list = [] # type: List[int]
+
+    cat.AbstractMethod()
+
+    int_list.append(1)
 
 
 def run_tests():
@@ -101,7 +116,9 @@ def run_tests():
 
     FunctionModuleTest()
 
-    VirtualFunctionTest()
+    MainLoop(1000)
+
+    VirtualFunctionTest(Lion())
 
 
 

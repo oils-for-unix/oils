@@ -4,6 +4,7 @@ pass_state.py
 from __future__ import print_function
 
 from collections import defaultdict
+from typing import Optional
 
 from mycpp.util import log
 
@@ -18,7 +19,7 @@ class Virtual(object):
     def __init__(self) -> None:
         self.methods: dict[str, list[str]] = defaultdict(list)
         self.subclasses: dict[str, list[str]] = defaultdict(list)
-        self.virtuals: list[tuple[str, str]] = []
+        self.virtuals: dict[tuple[str, str], Optional[tuple[str, str]]] = {}
         self.has_vtable: dict[str, bool] = {}
         self.can_reorder_fields: dict[str, bool] = {}
 
@@ -42,20 +43,20 @@ class Virtual(object):
             # class _Executor: pass
             #   versus
             # class MyExecutor(vm._Executor): pass
-            base_key = base_class.split('::')[1]
+            base_key = base_class.split('::')[-1]
 
             # Fail if we have two base classes in different namespaces with the same
             # name.
             if base_key in self.base_class_unique:
                 # Make sure we don't have collisions
-                assert self.base_class_unique[base_key] == base_class
+                assert self.base_class_unique[base_key] == base_class or base_class in self.subclasses[self.base_class_unique[base_key]]
             else:
                 self.base_class_unique[base_key] = base_class
 
         else:
             base_key = base_class
 
-        self.subclasses[base_key].append(subclass)
+        self.subclasses[base_class].append(subclass)
 
     def Calculate(self) -> None:
         """
@@ -73,8 +74,8 @@ class Virtual(object):
                 s_methods = self.methods[subclass]
                 overlapping = set(b_methods) & set(s_methods)
                 for method in overlapping:
-                    self.virtuals.append((base_class, method))
-                    self.virtuals.append((subclass, method))
+                    self.virtuals[(base_class, method)] = None
+                    self.virtuals[(subclass, method)] = (base_class, method)
                 if overlapping:
                     self.has_vtable[base_class] = True
                     self.has_vtable[subclass] = True

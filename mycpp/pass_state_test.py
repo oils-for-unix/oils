@@ -37,7 +37,7 @@ class VirtualTest(unittest.TestCase):
         v.Calculate()
 
         print(v.virtuals)
-        self.assertEqual([('Base', 'method'), ('Derived', 'method')],
+        self.assertEqual({('Base', 'method'): None, ('Derived', 'method'): ('Base', 'method')},
                          v.virtuals)
 
         self.assertEqual(True, v.IsVirtual('Base', 'method'))

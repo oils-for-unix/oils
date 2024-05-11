@@ -321,7 +321,7 @@ def main(argv):
 
     # First generate ALL C++ declarations / "headers".
     # class Foo { void method(); }; class Bar { void method(); };
-    call_graph = {}
+    call_graph = {'xxx':{}}
     for name, module in to_compile:
         #log('decl name %s', name)
         if name in to_header:
@@ -335,11 +335,11 @@ def main(argv):
                                   fmt_ids=fmt_ids,
                                   field_gc=field_gc,
                                   virtual=virtual,
-                                  decl=True)
+                                  decl=True,
+                                  call_graph=call_graph)
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
-        call_graph.update(p3.call_graph)
 
     if 0:
         with open('_tmp/mycpp_call_graph.json', 'w') as graph_f:
