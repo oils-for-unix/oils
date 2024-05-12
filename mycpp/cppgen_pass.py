@@ -470,7 +470,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.writing_default_arg = False
 
-        self.call_graph: Dict[str, Dict[str, int]] = call_graph or {}
+        self.call_graph = call_graph
 
     def log(self, msg, *args):
         ind_str = self.indent * '  '
@@ -835,26 +835,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             raise AssertionError()
 
         if full_callee:
-            self.call_graph[self.current_func_name][_StripMycpp(full_callee)] = 1
-
-    def call_path_exists(self, src, dst, visited):
-        """Do a DFS from src to dst. Returns true if a path was found."""
-
-        if self.decl or self.forward_decl:
-            return False
-
-        visited.add(src)
-        if src not in self.call_graph:
-            return False
-
-        for neighbor in self.call_graph[src]:
-            if neighbor == dst:
-                return True
-
-            if neighbor not in visited and self.call_path_exists(neighbor, dst, visited):
-                return True
-
-        return False
+            self.call_graph.OnCall(self.current_func_name, _StripMycpp(full_callee))
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         if o.callee.name == 'probe':
@@ -1845,9 +1826,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         reverse = False
-        need_roots = self.call_path_exists(self.current_func_name,
-                'mylib.MaybeCollect',
-                set({}))
+        might_gc = None
+        if not self.decl and not self.forward_decl:
+            might_gc = self.call_graph.PathExists(self.current_func_name, 'mylib.MaybeCollect')
 
         # for i, x in enumerate(...):
         index0_name = None
@@ -1981,7 +1962,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # it's called in a loop by _ExecuteList().  Although the 'child'
             # variable is already live by other means.
             # TODO: Test how much this affects performance.
-            if CTypeIsManaged(c_item_type) and need_roots:
+            if CTypeIsManaged(c_item_type) and might_gc:
                 self.def_write_ind('  StackRoot _for(&')
                 self.accept(index_expr)
                 self.def_write_ind(');\n')
@@ -2533,16 +2514,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_func_name = func_name
 
         if self.decl:
-            assert func_name not in self.call_graph, func_name
-            self.call_graph[func_name] = {}
             if self.virtual.IsVirtual(full_class_name, o.name):
                 key = (full_class_name, o.name)
                 base = self.virtual.virtuals[key]
                 if base:
                     full_base = '%s::%s' % (base[0], base[1])
                     full_base = _StripMycpp(full_base.replace('::', '.'))
-                    if full_base in self.call_graph:
-                        self.call_graph[full_base][func_name] = 1
+                    self.call_graph.OnCall(full_base, func_name)
 
             self.always_write(');\n')
             self.accept(
@@ -2996,12 +2974,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     roots.append(lval_name)
             #self.log('roots %s', roots)
 
-            need_roots = self.current_func_name.startswith('core.shell.') or self.call_path_exists(
-                    self.current_func_name,
-                    'mylib.MaybeCollect',
-                    set({}))
+            might_gc = None
+            if not self.decl and not self.forward_decl:
+                might_gc = self.call_graph.PathExists(self.current_func_name, 'mylib.MaybeCollect')
 
-            if len(roots) and need_roots:
+            if len(roots) and might_gc:
                 if (self.stack_roots_warn and
                         len(roots) > self.stack_roots_warn):
                     log('WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'

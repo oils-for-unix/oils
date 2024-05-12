@@ -92,3 +92,38 @@ class Virtual(object):
             return self.can_reorder_fields[class_name]
         else:
             return True  # by default they can be reordered
+
+
+class CallGraph(object):
+
+    def __init__(self) -> None:
+        self.graph: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        self.mem: dict[tuple[str, str]] = {}
+
+    def OnCall(self, caller: str, callee: str) -> None:
+        self.graph[caller][callee] += 1
+
+    def _Memoize(self, src: str, dst: str, reachable: bool) -> bool:
+        self.mem[(src, dst)] = reachable
+        return self.mem[(src, dst)]
+
+    def PathExists(self, src: str, dst: str) -> bool:
+
+        def _dfs(u, v, visited):
+            if (u, v) in self.mem:
+                return self.mem[(u, v)]
+
+            visited.add(u)
+            if u not in self.graph:
+                return False
+
+            for neighbor in self.graph[u]:
+                if neighbor == v:
+                    return self._Memoize(u, v, True)
+
+                if neighbor not in visited and _dfs(neighbor, v, visited):
+                    return self._Memoize(u, v, True)
+
+            return self._Memoize(u, v, False)
+
+        return _dfs(src, dst, set({}))

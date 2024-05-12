@@ -84,5 +84,35 @@ class VirtualTest(unittest.TestCase):
         self.assertEqual(True, v.CanReorderFields('Klass2'))
 
 
+class CallGraphTest(unittest.TestCase):
+
+    def testCallGraph(self):
+        g = pass_state.CallGraph()
+
+        g.OnCall('a', 'b')
+        g.OnCall('b', 'c')
+        g.OnCall('b', 'd')
+        g.OnCall('d', 'd')
+        g.OnCall('e', 'f')
+
+        self.assertEqual(True, g.PathExists('a', 'b'))
+        self.assertEqual(True, g.PathExists('a', 'c'))
+        self.assertEqual(True, g.PathExists('a', 'd'))
+        self.assertEqual(True, g.PathExists('b', 'c'))
+        self.assertEqual(True, g.PathExists('b', 'd'))
+        self.assertEqual(True, g.PathExists('d', 'd'))
+        self.assertEqual(True, g.PathExists('e', 'f'))
+
+        self.assertEqual(False, g.PathExists('b', 'a'))
+        self.assertEqual(False, g.PathExists('c', 'a'))
+        self.assertEqual(False, g.PathExists('d', 'a'))
+        self.assertEqual(False, g.PathExists('e', 'a'))
+        self.assertEqual(False, g.PathExists('f', 'a'))
+        self.assertEqual(False, g.PathExists('c', 'b'))
+        self.assertEqual(False, g.PathExists('d', 'b'))
+        self.assertEqual(False, g.PathExists('e', 'b'))
+        self.assertEqual(False, g.PathExists('d', 'c'))
+
+
 if __name__ == '__main__':
     unittest.main()

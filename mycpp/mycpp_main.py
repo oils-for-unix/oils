@@ -321,7 +321,7 @@ def main(argv):
 
     # First generate ALL C++ declarations / "headers".
     # class Foo { void method(); }; class Bar { void method(); };
-    call_graph = {'xxx':{}}
+    call_graph = pass_state.CallGraph()
     for name, module in to_compile:
         #log('decl name %s', name)
         if name in to_header:
