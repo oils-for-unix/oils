@@ -102,8 +102,9 @@ func_Utf8DecodeOne(PyObject *self, PyObject *args) {
     codepoint_or_error = decode_result.codepoint;
   }
 
-  // utf8_decode treats zero-bytes as an end-of-string marker. But python2/oils
-  // strings do not. Translate END_OF_STREAM errors to valid zero-codepoints.
+  // utf8_decode treats zero-bytes as C-style NUL-terminators. But python2/oils
+  // strings treat these as zero-codepoints. Translate END_OF_STREAM errors
+  // (resulting from zero-bytes) to valid zero-codepoints.
   if (decode_result.error == UTF8_ERR_END_OF_STREAM) {
     codepoint_or_error = 0;
     decode_result.bytes_read = 1;  // Read past that zero-byte
