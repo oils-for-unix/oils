@@ -343,7 +343,7 @@ def main(argv):
 
     if 0:
         with open('_tmp/mycpp_call_graph.json', 'w') as graph_f:
-            json.dump(call_graph, graph_f, indent=2)
+            json.dump(call_graph.graph, graph_f, indent=2)
 
     log('\tmycpp pass: IMPL')
 
