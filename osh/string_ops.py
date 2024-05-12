@@ -93,12 +93,6 @@ def DecodeUtf8Char(s, start):
     from {Next,Previous}Utf8Char which raises an `error.Strict` on encoding
     errors.)
     """
-    # The data_lang/utf8.h decoder treats nul-bytes as an end of string
-    # sentinel. However, they may not be the end of the string here. So we must
-    # special case the nul-byte.
-    if mylib.ByteAt(s, start) == 0:
-        return 0
-
     codepoint_or_error, _bytes_read = fastfunc.Utf8DecodeOne(s, start)
     if codepoint_or_error < 0:
         raise error.Expr(
@@ -116,10 +110,6 @@ def NextUtf8Char(s, i):
 
     Validates UTF-8.
     """
-    # Like in DecodeUtf8Char, this must be special-cased.
-    if mylib.ByteAt(s, i) == 0:
-        return 1
-
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
         e_strict(

@@ -48,9 +48,6 @@ class FastfuncTest(unittest.TestCase):
     self.assertEqual((0x2840, 3), fastfunc.Utf8DecodeOne(s, 1))
     self.assertEqual((0x141, 2), fastfunc.Utf8DecodeOne(s, 4))
 
-    # UTF8_ERR_END_OF_STREAM = 6
-    self.assertEqual((-6, 0), fastfunc.Utf8DecodeOne(s, 6))
-
     # UTF8_ERR_OVERLONG = 1
     self.assertEqual((-1, 2), fastfunc.Utf8DecodeOne("\xC1\x81", 0))
 
@@ -65,6 +62,9 @@ class FastfuncTest(unittest.TestCase):
 
     # UTF8_ERR_TRUNCATED_BYTES = 5
     self.assertEqual((-5, 1), fastfunc.Utf8DecodeOne("\xC2", 0))
+
+    # Should follow the python2/oils string model wrt zero-bytes
+    self.assertEqual((0, 1), fastfunc.Utf8DecodeOne("\x00", 0))
 
   def testCanOmit(self):
     self.assertEqual(True, fastfunc.CanOmitQuotes('foo'))

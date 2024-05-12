@@ -161,10 +161,8 @@ BigStr* ShellEncodeString(BigStr* s, int ysh_fallback) {
 }
 
 Tuple2<int, int> Utf8DecodeOne(BigStr* s, int start) {
-  // Bounds check for safety. start can equal length because the string has a
-  // nul-terminator. So utf8_decode(s + len(s)) is valid and would decode that
-  // terminator (also setting UTF8_ERR_END_OF_STREAM).
-  assert(0 <= start && start <= len(s));
+  // Bounds check for safety
+  assert(0 <= start && start < len(s));
 
   const unsigned char* string = reinterpret_cast<unsigned char*>(s->data());
 
@@ -175,6 +173,13 @@ Tuple2<int, int> Utf8DecodeOne(BigStr* s, int start) {
     codepoint_or_error = -decode_result.error;
   } else {
     codepoint_or_error = decode_result.codepoint;
+  }
+
+  // Follow the python2/oils string model. See func_Utf8DecodeOne in
+  // pyext/fastfunc.c for details.
+  if (decode_result.error == UTF8_ERR_END_OF_STREAM) {
+    codepoint_or_error = 0;
+    decode_result.bytes_read = 1;
   }
 
   return Tuple2<int, int>(codepoint_or_error, decode_result.bytes_read);
