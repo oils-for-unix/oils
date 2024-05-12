@@ -773,7 +773,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         return False
 
-    def add_to_call_graph(self, o):
+    def resolve_callee(self, o: CallExpr) -> Optional[str]:
+
         full_callee = None
         if isinstance(o.callee, NameExpr):
             full_callee = o.callee.fullname
@@ -835,7 +836,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             raise AssertionError()
 
         if full_callee:
-            self.call_graph.OnCall(self.current_func_name, _StripMycpp(full_callee))
+            full_callee = _StripMycpp(full_callee)
+
+        return full_callee
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         if o.callee.name == 'probe':
@@ -861,7 +864,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         if self.decl and self.current_func_name:
-            self.add_to_call_graph(o)
+            full_callee = self.resolve_callee(o)
+            if full_callee:
+                self.call_graph.OnCall(self.current_func_name, full_callee)
 
         if o.callee.name == 'isinstance':
             assert len(o.args) == 2, o.args
@@ -1497,7 +1502,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             callee = o.rvalue.callee
             if self.decl and self.current_func_name:
-                self.add_to_call_graph(o.rvalue)
+                full_callee = self.resolve_callee(o.rvalue)
+                if full_callee:
+                    self.call_graph.OnCall(self.current_func_name, full_callee)
 
             if callee.name == 'NewDict':
                 lval_type = self.types[lval]
