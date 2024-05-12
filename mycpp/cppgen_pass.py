@@ -2521,6 +2521,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_func_name = func_name
 
         if self.decl:
+            # For virtual methods, pretend that the method on the base class
+            # calls the same method on every subclass. This way call sites using
+            # the abstract base class will over-approximate the set of call paths
+            # they can take when checking if they can reach MaybeCollect().
             if self.virtual.IsVirtual(full_class_name, o.name):
                 key = (full_class_name, o.name)
                 base = self.virtual.virtuals[key]

@@ -98,20 +98,20 @@ class CallGraph(object):
 
     def __init__(self) -> None:
         self.graph: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
-        self.mem: dict[tuple[str, str]] = {}
+        self.mem: dict[tuple[str, str], Optional[str]] = {}
 
     def OnCall(self, caller: str, callee: str) -> None:
         self.graph[caller][callee] += 1
 
-    def _Memoize(self, src: str, dst: str, reachable: bool) -> bool:
-        self.mem[(src, dst)] = reachable
-        return self.mem[(src, dst)]
+    def _Memoize(self, src: str, dst: str, next_hop: Optional[str]) -> bool:
+        self.mem[(src, dst)] = next_hop
+        return self.mem[(src, dst)] is not None
 
     def PathExists(self, src: str, dst: str) -> bool:
 
-        def _dfs(u, v, visited):
+        def _dfs(u: str, v: str, visited: set[str]):
             if (u, v) in self.mem:
-                return self.mem[(u, v)]
+                return self.mem[(u, v)] is not None
 
             visited.add(u)
             if u not in self.graph:
@@ -119,11 +119,27 @@ class CallGraph(object):
 
             for neighbor in self.graph[u]:
                 if neighbor == v:
-                    return self._Memoize(u, v, True)
+                    return self._Memoize(u, v, neighbor)
 
                 if neighbor not in visited and _dfs(neighbor, v, visited):
-                    return self._Memoize(u, v, True)
+                    return self._Memoize(u, v, neighbor)
 
-            return self._Memoize(u, v, False)
+            return self._Memoize(u, v, None)
 
-        return _dfs(src, dst, set({}))
+        found_path = _dfs(src, dst, set({}))
+
+        # dump the path
+        if 0:
+            path = [src, self.mem[(src, dst)]]
+            while path[-1] != dst:
+                u = path[-1]
+                for neighbor in self.graph[u]:
+                    if self.mem[(u, dst)]:
+                        path.append(self.mem[(u, dst)])
+                        break
+
+            print(src, dst)
+            print(path)
+            print('---')
+
+        return found_path
