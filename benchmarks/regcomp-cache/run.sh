@@ -26,7 +26,10 @@ match-many() {
 
   declare -a REGEXES=()
   for i in $(seq $num_pat); do
-    REGEXES[i]="$i?($i*)$i+"  # last char is modified with ? then * and +
+    #REGEXES[i]="$i?($i*)$i+"  # last char is modified with ? then * and +
+
+    # char classes are expensive to compile
+    REGEXES[i]="$i?($i*)$i+[a-zA-Z_]?"  # last char is modified with ? then * and +
   done
 
   echo "${REGEXES[@]}"
@@ -68,8 +71,11 @@ compare() {
   # with OSH
   { time $bin $0 match-many "$@"; } >$dir/osh-stdout.txt 2>$dir/osh-time.txt
 
+  # OSH without cache
+  { time OILS_REGEX_CACHE_SIZE=0 $bin $0 match-many "$@"; } >$dir/osh-nocache-stdout.txt 2>$dir/osh-nocache-time.txt
+
   # should have equal output except for version
-  diff $dir/*-stdout.txt || true
+  diff $dir/{bash,osh}-stdout.txt || true
 
   # show timings
   head $dir/*-time.txt

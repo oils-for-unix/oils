@@ -146,13 +146,13 @@ TEST for_test_coverage() {
 }
 
 void FindAll(const char* p, const char* s) {
-  regex_t pat;
+  regex_t* pat;
 
   int cflags = REG_EXTENDED;
-  if (regcomp(&pat, p, cflags) != 0) {
+  if ((pat = libc::gRegexCache.regcomp(StrFromC(p), cflags)) == nullptr) {
     FAIL();
   }
-  int outlen = pat.re_nsub + 1;  // number of captures
+  int outlen = pat->re_nsub + 1;  // number of captures
 
   // TODO: Could statically allocate 99, and assert that re_nsub is less than
   // 99.  Would speed up loops.
@@ -164,7 +164,7 @@ void FindAll(const char* p, const char* s) {
   while (true) {
     // Necessary so ^ doesn't match in the middle!
     int eflags = cur_pos == 0 ? 0 : REG_NOTBOL;
-    bool match = regexec(&pat, s + cur_pos, outlen, pmatch, eflags) == 0;
+    bool match = regexec(pat, s + cur_pos, outlen, pmatch, eflags) == 0;
 
     if (!match) {
       break;
@@ -186,7 +186,6 @@ void FindAll(const char* p, const char* s) {
   }
 
   free(pmatch);
-  regfree(&pat);
 }
 
 // adjacent matches

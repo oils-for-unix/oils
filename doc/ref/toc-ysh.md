@@ -238,6 +238,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Oils VM]       OILS_VERSION
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS   OILS_GC_STATS_FD
+                  OILS_REGEX_CACHE_SIZE
 X [Wok]           _filename   _line
 X [Builtin Sub]   _buffer
 ```

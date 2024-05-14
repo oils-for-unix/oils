@@ -6,12 +6,101 @@
 #include <fnmatch.h>
 #include <glob.h>
 #include <locale.h>
-#include <regex.h>
+#include <stdlib.h>  // getenv()
 #include <sys/ioctl.h>
 #include <unistd.h>  // gethostname()
 #include <wchar.h>
 
+#include <algorithm>
+
 namespace libc {
+
+RegexCache::CacheEntry::CacheEntry(BigStr* pat, int cflags) : pat_() {
+  int status = ::regcomp(&compiled_, pat->data_, cflags);
+  if (status != 0) {
+    char error_desc[50];
+    regerror(status, &compiled_, error_desc, 50);
+
+    char error_message[80];
+    snprintf(error_message, 80, "Invalid regex %s (%s)", pat->data_,
+             error_desc);
+
+    throw Alloc<ValueError>(StrFromC(error_message));
+  }
+
+  pat_ = static_cast<char*>(malloc(len(pat) + 1));
+  memcpy(pat_, pat->data_, len(pat) + 1);
+  pat_hash_ = hash(pat);
+}
+
+RegexCache::CacheEntry::~CacheEntry() {
+  DCHECK(pat_ != nullptr);
+  free(pat_);
+  regfree(&compiled_);
+}
+
+RegexCache::RegexCache(int capacity) : capacity_(capacity), access_list_() {
+  // Override if env var is set.
+  char* e = getenv("OILS_REGEX_CACHE_SIZE");
+  if (e) {
+    int result;
+    if (StringToInt(e, strlen(e), 10, &result)) {
+      capacity_ = result;
+    }
+  }
+}
+
+RegexCache::~RegexCache() {
+  for (auto& it : access_list_) {
+    delete it;
+  }
+}
+
+regex_t* RegexCache::regcomp(BigStr* pat, int cflags) {
+  RegexCache::CacheEntry* entry = TakeEntry(pat);
+  if (entry == nullptr) {
+    // Dealing with a new entry. Make space and compile.
+    MaybeEvict();
+    entry = new RegexCache::CacheEntry(pat, cflags);
+  }
+
+  SetMostRecent(entry);
+
+  return &entry->compiled_;
+}
+
+RegexCache::CacheEntry* RegexCache::TakeEntry(BigStr* pat) {
+  auto it = std::find_if(access_list_.begin(), access_list_.end(),
+                         [pat](RegexCache::CacheEntry* entry) {
+                           return hash(pat) == entry->pat_hash_ &&
+                                  strcmp(pat->data_, entry->pat_) == 0;
+                         });
+  if (it == access_list_.end()) {
+    return nullptr;
+  }
+
+  RegexCache::CacheEntry* ret = *it;
+  access_list_.erase(it);
+  return ret;
+}
+
+void RegexCache::MaybeEvict() {
+  if (access_list_.size() < capacity_) {
+    return;
+  }
+
+  // Evict the least recently used entry.
+  if (access_list_.size()) {
+    delete *access_list_.begin();
+    access_list_.erase(access_list_.begin());
+  }
+}
+
+void RegexCache::SetMostRecent(RegexCache::CacheEntry* entry) {
+  access_list_.push_back(entry);
+}
+
+RegexCache gRegexCache(RegexCache::kDefaultSize);
 
 BigStr* gethostname() {
   // Note: Fixed issue #1656 - OS X and FreeBSD don't have HOST_NAME_MAX
@@ -108,20 +197,10 @@ List<BigStr*>* glob(BigStr* pat) {
 List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int eflags,
                         int pos) {
   cflags |= REG_EXTENDED;
-  regex_t pat;
-  int status = regcomp(&pat, pattern->data_, cflags);
-  if (status != 0) {
-    char error_desc[50];
-    regerror(status, &pat, error_desc, 50);
+  regex_t* compiled = gRegexCache.regcomp(pattern, cflags);
+  DCHECK(compiled != nullptr);
 
-    char error_message[80];
-    snprintf(error_message, 80, "Invalid regex %s (%s)", pattern->data_,
-             error_desc);
-
-    throw Alloc<ValueError>(StrFromC(error_message));
-  }
-
-  int num_groups = pat.re_nsub + 1;  // number of captures
+  int num_groups = compiled->re_nsub + 1;  // number of captures
 
   List<int>* indices = NewList<int>();
   indices->reserve(num_groups * 2);
@@ -129,7 +208,7 @@ List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int eflags,
   const char* s = str->data_;
   regmatch_t* pmatch =
       static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * num_groups));
-  bool match = regexec(&pat, s + pos, num_groups, pmatch, eflags) == 0;
+  bool match = regexec(compiled, s + pos, num_groups, pmatch, eflags) == 0;
   if (match) {
     int i;
     for (i = 0; i < num_groups; i++) {
@@ -148,7 +227,6 @@ List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int eflags,
   }
 
   free(pmatch);
-  regfree(&pat);
 
   if (!match) {
     return nullptr;
@@ -167,20 +245,16 @@ const int NMATCH = 2;
 // Odd: This a Tuple2* not Tuple2 because it's Optional[Tuple2]!
 Tuple2<int, int>* regex_first_group_match(BigStr* pattern, BigStr* str,
                                           int pos) {
-  regex_t pat;
   regmatch_t m[NMATCH];
 
   // Could have been checked by regex_parse for [[ =~ ]], but not for glob
   // patterns like ${foo/x*/y}.
 
-  if (regcomp(&pat, pattern->data_, REG_EXTENDED) != 0) {
-    throw Alloc<RuntimeError>(
-        StrFromC("Invalid regex syntax (func_regex_first_group_match)"));
-  }
+  regex_t* compiled = gRegexCache.regcomp(pattern, REG_EXTENDED);
+  DCHECK(compiled != nullptr);
 
   // Match at offset 'pos'
-  int result = regexec(&pat, str->data_ + pos, NMATCH, m, 0 /*flags*/);
-  regfree(&pat);
+  int result = regexec(compiled, str->data_ + pos, NMATCH, m, 0 /*flags*/);
 
   if (result != 0) {
     return nullptr;
