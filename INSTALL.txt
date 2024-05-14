@@ -9,7 +9,13 @@ This file describes how to configure, build, and install it from source code.
 Quick Start
 -----------
 
-If you haven't already done so, extract the tarball:
+If you haven't already done so, download the source code from 
+the [releases page](https://www.oilshell.org/releases.html).
+
+To get interactive features, install GNU readline library development 
+packages (see software requirements below).
+
+Extract the tarball:
  
     tar -x --xz < oil-0.21.0.tar.xz
     cd oil-0.21.0
@@ -47,14 +53,45 @@ This parses and prints a syntax tree for the 'configure' script.
 
     osh -n configure
 
-More Documentation
+Optional Configuration
+-----------------------
+
+After creating the directory:
+
+    mkdir -p ~/.config/oil
+
+OSH will create `osh_history` there to store your command history.
+
+You can also create your own startup files in this directory:
+
+- `bin/osh` runs `~/.config/oil/oshrc`
+- `bin/oil` runs `~/.config/oil/oilrc`
+
+These are the **only** files that are "sourced".  Other shells [have a
+confusing initialization sequence involving many files][mess] ([original][]).
+It's very hard to tell when and if `/etc/profile`, `~/.bashrc`,
+`~/.bash_profile`, etc. are executed.
+
+OSH and Oil intentionally avoid this.  If you want those files, simply `source`
+them in your `oshrc`.
+
+[mess]: https://shreevatsa.wordpress.com/2008/03/30/zshbash-startup-files-loading-order-bashrc-zshrc-etc/
+
+[original]: http://www.solipsys.co.uk/new/BashInitialisationFiles.html
+
+I describe my own `oshrc` file on the Wiki: [How To Test
+OSH](https://github.com/oilshell/oil/wiki/How-To-Test-OSH).
+
+- If you get tired of typing `~/.config/oil/oshrc`, symlink it to `~/.oshrc`.
+
+Documentation
 ------------------
 
 Every release has a home page with links, e.g.
 
     https://oilshell.org/release/0.21.0/
 
-System Requirements
+Software Requirements
 -------------------
 
 Roughly speaking, you need:
