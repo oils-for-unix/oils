@@ -212,7 +212,7 @@ def main(argv):
 
     # GLOBAL Constant pass over all modules.  We want to collect duplicate
     # strings together.  And have globally unique IDs str0, str1, ... strN.
-    const_lookup = {}
+    const_lookup = {}  # Dict {StrExpr node => string name}
     const_code = []
     pass1 = const_pass.Collect(result.types, const_lookup, const_code)
 
@@ -312,10 +312,6 @@ def main(argv):
     local_vars = {}  # FuncDef node -> (name, c_type) list
     field_gc = {}  # ClassDef node -> maskof_Foo() string, if it's required
 
-    # Node -> fmt_name, plus a hack for the counter
-    # TODO: This could be a class with 2 members
-    fmt_ids = {'_counter': 0}
-
     log('\tmycpp pass: PROTOTYPES')
 
     # First generate ALL C++ declarations / "headers".
@@ -330,7 +326,6 @@ def main(argv):
                                   const_lookup,
                                   out_f,
                                   local_vars=local_vars,
-                                  fmt_ids=fmt_ids,
                                   field_gc=field_gc,
                                   virtual=virtual,
                                   decl=True)
@@ -348,7 +343,6 @@ def main(argv):
                                   const_lookup,
                                   f,
                                   local_vars=local_vars,
-                                  fmt_ids=fmt_ids,
                                   field_gc=field_gc,
                                   stack_roots_warn=opts.stack_roots_warn)
         p4.visit_mypy_file(module)

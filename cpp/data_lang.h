@@ -13,6 +13,8 @@ BigStr* J8EncodeString(BigStr* s, int j8_fallback);
 
 BigStr* ShellEncodeString(BigStr* s, int ysh_fallback);
 
+Tuple2<int, int> Utf8DecodeOne(BigStr* s, int start);
+
 }  // namespace fastfunc
 
 namespace pyj8 {

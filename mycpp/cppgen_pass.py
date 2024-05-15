@@ -1,7 +1,6 @@
 """
 cppgen.py - AST pass to that prints C++ code
 """
-import io
 import itertools
 import json  # for "C escaping"
 
@@ -401,7 +400,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  f,
                  virtual=None,
                  local_vars=None,
-                 fmt_ids=None,
                  field_gc=None,
                  decl=False,
                  forward_decl=False,
@@ -415,9 +413,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # This is different from member_vars because we collect it in the
         # 'decl' phase, and write it in the definition phase.
         self.local_vars = local_vars
-        self.fmt_ids = fmt_ids
         self.field_gc = field_gc
-        self.fmt_funcs = io.StringIO()
 
         self.decl = decl
         self.forward_decl = forward_decl
@@ -537,6 +533,12 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         err = (self.module_path, node.line, msg)
         self.errors_keep_going.append(err)
 
+    def not_translated(self, node: Union[Statement, Expression], name: str):
+        self.report_error(node, '%s not translated' % name)
+
+    def not_python2(self, node: Union[Statement, Expression], name: str):
+        self.report_error(node, "%s: shouldn't get here in Python 2" % name)
+
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
@@ -578,12 +580,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 continue
             self.accept(node)
 
-        # Write fmtX() functions inside the namespace.
-        if self.decl:
-            self.always_write('\n')
-            self.always_write(self.fmt_funcs.getvalue())
-            self.fmt_funcs = io.StringIO()  # clear it for the next file
-
         if self.forward_decl:
             self.indent -= 1
 
@@ -602,29 +598,33 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> T:
         self.def_write(str(o.value))
 
-    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
-        self.def_write(self.const_lookup[o])
-
-    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
-        pass
-
-    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> T:
-        pass
-
     def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> T:
         # e.g. for arg.t > 0.0
         self.def_write(str(o.value))
 
+    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
+        self.def_write(self.const_lookup[o])
+
+    # UNHANDLED
+
+    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
+        self.not_python2(o, 'bytes expr')
+
+    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> T:
+        self.not_translated(o, 'unicode expr')
+
     def visit_complex_expr(self, o: 'mypy.nodes.ComplexExpr') -> T:
-        pass
+        self.not_translated(o, 'complex expr')
+
+    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> T:
+        # is this in .pyi files only?
+        self.not_translated(o, 'ellipsis')
 
     # Expressions
 
-    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> T:
-        pass
-
     def visit_star_expr(self, o: 'mypy.nodes.StarExpr') -> T:
-        pass
+        # mycpp/examples/invalid_python.py doesn't hit this?
+        self.not_translated(o, 'star expr')
 
     def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> T:
         if o.name == 'None':
@@ -698,7 +698,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.def_write('%s', o.name)
 
     def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
-        pass
+        self.not_python2(o, 'yield from')
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> T:
         assert self.current_func_node in self.yield_accumulators
@@ -1109,10 +1109,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> T:
-        pass
+        self.not_translated(o, 'super expr')
 
     def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> T:
-        pass
+        self.not_translated(o, 'assign expr')
 
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
         # e.g. a[-1] or 'not x'
@@ -1190,7 +1190,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.def_write('))')
 
     def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> T:
-        pass
+        self.not_translated(o, 'set expr')
 
     def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> T:
         self.accept(o.base)

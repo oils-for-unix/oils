@@ -231,6 +231,9 @@ test-invalid-examples() {
       */invalid_global.py)
         expected_status=2
         ;;
+      */invalid_python.py)
+        expected_status=3
+        ;;
       */invalid_switch.py)
         expected_status=5
         ;;
