@@ -7,23 +7,37 @@
 // - Unhandled input
 // - Unreachable code
 
+#include <assert.h>  // assert
 #include <stdio.h>  // printf
+
+
+/*!re2c
+  re2c:yyfill:enable = 0;
+  re2c:define:YYCTYPE = char;
+
+  // Define rule for C-style strings with backslash escapes.
+  //
+  // \x00 is for the sentinel.  re2c warns you that the sentinel should not be
+  // matched in a pattern.
+
+  favorite = ["] ( [^\x00"\\] | "\\" [^\x00] )* ["];
+
+  extra = "\\z";
+  favorite2 = ["] ( [^\x00"\\] | "\\z" )* ["];
+*/
 
 bool MatchDoubleQuotedString(const char *s) {
   const char *YYCURSOR = s;
-  const char *YYMARKER;   // sometimes needed
+  const char *YYMARKER;   // depending on pattern, generated code may use this
 
-  //for (;;) {
+#if 1
   /*!re2c
-    re2c:yyfill:enable = 0;
-    re2c:define:YYCTYPE = char;
-
-    favorite = ["] ( [^\x00"\\] | "\\." )* ["];
-
     favorite  { return true; }
     *         { return false; }
   */
-  //}
+#endif
+
+  assert(0);
 }
 
 int main(int argc, char **argv) {

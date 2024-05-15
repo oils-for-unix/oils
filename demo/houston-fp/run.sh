@@ -93,11 +93,15 @@ number() {
 
 favorite() {
   re2c-gen favorite
+  echo
+
+  wc -l demo/houston-fp/favorite.re2c.cc
+  echo
 
   ls -l $BASE_DIR/*.png
   echo
 
-  wc -l $BASE_DIR/favorite*.{dot,h}
+  wc -l $BASE_DIR/favorite*.{dot,cc}
   echo
 
   compile favorite
@@ -138,7 +142,7 @@ asdl-main() {
 }
 
 count-lines() {
-  wc -l $SCHEMA
+  wc -l $SCHEMA demo/houston-fp/demo_main.py
   echo
 
   wc -l $BASE_DIR/*
@@ -165,10 +169,24 @@ asdl-case-classes() {
   asdl-demo
 }
 
+banner() {
+  echo
+  echo ---
+  echo "$@"
+  echo ---
+  echo
+}
+
 soil-run() {
   # For local testing
   rm -r -f $BASE_DIR/*
   mkdir -p $BASE_DIR
+
+  banner 're2c'
+
+  favorite
+
+  banner 'ASDL'
 
   asdl-case-classes
 }
