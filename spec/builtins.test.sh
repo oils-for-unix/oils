@@ -76,11 +76,15 @@ if test $st -ne 0; then
   echo 'failed with multiple args'
 fi
 
-
 ## STDOUT:
 status=0
 status=0
 failed with multiple args
+## END
+
+## BUG dash STDOUT:
+status=0
+status=0
 ## END
 
 #### $OLDPWD

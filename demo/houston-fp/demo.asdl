@@ -1,0 +1,26 @@
+# Show off "first class variants" / case classes.
+#
+# Takeaways:
+# - metalanguage affects the language
+# - metalanguage design / code compression
+
+# Based on frontend/syntax.asdl
+
+module demo {
+
+  # Product type
+  Token = (int id, int length, int col, str line)
+
+  # Source location for errors
+  loc = 
+    Missing
+
+    # Variants that "belong" to the sum type loc_t
+  | Foo(int x, int y)
+  | Bar(str a, str b)
+
+  | Token %Token
+
+    # Example of indirection
+  #| ArgWord %CompoundWord
+}
