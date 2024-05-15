@@ -29,8 +29,73 @@ readonly BASE_DIR=_tmp/houston-fp
 
 # Note: not showing metaprogramming from frontend/lexer_def.py - only re2c
 
-favorite-regex() {
-  re2c --help
+re2c-gen() {
+  local name=$1
+  shift
+  # Rest are flags
+
+  #re2c --help
+  #return
+
+  set -x
+  # Generate C switch and goto
+  # Flags copied from Oils
+
+  local more_flags=''
+  # Extra flags for number
+  #local more_flags='-i --case-ranges'
+
+  re2c \
+    $more_flags \
+    -W -Wno-match-empty-string -Werror \
+    -o $BASE_DIR/$name-re2c.cc demo/houston-fp/$name.re2c.cc
+
+  # Generate DOT graph (text)
+  re2c --emit-dot \
+    -o $BASE_DIR/$name-re2c.dot demo/houston-fp/$name.re2c.cc
+
+  # Generate image
+  dot -Tpng \
+    -o $BASE_DIR/$name-re2c.png $BASE_DIR/$name-re2c.dot
+
+  set -x
+}
+
+compile() {
+  local name=$1
+
+  c++ -std=c++11 \
+    -o $BASE_DIR/$name-re2c demo/houston-fp/$name.re2c.cc
+}
+
+number() {
+  re2c-gen number
+  compile number
+
+  $BASE_DIR/number-re2c ''
+  $BASE_DIR/number-re2c 'z'
+  $BASE_DIR/number-re2c '123'
+}
+
+favorite() {
+  re2c-gen favorite
+
+  ls -l $BASE_DIR/*.png
+  echo
+
+  wc -l $BASE_DIR/favorite*.{dot,h}
+  echo
+
+  compile favorite
+
+  $BASE_DIR/favorite-re2c '"hello world"'
+  $BASE_DIR/favorite-re2c '""'
+  $BASE_DIR/favorite-re2c '"foo \n bar"'
+  $BASE_DIR/favorite-re2c '"bad \"'
+  $BASE_DIR/favorite-re2c '"unclosed '
+  $BASE_DIR/favorite-re2c 'unquoted'
+
+  echo
 }
 
 show-oils() {
