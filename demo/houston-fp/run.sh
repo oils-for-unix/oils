@@ -101,9 +101,6 @@ favorite() {
   wc -l demo/houston-fp/favorite.re2c.cc
   echo
 
-  ls -l $BASE_DIR/*.png
-  echo
-
   wc -l $BASE_DIR/favorite*.{dot,cc}
   echo
 
