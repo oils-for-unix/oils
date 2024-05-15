@@ -60,9 +60,12 @@ re2c-gen() {
   re2c --emit-dot \
     -o $BASE_DIR/$name-re2c.dot demo/houston-fp/$name.re2c.cc
 
-  # Generate image
-  dot -Tpng \
-    -o $BASE_DIR/$name-re2c.png $BASE_DIR/$name-re2c.dot
+  # Only works locally right now
+  if command -v dot; then
+    # Generate image
+    dot -Tpng \
+      -o $BASE_DIR/$name-re2c.png $BASE_DIR/$name-re2c.dot
+  fi
 
   set +x
 }
