@@ -11,6 +11,8 @@
 
 bool MatchDoubleQuotedString(const char *s) {
   const char *YYCURSOR = s;
+  const char *YYMARKER;   // sometimes needed
+
   //for (;;) {
   /*!re2c
     re2c:yyfill:enable = 0;
@@ -27,7 +29,6 @@ bool MatchDoubleQuotedString(const char *s) {
 int main(int argc, char **argv) {
   char *s = argv[1];
   bool matched = MatchDoubleQuotedString(s);
-  printf("matched %d\n", matched);
 
   if (matched) {
     printf("YES   %s\n", s);

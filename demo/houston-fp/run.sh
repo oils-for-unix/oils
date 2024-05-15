@@ -45,6 +45,12 @@ re2c-gen() {
   # Extra flags for number
   #local more_flags='-i --case-ranges'
 
+  # -i to debug the generated source directly?  Doesn't work
+  # --no-debug-info
+  #local more_flags='-i'
+  #local more_flags='--debug-output'
+  #local more_flags='--no-debug-info'
+
   re2c \
     $more_flags \
     -W -Wno-match-empty-string -Werror \
@@ -58,14 +64,22 @@ re2c-gen() {
   dot -Tpng \
     -o $BASE_DIR/$name-re2c.png $BASE_DIR/$name-re2c.dot
 
-  set -x
+  set +x
 }
 
 compile() {
   local name=$1
 
-  c++ -std=c++11 \
-    -o $BASE_DIR/$name-re2c demo/houston-fp/$name.re2c.cc
+  c++ -std=c++11 -g \
+    -o $BASE_DIR/$name-re2c $BASE_DIR/$name-re2c.cc
+}
+
+# TUI debugger!
+debug() {
+  local name=${1:-favorite}
+  shift
+
+  gdb --tui --args _tmp/houston-fp/$name-re2c "$@"
 }
 
 number() {
