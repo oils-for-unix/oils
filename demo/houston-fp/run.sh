@@ -48,31 +48,48 @@ check-types() {
     demo/houston-fp/demo_main.py
 }
 
-asdl-case-classes() {
-  export PYTHONPATH=".:vendor/:$BASE_DIR"
+#
+# ASDL
+#
 
-  mkdir -p $BASE_DIR
+readonly SCHEMA=demo/houston-fp/demo.asdl
 
-  #rm -v $BASE_DIR/*
+asdl-main() {
+  PYTHONPATH='.:vendor/' asdl/asdl_main.py "$@"
+}
 
-  # abbrev module is optional
-
-  local schema=demo/houston-fp/demo.asdl
-  asdl/asdl_main.py mypy $schema > $BASE_DIR/demo_asdl.py
-
-  asdl/asdl_main.py cpp $schema $BASE_DIR/demo.asdl
-  echo
-
-  wc -l $schema
+count-lines() {
+  wc -l $SCHEMA
   echo
 
   wc -l $BASE_DIR/*
+  echo
+}
 
-  demo/houston-fp/demo_main.py
+gen-asdl() {
+  asdl-main mypy $SCHEMA > $BASE_DIR/demo_asdl.py
+
+  asdl-main cpp $SCHEMA $BASE_DIR/demo.asdl  # out prefix
+}
+
+asdl-demo() {
+  PYTHONPATH=".:vendor/:$BASE_DIR" demo/houston-fp/demo_main.py
+}
+
+asdl-case-classes() {
+  gen-asdl
+
+  count-lines
+
+  check-types
+
+  asdl-demo
 }
 
 soil-run() {
-  check-types
+  # For local testing
+  rm -r -f $BASE_DIR/*
+  mkdir -p $BASE_DIR
 
   asdl-case-classes
 }
