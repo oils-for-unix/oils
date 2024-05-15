@@ -11,16 +11,22 @@ module demo {
   # Product type
   Token = (int id, int length, int col, str line)
 
+  word_part = 
+    Literal %Token
+  | TildeSub(str? user_name)
+
+  value = 
+    Int(int i)
+  | Str(str s)
+
+  expr =
+    Var %Token  # a variable name to evaluate
+  | Const(Token c, value val)
+
   # Source location for errors
   loc = 
     Missing
-
-    # Variants that "belong" to the sum type loc_t
-  | Foo(int x, int y)
-  | Bar(str a, str b)
-
   | Token %Token
-
-    # Example of indirection
+    # Another example from Oils
   #| ArgWord %CompoundWord
 }

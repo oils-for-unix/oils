@@ -145,7 +145,7 @@ count-lines() {
   wc -l $SCHEMA demo/houston-fp/demo_main.py
   echo
 
-  wc -l $BASE_DIR/*
+  wc -l $BASE_DIR/demo*
   echo
 
   wc -l demo/houston-fp/run.sh
