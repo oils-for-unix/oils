@@ -4,8 +4,8 @@
 
 // Demos:
 //
-// - Unhandled input
-// - Unreachable code
+// - Unreachable code - add unreachable
+// - Unhandled input - comment out * clause (more convincing in our huge lexer)
 
 #include <assert.h>  // assert
 #include <stdio.h>  // printf
@@ -22,7 +22,8 @@
 
   favorite = ["] ( [^\x00"\\] | "\\" [^\x00] )* ["];
 
-  extra = "\\z";
+  unreachable = "\"\"";
+
   favorite2 = ["] ( [^\x00"\\] | "\\z" )* ["];
 */
 
@@ -30,12 +31,10 @@ bool MatchDoubleQuotedString(const char *s) {
   const char *YYCURSOR = s;
   const char *YYMARKER;   // depending on pattern, generated code may use this
 
-#if 1
   /*!re2c
     favorite  { return true; }
     *         { return false; }
   */
-#endif
 
   assert(0);
 }

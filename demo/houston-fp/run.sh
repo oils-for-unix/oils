@@ -53,7 +53,7 @@ re2c-gen() {
 
   re2c \
     $more_flags \
-    -W -Wno-match-empty-string -Werror \
+    -W -Werror \
     -o $BASE_DIR/$name-re2c.cc demo/houston-fp/$name.re2c.cc
 
   # Generate DOT graph (text)
@@ -146,6 +146,9 @@ count-lines() {
   echo
 
   wc -l $BASE_DIR/*
+  echo
+
+  wc -l demo/houston-fp/run.sh
   echo
 }
 
