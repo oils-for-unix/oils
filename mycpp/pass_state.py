@@ -3,6 +3,8 @@ pass_state.py
 """
 from __future__ import print_function
 
+import subprocess
+
 from collections import defaultdict
 from typing import Optional
 
@@ -143,3 +145,76 @@ class CallGraph(object):
             print('---')
 
         return found_path
+
+
+def statement_name(statement_id):
+    return 'S{}'.format(statement_id)
+
+
+class LiveVars(object):
+
+    def __init__(self) -> None:
+        self.statements: dict[str, dict[int, list[tuple[str, str]]]] = defaultdict(lambda: defaultdict(list))
+        self.adj: dict[str, dict[int, dict[int, None]]] = defaultdict(lambda: defaultdict(dict))
+        self.roots: dict[str, set[str]] = defaultdict(set)
+
+    def EmitEdge(self, function: str, src_statement: int, dst_statement: int) -> None:
+        self.adj[function][src_statement][dst_statement] = None
+
+    def EmitDef(self, function: str, statement: int, var: str) -> None:
+        self.statements[function][statement].append(('def', var))
+
+    def EmitUse(self, function: str, statement: int, var: str) -> None:
+        self.statements[function][statement].append(('use', var))
+
+    def EmitCollect(self, function: str, statement: int) -> None:
+        self.statements[function][statement].append(('collect', None))
+
+    def DumpFunction(self, function: str, use_f, def_f, collect_f, graph_f) -> None:
+        if function not in self.adj:
+            return
+
+        action_f = {'use': use_f, 'def': def_f}
+        for u, neighbors in self.adj[function].items():
+            for v in neighbors:
+                graph_f.write('"%s"\t"%s"\t"%s"\n' % (function, statement_name(u),
+                                                      statement_name(v)))
+
+
+        for statement, statements in self.statements[function].items():
+            for action, var in statements:
+                if action == 'collect':
+                    collect_f.write('"%s"\t"%s"\n' % (function, statement_name(statement)))
+                else:
+                    action_f[action].write('"%s"\t"%s"\t"%s"\n' %
+                                           (function, statement_name(statement), var))
+
+
+    def Compute(self):
+        facts_dir = '_tmp/oils-for-unix-facts'
+        use_facts = f'{facts_dir}/use.facts'
+        def_facts = f'{facts_dir}/def.facts'
+        collect_facts = f'{facts_dir}/collect.facts'
+        cf_edge_facts = f'{facts_dir}/cf_edge.facts'
+        with open(use_facts, 'w') as use_f, \
+             open(def_facts, 'w') as def_f, \
+             open(collect_facts, 'w') as collect_f, \
+             open(cf_edge_facts, 'w') as graph_f:
+            for func in self.statements:
+                self.DumpFunction(func, use_f, def_f, collect_f, graph_f)
+
+        subprocess.check_call(
+            [
+                '_tmp/stack_roots',
+                '-F', '_tmp/oils-for-unix-facts',
+                '-D', '_tmp',
+            ]
+        )
+        with open('_tmp/root_vars.csv') as roots_f:
+            for line in roots_f:
+                line = line.rstrip().replace('"', '')
+                function, variable = line.split('\t')
+                self.roots[function].add(variable)
+
+    def NeedsRoot(self, function: str, variable: str) -> bool:
+        return function in self.roots and variable in self.roots[function]

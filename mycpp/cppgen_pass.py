@@ -417,7 +417,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  decl=False,
                  forward_decl=False,
                  stack_roots_warn=None,
-                 call_graph=None):
+                 call_graph=None,
+                 live_vars=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -471,6 +472,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.writing_default_arg = False
 
         self.call_graph = call_graph
+        self.live_vars = live_vars
+        self.callee_map = {}
 
     def log(self, msg, *args):
         ind_str = self.indent * '  '
@@ -837,6 +840,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if full_callee:
             full_callee = _StripMycpp(full_callee)
+            self.callee_map[o] = full_callee
 
         return full_callee
 
@@ -2982,7 +2986,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             for lval_name, c_type, is_param in self.prepend_to_block:
                 #self.log('%s %s %s', lval_name, c_type, is_param)
                 if lval_name not in roots and CTypeIsManaged(c_type):
-                    roots.append(lval_name)
+                    if self.live_vars and self.live_vars.NeedsRoot(self.current_func_name, lval_name):
+                        roots.append(lval_name)
             #self.log('roots %s', roots)
 
             might_gc = None

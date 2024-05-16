@@ -1,0 +1,87 @@
+// Facts and Relations (Inputs)
+// ============================
+// A function is a collection of statements. This is just used as context for
+// the facts below.
+.type Function <: symbol
+
+// A statement is a grouping variable definitions/uses and events like calls to the
+// GC.
+.type Statement <: symbol
+
+// Represent a program as a simplified control flow graph, a directed graph of
+// statements. Loops can introduce cycles.
+
+// True if Statement x happes immediately before Statement y.
+.decl cf_edge(f:Function, x:Statement, y:Statement)
+.input cf_edge
+
+// True if there is a path from Statement x to Statement y in the control flow graph.
+.decl cf_path(f:Function, x:Statement, y:Statement)
+
+// True if the GC is invoked, directly or indirectly, within Statement X.
+.decl collect(f:Function, x:Statement)
+.input collect
+
+// Statements can define and use variables.
+// TODO: track aliases
+.type Var <: symbol
+
+// use(x, v) means Statement x uses Var v.
+.decl use(f:Function, x:Statement, v:Var)
+.input use
+
+// def(x, v) means Statement x defines Var v.
+.decl def(f:Function, x:Statement, v:Var)
+.input def
+
+// Rules and Outputs
+// =================
+// Using the facts and relations above, these rules let us do basic live
+// variable analysis. See: https://en.wikipedia.org/wiki/Live-variable_analysis
+// and https://youtu.be/tT9m-NQ3NLs?t=1807 for an explanation. This doesn't
+// bother with the traditional kill relation for now. Since for stack roots we
+// care about *references*, not the things they referr to.
+
+// live_vars_in(x, v) means that Var X is considered live at the
+// "entrance" to Statement X.
+.decl live_vars_in(f:Function, x:Statement, v:Var)
+
+// live_vars_out(x, v) means that Var v is considered live at the
+// "exit" from Statement X.
+.decl live_vars_out(f:Function, x:Statement, v:Var)
+
+// root_vars(v) means that Var v needs a stack root to avoid getting swept up
+// by the GC and breaking a downstream dereference. This is the main output of
+// this analysis.
+.decl root_vars(f:Function, v:Var)
+.output root_vars()
+
+// Base case. There's a direct edge between x and y.
+cf_path(f, x, y) :- cf_edge(f, x, y).
+// Inductive case. x and reach why through z.
+cf_path(f, x, y) :- cf_path(f, x, z), cf_edge(f, z, y).
+
+// A variable used directly in a statement is considered live on the way in to that
+// statement.
+live_vars_in(f, x,v) :- use(f, x, v).
+// Any variables considered live on the way out of statement must be live on
+// the way in unless they were defined by that statement.
+live_vars_in(f, x,v) :- !def(f, x, v), live_vars_out(f, x,v).
+// If a statement invokes the GC, all variables considered live in its immediate
+// predecesors could potentionally be swept. So, they must be considered live.
+live_vars_in(f, x, v) :- collect(f, x), cf_edge(f, y, x), live_vars_out(f, y, v).
+
+// Live variables coming out of a statement should be propagated to all of that
+// statement's immediate successors.
+live_vars_out(f, x,v) :- cf_edge(f, x, y), live_vars_in(f, y, v).
+
+// Minimal set of roots. Only generate StackRoot for a variable if it was
+// declared before a GC statement and used after the GC statement.
+root_vars(f, v) :- use(f, x, v), live_vars_in(f, y, v), cf_path(f, y, x), collect(f, y).
+
+// Conservative set of roots. Generate StackRoot for a variable if there is a
+// path from the statement it was defined in to/from a GC statement in any direction.
+// This is the current policy on the call-graph branch. Uncomment the rules
+// below and comment out  the ones above and watch the set grow.
+//root_vars(f, v) :- def(f, x, v), cf_path(f, y, x), collect(f, y).
+//root_vars(f, v) :- def(f, x, v), cf_path(f, x, y), collect(f, y).

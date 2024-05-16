@@ -17,6 +17,7 @@ from mypy.main import process_options
 
 from mycpp import const_pass
 from mycpp import cppgen_pass
+from mycpp import live_vars
 from mycpp import debug_pass
 from mycpp import pass_state
 from mycpp.util import log
@@ -322,6 +323,7 @@ def main(argv):
     # First generate ALL C++ declarations / "headers".
     # class Foo { void method(); }; class Bar { void method(); };
     call_graph = pass_state.CallGraph()
+    callee_map = {}
     for name, module in to_compile:
         #log('decl name %s', name)
         if name in to_header:
@@ -340,6 +342,16 @@ def main(argv):
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
+        callee_map.update(p3.callee_map)
+
+    log('\tmycpp pass: OPTIMIZE')
+
+    live_var_state = pass_state.LiveVars()
+    live_var_pass = live_vars.Collect(result.types, callee_map, call_graph, live_var_state)
+    for name, module in to_compile:
+        live_var_pass.visit_mypy_file(module)
+
+    live_var_state.Compute()
 
     if 0:
         with open('_tmp/mycpp_call_graph.json', 'w') as graph_f:
@@ -358,7 +370,8 @@ def main(argv):
                                   fmt_ids=fmt_ids,
                                   field_gc=field_gc,
                                   stack_roots_warn=opts.stack_roots_warn,
-                                  call_graph=call_graph)
+                                  call_graph=call_graph,
+                                  live_vars=live_var_state)
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 
