@@ -103,6 +103,8 @@ class CallGraphTest(unittest.TestCase):
         self.assertEqual(True, g.PathExists('d', 'd'))
         self.assertEqual(True, g.PathExists('e', 'f'))
 
+        self.assertEqual(True, g.PathExists('a', 'a'))
+
         self.assertEqual(False, g.PathExists('b', 'a'))
         self.assertEqual(False, g.PathExists('c', 'a'))
         self.assertEqual(False, g.PathExists('d', 'a'))

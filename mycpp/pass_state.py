@@ -129,6 +129,9 @@ class CallGraph(object):
 
             return self._Memoize(u, v, None)
 
+        if src == dst:
+            return True
+
         found_path = _dfs(src, dst, set({}))
 
         # dump the path
