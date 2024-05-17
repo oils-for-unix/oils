@@ -162,7 +162,7 @@ BigStr* ShellEncodeString(BigStr* s, int ysh_fallback) {
 
 Tuple2<int, int> Utf8DecodeOne(BigStr* s, int start) {
   // Bounds check for safety
-  assert(0 <= start && start < len(s));
+  DCHECK(0 <= start && start < len(s));
 
   const unsigned char* string = reinterpret_cast<unsigned char*>(s->data());
 
