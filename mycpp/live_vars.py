@@ -556,6 +556,22 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
             self, o: 'mypy.nodes.OperatorAssignmentStmt') -> T:
         self.log('OperatorAssignmentStmt')
 
+        self.vars = []
+        self.accept(o.lvalue)
+        found_vars = self.vars
+        self.vars = None
+        t = self.types.get(o.lvalue)
+        for var_name in found_vars:
+            if var_name and var_name not in IGNORE_NAMES:
+                # XXX: limit to managed types? cppgen_pass has the info. having
+                # some false-positives probably won't hurt at this stage...
+                self.locals[var_name] = t
+                self.add_var_def(var_name)
+
+        self.current_rval = o.rvalue
+        self.accept(o.rvalue)
+        self.current_rval = None
+
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
         self.log('WhileStmt')
         self.current_rval = o
