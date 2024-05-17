@@ -326,7 +326,7 @@ class Rules(object):
       symlinks = None,
       implicit = None,  # for COMPILE action, not link action
       deps = None,
-      matrix = None,  # $compiler $variant
+      matrix = None,  # $compiler $variant $extra_cxx_flags
       phony_prefix = None,
       preprocessed = False,
       bin_path = None,  # default is _bin/$compiler-$variant/rel/path
@@ -478,16 +478,17 @@ class Rules(object):
         generated_headers = [out_header],
     )
 
-  def py_binary(self, main_py, deps_base_dir='_build/NINJA', template='py'):
+  def py_binary(self, main_py, deps_base_dir='_build/NINJA', extra_deps=None, template='py'):
     """
     Wrapper for Python script with dynamically discovered deps
     """
+    deps = extra_deps or []
     rel_path, _ = os.path.splitext(main_py)
     py_module = rel_path.replace('/', '.')  # asdl/asdl_main.py -> asdl.asdl_main
 
     deps_path = os.path.join(deps_base_dir, py_module, 'deps.txt')
     with open(deps_path) as f:
-      deps = [line.strip() for line in f]
+      deps.extend([line.strip() for line in f])
 
     deps.remove(main_py)  # raises ValueError if it's not there
 

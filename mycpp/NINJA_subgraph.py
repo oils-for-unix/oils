@@ -16,7 +16,13 @@ def DefineTargets(ru):
 
     ru.py_binary('mycpp/mycpp_main.py',
                  deps_base_dir='prebuilt/ninja',
+                 extra_deps=['_bin/cxx-opt-Ivendor_std=c++17/mycpp/stack_roots'],
                  template='mycpp')
+
+    ru.cc_binary(
+        'prebuilt/mycpp/stack_roots.cc',
+        matrix=[('cxx', 'opt', '-Ivendor -std=c++17')],
+        bin_path='mycpp/stack_roots')
 
     ru.cc_library(
         '//mycpp/runtime',

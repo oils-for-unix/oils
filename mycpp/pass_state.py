@@ -4,6 +4,7 @@ pass_state.py
 from __future__ import print_function
 
 import subprocess
+import os
 
 from collections import defaultdict
 from typing import Optional
@@ -191,7 +192,8 @@ class LiveVars(object):
 
 
     def Compute(self):
-        facts_dir = '_tmp/oils-for-unix-facts'
+        facts_dir = '_tmp/mycpp-facts'
+        os.makedirs(facts_dir, exist_ok=True)
         use_facts = f'{facts_dir}/use.facts'
         def_facts = f'{facts_dir}/def.facts'
         collect_facts = f'{facts_dir}/collect.facts'
@@ -205,8 +207,8 @@ class LiveVars(object):
 
         subprocess.check_call(
             [
-                '_tmp/stack_roots',
-                '-F', '_tmp/oils-for-unix-facts',
+                '_bin/cxx-opt-Ivendor_std=c++17/mycpp/stack_roots',
+                '-F', facts_dir,
                 '-D', '_tmp',
             ]
         )

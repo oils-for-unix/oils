@@ -309,6 +309,10 @@ link() {
   if test -n "${OILS_CXX_VERBOSE:-}"; then
     echo "__ $prefix $cxx -o $out $@ $link_flags" >&2
   fi
+	# XXX: do something less awful here
+  if test $out == "_bin/cxx-opt-Ivendor_std=c++17/mycpp/stack_roots"; then
+    link_flags="${link_flags} -lstdc++fs"
+  fi
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
   $prefix "$cxx" -o "$out" "$@" $link_flags
