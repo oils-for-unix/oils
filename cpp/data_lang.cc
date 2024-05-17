@@ -175,13 +175,6 @@ Tuple2<int, int> Utf8DecodeOne(BigStr* s, int start) {
     codepoint_or_error = decode_result.codepoint;
   }
 
-  // Follow the python2/oils string model. See func_Utf8DecodeOne in
-  // pyext/fastfunc.c for details.
-  if (decode_result.error == UTF8_ERR_END_OF_STREAM) {
-    codepoint_or_error = 0;
-    decode_result.bytes_read = 1;
-  }
-
   return Tuple2<int, int>(codepoint_or_error, decode_result.bytes_read);
 }
 

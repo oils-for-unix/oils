@@ -63,9 +63,6 @@ class FastfuncTest(unittest.TestCase):
     # UTF8_ERR_TRUNCATED_BYTES = 5
     self.assertEqual((-5, 1), fastfunc.Utf8DecodeOne("\xC2", 0))
 
-    # Should follow the python2/oils string model wrt zero-bytes
-    self.assertEqual((0, 1), fastfunc.Utf8DecodeOne("\x00", 0))
-
   def testCanOmit(self):
     self.assertEqual(True, fastfunc.CanOmitQuotes('foo'))
     self.assertEqual(False, fastfunc.CanOmitQuotes('foo bar'))

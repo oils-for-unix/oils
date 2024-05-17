@@ -42,7 +42,6 @@ UTF8_ERR_SURROGATE = -2  # Encodes a codepoint in the surrogate range (0xD800 to
 UTF8_ERR_TOO_LARGE = -3  # Encodes a value greater than the max codepoint U+10FFFF
 UTF8_ERR_BAD_ENCODING = -4  # Encoding doesn't conform to the UTF-8 bit patterns
 UTF8_ERR_TRUNCATED_BYTES = -5  # It looks like there is another codepoint, but it has been truncated
-UTF8_ERR_END_OF_STREAM = -6  # We are at the end of the string. (input_len = 0)
 
 
 def Utf8Error_str(error):
@@ -57,8 +56,6 @@ def Utf8Error_str(error):
         return "UTF-8 Error: Bad Encoding"
     if error == UTF8_ERR_TRUNCATED_BYTES:
         return "UTF-8 Error: Truncated Bytes"
-    if error == UTF8_ERR_END_OF_STREAM:
-        return "UTF-8 Error: End of Stream"
 
     raise AssertionError(0)
 

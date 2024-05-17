@@ -54,9 +54,6 @@ typedef enum Utf8Error {
 
   // It looks like there is another codepoint, but it has been truncated.
   UTF8_ERR_TRUNCATED_BYTES = 5,
-
-  // We are at the end of the string. (input_len = 0)
-  UTF8_ERR_END_OF_STREAM = 6,
 } Utf8Error_t;
 
 typedef struct Utf8Result {
@@ -89,6 +86,12 @@ static inline void _cont(const unsigned char *input, Utf8Result_t *result) {
  * Given a nul-terminated string `input`, try to decode the next codepoint from
  * that string.
  *
+ * It is required that `input` does not point to the nul-terminator. If
+ * `*input = '\0'`, then it is assumed that the zero-byte is meant to encode
+ * U+00, not a sentinel. The nul-terminator is still necessary because we need
+ * it to discrinate UTF8_ERR_TRUNCATED_BYTES from UTF8_ERR_BAD_ENCODING. This
+ * oddity is to facilitate strings which may contain U+00 codepoints.
+ *
  * If there was a surrogate, overlong or codepoint to large error then
  * `result.codepoint` will contain the recovered value.
  */
@@ -98,10 +101,6 @@ static inline void utf8_decode(const unsigned char *input, Utf8Result_t *result)
   result->bytes_read = 0;
 
   int first = *input;
-  if (first == '\0') {
-    result->error = UTF8_ERR_END_OF_STREAM;
-    return;
-  }
   result->bytes_read = 1;
 
   if ((first & 0x80) == 0) {

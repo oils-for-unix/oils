@@ -102,14 +102,6 @@ func_Utf8DecodeOne(PyObject *self, PyObject *args) {
     codepoint_or_error = decode_result.codepoint;
   }
 
-  // utf8_decode treats zero-bytes as C-style NUL-terminators. But python2/oils
-  // strings treat these as zero-codepoints. Translate END_OF_STREAM errors
-  // (resulting from zero-bytes) to valid zero-codepoints.
-  if (decode_result.error == UTF8_ERR_END_OF_STREAM) {
-    codepoint_or_error = 0;
-    decode_result.bytes_read = 1;  // Read past that zero-byte
-  }
-
   PyObject *ret_val = PyTuple_New(2);
   PyTuple_SET_ITEM(ret_val, 0, PyInt_FromLong(codepoint_or_error));
   PyTuple_SET_ITEM(ret_val, 1, PyInt_FromLong(decode_result.bytes_read));

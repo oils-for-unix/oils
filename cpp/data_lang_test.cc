@@ -154,9 +154,6 @@ TEST utf8_decode_one_test() {
   // UTF8_ERR_TRUNCATED_BYTES = 5
   ASSERT_DECODE(-5, 1, StrFromC("\xC2"), 0);
 
-  // Should follow the python2/oils string model wrt zero-bytes
-  ASSERT_DECODE(0, 1, StrFromC("\x00", 1), 0);
-
   PASS();
 #undef ASSERT_DECODE
 }
