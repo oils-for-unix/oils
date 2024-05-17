@@ -1,0 +1,32 @@
+# Show off "first class variants" / case classes.
+#
+# Takeaways:
+# - metalanguage affects the language
+# - metalanguage design / code compression
+
+# Based on frontend/syntax.asdl
+
+module demo {
+
+  # Product type
+  Token = (int id, int length, int col, str line)
+
+  word_part = 
+    Literal %Token
+  | TildeSub(str? user_name)
+
+  value = 
+    Int(int i)
+  | Str(str s)
+
+  expr =
+    Var %Token  # a variable name to evaluate
+  | Const(Token c, value val)
+
+  # Source location for errors
+  loc = 
+    Missing
+  | Token %Token
+    # Another example from Oils
+  #| ArgWord %CompoundWord
+}

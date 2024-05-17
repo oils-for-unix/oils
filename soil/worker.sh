@@ -287,6 +287,7 @@ ysh-runtime-errors test/ysh-runtime-errors.sh soil-run-cpp -
 ysh-every-string test/ysh-every-string.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
 j8-errors        data_lang/j8-errors.sh soil-run-cpp   -
+houston-fp       demo/houston-fp/run.sh soil-run       -
 EOF
 }
 

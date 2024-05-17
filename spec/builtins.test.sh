@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh zsh
 
 #### exec builtin 
@@ -58,6 +58,32 @@ echo status=$?
 status=1
 ## END
 ## BUG dash/mksh STDOUT:
+status=0
+## END
+
+#### cd with 2 or more args
+
+mkdir -p foo
+cd foo
+echo status=$?
+cd ..
+echo status=$?
+
+
+cd foo bar
+st=$?
+if test $st -ne 0; then
+  echo 'failed with multiple args'
+fi
+
+## STDOUT:
+status=0
+status=0
+failed with multiple args
+## END
+
+## BUG dash STDOUT:
+status=0
 status=0
 ## END
 
