@@ -117,11 +117,6 @@ TEST truncated_test() {
     ASSERT_EQ(result.bytes_read, strlen(inputs[i]));
   }
 
-  // End of stream is separate from truncated
-  utf8_decode((unsigned char*)"", &result);
-  ASSERT_EQ(result.error, UTF8_ERR_END_OF_STREAM);
-  ASSERT_EQ(result.bytes_read, 0);
-
   PASS();
 }
 

@@ -42,7 +42,6 @@ UTF8_ERR_SURROGATE = -2  # Encodes a codepoint in the surrogate range (0xD800 to
 UTF8_ERR_TOO_LARGE = -3  # Encodes a value greater than the max codepoint U+10FFFF
 UTF8_ERR_BAD_ENCODING = -4  # Encoding doesn't conform to the UTF-8 bit patterns
 UTF8_ERR_TRUNCATED_BYTES = -5  # It looks like there is another codepoint, but it has been truncated
-UTF8_ERR_END_OF_STREAM = -6  # We are at the end of the string. (input_len = 0)
 
 
 def Utf8Error_str(error):
@@ -57,8 +56,6 @@ def Utf8Error_str(error):
         return "UTF-8 Error: Bad Encoding"
     if error == UTF8_ERR_TRUNCATED_BYTES:
         return "UTF-8 Error: Truncated Bytes"
-    if error == UTF8_ERR_END_OF_STREAM:
-        return "UTF-8 Error: End of Stream"
 
     raise AssertionError(0)
 
@@ -93,12 +90,6 @@ def DecodeUtf8Char(s, start):
     from {Next,Previous}Utf8Char which raises an `error.Strict` on encoding
     errors.)
     """
-    # The data_lang/utf8.h decoder treats nul-bytes as an end of string
-    # sentinel. However, they may not be the end of the string here. So we must
-    # special case the nul-byte.
-    if mylib.ByteAt(s, start) == 0:
-        return 0
-
     codepoint_or_error, _bytes_read = fastfunc.Utf8DecodeOne(s, start)
     if codepoint_or_error < 0:
         raise error.Expr(
@@ -116,10 +107,6 @@ def NextUtf8Char(s, i):
 
     Validates UTF-8.
     """
-    # Like in DecodeUtf8Char, this must be special-cased.
-    if mylib.ByteAt(s, i) == 0:
-        return 1
-
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
         e_strict(

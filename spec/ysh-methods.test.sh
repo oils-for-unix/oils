@@ -318,7 +318,7 @@ status=0
 status=3
 ## END
 
-#### Str => trimStart(), unicode decoding incorrect
+#### Str => trimStart(), unicode decoding error types
 var badStrs = [
   b'\yF4\yA2\yA4\yB0',  # Too large of a codepoint
   b'\yED\yBF\y80',      # Surrogate
@@ -339,7 +339,7 @@ status=3
 status=3
 ## END
 
-#### Str => trimEnd(), unicode decoding incorrect
+#### Str => trimEnd(), unicode decoding error types
 # Tests the backwards UTF-8 decoder
 var badStrs = [
   b'\yF4\yA2\yA4\yB0',  # Too large of a codepoint
@@ -359,6 +359,16 @@ status=3
 status=3
 status=3
 status=3
+## END
+
+#### Str => trim*(), zero-codepoints are not NUL-terminators
+json write (b' \y00 ' => trim())
+json write (b' \y00 ' => trimStart())
+json write (b' \y00 ' => trimEnd())
+## STDOUT:
+"\u0000"
+"\u0000 "
+" \u0000"
 ## END
 
 #### Dict => keys()

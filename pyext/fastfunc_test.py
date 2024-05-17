@@ -48,9 +48,6 @@ class FastfuncTest(unittest.TestCase):
     self.assertEqual((0x2840, 3), fastfunc.Utf8DecodeOne(s, 1))
     self.assertEqual((0x141, 2), fastfunc.Utf8DecodeOne(s, 4))
 
-    # UTF8_ERR_END_OF_STREAM = 6
-    self.assertEqual((-6, 0), fastfunc.Utf8DecodeOne(s, 6))
-
     # UTF8_ERR_OVERLONG = 1
     self.assertEqual((-1, 2), fastfunc.Utf8DecodeOne("\xC1\x81", 0))
 
