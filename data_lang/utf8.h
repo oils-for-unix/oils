@@ -87,10 +87,11 @@ static inline void _cont(const unsigned char *input, Utf8Result_t *result) {
  * that string.
  *
  * It is required that `input` does not point to the nul-terminator. If
- * `*input = '\0'`, then it is assumed that the zero-byte is meant to encode
+ * `*input == '\0'`, then it is assumed that the zero-byte is meant to encode
  * U+00, not a sentinel. The nul-terminator is still necessary because we need
- * it to discriminate UTF8_ERR_TRUNCATED_BYTES from UTF8_ERR_BAD_ENCODING. This
- * oddity is to facilitate strings which may contain U+00 codepoints.
+ * it to prevent buffer overrun in the case of a truncated byte sequence, for
+ * example '\xC2'. This oddity is to facilitate strings which may contain U+00
+ * codepoints.
  *
  * If there was a surrogate, overlong or codepoint to large error then
  * `result.codepoint` will contain the recovered value.
