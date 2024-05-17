@@ -4,8 +4,6 @@ const_pass.py - AST pass that collects constants.
 Immutable string constants like 'StrFromC("foo")' are moved to the top level of
 the generated C++ program for efficiency.
 """
-import json
-
 from typing import overload, Union, Optional, Dict, List
 
 import mypy
@@ -13,13 +11,11 @@ from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
                         ComparisonExpr, NameExpr, MemberExpr, CallExpr)
 
-from mypy.types import CallableType, Instance, Type, UnionType
+from mypy.types import Type
 
 from mycpp.crash import catch_errors
-from mycpp import format_strings
 from mycpp.util import log
 from mycpp import pass_state
-from mycpp import util
 
 T = None  # TODO: Make it type check?
 
