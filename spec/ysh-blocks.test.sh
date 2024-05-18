@@ -1,4 +1,4 @@
-#### cd with block
+#### cd accepts a block, runs it in different dir
 shopt -s ysh:all
 
 const saved = "$PWD"
@@ -27,8 +27,21 @@ PWD=/tmp
 pwd builtin: /tmp
 ## END
 
+#### cd with block: requires explicit command
+shopt --set ysh:upgrade
+
+cd /tmp { echo $PWD }
+
+HOME=~
+cd { echo $PWD }
+
+## status: 2
+## STDOUT:
+/tmp
+## END
+
 #### cd with block: fatal error in block
-shopt -s oil:all
+shopt -s ysh:all
 cd / {
   echo one
   false
