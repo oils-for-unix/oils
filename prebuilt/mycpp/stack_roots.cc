@@ -1232,10 +1232,27 @@ rel_use_e955e932f22dad4d(&rel_use_e955e932f22dad4d){
 void Stratum_root_vars_d910841585fde373::run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret){
 signalHandler->setMsg(R"_(root_vars(f,v) :- 
    use(f,x,v),
+   collect(f,x).
+in file stack_roots.dl [80:1-80:48])_");
+if(!(rel_use_e955e932f22dad4d->empty()) && !(rel_collect_092686b367d9983d->empty())) {
+[&](){
+CREATE_OP_CONTEXT(rel_collect_092686b367d9983d_op_ctxt,rel_collect_092686b367d9983d->createContext());
+CREATE_OP_CONTEXT(rel_root_vars_9dd5ee9984886e0d_op_ctxt,rel_root_vars_9dd5ee9984886e0d->createContext());
+CREATE_OP_CONTEXT(rel_use_e955e932f22dad4d_op_ctxt,rel_use_e955e932f22dad4d->createContext());
+for(const auto& env0 : *rel_use_e955e932f22dad4d) {
+if( rel_collect_092686b367d9983d->contains(Tuple<RamDomain,2>{{ramBitCast(env0[0]),ramBitCast(env0[1])}},READ_OP_CONTEXT(rel_collect_092686b367d9983d_op_ctxt))) {
+Tuple<RamDomain,2> tuple{{ramBitCast(env0[0]),ramBitCast(env0[2])}};
+rel_root_vars_9dd5ee9984886e0d->insert(tuple,READ_OP_CONTEXT(rel_root_vars_9dd5ee9984886e0d_op_ctxt));
+}
+}
+}
+();}
+signalHandler->setMsg(R"_(root_vars(f,v) :- 
+   use(f,x,v),
    live_vars_in(f,y,v),
    cf_path(f,y,x),
    collect(f,y).
-in file stack_roots.dl [80:1-80:89])_");
+in file stack_roots.dl [81:1-81:89])_");
 if(!(rel_live_vars_in_0b002b95687eda95->empty()) && !(rel_cf_path_018f9b04e61e101f->empty()) && !(rel_use_e955e932f22dad4d->empty()) && !(rel_collect_092686b367d9983d->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_cf_path_018f9b04e61e101f_op_ctxt,rel_cf_path_018f9b04e61e101f->createContext());

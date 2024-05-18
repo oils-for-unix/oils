@@ -77,6 +77,7 @@ live_vars_out(f, x,v) :- cf_edge(f, x, y), live_vars_in(f, y, v).
 
 // Minimal set of roots. Only generate StackRoot for a variable if it was
 // declared before a GC statement and used after the GC statement.
+root_vars(f, v) :- use(f, x, v), collect(f, x).
 root_vars(f, v) :- use(f, x, v), live_vars_in(f, y, v), cf_path(f, y, x), collect(f, y).
 
 // Conservative set of roots. Generate StackRoot for a variable if there is a
