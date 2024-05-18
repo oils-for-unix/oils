@@ -1127,6 +1127,13 @@ test-arith_ops_str() {
 = 100 + myvar'
 }
 
+test-long-shell-line() {
+  # Example from https://github.com/oilshell/oil/issues/1973
+
+  _ysh-error-1 'myvar=$(printf "what a very long string that we have here, which forces the command line to wrap around the terminal width. long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long") && echo $myvar'
+  echo
+}
+
 #
 # TEST DRIVER
 #

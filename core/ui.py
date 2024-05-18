@@ -96,7 +96,21 @@ def _PrintCodeExcerpt(line, col, length, f):
     buf = mylib.BufWriter()
 
     buf.write('  ')
+
+    # TODO: Be smart about horizontal space when printing code snippet
+    # - Accept max_width param, which is terminal width or perhaps 100
+    #   when there's no terminal
+    # - If 'length' of token is greater than max_width, then perhaps print 10
+    #   chars on each side
+    # - If len(line) is less than max_width, then print everything normally
+    # - If len(line) is greater than max_width, then print up to max_width
+    #   but make sure to include the entire token, with some context
+    #   Print > < or ... to show truncation
+    #
+    #   ^col 80  ^~~~~ error  
+
     buf.write(line.rstrip())
+
     buf.write('\n  ')
     # preserve tabs
     for c in line[:col]:

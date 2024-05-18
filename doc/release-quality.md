@@ -118,7 +118,7 @@ compared with the shell interpreter?
     [Bloaty][].  How much code is output by the compiler?
     - [overview](pub/metrics.wwz/oils-for-unix/overview.txt),
       [symbols](pub/metrics.wwz/oils-for-unix/symbols.txt)
-
+- [Doc Metrics](doc/metrics.txt)
 
 [cloc]: https://github.com/AlDanial/cloc
 [Bloaty]: https://github.com/google/bloaty

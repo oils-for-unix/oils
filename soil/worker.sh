@@ -327,8 +327,11 @@ tools-deps        test/tools-deps.sh soil-run            -
 make-tarball      devtools/release.sh py-tarball         _release/oil.tar
 ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
-ref-check         build/doc.sh ref-check                 -
+doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
 EOF
+
+# doc-metrics is a no-op, just for the link.  Because soil-run just runs the
+# release, which creates metrics.
 }
 
 # Reuse ovm-tarball container

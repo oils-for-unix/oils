@@ -404,12 +404,17 @@ cards-from-chapters() {
     $HTML_DIR/doc/ref/chap-*.html
 }
 
-ref-check() {
+metrics() {
   ### Check indexes and chapters against each other
 
+  local out=_release/VERSION/doc/metrics.txt
+
+  # send stderr to the log file too
   help-gen ref-check \
     doc/ref/toc-*.md \
-    _release/VERSION/doc/ref/chap-*.html
+    _release/VERSION/doc/ref/chap-*.html > $out 2>&1
+
+  echo "Wrote $out"
 }
 
 tour() {
@@ -434,7 +439,8 @@ EOF
   popd
 
   # My own dev tools
-  if test -d ~/vm-shared; then
+  # if test -d ~/vm-shared; then
+  if false; then
     local path=_release/VERSION/doc/$name.html
     cp -v $path ~/vm-shared/$path
   fi
@@ -640,6 +646,8 @@ run-for-release() {
   all-redirects  # backward compat
 
   patch-release-pages
+
+  metrics
 
   # Problem: You can't preview it without .wwz!
   # Maybe have local redirects VERSION/test/wild/ to 
