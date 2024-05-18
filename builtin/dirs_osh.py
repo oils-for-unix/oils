@@ -109,6 +109,11 @@ class Cd(vm._Builtin):
                 self.errfmt.Print_(e.UserErrorString())
                 return 1
 
+        arg_r.Next()
+        extra, extra_loc = arg_r.Peek2()
+        if extra is not None:
+            raise error.Usage('got too many arguments', extra_loc)
+
         if dest_dir == '-':
             try:
                 dest_dir = state.GetString(self.mem, 'OLDPWD')
@@ -123,16 +128,16 @@ class Cd(vm._Builtin):
             self.errfmt.Print_(e.UserErrorString())
             return 1
 
-        # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We can't
-        # call posix.getcwd() because it can raise OSError if the directory was
-        # removed (ENOENT.)
+        # Calculate new directory, chdir() to it, then set PWD to it.  NOTE: We
+        # can't call posix.getcwd() because it can raise OSError if the
+        # directory was removed (ENOENT.)
         abspath = os_path.join(pwd, dest_dir)  # make it absolute, for cd ..
         if arg.P:
             # -P means resolve symbolic links, then process '..'
             real_dest_dir = libc.realpath(abspath)
         else:
-            # -L means process '..' first.  This just does string manipulation.  (But
-            # realpath afterward isn't correct?)
+            # -L means process '..' first.  This just does string manipulation.
+            # (But realpath afterward isn't correct?)
             real_dest_dir = os_path.normpath(abspath)
 
         err_num = pyos.Chdir(real_dest_dir)
@@ -144,8 +149,8 @@ class Cd(vm._Builtin):
 
         state.ExportGlobalString(self.mem, 'PWD', real_dest_dir)
 
-        # WEIRD: We need a copy that is NOT PWD, because the user could mutate PWD.
-        # Other shells use global variables.
+        # WEIRD: We need a copy that is NOT PWD, because the user could mutate
+        # PWD.  Other shells use global variables.
         self.mem.SetPwd(real_dest_dir)
 
         cmd = typed_args.OptionalBlock(cmd_val)
