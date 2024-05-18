@@ -591,6 +591,20 @@ good starting point.
 
 TODO: describe the Oils implementation.
 
+### Should a J8 number be mapped to an Int, Float, or Decimal type?
+
+J8 Notation is like JSON: it only specifies the syntax of messages on the wire.
+
+The mapping of text to types is left to implementers, and depends on the
+programming language:
+
+- Languages like C, C++, and Rust have different sizes of ints and floats
+- Languages like JavaScript favor floats
+- It's valid to map to a Decimal type, if the language runtime supports it
+
+OSH and YSH happen to use `Int` and `Float`, but this is logically separate
+from J8 Notation.
+
 ## Glossary
 
 - **J8 Strings** - the building block for JSON8 and TSV8.  There are 3 similar
