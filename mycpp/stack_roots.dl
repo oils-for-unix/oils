@@ -38,17 +38,7 @@
 // =================
 // Using the facts and relations above, these rules let us do basic live
 // variable analysis. See: https://en.wikipedia.org/wiki/Live-variable_analysis
-// and https://youtu.be/tT9m-NQ3NLs?t=1807 for an explanation. This doesn't
-// bother with the traditional kill relation for now. Since for stack roots we
-// care about *references*, not the things they referr to.
-
-// live_vars_in(x, v) means that Var X is considered live at the
-// "entrance" to Statement X.
-.decl live_vars_in(f:Function, x:Statement, v:Var)
-
-// live_vars_out(x, v) means that Var v is considered live at the
-// "exit" from Statement X.
-.decl live_vars_out(f:Function, x:Statement, v:Var)
+// and https://youtu.be/tT9m-NQ3NLs?t=1807 for an explanation.
 
 // root_vars(v) means that Var v needs a stack root to avoid getting swept up
 // by the GC and breaking a downstream dereference. This is the main output of
@@ -61,24 +51,10 @@ cf_path(f, x, y) :- cf_edge(f, x, y).
 // Inductive case. x and reach why through z.
 cf_path(f, x, y) :- cf_path(f, x, z), cf_edge(f, z, y).
 
-// A variable used directly in a statement is considered live on the way in to that
-// statement.
-live_vars_in(f, x,v) :- use(f, x, v).
-// Any variables considered live on the way out of statement must be live on
-// the way in unless they were defined by that statement.
-live_vars_in(f, x,v) :- !def(f, x, v), live_vars_out(f, x,v).
-// If a statement invokes the GC, all variables considered live in its immediate
-// predecesors could potentionally be swept. So, they must be considered live.
-live_vars_in(f, x, v) :- collect(f, x), cf_edge(f, y, x), live_vars_out(f, y, v).
-
-// Live variables coming out of a statement should be propagated to all of that
-// statement's immediate successors.
-live_vars_out(f, x,v) :- cf_edge(f, x, y), live_vars_in(f, y, v).
-
 // Minimal set of roots. Only generate StackRoot for a variable if it was
 // declared before a GC statement and used after the GC statement.
-root_vars(f, v) :- use(f, x, v), collect(f, x).
-root_vars(f, v) :- use(f, x, v), live_vars_in(f, y, v), cf_path(f, y, x), collect(f, y).
+root_vars(f, v) :- use(f, y, v), def(f, x, v), collect(f, y), cf_path(f, x, y).
+root_vars(f, v) :- use(f, z, v), def(f, x, v), collect(f, y), cf_path(f, x, y), cf_path(f, y, z).
 
 // Conservative set of roots. Generate StackRoot for a variable if there is a
 // path from the statement it was defined in to/from a GC statement in any direction.
