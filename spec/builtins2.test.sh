@@ -97,18 +97,26 @@ pf  spam
 myfunc() { echo x; }
 command -v echo
 echo $?
+
 command -v myfunc
 echo $?
+
 command -v nonexistent  # doesn't print anything
-echo $?
+echo nonexistent=$?
+
+command -v ''  # BUG FIX, shouldn't succeed
+echo empty=$?
+
 command -v for
 echo $?
+
 ## STDOUT:
 echo
 0
 myfunc
 0
-1
+nonexistent=1
+empty=1
 for
 0
 ## OK dash STDOUT:
@@ -116,7 +124,8 @@ echo
 0
 myfunc
 0
-127
+nonexistent=127
+empty=127
 for
 0
 ## END
