@@ -7,3 +7,4 @@ mycpp/mycpp_main.py
 mycpp/pass_state.py
 mycpp/live_vars.py
 mycpp/util.py
+prebuilt/mycpp/stack_roots.cc
