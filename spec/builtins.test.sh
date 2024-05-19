@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 6
 ## compare_shells: dash bash mksh zsh
 
 #### exec builtin 
@@ -179,4 +179,132 @@ echo diff=$?
 status=0
 status=0
 diff=0
+## END
+
+#### ulimit -f 1 prevents files larger than 1024 bytes
+
+# dash and zsh give too much spew
+# mksh gives 512 byte files?
+case $SH in dash|zsh|mksh) exit ;; esac
+
+rm -f err.txt
+touch err.txt
+
+bytes() {
+  local n=$1
+  local status=0
+  for i in $(seq $n); do
+    echo -n x
+    status=$?
+    if test $status -ne 0; then
+      echo "ERROR: echo failed with status $status" >> err.txt
+    fi
+  done
+}
+
+
+ulimit -f 1
+
+bytes 1024 > ok.txt
+echo 1024 status=$?
+
+bytes 1025 > too-big.txt
+echo 1025 status=$?
+echo
+
+wc --bytes ok.txt too-big.txt
+echo
+
+cat err.txt
+
+## STDOUT:
+1024 status=0
+1025 status=0
+
+1024 ok.txt
+1024 too-big.txt
+2048 total
+
+ERROR: echo failed with status 1
+## END
+
+## BUG dash/zsh/mksh STDOUT:
+## END
+
+#### ulimit accepts 'unlimited'
+
+for arg in zz unlimited; do
+  echo "  arg $arg"
+  ulimit -f
+  echo status=$?
+  ulimit -f $arg
+  if test $? -ne 0; then
+    echo 'FAILED'
+  fi
+  echo
+done
+## STDOUT:
+  arg zz
+unlimited
+status=0
+FAILED
+
+  arg unlimited
+unlimited
+status=0
+
+## END
+
+
+#### ulimit of 2**32, 2**31 (int overflow)
+
+echo -n 'one '; ulimit -f
+
+
+ulimit -f $(( 1 << 32 ))
+
+echo -n 'two '; ulimit -f
+
+
+# mksh fails because it overflows signed int, turning into negative number
+ulimit -f $(( 1 << 31 ))
+
+echo -n 'three '; ulimit -f
+
+## STDOUT:
+one unlimited
+two 4294967296
+three 2147483648
+## END
+## BUG mksh STDOUT:
+one unlimited
+two 1
+three 1
+## END
+
+
+#### ulimit of 2 ** 62
+
+echo -n 'before '; ulimit -f
+
+# 1 << 63 overflows signed int
+
+# bash says this is out of range
+ulimit -f $(( 1 << 62 ))
+
+echo -n 'after '; ulimit -f
+
+## STDOUT:
+before unlimited
+after unlimited
+## END
+
+## BUG dash/zsh STDOUT:
+before unlimited
+after 0
+## END
+
+## BUG mksh STDOUT:
+before unlimited
+after 1073741824
 ## END
