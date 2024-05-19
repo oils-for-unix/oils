@@ -1010,33 +1010,6 @@ rel_use_e955e932f22dad4d(&rel_use_e955e932f22dad4d){
 
 void Stratum_root_vars_d910841585fde373::run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret){
 signalHandler->setMsg(R"_(root_vars(f,v) :- 
-   use(f,y,v),
-   def(f,x,v),
-   collect(f,y),
-   cf_path(f,x,y).
-in file stack_roots.dl [56:1-56:80])_");
-if(!(rel_collect_092686b367d9983d->empty()) && !(rel_def_a2557aec54a7a800->empty()) && !(rel_use_e955e932f22dad4d->empty()) && !(rel_cf_path_018f9b04e61e101f->empty())) {
-[&](){
-CREATE_OP_CONTEXT(rel_cf_path_018f9b04e61e101f_op_ctxt,rel_cf_path_018f9b04e61e101f->createContext());
-CREATE_OP_CONTEXT(rel_collect_092686b367d9983d_op_ctxt,rel_collect_092686b367d9983d->createContext());
-CREATE_OP_CONTEXT(rel_def_a2557aec54a7a800_op_ctxt,rel_def_a2557aec54a7a800->createContext());
-CREATE_OP_CONTEXT(rel_root_vars_9dd5ee9984886e0d_op_ctxt,rel_root_vars_9dd5ee9984886e0d->createContext());
-CREATE_OP_CONTEXT(rel_use_e955e932f22dad4d_op_ctxt,rel_use_e955e932f22dad4d->createContext());
-for(const auto& env0 : *rel_use_e955e932f22dad4d) {
-if( rel_collect_092686b367d9983d->contains(Tuple<RamDomain,2>{{ramBitCast(env0[0]),ramBitCast(env0[1])}},READ_OP_CONTEXT(rel_collect_092686b367d9983d_op_ctxt))) {
-auto range = rel_def_a2557aec54a7a800->lowerUpperRange_101(Tuple<RamDomain,3>{{ramBitCast(env0[0]), ramBitCast<RamDomain>(MIN_RAM_SIGNED), ramBitCast(env0[2])}},Tuple<RamDomain,3>{{ramBitCast(env0[0]), ramBitCast<RamDomain>(MAX_RAM_SIGNED), ramBitCast(env0[2])}},READ_OP_CONTEXT(rel_def_a2557aec54a7a800_op_ctxt));
-for(const auto& env1 : range) {
-if( rel_cf_path_018f9b04e61e101f->contains(Tuple<RamDomain,3>{{ramBitCast(env0[0]),ramBitCast(env1[1]),ramBitCast(env0[1])}},READ_OP_CONTEXT(rel_cf_path_018f9b04e61e101f_op_ctxt))) {
-Tuple<RamDomain,2> tuple{{ramBitCast(env0[0]),ramBitCast(env0[2])}};
-rel_root_vars_9dd5ee9984886e0d->insert(tuple,READ_OP_CONTEXT(rel_root_vars_9dd5ee9984886e0d_op_ctxt));
-break;
-}
-}
-}
-}
-}
-();}
-signalHandler->setMsg(R"_(root_vars(f,v) :- 
    use(f,z,v),
    def(f,x,v),
    collect(f,y),

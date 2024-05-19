@@ -53,7 +53,6 @@ cf_path(f, x, y) :- cf_path(f, x, z), cf_edge(f, z, y).
 
 // Minimal set of roots. Only generate StackRoot for a variable if it was
 // declared before a GC statement and used after the GC statement.
-root_vars(f, v) :- use(f, y, v), def(f, x, v), collect(f, y), cf_path(f, x, y).
 root_vars(f, v) :- use(f, z, v), def(f, x, v), collect(f, y), cf_path(f, x, y), cf_path(f, y, z).
 
 // Conservative set of roots. Generate StackRoot for a variable if there is a
