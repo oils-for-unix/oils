@@ -16,8 +16,8 @@ page links to all the documentation.
 
 ## Preliminaries
 
-- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
-  tarball.
+- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in
+  the `oils-for-unix` tarball.
   - [Portability](portability.html)
 - [Getting Started](getting-started.html).  How do I use the shell?
 - [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
@@ -101,8 +101,6 @@ Crosscutting design issues:
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
 - [YSH I/O Builtins](io-builtins.html) &dagger;
 
-<!-- TODO: proc-func.html -- Informal guide to procs and funcs -->
-
 ## Data Languages Avoid Ad-Hoc Parsing
 
 YSH programs "talk about" these data languages, also called interchange formats
@@ -154,5 +152,14 @@ Internal Architecture:
 - [The blog](https://www.oilshell.org/blog/) has useful background information,
   although older posts are more likely to have incorrect information.
 - [The home page](https://www.oilshell.org/) has links to docs for new users.
+
+Old:
+
+- [INSTALL-old](INSTALL-old.html) for the slow `oil-$VERSION` tarball, based on
+  CPython.
+
+
+
+
 
 <!-- vim: set sw=2: -->

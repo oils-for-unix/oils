@@ -10,28 +10,22 @@ Quick Start
 If you haven't already done so, extract the tarball:
  
     tar -x --gz < oil-for-unix-0.21.0.tar.gz
-    cd oil-0.21.0
+    cd oils-for-unix-0.21.0
 
-Either install as /usr/local/bin/osh:
+This is the traditional way to install it:
 
     ./configure      # completes very quickly
     _build/oils.sh   # 30-60 seconds
     sudo ./install
 
-or install as ~/bin/osh and the man page as ~/.local/share/man/man1/osh.1:
+You'll end up with an oils-for-unix binary and two symlinks:
 
-    ./configure --prefix ~ --datarootdir ~/.local/share
-    _build/oils.sh
-    ./install
+    /usr/local/bin/   
+      oils-for-unix
+      osh -> oils-for-unix
+      ysh -> oils-for-unix
 
-The latter doesn't require root access, but it requires:
-
-- ~/bin to be in your $PATH
-- Pages under ~/.local/share/man to be found by 'man'.
-  (See manpath or $MANPATH.)
-
-NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oils-for-unix-0.21.0 directory.
+This structure is similar to the busybox tool.
 
 Smoke Test
 ----------
@@ -41,21 +35,31 @@ OSH behaves like a POSIX shell:
     $ osh -c 'echo hi'
     hi
 
-This parses and prints a syntax tree for the 'configure' script.
+The -n flag parses and prints a syntax tree for the 'configure' script:
 
     osh -n configure
+
+YSH is a legacy-free shell, with structured data:
+
+    $ ysh -c 'echo hi'
+    hi
+
+    $ ysh -c 'json write ({x: 42})'
+    {
+      "x": 42
+    }
 
 More Documentation
 ------------------
 
-Every release has a home page with links, e.g.
+Every release has a home page with links:
 
     https://oilshell.org/release/0.21.0/
 
 System Requirements
 -------------------
 
-You only need:
+Oils is designed to have very few dependencies.  You need:
 
   - A C++11 compiler
     - with libc and libstdc++
@@ -66,9 +70,9 @@ Optional:
   - GNU readline library, for interactive features
     (https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
 
-Debian/Ubuntu and derivatives:
+Build deps on Debian-like distros, including Ubuntu:
 
-    sudo apt install build-essential libreadline-dev
+    sudo apt-get install build-essential libreadline-dev
 
 Alpine Linux:
 
@@ -79,17 +83,47 @@ POSIX system.  If it doesn't, file a bug here:
 
     https://github.com/oilshell/oil/issues
 
+Non-root Install
+----------------
+
+You can run the binary in-place, e.g.
+
+    $ _bin/cxx-opt-sh/osh -c 'echo hi'
+    hi
+
+Or you can install into ~/bin, with the man page at
+~/.local/share/man/man1/osh.1:
+
+    ./configure --prefix ~ --datarootdir ~/.local/share
+    _build/oils.sh
+    ./install
+
+This doesn't require root access, but it requires:
+
+- ~/bin to be in your $PATH
+- Pages under ~/.local/share/man to be found by 'man'.  (See manpath or
+  $MANPATH.)
+
+NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
+oils-for-unix-0.21.0 directory.
+
 Build Options
 -------------
 
-./configure --help will show the options.  Right now, the only significant
-options are --prefix and --{with,without}-readline.
+Show options with:
 
-Notes
+    ./configure --help 
+    
+Common flags:
+
+    --prefix
+    --with-readline
+    --without-readline
+    --readline  # the location
+
+Links
 -----
 
-- The oils-for-unix executable behaves like busybox, and osh is a symlink to
-  it.
 - Notes on portability:
   https://oilshell.org/release/0.21.0/doc/portability.html
 
