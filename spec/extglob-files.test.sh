@@ -1,3 +1,7 @@
+## oils_failures_allowed: 1
+## compare_shells: bash mksh
+
+
 # Extended globs are an OPTION in bash, but not mksh (because the feature
 # originated in ksh).
 #

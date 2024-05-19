@@ -1,3 +1,5 @@
+## oils_failures_allowed: 2
+## compare_shells: bash dash mksh
 
 #### >&
 echo hi 1>&2

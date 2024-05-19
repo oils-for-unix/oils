@@ -1,3 +1,6 @@
+## oils_failures_allowed: 3
+## compare_shells: bash dash mksh
+
 #### Long Token - 65535 bytes
 
 python2 -c 'print("echo -n %s" % ("x" * 65535))' > tmp.sh

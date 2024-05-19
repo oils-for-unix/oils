@@ -1,5 +1,4 @@
 ## compare_shells: bash dash mksh zsh
-## oils_failures_allowed: 1
 
 #### ~ expansion in assignment
 HOME=/home/bob

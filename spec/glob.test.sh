@@ -1,5 +1,5 @@
-#
-# NOTE: Could move spec/03-glob.sh here.
+## oils_failures_allowed: 3
+## compare_shells: bash dash mksh ash
 
 #### glob double quote escape
 echo "*.sh"

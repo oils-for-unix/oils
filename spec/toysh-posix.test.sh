@@ -1,4 +1,5 @@
-# toysh-posix
+## oils_failures_allowed: 3
+## compare_shells: bash dash mksh zsh yash
 
 #### Fatal error
 # http://landley.net/notes.html#20-06-2020

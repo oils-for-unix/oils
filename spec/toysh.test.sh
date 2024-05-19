@@ -1,8 +1,7 @@
-#
 # Snippets from http://landley.net/notes.html
-#
-# Usage:
-#   test/toysh.sh
+
+## oils_failures_allowed: 3
+## compare_shells: bash mksh
 
 #### @Q
 # http://landley.net/notes.html#24-06-2020

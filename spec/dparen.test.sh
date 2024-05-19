@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+## compare_shells: bash mksh zsh
 
 #### (( )) result
 (( 1 )) && echo True

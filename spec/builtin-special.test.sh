@@ -1,4 +1,7 @@
-#
+## oils_failures_allowed: 4
+## compare_shells: bash dash mksh zsh
+
+
 # POSIX rule about special builtins pointed at:
 #
 # https://www.reddit.com/r/oilshell/comments/5ykpi3/oildev_is_alive/

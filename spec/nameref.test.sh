@@ -1,6 +1,5 @@
-# Run with
-#
-#     $ test/spec.sh nameref
+## oils_failures_allowed: 7
+## compare_shells: bash mksh
 
 #### pass array by reference
 show_value() {
