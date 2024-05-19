@@ -107,7 +107,7 @@ def _PrintCodeExcerpt(line, col, length, f):
     #   but make sure to include the entire token, with some context
     #   Print > < or ... to show truncation
     #
-    #   ^col 80  ^~~~~ error  
+    #   ^col 80  ^~~~~ error
 
     buf.write(line.rstrip())
 

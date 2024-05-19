@@ -379,3 +379,34 @@ class Umask(vm._Builtin):
             return 0
 
         e_usage('umask: unexpected arguments', loc.Missing)
+
+
+class Ulimit(vm._Builtin):
+
+    def __init__(self):
+        # type: () -> None
+        """Dummy constructor for mycpp."""
+        pass
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+
+        attrs, arg_r = flag_util.ParseCmdVal('ulimit', cmd_val)
+        arg = arg_types.ulimit(attrs.attrs)
+
+        # Print all
+        if arg.a:
+            print('TODO -a')
+
+        # Shell files - this is the default
+        if arg.f:
+            print('TODO -f')
+
+        # TODO:
+        # soft
+        # hard
+        # getrlimit()
+        # setrlimit()
+        # -a
+
+        return 0

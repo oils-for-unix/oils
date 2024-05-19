@@ -177,6 +177,10 @@ JOB_SPEC.ShortFlag('-l', help='long format')
 JOB_SPEC.ShortFlag('-p', help='prints PID only')
 JOB_SPEC.LongFlag('--debug', help='display debug info')
 
+ULIMIT_SPEC = FlagSpec('ulimit')
+ULIMIT_SPEC.ShortFlag('-a')
+ULIMIT_SPEC.ShortFlag('-f')
+
 #
 # FlagSpecAndMore
 #

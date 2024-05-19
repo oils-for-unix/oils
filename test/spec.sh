@@ -179,6 +179,10 @@ builtins() {
   run-file builtins "$@"
 }
 
+builtin-cd() {
+  run-file builtin-cd "$@"
+}
+
 builtin-eval-source() {
   sh-spec spec/builtin-eval-source.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
