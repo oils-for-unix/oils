@@ -342,14 +342,12 @@ _sed-ext() {
 }
 
 update-src-versions() {
+  # Update tarball names, etc.
   _sed-ext \
     "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" \
-    doc/release-*.md
+    doc/release-*.md INSTALL.txt INSTALL-old.txt
 
-  # we need to update tarball paths, /release/0.8.4/ URL, etc.
-  _sed-ext \
-    "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" INSTALL.txt INSTALL-old.txt
-
+  # Update /release/0.8.4/ URL, etc.
   _sed-ext \
     "s;/release/[0-9]+\.[0-9]+\.[a-z0-9]+/;/release/$OIL_VERSION/;g" \
     doc/osh.1

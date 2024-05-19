@@ -4,26 +4,24 @@ Building and Installing Oils
 Oils is a new Unix shell.  This file describes how to configure, build, and
 install it from source code.
 
-TODO: Revise instructions below.
-
 Quick Start
 -----------
 
 If you haven't already done so, extract the tarball:
  
-    tar -x --xz < oil-0.21.0.tar.xz
+    tar -x --gz < oil-for-unix-0.21.0.tar.gz
     cd oil-0.21.0
 
 Either install as /usr/local/bin/osh:
 
     ./configure      # completes very quickly
-    make             # 30-60 seconds
+    _build/oils.sh   # 30-60 seconds
     sudo ./install
 
 or install as ~/bin/osh and the man page as ~/.local/share/man/man1/osh.1:
 
     ./configure --prefix ~ --datarootdir ~/.local/share
-    make
+    _build/oils.sh
     ./install
 
 The latter doesn't require root access, but it requires:
@@ -33,7 +31,7 @@ The latter doesn't require root access, but it requires:
   (See manpath or $MANPATH.)
 
 NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
-oil-0.21.0 directory.
+oils-for-unix-0.21.0 directory.
 
 Smoke Test
 ----------
@@ -57,13 +55,11 @@ Every release has a home page with links, e.g.
 System Requirements
 -------------------
 
-Roughly speaking, you need:
+You only need:
 
-  - an ANSI C environment (compiler and libc)
-  - GNU Bash
-  - GNU Make.
-
-(I want to remove the GNU requirements and require only POSIX sh instead).
+  - A C++11 compiler
+    - with libc and libstdc++
+  - A POSIX shell to invoke _build/oils.sh
 
 Optional:
 
@@ -76,9 +72,9 @@ Debian/Ubuntu and derivatives:
 
 Alpine Linux:
 
-    apk add libc-dev gcc bash make readline-dev
+    apk add libc-dev gcc readline-dev
 
-OSH has been tested in several Linux distros and OS X.  It aims to run on any
+Oils has been tested on several Linux distros and OS X.  It aims to run on any
 POSIX system.  If it doesn't, file a bug here:
 
     https://github.com/oilshell/oil/issues
@@ -92,6 +88,8 @@ options are --prefix and --{with,without}-readline.
 Notes
 -----
 
-- The oil.ovm executable behaves like busybox, and osh is a symlink to it.
-- Oil contains a fork of the Python 2.7 runtime, so it should compile with most
-  popular compiler/OS combinations.
+- The oils-for-unix executable behaves like busybox, and osh is a symlink to
+  it.
+- Notes on portability:
+  https://oilshell.org/release/0.21.0/doc/portability.html
+

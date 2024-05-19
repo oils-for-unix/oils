@@ -17,7 +17,8 @@ page links to all the documentation.
 ## Preliminaries
 
 - [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
-  tarball.  <!-- TODO: C++ tarball -->
+  tarball.
+  - [Portability](portability.html) &dagger;
 - [Getting Started](getting-started.html).  How do I use the shell?
 - [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
   something**.
