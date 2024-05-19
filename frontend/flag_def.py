@@ -184,14 +184,18 @@ ULIMIT_SPEC.ShortFlag('-a', help='Print all limits')
 ULIMIT_SPEC.ShortFlag('-H', help='Use hard limit')
 ULIMIT_SPEC.ShortFlag('-S', help='Use soft limit')
 
-# The resource limits to set, which are mutually exclusive
-ULIMIT_SPEC.ShortFlag('-c')
-ULIMIT_SPEC.ShortFlag('-d')
-ULIMIT_SPEC.ShortFlag('-f')
-ULIMIT_SPEC.ShortFlag('-n')
-ULIMIT_SPEC.ShortFlag('-s')
-ULIMIT_SPEC.ShortFlag('-t')
-ULIMIT_SPEC.ShortFlag('-v')
+_ULIMIT_RESOURCES = [
+    '-c',
+    '-d',
+    '-f',
+    '-n',
+    '-s',
+    '-t',
+    '-v',
+]
+
+for u_flag in _ULIMIT_RESOURCES:
+    ULIMIT_SPEC.ShortFlag(u_flag)
 
 #
 # FlagSpecAndMore

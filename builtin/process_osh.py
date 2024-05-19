@@ -12,7 +12,8 @@ from signal import SIGCONT
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.runtime_asdl import cmd_value, job_state_e, wait_status, wait_status_e
+from _devbuild.gen.runtime_asdl import (cmd_value, job_state_e, wait_status,
+                                        wait_status_e)
 from core import dev
 from core import error
 from core.error import e_usage, e_die_status
@@ -25,7 +26,7 @@ from mycpp.mylib import log, tagswitch, print_stderr
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
     from core.state import Mem, SearchPath
@@ -389,24 +390,45 @@ class Ulimit(vm._Builtin):
     def __init__(self):
         # type: () -> None
         """Dummy constructor for mycpp."""
-        pass
+
+        self._table = None  # type: List[Tuple[str, int, int, str]]
+
+    def _Table(self):
+        # type: () -> List[Tuple[str, int, int, str]]
+
+        # POSIX 2018
+        #
+        # https://pubs.opengroup.org/onlinepubs/9699919799/functions/getrlimit.html
+        if self._table is None:
+            # This table matches _ULIMIT_RESOURCES in frontend/flag_def.py
+
+            # flag, RLIMIT_X, factor, description
+            self._table = [
+                # Following POSIX and most shells except bash, -f is in
+                # blocks of 512 bytes
+                ('-c', RLIMIT_CORE, 512, 'core dump size'),
+                ('-d', RLIMIT_DATA, 1024, 'data segment size'),
+                ('-f', RLIMIT_FSIZE, 512, 'file size'),
+                ('-n', RLIMIT_NOFILE, 1, 'file descriptors'),
+                ('-s', RLIMIT_STACK, 1024, 'stack size'),
+                ('-t', RLIMIT_CPU, 1, 'CPU seconds'),
+                ('-v', RLIMIT_AS, 1024, 'address space size'),
+            ]
+
+        return self._table
+
+    def _FindFactor(self, what):
+        # type: (int) -> int
+        for _, w, factor, _ in self._Table():
+            if w == what:
+                return factor
+        raise AssertionError()
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
 
         attrs, arg_r = flag_util.ParseCmdVal('ulimit', cmd_val)
         arg = arg_types.ulimit(attrs.attrs)
-
-        # POSIX 2018
-        #
-        # https://pubs.opengroup.org/onlinepubs/9699919799/functions/getrlimit.html
-        # -c RLIMIT_CORE
-        # -t RLIMIT_CPU
-        # -d RLIMIT_DATA
-        # -f RLIMIT_FSIZE
-        # -n RLIMIT_NOFILE
-        # -s RLIMIT_STACK
-        # -v RLIMIT_AS
 
         how = 0
         if arg.S:
@@ -461,7 +483,15 @@ class Ulimit(vm._Builtin):
             if extra is not None:
                 raise error.Usage('got extra arg with -a', extra_loc)
 
-            print('TODO -a')
+            # Worst case 20 == len(str(2**64))
+            fmt = '%5s %20s %20s %7s  %s'
+            print(fmt % ('FLAG', 'SOFT', 'HARD', 'FACTOR', 'DESC'))
+            for flag, what, factor, desc in self._Table():
+                soft = 0
+                hard = 0
+                print('%5s %20d %20d %7d  %s' %
+                      (flag, soft, hard, factor, desc))
+
             return 0
 
         if num_what_flags == 0:
@@ -470,12 +500,14 @@ class Ulimit(vm._Builtin):
         s, s_loc = arg_r.Peek2()
 
         if s is None:
+            factor = self._FindFactor(what)
             print('TODO: get')
             return 0
 
         # Set the given resource
         if s == 'unlimited':
-            limit = mops.IntWiden(RLIM_INFINITY)
+            # In C, RLIM_INFINITY is rlim_t
+            limit = cast(mops.BigInt, RLIM_INFINITY)
         else:
             try:
                 big_int = mops.FromStr(s)
@@ -493,6 +525,8 @@ class Ulimit(vm._Builtin):
         extra2, extra_loc2 = arg_r.Peek2()
         if extra2 is not None:
             raise error.Usage('got extra arg', extra_loc2)
+
+        factor = self._FindFactor(what)
 
         # Now set the resource according to what and how
 
