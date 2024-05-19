@@ -175,8 +175,8 @@ if_() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
-builtins() {
-  run-file builtins "$@"
+builtin-process() {
+  run-file builtin-process "$@"
 }
 
 builtin-cd() {
@@ -209,8 +209,8 @@ builtin-printf() {
   run-file builtin-printf "$@"
 }
 
-builtins2() {
-  run-file builtins2 "$@"
+builtin-meta() {
+  run-file builtin-meta  "$@"
 }
 
 builtin-history() {
