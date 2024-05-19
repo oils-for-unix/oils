@@ -1,4 +1,4 @@
-## oils_failures_allowed: 10
+## oils_failures_allowed: 7
 ## compare_shells: dash bash mksh zsh
 
 #### exec builtin 

@@ -6,6 +6,8 @@ This is sort of the opposite of builtin_pure.py.
 """
 from __future__ import print_function
 
+from resource import (RLIM_INFINITY, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_DATA,
+                      RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_STACK, RLIMIT_AS)
 from signal import SIGCONT
 
 from _devbuild.gen import arg_types
@@ -16,9 +18,10 @@ from core import error
 from core.error import e_usage, e_die_status
 from core import process  # W1_OK, W1_ECHILD
 from core import vm
-from mycpp.mylib import log, tagswitch, print_stderr
 from frontend import flag_util
 from frontend import typed_args
+from mycpp import mops
+from mycpp.mylib import log, tagswitch, print_stderr
 
 import posix_ as posix
 
@@ -395,7 +398,7 @@ class Ulimit(vm._Builtin):
         arg = arg_types.ulimit(attrs.attrs)
 
         # POSIX 2018
-        # 
+        #
         # https://pubs.opengroup.org/onlinepubs/9699919799/functions/getrlimit.html
         # -c RLIMIT_CORE
         # -t RLIMIT_CPU
@@ -405,27 +408,101 @@ class Ulimit(vm._Builtin):
         # -s RLIMIT_STACK
         # -v RLIMIT_AS
 
+        how = 0
+        if arg.S:
+            how = 1
+        if arg.H:
+            # TODO
+            how = 1
+
+        what = 0
+        num_what_flags = 0
+
+        if arg.c:
+            what = RLIMIT_CORE
+            num_what_flags += 1
+
+        if arg.d:
+            what = RLIMIT_DATA
+            num_what_flags += 1
+
+        if arg.f:
+            what = RLIMIT_FSIZE
+            num_what_flags += 1
+
+        if arg.n:
+            what = RLIMIT_NOFILE
+            num_what_flags += 1
+
+        if arg.s:
+            what = RLIMIT_STACK
+            num_what_flags += 1
+
+        if arg.t:
+            what = RLIMIT_CPU
+            num_what_flags += 1
+
+        if arg.v:
+            what = RLIMIT_AS
+            num_what_flags += 1
+
+        if num_what_flags > 1:
+            raise error.Usage(
+                'can only handle one resource at a time; got too many flags',
+                cmd_val.arg_locs[0])
+
         # Print all
         if arg.a:
+            if num_what_flags > 0:
+                raise error.Usage("doesn't accept resource flags with -a",
+                                  cmd_val.arg_locs[0])
+
             extra, extra_loc = arg_r.Peek2()
             if extra is not None:
                 raise error.Usage('got extra arg with -a', extra_loc)
 
+            print('TODO -a')
+            return 0
 
-        # Shell files - this is the default
-        if arg.f:
-            print('TODO -f')
+        if num_what_flags == 0:
+            what = RLIMIT_FSIZE  # -f is the default
 
-        # TODO:
-        # soft
-        # hard
-        # getrlimit()
-        # setrlimit()
-        # -a
+        s, s_loc = arg_r.Peek2()
 
+        if s is None:
+            print('TODO: get')
+            return 0
+
+        # Set the given resource
+        if s == 'unlimited':
+            limit = mops.IntWiden(RLIM_INFINITY)
+        else:
+            try:
+                big_int = mops.FromStr(s)
+            except ValueError as e:
+                raise error.Usage(
+                    "expected a number or 'unlimited', got %r" % s, s_loc)
+
+            if mops.Greater(mops.IntWiden(0), big_int):
+                raise error.Usage(
+                    "doesn't accept negative numbers, got %r" % s, s_loc)
+
+            limit = big_int
+
+        arg_r.Next()
         extra2, extra_loc2 = arg_r.Peek2()
         if extra2 is not None:
             raise error.Usage('got extra arg', extra_loc2)
+
+        # Now set the resource according to what and how
+
+        # TODO:
+        #
+        # getrlimit(resource: int) -> Tuple[mylib.BigInt, mylib.BigInt]
+        # setrlimit(resource: int, soft: mylib.BigInt, hard: mylib.BigInt)
+        #
+        # It's annoying that both dash and bash get the current limit, and
+        # then set it
 
         return 0
 
