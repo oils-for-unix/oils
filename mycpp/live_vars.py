@@ -60,6 +60,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.statement_id = -1
         self.loop_stack: List[int] = None
+        self.with_stack: List[set[str]] = []
         self.locals = {}
 
         self.vars = None
@@ -95,13 +96,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                 return res
             else:
                 if self.current_func_name:
-                    prev = self.statement_id
-                    self.statement_id += 1
-                    self.live_vars.EmitEdge(
-                        self.current_func_name,
-                        prev,
-                        self.statement_id
-                    )
+                    self.add_statement()
 
                 try:
                     node.accept(self)
@@ -113,6 +108,16 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         if 0:  # quiet
             ind_str = self.indent * '  '
             log(ind_str + msg, *args)
+
+
+    def add_statement(self):
+        prev = self.statement_id
+        self.statement_id += 1
+        self.live_vars.EmitEdge(
+            self.current_func_name,
+            prev,
+            self.statement_id
+        )
 
     def push_loop(self):
         assert self.loop_stack is not None
@@ -127,6 +132,13 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
             loop_entrance
         )
 
+    def push_with(self):
+        self.with_stack.append(set({}))
+
+    def pop_with(self):
+        assert len(self.with_stack)
+        return self.with_stack.pop()
+
     def add_var_def(self, name):
         if self.statement_id == -1 or name in IGNORE_NAMES:
             return
@@ -136,6 +148,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def add_var_use(self, name):
         if self.statement_id == -1 or name not in self.locals:
             return
+
+        if len(self.with_stack):
+            self.with_stack[-1].add(name)
 
         self.live_vars.EmitUse(self.current_func_name, self.statement_id, name)
 
@@ -422,8 +437,14 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
         assert len(o.expr) == 1, o.expr
+        self.push_with()
         self.accept(o.expr[0])
+        used = self.pop_with()
         self.accept(o.body)
+        self.add_statement()
+        for name in used:
+            self.live_vars.EmitUse(self.current_func_name, self.statement_id, name)
+
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
         self.accept(o.expr)
@@ -433,6 +454,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         typ = o.type
 
         assert self.statement_id == -1
+        assert len(self.with_stack) == 0
         self.statement_id = 0
         self.loop_stack = []
         self.locals = {}
