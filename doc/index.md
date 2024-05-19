@@ -18,7 +18,7 @@ page links to all the documentation.
 
 - [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
   tarball.
-  - [Portability](portability.html) &dagger;
+  - [Portability](portability.html)
 - [Getting Started](getting-started.html).  How do I use the shell?
 - [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
   something**.

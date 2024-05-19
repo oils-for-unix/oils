@@ -78,6 +78,7 @@ readonly MARKDOWN_DOCS=(
 
   # polished
   getting-started
+  portability
   known-differences
   error-handling
   error-catalog
