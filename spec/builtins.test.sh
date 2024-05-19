@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 10
 ## compare_shells: dash bash mksh zsh
 
 #### exec builtin 
@@ -181,55 +181,130 @@ status=0
 diff=0
 ## END
 
-#### ulimit -f 1 prevents files larger than 1024 bytes
 
-# dash and zsh give too much spew
-# mksh gives 512 byte files?
-case $SH in dash|zsh|mksh) exit ;; esac
+#### ulimit too many args
 
-rm -f err.txt
-touch err.txt
+ulimit 1 2
+if test $? -ne 0; then
+  echo pass
+else
+  echo fail
+fi
 
-bytes() {
-  local n=$1
-  local status=0
-  for i in $(seq $n); do
-    echo -n x
-    status=$?
-    if test $status -ne 0; then
-      echo "ERROR: echo failed with status $status" >> err.txt
-    fi
-  done
-}
-
-
-ulimit -f 1
-
-bytes 1024 > ok.txt
-echo 1024 status=$?
-
-bytes 1025 > too-big.txt
-echo 1025 status=$?
-echo
-
-wc --bytes ok.txt too-big.txt
-echo
-
-cat err.txt
+#ulimit -f
 
 ## STDOUT:
-1024 status=0
-1025 status=0
-
-1024 ok.txt
-1024 too-big.txt
-2048 total
-
-ERROR: echo failed with status 1
+pass
 ## END
 
-## BUG dash/zsh/mksh STDOUT:
+## BUG bash/zsh STDOUT:
+fail
 ## END
+
+
+#### ulimit negative flag
+
+ulimit -f
+
+# interpreted as a flag
+ulimit -f -42
+if test $? -ne 0; then
+  echo pass
+else
+  echo fail
+fi
+
+## STDOUT:
+unlimited
+pass
+## END
+
+#### ulimit negative arg
+
+ulimit -f
+
+# an arg
+ulimit -f -- -42
+if test $? -ne 0; then
+  echo pass
+else
+  echo fail
+fi
+
+## STDOUT:
+unlimited
+pass
+## END
+
+## BUG mksh STDOUT:
+unlimited
+fail
+## END
+
+## BUG bash STDOUT:
+unlimited
+unlimited
+fail
+## END
+
+#### ulimit -a doesn't take arg
+case $SH in bash) exit ;; esac
+
+ulimit -a 42
+if test $? -ne 0; then
+  echo 'failure that was expected'
+fi
+
+## STDOUT:
+failure that was expected
+## END
+## BUG bash STDOUT:
+## END
+
+
+#### ulimit doesn't accept multiple flags - reduce confusion between shells
+
+# - bash, zsh, busybox ash accept multiple "commands", which requires custom
+#   flag parsing, like
+
+#   ulimit -f 999 -n
+#   ulimit -f 999 -n 888
+#
+# - dash and mksh accept a single ARG
+#
+# we want to make it clear we're like the latter
+
+# can't print all and -f
+ulimit -f -a >/dev/null
+echo status=$?
+
+ulimit -f -n >/dev/null
+echo status=$?
+
+ulimit -f -n 999 >/dev/null
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+status=2
+## END
+
+## BUG dash/bash/mksh STDOUT:
+status=0
+status=0
+status=0
+## END
+
+# zsh is better - it checks that -a and -f are exclusive
+
+## BUG zsh STDOUT:
+status=1
+status=0
+status=0
+## END
+
+
 
 #### ulimit accepts 'unlimited'
 
@@ -308,3 +383,72 @@ after 0
 before unlimited
 after 1073741824
 ## END
+
+#### ulimit -f 1 prevents files larger than 1024 bytes, or 512 bytes
+
+# dash and zsh give too much spew
+# mksh gives 512 byte files?
+
+case $SH in dash|zsh|mksh) exit ;; esac
+
+rm -f err.txt
+touch err.txt
+
+bytes() {
+  local n=$1
+  local st=0
+  for i in $(seq $n); do
+    echo -n x
+    st=$?
+    if test $st -ne 0; then
+      echo "ERROR: echo failed with status $st" >> err.txt
+    fi
+  done
+}
+
+
+ulimit -f 1
+
+bytes 1024 > ok.txt
+echo 1024 status=$?
+
+bytes 1025 > too-big.txt
+echo 1025 status=$?
+echo
+
+wc --bytes ok.txt too-big.txt
+echo
+
+cat err.txt
+
+## STDOUT:
+1024 status=0
+1025 status=0
+
+1024 ok.txt
+1024 too-big.txt
+2048 total
+
+ERROR: echo failed with status 1
+## END
+
+## BUG dash/zsh/mksh STDOUT:
+## END
+
+#### ulimit -S for soft limit (default), -H for hard limit
+
+# note: ulimit -n -S 1111 is OK in osh/dash/mksh, but not bash/zsh
+
+ulimit -S -n 1111
+ulimit -H -n 9999
+
+ulimit -n
+ulimit -n -S
+ulimit -n -H
+
+## STDOUT:
+1111
+1111
+9999
+## END
+

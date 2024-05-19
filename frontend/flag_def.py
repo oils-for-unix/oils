@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
-"""Flag_def.py."""
+"""Flag parser defintions."""
+
 from __future__ import print_function
 
 from frontend import args
@@ -178,8 +179,19 @@ JOB_SPEC.ShortFlag('-p', help='prints PID only')
 JOB_SPEC.LongFlag('--debug', help='display debug info')
 
 ULIMIT_SPEC = FlagSpec('ulimit')
-ULIMIT_SPEC.ShortFlag('-a')
+
+ULIMIT_SPEC.ShortFlag('-a', help='Print all limits')
+ULIMIT_SPEC.ShortFlag('-H', help='Use hard limit')
+ULIMIT_SPEC.ShortFlag('-S', help='Use soft limit')
+
+# The resource limits to set, which are mutually exclusive
+ULIMIT_SPEC.ShortFlag('-c')
+ULIMIT_SPEC.ShortFlag('-d')
 ULIMIT_SPEC.ShortFlag('-f')
+ULIMIT_SPEC.ShortFlag('-n')
+ULIMIT_SPEC.ShortFlag('-s')
+ULIMIT_SPEC.ShortFlag('-t')
+ULIMIT_SPEC.ShortFlag('-v')
 
 #
 # FlagSpecAndMore

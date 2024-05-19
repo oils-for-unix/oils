@@ -394,9 +394,23 @@ class Ulimit(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('ulimit', cmd_val)
         arg = arg_types.ulimit(attrs.attrs)
 
+        # POSIX 2018
+        # 
+        # https://pubs.opengroup.org/onlinepubs/9699919799/functions/getrlimit.html
+        # -c RLIMIT_CORE
+        # -t RLIMIT_CPU
+        # -d RLIMIT_DATA
+        # -f RLIMIT_FSIZE
+        # -n RLIMIT_NOFILE
+        # -s RLIMIT_STACK
+        # -v RLIMIT_AS
+
         # Print all
         if arg.a:
-            print('TODO -a')
+            extra, extra_loc = arg_r.Peek2()
+            if extra is not None:
+                raise error.Usage('got extra arg with -a', extra_loc)
+
 
         # Shell files - this is the default
         if arg.f:
@@ -409,4 +423,11 @@ class Ulimit(vm._Builtin):
         # setrlimit()
         # -a
 
+        extra2, extra_loc2 = arg_r.Peek2()
+        if extra2 is not None:
+            raise error.Usage('got extra arg', extra_loc2)
+
         return 0
+
+
+# vim: sw=4
