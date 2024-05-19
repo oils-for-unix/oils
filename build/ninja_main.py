@@ -45,6 +45,7 @@ def TarballManifest(cc_h_files):
     # Text
     'LICENSE.txt',
     'README-native.txt',
+    'INSTALL.txt',
     'configure',
     'install',
     'doc/osh.1',

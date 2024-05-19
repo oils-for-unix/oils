@@ -11,6 +11,7 @@ set -o errexit
 #  doc/
 #    index.html
 #    INSTALL.html
+#    INSTALL-old.html
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 export OIL_VERSION  # for quick_ref.py
@@ -277,8 +278,11 @@ special() {
     "$web_dir/base.css $web_dir/manual.css $web_dir/toc.css" 'Oils Source Code'
 
   local web_dir='../web'
-  render-only 'INSTALL.txt' '' \
+  render-only INSTALL.txt '' \
     "$web_dir/base.css $web_dir/install.css" 'Installing Oils'
+
+  render-only INSTALL-old.txt '' \
+    "$web_dir/base.css $web_dir/install.css" 'Installing Oils - old CPython build'
 
   # These pages aren't in doc/
   split-and-render doc/release-index.md _tmp/release-index.html
@@ -344,7 +348,7 @@ update-src-versions() {
 
   # we need to update tarball paths, /release/0.8.4/ URL, etc.
   _sed-ext \
-    "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" INSTALL.txt
+    "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" INSTALL.txt INSTALL-old.txt
 
   _sed-ext \
     "s;/release/[0-9]+\.[0-9]+\.[a-z0-9]+/;/release/$OIL_VERSION/;g" \

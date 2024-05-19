@@ -1,10 +1,14 @@
-Building and Installing Oils
-============================
+Building and Installing Oils - old CPython build
+================================================
 
-Oils is a new Unix shell.  This file describes how to configure, build, and
-install it from source code.
+Oils is a new Unix shell.  This file is INSTALL-old.txt, and it describes how
+to configure, build, and install the oil-$VERSION tarball.
 
-TODO: Revise instructions below.
+The tarball contains an older, slower reference implementation based on CPython
+code.
+
+You may want INSTALL.txt instead, which tells you how to build the fast
+oils-for-unix-$VERSION tarball.
 
 Quick Start
 -----------
