@@ -175,6 +175,10 @@ if_() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
+builtin-misc() {
+  run-file builtin-misc "$@"
+}
+
 builtin-process() {
   run-file builtin-process "$@"
 }

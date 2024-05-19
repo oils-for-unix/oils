@@ -106,31 +106,6 @@ result=1
 ## N-I dash status: 2
 ## N-I dash stdout-json: ""
 
-#### time pipeline
-time echo hi | wc -c
-## stdout: 3
-## status: 0
-
-#### shift
-set -- 1 2 3 4
-shift
-echo "$@"
-shift 2
-echo "$@"
-## stdout-json: "2 3 4\n4\n"
-## status: 0
-
-#### Shifting too far
-set -- 1
-shift 2
-## status: 1
-## OK dash status: 2
-
-#### Invalid shift argument
-shift ZZZ
-## status: 2
-## OK bash status: 1
-## BUG mksh/zsh status: 0
 
 #### get umask
 umask | grep '[0-9]\+'  # check for digits
