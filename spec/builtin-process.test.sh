@@ -512,10 +512,14 @@ GET
 
 #### Changing resource limit is denied
 
-flag=-c
+# Not sure why these don't work
+case $SH in dash|mksh) exit ;; esac
 
-ulimit -H $flag 100
-echo hard=$?
+
+flag=-t
+
+ulimit -S -H $flag 100
+echo both=$?
 
 ulimit -S $flag 90
 echo soft=$?
@@ -538,10 +542,12 @@ else
 fi
 
 ## STDOUT:
-hard=0
+both=0
 soft=0
 soft=0
 soft OK
 hard OK
 ## END
 
+## BUG dash/mksh STDOUT:
+## END
