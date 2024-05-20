@@ -6,6 +6,7 @@ This is sort of the opposite of builtin_pure.py.
 """
 from __future__ import print_function
 
+import resource
 from resource import (RLIM_INFINITY, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_DATA,
                       RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_STACK, RLIMIT_AS)
 from signal import SIGCONT
@@ -19,6 +20,7 @@ from core import error
 from core.error import e_usage, e_die_status
 from core import process  # W1_OK, W1_ECHILD
 from core import pyos
+from core import pyutil
 from core import vm
 from frontend import flag_util
 from frontend import typed_args
@@ -565,8 +567,16 @@ class Ulimit(vm._Builtin):
                 pyos.SetRLimit(what, soft, hard)
             except OverflowError:  # only happens in CPython
                 raise error.Usage('detected overflow', s_loc)
+            except (ValueError, resource.error) as e:
+                # Annoying: Python binding changes IOError -> ValueError
+                print_stderr('ulimit error: %s' % e)
+                return 1
         else:
-            pyos.SetRLimit(what, soft, hard)
+            try:
+                pyos.SetRLimit(what, soft, hard)
+            except (IOError, OSError) as e:
+                print_stderr('ulimit error: %s' % pyutil.strerror(e))
+                return 1
 
         return 0
 

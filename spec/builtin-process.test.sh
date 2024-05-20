@@ -510,3 +510,36 @@ GET
 ## BUG dash/zsh STDOUT:
 ## END
 
+#### Changing resource limit is denied
+
+ulimit -H -c 100
+echo hard=$?
+
+ulimit -S -c 90
+echo soft=$?
+
+ulimit -S -c 95
+echo soft=$?
+
+ulimit -S -c 105
+if test $? -ne 0; then
+  echo soft OK
+else
+  echo soft fail
+fi
+
+ulimit -H -c 200
+if test $? -ne 0; then
+  echo hard OK
+else
+  echo hard fail
+fi
+
+## STDOUT:
+hard=0
+soft=0
+soft=0
+soft OK
+hard OK
+## END
+

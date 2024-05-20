@@ -1,6 +1,6 @@
 
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### echo keyword
 echo done
@@ -139,18 +139,38 @@ x=\D{%H:%M
 ## N-I zsh status: 1
 
 
-#### 'echo' and printf to disk full
+#### 'echo' and printf fail on writing to full disk
 
 # Inspired by https://blog.sunfishcode.online/bugs-in-hello-world/
 
 echo hi > /dev/full
 echo status=$?
+
 printf '%s\n' hi > /dev/full
 echo status=$?
 
 ## STDOUT:
 status=1
 status=1
+## END
+
+#### other builtins fail on writing to full disk
+
+type echo > /dev/full
+echo status=$?
+
+# other random builtin
+ulimit -a > /dev/full
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+## END
+
+## BUG mksh/zsh STDOUT:
+status=0
+status=0
 ## END
 
 #### subshell while running a script (regression)
