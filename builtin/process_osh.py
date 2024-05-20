@@ -23,6 +23,7 @@ from core import vm
 from frontend import flag_util
 from frontend import typed_args
 from mycpp import mops
+from mycpp import mylib
 from mycpp.mylib import log, tagswitch, print_stderr
 
 import posix_ as posix
@@ -559,7 +560,13 @@ class Ulimit(vm._Builtin):
         if arg.H:
             hard = limit
 
-        pyos.SetRLimit(what, soft, hard)
+        if mylib.PYTHON:
+            try:
+                pyos.SetRLimit(what, soft, hard)
+            except OverflowError:  # only happens in CPython
+                raise error.Usage('detected overflow', s_loc)
+        else:
+            pyos.SetRLimit(what, soft, hard)
 
         return 0
 

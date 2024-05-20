@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh
 
 #### exec builtin 
@@ -393,12 +393,12 @@ after 1
 ## END
 
 
-#### ulimit -f 1 prevents files larger than 1024 bytes, or 512 bytes
+#### ulimit -f 1 prevents files larger 512 bytes
 
 # dash and zsh give too much spew
 # mksh gives 512 byte files?
 
-case $SH in dash|zsh|mksh) exit ;; esac
+#case $SH in dash|zsh|mksh) exit ;; esac
 
 rm -f err.txt
 touch err.txt
@@ -418,11 +418,11 @@ bytes() {
 
 ulimit -f 1
 
-bytes 1024 > ok.txt
-echo 1024 status=$?
+bytes 512 > ok.txt
+echo 512 status=$?
 
-bytes 1025 > too-big.txt
-echo 1025 status=$?
+bytes 513 > too-big.txt
+echo 513 status=$?
 echo
 
 wc --bytes ok.txt too-big.txt
@@ -431,21 +431,28 @@ echo
 cat err.txt
 
 ## STDOUT:
-1024 status=0
-1025 status=0
+512 status=0
+513 status=0
 
-1024 ok.txt
-1024 too-big.txt
-2048 total
+ 512 ok.txt
+ 512 too-big.txt
+1024 total
 
 ERROR: echo failed with status 1
 ## END
 
-## BUG dash/zsh/mksh STDOUT:
+## BUG bash STDOUT:
+512 status=0
+513 status=0
+
+ 512 ok.txt
+ 513 too-big.txt
+1025 total
+
 ## END
 
-#### ulimit -S for soft limit (default), -H for hard limit
 
+#### ulimit -S for soft limit (default), -H for hard limit
 case $SH in dash|zsh) exit ;; esac
 
 # Note: ulimit -n -S 1111 is OK in osh/dash/mksh, but not bash/zsh

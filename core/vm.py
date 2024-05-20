@@ -333,4 +333,7 @@ class ctx_FlushStdout(object):
         # type: (Any, Any, Any) -> None
 
         # This function can't be translated, so it's in pyos
+
+        # TODO: can't raise exception in destructor!
+
         pyos.FlushStdout()

@@ -93,10 +93,7 @@ void PrintTimes();
 
 bool InputAvailable(int fd);
 
-inline void FlushStdout() {
-  // Flush libc buffers
-  fflush(stdout);
-}
+void FlushStdout();
 
 Tuple2<int, void*> PushTermAttrs(int fd, int mask);
 void PopTermAttrs(int fd, int orig_local_modes, void* term_attrs);
