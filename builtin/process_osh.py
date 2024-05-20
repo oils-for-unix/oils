@@ -552,6 +552,10 @@ class Ulimit(vm._Builtin):
         # Now set the resource
         soft, hard = pyos.GetRLimit(what)
 
+        # For error message
+        old_soft = soft
+        old_hard = hard
+
         # Bash behavior: manipulate both, unless a flag is parsed.  This
         # differs from zsh!
         if not arg.S and not arg.H:
@@ -569,7 +573,16 @@ class Ulimit(vm._Builtin):
                 raise error.Usage('detected overflow', s_loc)
             except (ValueError, resource.error) as e:
                 # Annoying: Python binding changes IOError -> ValueError
+
                 print_stderr('ulimit error: %s' % e)
+
+                # Extra info we could expose in C++ too
+                print_stderr('soft=%s hard=%s -> soft=%s hard=%s' % (
+                    _LimitString(old_soft, factor),
+                    _LimitString(old_hard, factor),
+                    _LimitString(soft, factor),
+                    _LimitString(hard, factor),
+                ))
                 return 1
         else:
             try:

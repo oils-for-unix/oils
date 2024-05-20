@@ -512,23 +512,25 @@ GET
 
 #### Changing resource limit is denied
 
-ulimit -H -c 100
+flag=-c
+
+ulimit -H $flag 100
 echo hard=$?
 
-ulimit -S -c 90
+ulimit -S $flag 90
 echo soft=$?
 
-ulimit -S -c 95
+ulimit -S $flag 95
 echo soft=$?
 
-ulimit -S -c 105
+ulimit -S $flag 105
 if test $? -ne 0; then
   echo soft OK
 else
   echo soft fail
 fi
 
-ulimit -H -c 200
+ulimit -H $flag 200
 if test $? -ne 0; then
   echo hard OK
 else
