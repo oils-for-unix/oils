@@ -861,6 +861,59 @@ Oils currently supports writing masks in octal.
 
 If no MODE, show the current mask.
 
+### ulimit
+
+    ulimit --all
+    ulimit -a
+    ulimit FLAGS* -RESOURCE_FLAG VALUE?
+
+    ulimit FLAGS* VALUE?  # discouraged
+
+Show and modify process resource limits.
+
+Flags:
+
+    -S  for soft limit
+    -H  for hard limit
+
+    -c -d -f ...  # ulimit --all shows all resource flags
+
+Show a table of resources:
+
+    ulimit --all
+    ulimit -a
+
+For example, the table shows that `-n` is the flag that controls the number
+file descriptors, the soft and hard limit for `-n`, and the multiplication
+"factor" for the integer VALUE you pass.
+
+---
+
+Here are examples of using resource flags.
+
+Get the soft limit for the number of file descriptors:
+ 
+    ulimit -S -n
+    ulimit -n     # same thing
+
+Get the hard limit:
+
+    ulimit -H -n
+
+Set the soft or hard limit:
+
+    ulimit -S -n 100
+    ulimit -H -n 100
+
+Set both limits:
+
+    ulimit -n 100
+
+A special case that's discouraged: with no resource flag, `-f` is assumed:
+
+    ulimit      # equivalent to ulimit -f
+    ulimit 100  # equivalent to ulimit -f 100
+
 ### times
 
     times

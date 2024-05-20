@@ -480,7 +480,8 @@ class Ulimit(vm._Builtin):
                 cmd_val.arg_locs[0])
 
         # Print all
-        if arg.a:
+        show_all = arg.a or arg.all
+        if show_all:
             if num_what_flags > 0:
                 raise error.Usage("doesn't accept resource flags with -a",
                                   cmd_val.arg_locs[0])

@@ -181,6 +181,7 @@ JOB_SPEC.LongFlag('--debug', help='display debug info')
 ULIMIT_SPEC = FlagSpec('ulimit')
 
 ULIMIT_SPEC.ShortFlag('-a', help='Print all limits')
+ULIMIT_SPEC.LongFlag('--all', help='Alias for -a')
 ULIMIT_SPEC.ShortFlag('-H', help='Use hard limit')
 ULIMIT_SPEC.ShortFlag('-S', help='Use soft limit')
 

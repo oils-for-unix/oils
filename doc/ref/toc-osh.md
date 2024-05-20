@@ -115,7 +115,7 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
   [Working Dir]   cd   pwd   pushd   popd   dirs
   [Completion]    complete   compgen   compopt   compadjust   compexport
   [Shell Process] exec   X logout 
-                  umask   X ulimit   times
+                  umask   ulimit   times
   [Child Process] jobs   wait   ampersand &
                   fg   X bg   X kill   X disown 
   [External]      test [   getopts

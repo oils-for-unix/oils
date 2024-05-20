@@ -280,6 +280,27 @@ status=0
 ## END
 
 
+#### YSH readability: ulimit --all the same as ulimit -a
+
+case $SH in bash|dash|mksh|zsh) exit ;; esac
+
+ulimit -a > short.txt
+ulimit --all > long.txt
+
+wc -l short.txt long.txt
+
+diff -u short.txt long.txt
+echo status=$?
+
+## STDOUT:
+  8 short.txt
+  8 long.txt
+ 16 total
+status=0
+## END
+
+## N-I bash/dash/mksh/zsh STDOUT:
+## END
 
 #### ulimit accepts 'unlimited'
 
