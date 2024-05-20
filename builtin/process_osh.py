@@ -6,7 +6,6 @@ This is sort of the opposite of builtin_pure.py.
 """
 from __future__ import print_function
 
-import resource
 from resource import (RLIM_INFINITY, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_DATA,
                       RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_STACK, RLIMIT_AS)
 from signal import SIGCONT
