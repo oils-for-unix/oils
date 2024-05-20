@@ -1,4 +1,4 @@
-## oils_failures_allowed: 8
+## oils_failures_allowed: 3
 ## compare_shells: dash bash mksh zsh
 
 #### exec builtin 
@@ -412,18 +412,60 @@ ERROR: echo failed with status 1
 
 #### ulimit -S for soft limit (default), -H for hard limit
 
-# note: ulimit -n -S 1111 is OK in osh/dash/mksh, but not bash/zsh
+case $SH in dash|zsh) exit ;; esac
 
-ulimit -S -n 1111
-ulimit -H -n 9999
+# Note: ulimit -n -S 1111 is OK in osh/dash/mksh, but not bash/zsh
+# Mus be ulimit -S -n 1111
 
-ulimit -n
-ulimit -n -S
-ulimit -n -H
+show_state() {
+  local msg=$1
+  echo "$msg"
+  echo -n '  '; ulimit -S -t
+  echo -n '  '; ulimit -H -t
+  echo
+}
+
+show_state 'init'
+
+ulimit -S -t 123456
+show_state '-S'
+
+ulimit -H -t 123457
+show_state '-H'
+
+ulimit -t 123455
+show_state 'no flag'
+
+echo 'GET'
+
+ulimit -S -t 123454
+echo -n '  '; ulimit -t
+echo -n '  '; ulimit -S -t
+echo -n '  '; ulimit -H -t
 
 ## STDOUT:
-1111
-1111
-9999
+init
+  unlimited
+  unlimited
+
+-S
+  123456
+  unlimited
+
+-H
+  123456
+  123457
+
+no flag
+  123455
+  123455
+
+GET
+  123454
+  123454
+  123455
+## END
+
+## BUG dash/zsh STDOUT:
 ## END
 

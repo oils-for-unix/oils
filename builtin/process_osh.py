@@ -387,12 +387,13 @@ class Umask(vm._Builtin):
         e_usage('umask: unexpected arguments', loc.Missing)
 
 
-def _LimitString(lim):
-    # type: (mops.BigInt) -> str
+def _LimitString(lim, factor):
+    # type: (mops.BigInt, int) -> str
     if mops.Equal(lim, mops.FromC(RLIM_INFINITY)):
         return 'unlimited'
     else:
-        return mops.ToStr(lim)
+        i = mops.Div(lim, mops.IntWiden(factor))
+        return mops.ToStr(i)
 
 
 class Ulimit(vm._Builtin):
@@ -499,8 +500,8 @@ class Ulimit(vm._Builtin):
             for flag, what, factor, desc in self._Table():
                 soft, hard = pyos.GetRLimit(what)
 
-                soft2 = _LimitString(soft)
-                hard2 = _LimitString(hard)
+                soft2 = _LimitString(soft, factor)
+                hard2 = _LimitString(hard, factor)
                 print(fmt % (flag, soft2, hard2, str(factor), desc))
 
             return 0
@@ -512,7 +513,11 @@ class Ulimit(vm._Builtin):
 
         if s is None:
             factor = self._FindFactor(what)
-            print('TODO: get')
+            soft, hard = pyos.GetRLimit(what)
+            if arg.H:
+                print(_LimitString(hard, factor))
+            else:
+                print(_LimitString(soft, factor))
             return 0
 
         # Set the given resource
@@ -530,16 +535,28 @@ class Ulimit(vm._Builtin):
                 raise error.Usage(
                     "doesn't accept negative numbers, got %r" % s, s_loc)
 
-            limit = big_int
+            factor = self._FindFactor(what)
+            limit = mops.Mul(big_int, mops.IntWiden(factor))
 
         arg_r.Next()
         extra2, extra_loc2 = arg_r.Peek2()
         if extra2 is not None:
             raise error.Usage('got extra arg', extra_loc2)
 
-        factor = self._FindFactor(what)
-
         # Now set the resource according to what and how
+        soft, hard = pyos.GetRLimit(what)
+
+        # Bash behavior: manipulate both, unless a flag is parsed.
+        # This differs from zsh!
+        if not arg.S and not arg.H:
+            soft = limit
+            hard = limit
+        if arg.S:
+            soft = limit
+        if arg.H:
+            hard = limit
+
+        pyos.SetRLimit(what, soft, hard)
 
         # TODO:
         #

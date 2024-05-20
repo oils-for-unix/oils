@@ -229,8 +229,7 @@ def SetRLimit(res, soft, hard):
     """
     Raises IOError
     """
-    arg = cast('Tuple[int, int]', (soft, hard))
-    resource.setrlimit(res, arg)
+    resource.setrlimit(res, (soft.i, hard.i))
 
 
 def Time():
