@@ -333,15 +333,50 @@ three 1
 ## END
 
 
-#### ulimit of 2 ** 62
+#### ulimit that is 64 bits
+
+# no 64-bit integers
+case $SH in mksh) exit ;; esac
 
 echo -n 'before '; ulimit -f
 
 # 1 << 63 overflows signed int
 
-# bash says this is out of range
-ulimit -f $(( 1 << 62 ))
+# 512 is 1 << 9, so make it 62-9 = 53 bits
 
+lim=$(( 1 << 53 ))
+#echo $lim
+
+# bash says this is out of range
+ulimit -f $lim
+
+echo -n 'after '; ulimit -f
+
+## STDOUT:
+before unlimited
+after 9007199254740992
+## END
+
+## BUG mksh STDOUT:
+## END
+
+
+#### arg that would overflow 64 bits is detected
+
+# no 64-bit integers
+case $SH in mksh) exit ;; esac
+
+echo -n 'before '; ulimit -f
+
+# 1 << 63 overflows signed int
+
+lim=$(( (1 << 62) + 1 ))
+#echo lim=$lim
+
+# bash detects that this is out of range
+# so does osh-cpp, but not osh-cpython
+
+ulimit -f $lim
 echo -n 'after '; ulimit -f
 
 ## STDOUT:
@@ -351,13 +386,12 @@ after unlimited
 
 ## BUG dash/zsh STDOUT:
 before unlimited
-after 0
+after 1
 ## END
 
 ## BUG mksh STDOUT:
-before unlimited
-after 1073741824
 ## END
+
 
 #### ulimit -f 1 prevents files larger than 1024 bytes, or 512 bytes
 

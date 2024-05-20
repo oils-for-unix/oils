@@ -441,13 +441,6 @@ class Ulimit(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('ulimit', cmd_val)
         arg = arg_types.ulimit(attrs.attrs)
 
-        how = 0
-        if arg.S:
-            how = 1
-        if arg.H:
-            # TODO
-            how = 1
-
         what = 0
         num_what_flags = 0
 
@@ -536,18 +529,29 @@ class Ulimit(vm._Builtin):
                     "doesn't accept negative numbers, got %r" % s, s_loc)
 
             factor = self._FindFactor(what)
-            limit = mops.Mul(big_int, mops.IntWiden(factor))
+
+            fac = mops.IntWiden(factor)
+            limit = mops.Mul(big_int, fac)
+
+            # Overflow check like bash does
+            # TODO: This should be replaced with a different overflow check
+            # when we have arbitrary precision integers
+            if not mops.Equal(mops.Div(limit, fac), big_int):
+                #log('div %s', mops.ToStr(mops.Div(limit, fac)))
+                raise error.Usage(
+                    'detected integer overflow: %s' % mops.ToStr(big_int),
+                    s_loc)
 
         arg_r.Next()
         extra2, extra_loc2 = arg_r.Peek2()
         if extra2 is not None:
             raise error.Usage('got extra arg', extra_loc2)
 
-        # Now set the resource according to what and how
+        # Now set the resource
         soft, hard = pyos.GetRLimit(what)
 
-        # Bash behavior: manipulate both, unless a flag is parsed.
-        # This differs from zsh!
+        # Bash behavior: manipulate both, unless a flag is parsed.  This
+        # differs from zsh!
         if not arg.S and not arg.H:
             soft = limit
             hard = limit
@@ -557,14 +561,6 @@ class Ulimit(vm._Builtin):
             hard = limit
 
         pyos.SetRLimit(what, soft, hard)
-
-        # TODO:
-        #
-        # getrlimit(resource: int) -> Tuple[mylib.BigInt, mylib.BigInt]
-        # setrlimit(resource: int, soft: mylib.BigInt, hard: mylib.BigInt)
-        #
-        # It's annoying that both dash and bash get the current limit, and
-        # then set it
 
         return 0
 
