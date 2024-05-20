@@ -185,6 +185,24 @@ BigStr* OsType() {
   return result;
 }
 
+Tuple2<mops::BigInt, mops::BigInt> GetRLimit(int resource) {
+  struct rlimit lim;
+  if (::getrlimit(resource, &lim) < 0) {
+    throw Alloc<IOError>(errno);
+  }
+  return Tuple2<mops::BigInt, mops::BigInt>(lim.rlim_cur, lim.rlim_max);
+}
+
+void SetRLimit(int resource, mops::BigInt soft, mops::BigInt hard) {
+  struct rlimit lim;
+  lim.rlim_cur = soft;
+  lim.rlim_max= hard;
+
+  if (::setrlimit(resource, &lim) < 0) {
+    throw Alloc<IOError>(errno);
+  }
+}
+
 Tuple3<double, double, double> Time() {
   struct timeval now;
   if (gettimeofday(&now, nullptr) < 0) {

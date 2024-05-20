@@ -15,6 +15,7 @@ import termios  # for read -n
 import time
 
 from core import pyutil
+from mycpp import mops
 from mycpp.mylib import log
 
 import posix_ as posix
@@ -212,6 +213,24 @@ def GetUserName(uid):
         return "<ERROR: Couldn't determine user name for uid %d>" % uid
     else:
         return e.pw_name
+
+
+def GetRLimit(res):
+    # type: (int) -> Tuple[mops.BigInt, mops.BigInt]
+    """
+    Raises IOError
+    """
+    soft, hard = resource.getrlimit(res)
+    return (mops.IntWiden(soft), mops.IntWiden(hard))
+
+
+def SetRLimit(res, soft, hard):
+    # type: (int, mops.BigInt, mops.BigInt) -> None
+    """
+    Raises IOError
+    """
+    arg = cast('Tuple[int, int]', (soft, hard))
+    resource.setrlimit(res, arg)
 
 
 def Time():

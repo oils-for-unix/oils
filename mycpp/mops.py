@@ -60,6 +60,12 @@ def IntWiden(i):
     return BigInt(i)
 
 
+def FromC(i):
+    # type: (int) -> BigInt
+    """A no-op in C, for RLIM_INFINITY"""
+    return BigInt(i)
+
+
 def FromBool(b):
     # type: (bool) -> BigInt
     """Only widens in C++"""

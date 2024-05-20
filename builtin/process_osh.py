@@ -6,6 +6,7 @@ This is sort of the opposite of builtin_pure.py.
 """
 from __future__ import print_function
 
+import resource
 from resource import (RLIM_INFINITY, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_DATA,
                       RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_STACK, RLIMIT_AS)
 from signal import SIGCONT
@@ -18,6 +19,7 @@ from core import dev
 from core import error
 from core.error import e_usage, e_die_status
 from core import process  # W1_OK, W1_ECHILD
+from core import pyos
 from core import vm
 from frontend import flag_util
 from frontend import typed_args
@@ -385,6 +387,14 @@ class Umask(vm._Builtin):
         e_usage('umask: unexpected arguments', loc.Missing)
 
 
+def _LimitString(lim):
+    # type: (mops.BigInt) -> str
+    if mops.Equal(lim, mops.FromC(RLIM_INFINITY)):
+        return 'unlimited'
+    else:
+        return mops.ToStr(lim)
+
+
 class Ulimit(vm._Builtin):
 
     def __init__(self):
@@ -484,13 +494,14 @@ class Ulimit(vm._Builtin):
                 raise error.Usage('got extra arg with -a', extra_loc)
 
             # Worst case 20 == len(str(2**64))
-            fmt = '%5s %20s %20s %7s  %s'
+            fmt = '%5s %15s %15s %7s  %s'
             print(fmt % ('FLAG', 'SOFT', 'HARD', 'FACTOR', 'DESC'))
             for flag, what, factor, desc in self._Table():
-                soft = 0
-                hard = 0
-                print('%5s %20d %20d %7d  %s' %
-                      (flag, soft, hard, factor, desc))
+                soft, hard = pyos.GetRLimit(what)
+
+                soft2 = _LimitString(soft)
+                hard2 = _LimitString(hard)
+                print(fmt % (flag, soft2, hard2, str(factor), desc))
 
             return 0
 
@@ -507,7 +518,7 @@ class Ulimit(vm._Builtin):
         # Set the given resource
         if s == 'unlimited':
             # In C, RLIM_INFINITY is rlim_t
-            limit = cast(mops.BigInt, RLIM_INFINITY)
+            limit = mops.FromC(RLIM_INFINITY)
         else:
             try:
                 big_int = mops.FromStr(s)

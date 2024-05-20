@@ -83,6 +83,10 @@ BigStr* GetUserName(int uid);
 
 BigStr* OsType();
 
+Tuple2<mops::BigInt, mops::BigInt> GetRLimit(int resource);
+
+void SetRLimit(int resource, mops::BigInt soft, mops::BigInt hard);
+
 Tuple3<double, double, double> Time();
 
 void PrintTimes();
