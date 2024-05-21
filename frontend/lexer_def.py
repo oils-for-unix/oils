@@ -565,6 +565,7 @@ J8_SYMBOL_RE = (
 
 _J8_LEFT = [
     C('"', Id.Left_DoubleQuote),  # JSON string
+    C('j"', Id.Left_JDoubleQuote),  # JSON string with explicit J8 prefix
     # Three left quotes that are J8 only
     C("u'", Id.Left_USingleQuote),  # unicode string
     C("'", Id.Left_USingleQuote),  # '' is alias for u'' in data, not in code
@@ -890,14 +891,16 @@ YSH_LEFT_SUBS = [
 # Used by ysh/grammar_gen.py
 
 YSH_LEFT_UNQUOTED = [
+    # Double quoted
     C('"', Id.Left_DoubleQuote),
-    # In expression mode, we add the r'' and c'' prefixes for '' and $''.
+    C('$"', Id.Left_DollarDoubleQuote),  # $"" is synonym for ""
+    C('j"', Id.Left_JDoubleQuote),  # for printing ERROR
+    # Single quoted
     C("'", Id.Left_SingleQuote),
     C("r'", Id.Left_RSingleQuote),
     C("u'", Id.Left_USingleQuote),
     C("b'", Id.Left_BSingleQuote),
-    C("$'", Id.Left_DollarSingleQuote),
-    C('$"', Id.Left_DollarDoubleQuote),
+    C("$'", Id.Left_DollarSingleQuote),  # legacy
     C('^"', Id.Left_CaretDoubleQuote),
     C('"""', Id.Left_TDoubleQuote),
     # In expression mode, we add the r'' and c'' prefixes for '' and $''.

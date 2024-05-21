@@ -201,7 +201,7 @@ Properties of JSON:
 
 There are 3 **styles** of J8 strings:
 
-1. JSON strings `""`
+1. JSON strings `j""`, which may be written `""`
 1. `b''` strings
 1. `u''` strings
 
@@ -214,8 +214,8 @@ There are 3 **styles** of J8 strings:
     \"  \\  \/          # same as JSON
     \b  \f  \n  \r  \t  
 
-(JSON-style double-quoted strings remain the same in J8 Notation; they do not
-add the `\'` escape.)
+(JSON-style double-quoted do not add the `\'` escape.  Except for the optional
+`j` prefix, they remain the same.)
 
 Examples:
 

@@ -344,6 +344,49 @@ json write (_reply)
 ]
 ## END
 
+#### json8 accepts j"" prefix, but json doesn't
+
+var msg = r'j"foo\nbar"'
+
+echo "$msg" | json read
+echo json=$?
+echo
+
+echo "$msg" | json8 read
+echo json8=$?
+pp line (_reply)
+echo
+
+var msg = r'j"\u0041"'
+echo "$msg" | json8 read
+echo json8=$?
+pp line (_reply)
+
+
+## STDOUT:
+json=1
+
+json8=0
+(Str)   "foo\nbar"
+
+json8=0
+(Str)   "A"
+## END
+
+#### j"" prefix not accepted in YSH (could be added later)
+
+shopt -s ysh:all
+
+# denied by YSH
+# echo j"\u{7f}"
+
+var s = j"\u{7f}"
+
+## status: 2
+## STDOUT:
+## END
+
+
 #### json8 write emits b'' strings for binary data \yff
 
 json8 write ([3, "foo", $'-\xff\xfe-\xfd='])

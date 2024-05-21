@@ -584,6 +584,13 @@ class LexerDecoder(object):
                       Id.Left_USingleQuote):
             return self._DecodeString(tok_id, end_pos)
 
+        if tok_id == Id.Left_JDoubleQuote:
+            if self.is_j8:
+                return self._DecodeString(tok_id, end_pos)
+            else:
+                raise self._Error('Pure JSON does not accept j"" prefix',
+                                  end_pos)
+
         if tok_id == Id.Ignored_Newline:
             #log('LINE %d', self.cur_line_num)
             self.cur_line_num += 1
@@ -623,12 +630,12 @@ class LexerDecoder(object):
         """ Returns a string token and updates self.pos """
 
         while True:
-            if left_id == Id.Left_DoubleQuote:
+            if left_id in (Id.Left_DoubleQuote, Id.Left_JDoubleQuote):
                 tok_id, str_end = match.MatchJsonStrToken(self.s, str_pos)
             else:
                 tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
 
-            #log('String tok %s', Id_str(tok_id))
+            #log('String tok %s %r', Id_str(tok_id), self.s[str_pos:str_end])
 
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?

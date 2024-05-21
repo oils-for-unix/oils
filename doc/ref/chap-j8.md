@@ -28,12 +28,19 @@ That is, Unix deals with byte strings, but JSON can't represent byte strings.
 
 All JSON strings are valid J8 strings!
 
-This is important.  Encoders often emit JSON-style `""` strings rather than
-`u''` or `b''` strings.
+This is important for compatibility.  Encoders may prefer to emit JSON-style
+`""` strings rather than `u''` or `b''` strings.
 
 Example:
 
     "hi μ \n"
+
+To be explicit, you can prefix JSON strings with `j`:
+
+    j"hi μ \n"  # same as above
+
+Of course, the `j""` prefix is accepted by our `json8` builtin, but not the
+`json` builtin.
 
 <h3 id="json-escape">json-escape <code>\" \n \u1234</code></h3>
 

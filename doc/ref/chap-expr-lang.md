@@ -41,11 +41,13 @@ Double quoted strings are identical to shell:
 
     var dq = "hello $world and $(hostname)"
 
+You can add a `$` prefix to be explicit: `$"x is $x"` rather than `"x is $x"`.
+
 Single quoted strings may be raw:
 
     var s = r'line\n'      # raw string means \n is literal, NOT a newline
 
-Or escaped *J8 strings*:
+Or *J8 strings* with backslash escapes:
 
     var s = u'line\n \u{3bc}'        # unicode string means \n is a newline
     var s = b'line\n \u{3bc} \yff'   # same thing, but also allows bytes

@@ -434,6 +434,7 @@ def AddKinds(spec):
         'Left',
         [
             'DoubleQuote',
+            'JDoubleQuote',  # j" for J8 notation
             'SingleQuote',  # ''
             'DollarSingleQuote',  # $'' for \n escapes
             'RSingleQuote',  # r''

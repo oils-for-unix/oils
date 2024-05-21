@@ -61,8 +61,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   float-lit     3.14  1.5e-10
                   X num-suffix  42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
-                  ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
-                  triple-quoted """  r'''  u'''  b'''
+                  ysh-string    "x is $x"  $"x is $x"   r'[a-z]\n'
+                                u'line\n'  b'byte \yff'
+                  triple-quoted """  $"""  r'''  u'''  b'''
                   str-template  ^"$a and $b" for Str::replace()
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}
@@ -102,8 +103,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-word-lang
-  [Quotes]        ysh-string    "$x"  r'[a-z]\n'  u'line\n'  b'byte \yff'
-                  triple-quoted """  r'''  u'''  b'''
+  [Quotes]        ysh-string    "x is $x"  $"x is $x"  r'[a-z]\n'
+                                u'line\n'  b'byte \yff'
+                  triple-quoted """  $"""  r'''  u'''  b'''
                   X tagged-str  "<span id=$x>"html
   [Substitutions] expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
