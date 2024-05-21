@@ -20,6 +20,24 @@ echo $x
 ## status: 2
 ## stdout-json: ""
 
+#### $"foo $x" to make "foo $x" explicit
+
+var x = $"bar"
+
+# expression mode
+var y = $"foo $x"
+echo "$y"
+
+# command mode
+if test "$y" = $"foo $x"; then
+  echo equal
+fi
+
+## STDOUT:
+foo bar
+equal
+## END
+
 #### single quoted C strings: $'foo\n'
 
 # expression mode

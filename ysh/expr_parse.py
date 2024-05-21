@@ -249,9 +249,10 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
 
             continue
 
-        # ", """ and ^"
-        if tok.id in (Id.Left_DoubleQuote, Id.Left_TDoubleQuote,
-                      Id.Left_CaretDoubleQuote):
+        # "   $"   """   ^"
+        if tok.id in (Id.Left_DoubleQuote, Id.Left_DollarDoubleQuote,
+                      Id.Left_TDoubleQuote, Id.Left_CaretDoubleQuote):
+
             left_token = tok
             line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
             w_parser = parse_ctx.MakeWordParser(lex, line_reader)

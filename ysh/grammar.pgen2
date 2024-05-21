@@ -246,8 +246,15 @@ sh_array_literal: ':|' Expr_CastedDummy Op_Pipe
 old_sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
 
-# Note: could add c"" too
-dq_string: (Left_DoubleQuote | Left_TDoubleQuote | Left_CaretDoubleQuote) Expr_CastedDummy Right_DoubleQuote
+# "   $"   """   ^" 
+dq_string: (
+  Left_DoubleQuote | Left_DollarDoubleQuote | Left_TDoubleQuote |
+  Left_CaretDoubleQuote
+  ) Expr_CastedDummy Right_DoubleQuote
+
+# '   '''   r'   r'''
+# $'  for "refactoring" property
+# u'   u'''   b'   b'''
 sq_string: (
     Left_SingleQuote | Left_TSingleQuote 
   | Left_RSingleQuote | Left_RTSingleQuote
