@@ -443,6 +443,7 @@ def AddKinds(spec):
 
             # Multiline versions
             'TDoubleQuote',  # """ """
+            'DollarTDoubleQuote',  # $""" """
             'TSingleQuote',  # ''' '''
             'RTSingleQuote',  # r''' '''
             'UTSingleQuote',  # u''' '''

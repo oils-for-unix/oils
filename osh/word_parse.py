@@ -986,7 +986,11 @@ class WordParser(WordEmitter):
           out_parts: list of word_part to append to
         """
         if left_token:
-            expected_end_tokens = 3 if left_token.id == Id.Left_TDoubleQuote else 1
+            if left_token.id in (Id.Left_TDoubleQuote,
+                                 Id.Left_DollarTDoubleQuote):
+                expected_end_tokens = 3
+            else:
+                expected_end_tokens = 1
         else:
             expected_end_tokens = 1000  # here doc will break
 
@@ -1065,7 +1069,8 @@ class WordParser(WordEmitter):
             out_parts.pop()
 
         # Remove space from """ in both expression mode and command mode
-        if left_token and left_token.id == Id.Left_TDoubleQuote:
+        if (left_token and left_token.id
+                in (Id.Left_TDoubleQuote, Id.Left_DollarTDoubleQuote)):
             word_compile.RemoveLeadingSpaceDQ(out_parts)
 
         # Return nothing, since we appended to 'out_parts'

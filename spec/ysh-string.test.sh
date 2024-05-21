@@ -234,7 +234,7 @@ echo $'''
 ## END
 
 
-#### """ in Expression Mode
+#### """ and $""" in Expression Mode
 
 var line1 = """line1"""
 echo line1=$line1
@@ -258,12 +258,12 @@ var x = """
   """
 echo "[$x]"
 
-# TODO: allow this
-#var x = $"""
-#  good
-# bad $I
-#  """
-#echo "[$x]"
+# alias
+var x = $"""
+  good
+ bad $i
+  """
+echo "[$x]"
 
 ## STDOUT:
 line1=line1
@@ -271,6 +271,9 @@ line2=line2
 [one "
 two = 2 ""
  three = 3
+]
+[good
+ bad 42
 ]
 [good
  bad 42

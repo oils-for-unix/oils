@@ -246,9 +246,10 @@ sh_array_literal: ':|' Expr_CastedDummy Op_Pipe
 old_sh_array_literal: '%(' Expr_CastedDummy Right_ShArrayLiteral
 sh_command_sub: ( '$(' | '@(' | '^(' ) Expr_CastedDummy Eof_RParen
 
-# "   $"   """   ^" 
+# "   $"   """   $"""   ^" 
 dq_string: (
-  Left_DoubleQuote | Left_DollarDoubleQuote | Left_TDoubleQuote |
+  Left_DoubleQuote | Left_DollarDoubleQuote |
+  Left_TDoubleQuote | Left_DollarTDoubleQuote |
   Left_CaretDoubleQuote
   ) Expr_CastedDummy Right_DoubleQuote
 

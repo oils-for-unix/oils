@@ -903,6 +903,7 @@ YSH_LEFT_UNQUOTED = [
     C("$'", Id.Left_DollarSingleQuote),  # legacy
     C('^"', Id.Left_CaretDoubleQuote),
     C('"""', Id.Left_TDoubleQuote),
+    C('$"""', Id.Left_DollarTDoubleQuote),
     # In expression mode, we add the r'' and c'' prefixes for '' and $''.
     C("'''", Id.Left_TSingleQuote),
     C("r'''", Id.Left_RTSingleQuote),
