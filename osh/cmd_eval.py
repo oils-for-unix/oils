@@ -332,12 +332,18 @@ class CommandEvaluator(object):
             with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
                 try:
                     status = builtin_func.Run(cmd_val)
+                except (IOError, OSError) as e:
+                    # e.g. declare -p > /dev/full
+                    self.errfmt.PrintMessage(
+                        'I/O error running assign builtin: %s' %
+                        pyutil.strerror(e), cmd_val.arg_locs[0])
+                    return 1
                 except error.Usage as e:  # Copied from RunBuiltin
                     arg0 = cmd_val.argv[0]
                     self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
                     return 2  # consistent error code for usage error
 
-        if len(io_errors):  # e.g. disk full, ulimit
+        if len(io_errors):  # e.g. declare -p > /dev/full
             self.errfmt.PrintMessage(
                 'I/O error running assign builtin: %s' %
                 pyutil.strerror(io_errors[0]), cmd_val.arg_locs[0])

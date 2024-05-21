@@ -211,6 +211,11 @@ class ShellExecutor(vm._Executor):
                 try:
                     status = builtin_func.Run(cmd_val)
                     assert isinstance(status, int)
+                except (IOError, OSError) as e:
+                    self.errfmt.PrintMessage(
+                        'I/O error running builtin: %s' %
+                        pyutil.strerror(e), cmd_val.arg_locs[0])
+                    return 1
                 except error.Usage as e:
                     arg0 = cmd_val.argv[0]
                     # e.g. 'type' doesn't accept flag '-x'
