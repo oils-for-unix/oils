@@ -604,8 +604,8 @@ class LexerDecoder(object):
 
         tok_id, end_pos = match.MatchJ8LinesToken(self.s, self.pos)
 
-        if tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
-                      Id.Left_USingleQuote):
+        if tok_id in (Id.Left_DoubleQuote, Id.Left_JDoubleQuote,
+                      Id.Left_BSingleQuote, Id.Left_USingleQuote):
             return self._DecodeString(tok_id, end_pos)
 
         # Check that UNQUOTED lines are valid UTF-8.  (_DecodeString() does
