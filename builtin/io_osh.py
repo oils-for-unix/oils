@@ -12,7 +12,6 @@ from frontend import match
 from frontend import typed_args
 from core import optview
 from core import pyos
-from core import pyutil
 from core import state
 from core import vm
 from mycpp import mylib
@@ -106,14 +105,7 @@ class Echo(vm._Builtin):
         if not arg.n and not backslash_c:
             buf.write('\n')
 
-        try:
-            self.f.write(buf.getvalue())
-            pyos.FlushStdout()  # Needed to reveal errors
-        except (IOError, OSError) as e:
-            from mycpp.mylib import print_stderr
-            print_stderr('oils I/O error (echo): %s\n' % pyutil.strerror(e))
-            return 1
-
+        self.f.write(buf.getvalue())
         return 0
 
 

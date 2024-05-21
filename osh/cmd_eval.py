@@ -327,14 +327,21 @@ class CommandEvaluator(object):
             e_die("Assignment builtin %r not configured" % cmd_val.argv[0],
                   cmd_val.arg_locs[0])
 
-        with vm.ctx_FlushStdout():
+        io_errors = []  # type: List[error.IOError_OSError]
+        with vm.ctx_FlushStdout(io_errors):
             with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
                 try:
                     status = builtin_func.Run(cmd_val)
                 except error.Usage as e:  # Copied from RunBuiltin
                     arg0 = cmd_val.argv[0]
                     self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
-                    status = 2  # consistent error code for usage error
+                    return 2  # consistent error code for usage error
+
+        if len(io_errors):  # e.g. disk full, ulimit
+            self.errfmt.PrintMessage(
+                'I/O error running assign builtin: %s' %
+                pyutil.strerror(io_errors[0]), cmd_val.arg_locs[0])
+            return 1
 
         return status
 
@@ -1005,8 +1012,15 @@ class CommandEvaluator(object):
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
 
         if node.keyword.id == Id.Lit_Equals:  # = f(x)
-            with vm.ctx_FlushStdout():
+            io_errors = []  # type: List[error.IOError_OSError]
+            with vm.ctx_FlushStdout(io_errors):
                 ui.PrettyPrintValue(val, mylib.Stdout())
+
+            if len(io_errors):  # e.g. disk full, ulimit
+                self.errfmt.PrintMessage(
+                    'I/O error in = keyword: %s' %
+                    pyutil.strerror(io_errors[0]), node.keyword)
+                return 1
 
         return 0
 

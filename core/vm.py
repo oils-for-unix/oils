@@ -273,8 +273,8 @@ class _Callable(object):
 class ctx_Redirect(object):
     """For closing files.
 
-    This is asymmetric because if PushRedirects fails, then we don't execute the
-    command at all.
+    This is asymmetric because if PushRedirects fails, then we don't execute
+    the command at all.
 
     Example:
       { seq 3 > foo.txt; echo 4; } > bar.txt
@@ -321,9 +321,9 @@ class ctx_ProcessSub(object):
 
 class ctx_FlushStdout(object):
 
-    def __init__(self):
-        # type: () -> None
-        pass
+    def __init__(self, err_out):
+        # type: (List[error.IOError_OSError]) -> None
+        self.err_out = err_out
 
     def __enter__(self):
         # type: () -> None
@@ -332,8 +332,7 @@ class ctx_FlushStdout(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
 
-        # This function can't be translated, so it's in pyos
-
-        # TODO: can't raise exception in destructor!
-
-        pyos.FlushStdout()
+        # Can't raise exception in destructor!  So we append it to out param.
+        err = pyos.FlushStdout()
+        if err is not None:
+            self.err_out.append(err)

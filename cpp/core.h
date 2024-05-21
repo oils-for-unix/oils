@@ -93,7 +93,7 @@ void PrintTimes();
 
 bool InputAvailable(int fd);
 
-void FlushStdout();
+IOError_OSError* FlushStdout();
 
 Tuple2<int, void*> PushTermAttrs(int fd, int mask);
 void PopTermAttrs(int fd, int orig_local_modes, void* term_attrs);

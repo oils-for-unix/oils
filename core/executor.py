@@ -21,6 +21,7 @@ from core import error
 from core import process
 from core.error import e_die, e_die_status
 from core import pyos
+from core import pyutil
 from core import state
 from core import ui
 from core import vm
@@ -203,7 +204,8 @@ class ShellExecutor(vm._Executor):
 
         builtin_func = self.builtins[builtin_id]
 
-        with vm.ctx_FlushStdout():
+        io_errors = []  # type: List[error.IOError_OSError]
+        with vm.ctx_FlushStdout(io_errors):
             # note: could be second word, like 'builtin read'
             with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
                 try:
@@ -213,7 +215,13 @@ class ShellExecutor(vm._Executor):
                     arg0 = cmd_val.argv[0]
                     # e.g. 'type' doesn't accept flag '-x'
                     self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
-                    status = 2  # consistent error code for usage error
+                    return 2  # consistent error code for usage error
+
+        if len(io_errors):  # e.g. disk full, ulimit
+            self.errfmt.PrintMessage(
+                'I/O error running builtin: %s' %
+                pyutil.strerror(io_errors[0]), cmd_val.arg_locs[0])
+            return 1
 
         return status
 

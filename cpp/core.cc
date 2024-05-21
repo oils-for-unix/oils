@@ -254,16 +254,12 @@ bool InputAvailable(int fd) {
   return select(FD_SETSIZE, &fds, NULL, NULL, &timeout) > 0;
 }
 
-void FlushStdout() {
+IOError_OSError* FlushStdout() {
   // Flush libc buffers
-  ::fflush(stdout);
-
-  // TODO: error should be out param, or return value
-#if 0
-  if (::fflush(stdout) < 0) {
-    throw Alloc<IOError>(errno);
+  if (::fflush(stdout) != 0) {
+    return Alloc<IOError>(errno);
   }
-#endif
+  return nullptr;
 }
 
 SignalSafe* InitSignalSafe() {

@@ -1,6 +1,6 @@
 
 ## compare_shells: bash dash mksh zsh ash
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 #### echo keyword
 echo done

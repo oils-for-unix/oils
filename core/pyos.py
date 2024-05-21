@@ -21,7 +21,9 @@ from mycpp.mylib import log
 import posix_ as posix
 from posix_ import WUNTRACED
 
-from typing import Optional, Tuple, List, Dict, cast, Any
+from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from core import error
 
 _ = log
 
@@ -30,9 +32,18 @@ NEWLINE_CH = 10  # ord('\n')
 
 
 def FlushStdout():
-    # type: () -> None
-    """Flush CPython buffers."""
-    sys.stdout.flush()
+    # type: () -> Optional[error.IOError_OSError]
+    """Flush CPython buffers.
+
+    Return error because we call this in a C++ destructor, and those can't
+    throw exceptions.
+    """
+    err = None  # type: Optional[error.IOError_OSError]
+    try:
+        sys.stdout.flush()
+    except (IOError, OSError) as e:
+        err = e
+    return err
 
 
 def WaitPid(waitpid_options):
