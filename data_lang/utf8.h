@@ -1,10 +1,9 @@
 #ifndef DATA_LANG_UTF8_H
 #define DATA_LANG_UTF8_H
 
+#include <stddef.h>  // size_t
+#include <stdint.h>  // uint32_t
 #include <stdio.h>
-
-#include <stdint.h> // uint32_t
-#include <stddef.h> // size_t
 
 /**
  *              ---- Quick reference about the encoding ----
@@ -96,7 +95,8 @@ static inline void _cont(const unsigned char *input, Utf8Result_t *result) {
  * If there was a surrogate, overlong or codepoint to large error then
  * `result.codepoint` will contain the recovered value.
  */
-static inline void utf8_decode(const unsigned char *input, Utf8Result_t *result) {
+static inline void utf8_decode(const unsigned char *input,
+                               Utf8Result_t *result) {
   result->error = UTF8_OK;
   result->codepoint = 0;
   result->bytes_read = 0;

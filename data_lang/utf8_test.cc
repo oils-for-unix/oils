@@ -1,6 +1,6 @@
-#include <inttypes.h>
-
 #include "data_lang/utf8.h"
+
+#include <inttypes.h>
 
 //#include "mycpp/runtime.h"
 #include "vendor/greatest.h"
@@ -102,13 +102,8 @@ TEST truncated_test() {
   Utf8Result result;
 
   constexpr const int NUM_INPUTS = 6;
-  const char *inputs[NUM_INPUTS] = {
-    "\xC5",
-    "\xED",
-    "\xED\x9F",
-    "\xF4",
-    "\xF4\x80",
-    "\xF4\x80\x80",
+  const char* inputs[NUM_INPUTS] = {
+      "\xC5", "\xED", "\xED\x9F", "\xF4", "\xF4\x80", "\xF4\x80\x80",
   };
 
   for (int i = 0; i < NUM_INPUTS; i++) {

@@ -196,7 +196,7 @@ Tuple2<mops::BigInt, mops::BigInt> GetRLimit(int resource) {
 void SetRLimit(int resource, mops::BigInt soft, mops::BigInt hard) {
   struct rlimit lim;
   lim.rlim_cur = soft;
-  lim.rlim_max= hard;
+  lim.rlim_max = hard;
 
   if (::setrlimit(resource, &lim) < 0) {
     throw Alloc<IOError>(errno);

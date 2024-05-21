@@ -179,7 +179,7 @@ static inline void BashDollarEncodeOne(unsigned char** p_in,
     // If not a valid UTF-8 byte sequence, losslessly encode the bad bytes
     int n = sprintf((char*)*p_out, "\\x%02x", **p_in);
     *p_out += n;
-    *p_in += 1; // Advance past the byte we wrote
+    *p_in += 1;  // Advance past the byte we wrote
   }
 }
 
