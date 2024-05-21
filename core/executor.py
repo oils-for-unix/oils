@@ -213,8 +213,9 @@ class ShellExecutor(vm._Executor):
                     assert isinstance(status, int)
                 except (IOError, OSError) as e:
                     self.errfmt.PrintMessage(
-                        'I/O error running builtin: %s' %
-                        pyutil.strerror(e), cmd_val.arg_locs[0])
+                        '%s builtin I/O error: %s' %
+                        (cmd_val.argv[0], pyutil.strerror(e)),
+                        cmd_val.arg_locs[0])
                     return 1
                 except error.Usage as e:
                     arg0 = cmd_val.argv[0]
@@ -224,8 +225,9 @@ class ShellExecutor(vm._Executor):
 
         if len(io_errors):  # e.g. disk full, ulimit
             self.errfmt.PrintMessage(
-                'I/O error running builtin: %s' %
-                pyutil.strerror(io_errors[0]), cmd_val.arg_locs[0])
+                '%s builtin I/O error: %s' %
+                (cmd_val.argv[0], pyutil.strerror(io_errors[0])),
+                cmd_val.arg_locs[0])
             return 1
 
         return status

@@ -335,8 +335,9 @@ class CommandEvaluator(object):
                 except (IOError, OSError) as e:
                     # e.g. declare -p > /dev/full
                     self.errfmt.PrintMessage(
-                        'I/O error running assign builtin: %s' %
-                        pyutil.strerror(e), cmd_val.arg_locs[0])
+                        '%s builtin I/O error: %s' %
+                        (cmd_val.argv[0], pyutil.strerror(e)),
+                        cmd_val.arg_locs[0])
                     return 1
                 except error.Usage as e:  # Copied from RunBuiltin
                     arg0 = cmd_val.argv[0]
@@ -345,8 +346,9 @@ class CommandEvaluator(object):
 
         if len(io_errors):  # e.g. declare -p > /dev/full
             self.errfmt.PrintMessage(
-                'I/O error running assign builtin: %s' %
-                pyutil.strerror(io_errors[0]), cmd_val.arg_locs[0])
+                '%s builtin I/O: %s' %
+                (cmd_val.argv[0], pyutil.strerror(io_errors[0])),
+                cmd_val.arg_locs[0])
             return 1
 
         return status
@@ -1020,11 +1022,17 @@ class CommandEvaluator(object):
         if node.keyword.id == Id.Lit_Equals:  # = f(x)
             io_errors = []  # type: List[error.IOError_OSError]
             with vm.ctx_FlushStdout(io_errors):
-                ui.PrettyPrintValue(val, mylib.Stdout())
+                try:
+                    ui.PrettyPrintValue(val, mylib.Stdout())
+                except (IOError, OSError) as e:
+                    self.errfmt.PrintMessage(
+                        'I/O error during = keyword: %s' % pyutil.strerror(e),
+                        node.keyword)
+                    return 1
 
             if len(io_errors):  # e.g. disk full, ulimit
                 self.errfmt.PrintMessage(
-                    'I/O error in = keyword: %s' %
+                    'I/O error during = keyword: %s' %
                     pyutil.strerror(io_errors[0]), node.keyword)
                 return 1
 
