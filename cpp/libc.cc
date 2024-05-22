@@ -194,12 +194,11 @@ Tuple2<int, int>* regex_first_group_match(BigStr* pattern, BigStr* str,
   return tup;
 }
 
-// TODO: SHARE with pyext
 int wcswidth(BigStr* s) {
   // Behavior of mbstowcs() depends on LC_CTYPE
 
   // Calculate length first
-  int num_wide_chars = mbstowcs(NULL, s->data_, 0);
+  int num_wide_chars = ::mbstowcs(NULL, s->data_, 0);
   if (num_wide_chars == -1) {
     throw Alloc<UnicodeError>(StrFromC("mbstowcs() 1"));
   }
@@ -207,22 +206,26 @@ int wcswidth(BigStr* s) {
   // Allocate buffer
   int buf_size = (num_wide_chars + 1) * sizeof(wchar_t);
   wchar_t* wide_chars = static_cast<wchar_t*>(malloc(buf_size));
-  assert(wide_chars != nullptr);
+  DCHECK(wide_chars != nullptr);
 
   // Convert to wide chars
-  num_wide_chars = mbstowcs(wide_chars, s->data_, num_wide_chars);
+  num_wide_chars = ::mbstowcs(wide_chars, s->data_, num_wide_chars);
   if (num_wide_chars == -1) {
+    free(wide_chars);  // cleanup
+
     throw Alloc<UnicodeError>(StrFromC("mbstowcs() 2"));
   }
 
   // Find number of columns
   int width = ::wcswidth(wide_chars, num_wide_chars);
   if (width == -1) {
+    free(wide_chars);  // cleanup
+
     // unprintable chars
     throw Alloc<UnicodeError>(StrFromC("wcswidth()"));
   }
-  free(wide_chars);
 
+  free(wide_chars);
   return width;
 }
 
