@@ -29,12 +29,6 @@ from typing import List, Tuple
 
 _ = log
 
-# TODO: Add details of the invalid character/byte here?
-
-INCOMPLETE_CHAR = 'Incomplete UTF-8 character'
-INVALID_CONT = 'Invalid UTF-8 continuation byte'
-INVALID_START = 'Invalid start of UTF-8 character'
-
 # Error types returned by fastfunc.Utf8DecodeOne
 # Derived from Utf8Error enum from data_lang/utf8.h
 UTF8_ERR_OVERLONG = -1  # Encodes a codepoint in more bytes than necessary
@@ -58,26 +52,6 @@ def Utf8Error_str(error):
         return "UTF-8 Error: Truncated Bytes"
 
     raise AssertionError(0)
-
-
-def _CheckContinuationByte(byte):
-    # type: (str) -> None
-    if (ord(byte) >> 6) != 0b10:
-        e_strict(INVALID_CONT, loc.Missing)
-
-
-def _Utf8CharLen(starting_byte):
-    # type: (int) -> int
-    if (starting_byte >> 7) == 0b0:
-        return 1
-    elif (starting_byte >> 5) == 0b110:
-        return 2
-    elif (starting_byte >> 4) == 0b1110:
-        return 3
-    elif (starting_byte >> 3) == 0b11110:
-        return 4
-    else:
-        e_strict(INVALID_START, loc.Missing)
 
 
 def DecodeUtf8Char(s, start):
@@ -113,6 +87,23 @@ def NextUtf8Char(s, i):
             "%s at byte index %d in string of length %d" %
             (Utf8Error_str(codepoint_or_error), i, len(s)), loc.Missing)
     return i + bytes_read
+
+
+_INVALID_START = 'Invalid start of UTF-8 sequence'
+
+
+def _Utf8CharLen(starting_byte):
+    # type: (int) -> int
+    if (starting_byte >> 7) == 0b0:
+        return 1
+    elif (starting_byte >> 5) == 0b110:
+        return 2
+    elif (starting_byte >> 4) == 0b1110:
+        return 3
+    elif (starting_byte >> 3) == 0b11110:
+        return 4
+    else:
+        e_strict(_INVALID_START, loc.Missing)
 
 
 def PreviousUtf8Char(s, i):
@@ -157,10 +148,10 @@ def PreviousUtf8Char(s, i):
                 # Leaving a generic error for now, but if we want to, it's not
                 # hard to calculate the position where things go wrong.  Note
                 # that offset might be more than 4, for an invalid utf-8 string.
-                e_strict(INVALID_START, loc.Missing)
+                e_strict(_INVALID_START, loc.Missing)
             return i
 
-    e_strict(INVALID_START, loc.Missing)
+    e_strict(_INVALID_START, loc.Missing)
 
 
 def CountUtf8Chars(s):
