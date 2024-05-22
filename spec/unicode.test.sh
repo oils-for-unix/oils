@@ -86,9 +86,7 @@ py-repr $(printf '\U0010ffff')
 '\xf4\x8f\xbf\xbf'
 ## END
 
-#### $'' checks that 0x110000 is too big at parse time
-
-case $SH in dash|ash|mksh) exit ;; esac
+#### $'' does NOT check that 0x110000 is too big at parse time
 
 py-repr() {
   python2 -c 'import sys; print repr(sys.argv[1])'  "$@"
@@ -96,51 +94,31 @@ py-repr() {
 
 py-repr $'\U00110000'
 
-## status: 2
 ## STDOUT:
-## END
-
-## BUG dash/ash/mksh status: 0
-
-## BUG bash/zsh status: 0
-## BUG bash/zsh STDOUT:
 '\xf4\x90\x80\x80'
 ## END
 
-#### $'' checks for surrogate range at parse time
+## BUG mksh STDOUT:
+'\xef\xbf\xbd'
+## END
 
-case $SH in mksh) exit ;; esac
+#### $'' does not check for surrogate range at parse time
 
-$SH << 'EOF'
-x=$'\udc00'
-EOF
-if test $? -ne 0; then
-  echo pass
-else
-  echo fail
-fi
+py-repr() {
+  python2 -c 'import sys; print repr(sys.argv[1])'  "$@"
+}
 
-$SH << 'EOF'
-x=$'\U0000dc00'
-EOF
-if test $? -ne 0; then
-  echo pass
-else
-  echo fail
-fi
+py-repr $'\udc00'
 
+py-repr $'\U0000dc00' 
 
 ## STDOUT:
-pass
-pass
+'\xed\xb0\x80'
+'\xed\xb0\x80'
 ## END
 
-## BUG bash STDOUT:
-fail
-fail
-## END
-
-## BUG mksh STDOUT:
+## OK zsh status: 1
+## OK zsh STDOUT:
 ## END
 
 

@@ -12,9 +12,8 @@ from _devbuild.gen.syntax_asdl import (
     CharCode,
     word_part_e,
     word_part_t,
-    loc,
 )
-from core.error import p_die, e_die
+from core.error import p_die
 from data_lang import j8
 from frontend import consts
 from frontend import lexer
@@ -144,17 +143,11 @@ def EvalSingleQuoted(id_, tokens):
             # EvalCStringToken() redoes some of this work, but right now it's
             # shared with dynamic echo -e / printf, which don't have tokens.
 
-            code_point = -1
-            if t.id in (Id.Char_Unicode4, Id.Char_Unicode8):
-                s = lexer.TokenSliceLeft(t, 2)
-                code_point = int(s, 16)
-
-            elif t.id == Id.Char_UBraced:
+            # Only check J8 style strings, not Char_Unicode4 and Char_Unicode8,
+            # which are in OSH
+            if t.id == Id.Char_UBraced:
                 s = lexer.TokenSlice(t, 3, -1)
                 code_point = int(s, 16)
-
-            if code_point != -1:
-                # Same checks in data_lang/j8.py and above
                 if code_point > 0x10ffff:
                     p_die("Code point can't be greater than U+10ffff", t)
                 if 0xD800 <= code_point and code_point < 0xE000:
