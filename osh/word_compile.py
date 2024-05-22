@@ -136,17 +136,23 @@ def EvalSingleQuoted(id_, tokens):
             # EvalCStringToken() redoes some of this work, but right now it's
             # shared with dynamic echo -e / printf, which don't have tokens.
 
-            if t.id == Id.Char_Unicode8:  # check for invalid \U00110000
+            i = -1
+            if t.id in (Id.Char_Unicode4, Id.Char_Unicode8):
                 s = lexer.TokenSliceLeft(t, 2)
                 i = int(s, 16)
-                if i > 0x10ffff:
-                    p_die("Code point can't be greater than U+10ffff", t)
 
-            elif t.id == Id.Char_UBraced:  # check for invalid \u{110000}
+            elif t.id == Id.Char_UBraced:
                 s = lexer.TokenSlice(t, 3, -1)
                 i = int(s, 16)
+
+            if i != -1:
+                # check for invalid \U00110000 or \u{110000}
                 if i > 0x10ffff:
                     p_die("Code point can't be greater than U+10ffff", t)
+                if 0xD800 <= i and i < 0xE000:
+                    p_die(
+                        r"%s escape is illegal because it's in the surrogate range"
+                        % lexer.TokenVal(t), t)
 
             strs.append(EvalCStringToken(t.id, lexer.TokenVal(t)))
 

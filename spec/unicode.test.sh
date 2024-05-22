@@ -107,6 +107,42 @@ py-repr $'\U00110000'
 '\xf4\x90\x80\x80'
 ## END
 
+#### $'' checks for surrogate range at parse time
+
+case $SH in mksh) exit ;; esac
+
+$SH << 'EOF'
+x=$'\udc00'
+EOF
+if test $? -ne 0; then
+  echo pass
+else
+  echo fail
+fi
+
+$SH << 'EOF'
+x=$'\U0000dc00'
+EOF
+if test $? -ne 0; then
+  echo pass
+else
+  echo fail
+fi
+
+
+## STDOUT:
+pass
+pass
+## END
+
+## BUG bash STDOUT:
+fail
+fail
+## END
+
+## BUG mksh STDOUT:
+## END
+
 
 #### printf / echo -e check that 0x110000 is too big at runtime
 case $SH in mksh) exit ;; esac
