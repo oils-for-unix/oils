@@ -59,9 +59,10 @@ All J8 notation is UTF-8.
 </h2>
 
 ```chapter-links-errors
-  [J8 Lines]  j8-lines-decode-err
-  [JSON]      json-encode-err   json-decode-err
-  [JSON8]     json8-encode-err   json8-decode-err
-  [Packle]    packle-encode-err   packle-decode-err   
-  [UTF8]      utf8-encode-err   utf8-decode-err
+  [UTF8]      err-utf8-encode   err-utf8-decode
+  [J8 String] err-j8-str-encode   err-j8-str-decode
+  [J8 Lines]  err-j8-lines-encode   err-j8-lines-decode
+  [JSON]      err-json-encode   err-json-decode
+  [JSON8]     err-json8-encode   err-json8-decode
+X [Packle]    err-packle-encode   err-packle-decode
 ```
