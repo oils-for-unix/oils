@@ -161,6 +161,10 @@ quote() {
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
+unicode() {
+  run-file unicode "$@"
+}
+
 loop() {
   sh-spec spec/loop.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"

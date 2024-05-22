@@ -101,29 +101,25 @@ This is for reference.
 
 Oils stores strings as UTF-8 in memory, so it doesn't often do encoding.
 
-- Surrogate range?
+But we may add a function to encode UTF-8 from an array of code points.  These
+errors would be handled:
+
+1. Integer greater than max code point
+1. Integer in the surrogate range
 
 ### utf8-decode-err
 
-#### bad-byte   
+A UTF-8 decoder should handle these errors:
 
-#### expected-start   
-
-#### expected-cont
-
-#### incomplete-seq   
-
-#### overlong
-
-I think this is only leading zeros?
-
-Like the difference between `123` and `0123`.
-
-#### bad-code-point
-
-e.g. decoded to something in the surrogate range
-
-Note: I think this is relaxed for WTF-8, and our JSON decoder probably needs to
-use it.
-
-
+1. Overlong encoding.  In UTF-8, each code point should be represented with the
+   fewest possible bytes. 
+   - Overlong encodings are the equivalent of writing the integer `42` as
+     `042`, `0042`, `00042`, etc.  This is not allowed.
+1. Invalid surrogate.  The sequence decodes to a code point in the surrogate
+   range, which is used only for the UTF-16 encoding, not for string data.
+1. Max code point.  The sequence decodes to an integer that's larger than the
+   maximum code point.
+1. Bad encoding.  The byte is not encoded like a UTF-8 start byte or a
+   continuation byte.
+1. Incomplete sequence.  Too few continuation bytes appeared after the start
+   byte.
