@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 #### ${#s} and len(s)
 
@@ -55,8 +55,6 @@ json8 read <<EOF
 u'\u{110000}'
 EOF
 echo status=$?
-
-pp line (_reply)
 
 ## STDOUT:
 status=1

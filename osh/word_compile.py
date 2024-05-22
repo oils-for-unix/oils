@@ -12,8 +12,9 @@ from _devbuild.gen.syntax_asdl import (
     CharCode,
     word_part_e,
     word_part_t,
+    loc,
 )
-from core.error import p_die
+from core.error import p_die, e_die
 from data_lang import j8
 from frontend import consts
 from frontend import lexer
@@ -68,6 +69,8 @@ def EvalCStringToken(id_, value):
     - echo -e and printf at runtime
     - $'' and b'' u'' at parse time
     """
+    code_point = -1
+
     if id_ in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.Unknown_Backslash):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
         return value
@@ -84,7 +87,7 @@ def EvalCStringToken(id_, value):
         return None
 
     elif id_ in (Id.Char_Octal3, Id.Char_Octal4):
-        if id_ == Id.Char_Octal3:  # $'\377' (disallowed at parse time in YSH)
+        if id_ == Id.Char_Octal3:  # $'\377'
             s = value[1:]
         else:  # echo -e '\0377'
             s = value[2:]
@@ -103,17 +106,27 @@ def EvalCStringToken(id_, value):
 
     elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
         s = value[2:]
-        i = int(s, 16)
-        #util.log('i = %d', i)
-        return j8.Utf8Encode(i)
+        code_point = int(s, 16)
+
+        # Keep going
 
     elif id_ == Id.Char_UBraced:
         s = value[3:-1]  # \u{123}
-        i = int(s, 16)
-        return j8.Utf8Encode(i)
+        code_point = int(s, 16)
 
     else:
         raise AssertionError(Id_str(id_))
+
+    # These checks are redundant for $'' u'' because we already checked at
+    # parse time.  But we need them for echo -e / printf.
+    if code_point > 0x10ffff:
+        e_die("Code point can't be greater than U+10ffff", loc.Missing)
+    if 0xD800 <= code_point and code_point < 0xE000:
+        e_die(
+            r"Code point is illegal because it's in the surrogate range",
+            loc.Missing)
+
+    return j8.Utf8Encode(code_point)
 
 
 def EvalSingleQuoted(id_, tokens):
@@ -136,20 +149,20 @@ def EvalSingleQuoted(id_, tokens):
             # EvalCStringToken() redoes some of this work, but right now it's
             # shared with dynamic echo -e / printf, which don't have tokens.
 
-            i = -1
+            code_point = -1
             if t.id in (Id.Char_Unicode4, Id.Char_Unicode8):
                 s = lexer.TokenSliceLeft(t, 2)
-                i = int(s, 16)
+                code_point = int(s, 16)
 
             elif t.id == Id.Char_UBraced:
                 s = lexer.TokenSlice(t, 3, -1)
-                i = int(s, 16)
+                code_point = int(s, 16)
 
-            if i != -1:
-                # check for invalid \U00110000 or \u{110000}
-                if i > 0x10ffff:
+            if code_point != -1:
+                # Same checks in data_lang/j8.py and above
+                if code_point > 0x10ffff:
                     p_die("Code point can't be greater than U+10ffff", t)
-                if 0xD800 <= i and i < 0xE000:
+                if 0xD800 <= code_point and code_point < 0xE000:
                     p_die(
                         r"%s escape is illegal because it's in the surrogate range"
                         % lexer.TokenVal(t), t)

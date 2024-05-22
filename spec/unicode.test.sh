@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: bash mksh zsh
 
 #### OSH source code doesn't have to be valid Unicode (like other shells)
@@ -151,16 +151,85 @@ py-repr() {
   python2 -c 'import sys; print repr(sys.argv[1])'  "$@"
 }
 
-py-repr $(echo -e '\U00110000')
-py-repr $(printf '\U00110000')
+e="$(echo -e '\U00110000')"
+echo status=$?
+py-repr "$e"
+
+p="$(printf '\U00110000')"
+echo status=$?
+py-repr "$p"
 
 ## STDOUT:
-echo
+status=1
+''
+status=1
+''
 ## END
 
 ## BUG bash/zsh STDOUT:
+status=0
 '\xf4\x90\x80\x80'
+status=0
 '\xf4\x90\x80\x80'
+## END
+
+## BUG mksh STDOUT:
+## END
+
+#### printf / echo -e check surrogates at runtime
+case $SH in mksh) exit ;; esac
+
+py-repr() {
+  python2 -c 'import sys; print repr(sys.argv[1])'  "$@"
+}
+
+e="$(echo -e '\udc00')"
+echo status=$?
+py-repr "$e"
+
+e="$(echo -e '\U0000dc00')"
+echo status=$?
+py-repr "$e"
+
+p="$(printf '\udc00')"
+echo status=$?
+py-repr "$p"
+
+p="$(printf '\U0000dc00')"
+echo status=$?
+py-repr "$p"
+
+## STDOUT:
+status=1
+''
+status=1
+''
+status=1
+''
+status=1
+''
+## END
+
+## BUG bash STDOUT:
+status=0
+'\xed\xb0\x80'
+status=0
+'\xed\xb0\x80'
+status=0
+'\xed\xb0\x80'
+status=0
+'\xed\xb0\x80'
+## END
+
+## BUG zsh STDOUT:
+status=0
+''
+status=0
+''
+status=0
+''
+status=0
+''
 ## END
 
 ## BUG mksh STDOUT:

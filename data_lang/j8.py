@@ -684,7 +684,10 @@ class LexerDecoder(object):
                 h = self.s[str_pos + 3:str_end - 1]
                 i = int(h, 16)
 
-                # Same check in osh/word_parse.py
+                # Same checks in osh/word_compile.py
+                if i > 0x10ffff:
+                    raise self._Error(
+                        "Code point can't be greater than U+10ffff", str_end)
                 if 0xD800 <= i and i < 0xE000:
                     raise self._Error(
                         r"\u{%s} escape is illegal because it's in the surrogate range"
