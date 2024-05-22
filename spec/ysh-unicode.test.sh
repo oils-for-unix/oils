@@ -143,7 +143,7 @@ var max = u'\u{10ffff}'
 json write (max)
 json8 write (max)
 
-#= max
+= max
 
 #echo "var x = u'"$max"'; = x" | $SH
 

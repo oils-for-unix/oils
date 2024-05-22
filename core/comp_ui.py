@@ -3,6 +3,7 @@ from __future__ import print_function
 
 from core import ansi
 from core import completion
+from data_lang import pretty
 import libc
 
 from mycpp import mylib
@@ -47,14 +48,7 @@ def _PromptLen(prompt_str):
             # mycpp: rewrite of +=
             display_str = display_str + c
     last_line = display_str.split('\n')[-1]
-    try:
-        width = libc.wcswidth(last_line)
-    # en_US.UTF-8 locale missing, just return the number of bytes
-    except UnicodeError:
-        return len(display_str)
-    if width == -1:
-        return len(display_str)
-    return width
+    return pretty.TryUnicodeWidth(last_line)
 
 
 class PromptState(object):
