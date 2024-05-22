@@ -87,11 +87,11 @@ class LibStrTest(unittest.TestCase):
         # with NextUtf8Char, at the expense of more complexity.
         CASES = [
             ([6, 3, 1, 0], '\x24\xC2\xA2\xE0\xA4\xB9\xF0\x90\x8D\x88'),
-            ([6, 3, 1, 'Invalid start of UTF-8 character'],
+            ([6, 3, 1, 'Invalid start of UTF-8 sequence'],
              '\xA2\xC2\xA2\xE0\xA4\xB9\xF0\x90\x8D\x88'),
-            ([10, 'Invalid start of UTF-8 character'],
+            ([10, 'Invalid start of UTF-8 sequence'],
              '\xF0\x90\x8D\x88\x90\x8D\x88\x90\x8D\x88\x24'),
-            ([3, 'Invalid start of UTF-8 character'], '\xF0\x90\x8D\x24'),
+            ([3, 'Invalid start of UTF-8 sequence'], '\xF0\x90\x8D\x24'),
         ]
         for expected_indexes, input_str in CASES:
             print()
