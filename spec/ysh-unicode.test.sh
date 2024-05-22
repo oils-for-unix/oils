@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 3
 
 #### ${#s} and len(s)
 
@@ -21,9 +21,52 @@ facepalm len = 17
 ## END
 
 
-#### Encoded value above max code point
+#### JSON \uXXXX\uYYYY as max code point - can't go above
 
-# Python DOES check this
+py-decode() {
+  python2 -c 'import json, sys; print json.load(sys.stdin).encode("utf-8")'
+}
+
+to-hex() {
+  od -A n -t x1
+}
+
+max='"\udbff\udfff"'
+
+# incrementing by one gives invalid surrogates
+# the encoding is "tight"
+# too_big='"\udc00\udfff"'
+
+echo "$max" | py-decode | to-hex
+
+echo "$max" | json read
+echo "$_reply" | to-hex
+
+## STDOUT:
+ f4 8f bf bf 0a
+ f4 8f bf bf 0a
+## END
+
+
+
+#### Parsing data - J8 rejects \u{110000} 
+
+json8 read <<EOF
+u'\u{110000}'
+EOF
+echo status=$?
+
+pp line (_reply)
+
+## STDOUT:
+status=1
+## END
+
+
+#### Parsing source code - YSH rejects \u{110000}
+
+# Sanity check first: Python interpreter DOES check big code points,
+# whereas shells don't
 
 max=$(python2 -c 'print u"\U0010ffff".encode("utf-8")')
 echo status max=$?
@@ -31,18 +74,16 @@ echo status max=$?
 too_big=$(python2 -c 'print u"\U00110000".encode("utf-8")')
 echo status too_big=$?
 
-echo py max=$max
-echo py too_big=$too_big
+#echo py max=$max
+#echo py too_big=$too_big
 
-python2 -c 'import sys; c = sys.argv[1].decode("utf-8"); print len(c)' "$ok"
-#python2 -c 'import sys; c = sys.argv[1].decode("utf-8"); print len(c)' "$too_big"
+# python2 -c 'import sys; c = sys.argv[1].decode("utf-8"); print len(c)' "$ok"
+# python2 -c 'import sys; c = sys.argv[1].decode("utf-8"); print len(c)' "$too_big"
 
 var max = u'\u{10ffff}'
 var too_big = u'\u{110000}'
 
-echo ysh max=$max
-# BUG
-echo ysh too_big=$too_big
+echo 'should not get here'
 
 # These are errors too
 var max = b'\u{10ffff}'
@@ -54,21 +95,7 @@ status too_big=1
 ## END
 
 
-#### JSON \uXXXX\uYYYY above max code point
-
-echo
-
-## STDOUT:
-## END
-
-#### J8 \u{123456} above max code point
-
-echo
-
-## STDOUT:
-## END
-
-#### YSH source code rejects encoded string above max code point
+#### Parsing source code - YSH source code rejects encoded string
 
 max=$(bash <<'EOF'
 echo $'\U0010ffff'
@@ -136,7 +163,7 @@ status=0
 status=1
 ## END
 
-#### = keyword on max code point
+#### Max code point: json, json8, = keyword, pp line
 
 var max = u'\u{10ffff}'
 
@@ -144,8 +171,13 @@ json write (max)
 json8 write (max)
 
 = max
+pp line (max)
 
 #echo "var x = u'"$max"'; = x" | $SH
 
 ## STDOUT:
+"􏿿"
+"􏿿"
+(Str)   "􏿿"
+(Str)   "􏿿"
 ## END
