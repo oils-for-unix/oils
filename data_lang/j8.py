@@ -122,12 +122,11 @@ def Utf8Encode(code):
         num_cont_bytes = 1
     elif code <= 0xFFFF:
         num_cont_bytes = 2
-    elif code <= 0x10FFFF:
-        num_cont_bytes = 3
-
     else:
-        # TODO: Assertion error
-        return '\xEF\xBF\xBD'  # unicode replacement character
+        # What about the check code <= 0x10FFFF ?
+        # - it happens in statically parsed $'' u''
+        # - but not dynamically parsed echo -e / printf, following bash/zsh
+        num_cont_bytes = 3
 
     bytes_ = []  # type: List[int]
     for _ in xrange(num_cont_bytes):

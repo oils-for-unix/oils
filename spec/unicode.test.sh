@@ -144,7 +144,7 @@ fail
 ## END
 
 
-#### printf / echo -e check that 0x110000 is too big at runtime
+#### printf / echo -e do NOT check max code point at runtime
 case $SH in mksh) exit ;; esac
 
 py-repr() {
@@ -160,13 +160,6 @@ echo status=$?
 py-repr "$p"
 
 ## STDOUT:
-status=1
-''
-status=1
-''
-## END
-
-## BUG bash/zsh STDOUT:
 status=0
 '\xf4\x90\x80\x80'
 status=0
@@ -176,7 +169,7 @@ status=0
 ## BUG mksh STDOUT:
 ## END
 
-#### printf / echo -e check surrogates at runtime
+#### printf / echo -e do NOT check surrogates at runtime
 case $SH in mksh) exit ;; esac
 
 py-repr() {
@@ -200,17 +193,6 @@ echo status=$?
 py-repr "$p"
 
 ## STDOUT:
-status=1
-''
-status=1
-''
-status=1
-''
-status=1
-''
-## END
-
-## BUG bash STDOUT:
 status=0
 '\xed\xb0\x80'
 status=0

@@ -104,29 +104,24 @@ def EvalCStringToken(id_, value):
         i = int(s, 16)
         return chr(i)
 
+    # Note: we're not doing the surrogate range and max code point checks for
+    # echo -e and printf:
+    #
+    # 1. It's not compatible with bash
+    # 2. We don't have good error locations anyway
+
     elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
         s = value[2:]
         code_point = int(s, 16)
-
-        # Keep going
+        return j8.Utf8Encode(code_point)
 
     elif id_ == Id.Char_UBraced:
         s = value[3:-1]  # \u{123}
         code_point = int(s, 16)
+        return j8.Utf8Encode(code_point)
 
     else:
         raise AssertionError(Id_str(id_))
-
-    # These checks are redundant for $'' u'' because we already checked at
-    # parse time.  But we need them for echo -e / printf.
-    if code_point > 0x10ffff:
-        e_die("Code point can't be greater than U+10ffff", loc.Missing)
-    if 0xD800 <= code_point and code_point < 0xE000:
-        e_die(
-            r"Code point is illegal because it's in the surrogate range",
-            loc.Missing)
-
-    return j8.Utf8Encode(code_point)
 
 
 def EvalSingleQuoted(id_, tokens):
