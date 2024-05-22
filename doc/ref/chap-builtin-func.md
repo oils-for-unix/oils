@@ -387,9 +387,60 @@ Like `Match => end()`, but accesses the global match created by `~`:
 
 ## Introspection
 
-### `shvar_get()`
+### `shvarGet()`
 
-TODO
+Given a variable name, return its value.  It uses the "dynamic scope" rule,
+which looks up the stack for a variable.
+
+It's meant to be used with `shvar`:
+
+    proc proc1 {
+      shvar PATH=/tmp {  # temporarily set PATH in this stack frame
+        my-proc
+      }
+
+      proc2
+    }
+
+    proc proc2 {
+      proc3
+    }
+
+    proc proc3 {
+      var path = shvarGet('PATH')  # Look up the stack (dynamic scoping)
+      echo $path  # => /tmp
+    }
+
+    proc1
+
+Note that `shvar` is usually for string variables, and is analogous to `shopt`
+for "booleans".
+
+If the variable isn't defined, `shvarGet()` returns `null`.  So there's no way
+to distinguish an undefined variable from one that's `null`.
+
+### `getVar()`
+
+Given a variable name, return its value.
+
+    $ var x = 42
+    $ echo $[getVar('x')]
+    42
+
+The variable may be local or global.  (Compare with `shvarGet()`.) the "dynamic
+scope" rule.)
+
+If the variable isn't defined, `getVar()` returns `null`.  So there's no way to
+distinguish an undefined variable from one that's `null`.
+
+### `evalExpr()`
+
+Given a an expression quotation, evaluate it and return its value:
+
+    $ var expr = ^[1 + 2]  
+
+    $ = evalExpr(expr)
+    3
 
 ## Config Gen
 

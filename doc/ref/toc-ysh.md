@@ -293,7 +293,7 @@ X [J8 Decode]     J8.Bool()   J8.Int()  ...
 X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()
   [Pattern]       _group()   _start()   _end()
-  [Introspection] shvarGet()   evalExpr()
+  [Introspection] shvarGet()   getVar()   evalExpr()
   [Hay Config]    parseHay()   evalHay()
 X [Wok]           _field()
 X [Hashing]       sha1dc()   sha256()

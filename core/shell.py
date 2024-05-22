@@ -840,6 +840,7 @@ def Main(
 
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
+    _SetGlobalFunc(mem, 'getVar', func_misc.GetVar(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
     _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))
