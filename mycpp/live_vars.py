@@ -9,9 +9,10 @@ from typing import overload, Union, Optional, Dict, List
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
-                        ComparisonExpr, NameExpr, MemberExpr, CallExpr)
+                        ComparisonExpr, NameExpr, MemberExpr, CallExpr,
+                        get_member_expr_fullname, IndexExpr)
 
-from mypy.types import Type
+from mypy.types import CallableType, Overloaded, Type
 
 from mycpp.crash import catch_errors
 from mycpp.util import log
@@ -163,6 +164,70 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def resolve_callee(self, o: CallExpr) -> Optional[str]:
         return self.callee_map.get(o)
 
+    def get_name(self, expr: Expression) -> str:
+        if isinstance(expr, NameExpr) and expr.name not in {'True', 'False', 'None'}:
+            return '$Variable("%s")' % expr.name
+
+        elif isinstance(expr, MemberExpr):
+            name_base = None
+            if isinstance(expr.expr, NameExpr) and expr.expr.name == 'self':
+                name_base = self.current_class_name
+
+            elif isinstance(expr.expr, NameExpr) or isinstance(expr.expr, MemberExpr):
+                name_t = self.types.get(expr.expr)
+                if name_t is None:
+                    name_base = str(expr.expr)
+
+                elif isinstance(name_t, CallableType):
+                    name_base = name_t.ret_type.type.fullname
+
+                else:
+                    name_base = str(self.types[expr.expr])
+
+            elif isinstance(expr.expr, IndexExpr):
+                name_base = str(self.types[expr.expr])
+
+            else:
+                #print(type(lval.expr))
+                pass
+
+            if name_base:
+                return '$Member("%s", "%s")' % (name_base, expr.name)
+
+        elif isinstance(expr, IndexExpr):
+            if isinstance(expr.base, NameExpr):
+                return '$Variable("%s")' % expr.base.name
+
+            elif isinstance(expr.base, MemberExpr):
+                name_base = None
+                if isinstance(expr.base.expr, NameExpr) and expr.base.expr.name == 'self':
+                    name_base = self.current_class_name
+
+                elif isinstance(expr.base.expr, NameExpr) or isinstance(expr.base.expr, MemberExpr):
+                    name_base = str(self.types[expr.base.expr])
+
+                elif isinstance(expr.base.expr, IndexExpr):
+                    name_base = str(self.types[expr.base.expr])
+
+                else:
+                    #print(type(expr.expr))
+                    pass
+
+                if name_base:
+                    return '$Member("%s", "%s")' % (name_base, expr.base.name)
+
+            else:
+                return self.get_name(expr.base)
+
+        elif isinstance(expr, CallExpr):
+            #print('RHS', str(self.types[expr]))
+            pass
+
+        else:
+            pass
+        
+        return None
+
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
@@ -244,7 +309,25 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
             self.add_collect_call()
 
         self.indent += 1
-        for arg in o.args:
+        callee_t = self.types.get(o.callee)
+        arg_offset = None
+        if callee_t and getattr(callee_t, 'definition', None) and len(callee_t.definition.arg_names):
+            arg_offset = 0
+            if callee_t.definition.arg_names[0] == 'self':
+                arg_offset = 1
+
+        for i, arg in enumerate(o.args):
+            arg_dl = self.get_name(arg)
+            arg_name = None
+            if arg_offset is not None and (i + arg_offset) < len(callee_t.definition.arg_names):
+                arg_name = callee_t.definition.arg_names[i+arg_offset]
+
+            if arg_dl and callee_t:
+                print('bind(["%s", "S%d"], %s, "%s", "%s")' % (self.current_func_name,
+                                                               self.statement_id,
+                                                               arg_dl,
+                                                               full_callee,
+                                                               arg_name))
             self.accept(arg)
             # The type of each argument
             #self.log(':: %s', self.types[arg])
@@ -392,6 +475,11 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
         assert len(o.lvalues) == 1, o.lvalues
         lval = o.lvalues[0]
+
+        lhs = self.get_name(lval)
+        rhs = self.get_name(o.rvalue)
+        if lhs and rhs:
+            print('assign(["%s", "S%d"], %s, %s)' % (self.current_func_name, self.statement_id, lhs, rhs))
 
         self.vars = []
         self.accept(lval)
