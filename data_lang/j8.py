@@ -126,6 +126,7 @@ def Utf8Encode(code):
         num_cont_bytes = 3
 
     else:
+        # TODO: Assertion error
         return '\xEF\xBF\xBD'  # unicode replacement character
 
     bytes_ = []  # type: List[int]

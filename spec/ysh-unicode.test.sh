@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 
 #### ${#s} and len(s)
 
@@ -81,17 +81,20 @@ echo status too_big=$?
 # python2 -c 'import sys; c = sys.argv[1].decode("utf-8"); print len(c)' "$too_big"
 
 var max = u'\u{10ffff}'
-var too_big = u'\u{110000}'
+pp line (max)
 
-echo 'should not get here'
+var too_big = u'\u{110000}'
+pp line (too_big)  # should not get here
 
 # These are errors too
 var max = b'\u{10ffff}'
 var too_big = b'\u{110000}'
 
+## status: 2
 ## STDOUT:
 status max=0
 status too_big=1
+(Str)   "􏿿"
 ## END
 
 

@@ -311,7 +311,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
             last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
                                                    True)
 
-            sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
+            sval = word_compile.EvalSingleQuoted(left_token.id, tokens)
             sq_part = SingleQuoted(left_token, sval, last_token)
 
             typ = Id.Expr_CastedDummy

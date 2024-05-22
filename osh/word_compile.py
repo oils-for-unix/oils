@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     word_part_t,
 )
+from core.error import p_die
 from data_lang import j8
 from frontend import consts
 from frontend import lexer
@@ -62,9 +63,10 @@ def EvalCharLiteralForRegex(tok):
 
 def EvalCStringToken(id_, value):
     # type: (Id_t, str) -> Optional[str]
-    """This function is shared between echo -e and $''.
-
-    $'' could use it at compile time, much like brace expansion in braces.py.
+    """All types of C-style backslash-escaped strings use this function:
+    
+    - echo -e and printf at runtime
+    - $'' and b'' u'' at parse time
     """
     if id_ in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.Unknown_Backslash):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
@@ -114,7 +116,7 @@ def EvalCStringToken(id_, value):
         raise AssertionError(Id_str(id_))
 
 
-def EvalSingleQuoted2(id_, tokens):
+def EvalSingleQuoted(id_, tokens):
     # type: (Id_t, List[Token]) -> str
     """ Done at parse time """
     if id_ in (Id.Left_SingleQuote, Id.Left_RSingleQuote, Id.Left_TSingleQuote,
@@ -128,7 +130,25 @@ def EvalSingleQuoted2(id_, tokens):
             for t in tokens:
                 print('T %s' % t)
 
-        strs = [EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens]
+        strs = []
+        for t in tokens:
+            # More parse time validation for code points.
+            # EvalCStringToken() redoes some of this work, but right now it's
+            # shared with dynamic echo -e / printf, which don't have tokens.
+
+            if t.id == Id.Char_Unicode8:  # check for invalid \U00110000
+                s = lexer.TokenSliceLeft(t, 2)
+                i = int(s, 16)
+                if i > 0x10ffff:
+                    p_die("Code point can't be greater than U+10ffff", t)
+
+            elif t.id == Id.Char_UBraced:  # check for invalid \u{110000}
+                s = lexer.TokenSlice(t, 3, -1)
+                i = int(s, 16)
+                if i > 0x10ffff:
+                    p_die("Code point can't be greater than U+10ffff", t)
+
+            strs.append(EvalCStringToken(t.id, lexer.TokenVal(t)))
 
     else:
         raise AssertionError(id_)
@@ -278,3 +298,6 @@ def RemoveLeadingSpaceSQ(tokens):
             tok.id = Id.Lit_CharsWithoutPrefix
 
             #log('STRIP tok %s', tok)
+
+
+# vim: sw=4

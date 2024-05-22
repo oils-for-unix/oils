@@ -636,7 +636,7 @@ class WordParser(WordEmitter):
         # In command mode, we never disallow backslashes like '\'
         right_quote = self.ReadSingleQuoted(lex_mode, left_token, tokens,
                                             False)
-        sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
+        sval = word_compile.EvalSingleQuoted(left_token.id, tokens)
         node = SingleQuoted(left_token, sval, right_quote)
         return node
 
