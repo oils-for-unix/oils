@@ -113,6 +113,7 @@ _ = log
 
 
 def TryUnicodeWidth(s):
+    # type: (str) -> int
     try:
         width = libc.wcswidth(s)
     except UnicodeError:
