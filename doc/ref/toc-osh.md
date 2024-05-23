@@ -32,17 +32,18 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-cmd-lang
-  [Commands]      simple-command   semicolon ;
-  [Conditional]   case   if   true   false   colon :
-                  bang !   and &&   or ||   dbracket [[
-  [Iteration]     while   until   for   for-expr-sh ((
-  [Control Flow]  break   continue   return   exit
-  [Grouping]      sh-func   sh-block {   subshell (
-  [Concurrency]   pipe |   X pipe-amp |&   ampersand &
-  [Redirects]     redir-file    >  >>  >|  <  <>   X &>
-                  redir-desc    >&  <&
-                  here-doc      <<  <<-  <<<
-  [Other Command] dparen ((   time   X coproc   X select
+  [Commands]      simple-command            semicolon ;
+  [Conditional]   case        if            dbracket [[
+                  true        false         colon :
+                  bang !      and &&        or ||
+  [Iteration]     while       until         for            for-expr-sh ((
+  [Control Flow]  break       continue      return         exit
+  [Grouping]      sh-func     sh-block {    subshell (
+  [Concurrency]   pipe |    X pipe-amp |&   ampersand &
+  [Redirects]     redir-file  >  >>  >|  <  <>   not impl: &>
+                  redir-desc  >&  <&
+                  here-doc    <<  <<-  <<<
+  [Other Command] dparen ((   time        X coproc       X select
 ```
 
 <h2 id="osh-assign">
@@ -54,7 +55,7 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
                   sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Operators]     sh-assign     str='xyz'
                   sh-append     str+='abc'
-  [Builtins]      local   readonly   export   unset   shift
+  [Builtins]      local     readonly    export   unset   shift
                   declare   typeset   X let
 ```
 
@@ -111,20 +112,20 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-builtin-cmd
-  [I/O]           read   echo   printf
+  [I/O]           read        echo      printf
                   readarray   mapfile
-  [Run Code]      source .   eval   trap
-  [Set Options]   set   shopt
-  [Working Dir]   cd   pwd   pushd   popd   dirs
-  [Completion]    complete   compgen   compopt   compadjust   compexport
-  [Shell Process] exec   X logout 
-                  umask   ulimit   times
-  [Child Process] jobs   wait   ampersand &
-                  fg   X bg   X kill   X disown 
-  [External]      test [   getopts
-  [Introspection] help   hash   type   X caller
-  [Word Lookup]   command   builtin
-  [Interactive]   alias   unalias   history   X fc   X bind
+  [Run Code]      source .    eval      trap
+  [Set Options]   set         shopt
+  [Working Dir]   cd          pwd       pushd     popd         dirs
+  [Completion]    complete    compgen   compopt   compadjust   compexport
+  [Shell Process] exec      X logout 
+                  umask       ulimit    times
+  [Child Process] jobs        wait      ampersand &
+                  fg        X bg      X kill        X disown 
+  [External]      test [      getopts
+  [Introspection] help        hash      type        X caller
+  [Word Lookup]   command     builtin
+  [Interactive]   alias       unalias   history     X fc     X bind
 X [Unsupported]   enable
 ```
 
@@ -133,11 +134,11 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-option
-  [Errors]        nounset   pipefail   errexit   inherit_errexit
-  [Globbing]      noglob   nullglob   failglob   dashglob
-  [Debugging]     xtrace   X verbose   X extdebug
-  [Interactive]   emacs   vi
-  [Other Option]  X noclobber
+  [Errors]         nounset    pipefail    errexit    inherit_errexit
+  [Globbing]       noglob     nullglob    failglob   dashglob
+  [Debugging]      xtrace   X verbose   X extdebug
+  [Interactive]    emacs      vi
+  [Other Option] X noclobber
 ```
 
 <h2 id="special-var">
@@ -145,26 +146,26 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-special-var
-  [Shell Vars]    IFS   X LANG   X GLOBIGNORE
-  [Shell Options] SHELLOPTS   X BASHOPTS
-  [Other Env]     HOME   PATH
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
-  [Other Special] BASH_REMATCH   @PIPESTATUS
-  [Platform]      HOSTNAME   OSTYPE
-  [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
-                  X @BASH_ARGV   X @BASH_ARGC
+  [Shell Vars]    IFS             X LANG       X GLOBIGNORE
+  [Shell Options] SHELLOPTS       X BASHOPTS
+  [Other Env]     HOME              PATH
+  [Other Special] BASH_REMATCH     @PIPESTATUS
+  [Platform]      HOSTNAME          OSTYPE
+  [Call Stack]    @BASH_SOURCE     @FUNCNAME    @BASH_LINENO   
+                X @BASH_ARGV     X @BASH_ARGC
   [Tracing]       LINENO
-  [Process State] X BASHPID   X PPID   UID   EUID
-X [Process Stack] BASH_SUBSHELL   SHLVL
-X [Shell State]   BASH_CMDS   @DIRSTACK
-  [Completion]    @COMP_WORDS   COMP_CWORD   COMP_LINE   COMP_POINT
-                  COMP_WORDBREAKS   @COMPREPLY   X COMP_KEY
-                  X COMP_TYPE   COMP_ARGV
+  [Process State] UID               EUID         PPID       X BASHPID
+X [Process Stack] BASH_SUBSHELL     SHLVL
+X [Shell State]   BASH_CMDS        @DIRSTACK
+  [Completion]   @COMP_WORDS        COMP_CWORD    COMP_LINE   COMP_POINT
+                  COMP_WORDBREAKS  @COMPREPLY   X COMP_KEY
+                X COMP_TYPE         COMP_ARGV
   [History]       HISTFILE
-  [cd]            PWD   OLDPWD   X CDPATH
-  [getopts]       OPTIND   OPTARG   X OPTERR
+  [cd]            PWD               OLDPWD      X CDPATH
+  [getopts]       OPTIND            OPTARG      X OPTERR
   [read]          REPLY
-  [Functions]     X RANDOM   X SECONDS
+  [Functions]   X RANDOM            SECONDS
 ```
 
 <h2 id="plugin">
@@ -173,8 +174,8 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 
 ```chapter-links-plugin
   [Signals]       SIGTERM   X SIGINT   X SIGABRT   ...
-  [Traps]         DEBUG   ERR   EXIT   X RETURN
-  [Words]         PS1   X PS2   X PS3   PS4
+  [Traps]         DEBUG       ERR        EXIT    X RETURN
+  [Words]         PS1       X PS2      X PS3       PS4
   [Completion]    complete
-  [Other Plugin]  X command_not_found   PROMPT_COMMAND
+  [Other Plugin]  PROMPT_COMMAND       X command_not_found    
 ```

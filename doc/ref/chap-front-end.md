@@ -224,8 +224,10 @@ General rules:
 - In J8 **data** languages, control chars other than whitespace are illegal.
   This is consistent with the JSON spec.
 - In **source code**, control chars are allowed (but discouraged).
-  - For example, we don't check for control chars in unquoted OSH words, or YSH
-    string literals.  They are treated like printable chars.
+  - For example, in OSH, we don't check for control chars unquoted words
+    words or string literals.  They are treated like printable chars.
+  - TODO: YSH should only allow printable characters, which implies valid
+    UTF-8.
 
 Note about `NUL` aka `0x00`:
 
