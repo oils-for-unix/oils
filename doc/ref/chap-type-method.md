@@ -125,8 +125,8 @@ whitespace.
  - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
 
 While the Unicode standard defines other codepoints as being spaces, Oils
-limits itself to just these codepoints so that the specifcation is stable,
-and doesn't depend on an external standard that has reclassify characters.
+limits itself to just these codepoints so that the specification is stable, and
+doesn't depend on an external standard that has reclassify characters.
 
 ### trimStart()
 
@@ -180,7 +180,7 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
     var m = 'aye' => leftMatch(/[aeiou]/)
     # matches 'a'
 
-`leftMatch()` Can be used to implement lexers that consome every byte of input.
+`leftMatch()` Can be used to implement lexers that consume every byte of input.
 
     var lexer = / <capture digit+> | <capture space+> /
 

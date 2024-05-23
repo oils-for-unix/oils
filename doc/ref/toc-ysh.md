@@ -54,8 +54,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-expr-lang
-  [Assign Ops]    =   +=   -=   *=   /=   **=   //=   %=
-                  &=   |=   ^=   <<=   >>=
+  [Assignment]    assign        =
+                  aug-assign    +=   -=   *=   /=   **=   //=   %=
+                                &=   |=   ^=   <<=   >>=
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
@@ -66,23 +67,25 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   triple-quoted """  $"""  r'''  u'''  b'''
                   str-template  ^"$a and $b" for Str::replace()
                   list-literal  ['one', 'two', 3]  :| unquoted words |
-                  dict-literal  {name: 'bob'}
+                  dict-literal  {name: 'bob'}  {a, b}
                   range         1 .. n+1
                   block-literal ^(echo $PWD)
                   expr-lit      ^[1 + 2*3]
                   X to-string   $[myobj]
                   X to-array    @[myobj]
-  [Operators]     concat        s1 ++ s2,  L1 ++ L2
-                  ysh-equals    ===   !==   ~==   is, is not, in, not in
+  [Operators]     op-precedence Like Python
+                  concat        s1 ++ s2,  L1 ++ L2
+                  ysh-equals    ===   !==   ~==   is, is not
+                  ysh-in        in, not in
                   ysh-compare   <  <=  >  >=  (numbers only)
                   ysh-logical    not  and  or
                   ysh-arith     +  -  *  /  //  %   ** 
                   ysh-bitwise   ~  &  |  ^  <<  >>
                   ysh-ternary   '+' if x >= 0 else '-'
-                  ysh-index     a[3]  s[3]
+                  ysh-index     s[0]  mylist[3]  mydict['key']
                   ysh-attr      mydict.key
                   ysh-slice     a[1:-1]  s[1:-1]
-                  func-call     f(x, y)
+                  func-call     f(x, y; ...named)
                   thin-arrow    mylist->pop()
                   fat-arrow     mystr => startsWith('prefix')
                   match-ops     ~   !~   ~~   !~~
@@ -184,6 +187,7 @@ X [External Lang] BEGIN   END   when (awk)
                   parse_paren            if (x > 0) ...
                   parse_proc             proc p { ... }
                   parse_triple_quote     """$x"""  '''x''' (command mode)
+                  X parse_utf8_only      YSH source code must be valid UTF-8
                   parse_ysh_string       echo r'\' u'\\' b'\\' (command mode)
                   command_sub_errexit    Synchronous errexit check
                   process_sub_fail       Analogous to pipefail for process subs
