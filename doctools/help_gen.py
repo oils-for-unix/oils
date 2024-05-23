@@ -60,24 +60,31 @@ SECTION_RE = re.compile(r'''
   \]
 ''', re.VERBOSE)
 
-# TODO:
-#
-# - Shouldn't be exactly 3 spaces - should be 3 or MORE
-# - Three kinds of lines
-#   - Matches no topics
-#   - TOPIC+ $       - multiple topics and then EOL
-#   - TOPIC freeform - one topic, any other text is not linkified
 
+# Complex heuristic to highlight topics.
 TOPIC_RE = re.compile(r'''
   (X[ ])?             # optional deprecation symbol X, then a single space
   @?                  # optional @array, e.g. @BASH_SOURCE
-  ([a-zA-Z0-9:_-]+)   # e.g. osh-usage, ysh:all, BASH_REMATCH
-  ( [ ]\S+            # optional: single space then punctuation
+
+  ([a-zA-Z_][a-zA-Z0-9:_-]+)
+                      # topic names: osh-usage, _status, ysh:all, BASH_REMATCH
+
+  ( [ ] [^a-zA-Z0-9 ] \S*
+                      # trailer like >> or (make)
     |
-    \(\)              # or func()
+    \(\)              # optional () for func()
   )?      
-  ([ ][ ][ ])?        # three spaces means we should keep highlighting
+
+  (                   # order of these 2 clauses matters
+    [ ]*\n            # spaces/newline
+    |
+    [ ]+              # 1 or more spaces
+  )
 ''', re.VERBOSE)
+
+"""
+''', re.VERBOSE)
+"""
 
 
 def _StringToHref(s):
@@ -90,9 +97,10 @@ X_LEFT_SPAN = '<span style="color: darkred">'
 
 class TopicHtmlRenderer(object):
 
-  def __init__(self, chapter, debug_out):
+  def __init__(self, chapter, debug_out, linkify_stop_col):
     self.chapter = chapter
     self.debug_out = debug_out
+    self.linkify_stop_col = linkify_stop_col
 
     self.html_page = 'chap-%s.html' % chapter
 
@@ -172,51 +180,24 @@ class TopicHtmlRenderer(object):
 
     pos = m.end()
 
-    # Look ahead position
-    pos2 = pos
-
-    # Check the line consists of ONLY multiple topics
-    num_topics = 0
+    # Keep matching topics until it doesn't match.
     while True:
-      m = TOPIC_RE.match(line, pos2)
+      m = TOPIC_RE.match(line, pos)
+
       if not m:
         break
-      num_topics += 1
-      pos2 = m.end()
 
-      if not m.group(4):  # not 3 or more spaces
+      pos = m.end()
+
+      # The 1-based column number of the end of this topic
+      col = m.end(2) + 1
+      if self.linkify_stop_col != -1 and col > self.linkify_stop_col:
+        #log('STOPPING %d > %d' % (col, self.linkify_stop_col))
         break
-    
-    # 3 or more spaces
-    _NEWLINE_ONLY = re.compile(r'[ ]*\n$')
 
-    if num_topics > 0:  # Some lines match zero topics
+      self._PrintTopic(m, out, line_info)
 
-      if _NEWLINE_ONLY.match(line, pos2):
-        line_is_all_topics = True
-        log('line is ALL topics - %d of them', num_topics)
-      else:
-        line_is_all_topics = False
-        # Enforced that this is just ONE topic, even though it might look like two
-        log('line starts with %d topics, but limited to 1 by %r', num_topics,
-            line[pos2:])
-
-      if line_is_all_topics:
-        # Print all topics
-        while True:
-          m = TOPIC_RE.match(line, pos)
-          if not m:
-            break
-
-          self._PrintTopic(m, out, line_info)
-          pos = m.end()
-      else:
-        # Print one topic
-        m = TOPIC_RE.match(line, pos)
-        assert m is not None
-
-        self._PrintTopic(m, out, line_info)
-        out.PrintTheRest()
+    #log('trailing %r', line[pos:])
 
     out.PrintTheRest()
     return f.getvalue()

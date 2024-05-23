@@ -29,14 +29,16 @@ Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
 </h2>
 
 ```chapter-links-j8
-  [J8 Strings]   json-string "hi"   json-escape \" \\ \u1234
+  [J8 Strings]   json-string    "hi"
+                 json-escape    \" \\ \u1234
                  surrogate-pair \ud83e\udd26
-                 u-prefix u'hi'   b-prefix b'hi'
-                 j8-escape \u{1f926} \yff
-                 no-prefix 'hi'
+                 j8-escape      \' \u{1f926} \yff
+                 u-prefix       u'hi'
+                 b-prefix       b'hi'
+                 no-prefix      'hi'
   [J8 Lines]     unquoted-line
-  [JSON8]        json8-num   json8-str
-                 json8-list   json-dict
+  [JSON8]        json8-num      json8-str
+                 json8-list     json-dict
                  json8-comment
   [TSV8]         column-attrs   column-types
 ```
@@ -49,8 +51,8 @@ All J8 notation is UTF-8.
 </h2>
 
 ```chapter-links-packle
-  [Atoms]    Null   Bool   Int   Float   Bytes   Unicode
-  [Compound] List   Dict
+X [Atoms]    Null   Bool   Int   Float   Bytes   Unicode
+X [Compound] List   Dict
 ```
 
 <h2 id="errors">
@@ -59,10 +61,10 @@ All J8 notation is UTF-8.
 </h2>
 
 ```chapter-links-errors
-  [UTF8]      err-utf8-encode   err-utf8-decode
-  [J8 String] err-j8-str-encode   err-j8-str-decode
+  [UTF8]      err-utf8-encode       err-utf8-decode
+  [J8 String] err-j8-str-encode     err-j8-str-decode
   [J8 Lines]  err-j8-lines-encode   err-j8-lines-decode
-  [JSON]      err-json-encode   err-json-decode
-  [JSON8]     err-json8-encode   err-json8-decode
-X [Packle]    err-packle-encode   err-packle-decode
+  [JSON]      err-json-encode       err-json-decode
+  [JSON8]     err-json8-encode      err-json8-decode
+X [Packle]    err-packle-encode     err-packle-decode
 ```

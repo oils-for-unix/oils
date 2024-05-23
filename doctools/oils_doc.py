@@ -275,15 +275,17 @@ class HelpTopicsPlugin(_Plugin):
   """
   Highlight blocks of help-index.md.
   """
-  def __init__(self, s, start_pos, end_pos, chapter):
+  def __init__(self, s, start_pos, end_pos, chapter, linkify_stop_col):
     _Plugin.__init__(self, s, start_pos, end_pos)
     self.chapter = chapter
+    self.linkify_stop_col = linkify_stop_col
 
   def PrintHighlighted(self, out):
     from doctools import help_gen
 
     debug_out = []
-    r = help_gen.TopicHtmlRenderer(self.chapter, debug_out)
+    r = help_gen.TopicHtmlRenderer(self.chapter, debug_out,
+                                   self.linkify_stop_col)
 
     pos = self.start_pos
     for line_end in Lines(self.s, self.start_pos, self.end_pos):
@@ -373,6 +375,12 @@ def SimpleHighlightCode(s):
   return f.getvalue()
 
 
+CSS_CLASS_RE = re.compile(r'''
+   language-chapter-links-
+   ([a-z0-9-]+)        # chapter name
+   (?:_(\d+))?      # optional linkify_stop_col
+   ''', re.VERBOSE)
+
 
 def HighlightCode(s, default_highlighter, debug_out=None):
   """
@@ -430,7 +438,8 @@ def HighlightCode(s, default_highlighter, debug_out=None):
               if default_highlighter in ('sh-prompt', 'oils-sh', 'oil-sh'):
                 out.PrintUntil(code_start_pos)
 
-                # Using ShPromptPlugin because it does the comment highlighting we want!
+                # Using ShPromptPlugin because it does the comment highlighting
+                # we want!
                 plugin = ShPromptPlugin(s, code_start_pos, slash_code_left)
                 plugin.PrintHighlighted(out)
 
@@ -461,13 +470,21 @@ def HighlightCode(s, default_highlighter, debug_out=None):
               pass
 
             elif css_class.startswith('language-chapter-links-'):
-              n = len('language-chapter-links-')
-              chapter = css_class[n:]
-              #log('chap %s', chapter)
+              m = CSS_CLASS_RE.match(css_class)
+              assert m is not None, css_class
+
+              #log('%s GROUPS %s', css_class, m.groups())
+              chapter, num_str = m.groups()
+              if num_str is not None:
+                linkify_stop_col = int(num_str)
+              else:
+                linkify_stop_col = -1
 
               out.PrintUntil(code_start_pos)
 
-              plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left, chapter)
+              plugin = HelpTopicsPlugin(s, code_start_pos, slash_code_left,
+                                        chapter, linkify_stop_col)
+
               block_debug_info = plugin.PrintHighlighted(out)
 
               # e.g. these are links to cmd-lang within a block in toc-ysh

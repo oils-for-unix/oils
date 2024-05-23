@@ -38,11 +38,10 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
   [Iteration]     while   until   for   for-expr-sh ((
   [Control Flow]  break   continue   return   exit
   [Grouping]      sh-func   sh-block {   subshell (
-  [Concurrency]   pipe        |   X |&
-                  ampersand   &
-  [Redirects]     redir-file  >  >>  >|  <  <>   X &>
-                  redir-desc  >&  <&
-                  here-doc    <<  <<-  <<<
+  [Concurrency]   pipe |   X pipe-amp |&   ampersand &
+  [Redirects]     redir-file    >  >>  >|  <  <>   X &>
+                  redir-desc    >&  <&
+                  here-doc      <<  <<-  <<<
   [Other Command] dparen ((   time   X coproc   X select
 ```
 
@@ -63,7 +62,9 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
   Word Language (<a class="group-link" href="chap-word-lang.html">word-lang</a>)
 </h2>
 
-```chapter-links-word-lang
+<!-- linkify_stop_col is 33 -->
+
+```chapter-links-word-lang_33
   [Quotes]        osh-string    'abc'  $'line\n'  "$var"
   [Substitutions] command-sub   $(command)   `command`
                   var-sub       ${var}   $0   $9   
@@ -82,15 +83,17 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
   Other Mini Languages (<a class="group-link" href="chap-mini-lang.html">mini-lang</a>)
 </h2>
 
-```chapter-links-mini-lang
+<!-- linkify_stop_col is 33 -->
+
+```chapter-links-mini-lang_33
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   sh-numbers    0xFF  0755  etc.
                   sh-arith      1 + 2*3   a *= 2
                   sh-logical    !a && b
                   sh-bitwise    ~a ^ b
-  [Boolean]       dbracket      [[ vs. the test builtin
-                  bool-expr     test ! $x -a $y -o $z
-                                [[ ! $x && $y || $z ]]
+  [Boolean]       dbracket      statically parsed expressions with [[
+                  bool-expr     [[ ! $x && $y || $z ]]
+                                test ! $x -a $y -o $z
                   bool-infix    [[ $a -nt $b ]]  [[ $x == $y ]]
                   bool-path     [[ -d /etc ]]
                   bool-str      [[ -z '' ]]
@@ -151,7 +154,7 @@ X [Unsupported]   enable
   [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
                   X @BASH_ARGV   X @BASH_ARGC
   [Tracing]       LINENO
-  [Process State] X BASHPID   X PPID   UID   EUID   
+  [Process State] X BASHPID   X PPID   UID   EUID
 X [Process Stack] BASH_SUBSHELL   SHLVL
 X [Shell State]   BASH_CMDS   @DIRSTACK
   [Completion]    @COMP_WORDS   COMP_CWORD   COMP_LINE   COMP_POINT
@@ -169,7 +172,7 @@ X [Shell State]   BASH_CMDS   @DIRSTACK
 </h2>
 
 ```chapter-links-plugin
-  [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
+  [Signals]       SIGTERM   X SIGINT   X SIGABRT   ...
   [Traps]         DEBUG   ERR   EXIT   X RETURN
   [Words]         PS1   X PS2   X PS3   PS4
   [Completion]    complete

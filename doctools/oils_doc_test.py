@@ -14,7 +14,18 @@ with open('lazylex/testdata.html') as f:
   TEST_HTML = f.read()
 
 
-class OilDoc(unittest.TestCase):
+class OilsDocTest(unittest.TestCase):
+
+  def testTopicCssClass(self):
+
+    CASES = [
+        ('language-chapter-links-expr-lang', True),
+        ('language-chapter-links-expr-lang_56', True),
+        ]
+
+    for s, matches in CASES:
+      m = oils_doc.CSS_CLASS_RE.match(s)
+      print(m.groups())
 
   def testExpandLinks(self):
     """

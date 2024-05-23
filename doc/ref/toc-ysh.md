@@ -33,7 +33,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   Command Language (<a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>)
 </h2>
 
-```chapter-links-cmd-lang
+<!-- linkify_stop_col is 33 -->
+
+```chapter-links-cmd-lang_33
   [YSH Simple]    typed-arg     json write (x)
                   lazy-expr-arg assert [42 === x]
                   block-arg     cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
@@ -53,7 +55,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   Expression Language and Assignments (<a class="group-link" href="chap-expr-lang.html">expr-lang</a>)
 </h2>
 
-```chapter-links-expr-lang
+<!-- linkify_stop_col is 33 -->
+
+```chapter-links-expr-lang_33
   [Assignment]    assign        =
                   aug-assign    +=   -=   *=   /=   **=   //=   %=
                                 &=   |=   ^=   <<=   >>=
@@ -78,7 +82,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   ysh-equals    ===   !==   ~==   is, is not
                   ysh-in        in, not in
                   ysh-compare   <  <=  >  >=  (numbers only)
-                  ysh-logical    not  and  or
+                  ysh-logical   not  and  or
                   ysh-arith     +  -  *  /  //  %   ** 
                   ysh-bitwise   ~  &  |  ^  <<  >>
                   ysh-ternary   '+' if x >= 0 else '-'
@@ -105,7 +109,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   Word Language (<a class="group-link" href="chap-word-lang.html">word-lang</a>)
 </h2>
 
-```chapter-links-word-lang
+<!-- linkify_stop_col is 33 -->
+
+```chapter-links-word-lang_33
   [Quotes]        ysh-string    "x is $x"  $"x is $x"  r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
                   triple-quoted """  $"""  r'''  u'''  b'''
@@ -122,7 +128,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   Builtin Commands (<a class="group-link" href="chap-builtin-cmd">builtin-cmd</a>)
 </h2>
 
-```chapter-links-builtin-cmd
+<!-- linkify_stop_col is 42 -->
+
+```chapter-links-builtin-cmd_42
   [Memory]        append                 Add elements to end of array
                   pp                     asdl   cell   X gc-stats   line   proc
   [Handle Errors] try                    Run with errexit, set _status _error
@@ -168,7 +176,9 @@ X [External Lang] BEGIN   END   when (awk)
   Shell Options (<a class="group-link" href="chap-option.html">option</a>)
 </h2>
 
-```chapter-links-option
+<!-- linkify_stop_col is 42 -->
+
+```chapter-links-option_42
   [Option Groups] strict:all   ysh:upgrade   ysh:all
   [Strictness]    ... More Runtime Errors
                   strict_argv            No empty argv
@@ -206,8 +216,8 @@ X [External Lang] BEGIN   END   when (awk)
                   X simple_trap          Function name only
   [YSH Breaking]  ... The Full YSH Language
                   parse_at_all           @ starting any word is an operator
-                  parse_backslash (-u)    Allow bad backslashes in "" and $''
-                  parse_backticks (-u)    Allow legacy syntax `echo hi`
+                  parse_backslash (-u)   Allow bad backslashes in "" and $''
+                  parse_backticks (-u)   Allow legacy syntax `echo hi`
                   parse_bare_word (-u)   'case unquoted' and 'for x in unquoted'
                   parse_dollar (-u)      Allow bare $ to mean \$  (maybe $/d+/)
                   parse_dbracket (-u)    Is legacy [[ allowed?
@@ -234,7 +244,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Vars]      ARGV   X ENV  X _ESCAPE
+  [YSH Vars]      ARGV   X ENV   X _ESCAPE
                   _this_dir
   [YSH Status]    _status   _error
                   _pipeline_status   _process_sub_status
@@ -254,10 +264,10 @@ X [Builtin Sub]   _buffer
 
 ```chapter-links-type-method
   [Primitive] Bool   Int   Float   Str   Slice   Range
-  [Str]       X find(eggex)   replace()
+  [Str]       X find()   replace()
               trim()   trimStart()   trimEnd()
               startsWith()   endsWith()
-              upper()   lower()  # ascii or unicode
+              upper()   lower()
               search()   leftMatch()
   [Match]     group()   start()   end()
               X groups()   X groupDict()
