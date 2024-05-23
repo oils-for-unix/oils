@@ -168,30 +168,66 @@ class LiveVars(object):
     def EmitDef(self, function: str, statement: int, var: str) -> None:
         self.statements[function][statement].append(('def', var))
 
+    def EmitAssign(self, function: str, statement: int, lhs: str, rhs: str) -> None:
+        self.statements[function][statement].append(('assign', lhs, rhs))
+
+    def EmitCall(self, function: str, statement: int, func: str) -> None:
+        self.statements[function][statement].append(('call', func))
+
+    def EmitBind(self, function: str, statement: int, arg_val: str, callee: str, arg_name:str) -> None:
+        self.statements[function][statement].append(('bind', arg_val, callee, arg_name))
+
     def EmitUse(self, function: str, statement: int, var: str) -> None:
         self.statements[function][statement].append(('use', var))
 
     def EmitCollect(self, function: str, statement: int) -> None:
         self.statements[function][statement].append(('collect', None))
 
-    def DumpFunction(self, function: str, use_f, def_f, collect_f, graph_f) -> None:
+    def DumpFunction(self, function: str, use_f, def_f, assign_f, bind_f, call_f, collect_f, graph_f) -> None:
         if function not in self.adj:
             return
 
-        action_f = {'use': use_f, 'def': def_f}
+        action_f = {
+            'use': use_f,
+            'def': def_f,
+            'assign': assign_f,
+            'call': call_f,
+            'bind': bind_f,
+        }
         for u, neighbors in self.adj[function].items():
             for v in neighbors:
-                graph_f.write('"%s"\t"%s"\t"%s"\n' % (function, statement_name(u),
-                                                      statement_name(v)))
+                graph_f.write('%s\t%d\t%d\n' % (function, u, v))
 
 
         for statement, statements in self.statements[function].items():
-            for action, var in statements:
+            for parts in statements:
+                action = parts[0]
                 if action == 'collect':
-                    collect_f.write('"%s"\t"%s"\n' % (function, statement_name(statement)))
+                    collect_f.write('[%s, %d]\n' % (function, statement))
+
+                elif action == 'call':
+                    callee = parts[1]
+                    call_f.write('[%s, %d]\t%s\n' % (function,
+                                                        statement,
+                                                        callee))
+                elif action == 'assign':
+                    lhs, rhs = parts[1:]
+                    assign_f.write('[%s, %d]\t%s\t%s\n' % (function,
+                                                           statement,
+                                                           lhs,
+                                                           rhs))
+
+                elif action == 'bind':
+                    arg_val, callee, arg_name = parts[1:]
+                    bind_f.write('[%s, %d]\t%s\t%s\t%s\n' % (function,
+                                                           statement,
+                                                           arg_val,
+                                                           callee, arg_name))
+
                 else:
-                    action_f[action].write('"%s"\t"%s"\t"%s"\n' %
-                                           (function, statement_name(statement), var))
+                    var = parts[1]
+                    action_f[action].write('[%s, %d]\t%s\n' %
+                                           (function, statement, var))
 
 
     def Compute(self):
@@ -199,14 +235,20 @@ class LiveVars(object):
         os.makedirs(facts_dir, exist_ok=True)
         use_facts = f'{facts_dir}/use.facts'
         def_facts = f'{facts_dir}/def.facts'
+        assign_facts = f'{facts_dir}/assign.facts'
+        bind_facts = f'{facts_dir}/bind.facts'
+        call_facts = f'{facts_dir}/call.facts'
         collect_facts = f'{facts_dir}/collect.facts'
         cf_edge_facts = f'{facts_dir}/cf_edge.facts'
         with open(use_facts, 'w') as use_f, \
              open(def_facts, 'w') as def_f, \
+             open(assign_facts, 'w') as assign_f, \
+             open(bind_facts, 'w') as bind_f, \
+             open(call_facts, 'w') as call_f, \
              open(collect_facts, 'w') as collect_f, \
              open(cf_edge_facts, 'w') as graph_f:
             for func in self.statements:
-                self.DumpFunction(func, use_f, def_f, collect_f, graph_f)
+                self.DumpFunction(func, use_f, def_f, assign_f, bind_f, call_f, collect_f, graph_f)
 
         subprocess.check_call(
             [

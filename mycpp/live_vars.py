@@ -10,9 +10,9 @@ import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
                         ComparisonExpr, NameExpr, MemberExpr, CallExpr,
-                        get_member_expr_fullname, IndexExpr)
+                        get_member_expr_fullname, IndexExpr, Block)
 
-from mypy.types import CallableType, Overloaded, Type
+from mypy.types import CallableType, Overloaded, Type, UnionType
 
 from mycpp.crash import catch_errors
 from mycpp.util import log
@@ -96,7 +96,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                     res = self.alloc_temp(self.node_type(node))
                 return res
             else:
-                if self.current_func_name:
+                if self.current_func_name and not isinstance(node, Block):
                     self.add_statement()
 
                 try:
@@ -144,7 +144,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         if self.statement_id == -1 or name in IGNORE_NAMES:
             return
 
-        self.live_vars.EmitDef(self.current_func_name, self.statement_id, name)
+        self.live_vars.EmitDef(self.current_func_name, self.statement_id,
+                               '$Variable(%s)' % name)
 
     def add_var_use(self, name):
         if self.statement_id == -1 or name not in self.locals:
@@ -153,7 +154,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         if len(self.with_stack):
             self.with_stack[-1].add(name)
 
-        self.live_vars.EmitUse(self.current_func_name, self.statement_id, name)
+        self.live_vars.EmitUse(self.current_func_name, self.statement_id,
+                               '$Variable(%s)' % name)
 
     def add_collect_call(self):
         if self.statement_id == -1:
@@ -166,14 +168,17 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
 
     def get_name(self, expr: Expression) -> str:
         if isinstance(expr, NameExpr) and expr.name not in {'True', 'False', 'None'}:
-            return '$Variable("%s")' % expr.name
+            return '$Variable(%s)' % expr.name
 
         elif isinstance(expr, MemberExpr):
             name_base = None
             if isinstance(expr.expr, NameExpr) and expr.expr.name == 'self':
                 name_base = self.current_class_name
 
-            elif isinstance(expr.expr, NameExpr) or isinstance(expr.expr, MemberExpr):
+            elif isinstance(expr.expr, NameExpr) and expr.expr.name in self.imported_names:
+                pass
+
+            elif isinstance(expr.expr, NameExpr):
                 name_t = self.types.get(expr.expr)
                 if name_t is None:
                     name_base = str(expr.expr)
@@ -181,8 +186,14 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                 elif isinstance(name_t, CallableType):
                     name_base = name_t.ret_type.type.fullname
 
+                elif isinstance(name_t, UnionType):
+                    name_base = str(name_t.items[0])
+
                 else:
-                    name_base = str(self.types[expr.expr])
+                    name_base = str(name_t)
+
+            elif isinstance(expr.expr, MemberExpr):
+                pass
 
             elif isinstance(expr.expr, IndexExpr):
                 name_base = str(self.types[expr.expr])
@@ -192,11 +203,12 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                 pass
 
             if name_base:
-                return '$Member("%s", "%s")' % (name_base, expr.name)
+                assert '[' not in name_base and ']' not in name_base, (name_base, str(expr))
+                return '$Member(%s, %s)' % (name_base, expr.name)
 
         elif isinstance(expr, IndexExpr):
             if isinstance(expr.base, NameExpr):
-                return '$Variable("%s")' % expr.base.name
+                return '$Variable(%s)' % expr.base.name
 
             elif isinstance(expr.base, MemberExpr):
                 name_base = None
@@ -204,17 +216,28 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                     name_base = self.current_class_name
 
                 elif isinstance(expr.base.expr, NameExpr) or isinstance(expr.base.expr, MemberExpr):
-                    name_base = str(self.types[expr.base.expr])
+                    base_t = self.types[expr.base.expr]
+                    if isinstance(base_t, UnionType):
+                        name_base = str(base_t.items[0])
+
+                    else:
+                        name_base = str(base_t)
 
                 elif isinstance(expr.base.expr, IndexExpr):
-                    name_base = str(self.types[expr.base.expr])
+                    base_t = self.types[expr.base.expr]
+                    if isinstance(base_t, UnionType):
+                        name_base = str(base_t.items[0])
+
+                    else:
+                        name_base = str(base_t)
 
                 else:
                     #print(type(expr.expr))
                     pass
 
                 if name_base:
-                    return '$Member("%s", "%s")' % (name_base, expr.base.name)
+                    assert '[' not in name_base and ']' not in name_base, expr.base
+                    return '$Member(%s, %s)' % (name_base, expr.base.name)
 
             else:
                 return self.get_name(expr.base)
@@ -305,6 +328,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_call = o
         self.accept(o.callee)  # could be f() or obj.method()
 
+        self.live_vars.EmitCall(self.current_func_name, self.statement_id,
+                                full_callee)
         if self.call_graph.PathExists(full_callee, 'mylib.MaybeCollect'):
             self.add_collect_call()
 
@@ -317,18 +342,22 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                 arg_offset = 1
 
         for i, arg in enumerate(o.args):
+            self.accept(arg)
             arg_dl = self.get_name(arg)
             arg_name = None
             if arg_offset is not None and (i + arg_offset) < len(callee_t.definition.arg_names):
                 arg_name = callee_t.definition.arg_names[i+arg_offset]
 
             if arg_dl and callee_t:
-                print('bind(["%s", "S%d"], %s, "%s", "%s")' % (self.current_func_name,
-                                                               self.statement_id,
-                                                               arg_dl,
-                                                               full_callee,
-                                                               arg_name))
-            self.accept(arg)
+                self.live_vars.EmitBind(self.current_func_name,
+                                        self.statement_id,
+                                        arg_dl,
+                                        full_callee,
+                                        arg_name)
+                #self.live_vars.EmitUse(self.current_func_name,
+                #                       self.statement_id,
+                #                       arg_dl)
+
             # The type of each argument
             #self.log(':: %s', self.types[arg])
 
@@ -479,7 +508,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         lhs = self.get_name(lval)
         rhs = self.get_name(o.rvalue)
         if lhs and rhs:
-            print('assign(["%s", "S%d"], %s, %s)' % (self.current_func_name, self.statement_id, lhs, rhs))
+            self.live_vars.EmitAssign(self.current_func_name, self.statement_id,
+                                      lhs, rhs)
 
         self.vars = []
         self.accept(lval)
@@ -503,6 +533,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         #self.log('  inferred_item_type %s', o.inferred_item_type)
         #self.log('  inferred_iterator_type %s', o.inferred_iterator_type)
         self.current_loop = o
+        self.push_loop()
 
         self.vars = []
         self.accept(o.index)  # index var expression
@@ -517,7 +548,6 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.expr)  # the thing being iterated over
         self.current_loop = None
         self.current_rval = None
-        self.push_loop()
         self.accept(o.body)
         self.pop_loop()
         if o.else_body:
@@ -531,7 +561,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(o.body)
         self.add_statement()
         for name in used:
-            self.live_vars.EmitUse(self.current_func_name, self.statement_id, name)
+            self.live_vars.EmitUse(self.current_func_name, self.statement_id,
+                                   '$Variable(%s)' % name)
 
 
     def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
@@ -686,10 +717,10 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('WhileStmt')
         self.current_rval = o
         self.current_loop = o
+        self.push_loop()
         self.accept(o.expr)
         self.current_loop = None
         self.current_rval = None
-        self.push_loop()
         self.accept(o.body)
         self.pop_loop()
 

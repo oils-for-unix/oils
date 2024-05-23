@@ -6,7 +6,21 @@
 
 // A statement is a grouping variable definitions/uses and events like calls to the
 // GC.
-.type Statement <: symbol
+.type Statement <: number
+
+.type Location = [
+	func: Function,
+	stmt: Statement
+]
+
+.comp DiGraph {
+	.decl edge(f:Function, u:Statement, g:Function, v:Statement)
+	.decl reachable(f: Function, u:Statement, g:Function, v:Statement)
+
+	reachable(f, s1, f, s2) :- edge(f, s1, f, s2).
+	reachable(f, s1, f, s3) :- reachable(f, s1, f, s2), edge(f, s2, f, s3).
+	reachable(f, s1, g, s3) :- edge(f, s2, g, 0), reachable(f, s1, f, s2), reachable(g, 0, g, s3).
+}
 
 // Represent a program as a simplified control flow graph, a directed graph of
 // statements. Loops can introduce cycles.
@@ -15,24 +29,37 @@
 .decl cf_edge(f:Function, x:Statement, y:Statement)
 .input cf_edge
 
-// True if there is a path from Statement x to Statement y in the control flow graph.
-.decl cf_path(f:Function, x:Statement, y:Statement)
-
 // True if the GC is invoked, directly or indirectly, within Statement X.
-.decl collect(f:Function, x:Statement)
+.decl collect(loc:Location)
 .input collect
 
 // Statements can define and use variables.
-// TODO: track aliases
-.type Var <: symbol
+.type Reference = Variable { v: symbol }
+                | Member { v: symbol, m: symbol }
+
 
 // use(x, v) means Statement x uses Var v.
-.decl use(f:Function, x:Statement, v:Var)
+.decl use(loc:Location, v:Reference)
 .input use
 
 // def(x, v) means Statement x defines Var v.
-.decl def(f:Function, x:Statement, v:Var)
+.decl def(loc:Location, v:Reference)
 .input def
+
+.decl assign(loc:Location, x:Reference, y:Reference)
+.input assign
+
+.decl call(caller:Location, callee:Function)
+.input call
+
+.decl bind(caller:Location, caller_arg:Reference, callee:Function, callee_arg:symbol)
+.input bind
+
+.decl alias(a:Location, vf:Reference, b:Location, vg:Reference)
+.output alias
+
+.decl aliasUsed(f:Function, v:Reference)
+.output aliasUsed
 
 // Rules and Outputs
 // =================
@@ -43,17 +70,34 @@
 // root_vars(v) means that Var v needs a stack root to avoid getting swept up
 // by the GC and breaking a downstream dereference. This is the main output of
 // this analysis.
-.decl root_vars(f:Function, v:Var)
-.output root_vars()
+.decl root_vars(f:Function, v:symbol)
+.output root_vars
 
-// Base case. There's a direct edge between x and y.
-cf_path(f, x, y) :- cf_edge(f, x, y).
-// Inductive case. x and reach why through z.
-cf_path(f, x, y) :- cf_path(f, x, z), cf_edge(f, z, y).
+.init CFGraph = DiGraph
+CFGraph.edge(f, s1, f, s2) :- cf_edge(f, s1, s2).
+CFGraph.edge(f, s1, g, 0) :- call([f, s1], g).
 
 // Minimal set of roots. Only generate StackRoot for a variable if it was
 // declared before a GC statement and used after the GC statement.
-root_vars(f, v) :- use(f, z, v), def(f, x, v), collect(f, y), cf_path(f, x, y), cf_path(f, y, z).
+root_vars(f, v) :-
+	def([f, x], $Variable(v)),
+	collect([f, y]),
+	use([f, z], $Variable(v)),
+	CFGraph.reachable(f, x, f, y),
+	CFGraph.reachable(f, y, f, z).
+
+alias([f, s1], $Variable(v1), [g, s2], $Member(v2, m)) :- def([f, s1], $Variable(v1)), assign([g, s2], $Member(v2, m), $Variable(v1)), CFGraph.reachable(f, s1, g, s2).
+alias([f, s1], $Variable(v1), [h, s4], $Member(v3, m)) :- alias([f, s1], $Variable(v1), [g, s2], r), alias([g, s3], r, [h, s4], $Member(v3, m)).
+alias([f, s1], $Member(v1, m1), [h, s3], $Member(v2, m2)) :- alias([f, s1], $Member(v1, m1), [g, s2], r), alias([g, s2], r, [h, s3], $Member(v2, m2)).
+alias([f, s1], $Member(v1, m1), [g, s2], $Member(v2, m2)) :- assign([g, s2], $Member(v2, m2), $Member(v1, m1)), CFGraph.reachable(f, s1, g, s2).
+alias([f, s1], $Variable(v), [g, s2], $Variable(v2)) :- def([f, s1], $Variable(v)), assign([g, s2], $Variable(v2), $Variable(v)), CFGraph.reachable(f, s1, g, s2).
+alias([f, s1], $Variable(v), [g, 0], $Variable(v2)) :- def([f, s1], $Variable(v)), bind([f, s2], $Variable(v), g, v2), CFGraph.reachable(f, s1, f, s2).
+alias([f, s1], $Variable(v), [g, s2], $Variable(v2)) :- alias([f, s1], $Variable(v), [h, s3], $Variable(v3)), alias([h, s3], $Variable(v3), [g, s2], $Variable(v2)).
+
+aliasUsed(f, r) :- alias([f, _], r, [g, _], r2), use([g, _], r2).
+aliasUsed(f, r) :- def([f, _], r), alias([f, _], r, _, r2), use(_, r2).
+
+def(l, r) :- assign(l, r, _).
 
 // Conservative set of roots. Generate StackRoot for a variable if there is a
 // path from the statement it was defined in to/from a GC statement in any direction.
