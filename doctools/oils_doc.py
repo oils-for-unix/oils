@@ -283,6 +283,7 @@ class HelpTopicsPlugin(_Plugin):
     from doctools import help_gen
 
     debug_out = []
+    r = help_gen.TopicHtmlRenderer(self.chapter, debug_out)
 
     pos = self.start_pos
     for line_end in Lines(self.s, self.start_pos, self.end_pos):
@@ -290,7 +291,7 @@ class HelpTopicsPlugin(_Plugin):
       # add tags and leave everything alone.
       line = self.s[pos : line_end]
 
-      html_line = help_gen.IndexLineToHtml(self.chapter, line, debug_out)
+      html_line = r.Render(line)
 
       if html_line is not None:
         out.PrintUntil(pos)

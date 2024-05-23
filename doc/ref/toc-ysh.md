@@ -273,7 +273,7 @@ X [Module]    name()   filename()
               promptVal()
               X time()   X strftime()
               X glob()
-  [Quotation] Expr   X Template   Command
+  [Quotation] Expr   Command
   [Code]      BuiltinFunc   BuiltinMethod
 X [Guts]      heapId()
 ```

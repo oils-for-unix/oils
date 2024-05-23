@@ -60,10 +60,18 @@ SECTION_RE = re.compile(r'''
   \]
 ''', re.VERBOSE)
 
+# TODO:
+#
+# - Shouldn't be exactly 3 spaces - should be 3 or MORE
+# - Three kinds of lines
+#   - Matches no topics
+#   - TOPIC+ $       - multiple topics and then EOL
+#   - TOPIC freeform - one topic, any other text is not linkified
+
 TOPIC_RE = re.compile(r'''
-  (X[ ])?           # optional deprecation symbol X, then a single space
+  (X[ ])?             # optional deprecation symbol X, then a single space
   @?                  # optional @array, e.g. @BASH_SOURCE
-  ([a-zA-Z0-9_\-:]+)  # e.g. osh-usage, all:oil, BASH_REMATCH
+  ([a-zA-Z0-9:_-]+)   # e.g. osh-usage, ysh:all, BASH_REMATCH
   ( [ ]\S+            # optional: single space then punctuation
     |
     \(\)              # or func()
@@ -77,78 +85,19 @@ def _StringToHref(s):
   return s.lower().replace(' ', '-')
 
 
-# HACK HACK: These happen to have 3 spaces before them! 
-_NOT_A_TOPIC = ['compatible', 'egrep']
-
-# BUGS:
-# - Continuation lines: hacked with ...
-# - Some X before punctuation aren't highlighted
-
 X_LEFT_SPAN = '<span style="color: darkred">'
 
-def IndexLineToHtml(chapter, line, debug_out):
-  """Convert a line of text to HTML.
 
-  Topics are highlighted and X made red.
+class TopicHtmlRenderer(object):
 
-  Args:
-    line: RAW SPAN of HTML that is already escaped.
+  def __init__(self, chapter, debug_out):
+    self.chapter = chapter
+    self.debug_out = debug_out
 
-  Returns:
-    The HTML with some tags inserted.
-  """
-  f = cStringIO.StringIO()
-  out = html.Output(line, f)
+    self.html_page = 'chap-%s.html' % chapter
 
-  html_page = 'chap-%s.html' % chapter
-
-  pos = 0  # position within line
-
-  section_impl = True
-
-  if line.startswith('X '):
-    out.Print(X_LEFT_SPAN)
-    out.PrintUntil(2)
-    out.Print('</span>')
-    pos = 2
-    section_impl = False
-  elif line.startswith('  '):
-    pos = 2
-  else:
-    return line
-
-  # Highlight [Section] at the start of a line.
-  m = SECTION_RE.match(line, pos)
-  if m:
-    section_name = m.group(1)
-    #href = _StringToHref(section_name)
-    href = html_lib.PrettyHref(section_name, preserve_anchor_case=True)
-
-    out.PrintUntil(m.start(1))
-    out.Print('<a href="%s#%s" class="level2">' % (html_page, href))
-    out.PrintUntil(m.end(1))  # anchor
-    out.Print('</a>')
-
-    pos = m.end(0)  # ADVANCE
-  else:
-    section_name = None
-
-  line_info = {'section': section_name, 'impl': section_impl, 'topics': []}
-  debug_out.append(line_info)
-
-  _WHITESPACE = re.compile(r'[ ]+')
-  m = _WHITESPACE.match(line, pos)
-  assert m, 'Expected whitespace %r' % line
-
-  pos = m.end(0)
-
-  done = False
-  while not done:
-    # Now just match one
-    m = TOPIC_RE.match(line, pos)
-    if not m or m.group(2) in _NOT_A_TOPIC:
-      break
-
+  def _PrintTopic(self, m, out, line_info):
+    # The X
     topic_impl = True
     if m.group(1):
       out.PrintUntil(m.start(1))
@@ -157,24 +106,120 @@ def IndexLineToHtml(chapter, line, debug_out):
       out.Print('</span>')
       topic_impl = False
 
-    # The linked topic
+    # The topic name to link
     topic = m.group(2)
     line_info['topics'].append((topic, topic_impl))
 
     out.PrintUntil(m.start(2))
-    out.Print('<a href="%s#%s">' % (html_page, topic))
+    out.Print('<a href="%s#%s">' % (self.html_page, topic))
     out.PrintUntil(m.end(2))
     out.Print('</a>')
 
-    # Trailing 3 spaces required to continue.
-    if not m.group(4):
-      done = True
+  def Render(self, line):
+    """Convert a line of text to HTML.
 
-    pos = m.end(0)
+    Topics are highlighted and X made red.
 
-  out.PrintTheRest()
+    Args:
+      chapter: where to link to
+      line: RAW SPAN of HTML that is already escaped.
+      debug_out: structured data
 
-  return f.getvalue()
+    Returns:
+      The HTML with some tags inserted.
+    """
+    f = cStringIO.StringIO()
+    out = html.Output(line, f)
+
+    pos = 0  # position within line
+
+    section_impl = True
+
+    if line.startswith('X '):
+      out.Print(X_LEFT_SPAN)
+      out.PrintUntil(2)
+      out.Print('</span>')
+      pos = 2
+      section_impl = False
+    elif line.startswith('  '):
+      pos = 2
+    else:
+      return line
+
+    # Highlight [Section] at the start of a line.
+    m = SECTION_RE.match(line, pos)
+    if m:
+      section_name = m.group(1)
+      #href = _StringToHref(section_name)
+      href = html_lib.PrettyHref(section_name, preserve_anchor_case=True)
+
+      out.PrintUntil(m.start(1))
+      out.Print('<a href="%s#%s" class="level2">' % (self.html_page, href))
+      out.PrintUntil(m.end(1))  # anchor
+      out.Print('</a>')
+
+      pos = m.end(0)  # ADVANCE
+    else:
+      section_name = None
+
+    line_info = {'section': section_name, 'impl': section_impl, 'topics': []}
+    self.debug_out.append(line_info)
+
+    # Whitespace after section, or leading whitespace
+    _SPACE_1 = re.compile(r'[ ]+')
+    m = _SPACE_1.match(line, pos)
+    assert m, 'Expected whitespace %r' % line
+
+    pos = m.end()
+
+    # Look ahead position
+    pos2 = pos
+
+    # Check the line consists of ONLY multiple topics
+    num_topics = 0
+    while True:
+      m = TOPIC_RE.match(line, pos2)
+      if not m:
+        break
+      num_topics += 1
+      pos2 = m.end()
+
+      if not m.group(4):  # not 3 or more spaces
+        break
+    
+    # 3 or more spaces
+    _NEWLINE_ONLY = re.compile(r'[ ]*\n$')
+
+    if num_topics > 0:  # Some lines match zero topics
+
+      if _NEWLINE_ONLY.match(line, pos2):
+        line_is_all_topics = True
+        log('line is ALL topics - %d of them', num_topics)
+      else:
+        line_is_all_topics = False
+        # Enforced that this is just ONE topic, even though it might look like two
+        log('line starts with %d topics, but limited to 1 by %r', num_topics,
+            line[pos2:])
+
+      if line_is_all_topics:
+        # Print all topics
+        while True:
+          m = TOPIC_RE.match(line, pos)
+          if not m:
+            break
+
+          self._PrintTopic(m, out, line_info)
+          pos = m.end()
+      else:
+        # Print one topic
+        m = TOPIC_RE.match(line, pos)
+        assert m is not None
+
+        self._PrintTopic(m, out, line_info)
+        out.PrintTheRest()
+
+    out.PrintTheRest()
+    return f.getvalue()
 
 
 class Splitter(HTMLParser.HTMLParser):

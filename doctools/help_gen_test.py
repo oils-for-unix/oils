@@ -23,13 +23,32 @@ class MakeHelpTest(unittest.TestCase):
 
     # Do we need markup here?
 
-    line = '  [Overview] hello   there   X not-impl'
+    CASES = [
+      '  [Overview] hello   there   X not-impl\n',
 
-    print(help_gen.IndexLineToHtml('osh', line, []))
+      # Bug fix: 42 was linkified
+      '    int-literal   42  65_536  0xFF  0o755  0b10\n',
+
+      # Bug fix: echo was linkified
+      '    expr-splice   echo @[split(x)]  \n',
+
+      # Bug fix: u was linkified
+      "    u'line\\n'  b'byte \yff'\n"
+
+      ]
+
+    for line in CASES:
+      debug_out = []
+      r = help_gen.TopicHtmlRenderer('osh', debug_out)
+      html = r.Render(line)
+      print(html)
+      print(debug_out[0])
+      print()
+      print()
 
   def testSplitIntoCards(self):
     contents = """
-<h2>Oil Expression Language</h2>
+<h2>YSH Expression Language</h2>
 
 expr
 

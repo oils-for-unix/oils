@@ -38,8 +38,8 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
   [Iteration]     while   until   for   for-expr-sh ((
   [Control Flow]  break   continue   return   exit
   [Grouping]      sh-func   sh-block {   subshell (
-  [Concurrency]   pipe   |   X |&
-                  ampersand &
+  [Concurrency]   pipe        |   X |&
+                  ampersand   &
   [Redirects]     redir-file  >  >>  >|  <  <>   X &>
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
@@ -89,8 +89,8 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
                   sh-logical    !a && b
                   sh-bitwise    ~a ^ b
   [Boolean]       dbracket      [[ vs. the test builtin
-                  bool-expr       [[ ! $x && $y || $z ]]
-                                test ! $x -a $y -o $z
+                  bool-expr     test ! $x -a $y -o $z
+                                [[ ! $x && $y || $z ]]
                   bool-infix    [[ $a -nt $b ]]  [[ $x == $y ]]
                   bool-path     [[ -d /etc ]]
                   bool-str      [[ -z '' ]]
