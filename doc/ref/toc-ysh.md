@@ -23,9 +23,9 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
 </h2>
 
 ```chapter-links-front-end
-  [Usage]         bundle-usage   ysh-usage
+  [Usage]         bundle-usage                 ysh-usage
   [Lexing]        ascii-whitespace [ \t\r\n]
-                  doc-comment ###   multiline-command ...
+                  doc-comment ###              multiline-command ...
   [Tools]         cat-em
 ```
 
@@ -64,7 +64,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Literals]      bool-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
-                  X num-suffix  42 K Ki M Mi G Gi T Ti / ms us
+                X num-suffix    42 K Ki M Mi G Gi T Ti / ms us
                   rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   ysh-string    "x is $x"  $"x is $x"   r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
@@ -75,8 +75,8 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   range         1 .. n+1
                   block-literal ^(echo $PWD)
                   expr-lit      ^[1 + 2*3]
-                  X to-string   $[myobj]
-                  X to-array    @[myobj]
+                X expr-sub      $[myobj]
+                X expr-slice    @[myobj]
   [Operators]     op-precedence Like Python
                   concat        s1 ++ s2,  L1 ++ L2
                   ysh-equals    ===   !==   ~==   is, is not
@@ -102,7 +102,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
                   re-capture    <capture d+ as name: int>
                   re-splice     Subpattern   @subpattern
                   re-flags      reg_icase   reg_newline
-                  X re-multiline  ///
+                X re-multiline  ///
 ```
 
 <h2 id="word-lang">
@@ -115,13 +115,13 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Quotes]        ysh-string    "x is $x"  $"x is $x"  r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
                   triple-quoted """  $"""  r'''  u'''  b'''
-                  X tagged-str  "<span id=$x>"html
+                X tagged-str    "<span id=$x>"html
   [Substitutions] expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
                   var-splice    @myarray @ARGV
                   command-sub   @(split command)
-  [Formatting]    X ysh-printf  ${x %.3f}
-                  X ysh-format  ${x|html}
+  [Formatting]  X ysh-printf    ${x %.3f}
+                X ysh-format    ${x|html}
 ```
 
 <h2 id="builtin-cmd">
@@ -136,7 +136,7 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [Handle Errors] try                    Run with errexit, set _status _error
                   boolstatus             Enforce 0 or 1 exit status
                   error                  error 'failed' (status=2)
-  [Shell State]   ysh-cd   ysh-shopt     compatible, and takes a block
+  [Shell State]   ysh-cd       ysh-shopt compatible, and takes a block
                   shvar                  Temporary modify global settings
                   ctx                    Share and update a temporary "context"
                   push-registers         Save registers like $?, PIPESTATUS
@@ -147,15 +147,15 @@ Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
   [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
                   write                  Like echo, with --, --sep, --end
-                  fork   forkwait        Replace & and (), and takes a block
+                  fork         forkwait  Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
-                  X dbg                  Only thing that can be used in funcs
-                  X log   X die          common functions (polyfill)
-  [Hay Config]    hay   haynode          For DSLs and config files
+                X dbg                    Only thing that can be used in funcs
+                X log        X die       Common functions (polyfill)
+  [Hay Config]    hay          haynode   For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
                   json8                  read write
-                  X packle               read write, Graph-shaped
+                X packle                 read write, graph-shaped
 X [TSV8]          rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
                   group-by               add a column with a group ID [ext]
@@ -168,9 +168,14 @@ X [TSV8]          rows                   pick rows; dplyr filter()
                   parseArgs()
 X [Testing]       describe               Test harness
                   assert                 takes an expression
+```
+
+<!--
+Naming ideas:
+
 X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
-```
+-->
 
 <h2 id="option">
   Shell Options (<a class="group-link" href="chap-option.html">option</a>)
@@ -244,47 +249,51 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-special-var
-  [YSH Vars]      ARGV   X ENV   X _ESCAPE
+  [YSH Vars]      ARGV              X ENV                 X _ESCAPE
                   _this_dir
-  [YSH Status]    _status   _error
-                  _pipeline_status   _process_sub_status
-  [YSH Tracing]   SHX_indent   SHX_punct   SHX_pid_str
+  [YSH Status]    _status             _error
+                  _pipeline_status    _process_sub_status
+  [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str
   [YSH read]      _reply
   [History]       YSH_HISTFILE
   [Oils VM]       OILS_VERSION
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
-                  OILS_GC_STATS   OILS_GC_STATS_FD
-X [Wok]           _filename   _line
-X [Builtin Sub]   _buffer
+                  OILS_GC_STATS       OILS_GC_STATS_FD
 ```
+
+<!-- ideas 
+X [Wok]           _filename           _line
+X [Builtin Sub]   _buffer
+-->
+
 
 <h2 id="type-method">
   Builtin Types and Methods (<a class="group-link" href="chap-type-method.html">type-method</a>)
 </h2>
 
 ```chapter-links-type-method
-  [Primitive] Bool   Int   Float   Str   Slice   Range
-  [Str]       X find()   replace()
-              trim()   trimStart()   trimEnd()
+  [Primitive] Bool    Int    Float   Str   Slice   Range
+  [Str]     X find()         replace()
+              trim()         trimStart()   trimEnd()
               startsWith()   endsWith()
-              upper()   lower()
-              search()   leftMatch()
-  [Match]     group()   start()   end()
-              X groups()   X groupDict()
-  [List]      append()   pop()   extend()   indexOf()
-              X insert()   X remove()   reverse()
-  [Dict]      keys()   values()   X get()   X erase()
-              X inc()   X accum()
-X [Func]      name()   location()   toJson()
-X [Proc]      name()   location()   toJson()
-X [Module]    name()   filename()
+              upper()        lower()
+              search()       leftMatch()
+  [Match]     group()        start()       end()
+            X groups()     X groupDict()
+  [List]      append()       pop()         extend()    indexOf()
+            X insert()     X remove()      reverse()
+  [Dict]      keys()         values()    X get()     X erase()
+            X inc()        X accum()
+X [Func]      name()         location()    toJson()
+X [Proc]      name()         location()    toJson()
+X [Module]    name()         filename()
   [Place]     setValue()
-  [IO]        X eval()   X captureStdout()
+  [IO]      X eval()       X captureStdout()
               promptVal()
-              X time()   X strftime()
-              X glob()
+            X time()       X strftime()
+            X glob()
   [Quotation] Expr   Command
-  [Code]      BuiltinFunc   BuiltinMethod
+  [Code]      BuiltinFunc    BuiltinMethod
 X [Guts]      heapId()
 ```
 
@@ -293,25 +302,28 @@ X [Guts]      heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()   type()   X repeat()
-  [Conversions]   bool()   int()   float()   str()   list()   dict()
-                  X chr()   X ord()   X runes()
-X [Str]           strcmp()   X split()   shSplit()
-  [List]          join()   any()   all()
-  [Collections]   X copy()   X deepCopy()
-  [Word]          glob()   maybe()
-  [Math]          abs()   max()   min()   X round()   sum()
-  [Serialize]     toJson()   fromJson()
-                  toJson8()   fromJson8()
-X [J8 Decode]     J8.Bool()   J8.Int()  ...
-X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
-                  quoteMake()   quoteNinja()
-  [Pattern]       _group()   _start()   _end()
+  [Values]        len()        type()   X repeat()
+  [Conversions]   bool()       int()      float()   str()   list()   dict()
+                X chr()      X ord()    X runes()
+  [Str]         X strcmp()   X split()    shSplit()
+  [List]          join()       any()      all()
+  [Collections] X copy()     X deepCopy()
+  [Word]          glob()       maybe()
+  [Math]          abs()        max()      min()   X round()   sum()
+  [Serialize]     toJson()     fromJson()
+                  toJson8()    fromJson8()
+X [J8 Decode]     J8.Bool()    J8.Int()   ...
+  [Pattern]       _group()     _start()   _end()
   [Introspection] shvarGet()   getVar()   evalExpr()
   [Hay Config]    parseHay()   evalHay()
-X [Wok]           _field()
-X [Hashing]       sha1dc()   sha256()
+X [Hashing]       sha1dc()     sha256()
 ```
+
+<!-- ideas
+X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
+                  quoteMake()   quoteNinja()
+X [Wok]           _field()
+-->
 
 <h2 id="plugin">
   Plugins and Hooks (<a class="group-link" href="chap-plugin.html">plugin</a>)
