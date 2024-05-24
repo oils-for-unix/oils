@@ -220,7 +220,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                     if isinstance(base_t, UnionType):
                         name_base = str(base_t.items[0])
 
-                    else:
+                    elif base_t:
                         name_base = str(base_t)
 
                 elif isinstance(expr.base.expr, IndexExpr):
@@ -228,7 +228,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                     if isinstance(base_t, UnionType):
                         name_base = str(base_t.items[0])
 
-                    else:
+                    elif base_t:
                         name_base = str(base_t)
 
                 else:
@@ -243,8 +243,8 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
                 return self.get_name(expr.base)
 
         elif isinstance(expr, CallExpr):
-            #print('RHS', str(self.types[expr]))
             pass
+            #print(self.types.get(expr))
 
         else:
             pass
@@ -583,6 +583,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
             func_name = '%s.%s' % (self.current_class_name, o.name)
 
         func_name = _StripMycpp('%s.%s' % (self.full_module_name, func_name))
+        if func_name.endswith('.__init__'):
+            func_name = func_name[:-len('.__init__')]
+
         self.current_func_name = func_name
 
         for t, name in zip(typ.arg_types, typ.arg_names):
@@ -625,7 +628,7 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         for b in o.base_type_exprs:
             self.log('  base_type_expr %s', b)
         self.indent += 1
-        self.current_class_name = o.name
+        self.current_class_name = _StripMycpp(o.fullname)
         self.accept(o.defs)
         self.current_class_name = None
         self.indent -= 1
