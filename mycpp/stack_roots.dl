@@ -8,11 +8,6 @@
 // GC.
 .type Statement <: number
 
-.type Location = [
-	func: Function,
-	stmt: Statement
-]
-
 .comp DiGraph {
 	.decl node(f:Function, s:Statement)
 	.decl edge(f:Function, u:Statement, g:Function, v:Statement)
@@ -23,7 +18,7 @@
 
 	reachable(f, s1, g, s2) :- edge(f, s1, g, s2).
 	reachable(f, s1, f, s3) :- reachable(f, s1, f, s2), edge(f, s2, f, s3).
-	reachable(f, s1, g, s3) :- edge(f, s2, g, 0), reachable(f, s1, f, s2), reachable(g, 0, g, s3).
+	//reachable(f, s1, g, s3) :- edge(f, s2, g, 0), reachable(f, s1, f, s2), reachable(g, 0, g, s3).
 }
 
 // Represent a program as a simplified control flow graph, a directed graph of
@@ -34,7 +29,7 @@
 .input cf_edge
 
 // True if the GC is invoked, directly or indirectly, within Statement X.
-.decl collect(loc:Location)
+.decl collect(f:Function, s:Statement)
 .input collect
 
 // Statements can define and use variables.
@@ -43,23 +38,23 @@
 
 
 // use(x, v) means Statement x uses Var v.
-.decl use(loc:Location, v:Reference)
+.decl use(f:Function, s:Statement, v:Reference)
 .input use
 
 // def(x, v) means Statement x defines Var v.
-.decl def(loc:Location, v:Reference)
+.decl def(f:Function, s:Statement, v:Reference)
 .input def
 
-.decl assign(loc:Location, x:Reference, y:Reference)
+.decl assign(f:Function, s:Statement, x:Reference, y:Reference)
 .input assign
 
-.decl call(caller:Location, callee:Function)
+.decl call(caller:Function, s:Statement, callee:Function)
 .input call
 
-.decl bind(caller:Location, caller_arg:Reference, callee:Function, callee_arg:symbol)
+.decl bind(caller:Function, s:Statement, caller_arg:Reference, callee:Function, callee_arg:symbol)
 .input bind
 
-.decl alias(a:Location, vf:Reference, b:Location, vg:Reference)
+.decl alias(f:Function, sf:Statement, vf:Reference, g:Function, sg:Statement, vg:Reference)
 .output alias
 
 .decl escaped_vars(f:Function, v:symbol)
@@ -74,8 +69,8 @@
 // Control flow graph.
 .init CFGraph = DiGraph
 CFGraph.edge(f, s1, f, s2) :- cf_edge(f, s1, s2).
-CFGraph.edge(f, s1, g, 0) :- call([f, s1], g).
-CFGraph.reachable(f, s, "heap", -1) :- CFGraph.node(f, s).
+CFGraph.edge(f, s1, g, 0) :- call(f, s1, g).
+//CFGraph.reachable(f, s, "heap", -1) :- CFGraph.node(f, s).
 
 // root_vars(v) means that Var v needs a stack root to avoid getting swept up
 // by the GC and breaking a downstream dereference. This is the main output of
@@ -86,47 +81,52 @@ CFGraph.reachable(f, s, "heap", -1) :- CFGraph.node(f, s).
 // Minimal set of roots. Only generate StackRoot for a variable if it was
 // declared before a GC statement and used after the GC statement.
 root_vars(f, v) :-
-	def([f, x], $Variable(v)),
-	collect([f, y]),
-	use([f, z], $Variable(v)),
+	def(f, x, $Variable(v)),
+	collect(f, y),
+	use(f, z, $Variable(v)),
 	CFGraph.reachable(f, x, f, y),
 	CFGraph.reachable(f, y, f, z).
 
 // a = ...
 // b = a
-alias([f, s1], $Variable(v), [f, s2], $Variable(v2)) :-
-	def([f, s1], $Variable(v)),
-	assign([f, s2], $Variable(v2), $Variable(v)),
+alias(f, s1, $Variable(v), f, s2, $Variable(v2)) :-
+	def(f, s1, $Variable(v)),
+	assign(f, s2, $Variable(v2), $Variable(v)),
 	CFGraph.reachable(f, s1, f, s2).
 // a.b = ...
 // c = a.b
-alias(["heap", -1], $Member(c, m), [f, s2], r) :-
-	assign([_, _], $Member(c, m), _),
-	assign([f, s2], r, $Member(c, m)).
+alias("heap", -1, $Member(c, m), f, s2, r) :-
+	assign(_, _, $Member(c, m), _),
+	assign(f, s2, r, $Member(c, m)).
 // a = ...
 // b.c = a
-alias([f, s1], $Variable(v), ["heap", -1], $Member(c, m)) :-
-	def([f, s1], $Variable(v)),
-	assign([f, s2], $Member(c, m), $Variable(v)),
+alias(f, s1, $Variable(v), "heap", -1, $Member(c, m)) :-
+	def(f, s1, $Variable(v)),
+	assign(f, s2, $Member(c, m), $Variable(v)),
 	CFGraph.reachable(f, s1, f, s2).
+// Common recursive case: assignment to a member via a constructor. This takes
+// some pressure off the general inductive case below which is a much bigger set.
+alias(f, s1, $Variable(v), "heap", -1, $Member(c, m)) :-
+	bind(f, s1, $Variable(v), g, arg),
+	assign(g, _, $Member(c, m), $Variable(arg)).
 // a = ...
 // func(a)
-alias([f, s1], $Variable(v), [g, 0], $Variable(v2)) :-
-	def([f, s1], $Variable(v)),
-	bind([f, s2], $Variable(v), g, v2),
+alias(f, s1, $Variable(v), g, 0, $Variable(v2)) :-
+	def(f, s1, $Variable(v)),
+	bind(f, s2, $Variable(v), g, v2),
 	CFGraph.reachable(f, s1, f, s2).
-// Inductive case
-alias([f, s1], r1, [h, s2], r3) :-
-	alias([f, s1], r1, [_, _], r2),
-	alias([_, _], r2, [h, s2], r3).
+// Inductive case.
+alias(f, s1, r, h, s2, r3) :-
+	alias(f, s1, r, g, _, r2),
+	alias(g, _, r2, h, s2, r3).
 
 escaped_vars(f, v) :-
-	alias([f, _], $Variable(v), [g, _], _), f != g.
+	alias(f, _, $Variable(v), g, _, _), f != g.
 escaped_vars(f, v) :-
-	alias([f, _], $Variable(v), [f, _], $Variable(v2)),
+	alias(f, _, $Variable(v), f, _, $Variable(v2)),
 	escaped_vars(f, v2).
 
-def(l, r) :- assign(l, r, _).
+def(f, s, r) :- assign(f, s, r, _).
 
 // Conservative set of roots. Generate StackRoot for a variable if there is a
 // path from the statement it was defined in to/from a GC statement in any direction.
