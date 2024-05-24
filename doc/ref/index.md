@@ -13,26 +13,12 @@ Oils Reference
       padding-bottom: 0.2em;
       padding-left: 1em;
       padding-right: 1em;
+      font-size: x-large;
   }
 </style>
 
-View the complete reference here, or use the `help` command.
-
-(in progress)
-
-<!--
-Go back to [All Docs on Oils](../index.html) for design docs and tutorials.
--->
-
-<!-- don't need TOC since it distracts from the important links
-<div id="toc">
-</div>
--->
-
-## HTML
-
-The reference has **three** tables of contents, which link to topics in 15
-chapters.
+This reference has **three** tables of contents.  They link to topics within 15
+chapters.  (in progress)
 
 <div class="highlight">
 
@@ -57,8 +43,7 @@ chapters.
 
 <div class="highlight">
 
-[**Data Notation Table of Contents**](toc-data.html) - Languages for data are
-complementary to shell programs.
+[**Data Notation Table of Contents**](toc-data.html)
 
 </div>
 
@@ -68,34 +53,34 @@ complementary to shell programs.
 
 ## `help` builtin command
 
-When you type `help` in OSH or YSH, the text is derived from this reference.
-Most topics show you a URL.
+When you type `help` in OSH or YSH, it shows a URL to this reference, or text
+extracted from it.
 
-## About This Reference
+## About
 
-### Source Dir
+### Source
 
 [The source code]($oils-src:doc/) is a simple tree of Markdown files:
 
-    doc/
-      release-index.md     # /release/$VERSION/
+    REPO/
+      doc/
+        release-index.md     # /release/$VERSION/
 
-      index.md             # All Docs on Oils, /release/$VERSION/doc/
-      getting-started.md
-      ...
-
-      ref/
-        index.md           # this page, the Oils Reference
-        toc-osh.md         # OSH topics
-        toc-ysh.md         # YSH topics
-        toc-data.md        # Data language topics
-
-        chap-cmd-lang.md   # chapter on the command language
-        chap-front-end.md
+        index.md             # All Docs on Oils, /release/$VERSION/doc/
+        getting-started.md
         ...
 
+        ref/
+          index.md           # this page, the Oils Reference
+          toc-osh.md         # OSH topics
+          toc-ysh.md         # YSH topics
+          toc-data.md        # Data language topics
 
-### URLs
+          chap-cmd-lang.md   # chapter on the command language
+          chap-front-end.md
+          ...
+
+### HTML
 
 The URLs mirror the source code, with minor differences:
 

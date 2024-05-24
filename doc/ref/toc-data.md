@@ -7,11 +7,21 @@ preserve_anchor_case: yes
 Data Notation Table of Contents
 ===
 
-These are links to topics in the [Oils Reference](index.html).
+Shell programs can be built on well-defined data formats.
 
-Siblings: [OSH Topics](toc-osh.html), [YSH Topics](toc-ysh.html)
+This page is part of the [Oils Reference](index.html).  (Siblings: [OSH
+contents](toc-osh.html), [YSH contents](toc-ysh.html))
 
+<!--
 <div id="toc">
+</div>
+-->
+
+<div class="custom-toc">
+
+[front-end](#front-end) &nbsp; [j8-notation](#j8-notation) &nbsp;
+[packle](#packle) &nbsp; [errors](#errors) &nbsp;
+
 </div>
 
 <h2 id="front-end">

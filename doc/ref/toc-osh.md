@@ -9,11 +9,23 @@ OSH Table of Contents
 
 [OSH]($xref) is a POSIX- and [bash]($xref)-compatible shell.
 
-This page has links to topics in the [Oils Reference](index.html).
+This page is part of the [Oils Reference](index.html).  (Siblings: [YSH
+contents](toc-ysh.html), [Data contents](toc-data.html))
 
-Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
-
+<!--
 <div id="toc">
+</div>
+-->
+
+<div class="custom-toc">
+
+[front-end](#front-end) &nbsp; [cmd-lang](#cmd-lang) &nbsp;
+[osh-assign](#osh-assign) &nbsp; [word-lang](#word-lang) &nbsp;
+[mini-lang](#mini-lang) &nbsp;
+[builtin-cmd](#builtin-cmd) &nbsp; [option](#option) &nbsp;
+[special-var](#special-var) &nbsp;
+[plugin](#plugin)
+
 </div>
 
 

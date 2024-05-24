@@ -7,16 +7,21 @@ preserve_anchor_case: yes
 YSH Table of Contents
 =====================
 
-[YSH]($xref) is shell with familiar syntax, JSON-like data structures, and
-more.  It handles errors properly.
+[YSH]($xref) is shell with a familiar syntax, JSON-like data structures, good
+error handling, and more.
 
-This page has links to topics in the [Oils Reference](index.html).
+This page is part of the [Oils Reference](index.html).  (Siblings: [OSH
+contents](toc-osh.html), [Data contents](toc-data.html))
 
-Siblings: [OSH Topics](toc-osh.html), [Data Topics](toc-data.html)
+<div class="custom-toc">
 
-<div id="toc">
+[front-end](#front-end) &nbsp; [cmd-lang](#cmd-lang) &nbsp;
+[expr-lang](#expr-lang) &nbsp; [word-lang](#word-lang) &nbsp;
+[builtin-cmd](#builtin-cmd) &nbsp; [option](#option) &nbsp;
+[special-var](#special-var) &nbsp; [type-method](#type-method) &nbsp;
+[builtin-func](#builtin-func) &nbsp; [plugin](#plugin)
+
 </div>
-
 
 <h2 id="front-end">
   Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)

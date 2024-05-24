@@ -4,6 +4,15 @@
   }
 }
 
+/* like web/toc.css */
+.custom-toc {
+  background-color: oldlace;
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+
 a:link {
   text-decoration: none;
 }
