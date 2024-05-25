@@ -7,6 +7,8 @@ from collections import defaultdict
 
 from mycpp.util import log
 
+from typing import Optional
+
 _ = log
 
 
@@ -91,3 +93,128 @@ class Virtual(object):
             return self.can_reorder_fields[class_name]
         else:
             return True  # by default they can be reordered
+
+
+class Fact(object):
+    """
+    An abstract fact. These can be used to build up datalog programs.
+    """
+    def __init__(self) -> None:
+        pass
+
+    def name(self) -> str:
+        raise NotImplementedError()
+
+    def Generate(self, func: str, statement: int) -> str:
+        raise NotImplementedError()
+
+
+class ControlFlowGraph(object):
+    """
+    A simple control-flow graph. See unit tests for usage.
+
+    Statements are assigned unique numeric IDs. Control flow is represented as
+    directed edges between statements.
+
+    Statements can carry annotations called facts.
+    """
+
+    def __init__(self) -> None:
+        self.statement_counter: int = 0
+        self.edges: set[tuple[int, int]] = set({})
+        self.loop_stack: list[int] = []
+        self.branch_exits: list[int] = None
+
+        # order doesn't actually matter here, but sets require elements to be
+        # hashable
+        self.facts: dict[int, list[Fact]] = defaultdict(list)
+
+    def AddEdge(self, pred: int, succ: int) -> None:
+        """
+        Add a directed edge from pred to succ.
+        """
+        self.edges.add((pred, succ))
+
+    def AddStatement(self, pred: Optional[int] = None) -> int:
+        """
+        Add a new statement and return its ID. If pred is set, it will be used
+        as the new statement's predecessor instead of the last statement
+        created.
+        """
+        if self.branch_exits is not None:
+            assert pred is None
+            self.statement_counter += 1
+            for s in self.branch_exits:
+                self.AddEdge(s, self.statement_counter)
+
+            self.branch_exits = None
+
+        else:
+            pred = pred or self.statement_counter
+            self.statement_counter += 1
+            self.AddEdge(pred, self.statement_counter)
+
+        return self.statement_counter
+    
+    def AddFact(self, statement: int, fact: Fact) -> None:
+        """
+        Annotate a statement with a fact.
+        """
+        self.facts[statement].append(fact)
+
+    def SetBranchExits(self, exits: list[int]) -> None:
+        """
+        Set a list of if statement arm exit points.
+        """
+        assert self.branch_exits is None
+        self.branch_exits = list(exits)
+
+    def CurrentLoop(self) -> Optional[int]:
+        """
+        Return the statement ID that corresponds to the entry point of the loop
+        on the top of the loop stack. This can be used for things like continue
+        statements.
+        """
+        if len(self.loop_stack):
+            return self.loop_stack[-1]
+
+        return None
+
+    def PushLoop(self) -> None:
+        """
+        Push the current statement onto the loop stack. It will be treated as
+        the entry point for the loop.
+        """
+        self.loop_stack.append(self.statement_counter)
+
+    def PopLoop(self) -> None:
+        """
+        Pop the current loop from the stack and add back-edges from the final
+        statement(s) of the loop to the entry point.
+        """
+        loop_entrance = self.loop_stack.pop()
+        if self.branch_exits is not None:
+            exits = self.branch_exits
+            if len(self.loop_stack) == 0:
+                self.branch_exits = None
+
+            for s in exits:
+                self.AddEdge(s, loop_entrance)
+
+        self.AddEdge(self.statement_counter, loop_entrance)
+
+
+class CfgLoopContext(object):
+    """
+    Context manager to make dealing with loops easier.  
+    """
+    def __init__(self, cfg: ControlFlowGraph) -> None:
+        self.cfg = cfg
+        self.entry = self.cfg.AddStatement()
+        self.cfg.PushLoop()
+
+    def __enter__(self) -> None:
+        return self
+
+    def __exit__(self, *args) -> None:
+        self.cfg.PopLoop()
