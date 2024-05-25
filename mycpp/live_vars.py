@@ -582,7 +582,6 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         if self.current_class_name:
             func_name = '%s.%s' % (self.current_class_name, o.name)
 
-        func_name = _StripMycpp('%s.%s' % (self.full_module_name, func_name))
         if func_name.endswith('.__init__'):
             func_name = func_name[:-len('.__init__')]
 

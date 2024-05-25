@@ -203,30 +203,30 @@ class LiveVars(object):
             for parts in statements:
                 action = parts[0]
                 if action == 'collect':
-                    collect_f.write('[%s, %d]\n' % (function, statement))
+                    collect_f.write('%s\t%d\n' % (function, statement))
 
                 elif action == 'call':
                     callee = parts[1]
-                    call_f.write('[%s, %d]\t%s\n' % (function,
+                    call_f.write('%s\t%d\t%s\n' % (function,
                                                         statement,
                                                         callee))
                 elif action == 'assign':
                     lhs, rhs = parts[1:]
-                    assign_f.write('[%s, %d]\t%s\t%s\n' % (function,
+                    assign_f.write('%s\t%d\t%s\t%s\n' % (function,
                                                            statement,
                                                            lhs,
                                                            rhs))
 
                 elif action == 'bind':
                     arg_val, callee, arg_name = parts[1:]
-                    bind_f.write('[%s, %d]\t%s\t%s\t%s\n' % (function,
+                    bind_f.write('%s\t%d\t%s\t%s\t%s\n' % (function,
                                                            statement,
                                                            arg_val,
                                                            callee, arg_name))
 
                 else:
                     var = parts[1]
-                    action_f[action].write('[%s, %d]\t%s\n' %
+                    action_f[action].write('%s\t%d\t%s\n' %
                                            (function, statement, var))
 
 
@@ -252,7 +252,7 @@ class LiveVars(object):
 
         subprocess.check_call(
             [
-                '_bin/cxx-opt-Ivendor_std=c++17/mycpp/stack_roots',
+                '_bin/cxx-opt-Ivendor_std=c++17_fopenmp/mycpp/stack_roots',
                 '-F', facts_dir,
                 '-D', '_tmp',
             ]
