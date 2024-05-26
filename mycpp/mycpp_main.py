@@ -311,6 +311,7 @@ def main(argv):
 
     local_vars = {}  # FuncDef node -> (name, c_type) list
     field_gc = {}  # ClassDef node -> maskof_Foo() string, if it's required
+    cfgs = {} # fully qualified function name -> control flow graph
 
     log('\tmycpp pass: PROTOTYPES')
 
@@ -328,10 +329,13 @@ def main(argv):
                                   local_vars=local_vars,
                                   field_gc=field_gc,
                                   virtual=virtual,
+                                  cfgs=cfgs,
                                   decl=True)
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
+
+    pass_state.DumpControlFlowGraphs(cfgs)
 
     log('\tmycpp pass: IMPL')
 

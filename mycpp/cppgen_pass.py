@@ -11,15 +11,17 @@ from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         Overloaded, CallableType, UnionType, UninhabitedType,
                         PartialType, TypeAliasType)
-from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
+from mypy.nodes import (Block, Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
                         FuncDef, UnaryExpr, OpExpr, ComparisonExpr, CallExpr,
-                        IntExpr, ListExpr, DictExpr, ListComprehension)
+                        IntExpr, ListExpr, DictExpr, ListComprehension,
+                        ForStmt, WhileStmt)
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
 from mycpp.util import log, join_name, split_py_name
 from mycpp import util
+from mycpp import pass_state
 
 from typing import Tuple, List
 
@@ -435,7 +437,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  field_gc=None,
                  decl=False,
                  forward_decl=False,
-                 stack_roots_warn=None):
+                 stack_roots_warn=None,
+                 cfgs=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -473,6 +476,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_method_name = None
 
         self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
+
+        self.cfgs = cfgs
+        self.loop_stack = []
 
         # HACK for conditional import inside mylib.PYTHON
         # in core/shell.py
@@ -528,6 +534,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         ind_str = self.indent * '  '
         self.decl_write(ind_str + msg, *args)
 
+    def current_cfg(self):
+        if not self.current_func_node or self.cfgs is None:
+            return None
+
+        return self.cfgs.get(split_py_name(self.current_func_node.fullname))
     #
     # COPIED from IRBuilder
     #
@@ -556,6 +567,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 return res
             else:
                 try:
+                    cfg = self.current_cfg()
+                    if cfg and not isinstance(node, Block) and not isinstance(node, ForStmt) and not isinstance(node, WhileStmt):
+                        cfg.AddStatement()
+
                     node.accept(self)
                 except UnsupportedException:
                     pass
@@ -1718,6 +1733,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(stmt)
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
+        cfg = self.current_cfg()
+        if not cfg:
+            self._visit_for_stmt(o)
+            return
+
+        with pass_state.CfgLoopContext(cfg) as loop:
+            self.loop_stack.append(loop)
+            self._visit_for_stmt(o)
+            self.loop_stack.pop()
+
+    def _visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
         if 0:
             self.log('ForStmt')
             self.log('  index_type %s', o.index_type)
@@ -2016,35 +2042,44 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def _write_cases(self, switch_expr, cases, default_block):
         """ Write a list of (expr, block) pairs """
 
-        for expr, body in cases:
-            assert expr is not None, expr
-            if not isinstance(expr, CallExpr):
-                self.report_error(expr,
-                                  'Expected call like case(x), got %s' % expr)
+        cfg = self.current_cfg()
+        branch_point = None
+        if cfg:
+            branch_point = cfg.CurrentStatement()
+
+        with pass_state.CfgBranchContext(cfg, branch_point) as branch_ctx:
+            for expr, body in cases:
+                assert expr is not None, expr
+                if not isinstance(expr, CallExpr):
+                    self.report_error(expr,
+                                      'Expected call like case(x), got %s' % expr)
+                    return
+
+                for i, arg in enumerate(expr.args):
+                    if i != 0:
+                        self.def_write('\n')
+                    self.def_write_ind('case ')
+                    self.accept(arg)
+                    self.def_write(': ')
+
+                with branch_ctx.AddBranch():
+                    self.accept(body)
+
+                self.def_write_ind('  break;\n')
+
+            if default_block is None:
+                # an error occurred
+                return
+            if default_block is False:
+                # This is too restrictive
+                #self.report_error(switch_expr,
+                #                  'switch got no else: for default block')
                 return
 
-            for i, arg in enumerate(expr.args):
-                if i != 0:
-                    self.def_write('\n')
-                self.def_write_ind('case ')
-                self.accept(arg)
-                self.def_write(': ')
-
-            self.accept(body)
-            self.def_write_ind('  break;\n')
-
-        if default_block is None:
-            # an error occurred
-            return
-        if default_block is False:
-            # This is too restrictive
-            #self.report_error(switch_expr,
-            #                  'switch got no else: for default block')
-            return
-
-        self.def_write_ind('default: ')
-        self.accept(default_block)
-        # don't write 'break'
+            self.def_write_ind('default: ')
+            with branch_ctx.AddBranch():
+                self.accept(default_block)
+            # don't write 'break'
 
     def _write_switch(self, expr, o):
         """Write a switch statement over integers."""
@@ -2142,55 +2177,63 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         cases = []
         default_block = self._collect_cases(if_node, cases)
 
+        branch_point = None
+        cfg = self.current_cfg()
+        if cfg:
+            branch_point = cfg.CurrentStatement()
+
         grouped_cases = self._str_switch_cases(cases)
         # Warning: this consumes internal iterator
         #self.log('grouped %s', list(grouped_cases))
 
-        for str_len, group in grouped_cases:
-            self.def_write_ind('case %s: {\n' % str_len)
-            if_num = 0
-            for _, case_str, block in group:
+        with pass_state.CfgBranchContext(cfg, branch_point) as branch_ctx:
+            for str_len, group in grouped_cases:
+                self.def_write_ind('case %s: {\n' % str_len)
+                if_num = 0
+                for _, case_str, block in group:
+                    self.indent += 1
+
+                    else_str = '' if if_num == 0 else 'else '
+                    self.def_write_ind('%sif (str_equals_c(%s, %s, %d)) ' %
+                                       (else_str, switch_var.name,
+                                        PythonStringLiteral(case_str), str_len))
+                    with branch_ctx.AddBranch():
+                        self.accept(block)
+
+                    self.indent -= 1
+                    if_num += 1
+
                 self.indent += 1
-
-                else_str = '' if if_num == 0 else 'else '
-                self.def_write_ind('%sif (str_equals_c(%s, %s, %d)) ' %
-                                   (else_str, switch_var.name,
-                                    PythonStringLiteral(case_str), str_len))
-                self.accept(block)
-
+                self.def_write_ind('else {\n')
+                self.def_write_ind('  goto str_switch_default;\n')
+                self.def_write_ind('}\n')
                 self.indent -= 1
-                if_num += 1
 
-            self.indent += 1
-            self.def_write_ind('else {\n')
-            self.def_write_ind('  goto str_switch_default;\n')
-            self.def_write_ind('}\n')
+                self.def_write_ind('}\n')
+                self.def_write_ind('  break;\n')
+
+            if default_block is None:
+                # an error occurred
+                return
+            if default_block is False:
+                self.report_error(switch_expr,
+                                  'str_switch got no else: for default block')
+                return
+
+            self.def_write('\n')
+            self.def_write_ind('str_switch_default:\n')
+            self.def_write_ind('default: ')
+            with branch_ctx.AddBranch():
+                self.accept(default_block)
+
             self.indent -= 1
-
             self.def_write_ind('}\n')
-            self.def_write_ind('  break;\n')
-
-        if default_block is None:
-            # an error occurred
-            return
-        if default_block is False:
-            self.report_error(switch_expr,
-                              'str_switch got no else: for default block')
-            return
-
-        self.def_write('\n')
-        self.def_write_ind('str_switch_default:\n')
-        self.def_write_ind('default: ')
-        self.accept(default_block)
-
-        self.indent -= 1
-        self.def_write_ind('}\n')
 
     def visit_with_stmt(self, o: 'mypy.nodes.WithStmt') -> T:
         """
         Translate only blocks of this form:
 
-        with switch(x) as case:
+        WIth switch(x) as case:
           if case(0):
             print('zero')
           elif case(1, 2, 3):
@@ -2256,7 +2299,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.def_write('};\n\n')
 
             #self.def_write_ind('')
-            self._write_body(o.body.body)
+            cfg = self.current_cfg()
+            entry = None
+            if cfg:
+                entry = cfg.CurrentStatement()
+
+            with pass_state.CfgBlockContext(cfg, entry):
+                self._write_body(o.body.body)
 
             self.indent -= 1
             self.def_write_ind('}\n')
@@ -2402,6 +2451,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         func_name = o.name
+        if self.decl:
+            self.cfgs[split_py_name(o.fullname)] = pass_state.ControlFlowGraph()
 
         virtual = ''
         if self.decl:
@@ -2915,6 +2966,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.def_write(';\n')
 
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
+        cfg = self.current_cfg()
+        if not cfg:
+            self._visit_while_stmt(o)
+            return
+
+        with pass_state.CfgLoopContext(cfg) as loop:
+            self.loop_stack.append(loop)
+            self._visit_while_stmt(o)
+            self.loop_stack.pop()
+
+    def _visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
         self.def_write_ind('while (')
         self.accept(o.expr)
         self.def_write(') ')
@@ -2926,6 +2988,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # return None
         # return my_int + 3;
         self.def_write_ind('return ')
+        cfg = self.current_cfg()
+        if cfg:
+            cfg.AddDeadend(cfg.CurrentStatement())
+
         if o.expr:
             if not (isinstance(o.expr, NameExpr) and o.expr.name == 'None'):
 
@@ -2969,6 +3035,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             )
             return
 
+        cfg = self.current_cfg()
+
         # Omit anything that looks like if __name__ == ...
         if (isinstance(cond, ComparisonExpr) and
                 isinstance(cond.operands[0], NameExpr) and
@@ -3010,23 +3078,41 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(e)
         self.def_write(') ')
 
-        for node in o.body:
-            self.accept(node)
+        cfg = self.current_cfg()
+        branch_point = None
+        if cfg:
+            branch_point = cfg.CurrentStatement()
 
-        if o.else_body:
-            self.def_write_ind('else ')
-            self.accept(o.else_body)
+        with pass_state.CfgBranchContext(cfg, branch_point) as branch_ctx:
+            with branch_ctx.AddBranch():
+                for node in o.body:
+                    self.accept(node)
+
+            if o.else_body:
+                with branch_ctx.AddBranch():
+                    self.def_write_ind('else ')
+                    self.accept(o.else_body)
+
 
     def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
         self.def_write_ind('break;\n')
+        if len(self.loop_stack):
+            self.loop_stack[-1].AddBreak(self.current_cfg().CurrentStatement())
 
     def visit_continue_stmt(self, o: 'mypy.nodes.ContinueStmt') -> T:
+        if len(self.loop_stack):
+            self.loop_stack[-1].AddContinue(self.current_cfg().CurrentStatement())
+
         self.def_write_ind('continue;\n')
 
     def visit_pass_stmt(self, o: 'mypy.nodes.PassStmt') -> T:
         self.def_write_ind(';  // pass\n')
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
+        cfg = self.current_cfg()
+        if cfg:
+            cfg.AddDeadend(cfg.CurrentStatement())
+
         # C++ compiler is aware of assert(0) for unreachable code
         if o.expr and isinstance(o.expr, CallExpr):
             if o.expr.callee.name == 'AssertionError':
@@ -3045,45 +3131,55 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_try_stmt(self, o: 'mypy.nodes.TryStmt') -> T:
         self.def_write_ind('try ')
-        self.accept(o.body)
-        caught = False
+        cfg = self.current_cfg()
+        branch_point = None
+        if cfg:
+            branch_point = cfg.CurrentStatement()
 
-        for t, v, handler in zip(o.types, o.vars, o.handlers):
-            c_type = None
+        with pass_state.CfgBranchContext(cfg, branch_point) as try_ctx:
+            with try_ctx.AddBranch() as try_block:
+                self.accept(o.body)
 
-            if isinstance(t, NameExpr):
-                if t.name in ('IOError', 'OSError'):
-                    self.report_error(
-                        handler,
-                        'Use except (IOError, OSError) rather than catching just one'
-                    )
-                c_type = '%s*' % t.name
+            caught = False
 
-            elif isinstance(t, MemberExpr):
-                # Heuristic
-                c_type = '%s::%s*' % (t.expr.name, t.name)
+            for t, v, handler in zip(o.types, o.vars, o.handlers):
+                c_type = None
 
-            elif isinstance(t, TupleExpr):
-                if len(t.items) == 2:
-                    e1 = t.items[0]
-                    e2 = t.items[1]
-                    if isinstance(e1, NameExpr) and isinstance(e2, NameExpr):
-                        names = [e1.name, e2.name]
-                        names.sort()
-                        if names == ['IOError', 'OSError']:
-                            c_type = 'IOError_OSError*'  # Base class in mylib
+                if isinstance(t, NameExpr):
+                    if t.name in ('IOError', 'OSError'):
+                        self.report_error(
+                            handler,
+                            'Use except (IOError, OSError) rather than catching just one'
+                        )
+                    c_type = '%s*' % t.name
 
-            else:
-                raise AssertionError()
+                elif isinstance(t, MemberExpr):
+                    # Heuristic
+                    c_type = '%s::%s*' % (t.expr.name, t.name)
 
-            if c_type is None:
-                c_type = 'INVALID_TRY_EXCEPT'  # Causes compile error
+                elif isinstance(t, TupleExpr):
+                    if len(t.items) == 2:
+                        e1 = t.items[0]
+                        e2 = t.items[1]
+                        if isinstance(e1, NameExpr) and isinstance(e2, NameExpr):
+                            names = [e1.name, e2.name]
+                            names.sort()
+                            if names == ['IOError', 'OSError']:
+                                c_type = 'IOError_OSError*'  # Base class in mylib
 
-            if v:
-                self.def_write_ind('catch (%s %s) ', c_type, v.name)
-            else:
-                self.def_write_ind('catch (%s) ', c_type)
-            self.accept(handler)
+                else:
+                    raise AssertionError()
+
+                if c_type is None:
+                    c_type = 'INVALID_TRY_EXCEPT'  # Causes compile error
+
+                if v:
+                    self.def_write_ind('catch (%s %s) ', c_type, v.name)
+                else:
+                    self.def_write_ind('catch (%s) ', c_type)
+
+                with try_ctx.AddBranch(try_block.exit):
+                    self.accept(handler)
 
             caught = True
 
