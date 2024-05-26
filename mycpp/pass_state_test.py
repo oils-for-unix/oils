@@ -236,12 +236,16 @@ class ControlFlowGraphTest(unittest.TestCase):
         end = cfg.AddStatement()
         expected_edges = {
             (0, branchA.entry),
+            (branchA.entry, ret),
             (branchA.entry, loop.entry),
             (loop.entry, branchB.entry),
             (branch_point, cont),
+            (cont, loop.entry),
             (branch_point, innerC),
             (innerC, end),
+            (innerC, loop.entry),
         }
+        self.assertEqual(expected_edges, cfg.edges)
 
     def testNedstedIf(self):
         """
