@@ -122,8 +122,9 @@ class ControlFlowGraph(object):
     def __init__(self) -> None:
         self.statement_counter: int = 0
         self.edges: set[tuple[int, int]] = set({})
-        self.loop_stack: list[int] = []
-        self.branch_exits: list[int] = None
+        self.block_stack: list[int] = []
+        self.predecessors: set[int] = set({})
+        self.deadends: set[int] = set({})
 
         # order doesn't actually matter here, but sets require elements to be
         # hashable
@@ -133,26 +134,44 @@ class ControlFlowGraph(object):
         """
         Add a directed edge from pred to succ.
         """
-        self.edges.add((pred, succ))
+        if pred in self.deadends:
+            for w in [u for (u, v) in self.edges if v == pred]:
+                self.AddEdge(w, succ)
+        else:
+            self.edges.add((pred, succ))
 
-    def AddStatement(self, pred: Optional[int] = None) -> int:
+    def AddDeadend(self, statement: int):
+        """
+        Mark a statement as a dead-end (e.g. return or continue).
+        """
+        self.deadends.add(statement)
+
+    def CurrentStatement(self) -> int:
+        """
+        Get the ID of the current statement.
+        """
+        return self.statement_counter
+
+    def AddStatement(self) -> int:
         """
         Add a new statement and return its ID. If pred is set, it will be used
         as the new statement's predecessor instead of the last statement
         created.
         """
-        if self.branch_exits is not None:
-            assert pred is None
+        if len(self.predecessors) and len(self.block_stack) == 0:
             self.statement_counter += 1
-            for s in self.branch_exits:
-                self.AddEdge(s, self.statement_counter)
-
-            self.branch_exits = None
+            self._PopPredecessors(self.statement_counter)
 
         else:
-            pred = pred or self.statement_counter
+            pred = self.statement_counter
+            if len(self.block_stack):
+                pred = self.block_stack[-1]
+
             self.statement_counter += 1
             self.AddEdge(pred, self.statement_counter)
+
+        if len(self.block_stack):
+            self.block_stack[-1] = self.statement_counter
 
         return self.statement_counter
     
@@ -162,59 +181,104 @@ class ControlFlowGraph(object):
         """
         self.facts[statement].append(fact)
 
-    def SetBranchExits(self, exits: list[int]) -> None:
-        """
-        Set a list of if statement arm exit points.
-        """
-        assert self.branch_exits is None
-        self.branch_exits = list(exits)
+    def _PopPredecessors(self, succ: Optional[int] = None) -> None:
+        preds = self.predecessors
+        if preds is not None and succ is not None:
+            for s in preds:
+                self.AddEdge(s, succ)
 
-    def CurrentLoop(self) -> Optional[int]:
-        """
-        Return the statement ID that corresponds to the entry point of the loop
-        on the top of the loop stack. This can be used for things like continue
-        statements.
-        """
-        if len(self.loop_stack):
-            return self.loop_stack[-1]
+        self.predecessors = set({})
 
-        return None
-
-    def PushLoop(self) -> None:
+    def _PushBlock(self, begin: Optional[int] = None) -> None:
         """
-        Push the current statement onto the loop stack. It will be treated as
-        the entry point for the loop.
+        Start a block at the given statement ID.
         """
-        self.loop_stack.append(self.statement_counter)
+        if begin is None:
+            begin = self.AddStatement()
+            self._PopPredecessors(begin)
 
-    def PopLoop(self) -> None:
+        self.block_stack.append(begin)
+        return begin
+
+    def _PopBlock(self, was_if_arm: bool = False) -> int:
         """
-        Pop the current loop from the stack and add back-edges from the final
-        statement(s) of the loop to the entry point.
+        Pop a block from the top of the stack and return the ID of the block's
+        last statement.
         """
-        loop_entrance = self.loop_stack.pop()
-        if self.branch_exits is not None:
-            exits = self.branch_exits
-            if len(self.loop_stack) == 0:
-                self.branch_exits = None
+        assert len(self.block_stack)
+        last = self.block_stack.pop()
+        if len(self.block_stack) and last not in self.deadends:
+            self.block_stack[-1] = last
 
-            for s in exits:
-                self.AddEdge(s, loop_entrance)
+        if was_if_arm and last not in self.deadends:
+            self.predecessors.add(last)
 
-        self.AddEdge(self.statement_counter, loop_entrance)
+        return last
+
+
+class CfgBlockContext(object):
+    """
+    Context manager to make dealing with things like try-except blocks easier.
+    """
+    def __init__(self, cfg: ControlFlowGraph, pred: Optional[int] = None) -> None:
+        self.cfg = cfg
+        if cfg is None:
+            return
+
+        self.entry = self.cfg._PushBlock(pred)
+        self.exit = self.entry
+
+    def __enter__(self) -> None:
+        return self if self.cfg else None
+
+    def __exit__(self, *args) -> None:
+        if not self.cfg:
+            return
+
+        self.exit = self.cfg._PopBlock()
+
+
+class CfgBranchContext(object):
+    """
+    Context manager to make dealing with if-else blocks easier.
+    """
+    def __init__(self, cfg: ControlFlowGraph, pred: int) -> None:
+        self.cfg = cfg
+        self.entry = pred
+        self.exit = self.entry
+        if cfg is None:
+            return
+
+        self.cfg._PushBlock(pred)
+
+    def __enter__(self) -> None:
+        return self if self.cfg else None
+
+    def __exit__(self, *args) -> None:
+        if not self.cfg:
+            return
+
+        self.exit = self.cfg._PopBlock(was_if_arm=True)
 
 
 class CfgLoopContext(object):
     """
-    Context manager to make dealing with loops easier.  
+    Context manager to make dealing with loops easier.
     """
     def __init__(self, cfg: ControlFlowGraph) -> None:
         self.cfg = cfg
-        self.entry = self.cfg.AddStatement()
-        self.cfg.PushLoop()
+        if cfg is None:
+            return
+
+        self.entry = self.cfg._PushBlock()
+        self.exit = self.entry
 
     def __enter__(self) -> None:
-        return self
+        return self if self.cfg else None
 
     def __exit__(self, *args) -> None:
-        self.cfg.PopLoop()
+        if not self.cfg:
+            return
+
+        self.exit = self.cfg._PopBlock()
+        self.cfg.AddEdge(self.exit, self.entry)

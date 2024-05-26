@@ -129,19 +129,24 @@ class ControlFlowGraphTest(unittest.TestCase):
         branch_point = cfg.AddStatement()
 
         # first statement in if block
-        arm0_a = cfg.AddStatement(branch_point)
-        arm0_b = cfg.AddStatement(arm0_a) # block statement 2
-        arm0_c = cfg.AddStatement(arm0_b) # block statement 3
+        with pass_state.CfgBranchContext(cfg, branch_point) as arm0:
+            arm0_a = cfg.AddStatement() # block statement 2
+            arm0_b = cfg.AddStatement() # block statement 2
+            arm0_c = cfg.AddStatement() # block statement 3
 
         # frist statement in elif block
-        arm1_a = cfg.AddStatement(branch_point)
-        arm1_b = cfg.AddStatement(arm1_a) # block statement 2
+        with pass_state.CfgBranchContext(cfg, branch_point) as arm1:
+            arm1_a = cfg.AddStatement()
+            arm1_b = cfg.AddStatement() # block statement 2
 
         # frist statement in else block
-        arm2_a = cfg.AddStatement(branch_point)
-        arm2_b = cfg.AddStatement(arm2_a) # block statement 2
+        with pass_state.CfgBranchContext(cfg, branch_point) as arm2:
+            arm2_a = cfg.AddStatement()
+            arm2_b = cfg.AddStatement() # block statement 2
 
-        cfg.SetBranchExits([arm0_c, arm1_b, arm2_b])
+        self.assertEqual(arm0_c, arm0.exit)
+        self.assertEqual(arm1_b, arm1.exit)
+        self.assertEqual(arm2_b, arm2.exit)
 
         join = cfg.AddStatement()
         end = cfg.AddStatement()
@@ -182,21 +187,109 @@ class ControlFlowGraphTest(unittest.TestCase):
         }
         self.assertEqual(expected_edges, cfg.edges)
 
+    def testDeadends(self):
+        """
+        Make sure we don't create orphans in the presence of continue, return,
+        raise, etc...
+        """
+
+        cfg = pass_state.ControlFlowGraph()
+        with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as branchA:
+            ret = cfg.AddStatement() # return
+            cfg.AddDeadend(ret)
+
+        with pass_state.CfgLoopContext(cfg) as loop:
+            branch_point = cfg.AddStatement()
+            with pass_state.CfgBranchContext(cfg, branch_point) as branchB: # if
+                cont = cfg.AddStatement() # continue
+                cfg.AddEdge(cont, loop.entry)
+                cfg.AddDeadend(cont)
+
+            with pass_state.CfgBranchContext(cfg, branch_point) as branchC: # else
+                innerC = cfg.AddStatement()
+
+        end = cfg.AddStatement()
+        expected_edges = {
+            (0, branchA.entry),
+            (branchA.entry, loop.entry),
+            (loop.entry, branchB.entry),
+            (branch_point, cont),
+            (branch_point, innerC),
+            (innerC, end),
+        }
+
+    def testNedstedIf(self):
+        """
+        The mypy AST represents else-if as nested if-statements inside the else arm.
+        """
+        cfg = pass_state.ControlFlowGraph()
+
+        outer_branch_point = cfg.AddStatement()
+        with pass_state.CfgBranchContext(cfg, outer_branch_point) as branch0: # if
+            branch0_a = cfg.AddStatement()
+
+        with pass_state.CfgBranchContext(cfg, outer_branch_point) as branch1: # else
+            with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as branch2: # else if
+                branch2_a = cfg.AddStatement()
+
+            branch1_a = cfg.AddStatement()
+
+        end = cfg.AddStatement()
+
+        """
+        We expect a graph like this.
+
+                    begin
+                      |
+                outer_branch_point +------
+                      |            |       \
+                  branch0_a        |      branch2.entry
+                      |            |           |
+                      |            |        branch2_a
+                      |            |           |
+                      |            |          /
+                      |            |         /
+                      |            |        /
+                      |            branch1_a
+                      |            /
+                      |           /
+                      |          /
+                      |         /
+                      end _____/
+        """
+        expected_edges = {
+            (0, outer_branch_point),
+            (outer_branch_point, branch0_a),
+            (outer_branch_point, branch2.entry),
+            (branch2.entry, branch2_a),
+            (branch2_a, branch1_a),
+            (branch0.exit, end),
+            (branch1.exit, end),
+            (branch2.exit, end),
+        }
+        self.assertEqual(expected_edges, cfg.edges)
+
 
     def testLoops(self):
         cfg = pass_state.ControlFlowGraph()
 
         with pass_state.CfgLoopContext(cfg) as loopA:
             branch_point = cfg.AddStatement()
-            arm0_a = cfg.AddStatement(branch_point)
-            arm0_b = cfg.AddStatement(arm0_a)
+            with pass_state.CfgBranchContext(cfg, branch_point) as arm0:
+                arm0_a = cfg.AddStatement()
+                arm0_b = cfg.AddStatement()
 
-            arm1_a = cfg.AddStatement(branch_point)
-            arm1_b = cfg.AddStatement(arm1_a)
-            cfg.SetBranchExits([arm0_b, arm1_b])
+            with pass_state.CfgBranchContext(cfg, branch_point) as arm1:
+                arm1_a = cfg.AddStatement()
+                arm1_b = cfg.AddStatement()
+
+            self.assertEqual(arm0_b, arm0.exit)
+            self.assertEqual(arm1_b, arm1.exit)
 
             with pass_state.CfgLoopContext(cfg) as loopB:
                 innerB = cfg.AddStatement()
+
+            self.assertEqual(innerB, loopB.exit)
 
         end = cfg.AddStatement()
 
@@ -233,6 +326,83 @@ class ControlFlowGraphTest(unittest.TestCase):
             (innerB, end),
         }
         self.assertEqual(expected_edges, cfg.edges)
+
+
+    def testLoops2(self):
+        cfg = pass_state.ControlFlowGraph()
+
+        with pass_state.CfgLoopContext(cfg) as loopA:
+            with pass_state.CfgLoopContext(cfg) as loopB:
+                innerB = cfg.AddStatement()
+
+            innerA = cfg.AddStatement()
+
+        end = cfg.AddStatement()
+
+        expected_edges = {
+            (0, loopA.entry),
+            (loopA.entry, loopB.entry),
+            (loopB.entry, innerB),
+            (innerB, innerA),
+            (innerB, loopB.entry),
+            (innerA, loopA.entry),
+            (innerA, end),
+        }
+        self.assertEqual(expected_edges, cfg.edges)
+
+    def testDeepTry(self):
+        """
+        A code snippet like the following.
+
+        1 while i < n:
+        2   for prog in cases:
+        3      try:
+        4        result = f(prog)
+               except ParseError as e:
+        5        num_exceptions += 1
+        6        continue
+        7   i += 1
+
+        8   mylib.MaybeCollect()  # manual GC point
+
+        9 log('num_exceptions = %d', num_exceptions)
+        """
+        cfg = pass_state.ControlFlowGraph()
+
+        with pass_state.CfgLoopContext(cfg) as loopA:
+            with pass_state.CfgLoopContext(cfg) as loopB:
+                with pass_state.CfgBlockContext(cfg) as try_block:
+                    try_s0 = cfg.AddStatement()
+
+                with pass_state.CfgBlockContext(cfg, try_block.exit) as except_block:
+                    except_s0 = cfg.AddStatement()
+                    cont = cfg.AddStatement()
+                    cfg.AddEdge(cont, loopB.entry)
+                    cfg.AddDeadend(cont)
+
+            a_s0 = cfg.AddStatement()
+            a_s1 = cfg.AddStatement()
+
+        log_stmt = cfg.AddStatement()
+        end = cfg.AddStatement()
+
+        expected_edges = {
+            (0, loopA.entry),
+            (loopA.entry, loopB.entry),
+            (loopB.entry, try_block.entry),
+            (try_block.entry, try_s0),
+            (try_s0, except_s0),
+            (try_s0, loopB.entry),
+            (except_s0, cont),
+            (cont, loopB.entry),
+            (try_block.exit, a_s0),
+            (a_s0, a_s1),
+            (a_s1, loopA.entry),
+            (a_s1, log_stmt),
+            (log_stmt, end),
+        }
+        self.assertEqual(expected_edges, cfg.edges)
+
 
 
 if __name__ == '__main__':
