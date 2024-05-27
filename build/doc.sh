@@ -487,15 +487,19 @@ all-ref() {
   rm -f $TEXT_DIR/*
   make-dirs
 
-  # Text cards
-  cards-from-indices
-  # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
-  cards-from-chapters
-
   # Make the indexes and chapters
   for d in doc/ref/*.md; do
     split-and-render $d '' '../../web'
   done
+
+  # Note: if we want a $ref-topic shortcut, we might want to use Ninja to
+  # extract topics from all chapters first, and then make help_meta.json, like
+  # we have _devbuild/gen/help_meta.py.
+
+  # Text cards
+  cards-from-indices
+  # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
+  cards-from-chapters
 
   if command -v pysum; then
     # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could
