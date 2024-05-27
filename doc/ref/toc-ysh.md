@@ -186,68 +186,9 @@ X [External Lang] BEGIN   END   when (awk)
   Shell Options (<a class="group-link" href="chap-option.html">option</a>)
 </h2>
 
-<!-- linkify_stop_col is 42 -->
-
-```chapter-links-option_42
-  [Groups]       strict:all   ysh:upgrade   ysh:all
-  [Strict]       ... More Runtime Errors
-                 strict_argv             No empty argv
-                 strict_arith            Fatal parse errors (on by default)
-                 strict_array            Arrays and strings aren't confused
-                 strict_control_flow     Disallow misplaced keyword, empty arg
-                 strict_errexit          Disallow code that ignores failure
-                 strict_nameref          trap invalid variable names
-                 strict_word_eval        Expose unicode and slicing errors
-                 strict_tilde            Tilde subst can result in error
-               X strict_glob             Parse the sublanguage more strictly
-  [YSH Upgrade]  ... Migrate Existing Code to YSH
-                 parse_at                echo @array @[arrayfunc(x, y)]
-                 parse_brace             if true { ... }; cd ~/src { ... }
-                 parse_equals            x = 'val' in Caps { } config blocks
-                 parse_paren             if (x > 0) ...
-                 parse_proc              proc p { ... }
-                 parse_triple_quote      """$x"""  '''x''' (command mode)
-               X parse_utf8_only         YSH source code must be valid UTF-8
-                 parse_ysh_string        echo r'\' u'\\' b'\\' (command mode)
-                 command_sub_errexit     Synchronous errexit check
-                 process_sub_fail        Analogous to pipefail for process subs
-                 sigpipe_status_ok       status 141 -> 0 in pipelines
-                 simple_word_eval        No splitting, static globbing
-                 xtrace_rich             Hierarchical and process tracing
-                 xtrace_details (-u)     Disable most tracing with +
-                 dashglob (-u)           Disabled to avoid files like -rf
-               X env_dict                Copy environ into ENV dict
-  [YSH Breaking] ... The Full YSH Language
-                 parse_at_all            @ starting any word is an operator
-                 parse_backslash (-u)    Allow bad backslashes in "" and $''
-                 parse_backticks (-u)    Allow legacy syntax `echo hi`
-                 parse_bare_word (-u)    'case unquoted' and 'for x in unquoted'
-                 parse_dollar (-u)       Allow bare $ to mean \$  (maybe $/d+/)
-                 parse_dbracket (-u)     Is legacy [[ allowed?
-                 parse_dparen (-u)       Is (( legacy arithmetic allowed?
-                 parse_ignored (-u)      Parse, but ignore, certain redirects
-                 parse_sh_arith (-u)     Allow legacy shell arithmetic
-                 expand_aliases (-u)     Whether aliases are expanded
-               X no_env_vars             Use $[ENV.PYTHONPATH], not $PYTHONPATH
-               X old_builtins (-u)       local/declare/etc.  pushd/popd/dirs
-                                         ... source  unset  printf  [un]alias
-                                         ... getopts
-               X old_syntax (-u)         ( )   ${x%prefix}  ${a[@]}   $$
-                 simple_echo             echo doesn't accept flags -e -n
-                 simple_eval_builtin     eval takes exactly 1 argument
-                 simple_test_builtin     3 args or fewer; use test not [
-               X simple_trap             Function name only
-                 verbose_errexit         Whether to print detailed errors
-  [Interactive]  redefine_module         'module' builtin always returns 0
-                 redefine_proc_func (-u) Can proc and func be redefined?
-               X redefine_const          Can consts be redefined?
-  [Compat]       eval_unsafe_arith       Allow dynamically parsed a[$(echo 42)]
-  [Internal]     _allow_command_sub      To implement strict_errexit, eval_unsafe_arith
-                 _allow_process_sub      To implement strict_errexit
-                 dynamic_scope           To implement proc and func
-                 _no_debug_trap          Used in pipelines in job control shell
-                 _running_trap           To disable strict_errexit
-                 _running_hay            Hay evaluation
+```chapter-links-option
+  [Groups]       strict:all      ysh:upgrade     ysh:all
+  [YSH Details]  opts-redefine   opts-internal
 ```
 
 <h2 id="special-var">
@@ -278,7 +219,8 @@ X [Builtin Sub]   _buffer
 </h2>
 
 ```chapter-links-type-method
-  [Primitive] Bool    Int    Float   Str   Slice   Range
+  [Primitive] Bool           Int           Float       Str
+              Eggex          Range
   [Str]     X find()         replace()
               trim()         trimStart()   trimEnd()
               startsWith()   endsWith()
@@ -298,7 +240,7 @@ X [Module]    name()         filename()
               promptVal()
             X time()       X strftime()
             X glob()
-  [Quotation] Expr   Command
+  [Quotation] Expr           Command
   [Code]      BuiltinFunc    BuiltinMethod
 X [Guts]      heapId()
 ```

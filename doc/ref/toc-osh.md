@@ -145,12 +145,16 @@ X [Unsupported]   enable
   Global Shell Options (<a class="group-link" href="chap-option.html">option</a>)
 </h2>
 
-```chapter-links-option
-  [Errors]         nounset    pipefail    errexit    inherit_errexit
-  [Globbing]       noglob     nullglob    failglob   dashglob
-  [Debugging]      xtrace   X verbose   X extdebug
-  [Interactive]    emacs      vi
-  [Other Option] X noclobber
+<!-- linkify_stop_col is 20 since we only want section links -->
+
+```chapter-links-option_22
+  [Errors]         nounset -u      errexit -e   inherit_errexit   pipefail
+  [Globbing]       noglob -f       nullglob     failglob        X dotglob
+                   dashglob (true)
+  [Debugging]      xtrace        X verbose    X extdebug
+  [Interactive]    emacs           vi
+  [Other POSIX]  X noclobber
+  [Compat]         eval_unsafe_arith
 ```
 
 <h2 id="special-var">

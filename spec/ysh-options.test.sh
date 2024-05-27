@@ -660,7 +660,7 @@ echo finished
 finished
 ## END
 
-#### redefine_proc for shell functions
+#### Shell functions can't be refined with YSH (redefine_proc_func off)
 
 f() {
   echo 1
@@ -672,7 +672,7 @@ f() {
 }
 echo 'second'
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 f() {
   echo 3
 }
