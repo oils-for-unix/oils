@@ -67,10 +67,14 @@ _ABBREVIATIONS = {
       _Abbrev('oil-help.html?topic=%(value)s#%(value)s'),
 
   # New style: one for every chapter?
+  # Problem: can't use relative links here, because some are from doc/ref, and
+  # some are from doc
   'chap-type-method':
       _Abbrev('chap-type-method.html?topic=%(value)s#%(value)s'),
   'chap-plugin':
       _Abbrev('chap-plugin.html?topic=%(value)s#%(value)s'),
+  'chap-builtin-cmd':
+      _Abbrev('chap-builtin-cmd.html?topic=%(value)s#%(value)s'),
 
    # for blog
   'osh-help-latest':

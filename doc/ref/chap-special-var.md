@@ -61,7 +61,11 @@ Such errors include JSON/J8 encoding/decoding errors, and user errors from the
 
 ### `_pipeline_status`
 
-Alias for [PIPESTATUS]($osh-help).
+After a pipeline of processes is executed, this array contains the exit code of
+each process.
+
+Each exit code is an [Int](chap-type-method.html#Int).  Compare with
+[`PIPESTATUS`](#PIPESTATUS).
 
 ### `_process_sub_status`
 
@@ -163,8 +167,11 @@ Result of regex evaluation `[[ $x =~ $pat ]]`.
 
 ### PIPESTATUS
 
-Exit code of each element in a pipeline.
+After a pipeline of processes is executed, this array contains the exit code of
+each process.
 
+Each exit code is a [Str](chap-type-method.html#Str).  Compare with
+[`_pipeline_status`](#_pipeline_status).
 
 ## Call Stack
 

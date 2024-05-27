@@ -142,7 +142,7 @@ Here's the most general form:
 
 See the [Guide to Procs and Funcs](../proc-func.html) for details.
 
-Compare with [sh-func]($osh-help).
+Compare with [sh-func](chap-builtin-cmd.html#sh-func).
 
 ### func
 

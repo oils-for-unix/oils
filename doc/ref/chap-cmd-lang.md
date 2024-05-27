@@ -255,7 +255,7 @@ The trailing `;` is necessary in OSH, but not YSH.  In YSH, `parse_brace` makes
 
     ( echo one; echo two )
 
-Use [forkwait]($osh-help) in YSH instead.
+In YSH, use [forkwait](chap-builtin-cmd.html#forkwait) instead of parentheses.
 
 <h2 id="Concurrency">Concurrency</h2>
 
@@ -399,7 +399,7 @@ Or as an expression:
 Note that `cd` has no typed or named arguments, so the two semicolons are
 preceded by nothing.
 
-Compare with [sh-block]($osh-help).
+Compare with [sh-block](#sh-block).
 
 Redirects can appear after the block arg:
 

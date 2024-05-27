@@ -38,7 +38,7 @@ Yes:
 
     test -d /tmp
 
-The [simple_test_builtin]($oil-help) option enforces this.
+The [simple_test_builtin](ref/chap-option.html#ysh:all) option enforces this.
 
 ## Use Statically Parsed Language Constructs
 
@@ -64,9 +64,8 @@ Yes:
     ! test -d /tmp
     test -d /tmp && test -d /tmp/foo
 
-The [simple_test_builtin]($oil-help) option enforces that `test` receives 3 or
-fewer arguments.
-
+The [simple_test_builtin](ref/chap-option.html#ysh:all) option enforces that
+`test` receives 3 or fewer arguments.
 
 ### Prefer Shell Functions to Aliases
 
@@ -87,7 +86,7 @@ Yes:
     }
 
 If you're wrapping an external command with a function of the same, use the
-[command]($osh-help) builtin:
+[command](ref/chap-builtin-cmd.html#command) builtin:
 
     proc ls {
       command ls --color @ARGV

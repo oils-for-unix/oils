@@ -30,11 +30,11 @@ Array literals in shell accept any sequence of words, just like a command does:
     # Put it in an array
     a=(ls $mystr "$@" *.py)
 
-In YSH, use [oil-array]($oil-help).
+In YSH, use [list-literal](chap-expr-lang.html#list-literal).
 
 ### sh-assoc
 
-In YSH, use [oil-dict]($oil-help).
+In YSH, use [dict-literal](chap-expr-lang.html#dict-literal).
 
 ## Builtins
 
@@ -50,4 +50,4 @@ In YSH, use [oil-dict]($oil-help).
 
 ### typeset
 
-Alias for [declare]($osh-help).
+Another name for the [declare](#declare) builtin.

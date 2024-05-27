@@ -561,7 +561,7 @@ Flags:
     -n  omit the trailing newline
 <!--  -E  -->
 
-See [char-escapes]($osh-help).
+See [char-escapes](chap-mini-lang.html#char-escapes).
 
 ### printf
 
@@ -570,7 +570,7 @@ See [char-escapes]($osh-help).
 Formats values and prints them.  The FMT string contain three types of objects:
 
 1. Literal Characters
-2. Character escapes like `\t`.  See [char-escapes]($osh-help).
+2. Character escapes like `\t`.  See [char-escapes](chap-mini-lang.html#char-escapes).
 3. Percent codes like `%s` that specify how to format each each ARG.
 
 If not enough ARGS are passed, the empty string is used.  If too many are
@@ -1203,7 +1203,7 @@ to aliases like:
 Functions are less likely to cause parsing problems.
 
 - Quoting like `\ls` or `'ls'` disables alias expansion
-- To remove an existing alias, use [unalias]($osh-help).
+- To remove an existing alias, use [unalias](chap-builtin-cmd.html#unalias).
 
 ### unalias
 

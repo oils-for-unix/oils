@@ -57,7 +57,7 @@ TODO: extended glob syntax
 
 ### regex
 
-Part of [dbracket]($osh-help)
+Part of [dbracket](chap-cmd-lang.html#dbracket)
 
 ## Other Sublang
 
@@ -69,8 +69,9 @@ History substitution uses `!`.
 
 ### char-escapes
 
-These backslash escape sequences are used in `echo -e`, [printf]($osh-help),
-and in C-style strings like `$'foo\n'`:
+These backslash escape sequences are used in [echo
+-e](chap-builtin-cmd.html#echo), [printf](chap-builtin-cmd.html#printf), and in
+C-style strings like `$'foo\n'`:
 
     \\         backslash
     \a         alert (BEL)
