@@ -129,14 +129,6 @@ minimal() {
   echo "Minimal unit tests passed."
 }
 
-soil-run() {
-  # TODO: Should run everything in CI, but it depends on R.  dev-minimal
-  # doesn't have it
-  #
-  # Skips fastlex_test.py and cmark_test.py
-  minimal
-}
-
 #
 # Unlike soil-run, run-for-release makes an HTML page in _release/VERSION 
 # Could unify them.
