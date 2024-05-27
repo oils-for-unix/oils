@@ -24,20 +24,28 @@ source test/common.sh        # html-head
 source devtools/run-task.sh  # run-task
 source test/tsv-lib.sh
 
-
-# For auto-complete
-unit() {
-  "$@"
-}
-
 banner() {
   echo -----
   echo "$@"
   echo -----
 }
 
+unit() {
+  ### Run a single test, autocompletes with devtools/completion.bash
+  local test_path=$1
+
+  # Duplicates logic in test-niafest
+  read -r first_line < $test_path
+  if [[ $first_line == *python3* ]]; then
+    py_path_more=:  # no-op
+  else
+    py_path_more=:vendor/  # for vendor/typing.py
+  fi
+  PYTHONPATH=${PYTHONPATH}${py_path_more} "$@"
+}
+
 test-files() {
-  find . -name '_*' -a -prune -o -name '*_test.py' -a -print | sort
+  find . -name '_*' -a -prune -o -name '*_test.py' -a -printf '%P\n' | sort
 }
 
 test-manifest() {
@@ -46,18 +54,18 @@ test-manifest() {
     case $test_path in
       # For build/py.sh minimal: if we didn't build fastlex.so,
       # then skip a unit test that will fail.
-      ./pyext/fastlex_test.py|./doctools/cmark_test.py)
+      pyext/fastlex_test.py|doctools/cmark_test.py)
         minimal=exclude
         ;;
 
       # Skip obsolete tests
-      ./demo/old/*)
+      demo/old/*)
         continue
         ;;
 
       # Skip OPy and pgen2 tests - they have some PYTHONPATH issues?
       # May want to restore pgen2
-      ./opy/*|./pgen2/*)
+      opy/*|pgen2/*)
         continue
         ;;
 
@@ -67,35 +75,35 @@ test-manifest() {
     #echo $first_line
     if [[ $first_line == *python3* ]]; then
       kind=py3
+      py_path_more=:  # no-op
     else
       kind=py2
+      py_path_more=:vendor/  # for vendor/typing.py
     fi
 
-    echo "$minimal $kind $test_path"
+    echo "$minimal $kind $py_path_more $test_path"
+  done
+}
+
+files-to-count() {
+  ### Invoked by metrics/source-code.sh
+  test-manifest | while read _ _ _ test_path; do
+    echo $test_path
   done
 }
 
 run-unit-test() {
-  local kind=$1
+  local py_path_more=$1
   local test_path=$2
 
-  if test $kind = py2; then
-    # For 'import typing' in Python 2. Can't go in build/dev-shell.sh because
-    # it would affect Python 3.
-    pypath=$PYTHONPATH:vendor/
-  else
-    pypath=$PYTHONPATH
-  fi
-  PYTHONPATH=$pypath run-test-bin $test_path '' _test/py-unit
+  PYTHONPATH=${PYTHONPATH}${py_path_more} run-test-bin $test_path '' _test/py-unit
 }
 
 all() {
   ### Run unit tests after build/py.sh all
 
-  # TODO: Unify this with run-all-and-log / run-test-and-log
-
-  test-manifest | while read minimal kind test_path; do
-    run-unit-test $kind $test_path '' _test/py-unit
+  test-manifest | while read minimal kind py_path_more test_path; do
+    run-unit-test $py_path_more $test_path '' _test/py-unit
   done
 
   echo
@@ -105,7 +113,7 @@ all() {
 minimal() {
   ### Run unit tests after build/py.sh minimal
 
-  test-manifest | while read minimal kind test_path; do
+  test-manifest | while read minimal kind py_path_more test_path; do
     if test $minimal = exclude; then
       continue
     fi
@@ -114,7 +122,7 @@ minimal() {
       continue
     fi
 
-    run-unit-test $kind $test_path
+    run-unit-test $py_path_more $test_path
   done
 
   echo
@@ -159,18 +167,11 @@ run-all-and-log() {
 
   # There are no functions here, so disabling errexit is safe.
   # Note: In YSH, this could use shopt { }.
-  test-manifest | while read _ kind test_path; do
-    if test $kind = py2; then
-      # For 'import typing' in Python 2. Can't go in build/dev-shell.sh because
-      # it would affect Python 3.
-      pypath=$PYTHONPATH:vendor/
-    else
-      pypath=$PYTHONPATH
-    fi
+  test-manifest | while read _ kind py_path_more test_path; do
 
     local status=0
     set +o errexit
-    PYTHONPATH=$pypath run-test-and-log $tasks_tsv $test_path
+    PYTHONPATH=${PYTHONPATH}${py_path_more} run-test-and-log $tasks_tsv $test_path
     status=$?
     set -o errexit
 
