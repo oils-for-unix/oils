@@ -165,9 +165,11 @@ JSON8 is JSON with 4 more things allowed:
 
 ### json8-num
 
-Decoding detail, specific to Oils:
+JSON8 numbers are identical to JSON numbers.
 
-If there's a decimal point or `e-10` suffix, then it's decoded into YSH
+Here is a decoding detail, specific to Oils:
+
+If there's a decimal point or `e-10` suffix, then it's decoded into a YSH
 `Float`.  Otherwise it's a YSH `Int`.
 
     42       # decoded to Int
@@ -177,7 +179,7 @@ If there's a decimal point or `e-10` suffix, then it's decoded into YSH
 
 ### json8-str
 
-JSON8 strings are exactly J8 strings:
+JSON8 strings are J8 strings:
 
 <pre>
 "hi &#x1f926; \u03bc"
@@ -187,12 +189,16 @@ b'hi &#x1f926; \u{3bc} \yff'
 
 ### json8-list
 
+TODO:
+
 Like JSON lists, but can have trailing comma.  Examples:
 
     [42, 43]
     [42, 43,]   # same as above
 
 ### json8-dict
+
+TODO:
 
 Like JSON "objects", but:
 
@@ -215,8 +221,18 @@ End-of-line comments in the same style as shell:
 
 These are the J8 Primitives (Bool, Int, Float, Str), separated by tabs.
 
-
 ### column-attrs   
+
+<!-- Consider #.tsv8 and 'type' perhaps 
+
+#.tsv8   name    age
+type     Str     Int
+other    x       y
+         Alice   42
+
+Also consider alignment.
+-->
+
 
 ```
 !tsv8    name    age

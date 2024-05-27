@@ -19,15 +19,49 @@ contents](toc-ysh.html), [Data contents](toc-data.html))
 
 <div class="custom-toc">
 
-[front-end](#front-end) &nbsp; [cmd-lang](#cmd-lang) &nbsp;
-[osh-assign](#osh-assign) &nbsp; [word-lang](#word-lang) &nbsp;
+[type-method](#type-method) &nbsp;
+[builtin-cmd](#builtin-cmd) &nbsp;
+[front-end](#front-end) &nbsp;
+[cmd-lang](#cmd-lang) &nbsp;
+[osh-assign](#osh-assign) &nbsp;
+[word-lang](#word-lang) &nbsp;
 [mini-lang](#mini-lang) &nbsp;
-[builtin-cmd](#builtin-cmd) &nbsp; [option](#option) &nbsp;
+[option](#option) &nbsp;
 [special-var](#special-var) &nbsp;
 [plugin](#plugin)
-[type-method](#type-method)
+
 </div>
 
+
+<h2 id="type-method">
+  OSH Types (<a class="group-link" href="chap-type-method.html">type-method</a>)
+</h2>
+
+```chapter-links-type-method
+  [OSH]           BashArray   BashAssoc
+```
+
+<h2 id="builtin-cmd">
+  Builtin Commands (<a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>)
+</h2>
+
+```chapter-links-builtin-cmd
+  [I/O]           read        echo      printf
+                  readarray   mapfile
+  [Run Code]      source .    eval      trap
+  [Set Options]   set         shopt
+  [Working Dir]   cd          pwd       pushd     popd         dirs
+  [Completion]    complete    compgen   compopt   compadjust   compexport
+  [Shell Process] exec      X logout 
+                  umask       ulimit    times
+  [Child Process] jobs        wait      ampersand &
+                  fg        X bg      X kill        X disown 
+  [External]      test [      getopts
+  [Introspection] help        hash      type        X caller
+  [Word Lookup]   command     builtin
+  [Interactive]   alias       unalias   history     X fc     X bind
+X [Unsupported]   enable
+```
 
 <h2 id="front-end">
   Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)
@@ -119,28 +153,6 @@ contents](toc-ysh.html), [Data contents](toc-data.html))
                   char-escapes  \t  \c  \x00  \u03bc
 ```
 
-<h2 id="builtin-cmd">
-  Builtin Commands (<a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>)
-</h2>
-
-```chapter-links-builtin-cmd
-  [I/O]           read        echo      printf
-                  readarray   mapfile
-  [Run Code]      source .    eval      trap
-  [Set Options]   set         shopt
-  [Working Dir]   cd          pwd       pushd     popd         dirs
-  [Completion]    complete    compgen   compopt   compadjust   compexport
-  [Shell Process] exec      X logout 
-                  umask       ulimit    times
-  [Child Process] jobs        wait      ampersand &
-                  fg        X bg      X kill        X disown 
-  [External]      test [      getopts
-  [Introspection] help        hash      type        X caller
-  [Word Lookup]   command     builtin
-  [Interactive]   alias       unalias   history     X fc     X bind
-X [Unsupported]   enable
-```
-
 <h2 id="option">
   Global Shell Options (<a class="group-link" href="chap-option.html">option</a>)
 </h2>
@@ -194,12 +206,4 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [Words]         PS1       X PS2      X PS3       PS4
   [Completion]    complete
   [Other Plugin]  PROMPT_COMMAND       X command_not_found    
-```
-
-<h2 id="type-method">
-  OSH Types (<a class="group-link" href="chap-type-method.html">type-method</a>)
-</h2>
-
-```chapter-links-type-method
-  [OSH]           BashArray   BashAssoc
 ```

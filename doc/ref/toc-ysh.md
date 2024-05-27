@@ -15,14 +15,133 @@ contents](toc-osh.html), [Data contents](toc-data.html))
 
 <div class="custom-toc">
 
-[front-end](#front-end) &nbsp; [cmd-lang](#cmd-lang) &nbsp;
+[type-method](#type-method) &nbsp;
+[builtin-func](#builtin-func) &nbsp;
+[builtin-cmd](#builtin-cmd) &nbsp;
+[front-end](#front-end) &nbsp;
+[cmd-lang](#cmd-lang) &nbsp;
 [ysh-cmd](#ysh-cmd) &nbsp;
-[expr-lang](#expr-lang) &nbsp; [word-lang](#word-lang) &nbsp;
-[builtin-cmd](#builtin-cmd) &nbsp; [option](#option) &nbsp;
-[special-var](#special-var) &nbsp; [type-method](#type-method) &nbsp;
-[builtin-func](#builtin-func) &nbsp; [plugin](#plugin)
+[expr-lang](#expr-lang) &nbsp;
+[word-lang](#word-lang) &nbsp;
+[mini-lang](#mini-lang) &nbsp;
+[option](#option) &nbsp;
+[special-var](#special-var) &nbsp;
+[plugin](#plugin)
 
 </div>
+
+
+<h2 id="type-method">
+  Types and Methods (<a class="group-link" href="chap-type-method.html">type-method</a>)
+</h2>
+
+```chapter-links-type-method
+  [Primitive] Bool           Int           Float       Str
+              Eggex          Range
+  [Str]     X find()         replace()
+              trim()         trimStart()   trimEnd()
+              startsWith()   endsWith()
+              upper()        lower()
+              search()       leftMatch()
+  [Match]     group()        start()       end()
+            X groups()     X groupDict()
+  [List]      append()       pop()         extend()    indexOf()
+            X insert()     X remove()      reverse()
+  [Dict]      keys()         values()    X get()     X erase()
+            X inc()        X accum()
+X [Func]      name()         location()    toJson()
+X [Proc]      name()         location()    toJson()
+X [Module]    name()         filename()
+  [Place]     setValue()
+  [IO]      X eval()       X captureStdout()
+              promptVal()
+            X time()       X strftime()
+            X glob()
+  [Quotation] Expr           Command
+  [Code]      BuiltinFunc    BuiltinMethod
+X [Guts]      heapId()
+```
+
+<h2 id="builtin-func">
+  Builtin Functions (<a class="group-link" href="chap-builtin-func.html">builtin-func</a>)
+</h2>
+
+```chapter-links-builtin-func
+  [Values]        len()        type()   X repeat()
+  [Conversions]   bool()       int()      float()   str()   list()   dict()
+                X chr()      X ord()    X runes()
+  [Str]         X strcmp()   X split()    shSplit()
+  [List]          join()       any()      all()
+  [Collections] X copy()     X deepCopy()
+  [Word]          glob()       maybe()
+  [Math]          abs()        max()      min()   X round()   sum()
+  [Serialize]     toJson()     fromJson()
+                  toJson8()    fromJson8()
+X [J8 Decode]     J8.Bool()    J8.Int()   ...
+  [Pattern]       _group()     _start()   _end()
+  [Introspection] shvarGet()   getVar()   evalExpr()
+  [Hay Config]    parseHay()   evalHay()
+X [Hashing]       sha1dc()     sha256()
+```
+
+<!-- ideas
+X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
+                  quoteMake()   quoteNinja()
+X [Wok]           _field()
+-->
+
+<h2 id="builtin-cmd">
+  Builtin Commands (<a class="group-link" href="chap-builtin-cmd">builtin-cmd</a>)
+</h2>
+
+<!-- linkify_stop_col is 42 -->
+
+```chapter-links-builtin-cmd_42
+  [Memory]        append                 Add elements to end of array
+                  pp                     asdl   cell   X gc-stats   line   proc
+  [Handle Errors] try                    Run with errexit, set _status _error
+                  boolstatus             Enforce 0 or 1 exit status
+                  error                  error 'failed' (status=2)
+  [Shell State]   ysh-cd       ysh-shopt compatible, and takes a block
+                  shvar                  Temporary modify global settings
+                  ctx                    Share and update a temporary "context"
+                  push-registers         Save registers like $?, PIPESTATUS
+  [Modules]       runproc                Run a proc; use as main entry point
+                  module                 guard against duplicate 'source'
+                  is-main                false when sourcing a file
+                  use                    change first word lookup
+  [I/O]           ysh-read               flags --all, -0
+                  ysh-echo               no -e -n with simple_echo
+                  write                  Like echo, with --, --sep, --end
+                  fork         forkwait  Replace & and (), and takes a block
+                  fopen                  Open multiple streams, takes a block
+                X dbg                    Only thing that can be used in funcs
+                X log        X die       Common functions (polyfill)
+  [Hay Config]    hay          haynode   For DSLs and config files
+  [Completion]    compadjust   compexport
+  [Data Formats]  json                   read write
+                  json8                  read write
+                X packle                 read write, graph-shaped
+X [TSV8]          rows                   pick rows; dplyr filter()
+                  cols                   pick columns ('select' already taken)
+                  group-by               add a column with a group ID [ext]
+                  sort-by                sort by columns; dplyr arrange() [ext]
+                  summary                count, sum, histogram, etc. [ext]
+  [Args Parser]   parser                 Parse command line arguments
+                  flag
+                  arg
+                  rest
+                  parseArgs()
+X [Testing]       describe               Test harness
+                  assert                 takes an expression
+```
+
+<!--
+Naming ideas:
+
+X [External Lang] BEGIN   END   when (awk)
+                  rule (make)   each (xargs)   fs (find)
+-->
 
 <h2 id="front-end">
   Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)
@@ -140,58 +259,16 @@ contents](toc-osh.html), [Data contents](toc-data.html))
                 X ysh-format    ${x|html}
 ```
 
-<h2 id="builtin-cmd">
-  Builtin Commands (<a class="group-link" href="chap-builtin-cmd">builtin-cmd</a>)
+<h2 id="mini-lang">
+  Other Mini Languages (<a class="group-link" href="chap-mini-lang.html">mini-lang</a>)
 </h2>
 
-<!-- linkify_stop_col is 42 -->
+<!-- linkify_stop_col is 33 -->
 
-```chapter-links-builtin-cmd_42
-  [Memory]        append                 Add elements to end of array
-                  pp                     asdl   cell   X gc-stats   line   proc
-  [Handle Errors] try                    Run with errexit, set _status _error
-                  boolstatus             Enforce 0 or 1 exit status
-                  error                  error 'failed' (status=2)
-  [Shell State]   ysh-cd       ysh-shopt compatible, and takes a block
-                  shvar                  Temporary modify global settings
-                  ctx                    Share and update a temporary "context"
-                  push-registers         Save registers like $?, PIPESTATUS
-  [Modules]       runproc                Run a proc; use as main entry point
-                  module                 guard against duplicate 'source'
-                  is-main                false when sourcing a file
-                  use                    change first word lookup
-  [I/O]           ysh-read               flags --all, -0
-                  ysh-echo               no -e -n with simple_echo
-                  write                  Like echo, with --, --sep, --end
-                  fork         forkwait  Replace & and (), and takes a block
-                  fopen                  Open multiple streams, takes a block
-                X dbg                    Only thing that can be used in funcs
-                X log        X die       Common functions (polyfill)
-  [Hay Config]    hay          haynode   For DSLs and config files
-  [Completion]    compadjust   compexport
-  [Data Formats]  json                   read write
-                  json8                  read write
-                X packle                 read write, graph-shaped
-X [TSV8]          rows                   pick rows; dplyr filter()
-                  cols                   pick columns ('select' already taken)
-                  group-by               add a column with a group ID [ext]
-                  sort-by                sort by columns; dplyr arrange() [ext]
-                  summary                count, sum, histogram, etc. [ext]
-  [Args Parser]   parser                 Parse command line arguments
-                  flag
-                  arg
-                  rest
-                  parseArgs()
-X [Testing]       describe               Test harness
-                  assert                 takes an expression
+```chapter-links-mini-lang_33
+  [Patterns]      glob-pat      *.py
+  [Other Sublang] braces        {alice,bob}@example.com
 ```
-
-<!--
-Naming ideas:
-
-X [External Lang] BEGIN   END   when (awk)
-                  rule (make)   each (xargs)   fs (find)
--->
 
 <h2 id="option">
   Shell Options (<a class="group-link" href="chap-option.html">option</a>)
@@ -222,66 +299,6 @@ X [External Lang] BEGIN   END   when (awk)
 <!-- ideas 
 X [Wok]           _filename           _line
 X [Builtin Sub]   _buffer
--->
-
-
-<h2 id="type-method">
-  Builtin Types and Methods (<a class="group-link" href="chap-type-method.html">type-method</a>)
-</h2>
-
-```chapter-links-type-method
-  [Primitive] Bool           Int           Float       Str
-              Eggex          Range
-  [Str]     X find()         replace()
-              trim()         trimStart()   trimEnd()
-              startsWith()   endsWith()
-              upper()        lower()
-              search()       leftMatch()
-  [Match]     group()        start()       end()
-            X groups()     X groupDict()
-  [List]      append()       pop()         extend()    indexOf()
-            X insert()     X remove()      reverse()
-  [Dict]      keys()         values()    X get()     X erase()
-            X inc()        X accum()
-X [Func]      name()         location()    toJson()
-X [Proc]      name()         location()    toJson()
-X [Module]    name()         filename()
-  [Place]     setValue()
-  [IO]      X eval()       X captureStdout()
-              promptVal()
-            X time()       X strftime()
-            X glob()
-  [Quotation] Expr           Command
-  [Code]      BuiltinFunc    BuiltinMethod
-X [Guts]      heapId()
-```
-
-<h2 id="builtin-func">
-  Builtin Functions (<a class="group-link" href="chap-builtin-func.html">builtin-func</a>)
-</h2>
-
-```chapter-links-builtin-func
-  [Values]        len()        type()   X repeat()
-  [Conversions]   bool()       int()      float()   str()   list()   dict()
-                X chr()      X ord()    X runes()
-  [Str]         X strcmp()   X split()    shSplit()
-  [List]          join()       any()      all()
-  [Collections] X copy()     X deepCopy()
-  [Word]          glob()       maybe()
-  [Math]          abs()        max()      min()   X round()   sum()
-  [Serialize]     toJson()     fromJson()
-                  toJson8()    fromJson8()
-X [J8 Decode]     J8.Bool()    J8.Int()   ...
-  [Pattern]       _group()     _start()   _end()
-  [Introspection] shvarGet()   getVar()   evalExpr()
-  [Hay Config]    parseHay()   evalHay()
-X [Hashing]       sha1dc()     sha256()
-```
-
-<!-- ideas
-X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
-                  quoteMake()   quoteNinja()
-X [Wok]           _field()
 -->
 
 <h2 id="plugin">

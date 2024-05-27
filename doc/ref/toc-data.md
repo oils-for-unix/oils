@@ -39,18 +39,18 @@ contents](toc-osh.html), [YSH contents](toc-ysh.html))
 </h2>
 
 ```chapter-links-j8
-  [J8 Strings]   json-string    "hi"
-                 json-escape    \" \\ \u1234
-                 surrogate-pair \ud83e\udd26
-                 j8-escape      \' \u{1f926} \yff
-                 u-prefix       u'hi'
-                 b-prefix       b'hi'
-                 no-prefix      'hi'
+  [J8 Strings]   json-string        "hi"
+                 json-escape        \"  \\  \u1234
+                 surrogate-pair     \ud83e\udd26
+                 j8-escape          \'  \u{1f926}  \yff
+                 u-prefix           u'hi'
+                 b-prefix           b'hi'
+                 no-prefix          'hi'
   [J8 Lines]     unquoted-line
-  [JSON8]        json8-num      json8-str
-                 json8-list     json-dict
+  [JSON8]        json8-num          json8-str
+               X json8-list       X json8-dict
                  json8-comment
-  [TSV8]         column-attrs   column-types
+  [TSV8]         column-attrs       column-types
 ```
 
 All J8 notation is UTF-8.

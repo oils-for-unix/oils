@@ -321,6 +321,8 @@ oil-language-tour ysh-tour
 oil-language-faq ysh-faq
 oil-help ysh-help
 oil-help-topics ysh-help-topics
+ysh-help ref/toc-ysh
+ysh-help-topics ref/toc-ysh
 EOF
 }
 
@@ -485,15 +487,15 @@ all-ref() {
   rm -f $TEXT_DIR/*
   make-dirs
 
-  # Make the indexes and chapters
-  for d in doc/ref/*.md; do
-    split-and-render $d '' '../../web'
-  done
-
   # Text cards
   cards-from-indices
   # A few text cards, and HELP_TOPICS dict for URLs, for flat namespace
   cards-from-chapters
+
+  # Make the indexes and chapters
+  for d in doc/ref/*.md; do
+    split-and-render $d '' '../../web'
+  done
 
   if command -v pysum; then
     # 19 KB of embedded help, seems OK.  Biggest card is 'ysh-option'.  Could

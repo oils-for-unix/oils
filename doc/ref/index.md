@@ -28,19 +28,19 @@ chapters.  (in progress)
 
 </div>
 
+1. [Types and Methods](chap-type-method.html)
+1. [Builtin Functions](chap-builtin-func.html)
+1. [Builtin Commands](chap-builtin-cmd.html)
 1. [Front End](chap-front-end.html)
 1. [Command Language](chap-cmd-lang.html)
 1. [OSH Assignment](chap-osh-assign.html)
 1. [YSH Command Language Keywords](chap-ysh-cmd.html)
 1. [Word Language](chap-word-lang.html)
+1. [YSH Expression Language](chap-expr-lang.html)
 1. [Mini Languages](chap-mini-lang.html)
-1. [Builtin Commands](chap-builtin-cmd.html)
 1. [Global Shell Options](chap-option.html)
 1. [Special Variables](chap-special-var.html)
 1. [Plugins and Hooks](chap-plugin.html)
-1. [YSH Expression Language](chap-expr-lang.html)
-1. [Types and Methods](chap-type-method.html)
-1. [Builtin Functions](chap-builtin-func.html)
 
 <div class="highlight">
 

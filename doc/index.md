@@ -27,13 +27,12 @@ page links to all the documentation.
 
 Like many other docs, the reference is still in progress:
 
-- [Oils Reference](ref/index.html) &dagger; - These docs underlie `help` builtin, and
-  are also published online.
-- Links to topics within each chapter:
+- [**Oils Reference**](ref/index.html) &dagger; - These docs underlie `help` builtin, and
+  are also published online.  Navigate it with:
   - [OSH Table of Contents](ref/toc-osh.html) &dagger;
   - [YSH Table of Contents](ref/toc-ysh.html) &dagger;
   - [Data Notation Table of Contents](ref/toc-data.html) &dagger;
-- [Style Guide](style-guide.html) gives coding recommendations.
+- The [YSH Style Guide](style-guide.html) gives coding recommendations.
 
 ## Interactive Shell
 
