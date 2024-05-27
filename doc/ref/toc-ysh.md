@@ -16,6 +16,7 @@ contents](toc-osh.html), [Data contents](toc-data.html))
 <div class="custom-toc">
 
 [front-end](#front-end) &nbsp; [cmd-lang](#cmd-lang) &nbsp;
+[ysh-cmd](#ysh-cmd) &nbsp;
 [expr-lang](#expr-lang) &nbsp; [word-lang](#word-lang) &nbsp;
 [builtin-cmd](#builtin-cmd) &nbsp; [option](#option) &nbsp;
 [special-var](#special-var) &nbsp; [type-method](#type-method) &nbsp;
@@ -44,16 +45,26 @@ contents](toc-osh.html), [Data contents](toc-data.html))
   [YSH Simple]    typed-arg     json write (x)
                   lazy-expr-arg assert [42 === x]
                   block-arg     cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
-  [YSH Assign]    const   var   setvar   setglobal
-  [YSH Expr]      equal =       = 1 + 2*3
-                  call          call mylist->append(42)
-  [YSH Code]      proc-def      proc p (out Ref; pos, ...rest; n=0; b Block) {
-                  func-def      func f(x; opt1, opt2) { return (x + 1) }
-                  ysh-return    return (myexpr)
   [YSH Cond]      ysh-case      case (x) { *.py { echo 'python' } }
                   ysh-if        if (x > 0) { echo }
   [YSH Iter]      ysh-while     while (x > 0) { echo }
                   ysh-for       for i, item in (mylist) { echo }
+```
+
+<h2 id="ysh-cmd">
+  YSH Command Language Keywords (<a class="group-link" href="chap-ysh-cmd.html">ysh-cmd</a>)
+</h2>
+
+```chapter-links-ysh-cmd_33
+  [Assignment]    const   var   Declare variables
+                  setvar        setvar a[i] = 42
+                  setglobal     setglobal d.key = 'foo'
+  [Expression]    equal =       = 1 + 2*3
+                  call          call mylist->append(42)
+  [Definitions]   proc          proc p (s, ...rest) {
+                                typed proc p (; typed, ...rest; n=0; b) {
+                  func          func f(x; opt1, opt2) { return (x + 1) }
+                  ysh-return    return (myexpr)
 ```
 
 <h2 id="expr-lang">

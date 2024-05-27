@@ -25,7 +25,7 @@ contents](toc-ysh.html), [Data contents](toc-data.html))
 [builtin-cmd](#builtin-cmd) &nbsp; [option](#option) &nbsp;
 [special-var](#special-var) &nbsp;
 [plugin](#plugin)
-
+[type-method](#type-method)
 </div>
 
 
@@ -194,4 +194,12 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [Words]         PS1       X PS2      X PS3       PS4
   [Completion]    complete
   [Other Plugin]  PROMPT_COMMAND       X command_not_found    
+```
+
+<h2 id="type-method">
+  OSH Types (<a class="group-link" href="chap-type-method.html">type-method</a>)
+</h2>
+
+```chapter-links-type-method
+  [OSH]           BashArray   BashAssoc
 ```

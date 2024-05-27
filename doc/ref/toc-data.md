@@ -55,6 +55,7 @@ contents](toc-osh.html), [YSH contents](toc-ysh.html))
 
 All J8 notation is UTF-8.
 
+<!--
 <h2 id="packle">
   Packle
   (<a class="group-link" href="chap-packle.html">packle</a>)
@@ -64,6 +65,7 @@ All J8 notation is UTF-8.
 X [Atoms]    Null   Bool   Int   Float   Bytes   Unicode
 X [Compound] List   Dict
 ```
+-->
 
 <h2 id="errors">
   Errors

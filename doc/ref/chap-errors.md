@@ -135,6 +135,8 @@ JSON8 has the same decoding errors as JSON, plus J8 string decoding errors.
 
 See [err-j8-str-decode](#err-j8-str-decode).
 
+<!--
+
 ## Packle
 
 TODO: Not implemented!
@@ -155,4 +157,6 @@ Packle has no encoding errors!
 ### err-packle-decode
 
 TODO
+
+-->
 

@@ -5,10 +5,12 @@ default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-YSH Types and Methods
+Types and Methods
 ===
 
 This chapter in the [Oils Reference](index.html) describes YSH types and methods.
+
+There are also two OSH types for bash compatibility.
 
 <div id="toc">
 </div>
@@ -367,3 +369,13 @@ database), and then C strftime().
 TODO: The free function glob() actually does I/O.  Although maybe it doesn't
 fail?
 
+
+## OSH
+
+### BashArray
+
+TODO
+
+### BashAssoc
+
+TODO
