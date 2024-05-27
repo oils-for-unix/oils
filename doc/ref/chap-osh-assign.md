@@ -30,11 +30,30 @@ Array literals in shell accept any sequence of words, just like a command does:
     # Put it in an array
     a=(ls $mystr "$@" *.py)
 
-In YSH, use [list-literal](chap-expr-lang.html#list-literal).
+Their type is [BashArray][].
+
+In YSH, use a [list-literal][] to create a [List][] instance.
+
+[BashArray]: chap-type-method.html#BashArray
+
+[List]: chap-type-method.html#List
+[list-literal]: chap-expr-lang.html#list-literal
+
 
 ### sh-assoc
 
-In YSH, use [dict-literal](chap-expr-lang.html#dict-literal).
+Associative arrays map strings to strings:
+
+    declare -A assoc=(['k']=v ['k2']=v2)
+
+Their type is [BashAssoc][].
+
+In YSH, use a [dict-literal][] to create a [Dict][] instance.
+
+[BashAssoc]: chap-type-method.html#BashAssoc
+
+[Dict]: chap-type-method.html#Dict
+[dict-literal]: chap-expr-lang.html#dict-literal
 
 ## Builtins
 

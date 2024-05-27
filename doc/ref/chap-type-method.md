@@ -15,15 +15,78 @@ There are also two OSH types for bash compatibility.
 <div id="toc">
 </div>
 
-## Null
+## OSH
 
-## Bool
+These two types are for OSH code only.
 
-## Int
+### BashArray
 
-## Float
+A bash array holds a sequence of strings.  Some entries may be unset, i.e.
+*not* an empty string.
+
+See [sh-array][] for details.  In YSH, prefer to use [List](#List) instances.
+
+[sh-array]: chap-osh-assign.html#sh-array
+
+
+### BashAssoc
+
+A bash associative array is a mapping from strings to strings.
+
+See [sh-assoc][] for details.  In YSH, prefer to use [Dict](#Dict) instances.
+
+[sh-assoc]: chap-osh-assign.html#sh-assoc
+
+## Atom Types
+
+### Null
+
+The `Null` type has a single value spelled `null`.  (Related:
+[atom-literal][]).
+
+[atom-literal]: chap-expr-lang.html#atom-literal
+
+### Bool
+
+The `Bool` type has 2 values: `true` and `false`.  (Related: [atom-literal][]).
+
+## Number Types
+
+### Int
+
+Integers are currently 64-bit signed integers (on all platforms).  TODO: they
+should be arbitrary precision.
+
+There are many way of writing integers; see [int-literal][].
+
+In shell, ASCII strings like `'42'` are often used for calculations on
+integers.  But you can use a "real" integer type in YSH.
+
+[int-literal]: chap-expr-lang.html#int-literal
+
+
+### Float
+
+Floats are at least 32 bits wide.
+
+See [float-literal][] for how to denote them.
+
+[float-literal]: chap-expr-lang.html#float-literal
+
+<!-- TODO: reduce from 64-bit to 32-bit -->
 
 ## Str
+
+In Oils, strings may contains any sequence of bytes, which may be UTF-8
+encoded.
+
+Internal NUL bytes (`0x00`) are allowed.
+
+When passing such strings to say the [cd][] builtin, the string will be
+truncated before the NUL.  This is because most C functions like `chdir()` take
+NUL-terminated strings.
+
+[cd]: chap-builtin-cmd.html#cd
 
 ### find()
 
@@ -188,51 +251,6 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 
 (Similar to Python's `re.match()`.)
 
-## Match
-
-### group()
-
-Returns the string that matched a regex capture group.  Group 0 is the entire
-match.
-
-    var m = '10:59' => search(/ ':' <capture d+> /)
-    echo $[m => group(0)]  # => ':59'
-    echo $[m => group(1)]  # => '59'
-
-Matches can be named with `as NAME`:
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-
-And then accessed by the same name:
-
-    echo $[m => group('minute')]  # => '59'
-
-<!--
-    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
--->
-
-### start()
-
-Like `group()`, but returns the **start** position of a regex capture group,
-rather than its value.
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => start(0)]         # => position 2 for ':59'
-    echo $[m => start(1)]         # => position 3 for '59'
-
-    echo $[m => start('minute')]  # => position 3 for '59'
-
-### end()
-
-Like `group()`, but returns the **end** position of a regex capture group,
-rather than its value.
-
-    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
-    echo $[m => end(0)]         # => position 5 for ':59'
-    echo $[m => end(1)]         # => position 5 for '59'
-
-    echo $[m => end('minute')]  # => 5 for '59'
-
 ## List
 
 ### append()
@@ -315,6 +333,66 @@ Similar to `keys()`, but returns the values of the dictionary.
 
 ### accum()
 
+## Range
+  
+A `Range` is a pair of two numbers, like `42 .. 45`.
+
+Ranges are used for iteration; see [ysh-for][].
+
+[ysh-for]: chap-cmd-lang.html#ysh-for
+
+## Eggex
+
+An `Eggex` is a composable regular expression.  It can be spliced into other
+regular expressions.
+
+## Match
+
+A `Match` is the result searching for an `Eggex` within a `Str`.
+
+### group()
+
+Returns the string that matched a regex capture group.  Group 0 is the entire
+match.
+
+    var m = '10:59' => search(/ ':' <capture d+> /)
+    echo $[m => group(0)]  # => ':59'
+    echo $[m => group(1)]  # => '59'
+
+Matches can be named with `as NAME`:
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+
+And then accessed by the same name:
+
+    echo $[m => group('minute')]  # => '59'
+
+<!--
+    var m = '10:59' => search(/ ':' <capture d+ as minutes: int> /)
+-->
+
+### start()
+
+Like `group()`, but returns the **start** position of a regex capture group,
+rather than its value.
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    echo $[m => start(0)]         # => position 2 for ':59'
+    echo $[m => start(1)]         # => position 3 for '59'
+
+    echo $[m => start('minute')]  # => position 3 for '59'
+
+### end()
+
+Like `group()`, but returns the **end** position of a regex capture group,
+rather than its value.
+
+    var m = '10:59' => search(/ ':' <capture d+ as minute> /)
+    echo $[m => end(0)]         # => position 5 for ':59'
+    echo $[m => end(1)]         # => position 5 for '59'
+
+    echo $[m => end('minute')]  # => 5 for '59'
+
 ## Place
 
 ### setValue()
@@ -329,6 +407,32 @@ A Place is used as an "out param" by calling setValue():
     p (&x)
     echo x=$x  # => x=hi
 
+
+## Code Types
+
+### Expr
+
+### Command
+
+### BuiltinFunc
+
+### BoundFunc
+
+## Func
+
+User-defined functions.
+
+## Proc
+
+User-defined procs.
+
+## Module
+
+TODO:
+
+A module is a file with YSH code.
+
+<!-- can it be a directory or tree of files too? -->
 
 ## IO
 
@@ -352,7 +456,6 @@ An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
       return (join(parts))
     }
 
-
 ### time()
 
 TODO: Depends on system clock.
@@ -369,13 +472,3 @@ database), and then C strftime().
 TODO: The free function glob() actually does I/O.  Although maybe it doesn't
 fail?
 
-
-## OSH
-
-### BashArray
-
-TODO
-
-### BashAssoc
-
-TODO

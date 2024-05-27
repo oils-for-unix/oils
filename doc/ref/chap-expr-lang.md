@@ -49,14 +49,15 @@ Likewise, these are the same:
 
 ## Literals
 
-### bool-literal
+### atom-literal
 
 YSH uses JavaScript-like spellings for these three "atoms":
 
-    true   false   null
+    null           # type Null
+    true   false   # type Bool
 
-Note that the empty string is a good "special" value in some cases.  The `null`
-value can't be interpolated into words.
+Note: to signify "no value", you may sometimes use an empty string `''`,
+instead of `null`.
 
 ### int-literal
 

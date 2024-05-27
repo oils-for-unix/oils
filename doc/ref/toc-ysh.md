@@ -36,30 +36,32 @@ contents](toc-osh.html), [Data contents](toc-data.html))
 </h2>
 
 ```chapter-links-type-method
-  [Primitive] Bool           Int           Float       Str
-              Eggex          Range
-  [Str]     X find()         replace()
-              trim()         trimStart()   trimEnd()
-              startsWith()   endsWith()
-              upper()        lower()
-              search()       leftMatch()
-  [Match]     group()        start()       end()
-            X groups()     X groupDict()
-  [List]      append()       pop()         extend()    indexOf()
-            X insert()     X remove()      reverse()
-  [Dict]      keys()         values()    X get()     X erase()
-            X inc()        X accum()
-X [Func]      name()         location()    toJson()
-X [Proc]      name()         location()    toJson()
-X [Module]    name()         filename()
-  [Place]     setValue()
-  [IO]      X eval()       X captureStdout()
-              promptVal()
-            X time()       X strftime()
-            X glob()
-  [Quotation] Expr           Command
-  [Code]      BuiltinFunc    BuiltinMethod
-X [Guts]      heapId()
+  [Atom Types]     Null           Bool
+  [Number Types]   Int            Float
+  [Str]          X find()         replace()
+                   trim()         trimStart()   trimEnd()
+                   startsWith()   endsWith()
+                   upper()        lower()
+                   search()       leftMatch()
+  [List]           append()       pop()         extend()    indexOf()
+                 X insert()     X remove()      reverse()
+  [Dict]           keys()         values()    X get()     X erase()
+                 X inc()        X accum()
+  [Range] 
+  [Eggex] 
+  [Match]          group()        start()       end()
+                 X groups()     X groupDict()
+  [Place]          setValue()
+  [Code Types]     Expr           Command
+                   BuiltinFunc    BoundFunc
+X [Func]           name()         location()    toJson()
+X [Proc]           name()         location()    toJson()
+X [Module]         name()         filename()
+  [IO]           X eval()       X captureStdout()
+                   promptVal()
+                 X time()       X strftime()
+                 X glob()
+X [Guts]           heapId()
 ```
 
 <h2 id="builtin-func">
@@ -196,7 +198,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Assignment]    assign        =
                   aug-assign    +=   -=   *=   /=   **=   //=   %=
                                 &=   |=   ^=   <<=   >>=
-  [Literals]      bool-literal  true   false   null
+  [Literals]      atom-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
                 X num-suffix    42 K Ki M Mi G Gi T Ti / ms us
