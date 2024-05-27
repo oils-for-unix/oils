@@ -76,7 +76,7 @@ _OTHER_SET_OPTIONS = [
 
 # These are RUNTIME strict options.  We also have parse time ones like
 # parse_backslash.
-_STRICT_OPTION_NAMES = [
+_STRICT_OPTS = [
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
 
@@ -106,7 +106,7 @@ _STRICT_OPTION_NAMES = [
 #
 # Note that inherit_errexit is a strict option.
 
-_BASIC_RUNTIME_OPTIONS = [
+_UPGRADE_RUNTIME_OPTS = [
     ('simple_word_eval', False),  # No splitting; arity isn't data-dependent
     # Don't reparse program data as globs
     ('dashglob', True),  # do globs return files starting with - ?
@@ -123,7 +123,7 @@ _BASIC_RUNTIME_OPTIONS = [
     # Whether status 141 in pipelines is turned into 0
     ('sigpipe_status_ok', False),
 
-    # Can procs and shell functions be redefined?  On in OSH, off in YSH batch,
+    # Can procs and shell functions be redefined?  Off in YSH batch mode, but
     # on in interactive shell
     ('redefine_proc_func', True),
 ]
@@ -132,7 +132,7 @@ _BASIC_RUNTIME_OPTIONS = [
 # valid, because it has an extra argument.  Builtins are inconsistent about
 # checking this.
 
-_AGGRESSIVE_RUNTIME_OPTIONS = [
+_YSH_RUNTIME_OPTS = [
     ('simple_echo', False),  # echo takes 0 or 1 arguments
     ('simple_eval_builtin', False),  # eval takes exactly 1 argument
 
@@ -147,7 +147,7 @@ _AGGRESSIVE_RUNTIME_OPTIONS = [
 ]
 
 # Stuff that doesn't break too many programs.
-_BASIC_PARSE_OPTIONS = [
+_UPGRADE_PARSE_OPTS = [
     'parse_at',  # @foo, @array(a, b)
     'parse_proc',  # proc p { ... }
     'parse_func',  # func f(x) { ... }
@@ -163,7 +163,7 @@ _BASIC_PARSE_OPTIONS = [
 ]
 
 # Extra stuff that breaks too many programs.
-_AGGRESSIVE_PARSE_OPTIONS = [
+_YSH_PARSE_OPTS = [
     ('parse_at_all', False),  # @ starting any word, e.g. @[] @{} @@ @_ @-
 
     # Legacy syntax that is removed.  These options are distinct from strict_*
@@ -279,9 +279,8 @@ def _Init(opt_def):
     opt_def.Add('extglob')
     opt_def.Add('nocasematch')
 
-    # Compatibility
-    opt_def.Add(
-        'eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
+    # recursive parsing and evaluation - for compatibility, ble.sh, etc.
+    opt_def.Add('eval_unsafe_arith')
 
     # For implementing strict_errexit
     # TODO: could be _no_command_sub / _no_process_sub, if we had to discourage
@@ -306,22 +305,22 @@ def _Init(opt_def):
     opt_def.Add('_no_debug_trap')
 
     # shopt -s strict_arith, etc.
-    for name in _STRICT_OPTION_NAMES:
+    for name in _STRICT_OPTS:
         opt_def.Add(name, groups=['strict:all', 'ysh:all'])
 
     #
     # Options that enable YSH features
     #
 
-    for name in _BASIC_PARSE_OPTIONS:
+    for name in _UPGRADE_PARSE_OPTS:
         opt_def.Add(name, groups=['ysh:upgrade', 'ysh:all'])
     # shopt -s simple_word_eval, etc.
-    for name, default in _BASIC_RUNTIME_OPTIONS:
+    for name, default in _UPGRADE_RUNTIME_OPTS:
         opt_def.Add(name, default=default, groups=['ysh:upgrade', 'ysh:all'])
 
-    for name, default in _AGGRESSIVE_PARSE_OPTIONS:
+    for name, default in _YSH_PARSE_OPTS:
         opt_def.Add(name, default=default, groups=['ysh:all'])
-    for name, default in _AGGRESSIVE_RUNTIME_OPTIONS:
+    for name, default in _YSH_RUNTIME_OPTS:
         opt_def.Add(name, default=default, groups=['ysh:all'])
 
     opt_def.DoneWithImplementedOptions()
