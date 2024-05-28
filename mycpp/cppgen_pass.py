@@ -2557,7 +2557,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # List of field mask expressions
             mask_bits = []
-            if self.virtual.CanReorderFields(split_py_name(o.name)):
+            if self.virtual.CanReorderFields(split_py_name(o.fullname)):
                 # No inheritance, so we are free to REORDER member vars, putting
                 # pointers at the front.
 
