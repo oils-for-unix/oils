@@ -109,6 +109,17 @@ Used as a shortcut for a user's home directory:
     ~/src     # my home dir
     ~bob/src  # user bob's home dir
 
+### proc-sub
+
+Open stdout as a named file in `/dev/fd`, which can be passed to a command:
+
+    diff <(sort L.txt) <(sort R.txt)
+
+Open stdin as a named file in `/dev/fd`:
+
+    seq 3 | tee >(sleep 1; tac)
+
+
 ## Var Ops
 
 ### op-test

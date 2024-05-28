@@ -35,7 +35,7 @@ def Check(all_toc_nodes, chap_tree):
   """
   all_topics = []
 
-  link_from = set()
+  link_from = {}  # (filename, topic) -> implemented
   link_to = set()
 
   section_check = collections.defaultdict(list)
@@ -64,10 +64,11 @@ def Check(all_toc_nodes, chap_tree):
 
         topics = line_info['topics']
         for topic, topic_impl in topics:
-          toc_topic_check[topic].append(toc)
+          if topic_impl:
+            toc_topic_check[topic].append(toc)
 
           chap_filename = 'chap-%s.html' % to_chap
-          link_from.add((chap_filename, topic))
+          link_from[chap_filename, topic] = topic_impl
 
           if not topic_impl or not section_impl:
             topics_not_impl += 1
@@ -77,10 +78,11 @@ def Check(all_toc_nodes, chap_tree):
   log('')
 
   log('TOC stats:')
-  log('  Topics: %d', len(all_topics))
+  log('  All Topics: %d', len(all_topics))
   log('  Unique topics: %d', len(set(all_topics)))
-  log('  Topic Sections not implemented (X): %d', sections_not_impl)
-  log('  All topics not implemented: %d', topics_not_impl)
+  log('  Topics marked implemented: %d', len(toc_topic_check))
+  log('  Topics not implemented: %d', topics_not_impl)
+  log('  Sections not implemented (X): %d', sections_not_impl)
   log('')
 
   if 0:
@@ -114,7 +116,7 @@ def Check(all_toc_nodes, chap_tree):
           topic_id = topic.name
 
         chap_topics[topic_id].append(chap.name)
-        link_to.add((chap.name, topic.name))
+        link_to.add((chap.name, topic_id))
 
         # split by whitespace
         num_words = len(topic.text.split())
@@ -164,13 +166,15 @@ def Check(all_toc_nodes, chap_tree):
 
   # Report on link integrity
   if 1:
-    broken = link_from - link_to
+    # TOC topics with X can be missing
+    impl_link_from = set(k for k, v in link_from.iteritems() if v)
+    broken = impl_link_from - link_to
     log('%d Broken Links:', len(broken))
     for pair in sorted(broken):
       log('  %s', pair)
     log('')
 
-    orphaned = link_to - link_from
+    orphaned = link_to - set(link_from)
     log('%d Orphaned Topics:', len(orphaned))
     for pair in sorted(orphaned):
       log('  %s', pair)

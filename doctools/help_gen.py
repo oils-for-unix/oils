@@ -649,6 +649,7 @@ def TopicMetadata():
     #log('%d topics: %s', len(topics), topics.keys()[:10])
     log('')
 
+    # Compare TOC vs. chapters
     ref_check.Check(all_toc_nodes, chap_tree)
 
   else:

@@ -114,6 +114,13 @@ Pass --norc to disable the startup directory.
 
 History is read?
 
+<h3 id="line-editing" class="osh-ysh-topic">line-editing</h3>
+
+Oils is often built with GNU readline, which recognizes many terminal commands
+for editing input.
+
+A useful option is `set -o vi`, which tells GNU readline to accept vi keys.
+
 <h3 id="exit-codes" class="osh-ysh-topic">exit-codes</h3>
 
 The meaning of exit codes is a convention, and generally follows one of two

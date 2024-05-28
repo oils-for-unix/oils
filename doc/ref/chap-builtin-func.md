@@ -442,26 +442,34 @@ Given a an expression quotation, evaluate it and return its value:
     $ = evalExpr(expr)
     3
 
-## Config Gen
+## Hay Config
+
+### parseHay()
+
+### evalHay()
+
+
+## Hashing
+
+### sha1dc()
+
+Git's algorithm.
+
+### sha256()
+
+
+<!--
 
 ### Better Syntax
 
 These functions give better syntax to existing shell constructs.
 
-- `shquote()` for `printf %q` and `${x@Q}`
-- `lstrip()` for `${x#prefix}` and  `${x##prefix}`
-- `rstrip()` for `${x%suffix}` and  `${x%%suffix}` 
-- `lstripglob()` and `rstripglob()` for slow, legacy glob
+- `shQuote()` for `printf %q` and `${x@Q}`
+- `trimLeft()` for `${x#prefix}` and  `${x##prefix}`
+- `trimRight()` for `${x%suffix}` and  `${x%%suffix}` 
+- `trimLeftGlob()` and `trimRightGlob()` for slow, legacy glob
 - `upper()` for `${x^^}`
 - `lower()` for `${x,,}`
 - `strftime()`: hidden in `printf`
 
-
-## Codecs
-
-TODO
-
-## Hashing
-
-TODO
-
+-->

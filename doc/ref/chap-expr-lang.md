@@ -440,6 +440,12 @@ The ternary operator is borrowed from Python:
     ysh$ = mydict['key']
     (Int)  42
 
+### ysh-attr
+
+The expression `mydict.key` is short for `mydict['key']`.
+
+(Like JavaScript, but unlike Python.)
+
 ### ysh-slice
 
 Slicing gives you a subsequence of a `Str` or `List`, like Python.

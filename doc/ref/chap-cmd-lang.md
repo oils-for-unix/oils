@@ -80,6 +80,19 @@ or this:
     echo one
     echo two
 
+<h3 id="ampersand" class="osh-topic">ampersand &amp;</h3>
+
+Run a command, but don't wait for it to finish.
+
+    sleep 1 &
+    { echo two; sleep 2 } &
+    wait
+    wait
+
+In YSH, use the [fork][] builtin.
+
+[fork]: chap-builtin-cmd.html#fork
+
 <h2 id="Conditional">Conditional</h2>
 
 <h3 id="case" class="osh-topic">case</h3>
@@ -126,6 +139,23 @@ YSH:
     } else {
       echo 'neither'
     }
+
+<h3 id="dbracket" class="osh-topic">dbracket [[</h3>
+
+Statically parsed boolean expressions, from bash and other shells:
+
+    x=42
+    if [[ $x -eq 42 ]]; then
+      echo yes
+    fi  # => yes
+
+Compare with the [test][] builtin, which is dynamically parsed.
+
+See [bool-expr][] for the expression syntax.
+
+[test]: chap-builtin-cmd.html#test
+[bool-expr]: chap-mini-lang.html#bool-expr
+
 
 <h3 id="true" class="osh-ysh-topic">true</h3>
 

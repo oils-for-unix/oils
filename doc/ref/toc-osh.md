@@ -54,7 +54,7 @@ contents](toc-ysh.html), [Data contents](toc-data.html))
   [Completion]    complete    compgen   compopt   compadjust   compexport
   [Shell Process] exec      X logout 
                   umask       ulimit    times
-  [Child Process] jobs        wait      ampersand &
+  [Child Process] jobs        wait
                   fg        X bg      X kill        X disown 
   [External]      test [      getopts
   [Introspection] help        hash      type        X caller
@@ -68,9 +68,9 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-front-end
-  [Usage]         osh-usage   config   startup   line-editing   prompt
-                  exit-codes
-  [Lexing]        comment #   line-continuation \   ascii-whitespace [ \t\r\n]
+  [Usage]         oils-usage   osh-usage             config
+                  startup      line-editing          exit-codes
+  [Lexing]        comment #    line-continuation \   ascii-whitespace [ \t\r\n]
 ```
 
 <h2 id="cmd-lang">
@@ -78,7 +78,7 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-cmd-lang
-  [Commands]      simple-command            semicolon ;
+  [Commands]      simple-command            semicolon ;    ampersand &
   [Conditional]   case        if            dbracket [[
                   true        false         colon :
                   bang !      and &&        or ||
@@ -138,8 +138,7 @@ X [Unsupported]   enable
                   sh-arith      1 + 2*3   a *= 2
                   sh-logical    !a && b
                   sh-bitwise    ~a ^ b
-  [Boolean]       dbracket      statically parsed expressions with [[
-                  bool-expr     [[ ! $x && $y || $z ]]
+  [Boolean]       bool-expr     [[ ! $x && $y || $z ]]
                                 test ! $x -a $y -o $z
                   bool-infix    [[ $a -nt $b ]]  [[ $x == $y ]]
                   bool-path     [[ -d /etc ]]

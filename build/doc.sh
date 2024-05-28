@@ -409,15 +409,20 @@ cards-from-chapters() {
     $HTML_DIR/doc/ref/chap-*.html
 }
 
-metrics() {
+ref-check() {
+  help-gen ref-check \
+    doc/ref/toc-*.md \
+    _release/VERSION/doc/ref/chap-*.html 
+}
+
+
+write-metrics() {
   ### Check indexes and chapters against each other
 
   local out=_release/VERSION/doc/metrics.txt
 
   # send stderr to the log file too
-  help-gen ref-check \
-    doc/ref/toc-*.md \
-    _release/VERSION/doc/ref/chap-*.html > $out 2>&1
+  ref-check > $out 2>&1
 
   echo "Wrote $out"
 }
@@ -656,7 +661,7 @@ run-for-release() {
 
   patch-release-pages
 
-  metrics
+  write-metrics
 
   # Problem: You can't preview it without .wwz!
   # Maybe have local redirects VERSION/test/wild/ to 

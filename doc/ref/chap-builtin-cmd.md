@@ -459,10 +459,14 @@ You may want to use `toJson8()` or `toJson()` before writing:
 
 ### fork
 
-The preferred alternative to shell's `&`.
+Run a command, but don't wait for it to finish.
 
     fork { sleep 1 }
     wait -n
+
+In YSH, use `fork` rather than shell's `&` ([ampersand][]).
+
+[ampersand]: chap-cmd-lang.html#ampersand
 
 ### forkwait
 
@@ -473,6 +477,29 @@ The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible
     }
     echo $not_mutated
 
+### fopen
+
+Runs a block passed to it.  It's designed so redirects have a **prefix**
+syntax:
+
+    fopen >out.txt {
+      echo 1
+      echo 2
+    }
+
+Rather than shell style:
+
+    { echo 1
+      echo 2
+    } >out.txt
+
+When a block is long, the former is more readable.
+
+## Hay Config
+
+### hay
+
+### haynode
 
 
 ## Data Formats

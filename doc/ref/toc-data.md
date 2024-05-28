@@ -78,5 +78,9 @@ X [Compound] List   Dict
   [J8 Lines]  err-j8-lines-encode   err-j8-lines-decode
   [JSON]      err-json-encode       err-json-decode
   [JSON8]     err-json8-encode      err-json8-decode
-X [Packle]    err-packle-encode     err-packle-decode
 ```
+
+<!--
+X [Packle]    err-packle-encode     err-packle-decode
+
+-->

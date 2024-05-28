@@ -31,10 +31,6 @@ In contrast, the main sub languages of YSH are [command](chap-cmd-lang.html),
 
 ## Boolean
 
-### dbracket
-
-Compatible with bash.
-
 ### bool-expr
 
 ### bool-infix

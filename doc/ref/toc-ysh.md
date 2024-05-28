@@ -150,7 +150,7 @@ X [External Lang] BEGIN   END   when (awk)
 </h2>
 
 ```chapter-links-front-end
-  [Usage]         bundle-usage                 ysh-usage
+  [Usage]         oils-usage                   ysh-usage
   [Lexing]        ascii-whitespace [ \t\r\n]
                   doc-comment ###              multiline-command ...
   [Tools]         cat-em
@@ -202,7 +202,6 @@ X [External Lang] BEGIN   END   when (awk)
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
                 X num-suffix    42 K Ki M Mi G Gi T Ti / ms us
-                  rune-literal  #'a'   #'_'   \n   \\   \u{3bc}
                   ysh-string    "x is $x"  $"x is $x"   r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
                   triple-quoted """  $"""  r'''  u'''  b'''
@@ -213,7 +212,7 @@ X [External Lang] BEGIN   END   when (awk)
                   block-literal ^(echo $PWD)
                   expr-lit      ^[1 + 2*3]
                 X expr-sub      $[myobj]
-                X expr-slice    @[myobj]
+                X expr-splice   @[myobj]
   [Operators]     op-precedence Like Python
                   concat        s1 ++ s2,  L1 ++ L2
                   ysh-equals    ===   !==   ~==   is, is not
