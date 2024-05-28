@@ -104,6 +104,9 @@ class VirtualTest(unittest.TestCase):
         self.assertEqual(
             (('moduleA', 'Base'), 'frobnicate'),
             v.virtuals[(('bar', 'Derived'), 'frobnicate')])
+        self.assertEqual(
+            None,
+            v.virtuals[(('moduleA', 'Base'), 'frobnicate')])
 
 
 class DummyFact(pass_state.Fact):
