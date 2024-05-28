@@ -1330,10 +1330,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 if _SkipAssignment(lval_item.name):
                     continue
 
-                item_c_type = GetCType(item_type)
                 # declare it at the top of the function
                 if self.decl:
-                    self.local_var_list.append((lval_item.name, item_c_type))
+                    self.local_var_list.append((lval_item.name, item_type))
                 self.def_write_ind('%s', lval_item.name)
             else:
                 # Could be MemberExpr like self.foo, self.bar = baz
@@ -1459,7 +1458,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         c_type = GetCType(lval_type)
         if self.decl:
-            self.local_var_list.append((lval.name, c_type))
+            self.local_var_list.append((lval.name, lval_type))
 
         assert c_type.endswith('*')
 
@@ -1621,7 +1620,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if self.current_func_node:
                 self.def_write_ind('%s = ', lval.name)
                 if self.decl:
-                    self.local_var_list.append((lval.name, c_type))
+                    self.local_var_list.append((lval.name, lval_type))
             else:
                 # globals always get a type -- they're not mutated
                 self.def_write_ind('%s %s = ', c_type, lval.name)
@@ -2341,7 +2340,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # only do it in one place.  TODO: Check if locals are used in
             # __init__ after allocation.
             if update_locals:
-                self.local_var_list.append((arg_name, c_type))
+                self.local_var_list.append((arg_name, arg_type))
 
             # We can't use __str__ on these Argument objects?  That seems like an
             # oversight
@@ -2423,10 +2422,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 arg_names = [arg.variable.name for arg in o.arguments]
                 #log('arg_names %s', arg_names)
                 #log('local_vars %s', self.local_vars[o])
-                self.prepend_to_block = [
-                    (lval_name, c_type, lval_name in arg_names)
-                    for (lval_name, c_type) in self.local_vars[o]
-                ]
+                self.prepend_to_block = []
+                for (lval_name, lval_type) in self.local_vars[o]:
+                    c_type = lval_type
+                    if not isinstance(lval_type, str):
+                        c_type = GetCType(lval_type)
+
+                    self.prepend_to_block.append((lval_name, c_type, lval_name
+                                                  in arg_names))
 
         self.accept(o.body)
         self.current_func_node = None
