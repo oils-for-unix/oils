@@ -338,7 +338,7 @@ def main(argv):
 
     cfgs = {} # fully qualified function name -> control flow graph
     for name, module in to_compile:
-        cfg_pass = control_flow_pass.Build(result.types)
+        cfg_pass = control_flow_pass.Build(result.types, virtual, local_vars)
         cfg_pass.visit_mypy_file(module)
         cfgs.update(cfg_pass.cfgs)
 

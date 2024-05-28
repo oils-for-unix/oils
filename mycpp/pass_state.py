@@ -110,6 +110,17 @@ class Fact(object):
         raise NotImplementedError()
 
 
+class FunctionCall(Fact):
+    def __init__(self, callee: str) -> None:
+        self.callee = callee
+
+    def name(self) -> str:
+        return 'call'
+
+    def Generate(self, func: str, statement: int) -> str:
+        return '{}\t{}\t{}\n'.format(func, statement, self.callee)
+
+
 class ControlFlowGraph(object):
     """
     A simple control-flow graph.
@@ -299,13 +310,13 @@ class CfgLoopContext(object):
     """
     Context manager to make dealing with loops easier.
     """
-    def __init__(self, cfg: ControlFlowGraph) -> None:
+    def __init__(self, cfg: ControlFlowGraph, entry: Optional[int] = None) -> None:
         self.cfg = cfg
         self.breaks = set({})
         if cfg is None:
             return
 
-        self.entry = self.cfg._PushBlock()
+        self.entry = self.cfg._PushBlock(entry)
         self.exit = self.entry
 
     def AddBreak(self, statement: int) -> None:
@@ -348,9 +359,22 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph], facts_dir='_tmp/myc
     directory as text files that can be consumed by datalog.
     """
     edge_facts = '{}/cf_edge.facts'.format(facts_dir)
+    fact_files = {}
     os.makedirs(facts_dir, exist_ok=True)
     with open(edge_facts, 'w') as cfg_f:
         for func, cfg in sorted(cfgs.items()):
             joined = join_name(func, delim='.')
             for (u, v) in sorted(cfg.edges):
                 cfg_f.write('{}\t{}\t{}\n'.format(joined, u, v))
+
+            for statement, facts in sorted(cfg.facts.items()):
+                for fact in facts: # already sorted temporally
+                    fact_f = fact_files.get(fact.name())
+                    if not fact_f:
+                        fact_f = open('{}/{}.facts'.format(facts_dir, fact.name()), 'w')
+                        fact_files[fact.name()] = fact_f
+
+                    fact_f.write(fact.Generate(joined, statement))
+
+    for f in fact_files.values():
+        f.close()
