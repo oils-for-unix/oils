@@ -209,8 +209,8 @@ X [External Lang] BEGIN   END   when (awk)
                   list-literal  ['one', 'two', 3]  :| unquoted words |
                   dict-literal  {name: 'bob'}  {a, b}
                   range         1 .. n+1
-                  block-literal ^(echo $PWD)
-                  expr-lit      ^[1 + 2*3]
+                  block-expr    ^(echo $PWD)
+                  expr-literal  ^[1 + 2*3]
                 X expr-sub      $[myobj]
                 X expr-splice   @[myobj]
   [Operators]     op-precedence Like Python

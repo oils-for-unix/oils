@@ -229,17 +229,29 @@ can use this idiom:
       echo $i
     }
 
-### block-literal
+### block-expr
 
-A block literal is an object that holds an unevaluated command:
+In YSH expressions, we use `^()` to create a [Command][] object:
 
-    var myblock = ^(echo $PWD)
+    var myblock = ^(echo $PWD; ls *.txt)
 
-### expr-lit
+It's more common for [Command][] objects to be created with block arguments,
+which are not expressions:
+
+    cd /tmp {
+      echo $PWD
+      ls *.txt
+    }
+
+[Command]: chap-type-method.html#Command
+
+### expr-literal
 
 An expression literal is an object that holds an unevaluated expression:
 
     var myexpr = ^[1 + 2*3]
+
+[Expr]: chap-type-method.html#Expr
 
 ## Operators
 

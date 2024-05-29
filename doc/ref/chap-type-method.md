@@ -253,6 +253,8 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 
 ## List
 
+A List contains an ordered sequence of values.
+
 ### append()
 
 Add an element to a list.
@@ -300,6 +302,9 @@ Reverses a list in place.
     echo @fruits  # => pear banana apple
 
 ## Dict
+
+A Dict contains an ordered sequence of key-value pairs.  Given the key, the
+value can be retrieved efficiently.
 
 ### keys()
 
@@ -412,11 +417,35 @@ A Place is used as an "out param" by calling setValue():
 
 ### Expr
 
+An unevaluated expression.  You can create an `Expr` with an expression literal
+([expr-literal][]):
+
+    var expr = ^[42 + a[i]]
+
+[expr-literal]: chap-expr-lang.html#expr-lit
+
 ### Command
+
+An unevaluated command.  You can create a `Command` with a "block expression"
+([block-expr][]):
+
+    var block = ^(echo $PWD; ls *.txt)
+
+[block-expr]: chap-expr-lang.html#block-expr
 
 ### BuiltinFunc
 
+A func that's part of Oils, like `len()`.
+
 ### BoundFunc
+
+The [thin-arrow][] and [fat-arrow][] create bound funcs:
+
+    var bound = '' => upper
+    var bound2 = [] -> append
+
+[thin-arrow]: chap-expr-lang.html#thin-arrow
+[fat-arrow]: chap-expr-lang.html#thin-arrow
 
 ## Func
 

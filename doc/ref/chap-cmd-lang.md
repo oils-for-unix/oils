@@ -278,19 +278,24 @@ In YSH, use [forkwait](chap-builtin-cmd.html#forkwait) instead of parentheses.
 
 ### pipe
 
-### ampersand
+Pipelines are a traditional POSIX shell construct:
 
-    CMD &
+    ls /tmp | grep ssh | sort
 
-The `&` language construct runs CMD in the background as a job, immediately
-returning control to the shell.
+Related:
+
+- [`PIPESTATUS`]() in OSH
+- [`_pipeline_status`]() in YSH
+
+[PIPESTATUS]: chap-special-var.html#PIPESTATUS
+[_pipeline_status]: chap-special-var.html#_pipeline_status
 
 <h3 id="ampersand" class="osh-topic">ampersand &amp;</h3>
 
-Start a command in the background, as a job.  That is, don't wait for it to
-finish.
+Start a command as a background job.  Don't wait for it to finish, and return
+control to the shell.
 
-The resulting PID is recorded in the `$!` variable.
+The PID of the job is recorded in the `$!` variable.
 
     sleep 1 &
     echo pid=$!
