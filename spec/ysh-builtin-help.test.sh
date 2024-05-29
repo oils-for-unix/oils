@@ -1,28 +1,51 @@
 ## oils_failures_allowed: 1
+## our_shell: ysh
 
-#### help topics that are embedded
-help > help.txt
-echo no args $?
+#### help topic not found
 
-for topic in help oils-usage {osh,ysh}-usage {osh,ysh}-chapters; do
-  help $topic > $topic.txt
-  echo $topic $?
-done
+help zz
 
-help zz > zz.txt
-echo zz $?
+## status: 1
 ## STDOUT:
-no args 0
-help 0
-oils-usage 0
-osh-usage 0
-ysh-usage 0
-osh-chapters 0
-ysh-chapters 0
-zz 1
 ## END
 
-#### help topics that are linked
+#### help topics that are embedded
+
+help > help.txt
+echo no args $?
+echo
+
+for topic in help oils-usage {osh,ysh}-usage {osh,ysh}-chapters; do
+  help $topic | fgrep -o "~~~ $topic"
+  echo $topic $?
+  echo
+done
+
+## STDOUT:
+no args 0
+
+~~~ help
+help 0
+
+~~~ oils-usage
+oils-usage 0
+
+~~~ osh-usage
+osh-usage 0
+
+~~~ ysh-usage
+ysh-usage 0
+
+~~~ osh-chapters
+osh-chapters 0
+
+~~~ ysh-chapters
+ysh-chapters 0
+
+## END
+
+#### help topics that print URLs
+
 help command-sub | grep -o chap-word-lang.html
 echo status=$?
 
@@ -38,13 +61,39 @@ status=0
 
 #### help shows 'ysh-chapters' topic
 
-# doesn't show ANSI text unless TTY
+# shows ~~~ instead of ANSI text
 help | grep ysh-chapters
 
 echo status=$?
 
 ## STDOUT:
-TODO fix dev-minimal ~~~ ysh-chapters ~~~
+~~~ ysh-chapters ~~~
+status=0
+## END
+
+#### help List/append chr etc.
+
+shopt --set ysh:upgrade
+
+proc assert-lines {
+  var num_lines = $(@ARGV | wc -l)
+  if (num_lines < 2) {
+    error "only got $num_lines lines"
+  }
+}
+
+assert-lines help List/append
+echo status=$?
+
+assert-lines help cmd/append
+echo status=$?
+
+assert-lines help chr
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
 status=0
 ## END
 
