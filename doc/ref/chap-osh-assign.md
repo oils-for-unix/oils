@@ -59,6 +59,8 @@ In YSH, use a [dict-literal][] to create a [Dict][] instance.
 
 ### local
 
+### readonly
+
 ### export
 
 ### unset

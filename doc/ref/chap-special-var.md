@@ -173,7 +173,26 @@ each process.
 Each exit code is a [Str](chap-type-method.html#Str).  Compare with
 [`_pipeline_status`](#_pipeline_status).
 
+## Platform
+
+### HOSTNAME
+
+The name of the "host" or machine that Oils is running on, determined by
+`gethostname()`.
+
+### OSTYPE
+
+The operating system that Oils is running on, determined by `uname()`.
+
+Examples: `linux darwin ...`
+
 ## Call Stack
+
+### BASH_SOURCE
+
+### FUNCNAME
+
+### BASH_LINENO
 
 ## Tracing
 
@@ -213,6 +232,10 @@ Discouraged; for compatibility with bash.
 Discouraged; for compatibility with bash.
 
 ### COMP_POINT
+
+Discouraged; for compatibility with bash.
+
+### COMP_WORDBREAKS
 
 Discouraged; for compatibility with bash.
 

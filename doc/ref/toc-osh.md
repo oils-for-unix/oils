@@ -78,7 +78,7 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-cmd-lang
-  [Commands]      simple-command            semicolon ;    ampersand &
+  [Commands]      simple-command            semicolon ;
   [Conditional]   case        if            dbracket [[
                   true        false         colon :
                   bang !      and &&        or ||
@@ -200,7 +200,8 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
 </h2>
 
 ```chapter-links-plugin
-  [Signals]       SIGTERM   X SIGINT   X SIGABRT   ...
+  [Signals]       SIGTERM     SIGINT     SIGQUIT
+                  SIGTTIN     SIGTTOU    SIGWINCH
   [Traps]         DEBUG       ERR        EXIT    X RETURN
   [Words]         PS1       X PS2      X PS3       PS4
   [Completion]    complete

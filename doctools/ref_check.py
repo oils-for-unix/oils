@@ -64,13 +64,14 @@ def Check(all_toc_nodes, chap_tree):
 
         topics = line_info['topics']
         for topic, topic_impl in topics:
-          if topic_impl:
-            toc_topic_check[topic].append(toc)
+          is_implemented = topic_impl and section_impl
 
           chap_filename = 'chap-%s.html' % to_chap
-          link_from[chap_filename, topic] = topic_impl
+          link_from[chap_filename, topic] = is_implemented
 
-          if not topic_impl or not section_impl:
+          if is_implemented:
+            toc_topic_check[topic].append(toc)
+          else:
             topics_not_impl += 1
 
         all_topics.extend(topics)

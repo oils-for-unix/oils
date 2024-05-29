@@ -430,6 +430,24 @@ a"hi"  # what about this?
 Technically we CAN read those as literal strings
 -->
 
+### ysh-echo
+
+Print arguments to stdout, separated by a space.
+
+    ysh$ echo hi there
+    hi there
+
+The [simple_echo][] option means that flags aren't accepted, and `--` is not
+accepted.
+
+    ysh$ echo -n
+    -n
+
+See the [YSH FAQ][echo-en] for details.
+
+[simple_echo]: chap-option.html#ysh:all
+[echo-en]: ../ysh-faq.html#how-do-i-write-the-equivalent-of-echo-e-or-echo-n
+
 ### write
 
 write fixes problems with shell's `echo` builtin.

@@ -80,19 +80,6 @@ or this:
     echo one
     echo two
 
-<h3 id="ampersand" class="osh-topic">ampersand &amp;</h3>
-
-Run a command, but don't wait for it to finish.
-
-    sleep 1 &
-    { echo two; sleep 2 } &
-    wait
-    wait
-
-In YSH, use the [fork][] builtin.
-
-[fork]: chap-builtin-cmd.html#fork
-
 <h2 id="Conditional">Conditional</h2>
 
 <h3 id="case" class="osh-topic">case</h3>
@@ -298,7 +285,23 @@ In YSH, use [forkwait](chap-builtin-cmd.html#forkwait) instead of parentheses.
 The `&` language construct runs CMD in the background as a job, immediately
 returning control to the shell.
 
+<h3 id="ampersand" class="osh-topic">ampersand &amp;</h3>
+
+Start a command in the background, as a job.  That is, don't wait for it to
+finish.
+
 The resulting PID is recorded in the `$!` variable.
+
+    sleep 1 &
+    echo pid=$!
+    { echo two; sleep 2 } &
+    wait
+    wait
+
+In YSH, use the [fork][] builtin.
+
+[fork]: chap-builtin-cmd.html#fork
+
 
 <h2 id="Redirects">Redirects</h2>
 
