@@ -18,6 +18,8 @@ from _devbuild.gen.types_asdl import lex_mode_e
 
 import fastlex  # module under test
 
+_ = log
+
 
 # NOTE: This is just like _MatchOshToken_Fast in frontend/match.py
 def MatchOshToken(lex_mode, line, start_pos):

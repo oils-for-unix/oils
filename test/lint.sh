@@ -74,11 +74,27 @@ py3-lint() {
 # TODO: Use devtools/repo.sh instead of this hard-coded list
 readonly -a CODE_DIRS=(
   asdl bin builtin core data_lang doctools frontend osh tools yaks ysh
+
+  prebuilt
+  pyext
+  lazylex
+  benchmarks
+  build
+
+  #pylib
+  #test
 )
 
 py2-files-to-lint() {
-  # TODO: This is better
-  #devtools/repo.sh py-manifest | awk '$1 == "py2" { print $2 }'
+  if false; then
+    # TODO: This is better
+    # Although we should filter by $2
+
+    devtools/repo.sh py-manifest \
+      | egrep -v 'opy/|tools/find/|tools/xargs/' \
+      | awk '$1 == "py2" { print $2 }'
+    return
+  fi
 
   for dir in "${CODE_DIRS[@]}"; do
     for name in $dir/*.py; do

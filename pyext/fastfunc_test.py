@@ -9,6 +9,8 @@ from mycpp.mylib import log
 
 import fastfunc  # module under test
 
+_ = log
+
 
 class FastfuncTest(unittest.TestCase):
 

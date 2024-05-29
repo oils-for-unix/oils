@@ -5,7 +5,6 @@ Shared between sh_spec.py (Python 2) and spec/stateful/harness.py (Python 3)!
 """
 from __future__ import print_function
 
-import optparse
 import os
 import re
 import sys

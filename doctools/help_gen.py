@@ -434,7 +434,6 @@ def CardsFromChapters(out_dir, tag_level, paths):
     root_node = DocNode('/')
     cur_h2_node = None
 
-    seen = set()
     for path in paths:
         with open(path) as f:
             contents = f.read()
@@ -484,11 +483,6 @@ def CardsFromChapters(out_dir, tag_level, paths):
 
             # help builtin will show URL if there's a chapter name
             topic_to_chap[topic_id] = None if embed else chapter_name
-
-            # TODO: move this to ref-check
-            if topic_id in seen:
-                log('Warning: %r is a duplicate topic', topic_id)
-            seen.add(topic_id)
 
         root_node.children.append(page_node)
 

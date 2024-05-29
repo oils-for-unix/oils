@@ -4,7 +4,6 @@ html_test.py: Tests for html.py
 """
 from __future__ import print_function
 
-import sys
 import unittest
 
 from lazylex import html  # module under test log = html.log 
@@ -82,7 +81,7 @@ class HtmlTest(unittest.TestCase):
     n = len(TEST_HTML)
     for tok_id, end_pos in html._Tokens(TEST_HTML, 0, n):
       if tok_id == html.Invalid:
-        raise RuntimeError(event)
+        raise RuntimeError()
       print(tok_id)
 
 

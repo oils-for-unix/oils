@@ -60,7 +60,6 @@ import re
 import shutil
 import subprocess
 import sys
-import time
 
 from test import spec_lib
 from doctools import html_head

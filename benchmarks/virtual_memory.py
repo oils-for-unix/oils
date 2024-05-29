@@ -4,7 +4,6 @@ from __future__ import print_function
 virtual_memory.py
 """
 
-import csv
 import os
 import sys
 import re
