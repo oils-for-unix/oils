@@ -250,15 +250,14 @@ test-control-flow-graph() {
   local mycpp=_bin/shwrap/mycpp_main
   ninja $mycpp
   for ex in mycpp/examples/*.py; do
-
-		local data_dir=testdata/control-flow-graph/$(basename -s .py $ex)
-		if ! test -d $data_dir; then
-			continue
-		fi
+    local data_dir=testdata/control-flow-graph/$(basename -s .py $ex)
+    if ! test -d $data_dir; then
+      continue
+    fi
     banner "$ex"
 
     translate-example $ex
-		diff -u $data_dir/cf_edge.facts _tmp/mycpp-facts/cf_edge.facts
+    diff -u $data_dir/cf_edge.facts _tmp/mycpp-facts/cf_edge.facts
   done
 }
 
