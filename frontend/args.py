@@ -352,6 +352,7 @@ class SetToString(_ArgAction):
 
 
 class SetAttachedBool(_Action):
+
     def __init__(self, name):
         # type: (str) -> None
         self.name = name

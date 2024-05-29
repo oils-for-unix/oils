@@ -898,8 +898,7 @@ class CommandParser(object):
             prev_byte = self.lexer.ByteLookBack()
             if prev_byte not in (SPACE_CH, TAB_CH):
                 if self.parse_opts.parse_at():
-                    p_die('Space required before (',
-                          loc.Word(self.cur_word))
+                    p_die('Space required before (', loc.Word(self.cur_word))
                 else:
                     # inline func call like @sorted(x) is invalid in OSH, but the
                     # solution isn't a space
@@ -915,8 +914,7 @@ class CommandParser(object):
             # of a word, and we don't know if it will end.
             next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
             if next_id == Id.Op_RParen:
-                p_die('Empty arg list not allowed',
-                      loc.Word(self.cur_word))
+                p_die('Empty arg list not allowed', loc.Word(self.cur_word))
 
             typed_args = self.w_parser.ParseProcCallArgs(
                 grammar_nt.ysh_eager_arglist)

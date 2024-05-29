@@ -74,6 +74,25 @@ yapf-changed() {
 }
 
 #
+# Doc strings - one off
+#
+
+install-docformatter() {
+  python3 -m pip install docformatter
+}
+
+docstrings() {
+  ### Format docstrings - NOT done automatically, because it can mangle them
+
+  # Requires manual fix-up
+
+  #time test/lint.sh py2-files-to-lint \
+  #  | xargs --verbose -- python3 -m docformatter --in-place
+
+  python3 -m docformatter --in-place doctools/*.py
+}
+
+#
 # C++
 #
 

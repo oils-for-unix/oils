@@ -18,9 +18,6 @@ source build/dev-shell.sh  # python2 and python3
 source devtools/common.sh  # banner
 source devtools/run-task.sh  # run-task
 
-# TODO: synchronize with metrics/source-code.sh
-readonly -a CODE_DIRS=(asdl bin builtin core data_lang frontend osh tools yaks ysh)
-
 #
 # C++
 #
@@ -95,11 +92,23 @@ py3-lint() {
   oils-lint py3 "$@"
 }
 
+# TODO: synchronize with metrics/source-code.sh, or maybe test/unit.sh which
+# prints a manifest
+readonly -a CODE_DIRS=(asdl bin builtin core data_lang frontend osh tools yaks ysh)
+
+py2-files-to-lint() {
+  for dir in "${CODE_DIRS[@]}"; do
+    for name in $dir/*.py; do
+      echo $name
+    done
+  done | grep -v 'NINJA_subgraph'  # leave out for now
+}
+
 py2() {
   banner 'Linting Python 2 code'
 
   # syntax_abbrev.py doesn't stand alone
-  py2-files-to-format | grep -v '_abbrev.py' | xargs $0 py2-lint
+  py2-files-to-lint | grep -v '_abbrev.py' | xargs $0 py2-lint
 }
 
 py3-files() {
@@ -133,24 +142,6 @@ mycpp-files() {
 
     echo $f
   done
-}
-
-py2-files-to-format() {
-  for dir in "${CODE_DIRS[@]}"; do
-    for name in $dir/*.py; do
-      echo $name
-    done
-  done | grep -v 'NINJA_subgraph'  # leave out for now
-}
-
-run-docformatter() {
-  ### Format docstrings
-
-  # Only done as a ONE OFF to indent docstrings after yapf-2
-  # Because it tends to mangle comments, e.g. grammar comments in
-  # ysh/expr_to_ast.py
-  time py2-files-to-format \
-    | xargs --verbose -- python3 -m docformatter --in-place
 }
 
 #

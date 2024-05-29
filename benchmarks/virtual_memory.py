@@ -14,6 +14,7 @@ METRIC_RE = re.compile('^(VmPeak|VmRSS):\s*(\d+)')
 
 
 class TsvWriter(object):
+
     def __init__(self, f):
         self.f = f
 
