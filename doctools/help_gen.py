@@ -429,7 +429,7 @@ def CardsFromChapters(out_dir, tag_level, paths):
     Args:
       paths: list of chap-*.html to read
     """
-    topics = {}
+    topic_to_chap = {}
 
     root_node = DocNode('/')
     cur_h2_node = None
@@ -453,17 +453,16 @@ def CardsFromChapters(out_dir, tag_level, paths):
             values = [v for k, v in attrs if k == 'id']
             id_value = values[0] if len(values) == 1 else None
 
-            topic_id = id_value if id_value else heading.replace(' ', '-')
+            topic_id = (id_value if id_value else html_lib.PrettyHref(
+                heading, preserve_anchor_case=True))
 
             if tag == 'h2':
-                name = html_lib.PrettyHref(heading, preserve_anchor_case=True)
-                h2 = DocNode(name, attrs=attrs)
+                h2 = DocNode(topic_id, attrs=attrs)
                 page_node.children.append(h2)
                 cur_h2_node = h2
             elif tag == 'h3':
-                name = html_lib.PrettyHref(heading, preserve_anchor_case=True)
                 # attach text so we can see which topics have empty bodies
-                h3 = DocNode(name, attrs=attrs, text=text)
+                h3 = DocNode(topic_id, attrs=attrs, text=text)
                 cur_h2_node.children.append(h3)
 
             if tag != tag_level:
@@ -484,8 +483,9 @@ def CardsFromChapters(out_dir, tag_level, paths):
                     f.write(text)
 
             # help builtin will show URL if there's a chapter name
-            topics[topic_id] = None if embed else chapter_name
+            topic_to_chap[topic_id] = None if embed else chapter_name
 
+            # TODO: move this to ref-check
             if topic_id in seen:
                 log('Warning: %r is a duplicate topic', topic_id)
             seen.add(topic_id)
@@ -496,9 +496,9 @@ def CardsFromChapters(out_dir, tag_level, paths):
 
     log(
         '%d chapters -> (doctools/make_help) -> %d <h3> cards from %d <h2> sections to %s',
-        len(paths), len(topics), num_sections, out_dir)
+        len(paths), len(topic_to_chap), num_sections, out_dir)
 
-    return topics, root_node
+    return topic_to_chap, root_node
 
 
 class StrPool(object):
@@ -587,12 +587,12 @@ def main(argv):
         cc_prefix = argv[4]
         pages = argv[5:]
 
-        topic_dict, _ = CardsFromChapters(out_dir, 'h3', pages)
+        topic_to_chap, _ = CardsFromChapters(out_dir, 'h3', pages)
 
         # Write topic dict as Python and C++
 
         with open(py_out, 'w') as f:
-            f.write('TOPICS = %s\n' % pprint.pformat(topic_dict))
+            f.write('TOPICS = %s\n' % pprint.pformat(topic_to_chap))
 
             f.write('''
 
@@ -608,7 +608,7 @@ def TopicMetadata():
 
         with open(h_path, 'w') as header_f:
             with open(cc_path, 'w') as cc_f:
-                WriteTopicDict(topic_dict, header_f, cc_f)
+                WriteTopicDict(topic_to_chap, header_f, cc_f)
 
     elif action == 'ref-check':
         from doctools import cmark

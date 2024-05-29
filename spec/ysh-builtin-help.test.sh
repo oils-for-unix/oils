@@ -77,6 +77,7 @@ shopt --set ysh:upgrade
 
 proc assert-lines {
   var num_lines = $(@ARGV | wc -l)
+  #echo "lines = $num_lines"
   if (num_lines < 2) {
     error "only got $num_lines lines"
   }
