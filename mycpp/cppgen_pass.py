@@ -2233,7 +2233,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         """
         Translate only blocks of this form:
 
-        WIth switch(x) as case:
+        with switch(x) as case:
           if case(0):
             print('zero')
           elif case(1, 2, 3):
