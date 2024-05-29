@@ -255,13 +255,17 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
 
 A List contains an ordered sequence of values.
 
-### append()
+### List/append()
 
 Add an element to a list.
 
     var fruits = :|apple banana pear|
     call fruits->append("orange")
     echo @fruits  # => apple banana pear orange
+
+Similar names: [append][]
+
+[append]: chap-index.html#append
 
 ### pop()
 

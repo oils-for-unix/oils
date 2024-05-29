@@ -57,7 +57,7 @@ contents](toc-ysh.html), [Data contents](toc-data.html))
   [Child Process] jobs        wait
                   fg        X bg      X kill        X disown 
   [External]      test [      getopts
-  [Introspection] help        hash      type        X caller
+  [Introspection] help        hash      cmd/type    X caller
   [Word Lookup]   command     builtin
   [Interactive]   alias       unalias   history     X fc     X bind
 X [Unsupported]   enable

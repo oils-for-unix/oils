@@ -15,7 +15,7 @@ This chapter in the [Oils Reference](index.html) describes builtin commands for 
 
 ## Memory
 
-### append
+### cmd/append
 
 Append word arguments to a list:
 
@@ -30,6 +30,10 @@ It's a shortcut for:
 
     call myflags->append('-c')
     call myflags->append('echo hi')
+
+Similar names: [append][]
+
+[append]: chap-index.html#append
 
 ### pp
 
@@ -1169,7 +1173,7 @@ Flag:
     -p PATH  Inhibit path search, PATH is used as location for NAME.
     -t       Print the full path of one or more NAME.-->
 
-### type
+### cmd/type
 
     type FLAG* NAME+
 
@@ -1183,6 +1187,10 @@ Flags:
     -f  Don't search for shell functions
     -P  Only search for executable files
     -t  Print a single word: alias, builtin, file, function, or keyword
+
+Similar names: [type][]
+
+[type]: chap-index.html#type
 
 <!-- TODO:
 - procs are counted as shell functions, should be their own thing

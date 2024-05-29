@@ -51,9 +51,11 @@ chapters.  (in progress)
 14. [JSON / J8 Notation](chap-j8.html)
 1. [Errors](chap-errors.html)
 
-<!--
-1. Packle (TODO)
--->
+<div class="highlight">
+
+[**Index**](chap-index.html)
+
+</div>
 
 ## `help` builtin command
 

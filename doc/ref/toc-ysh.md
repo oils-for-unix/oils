@@ -43,7 +43,7 @@ contents](toc-osh.html), [Data contents](toc-data.html))
                    startsWith()   endsWith()
                    upper()        lower()
                    search()       leftMatch()
-  [List]           append()       pop()         extend()    indexOf()
+  [List]           List/append()  pop()         extend()    indexOf()
                  X insert()     X remove()      reverse()
   [Dict]           keys()         values()    X get()     X erase()
                  X inc()        X accum()
@@ -69,7 +69,7 @@ X [Guts]           heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()        type()   X repeat()
+  [Values]        len()        func/type()       X repeat()
   [Conversions]   bool()       int()      float()   str()   list()   dict()
                 X chr()      X ord()    X runes()
   [Str]         X strcmp()   X split()    shSplit()
@@ -99,7 +99,7 @@ X [Wok]           _field()
 <!-- linkify_stop_col is 42 -->
 
 ```chapter-links-builtin-cmd_42
-  [Memory]        append                 Add elements to end of array
+  [Memory]        cmd/append             Add elements to end of array
                   pp                     asdl   cell   X gc-stats   line   proc
   [Handle Errors] try                    Run with errexit, set _status _error
                   boolstatus             Enforce 0 or 1 exit status
@@ -123,7 +123,6 @@ X [Wok]           _field()
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
                   json8                  read write
-                X packle                 read write, graph-shaped
 X [TSV8]          rows                   pick rows; dplyr filter()
                   cols                   pick columns ('select' already taken)
                   group-by               add a column with a group ID [ext]

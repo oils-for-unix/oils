@@ -11,7 +11,14 @@ class FunctionsTest(unittest.TestCase):
   def testPrettyHref(self):
     self.assertEqual('foo-bar', html_lib.PrettyHref('foo  bar', False))
     self.assertEqual('why-not', html_lib.PrettyHref('Why Not??', False))
-    self.assertEqual('cant-touch-this', html_lib.PrettyHref("Can't Touch This!", False))
+    self.assertEqual(
+            'backslash-foo', html_lib.PrettyHref(r'backslash \ foo', False))
+
+    self.assertEqual(
+            'cant-touch-this', html_lib.PrettyHref("Can't Touch This!", False))
+
+    self.assertEqual(
+            'List/append', html_lib.PrettyHref('List/append', True))
 
     self.assertEqual('foo-bar', html_lib.PrettyHref('foo  bar', True))
     self.assertEqual('Why-Not', html_lib.PrettyHref('Why Not??', True))

@@ -26,9 +26,10 @@ Returns the
 - number of bytes in a `Str`
   - TODO: `countRunes()` can return the number of UTF-8 encoded code points.
 
-### type()
+### func/type()
 
-Given an arbitrary value, returns a string representing the value's runtime type.
+Given an arbitrary value, returns a string representing the value's runtime
+type.
 
 For example:
 
@@ -40,6 +41,10 @@ For example:
 
     $ = type(n)
     (Str)    'Int'
+
+Similar names: [type][]
+
+[type]: chap-index.html#type
 
 ### repeat()
 

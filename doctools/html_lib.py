@@ -30,8 +30,15 @@ def PrettyHref(s, preserve_anchor_case=False):
   # Split by whitespace or hyphen
   words = re.split(r'[\s\-]+', s)
 
-  # Keep only alphanumeric
-  keep = [''.join(re.findall(r'\w+', w)) for w in words]
+  if preserve_anchor_case:
+    # doc/ref: Keep only alphanumeric and /, for List/append, cmd/append
+    # Note that "preserve_anchor_case" could be renamed
+    keep_re = r'[\w/]+'
+  else:
+    # Keep only alphanumeric
+    keep_re = r'\w+'
+
+  keep = [''.join(re.findall(keep_re, w)) for w in words]
 
   # Join with - and lowercase.  And then remove empty words, unlike Github.
   # This is SIMILAR to what Github does, but there's no need to be 100%

@@ -66,8 +66,9 @@ TOPIC_RE = re.compile(r'''
   (X[ ])?             # optional deprecation symbol X, then a single space
   @?                  # optional @array, e.g. @BASH_SOURCE
 
-  ([a-zA-Z_][a-zA-Z0-9:_-]+)
+  ([a-zA-Z_][a-zA-Z0-9/:_-]+)
                       # topic names: osh-usage, _status, ysh:all, BASH_REMATCH
+                      #              List/append, cmd/append
 
   ( [ ] [^a-zA-Z0-9 ] \S*
                       # trailer like >> or (make)
