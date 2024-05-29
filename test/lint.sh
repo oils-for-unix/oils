@@ -36,40 +36,19 @@ cpplint() {
 }
 
 #
-# Python
+# Space checks
 #
 
-find-prune() {
-  ### find real source files
-
-  # benchmarks/testdata should be excluded
-  # excluding _build, _devbuild.  Although it might be OK to test generated
-  # code for tabs.
-  find . '(' -type d -a -name '_*' \
-          -o -name testdata \
-          -o -name $PY27 \
-         ')' -a -prune \
-         "$@"
-}
-
-find-src-files() {
-  find-prune \
-    -o -type f -a \
-   '(' -name '*.py' \
-    -o -name '*.sh' \
-    -o -name '*.asdl' \
-    -o -name '*.[ch]' \
-    -o -name '*.cc' \
-   ')' -a -print 
-}
-
 find-tabs() {
-  find-src-files | xargs grep -n $'\t'
+  devtools/repo.sh find-src-files \
+    | egrep -v 'tools/(xargs|find)' \
+    | xargs grep -n $'\t'
 }
 
 find-long-lines() {
   # Exclude URLs
-  find-src-files | xargs grep -n '^.\{81\}' | grep -v 'http'
+  devtools/repo.sh find-src-files \
+    | xargs grep -n '^.\{81\}' | grep -v 'http'
 }
 
 #
@@ -92,11 +71,15 @@ py3-lint() {
   oils-lint py3 "$@"
 }
 
-# TODO: synchronize with metrics/source-code.sh, or maybe test/unit.sh which
-# prints a manifest
-readonly -a CODE_DIRS=(asdl bin builtin core data_lang frontend osh tools yaks ysh)
+# TODO: Use devtools/repo.sh instead of this hard-coded list
+readonly -a CODE_DIRS=(
+  asdl bin builtin core data_lang doctools frontend osh tools yaks ysh
+)
 
 py2-files-to-lint() {
+  # TODO: This is better
+  #devtools/repo.sh py-manifest | awk '$1 == "py2" { print $2 }'
+
   for dir in "${CODE_DIRS[@]}"; do
     for name in $dir/*.py; do
       echo $name

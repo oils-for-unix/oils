@@ -11,7 +11,6 @@ import HTMLParser
 import json
 import optparse
 import os
-import re
 import sys
 
 from doctools import html_lib

@@ -35,6 +35,8 @@ from doctools import html_lib
 from doctools.util import log
 from lazylex import html
 
+#from typing import List, Tuple
+
 # Sections have alphabetical characters, spaces, and '/' for I/O.  They are
 # turned into anchors.
 SECTION_RE = re.compile(
@@ -219,7 +221,7 @@ class Splitter(HTMLParser.HTMLParser):
         self.heading_tags = heading_tags
         self.out = out
 
-        self.cur_group = None  # type: List[Tuple[str, str, List, List]]
+        self.cur_group = None  # type-not-checked: List[Tuple[str, str, List, List]]
         self.in_heading = False
 
         self.indent = 0

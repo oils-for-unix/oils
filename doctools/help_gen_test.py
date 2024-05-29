@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import os
 import unittest
-from cStringIO import StringIO
 
 from doctools import help_gen  # module under test
 

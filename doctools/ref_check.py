@@ -1,10 +1,9 @@
 #!/usr/bin/env python2
-"""ref_check.py: Check Links."""
+"""ref_check.py: Check integrity of doc/ref, and print metrics."""
 from __future__ import print_function
 
 import collections
-import json
-from pprint import pprint
+#from pprint import pprint
 import sys
 
 from doctools.util import log
