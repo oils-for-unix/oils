@@ -18,7 +18,7 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
-from mycpp.util import log, join_name_cpp, split_py_name
+from mycpp.util import log, join_name, split_py_name
 from mycpp import util
 
 from typing import Tuple, List
@@ -2414,7 +2414,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if not self.decl and self.current_class_name:
             # definition looks like
             # void Class::method(...);
-            func_name = join_name_cpp((self.current_class_name[-1], o.name))
+            func_name = join_name((self.current_class_name[-1], o.name))
         else:
             # declaration inside class { }
             func_name = o.name
@@ -2502,7 +2502,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # e.g. class TextOutput : public ColorOutput
             if base_class_name:
-                self.always_write(' : public %s', join_name_cpp(base_class_name, True))
+                self.always_write(' : public %s', join_name(base_class_name,
+                                                            strip_package=True))
 
             self.always_write(' {\n')
             self.always_write_ind(' public:\n')
@@ -2582,7 +2583,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # field mask.
                 if base_class_name:
                     mask_bits.append('%s::field_mask()' %
-                                     join_name_cpp(base_class_name, True))
+                                     join_name(base_class_name, strip_package=True))
 
                 for name in sorted(self.member_vars):
                     c_type = GetCType(self.member_vars[name])
@@ -2688,7 +2689,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                 callee.name == '__init__'):
                             base_constructor_args = expr.args
                             #log('ARGS %s', base_constructor_args)
-                            self.def_write(' : %s(', join_name_cpp(base_class_name, True))
+                            self.def_write(' : %s(', join_name(base_class_name,
+                                                               strip_package=True))
                             for i, arg in enumerate(base_constructor_args):
                                 if i == 0:
                                     continue  # Skip 'this'

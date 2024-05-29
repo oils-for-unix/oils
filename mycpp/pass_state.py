@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from collections import defaultdict
 
-from mycpp.util import log
+from mycpp.util import log, SymbolPath
 
 from typing import Optional
 
@@ -18,17 +18,17 @@ class Virtual(object):
   """
 
     def __init__(self) -> None:
-        self.methods: dict[tuple[str], list[str]] = defaultdict(list)
-        self.subclasses: dict[tuple[str], list[tuple[str]]] = defaultdict(list)
-        self.virtuals: dict[tuple[tuple[str], str], Optional[tuple[str, str]]] = {}
-        self.has_vtable: dict[tuple[str], bool] = {}
-        self.can_reorder_fields: dict[tuple[str], bool] = {}
+        self.methods: dict[SymbolPath, list[str]] = defaultdict(list)
+        self.subclasses: dict[SymbolPath, list[tuple[str]]] = defaultdict(list)
+        self.virtuals: dict[tuple[SymbolPath, str], Optional[tuple[SymbolPath, str]]] = {}
+        self.has_vtable: dict[SymbolPath, bool] = {}
+        self.can_reorder_fields: dict[SymbolPath, bool] = {}
 
         # _Executor -> vm::_Executor
-        self.base_class_unique: dict[str, tuple[str]] = {}
+        self.base_class_unique: dict[str, SymbolPath] = {}
 
     # These are called on the Forward Declare pass
-    def OnMethod(self, class_name: tuple[str], method_name: str) -> None:
+    def OnMethod(self, class_name: SymbolPath, method_name: str) -> None:
         #log('OnMethod %s %s', class_name, method_name)
 
         # __init__ and so forth don't count
@@ -37,7 +37,7 @@ class Virtual(object):
 
         self.methods[class_name].append(method_name)
 
-    def OnSubclass(self, base_class: tuple[str], subclass: tuple[str]) -> None:
+    def OnSubclass(self, base_class: SymbolPath, subclass: SymbolPath) -> None:
         if len(base_class) > 1:
             # Hack for
             #
@@ -82,13 +82,13 @@ class Virtual(object):
                     self.has_vtable[subclass] = True
 
     # These is called on the Decl pass
-    def IsVirtual(self, class_name: tuple[str], method_name: str) -> bool:
+    def IsVirtual(self, class_name: SymbolPath, method_name: str) -> bool:
         return (class_name, method_name) in self.virtuals
 
-    def HasVTable(self, class_name: tuple[str]) -> bool:
+    def HasVTable(self, class_name: SymbolPath) -> bool:
         return class_name in self.has_vtable
 
-    def CanReorderFields(self, class_name: tuple[str]) -> bool:
+    def CanReorderFields(self, class_name: SymbolPath) -> bool:
         if class_name in self.can_reorder_fields:
             return self.can_reorder_fields[class_name]
         else:
