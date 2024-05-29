@@ -5,7 +5,7 @@ from __future__ import print_function
 
 import sys
 
-from typing import Any
+from typing import Any, Sequence
 
 # Used by cppgen_pass and const_pass
 
@@ -14,7 +14,7 @@ from typing import Any
 
 SMALL_STR = False
 
-SymbolPath = tuple[str]
+SymbolPath = Sequence[str]
 
 
 def log(msg: str, *args: Any) -> None:
