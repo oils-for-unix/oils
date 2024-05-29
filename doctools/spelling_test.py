@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
-"""
-spelling_test.py: Tests for spelling.py
-"""
+"""spelling_test.py: Tests for spelling.py."""
 from __future__ import print_function
 
 import unittest
@@ -11,10 +9,10 @@ import spelling  # module under test
 
 class SpellingTest(unittest.TestCase):
 
-  def testSplitWords(self):
+    def testSplitWords(self):
 
-    docs = [
-        r'''
+        docs = [
+            r'''
         a b c   # single chars left out
         foo bar
         http://google.com   # url stripped
@@ -30,8 +28,8 @@ class SpellingTest(unittest.TestCase):
 
         ''',
 
-        # real test case from lynx -dump
-        '''
+            # real test case from lynx -dump
+            '''
         hi
         9. file:///home/andy/git/oilshell/oil/_release/VERSION/doc/oil-language-faq.html#why-doesnt-a-raw-string-work-here-arrayr
 
@@ -39,12 +37,13 @@ class SpellingTest(unittest.TestCase):
 
         aren'tzzz
         '''
-        # turns into "aren't", "zzz" which I guess is right
-    ]
 
-    for doc in docs:
-      print(list(spelling.SplitWords(doc)))
+            # turns into "aren't", "zzz" which I guess is right
+        ]
+
+        for doc in docs:
+            print(list(spelling.SplitWords(doc)))
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

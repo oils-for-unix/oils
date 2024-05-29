@@ -8,34 +8,42 @@ from doctools import html_lib
 
 class FunctionsTest(unittest.TestCase):
 
-  def testPrettyHref(self):
-    self.assertEqual('foo-bar', html_lib.PrettyHref('foo  bar', False))
-    self.assertEqual('why-not', html_lib.PrettyHref('Why Not??', False))
-    self.assertEqual(
-            'backslash-foo', html_lib.PrettyHref(r'backslash \ foo', False))
+    def testPrettyHref(self):
+        self.assertEqual('foo-bar', html_lib.PrettyHref('foo  bar', False))
+        self.assertEqual('why-not', html_lib.PrettyHref('Why Not??', False))
+        self.assertEqual('backslash-foo',
+                         html_lib.PrettyHref(r'backslash \ foo', False))
 
-    self.assertEqual(
-            'cant-touch-this', html_lib.PrettyHref("Can't Touch This!", False))
+        self.assertEqual('cant-touch-this',
+                         html_lib.PrettyHref("Can't Touch This!", False))
 
-    self.assertEqual(
-            'List/append', html_lib.PrettyHref('List/append', True))
+        self.assertEqual('List/append',
+                         html_lib.PrettyHref('List/append', True))
 
-    self.assertEqual('foo-bar', html_lib.PrettyHref('foo  bar', True))
-    self.assertEqual('Why-Not', html_lib.PrettyHref('Why Not??', True))
-    self.assertEqual('Cant-Touch-This', html_lib.PrettyHref("Can't Touch This!", True))
+        self.assertEqual('foo-bar', html_lib.PrettyHref('foo  bar', True))
+        self.assertEqual('Why-Not', html_lib.PrettyHref('Why Not??', True))
+        self.assertEqual('Cant-Touch-This',
+                         html_lib.PrettyHref("Can't Touch This!", True))
 
-    # This is what github does:
-    if 0:
-      self.assertEqual('section-2--3', html_lib.PrettyHref("Section 2 + 3"))
-      self.assertEqual('break--return--continue', html_lib.PrettyHref("break / return / continue"))
-      self.assertEqual('inside-', html_lib.PrettyHref('Inside ${}'))
-    # Ours is cleaner
-    else:
-      self.assertEqual('section-2-3', html_lib.PrettyHref("Section 2 + 3", False))
-      self.assertEqual('break-return-continue', html_lib.PrettyHref("break / return / continue", False))
-      self.assertEqual('inside', html_lib.PrettyHref('Inside ${}', False))
-      self.assertEqual('bash-compatible', html_lib.PrettyHref('Bash-Compatible', False))
+        # This is what github does:
+        if 0:
+            self.assertEqual('section-2--3',
+                             html_lib.PrettyHref("Section 2 + 3"))
+            self.assertEqual('break--return--continue',
+                             html_lib.PrettyHref("break / return / continue"))
+            self.assertEqual('inside-', html_lib.PrettyHref('Inside ${}'))
+        # Ours is cleaner
+        else:
+            self.assertEqual('section-2-3',
+                             html_lib.PrettyHref("Section 2 + 3", False))
+            self.assertEqual(
+                'break-return-continue',
+                html_lib.PrettyHref("break / return / continue", False))
+            self.assertEqual('inside',
+                             html_lib.PrettyHref('Inside ${}', False))
+            self.assertEqual('bash-compatible',
+                             html_lib.PrettyHref('Bash-Compatible', False))
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

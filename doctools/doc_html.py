@@ -1,7 +1,5 @@
 #!/usr/bin/env python2
-"""
-doc_html.py
-"""
+"""doc_html.py."""
 from __future__ import print_function
 
 import cgi
@@ -12,16 +10,17 @@ JS_FMT = '<script type="text/javascript" src="%s"></script>\n'
 
 CSS_FMT = '<link rel="stylesheet" type="text/css" href="%s" />\n'
 
+
 def Header(meta, f, draft_warning=False):
-  css_files = [x for x in meta['css_files'].split() if x]
+    css_files = [x for x in meta['css_files'].split() if x]
 
-  meta['css_links'] = ''.join(CSS_FMT % url for url in css_files)
+    meta['css_links'] = ''.join(CSS_FMT % url for url in css_files)
 
-  # CSS links are NOT escaped
-  meta['title'] = cgi.escape(meta['title'])
+    # CSS links are NOT escaped
+    meta['title'] = cgi.escape(meta['title'])
 
-  # NOTE: 'meta viewport' so it's not small on mobile browsers
-  f.write('''\
+    # NOTE: 'meta viewport' so it's not small on mobile browsers
+    f.write('''\
 <!DOCTYPE html>
 <html>
   <head>
@@ -33,35 +32,35 @@ def Header(meta, f, draft_warning=False):
     <p id="home-link">
 ''' % meta)
 
-  compact_title = meta.get('compact_title')
-  if compact_title:
-    f.write('''\
+    compact_title = meta.get('compact_title')
+    if compact_title:
+        f.write('''\
 <span id="compact-title">%(title)s</span>
 ''' % meta)
 
-  f.write('''\
+    f.write('''\
       <span id="why-sponsor"><a href="/why-sponsor.html">Why Sponsor Oils?</a></span> |
       <a href="https://github.com/oilshell/oil/blob/master/%(repo_url)s" id="source-link">source</a> |
 ''' % meta)
 
-  if meta.get('all_docs_url') != '-':
-    f.write('''\
+    if meta.get('all_docs_url') != '-':
+        f.write('''\
       <span id="all-docs"><a href="%(all_docs_url)s">all docs</a>
         for <span id="version-in-header">version %(oil_version)s</span></span> |
 ''' % meta)
-  elif meta.get('version_url') != '-':
-    # The doc/ URL needs to go back
-    f.write('''\
+    elif meta.get('version_url') != '-':
+        # The doc/ URL needs to go back
+        f.write('''\
       <a href="..">version %(oil_version)s</a> |
 ''' % meta)
 
-  f.write('''\
+    f.write('''\
       <a href="/releases.html">all versions</a> |
       <a href="/">oilshell.org</a>
 ''' % meta)
 
-  if draft_warning:
-    f.write('''\
+    if draft_warning:
+        f.write('''\
       <span id="draft-warning" style="visibility: hidden;"></span>
 
       <script type="text/javascript">
@@ -83,10 +82,10 @@ def Header(meta, f, draft_warning=False):
       </script>
 ''')
 
-  f.write('</p>')
+    f.write('</p>')
 
-  if 'in_progress' in meta:
-    f.write('''\
+    if 'in_progress' in meta:
+        f.write('''\
         <p style="background-color: mistyrose; font-size: large;
                   text-align: center; padding: 1em;">
 
@@ -99,7 +98,7 @@ def Header(meta, f, draft_warning=False):
 
 
 def Footer(meta, f):
-  f.write('''\
+    f.write('''\
     <hr/>
     <div id="build-timestamp"><i>Generated on %(build_timestamp)s</i></div>
   </body>
