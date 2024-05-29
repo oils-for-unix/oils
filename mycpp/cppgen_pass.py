@@ -18,7 +18,7 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
-from mycpp.util import log
+from mycpp.util import log, join_name, split_py_name
 from mycpp import util
 
 from typing import Tuple, List
@@ -2414,7 +2414,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if not self.decl and self.current_class_name:
             # definition looks like
             # void Class::method(...);
-            func_name = '%s::%s' % (self.current_class_name, o.name)
+            func_name = join_name((self.current_class_name[-1], o.name))
         else:
             # declaration inside class { }
             func_name = o.name
@@ -2479,18 +2479,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(b, NameExpr):
                 # TODO: inherit from std::exception?
                 if b.name != 'object' and b.name != 'Exception':
-                    base_class_name = b.name
+                    base_class_name = split_py_name(b.fullname)
             elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
                 assert isinstance(b.expr, NameExpr), b
-                base_class_name = '%s::%s' % (b.expr.name, b.name)
+                base_class_name = split_py_name(b.expr.fullname) + (b.name,)
 
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
             self.always_write_ind('class %s;\n', o.name)
             if base_class_name:
-                self.virtual.OnSubclass(base_class_name, o.name)
+                self.virtual.OnSubclass(base_class_name, split_py_name(o.fullname))
             # Visit class body so we get method declarations
-            self.current_class_name = o.name
+            self.current_class_name = split_py_name(o.fullname)
             self._write_body(o.defs.body)
             self.current_class_name = None
             return
@@ -2502,7 +2502,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # e.g. class TextOutput : public ColorOutput
             if base_class_name:
-                self.always_write(' : public %s', base_class_name)
+                self.always_write(' : public %s', join_name(base_class_name,
+                                                            strip_package=True))
 
             self.always_write(' {\n')
             self.always_write_ind(' public:\n')
@@ -2510,7 +2511,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             block = o.defs
 
             self.indent += 1
-            self.current_class_name = o.name
+            self.current_class_name = split_py_name(o.fullname)
             for stmt in block.body:
 
                 # Ignore things that look like docstrings
@@ -2557,7 +2558,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # List of field mask expressions
             mask_bits = []
-            if self.virtual.CanReorderFields(o.name):
+            if self.virtual.CanReorderFields(split_py_name(o.fullname)):
                 # No inheritance, so we are free to REORDER member vars, putting
                 # pointers at the front.
 
@@ -2581,7 +2582,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # The field mask of a derived class is unioned with its base's
                 # field mask.
                 if base_class_name:
-                    mask_bits.append('%s::field_mask()' % base_class_name)
+                    mask_bits.append('%s::field_mask()' %
+                                     join_name(base_class_name, strip_package=True))
 
                 for name in sorted(self.member_vars):
                     c_type = GetCType(self.member_vars[name])
@@ -2649,7 +2651,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             return
 
-        self.current_class_name = o.name
+        self.current_class_name = split_py_name(o.fullname)
 
         #
         # Now we're visiting for definitions (not declarations).
@@ -2687,7 +2689,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                 callee.name == '__init__'):
                             base_constructor_args = expr.args
                             #log('ARGS %s', base_constructor_args)
-                            self.def_write(' : %s(', base_class_name)
+                            self.def_write(' : %s(', join_name(base_class_name,
+                                                               strip_package=True))
                             for i, arg in enumerate(base_constructor_args):
                                 if i == 0:
                                     continue  # Skip 'this'
@@ -2880,9 +2883,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if len(roots):
                 if (self.stack_roots_warn and
                         len(roots) > self.stack_roots_warn):
-                    log('WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'
-                        % (self.current_class_name or
-                           '', self.current_func_node.name, len(roots)))
+                    log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
+                        % (self.current_func_node.fullname, len(roots)))
 
                 for i, r in enumerate(roots):
                     self.def_write_ind('StackRoot _root%d(&%s);\n' % (i, r))

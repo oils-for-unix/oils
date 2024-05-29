@@ -28,37 +28,38 @@ class VirtualTest(unittest.TestCase):
         pass
     """
         v = pass_state.Virtual()
-        v.OnMethod('Base', 'method')
-        v.OnMethod('Base', 'x')
-        v.OnSubclass('Base', 'Derived')
-        v.OnMethod('Derived', 'method')
-        v.OnMethod('Derived', 'y')
+        v.OnMethod(('Base',), 'method')
+        v.OnMethod(('Base',), 'x')
+        v.OnSubclass(('Base',), ('Derived',))
+        v.OnMethod(('Derived',), 'method')
+        v.OnMethod(('Derived',), 'y')
 
         v.Calculate()
 
         print(v.virtuals)
-        self.assertEqual([('Base', 'method'), ('Derived', 'method')],
+        self.assertEqual({(('Base',), 'method'): None,
+                          (('Derived',), 'method'): (('Base',), 'method')},
                          v.virtuals)
 
-        self.assertEqual(True, v.IsVirtual('Base', 'method'))
-        self.assertEqual(True, v.IsVirtual('Derived', 'method'))
-        self.assertEqual(False, v.IsVirtual('Derived', 'y'))
+        self.assertEqual(True, v.IsVirtual(('Base',), 'method'))
+        self.assertEqual(True, v.IsVirtual(('Derived',), 'method'))
+        self.assertEqual(False, v.IsVirtual(('Derived',), 'y'))
 
-        self.assertEqual(False, v.IsVirtual('Klass', 'z'))
+        self.assertEqual(False, v.IsVirtual(('Klass',), 'z'))
 
-        self.assertEqual(True, v.HasVTable('Base'))
-        self.assertEqual(True, v.HasVTable('Derived'))
+        self.assertEqual(True, v.HasVTable(('Base',)))
+        self.assertEqual(True, v.HasVTable(('Derived',)))
 
-        self.assertEqual(False, v.HasVTable('Klass'))
+        self.assertEqual(False, v.HasVTable(('Klass',)))
 
     def testNoInit(self):
         v = pass_state.Virtual()
-        v.OnMethod('Base', '__init__')
-        v.OnSubclass('Base', 'Derived')
-        v.OnMethod('Derived', '__init__')
+        v.OnMethod(('Base',), '__init__')
+        v.OnSubclass(('Base',), ('Derived',))
+        v.OnMethod(('Derived',), '__init__')
         v.Calculate()
-        self.assertEqual(False, v.HasVTable('Base'))
-        self.assertEqual(False, v.HasVTable('Derived'))
+        self.assertEqual(False, v.HasVTable(('Base',)))
+        self.assertEqual(False, v.HasVTable(('Derived',)))
 
     def testCanReorderFields(self):
         """
@@ -75,13 +76,37 @@ class VirtualTest(unittest.TestCase):
     Note: we can't reorder these, even though there are no virtual methods.
     """
         v = pass_state.Virtual()
-        v.OnSubclass('Base2', 'Derived2')
+        v.OnSubclass(('Base2',), ('Derived2',))
         v.Calculate()
 
-        self.assertEqual(False, v.CanReorderFields('Base2'))
-        self.assertEqual(False, v.CanReorderFields('Derived2'))
+        self.assertEqual(False, v.CanReorderFields(('Base2',)))
+        self.assertEqual(False, v.CanReorderFields(('Derived2',)))
 
-        self.assertEqual(True, v.CanReorderFields('Klass2'))
+        self.assertEqual(True, v.CanReorderFields(('Klass2',)))
+
+    def testBaseCollision(self):
+        v = pass_state.Virtual()
+        v.OnSubclass(('moduleA', 'Base',), ('foo', 'Derived',))
+        with self.assertRaises(AssertionError):
+            v.OnSubclass(('moduleB', 'Base',), ('bar', 'Derived',))
+
+    def testSubclassMapping(self):
+        v = pass_state.Virtual()
+        v.OnMethod(('moduleA', 'Base',), 'frobnicate')
+        v.OnSubclass(('moduleA', 'Base',), ('foo', 'Derived',))
+        v.OnMethod(('foo', 'Derived',), 'frobnicate')
+        v.OnSubclass(('moduleA', 'Base',), ('bar', 'Derived',))
+        v.OnMethod(('bar', 'Derived',), 'frobnicate')
+        v.Calculate()
+        self.assertEqual(
+            (('moduleA', 'Base'), 'frobnicate'),
+            v.virtuals[(('foo', 'Derived'), 'frobnicate')])
+        self.assertEqual(
+            (('moduleA', 'Base'), 'frobnicate'),
+            v.virtuals[(('bar', 'Derived'), 'frobnicate')])
+        self.assertEqual(
+            None,
+            v.virtuals[(('moduleA', 'Base'), 'frobnicate')])
 
 
 class DummyFact(pass_state.Fact):

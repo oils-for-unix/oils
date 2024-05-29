@@ -5,7 +5,7 @@ from __future__ import print_function
 
 from collections import defaultdict
 
-from mycpp.util import log
+from mycpp.util import log, SymbolPath
 
 from typing import Optional
 
@@ -18,17 +18,17 @@ class Virtual(object):
   """
 
     def __init__(self) -> None:
-        self.methods: dict[str, list[str]] = defaultdict(list)
-        self.subclasses: dict[str, list[str]] = defaultdict(list)
-        self.virtuals: list[tuple[str, str]] = []
-        self.has_vtable: dict[str, bool] = {}
-        self.can_reorder_fields: dict[str, bool] = {}
+        self.methods: dict[SymbolPath, list[str]] = defaultdict(list)
+        self.subclasses: dict[SymbolPath, list[tuple[str]]] = defaultdict(list)
+        self.virtuals: dict[tuple[SymbolPath, str], Optional[tuple[SymbolPath, str]]] = {}
+        self.has_vtable: dict[SymbolPath, bool] = {}
+        self.can_reorder_fields: dict[SymbolPath, bool] = {}
 
         # _Executor -> vm::_Executor
-        self.base_class_unique: dict[str, str] = {}
+        self.base_class_unique: dict[str, SymbolPath] = {}
 
     # These are called on the Forward Declare pass
-    def OnMethod(self, class_name: str, method_name: str) -> None:
+    def OnMethod(self, class_name: SymbolPath, method_name: str) -> None:
         #log('OnMethod %s %s', class_name, method_name)
 
         # __init__ and so forth don't count
@@ -37,27 +37,27 @@ class Virtual(object):
 
         self.methods[class_name].append(method_name)
 
-    def OnSubclass(self, base_class: str, subclass: str) -> None:
-        if '::' in base_class:
+    def OnSubclass(self, base_class: SymbolPath, subclass: SymbolPath) -> None:
+        if len(base_class) > 1:
             # Hack for
             #
             # class _Executor: pass
             #   versus
             # class MyExecutor(vm._Executor): pass
-            base_key = base_class.split('::')[1]
+            base_key = base_class[-1]
 
             # Fail if we have two base classes in different namespaces with the same
             # name.
             if base_key in self.base_class_unique:
                 # Make sure we don't have collisions
-                assert self.base_class_unique[base_key] == base_class
+                assert self.base_class_unique[base_key] == base_class or base_class in self.subclasses[self.base_class_unique[base_key]], base_class
             else:
                 self.base_class_unique[base_key] = base_class
 
         else:
             base_key = base_class
 
-        self.subclasses[base_key].append(subclass)
+        self.subclasses[base_class].append(subclass)
 
     def Calculate(self) -> None:
         """
@@ -75,20 +75,20 @@ class Virtual(object):
                 s_methods = self.methods[subclass]
                 overlapping = set(b_methods) & set(s_methods)
                 for method in overlapping:
-                    self.virtuals.append((base_class, method))
-                    self.virtuals.append((subclass, method))
+                    self.virtuals[(base_class, method)] = None
+                    self.virtuals[(subclass, method)] = (base_class, method)
                 if overlapping:
                     self.has_vtable[base_class] = True
                     self.has_vtable[subclass] = True
 
     # These is called on the Decl pass
-    def IsVirtual(self, class_name: str, method_name: str) -> bool:
+    def IsVirtual(self, class_name: SymbolPath, method_name: str) -> bool:
         return (class_name, method_name) in self.virtuals
 
-    def HasVTable(self, class_name: str) -> bool:
+    def HasVTable(self, class_name: SymbolPath) -> bool:
         return class_name in self.has_vtable
 
-    def CanReorderFields(self, class_name: str) -> bool:
+    def CanReorderFields(self, class_name: SymbolPath) -> bool:
         if class_name in self.can_reorder_fields:
             return self.can_reorder_fields[class_name]
         else:
