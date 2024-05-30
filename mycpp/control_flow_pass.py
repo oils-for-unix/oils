@@ -67,6 +67,9 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 try:
                     cfg = self.current_cfg()
+                    # Most statements have empty visitors because they don't
+                    # require any special logic. Create statements for them
+                    # here. Blocks and loops are handled by their visitors.
                     if cfg and not isinstance(node, Block) and not isinstance(node, ForStmt) and not isinstance(node, WhileStmt):
                         self.current_statement_id = cfg.AddStatement()
 
