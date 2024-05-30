@@ -416,7 +416,7 @@ like a linter *at runtime*, so it can catch things that [ShellCheck][] can't.
 
 `strict_errexit` disallows code that exhibits these problems:
 
-1. The `if `myfunc` Pitfall
+1. The `if myfunc` Pitfall
 1. The `local x=$(false)` Pitfall
 
 See the appendix for examples of each.
