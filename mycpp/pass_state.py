@@ -112,12 +112,39 @@ class Fact(object):
 
 class ControlFlowGraph(object):
     """
-    A simple control-flow graph. See unit tests for usage.
+    A simple control-flow graph.
 
-    Statements are assigned unique numeric IDs. Control flow is represented as
-    directed edges between statements.
+    Every statement in the program is represented as a node in a graph with
+    unique a numeric ID. Control flow is represented as directed edges through
+    the graph. Loops can introduce back-edges. Every node in the graph will
+    satisfy at least one of the following conditions:
 
-    Statements can carry annotations called facts.
+        - Its indegree is at least one.
+
+        - Its outdegree is at least one.
+
+    For simple linear graphs all you need is the AddStatement method. For more
+    complex flows there is a set of context managers below to help simplify
+    construction.
+
+        - For branches-like statements (e.g. if- and try- statements) use
+          CfgBranchContext. It will take care of the details associated with
+          stitching the different branches to statements in the next statement.
+
+        - For loops, use CfgLoopContext. It will take care of adding back-edges
+          and connecting break statements to any statements that proceed the
+          loop.
+
+        - CfgBlockContext can be used for simple cases where you just want to
+          track the beginning and end of a sequence of statements.
+
+    Statements can carry annotations called facts, which are used as inputs to
+    datalog programs to perform dataflow diffrent kinds of dataflow analyses.
+    To annotate a statement, use the AddFact method with any object that
+    implements the Fact interface.
+
+    See the unit tests in pass_state_test.py and the mycpp phase in
+    control_flow_pass.py for detailed examples of usage.
     """
 
     def __init__(self) -> None:
@@ -147,12 +174,6 @@ class ControlFlowGraph(object):
         Mark a statement as a dead-end (e.g. return or continue).
         """
         self.deadends.add(statement)
-
-    def CurrentStatement(self) -> int:
-        """
-        Get the ID of the current statement.
-        """
-        return self.statement_counter
 
     def AddStatement(self) -> int:
         """
@@ -185,6 +206,9 @@ class ControlFlowGraph(object):
         """
         Start a block at the given statement ID. If a beginning statement isn't
         provided one will be created and its ID will be returend.
+
+        Direct use of this function is discouraged. Consider using one of the
+        block context managers below instead.
         """
         if begin is None:
             begin = self.AddStatement()
@@ -198,6 +222,9 @@ class ControlFlowGraph(object):
         """
         Pop a block from the top of the stack and return the ID of the block's
         last statement.
+
+        Direct use of this function is discouraged. Consider using one of the
+        block context managers below instead.
         """
         assert len(self.block_stack)
         last = self.block_stack.pop()
@@ -209,7 +236,7 @@ class ControlFlowGraph(object):
 
 class CfgBlockContext(object):
     """
-    Context manager to make dealing with things like try-except blocks easier.
+    Context manager to make dealing with things like with-statements easier.
     """
     def __init__(self, cfg: ControlFlowGraph, begin: Optional[int] = None) -> None:
         self.cfg = cfg

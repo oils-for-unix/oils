@@ -17,6 +17,7 @@ from mypy.main import process_options
 from mycpp import const_pass
 from mycpp import cppgen_pass
 from mycpp import debug_pass
+from mycpp import control_flow_pass
 from mycpp import pass_state
 from mycpp.util import log
 
@@ -311,7 +312,6 @@ def main(argv):
 
     local_vars = {}  # FuncDef node -> (name, c_type) list
     field_gc = {}  # ClassDef node -> maskof_Foo() string, if it's required
-    cfgs = {} # fully qualified function name -> control flow graph
 
     log('\tmycpp pass: PROTOTYPES')
 
@@ -329,11 +329,18 @@ def main(argv):
                                   local_vars=local_vars,
                                   field_gc=field_gc,
                                   virtual=virtual,
-                                  cfgs=cfgs,
                                   decl=True)
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
+
+    log('\tmycpp pass: CONTROL FLOW')
+
+    cfgs = {} # fully qualified function name -> control flow graph
+    for name, module in to_compile:
+        cfg_pass = control_flow_pass.Build(result.types)
+        cfg_pass.visit_mypy_file(module)
+        cfgs.update(cfg_pass.cfgs)
 
     pass_state.DumpControlFlowGraphs(cfgs)
 

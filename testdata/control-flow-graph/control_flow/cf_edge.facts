@@ -17,6 +17,7 @@ examples.control_flow.IfDemo	5	6
 examples.control_flow.IfDemo	5	7
 examples.control_flow.IfDemo	7	8
 examples.control_flow.IfDemo	7	9
+examples.control_flow.ParseError.__init__	0	1
 examples.control_flow.f	0	1
 examples.control_flow.f	1	2
 examples.control_flow.f	1	3
