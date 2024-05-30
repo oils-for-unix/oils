@@ -4,7 +4,7 @@ util.py
 from __future__ import print_function
 
 import sys
-from mypy.nodes import CallExpr, IfStmt, Block, Expression
+from mypy.nodes import CallExpr, IfStmt, Block, Expression, MypyFile
 
 from typing import Any, Sequence, Optional
 
@@ -88,3 +88,12 @@ def _collect_cases(module_path: str, if_node: IfStmt, out: list[tuple[Expression
             return if_node.else_body
 
     return False  # NO DEFAULT BLOCK - Different than None
+
+
+def ShouldSkipPyFile(node: MypyFile) -> bool:
+    # Skip some stdlib stuff.  A lot of it is brought in by 'import
+    # typing'. These module are special; their contents are currently all
+    # built-in primitives.
+    return node.fullname in ('__future__', 'sys', 'types', 'typing', 'abc',
+                             '_ast', 'ast', '_weakrefset', 'collections',
+                             'cStringIO', 're', 'builtins')

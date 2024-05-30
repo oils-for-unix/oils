@@ -78,14 +78,7 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
-        # Skip some stdlib stuff.  A lot of it is brought in by 'import
-        # typing'.
-        if o.fullname in ('__future__', 'sys', 'types', 'typing', 'abc',
-                          '_ast', 'ast', '_weakrefset', 'collections',
-                          'cStringIO', 're', 'builtins'):
-
-            # These module are special; their contents are currently all
-            # built-in primitives.
+        if util.ShouldSkipPyFile(o):
             return
 
         self.module_path = o.path
