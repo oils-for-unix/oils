@@ -1,17 +1,30 @@
 ---
-css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
+title: YSH Table of Contents
+all_docs_url: ..
+css_files: ../../web/base.css ../../web/ref-index.css
 preserve_anchor_case: yes
 ---
 
+<!--
 YSH Table of Contents
 =====================
+-->
+
+<div class="toc-header">
+
+<span style="font-size: 1.2em">
+
+[Oils Reference](index.html) &mdash;
+[OSH](toc-osh.html) | **YSH Table of Contents** | [Data Notation](toc-data.html)
+
+</span>
+
+</div>
 
 [YSH]($xref) is shell with a familiar syntax, JSON-like data structures, good
 error handling, and more.
 
-This page is part of the [Oils Reference](index.html).  (Siblings: [OSH
-contents](toc-osh.html), [Data contents](toc-data.html))
-
+<!--
 <div class="custom-toc">
 
 [type-method](#type-method) &nbsp;
@@ -28,6 +41,7 @@ contents](toc-osh.html), [Data contents](toc-data.html))
 [plugin](#plugin)
 
 </div>
+-->
 
 &nbsp;
 
@@ -289,7 +303,7 @@ X [External Lang] BEGIN   END   when (awk)
 &nbsp;
 
 <h2 id="option">
-  Shell Options <a class="group-link" href="chap-option.html">option</a>
+  Global Shell Options <a class="group-link" href="chap-option.html">option</a>
 </h2>
 
 ```chapter-links-option

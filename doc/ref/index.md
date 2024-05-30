@@ -1,19 +1,38 @@
 ---
+title: Oils Reference
+all_docs_url: ..
+css_files: ../../web/base.css ../../web/ref-index.css
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
+<div class="toc-header">
+
+<span style="font-size: 1.2em">
+
+**Oils Reference** &mdash;
+[OSH](toc-osh.html) | [YSH](toc-ysh.html) | [Data Notation](toc-data.html)
+
+</span>
+
+</div>
+
+<!--
 Oils Reference
 =============
+-->
+
 
 <style>
   .highlight {
       background-color: #eee;
-      padding-top: 0.2em;
-      padding-bottom: 0.2em;
+      padding-top: 0.1em;
+      padding-bottom: 0.1em;
       padding-left: 1em;
       padding-right: 1em;
-      font-size: x-large;
+      /*
+      font-size: 1.2em;
+      */
   }
 </style>
 
@@ -57,7 +76,9 @@ chapters.  (in progress)
 
 </div>
 
-## `help` builtin command
+&nbsp;
+
+## `help` command
 
 When you type `help` in OSH or YSH, it shows a URL to this reference, or text
 extracted from it.

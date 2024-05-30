@@ -1,22 +1,46 @@
 ---
-css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
+title: OSH Table of Contents
+all_docs_url: ..
+css_files: ../../web/base.css ../../web/ref-index.css
 preserve_anchor_case: yes
 ---
 
+<!--
 OSH Table of Contents
 =====================
-
-[OSH]($xref) is a POSIX- and [bash]($xref)-compatible shell.
-
-This page is part of the [Oils Reference](index.html).  (Siblings: [YSH
-contents](toc-ysh.html), [Data contents](toc-data.html))
+-->
 
 <!--
 <div id="toc">
 </div>
 -->
 
+<div class="toc-header">
+
+<span style="font-size: 1.2em">
+
+[Oils Reference](index.html) &mdash;
+**OSH Table of Contents** | [YSH](toc-ysh.html) | [Data Notation](toc-data.html)
+
+</span>
+
+</div>
+
+[OSH]($xref) is a POSIX- and [bash]($xref)-compatible shell.
+
+<!--
 <div class="custom-toc">
+
+[OSH Types](#type-method) <br/>
+[Builtin Commands](#builtin-cmd) <br/>
+[Front End](#front-end) <br/>
+[Command Language](#cmd-lang) <br/>
+[OSH Assignment](#osh-assign) <br/>
+[Word Language](#word-lang) <br/>
+[Mini Languages](#mini-lang) <br/>
+[Shell Options](#option) <br/>
+[Special Variables](#special-var) <br/>
+[Plugins and Hooks](#plugin) <br/>
 
 [type-method](#type-method) &nbsp;
 [builtin-cmd](#builtin-cmd) &nbsp;
@@ -30,6 +54,7 @@ contents](toc-ysh.html), [Data contents](toc-data.html))
 [plugin](#plugin)
 
 </div>
+-->
 
 &nbsp;
 

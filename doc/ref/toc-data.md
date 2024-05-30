@@ -1,20 +1,34 @@
 ---
-css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
+title: Data Notation Table of Contents
+all_docs_url: ..
+css_files: ../../web/base.css ../../web/ref-index.css
 preserve_anchor_case: yes
 ---
 
+<!--
 Data Notation Table of Contents
 ===
-
-Shell programs can be built with well-defined textual data.
-
-This page is part of the [Oils Reference](index.html).  (Siblings: [OSH
-contents](toc-osh.html), [YSH contents](toc-ysh.html))
+-->
 
 <!--
 <div id="toc">
 </div>
 -->
+
+<div class="toc-header">
+
+<span style="font-size: 1.2em">
+
+[Oils Reference](index.html) &mdash;
+[OSH](toc-osh.html) | [YSH](toc-ysh.html) | **Data Notation Table of Contents**
+
+</span>
+
+</div>
+
+Shell programs can be built on well-defined textual data.
+
+<!--
 
 <div class="custom-toc">
 
@@ -22,6 +36,8 @@ contents](toc-osh.html), [YSH contents](toc-ysh.html))
 [packle](#packle) &nbsp; [errors](#errors) &nbsp;
 
 </div>
+-->
+
 
 &nbsp;
 

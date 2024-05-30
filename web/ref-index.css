@@ -5,12 +5,25 @@
 }
 
 /* like web/toc.css */
-.custom-toc {
+.toc-header {
   background-color: oldlace;
   padding-left: 1em;
   padding-right: 1em;
   padding-top: 1px;
   padding-bottom: 1px;
+}
+
+/* Not used */
+.custom-toc {
+  background-color: oldlace;
+  /*
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  */
+
+  column-width: 8em;
 }
 
 a:link {
