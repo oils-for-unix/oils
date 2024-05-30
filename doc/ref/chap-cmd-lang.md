@@ -1,7 +1,7 @@
 ---
 in_progress: yes
 all_docs_url: ..
-body_css_class: width40 help-body
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---

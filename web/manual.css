@@ -33,12 +33,6 @@ h3 {
   padding-top: 1em;  /* separate sections */
 }
 
-h4 {
-  margin-left: 2em;
-
-  padding-top: 1em;  /* separate sections */
-}
-
 /* inline code 
  *
  * BUG FIX: Selector is 'p code' and not 'code' because markdown generates
@@ -48,20 +42,6 @@ h4 {
 p code, li code, h2 code, h3 code, div code {
   background-color: #eee;
   padding: 4px;
-}
-
-/* for doc/ref */
-
-.help-body h3 {
-  /* Make it block and use normal spacing
-   * TODO: It would be nice to use the spacing of the manual
-   */
-
-  font-size: 1em;
-  /* margin-left: 2em; */
-  padding: 1em; 
-
-  color: black;
 }
 
 /* like web/toc.css */
