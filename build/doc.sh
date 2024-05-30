@@ -74,7 +74,7 @@ cmark() {
 }
 
 readonly MARKDOWN_DOCS=(
-  # Help index has its own rendering
+  published
 
   # polished
   getting-started

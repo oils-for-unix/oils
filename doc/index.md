@@ -6,13 +6,25 @@ all_docs_url: -
 All Docs
 ========
 
-Oils is **our upgrade path from bash** to a better language and runtime.  This
-page links to all the documentation.
+This page links to all docs.  A dagger &dagger; means a doc isn't finished.
 
+See [Published Docs](published.html) for those that are ready to read.
+
+
+<!--
 <div id="toc">
 </div>
+-->
 
-&dagger; means a doc is not ready to read yet.
+## Good Places to Start
+
+- [A Tour of YSH](ysh-tour.html)
+- [YSH vs. Shell Idioms](idioms.html) 
+- [**Oils Reference**](ref/index.html) - underlies the [help][] builtin
+- [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
+  something**.
+
+[help]: ref/chap-builtin-cmd.html#help
 
 ## Preliminaries
 
@@ -20,19 +32,6 @@ page links to all the documentation.
   the `oils-for-unix` tarball.
   - [Portability](portability.html)
 - [Getting Started](getting-started.html).  How do I use the shell?
-- [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
-  something**.
-
-## Reference
-
-Like many other docs, the reference is still in progress:
-
-- [**Oils Reference**](ref/index.html) &dagger; - These docs underlie `help` builtin, and
-  are also published online.  Navigate it with:
-  - [OSH Table of Contents](ref/toc-osh.html) &dagger;
-  - [YSH Table of Contents](ref/toc-ysh.html) &dagger;
-  - [Data Notation Table of Contents](ref/toc-data.html) &dagger;
-- The [YSH Style Guide](style-guide.html) gives coding recommendations.
 
 ## Interactive Shell
 
@@ -41,22 +40,23 @@ Like many other docs, the reference is still in progress:
 
 ## OSH is a Compatible Shell
 
-These docs are for advanced users:
-
-- [Known Differences Between OSH and Other Shells](known-differences.html)
-- [OSH Quirks](quirks.html) for compatibility.
 - [Shell Language Idioms](shell-idioms.html) has some advice for using any
   shell, not just Oils.
 
-## YSH is a Shell with Structured Data
+For sophisticated users:
+
+- [Known Differences Between OSH and Other Shells](known-differences.html)
+- [OSH Quirks](quirks.html) for compatibility.
+
+## YSH is a New, Powerful Shell
 
 - [A Tour of YSH](ysh-tour.html).  Explains YSH from scratch, without referring
   to shell's legacy.
 - [What Breaks When You Upgrade to YSH](upgrade-breakage.html).  When you turn
   on YSH, there are some shell constructs you can no longer use.  We try to
   minimize the length of this list.
-- [YSH Language FAQ](ysh-faq.html).  Common questions about the
-  language.
+- [YSH Language FAQ](ysh-faq.html)
+- [YSH Style Guide](style-guide.html)
 
 ### Comparisons
 
@@ -109,11 +109,7 @@ the wire, **not** the other way around.
 - [J8 Notation](j8-notation.html).  An upgrade of JSON to bytes, strings,
   lines, and structured data.
   - [JSON](json.html).  Some usage details.
-  - [Framing](framing.html)
-
-TODO:
-
-- Packle &dagger;
+  - [Framing](framing.html) &dagger;
 
 ## The Shared Oils Runtime
 
@@ -156,9 +152,5 @@ Old:
 
 - [INSTALL-old](INSTALL-old.html) for the slow `oil-$VERSION` tarball, based on
   CPython.
-
-
-
-
 
 <!-- vim: set sw=2: -->

@@ -1,5 +1,4 @@
 ---
-in_progress: yes
 css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
 preserve_anchor_case: yes
 ---

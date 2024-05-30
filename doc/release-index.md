@@ -30,6 +30,15 @@ and benchmarks.
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
+## Documentation
+
+- [Published Docs](doc/published.html) about Oils - these docs are ready to
+  read.
+- [All Docs](doc/index.html) about Oils (in progress).
+  - The [**Oils Reference**](doc/ref/index.html)
+
+&nbsp;
+
 **[Oils Packaging Guidelines]($wiki)**:
 
 - The `oils-for-unix` tarball is the fast shell in C++, completed in
@@ -49,52 +58,10 @@ and benchmarks.
 - I sometimes write a [release announcement](announcement.html) with a
   high-level description of changes.
 
-## Documentation
-
-- The [**Oils Reference**](doc/ref/index.html) (in progress)
-  - Table of contents for [OSH](doc/ref/toc-osh.html) | [YSH](doc/ref/toc-ysh.html)
-    | [Data Languages](doc/ref/toc-data.html)
-- [**All Docs**](doc/) about Oils (in progress).
-
-These docs are **ready to read**:
-
-- [Getting Started](doc/getting-started.html)
-- [FAQ on Documentation](doc/faq-doc.html).  **Look here if you can't find
-  something.**
-- OSH:
-  - [Known Differences Between OSH and Other Shells](doc/known-differences.html)
-  | [Quirks](doc/quirks.html)
-  | [Tracing Execution](doc/xtrace.html)
-  | [Headless Mode](doc/headless.html)
-- YSH:
-  - Intro: [A Tour of YSH](doc/ysh-tour.html)
-  | [A Feel For YSH Syntax](doc/syntax-feelings.html) 
-  | [YSH Style Guide](doc/style-guide.html) 
-  | [YSH vs. Shell Idioms](doc/idioms.html) and [Shell Idioms](doc/shell-idioms.html)
-  | [What Breaks When You Upgrade to YSH](doc/upgrade-breakage.html)
-  | [YSH Language FAQ](doc/ysh-faq.html)
-  - Comparisons: [YSH vs. Shell](doc/ysh-vs-shell.html) | [YSH Expressions vs.
-    Python](doc/ysh-vs-python.html)
-  - Features: [Egg Expressions (YSH Regexes)](doc/eggex.html)
-  | [YSH Regex API](doc/ysh-regex-api.html)
-  | [Guide to Procs and Funcs](doc/proc-func.html)
-  | [YSH Fixes Shell's Error Handling](doc/error-handling.html)
-  | [Simple Word Evaluation](doc/simple-word-eval.html)
-  | [Variable Declaration, Mutation, and Scope](doc/variables.html)
-  | [Hay - Custom Languages for Unix Systems](doc/hay.html)
-- Data Languages:
-  - [JSON](doc/json.html) | [J8 Notation](doc/j8-notation.html)
-- Language Design:
-  - [Syntactic Concepts](doc/syntactic-concepts.html) 
-  | [Command vs. Expression Mode](doc/command-vs-expression-mode.html)
-  | [Language Influences](doc/language-influences.html)
-  - Notes: [Novelties in OSH and YSH](doc/novelties.html) | [Warts](doc/warts.html)
-- Reference:
-  - [Oils Error Catalog, With Hints](doc/error-catalog.html)
-
-More:
+## Links
 
 - [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
-  [Oil Deployments](https://github.com/oilshell/oil/wiki/Oil-Deployments) wiki
-  page has other ways of getting Oils.  These versions may not be up-to-date.
+  [Oils Deployments](https://github.com/oilshell/oil/wiki/Oils-Deployments)
+  wiki page has other ways of getting Oils.  These versions may not be
+  up-to-date.
 
