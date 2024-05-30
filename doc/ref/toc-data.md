@@ -1,32 +1,19 @@
 ---
 title: Data Notation Table of Contents
 all_docs_url: ..
-css_files: ../../web/base.css ../../web/ref-index.css
+css_files: ../../web/base.css ../../web/manual.css ../../web/ref-index.css
 preserve_anchor_case: yes
 ---
 
-<!--
-Data Notation Table of Contents
-===
--->
-
-<!--
-<div id="toc">
-</div>
--->
-
-<div class="toc-header">
-
-<span style="font-size: 1.2em">
+<div class="doc-ref-header">
 
 [Oils Reference](index.html) &mdash;
 [OSH](toc-osh.html) | [YSH](toc-ysh.html) | **Data Notation Table of Contents**
 
-</span>
-
 </div>
 
-Shell programs can be built on well-defined textual data.
+Shell programs can be built on well-defined data notation / data languages /
+text interchange formats.
 
 <!--
 
@@ -38,9 +25,6 @@ Shell programs can be built on well-defined textual data.
 </div>
 -->
 
-
-&nbsp;
-
 <h2 id="front-end">
   <!-- <a href="chap-front-end.html">Front End</a> -->
   Front End <a class="group-link" href="chap-front-end.html">front-end</a>
@@ -50,8 +34,6 @@ Shell programs can be built on well-defined textual data.
   [Lexing]        ascii-whitespace [ \t\r\n]
                   ascii-control-chars
 ```
-
-&nbsp;
 
 <h2 id="j8-notation">
   J8 Notation
@@ -74,8 +56,6 @@ Shell programs can be built on well-defined textual data.
 ```
 
 All J8 notation is UTF-8.
-
-&nbsp;
 
 <!--
 <h2 id="packle">
@@ -106,5 +86,3 @@ X [Compound] List   Dict
 X [Packle]    err-packle-encode     err-packle-decode
 
 -->
-
-&nbsp;

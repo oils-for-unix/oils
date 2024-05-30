@@ -1,27 +1,17 @@
 ---
 title: Oils Reference
 all_docs_url: ..
-css_files: ../../web/base.css ../../web/ref-index.css
+css_files: ../../web/base.css ../../web/manual.css ../../web/ref-index.css
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-<div class="toc-header">
-
-<span style="font-size: 1.2em">
+<div class="doc-ref-header">
 
 **Oils Reference** &mdash;
 [OSH](toc-osh.html) | [YSH](toc-ysh.html) | [Data Notation](toc-data.html)
 
-</span>
-
 </div>
-
-<!--
-Oils Reference
-=============
--->
-
 
 <style>
   .highlight {
@@ -75,8 +65,6 @@ chapters.  (in progress)
 [**Index**](chap-index.html)
 
 </div>
-
-&nbsp;
 
 ## `help` command
 

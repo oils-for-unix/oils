@@ -1,4 +1,5 @@
 ---
+title: Types and Methods (Oils Reference)
 in_progress: yes
 all_docs_url: ..
 body_css_class: width40 help-body
@@ -6,12 +7,14 @@ default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Types and Methods
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes YSH types and methods.
+[Oils Reference](index.html) &mdash; Chapter **Types and Methods**
 
-There are also two OSH types for bash compatibility.
+</div>
+
+This chapter in the [Oils Reference](index.html) describes YSH types and
+methods.  There are also two OSH types for bash compatibility.
 
 <div id="toc">
 </div>

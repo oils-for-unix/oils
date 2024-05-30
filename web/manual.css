@@ -64,6 +64,26 @@ p code, li code, h2 code, h3 code, div code {
   color: black;
 }
 
+/* like web/toc.css */
+.doc-ref-header {
+  background-color: oldlace;
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-top: 1px;
+  padding-bottom: 1px;
+
+  font-size: 1.2em;
+}
+
+/* remove underline for the header only */
+.doc-ref-header a:link {
+  text-decoration: none;
+}
+.doc-ref-header a:hover {
+  text-decoration: underline;
+}
+
+
 .osh-topic {
   border-left: solid;
   border-color: brown;

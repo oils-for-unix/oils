@@ -1,23 +1,14 @@
 ---
 title: YSH Table of Contents
 all_docs_url: ..
-css_files: ../../web/base.css ../../web/ref-index.css
+css_files: ../../web/base.css ../../web/manual.css ../../web/ref-index.css
 preserve_anchor_case: yes
 ---
 
-<!--
-YSH Table of Contents
-=====================
--->
-
-<div class="toc-header">
-
-<span style="font-size: 1.2em">
+<div class="doc-ref-header">
 
 [Oils Reference](index.html) &mdash;
 [OSH](toc-osh.html) | **YSH Table of Contents** | [Data Notation](toc-data.html)
-
-</span>
 
 </div>
 
@@ -42,8 +33,6 @@ error handling, and more.
 
 </div>
 -->
-
-&nbsp;
 
 <h2 id="type-method">
   Types and Methods <a class="group-link" href="chap-type-method.html">type-method</a>
@@ -78,8 +67,6 @@ X [Module]         name()         filename()
 X [Guts]           heapId()
 ```
 
-&nbsp;
-
 <h2 id="builtin-func">
   Builtin Functions <a class="group-link" href="chap-builtin-func.html">builtin-func</a>
 </h2>
@@ -107,8 +94,6 @@ X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
                   quoteMake()   quoteNinja()
 X [Wok]           _field()
 -->
-
-&nbsp;
 
 <h2 id="builtin-cmd">
   Builtin Commands <a class="group-link" href="chap-builtin-cmd">builtin-cmd</a>
@@ -162,8 +147,6 @@ X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 -->
 
-&nbsp;
-
 <h2 id="front-end">
   Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>
@@ -174,8 +157,6 @@ X [External Lang] BEGIN   END   when (awk)
                   doc-comment ###              multiline-command ...
   [Tools]         cat-em
 ```
-
-&nbsp;
 
 <h2 id="cmd-lang">
   Command Language <a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>
@@ -193,8 +174,6 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-for       for i, item in (mylist) { echo }
 ```
 
-&nbsp;
-
 <h2 id="ysh-cmd">
   YSH Command Language Keywords <a class="group-link" href="chap-ysh-cmd.html">ysh-cmd</a>
 </h2>
@@ -210,8 +189,6 @@ X [External Lang] BEGIN   END   when (awk)
                   func          func f(x; opt1, opt2) { return (x + 1) }
                   ysh-return    return (myexpr)
 ```
-
-&nbsp;
 
 <h2 id="expr-lang">
   Expression Language and Assignments <a class="group-link" href="chap-expr-lang.html">expr-lang</a>
@@ -266,8 +243,6 @@ X [External Lang] BEGIN   END   when (awk)
                 X re-multiline  ///
 ```
 
-&nbsp;
-
 <h2 id="word-lang">
   Word Language <a class="group-link" href="chap-word-lang.html">word-lang</a>
 </h2>
@@ -287,8 +262,6 @@ X [External Lang] BEGIN   END   when (awk)
                 X ysh-format    ${x|html}
 ```
 
-&nbsp;
-
 <h2 id="mini-lang">
   Other Mini Languages <a class="group-link" href="chap-mini-lang.html">mini-lang</a>
 </h2>
@@ -300,8 +273,6 @@ X [External Lang] BEGIN   END   when (awk)
   [Other Sublang] braces        {alice,bob}@example.com
 ```
 
-&nbsp;
-
 <h2 id="option">
   Global Shell Options <a class="group-link" href="chap-option.html">option</a>
 </h2>
@@ -310,8 +281,6 @@ X [External Lang] BEGIN   END   when (awk)
   [Groups]       strict:all      ysh:upgrade     ysh:all
   [YSH Details]  opts-redefine   opts-internal
 ```
-
-&nbsp;
 
 <h2 id="special-var">
   Special Variables <a class="group-link" href="chap-special-var.html">special-var</a>
@@ -335,8 +304,6 @@ X [Wok]           _filename           _line
 X [Builtin Sub]   _buffer
 -->
 
-&nbsp;
-
 <h2 id="plugin">
   Plugins and Hooks <a class="group-link" href="chap-plugin.html">plugin</a>
 </h2>
@@ -344,5 +311,3 @@ X [Builtin Sub]   _buffer
 ```chapter-links-plugin
   [YSH]   renderPrompt()
 ```
-
-&nbsp;

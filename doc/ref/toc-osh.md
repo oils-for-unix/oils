@@ -1,28 +1,14 @@
 ---
 title: OSH Table of Contents
 all_docs_url: ..
-css_files: ../../web/base.css ../../web/ref-index.css
+css_files: ../../web/base.css ../../web/manual.css ../../web/ref-index.css
 preserve_anchor_case: yes
 ---
 
-<!--
-OSH Table of Contents
-=====================
--->
-
-<!--
-<div id="toc">
-</div>
--->
-
-<div class="toc-header">
-
-<span style="font-size: 1.2em">
+<div class="doc-ref-header">
 
 [Oils Reference](index.html) &mdash;
 **OSH Table of Contents** | [YSH](toc-ysh.html) | [Data Notation](toc-data.html)
-
-</span>
 
 </div>
 
@@ -56,8 +42,6 @@ OSH Table of Contents
 </div>
 -->
 
-&nbsp;
-
 <h2 id="type-method">
   OSH Types <a class="group-link" href="chap-type-method.html">type-method</a>
 </h2>
@@ -65,8 +49,6 @@ OSH Table of Contents
 ```chapter-links-type-method
   [OSH]           BashArray   BashAssoc
 ```
-
-&nbsp;
 
 <h2 id="builtin-cmd">
   Builtin Commands <a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>
@@ -90,8 +72,6 @@ OSH Table of Contents
 X [Unsupported]   enable
 ```
 
-&nbsp;
-
 <h2 id="front-end">
   Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>
@@ -101,8 +81,6 @@ X [Unsupported]   enable
                   startup      line-editing          exit-codes
   [Lexing]        comment #    line-continuation \   ascii-whitespace [ \t\r\n]
 ```
-
-&nbsp;
 
 <h2 id="cmd-lang">
   Command Language <a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>
@@ -123,8 +101,6 @@ X [Unsupported]   enable
   [Other Command] dparen ((   time        X coproc       X select
 ```
 
-&nbsp;
-
 <h2 id="osh-assign">
   Assignments and Expressions <a class="group-link" href="chap-osh-assign.html">osh-assign</a>
 </h2>
@@ -137,8 +113,6 @@ X [Unsupported]   enable
   [Builtins]      local     readonly    export   unset   shift
                   declare   typeset   X let
 ```
-
-&nbsp;
 
 <h2 id="word-lang">
   Word Language <a class="group-link" href="chap-word-lang.html">word-lang</a>
@@ -160,8 +134,6 @@ X [Unsupported]   enable
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
 ```
-
-&nbsp;
 
 <h2 id="mini-lang">
   Other Mini Languages <a class="group-link" href="chap-mini-lang.html">mini-lang</a>
@@ -189,8 +161,6 @@ X [Unsupported]   enable
                   char-escapes  \t  \c  \x00  \u03bc
 ```
 
-&nbsp;
-
 <h2 id="option">
   Global Shell Options <a class="group-link" href="chap-option.html">option</a>
 </h2>
@@ -206,8 +176,6 @@ X [Unsupported]   enable
   [Other POSIX]  X noclobber
   [Compat]         eval_unsafe_arith
 ```
-
-&nbsp;
 
 <h2 id="special-var">
   Special Variables <a class="group-link" href="chap-special-var.html">special-var</a>
@@ -236,8 +204,6 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [Functions]   X RANDOM            SECONDS
 ```
 
-&nbsp;
-
 <h2 id="plugin">
   Plugins and Hooks <a class="group-link" href="chap-plugin.html">plugin</a>
 </h2>
@@ -250,5 +216,3 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [Completion]    complete
   [Other Plugin]  PROMPT_COMMAND       X command_not_found    
 ```
-
-&nbsp;
