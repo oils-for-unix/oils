@@ -1,16 +1,21 @@
 ---
-in_progress: yes
+title: Front End (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Front End
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes command line usage
-and lexing.
+[Oils Reference](index.html) &mdash;
+Chapter **Front End**
+
+</div>
+
+This chapter describes command line usage and lexing.
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

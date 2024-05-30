@@ -1,21 +1,28 @@
 ---
-in_progress: yes
+title: Mini Languages (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Mini Languages
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes "mini-languages".
+[Oils Reference](index.html) &mdash;
+Chapter **Mini Languages**
+
+</div>
+
+This chapter describes "mini-languages" like glob patterns and brace expansion.
 
 In contrast, the main sub languages of YSH are [command](chap-cmd-lang.html),
 [word](chap-word-lang.html), and [expression](chap-expr-lang.html).
 
+<span class="in-progress">(in progress)</span>
+
 <div id="toc">
 </div>
+
 <h2 id="sublang">Other Shell Sublanguages</h2>
 
 ## Arithmetic

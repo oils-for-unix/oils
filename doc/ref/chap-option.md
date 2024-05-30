@@ -1,16 +1,23 @@
 ---
-in_progress: yes
+title: Global Shell Options (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Global Shell Options
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes global shell options
-for OSH and YSH.
+[Oils Reference](index.html) &mdash;
+Chapter **Global Shell Options**
+
+</div>
+
+This chapter describes global shell options in Oils.  Some options are from
+POSIX shell, and some are from [bash]($xref).  We also use options to turn
+[OSH]($xref) into [YSH]($xref).
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

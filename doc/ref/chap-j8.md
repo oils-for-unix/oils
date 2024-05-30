@@ -1,19 +1,24 @@
 ---
-in_progress: yes
+title: JSON / J8 Notation (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-JSON / J8 Notation
-==================
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes [JSON]($xref), and
-its **J8 Notation** superset.
+[Oils Reference](index.html) &mdash;
+Chapter **JSON / J8 Notation**
 
-See the [J8 Notation](../j8-notation.html) doc for more background.  This doc
+</div>
+
+This chapter describes [JSON]($xref), and its **J8 Notation** superset.
+
+See the [J8 Notation doc](../j8-notation.html) for more background.  This doc
 is a quick reference, not the official spec.
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

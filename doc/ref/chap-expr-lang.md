@@ -1,15 +1,20 @@
 ---
+title: YSH Expression Language (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-YSH Expression Language
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes the YSH expression
-language, which includes [Egg Expressions]($xref:eggex).
+[Oils Reference](index.html) &mdash;
+Chapter **YSH Expression Language**
+
+</div>
+
+This chapter describes the YSH expression language, which includes [Egg
+Expressions]($xref:eggex).
 
 <div id="toc">
 </div>

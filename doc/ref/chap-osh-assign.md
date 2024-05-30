@@ -1,15 +1,21 @@
 ---
-in_progress: yes
+title: OSH Assignment (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-OSH Assignment
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes OSH assignment.
+[Oils Reference](index.html) &mdash;
+Chapter **OSH Assignment**
+
+</div>
+
+This chapter describes OSH assignment, which looks like `x=value`.
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

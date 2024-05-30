@@ -1,19 +1,21 @@
 ---
-in_progress: yes
+title: Command Language (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Command Language
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes the command language
-for OSH, and some YSH extensions.
+[Oils Reference](index.html) &mdash;
+Chapter **Command Language**
 
-- Back: [OSH Table of Contents](toc-osh.html) |
-  [YSH Table of Contents](toc-ysh.html)
+</div>
+
+This chapter describes the command language for OSH, and some YSH extensions.
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

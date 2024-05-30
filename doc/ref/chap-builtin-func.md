@@ -1,17 +1,22 @@
 ---
-in_progress: yes
+title: Builtin Functions (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Builtin Functions
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes builtin functions.
+[Oils Reference](index.html) &mdash;
+Chapter **Builtin Functions**
 
-(As opposed to [builtin commands](chap-builtin-cmd.html).
+</div>
+
+This chapter describes builtin functions (as opposed to [builtin
+commands](chap-builtin-cmd.html).)
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

@@ -1,21 +1,25 @@
 ---
-in_progress: yes
+title: Errors (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Errors
-======
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes **errors** for data
-languages.  An error checklist is often a nice, concise way to describe a
-language.
+[Oils Reference](index.html) &mdash;
+Chapter **Errors**
+
+</div>
+
+This chapter describes **errors** for data languages.  An error checklist is
+often a nice, concise way to describe a language.
 
 Related: [Oils Error Catalog, With Hints](../error-catalog.html) describes
 errors in code.
 
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

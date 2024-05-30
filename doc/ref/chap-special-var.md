@@ -1,16 +1,21 @@
 ---
-in_progress: yes
+title: Special Variables (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Special Variables
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes special variables
-for OSH and YSH.
+[Oils Reference](index.html) &mdash;
+Chapter **Special Variables**
+
+</div>
+
+This chapter describes special variables for OSH and YSH.
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

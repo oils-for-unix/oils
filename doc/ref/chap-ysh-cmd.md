@@ -1,18 +1,21 @@
 ---
-in_progress: yes
+title: YSH Command Language Keywords (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-YSH Command Language Keywords
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes new YSH keywords in
-the command language.
+[Oils Reference](index.html) &mdash;
+Chapter **YSH Command Language Keywords**
 
-- Back: [YSH Table of Contents](toc-ysh.html)
+</div>
+
+This chapter describes new YSH keywords in the command language.
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

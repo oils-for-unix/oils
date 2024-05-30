@@ -1,16 +1,21 @@
 ---
-in_progress: yes
+title: Plugins and Hooks (Oils Reference)
 all_docs_url: ..
 body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Plugins and Hooks
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes extension points for
-OSH and YSH.
+[Oils Reference](index.html) &mdash;
+Chapter **Plugins and Hooks**
+
+</div>
+
+This chapter describes extension points for OSH and YSH.
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>
