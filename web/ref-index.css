@@ -20,10 +20,11 @@ a:hover {
   text-decoration: underline;
 }
 
-/* where help-index.html links to h2 in help.html */
+/* e.g. type-method for chap-type-method.html */
 .group-link {
   font-family: monospace;
-  color: darkgreen;
+  font-weight: normal; /* not bold like heading */
+  float: right;
 }
 
 h1 {
@@ -61,7 +62,9 @@ p code, li code, h2 code, h3 code, div code {
 /* blocks of code */
 pre {
   /* 80 character width */
+  /*
   width: 80ch;
+  */
 }
 
 #compact-title {

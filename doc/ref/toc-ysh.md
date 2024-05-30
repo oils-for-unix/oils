@@ -29,9 +29,10 @@ contents](toc-osh.html), [Data contents](toc-data.html))
 
 </div>
 
+&nbsp;
 
 <h2 id="type-method">
-  Types and Methods (<a class="group-link" href="chap-type-method.html">type-method</a>)
+  Types and Methods <a class="group-link" href="chap-type-method.html">type-method</a>
 </h2>
 
 ```chapter-links-type-method
@@ -63,8 +64,10 @@ X [Module]         name()         filename()
 X [Guts]           heapId()
 ```
 
+&nbsp;
+
 <h2 id="builtin-func">
-  Builtin Functions (<a class="group-link" href="chap-builtin-func.html">builtin-func</a>)
+  Builtin Functions <a class="group-link" href="chap-builtin-func.html">builtin-func</a>
 </h2>
 
 ```chapter-links-builtin-func
@@ -91,8 +94,10 @@ X [Codecs]        quoteUrl()   quoteHtml()   quoteSh()   quoteC()
 X [Wok]           _field()
 -->
 
+&nbsp;
+
 <h2 id="builtin-cmd">
-  Builtin Commands (<a class="group-link" href="chap-builtin-cmd">builtin-cmd</a>)
+  Builtin Commands <a class="group-link" href="chap-builtin-cmd">builtin-cmd</a>
 </h2>
 
 <!-- linkify_stop_col is 42 -->
@@ -143,8 +148,10 @@ X [External Lang] BEGIN   END   when (awk)
                   rule (make)   each (xargs)   fs (find)
 -->
 
+&nbsp;
+
 <h2 id="front-end">
-  Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)
+  Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>
 
 ```chapter-links-front-end
@@ -154,8 +161,10 @@ X [External Lang] BEGIN   END   when (awk)
   [Tools]         cat-em
 ```
 
+&nbsp;
+
 <h2 id="cmd-lang">
-  Command Language (<a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>)
+  Command Language <a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>
 </h2>
 
 <!-- linkify_stop_col is 33 -->
@@ -170,8 +179,10 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-for       for i, item in (mylist) { echo }
 ```
 
+&nbsp;
+
 <h2 id="ysh-cmd">
-  YSH Command Language Keywords (<a class="group-link" href="chap-ysh-cmd.html">ysh-cmd</a>)
+  YSH Command Language Keywords <a class="group-link" href="chap-ysh-cmd.html">ysh-cmd</a>
 </h2>
 
 ```chapter-links-ysh-cmd_33
@@ -186,8 +197,10 @@ X [External Lang] BEGIN   END   when (awk)
                   ysh-return    return (myexpr)
 ```
 
+&nbsp;
+
 <h2 id="expr-lang">
-  Expression Language and Assignments (<a class="group-link" href="chap-expr-lang.html">expr-lang</a>)
+  Expression Language and Assignments <a class="group-link" href="chap-expr-lang.html">expr-lang</a>
 </h2>
 
 <!-- linkify_stop_col is 33 -->
@@ -239,8 +252,10 @@ X [External Lang] BEGIN   END   when (awk)
                 X re-multiline  ///
 ```
 
+&nbsp;
+
 <h2 id="word-lang">
-  Word Language (<a class="group-link" href="chap-word-lang.html">word-lang</a>)
+  Word Language <a class="group-link" href="chap-word-lang.html">word-lang</a>
 </h2>
 
 <!-- linkify_stop_col is 33 -->
@@ -258,8 +273,10 @@ X [External Lang] BEGIN   END   when (awk)
                 X ysh-format    ${x|html}
 ```
 
+&nbsp;
+
 <h2 id="mini-lang">
-  Other Mini Languages (<a class="group-link" href="chap-mini-lang.html">mini-lang</a>)
+  Other Mini Languages <a class="group-link" href="chap-mini-lang.html">mini-lang</a>
 </h2>
 
 <!-- linkify_stop_col is 33 -->
@@ -269,8 +286,10 @@ X [External Lang] BEGIN   END   when (awk)
   [Other Sublang] braces        {alice,bob}@example.com
 ```
 
+&nbsp;
+
 <h2 id="option">
-  Shell Options (<a class="group-link" href="chap-option.html">option</a>)
+  Shell Options <a class="group-link" href="chap-option.html">option</a>
 </h2>
 
 ```chapter-links-option
@@ -278,8 +297,10 @@ X [External Lang] BEGIN   END   when (awk)
   [YSH Details]  opts-redefine   opts-internal
 ```
 
+&nbsp;
+
 <h2 id="special-var">
-  Special Variables (<a class="group-link" href="chap-special-var.html">special-var</a>)
+  Special Variables <a class="group-link" href="chap-special-var.html">special-var</a>
 </h2>
 
 ```chapter-links-special-var
@@ -300,10 +321,14 @@ X [Wok]           _filename           _line
 X [Builtin Sub]   _buffer
 -->
 
+&nbsp;
+
 <h2 id="plugin">
-  Plugins and Hooks (<a class="group-link" href="chap-plugin.html">plugin</a>)
+  Plugins and Hooks <a class="group-link" href="chap-plugin.html">plugin</a>
 </h2>
 
 ```chapter-links-plugin
   [YSH]   renderPrompt()
 ```
+
+&nbsp;

@@ -6,7 +6,7 @@ preserve_anchor_case: yes
 Data Notation Table of Contents
 ===
 
-Shell programs can be built on well-defined data formats.
+Shell programs can be built with well-defined textual data.
 
 This page is part of the [Oils Reference](index.html).  (Siblings: [OSH
 contents](toc-osh.html), [YSH contents](toc-ysh.html))
@@ -23,8 +23,11 @@ contents](toc-osh.html), [YSH contents](toc-ysh.html))
 
 </div>
 
+&nbsp;
+
 <h2 id="front-end">
-  Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)
+  <!-- <a href="chap-front-end.html">Front End</a> -->
+  Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>
 
 ```chapter-links-front-end
@@ -32,9 +35,11 @@ contents](toc-osh.html), [YSH contents](toc-ysh.html))
                   ascii-control-chars
 ```
 
+&nbsp;
+
 <h2 id="j8-notation">
   J8 Notation
-  (<a class="group-link" href="chap-j8.html">j8</a>)
+  <a class="group-link" href="chap-j8.html">j8</a>
 </h2>
 
 ```chapter-links-j8
@@ -54,6 +59,8 @@ contents](toc-osh.html), [YSH contents](toc-ysh.html))
 
 All J8 notation is UTF-8.
 
+&nbsp;
+
 <!--
 <h2 id="packle">
   Packle
@@ -68,7 +75,7 @@ X [Compound] List   Dict
 
 <h2 id="errors">
   Errors
-  (<a class="group-link" href="chap-errors.html">errors</a>)
+  <a class="group-link" href="chap-errors.html">errors</a>
 </h2>
 
 ```chapter-links-errors
@@ -83,3 +90,5 @@ X [Compound] List   Dict
 X [Packle]    err-packle-encode     err-packle-decode
 
 -->
+
+&nbsp;

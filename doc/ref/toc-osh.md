@@ -31,17 +31,20 @@ contents](toc-ysh.html), [Data contents](toc-data.html))
 
 </div>
 
+&nbsp;
 
 <h2 id="type-method">
-  OSH Types (<a class="group-link" href="chap-type-method.html">type-method</a>)
+  OSH Types <a class="group-link" href="chap-type-method.html">type-method</a>
 </h2>
 
 ```chapter-links-type-method
   [OSH]           BashArray   BashAssoc
 ```
 
+&nbsp;
+
 <h2 id="builtin-cmd">
-  Builtin Commands (<a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>)
+  Builtin Commands <a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>
 </h2>
 
 ```chapter-links-builtin-cmd
@@ -62,8 +65,10 @@ contents](toc-ysh.html), [Data contents](toc-data.html))
 X [Unsupported]   enable
 ```
 
+&nbsp;
+
 <h2 id="front-end">
-  Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)
+  Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>
 
 ```chapter-links-front-end
@@ -72,8 +77,10 @@ X [Unsupported]   enable
   [Lexing]        comment #    line-continuation \   ascii-whitespace [ \t\r\n]
 ```
 
+&nbsp;
+
 <h2 id="cmd-lang">
-  Command Language (<a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>)
+  Command Language <a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>
 </h2>
 
 ```chapter-links-cmd-lang
@@ -91,8 +98,10 @@ X [Unsupported]   enable
   [Other Command] dparen ((   time        X coproc       X select
 ```
 
+&nbsp;
+
 <h2 id="osh-assign">
-  Assignments and Expressions (<a class="group-link" href="chap-osh-assign.html">osh-assign</a>)
+  Assignments and Expressions <a class="group-link" href="chap-osh-assign.html">osh-assign</a>
 </h2>
 
 ```chapter-links-osh-assign
@@ -104,8 +113,10 @@ X [Unsupported]   enable
                   declare   typeset   X let
 ```
 
+&nbsp;
+
 <h2 id="word-lang">
-  Word Language (<a class="group-link" href="chap-word-lang.html">word-lang</a>)
+  Word Language <a class="group-link" href="chap-word-lang.html">word-lang</a>
 </h2>
 
 <!-- linkify_stop_col is 33 -->
@@ -125,8 +136,10 @@ X [Unsupported]   enable
                   op-format     ${x@P}
 ```
 
+&nbsp;
+
 <h2 id="mini-lang">
-  Other Mini Languages (<a class="group-link" href="chap-mini-lang.html">mini-lang</a>)
+  Other Mini Languages <a class="group-link" href="chap-mini-lang.html">mini-lang</a>
 </h2>
 
 <!-- linkify_stop_col is 33 -->
@@ -151,8 +164,10 @@ X [Unsupported]   enable
                   char-escapes  \t  \c  \x00  \u03bc
 ```
 
+&nbsp;
+
 <h2 id="option">
-  Global Shell Options (<a class="group-link" href="chap-option.html">option</a>)
+  Global Shell Options <a class="group-link" href="chap-option.html">option</a>
 </h2>
 
 <!-- linkify_stop_col is 20 since we only want section links -->
@@ -167,8 +182,10 @@ X [Unsupported]   enable
   [Compat]         eval_unsafe_arith
 ```
 
+&nbsp;
+
 <h2 id="special-var">
-  Special Variables (<a class="group-link" href="chap-special-var.html">special-var</a>)
+  Special Variables <a class="group-link" href="chap-special-var.html">special-var</a>
 </h2>
 
 ```chapter-links-special-var
@@ -194,8 +211,10 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [Functions]   X RANDOM            SECONDS
 ```
 
+&nbsp;
+
 <h2 id="plugin">
-  Plugins and Hooks (<a class="group-link" href="chap-plugin.html">plugin</a>)
+  Plugins and Hooks <a class="group-link" href="chap-plugin.html">plugin</a>
 </h2>
 
 ```chapter-links-plugin
@@ -206,3 +225,5 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [Completion]    complete
   [Other Plugin]  PROMPT_COMMAND       X command_not_found    
 ```
+
+&nbsp;

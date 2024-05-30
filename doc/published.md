@@ -10,7 +10,7 @@ See [All Docs](index.html) for links to drafts.
 - [A Tour of YSH](ysh-tour.html)
 - [YSH vs. Shell Idioms](idioms.html) 
 - [**Oils Reference**](ref/index.html) - underlies the [help][] builtin
-- [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
+- [FAQ on Docs](faq-doc.html).  **Look here if you can't find
   something**.
 
 [help]: ref/chap-builtin-cmd.html#help
