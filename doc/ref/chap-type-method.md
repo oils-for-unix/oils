@@ -1,6 +1,5 @@
 ---
 title: Types and Methods (Oils Reference)
-in_progress: yes
 all_docs_url: ..
 body_css_class: width40 help-body
 default_highlighter: oils-sh
@@ -13,8 +12,10 @@ preserve_anchor_case: yes
 
 </div>
 
-This chapter in the [Oils Reference](index.html) describes YSH types and
-methods.  There are also two OSH types for bash compatibility.
+This chapter describes YSH types and methods.  There are also two OSH types for
+bash compatibility.
+
+<span class="in-progress">(in progress)</span>
 
 <div id="toc">
 </div>

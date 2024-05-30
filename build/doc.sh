@@ -51,11 +51,6 @@ mandoc() {
   $MANDOC_DIR/mandoc "$@"
 }
 
-_build-timestamp() {
-  echo '<hr/>'
-  echo "<i>Generated on $(date)</i>"
-}
-
 # Places version is used
 #
 # - in --version

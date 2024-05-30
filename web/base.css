@@ -58,6 +58,17 @@ ol { padding-left: 1.2em; }
 #why-sponsor a:hover { text-decoration: underline }
 #why-sponsor a { color: darkgreen; }
 
+#build-timestamp {
+  margin-top: 2em;
+  padding-top: 0.5em;
+  padding-bottom: 2em;
+  border-top: solid 1px #BBB;
+}
+
+.in-progress {
+  color: darkred;
+}
+
 
 /* 
  * Usage: <table class="col3-right col5-right">

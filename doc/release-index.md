@@ -30,11 +30,14 @@ and benchmarks.
 
 <!-- REPLACE_WITH_DOWNLOAD_LINKS -->
 
+The [Oils Deployments](https://github.com/oilshell/oil/wiki/Oils-Deployments)
+wiki page has other ways of getting Oils.  These versions may not be
+up-to-date.
+
 ## Documentation
 
-- [Published Docs](doc/published.html) about Oils - these docs are ready to
-  read.
-- [All Docs](doc/index.html) about Oils (in progress).
+- [Published Docs](doc/published.html) - these are ready to read.
+- [All Docs](doc/index.html) (in progress).
   - The [**Oils Reference**](doc/ref/index.html)
 
 &nbsp;
@@ -60,8 +63,4 @@ and benchmarks.
 
 ## Links
 
-- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).  The
-  [Oils Deployments](https://github.com/oilshell/oil/wiki/Oils-Deployments)
-  wiki page has other ways of getting Oils.  These versions may not be
-  up-to-date.
-
+- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).
