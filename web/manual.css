@@ -63,6 +63,7 @@ p code, li code, h2 code, h3 code, div code {
   text-decoration: underline;
 }
 
+/* Obsolete: we should make something that doesn't require markdown
 
 .osh-topic {
   border-left: solid;
@@ -80,18 +81,4 @@ p code, li code, h2 code, h3 code, div code {
   border-color: darkcyan;
 }
 
-  border-left: solid;
-  border-color: brown;
-}
-
-.osh-ysh-topic {
-  border-left: solid;
-  border-right: solid;
-  border-color: darkgreen;
-}
-
-.ysh-topic {
-  border-right: solid;
-  border-color: darkcyan;
-}
-
+*/

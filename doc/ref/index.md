@@ -27,7 +27,9 @@ preserve_anchor_case: yes
 </style>
 
 This reference has **three** tables of contents.  They link to topics within 15
-chapters.  (in progress)
+chapters.
+
+<span class="in-progress">(in progress)</span>
 
 <div class="highlight">
 
@@ -68,14 +70,14 @@ chapters.  (in progress)
 
 ## `help` command
 
-When you type `help` in OSH or YSH, it shows a URL to this reference, or text
-extracted from it.
+When you type [`help`][help] in OSH or YSH, it shows a URL to this reference,
+or text extracted from it.
+
+[help]: chap-builtin-cmd.html#help
 
 ## About
 
-### Source
-
-[The source code]($oils-src:doc/) is a simple tree of Markdown files:
+[The source files]($oils-src:doc/) for this reference are in Markdown:
 
     REPO/
       doc/
@@ -95,9 +97,7 @@ extracted from it.
           chap-front-end.md
           ...
 
-### HTML
-
-The URLs mirror the source code, with minor differences:
+The URLs mirror the source, with minor differences:
 
     /release/$VERSION/
       index.html
@@ -138,4 +138,3 @@ More terminology:
 - *Table of Contents* - a doc with a dense list of topic links.
 - *Card* - Some topics are exported as `help` builtin "cards".  They can be
   inline text, or a URL pointer.  A card may also link to POSIX or bash docs.
-
