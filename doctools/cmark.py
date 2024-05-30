@@ -245,6 +245,38 @@ def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
     return insertions
 
 
+def _MakeTocInsertionsDense(opts, toc_tags, headings, toc_pos,
+                       preserve_anchor_case):
+    """For the dense-toc style with columns, used by doc/ref
+
+    The style above is simpler: it outputs a div for every line:
+
+        <div id="toctitle">Table of Contents</div>
+
+        <div class="toclevel1><a ...> Level 1 </a></div>
+          <div class="toclevel2><a ...> 1.A </a></div>
+          <div class="toclevel2><a ...> 1.B </a></div>
+        <div class="toclevel1><a ...> Level 2 </a></div>
+          ...
+
+    We want something like this:
+
+        <div id="dense-toc-title">Table of Contents</div>
+
+        <div class="dense-toc-group"> 
+          <a ...> Level 1 </a> <br/>
+
+          <a class="dense-toc-h3" ...> 1.A </a> <br/>
+          <a class="dense-toc-h3" ...> 1.B </a> <br/>
+
+        </div>  # NO BREAKING within this div
+
+        <div class="dense-toc-group"> 
+          <a ...> Level 2 </a> <br/>
+        </div>
+    """
+
+
 def _ApplyInsertions(lines, insertions, out_file):
     assert insertions, "Should be at least one insertion"
     j = 0

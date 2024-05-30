@@ -40,7 +40,7 @@ div.toclevel2 {
 }
 
 /* Represents ONE h2 and ALL h3 children */
-.dense-toc-1 {
+.dense-toc-group {
   /*
   display: inline-block;
   display: table;
@@ -61,7 +61,7 @@ div.toclevel2 {
 }
 
 /* One h3 child */
-.dense-toc-2 {
+.dense-toc-h3 {
   margin-left: 1em;
   font-size: 0.9em;
 }
