@@ -84,6 +84,25 @@ Title
 ## One
 """)
 
+_HTML_1 = '''
+<p>dummy
+</p>
+
+<div id="toc">
+</div>
+
+<h2>One <a href="/">link</a></h2>
+
+hello one.
+
+<h3>subheading <code>backticks</code></h3>
+
+<h3>one &amp; two</h3>
+
+<h2 id="explicit">Two</h2>
+
+'''
+
 
 class RenderTest(unittest.TestCase):
 
@@ -128,25 +147,7 @@ class RenderTest(unittest.TestCase):
 
     def testExtractor(self):
         parser = cmark.TocExtractor()
-        parser.feed('''
-<p>dummy
-</p>
-
-<div id="toc">
-</div>
-
-<h2>One <a href="/">link</a></h2>
-
-hello one.
-
-<h3>subheading <code>backticks</code></h3>
-
-<h3>one &amp; two</h3>
-
-<h2 id="explicit">Two</h2>
-
-''')
-
+        parser.feed(_HTML_1)
         self.assertEqual(5, parser.toc_begin_line)
 
         for heading in parser.headings:
@@ -183,6 +184,13 @@ hello one.
         self.assertEqual('explicit', css_id)
         self.assertEqual('Two', ''.join(html))
         self.assertEqual('Two', ''.join(text))
+
+    def testExtractorDense(self):
+        parser = cmark.TocExtractor()
+        parser.feed(_HTML_1.replace('"toc"', '"dense-toc"'))
+
+        self.assertEqual(-1, parser.toc_begin_line)
+        self.assertEqual(5, parser.dense_toc_begin_line)
 
 
 if __name__ == '__main__':

@@ -92,6 +92,8 @@ class TocExtractor(HTMLParser.HTMLParser):
 
         # The TOC will be inserted after this.
         self.toc_begin_line = -1
+        self.dense_toc_begin_line = -1
+
         self.capturing = False
 
         # Flat list of (line_num, tag, id, HTML)?
@@ -100,10 +102,14 @@ class TocExtractor(HTMLParser.HTMLParser):
         self.headings = []
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'div' and attrs == [('id', 'toc')]:
-            log('%s> %s %s', self.indent * '  ', tag, attrs)
-            self.indent += 1
-            self.toc_begin_line, _ = self.getpos()
+        if tag == 'div':
+            if attrs == [('id', 'toc')]:
+                log('%s> %s %s', self.indent * '  ', tag, attrs)
+                self.indent += 1
+                self.toc_begin_line, _ = self.getpos()
+            elif attrs == [('id', 'dense-toc')]:
+                self.indent += 1
+                self.dense_toc_begin_line, _ = self.getpos()
 
         # Can't have nested <a> tags
         if self.capturing and tag != 'a':
@@ -170,9 +176,11 @@ class TocExtractor(HTMLParser.HTMLParser):
 TAG_TO_CSS = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}
 
 
-def _MakeTocAndAnchors(opts, toc_tags, headings, toc_pos,
+def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
                        preserve_anchor_case):
-    """Given extract headings list and TOC position, render HTML to insert.
+    """Given extract headings list and TOC position, return a list of insertions.
+
+    The insertions <div> for the TOC itself, and <a name=""> for the targets.
 
     Args:
       toc_tags: List of HTML tags ['h2', 'h3'] to SHOW in TOC.  But we LINK to
@@ -300,14 +308,17 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
     for heading in parser.headings:
         log(heading)
 
-    if parser.toc_begin_line == -1:  # Not found!
+    preserve_anchor_case = bool(meta.get('preserve_anchor_case', ''))
+
+    if parser.toc_begin_line != -1:
+        insertions = _MakeTocInsertions(opts, toc_tags, parser.headings,
+                                        parser.toc_begin_line,
+                                        preserve_anchor_case)
+    elif parser.dense_toc_begin_line != -1:
+        pass
+    else:  # No TOC found Not found!
         out_file.write(html)  # Pass through
         return
-
-    preserve_anchor_case = bool(meta.get('preserve_anchor_case', ''))
-    insertions = _MakeTocAndAnchors(opts, toc_tags, parser.headings,
-                                    parser.toc_begin_line,
-                                    preserve_anchor_case)
 
     log('')
     log('*** Text Insertions:')

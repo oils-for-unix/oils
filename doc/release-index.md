@@ -21,9 +21,6 @@ This is the home page for version 0.21.0 of Oils, a Unix shell.  To use it,
 These steps take 30 to 60 seconds on most machines.  After installation, see
 [Getting Started](doc/getting-started.html).
 
-The associated **[quality page](quality.html)** shows test results, metrics,
-and benchmarks.
-
 [INSTALL]: doc/INSTALL.html
 
 ## Download
@@ -36,13 +33,14 @@ up-to-date.
 
 ## Documentation
 
-- [Published Docs](doc/published.html) - these are ready to read.
-- [All Docs](doc/index.html) (in progress).
+- [Published Docs](doc/published.html) - these are ready to read
+- [All Docs](doc/index.html) (in progress)
   - The [**Oils Reference**](doc/ref/index.html)
+- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki)
 
-&nbsp;
+## Packaging
 
-**[Oils Packaging Guidelines]($wiki)**:
+Summary of [Oils Packaging Guidelines]($wiki):
 
 - The `oils-for-unix` tarball is the fast shell in C++, completed in
   2024.  The distro package should be called `oils-for-unix`.
@@ -63,4 +61,6 @@ up-to-date.
 
 ## Links
 
-- [Github Wiki for oilshell/oil](https://github.com/oilshell/oil/wiki).
+- The **[quality page](quality.html)** shows test results, metrics, and
+  benchmarks.
+
