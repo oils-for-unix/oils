@@ -18,8 +18,6 @@ See [All Docs](index.html) for links to drafts.
 ## More
 
 - [Getting Started](getting-started.html)
-- [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
-  something.**
 - OSH:
   - [Known Differences Between OSH and Other Shells](known-differences.html)
   | [Quirks](quirks.html)

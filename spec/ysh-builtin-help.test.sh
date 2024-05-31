@@ -1,4 +1,3 @@
-## oils_failures_allowed: 1
 ## our_shell: ysh
 
 #### help topic not found
