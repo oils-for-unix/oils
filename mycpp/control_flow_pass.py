@@ -95,141 +95,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
 
     # LITERALS
 
-    def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> T:
-        pass
-
-    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
-        pass
-
-    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
-        pass
-
-    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> T:
-        pass
-
-    def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> T:
-        pass
-
-    def visit_complex_expr(self, o: 'mypy.nodes.ComplexExpr') -> T:
-        pass
-
-    # Expression
-
-    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> T:
-        pass
-
-    def visit_star_expr(self, o: 'mypy.nodes.StarExpr') -> T:
-        pass
-
-    def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> T:
-        pass
-
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
-        pass
-
-    def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
-        pass
-
-    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> T:
-        pass
-
-    def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
-        pass
-
-    def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> T:
-        pass
-
-    def visit_comparison_expr(self, o: 'mypy.nodes.ComparisonExpr') -> T:
-        pass
-
-    def visit_cast_expr(self, o: 'mypy.nodes.CastExpr') -> T:
-        pass
-
-    def visit_reveal_expr(self, o: 'mypy.nodes.RevealExpr') -> T:
-        pass
-
-    def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> T:
-        pass
-
-    def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> T:
-        pass
-
-    def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
-        pass
-
-    def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> T:
-        pass
-
-    def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
-        pass
-
-    def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
-        pass
-
-    def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> T:
-        pass
-
-    def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> T:
-        pass
-
-    def visit_type_application(self, o: 'mypy.nodes.TypeApplication') -> T:
-        pass
-
-    def visit_lambda_expr(self, o: 'mypy.nodes.LambdaExpr') -> T:
-        pass
-
-    def visit_list_comprehension(self, o: 'mypy.nodes.ListComprehension') -> T:
-        pass
-
-    def visit_set_comprehension(self, o: 'mypy.nodes.SetComprehension') -> T:
-        pass
-
-    def visit_dictionary_comprehension(
-            self, o: 'mypy.nodes.DictionaryComprehension') -> T:
-        pass
-
-    def visit_generator_expr(self, o: 'mypy.nodes.GeneratorExpr') -> T:
-        pass
-
-    def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> T:
-        pass
-
-    def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
-        pass
-
-    def visit_backquote_expr(self, o: 'mypy.nodes.BackquoteExpr') -> T:
-        pass
-
-    def visit_type_var_expr(self, o: 'mypy.nodes.TypeVarExpr') -> T:
-        pass
-
-    def visit_type_alias_expr(self, o: 'mypy.nodes.TypeAliasExpr') -> T:
-        pass
-
-    def visit_namedtuple_expr(self, o: 'mypy.nodes.NamedTupleExpr') -> T:
-        pass
-
-    def visit_enum_call_expr(self, o: 'mypy.nodes.EnumCallExpr') -> T:
-        pass
-
-    def visit_typeddict_expr(self, o: 'mypy.nodes.TypedDictExpr') -> T:
-        pass
-
-    def visit_newtype_expr(self, o: 'mypy.nodes.NewTypeExpr') -> T:
-        pass
-
-    def visit__promote_expr(self, o: 'mypy.nodes.PromoteExpr') -> T:
-        pass
-
-    def visit_await_expr(self, o: 'mypy.nodes.AwaitExpr') -> T:
-        pass
-
-    def visit_temp_node(self, o: 'mypy.nodes.TempNode') -> T:
-        pass
-
-    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
-        pass
-
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
         cfg = self.current_cfg()
         if not cfg:
@@ -277,9 +142,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
                 for stmt in o.body.body:
                     self.accept(stmt)
 
-    def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
-        pass
-
     def visit_func_def(self, o: 'mypy.nodes.FuncDef') -> T:
         if o.name == '__repr__':  # Don't translate
             return
@@ -288,10 +150,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_func_node = o
         self.accept(o.body)
         self.current_func_node = None
-
-    def visit_overloaded_func_def(self,
-                                  o: 'mypy.nodes.OverloadedFuncDef') -> T:
-        pass
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
         for stmt in o.defs.body:
@@ -304,29 +162,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
                 continue
 
             self.accept(stmt)
-
-    def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> T:
-        pass
-
-    def visit_nonlocal_decl(self, o: 'mypy.nodes.NonlocalDecl') -> T:
-        pass
-
-    def visit_decorator(self, o: 'mypy.nodes.Decorator') -> T:
-        pass
-
-    def visit_var(self, o: 'mypy.nodes.Var') -> T:
-        pass
-
-    # Module structure
-
-    def visit_import(self, o: 'mypy.nodes.Import') -> T:
-        pass
-
-    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
-        pass
-
-    def visit_import_all(self, o: 'mypy.nodes.ImportAll') -> T:
-        pass
 
     # Statements
 
@@ -342,10 +177,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> T:
         self.accept(o.expr)
 
-    def visit_operator_assignment_stmt(
-            self, o: 'mypy.nodes.OperatorAssignmentStmt') -> T:
-        pass
-
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
         cfg = self.current_cfg()
         if not cfg:
@@ -360,9 +191,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         cfg = self.current_cfg()
         if cfg:
             cfg.AddDeadend(self.current_statement_id)
-
-    def visit_assert_stmt(self, o: 'mypy.nodes.AssertStmt') -> T:
-        pass
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
         cfg = self.current_cfg()
@@ -386,9 +214,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         if len(self.loop_stack):
             self.loop_stack[-1].AddContinue(self.current_statement_id)
 
-    def visit_pass_stmt(self, o: 'mypy.nodes.PassStmt') -> T:
-        pass
-
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
         cfg = self.current_cfg()
         if cfg:
@@ -406,9 +231,3 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
             for t, v, handler in zip(o.types, o.vars, o.handlers):
                 with try_ctx.AddBranch(try_block.exit):
                     self.accept(handler)
-
-    def visit_print_stmt(self, o: 'mypy.nodes.PrintStmt') -> T:
-        pass
-
-    def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> T:
-        pass
