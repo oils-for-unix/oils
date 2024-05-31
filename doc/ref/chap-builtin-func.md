@@ -18,7 +18,7 @@ commands](chap-builtin-cmd.html).)
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Values
@@ -340,7 +340,9 @@ Add indentation by passing the `space` param:
 
 Similar to `json write (x)`, except the default value of `space` is 0.
 
-See [json-encode-err](chap-errors.html#json-encode-err) for errors.
+See [err-json-encode][] for errors.
+
+[err-json-encode]: chap-errors.html#err-json-encode
 
 ### fromJson()
 
@@ -351,7 +353,9 @@ Convert JSON text to an object in memory:
 
 Similar to `json read <<< '{"name": "alice"}'`.
 
-See [json-decode-err](chap-errors.html#json-decode-err) for errors.
+See [err-json-decode][] for errors.
+
+[err-json-decode]: chap-errors.html#err-json-decode
 
 ### toJson8()
 
@@ -361,14 +365,18 @@ J8-style `b'foo \yff'` strings.
 In contrast, `toJson()` will do a lossy conversion with the Unicode replacement
 character.
 
-See [json8-encode-err](chap-errors.html#json8-encode-err) for errors.
+See [err-json8-encode][] for errors.
+
+[err-json8-encode]: chap-errors.html#err-json8-encode
 
 ### fromJson8()
 
 Like `fromJson()`, but it also accepts binary data denoted by J8-style `b'foo
 \yff'` strings.
 
-See [json8-decode-err](chap-errors.html#json8-decode-err) for errors.
+See [err-json8-decode][] for errors.
+
+[err-json8-decode]: chap-errors.html#err-json8-decode
 
 ## Pattern
 

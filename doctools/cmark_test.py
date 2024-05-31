@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import cStringIO
 import unittest
+from pprint import pprint
 
 import cmark  # module under test
 
@@ -191,6 +192,11 @@ class RenderTest(unittest.TestCase):
 
         self.assertEqual(-1, parser.toc_begin_line)
         self.assertEqual(5, parser.dense_toc_begin_line)
+
+        insertions = cmark._MakeTocInsertionsDense(parser.headings,
+                                                   parser.dense_toc_begin_line,
+                                                   True)
+        pprint(insertions)
 
 
 if __name__ == '__main__':

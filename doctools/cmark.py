@@ -11,6 +11,7 @@ import HTMLParser
 import json
 import optparse
 import os
+import pprint
 import sys
 
 from doctools import html_lib
@@ -54,8 +55,8 @@ def log(msg, *args):
     if args:
         msg = msg % args
 
-    # Uncomment to debug
-    #print(msg, file=sys.stderr)
+    if 0:
+        print(msg, file=sys.stderr)
 
 
 # Version 0.29.0 disallowed raw HTML by default!
@@ -175,6 +176,11 @@ class TocExtractor(HTMLParser.HTMLParser):
 
 TAG_TO_CSS = {'h2': 'toclevel1', 'h3': 'toclevel2', 'h4': 'toclevel3'}
 
+# We could just add <h2 id="foo"> attribute!  I didn't know those are valid
+# anchors.
+# But it's easier to insert an entire line, rather than part ofa line.
+ANCHOR_FMT = '<a name="%s"></a>\n'
+
 
 def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
                        preserve_anchor_case):
@@ -220,19 +226,15 @@ def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
         if tag in toc_tags:
             toc_lines.append(line)
 
-        # TODO: We should just use the damn <h2 id="foo"> attribute!  I didn't know
-        # those are valid anchors.  We don't need to add <a name=""> ever.
-        FMT = '<a name="%s"></a>\n'
-
         targets = []
         if opts.toc_pretty_href:  # NEW WAY
-            targets.append(FMT % pretty_href)
+            targets.append(ANCHOR_FMT % pretty_href)
         elif css_id:  # Old blog explicit
-            targets.append(FMT % css_id)
-            targets.append(FMT % numeric_href)
+            targets.append(ANCHOR_FMT % css_id)
+            targets.append(ANCHOR_FMT % numeric_href)
         else:  # Old blog implicit
-            targets.append(FMT % pretty_href)  # Include the NEW WAY too
-            targets.append(FMT % numeric_href)
+            targets.append(ANCHOR_FMT % pretty_href)  # Include the NEW WAY too
+            targets.append(ANCHOR_FMT % numeric_href)
 
         insertions.append((line_num, ''.join(targets)))
 
@@ -245,8 +247,7 @@ def _MakeTocInsertions(opts, toc_tags, headings, toc_pos,
     return insertions
 
 
-def _MakeTocInsertionsDense(opts, toc_tags, headings, toc_pos,
-                       preserve_anchor_case):
+def _MakeTocInsertionsDense(headings, toc_pos, preserve_anchor_case):
     """For the dense-toc style with columns, used by doc/ref
 
     The style above is simpler: it outputs a div for every line:
@@ -275,6 +276,68 @@ def _MakeTocInsertionsDense(opts, toc_tags, headings, toc_pos,
           <a ...> Level 2 </a> <br/>
         </div>
     """
+
+    heading_tree = []
+    current_h2 = None
+
+    insertions = []
+
+    for line_num, tag, css_id, html_parts, text_parts in headings:
+
+        pretty_href = html_lib.PrettyHref(
+            ''.join(text_parts), preserve_anchor_case=preserve_anchor_case)
+
+        if css_id:  # doc/ref can use <h3 id="explicit"></h3>
+            toc_href = css_id
+        else:
+            # Always use the pretty version now.  The old numeric version is still a
+            # target, but not in the TOC.
+            toc_href = pretty_href
+
+        anchor_html = ''.join(html_parts)
+
+        # Create a two level tree
+        if tag == 'h2':
+            current_h2 = (anchor_html, toc_href, [])
+            heading_tree.append(current_h2)
+        elif tag == 'h3':
+            assert current_h2 is not None, "h3 shouldn't come before any h2"
+            current_h2[2].append((anchor_html, toc_href))
+
+        # Insert the target <a name="">
+        insertions.append((line_num, ANCHOR_FMT % pretty_href))
+
+        #print('%d %s %s %s %s' % (line_num, tag, css_id, html_parts, text_parts))
+
+    if 1:
+        log('Heading Tree:')
+        log(pprint.pformat(heading_tree))
+        log('')
+
+    toc_lines = ['<div id="dense-toc-title">In This Chapter</div>\n']
+    toc_lines.append('<div id="dense-toc-cols">\n')
+
+    for h2_html, h2_href, children in heading_tree:
+        toc_lines.append('<div class="dense-toc-group">\n')
+        toc_lines.append('  <a href="#%s">%s</a> <br/>\n' % (h2_href, h2_html))
+        for h3_html, h3_href in children:
+            toc_lines.append(
+                '  <a class="dense-toc-h3" href="#%s">%s</a> <br/>\n' %
+                (h3_href, h3_html))
+        toc_lines.append('</div>\n')
+
+    toc_lines.append('</div>\n')
+
+    if 1:
+        log('TOC lines')
+        log(pprint.pformat(toc_lines))
+        log('')
+
+    # +1 to insert AFTER the <div>
+    toc_insert = (toc_pos + 1, ''.join(toc_lines))
+    insertions.insert(0, toc_insert)  # The first insertion is TOC
+
+    return insertions
 
 
 def _ApplyInsertions(lines, insertions, out_file):
@@ -347,7 +410,9 @@ def Render(opts, meta, in_file, out_file, use_fastlex=True, debug_out=None):
                                         parser.toc_begin_line,
                                         preserve_anchor_case)
     elif parser.dense_toc_begin_line != -1:
-        pass
+        insertions = _MakeTocInsertionsDense(parser.headings,
+                                             parser.dense_toc_begin_line,
+                                             preserve_anchor_case)
     else:  # No TOC found Not found!
         out_file.write(html)  # Pass through
         return

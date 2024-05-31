@@ -21,7 +21,7 @@ errors in code.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## UTF8

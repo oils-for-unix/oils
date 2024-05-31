@@ -17,7 +17,7 @@ This chapter describes new YSH keywords in the command language.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Assignment

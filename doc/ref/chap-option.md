@@ -19,7 +19,7 @@ POSIX shell, and some are from [bash]($xref).  We also use options to turn
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Errors

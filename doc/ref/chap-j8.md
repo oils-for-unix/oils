@@ -20,7 +20,7 @@ is a quick reference, not the official spec.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 

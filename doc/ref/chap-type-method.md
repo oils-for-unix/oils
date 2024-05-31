@@ -17,7 +17,7 @@ bash compatibility.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## OSH

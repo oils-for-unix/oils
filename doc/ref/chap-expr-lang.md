@@ -16,7 +16,7 @@ Chapter **YSH Expression Language**
 This chapter describes the YSH expression language, which includes [Egg
 Expressions]($xref:eggex).
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Assignment

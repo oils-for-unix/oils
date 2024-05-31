@@ -16,7 +16,7 @@ This chapter in the [Oils Reference](index.html) describes builtin commands for 
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Memory
@@ -549,7 +549,10 @@ Or use an explicit place:
     var x = ''
     json read (&x) < myfile.txt
 
-Related: [json-encode-err]() and [json-decode-error]()
+Related: [err-json-encode][] and [err-json-decode][]
+
+[err-json-encode]: chap-errors.html#err-json-encode
+[err-json-decode]: chap-errors.html#err-json-decode
 
 ### json8
 
@@ -561,7 +564,10 @@ On decoding side:
 
 - Understands `b'' u''` strings
 
-Related: [json8-encode-err]() and [json8-decode-error]()
+Related: [err-json8-encode]() and [err-json8-decode]()
+
+[err-json8-encode]: chap-errors.html#err-json8-encode
+[err-json8-decode]: chap-errors.html#err-json8-decode
 
 ## Testing
 

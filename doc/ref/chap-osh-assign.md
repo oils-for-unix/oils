@@ -17,7 +17,7 @@ This chapter describes OSH assignment, which looks like `x=value`.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Operators

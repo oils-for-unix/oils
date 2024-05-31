@@ -14,7 +14,7 @@ preserve_anchor_case: yes
 
 This is an index of topics in the [Oils Reference](index.html).
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Name Conflicts

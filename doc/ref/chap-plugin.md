@@ -17,7 +17,7 @@ This chapter describes extension points for OSH and YSH.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Signals

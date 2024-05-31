@@ -17,7 +17,7 @@ This chapter describes the command language for OSH, and some YSH extensions.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 ## Quick Sketch: What's a Command?

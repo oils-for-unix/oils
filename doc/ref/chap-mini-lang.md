@@ -20,7 +20,7 @@ In contrast, the main sub languages of YSH are [command](chap-cmd-lang.html),
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 <h2 id="sublang">Other Shell Sublanguages</h2>

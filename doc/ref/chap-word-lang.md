@@ -18,7 +18,7 @@ strings, or arrays of strings.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 <h2 id="expression">Expressions to Words</h2>

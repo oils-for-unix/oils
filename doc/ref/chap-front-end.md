@@ -17,7 +17,7 @@ This chapter describes command line usage and lexing.
 
 <span class="in-progress">(in progress)</span>
 
-<div id="toc">
+<div id="dense-toc">
 </div>
 
 <h2 id="usage">Command Line Usage</h3>
