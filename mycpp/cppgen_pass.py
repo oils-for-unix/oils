@@ -574,14 +574,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
-        # Skip some stdlib stuff.  A lot of it is brought in by 'import
-        # typing'.
-        if o.fullname in ('__future__', 'sys', 'types', 'typing', 'abc',
-                          '_ast', 'ast', '_weakrefset', 'collections',
-                          'cStringIO', 're', 'builtins'):
-
-            # These module are special; their contents are currently all
-            # built-in primitives.
+        if util.ShouldSkipPyFile(o):
             return
 
         #self.log('')
@@ -1972,47 +1965,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _collect_cases(self, if_node, out):
-        """
-        The MyPy AST has a recursive structure for if-elif-elif rather than a
-        flat one.  It's a bit confusing.
-
-        Appends (expr, block) cases to out param, and returns the default
-        block, which has no expression.
-
-        default block may be None.
-
-        Returns False if there is no default block.
-        """
-        assert isinstance(if_node, IfStmt), if_node
-        assert len(if_node.expr) == 1, if_node.expr
-        assert len(if_node.body) == 1, if_node.body
-
-        expr = if_node.expr[0]
-        body = if_node.body[0]
-
-        if not isinstance(expr, CallExpr):
-            self.report_error(expr,
-                              'Expected call like case(x), got %s' % expr)
-            return
-
-        out.append((expr, body))
-
-        if if_node.else_body:
-            first_of_block = if_node.else_body.body[0]
-            # BUG: this is meant for 'elif' only.  But it also triggers for
-            #
-            # else:
-            #   if 0:
-
-            if isinstance(first_of_block, IfStmt):
-                return self._collect_cases(first_of_block, out)
-            else:
-                # default case - no expression
-                return if_node.else_body
-
-        return False  # NO DEFAULT BLOCK - Different than None
-
     def _write_cases(self, switch_expr, cases, default_block):
         """ Write a list of (expr, block) pairs """
 
@@ -2060,7 +2012,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path, if_node, cases,
+                                            errors=self.errors_keep_going)
         self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
@@ -2080,7 +2033,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path, if_node, cases,
+                                            errors=self.errors_keep_going)
         self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
@@ -2140,7 +2094,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path, if_node, cases,
+                                            errors=self.errors_keep_going)
 
         grouped_cases = self._str_switch_cases(cases)
         # Warning: this consumes internal iterator

@@ -154,20 +154,21 @@ class ControlFlowGraphTest(unittest.TestCase):
         branch_point = cfg.AddStatement()
 
         # first statement in if block
-        with pass_state.CfgBranchContext(cfg, branch_point) as arm0:
-            arm0_a = cfg.AddStatement() # block statement 2
-            arm0_b = cfg.AddStatement() # block statement 2
-            arm0_c = cfg.AddStatement() # block statement 3
+        with pass_state.CfgBranchContext(cfg, branch_point) as branch_ctx:
+            with branch_ctx.AddBranch() as arm0:
+                arm0_a = cfg.AddStatement() # block statement 2
+                arm0_b = cfg.AddStatement() # block statement 2
+                arm0_c = cfg.AddStatement() # block statement 3
 
-        # frist statement in elif block
-        with pass_state.CfgBranchContext(cfg, branch_point) as arm1:
-            arm1_a = cfg.AddStatement()
-            arm1_b = cfg.AddStatement() # block statement 2
+            # frist statement in elif block
+            with branch_ctx.AddBranch() as arm1:
+                arm1_a = cfg.AddStatement()
+                arm1_b = cfg.AddStatement() # block statement 2
 
-        # frist statement in else block
-        with pass_state.CfgBranchContext(cfg, branch_point) as arm2:
-            arm2_a = cfg.AddStatement()
-            arm2_b = cfg.AddStatement() # block statement 2
+            # frist statement in else block
+            with branch_ctx.AddBranch() as arm2:
+                arm2_a = cfg.AddStatement()
+                arm2_b = cfg.AddStatement() # block statement 2
 
         self.assertEqual(arm0_c, arm0.exit)
         self.assertEqual(arm1_b, arm1.exit)
@@ -219,29 +220,43 @@ class ControlFlowGraphTest(unittest.TestCase):
         """
 
         cfg = pass_state.ControlFlowGraph()
-        with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as branchA:
-            ret = cfg.AddStatement() # return
-            cfg.AddDeadend(ret)
+        with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as branch_ctx:
+            with branch_ctx.AddBranch() as branchA: # if
+                ret = cfg.AddStatement() # return
+                cfg.AddDeadend(ret)
 
+        """
+        while ...:
+            if ...:
+                continue
+            else:
+                print(...)
+
+        print(...)
+        """
         with pass_state.CfgLoopContext(cfg) as loop:
             branch_point = cfg.AddStatement()
-            with pass_state.CfgBranchContext(cfg, branch_point) as branchB: # if
-                cont = cfg.AddStatement() # continue
-                cfg.AddEdge(cont, loop.entry)
-                cfg.AddDeadend(cont)
+            with pass_state.CfgBranchContext(cfg, branch_point) as branch_ctx:
+                with branch_ctx.AddBranch() as branchB: # if
+                    cont = cfg.AddStatement() # continue
+                    loop.AddContinue(cont)
 
-            with pass_state.CfgBranchContext(cfg, branch_point) as branchC: # else
-                innerC = cfg.AddStatement()
+                with branch_ctx.AddBranch() as branchC: # else
+                    innerC = cfg.AddStatement()
 
         end = cfg.AddStatement()
         expected_edges = {
             (0, branchA.entry),
+            (branchA.entry, ret),
             (branchA.entry, loop.entry),
             (loop.entry, branchB.entry),
             (branch_point, cont),
+            (cont, loop.entry),
             (branch_point, innerC),
             (innerC, end),
+            (innerC, loop.entry),
         }
+        self.assertEqual(expected_edges, cfg.edges)
 
     def testNedstedIf(self):
         """
@@ -250,14 +265,15 @@ class ControlFlowGraphTest(unittest.TestCase):
         cfg = pass_state.ControlFlowGraph()
 
         outer_branch_point = cfg.AddStatement()
-        with pass_state.CfgBranchContext(cfg, outer_branch_point) as branch0: # if
-            branch0_a = cfg.AddStatement()
+        with pass_state.CfgBranchContext(cfg, outer_branch_point) as branch_ctx:
+            with branch_ctx.AddBranch() as branch0: # if
+                branch0_a = cfg.AddStatement()
 
-        with pass_state.CfgBranchContext(cfg, outer_branch_point) as branch1: # else
-            with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as branch2: # else if
-                branch2_a = cfg.AddStatement()
+            with branch_ctx.AddBranch() as branch1: # else
+                with branch1.AddBranch(cfg.AddStatement()) as branch2: # if
+                    branch2_a = cfg.AddStatement()
 
-            branch1_a = cfg.AddStatement()
+                branch1_a = cfg.AddStatement()
 
         end = cfg.AddStatement()
 
@@ -300,13 +316,14 @@ class ControlFlowGraphTest(unittest.TestCase):
 
         with pass_state.CfgLoopContext(cfg) as loopA:
             branch_point = cfg.AddStatement()
-            with pass_state.CfgBranchContext(cfg, branch_point) as arm0:
-                arm0_a = cfg.AddStatement()
-                arm0_b = cfg.AddStatement()
+            with pass_state.CfgBranchContext(cfg, branch_point) as branch_ctx:
+                with branch_ctx.AddBranch() as arm0:
+                    arm0_a = cfg.AddStatement()
+                    arm0_b = cfg.AddStatement()
 
-            with pass_state.CfgBranchContext(cfg, branch_point) as arm1:
-                arm1_a = cfg.AddStatement()
-                arm1_b = cfg.AddStatement()
+                with branch_ctx.AddBranch() as arm1:
+                    arm1_a = cfg.AddStatement()
+                    arm1_b = cfg.AddStatement()
 
             self.assertEqual(arm0_b, arm0.exit)
             self.assertEqual(arm1_b, arm1.exit)
@@ -402,8 +419,7 @@ class ControlFlowGraphTest(unittest.TestCase):
                 with pass_state.CfgBlockContext(cfg, try_block.exit) as except_block:
                     except_s0 = cfg.AddStatement()
                     cont = cfg.AddStatement()
-                    cfg.AddEdge(cont, loopB.entry)
-                    cfg.AddDeadend(cont)
+                    loopB.AddContinue(cont)
 
             a_s0 = cfg.AddStatement()
             a_s1 = cfg.AddStatement()
@@ -428,7 +444,98 @@ class ControlFlowGraphTest(unittest.TestCase):
         }
         self.assertEqual(expected_edges, cfg.edges)
 
+    def testLoopWithDanglingBlocks(self):
+        """
+        for i in xrange(1000000):
+            try:
+                with ctx_DirStack(d, 'foo') as _:
+                    if i % 10000 == 0:
+                        raise MyError()
+                    pass
+            except MyError:
+                log('exception')
+        """
+        cfg = pass_state.ControlFlowGraph()
 
+        with pass_state.CfgLoopContext(cfg) as loop:
+            with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as try_ctx:
+                with try_ctx.AddBranch() as try_block:
+                    with pass_state.CfgBlockContext(cfg, cfg.AddStatement()) as with_block:
+                        with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as if_ctx:
+                            with if_ctx.AddBranch() as if_block:
+                                s_raise = cfg.AddStatement()
+                                cfg.AddDeadend(s_raise)
+
+                        pass_stmt = cfg.AddStatement()
+
+                with try_ctx.AddBranch(try_block.exit) as except_block:
+                    log_stmt = cfg.AddStatement()
+
+        expected_edges = {
+            (0, loop.entry),
+            (loop.entry, try_block.entry),
+            (try_block.entry, with_block.entry),
+            (with_block.entry, if_block.entry),
+            (if_block.entry, s_raise),
+            (if_block.entry, pass_stmt),
+            (pass_stmt, loop.entry),
+            (pass_stmt, log_stmt),
+            (log_stmt, loop.entry),
+        }
+        self.assertEqual(expected_edges, cfg.edges)
+
+    def testLoopBreak(self):
+        """
+        while ...:
+            if ...:
+                break
+
+            else:
+                try:
+                    pass
+
+                except ...:
+                    break
+
+            pass
+
+        pass
+        """
+        cfg = pass_state.ControlFlowGraph()
+
+        with pass_state.CfgLoopContext(cfg) as loop:
+            with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as if_ctx:
+                with if_ctx.AddBranch() as if_block:
+                    break1 = cfg.AddStatement()
+                    loop.AddBreak(break1)
+
+                with if_ctx.AddBranch() as else_block:
+                    with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as try_ctx:
+                        with try_ctx.AddBranch() as try_block:
+                            pass1 = cfg.AddStatement()
+
+                        with try_ctx.AddBranch(try_block.exit) as except_block:
+                            break2 = cfg.AddStatement()
+                            loop.AddBreak(break2)
+
+            pass2 = cfg.AddStatement()
+
+        pass3 = cfg.AddStatement()
+
+        expected_edges = {
+            (0, loop.entry),
+            (loop.entry, if_block.entry),
+            (if_block.entry, break1),
+            (if_block.entry, try_block.entry),
+            (try_block.entry, pass1),
+            (pass1, break2),
+            (pass1, pass2),
+            (pass2, loop.entry),
+            (pass2, pass3),
+            (break1, pass3),
+            (break2, pass3),
+        }
+        self.assertEqual(expected_edges, cfg.edges)
 
 if __name__ == '__main__':
     unittest.main()
