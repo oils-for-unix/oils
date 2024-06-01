@@ -296,7 +296,7 @@ def InitSteps(n):
 
   # Link objects together
   n.rule('link',
-         command='build/ninja-rules-cpp.sh link $compiler $variant $out $in',
+         command='build/ninja-rules-cpp.sh link $compiler $variant $more_link_flags $out $in',
          description='LINK $compiler $variant $out $in')
   n.newline()
 
@@ -325,6 +325,11 @@ def InitSteps(n):
   n.rule('gen-oils-for-unix',
          command='build/ninja-rules-py.sh gen-oils-for-unix $main_name $out_prefix $preamble $in',
          description='gen-oils-for-unix $main_name $out_prefix $preamble $in')
+  n.newline()
+
+  n.rule('compile_souffle',
+         command='mycpp/datalog/build.sh compile_souffle $in $out',
+         description='compile_souffle $in $out')
   n.newline()
 
 

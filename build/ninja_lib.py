@@ -267,7 +267,7 @@ class Rules(object):
       o = cc_lib.obj_lookup[config]
       objects.extend(o)
 
-    v = [('compiler', compiler), ('variant', variant)]
+    v = [('compiler', compiler), ('variant', variant), ('more_link_flags', "''")]
     self.n.build([out_bin], 'link', objects, variables=v)
     self.n.newline()
 

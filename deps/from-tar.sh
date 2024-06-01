@@ -87,4 +87,33 @@ extract-wild() {
   popd
 }
 
+download-souffle() {
+  mkdir -p $REPO_ROOT/_cache
+  wget --no-clobber --directory $REPO_ROOT/_cache \
+    https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
+}
+
+extract-souffle() {
+  mkdir -p $DEPS_DIR/souffle/src
+  pushd $DEPS_DIR/souffle/src
+  tar --extract -z -f $REPO_ROOT/_cache/2.4.1.tar.gz
+  popd
+}
+
+build-souffle() {
+  pushd $DEPS_DIR/souffle/src/souffle-2.4.1
+  cmake -DSOUFFLE_USE_CURSES=OFF \
+    -DSOUFFLE_USE_SQLITE=OFF \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$DEPS_DIR/souffle \
+    -S . -B build
+  cmake --build build -j 8 --target install
+}
+
+layer-souffle() {
+  download-souffle
+  extract-souffle
+  build-souffle
+}
+
 "$@"

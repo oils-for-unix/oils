@@ -413,3 +413,27 @@ def NinjaGraph(ru):
     out = '_test/benchmark-table.tsv'
     n.build([out], 'benchmark-table', benchmark_tasks)
     n.newline()
+
+    out = '_gen/mycpp/stack-roots.cpp'
+    in_dl = ['mycpp/datalog/stack-roots.dl']
+    n.build([out], 'compile_souffle', in_dl)
+
+    out = '_build/obj/mycpp/stack-roots.o'
+    in_cc = ['_gen/mycpp/stack-roots.cpp']
+    n.build(
+        [out], 'compile_one', in_cc,
+        variables=[
+            ('compiler', 'cxx'),
+            ('variant', 'opt'),
+            ('more_cxx_flags', "'-I$NINJA_REPO_ROOT/../oil_DEPS/souffle/include -std=c++17'")
+        ])
+
+    out = '_bin/tools/stack-roots'
+    in_obj = ['_build/obj/mycpp/stack-roots.o']
+    n.build(
+        [out], 'link', in_obj,
+        variables=[
+            ('compiler', 'cxx'),
+            ('variant', 'opt'),
+            ('more_link_flags', "'-lstdc++fs'")
+        ])
