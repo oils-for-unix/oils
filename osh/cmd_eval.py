@@ -544,27 +544,6 @@ class CommandEvaluator(object):
             elif case(command_e.ShAssignment):
                 node = cast(command.ShAssignment, UP_node)
                 redirects = node.redirects
-            elif case(command_e.BraceGroup):
-                node = cast(BraceGroup, UP_node)
-                redirects = node.redirects
-            elif case(command_e.Subshell):
-                node = cast(command.Subshell, UP_node)
-                redirects = node.redirects
-            elif case(command_e.DParen):
-                node = cast(command.DParen, UP_node)
-                redirects = node.redirects
-            elif case(command_e.DBracket):
-                node = cast(command.DBracket, UP_node)
-                redirects = node.redirects
-            elif case(command_e.ForEach):
-                node = cast(command.ForEach, UP_node)
-                redirects = node.redirects
-            elif case(command_e.ForExpr):
-                node = cast(command.ForExpr, UP_node)
-                redirects = node.redirects
-            elif case(command_e.WhileUntil):
-                node = cast(command.WhileUntil, UP_node)
-                redirects = node.redirects
             else:
                 # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
                 # command_e.AndOr, command_e.CommandList, command_e.DoGroup,

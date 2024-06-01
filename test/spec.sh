@@ -818,6 +818,10 @@ ysh-expr-sub() {
   run-file ysh-expr-sub "$@"
 }
 
+ysh-cmd-lang() {
+  run-file ysh-cmd-lang "$@"
+}
+
 ysh-for() {
   run-file ysh-for "$@"
 }

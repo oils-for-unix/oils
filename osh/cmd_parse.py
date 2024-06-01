@@ -1551,13 +1551,11 @@ class CommandParser(object):
 
             # for (( i = 0; i < 10; i++)
             n1 = self._ParseForExprLoop(for_kw)
-            n1.redirects = self._ParseRedirectList()
-            return n1
+            return self._MaybeParseRedirectList(n1)
         else:
             # for x in a b; do echo hi; done
             n2 = self._ParseForEachLoop(for_kw)
-            n2.redirects = self._ParseRedirectList()
-            return n2
+            return self._MaybeParseRedirectList(n2)
 
     def _ParseConditionList(self):
         # type: () -> condition_t
@@ -2007,22 +2005,19 @@ class CommandParser(object):
         self._GetWord()
         if self.c_id == Id.Lit_LBrace:
             n1 = self.ParseBraceGroup()
-            n1.redirects = self._ParseRedirectList()
-            return n1
+            return self._MaybeParseRedirectList(n1)
         if self.c_id == Id.Op_LParen:
             n2 = self.ParseSubshell()
-            n2.redirects = self._ParseRedirectList()
-            return n2
+            return self._MaybeParseRedirectList(n2)
 
         if self.c_id == Id.KW_For:
-            # Note: Redirects parsed in this call.  POSIX for and bash for (( have
-            # redirects, but YSH for doesn't.
+            # Note: Redirects parsed in this call.  POSIX for and bash for ((
+            # have different nodetypes.
             return self.ParseFor()
         if self.c_id in (Id.KW_While, Id.KW_Until):
             keyword = word_.AsKeywordToken(self.cur_word)
             n3 = self.ParseWhileUntil(keyword)
-            n3.redirects = self._ParseRedirectList()
-            return n3
+            return self._MaybeParseRedirectList(n3)
 
         if self.c_id == Id.KW_If:
             n4 = self.ParseIf()
@@ -2037,16 +2032,14 @@ class CommandParser(object):
                 p_die('Bash [[ not allowed in YSH (parse_dbracket)',
                       loc.Word(self.cur_word))
             n6 = self.ParseDBracket()
-            n6.redirects = self._ParseRedirectList()
-            return n6
+            return self._MaybeParseRedirectList(n6)
         if self.c_id == Id.Op_DLeftParen:
             if not self.parse_opts.parse_dparen():
                 p_die(
                     'Bash (( not allowed in YSH (parse_dparen, see OILS-ERR-14 for wart)',
                     loc.Word(self.cur_word))
             n7 = self.ParseDParen()
-            n7.redirects = self._ParseRedirectList()
-            return n7
+            return self._MaybeParseRedirectList(n7)
 
         # bash extensions: no redirects
         if self.c_id == Id.KW_Time:
