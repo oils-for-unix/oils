@@ -27,7 +27,10 @@ echo $foo
 ## STDOUT:
 FOO
 ## END
-## N-I dash/ash/yash stdout-json: "\n"
+
+## N-I dash/ash/yash STDOUT:
+
+## END
 
 #### $(< file) with more statements
 
@@ -103,7 +106,10 @@ echo $FOO
 #### Redirect in the middle of two assignments
 FOO=foo >$TMP/out.txt BAR=bar printenv.py FOO BAR
 tac $TMP/out.txt
-## stdout-json: "bar\nfoo\n"
+## STDOUT:
+bar
+foo
+## END
 
 #### Redirect in assignment
 # dash captures stderr to a file here, which seems correct.  Bash doesn't and
@@ -126,7 +132,7 @@ FOO=
 ## END
 
 
-#### Redirect in function body.
+#### Redirect in function body
 fun() { echo hi; } 1>&2
 fun
 ## STDOUT:
@@ -158,8 +164,47 @@ file 2
 #### Redirect in function body AND function call
 fun() { echo hi; } 1>&2
 fun 2>&1
-## stdout-json: "hi\n"
-## stderr-json: ""
+## STDOUT:
+hi
+## END
+## STDERR:
+## END
+
+#### redirect if
+if true; then
+  echo if-body
+fi >out
+
+cat out
+
+## STDOUT:
+if-body
+## END
+
+#### redirect case
+case foo in
+  foo)
+    echo case-body
+    ;;
+esac > out
+
+cat out
+
+## STDOUT:
+case-body
+## END
+
+#### redirect while
+while true; do
+  echo while-body
+  break
+done > out
+
+cat out
+
+## STDOUT:
+while-body
+## END
 
 #### redirect for loop
 for i in $(seq 3)
@@ -167,7 +212,11 @@ do
   echo $i
 done > $TMP/redirect-for-loop.txt
 cat $TMP/redirect-for-loop.txt
-## stdout-json: "1\n2\n3\n"
+## STDOUT:
+1
+2
+3
+## END
 
 #### redirect subshell
 ( echo foo ) 1>&2
@@ -194,7 +243,10 @@ cat $TMP/br.txt | wc -c
 f() { echo one; echo two; }
 f > $TMP/redirect-func.txt
 cat $TMP/redirect-func.txt
-## stdout-json: "one\ntwo\n"
+## STDOUT:
+one
+two
+## END
 
 #### Nested function stdout redirect
 # Shows that a stack is necessary.
@@ -211,5 +263,10 @@ outer > $TMP/outer.txt
 cat $TMP/inner.txt
 echo --
 cat $TMP/outer.txt
-## stdout-json: "i1\ni2\n--\no1\no2\n"
-
+## STDOUT:
+i1
+i2
+--
+o1
+o2
+## END
