@@ -783,6 +783,31 @@ class CommandParser(object):
 
         return redirects
 
+    def _MaybeParseRedirectList(self, node):
+        # type: (command_t) -> command_t
+        """Try parsing redirects at the current position.
+
+        If there are any, then wrap the command_t argument with a
+        command.Redirect node.  Otherwise, return argument unchanged.
+        """
+        self._GetWord()
+        if self.c_kind != Kind.Redir:
+            return node
+
+        redirects = [self.ParseRedirect()]
+
+        while True:
+            # This prediction needs to ONLY accept redirect operators.  Should we
+            # make them a separate Kind?
+            self._GetWord()
+            if self.c_kind != Kind.Redir:
+                break
+
+            redirects.append(self.ParseRedirect())
+            self._SetNext()
+
+        return command.Redirect(node, redirects)
+
     def _ScanSimpleCommand(self):
         # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[LiteralBlock]]
         """YSH extends simple commands with typed args and blocks.
@@ -2001,18 +2026,11 @@ class CommandParser(object):
 
         if self.c_id == Id.KW_If:
             n4 = self.ParseIf()
-            #n4.redirects = self._ParseRedirectList()
-            if 1:
-                redirects = self._ParseRedirectList()
-                #if redirects is not None:
-                if len(redirects):
-                    return command.Redirect(n4, redirects)
-                else:
-                    return n4
+            return self._MaybeParseRedirectList(n4)
+
         if self.c_id == Id.KW_Case:
             n5 = self.ParseCase()
-            n5.redirects = self._ParseRedirectList()
-            return n5
+            return self._MaybeParseRedirectList(n5)
 
         if self.c_id == Id.KW_DLeftBracket:
             if not self.parse_opts.parse_dbracket():

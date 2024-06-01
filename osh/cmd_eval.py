@@ -565,12 +565,6 @@ class CommandEvaluator(object):
             elif case(command_e.WhileUntil):
                 node = cast(command.WhileUntil, UP_node)
                 redirects = node.redirects
-            elif case(command_e.If):
-                node = cast(command.If, UP_node)
-                redirects = node.redirects
-            elif case(command_e.Case):
-                node = cast(command.Case, UP_node)
-                redirects = node.redirects
             else:
                 # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
                 # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
