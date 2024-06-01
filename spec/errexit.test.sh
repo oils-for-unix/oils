@@ -1,6 +1,4 @@
-#
-# Usage:
-#   ./errexit.test.sh <function name>
+## compare_shells: dash bash mksh ash
 
 #### errexit aborts early
 set -o errexit
@@ -280,7 +278,81 @@ one
 [three]
 ## END
 
-#### compound command
+#### simple command - redir failure DOES respect errexit
+
+$SH -c '
+set -o errexit
+true > /
+echo builtin status=$?
+'
+echo status=$?
+
+$SH -c '
+set -o errexit
+/bin/true > /
+echo extern status=$?
+'
+echo status=$?
+
+$SH -c '
+set -o errexit
+assign=foo > /
+echo extern status=$?
+'
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+status=1
+## END
+## OK dash STDOUT:
+status=2
+status=2
+status=2
+## END
+
+#### bash atoms [[ (( - redir failure does NOT respect errexit (unless redir_errexit)
+case $SH in dash) exit ;; esac
+
+$SH -c '
+set -o errexit
+[[ x = x ]] > /
+echo dbracket status=$?
+'
+echo status=$?
+
+$SH -c '
+set -o errexit
+(( 42 )) > /
+echo dparen status=$?
+'
+echo status=$?
+
+## STDOUT:
+dbracket status=1
+status=0
+dparen status=1
+status=0
+## END
+
+# mksh checks errors!
+
+## OK mksh STDOUT:
+status=1
+status=1
+## END
+
+## OK ash STDOUT:
+status=1
+status=2
+## END
+
+## N-I dash STDOUT:
+## END
+
+
+#### brace group - redir failure does NOT respect errexit
 # case from
 # https://lists.gnu.org/archive/html/bug-bash/2020-05/msg00066.html
 
@@ -290,19 +362,22 @@ set -o errexit
 
 echo status=$?
 echo 'should not get here'
-## status: 1
-## stdout-json: ""
-## BUG dash/bash/ash status: 0
-## BUG bash/ash STDOUT:
+
+## STDOUT:
 status=1
 should not get here
 ## END
-## BUG dash STDOUT:
+
+## OK dash STDOUT:
 status=2
 should not get here
 ## END
 
-#### while loop
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+## END
+
+#### while loop - redirect failure does NOT respect errexit
 # case from
 # https://lists.gnu.org/archive/html/bug-bash/2020-05/msg00066.html
 
@@ -314,16 +389,19 @@ done < not_exist.txt
 
 echo status=$?
 echo 'should not get here'
-## status: 1
-## stdout-json: ""
-## BUG dash/bash/ash status: 0
-## BUG bash/ash STDOUT:
+
+## STDOUT:
 status=1
 should not get here
 ## END
-## BUG dash STDOUT:
+
+## OK dash STDOUT:
 status=2
 should not get here
+## END
+
+## BUG mksh status: 1
+## BUG mksh STDOUT:
 ## END
 
 #### set -e enabled in function (regression)

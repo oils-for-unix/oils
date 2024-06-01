@@ -1486,6 +1486,11 @@ class CommandEvaluator(object):
     def _DoRedirect(self, node, cmd_st):
         # type: (command.Redirect, CommandStatus) -> int
 
+        # TODO: make this shopt --set redirect_errexit
+        #
+        # And document in doc/error-handling.md
+        #cmd_st.check_errexit = True
+
         # COPIED from _Execute.  TODO: delete that code, in favor of this.
 
         status = 0

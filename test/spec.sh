@@ -435,8 +435,7 @@ exit-status() {
 }
 
 errexit() {
-  sh-spec spec/errexit.test.sh \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file errexit "$@"
 }
 
 errexit-osh() {
