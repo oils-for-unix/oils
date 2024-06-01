@@ -349,6 +349,10 @@ redirect() {
   run-file redirect "$@"
 }
 
+redirect-command() {
+  run-file redirect-command "$@"
+}
+
 redirect-multi() {
   run-file redirect-multi "$@"
 }

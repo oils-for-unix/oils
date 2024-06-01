@@ -360,12 +360,17 @@ module syntax
 
   command =
     NoOp
+
+    # can wrap many children, e.g. { }, loops, functions
+  | Redirect(command child, List[Redir] redirects)
+
   | Simple(Token? blame_tok,  # TODO: make required (BracedTuple?)
            List[EnvPair] more_env,
            List[word] words, List[Redir] redirects,
            ArgList? typed_args, LiteralBlock? block,
            # do_fork is semantic, not syntactic
            bool do_fork)
+
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
   | ExpandedAlias(command child, List[Redir] redirects, List[EnvPair] more_env)
@@ -373,12 +378,14 @@ module syntax
     # Represents "bare assignment"
     # Token left is redundant with pairs[0].left
   | ShAssignment(Token left, List[AssignPair] pairs, List[Redir] redirects)
-  | Retval(Token keyword, expr val)
+
   | ControlFlow(Token keyword, word? arg_word)
+
     # ops are |  |&
   | Pipeline(Token? negated, List[command] children, List[Token] ops)
     # ops are &&  ||
   | AndOr(List[command] children, List[Token] ops)
+
     # Part of for, while, until (but not if, case, ShFunction).  No redirects.
   | DoGroup(Token left, List[command] children, Token right)
     # A brace group is a compound command, with redirects.
@@ -387,6 +394,7 @@ module syntax
   | Subshell(Token left, command child, Token right, List[Redir] redirects)
   | DParen(Token left, arith_expr child, Token right, List[Redir] redirects)
   | DBracket(Token left, bool_expr expr, Token right, List[Redir] redirects)
+
     # up to 3 iterations variables
   | ForEach(Token keyword, List[str] iter_names, for_iter iterable,
             Token? semi_tok, command body, List[Redir] redirects)
@@ -396,13 +404,16 @@ module syntax
   | ForExpr(Token keyword, arith_expr? init, arith_expr? cond,
             arith_expr? update, command? body, List[Redir] redirects)
   | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
+
   | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
        Token? fi_kw, List[Redir] redirects)
   | Case(Token case_kw, case_arg to_match, Token arms_start, List[CaseArm] arms,
          Token arms_end, List[Redir] redirects)
+
     # The keyword is optional in the case of bash-style functions
     # (ie. "foo() { ... }") which do not have one.
   | ShFunction(Token? keyword, Token name_tok, str name, command body)
+
   | TimeBlock(Token keyword, command pipeline)
     # Some nodes optimize it out as List[command], but we use CommandList for
     # 1. the top level
@@ -428,6 +439,7 @@ module syntax
   | Expr(Token keyword, expr e)
   | Proc %Proc
   | Func %Func
+  | Retval(Token keyword, expr val)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.
