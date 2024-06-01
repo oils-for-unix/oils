@@ -208,7 +208,7 @@ main() {
 
   print('  echo "LINK $out"', file=f)
   # note: can't have spaces in filenames
-  print('  link "$compiler" "$variant" "$out" \\', file=f)
+  print('  link "$compiler" "$variant" "" "$out" \\', file=f)
   # put each object on its own line, and indent by 4
   print('    %s' % (' \\\n    '.join(objects)), file=f)
   print('', file=f)
@@ -296,8 +296,8 @@ def InitSteps(n):
 
   # Link objects together
   n.rule('link',
-         command='build/ninja-rules-cpp.sh link $compiler $variant $out $in',
-         description='LINK $compiler $variant $out $in')
+         command='build/ninja-rules-cpp.sh link $compiler $variant $more_link_flags $out $in',
+         description='LINK $compiler $variant $more_link_flags $out $in')
   n.newline()
 
   # 1 input and 2 outputs
@@ -325,6 +325,11 @@ def InitSteps(n):
   n.rule('gen-oils-for-unix',
          command='build/ninja-rules-py.sh gen-oils-for-unix $main_name $out_prefix $preamble $in',
          description='gen-oils-for-unix $main_name $out_prefix $preamble $in')
+  n.newline()
+
+  n.rule('compile_souffle',
+         command='build/ninja-rules-datalog.sh compile_souffle $in $out',
+         description='compile_souffle $in $out')
   n.newline()
 
 
