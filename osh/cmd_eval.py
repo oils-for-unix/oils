@@ -1976,18 +1976,17 @@ class CommandEvaluator(object):
 
     def _RemoveSubshells(self, node):
         # type: (command_t) -> command_t
-        """Eliminate redundant subshells like ( echo hi ) | wc -l etc."""
+        """Eliminate redundant subshells like ( echo hi ) | wc -l etc.
+
+        This is ONLY called at the top level of ExecuteAndCatch() - it wouldn't
+        be correct otherwise.
+        """
         UP_node = node
         with tagswitch(node) as case:
             if case(command_e.Subshell):
                 node = cast(command.Subshell, UP_node)
-                if len(node.redirects) == 0:
-                    # Note: technically we could optimize this into BraceGroup with
-                    # redirects.  Some shells appear to do that.
-                    if 0:
-                        log('removing subshell')
-                    # Optimize ( ( date ) ) etc.
-                    return self._RemoveSubshells(node.child)
+                # Optimize ( ( date ) ) etc.
+                return self._RemoveSubshells(node.child)
         return node
 
     def ExecuteAndCatch(self, node, cmd_flags=0):

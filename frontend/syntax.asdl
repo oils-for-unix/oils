@@ -329,8 +329,7 @@ module syntax
   | YshExpr(expr e, Token blame)  # for x in (mylist) { echo $x }
 
   BraceGroup = (
-      Token left, Token? doc_token, List[command] children,
-      List[Redir] redirects, Token right
+      Token left, Token? doc_token, List[command] children, Token right
   )
 
   Param = (Token blame_tok, str name, TypeExpr? type, expr? default_val)
@@ -391,24 +390,24 @@ module syntax
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
-  | Subshell(Token left, command child, Token right, List[Redir] redirects)
-  | DParen(Token left, arith_expr child, Token right, List[Redir] redirects)
-  | DBracket(Token left, bool_expr expr, Token right, List[Redir] redirects)
+  | Subshell(Token left, command child, Token right)
+  | DParen(Token left, arith_expr child, Token right)
+  | DBracket(Token left, bool_expr expr, Token right)
 
     # up to 3 iterations variables
   | ForEach(Token keyword, List[str] iter_names, for_iter iterable,
-            Token? semi_tok, command body, List[Redir] redirects)
+            Token? semi_tok, command body)
     # C-style for loop.  Any of the 3 expressions can be omitted.
     # Note: body is required, but only optional here because of initialization
     # order.
   | ForExpr(Token keyword, arith_expr? init, arith_expr? cond,
-            arith_expr? update, command? body, List[Redir] redirects)
-  | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
+            arith_expr? update, command? body)
+  | WhileUntil(Token keyword, condition cond, command body)
 
   | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
-       Token? fi_kw, List[Redir] redirects)
+       Token? fi_kw)
   | Case(Token case_kw, case_arg to_match, Token arms_start, List[CaseArm] arms,
-         Token arms_end, List[Redir] redirects)
+         Token arms_end)
 
     # The keyword is optional in the case of bash-style functions
     # (ie. "foo() { ... }") which do not have one.

@@ -903,7 +903,7 @@ fi
         # Redirects
         node = assert_ParseCommandList(self,
                                        'foo() { echo hi; } 1>&2 2>/dev/null')
-        self.assertEqual(command_e.BraceGroup, node.body.tag())
+        self.assertEqual(command_e.Redirect, node.body.tag())
         self.assertEqual(2, len(node.body.redirects))
 
     def testParseKeyword(self):

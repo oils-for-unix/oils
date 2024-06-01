@@ -1340,8 +1340,7 @@ class CommandParser(object):
         # would allow us to revert this back to None, which was changed in
         # https://github.com/oilshell/oil/pull/1211.  Choosing the C++ nullptr
         # behavior saves allocations, but is less type safe.
-        return BraceGroup(left, doc_token, c_list.children, [],
-                          right)  # no redirects yet
+        return BraceGroup(left, doc_token, c_list.children, right)
 
     def ParseDoGroup(self):
         # type: () -> command.DoGroup
@@ -1598,8 +1597,7 @@ class CommandParser(object):
         else:
             body_node = self.ParseDoGroup()
 
-        # no redirects yet
-        return command.WhileUntil(keyword, cond, body_node, None)
+        return command.WhileUntil(keyword, cond, body_node)
 
     def ParseCaseArm(self):
         # type: () -> CaseArm
@@ -1747,8 +1745,7 @@ class CommandParser(object):
         arms_end = word_.AsOperatorToken(ate)
         arms_end.id = Id.Lit_RBrace
 
-        return command.Case(case_kw, to_match, arms_start, arms, arms_end,
-                            None)
+        return command.Case(case_kw, to_match, arms_start, arms, arms_end)
 
     def ParseOldCase(self, case_kw):
         # type: (Token) -> command.Case
@@ -1799,8 +1796,7 @@ class CommandParser(object):
         arms_end = word_.AsKeywordToken(ate)
 
         # no redirects yet
-        return command.Case(case_kw, to_match, arms_start, arms, arms_end,
-                            None)
+        return command.Case(case_kw, to_match, arms_start, arms, arms_end)
 
     def ParseCase(self):
         # type: () -> command.Case
@@ -2267,7 +2263,7 @@ class CommandParser(object):
         ate = self._Eat(Id.Right_Subshell)
         right = word_.AsOperatorToken(ate)
 
-        return command.Subshell(left, child, right, None)  # no redirects yet
+        return command.Subshell(left, child, right)
 
     def ParseDBracket(self):
         # type: () -> command.DBracket
@@ -2280,7 +2276,7 @@ class CommandParser(object):
         self._SetNext()  # skip [[
         b_parser = bool_parse.BoolParser(self.w_parser)
         bnode, right = b_parser.Parse()  # May raise
-        return command.DBracket(left, bnode, right, None)  # no redirects yet
+        return command.DBracket(left, bnode, right)
 
     def ParseDParen(self):
         # type: () -> command.DParen
@@ -2290,7 +2286,7 @@ class CommandParser(object):
         anode, right = self.w_parser.ReadDParen()
         assert anode is not None
 
-        return command.DParen(left, anode, right, None)  # no redirects yet
+        return command.DParen(left, anode, right)
 
     def ParseCommand(self):
         # type: () -> command_t
