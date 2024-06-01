@@ -1510,6 +1510,68 @@ class CommandEvaluator(object):
 
         return status
 
+    def _DoRedirect(self, node, cmd_st):
+        # type: (command.Redirect, CommandStatus) -> int
+
+        # COPIED from _Execute.  TODO: delete that code, in favor of this.
+
+        status = 0
+        redirects = []  # type: List[RedirValue]
+
+        try:
+            for redir in node.redirects:
+                redirects.append(self._EvalRedirect(redir))
+        except error.RedirectEval as e:
+            self.errfmt.PrettyPrintError(e)
+            redirects = None
+        except error.FailGlob as e:  # e.g. echo hi > foo-*
+            if not e.HasLocation():
+                e.location = self.mem.GetFallbackLocation()
+            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+            redirects = None
+
+        if redirects is None:
+            # Error evaluating redirect words
+            status = 1
+
+        # Translation fix: redirect I/O errors may happen in a C++
+        # destructor ~vm::ctx_Redirect, which means they must be signaled
+        # by out params, not exceptions.
+        io_errors = []  # type: List[error.IOError_OSError]
+
+        # If we evaluated redirects, apply/push them
+        if status == 0:
+            self.shell_ex.PushRedirects(redirects, io_errors)
+            if len(io_errors):
+                # core/process.py prints cryptic errors, so we repeat them
+                # here.  e.g. Bad File Descriptor
+                self.errfmt.PrintMessage(
+                    'I/O error applying redirect: %s' %
+                    pyutil.strerror(io_errors[0]),
+                    self.mem.GetFallbackLocation())
+                status = 1
+
+        # If we applied redirects successfully, run the command_t, and pop
+        # them.
+        if status == 0:
+            with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
+                try:
+                    status = self._Dispatch(node.child, cmd_st)
+                    check_errexit = cmd_st.check_errexit
+                except error.FailGlob as e:
+                    if not e.HasLocation():  # Last resort!
+                        e.location = self.mem.GetFallbackLocation()
+                    self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                    status = 1  # another redirect word eval error
+                    check_errexit = True  # probably not necessary?
+            if len(io_errors):
+                # It would be better to point to the right redirect
+                # operator, but we don't track it specifically
+                e_die("Fatal error popping redirect: %s" %
+                      pyutil.strerror(io_errors[0]))
+
+        return status
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1546,6 +1608,10 @@ class CommandEvaluator(object):
                     status = self._Execute(node.child)
                 else:
                     status = self.shell_ex.RunBackgroundJob(node.child)
+
+            elif case(command_e.Redirect):
+                node = cast(command.Redirect, UP_node)
+                status = self._DoRedirect(node, cmd_st)
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)

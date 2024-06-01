@@ -1,6 +1,10 @@
 ## oils_failures_allowed: 2
 ## compare_shells: bash dash mksh
 
+# Notes:
+# - ash is just like dash, so don't bother testing
+# - zsh fails several cases
+
 #### >$file touches a file
 rm -f myfile
 test -f myfile
@@ -93,9 +97,13 @@ echo -n 1 2 '3 ' > $f
 echo -n 4 5 >> $f '6 '
 echo -n 7 >> $f 8 '9 '
 echo -n >> $f 1 2 '3 '
-echo >> $f -n 4 5 '6 '
+echo >> $f -n 4 5 '6'
+
 cat $f
-## stdout-json: "1 2 3 4 5 6 7 8 9 1 2 3 4 5 6 "
+echo
+## STDOUT:
+1 2 3 4 5 6 7 8 9 1 2 3 4 5 6
+## END
 
 #### Redirect in command sub
 FOO=$(echo foo 1>&2)

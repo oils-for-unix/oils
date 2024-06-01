@@ -2001,13 +2001,14 @@ class CommandParser(object):
 
         if self.c_id == Id.KW_If:
             n4 = self.ParseIf()
-            n4.redirects = self._ParseRedirectList()
-            if 0:
+            #n4.redirects = self._ParseRedirectList()
+            if 1:
                 redirects = self._ParseRedirectList()
                 #if redirects is not None:
                 if len(redirects):
-                    n4 = command.Redirect(n4, redirects)
-            return n4
+                    return command.Redirect(n4, redirects)
+                else:
+                    return n4
         if self.c_id == Id.KW_Case:
             n5 = self.ParseCase()
             n5.redirects = self._ParseRedirectList()
