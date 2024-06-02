@@ -1,4 +1,5 @@
 ## compare_shells: dash bash mksh ash
+## oils_failures_allowed: 1
 
 #### errexit aborts early
 set -o errexit
@@ -278,7 +279,7 @@ one
 [three]
 ## END
 
-#### simple command - redir failure DOES respect errexit
+#### simple command / assign - redir failure DOES respect errexit
 
 $SH -c '
 set -o errexit
@@ -297,7 +298,7 @@ echo status=$?
 $SH -c '
 set -o errexit
 assign=foo > /
-echo extern status=$?
+echo assign status=$?
 '
 echo status=$?
 
@@ -310,6 +311,32 @@ status=1
 status=2
 status=2
 status=2
+## END
+
+#### simple command that's an alias -- redir failure NOT checked
+
+$SH -c '
+shopt -s expand_aliases
+
+set -o errexit
+alias zz="{ echo 1; echo 2; }"
+zz > /
+echo alias status=$?
+'
+echo status=$?
+
+## STDOUT:
+alias status=1
+status=0
+## END
+
+## OK dash STDOUT:
+alias status=2
+status=0
+## END
+
+## BUG mksh STDOUT:
+status=1
 ## END
 
 #### bash atoms [[ (( - redir failure does NOT respect errexit (unless redir_errexit)

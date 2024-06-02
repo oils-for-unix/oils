@@ -1241,11 +1241,21 @@ class CommandParser(object):
                     _MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
             left_tok = location.LeftTokenForCompoundWord(words[0])
-            return command.ShAssignment(left_tok, pairs, redirects)
+            assign_node = command.ShAssignment(left_tok, pairs)
+            if len(redirects):
+                return command.Redirect(assign_node, redirects)
+            else:
+                return assign_node
 
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
 
         if kind == Kind.ControlFlow:
+            if not self.parse_opts.parse_ignored() and len(redirects):
+                p_die("Control flow shouldn't have redirects", kw_token)
+            if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
+                p_die("Control flow shouldn't have environment bindings",
+                      preparsed_list[0].left)
+
             if kw_token.id == Id.ControlFlow_Return:
                 # return x - inside procs and shell functions
                 # return (x) - inside funcs
@@ -1264,14 +1274,9 @@ class CommandParser(object):
                               typed_loc)
                     return command.Retval(kw_token, typed_args.pos_args[0])
 
+            # Except for return (x), we shouldn't have typed args
             if typed_loc is not None:
                 p_die("Unexpected typed args", typed_loc)
-            if not self.parse_opts.parse_ignored() and len(redirects):
-                p_die("Control flow shouldn't have redirects", kw_token)
-
-            if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
-                p_die("Control flow shouldn't have environment bindings",
-                      preparsed_list[0].left)
 
             # Attach the token for errors.  (ShAssignment may not need it.)
             if len(suffix_words) == 1:

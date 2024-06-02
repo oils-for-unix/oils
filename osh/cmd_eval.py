@@ -541,9 +541,6 @@ class CommandEvaluator(object):
             elif case(command_e.ExpandedAlias):
                 node = cast(command.ExpandedAlias, UP_node)
                 redirects = node.redirects
-            elif case(command_e.ShAssignment):
-                node = cast(command.ShAssignment, UP_node)
-                redirects = node.redirects
             else:
                 # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
                 # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
@@ -1487,9 +1484,10 @@ class CommandEvaluator(object):
         # type: (command.Redirect, CommandStatus) -> int
 
         # TODO: make this shopt --set redirect_errexit
-        #
         # And document in doc/error-handling.md
-        #cmd_st.check_errexit = True
+
+        if node.child.tag() in (command_e.Simple, command_e.ShAssignment):
+            cmd_st.check_errexit = True
 
         # COPIED from _Execute.  TODO: delete that code, in favor of this.
 

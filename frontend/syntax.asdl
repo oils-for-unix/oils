@@ -376,7 +376,7 @@ module syntax
   | Sentence(command child, Token terminator)
     # Represents "bare assignment"
     # Token left is redundant with pairs[0].left
-  | ShAssignment(Token left, List[AssignPair] pairs, List[Redir] redirects)
+  | ShAssignment(Token left, List[AssignPair] pairs)
 
   | ControlFlow(Token keyword, word? arg_word)
 
