@@ -147,6 +147,10 @@ def _HasManyStatuses(node):
         if case(command_e.Simple, command_e.DBracket, command_e.DParen):
             return False
 
+        elif case(command_e.Redirect):
+            node = cast(command.Redirect, UP_node)
+            return _HasManyStatuses(node.child)
+
         elif case(command_e.Pipeline):
             node = cast(command.Pipeline, UP_node)
             if len(node.children) == 1:
