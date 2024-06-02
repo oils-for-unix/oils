@@ -481,18 +481,25 @@ class ShellExecutor(vm._Executor):
         node = cs_part.child
 
         # Hack for weird $(<file) construct
-        if node.tag() == command_e.Simple:
-            simple = cast(command.Simple, node)
+        if node.tag() == command_e.Redirect:
+            redir_node = cast(command.Redirect, node)
             # Detect '< file'
-            if (len(simple.words) == 0 and len(simple.redirects) == 1 and
-                    simple.redirects[0].op.id == Id.Redir_Less):
-                # change it to __cat < file
-                # TODO: change to 'internal cat' (issue 1013)
+            if (len(redir_node.redirects) == 1 and
+                    redir_node.redirects[0].op.id == Id.Redir_Less and
+                    redir_node.child.tag() == command_e.NoOp):
+
+                # Change it to __cat < file.
+                # TODO: could be 'internal cat' (issue #1013)
                 tok = lexer.DummyToken(Id.Lit_Chars, '__cat')
                 cat_word = CompoundWord([tok])
-                # MUTATE the command.Simple node.  This will only be done the first
-                # time in the parent process.
-                simple.words.append(cat_word)
+
+                # Blame < because __cat has no location
+                blame_tok = redir_node.redirects[0].op
+                simple = command.Simple(blame_tok, [], [cat_word], None, None,
+                                        True)
+
+                # MUTATE redir node so it's like $(<file _cat)
+                redir_node.child = simple
 
         p = self._MakeProcess(node,
                               inherit_errexit=self.exec_opts.inherit_errexit())

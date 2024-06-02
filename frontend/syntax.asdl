@@ -365,14 +365,14 @@ module syntax
 
   | Simple(Token? blame_tok,  # TODO: make required (BracedTuple?)
            List[EnvPair] more_env,
-           List[word] words, List[Redir] redirects,
+           List[word] words,
            ArgList? typed_args, LiteralBlock? block,
            # do_fork is semantic, not syntactic
            bool do_fork)
 
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
-  | ExpandedAlias(command child, List[Redir] redirects, List[EnvPair] more_env)
+  | ExpandedAlias(command child, List[EnvPair] more_env)
   | Sentence(command child, Token terminator)
     # Represents "bare assignment"
     # Token left is redundant with pairs[0].left

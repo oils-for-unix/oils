@@ -530,10 +530,6 @@ class YshPrinter(object):
         for w in node.words:
             self.DoWordInCommand(w, local_symbols)
 
-        # It would be nice to convert here docs to multi-line strings
-        for r in node.redirects:
-            self.DoRedirect(r, local_symbols)
-
         # TODO: Print the terminator.  Could be \n or ;
         # Need to print env like PYTHONPATH = 'foo' && ls
         # Need to print redirects:

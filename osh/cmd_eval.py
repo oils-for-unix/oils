@@ -537,10 +537,12 @@ class CommandEvaluator(object):
         with tagswitch(node) as case:
             if case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
-                redirects = node.redirects
+                #redirects = node.redirects
+                redirects = []  # type: List[Redir]
             elif case(command_e.ExpandedAlias):
                 node = cast(command.ExpandedAlias, UP_node)
-                redirects = node.redirects
+                #redirects = node.redirects
+                redirects = []
             else:
                 # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
                 # command_e.AndOr, command_e.CommandList, command_e.DoGroup,

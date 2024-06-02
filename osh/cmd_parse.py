@@ -341,12 +341,11 @@ def _SplitSimpleCommandPrefix(words):
 def _MakeSimpleCommand(
         preparsed_list,  # type: List[ParsedAssignment]
         suffix_words,  # type: List[CompoundWord]
-        redirects,  # type: List[Redir]
         typed_args,  # type: Optional[ArgList]
         block,  # type: Optional[LiteralBlock]
 ):
     # type: (...) -> command.Simple
-    """Create an command.Simple node."""
+    """Create a command.Simple"""
 
     # FOO=(1 2 3) ls is not allowed.
     for preparsed in preparsed_list:
@@ -381,8 +380,7 @@ def _MakeSimpleCommand(
     _AppendMoreEnv(preparsed_list, more_env)
 
     # do_fork by default
-    return command.Simple(blame_tok, more_env, words3, redirects, typed_args,
-                          block, True)
+    return command.Simple(blame_tok, more_env, words3, typed_args, block, True)
 
 
 class VarChecker(object):
@@ -1204,13 +1202,7 @@ class CommandParser(object):
             assert len(redirects) != 0
             if typed_loc is not None:
                 p_die("Unexpected typed args", typed_loc)
-
-            simple = command.Simple.CreateNull()
-            simple.blame_tok = redirects[0].op
-            simple.more_env = []
-            simple.words = []
-            simple.redirects = redirects
-            return simple
+            return command.Redirect(command.NoOp, redirects)
 
         preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
         if len(preparsed_list):
@@ -1297,15 +1289,21 @@ class CommandParser(object):
                 # Attach env bindings and redirects to the expanded node.
                 more_env = []  # type: List[EnvPair]
                 _AppendMoreEnv(preparsed_list, more_env)
-                exp = command.ExpandedAlias(expanded_node, redirects, more_env)
-                return exp
+                exp = command.ExpandedAlias(expanded_node, more_env)
+                if len(redirects):
+                    return command.Redirect(exp, redirects)
+                else:
+                    return exp
 
         # TODO: check that we don't have env1=x x[1]=y env2=z here.
 
         # FOO=bar printenv.py FOO
-        node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects,
-                                  typed_args, block)
-        return node
+        node = _MakeSimpleCommand(preparsed_list, suffix_words, typed_args,
+                                  block)
+        if len(redirects):
+            return command.Redirect(node, redirects)
+        else:
+            return node
 
     def ParseBraceGroup(self):
         # type: () -> BraceGroup
