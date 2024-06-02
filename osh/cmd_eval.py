@@ -514,50 +514,6 @@ class CommandEvaluator(object):
 
         raise AssertionError('for -Wreturn-type in C++')
 
-    def _EvalRedirects(self, node):
-        # type: (command_t) -> List[RedirValue]
-        """Evaluate redirect nodes to concrete objects.
-
-        We have to do this every time, because you could have something like:
-
-        for i in a b c; do
-          echo foo >$i
-        done
-
-        Does it makes sense to just have RedirectNode.Eval?  Nah I think the
-        Redirect() abstraction in process.py is useful.  It has a lot of methods.
-
-        Raises:
-          error.RedirectEval
-        """
-        # This is kind of lame because we have two switches over command_e: one for
-        # redirects, and to evaluate the node.  But it's what you would do in C++ I
-        # suppose.  We could also inline them.  Or maybe use RAII.
-        UP_node = node
-        with tagswitch(node) as case:
-            if case(command_e.Simple):
-                node = cast(command.Simple, UP_node)
-                #redirects = node.redirects
-                redirects = []  # type: List[Redir]
-            elif case(command_e.ExpandedAlias):
-                node = cast(command.ExpandedAlias, UP_node)
-                #redirects = node.redirects
-                redirects = []
-            else:
-                # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
-                # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
-                # command_e.Sentence, # command_e.TimeBlock, command_e.ShFunction,
-                # YSH:
-                # command_e.VarDecl, command_e.Mutation,
-                # command_e.Proc, command_e.Func, command_e.Expr,
-                redirects = []
-
-        result = []  # type: List[RedirValue]
-        for redir in redirects:
-            result.append(self._EvalRedirect(redir))
-
-        return result
-
     def _RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
         # type: (cmd_value_t, CommandStatus, int) -> int
         """Private interface to run a simple command (including assignment)."""
@@ -1811,63 +1767,11 @@ class CommandEvaluator(object):
         else:
             process_sub_st = StatusArray.CreateNull()
 
-        errexit_loc = loc.Missing  # type: loc_t
-        check_errexit = True
-
-        status = 0
-
         with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):  # for wait()
-            try:
-                redirects = self._EvalRedirects(node)
-            except error.RedirectEval as e:
-                self.errfmt.PrettyPrintError(e)
-                redirects = None
-            except error.FailGlob as e:  # e.g. echo hi > foo-*
-                if not e.HasLocation():
-                    e.location = self.mem.GetFallbackLocation()
-                self.errfmt.PrettyPrintError(e, prefix='failglob: ')
-                redirects = None
-            if redirects is None:
-                # Error evaluating redirect words
-                status = 1
+            status = self._Dispatch(node, cmd_st)
+        # Now we've waited for process subs
 
-            # Translation fix: redirect I/O errors may happen in a C++
-            # destructor ~vm::ctx_Redirect, which means they must be signaled
-            # by out params, not exceptions.
-            io_errors = []  # type: List[error.IOError_OSError]
-
-            # If we evaluated redirects, apply/push them
-            if status == 0:
-                self.shell_ex.PushRedirects(redirects, io_errors)
-                if len(io_errors):
-                    # core/process.py prints cryptic errors, so we repeat them
-                    # here.  e.g. Bad File Descriptor
-                    self.errfmt.PrintMessage(
-                        'I/O error applying redirect: %s' %
-                        pyutil.strerror(io_errors[0]),
-                        self.mem.GetFallbackLocation())
-                    status = 1
-
-            # If we applied redirects successfully, run the command_t, and pop
-            # them.
-            if status == 0:
-                with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
-                    try:
-                        status = self._Dispatch(node, cmd_st)
-                        check_errexit = cmd_st.check_errexit
-                    except error.FailGlob as e:
-                        if not e.HasLocation():  # Last resort!
-                            e.location = self.mem.GetFallbackLocation()
-                        self.errfmt.PrettyPrintError(e, prefix='failglob: ')
-                        status = 1  # another redirect word eval error
-                        check_errexit = True  # probably not necessary?
-                if len(io_errors):
-                    # It would be better to point to the right redirect
-                    # operator, but we don't track it specifically
-                    e_die("Fatal error popping redirect: %s" %
-                          pyutil.strerror(io_errors[0]))
-
-        # end with - we've waited for process subs
+        check_errexit = cmd_st.check_errexit
 
         # If it was a real pipeline, compute status from ${PIPESTATUS[@]} aka
         # @_pipeline_status
@@ -1876,6 +1780,7 @@ class CommandEvaluator(object):
         # makes it annoying to check both _process_sub_status and
         # _pipeline_status
 
+        errexit_loc = loc.Missing  # type: loc_t
         if pipe_status is not None:
             # Tricky: _DoPipeline sets cmt_st.pipe_status and returns -1
             # for a REAL pipeline (but not singleton pipelines)
