@@ -137,18 +137,20 @@ def _HasManyStatuses(node):
     Note: strict_errexit also uses
       shopt --unset _allow_command_sub _allow_process_sub
     """
-    # Sentence check is for   if false;   versus   if false
-    if node.tag() == command_e.Sentence:
-        node1 = cast(command.Sentence, node)
-        return _HasManyStatuses(node1.child)
-
     UP_node = node
     with tagswitch(node) as case:
+        # Atoms.
+        # TODO: Do we need YSH atoms here?
         if case(command_e.Simple, command_e.DBracket, command_e.DParen):
             return False
 
         elif case(command_e.Redirect):
             node = cast(command.Redirect, UP_node)
+            return _HasManyStatuses(node.child)
+
+        elif case(command_e.Sentence):
+            # Sentence check is for   if false;   versus   if false
+            node = cast(command.Sentence, UP_node)
             return _HasManyStatuses(node.child)
 
         elif case(command_e.Pipeline):
@@ -166,6 +168,7 @@ def _HasManyStatuses(node):
         #   BUT could be a proc executed inside a child process, which causes a
         #   problem: the strict_errexit check has to occur at runtime and there's
         #   no way to signal it ot the parent.
+
     return True
 
 
@@ -1447,11 +1450,8 @@ class CommandEvaluator(object):
 
         # TODO: make this shopt --set redirect_errexit
         # And document in doc/error-handling.md
-
         if node.child.tag() in (command_e.Simple, command_e.ShAssignment):
             cmd_st.check_errexit = True
-
-        # COPIED from _Execute.  TODO: delete that code, in favor of this.
 
         status = 0
         redirects = []  # type: List[RedirValue]
@@ -1493,15 +1493,7 @@ class CommandEvaluator(object):
         # them.
         if status == 0:
             with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
-                try:
-                    status = self._Dispatch(node.child, cmd_st)
-                    check_errexit = cmd_st.check_errexit
-                except error.FailGlob as e:
-                    if not e.HasLocation():  # Last resort!
-                        e.location = self.mem.GetFallbackLocation()
-                    self.errfmt.PrettyPrintError(e, prefix='failglob: ')
-                    status = 1  # another redirect word eval error
-                    check_errexit = True  # probably not necessary?
+                status = self._Execute(node.child)
             if len(io_errors):
                 # It would be better to point to the right redirect
                 # operator, but we don't track it specifically
@@ -1740,7 +1732,7 @@ class CommandEvaluator(object):
 
     def _Execute(self, node):
         # type: (command_t) -> int
-        """Apply redirects, call _Dispatch(), and performs the errexit check.
+        """Call _Dispatch(), and performs the errexit check.
 
         Also runs trap handlers.
         """
@@ -1772,10 +1764,16 @@ class CommandEvaluator(object):
             process_sub_st = StatusArray.CreateNull()
 
         with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):  # for wait()
-            status = self._Dispatch(node, cmd_st)
-        # Now we've waited for process subs
+            try:
+                status = self._Dispatch(node, cmd_st)
+            except error.FailGlob as e:
+                if not e.HasLocation():  # Last resort!
+                    e.location = self.mem.GetFallbackLocation()
+                self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+                status = 1  # another redirect word eval error
+                cmd_st.check_errexit = True  # failglob + errexit
 
-        check_errexit = cmd_st.check_errexit
+        # Now we've waited for process subs
 
         # If it was a real pipeline, compute status from ${PIPESTATUS[@]} aka
         # @_pipeline_status
@@ -1833,7 +1831,7 @@ class CommandEvaluator(object):
         # - assignment - its result should be the result of the RHS?
         #   - e.g. arith sub, command sub?  I don't want arith sub.
         # - ControlFlow: always raises, it has no status.
-        if check_errexit:
+        if cmd_st.check_errexit:
             #log('cmd_st %s', cmd_st)
             self._CheckStatus(status, cmd_st, node, errexit_loc)
 

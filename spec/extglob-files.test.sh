@@ -158,11 +158,14 @@ argv.py @(nested|'_?'|@('_[:]'|'_*'))
 
 #### Escaping of pipe (glibc bug, see demo/glibc_fnmatch.c)
 shopt -s extglob
+
 mkdir -p extpipe
 cd extpipe
+
 touch '__|' foo
 argv.py @('foo'|__\||bar)
 argv.py @('foo'|'__|'|bar)
+
 ## STDOUT:
 ['__|', 'foo']
 ['__|', 'foo']
