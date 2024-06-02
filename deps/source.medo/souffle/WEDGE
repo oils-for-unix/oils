@@ -6,18 +6,51 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+WEDGE_NAME='souffle'
+WEDGE_VERSION='2.4.1'
+
 wedge-make() {
-  echo TODO
+  local src_dir=$1
+  local build_dir=$2
+  local install_dir=$3
+
+  #pushd $DEPS_DIR/souffle/src/souffle-2.4.1
+  #rm -rf build
+
+  pushd $build_dir
+
+  # Seems to build in parallel by default
+  cmake -DSOUFFLE_USE_CURSES=OFF \
+    -DSOUFFLE_USE_SQLITE=OFF \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=$install_dir \
+    -DSOUFFLE_ENABLE_TESTING=OFF \
+    -DSOUFFLE_TEST_EXAMPLES=OFF \
+    -DSOUFFLE_TEST_EVALUATION=OFF \
+    -S $src_dir -B build
+
+  popd
 }
 
 wedge-install() {
-  echo TODO
+  local build_dir=$1
+  #local install_dir=$2
+
+  pushd $build_dir
+
+  #cmake --build build -j 8 --target install
+  cmake --build build --target install
+
+  popd
 }
 
 wedge-smoke-test() {
   local install_dir=$1
-  PATH=$install_dir/bin:$PATH souffle -g test test.dl
-  c++ test.cpp -I $install_dir/include -std=c++17 -lstdc++fs -o test
-  ./test
-  sort path.csv | diff -u - path.expected.csv
+  local wedge_dir=$2
+
+  $install_dir/bin/souffle -g smoke-test $wedge_dir/smoke-test.dl
+  c++ smoke-test.cpp -I $install_dir/include -std=c++17 -lstdc++fs -o smoke-test
+  ./smoke-test
+
+  sort path.tsv | diff -u - $wedge_dir/path.expected.tsv
 }

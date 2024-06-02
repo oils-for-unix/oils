@@ -90,6 +90,9 @@ readonly BLOATY_URL='https://github.com/google/bloaty/releases/download/v1.1/blo
 readonly UFTRACE_VERSION=0.13
 readonly UFTRACE_URL='https://github.com/namhyung/uftrace/archive/refs/tags/v0.13.tar.gz'
 
+readonly SOUFFLE_VERSION=2.4.1
+readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
+
 log() {
   echo "$0: $@" >& 2
 }
@@ -121,16 +124,20 @@ rm-oils-crap() {
 # PY3_BUILD_DEPS - I think these will be used for building the Python 2 wedge
 # as well
 readonly -a WEDGE_DEPS_DEBIAN=(
-    bzip2 
-    wget
-    tree
-    gawk 
-    g++ 
-    ninja-build
-    cmake
-    libreadline-dev 
-    systemtap-sdt-dev
-    "${PY3_BUILD_DEPS[@]}"
+  bzip2 
+  wget
+  tree
+  gawk 
+  g++ 
+  ninja-build
+  cmake
+  libreadline-dev 
+  systemtap-sdt-dev
+
+  # for Souffle, flex and bison
+  #flex bison
+
+  "${PY3_BUILD_DEPS[@]}"
 )
 
 readonly -a WEDGE_DEPS_ALPINE=(
@@ -151,6 +158,9 @@ readonly -a WEDGE_DEPS_ALPINE=(
   openssl-dev
 
   ncurses-dev
+
+  # for Souffle, flex and bison
+  #flex bison
 )
 
 readonly -a WEDGE_DEPS_FEDORA=(
@@ -422,6 +432,11 @@ fetch() {
   # It's also copied into a wedge in install-wedges.
   clone-mypy $DEPS_SOURCE_DIR/mypy
 
+  if false; then
+    download-to $DEPS_SOURCE_DIR/souffle "$SOUFFLE_URL"
+    maybe-extract $DEPS_SOURCE_DIR/souffle "$(basename $SOUFFLE_URL)" souffle-$SOUFFLE_VERSION
+  fi
+
   if command -v tree > /dev/null; then
     tree -L 2 $DEPS_SOURCE_DIR
   fi
@@ -610,6 +625,7 @@ cpp-wedges() {
 
   echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
   echo mypy $MYPY_VERSION $USER_WEDGE_DIR
+  #echo souffle $SOUFFLE_VERSION $USER_WEDGE_DIR
 
   # py3-libs has a built time dep on both python3 and MyPy, so we're doing it
   # separately for now
@@ -935,6 +951,10 @@ install-wedges() {
     # This patch doesn't work?
     # patch-typed-ast
     install-py3-libs
+  fi
+
+  if ! wedge-exists souffle $SOUFFLE_VERSION $USER_WEDGE_DIR; then
+    deps/wedge.sh unboxed-build _build/deps-source/souffle/
   fi
 
   if command -v tree > /dev/null; then

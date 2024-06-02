@@ -4,7 +4,7 @@ edge(1, 2).
 edge(2, 3).
 
 .decl path(u: number, v: number)
-.output path
+.output path(filename="path.tsv")
 
 path(u, v) :- edge(u, v).
 path(u, w) :- edge(u, v), path(v, w).
