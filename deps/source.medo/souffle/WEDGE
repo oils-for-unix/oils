@@ -1,0 +1,23 @@
+# Wedge definition for Souffle
+#
+# Loaded by deps/wedge.sh.
+
+set -o nounset
+set -o pipefail
+set -o errexit
+
+wedge-make() {
+  echo TODO
+}
+
+wedge-install() {
+  echo TODO
+}
+
+wedge-smoke-test() {
+  local install_dir=$1
+  PATH=$install_dir/bin:$PATH souffle -g test test.dl
+  c++ test.cpp -I $install_dir/include -std=c++17 -lstdc++fs -o test
+  ./test
+  sort path.csv | diff -u - path.expected.csv
+}
