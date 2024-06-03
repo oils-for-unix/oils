@@ -453,10 +453,11 @@ class _DocConstructor:
         third
         ```
         """
-        seq = [items[0]]
-        for item in items[1:]:
-            seq.append(_Text(sep))
-            seq.append(_Break(space))
+        seq = []
+        for i, item in enumerate(items):
+            if i != 0:
+                seq.append(_Text(sep))
+                seq.append(_Break(space))
             seq.append(item)
         return _Concat(seq)
 
@@ -488,27 +489,44 @@ class _DocConstructor:
         used otherwise.
         """
 
+        # Why not "just" use tabular alignment so long as two items fit on every
+        # line?  Because it isn't possible to check for that in the pretty
+        # printing language. There are two sorts of conditionals we can do:
+        #
+        # A. Inside the pretty printing language, which supports exactly one
+        #    conditional: "does it fit on one line?".
+        # B. Outside the pretty printing language we can run arbitrary Python
+        #    code, but we don't know how much space is available on the line
+        #    because it depends on the context in which we're printed, which may
+        #    vary.
+        #
+        # We're picking between the three styles, by using (A) to check if the
+        # first style fits on one line, then using (B) with "are all the items
+        # smaller than `self.max_tabular_width`?" to pick between style 2 and
+        # style 3.
+
         if len(items) == 0:
             return _Text("")
 
-        max_flat_len = items[0].measure.flat
-        seq = [items[0]]
-        for item in items[1:]:
-            seq.append(_Text(sep))
-            seq.append(_Break(" "))
+        max_flat_len = 0
+        seq = []
+        for i, item in enumerate(items):
+            if i != 0:
+                seq.append(_Text(sep))
+                seq.append(_Break(" "))
             seq.append(item)
             max_flat_len = max(max_flat_len, item.measure.flat)
         non_tabular = _Concat(seq)
 
         sep_width = _StrWidth(sep)
         if max_flat_len + sep_width + 1 <= self.max_tabular_width:
-            tabular_seq = [] # type: List[MeasuredDoc]
-            for item in items[:-1]:
-                padding = max_flat_len - item.measure.flat + 1
+            tabular_seq = []  # type: List[MeasuredDoc]
+            for i, item in enumerate(items):
                 tabular_seq.append(item)
-                tabular_seq.append(_Text(sep))
-                tabular_seq.append(_Group(_Break(" " * padding)))
-            tabular_seq.append(items[-1])
+                if i != len(items) - 1:
+                    padding = max_flat_len - item.measure.flat + 1
+                    tabular_seq.append(_Text(sep))
+                    tabular_seq.append(_Group(_Break(" " * padding)))
             tabular = _Concat(tabular_seq)
             return _Group(_IfFlat(non_tabular, tabular))
         else:
