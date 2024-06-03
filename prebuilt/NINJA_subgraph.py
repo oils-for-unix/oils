@@ -73,3 +73,5 @@ def NinjaGraph(ru):
             '//cpp/data_lang',  # for fastfunc
             '//cpp/frontend_flag_spec',
         ])
+
+    ru.souffle_cpp('mycpp/datalog/call-graph.dl')
