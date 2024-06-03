@@ -115,12 +115,22 @@ build-dir() {
 }
 
 install-dir() {
+  local version_requested=${1:-}
+
   local prefix
   if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
     prefix=$OILS_ABSOLUTE_ROOT
   else
     prefix=$OILS_RELATIVE_ROOT
   fi
+
+  # TODO: We want to support multiple versions of the same wedge
+  # So maybe we can provide
+  # 
+  # WEDGE_VERSION_LIST='4.4 5.2'
+  #
+  # And then provide a flag to select them?
+
   echo "$prefix/pkg/$WEDGE_NAME/$WEDGE_VERSION"
 }
 
@@ -139,7 +149,10 @@ load-wedge() {
   source $wedge_dir/WEDGE
 
   echo "  OK  name: ${WEDGE_NAME?"$wedge_dir: WEDGE_NAME required"}"
+
+  # TODO: Either WEDGE_VERSION or WEDGE_VERSION_LIST (space-separated)
   echo "  OK  version: ${WEDGE_VERSION?"$wedge_dir: WEDGE_VERSION required"}"
+
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
     echo "  --  tarball name: $WEDGE_TARBALL_NAME"
   fi
@@ -183,13 +196,14 @@ unboxed-make() {
   ### Build on the host
 
   local wedge=$1  # e.g. re2c.wedge.sh
+  local version_requested=${2:-}  # e.g. 5.2
 
   load-wedge $wedge
 
   local build_dir=$(build-dir) 
 
   # NOT created because it might require root permissions!
-  local install_dir=$(install-dir)
+  local install_dir=$(install-dir "${version_requested}")
 
   rm -r -f -v $build_dir
   mkdir -p $build_dir
@@ -288,10 +302,13 @@ unboxed-stats() {
 unboxed-build() {
   local wedge_dir=$1
 
+  # Can override default version.  Ca this be a fflag?
+  local version_requested=${2:-}
+
   # TODO:
   # - Would be nice to export the logs somewhere
 
-  unboxed-make $wedge_dir
+  unboxed-make $wedge_dir "${version_requested}"
 
   unboxed-install $wedge_dir
 

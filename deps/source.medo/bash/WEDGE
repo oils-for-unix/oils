@@ -8,6 +8,10 @@ set -o errexit
 
 # sourced
 WEDGE_NAME='bash'
+
+# TODO: require a param to select one of these
+WEDGE_VERSION_LIST='4.4 5.2'
+# TODO: remove
 WEDGE_VERSION='4.4'
 
 wedge-make() {
@@ -36,4 +40,5 @@ wedge-smoke-test() {
   local install_dir=$1
 
   $install_dir/bin/bash -c 'echo "hi from bash"'
+  $install_dir/bin/bash --version
 }

@@ -54,6 +54,8 @@ TEST sizeof_syntax() {
 // Doesn't really test anything
 TEST sizeof_core_types() {
   log("");
+  // 4 bytes, for lower case / upper case etc.
+  log("sizeof(wchar_t) = %d", sizeof(wchar_t));
 
   // 8 byte header
   log("sizeof(ObjHeader) = %d", sizeof(ObjHeader));

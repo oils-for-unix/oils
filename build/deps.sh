@@ -57,6 +57,10 @@ readonly PY3_URL="$PY_FTP_MIRROR/python/$PY3_VERSION/Python-$PY3_VERSION.tar.xz"
 readonly BASH_VER=4.4  # don't clobber BASH_VERSION
 readonly BASH_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH_VER.tar.gz"
 
+# Another version of bash to test
+readonly BASH5_VER=5.2
+readonly BASH5_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH5_VER.tar.gz"
+
 readonly DASH_VERSION=0.5.10.2
 readonly DASH_URL="https://www.oilshell.org/blob/spec-bin/dash-$DASH_VERSION.tar.gz"
 
@@ -397,7 +401,10 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
   download-to $DEPS_SOURCE_DIR/bash "$BASH_URL"
-  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH_URL)" dash-$BASH_VER
+  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH_URL)" bash-$BASH_VER
+
+  download-to $DEPS_SOURCE_DIR/bash "$BASH5_URL"
+  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH5_URL)" bash-$BASH5_VER
 
   download-to $DEPS_SOURCE_DIR/dash "$DASH_URL"
   maybe-extract $DEPS_SOURCE_DIR/dash "$(basename $DASH_URL)" dash-$DASH_VERSION
@@ -637,6 +644,7 @@ spec-bin-wedges() {
 
   echo dash $DASH_VERSION $USER_WEDGE_DIR
   echo bash $BASH_VER $USER_WEDGE_DIR
+  echo bash $BASH5_VER $USER_WEDGE_DIR
   echo mksh $MKSH_VERSION $USER_WEDGE_DIR
   echo zsh $ZSH_VERSION $USER_WEDGE_DIR
   echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
@@ -658,8 +666,8 @@ maybe-install-wedge() {
   local version=$2
   local wedge_dir=$3  # e.g. $USER_WEDGE_DIR or empty
 
-  local task_file=$WEDGE_LOG_DIR/$name.task.tsv
-  local log_file=$WEDGE_LOG_DIR/$name.log.txt
+  local task_file=$WEDGE_LOG_DIR/$name-$version.task.tsv
+  local log_file=$WEDGE_LOG_DIR/$name-$version.log.txt
 
   echo "  TASK  $(timestamp)  $name $version > $log_file"
 
@@ -677,13 +685,17 @@ maybe-install-wedge() {
     return
   fi
 
+  # TODO: How do we express the difference between bash 4.4 and 5.2?
+  # I think they should both live in the same WEDGE
+  # But the WEDGE_VERSION somehow gets factored out
+
   local -a cmd=( deps/wedge.sh unboxed-build _build/deps-source/$name/ )
 
   set +o errexit
   my-time-tsv \
     --field "$XARGS_SLOT" \
     --field "$name" \
-    --field "$name.log.txt" \
+    --field "$name-$version.log.txt" \
     --field "$version" \
     --append \
     --output $task_file \
