@@ -9,12 +9,13 @@ readonly REPO_ROOT
 readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS
 
 source build/common.sh
+source build/dev-shell.sh
 source devtools/run-task.sh
 
 compile_souffle() {
   in=$1
   out=$2
-  PATH=$DEPS_DIR/souffle/bin:$PATH souffle -g - -I mycpp/datalog $in > $out
+  souffle -g - -I mycpp/datalog $in > $out
 }
 
 run-task "$@"
