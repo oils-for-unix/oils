@@ -42,4 +42,19 @@ compare() {
   done
 }
 
+float-demo() {
+  ### Test of tabular floats - not a test or a benchmark right now
+
+  # Note: this could change if we change how floats are printed, e.g. strtof
+  # vs. strtod.
+
+  bin/ysh -c '
+var L = []
+for i in (1 .. 200) {
+  call L->append(i/3)
+}
+= L
+'
+}
+
 "$@"
