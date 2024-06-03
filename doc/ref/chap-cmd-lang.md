@@ -1,17 +1,23 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Command Language (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Command Language
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes the command language
-for both OSH and YSH.
+[Oils Reference](index.html) &mdash;
+Chapter **Command Language**
 
-<div id="toc">
+</div>
+
+This chapter describes the command language for OSH, and some YSH extensions.
+
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
 
 ## Quick Sketch: What's a Command?
@@ -123,6 +129,23 @@ YSH:
     } else {
       echo 'neither'
     }
+
+<h3 id="dbracket" class="osh-topic">dbracket [[</h3>
+
+Statically parsed boolean expressions, from bash and other shells:
+
+    x=42
+    if [[ $x -eq 42 ]]; then
+      echo yes
+    fi  # => yes
+
+Compare with the [test][] builtin, which is dynamically parsed.
+
+See [bool-expr][] for the expression syntax.
+
+[test]: chap-builtin-cmd.html#test
+[bool-expr]: chap-mini-lang.html#bool-expr
+
 
 <h3 id="true" class="osh-ysh-topic">true</h3>
 
@@ -252,20 +275,41 @@ The trailing `;` is necessary in OSH, but not YSH.  In YSH, `parse_brace` makes
 
     ( echo one; echo two )
 
-Use [forkwait]($osh-help) in YSH instead.
+In YSH, use [forkwait](chap-builtin-cmd.html#forkwait) instead of parentheses.
 
 <h2 id="Concurrency">Concurrency</h2>
 
 ### pipe
 
-### ampersand
+Pipelines are a traditional POSIX shell construct:
 
-    CMD &
+    ls /tmp | grep ssh | sort
 
-The `&` language construct runs CMD in the background as a job, immediately
-returning control to the shell.
+Related:
 
-The resulting PID is recorded in the `$!` variable.
+- [`PIPESTATUS`]() in OSH
+- [`_pipeline_status`]() in YSH
+
+[PIPESTATUS]: chap-special-var.html#PIPESTATUS
+[_pipeline_status]: chap-special-var.html#_pipeline_status
+
+<h3 id="ampersand" class="osh-topic">ampersand &amp;</h3>
+
+Start a command as a background job.  Don't wait for it to finish, and return
+control to the shell.
+
+The PID of the job is recorded in the `$!` variable.
+
+    sleep 1 &
+    echo pid=$!
+    { echo two; sleep 2 } &
+    wait
+    wait
+
+In YSH, use the [fork][] builtin.
+
+[fork]: chap-builtin-cmd.html#fork
+
 
 <h2 id="Redirects">Redirects</h2>
 
@@ -396,153 +440,13 @@ Or as an expression:
 Note that `cd` has no typed or named arguments, so the two semicolons are
 preceded by nothing.
 
-Compare with [sh-block]($osh-help).
+Compare with [sh-block](#sh-block).
 
 Redirects can appear after the block arg:
 
     cd /tmp {
       echo $PWD  # prints /tmp
     } >out.txt
-
-## YSH Assign
-
-### const 
-
-Binds a name to a YSH expression on the right, with a **dynamic** check to
-prevent mutation.
-
-    const c = 'mystr'        # equivalent to readonly c=mystr
-    const pat = / digit+ /   # an eggex, with no shell equivalent
-
-If you try to re-declare or mutate the name, the shell will fail with a runtime
-error.  `const` uses the same mechanism as the `readonly` builtin.
-
-Consts should only appear at the top-level, and can't appear within `proc` or
-`func`.
-
-### var
-
-Initializes a name to a YSH expression.
-
-    var s = 'mystr'        # equivalent to declare s=mystr
-    var pat = / digit+ /   # an eggex, with no shell equivalent
-
-It's either global or scoped to the current function.
-
-You can bind multiple variables:
-
-    var flag, i = parseArgs(spec, ARGV)
-
-    var x, y = 42, 43
-
-You can omit the right-hand side:
-
-    var x, y  # implicitly initialized to null
-
-### setvar
-
-At the top-level, setvar creates or mutates a variable.
-
-    setvar gFoo = 'mutable'
-
-Inside a func or proc, it mutates a local variable declared with var.
-
-    proc p {
-      var x = 42
-      setvar x = 43
-    }
-
-You can mutate a List location:
-
-    setvar a[42] = 'foo'
-
-Or a Dict location:
-
-    setvar d['key'] = 43
-    setvar d.key = 43  # same thing
-
-You can use any of these these augmented assignment operators
-
-    +=   -=   *=   /=   **=   //=   %=
-    &=   |=   ^=   <<=   >>=
-
-Examples:
-
-    setvar x += 2  # increment by 2
-
-    setvar a[42] *= 2  # multiply by 2
-
-    setvar d.flags |= 0b0010_000  # set a flag
-
-
-### setglobal
-
-Creates or mutates a global variable.  Has the same syntax as `setvar`.
-
-
-## YSH Expr
-
-### equal
-
-The `=` keyword evaluates an expression and shows the result:
-
-    oil$ = 1 + 2*3
-    (Int)   7
-
-It's meant to be used interactively.  Think of it as an assignment with no
-variable on the left.
-
-### call
-
-The `call` keyword evaluates an expression and throws away the result:
-
-    var x = :| one two |
-    call x->append('three')
-    call x->append(['typed', 'data'])
-
-
-## YSH Code
-
-### proc-def
-
-Procs are shell-like functions, but with named parameters, and without dynamic
-scope.
-
-Here's a simple proc:
-
-    proc my-cp (src, dest) {
-      cp --verbose --verbose $src $dest
-    }
-
-Here's the most general form:
-
-    proc p (
-      w1, w2, ...rest_words;
-      t1, t2, ...rest_typed;
-      n1, n2, ...rest_named;
-      block) {
-
-      = w1
-      = t1
-      = n1
-      = block
-    }
-
-See the [Guide to Procs and Funcs](../proc-func.html) for details.
-
-Compare with [sh-func]($osh-help).
-
-### func-def
-
-TODO
-
-### ysh-return
-
-To return an expression, wrap it in `()` as usual:
-
-    func inc(x) {
-      return (x + 1)
-    }
 
 ## YSH Cond
 
@@ -635,5 +539,3 @@ Three forms for expressions that evaluate to a `Dict`:
     for i, key, value in (mydict) {
       echo "$i $key $value"
     }
-
-# vim: sw=2

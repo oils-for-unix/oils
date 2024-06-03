@@ -5,7 +5,7 @@ in_progress: yes
 Examples of HTML Plugins
 ========================
 
-This file is essentially a unit test for [doctools/oil_doc.py]($oils-src), which
+This file is essentially a unit test for [doctools/oils_doc.py]($oils-src), which
 contains all the HTML plugins.
 
 Related: [How We Build Oils Documentation](doc-toolchain.html).

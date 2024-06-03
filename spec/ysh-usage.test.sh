@@ -1,5 +1,4 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
 
 #### ysh usage
 

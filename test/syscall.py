@@ -183,11 +183,7 @@ def main(argv):
       f.write('%6d\t' % n)
       #min_procs = min(n, min_procs)
 
-    #osh_count = num_procs[case_id, 'osh']
-    if False: #osh_count != min_procs:
-      f.write('%sx%s %d>%d\t' % (L, R, osh_count, min_procs))
-    else:
-      f.write('\t')
+    f.write('\t')
 
     f.write(code_strs[case_id])
     f.write("\n")

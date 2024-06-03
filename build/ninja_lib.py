@@ -267,7 +267,7 @@ class Rules(object):
       o = cc_lib.obj_lookup[config]
       objects.extend(o)
 
-    v = [('compiler', compiler), ('variant', variant)]
+    v = [('compiler', compiler), ('variant', variant), ('more_link_flags', "''")]
     self.n.build([out_bin], 'link', objects, variables=v)
     self.n.newline()
 
@@ -496,4 +496,32 @@ class Rules(object):
             variables=[('template', template)])
     self.n.newline()
 
+  def souffle_binary(self, souffle_src):
+    """
+    Compile a souffle program into a native executable.
+    """
+    rel_path, _ = os.path.splitext(souffle_src)
+    basename = os.path.basename(rel_path)
 
+    souffle_cpp = '_gen/mycpp/%s.cc' % basename
+    self.n.build([souffle_cpp], 'compile_souffle', souffle_src)
+
+    souffle_obj = '_build/obj/mycpp/%s.o' % basename
+    self.n.build(
+        [souffle_obj], 'compile_one', souffle_cpp,
+        variables=[
+            ('compiler', 'cxx'),
+            ('variant', 'opt'),
+            ('more_cxx_flags', "'-I$NINJA_REPO_ROOT/../oil_DEPS/souffle/include -std=c++17'")
+        ])
+
+    souffle_bin = '_bin/tools/%s' % basename
+    self.n.build(
+        [souffle_bin], 'link', souffle_obj,
+        variables=[
+            ('compiler', 'cxx'),
+            ('variant', 'opt'),
+            ('more_link_flags', "'-lstdc++fs'")
+        ])
+
+    self.n.newline()

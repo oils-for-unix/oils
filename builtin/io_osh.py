@@ -79,7 +79,8 @@ class Echo(vm._Builtin):
 
                     p = word_compile.EvalCStringToken(id_, s)
 
-                    # Unusual behavior: '\c' prints what is there and aborts processing!
+                    # Unusual behavior: '\c' prints what is there and aborts
+                    # processing!
                     if p is None:
                         backslash_c = True
                         break
@@ -93,15 +94,18 @@ class Echo(vm._Builtin):
             # Replace it
             argv = new_argv
 
+        buf = mylib.BufWriter()
+
         #log('echo argv %s', argv)
         for i, a in enumerate(argv):
             if i != 0:
-                self.f.write(' ')  # arg separator
-            self.f.write(a)
+                buf.write(' ')  # arg separator
+            buf.write(a)
 
         if not arg.n and not backslash_c:
-            self.f.write('\n')
+            buf.write('\n')
 
+        self.f.write(buf.getvalue())
         return 0
 
 

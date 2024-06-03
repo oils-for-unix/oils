@@ -14,7 +14,6 @@
 # - let arithmetic (rarely used)
 # - coprocesses # one with arg and one without
 # - select block
-# - case fallthrough ;& and ;;&
 
 # Possible refactorings:
 #
@@ -76,61 +75,19 @@ module syntax
 
   SourceLine = (int line_num, str content, source src)
 
-  # Ways to make Token 24 bytes:
-  # - Introduce WideToken with the wide_tok.tval field, which we use with
-  #   lexer.LazyStr()
-  #   - It will be 32 bytes rather than 24
-  #   - loc = Token %Token | WideToken %WideToken
-  #   - Which tokens need to be big?
-  #     - Id.Lit_{Chars,VarLike,...} - word_part.Literal
-  #     - SingleQuoted does not store tokens; it stores a string
-  #     - Id.Arith_VarLike - arith_expr.Var
-  #     - Id.VSub_{DollarName,Number} - SimpleVarSub
-  #     - Id.VSub_Name - BracedVarSub
-  #     - Id.Expr_Name - expr.Var
-  #
-  # Instrumenting lexer.LazyVal() with histogram:
-  #   22561 Id.Lit_Chars
-  #    8366 Id.Lit_VarLike
-  #    4681 Id.Lit_Colon
-  #     287 Id.Lit_Slash
-  #     164 Id.ControlFlow_Break
-  #     158 Id.ControlFlow_Exit
-  #      29 Id.ControlFlow_Continue
-  #       3 Id.Lit_Comma
-  #       2 Id.Lit_LBracket
-  #       1 Id.Lit_LBrace
-
-  #   36255 total tokens
-  #   36255 tokens with LazyVal()
-  #      13 unique tokens IDs
-  #
-  # This is ONLY word_::_EvalWordPart() -> word_part::Literal.  So it does seem
-  # a HANDFUL of syntax.asdl nodes can use WideToken, and we can use the TYPE
-  # SYSTEM to distinguish them.
-  #
-  # In other words, Lexer always returns type Token, and then the parser may
-  # "upgrade" to type WideToken when it knows it will need to store
-  # word_part.Literal, SimpleVarSub, etc.  This also means we can INLINE
-  # SimpleVarSub %WideToken into word_part_t and expr_t.
-
-  # Possible problem with WideToken: parse_ctx.trail.tokens is List[Token], and
-  # WordParser._GetToken() appends to it.  But we can just use TokenVal() to
-  # create garbage there.
-
-  # Pack id and length into 32 bits with special uint16 type.
-  # TODO: This breaks ASDL pretty printing of Id type!
-
-  # We transpose (id, col, length) -> (id, length, col) for C struct packing.
-
   # Note that ASDL generates:
-  #    typedef int Id_t;
-  # So uint16 id implies truncation.  We happen to know there are less than
-  # 2^16 IDs, but it's not checked.  Yaks could check it.
-
+  #    typedef uint16_t Id_t;
+  # So Token is
+  #    8 bytes GC header + 2 + 2 + 4 + 8 + 8 = 32 bytes on 64-bit machines
+  #
+  # We transpose (id, col, length) -> (id, length, col) for C struct packing.
   Token = (id id, uint16 length, int col, SourceLine? line, str? tval)
 
-  WideToken = (id id, int length, int col, SourceLine? line, str? tval)
+  # I wanted to get rid of Token.tval with this separate WideToken type, but it
+  # is more efficient if word_part.Literal %Token literally is the same thing
+  # that comes out of the lexer.  Otherwise we have extra garbage.
+
+  # WideToken = (id id, int length, int col, SourceLine? line, str? tval)
 
   # Slight ASDL bug: CompoundWord has to be defined before using it as a shared
   # variant.  The _product_counter algorithm should be moved into a separate
@@ -286,7 +243,6 @@ module syntax
   | BinaryAssign(id op_id, arith_expr left, arith_expr right)
 
   | Unary(id op_id, arith_expr child)
-    # TODO: op should be token, e.g. for divide by zero
   | Binary(Token op, arith_expr left, arith_expr right)
   | TernaryOp(arith_expr cond, arith_expr true_expr, arith_expr false_expr)
 
@@ -373,8 +329,7 @@ module syntax
   | YshExpr(expr e, Token blame)  # for x in (mylist) { echo $x }
 
   BraceGroup = (
-      Token left, Token? doc_token, List[command] children,
-      List[Redir] redirects, Token right
+      Token left, Token? doc_token, List[command] children, Token right
   )
 
   Param = (Token blame_tok, str name, TypeExpr? type, expr? default_val)
@@ -404,49 +359,60 @@ module syntax
 
   command =
     NoOp
+
+    # can wrap many children, e.g. { }, loops, functions
+  | Redirect(command child, List[Redir] redirects)
+
   | Simple(Token? blame_tok,  # TODO: make required (BracedTuple?)
            List[EnvPair] more_env,
-           List[word] words, List[Redir] redirects,
+           List[word] words,
            ArgList? typed_args, LiteralBlock? block,
            # do_fork is semantic, not syntactic
            bool do_fork)
+
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
-  | ExpandedAlias(command child, List[Redir] redirects, List[EnvPair] more_env)
+  | ExpandedAlias(command child, List[EnvPair] more_env)
   | Sentence(command child, Token terminator)
     # Represents "bare assignment"
     # Token left is redundant with pairs[0].left
-  | ShAssignment(Token left, List[AssignPair] pairs, List[Redir] redirects)
-  | Retval(Token keyword, expr val)
+  | ShAssignment(Token left, List[AssignPair] pairs)
+
   | ControlFlow(Token keyword, word? arg_word)
+
     # ops are |  |&
   | Pipeline(Token? negated, List[command] children, List[Token] ops)
     # ops are &&  ||
   | AndOr(List[command] children, List[Token] ops)
+
     # Part of for, while, until (but not if, case, ShFunction).  No redirects.
   | DoGroup(Token left, List[command] children, Token right)
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
-  | Subshell(Token left, command child, Token right, List[Redir] redirects)
-  | DParen(Token left, arith_expr child, Token right, List[Redir] redirects)
-  | DBracket(Token left, bool_expr expr, Token right, List[Redir] redirects)
+  | Subshell(Token left, command child, Token right)
+  | DParen(Token left, arith_expr child, Token right)
+  | DBracket(Token left, bool_expr expr, Token right)
+
     # up to 3 iterations variables
   | ForEach(Token keyword, List[str] iter_names, for_iter iterable,
-            Token? semi_tok, command body, List[Redir] redirects)
+            Token? semi_tok, command body)
     # C-style for loop.  Any of the 3 expressions can be omitted.
     # Note: body is required, but only optional here because of initialization
     # order.
   | ForExpr(Token keyword, arith_expr? init, arith_expr? cond,
-            arith_expr? update, command? body, List[Redir] redirects)
-  | WhileUntil(Token keyword, condition cond, command body, List[Redir] redirects)
+            arith_expr? update, command? body)
+  | WhileUntil(Token keyword, condition cond, command body)
+
   | If(Token if_kw, List[IfArm] arms, Token? else_kw, List[command] else_action,
-       Token? fi_kw, List[Redir] redirects)
+       Token? fi_kw)
   | Case(Token case_kw, case_arg to_match, Token arms_start, List[CaseArm] arms,
-         Token arms_end, List[Redir] redirects)
+         Token arms_end)
+
     # The keyword is optional in the case of bash-style functions
     # (ie. "foo() { ... }") which do not have one.
   | ShFunction(Token? keyword, Token name_tok, str name, command body)
+
   | TimeBlock(Token keyword, command pipeline)
     # Some nodes optimize it out as List[command], but we use CommandList for
     # 1. the top level
@@ -472,6 +438,7 @@ module syntax
   | Expr(Token keyword, expr e)
   | Proc %Proc
   | Func %Func
+  | Retval(Token keyword, expr val)
 
   #
   # Glob representation, for converting ${x//} to extended regexes.
@@ -660,7 +627,7 @@ module syntax
   | CharClass(bool negated, List[char_class_term] terms)
 
     # @D
-  | Splice(Token name, str var_name)  # TODO: Splice %Token
+  | Splice(Token name, str var_name)  # TODO: Splice %Token ?
 
   | SingleQuoted %SingleQuoted
 

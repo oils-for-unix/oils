@@ -29,7 +29,7 @@ oils-ctags-out() {
   # We want an explicit manifest to avoid walking _chroot/ and so forth.  ctags
   # --exclude doesn't work well.
 
-  test/lint.sh find-src-files | ctags --filter | sort 
+  devtools/repo.sh find-src-files | ctags --filter | sort 
 }
 
 index-oils() {

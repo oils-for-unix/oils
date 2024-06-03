@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
-"""Flag_def.py."""
+"""Flag parser defintions."""
+
 from __future__ import print_function
 
 from frontend import args
@@ -177,6 +178,26 @@ JOB_SPEC.ShortFlag('-l', help='long format')
 JOB_SPEC.ShortFlag('-p', help='prints PID only')
 JOB_SPEC.LongFlag('--debug', help='display debug info')
 
+ULIMIT_SPEC = FlagSpec('ulimit')
+
+ULIMIT_SPEC.ShortFlag('-a', help='Print all limits')
+ULIMIT_SPEC.LongFlag('--all', help='Alias for -a')
+ULIMIT_SPEC.ShortFlag('-H', help='Use hard limit')
+ULIMIT_SPEC.ShortFlag('-S', help='Use soft limit')
+
+_ULIMIT_RESOURCES = [
+    '-c',
+    '-d',
+    '-f',
+    '-n',
+    '-s',
+    '-t',
+    '-v',
+]
+
+for u_flag in _ULIMIT_RESOURCES:
+    ULIMIT_SPEC.ShortFlag(u_flag)
+
 #
 # FlagSpecAndMore
 #
@@ -331,7 +352,9 @@ def _DefineCompletionActions(spec):
     spec.Action('b', 'binding')
     spec.Action('c', 'command')
     spec.Action('d', 'directory')
+    spec.Action('e', 'export')
     spec.Action('f', 'file')
+    spec.Action('k', 'keyword')
     spec.Action('j', 'job')
     spec.Action('u', 'user')
     spec.Action('v', 'variable')

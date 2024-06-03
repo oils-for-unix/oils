@@ -72,7 +72,7 @@ file
 ## BUG bash status: 0
 
 #### type -t -> not found
-type -t echo ZZZ find =
+type -t echo ZZZ find ==
 echo status=$?
 ## STDOUT: 
 builtin

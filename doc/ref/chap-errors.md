@@ -1,49 +1,116 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Errors (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Errors
-======
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes **errors**.
+[Oils Reference](index.html) &mdash;
+Chapter **Errors**
 
-Related: [Oils Error Catalog, With Hints](../error-catalog.html).
-
-<div id="toc">
 </div>
+
+This chapter describes **errors** for data languages.  An error checklist is
+often a nice, concise way to describe a language.
+
+Related: [Oils Error Catalog, With Hints](../error-catalog.html) describes
+errors in code.
+
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
+</div>
+
+## UTF8
+
+J8 Notation is built on UTF-8, so let's summarize UTF-8 errors.
+
+### err-utf8-encode
+
+Oils stores strings as UTF-8 in memory, so it doesn't encode UTF-8 often.
+
+But it may have a function to encode UTF-8 from a `List[Int]`.  These errors
+would be handled:
+
+1. Integer greater than max code point
+1. Code point in the surrogate range
+
+### err-utf8-decode
+
+A UTF-8 decoder should handle these errors:
+
+1. Overlong encoding.  In UTF-8, each code point should be represented with the
+   fewest possible bytes. 
+   - Overlong encodings are the equivalent of writing the integer `42` as
+     `042`, `0042`, `00042`, etc.  This is not allowed.
+1. Surrogate code point.  The sequence decodes to a code point in the surrogate
+   range, which is used only for the UTF-16 encoding, not for string data.
+1. Exceeds max code point.  The sequence decodes to an integer that's larger
+   than the maximum code point.
+1. Bad encoding.  A byte is not encoded like a UTF-8 start byte or a
+   continuation byte.
+1. Incomplete sequence.  Too few continuation bytes appeared after the start
+   byte.
+
+## J8 String
+
+J8 strings extend [JSON]($xref) strings, and are a primary building block of J8
+Notation.
+
+### err-j8-str-encode
+
+J8 strings can represent any string &mdash; bytes or unicode &mdash; so there
+are **no encoding errors**.
+
+### err-j8-str-decode
+
+1. Escape sequence like `\u{dc00}` should not be in the surrogate range.
+   - This means it doesn't represent a real character.  Byte escapes like
+     `\yff` should be used instead.
+1. Escape sequence like `\u{110000}` is greater than the maximimum Unicode code
+   point.
+1. Byte escapes like `\yff` should not be in `u''` string.
+   - By design, they're only valid in `b''` strings.
 
 ## J8 Lines
 
-### j8-lines-decode-err
+Roughly speaking, J8 Lines are an encoding for a stream of J8 strings.  In
+[YSH]($xref), it's used by `@(split command sub)`.
 
-J8 Lines is used by `@(split command sub)`, and has these errors:
+### err-j8-lines-encode
 
+Like J8 strings, J8 Lines have no encoding errors by design.
+
+### err-j8-lines-decode
+
+1. Any error in a J8 quoted string.
+   -  e.g. no closing quote, invalid UTF-8, invalid backslash escape, ...
+1. A line with a quoted string has extra text after it.
+   - e.g. `"mystr" extra`.
 1. An unquoted line is not valid UTF-8.
-1. A J8 quoted string has a syntax error (e.g. no closing quote, invalid
-   backslash escape)
-1. A line has extra text after a quoted string, e.g. `"mystr" extra`.
 
 ## JSON
 
-### json-encode-err
+### err-json-encode
 
-JSON encoding has three possible errors:
+JSON encoding has these errors:
 
-1. Object of this type can't be serialized
-   - For example, `Str List Dict` are YSH objects can be serialized.
-   - But `Eggex Func Range` can't.
-1. Circular reference
+1. Object of this type can't be serialized.
+   - For example, `Str List Dict` are Oils objects can be serialized, but
+     `Eggex Func Range` can't.
+1. Circular reference.
    - e.g. a Dict that points to itself, a List that points to itself, and other
      permutations
 1. Float values of NaN, Inf, and -Inf can't be encoded.
    - TODO: option to use `null` like JavaScript.
-1. Invalid UTF-8 in string, e.g. binary data like `\xfe\xff`
-   - TODO: option to use the Unicode replacement char to avoid an error.
 
-### json-decode-err
+Note that invalid UTF-8 bytes like `0xfe` produce a Unicode replacement
+character, not a hard error.
+
+### err-json-decode
 
 1. The encoded message itself is not valid UTF-8.
    - (Typically, you need to check the unescaped bytes in string literals
@@ -59,24 +126,27 @@ JSON encoding has three possible errors:
 
 ## JSON8
 
-### json8-encode-err
+### err-json8-encode
 
-Compared to JSON, JSON8 removes an encoding error:
+JSON8 has the same encoding errors as JSON.
 
-5. Invalid UTF-8 is OK, because it gets turned into a binary string like
-   `b"byte \yfe\yff"`.
+However, the encoding is lossless by design.  Instead of invalid UTF-8 being
+turned into a Unicode replacment character, it can use J8 strings with byte
+escapes like `b'byte \yfe\yff'`.
 
-### json8-decode-err
+### err-json8-decode
 
-JSON8 has the same decoding errors as JSON, plus:
+JSON8 has the same decoding errors as JSON, plus J8 string decoding errors.
 
-4. `\u{dc00}` should not be in the surrogate range.  This means it doesn't
-   represent a real character, and `\yff` escapes should be used instead.
-4. `\yff` should not be in `u''` string.  (It's only valid in `b''` strings.)
+See [err-j8-str-decode](#err-j8-str-decode).
+
+<!--
 
 ## Packle
 
-### packle-encode-err
+TODO: Not implemented!
+
+### err-packle-encode
 
 Packle has no encoding errors!
 
@@ -89,41 +159,9 @@ Packle has no encoding errors!
 1. Float values NaN, Inf, and -Inf use their binary representations.
 1. Both Unicode and binary data are allowed.
 
-### packle-decode-err
+### err-packle-decode
 
 TODO
 
-## UTF8
-
-This is for reference.
-
-### utf8-encode-err
-
-Oils stores strings as UTF-8 in memory, so it doesn't often do encoding.
-
-- Surrogate range?
-
-### utf8-decode-err
-
-#### bad-byte   
-
-#### expected-start   
-
-#### expected-cont
-
-#### incomplete-seq   
-
-#### overlong
-
-I think this is only leading zeros?
-
-Like the difference between `123` and `0123`.
-
-#### bad-code-point
-
-e.g. decoded to something in the surrogate range
-
-Note: I think this is relaxed for WTF-8, and our JSON decoder probably needs to
-use it.
-
+-->
 

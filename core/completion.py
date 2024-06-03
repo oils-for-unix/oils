@@ -660,6 +660,19 @@ class VariablesAction(CompletionAction):
         f.write('VariablesAction ')
 
 
+class ExportedVarsAction(CompletionAction):
+    """compgen -e export."""
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        self.mem = mem
+
+    def Matches(self, comp):
+        # type: (Api) -> Iterator[str]
+        for var_name in self.mem.GetExported():
+            yield var_name
+
+
 class ExternalCommandAction(CompletionAction):
     """Complete commands in $PATH.
 

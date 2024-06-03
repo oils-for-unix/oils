@@ -1,17 +1,29 @@
-// float_test.cc - Printing floats
+// float_test.cc - Learning by running code from Bruce Dawson's articles!
+//
+// Index here:
+//   https://randomascii.wordpress.com/2013/02/07/float-precision-revisited-nine-digit-float-portability/
+//
+// union Float_t helper:
+//   https://randomascii.wordpress.com/2012/01/11/tricks-with-the-floating-point-format/
+//
+// How to round trip floating numbers - just sprintf() and sscanf!
+//   https://randomascii.wordpress.com/2012/03/08/float-precisionfrom-zero-to-100-digits-2/
+//
+//     printf(“%1.8e\n”, d); // Round-trippable float, always with an exponent
+//     printf(“%.9g\n”, d); // Round-trippable float, shortest possible
+//
+//     printf(“%1.16e\n”, d); // Round-trippable double, always with an exponent
+//     printf(“%.17g\n”, d); // Round-trippable double, shortest possible
+//
+// Good idea - do an exhaustive test of all floats:
+//   https://randomascii.wordpress.com/2014/01/27/theres-only-four-billion-floatsso-test-them-all/
+//
+// But use threads.  A single threaded test took 12 minutes on my machine.
+//   https://randomascii.wordpress.com/2012/03/11/c-11-stdasync-for-fast-float-format-finding/
 
 #include <inttypes.h>
-// #include <limits.h>  // HOST_NAME_MAX
-// #include <unistd.h>  // gethostname()
 
-//#include <new>  // placement new
-
-// #include "mycpp/runtime.h"
-// #include "mycpp/common.h"
-// #include "mycpp/gc_obj.h"  // ObjHeader
 #include "vendor/greatest.h"
-
-// https://randomascii.wordpress.com/2012/01/11/tricks-with-the-floating-point-format/
 
 union Float_t {
   Float_t(float num = 0.0f) : f(num) {
@@ -38,93 +50,100 @@ union Float_t {
 #endif
 };
 
-void PrintFloat(Float_t num) {
+void PrintPartsOfFloat(Float_t num) {
   // printf("Float value, representation, sign, exponent, mantissa\n");
   printf("%1.8e   0x%08X   sign %d, exponent %d, mantissa 0x%06X\n", num.f,
          num.i, num.parts.sign, num.parts.exponent, num.parts.mantissa);
 }
 
+// https://randomascii.wordpress.com/2013/02/07/float-precision-revisited-nine-digit-float-portability/
+
 TEST print_float_test() {
   Float_t num(1.0f);
   for (int i = 0; i < 10; ++i) {
-    PrintFloat(num);
+    PrintPartsOfFloat(num);
+
+    // change it to an adjacent float
     num.i -= 1;
+
+#if 0
+    char s[20];
+
+    // He recommends both of these - what is the difference?
+    // Oh one of them uses e-01
+
+    sprintf(s, "%1.8e\n", num.f);
+    printf("%s", s);
+
+    sprintf(s, "%.9g\n", num.f);
+    printf("%s", s);
+
+    float f;
+    sscanf(s, "%f", &f);
+    Float_t parsed(f);
+
+    sprintf(s, "%.9g\n", parsed.f);
+    printf("parsed %s", s);
+
+    ASSERT_EQ_FMT(num.i, parsed.i, "%d");
+#endif
   }
 
   PASS();
 }
 
-typedef float (*Transform)(float);
+TEST decimal_round_trip_test() {
+  // Test that sprintf() and sscanf() round trip all floats!
+  // Presumably strtof() uses the same algorithm as sscanf().
 
-// https://randomascii.wordpress.com/2014/01/27/theres-only-four-billion-floatsso-test-them-all/
+  // This is the biggest number that can be represented in both float and
+  // int32_t. It’s 2^31-128.
+  Float_t max_float(2147483520.0f);
 
-// Pass in a uint32_t range of float representations to test.
-// start and stop are inclusive. Pass in 0, 0xFFFFFFFF to scan all
-// floats. The floats are iterated through by incrementing
-// their integer representation.
-bool ExhaustiveTest(uint32_t start, uint32_t stop, Transform TestFunc,
-                    Transform RefFunc, const char* desc) {
-  printf("Testing %s from %u to %u (inclusive).\n", desc, start, stop);
+  // 22 bits out of 32, so we print 2**10 or ~1000 lines of progress
+  const int interval = 1 << 22;
+
   // Use long long to let us loop over all positive integers.
-  long long i = start;
-  bool passed = true;
-  while (i <= stop) {
-    Float_t input;
-    input.i = (int32_t)i;
-    Float_t testValue = TestFunc(input.f);
-    Float_t refValue = RefFunc(input.f);
-    // If the results don’t match then report an error.
-    if (testValue.f != refValue.f &&
-        // If both results are NaNs then we treat that as a match.
-        (testValue.f == testValue.f || refValue.f == refValue.f)) {
-      printf("Input %.9g, expected %.9g, got %1.9g        \n", input.f,
-             refValue.f, testValue.f);
-      passed = false;
+  long long i = 0;
+  while (i <= max_float.i) {
+    Float_t num;
+    num.i = (int32_t)i;
+
+    char s[20];
+    sprintf(s, "%.9g\n", num.f);  // preserves all information
+    // printf("%s", s);
+
+    float f;
+    sscanf(s, "%f", &f);  // recover all information
+    Float_t parsed(f);
+
+    sprintf(s, "%.9g\n", parsed.f);
+    // printf("parsed %s", s);
+
+    ASSERT_EQ_FMT(num.i, parsed.i, "%d");
+
+    i++;
+
+    if (i % interval == 0) {
+      printf("%lld iterations done\n", i);
     }
 
-    ++i;
+    // Comment this out to do more
+    if (i == 1000) {
+      printf("STOPPING EARLY\n");
+      break;
+    }
   }
-  return passed;
-}
-
-float half(float f) {
-  return f / 2;
-}
-
-float half2(float f) {
-#if 0
-  if (f == 4242.00) {
-    return f + 1;  // see if exhasutive test finds this number
-  }
-#endif
-  return f / 2;
-}
-
-TEST round_trip_test() {
-  // This is the biggest number that can be represented in
-  // both float and int32_t. It’s 2^31-128.
-  Float_t maxfloatasint(2147483520.0f);
-
-  // const uint32_t signBit = 0x80000000;
-
-  // Takes 3.5 seconds in opt
-  ASSERT(ExhaustiveTest(0, (uint32_t)maxfloatasint.i, half, half2,
-                        "exhaustive half"));
-
   PASS();
 }
 
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
-  // gHeap.Init();
-
   GREATEST_MAIN_BEGIN();
 
   RUN_TEST(print_float_test);
-  RUN_TEST(round_trip_test);
-
-  // gHeap.CleanProcessExit();
+  RUN_TEST(decimal_round_trip_test);
 
   GREATEST_MAIN_END();
   return 0;

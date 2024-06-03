@@ -1,0 +1,15 @@
+.once
+
+.include "control-flow.dl"
+
+// At statement s, caller invokes callee.
+.decl call(caller: Function, s: Statement, callee:Function)
+.input call
+
+// (f, s) is in this set if there is a call into the garbage collector, either
+// directly or indirectly, at statement s in function f.
+.decl might_collect(f: Function, s: Statement)
+.output might_collect
+
+might_collect(f, s) :- call(f, s, "mylib.MaybeCollect").
+might_collect(f, s) :- call(f, s, g), might_collect(g, _).

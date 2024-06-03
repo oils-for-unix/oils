@@ -18,7 +18,7 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
-from mycpp.util import log
+from mycpp.util import log, join_name, split_py_name
 from mycpp import util
 
 from typing import Tuple, List
@@ -308,28 +308,60 @@ def GetCType(t, param=False, local=False):
         is_pointer = True
 
     elif isinstance(t, UnionType):
-        # Special case for Optional[T] == Union[T, None]
-        if len(t.items) != 2:
-            raise NotImplementedError('Expected 2 items in Union, got %s' %
-                                      len(t.items))
+        # Special case for Optional[IOError_OSError]
+        # == Union[IOError, OSError, None]
 
-        t0 = t.items[0]
-        t1 = t.items[1]
+        num_items = len(t.items)
 
-        c_type = None
-        if isinstance(t1, NoneTyp):  # Optional[T0]
-            c_type = GetCType(t.items[0])
-        else:
-            # Detect type alias defined in core/error.py
-            # IOError_OSError = Union[IOError, OSError]
+        if num_items == 3:
+            t0 = t.items[0]
+            t1 = t.items[1]
+            t2 = t.items[2]
+
             t0_name = t0.type.fullname
             t1_name = t1.type.fullname
-            if t0_name == 'builtins.IOError' and t1_name == 'builtins.OSError':
-                c_type = 'IOError_OSError'
-                is_pointer = True
 
-        if c_type is None:
-            raise NotImplementedError('Unexpected Union type %s' % t)
+            if t0_name != 'builtins.IOError':
+                raise NotImplementedError(
+                    'Expected Union[IOError, OSError, None]: t0 = %s' %
+                    t0_name)
+
+            if t1_name != 'builtins.OSError':
+                raise NotImplementedError(
+                    'Expected Union[IOError, OSError, None]: t1 = %s' %
+                    t1_name)
+
+            if not isinstance(t2, NoneTyp):
+                raise NotImplementedError(
+                    'Expected Union[IOError, OSError, None]')
+
+            c_type = 'IOError_OSError'
+            is_pointer = True
+
+        elif num_items == 2:
+
+            t0 = t.items[0]
+            t1 = t.items[1]
+
+            c_type = None
+            if isinstance(t1, NoneTyp):  # Optional[T0]
+                c_type = GetCType(t.items[0])
+            else:
+                # Detect type alias defined in core/error.py
+                # IOError_OSError = Union[IOError, OSError]
+                t0_name = t0.type.fullname
+                t1_name = t1.type.fullname
+                if (t0_name == 'builtins.IOError' and
+                        t1_name == 'builtins.OSError'):
+                    c_type = 'IOError_OSError'
+                    is_pointer = True
+
+            if c_type is None:
+                raise NotImplementedError('Unexpected Union type %s' % t)
+
+        else:
+            raise NotImplementedError(
+                'Expected 2 or 3 items in Union, got %s' % num_items)
 
     elif isinstance(t, CallableType):
         # Function types are expanded
@@ -542,14 +574,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
-        # Skip some stdlib stuff.  A lot of it is brought in by 'import
-        # typing'.
-        if o.fullname in ('__future__', 'sys', 'types', 'typing', 'abc',
-                          '_ast', 'ast', '_weakrefset', 'collections',
-                          'cStringIO', 're', 'builtins'):
-
-            # These module are special; their contents are currently all
-            # built-in primitives.
+        if util.ShouldSkipPyFile(o):
             return
 
         #self.log('')
@@ -766,12 +791,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if arity > 0:
                 macro = 'DTRACE_PROBE%d' % arity
 
-            self.def_write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
+            self.def_write('%s(%s, %s', macro, o.args[0].value,
+                           o.args[1].value)
 
             for arg in o.args[2:]:
                 arg_type = self.types[arg]
                 self.def_write(', ')
-                if isinstance(arg_type, Instance) and arg_type.type.fullname == 'builtins.str':
+                if (isinstance(arg_type, Instance) and
+                        arg_type.type.fullname == 'builtins.str'):
                     self.def_write('%s->data()' % arg.name)
                 else:
                     self.accept(arg)
@@ -1938,47 +1965,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _collect_cases(self, if_node, out):
-        """
-        The MyPy AST has a recursive structure for if-elif-elif rather than a
-        flat one.  It's a bit confusing.
-
-        Appends (expr, block) cases to out param, and returns the default
-        block, which has no expression.
-
-        default block may be None.
-
-        Returns False if there is no default block.
-        """
-        assert isinstance(if_node, IfStmt), if_node
-        assert len(if_node.expr) == 1, if_node.expr
-        assert len(if_node.body) == 1, if_node.body
-
-        expr = if_node.expr[0]
-        body = if_node.body[0]
-
-        if not isinstance(expr, CallExpr):
-            self.report_error(expr,
-                              'Expected call like case(x), got %s' % expr)
-            return
-
-        out.append((expr, body))
-
-        if if_node.else_body:
-            first_of_block = if_node.else_body.body[0]
-            # BUG: this is meant for 'elif' only.  But it also triggers for
-            #
-            # else:
-            #   if 0:
-
-            if isinstance(first_of_block, IfStmt):
-                return self._collect_cases(first_of_block, out)
-            else:
-                # default case - no expression
-                return if_node.else_body
-
-        return False  # NO DEFAULT BLOCK - Different than None
-
     def _write_cases(self, switch_expr, cases, default_block):
         """ Write a list of (expr, block) pairs """
 
@@ -2026,7 +2012,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path, if_node, cases,
+                                            errors=self.errors_keep_going)
         self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
@@ -2046,7 +2033,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path, if_node, cases,
+                                            errors=self.errors_keep_going)
         self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
@@ -2106,7 +2094,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path, if_node, cases,
+                                            errors=self.errors_keep_going)
 
         grouped_cases = self._str_switch_cases(cases)
         # Warning: this consumes internal iterator
@@ -2380,7 +2369,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if not self.decl and self.current_class_name:
             # definition looks like
             # void Class::method(...);
-            func_name = '%s::%s' % (self.current_class_name, o.name)
+            func_name = join_name((self.current_class_name[-1], o.name))
         else:
             # declaration inside class { }
             func_name = o.name
@@ -2445,18 +2434,18 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(b, NameExpr):
                 # TODO: inherit from std::exception?
                 if b.name != 'object' and b.name != 'Exception':
-                    base_class_name = b.name
+                    base_class_name = split_py_name(b.fullname)
             elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
                 assert isinstance(b.expr, NameExpr), b
-                base_class_name = '%s::%s' % (b.expr.name, b.name)
+                base_class_name = split_py_name(b.expr.fullname) + (b.name,)
 
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
             self.always_write_ind('class %s;\n', o.name)
             if base_class_name:
-                self.virtual.OnSubclass(base_class_name, o.name)
+                self.virtual.OnSubclass(base_class_name, split_py_name(o.fullname))
             # Visit class body so we get method declarations
-            self.current_class_name = o.name
+            self.current_class_name = split_py_name(o.fullname)
             self._write_body(o.defs.body)
             self.current_class_name = None
             return
@@ -2468,7 +2457,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # e.g. class TextOutput : public ColorOutput
             if base_class_name:
-                self.always_write(' : public %s', base_class_name)
+                self.always_write(' : public %s', join_name(base_class_name,
+                                                            strip_package=True))
 
             self.always_write(' {\n')
             self.always_write_ind(' public:\n')
@@ -2476,7 +2466,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             block = o.defs
 
             self.indent += 1
-            self.current_class_name = o.name
+            self.current_class_name = split_py_name(o.fullname)
             for stmt in block.body:
 
                 # Ignore things that look like docstrings
@@ -2523,7 +2513,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             # List of field mask expressions
             mask_bits = []
-            if self.virtual.CanReorderFields(o.name):
+            if self.virtual.CanReorderFields(split_py_name(o.fullname)):
                 # No inheritance, so we are free to REORDER member vars, putting
                 # pointers at the front.
 
@@ -2547,7 +2537,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # The field mask of a derived class is unioned with its base's
                 # field mask.
                 if base_class_name:
-                    mask_bits.append('%s::field_mask()' % base_class_name)
+                    mask_bits.append('%s::field_mask()' %
+                                     join_name(base_class_name, strip_package=True))
 
                 for name in sorted(self.member_vars):
                     c_type = GetCType(self.member_vars[name])
@@ -2615,7 +2606,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             return
 
-        self.current_class_name = o.name
+        self.current_class_name = split_py_name(o.fullname)
 
         #
         # Now we're visiting for definitions (not declarations).
@@ -2653,7 +2644,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                 callee.name == '__init__'):
                             base_constructor_args = expr.args
                             #log('ARGS %s', base_constructor_args)
-                            self.def_write(' : %s(', base_class_name)
+                            self.def_write(' : %s(', join_name(base_class_name,
+                                                               strip_package=True))
                             for i, arg in enumerate(base_constructor_args):
                                 if i == 0:
                                     continue  # Skip 'this'
@@ -2846,9 +2838,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if len(roots):
                 if (self.stack_roots_warn and
                         len(roots) > self.stack_roots_warn):
-                    log('WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'
-                        % (self.current_class_name or
-                           '', self.current_func_node.name, len(roots)))
+                    log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
+                        % (self.current_func_node.fullname, len(roots)))
 
                 for i, r in enumerate(roots):
                     self.def_write_ind('StackRoot _root%d(&%s);\n' % (i, r))

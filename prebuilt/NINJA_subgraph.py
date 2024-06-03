@@ -4,7 +4,6 @@ prebuilt/NINJA_subgraph.py
 
 from __future__ import print_function
 
-from build import ninja_lib
 from build.ninja_lib import log
 
 _ = log

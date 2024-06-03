@@ -1,5 +1,5 @@
-#
-# NOTE: Could move spec/03-glob.sh here.
+## oils_failures_allowed: 3
+## compare_shells: bash dash mksh ash
 
 #### glob double quote escape
 echo "*.sh"
@@ -227,19 +227,22 @@ echo status=$?
 set -e
 for x in *.ZZ; do echo $x; done
 echo status=$?
+
 shopt -s failglob
 for x in *.ZZ; do echo $x; done
 echo status=$?
+
+## status: 1
 ## STDOUT:
 *.ZZ
 status=0
 ## END
-## status: 1
+
+## N-I dash/mksh/ash status: 127
 ## N-I dash/mksh/ash STDOUT:
 *.ZZ
 status=0
 ## END
-## N-I dash/mksh/ash status: 127
 
 #### shopt -s failglob behavior on single line with semicolon
 # bash behaves differently when commands are separated by a semicolon than when

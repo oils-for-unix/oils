@@ -24,78 +24,88 @@ source test/common.sh        # html-head
 source devtools/run-task.sh  # run-task
 source test/tsv-lib.sh
 
-# for 'import typing' in Python 2. Can't go in build/dev-shell.sh because it
-# would affect Python 3.
-export PYTHONPATH="vendor:$PYTHONPATH"
-
-# For auto-complete
-unit() {
-  "$@"
-}
-
-delete-pyc() {
-  find . -name '*.pyc' | xargs --no-run-if-empty -- rm || true
-}
-
-# WTF, fixes native_test issue
-#export PYTHONDONTWRITEBYTECODE=1
-
 banner() {
   echo -----
   echo "$@"
   echo -----
 }
 
-readonly -a PY2_UNIT_TESTS=( {asdl,asdl/examples,build,builtin,core,data_lang,doctools,frontend,lazylex,ysh,osh,pyext,pylib,soil,test,tools}/*_test.py )
+unit() {
+  ### Run a single test, autocompletes with devtools/completion.bash
+  local test_path=$1
 
-readonly -a PY3_UNIT_TESTS=( mycpp/*_test.py spec/stateful/*_test.py )
+  # Duplicates logic in test-niafest
+  read -r first_line < $test_path
+  if [[ $first_line == *python3* ]]; then
+    py_path_more=:  # no-op
+  else
+    py_path_more=:vendor/  # for vendor/typing.py
+  fi
+  PYTHONPATH=${PYTHONPATH}${py_path_more} "$@"
+}
 
-py2-tests() {
-  local minimal=${1:-}
+test-files() {
+  find . -name '_*' -a -prune -o -name '*_test.py' -a -printf '%P\n' | sort
+}
 
-  for t in "${PY2_UNIT_TESTS[@]}"; do
-    # For Travis after build/py.sh minimal: if we didn't build fastlex.so,
-    # then skip a unit test that will fail.
+test-manifest() {
+  test-files | while read test_path; do
+    local minimal=-
+    case $test_path in
+      # For build/py.sh minimal: if we didn't build fastlex.so,
+      # then skip a unit test that will fail.
+      pyext/fastlex_test.py|doctools/cmark_test.py)
+        minimal=exclude
+        ;;
 
-    if test -n "$minimal"; then
-      if test $t = 'pyext/fastlex_test.py'; then
+      # Skip obsolete tests
+      demo/old/*)
         continue
-      fi
-      # doctools/cmark.sh makes that shared library
-      if test $t = 'doctools/cmark_test.py'; then
+        ;;
+
+      # Skip OPy and pgen2 tests - they have some PYTHONPATH issues?
+      # May want to restore pgen2
+      opy/*|pgen2/*)
         continue
-      fi
+        ;;
+
+    esac
+
+    read -r first_line < $test_path
+    #echo $first_line
+    if [[ $first_line == *python3* ]]; then
+      kind=py3
+      py_path_more=:  # no-op
+    else
+      kind=py2
+      py_path_more=:vendor/  # for vendor/typing.py
     fi
 
-    echo $t
+    echo "$minimal $kind $py_path_more $test_path"
   done
 }
 
-py3-tests() {
-  for t in "${PY3_UNIT_TESTS[@]}"; do
-    echo $t
+files-to-count() {
+  ### Invoked by metrics/source-code.sh
+  test-manifest | while read _ _ _ test_path; do
+    echo $test_path
   done
 }
 
-all-tests() {
-  py2-tests "$@"
+run-unit-test() {
+  local py_path_more=$1
+  local test_path=$2
 
-  # TODO: This only PRINTS the tests.  It doesn't actually run them, but we
-  # need a different PYTHONPATH here.
-  py3-tests
-}
-
-run-unit-tests() {
-  while read test_path; do
-    # no separate working dir
-    run-test-bin $test_path '' _test/py-unit
-  done
+  PYTHONPATH=${PYTHONPATH}${py_path_more} run-test-bin $test_path '' _test/py-unit
 }
 
 all() {
   ### Run unit tests after build/py.sh all
 
-  time all-tests "$@" | run-unit-tests
+  test-manifest | while read minimal kind py_path_more test_path; do
+    run-unit-test $py_path_more $test_path '' _test/py-unit
+  done
+
   echo
   echo "All unit tests passed."
 }
@@ -103,9 +113,116 @@ all() {
 minimal() {
   ### Run unit tests after build/py.sh minimal
 
-  time py2-tests T | run-unit-tests
+  test-manifest | while read minimal kind py_path_more test_path; do
+    if test $minimal = exclude; then
+      continue
+    fi
+
+    if test $kind = py3; then
+      continue
+    fi
+
+    run-unit-test $py_path_more $test_path
+  done
+
   echo
   echo "Minimal unit tests passed."
+}
+
+#
+# Unlike soil-run, run-for-release makes an HTML page in _release/VERSION 
+# Could unify them.
+
+run-test-and-log() {
+  local tasks_tsv=$1
+  local rel_path=$2
+
+  local log=_tmp/unit/$rel_path.txt
+  mkdir -p "$(dirname $log)"
+
+  time-tsv --append --out $tasks_tsv \
+    --field $rel_path --field "$rel_path.txt" -- \
+    $rel_path >$log 2>&1
+}
+
+run-all-and-log() {
+  local out_dir=_tmp/unit
+  mkdir -p $out_dir
+  rm -r -f $out_dir/*
+
+  local tasks_tsv=$out_dir/tasks.tsv
+
+  local status=0
+
+  # Not writing a schema
+  tsv-row 'status' 'elapsed_secs' 'test' 'test_HREF' > $tasks_tsv
+
+  # There are no functions here, so disabling errexit is safe.
+  # Note: In YSH, this could use shopt { }.
+  test-manifest | while read _ kind py_path_more test_path; do
+
+    local status=0
+    set +o errexit
+    PYTHONPATH=${PYTHONPATH}${py_path_more} run-test-and-log $tasks_tsv $test_path
+    status=$?
+    set -o errexit
+
+    if test $status -ne 0; then
+      echo "FAIL $status - $test_path"
+    fi
+
+  done
+}
+
+# TODO: It would be nice to have timestamps of the underlying TSV files and
+# timestamp of running the report.  This is useful for benchmarks too.
+
+print-report() {
+  local in_dir=${1:-_tmp/unit}
+  local base_url='../../web'  # published at more_tests.wwz/unit/
+
+  html-head --title 'Oils Unit Test Results' \
+    "$base_url/table/table-sort.js" \
+    "$base_url/table/table-sort.css" \
+    "$base_url/base.css" \
+    "$base_url/benchmarks.css" 
+
+  # NOTE: Using benchmarks for now.
+  cat <<EOF
+  <body class="width40">
+    <p id="home-link">
+      <a href="/">oilshell.org</a>
+    </p>
+    <h2>Unit Test Results</h2>
+
+EOF
+
+  tsv2html $in_dir/report.tsv
+
+  cat <<EOF
+  </body>
+</html>
+EOF
+}
+
+write-report() {
+  # Presentation:
+  #
+  # - elapsed seconds -> milliseconds
+  # - Link to test log
+  # - Right justify numbers
+
+  local out=_tmp/unit/index.html
+  test/report.R unit _tmp/unit _tmp/unit
+  print-report > $out
+  echo "Wrote $out"
+}
+
+run-for-release() {
+  # Invoked by devtools/release.sh.
+
+  run-all-and-log
+  write-report
 }
 
 #
@@ -164,7 +281,6 @@ tsv-stream-all() {
 # 
 # RUN osh/split_test.py &> _test/osh/split_test
 
-
 all-2() {
   ### New harness that uses tsv-stream
 
@@ -175,115 +291,5 @@ all-2() {
 
 # NOTE: Show options like this:
 # python -m unittest discover -h
-
-#
-# For _release/VERSION
-#
-
-run-test-and-log() {
-  local tasks_tsv=$1
-  local rel_path=$2
-
-  local log=_tmp/unit/$rel_path.txt
-  mkdir -p "$(dirname $log)"
-
-  time-tsv --append --out $tasks_tsv \
-    --field $rel_path --field "$rel_path.txt" -- \
-    $rel_path >$log 2>&1
-}
-
-run-all-and-log() {
-  local out_dir=_tmp/unit
-  mkdir -p $out_dir
-  rm -r -f $out_dir/*
-
-  local tasks_tsv=$out_dir/tasks.tsv
-
-  local status=0
-
-  # TODO: I need to write a schema too?  Or change csv2html.py to support HREF
-  # in NullSchema.
-
-  tsv-row 'status' 'elapsed_secs' 'test' 'test_HREF' > $tasks_tsv
-
-  # There are no functions here, so disabline errexit is safe.
-  # Note: In YSH, this could use shopt { }.
-  set +o errexit
-  time all-tests | xargs -n 1 -- $0 run-test-and-log $tasks_tsv
-  status=$?
-  set -o errexit
-
-  if test $status -ne 0; then
-    cat $tasks_tsv
-    echo
-    echo "*** Some tests failed.  See $tasks_tsv ***"
-    echo
-
-    return $status
-  fi
-
-  #tree _tmp/unit
-  echo
-  echo "All unit tests passed."
-}
-
-
-# TODO: It would be nice to have timestamps of the underlying CSV files and
-# timestamp of running the report.  This is useful for benchmarks too.
-
-print-report() {
-  local in_dir=${1:-_tmp/unit}
-  local base_url='../../web'  # published at more_tests.wwz/unit/
-
-  html-head --title 'Oils Unit Test Results' \
-    "$base_url/table/table-sort.js" \
-    "$base_url/table/table-sort.css" \
-    "$base_url/base.css" \
-    "$base_url/benchmarks.css" 
-
-  # NOTE: Using benchmarks for now.
-  cat <<EOF
-  <body class="width40">
-    <p id="home-link">
-      <a href="/">oilshell.org</a>
-    </p>
-    <h2>Unit Test Results</h2>
-
-EOF
-
-  tsv2html $in_dir/report.tsv
-
-  cat <<EOF
-  </body>
-</html>
-EOF
-}
-
-# Presentation changes:
-#
-# - elapsed seconds -> milliseconds
-# - Need a link to the log for the test name (done, but no schema)
-# - schema for right-justifying numbers
-
-write-report() {
-  local out=_tmp/unit/index.html
-  test/report.R unit _tmp/unit _tmp/unit
-  print-report > $out
-  echo "Wrote $out"
-}
-
-soil-run() {
-  # TODO: Should run everything in CI, but it depends on R.  dev-minimal
-  # doesn't have it
-  #
-  # Skips fastlex_test.py and cmark_test.py
-  minimal
-}
-
-# Called by scripts/release.sh.
-run-for-release() {
-  run-all-and-log
-  write-report
-}
 
 run-task "$@"

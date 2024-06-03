@@ -2,113 +2,31 @@
 ## compare_shells: dash bash mksh zsh
 
 
-#### Print shell strings with weird chars: set and printf %q and ${x@Q}
-
-# bash declare -p will print binary data, which makes this invalid UTF-8!
-foo=$(/bin/echo -e 'a\nb\xffc'\'d)
-
-# let's test the easier \x01, which doesn't give bash problems
-foo=$(/bin/echo -e 'a\nb\x01c'\'d)
-
-# dash:
-#   only supports 'set'; prints it on multiple lines with binary data
-#   switches to "'" for single quotes, not \'
-# zsh:
-#   print binary data all the time, except for printf %q
-#   does print $'' strings
-# mksh:
-#   prints binary data for @Q
-#   prints $'' strings
-
-# All are very inconsistent.
-
-case $SH in dash|mksh|zsh) return ;; esac
-
-
-set | grep -A1 foo
-
-# Will print multi-line and binary data literally!
-#declare -p foo
-
-printf 'pf  %q\n' "$foo"
-
-echo '@Q ' ${foo@Q}
-
-## STDOUT:
-foo=$'a\nb\u0001c\'d'
-pf  $'a\nb\u0001c\'d'
-@Q  $'a\nb\u0001c\'d'
-## END
-
-## OK bash STDOUT:
-foo=$'a\nb\001c\'d'
-pf  $'a\nb\001c\'d'
-@Q  $'a\nb\001c\'d'
-## END
-
-## OK dash/mksh/zsh STDOUT:
-## END
-
-#### Print shell strings with normal chars: set and printf %q and ${x@Q}
-
-# There are variations on whether quotes are printed
-
-case $SH in dash|zsh) return ;; esac
-
-foo=spam
-
-set | grep -A1 foo
-
-# Will print multi-line and binary data literally!
-typeset -p foo
-
-printf 'pf  %q\n' "$foo"
-
-echo '@Q ' ${foo@Q}
-
-## STDOUT:
-foo=spam
-declare -- foo=spam
-pf  spam
-@Q  spam
-## END
-
-
-## OK bash STDOUT:
-foo=spam
-declare -- foo="spam"
-pf  spam
-@Q  'spam'
-## END
-
-## OK mksh STDOUT:
-foo=spam
-typeset foo=spam
-pf  spam
-@Q  spam
-## END
-
-## N-I dash/zsh STDOUT:
-## END
-
-
 
 #### command -v
 myfunc() { echo x; }
 command -v echo
 echo $?
+
 command -v myfunc
 echo $?
+
 command -v nonexistent  # doesn't print anything
-echo $?
+echo nonexistent=$?
+
+command -v ''  # BUG FIX, shouldn't succeed
+echo empty=$?
+
 command -v for
 echo $?
+
 ## STDOUT:
 echo
 0
 myfunc
 0
-1
+nonexistent=1
+empty=1
 for
 0
 ## OK dash STDOUT:
@@ -116,7 +34,8 @@ echo
 0
 myfunc
 0
-127
+nonexistent=127
+empty=127
 for
 0
 ## END
@@ -324,47 +243,6 @@ command command -v seq
 ## stdout: seq
 ## N-I zsh stdout-json: ""
 ## N-I zsh status: 127
-
-#### history usage
-history
-echo status=$?
-history +5  # hm bash considers this valid
-echo status=$?
-history -5  # invalid flag
-echo status=$?
-history f 
-echo status=$?
-history too many args
-echo status=$?
-## status: 0
-## STDOUT:
-status=0
-status=0
-status=2
-status=2
-status=2
-## END
-## OK bash STDOUT:
-status=0
-status=0
-status=2
-status=1
-status=1
-## END
-## BUG zsh/mksh STDOUT:
-status=1
-status=1
-status=1
-status=1
-status=1
-## END
-## N-I dash STDOUT:
-status=127
-status=127
-status=127
-status=127
-status=127
-## END
 
 #### command -p (override existing program)
 # Tests whether command -p overrides the path

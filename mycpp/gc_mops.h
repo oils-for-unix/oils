@@ -33,6 +33,10 @@ inline BigInt IntWiden(int b) {
   return static_cast<BigInt>(b);
 }
 
+inline BigInt FromC(int64_t i) {
+  return i;
+}
+
 inline BigInt FromBool(bool b) {
   return b ? BigInt(1) : BigInt(0);
 }

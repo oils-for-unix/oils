@@ -126,6 +126,14 @@ os-info() {
 
   dump-hardware
   echo
+
+  # Process limits
+  echo 'Soft limits:'
+  ulimit -S -a
+  echo
+  echo 'Hard limits:'
+  ulimit -H -a
+  echo
 }
 
 run-task "$@"

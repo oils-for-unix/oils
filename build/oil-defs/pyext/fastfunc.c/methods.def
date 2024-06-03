@@ -4,6 +4,7 @@ static PyMethodDef methods[] = {
   {"J8EncodeString", func_J8EncodeString, METH_VARARGS},
   {"ShellEncodeString", func_ShellEncodeString, METH_VARARGS},
   {"PartIsUtf8", func_PartIsUtf8, METH_VARARGS},
+  {"Utf8DecodeOne", func_Utf8DecodeOne, METH_VARARGS},
   {"CanOmitQuotes", func_CanOmitQuotes, METH_VARARGS},
   {0},
 };

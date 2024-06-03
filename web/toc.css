@@ -12,13 +12,11 @@ div#toc a {
   text-decoration: none;
 }
 
-#toctitle {
+#toctitle, #dense-toc-title {
   text-align: center;
   color: #666;
   font-weight: bold;
   margin-bottom: 0.2em;
-/*
-*/
 }
 
 div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
@@ -31,5 +29,47 @@ div.toclevel1 {
 }
 div.toclevel2 {
   margin-left: 4em;
+  font-size: 0.9em;
+}
+
+/* Dense TOC style for doc/ref */
+
+/* The whole TOC */
+div#dense-toc {
+  /* copied from toc */
+  margin-top: 2em;
+  background-color: oldlace;
+  padding: 1em;
+}
+
+div#dense-toc-cols {
+  column-width: 10em;
+}
+
+div#dense-toc a {
+  text-decoration: none;
+}
+
+/* Represents ONE h2 and ALL h3 children
+   They are an UNBREAKABLE unit
+ */
+.dense-toc-group {
+  /* 
+  'overflow: hidden' is an older thing that seems prevent breaking
+   */
+  overflow: hidden;
+  /*
+  'page-break-inside: avoid' is newer
+  https://stackoverflow.com/questions/7785374/how-to-prevent-column-break-within-an-element
+  */
+  page-break-inside: avoid;
+
+  margin-left: 1em;
+  margin-bottom: 1em;
+}
+
+/* One h3 child */
+.dense-toc-h3 {
+  margin-left: 1em;
   font-size: 0.9em;
 }

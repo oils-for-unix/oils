@@ -355,7 +355,7 @@ _overview() {
 
   spec-gold-counts $count "$@"
 
-  test/unit.sh py2-tests | $count \
+  test/unit.sh files-to-count | $count \
     'Python Unit Tests' '' "$@"
 
   ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py | $count \

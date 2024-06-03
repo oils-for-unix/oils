@@ -122,11 +122,11 @@ def Utf8Encode(code):
         num_cont_bytes = 1
     elif code <= 0xFFFF:
         num_cont_bytes = 2
-    elif code <= 0x10FFFF:
-        num_cont_bytes = 3
-
     else:
-        return '\xEF\xBF\xBD'  # unicode replacement character
+        # What about the check code <= 0x10FFFF ?
+        # - it happens in statically parsed $'' u''
+        # - but not dynamically parsed echo -e / printf, following bash/zsh
+        num_cont_bytes = 3
 
     bytes_ = []  # type: List[int]
     for _ in xrange(num_cont_bytes):
@@ -584,6 +584,13 @@ class LexerDecoder(object):
                       Id.Left_USingleQuote):
             return self._DecodeString(tok_id, end_pos)
 
+        if tok_id == Id.Left_JDoubleQuote:
+            if self.is_j8:
+                return self._DecodeString(tok_id, end_pos)
+            else:
+                raise self._Error('Pure JSON does not accept j"" prefix',
+                                  end_pos)
+
         if tok_id == Id.Ignored_Newline:
             #log('LINE %d', self.cur_line_num)
             self.cur_line_num += 1
@@ -597,8 +604,8 @@ class LexerDecoder(object):
 
         tok_id, end_pos = match.MatchJ8LinesToken(self.s, self.pos)
 
-        if tok_id in (Id.Left_DoubleQuote, Id.Left_BSingleQuote,
-                      Id.Left_USingleQuote):
+        if tok_id in (Id.Left_DoubleQuote, Id.Left_JDoubleQuote,
+                      Id.Left_BSingleQuote, Id.Left_USingleQuote):
             return self._DecodeString(tok_id, end_pos)
 
         # Check that UNQUOTED lines are valid UTF-8.  (_DecodeString() does
@@ -623,12 +630,12 @@ class LexerDecoder(object):
         """ Returns a string token and updates self.pos """
 
         while True:
-            if left_id == Id.Left_DoubleQuote:
+            if left_id in (Id.Left_DoubleQuote, Id.Left_JDoubleQuote):
                 tok_id, str_end = match.MatchJsonStrToken(self.s, str_pos)
             else:
                 tok_id, str_end = match.MatchJ8StrToken(self.s, str_pos)
 
-            #log('String tok %s', Id_str(tok_id))
+            #log('String tok %s %r', Id_str(tok_id), self.s[str_pos:str_end])
 
             if tok_id == Id.Eol_Tok:
                 # TODO: point to beginning of # quote?
@@ -676,7 +683,10 @@ class LexerDecoder(object):
                 h = self.s[str_pos + 3:str_end - 1]
                 i = int(h, 16)
 
-                # Same check in osh/word_parse.py
+                # Same checks in osh/word_compile.py
+                if i > 0x10ffff:
+                    raise self._Error(
+                        "Code point can't be greater than U+10ffff", str_end)
                 if 0xD800 <= i and i < 0xE000:
                     raise self._Error(
                         r"\u{%s} escape is illegal because it's in the surrogate range"

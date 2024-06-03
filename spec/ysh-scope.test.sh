@@ -753,9 +753,14 @@ proc myproc {
 
 IFS=x
 IFS=z myproc
+
+# null
+echo $[shvarGet('nonexistent')]
+
 ## STDOUT:
 wrong IFS=x
 shvar IFS=z
 ['x', 'x ', 'x']
+null
 ## END
 

@@ -668,6 +668,7 @@ def Main(
     b[builtin_i.exec_] = process_osh.Exec(mem, ext_prog, fd_state, search_path,
                                           errfmt)
     b[builtin_i.umask] = process_osh.Umask()
+    b[builtin_i.ulimit] = process_osh.Ulimit()
     b[builtin_i.wait] = process_osh.Wait(waiter, job_list, mem, tracer, errfmt)
 
     b[builtin_i.jobs] = process_osh.Jobs(job_list)
@@ -839,6 +840,7 @@ def Main(
 
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
+    _SetGlobalFunc(mem, 'getVar', func_misc.GetVar(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
     _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))

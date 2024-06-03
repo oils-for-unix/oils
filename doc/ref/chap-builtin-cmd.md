@@ -1,21 +1,27 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Builtin Commands (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Builtin Commands
-===
+<div class="doc-ref-header">
+
+[Oils Reference](index.html) &mdash; Chapter **Builtin Commands**
+
+</div>
 
 This chapter in the [Oils Reference](index.html) describes builtin commands for OSH and YSH.
 
-<div id="toc">
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
 
 ## Memory
 
-### append
+### cmd/append
 
 Append word arguments to a list:
 
@@ -30,6 +36,10 @@ It's a shortcut for:
 
     call myflags->append('-c')
     call myflags->append('echo hi')
+
+Similar names: [append][]
+
+[append]: chap-index.html#append
 
 ### pp
 
@@ -430,6 +440,24 @@ a"hi"  # what about this?
 Technically we CAN read those as literal strings
 -->
 
+### ysh-echo
+
+Print arguments to stdout, separated by a space.
+
+    ysh$ echo hi there
+    hi there
+
+The [simple_echo][] option means that flags aren't accepted, and `--` is not
+accepted.
+
+    ysh$ echo -n
+    -n
+
+See the [YSH FAQ][echo-en] for details.
+
+[simple_echo]: chap-option.html#ysh:all
+[echo-en]: ../ysh-faq.html#how-do-i-write-the-equivalent-of-echo-e-or-echo-n
+
 ### write
 
 write fixes problems with shell's `echo` builtin.
@@ -459,10 +487,14 @@ You may want to use `toJson8()` or `toJson()` before writing:
 
 ### fork
 
-The preferred alternative to shell's `&`.
+Run a command, but don't wait for it to finish.
 
     fork { sleep 1 }
     wait -n
+
+In YSH, use `fork` rather than shell's `&` ([ampersand][]).
+
+[ampersand]: chap-cmd-lang.html#ampersand
 
 ### forkwait
 
@@ -473,6 +505,29 @@ The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible
     }
     echo $not_mutated
 
+### fopen
+
+Runs a block passed to it.  It's designed so redirects have a **prefix**
+syntax:
+
+    fopen >out.txt {
+      echo 1
+      echo 2
+    }
+
+Rather than shell style:
+
+    { echo 1
+      echo 2
+    } >out.txt
+
+When a block is long, the former is more readable.
+
+## Hay Config
+
+### hay
+
+### haynode
 
 
 ## Data Formats
@@ -494,7 +549,10 @@ Or use an explicit place:
     var x = ''
     json read (&x) < myfile.txt
 
-Related: [json-encode-err]() and [json-decode-error]()
+Related: [err-json-encode][] and [err-json-decode][]
+
+[err-json-encode]: chap-errors.html#err-json-encode
+[err-json-decode]: chap-errors.html#err-json-decode
 
 ### json8
 
@@ -506,7 +564,10 @@ On decoding side:
 
 - Understands `b'' u''` strings
 
-Related: [json8-encode-err]() and [json8-decode-error]()
+Related: [err-json8-encode]() and [err-json8-decode]()
+
+[err-json8-encode]: chap-errors.html#err-json8-encode
+[err-json8-decode]: chap-errors.html#err-json8-decode
 
 ## Testing
 
@@ -561,7 +622,7 @@ Flags:
     -n  omit the trailing newline
 <!--  -E  -->
 
-See [char-escapes]($osh-help).
+See [char-escapes](chap-mini-lang.html#char-escapes).
 
 ### printf
 
@@ -570,7 +631,7 @@ See [char-escapes]($osh-help).
 Formats values and prints them.  The FMT string contain three types of objects:
 
 1. Literal Characters
-2. Character escapes like `\t`.  See [char-escapes]($osh-help).
+2. Character escapes like `\t`.  See [char-escapes](chap-mini-lang.html#char-escapes).
 3. Percent codes like `%s` that specify how to format each each ARG.
 
 If not enough ARGS are passed, the empty string is used.  If too many are
@@ -861,6 +922,59 @@ Oils currently supports writing masks in octal.
 
 If no MODE, show the current mask.
 
+### ulimit
+
+    ulimit --all
+    ulimit -a
+    ulimit FLAGS* -RESOURCE_FLAG VALUE?
+
+    ulimit FLAGS* VALUE?  # discouraged
+
+Show and modify process resource limits.
+
+Flags:
+
+    -S  for soft limit
+    -H  for hard limit
+
+    -c -d -f ...  # ulimit --all shows all resource flags
+
+Show a table of resources:
+
+    ulimit --all
+    ulimit -a
+
+For example, the table shows that `-n` is the flag that controls the number
+file descriptors, the soft and hard limit for `-n`, and the multiplication
+"factor" for the integer VALUE you pass.
+
+---
+
+Here are examples of using resource flags.
+
+Get the soft limit for the number of file descriptors:
+ 
+    ulimit -S -n
+    ulimit -n     # same thing
+
+Get the hard limit:
+
+    ulimit -H -n
+
+Set the soft or hard limit:
+
+    ulimit -S -n 100
+    ulimit -H -n 100
+
+Set both limits:
+
+    ulimit -n 100
+
+A special case that's discouraged: with no resource flag, `-f` is assumed:
+
+    ulimit      # equivalent to ulimit -f
+    ulimit 100  # equivalent to ulimit -f 100
+
 ### times
 
     times
@@ -1071,7 +1185,7 @@ Flag:
     -p PATH  Inhibit path search, PATH is used as location for NAME.
     -t       Print the full path of one or more NAME.-->
 
-### type
+### cmd/type
 
     type FLAG* NAME+
 
@@ -1085,6 +1199,10 @@ Flags:
     -f  Don't search for shell functions
     -P  Only search for executable files
     -t  Print a single word: alias, builtin, file, function, or keyword
+
+Similar names: [type][]
+
+[type]: chap-index.html#type
 
 <!-- TODO:
 - procs are counted as shell functions, should be their own thing
@@ -1150,7 +1268,7 @@ to aliases like:
 Functions are less likely to cause parsing problems.
 
 - Quoting like `\ls` or `'ls'` disables alias expansion
-- To remove an existing alias, use [unalias]($osh-help).
+- To remove an existing alias, use [unalias](chap-builtin-cmd.html#unalias).
 
 ### unalias
 

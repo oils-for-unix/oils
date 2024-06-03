@@ -15,12 +15,15 @@ import termios  # for read -n
 import time
 
 from core import pyutil
+from mycpp import mops
 from mycpp.mylib import log
 
 import posix_ as posix
 from posix_ import WUNTRACED
 
-from typing import Optional, Tuple, List, Dict, cast, Any
+from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from core import error
 
 _ = log
 
@@ -29,9 +32,18 @@ NEWLINE_CH = 10  # ord('\n')
 
 
 def FlushStdout():
-    # type: () -> None
-    """Flush CPython buffers."""
-    sys.stdout.flush()
+    # type: () -> Optional[error.IOError_OSError]
+    """Flush CPython buffers.
+
+    Return error because we call this in a C++ destructor, and those can't
+    throw exceptions.
+    """
+    err = None  # type: Optional[error.IOError_OSError]
+    try:
+        sys.stdout.flush()
+    except (IOError, OSError) as e:
+        err = e
+    return err
 
 
 def WaitPid(waitpid_options):
@@ -212,6 +224,23 @@ def GetUserName(uid):
         return "<ERROR: Couldn't determine user name for uid %d>" % uid
     else:
         return e.pw_name
+
+
+def GetRLimit(res):
+    # type: (int) -> Tuple[mops.BigInt, mops.BigInt]
+    """
+    Raises IOError
+    """
+    soft, hard = resource.getrlimit(res)
+    return (mops.IntWiden(soft), mops.IntWiden(hard))
+
+
+def SetRLimit(res, soft, hard):
+    # type: (int, mops.BigInt, mops.BigInt) -> None
+    """
+    Raises IOError
+    """
+    resource.setrlimit(res, (soft.i, hard.i))
 
 
 def Time():

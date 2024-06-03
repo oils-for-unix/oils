@@ -41,9 +41,14 @@ VISIBLE_SHOPT_NUMS = option_def.VISIBLE_SHOPT_NUMS  # used to print
 
 BUILTIN_NAMES = builtin_def.BUILTIN_NAMES  # Used by builtin_comp.py
 
-# The 'compen' and 'type' builtins introspect on keywords and builtins.
+# Keywords for introspection with bash 'compgen' and 'type'
 OSH_KEYWORD_NAMES = [name for _, name, _ in lexer_def.KEYWORDS]
-OSH_KEYWORD_NAMES.append('{')  # not in our lexer list
+OSH_KEYWORD_NAMES.append('{')  # not handled by our lexer
+OSH_KEYWORD_NAMES.append('=')  # YSH keyword not handled by our lexer
+
+# bash considers these closing delimiters keywords
+OSH_KEYWORD_NAMES.append('}')
+OSH_KEYWORD_NAMES.append(']]')
 
 
 def GetKind(id_):

@@ -6,23 +6,31 @@ This is sort of the opposite of builtin_pure.py.
 """
 from __future__ import print_function
 
+import resource
+from resource import (RLIM_INFINITY, RLIMIT_CORE, RLIMIT_CPU, RLIMIT_DATA,
+                      RLIMIT_FSIZE, RLIMIT_NOFILE, RLIMIT_STACK, RLIMIT_AS)
 from signal import SIGCONT
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.runtime_asdl import cmd_value, job_state_e, wait_status, wait_status_e
+from _devbuild.gen.runtime_asdl import (cmd_value, job_state_e, wait_status,
+                                        wait_status_e)
 from core import dev
 from core import error
 from core.error import e_usage, e_die_status
 from core import process  # W1_OK, W1_ECHILD
+from core import pyos
+from core import pyutil
 from core import vm
-from mycpp.mylib import log, tagswitch, print_stderr
 from frontend import flag_util
 from frontend import typed_args
+from mycpp import mops
+from mycpp import mylib
+from mycpp.mylib import log, tagswitch, print_stderr
 
 import posix_ as posix
 
-from typing import TYPE_CHECKING, List, Optional, cast
+from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
     from core.state import Mem, SearchPath
@@ -379,3 +387,212 @@ class Umask(vm._Builtin):
             return 0
 
         e_usage('umask: unexpected arguments', loc.Missing)
+
+
+def _LimitString(lim, factor):
+    # type: (mops.BigInt, int) -> str
+    if mops.Equal(lim, mops.FromC(RLIM_INFINITY)):
+        return 'unlimited'
+    else:
+        i = mops.Div(lim, mops.IntWiden(factor))
+        return mops.ToStr(i)
+
+
+class Ulimit(vm._Builtin):
+
+    def __init__(self):
+        # type: () -> None
+        """Dummy constructor for mycpp."""
+
+        self._table = None  # type: List[Tuple[str, int, int, str]]
+
+    def _Table(self):
+        # type: () -> List[Tuple[str, int, int, str]]
+
+        # POSIX 2018
+        #
+        # https://pubs.opengroup.org/onlinepubs/9699919799/functions/getrlimit.html
+        if self._table is None:
+            # This table matches _ULIMIT_RESOURCES in frontend/flag_def.py
+
+            # flag, RLIMIT_X, factor, description
+            self._table = [
+                # Following POSIX and most shells except bash, -f is in
+                # blocks of 512 bytes
+                ('-c', RLIMIT_CORE, 512, 'core dump size'),
+                ('-d', RLIMIT_DATA, 1024, 'data segment size'),
+                ('-f', RLIMIT_FSIZE, 512, 'file size'),
+                ('-n', RLIMIT_NOFILE, 1, 'file descriptors'),
+                ('-s', RLIMIT_STACK, 1024, 'stack size'),
+                ('-t', RLIMIT_CPU, 1, 'CPU seconds'),
+                ('-v', RLIMIT_AS, 1024, 'address space size'),
+            ]
+
+        return self._table
+
+    def _FindFactor(self, what):
+        # type: (int) -> int
+        for _, w, factor, _ in self._Table():
+            if w == what:
+                return factor
+        raise AssertionError()
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+
+        attrs, arg_r = flag_util.ParseCmdVal('ulimit', cmd_val)
+        arg = arg_types.ulimit(attrs.attrs)
+
+        what = 0
+        num_what_flags = 0
+
+        if arg.c:
+            what = RLIMIT_CORE
+            num_what_flags += 1
+
+        if arg.d:
+            what = RLIMIT_DATA
+            num_what_flags += 1
+
+        if arg.f:
+            what = RLIMIT_FSIZE
+            num_what_flags += 1
+
+        if arg.n:
+            what = RLIMIT_NOFILE
+            num_what_flags += 1
+
+        if arg.s:
+            what = RLIMIT_STACK
+            num_what_flags += 1
+
+        if arg.t:
+            what = RLIMIT_CPU
+            num_what_flags += 1
+
+        if arg.v:
+            what = RLIMIT_AS
+            num_what_flags += 1
+
+        if num_what_flags > 1:
+            raise error.Usage(
+                'can only handle one resource at a time; got too many flags',
+                cmd_val.arg_locs[0])
+
+        # Print all
+        show_all = arg.a or arg.all
+        if show_all:
+            if num_what_flags > 0:
+                raise error.Usage("doesn't accept resource flags with -a",
+                                  cmd_val.arg_locs[0])
+
+            extra, extra_loc = arg_r.Peek2()
+            if extra is not None:
+                raise error.Usage('got extra arg with -a', extra_loc)
+
+            # Worst case 20 == len(str(2**64))
+            fmt = '%5s %15s %15s %7s  %s'
+            print(fmt % ('FLAG', 'SOFT', 'HARD', 'FACTOR', 'DESC'))
+            for flag, what, factor, desc in self._Table():
+                soft, hard = pyos.GetRLimit(what)
+
+                soft2 = _LimitString(soft, factor)
+                hard2 = _LimitString(hard, factor)
+                print(fmt % (flag, soft2, hard2, str(factor), desc))
+
+            return 0
+
+        if num_what_flags == 0:
+            what = RLIMIT_FSIZE  # -f is the default
+
+        s, s_loc = arg_r.Peek2()
+
+        if s is None:
+            factor = self._FindFactor(what)
+            soft, hard = pyos.GetRLimit(what)
+            if arg.H:
+                print(_LimitString(hard, factor))
+            else:
+                print(_LimitString(soft, factor))
+            return 0
+
+        # Set the given resource
+        if s == 'unlimited':
+            # In C, RLIM_INFINITY is rlim_t
+            limit = mops.FromC(RLIM_INFINITY)
+        else:
+            try:
+                big_int = mops.FromStr(s)
+            except ValueError as e:
+                raise error.Usage(
+                    "expected a number or 'unlimited', got %r" % s, s_loc)
+
+            if mops.Greater(mops.IntWiden(0), big_int):
+                raise error.Usage(
+                    "doesn't accept negative numbers, got %r" % s, s_loc)
+
+            factor = self._FindFactor(what)
+
+            fac = mops.IntWiden(factor)
+            limit = mops.Mul(big_int, fac)
+
+            # Overflow check like bash does
+            # TODO: This should be replaced with a different overflow check
+            # when we have arbitrary precision integers
+            if not mops.Equal(mops.Div(limit, fac), big_int):
+                #log('div %s', mops.ToStr(mops.Div(limit, fac)))
+                raise error.Usage(
+                    'detected integer overflow: %s' % mops.ToStr(big_int),
+                    s_loc)
+
+        arg_r.Next()
+        extra2, extra_loc2 = arg_r.Peek2()
+        if extra2 is not None:
+            raise error.Usage('got extra arg', extra_loc2)
+
+        # Now set the resource
+        soft, hard = pyos.GetRLimit(what)
+
+        # For error message
+        old_soft = soft
+        old_hard = hard
+
+        # Bash behavior: manipulate both, unless a flag is parsed.  This
+        # differs from zsh!
+        if not arg.S and not arg.H:
+            soft = limit
+            hard = limit
+        if arg.S:
+            soft = limit
+        if arg.H:
+            hard = limit
+
+        if mylib.PYTHON:
+            try:
+                pyos.SetRLimit(what, soft, hard)
+            except OverflowError:  # only happens in CPython
+                raise error.Usage('detected overflow', s_loc)
+            except (ValueError, resource.error) as e:
+                # Annoying: Python binding changes IOError -> ValueError
+
+                print_stderr('ulimit error: %s' % e)
+
+                # Extra info we could expose in C++ too
+                print_stderr('soft=%s hard=%s -> soft=%s hard=%s' % (
+                    _LimitString(old_soft, factor),
+                    _LimitString(old_hard, factor),
+                    _LimitString(soft, factor),
+                    _LimitString(hard, factor),
+                ))
+                return 1
+        else:
+            try:
+                pyos.SetRLimit(what, soft, hard)
+            except (IOError, OSError) as e:
+                print_stderr('ulimit error: %s' % pyutil.strerror(e))
+                return 1
+
+        return 0
+
+
+# vim: sw=4

@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -109,3 +109,29 @@ echo nope
 ## STDOUT:
 type -a returned 1
 ## END
+
+
+#### && || with YSH constructs ?
+
+
+var x = []
+true && call x->append(42)
+false && call x->append(43)
+pp line (x)
+
+
+func amp() {
+  true && return (42)
+}
+
+func pipe() {
+  false || return (42)
+}
+
+pp line (amp())
+pp line (pipe())
+
+## STDOUT:
+## END
+
+

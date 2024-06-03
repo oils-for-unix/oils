@@ -2352,6 +2352,21 @@ def ExportGlobalString(mem, name, s):
 #
 
 
+def DynamicGetVar(mem, name, which_scopes):
+    # type: (Mem, str, scope_t) -> value_t
+    """
+    For getVar() and shvarGet()
+    """
+    val = mem.GetValue(name, which_scopes=which_scopes)
+
+    # Undef is not a user-visible value!
+    # There's no way to distinguish null from undefined.
+    if val.tag() == value_e.Undef:
+        return value.Null
+
+    return val
+
+
 def GetString(mem, name):
     # type: (Mem, str) -> str
     """Wrapper around GetValue().  Check that HOME, PWD, OLDPWD, etc. are

@@ -4,7 +4,6 @@ web_test.py: Tests for web.py
 """
 from __future__ import print_function
 
-import itertools
 import unittest
 
 from soil import web  # module under test

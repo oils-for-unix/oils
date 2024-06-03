@@ -114,9 +114,18 @@ _ = log
 ################
 
 
-def _StrWidth(string):
+def TryUnicodeWidth(s):
     # type: (str) -> int
-    return libc.wcswidth(string)
+    try:
+        width = libc.wcswidth(s)
+    except UnicodeError:
+        # e.g. en_US.UTF-8 locale missing, just return the number of bytes
+        width = len(s)
+
+    if width == -1:  # non-printable wide char
+        return len(s)
+
+    return width
 
 
 def _EmptyMeasure():
@@ -163,13 +172,13 @@ def _SuffixLen(measure):
 def _Text(string):
     # type: (str) -> MeasuredDoc
     """Print `string` (which must not contain a newline)."""
-    return MeasuredDoc(doc.Text(string), Measure(_StrWidth(string), -1))
+    return MeasuredDoc(doc.Text(string), Measure(TryUnicodeWidth(string), -1))
 
 
 def _Break(string):
     # type: (str) -> MeasuredDoc
     """If in `flat` mode, print `string`, otherwise print `\n`."""
-    return MeasuredDoc(doc.Break(string), Measure(_StrWidth(string), 0))
+    return MeasuredDoc(doc.Break(string), Measure(TryUnicodeWidth(string), 0))
 
 
 def _Indent(indent, mdoc):
@@ -518,7 +527,7 @@ class _DocConstructor:
             max_flat_len = max(max_flat_len, item.measure.flat)
         non_tabular = _Concat(seq)
 
-        sep_width = _StrWidth(sep)
+        sep_width = TryUnicodeWidth(sep)
         if max_flat_len + sep_width + 1 <= self.max_tabular_width:
             tabular_seq = []  # type: List[MeasuredDoc]
             for i, item in enumerate(items):

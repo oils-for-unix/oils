@@ -411,6 +411,16 @@ if true {
 } else {
   echo no
 }'
+
+  # Redirect
+  check-osh2ysh '
+if true; then
+  echo yes
+fi > out' \
+  '
+if true {
+  echo yes
+} > out'
 }
 
 TODO-test-then-next-line() {

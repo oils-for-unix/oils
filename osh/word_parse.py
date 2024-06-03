@@ -636,7 +636,7 @@ class WordParser(WordEmitter):
         # In command mode, we never disallow backslashes like '\'
         right_quote = self.ReadSingleQuoted(lex_mode, left_token, tokens,
                                             False)
-        sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
+        sval = word_compile.EvalSingleQuoted(left_token.id, tokens)
         node = SingleQuoted(left_token, sval, right_quote)
         return node
 
@@ -736,14 +736,6 @@ class WordParser(WordEmitter):
                 p_die(
                     r"%s escapes not allowed in u'' strings" %
                     lexer.TokenVal(tok), tok)
-            # \u{dc00} isn't valid
-            if tok.id == Id.Char_UBraced:
-                h = lexer.TokenSlice(tok, 3, -1)  # \u{123456}
-                i = int(h, 16)
-                if 0xD800 <= i and i < 0xE000:
-                    p_die(
-                        r"%s escape is illegal because it's in the surrogate range"
-                        % lexer.TokenVal(tok), tok)
 
         out_tokens.extend(tokens)
         return self.cur_token
@@ -986,7 +978,11 @@ class WordParser(WordEmitter):
           out_parts: list of word_part to append to
         """
         if left_token:
-            expected_end_tokens = 3 if left_token.id == Id.Left_TDoubleQuote else 1
+            if left_token.id in (Id.Left_TDoubleQuote,
+                                 Id.Left_DollarTDoubleQuote):
+                expected_end_tokens = 3
+            else:
+                expected_end_tokens = 1
         else:
             expected_end_tokens = 1000  # here doc will break
 
@@ -1065,7 +1061,8 @@ class WordParser(WordEmitter):
             out_parts.pop()
 
         # Remove space from """ in both expression mode and command mode
-        if left_token and left_token.id == Id.Left_TDoubleQuote:
+        if (left_token and left_token.id
+                in (Id.Left_TDoubleQuote, Id.Left_DollarTDoubleQuote)):
             word_compile.RemoveLeadingSpaceDQ(out_parts)
 
         # Return nothing, since we appended to 'out_parts'

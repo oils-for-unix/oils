@@ -165,16 +165,25 @@ Writer* gStderr;
 //
 
 void CFile::write(BigStr* s) {
-  // note: throwing away the return value
-  fwrite(s->data_, sizeof(char), len(s), f_);
+  // Writes can be short!
+  int n = len(s);
+  int num_written = ::fwrite(s->data_, sizeof(char), n, f_);
+  // Similar to CPython fileobject.c
+  if (num_written != n) {
+    throw Alloc<IOError>(errno);
+  }
 }
 
 void CFile::flush() {
-  ::fflush(f_);
+  if (::fflush(f_) != 0) {
+    throw Alloc<IOError>(errno);
+  }
 }
 
 void CFile::close() {
-  ::fclose(f_);
+  if (::fclose(f_) != 0) {
+    throw Alloc<IOError>(errno);
+  }
 }
 
 //

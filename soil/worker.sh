@@ -143,7 +143,7 @@ repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
 oil-types           devtools/types.sh soil-run                   -
-unit                test/unit.sh soil-run                        -
+unit                test/unit.sh minimal                         _test/py-unit/
 lossless            test/lossless.sh soil-run                    -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh soil-run-py           -
@@ -269,6 +269,7 @@ cpp-small-tasks() {
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+py-unit          test/unit.sh all                      _test/py-unit/
 yaks             yaks/TEST.sh soil-run                 -
 oils-cpp-smoke   build/native.sh soil-run              -
 cpp-unit         test/cpp-unit.sh soil-run             _test/-wwz-index
@@ -287,6 +288,7 @@ ysh-runtime-errors test/ysh-runtime-errors.sh soil-run-cpp -
 ysh-every-string test/ysh-every-string.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
 j8-errors        data_lang/j8-errors.sh soil-run-cpp   -
+houston-fp       demo/houston-fp/run.sh soil-run       -
 EOF
 }
 
@@ -326,8 +328,11 @@ tools-deps        test/tools-deps.sh soil-run            -
 make-tarball      devtools/release.sh py-tarball         _release/oil.tar
 ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
-ref-check         build/doc.sh ref-check                 -
+doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
 EOF
+
+# doc-metrics is a no-op, just for the link.  Because soil-run just runs the
+# release, which creates metrics.
 }
 
 # Reuse ovm-tarball container

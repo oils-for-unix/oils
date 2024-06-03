@@ -1,53 +1,108 @@
 ---
-in_progress: yes
-css_files: ../../web/base.css ../../web/ref-index.css ../../web/toc.css
+title: OSH Table of Contents
+all_docs_url: ..
+css_files: ../../web/base.css ../../web/manual.css ../../web/ref-index.css
 preserve_anchor_case: yes
 ---
 
-OSH Table of Contents
-=====================
+<div class="doc-ref-header">
+
+[Oils Reference](index.html) &mdash;
+**OSH Table of Contents** | [YSH](toc-ysh.html) | [Data Notation](toc-data.html)
+
+</div>
 
 [OSH]($xref) is a POSIX- and [bash]($xref)-compatible shell.
 
-This page has links to topics in the [Oils Reference](index.html).
+<!--
+<div class="custom-toc">
 
-Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
+[OSH Types](#type-method) <br/>
+[Builtin Commands](#builtin-cmd) <br/>
+[Front End](#front-end) <br/>
+[Command Language](#cmd-lang) <br/>
+[OSH Assignment](#osh-assign) <br/>
+[Word Language](#word-lang) <br/>
+[Mini Languages](#mini-lang) <br/>
+[Shell Options](#option) <br/>
+[Special Variables](#special-var) <br/>
+[Plugins and Hooks](#plugin) <br/>
 
-<div id="toc">
+[type-method](#type-method) &nbsp;
+[builtin-cmd](#builtin-cmd) &nbsp;
+[front-end](#front-end) &nbsp;
+[cmd-lang](#cmd-lang) &nbsp;
+[osh-assign](#osh-assign) &nbsp;
+[word-lang](#word-lang) &nbsp;
+[mini-lang](#mini-lang) &nbsp;
+[option](#option) &nbsp;
+[special-var](#special-var) &nbsp;
+[plugin](#plugin)
+
 </div>
+-->
 
+<h2 id="type-method">
+  OSH Types <a class="group-link" href="chap-type-method.html">type-method</a>
+</h2>
+
+```chapter-links-type-method
+  [OSH]           BashArray   BashAssoc
+```
+
+<h2 id="builtin-cmd">
+  Builtin Commands <a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>
+</h2>
+
+```chapter-links-builtin-cmd
+  [I/O]           read        echo      printf
+                  readarray   mapfile
+  [Run Code]      source .    eval      trap
+  [Set Options]   set         shopt
+  [Working Dir]   cd          pwd       pushd     popd         dirs
+  [Completion]    complete    compgen   compopt   compadjust   compexport
+  [Shell Process] exec      X logout 
+                  umask       ulimit    times
+  [Child Process] jobs        wait
+                  fg        X bg      X kill        X disown 
+  [External]      test [      getopts
+  [Introspection] help        hash      cmd/type    X caller
+  [Word Lookup]   command     builtin
+  [Interactive]   alias       unalias   history     X fc     X bind
+X [Unsupported]   enable
+```
 
 <h2 id="front-end">
-  Front End (<a class="group-link" href="chap-front-end.html">front-end</a>)
+  Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>
 
 ```chapter-links-front-end
-  [Usage]         osh-usage   config   startup   line-editing   prompt
-                  exit-codes
-  [Lexing]        comment #   line-continuation \   ascii-whitespace [ \t\r\n]
+  [Usage]         oils-usage   osh-usage             config
+                  startup      line-editing          exit-codes
+  [Lexing]        comment #    line-continuation \   ascii-whitespace [ \t\r\n]
 ```
 
 <h2 id="cmd-lang">
-  Command Language (<a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>)
+  Command Language <a class="group-link" href="chap-cmd-lang.html">cmd-lang</a>
 </h2>
 
 ```chapter-links-cmd-lang
-  [Commands]      simple-command   semicolon ;
-  [Conditional]   case   if   true   false   colon :
-                  bang !   and &&   or ||   dbracket [[
-  [Iteration]     while   until   for   for-expr-sh ((
-  [Control Flow]  break   continue   return   exit
-  [Grouping]      sh-func   sh-block {   subshell (
-  [Concurrency]   pipe   |   X |&
-                  ampersand &
-  [Redirects]     redir-file  >  >>  >|  <  <>   X &>
+  [Commands]      simple-command            semicolon ;
+  [Conditional]   case        if            dbracket [[
+                  true        false         colon :
+                  bang !      and &&        or ||
+  [Iteration]     while       until         for            for-expr-sh ((
+  [Control Flow]  break       continue      return         exit
+  [Grouping]      sh-func     sh-block {    subshell (
+  [Concurrency]   pipe |    X pipe-amp |&   ampersand &
+  [Redirects]     redir-file  >  >>  >|  <  <>   not impl: &>
                   redir-desc  >&  <&
                   here-doc    <<  <<-  <<<
-  [Other Command] dparen ((   time   X coproc   X select
+  [Other Command] dparen ((   time        X coproc       X select
 ```
 
 <h2 id="osh-assign">
-  Assignments and Expressions (<a class="group-link" href="chap-osh-assign.html">osh-assign</a>)
+  Assignments and Expressions <a class="group-link" href="chap-osh-assign.html">osh-assign</a>
 </h2>
 
 ```chapter-links-osh-assign
@@ -55,15 +110,17 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
                   sh-assoc      assoc=(['a']=1 ['b']=2)   assoc['x']=b
   [Operators]     sh-assign     str='xyz'
                   sh-append     str+='abc'
-  [Builtins]      local   readonly   export   unset   shift
+  [Builtins]      local     readonly    export   unset   shift
                   declare   typeset   X let
 ```
 
 <h2 id="word-lang">
-  Word Language (<a class="group-link" href="chap-word-lang.html">word-lang</a>)
+  Word Language <a class="group-link" href="chap-word-lang.html">word-lang</a>
 </h2>
 
-```chapter-links-word-lang
+<!-- linkify_stop_col is 33 -->
+
+```chapter-links-word-lang_33
   [Quotes]        osh-string    'abc'  $'line\n'  "$var"
   [Substitutions] command-sub   $(command)   `command`
                   var-sub       ${var}   $0   $9   
@@ -79,17 +136,18 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
 ```
 
 <h2 id="mini-lang">
-  Other Mini Languages (<a class="group-link" href="chap-mini-lang.html">mini-lang</a>)
+  Other Mini Languages <a class="group-link" href="chap-mini-lang.html">mini-lang</a>
 </h2>
 
-```chapter-links-mini-lang
+<!-- linkify_stop_col is 33 -->
+
+```chapter-links-mini-lang_33
   [Arithmetic]    arith-context Where legacy arithmetic is allowed
                   sh-numbers    0xFF  0755  etc.
                   sh-arith      1 + 2*3   a *= 2
                   sh-logical    !a && b
                   sh-bitwise    ~a ^ b
-  [Boolean]       dbracket      [[ vs. the test builtin
-                  bool-expr       [[ ! $x && $y || $z ]]
+  [Boolean]       bool-expr     [[ ! $x && $y || $z ]]
                                 test ! $x -a $y -o $z
                   bool-infix    [[ $a -nt $b ]]  [[ $x == $y ]]
                   bool-path     [[ -d /etc ]]
@@ -103,75 +161,58 @@ Siblings: [YSH Topics](toc-ysh.html), [Data Topics](toc-data.html)
                   char-escapes  \t  \c  \x00  \u03bc
 ```
 
-<h2 id="builtin-cmd">
-  Builtin Commands (<a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>)
-</h2>
-
-```chapter-links-builtin-cmd
-  [I/O]           read   echo   printf
-                  readarray   mapfile
-  [Run Code]      source .   eval   trap
-  [Set Options]   set   shopt
-  [Working Dir]   cd   pwd   pushd   popd   dirs
-  [Completion]    complete   compgen   compopt   compadjust   compexport
-  [Shell Process] exec   X logout 
-                  umask   X ulimit   times
-  [Child Process] jobs   wait   ampersand &
-                  fg   X bg   X kill   X disown 
-  [External]      test [   getopts
-  [Introspection] help   hash   type   X caller
-  [Word Lookup]   command   builtin
-  [Interactive]   alias   unalias   history   X fc   X bind
-X [Unsupported]   enable
-```
-
 <h2 id="option">
-  Global Shell Options (<a class="group-link" href="chap-option.html">option</a>)
+  Global Shell Options <a class="group-link" href="chap-option.html">option</a>
 </h2>
 
-```chapter-links-option
-  [Errors]        nounset   pipefail   errexit   inherit_errexit
-  [Globbing]      noglob   nullglob   failglob   dashglob
-  [Debugging]     xtrace   X verbose   X extdebug
-  [Interactive]   emacs   vi
-  [Other Option]  X noclobber
+<!-- linkify_stop_col is 20 since we only want section links -->
+
+```chapter-links-option_22
+  [Errors]         nounset -u      errexit -e   inherit_errexit   pipefail
+  [Globbing]       noglob -f       nullglob     failglob        X dotglob
+                   dashglob (true)
+  [Debugging]      xtrace        X verbose    X extdebug
+  [Interactive]    emacs           vi
+  [Other POSIX]  X noclobber
+  [Compat]         eval_unsafe_arith
 ```
 
 <h2 id="special-var">
-  Special Variables (<a class="group-link" href="chap-special-var.html">special-var</a>)
+  Special Variables <a class="group-link" href="chap-special-var.html">special-var</a>
 </h2>
 
 ```chapter-links-special-var
-  [Shell Vars]    IFS   X LANG   X GLOBIGNORE
-  [Shell Options] SHELLOPTS   X BASHOPTS
-  [Other Env]     HOME   PATH
   [POSIX Special] $@  $*  $#     $?  $-     $$  $!   $0  $9
-  [Other Special] BASH_REMATCH   @PIPESTATUS
-  [Platform]      HOSTNAME   OSTYPE
-  [Call Stack]    @BASH_SOURCE   @FUNCNAME   @BASH_LINENO   
-                  X @BASH_ARGV   X @BASH_ARGC
+  [Shell Vars]    IFS             X LANG       X GLOBIGNORE
+  [Shell Options] SHELLOPTS       X BASHOPTS
+  [Other Env]     HOME              PATH
+  [Other Special] BASH_REMATCH     @PIPESTATUS
+  [Platform]      HOSTNAME          OSTYPE
+  [Call Stack]    @BASH_SOURCE     @FUNCNAME    @BASH_LINENO   
+                X @BASH_ARGV     X @BASH_ARGC
   [Tracing]       LINENO
-  [Process State] X BASHPID   X PPID   UID   EUID   
-X [Process Stack] BASH_SUBSHELL   SHLVL
-X [Shell State]   BASH_CMDS   @DIRSTACK
-  [Completion]    @COMP_WORDS   COMP_CWORD   COMP_LINE   COMP_POINT
-                  COMP_WORDBREAKS   @COMPREPLY   X COMP_KEY
-                  X COMP_TYPE   COMP_ARGV
+  [Process State] UID               EUID         PPID       X BASHPID
+X [Process Stack] BASH_SUBSHELL     SHLVL
+X [Shell State]   BASH_CMDS        @DIRSTACK
+  [Completion]   @COMP_WORDS        COMP_CWORD    COMP_LINE   COMP_POINT
+                  COMP_WORDBREAKS  @COMPREPLY   X COMP_KEY
+                X COMP_TYPE         COMP_ARGV
   [History]       HISTFILE
-  [cd]            PWD   OLDPWD   X CDPATH
-  [getopts]       OPTIND   OPTARG   X OPTERR
+  [cd]            PWD               OLDPWD      X CDPATH
+  [getopts]       OPTIND            OPTARG      X OPTERR
   [read]          REPLY
-  [Functions]     X RANDOM   X SECONDS
+  [Functions]   X RANDOM            SECONDS
 ```
 
 <h2 id="plugin">
-  Plugins and Hooks (<a class="group-link" href="chap-plugin.html">plugin</a>)
+  Plugins and Hooks <a class="group-link" href="chap-plugin.html">plugin</a>
 </h2>
 
 ```chapter-links-plugin
-  [Signals]       SIGTERM   X SIGINT   X SIGABRT   SIG...
-  [Traps]         DEBUG   ERR   EXIT   X RETURN
-  [Words]         PS1   X PS2   X PS3   PS4
+  [Signals]       SIGTERM     SIGINT     SIGQUIT
+                  SIGTTIN     SIGTTOU    SIGWINCH
+  [Traps]         DEBUG       ERR        EXIT    X RETURN
+  [Words]         PS1       X PS2      X PS3       PS4
   [Completion]    complete
-  [Other Plugin]  X command_not_found   PROMPT_COMMAND
+  [Other Plugin]  PROMPT_COMMAND       X command_not_found    
 ```

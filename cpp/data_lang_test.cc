@@ -139,9 +139,6 @@ TEST utf8_decode_one_test() {
   ASSERT_DECODE(0x2840, 3, s, 1);
   ASSERT_DECODE(0x141, 2, s, 4);
 
-  // UTF8_ERR_END_OF_STREAM = 6
-  ASSERT_DECODE(-6, 0, s, 6);
-
   // UTF8_ERR_OVERLONG = 1
   ASSERT_DECODE(-1, 2, StrFromC("\xC1\x81"), 0);
 

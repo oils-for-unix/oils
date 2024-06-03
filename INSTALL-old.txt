@@ -1,0 +1,101 @@
+Building and Installing Oils - old CPython build
+================================================
+
+Oils is a new Unix shell.  This file is INSTALL-old.txt, and it describes how
+to configure, build, and install the oil-$VERSION tarball.
+
+The tarball contains an older, slower reference implementation based on CPython
+code.
+
+You may want INSTALL.txt instead, which tells you how to build the fast
+oils-for-unix-$VERSION tarball.
+
+Quick Start
+-----------
+
+If you haven't already done so, extract the tarball:
+ 
+    tar -x --xz < oil-0.22.0.tar.xz
+    cd oil-0.22.0
+
+Either install as /usr/local/bin/osh:
+
+    ./configure      # completes very quickly
+    make             # 30-60 seconds
+    sudo ./install
+
+or install as ~/bin/osh and the man page as ~/.local/share/man/man1/osh.1:
+
+    ./configure --prefix ~ --datarootdir ~/.local/share
+    make
+    ./install
+
+The latter doesn't require root access, but it requires:
+
+- ~/bin to be in your $PATH
+- Pages under ~/.local/share/man to be found by 'man'.
+  (See manpath or $MANPATH.)
+
+NOTE: Out-of-tree builds are NOT currently supported, so you have to be in the
+oil-0.22.0 directory.
+
+Smoke Test
+----------
+
+OSH behaves like a POSIX shell:
+
+    $ osh -c 'echo hi'
+    hi
+
+This parses and prints a syntax tree for the 'configure' script.
+
+    osh -n configure
+
+More Documentation
+------------------
+
+Every release has a home page with links, e.g.
+
+    https://oilshell.org/release/0.22.0/
+
+System Requirements
+-------------------
+
+Roughly speaking, you need:
+
+  - an ANSI C environment (compiler and libc)
+  - GNU Bash
+  - GNU Make.
+
+(I want to remove the GNU requirements and require only POSIX sh instead).
+
+Optional:
+
+  - GNU readline library, for interactive features
+    (https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html)
+
+Debian/Ubuntu and derivatives:
+
+    sudo apt install build-essential libreadline-dev
+
+Alpine Linux:
+
+    apk add libc-dev gcc bash make readline-dev
+
+OSH has been tested in several Linux distros and OS X.  It aims to run on any
+POSIX system.  If it doesn't, file a bug here:
+
+    https://github.com/oilshell/oil/issues
+
+Build Options
+-------------
+
+./configure --help will show the options.  Right now, the only significant
+options are --prefix and --{with,without}-readline.
+
+Notes
+-----
+
+- The oil.ovm executable behaves like busybox, and osh is a symlink to it.
+- Oil contains a fork of the Python 2.7 runtime, so it should compile with most
+  popular compiler/OS combinations.

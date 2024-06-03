@@ -29,12 +29,6 @@ from typing import List, Tuple
 
 _ = log
 
-# TODO: Add details of the invalid character/byte here?
-
-INCOMPLETE_CHAR = 'Incomplete UTF-8 character'
-INVALID_CONT = 'Invalid UTF-8 continuation byte'
-INVALID_START = 'Invalid start of UTF-8 character'
-
 # Error types returned by fastfunc.Utf8DecodeOne
 # Derived from Utf8Error enum from data_lang/utf8.h
 UTF8_ERR_OVERLONG = -1  # Encodes a codepoint in more bytes than necessary
@@ -42,7 +36,6 @@ UTF8_ERR_SURROGATE = -2  # Encodes a codepoint in the surrogate range (0xD800 to
 UTF8_ERR_TOO_LARGE = -3  # Encodes a value greater than the max codepoint U+10FFFF
 UTF8_ERR_BAD_ENCODING = -4  # Encoding doesn't conform to the UTF-8 bit patterns
 UTF8_ERR_TRUNCATED_BYTES = -5  # It looks like there is another codepoint, but it has been truncated
-UTF8_ERR_END_OF_STREAM = -6  # We are at the end of the string. (input_len = 0)
 
 
 def Utf8Error_str(error):
@@ -57,30 +50,8 @@ def Utf8Error_str(error):
         return "UTF-8 Error: Bad Encoding"
     if error == UTF8_ERR_TRUNCATED_BYTES:
         return "UTF-8 Error: Truncated Bytes"
-    if error == UTF8_ERR_END_OF_STREAM:
-        return "UTF-8 Error: End of Stream"
 
     raise AssertionError(0)
-
-
-def _CheckContinuationByte(byte):
-    # type: (str) -> None
-    if (ord(byte) >> 6) != 0b10:
-        e_strict(INVALID_CONT, loc.Missing)
-
-
-def _Utf8CharLen(starting_byte):
-    # type: (int) -> int
-    if (starting_byte >> 7) == 0b0:
-        return 1
-    elif (starting_byte >> 5) == 0b110:
-        return 2
-    elif (starting_byte >> 4) == 0b1110:
-        return 3
-    elif (starting_byte >> 3) == 0b11110:
-        return 4
-    else:
-        e_strict(INVALID_START, loc.Missing)
 
 
 def DecodeUtf8Char(s, start):
@@ -93,12 +64,6 @@ def DecodeUtf8Char(s, start):
     from {Next,Previous}Utf8Char which raises an `error.Strict` on encoding
     errors.)
     """
-    # The data_lang/utf8.h decoder treats nul-bytes as an end of string
-    # sentinel. However, they may not be the end of the string here. So we must
-    # special case the nul-byte.
-    if mylib.ByteAt(s, start) == 0:
-        return 0
-
     codepoint_or_error, _bytes_read = fastfunc.Utf8DecodeOne(s, start)
     if codepoint_or_error < 0:
         raise error.Expr(
@@ -116,16 +81,29 @@ def NextUtf8Char(s, i):
 
     Validates UTF-8.
     """
-    # Like in DecodeUtf8Char, this must be special-cased.
-    if mylib.ByteAt(s, i) == 0:
-        return 1
-
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
         e_strict(
             "%s at byte index %d in string of length %d" %
             (Utf8Error_str(codepoint_or_error), i, len(s)), loc.Missing)
     return i + bytes_read
+
+
+_INVALID_START = 'Invalid start of UTF-8 sequence'
+
+
+def _Utf8CharLen(starting_byte):
+    # type: (int) -> int
+    if (starting_byte >> 7) == 0b0:
+        return 1
+    elif (starting_byte >> 5) == 0b110:
+        return 2
+    elif (starting_byte >> 4) == 0b1110:
+        return 3
+    elif (starting_byte >> 3) == 0b11110:
+        return 4
+    else:
+        e_strict(_INVALID_START, loc.Missing)
 
 
 def PreviousUtf8Char(s, i):
@@ -170,10 +148,10 @@ def PreviousUtf8Char(s, i):
                 # Leaving a generic error for now, but if we want to, it's not
                 # hard to calculate the position where things go wrong.  Note
                 # that offset might be more than 4, for an invalid utf-8 string.
-                e_strict(INVALID_START, loc.Missing)
+                e_strict(_INVALID_START, loc.Missing)
             return i
 
-    e_strict(INVALID_START, loc.Missing)
+    e_strict(_INVALID_START, loc.Missing)
 
 
 def CountUtf8Chars(s):

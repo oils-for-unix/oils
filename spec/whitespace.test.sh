@@ -1,4 +1,3 @@
-## oils_failures_allowed: 2
 ## compare_shells: dash bash mksh zsh ash
 
 #### Parsing shell words \r \v

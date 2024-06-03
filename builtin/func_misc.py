@@ -9,6 +9,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 
 from core import error
 from core import num
+from core import state
 from core import ui
 from core import vm
 from data_lang import j8
@@ -22,7 +23,6 @@ from ysh import val_ops
 
 from typing import TYPE_CHECKING, Dict, List, cast
 if TYPE_CHECKING:
-    from core import state
     from osh import glob_
     from osh import split
 
@@ -363,8 +363,22 @@ class Shvar_get(vm._Callable):
         # type: (typed_args.Reader) -> value_t
         name = rd.PosStr()
         rd.Done()
-        return expr_eval.LookupVar(self.mem, name, scope_e.Dynamic,
-                                   rd.LeftParenToken())
+        return state.DynamicGetVar(self.mem, name, scope_e.Dynamic)
+
+
+class GetVar(vm._Callable):
+    """Look up normal scoping rules."""
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+        vm._Callable.__init__(self)
+        self.mem = mem
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        name = rd.PosStr()
+        rd.Done()
+        return state.DynamicGetVar(self.mem, name, scope_e.LocalOrGlobal)
 
 
 class Assert(vm._Callable):

@@ -1,20 +1,26 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: JSON / J8 Notation (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-JSON / J8 Notation
-==================
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes [JSON]($xref), and
-its **J8 Notation** superset.
+[Oils Reference](index.html) &mdash;
+Chapter **JSON / J8 Notation**
 
-See the [J8 Notation](../j8-notation.html) doc for more background.  This doc
+</div>
+
+This chapter describes [JSON]($xref), and its **J8 Notation** superset.
+
+See the [J8 Notation doc](../j8-notation.html) for more background.  This doc
 is a quick reference, not the official spec.
 
-<div id="toc">
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
 
 
@@ -28,12 +34,19 @@ That is, Unix deals with byte strings, but JSON can't represent byte strings.
 
 All JSON strings are valid J8 strings!
 
-This is important.  Encoders often emit JSON-style `""` strings rather than
-`u''` or `b''` strings.
+This is important for compatibility.  Encoders may prefer to emit JSON-style
+`""` strings rather than `u''` or `b''` strings.
 
 Example:
 
     "hi μ \n"
+
+To be explicit, you can prefix JSON strings with `j`:
+
+    j"hi μ \n"  # same as above
+
+Of course, the `j""` prefix is accepted by our `json8` builtin, but not the
+`json` builtin.
 
 <h3 id="json-escape">json-escape <code>\" \n \u1234</code></h3>
 
@@ -158,9 +171,11 @@ JSON8 is JSON with 4 more things allowed:
 
 ### json8-num
 
-Decoding detail, specific to Oils:
+JSON8 numbers are identical to JSON numbers.
 
-If there's a decimal point or `e-10` suffix, then it's decoded into YSH
+Here is a decoding detail, specific to Oils:
+
+If there's a decimal point or `e-10` suffix, then it's decoded into a YSH
 `Float`.  Otherwise it's a YSH `Int`.
 
     42       # decoded to Int
@@ -170,7 +185,7 @@ If there's a decimal point or `e-10` suffix, then it's decoded into YSH
 
 ### json8-str
 
-JSON8 strings are exactly J8 strings:
+JSON8 strings are J8 strings:
 
 <pre>
 "hi &#x1f926; \u03bc"
@@ -180,12 +195,16 @@ b'hi &#x1f926; \u{3bc} \yff'
 
 ### json8-list
 
+TODO:
+
 Like JSON lists, but can have trailing comma.  Examples:
 
     [42, 43]
     [42, 43,]   # same as above
 
 ### json8-dict
+
+TODO:
 
 Like JSON "objects", but:
 
@@ -208,8 +227,18 @@ End-of-line comments in the same style as shell:
 
 These are the J8 Primitives (Bool, Int, Float, Str), separated by tabs.
 
-
 ### column-attrs   
+
+<!-- Consider #.tsv8 and 'type' perhaps 
+
+#.tsv8   name    age
+type     Str     Int
+other    x       y
+         Alice   42
+
+Also consider alignment.
+-->
+
 
 ```
 !tsv8    name    age

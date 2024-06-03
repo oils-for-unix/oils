@@ -1,5 +1,4 @@
-#
-# Tests for quotes.
+## oils_failures_allowed: 1
 
 #### Unquoted words
 echo unquoted    words
@@ -184,6 +183,7 @@ echo $'\1 \11 \11 \111' | od -A n -c | sed 's/ \+/ /g'
  $ 001 \t \t I \n
 ## END
 
+
 #### OSH allows invalid backslashes
 case $SH in (dash|mksh) exit ;; esac
 
@@ -196,7 +196,7 @@ echo $w $x $y
 ## END
 ## N-I dash/mksh stdout-json: ""
 
-#### Oil parse errors with parse_backslash
+#### YSH parse errors with parse_backslash
 case $SH in (*osh) ;; (*) exit  ;; esac
 shopt -s oil:all
 

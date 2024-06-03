@@ -413,3 +413,5 @@ def NinjaGraph(ru):
     out = '_test/benchmark-table.tsv'
     n.build([out], 'benchmark-table', benchmark_tasks)
     n.newline()
+ 
+    ru.souffle_binary('mycpp/datalog/call-graph.dl')

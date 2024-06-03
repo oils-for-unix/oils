@@ -54,45 +54,16 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-# *** UNUSED because it only makes sense on a dynamic web page! ***
-# Loosely based on
-# https://stackoverflow.com/questions/1551382/user-friendly-time-format-in-python
-
-SECS_IN_DAY = 86400
-
-
 def PrettyTime(now, start_time):
   """
   Return a pretty string like 'an hour ago', 'Yesterday', '3 months ago', 'just
   now', etc
   """
-  delta = now - start_time
+  # *** UNUSED because it only makes sense on a dynamic web page! ***
+  # Loosely based on
+  # https://stackoverflow.com/questions/1551382/user-friendly-time-format-in-python
 
-  if delta < 10:
-      return "just now"
-  if delta < 60:
-      return "%d seconds ago" % delta
-  if delta < 120:
-      return "a minute ago"
-  if delta < 3600:
-      return "%d minutes ago" % (delta // 60)
-  if delta < 7200:
-      return "an hour ago"
-  if delta < SECS_IN_DAY:
-      return "%d hours ago" % (delta // 3600)
-
-  if delta < 2 * SECS_IN_DAY:
-      return "Yesterday"
-  if delta < 7 * SECS_IN_DAY:
-      return "%d days ago" % (delta // SECS_IN_DAY)
-
-  if day_diff < 31 * SECS_IN_DAY:
-      return "%d weeks ago" % (delta / SECS_IN_DAY / 7)
-
-  if day_diff < 365:
-      return "%d months ago" % (delta / SECS_IN_DAY / 30) 
-
-  return "%d years ago" % (delta / SECS_IN_DAY / 365)
+  return 'unused'
 
 
 def _MinutesSeconds(num_seconds):

@@ -246,6 +246,21 @@ test-invalid-examples() {
   done
 }
 
+test-control-flow-graph() {
+  local mycpp=_bin/shwrap/mycpp_main
+  ninja $mycpp
+  for ex in mycpp/examples/*.py; do
+    local data_dir=testdata/control-flow-graph/$(basename -s .py $ex)
+    if ! test -d $data_dir; then
+      continue
+    fi
+    banner "$ex"
+
+    translate-example $ex
+    diff -u $data_dir/cf_edge.facts _tmp/mycpp-facts/cf_edge.facts
+  done
+}
+
 test-runtime() {
   # Run other unit tests, e.g. the GC tests
 
@@ -291,6 +306,8 @@ test-translator() {
   examples-variant '' asan+gcalways
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
+
+  run-test-func test-control-flow-graph _test/mycpp/test-cfg-examples.log
 
   # Runs tests in cxx-asan variant, and benchmarks in cxx-opt variant
   if ! ninja mycpp-logs-equal; then

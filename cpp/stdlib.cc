@@ -94,7 +94,7 @@ void execve(BigStr* argv0, List<BigStr*>* argv,
     BigStr* k = it.Key();
     BigStr* v = it.Value();
 
-    int joined_len = len(k) + len(v) + 2; // = and NUL terminator
+    int joined_len = len(k) + len(v) + 2;  // = and NUL terminator
     combined_size += joined_len;
   }
   const int argv_size = (n_args + 1) * sizeof(char*);

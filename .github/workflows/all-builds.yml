@@ -38,7 +38,7 @@ jobs:
     needs: ['cpp-tarball']
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: raw-vm
         run: |
@@ -57,7 +57,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: dev-setup-debian
         run: |
@@ -77,7 +77,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
         # UPGRADED to podman
       - name: dummy
@@ -98,7 +98,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: dev-minimal
         run: |
@@ -117,7 +117,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fix kernel mmap rnd bits
       # Asan in llvm 14 provided in ubuntu 22.04 is incompatible with
@@ -142,7 +142,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
         # UPGRADED to podman
       - name: pea
@@ -162,7 +162,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: other-tests
         run: |
@@ -181,7 +181,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ovm-tarball
         run: |
@@ -201,7 +201,7 @@ jobs:
     needs: ['cpp-tarball']
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: app-tests
         run: |
@@ -220,7 +220,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: cpp-coverage
         run: |
@@ -239,7 +239,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: benchmarks
         run: |
@@ -258,7 +258,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: benchmarks2
         run: |
@@ -277,7 +277,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fix kernel mmap rnd bits
       # Asan in llvm 14 provided in ubuntu 22.04 is incompatible with
@@ -302,7 +302,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fix kernel mmap rnd bits
       # Asan in llvm 14 provided in ubuntu 22.04 is incompatible with
@@ -334,7 +334,7 @@ jobs:
       REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fix kernel mmap rnd bits
       # Asan in llvm 14 provided in ubuntu 22.04 is incompatible with
@@ -360,7 +360,7 @@ jobs:
     needs: ['cpp-tarball']
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: wild
         run: |
@@ -382,7 +382,7 @@ jobs:
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: maybe-merge
         env:

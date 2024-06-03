@@ -1,7 +1,11 @@
-#
 # Test combination of var ops.
 #
 # NOTE: There are also slice tests in {array,arith-context}.test.sh.
+
+
+## oils_failures_allowed: 1
+## compare_shells: bash mksh zsh
+
 
 #### String slice
 foo=abcdefg

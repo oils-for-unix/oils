@@ -137,15 +137,21 @@ def _HasManyStatuses(node):
     Note: strict_errexit also uses
       shopt --unset _allow_command_sub _allow_process_sub
     """
-    # Sentence check is for   if false;   versus   if false
-    if node.tag() == command_e.Sentence:
-        node1 = cast(command.Sentence, node)
-        return _HasManyStatuses(node1.child)
-
     UP_node = node
     with tagswitch(node) as case:
+        # Atoms.
+        # TODO: Do we need YSH atoms here?
         if case(command_e.Simple, command_e.DBracket, command_e.DParen):
             return False
+
+        elif case(command_e.Redirect):
+            node = cast(command.Redirect, UP_node)
+            return _HasManyStatuses(node.child)
+
+        elif case(command_e.Sentence):
+            # Sentence check is for   if false;   versus   if false
+            node = cast(command.Sentence, UP_node)
+            return _HasManyStatuses(node.child)
 
         elif case(command_e.Pipeline):
             node = cast(command.Pipeline, UP_node)
@@ -162,6 +168,7 @@ def _HasManyStatuses(node):
         #   BUT could be a proc executed inside a child process, which causes a
         #   problem: the strict_errexit check has to occur at runtime and there's
         #   no way to signal it ot the parent.
+
     return True
 
 
@@ -327,14 +334,29 @@ class CommandEvaluator(object):
             e_die("Assignment builtin %r not configured" % cmd_val.argv[0],
                   cmd_val.arg_locs[0])
 
-        with vm.ctx_FlushStdout():
+        io_errors = []  # type: List[error.IOError_OSError]
+        with vm.ctx_FlushStdout(io_errors):
             with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
                 try:
                     status = builtin_func.Run(cmd_val)
+                except (IOError, OSError) as e:
+                    # e.g. declare -p > /dev/full
+                    self.errfmt.PrintMessage(
+                        '%s builtin I/O error: %s' %
+                        (cmd_val.argv[0], pyutil.strerror(e)),
+                        cmd_val.arg_locs[0])
+                    return 1
                 except error.Usage as e:  # Copied from RunBuiltin
                     arg0 = cmd_val.argv[0]
                     self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
-                    status = 2  # consistent error code for usage error
+                    return 2  # consistent error code for usage error
+
+        if len(io_errors):  # e.g. declare -p > /dev/full
+            self.errfmt.PrintMessage(
+                '%s builtin I/O: %s' %
+                (cmd_val.argv[0], pyutil.strerror(io_errors[0])),
+                cmd_val.arg_locs[0])
+            return 1
 
         return status
 
@@ -498,78 +520,6 @@ class CommandEvaluator(object):
                 raise AssertionError('Unknown redirect type')
 
         raise AssertionError('for -Wreturn-type in C++')
-
-    def _EvalRedirects(self, node):
-        # type: (command_t) -> List[RedirValue]
-        """Evaluate redirect nodes to concrete objects.
-
-        We have to do this every time, because you could have something like:
-
-        for i in a b c; do
-          echo foo >$i
-        done
-
-        Does it makes sense to just have RedirectNode.Eval?  Nah I think the
-        Redirect() abstraction in process.py is useful.  It has a lot of methods.
-
-        Raises:
-          error.RedirectEval
-        """
-        # This is kind of lame because we have two switches over command_e: one for
-        # redirects, and to evaluate the node.  But it's what you would do in C++ I
-        # suppose.  We could also inline them.  Or maybe use RAII.
-        UP_node = node
-        with tagswitch(node) as case:
-            if case(command_e.Simple):
-                node = cast(command.Simple, UP_node)
-                redirects = node.redirects
-            elif case(command_e.ExpandedAlias):
-                node = cast(command.ExpandedAlias, UP_node)
-                redirects = node.redirects
-            elif case(command_e.ShAssignment):
-                node = cast(command.ShAssignment, UP_node)
-                redirects = node.redirects
-            elif case(command_e.BraceGroup):
-                node = cast(BraceGroup, UP_node)
-                redirects = node.redirects
-            elif case(command_e.Subshell):
-                node = cast(command.Subshell, UP_node)
-                redirects = node.redirects
-            elif case(command_e.DParen):
-                node = cast(command.DParen, UP_node)
-                redirects = node.redirects
-            elif case(command_e.DBracket):
-                node = cast(command.DBracket, UP_node)
-                redirects = node.redirects
-            elif case(command_e.ForEach):
-                node = cast(command.ForEach, UP_node)
-                redirects = node.redirects
-            elif case(command_e.ForExpr):
-                node = cast(command.ForExpr, UP_node)
-                redirects = node.redirects
-            elif case(command_e.WhileUntil):
-                node = cast(command.WhileUntil, UP_node)
-                redirects = node.redirects
-            elif case(command_e.If):
-                node = cast(command.If, UP_node)
-                redirects = node.redirects
-            elif case(command_e.Case):
-                node = cast(command.Case, UP_node)
-                redirects = node.redirects
-            else:
-                # command_e.NoOp, command_e.ControlFlow, command_e.Pipeline,
-                # command_e.AndOr, command_e.CommandList, command_e.DoGroup,
-                # command_e.Sentence, # command_e.TimeBlock, command_e.ShFunction,
-                # YSH:
-                # command_e.VarDecl, command_e.Mutation,
-                # command_e.Proc, command_e.Func, command_e.Expr,
-                redirects = []
-
-        result = []  # type: List[RedirValue]
-        for redir in redirects:
-            result.append(self._EvalRedirect(redir))
-
-        return result
 
     def _RunSimpleCommand(self, cmd_val, cmd_st, run_flags):
         # type: (cmd_value_t, CommandStatus, int) -> int
@@ -1005,8 +955,21 @@ class CommandEvaluator(object):
         val = self.expr_ev.EvalExpr(node.e, loc.Missing)
 
         if node.keyword.id == Id.Lit_Equals:  # = f(x)
-            with vm.ctx_FlushStdout():
-                ui.PrettyPrintValue(val, mylib.Stdout())
+            io_errors = []  # type: List[error.IOError_OSError]
+            with vm.ctx_FlushStdout(io_errors):
+                try:
+                    ui.PrettyPrintValue(val, mylib.Stdout())
+                except (IOError, OSError) as e:
+                    self.errfmt.PrintMessage(
+                        'I/O error during = keyword: %s' % pyutil.strerror(e),
+                        node.keyword)
+                    return 1
+
+            if len(io_errors):  # e.g. disk full, ulimit
+                self.errfmt.PrintMessage(
+                    'I/O error during = keyword: %s' %
+                    pyutil.strerror(io_errors[0]), node.keyword)
+                return 1
 
         return 0
 
@@ -1482,6 +1445,63 @@ class CommandEvaluator(object):
 
         return status
 
+    def _DoRedirect(self, node, cmd_st):
+        # type: (command.Redirect, CommandStatus) -> int
+
+        # TODO: make this shopt --set redirect_errexit
+        # And document in doc/error-handling.md
+        if node.child.tag() in (command_e.Simple, command_e.ShAssignment):
+            cmd_st.check_errexit = True
+
+        status = 0
+        redirects = []  # type: List[RedirValue]
+
+        try:
+            for redir in node.redirects:
+                redirects.append(self._EvalRedirect(redir))
+        except error.RedirectEval as e:
+            self.errfmt.PrettyPrintError(e)
+            redirects = None
+        except error.FailGlob as e:  # e.g. echo hi > foo-*
+            if not e.HasLocation():
+                e.location = self.mem.GetFallbackLocation()
+            self.errfmt.PrettyPrintError(e, prefix='failglob: ')
+            redirects = None
+
+        if redirects is None:
+            # Error evaluating redirect words
+            status = 1
+
+        # Translation fix: redirect I/O errors may happen in a C++
+        # destructor ~vm::ctx_Redirect, which means they must be signaled
+        # by out params, not exceptions.
+        io_errors = []  # type: List[error.IOError_OSError]
+
+        # If we evaluated redirects, apply/push them
+        if status == 0:
+            self.shell_ex.PushRedirects(redirects, io_errors)
+            if len(io_errors):
+                # core/process.py prints cryptic errors, so we repeat them
+                # here.  e.g. Bad File Descriptor
+                self.errfmt.PrintMessage(
+                    'I/O error applying redirect: %s' %
+                    pyutil.strerror(io_errors[0]),
+                    self.mem.GetFallbackLocation())
+                status = 1
+
+        # If we applied redirects successfully, run the command_t, and pop
+        # them.
+        if status == 0:
+            with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
+                status = self._Execute(node.child)
+            if len(io_errors):
+                # It would be better to point to the right redirect
+                # operator, but we don't track it specifically
+                e_die("Fatal error popping redirect: %s" %
+                      pyutil.strerror(io_errors[0]))
+
+        return status
+
     def _Dispatch(self, node, cmd_st):
         # type: (command_t, CommandStatus) -> int
         """Switch on the command_t variants and execute them."""
@@ -1518,6 +1538,10 @@ class CommandEvaluator(object):
                     status = self._Execute(node.child)
                 else:
                     status = self.shell_ex.RunBackgroundJob(node.child)
+
+            elif case(command_e.Redirect):
+                node = cast(command.Redirect, UP_node)
+                status = self._DoRedirect(node, cmd_st)
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
@@ -1708,7 +1732,7 @@ class CommandEvaluator(object):
 
     def _Execute(self, node):
         # type: (command_t) -> int
-        """Apply redirects, call _Dispatch(), and performs the errexit check.
+        """Call _Dispatch(), and performs the errexit check.
 
         Also runs trap handlers.
         """
@@ -1739,63 +1763,17 @@ class CommandEvaluator(object):
         else:
             process_sub_st = StatusArray.CreateNull()
 
-        errexit_loc = loc.Missing  # type: loc_t
-        check_errexit = True
-
-        status = 0
-
         with vm.ctx_ProcessSub(self.shell_ex, process_sub_st):  # for wait()
             try:
-                redirects = self._EvalRedirects(node)
-            except error.RedirectEval as e:
-                self.errfmt.PrettyPrintError(e)
-                redirects = None
-            except error.FailGlob as e:  # e.g. echo hi > foo-*
-                if not e.HasLocation():
+                status = self._Dispatch(node, cmd_st)
+            except error.FailGlob as e:
+                if not e.HasLocation():  # Last resort!
                     e.location = self.mem.GetFallbackLocation()
                 self.errfmt.PrettyPrintError(e, prefix='failglob: ')
-                redirects = None
-            if redirects is None:
-                # Error evaluating redirect words
-                status = 1
+                status = 1  # another redirect word eval error
+                cmd_st.check_errexit = True  # failglob + errexit
 
-            # Translation fix: redirect I/O errors may happen in a C++
-            # destructor ~vm::ctx_Redirect, which means they must be signaled
-            # by out params, not exceptions.
-            io_errors = []  # type: List[error.IOError_OSError]
-
-            # If we evaluated redirects, apply/push them
-            if status == 0:
-                self.shell_ex.PushRedirects(redirects, io_errors)
-                if len(io_errors):
-                    # core/process.py prints cryptic errors, so we repeat them
-                    # here.  e.g. Bad File Descriptor
-                    self.errfmt.PrintMessage(
-                        'I/O error applying redirect: %s' %
-                        pyutil.strerror(io_errors[0]),
-                        self.mem.GetFallbackLocation())
-                    status = 1
-
-            # If we applied redirects successfully, run the command_t, and pop
-            # them.
-            if status == 0:
-                with vm.ctx_Redirect(self.shell_ex, len(redirects), io_errors):
-                    try:
-                        status = self._Dispatch(node, cmd_st)
-                        check_errexit = cmd_st.check_errexit
-                    except error.FailGlob as e:
-                        if not e.HasLocation():  # Last resort!
-                            e.location = self.mem.GetFallbackLocation()
-                        self.errfmt.PrettyPrintError(e, prefix='failglob: ')
-                        status = 1  # another redirect word eval error
-                        check_errexit = True  # probably not necessary?
-                if len(io_errors):
-                    # It would be better to point to the right redirect
-                    # operator, but we don't track it specifically
-                    e_die("Fatal error popping redirect: %s" %
-                          pyutil.strerror(io_errors[0]))
-
-        # end with - we've waited for process subs
+        # Now we've waited for process subs
 
         # If it was a real pipeline, compute status from ${PIPESTATUS[@]} aka
         # @_pipeline_status
@@ -1804,6 +1782,7 @@ class CommandEvaluator(object):
         # makes it annoying to check both _process_sub_status and
         # _pipeline_status
 
+        errexit_loc = loc.Missing  # type: loc_t
         if pipe_status is not None:
             # Tricky: _DoPipeline sets cmt_st.pipe_status and returns -1
             # for a REAL pipeline (but not singleton pipelines)
@@ -1852,7 +1831,7 @@ class CommandEvaluator(object):
         # - assignment - its result should be the result of the RHS?
         #   - e.g. arith sub, command sub?  I don't want arith sub.
         # - ControlFlow: always raises, it has no status.
-        if check_errexit:
+        if cmd_st.check_errexit:
             #log('cmd_st %s', cmd_st)
             self._CheckStatus(status, cmd_st, node, errexit_loc)
 
@@ -1909,18 +1888,17 @@ class CommandEvaluator(object):
 
     def _RemoveSubshells(self, node):
         # type: (command_t) -> command_t
-        """Eliminate redundant subshells like ( echo hi ) | wc -l etc."""
+        """Eliminate redundant subshells like ( echo hi ) | wc -l etc.
+
+        This is ONLY called at the top level of ExecuteAndCatch() - it wouldn't
+        be correct otherwise.
+        """
         UP_node = node
         with tagswitch(node) as case:
             if case(command_e.Subshell):
                 node = cast(command.Subshell, UP_node)
-                if len(node.redirects) == 0:
-                    # Note: technically we could optimize this into BraceGroup with
-                    # redirects.  Some shells appear to do that.
-                    if 0:
-                        log('removing subshell')
-                    # Optimize ( ( date ) ) etc.
-                    return self._RemoveSubshells(node.child)
+                # Optimize ( ( date ) ) etc.
+                return self._RemoveSubshells(node.child)
         return node
 
     def ExecuteAndCatch(self, node, cmd_flags=0):

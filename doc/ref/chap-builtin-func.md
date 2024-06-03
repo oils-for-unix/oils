@@ -1,18 +1,24 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Builtin Functions (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Builtin Functions
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes builtin functions.
+[Oils Reference](index.html) &mdash;
+Chapter **Builtin Functions**
 
-(As opposed to [builtin commands](chap-builtin-cmd.html).
+</div>
 
-<div id="toc">
+This chapter describes builtin functions (as opposed to [builtin
+commands](chap-builtin-cmd.html).)
+
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
 
 ## Values
@@ -26,9 +32,10 @@ Returns the
 - number of bytes in a `Str`
   - TODO: `countRunes()` can return the number of UTF-8 encoded code points.
 
-### type()
+### func/type()
 
-Given an arbitrary value, returns a string representing the value's runtime type.
+Given an arbitrary value, returns a string representing the value's runtime
+type.
 
 For example:
 
@@ -40,6 +47,10 @@ For example:
 
     $ = type(n)
     (Str)    'Int'
+
+Similar names: [type][]
+
+[type]: chap-index.html#type
 
 ### repeat()
 
@@ -329,7 +340,9 @@ Add indentation by passing the `space` param:
 
 Similar to `json write (x)`, except the default value of `space` is 0.
 
-See [json-encode-err](chap-errors.html#json-encode-err) for errors.
+See [err-json-encode][] for errors.
+
+[err-json-encode]: chap-errors.html#err-json-encode
 
 ### fromJson()
 
@@ -340,7 +353,9 @@ Convert JSON text to an object in memory:
 
 Similar to `json read <<< '{"name": "alice"}'`.
 
-See [json-decode-err](chap-errors.html#json-decode-err) for errors.
+See [err-json-decode][] for errors.
+
+[err-json-decode]: chap-errors.html#err-json-decode
 
 ### toJson8()
 
@@ -350,14 +365,18 @@ J8-style `b'foo \yff'` strings.
 In contrast, `toJson()` will do a lossy conversion with the Unicode replacement
 character.
 
-See [json8-encode-err](chap-errors.html#json8-encode-err) for errors.
+See [err-json8-encode][] for errors.
+
+[err-json8-encode]: chap-errors.html#err-json8-encode
 
 ### fromJson8()
 
 Like `fromJson()`, but it also accepts binary data denoted by J8-style `b'foo
 \yff'` strings.
 
-See [json8-decode-err](chap-errors.html#json8-decode-err) for errors.
+See [err-json8-decode][] for errors.
+
+[err-json8-decode]: chap-errors.html#err-json8-decode
 
 ## Pattern
 
@@ -387,30 +406,89 @@ Like `Match => end()`, but accesses the global match created by `~`:
 
 ## Introspection
 
-### `shvar_get()`
+### `shvarGet()`
 
-TODO
+Given a variable name, return its value.  It uses the "dynamic scope" rule,
+which looks up the stack for a variable.
 
-## Config Gen
+It's meant to be used with `shvar`:
+
+    proc proc1 {
+      shvar PATH=/tmp {  # temporarily set PATH in this stack frame
+        my-proc
+      }
+
+      proc2
+    }
+
+    proc proc2 {
+      proc3
+    }
+
+    proc proc3 {
+      var path = shvarGet('PATH')  # Look up the stack (dynamic scoping)
+      echo $path  # => /tmp
+    }
+
+    proc1
+
+Note that `shvar` is usually for string variables, and is analogous to `shopt`
+for "booleans".
+
+If the variable isn't defined, `shvarGet()` returns `null`.  So there's no way
+to distinguish an undefined variable from one that's `null`.
+
+### `getVar()`
+
+Given a variable name, return its value.
+
+    $ var x = 42
+    $ echo $[getVar('x')]
+    42
+
+The variable may be local or global.  (Compare with `shvarGet()`.) the "dynamic
+scope" rule.)
+
+If the variable isn't defined, `getVar()` returns `null`.  So there's no way to
+distinguish an undefined variable from one that's `null`.
+
+### `evalExpr()`
+
+Given a an expression quotation, evaluate it and return its value:
+
+    $ var expr = ^[1 + 2]  
+
+    $ = evalExpr(expr)
+    3
+
+## Hay Config
+
+### parseHay()
+
+### evalHay()
+
+
+## Hashing
+
+### sha1dc()
+
+Git's algorithm.
+
+### sha256()
+
+
+<!--
 
 ### Better Syntax
 
 These functions give better syntax to existing shell constructs.
 
-- `shquote()` for `printf %q` and `${x@Q}`
-- `lstrip()` for `${x#prefix}` and  `${x##prefix}`
-- `rstrip()` for `${x%suffix}` and  `${x%%suffix}` 
-- `lstripglob()` and `rstripglob()` for slow, legacy glob
+- `shQuote()` for `printf %q` and `${x@Q}`
+- `trimLeft()` for `${x#prefix}` and  `${x##prefix}`
+- `trimRight()` for `${x%suffix}` and  `${x%%suffix}` 
+- `trimLeftGlob()` and `trimRightGlob()` for slow, legacy glob
 - `upper()` for `${x^^}`
 - `lower()` for `${x,,}`
 - `strftime()`: hidden in `printf`
 
-
-## Codecs
-
-TODO
-
-## Hashing
-
-TODO
-
+-->

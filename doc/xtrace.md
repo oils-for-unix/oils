@@ -77,13 +77,16 @@ then another builtin:
 
 ### Option Names
 
-This functionality is enabled by the [xtrace_rich]($oil-help) option, but you
-should generally use the `ysh:upgrade` option group.  This group turns on
-[xtrace_rich]($oil-help) and turns off [xtrace_details]($oil-help), which  is
-equivalent to:
+This functionality is enabled by the
+[xtrace_rich][] option, but you should
+generally use the `ysh:upgrade` option group.  This group turns on
+[xtrace_rich][] and turns off [xtrace_details][], which  is equivalent to:
 
     $ shopt --set xtrace_rich
     $ shopt --unset xtrace_details
+
+[xtrace_rich]: ref/chap-option.html#ysh:upgrade
+[xtrace_details]: ref/chap-option.html#ysh:upgrade
 
 ### Variables for the Trace Line
 
@@ -98,16 +101,19 @@ In YSH, the default trace line prefix is:
 
 `SHX_punct` is one of the following:
 
-- `+` for legacy shell tracing ([xtrace_details]($oil-help))
+- `+` for legacy shell tracing ([xtrace_details][])
 - `.` for `builtin` and `exec`
 - `>` and `<` for internal, stack-based, **synchronous** constructs
   - `proc`, `eval`, and `source`, an entire pipeline, and the `wait` builtin
   - running trap handlers (which happens in the main loop)
 - `|` and `;` for process start and wait
-  - **synchronous** processes: subshell aka [forkwait]($oil-help), command sub
+  - **synchronous** processes: subshell aka [forkwait][], command sub
     like `$(date)`, simple commands (`;`)
-  - **async** processes: [fork]($oil-help) (`&`), pipeline parts, process subs
+  - **async** processes: [fork][] (`&`), pipeline parts, process subs
     like `<(sort left.txt)`, the process that writes a here doc
+
+[forkwait]: ref/chap-builtin-cmd.html#forkwait
+[fork]:     ref/chap-builtin-cmd.html#fork
 
 TODO: Cross-shell tracing
 

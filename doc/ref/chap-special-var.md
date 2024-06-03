@@ -1,17 +1,23 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Special Variables (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Special Variables
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes special variables
-for OSH and YSH.
+[Oils Reference](index.html) &mdash;
+Chapter **Special Variables**
 
-<div id="toc">
+</div>
+
+This chapter describes special variables for OSH and YSH.
+
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
 
 ## YSH Vars
@@ -61,7 +67,11 @@ Such errors include JSON/J8 encoding/decoding errors, and user errors from the
 
 ### `_pipeline_status`
 
-Alias for [PIPESTATUS]($osh-help).
+After a pipeline of processes is executed, this array contains the exit code of
+each process.
+
+Each exit code is an [Int](chap-type-method.html#Int).  Compare with
+[`PIPESTATUS`](#PIPESTATUS).
 
 ### `_process_sub_status`
 
@@ -163,10 +173,32 @@ Result of regex evaluation `[[ $x =~ $pat ]]`.
 
 ### PIPESTATUS
 
-Exit code of each element in a pipeline.
+After a pipeline of processes is executed, this array contains the exit code of
+each process.
 
+Each exit code is a [Str](chap-type-method.html#Str).  Compare with
+[`_pipeline_status`](#_pipeline_status).
+
+## Platform
+
+### HOSTNAME
+
+The name of the "host" or machine that Oils is running on, determined by
+`gethostname()`.
+
+### OSTYPE
+
+The operating system that Oils is running on, determined by `uname()`.
+
+Examples: `linux darwin ...`
 
 ## Call Stack
+
+### BASH_SOURCE
+
+### FUNCNAME
+
+### BASH_LINENO
 
 ## Tracing
 
@@ -206,6 +238,10 @@ Discouraged; for compatibility with bash.
 Discouraged; for compatibility with bash.
 
 ### COMP_POINT
+
+Discouraged; for compatibility with bash.
+
+### COMP_WORDBREAKS
 
 Discouraged; for compatibility with bash.
 

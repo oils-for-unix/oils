@@ -1,10 +1,11 @@
 // cpp/preamble.h: declarations to run oils_for_unix.mycpp
 
 #include <errno.h>
-#include <fcntl.h>     // e.g. F_DUPFD used directly
-#include <fnmatch.h>   // FNM_CASEFOLD in osh/sh_expr_eval.py
-#include <regex.h>     // REG_ICASE in osh/sh_expr_eval.py
-#include <sys/wait.h>  // e.g. WIFSIGNALED() called directly
+#include <fcntl.h>         // e.g. F_DUPFD used directly
+#include <fnmatch.h>       // FNM_CASEFOLD in osh/sh_expr_eval.py
+#include <regex.h>         // REG_ICASE in osh/sh_expr_eval.py
+#include <sys/resource.h>  // RLIM_INFINITY in builtin/process_osh.py
+#include <sys/wait.h>      // e.g. WIFSIGNALED() called directly
 
 #include "_gen/core/optview.h"
 #include "_gen/core/runtime.asdl.h"

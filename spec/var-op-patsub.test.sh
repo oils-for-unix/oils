@@ -1,5 +1,8 @@
-#
 # Test ${x/pat*/replace}
+# TODO: can add $BUSYBOX_ASH
+
+## oils_failures_allowed: 2
+## compare_shells: bash mksh zsh
 
 #### Pattern replacement
 v=abcde

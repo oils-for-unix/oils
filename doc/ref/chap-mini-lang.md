@@ -1,20 +1,28 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Mini Languages (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Mini Languages
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes "mini-languages".
+[Oils Reference](index.html) &mdash;
+Chapter **Mini Languages**
+
+</div>
+
+This chapter describes "mini-languages" like glob patterns and brace expansion.
 
 In contrast, the main sub languages of YSH are [command](chap-cmd-lang.html),
 [word](chap-word-lang.html), and [expression](chap-expr-lang.html).
 
-<div id="toc">
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
+
 <h2 id="sublang">Other Shell Sublanguages</h2>
 
 ## Arithmetic
@@ -30,10 +38,6 @@ In contrast, the main sub languages of YSH are [command](chap-cmd-lang.html),
 ### sh-bitwise
 
 ## Boolean
-
-### dbracket
-
-Compatible with bash.
 
 ### bool-expr
 
@@ -57,7 +61,7 @@ TODO: extended glob syntax
 
 ### regex
 
-Part of [dbracket]($osh-help)
+Part of [dbracket](chap-cmd-lang.html#dbracket)
 
 ## Other Sublang
 
@@ -69,8 +73,9 @@ History substitution uses `!`.
 
 ### char-escapes
 
-These backslash escape sequences are used in `echo -e`, [printf]($osh-help),
-and in C-style strings like `$'foo\n'`:
+These backslash escape sequences are used in [echo
+-e](chap-builtin-cmd.html#echo), [printf](chap-builtin-cmd.html#printf), and in
+C-style strings like `$'foo\n'`:
 
     \\         backslash
     \a         alert (BEL)

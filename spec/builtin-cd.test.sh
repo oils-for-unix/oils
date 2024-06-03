@@ -1,44 +1,5 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh
-
-#### exec builtin 
-exec echo hi
-## stdout: hi
-
-#### exec builtin with redirects
-exec 1>&2
-echo 'to stderr'
-## stdout-json: ""
-## stderr: to stderr
-
-#### exec builtin with here doc
-# This has in a separate file because both code and data can be read from
-# stdin.
-$SH $REPO_ROOT/spec/bin/builtins-exec-here-doc-helper.sh
-## STDOUT:
-x=one
-y=two
-DONE
-## END
-
-#### exec builtin accepts --
-exec -- echo hi
-## STDOUT:
-hi
-## END
-## BUG dash status: 127
-## BUG dash stdout-json: ""
-
-#### exec -- 2>&1
-exec -- 3>&1
-echo stdout 1>&3
-## STDOUT:
-stdout
-## END
-## BUG dash status: 127
-## BUG dash stdout-json: ""
-## BUG mksh status: -11
-## BUG mksh stdout-json: ""
 
 #### cd and $PWD
 cd /
@@ -49,8 +10,8 @@ echo $PWD
 
 # Odd divergence in shells: dash and mksh normalize the path and don't check
 # this error.
-# TODO: I would like OSH to behave like bash and zsh, but it separating chdir_arg and
-# pwd_arg breaks case 17.
+# TODO: I would like OSH to behave like bash and zsh, but separating chdir_arg
+# and pwd_arg breaks case 17.
 
 cd nonexistent_ZZ/..
 echo status=$?
@@ -58,6 +19,32 @@ echo status=$?
 status=1
 ## END
 ## BUG dash/mksh STDOUT:
+status=0
+## END
+
+#### cd with 2 or more args
+
+mkdir -p foo
+cd foo
+echo status=$?
+cd ..
+echo status=$?
+
+
+cd foo bar
+st=$?
+if test $st -ne 0; then
+  echo 'failed with multiple args'
+fi
+
+## STDOUT:
+status=0
+status=0
+failed with multiple args
+## END
+
+## BUG dash STDOUT:
+status=0
 status=0
 ## END
 
@@ -314,123 +301,4 @@ OK
 OK
 ## END
 
-#### Exit out of function
-f() { exit 3; }
-f
-exit 4
-## status: 3
 
-#### Exit builtin with invalid arg 
-exit invalid
-# Rationale: runtime errors are 1
-## status: 1
-## OK dash/bash status: 2
-## BUG zsh status: 0
-
-#### Exit builtin with too many args
-# This is a parse error in OSH.
-exit 7 8 9
-echo status=$?
-## status: 2
-## stdout-json: ""
-## BUG bash/zsh status: 0
-## BUG bash/zsh stdout: status=1
-## BUG dash status: 7
-## BUG dash stdout-json: ""
-## OK mksh status: 1
-## OK mksh stdout-json: ""
-
-#### time with brace group argument
-
-err=_tmp/time-$(basename $SH).txt
-{
-  time {
-    sleep 0.01
-    sleep 0.02
-  }
-} 2> $err
-
-grep --only-matching user $err
-echo result=$?
-
-# Regression: check fractional seconds
-gawk '
-BEGIN { ok = 0 }
-match( $0, /\.([0-9]+)/, m) {
-  if (m[1] > 0) {  # check fractional seconds
-    ok = 1
-  }
-}
-END { if (ok) { print "non-zero" } }
-' $err
-
-## status: 0
-## STDOUT:
-user
-result=0
-non-zero
-## END
-
-# time doesn't accept a block?
-## BUG zsh STDOUT:
-result=1
-## END
-
-# dash doesn't have time keyword
-## N-I dash status: 2
-## N-I dash stdout-json: ""
-
-#### time pipeline
-time echo hi | wc -c
-## stdout: 3
-## status: 0
-
-#### shift
-set -- 1 2 3 4
-shift
-echo "$@"
-shift 2
-echo "$@"
-## stdout-json: "2 3 4\n4\n"
-## status: 0
-
-#### Shifting too far
-set -- 1
-shift 2
-## status: 1
-## OK dash status: 2
-
-#### Invalid shift argument
-shift ZZZ
-## status: 2
-## OK bash status: 1
-## BUG mksh/zsh status: 0
-
-#### get umask
-umask | grep '[0-9]\+'  # check for digits
-## status: 0
-
-#### set umask in octal
-rm -f $TMP/umask-one $TMP/umask-two
-umask 0002
-echo one > $TMP/umask-one
-umask 0022
-echo two > $TMP/umask-two
-stat -c '%a' $TMP/umask-one $TMP/umask-two
-## status: 0
-## stdout-json: "664\n644\n"
-## stderr-json: ""
-
-#### set umask symbolically
-umask 0002  # begin in a known state for the test
-rm -f $TMP/umask-one $TMP/umask-two
-echo one > $TMP/umask-one
-umask g-w,o-w
-echo two > $TMP/umask-two
-stat -c '%a' $TMP/umask-one $TMP/umask-two
-## status: 0
-## STDOUT:
-664
-644
-## END
-## stderr-json: ""

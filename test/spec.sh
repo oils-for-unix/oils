@@ -161,6 +161,10 @@ quote() {
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
+unicode() {
+  run-file unicode "$@"
+}
+
 loop() {
   sh-spec spec/loop.test.sh \
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
@@ -175,8 +179,16 @@ if_() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
-builtins() {
-  run-file builtins "$@"
+builtin-misc() {
+  run-file builtin-misc "$@"
+}
+
+builtin-process() {
+  run-file builtin-process "$@"
+}
+
+builtin-cd() {
+  run-file builtin-cd "$@"
 }
 
 builtin-eval-source() {
@@ -205,8 +217,8 @@ builtin-printf() {
   run-file builtin-printf "$@"
 }
 
-builtins2() {
-  run-file builtins2 "$@"
+builtin-meta() {
+  run-file builtin-meta  "$@"
 }
 
 builtin-history() {
@@ -267,8 +279,7 @@ builtin-completion() {
 }
 
 builtin-special() {
-  sh-spec spec/builtin-special.test.sh --oils-failures-allowed 4 \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file builtin-special "$@"
 }
 
 builtin-times() {
@@ -284,14 +295,11 @@ func-parsing() {
 }
 
 sh-func() {
-  sh-spec spec/sh-func.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file sh-func "$@"
 }
 
 glob() {
-  # Note: can't pass because it assumes 'bin' exists, etc.
-  sh-spec spec/glob.test.sh --oils-failures-allowed 3 \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file glob "$@"
 }
 
 globignore() {
@@ -323,8 +331,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --oils-failures-allowed 3 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file parse-errors "$@"
 }
 
 here-doc() {
@@ -339,8 +346,11 @@ here-doc() {
 }
 
 redirect() {
-  sh-spec spec/redirect.test.sh --oils-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file redirect "$@"
+}
+
+redirect-command() {
+  run-file redirect-command "$@"
 }
 
 redirect-multi() {
@@ -371,15 +381,11 @@ var-op-len() {
 
 var-op-patsub() {
   # 1 unicode failure, and [^]] which is a parsing divergence
-  sh-spec spec/var-op-patsub.test.sh --oils-failures-allowed 2 \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
-  # TODO: can add $BUSYBOX_ASH
+  run-file var-op-patsub "$@"
 }
 
 var-op-slice() {
-  # dash doesn't support any of these operations
-  sh-spec spec/var-op-slice.test.sh --oils-failures-allowed 1 \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file var-op-slice "$@"
 }
 
 var-op-bash() {
@@ -416,8 +422,7 @@ sh-options() {
 }
 
 xtrace() {
-  sh-spec spec/xtrace.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file xtrace "$@"
 }
 
 strict-options() {
@@ -430,8 +435,7 @@ exit-status() {
 }
 
 errexit() {
-  sh-spec spec/errexit.test.sh \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file errexit "$@"
 }
 
 errexit-osh() {
@@ -486,8 +490,7 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh --oils-failures-allowed 1 \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file dparen "$@"
 }
 
 brace-expansion() {
@@ -506,8 +509,7 @@ process-sub() {
 
 # This does file system globbing
 extglob-files() {
-  sh-spec spec/extglob-files.test.sh --oils-failures-allowed 1 \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file extglob-files "$@"
 }
 
 # This does string matching.
@@ -526,11 +528,9 @@ var-ref() {
   run-file var-ref "$@"
 }
 
-# declare / local -n
-# there is one divergence when combining -n and ${!ref}
 nameref() {
-  sh-spec spec/nameref.test.sh --oils-failures-allowed 7 \
-    $BASH $MKSH $OSH_LIST "$@"
+  ### declare -n / local -n
+  run-file nameref "$@"
 }
 
 let() {
@@ -817,6 +817,10 @@ ysh-expr-sub() {
   run-file ysh-expr-sub "$@"
 }
 
+ysh-cmd-lang() {
+  run-file ysh-cmd-lang "$@"
+}
+
 ysh-for() {
   run-file ysh-for "$@"
 }
@@ -961,13 +965,11 @@ ble-features() {
 }
 
 toysh() {
-  sh-spec spec/toysh.test.sh --oils-failures-allowed 3 \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file toysh "$@"
 }
 
 toysh-posix() {
-  sh-spec spec/toysh-posix.test.sh --oils-failures-allowed 3 \
-    ${REF_SHELLS[@]} $ZSH yash $OSH_LIST "$@"
+  run-file toysh-posix "$@"
 }
 
 run-task "$@"

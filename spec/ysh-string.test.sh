@@ -20,6 +20,24 @@ echo $x
 ## status: 2
 ## stdout-json: ""
 
+#### $"foo $x" to make "foo $x" explicit
+
+var x = $"bar"
+
+# expression mode
+var y = $"foo $x"
+echo "$y"
+
+# command mode
+if test "$y" = $"foo $x"; then
+  echo equal
+fi
+
+## STDOUT:
+foo bar
+equal
+## END
+
 #### single quoted C strings: $'foo\n'
 
 # expression mode
@@ -201,7 +219,22 @@ unset
 r\
 ## END
 
-#### Triple Double Quotes, Expression Mode
+#### $''' isn't a a multiline string (removed)
+
+shopt -s ysh:upgrade
+
+echo $'''
+  foo
+  '''
+
+## STDOUT:
+
+  foo
+  
+## END
+
+
+#### """ and $""" in Expression Mode
 
 var line1 = """line1"""
 echo line1=$line1
@@ -218,9 +251,17 @@ var x = """
   """
 echo "[$x]"
 
+var i = 42
 var x = """
   good
- bad
+ bad $i
+  """
+echo "[$x]"
+
+# alias
+var x = $"""
+  good
+ bad $i
   """
 echo "[$x]"
 
@@ -232,11 +273,14 @@ two = 2 ""
  three = 3
 ]
 [good
- bad
+ bad 42
+]
+[good
+ bad 42
 ]
 ## END
 
-#### Triple Single Quotes, Expression Mode
+#### ''' in Expression Mode
 
 var two = 2
 var three = 2
@@ -278,7 +322,7 @@ three = $three ''
 ## END
 
 
-#### Triple Double Quotes, Command Mode
+#### """ and $""" in Command Mode
 
 var two=2
 var three=3
@@ -287,6 +331,14 @@ echo ""a  # test lookahead
 
 echo --
 echo """
+  one "
+  two = $two ""
+  three = $three
+  """
+
+# optional $ prefix
+echo --
+echo $"""
   one "
   two = $two ""
   three = $three
@@ -317,6 +369,11 @@ two = 2 ""
 three = 3
 
 --
+one "
+two = 2 ""
+three = 3
+
+--
 
 three = 3
 two = 2 ""
@@ -329,21 +386,8 @@ one "
   
 ## END
 
-#### raw strings and triple quotes
 
-echo r'''a'''
-
-shopt --unset parse_ysh_string
-
-echo r'''a'''
-
-## STDOUT:
-a
-ra
-## END
-
-
-#### Triple Single Quotes, Command Mode
+#### ''' in Command Mode
 
 echo ''a  # make sure lookahead doesn't mess up
 
@@ -364,7 +408,25 @@ two = $two
 
 ## END
 
-#### Triple Single Quotes, Here Doc
+#### r''' in Command Mode, Expression mode
+
+echo r'''\'''
+
+var x = r'''\'''
+echo $x
+
+shopt --unset parse_ysh_string
+
+echo r'''\'''
+
+## STDOUT:
+\
+\
+r\
+## END
+
+
+#### ''' in Here Doc
 
 tac <<< '''
   two = $two
@@ -381,7 +443,7 @@ tac <<< '''
 two = $two
 ## END
 
-#### Triple Single Quotes without parse_triple_quote
+#### ''' without parse_triple_quote
 
 shopt --unset parse_triple_quote
 

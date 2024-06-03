@@ -39,7 +39,6 @@ class RegexTest(unittest.TestCase):
             # var name, op, value
             ('s', ['s', '', '']),
             ('value', ['value', '', '']),
-
             ('s!', None),
             ('!', None),
             ('=s', None),
