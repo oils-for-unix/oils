@@ -414,4 +414,5 @@ def NinjaGraph(ru):
     n.build([out], 'benchmark-table', benchmark_tasks)
     n.newline()
  
-    ru.souffle_binary('mycpp/datalog/call-graph.dl')
+    ru.souffle_binary('prebuilt/datalog/call-graph.cc')
+    ru.souffle_binary('prebuilt/datalog/smoke-test.cc')

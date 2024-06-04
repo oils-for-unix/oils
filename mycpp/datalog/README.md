@@ -17,9 +17,12 @@ deps/from_tar.sh build-souffle
 
 ## Compiling a Souffle Binary
 
-You can compile a souffle program to fast native code with the `souffle_binary`
-ninja rule. For example, `souffle_binary('mycpp/datalog/call-graph.dl')` will
-produce an executable called `_bin/tools/call-graph`.
+You can compile a souffle program to fast native code with the `souffle_binary`,
+and `souffle_cpp` ninja rules. For example,
+`souffle_cpp('mycpp/datalog/call-graph.dl')` will produce C++ source at
+`prebuilt/datalog/call-graph.cc` and
+`souffle_binary('prebuilt/datalog/call-graph.cc')` will produce an executable
+called `_bin/datalog/call-graph`.
 
 See this [page from the Souffle docs](https://souffle-lang.github.io/execute)
 for details about how to run your program.

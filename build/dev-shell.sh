@@ -46,6 +46,11 @@ if test -d $ASH_SYMLINK_DIR; then
   export PATH="$ASH_SYMLINK_DIR:$PATH"
 fi
 
+readonly WEDGE_SOUFFLE_DIR=$USER_WEDGE_DIR/pkg/souffle/2.4.1/bin
+if test -d $WEDGE_SOUFFLE_DIR; then
+  export PATH="$WEDGE_SOUFFLE_DIR:$PATH"
+fi
+
 # test/spec-bin.sh builds binaries
 # This takes precedence over $ASH_SYMLINK_DIR
 readonly SPEC_DIR="$PWD/../oil_DEPS/spec-bin"

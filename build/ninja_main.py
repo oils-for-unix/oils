@@ -327,11 +327,6 @@ def InitSteps(n):
          description='gen-oils-for-unix $main_name $out_prefix $preamble $in')
   n.newline()
 
-  n.rule('compile_souffle',
-         command='build/ninja-rules-datalog.sh compile_souffle $in $out',
-         description='compile_souffle $in $out')
-  n.newline()
-
 
 def main(argv):
   try:

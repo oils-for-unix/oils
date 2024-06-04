@@ -496,26 +496,23 @@ class Rules(object):
             variables=[('template', template)])
     self.n.newline()
 
-  def souffle_binary(self, souffle_src):
+  def souffle_binary(self, souffle_cpp):
     """
-    Compile a souffle program into a native executable.
+    Compile a souffle C++ into a native executable.
     """
-    rel_path, _ = os.path.splitext(souffle_src)
+    rel_path, _ = os.path.splitext(souffle_cpp)
     basename = os.path.basename(rel_path)
 
-    souffle_cpp = '_gen/mycpp/%s.cc' % basename
-    self.n.build([souffle_cpp], 'compile_souffle', souffle_src)
-
-    souffle_obj = '_build/obj/mycpp/%s.o' % basename
+    souffle_obj = '_build/obj/datalog/%s.o' % basename
     self.n.build(
         [souffle_obj], 'compile_one', souffle_cpp,
         variables=[
             ('compiler', 'cxx'),
             ('variant', 'opt'),
-            ('more_cxx_flags', "'-I$NINJA_REPO_ROOT/../oil_DEPS/souffle/include -std=c++17'")
+            ('more_cxx_flags', "'-Ivendor -std=c++17'")
         ])
 
-    souffle_bin = '_bin/tools/%s' % basename
+    souffle_bin = '_bin/datalog/%s' % basename
     self.n.build(
         [souffle_bin], 'link', souffle_obj,
         variables=[
