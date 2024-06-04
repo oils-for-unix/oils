@@ -25,6 +25,17 @@ def Error(error):
         raise MyError()
 
 
+#class BadName(object):
+class ctx_BadName(object):
+    def __init__(self):
+        # type: () -> None
+        self.i = 42
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.i = 43
+
+
 class ctx_NoArgs(object):
     """Regression for most vexing parse."""
 
@@ -52,6 +63,7 @@ class ctx_DirStack(object):
         # Bug #1986: add heap-allocated member of context manager
         #self.restored = []  # type: List[str]
         #self.restored.append('foo')
+        self.non_pointer_member = 42  # make sure we don't root this
 
     def __enter__(self):
         # type: () -> None

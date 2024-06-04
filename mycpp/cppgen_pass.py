@@ -2663,6 +2663,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
                     # Now visit the rest of the statements
                     self.indent += 1
+
+                    # TODO:
+                    # For ctx_* classes only, do gHeap.PushRoot() for all the
+                    # pointer members
+                    if self.current_class_name[-1].startswith('ctx_'):
+                        self.def_write('// TODO: gHeap.PushRoot\n')
+
                     for node in stmt.body.body[first_index:]:
                         self.accept(node)
                     self.indent -= 1
@@ -2676,7 +2683,27 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 if stmt.name == '__exit__':
                     self.always_write('\n')
                     self.always_write_ind('%s::~%s()', o.name, o.name)
-                    self.accept(stmt.body)
+
+                    self.def_write(' {\n')
+                    self.indent += 1
+                    if self.current_class_name[-1].startswith('ctx_'):
+                        self.def_write('// TODO: gHeap.PopRoot\n')
+                    else:
+                        self.report_error(
+                            o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
+                            (self.current_class_name,)
+                        )
+                        return
+
+                    # For ctx_* classes only , gHeap.PopRoot() for all the
+                    # pointer members
+                    # 
+                    # Only ctx_* should have __exit__ members though
+                    for node in stmt.body.body:
+                        self.accept(node)
+                    self.indent -= 1
+                    self.def_write('}\n')
+
                     continue
 
                 self.accept(stmt)
