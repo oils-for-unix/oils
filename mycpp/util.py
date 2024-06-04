@@ -23,7 +23,10 @@ def log(msg: str, *args: Any) -> None:
         msg = msg % args
     print(msg, file=sys.stderr)
 
-def join_name(parts: SymbolPath, strip_package: bool = False, delim: str = '::') -> str:
+
+def join_name(parts: SymbolPath,
+              strip_package: bool = False,
+              delim: str = '::') -> str:
     """
     Join the given name path into a string with the given delimiter.
     Use strip_package to remove the top-level directory (e.g. `core`, `ysh`)
@@ -33,9 +36,10 @@ def join_name(parts: SymbolPath, strip_package: bool = False, delim: str = '::')
         return delim.join(parts)
 
     if len(parts) > 1:
-        return delim.join(('',) + parts[1:])
+        return delim.join(('', ) + parts[1:])
 
     return parts[0]
+
 
 def split_py_name(name: str) -> SymbolPath:
     ret = tuple(name.split('.'))
@@ -47,7 +51,10 @@ def split_py_name(name: str) -> SymbolPath:
     return ret
 
 
-def _collect_cases(module_path: str, if_node: IfStmt, out: list[tuple[Expression, Block]], errors = None) -> Optional[Block] | bool:
+def _collect_cases(module_path: str,
+                   if_node: IfStmt,
+                   out: list[tuple[Expression, Block]],
+                   errors=None) -> Optional[Block] | bool:
     """
     The MyPy AST has a recursive structure for if-elif-elif rather than a
     flat one.  It's a bit confusing.

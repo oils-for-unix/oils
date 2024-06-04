@@ -336,7 +336,7 @@ def main(argv):
 
     log('\tmycpp pass: CONTROL FLOW')
 
-    cfgs = {} # fully qualified function name -> control flow graph
+    cfgs = {}  # fully qualified function name -> control flow graph
     for name, module in to_compile:
         cfg_pass = control_flow_pass.Build(result.types)
         cfg_pass.visit_mypy_file(module)

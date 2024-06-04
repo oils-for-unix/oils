@@ -21,7 +21,8 @@ class Virtual(object):
     def __init__(self) -> None:
         self.methods: dict[SymbolPath, list[str]] = defaultdict(list)
         self.subclasses: dict[SymbolPath, list[tuple[str]]] = defaultdict(list)
-        self.virtuals: dict[tuple[SymbolPath, str], Optional[tuple[SymbolPath, str]]] = {}
+        self.virtuals: dict[tuple[SymbolPath, str], Optional[tuple[SymbolPath,
+                                                                   str]]] = {}
         self.has_vtable: dict[SymbolPath, bool] = {}
         self.can_reorder_fields: dict[SymbolPath, bool] = {}
 
@@ -51,7 +52,10 @@ class Virtual(object):
             # name.
             if base_key in self.base_class_unique:
                 # Make sure we don't have collisions
-                assert self.base_class_unique[base_key] == base_class or base_class in self.subclasses[self.base_class_unique[base_key]], base_class
+                assert (self.base_class_unique[base_key] == base_class or
+                        base_class
+                        in self.subclasses[self.base_class_unique[base_key]]
+                        ), base_class
             else:
                 self.base_class_unique[base_key] = base_class
 
@@ -100,6 +104,7 @@ class Fact(object):
     """
     An abstract fact. These can be used to build up datalog programs.
     """
+
     def __init__(self) -> None:
         pass
 
@@ -195,7 +200,7 @@ class ControlFlowGraph(object):
             self.block_stack[-1] = self.statement_counter
 
         return self.statement_counter
-    
+
     def AddFact(self, statement: int, fact: Fact) -> None:
         """
         Annotate a statement with a fact.
@@ -238,7 +243,10 @@ class CfgBlockContext(object):
     """
     Context manager to make dealing with things like with-statements easier.
     """
-    def __init__(self, cfg: ControlFlowGraph, begin: Optional[int] = None) -> None:
+
+    def __init__(self,
+                 cfg: ControlFlowGraph,
+                 begin: Optional[int] = None) -> None:
         self.cfg = cfg
         if cfg is None:
             return
@@ -260,6 +268,7 @@ class CfgBranchContext(object):
     """
     Context manager to make dealing with if-else blocks easier.
     """
+
     def __init__(self, cfg: ControlFlowGraph, branch_point: int) -> None:
         self.cfg = cfg
         self.entry = branch_point
@@ -294,11 +303,11 @@ class CfgBranchContext(object):
                 self.cfg.predecessors.add(arm.exit)
 
 
-
 class CfgLoopContext(object):
     """
     Context manager to make dealing with loops easier.
     """
+
     def __init__(self, cfg: ControlFlowGraph) -> None:
         self.cfg = cfg
         self.breaks = set({})
@@ -342,7 +351,8 @@ class CfgLoopContext(object):
             self.cfg.predecessors.add(b)
 
 
-def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph], facts_dir='_tmp/mycpp-facts') -> None:
+def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
+                          facts_dir='_tmp/mycpp-facts') -> None:
     """
     Dump the given control flow graphs and associated facts into the given
     directory as text files that can be consumed by datalog.

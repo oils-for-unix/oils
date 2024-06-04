@@ -10,40 +10,41 @@ from typing import List, Any, Iterator
 
 
 def visit_star(x):
-  # type: (Any) -> None
-  pass
+    # type: (Any) -> None
+    pass
 
 
 def f():
-  # type: () -> Iterator[int]
-  yield 42
+    # type: () -> Iterator[int]
+    yield 42
 
 
 class Base:
-  pass
+    pass
+
 
 class Derived:
-  def __init__(self):
-    # type: () -> None
 
-    #  Hm not hitting this error
-    super(self)
+    def __init__(self):
+        # type: () -> None
+
+        #  Hm not hitting this error
+        super(self)
 
 
 def main():
-  # type: () -> None
+    # type: () -> None
 
-  # Not handled
-  print(u'unicode')
+    # Not handled
+    print(u'unicode')
 
-  # This is accepted -- as StrExpr?
-  print(b'bytes')
+    # This is accepted -- as StrExpr?
+    print(b'bytes')
 
-  mycomplex = 3j
+    mycomplex = 3j
 
-  myset = {1, 2}
+    myset = {1, 2}
 
-
-  mylist = ['hi']
-  # This is somehow accepted?  Not StarExpr?
-  visit_star(*mylist)
+    mylist = ['hi']
+    # This is somehow accepted?  Not StarExpr?
+    visit_star(*mylist)

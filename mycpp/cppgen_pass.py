@@ -2012,7 +2012,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         cases = []
-        default_block = util._collect_cases(self.module_path, if_node, cases,
+        default_block = util._collect_cases(self.module_path,
+                                            if_node,
+                                            cases,
                                             errors=self.errors_keep_going)
         self._write_cases(expr, cases, default_block)
 
@@ -2033,7 +2035,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         cases = []
-        default_block = util._collect_cases(self.module_path, if_node, cases,
+        default_block = util._collect_cases(self.module_path,
+                                            if_node,
+                                            cases,
                                             errors=self.errors_keep_going)
         self._write_cases(expr, cases, default_block)
 
@@ -2094,7 +2098,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         cases = []
-        default_block = util._collect_cases(self.module_path, if_node, cases,
+        default_block = util._collect_cases(self.module_path,
+                                            if_node,
+                                            cases,
                                             errors=self.errors_keep_going)
 
         grouped_cases = self._str_switch_cases(cases)
@@ -2433,8 +2439,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         # e.g. class TextOutput : public ColorOutput
         if base_class_name:
-            self.always_write(' : public %s', join_name(base_class_name,
-                                                        strip_package=True))
+            self.always_write(' : public %s',
+                              join_name(base_class_name, strip_package=True))
 
         self.always_write(' {\n')
         self.always_write_ind(' public:\n')
@@ -2513,8 +2519,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # The field mask of a derived class is unioned with its base's
             # field mask.
             if base_class_name:
-                mask_bits.append('%s::field_mask()' %
-                                 join_name(base_class_name, strip_package=True))
+                mask_bits.append(
+                    '%s::field_mask()' %
+                    join_name(base_class_name, strip_package=True))
 
             for name in sorted(self.member_vars):
                 c_type = GetCType(self.member_vars[name])
@@ -2545,8 +2552,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if mask_bits:
             self.always_write_ind('\n')
-            self.always_write_ind(
-                'static constexpr uint32_t field_mask() {\n')
+            self.always_write_ind('static constexpr uint32_t field_mask() {\n')
             self.always_write_ind('  return ')
             for i, b in enumerate(mask_bits):
                 if i != 0:
@@ -2559,8 +2565,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         obj_tag, obj_arg = self.field_gc[o]
         if obj_tag == 'HeapTag::FixedSize':
             obj_mask = obj_arg
-            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (
-                obj_mask, o.name)
+            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
+                                                                    o.name)
         elif obj_tag == 'HeapTag::Scanned':
             num_pointers = obj_arg
             obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
@@ -2569,8 +2575,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             raise AssertionError(o.name)
 
         self.always_write('\n')
-        self.always_write_ind(
-            'static constexpr ObjHeader obj_header() {\n')
+        self.always_write_ind('static constexpr ObjHeader obj_header() {\n')
         self.always_write_ind('  return %s;\n' % obj_header)
         self.always_write_ind('}\n')
 
@@ -2614,8 +2619,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                 callee.name == '__init__'):
                             base_constructor_args = expr.args
                             #log('ARGS %s', base_constructor_args)
-                            self.def_write(' : %s(', join_name(base_class_name,
-                                                               strip_package=True))
+                            self.def_write(
+                                ' : %s(',
+                                join_name(base_class_name, strip_package=True))
                             for i, arg in enumerate(base_constructor_args):
                                 if i == 0:
                                     continue  # Skip 'this'
@@ -2649,7 +2655,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                             self.indent += 1
                             if pointer_members:
                                 for name in pointer_members:
-                                    self.def_write('gHeap.PushRoot(&%s);\n' % name)
+                                    self.def_write('gHeap.PushRoot(&%s);\n' %
+                                                   name)
                             else:
                                 self.def_write('// (no pointer members)\n')
                             self.indent -= 1
@@ -2674,14 +2681,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         self.def_write('// TODO: gHeap.PopRoot\n')
                     else:
                         self.report_error(
-                            o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
-                            (self.current_class_name,)
-                        )
+                            o,
+                            'Any class with __exit__ should be named ctx_Foo (%s)'
+                            % (self.current_class_name, ))
                         return
 
                     # For ctx_* classes only , gHeap.PopRoot() for all the
                     # pointer members
-                    # 
+                    #
                     # Only ctx_* should have __exit__ members though
                     for node in stmt.body.body:
                         self.accept(node)
@@ -2703,13 +2710,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     base_class_name = split_py_name(b.fullname)
             elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
                 assert isinstance(b.expr, NameExpr), b
-                base_class_name = split_py_name(b.expr.fullname) + (b.name,)
+                base_class_name = split_py_name(b.expr.fullname) + (b.name, )
 
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
             self.always_write_ind('class %s;\n', o.name)
             if base_class_name:
-                self.virtual.OnSubclass(base_class_name, split_py_name(o.fullname))
+                self.virtual.OnSubclass(base_class_name,
+                                        split_py_name(o.fullname))
             # Visit class body so we get method declarations
             self.current_class_name = split_py_name(o.fullname)
             self._write_body(o.defs.body)

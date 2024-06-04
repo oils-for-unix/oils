@@ -13,107 +13,140 @@ class VirtualTest(unittest.TestCase):
 
     def testVirtual(self):
         """
-    Example:
+        Example:
 
-    class Base(object):
-      def method(self):  # we don't know if this is virtual yet
-        pass
-      def x(self):
-        pass
+        class Base(object):
+          def method(self):  # we don't know if this is virtual yet
+            pass
+          def x(self):
+            pass
 
-    class Derived(Base):
-      def method(self):  # now it's virtual!
-        pass
-      def y(self):
-        pass
-    """
+        class Derived(Base):
+          def method(self):  # now it's virtual!
+            pass
+          def y(self):
+            pass
+        """
         v = pass_state.Virtual()
-        v.OnMethod(('Base',), 'method')
-        v.OnMethod(('Base',), 'x')
-        v.OnSubclass(('Base',), ('Derived',))
-        v.OnMethod(('Derived',), 'method')
-        v.OnMethod(('Derived',), 'y')
+        v.OnMethod(('Base', ), 'method')
+        v.OnMethod(('Base', ), 'x')
+        v.OnSubclass(('Base', ), ('Derived', ))
+        v.OnMethod(('Derived', ), 'method')
+        v.OnMethod(('Derived', ), 'y')
 
         v.Calculate()
 
         print(v.virtuals)
-        self.assertEqual({(('Base',), 'method'): None,
-                          (('Derived',), 'method'): (('Base',), 'method')},
-                         v.virtuals)
+        self.assertEqual(
+            {
+                (('Base', ), 'method'): None,
+                (('Derived', ), 'method'): (('Base', ), 'method')
+            }, v.virtuals)
 
-        self.assertEqual(True, v.IsVirtual(('Base',), 'method'))
-        self.assertEqual(True, v.IsVirtual(('Derived',), 'method'))
-        self.assertEqual(False, v.IsVirtual(('Derived',), 'y'))
+        self.assertEqual(True, v.IsVirtual(('Base', ), 'method'))
+        self.assertEqual(True, v.IsVirtual(('Derived', ), 'method'))
+        self.assertEqual(False, v.IsVirtual(('Derived', ), 'y'))
 
-        self.assertEqual(False, v.IsVirtual(('Klass',), 'z'))
+        self.assertEqual(False, v.IsVirtual(('Klass', ), 'z'))
 
-        self.assertEqual(True, v.HasVTable(('Base',)))
-        self.assertEqual(True, v.HasVTable(('Derived',)))
+        self.assertEqual(True, v.HasVTable(('Base', )))
+        self.assertEqual(True, v.HasVTable(('Derived', )))
 
-        self.assertEqual(False, v.HasVTable(('Klass',)))
+        self.assertEqual(False, v.HasVTable(('Klass', )))
 
     def testNoInit(self):
         v = pass_state.Virtual()
-        v.OnMethod(('Base',), '__init__')
-        v.OnSubclass(('Base',), ('Derived',))
-        v.OnMethod(('Derived',), '__init__')
+        v.OnMethod(('Base', ), '__init__')
+        v.OnSubclass(('Base', ), ('Derived', ))
+        v.OnMethod(('Derived', ), '__init__')
         v.Calculate()
-        self.assertEqual(False, v.HasVTable(('Base',)))
-        self.assertEqual(False, v.HasVTable(('Derived',)))
+        self.assertEqual(False, v.HasVTable(('Base', )))
+        self.assertEqual(False, v.HasVTable(('Derived', )))
 
     def testCanReorderFields(self):
         """
-    class Base(object):
-      def __init__(self):
-        self.s = ''  # pointer
-        self.i = 42
+        class Base(object):
+          def __init__(self):
+            self.s = ''  # pointer
+            self.i = 42
 
-    class Derived(Base):
-      def __init__(self):
-        Base.__init__()
-        self.mylist = []  # type: List[str]
+        class Derived(Base):
+          def __init__(self):
+            Base.__init__()
+            self.mylist = []  # type: List[str]
 
-    Note: we can't reorder these, even though there are no virtual methods.
-    """
+        Note: we can't reorder these, even though there are no virtual methods.
+        """
         v = pass_state.Virtual()
-        v.OnSubclass(('Base2',), ('Derived2',))
+        v.OnSubclass(('Base2', ), ('Derived2', ))
         v.Calculate()
 
-        self.assertEqual(False, v.CanReorderFields(('Base2',)))
-        self.assertEqual(False, v.CanReorderFields(('Derived2',)))
+        self.assertEqual(False, v.CanReorderFields(('Base2', )))
+        self.assertEqual(False, v.CanReorderFields(('Derived2', )))
 
-        self.assertEqual(True, v.CanReorderFields(('Klass2',)))
+        self.assertEqual(True, v.CanReorderFields(('Klass2', )))
 
     def testBaseCollision(self):
         v = pass_state.Virtual()
-        v.OnSubclass(('moduleA', 'Base',), ('foo', 'Derived',))
+        v.OnSubclass((
+            'moduleA',
+            'Base',
+        ), (
+            'foo',
+            'Derived',
+        ))
         with self.assertRaises(AssertionError):
-            v.OnSubclass(('moduleB', 'Base',), ('bar', 'Derived',))
+            v.OnSubclass((
+                'moduleB',
+                'Base',
+            ), (
+                'bar',
+                'Derived',
+            ))
 
     def testSubclassMapping(self):
         v = pass_state.Virtual()
-        v.OnMethod(('moduleA', 'Base',), 'frobnicate')
-        v.OnSubclass(('moduleA', 'Base',), ('foo', 'Derived',))
-        v.OnMethod(('foo', 'Derived',), 'frobnicate')
-        v.OnSubclass(('moduleA', 'Base',), ('bar', 'Derived',))
-        v.OnMethod(('bar', 'Derived',), 'frobnicate')
+        v.OnMethod((
+            'moduleA',
+            'Base',
+        ), 'frobnicate')
+        v.OnSubclass((
+            'moduleA',
+            'Base',
+        ), (
+            'foo',
+            'Derived',
+        ))
+        v.OnMethod((
+            'foo',
+            'Derived',
+        ), 'frobnicate')
+        v.OnSubclass((
+            'moduleA',
+            'Base',
+        ), (
+            'bar',
+            'Derived',
+        ))
+        v.OnMethod((
+            'bar',
+            'Derived',
+        ), 'frobnicate')
         v.Calculate()
-        self.assertEqual(
-            (('moduleA', 'Base'), 'frobnicate'),
-            v.virtuals[(('foo', 'Derived'), 'frobnicate')])
-        self.assertEqual(
-            (('moduleA', 'Base'), 'frobnicate'),
-            v.virtuals[(('bar', 'Derived'), 'frobnicate')])
-        self.assertEqual(
-            None,
-            v.virtuals[(('moduleA', 'Base'), 'frobnicate')])
+        self.assertEqual((('moduleA', 'Base'), 'frobnicate'),
+                         v.virtuals[(('foo', 'Derived'), 'frobnicate')])
+        self.assertEqual((('moduleA', 'Base'), 'frobnicate'),
+                         v.virtuals[(('bar', 'Derived'), 'frobnicate')])
+        self.assertEqual(None, v.virtuals[(('moduleA', 'Base'), 'frobnicate')])
 
 
 class DummyFact(pass_state.Fact):
+
     def __init__(self, n: int) -> None:
         self.n = n
 
-    def name(self): return 'dummy'
+    def name(self):
+        return 'dummy'
 
     def Generate(self, func: str, statement: int) -> str:
         return '{},{},{}'.format(func, statement, self.n)
@@ -134,7 +167,10 @@ class ControlFlowGraphTest(unittest.TestCase):
         cfg.AddFact(d, DummyFact(7))
 
         expected_edges = {
-            (0, a), (a, b), (b, c), (c, d),
+            (0, a),
+            (a, b),
+            (b, c),
+            (c, d),
         }
         self.assertEqual(expected_edges, cfg.edges)
 
@@ -156,19 +192,19 @@ class ControlFlowGraphTest(unittest.TestCase):
         # first statement in if block
         with pass_state.CfgBranchContext(cfg, branch_point) as branch_ctx:
             with branch_ctx.AddBranch() as arm0:
-                arm0_a = cfg.AddStatement() # block statement 2
-                arm0_b = cfg.AddStatement() # block statement 2
-                arm0_c = cfg.AddStatement() # block statement 3
+                arm0_a = cfg.AddStatement()  # block statement 2
+                arm0_b = cfg.AddStatement()  # block statement 2
+                arm0_c = cfg.AddStatement()  # block statement 3
 
             # frist statement in elif block
             with branch_ctx.AddBranch() as arm1:
                 arm1_a = cfg.AddStatement()
-                arm1_b = cfg.AddStatement() # block statement 2
+                arm1_b = cfg.AddStatement()  # block statement 2
 
             # frist statement in else block
             with branch_ctx.AddBranch() as arm2:
                 arm2_a = cfg.AddStatement()
-                arm2_b = cfg.AddStatement() # block statement 2
+                arm2_b = cfg.AddStatement()  # block statement 2
 
         self.assertEqual(arm0_c, arm0.exit)
         self.assertEqual(arm1_b, arm1.exit)
@@ -176,7 +212,6 @@ class ControlFlowGraphTest(unittest.TestCase):
 
         join = cfg.AddStatement()
         end = cfg.AddStatement()
-
         """
         We expecte a graph like this.
 
@@ -201,6 +236,7 @@ class ControlFlowGraphTest(unittest.TestCase):
                       |
                      end
         """
+        # yapf: disable
         expected_edges = {
             (0, main0),
             (main0, branch_point),
@@ -211,6 +247,7 @@ class ControlFlowGraphTest(unittest.TestCase):
             (arm0_c, join), (arm1_b, join), (arm2_b, join),
             (join, end),
         }
+        # yapf: enable
         self.assertEqual(expected_edges, cfg.edges)
 
     def testDeadends(self):
@@ -220,11 +257,11 @@ class ControlFlowGraphTest(unittest.TestCase):
         """
 
         cfg = pass_state.ControlFlowGraph()
-        with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as branch_ctx:
-            with branch_ctx.AddBranch() as branchA: # if
-                ret = cfg.AddStatement() # return
+        with pass_state.CfgBranchContext(cfg,
+                                         cfg.AddStatement()) as branch_ctx:
+            with branch_ctx.AddBranch() as branchA:  # if
+                ret = cfg.AddStatement()  # return
                 cfg.AddDeadend(ret)
-
         """
         while ...:
             if ...:
@@ -237,14 +274,15 @@ class ControlFlowGraphTest(unittest.TestCase):
         with pass_state.CfgLoopContext(cfg) as loop:
             branch_point = cfg.AddStatement()
             with pass_state.CfgBranchContext(cfg, branch_point) as branch_ctx:
-                with branch_ctx.AddBranch() as branchB: # if
-                    cont = cfg.AddStatement() # continue
+                with branch_ctx.AddBranch() as branchB:  # if
+                    cont = cfg.AddStatement()  # continue
                     loop.AddContinue(cont)
 
-                with branch_ctx.AddBranch() as branchC: # else
+                with branch_ctx.AddBranch() as branchC:  # else
                     innerC = cfg.AddStatement()
 
         end = cfg.AddStatement()
+        # yapf: disable
         expected_edges = {
             (0, branchA.entry),
             (branchA.entry, ret),
@@ -256,6 +294,7 @@ class ControlFlowGraphTest(unittest.TestCase):
             (innerC, end),
             (innerC, loop.entry),
         }
+        # yapf: enable
         self.assertEqual(expected_edges, cfg.edges)
 
     def testNedstedIf(self):
@@ -265,18 +304,18 @@ class ControlFlowGraphTest(unittest.TestCase):
         cfg = pass_state.ControlFlowGraph()
 
         outer_branch_point = cfg.AddStatement()
-        with pass_state.CfgBranchContext(cfg, outer_branch_point) as branch_ctx:
-            with branch_ctx.AddBranch() as branch0: # if
+        with pass_state.CfgBranchContext(cfg,
+                                         outer_branch_point) as branch_ctx:
+            with branch_ctx.AddBranch() as branch0:  # if
                 branch0_a = cfg.AddStatement()
 
-            with branch_ctx.AddBranch() as branch1: # else
-                with branch1.AddBranch(cfg.AddStatement()) as branch2: # if
+            with branch_ctx.AddBranch() as branch1:  # else
+                with branch1.AddBranch(cfg.AddStatement()) as branch2:  # if
                     branch2_a = cfg.AddStatement()
 
                 branch1_a = cfg.AddStatement()
 
         end = cfg.AddStatement()
-
         """
         We expect a graph like this.
 
@@ -298,6 +337,7 @@ class ControlFlowGraphTest(unittest.TestCase):
                       |         /
                       end _____/
         """
+        # yapf: disable
         expected_edges = {
             (0, outer_branch_point),
             (outer_branch_point, branch0_a),
@@ -308,8 +348,8 @@ class ControlFlowGraphTest(unittest.TestCase):
             (branch1.exit, end),
             (branch2.exit, end),
         }
+        # yapf: enable
         self.assertEqual(expected_edges, cfg.edges)
-
 
     def testLoops(self):
         cfg = pass_state.ControlFlowGraph()
@@ -334,7 +374,6 @@ class ControlFlowGraphTest(unittest.TestCase):
             self.assertEqual(innerB, loopB.exit)
 
         end = cfg.AddStatement()
-
         """
         We expecte a graph like this:.
 
@@ -356,6 +395,7 @@ class ControlFlowGraphTest(unittest.TestCase):
                       |
                       end
         """
+        # yapf: disable
         expected_edges = {
             (0, loopA.entry),
             (loopA.entry, branch_point),
@@ -367,8 +407,8 @@ class ControlFlowGraphTest(unittest.TestCase):
             (innerB, loopA.entry), (innerB, loopB.entry),
             (innerB, end),
         }
+        # yapf: enable
         self.assertEqual(expected_edges, cfg.edges)
-
 
     def testLoops2(self):
         cfg = pass_state.ControlFlowGraph()
@@ -381,6 +421,7 @@ class ControlFlowGraphTest(unittest.TestCase):
 
         end = cfg.AddStatement()
 
+        # yapf: disable
         expected_edges = {
             (0, loopA.entry),
             (loopA.entry, loopB.entry),
@@ -390,6 +431,7 @@ class ControlFlowGraphTest(unittest.TestCase):
             (innerA, loopA.entry),
             (innerA, end),
         }
+        # yapf: enable
         self.assertEqual(expected_edges, cfg.edges)
 
     def testDeepTry(self):
@@ -416,7 +458,8 @@ class ControlFlowGraphTest(unittest.TestCase):
                 with pass_state.CfgBlockContext(cfg) as try_block:
                     try_s0 = cfg.AddStatement()
 
-                with pass_state.CfgBlockContext(cfg, try_block.exit) as except_block:
+                with pass_state.CfgBlockContext(
+                        cfg, try_block.exit) as except_block:
                     except_s0 = cfg.AddStatement()
                     cont = cfg.AddStatement()
                     loopB.AddContinue(cont)
@@ -427,6 +470,7 @@ class ControlFlowGraphTest(unittest.TestCase):
         log_stmt = cfg.AddStatement()
         end = cfg.AddStatement()
 
+        # yapf: disable
         expected_edges = {
             (0, loopA.entry),
             (loopA.entry, loopB.entry),
@@ -442,6 +486,7 @@ class ControlFlowGraphTest(unittest.TestCase):
             (a_s1, log_stmt),
             (log_stmt, end),
         }
+        # yapf: enable
         self.assertEqual(expected_edges, cfg.edges)
 
     def testLoopWithDanglingBlocks(self):
@@ -458,10 +503,13 @@ class ControlFlowGraphTest(unittest.TestCase):
         cfg = pass_state.ControlFlowGraph()
 
         with pass_state.CfgLoopContext(cfg) as loop:
-            with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as try_ctx:
+            with pass_state.CfgBranchContext(cfg,
+                                             cfg.AddStatement()) as try_ctx:
                 with try_ctx.AddBranch() as try_block:
-                    with pass_state.CfgBlockContext(cfg, cfg.AddStatement()) as with_block:
-                        with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as if_ctx:
+                    with pass_state.CfgBlockContext(
+                            cfg, cfg.AddStatement()) as with_block:
+                        with pass_state.CfgBranchContext(
+                                cfg, cfg.AddStatement()) as if_ctx:
                             with if_ctx.AddBranch() as if_block:
                                 s_raise = cfg.AddStatement()
                                 cfg.AddDeadend(s_raise)
@@ -471,6 +519,7 @@ class ControlFlowGraphTest(unittest.TestCase):
                 with try_ctx.AddBranch(try_block.exit) as except_block:
                     log_stmt = cfg.AddStatement()
 
+        # yapf: disable
         expected_edges = {
             (0, loop.entry),
             (loop.entry, try_block.entry),
@@ -482,6 +531,7 @@ class ControlFlowGraphTest(unittest.TestCase):
             (pass_stmt, log_stmt),
             (log_stmt, loop.entry),
         }
+        # yapf: enable
         self.assertEqual(expected_edges, cfg.edges)
 
     def testLoopBreak(self):
@@ -504,13 +554,15 @@ class ControlFlowGraphTest(unittest.TestCase):
         cfg = pass_state.ControlFlowGraph()
 
         with pass_state.CfgLoopContext(cfg) as loop:
-            with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as if_ctx:
+            with pass_state.CfgBranchContext(cfg,
+                                             cfg.AddStatement()) as if_ctx:
                 with if_ctx.AddBranch() as if_block:
                     break1 = cfg.AddStatement()
                     loop.AddBreak(break1)
 
                 with if_ctx.AddBranch() as else_block:
-                    with pass_state.CfgBranchContext(cfg, cfg.AddStatement()) as try_ctx:
+                    with pass_state.CfgBranchContext(
+                            cfg, cfg.AddStatement()) as try_ctx:
                         with try_ctx.AddBranch() as try_block:
                             pass1 = cfg.AddStatement()
 
@@ -522,6 +574,7 @@ class ControlFlowGraphTest(unittest.TestCase):
 
         pass3 = cfg.AddStatement()
 
+        # yapf: disable
         expected_edges = {
             (0, loop.entry),
             (loop.entry, if_block.entry),
@@ -535,7 +588,9 @@ class ControlFlowGraphTest(unittest.TestCase):
             (break1, pass3),
             (break2, pass3),
         }
+        # yapf: enable
         self.assertEqual(expected_edges, cfg.edges)
+
 
 if __name__ == '__main__':
     unittest.main()

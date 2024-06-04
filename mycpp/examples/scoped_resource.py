@@ -27,6 +27,7 @@ def Error(error):
 
 #class BadName(object):
 class ctx_BadName(object):
+
     def __init__(self):
         # type: () -> None
         self.i = 42

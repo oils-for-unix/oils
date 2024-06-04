@@ -462,7 +462,7 @@ class _DocConstructor:
         third
         ```
         """
-        seq = [] # type: List[MeasuredDoc]
+        seq = []  # type: List[MeasuredDoc]
         for i, item in enumerate(items):
             if i != 0:
                 seq.append(_Text(sep))
@@ -518,7 +518,7 @@ class _DocConstructor:
             return _Text("")
 
         max_flat_len = 0
-        seq = [] # type: List[MeasuredDoc]
+        seq = []  # type: List[MeasuredDoc]
         for i, item in enumerate(items):
             if i != 0:
                 seq.append(_Text(sep))

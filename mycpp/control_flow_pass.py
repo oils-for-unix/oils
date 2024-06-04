@@ -70,7 +70,9 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
                     # Most statements have empty visitors because they don't
                     # require any special logic. Create statements for them
                     # here. Blocks and loops are handled by their visitors.
-                    if cfg and not isinstance(node, Block) and not isinstance(node, ForStmt) and not isinstance(node, WhileStmt):
+                    if (cfg and not isinstance(node, Block) and
+                            not isinstance(node, ForStmt) and
+                            not isinstance(node, WhileStmt)):
                         self.current_statement_id = cfg.AddStatement()
 
                     node.accept(self)
@@ -111,7 +113,8 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         assert isinstance(if_node, IfStmt), if_node
         cases = []
         default_block = util._collect_cases(self.module_path, if_node, cases)
-        with pass_state.CfgBranchContext(cfg, self.current_statement_id) as branch_ctx:
+        with pass_state.CfgBranchContext(
+                cfg, self.current_statement_id) as branch_ctx:
             for expr, body in cases:
                 assert expr is not None, expr
                 with branch_ctx.AddBranch():
@@ -197,7 +200,8 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         if not cfg:
             return
 
-        with pass_state.CfgBranchContext(cfg, self.current_statement_id) as branch_ctx:
+        with pass_state.CfgBranchContext(
+                cfg, self.current_statement_id) as branch_ctx:
             with branch_ctx.AddBranch():
                 for node in o.body:
                     self.accept(node)
@@ -224,7 +228,8 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         if not cfg:
             return
 
-        with pass_state.CfgBranchContext(cfg, self.current_statement_id) as try_ctx:
+        with pass_state.CfgBranchContext(cfg,
+                                         self.current_statement_id) as try_ctx:
             with try_ctx.AddBranch() as try_block:
                 self.accept(o.body)
 
