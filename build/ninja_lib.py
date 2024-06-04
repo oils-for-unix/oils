@@ -496,16 +496,6 @@ class Rules(object):
             variables=[('template', template)])
     self.n.newline()
 
-  def souffle_cpp(self, souffle_src):
-    """
-    Compile a souffle program into C++ source code.
-    """
-    rel_path, _ = os.path.splitext(souffle_src)
-    basename = os.path.basename(rel_path)
-
-    souffle_cpp = 'prebuilt/datalog/%s.cc' % basename
-    self.n.build([souffle_cpp], 'compile_souffle', souffle_src)
-
   def souffle_binary(self, souffle_cpp):
     """
     Compile a souffle C++ into a native executable.

@@ -4,8 +4,6 @@ prebuilt/NINJA_subgraph.py
 
 from __future__ import print_function
 
-import subprocess
-
 from build.ninja_lib import log
 
 _ = log
@@ -75,9 +73,3 @@ def NinjaGraph(ru):
             '//cpp/data_lang',  # for fastfunc
             '//cpp/frontend_flag_spec',
         ])
-
-    # NOTE: To avoid failures on these in CI, these targets are only enabled if
-    # the user has the souffle executable in their PATH.
-    if subprocess.call('which souffle > /dev/null', shell=True) == 0:
-        ru.souffle_cpp('mycpp/datalog/call-graph.dl')
-        ru.souffle_cpp('deps/source.medo/souffle/smoke-test.dl')
