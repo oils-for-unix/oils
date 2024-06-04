@@ -2426,191 +2426,161 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                   o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
 
-    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
-        #log('  CLASS %s', o.name)
+    def _ClassDefDeclPass(self, o, base_class_name):
+        self.member_vars.clear()  # make a new list
 
-        base_class_name = None  # single inheritance only
-        for b in o.base_type_exprs:
-            if isinstance(b, NameExpr):
-                # TODO: inherit from std::exception?
-                if b.name != 'object' and b.name != 'Exception':
-                    base_class_name = split_py_name(b.fullname)
-            elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
-                assert isinstance(b.expr, NameExpr), b
-                base_class_name = split_py_name(b.expr.fullname) + (b.name,)
+        self.always_write_ind('class %s', o.name)  # block after this
 
-        # Forward declare types because they may be used in prototypes
-        if self.forward_decl:
-            self.always_write_ind('class %s;\n', o.name)
-            if base_class_name:
-                self.virtual.OnSubclass(base_class_name, split_py_name(o.fullname))
-            # Visit class body so we get method declarations
-            self.current_class_name = split_py_name(o.fullname)
-            self._write_body(o.defs.body)
-            self.current_class_name = None
-            return
+        # e.g. class TextOutput : public ColorOutput
+        if base_class_name:
+            self.always_write(' : public %s', join_name(base_class_name,
+                                                        strip_package=True))
 
-        if self.decl:
-            self.member_vars.clear()  # make a new list
+        self.always_write(' {\n')
+        self.always_write_ind(' public:\n')
 
-            self.always_write_ind('class %s', o.name)  # block after this
+        block = o.defs
 
-            # e.g. class TextOutput : public ColorOutput
-            if base_class_name:
-                self.always_write(' : public %s', join_name(base_class_name,
-                                                            strip_package=True))
+        self.indent += 1
+        self.current_class_name = split_py_name(o.fullname)
+        for stmt in block.body:
 
-            self.always_write(' {\n')
-            self.always_write_ind(' public:\n')
+            # Ignore things that look like docstrings
+            if (isinstance(stmt, ExpressionStmt) and
+                    isinstance(stmt.expr, StrExpr)):
+                continue
 
-            block = o.defs
+            # Constructor is named after class
+            if isinstance(stmt, FuncDef):
+                method_name = stmt.name
+                if method_name == '__init__':
+                    self.always_write_ind('%s(', o.name)
+                    self._WriteFuncParams(stmt.type.arg_types,
+                                          stmt.arguments,
+                                          write_defaults=True)
+                    self.always_write(');\n')
 
-            self.indent += 1
-            self.current_class_name = split_py_name(o.fullname)
-            for stmt in block.body:
-
-                # Ignore things that look like docstrings
-                if (isinstance(stmt, ExpressionStmt) and
-                        isinstance(stmt.expr, StrExpr)):
-                    continue
-
-                # Constructor is named after class
-                if isinstance(stmt, FuncDef):
-                    method_name = stmt.name
-                    if method_name == '__init__':
-                        self.always_write_ind('%s(', o.name)
-                        self._WriteFuncParams(stmt.type.arg_types,
-                                              stmt.arguments,
-                                              write_defaults=True)
-                        self.always_write(');\n')
-
-                        # Visit for member vars
-                        self.current_method_name = method_name
-                        self.accept(stmt.body)
-                        self.current_method_name = None
-                        continue
-
-                    if method_name == '__enter__':
-                        continue
-
-                    if method_name == '__exit__':
-                        # Turn it into a destructor with NO ARGS
-                        self.always_write_ind('~%s();\n', o.name)
-                        continue
-
-                    if method_name == '__repr__':
-                        # skip during declaration, just like visit_func_def does during definition
-                        continue
-
-                    # Any other function: Visit for member vars
+                    # Visit for member vars
                     self.current_method_name = method_name
-                    self.accept(stmt)
+                    self.accept(stmt.body)
                     self.current_method_name = None
                     continue
 
-                # TODO: Remove this?  Everything under a class is a method?
+                if method_name == '__enter__':
+                    continue
+
+                if method_name == '__exit__':
+                    # Turn it into a destructor with NO ARGS
+                    self.always_write_ind('~%s();\n', o.name)
+                    continue
+
+                if method_name == '__repr__':
+                    # skip during declaration, just like visit_func_def does during definition
+                    continue
+
+                # Any other function: Visit for member vars
+                self.current_method_name = method_name
                 self.accept(stmt)
+                self.current_method_name = None
+                continue
 
-            # List of field mask expressions
-            mask_bits = []
-            if self.virtual.CanReorderFields(split_py_name(o.fullname)):
-                # No inheritance, so we are free to REORDER member vars, putting
-                # pointers at the front.
+            # TODO: Remove this?  Everything under a class is a method?
+            self.accept(stmt)
 
-                pointer_members = []
-                non_pointer_members = []
+        # List of field mask expressions
+        mask_bits = []
+        if self.virtual.CanReorderFields(split_py_name(o.fullname)):
+            # No inheritance, so we are free to REORDER member vars, putting
+            # pointers at the front.
 
-                for name in self.member_vars:
-                    c_type = GetCType(self.member_vars[name])
-                    if CTypeIsManaged(c_type):
-                        pointer_members.append(name)
-                    else:
-                        non_pointer_members.append(name)
+            pointer_members = []
+            non_pointer_members = []
 
-                # So we declare them in the right order
-                sorted_member_names = pointer_members + non_pointer_members
+            for name in self.member_vars:
+                c_type = GetCType(self.member_vars[name])
+                if CTypeIsManaged(c_type):
+                    pointer_members.append(name)
+                else:
+                    non_pointer_members.append(name)
 
-                self.field_gc[o] = ('HeapTag::Scanned', len(pointer_members))
-            else:
-                # Has inheritance
+            # So we declare them in the right order
+            sorted_member_names = pointer_members + non_pointer_members
 
-                # The field mask of a derived class is unioned with its base's
-                # field mask.
-                if base_class_name:
-                    mask_bits.append('%s::field_mask()' %
-                                     join_name(base_class_name, strip_package=True))
+            self.field_gc[o] = ('HeapTag::Scanned', len(pointer_members))
+        else:
+            # Has inheritance
 
-                for name in sorted(self.member_vars):
-                    c_type = GetCType(self.member_vars[name])
-                    if CTypeIsManaged(c_type):
-                        mask_bits.append('maskbit(offsetof(%s, %s))' %
-                                         (o.name, name))
+            # The field mask of a derived class is unioned with its base's
+            # field mask.
+            if base_class_name:
+                mask_bits.append('%s::field_mask()' %
+                                 join_name(base_class_name, strip_package=True))
 
-                # A base class with no fields has kZeroMask.
-                if not base_class_name and not mask_bits:
-                    mask_bits.append('kZeroMask')
+            for name in sorted(self.member_vars):
+                c_type = GetCType(self.member_vars[name])
+                if CTypeIsManaged(c_type):
+                    mask_bits.append('maskbit(offsetof(%s, %s))' %
+                                     (o.name, name))
 
-                sorted_member_names = sorted(self.member_vars)
+            # A base class with no fields has kZeroMask.
+            if not base_class_name and not mask_bits:
+                mask_bits.append('kZeroMask')
 
-                self.field_gc[o] = ('HeapTag::FixedSize', 'field_mask()')
+            sorted_member_names = sorted(self.member_vars)
 
-            # Write member variables
+            self.field_gc[o] = ('HeapTag::FixedSize', 'field_mask()')
 
-            #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
-            if self.member_vars:
-                if base_class_name:
-                    self.always_write('\n')  # separate from functions
+        # Write member variables
 
-                for name in sorted_member_names:
-                    c_type = GetCType(self.member_vars[name])
-                    self.always_write_ind('%s %s;\n', c_type, name)
+        #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
+        if self.member_vars:
+            if base_class_name:
+                self.always_write('\n')  # separate from functions
 
-            self.current_class_name = None
+            for name in sorted_member_names:
+                c_type = GetCType(self.member_vars[name])
+                self.always_write_ind('%s %s;\n', c_type, name)
 
-            if mask_bits:
-                self.always_write_ind('\n')
-                self.always_write_ind(
-                    'static constexpr uint32_t field_mask() {\n')
-                self.always_write_ind('  return ')
-                for i, b in enumerate(mask_bits):
-                    if i != 0:
-                        self.always_write('\n')
-                        self.always_write_ind('       | ')
-                    self.always_write(b)
-                self.always_write(';\n')
-                self.always_write_ind('}\n')
+        self.current_class_name = None
 
-            obj_tag, obj_arg = self.field_gc[o]
-            if obj_tag == 'HeapTag::FixedSize':
-                obj_mask = obj_arg
-                obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (
-                    obj_mask, o.name)
-            elif obj_tag == 'HeapTag::Scanned':
-                num_pointers = obj_arg
-                obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
-                    num_pointers, o.name)
-            else:
-                raise AssertionError(o.name)
-
-            self.always_write('\n')
+        if mask_bits:
+            self.always_write_ind('\n')
             self.always_write_ind(
-                'static constexpr ObjHeader obj_header() {\n')
-            self.always_write_ind('  return %s;\n' % obj_header)
+                'static constexpr uint32_t field_mask() {\n')
+            self.always_write_ind('  return ')
+            for i, b in enumerate(mask_bits):
+                if i != 0:
+                    self.always_write('\n')
+                    self.always_write_ind('       | ')
+                self.always_write(b)
+            self.always_write(';\n')
             self.always_write_ind('}\n')
 
-            self.always_write('\n')
-            self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
-            self.indent -= 1
-            self.always_write_ind('};\n')
-            self.always_write('\n')
+        obj_tag, obj_arg = self.field_gc[o]
+        if obj_tag == 'HeapTag::FixedSize':
+            obj_mask = obj_arg
+            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (
+                obj_mask, o.name)
+        elif obj_tag == 'HeapTag::Scanned':
+            num_pointers = obj_arg
+            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
+                num_pointers, o.name)
+        else:
+            raise AssertionError(o.name)
 
-            return
+        self.always_write('\n')
+        self.always_write_ind(
+            'static constexpr ObjHeader obj_header() {\n')
+        self.always_write_ind('  return %s;\n' % obj_header)
+        self.always_write_ind('}\n')
 
-        self.current_class_name = split_py_name(o.fullname)
+        self.always_write('\n')
+        self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
+        self.indent -= 1
+        self.always_write_ind('};\n')
+        self.always_write('\n')
 
-        #
-        # Now we're visiting for definitions (not declarations).
-        #
+    def _ClassDefDefPass(self, o, base_class_name):
         block = o.defs
         for stmt in block.body:
             if isinstance(stmt, FuncDef):
@@ -2669,6 +2639,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     # pointer members
                     if self.current_class_name[-1].startswith('ctx_'):
                         self.def_write('// TODO: gHeap.PushRoot\n')
+                        if 0:
+                            pointer_members = []  # duplicate logic above
+                            for name in self.member_vars:
+                                c_type = GetCType(self.member_vars[name])
+                                if CTypeIsManaged(c_type):
+                                    pointer_members.append(name)
+
+                            self.indent += 1
+                            if pointer_members:
+                                for name in pointer_members:
+                                    self.def_write('gHeap.PushRoot(&%s);\n' % name)
+                            else:
+                                self.def_write('// (no pointer members)\n')
+                            self.indent -= 1
 
                     for node in stmt.body.body[first_index:]:
                         self.accept(node)
@@ -2707,6 +2691,38 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     continue
 
                 self.accept(stmt)
+
+    def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
+        #log('  CLASS %s', o.name)
+
+        base_class_name = None  # single inheritance only
+        for b in o.base_type_exprs:
+            if isinstance(b, NameExpr):
+                # TODO: inherit from std::exception?
+                if b.name != 'object' and b.name != 'Exception':
+                    base_class_name = split_py_name(b.fullname)
+            elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
+                assert isinstance(b.expr, NameExpr), b
+                base_class_name = split_py_name(b.expr.fullname) + (b.name,)
+
+        # Forward declare types because they may be used in prototypes
+        if self.forward_decl:
+            self.always_write_ind('class %s;\n', o.name)
+            if base_class_name:
+                self.virtual.OnSubclass(base_class_name, split_py_name(o.fullname))
+            # Visit class body so we get method declarations
+            self.current_class_name = split_py_name(o.fullname)
+            self._write_body(o.defs.body)
+            self.current_class_name = None
+            return
+
+        if self.decl:
+            self._ClassDefDeclPass(o, base_class_name)
+            return
+
+        self.current_class_name = split_py_name(o.fullname)
+
+        self._ClassDefDefPass(o, base_class_name)
 
         self.current_class_name = None  # Stop prefixing functions with class
 

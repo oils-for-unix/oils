@@ -5,6 +5,10 @@
 # Usage:
 #   test/stress.sh <function name>
 
+set -o nounset
+set -o pipefail
+set -o errexit
+
 # GC bug?
 
 replace-ysh() {
@@ -21,16 +25,57 @@ replace-ysh() {
   #GDB='gdb --args '
   GDB=''
 
-  OIL_GC_STATS=1 OILS_GC_VERBOSE=1 OILS_GC_THRESHOLD=100 $GDB $ysh -c '
+  # Stats show that there are 29 collections
+  OILS_GC_STATS=1 OILS_GC_VERBOSE=1 OILS_GC_THRESHOLD=10 $GDB $ysh -c '
+env | grep OILS
+
 var x = "z"
-for i in (1 .. 1000) { 
-  echo $i
-  # z -> zz creates exponential data
-  setvar x = x=>replace("z", "y")
-  setvar x = x=>replace("y", "z")
+var r = "replace"
+
+for i in (1 .. 2000) { 
+  #echo $i
+
+  # creates exponentially sized strings!
+  # TODO: document string size limits
+  #setvar x = x=>replace("z", "zz")
+
+  # Works fine
+  #setvar x = x=>replace("z", "y")
+
+  # Hm does not crash?
+  setvar x = x=>replace("z", ^"hi $r")
 }
 echo $x
 '
+}
+
+try-replace() {
+  ### failing test from Julian
+
+  #local ysh=_bin/cxx-asan+gcalways/ysh
+  local ysh=_bin/cxx-dbg/ysh
+  #local ysh=_bin/cxx-asan/ysh
+  ninja $ysh
+  #GDB='gdb --args'
+  GDB=''
+
+  # Takes a few tries, even with OILS_GC_THRESHOLD
+
+  local i=0
+  while true; do
+    echo "=== try $i"
+
+    OILS_GC_STATS=1 OILS_GC_VERBOSE=1 OILS_GC_THRESHOLD=10 $GDB $ysh -c '
+shvar FOO=bar {
+  for x in (1 .. 500) {
+    var Q = "hello"
+    setvar Q = Q=>replace("hello","world")
+  }
+}
+echo $Q
+'
+    i=$(( i + 1 ))
+  done
 }
 
 replace-exp() {
@@ -63,11 +108,15 @@ bug-1986() {
   #local ysh=_bin/cxx-asan/ysh
   ninja $ysh
 
-  GDB="gdb --args $PWD/$ysh"
+  local prefix
+  #prefix=''
+  #prefix="$PWD/$ysh -x"
+  prefix="gdb --args $PWD/$ysh"
+
   cd bug/code
 
   set -x
-  $GDB src/amd-scripts/amd-test --select imperfect aomp-amd-staging.cfg 14
+  $prefix src/amd-scripts/amd-test --select imperfect aomp-amd-staging.cfg 14
 }
 
 "$@"
