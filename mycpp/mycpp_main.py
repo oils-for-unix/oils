@@ -311,7 +311,6 @@ def main(argv):
         log('has_vtable %s', virtual.has_vtable)
 
     local_vars = {}  # FuncDef node -> (name, c_type) list
-    field_gc = {}  # ClassDef node -> maskof_Foo() string, if it's required
 
     log('\tmycpp pass: PROTOTYPES')
 
@@ -327,7 +326,6 @@ def main(argv):
                                   const_lookup,
                                   out_f,
                                   local_vars=local_vars,
-                                  field_gc=field_gc,
                                   virtual=virtual,
                                   decl=True)
 
@@ -354,7 +352,6 @@ def main(argv):
                                   const_lookup,
                                   f,
                                   local_vars=local_vars,
-                                  field_gc=field_gc,
                                   stack_roots_warn=opts.stack_roots_warn)
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)

@@ -432,7 +432,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  f,
                  virtual=None,
                  local_vars=None,
-                 field_gc=None,
                  decl=False,
                  forward_decl=False,
                  stack_roots_warn=None):
@@ -445,7 +444,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # This is different from member_vars because we collect it in the
         # 'decl' phase, and write it in the definition phase.
         self.local_vars = local_vars
-        self.field_gc = field_gc
 
         self.decl = decl
         self.forward_decl = forward_decl
@@ -2517,7 +2515,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # So we declare them in the right order
             sorted_member_names = pointer_members + non_pointer_members
 
-            self.field_gc[o] = ('HeapTag::Scanned', len(pointer_members))
+            field_gc = ('HeapTag::Scanned', len(pointer_members))
         else:
             # Has inheritance
 
@@ -2540,7 +2538,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             sorted_member_names = sorted(self.member_vars)
 
-            self.field_gc[o] = ('HeapTag::FixedSize', 'field_mask()')
+            field_gc = ('HeapTag::FixedSize', 'field_mask()')
 
         # Write member variables
 
@@ -2567,7 +2565,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.always_write(';\n')
             self.always_write_ind('}\n')
 
-        obj_tag, obj_arg = self.field_gc[o]
+        obj_tag, obj_arg = field_gc
         if obj_tag == 'HeapTag::FixedSize':
             obj_mask = obj_arg
             obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
