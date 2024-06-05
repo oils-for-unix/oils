@@ -75,7 +75,7 @@ surrogate pair or half. -->
 Now, starting with J8 strings, we define the formats JSON8:
 
     { name: "Alice",
-      signature: b'\y01 ... \yff',  // binary data
+      signature: b'\y01 ... \yff',  # binary data
     }
 
 J8 Lines:
@@ -377,9 +377,9 @@ probably NIL8:
 Example:
 
 ```
-{ name: "Bob",  // comment
+{ name: "Bob",  # comment
   age: 30,
-  sig: b'\y00\y01 ... \yff',  // trailing comma, binary data
+  sig: b'\y00\y01 ... \yff',  # trailing comma, binary data
 }
 ```
 
