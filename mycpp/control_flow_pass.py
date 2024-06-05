@@ -6,9 +6,10 @@ from typing import overload, Union, Optional, Dict
 
 import mypy
 from mypy.nodes import (Block, Expression, Statement, ExpressionStmt, StrExpr,
-                        CallExpr, FuncDef, IfStmt, NameExpr, MemberExpr)
+                        CallExpr, FuncDef, IfStmt, NameExpr, MemberExpr,
+                        IndexExpr, TupleExpr)
 
-from mypy.types import CallableType, Instance, Type, UnionType
+from mypy.types import CallableType, Instance, Type, UnionType, NoneTyp
 
 from mycpp.crash import catch_errors
 from mycpp.util import join_name, split_py_name
@@ -19,6 +20,20 @@ from mycpp import pass_state
 
 class UnsupportedException(Exception):
     pass
+
+
+def GetObjectTypeName(t: Type) -> util.SymbolPath:
+    if isinstance(t, Instance):
+        return split_py_name(t.type.fullname)
+
+    elif isinstance(t, UnionType):
+        assert len(t.items) == 2
+        if isinstance(t.items[0], NoneTyp):
+            return GetObjectTypeName(t.items[1])
+
+        return GetObjectTypeName(t.items[0])
+
+    assert False, t
 
 
 class Build(SimpleVisitor):
@@ -129,6 +144,68 @@ class Build(SimpleVisitor):
 
         # Don't currently get here
         raise AssertionError()
+
+    def get_object_name(self, expr: Expression) -> Optional[util.SymbolPath]:
+        """
+        To do dataflow analysis we need to track changes to objects, which
+        requires naming them. This function returns the name of the object
+        referred to by the given expression. If the expression doesn't refer to
+        an object it returns None.
+
+        Objects are named slightly differently than they appear in the source
+        code.
+
+        Objects referenced by local variables are referred to by the name of the
+        local. For example, the name of the object in both statements below is
+        `x`.
+
+            x = module.SomeObject()
+            x = None
+
+        Member expressions are named after the parent object's type. For
+        example, the names of the objects in the member assignment statements
+        below are both `module.SomeObject.member_a`. This makes it possible to
+        track data flow across object members without having to track individual
+        heap objects, which would increase the search space for analyses and
+        slow things down.
+
+            x = module.SomeObject()
+            y = module.SomeObject()
+            x.member_a = 'foo'
+            y.member_a = 'bar'
+
+        Index expressions are named after their bases, for the same reasons as
+        member expressions. The coarse-grained precision should lead to an
+        over-approximation of where objects are in use, but should not miss any
+        references. This should be fine for our purposes. In the snippet below
+        the last two assignments are named `x` and `module.SomeObject.a_list`.
+
+            x = [None] # list[Thing]
+            y = module.SomeObject()
+            x[0] = Thing()
+            y.a_list[1] = Blah()
+
+        The examples above all deal with assignments, but these rules apply to
+        any expression that uses an object.
+        """
+        if isinstance(expr, NameExpr) and expr.name not in {'True', 'False', 'None'}:
+            return (expr.name,)
+
+        elif isinstance(expr, MemberExpr):
+            dot_expr = self.dot_exprs[expr]
+            if isinstance(dot_expr, pass_state.ModuleMember):
+                return dot_expr.module_path + (dot_expr.member,)
+
+            elif isinstance(dot_expr, pass_state.HeapObjectMember):
+                return GetObjectTypeName(dot_expr.object_type) + (dot_expr.member,)
+
+            elif isinstance(dot_expr, pass_state.StackObjectMember):
+                return GetObjectTypeName(dot_expr.object_type) + (dot_expr.member,)
+
+        elif isinstance(expr, IndexExpr):
+            return self.get_object_name(expr.base)
+
+        return None
 
     #
     # COPIED from IRBuilder
@@ -290,6 +367,9 @@ class Build(SimpleVisitor):
             self.accept(o.expr)
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
+        if util.MaybeSkipIfStmt(self, o):
+            return
+
         cfg = self.current_cfg()
         for expr in o.expr:
             self.accept(expr)
@@ -330,6 +410,48 @@ class Build(SimpleVisitor):
             for t, v, handler in zip(o.types, o.vars, o.handlers):
                 with try_ctx.AddBranch(try_block.exit):
                     self.accept(handler)
+
+    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
+        cfg = self.current_cfg()
+        if cfg:
+            assert len(o.lvalues) == 1
+            lval = o.lvalues[0]
+            lval_names = []
+            if isinstance(lval, TupleExpr):
+                lval_names.extend([self.get_object_name(item) for item in lval.items])
+
+            else:
+                lval_names.append(self.get_object_name(lval))
+
+            assert lval_names, o
+
+            rval_name = self.get_object_name(o.rvalue)
+            if len(lval_names) > 1 and not isinstance(o.rvalue, CallExpr):
+                assert rval_name, o
+
+            # XXX: Most tuple unpacking assignments have functions calls on the
+            # RHS. For now we ignore these since there isn't an obvious way to
+            # handle them until we add a way to represent return values.
+            if lval_names and rval_name and not isinstance(o.rvalue, CallExpr):
+                # When unpacking a tuple assignment, consider each object in the
+                # lvalue as being assigned the rvalue. This reasoning here is
+                # the same as the treatment of index expressions by
+                # get_object_name(). See the docstring of that function for
+                # more details.
+                rval_name = join_name(rval_name, delim='.')
+                for lname in lval_names:
+                    cfg.AddFact(
+                        self.current_statement_id,
+                        pass_state.Assignment(
+                            join_name(lname, delim='.'),
+                            rval_name
+                        )
+                    )
+
+        for lval in o.lvalues:
+            self.accept(lval)
+
+        self.accept(o.rvalue)
 
     # Expressions
 

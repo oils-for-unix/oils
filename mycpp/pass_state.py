@@ -179,6 +179,19 @@ class FunctionCall(Fact):
         return '{}\t{}\t{}\n'.format(func, statement, self.callee)
 
 
+class Assignment(Fact):
+
+    def __init__(self, lhs: str, rhs: str) -> None:
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def name(self) -> str:
+        return 'assign'
+
+    def Generate(self, func: str, statement: int) -> str:
+        return '{}\t{}\t{}\t{}\n'.format(func, statement, self.lhs, self.rhs)
+
+
 class ControlFlowGraph(object):
     """
     A simple control-flow graph.
