@@ -311,6 +311,8 @@ def main(argv):
         log('has_vtable %s', virtual.has_vtable)
 
     local_vars = {}  # FuncDef node -> (name, c_type) list
+    ctx_member_vars = {
+    }  # Dict[ClassDef node for ctx_Foo, Dict[member_name: str, Type]]
 
     log('\tmycpp pass: PROTOTYPES')
 
@@ -326,11 +328,17 @@ def main(argv):
                                   const_lookup,
                                   out_f,
                                   local_vars=local_vars,
+                                  ctx_member_vars=ctx_member_vars,
                                   virtual=virtual,
                                   decl=True)
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
+
+    if 0:
+        log('\tctx_member_vars')
+        from pprint import pformat
+        print(pformat(ctx_member_vars), file=sys.stderr)
 
     log('\tmycpp pass: CONTROL FLOW')
 
@@ -352,6 +360,7 @@ def main(argv):
                                   const_lookup,
                                   f,
                                   local_vars=local_vars,
+                                  ctx_member_vars=ctx_member_vars,
                                   stack_roots_warn=opts.stack_roots_warn)
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)

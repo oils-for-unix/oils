@@ -432,6 +432,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  f,
                  virtual=None,
                  local_vars=None,
+                 ctx_member_vars=None,
                  decl=False,
                  forward_decl=False,
                  stack_roots_warn=None):
@@ -440,10 +441,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.f = f
 
         self.virtual = virtual
-        # local_vars: FuncDef node -> list of type, var
-        # This is different from member_vars because we collect it in the
-        # 'decl' phase, and write it in the definition phase.
-        self.local_vars = local_vars
+
+        # We collect local_vars and ctx-member_vars in the DECL phase, and
+        # write them in the IMPL phase.
+        self.local_vars = local_vars  # Dict[FuncDef node, list of type, var]
+        self.ctx_member_vars = ctx_member_vars  # for rooting
 
         self.decl = decl
         self.forward_decl = forward_decl
@@ -454,19 +456,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent = 0
         self.local_var_list = []  # Collected at assignment
         self.prepend_to_block = None  # For writing vars after {
-        self.current_func_node = None
-        self.current_stmt_node = None
+
         # Temporary lists to use as output params for generators
         self.yield_accumulators = {
         }  # type: Dict[Union[Statement, FuncDef], Tuple[str, str]]
 
-        # This is cleared when we start visiting a class.  Then we visit all the
-        # methods, and accumulate the types of everything that looks like
-        # self.foo = 1.  Then we write C++ class member declarations at the end
-        # of the class.
-        # This is all in the 'decl' phase.
-        self.member_vars: Dict[str, Type] = {}
+        self.current_func_node = None
+        self.current_stmt_node = None
 
+        # DECL pass: self.current_member_vars holds the vars for the current
+        # class.  It's cleared when we start looking at a class.  Then we visit
+        # all the methods, and accumulate the types of everything that looks
+        # like self.foo = 1.  Then we write C++ class member declarations at
+        # the end of the class.
+        self.current_member_vars: Dict[str, Type] = {}
         self.current_class_name = None  # for prototypes
         self.current_method_name = None
 
@@ -1647,7 +1650,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         lval.expr.name == 'self'):
                     #log('    lval.name %s', lval.name)
                     lval_type = self.types[lval]
-                    self.member_vars[lval.name] = lval_type
+                    self.current_member_vars[lval.name] = lval_type
             return
 
         if isinstance(lval, IndexExpr):  # a[x] = 1
@@ -2407,7 +2410,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if self.decl:
             self.always_write(');\n')
-            # Collect member_vars, but don't write anything
+            # Collect current_member_vars, but don't write anything
             self.accept(o.body)
 
             self.current_func_node = None
@@ -2432,8 +2435,107 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                   o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
 
+    def _TracingMetadataDecl(self, o, field_gc, mask_bits):
+        if mask_bits:
+            self.always_write_ind('\n')
+            self.always_write_ind('static constexpr uint32_t field_mask() {\n')
+            self.always_write_ind('  return ')
+            for i, b in enumerate(mask_bits):
+                if i != 0:
+                    self.always_write('\n')
+                    self.always_write_ind('       | ')
+                self.always_write(b)
+            self.always_write(';\n')
+            self.always_write_ind('}\n')
+
+        obj_tag, obj_arg = field_gc
+        if obj_tag == 'HeapTag::FixedSize':
+            obj_mask = obj_arg
+            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
+                                                                    o.name)
+        elif obj_tag == 'HeapTag::Scanned':
+            num_pointers = obj_arg
+            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
+                num_pointers, o.name)
+        else:
+            raise AssertionError(o.name)
+
+        self.always_write('\n')
+        self.always_write_ind('static constexpr ObjHeader obj_header() {\n')
+        self.always_write_ind('  return %s;\n' % obj_header)
+        self.always_write_ind('}\n')
+
+    def _MemberDecl(self, o, base_class_name):
+        # List of field mask expressions
+        mask_bits = []
+        if self.virtual.CanReorderFields(split_py_name(o.fullname)):
+            # No inheritance, so we are free to REORDER member vars, putting
+            # pointers at the front.
+
+            pointer_members = []
+            non_pointer_members = []
+
+            for name in self.current_member_vars:
+                c_type = GetCType(self.current_member_vars[name])
+                if CTypeIsManaged(c_type):
+                    pointer_members.append(name)
+                else:
+                    non_pointer_members.append(name)
+
+            # So we declare them in the right order
+            sorted_member_names = pointer_members + non_pointer_members
+
+            field_gc = ('HeapTag::Scanned', len(pointer_members))
+        else:
+            # Has inheritance
+
+            # The field mask of a derived class is unioned with its base's
+            # field mask.
+            if base_class_name:
+                mask_bits.append(
+                    '%s::field_mask()' %
+                    join_name(base_class_name, strip_package=True))
+
+            for name in sorted(self.current_member_vars):
+                c_type = GetCType(self.current_member_vars[name])
+                if CTypeIsManaged(c_type):
+                    mask_bits.append('maskbit(offsetof(%s, %s))' %
+                                     (o.name, name))
+
+            # A base class with no fields has kZeroMask.
+            if not base_class_name and not mask_bits:
+                mask_bits.append('kZeroMask')
+
+            sorted_member_names = sorted(self.current_member_vars)
+
+            field_gc = ('HeapTag::FixedSize', 'field_mask()')
+
+        # Write member variables
+
+        #log('MEMBERS for %s: %s', o.name, list(self.current_member_vars.keys()))
+        if len(self.current_member_vars):
+            if base_class_name:
+                self.always_write('\n')  # separate from functions
+
+            for name in sorted_member_names:
+                c_type = GetCType(self.current_member_vars[name])
+                self.always_write_ind('%s %s;\n', c_type, name)
+
+        if self.current_class_name[-1].startswith('ctx_'):
+            # Copy ctx member vars out of this class
+            assert self.ctx_member_vars is not None
+            self.ctx_member_vars[o] = dict(self.current_member_vars)
+        else:
+            self._TracingMetadataDecl(o, field_gc, mask_bits)
+
+        self.always_write('\n')
+        self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
+        self.indent -= 1
+        self.always_write_ind('};\n')
+        self.always_write('\n')
+
     def _ClassDefDecl(self, o, base_class_name):
-        self.member_vars.clear()  # make a new list
+        self.current_member_vars.clear()  # make a new list
 
         self.always_write_ind('class %s', o.name)  # block after this
 
@@ -2492,102 +2594,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # TODO: Remove this?  Everything under a class is a method?
             self.accept(stmt)
 
-        self._MemberImpl(o, base_class_name)
-
-    def _TracingMetadataImpl(self, o, field_gc, mask_bits):
-        if mask_bits:
-            self.always_write_ind('\n')
-            self.always_write_ind('static constexpr uint32_t field_mask() {\n')
-            self.always_write_ind('  return ')
-            for i, b in enumerate(mask_bits):
-                if i != 0:
-                    self.always_write('\n')
-                    self.always_write_ind('       | ')
-                self.always_write(b)
-            self.always_write(';\n')
-            self.always_write_ind('}\n')
-
-        obj_tag, obj_arg = field_gc
-        if obj_tag == 'HeapTag::FixedSize':
-            obj_mask = obj_arg
-            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
-                                                                    o.name)
-        elif obj_tag == 'HeapTag::Scanned':
-            num_pointers = obj_arg
-            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
-                num_pointers, o.name)
-        else:
-            raise AssertionError(o.name)
-
-        self.always_write('\n')
-        self.always_write_ind('static constexpr ObjHeader obj_header() {\n')
-        self.always_write_ind('  return %s;\n' % obj_header)
-        self.always_write_ind('}\n')
-
-    def _MemberImpl(self, o, base_class_name):
-        # List of field mask expressions
-        mask_bits = []
-        if self.virtual.CanReorderFields(split_py_name(o.fullname)):
-            # No inheritance, so we are free to REORDER member vars, putting
-            # pointers at the front.
-
-            pointer_members = []
-            non_pointer_members = []
-
-            for name in self.member_vars:
-                c_type = GetCType(self.member_vars[name])
-                if CTypeIsManaged(c_type):
-                    pointer_members.append(name)
-                else:
-                    non_pointer_members.append(name)
-
-            # So we declare them in the right order
-            sorted_member_names = pointer_members + non_pointer_members
-
-            field_gc = ('HeapTag::Scanned', len(pointer_members))
-        else:
-            # Has inheritance
-
-            # The field mask of a derived class is unioned with its base's
-            # field mask.
-            if base_class_name:
-                mask_bits.append(
-                    '%s::field_mask()' %
-                    join_name(base_class_name, strip_package=True))
-
-            for name in sorted(self.member_vars):
-                c_type = GetCType(self.member_vars[name])
-                if CTypeIsManaged(c_type):
-                    mask_bits.append('maskbit(offsetof(%s, %s))' %
-                                     (o.name, name))
-
-            # A base class with no fields has kZeroMask.
-            if not base_class_name and not mask_bits:
-                mask_bits.append('kZeroMask')
-
-            sorted_member_names = sorted(self.member_vars)
-
-            field_gc = ('HeapTag::FixedSize', 'field_mask()')
-
-        # Write member variables
-
-        #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
-        if len(self.member_vars):
-            if base_class_name:
-                self.always_write('\n')  # separate from functions
-
-            for name in sorted_member_names:
-                c_type = GetCType(self.member_vars[name])
-                self.always_write_ind('%s %s;\n', c_type, name)
-
-        if not self.current_class_name[-1].startswith('ctx_'):
-            self._TracingMetadataImpl(o, field_gc, mask_bits)
-
-        self.always_write('\n')
-        self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
-        self.indent -= 1
-        self.always_write_ind('};\n')
-        self.always_write('\n')
+        self._MemberDecl(o, base_class_name)
 
     def _ConstructorImpl(self, o, stmt, base_class_name):
         self.def_write('\n')
@@ -2595,7 +2602,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
         self.def_write(')')
 
-        # Check for Base.__init__(self, ...) and move that to the initializer list.
         first_index = 0
 
         # Skip docstring
@@ -2604,6 +2610,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 isinstance(maybe_skip_stmt.expr, StrExpr)):
             first_index += 1
 
+        # Check for Base.__init__(self, ...) and move that to the initializer list.
         first_stmt = stmt.body.body[first_index]
         if (isinstance(first_stmt, ExpressionStmt) and
                 isinstance(first_stmt.expr, CallExpr)):
@@ -2639,8 +2646,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.def_write('// TODO: gHeap.PushRoot\n')
             if 0:
                 pointer_members = []  # duplicate logic above
-                for name in self.member_vars:
-                    c_type = GetCType(self.member_vars[name])
+                for name in self.current_member_vars:
+                    c_type = GetCType(self.current_member_vars[name])
                     if CTypeIsManaged(c_type):
                         pointer_members.append(name)
 
@@ -2684,8 +2691,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         block = o.defs
         for stmt in block.body:
             if isinstance(stmt, FuncDef):
-                # Collect __init__ calls within __init__, and turn them into
-                # initializer lists.
                 if stmt.name == '__init__':
                     self._ConstructorImpl(o, stmt, base_class_name)
                     continue
