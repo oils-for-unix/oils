@@ -14,9 +14,10 @@ _ = log
 
 
 class Virtual(object):
+    """Calculate which C++ methods need the virtual keyword.
+
+    See unit test for example usage.
     """
-  See unit test for example usage.
-  """
 
     def __init__(self) -> None:
         self.methods: dict[SymbolPath, list[str]] = defaultdict(list)
@@ -65,11 +66,7 @@ class Virtual(object):
         self.subclasses[base_class].append(subclass)
 
     def Calculate(self) -> None:
-        """
-    Call this after the forward declare pass.
-
-    TODO: Are there bugs based on conflicting class names?
-    """
+        """Call this after the forward declare pass."""
         for base_class, subclasses in self.subclasses.items():
             self.can_reorder_fields[base_class] = False
 

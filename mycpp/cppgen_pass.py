@@ -2585,6 +2585,97 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.always_write_ind('};\n')
         self.always_write('\n')
 
+    def _ConstructorDef(self, o, stmt, base_class_name):
+        self.def_write('\n')
+        self.def_write('%s::%s(', o.name, o.name)
+        self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
+        self.def_write(')')
+
+        # Check for Base.__init__(self, ...) and move that to the initializer list.
+        first_index = 0
+
+        # Skip docstring
+        maybe_skip_stmt = stmt.body.body[0]
+        if (isinstance(maybe_skip_stmt, ExpressionStmt) and
+                isinstance(maybe_skip_stmt.expr, StrExpr)):
+            first_index += 1
+
+        first_stmt = stmt.body.body[first_index]
+        if (isinstance(first_stmt, ExpressionStmt) and
+                isinstance(first_stmt.expr, CallExpr)):
+            expr = first_stmt.expr
+            #log('expr %s', expr)
+            callee = first_stmt.expr.callee
+
+            # TextOutput() : ColorOutput(f), ... {
+            if (isinstance(callee, MemberExpr) and callee.name == '__init__'):
+                base_constructor_args = expr.args
+                #log('ARGS %s', base_constructor_args)
+                self.def_write(' : %s(',
+                               join_name(base_class_name, strip_package=True))
+                for i, arg in enumerate(base_constructor_args):
+                    if i == 0:
+                        continue  # Skip 'this'
+                    if i != 1:
+                        self.def_write(', ')
+                    self.accept(arg)
+                self.def_write(')')
+
+                first_index += 1
+
+        self.def_write(' {\n')
+
+        # Now visit the rest of the statements
+        self.indent += 1
+
+        # TODO:
+        # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
+        # members
+        if self.current_class_name[-1].startswith('ctx_'):
+            self.def_write('// TODO: gHeap.PushRoot\n')
+            if 0:
+                pointer_members = []  # duplicate logic above
+                for name in self.member_vars:
+                    c_type = GetCType(self.member_vars[name])
+                    if CTypeIsManaged(c_type):
+                        pointer_members.append(name)
+
+                self.indent += 1
+                if pointer_members:
+                    for name in pointer_members:
+                        self.def_write('gHeap.PushRoot(&%s);\n' % name)
+                else:
+                    self.def_write('// (no pointer members)\n')
+                self.indent -= 1
+
+        for node in stmt.body.body[first_index:]:
+            self.accept(node)
+        self.indent -= 1
+        self.def_write('}\n')
+
+    def _DestructorDef(self, o, stmt, base_class_name):
+        self.always_write('\n')
+        self.always_write_ind('%s::~%s()', o.name, o.name)
+
+        self.def_write(' {\n')
+        self.indent += 1
+        if self.current_class_name[-1].startswith('ctx_'):
+            self.def_write('// TODO: gHeap.PopRoot\n')
+        else:
+            self.report_error(
+                o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
+                (self.current_class_name, ))
+            return
+
+        # For ctx_* classes only , gHeap.PopRoot() for all the
+        # pointer members
+        #
+        # Only ctx_* should have __exit__ members though
+        for node in stmt.body.body:
+            self.accept(node)
+        self.indent -= 1
+        self.def_write('}\n')
+
     def _ClassDefDefPass(self, o, base_class_name):
         block = o.defs
         for stmt in block.body:
@@ -2592,109 +2683,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 # Collect __init__ calls within __init__, and turn them into
                 # initializer lists.
                 if stmt.name == '__init__':
-                    self.def_write('\n')
-                    self.def_write('%s::%s(', o.name, o.name)
-                    self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
-                    self.def_write(')')
+                    self._ConstructorDef(o, stmt, base_class_name)
+                    continue
 
-                    # Check for Base.__init__(self, ...) and move that to the initializer list.
-
-                    first_index = 0
-
-                    # Skip docstring
-                    maybe_skip_stmt = stmt.body.body[0]
-                    if (isinstance(maybe_skip_stmt, ExpressionStmt) and
-                            isinstance(maybe_skip_stmt.expr, StrExpr)):
-                        first_index += 1
-
-                    first_stmt = stmt.body.body[first_index]
-                    if (isinstance(first_stmt, ExpressionStmt) and
-                            isinstance(first_stmt.expr, CallExpr)):
-                        expr = first_stmt.expr
-                        #log('expr %s', expr)
-                        callee = first_stmt.expr.callee
-
-                        # TextOutput() : ColorOutput(f), ... {
-                        if (isinstance(callee, MemberExpr) and
-                                callee.name == '__init__'):
-                            base_constructor_args = expr.args
-                            #log('ARGS %s', base_constructor_args)
-                            self.def_write(
-                                ' : %s(',
-                                join_name(base_class_name, strip_package=True))
-                            for i, arg in enumerate(base_constructor_args):
-                                if i == 0:
-                                    continue  # Skip 'this'
-                                if i != 1:
-                                    self.def_write(', ')
-                                self.accept(arg)
-                            self.def_write(')')
-
-                            first_index += 1
-
-                    self.def_write(' {\n')
-
-                    # Debug Tag!
-                    # self.def_write('  type_tag_ = kMycppDebugType;\n')
-
-                    # Now visit the rest of the statements
-                    self.indent += 1
-
-                    # TODO:
-                    # For ctx_* classes only, do gHeap.PushRoot() for all the
-                    # pointer members
-                    if self.current_class_name[-1].startswith('ctx_'):
-                        self.def_write('// TODO: gHeap.PushRoot\n')
-                        if 0:
-                            pointer_members = []  # duplicate logic above
-                            for name in self.member_vars:
-                                c_type = GetCType(self.member_vars[name])
-                                if CTypeIsManaged(c_type):
-                                    pointer_members.append(name)
-
-                            self.indent += 1
-                            if pointer_members:
-                                for name in pointer_members:
-                                    self.def_write('gHeap.PushRoot(&%s);\n' %
-                                                   name)
-                            else:
-                                self.def_write('// (no pointer members)\n')
-                            self.indent -= 1
-
-                    for node in stmt.body.body[first_index:]:
-                        self.accept(node)
-                    self.indent -= 1
-                    self.def_write('}\n')
-
-                    continue  # wrote FuncDef for constructor
-
-                if stmt.name == '__enter__':
+                if stmt.name == '__enter__':  # We never use these
                     continue
 
                 if stmt.name == '__exit__':
-                    self.always_write('\n')
-                    self.always_write_ind('%s::~%s()', o.name, o.name)
-
-                    self.def_write(' {\n')
-                    self.indent += 1
-                    if self.current_class_name[-1].startswith('ctx_'):
-                        self.def_write('// TODO: gHeap.PopRoot\n')
-                    else:
-                        self.report_error(
-                            o,
-                            'Any class with __exit__ should be named ctx_Foo (%s)'
-                            % (self.current_class_name, ))
-                        return
-
-                    # For ctx_* classes only , gHeap.PopRoot() for all the
-                    # pointer members
-                    #
-                    # Only ctx_* should have __exit__ members though
-                    for node in stmt.body.body:
-                        self.accept(node)
-                    self.indent -= 1
-                    self.def_write('}\n')
-
+                    self._DestructorDef(o, stmt, base_class_name)
                     continue
 
                 self.accept(stmt)
