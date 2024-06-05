@@ -1339,7 +1339,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             op = '.' if is_return else '->'
             self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
 
-    def _ListComprehensionDef(self, o, lval, c_type):
+    def _ListComprehensionImpl(self, o, lval, c_type):
         """
         Special case for list comprehensions.  Note that the LHS MUST be on the
         LHS, so we can append to it.
@@ -1429,7 +1429,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.def_write_ind('}\n')
 
-    def _NewDictDef(self, lval):
+    def _AssignNewDictImpl(self, lval):
         """
            d = NewDict()  # type: Dict[int, int]
         -> auto* d = NewDict<int, int>();
@@ -1464,7 +1464,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.def_write_ind('%s%s = Alloc<%s>();\n', prefix, lval.name,
                            c_type[:-1])
 
-    def _CastDef(self, o, lval):
+    def _AssignCastImpl(self, o, lval):
         """
         is_downcast_and_shadow idiom:
         
@@ -1498,7 +1498,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.accept(call.args[1])  # variable being casted
         self.def_write(');\n')
 
-    def _IteratorDef(self, o, lval, rval_type):
+    def _IteratorImpl(self, o, lval, rval_type):
         # We're calling a generator. Create a temporary List<T> on the stack
         # to accumulate the results in one big batch, then wrap it in
         # ListIter<T>.
@@ -1594,17 +1594,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             callee = o.rvalue.callee
 
             if callee.name == 'NewDict':
-                self._NewDictDef(lval)
+                self._AssignNewDictImpl(lval)
                 return
 
             if callee.name == 'cast':
-                self._CastDef(o, lval)
+                self._AssignCastImpl(o, lval)
                 return
 
             rval_type = self.types[o.rvalue]
             if (isinstance(rval_type, Instance) and
                     rval_type.type.fullname == 'typing.Iterator'):
-                self._IteratorDef(o, lval, rval_type)
+                self._IteratorImpl(o, lval, rval_type)
                 return
 
         if isinstance(lval, NameExpr):
@@ -1622,7 +1622,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.def_write_ind('%s %s = ', c_type, lval.name)
 
             if isinstance(o.rvalue, ListComprehension):
-                self._ListComprehensionDef(o, lval, c_type)
+                self._ListComprehensionImpl(o, lval, c_type)
                 return
 
             self.accept(o.rvalue)
@@ -2434,7 +2434,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                   o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
 
-    def _ClassDefDeclPass(self, o, base_class_name):
+    def _ClassDefDecl(self, o, base_class_name):
         self.member_vars.clear()  # make a new list
 
         self.always_write_ind('class %s', o.name)  # block after this
@@ -2495,6 +2495,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # TODO: Remove this?  Everything under a class is a method?
             self.accept(stmt)
 
+        self._MemberImpl(o, base_class_name)
+
+    def _MemberImpl(self, o, base_class_name):
         # List of field mask expressions
         mask_bits = []
         if self.virtual.CanReorderFields(split_py_name(o.fullname)):
@@ -2587,7 +2590,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.always_write_ind('};\n')
         self.always_write('\n')
 
-    def _ConstructorDef(self, o, stmt, base_class_name):
+    def _ConstructorImpl(self, o, stmt, base_class_name):
         self.def_write('\n')
         self.def_write('%s::%s(', o.name, o.name)
         self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
@@ -2655,7 +2658,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent -= 1
         self.def_write('}\n')
 
-    def _DestructorDef(self, o, stmt, base_class_name):
+    def _DestructorImpl(self, o, stmt, base_class_name):
         self.always_write('\n')
         self.always_write_ind('%s::~%s()', o.name, o.name)
 
@@ -2678,21 +2681,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent -= 1
         self.def_write('}\n')
 
-    def _ClassDefDefPass(self, o, base_class_name):
+    def _ClassDefImpl(self, o, base_class_name):
         block = o.defs
         for stmt in block.body:
             if isinstance(stmt, FuncDef):
                 # Collect __init__ calls within __init__, and turn them into
                 # initializer lists.
                 if stmt.name == '__init__':
-                    self._ConstructorDef(o, stmt, base_class_name)
+                    self._ConstructorImpl(o, stmt, base_class_name)
                     continue
 
                 if stmt.name == '__enter__':  # We never use these
                     continue
 
                 if stmt.name == '__exit__':
-                    self._DestructorDef(o, stmt, base_class_name)
+                    self._DestructorImpl(o, stmt, base_class_name)
                     continue
 
                 self.accept(stmt)
@@ -2723,17 +2726,17 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         if self.decl:
-            self._ClassDefDeclPass(o, base_class_name)
+            self._ClassDefDecl(o, base_class_name)
             return
 
         self.current_class_name = split_py_name(o.fullname)
 
-        self._ClassDefDefPass(o, base_class_name)
+        self._ClassDefImpl(o, base_class_name)
 
         self.current_class_name = None  # Stop prefixing functions with class
 
     def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> T:
-        pass
+        self.report_error(o, 'global not allowed')
 
     def visit_nonlocal_decl(self, o: 'mypy.nodes.NonlocalDecl') -> T:
         pass
@@ -3108,4 +3111,4 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             'File should start with "from __future__ import print_function"')
 
     def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> T:
-        pass
+        self.report_error(o, 'exec not allowed')

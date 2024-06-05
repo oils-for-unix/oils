@@ -232,7 +232,7 @@ test-invalid-examples() {
         expected_status=2
         ;;
       */invalid_python.py)
-        expected_status=3
+        expected_status=5
         ;;
       */invalid_switch.py)
         expected_status=5

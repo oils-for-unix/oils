@@ -19,6 +19,17 @@ def f():
     yield 42
 
 
+myglobal = 'bad'
+
+
+def g():
+    # type: () -> None
+    global myglobal
+    print('g')
+
+    exec('print("hi")')
+
+
 class Base:
     pass
 
