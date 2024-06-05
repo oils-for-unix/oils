@@ -2448,7 +2448,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         block = o.defs
 
         self.indent += 1
-        self.current_class_name = split_py_name(o.fullname)
         for stmt in block.body:
 
             # Ignore things that look like docstrings
@@ -2494,6 +2493,36 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(stmt)
 
         self._MemberImpl(o, base_class_name)
+
+    def _TracingMetadataImpl(self, o, field_gc, mask_bits):
+        if mask_bits:
+            self.always_write_ind('\n')
+            self.always_write_ind('static constexpr uint32_t field_mask() {\n')
+            self.always_write_ind('  return ')
+            for i, b in enumerate(mask_bits):
+                if i != 0:
+                    self.always_write('\n')
+                    self.always_write_ind('       | ')
+                self.always_write(b)
+            self.always_write(';\n')
+            self.always_write_ind('}\n')
+
+        obj_tag, obj_arg = field_gc
+        if obj_tag == 'HeapTag::FixedSize':
+            obj_mask = obj_arg
+            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
+                                                                    o.name)
+        elif obj_tag == 'HeapTag::Scanned':
+            num_pointers = obj_arg
+            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
+                num_pointers, o.name)
+        else:
+            raise AssertionError(o.name)
+
+        self.always_write('\n')
+        self.always_write_ind('static constexpr ObjHeader obj_header() {\n')
+        self.always_write_ind('  return %s;\n' % obj_header)
+        self.always_write_ind('}\n')
 
     def _MemberImpl(self, o, base_class_name):
         # List of field mask expressions
@@ -2551,36 +2580,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 c_type = GetCType(self.member_vars[name])
                 self.always_write_ind('%s %s;\n', c_type, name)
 
-        self.current_class_name = None
-
-        if mask_bits:
-            self.always_write_ind('\n')
-            self.always_write_ind('static constexpr uint32_t field_mask() {\n')
-            self.always_write_ind('  return ')
-            for i, b in enumerate(mask_bits):
-                if i != 0:
-                    self.always_write('\n')
-                    self.always_write_ind('       | ')
-                self.always_write(b)
-            self.always_write(';\n')
-            self.always_write_ind('}\n')
-
-        obj_tag, obj_arg = field_gc
-        if obj_tag == 'HeapTag::FixedSize':
-            obj_mask = obj_arg
-            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
-                                                                    o.name)
-        elif obj_tag == 'HeapTag::Scanned':
-            num_pointers = obj_arg
-            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
-                num_pointers, o.name)
-        else:
-            raise AssertionError(o.name)
-
-        self.always_write('\n')
-        self.always_write_ind('static constexpr ObjHeader obj_header() {\n')
-        self.always_write_ind('  return %s;\n' % obj_header)
-        self.always_write_ind('}\n')
+        if not self.current_class_name[-1].startswith('ctx_'):
+            self._TracingMetadataImpl(o, field_gc, mask_bits)
 
         self.always_write('\n')
         self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
@@ -2724,13 +2725,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             return
 
         if self.decl:
+            self.current_class_name = split_py_name(o.fullname)
             self._ClassDefDecl(o, base_class_name)
+            self.current_class_name = None
             return
 
         self.current_class_name = split_py_name(o.fullname)
-
         self._ClassDefImpl(o, base_class_name)
-
         self.current_class_name = None  # Stop prefixing functions with class
 
     def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> T:
