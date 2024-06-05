@@ -1650,7 +1650,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         lval.expr.name == 'self'):
                     #log('    lval.name %s', lval.name)
                     lval_type = self.types[lval]
-                    self.current_member_vars[lval.name] = lval_type
+                    c_type = GetCType(lval_type)
+                    is_managed = CTypeIsManaged(c_type)
+                    self.current_member_vars[lval.name] = (lval_type, c_type,
+                                                           is_managed)
             return
 
         if isinstance(lval, IndexExpr):  # a[x] = 1
@@ -2391,7 +2394,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # accumulator for the results.
             self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
 
-        # Avoid ++ warnings by prepending [[noreturn]]
+        # Avoid C++ warnings by prepending [[noreturn]]
         noreturn = ''
         if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage',
                          'p_die'):
@@ -2410,23 +2413,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if self.decl:
             self.always_write(');\n')
-            # Collect current_member_vars, but don't write anything
-            self.accept(o.body)
-
-            self.current_func_node = None
-            return
-
-        self.def_write(') ')
-
-        # Write local vars we collected in the 'decl' phase
-        if not self.forward_decl and not self.decl:
-            arg_names = [arg.variable.name for arg in o.arguments]
-            #log('arg_names %s', arg_names)
-            #log('local_vars %s', self.local_vars[o])
-            self.prepend_to_block = [
-                (lval_name, c_type, lval_name in arg_names)
-                for (lval_name, c_type) in self.local_vars[o]
-            ]
+        else:
+            self.def_write(') ')
+            if not self.forward_decl:
+                arg_names = [arg.variable.name for arg in o.arguments]
+                #log('arg_names %s', arg_names)
+                #log('local_vars %s', self.local_vars[o])
+                self.prepend_to_block = [
+                    (lval_name, c_type, lval_name in arg_names)
+                    for (lval_name, c_type) in self.local_vars[o]
+                ]
 
         self.accept(o.body)
         self.current_func_node = None
@@ -2476,8 +2472,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             non_pointer_members = []
 
             for name in self.current_member_vars:
-                c_type = GetCType(self.current_member_vars[name])
-                if CTypeIsManaged(c_type):
+                _, c_type, is_managed = self.current_member_vars[name]
+                if is_managed:
                     pointer_members.append(name)
                 else:
                     non_pointer_members.append(name)
@@ -2497,8 +2493,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                     join_name(base_class_name, strip_package=True))
 
             for name in sorted(self.current_member_vars):
-                c_type = GetCType(self.current_member_vars[name])
-                if CTypeIsManaged(c_type):
+                _, c_type, is_managed = self.current_member_vars[name]
+                if is_managed:
                     mask_bits.append('maskbit(offsetof(%s, %s))' %
                                      (o.name, name))
 
@@ -2518,7 +2514,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 self.always_write('\n')  # separate from functions
 
             for name in sorted_member_names:
-                c_type = GetCType(self.current_member_vars[name])
+                _, c_type, _ = self.current_member_vars[name]
                 self.always_write_ind('%s %s;\n', c_type, name)
 
         if self.current_class_name[-1].startswith('ctx_'):
@@ -2639,25 +2635,15 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Now visit the rest of the statements
         self.indent += 1
 
-        # TODO:
-        # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
-        # members
         if self.current_class_name[-1].startswith('ctx_'):
-            self.def_write('// TODO: gHeap.PushRoot\n')
+            # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
+            # members
+            member_vars = self.ctx_member_vars[o]
             if 0:
-                pointer_members = []  # duplicate logic above
-                for name in self.current_member_vars:
-                    c_type = GetCType(self.current_member_vars[name])
-                    if CTypeIsManaged(c_type):
-                        pointer_members.append(name)
-
-                self.indent += 1
-                if pointer_members:
-                    for name in pointer_members:
-                        self.def_write('gHeap.PushRoot(&%s);\n' % name)
-                else:
-                    self.def_write('// (no pointer members)\n')
-                self.indent -= 1
+                for name in sorted(member_vars):
+                    _, c_type, is_managed = member_vars[name]
+                    if is_managed:
+                        self.def_write_ind('gHeap.PushRoot(reinterpret_cast<RawObject**>(&%s));\n' % name)
 
         for node in stmt.body.body[first_index:]:
             self.accept(node)
@@ -2670,20 +2656,29 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.def_write(' {\n')
         self.indent += 1
+
+        # TODO:
+        # - Can't throw exception here
+        # - If you 'return' early, that messes up the PopRoot invariant!
+
+        for node in stmt.body.body:
+            self.accept(node)
+
+        # For ctx_* classes only , gHeap.PopRoot() for all the
+        # pointer members
         if self.current_class_name[-1].startswith('ctx_'):
-            self.def_write('// TODO: gHeap.PopRoot\n')
+            member_vars = self.ctx_member_vars[o]
+            if 0:
+                for name in sorted(member_vars):
+                    _, c_type, is_managed = member_vars[name]
+                    if is_managed:
+                        self.def_write_ind('gHeap.PopRoot();\n')
         else:
             self.report_error(
                 o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
                 (self.current_class_name, ))
             return
 
-        # For ctx_* classes only , gHeap.PopRoot() for all the
-        # pointer members
-        #
-        # Only ctx_* should have __exit__ members though
-        for node in stmt.body.body:
-            self.accept(node)
         self.indent -= 1
         self.def_write('}\n')
 
