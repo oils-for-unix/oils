@@ -17,27 +17,43 @@ module stdlib/testing || return 0
 
 source --builtin args.ysh
 
-# Opt in to lazy evaluation
+proc assert ( ; cond ; fail_message='default fail message') {
+  echo 'hi from assert'
 
-proc assert ( ; cond LAZY ) {
-  echo hi
+  = cond
 
-  # TODO: evalExpr() builtin
+  # I think this might be ready now?
+
   var val = evalExpr(cond) 
-  if (not val) {
-    # TODO: if it's an expr.Binary
-    # Then
-    #
-    # Then print $left != $right
-    #
-    # I think you need to introspect on the source code
-    #
-    # Or print '5 != 3'
-    #
-    # Or you can evaluate left and right separately, and then compare them
 
-    echo
+  echo
+  echo 'value'
+  = val
+  pp line (val)
+
+  = fail_message
+
+  if (val) {
+    echo 'OK'
+  } else {
+    var m = evalExpr(fail_message) 
+    echo "FAIL - this is where we extract the string - $m"
   }
+}
+
+proc test-assert {
+  var x = 42
+  assert [42 === x]
+}
+
+proc test-expr ( ; expr ) {
+  echo 'expr'
+  pp line (expr)
+}
+
+proc test-named ( ; ; n=^[99] ) {
+  echo 'n'
+  pp line (n)
 }
 
 # What happens when there are duplicate test IDs?
@@ -59,7 +75,7 @@ var _describe_list = []
 
 proc describe (test_id ; ; ; block) {
   echo describe
-  = desc
+  #= desc
 
   # TODO:
   # - need append
@@ -69,20 +85,20 @@ proc describe (test_id ; ; ; block) {
   # Need to clean this up
   # append (_describe, cmd)  # does NOT work!
 
-  _ _describe_list->append(block)
+  call _describe_list->append(block)
+}
+
+proc Args {
+  echo TODO
 }
 
 # Problem: this creates a global variable?
-Args :spec {
+Args (&spec) {
   flag --filter 'Regex of test descriptions'
 }
 
 proc run-tests {
-
-  # TODO: fix this crap
-  var opt = null
-  var i = null
-  setvar opt, i = parseArgs(spec, ARGV)
+  var opt, i = parseArgs(spec, ARGV)
 
   # TODO:
   # - parse --filter foo, which you can use eggex for!

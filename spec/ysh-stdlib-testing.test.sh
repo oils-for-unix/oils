@@ -1,5 +1,85 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 5
+
+#### value.Expr test - positional test
+
+source --builtin testing.ysh
+
+echo 'parens'
+test-expr (42 + 1)
+echo
+
+echo 'brackets'
+test-expr [42 + 1]
+echo
+
+echo 'expr in parens'
+test-expr (^[42 + 1])
+echo
+
+## STDOUT:
+## END
+
+#### value.Expr test - named test
+
+source --builtin testing.ysh
+
+echo 'parens'
+test-named (n=42 + 1)
+echo
+
+echo 'brackets'
+test-named [n=42 + 1]
+echo
+
+echo 'expr in parens'
+test-named (n=^[42 + 1])
+echo
+
+echo 'no value'
+test-named
+echo
+
+## STDOUT:
+## END
+
+#### assert builtin
+
+source --builtin testing.ysh  # get rid of this line later?
+
+var x = 42
+
+# how do you get the code string here?
+
+assert [42 === x]
+
+assert [42 < x]
+
+#assert [42 < x; fail_message='message']
+
+#assert (^[(42 < x)], fail_message='passed message')
+
+# BUG
+assert [42 < x, fail_message='passed message']
+
+## STDOUT:
+## END
+
+#### ysh --tool test file
+
+cat >mytest.ysh <<EOF
+echo hi
+EOF
+
+# which ysh
+
+# the test framework sets $SH to bin/ysh
+# but ysh is already installed on this machine
+
+$SH --tool test mytest.ysh
+
+## STDOUT:
+## END
 
 # Hm can we do this entirely in user code, not as a builtin?
 

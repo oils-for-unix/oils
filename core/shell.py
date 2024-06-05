@@ -1087,6 +1087,9 @@ def Main(
         elif tool_name == 'fmt':
             fmt.Format(arena, node)
 
+        elif tool_name == 'test':
+            raise AssertionError('TODO')
+
         elif tool_name == 'ysh-ify':
             ysh_ify.Ysh_ify(arena, node)
 
