@@ -352,9 +352,13 @@ func_cpython_reset_locale(PyObject *self, PyObject *unused)
     //   On startup of the main program, the portable "C" locale is selected as default.
 
     // Python overrides this, so we set it back.
-    if (setlocale(LC_CTYPE, "C.utf8") == NULL) {
-        PyErr_SetString(PyExc_SystemError, "Couldn't set locale to C.utf8");
-        return NULL;
+    if (setlocale(LC_CTYPE, "C.UTF-8") == NULL) {
+        // Our CI machines don't work with C.UTF-8, even though it's supposed
+        // to exist?
+        if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL) {
+            PyErr_SetString(PyExc_SystemError, "Couldn't set locale to C.UTF-8 or en_US.UTF-8");
+            return NULL;
+        }
     }
     Py_RETURN_NONE;
 }

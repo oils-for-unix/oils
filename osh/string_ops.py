@@ -500,8 +500,8 @@ class GlobReplacer(object):
                 return s
 
             try:
-                return _PatSubAll(s, regex,
-                                  self.replace_str)  # loop over matches
+                # loop over matches
+                return _PatSubAll(s, regex, self.replace_str)
             except RuntimeError as e:
                 # Not sure if this is possible since we convert from glob:
                 # libc.regex_first_group_match raises RuntimeError on regex syntax

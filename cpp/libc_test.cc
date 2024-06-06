@@ -1,7 +1,9 @@
 #include "cpp/libc.h"
 
+#include <locale.h>  // setlocale()
 #include <regex.h>   // regcomp()
 #include <unistd.h>  // gethostname()
+#include <wctype.h>  // towupper()
 
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
@@ -248,6 +250,81 @@ TEST regex_alt_with_capture() {
   PASS();
 }
 
+TEST regex_unicode() {
+  // TODO
+  PASS();
+
+  regex_t pat;
+
+  const char* p = "_._";
+  if (regcomp(&pat, p, REG_EXTENDED) != 0) {
+    FAIL();
+  }
+  int outlen = pat.re_nsub + 1;  // number of captures
+  regmatch_t* pmatch =
+      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
+
+  int result;
+  const char* a = "_x_";
+  result = regexec(&pat, a, outlen, pmatch, 0);
+  ASSERT_EQ_FMT(0, result, "%d");
+
+  // Doesn't change anything
+  // int lc_what = LC_ALL;
+  int lc_what = LC_CTYPE;
+
+  char* saved_locale = setlocale(lc_what, NULL);
+
+  if (setlocale(lc_what, "C.utf8") == NULL) {
+    log("Couldn't set locale to C.utf8");
+    FAIL();
+  }
+
+  const char* u = "_μ_";
+  result = regexec(&pat, u, outlen, pmatch, 0);
+
+  if (setlocale(lc_what, saved_locale) == NULL) {
+    log("Couldn't restore locale");
+    FAIL();
+  }
+
+  free(pmatch);  // Clean up before test failures
+  regfree(&pat);
+
+  ASSERT_EQ_FMT(0, result, "%d");
+
+  PASS();
+}
+
+TEST casefold_test() {
+  // TODO
+  PASS();
+
+#if 0
+  // Turkish
+  if (setlocale(LC_CTYPE, "tr_TR.utf8") == NULL) {
+    log("Couldn't set locale to tr_TR.utf8");
+    FAIL();
+  }
+#endif
+
+  locale_t turkish = newlocale(LC_CTYPE, "tr_TR.utf8", NULL);
+
+  int u = toupper('i');
+  int wu = towupper('i');
+  int wul = towupper_l('i', turkish);
+
+  // Regular: upper case i is I, 73
+  // Turkish: upper case is 304
+  log("upper = %d", u);
+  log("wide upper = %d", wu);
+  log("wide upper locale = %d", wul);
+
+  freelocale(turkish);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -268,6 +345,9 @@ int main(int argc, char** argv) {
   RUN_TEST(regex_repeat_with_capture);
   RUN_TEST(regex_alt_with_capture);
   RUN_TEST(regex_nested_capture);
+  RUN_TEST(regex_unicode);
+
+  RUN_TEST(casefold_test);
 
   gHeap.CleanProcessExit();
 

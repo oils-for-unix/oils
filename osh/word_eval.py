@@ -897,6 +897,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
             #   "Glob is not in CANONICAL FORM".
             # - Propagate location info back to the 'op.pat' word.
             pass
+        #log('regex %r', regex)
         replacer = string_ops.GlobReplacer(regex, replace_str, op.slash_tok)
 
         with tagswitch(val) as case2:
