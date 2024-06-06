@@ -62,8 +62,8 @@ class ctx_DirStack(object):
         state.Push(entry)
 
         # Bug #1986: add heap-allocated member of context manager
-        #self.restored = []  # type: List[str]
-        #self.restored.append('foo')
+        self.restored = []  # type: List[str]
+        self.restored.append('foo')
         self.non_pointer_member = 42  # make sure we don't root this
 
     def __enter__(self):
@@ -73,7 +73,7 @@ class ctx_DirStack(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
-        #self.restored.pop()
+        self.restored.pop()
         self.state.Pop()
 
 

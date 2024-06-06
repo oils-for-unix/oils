@@ -32,6 +32,10 @@ class UnsupportedException(Exception):
     pass
 
 
+def _IsContextManager(class_name):
+    return class_name[-1].startswith('ctx_')
+
+
 def _SkipAssignment(var_name):
     """
     Skip at the top level:
@@ -2517,7 +2521,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 _, c_type, _ = self.current_member_vars[name]
                 self.always_write_ind('%s %s;\n', c_type, name)
 
-        if self.current_class_name[-1].startswith('ctx_'):
+        if _IsContextManager(self.current_class_name):
             # Copy ctx member vars out of this class
             assert self.ctx_member_vars is not None
             self.ctx_member_vars[o] = dict(self.current_member_vars)
@@ -2635,15 +2639,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         # Now visit the rest of the statements
         self.indent += 1
 
-        if self.current_class_name[-1].startswith('ctx_'):
+        if _IsContextManager(self.current_class_name):
             # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
             # members
             member_vars = self.ctx_member_vars[o]
-            if 0:
-                for name in sorted(member_vars):
-                    _, c_type, is_managed = member_vars[name]
-                    if is_managed:
-                        self.def_write_ind('gHeap.PushRoot(reinterpret_cast<RawObject**>(&%s));\n' % name)
+            for name in sorted(member_vars):
+                _, c_type, is_managed = member_vars[name]
+                if is_managed:
+                    # VALIDATE_ROOTS doesn't complain even if it's not
+                    # initialized?  Should be initialized after PushRoot().
+                    #self.def_write_ind('this->%s = nullptr;\n' % name)
+                    self.def_write_ind(
+                        'gHeap.PushRoot(reinterpret_cast<RawObject**>(&(this->%s)));\n'
+                        % name)
 
         for node in stmt.body.body[first_index:]:
             self.accept(node)
@@ -2658,21 +2666,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         # TODO:
-        # - Can't throw exception here
-        # - If you 'return' early, that messes up the PopRoot invariant!
+        # - Can't throw exception in destructor.
+        # - Check that you don't return early from destructor.  If so, we skip
+        #   PopRoot(), which messes up the invariant!
 
         for node in stmt.body.body:
             self.accept(node)
 
-        # For ctx_* classes only , gHeap.PopRoot() for all the
-        # pointer members
-        if self.current_class_name[-1].startswith('ctx_'):
+        # For ctx_* classes only , gHeap.PopRoot() for all the pointer members
+        if _IsContextManager(self.current_class_name):
             member_vars = self.ctx_member_vars[o]
-            if 0:
-                for name in sorted(member_vars):
-                    _, c_type, is_managed = member_vars[name]
-                    if is_managed:
-                        self.def_write_ind('gHeap.PopRoot();\n')
+            for name in sorted(member_vars):
+                _, c_type, is_managed = member_vars[name]
+                if is_managed:
+                    self.def_write_ind('gHeap.PopRoot();\n')
         else:
             self.report_error(
                 o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
