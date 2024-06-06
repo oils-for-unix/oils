@@ -25,7 +25,7 @@ class UnsupportedException(Exception):
 
 class Build(ExpressionVisitor[T], StatementVisitor[None]):
 
-    def __init__(self, types: Dict[Expression, Type], virtual, local_vars):
+    def __init__(self, types: Dict[Expression, Type], virtual, local_vars, imported_names):
 
         self.types = types
         self.cfgs = collections.defaultdict(pass_state.ControlFlowGraph)
@@ -35,11 +35,7 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         self.loop_stack = []
         self.virtual = virtual
         self.local_vars = local_vars
-        self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
-
-        # HACK for conditional import inside mylib.PYTHON
-        # in core/shell.py
-        self.imported_names.add('help_meta')
+        self.imported_names = imported_names
 
     def current_cfg(self):
         if not self.current_func_node:
@@ -259,24 +255,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(stmt)
 
         self.current_class_name = None
-
-    # Module structure
-
-    def visit_import(self, o: 'mypy.nodes.Import') -> T:
-        for name, as_name in o.ids:
-            if as_name is not None:
-                # import time as time_
-                self.imported_names.add(as_name)
-            else:
-                # import libc
-                self.imported_names.add(name)
-
-    def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
-        for name, alias in o.names:
-            if alias:
-                self.imported_names.add(alias)
-            else:
-                self.imported_names.add(name)
 
     # Statements
 

@@ -288,6 +288,7 @@ def main(argv):
 
     # Forward declarations first.
     # class Foo; class Bar;
+    imported_names = {} # module path -> set of imported names
     for name, module in to_compile:
         #log('forward decl name %s', name)
         if name in to_header:
@@ -301,6 +302,7 @@ def main(argv):
                                   forward_decl=True)
 
         p2.visit_mypy_file(module)
+        imported_names[module.path] = p2.imported_names
         MaybeExitWithErrors(p2)
 
     # After seeing class and method names in the first pass, figure out which
@@ -344,7 +346,8 @@ def main(argv):
 
     cfgs = {}  # fully qualified function name -> control flow graph
     for name, module in to_compile:
-        cfg_pass = control_flow_pass.Build(result.types, virtual, local_vars)
+        cfg_pass = control_flow_pass.Build(result.types, virtual, local_vars,
+                                           imported_names[module.path])
         cfg_pass.visit_mypy_file(module)
         cfgs.update(cfg_pass.cfgs)
 
