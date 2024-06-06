@@ -1,5 +1,5 @@
 ## compare_shells: bash
-## oils_failures_allowed: 5
+## oils_failures_allowed: 6
 
 #### Lower Case with , and ,,
 x='ABC DEF'
@@ -55,6 +55,85 @@ u Áé
 U ÁÉ
 l áé
 L áé
+## END
+
+#### Case folding - multi code point
+
+echo shell
+small=$'\u00DF'
+echo u ${small^}
+echo U ${small^^}
+
+echo l ${small,}
+echo L ${small,,}
+echo
+
+echo python2
+python2 -c '
+small = u"\u00DF"
+print(small.upper().encode("utf-8"))
+print(small.lower().encode("utf-8"))
+'
+echo
+
+echo python3
+python3 -c '
+import sys
+small = u"\u00DF"
+sys.stdout.buffer.write(small.upper().encode("utf-8") + b"\n")
+sys.stdout.buffer.write(small.lower().encode("utf-8") + b"\n")
+'
+
+if false; then
+  # Yes, supported
+  echo node.js
+
+  nodejs -e '
+  var small = "\u00DF"
+  console.log(small.toUpperCase())
+  console.log(small.toLowerCase())
+  '
+fi
+
+## STDOUT:
+## END
+## BUG bash STDOUT:
+shell
+u ß
+U ß
+l ß
+L ß
+
+python2
+ß
+ß
+
+python3
+SS
+ß
+## END
+
+#### Case folding that depends on locale (not enabled, requires Turkish locale)
+
+# Hm this works in demo/survey-case-fold.sh
+# Is this a bash 4.4 thing?
+
+#export LANG='tr_TR.UTF-8'
+#echo $LANG
+
+x='i'
+
+echo u ${x^}
+echo U ${x^^}
+
+echo l ${x,}
+echo L ${x,,}
+
+## OK bash/osh STDOUT:
+u I
+U I
+l i
+L i
 ## END
 
 #### Lower Case with constant string (VERY WEIRD)
