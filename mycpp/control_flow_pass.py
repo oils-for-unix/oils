@@ -36,6 +36,7 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         self.virtual = virtual
         self.local_vars = local_vars
         self.imported_names = imported_names
+        self.callees = {} # statement object -> SymbolPath of the callee
 
     def current_cfg(self):
         if not self.current_func_node:
@@ -44,6 +45,22 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         return self.cfgs[split_py_name(self.current_func_node.fullname)]
 
     def resolve_callee(self, o: CallExpr) -> Optional[util.SymbolPath]:
+        """
+        Returns the fully qualified name of the callee in the given call
+        expression.
+
+        Member functions are prefixed by the names of the classes that contain
+        them. For example, the name of the callee in the last statement of the
+        snippet below is `module.SomeObject.Foo`.
+
+            x = module.SomeObject()
+            x.Foo()
+
+        Free-functions defined in the local module are referred to by their
+        normal fully qualified names. The function `foo` in a module called
+        `moduleA` would is named `moduleA.foo`. Calls to free-functions defined
+        in imported modules are named the same way.
+        """
 
         if isinstance(o.callee, NameExpr):
             return split_py_name(o.callee.fullname)
@@ -396,6 +413,7 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         if self.current_func_node:
             full_callee = self.resolve_callee(o)
             if full_callee:
+                self.callees[o] = full_callee
                 cfg.AddFact(
                     self.current_statement_id,
                     pass_state.FunctionCall(join_name(full_callee, delim='.')))
