@@ -113,7 +113,7 @@ esac
 echo $result
 ## stdout: - X
 
-#### Match one unicode char
+#### Pattern ? matches 1 code point (many bytes), but not multiple code points
 
 # These two code points form a single character.
 two_code_points="__$(echo $'\u0061\u0300')__"

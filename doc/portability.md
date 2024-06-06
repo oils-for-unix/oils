@@ -51,3 +51,27 @@ Our C++ code has `DTRACE_PROBE()` macros, which means we can use tools like
 
 The probe names and locations aren't stable across releases.
 
+## "Enums" that are often extended
+
+Different Unix implementations often extend:
+
+- the list of signals 
+- the list of [ulimit][] resources, which correspond to flags
+
+[ulimit]: ref/chap-builtin-cmd.html#ulimit
+
+## Unicode
+
+Strings in Oils are byte strings, which are often UTF-8 encoded.
+
+We use `libc` functions that may depend on the global locale setting, like
+`glob()`.  We currently assume your libc is configured to use UTF-8.
+
+See the [Unicode doc][] for details on Unicode-aware operations.
+
+[Unicode doc]: unicode.html
+
+<!--
+
+TODO: ./configure could detect some of these
+-->

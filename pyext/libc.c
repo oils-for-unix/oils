@@ -347,15 +347,16 @@ func_wcswidth(PyObject *self, PyObject *args){
 static PyObject *
 func_cpython_reset_locale(PyObject *self, PyObject *unused)
 {
-  if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL) {
-    if (setlocale(LC_CTYPE, "C.UTF-8") == NULL) {
-	    PyErr_SetString(PyExc_SystemError,
-                      "Couldn't set locale to en_US.UTF-8 or C.UTF-8");
-  	  return NULL;
-    }
-  }
+    // From man setlocale:
+    //   The locale "C" or "POSIX" is a portable locale; it exists on all conforming systems.
+    //   On startup of the main program, the portable "C" locale is selected as default.
 
-  Py_RETURN_NONE;
+    // Python overrides this, so we set it back.
+    if (setlocale(LC_CTYPE, "C.utf8") == NULL) {
+        PyErr_SetString(PyExc_SystemError, "Couldn't set locale to C.utf8");
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 #ifdef OVM_MAIN
