@@ -537,7 +537,7 @@ comsub=6
 var s = 'hi'
 
 # TODO: This does a bound method thing we probably don't want
-var s2 = s->upper()
+var s2 = s=>upper()
 echo $s2
 ## STDOUT:
 HI

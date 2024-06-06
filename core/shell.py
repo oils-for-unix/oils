@@ -717,10 +717,8 @@ def Main(
         'trim': method_str.Trim(method_str.START | method_str.END),
         'trimStart': method_str.Trim(method_str.START),
         'trimEnd': method_str.Trim(method_str.END),
-
-        # These also have Unicode support
         'upper': method_str.Upper(),
-        'lower': None,
+        'lower': method_str.Lower(),
 
         # finds a substring, optional position to start at
         'find': None,

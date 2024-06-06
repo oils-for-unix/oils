@@ -49,7 +49,7 @@ echo $x
 '
 }
 
-try-replace() {
+shvar-replace() {
   ### failing test from Julian
 
   #local ysh=_bin/cxx-asan+gcalways/ysh

@@ -135,3 +135,17 @@ pp line (pipe())
 ## END
 
 
+#### shvar then replace - bug #1986 context manager crash
+
+shvar FOO=bar {
+  for x in (1 .. 500) {
+    var Q = "hello"
+    setvar Q = Q=>replace("hello","world")
+  }
+}
+echo $Q
+
+## STDOUT:
+world
+## END
+
