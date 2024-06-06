@@ -27,7 +27,7 @@ empty=
 empty=
 ## END
 
-#### Case Folding of Unicode Characters
+#### Case folding - Unicode characters
 
 # https://www.utf8-chartable.de/unicode-utf8-table.pl
 
@@ -76,6 +76,10 @@ print(small.lower().encode("utf-8"))
 '
 echo
 
+# Not in the container images, but python 3 DOES support it!
+# This is moved to demo/survey-case-fold.sh
+
+if false; then
 echo python3
 python3 -c '
 import sys
@@ -83,6 +87,7 @@ small = u"\u00DF"
 sys.stdout.buffer.write(small.upper().encode("utf-8") + b"\n")
 sys.stdout.buffer.write(small.lower().encode("utf-8") + b"\n")
 '
+fi
 
 if false; then
   # Yes, supported
@@ -108,9 +113,6 @@ python2
 ß
 ß
 
-python3
-SS
-ß
 ## END
 
 #### Case folding that depends on locale (not enabled, requires Turkish locale)
