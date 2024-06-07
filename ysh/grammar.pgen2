@@ -80,8 +80,12 @@ power: atom trailer* ['**' factor]
 testlist_comp: (test|splat_expr) ( comp_for | (',' (test|splat_expr))* [','] )
 
 atom: (
-    '(' [testlist_comp] ')' 
-  | '[' [testlist_comp] ']' 
+    '(' [testlist_comp] ')'   # empty tuple/list, or parenthesized expression
+  | '[' [testlist_comp] ']'   # empty list or list comprehension
+  | '^[' testlist ']'         # expression literal
+                              # note: ^[x for x in y] is invalid
+                              #   but ^[[x for x in y]] is a list comprehension
+
     # Note: newlines are significant inside {}, unlike inside () and []
   | '{' [Op_Newline] [dict] '}'
   | '&' Expr_Name place_trailer*
@@ -105,7 +109,6 @@ atom: (
     # Expr_Symbol could be %mykey
 
   | eggex
-  | literal_expr
 
   # $foo is disallowed, but $? is allowed.  Should be "$foo" to indicate a
   # string, or ${foo:-}
@@ -114,8 +117,6 @@ atom: (
   | sh_array_literal
   | old_sh_array_literal
 )
-
-literal_expr: '^[' expr ']'
 
 place_trailer: (
     '[' subscriptlist ']'
@@ -135,9 +136,10 @@ trailer: (
 )
 
 # YSH patch: this is 'expr' instead of 'test'
-# - 1:(3<4) doesn't make any sense.
-# - And then this allows us to support a[3:] and a[:i] as special cases.
-# - First class slices have to be written 0:n.
+# - 1:(3<4) doesn't make sense.
+# - TODO: could we revert this?  I think it might have been because we wanted
+#   first class slices like var x = 1:n, but we have ranges var x = 1 .. n instead.
+# - There was also the colon conflict for :symbol
 
 subscriptlist: subscript (',' subscript)* [',']
 
