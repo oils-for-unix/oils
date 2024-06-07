@@ -58,6 +58,8 @@ TEST libc_test() {
   ASSERT_EQ(3, width);
 
   libc::print_time(0.1, 0.2, 0.3);
+
+  PASS();
 }
 
 static List<BigStr*>* Groups(BigStr* s, List<int>* indices) {
