@@ -120,6 +120,7 @@ List<int>* regex_search(BigStr* pattern, int cflags, BigStr* str, int eflags,
 
     throw Alloc<ValueError>(StrFromC(error_message));
   }
+  // log("pat = %d, str = %d", len(pattern), len(str));
 
   int num_groups = pat.re_nsub + 1;  // number of captures
 
