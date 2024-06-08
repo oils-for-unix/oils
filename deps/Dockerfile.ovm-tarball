@@ -24,7 +24,9 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
   /wedge/oils-for-unix.org/pkg/re2c/3.0
 
-# TODO: Could make a wedges out of Python 2.7, and all shells in spec-bin
+# TODO: copy shells for spec tests here
+
+# TODO: Could make a wedges out of Python 2.7
 
 # Copy into current directory
 COPY --chown=uke \

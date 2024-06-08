@@ -11,7 +11,7 @@
 #
 # Host build, without containers:
 #
-#   $0 unboxed-build      deps/source.medo/re2c/
+#   $0 unboxed            deps/source.medo/re2c/
 #
 # Individual steps:
 #
@@ -333,7 +333,7 @@ unboxed-stats() {
   echo
 }
 
-unboxed-build() {
+unboxed() {
   local wedge_dir=$1
 
   # Can override default version.  Could be a flag since it's optional?  But
@@ -355,7 +355,7 @@ readonly BUILD_IMAGE_TAG=v-2023-03-01
 
 DOCKER=${DOCKER:-docker}
 
-build() {
+boxed() {
   ### Build inside a container, and put output in a specific place.
 
   # TODO: Specify the container OS, CPU like x86-64, etc.
@@ -389,7 +389,7 @@ build() {
 
   # Run unboxed-{build,install,smoke-test} INSIDE the container
   local -a args=(
-      sh -c 'cd ~/oil; deps/wedge.sh unboxed-build $1' dummy "$wedge"
+      sh -c 'cd ~/oil; deps/wedge.sh unboxed $1' dummy "$wedge"
   )
 
   local -a docker_flags=()

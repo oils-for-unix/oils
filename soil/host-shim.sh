@@ -64,7 +64,7 @@ live-image-tag() {
       ;;
     (dummy)
       # freshen up
-      echo 'v-2023-07-15'
+      echo 'v-2024-06-08'
       ;;
     (dev-minimal)
       # Use python3 wedge and mypy-0.780 repo

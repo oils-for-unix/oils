@@ -573,20 +573,20 @@ install-py3-libs() {
 # OBSOLETE in favor of install-spec-bin-fast
 install-spec-bin() {
   if ! wedge-exists dash $DASH_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed-build _build/deps-source/dash
+    deps/wedge.sh unboxed _build/deps-source/dash
   fi
 
   if ! wedge-exists mksh $MKSH_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed-build _build/deps-source/mksh
+    deps/wedge.sh unboxed _build/deps-source/mksh
   fi
 
   if ! wedge-exists busybox $BUSYBOX_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed-build _build/deps-source/busybox
+    deps/wedge.sh unboxed _build/deps-source/busybox
   fi
 
   # Fedora compile error - count_all_jobs
   if ! wedge-exists bash $BASH_VER $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed-build _build/deps-source/bash
+    deps/wedge.sh unboxed _build/deps-source/bash
   fi
 
   # Fedora compiler error
@@ -603,14 +603,14 @@ install-spec-bin() {
   # I think the ./configure is out of sync with the actual build?
 
   if ! wedge-exists zsh $ZSH_VERSION ''; then
-    deps/wedge.sh unboxed-build _build/deps-source/zsh
+    deps/wedge.sh unboxed _build/deps-source/zsh
   fi
 
   return
 
   # Hm this has problem with out-of-tree build?  I think Oils does too actually
   if ! wedge-exists yash $YASH_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed-build _build/deps-source/yash
+    deps/wedge.sh unboxed _build/deps-source/yash
   fi
 }
 
@@ -685,7 +685,7 @@ maybe-install-wedge() {
     return
   fi
 
-  local -a cmd=( deps/wedge.sh unboxed-build _build/deps-source/$name/ $version)
+  local -a cmd=( deps/wedge.sh unboxed _build/deps-source/$name/ $version)
 
   set +o errexit
   my-time-tsv \
@@ -912,15 +912,15 @@ install-wedges() {
   #   - rel-smoke-test -- mount it in a different location
 
   if ! wedge-exists cmark $CMARK_VERSION; then
-    deps/wedge.sh unboxed-build _build/deps-source/cmark/
+    deps/wedge.sh unboxed _build/deps-source/cmark/
   fi
 
   if ! wedge-exists re2c $RE2C_VERSION; then
-    deps/wedge.sh unboxed-build _build/deps-source/re2c/
+    deps/wedge.sh unboxed _build/deps-source/re2c/
   fi
 
   if ! wedge-exists python2 $PY2_VERSION; then
-    deps/wedge.sh unboxed-build _build/deps-source/python2/
+    deps/wedge.sh unboxed _build/deps-source/python2/
   fi
 
   if test -n "$py_only"; then
@@ -938,7 +938,7 @@ install-wedges() {
   fi
 
   if ! wedge-exists python3 $PY3_VERSION; then
-    deps/wedge.sh unboxed-build _build/deps-source/python3/
+    deps/wedge.sh unboxed _build/deps-source/python3/
   fi
 
   # Copy all the contents, except for .git folder.
@@ -963,7 +963,7 @@ install-wedges() {
   fi
 
   if ! wedge-exists souffle $SOUFFLE_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed-build _build/deps-source/souffle/
+    deps/wedge.sh unboxed _build/deps-source/souffle/
   fi
 
   if command -v tree > /dev/null; then
@@ -989,15 +989,15 @@ uftrace-host() {
   # 'apt-get install pkgconf' gets it
   # TODO: Should use python3 WEDGE instead of SYSTEM python3?
 
-  deps/wedge.sh unboxed-build _build/deps-source/uftrace
+  deps/wedge.sh unboxed _build/deps-source/uftrace
 }
 
 bloaty-host() {
-  deps/wedge.sh unboxed-build _build/deps-source/bloaty
+  deps/wedge.sh unboxed _build/deps-source/bloaty
 }
 
 R-libs-host() {
-  deps/wedge.sh unboxed-build _build/deps-source/R-libs
+  deps/wedge.sh unboxed _build/deps-source/R-libs
 }
 
 #
@@ -1010,20 +1010,20 @@ container-wedges() {
   #export-podman
 
   if true; then
-    deps/wedge.sh build deps/source.medo/time-helper
-    deps/wedge.sh build deps/source.medo/cmark/
-    deps/wedge.sh build deps/source.medo/re2c/
-    deps/wedge.sh build deps/source.medo/python3/
+    deps/wedge.sh boxed deps/source.medo/time-helper
+    deps/wedge.sh boxed deps/source.medo/cmark/
+    deps/wedge.sh boxed deps/source.medo/re2c/
+    deps/wedge.sh boxed deps/source.medo/python3/
   fi
 
   if false; then
-    deps/wedge.sh build deps/source.medo/bloaty/
-    deps/wedge.sh build deps/source.medo/uftrace/
+    deps/wedge.sh boxed deps/source.medo/bloaty/
+    deps/wedge.sh boxed deps/source.medo/uftrace/
   fi
 
   if false; then
     # For soil-benchmarks/ images
-    deps/wedge.sh build deps/source.medo/R-libs/
+    deps/wedge.sh boxed deps/source.medo/R-libs/
   fi
 }
 
