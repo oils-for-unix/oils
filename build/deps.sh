@@ -1009,19 +1009,22 @@ container-wedges() {
 
   #export-podman
 
-  if true; then
+  # TODO: Do these lazily like we do in install-wedges-fast?
+  # We can test if the dir _build/wedge/binary/oils-for-unix.org/pkg/FOO exists
+
+  if false; then
     deps/wedge.sh boxed deps/source.medo/time-helper
     deps/wedge.sh boxed deps/source.medo/cmark/
     deps/wedge.sh boxed deps/source.medo/re2c/
     deps/wedge.sh boxed deps/source.medo/python3/
   fi
 
-  if false; then
+  if true; then
     deps/wedge.sh boxed deps/source.medo/bloaty/
     deps/wedge.sh boxed deps/source.medo/uftrace/
   fi
 
-  if false; then
+  if true; then
     # For soil-benchmarks/ images
     deps/wedge.sh boxed deps/source.medo/R-libs/
   fi

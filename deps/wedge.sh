@@ -460,10 +460,10 @@ fi
 
 case $1 in
   validate|\
-  unboxed-build|\
+  unboxed|\
   unboxed-make|unboxed-install|_unboxed-install|\
   unboxed-smoke-test|unboxed-stats|\
-  build|smoke-test)
+  boxed|smoke-test)
     "$@"
     ;;
 
