@@ -44,7 +44,7 @@ live-image-tag() {
       ;;
     (pea)
       # freshen up
-      echo 'v-2023-07-15'
+      echo 'v-2024-06-08'
       ;;
     (cpp-small)
       # Rebuild with Docker, remove dead code

@@ -38,7 +38,7 @@ source deps/podman.sh
 DOCKER=${DOCKER:-docker}
 
 # Build with this tag
-readonly LATEST_TAG='v-2023-10-05a'
+readonly LATEST_TAG='v-2024-06-08'
 
 # BUGS in Docker.
 #
