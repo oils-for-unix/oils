@@ -102,31 +102,21 @@ die() {
 #
 
 source-dir() {
-  local version_requested=${1:-}
-  local version=${version_requested:-$WEDGE_VERSION}
-
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
-
     # for Python-3.10.4 to override 'python3' package name
-    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_TARBALL_NAME-$version"
+    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_TARBALL_NAME-$WEDGE_VERSION"
 
   else
-    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_NAME-$version"
+    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_NAME-$WEDGE_VERSION"
   fi
 }
 
 build-dir() {
-  local version_requested=${1:-}
-  local version=${version_requested:-$WEDGE_VERSION}
-
   # call it tmp-build?
-  echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME-$version"
+  echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME-$WEDGE_VERSION"
 }
 
 install-dir() {
-  local version_requested=${1:-}
-  local version=${version_requested:-$WEDGE_VERSION}
-
   local prefix
   if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
     prefix=$OILS_ABSOLUTE_ROOT
@@ -141,20 +131,18 @@ install-dir() {
   #
   # And then provide a flag to select them?
 
-  echo "$prefix/pkg/$WEDGE_NAME/$version"
+  echo "$prefix/pkg/$WEDGE_NAME/$WEDGE_VERSION"
 }
 
 smoke-test-dir() {
-  local version_requested=${1:-}
-  local version=${version_requested:-$WEDGE_VERSION}
-
-  echo "$REPO_ROOT/_build/wedge/smoke-test/$WEDGE_NAME-$version"
+  echo "$REPO_ROOT/_build/wedge/smoke-test/$WEDGE_NAME-$WEDGE_VERSION"
 }
 
 load-wedge() {
   ### source .wedge.sh file and ensure it conforms to protocol
 
   local wedge_dir=$1
+  local version_requested=${2:-}
 
   echo "Loading $wedge_dir"
   echo
@@ -163,13 +151,28 @@ load-wedge() {
 
   echo "  OK  name: ${WEDGE_NAME?"$wedge_dir: WEDGE_NAME required"}"
 
-  # WEDGE_VERSION is technically non longer needed since we can always pass it
-  # from build/deps.sh install-wedges-fast
-  echo "  OK  version: ${WEDGE_VERSION?"$wedge_dir: WEDGE_VERSION required"}"
+  # This WEDGE supports a single version.
+  if test -n "${WEDGE_VERSION:-}"; then
+    echo "  --  single version: $WEDGE_VERSION"
+  fi
 
   # Can validate version against this
   if test -n "${WEDGE_VERSION_LIST:-}"; then
     echo "  --  version list: $WEDGE_VERSION_LIST"
+
+    if test -z "$version_requested"; then
+      die "FAIL  Expected explicit version, one of: $WEDGE_VERSION_LIST"
+    fi
+
+    case "$WEDGE_VERSION_LIST" in
+      *"$version_requested"*)
+        echo "  OK  Setting WEDGE_VERSION to $version_requested"
+        WEDGE_VERSION=$version_requested
+        ;;
+      *)
+        die "FAIL  Requested version $version_requested should be one of: $WEDGE_VERSION_LIST"
+        ;;
+    esac
   fi
 
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
@@ -207,8 +210,9 @@ _run-sourced-func() {
 
 validate() {
   local wedge=$1
+  local version_requested=${2:-}
 
-  load-wedge $wedge
+  load-wedge $wedge "$version_requested"
 }
 
 unboxed-make() {
@@ -217,33 +221,18 @@ unboxed-make() {
   local wedge=$1  # e.g. re2c.wedge.sh
   local version_requested=${2:-}  # e.g. 5.2
 
-  load-wedge $wedge
-
-  if test -n "${WEDGE_VERSION_LIST:-}" && test -n "$version_requested"; then
-    # lame sanity check: test that the version is there
-    # the string matching isn't accurate: e.g. ".2" would match "4.4 5.2", but
-    # it's not valid.
-    # This is mostly POSIX shell, not bash.
-    case "$WEDGE_VERSION_LIST" in
-      *"$version_requested"*)
-        echo "  OK  Requested version $version_requested is valid"
-        ;;
-      *)
-        echo "FAIL  Requested version $version_requested should be one of: $WEDGE_VERSION_LIST"
-        ;;
-    esac
-  fi
+  load-wedge $wedge "$version_requested"
 
   local source_dir
-  source_dir=$(source-dir "$version_requested") 
+  source_dir=$(source-dir) 
   echo " SRC $source_dir"
 
   local build_dir
-  build_dir=$(build-dir "$version_requested") 
+  build_dir=$(build-dir) 
 
   # NOT created because it might require root permissions!
   local install_dir
-  install_dir=$(install-dir "$version_requested")
+  install_dir=$(install-dir)
 
   rm -r -f -v $build_dir
   mkdir -p $build_dir
@@ -268,13 +257,13 @@ _unboxed-install() {
   local wedge=$1  # e.g. re2c.wedge.sh
   local version_requested=${2:-}  # e.g. 5.2
 
-  load-wedge $wedge
+  load-wedge $wedge "$version_requested"
 
   local build_dir
-  build_dir=$(build-dir "$version_requested") 
+  build_dir=$(build-dir) 
 
   local install_dir
-  install_dir=$(install-dir "$version_requested")
+  install_dir=$(install-dir)
   mkdir -p $install_dir
 
   # Note: install-dir needed for time-helper, but not others
@@ -295,12 +284,12 @@ unboxed-smoke-test() {
   local wedge_dir=$1  # e.g. re2c/ with WEDGE
   local version_requested=${2:-}  # e.g. 5.2
 
-  load-wedge $wedge_dir
+  load-wedge $wedge_dir "$version_requested"
 
   local smoke_test_dir
-  smoke_test_dir=$(smoke-test-dir "$version_requested")
+  smoke_test_dir=$(smoke-test-dir)
   local install_dir
-  install_dir=$(install-dir "$version_requested")
+  install_dir=$(install-dir)
 
   echo '  SMOKE TEST'
 
@@ -332,7 +321,7 @@ unboxed-smoke-test() {
 unboxed-stats() {
   local wedge=$1
 
-  load-wedge $wedge
+  load-wedge $wedge "$version_requested"
 
   du --si -s $(source-dir)
   echo
@@ -372,8 +361,9 @@ build() {
   # TODO: Specify the container OS, CPU like x86-64, etc.
 
   local wedge=$1
+  local version_requested=${2:-}
 
-  load-wedge $wedge
+  load-wedge $wedge "$version_requested"
 
   # Permissions will be different, so we separate the two
 
@@ -428,9 +418,10 @@ build() {
 smoke-test() {
   local wedge_dir=$1
   local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: rename to /boxed
-  local debug_shell=${3:-}
+  local version_requested=${3:-}
+  local debug_shell=${4:-}
 
-  load-wedge $wedge_dir
+  load-wedge $wedge_dir "$version_requested"
 
   local -a args=(
       sh -c 'cd ~/oil; deps/wedge.sh unboxed-smoke-test $1' dummy "$wedge_dir"

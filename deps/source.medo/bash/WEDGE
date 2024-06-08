@@ -9,13 +9,9 @@ set -o errexit
 # sourced
 WEDGE_NAME='bash'
 
-# validate requested version against this list
-# I guess it would be better to pass WEDGE_VERSION as an INPUT then, so we can
-# have version-specific logic.
-
+# Validate requested version against this list
+# The global variable WEDGE_VERSION gets SET after validation.
 WEDGE_VERSION_LIST='4.4 5.2'
-# default version that's used
-WEDGE_VERSION='4.4'
 
 wedge-make() {
   local src_dir=$1
