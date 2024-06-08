@@ -25,8 +25,23 @@ wedge-make() {
   local makefile=$src_dir/check-deps/Makefile.check
 
   # look for libpython3.6m.so, not libpython3.6.so
-  # 2023-07: not needed on Debian 12 Bookworm
-  if test -n "${UBUNTU_HACK:-}"; then
+  # 2023-07: not needed on Debian 12 Bookworm, outside container
+  # 2024-06: need it inside the container
+  #if test -n "${PY_36_37_HACK:-}"; then
+
+  local py_version
+  py_version=$(python3 -V)
+
+  #echo
+  #echo "*** Got $py_version ***"
+  #echo 
+
+  if echo $py_version | egrep 'Python 3.[67]'; then
+
+    echo
+    echo "*** PATCHING utrace $makefile because we detected $py_version"
+    echo 
+
     sed -i 's/--modversion)$/--modversion)m/' $makefile
 
     # additionally, look for libpython3.6m.so.1.0 !!!

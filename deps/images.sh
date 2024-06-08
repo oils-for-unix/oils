@@ -174,6 +174,8 @@ for name in python python2 python3; do
     echo "$name not found"
   fi
 done
+
+echo PATH=$PATH
 '
 
   # Python 2.7 build/prepare.sh requires this

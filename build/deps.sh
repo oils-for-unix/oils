@@ -1009,8 +1009,20 @@ container-wedges() {
 
   #export-podman
 
-  # TODO: Do these lazily like we do in install-wedges-fast?
+  # TODO:
+  #
+  # - Add equivalents of spec-bin
+  # - Use the same manifest as install-wedges-fast
+  #   - so then you can delete the _build/wedge dir to re-run it
+  #   - use xargs -n 1 so it's done serially
+
+  # - Do these lazily like we do in install-wedges-fast?
+
   # We can test if the dir _build/wedge/binary/oils-for-unix.org/pkg/FOO exists
+  # if wedge-exists "$name" "$version" "$wedge_dir"; then
+  #  echo "CACHED  $(timestamp)  $name $version"
+  #  return
+  # fi
 
   if false; then
     deps/wedge.sh boxed deps/source.medo/time-helper
@@ -1019,7 +1031,7 @@ container-wedges() {
     deps/wedge.sh boxed deps/source.medo/python3/
   fi
 
-  if true; then
+  if false; then
     deps/wedge.sh boxed deps/source.medo/bloaty/
     deps/wedge.sh boxed deps/source.medo/uftrace/
   fi

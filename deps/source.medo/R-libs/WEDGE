@@ -37,9 +37,25 @@ wedge-install() {
   # 2024-02 - weird fix, I had to add "rlang" on Debian Bookworm.  Otherwise
   # the smoke test for dplyr/tidyr would fail.
 
+  echo
+  echo '*** INFO: Rscript --version ***'
+  echo
+  Rscript --version
+  echo
+
+  # Gah!  This "devtools" has a shitload of deps itself ... sad
+  # #
+  # https://support.posit.co/hc/en-us/articles/219949047-Installing-older-versions-of-packages
+  if false; then
+    INSTALL_DEST=$install_dir Rscript -e \
+        'install.packages(c("devtools"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
+  fi
+
   # Also consider adding ggplot.
-  INSTALL_DEST=$install_dir Rscript -e \
-    'install.packages(c("rlang", "dplyr", "tidyr", "stringr", "RUnit"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
+  if true; then
+    INSTALL_DEST=$install_dir Rscript -e \
+      'install.packages(c("rlang", "dplyr", "tidyr", "stringr", "RUnit"), lib=Sys.getenv("INSTALL_DEST"), repos="https://cloud.r-project.org")'
+  fi
 }
 
 wedge-smoke-test() {
