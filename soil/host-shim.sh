@@ -56,7 +56,7 @@ live-image-tag() {
       ;;
     (ovm-tarball)
       # freshen up, still need spec-bin wedge
-      echo 'v-2023-07-15'
+      echo 'v-2024-06-08'
       ;;
     (other-tests)
       # freshen up
