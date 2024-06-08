@@ -11,23 +11,36 @@
 #
 # (2) Rebuild
 #
-#     deps/images.sh build common  # populates apt cache.  WHY DO I NEED THIS?
-#     deps/images.sh build cpp T   # reuse package cache from apt-get
-#     deps/images.sh smoke cpp
+#     deps/images.sh build soil-common  # populates apt cache.  WHY DO I NEED THIS?
+#     deps/images.sh build soil-pea T   # reuse package cache from apt-get
+#     deps/images.sh smoke soil-pea
 #
 # (3) Push image and common
 #
 #     deps/images.sh push cpp      # pushes the LATEST_TAG
 #
 #     deps/images.sh list-tagged  # find hash of soil-common
+#
+# Either:
 #     sudo docker tag abcdef oilshell/soil-common:latest
-#     deps/images.sh push common latest  # update latest, for next Docker build
+#     deps/images.sh push soil-common latest  # update latest, for next Docker build
+#
+# Or this, I think it's better:
+#     sudo docker tag oilshell/soil-common:{v-2024-06-08,latest}
+#     deps/images.sh push soil-common v-2024-06-08
+#     deps/images.sh push soil-common latest
 #
 # (4) Update live version in 'soil/host-shim.sh live-image-tag'
 #
 # Our images:
 #
 #   https://hub.docker.com/u/oilshell
+#
+# Bootstrapping Wedges
+# --------------------
+#
+#    deps/images.sh build wedge-bootstrap-debian-10 T
+#    deps/images.sh push wedge-bootstrap-debian-10 latest
 
 set -o nounset
 set -o pipefail
@@ -70,7 +83,7 @@ tag-common() {
 }
 
 build() {
-  local name=${1:-dummy}
+  local name=${1:-soil-dummy}
   local use_cache=${2:-}  # OFF by default
 
   # set -x
@@ -90,12 +103,15 @@ build() {
   # TODO: use --authfile and more
   #export-podman
 
+  # Hack
+  local docker_suffix=${name#soil-}  # soil-dummy -> Dockerfile.dummy
+
   # can't preserve the entire env: https://github.com/containers/buildah/issues/3887
   #sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
   sudo -E DOCKER_BUILDKIT=1 \
     $DOCKER build "${flags[@]}" \
-    --tag "oilshell/soil-$name:$LATEST_TAG" \
-    --file deps/Dockerfile.$name .
+    --tag "oilshell/$name:$LATEST_TAG" \
+    --file deps/Dockerfile.$docker_suffix .
 }
 
 list-images() {
@@ -109,7 +125,7 @@ list-images() {
 }
 
 tag-all-latest() {
-  list-images | grep -v 'wedge-builder' | while read image; do
+  list-images | egrep -v 'wedge-builder|bootstrap' | while read image; do
     local tag
     tag=$(soil/host-shim.sh live-image-tag $image)
 
@@ -125,24 +141,24 @@ push-all-latest() {
 
   # because our 'my-sizes' script fetches the latest manifest
 
-  list-images | grep -v 'wedge-builder' | while read image_id; do
+  list-images | grep -v 'wedge-builder|bootstrap' | while read image_id; do
     echo "___ $image_id"
     push $image_id latest
   done
 }
 
 list-tagged() {
-  sudo $DOCKER images 'oilshell/soil-*:v-*'
+  sudo $DOCKER images 'oilshell/*' #:v-*'
 }
 
 push() {
-  local name=${1:-dummy}
+  local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
 
   # TODO: replace with flags
   #export-podman
 
-  local image="oilshell/soil-$name:$tag"
+  local image="oilshell/$name:$tag"
 
   # -E for export-podman vars
   sudo -E $DOCKER push $image
@@ -151,18 +167,18 @@ push() {
 
 smoke() {
   ### Smoke test of container
-  local name=${1:-dummy}
+  local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
   local docker=${3:-$DOCKER}
   local prefix=${4:-}
 
-  #sudo docker run oilshell/soil-$name
-  #sudo docker run oilshell/soil-$name python2 -c 'print("python2")'
+  #sudo docker run oilshell/$name
+  #sudo docker run oilshell/$name python2 -c 'print("python2")'
 
   # Need to point at registries.conf ?
   #export-podman
 
-  sudo $docker run ${prefix}oilshell/soil-$name:$tag bash -c '
+  sudo $docker run ${prefix}oilshell/$name:$tag bash -c '
 echo "bash $BASH_VERSION"
 
 git --version
@@ -179,9 +195,9 @@ echo PATH=$PATH
 '
 
   # Python 2.7 build/prepare.sh requires this
-  #sudo docker run oilshell/soil-$name python -V
+  #sudo docker run oilshell/$name python -V
 
-  #sudo docker run oilshell/soil-$name python3 -c 'import pexpect; print(pexpect)'
+  #sudo docker run oilshell/$name python3 -c 'import pexpect; print(pexpect)'
 }
 
 smoke-podman() {
@@ -193,12 +209,12 @@ smoke-podman() {
 
 cmd() {
   ### Run an arbitrary command
-  local name=${1:-dummy}
+  local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
 
   shift 2
 
-  sudo $DOCKER run oilshell/soil-$name:$tag "$@"
+  sudo $DOCKER run oilshell/$name:$tag "$@"
 }
 
 utf8() {
@@ -207,7 +223,7 @@ utf8() {
 }
 
 mount-test() {
-  local name=${1:-dummy}
+  local name=${1:-soil-dummy}
 
   local -a argv
   if test $# -le 1; then
@@ -219,23 +235,23 @@ mount-test() {
   # mount Oil directory as /app
   sudo $DOCKER run \
     --mount "type=bind,source=$PWD,target=/home/uke/oil" \
-    oilshell/soil-$name "${argv[@]}"
+    oilshell/$name "${argv[@]}"
 }
 
 image-history() {
-  local image_id=${1:-dummy}
+  local image_id=${1:-soil-dummy}
   local tag=${2:-latest}
 
-  local image="oilshell/soil-$image_id"
+  local image="oilshell/$image_id"
 
   sudo $DOCKER history $image:$tag
 }
 
 save() {
-  local image_id=${1:-dummy}
+  local image_id=${1:-soil-dummy}
   local tag=${2:-latest}
 
-  local image="oilshell/soil-$image_id"
+  local image="oilshell/$image_id"
 
   mkdir -p _tmp/images
   local out=_tmp/images/$image_id.tar 
@@ -254,10 +270,10 @@ save() {
 # It's annoying that the remote registry API is different than the local API.
 
 layers() {
-  local name=${1:-dummy}
+  local name=${1:-soil-dummy}
   local tag=${2:-$LATEST_TAG}
 
-  local image="oilshell/soil-$name:$tag"
+  local image="oilshell/$name:$tag"
 
   # Gah this still prints 237M, not the exact number of bytes!
   # --format ' {{ .Size }} ' 

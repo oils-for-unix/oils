@@ -45,7 +45,7 @@ init-deb-cache() {
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 }
 
-layer-wedge-builder() {
+layer-wedge-bootstrap-debian() {
   local -a packages=(
     # xz-utils  # do we need this for extraction?
 

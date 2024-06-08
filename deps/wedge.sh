@@ -350,8 +350,10 @@ unboxed() {
   unboxed-smoke-test $wedge_dir "$version_requested"
 }
 
-readonly BUILD_IMAGE=oilshell/soil-wedge-builder
-readonly BUILD_IMAGE_TAG=v-2023-03-01
+readonly DISTRO=debian-10  # Debian Buster
+readonly BOOTSTRAP_IMAGE=oilshell/wedge-bootstrap-$DISTRO
+
+#readonly BUILD_IMAGE_TAG=v-2023-03-01
 
 DOCKER=${DOCKER:-docker}
 
@@ -374,7 +376,7 @@ boxed() {
     wedge_guest_dir=/wedge
   else
     wedge_host_dir=_build/wedge/relative
-    wedge_guest_dir=/home/wedge-builder/wedge
+    wedge_guest_dir=/home/uke0/wedge
   fi
 
   mkdir -v -p $wedge_host_dir
@@ -409,9 +411,9 @@ boxed() {
 
   # -E to preserve CONTAINERS_REGISTRIES_CONF
   sudo -E $DOCKER run "${docker_flags[@]}" \
-    --mount "type=bind,source=$REPO_ROOT,target=/home/wedge-builder/oil" \
+    --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oil" \
     --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \
-    $BUILD_IMAGE:$BUILD_IMAGE_TAG \
+    $BOOTSTRAP_IMAGE \
     "${args[@]}"
 }
 
@@ -436,14 +438,14 @@ smoke-test() {
   if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
     wedge_mount_dir=/wedge
   else
-    wedge_mount_dir=/home/wedge-builder/wedge
+    wedge_mount_dir=/home/uke0/wedge
   fi
 
   sudo $DOCKER run "${docker_flags[@]}" \
     --network none \
-    --mount "type=bind,source=$REPO_ROOT,target=/home/wedge-builder/oil" \
+    --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oil" \
     --mount "type=bind,source=$PWD/$wedge_out_dir,target=$wedge_mount_dir" \
-    $BUILD_IMAGE:$BUILD_IMAGE_TAG \
+    $BOOTSTRAP_IMAGE \
     "${args[@]}"
 }
 
