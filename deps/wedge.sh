@@ -29,15 +29,18 @@
 #       re2c-3.0.blob  # .tar.gz file that you can 'medo sync'
 #       re2c-3.1.blob
 #     opaque.medo/     # Binary files, e.g. Clang
-#     derived.medo/    # Svaed output of 'wedge build'
+#     derived.medo/    # Saved output of 'wedge build'
 #
 #   _build/            # Temp dirs and output
 #     obj/             # for C++ / Ninja
+#     deps-source/     # sync'd from deps/source.medo - should it be
+#                      # _build/wedge/source?
 #     wedge/           # for containerized builds
-#       source/        # sync'd from deps/source.medo
-#       unboxed-tmp/   # build directory
+#       tmp/           # build directory
 #       boxed/         # output of containerized build
 #                      # TODO: rename from /binary/
+#       logs/
+#       smoke-test/    # current dir for smoke test
 
 # Every package ("wedge") has these dirs associated with it:
 #
@@ -99,23 +102,30 @@ die() {
 #
 
 source-dir() {
+  local version_requested=${1:-}
+  local version=${version_requested:-$WEDGE_VERSION}
+
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
 
     # for Python-3.10.4 to override 'python3' package name
-    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_TARBALL_NAME-$WEDGE_VERSION"
+    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_TARBALL_NAME-$version"
 
   else
-    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_NAME-$WEDGE_VERSION"
+    echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_NAME-$version"
   fi
 }
 
 build-dir() {
+  local version_requested=${1:-}
+  local version=${version_requested:-$WEDGE_VERSION}
+
   # call it tmp-build?
-  echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME"
+  echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME-$version"
 }
 
 install-dir() {
   local version_requested=${1:-}
+  local version=${version_requested:-$WEDGE_VERSION}
 
   local prefix
   if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
@@ -131,11 +141,14 @@ install-dir() {
   #
   # And then provide a flag to select them?
 
-  echo "$prefix/pkg/$WEDGE_NAME/$WEDGE_VERSION"
+  echo "$prefix/pkg/$WEDGE_NAME/$version"
 }
 
 smoke-test-dir() {
-  echo "$REPO_ROOT/_build/wedge/smoke-test/$WEDGE_NAME"
+  local version_requested=${1:-}
+  local version=${version_requested:-$WEDGE_VERSION}
+
+  echo "$REPO_ROOT/_build/wedge/smoke-test/$WEDGE_NAME-$version"
 }
 
 load-wedge() {
@@ -150,8 +163,14 @@ load-wedge() {
 
   echo "  OK  name: ${WEDGE_NAME?"$wedge_dir: WEDGE_NAME required"}"
 
-  # TODO: Either WEDGE_VERSION or WEDGE_VERSION_LIST (space-separated)
+  # WEDGE_VERSION is technically non longer needed since we can always pass it
+  # from build/deps.sh install-wedges-fast
   echo "  OK  version: ${WEDGE_VERSION?"$wedge_dir: WEDGE_VERSION required"}"
+
+  # Can validate version against this
+  if test -n "${WEDGE_VERSION_LIST:-}"; then
+    echo "  --  version list: $WEDGE_VERSION_LIST"
+  fi
 
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
     echo "  --  tarball name: $WEDGE_TARBALL_NAME"
@@ -200,20 +219,39 @@ unboxed-make() {
 
   load-wedge $wedge
 
-  local build_dir=$(build-dir) 
+  if test -n "${WEDGE_VERSION_LIST:-}" && test -n "$version_requested"; then
+    # lame sanity check: test that the version is there
+    # the string matching isn't accurate: e.g. ".2" would match "4.4 5.2", but
+    # it's not valid.
+    # This is mostly POSIX shell, not bash.
+    case "$WEDGE_VERSION_LIST" in
+      *"$version_requested"*)
+        echo "  OK  Requested version $version_requested is valid"
+        ;;
+      *)
+        echo "FAIL  Requested version $version_requested should be one of: $WEDGE_VERSION_LIST"
+        ;;
+    esac
+  fi
+
+  local source_dir
+  source_dir=$(source-dir "$version_requested") 
+  echo " SRC $source_dir"
+
+  local build_dir
+  build_dir=$(build-dir "$version_requested") 
 
   # NOT created because it might require root permissions!
-  local install_dir=$(install-dir "${version_requested}")
+  local install_dir
+  install_dir=$(install-dir "$version_requested")
 
   rm -r -f -v $build_dir
   mkdir -p $build_dir
 
-  echo SOURCE $(source-dir)
-
   # TODO: pushd/popd error handling
 
   pushd $build_dir
-  wedge-make $(source-dir) $build_dir $install_dir
+  wedge-make $source_dir $build_dir $install_dir
   popd
 }
 
@@ -228,15 +266,19 @@ unboxed-make() {
 
 _unboxed-install() {
   local wedge=$1  # e.g. re2c.wedge.sh
+  local version_requested=${2:-}  # e.g. 5.2
 
   load-wedge $wedge
 
+  local build_dir
+  build_dir=$(build-dir "$version_requested") 
+
   local install_dir
-  install_dir=$(install-dir)
+  install_dir=$(install-dir "$version_requested")
   mkdir -p $install_dir
 
   # Note: install-dir needed for time-helper, but not others
-  wedge-install $(build-dir) $install_dir
+  wedge-install $build_dir $install_dir
 }
 
 unboxed-install() {
@@ -251,11 +293,14 @@ unboxed-install() {
 
 unboxed-smoke-test() {
   local wedge_dir=$1  # e.g. re2c/ with WEDGE
+  local version_requested=${2:-}  # e.g. 5.2
 
   load-wedge $wedge_dir
 
-  local smoke_test_dir=$(smoke-test-dir)
-  local install_dir=$(install-dir)
+  local smoke_test_dir
+  smoke_test_dir=$(smoke-test-dir "$version_requested")
+  local install_dir
+  install_dir=$(install-dir "$version_requested")
 
   echo '  SMOKE TEST'
 
@@ -302,17 +347,18 @@ unboxed-stats() {
 unboxed-build() {
   local wedge_dir=$1
 
-  # Can override default version.  Ca this be a fflag?
+  # Can override default version.  Could be a flag since it's optional?  But
+  # right now we always pass it.
   local version_requested=${2:-}
 
   # TODO:
   # - Would be nice to export the logs somewhere
 
-  unboxed-make $wedge_dir "${version_requested}"
+  unboxed-make $wedge_dir "$version_requested"
 
-  unboxed-install $wedge_dir
+  unboxed-install $wedge_dir "$version_requested"
 
-  unboxed-smoke-test $wedge_dir
+  unboxed-smoke-test $wedge_dir "$version_requested"
 }
 
 readonly BUILD_IMAGE=oilshell/soil-wedge-builder

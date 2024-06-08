@@ -9,9 +9,12 @@ set -o errexit
 # sourced
 WEDGE_NAME='bash'
 
-# TODO: require a param to select one of these
+# validate requested version against this list
+# I guess it would be better to pass WEDGE_VERSION as an INPUT then, so we can
+# have version-specific logic.
+
 WEDGE_VERSION_LIST='4.4 5.2'
-# TODO: remove
+# default version that's used
 WEDGE_VERSION='4.4'
 
 wedge-make() {

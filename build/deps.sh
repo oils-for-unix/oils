@@ -685,11 +685,7 @@ maybe-install-wedge() {
     return
   fi
 
-  # TODO: How do we express the difference between bash 4.4 and 5.2?
-  # I think they should both live in the same WEDGE
-  # But the WEDGE_VERSION somehow gets factored out
-
-  local -a cmd=( deps/wedge.sh unboxed-build _build/deps-source/$name/ )
+  local -a cmd=( deps/wedge.sh unboxed-build _build/deps-source/$name/ $version)
 
   set +o errexit
   my-time-tsv \
@@ -812,7 +808,6 @@ install-wedge-list() {
   ### Reads task rows from stdin
   local parallel=${1:-}
 
-
   mkdir -p _build/wedge/logs
 
   local -a flags
@@ -829,6 +824,8 @@ install-wedge-list() {
 
   # Reads from stdin
   # Note: --process-slot-var requires GNU xargs!  busybox args doesn't have it.
+  #
+  # $name $version $wedge_dir
   xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 maybe-install-wedge
 
   #xargs "${flags[@]}" -n 3 --process-slot-var=XARGS_SLOT -- $0 dummy-task-wrapper
