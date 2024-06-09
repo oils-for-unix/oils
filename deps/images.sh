@@ -12,6 +12,7 @@
 # (2) Rebuild
 #
 #     deps/images.sh build soil-common  # populates apt cache.  WHY DO I NEED THIS?
+#     deps/images.sh build soil-debian-12
 #     deps/images.sh build soil-pea T   # reuse package cache from apt-get
 #     deps/images.sh smoke soil-pea
 #
@@ -22,7 +23,6 @@
 #     deps/images.sh push soil-common v-2024-06-08
 #     sudo docker tag oilshell/soil-common:{v-2024-06-08,latest}
 #     deps/images.sh push soil-common latest
-#
 #
 # (4) Update live version in 'soil/host-shim.sh live-image-tag'
 #
