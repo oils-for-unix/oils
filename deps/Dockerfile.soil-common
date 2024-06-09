@@ -1,5 +1,3 @@
-# This image is only for TESTING
-
 FROM debian:buster-slim
 
 WORKDIR /home/uke/tmp
@@ -15,7 +13,7 @@ RUN deps/from-apt.sh init-deb-cache
 RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
     du --si -s /var/cache/apt /var/lib/apt && \
-    deps/from-apt.sh layer-common
+    deps/from-apt.sh layer-debian-10
 
 # Note: can't remove apt lists yet, because other images will install more
 # packages.

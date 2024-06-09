@@ -19,8 +19,8 @@
 #
 #     deps/images.sh push cpp v-2024-06-08
 #
-#     sudo docker tag oilshell/soil-common:{v-2024-06-08,latest}
 #     deps/images.sh push soil-common v-2024-06-08
+#     sudo docker tag oilshell/soil-common:{v-2024-06-08,latest}
 #     deps/images.sh push soil-common latest
 #
 #
@@ -99,15 +99,12 @@ build() {
   # TODO: use --authfile and more
   #export-podman
 
-  # Hack
-  local docker_suffix=${name#soil-}  # soil-dummy -> Dockerfile.dummy
-
   # can't preserve the entire env: https://github.com/containers/buildah/issues/3887
   #sudo --preserve-env=CONTAINERS_REGISTRIES_CONF --preserve-env=REGISTRY_AUTH_FILE \
   sudo -E DOCKER_BUILDKIT=1 \
     $DOCKER build "${flags[@]}" \
     --tag "oilshell/$name:$LATEST_TAG" \
-    --file deps/Dockerfile.$docker_suffix .
+    --file deps/Dockerfile.$name .
 }
 
 list-images() {

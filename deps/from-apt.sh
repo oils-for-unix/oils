@@ -92,21 +92,22 @@ layer-python-symlink() {
   ln -s -f -v /usr/bin/python2 /usr/bin/python
 }
 
-layer-for-soil() {
-  # git: for checking out code
-  # python2: for various tools
-
-  # TODO: change python2 to python3
-  apt-install git python2
-}
-
-layer-common() {
-  # with RUN --mount=type=cache
-
+layer-debian-10() {
   # Can't install packages in Debian without this
   apt-get update  # uses /var/lib/apt
 
-  layer-for-soil  # uses /var/cache/apt
+  # uses /var/cache/apt
+  apt-install git python2
+}
+
+layer-debian-12() {
+  # Can't install packages in Debian without this
+  apt-get update  # uses /var/lib/apt
+
+  # uses /var/cache/apt
+  apt-install git
+
+  # What about python2?  Will you have problems running Soil itself?
 }
 
 layer-locales() {
