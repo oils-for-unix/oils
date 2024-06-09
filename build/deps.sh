@@ -387,7 +387,7 @@ fetch-spec-bin() {
   maybe-extract $DEPS_SOURCE_DIR/busybox "$(basename $BUSYBOX_URL)" busybox-$BUSYBOX_VERSION
 
   download-to $DEPS_SOURCE_DIR/yash "$YASH_URL"
-  maybe-extract $DEPS_SOURCE_DIR/yash "$(basename $YASH_URL)" yash-$DASH_VERSION
+  maybe-extract $DEPS_SOURCE_DIR/yash "$(basename $YASH_URL)" yash-$YASH_VERSION
 
   # Patch: this tarball doesn't follow the convention $name-$version
   if test -d $DEPS_SOURCE_DIR/mksh/mksh; then
@@ -637,11 +637,6 @@ cpp-wedges() {
   echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
   echo mypy $MYPY_VERSION $USER_WEDGE_DIR
 
-  # Test both outside the contianer, as well as inside?
-  echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR
-
-  #echo souffle $SOUFFLE_VERSION $USER_WEDGE_DIR
-
   # py3-libs has a built time dep on both python3 and MyPy, so we're doing it
   # separately for now
   #echo py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR
@@ -656,6 +651,23 @@ spec-bin-wedges() {
   echo mksh $MKSH_VERSION $USER_WEDGE_DIR
   echo zsh $ZSH_VERSION $USER_WEDGE_DIR
   echo busybox $BUSYBOX_VERSION $USER_WEDGE_DIR
+  echo yash $YASH_VERSION $USER_WEDGE_DIR
+}
+
+contributor-wedges() {
+  py-wedges
+  cpp-wedges
+  spec-bin-wedges
+}
+
+extra-wedges() {
+  # Contributors don't need uftrace, bloaty, and probably R-libs
+  # Although R-libs could be useful for benchmarks
+
+  # Test both outside the contianer, as well as inside?
+  echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR
+
+  #echo souffle $SOUFFLE_VERSION $USER_WEDGE_DIR
 }
 
 timestamp() {
@@ -898,15 +910,25 @@ fake-py3-libs-wedge() {
 }
 
 install-wedges-fast() {
+  local extra=${1:-}
+
   echo " START  $(timestamp)"
 
   # Do all of them in parallel
-  { py-wedges; cpp-wedges; spec-bin-wedges; } | install-wedge-list T
+  if test -n "$extra"; then
+    { contributor-wedges; extra-wedges; } | install-wedge-list T
+  else
+    contributor-wedges | install-wedge-list T
+  fi
 
   fake-py3-libs-wedge
   echo "   END  $(timestamp)"
 
   write-task-report
+}
+
+install-wedges-soil() {
+  install-wedges-fast extra
 }
 
 # OBSOLETE in favor of install-wedges-fast
@@ -1071,7 +1093,7 @@ boxed-spec-bin() {
     #deps/wedge.sh boxed deps/source.medo/busybox
 
     # Problem with out of tree build, as above.  Skipping for now
-    #deps/wedge.sh boxed deps/source.medo/yash
+    deps/wedge.sh boxed deps/source.medo/yash
     echo
   fi
 }

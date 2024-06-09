@@ -74,6 +74,11 @@ osh-version-text() {
   ls -l $(type -p zsh)
   echo
 
+  echo ---
+  yash --version | head -n 1
+  ls -l $(type -p yash)
+  echo
+
   # No -v or -V or --version.  TODO: Only use hermetic version on release.
 
   echo ---

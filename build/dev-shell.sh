@@ -59,6 +59,40 @@ if test -d $SPEC_DIR; then
   export PATH="$SPEC_DIR:$PATH"
 fi
 
+#
+# NEW spec-bin wedges come before old ../oil_DEPS
+#
+
+readonly BASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/bash/4.4/bin
+if test -d $BASH_WEDGE_DIR; then
+  export PATH="$BASH_WEDGE_DIR:$PATH"
+fi
+
+readonly DASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/dash/0.5.10.2/bin
+if test -d $DASH_WEDGE_DIR; then
+  export PATH="$DASH_WEDGE_DIR:$PATH"
+fi
+
+readonly MKSH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/mksh/R52c
+if test -d $MKSH_WEDGE_DIR; then
+  export PATH="$MKSH_WEDGE_DIR:$PATH"
+fi
+
+readonly ZSH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.1.1/bin
+if test -d $ZSH_WEDGE_DIR; then
+  export PATH="$ZSH_WEDGE_DIR:$PATH"
+fi
+
+readonly BUSYBOX_WEDGE_DIR=$USER_WEDGE_DIR/pkg/busybox/1.35.0
+if test -d $BUSYBOX_WEDGE_DIR; then
+  export PATH="$BUSYBOX_WEDGE_DIR:$PATH"
+fi
+
+readonly YASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/yash/2.49/bin
+if test -d $YASH_WEDGE_DIR; then
+  export PATH="$YASH_WEDGE_DIR:$PATH"
+fi
+
 if test -d ~/R; then
   # 2023-07: Hack to keep using old versions on lenny.local
   # In 2023-04, dplyr stopped supporting R 3.4.4 on Ubuntu Bionic

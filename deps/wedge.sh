@@ -187,7 +187,24 @@ load-wedge() {
     echo '  --  WEDGE_LEAKY_BUILD'
   fi
 
-  for func in wedge-make wedge-install wedge-smoke-test; do
+  if declare -f wedge-make; then
+    echo "  OK  wedge-make"
+  elif declare -f wedge-make-from-source-dir; then
+    echo "  OK  wedge-make-from-source-dir"
+  else
+    die "$wedge_dir: wedge-make(-from-source-dir) not declared"
+  fi
+
+  if declare -f wedge-install; then
+    echo "  OK  wedge-install"
+  elif declare -f wedge-make-from-source-dir; then
+    echo "  OK  wedge-install-from-source-dir"
+  else
+    die "$wedge_dir: wedge-install(-from-source-dir) not declared"
+  fi
+
+  # Just one function for now
+  for func in wedge-smoke-test; do
     if declare -f $func > /dev/null; then
       echo "  OK  $func"
     else
@@ -237,11 +254,16 @@ unboxed-make() {
   rm -r -f -v $build_dir
   mkdir -p $build_dir
 
-  # TODO: pushd/popd error handling
-
-  pushd $build_dir
-  wedge-make $source_dir $build_dir $install_dir
-  popd
+  if declare -f wedge-make-from-source-dir; then
+    # e.g. for yash, which can't build outside the source tree
+    pushd $source_dir
+    wedge-make-from-source-dir $source_dir $install_dir
+    popd
+  else
+    pushd $build_dir
+    wedge-make $source_dir $build_dir $install_dir
+    popd
+  fi
 }
 
 
@@ -259,6 +281,9 @@ _unboxed-install() {
 
   load-wedge $wedge "$version_requested"
 
+  local source_dir
+  source_dir=$(source-dir) 
+
   local build_dir
   build_dir=$(build-dir) 
 
@@ -266,8 +291,17 @@ _unboxed-install() {
   install_dir=$(install-dir)
   mkdir -p $install_dir
 
-  # Note: install-dir needed for time-helper, but not others
-  wedge-install $build_dir $install_dir
+  if declare -f wedge-make-from-source-dir; then
+    pushd $source_dir
+    wedge-install-from-source-dir $source_dir $install_dir
+    popd
+  else
+    # Note: install-dir needed for time-helper, but not others
+    #
+    # I think it would nicer to pushd $build_dir in most cases
+
+    wedge-install $build_dir $install_dir
+  fi
 }
 
 unboxed-install() {

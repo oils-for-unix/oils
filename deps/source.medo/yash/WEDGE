@@ -10,10 +10,9 @@ set -o errexit
 WEDGE_NAME='yash'
 WEDGE_VERSION='2.49'
 
-wedge-make() {
+wedge-make-from-source-dir() {
   local src_dir=$1
-  local build_dir=$2
-  local install_dir=$3
+  local install_dir=$2
 
   # 9/2021: from VirtualBox VM
   # The terminfo (curses) library is unavailable!
@@ -23,14 +22,10 @@ wedge-make() {
   time make
 }
 
-wedge-install() {
-  local build_dir=$1
-
-  pushd $build_dir
+wedge-install-from-source-dir() {
+  #local src_dir=$1
 
   time make install
-
-  popd
 }
 
 wedge-smoke-test() {
