@@ -82,7 +82,11 @@ soil-run() {
 
   benchmarks/gc.sh measure-cachegrind
 
-  make-report
+  if which Rscript; then
+    make-report
+  else
+    echo 'R not detected'
+  fi
 }
 
 

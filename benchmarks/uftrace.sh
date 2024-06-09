@@ -143,6 +143,7 @@ record-oils-cpp() {
   fi
 
   soil/cpp-tarball.sh build-like-ninja uftrace
+  local bin=_bin/cxx-uftrace/osh
 
   mkdir -p $out_dir
   time uftrace record --demangle full -d $out_dir "${flags[@]}" $bin "$@"

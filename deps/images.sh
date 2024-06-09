@@ -15,32 +15,28 @@
 #     deps/images.sh build soil-pea T   # reuse package cache from apt-get
 #     deps/images.sh smoke soil-pea
 #
-# (3) Push image and common
+# (3) Push image and common, including latest
 #
-#     deps/images.sh push cpp      # pushes the LATEST_TAG
+#     deps/images.sh push cpp v-2024-06-08
 #
-#     deps/images.sh list-tagged  # find hash of soil-common
-#
-# Either:
-#     sudo docker tag abcdef oilshell/soil-common:latest
-#     deps/images.sh push soil-common latest  # update latest, for next Docker build
-#
-# Or this, I think it's better:
 #     sudo docker tag oilshell/soil-common:{v-2024-06-08,latest}
 #     deps/images.sh push soil-common v-2024-06-08
 #     deps/images.sh push soil-common latest
+#
 #
 # (4) Update live version in 'soil/host-shim.sh live-image-tag'
 #
 # Our images:
 #
-#   https://hub.docker.com/u/oilshell
+#    https://hub.docker.com/u/oilshell
+#
+#    deps/images.sh list-tagged
 #
 # Bootstrapping Wedges
 # --------------------
 #
 #    deps/images.sh build wedge-bootstrap-debian-10 T
-#    deps/images.sh push wedge-bootstrap-debian-10 latest
+#    deps/images.sh push wedge-bootstrap-debian-10  v-2024-06-08
 
 set -o nounset
 set -o pipefail
