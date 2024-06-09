@@ -574,25 +574,8 @@ install-py3-libs() {
   install-py3-libs-from-cache
 }
 
-# OBSOLETE in favor of install-spec-bin-fast
-install-spec-bin() {
-  if ! wedge-exists dash $DASH_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed _build/deps-source/dash
-  fi
 
-  if ! wedge-exists mksh $MKSH_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed _build/deps-source/mksh
-  fi
-
-  if ! wedge-exists busybox $BUSYBOX_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed _build/deps-source/busybox
-  fi
-
-  # Fedora compile error - count_all_jobs
-  if ! wedge-exists bash $BASH_VER $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed _build/deps-source/bash
-  fi
-
+# zsh notes
   # Fedora compiler error
   # zsh ./configure is NOT detecting 'boolcodes', and then it has a broken
   # fallback in Src/Modules/termcap.c that causes a compile error!  It seems
@@ -606,17 +589,6 @@ install-spec-bin() {
   #
   # I think the ./configure is out of sync with the actual build?
 
-  if ! wedge-exists zsh $ZSH_VERSION ''; then
-    deps/wedge.sh unboxed _build/deps-source/zsh
-  fi
-
-  return
-
-  # Hm this has problem with out-of-tree build?  I think Oils does too actually
-  if ! wedge-exists yash $YASH_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed _build/deps-source/yash
-  fi
-}
 
 # TODO:
 # - $ROOT_WEDGE_DIR vs. $USER_WEDGE_DIR is duplicating information that's
@@ -931,82 +903,6 @@ install-wedges-soil() {
   install-wedges-fast extra
 }
 
-# OBSOLETE in favor of install-wedges-fast
-install-wedges() {
-  local py_only=${1:-}
-
-  # TODO:
-  # - Make all of these RELATIVE wedges
-  # - Add
-  #   - unboxed-rel-smoke-test -- move it inside container
-  #   - rel-smoke-test -- mount it in a different location
-
-  if ! wedge-exists cmark $CMARK_VERSION; then
-    deps/wedge.sh unboxed _build/deps-source/cmark/
-  fi
-
-  if ! wedge-exists re2c $RE2C_VERSION; then
-    deps/wedge.sh unboxed _build/deps-source/re2c/
-  fi
-
-  if ! wedge-exists python2 $PY2_VERSION; then
-    deps/wedge.sh unboxed _build/deps-source/python2/
-  fi
-
-  if test -n "$py_only"; then
-    log "Installed dependencies for 'build/py.sh'"
-    return
-  fi
-
-  # Just copy this source tarball
-  if ! wedge-exists pyflakes $PYFLAKES_VERSION $USER_WEDGE_DIR; then
-    local dest_dir=$USER_WEDGE_DIR/pkg/pyflakes/$PYFLAKES_VERSION
-    mkdir -p $dest_dir
-
-    cp --verbose --recursive --no-target-directory \
-      $DEPS_SOURCE_DIR/pyflakes/pyflakes-$PYFLAKES_VERSION $dest_dir
-  fi
-
-  if ! wedge-exists python3 $PY3_VERSION; then
-    deps/wedge.sh unboxed _build/deps-source/python3/
-  fi
-
-  # Copy all the contents, except for .git folder.
-  if ! wedge-exists mypy $MYPY_VERSION $USER_WEDGE_DIR; then
-
-    # NOTE: We have to also copy the .git dir, because it has
-    # .git/modules/typeshed
-    local dest_dir=$USER_WEDGE_DIR/pkg/mypy/$MYPY_VERSION
-    mkdir -p $dest_dir
-
-    # Note: pack files in .git/modules/typeshed/objects/pack are read-only
-    # this can fail
-    cp --verbose --recursive --no-target-directory \
-      $DEPS_SOURCE_DIR/mypy/mypy-$MYPY_VERSION $dest_dir
-  fi
-
-  if ! wedge-exists py3-libs $PY3_LIBS_VERSION $USER_WEDGE_DIR; then
-    download-py3-libs
-    # This patch doesn't work?
-    # patch-typed-ast
-    install-py3-libs
-  fi
-
-  if ! wedge-exists souffle $SOUFFLE_VERSION $USER_WEDGE_DIR; then
-    deps/wedge.sh unboxed _build/deps-source/souffle/
-  fi
-
-  if command -v tree > /dev/null; then
-    tree -L 3 $USER_WEDGE_DIR
-    echo
-    tree -L 3 /wedge/oils-for-unix.org
-  fi
-}
-
-install-wedges-py() {
-  install-wedges py_only
-}
-
 #
 # Unboxed wedge builds
 #
@@ -1018,7 +914,6 @@ uftrace-host() {
   # WEDGE tells me that it depends on pkg-config
   # 'apt-get install pkgconf' gets it
   # TODO: Should use python3 WEDGE instead of SYSTEM python3?
-
   deps/wedge.sh unboxed _build/deps-source/uftrace
 }
 

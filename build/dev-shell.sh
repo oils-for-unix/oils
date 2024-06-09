@@ -40,7 +40,7 @@ if test -d $UFTRACE_WEDGE_DIR; then
   export PATH="$UFTRACE_WEDGE_DIR:$PATH"
 fi
 
-# FALLBACK without test/spec-bin: test/spec.sh link-busybox-ash
+# FALLBACK without busybox wedge: test/spec.sh link-busybox-ash
 readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"
 if test -d $ASH_SYMLINK_DIR; then
   export PATH="$ASH_SYMLINK_DIR:$PATH"

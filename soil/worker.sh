@@ -93,7 +93,6 @@ dev-setup-debian-tasks() {
   # (task_name, script, action, result_html)
 
   dev-setup-for debian
-  #spec-bin-for debian
 }
 
 dev-setup-fedora-tasks() {
@@ -106,7 +105,6 @@ dev-setup-alpine-tasks() {
   # (task_name, script, action, result_html)
 
   dev-setup-for alpine
-  #spec-bin-for alpine
 }
 
 pea-tasks() {
