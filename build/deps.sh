@@ -1033,11 +1033,14 @@ container-wedges() {
 
   if false; then
     deps/wedge.sh boxed deps/source.medo/bloaty/
+
+    # TODO: build with debian-12, because soil-benchmarks2 is, because it has R
     deps/wedge.sh boxed deps/source.medo/uftrace/
   fi
 
   if true; then
-    # For soil-benchmarks/ images
+    # TODO: build with debian-12
+    # Used in {benchmarks,benchmarks2,other-tests}
     deps/wedge.sh boxed deps/source.medo/R-libs/
   fi
 }

@@ -426,7 +426,7 @@ measure-cachegrind() {
   mkdir -p $(dirname $tsv_out)
 
   # Make the header
-  time-tsv -o $tsv_out --print-header \
+  time-tsv3 -o $tsv_out --print-header \
     --rusage --field join_id --field task --field sh_path --field shell_runtime_opts
 
   print-cachegrind-tasks | run-tasks $tsv_out cachegrind

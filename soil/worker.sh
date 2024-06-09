@@ -231,8 +231,9 @@ dump-env         soil/diagnose.sh dump-env             -
 wait-for-tarball soil/wait.sh for-cpp-tarball          -
 test-tar         devtools/release-native.sh test-tar   -
 gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
-uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 EOF
+# TODO: uftrace wedge with debian-12
+#uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 }
 
 cpp-spec-tasks() {
