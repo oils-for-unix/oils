@@ -39,8 +39,8 @@ live-image-tag() {
       echo 'v-2023-07-15'
       ;;
     (benchmarks2)
-      # use cpp-tarball, not mycpp
-      echo 'v-2024-06-08'
+      # debian 12, python3
+      echo 'v-2024-06-08a'
       ;;
     (cpp-spec)
       # Rebuild with jq, procps

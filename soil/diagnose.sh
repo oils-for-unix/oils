@@ -63,7 +63,7 @@ dump-hardware() {
 }
 
 dump-distro() {
-  local path=/etc/lsb-release
+  local path=/etc/os-release
   if test -f $path; then
     cat $path
   else

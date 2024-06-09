@@ -105,9 +105,8 @@ layer-debian-12() {
   apt-get update  # uses /var/lib/apt
 
   # uses /var/cache/apt
-  apt-install git
-
-  # What about python2?  Will you have problems running Soil itself?
+  # Soil's time-tsv3 can run under python3 too
+  apt-install git python3
 }
 
 layer-locales() {

@@ -17,7 +17,6 @@ RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=
 
 # Note: can't remove apt lists yet, because other images will install more
 # packages.
-
 RUN useradd --create-home uke && chown -R uke /home/uke
 
 # TODO: try making this a relative wedge:
