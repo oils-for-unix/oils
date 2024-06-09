@@ -14,37 +14,11 @@ USER uke
 # Copy pre-built wedges
 
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
-  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
-
-COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
-  /wedge/oils-for-unix.org/pkg/re2c/3.0
-
-COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/uftrace/0.13 \
   /wedge/oils-for-unix.org/pkg/uftrace/0.13
 
 COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/python3/3.10.4 \
-  /wedge/oils-for-unix.org/pkg/python3/3.10.4
-
-COPY --chown=uke \
   _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-04-18 \
   /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
-
-# Copy _build/deps-source -> /home/uke/wedge for now.
-COPY --chown=uke \
-  _build/deps-source/mypy/mypy-0.780/ \
-  /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
-
-COPY devtools/run-task.sh /home/uke/tmp/devtools/run-task.sh
-COPY build/deps.sh /home/uke/tmp/build/deps.sh
-COPY build/dev-shell.sh /home/uke/tmp/build/dev-shell.sh
-
-# Hack for now: pass a different MyPy dir
-# Ideally py3-libs would be created a BUILD TIME with wedge-builder, not at
-# RUNTIME with uke!
-RUN build/deps.sh install-py3-libs /home/uke/wedge/oils-for-unix.org/pkg/mypy/0.780/
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-benchmarks2'"]

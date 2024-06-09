@@ -202,6 +202,7 @@ benchmarks-tasks() {
 os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+dev-shell-test   build/dev-shell-test.sh soil-run      -
 id-test          benchmarks/id-test.sh soil-run        -
 osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/osh-parser/index.html
 osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
@@ -227,8 +228,8 @@ benchmarks2-tasks() {
   cat <<EOF
 os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
-py-all-and-ninja soil/worker.sh py-all-and-ninja       -
-dev-shell-test   build/dev-shell-test.sh soil-run      -
+wait-for-tarball soil/wait.sh for-cpp-tarball          -
+test-tar         devtools/release-native.sh test-tar   -
 gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
 uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 EOF

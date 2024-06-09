@@ -272,13 +272,8 @@ benchmarks2() {
   ### uftrace needs a Python plugin
 
   local -a packages=(
-    # for build/py.sh all
-    libreadline-dev
-    python2-dev
-
-    # To build Oil
-    g++
-    ninja-build
+    curl  # fetch C++ tarball
+    g++   # build it
 
     # uftrace needs a Python 3 plugin
     # Technically we don't need 'python3' or 'python3.7' -- only the shared

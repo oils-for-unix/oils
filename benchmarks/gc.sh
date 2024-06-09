@@ -384,12 +384,21 @@ more-variants() {
 }
 
 build-binaries() {
-  local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}/osh )
+  if true; then
 
-  if test -n "${TCMALLOC:-}"; then
-    bin+=( _bin/cxx-opt+tcmalloc/osh )
+    soil/cpp-tarball.sh build-like-ninja \
+      opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}
+
+  else
+
+    # Old Ninja build
+    local -a bin=( _bin/cxx-opt{,+bumpleak,+bumproot,+bumpsmall,+nopool}/osh )
+
+    if test -n "${TCMALLOC:-}"; then
+      bin+=( _bin/cxx-opt+tcmalloc/osh )
+    fi
+    ninja "${bin[@]}"
   fi
-  ninja "${bin[@]}"
 }
 
 measure-all() {
