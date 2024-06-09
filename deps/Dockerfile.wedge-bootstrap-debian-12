@@ -20,7 +20,7 @@ RUN deps/from-apt.sh init-deb-cache
 RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=var-lib-apt-debian-12,target=/var/lib/apt,sharing=locked \
     du --si -s /var/cache/apt /var/lib/apt && \
-    deps/from-apt.sh layer-wedge-bootstrap-debian
+    deps/from-apt.sh layer-wedge-bootstrap-debian-12
 
 # Password-less sudo for 'sudo make install'
 RUN useradd --create-home -G sudo uke0 && \

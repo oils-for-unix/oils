@@ -391,7 +391,8 @@ boxed() {
 
   # Run unboxed-{build,install,smoke-test} INSIDE the container
   local -a args=(
-      sh -c 'cd ~/oil; deps/wedge.sh unboxed $1' dummy "$wedge"
+      sh -c 'cd ~/oil; deps/wedge.sh unboxed "$1" "$2"'
+      dummy "$wedge" "$version_requested"
   )
 
   local -a docker_flags=()

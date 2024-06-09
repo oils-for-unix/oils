@@ -367,6 +367,36 @@ copy-source-medo() {
     deps/source.medo/ $DEPS_SOURCE_DIR/
 }
 
+fetch-spec-bin() {
+  download-to $DEPS_SOURCE_DIR/bash "$BASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH_URL)" bash-$BASH_VER
+
+  download-to $DEPS_SOURCE_DIR/bash "$BASH5_URL"
+  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH5_URL)" bash-$BASH5_VER
+
+  download-to $DEPS_SOURCE_DIR/dash "$DASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/dash "$(basename $DASH_URL)" dash-$DASH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/zsh "$ZSH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_URL)" zsh-$ZSH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/mksh "$MKSH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/mksh "$(basename $MKSH_URL)" mksh-$MKSH_VERSION
+
+  download-to $DEPS_SOURCE_DIR/busybox "$BUSYBOX_URL"
+  maybe-extract $DEPS_SOURCE_DIR/busybox "$(basename $BUSYBOX_URL)" busybox-$BUSYBOX_VERSION
+
+  download-to $DEPS_SOURCE_DIR/yash "$YASH_URL"
+  maybe-extract $DEPS_SOURCE_DIR/yash "$(basename $YASH_URL)" yash-$DASH_VERSION
+
+  # Patch: this tarball doesn't follow the convention $name-$version
+  if test -d $DEPS_SOURCE_DIR/mksh/mksh; then
+    pushd $DEPS_SOURCE_DIR/mksh
+    mv -v mksh mksh-$MKSH_VERSION
+    popd
+  fi
+}
+
 fetch() {
   local py_only=${1:-}
 
@@ -400,39 +430,13 @@ fetch() {
   maybe-extract $DEPS_SOURCE_DIR/python2 "$(basename $PY2_URL)" Python-$PY2_VERSION
   maybe-extract $DEPS_SOURCE_DIR/python3 "$(basename $PY3_URL)" Python-$PY3_VERSION
 
-  download-to $DEPS_SOURCE_DIR/bash "$BASH_URL"
-  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH_URL)" bash-$BASH_VER
-
-  download-to $DEPS_SOURCE_DIR/bash "$BASH5_URL"
-  maybe-extract $DEPS_SOURCE_DIR/bash "$(basename $BASH5_URL)" bash-$BASH5_VER
-
-  download-to $DEPS_SOURCE_DIR/dash "$DASH_URL"
-  maybe-extract $DEPS_SOURCE_DIR/dash "$(basename $DASH_URL)" dash-$DASH_VERSION
-
-  download-to $DEPS_SOURCE_DIR/zsh "$ZSH_URL"
-  maybe-extract $DEPS_SOURCE_DIR/zsh "$(basename $ZSH_URL)" zsh-$ZSH_VERSION
-
-  download-to $DEPS_SOURCE_DIR/mksh "$MKSH_URL"
-  maybe-extract $DEPS_SOURCE_DIR/mksh "$(basename $MKSH_URL)" mksh-$MKSH_VERSION
-
-  download-to $DEPS_SOURCE_DIR/busybox "$BUSYBOX_URL"
-  maybe-extract $DEPS_SOURCE_DIR/busybox "$(basename $BUSYBOX_URL)" busybox-$BUSYBOX_VERSION
-
-  download-to $DEPS_SOURCE_DIR/yash "$YASH_URL"
-  maybe-extract $DEPS_SOURCE_DIR/yash "$(basename $YASH_URL)" yash-$DASH_VERSION
-
-  # Patch: this tarball doesn't follow the convention $name-$version
-  if test -d $DEPS_SOURCE_DIR/mksh/mksh; then
-    pushd $DEPS_SOURCE_DIR/mksh
-    mv -v mksh mksh-$MKSH_VERSION
-    popd
-  fi
+  fetch-spec-bin
 
   # bloaty and uftrace are for benchmarks, in containers
   download-to $DEPS_SOURCE_DIR/bloaty "$BLOATY_URL"
   download-to $DEPS_SOURCE_DIR/uftrace "$UFTRACE_URL"
-  maybe-extract $DEPS_SOURCE_DIR/bloaty "$(basename $BLOATY_URL)" uftrace-$BLOATY_VERSION
-  maybe-extract $DEPS_SOURCE_DIR/uftrace "$(basename $UFTRACE_URL)" bloaty-$UFTRACE_VERSION
+  maybe-extract $DEPS_SOURCE_DIR/bloaty "$(basename $BLOATY_URL)" bloaty-$BLOATY_VERSION
+  maybe-extract $DEPS_SOURCE_DIR/uftrace "$(basename $UFTRACE_URL)" uftrace-$UFTRACE_VERSION
 
   # This is in $DEPS_SOURCE_DIR to COPY into containers, which mycpp will directly import.
 
@@ -632,6 +636,10 @@ cpp-wedges() {
 
   echo python3 $PY3_VERSION $ROOT_WEDGE_DIR
   echo mypy $MYPY_VERSION $USER_WEDGE_DIR
+
+  # Test both outside the contianer, as well as inside?
+  echo uftrace $UFTRACE_VERSION $ROOT_WEDGE_DIR
+
   #echo souffle $SOUFFLE_VERSION $USER_WEDGE_DIR
 
   # py3-libs has a built time dep on both python3 and MyPy, so we're doing it
@@ -1004,7 +1012,7 @@ R-libs-host() {
 # Wedges built inside a container, for copying into a container
 #
 
-container-wedges() {
+boxed-wedges() {
   #### host _build/wedge/binary -> guest container /wedge or ~/wedge
 
   #export-podman
@@ -1037,13 +1045,34 @@ container-wedges() {
 
   if true; then
     # build with debian-12, because soil-benchmarks2 is, because it has R
-    #deps/wedge.sh boxed deps/source.medo/uftrace/ '' debian-12
+    deps/wedge.sh boxed deps/source.medo/uftrace/ '' debian-12
     # python2 needed everywhere
     #deps/wedge.sh boxed deps/source.medo/python2/ '' debian-12
 
     # TODO: build with debian-12
     # Used in {benchmarks,benchmarks2,other-tests}
-    deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
+    #deps/wedge.sh boxed deps/source.medo/R-libs/ '' debian-12
+  fi
+}
+
+boxed-spec-bin() {
+  if false; then
+    deps/wedge.sh boxed deps/source.medo/bash '4.4'
+    deps/wedge.sh boxed deps/source.medo/bash '5.2'
+
+    deps/wedge.sh boxed deps/source.medo/dash
+    deps/wedge.sh boxed deps/source.medo/mksh
+  fi
+
+  if true; then
+    # Note: zsh requires libncursesw5-dev
+    #deps/wedge.sh boxed deps/source.medo/zsh
+
+    #deps/wedge.sh boxed deps/source.medo/busybox
+
+    # Problem with out of tree build, as above.  Skipping for now
+    #deps/wedge.sh boxed deps/source.medo/yash
+    echo
   fi
 }
 

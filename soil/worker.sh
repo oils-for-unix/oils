@@ -230,10 +230,9 @@ os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 wait-for-tarball soil/wait.sh for-cpp-tarball          -
 test-tar         devtools/release-native.sh test-tar   -
+uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
 EOF
-# TODO: figure out what's wrong with python 3.11
-#uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
 }
 
 cpp-spec-tasks() {

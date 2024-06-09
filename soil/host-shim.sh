@@ -40,7 +40,8 @@ live-image-tag() {
       ;;
     (benchmarks2)
       # debian 12, python3, new R-libs, cmark
-      echo 'v-2024-06-08c'
+      # new uftrace version
+      echo 'v-2024-06-09'
       ;;
     (cpp-spec)
       # Rebuild with jq, procps
