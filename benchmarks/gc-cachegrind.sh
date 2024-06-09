@@ -80,8 +80,7 @@ soil-run() {
 
   benchmarks/gc.sh measure-cachegrind
 
-  # TODO: enable
-  # make-report
+  make-report
 }
 
 "$@"

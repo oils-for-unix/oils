@@ -26,3 +26,8 @@ RUN useradd --create-home uke && chown -R uke /home/uke
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/time-helper/2023-02-28 \
   /wedge/oils-for-unix.org/pkg/time-helper/2023-02-28
+
+# We always need Python 2
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/python2/2.7.18 \
+  /wedge/oils-for-unix.org/pkg/python2/2.7.18

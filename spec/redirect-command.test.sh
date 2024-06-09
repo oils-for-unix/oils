@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 ## compare_shells: bash dash mksh
 
 # Notes:

@@ -13,6 +13,13 @@ USER uke
 
 # Copy pre-built wedges
 
+# debian-10 should work?
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
+  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
+
+
+# debian-12
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/uftrace/0.13 \
   /wedge/oils-for-unix.org/pkg/uftrace/0.13
@@ -20,5 +27,6 @@ COPY --chown=uke \
 COPY --chown=uke \
   _build/wedge/relative/oils-for-unix.org/pkg/R-libs/2023-04-18 \
   /home/uke/wedge/oils-for-unix.org/pkg/R-libs/2023-04-18
+
 
 CMD ["sh", "-c", "echo 'hello from oilshell/soil-benchmarks2'"]

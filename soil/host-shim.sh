@@ -39,8 +39,8 @@ live-image-tag() {
       echo 'v-2023-07-15'
       ;;
     (benchmarks2)
-      # debian 12, python3
-      echo 'v-2024-06-08a'
+      # debian 12, python3, new R-libs, cmark
+      echo 'v-2024-06-08c'
       ;;
     (cpp-spec)
       # Rebuild with jq, procps

@@ -350,10 +350,7 @@ unboxed() {
   unboxed-smoke-test $wedge_dir "$version_requested"
 }
 
-readonly DISTRO=debian-10  # Debian Buster
-readonly BOOTSTRAP_IMAGE=oilshell/wedge-bootstrap-$DISTRO
-
-#readonly BUILD_IMAGE_TAG=v-2023-03-01
+readonly DEFAULT_DISTRO=debian-10  # Debian Buster
 
 DOCKER=${DOCKER:-docker}
 
@@ -364,6 +361,9 @@ boxed() {
 
   local wedge=$1
   local version_requested=${2:-}
+  local distro=${3:-$DEFAULT_DISTRO}
+
+  local bootstrap_image=oilshell/wedge-bootstrap-$distro
 
   load-wedge $wedge "$version_requested"
 
@@ -413,7 +413,7 @@ boxed() {
   sudo -E $DOCKER run "${docker_flags[@]}" \
     --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oil" \
     --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \
-    $BOOTSTRAP_IMAGE \
+    $bootstrap_image \
     "${args[@]}"
 }
 
@@ -421,9 +421,12 @@ smoke-test() {
   local wedge_dir=$1
   local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: rename to /boxed
   local version_requested=${3:-}
-  local debug_shell=${4:-}
+  local distro=${4:-$DEFAULT_DISTRO}
+  local debug_shell=${5:-}
 
   load-wedge $wedge_dir "$version_requested"
+
+  local bootstrap_image=oilshell/wedge-bootstrap-$distro
 
   local -a args=(
       sh -c 'cd ~/oil; deps/wedge.sh unboxed-smoke-test $1' dummy "$wedge_dir"
@@ -445,7 +448,7 @@ smoke-test() {
     --network none \
     --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oil" \
     --mount "type=bind,source=$PWD/$wedge_out_dir,target=$wedge_mount_dir" \
-    $BOOTSTRAP_IMAGE \
+    $bootstrap_image \
     "${args[@]}"
 }
 

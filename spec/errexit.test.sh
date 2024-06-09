@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### errexit aborts early
 set -o errexit
