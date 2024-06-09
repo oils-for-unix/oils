@@ -39,8 +39,8 @@ live-image-tag() {
       echo 'v-2023-07-15'
       ;;
     (benchmarks2)
-      # freshen up
-      echo 'v-2023-07-15'
+      # use cpp-tarball, not mycpp
+      echo 'v-2024-06-08'
       ;;
     (cpp-spec)
       # Rebuild with jq, procps

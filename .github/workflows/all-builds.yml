@@ -273,6 +273,7 @@ jobs:
           soil/github-actions.sh publish-and-exit bloaty T
 
   benchmarks2:
+    needs: ['cpp-tarball']
     runs-on: ubuntu-22.04
     env:
       REPO_ROOT: ${{ github.workspace }}
