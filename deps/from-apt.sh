@@ -227,7 +227,7 @@ benchmarks() {
     libreadline-dev
     python2-dev
 
-    # To build Oil
+    # To build Oils
     g++
     ninja-build
     make  # to build R packages
@@ -254,6 +254,15 @@ benchmarks() {
     # TODO: Could move both Python and C++ to their own image
     # That will be a good use case once we have
     procps
+  )
+
+  apt-install "${packages[@]}"
+}
+
+bloaty() {
+  local -a packages=(
+
+    curl  # wait for cpp-tarball
   )
 
   apt-install "${packages[@]}"

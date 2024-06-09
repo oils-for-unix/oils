@@ -1,13 +1,3 @@
-# For buildings wedges.  Similar to Dockerfile.common
-# 
-# TODO: Separate by distro
-#
-#   Dockerfile.wedge-alpine-3.0
-#   Dockerfile.wedge-debian-bullseye
-#   Dockerfile.wedge-ubuntu-18.04
-#   Dockerfile.wedge-ubuntu-20.04
-
-# TODO: use bullseye?
 FROM debian:buster-slim
 
 WORKDIR /home/uke0/tmp

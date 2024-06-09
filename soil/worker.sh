@@ -203,13 +203,22 @@ os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
 id-test          benchmarks/id-test.sh soil-run        -
-native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/
 osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/osh-parser/index.html
 osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/index.html
 mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/-wwz-index
+EOF
+}
+
+bloaty-tasks() {
+  cat <<EOF
+os-info          soil/diagnose.sh os-info              -
+dump-env         soil/diagnose.sh dump-env             -
+wait-for-tarball soil/wait.sh for-cpp-tarball                 -
+test-install-tar devtools/release-native.sh test-install-tar  -
+native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/
 EOF
 }
 
@@ -613,6 +622,7 @@ JOB-cpp-small() { job-main 'cpp-small'; }
 JOB-cpp-tarball() { job-main 'cpp-tarball'; }
 JOB-cpp-spec() { job-main 'cpp-spec'; }
 
+JOB-bloaty() { job-main 'bloaty'; }
 JOB-benchmarks() { job-main 'benchmarks'; }
 JOB-benchmarks2() { job-main 'benchmarks2'; }
 

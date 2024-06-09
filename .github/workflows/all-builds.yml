@@ -252,6 +252,26 @@ jobs:
         run: |
           soil/github-actions.sh publish-and-exit benchmarks T
 
+  bloaty:
+    needs: ['cpp-tarball']
+    runs-on: ubuntu-22.04
+    env:
+      REPO_ROOT: ${{ github.workspace }}
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+
+      - name: bloaty
+        run: |
+          soil/github-actions.sh run-job bloaty
+
+      - name: publish-html
+        env:
+          # for deploying to dashboard
+          TOIL_KEY: ${{ secrets.TOIL_KEY }}
+        run: |
+          soil/github-actions.sh publish-and-exit bloaty T
+
   benchmarks2:
     runs-on: ubuntu-22.04
     env:
@@ -378,7 +398,7 @@ jobs:
     env:
       REPO_ROOT: ${{ github.workspace }}
     # List of tasks to wait on.  Copied from soil/worker.sh list-jobs
-    needs: ['dummy', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm', 'dev-setup-debian']
+    needs: ['dummy', 'bloaty', 'benchmarks', 'benchmarks2', 'dev-minimal', 'cpp-coverage', 'cpp-small', 'cpp-spec', 'cpp-tarball', 'interactive', 'ovm-tarball', 'pea', 'other-tests', 'app-tests', 'wild', 'raw-vm', 'dev-setup-debian']
     #needs: ['dummy', 'pea', 'other-tests']
     steps:
       - name: Check out repository code

@@ -111,11 +111,20 @@ collect-and-report() {
 oils-for-unix() {
   ### Report on the ones we just built
 
-  # TODO: could compare GCC and Clang once we have R on the CI images
-  local -a targets=(_bin/cxx-{dbg,opt}/oils-for-unix)
-  ninja "${targets[@]}"
+  # Leaving out version
+  pushd _tmp/native-tar-test/oils-for-unix-*
 
-  collect-and-report $OIL_BASE_DIR "${targets[@]}"
+  ./configure
+
+  time _build/oils.sh '' dbg SKIP_REBUILD
+  time _build/oils.sh '' opt SKIP_REBUILD
+
+  popd
+
+  collect-and-report $OIL_BASE_DIR \
+    _tmp/native-tar-test/oils-for-unix-*/_bin/cxx-dbg-sh/oils-for-unix \
+    _tmp/native-tar-test/oils-for-unix-*/_bin/cxx-opt-sh/oils-for-unix
+
 
   ls -l $OIL_BASE_DIR
 }

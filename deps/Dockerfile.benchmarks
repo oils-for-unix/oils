@@ -21,11 +21,6 @@ COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
   /wedge/oils-for-unix.org/pkg/re2c/3.0
 
-# For measuring binary size
-COPY --chown=uke \
-  _build/wedge/binary/oils-for-unix.org/pkg/bloaty/1.1 \
-  /wedge/oils-for-unix.org/pkg/bloaty/1.1
-
 COPY --chown=uke \
   _build/wedge/binary/oils-for-unix.org/pkg/uftrace/0.13 \
   /wedge/oils-for-unix.org/pkg/uftrace/0.13

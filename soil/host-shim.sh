@@ -30,6 +30,10 @@ live-image-tag() {
       # rebuild with curl, then g++
       echo 'v-2023-10-05a'
       ;;
+    (bloaty)
+      # new image and task
+      echo 'v-2024-06-08'
+      ;;
     (benchmarks)
       # freshen up
       echo 'v-2023-07-15'
