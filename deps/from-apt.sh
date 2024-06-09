@@ -261,7 +261,7 @@ benchmarks() {
 
 bloaty() {
   local -a packages=(
-
+    g++  # for C++ tarball
     curl  # wait for cpp-tarball
   )
 
