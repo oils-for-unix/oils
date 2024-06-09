@@ -216,8 +216,8 @@ bloaty-tasks() {
   cat <<EOF
 os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
-wait-for-tarball soil/wait.sh for-cpp-tarball                 -
-test-install-tar devtools/release-native.sh test-install-tar  -
+wait-for-tarball soil/wait.sh for-cpp-tarball          -
+test-tar         devtools/release-native.sh test-tar   -
 native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/
 EOF
 }
