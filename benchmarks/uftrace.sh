@@ -343,8 +343,8 @@ plugin() {
 soil-run() {
   measure-all
   export-all
-  analyze-all
-
+  # TODO: enable
+  # analyze-all
 }
 
 "$@"

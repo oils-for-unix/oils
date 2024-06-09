@@ -57,7 +57,6 @@ EOF
 EOF
 }
 
-
 make-report() {
   mkdir -p $BASE_DIR/{stage1,stage2}
 
@@ -76,18 +75,13 @@ make-report() {
   benchmarks/report.sh stage3 $BASE_DIR
 }
 
-
 soil-run() {
   ### Run in soil/benchmarks2 (stable timings)
 
   benchmarks/gc.sh measure-cachegrind
 
-  if which Rscript; then
-    make-report
-  else
-    echo 'R not detected'
-  fi
+  # TODO: enable
+  # make-report
 }
-
 
 "$@"
