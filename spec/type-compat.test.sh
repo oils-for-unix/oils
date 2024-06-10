@@ -1,4 +1,4 @@
-## compare_shells: bash
+## compare_shells: bash-4.4
 
 # Tests for bash's type flags on cells.  Hopefully we don't have to implement
 # this, but it's good to know the behavior.

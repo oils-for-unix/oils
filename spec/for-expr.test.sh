@@ -1,4 +1,5 @@
-#
+## compare_shells: bash-4.4 zsh
+
 # Constructs borrowed from ksh.  Hm I didn't realize zsh also implements these!
 # mksh implements most too.
 

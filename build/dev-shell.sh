@@ -60,12 +60,18 @@ if test -d $SPEC_DIR; then
 fi
 
 #
-# NEW spec-bin wedges come before old ../oil_DEPS
+# NEW spec-bin wedges found before old ../oil_DEPS
 #
 
 readonly BASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/bash/4.4/bin
 if test -d $BASH_WEDGE_DIR; then
   export PATH="$BASH_WEDGE_DIR:$PATH"
+fi
+
+# bash 5 found before bash 4
+readonly BASH5_WEDGE_DIR=$USER_WEDGE_DIR/pkg/bash/5.2.21/bin
+if test -d $BASH5_WEDGE_DIR; then
+  export PATH="$BASH5_WEDGE_DIR:$PATH"
 fi
 
 readonly DASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/dash/0.5.10.2/bin

@@ -565,10 +565,10 @@ argv.py 'ref[@]' "${ref[@]}"
 argv.py ref "$ref"  # JOINING mangles the array?
 argv.py 'a[@]' "${a[@]}"
 ## STDOUT:
-['ref', 'A B C']
+['ref', 'A B', 'C']
 status=1
 ['ref[@]']
-['ref', 'A B C']
+['ref', 'A B', 'C']
 ['a[@]', 'A B', 'C']
 ## END
 ## OK mksh status: 1

@@ -148,7 +148,7 @@ echo status=$?
 history -d 99
 echo status=$?
 
-case $SH in bash) echo '^D' ;; esac
+case $SH in bash*) echo '^D' ;; esac
 
 EOF
 
@@ -163,13 +163,15 @@ status=2
 ^D
 ## END
 
-## OK bash STDOUT:
+# bash-4.4 used to give more errors like OSH?  Weird
+
+## BUG bash STDOUT:
 42
 43
 44
 status=0
-status=1
-status=1
+status=0
+status=0
 status=1
 ^D
 ## END

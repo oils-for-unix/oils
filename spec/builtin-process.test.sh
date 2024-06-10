@@ -216,11 +216,6 @@ unlimited
 fail
 ## END
 
-## BUG bash STDOUT:
-unlimited
-unlimited
-fail
-## END
 
 #### ulimit -a doesn't take arg
 case $SH in bash) exit ;; esac

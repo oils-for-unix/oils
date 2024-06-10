@@ -1,5 +1,7 @@
-## compare_shells: bash
+## compare_shells: bash-4.4
 ## oils_failures_allowed: 6
+
+# TODO: bash 5.2.21 with lower case
 
 #### Lower Case with , and ,,
 x='ABC DEF'

@@ -1,5 +1,7 @@
-## compare_shells: dash bash mksh ash
+## compare_shells: dash bash-4.4 mksh ash
 ## oils_failures_allowed: 0
+
+# TODO: upgrade to bash 5.2 and make OSH behave like that!  redirect failures
 
 #### errexit aborts early
 set -o errexit

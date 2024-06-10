@@ -1,4 +1,6 @@
-#
+## compare_shells: bash-4.4 mksh
+
+
 # Extended assignment language, e.g. typeset, declare, arrays, etc.
 # Things that dash doesn't support.
 
@@ -223,7 +225,7 @@ typeset test_var5=555
 #### declare -p doesn't print binary data, but can be loaded into bash
 
 # bash prints binary data!
-case $SH in bash|mksh) exit ;; esac
+case $SH in bash*|mksh) exit ;; esac
 
 unquoted='foo'
 sq='foo bar'

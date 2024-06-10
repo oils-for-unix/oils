@@ -149,8 +149,10 @@ echo 1 ;; echo 2
 ## OK mksh status: 1
 
 #### empty clause in [[
+
 # regression test for commit 451ca9e2b437e0326fc8155783d970a6f32729d8
 [[ || true ]]
+
 ## status: 2
 ## N-I dash status: 0
 ## OK mksh status: 1
@@ -158,14 +160,14 @@ echo 1 ;; echo 2
 #### interactive parse error (regression)
 flags=''
 case $SH in
-  *bash|*osh)
+  bash*|*osh)
     flags='--rcfile /dev/null'
     ;;
 esac  
 $SH $flags -i -c 'var=)'
 
 ## status: 2
-## OK bash/mksh status: 1
+## OK mksh status: 1
 
 #### array literal inside array is a parse error
 a=( inside=() )

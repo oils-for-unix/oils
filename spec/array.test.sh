@@ -1,3 +1,5 @@
+## compare_shells: bash mksh
+## oils_failures_allowed: 1
 
 # TODO: Need a SETUP section.
 
@@ -408,13 +410,14 @@ ls foo=(1 2)
 ## OK bash status: 2
 
 #### Single array with :-
-# bash does EMPTY ELISION here, unless it's double quoted.  mksh has
-# more sane behavior.  OSH is better.
+
+# 2024-06 - bash 5.2 and mksh now match, bash 4.4 differed.
+# Could change OSH
+# zsh agrees with OSH, but it fails most test cases
+
 single=('')
 argv.py ${single[@]:-none} x "${single[@]:-none}"
-## OK osh stdout: ['x', '']
-## OK bash stdout: ['none', 'x', '']
-## OK mksh stdout: ['none', 'x', 'none']
+## stdout: ['none', 'x', 'none']
 
 #### Stripping a whole array unquoted
 # Problem: it joins it first.

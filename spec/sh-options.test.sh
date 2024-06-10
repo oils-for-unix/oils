@@ -485,7 +485,7 @@ __assoc['k e y']='v a l'
 __assoc[a]=b
 set | grep '^__'
 ## STDOUT:
-__assoc=(["k e y"]="v a l" [a]="b" )
+__assoc=([a]="b" ["k e y"]="v a l" )
 ## END
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1

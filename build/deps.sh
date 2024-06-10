@@ -58,7 +58,7 @@ readonly BASH_VER=4.4  # don't clobber BASH_VERSION
 readonly BASH_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH_VER.tar.gz"
 
 # Another version of bash to test
-readonly BASH5_VER=5.2
+readonly BASH5_VER=5.2.21
 readonly BASH5_URL="https://www.oilshell.org/blob/spec-bin/bash-$BASH5_VER.tar.gz"
 
 readonly DASH_VERSION=0.5.10.2
@@ -973,15 +973,17 @@ boxed-wedges() {
 }
 
 boxed-spec-bin() {
-  if false; then
-    deps/wedge.sh boxed deps/source.medo/bash '4.4'
-    deps/wedge.sh boxed deps/source.medo/bash '5.2'
+  if true; then
+    #deps/wedge.sh boxed deps/source.medo/bash '4.4'
+    deps/wedge.sh boxed deps/source.medo/bash '5.2.21'
+  fi
 
+  if false; then
     deps/wedge.sh boxed deps/source.medo/dash
     deps/wedge.sh boxed deps/source.medo/mksh
   fi
 
-  if true; then
+  if false; then
     # Note: zsh requires libncursesw5-dev
     #deps/wedge.sh boxed deps/source.medo/zsh
 

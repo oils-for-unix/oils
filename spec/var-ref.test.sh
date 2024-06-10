@@ -1,4 +1,4 @@
-## compare_shells: bash
+## compare_shells: bash-4.4
 
 # Var refs are done with ${!a}
 #

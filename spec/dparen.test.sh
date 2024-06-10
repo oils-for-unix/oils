@@ -1,4 +1,4 @@
-## compare_shells: bash mksh zsh
+## compare_shells: bash-4.4 mksh zsh
 
 #### (( )) result
 (( 1 )) && echo True

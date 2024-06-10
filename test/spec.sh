@@ -99,8 +99,7 @@ blog1() {
 }
 
 blog2() {
-  sh-spec spec/blog2.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file blog2 "$@"
 }
 
 blog-other1() {
@@ -132,8 +131,7 @@ assign() {
 
 # These cases apply to a few shells.
 assign-extended() {
-  sh-spec spec/assign-extended.test.sh \
-    $BASH $MKSH $OSH_LIST "$@" 
+  run-file assign-extended "$@"
 }
 
 # Corner cases that OSH doesn't handle
@@ -166,8 +164,7 @@ unicode() {
 }
 
 loop() {
-  sh-spec spec/loop.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file loop "$@"
 }
 
 case_() {
@@ -192,8 +189,7 @@ builtin-cd() {
 }
 
 builtin-eval-source() {
-  sh-spec spec/builtin-eval-source.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file builtin-eval-source "$@"
 }
 
 builtin-echo() {
@@ -426,8 +422,7 @@ xtrace() {
 }
 
 strict-options() {
-  sh-spec spec/strict-options.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file strict-options "$@"
 }
 
 exit-status() {
@@ -458,8 +453,7 @@ arith-context() {
 }
 
 array() {
-  sh-spec spec/array.test.sh \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file array "$@"
 }
 
 array-compat() {
@@ -502,9 +496,7 @@ regex() {
 }
 
 process-sub() {
-  # mksh and dash don't support it
-  sh-spec spec/process-sub.test.sh \
-    $BASH $ZSH $OSH_LIST "$@"
+  run-file process-sub "$@"
 }
 
 # This does file system globbing
@@ -538,8 +530,7 @@ let() {
 }
 
 for-expr() {
-  sh-spec spec/for-expr.test.sh \
-    $BASH $ZSH $OSH_LIST "$@"
+  run-file for-expr "$@"
 }
 
 empty-bodies() {
@@ -960,8 +951,7 @@ ble-idioms() {
 }
 
 ble-features() {
-  sh-spec spec/ble-features.test.sh \
-    $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
+  run-file ble-features "$@"
 }
 
 toysh() {

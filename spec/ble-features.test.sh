@@ -1,3 +1,4 @@
+## compare_shells: bash-4.4 zsh mksh ash dash yash
 
 #### [bash_unset] local-unset / dynamic-unset for localvar
 unlocal() { unset -v "$1"; }

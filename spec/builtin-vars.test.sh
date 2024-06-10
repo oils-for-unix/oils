@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 1
-## compare_shells: dash bash mksh zsh
+## compare_shells: dash bash-4.4 mksh zsh
 
 # Tests for builtins having to do with variables: export, readonly, unset, etc.
 #

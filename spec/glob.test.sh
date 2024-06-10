@@ -111,11 +111,21 @@ echo _tmp/\[???\] _tmp/\?
 ## stdout: _tmp/[abc] _tmp/?
 
 #### : escaped
+
 touch _tmp/foo.-
 echo _tmp/*.[[:punct:]] _tmp/*.[[:punct\:]]
-## stdout: _tmp/foo.- _tmp/*.[[:punct:]]
-## BUG mksh stdout: _tmp/*.[[:punct:]] _tmp/*.[[:punct:]]
-## BUG ash stdout: _tmp/foo.- _tmp/foo.-
+
+## STDOUT:
+_tmp/foo.- _tmp/*.[[:punct:]]
+## END
+
+## BUG mksh STDOUT:
+_tmp/*.[[:punct:]] _tmp/*.[[:punct:]]
+## END
+
+## BUG bash/ash STDOUT:
+_tmp/foo.- _tmp/foo.-
+## END
 
 #### Glob after var manipulation
 touch _tmp/foo.zzz _tmp/bar.zzz

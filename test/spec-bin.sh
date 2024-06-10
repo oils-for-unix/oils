@@ -51,4 +51,9 @@ install-shells-with-apt() {
   link-busybox-ash
 }
 
+bash-upstream() {
+  wget --directory _tmp --no-clobber \
+    https://ftp.gnu.org/gnu/bash/bash-5.2.21.tar.gz
+}
+
 run-task "$@"
