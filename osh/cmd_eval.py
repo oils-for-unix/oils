@@ -1448,10 +1448,9 @@ class CommandEvaluator(object):
     def _DoRedirect(self, node, cmd_st):
         # type: (command.Redirect, CommandStatus) -> int
 
-        # TODO: make this shopt --set redirect_errexit
-        # And document in doc/error-handling.md
-        if node.child.tag() in (command_e.Simple, command_e.ShAssignment):
-            cmd_st.check_errexit = True
+        # set -e affects redirect error, like mksh and bash 5.2, but unlike
+        # dash/ash
+        cmd_st.check_errexit = True
 
         status = 0
         redirects = []  # type: List[RedirValue]

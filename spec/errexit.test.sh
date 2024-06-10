@@ -1,4 +1,4 @@
-## compare_shells: dash bash-4.4 mksh ash
+## compare_shells: dash bash mksh ash
 ## oils_failures_allowed: 0
 
 # TODO: upgrade to bash 5.2 and make OSH behave like that!  redirect failures
@@ -315,7 +315,9 @@ status=2
 status=2
 ## END
 
-#### simple command that's an alias -- redir failure NOT checked
+#### simple command that's an alias - redir failure checked
+
+# bash 5.2 fixed bash 4.4 bug: this is now checked
 
 $SH -c '
 shopt -s expand_aliases
@@ -328,20 +330,23 @@ echo alias status=$?
 echo status=$?
 
 ## STDOUT:
-alias status=1
-status=0
+status=1
 ## END
 
-## OK dash STDOUT:
+## BUG dash STDOUT:
 alias status=2
 status=0
 ## END
 
-## BUG mksh STDOUT:
-status=1
+## BUG ash STDOUT:
+alias status=1
+status=0
 ## END
 
-#### bash atoms [[ (( - redir failure does NOT respect errexit (unless redir_errexit)
+#### bash atoms [[ (( - redir failure checked
+
+# bash 5.2 fixed bash 4.4 bug: this is now checked
+
 case $SH in dash) exit ;; esac
 
 $SH -c '
@@ -359,15 +364,6 @@ echo dparen status=$?
 echo status=$?
 
 ## STDOUT:
-dbracket status=1
-status=0
-dparen status=1
-status=0
-## END
-
-# mksh checks errors!
-
-## OK mksh STDOUT:
 status=1
 status=1
 ## END
@@ -381,7 +377,10 @@ status=2
 ## END
 
 
-#### brace group - redir failure does NOT respect errexit
+#### brace group - redir failure checked
+
+# bash 5.2 fixed bash 4.4 bug: this is now checked
+
 # case from
 # https://lists.gnu.org/archive/html/bug-bash/2020-05/msg00066.html
 
@@ -392,21 +391,27 @@ set -o errexit
 echo status=$?
 echo 'should not get here'
 
+## status: 1
 ## STDOUT:
-status=1
-should not get here
 ## END
 
-## OK dash STDOUT:
+## BUG dash status: 0
+## BUG dash STDOUT:
 status=2
 should not get here
 ## END
 
-## BUG mksh status: 1
-## BUG mksh STDOUT:
+## BUG ash status: 0
+## BUG ash STDOUT:
+status=1
+should not get here
 ## END
 
-#### while loop - redirect failure does NOT respect errexit
+
+#### while loop - redirect failure checked
+
+# bash 5.2 fixed bash 4.4 bug: this is now checked
+
 # case from
 # https://lists.gnu.org/archive/html/bug-bash/2020-05/msg00066.html
 
@@ -419,19 +424,22 @@ done < not_exist.txt
 echo status=$?
 echo 'should not get here'
 
+## status: 1
 ## STDOUT:
-status=1
-should not get here
 ## END
 
-## OK dash STDOUT:
+## BUG dash status: 0
+## BUG dash STDOUT:
 status=2
 should not get here
 ## END
 
-## BUG mksh status: 1
-## BUG mksh STDOUT:
+## BUG ash status: 0
+## BUG ash STDOUT:
+status=1
+should not get here
 ## END
+
 
 #### set -e enabled in function (regression)
 foo() {
