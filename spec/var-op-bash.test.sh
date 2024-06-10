@@ -1,4 +1,4 @@
-## compare_shells: bash-4.4
+## compare_shells: bash
 ## oils_failures_allowed: 6
 
 # TODO: bash 5.2.21 with lower case
@@ -156,24 +156,28 @@ export LC_ALL=en_US.UTF-8
 
 x='ABC DEF'
 echo ${x,[d-f]}
-echo ${x,,[d-f]}  # This seems buggy, it doesn't include F?
+echo ${x,,[d-f]}  # bash 4.4 fixed in bash 5.2.21
 ## STDOUT:
 ABC DEF
-ABC deF
+ABC DEF
 ## END
 
-#### ${x@u} U l L upper / lower case (bash 5.1 feature)
+#### ${x@u} U L - upper / lower case (bash 5.1 feature)
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
 
-x='abc def'
+x='abc DEF'
+
 echo "${x@u}"
 
-# TODO: we need to upgrade the spec tests to bash 5.1 (or bash 5.2 is coming
-# out soon)
+echo "${x@U}"
 
-## N-I bash status: 1
-## N-I bash STDOUT:
+echo "${x@L}"
+
+## STDOUT:
+Abc DEF
+ABC DEF
+abc def
 ## END
 
 

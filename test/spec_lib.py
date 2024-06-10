@@ -25,7 +25,7 @@ YSH_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/ysh')  # e.g. $PWD/_bin/cxx-dbg/ysh
 OIL_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/oil')
 
 # e.g. bash-4.4   bash 5.2.21
-BASH_RE = re.compile(r'bash-[\d.]+$')
+BASH_RE = re.compile(r'(bash-\d)[\d.]+$')
 
 def MakeShellPairs(shells):
   shell_pairs = []
@@ -35,10 +35,9 @@ def MakeShellPairs(shells):
   saw_oil = False
 
   for path in shells:
-    if BASH_RE.match(path):
-      # Just call it 'bash' for the assertions
-      #label = os.path.basename(path)
-      label = 'bash'
+    m = BASH_RE.match(path)
+    if m:
+      label = m.group(1)  # bash-4 or to fit
     else:
       first, _ = os.path.splitext(path)
       label = os.path.basename(first)

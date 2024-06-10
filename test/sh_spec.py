@@ -413,7 +413,13 @@ def CreateAssertions(case, sh_label):
   status = False
 
   # So the assertion are exactly the same for osh and osh_ALT
-  case_sh = 'osh' if sh_label.startswith('osh') else sh_label
+
+  if sh_label.startswith('osh'):
+    case_sh = 'osh' 
+  elif sh_label.startswith('bash'):
+    case_sh = 'bash' 
+  else:
+    case_sh = sh_label
 
   if case_sh in case:
     q = case[case_sh]['qualifier']
