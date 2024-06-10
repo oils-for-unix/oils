@@ -1,115 +1,179 @@
-# testing.ysh
-#
-# Usage:
-#   source --builtin testing.sh
-#
-# func f(x) { return (x + 1) }
-#
-# describe foo {
-#   assert (43 === f(42))
-# }
-#
-# if is-main {
-#   run-tests @ARGV   # --filter
-# }
+##########
+# Colors #
+##########
 
-module stdlib/testing || return 0
+const _BOLD = $'\e[1m'
+const _RED = $'\e[31m'
+const _GREEN = $'\e[32m'
+const _YELLOW = $'\e[33m'
+const _PURPLE = $'\e[35m'
+const _CYAN = $'\e[36m'
+const _RESET = $'\e[0;0m'
 
-source --builtin args.ysh
+############
+# Internal #
+############
 
-proc assert ( ; cond ; fail_message='default fail message') {
-  echo 'hi from assert'
+var _test_group_stack = []
+var _tests = {}
+var _test_group_depth = 0
 
-  = cond
+var _num_fail = 0
+var _num_succ = 0
 
-  # I think this might be ready now?
-
-  var val = evalExpr(cond) 
-
-  echo
-  echo 'value'
-  = val
-  pp line (val)
-
-  = fail_message
-
-  if (val) {
-    echo 'OK'
-  } else {
-    var m = evalExpr(fail_message) 
-    echo "FAIL - this is where we extract the string - $m"
-  }
+proc _start_test_group (; name) {
+    call _test_group_stack->append(name)
 }
 
-proc test-assert {
-  var x = 42
-  assert [42 === x]
+proc _end_test_group {
+    call _test_group_stack->pop()
 }
 
-proc test-expr ( ; expr ) {
-  echo 'expr'
-  pp line (expr)
+proc _print_indented (msg) {
+    for _ in (0 .. _test_group_depth) {
+        printf "    "
+    }
+    echo "$msg"
 }
 
-proc test-named ( ; ; n=^[99] ) {
-  echo 'n'
-  pp line (n)
+proc _run_test_group (; group) {
+    for name, elem in (group) {
+        if (type (elem) === "Dict") {
+            # It's another group.
+            _print_indented "${_CYAN}begin${_RESET} ${name}"
+            #_print_indented "${name} {"
+            setglobal _test_group_depth += 1;
+            _run_test_group (elem)
+            setglobal _test_group_depth -= 1;
+            #_print_indented "}"
+            _print_indented "${_CYAN}end${_RESET}"
+        } else {
+            # It's a test case.
+            _run_test_case (name, elem)
+        }
+    }
 }
 
-# What happens when there are duplicate test IDs?
-#
-# Also I think filter by "$test_id/$case_id"
-
-proc __it (case_id ; ; ; block) {
-  # This uses a clean directory
-  echo TODO
-}
-
-# is this accessible to users?
-# It can contain a global list of things to run
-
-# Naming convention: a proc named 'describe' mutates a global named _describe?
-# Or maybe _describe_list ?
-
-var _describe_list = []
-
-proc describe (test_id ; ; ; block) {
-  echo describe
-  #= desc
-
-  # TODO:
-  # - need append
-  # - need ::
-  # _ _describe->append(cmd)
-  #
-  # Need to clean this up
-  # append (_describe, cmd)  # does NOT work!
-
-  call _describe_list->append(block)
-}
-
-proc Args {
-  echo TODO
-}
-
-# Problem: this creates a global variable?
-Args (&spec) {
-  flag --filter 'Regex of test descriptions'
-}
-
-proc run-tests {
-  var opt, i = parseArgs(spec, ARGV)
-
-  # TODO:
-  # - parse --filter foo, which you can use eggex for!
-
-  for cmd in (_describe) {
-    # TODO: print filename and 'describe' name?
+proc _run_test_case (; name, block) {
+    for _ in (0 .. _test_group_depth) {
+        printf "    "
+    }
+    printf "${_YELLOW}test${_RESET} ${name} ... "
     try {
-      eval (cmd)
+        eval (block)
+    }
+    if (_status === 0) {
+        setglobal _num_succ += 1
+        printf "${_GREEN}ok${_RESET}"
+        printf '\n'
+    } else {
+        setglobal _num_fail += 1
+    }
+}
+
+##########
+# Public #
+##########
+
+proc test_group (; name ; ; block) {
+    _start_test_group (name)
+    eval (block)
+    _end_test_group
+}
+
+proc test (; name ; ; block) {
+    var test_group = _tests
+    for group_name in (_test_group_stack) {
+        if (not (group_name in test_group)) {
+            setvar test_group[group_name] = {}
+        }
+        setvar test_group = test_group[group_name]
+    }
+    setvar test_group[name] = block
+}
+
+proc assert ( ; cond LAZY ) {
+    var result = 1
+    try {
+        setvar result = evalExpr(cond)
     }
     if (_status !== 0) {
-      echo 'failed'
+        printf '\n'
+        _print_indented "    ${_RED}${_BOLD}EXCEPTION:${_RESET} ${_status}"
+        error "exception while running assertion"
+    } elif (not result) {
+        printf '\n'
+        _print_indented "    ${_RED}${_BOLD}assertion FAILED:${_RESET} TODO"
+        error "assertion failed"
     }
-  }
 }
+
+proc run_tests {
+    setglobal _num_fail = 0
+    setglobal _num_succ = 0
+
+    _run_test_group (_tests)
+    setglobal _tests = {}
+
+    var total = _num_fail + _num_succ
+    if (total === 0) {
+        echo "${_YELLOW}0 tests ran${_RESET}"
+    } elif (_num_fail === 0) {
+        echo "${_GREEN}${total} tests succeeded${_RESET}"
+    } else {
+        echo "${_RED}${_BOLD}${_num_fail} / ${total} tests failed${_RESET}"
+    }
+}
+
+###################
+# Testing Testing #
+###################
+
+test_group ("Numbers") {
+    test ("numbers exist") {
+        assert [3]
+        assert [2]
+        assert [1]
+        assert [0]
+    }
+    test ("positive numbers exist") {
+        assert [3]
+        assert [2]
+        assert [1]
+    }
+    test ("comparisons (right)") {
+        assert [1 < 2]
+        assert [1 < 3]
+    }
+    test ("comparisons (wrong)") {
+        assert [1 === 1]
+        assert [1 > 2]
+        assert [1 > 3]
+    }
+    test_group ("Big Numbers") {
+        test ("big positive numbers") {
+            assert [14783482949258384725882347823841]
+        }
+        test ("big negative numbers") {
+            assert [-14783482949258384725882347823841]
+        }
+    }
+}
+
+test ("string test") {
+    assert ["abc" < "def"]
+}
+
+test_group ("Miscellaneous") {
+    test ("nothing") { : }
+    test ("something") { var x = "something" }
+}
+
+run_tests
+
+test ("good test") {
+    assert [true]
+}
+
+run_tests
+run_tests
