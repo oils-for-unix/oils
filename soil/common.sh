@@ -20,7 +20,7 @@ dump-env() {
   env | grep -v '^encrypted_' | sort
 }
 
-if true; then
+if false; then
   readonly SOIL_USER='travis_admin'
   readonly SOIL_HOST='travis-ci.oilshell.org'
   readonly SOIL_HOST_DIR=~/travis-ci.oilshell.org  # used on server
@@ -30,13 +30,13 @@ else
   readonly SOIL_HOST='mb.oils.pub'
   # Extra level
   readonly SOIL_HOST_DIR=~/www/mb.oils.pub  # used on server
-  readonly SOIL_REMOTE_DIR=www/travis-ci.oilshell.org  # used on client
+  readonly SOIL_REMOTE_DIR=www/mb.oils.pub  # used on client
 fi
 
 readonly SOIL_USER_HOST="$SOIL_USER@$SOIL_HOST"
 
 html-head() {
-  # TODO: Shebang line should chang ecahnge to
+  # TODO: Shebang line should change too
   PYTHONPATH=. python3 doctools/html_head.py "$@"
 }
 

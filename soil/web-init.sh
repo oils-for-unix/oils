@@ -167,15 +167,7 @@ remote-test() {
   local user=${1:-$SOIL_USER}
   local host=${2:-$SOIL_HOST}
 
-  #local arg='~/travis-ci.oilshell.org/jobs'
-  local arg='~/www/mb.oils.pub/github-jobs'
-
-  # TODO: $PATH needs to have ~/bin, so shebang works
-  # #!/usr/bin/env python2
-  #
-  #ssh $user@$host /usr/bin/env
-
-  ssh $user@$host soil-web/soil/web.sh local-test $arg
+  ssh $user@$host soil-web/soil/web.sh hello
 }
 
 

@@ -177,4 +177,11 @@ local-test() {
   echo "Wrote $index and $run_index"
 }
 
+hello() {
+  echo "hi from $0"
+  echo
+  whoami
+  hostname
+}
+
 "$@"
