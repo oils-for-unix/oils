@@ -46,7 +46,9 @@ deps() {
 }
 
 keygen() {
-  ssh-keygen -t rsa -b 4096 -C "travis-ci.oilshell" -f rsa_travis
+  local comment=${1:-travis-ci.oilshell}
+  local file=${2:-rsa_travis}
+  ssh-keygen -t rsa -b 4096 -C "$comment" -f $file
 }
 
 encrypt-private-key() {

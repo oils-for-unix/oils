@@ -40,7 +40,7 @@ rewrite-jobs-index() {
   local prefix=$1
   local run_id=$2   # pass GITHUB_RUN_NUMBER or git-$hash
 
-  local dir=~/travis-ci.oilshell.org/${prefix}jobs
+  local dir=$SOIL_HOST_DIR/${prefix}jobs
 
   log "soil-web: Rewriting ${prefix}jobs/index.html"
 
@@ -74,7 +74,7 @@ cleanup-jobs-index() {
   local prefix=$1
   local dry_run=${2:-true}
 
-  local dir=~/travis-ci.oilshell.org/${prefix}jobs
+  local dir=$SOIL_HOST_DIR/${prefix}jobs
 
   # Pass it all JSON, and then it figures out what files to delete (TSV, etc.)
   case $dry_run in
@@ -112,7 +112,7 @@ cleanup-status-api() {
 
   local dry_run=${1:-true}
 
-  local dir=~/travis-ci.oilshell.org/status-api/github
+  local dir=$SOIL_HOST_DIR/status-api/github
 
   pushd $dir
   case $dry_run in

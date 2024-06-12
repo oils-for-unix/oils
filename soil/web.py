@@ -372,7 +372,7 @@ HTML_BODY_TOP_T = jsontemplate.Template('''
   <body class="width50">
     <p id="home-link">
         <a href="..">Up</a>
-      | <a href="/">travis-ci.oilshell.org</a>
+      | <a href="/">Home</a>
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 

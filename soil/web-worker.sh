@@ -78,7 +78,7 @@ scp-status-api() {
   local job_name=$2
 
   local status_file="_soil-jobs/$job_name.status.txt"
-  local remote_path="travis-ci.oilshell.org/status-api/github/$run_id/$job_name"
+  local remote_path="$SOIL_REMOTE_DIR/status-api/github/$run_id/$job_name"
 
   # We could make this one invocation of something like:
   # cat $status_file | sshq soil/web.sh PUT $remote_path
@@ -95,7 +95,7 @@ scp-results() {
   local prefix=$1  # srht- or ''
   shift
 
-  my-scp "$@" "$SOIL_USER_HOST:travis-ci.oilshell.org/${prefix}jobs/"
+  my-scp "$@" "$SOIL_USER_HOST:$SOIL_REMOTE_DIR/${prefix}jobs/"
 }
 
 # Dummy that doesn't depend on results
@@ -130,7 +130,7 @@ format-wwz-index() {
   <body class="width40">
     <p id="home-link">
         <a href="..">Up</a>
-      | <a href="/">travis-ci.oilshell.org</a>
+      | <a href="/">Home</a>
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
@@ -174,7 +174,7 @@ format-image-stats() {
 
   cat <<EOF
     <p id="home-link">
-        <a href="/">travis-ci.oilshell.org</a>
+        <a href="/">Home</a>
       | <a href="//oilshell.org/">oilshell.org</a>
     </p>
 
@@ -270,7 +270,7 @@ deploy-job-results() {
   # So we don't have to unzip it
   cp _tmp/soil/INDEX.tsv $job_name.tsv
 
-  local remote_dest_dir="travis-ci.oilshell.org/${prefix}jobs/$subdir"
+  local remote_dest_dir="$SOIL_REMOTE_DIR/${prefix}jobs/$subdir"
   my-ssh $SOIL_USER_HOST "mkdir -p $remote_dest_dir"
 
   # Do JSON last because that's what 'list-json' looks for
@@ -279,8 +279,8 @@ deploy-job-results() {
   log ''
   log 'View CI results here:'
   log ''
-  log "http://travis-ci.oilshell.org/${prefix}jobs/$subdir/"
-  log "http://travis-ci.oilshell.org/${prefix}jobs/$subdir/$job_name.wwz/"
+  log "http://$SOIL_HOST/${prefix}jobs/$subdir/"
+  log "http://$SOIL_HOST/${prefix}jobs/$subdir/$job_name.wwz/"
   log ''
 }
 
