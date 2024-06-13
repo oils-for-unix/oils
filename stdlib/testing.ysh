@@ -1,14 +1,18 @@
 # TODO:
 # - [x] Renaming a bit for "privacy"
 # - [x] Renaming for public interface: test-case, test-suite, assert (subject to change)
+# - [ ] Rename to use "-"s for procs.
 # - [x] Make test-case and test-suite take a word arg so they don't need parens
 # - [x] error if you try to re-enter run-tests
-# - [ ] testing testing: assert fail, exn in assert, exn outside of assert
-# - [ ] check for both kinds of exceptions (_status and _error)
+# - [x] testing testing: assert fail, exn in assert, exn outside of assert
+# - [-] check for both kinds of exceptions (_status and _error)
 # - [ ] tests for tests
 # - [ ] --tool test support
 # - [ ] Turn the assert expression into a string, to print if it fails
-# - [ ] Merge _status and _error
+# - [ ] Use ctx instead of globals, wherever possible
+# - [ ] Merge _status and _error. Every exception should set _error, with the
+#       status stored on _error.status. Use _error instead of the icky global
+#       _assertion_result
 
 ##########
 # Colors #
@@ -64,6 +68,8 @@ var _num_test_fail = 0
 var _num_test_succ = 0
 var _test_use_color = true
 
+var _assertion_result = 0 # 0: no assert, 1: failed, 2: errored
+
 proc _start_test_suite (; name) {
     call _test_suite_stack->append(name)
 }
@@ -98,21 +104,36 @@ proc _run_test_suite (; suite) {
 }
 
 proc _run_test_case (; name, block) {
+    var test = _yellow("test")
     for _ in (0 .. _test_suite_depth) {
         printf "    "
     }
-    var test = _yellow("test")
-    printf "$test $name ... "
+    printf "$test $name ..."
+    setglobal _assertion_result = 0
     try {
         eval (block)
     }
     if (_status === 0) {
         setglobal _num_test_succ += 1
-        var ok = _green("ok")
+        var ok = _green(" ok")
         printf "$ok"
         printf '\n'
     } else {
         setglobal _num_test_fail += 1
+        printf '\n'
+        if (_assertion_result === 1) {
+            # An assertion failed.
+            var fail = _red("assertion FAILED")
+            _test_print_indented "    $fail"
+        } elif (_assertion_result === 2) {
+            # There was an exception while evaluating an assertion.
+            var exn_in_assert = _red("assertion ERRORED:")
+            _test_print_indented "    $exn_in_assert $_status"
+        } else {
+            # There was an exception in the test case outside of any `assert`.
+            var exn = _red("ERROR:")
+            _test_print_indented "    $exn $_status"
+        }
     }
 }
 
@@ -138,19 +159,15 @@ proc test_case (name ; ; ; block) {
 }
 
 proc assert ( ; cond LAZY ) {
-    var result = 1
+    var success
     try {
-        setvar result = evalExpr(cond)
+        setvar success = evalExpr(cond)
     }
     if (_status !== 0) {
-        printf '\n'
-        var exn = _red("EXCEPTION:")
-        _test_print_indented "    $exn $_status"
-        error "exception while running assertion"
-    } elif (not result) {
-        printf '\n'
-        var fail = _red("assertion FAILED:")
-        _test_print_indented "    $fail TODO"
+        setglobal _assertion_result = 2
+        error "exception in assertion"
+    } elif (not success) {
+        setglobal _assertion_result = 1
         error "assertion failed"
     }
 }

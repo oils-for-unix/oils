@@ -6,14 +6,19 @@ source --builtin testing.ysh
 
 setglobal _test_use_color = false
 
-test_suite "some bad tests" {
-    test_case "bad test number one (should fail)"  {
+test_suite "three kinds of failures" {
+    test_case "the assertion is false" {
         assert [1 > 0]
         assert [1 > 1]
         assert [1 > 2]
     }
-    test_case "bad test number two (should error)" {
+
+    test_case "there is an exception while evaluating the assertion" {
         assert ["Superman" > "Batman"]
+    }
+
+    test_case "there is an exception outside of any assertion" {
+        error "oops!"
     }
 }
 
@@ -24,14 +29,16 @@ test_case "one good test case" {
 run_tests
 
 ## STDOUT:
-begin some bad tests
-    test bad test number one (should fail) ... 
-        assertion FAILED: TODO
-    test bad test number two (should error) ... 
-        EXCEPTION: 3
+begin three kinds of failures
+    test the assertion is false ...
+        assertion FAILED
+    test there is an exception while evaluating the assertion ...
+        assertion ERRORED: 10
+    test there is an exception outside of any assertion ...
+        ERROR: 10
 end
 test one good test case ... ok
-2 / 3 tests failed
+3 / 4 tests failed
 ## END
 
 # #### value.Expr test - positional test
