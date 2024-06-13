@@ -64,11 +64,24 @@ table-sort-html-head() {
 git-commit-dir() {
   local prefix=$1
 
-  local commit_hash
   # written by save-metadata in soil/worker.sh
+  local commit_hash
   commit_hash=$(cat _tmp/soil/commit-hash.txt)
 
-  local git_commit_dir="travis-ci.oilshell.org/${prefix}jobs/git-$commit_hash"
+  local git_commit_dir="$SOIL_REMOTE_DIR/${prefix}jobs/git-$commit_hash"
 
   echo $git_commit_dir
+}
+
+git-commit-url() {
+  local prefix=$1
+
+  # written by save-metadata in soil/worker.sh
+  local commit_hash
+  commit_hash=$(cat _tmp/soil/commit-hash.txt)
+
+  # https:// not working on Github Actions?
+  local url="http://$SOIL_HOST/${prefix}jobs/git-$commit_hash"
+
+  echo $url
 }
