@@ -1,3 +1,15 @@
+# TODO:
+# - [x] Renaming a bit for "privacy"
+# - [x] Renaming for public interface: test-case, test-suite, assert (subject to change)
+# - [x] Make test-case and test-suite take a word arg so they don't need parens
+# - [x] error if you try to re-enter run-tests
+# - [ ] testing testing: assert fail, exn in assert, exn outside of assert
+# - [ ] check for both kinds of exceptions (_status and _error)
+# - [ ] tests for tests
+# - [ ] --tool test support
+# - [ ] Turn the assert expression into a string, to print if it fails
+# - [ ] Merge _status and _error
+
 ##########
 # Colors #
 ##########
@@ -10,43 +22,74 @@ const _PURPLE = $'\e[35m'
 const _CYAN = $'\e[36m'
 const _RESET = $'\e[0;0m'
 
+func _red(text) {
+    if (_test_use_color) {
+        return ("${_BOLD}${_RED}${text}${_RESET}")
+    } else {
+        return (text)
+    }
+}
+func _yellow(text) {
+    if (_test_use_color) {
+        return ("${_YELLOW}${text}${_RESET}")
+    } else {
+        return (text)
+    }
+}
+func _green(text) {
+    if (_test_use_color) {
+        return ("${_YELLOW}${text}${_RESET}")
+    } else {
+        return (text)
+    }
+}
+func _cyan(text) {
+    if (_test_use_color) {
+        return ("${_YELLOW}${text}${_RESET}")
+    } else {
+        return (text)
+    }
+}
+
 ############
 # Internal #
 ############
 
-var _test_group_stack = []
+var _testing_in_progress = false
+var _test_suite_depth = 0
+var _test_suite_stack = []
 var _tests = {}
-var _test_group_depth = 0
 
-var _num_fail = 0
-var _num_succ = 0
+var _num_test_fail = 0
+var _num_test_succ = 0
+var _test_use_color = true
 
-proc _start_test_group (; name) {
-    call _test_group_stack->append(name)
+proc _start_test_suite (; name) {
+    call _test_suite_stack->append(name)
 }
 
-proc _end_test_group {
-    call _test_group_stack->pop()
+proc _end_test_suite {
+    call _test_suite_stack->pop()
 }
 
-proc _print_indented (msg) {
-    for _ in (0 .. _test_group_depth) {
+proc _test_print_indented (msg) {
+    for _ in (0 .. _test_suite_depth) {
         printf "    "
     }
     echo "$msg"
 }
 
-proc _run_test_group (; group) {
-    for name, elem in (group) {
+proc _run_test_suite (; suite) {
+    for name, elem in (suite) {
         if (type (elem) === "Dict") {
-            # It's another group.
-            _print_indented "${_CYAN}begin${_RESET} ${name}"
-            #_print_indented "${name} {"
-            setglobal _test_group_depth += 1;
-            _run_test_group (elem)
-            setglobal _test_group_depth -= 1;
-            #_print_indented "}"
-            _print_indented "${_CYAN}end${_RESET}"
+            # It's another suite.
+            var begin = _cyan("begin")
+            _test_print_indented "$begin $name"
+            setglobal _test_suite_depth += 1;
+            _run_test_suite (elem)
+            setglobal _test_suite_depth -= 1;
+            var end = _cyan("end")
+            _test_print_indented "$end"
         } else {
             # It's a test case.
             _run_test_case (name, elem)
@@ -55,19 +98,21 @@ proc _run_test_group (; group) {
 }
 
 proc _run_test_case (; name, block) {
-    for _ in (0 .. _test_group_depth) {
+    for _ in (0 .. _test_suite_depth) {
         printf "    "
     }
-    printf "${_YELLOW}test${_RESET} ${name} ... "
+    var test = _yellow("test")
+    printf "$test $name ... "
     try {
         eval (block)
     }
     if (_status === 0) {
-        setglobal _num_succ += 1
-        printf "${_GREEN}ok${_RESET}"
+        setglobal _num_test_succ += 1
+        var ok = _green("ok")
+        printf "$ok"
         printf '\n'
     } else {
-        setglobal _num_fail += 1
+        setglobal _num_test_fail += 1
     }
 }
 
@@ -75,21 +120,21 @@ proc _run_test_case (; name, block) {
 # Public #
 ##########
 
-proc test_group (; name ; ; block) {
-    _start_test_group (name)
+proc test_suite (name ; ; ; block) {
+    _start_test_suite (name)
     eval (block)
-    _end_test_group
+    _end_test_suite
 }
 
-proc test (; name ; ; block) {
-    var test_group = _tests
-    for group_name in (_test_group_stack) {
-        if (not (group_name in test_group)) {
-            setvar test_group[group_name] = {}
+proc test_case (name ; ; ; block) {
+    var test_suite = _tests
+    for suite_name in (_test_suite_stack) {
+        if (not (suite_name in test_suite)) {
+            setvar test_suite[suite_name] = {}
         }
-        setvar test_group = test_group[group_name]
+        setvar test_suite = test_suite[suite_name]
     }
-    setvar test_group[name] = block
+    setvar test_suite[name] = block
 }
 
 proc assert ( ; cond LAZY ) {
@@ -99,81 +144,41 @@ proc assert ( ; cond LAZY ) {
     }
     if (_status !== 0) {
         printf '\n'
-        _print_indented "    ${_RED}${_BOLD}EXCEPTION:${_RESET} ${_status}"
+        var exn = _red("EXCEPTION:")
+        _test_print_indented "    $exn $_status"
         error "exception while running assertion"
     } elif (not result) {
         printf '\n'
-        _print_indented "    ${_RED}${_BOLD}assertion FAILED:${_RESET} TODO"
+        var fail = _red("assertion FAILED:")
+        _test_print_indented "    $fail TODO"
         error "assertion failed"
     }
 }
 
 proc run_tests {
-    setglobal _num_fail = 0
-    setglobal _num_succ = 0
+    if (_testing_in_progress) {
+        error "Cannot run tests while testing is already in progress"
+    }
+    setglobal _testing_in_progress = true
+    setglobal _num_test_fail = 0
+    setglobal _num_test_succ = 0
 
-    _run_test_group (_tests)
+    _run_test_suite (_tests)
     setglobal _tests = {}
+    setglobal _testing_in_progress = false
 
-    var total = _num_fail + _num_succ
+    var total = _num_test_fail + _num_test_succ
     if (total === 0) {
-        echo "${_YELLOW}0 tests ran${_RESET}"
-    } elif (_num_fail === 0) {
-        echo "${_GREEN}${total} tests succeeded${_RESET}"
+        var na = _yellow("0 tests ran")
+        printf "$na"
+        printf '\n'
+    } elif (_num_test_fail === 0) {
+        var success = _green("$total tests succeeded")
+        printf "$success"
+        printf '\n'
     } else {
-        echo "${_RED}${_BOLD}${_num_fail} / ${total} tests failed${_RESET}"
+        var failure = _red("$_num_test_fail / $total tests failed")
+        printf "$failure"
+        printf '\n'
     }
 }
-
-###################
-# Testing Testing #
-###################
-
-test_group ("Numbers") {
-    test ("numbers exist") {
-        assert [3]
-        assert [2]
-        assert [1]
-        assert [0]
-    }
-    test ("positive numbers exist") {
-        assert [3]
-        assert [2]
-        assert [1]
-    }
-    test ("comparisons (right)") {
-        assert [1 < 2]
-        assert [1 < 3]
-    }
-    test ("comparisons (wrong)") {
-        assert [1 === 1]
-        assert [1 > 2]
-        assert [1 > 3]
-    }
-    test_group ("Big Numbers") {
-        test ("big positive numbers") {
-            assert [14783482949258384725882347823841]
-        }
-        test ("big negative numbers") {
-            assert [-14783482949258384725882347823841]
-        }
-    }
-}
-
-test ("string test") {
-    assert ["abc" < "def"]
-}
-
-test_group ("Miscellaneous") {
-    test ("nothing") { : }
-    test ("something") { var x = "something" }
-}
-
-run_tests
-
-test ("good test") {
-    assert [true]
-}
-
-run_tests
-run_tests
