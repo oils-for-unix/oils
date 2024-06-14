@@ -13,7 +13,7 @@ packages:
   - fuse-overlayfs
 
 secrets:
-  - 2678474d-b22b-449f-a19a-16cb403c94cd
+  - 839206d4-55e5-4840-8b1f-867dc3ac622e
 
 tasks:
   - mount-perms: |
