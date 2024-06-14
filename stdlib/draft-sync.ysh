@@ -1,0 +1,267 @@
+#!/usr/bin/env ysh
+# vim:foldmethod=marker
+
+module stdlib/sync || return 0
+source --builtin draft-descriptor.ysh
+source --builtin draft-pipe.ysh
+
+# Semaphores {{{
+
+proc sema-new(; value, out_sema) {
+  fifo-fd-new (&sema)
+  sema-up (sema, value)
+  call out_sema->setValue(sema)
+}
+
+proc sema-down(; sema) {
+  read <&$sema
+}
+
+proc sema-up(; sema, delta = 1) {
+  fork {
+    for _ in (0 .. delta) {
+      echo >&$sema
+    }
+  }
+}
+
+proc sema-destroy(; sema) {
+  fifo-fd-destroy (sema)
+}
+
+# }}}
+# Mutex {{{
+
+proc mutex-new(; out_mutex) {
+  sema-new (1, out_mutex)
+} 
+
+proc mutex-acquire(; mutex) {
+  sema-down (mutex)
+}
+
+proc mutex-release(; mutex) {
+  sema-up (mutex)
+}
+
+proc mutex-destroy(; mutex) {
+  sema-destroy (mutex)
+}
+
+# }}}
+# Channels {{{
+# - Pipeline but you can send multiple objects across pipelines
+# - Has to manually ensure the number of sent/received blocks are same across each side.
+# - Blocks, no buffering
+# - Backed by a modified net-string implementation
+#   - We may may modify this to replace with an implementation that allows streaming, however.
+
+proc channel-new(;out_chan, methods = null) {
+# NOTE: Wait for dicts to be able to be set for default fields
+# proc channel-new(;out_chan, methods = Pipe_Methods_NetString) {
+  if (methods === null) {
+    setvar methods = Pipe_Methods_NetString
+  }
+  mutex-new (&write_lock)
+  mutex-new (&read_lock)
+  fifo-fd-new (&pipe)
+  call out_chan->setValue({
+    write_lock,
+    read_lock,
+    pipe,
+    methods,
+  })
+}
+
+proc channel-in(; chan) {
+  mutex-acquire (chan.write_lock)
+  {
+    call chan.methods.in_pipe()
+  } >&$[chan.pipe]
+  mutex-release (chan.write_lock)
+}
+
+proc channel-out(; chan) {
+  mutex-acquire (chan.write_lock)
+  {
+    call chan.methods.out_pipe()
+  } <&$[chan.pipe]
+  mutex-release (chan.write_lock)
+}
+
+proc channel-destroy(; chan) {
+  # Ensures no one else is working
+  mutex-acquire (chan.read_lock)
+  mutex-acquire (chan.write_lock)
+  # Clean up
+  fifo-fd-destroy (chan.pipe)
+  mutex-destroy (chan.write_lock)
+  mutex-destroy (chan.read_lock)
+}
+
+# }}}
+# Atom {{{
+
+proc atom-new(; out_lock) {
+  var lockfile = $(mktemp)
+  var lock = {
+    fd: null,
+    lockfile,
+  }
+  call out_lock->setValue(lock)
+}
+
+proc atom-read-out(; lock) {
+  if (isFdRead(lock.fd)) {
+    # TODO: ensure lock is held with correct permission
+    cat $[lock.lockfile]
+  } else {
+    echo "No rwlock held at $[lock.fd]" 1>&2
+    exit 1
+  }
+}
+
+proc atom-write-in(; lock) {
+  if (isFdWrite(lock.fd)) {
+    # TODO: ensure lock is held with correct permission
+    cat > $[lock.lockfile]
+  } else {
+    echo "No exclusive lock held at rwlock $[lock.fd]" 1>&2
+    exit 1
+  }
+}
+
+# NOTE: to change the type of a lock to T, e.g. from shared to exclusive, just call atom-{T} again. 
+proc atom-lock-shared(; lock) {
+  exec {lock_fd}<$[lock.lockfile]
+  setvar lock.fd = lock_fd
+  flock -s $[lock.fd]
+}
+
+proc atom-lock-exclusive(; lock) {
+  exec {lock_fd}<>$[lock.lockfile]
+  setvar lock.fd = lock_fd
+  flock -x $[lock.fd]
+}
+
+proc atom-unlock(; lock) {
+  var lock_fd_info
+  try {
+    setvar lock_fd_info = getFdInfo(lock.fd)
+  }
+  if (_status === 0) {
+    var lock_fd = lock.fd
+    flock -u $lock_fd
+    exec {lock_fd}<&-
+  } else {
+    echo "No rwlock held at $[lock.fd]" 1>&2
+    exit 1
+  }
+}
+
+proc atom-destroy(; lock) {
+  atom-lock-exclusive (lock)
+  fd-destroy-and-rm-file $[lock.fd]
+}
+
+proc atom-swap-fn(; lock, fn) {
+  atom-lock-exclusive (lock)
+  var swapped = $(atom-read-out (lock)) => fn()
+  write -n -- "$swapped" | atom-write-in (lock)
+  atom-unlock (lock)
+}
+
+# TODO: Performs an lock-guarded write on a lock's file
+# The issue is we need to know when to close the pipe
+# proc atom-swap-pipe(; lock)
+
+# }}}
+# Exhaustable Channels {{{
+# Channels but exhaustable
+
+proc exh-channel-new(; out_chan, methods = null) {
+  if (methods === null) {
+    setvar methods = Pipe_Methods_NetString
+  }
+  mutex-new (&write_lock)
+  mutex-new (&read_lock)
+  fifo-fd-new (&pipe)
+  # a counter on how many information we have on the pipe
+  atom-new (&message_count)
+  # a lock indicating if there's upcoming writes
+  atom-new (&will_write)
+  atom-lock-exclusive (message_count)
+  write -n -- 0 | atom-write-in (message_count)
+  atom-unlock (message_count)
+  call out_chan->setValue({
+    write_lock,
+    read_lock,
+    pipe,
+    methods,
+    message_count,
+    will_write,
+  })
+}
+
+# TODO: when lambda landed, this can be refactor to a parse chained to an inc.
+func __sync_exh_channel_inc_untyped (buf) {
+  var typed = buf => int()
+  var swapped = typed + 1
+  var untyped = "$[swapped]"
+  return (untyped)
+}
+
+proc exh-channel-in(; chan) {
+  atom-swap-fn (chan.message_count, __sync_exh_channel_inc_untyped)
+  atom-lock-shared (chan.will_write)
+  mutex-acquire (chan.write_lock)
+  {
+    call chan.methods.in_pipe()
+  } >&$[chan.pipe]
+  mutex-release (chan.write_lock)
+  atom-unlock (chan.will_write)
+}
+
+proc __exh_channel_out_no_lock(; chan) {
+  {
+    call chan.methods.out_pipe()
+  } <&$[chan.pipe]
+}
+
+proc exh-channel-out(; chan) {
+  mutex-acquire (chan.read_lock)
+  __exh_channel_out_no_lock (chan)
+  mutex-release (chan.read_lock)
+}
+
+proc exh-channel-exhaust(; chan, out_ret) {
+  # No body should send anything to the channel from now on
+  atom-lock-exclusive (chan.will_write)
+  # Count how many message we have
+  atom-lock-exclusive (chan.message_count)
+  atom-read-out (chan.message_count) | json8 read (&num_msg)
+  write -n -- 0 | atom-write-in (chan.message_count)
+  atom-unlock (chan.message_count)
+
+  var ret = []
+  mutex-acquire (chan.read_lock)
+  for _ in (0..num_msg) {
+    call ret->append($(__exh_channel_out_no_lock (chan)))
+  }
+  mutex-release (chan.read_lock)
+  atom-unlock (chan.will_write)
+  call out_ret->setValue(ret)
+}
+
+proc exh-channel-destroy(; chan) {
+  # Ensures no one else is working
+  mutex-acquire (chan.read_lock)
+  mutex-acquire (chan.write_lock)
+  # Clean up
+  fifo-fd-destroy (chan.pipe)
+  atom-destroy (chan.message_count)
+  atom-destroy (chan.will_write)
+  mutex-destroy (chan.write_lock)
+  mutex-destroy (chan.read_lock)
+}
+# }}}

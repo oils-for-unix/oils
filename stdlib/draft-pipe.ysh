@@ -1,0 +1,94 @@
+#!/usr/bin/env ysh
+# vim:foldmethod=marker
+
+module stdlib/pipe || return 0
+
+const __pipe_NUM_DELIM = u'$'
+
+# NOTE: I would love to optimize this a bit more, for example netstring of size n 
+# now takes log_10(n) over head. We can certainly do this better by byte encoding
+# It would be log_128(n) (using 1 bit for indicating the number ends)
+# That's a ln 128 / ln 10 which is roughly twice less overhead.
+proc delim-num-pipe-in (; num) {
+  write -n -- "$num$__pipe_NUM_DELIM"
+}
+
+proc delim-num-pipe-out (; out_num) {
+  var num_str = ""
+  while (true) {
+    read -n 1 next_char
+    if (next_char !== __pipe_NUM_DELIM) {
+      setvar num_str = num_str ++ next_char
+    } else {
+      break
+    }
+  }
+  call out_num->setValue(num_str => int())
+}
+
+
+# Netstring {{{
+proc netstring-pipe-in () {
+  var msg = $(cat) # consume everything from input
+  delim-num-pipe-in (len(msg))
+  write -n -- "$msg"
+}
+
+proc netstring-pipe-out() {
+  delim-num-pipe-out (&msg_len)
+  read -n $msg_len msg
+  write -n -- "$msg"
+}
+
+# NOTE: No way to refer to procs, I wrap them around funcs for now.
+func __pipe_netstring_pipe_in_wrap() {
+  netstring-pipe-in
+}
+func __pipe_netstring_pipe_out_wrap() {
+  netstring-pipe-out
+}
+const Pipe_Methods_NetString = {
+  in_pipe: __pipe_netstring_pipe_in_wrap,
+  out_pipe: __pipe_netstring_pipe_out_wrap,
+}
+# }}}
+# Blocked NetString {{{
+proc blocked-netstring-pipe-in (; block_size) {
+  while (true) {
+    var chunk
+    try {
+      read -n $block_size chunk
+    }
+    var last_chunk = (_status !== 0)
+    write -n -- "$chunk" | netstring-pipe-in 
+    if (last_chunk) {
+      break
+    }
+  }
+}
+
+proc blocked-netstring-pipe-out (; block_size) {
+  while (true) {
+    var chunk = $(netstring-pipe-out)
+    write -n -- "$chunk"
+    if (len(chunk) !== block_size) {
+      break
+    }
+  }
+}
+
+
+func __pipe_blocked_netstring_pipe_in_wrap(block_size) {
+  blocked-netstring-pipe-in (block_size)
+}
+func __pipe_blocked_pipe_out_wrap(block_size) {
+  blocked-netstring-pipe-out (block_size)
+}
+
+func __pipe_methods_blocked_netstring(blocksize) {
+  return ({
+    in_pipe: __pipe_netstring_pipe_in_wrap,
+    out_pipe: __pipe_netstring_pipe_out_wrap,
+  })
+}
+# }}}
