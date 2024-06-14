@@ -25,12 +25,17 @@ if false; then
   readonly SOIL_HOST='travis-ci.oilshell.org'
   readonly SOIL_HOST_DIR=~/travis-ci.oilshell.org  # used on server
   readonly SOIL_REMOTE_DIR=travis-ci.oilshell.org  # used on client
-else
+elif false; then
   readonly SOIL_USER='oils'
   readonly SOIL_HOST='mb.oils.pub'
   # Extra level
   readonly SOIL_HOST_DIR=~/www/mb.oils.pub  # used on server
   readonly SOIL_REMOTE_DIR=www/mb.oils.pub  # used on client
+else
+  readonly SOIL_USER='oils'
+  readonly SOIL_HOST='op.oils.pub'
+  readonly SOIL_HOST_DIR=~/op.oils.pub  # used on server
+  readonly SOIL_REMOTE_DIR=op.oils.pub  # used on client
 fi
 
 readonly SOIL_USER_HOST="$SOIL_USER@$SOIL_HOST"

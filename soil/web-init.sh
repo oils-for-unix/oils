@@ -121,7 +121,7 @@ deploy-data() {
   local host=${2:-$SOIL_HOST}
 
   # www/ prefix for Mythic beasts
-  local host_dir=www/$host
+  local host_dir=$SOIL_REMOTE_DIR
 
   # TODO: Better to put HTML in www/$host/uuu/github-jobs, etc.
   ssh $user@$host mkdir -v -p \
