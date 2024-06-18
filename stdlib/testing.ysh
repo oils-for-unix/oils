@@ -6,7 +6,7 @@
 # - [x] error if you try to re-enter run-tests
 # - [x] testing testing: assert fail, exn in assert, exn outside of assert
 # - [-] check for both kinds of exceptions (_status and _error)
-# - [ ] tests for tests
+# - [x] tests for tests
 # - [ ] --tool test support
 # - [ ] Turn the assert expression into a string, to print if it fails
 # - [ ] Use ctx instead of globals, wherever possible
