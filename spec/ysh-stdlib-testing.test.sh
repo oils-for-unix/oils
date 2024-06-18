@@ -5,28 +5,28 @@
 source --builtin testing.ysh
 setglobal _test_use_color = false
 
-test_suite "three bad tests" {
-    test_case "the assertion is false" {
+test-suite "three bad tests" {
+    test-case "the assertion is false" {
         assert [1 > 0]
         assert [1 > 1]
         assert [1 > 2]
     }
 
-    test_case "there is an exception while evaluating the assertion" {
+    test-case "there is an exception while evaluating the assertion" {
         assert ["Superman" > "Batman"]
     }
 
-    test_case "there is an exception outside of any assertion" {
+    test-case "there is an exception outside of any assertion" {
         error "oops!"
     }
 }
 
-test_case "one good test case" {
+test-case "one good test case" {
     assert [1 === 1]
     assert [2 === 2]
 }
 
-run_tests
+run-tests
 
 ## STDOUT:
 begin three bad tests
@@ -41,7 +41,45 @@ test one good test case ... ok
 3 / 4 tests failed
 ## END
 
-#### Stdout and stderr
+#### Test framework: nested test suites
+
+source --builtin testing.ysh
+setglobal _test_use_color = false
+
+test-case "A" { : }
+test-suite "outer test suite" {
+    test-case "B" { : }
+    test-suite "first inner test suite" {
+        test-case "C" { : }
+    }
+    test-case "D" { : }
+    test-suite "second inner test suite" {
+        test-case "E" { : }
+    }
+    test-case "F" { : }
+}
+test-case "G" { : }
+
+run-tests
+
+## STDOUT:
+test A ... ok
+begin outer test suite
+    test B ... ok
+    begin first inner test suite
+        test C ... ok
+    end
+    test D ... ok
+    begin second inner test suite
+        test E ... ok
+    end
+    test F ... ok
+end
+test G ... ok
+7 tests succeeded
+## END
+
+#### Test framework: stdout and stderr
 
 source --builtin testing.ysh
 setglobal _test_use_color = false
@@ -52,7 +90,7 @@ proc p {
   return 42
 }
 
-test_case "that it prints to stdout and stderr" {
+test-case "that it prints to stdout and stderr" {
   # each case changes to a clean directory?
   #
   # and each one is numbered?
@@ -66,7 +104,7 @@ test_case "that it prints to stdout and stderr" {
   assert [$(<err) === "STDERR"]
 }
 
-run_tests
+run-tests
 
 ## STDOUT:
 test that it prints to stdout and stderr ... ok

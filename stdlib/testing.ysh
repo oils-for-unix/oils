@@ -7,7 +7,7 @@
 # - [x] testing testing: assert fail, exn in assert, exn outside of assert
 # - [-] check for both kinds of exceptions (_status and _error)
 # - [x] tests for tests
-# - [ ] --tool test support
+# - [ ] --tool test support (& spec test case for it)
 # - [ ] Turn the assert expression into a string, to print if it fails
 # - [ ] Use ctx instead of globals, wherever possible
 # - [ ] Merge _status and _error. Every exception should set _error, with the
@@ -70,40 +70,40 @@ var _test_use_color = true
 
 var _assertion_result = 0 # 0: no assert, 1: failed, 2: errored
 
-proc _start_test_suite (; name) {
+proc _start-test-suite (; name) {
     call _test_suite_stack->append(name)
 }
 
-proc _end_test_suite {
+proc _end-test-suite {
     call _test_suite_stack->pop()
 }
 
-proc _test_print_indented (msg) {
+proc _test-print-indented (msg) {
     for _ in (0 .. _test_suite_depth) {
         printf "    "
     }
     echo "$msg"
 }
 
-proc _run_test_suite (; suite) {
+proc _run-test-suite (; suite) {
     for name, elem in (suite) {
         if (type (elem) === "Dict") {
             # It's another suite.
             var begin = _cyan("begin")
-            _test_print_indented "$begin $name"
+            _test-print-indented "$begin $name"
             setglobal _test_suite_depth += 1;
-            _run_test_suite (elem)
+            _run-test-suite (elem)
             setglobal _test_suite_depth -= 1;
             var end = _cyan("end")
-            _test_print_indented "$end"
+            _test-print-indented "$end"
         } else {
             # It's a test case.
-            _run_test_case (name, elem)
+            _run-test-case (name, elem)
         }
     }
 }
 
-proc _run_test_case (; name, block) {
+proc _run-test-case (; name, block) {
     var test = _yellow("test")
     for _ in (0 .. _test_suite_depth) {
         printf "    "
@@ -124,15 +124,15 @@ proc _run_test_case (; name, block) {
         if (_assertion_result === 1) {
             # An assertion failed.
             var fail = _red("assertion FAILED")
-            _test_print_indented "    $fail"
+            _test-print-indented "    $fail"
         } elif (_assertion_result === 2) {
             # There was an exception while evaluating an assertion.
             var exn_in_assert = _red("assertion ERRORED:")
-            _test_print_indented "    $exn_in_assert $_status"
+            _test-print-indented "    $exn_in_assert $_status"
         } else {
             # There was an exception in the test case outside of any `assert`.
             var exn = _red("ERROR:")
-            _test_print_indented "    $exn $_status"
+            _test-print-indented "    $exn $_status"
         }
     }
 }
@@ -141,13 +141,13 @@ proc _run_test_case (; name, block) {
 # Public #
 ##########
 
-proc test_suite (name ; ; ; block) {
-    _start_test_suite (name)
+proc test-suite (name ; ; ; block) {
+    _start-test-suite (name)
     eval (block)
-    _end_test_suite
+    _end-test-suite
 }
 
-proc test_case (name ; ; ; block) {
+proc test-case (name ; ; ; block) {
     var test_suite = _tests
     for suite_name in (_test_suite_stack) {
         if (not (suite_name in test_suite)) {
@@ -172,7 +172,7 @@ proc assert ( ; cond LAZY ) {
     }
 }
 
-proc run_tests {
+proc run-tests {
     if (_testing_in_progress) {
         error "Cannot run tests while testing is already in progress"
     }
@@ -180,7 +180,7 @@ proc run_tests {
     setglobal _num_test_fail = 0
     setglobal _num_test_succ = 0
 
-    _run_test_suite (_tests)
+    _run-test-suite (_tests)
     setglobal _tests = {}
     setglobal _testing_in_progress = false
 
