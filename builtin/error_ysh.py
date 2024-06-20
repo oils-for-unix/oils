@@ -58,8 +58,10 @@ class Try(vm._Builtin):
     - Set _error_location
     - These could be used by a 'raise' builtin?  Or 'reraise'
 
-    try foo
-    if (_status != 0) {
+    try {
+      foo
+    }
+    if (_status !== 0) {
       echo 'hello'
       raise  # reads _status, _error_str, and _error_location ?
     }
@@ -129,7 +131,7 @@ class Error(vm._Builtin):
         # use status 3 for expressions and 4 for encode/decode, and 10 "leaves
         # room" for others.
         # The user is of course free to choose status 1.
-        status = mops.BigTruncate(rd.NamedInt('status', 10))
+        status = mops.BigTruncate(rd.NamedInt('code', 10))
 
         # attach rest of named args to _error Dict
         properties = rd.RestNamed()

@@ -15,7 +15,7 @@ echo status=$?
 #### User errors behave like builtin errors
 func divide(a, b) {
   if (b === 0) {
-    error 'divide by zero' (status=3)
+    error 'divide by zero' (code=3)
   }
 
   return (a / b)
@@ -45,7 +45,7 @@ Dict
 
 func divide(a, b) {
   if (b === 0) {
-    error "divide by zero: $a / $b" (status=3)
+    error "divide by zero: $a / $b" (code=3)
   }
   return (a / b)
 }
@@ -76,25 +76,25 @@ message=divide by zero: 5 / 0
 #### error builtin adds named args as properties on _error Dict
 
 try {
-  error 'bad' (status=99)
+  error 'bad' (code=99)
 }
 pp line (_error)
 
 # Note: myData co
 try {
-  error 'bad' (status=99, myData={spam:'eggs'})
+  error 'bad' (code=99, myData={spam:'eggs'})
 }
 pp line (_error)
 
 try {
-  error 'bad' (status=99, message='cannot override')
+  error 'bad' (code=99, message='cannot override')
 }
 pp line (_error)
 
 ## STDOUT:
-(Dict)   {"status":99,"message":"bad"}
-(Dict)   {"myData":{"spam":"eggs"},"status":99,"message":"bad"}
-(Dict)   {"message":"bad","status":99}
+(Dict)   {"code":99,"message":"bad"}
+(Dict)   {"myData":{"spam":"eggs"},"code":99,"message":"bad"}
+(Dict)   {"message":"bad","code":99}
 ## END
 
 #### Errors within multiple functions
@@ -140,8 +140,8 @@ error 'some error'
 ## STDOUT:
 ## END
 
-#### Error expects an int status
-error 'error' (status='a string?')
+#### error expects an integer code
+error 'error' (code='a string?')
 ## status: 3
 ## STDOUT:
 ## END

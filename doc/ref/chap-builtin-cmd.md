@@ -117,7 +117,7 @@ The `error` builtin interrupts the shell program.
 
 Override the default status of `10` with a named argument:
 
-    error 'Missing /tmp' (status=99) 
+    error 'Missing /tmp' (code=99) 
 
 In YSH, it's customary to use `error` instead of `return 1`, since it provides
 more information:
@@ -144,7 +144,7 @@ The integer `_status` is always set, and the Dict `_error` is set for all
 Special properties of `_error`:
 
 - `_error.message` - the positional string arg
-- `_error.status` - the named `status` arg, or the default 10
+- `_error.code` - the named `code` arg, or the default 10
 
 You can attach other, arbitrary properties to the error:
 
