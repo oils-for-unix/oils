@@ -1,12 +1,13 @@
 # TODO:
 # - [x] Renaming a bit for "privacy"
 # - [x] Renaming for public interface: test-case, test-suite, assert (subject to change)
-# - [ ] Rename to use "-"s for procs.
+# - [x] Rename to use "-"s for procs.
 # - [x] Make test-case and test-suite take a word arg so they don't need parens
 # - [x] error if you try to re-enter run-tests
 # - [x] testing testing: assert fail, exn in assert, exn outside of assert
 # - [-] check for both kinds of exceptions (_status and _error)
 # - [x] tests for tests
+# - [ ] question: naming for variables?
 # - [ ] --tool test support (& spec test case for it)
 # - [ ] Turn the assert expression into a string, to print if it fails
 # - [ ] Use ctx instead of globals, wherever possible
