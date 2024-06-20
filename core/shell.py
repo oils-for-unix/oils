@@ -609,6 +609,7 @@ def Main(
 
     # Errors
     b[builtin_i.error] = error_ysh.Error()
+    b[builtin_i.failed] = error_ysh.Failed(mem)
     b[builtin_i.boolstatus] = error_ysh.BoolStatus(shell_ex, errfmt)
     b[builtin_i.try_] = error_ysh.Try(mutable_opts, mem, cmd_ev, shell_ex,
                                       errfmt)

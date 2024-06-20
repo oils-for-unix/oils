@@ -1,9 +1,9 @@
 # spec/ysh-builtin-error
 
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
-#### try expects an argument
+#### try requires an argument
 
 try
 echo status=$?
@@ -15,7 +15,7 @@ echo status=$?
 #### User errors behave like builtin errors
 func divide(a, b) {
   if (b === 0) {
-    error 'divide by zero' (status=3)
+    error 'divide by zero' (code=3)
   }
 
   return (a / b)
@@ -25,7 +25,8 @@ func divide(a, b) {
 try { = divide(42, 0) }
 echo status=$_status
 
-= divide(42, 0)  # sets status to 3
+= divide(42, 0)
+
 ## status: 3
 ## STDOUT:
 status=3
@@ -41,11 +42,11 @@ Dict
 0
 ## END
 
-#### Error sets _error.message, which can be used by programs
+#### error builtin sets _error.message, which can be used by programs
 
 func divide(a, b) {
   if (b === 0) {
-    error "divide by zero: $a / $b" (status=3)
+    error "divide by zero: $a / $b" (code=3)
   }
   return (a / b)
 }
@@ -62,10 +63,6 @@ try { p }
 echo status=$_status
 echo message=$[_error.message]
 
-# Design bug: this isn't caught!
-
-# try echo $[divide(3, 0]
-
 ## STDOUT:
 status=3
 message=divide by zero: 42 / 0
@@ -76,25 +73,25 @@ message=divide by zero: 5 / 0
 #### error builtin adds named args as properties on _error Dict
 
 try {
-  error 'bad' (status=99)
+  error 'bad' (code=99)
 }
 pp line (_error)
 
 # Note: myData co
 try {
-  error 'bad' (status=99, myData={spam:'eggs'})
+  error 'bad' (code=99, myData={spam:'eggs'})
 }
 pp line (_error)
 
 try {
-  error 'bad' (status=99, message='cannot override')
+  error 'bad' (code=99, message='cannot override')
 }
 pp line (_error)
 
 ## STDOUT:
-(Dict)   {"status":99,"message":"bad"}
-(Dict)   {"myData":{"spam":"eggs"},"status":99,"message":"bad"}
-(Dict)   {"message":"bad","status":99}
+(Dict)   {"code":99,"message":"bad"}
+(Dict)   {"myData":{"spam":"eggs"},"code":99,"message":"bad"}
+(Dict)   {"message":"bad","code":99}
 ## END
 
 #### Errors within multiple functions
@@ -134,38 +131,38 @@ try {
 ## STDOUT:
 ## END
 
-#### Error defaults status to 10
+#### default error code is 10
 error 'some error'
 ## status: 10
 ## STDOUT:
 ## END
 
-#### Error expects an int status
-error 'error' (status='a string?')
+#### error code should be an integer
+error 'error' (code='a string?')
 ## status: 3
 ## STDOUT:
 ## END
 
-#### Error typed arg, not named arg
+#### Error code should be named arg, not positional
 error msg (100)
 ## status: 3
 ## STDOUT:
 ## END
 
-#### Errors cannot take command args
+#### error cannot take word args
 error uh-oh ('error', status=1)
 ## status: 3
 ## STDOUT:
 ## END
 
-#### Error must take arguments
+#### error requires arguments
 error
 ## status: 2
 ## STDOUT:
 ## END
 
-#### Errors cannot have a status of 0
-error ('error', status=0)
+#### error cannot have a code of 0
+error ('error', code=0)
 ## status: 2
 ## STDOUT:
 ## END
@@ -177,4 +174,43 @@ echo status=$_status
 
 ## STDOUT:
 status=10
+## END
+
+#### Handle _error.code
+
+proc failing {
+  error 'failed' (code=99)
+}
+
+try {
+  failing
+}
+if (_error.code === 99) {
+  echo PASS
+}
+
+try {
+  failing
+}
+case (_error.code) {
+  (0)    { echo success }
+  (1)    { echo one }
+  (else) { echo CASE PASS }
+}
+
+## STDOUT:
+PASS
+CASE PASS
+## END
+
+
+#### failed builtin
+
+failed a b
+echo status=$?
+
+failed 
+echo status=$?
+
+## STDOUT:
 ## END

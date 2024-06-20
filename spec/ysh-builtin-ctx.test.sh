@@ -81,7 +81,7 @@ json write (b)
 var a = {}
 try {
   ctx push (a) {
-    error "Error from inside a context" (status=100)
+    error "Error from inside a context" (code=100)
   }
 }
 echo status=$_status

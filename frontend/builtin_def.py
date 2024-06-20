@@ -53,7 +53,7 @@ _NORMAL_BUILTINS = [
     'write', 'json', 'json8', 'pp',
     'hay', 'haynode',
     'module', 'use',
-    'error',
+    'error', 'failed',
 
     # take a block
     # push-registers added below

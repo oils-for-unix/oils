@@ -1872,11 +1872,6 @@ class Mem(object):
 
         if which_scopes == scope_e.Shopt:
             which_scopes = self.ScopesForReading()
-        #log('which_scopes %s', which_scopes)
-
-        # TODO: Optimize this by doing a single hash lookup:
-        # COMPUTED_VARS = {'PIPESTATUS': 1, 'FUNCNAME': 1, ...}
-        # if name not in COMPUTED_VARS: ...
 
         with str_switch(name) as case:
             # "Registers"

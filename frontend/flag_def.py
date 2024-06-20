@@ -432,6 +432,7 @@ TRY_SPEC.LongFlag('--assign',
                   help='Assign status to this variable, and return 0')
 
 ERROR_SPEC = FlagSpec('error')
+FAILED_SPEC = FlagSpec('failed')
 
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
 
