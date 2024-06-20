@@ -18,7 +18,8 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
-from mycpp.util import log, join_name, split_py_name
+from mycpp.util import log, join_name, split_py_name, IsStr
+from mycpp import pass_state
 from mycpp import util
 
 from typing import Tuple, List
@@ -132,11 +133,6 @@ def _GetContainsFunc(t):
         contains_func = _GetContainsFunc(t.items[0])
 
     return contains_func  # None checked later
-
-
-def IsStr(t):
-    """Helper to check if a type is a string."""
-    return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
 
 def _EqualsFunc(left_type):
@@ -439,7 +435,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  ctx_member_vars=None,
                  decl=False,
                  forward_decl=False,
-                 stack_roots_warn=None):
+                 stack_roots_warn=None,
+                 dot_exprs=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -477,11 +474,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_class_name = None  # for prototypes
         self.current_method_name = None
 
-        self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
-
-        # HACK for conditional import inside mylib.PYTHON
-        # in core/shell.py
-        self.imported_names.add('help_meta')
+        self.dot_exprs = dot_exprs
 
         # So we can report multiple at once
         # module path, line number, message
@@ -681,37 +674,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         if o.expr:
-            # Why do we not get some of the types?  e.g. hnode.Record in asdl/runtime
-            # But this might suffice for the "Str_v" and "value_v" refactoring.
-            # We want to rewrite w.parts not to w->parts, but to w.parts() (method call)
+            dot_expr = self.dot_exprs[o]
 
-            is_small_str = False
-            if util.SMALL_STR:
-                lhs_type = self.types.get(o.expr)
-                if IsStr(lhs_type):
-                    is_small_str = True
-                else:
-                    #self.log('NOT a string %s %s', o.expr, o.name)
-                    pass
-                """
-                if lhs_type is not None and isinstance(lhs_type, Instance):
-                    self.log('lhs_type %s expr %s name %s',
-                             lhs_type.type.fullname, o.expr, o.name)
-
-                 """
-
-            is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
-            is_module = (isinstance(o.expr, NameExpr) and
-                         o.expr.name in self.imported_names)
-
-            # This is an approximate hack that assumes that locals don't shadow
-            # imported names.  Might be a problem with names like 'word'?
-            if is_small_str:
+            if isinstance(dot_expr, pass_state.StackObjectMember):
                 op = '.'
-            elif is_asdl or is_module:
+
+            elif isinstance(dot_expr, pass_state.StaticObjectMember) or isinstance(dot_expr, pass_state.ModuleMember):
                 op = '::'
+
+            elif isinstance(dot_expr, pass_state.HeapObjectMember):
+                op = '->'
+
             else:
-                op = '->'  # Everything is a pointer
+                assert False, o
 
             self.accept(o.expr)
             self.def_write(op)
@@ -2759,13 +2734,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     # Module structure
 
     def visit_import(self, o: 'mypy.nodes.Import') -> T:
-        for name, as_name in o.ids:
-            if as_name is not None:
-                # import time as time_
-                self.imported_names.add(as_name)
-            else:
-                # import libc
-                self.imported_names.add(name)
+        pass
 
     def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
         """
@@ -2773,14 +2742,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         We need them in the 'decl' phase for default arguments like
         runtime_asdl::scope_e -> scope_e
         """
-        # For MemberExpr . -> module::func() or this->field.  Also needed in
-        # the decl phase for default arg values.
-        for name, alias in o.names:
-            if alias:
-                self.imported_names.add(alias)
-            else:
-                self.imported_names.add(name)
-
         if o.id in ('__future__', 'typing'):
             return  # do nothing
 

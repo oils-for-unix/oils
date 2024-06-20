@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import sys
 from mypy.nodes import CallExpr, IfStmt, Block, Expression, MypyFile
+from mypy.types import Instance, Type
 
 from typing import Any, Sequence, Optional
 
@@ -104,3 +105,8 @@ def ShouldSkipPyFile(node: MypyFile) -> bool:
     return node.fullname in ('__future__', 'sys', 'types', 'typing', 'abc',
                              '_ast', 'ast', '_weakrefset', 'collections',
                              'cStringIO', 're', 'builtins')
+
+
+def IsStr(t: Type):
+    """Helper to check if a type is a string."""
+    return isinstance(t, Instance) and t.type.fullname == 'builtins.str'

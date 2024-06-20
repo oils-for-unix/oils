@@ -6,11 +6,40 @@ from __future__ import print_function
 import os
 from collections import defaultdict
 
+from mypy.types import Type
+from mypy.nodes import Expression
+
 from mycpp.util import join_name, log, SymbolPath
 
 from typing import Optional
 
 _ = log
+
+
+class ModuleMember(object):
+    def __init__(self, module_path: SymbolPath, member: str) -> None:
+        self.module_path = module_path
+        self.member = member
+
+
+class StaticObjectMember(object):
+    def __init__(self, base_type_name: SymbolPath, member: str) -> None:
+        self.base_type_name = base_type_name
+        self.member = member
+
+
+class HeapObjectMember(object):
+    def __init__(self, object_expr: Expression, object_type: Optional[Type], member: str) -> None:
+        self.ojbect_expr = object_expr
+        self.object_type = object_type
+        self.member = member
+
+
+class StackObjectMember(object):
+    def __init__(self, object_expr: Expression, object_type: Type, member: str) -> None:
+        self.ojbect_expr = object_expr
+        self.object_type = object_type
+        self.member = member
 
 
 class Virtual(object):

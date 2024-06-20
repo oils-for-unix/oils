@@ -5,7 +5,6 @@ import collections
 from typing import overload, Union, Optional, Dict
 
 import mypy
-from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Block, Expression, Statement, ExpressionStmt, StrExpr,
                         CallExpr, FuncDef, IfStmt, NameExpr, MemberExpr)
 
@@ -13,19 +12,19 @@ from mypy.types import CallableType, Instance, Type, UnionType
 
 from mycpp.crash import catch_errors
 from mycpp.util import join_name, split_py_name
+from mycpp.visitor import SimpleVisitor, T
 from mycpp import util
 from mycpp import pass_state
-
-T = None  # TODO: Make it type check?
 
 
 class UnsupportedException(Exception):
     pass
 
 
-class Build(ExpressionVisitor[T], StatementVisitor[None]):
+class Build(SimpleVisitor):
 
-    def __init__(self, types: Dict[Expression, Type], virtual, local_vars, imported_names):
+    def __init__(self, types: Dict[Expression, Type], virtual, local_vars,
+                 dot_exprs):
 
         self.types = types
         self.cfgs = collections.defaultdict(pass_state.ControlFlowGraph)
@@ -35,7 +34,7 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
         self.loop_stack = []
         self.virtual = virtual
         self.local_vars = local_vars
-        self.imported_names = imported_names
+        self.dot_exprs = dot_exprs
         self.callees = {} # statement object -> SymbolPath of the callee
 
     def current_cfg(self):
@@ -67,8 +66,8 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
 
         elif isinstance(o.callee, MemberExpr):
             if isinstance(o.callee.expr, NameExpr):
-                is_module = (isinstance(o.callee.expr, NameExpr) and
-                             o.callee.expr.name in self.imported_names)
+                is_module = isinstance(self.dot_exprs.get(o.callee),
+                                       pass_state.ModuleMember)
                 if is_module:
                     return split_py_name(
                         o.callee.expr.fullname) + (o.callee.name, )
@@ -187,7 +186,7 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
                 continue
             self.accept(node)
 
-    # LITERALS
+    # Statements
 
     def visit_for_stmt(self, o: 'mypy.nodes.ForStmt') -> T:
         cfg = self.current_cfg()
@@ -273,26 +272,6 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.current_class_name = None
 
-    # Statements
-
-    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
-        for lval in o.lvalues:
-            self.accept(lval)
-
-        self.accept(o.rvalue)
-
-    def visit_block(self, block: 'mypy.nodes.Block') -> T:
-        for stmt in block.body:
-            # Ignore things that look like docstrings
-            if (isinstance(stmt, ExpressionStmt) and
-                    isinstance(stmt.expr, StrExpr)):
-                continue
-
-            self.accept(stmt)
-
-    def visit_expression_stmt(self, o: 'mypy.nodes.ExpressionStmt') -> T:
-        self.accept(o.expr)
-
     def visit_while_stmt(self, o: 'mypy.nodes.WhileStmt') -> T:
         cfg = self.current_cfg()
         with pass_state.CfgLoopContext(
@@ -352,61 +331,7 @@ class Build(ExpressionVisitor[T], StatementVisitor[None]):
                 with try_ctx.AddBranch(try_block.exit):
                     self.accept(handler)
 
-    def visit_del_stmt(self, o: 'mypy.nodes.DelStmt') -> T:
-        self.accept(o.expr)
-
     # Expressions
-
-    def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
-        self.accept(o.expr)
-
-    def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> T:
-        self.accept(o.expr)
-
-    def visit_op_expr(self, o: 'mypy.nodes.OpExpr') -> T:
-        self.accept(o.left)
-        self.accept(o.right)
-
-    def visit_comparison_expr(self, o: 'mypy.nodes.ComparisonExpr') -> T:
-        for operand in o.operands:
-            self.accept(operand)
-
-    def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
-        self.accept(o.expr)
-
-    def visit_list_expr(self, o: 'mypy.nodes.ListExpr') -> T:
-        if o.items:
-            for item in o.items:
-                self.accept(item)
-
-    def visit_dict_expr(self, o: 'mypy.nodes.DictExpr') -> T:
-        if o.items:
-            for k, v in o.items:
-                self.accept(k)
-                self.accept(v)
-
-    def visit_tuple_expr(self, o: 'mypy.nodes.TupleExpr') -> T:
-        if o.items:
-            for item in o.items:
-                self.accept(item)
-
-    def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> T:
-        self.accept(o.base)
-
-    def visit_slice_expr(self, o: 'mypy.nodes.SliceExpr') -> T:
-        if o.begin_index:
-            self.accept(o.begin_index)
-
-        if o.end_index:
-            self.accept(o.end_index)
-
-        if o.stride:
-            self.accept(o.stride)
-
-    def visit_conditional_expr(self, o: 'mypy.nodes.ConditionalExpr') -> T:
-        self.accept(o.cond)
-        self.accept(o.if_expr)
-        self.accept(o.else_expr)
 
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         cfg = self.current_cfg()
