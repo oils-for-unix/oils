@@ -3,7 +3,7 @@
 ## our_shell: ysh
 ## oils_failures_allowed: 0
 
-#### try expects an argument
+#### try requires an argument
 
 try
 echo status=$?
@@ -25,7 +25,8 @@ func divide(a, b) {
 try { = divide(42, 0) }
 echo status=$_status
 
-= divide(42, 0)  # sets status to 3
+= divide(42, 0)
+
 ## status: 3
 ## STDOUT:
 status=3
@@ -41,7 +42,7 @@ Dict
 0
 ## END
 
-#### Error sets _error.message, which can be used by programs
+#### error builtin sets _error.message, which can be used by programs
 
 func divide(a, b) {
   if (b === 0) {
@@ -61,10 +62,6 @@ proc p {
 try { p }
 echo status=$_status
 echo message=$[_error.message]
-
-# Design bug: this isn't caught!
-
-# try echo $[divide(3, 0]
 
 ## STDOUT:
 status=3
@@ -134,38 +131,38 @@ try {
 ## STDOUT:
 ## END
 
-#### Error defaults status to 10
+#### default error code is 10
 error 'some error'
 ## status: 10
 ## STDOUT:
 ## END
 
-#### error expects an integer code
+#### error code should be an integer
 error 'error' (code='a string?')
 ## status: 3
 ## STDOUT:
 ## END
 
-#### Error typed arg, not named arg
+#### Error code should be named arg, not positional
 error msg (100)
 ## status: 3
 ## STDOUT:
 ## END
 
-#### Errors cannot take command args
+#### error cannot take word args
 error uh-oh ('error', status=1)
 ## status: 3
 ## STDOUT:
 ## END
 
-#### Error must take arguments
+#### error requires arguments
 error
 ## status: 2
 ## STDOUT:
 ## END
 
-#### Errors cannot have a status of 0
-error ('error', status=0)
+#### error cannot have a code of 0
+error ('error', code=0)
 ## status: 2
 ## STDOUT:
 ## END
@@ -177,4 +174,31 @@ echo status=$_status
 
 ## STDOUT:
 status=10
+## END
+
+#### Handle _error.code
+
+proc failing {
+  error 'failed' (code=99)
+}
+
+try {
+  failing
+}
+if (_error.code === 99) {
+  echo PASS
+}
+
+try {
+  failing
+}
+case (_error.code) {
+  (0)    { echo success }
+  (1)    { echo one }
+  (else) { echo CASE PASS }
+}
+
+## STDOUT:
+PASS
+CASE PASS
 ## END
