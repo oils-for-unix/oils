@@ -96,7 +96,7 @@ X [Wok]           _field()
 -->
 
 <h2 id="builtin-cmd">
-  Builtin Commands <a class="group-link" href="chap-builtin-cmd">builtin-cmd</a>
+  Builtin Commands <a class="group-link" href="chap-builtin-cmd.html">builtin-cmd</a>
 </h2>
 
 <!-- linkify_stop_col is 42 -->
