@@ -125,7 +125,7 @@ class Failed(vm._Builtin):
         #arg_r.Done()
 
         err = self.mem.TryError()
-        print(err)
+        #print(err)
 
         return 0
 
