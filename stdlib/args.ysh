@@ -52,7 +52,7 @@ proc parser (; place ; ; block_def) {
   # Validate that p.rest = [name] or null and reduce p.rest into name or null.
   if ('rest' in p) {
     if (len(p.rest) > 1) {
-      error '`rest` was called more than once' (status=3)
+      error '`rest` was called more than once' (code=3)
     } else {
       setvar p.rest = p.rest[0]
     }
@@ -64,7 +64,7 @@ proc parser (; place ; ; block_def) {
   for items in ([p.flags, p.args]) {
     for x in (items) {
       if (x.name in names) {
-        error "Duplicate flag/arg name $[x.name] in spec" (status=3)
+        error "Duplicate flag/arg name $[x.name] in spec" (code=3)
       }
 
       setvar names[x.name] = null
@@ -154,12 +154,12 @@ func parseArgs(spec, argv) {
             int {
               setvar i += 1
               if (i >= len(argv)) {
-                error "Expected integer after '$arg'" (status=2)
+                error "Expected integer after '$arg'" (code=2)
               }
 
               try { setvar value = int(argv[i]) }
               if (_status !== 0) {
-                error "Expected integer after '$arg', got '$[argv[i]]'" (status=2)
+                error "Expected integer after '$arg', got '$[argv[i]]'" (code=2)
               }
             }
           }
@@ -171,11 +171,11 @@ func parseArgs(spec, argv) {
       }
 
       if (not found) {
-        error "Unknown flag '$arg'" (status=2)
+        error "Unknown flag '$arg'" (code=2)
       }
     } elif (positionalPos >= len(spec.args)) {
       if (not spec.rest) {
-        error "Too many arguments, unexpected '$arg'" (status=2)
+        error "Too many arguments, unexpected '$arg'" (code=2)
       }
 
       call rest->append(arg)
@@ -203,7 +203,7 @@ func parseArgs(spec, argv) {
   # Raise error on missing args
   for arg in (spec.args) {
     if (arg.name not in args) {
-      error "Usage Error: Missing required argument $[arg.name]" (status=2)
+      error "Usage Error: Missing required argument $[arg.name]" (code=2)
     }
   }
 
