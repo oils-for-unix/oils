@@ -17,26 +17,52 @@ _ = log
 
 
 class ModuleMember(object):
+    """
+    A member of a Python module.
+
+    e.g. core.state.Mem => core::state::Mem
+    """
+
     def __init__(self, module_path: SymbolPath, member: str) -> None:
         self.module_path = module_path
         self.member = member
 
 
 class StaticObjectMember(object):
+    """
+    A static member of an object. Usually a a method like an alternative constructor.
+
+    e.g. runtime_asdl.Cell.CreateNull() => runtime_asdl::Cell::CreateNull()
+    """
+
     def __init__(self, base_type_name: SymbolPath, member: str) -> None:
         self.base_type_name = base_type_name
         self.member = member
 
 
 class HeapObjectMember(object):
-    def __init__(self, object_expr: Expression, object_type: Optional[Type], member: str) -> None:
+    """
+    A member of a heap-allocated object.
+
+    e.g foo.empty() => foo->empty()
+    """
+
+    def __init__(self, object_expr: Expression, object_type: Optional[Type],
+                 member: str) -> None:
         self.ojbect_expr = object_expr
         self.object_type = object_type
         self.member = member
 
 
 class StackObjectMember(object):
-    def __init__(self, object_expr: Expression, object_type: Type, member: str) -> None:
+    """
+    A member of a stack-allocated object.
+
+    e.g foo.empty() => foo.empty()
+    """
+
+    def __init__(self, object_expr: Expression, object_type: Type,
+                 member: str) -> None:
         self.ojbect_expr = object_expr
         self.object_type = object_type
         self.member = member
@@ -142,6 +168,7 @@ class Fact(object):
 
 
 class FunctionCall(Fact):
+
     def __init__(self, callee: str) -> None:
         self.callee = callee
 
@@ -345,7 +372,9 @@ class CfgLoopContext(object):
     Context manager to make dealing with loops easier.
     """
 
-    def __init__(self, cfg: ControlFlowGraph, entry: Optional[int] = None) -> None:
+    def __init__(self,
+                 cfg: ControlFlowGraph,
+                 entry: Optional[int] = None) -> None:
         self.cfg = cfg
         self.breaks = set({})
         if cfg is None:
@@ -404,10 +433,11 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
                 cfg_f.write('{}\t{}\t{}\n'.format(joined, u, v))
 
             for statement, facts in sorted(cfg.facts.items()):
-                for fact in facts: # already sorted temporally
+                for fact in facts:  # already sorted temporally
                     fact_f = fact_files.get(fact.name())
                     if not fact_f:
-                        fact_f = open('{}/{}.facts'.format(facts_dir, fact.name()), 'w')
+                        fact_f = open(
+                            '{}/{}.facts'.format(facts_dir, fact.name()), 'w')
                         fact_files[fact.name()] = fact_f
 
                     fact_f.write(fact.Generate(joined, statement))
