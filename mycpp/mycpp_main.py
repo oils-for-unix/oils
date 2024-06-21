@@ -14,6 +14,7 @@ from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
 
+from mycpp import ir_pass
 from mycpp import const_pass
 from mycpp import cppgen_pass
 from mycpp import debug_pass
@@ -267,6 +268,14 @@ def main(argv):
 
 """)
 
+    # Convert the mypy AST into our own IR.
+    dot_exprs = {} # module name -> {expr node -> access type}
+    log('\tmycpp pass: IR')
+    for _, module in to_compile:
+        p = ir_pass.Build(result.types)
+        p.visit_mypy_file(module)
+        dot_exprs[module.path] = p.dot_exprs
+
     # Collect constants and then emit code.
     log('\tmycpp pass: CONST')
     for name, module in to_compile:
@@ -298,7 +307,8 @@ def main(argv):
                                   const_lookup,
                                   out_f,
                                   virtual=virtual,
-                                  forward_decl=True)
+                                  forward_decl=True,
+                                  dot_exprs=dot_exprs[module.path])
 
         p2.visit_mypy_file(module)
         MaybeExitWithErrors(p2)
@@ -330,7 +340,8 @@ def main(argv):
                                   local_vars=local_vars,
                                   ctx_member_vars=ctx_member_vars,
                                   virtual=virtual,
-                                  decl=True)
+                                  decl=True,
+                                  dot_exprs=dot_exprs[module.path])
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
@@ -344,7 +355,8 @@ def main(argv):
 
     cfgs = {}  # fully qualified function name -> control flow graph
     for name, module in to_compile:
-        cfg_pass = control_flow_pass.Build(result.types)
+        cfg_pass = control_flow_pass.Build(result.types, virtual, local_vars,
+                                           dot_exprs[module.path])
         cfg_pass.visit_mypy_file(module)
         cfgs.update(cfg_pass.cfgs)
 
@@ -361,7 +373,8 @@ def main(argv):
                                   f,
                                   local_vars=local_vars,
                                   ctx_member_vars=ctx_member_vars,
-                                  stack_roots_warn=opts.stack_roots_warn)
+                                  stack_roots_warn=opts.stack_roots_warn,
+                                  dot_exprs=dot_exprs[module.path])
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 

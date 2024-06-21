@@ -1,3 +1,4 @@
+mycpp/ir_pass.py
 mycpp/const_pass.py
 mycpp/cppgen_pass.py
 mycpp/crash.py
@@ -7,3 +8,4 @@ mycpp/format_strings.py
 mycpp/mycpp_main.py
 mycpp/pass_state.py
 mycpp/util.py
+mycpp/visitor.py

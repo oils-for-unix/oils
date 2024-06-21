@@ -18,7 +18,8 @@ from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
-from mycpp.util import log, join_name, split_py_name
+from mycpp.util import log, join_name, split_py_name, IsStr
+from mycpp import pass_state
 from mycpp import util
 
 from typing import Tuple, List
@@ -132,11 +133,6 @@ def _GetContainsFunc(t):
         contains_func = _GetContainsFunc(t.items[0])
 
     return contains_func  # None checked later
-
-
-def IsStr(t):
-    """Helper to check if a type is a string."""
-    return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
 
 def _EqualsFunc(left_type):
@@ -439,7 +435,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  ctx_member_vars=None,
                  decl=False,
                  forward_decl=False,
-                 stack_roots_warn=None):
+                 stack_roots_warn=None,
+                 dot_exprs=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
@@ -477,11 +474,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.current_class_name = None  # for prototypes
         self.current_method_name = None
 
-        self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
-
-        # HACK for conditional import inside mylib.PYTHON
-        # in core/shell.py
-        self.imported_names.add('help_meta')
+        self.dot_exprs = dot_exprs
 
         # So we can report multiple at once
         # module path, line number, message
@@ -681,37 +674,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         if o.expr:
-            # Why do we not get some of the types?  e.g. hnode.Record in asdl/runtime
-            # But this might suffice for the "Str_v" and "value_v" refactoring.
-            # We want to rewrite w.parts not to w->parts, but to w.parts() (method call)
+            dot_expr = self.dot_exprs[o]
 
-            is_small_str = False
-            if util.SMALL_STR:
-                lhs_type = self.types.get(o.expr)
-                if IsStr(lhs_type):
-                    is_small_str = True
-                else:
-                    #self.log('NOT a string %s %s', o.expr, o.name)
-                    pass
-                """
-                if lhs_type is not None and isinstance(lhs_type, Instance):
-                    self.log('lhs_type %s expr %s name %s',
-                             lhs_type.type.fullname, o.expr, o.name)
-
-                 """
-
-            is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
-            is_module = (isinstance(o.expr, NameExpr) and
-                         o.expr.name in self.imported_names)
-
-            # This is an approximate hack that assumes that locals don't shadow
-            # imported names.  Might be a problem with names like 'word'?
-            if is_small_str:
+            if isinstance(dot_expr, pass_state.StackObjectMember):
                 op = '.'
-            elif is_asdl or is_module:
+
+            elif isinstance(dot_expr, pass_state.StaticObjectMember) or isinstance(dot_expr, pass_state.ModuleMember):
                 op = '::'
+
+            elif isinstance(dot_expr, pass_state.HeapObjectMember):
+                op = '->'
+
             else:
-                op = '->'  # Everything is a pointer
+                assert False, o
 
             self.accept(o.expr)
             self.def_write(op)
@@ -1330,10 +1305,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 if _SkipAssignment(lval_item.name):
                     continue
 
-                item_c_type = GetCType(item_type)
                 # declare it at the top of the function
                 if self.decl:
-                    self.local_var_list.append((lval_item.name, item_c_type))
+                    self.local_var_list.append((lval_item.name, item_type))
                 self.def_write_ind('%s', lval_item.name)
             else:
                 # Could be MemberExpr like self.foo, self.bar = baz
@@ -1459,7 +1433,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         c_type = GetCType(lval_type)
         if self.decl:
-            self.local_var_list.append((lval.name, c_type))
+            self.local_var_list.append((lval.name, lval_type))
 
         assert c_type.endswith('*')
 
@@ -1621,7 +1595,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if self.current_func_node:
                 self.def_write_ind('%s = ', lval.name)
                 if self.decl:
-                    self.local_var_list.append((lval.name, c_type))
+                    self.local_var_list.append((lval.name, lval_type))
             else:
                 # globals always get a type -- they're not mutated
                 self.def_write_ind('%s %s = ', c_type, lval.name)
@@ -2341,7 +2315,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # only do it in one place.  TODO: Check if locals are used in
             # __init__ after allocation.
             if update_locals:
-                self.local_var_list.append((arg_name, c_type))
+                self.local_var_list.append((arg_name, arg_type))
 
             # We can't use __str__ on these Argument objects?  That seems like an
             # oversight
@@ -2423,10 +2397,14 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 arg_names = [arg.variable.name for arg in o.arguments]
                 #log('arg_names %s', arg_names)
                 #log('local_vars %s', self.local_vars[o])
-                self.prepend_to_block = [
-                    (lval_name, c_type, lval_name in arg_names)
-                    for (lval_name, c_type) in self.local_vars[o]
-                ]
+                self.prepend_to_block = []
+                for (lval_name, lval_type) in self.local_vars[o]:
+                    c_type = lval_type
+                    if not isinstance(lval_type, str):
+                        c_type = GetCType(lval_type)
+
+                    self.prepend_to_block.append((lval_name, c_type, lval_name
+                                                  in arg_names))
 
         self.accept(o.body)
         self.current_func_node = None
@@ -2756,13 +2734,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     # Module structure
 
     def visit_import(self, o: 'mypy.nodes.Import') -> T:
-        for name, as_name in o.ids:
-            if as_name is not None:
-                # import time as time_
-                self.imported_names.add(as_name)
-            else:
-                # import libc
-                self.imported_names.add(name)
+        pass
 
     def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
         """
@@ -2770,14 +2742,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         We need them in the 'decl' phase for default arguments like
         runtime_asdl::scope_e -> scope_e
         """
-        # For MemberExpr . -> module::func() or this->field.  Also needed in
-        # the decl phase for default arg values.
-        for name, alias in o.names:
-            if alias:
-                self.imported_names.add(alias)
-            else:
-                self.imported_names.add(name)
-
         if o.id in ('__future__', 'typing'):
             return  # do nothing
 
