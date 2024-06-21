@@ -1,5 +1,5 @@
 """
-ast_pass.py - Translate (eventually) the mypy AST into our own IR.
+ir_pass.py - Translate (eventually) the mypy AST into our own IR.
 """
 from typing import Dict
 

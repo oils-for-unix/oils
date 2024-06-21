@@ -1,3 +1,4 @@
+mycpp/ir_pass.py
 mycpp/const_pass.py
 mycpp/cppgen_pass.py
 mycpp/crash.py

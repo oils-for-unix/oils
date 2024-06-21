@@ -14,7 +14,7 @@ from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
 
-from mycpp import ast_pass
+from mycpp import ir_pass
 from mycpp import const_pass
 from mycpp import cppgen_pass
 from mycpp import debug_pass
@@ -270,9 +270,9 @@ def main(argv):
 
     # Convert the mypy AST into our own IR.
     dot_exprs = {} # module name -> {expr node -> access type}
-    log('\tmycpp pass: AST')
+    log('\tmycpp pass: IR')
     for _, module in to_compile:
-        p = ast_pass.Build(result.types)
+        p = ir_pass.Build(result.types)
         p.visit_mypy_file(module)
         dot_exprs[module.path] = p.dot_exprs
 
