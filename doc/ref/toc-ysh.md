@@ -104,9 +104,10 @@ X [Wok]           _field()
 ```chapter-links-builtin-cmd_42
   [Memory]        cmd/append             Add elements to end of array
                   pp                     asdl   cell   X gc-stats   line   proc
-  [Handle Errors] try                    Run with errexit, set _status _error
+  [Handle Errors] error                  error 'failed' (status=2)
+                  try                    Run with errexit, set _status _error
+                  failed                 Test if _error.code !== 0
                   boolstatus             Enforce 0 or 1 exit status
-                  error                  error 'failed' (status=2)
   [Shell State]   ysh-cd       ysh-shopt compatible, and takes a block
                   shvar                  Temporary modify global settings
                   ctx                    Share and update a temporary "context"

@@ -204,13 +204,62 @@ CASE PASS
 ## END
 
 
-#### failed builtin
+#### failed builtin  usage
 
+set +o errexit
+
+try { echo ok }
+
+failed (42)
+echo status=$?
+
+try { echo ok }
+
+# Too many args
 failed a b
 echo status=$?
 
-failed 
-echo status=$?
+## STDOUT:
+ok
+status=2
+ok
+status=2
+## END
+
+#### failed builtin 
+
+try {
+  echo hi
+}
+if failed {
+  echo 'should not get here'
+} else {
+  echo 'ok 1'
+}
+
+try {
+  #test -n ''
+
+  # Hm json read sets the regular error
+  # Should we raise error.Structured?
+  #json read <<< '{'
+
+  var x = fromJson('{')
+
+  # Hm the error is in a SUBPROCESS HERE
+  #echo '{' | json read
+}
+if failed {
+  echo 'ok 2'
+} else {
+  echo 'should not get here'
+}
 
 ## STDOUT:
+hi
+ok 1
+ok 2
 ## END
+
+
+

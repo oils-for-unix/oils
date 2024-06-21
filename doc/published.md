@@ -7,6 +7,7 @@ See [All Docs](index.html) for links to drafts.
 
 ## Good Places to Start
 
+- [Getting Started](getting-started.html)
 - [A Tour of YSH](ysh-tour.html)
 - [YSH vs. Shell Idioms](idioms.html) 
 - [**Oils Reference**](ref/index.html) - underlies the [help][] builtin
@@ -17,7 +18,6 @@ See [All Docs](index.html) for links to drafts.
 
 ## More
 
-- [Getting Started](getting-started.html)
 - OSH:
   - [Known Differences Between OSH and Other Shells](known-differences.html)
   | [Quirks](quirks.html)

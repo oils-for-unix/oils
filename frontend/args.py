@@ -209,6 +209,11 @@ class Reader(object):
         # type: () -> bool
         return self.i >= self.n  # must be >= and not ==
 
+    def Done(self):
+        # type: () -> None
+        if not self.AtEnd():
+            e_usage('got too many arguments', self.Location())
+
     def _FirstLocation(self):
         # type: () -> loc_t
         if self.locs is not None and self.locs[0] is not None:

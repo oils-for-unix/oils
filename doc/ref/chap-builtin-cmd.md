@@ -59,56 +59,6 @@ Examples:
 
 ## Handle Errors
 
-### try
-
-Run a block of code, stopping at the first error.  In other words, shopt
-`errexit` is enabled.
-
-Set the `_status` variable to the exit status of the block, and return 0.
-
-    try {
-      ls /nonexistent
-    }
-    if (_status !== 0) {
-      echo 'ls failed'
-    }
-
-Handle expression errors:
-
-    try {
-      var x = 42 / 0
-    }
-
-And errors from compound commands:
-
-    try {
-      ls | wc -l
-      diff <(sort left.txt) <(sort right.txt)
-    }
-
-The case statement can be useful:
-
-    try {
-      grep PATTERN FILE.txt
-    }
-    case (_status) {
-      (0)    { echo 'found' }
-      (1)    { echo 'not found' }
-      (else) { echo "grep returned status $_status" }
-    }
-
-The `try` builtin may also set the `_error` register.
-
-### boolstatus
-
-Runs a command and requires the exit code to be 0 or 1.
-
-    if boolstatus egrep '[0-9]+' myfile {  # may abort
-      echo 'found'               # status 0 means found
-    } else {
-      echo 'not found'           # status 1 means not found
-    }
-
 ### error
 
 The `error` builtin interrupts the shell program.  
@@ -158,6 +108,79 @@ They are attached to `_error`:
     if (_status !== 0) {
       echo $[_error.path]  # => foo.json
     }
+
+### failed
+
+Test if the last `try` command failed.
+
+    try {
+      ls /tmp
+    }
+    if failed {
+      echo 'ls failed'
+    }
+
+This is simply a shortcut for checking if `_error.code` is non-zero:
+
+    try {
+      ls /tmp
+    }
+    if (_error.code !== 0) {  # same as above
+      echo 'ls failed'
+    }
+
+### try
+
+Run a block of code, stopping at the first error.  In other words, shopt
+`errexit` is enabled.
+
+Set the `_status` variable to the exit status of the block, and return 0.
+
+    try {
+      ls /nonexistent
+    }
+    if (_status !== 0) {
+      echo 'ls failed'
+    }
+
+Handle expression errors:
+
+    try {
+      var x = 42 / 0
+    }
+
+And errors from compound commands:
+
+    try {
+      ls | wc -l
+      diff <(sort left.txt) <(sort right.txt)
+    }
+
+The case statement can be useful:
+
+    try {
+      grep PATTERN FILE.txt
+    }
+    case (_status) {
+      (0)    { echo 'found' }
+      (1)    { echo 'not found' }
+      (else) { echo "grep returned status $_status" }
+    }
+
+The `try` builtin may also set the `_error` register.
+
+### boolstatus
+
+Runs a command and requires the exit code to be 0 or 1.
+
+    if boolstatus egrep '[0-9]+' myfile {  # e.g. aborts on status 2
+      echo 'found'               # status 0 means found
+    } else {
+      echo 'not found'           # status 1 means not found
+    }
+
+It's meant for external commands that "return" true / false / fail, rather than
+pass / fail.
 
 ## Shell State
 

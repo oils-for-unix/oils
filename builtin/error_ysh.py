@@ -3,6 +3,7 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.value_asdl import value, value_e
 from core import error
 from core.error import e_die_status, e_usage
 from core import executor
@@ -11,11 +12,11 @@ from core import vm
 from frontend import flag_util
 from frontend import typed_args
 from mycpp import mops
-from mycpp.mylib import log
+from mycpp.mylib import tagswitch, log
 
 _ = log
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import ui
     from osh import cmd_eval
@@ -102,6 +103,7 @@ class Try(vm._Builtin):
             status = e.ExitStatus()
 
         except error.Structured as e:
+            #log('*** STRUC %s', e)
             status = e.ExitStatus()
             self.mem.SetTryError(e.ToDict())
 
@@ -120,14 +122,27 @@ class Failed(vm._Builtin):
         _, arg_r = flag_util.ParseCmdVal('failed', cmd_val)
 
         # No args
-        # Or we could have failed (_error)
+        arg_r.Done()
 
-        #arg_r.Done()
+        # Should we have
+        #   failed (_error) ?
 
         err = self.mem.TryError()
-        #print(err)
+        code = err.d.get('code')
+        if code is None:
+            # No error
+            return 1
 
-        return 0
+        UP_code = code
+        with tagswitch(code) as case:
+            if case(value_e.Int):
+                code = cast(value.Int, UP_code)
+                # return 0 if and only if it failed
+                return 1 if mops.Equal(code.i, mops.ZERO) else 0
+            else:
+                # This should never happen because the interpreter controls the
+                # contents of TryError()
+                raise AssertionError()
 
 
 class Error(vm._Builtin):
