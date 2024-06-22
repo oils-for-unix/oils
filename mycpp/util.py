@@ -4,7 +4,8 @@ util.py
 from __future__ import print_function
 
 import sys
-from mypy.nodes import CallExpr, IfStmt, Block, Expression, MypyFile
+from mypy.nodes import (CallExpr, IfStmt, Block, Expression, MypyFile,
+                       MemberExpr, IntExpr, NameExpr, ComparisonExpr)
 from mypy.types import Instance, Type
 
 from typing import Any, Sequence, Optional
@@ -110,3 +111,57 @@ def ShouldSkipPyFile(node: MypyFile) -> bool:
 def IsStr(t: Type):
     """Helper to check if a type is a string."""
     return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
+
+
+def MaybeSkipIfStmt(visitor, stmt: IfStmt) -> bool:
+    """Returns true if the caller should not visit the entire if statement."""
+    cond = stmt.expr[0]
+
+    # Omit anything that looks like if __name__ == ...
+    if (isinstance(cond, ComparisonExpr) and
+            isinstance(cond.operands[0], NameExpr) and
+            cond.operands[0].name == '__name__'):
+        return True
+
+    if isinstance(cond, IntExpr) and cond.value == 0:
+        # But write else: body
+        # Note: this would be invalid at the top level!
+        if stmt.else_body:
+            visitor.accept(stmt.else_body)
+
+        return True
+
+    if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
+        # Omit if TYPE_CHECKING blocks.  They contain type expressions that
+        # don't type check!
+        return True
+
+    if isinstance(cond, MemberExpr) and cond.name == 'CPP':
+        # just take the if block
+        if hasattr(visitor, 'def_write_ind'):
+            visitor.def_write_ind('// if MYCPP\n')
+            visitor.def_write_ind('')
+
+        for node in stmt.body:
+            visitor.accept(node)
+
+        if hasattr(visitor, 'def_write_ind'):
+            visitor.def_write_ind('// endif MYCPP\n')
+
+        return True
+
+    if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
+        # only accept the else block
+        if stmt.else_body:
+            if hasattr(visitor, 'def_write_ind'):
+                visitor.def_write_ind('// if not PYTHON\n')
+                visitor.def_write_ind('')
+
+            visitor.accept(stmt.else_body)
+
+            if hasattr(visitor, 'def_write_ind'):
+                visitor.def_write_ind('// endif MYCPP\n')
+
+        return True
+
+    return False
