@@ -26,11 +26,24 @@ echo $((0||a)):$((b))
 c=d=321
 echo $((0&&c)):$((d))
 echo $((1&&c)):$((d))
-## stdout-json: "1:0\n1:123\n0:0\n1:321\n"
-## BUG mksh stdout-json: "1:123\n1:123\n0:321\n1:321\n"
-## N-I ash stdout-json: "1:123\n1:123\n0:321\n1:321\n"
+## STDOUT:
+1:0
+1:123
+0:0
+1:321
+## END
+
+## BUG mksh/ash STDOUT:
+1:123
+1:123
+0:321
+1:321
+## END
+
 ## N-I dash/yash status: 2
-## N-I dash/yash stdout-json: "1:0\n"
+## N-I dash/yash STDOUT:
+1:0
+## END
 
 #### recursive arith: short circuit ?:
 # Note: "busybox sh" behaves strangely.
@@ -155,3 +168,35 @@ array 0
 ## END
 ## N-I zsh/mksh/ash/dash/yash status: 1
 ## N-I zsh/mksh/ash/dash/yash stdout-json: ""
+
+
+#### Sparse array with big index
+
+# TODO: more BashArray idioms / stress tests ?
+
+a=()
+
+if false; then
+  # This takes too long!  # From Zulip
+  i=$(( 0x0100000000000000 ))
+else
+  # smaller number that's OK
+  i=$(( 0x0100000 ))
+fi
+
+a[i]=1
+
+echo len=${#a[@]}
+
+## STDOUT:
+len=1
+## END
+
+## N-I ash status: 2
+## N-I ash STDOUT:
+## END
+
+## BUG zsh STDOUT:
+len=1048576
+## END
+
