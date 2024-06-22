@@ -75,6 +75,7 @@ readonly MARKDOWN_DOCS=(
   getting-started
   portability
   known-differences
+  ysh-error-handling
   error-handling
   error-catalog
   json

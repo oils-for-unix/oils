@@ -33,6 +33,7 @@ See [All Docs](index.html) for links to drafts.
     Python](ysh-vs-python.html)
   - Features: [Egg Expressions (YSH Regexes)](eggex.html)
   | [YSH Regex API](ysh-regex-api.html)
+  | [YSH Error Handling](ysh-error-handling.html)
   | [Guide to Procs and Funcs](proc-func.html)
   | [YSH Fixes Shell's Error Handling](error-handling.html)
   | [Simple Word Evaluation](simple-word-eval.html)

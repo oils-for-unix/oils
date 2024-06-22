@@ -41,3 +41,24 @@ if ('foo42' ~ / <capture d+> /) {
 42
 42
 ## END
+
+#### _status instead of _error.code
+
+shopt --set ysh:upgrade
+
+f() {
+  return 42
+}
+
+try {
+  f
+}
+echo status=$_status
+
+## STDOUT:
+status=42
+## END
+
+
+
+

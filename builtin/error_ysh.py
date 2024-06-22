@@ -7,6 +7,7 @@ from _devbuild.gen.value_asdl import value, value_e
 from core import error
 from core.error import e_die_status, e_usage
 from core import executor
+from core import num
 from core import state
 from core import vm
 from frontend import flag_util
@@ -93,6 +94,8 @@ class Try(vm._Builtin):
         cmd = rd.RequiredBlock()
         rd.Done()
 
+        error_dict = None  # type: value.Dict
+
         status = 0  # success by default
         try:
             with ctx_Try(self.mutable_opts):
@@ -105,8 +108,16 @@ class Try(vm._Builtin):
         except error.Structured as e:
             #log('*** STRUC %s', e)
             status = e.ExitStatus()
-            self.mem.SetTryError(e.ToDict())
+            error_dict = e.ToDict()
 
+        if error_dict is None:
+            error_dict = value.Dict({'code': num.ToBig(status)})
+
+        # Always set _error
+        self.mem.SetTryError(error_dict)
+
+        # TODO: remove _status in favor of _error.code.  This is marked in
+        # spec/TODO-deprecate
         self.mem.SetTryStatus(status)
         return 0
 

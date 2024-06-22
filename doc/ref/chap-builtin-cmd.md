@@ -63,55 +63,45 @@ Examples:
 
 The `error` builtin interrupts the shell program.  
 
-    error 'Missing /tmp'  # program fails with status 10
+    error 'Missing /tmp'            # program fails with status 10
 
-Override the default status of `10` with a named argument:
+Override the default error code of `10` with a named argument:
 
-    error 'Missing /tmp' (code=99) 
+    error 'Missing /tmp' (code=99)  # program fails with status 99
 
-In YSH, it's customary to use `error` instead of `return 1`, since it provides
-more information:
+You can add arbitrary properties with named arguments:
+
+    error 'Oops' (path='foo.json')
+
+<!--
+
+In YSH, use `error` instead of `return 1` to provide more information:
 
     proc p {
       if ! test -d /tmp {
-        error 'Missing /tmp'  # more descriptive than return
+        error 'Missing /tmp'  # More descriptive than return
       }
       echo hi
     }
 
-Handle the error with the `try` builtin:
+Use the `try` builtin to handle the error.
 
     try {
       p
     }
-    if (_status !== 0) {
-      echo $[_error.message]  # => Missing /tmp
-    }
 
-The integer `_status` is always set, and the Dict `_error` is set for all
-"structured" errors, which includes errors raised by the `try` builtin.
+After `try`, the `_error` register is set to a Dict, with these properties:
 
-Special properties of `_error`:
-
-- `_error.message` - the positional string arg
 - `_error.code` - the named `code` arg, or the default 10
+- `_error.message` - the positional string arg
 
-You can attach other, arbitrary properties to the error:
+-->
 
-    error 'Oops' (path='foo.json')
-
-They are attached to `_error`:
-
-    try {
-      error 'Oops' (path='foo.json')
-    }
-    if (_status !== 0) {
-      echo $[_error.path]  # => foo.json
-    }
+See [YSH Error Handling](../ysh-error-handling.html) for more examples.
 
 ### failed
 
-Test if the last `try` command failed.
+A shortcut for `(_error.code !== 0):
 
     try {
       ls /tmp
@@ -120,26 +110,21 @@ Test if the last `try` command failed.
       echo 'ls failed'
     }
 
-This is simply a shortcut for checking if `_error.code` is non-zero:
+It saves you 7 punctuation characters: `( _ . !== )`
 
-    try {
-      ls /tmp
-    }
-    if (_error.code !== 0) {  # same as above
-      echo 'ls failed'
-    }
+See [YSH Error Handling](../ysh-error-handling.html) for more examples.
 
 ### try
 
-Run a block of code, stopping at the first error.  In other words, shopt
-`errexit` is enabled.
+Run a block of code, stopping at the first error.  (This is implemented with
+`shopt --set errexit`)
 
-Set the `_status` variable to the exit status of the block, and return 0.
+`try` sets the `_error` register to a dict, and always returns 0.
 
     try {
       ls /nonexistent
     }
-    if (_status !== 0) {
+    if (_error.code !== 0) {
       echo 'ls failed'
     }
 
@@ -161,17 +146,17 @@ The case statement can be useful:
     try {
       grep PATTERN FILE.txt
     }
-    case (_status) {
+    case (_error.code) {
       (0)    { echo 'found' }
       (1)    { echo 'not found' }
       (else) { echo "grep returned status $_status" }
     }
 
-The `try` builtin may also set the `_error` register.
+See [YSH Error Handling](../ysh-error-handling.html) for more examples.
 
 ### boolstatus
 
-Runs a command and requires the exit code to be 0 or 1.
+Runs a command, and requires the exit code to be 0 or 1.
 
     if boolstatus egrep '[0-9]+' myfile {  # e.g. aborts on status 2
       echo 'found'               # status 0 means found
@@ -179,8 +164,8 @@ Runs a command and requires the exit code to be 0 or 1.
       echo 'not found'           # status 1 means not found
     }
 
-It's meant for external commands that "return" true / false / fail, rather than
-pass / fail.
+It's meant for external commands that "return" more than 2 values, like true /
+false / fail, rather than pass / fail.
 
 ## Shell State
 
