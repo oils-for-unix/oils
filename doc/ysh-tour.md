@@ -592,7 +592,7 @@ Procs use this style (because of shell's *disabled `errexit` quirk*):
     }
 
 For a complete list of examples, see [YSH Error
-Handling](ysh-error-handling.html).  For design goals and a reference, see [YSH
+Handling](ysh-error.html).  For design goals and a reference, see [YSH
 Fixes Shell's Error Handling](error-handling.html).
 
 #### `break`, `continue`, `return`, `exit`

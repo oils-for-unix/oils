@@ -2,19 +2,22 @@
 default_highlighter: oils-sh
 ---
 
-YSH Error Handling: A Quick Guide
-=================================
+Guide to YSH Error Handling
+===========================
 
 There are just a few concepts to know:
 
-- [try][] - Run a block, and set the `_error` register to a `Dict`.
+- [try][] builtin - Run a block, and set the [_error][] register to a `Dict`.
   - `_error.code` will be `0` on success, or non-zero on failure.
-- [error][] - "Throw" an error, with a custom message, error code, and other
+- [error][] builtin - "Throw" an error, with a custom message, error code, and
+  other
   properties.
-- [failed][] - Handy shortcut that tests for non-zero error code.
+- [failed][] builtin - A handy shortcut to test for a non-zero error code.
+
+[try]: ref/chap-builtin-cmd.html#try
+[_error]: ref/chap-special-var.html#_error
 
 [error]: ref/chap-builtin-cmd.html#error
-[try]: ref/chap-builtin-cmd.html#try
 [failed]: ref/chap-builtin-cmd.html#failed
 
 <div id="toc">

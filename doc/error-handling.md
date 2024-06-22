@@ -33,7 +33,7 @@ error handling, and discuss its fundamental problems.  Then we show idiomatic
 YSH code, and look under the hood at the underlying mechanisms.
 
 (If you just want to **use** YSH, see [YSH Error Handling: A Quick
-Guide](ysh-error-handling.html).)
+Guide](ysh-error.html).)
 
 [file a bug]: https://github.com/oilshell/oil/issues
 

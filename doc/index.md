@@ -95,8 +95,8 @@ Crosscutting design issues:
 
 - [Guide to Procs and Funcs](proc-func.html)
   - [Block Literals](block-literals.html) &dagger;
+- [Guide to YSH Error Handling](ysh-error.html)
 - [Variable Declaration, Mutation, and Scope](variables.html)
-- [YSH Error Handling](ysh-error-handling.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
 - [YSH I/O Builtins](io-builtins.html) &dagger;
