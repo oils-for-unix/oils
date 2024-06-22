@@ -367,7 +367,7 @@ printf '%u\n' 2147483648
 2147483648
 ## END
 
-#### bit shift bug (Koiche on Zulip)
+#### (( status bug
 case $SH in dash|ash) exit ;; esac
 
 (( 1 << 32 ))

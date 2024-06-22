@@ -312,6 +312,9 @@ class Printf(vm._Builtin):
 
                         try:
                             # note: spaces like ' -42 ' accepted and normalized
+                            # TODO: use mops.FromStr()
+                            # And mylib.hex_lower() etc. may have to change
+
                             d = int(s)
                         except ValueError:
                             # 'a is interpreted as the ASCII value of 'a'
@@ -352,8 +355,8 @@ class Printf(vm._Builtin):
                             # state.
 
                             tzcell = self.mem.GetCell('TZ')
-                            if tzcell and tzcell.exported and tzcell.val.tag(
-                            ) == value_e.Str:
+                            if (tzcell and tzcell.exported and
+                                    tzcell.val.tag() == value_e.Str):
                                 tzval = cast(value.Str, tzcell.val)
                                 posix.putenv('TZ', tzval.s)
 

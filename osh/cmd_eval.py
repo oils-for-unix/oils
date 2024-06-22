@@ -83,6 +83,7 @@ from frontend import location
 from osh import braces
 from osh import sh_expr_eval
 from osh import word_eval
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log, probe, switch, tagswitch
 from ysh import expr_eval
@@ -1251,8 +1252,8 @@ class CommandEvaluator(object):
             while True:
                 if for_cond:
                     # We only accept integers as conditions
-                    cond_int = self.arith_ev.EvalToInt(for_cond)
-                    if cond_int == 0:  # false
+                    cond_int = self.arith_ev.EvalToBigInt(for_cond)
+                    if mops.Equal(cond_int, mops.ZERO):  # false
                         break
 
                 try:
@@ -1574,8 +1575,8 @@ class CommandEvaluator(object):
 
                 cmd_st.check_errexit = True
                 cmd_st.show_code = True  # this is a "leaf" for errors
-                i = self.arith_ev.EvalToInt(node.child)
-                status = 1 if i == 0 else 0
+                i = self.arith_ev.EvalToBigInt(node.child)
+                status = 1 if mops.Equal(i, mops.ZERO) else 0
 
             elif case(command_e.ControlFlow):  # LEAF command
                 node = cast(command.ControlFlow, UP_node)
