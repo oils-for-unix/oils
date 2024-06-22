@@ -587,13 +587,13 @@ Procs use this style (because of shell's *disabled `errexit` quirk*):
     try {
       myproc
     }
-    if (_status !== 0) {
+    if failed {
       echo 'failed'
     }
 
-For a complete list of examples, see [YSH vs. Shell Idioms > Error
-Handling](idioms.html#error-handling).  For design goals and a reference, see
-[YSH Fixes Shell's Error Handling](error-handling.html).
+For a complete list of examples, see [YSH Error
+Handling](ysh-error-handling.html).  For design goals and a reference, see [YSH
+Fixes Shell's Error Handling](error-handling.html).
 
 #### `break`, `continue`, `return`, `exit`
 
@@ -1239,7 +1239,7 @@ It will cover:
 - Boolean shell options with `shopt`: `parse_paren`, `simple_word_eval`, etc.
 - String shell options with `shvar`: `IFS`, `PATH`
 - **Registers** that are silently modified by the interpreter
-  - `$?` and `_status`
+  - `$?` and `_error`
   - `$!` for the last PID
   - `_this_dir`
   - `_reply`

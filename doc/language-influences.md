@@ -267,9 +267,9 @@ Hay blocks in YSH allow this to be expressed very similarly:
 
 PHP has global variables like `_REQUEST` and `_POST`.
 
-YSH has `_status`, `_group()`, `_start()`, etc.  These are global variables
-that are "silently" mutated by the interpreter (and functions to access such
-global data).
+YSH has `_error`, `_group()`, `_start()`, etc.  These are global variables that
+are "silently" mutated by the interpreter (and functions to access such global
+data).
 
 ### Lua
 

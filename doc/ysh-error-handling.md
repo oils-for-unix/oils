@@ -2,8 +2,8 @@
 default_highlighter: oils-sh
 ---
 
-YSH Error Handling: Quick Reference
-===================================
+YSH Error Handling: A Quick Guide
+=================================
 
 There are just a few concepts to know:
 
@@ -73,13 +73,14 @@ Sometimes it's nicer to use `case` rather than `if`:
 A non-zero exit code results in a simple shell-style error:
 
     proc simple-failure {
-      return 1
+      return 2
     }
 
     try {
       simple-failure
     }
-    echo $[_error.code]
+    echo "status is $[_error.code]"
+    # => status is 2
 
 The `error` builtin is more informative:
 
@@ -92,4 +93,11 @@ The `error` builtin is more informative:
     }
     echo "$[_error.code] $[_error.message] foo=$[_error.foo]"
     # => 99 Custom message foo=zz"
+
+## Related
+
+- [YSH vs. Shell Idioms > Error Handling](idioms.html#error-handling)
+- [YSH Fixes Shell's Error Handling (`errexit`)](error-handling.html) - Long
+  design doc.
+
 

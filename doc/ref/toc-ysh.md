@@ -105,7 +105,7 @@ X [Wok]           _field()
   [Memory]        cmd/append             Add elements to end of array
                   pp                     asdl   cell   X gc-stats   line   proc
   [Handle Errors] error                  error 'failed' (status=2)
-                  try                    Run with errexit, set _status _error
+                  try                    Run with errexit, set _error
                   failed                 Test if _error.code !== 0
                   boolstatus             Enforce 0 or 1 exit status
   [Shell State]   ysh-cd       ysh-shopt compatible, and takes a block
@@ -290,7 +290,7 @@ X [External Lang] BEGIN   END   when (awk)
 ```chapter-links-special-var
   [YSH Vars]      ARGV              X ENV                 X _ESCAPE
                   _this_dir
-  [YSH Status]    _status             _error
+  [YSH Status]    _error
                   _pipeline_status    _process_sub_status
   [YSH Tracing]   SHX_indent          SHX_punct             SHX_pid_str
   [YSH read]      _reply

@@ -255,7 +255,7 @@ These builtins are also "isolated" inside procs, using local scope:
 YSH Builtins:
 
 - [compadjust](ref/chap-builtin-cmd.html#compadjust)
-- [try](ref/chap-builtin-cmd.html#try) and `_status`
+- [try](ref/chap-builtin-cmd.html#try) and `_error`
 
 <!-- TODO: should YSH builtins always behave the same way?  Isn't that a little
 faster? I think read --all is not consistent.  -->

@@ -157,7 +157,7 @@ Hint: Error checking often looks like this:
     try {
       ls /bad
     }
-    if (_status !== 0) {
+    if (_error.code !== 0) {
       echo 'failed'
     }
 

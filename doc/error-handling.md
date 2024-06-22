@@ -32,6 +32,9 @@ This document explains how YSH makes these guarantees.  We first review shell
 error handling, and discuss its fundamental problems.  Then we show idiomatic
 YSH code, and look under the hood at the underlying mechanisms.
 
+(If you just want to **use** YSH, see [YSH Error Handling: A Quick
+Guide](ysh-error-handling.html).)
+
 [file a bug]: https://github.com/oilshell/oil/issues
 
 <div id="toc">
@@ -46,7 +49,7 @@ GNU [bash]($xref) fixes some of the problems, but **adds its own**, e.g. with
 respect to process subs, command subs, and assignment builtins.
 
 YSH fixes all the problems by adding new builtin commands, special variables,
-and global options.  But you see a simple interface with `try` and `_status`.
+and global options.  But you see a simple interface with `try` and `_error`.
 
 Let's review a few concepts before discussing YSH.
 
@@ -194,31 +197,23 @@ The details are explained below.
 ### `try` Handles Command and Expression Errors
 
 You may want to **handle failure** instead of aborting the shell.  In this
-case, use the `try` builtin and inspect the `_status` variable it sets.
+case, use the `try` builtin and inspect the `_error` variable it sets.
 
-    try {                 # try takes a block of commands
+    try {                     # try takes a block of commands
       ls /etc
-      ls /BAD             # it stops at the first failure
+      ls /BAD                 # it stops at the first failure
       ls /lib
-    }                     # After try, $? is always 0
-    if (_status !== 0) {  # Now check _status
+    }                         # After try, $? is always 0
+    if (_error.code !== 0) {  # Now check _error
       echo 'failed'
     }
 
 Note that:
 
-- The `_status` variable is different than `$?`.
+- The `_error.code` variable is different than `$?`.
   - The leading `_` is a PHP-like convention for special variables /
     "registers" in YSH.
 - Idiomatic YSH programs don't look at `$?`.
-
-You can omit `{ }` when invoking a single command.  Here's how to invoke a
-function without the *`if myfunc` Pitfall*:
-
-    try myfunc            # Unlike 'myfunc', doesn't abort on error
-    if (_status !== 0) {
-      echo 'failed'
-    }
 
 You also have fine-grained control over every process in a pipeline:
 
@@ -255,7 +250,7 @@ The `try` builtin also handles them:
     try {
        var x = 42 / 0
     }
-    if (_status !== 0) {
+    if failed {
       echo 'divide by zero'
     }
 
@@ -283,15 +278,15 @@ program if `grep` doesn't return 0 or 1.
 
 You can think of this as a shortcut for
 
-    try grep 'class' *.py
-    case $_status {
-      (0) echo 'found'
-          ;;
-      (1) echo 'not found'
-          ;;
-      (*) echo 'fatal'
-          exit $_status
-          ;;
+    try {
+      grep 'class' *.py
+    }
+    case (_error.code) {
+      (0)    { echo 'found' }
+      (1)    { echo 'not found' }
+      (else) { echo 'fatal'
+               exit $[_error.code]
+             }
     }
 
 ### FAQ on Language Design
@@ -304,7 +299,7 @@ Why is there `try` but no `catch`?
 
 First, it offers more flexibility:
 
-- The handler usually inspects `_status`, but it may also inspect
+- The handler usually inspects `_error.code`, but it may also inspect
   `_pipeline_status` or `_process_sub_status`.
 - The handler may use `case` instead of `if`, e.g. to distinguish true / false
   / error.
@@ -327,7 +322,7 @@ error, each of which has independent choices:
 
 <div class="faq">
 
-Why is `_status` different from `$?`
+Why is `_error.code` different from `$?`
 
 </div>
 
@@ -341,8 +336,8 @@ Generally, [errors occur *inside* blocks, not
 outside](proc-block-func.html#errors).
 
 Again, idiomatic YSH scripts never look at `$?`, which is only used to trigger
-shell's `errexit` rule.  Instead they invoke `try` and inspect `_status` when
-they want to handle errors.
+shell's `errexit` rule.  Instead they invoke `try` and inspect `_error.code`
+when they want to handle errors.
 
 <div class="faq">
 
@@ -532,9 +527,9 @@ It has two new **builtins** that relate to errors:
 
 It has three **special variables**:
 
-1. The `_status` integer, which is set by `try`.
-   - Remember that it's distinct from `$?`, and that idiomatic YSH programs
-     don't use `$?`.
+1. The `_error` register, which is set by `try`.
+   - Remember that `_error.code` is distinct from `$?`, and that idiomatic YSH
+     programs don't use `$?`.
 1. The `_pipeline_status` array (another name for bash's `PIPESTATUS`)
 1. The `_process_sub_status` array for process substitutions.
 
@@ -590,7 +585,7 @@ backward-compatible overhauls of shell!
 For reference, this work on error handling was described in [Four Features That
 Justify a New Unix
 Shell](https://www.oilshell.org/blog/2020/10/osh-features.html) (October 2020).
-Since then, we changed `try` and `_status` to be more powerful and general.
+Since then, we changed `try` and `_error` to be more powerful and general.
 
 &nbsp;
 

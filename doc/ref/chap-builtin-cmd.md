@@ -149,7 +149,7 @@ The case statement can be useful:
     case (_error.code) {
       (0)    { echo 'found' }
       (1)    { echo 'not found' }
-      (else) { echo "grep returned status $_status" }
+      (else) { echo "grep returned status $[_error.code]" }
     }
 
 See [YSH Error Handling](../ysh-error-handling.html) for more examples.
@@ -270,7 +270,7 @@ Current list of registers:
 
     Regex data underlying BASH_REMATCH, _group(), _start(), _end()
     $?             
-    _status               # set by the try builtin
+    _error                # set by the try builtin
     PIPESTATUS            # aka  _pipeline_status
     _process_sub_status
 

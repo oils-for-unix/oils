@@ -44,26 +44,29 @@ It's useful for "relative imports".
 
 ### `_status`
 
-An `Int` that's set by the `try` builtin.
-
-    try {
-      ls /bad  # exits with status 2
-    }
-    if (_status !== 0) {  # _status is 2
-      echo 'failed'
-    }
+DEPRECATED: Use `_error.code` instead.
 
 ### `_error`
 
-A `Dict` that's set by the `try` builtin when catching certain errors.
+A `Dict` that's set by the `try` builtin.
 
-Such errors include JSON/J8 encoding/decoding errors, and user errors from the
-`error` builtin.
+The integer `_error.code` is always present:
+
+    try {
+      ls /tmp
+    }
+    echo "status is $[_error.code]"
+
+Some errors also have a `message` field, like JSON/J8 encoding/decoding errors,
+and user errors from the [error][] builtin.
 
     try {
       echo $[toJson( /d+/ )]  # invalid Eggex type
     }
     echo "failed: $[_error.message]"  # => failed: Can't serialize ...
+
+[error]: chap-builtin-cmd.html#error
+
 
 ### `_pipeline_status`
 

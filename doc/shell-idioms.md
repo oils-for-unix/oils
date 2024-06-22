@@ -165,8 +165,10 @@ Shell workaround when the *$0 Dispatch Pattern* is used:
 
 Better YSH Style:
 
-    try myfunc
-    if (_status === 0) 
+    try {
+      myfunc
+    }
+    if (_error.code === 0) 
       echo 'Success'
     }
 
