@@ -149,3 +149,18 @@ echo $Q
 world
 ## END
 
+
+#### Parsing crash - bug #2003
+
+set +o errexit
+
+$SH -c 'proc y (;x) { return = x }'
+echo status=$?
+
+$SH -c 'func y (;x) { return = x }'
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+## END

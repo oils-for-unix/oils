@@ -1,4 +1,3 @@
-
 ## compare_shells: bash dash mksh zsh ash
 ## oils_failures_allowed: 0
 
@@ -360,3 +359,26 @@ PWNED
 0
 ## END
 
+#### printf bugs (Koiche on Zulip)
+printf '%x\n' 2147483648
+printf '%u\n' 2147483648
+## STDOUT:
+80000000
+2147483648
+## END
+
+#### bit shift bug (Koiche on Zulip)
+case $SH in dash|ash) exit ;; esac
+
+(( 1 << 32 ))
+echo status=$?
+
+(( 1 << 32 )) && echo yes
+
+## STDOUT:
+status=0
+yes
+## END
+
+## N-I dash/ash STDOUT:
+## END

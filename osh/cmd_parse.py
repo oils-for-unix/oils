@@ -2427,9 +2427,9 @@ class CommandParser(object):
                 part0 = parts[0]
                 if part0.tag() == word_part_e.Literal:
                     tok = cast(Token, part0)
-                    if (match.IsValidVarName(lexer.LazyStr(tok)) and
-                            self.w_parser.LookPastSpace() == Id.Lit_Equals):
-                        assert tok.id == Id.Lit_Chars, tok
+                    if (tok.id == Id.Lit_Chars and
+                            self.w_parser.LookPastSpace() == Id.Lit_Equals and
+                            match.IsValidVarName(lexer.LazyStr(tok))):
 
                         if (len(self.hay_attrs_stack) and
                                 self.hay_attrs_stack[-1]):
