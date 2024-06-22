@@ -47,7 +47,7 @@ class HeapObjectMember(object):
     e.g foo.empty() => foo->empty()
     """
 
-    def __init__(self, object_expr: Expression, object_type: Optional[Type],
+    def __init__(self, object_expr: Expression, object_type: Type,
                  member: str) -> None:
         self.ojbect_expr = object_expr
         self.object_type = object_type
