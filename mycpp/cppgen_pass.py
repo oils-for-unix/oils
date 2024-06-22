@@ -2946,40 +2946,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             )
             return
 
-        # Omit anything that looks like if __name__ == ...
-        if (isinstance(cond, ComparisonExpr) and
-                isinstance(cond.operands[0], NameExpr) and
-                cond.operands[0].name == '__name__'):
-            return
-
-        # Omit if 0:
-        if isinstance(cond, IntExpr) and cond.value == 0:
-            # But write else: body
-            # Note: this would be invalid at the top level!
-            if o.else_body:
-                self.accept(o.else_body)
-            return
-
-        # Omit if TYPE_CHECKING blocks.  They contain type expressions that
-        # don't type check!
-        if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
-            return
-        # mylib.CPP
-        if isinstance(cond, MemberExpr) and cond.name == 'CPP':
-            # just take the if block
-            self.def_write_ind('// if MYCPP\n')
-            self.def_write_ind('')
-            for node in o.body:
-                self.accept(node)
-            self.def_write_ind('// endif MYCPP\n')
-            return
-        # mylib.PYTHON
-        if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
-            if o.else_body:
-                self.def_write_ind('// if not PYTHON\n')
-                self.def_write_ind('')
-                self.accept(o.else_body)
-                self.def_write_ind('// endif MYCPP\n')
+        if util.MaybeSkipIfStmt(self, o):
             return
 
         self.def_write_ind('if (')

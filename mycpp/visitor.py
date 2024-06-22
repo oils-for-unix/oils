@@ -139,10 +139,7 @@ class SimpleVisitor(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(o.expr)
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
-        # Omit if TYPE_CHECKING blocks.  They contain type expressions that
-        # don't type check!
-        cond = o.expr[0]
-        if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
+        if util.MaybeSkipIfStmt(self, o):
             return
 
         for expr in o.expr:
