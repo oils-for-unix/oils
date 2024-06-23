@@ -517,8 +517,7 @@ class DictToSparse(vm._Callable):
         result = value.SparseArray({})
         for i, s in enumerate(strs):
             if s is not None:
-                # result.d[i] = s
-                mylib.BashArraySet(result.d, mops.IntWiden(i), s)
+                result.d[mops.IntWiden(i)] = s
 
         return result
 
@@ -544,7 +543,7 @@ class SparseOp(vm._Callable):
             index = rd.PosInt()
             rd.Done()
 
-            s = mylib.BashArrayGet(d, index)
+            s = d.get(index)
             if s is None:
                 return value.Null
             else:
@@ -555,8 +554,8 @@ class SparseOp(vm._Callable):
             s = rd.PosStr()
             rd.Done()
 
-            #d[index] = s
-            mylib.BashArraySet(d, index, s)
+            d[index] = s
+            #mylib.BashArraySet(d, index, s)
             return value.Int(mops.ZERO)
 
         elif op_name == 'subst':  # "${a[@]}"
@@ -564,7 +563,7 @@ class SparseOp(vm._Callable):
             mylib.BigIntSort(keys)
             items = []  # type: List[str]
             for i in keys:
-                s = mylib.BashArrayGet(d, i)
+                s = d.get(i)
                 assert s is not None
                 items.append(s)
             return value.BashArray(items)
@@ -579,7 +578,7 @@ class SparseOp(vm._Callable):
             items2 = []  # type: List[str]
             i = start
             while mops.Greater(end, i):  # i < end
-                s = mylib.BashArrayGet(d, i)
+                s = d.get(i)
                 #log('s %s', s)
                 if s is not None:
                     items2.append(s)

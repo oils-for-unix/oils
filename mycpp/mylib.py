@@ -26,8 +26,6 @@ from typing import (Tuple, List, Dict, Optional, Iterator, Any, TypeVar,
 if TYPE_CHECKING:
     from mycpp import mops
 
-
-
 # For conditional translation
 CPP = False
 PYTHON = True
@@ -114,16 +112,6 @@ def JoinBytes(byte_list):
 def BigIntSort(keys):
     # type: (List[mops.BigInt]) -> None
     keys.sort(key=lambda big: big.i)
-
-
-def BashArrayGet(d, index):
-    # type: (Dict[mops.BigInt, str], mops.BigInt) -> Optional[str]
-    return d.get(index)
-
-
-def BashArraySet(d, index, s):
-    # type: (Dict[mops.BigInt, str], mops.BigInt, str) -> None
-    d[index] = s
 
 
 class File:

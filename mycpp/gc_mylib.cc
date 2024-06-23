@@ -43,21 +43,9 @@ BigStr* JoinBytes(List<int>* byte_list) {
   return result;
 }
 
-//
 // For BashArray
-//
-
 void BigIntSort(List<mops::BigInt>* keys) {
-  CHECK(false);
-}
-
-BigStr* BashArrayGet(Dict<mops::BigInt, BigStr*>* d, mops::BigInt index) {
-  CHECK(false);
-}
-
-BigStr* BashArraySet(Dict<mops::BigInt, BigStr*>* d, mops::BigInt index,
-                     BigStr* s) {
-  CHECK(false);
+  keys->sort();
 }
 
 class MutableStr : public BigStr {};

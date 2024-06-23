@@ -66,9 +66,6 @@ inline int ByteInSet(int byte, BigStr* byte_set) {
 BigStr* JoinBytes(List<int>* byte_list);
 
 void BigIntSort(List<mops::BigInt>* keys);
-BigStr* BashArrayGet(Dict<mops::BigInt, BigStr*>* d, mops::BigInt index);
-BigStr* BashArraySet(Dict<mops::BigInt, BigStr*>* d, mops::BigInt index,
-                     BigStr* s);
 
 // const int kStdout = 1;
 // const int kStderr = 2;
