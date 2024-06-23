@@ -21,14 +21,17 @@ class BigInt(object):
 
     def __eq__(self, other):
         # type: (object) -> bool
+
+        # Disabled check
+        # Prevent possible mistakes.  Could do this with other operators
+        # raise AssertionError('Use mops.Equal()')
+
         if not isinstance(other, BigInt):
             raise AssertionError()
 
         # Used for hashing
         return self.i == other.i
 
-        # Prevent possible mistakes.  Could do this with other operators
-        #raise AssertionError('Use mops.Equal()')
 
     def __gt__(self, other):
         # type: (object) -> bool
