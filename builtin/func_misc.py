@@ -538,6 +538,8 @@ class SparseOp(vm._Callable):
         #i = mops.BigTruncate(rd.PosInt())
         op_name = rd.PosStr()
 
+        no_str = None  # type: str
+
         if op_name == 'len':  # ${#a[@]}
             rd.Done()
             return num.ToBig(len(d))
@@ -564,11 +566,14 @@ class SparseOp(vm._Callable):
         elif op_name == 'subst':  # "${a[@]}"
             keys = d.keys()
             mylib.BigIntSort(keys)
-            items = []  # type: List[str]
+            # Pre-allocate
+            items = [no_str] * len(d)  # type: List[str]
+            j = 0
             for i in keys:
                 s = d.get(i)
                 assert s is not None
-                items.append(s)
+                items[j] = s
+                j += 1
             return value.BashArray(items)
 
         elif op_name == 'slice':  # "${a[@]:0:5}"
@@ -576,15 +581,19 @@ class SparseOp(vm._Callable):
             end = rd.PosInt()
             rd.Done()
 
+            n = mops.BigTruncate(mops.Sub(end, start))
             #log('start %d - end %d', start.i, end.i)
 
-            items2 = []  # type: List[str]
+            # Pre-allocate
+            items2 = [no_str] * n  # type: List[str]
+            j = 0
             i = start
             while mops.Greater(end, i):  # i < end
                 s = d.get(i)
                 #log('s %s', s)
                 if s is not None:
-                    items2.append(s)
+                    items2[j] = s
+                    j += 1
 
                 i = mops.Add(i, mops.ONE)  # i += 1
 
