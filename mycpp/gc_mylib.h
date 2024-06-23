@@ -7,6 +7,7 @@
 
 #include "mycpp/gc_alloc.h"  // gHeap
 #include "mycpp/gc_dict.h"   // for dict_erase()
+#include "mycpp/gc_mops.h"
 #include "mycpp/gc_tuple.h"
 
 template <class K, class V>
@@ -63,6 +64,11 @@ inline int ByteInSet(int byte, BigStr* byte_set) {
 }
 
 BigStr* JoinBytes(List<int>* byte_list);
+
+void BigIntSort(List<mops::BigInt>* keys);
+BigStr* BashArrayGet(Dict<mops::BigInt, BigStr*>* d, mops::BigInt index);
+BigStr* BashArraySet(Dict<mops::BigInt, BigStr*>* d, mops::BigInt index,
+                     BigStr* s);
 
 // const int kStdout = 1;
 // const int kStderr = 2;

@@ -23,6 +23,10 @@ except ImportError:
 
 from typing import (Tuple, List, Dict, Optional, Iterator, Any, TypeVar,
                     Generic, cast, TYPE_CHECKING)
+if TYPE_CHECKING:
+    from mycpp import mops
+
+
 
 # For conditional translation
 CPP = False
@@ -100,6 +104,26 @@ def JoinBytes(byte_list):
     # type: (List[int]) -> str
 
     return ''.join(chr(b) for b in byte_list)
+
+
+#
+# Added for SparseArray
+#
+
+
+def BigIntSort(keys):
+    # type: (List[mops.BigInt]) -> None
+    keys.sort(key=lambda big: big.i)
+
+
+def BashArrayGet(d, index):
+    # type: (Dict[mops.BigInt, str], mops.BigInt) -> Optional[str]
+    return d.get(index)
+
+
+def BashArraySet(d, index, s):
+    # type: (Dict[mops.BigInt, str], mops.BigInt, str) -> None
+    d[index] = s
 
 
 class File:

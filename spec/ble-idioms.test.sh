@@ -200,26 +200,112 @@ len=1
 len=1048576
 ## END
 
+
+#### shift unshift reverse
+
+case $SH in mksh|ash) exit ;; esac
+
+# https://github.com/akinomyoga/ble.sh/blob/79beebd928cf9f6506a687d395fd450d027dc4cd/src/util.sh#L578-L582
+
+# @fn ble/array#unshift arr value...
+function ble/array#unshift {
+  builtin eval -- "$1=(\"\${@:2}\" \"\${$1[@]}\")"
+}
+# @fn ble/array#shift arr count
+function ble/array#shift {
+  # Note: Bash 4.3 以下では ${arr[@]:${2:-1}} が offset='${2'
+  # length='-1' に解釈されるので、先に算術式展開させる。
+  builtin eval -- "$1=(\"\${$1[@]:$((${2:-1}))}\")"
+}
+# @fn ble/array#reverse arr
+function ble/array#reverse {
+  builtin eval "
+  set -- \"\${$1[@]}\"; $1=()
+  local e$1 i$1=\$#
+  for e$1; do $1[--i$1]=\"\$e$1\"; done"
+}
+
+a=( {1..6} )
+echo "${a[@]}"
+
+ble/array#shift a 1
+echo "${a[@]}"
+
+ble/array#shift a 2
+echo "${a[@]}"
+
+echo ---
+
+ble/array#unshift a 99
+echo "${a[@]}"
+
+echo ---
+
+# doesn't work in zsh!
+ble/array#reverse a
+echo "${a[@]}"
+
+
+## STDOUT:
+1 2 3 4 5 6
+2 3 4 5 6
+4 5 6
+---
+99 4 5 6
+---
+6 5 4 99
+## END
+
+## BUG zsh STDOUT:
+1 2 3 4 5 6
+2 3 4 5 6
+4 5 6
+---
+99 4 5 6
+---
+5 4 99
+## END
+
+## N-I mksh/ash STDOUT:
+## END
+
+
 #### Performance demo
 
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
-a=(x y)
 #pp line (a)
 
-var sp = _spmake(a)
+a=( foo {25..27} bar )
 
+a[10]='sparse'
+
+var sp = _a2sp(a)
 echo $[type(sp)]
+
+echo len: $[_opsp(sp, 'len')]
+
 #echo $[len(sp)]
 
-# shows the length
-call _spdemo(sp, 0)
+shopt -s ysh:upgrade
+
+echo subst: @[_opsp(sp, 'subst')]
+
+echo slice: @[_opsp(sp, 'slice', 2, 5)]
+
+call _opsp(sp, 'set', 0, 'set this')
+
+echo get0: $[_opsp(sp, 'get', 0)]
+echo get1: $[_opsp(sp, 'get', 1)]
 
 ## STDOUT:
 SparseArray
-len 2
+len: 6
+subst: foo 25 26 27 bar sparse
+slice: 26 27 bar
+get0: set this
+get1: 25
 ## END
 
 ## N-I bash/zsh/mksh/ash STDOUT:
 ## END
-

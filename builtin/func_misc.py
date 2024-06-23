@@ -480,7 +480,7 @@ class FromJson8(vm._Callable):
         return val
 
 
-class ToSparseArray(vm._Callable):
+class BashArrayToSparse(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -501,7 +501,29 @@ class ToSparseArray(vm._Callable):
         return result
 
 
-class SparseArrayDemo(vm._Callable):
+class DictToSparse(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        strs = rd.PosBashArray()
+        rd.Done()
+
+        # List[str] with holes -> Dict[int, str]
+        result = value.SparseArray({})
+        for i, s in enumerate(strs):
+            if s is not None:
+                # result.d[i] = s
+                mylib.BashArraySet(result.d, mops.IntWiden(i), s)
+
+        return result
+
+
+class SparseOp(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -511,13 +533,61 @@ class SparseArrayDemo(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         d = rd.PosSparseArray()
-        i = mops.BigTruncate(rd.PosInt())
-        rd.Done()
+        #i = mops.BigTruncate(rd.PosInt())
+        op_name = rd.PosStr()
 
-        # TODO: Add timing here
-        if i == 0:
-            print('len %d' % len(d))
+        if op_name == 'len':  # ${#a[@]}
+            rd.Done()
+            return num.ToBig(len(d))
+
+        elif op_name == 'get':  # ${a[42]}
+            index = rd.PosInt()
+            rd.Done()
+
+            s = mylib.BashArrayGet(d, index)
+            if s is None:
+                return value.Null
+            else:
+                return value.Str(s)
+
+        elif op_name == 'set':  # a[42]=foo
+            index = rd.PosInt()
+            s = rd.PosStr()
+            rd.Done()
+
+            #d[index] = s
+            mylib.BashArraySet(d, index, s)
+            return value.Int(mops.ZERO)
+
+        elif op_name == 'subst':  # "${a[@]}"
+            keys = d.keys()
+            mylib.BigIntSort(keys)
+            items = []  # type: List[str]
+            for i in keys:
+                s = mylib.BashArrayGet(d, i)
+                assert s is not None
+                items.append(s)
+            return value.BashArray(items)
+
+        elif op_name == 'slice':  # "${a[@]:0:5}"
+            start = rd.PosInt()
+            end = rd.PosInt()
+            rd.Done()
+
+            #log('start %d - end %d', start.i, end.i)
+
+            items2 = []  # type: List[str]
+            i = start
+            while mops.Greater(end, i):  # i < end
+                s = mylib.BashArrayGet(d, i)
+                #log('s %s', s)
+                if s is not None:
+                    items2.append(s)
+
+                i = mops.Add(i, mops.ONE)  # i += 1
+
+            return value.BashArray(items2)
+
         else:
-            print('Invalid SparseArray demo %d' % i)
-
-        return value.Int(mops.ZERO)
+            print('Invalid SparseArray operation %r' % op_name)
+            return value.Int(mops.ZERO)
