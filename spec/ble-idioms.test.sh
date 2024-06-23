@@ -200,3 +200,26 @@ len=1
 len=1048576
 ## END
 
+#### Performance demo
+
+case $SH in bash|zsh|mksh|ash) exit ;; esac
+
+a=(x y)
+#pp line (a)
+
+var sp = _spmake(a)
+
+echo $[type(sp)]
+#echo $[len(sp)]
+
+# shows the length
+call _spdemo(sp, 0)
+
+## STDOUT:
+SparseArray
+len 2
+## END
+
+## N-I bash/zsh/mksh/ash STDOUT:
+## END
+

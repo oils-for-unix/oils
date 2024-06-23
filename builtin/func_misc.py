@@ -480,4 +480,44 @@ class FromJson8(vm._Callable):
         return val
 
 
-# vim: sw=2
+class ToSparseArray(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        strs = rd.PosBashArray()
+        rd.Done()
+
+        # List[str] with holes -> Dict[int, str]
+        result = value.SparseArray({})
+        for i, item in enumerate(strs):
+            if item is not None:
+                result.d[mops.IntWiden(i)] = item
+
+        return result
+
+
+class SparseArrayDemo(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        d = rd.PosSparseArray()
+        i = mops.BigTruncate(rd.PosInt())
+        rd.Done()
+
+        # TODO: Add timing here
+        if i == 0:
+            print('len %d' % len(d))
+        else:
+            print('Invalid SparseArray demo %d' % i)
+
+        return value.Int(mops.ZERO)

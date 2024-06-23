@@ -848,6 +848,9 @@ def Main(
     _SetGlobalFunc(mem, 'fromJson8', func_misc.FromJson8(True))
     _SetGlobalFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
+    _SetGlobalFunc(mem, '_spmake', func_misc.ToSparseArray())
+    _SetGlobalFunc(mem, '_spdemo', func_misc.SparseArrayDemo())
+
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
     mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)
 

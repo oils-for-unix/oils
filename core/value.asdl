@@ -70,8 +70,10 @@ module value
   | Str(str s)
 
     # "holes" in the array are represented by None
-    # TODO: Use Dict[int, str] representation
   | BashArray(List[str] strs)
+    # TODO: Switch to this more efficient representation?
+  | SparseArray(Dict[BigInt, str] d)
+
   | BashAssoc(Dict[str, str] d)
 
     # DATA model for YSH follows JSON.  Note: YSH doesn't have 'undefined' and
