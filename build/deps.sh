@@ -528,11 +528,35 @@ install-py3-libs-in-venv() {
   # Avoids a warning, but doesn't fix typed_ast
   #time python3 -m pip install --find-links $package_dir wheel
 
+  upgrade-typed-ast $mypy_dir/mypy-requirements.txt
+
   # for mycpp/
   time python3 -m pip install --find-links $package_dir -r $mypy_dir/test-requirements.txt
 
   # pexpect: for spec/stateful/*.py
   time python3 -m pip install --find-links $package_dir pexpect
+}
+
+upgrade-typed-ast() {
+  local file=$1
+  sed -i 's/typed_ast.*/typed_ast==1.5.0/' $file
+}
+
+test-typed-ast() {
+  local dir=~/wedge/oils-for-unix.org/pkg/mypy/0.780
+
+  cp -v $dir/mypy-requirements.txt _tmp
+
+  local file=_tmp/mypy-requirements.txt
+  cat $file
+  #echo
+
+  # 1.5.0 fixed this bug
+  # https://github.com/python/typed_ast/issues/169 
+
+  upgrade-typed-ast $file
+  echo
+  cat $file
 }
 
 install-py3-libs-from-cache() {

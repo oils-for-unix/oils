@@ -481,6 +481,9 @@ class FromJson8(vm._Callable):
 
 
 class BashArrayToSparse(vm._Callable):
+    """
+    value.BashArray -> value.SparseArray, for testing
+    """
 
     def __init__(self):
         # type: () -> None
@@ -494,14 +497,17 @@ class BashArrayToSparse(vm._Callable):
 
         # List[str] with holes -> Dict[int, str]
         result = value.SparseArray({})
-        for i, item in enumerate(strs):
-            if item is not None:
-                result.d[mops.IntWiden(i)] = item
+        for i, s in enumerate(strs):
+            if s is not None:
+                result.d[mops.IntWiden(i)] = s
 
         return result
 
 
 class DictToSparse(vm._Callable):
+    """
+    value.Dict -> value.SparseArray, for testing
+    """
 
     def __init__(self):
         # type: () -> None
@@ -526,6 +532,9 @@ class DictToSparse(vm._Callable):
 
 
 class SparseOp(vm._Callable):
+    """
+    All ops on value.SparseArray, for testing performance
+    """
 
     def __init__(self):
         # type: () -> None
@@ -564,6 +573,21 @@ class SparseOp(vm._Callable):
             return value.Int(mops.ZERO)
 
         elif op_name == 'subst':  # "${a[@]}"
+            # Algorithm to expand a Dict[BigInt, Str]
+            #
+            # 1. Copy the integer keys into a new List
+            # 2. Sort them in numeric order
+            # 3. Create a List[str] that's the same size as the keys
+            # 4. Loop through sorted keys, look up value, and populate list
+            #
+            # There is another possible algorithm:
+            #
+            # 1. Copy the VALUES into a new list
+            # 2. Somehow sort them by the CORRESPONDING key, which depends on
+            #    Slab<> POSITION.  I think this does not fit within the
+            #    std::sort() model.  I think we would have to write a little custom
+            #    sort algorithm.
+
             keys = d.keys()
             mylib.BigIntSort(keys)
             # Pre-allocate
@@ -586,6 +610,18 @@ class SparseOp(vm._Callable):
 
             # Pre-allocate
             items2 = [no_str] * n  # type: List[str]
+
+            # Iterate from start to end.  Note that this algorithm is
+            # theoretically slower than bash in the case where the array is
+            # sparse (in the part selected by the slice)
+            #
+            # e.g. if you do ${a[@]:1:1000} e.g. to SHIFT, and there are only 3
+            # elements, OSH will iterate through 999 integers and do 999 dict
+            # lookups, while bash will follow 3 pointers.
+            #
+            # However, in practice, I think iterating through integers is
+            # cheap.
+
             j = 0
             i = start
             while mops.Greater(end, i):  # i < end
