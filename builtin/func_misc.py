@@ -510,14 +510,17 @@ class DictToSparse(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        strs = rd.PosBashArray()
+        d = rd.PosDict()
         rd.Done()
 
-        # List[str] with holes -> Dict[int, str]
+        blame_tok = rd.LeftParenToken()
+
         result = value.SparseArray({})
-        for i, s in enumerate(strs):
-            if s is not None:
-                result.d[mops.IntWiden(i)] = s
+        for k, v in iteritems(d):
+            i = mops.FromStr(k)
+            s = val_ops.ToStr(v, 'expected str', blame_tok)
+
+            result.d[i] = s
 
         return result
 

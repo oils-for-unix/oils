@@ -298,6 +298,24 @@ call _opsp(sp, 'set', 0, 'set this')
 echo get0: $[_opsp(sp, 'get', 0)]
 echo get1: $[_opsp(sp, 'get', 1)]
 
+echo ---
+
+# Sparse
+var d = {
+  '1': 'a',
+  '10': 'b',
+  '100': 'c',
+  '1000': 'd',
+  '10000': 'e',
+  '100000': 'f',
+}
+
+var sp2 = _d2sp(d)
+
+echo len: $[_opsp(sp2, 'len')]
+echo subst: @[_opsp(sp2, 'subst')]
+
+
 ## STDOUT:
 SparseArray
 len: 6
@@ -305,6 +323,9 @@ subst: foo 25 26 27 bar sparse
 slice: 26 27 bar
 get0: set this
 get1: 25
+---
+len: 6
+subst: a b c d e f
 ## END
 
 ## N-I bash/zsh/mksh/ash STDOUT:

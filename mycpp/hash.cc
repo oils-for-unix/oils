@@ -24,6 +24,11 @@ unsigned hash_key(int n) {
   return n;
 }
 
+unsigned hash_key(mops::BigInt n) {
+  // Cast to a smaller type.  Is there anything better we can do?
+  return static_cast<unsigned>(n);
+}
+
 unsigned hash_key(Tuple2<int, int>* t1) {
   return t1->at0() + t1->at1();
 }
