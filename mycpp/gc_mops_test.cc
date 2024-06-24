@@ -53,20 +53,6 @@ TEST static_cast_test() {
   PASS();
 }
 
-TEST hash_test() {
-  // Failed before we had keys_equal
-
-  auto d = Alloc<Dict<mops::BigInt, BigStr*>>();
-
-  for (int i = 0; i < 64; ++i) {
-    int64_t p2 = 1LL << i;
-    d->set(p2, kEmptyString);
-  }
-  ASSERT_EQ_FMT(64, len(d), "%d");
-
-  PASS();
-}
-
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -76,7 +62,6 @@ int main(int argc, char** argv) {
 
   RUN_TEST(bigint_test);
   RUN_TEST(static_cast_test);
-  RUN_TEST(hash_test);
 
   gHeap.CleanProcessExit();
 

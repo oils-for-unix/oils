@@ -254,6 +254,7 @@ TEST comparators_test() {
   ASSERT(!maybe_str_equals(kEmptyString, nullptr));
   ASSERT(maybe_str_equals(nullptr, nullptr));
 
+  // Compare by VALUE, not by pointer.
   // TODO: check for this bug elsewhere
   log("Tuple2<BigStr*, int> are_equal()");
   auto t1 = Alloc<Tuple2<BigStr*, int>>(StrFromC("42"), 42);
@@ -262,6 +263,44 @@ TEST comparators_test() {
 
   ASSERT(are_equal(t1, t2));
   ASSERT(!are_equal(t2, t3));
+
+  PASS();
+}
+
+TEST container_test() {
+  //
+  // int
+  //
+
+  auto* di = Alloc<Dict<int, BigStr*>>();
+  for (int i = 0; i < 32; ++i) {
+    int p2 = 1 << i;
+    di->set(p2, kEmptyString);
+  }
+  ASSERT_EQ_FMT(32, len(di), "%d");
+
+  auto* li = Alloc<List<int>>();
+  li->append(1 << 30);
+  li->append(1 << 31);
+  ASSERT(!list_contains(li, 0));
+
+  //
+  // mops::BigInt
+  //
+
+  // Failed before we had keys_equal() for mops::BigInt
+  auto* d = Alloc<Dict<mops::BigInt, BigStr*>>();
+  for (int i = 0; i < 64; ++i) {
+    int64_t p2 = 1LL << i;
+    d->set(p2, kEmptyString);
+  }
+  ASSERT_EQ_FMT(64, len(d), "%d");
+
+  // Failed before we had are_equal() for mops::BigInt
+  auto* lb = Alloc<List<mops::BigInt>>();
+  lb->append(1L << 32);
+  lb->append(1L << 33);
+  ASSERT(!list_contains(lb, 0L));
 
   PASS();
 }
@@ -370,6 +409,7 @@ int main(int argc, char** argv) {
   RUN_TEST(float_to_str_test);
 
   RUN_TEST(comparators_test);
+  RUN_TEST(container_test);
 
   RUN_TEST(exceptions_test);
 

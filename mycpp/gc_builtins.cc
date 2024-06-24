@@ -385,35 +385,12 @@ bool maybe_str_equals(BigStr* left, BigStr* right) {
   return false;  // one is None and one is a BigStr*
 }
 
-// TODO: inline these functions?
-bool are_equal(int left, int right) {
-  return left == right;
-}
-
-bool keys_equal(int left, int right) {
-  return left == right;
-}
-
-bool keys_equal(mops::BigInt left, mops::BigInt right) {
-  return left == right;
-}
-
 bool are_equal(BigStr* left, BigStr* right) {
   return str_equals(left, right);
 }
 
 bool keys_equal(BigStr* left, BigStr* right) {
   return are_equal(left, right);
-}
-
-// Shouldn't be used?
-bool are_equal(void* left, void* right) {
-  assert(0);
-}
-
-// e.g. for Dict<Token*, int>, use object IDENTITY, not value
-bool keys_equal(void* left, void* right) {
-  return left == right;
 }
 
 bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
