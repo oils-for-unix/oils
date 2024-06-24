@@ -1,5 +1,7 @@
 #include "mycpp/gc_dict.h"
 
+#include <unordered_map>
+
 #include "mycpp/gc_mylib.h"
 #include "vendor/greatest.h"
 
@@ -686,6 +688,31 @@ TEST test_hash() {
   PASS();
 }
 
+TEST hash_pileup_bug() {
+  auto* d = Alloc<Dict<mops::BigInt, BigStr*>>();
+
+  std::unordered_map<unsigned, bool> hist;
+
+  for (int i = 0; i < 24; ++i) {
+    mops::BigInt index {1 << i};
+    log("index %ld", index);
+
+    for (mops::BigInt j = index; j < index + 2000; ++j) {
+      d->set(j, kEmptyString);
+      unsigned h = hash_key(j);
+      hist[h] = true;
+      // log("%ld %d", j, h);
+    }
+    log("len %d", len(d));
+  }
+
+  log("len %d", len(d));
+  log("unique hashes %d", hist.size());
+
+  PASS();
+}
+
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -710,6 +737,7 @@ int main(int argc, char** argv) {
   RUN_TEST(dict_iters_test);
 
   RUN_TEST(test_hash);
+  RUN_TEST(hash_pileup_bug);
 
   gHeap.CleanProcessExit();
 

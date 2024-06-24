@@ -26,6 +26,41 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+compare-x() {
+  local x=$1
+
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+
+  echo ===
+  echo $osh SparseArray
+  echo
+  time sparse-$x $osh
+
+  for sh in bash $osh; do
+    echo ===
+    echo $sh
+    echo
+    time $sh $0 $x
+  done
+}
+
+compare-sum-shift() {
+  compare-x sum-shift
+}
+
+compare-append-sparse() {
+  compare-x append-sparse
+}
+
+compare-append-dense() {
+  compare-x append-dense
+}
+
+#
+# Workloads
+#
+
 sum-shift() {
   local n=${1:-1000}
 
@@ -112,26 +147,6 @@ f
 EOF
 }
 
-compare-sum-shift() {
-  # more like 1M iterations - 1.8 seconds in bash
-  # So that's 1.8 ms for 1000 iterations
-
-  local osh=_bin/cxx-opt/osh
-  ninja $osh
-
-  echo ===
-  echo $osh SparseArray
-  echo
-  time sparse-sum-shift $osh
-
-  for sh in bash $osh; do
-    echo ===
-    echo $sh
-    echo
-    time $sh $0 sum-shift
-  done
-}
-
 append-sparse() {
   local n=${1:-24}  # up to 2^n
   local m=${2:-2000}
@@ -182,21 +197,52 @@ f
 EOF
 }
 
-compare-append-sparse() {
-  local osh=_bin/cxx-opt/osh
-  ninja $osh
+append-dense() {
+  local n=${1:-24}  # up to 2^n
+  local m=${2:-2000}
 
-  echo ===
-  echo $osh SparseArray
-  echo
-  time sparse-append-sparse $osh
+  to_append=( $(seq $m) )  # split words
 
-  for sh in bash $osh; do
-    echo ===
-    echo $sh
-    echo
-    time $sh $0 append-sparse
-  done
+  a=()
+  for (( i = 0; i < n; ++i )) {
+    a+=( ${to_append[@]} )
+  }
+  #echo ${a[@]}
+  #echo ${!a[@]}
+  echo ${#a[@]}
+}
+
+sparse-append-dense() {
+  local osh=${1:-_bin/cxx-opt/osh}
+  local n=${2:-24}
+  local m=${3:-2000}
+
+  NUM_ITERS=$n TO_APPEND=$m $osh <<'EOF'
+n=$NUM_ITERS
+m=$TO_APPEND
+to_append=( $(seq $m) )  # split words before ysh:upgrade
+
+shopt --set ysh:upgrade
+
+f() {
+  a=()
+  var sp = _a2sp(a)
+
+  for (( i = 0; i < n; ++i )) {
+    #call _opsp(sp, 'set', 1 << i, str(i))
+    call _opsp(sp, 'append', to_append)
+
+    #time call _opsp(sp, 'append', to_append)
+    #echo $[_opsp(sp, 'len')]
+    #echo
+  }
+  echo $[_opsp(sp, 'len')]
+  #echo @[_opsp(sp, 'subst')]
+  #echo @[_opsp(sp, 'keys')]
+}
+
+f
+EOF
 }
 
 demo() {

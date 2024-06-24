@@ -233,6 +233,7 @@ void Dict<K, V>::reserve(int num_desired) {
   values_ = NewSlab<V>(capacity_);
 
   if (old_k != nullptr) {  // rehash if there were any entries
+    //log("REHASH num_desired %d", num_desired);
     len_ = 0;
     for (int i = 0; i < old_len; ++i) {
       set(old_k->items_[i], old_v->items_[i]);
