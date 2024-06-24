@@ -495,13 +495,16 @@ class BashArrayToSparse(vm._Callable):
         strs = rd.PosBashArray()
         rd.Done()
 
-        # List[str] with holes -> Dict[int, str]
-        result = value.SparseArray({})
+        d = {}  # type: Dict[mops.BigInt, str]
+        max_index = mops.MINUS_ONE   # max index for empty array
         for i, s in enumerate(strs):
             if s is not None:
-                result.d[mops.IntWiden(i)] = s
+                big_i = mops.IntWiden(i)
+                d[big_i] = s
+                if mops.Greater(big_i,  max_index):
+                    max_index = big_i
 
-        return result
+        return value.SparseArray(d, max_index)
 
 
 class DictToSparse(vm._Callable):
@@ -521,14 +524,15 @@ class DictToSparse(vm._Callable):
 
         blame_tok = rd.LeftParenToken()
 
-        result = value.SparseArray({})
+        mydict = {}  # type: Dict[mops.BigInt, str]
         for k, v in iteritems(d):
             i = mops.FromStr(k)
             s = val_ops.ToStr(v, 'expected str', blame_tok)
 
-            result.d[i] = s
+            mydict[i] = s
 
-        return result
+        max_index = mops.MINUS_ONE  # TODO:
+        return value.SparseArray(mydict, max_index)
 
 
 class SparseOp(vm._Callable):
@@ -543,7 +547,8 @@ class SparseOp(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        d = rd.PosSparseArray()
+        sp = rd.PosSparseArray()
+        d = sp.d
         #i = mops.BigTruncate(rd.PosInt())
         op_name = rd.PosStr()
 
@@ -569,6 +574,10 @@ class SparseOp(vm._Callable):
             rd.Done()
 
             d[index] = s
+
+            if mops.Greater(index, sp.max_index):
+                sp.max_index = index
+
             return value.Int(mops.ZERO)
 
         elif op_name == 'unset':  # unset 'a[1]'
@@ -576,6 +585,13 @@ class SparseOp(vm._Callable):
             rd.Done()
 
             mylib.dict_erase(d, index)
+
+            max_index = mops.MINUS_ONE  # Note: this works if d is not empty
+            for i1 in d:
+                if mops.Greater(i1, max_index):  # i1 > max_index
+                    max_index = i1
+            sp.max_index = max_index
+
             return value.Int(mops.ZERO)
 
         elif op_name == 'subst':  # "${a[@]}"
@@ -655,17 +671,24 @@ class SparseOp(vm._Callable):
 
             # TODO: We can maintain the max index in the value.SparseArray(),
             # so that it's O(1) to append rather than O(n)
+            # - Update on 'set' is O(1)
+            # - Update on 'unset' is potentially O(n)
 
-            max_index = mops.MINUS_ONE  # Note: this works for empty arrays
-            for i1 in d:
-                if mops.Greater(i1, max_index):  # i1 > max_index
-                    max_index = i1
+            if 0:
+                max_index = mops.MINUS_ONE  # Note: this works for empty arrays
+                for i1 in d:
+                    if mops.Greater(i1, max_index):  # i1 > max_index
+                        max_index = i1
+            else:
+                max_index = sp.max_index
 
             i2 = mops.Add(max_index, mops.ONE)  # i2 = max_index + 1
             for s in strs:
                 d[i2] = s
-                i2 = mops.Add(i2, mops.ONE)
+                i2 = mops.Add(i2, mops.ONE)  # i2 += 1
 
+            # sp.max_index += len(strs)
+            sp.max_index = mops.Add(sp.max_index, mops.IntWiden(len(strs)))
             return value.Int(mops.ZERO)
 
         else:

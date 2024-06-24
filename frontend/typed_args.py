@@ -235,9 +235,9 @@ class Reader(object):
                             self.BlamePos())
 
     def _ToSparseArray(self, val):
-        # type: (value_t) -> Dict[mops.BigInt, str]
+        # type: (value_t) -> value.SparseArray
         if val.tag() == value_e.SparseArray:
-            return cast(value.SparseArray, val).d
+            return cast(value.SparseArray, val)
 
         raise error.TypeErr(
             val, 'Arg %d should be a SparseArray' % self.pos_consumed,
@@ -378,7 +378,7 @@ class Reader(object):
         return self._ToBashArray(val)
 
     def PosSparseArray(self):
-        # type: () -> Dict[mops.BigInt, str]
+        # type: () -> value.SparseArray
         val = self.PosValue()
         return self._ToSparseArray(val)
 

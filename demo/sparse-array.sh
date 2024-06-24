@@ -89,7 +89,8 @@ f() {
       break
     }
 
-    #echo ZERO $[_opsp(sp, 'get', 0)]
+    #echo ZERO $sum $[_opsp(sp, 'get', 0)]
+    #echo ONE $sum $[_opsp(sp, 'get', 1)]
     for i in (0 .. length) {
       setvar sum += _opsp(sp, 'get', i)
     }
@@ -133,7 +134,7 @@ compare-sum-shift() {
 
 append-sparse() {
   local n=${1:-24}  # up to 2^n
-  local m=${2:-1000}
+  local m=${2:-2000}
 
   to_append=( $(seq $m) )  # split words
 
@@ -148,24 +149,29 @@ append-sparse() {
 }
 
 sparse-append-sparse() {
-  local osh=$1
-  local m=${2:-1000}
+  local osh=${1:-_bin/cxx-opt/osh}
+  local n=${2:-24}
+  local m=${3:-2000}
 
-  TO_APPEND=$m $osh <<'EOF'
+  NUM_ITERS=$n TO_APPEND=$m $osh <<'EOF'
+n=$NUM_ITERS
 m=$TO_APPEND
 to_append=( $(seq $m) )  # split words before ysh:upgrade
+
 
 shopt --set ysh:upgrade
 
 f() {
-  local n=${1:-24}
-
   a=()
   var sp = _a2sp(a)
 
   for (( i = 0; i < n; ++i )) {
     call _opsp(sp, 'set', 1 << i, str(i))
     call _opsp(sp, 'append', to_append)
+
+    #time call _opsp(sp, 'append', to_append)
+    #echo $[_opsp(sp, 'len')]
+    #echo
   }
   echo $[_opsp(sp, 'len')]
   #echo @[_opsp(sp, 'subst')]
