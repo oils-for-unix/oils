@@ -3,11 +3,15 @@
 
 #include "_build/detected-cpp-config.h"  // for HAVE_SYSTEMTAP_SDT
 
-// Added __has_include() for running unit tests with cc -m32 (32 bit build),
-// which finds some issues
-// ./configure probes without -m32 and sets HAVE_SYSTEMTAP_SDT
-// Technically this is C++ 17, but it seems to work with -std=c++11
-#if HAVE_SYSTEMTAP_SDT && __has_include(<sys/sdt.h>)
+#if HAVE_SYSTEMTAP_SDT && !defined(__ILP32__)
+  // When -m32 is passed, <sys/sdt.h> may not be available.
+  // So disable it under __ILP32__
+  // https://docs.oracle.com/cd/E19620-01/805-3024/lp64-1/index.html
+
+  // __has_include() also seems to work, but technically it's C++17, even
+  // though it works with -std=c++11
+  // #if HAVE_SYSTEMTAP_SDT && __has_include(<sys/sdt.h>)
+
   #include <sys/sdt.h>
 #else
   #define DTRACE_PROBE(provider, probe)
