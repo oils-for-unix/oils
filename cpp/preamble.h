@@ -41,6 +41,7 @@ using pretty_asdl::doc;
 using runtime_asdl::cmd_value;
 using syntax_asdl::command;
 using syntax_asdl::expr;
+using syntax_asdl::printf_part;  // added when self._Percent() used it in function signature
 using syntax_asdl::proc_sig;
 using value_asdl::sh_lvalue;  // for builtin_assign.py and builtin_misc.py
 using value_asdl::value;
