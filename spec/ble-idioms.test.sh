@@ -290,13 +290,19 @@ echo len: $[_opsp(sp, 'len')]
 shopt -s ysh:upgrade
 
 echo subst: @[_opsp(sp, 'subst')]
+echo keys: @[_opsp(sp, 'keys')]
 
 echo slice: @[_opsp(sp, 'slice', 2, 5)]
 
-call _opsp(sp, 'set', 0, 'set this')
+call _opsp(sp, 'set', 0, 'set0')
 
 echo get0: $[_opsp(sp, 'get', 0)]
 echo get1: $[_opsp(sp, 'get', 1)]
+
+to_append=(x y)
+call _opsp(sp, 'append', to_append)
+echo subst: @[_opsp(sp, 'subst')]
+echo keys: @[_opsp(sp, 'keys')]
 
 echo ---
 
@@ -320,9 +326,12 @@ echo subst: @[_opsp(sp2, 'subst')]
 SparseArray
 len: 6
 subst: foo 25 26 27 bar sparse
+keys: 0 1 2 3 4 10
 slice: 26 27 bar
-get0: set this
+get0: set0
 get1: 25
+subst: set0 25 26 27 bar sparse x y
+keys: 0 1 2 3 4 10 11 12
 ---
 len: 6
 subst: a b c d e f

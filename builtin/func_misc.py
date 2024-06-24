@@ -600,6 +600,14 @@ class SparseOp(vm._Callable):
                 j += 1
             return value.BashArray(items)
 
+        elif op_name == 'keys':  # "${!a[@]}"
+            keys = d.keys()
+            mylib.BigIntSort(keys)
+            items = [mops.ToStr(k) for k in keys]
+
+            # TODO: return SparseArray
+            return value.BashArray(items)
+
         elif op_name == 'slice':  # "${a[@]:0:5}"
             start = rd.PosInt()
             end = rd.PosInt()
@@ -633,7 +641,26 @@ class SparseOp(vm._Callable):
 
                 i = mops.Add(i, mops.ONE)  # i += 1
 
+            # TODO: return SparseArray
             return value.BashArray(items2)
+
+        elif op_name == 'append':  # a+=(x y)
+            strs = rd.PosBashArray()
+
+            # TODO: We can maintain the max index in the value.SparseArray(),
+            # so that it's O(1) to append rather than O(n)
+
+            max_index = mops.ZERO
+            for i1 in d:
+                if mops.Greater(i1, max_index):  # i1 > max_index
+                    max_index = i1
+
+            i2 = mops.Add(max_index, mops.ONE)  # i2 = max_index + 1
+            for s in strs:
+                d[i2] = s
+                i2 = mops.Add(i2, mops.ONE)
+
+            return value.Int(mops.ZERO)
 
         else:
             print('Invalid SparseArray operation %r' % op_name)
