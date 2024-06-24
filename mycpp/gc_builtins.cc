@@ -394,6 +394,10 @@ bool keys_equal(int left, int right) {
   return left == right;
 }
 
+bool keys_equal(mops::BigInt left, mops::BigInt right) {
+  return left == right;
+}
+
 bool are_equal(BigStr* left, BigStr* right) {
   return str_equals(left, right);
 }
