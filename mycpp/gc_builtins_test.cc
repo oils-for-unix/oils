@@ -9,6 +9,7 @@
 #include "mycpp/gc_dict.h"
 #include "mycpp/gc_list.h"
 #include "mycpp/gc_tuple.h"
+#include "mycpp/test_common.h"
 #include "vendor/greatest.h"
 
 GLOBAL_STR(kStrFood, "food");
@@ -269,9 +270,28 @@ TEST comparators_test() {
 
 TEST container_test() {
   //
-  // int
+  // User-defined class
   //
 
+  // We used Dict<Token*, V> to get rid of the span_id, e.g. for --tool ysh-ify
+  auto* dp = Alloc<Dict<Point*, BigStr*>>();
+  for (int i = 0; i < 32; ++i) {
+    Point* p2 = Alloc<Point>(42, 43);
+    dp->set(p2, kEmptyString);
+  }
+  ASSERT_EQ_FMT(32, len(dp), "%d");
+
+  // For now, we're not allowed to compare lists by pointers.
+#if 0
+  auto* lp = Alloc<List<Point*>>();
+  lp->append(Alloc<Point>(0, 1));
+  lp->append(Alloc<Point>(2, 3));
+  ASSERT(!list_contains(lp, Alloc<Point>(4, 5)));
+#endif
+
+  //
+  // int
+  //
   auto* di = Alloc<Dict<int, BigStr*>>();
   for (int i = 0; i < 32; ++i) {
     int p2 = 1 << i;
