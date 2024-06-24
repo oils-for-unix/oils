@@ -26,7 +26,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-bash-style-sum-shift() {
+sum-shift() {
   local n=${1:-1000}
 
   # Populate array 0 .. n-1
@@ -111,7 +111,7 @@ f
 EOF
 }
 
-compare() {
+compare-sum-shift() {
   # more like 1M iterations - 1.8 seconds in bash
   # So that's 1.8 ms for 1000 iterations
 
@@ -127,7 +127,82 @@ compare() {
     echo ===
     echo $sh
     echo
-    time $sh $0 bash-style-sum-shift
+    time $sh $0 sum-shift
+  done
+}
+
+append-sparse() {
+  local n=${1:-24}  # up to 2^n
+
+  a=()
+  for (( i = 0; i < n; ++i )) {
+    a[$(( 1 << i ))]=$i
+    a+=(1 2 3)
+  }
+  echo ${a[@]}
+  echo ${!a[@]}
+}
+
+sparse-append-sparse() {
+  local osh=$1
+
+  $osh <<'EOF'
+shopt --set ysh:upgrade
+
+f() {
+  local n=${1:-24}
+
+  a=()
+  var sp = _a2sp(a)
+
+  for (( i = 0; i < n; ++i )) {
+    call _opsp(sp, 'set', 1 << i, str(i))
+    to_append=(1 2 3)
+    call _opsp(sp, 'append', to_append)
+  }
+  echo $[_opsp(sp, 'len')]
+  echo @[_opsp(sp, 'subst')]
+  echo @[_opsp(sp, 'keys')]
+}
+
+f
+EOF
+}
+
+hash-bug() {
+  # Hm the container doesn't grow here
+  local osh=$1
+
+  $osh <<'EOF'
+shopt --set ysh:upgrade
+
+a=()
+var sp = _a2sp(a)
+n=${1:-54}
+for (( i = 0; i < n; ++i )) {
+  var j = (1 << i) - 1
+  echo $[j]
+  call _opsp(sp, 'set', j, str(i))
+  echo len=$[_opsp(sp, 'len')]
+}
+echo @[_opsp(sp, 'keys')]
+EOF
+}
+
+compare-append-sparse() {
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
+
+  echo ===
+  echo $osh SparseArray
+  echo
+  time sparse-append-sparse $osh
+
+  for sh in bash $osh; do
+    echo ===
+    echo $sh
+    echo
+    time $sh $0 append-sparse
   done
 }
 
