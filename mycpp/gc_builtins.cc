@@ -393,18 +393,16 @@ bool keys_equal(BigStr* left, BigStr* right) {
   return are_equal(left, right);
 }
 
-bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
-  bool result = are_equal(t1->at0(), t2->at0());
-  result = result && (t1->at1() == t2->at1());
-  return result;
-}
-
 bool are_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
-  return t1->at0() == t2->at0() && t1->at1() == t2->at1();
+  return (t1->at0() == t2->at0()) && (t1->at1() == t2->at1());
 }
 
 bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
   return are_equal(t1, t2);
+}
+
+bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
+  return are_equal(t1->at0(), t2->at0()) && (t1->at1() == t2->at1());
 }
 
 bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
