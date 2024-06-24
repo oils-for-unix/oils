@@ -310,23 +310,28 @@ class Printf(vm._Builtin):
                     elif part.type.id == Id.Format_Time or typ in 'diouxX':
                         # %(...)T and %d share this complex integer conversion logic
 
-                        try:
+                        if match.LooksLikeInteger(s):
                             # note: spaces like ' -42 ' accepted and normalized
                             # TODO: use mops.FromStr()
                             # And mylib.hex_lower() etc. may have to change
 
                             d = int(s)
-                        except ValueError:
+                        else:
                             # 'a is interpreted as the ASCII value of 'a'
                             if len(s) >= 1 and s[0] in '\'"':
-                                # TODO: utf-8 decode s[1:] to be more correct.  Probably
-                                # depends on issue #366, a utf-8 library.
-                                # Note: len(s) == 1 means there is a NUL (0) after the quote..
-                                d = ord(s[1]) if len(s) >= 2 else 0
+                                if len(s) == 1:
+                                    # NUL after quote
+                                    d = 0
+                                else:
+                                    # TODO: utf-8 decode s[1:] to be more
+                                    # correct.  Probably depends on issue #366,
+                                    # a utf-8 library.
+                                    d = ord(s[1])
 
-                            # No argument means -1 for %(...)T as in Bash Reference Manual
-                            # 4.2 "If no argument is specified, conversion behaves as if -1
-                            # had been given."
+                            # No argument means -1 for %(...)T as in Bash #
+                            # Reference Manual 4.2 "If no argument is
+                            # specified, conversion behaves as if -1 had been
+                            # given."
                             elif not has_arg and part.type.id == Id.Format_Time:
                                 d = -1
 

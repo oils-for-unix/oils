@@ -359,7 +359,10 @@ PWNED
 0
 ## END
 
-#### printf bugs (Koiche on Zulip)
+#### printf integer size bug
+
+# from Koiche on Zulip
+
 printf '%x\n' 2147483648
 printf '%u\n' 2147483648
 ## STDOUT:
@@ -368,6 +371,9 @@ printf '%u\n' 2147483648
 ## END
 
 #### (( status bug
+
+# from Koiche on Zulip
+
 case $SH in dash|ash) exit ;; esac
 
 (( 1 << 32 ))
