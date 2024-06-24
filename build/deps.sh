@@ -8,7 +8,8 @@
 #
 # Examples:
 #   build/deps.sh fetch
-#   build/deps.sh install-wedges  # for both Python and C++
+#   build/deps.sh install-wedges-fast  # for both Python and C++
+#
 #   build/deps.sh rm-oils-crap  # rm -r -f /wedge ~/wedge to start over
 #
 # TODO: Do we need something faster, just python2, re2c, and cmark?
@@ -907,6 +908,9 @@ fake-py3-libs-wedge() {
 
 install-wedges-fast() {
   local extra=${1:-}
+
+  # For contributor setup: we need to use this BEFORE running build/py.sh all
+  build/py.sh time-helper
 
   echo " START  $(timestamp)"
 
