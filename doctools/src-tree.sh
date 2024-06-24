@@ -71,6 +71,12 @@ classify() {
         # TODO: make a style for *.test.sh?
         echo "$path" >& $txt
         ;;
+
+      # TODO: Fix BUG in micro-syntax: $(( 1 << i )) is confused for here doc!
+      demo/sparse-array.sh)
+        echo "$path" >& $txt
+        ;;
+
       *.cc|*.c|*.h)
         echo "$path" >& $cpp
         ;;

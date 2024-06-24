@@ -170,7 +170,7 @@ EOF
 }
 
 hash-bug() {
-  local osh=_bin/cxx-opt/osh
+  local osh=${1:-_bin/cxx-opt/osh}
   ninja $osh
 
   # Hm the container doesn't grow here
