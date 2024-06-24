@@ -170,9 +170,10 @@ EOF
 }
 
 hash-bug() {
-  # Hm the container doesn't grow here
-  local osh=$1
+  local osh=_bin/cxx-opt/osh
+  ninja $osh
 
+  # Hm the container doesn't grow here
   $osh <<'EOF'
 shopt --set ysh:upgrade
 
@@ -180,7 +181,8 @@ a=()
 var sp = _a2sp(a)
 n=${1:-54}
 for (( i = 0; i < n; ++i )) {
-  var j = (1 << i) - 1
+  #var j = (1 << i) - 1
+  var j = 1 << i
   echo $[j]
   call _opsp(sp, 'set', j, str(i))
   echo len=$[_opsp(sp, 'len')]
