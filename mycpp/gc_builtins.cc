@@ -385,28 +385,28 @@ bool maybe_str_equals(BigStr* left, BigStr* right) {
   return false;  // one is None and one is a BigStr*
 }
 
-bool are_equal(BigStr* left, BigStr* right) {
+bool items_equal(BigStr* left, BigStr* right) {
   return str_equals(left, right);
 }
 
 bool keys_equal(BigStr* left, BigStr* right) {
-  return are_equal(left, right);
+  return items_equal(left, right);
 }
 
-bool are_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
+bool items_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
   return (t1->at0() == t2->at0()) && (t1->at1() == t2->at1());
 }
 
 bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
-  return are_equal(t1, t2);
+  return items_equal(t1, t2);
 }
 
-bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
-  return are_equal(t1->at0(), t2->at0()) && (t1->at1() == t2->at1());
+bool items_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
+  return items_equal(t1->at0(), t2->at0()) && (t1->at1() == t2->at1());
 }
 
 bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
-  return are_equal(t1, t2);
+  return items_equal(t1, t2);
 }
 
 bool str_equals_c(BigStr* s, const char* c_string, int c_len) {

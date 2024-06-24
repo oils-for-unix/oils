@@ -4,7 +4,7 @@
 #define CPP_TRANSLATION_STUBS_H
 
 // Declared in mycpp/comparators.h
-inline bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
+inline bool items_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right) {
   return left == right;
 }
 

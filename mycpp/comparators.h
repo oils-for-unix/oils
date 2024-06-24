@@ -14,11 +14,11 @@ class Tuple2;
 bool str_equals(BigStr* left, BigStr* right);
 bool maybe_str_equals(BigStr* left, BigStr* right);
 
-bool are_equal(BigStr* left, BigStr* right);
+bool items_equal(BigStr* left, BigStr* right);
 bool keys_equal(BigStr* left, BigStr* right);
 
 // No List<T> comparison by pointer
-inline bool are_equal(void* left, void* right) {
+inline bool items_equal(void* left, void* right) {
   assert(0);
 }
 
@@ -27,26 +27,26 @@ inline bool keys_equal(void* left, void* right) {
   return left == right;
 }
 
-inline bool are_equal(int left, int right) {
+inline bool items_equal(int left, int right) {
   return left == right;
 }
 
 inline bool keys_equal(int left, int right) {
-  return are_equal(left, right);
+  return items_equal(left, right);
 }
 
-inline bool are_equal(mops::BigInt left, mops::BigInt right) {
+inline bool items_equal(mops::BigInt left, mops::BigInt right) {
   return left == right;
 }
 
 inline bool keys_equal(mops::BigInt left, mops::BigInt right) {
-  return are_equal(left, right);
+  return items_equal(left, right);
 }
 
-bool are_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
+bool items_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
 bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
 
-bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
+bool items_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
 bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
 
 namespace id_kind_asdl {
@@ -54,7 +54,7 @@ enum class Kind;
 };
 
 // Defined in cpp/translation_stubs.h
-bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
+bool items_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 
 inline int int_cmp(int a, int b) {
   if (a == b) {

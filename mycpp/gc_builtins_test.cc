@@ -257,13 +257,13 @@ TEST comparators_test() {
 
   // Compare by VALUE, not by pointer.
   // TODO: check for this bug elsewhere
-  log("Tuple2<BigStr*, int> are_equal()");
+  log("Tuple2<BigStr*, int> items_equal()");
   auto t1 = Alloc<Tuple2<BigStr*, int>>(StrFromC("42"), 42);
   auto t2 = Alloc<Tuple2<BigStr*, int>>(StrFromC("42"), 42);
   auto t3 = Alloc<Tuple2<BigStr*, int>>(StrFromC("99"), 99);
 
-  ASSERT(are_equal(t1, t2));
-  ASSERT(!are_equal(t2, t3));
+  ASSERT(items_equal(t1, t2));
+  ASSERT(!items_equal(t2, t3));
 
   PASS();
 }
@@ -316,7 +316,7 @@ TEST container_test() {
   }
   ASSERT_EQ_FMT(64, len(d), "%d");
 
-  // Failed before we had are_equal() for mops::BigInt
+  // Failed before we had items_equal() for mops::BigInt
   auto* lb = Alloc<List<mops::BigInt>>();
   lb->append(mops::BigInt{1} << 32);
   lb->append(mops::BigInt{1} << 33);

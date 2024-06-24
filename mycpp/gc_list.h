@@ -311,7 +311,7 @@ template <typename T>
 int List<T>::index(T value) {
   int element_count = len(this);
   for (int i = 0; i < element_count; i++) {
-    if (are_equal(slab_->items_[i], value)) {
+    if (items_equal(slab_->items_[i], value)) {
       return i;
     }
   }
@@ -423,7 +423,7 @@ template <typename T>
 inline bool list_contains(List<T>* haystack, T needle) {
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
-    if (are_equal(haystack->at(i), needle)) {
+    if (items_equal(haystack->at(i), needle)) {
       return true;
     }
   }
