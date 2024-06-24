@@ -268,6 +268,14 @@ golden-control-flow-graph() {
 test-runtime() {
   # Run other unit tests, e.g. the GC tests
 
+  if can-compile-32-bit; then
+    unit '' asan32+gcalways  # ASAN on 32-bit
+  else
+    log ''
+    log "*** Can't compile 32-bit binaries (gcc-multilib g++-multilib needed on Debian)"
+    log ''
+  fi
+
   # Special test
 
   # TODO: Switch when the CI supports it
@@ -289,12 +297,6 @@ test-runtime() {
   unit '' asan
   unit '' asan+gcalways
   unit '' opt
-
-  if can-compile-32-bit; then
-    unit '' asan32+gcalways  # ASAN on 32-bit
-  else
-    log "Can't compile 32-bit binaries (gcc-multilib g++-multilib needed on Debian)"
-  fi
 }
 
 #

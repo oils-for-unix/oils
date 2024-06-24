@@ -3,7 +3,11 @@
 
 #include "_build/detected-cpp-config.h"  // for HAVE_SYSTEMTAP_SDT
 
-#if HAVE_SYSTEMTAP_SDT
+// Added __has_include() for running unit tests with cc -m32 (32 bit build),
+// which finds some issues
+// ./configure probes without -m32 and sets HAVE_SYSTEMTAP_SDT
+// Technically this is C++ 17, but it seems to work with -std=c++11
+#if HAVE_SYSTEMTAP_SDT && __has_include(<sys/sdt.h>)
   #include <sys/sdt.h>
 #else
   #define DTRACE_PROBE(provider, probe)

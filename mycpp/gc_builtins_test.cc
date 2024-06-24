@@ -291,16 +291,16 @@ TEST container_test() {
   // Failed before we had keys_equal() for mops::BigInt
   auto* d = Alloc<Dict<mops::BigInt, BigStr*>>();
   for (int i = 0; i < 64; ++i) {
-    int64_t p2 = 1LL << i;
+    mops::BigInt p2 = mops::BigInt{1} << i;
     d->set(p2, kEmptyString);
   }
   ASSERT_EQ_FMT(64, len(d), "%d");
 
   // Failed before we had are_equal() for mops::BigInt
   auto* lb = Alloc<List<mops::BigInt>>();
-  lb->append(1L << 32);
-  lb->append(1L << 33);
-  ASSERT(!list_contains(lb, 0L));
+  lb->append(mops::BigInt{1} << 32);
+  lb->append(mops::BigInt{1} << 33);
+  ASSERT(!list_contains(lb, mops::BigInt{0}));
 
   PASS();
 }
