@@ -569,7 +569,13 @@ class SparseOp(vm._Callable):
             rd.Done()
 
             d[index] = s
-            #mylib.BashArraySet(d, index, s)
+            return value.Int(mops.ZERO)
+
+        elif op_name == 'unset':  # unset 'a[1]'
+            index = rd.PosInt()
+            rd.Done()
+
+            mylib.dict_erase(d, index)
             return value.Int(mops.ZERO)
 
         elif op_name == 'subst':  # "${a[@]}"
@@ -650,7 +656,7 @@ class SparseOp(vm._Callable):
             # TODO: We can maintain the max index in the value.SparseArray(),
             # so that it's O(1) to append rather than O(n)
 
-            max_index = mops.ZERO
+            max_index = mops.MINUS_ONE  # Note: this works for empty arrays
             for i1 in d:
                 if mops.Greater(i1, max_index):  # i1 > max_index
                     max_index = i1

@@ -298,9 +298,17 @@ call _opsp(sp, 'set', 0, 'set0')
 
 echo get0: $[_opsp(sp, 'get', 0)]
 echo get1: $[_opsp(sp, 'get', 1)]
+echo ---
 
 to_append=(x y)
+echo append
 call _opsp(sp, 'append', to_append)
+echo subst: @[_opsp(sp, 'subst')]
+echo keys: @[_opsp(sp, 'keys')]
+echo ---
+
+echo unset
+call _opsp(sp, 'unset', 11)
 echo subst: @[_opsp(sp, 'subst')]
 echo keys: @[_opsp(sp, 'keys')]
 
@@ -330,8 +338,14 @@ keys: 0 1 2 3 4 10
 slice: 26 27 bar
 get0: set0
 get1: 25
+---
+append
 subst: set0 25 26 27 bar sparse x y
 keys: 0 1 2 3 4 10 11 12
+---
+unset
+subst: set0 25 26 27 bar sparse y
+keys: 0 1 2 3 4 10 12
 ---
 len: 6
 subst: a b c d e f
