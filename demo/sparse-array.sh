@@ -133,20 +133,28 @@ compare-sum-shift() {
 
 append-sparse() {
   local n=${1:-24}  # up to 2^n
+  local m=${2:-1000}
+
+  to_append=( $(seq $m) )  # split words
 
   a=()
   for (( i = 0; i < n; ++i )) {
     a[$(( 1 << i ))]=$i
-    a+=(1 2 3)
+    a+=( ${to_append[@]} )
   }
-  echo ${a[@]}
-  echo ${!a[@]}
+  #echo ${a[@]}
+  #echo ${!a[@]}
+  echo ${#a[@]}
 }
 
 sparse-append-sparse() {
   local osh=$1
+  local m=${2:-1000}
 
-  $osh <<'EOF'
+  TO_APPEND=$m $osh <<'EOF'
+m=$TO_APPEND
+to_append=( $(seq $m) )  # split words before ysh:upgrade
+
 shopt --set ysh:upgrade
 
 f() {
@@ -157,37 +165,14 @@ f() {
 
   for (( i = 0; i < n; ++i )) {
     call _opsp(sp, 'set', 1 << i, str(i))
-    to_append=(1 2 3)
     call _opsp(sp, 'append', to_append)
   }
   echo $[_opsp(sp, 'len')]
-  echo @[_opsp(sp, 'subst')]
-  echo @[_opsp(sp, 'keys')]
+  #echo @[_opsp(sp, 'subst')]
+  #echo @[_opsp(sp, 'keys')]
 }
 
 f
-EOF
-}
-
-hash-bug() {
-  local osh=${1:-_bin/cxx-opt/osh}
-  ninja $osh
-
-  # Hm the container doesn't grow here
-  $osh <<'EOF'
-shopt --set ysh:upgrade
-
-a=()
-var sp = _a2sp(a)
-n=${1:-54}
-for (( i = 0; i < n; ++i )) {
-  #var j = (1 << i) - 1
-  var j = 1 << i
-  echo $[j]
-  call _opsp(sp, 'set', j, str(i))
-  echo len=$[_opsp(sp, 'len')]
-}
-echo @[_opsp(sp, 'keys')]
 EOF
 }
 
