@@ -1,10 +1,11 @@
 #include "mycpp/gc_builtins.h"
 
 #include <assert.h>
-#include <limits.h>  // INT_MAX
-#include <math.h>    // INFINITY
-#include <stdarg.h>  // va_list, etc.
-#include <stdio.h>   // vprintf
+#include <inttypes.h>  // PRId64
+#include <limits.h>    // INT_MAX
+#include <math.h>      // INFINITY
+#include <stdarg.h>    // va_list, etc.
+#include <stdio.h>     // vprintf
 
 #include "mycpp/gc_dict.h"
 #include "mycpp/gc_list.h"
@@ -135,16 +136,16 @@ TEST StringToInteger_test() {
 
   ok = _StringToInt64(StrFromC("345"), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT((int64_t)345, i, "%ld");
+  ASSERT_EQ_FMT((int64_t)345, i, "%" PRId64);
 
   // Hack to test slicing.  Truncated "345" at "34".
   ok = _StringToInt64(StrFromC("345", 2), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT((int64_t)34, i, "%ld");
+  ASSERT_EQ_FMT((int64_t)34, i, "%" PRId64);
 
   ok = _StringToInt64(StrFromC("12345678909"), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT((int64_t)12345678909, i, "%ld");
+  ASSERT_EQ_FMT((int64_t)12345678909, i, "%" PRId64);
 
   // overflow
   ok = _StringToInt64(StrFromC("12345678901234567890"), &i, 10);

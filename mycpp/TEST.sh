@@ -276,11 +276,7 @@ test-runtime() {
     log ''
   fi
 
-  # Special test
-
-  # TODO: Switch when the CI supports it
-  # We also want to change test/cpp-unit.sh all-tests
-
+  # TODO: Run with Clang UBSAN in CI as well
   local ubsan_compiler=cxx
   #local ubsan_compiler=clang
 

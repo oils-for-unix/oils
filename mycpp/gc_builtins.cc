@@ -359,18 +359,17 @@ bool str_equals(BigStr* left, BigStr* right) {
     return true;
   }
 
+  // TODO: It would be nice to remove this condition, but I think we need MyPy
+  // strict None checking for it
   if (left == nullptr || right == nullptr) {
     return false;
   }
 
-  // obj_len equal implies string lengths are equal
-
-  if (left->len_ == right->len_) {
-    // assert(len(left) == len(right));
-    return memcmp(left->data_, right->data_, left->len_) == 0;
+  if (left->len_ != right->len_) {
+    return false;
   }
 
-  return false;
+  return memcmp(left->data_, right->data_, left->len_) == 0;
 }
 
 bool maybe_str_equals(BigStr* left, BigStr* right) {
