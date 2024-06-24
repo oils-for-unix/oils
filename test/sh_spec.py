@@ -1198,7 +1198,7 @@ def MakeTestEnv(opts):
     raise RuntimeError('--path-env required')
   env = {
     'PATH': opts.path_env,
-    'LANG': opts.lang_env,
+    #'LANG': opts.lang_env,
   }
   for p in opts.env_pair:
     name, value = p.split('=', 1)

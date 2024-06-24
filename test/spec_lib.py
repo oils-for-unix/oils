@@ -205,9 +205,10 @@ def DefineShSpec(p):
   # - utf-8 is the Ubuntu default
   # - this flag has limited usefulness.  It may be better to simply export LANG=
   #   in this test case itself.
-  p.add_option(
-      '--lang-env', dest='lang_env', default='en_US.UTF-8',
-      help="The LANG= setting, which affects various libc functions.")
+  if 0:
+      p.add_option(
+          '--lang-env', dest='lang_env', default='en_US.UTF-8',
+          help="The LANG= setting, which affects various libc functions.")
   p.add_option(
       '--env-pair', dest='env_pair', default=[], action='append',
       help='A key=value pair to add to the environment')
