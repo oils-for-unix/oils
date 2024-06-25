@@ -555,3 +555,37 @@ g
 return-helper.sh
 profile [x y]
 ## END
+
+
+#### trap ERR with errtrace (-E)
+# ERR trap is not inherited by shell functions unless the -o errtrace option is set
+set -E
+trap "echo ERR" ERR
+echo 0
+false
+echo 1
+cat <( date X ; echo 2 )
+echo $( date X ; echo 3 )
+{ date X ; echo 4 ; }
+{ date X ; echo 5 ; } & wait
+( date X ; echo 6 ; )
+true
+## status: 0
+## stdout-json: "0\nERR\n1\nERR\n2\nERR 3\nERR\n4\nERR\n5\nERR\n6\n"
+
+
+#### trap ERR without errtrace (+E)
+# ERR trap is not inherited by shell functions unless the -o errtrace option is set
+set +E
+trap "echo ERR" ERR
+echo 0
+false
+echo 1
+cat <( date X ; echo 2 )
+echo $( date X ; echo 3 )
+{ date X ; echo 4 ; }
+{ date X ; echo 5 ; } & wait
+( date X ; echo 6 ; )
+true
+## status: 0
+## stdout-json: "0\nERR\n1\n2\n3\nERR\n4\n5\n6\n"

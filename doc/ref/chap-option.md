@@ -101,6 +101,7 @@ These options are from bash.
 ## Other Option
 
     noclobber   # Redirects don't overwrite files
+    errtrace    # Inherits ERR trap in shell functions
 
 ## Compat
 

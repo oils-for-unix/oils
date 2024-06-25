@@ -448,6 +448,8 @@ def _GetDollarHyphen(exec_opts):
         chars.append('x')
     if exec_opts.noclobber():
         chars.append('C')
+    if exec_opts.errtrace():
+        chars.append('E')
 
     # bash has:
     # - c for sh -c, i for sh -i (mksh also has this)
