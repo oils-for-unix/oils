@@ -61,47 +61,35 @@ Examples:
 
 ### error
 
-The `error` builtin interrupts the shell program.  
+The `error` builtin interrupts shell execution.
+
+If there's a surrounding `try` block, the `_error` register is set, and
+execution proceeds after the block.
+
+Otherwise, the shell exits with a non-zero status.
+
+Examples:
 
     error 'Missing /tmp'            # program fails with status 10
+
+    try {
+       error 'Another problem'
+    }
+    echo $[error.code] # => 10
 
 Override the default error code of `10` with a named argument:
 
     error 'Missing /tmp' (code=99)  # program fails with status 99
 
-You can add arbitrary properties with named arguments:
+Named arguments add arbitrary properties to the resulting `_error` register:
 
     error 'Oops' (path='foo.json')
-
-<!--
-
-In YSH, use `error` instead of `return 1` to provide more information:
-
-    proc p {
-      if ! test -d /tmp {
-        error 'Missing /tmp'  # More descriptive than return
-      }
-      echo hi
-    }
-
-Use the `try` builtin to handle the error.
-
-    try {
-      p
-    }
-
-After `try`, the `_error` register is set to a Dict, with these properties:
-
-- `_error.code` - the named `code` arg, or the default 10
-- `_error.message` - the positional string arg
-
--->
 
 See [YSH Error Handling](../ysh-error-handling.html) for more examples.
 
 ### failed
 
-A shortcut for `(_error.code !== 0):
+A shortcut for `(_error.code !== 0)`:
 
     try {
       ls /tmp
