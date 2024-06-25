@@ -121,23 +121,10 @@ void dict_erase(Dict<K, V>* haystack, K needle) {
   DCHECK(haystack->len_ < haystack->capacity_);
 }
 
-// NOTE: Can use OverAllocatedStr for all of these, rather than copying
-
 inline BigStr* hex_lower(int i) {
+  // Note: Could also use OverAllocatedStr, but most strings are small?
   char buf[kIntBufSize];
   int len = snprintf(buf, kIntBufSize, "%x", i);
-  return ::StrFromC(buf, len);
-}
-
-inline BigStr* hex_upper(int i) {
-  char buf[kIntBufSize];
-  int len = snprintf(buf, kIntBufSize, "%X", i);
-  return ::StrFromC(buf, len);
-}
-
-inline BigStr* octal(int i) {
-  char buf[kIntBufSize];
-  int len = snprintf(buf, kIntBufSize, "%o", i);
   return ::StrFromC(buf, len);
 }
 

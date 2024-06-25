@@ -374,16 +374,6 @@ def hex_lower(i):
     return '%x' % i
 
 
-def hex_upper(i):
-    # type: (int) -> str
-    return '%X' % i
-
-
-def octal(i):
-    # type: (int) -> str
-    return '%o' % i
-
-
 def dict_erase(d, key):
     # type: (Dict[Any, Any], Any) -> None
     """

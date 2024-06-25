@@ -23,6 +23,10 @@ extern const BigInt ONE;
 extern const BigInt MINUS_ONE;
 
 BigStr* ToStr(BigInt b);
+BigStr* ToOctal(BigInt b);
+BigStr* ToHexUpper(BigInt b);
+BigStr* ToHexLower(BigInt b);
+
 BigInt FromStr(BigStr* s, int base = 10);
 
 inline int BigTruncate(BigInt b) {

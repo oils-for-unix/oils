@@ -56,6 +56,21 @@ def ToStr(b):
     return str(b.i)
 
 
+def ToOctal(b):
+    # type: (BigInt) -> str
+    return '%o' % b.i
+
+
+def ToHexUpper(b):
+    # type: (BigInt) -> str
+    return '%X' % b.i
+
+
+def ToHexLower(b):
+    # type: (BigInt) -> str
+    return '%x' % b.i
+
+
 def FromStr(s, base=10):
     # type: (str, int) -> BigInt
     return BigInt(int(s, base))

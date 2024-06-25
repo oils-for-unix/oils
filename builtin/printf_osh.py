@@ -31,6 +31,7 @@ from frontend import consts
 from frontend import lexer
 from frontend import match
 from frontend import reader
+from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
 from osh import sh_expr_eval
@@ -378,14 +379,15 @@ class Printf(vm._Builtin):
                         "Can't format negative number %d with %%%s" % (d, typ),
                         part.type)
 
+                big_d = mops.IntWiden(d)
                 if typ == 'o':
-                    s = mylib.octal(d)
+                    s = mops.ToOctal(big_d)
                 elif typ == 'x':
-                    s = mylib.hex_lower(d)
+                    s = mops.ToHexLower(big_d)
                 elif typ == 'X':
-                    s = mylib.hex_upper(d)
+                    s = mops.ToHexUpper(big_d)
                 else:  # diu
-                    s = str(d)  # without spaces like ' -42 '
+                    s = mops.ToStr(big_d)  # without spaces like ' -42 '
 
                 # There are TWO different ways to ZERO PAD, and they differ on
                 # the negative sign!  See spec/builtin-printf
