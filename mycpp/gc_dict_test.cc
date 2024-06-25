@@ -694,8 +694,8 @@ TEST hash_pileup_bug() {
   std::unordered_map<unsigned, bool> hist;
 
   for (int i = 0; i < 24; ++i) {
-    mops::BigInt index {1 << i};
-    log("index %ld", index);
+    mops::BigInt index{1 << i};
+    // log("index %ld", index);
 
     for (mops::BigInt j = index; j < index + 2000; ++j) {
       d->set(j, kEmptyString);
@@ -703,7 +703,7 @@ TEST hash_pileup_bug() {
       hist[h] = true;
       // log("%ld %d", j, h);
     }
-    log("len %d", len(d));
+    // log("len %d", len(d));
   }
 
   log("len %d", len(d));
@@ -711,7 +711,6 @@ TEST hash_pileup_bug() {
 
   PASS();
 }
-
 
 GREATEST_MAIN_DEFS();
 

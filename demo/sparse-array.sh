@@ -22,9 +22,17 @@
 # Usage:
 #   demo/sparse-array.sh <function name>
 
+TIMEFORMAT='%U'
+
 set -o nounset
 set -o pipefail
 set -o errexit
+
+my-time() {
+  local tmp=/tmp/sparse-array
+  { time "$@"; } 2> $tmp
+  echo "$(cat $tmp) seconds"
+}
 
 compare-x() {
   local x=$1
@@ -35,13 +43,13 @@ compare-x() {
   echo ===
   echo $osh SparseArray
   echo
-  time sparse-$x $osh
+  my-time sparse-$x $osh
 
   for sh in bash $osh; do
     echo ===
     echo $sh
     echo
-    time $sh $0 $x
+    my-time $sh $0 $x
   done
 }
 
