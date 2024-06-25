@@ -98,7 +98,13 @@ class UnAlias(vm._Builtin):
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_util.ParseCmdVal('unalias', cmd_val)
+        attrs, arg_r = flag_util.ParseCmdVal('unalias', cmd_val)
+        arg = arg_types.unalias(attrs.attrs)
+
+        if arg.a:
+            self.aliases.clear()
+            return 0
+
         argv = arg_r.Rest()
 
         if len(argv) == 0:

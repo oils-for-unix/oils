@@ -74,6 +74,7 @@ TYPE_SPEC.ShortFlag('-a')
 
 ALIAS_SPEC = FlagSpec('alias')  # no flags yet
 UNALIAS_SPEC = FlagSpec('unalias')  # no flags yet
+UNALIAS_SPEC.ShortFlag('-a')
 
 SHOPT_SPEC = FlagSpec('shopt')
 SHOPT_SPEC.ShortFlag('-s', long_name='--set')

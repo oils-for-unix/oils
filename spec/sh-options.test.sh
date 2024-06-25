@@ -1,7 +1,7 @@
 # Test set flags, sh flags.
 
 ## compare_shells: bash dash mksh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## tags: interactive
 
 #### $- with -c
@@ -318,8 +318,16 @@ echo $?
 set +x
 echo $SHELLOPTS | grep -q xtrace
 echo $?
-## stdout-json: "1\n0\n1\n"
-## N-I dash/mksh stdout-json: "1\n1\n1\n"
+## STDOUT:
+1
+0
+1
+## END
+## N-I dash/mksh STDOUT:
+1
+1
+1
+## END
 
 #### SHELLOPTS is readonly
 SHELLOPTS=x
@@ -330,6 +338,22 @@ echo status=$?
 # Setting a readonly variable in osh is a hard failure.
 ## OK osh status: 1
 ## OK osh stdout-json: ""
+
+#### SHELLOPTS and BASHOPTS are set
+
+# 2024-06 - tickled by Samuel testing Gentoo
+
+# bash: bracexpand:hashall etc.
+
+echo shellopts ${SHELLOPTS:?} > /dev/null
+echo bashopts ${BASHOPTS:?} > /dev/null
+
+## STDOUT:
+## END
+
+## N-I dash status: 2
+## N-I mksh status: 1
+
 
 #### set - -
 set a b
