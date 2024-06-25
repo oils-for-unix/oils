@@ -966,10 +966,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _Slice(self, val, op, var_name, part):
         # type: (value_t, suffix_op.Slice, Optional[str], BracedVarSub) -> value_t
 
-        if op.begin:
-            begin = self.arith_ev.EvalToInt(op.begin)
-        else:
-            begin = 0
+        begin = self.arith_ev.EvalToInt(op.begin)
 
         # Note: bash allows lengths to be negative (with odd semantics), but
         # we don't allow that right now.

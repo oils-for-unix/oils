@@ -1245,16 +1245,13 @@ class CommandEvaluator(object):
         body = node.body
         update = node.update
 
-        if init:
-            self.arith_ev.Eval(init)
-
+        self.arith_ev.Eval(init)
         with ctx_LoopLevel(self):
             while True:
-                if for_cond:
-                    # We only accept integers as conditions
-                    cond_int = self.arith_ev.EvalToBigInt(for_cond)
-                    if mops.Equal(cond_int, mops.ZERO):  # false
-                        break
+                # We only accept integers as conditions
+                cond_int = self.arith_ev.EvalToBigInt(for_cond)
+                if mops.Equal(cond_int, mops.ZERO):  # false
+                    break
 
                 try:
                     status = self._Execute(body)
@@ -1266,8 +1263,7 @@ class CommandEvaluator(object):
                     elif action == flow_e.Raise:
                         raise
 
-                if update:
-                    self.arith_ev.Eval(update)
+                self.arith_ev.Eval(update)
 
         return status
 

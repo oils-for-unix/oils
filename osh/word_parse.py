@@ -87,6 +87,7 @@ from _devbuild.gen.syntax_asdl import (
     Func,
     Subscript,
     Attribute,
+    arith_expr,
 )
 from core import alloc
 from core.error import p_die
@@ -269,7 +270,7 @@ class WordParser(WordEmitter):
 
         if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
             # no beginning specified
-            begin = None  # type: Optional[arith_expr_t]
+            begin = arith_expr.EmptyZero  # type: arith_expr_t
         else:
             begin = self.a_parser.Parse()
             cur_id = self.a_parser.CurrentId()
@@ -1530,7 +1531,7 @@ class WordParser(WordEmitter):
         cur_id = self.token_type  # for end of arith expressions
 
         if cur_id == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
-            init_node = None  # type: Optional[arith_expr_t]
+            init_node = arith_expr.EmptyZero  # type: arith_expr_t
         else:
             init_node = self.a_parser.Parse()
             cur_id = self.a_parser.CurrentId()
@@ -1546,7 +1547,8 @@ class WordParser(WordEmitter):
         cur_id = self.token_type
 
         if cur_id == Id.Arith_Semi:  # for (( ; ; i++ ))
-            cond_node = None  # type: Optional[arith_expr_t]
+            # empty condition is TRUE
+            cond_node = arith_expr.EmptyOne  # type: arith_expr_t
         else:
             cond_node = self.a_parser.Parse()
             cur_id = self.a_parser.CurrentId()
@@ -1559,7 +1561,7 @@ class WordParser(WordEmitter):
         cur_id = self.token_type
 
         if cur_id == Id.Arith_RParen:  # for (( ; ; ))
-            update_node = None  # type: Optional[arith_expr_t]
+            update_node = arith_expr.EmptyZero  # type: arith_expr_t
         else:
             update_node = self._ReadArithExpr(Id.Arith_RParen)
         self._SetNextNonSpace()

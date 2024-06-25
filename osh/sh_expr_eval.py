@@ -545,7 +545,13 @@ class ArithEvaluator(object):
 
         UP_node = node
         with tagswitch(node) as case:
-            if case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
+            if case(arith_expr_e.EmptyZero):  # $(( ))
+                return value.Int(mops.ZERO)  # Weird axiom
+
+            elif case(arith_expr_e.EmptyOne):  # for (( ; ; ))
+                return value.Int(mops.ONE)
+
+            elif case(arith_expr_e.VarSub):  # $(( x ))  (can be array)
                 vsub = cast(Token, UP_node)
                 var_name = lexer.LazyStr(vsub)
                 val = self.mem.GetValue(var_name)

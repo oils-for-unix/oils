@@ -448,8 +448,7 @@ fatal-errors() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec spec/arith-context.test.sh \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file arith-context "$@"
 }
 
 array() {
