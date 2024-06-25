@@ -17,19 +17,19 @@ class LibStrTest(unittest.TestCase):
             ([1, 3, 6, 10], '\x24\xC2\xA2\xE0\xA4\xB9\xF0\x90\x8D\x88'),
             ([
                 1, 3,
-                'UTF-8 Error: Bad Encoding at byte index 3 in string of length 6'
+                'UTF-8 decode: Bad encoding at offset 3 in string of 6 bytes'
             ], '\x24\xC2\xA2\xE0\xE0\xA4'),
             ([
                 1, 3, 6,
-                'UTF-8 Error: Bad Encoding at byte index 6 in string of length 7'
+                'UTF-8 decode: Bad encoding at offset 6 in string of 7 bytes'
             ], '\x24\xC2\xA2\xE0\xA4\xA4\xB9'),
             ([
                 1, 3,
-                'UTF-8 Error: Bad Encoding at byte index 3 in string of length 4'
+                'UTF-8 decode: Bad encoding at offset 3 in string of 4 bytes'
             ], '\x24\xC2\xA2\xFF'),
             ([
                 1,
-                'UTF-8 Error: Truncated Bytes at byte index 1 in string of length 4'
+                'UTF-8 decode: Truncated bytes at offset 1 in string of 4 bytes'
             ], '\x24\xF0\x90\x8D'),
         ]
         for expected_indexes, input_str in CASES:
@@ -70,11 +70,11 @@ class LibStrTest(unittest.TestCase):
 
     def test_DecodeUtf8CharError(self):
         CASES = [
-            ('UTF-8 Error: Truncated Bytes at byte index 0 in string of length 1',
+            ('UTF-8 decode: Truncated bytes at offset 0 in string of 1 bytes',
              '\xC0'),
-            ('UTF-8 Error: Bad Encoding at byte index 0 in string of length 2',
+            ('UTF-8 decode: Bad encoding at offset 0 in string of 2 bytes',
              '\xC0\x01'),
-            ('UTF-8 Error: Bad Encoding at byte index 0 in string of length 1',
+            ('UTF-8 decode: Bad encoding at offset 0 in string of 1 bytes',
              '\xff'),
         ]
         for msg, input in CASES:

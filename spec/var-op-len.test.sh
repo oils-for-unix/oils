@@ -45,12 +45,12 @@ true  # exit 0
 -1
 -1
 7
-[ stdin ]:3: warning: UTF-8 Error: Truncated Bytes at byte index 2 in string of length 3
-[ stdin ]:3: warning: UTF-8 Error: Truncated Bytes at byte index 5 in string of length 6
-[ stdin ]:3: warning: UTF-8 Error: Truncated Bytes at byte index 5 in string of length 7
-[ stdin ]:3: warning: UTF-8 Error: Truncated Bytes at byte index 9 in string of length 10
-[ stdin ]:3: warning: UTF-8 Error: Truncated Bytes at byte index 9 in string of length 11
-[ stdin ]:3: warning: UTF-8 Error: Truncated Bytes at byte index 9 in string of length 12
+[ stdin ]:3: warning: UTF-8 decode: Truncated bytes at offset 2 in string of 3 bytes
+[ stdin ]:3: warning: UTF-8 decode: Truncated bytes at offset 5 in string of 6 bytes
+[ stdin ]:3: warning: UTF-8 decode: Truncated bytes at offset 5 in string of 7 bytes
+[ stdin ]:3: warning: UTF-8 decode: Truncated bytes at offset 9 in string of 10 bytes
+[ stdin ]:3: warning: UTF-8 decode: Truncated bytes at offset 9 in string of 11 bytes
+[ stdin ]:3: warning: UTF-8 decode: Truncated bytes at offset 9 in string of 12 bytes
 ## END
 # zsh behavior actually matches bash!
 ## BUG bash/zsh stderr-json: ""
@@ -113,21 +113,21 @@ true
 -1
 -1
 -1
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 0 in string of length 1
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 1 in string of length 2
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 2 in string of length 3
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 2 in string of length 4
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 4 in string of length 5
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 5 in string of length 6
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 5 in string of length 7
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 5 in string of length 8
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 8 in string of length 9
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 9 in string of length 10
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 9 in string of length 11
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 9 in string of length 12
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 9 in string of length 13
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 13 in string of length 14
-[ stdin ]:3: warning: UTF-8 Error: Bad Encoding at byte index 13 in string of length 14
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 0 in string of 1 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 1 in string of 2 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 2 in string of 3 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 2 in string of 4 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 4 in string of 5 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 5 in string of 6 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 5 in string of 7 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 5 in string of 8 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 8 in string of 9 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 9 in string of 10 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 9 in string of 11 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 9 in string of 12 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 9 in string of 13 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 13 in string of 14 bytes
+[ stdin ]:3: warning: UTF-8 decode: Bad encoding at offset 13 in string of 14 bytes
 ## END
 ## BUG bash/zsh stderr-json: ""
 ## BUG bash/zsh STDOUT:

@@ -109,7 +109,7 @@ echo -${s:1:3}-
 --
 ## END
 ## STDERR:
-[??? no location ???] warning: UTF-8 Error: Bad Encoding at byte index 0 in string of length 6
+[??? no location ???] warning: UTF-8 decode: Bad encoding at offset 0 in string of 6 bytes
 ## END
 ## BUG bash/mksh/zsh status: 0
 ## BUG bash/mksh/zsh STDOUT:
