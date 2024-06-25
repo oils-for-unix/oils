@@ -59,6 +59,32 @@ class Len(vm._Callable):
                             rd.BlamePos())
 
 
+class Type(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        val = rd.PosValue()
+        rd.Done()
+
+        return value.Str(ui.ValType(val))
+
+
+class Repeat(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
 class Join(vm._Callable):
     """Both free function join() and List->join() method."""
 
@@ -102,21 +128,6 @@ class Maybe(vm._Callable):
             return value.List([val])  # use val to avoid needlessly copy
 
         return value.List([])
-
-
-class Type(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        val = rd.PosValue()
-        rd.Done()
-
-        return value.Str(ui.ValType(val))
 
 
 class Bool(vm._Callable):
@@ -310,6 +321,50 @@ class Dict_(vm._Callable):
                             rd.BlamePos())
 
 
+class Runes(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class EncodeRunes(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class Bytes(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class EncodeBytes(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
 class Split(vm._Callable):
 
     def __init__(self, splitter):
@@ -496,12 +551,12 @@ class BashArrayToSparse(vm._Callable):
         rd.Done()
 
         d = {}  # type: Dict[mops.BigInt, str]
-        max_index = mops.MINUS_ONE   # max index for empty array
+        max_index = mops.MINUS_ONE  # max index for empty array
         for i, s in enumerate(strs):
             if s is not None:
                 big_i = mops.IntWiden(i)
                 d[big_i] = s
-                if mops.Greater(big_i,  max_index):
+                if mops.Greater(big_i, max_index):
                     max_index = big_i
 
         return value.SparseArray(d, max_index)

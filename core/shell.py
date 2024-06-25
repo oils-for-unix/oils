@@ -780,11 +780,13 @@ def Main(
     methods[value_e.IO] = {
         # io->eval(myblock) is the functional version of eval (myblock)
         # Should we also have expr->eval() instead of evalExpr?
-        'eval': None,
+        'eval': method_io.Eval(),
 
         # identical to command sub
-        'captureStdout': None,
+        'captureStdout': method_io.CaptureStdout(),
         'promptVal': method_io.PromptVal(),
+        'time': method_io.Time(),
+        'strftime': method_io.Strftime(),
     }
 
     methods[value_e.Place] = {
@@ -812,6 +814,8 @@ def Main(
     _SetGlobalFunc(mem, '_hay', hay_func)
 
     _SetGlobalFunc(mem, 'len', func_misc.Len())
+    _SetGlobalFunc(mem, 'type', func_misc.Type())
+    _SetGlobalFunc(mem, 'repeat', func_misc.Repeat())
 
     g = func_eggex.MatchFunc(func_eggex.G, expr_ev, mem)
     _SetGlobalFunc(mem, '_group', g)
@@ -822,7 +826,6 @@ def Main(
 
     _SetGlobalFunc(mem, 'join', func_misc.Join())
     _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
-    _SetGlobalFunc(mem, 'type', func_misc.Type())
     _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
 
     # type conversions
@@ -832,6 +835,11 @@ def Main(
     _SetGlobalFunc(mem, 'str', func_misc.Str_())
     _SetGlobalFunc(mem, 'list', func_misc.List_())
     _SetGlobalFunc(mem, 'dict', func_misc.Dict_())
+
+    _SetGlobalFunc(mem, 'runes', func_misc.Runes())
+    _SetGlobalFunc(mem, 'encodeRunes', func_misc.EncodeRunes())
+    _SetGlobalFunc(mem, 'bytes', func_misc.Bytes())
+    _SetGlobalFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
 
     # TODO: This should be Python style splitting
     _SetGlobalFunc(mem, 'split', func_misc.Split(splitter))

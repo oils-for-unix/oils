@@ -142,38 +142,42 @@ one element for each item in the original collection.
 
 Given a dictionary, returns a shallow copy of the original.
 
-### chr()
-
-(not implemented)
-
-Convert an integer to a Str with the corresponding UTF-8 encoded code point.
-
-Integers in the surrogate range are an error.
-
-    = chr(97)
-    (Str)    'a'
-
-    = chr(0x3bc)
-    (Str)    'μ'
-
-### ord()
-
-(not implemented)
-
-Convert a single UTF-8 encoded code point to an integer.
-
-    = ord('a')
-    (Int)   97
-
-    = ord('μ')
-    (Int)   956  # same as 0x3bc
-
-<!-- Do we have character literals like #'a' ?  Or just use strings.  Small
-string optimization helps. -->
-
 ### runes()
 
-TODO: Explicit iterator over runes.
+TODO
+
+Given a string, decodes UTF-8 into a List of integer "runes" (aka code points).
+
+Each rune is in the range `U+0` to `U+110000`, and **excludes** the surrogate
+range.
+
+    runes(s, start=-1, end=-1)
+
+TODO: How do we signal errors?
+
+(`runes()` can be used to implement implemented Python's `ord()`.)
+
+### encodeRunes()
+
+TODO
+
+Given a List of integer "runes" (aka code points), return a string.
+
+(`encodeRunes()` can be used to implement implemented Python's `chr()`.)
+
+### bytes()
+
+TODO
+
+Given a string, return a List of integer byte values.
+
+Each byte is in the range 0 to 255.
+
+### encodeBytes()
+
+TODO
+
+Given a List of integer byte values, return a string.
 
 ## Str
 

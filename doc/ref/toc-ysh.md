@@ -72,19 +72,20 @@ X [Guts]           heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()        func/type()       X repeat()
-  [Conversions]   bool()       int()      float()   str()   list()   dict()
-                X chr()      X ord()    X runes()
-  [Str]         X strcmp()   X split()    shSplit()
-  [List]          join()       any()      all()
+  [Values]        len()        func/type()   X repeat()
+  [Conversions]   bool()       int()           float()   str()   list()   dict()
+                X runes()    X encodeRunes()
+                X bytes()    X encodeBytes()
+  [Str]         X strcmp()   X split()         shSplit()
+  [List]          join()       any()           all()
   [Collections] X copy()     X deepCopy()
   [Word]          glob()       maybe()
-  [Math]          abs()        max()      min()   X round()   sum()
+  [Math]          abs()        max()           min()   X round()   sum()
   [Serialize]     toJson()     fromJson()
                   toJson8()    fromJson8()
-X [J8 Decode]     J8.Bool()    J8.Int()   ...
-  [Pattern]       _group()     _start()   _end()
-  [Introspection] shvarGet()   getVar()   evalExpr()
+X [J8 Decode]     J8.Bool()    J8.Int()        ...
+  [Pattern]       _group()     _start()        _end()
+  [Introspection] shvarGet()   getVar()        evalExpr()
   [Hay Config]    parseHay()   evalHay()
 X [Hashing]       sha1dc()     sha256()
 ```
