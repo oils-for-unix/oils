@@ -35,6 +35,7 @@ from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import log
 from osh import sh_expr_eval
+from osh import string_ops
 from osh import word_compile
 from data_lang import j8_lite
 
@@ -303,21 +304,33 @@ class Printf(vm._Builtin):
                 d = mops.FromStr(s)
 
             else:
-                # 'a is interpreted as the ASCII value of 'a'
-                if len(s) >= 1 and s[0] in '\'"':
-                    if len(s) == 1:
+                # Check for 'a and "a
+                # These are interpreted as the numeric ASCII value of 'a'
+                num_bytes = len(s)
+                if num_bytes > 0 and s[0] in '\'"':
+                    if num_bytes == 1:
                         # NUL after quote
                         d = mops.ZERO
-                    else:
-                        # TODO: utf-8 decode s[1:] to be more
-                        # correct.  Probably depends on issue #366,
-                        # a utf-8 library.
+                    elif num_bytes == 2:
+                        # Allow invalid UTF-8, because all shells do
                         d = mops.IntWiden(ord(s[1]))
+                    else:
+                        try:
+                            small_i = string_ops.DecodeUtf8Char(s, 1)
+                        except error.Expr as e:
+                            # Take the numeric value of first char, ignoring
+                            # the rest of the bytes.
+                            # Something like strict_arith or strict_printf
+                            # could throw an error in this case.
+                            self.errfmt.Print_('Warning: %s' %
+                                               e.UserErrorString(), word_loc)
+                            small_i = ord(s[1])
 
-                # No argument means -1 for %(...)T as in Bash #
-                # Reference Manual 4.2 "If no argument is
-                # specified, conversion behaves as if -1 had been
-                # given."
+                        d = mops.IntWiden(small_i)
+
+                # No argument means -1 for %(...)T as in Bash Reference Manual
+                # 4.2 - "If no argument is specified, conversion behaves as if
+                # -1 had been given."
                 elif not has_arg and part.type.id == Id.Format_Time:
                     d = mops.MINUS_ONE
 

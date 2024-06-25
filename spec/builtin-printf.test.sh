@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 ## compare_shells: dash bash mksh zsh ash
 
 # printf
@@ -566,6 +566,16 @@ too large
 ## END
 
 ## BUG dash/ash/mksh STDOUT:
+too large
+f4
+244
+364
+
+## END
+
+# osh rejects code points that are too large for a DIFFERENT reason
+
+## OK osh STDOUT:
 too large
 f4
 244

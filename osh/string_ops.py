@@ -41,15 +41,15 @@ UTF8_ERR_TRUNCATED_BYTES = -5  # It looks like there is another codepoint, but i
 def Utf8Error_str(error):
     # type: (int) -> str
     if error == UTF8_ERR_OVERLONG:
-        return "UTF-8 Error: Decoded Overlong"
+        return "UTF-8 decode: Overlong"
     if error == UTF8_ERR_SURROGATE:
-        return "UTF-8 Error: Decoded Surrogate"
+        return "UTF-8 decode: Surrogate range"
     if error == UTF8_ERR_TOO_LARGE:
-        return "UTF-8 Error: Decoded Invalid Codepoint"
+        return "UTF-8 decode: Integer too large"
     if error == UTF8_ERR_BAD_ENCODING:
-        return "UTF-8 Error: Bad Encoding"
+        return "UTF-8 decode: Bad encoding"
     if error == UTF8_ERR_TRUNCATED_BYTES:
-        return "UTF-8 Error: Truncated Bytes"
+        return "UTF-8 decode: Truncated bytes"
 
     raise AssertionError(0)
 
@@ -67,7 +67,7 @@ def DecodeUtf8Char(s, start):
     codepoint_or_error, _bytes_read = fastfunc.Utf8DecodeOne(s, start)
     if codepoint_or_error < 0:
         raise error.Expr(
-            "%s at byte index %d in string of length %d" %
+            "%s at offset %d in string of %d bytes" %
             (Utf8Error_str(codepoint_or_error), start, len(s)), loc.Missing)
     return codepoint_or_error
 
@@ -84,7 +84,7 @@ def NextUtf8Char(s, i):
     codepoint_or_error, bytes_read = fastfunc.Utf8DecodeOne(s, i)
     if codepoint_or_error < 0:
         e_strict(
-            "%s at byte index %d in string of length %d" %
+            "%s at offset %d in string of %d bytes" %
             (Utf8Error_str(codepoint_or_error), i, len(s)), loc.Missing)
     return i + bytes_read
 
