@@ -1481,12 +1481,15 @@ class CommandEvaluator(object):
         if status == 0:
             self.shell_ex.PushRedirects(redirects, io_errors)
             if len(io_errors):
-                # core/process.py prints cryptic errors, so we repeat them
-                # here.  e.g. Bad File Descriptor
-                self.errfmt.PrintMessage(
-                    'I/O error applying redirect: %s' %
-                    pyutil.strerror(io_errors[0]),
-                    self.mem.GetFallbackLocation())
+                # if errno is 0, error has already printed
+                if io_errors[0].errno:
+                    # core/process.py prints cryptic errors, so we repeat them
+                    # here.  e.g. Bad File Descriptor
+                    self.errfmt.PrintMessageEx(
+                        'I/O redirect error: %s' %
+                        pyutil.strerror(io_errors[0]),
+                        self.mutable_opts.Get(option_i.verbose_errexit),
+                        self.mem.GetFallbackLocation())
                 status = 1
 
         # If we applied redirects successfully, run the command_t, and pop
