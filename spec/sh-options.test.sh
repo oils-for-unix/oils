@@ -299,15 +299,27 @@ cat $TMP/can-clobber
 ## stdout: foo
 
 #### noclobber on
-# Not implemented yet.
 rm $TMP/no-clobber
 set -C
 echo foo > $TMP/no-clobber
 echo $?
 echo foo > $TMP/no-clobber
 echo $?
-## stdout-json: "0\n1\n"
-## OK dash stdout-json: "0\n2\n"
+echo foo >| $TMP/no-clobber
+echo $?
+## stdout-json: "0\n1\n0\n"
+## OK dash stdout-json: "0\n2\n0\n"
+
+#### noclobber on <>
+set -C
+echo foo >| $TMP/no-clobber
+exec 3<> $TMP/no-clobber
+read -n 1 <&3
+echo -n . >&3
+exec 3>&-
+cat $TMP/no-clobber
+## stdout-json: "f.o\n"
+## N-I dash stdout-json: ".oo\n"
 
 #### SHELLOPTS is updated when options are changed
 echo $SHELLOPTS | grep -q xtrace
