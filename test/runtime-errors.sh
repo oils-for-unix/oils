@@ -1109,6 +1109,17 @@ test-fallback_locations() {
   echo done
 }
 
+test-var-op-qmark() {
+  _osh-error-1 'echo ${zz?}'
+  _osh-error-1 'echo ${zz:?}'
+
+  _osh-should-run 'zz=""; echo ${zz?}'
+  _osh-error-1 'zz=""; echo ${zz:?}'
+
+  _osh-error-1 'echo ${zz?Required}'
+  _osh-error-1 'echo ${zz:?Required}'
+}
+
 test-external_cmd_typed_args() {
   _ysh-error-X 1 'cat ("myfile")'
 }

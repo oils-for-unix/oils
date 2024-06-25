@@ -625,6 +625,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         with tagswitch(val) as case:
             if case(value_e.Undef):
                 is_falsey = True
+
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
@@ -632,13 +633,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     is_falsey = len(val.s) == 0
                 else:
                     is_falsey = False
+
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
                 # TODO: allow undefined
                 is_falsey = len(val.strs) == 0
+
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
                 is_falsey = len(val.d) == 0
+
             else:
                 # value.Eggex, etc. are all false
                 is_falsey = False
@@ -711,7 +715,38 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                          eval_flags)
                 error_str = _DecayPartValuesToString(
                     error_part_vals, self.splitter.GetJoinChar())
-                e_die("unset variable %r" % error_str, blame_token)
+
+                #
+                # Display fancy/helpful error
+                #
+                if vtest_place.name is None:
+                    var_name = '???'
+                else:
+                    var_name = vtest_place.name
+
+                if 0:
+                    # This hint is nice, but looks too noisy for now
+                    op_str = lexer.LazyStr(tok)
+                    if tok.id == Id.VTest_ColonQMark:
+                        why = 'empty or unset'
+                    else:
+                        why = 'unset'
+
+                    self.errfmt.Print_(
+                        "Hint: operator %s means a variable can't be %s" %
+                        (op_str, why), tok)
+
+                if val.tag() == value_e.Undef:
+                    actual = 'unset'
+                else:
+                    actual = 'empty'
+
+                if len(error_str):
+                    suffix = ': %r' % error_str
+                else:
+                    suffix = ''
+                e_die("Var %s is %s%s" % (var_name, actual, suffix),
+                      blame_token)
 
             else:
                 return False
