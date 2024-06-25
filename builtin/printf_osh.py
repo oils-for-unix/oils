@@ -299,29 +299,27 @@ class Printf(vm._Builtin):
             # %(...)T and %d share this complex integer conversion logic
 
             if match.LooksLikeInteger(s):
-                # note: spaces like ' -42 ' accepted and normalized
-                # TODO: use mops.FromStr()
-                # And mylib.hex_lower() etc. may have to change
-                d = int(s)
+                # Note: spaces like ' -42 ' accepted and normalized
+                d = mops.FromStr(s)
 
             else:
                 # 'a is interpreted as the ASCII value of 'a'
                 if len(s) >= 1 and s[0] in '\'"':
                     if len(s) == 1:
                         # NUL after quote
-                        d = 0
+                        d = mops.ZERO
                     else:
                         # TODO: utf-8 decode s[1:] to be more
                         # correct.  Probably depends on issue #366,
                         # a utf-8 library.
-                        d = ord(s[1])
+                        d = mops.IntWiden(ord(s[1]))
 
                 # No argument means -1 for %(...)T as in Bash #
                 # Reference Manual 4.2 "If no argument is
                 # specified, conversion behaves as if -1 had been
                 # given."
                 elif not has_arg and part.type.id == Id.Format_Time:
-                    d = -1
+                    d = mops.MINUS_ONE
 
                 else:
                     if has_arg:
@@ -361,12 +359,13 @@ class Printf(vm._Builtin):
                 #   used: -1 represents the current time, and -2 represents the
                 #   time the shell was invoked." from
                 #   https://www.gnu.org/software/bash/manual/html_node/Bash-Builtins.html#index-printf
-                if d == -1:  # the current time
+                if mops.Equal(d, mops.MINUS_ONE):  # -1 is current time
+                    # TODO: 2038 problem
                     ts = time_.time()
-                elif d == -2:  # the shell start time
+                elif mops.Equal(d, mops.MINUS_TWO):  # -2 is shell start time
                     ts = self.shell_start_time
                 else:
-                    ts = d
+                    ts = mops.BigTruncate(d)
 
                 s = time_.strftime(typ[1:-2], time_.localtime(ts))
                 if precision >= 0:
@@ -374,20 +373,20 @@ class Printf(vm._Builtin):
 
             else:  # typ in 'diouxX'
                 # Disallowed because it depends on 32- or 64- bit
-                if d < 0 and typ in 'ouxX':
+                if mops.Greater(mops.ZERO, d) and typ in 'ouxX':
+                    # TODO: Don't truncate it
                     e_die(
-                        "Can't format negative number %d with %%%s" % (d, typ),
-                        part.type)
+                        "Can't format negative number with %%%s: %d" %
+                        (typ, mops.BigTruncate(d)), part.type)
 
-                big_d = mops.IntWiden(d)
                 if typ == 'o':
-                    s = mops.ToOctal(big_d)
+                    s = mops.ToOctal(d)
                 elif typ == 'x':
-                    s = mops.ToHexLower(big_d)
+                    s = mops.ToHexLower(d)
                 elif typ == 'X':
-                    s = mops.ToHexUpper(big_d)
+                    s = mops.ToHexUpper(d)
                 else:  # diu
-                    s = mops.ToStr(big_d)  # without spaces like ' -42 '
+                    s = mops.ToStr(d)  # without spaces like ' -42 '
 
                 # There are TWO different ways to ZERO PAD, and they differ on
                 # the negative sign!  See spec/builtin-printf

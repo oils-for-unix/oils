@@ -13,6 +13,7 @@ namespace mops {
 const BigInt ZERO = BigInt{0};
 const BigInt ONE = BigInt{1};
 const BigInt MINUS_ONE = BigInt{-1};
+const BigInt MINUS_TWO = BigInt{-2};  // for printf
 
 static const int kInt64BufSize = 32;  // more than twice as big as kIntBufSize
 

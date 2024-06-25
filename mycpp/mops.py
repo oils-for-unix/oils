@@ -49,6 +49,7 @@ class BigInt(object):
 ZERO = BigInt(0)
 ONE = BigInt(1)
 MINUS_ONE = BigInt(-1)
+MINUS_TWO = BigInt(-2)  # for printf
 
 
 def ToStr(b):

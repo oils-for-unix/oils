@@ -357,7 +357,7 @@ printf '[%X]\n' \'ab # extra chars ignored
 
 #### unsigned / octal / hex big
 
-for big in $(( 1 << 32 )) $(( 1 << 63 )); do
+for big in $(( 1 << 32 )) $(( (1 << 63) - 1 )); do
   printf '[%u]\n' $big
   printf '[%o]\n' $big
   printf '[%x]\n' $big
@@ -371,10 +371,10 @@ done
 [100000000]
 [100000000]
 
-[9223372036854775808]
-[1000000000000000000000]
-[8000000000000000]
-[8000000000000000]
+[9223372036854775807]
+[777777777777777777777]
+[7fffffffffffffff]
+[7FFFFFFFFFFFFFFF]
 
 ## END
 

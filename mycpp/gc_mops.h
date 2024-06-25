@@ -21,6 +21,7 @@ typedef int64_t BigInt;
 extern const BigInt ZERO;
 extern const BigInt ONE;
 extern const BigInt MINUS_ONE;
+extern const BigInt MINUS_TWO;
 
 BigStr* ToStr(BigInt b);
 BigStr* ToOctal(BigInt b);
