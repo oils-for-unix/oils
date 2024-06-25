@@ -384,7 +384,7 @@ PARSE_OPTION_NUMS = [opt.index for opt in _SORTED if opt.is_parse]
 
 # Sorted because 'shopt -o -p' should be sorted, etc.
 VISIBLE_SHOPT_NUMS = [
-    opt.index for opt in _SORTED if opt.builtin == 'shopt' and opt.implemented
+    opt.index for opt in _SORTED if opt.implemented
 ]
 
 YSH_UPGRADE = [opt.index for opt in _SORTED if 'ysh:upgrade' in opt.groups]
