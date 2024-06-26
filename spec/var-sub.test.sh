@@ -9,7 +9,7 @@ echo ${a&}
 
 #### Braced block inside ${}
 # NOTE: This bug was in bash 4.3 but fixed in bash 4.4.
-echo ${foo:-$({ which ls; })}
+echo ${foo:-$({ ls /bin/ls; })}
 ## stdout: /bin/ls
 
 #### Nested ${} 
