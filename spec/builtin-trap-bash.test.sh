@@ -648,7 +648,7 @@ false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
 false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
 { trap "echo ERR5" ERR ; date X ; } & wait
 false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
-( trap "echo ERR6" ERR ; date X ; )
+( trap "echo ERR6" ERR ; date X )
 false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
 f() { trap "echo ERR7" ERR ; date X ; } ; f
 true
@@ -689,7 +689,7 @@ false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
 false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
 { trap "echo ERR5" ERR ; date X ; } & wait
 false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
-( trap "echo ERR6" ERR ; date X ; )
+( trap "echo ERR6" ERR ; date X )
 false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
 f() { trap "echo ERR7" ERR ; date X ; } ; f
 true

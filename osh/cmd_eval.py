@@ -1918,7 +1918,8 @@ class CommandEvaluator(object):
         """
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
-            self._NoForkLast(node)  # turn the last ones into exec
+            # Using _NoForkLast() hides exit code for ERR trap, temporarily comment it
+            # self._NoForkLast(node)  # turn the last ones into exec
 
         if 0:
             log('after opt:')
