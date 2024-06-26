@@ -12,13 +12,6 @@
 # the trace attribute or the functrace option has been enabled using the shopt
 # builtin. The extdebug shell option has additional effects on the DEBUG trap.
 
-# The trap builtin (see Bourne Shell Builtins) allows an ERR pseudo-signal
-# specification, similar to EXIT and DEBUG. Commands specified with an ERR trap
-# are executed after a simple command fails, with a few exceptions. The ERR
-# trap is not inherited by shell functions unless the -o errtrace option to the
-# set builtin is enabled. 
-
-
 #### trap -l
 trap -l | grep INT >/dev/null
 ## status: 0
