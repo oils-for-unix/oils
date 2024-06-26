@@ -2,8 +2,7 @@
 #
 # NOTE: There are also slice tests in {array,arith-context}.test.sh.
 
-
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: bash mksh zsh
 
 
@@ -167,10 +166,13 @@ ab
 #### Simple ${@:offset}
 
 set -- 4 5 6
+
 result=$(argv.py ${@:0})
 echo ${result//"$0"/'SHELL'}
+
 argv.py ${@:1}
 argv.py ${@:2}
+
 ## STDOUT:
 ['SHELL', '4', '5', '6']
 ['4', '5', '6']
@@ -299,21 +301,71 @@ SHELL
 ## END
 ## N-I mksh stdout-json: "\n"
 
-#### ${array[@]::0}
+#### Permutations of implicit begin and length
 array=(1 2 3)
-argv.py ${array[@]::0}
+
+argv.py ${array[@]}
+
+# *** implict length of N **
+argv.py ${array[@]:0}
+
+# Why is this one not allowed
+#argv.py ${array[@]:}
+
+# ** implicit length of ZERO **
+#argv.py ${array[@]::}
+#argv.py ${array[@]:0:}
+
+argv.py ${array[@]:0:0}
+echo
+
+# Same agreed upon permutations
+set -- 1 2 3
+argv.py ${@}
+argv.py ${@:1}
+argv.py ${@:1:0}
+
 ## STDOUT:
+['1', '2', '3']
+['1', '2', '3']
+[]
+
+['1', '2', '3']
+['1', '2', '3']
 []
 ## END
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh stdout-json: ""
 
-#### ${array[@]::}
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+['1', '2', '3']
+## END
+
+#### ${array[@]:}
+
+array=(1 2 3)
+argv.py ${array[@]:}
+
+## status: 1
+## OK osh status: 2
+## STDOUT:
+## END
+
+#### don't agree with ${array[@]::} has implicit length of zero!
 array=(1 2 3)
 argv.py ${array[@]::}
-## STDOUT:
+
+set -- 1 2 3
+#argv.py ${@:}
+argv.py ${@::}
+
+## status: 1
+## stdout-json: ""
+
+## OK osh status: 2
+
+## N-I bash status: 0
+## N-I bash STDOUT:
+[]
 []
 ## END
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh stdout-json: ""
+

@@ -378,7 +378,7 @@ def _PerformSlice(
             # strings.
             if has_length and length < 0:
                 e_die(
-                    "The length index of a array slice can't be negative: %d" %
+                    "Array slice can't have negative length: %d" %
                     length, loc.WordPart(part))
 
             # Quirk: "begin" for positional arguments ($@ and $*) counts $0.

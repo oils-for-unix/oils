@@ -263,27 +263,38 @@ class WordParser(WordEmitter):
 
     def _ReadSliceVarOp(self):
         # type: () -> suffix_op.Slice
-        """VarOf ':' ArithExpr (':' ArithExpr )?"""
+        """
+        ArithExpr? (':' ArithExpr? )? '}'
+        """
+        # Looking token after first ':'
         self._SetNext(lex_mode_e.Arith)
         self._GetToken()
-        cur_id = self.token_type  # e.g. Id.Arith_Colon
 
-        if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
-            # no beginning specified
-            begin = arith_expr.EmptyZero  # type: arith_expr_t
-        else:
+        cur_id = self.token_type
+
+        begin = arith_expr.EmptyZero  # type: arith_expr_t
+        if cur_id != Id.Arith_Colon:  # A pun for Id.VOp2_Colon
             begin = self.a_parser.Parse()
             cur_id = self.a_parser.CurrentId()
+        #log('after begin %s', Id_str(cur_id))
 
-        if cur_id == Id.Arith_RBrace:
+        # e.g. Id.Arith_Colon for the second colon, e.g. ${a:42:}
+        if cur_id == Id.Arith_Colon:  # Id.Arith_Colon is a pun for Id.VOp2_Colon
+            self._SetNext(lex_mode_e.Arith)
+            self._GetToken()
+
+            if self.token_type != Id.Arith_RBrace:
+                length = self._ReadArithExpr(Id.Arith_RBrace)
+            else:
+                p_die('Use explicit slice length of zero',
+                      self.cur_token)
+                # bash behavior
+                # length = arith_expr.EmptyZero  # ${a:1:} or ${a::}
+            return suffix_op.Slice(begin, length)
+
+        elif cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
             no_length = None  # type: Optional[arith_expr_t]  # No length specified
             return suffix_op.Slice(begin, no_length)
-
-        # Id.Arith_Colon is a pun for Id.VOp2_Colon
-        if cur_id == Id.Arith_Colon:
-            self._SetNext(lex_mode_e.Arith)
-            length = self._ReadArithExpr(Id.Arith_RBrace)
-            return suffix_op.Slice(begin, length)
 
         p_die("Expected : or } in slice", self.cur_token)
         raise AssertionError()  # for MyPy
