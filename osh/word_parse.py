@@ -264,19 +264,19 @@ class WordParser(WordEmitter):
     def _ReadSliceVarOp(self):
         # type: () -> suffix_op.Slice
         """
+        Looking token after first ':'
+
         ArithExpr? (':' ArithExpr? )? '}'
         """
-        # Looking token after first ':'
-        self._SetNext(lex_mode_e.Arith)
-        self._GetToken()
+        self._NextNonSpace()
 
         cur_id = self.token_type
 
-        begin = arith_expr.EmptyZero  # type: arith_expr_t
-        if cur_id != Id.Arith_Colon:  # A pun for Id.VOp2_Colon
+        if cur_id in (Id.Arith_RBrace, Id.Arith_Colon):  #  ${a:} or ${a::}
+            begin = arith_expr.EmptyZero  # type: arith_expr_t
+        else:
             begin = self.a_parser.Parse()
-            cur_id = self.a_parser.CurrentId()
-        #log('after begin %s', Id_str(cur_id))
+            cur_id = self.a_parser.CurrentId()  # advance
 
         if cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
             no_length = None  # type: Optional[arith_expr_t]  # No length specified
