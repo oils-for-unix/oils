@@ -239,8 +239,8 @@ class ctx_Option(object):
         for opt_num in opt_nums:
             mutable_opts.Push(opt_num, b)
             if opt_num == option_i.errexit:
-                mutable_opts.errexit_disabled_tok.append(
-                    None)  # it wasn't disabled
+                # it wasn't disabled
+                mutable_opts.errexit_disabled_tok.append(None)
 
         self.mutable_opts = mutable_opts
         self.opt_nums = opt_nums
@@ -580,6 +580,16 @@ class MutableOpts(object):
             return None
 
         return self.errexit_disabled_tok[-1]
+
+    def ErrExitIsDisabled(self):
+        # type: () -> bool
+        """
+        Similar to ErrExitDisabledToken, for ERR trap
+        """
+        if len(self.errexit_disabled_tok) == 0:
+            return False
+
+        return self.errexit_disabled_tok[-1] is not None
 
     def _SetOldOption(self, opt_name, b):
         # type: (str, bool) -> None
@@ -1386,6 +1396,13 @@ class Mem(object):
             return False
 
         return True
+
+    def InsideFunction(self):
+        # type: () -> bool
+        """For the ERR trap"""
+
+        # Don't run it inside functions
+        return len(self.var_stack) > 1
 
     def PushSource(self, source_name, argv):
         # type: (str, List[str]) -> None

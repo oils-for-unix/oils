@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 4
 ## compare_shells: bash mksh ash
 
 # Notes on bash semantics:
@@ -24,6 +24,49 @@ echo ok
 line=3
 line=4
 ok
+## END
+
+#### trap ERR and set -o errexit
+
+trap 'echo line=$LINENO' ERR
+
+false
+echo a
+
+set -o errexit
+
+echo b
+false   # trap executed, and executation also halts
+echo c  # doesn't get here
+
+## status: 1
+## STDOUT:
+line=3
+a
+b
+line=9
+## END
+
+#### trap ERR and errexit disabled context
+
+trap 'echo line=$LINENO' ERR
+
+false
+echo a
+
+set -o errexit
+
+echo b
+if false; then
+  echo xx
+fi
+echo c  # doesn't get here
+
+## STDOUT:
+line=3
+a
+b
+c
 ## END
 
 #### trap ERR and if statement
@@ -299,7 +342,9 @@ case $SH in dash) exit ;; esac
 
 err() {
   echo err status $?
-  ( exit 2 )
+  false
+  ( exit 2 )  # not recursively triggered
+  echo err 2
 }
 trap 'err' ERR 
 
@@ -307,10 +352,18 @@ echo A
 false
 echo B
 
+# Try it with errexit
+set -e
+false
+echo C
+
+## status: 1
 ## STDOUT:
 A
 err status 1
+err 2
 B
+err status 1
 ## END
 ## N-I dash STDOUT:
 ## END
