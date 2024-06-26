@@ -1479,9 +1479,11 @@ class WordParser(WordEmitter):
         # $((echo * foo))  # looks like multiplication
         # $((echo / foo))  # looks like division
 
-        anode = arith_expr.EmptyZero
-        self._SetNextNonSpace()
+        # $(( )) is valid
+        anode = arith_expr.EmptyZero  # type: arith_expr_t
 
+        self._SetNextNonSpace()
+        self._GetToken()
         if self.token_type != Id.Arith_RParen:
             anode = self._ReadArithExpr(Id.Arith_RParen)
 
@@ -1505,7 +1507,8 @@ class WordParser(WordEmitter):
         This also returns the terminating Id.Op_DRightParen token for location
         info.
         """
-        anode = arith_expr.EmptyZero  # (( ))
+        # (( )) is valid
+        anode = arith_expr.EmptyZero  # type: arith_expr_t
 
         self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
@@ -1565,18 +1568,18 @@ class WordParser(WordEmitter):
         else:
             cond_node = self.a_parser.Parse()
             cur_id = self.a_parser.CurrentId()
-        self._SetNextNonSpace()
 
         if cur_id != Id.Arith_Semi:  # for (( x=0; x<5 b ))
             p_die("Expected ; here", loc.Word(self.a_parser.cur_word))
 
-        self._GetToken()
-        cur_id = self.token_type
+        self._SetNextNonSpace()
 
-        if cur_id == Id.Arith_RParen:  # for (( ; ; ))
+        self._GetToken()
+        if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
             update_node = arith_expr.EmptyZero  # type: arith_expr_t
         else:
             update_node = self._ReadArithExpr(Id.Arith_RParen)
+
         self._SetNextNonSpace()
 
         self._GetToken()
