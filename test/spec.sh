@@ -240,8 +240,11 @@ builtin-bracket() {
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file builtin-trap "$@"
+}
+
+builtin-trap-err() {
+  run-file builtin-trap-err "$@"
 }
 
 builtin-trap-bash() {
