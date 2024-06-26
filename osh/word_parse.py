@@ -1479,14 +1479,15 @@ class WordParser(WordEmitter):
         # $((echo * foo))  # looks like multiplication
         # $((echo / foo))  # looks like division
 
-        self._SetNext(lex_mode_e.Arith)
-        anode = self._ReadArithExpr(Id.Arith_RParen)
+        anode = arith_expr.EmptyZero
+        self._SetNextNonSpace()
 
-        # TODO: This could be DQ or Arith too
+        if self.token_type != Id.Arith_RParen:
+            anode = self._ReadArithExpr(Id.Arith_RParen)
+
         self._SetNext(lex_mode_e.ShCommand)
 
-        # PROBLEM: $(echo $(( 1 + 2 )) )
-        # Two right parens break the Id.Eof_RParen scheme
+        # Ensure we get closing )
         self._GetToken()
         if self.token_type != Id.Right_DollarDParen:
             p_die('Expected second ) to end arith sub', self.cur_token)
@@ -1501,24 +1502,25 @@ class WordParser(WordEmitter):
         We're using the word parser because it's very similar to _ReadArithExpr
         above.
 
-        This also returns the terminating `Op_DRightParen` token for use as location
-        tracking.
+        This also returns the terminating Id.Op_DRightParen token for location
+        info.
         """
-        # The second one needs to be disambiguated in stuff like stuff like:
-        # TODO: Be consistent with ReadForExpression below and use lex_mode_e.Arith?
-        # Then you can get rid of this.
+        anode = arith_expr.EmptyZero  # (( ))
+
         self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
-        self._SetNext(lex_mode_e.Arith)
-        anode = self._ReadArithExpr(Id.Arith_RParen)
+        self._SetNextNonSpace()
+        self._GetToken()
+        if self.token_type != Id.Arith_RParen:
+            anode = self._ReadArithExpr(Id.Arith_RParen)
 
         self._SetNext(lex_mode_e.ShCommand)
 
-        # PROBLEM: $(echo $(( 1 + 2 )) )
+        # Ensure we get the second )
         self._GetToken()
         right = self.cur_token
-        if self.token_type != Id.Op_DRightParen:
-            p_die('Expected second ) to end arith statement', self.cur_token)
+        if right.id != Id.Op_DRightParen:
+            p_die('Expected second ) to end arith statement', right)
 
         self._SetNext(lex_mode_e.ShCommand)
 

@@ -117,6 +117,42 @@ test-word-parse() {
   _osh-parse-error '${x:'
 }
 
+test-dparen() {
+  # (( ))
+
+  _osh-should-parse '(())'
+  _osh-should-parse '(( ))'
+  _osh-parse-error '(( )'
+  _osh-parse-error '(( )x'
+  #_osh-should-parse '$(echo $(( 1 + 2 )) )'
+
+  # Hard case
+  _osh-should-parse '$(echo $(( 1 + 2 )))'
+  _osh-should-parse '$( (()))'
+
+  # More
+  _osh-parse-error '(( 1 + 2 /'
+  _osh-parse-error '(( 1 + 2 )/'
+  _osh-parse-error '(( 1'
+  _osh-parse-error '(('
+}
+
+test-arith-sub() {
+  # $(( ))
+
+  _osh-should-parse 'echo $(( ))'
+  _osh-should-parse 'echo $(())'
+  _osh-parse-error 'echo $(()x'
+
+  _osh-parse-error 'echo $(()'
+
+  _osh-parse-error 'echo $(( 1 + 2 ;'
+  _osh-parse-error 'echo $(( 1 + 2 );'
+  _osh-parse-error 'echo $(( '
+  _osh-parse-error 'echo $(( 1'
+}
+
+
 test-array-literal() {
   # Array literal with invalid TokenWord.
   _osh-parse-error 'a=(1 & 2)'
@@ -126,12 +162,6 @@ test-array-literal() {
 }
 
 test-arith-context() {
-  # $(( ))
-  _osh-parse-error 'echo $(( 1 + 2 ;'
-  _osh-parse-error 'echo $(( 1 + 2 );'
-  _osh-parse-error 'echo $(( '
-  _osh-parse-error 'echo $(( 1'
-
   # Disable Oil stuff for osh_{parse,eval}.asan
   if false; then
     # Non-standard arith sub $[1 + 2]
@@ -143,12 +173,6 @@ test-arith-context() {
     _osh-parse-error 'echo $[ 1 + 2 / 3'
     _osh-parse-error 'echo $['
   fi
-
-  # (( ))
-  _osh-parse-error '(( 1 + 2 /'
-  _osh-parse-error '(( 1 + 2 )/'
-  _osh-parse-error '(( 1'
-  _osh-parse-error '(('
 
   # Should be an error
   _osh-parse-error 'a[x+]=1'
@@ -751,7 +775,6 @@ esac'
     echo bash=$?
     set -o errexit
   done
-
 }
 
 all() {

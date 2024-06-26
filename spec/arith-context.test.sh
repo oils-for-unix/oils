@@ -1,5 +1,5 @@
 ## compare_shells: bash mksh zsh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 1
 
 # Test arithmetic expressions in all their different contexts.
 
