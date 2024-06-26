@@ -130,6 +130,18 @@ pipeline
 EXIT TRAP
 ## END
 
+#### trap 0 is equivalent to EXIT
+# not sure why this is, but POSIX wants it.
+trap 'echo EXIT' 0
+echo status=$?
+trap - EXIT
+echo status=$?
+## status: 0
+## STDOUT:
+status=0
+status=0
+## END
+
 #### trap 1 is equivalent to SIGHUP; HUP is equivalent to SIGHUP
 trap 'echo HUP' SIGHUP
 echo status=$?
