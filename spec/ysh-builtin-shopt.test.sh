@@ -88,21 +88,25 @@ shopt --set strict:all {
 
 ## STDOUT:
 shopt -u command_sub_errexit
+shopt -u errexit
 shopt -u inherit_errexit
 shopt -u strict_errexit
 shopt -u verbose_errexit
 ---
 shopt -s command_sub_errexit
+shopt -s errexit
 shopt -s inherit_errexit
 shopt -s strict_errexit
 shopt -s verbose_errexit
 ---
 shopt -s command_sub_errexit
+shopt -s errexit
 shopt -s inherit_errexit
 shopt -u strict_errexit
 shopt -s verbose_errexit
 ---
 shopt -u command_sub_errexit
+shopt -u errexit
 shopt -u inherit_errexit
 shopt -s strict_errexit
 shopt -u verbose_errexit
