@@ -134,6 +134,7 @@ one
 
 a=(a b c d e f)
 
+# space required here -- see spec/var-op-slice
 echo slice ${a[@]: }
 echo status=$?
 echo

@@ -148,7 +148,7 @@ _YSH_RUNTIME_OPTS = [
 
 # Stuff that doesn't break too many programs.
 _UPGRADE_PARSE_OPTS = [
-    'parse_at',  # @foo, @array(a, b)
+    'parse_at',  # @array, @[expr]
     'parse_proc',  # proc p { ... }
     'parse_func',  # func f(x) { ... }
     'parse_brace',  # cd /bin { ... }

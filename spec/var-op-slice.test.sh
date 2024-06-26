@@ -2,7 +2,7 @@
 #
 # NOTE: There are also slice tests in {array,arith-context}.test.sh.
 
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: bash mksh zsh
 
 
@@ -306,7 +306,7 @@ array=(1 2 3)
 
 argv.py ${array[@]}
 
-# *** implict length of N **
+# *** implicit length of N **
 argv.py ${array[@]:0}
 
 # Why is this one not allowed
@@ -324,6 +324,12 @@ set -- 1 2 3
 argv.py ${@}
 argv.py ${@:1}
 argv.py ${@:1:0}
+echo
+
+s='123'
+argv.py "${s}"
+argv.py "${s:0}"
+argv.py "${s:0:0}"
 
 ## STDOUT:
 ['1', '2', '3']
@@ -333,6 +339,10 @@ argv.py ${@:1:0}
 ['1', '2', '3']
 ['1', '2', '3']
 []
+
+['123']
+['123']
+['']
 ## END
 
 ## BUG mksh status: 1
@@ -340,14 +350,21 @@ argv.py ${@:1:0}
 ['1', '2', '3']
 ## END
 
-#### ${array[@]:}
+#### Inconsistent - ${array[@]:} is not allowed but ${array[@]: } is
 
-array=(1 2 3)
-argv.py ${array[@]:}
+$SH -c 'array=(1 2 3); argv.py ${array[@]:}'
+$SH -c 'array=(1 2 3); argv.py space ${array[@]: }'
 
-## status: 1
-## OK osh status: 2
+$SH -c 's=123; argv.py ${s:}'
+$SH -c 's=123; argv.py space ${s: }'
+
 ## STDOUT:
+['space', '1', '2', '3']
+['space', '123']
+## END
+
+## BUG mksh STDOUT:
+['space', '123']
 ## END
 
 #### don't agree with ${array[@]::} has implicit length of zero!
