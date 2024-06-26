@@ -561,7 +561,7 @@ cat <( date X ; echo 2 )
 echo $( date X ; echo 3 )
 { date X ; echo 4 ; }
 { date X ; echo 5 ; } & wait
-( date X ; echo 6 ; )
+( date X ; echo 6 )
 f() { date X ; echo 7 ; } ; f
 true
 ## status: 0
@@ -593,7 +593,7 @@ cat <( date X ; echo 2 )
 echo $( date X ; echo 3 )
 { date X ; echo 4 ; }
 { date X ; echo 5 ; } & wait
-( date X ; echo 6 ; )
+( date X ; echo 6 )
 f() { date X ; echo 7 ; } ; f
 true
 ## status: 0
@@ -612,9 +612,8 @@ ERR
 
 #### trap ERR LINENO
 # ERR trap is not inherited by shell functions, sub processes, sub commands, ... unless the -o errtrace option is set
-# TODO LINENO is not working, as it is was set to the trap method LINENO
 set +E
-trap "echo ERR=\$LINENO" ERR
+trap 'echo ERR=$LINENO' ERR
 echo 0
 false
 true
@@ -622,10 +621,6 @@ true
 ## STDOUT:
 0
 ERR=4
-## END
-## OK osh STDOUT:
-0
-ERR=1
 ## END
 
 #### trap ERR shadowing with errtrace (-E)

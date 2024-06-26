@@ -2060,9 +2060,9 @@ class CommandEvaluator(object):
         if self.mutable_opts.ErrExitIsDisabled():
             return
 
-        # Di
-        if self.mem.InsideFunction():
-            return
+        # # Di
+        # if self.mem.InsideFunction():
+        #     return
 
         node = self.trap_state.GetHook('ERR')  # type: command_t
         if node:
