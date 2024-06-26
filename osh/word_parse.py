@@ -286,10 +286,11 @@ class WordParser(WordEmitter):
             if self.token_type != Id.Arith_RBrace:
                 length = self._ReadArithExpr(Id.Arith_RBrace)
             else:
-                p_die('Use explicit slice length of zero',
-                      self.cur_token)
-                # bash behavior
-                # length = arith_expr.EmptyZero  # ${a:1:} or ${a::}
+                # quirky bash behavior:
+                # ${a:1:} or ${a::} means zero length
+                # but ${a:1} or ${a:} means length N
+                length = arith_expr.EmptyZero  
+
             return suffix_op.Slice(begin, length)
 
         elif cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
