@@ -1,5 +1,5 @@
-## oils_failures_allowed: 5
-## compare_shells: bash mksh
+## oils_failures_allowed: 6
+## compare_shells: bash mksh ash
 
 # Notes on bash semantics:
 #
@@ -89,6 +89,24 @@ false | false | false
 err
 ## END
 
+#### trap ERR not active in shell functions in (bash behavior)
+
+trap 'echo line=$LINENO' ERR
+
+f() {
+  false 
+  true
+}
+
+f
+
+## STDOUT:
+## END
+
+## N-I mksh STDOUT:
+line=4
+## END
+
 #### trap ERR shell function - with errtrace
 
 trap 'echo line=$LINENO' ERR
@@ -132,7 +150,7 @@ line=10
 
 #### trap ERR with YSH proc
 
-case $SH in dash|bash|mksh) exit ;; esac
+case $SH in bash|mksh|ash) exit ;; esac
 
 # seems the same
 
@@ -147,7 +165,7 @@ if test -f /nope { echo file exists }
 abc
 ## END
 
-## N-I bash/dash/mksh STDOUT:
+## N-I bash/mksh/ash STDOUT:
 ## END
 
 #### trap ERR
@@ -194,7 +212,7 @@ D
 ## END
 
 #### trap ERR and pipelines (lastpipe and PIPESTATUS difference)
-case $SH in dash) exit ;; esac
+case $SH in ash) exit ;; esac
 
 err() {
   echo "err [$@] status=$? [${PIPESTATUS[@]}]"
@@ -243,7 +261,7 @@ err [] status=1 [0 1 0]
 ok
 ## END
 
-## N-I dash STDOUT:
+## N-I ash STDOUT:
 ## END
 
 #### error in trap ERR (recursive)
