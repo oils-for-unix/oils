@@ -75,18 +75,48 @@ ok
 #### trap ERR pipeline (also errexit)
 
 # mksh and bash have different line numbers in this case
-trap 'echo err' ERR
 #trap 'echo line=$LINENO' ERR
+trap 'echo line=$LINENO' ERR
 
 # it's run for the last 'false'
 false | false | false
+
+{ echo pipeline; false; } | false | false
 
 # it's never run here
 ! true
 ! false
 
 ## STDOUT:
-err
+line=3
+line=5
+## END
+
+## BUG mksh/ash STDOUT:
+line=1
+line=1
+## END
+
+#### trap ERR subprogram - subshell, command sub, async
+
+trap 'echo line=$LINENO' ERR
+
+( false; echo subshell )
+
+x=$( false; echo command sub )
+
+false & wait
+
+{ false; echo async; } & wait
+
+false
+echo ok
+
+## STDOUT:
+subshell
+async
+line=11
+ok
 ## END
 
 #### trap ERR not active in shell functions in (bash behavior)
