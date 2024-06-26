@@ -350,7 +350,7 @@ argv.py "${s:0:0}"
 ['1', '2', '3']
 ## END
 
-#### Inconsistent - ${array[@]:} is not allowed but ${array[@]: } is
+#### ${array[@]:} vs ${array[@]: }  - bash and zsh inconsistent
 
 $SH -c 'array=(1 2 3); argv.py ${array[@]:}'
 $SH -c 'array=(1 2 3); argv.py space ${array[@]: }'
@@ -360,6 +360,13 @@ $SH -c 's=123; argv.py space ${s: }'
 
 ## STDOUT:
 ['space', '1', '2', '3']
+['space', '123']
+## END
+
+## OK osh STDOUT:
+['1', '2', '3']
+['space', '1', '2', '3']
+['123']
 ['space', '123']
 ## END
 
