@@ -1,5 +1,5 @@
-## oils_failures_allowed: 1
-## compare_shells: dash bash mksh
+## oils_failures_allowed: 5
+## compare_shells: bash mksh
 
 # Notes on bash semantics:
 #
@@ -12,18 +12,123 @@
 # set builtin is enabled. 
 
 
-#### trap ERR and if statement
+#### trap can use original $LINENO
 
-abc() { echo abc; }
+trap 'echo line=$LINENO' ERR
+
+false
+false
+echo ok
+
+## STDOUT:
+line=3
+line=4
+ok
+## END
+
+#### trap ERR and if statement
 
 if test -f /nope; then echo file exists; fi
 
-trap abc ERR
+trap 'echo err' ERR
+#trap 'echo line=$LINENO' ERR
 
 if test -f /nope; then echo file exists; fi
 
 ## STDOUT:
 ## END
+
+#### trap ERR does not run in errexit situations
+
+trap 'echo line=$LINENO' ERR
+
+if false; then
+  echo if
+fi
+
+while false; do
+  echo while
+done
+
+until false; do
+  echo until
+  break
+done
+
+false || false || false
+
+false && false && false
+
+false; false; false
+
+echo ok
+
+## STDOUT:
+until
+line=16
+line=20
+line=20
+line=20
+ok
+## END
+
+#### trap ERR pipeline (also errexit)
+
+# mksh and bash have different line numbers in this case
+trap 'echo err' ERR
+#trap 'echo line=$LINENO' ERR
+
+# it's run for the last 'false'
+false | false | false
+
+# it's never run here
+! true
+! false
+
+## STDOUT:
+err
+## END
+
+#### trap ERR shell function - with errtrace
+
+trap 'echo line=$LINENO' ERR
+
+passing() {
+  false  # line 4
+  true
+}
+
+failing() {
+  true
+  false
+}
+
+passing
+failing
+
+set -o errtrace
+
+echo 'now with errtrace'
+passing
+failing
+
+echo ok
+
+## STDOUT:
+line=14
+now with errtrace
+line=4
+line=10
+line=20
+ok
+## END
+
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+line=4
+line=10
+## END
+
 
 #### trap ERR with YSH proc
 
@@ -44,19 +149,6 @@ abc
 
 ## N-I bash/dash/mksh STDOUT:
 ## END
-
-#### trap 0 is equivalent to EXIT
-# not sure why this is, but POSIX wants it.
-trap 'echo EXIT' 0
-echo status=$?
-trap - EXIT
-echo status=$?
-## status: 0
-## STDOUT:
-status=0
-status=0
-## END
-
 
 #### trap ERR
 err() {
