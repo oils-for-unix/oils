@@ -292,7 +292,7 @@ class WordParser(WordEmitter):
                 # quirky bash behavior:
                 # ${a:1:} or ${a::} means length ZERO
                 # but ${a:1} or ${a:} means length N
-                length = arith_expr.EmptyZero  
+                length = arith_expr.EmptyZero
 
             return suffix_op.Slice(begin, length)
 

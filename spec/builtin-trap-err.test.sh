@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 5
 ## compare_shells: bash mksh ash
 
 # Notes on bash semantics:

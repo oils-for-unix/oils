@@ -214,6 +214,23 @@ class ctx_DebugTrap(object):
         self.mem.running_debug_trap = False
 
 
+class ctx_ErrTrap(object):
+    """For trap ERR."""
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        mem.running_err_trap = True
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.running_err_trap = False
+
+
 class ctx_Option(object):
     """Shopt --unset errexit { false }"""
 
@@ -1150,6 +1167,7 @@ class Mem(object):
         self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
         self.running_debug_trap = False  # set by ctx_DebugTrap()
+        self.running_err_trap = False  # set by ctx_ErrTrap
         self.is_main = True  # we start out in main
 
         # For the ctx builtin
@@ -1243,7 +1261,7 @@ class Mem(object):
         Although most of that should be taken over by 'with ui.ctx_Location()`,
         for the errfmt.
         """
-        if self.running_debug_trap:
+        if self.running_debug_trap or self.running_err_trap:
             return
 
         #if tok.span_id == runtime.NO_SPID:
