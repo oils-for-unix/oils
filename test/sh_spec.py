@@ -1395,9 +1395,10 @@ def main(argv):
   # spec/smoke.test.sh -> smoke
   test_name = os.path.basename(test_file).split('.')[0]
 
-  allowed = opts.oils_failures_allowed
+  multiplier = 2 if opts.oils_cpp_bin_dir else 1
+  allowed = opts.oils_failures_allowed * multiplier
   all_count = stats.Get('num_failed')
-  oils_count = stats.Get('oils_num_failed')
+  oils_count = stats.Get('oils_num_failed') * multiplier
   if allowed == 0:
     log('')
     log('%s: FATAL: %d tests failed (%d oils failures)', test_name, all_count,
