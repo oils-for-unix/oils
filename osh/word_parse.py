@@ -1482,8 +1482,7 @@ class WordParser(WordEmitter):
         # $(( )) is valid
         anode = arith_expr.EmptyZero  # type: arith_expr_t
 
-        self._SetNextNonSpace()
-        self._GetToken()
+        self._NextNonSpace()
         if self.token_type != Id.Arith_RParen:
             anode = self._ReadArithExpr(Id.Arith_RParen)
 
@@ -1512,8 +1511,7 @@ class WordParser(WordEmitter):
 
         self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
-        self._SetNextNonSpace()
-        self._GetToken()
+        self._NextNonSpace()
         if self.token_type != Id.Arith_RParen:
             anode = self._ReadArithExpr(Id.Arith_RParen)
 
@@ -1529,9 +1527,17 @@ class WordParser(WordEmitter):
 
         return anode, right
 
-    def _SetNextNonSpace(self):
+    def _NextNonSpace(self):
         # type: () -> None
-        """Same logic as _ReadWord, but for ReadForExpression."""
+        """Advance in lex_mode_e.Arith until non-space token.
+
+        Same logic as _ReadWord, but used in
+           $(( ))
+           (( ))
+           for (( ))
+
+        You can read self.token_type after this, without calling _GetToken.
+        """
         while True:
             self._SetNext(lex_mode_e.Arith)
             self._GetToken()
@@ -1541,9 +1547,7 @@ class WordParser(WordEmitter):
     def ReadForExpression(self):
         # type: () -> command.ForExpr
         """Read ((i=0; i<5; ++i)) -- part of command context."""
-        self._SetNextNonSpace()  # skip over ((
-
-        self._GetToken()
+        self._NextNonSpace()  # skip over ((
         cur_id = self.token_type  # for end of arith expressions
 
         if cur_id == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
@@ -1551,7 +1555,7 @@ class WordParser(WordEmitter):
         else:
             init_node = self.a_parser.Parse()
             cur_id = self.a_parser.CurrentId()
-        self._SetNextNonSpace()
+        self._NextNonSpace()
 
         # It's odd to keep track of both cur_id and self.token_type in this
         # function, but it works, and is tested in 'test/parse_error.sh
@@ -1572,17 +1576,13 @@ class WordParser(WordEmitter):
         if cur_id != Id.Arith_Semi:  # for (( x=0; x<5 b ))
             p_die("Expected ; here", loc.Word(self.a_parser.cur_word))
 
-        self._SetNextNonSpace()
-
-        self._GetToken()
+        self._NextNonSpace()
         if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
             update_node = arith_expr.EmptyZero  # type: arith_expr_t
         else:
             update_node = self._ReadArithExpr(Id.Arith_RParen)
 
-        self._SetNextNonSpace()
-
-        self._GetToken()
+        self._NextNonSpace()
         if self.token_type != Id.Arith_RParen:
             p_die('Expected ) to end for loop expression', self.cur_token)
         self._SetNext(lex_mode_e.ShCommand)
