@@ -278,8 +278,11 @@ class WordParser(WordEmitter):
             cur_id = self.a_parser.CurrentId()
         #log('after begin %s', Id_str(cur_id))
 
-        # e.g. Id.Arith_Colon for the second colon, e.g. ${a:42:}
-        if cur_id == Id.Arith_Colon:  # Id.Arith_Colon is a pun for Id.VOp2_Colon
+        if cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
+            no_length = None  # type: Optional[arith_expr_t]  # No length specified
+            return suffix_op.Slice(begin, no_length)
+
+        elif cur_id == Id.Arith_Colon:  # ${a:1:} or ${@:1:}
             self._SetNext(lex_mode_e.Arith)
             self._GetToken()
 
@@ -287,17 +290,15 @@ class WordParser(WordEmitter):
                 length = self._ReadArithExpr(Id.Arith_RBrace)
             else:
                 # quirky bash behavior:
-                # ${a:1:} or ${a::} means zero length
+                # ${a:1:} or ${a::} means length ZERO
                 # but ${a:1} or ${a:} means length N
                 length = arith_expr.EmptyZero  
 
             return suffix_op.Slice(begin, length)
 
-        elif cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
-            no_length = None  # type: Optional[arith_expr_t]  # No length specified
-            return suffix_op.Slice(begin, no_length)
+        else:
+            p_die("Expected : or } in slice", self.cur_token)
 
-        p_die("Expected : or } in slice", self.cur_token)
         raise AssertionError()  # for MyPy
 
     def _ReadPatSubVarOp(self):
