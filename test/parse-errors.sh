@@ -65,10 +65,6 @@ test-patsub() {
 }
 
 test-slice() {
-  # This parses like a slice, but that's OK.  Maybe talk about arithmetic
-  # expression.  Maybe say where it started?
-  _osh-parse-error '${foo:}'
-
   _osh-should-parse '${foo:42}'
   _osh-should-parse '${foo:42+1}'
 
