@@ -367,22 +367,32 @@ $SH -c 's=123; argv.py space ${s: }'
 ['space', '123']
 ## END
 
-#### don't agree with ${array[@]::} has implicit length of zero!
+#### ${array[@]::} has implicit length of zero - for ble.sh
+
+# https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/.24.7Barr.5B.40.5D.3A.3A.7D.20in.20bash.20-.20is.20it.20documented.3F
+
 array=(1 2 3)
 argv.py ${array[@]::}
+argv.py ${array[@]:0:}
+
+echo
 
 set -- 1 2 3
-#argv.py ${@:}
 argv.py ${@::}
+argv.py ${@:0:}
 
-## status: 1
-## stdout-json: ""
+## status: 0
+## STDOUT:
 
-## OK osh status: 2
+## status: 0
+## STDOUT:
+[]
+[]
 
-## N-I bash status: 0
-## N-I bash STDOUT:
 []
 []
 ## END
 
+## OK mksh/zsh status: 1
+## OK mksh/zsh STDOUT:
+## END
