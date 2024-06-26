@@ -164,7 +164,8 @@ def _HasManyStatuses(node):
                 # Multiple parts like 'ls | wc' is disallowed
                 return True
 
-        # - ShAssignment could be allowed, but its exit code will always be 0 without command subs
+        # - ShAssignment could be allowed, though its exit code will always be
+        #   0 without command subs
         # - Naively, (non-singleton) pipelines could be allowed because pipefail.
         #   BUT could be a proc executed inside a child process, which causes a
         #   problem: the strict_errexit check has to occur at runtime and there's
@@ -2053,6 +2054,13 @@ class CommandEvaluator(object):
 
         # Prevent infinite recursion
         if self.mem.running_err_trap:
+            return
+
+        if self.mutable_opts.ErrExitIsDisabled():
+            return
+
+        # Di
+        if self.mem.InsideFunction():
             return
 
         node = self.trap_state.GetHook('ERR')  # type: command_t
