@@ -81,6 +81,19 @@ if test -f /nope; then echo file exists; fi
 ## STDOUT:
 ## END
 
+
+#### trap err and || conditional (regression)
+
+trap 'echo line=$LINENO' ERR
+
+false || false || false
+echo ok
+
+## STDOUT:
+line=3
+ok
+## END
+
 #### trap ERR does not run in errexit situations
 
 trap 'echo line=$LINENO' ERR
@@ -114,6 +127,7 @@ line=20
 line=20
 ok
 ## END
+
 
 #### trap ERR pipeline (also errexit)
 
@@ -229,15 +243,25 @@ case $SH in bash|mksh|ash) exit ;; esac
 
 shopt -s ysh:upgrade
 
-proc abc { echo abc }
-if test -f /nope { echo file exists }
-trap abc ERR
+proc handler {
+  echo err
+}
+
 if test -f /nope { echo file exists }
 
+trap handler ERR
+
+if test -f /nope { echo file exists }
+
+false || true  # not run for the first part here
+false
+
+## status: 1
 ## STDOUT:
-abc
+err
 ## END
 
+## N-I bash/mksh/ash status: 0
 ## N-I bash/mksh/ash STDOUT:
 ## END
 

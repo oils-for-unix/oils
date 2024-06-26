@@ -1,4 +1,4 @@
-## compare_shells: dash bash mksh
+## compare_shells: dash bash mksh ash
 ## oils_failures_allowed: 0
 
 # builtin-trap.test.sh
@@ -14,12 +14,16 @@ hi
 #### trap 'echo hi' KILL (regression test, caught by smoosh suite)
 trap 'echo hi' 9
 echo status=$?
+
 trap 'echo hi' KILL
 echo status=$?
+
 trap 'echo hi' STOP
 echo status=$?
+
 trap 'echo hi' TERM
 echo status=$?
+
 ## STDOUT:
 status=0
 status=0
@@ -58,19 +62,39 @@ echo $?
 #### Invalid trap invocation
 trap 'foo'
 echo status=$?
-## stdout: status=2
-## OK dash stdout: status=1
-## BUG mksh stdout: status=0
+## STDOUT:
+status=2
+## END
+## OK dash/ash STDOUT:
+status=1
+## END
+## BUG mksh STDOUT:
+status=0
+## END
 
 #### exit 1 when trap code string is invalid
 # All shells spew warnings to stderr, but don't actually exit!  Bad!
 trap 'echo <' EXIT
 echo status=$?
-## stdout: status=1
+## STDOUT:
+status=1
+## END
+
 ## BUG mksh status: 1
-## BUG mksh stdout: status=0
+## BUG mksh STDOUT:
+status=0
+## END
+
+## BUG ash status: 2
+## BUG ash STDOUT:
+status=0
+## END
+
 ## BUG dash/bash status: 0
-## BUG dash/bash stdout: status=0
+## BUG dash/bash STDOUT:
+status=0
+## END
+
 
 #### trap EXIT calling exit
 cleanup() {
@@ -220,4 +244,70 @@ SIGURG
 begin child
 end child
 wait status 0
+## END
+
+
+#### DEBUG trap remains on during USR1 trap?
+
+case $SH in dash|mksh|ash) exit ;; esac
+
+trap 'false; echo $LINENO usr1' USR1
+trap 'false; echo $LINENO dbg' DEBUG
+
+sh -c "kill -USR1 $$"
+echo after=$?
+
+## STDOUT:
+6 dbg
+1 dbg
+1 dbg
+1 usr1
+7 dbg
+after=0
+## END
+
+## N-I dash/mksh/ash STDOUT:
+## END
+
+#### ERR trap and USR1 trap
+
+case $SH in dash|mksh|ash) exit ;; esac
+
+trap 'false; echo $LINENO usr1' USR1
+trap 'false; echo $LINENO err' ERR
+
+sh -c "kill -USR1 $$"
+echo after=$?
+
+## STDOUT:
+1 err
+1 usr1
+after=0
+## END
+
+## N-I dash/mksh/ash STDOUT:
+## END
+
+#### DEBUG trap and ERR trap 
+
+case $SH in dash|mksh|ash) exit ;; esac
+
+trap 'false; echo $LINENO err' ERR
+trap 'false; echo $LINENO debug' DEBUG
+
+false
+echo after=$?
+
+## STDOUT:
+6 err
+6 debug
+6 debug
+6 debug
+6 err
+7 err
+7 debug
+after=1
+## END
+
+## N-I dash/mksh/ash STDOUT:
 ## END

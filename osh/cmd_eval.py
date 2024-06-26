@@ -2059,7 +2059,6 @@ class CommandEvaluator(object):
         if self.mutable_opts.ErrExitIsDisabled():
             return
 
-        # Di
         if self.mem.InsideFunction():
             return
 
