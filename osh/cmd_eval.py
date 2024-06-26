@@ -242,23 +242,6 @@ class ctx_LoopLevel(object):
         self.cmd_ev.loop_level -= 1
 
 
-class ctx_ErrTrap(object):
-    """For trap ERR."""
-
-    def __init__(self, cmd_ev):
-        # type: (CommandEvaluator) -> None
-        cmd_ev.running_err_trap = True
-        self.cmd_ev = cmd_ev
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.cmd_ev.running_err_trap = False
-
-
 class CommandEvaluator(object):
     """Executes the program by tree-walking.
 
@@ -309,7 +292,6 @@ class CommandEvaluator(object):
         self.trap_state = trap_state
         self.signal_safe = signal_safe
 
-        self.running_err_trap = False
         self.loop_level = 0  # for detecting bad top-level break/continue
         self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
 
@@ -2071,7 +2053,7 @@ class CommandEvaluator(object):
         """If a ERR trap handler exists, run it."""
 
         # Prevent infinite recursion
-        if self.running_err_trap:
+        if self.mem.running_err_trap:
             return
 
         node = self.trap_state.GetHook('ERR')  # type: command_t
@@ -2081,7 +2063,7 @@ class CommandEvaluator(object):
 
             with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
                 #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-                with ctx_ErrTrap(self):
+                with state.ctx_ErrTrap(self.mem):
                     self._Execute(node)
 
     def RunProc(self, proc, cmd_val):
