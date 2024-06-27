@@ -1,4 +1,4 @@
-## oils_failures_allowed: 4
+## oils_failures_allowed: 2
 ## compare_shells: bash mksh ash
 
 # Notes on bash semantics:
@@ -129,35 +129,61 @@ line=1
 trap 'echo assign' ERR
 a=$(false) | a=$(false) | a=$(false)
 
-# anomaly - it gets printed twice?
-trap 'echo subshell' ERR
-(false) | (false) | (false) | (false)
-
 trap 'echo dparen' ERR
 (( 0 )) | (( 0 )) | (( 0 ))
 
 trap 'echo dbracket' ERR
 [[ a = b ]] | [[ a = b ]] | [[ a = b ]]
 
+# bash anomaly - it gets printed twice?
+trap 'echo subshell' ERR
+(false) | (false) | (false) | (false)
+
+# same bug
+trap 'echo subshell2' ERR 
+(false) | (false) | (false) | (false; false)
+
+trap 'echo group' ERR
+{ false; } | { false; } | { false; }
+
 echo ok
 
 ## STDOUT:
 assign
-subshell
 dparen
 dbracket
+subshell
+subshell2
+group
 ok
 ## END
 
 ## BUG bash STDOUT:
 assign
-subshell
-subshell
 dparen
 dbracket
+subshell
+subshell
+subshell2
+subshell2
+group
 ok
 ## END
 
+
+#### Pipeline group quirk
+
+# Oh this is because it's run for the PIPELINE, not for the last thing!  Hmmm
+
+trap 'echo group2' ERR
+{ false; } | { false; } | { false; false; }
+
+echo ok
+
+## STDOUT:
+group2
+ok
+## END
 
 #### trap ERR does not run in errexit situations
 
@@ -352,13 +378,14 @@ case x in
   *) false ;;
 esac
 
-{ false; false; }
+{ false; false; false; }
 echo ok
 
 ## STDOUT:
 line=4
 line=4
 line=8
+line=12
 line=12
 line=12
 ok
@@ -468,7 +495,7 @@ C
 D
 ## END
 
-#### trap ERR and pipelines (lastpipe and PIPESTATUS difference)
+#### trap ERR and pipelines - PIPESTATUS difference
 case $SH in ash) exit ;; esac
 
 err() {
@@ -505,14 +532,12 @@ err [] status=1 [0 1 0]
 ok
 ## END
 
-# lastpipe semantics mean we get another call!
-# also we don't set PIPESTATUS unless we get a pipeline
+# we don't set PIPESTATUS unless we get a pipeline
 
 ## OK osh STDOUT:
 A
 err [] status=1 []
 B
-err [] status=1 [0 0]
 err [] status=1 [0 1]
 err [] status=1 [0 1 0]
 ok

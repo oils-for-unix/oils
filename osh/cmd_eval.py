@@ -112,6 +112,7 @@ IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
 NoDebugTrap = 1 << 3
+NoErrTrap = 1 << 4
 
 
 def MakeBuiltinArgv(argv1):
@@ -1910,11 +1911,12 @@ class CommandEvaluator(object):
         status = -1  # uninitialized
 
         try:
+            options = []  # type: List[int]
             if cmd_flags & NoDebugTrap:
-                with state.ctx_Option(self.mutable_opts,
-                                      [option_i._no_debug_trap], True):
-                    status = self._Execute(node)
-            else:
+                options.append(option_i._no_debug_trap)
+            if cmd_flags & NoErrTrap:
+                options.append(option_i._no_err_trap)
+            with state.ctx_Option(self.mutable_opts, options, True):
                 status = self._Execute(node)
         except vm.IntControlFlow as e:
             if cmd_flags & RaiseControlFlow:
@@ -2020,7 +2022,7 @@ class CommandEvaluator(object):
 
     def _MaybeRunDebugTrap(self):
         # type: () -> None
-        """If a DEBUG trap handler exists, run it."""
+        """Run user-specified DEBUG code before certain commands."""
 
         # Fix lastpipe / job control / DEBUG trap interaction
         if self.exec_opts._no_debug_trap():
@@ -2044,15 +2046,23 @@ class CommandEvaluator(object):
 
     def _MaybeRunErrTrap(self):
         # type: () -> None
-        """If a ERR trap handler exists, run it."""
+        """
+        Run user-specified ERR code after checking the status of certain
+        commands (pipelines)
+        """
+        # ERR trap is only run for a whole pipeline, not its parts
+        if self.exec_opts._no_err_trap():
+            return
 
         # Prevent infinite recursion
         if self.mem.running_err_trap:
             return
 
+        # "disabled errexit" rule
         if self.mutable_opts.ErrExitIsDisabled():
             return
 
+        # bash rule - affected by set -o errtrace
         if self.mem.InsideFunction():
             return
 

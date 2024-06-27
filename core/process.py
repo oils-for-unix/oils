@@ -1387,6 +1387,11 @@ class Pipeline(Job):
 
         # Fix lastpipe / job control / DEBUG trap interaction
         cmd_flags = cmd_eval.NoDebugTrap if self.job_control.Enabled() else 0
+
+        # The ERR trap only runs for the WHOLE pipeline, not the COMPONENTS in
+        # a pipeline.
+        cmd_flags |= cmd_eval.NoErrTrap
+
         io_errors = []  # type: List[error.IOError_OSError]
         with ctx_Pipe(fd_state, r, io_errors):
             cmd_ev.ExecuteAndCatch(last_node, cmd_flags)
