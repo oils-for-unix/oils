@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 4
 ## compare_shells: bash mksh ash
 
 # Notes on bash semantics:
@@ -124,6 +124,41 @@ line=1
 ## END
 
 
+#### trap ERR pipelines without simple commands
+
+trap 'echo assign' ERR
+a=$(false) | a=$(false) | a=$(false)
+
+# anomaly - it gets printed twice?
+trap 'echo subshell' ERR
+(false) | (false) | (false) | (false)
+
+trap 'echo dparen' ERR
+(( 0 )) | (( 0 )) | (( 0 ))
+
+trap 'echo dbracket' ERR
+[[ a = b ]] | [[ a = b ]] | [[ a = b ]]
+
+echo ok
+
+## STDOUT:
+assign
+subshell
+dparen
+dbracket
+ok
+## END
+
+## BUG bash STDOUT:
+assign
+subshell
+subshell
+dparen
+dbracket
+ok
+## END
+
+
 #### trap ERR does not run in errexit situations
 
 trap 'echo line=$LINENO' ERR
@@ -159,7 +194,7 @@ ok
 ## END
 
 
-#### trap ERR subprogram - subshell, command sub, async
+#### trap ERR doesn't run in subprograms - subshell, command sub, async
 
 trap 'echo line=$LINENO' ERR
 
@@ -181,6 +216,45 @@ line=11
 ok
 ## END
 
+#### set -o errtrace: trap ERR runs in subprograms
+
+case $SH in mksh) exit ;; esac
+
+set -o errtrace
+trap 'echo line=$LINENO' ERR
+
+( false; echo subshell )
+
+x=$( false; echo command sub )
+
+false & wait
+
+{ false; echo async; } & wait
+
+false
+echo ok
+
+## STDOUT:
+line=6
+subshell
+line=12
+async
+line=14
+ok
+## END
+
+# ash doesn't reject errtrace, but doesn't implement it
+## BUG ash STDOUT:
+subshell
+async
+line=14
+ok
+## END
+
+## N-I mksh STDOUT:
+## END
+
+
 #### trap ERR not active in shell functions in (bash behavior)
 
 trap 'echo line=$LINENO' ERR
@@ -199,7 +273,7 @@ f
 line=4
 ## END
 
-#### trap ERR shell function - with errtrace
+#### set -o errtrace - trap ERR runs in shell functions
 
 trap 'echo line=$LINENO' ERR
 
