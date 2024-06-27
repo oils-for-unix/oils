@@ -82,17 +82,47 @@ if test -f /nope; then echo file exists; fi
 ## END
 
 
-#### trap err and || conditional (regression)
+#### trap ERR and || conditional
 
 trap 'echo line=$LINENO' ERR
 
 false || false || false
 echo ok
 
+false && false
+echo ok
+
 ## STDOUT:
 line=3
 ok
+ok
 ## END
+
+#### trap ERR and pipeline
+
+# mksh and bash have different line numbers in this case
+#trap 'echo line=$LINENO' ERR
+trap 'echo line=$LINENO' ERR
+
+# it's run for the last 'false'
+false | false | false
+
+{ echo pipeline; false; } | false | false
+
+# it's never run here
+! true
+! false
+
+## STDOUT:
+line=3
+line=5
+## END
+
+## BUG mksh/ash STDOUT:
+line=1
+line=1
+## END
+
 
 #### trap ERR does not run in errexit situations
 
@@ -128,31 +158,6 @@ line=20
 ok
 ## END
 
-
-#### trap ERR pipeline (also errexit)
-
-# mksh and bash have different line numbers in this case
-#trap 'echo line=$LINENO' ERR
-trap 'echo line=$LINENO' ERR
-
-# it's run for the last 'false'
-false | false | false
-
-{ echo pipeline; false; } | false | false
-
-# it's never run here
-! true
-! false
-
-## STDOUT:
-line=3
-line=5
-## END
-
-## BUG mksh/ash STDOUT:
-line=1
-line=1
-## END
 
 #### trap ERR subprogram - subshell, command sub, async
 
@@ -232,6 +237,64 @@ ok
 ## BUG mksh STDOUT:
 line=4
 line=10
+## END
+
+#### trap ERR with assignment, for,  case, { }
+
+trap 'echo line=$LINENO' ERR
+
+x=$(false)
+
+for y in 1 2; do
+  false
+done
+
+case x in
+  x) false ;;
+  *) false ;;
+esac
+
+{ false; false; }
+echo ok
+
+## STDOUT:
+line=3
+line=6
+line=6
+line=10
+line=14
+line=14
+ok
+## END
+
+#### trap ERR with redirect 
+
+trap 'echo line=$LINENO' ERR
+
+false
+
+{ false 
+  true
+} > /zz  # error
+echo ok
+
+## STDOUT:
+line=3
+line=7
+ok
+## END
+
+# doesn't update line for redirect
+
+## BUG bash/mksh STDOUT:
+line=3
+line=3
+ok
+## END
+
+## BUG ash STDOUT:
+line=3
+ok
 ## END
 
 

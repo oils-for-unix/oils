@@ -766,7 +766,6 @@ class CommandEvaluator(object):
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
         probe('cmd_eval', '_DoSimple_enter')
-        cmd_st.check_errexit = True
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
         # redirected here, which screws up logging.  For example, 'echo hi
@@ -1428,10 +1427,6 @@ class CommandEvaluator(object):
     def _DoRedirect(self, node, cmd_st):
         # type: (command.Redirect, CommandStatus) -> int
 
-        # set -e affects redirect error, like mksh and bash 5.2, but unlike
-        # dash/ash
-        cmd_st.check_errexit = True
-
         status = 0
         redirects = []  # type: List[RedirValue]
 
@@ -1503,6 +1498,7 @@ class CommandEvaluator(object):
                     self.mem.SetTokenForLine(node.blame_tok)
 
                 self._MaybeRunDebugTrap()
+                cmd_st.check_errexit = True
                 status = self._DoSimple(node, cmd_st)
 
             elif case(command_e.ExpandedAlias):
@@ -1520,6 +1516,10 @@ class CommandEvaluator(object):
 
             elif case(command_e.Redirect):
                 node = cast(command.Redirect, UP_node)
+
+                # set -e affects redirect error, like mksh and bash 5.2, but unlike
+                # dash/ash
+                cmd_st.check_errexit = True
                 status = self._DoRedirect(node, cmd_st)
 
             elif case(command_e.Pipeline):
@@ -1728,10 +1728,6 @@ class CommandEvaluator(object):
 
         # Manual GC point before every statement
         mylib.MaybeCollect()
-
-        # This has to go around redirect handling because the process sub could be
-        # in the redirect word:
-        #     { echo one; echo two; } > >(tac)
 
         # Optimization: These 2 records have rarely-used lists, so we don't pass
         # alloc_lists=True.  We create them on demand.
