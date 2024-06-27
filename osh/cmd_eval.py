@@ -1052,7 +1052,6 @@ class CommandEvaluator(object):
 
             if i == n - 1:  # errexit handled differently for last child
                 status = self._Execute(child)
-                cmd_st.check_errexit = True
             else:
                 # blame the right && or ||
                 self._StrictErrExit(child)
