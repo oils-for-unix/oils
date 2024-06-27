@@ -239,11 +239,35 @@ line=4
 line=10
 ## END
 
-#### trap ERR with assignment, for,  case, { }
+#### trap ERR with "atoms": assignment (( [[
 
 trap 'echo line=$LINENO' ERR
 
 x=$(false)
+
+[[ a == b ]]
+
+(( 0 ))
+echo ok
+
+## STDOUT:
+line=3
+line=5
+line=7
+ok
+## END
+
+## BUG mksh STDOUT:
+line=3
+line=3
+line=7
+ok
+## END
+
+
+#### trap ERR with for,  case, { }
+
+trap 'echo line=$LINENO' ERR
 
 for y in 1 2; do
   false
@@ -258,12 +282,11 @@ esac
 echo ok
 
 ## STDOUT:
-line=3
-line=6
-line=6
-line=10
-line=14
-line=14
+line=4
+line=4
+line=8
+line=12
+line=12
 ok
 ## END
 

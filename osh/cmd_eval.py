@@ -1528,6 +1528,8 @@ class CommandEvaluator(object):
 
             elif case(command_e.Subshell):
                 node = cast(command.Subshell, UP_node)
+
+                # This is a leaf from the parent process POV
                 cmd_st.check_errexit = True
                 status = self.shell_ex.RunSubshell(node.child)
 
@@ -1611,17 +1613,14 @@ class CommandEvaluator(object):
             elif case(command_e.CommandList):
                 node = cast(command.CommandList, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False
 
             elif case(command_e.DoGroup):
                 node = cast(command.DoGroup, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False  # not real statements
 
             elif case(command_e.BraceGroup):
                 node = cast(BraceGroup, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False
 
             elif case(command_e.AndOr):
                 node = cast(command.AndOr, UP_node)
