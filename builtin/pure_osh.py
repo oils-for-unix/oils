@@ -194,7 +194,7 @@ class Shopt(vm._Builtin):
         self.cmd_ev = cmd_ev
 
     def _PrintOptions(self, use_set_opts, as_command, opt_names):
-        # type: (bool, List[str]) -> None
+        # type: (bool, bool, List[str]) -> None
         if use_set_opts:
             self.mutable_opts.ShowOptions(opt_names, as_command)
         else:

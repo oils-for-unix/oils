@@ -687,7 +687,7 @@ class MutableOpts(object):
                 print('%-16s\t%s' % (opt_name, 'on' if b else 'off'))
 
     def ShowShoptOptions(self, opt_names, as_command):
-        # type: (List[str]) -> None
+        # type: (List[str], bool) -> None
         """For 'shopt -p'."""
 
         # Respect option groups.
