@@ -357,8 +357,9 @@ def Main(
     state.InitMem(mem, environ, version_str)
 
     if attrs.show_options:  # special case: sh -o
-        mutable_opts.ShowOptions([])
-        return 0
+        mutable_opts.ShowOptions([], False)
+        # removed return as sh -o does not return
+        # return 0
 
     # Set these BEFORE processing flags, so they can be overridden.
     if lang == 'ysh':
