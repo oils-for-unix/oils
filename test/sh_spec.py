@@ -79,7 +79,8 @@ OTHER_OSH = ('osh_ALT',)
 YSH_CPYTHON = ('ysh', 'ysh-dbg')
 OTHER_YSH = ('oil_ALT',)
 
-# Forw now, only count the Oils CPython failures
+# For now, only count the Oils CPython failures.  TODO: the spec-cpp job should
+# assert the osh-cpp and ysh-cpp deltas.
 OTHER_OILS = OTHER_OSH + OTHER_YSH + ('osh-cpp', 'ysh-cpp')
 
 
