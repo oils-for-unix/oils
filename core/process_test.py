@@ -181,9 +181,9 @@ class ProcessTest(unittest.TestCase):
         node2 = _CommandNode('head', self.arena)
         node3 = _CommandNode('sort --reverse', self.arena)
 
-        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state, None)
-        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state, None)
-        thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state, None)
+        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state, None, True, False)
+        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state, None, True, False)
+        thunk3 = process.SubProgramThunk(cmd_ev, node3, self.trap_state, None, True, False)
 
         p = process.Pipeline(False, self.job_control, self.job_list,
                              self.tracer)
@@ -221,8 +221,8 @@ class ProcessTest(unittest.TestCase):
         node1 = _CommandNode('/bin/echo testpipeline', self.arena)
         node2 = _CommandNode('cat', self.arena)
 
-        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state, None)
-        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state, None)
+        thunk1 = process.SubProgramThunk(cmd_ev, node1, self.trap_state, None, True, False)
+        thunk2 = process.SubProgramThunk(cmd_ev, node2, self.trap_state, None, True, False)
 
         pi.Add(Process(thunk1, jc, self.job_list, self.tracer))
         pi.Add(Process(thunk2, jc, self.job_list, self.tracer))

@@ -655,3 +655,175 @@ after=1
 
 ## N-I dash/mksh/ash STDOUT:
 ## END
+
+#### trap ERR with errtrace (-E)
+# ERR trap is not inherited by shell functions, sub processes, sub commands, ... unless the -o errtrace option is set
+set -E
+trap "echo ERR" ERR
+echo 0
+false
+echo 1
+cat <( date X ; echo 2 )
+echo $( date X ; echo 3 )
+{ date X ; echo 4 ; }
+{ date X ; echo 5 ; } & wait
+( date X ; echo 6 )
+f() { date X ; echo 7 ; } ; f
+x=$( date X ; echo 8 )
+true
+## status: 0
+## STDOUT:
+0
+ERR
+1
+ERR
+2
+ERR 3
+ERR
+4
+ERR
+5
+ERR
+6
+ERR
+7
+## END
+
+#### trap ERR without errtrace (+E)
+# ERR trap is not inherited by shell functions, sub processes, sub commands, ... unless the -o errtrace option is set
+set +E
+trap "echo ERR" ERR
+echo 0
+false
+echo 1
+cat <( date X ; echo 2 )
+echo $( date X ; echo 3 )
+{ date X ; echo 4 ; }
+{ date X ; echo 5 ; } & wait
+( date X ; echo 6 )
+f() { date X ; echo 7 ; } ; f
+x=$( date X ; echo 8 )
+true
+## status: 0
+## STDOUT:
+0
+ERR
+1
+2
+3
+ERR
+4
+5
+6
+7
+## END
+
+#### trap ERR LINENO
+# ERR trap is not inherited by shell functions, sub processes, sub commands, ... unless the -o errtrace option is set
+set +E
+trap 'echo ERR=$LINENO' ERR
+echo 0
+false
+true
+## status: 0
+## STDOUT:
+0
+ERR=4
+## END
+
+#### trap ERR NoLastFork
+trap 'echo ERR' ERR ; date X
+## status: 1
+## STDOUT:
+ERR
+## END
+
+#### trap ERR shadowing with errtrace (-E)
+# ERR trap is not inherited by shell functions, sub processes, sub commands, ... unless the -o errtrace option is set
+set -E
+trap "echo ERR" ERR
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+cat <( trap "echo ERR2" ERR ; date X )
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+echo $( trap "echo ERR3" ERR ; date X )
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+{ trap "echo ERR4" ERR ; date X ; }
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+{ trap "echo ERR5" ERR ; date X ; } & wait
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+( trap "echo ERR6" ERR ; date X )
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+f() { trap "echo ERR7" ERR ; date X ; } ; f
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+x=$( trap "echo ERR8" ERR ; date X ; echo 8 )
+true
+## status: 0
+## STDOUT:
+ERR
+ERRx
+ERR2
+ERR
+ERRx
+ERR3
+ERR
+ERRx
+ERR4
+ERR4
+ERRx
+ERR5
+ERR
+ERRx
+ERR6
+ERR
+ERR
+ERRx
+ERR7
+ERR7
+ERR7
+ERRx
+## END
+
+#### trap ERR shadowing without errtrace (+E)
+# ERR trap is not inherited by shell functions, sub processes, sub commands, ... unless the -o errtrace option is set
+set +E
+trap "echo ERR" ERR
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+cat <( trap "echo ERR2" ERR ; date X )
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+echo $( trap "echo ERR3" ERR ; date X )
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+{ trap "echo ERR4" ERR ; date X ; }
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+{ trap "echo ERR5" ERR ; date X ; } & wait
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+( trap "echo ERR6" ERR ; date X )
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+f() { trap "echo ERR7" ERR ; date X ; } ; f
+false ; trap "echo ERRx" ERR ; false ; trap "echo ERR" ERR
+x=$( trap "echo ERR8" ERR ; date X ; echo 8 )
+true
+## status: 0
+## STDOUT:
+ERR
+ERRx
+ERR2
+ERR
+ERRx
+ERR3
+ERR
+ERRx
+ERR4
+ERR4
+ERRx
+ERR5
+ERR
+ERRx
+ERR6
+ERR
+ERR
+ERRx
+ERR7
+ERR7
+ERR7
+ERRx
+## END

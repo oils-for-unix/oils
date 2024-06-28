@@ -1896,7 +1896,12 @@ class CommandEvaluator(object):
         """
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
-            self._NoForkLast(node)  # turn the last ones into exec
+            # Using _NoForkLast() hides exit code for ERR trap, temporarily comment it
+            # Example:
+            # - ./bin/osh -c 'trap "echo ERR" ERR ; date X' - does not show ERR
+            # - ./bin/osh -c 'trap "echo ERR" ERR ; date X ; true' - does show ERR
+            # This can't be tested by spec.sh
+            # self._NoForkLast(node)  # turn the last ones into exec
 
         if 0:
             log('after opt:')
@@ -2068,8 +2073,9 @@ class CommandEvaluator(object):
             return
 
         # bash rule - affected by set -o errtrace
-        if self.mem.InsideFunction():
-            return
+        # if self.mem.InsideFunction():
+        #     print("zzz InsideFunction")
+        #     return
 
         # NOTE: Don't set option_i._running_trap, because that's for
         # RunPendingTraps() in the MAIN LOOP

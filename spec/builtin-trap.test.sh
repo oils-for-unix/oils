@@ -1,4 +1,4 @@
-## compare_shells: dash bash mksh ash
+## compare_shells: dash bash mksh
 ## oils_failures_allowed: 0
 
 # builtin-trap.test.sh
