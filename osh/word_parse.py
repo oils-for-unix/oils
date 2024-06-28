@@ -264,39 +264,41 @@ class WordParser(WordEmitter):
     def _ReadSliceVarOp(self):
         # type: () -> suffix_op.Slice
         """
+        Looking token after first ':'
+
         ArithExpr? (':' ArithExpr? )? '}'
         """
-        # Looking token after first ':'
-        self._SetNext(lex_mode_e.Arith)
-        self._GetToken()
+        self._NextNonSpace()
 
         cur_id = self.token_type
 
-        begin = arith_expr.EmptyZero  # type: arith_expr_t
-        if cur_id != Id.Arith_Colon:  # A pun for Id.VOp2_Colon
+        if cur_id in (Id.Arith_RBrace, Id.Arith_Colon):  #  ${a:} or ${a::}
+            begin = arith_expr.EmptyZero  # type: arith_expr_t
+        else:
             begin = self.a_parser.Parse()
-            cur_id = self.a_parser.CurrentId()
-        #log('after begin %s', Id_str(cur_id))
+            cur_id = self.a_parser.CurrentId()  # advance
 
-        # e.g. Id.Arith_Colon for the second colon, e.g. ${a:42:}
-        if cur_id == Id.Arith_Colon:  # Id.Arith_Colon is a pun for Id.VOp2_Colon
+        if cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
+            no_length = None  # type: Optional[arith_expr_t]  # No length specified
+            return suffix_op.Slice(begin, no_length)
+
+        elif cur_id == Id.Arith_Colon:  # ${a:1:} or ${@:1:}
             self._SetNext(lex_mode_e.Arith)
             self._GetToken()
 
             if self.token_type != Id.Arith_RBrace:
                 length = self._ReadArithExpr(Id.Arith_RBrace)
             else:
-                p_die('Use explicit slice length of zero',
-                      self.cur_token)
-                # bash behavior
-                # length = arith_expr.EmptyZero  # ${a:1:} or ${a::}
+                # quirky bash behavior:
+                # ${a:1:} or ${a::} means length ZERO
+                # but ${a:1} or ${a:} means length N
+                length = arith_expr.EmptyZero
+
             return suffix_op.Slice(begin, length)
 
-        elif cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
-            no_length = None  # type: Optional[arith_expr_t]  # No length specified
-            return suffix_op.Slice(begin, no_length)
+        else:
+            p_die("Expected : or } in slice", self.cur_token)
 
-        p_die("Expected : or } in slice", self.cur_token)
         raise AssertionError()  # for MyPy
 
     def _ReadPatSubVarOp(self):

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## compare_shells: bash
 
 # Notes on bash semantics:
@@ -11,13 +11,6 @@
 # trap is not inherited by shell functions unless the function has been given
 # the trace attribute or the functrace option has been enabled using the shopt
 # builtin. The extdebug shell option has additional effects on the DEBUG trap.
-
-# The trap builtin (see Bourne Shell Builtins) allows an ERR pseudo-signal
-# specification, similar to EXIT and DEBUG. Commands specified with an ERR trap
-# are executed after a simple command fails, with a few exceptions. The ERR
-# trap is not inherited by shell functions unless the -o errtrace option to the
-# set builtin is enabled. 
-
 
 #### trap -l
 trap -l | grep INT >/dev/null
@@ -554,4 +547,111 @@ g
 --
 return-helper.sh
 profile [x y]
+## END
+
+#### Compare trap DEBUG vs. trap ERR
+
+# Pipelines and AndOr are problematic
+
+# THREE each
+trap 'echo dbg $LINENO' DEBUG
+
+false | false | false
+
+false || false || false
+
+! true
+
+trap - DEBUG
+
+
+# ONE EACH
+trap 'echo err $LINENO' ERR
+
+false | false | false
+
+false || false || false
+
+! true  # not run
+
+echo ok
+
+## STDOUT:
+dbg 3
+dbg 3
+dbg 3
+dbg 5
+dbg 5
+dbg 5
+dbg 7
+dbg 9
+err 14
+err 16
+ok
+## END
+
+
+#### Combine DEBUG trap and USR1 trap
+
+case $SH in dash|mksh|ash) exit ;; esac
+
+trap 'false; echo $LINENO usr1' USR1
+trap 'false; echo $LINENO dbg' DEBUG
+
+sh -c "kill -USR1 $$"
+echo after=$?
+
+## STDOUT:
+6 dbg
+1 dbg
+1 dbg
+1 usr1
+7 dbg
+after=0
+## END
+
+## N-I dash/mksh/ash STDOUT:
+## END
+
+#### Combine ERR trap and USR1 trap
+
+case $SH in dash|mksh|ash) exit ;; esac
+
+trap 'false; echo $LINENO usr1' USR1
+trap 'false; echo $LINENO err' ERR
+
+sh -c "kill -USR1 $$"
+echo after=$?
+
+## STDOUT:
+1 err
+1 usr1
+after=0
+## END
+
+## N-I dash/mksh/ash STDOUT:
+## END
+
+#### Combine DEBUG trap and ERR trap 
+
+case $SH in dash|mksh|ash) exit ;; esac
+
+trap 'false; echo $LINENO err' ERR
+trap 'false; echo $LINENO debug' DEBUG
+
+false
+echo after=$?
+
+## STDOUT:
+6 err
+6 debug
+6 debug
+6 debug
+6 err
+7 err
+7 debug
+after=1
+## END
+
+## N-I dash/mksh/ash STDOUT:
 ## END

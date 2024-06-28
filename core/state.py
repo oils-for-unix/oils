@@ -214,6 +214,23 @@ class ctx_DebugTrap(object):
         self.mem.running_debug_trap = False
 
 
+class ctx_ErrTrap(object):
+    """For trap ERR."""
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        mem.running_err_trap = True
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.running_err_trap = False
+
+
 class ctx_Option(object):
     """Shopt --unset errexit { false }"""
 
@@ -222,8 +239,8 @@ class ctx_Option(object):
         for opt_num in opt_nums:
             mutable_opts.Push(opt_num, b)
             if opt_num == option_i.errexit:
-                mutable_opts.errexit_disabled_tok.append(
-                    None)  # it wasn't disabled
+                # it wasn't disabled
+                mutable_opts.errexit_disabled_tok.append(None)
 
         self.mutable_opts = mutable_opts
         self.opt_nums = opt_nums
@@ -563,6 +580,16 @@ class MutableOpts(object):
             return None
 
         return self.errexit_disabled_tok[-1]
+
+    def ErrExitIsDisabled(self):
+        # type: () -> bool
+        """
+        Similar to ErrExitDisabledToken, for ERR trap
+        """
+        if len(self.errexit_disabled_tok) == 0:
+            return False
+
+        return self.errexit_disabled_tok[-1] is not None
 
     def _SetOldOption(self, opt_name, b):
         # type: (str, bool) -> None
@@ -1150,6 +1177,7 @@ class Mem(object):
         self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
         self.running_debug_trap = False  # set by ctx_DebugTrap()
+        self.running_err_trap = False  # set by ctx_ErrTrap
         self.is_main = True  # we start out in main
 
         # For the ctx builtin
@@ -1243,7 +1271,7 @@ class Mem(object):
         Although most of that should be taken over by 'with ui.ctx_Location()`,
         for the errfmt.
         """
-        if self.running_debug_trap:
+        if self.running_debug_trap or self.running_err_trap:
             return
 
         #if tok.span_id == runtime.NO_SPID:
@@ -1368,6 +1396,13 @@ class Mem(object):
             return False
 
         return True
+
+    def InsideFunction(self):
+        # type: () -> bool
+        """For the ERR trap"""
+
+        # Don't run it inside functions
+        return len(self.var_stack) > 1
 
     def PushSource(self, source_name, argv):
         # type: (str, List[str]) -> None

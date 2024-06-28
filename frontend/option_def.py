@@ -305,6 +305,9 @@ def _Init(opt_def):
 
     # For fixing lastpipe / job control / DEBUG trap interaction
     opt_def.Add('_no_debug_trap')
+    # To implement ERR trap semantics - it's only run for the WHOLE pipeline,
+    # not each part (even the last part)
+    opt_def.Add('_no_err_trap')
 
     # shopt -s strict_arith, etc.
     for name in _STRICT_OPTS:

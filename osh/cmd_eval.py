@@ -112,6 +112,7 @@ IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
 NoDebugTrap = 1 << 3
+NoErrTrap = 1 << 4
 
 
 def MakeBuiltinArgv(argv1):
@@ -164,7 +165,8 @@ def _HasManyStatuses(node):
                 # Multiple parts like 'ls | wc' is disallowed
                 return True
 
-        # - ShAssignment could be allowed, but its exit code will always be 0 without command subs
+        # - ShAssignment could be allowed, though its exit code will always be
+        #   0 without command subs
         # - Naively, (non-singleton) pipelines could be allowed because pipefail.
         #   BUT could be a proc executed inside a child process, which causes a
         #   problem: the strict_errexit check has to occur at runtime and there's
@@ -242,23 +244,6 @@ class ctx_LoopLevel(object):
         self.cmd_ev.loop_level -= 1
 
 
-class ctx_ErrTrap(object):
-    """For trap ERR."""
-
-    def __init__(self, cmd_ev):
-        # type: (CommandEvaluator) -> None
-        cmd_ev.running_err_trap = True
-        self.cmd_ev = cmd_ev
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.cmd_ev.running_err_trap = False
-
-
 class CommandEvaluator(object):
     """Executes the program by tree-walking.
 
@@ -309,7 +294,6 @@ class CommandEvaluator(object):
         self.trap_state = trap_state
         self.signal_safe = signal_safe
 
-        self.running_err_trap = False
         self.loop_level = 0  # for detecting bad top-level break/continue
         self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
 
@@ -783,7 +767,6 @@ class CommandEvaluator(object):
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
         probe('cmd_eval', '_DoSimple_enter')
-        cmd_st.check_errexit = True
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
         # redirected here, which screws up logging.  For example, 'echo hi
@@ -1070,7 +1053,6 @@ class CommandEvaluator(object):
 
             if i == n - 1:  # errexit handled differently for last child
                 status = self._Execute(child)
-                cmd_st.check_errexit = True
             else:
                 # blame the right && or ||
                 self._StrictErrExit(child)
@@ -1445,10 +1427,6 @@ class CommandEvaluator(object):
     def _DoRedirect(self, node, cmd_st):
         # type: (command.Redirect, CommandStatus) -> int
 
-        # set -e affects redirect error, like mksh and bash 5.2, but unlike
-        # dash/ash
-        cmd_st.check_errexit = True
-
         status = 0
         redirects = []  # type: List[RedirValue]
 
@@ -1520,6 +1498,7 @@ class CommandEvaluator(object):
                     self.mem.SetTokenForLine(node.blame_tok)
 
                 self._MaybeRunDebugTrap()
+                cmd_st.check_errexit = True
                 status = self._DoSimple(node, cmd_st)
 
             elif case(command_e.ExpandedAlias):
@@ -1537,6 +1516,10 @@ class CommandEvaluator(object):
 
             elif case(command_e.Redirect):
                 node = cast(command.Redirect, UP_node)
+
+                # set -e affects redirect error, like mksh and bash 5.2, but unlike
+                # dash/ash
+                cmd_st.check_errexit = True
                 status = self._DoRedirect(node, cmd_st)
 
             elif case(command_e.Pipeline):
@@ -1545,6 +1528,8 @@ class CommandEvaluator(object):
 
             elif case(command_e.Subshell):
                 node = cast(command.Subshell, UP_node)
+
+                # This is a leaf from the parent process POV
                 cmd_st.check_errexit = True
                 status = self.shell_ex.RunSubshell(node.child)
 
@@ -1628,17 +1613,14 @@ class CommandEvaluator(object):
             elif case(command_e.CommandList):
                 node = cast(command.CommandList, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False
 
             elif case(command_e.DoGroup):
                 node = cast(command.DoGroup, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False  # not real statements
 
             elif case(command_e.BraceGroup):
                 node = cast(BraceGroup, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False
 
             elif case(command_e.AndOr):
                 node = cast(command.AndOr, UP_node)
@@ -1745,10 +1727,6 @@ class CommandEvaluator(object):
 
         # Manual GC point before every statement
         mylib.MaybeCollect()
-
-        # This has to go around redirect handling because the process sub could be
-        # in the redirect word:
-        #     { echo one; echo two; } > >(tac)
 
         # Optimization: These 2 records have rarely-used lists, so we don't pass
         # alloc_lists=True.  We create them on demand.
@@ -1933,11 +1911,12 @@ class CommandEvaluator(object):
         status = -1  # uninitialized
 
         try:
+            options = []  # type: List[int]
             if cmd_flags & NoDebugTrap:
-                with state.ctx_Option(self.mutable_opts,
-                                      [option_i._no_debug_trap], True):
-                    status = self._Execute(node)
-            else:
+                options.append(option_i._no_debug_trap)
+            if cmd_flags & NoErrTrap:
+                options.append(option_i._no_err_trap)
+            with state.ctx_Option(self.mutable_opts, options, True):
                 status = self._Execute(node)
         except vm.IntControlFlow as e:
             if cmd_flags & RaiseControlFlow:
@@ -2043,7 +2022,7 @@ class CommandEvaluator(object):
 
     def _MaybeRunDebugTrap(self):
         # type: () -> None
-        """If a DEBUG trap handler exists, run it."""
+        """Run user-specified DEBUG code before certain commands."""
 
         # Fix lastpipe / job control / DEBUG trap interaction
         if self.exec_opts._no_debug_trap():
@@ -2067,10 +2046,24 @@ class CommandEvaluator(object):
 
     def _MaybeRunErrTrap(self):
         # type: () -> None
-        """If a ERR trap handler exists, run it."""
+        """
+        Run user-specified ERR code after checking the status of certain
+        commands (pipelines)
+        """
+        # ERR trap is only run for a whole pipeline, not its parts
+        if self.exec_opts._no_err_trap():
+            return
 
         # Prevent infinite recursion
-        if self.running_err_trap:
+        if self.mem.running_err_trap:
+            return
+
+        # "disabled errexit" rule
+        if self.mutable_opts.ErrExitIsDisabled():
+            return
+
+        # bash rule - affected by set -o errtrace
+        if self.mem.InsideFunction():
             return
 
         node = self.trap_state.GetHook('ERR')  # type: command_t
@@ -2080,7 +2073,7 @@ class CommandEvaluator(object):
 
             with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
                 #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-                with ctx_ErrTrap(self):
+                with state.ctx_ErrTrap(self.mem):
                     self._Execute(node)
 
     def RunProc(self, proc, cmd_val):
