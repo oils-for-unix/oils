@@ -79,6 +79,10 @@ OTHER_OSH = ('osh_ALT',)
 YSH_CPYTHON = ('ysh', 'ysh-dbg')
 OTHER_YSH = ('oil_ALT',)
 
+# For now, only count the Oils CPython failures.  TODO: the spec-cpp job should
+# assert the osh-cpp and ysh-cpp deltas.
+OTHER_OILS = OTHER_OSH + OTHER_YSH + ('osh-cpp', 'ysh-cpp')
+
 
 class ParseError(Exception):
   pass
@@ -565,7 +569,7 @@ class Stats(object):
     elif cell_result == Result.FAIL:
       # Special logic: don't count osh_ALT because its failures will be
       # counted in the delta.
-      if sh_label not in OTHER_OSH + OTHER_YSH:
+      if sh_label not in OTHER_OILS:
         c['num_failed'] += 1
 
       if sh_label in OSH_CPYTHON + YSH_CPYTHON:
