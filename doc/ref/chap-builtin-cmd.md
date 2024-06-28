@@ -776,6 +776,7 @@ Flags:
     -s --set    Turn the named options on
     -u --unset  Turn the named options off
     -p          Print option values
+    -o          Use older set of options, normally controlled by 'set -o'
     -q          Return 0 if the option is true, else 1
 
 Examples: 
