@@ -2023,6 +2023,9 @@ class CommandEvaluator(object):
     def _MaybeRunDebugTrap(self):
         # type: () -> None
         """Run user-specified DEBUG code before certain commands."""
+        node = self.trap_state.GetHook('DEBUG')  # type: command_t
+        if node is None:
+            return
 
         # Fix lastpipe / job control / DEBUG trap interaction
         if self.exec_opts._no_debug_trap():
@@ -2032,17 +2035,15 @@ class CommandEvaluator(object):
         if not self.mem.ShouldRunDebugTrap():
             return
 
-        node = self.trap_state.GetHook('DEBUG')  # type: command_t
-        if node:
-            # NOTE: Don't set option_i._running_trap, because that's for
-            # RunPendingTraps() in the MAIN LOOP
+        # NOTE: Don't set option_i._running_trap, because that's for
+        # RunPendingTraps() in the MAIN LOOP
 
-            with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
-                with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-                    # for SetTokenForLine $LINENO
-                    with state.ctx_DebugTrap(self.mem):
-                        # Don't catch util.UserExit, etc.
-                        self._Execute(node)
+        with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
+            with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+                # for SetTokenForLine $LINENO
+                with state.ctx_DebugTrap(self.mem):
+                    # Don't catch util.UserExit, etc.
+                    self._Execute(node)
 
     def _MaybeRunErrTrap(self):
         # type: () -> None
@@ -2050,6 +2051,10 @@ class CommandEvaluator(object):
         Run user-specified ERR code after checking the status of certain
         commands (pipelines)
         """
+        node = self.trap_state.GetHook('ERR')  # type: command_t
+        if node is None:
+            return
+
         # ERR trap is only run for a whole pipeline, not its parts
         if self.exec_opts._no_err_trap():
             return
@@ -2066,15 +2071,13 @@ class CommandEvaluator(object):
         if self.mem.InsideFunction():
             return
 
-        node = self.trap_state.GetHook('ERR')  # type: command_t
-        if node:
-            # NOTE: Don't set option_i._running_trap, because that's for
-            # RunPendingTraps() in the MAIN LOOP
+        # NOTE: Don't set option_i._running_trap, because that's for
+        # RunPendingTraps() in the MAIN LOOP
 
-            with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
-                #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-                with state.ctx_ErrTrap(self.mem):
-                    self._Execute(node)
+        with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
+            #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+            with state.ctx_ErrTrap(self.mem):
+                self._Execute(node)
 
     def RunProc(self, proc, cmd_val):
         # type: (value.Proc, cmd_value.Argv) -> int
