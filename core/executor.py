@@ -298,16 +298,9 @@ class ShellExecutor(vm._Executor):
                             arg0_loc)
 
                 with dev.ctx_Tracer(self.tracer, 'proc', argv):
-                    # remove ERR trap unless errtrace option is set
-                    err_handler = self.trap_state.GetHook('ERR')
-                    if err_handler and not self.exec_opts.errtrace():
-                        self.trap_state.RemoveUserHook('ERR')
-                    # NOTE: Functions could call 'exit 42' directly, etc.
-                    status = self.cmd_ev.RunProc(proc_node, cmd_val)
-                    # restore ERR trap if not set again, as new ERR trap will just override previous on
-                    if err_handler and not self.exec_opts.errtrace():
-                        if not self.trap_state.GetHook('ERR'):
-                            self.trap_state.AddUserHook('ERR', err_handler)
+                    with state.ctx_HideErrTrap(self.trap_state, self.exec_opts.errtrace()):
+                        # NOTE: Functions could call 'exit 42' directly, etc.
+                        status = self.cmd_ev.RunProc(proc_node, cmd_val)
                 return status
 
         # Notes:
