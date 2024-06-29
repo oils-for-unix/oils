@@ -368,11 +368,6 @@ class Read(vm._Builtin):
         if next_arg is not None:
             raise error.Usage('got extra argument', next_loc)
 
-        if arg.line:  # read --line is buffered, calls getline()
-            raise error.Usage(
-                "no longer supports --line; please use read -r instead (unbuffered I/O)",
-                next_loc)
-
         num_bytes = mops.BigTruncate(arg.num_bytes)
         if num_bytes != -1:  # read --num-bytes
             contents = _ReadN(num_bytes, self.cmd_ev)
@@ -400,11 +395,7 @@ class Read(vm._Builtin):
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
 
-        #if arg.q and not arg.line:
-        #    e_usage('--qsn can only be used with --line', loc.Missing)
-
-        if (arg.line or arg.raw_line or arg.all or
-                mops.BigTruncate(arg.num_bytes) != -1):
+        if arg.raw_line or arg.all or mops.BigTruncate(arg.num_bytes) != -1:
             return self._ReadYsh(arg, arg_r, cmd_val)
 
         if cmd_val.typed_args:
