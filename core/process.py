@@ -186,7 +186,7 @@ class FdState(object):
             mem,  #type: state.Mem
             tracer,  # type: Optional[dev.Tracer]
             waiter,  # type: Optional[Waiter]
-            mutable_opts,  #type: MutableOpts
+            exec_opts,  #type: optview.Exec
     ):
         # type: (...) -> None
         """
@@ -202,7 +202,7 @@ class FdState(object):
         self.mem = mem
         self.tracer = tracer
         self.waiter = waiter
-        self.mutable_opts = mutable_opts
+        self.exec_opts = exec_opts
 
     def Open(self, path):
         # type: (str) -> mylib.LineReader
@@ -383,20 +383,17 @@ class FdState(object):
 
             if case(redirect_arg_e.Path):
                 arg = cast(redirect_arg.Path, UP_arg)
-
                 # noclobber flag is OR'd with other flags when allowed
-                noclobber = O_EXCL if self.mutable_opts.Get(
-                    option_i.noclobber) else 0
-
+                noclobber_mode = O_EXCL if self.exec_opts.noclobber() else 0
                 if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
                     # NOTE: This is different than >| because it respects noclobber, but
                     # that option is almost never used.  See test/wild.sh.
-                    mode = O_CREAT | O_WRONLY | O_TRUNC | noclobber
+                    mode = O_CREAT | O_WRONLY | O_TRUNC | noclobber_mode
                 elif r.op_id == Id.Redir_Clobber:  # >|
                     mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id in (Id.Redir_DGreat,
                                  Id.Redir_AndDGreat):  # >>   &>>
-                    mode = O_CREAT | O_WRONLY | O_APPEND | noclobber
+                    mode = O_CREAT | O_WRONLY | O_APPEND | noclobber_mode
                 elif r.op_id == Id.Redir_Less:  # <
                     mode = O_RDONLY
                 elif r.op_id == Id.Redir_LessGreat:  # <>
@@ -408,17 +405,15 @@ class FdState(object):
                 try:
                     open_fd = posix.open(arg.filename, mode, 0o666)
                 except (IOError, OSError) as e:
-                    if noclobber != 0 and e.errno == EEXIST:
-                        self.errfmt.PrintMessageEx(
+                    if noclobber_mode != 0 and e.errno == EEXIST:
+                        self.errfmt.PrintMessage(
                             "I/O redirect error: can't overwrite existing file %r: %s"
                             % (arg.filename, pyutil.strerror(e)),
-                            self.mutable_opts.Get(option_i.verbose_errexit),
                             r.op_loc)
                     else:
-                        self.errfmt.PrintMessageEx(
+                        self.errfmt.PrintMessage(
                             "I/O redirect error: can't open file %r: %s" %
                             (arg.filename, pyutil.strerror(e)),
-                            self.mutable_opts.Get(option_i.verbose_errexit),
                             r.op_loc)
                     raise IOError(
                         0

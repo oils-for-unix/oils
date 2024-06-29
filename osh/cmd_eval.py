@@ -1485,10 +1485,9 @@ class CommandEvaluator(object):
                 if io_errors[0].errno:
                     # core/process.py prints cryptic errors, so we repeat them
                     # here.  e.g. Bad File Descriptor
-                    self.errfmt.PrintMessageEx(
+                    self.errfmt.PrintMessage(
                         'I/O redirect error: %s' %
                         pyutil.strerror(io_errors[0]),
-                        self.mutable_opts.Get(option_i.verbose_errexit),
                         self.mem.GetFallbackLocation())
                 status = 1
 

@@ -214,7 +214,7 @@ def InitCommandEvaluator(parse_ctx=None,
     job_control = process.JobControl()
     job_list = process.JobList()
     fd_state = process.FdState(errfmt, job_control, job_list, None, None, None,
-                               mutable_opts)
+                               exec_opts)
     aliases = {} if aliases is None else aliases
     procs = {}
     methods = {}

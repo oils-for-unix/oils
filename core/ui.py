@@ -420,12 +420,6 @@ class ErrorFormatter(object):
                            self._FallbackLocation(blame_loc),
                            show_code=False)
 
-    def PrintMessageEx(self, msg, show_code, blame_loc=None):
-        # type: (str, bool, loc_t) -> None
-        """Print a message WITHOUT quoting code."""
-        _PrintWithLocation('', msg, self._FallbackLocation(blame_loc),
-                           show_code)
-
     def StderrLine(self, msg):
         # type: (str) -> None
         """Just print to stderr."""
