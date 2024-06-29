@@ -1477,14 +1477,14 @@ class CommandParser(object):
 
         self._GetWord()
         if self.c_id == Id.KW_In:
-            # Ideally we would want ( not 'in'.  But we still have to fix the bug
-            # where we require a SPACE between in and (
-            #   for x in(y)   # should be accepted, but isn't
-
             expr_blame = word_.AsKeywordToken(self.cur_word)
 
             self._SetNext()  # skip in
-            if self.w_parser.LookPastSpace() == Id.Op_LParen:
+
+            next_id = self.w_parser.LookPastSpace()
+            #log('%s', Id_str(next_id))
+
+            if next_id == Id.Op_LParen:  # for x in (expr) {
                 enode = self.w_parser.ParseYshExprForCommand()
                 node.iterable = for_iter.YshExpr(enode, expr_blame)
 
@@ -1493,6 +1493,20 @@ class CommandParser(object):
                 if self.c_id != Id.Lit_LBrace:
                     p_die('Expected { after iterable expression',
                           loc.Word(self.cur_word))
+
+            elif next_id == Id.Redir_LessGreat:  # for x in <> {
+                # <> is Id.Redir_Great - reuse this for simplicity
+                #
+                # Later
+                # < is Id.Redir_Less
+                # > is Id.Redir_Great
+
+                self._Eat(Id.Redir_LessGreat)
+                #self._Eat(Id.Redir_Less)
+                #self._SetNext()
+                #self._Eat(Id.Redir_Great)
+                p_die('TODO', loc.Word(self.cur_word))
+
             else:
                 semi_tok = None  # type: Optional[Token]
                 iter_words, semi_tok = self.ParseForWords()

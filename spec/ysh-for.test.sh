@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### For loop over expression: List
 var mylist = [1, 2, 3]
@@ -139,7 +139,7 @@ for x in (42) {
 hi
 ## END
 
-#### Oil for with brace substitution and glob
+#### YSH for with brace substitution and glob
 
 touch {foo,bar}.py
 for i, file in *.py {README,foo}.md {
@@ -150,4 +150,30 @@ for i, file in *.py {README,foo}.md {
 1 foo.py
 2 README.md
 3 foo.md
+## END
+
+#### for x in <> { 
+
+# I think <> is just stdin for now
+# Later we could add
+#
+# < >
+# < *.py README.md >
+# etc.
+
+seq 3 | for x in <> { 
+  echo "-$x-"
+}
+
+seq 3 | for i, x in <> { 
+  echo "$i $x"
+}
+
+## STDOUT:
+-1-
+-2-
+-3-
+0 1
+1 2
+2 3
 ## END
