@@ -700,9 +700,9 @@ class ArithEvaluator(object):
                     with tagswitch(left) as case:
                         if case(value_e.BashArray):
                             array_val = cast(value.BashArray, UP_left)
-                            index = mops.BigTruncate(
+                            small_i = mops.BigTruncate(
                                 self.EvalToBigInt(node.right))
-                            s = word_eval.GetArrayItem(array_val.strs, index)
+                            s = word_eval.GetArrayItem(array_val.strs, small_i)
 
                         elif case(value_e.BashAssoc):
                             left = cast(value.BashAssoc, UP_left)
@@ -718,8 +718,7 @@ class ArithEvaluator(object):
                             index = self.EvalToBigInt(node.right)
                             # s[0] evaluates to s
                             # s[1] evaluates to Undef
-                            s = left.s if mops.Equal(index,
-                                                     mops.ZERO) else None
+                            s = left.s if mops.Equal(index, mops.ZERO) else None
 
                         elif case(value_e.Undef):
                             if self.exec_opts.strict_arith():
