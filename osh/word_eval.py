@@ -377,9 +377,8 @@ def _PerformSlice(
             # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
             # strings.
             if has_length and length < 0:
-                e_die(
-                    "Array slice can't have negative length: %d" %
-                    length, loc.WordPart(part))
+                e_die("Array slice can't have negative length: %d" % length,
+                      loc.WordPart(part))
 
             # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
             if arg0_val is not None:
@@ -2151,7 +2150,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         for i, w in enumerate(words):
             # No globbing in the first arg for command.Simple.
             if i == 0 and allow_assign:
-                strs0 = self._EvalWordToArgv(w)  # respects strict-array
+                strs0 = self._EvalWordToArgv(w)
                 if len(strs0) == 1:
                     arg0 = strs0[0]
                     builtin_id = consts.LookupAssignBuiltin(arg0)
@@ -2202,6 +2201,22 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         return cmd_value.Argv(strs, locs, None, None, None, None)
 
+    def _DetectAssignBuiltinStr(self, arg0, words):
+        # type: (str, List[CompoundWord]) -> Optional[cmd_value.Assign]
+        builtin_id = consts.LookupAssignBuiltin(arg0)
+        if builtin_id != consts.NO_INDEX:
+            return self._EvalAssignBuiltin(builtin_id, arg0, words)
+        return None
+
+    def _DetectAssignBuiltin(self, val0, words):
+        # type: (part_value_t, List[CompoundWord]) -> Optional[cmd_value.Assign]
+        UP_val0 = val0
+        if val0.tag() == part_value_e.String:
+            val0 = cast(Piece, UP_val0)
+            if not val0.quoted:
+                return self._DetectAssignBuiltinStr(val0.s, words)
+        return None
+
     def EvalWordSequence2(self, words, allow_assign=False):
         # type: (List[CompoundWord], bool) -> cmd_value_t
         """Turns a list of Words into a list of strings.
@@ -2209,10 +2224,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         Unlike the EvalWord*() methods, it does globbing.
 
         Args:
-          words: list of Word instances
-
-        Returns:
-          argv: list of string arguments, or None if there was an eval error
+          allow_assign: True for command.Simple, False for BashArray a=(1 2 3)
         """
         if self.exec_opts.simple_word_eval():
             return self.SimpleEvalWordSequence2(words, allow_assign)
@@ -2242,10 +2254,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 # e.g. the 'local' in 'local a=b c=d' will be here
                 if allow_assign and i == 0:
-                    builtin_id = consts.LookupAssignBuiltin(fast_str)
-                    if builtin_id != consts.NO_INDEX:
-                        return self._EvalAssignBuiltin(builtin_id, fast_str,
-                                                       words)
+                    cmd_val = self._DetectAssignBuiltinStr(fast_str, words)
+                    if cmd_val:
+                        return cmd_val
                 continue
 
             part_vals = []  # type: List[part_value_t]
@@ -2261,15 +2272,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # But we don't want to evaluate the first word twice in the case of:
             #   $(some-command) --flag
             if allow_assign and i == 0 and len(part_vals) == 1:
-                val0 = part_vals[0]
-                UP_val0 = val0
-                if val0.tag() == part_value_e.String:
-                    val0 = cast(Piece, UP_val0)
-                    if not val0.quoted:
-                        builtin_id = consts.LookupAssignBuiltin(val0.s)
-                        if builtin_id != consts.NO_INDEX:
-                            return self._EvalAssignBuiltin(
-                                builtin_id, val0.s, words)
+                cmd_val = self._DetectAssignBuiltin(part_vals[0], words)
+                if cmd_val:
+                    return cmd_val
 
             if 0:
                 log('')
