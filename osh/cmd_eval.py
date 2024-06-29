@@ -1901,7 +1901,7 @@ class CommandEvaluator(object):
             # - ./bin/osh -c 'trap "echo ERR" ERR ; date X' - does not show ERR
             # - ./bin/osh -c 'trap "echo ERR" ERR ; date X ; true' - does show ERR
             # This can't be tested by spec.sh
-            # self._NoForkLast(node)  # turn the last ones into exec
+            self._NoForkLast(node)  # turn the last ones into exec
 
         if 0:
             log('after opt:')
