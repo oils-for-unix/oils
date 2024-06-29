@@ -47,6 +47,7 @@ from typing import Tuple, List, Dict, Optional, Any, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import option_t
+    from builtin import trap_osh
     from core import alloc
     from osh import sh_expr_eval
 
@@ -235,7 +236,7 @@ class ctx_HideErrTrap(object):
     """For trap ERR."""
 
     def __init__(self, trap_state, errtrace):
-        # type: (trap_osh.TrapState) -> None
+        # type: (trap_osh.TrapState, bool) -> None
         self.errtrace = errtrace
         if self.errtrace: return
         # errtrace is disabled, hide err trap
