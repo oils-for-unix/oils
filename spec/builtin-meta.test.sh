@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: dash bash mksh zsh
 
 #### command -v
@@ -374,18 +374,26 @@ s=local
 ## N-I dash/mksh STDOUT:
 ## END
 
-#### builtin declare etc. with array is not parsed
+#### builtin declare a=(x y) etc.
 
 $SH -c 'builtin declare a=(x y)'
-test $? -ne 0 && echo 'fail'
+if test $? -ne 0; then
+  echo 'fail'
+fi
 
 $SH -c 'builtin declare -a a=(x y)'
-test $? -ne 0 && echo 'fail'
+if test $? -ne 0; then
+  echo 'fail'
+fi
 
 ## STDOUT:
 fail
 fail
 ## END
+
+## OK osh STDOUT:
+## END
+
 
 #### command export / readonly
 case $SH in zsh) exit ;; esac

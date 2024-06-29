@@ -140,6 +140,34 @@ def GetArrayItem(strs, index):
     return s
 
 
+def _DetectMetaBuiltinStr(s):
+    # type: (str) -> bool
+    """
+    We need to detect all of these cases:
+
+        builtin local
+        command local
+        builtin builtin local
+        builtin command local
+
+    Fundamentally, assignment builtins have different WORD EVALUATION RULES
+    for a=$x (no word splitting), so it seems hard to do this in
+    meta_osh.Builtin() or meta_osh.Command()
+    """
+    return (consts.LookupNormalBuiltin(s)
+            in (builtin_i.builtin, builtin_i.command))
+
+
+def _DetectMetaBuiltin(val0):
+    # type: (part_value_t) -> bool
+    UP_val0 = val0
+    if val0.tag() == part_value_e.String:
+        val0 = cast(Piece, UP_val0)
+        if not val0.quoted:
+            return _DetectMetaBuiltinStr(val0.s)
+    return False
+
+
 # Use libc to parse NAME, NAME=value, and NAME+=value.  We want submatch
 # extraction, but I haven't used that in re2c, and we would need a new kind of
 # binding.
@@ -2059,16 +2087,17 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # type: (builtin_t, str, List[CompoundWord]) -> cmd_value.Assign
         """Handles both static and dynamic assignment, e.g.
 
-        x='foo=bar' local a=(1 2) $x
-        """
-        # Grammar:
-        #
-        # ('builtin' | 'command')* keyword flag* pair*
-        # flag = [-+].*
-        #
-        # There is also command -p, but we haven't implemented it.  Maybe just punt
-        # on it.  Punted on 'builtin' and 'command' for now too.
+        x='foo=bar'
+        local a=(1 2) $x
 
+        Grammar:
+        
+            ('builtin' | 'command')* keyword flag* pair*
+            flag = [-+].*
+        
+        There is also command -p, but we haven't implemented it.  Maybe just
+        punt on it.
+        """
         eval_to_pairs = True  # except for -f and -F
         started_pairs = False
 
@@ -2141,47 +2170,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         return cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
 
-    def _DetectAssignBuiltinStr(self, arg0, words):
-        # type: (str, List[CompoundWord]) -> Optional[cmd_value.Assign]
+    def _DetectAssignBuiltinStr(self, arg0, words, offset):
+        # type: (str, List[CompoundWord], int) -> Optional[cmd_value.Assign]
         builtin_id = consts.LookupAssignBuiltin(arg0)
         if builtin_id != consts.NO_INDEX:
-            return self._EvalAssignBuiltin(builtin_id, arg0, words)
+            return self._EvalAssignBuiltin(builtin_id, arg0, words[offset:])
         return None
 
-    def _DetectAssignBuiltin(self, val0, words):
-        # type: (part_value_t, List[CompoundWord]) -> Optional[cmd_value.Assign]
+    def _DetectAssignBuiltin(self, val0, words, offset):
+        # type: (part_value_t, List[CompoundWord], int) -> Optional[cmd_value.Assign]
         UP_val0 = val0
         if val0.tag() == part_value_e.String:
             val0 = cast(Piece, UP_val0)
             if not val0.quoted:
-                return self._DetectAssignBuiltinStr(val0.s, words)
+                return self._DetectAssignBuiltinStr(val0.s, words, offset)
         return None
-
-    def _DetectMetaBuiltinStr(self, s):
-        # type: (str) -> bool
-        """
-        We need to detect all of these cases:
-
-            builtin local
-            command local
-            builtin builtin local
-            builtin command local
-
-        Fundamentally, assignment builtins have different WORD EVALUATION RULES
-        for a=$x (no word splitting), so it seems hard to do this in
-        meta_osh.Builtin() or meta_osh.Command()
-        """
-        return (consts.LookupNormalBuiltin(s)
-                in (builtin_i.builtin, builtin_i.command))
-
-    def _DetectMetaBuiltin(self, val0):
-        # type: (part_value_t) -> bool
-        UP_val0 = val0
-        if val0.tag() == part_value_e.String:
-            val0 = cast(Piece, UP_val0)
-            if not val0.quoted:
-                return self._DetectMetaBuiltinStr(val0.s)
-        return False
 
     def SimpleEvalWordSequence2(self, words, allow_assign):
         # type: (List[CompoundWord], bool) -> cmd_value_t
@@ -2198,7 +2201,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 # TODO: Remove this because we should remove assignment
                 # builtins?  What about export?
                 if len(strs0) == 1:
-                    cmd_val = self._DetectAssignBuiltinStr(strs0[0], words)
+                    cmd_val = self._DetectAssignBuiltinStr(
+                        strs0[0], words, assign_builtin_offset)
                     if cmd_val:
                         return cmd_val
 
@@ -2284,11 +2288,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
                 # e.g. the 'local' in 'local a=b c=d' will be here
                 if allow_assign and i == assign_builtin_offset:
-                    cmd_val = self._DetectAssignBuiltinStr(fast_str, words)
+                    cmd_val = self._DetectAssignBuiltinStr(
+                        fast_str, words, assign_builtin_offset)
                     if cmd_val:
                         return cmd_val
                 #print('YO %s' % fast_str)
-                if self._DetectMetaBuiltinStr(fast_str):
+                if _DetectMetaBuiltinStr(fast_str):
                     #print('META')
                     assign_builtin_offset += 1
                 continue
@@ -2307,12 +2312,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
             #   $(some-command) --flag
             if (allow_assign and i == assign_builtin_offset and
                     len(part_vals) == 1):
-                cmd_val = self._DetectAssignBuiltin(part_vals[0], words)
+                cmd_val = self._DetectAssignBuiltin(part_vals[0], words,
+                                                    assign_builtin_offset)
                 if cmd_val:
                     return cmd_val
 
             if len(part_vals) == 1:
-                if self._DetectMetaBuiltin(part_vals[0]):
+                if _DetectMetaBuiltin(part_vals[0]):
                     assign_builtin_offset += 1
 
             if 0:
