@@ -16,7 +16,6 @@ from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
                     SIGTTOU, SIGTTIN, SIGWINCH)
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (job_state_e, job_state_t,
                                         job_state_str, wait_status,
                                         wait_status_t, RedirValue,
@@ -37,7 +36,6 @@ from core import pyos
 from core import state
 from core import ui
 from core import util
-from core.state import MutableOpts
 from data_lang import j8_lite
 from frontend import location
 from frontend import match
