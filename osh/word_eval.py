@@ -2197,9 +2197,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
             # No globbing in the first arg for command.Simple.
             if i == assign_builtin_offset and allow_assign:
                 strs0 = self._EvalWordToArgv(w)
-                # Same logic as legacy word eval, with no splitting
-                # TODO: Remove this because we should remove assignment
-                # builtins?  What about export?
+                # TODO: Remove this because YSH will disallow assignment
+                # builtins?  (including export?)
                 if len(strs0) == 1:
                     cmd_val = self._DetectAssignBuiltinStr(
                         strs0[0], words, assign_builtin_offset)

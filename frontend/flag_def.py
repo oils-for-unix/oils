@@ -118,6 +118,7 @@ READ_SPEC.ShortFlag('-p', args.String)  # prompt
 READ_SPEC.ShortFlag('-0')  # until NUL, like -r -d ''
 READ_SPEC.LongFlag('--all')
 READ_SPEC.LongFlag('--line')
+READ_SPEC.LongFlag('--raw-line')
 READ_SPEC.LongFlag('--num-bytes', args.Int)
 # don't strip the trailing newline
 READ_SPEC.LongFlag('--with-eol')

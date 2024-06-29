@@ -131,7 +131,7 @@ class MapFile(vm._Builtin):
         while True:
             # bash uses this slow algorithm; YSH could provide read --all-lines
             try:
-                line = read_osh.ReadLineSlowly(self.cmd_ev)
+                line, _ = read_osh.ReadLineSlowly(self.cmd_ev)
             except pyos.ReadError as e:
                 self.errfmt.PrintMessage("mapfile: read() error: %s" %
                                          posix.strerror(e.err_num))

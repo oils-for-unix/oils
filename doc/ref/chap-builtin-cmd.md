@@ -338,31 +338,30 @@ Also a declaration
 
 YSH adds long flags to shell's `read`:
 
-    read --all               # whole file including newline, fills $_reply
+    read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
 
     read --num-bytes 3       # read N bytes, fills _reply
     read --num-bytes 3 (&x)  # fills $x
 
+    read --raw-line             # unbuffered read of line, omitting trailing \n
+    read --raw-line (&x)        # fills $x
+
+    read --raw-line --with-eol  # include the trailing \n
+
 And a convenience:
 
     read -0                 # read until NUL, synonym for read -r -d ''
 
-TODO: We used to have `read --line`, but buffered I/O doesn't mix with shell
-I/O, which is reads directly from file descriptors.
+You may want to use `fromJson8()` or `fromJson()` after reading a line.
 
 <!--
 
-buffered, line-oriented I/O 
+TODO:
 
-    read --line             # fills $_reply var with line
-    read --line (&x)        # fills $x (&x is a place)
+- read --netstr
+- fromJ8Line() is different than from Json8!  It's like @()
 
-    read --line --with-eol  # keep the \n
-
-You may want to use `fromJ8()` or `fromJson()` after reading a line.
-
-TODO: read --netstr
 -->
 
 <!--

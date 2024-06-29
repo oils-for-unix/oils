@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 3
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -155,12 +155,41 @@ echo status=$?
 status=2
 ## END
 
+#### read --raw-line
+
+echo hi | read --raw-line
+echo "reply=$_reply"
+echo len=$[len(_reply)]
+
+echo hi | read -r
+if test "$REPLY" = "$_reply"; then
+  echo pass
+fi
+
+## STDOUT:
+reply=hi
+len=2
+pass
+## END
+
 #### Mixing read --line with read -r
 
 $SH $REPO_ROOT/spec/testdata/ysh-read-0.sh
 
 ## STDOUT:
-TODO
+read -r
+REPLY=1
+REPLY=2
+
+read --raw-line
+_reply=1
+_reply=2
+
+Mixed
+REPLY=1
+REPLY=2
+_reply=3
+REPLY=4
 ## END
 
 #### read --line --with-eol
@@ -175,9 +204,16 @@ myline=a
 myline=b
 ## END
 
-#### read --line --j8
+#### read --raw-line --j8
 
-echo $'u\'foo\'' | read --line --j8
+# TODO: is this similar to @() ?  It reads j8 lines?
+#
+# But using a function is better?
+#
+# var x = fromJ8Line(_reply)
+# var x = fromJson(_reply)  # this is https://jsonlines.org
+
+echo $'u\'foo\'' | read --raw-line --j8
 write -- "$_reply"
 
 ## STDOUT:
