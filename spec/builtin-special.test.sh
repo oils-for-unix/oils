@@ -112,3 +112,30 @@ echo status=$?
 true func
 status=0
 ## END
+
+
+#### command, builtin - both can be redefined, not special (regression)
+case $SH in dash) exit ;; esac
+
+builtin echo b
+command echo c
+
+builtin() {
+  echo builtin-redef "$@"
+}
+
+command() {
+  echo command-redef "$@"
+}
+
+builtin echo b
+command echo c
+
+## STDOUT:
+b
+c
+builtin-redef echo b
+command-redef echo c
+## END
+## N-I dash STDOUT:
+## END

@@ -40,8 +40,8 @@ _NORMAL_BUILTINS = [
 
     'getopts',
 
-    # introspection
-    'command', 'type', 'hash', 'help', 'history',
+    # introspection / meta
+    'builtin', 'command', 'type', 'hash', 'help', 'history',
 
     'alias', 'unalias',
     'bind',
@@ -112,7 +112,7 @@ def _Init(b):
     b.Add('.', enum_name='dot', kind='special')
     # Python keyword
     b.Add('exec', enum_name='exec_', kind='special')
-    for name in ['eval', 'set', 'shift', 'times', 'trap', 'unset', 'builtin']:
+    for name in ['eval', 'set', 'shift', 'times', 'trap', 'unset']:
         b.Add(name, kind='special')
 
     #

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 6
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh
 
 #### command -v
@@ -515,3 +515,4 @@ cbr=readonly
 ## END
 ## N-I dash/zsh STDOUT:
 ## END
+
