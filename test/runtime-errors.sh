@@ -678,6 +678,12 @@ test-unset_expr() {
   _osh-error-2 'unset -v 1+2'
 }
 
+test-strict-arith() {
+  _osh-error-1 'shopt -s strict_arith; echo $(( undef[0] ))'
+  _osh-error-1 'shopt -s strict_arith; s=abc; echo $(( s[0] ))'
+  _osh-error-1 'shopt -s strict_arith; var i = 42; echo $(( i[0] ))'
+}
+
 # Only dash flags this as an error.
 unquoted-string_to_int_arith() {
   local x='ZZZ'

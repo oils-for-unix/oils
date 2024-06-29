@@ -709,11 +709,34 @@ class ArithEvaluator(object):
                             key = self.EvalWordToString(node.right)
                             s = left.d.get(key)
 
+                        elif case(value_e.Str):
+                            left = cast(value.Str, UP_left)
+                            if self.exec_opts.strict_arith():
+                                e_die(
+                                    "Value of type Str can't be indexed (strict_arith)",
+                                    node.op)
+                            index = self.EvalToBigInt(node.right)
+                            # s[0] evaluates to s
+                            # s[1] evaluates to Undef
+                            s = left.s if mops.Equal(index,
+                                                     mops.ZERO) else None
+
+                        elif case(value_e.Undef):
+                            if self.exec_opts.strict_arith():
+                                e_die(
+                                    "Value of type Undef can't be indexed (strict_arith)",
+                                    node.op)
+                            s = None  # value.Undef
+
+                            # There isn't a way to distinguish Undef vs. empty
+                            # string, even with set -o nounset?
+                            # s = ''
+
                         else:
                             # TODO: Add error context
                             e_die(
-                                'Expected array or assoc in index expression, got %s'
-                                % ui.ValType(left))
+                                "Value of type %s can't be indexed" %
+                                ui.ValType(left), node.op)
 
                     if s is None:
                         val = value.Undef
