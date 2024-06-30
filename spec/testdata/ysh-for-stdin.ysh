@@ -1,0 +1,37 @@
+
+# I think <> is just stdin for now
+# Later we could add
+#
+# < >
+# < *.py README.md >
+# etc.
+
+seq 3 | for x in <> { 
+  echo "-$x-"
+}
+echo
+
+
+seq 3 | for i, x in <> { 
+  echo "$i $x"
+}
+echo
+
+echo 'empty'
+
+fopen < /dev/null {
+  for x in <> { 
+    echo "$x"
+  }
+}
+
+echo 'done'
+echo
+
+echo 'empty2'
+
+for x in <> { 
+  echo "$x"
+} < /dev/null
+
+echo 'done2'

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 _ = log
 
-# The Read builtin splits using IFS.
+# The read builtin splits using IFS.
 #
 # Summary:
 # - Split with IFS, except \ can escape them!  This is different than the

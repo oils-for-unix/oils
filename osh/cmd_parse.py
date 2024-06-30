@@ -1488,7 +1488,7 @@ class CommandParser(object):
                 enode = self.w_parser.ParseYshExprForCommand()
                 node.iterable = for_iter.YshExpr(enode, expr_blame)
 
-                # For simplicity, we don't accept for x in (obj); do ...
+                # We don't accept for x in (obj); do ...
                 self._GetWord()
                 if self.c_id != Id.Lit_LBrace:
                     p_die('Expected { after iterable expression',
@@ -1501,11 +1501,26 @@ class CommandParser(object):
                 # < is Id.Redir_Less
                 # > is Id.Redir_Great
 
-                self._Eat(Id.Redir_LessGreat)
-                #self._Eat(Id.Redir_Less)
-                #self._SetNext()
-                #self._Eat(Id.Redir_Great)
-                p_die('TODO', loc.Word(self.cur_word))
+                w = self._Eat(Id.Redir_LessGreat)
+                left = word_.AsOperatorToken(w)
+
+                node.iterable = for_iter.Files(left, [])
+
+                # We don't accept for x in <>; do ...
+                self._GetWord()
+                if self.c_id != Id.Lit_LBrace:
+                    p_die('Expected { after files', loc.Word(self.cur_word))
+
+            elif next_id == Id.Redir_Less:  # for x in <> {
+                self._Eat(Id.Redir_Less)
+                p_die('TODO: files list', loc.Word(self.cur_word))
+
+                """
+                # We don't accept for x in < $myfile >; do ...
+                self._GetWord()
+                if self.c_id != Id.Lit_LBrace:
+                    p_die('Expected { after files', loc.Word(self.cur_word))
+                """
 
             else:
                 semi_tok = None  # type: Optional[Token]

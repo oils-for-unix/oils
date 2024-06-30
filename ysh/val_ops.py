@@ -1,8 +1,6 @@
-#!/usr/bin/env python2
-"""
-val_ops.py
-"""
 from __future__ import print_function
+
+from errno import EINTR
 
 from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
@@ -10,12 +8,15 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
 from core import error
 from core import ui
 from mycpp import mops
-from mycpp.mylib import tagswitch
+from mycpp import mylib
+from mycpp.mylib import tagswitch, log
 from ysh import regex_translate
 
 from typing import TYPE_CHECKING, cast, Dict, List, Optional
 
 import libc
+
+_ = log
 
 if TYPE_CHECKING:
     from core import state
@@ -171,7 +172,7 @@ def ToShellArray(val, blame_loc, prefix=''):
     return strs
 
 
-class _ContainerIter(object):
+class Iterator(object):
     """Interface for various types of for loop."""
 
     def __init__(self):
@@ -186,13 +187,12 @@ class _ContainerIter(object):
         # type: () -> None
         self.i += 1
 
-    def Done(self):
-        # type: () -> int
-        raise NotImplementedError()
-
     def FirstValue(self):
-        # type: () -> value_t
-        """Return Dict key or List value"""
+        # type: () -> Optional[value_t]
+        """Return a value, or None if done
+
+        e.g. return Dict key or List value
+        """
         raise NotImplementedError()
 
     def SecondValue(self):
@@ -201,67 +201,92 @@ class _ContainerIter(object):
         raise AssertionError("Shouldn't have called this")
 
 
-class ArrayIter(_ContainerIter):
+from builtin import read_osh
+
+
+class StdinIterator(Iterator):
+    """ for x in <> { """
+
+    def __init__(self):
+        # type: () -> None
+        Iterator.__init__(self)
+        self.f = mylib.Stdin()
+
+    def FirstValue(self):
+        # type: () -> Optional[value_t]
+
+        # line, eof = read_osh.ReadLineSlowly(None, with_eol=False)
+        try:
+            line = self.f.readline()
+        except (IOError, OSError) as e:  # signals
+            # TODO: run traps run traps with cmd_ev, like ReadLineSlowly
+            if e.errno == EINTR:
+                pass
+
+        if len(line) == 0:
+            return None
+        elif line.endswith('\n'):
+            # TODO: optimize this to prevent extra garbage
+            line = line[:-1]
+
+        return value.Str(line)
+
+
+class ArrayIter(Iterator):
     """ for x in 1 2 3 { """
 
     def __init__(self, strs):
         # type: (List[str]) -> None
-        _ContainerIter.__init__(self)
+        Iterator.__init__(self)
         self.strs = strs
         self.n = len(strs)
 
-    def Done(self):
-        # type: () -> int
-        return self.i == self.n
-
     def FirstValue(self):
-        # type: () -> value_t
+        # type: () -> Optional[value_t]
+        if self.i == self.n:
+            return None
         return value.Str(self.strs[self.i])
 
 
-class RangeIterator(_ContainerIter):
+class RangeIterator(Iterator):
     """ for x in (m:n) { """
 
     def __init__(self, val):
         # type: (value.Range) -> None
-        _ContainerIter.__init__(self)
+        Iterator.__init__(self)
         self.val = val
 
-    def Done(self):
-        # type: () -> int
-        return self.val.lower + self.i >= self.val.upper
-
     def FirstValue(self):
-        # type: () -> value_t
+        # type: () -> Optional[value_t]
+        if self.val.lower + self.i >= self.val.upper:
+            return None
 
         # TODO: range should be BigInt too
         return value.Int(mops.IntWiden(self.val.lower + self.i))
 
 
-class ListIterator(_ContainerIter):
+class ListIterator(Iterator):
     """ for x in (mylist) { """
 
     def __init__(self, val):
         # type: (value.List) -> None
-        _ContainerIter.__init__(self)
+        Iterator.__init__(self)
         self.val = val
         self.n = len(val.items)
 
-    def Done(self):
-        # type: () -> int
-        return self.i == self.n
-
     def FirstValue(self):
-        # type: () -> value_t
+        # type: () -> Optional[value_t]
+        if self.i == self.n:
+            return None
         return self.val.items[self.i]
 
 
-class DictIterator(_ContainerIter):
+class DictIterator(Iterator):
     """ for x in (mydict) { """
 
     def __init__(self, val):
         # type: (value.Dict) -> None
-        _ContainerIter.__init__(self)
+        Iterator.__init__(self)
 
         # TODO: Don't materialize these Lists
         self.keys = val.d.keys()  # type: List[str]
@@ -270,12 +295,10 @@ class DictIterator(_ContainerIter):
         self.n = len(val.d)
         assert self.n == len(self.keys)
 
-    def Done(self):
-        # type: () -> int
-        return self.i == self.n
-
     def FirstValue(self):
         # type: () -> value_t
+        if self.i == self.n:
+            return None
         return value.Str(self.keys[self.i])
 
     def SecondValue(self):

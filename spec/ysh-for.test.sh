@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 0
 
 #### For loop over expression: List
 var mylist = [1, 2, 3]
@@ -32,10 +32,10 @@ key age
 ## END
 
 
-#### For loop over expression: range (low priority)
-var myrange = 0:3
+#### For loop over range
+var myrange = 0 .. 3
 for i in (myrange) {
-  echo "i $key"
+  echo "i $i"
 }
 
 ## STDOUT:
@@ -154,26 +154,22 @@ for i, file in *.py {README,foo}.md {
 
 #### for x in <> { 
 
-# I think <> is just stdin for now
-# Later we could add
-#
-# < >
-# < *.py README.md >
-# etc.
+# to avoid stdin conflict
 
-seq 3 | for x in <> { 
-  echo "-$x-"
-}
-
-seq 3 | for i, x in <> { 
-  echo "$i $x"
-}
+$SH $REPO_ROOT/spec/testdata/ysh-for-stdin.ysh
 
 ## STDOUT:
 -1-
 -2-
 -3-
+
 0 1
 1 2
 2 3
+
+empty
+done
+
+empty2
+done2
 ## END

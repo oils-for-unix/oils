@@ -1096,6 +1096,7 @@ class CommandEvaluator(object):
         # for YSH loop
         iter_expr = None  # type: expr_t
         expr_blame = None  # type: loc_t
+        iter_stdin = False
 
         iterable = node.iterable
         UP_iterable = iterable
@@ -1114,6 +1115,22 @@ class CommandEvaluator(object):
                 iter_expr = iterable.e
                 expr_blame = iterable.blame
 
+            elif case(for_iter_e.Files):
+                iterable = cast(for_iter.Files, UP_iterable)
+
+                # For now we only handle <>
+                assert len(iterable.words) == 0, iterable.words
+
+                if 0:
+                    words = braces.BraceExpandWords(iterable.words)
+                    iter_list = self.word_ev.EvalWordSequence(words)
+
+                expr_blame = iterable.left
+                iter_stdin = True
+
+            else:
+                raise AssertionError()
+
         n = len(node.iter_names)
         assert n > 0
 
@@ -1122,8 +1139,8 @@ class CommandEvaluator(object):
         name1 = None  # type: LeftName
         name2 = None  # type: Optional[LeftName]
 
-        it2 = None  # type: val_ops._ContainerIter
-        if iter_list is None:  # for_expr.YshExpr
+        it2 = None  # type: val_ops.Iterator
+        if iter_expr:  # for_expr.YshExpr
             val = self.expr_ev.EvalExpr(iter_expr, expr_blame)
 
             UP_val = val
@@ -1178,7 +1195,22 @@ class CommandEvaluator(object):
                 else:
                     raise error.TypeErr(val, 'for loop expected List or Dict',
                                         node.keyword)
+
+        elif iter_stdin:
+            it2 = val_ops.StdinIterator()
+            if n == 1:
+                name1 = location.LName(node.iter_names[0])
+            elif n == 2:
+                i_name = location.LName(node.iter_names[0])
+                name1 = location.LName(node.iter_names[1])
+            else:
+                e_die_status(
+                    2, 'Files iteration expects at most 2 loop variables',
+                    node.keyword)
+
         else:
+            assert iter_list, iter_list
+
             #log('iter list %s', iter_list)
             it2 = val_ops.ArrayIter(iter_list)
 
@@ -1195,8 +1227,11 @@ class CommandEvaluator(object):
 
         status = 0  # in case we loop zero times
         with ctx_LoopLevel(self):
-            while not it2.Done():
-                self.mem.SetLocalName(name1, it2.FirstValue())
+            while True:
+                first = it2.FirstValue()
+                if first is None:  # for StdinIterator
+                    break
+                self.mem.SetLocalName(name1, first)
                 if name2:
                     self.mem.SetLocalName(name2, it2.SecondValue())
                 if i_name:
