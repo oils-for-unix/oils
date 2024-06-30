@@ -524,3 +524,53 @@ cbr=readonly
 ## N-I dash/zsh STDOUT:
 ## END
 
+
+#### Assignment builtins and word splitting, even after builtin/command
+
+x='a b'
+
+readonly y=$x
+echo $x
+
+command readonly z=$x
+echo $z
+
+## STDOUT:
+a b
+a b
+## END
+
+## BUG dash/bash STDOUT:
+a b
+a
+## END
+
+## N-I zsh STDOUT:
+a b
+
+## END
+
+#### More word splitting
+
+x='a b'
+
+export y=$x
+echo $y
+
+builtin export z=$x
+echo $z
+
+## STDOUT:
+a b
+a b
+## END
+
+## BUG bash/mksh STDOUT:
+a b
+a
+## END
+
+## N-I dash STDOUT:
+a
+
+## END

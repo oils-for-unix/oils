@@ -8,12 +8,19 @@ big-stream() {
   #*/*/*.py
 }
 
+OSH=_bin/cxx-opt/osh
+YSH=_bin/cxx-opt/ysh
+
 setup() {
-  for i in {1..2}; do
+  local n=${1:-1}  # how many copies
+
+  for i in $(seq $n); do
     big-stream 
   done > $BIG_FILE
 
   wc -l $BIG_FILE
+
+  ninja $OSH $YSH
 }
 
 py3-count() {
@@ -34,20 +41,31 @@ awk-count() {
   awk '{ i += 1 } END { print i } '
 }
 
-ysh-count() {
+exec-ysh-count() {
+  local do_trap=${1:-}
+
   echo '=== ysh'
 
-  local ysh=_bin/cxx-opt/ysh
-  ninja $ysh
-
-  # New buffered read!
-  $ysh -c '
+  local code='
 var i = 0
 for _ in <> {
   setvar i += 1
 }
 echo $i
-  '
+'
+
+  if test -n "$do_trap"; then
+    # Register BEFORE creating pipeline
+    #trap usr1-handler USR1
+    code="
+trap 'echo usr1 in \$\$' USR1
+
+$code
+"
+  fi
+
+  # New buffered read!
+  exec $YSH -c "$code"
 }
 
 usr1-handler() {
@@ -89,6 +107,7 @@ readonly BIG_FILE=_tmp/lines.txt
 
 compare() {
 
+  echo '=== wc'
   time wc -l < $BIG_FILE  # warmup
   echo
 
@@ -98,27 +117,38 @@ compare() {
   time awk-count < $BIG_FILE
   echo
 
-  time ysh-count < $BIG_FILE
+  time $0 exec-ysh-count < $BIG_FILE
   echo
 
-  local osh=_bin/cxx-opt/osh
-  ninja $osh
-
-  for sh in dash bash $osh; do
+  for sh in dash bash $OSH; do
     # need $0 because it exec
     time $0 exec-sh-count $sh < $BIG_FILE
     echo
   done
 }
 
-trap-demo() {
-  exec-sh-count bash T < $BIG_FILE &
+sh-count-with-trap() {
+  local sh=$1
+
+  local -a argv
+  case $sh in 
+    *ysh)
+      argv=(exec-ysh-count T)
+      ;;
+    *)
+      argv=(exec-sh-count $sh T)
+      ;;
+  esac
+
+  "${argv[@]}" < $BIG_FILE &
+
   #$0 sh-count bash T &
   #$0 sh-count dash T &
 
   local pid=$!
   echo "background = $pid"
   pstree -p $pid
+  echo
 
   #wait
   #echo status=$?
@@ -131,7 +161,7 @@ trap-demo() {
     kill -s USR1 $pid
     local status=$?
 
-    echo status=$status
+    echo "kill status: $status"
     if test $status -ne 0; then
       break
     fi
@@ -140,6 +170,14 @@ trap-demo() {
 
   wait
   echo status=$?
+}
+
+compare-trap() {
+  for sh in $YSH dash bash $OSH; do
+    sh-count-with-trap $sh
+    echo
+    echo
+  done
 }
 
 "$@"
