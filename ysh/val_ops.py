@@ -201,9 +201,6 @@ class Iterator(object):
         raise AssertionError("Shouldn't have called this")
 
 
-from builtin import read_osh
-
-
 class StdinIterator(Iterator):
     """ for x in <> { """
 

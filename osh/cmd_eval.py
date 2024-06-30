@@ -1209,7 +1209,7 @@ class CommandEvaluator(object):
                     node.keyword)
 
         else:
-            assert iter_list, iter_list
+            assert iter_list is not None, iter_list
 
             #log('iter list %s', iter_list)
             it2 = val_ops.ArrayIter(iter_list)
