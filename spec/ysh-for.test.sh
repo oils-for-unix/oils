@@ -172,4 +172,7 @@ done
 
 empty2
 done2
+
+space
+hi
 ## END

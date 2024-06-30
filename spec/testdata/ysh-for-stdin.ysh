@@ -35,3 +35,10 @@ for x in <> {
 } < /dev/null
 
 echo 'done2'
+echo
+
+echo 'space'
+
+echo 'hi' | for x in < > { 
+  echo "$x"
+}
