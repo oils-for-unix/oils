@@ -1965,6 +1965,7 @@ class CommandEvaluator(object):
                 #log('%s', err.location)
 
             if is_errexit:
+                # TODO xtian use a mutable_opts to identify if we should print the error or not?
                 if self.exec_opts.verbose_errexit():
                     self.errfmt.PrintErrExit(cast(error.ErrExit, err),
                                              posix.getpid())
@@ -2074,7 +2075,6 @@ class CommandEvaluator(object):
 
         # bash rule - affected by set -o errtrace
         # if self.mem.InsideFunction():
-        #     print("zzz InsideFunction")
         #     return
 
         # NOTE: Don't set option_i._running_trap, because that's for
