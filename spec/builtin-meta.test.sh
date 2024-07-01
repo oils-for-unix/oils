@@ -1,4 +1,4 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh
 
 #### command -v
@@ -572,5 +572,36 @@ a
 
 ## N-I dash STDOUT:
 a
+
+## END
+
+#### \builtin declare - ble.sh relies on it
+
+# \command readonly is equivalent to \builtin declare
+# except dash implements it
+
+x='a b'
+
+command readonly y=$x
+echo $y
+
+\command readonly z=$x
+echo $z
+
+# The issue here is that we have a heuristic in EvalWordSequence2:
+# fs len(part_vals) == 1
+
+## STDOUT:
+a b
+a b
+## END
+
+## OK bash/dash STDOUT:
+a
+a
+## END
+
+## N-I zsh STDOUT:
+
 
 ## END

@@ -2277,6 +2277,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
         strs = []  # type: List[str]
         locs = []  # type: List[CompoundWord]
 
+        # 0 for declare x
+        # 1 for builtin declare x
+        # 2 for command builtin declare x
+        # etc.
         meta_offset = 0
 
         n = 0
@@ -2292,10 +2296,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                         fast_str, words, meta_offset)
                     if cmd_val:
                         return cmd_val
-                #print('YO %s' % fast_str)
-                if _DetectMetaBuiltinStr(fast_str):
-                    #print('META')
+
+                if i <= meta_offset and _DetectMetaBuiltinStr(fast_str):
                     meta_offset += 1
+
                 continue
 
             part_vals = []  # type: List[part_value_t]
@@ -2317,7 +2321,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     return cmd_val
 
             if len(part_vals) == 1:
-                if _DetectMetaBuiltin(part_vals[0]):
+                if i <= meta_offset and _DetectMetaBuiltin(part_vals[0]):
                     meta_offset += 1
 
             if 0:
