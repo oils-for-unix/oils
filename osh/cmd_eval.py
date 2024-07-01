@@ -1966,7 +1966,6 @@ class CommandEvaluator(object):
                 #log('%s', err.location)
 
             if is_errexit:
-                # TODO xtian use a mutable_opts to identify if we should print the error or not?
                 if self.exec_opts.verbose_errexit():
                     self.errfmt.PrintErrExit(cast(error.ErrExit, err),
                                              posix.getpid())
