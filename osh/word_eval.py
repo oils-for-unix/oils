@@ -2314,13 +2314,13 @@ class AbstractWordEvaluator(StringWordEvaluator):
             #
             # But we don't want to evaluate the first word twice in the case of:
             #   $(some-command) --flag
-            if allow_assign and i == meta_offset and len(part_vals) == 1:
-                cmd_val = self._DetectAssignBuiltin(part_vals[0], words,
-                                                    meta_offset)
-                if cmd_val:
-                    return cmd_val
-
             if len(part_vals) == 1:
+                if allow_assign and i == meta_offset:
+                    cmd_val = self._DetectAssignBuiltin(
+                        part_vals[0], words, meta_offset)
+                    if cmd_val:
+                        return cmd_val
+
                 if i <= meta_offset and _DetectMetaBuiltin(part_vals[0]):
                     meta_offset += 1
 
