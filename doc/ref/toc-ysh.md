@@ -187,7 +187,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Expression]    equal =       = 1 + 2*3
                   call          call mylist->append(42)
   [Definitions]   proc          proc p (s, ...rest) {
-                                typed proc p (; typed, ...rest; n=0; b) {
+                                typed proc p (; typed, ...rest; n=0; b)
                   func          func f(x; opt1, opt2) { return (x + 1) }
                   ysh-return    return (myexpr)
 ```

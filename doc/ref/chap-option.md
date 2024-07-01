@@ -205,8 +205,8 @@ Details on options that are not in `ysh:upgrade` and `strict:all`:
 In the interactive shell, you can redefine procs and funcs.
 
       redefine_module           'module' builtin always returns 0
-      redefine_proc_func (-u)   Can shell func, proc and func be redefined?
-    X redefine_const            Can consts be redefined?
+      redefine_proc_func (-u)   Can redefine shell func, proc and func?
+    X redefine_const            Can redefine consts?
 
 ### opts-internal
 
