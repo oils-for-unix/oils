@@ -5,7 +5,6 @@ Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
-from errno import EINTR
 import pwd
 import resource
 import signal
@@ -14,7 +13,6 @@ import sys
 import termios  # for read -n
 import time
 
-from core import pyutil
 from mycpp import mops
 from mycpp.mylib import log
 
