@@ -2083,8 +2083,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
         #log('argv: %s', argv)
         return argv
 
-    def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-        # type: (builtin_t, str, List[CompoundWord]) -> cmd_value.Assign
+    def _EvalAssignBuiltin(self, builtin_id, arg0, words, meta_offset):
+        # type: (builtin_t, str, List[CompoundWord], int) -> cmd_value.Assign
         """Handles both static and dynamic assignment, e.g.
 
         x='foo=bar'
@@ -2106,7 +2106,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         assign_args = []  # type: List[AssignArg]
 
         n = len(words)
-        for i in xrange(1, n):  # skip first word
+        for i in xrange(meta_offset + 1, n):  # skip first word
             w = words[i]
 
             if word_.IsVarLike(w):
@@ -2170,20 +2170,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         return cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
 
-    def _DetectAssignBuiltinStr(self, arg0, words, offset):
+    def _DetectAssignBuiltinStr(self, arg0, words, meta_offset):
         # type: (str, List[CompoundWord], int) -> Optional[cmd_value.Assign]
         builtin_id = consts.LookupAssignBuiltin(arg0)
         if builtin_id != consts.NO_INDEX:
-            return self._EvalAssignBuiltin(builtin_id, arg0, words[offset:])
+            return self._EvalAssignBuiltin(builtin_id, arg0, words,
+                                           meta_offset)
         return None
 
-    def _DetectAssignBuiltin(self, val0, words, offset):
+    def _DetectAssignBuiltin(self, val0, words, meta_offset):
         # type: (part_value_t, List[CompoundWord], int) -> Optional[cmd_value.Assign]
         UP_val0 = val0
         if val0.tag() == part_value_e.String:
             val0 = cast(Piece, UP_val0)
             if not val0.quoted:
-                return self._DetectAssignBuiltinStr(val0.s, words, offset)
+                return self._DetectAssignBuiltinStr(val0.s, words, meta_offset)
         return None
 
     def SimpleEvalWordSequence2(self, words, allow_assign):
@@ -2192,16 +2193,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
         strs = []  # type: List[str]
         locs = []  # type: List[CompoundWord]
 
-        assign_builtin_offset = 0
+        meta_offset = 0
         for i, w in enumerate(words):
             # No globbing in the first arg for command.Simple.
-            if i == assign_builtin_offset and allow_assign:
+            if i == meta_offset and allow_assign:
                 strs0 = self._EvalWordToArgv(w)
                 # TODO: Remove this because YSH will disallow assignment
                 # builtins?  (including export?)
                 if len(strs0) == 1:
                     cmd_val = self._DetectAssignBuiltinStr(
-                        strs0[0], words, assign_builtin_offset)
+                        strs0[0], words, meta_offset)
                     if cmd_val:
                         return cmd_val
 
@@ -2276,7 +2277,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         strs = []  # type: List[str]
         locs = []  # type: List[CompoundWord]
 
-        assign_builtin_offset = 0
+        meta_offset = 0
 
         n = 0
         for i, w in enumerate(words):
@@ -2286,15 +2287,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 locs.append(w)
 
                 # e.g. the 'local' in 'local a=b c=d' will be here
-                if allow_assign and i == assign_builtin_offset:
+                if allow_assign and i == meta_offset:
                     cmd_val = self._DetectAssignBuiltinStr(
-                        fast_str, words, assign_builtin_offset)
+                        fast_str, words, meta_offset)
                     if cmd_val:
                         return cmd_val
                 #print('YO %s' % fast_str)
                 if _DetectMetaBuiltinStr(fast_str):
                     #print('META')
-                    assign_builtin_offset += 1
+                    meta_offset += 1
                 continue
 
             part_vals = []  # type: List[part_value_t]
@@ -2309,16 +2310,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
             #
             # But we don't want to evaluate the first word twice in the case of:
             #   $(some-command) --flag
-            if (allow_assign and i == assign_builtin_offset and
-                    len(part_vals) == 1):
+            if allow_assign and i == meta_offset and len(part_vals) == 1:
                 cmd_val = self._DetectAssignBuiltin(part_vals[0], words,
-                                                    assign_builtin_offset)
+                                                    meta_offset)
                 if cmd_val:
                     return cmd_val
 
             if len(part_vals) == 1:
                 if _DetectMetaBuiltin(part_vals[0]):
-                    assign_builtin_offset += 1
+                    meta_offset += 1
 
             if 0:
                 log('')
