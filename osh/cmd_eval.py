@@ -1896,12 +1896,13 @@ class CommandEvaluator(object):
         """
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
-            # Using _NoForkLast() hides exit code for ERR trap, temporarily comment it
+            # Using _NoForkLast() hides exit code for ERR trap, but only in non-interactive mode!
             # Example:
             # - ./bin/osh -c 'trap "echo ERR" ERR ; date X' - does not show ERR
-            # - ./bin/osh -c 'trap "echo ERR" ERR ; date X ; true' - does show ERR
-            # This can't be tested by spec.sh
-            # self._NoForkLast(node)  # turn the last ones into exec
+            # - ./bin/osh -c 'trap "echo ERR" ERR ; date X ; exit' - does show ERR
+            # This is why it is only called interactive mode
+            if self.mutable_opts.Get(option_i.interactive):
+                self._NoForkLast(node)  # turn the last ones into exec
 
         if 0:
             log('after opt:')
