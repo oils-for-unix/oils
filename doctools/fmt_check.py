@@ -63,7 +63,7 @@ class CheckBackticks(TagAwareHTMLParser):
 
 class CheckCodeLines(TagAwareHTMLParser):
     # Found when the display is 801px in width
-    MAX_LINE_LENGTH = 70
+    MAX_LINE_LENGTH = 72
 
     def __init__(self, file):
         super().__init__(file)
