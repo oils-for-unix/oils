@@ -8,6 +8,16 @@ big-stream() {
   #*/*/*.py
 }
 
+slow-stream() {
+  ### for testing signal handling in loop
+  local secs=${1:-1}
+
+  while read -r line; do
+    sleep $secs
+    echo $line
+  done
+}
+
 OSH=_bin/cxx-opt/osh
 YSH=_bin/cxx-opt/ysh
 
@@ -58,7 +68,9 @@ echo $i
     # Register BEFORE creating pipeline
     #trap usr1-handler USR1
     code="
-trap 'echo usr1 in \$\$' USR1
+trap 'echo \[pid \$\$\] usr1' USR1
+trap 'echo \[pid \$\$\] exit with status \$?' EXIT
+echo \"hi from YSH pid \$\$\"
 
 $code
 "
@@ -76,7 +88,7 @@ exec-sh-count() {
   local sh=$1
   local do_trap=${2:-}
 
-  echo "pid = $$"
+  echo "shell pid = $$"
 
   echo === $sh
 
@@ -92,7 +104,9 @@ echo $i
     # Register BEFORE creating pipeline
     #trap usr1-handler USR1
     code="
-trap 'echo usr1 in \$\$' USR1
+trap 'echo \[pid \$\$\] usr1' USR1
+trap 'echo \[pid \$\$\] exit with status \$?' EXIT
+echo \"hi from $sh pid \$\$\"
 
 $code
 "
@@ -106,7 +120,6 @@ $code
 readonly BIG_FILE=_tmp/lines.txt
 
 compare() {
-
   echo '=== wc'
   time wc -l < $BIG_FILE  # warmup
   echo
@@ -127,52 +140,69 @@ compare() {
   done
 }
 
-sh-count-with-trap() {
+sh-count-slow-trap() {
+  local write_delay=${1:-0.20}
+  local kill_delay=${2:-0.07}
+  local -a argv=( ${@:2} )
+
+  local len=${#argv[@]}
+  #echo "len=$len"
+  if test $len -eq 0; then
+    echo 'argv required'
+  fi
+
   local sh=$1
 
-  local -a argv
-  case $sh in 
-    *ysh)
-      argv=(exec-ysh-count T)
-      ;;
-    *)
-      argv=(exec-sh-count $sh T)
-      ;;
-  esac
+  #exec-sh-count bash T & < <(seq 100 | slow-stream)
 
-  "${argv[@]}" < $BIG_FILE &
+  echo "[pid $$] Spawn stream with write delay $write_delay"
 
-  #$0 sh-count bash T &
-  #$0 sh-count dash T &
-
+  seq 10 | slow-stream $write_delay | "${argv[@]}" &
   local pid=$!
-  echo "background = $pid"
+
+  echo "pid of background job = $pid"
+  echo 'pstree:'
   pstree -p $pid
   echo
 
-  #wait
-  #echo status=$?
-  #return
+  echo "[pid $$] Entering kill loop ($kill_delay secs)"
 
   while true; do
     # wait for USR1 to be registered
-    sleep 0.05
+    sleep $kill_delay
 
     kill -s USR1 $pid
     local status=$?
 
-    echo "kill status: $status"
+    echo "[pid $$] kill $pid status: $status"
     if test $status -ne 0; then
       break
     fi
 
   done
 
-  wait
-  echo status=$?
+  time wait
+  echo "wait status: $?"
 }
 
 compare-trap() {
+  # dash exits at the first try
+  #sh-count-slow-trap dash
+
+  # Oh interesting, mksh waits until the main loop!  Different behavior
+  #sh-count-slow-trap mksh
+
+  #sh-count-slow-trap zsh
+
+  #sh-count-slow-trap bash
+
+  # OSH behaves like bash/zsh, yay
+  sh-count-slow-trap '' '' exec-sh-count _bin/cxx-opt/osh T
+
+  #sh-count-slow-trap '' '' exec-ysh-count T
+
+  return
+
   for sh in $YSH dash bash $OSH; do
     sh-count-with-trap $sh
     echo
