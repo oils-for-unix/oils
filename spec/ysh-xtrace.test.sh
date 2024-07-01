@@ -229,7 +229,8 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g; s|/fd/.|/fd/N|g' err.txt |
 
 ## STDERR:
   . 12345 builtin echo 1
-  . 12345 exec seq 2
+  ; 12345 process 12345: status 0
+  | 12345 command 12345: seq 2
 . builtin ':' begin
 . builtin set '+x'
 ; process 12345: status 0
@@ -271,9 +272,10 @@ fi
 ## STDERR:
       . 12345 builtin echo 1
       . 12345 builtin echo 2
-    . 12345 exec sort
+    ; 12345 process 12345: status 0
     < 12345 proc myfunc
     > 12345 proc myfunc
+    | 12345 command 12345: sort
   ; process 12345: status 0
   ; process 12345: status 0
   ; process 12345: status 0
@@ -333,13 +335,15 @@ status=0
 ## STDERR:
     . 12345 builtin echo 1
     . 12345 builtin echo 2
-  . 12345 exec grep ZZZ
-  . 12345 exec sort
+  ; 12345 process 12345: status 0
+  ; 12345 process 12345: status 1
   ; process 12345: status 0
   ; process 12345: status 0
   ; process 12345: status 1
   < 12345 proc myfunc
   > 12345 proc myfunc
+  | 12345 command 12345: grep ZZZ
+  | 12345 command 12345: sort
 . builtin ':' begin
 . builtin echo 'status=0'
 . builtin set '+x'
@@ -374,10 +378,12 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
 
 ## stdout-json: ""
 ## STDERR:
-  . 12345 exec sleep 0.1
-  . 12345 exec sleep 0.1
+  ; 12345 process 12345: status 0
+  ; 12345 process 12345: status 0
   ; process 12345: status 0
   ; process 12345: status 0
+  | 12345 command 12345: sleep 0.1
+  | 12345 command 12345: sleep 0.1
 . builtin fork
 . builtin set '+x'
 . builtin shopt -s 'oil:upgrade'
