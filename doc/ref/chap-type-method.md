@@ -161,7 +161,7 @@ Matching is done based on bytes, not runes.
 
 ### endsWith()
 
-Like 'startsWith()` but returns true if the _end_ of the string matches.
+Like `startsWith()` but returns true if the _end_ of the string matches.
 
     = b'123YSH' => endsWith("YSH")   # => true
     = b'YSH123' => endsWith(/ d+ /)  # => true
