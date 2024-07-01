@@ -15,6 +15,7 @@ from doctools.util import log
 
 
 class TagAwareHTMLParser(html.parser.HTMLParser):
+
     def __init__(self, file):
         super().__init__()
         self.tag_stack = []
@@ -35,24 +36,27 @@ class TagAwareHTMLParser(html.parser.HTMLParser):
         popped = self.tag_stack.pop()
         if tag != popped:
             print('%s [WARN] Mismatched tag!' % self.location_str(),
-                  'Expected </%s> but got </%s>'  % (popped, tag))
+                  'Expected </%s> but got </%s>' % (popped, tag))
+
 
 class CheckBackticks(TagAwareHTMLParser):
+
     def __init__(self, file):
         super().__init__(file)
         self.has_error = False
 
     def handle_data(self, text):
         # Ignore eg, <code> tags
-        if len(self.tag_stack) and (
-            self.tag_stack[-1] not in ("p", "h1", "h2", "h3", "a")):
+        if len(self.tag_stack) and (self.tag_stack[-1]
+                                    not in ("p", "h1", "h2", "h3", "a")):
             return
 
         idx = text.find('`')
         if idx == -1:
             return
 
-        print('%s [ERROR] Found stray backtick %r' % (self.location_str(), text))
+        print('%s [ERROR] Found stray backtick %r' %
+              (self.location_str(), text))
 
         self.has_error = True
 
@@ -72,7 +76,8 @@ class CheckCodeLines(TagAwareHTMLParser):
 
         for i, line in enumerate(text.splitlines()):
             if len(line) > self.MAX_LINE_LENGTH:
-                print('%s [ERROR] Line %d of <code> is too long: %r' % (self.location_str(), i + 1, line))
+                print('%s [ERROR] Line %d of <code> is too long: %r' %
+                      (self.location_str(), i + 1, line))
                 self.has_error = True
 
 
@@ -86,6 +91,7 @@ def FormatCheck(filename):
         lines.feed(f.read())
 
     return backticks.has_error or lines.has_error
+
 
 def main(argv):
     action = argv[1]
