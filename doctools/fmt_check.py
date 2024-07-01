@@ -4,6 +4,7 @@
 Check that the output HTML obeys the following rules:
 
  - No orphaned backticks '`' should be part of a `inline code block`
+   (ie. any backticks not in a <code> block is treated as an error)
  - Lines in a <code> should be shorter than 70 chars (else they overflow)
 """
 
@@ -13,10 +14,9 @@ import sys
 from doctools.util import log
 
 
-class CheckBackticks(html.parser.HTMLParser):
+class TagAwareHTMLParser(html.parser.HTMLParser):
     def __init__(self, file):
         super().__init__()
-        self.has_error = False
         self.tag_stack = []
         self.file = file
 
@@ -37,6 +37,11 @@ class CheckBackticks(html.parser.HTMLParser):
             print('%s [WARN] Mismatched tag!' % self.location_str(),
                   'Expected </%s> but got </%s>'  % (popped, tag))
 
+class CheckBackticks(TagAwareHTMLParser):
+    def __init__(self, file):
+        super().__init__(file)
+        self.has_error = False
+
     def handle_data(self, text):
         # Ignore eg, <code> tags
         if len(self.tag_stack) and (
@@ -51,12 +56,36 @@ class CheckBackticks(html.parser.HTMLParser):
 
         self.has_error = True
 
+
+class CheckCodeLines(TagAwareHTMLParser):
+    # Found when the display is 801px in width
+    MAX_LINE_LENGTH = 70
+
+    def __init__(self, file):
+        super().__init__(file)
+        self.has_error = False
+
+    def handle_data(self, text):
+        # Ignore eg, <code> tags
+        if len(self.tag_stack) and self.tag_stack[-1] != 'code':
+            return
+
+        for i, line in enumerate(text.splitlines()):
+            if len(line) > self.MAX_LINE_LENGTH:
+                print('%s [ERROR] Line %d of <code> is too long: %r' % (self.location_str(), i + 1, line))
+                self.has_error = True
+
+
 def FormatCheck(filename):
     backticks = CheckBackticks(filename)
     with open(filename, "r") as f:
         backticks.feed(f.read())
 
-    return backticks.has_error
+    lines = CheckCodeLines(filename)
+    with open(filename, "r") as f:
+        lines.feed(f.read())
+
+    return backticks.has_error or lines.has_error
 
 def main(argv):
     action = argv[1]
