@@ -6,6 +6,7 @@ from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, regex_match, RegexMatch)
 from core import error
+from core.error import e_die
 from core import ui
 from mycpp import mops
 from mycpp import mylib
@@ -15,6 +16,7 @@ from ysh import regex_translate
 from typing import TYPE_CHECKING, cast, Dict, List, Optional
 
 import libc
+import posix_ as posix
 
 _ = log
 
@@ -204,9 +206,10 @@ class Iterator(object):
 class StdinIterator(Iterator):
     """ for x in <> { """
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, blame_loc):
+        # type: (loc_t) -> None
         Iterator.__init__(self)
+        self.blame_loc = blame_loc
         self.f = mylib.Stdin()
 
     def FirstValue(self):
@@ -216,12 +219,28 @@ class StdinIterator(Iterator):
         try:
             line = self.f.readline()
         except (IOError, OSError) as e:  # signals
-            # TODO: run traps run traps with cmd_ev, like ReadLineSlowly
             if e.errno == EINTR:
-                pass
+                # TODO: return value.Interrupted, so we can run traps
+                # with cmd_ev, like ReadLineSlowly
+                #log('EINTR')
+                return None
+            else:
+                # For possible errors, see
+                #   man read
+                #   man getline
+                # e.g.
+                # - ENOMEM getline() allocation failure
+                # - EISDIR getline() read from directory descriptor!
+                #
+                # Note: the read builtin returns status 1 for EISDIR.
+                #
+                # We'll raise a top-level error like Python.  (Awk prints a
+                # warning message)
+                e_die("I/O error in for <> loop: %s" % posix.strerror(e.errno),
+                      self.blame_loc)
 
         if len(line) == 0:
-            return None
+            return None  # Done
         elif line.endswith('\n'):
             # TODO: optimize this to prevent extra garbage
             line = line[:-1]

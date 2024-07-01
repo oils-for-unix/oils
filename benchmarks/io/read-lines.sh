@@ -18,20 +18,12 @@ slow-stream() {
   done
 }
 
-OSH=_bin/cxx-opt/osh
-YSH=_bin/cxx-opt/ysh
+# TODO: Add to benchmarks2, which uses the oils-for-unix
+OSH_OPT=_bin/cxx-opt/osh
+YSH_OPT=_bin/cxx-opt/ysh
 
-setup() {
-  local n=${1:-1}  # how many copies
-
-  for i in $(seq $n); do
-    big-stream 
-  done > $BIG_FILE
-
-  wc -l $BIG_FILE
-
-  ninja $OSH $YSH
-}
+OSH_ASAN=_bin/cxx-asan/osh
+YSH_ASAN=_bin/cxx-asan/ysh
 
 py3-count() {
   echo '=== python3'
@@ -52,7 +44,8 @@ awk-count() {
 }
 
 exec-ysh-count() {
-  local do_trap=${1:-}
+  local ysh=$1
+  local do_trap=${2:-}
 
   echo '=== ysh'
 
@@ -77,7 +70,7 @@ $code
   fi
 
   # New buffered read!
-  exec $YSH -c "$code"
+  exec $ysh -c "$code"
 }
 
 usr1-handler() {
@@ -117,9 +110,7 @@ $code
   exec $sh -c "$code"
 }
 
-readonly BIG_FILE=_tmp/lines.txt
-
-compare() {
+compare-line-count() {
   echo '=== wc'
   time wc -l < $BIG_FILE  # warmup
   echo
@@ -130,10 +121,10 @@ compare() {
   time awk-count < $BIG_FILE
   echo
 
-  time $0 exec-ysh-count < $BIG_FILE
+  time $0 exec-ysh-count $YSH_OPT < $BIG_FILE
   echo
 
-  for sh in dash bash $OSH; do
+  for sh in dash bash $OSH_OPT; do
     # need $0 because it exec
     time $0 exec-sh-count $sh < $BIG_FILE
     echo
@@ -185,25 +176,91 @@ sh-count-slow-trap() {
   echo "wait status: $?"
 }
 
-compare-trap() {
+test-ysh-for() {
+  sh-count-slow-trap '' '' exec-ysh-count $YSH_ASAN T
+}
+
+test-ysh-read-error() {
+  ### testing errno!
+
+  set +o errexit
+  $YSH_ASAN -c 'for x in <> { echo $x }' < /tmp
+  echo status=$?
+}
+
+test-read-errors() {
+  set +o errexit
+
+  # Awk prints a warning, but exits 0!
+  awk '{ print }' < /tmp
+  echo status=$?
+  echo
+
+  seq 3 | perl -e 'while (<>) { print "-" . $_ }'
+
+  # Hm perl doesn't report this error!
+  perl -e 'while (<>) { print }' < /tmp
+  echo status=$?
+
+  echo
+
+  python3 -c '
+import sys
+for line in sys.stdin:
+  print(line)
+print("end")
+' < /tmp
+  echo status=$?
+
+
+}
+
+readonly BIG_FILE=_tmp/lines.txt
+
+setup-benchmark() {
+  local n=${1:-1}  # how many copies
+  mkdir -p $(dirname $BIG_FILE)
+
+  for i in $(seq $n); do
+    big-stream 
+  done > $BIG_FILE
+
+  wc -l $BIG_FILE
+
+  ninja $OSH_OPT $YSH_OPT
+}
+
+setup-test() {
+  ninja $OSH_ASAN $YSH_ASAN
+}
+
+soil-benchmark() {
+  setup-benchmark
+
+  compare-line-count
+}
+
+soil-test() {
+  setup-test
+
   # dash exits at the first try
-  #sh-count-slow-trap dash
+  #sh-count-slow-trap '' '' exec-sh-count dash T
+
+  #sh-count-slow-trap '' '' exec-sh-count bash T
 
   # Oh interesting, mksh waits until the main loop!  Different behavior
-  #sh-count-slow-trap mksh
+  #sh-count-slow-trap '' '' exec-sh-count mksh T
 
-  #sh-count-slow-trap zsh
-
-  #sh-count-slow-trap bash
+  #sh-count-slow-trap '' '' exec-sh-count $OSH_ASAN T
 
   # OSH behaves like bash/zsh, yay
-  sh-count-slow-trap '' '' exec-sh-count _bin/cxx-opt/osh T
 
-  #sh-count-slow-trap '' '' exec-ysh-count T
+  test-ysh-for
+
 
   return
 
-  for sh in $YSH dash bash $OSH; do
+  for sh in $YSH_OPT dash bash $OSH_OPT; do
     sh-count-with-trap $sh
     echo
     echo

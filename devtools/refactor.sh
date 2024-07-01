@@ -237,6 +237,10 @@ asdl-create() {
     | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
 
+readline() {
+  metrics/source-code.sh oils-files | xargs fgrep -n 'readline('
+}
+
 #
 # To improve code formatting
 #

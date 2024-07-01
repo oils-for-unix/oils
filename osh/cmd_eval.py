@@ -1197,7 +1197,7 @@ class CommandEvaluator(object):
                                         node.keyword)
 
         elif iter_stdin:
-            it2 = val_ops.StdinIterator()
+            it2 = val_ops.StdinIterator(expr_blame)
             if n == 1:
                 name1 = location.LName(node.iter_names[0])
             elif n == 2:
