@@ -283,20 +283,21 @@ class WordParser(WordEmitter):
             return suffix_op.Slice(begin, no_length)
 
         elif cur_id == Id.Arith_Colon:  # ${a:1:} or ${@:1:}
+            colon_tok = self.cur_token
             self._NextNonSpace()
 
-            if self.token_type != Id.Arith_RBrace:
-                length = self._ReadArithExpr(Id.Arith_RBrace)
-            else:
+            if self.token_type == Id.Arith_RBrace:
                 # quirky bash behavior:
                 # ${a:1:} or ${a::} means length ZERO
                 # but ${a:1} or ${a:} means length N
                 if self.parse_opts.strict_parse_slice():
                     p_die(
-                        "Explicit slice length required - zero or N (strict_parse_slice)",
-                        self.cur_token)
+                        "Slice length: Add explicit zero, or omit : for N (strict_parse_slice)",
+                        colon_tok)
 
                 length = arith_expr.EmptyZero
+            else:
+                length = self._ReadArithExpr(Id.Arith_RBrace)
 
             return suffix_op.Slice(begin, length)
 
