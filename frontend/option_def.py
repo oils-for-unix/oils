@@ -286,6 +286,9 @@ def _Init(opt_def):
     # recursive parsing and evaluation - for compatibility, ble.sh, etc.
     opt_def.Add('eval_unsafe_arith')
 
+    opt_def.Add('ignore_flags_not_impl')
+    opt_def.Add('ignore_opts_not_impl')
+
     # For implementing strict_errexit
     # TODO: could be _no_command_sub / _no_process_sub, if we had to discourage
     # "default True" options

@@ -19,6 +19,7 @@ from core import error
 from core import executor
 from core import completion
 from core import main_loop
+from core import optview
 from core import pyos
 from core import process
 from core import pyutil
@@ -211,13 +212,14 @@ def _SetGlobalFunc(mem, name, func):
 def InitAssignmentBuiltins(
         mem,  # type: state.Mem
         procs,  # type: Dict[str, value.Proc]
+        exec_opts,  # type: optview.Exec
         errfmt,  # type: ui.ErrorFormatter
 ):
     # type: (...) -> Dict[int, vm._AssignBuiltin]
 
     assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
 
-    new_var = assign_osh.NewVar(mem, procs, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, exec_opts, errfmt)
     assign_b[builtin_i.declare] = new_var
     assign_b[builtin_i.typeset] = new_var
     assign_b[builtin_i.local] = new_var
@@ -537,7 +539,7 @@ def Main(
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
 
-    assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
+    assign_b = InitAssignmentBuiltins(mem, procs, exec_opts, errfmt)
     cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, assign_b,
                                        arena, cmd_deps, trap_state,
                                        signal_safe)

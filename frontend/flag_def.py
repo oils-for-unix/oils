@@ -41,6 +41,8 @@ NEW_VAR_SPEC.PlusFlag('n')  # named ref
 NEW_VAR_SPEC.ShortFlag('-a')
 NEW_VAR_SPEC.ShortFlag('-A')
 NEW_VAR_SPEC.ShortFlag('-i')  # no-op for integers
+NEW_VAR_SPEC.ShortFlag('-u')  # no-op for case
+NEW_VAR_SPEC.ShortFlag('-l')  # no-op for case
 
 UNSET_SPEC = FlagSpec('unset')
 UNSET_SPEC.ShortFlag('-v')

@@ -108,6 +108,15 @@ These options are from bash.
 
 Allow dynamically parsed `a[$(echo 42)]`  For bash compatibility.
 
+### ignore_flags_not_impl
+
+Suppress failures from flags not implemented.  Example:
+
+    shopt --set ignore_flags_not_impl
+
+    declare -i foo=2+3  # not evaluated to 5, but doesn't fail either
+
+This option can be useful for "getting past" errors while testing.
 
 ## Groups
 
