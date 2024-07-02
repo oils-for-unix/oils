@@ -1393,33 +1393,28 @@ def main(argv):
       f.write(opts.stats_template % stats.counters)
       f.write('\n')  # bash 'read' requires a newline
 
-  if stats.Get('num_failed') == 0:
-    return 0
-
   # spec/smoke.test.sh -> smoke
   test_name = os.path.basename(test_file).split('.')[0]
 
-  allowed = opts.oils_failures_allowed
+  return _SuccessOrFailure(test_name, opts.oils_failures_allowed, stats)
+
+
+def _SuccessOrFailure(test_name, allowed, stats):
   all_count = stats.Get('num_failed')
   oils_count = stats.Get('oils_num_failed')
-  if allowed == 0:
-    log('')
-    log('%s: FATAL: %d tests failed (%d oils failures)', test_name, all_count,
-        oils_count)
-    log('')
-  else:
-    # If we got EXACTLY the allowed number of failures, exit 0.
-    if allowed == all_count and all_count == oils_count:
-      log('%s: note: Got %d allowed oils failures (exit with code 0)',
-          test_name, allowed)
-      return 0
-    else:
-      log('')
-      log('%s: FATAL: Got %d failures (%d oils failures), but %d are allowed',
-          test_name, all_count, oils_count, allowed)
-      log('')
 
-  return 1
+  # If we got EXACTLY the allowed number of failures, exit 0.
+  if allowed == all_count and all_count == oils_count:
+    log('%s: note: Got %d allowed oils failures (exit with code 0)',
+        test_name, allowed)
+    return 0
+  else:
+    log('')
+    log('%s: FATAL: Got %d failures (%d oils failures), but %d are allowed',
+        test_name, all_count, oils_count, allowed)
+    log('')
+
+    return 1
 
 
 if __name__ == '__main__':
@@ -1431,3 +1426,5 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+# vim: sw=2

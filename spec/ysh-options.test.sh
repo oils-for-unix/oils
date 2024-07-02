@@ -148,6 +148,7 @@ shopt -s strict_control_flow
 shopt -s strict_errexit
 shopt -s strict_glob
 shopt -s strict_nameref
+shopt -s strict_parse_slice
 shopt -s strict_tilde
 shopt -s strict_word_eval
 ## END

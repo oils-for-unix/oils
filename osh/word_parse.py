@@ -279,7 +279,8 @@ class WordParser(WordEmitter):
             cur_id = self.a_parser.CurrentId()  # advance
 
         if cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
-            no_length = None  # type: Optional[arith_expr_t]  # No length specified
+            # No length specified, so it's N
+            no_length = None  # type: Optional[arith_expr_t]
             return suffix_op.Slice(begin, no_length)
 
         elif cur_id == Id.Arith_Colon:  # ${a:1:} or ${@:1:}
@@ -295,7 +296,7 @@ class WordParser(WordEmitter):
                         "Slice length: Add explicit zero, or omit : for N (strict_parse_slice)",
                         colon_tok)
 
-                length = arith_expr.EmptyZero
+                length = arith_expr.EmptyZero  # type: arith_expr_t
             else:
                 length = self._ReadArithExpr(Id.Arith_RBrace)
 
