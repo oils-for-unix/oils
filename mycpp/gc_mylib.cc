@@ -111,7 +111,9 @@ BigStr* CFile::readline() {
     // man page says the buffer should be freed even if getline fails
     free(line);
     if (errno != 0) {  // Unexpected error
-      log("getline() error: %s", strerror(errno));
+      // log("getline() error: %s", strerror(errno));
+      // Reset EOF flag so the next readline() will get the line
+      clearerr(f_);
       throw Alloc<IOError>(errno);
     }
     return kEmptyString;  // EOF indicated by by empty string, like Python

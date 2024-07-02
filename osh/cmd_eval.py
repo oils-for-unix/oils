@@ -1236,7 +1236,7 @@ class CommandEvaluator(object):
 
                 if first.tag() == value_e.Interrupted:
                     self.RunPendingTraps()
-                    log('Done running traps')
+                    #log('Done running traps')
                     continue
 
                 self.mem.SetLocalName(name1, first)
