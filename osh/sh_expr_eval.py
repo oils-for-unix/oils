@@ -1045,6 +1045,12 @@ class BoolEvaluator(ArithEvaluator):
                             return self.exec_opts.opt0_array[index]
 
                     if op_id == Id.BoolUnary_v:
+                        # TODO: I guess we need dynamic parsing here?
+                        # Use self.unsafe_arith_eval
+                        # self.eval_unsafe_arith
+                        # Do something like ParseLValue()
+                        # I guess ParseNameExpr()
+
                         val = self.mem.GetValue(s)
                         return val.tag() != value_e.Undef
 
@@ -1123,8 +1129,9 @@ class BoolEvaluator(ArithEvaluator):
                         try:
                             indices = libc.regex_search(s2, regex_flags, s1, 0)
                         except ValueError as e:
-                            # Status 2 indicates a regex parse error.  This is fatal in OSH but
-                            # not in bash, which treats [[ like a command with an exit code.
+                            # Status 2 indicates a regex parse error.  This is
+                            # fatal in OSH but not in bash, which treats [[
+                            # like a command with an exit code.
                             e_die_status(2, e.message, loc.Word(node.right))
 
                         if indices is not None:

@@ -29,6 +29,36 @@ In contrast, the main sub languages of YSH are [command](chap-cmd-lang.html),
 
 ### arith-context
 
+Arithmetic expressions are parsed and evaluated in many parts of POSIX shell
+and bash.
+
+Static:
+
+    a=$(( x + 1 ))  # POSIX shell
+
+    # bash
+    (( a = x + 1 ))
+
+    for (( i = 0; i < n; ++i )); do
+      echo $i
+    done
+
+Dynamic:
+
+    [[ 5 -eq 3+x ]]   # but not test  5 -eq 3+x
+
+Array index contexts:
+
+    echo ${a[i+1]}      # get
+    echo ${#a[i+1]}     # calculate
+
+    a[i+1]=foo          # set
+
+    printf -v 'a[i+1]'  # assign to this location
+    unset 'a[i+1]'      # unset location
+
+    echo ${a[@] : i+1 : i+2 }  # bash slicing
+
 ### sh-numbers
 
 ### sh-arith

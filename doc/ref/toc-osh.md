@@ -174,7 +174,7 @@ X [Unsupported]   enable
   [Debugging]      xtrace        X verbose    X extdebug
   [Interactive]    emacs           vi
   [Other POSIX]  X noclobber
-  [Compat]         eval_unsafe_arith   ignore_flags_not_impl
+  [Compat]         eval_unsafe_arith            ignore_flags_not_impl
 ```
 
 <h2 id="special-var">

@@ -1,5 +1,5 @@
 ## compare_shells: bash-4.4
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 
 # NOTE:
@@ -642,4 +642,64 @@ argv.py "${arr[@]}"
 ## STDOUT:
 ['30', '31', '40', '41']
 ['a', 'b', 'x', 'y']
+## END
+
+
+#### [[ -v assoc[key] ]]
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
+
+[[ -v assoc[empty] ]]
+echo empty=$?
+
+[[ -v assoc[k] ]]
+echo k=$?
+
+[[ -v assoc[nonexistent] ]]
+echo nonexistent=$?
+
+echo ---
+# Now with quotes
+
+[[ -v assoc["empty"] ]]
+echo empty=$?
+
+[[ -v assoc['k'] ]]
+echo k=$?
+
+[[ -v assoc['nonexistent'] ]]
+echo nonexistent=$?
+
+echo ---
+# Now with var expansion
+
+key=empty
+[[ -v assoc[$key] ]]
+echo empty=$?
+
+key=k
+[[ -v assoc[$key] ]]
+echo k=$?
+
+key=nonexistent
+[[ -v assoc[$key] ]]
+echo nonexistent=$?
+
+## STDOUT:
+empty=0
+k=0
+nonexistent=1
+---
+empty=0
+k=0
+nonexistent=1
+---
+empty=0
+k=0
+nonexistent=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
 ## END

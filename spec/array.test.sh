@@ -1,34 +1,5 @@
 ## compare_shells: bash mksh
-## oils_failures_allowed: 1
-
-# TODO: Need a SETUP section.
-
-#### SETUP
-a=(1 '2 3')
-
-#### "${a[@]}" and "${a[*]}"
-a=(1 '2 3')
-argv.py "${a[@]}" "${a[*]}"
-## stdout: ['1', '2 3', '1 2 3']
-
-#### ${a[@]} and ${a[*]}
-a=(1 '2 3')
-argv.py ${a[@]} ${a[*]}
-## stdout: ['1', '2', '3', '1', '2', '3']
-
-#### 4 ways to interpolate empty array
-argv.py 1 "${a[@]}" 2 ${a[@]} 3 "${a[*]}" 4 ${a[*]} 5
-## stdout: ['1', '2', '3', '', '4', '5']
-
-#### empty array
-empty=()
-argv.py "${empty[@]}"
-## stdout: []
-
-#### Empty array with :-
-empty=()
-argv.py ${empty[@]:-not one} "${empty[@]:-not one}"
-## stdout: ['not', 'one', 'not one']
+## oils_failures_allowed: 5
 
 #### nounset / set -u with empty array (bug in bash 4.3, fixed in 4.4)
 
@@ -678,4 +649,162 @@ three
 ## OK zsh STDOUT:
 two
 two
+## END
+
+
+#### test membership with test -v 
+
+# note: modern versions of zsh implement this
+
+array=(1 2 3)
+test -v 'array[1]'
+echo status=$?
+
+test -v 'array[4]'
+echo status=$?
+
+echo
+
+# dynamic arithmetic
+array=(1 2 3)
+test -v 'array[1+1]'
+echo status=$?
+
+test -v 'array[4+1]'
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+
+status=0
+status=1
+## END
+
+## N-I mksh STDOUT:
+status=2
+status=2
+
+status=2
+status=2
+## END
+
+#### test membership with [[ -v 
+
+# note: modern versions of zsh implement this
+
+array=(1 2 3)
+[[ -v array[1] ]]
+echo status=$?
+
+[[ -v array[4] ]]
+echo status=$?
+
+echo
+
+[[ -v array[1+1] ]]
+echo status=$?
+
+[[ -v array[4+1] ]]
+echo status=$?
+
+## STDOUT:
+status=0
+status=1
+
+status=0
+status=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
+
+#### test -v array[i] with empty string
+
+typeset -a array
+array=('' nonempty)
+
+[[ -v array[0] ]]
+echo zero=$?
+
+[[ -v array[1] ]]
+echo one=$?
+
+[[ -v array[2] ]]
+echo two=$?
+
+## STDOUT:
+zero=0
+one=0
+two=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
+
+
+#### [[ -v array[expr]] ]] does arith expression evaluation
+
+typeset -a array
+array=('' nonempty)
+
+# This feels inconsistent with the rest of bash?
+zero=0
+
+[[ -v array[zero+0] ]]
+echo zero=$?
+
+[[ -v array[zero+1] ]]
+echo one=$?
+
+[[ -v array[zero+2] ]]
+echo two=$?
+
+echo ---
+
+i='0+0'
+[[ -v array[i] ]]
+echo zero=$?
+
+i='0+1'
+[[ -v array[i] ]]
+echo one=$?
+
+i='0+2'
+[[ -v array[i] ]]
+echo two=$?
+
+echo ---
+
+i='0+0'
+[[ -v array[$i] ]]
+echo zero=$?
+
+i='0+1'
+[[ -v array[$i] ]]
+echo one=$?
+
+i='0+2'
+[[ -v array[$i] ]]
+echo two=$?
+
+
+## STDOUT:
+zero=0
+one=0
+two=1
+---
+zero=0
+one=0
+two=1
+---
+zero=0
+one=0
+two=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
 ## END
