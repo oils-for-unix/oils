@@ -123,17 +123,22 @@ resulting script will still run in another shell.
     shopt --set strict:all    # turn on all options
     shopt -p strict:all       # print their current state
 
-Details on each option:
+Parsing options:
 
-      strict_argv             No empty argv
-      strict_arith            Fatal parse errors (on by default)
-      strict_array            Arrays and strings aren't confused
-      strict_control_flow     Disallow misplaced keyword, empty arg
-      strict_errexit          Disallow code that ignores failure
-      strict_nameref          trap invalid variable names
-      strict_word_eval        Expose unicode and slicing errors
-      strict_tilde            Tilde subst can result in error
-    X strict_glob             Parse the sublanguage more strictly
+      strict_parse_slice      # No implicit length for ${a[@]::}
+    X strict_parse_utf8       # Source code must be valid UTF-8
+
+Runtime options:
+
+      strict_argv             # No empty argv
+      strict_arith            # Fatal parse errors (on by default)
+      strict_array            # Arrays and strings aren't confused
+      strict_control_flow     # Disallow misplaced keyword, empty arg
+      strict_errexit          # Disallow code that ignores failure
+      strict_nameref          # Trap invalid variable names
+      strict_word_eval        # Expose unicode and slicing errors
+      strict_tilde            # Tilde subst can result in error
+    X strict_glob             # Parse the sublanguage more strictly
 
 <h3 id="ysh:upgrade">ysh:upgrade</h3>
 
@@ -155,7 +160,6 @@ Details on each option:
       parse_paren             if (x > 0) ...
       parse_proc              proc p { ... }
       parse_triple_quote      """$x"""  '''x''' (command mode)
-    X parse_utf8_only         YSH source code must be valid UTF-8
       parse_ysh_string        echo r'\' u'\\' b'\\' (command mode)
       command_sub_errexit     Synchronous errexit check
       process_sub_fail        Analogous to pipefail for process subs
