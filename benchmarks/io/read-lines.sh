@@ -134,13 +134,15 @@ compare-line-count() {
 sh-count-slow-trap() {
   local write_delay=${1:-0.20}
   local kill_delay=${2:-0.07}
-  local -a argv=( ${@:2} )
+  local -a argv=( ${@:3} )
 
   local len=${#argv[@]}
   #echo "len=$len"
+
   if test $len -eq 0; then
     echo 'argv required'
   fi
+  echo "argv: ${argv[@]}"
 
   local sh=$1
 
@@ -178,6 +180,11 @@ sh-count-slow-trap() {
 
 test-ysh-for() {
   sh-count-slow-trap '' '' exec-ysh-count $YSH_ASAN T
+  #sh-count-slow-trap '' '' exec-ysh-count bin/ysh T
+
+  #sh-count-slow-trap 2.0 0.7 exec-ysh-count bin/ysh T
+
+  #sh-count-slow-trap 2.0 0.7 exec-ysh-count $YSH_ASAN T
 }
 
 test-ysh-read-error() {
@@ -251,7 +258,7 @@ soil-test() {
   # Oh interesting, mksh waits until the main loop!  Different behavior
   #sh-count-slow-trap '' '' exec-sh-count mksh T
 
-  #sh-count-slow-trap '' '' exec-sh-count $OSH_ASAN T
+  sh-count-slow-trap '' '' exec-sh-count $OSH_ASAN T
 
   # OSH behaves like bash/zsh, yay
 

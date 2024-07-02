@@ -1229,8 +1229,16 @@ class CommandEvaluator(object):
         with ctx_LoopLevel(self):
             while True:
                 first = it2.FirstValue()
+                #log('first %s', first)
                 if first is None:  # for StdinIterator
+                    #log('first is None')
                     break
+
+                if first.tag() == value_e.Interrupted:
+                    self.RunPendingTraps()
+                    log('Done running traps')
+                    continue
+
                 self.mem.SetLocalName(name1, first)
                 if name2:
                     self.mem.SetLocalName(name2, it2.SecondValue())

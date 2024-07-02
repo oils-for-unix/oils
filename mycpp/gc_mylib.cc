@@ -106,6 +106,7 @@ BigStr* CFile::readline() {
   // Reset errno because we turn the EOF error into empty string (like Python).
   errno = 0;
   ssize_t len = getline(&line, &allocated_size, f_);
+  // log("getline = %d", len);
   if (len < 0) {
     // man page says the buffer should be freed even if getline fails
     free(line);

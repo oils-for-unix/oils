@@ -176,3 +176,17 @@ done2
 space
 hi
 ## END
+
+#### I/O error in for x in <> { 
+
+set +o errexit
+
+# EISDIR - stdin descriptor is dir
+$SH -c 'for x in <> { echo $x }' < /
+if test $? -ne 0; then
+  echo pass
+fi
+
+## STDOUT:
+pass
+## END

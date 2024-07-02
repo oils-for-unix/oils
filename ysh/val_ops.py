@@ -220,12 +220,10 @@ class StdinIterator(Iterator):
             line = self.f.readline()
         except (IOError, OSError) as e:  # signals
             if e.errno == EINTR:
-                # TODO: return value.Interrupted, so we can run traps
-                # with cmd_ev, like ReadLineSlowly
-                #log('EINTR')
-                return None
+                # Caller will can run traps with cmd_ev, like ReadLineSlowly
+                return value.Interrupted
             else:
-                # For possible errors, see
+                # For possible errors from f.readline(), see
                 #   man read
                 #   man getline
                 # e.g.
