@@ -225,7 +225,7 @@ No:
 Yes:
 
     while read --raw-line {
-      echo $_line
+      echo $_reply
     }
     # this reads a byte at a time, unbuffered, like shell
 
