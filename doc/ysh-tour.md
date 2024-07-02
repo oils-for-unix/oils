@@ -437,9 +437,21 @@ You can also request the loop index:
     # 0 - README.md
     # 1 - __init__.py
 
+To iterate over lines of `stdin`, use the special form:
+
+    for line in <> {
+      echo $line
+    }
+    # lines are buffered, so it's much faster than `while read --rawline`
+
+Ask for the loop index:
+
+    for i, line in <> {
+      echo "$i $line"
+    }
+
 To iterate over a typed data, use parentheses around an **expression**.  The
-expression should evaluate to an integer range, `List`, `Dict`, or `Str`
-(TODO).
+expression should evaluate to an integer `Range`, `List`, or `Dict`:
 
     for i in (3 .. 5) {  # range operator ..
       echo "i = $i"
@@ -458,16 +470,9 @@ List:
     # ale
     # bean
 
-Again you can request the index:
+Again, you can request the index with `for i, item in ...`.
 
-    for i, item in (foods) {
-      echo "$i - $item"
-    }
-    # =>
-    # 0 - ale
-    # 1 - bean
-
-Likewise, here's the most general form of the dictionary loop:
+Here's the most general form of the loop over `Dict`:
 
     var mydict = {pea: 42, nut: 10}
     for i, k, v in (mydict) {

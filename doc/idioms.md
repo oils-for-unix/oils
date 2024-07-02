@@ -213,6 +213,29 @@ Yes:
     read --all           # sets $_reply
     read --all (&myvar)  # sets $myvar
 
+### Read Lines of a File
+
+No:    
+
+    # The IFS= idiom doesn't work in YSH, because of dynamic scope!
+    while IFS= read -r line; do
+      echo $line
+    done
+
+Yes:
+
+    while read --raw-line {
+      echo $_line
+    }
+    # this reads a byte at a time, unbuffered, like shell
+
+Yes:
+
+    for line in <> {
+      echo $line
+    }
+    # this reads buffered lines, which is much faster
+
 ### Read a Number of Bytes
 
 No:

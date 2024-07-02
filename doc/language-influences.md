@@ -137,6 +137,12 @@ The `@` character comes from Perl (and PowerShell):
       echo $i
     }
 
+The unbuffered `for` loop is similar to Perl's `while (<>) { ...`:
+
+    for line in <> {
+      echo $line
+    }
+
 Perl can be viewed as a mixture of shell, awk, and sed.  YSH is a similar
 agglomeration of languages, but it's statically parsed.
 
