@@ -54,6 +54,9 @@ Array index contexts:
 
     a[i+1]=foo          # set
 
+    test -v 'a[i+1]'    # is item set?
+    [[ -v 'a[i+1]' ]]   # is item set?
+
     printf -v 'a[i+1]'  # assign to this location
     unset 'a[i+1]'      # unset location
 

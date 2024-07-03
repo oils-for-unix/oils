@@ -1,5 +1,5 @@
 ## compare_shells: bash mksh
-## oils_failures_allowed: 5
+## oils_failures_allowed: 4
 
 #### nounset / set -u with empty array (bug in bash 4.3, fixed in 4.4)
 
@@ -652,21 +652,25 @@ two
 ## END
 
 
-#### test membership with test -v 
+#### Is element set?  test -v a[i]
 
 # note: modern versions of zsh implement this
 
-array=(1 2 3)
+array=(1 2 3 '')
+
+echo 'no quotes'
 test -v 'array[1]'
 echo status=$?
+
+test -v 'array[3]'
+echo empty=$?
 
 test -v 'array[4]'
 echo status=$?
 
 echo
 
-# dynamic arithmetic
-array=(1 2 3)
+echo 'arith expr'
 test -v 'array[1+1]'
 echo status=$?
 
@@ -674,22 +678,28 @@ test -v 'array[4+1]'
 echo status=$?
 
 ## STDOUT:
+no quotes
 status=0
+empty=0
 status=1
 
+arith expr
 status=0
 status=1
 ## END
 
 ## N-I mksh STDOUT:
+no quotes
 status=2
+empty=2
 status=2
 
+arith expr
 status=2
 status=2
 ## END
 
-#### test membership with [[ -v 
+#### [[ -v a[i] ]]
 
 # note: modern versions of zsh implement this
 
@@ -714,30 +724,6 @@ status=1
 
 status=0
 status=1
-## END
-
-## N-I mksh status: 1
-## N-I mksh STDOUT:
-## END
-
-#### test -v array[i] with empty string
-
-typeset -a array
-array=('' nonempty)
-
-[[ -v array[0] ]]
-echo zero=$?
-
-[[ -v array[1] ]]
-echo one=$?
-
-[[ -v array[2] ]]
-echo two=$?
-
-## STDOUT:
-zero=0
-one=0
-two=1
 ## END
 
 ## N-I mksh status: 1
