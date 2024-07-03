@@ -120,12 +120,23 @@ YSH has long flags:
 
 ### bool-other
 
-    test -o errexit      # is the option set?
+Test if a shell option is set:
+
+    test -o errexit      
+
+Test the values of variables:
+
     test -v var_name     # is variable defined?
     test -v name[index]  # is an entry in a container set?
 
-Note: `name[index]` doesn't implement arithmetic expressions / dynamic parsing,
-as in bash.
+Notes:
+
+- In `name[index]`, OSH doesn't allow arithmetic expressions / dynamic parsing,
+  as bash does.
+- `shopt --set strict_word_eval` exposes "syntax errors" in `name[index]`, and
+  is recommended.
+  - Without this option, `test -v` will silently return `1` (false) when given
+    nonsense input, like `test -v /`.
 
 ## Patterns
 
