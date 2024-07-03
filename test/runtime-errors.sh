@@ -1144,6 +1144,22 @@ test-arith_ops_str() {
 = 100 + myvar'
 }
 
+assert-test-v-error() {
+  local code=$1
+
+  # note: the test builtin fails with status 2, but the shell doesn't fail
+  _osh-error-2 "shopt -s strict_word_eval; a=(1 2 3); $code"
+}
+
+test-test-v-expr() {
+  assert-test-v-error 'test -v ""'
+  assert-test-v-error 'test -v "a[foo"'
+  assert-test-v-error 'test -v "a[not-int]"'
+  assert-test-v-error 'test -v "a[-42]"'
+
+  _osh-error-2 'shopt -s strict_word_eval; s=""; test -v s[0]'
+}
+
 test-long-shell-line() {
   # Example from https://github.com/oilshell/oil/issues/1973
 

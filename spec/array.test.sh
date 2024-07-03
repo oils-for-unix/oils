@@ -1,5 +1,5 @@
 ## compare_shells: bash mksh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### nounset / set -u with empty array (bug in bash 4.3, fixed in 4.4)
 
@@ -658,46 +658,27 @@ two
 
 array=(1 2 3 '')
 
-echo 'no quotes'
 test -v 'array[1]'
-echo status=$?
+echo set=$?
 
 test -v 'array[3]'
 echo empty=$?
 
 test -v 'array[4]'
-echo status=$?
-
-echo
-
-echo 'arith expr'
-test -v 'array[1+1]'
-echo status=$?
-
-test -v 'array[4+1]'
-echo status=$?
+echo unset=$?
 
 ## STDOUT:
-no quotes
-status=0
+set=0
 empty=0
-status=1
-
-arith expr
-status=0
-status=1
+unset=1
 ## END
 
 ## N-I mksh STDOUT:
-no quotes
-status=2
+set=2
 empty=2
-status=2
-
-arith expr
-status=2
-status=2
+unset=2
 ## END
+
 
 #### [[ -v a[i] ]]
 
@@ -710,7 +691,28 @@ echo status=$?
 [[ -v array[4] ]]
 echo status=$?
 
+## STDOUT:
+status=0
+status=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
+
+
+#### test -v a[i] with arith expressions
+
+array=(1 2 3 '')
+
+test -v 'array[1+1]'
+echo status=$?
+
+test -v 'array[4+1]'
+echo status=$?
+
 echo
+echo dbracket
 
 [[ -v array[1+1] ]]
 echo status=$?
@@ -722,16 +724,21 @@ echo status=$?
 status=0
 status=1
 
+dbracket
 status=0
 status=1
 ## END
 
 ## N-I mksh status: 1
 ## N-I mksh STDOUT:
+status=2
+status=2
+
+dbracket
 ## END
 
 
-#### [[ -v array[expr]] ]] does arith expression evaluation
+#### More arith expressions in [[ -v array[expr]] ]] 
 
 typeset -a array
 array=('' nonempty)

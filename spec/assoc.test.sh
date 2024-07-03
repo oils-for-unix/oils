@@ -1,5 +1,5 @@
 ## compare_shells: bash-4.4
-## oils_failures_allowed: 6
+## oils_failures_allowed: 4
 
 
 # NOTE:
@@ -674,10 +674,22 @@ echo k=$?
 test -v assoc['nonexistent'] 
 echo nonexistent=$?
 
-echo
+## STDOUT:
+no quotes
+empty=0
+k=0
+nonexistent=1
 
-# dynamic parsing, this is gross
-echo 'vars' 
+quotes
+empty=0
+k=0
+nonexistent=1
+## END
+
+#### test -v with dynamic parsing
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
 
 key=empty
 test -v 'assoc[$key]'
@@ -691,24 +703,11 @@ key=nonexistent
 test -v 'assoc[$key]'
 echo nonexistent=$?
 
-
 ## STDOUT:
-no quotes
-empty=0
-k=0
-nonexistent=1
-
-quotes
-empty=0
-k=0
-nonexistent=1
-
-vars
 empty=0
 k=0
 nonexistent=1
 ## END
-
 
 #### [[ -v assoc[key] ]]
 

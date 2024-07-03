@@ -149,10 +149,10 @@ X [Unsupported]   enable
                   sh-bitwise    ~a ^ b
   [Boolean]       bool-expr     [[ ! $x && $y || $z ]]
                                 test ! $x -a $y -o $z
-                  bool-infix    [[ $a -nt $b ]]  [[ $x == $y ]]
-                  bool-path     [[ -d /etc ]]
-                  bool-str      [[ -z '' ]]
-                  bool-other    [[ -o errexit ]]
+                  bool-infix    $a -nt $b    $x == $y
+                  bool-path     -d /etc
+                  bool-str      -n foo   -z '' 
+                  bool-other    -o errexit   -v name[index]
   [Patterns]      glob-pat      *.py
                   extglob       ,(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]

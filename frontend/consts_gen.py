@@ -384,6 +384,7 @@ BigStr* OptionName(option_asdl::option_t opt_num);
 Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_t state, runtime_asdl::char_kind_t ch);
 
 extern BigStr* ASSIGN_ARG_RE;
+extern BigStr* TEST_V_RE;
 
 }  // namespace consts
 
@@ -569,9 +570,10 @@ Tuple2<state_t, emit_t> IfsEdge(state_t state, runtime_asdl::char_kind_t ch) {
                 import json
                 return json.dumps(s)
 
-            GLOBAL_STRINGS = ['ASSIGN_ARG_RE']
+            GLOBAL_STRINGS = ['ASSIGN_ARG_RE', 'TEST_V_RE']
             for var_name in GLOBAL_STRINGS:
-                out('GLOBAL_STR(%s, %s);', var_name, _CString(getattr(consts, var_name)))
+                out('GLOBAL_STR(%s, %s);', var_name,
+                    _CString(getattr(consts, var_name)))
 
             out("""\
 }  // namespace consts

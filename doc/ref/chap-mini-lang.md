@@ -54,13 +54,24 @@ Array index contexts:
 
     a[i+1]=foo          # set
 
-    test -v 'a[i+1]'    # is item set?
-    [[ -v 'a[i+1]' ]]   # is item set?
-
     printf -v 'a[i+1]'  # assign to this location
     unset 'a[i+1]'      # unset location
 
     echo ${a[@] : i+1 : i+2 }  # bash slicing
+
+bash allows similar array expressions with `test -v`:
+
+    test -v 'array[i+1]'     # is array item set?
+    [[ -v 'array[i+1]' ]]    # ditto
+
+    test -v 'assoc[$key]'    # is assoc array key set?
+    [[ -v 'assoc[$key]' ]]   # ditto
+
+But OSH allows only integers and "bare" string constants:
+
+    test -v 'array[42]'      # is array item set?
+
+    test -v 'assoc[key]'     # is assoc array key set?
 
 ### sh-numbers
 
@@ -74,13 +85,48 @@ Array index contexts:
 
 ### bool-expr
 
+Boolean expressions can be use the `test` builtin:
+
+    test ! $x -a $y -o $z
+
+Or the `[[` command language:
+
+    [[ ! $x && $y || $z ]]
+
 ### bool-infix
+
+Examples:
+
+    test $a -nt $b
+    test $x == $y
 
 ### bool-path
 
+Example:
+
+    test -d /etc
+    test -e /
+    test -f myfile
+
+YSH has long flags:
+
+    test --dir /etc
+    test --exists /
+    test --file myfile
+
 ### bool-str
 
+    test -n foo  # => status 0 / true -- foo is non-empty
+    test -z ''   # => status 0 / true -- '' is empty / zero-length
+
 ### bool-other
+
+    test -o errexit      # is the option set?
+    test -v var_name     # is variable defined?
+    test -v name[index]  # is an entry in a container set?
+
+Note: `name[index]` doesn't implement arithmetic expressions / dynamic parsing,
+as in bash.
 
 ## Patterns
 

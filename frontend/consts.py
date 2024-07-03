@@ -361,24 +361,23 @@ ASSIGN_ARG_RE = '^(' + lexer_def.VAR_NAME_RE + r')((=|\+=)(.*))?$'
 #
 # SplitArg = /
 #   %begin
-#   < capture VarName >
-#   < capture
-#     < capture '=' | '+=' > < capture dot* >
-#   > ?
+#   <capture VarName>
+#   (
+#     <capture '=' | '+='> <capture dot*>
+#   )?
 #   %end
-# 
-# Note: we use < > for grouping because ERE has no non-capturing group.
-
 
 # Weird rules for brackets: put ] first
 NOT_BRACKETS = '[^][]*'
 TEST_V_RE = '^(' + lexer_def.VAR_NAME_RE + r')(\[(' + NOT_BRACKETS + ')\])?$'
 
-# NotBracket = / ![ '[' ']' ] /
+# NotBracket = / ![ ']' '[' ] /
 #
 # TestV = /
 #   %begin
-#   ( '[' NotBrackets ']' )?
+#   <capture VarName>
+#   (
+#     '[' <capture NotBrackets> ']'
+#   )?
 #   %end
 # /
-

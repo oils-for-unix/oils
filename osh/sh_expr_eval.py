@@ -50,6 +50,7 @@ from core.error import e_die, e_die_status, e_strict, e_usage
 from core import num
 from core import state
 from core import ui
+from core import util
 from frontend import consts
 from frontend import lexer
 from frontend import location
@@ -718,7 +719,8 @@ class ArithEvaluator(object):
                             index = self.EvalToBigInt(node.right)
                             # s[0] evaluates to s
                             # s[1] evaluates to Undef
-                            s = left.s if mops.Equal(index, mops.ZERO) else None
+                            s = left.s if mops.Equal(index,
+                                                     mops.ZERO) else None
 
                         elif case(value_e.Undef):
                             if self.exec_opts.strict_arith():
@@ -960,6 +962,60 @@ class BoolEvaluator(ArithEvaluator):
                                 errfmt)
         self.always_strict = always_strict
 
+    def _IsDefined(self, s, blame_loc):
+        # type: (str, loc_t) -> bool
+
+        m = util.RegexSearch(consts.TEST_V_RE, s)
+        if m is None:
+            if self.exec_opts.strict_word_eval():
+                e_die('-v expected name or name[index]', blame_loc)
+            return False
+
+        var_name = m[1]
+        index_str = m[3]
+
+        val = self.mem.GetValue(var_name)
+        if len(index_str) == 0:  # it's just a variable name
+            return val.tag() != value_e.Undef
+
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.BashArray):
+                val = cast(value.BashArray, UP_val)
+
+                # TODO: use mops.BigStr
+                try:
+                    index = int(index_str)
+                except ValueError as e:
+                    if self.exec_opts.strict_word_eval():
+                        e_die(
+                            '-v got BashArray and invalid index %r' %
+                            index_str, blame_loc)
+                    return False
+
+                if index < 0:
+                    if self.exec_opts.strict_word_eval():
+                        e_die('-v got invalid negative index %s' % index_str,
+                              blame_loc)
+                    return False
+
+                if index < len(val.strs):
+                    return val.strs[index] is not None
+
+                # out of range
+                return False
+
+            elif case(value_e.BashAssoc):
+                val = cast(value.BashAssoc, UP_val)
+                return index_str in val.d
+
+            else:
+                if self.exec_opts.strict_word_eval():
+                    raise error.TypeErr(val, 'Expected BashArray or BashAssoc',
+                                        blame_loc)
+                return False
+        raise AssertionError()
+
     def _StringToBigIntOrError(self, s, blame_word=None):
         # type: (str, Optional[word_t]) -> mops.BigInt
         """Used by both [[ $x -gt 3 ]] and (( $x ))."""
@@ -1017,9 +1073,9 @@ class BoolEvaluator(ArithEvaluator):
                 op_id = node.op_id
                 s = self._EvalCompoundWord(node.child)
 
-                # Now dispatch on arg type
-                arg_type = consts.BoolArgType(
-                    op_id)  # could be static in the LST?
+                # Now dispatch on arg type.  (arg_type could be static in the
+                # LST?)
+                arg_type = consts.BoolArgType(op_id)
 
                 if arg_type == bool_arg_type_e.Path:
                     return bool_stat.DoUnaryOp(op_id, s)
@@ -1045,14 +1101,7 @@ class BoolEvaluator(ArithEvaluator):
                             return self.exec_opts.opt0_array[index]
 
                     if op_id == Id.BoolUnary_v:
-                        # TODO: I guess we need dynamic parsing here?
-                        # Use self.unsafe_arith_eval
-                        # self.eval_unsafe_arith
-                        # Do something like ParseLValue()
-                        # I guess ParseNameExpr()
-
-                        val = self.mem.GetValue(s)
-                        return val.tag() != value_e.Undef
+                        return self._IsDefined(s, loc.Word(node.child))
 
                     e_die("%s isn't implemented" %
                           ui.PrettyId(op_id))  # implicit location
