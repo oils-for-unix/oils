@@ -1,7 +1,5 @@
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 ## compare_shells: dash bash mksh zsh
-
-
 
 #### command -v
 myfunc() { echo x; }
@@ -320,3 +318,290 @@ builtin command echo hi
 ## stdout: hi
 ## N-I dash status: 127
 ## N-I dash stdout-json: ""
+
+#### builtin typeset / export / readonly
+case $SH in dash) exit ;; esac
+
+builtin typeset s=typeset
+echo s=$s
+
+builtin export s=export
+echo s=$s
+
+builtin readonly s=readonly
+echo s=$s
+
+echo --
+
+builtin builtin typeset s2=typeset
+echo s2=$s2
+
+builtin builtin export s2=export
+echo s2=$s2
+
+builtin builtin readonly s2=readonly
+echo s2=$s2
+
+## STDOUT:
+s=typeset
+s=export
+s=readonly
+--
+s2=typeset
+s2=export
+s2=readonly
+## END
+## N-I dash STDOUT:
+## END
+
+#### builtin declare / local
+case $SH in dash|mksh) exit ;; esac
+
+builtin declare s=declare
+echo s=$s
+
+f() {
+  builtin local s=local
+  echo s=$s
+}
+
+f
+
+## STDOUT:
+s=declare
+s=local
+## END
+## N-I dash/mksh STDOUT:
+## END
+
+#### builtin declare a=(x y) etc.
+
+$SH -c 'builtin declare a=(x y)'
+if test $? -ne 0; then
+  echo 'fail'
+fi
+
+$SH -c 'builtin declare -a a=(x y)'
+if test $? -ne 0; then
+  echo 'fail'
+fi
+
+## STDOUT:
+fail
+fail
+## END
+
+## OK osh STDOUT:
+## END
+
+
+#### command export / readonly
+case $SH in zsh) exit ;; esac
+
+# dash doesn't have declare typeset
+
+command export c=export
+echo c=$c
+
+command readonly c=readonly
+echo c=$c
+
+echo --
+
+command command export cc=export
+echo cc=$cc
+
+command command readonly cc=readonly
+echo cc=$cc
+
+## STDOUT:
+c=export
+c=readonly
+--
+cc=export
+cc=readonly
+## END
+## N-I zsh STDOUT:
+## END
+
+#### command local
+
+f() {
+  command local s=local
+  echo s=$s
+}
+
+f
+
+## STDOUT:
+s=local
+## END
+## BUG dash/mksh/zsh STDOUT:
+s=
+## END
+
+
+#### static builtin command ASSIGN, command builtin ASSIGN
+case $SH in dash|zsh) exit ;; esac
+
+# dash doesn't have declare typeset
+
+builtin command export bc=export
+echo bc=$bc
+
+builtin command readonly bc=readonly
+echo bc=$bc
+
+echo --
+
+command builtin export cb=export
+echo cb=$cb
+
+command builtin readonly cb=readonly
+echo cb=$cb
+
+## STDOUT:
+bc=export
+bc=readonly
+--
+cb=export
+cb=readonly
+## END
+## N-I dash/zsh STDOUT:
+## END
+
+#### dynamic builtin command ASSIGN, command builtin ASSIGN
+case $SH in dash|zsh) exit ;; esac
+
+b=builtin
+c=command
+e=export
+r=readonly
+
+$b $c export bc=export
+echo bc=$bc
+
+$b $c readonly bc=readonly
+echo bc=$bc
+
+echo --
+
+$c $b export cb=export
+echo cb=$cb
+
+$c $b readonly cb=readonly
+echo cb=$cb
+
+echo --
+
+$b $c $e bce=export
+echo bce=$bce
+
+$b $c $r bcr=readonly
+echo bcr=$bcr
+
+echo --
+
+$c $b $e cbe=export
+echo cbe=$cbe
+
+$c $b $r cbr=readonly
+echo cbr=$cbr
+
+## STDOUT:
+bc=export
+bc=readonly
+--
+cb=export
+cb=readonly
+--
+bce=export
+bcr=readonly
+--
+cbe=export
+cbr=readonly
+## END
+## N-I dash/zsh STDOUT:
+## END
+
+
+#### Assignment builtins and word splitting, even after builtin/command
+
+x='a b'
+
+readonly y=$x
+echo $x
+
+command readonly z=$x
+echo $z
+
+## STDOUT:
+a b
+a b
+## END
+
+## BUG dash/bash STDOUT:
+a b
+a
+## END
+
+## N-I zsh STDOUT:
+a b
+
+## END
+
+#### More word splitting
+
+x='a b'
+
+export y=$x
+echo $y
+
+builtin export z=$x
+echo $z
+
+## STDOUT:
+a b
+a b
+## END
+
+## BUG bash/mksh STDOUT:
+a b
+a
+## END
+
+## N-I dash STDOUT:
+a
+
+## END
+
+#### \builtin declare - ble.sh relies on it
+
+# \command readonly is equivalent to \builtin declare
+# except dash implements it
+
+x='a b'
+
+command readonly y=$x
+echo $y
+
+\command readonly z=$x
+echo $z
+
+# The issue here is that we have a heuristic in EvalWordSequence2:
+# fs len(part_vals) == 1
+
+## STDOUT:
+a b
+a b
+## END
+
+## OK bash/dash STDOUT:
+a
+a
+## END
+
+## N-I zsh STDOUT:
+
+
+## END

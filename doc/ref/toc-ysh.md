@@ -302,7 +302,7 @@ X [External Lang] BEGIN   END   when (awk)
 ```
 
 <!-- ideas 
-X [Wok]           _filename           _line
+X [Wok]           _filename   _line   _line_num
 X [Builtin Sub]   _buffer
 -->
 

@@ -1,5 +1,5 @@
 ## compare_shells: bash mksh zsh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 # Test arithmetic expressions in all their different contexts.
 
@@ -130,7 +130,7 @@ one
 ## N-I mksh STDOUT:
 ## END
 
-#### Empty expression in ${a[@]:slice}
+#### Empty expression in ${a[@]: : }
 
 a=(a b c d e f)
 
@@ -143,10 +143,23 @@ echo slice ${a[@]: : }
 echo status=$?
 echo
 
-# bash and zsh differ with respect to spaces
-#echo slice ${a[@]:: }
+# zsh doesn't accept this
+echo slice ${a[@]:: }
+echo status=$?
 
 ## STDOUT:
+slice a b c d e f
+status=0
+
+slice
+status=0
+
+slice
+status=0
+## END
+
+## BUG zsh status: 1
+## BUG zsh STDOUT:
 slice a b c d e f
 status=0
 

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 2
+## oils_failures_allowed: 4
 ## compare_shells: bash mksh ash
 
 # Notes on bash semantics:
@@ -243,7 +243,6 @@ ok
 ## END
 
 #### set -o errtrace: trap ERR runs in subprograms
-
 case $SH in mksh) exit ;; esac
 
 set -o errtrace
@@ -253,32 +252,61 @@ trap 'echo line=$LINENO' ERR
 
 x=$( false; echo command sub )
 
-false & wait
-
-{ false; echo async; } & wait
-
 false
 echo ok
 
 ## STDOUT:
 line=6
 subshell
-line=12
-async
-line=14
+line=10
 ok
 ## END
 
 # ash doesn't reject errtrace, but doesn't implement it
 ## BUG ash STDOUT:
 subshell
-async
-line=14
+line=10
 ok
 ## END
 
 ## N-I mksh STDOUT:
 ## END
+
+#### trap ERR doesn't run with &
+
+trap 'echo line=$LINENO' ERR
+
+false & wait
+
+{ false; echo async; } & wait
+
+## STDOUT:
+async
+## END
+
+
+#### set -o errtrace: trap ERR with &
+case $SH in mksh) exit ;; esac
+
+set -o errtrace
+trap 'echo line=$LINENO' ERR
+
+false & wait
+
+{ false; echo async; } & wait
+
+## STDOUT:
+line=8
+async
+## END
+
+## BUG ash STDOUT:
+async
+## END
+
+## N-I mksh STDOUT:
+## END
+
 
 
 #### trap ERR not active in shell functions in (bash behavior)
@@ -300,6 +328,46 @@ line=4
 ## END
 
 #### set -o errtrace - trap ERR runs in shell functions
+
+trap 'echo err' ERR
+
+passing() {
+  false  # line 4
+  true
+}
+
+failing() {
+  true
+  false
+}
+
+passing
+failing
+
+set -o errtrace
+
+echo 'now with errtrace'
+passing
+failing
+
+echo ok
+
+## STDOUT:
+err
+now with errtrace
+err
+err
+err
+ok
+## END
+
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+err
+err
+## END
+
+#### set -o errtrace - trap ERR runs in shell functions (LINENO)
 
 trap 'echo line=$LINENO' ERR
 

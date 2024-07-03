@@ -21,6 +21,14 @@ filter-py() {
 
 readonly -a OSH_ASDL=( {frontend,core}/*.asdl )
 
+oils-files() {
+  # what's in the runtime
+  osh-files
+  ysh-files
+  data-lang-files
+  tools-files
+}
+
 # OSH and common
 osh-files() {
   # Exclude:

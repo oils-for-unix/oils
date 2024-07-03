@@ -187,18 +187,20 @@ Yes:
 
 No:
 
-    read line     # Bad because it mangles your backslashes!
+    read line          # Mangles your backslashes!
 
-For now, please use this bash idiom to read a single line:
+Better:
 
-    read -r line  # Easy to forget -r for "raw"
+    read -r line       # Still messes with leading and trailing whitespace
 
-YSH used to have `read --line`, but there was a design problem: reading
-buffered lines doesn't mix well with reading directly from file descriptors,
-and shell does the latter.
+    IFS= read -r line  # OK, but doesn't work in YSH
 
-That is, `read -r` is suboptimal because it makes many syscalls, but it's
-already established in shell.
+Yes:
+
+    read --raw-line    # Gives you the line, without trailing \n
+
+(Note that `read --raw-line` is still an unbuffered read, which means it slowly
+reads a byte at a time.  We plan to add buffered reads as well.)
 
 ### Read a Whole File
 
@@ -210,6 +212,29 @@ Yes:
 
     read --all           # sets $_reply
     read --all (&myvar)  # sets $myvar
+
+### Read Lines of a File
+
+No:    
+
+    # The IFS= idiom doesn't work in YSH, because of dynamic scope!
+    while IFS= read -r line; do
+      echo $line
+    done
+
+Yes:
+
+    while read --raw-line {
+      echo $_reply
+    }
+    # this reads a byte at a time, unbuffered, like shell
+
+Yes:
+
+    for line in <> {
+      echo $line
+    }
+    # this reads buffered lines, which is much faster
 
 ### Read a Number of Bytes
 

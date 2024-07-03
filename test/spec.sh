@@ -458,6 +458,10 @@ array() {
   run-file array "$@"
 }
 
+array-basic() {
+  run-file array-basic "$@"
+}
+
 array-compat() {
   run-file array-compat "$@"
 }

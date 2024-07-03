@@ -50,6 +50,7 @@ from core.error import e_die, e_die_status, e_strict, e_usage
 from core import num
 from core import state
 from core import ui
+from core import util
 from frontend import consts
 from frontend import lexer
 from frontend import location
@@ -700,20 +701,43 @@ class ArithEvaluator(object):
                     with tagswitch(left) as case:
                         if case(value_e.BashArray):
                             array_val = cast(value.BashArray, UP_left)
-                            index = mops.BigTruncate(
+                            small_i = mops.BigTruncate(
                                 self.EvalToBigInt(node.right))
-                            s = word_eval.GetArrayItem(array_val.strs, index)
+                            s = word_eval.GetArrayItem(array_val.strs, small_i)
 
                         elif case(value_e.BashAssoc):
                             left = cast(value.BashAssoc, UP_left)
                             key = self.EvalWordToString(node.right)
                             s = left.d.get(key)
 
+                        elif case(value_e.Str):
+                            left = cast(value.Str, UP_left)
+                            if self.exec_opts.strict_arith():
+                                e_die(
+                                    "Value of type Str can't be indexed (strict_arith)",
+                                    node.op)
+                            index = self.EvalToBigInt(node.right)
+                            # s[0] evaluates to s
+                            # s[1] evaluates to Undef
+                            s = left.s if mops.Equal(index,
+                                                     mops.ZERO) else None
+
+                        elif case(value_e.Undef):
+                            if self.exec_opts.strict_arith():
+                                e_die(
+                                    "Value of type Undef can't be indexed (strict_arith)",
+                                    node.op)
+                            s = None  # value.Undef
+
+                            # There isn't a way to distinguish Undef vs. empty
+                            # string, even with set -o nounset?
+                            # s = ''
+
                         else:
                             # TODO: Add error context
                             e_die(
-                                'Expected array or assoc in index expression, got %s'
-                                % ui.ValType(left))
+                                "Value of type %s can't be indexed" %
+                                ui.ValType(left), node.op)
 
                     if s is None:
                         val = value.Undef
@@ -938,6 +962,63 @@ class BoolEvaluator(ArithEvaluator):
                                 errfmt)
         self.always_strict = always_strict
 
+    def _IsDefined(self, s, blame_loc):
+        # type: (str, loc_t) -> bool
+
+        m = util.RegexSearch(consts.TEST_V_RE, s)
+        if m is None:
+            if self.exec_opts.strict_word_eval():
+                e_die('-v expected name or name[index]', blame_loc)
+            return False
+
+        var_name = m[1]
+        index_str = m[3]
+
+        val = self.mem.GetValue(var_name)
+        if len(index_str) == 0:  # it's just a variable name
+            return val.tag() != value_e.Undef
+
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.BashArray):
+                val = cast(value.BashArray, UP_val)
+
+                # TODO: use mops.BigStr
+                try:
+                    index = int(index_str)
+                except ValueError as e:
+                    if self.exec_opts.strict_word_eval():
+                        e_die(
+                            '-v got BashArray and invalid index %r' %
+                            index_str, blame_loc)
+                    return False
+
+                if index < 0:
+                    if self.exec_opts.strict_word_eval():
+                        e_die('-v got invalid negative index %s' % index_str,
+                              blame_loc)
+                    return False
+
+                if index < len(val.strs):
+                    return val.strs[index] is not None
+
+                # out of range
+                return False
+
+            elif case(value_e.BashAssoc):
+                val = cast(value.BashAssoc, UP_val)
+                return index_str in val.d
+
+            else:
+                # work around mycpp bug!  parses as 'elif'
+                pass
+
+                if self.exec_opts.strict_word_eval():
+                    raise error.TypeErr(val, 'Expected BashArray or BashAssoc',
+                                        blame_loc)
+                return False
+        raise AssertionError()
+
     def _StringToBigIntOrError(self, s, blame_word=None):
         # type: (str, Optional[word_t]) -> mops.BigInt
         """Used by both [[ $x -gt 3 ]] and (( $x ))."""
@@ -995,9 +1076,9 @@ class BoolEvaluator(ArithEvaluator):
                 op_id = node.op_id
                 s = self._EvalCompoundWord(node.child)
 
-                # Now dispatch on arg type
-                arg_type = consts.BoolArgType(
-                    op_id)  # could be static in the LST?
+                # Now dispatch on arg type.  (arg_type could be static in the
+                # LST?)
+                arg_type = consts.BoolArgType(op_id)
 
                 if arg_type == bool_arg_type_e.Path:
                     return bool_stat.DoUnaryOp(op_id, s)
@@ -1023,8 +1104,7 @@ class BoolEvaluator(ArithEvaluator):
                             return self.exec_opts.opt0_array[index]
 
                     if op_id == Id.BoolUnary_v:
-                        val = self.mem.GetValue(s)
-                        return val.tag() != value_e.Undef
+                        return self._IsDefined(s, loc.Word(node.child))
 
                     e_die("%s isn't implemented" %
                           ui.PrettyId(op_id))  # implicit location
@@ -1101,8 +1181,9 @@ class BoolEvaluator(ArithEvaluator):
                         try:
                             indices = libc.regex_search(s2, regex_flags, s1, 0)
                         except ValueError as e:
-                            # Status 2 indicates a regex parse error.  This is fatal in OSH but
-                            # not in bash, which treats [[ like a command with an exit code.
+                            # Status 2 indicates a regex parse error.  This is
+                            # fatal in OSH but not in bash, which treats [[
+                            # like a command with an exit code.
                             e_die_status(2, e.message, loc.Word(node.right))
 
                         if indices is not None:

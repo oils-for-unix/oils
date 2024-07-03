@@ -1,7 +1,6 @@
 # spec/ysh-builtin-error
 
 ## our_shell: ysh
-## oils_failures_allowed: 1
 
 #### try requires an argument
 

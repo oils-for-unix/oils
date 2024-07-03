@@ -259,7 +259,7 @@ class List_(vm._Callable):
         rd.Done()
 
         l = []  # type: List[value_t]
-        it = None  # type: val_ops._ContainerIter
+        it = None  # type: val_ops.Iterator
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.List):
@@ -280,8 +280,11 @@ class List_(vm._Callable):
                                     rd.BlamePos())
 
         assert it is not None
-        while not it.Done():
-            l.append(it.FirstValue())
+        while True:
+            first = it.FirstValue()
+            if first is None:
+                break
+            l.append(first)
             it.Next()
 
         return value.List(l)

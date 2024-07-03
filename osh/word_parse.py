@@ -279,20 +279,26 @@ class WordParser(WordEmitter):
             cur_id = self.a_parser.CurrentId()  # advance
 
         if cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
-            no_length = None  # type: Optional[arith_expr_t]  # No length specified
+            # No length specified, so it's N
+            no_length = None  # type: Optional[arith_expr_t]
             return suffix_op.Slice(begin, no_length)
 
         elif cur_id == Id.Arith_Colon:  # ${a:1:} or ${@:1:}
-            self._SetNext(lex_mode_e.Arith)
-            self._GetToken()
+            colon_tok = self.cur_token
+            self._NextNonSpace()
 
-            if self.token_type != Id.Arith_RBrace:
-                length = self._ReadArithExpr(Id.Arith_RBrace)
-            else:
+            if self.token_type == Id.Arith_RBrace:
                 # quirky bash behavior:
                 # ${a:1:} or ${a::} means length ZERO
                 # but ${a:1} or ${a:} means length N
-                length = arith_expr.EmptyZero
+                if self.parse_opts.strict_parse_slice():
+                    p_die(
+                        "Slice length: Add explicit zero, or omit : for N (strict_parse_slice)",
+                        colon_tok)
+
+                length = arith_expr.EmptyZero  # type: arith_expr_t
+            else:
+                length = self._ReadArithExpr(Id.Arith_RBrace)
 
             return suffix_op.Slice(begin, length)
 

@@ -41,6 +41,8 @@ NEW_VAR_SPEC.PlusFlag('n')  # named ref
 NEW_VAR_SPEC.ShortFlag('-a')
 NEW_VAR_SPEC.ShortFlag('-A')
 NEW_VAR_SPEC.ShortFlag('-i')  # no-op for integers
+NEW_VAR_SPEC.ShortFlag('-u')  # no-op for case
+NEW_VAR_SPEC.ShortFlag('-l')  # no-op for case
 
 UNSET_SPEC = FlagSpec('unset')
 UNSET_SPEC.ShortFlag('-v')
@@ -117,18 +119,15 @@ READ_SPEC.ShortFlag('-p', args.String)  # prompt
 # YSH extensions
 READ_SPEC.ShortFlag('-0')  # until NUL, like -r -d ''
 READ_SPEC.LongFlag('--all')
-READ_SPEC.LongFlag('--line')
+
+# Why not have --j8-line, a shortcut for fromJ8Line()?
+# Because buffered vs. unbuffered should be ORTHOGONAL to encoding
+# TODO: my-j8-read should be possible
+
+READ_SPEC.LongFlag('--raw-line')
 READ_SPEC.LongFlag('--num-bytes', args.Int)
 # don't strip the trailing newline
 READ_SPEC.LongFlag('--with-eol')
-READ_SPEC.LongFlag('--json',
-                   args.Bool,
-                   default=False,
-                   help='Read elements as JSON strings')
-READ_SPEC.LongFlag('--j8',
-                   args.Bool,
-                   default=False,
-                   help='Read elements as J8 strings')
 
 MAPFILE_SPEC = FlagSpec('mapfile')
 MAPFILE_SPEC.ShortFlag('-t')

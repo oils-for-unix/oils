@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### For loop over expression: List
 var mylist = [1, 2, 3]
@@ -32,10 +32,10 @@ key age
 ## END
 
 
-#### For loop over expression: range (low priority)
-var myrange = 0:3
+#### For loop over range
+var myrange = 0 .. 3
 for i in (myrange) {
-  echo "i $key"
+  echo "i $i"
 }
 
 ## STDOUT:
@@ -139,7 +139,7 @@ for x in (42) {
 hi
 ## END
 
-#### Oil for with brace substitution and glob
+#### YSH for with brace substitution and glob
 
 touch {foo,bar}.py
 for i, file in *.py {README,foo}.md {
@@ -150,4 +150,43 @@ for i, file in *.py {README,foo}.md {
 1 foo.py
 2 README.md
 3 foo.md
+## END
+
+#### for x in <> { 
+
+# to avoid stdin conflict
+
+$SH $REPO_ROOT/spec/testdata/ysh-for-stdin.ysh
+
+## STDOUT:
+-1-
+-2-
+-3-
+
+0 1
+1 2
+2 3
+
+empty
+done
+
+empty2
+done2
+
+space
+hi
+## END
+
+#### I/O error in for x in <> { 
+
+set +o errexit
+
+# EISDIR - stdin descriptor is dir
+$SH -c 'for x in <> { echo $x }' < /
+if test $? -ne 0; then
+  echo pass
+fi
+
+## STDOUT:
+pass
 ## END

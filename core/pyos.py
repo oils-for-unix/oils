@@ -5,7 +5,6 @@ Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
-from errno import EINTR
 import pwd
 import resource
 import signal
@@ -14,7 +13,6 @@ import sys
 import termios  # for read -n
 import time
 
-from core import pyutil
 from mycpp import mops
 from mycpp.mylib import log
 
@@ -119,38 +117,6 @@ def ReadByte(fd):
             return ord(b), 0
         else:
             return EOF_SENTINEL, 0
-
-
-if 0:
-
-    def ReadLineBuffered():
-        # type: () -> str
-        """Obsolete
-        """
-        ch_array = []  # type: List[int]
-        while True:
-            ch, err_num = ReadByte(0)
-
-            if ch < 0:
-                if err_num == EINTR:
-                    # Instead of retrying, return EOF, which is what libc.stdin_readline()
-                    # did.  I think this interface is easier with getline().
-                    # This causes 'read --line' to return status 1.
-                    return ''
-                else:
-                    raise ReadError(err_num)
-
-            elif ch == EOF_SENTINEL:
-                break
-
-            else:
-                ch_array.append(ch)
-
-            # TODO: Add option to omit newline
-            if ch == NEWLINE_CH:
-                break
-
-        return pyutil.ChArrayToString(ch_array)
 
 
 def Environ():

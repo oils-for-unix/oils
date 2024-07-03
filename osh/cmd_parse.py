@@ -1477,22 +1477,56 @@ class CommandParser(object):
 
         self._GetWord()
         if self.c_id == Id.KW_In:
-            # Ideally we would want ( not 'in'.  But we still have to fix the bug
-            # where we require a SPACE between in and (
-            #   for x in(y)   # should be accepted, but isn't
-
             expr_blame = word_.AsKeywordToken(self.cur_word)
 
             self._SetNext()  # skip in
-            if self.w_parser.LookPastSpace() == Id.Op_LParen:
+
+            next_id = self.w_parser.LookPastSpace()
+            #log('%s', Id_str(next_id))
+
+            if next_id == Id.Op_LParen:  # for x in (expr) {
                 enode = self.w_parser.ParseYshExprForCommand()
                 node.iterable = for_iter.YshExpr(enode, expr_blame)
 
-                # For simplicity, we don't accept for x in (obj); do ...
+                # We don't accept for x in (obj); do ...
                 self._GetWord()
                 if self.c_id != Id.Lit_LBrace:
                     p_die('Expected { after iterable expression',
                           loc.Word(self.cur_word))
+
+            elif next_id == Id.Redir_LessGreat:  # for x in <> {
+                # <> is Id.Redir_Great - reuse this for simplicity
+
+                w = self._Eat(Id.Redir_LessGreat)
+                left = word_.AsOperatorToken(w)
+
+                node.iterable = for_iter.Files(left, [])
+
+                # Must be { not 'do'
+                self._GetWord()
+                if self.c_id != Id.Lit_LBrace:
+                    p_die('Expected { after files', loc.Word(self.cur_word))
+
+            elif next_id == Id.Redir_Less:  # for x in < > {
+                w = self._Eat(Id.Redir_Less)
+                left = word_.AsOperatorToken(w)
+
+                # TODO: we could accept
+                #
+                # for x in < README.md *.py > {
+                # for x in < @myfiles > {
+                #
+                # And set _filename _line_num, similar to awk
+
+                self._Eat(Id.Redir_Great)
+
+                node.iterable = for_iter.Files(left, [])
+
+                # Must be { not 'do'
+                self._GetWord()
+                if self.c_id != Id.Lit_LBrace:
+                    p_die('Expected { after files', loc.Word(self.cur_word))
+
             else:
                 semi_tok = None  # type: Optional[Token]
                 iter_words, semi_tok = self.ParseForWords()

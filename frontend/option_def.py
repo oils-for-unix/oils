@@ -31,7 +31,9 @@ class Option(object):
         self.groups = groups or []  # list of groups
 
         # for optview
-        self.is_parse = name.startswith('parse_') or name == 'expand_aliases'
+        self.is_parse = (name.startswith('parse_') or
+                         name.startswith('strict_parse_') or
+                         name == 'expand_aliases')
         # interactive() is an accessor
         self.is_exec = implemented and not self.is_parse
 
@@ -75,9 +77,11 @@ _OTHER_SET_OPTIONS = [
     (None, 'emacs'),
 ]
 
-# These are RUNTIME strict options.  We also have parse time ones like
-# parse_backslash.
 _STRICT_OPTS = [
+    # $a{[@]::} is not allowed, you need ${a[@]::0} or ${a[@]::n}
+    'strict_parse_slice',
+
+    # These are RUNTIME strict options.
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
 
@@ -282,6 +286,9 @@ def _Init(opt_def):
 
     # recursive parsing and evaluation - for compatibility, ble.sh, etc.
     opt_def.Add('eval_unsafe_arith')
+
+    opt_def.Add('ignore_flags_not_impl')
+    opt_def.Add('ignore_opts_not_impl')
 
     # For implementing strict_errexit
     # TODO: could be _no_command_sub / _no_process_sub, if we had to discourage
