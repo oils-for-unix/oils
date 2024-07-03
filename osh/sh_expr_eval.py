@@ -1010,6 +1010,9 @@ class BoolEvaluator(ArithEvaluator):
                 return index_str in val.d
 
             else:
+                # work around mycpp bug!  parses as 'elif'
+                pass
+
                 if self.exec_opts.strict_word_eval():
                     raise error.TypeErr(val, 'Expected BashArray or BashAssoc',
                                         blame_loc)

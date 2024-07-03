@@ -61,17 +61,16 @@ Array index contexts:
 
 bash allows similar array expressions with `test -v`:
 
-    test -v 'array[i+1]'     # is array item set?
-    [[ -v 'array[i+1]' ]]    # ditto
+    test -v 'array[i+1]'       # is array item set?
+    test -v 'assoc[$myvar]'    # is assoc array key set?
 
-    test -v 'assoc[$key]'    # is assoc array key set?
-    [[ -v 'assoc[$key]' ]]   # ditto
+    [[ -v 'array[i+1]' ]]      # ditto
+    [[ -v 'assoc[$myvar]' ]]
 
 But OSH allows only integers and "bare" string constants:
 
-    test -v 'array[42]'      # is array item set?
-
-    test -v 'assoc[key]'     # is assoc array key set?
+    test -v 'array[42]'        # is array item set?
+    test -v 'assoc[key]'       # is assoc array key set?
 
 ### sh-numbers
 
