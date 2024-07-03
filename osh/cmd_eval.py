@@ -811,7 +811,8 @@ class CommandEvaluator(object):
             # shells aren't consistent.
             # self.mem.SetLastArgument('')
 
-        run_flags = executor.DO_FORK if node.do_fork else 0
+        # NOTE: ERR trap will not be called if not forked
+        run_flags = executor.DO_FORK if node.do_fork or self.trap_state.GetHook('ERR') else 0
         # NOTE: RunSimpleCommand never returns when do_fork=False!
         if len(node.more_env):  # I think this guard is necessary?
             is_other_special = False  # TODO: There are other special builtins too!
@@ -1896,13 +1897,7 @@ class CommandEvaluator(object):
         """
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
-            # Using _NoForkLast() hides exit code for ERR trap, but only in non-interactive mode!
-            # Example:
-            # - ./bin/osh -c 'trap "echo ERR" ERR ; date X' - does not show ERR
-            # - ./bin/osh -c 'trap "echo ERR" ERR ; date X ; exit' - does show ERR
-            # This is why it is only called interactive mode
-            if self.mutable_opts.Get(option_i.interactive):
-                self._NoForkLast(node)  # turn the last ones into exec
+            self._NoForkLast(node)  # turn the last ones into exec
 
         if 0:
             log('after opt:')
