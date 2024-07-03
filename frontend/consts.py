@@ -350,7 +350,7 @@ def IfsEdge(state, ch):
 # We want submatch extraction, which would need a new type of binding, and
 # doing it with libc seems easy enough.
 
-ASSIGN_ARG_RE = '^(' + lexer_def.VAR_NAME_RE + ')((=|\+=)(.*))?$'
+ASSIGN_ARG_RE = '^(' + lexer_def.VAR_NAME_RE + r')((=|\+=)(.*))?$'
 
 # Eggex equivalent:
 #
@@ -368,3 +368,17 @@ ASSIGN_ARG_RE = '^(' + lexer_def.VAR_NAME_RE + ')((=|\+=)(.*))?$'
 #   %end
 # 
 # Note: we use < > for grouping because ERE has no non-capturing group.
+
+
+# Weird rules for brackets: put ] first
+NOT_BRACKETS = '[^][]*'
+TEST_V_RE = '^(' + lexer_def.VAR_NAME_RE + r')(\[(' + NOT_BRACKETS + ')\])?$'
+
+# NotBracket = / ![ '[' ']' ] /
+#
+# TestV = /
+#   %begin
+#   ( '[' NotBrackets ']' )?
+#   %end
+# /
+
