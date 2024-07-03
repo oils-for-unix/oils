@@ -301,6 +301,46 @@ line=4
 
 #### set -o errtrace - trap ERR runs in shell functions
 
+trap 'echo err' ERR
+
+passing() {
+  false  # line 4
+  true
+}
+
+failing() {
+  true
+  false
+}
+
+passing
+failing
+
+set -o errtrace
+
+echo 'now with errtrace'
+passing
+failing
+
+echo ok
+
+## STDOUT:
+err
+now with errtrace
+err
+err
+err
+ok
+## END
+
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+err
+err
+## END
+
+#### set -o errtrace - trap ERR runs in shell functions (LINENO)
+
 trap 'echo line=$LINENO' ERR
 
 passing() {
