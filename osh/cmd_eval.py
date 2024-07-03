@@ -2112,8 +2112,8 @@ class CommandEvaluator(object):
             return
 
         # bash rule - affected by set -o errtrace
-        if not self.exec_opts.errtrace() and self.mem.InsideFunction():
-            return
+        # if self.mem.InsideFunction():
+        #     return
 
         # NOTE: Don't set option_i._running_trap, because that's for
         # RunPendingTraps() in the MAIN LOOP
