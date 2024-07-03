@@ -343,3 +343,28 @@ def IfsEdge(state, ch):
     # type: (state_t, char_kind_t) -> Tuple[state_t, emit_t]
     """Follow edges of the IFS state machine."""
     return _IFS_EDGES[state, ch]
+
+
+# Pattern to use libc regexec() to parse NAME, NAME=value, and NAME+=value.
+#
+# We want submatch extraction, which would need a new type of binding, and
+# doing it with libc seems easy enough.
+
+ASSIGN_ARG_RE = '^(' + lexer_def.VAR_NAME_RE + ')((=|\+=)(.*))?$'
+
+# Eggex equivalent:
+#
+# VarName = /
+#   [a-z A-Z _ ]
+#   [a-z A-Z 0-9 _ ]*
+# /
+#
+# SplitArg = /
+#   %begin
+#   < capture VarName >
+#   < capture
+#     < capture '=' | '+=' > < capture dot* >
+#   > ?
+#   %end
+# 
+# Note: we use < > for grouping because ERE has no non-capturing group.

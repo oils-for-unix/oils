@@ -383,11 +383,12 @@ BigStr* OptionName(option_asdl::option_t opt_num);
 
 Tuple2<runtime_asdl::state_t, runtime_asdl::emit_t> IfsEdge(runtime_asdl::state_t state, runtime_asdl::char_kind_t ch);
 
+extern BigStr* ASSIGN_ARG_RE;
+
 }  // namespace consts
 
 #endif  // CONSTS_H
 """)
-
         with open(prefix + '.cc', 'w') as f:
 
             def out(fmt, *args):
@@ -561,6 +562,16 @@ Tuple2<state_t, emit_t> IfsEdge(state_t state, runtime_asdl::char_kind_t ch) {
             GenStrList(consts.OSH_KEYWORD_NAMES, 'OSH_KEYWORD_NAMES', out)
             GenStrList(consts.SET_OPTION_NAMES, 'SET_OPTION_NAMES', out)
             GenStrList(consts.SHOPT_OPTION_NAMES, 'SHOPT_OPTION_NAMES', out)
+
+            def _CString(s):
+                # Hack that does backslash escaping, e.g. \\
+                # We could also use C++ strings
+                import json
+                return json.dumps(s)
+
+            GLOBAL_STRINGS = ['ASSIGN_ARG_RE']
+            for var_name in GLOBAL_STRINGS:
+                out('GLOBAL_STR(%s, %s);', var_name, _CString(getattr(consts, var_name)))
 
             out("""\
 }  // namespace consts

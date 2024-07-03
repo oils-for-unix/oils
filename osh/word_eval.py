@@ -168,28 +168,6 @@ def _DetectMetaBuiltin(val0):
     return False
 
 
-# Use libc to parse NAME, NAME=value, and NAME+=value.  We want submatch
-# extraction, but I haven't used that in re2c, and we would need a new kind of
-# binding.
-#
-ASSIGN_ARG_RE = '^([a-zA-Z_][a-zA-Z0-9_]*)((=|\+=)(.*))?$'
-
-# Eggex equivalent:
-#
-# VarName = /
-#   [a-z A-Z _ ]
-#   [a-z A-Z 0-9 _ ]*
-# /
-#
-# SplitArg = /
-#   %begin
-#   < VarName >
-#   < < '=' | '+=' > < dot* > > ?
-#   %end
-# /
-# Note: must use < > for grouping because there is no non-capturing group.
-
-
 def _SplitAssignArg(arg, blame_word):
     # type: (str, CompoundWord) -> AssignArg
     """Dynamically parse argument to declare, export, etc.
@@ -198,7 +176,7 @@ def _SplitAssignArg(arg, blame_word):
     """
     # Note: it would be better to cache regcomp(), but we don't have an API for
     # that, and it probably isn't a bottleneck now
-    m = util.RegexSearch(ASSIGN_ARG_RE, arg)
+    m = util.RegexSearch(consts.ASSIGN_ARG_RE, arg)
     if m is None:
         e_die("Assignment builtin expected NAME=value, got %r" % arg,
               blame_word)
