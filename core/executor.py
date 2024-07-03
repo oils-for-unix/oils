@@ -298,9 +298,8 @@ class ShellExecutor(vm._Executor):
                             arg0_loc)
 
                 with dev.ctx_Tracer(self.tracer, 'proc', argv):
-                    with state.ctx_HideErrTrap(self.trap_state, self.exec_opts.errtrace()):
-                        # NOTE: Functions could call 'exit 42' directly, etc.
-                        status = self.cmd_ev.RunProc(proc_node, cmd_val)
+                    # NOTE: Functions could call 'exit 42' directly, etc.
+                    status = self.cmd_ev.RunProc(proc_node, cmd_val)
                 return status
 
         # Notes:
