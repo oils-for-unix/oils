@@ -128,11 +128,32 @@ X [Wok]           _field()
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
                   json8                  read write
-X [TSV8]          rows                   pick rows; dplyr filter()
-                  cols                   pick columns ('select' already taken)
+X [Lines]         slurp-by               combine adjacent lines into cells
+X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block) - xargs
+                  each-row               --max-jobs (Str, Template, Block) - xargs
+                  split-by               (str=\n, ifs=':', pattern=/s+/)
+                  if-split-by  
+                  chop                   alias for split-by (pattern=/s+/)
+                  must-match             (/ <capture d+> </capture w+> /)
+                  if-match               
+X [Table Create]  table                  --by-row --by-col (&place); construct/parse a table
+                  table/cols             cols name age - cols name:Str age:Int
+                  types                  type       Str Int
+                  attr                   attr units -   secs
+                  row                    emit row
+                  table cat              concatenate TSV8
+                  table align            to ssv8
+                  table tabify           to tsv8
+                  table header           (cols = :|name age|, types = :|Str Int|, units = :|- secs|)
+                  table slice            e.g. slice (1, -1)   slice (5, 7)
+                  table to-tsv           lose type info, and error on \t in cells
+X [Table Ops]     where                  subset of rows; dplyr filter()
+                  pick                   subset of columns ('select' taken by shell)
+                  mutate    transmute    [average = count / sum] - drop the ones that are used?
+                  rename                 (bytes='bytes', path='filename')
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
-                  summary                count, sum, histogram, etc. [ext]
+                  summary                count, sum, histogram, any, all, reduce(), etc. [ext]
   [Args Parser]   parser                 Parse command line arguments
                   flag
                   arg

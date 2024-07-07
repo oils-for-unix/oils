@@ -100,6 +100,7 @@ readonly MARKDOWN_DOCS=(
   qtt
   j8-notation
   pretty-printing
+  stream-table-process
 
   doc-toolchain
   doc-plugins

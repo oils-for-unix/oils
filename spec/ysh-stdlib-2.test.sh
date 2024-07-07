@@ -134,3 +134,25 @@ a.z
 b.z
 ## END
 
+
+#### smoke test for stream.ysh and table.ysh 
+
+shopt --set redefine_proc_func   # byo-maybe-main
+
+source --builtin stream.ysh
+source --builtin table.ysh
+
+# Also run tests
+
+# I guess this should not require being in a specific dir.
+# Also I guess it doesn't need to be executable?
+
+# we can run tests under bash for OSH/YSH code, so there's no coupling.
+
+$REPO_ROOT/test/byo-client.sh run-tests $SH $REPO_ROOT/stdlib/stream.ysh 
+$REPO_ROOT/test/byo-client.sh run-tests $SH $REPO_ROOT/stdlib/table.ysh 
+
+#$SH $REPO_ROOT/stdlib/stream.ysh run-byo-tests
+# $SH $REPO_ROOT/stdlib/table.ysh run-byo-tests
+
+## status: 0
