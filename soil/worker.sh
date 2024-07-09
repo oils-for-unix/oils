@@ -153,6 +153,7 @@ j8-errors           data_lang/j8-errors.sh soil-run-py           -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
 osh-minimal         test/spec-py.sh osh-minimal                  _tmp/spec/osh-minimal/index.html
 headless            client/run.sh soil-run-py                    -
+stdlib-test         stdlib/TEST.sh soil-run                      -
 EOF
 }
 
