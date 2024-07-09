@@ -659,6 +659,8 @@ run-for-release() {
   all-ref
   all-redirects  # backward compat
 
+  fmt-check  # Needs to run *after* we build the HTML
+
   patch-release-pages
 
   write-metrics
