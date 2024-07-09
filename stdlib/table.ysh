@@ -1,4 +1,4 @@
-# table.ysh
+# table.ysh - Library for tables.
 #
 # Usage:
 #   source --builtin table.ysh

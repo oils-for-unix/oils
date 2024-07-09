@@ -24,14 +24,7 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 readonly TAB=$'\t'
 
-log() {
-  echo "$0: $@" >&2
-}
-
-die() {
-  log "$0: fatal: $@"
-  exit 1
-}
+source stdlib/two.sh
 
 run-tests() {
   # argv is the command to run, like bash foo.sh

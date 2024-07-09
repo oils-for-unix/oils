@@ -134,6 +134,19 @@ a.z
 b.z
 ## END
 
+#### smoke test for two.sh
+
+source --builtin two.sh
+
+log 'hi'
+
+set +o errexit
+( die "bad" )
+echo status=$?
+
+## STDOUT:
+status=1
+## END
 
 #### smoke test for stream.ysh and table.ysh 
 

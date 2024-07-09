@@ -4,9 +4,6 @@
 #
 # Usage:
 #   source oil-polyfill.sh
-#
-# TODO: Where to deploy this?  I think we want versioned copies in
-# ~/.local/lib/oil-0.7.0/stdlib/oil-polyfill.sh
 
 sh-strict() {
   ### Turn on "legacy" shell strict modes.
@@ -18,17 +15,8 @@ sh-strict() {
 
   # POSIX
   set -o errexit -o nounset -o pipefail
-}
 
-log() {
-  ### Write a message to stderr.
-  echo "$@" >&2
-}
-
-die() {
-  ### Write a message to stderr and exit failure.
-  log "$0: fatal: $@"
-  exit 1
+  # shopt
 }
 
 # Idea: from Soil, to fix Bernstein chaining.

@@ -26,7 +26,6 @@ Notes on ninja_syntax.py:
 from __future__ import print_function
 
 import collections
-import glob
 import os
 import sys
 
