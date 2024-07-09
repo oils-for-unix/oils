@@ -114,8 +114,7 @@ referenced with `$1`, `$2`, etc.
 
 Captures can also be named.
 
-    = mystr2 => replace(/ <capture digit{4} as year : int> /,
-                        ^"$[year + 1]")
+    = mystr2 => replace(/ <capture digit{4} as year : int> /, ^"$[year + 1]")
 
 `$0` refers to the entire capture itself in a substitution string.
 

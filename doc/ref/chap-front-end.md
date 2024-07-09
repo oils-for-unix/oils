@@ -34,13 +34,12 @@ bin/oils-for-unix is an executable that contains OSH, YSH, and more.
 Usage: oils-for-unix MAIN_NAME ARG*
        MAIN_NAME ARG*
 
-It behaves like busybox.  The command name can be passed as the first
-argument:
+It behaves like busybox.  The command name can be passed as the first argument:
 
     oils-for-unix ysh -c 'echo hi'
 
-More commonly, it's invoked through a symlink like 'ysh', which
-causes it to behave like that command:
+More commonly, it's invoked through a symlink like 'ysh', which causes it to
+behave like that command:
 
     ysh -c 'echo hi'
 
@@ -59,8 +58,7 @@ Usage: osh FLAG* SCRIPT ARG*
        osh FLAG* -c COMMAND ARG*
        osh FLAG*
 
-The command line accepted by `bin/osh` is compatible with /bin/sh and
-bash.
+The command line accepted by `bin/osh` is compatible with /bin/sh and bash.
 
     osh -c 'echo hi'
     osh myscript.sh
@@ -73,8 +71,7 @@ It also has a few enhancements:
 
 osh accepts POSIX sh flags, with these additions:
 
-    -n             parse the program but don't execute it.
-                   Print the AST.
+    -n             parse the program but don't execute it.  Print the AST.
     --ast-format   what format the AST should be in
 ```
 
@@ -85,15 +82,14 @@ osh accepts POSIX sh flags, with these additions:
 <!-- pre-formatted for help builtin -->
 
 ```
-bin/ysh is the shell with data tYpes, influenced by pYthon,
-JavaScript, ...
+bin/ysh is the shell with data tYpes, influenced by pYthon, JavaScript, ...
 
 Usage: ysh FLAG* SCRIPT ARG*
        ysh FLAG* -c COMMAND ARG*
        ysh FLAG*
 
-`bin/ysh` is the same as `bin/osh` with a the `ysh:all` option group
-set.  So `bin/ysh` also accepts shell flags.
+`bin/ysh` is the same as `bin/osh` with a the `ysh:all` option group set.  So
+`bin/ysh` also accepts shell flags.
 
     ysh -c 'echo hi'
     ysh myscript.ysh
@@ -311,8 +307,8 @@ Print files embedded in the `oils-for-unix` binary to stdout.  Example:
 <!-- shown at the bottom of 'help' -->
 
 ```
-The reference is divided in to "chapters", each of which has its own
-table of contents.  Type:
+The reference is divided in to "chapters", each of which has its own table of
+contents.  Type:
 
     help osh-$CHAPTER
 
@@ -341,8 +337,8 @@ Example:
 <!-- shown at the bottom of 'help' -->
 
 ```
-The reference is divided in to "chapters", each of which has its own
-table of contents.  Type:
+The reference is divided in to "chapters", each of which has its own table of
+contents.  Type:
 
     help ysh-$CHAPTER
 

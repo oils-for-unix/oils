@@ -640,14 +640,13 @@ Format specifiers:
 
     %%  Prints a single "%".
     %b  Interprets backslash escapes while printing.
-    %q  Prints the argument escaping the characters needed to make it
-        reusable as shell input.
+    %q  Prints the argument escaping the characters needed to make it reusable
+        as shell input.
     %d  Print as signed decimal number.
     %i  Same as %d.
     %o  Print as unsigned octal number.
     %u  Print as unsigned decimal number.
-    %x  Print as unsigned hexadecimal number with lower-case hex-digits
-        (a-f).
+    %x  Print as unsigned hexadecimal number with lower-case hex-digits (a-f).
     %X  Same as %x, but with upper-case hex-digits (A-F).
     %f  Print as floating point number.
     %e  Print as a double number, in "±e" format (lower-case e).
@@ -656,16 +655,15 @@ Format specifiers:
     %G  Same as %g, but print it like %E.
     %c  Print as a single char, only the first character is printed.
     %s  Print as string
-    %n  The number of characters printed so far is stored in the variable
-        named in the argument.
-    %a  Interprets the argument as double, and prints it like a C99
-        hexadecimal floating-point literal.
+    %n  The number of characters printed so far is stored in the variable named
+        in the argument.
+    %a  Interprets the argument as double, and prints it like a C99 hexadecimal
+        floating-point literal.
     %A  Same as %a, but print it like %E.
-    %(FORMAT)T  Prints date and time, according to FORMAT as a format
-                string for strftime(3). The argument is the number of
-                seconds since epoch. It can also be -1 (current time,
-                also the default value if there is no argument) or -2
-                (shell startup time).
+    %(FORMAT)T  Prints date and time, according to FORMAT as a format string
+                for strftime(3). The argument is the number of seconds since
+                epoch. It can also be -1 (current time, also the default value
+                if there is no argument) or -2 (shell startup time).
 
 ### readarray
 
@@ -818,8 +816,7 @@ Prints the current working directory.
 Flags:
 
     -L  Follow symbolic links if present (default)
-    -P  Don't follow symbolic links.
-        Print the link instead of the target.
+    -P  Don't follow symbolic links.  Print the link instead of the target.
 
 ### pushd
 
@@ -1070,8 +1067,7 @@ File expressions:
     -r FILE          True if FILE is readable.
     -s FILE          True if FILE has size bigger than 0.
     -S FILE          True if FILE is a socket file.
-    -t FD            True if file descriptor FD is open and refers to a
-                     terminal.
+    -t FD            True if file descriptor FD is open and refers to a terminal.
     -u FILE          True if FILE has suid bit set.
     -w FILE          True if FILE is writable.
     -x FILE          True if FILE is executable.
