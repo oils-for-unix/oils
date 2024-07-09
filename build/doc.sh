@@ -412,6 +412,10 @@ ref-check() {
     _release/VERSION/doc/ref/chap-*.html 
 }
 
+fmt-check() {
+  PYTHONPATH=. doctools/fmt_check.py _release/VERSION/doc/ref/*.html
+}
+
 
 write-metrics() {
   ### Check indexes and chapters against each other
@@ -655,6 +659,8 @@ run-for-release() {
   all-markdown
   all-ref
   all-redirects  # backward compat
+
+  fmt-check  # Needs to run *after* we build the HTML
 
   patch-release-pages
 

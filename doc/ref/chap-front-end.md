@@ -20,7 +20,7 @@ This chapter describes command line usage and lexing.
 <div id="dense-toc">
 </div>
 
-<h2 id="usage">Command Line Usage</h3>
+<h2 id="usage">Command Line Usage</h2>
 
 <h3 id="oils-usage" class="osh-ysh-topic" oils-embed="1">
   oils-usage
