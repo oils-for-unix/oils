@@ -72,6 +72,18 @@ preserve_anchor_case: yes
 X [Unsupported]   enable
 ```
 
+<h2 id="stdlib">
+  Standard Library <a class="group-link" href="chap-stdlib.html">stdlib</a>
+</h2>
+
+```chapter-links-stdlib
+  [two]           log        die
+```
+  <!--
+  [bash-strict.sh]
+  [taskfile.sh]
+  -->
+
 <h2 id="front-end">
   Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>

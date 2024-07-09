@@ -77,6 +77,65 @@ Command usage:
 
 I think that is reasonable.
 
+Polyglot:
+    
+    if test -n "${OILS_VERSION:-}"; then
+      prefix='--builtin '
+    else
+      prefix='stdlib'
+    fi
+    
+    source ${prefix}two.sh
+    source ${prefix}bash-strict.sh
+
+Honestly I think this is better.
+
+    # Bootstrapping trick, to
+    # To avoid self-hosting
+    if test -z "${OILS_VERSION:-}"; then
+      OSH_LIB='stdlib'
+    fi
+
+    source $OSH_LIB/bash-strict.sh
+    source $OSH_LIB/two.sh
+    source $OSH_LIB/taskfile.sh
+
+    source $OSH_LIB/byo-server-lib.sh
+
+    # source /osh-lib/foo  # refers to the actual directory
+
+    source $OSH_LIB/bash-strict.sh
+    source ///osh-lib/bash-strict.sh
+
+    # Does not work - this refers to a real dir
+    source /osh-lib/bash-strict.sh
+
+
+    use $YSH_LIB/args.ysh { pick parser }
+
+    use $YSH_LIB/arg-parser.ysh
+    arg-parser (&x) {
+       flag --fo x
+       flag --fo x
+    }
+
+    use $YSH_LIB/table.ysh { pick table split-by }
+
+Repo:
+
+    oils/
+      stdlib/
+        osh/
+          two.sh
+          bash-strict.sh
+          taskfile.sh
+        ysh/
+          args.ysh
+          table.ysh
+          stream.ysh
+
+    
+
 ## Polyfill ideas
 
 ### From Soil - Fix SSH and Bernstein chaining

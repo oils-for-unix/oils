@@ -16,7 +16,7 @@ log() {
 }
 
 die() {
-  ### Write an error message with the script name, and exit failure.
+  ### Write an error message with the script name, and exit with status 1.
   log "$0: fatal: $@"
   exit 1
 }

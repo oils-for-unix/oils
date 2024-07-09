@@ -123,11 +123,26 @@ X [Wok]           _field()
                   fork         forkwait  Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
                 X dbg                    Only thing that can be used in funcs
-                X log        X die       Common functions (polyfill)
   [Hay Config]    hay          haynode   For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
                   json8                  read write
+X [Testing]       assert                 takes an expression
+```
+
+<h2 id="stdlib">
+  Standard Library<a class="group-link" href="chap-stdlib.html">stdlib</a>
+</h2>
+
+<!-- linkify_stop_col is 42 -->
+
+```chapter-links-stdlib_42
+  [Args Parser]   parser                 Parse command line arguments
+                  flag
+                  arg
+                  rest
+                  parseArgs()
+X [Testing]       describe               Test harness
 X [Lines]         slurp-by               combine adjacent lines into cells
 X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block) - xargs
                   each-row               --max-jobs (Str, Template, Block) - xargs
@@ -154,13 +169,6 @@ X [Table Ops]     where                  subset of rows; dplyr filter()
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
                   summary                count, sum, histogram, any, all, reduce(), etc. [ext]
-  [Args Parser]   parser                 Parse command line arguments
-                  flag
-                  arg
-                  rest
-                  parseArgs()
-X [Testing]       describe               Test harness
-                  assert                 takes an expression
 ```
 
 <!--
