@@ -37,11 +37,6 @@ def log(msg, *args):
   print(msg, file=sys.stderr)
 
 
-def globs(pat):
-  """Deterministic glob, e.g. for _gen/bin/text_files.cc."""
-  return sorted(glob.glob(pat))
-
-
 # Matrix of configurations
 
 COMPILERS_VARIANTS = [

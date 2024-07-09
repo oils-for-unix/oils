@@ -5,8 +5,8 @@
 #
 # For reading lines, decoding, extracting, splitting
 
-# make this file a test server, bash/OSH lib is OK
-source --builtin byo-server-lib.bash
+# make this file a test server
+source --builtin byo-server-lib.sh
 
 source --builtin args.ysh
 

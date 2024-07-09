@@ -3,8 +3,8 @@
 # Usage:
 #   source --builtin table.ysh
 
-# make this file a test server, bash/OSH lib is OK
-source --builtin byo-server-lib.bash
+# make this file a test server
+source --builtin byo-server-lib.sh
 
 proc table (...words; place; ; block) {
   var n = len(words)

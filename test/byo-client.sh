@@ -29,7 +29,7 @@ log() {
 }
 
 die() {
-  log "$@"
+  log "$0: fatal: $@"
   exit 1
 }
 
@@ -47,8 +47,20 @@ run-tests() {
   fi
 
   # TODO:
-  # - change directories
-  # - provide option to redirect stdout
+  # --no-chdir       Change directory by default, but this option disables it
+  # --no-stdout-log  stdout is not redirected to its own, named file
+  # --max-jobs       Parallelism
+  #
+  # And how do we run test binaries that are just one big process?
+  # - Python - inside a file, we probably don't have any tests to run in parallel
+  # - C++    - ditto
+  # - R      - we have a few unit tests
+  #
+  # So maybe we need BYO_LIST_TEST_BIN - list the test binaries?
+  # Or mycpp/TEST.sh etc. should list them.   Yes that is true!
+  # We can also list things to build.
+  #
+  # BYO_LIST_NINJA=1
 
   mkdir -p _tmp
   local tmp=_tmp/byo-list.txt

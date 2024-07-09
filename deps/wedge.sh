@@ -92,8 +92,12 @@ OILS_ABSOLUTE_ROOT='/wedge/oils-for-unix.org'
 # The user may build a wedge outside a container here
 OILS_RELATIVE_ROOT="$HOME/wedge/oils-for-unix.org"
 
+log() {
+  echo "$@" >&2
+}
+
 die() {
-  echo "$0: $@" >& 2
+  log "$0: fatal: $@"
   exit 1
 }
 
@@ -508,6 +512,6 @@ case $1 in
     ;;
 
   *)
-    die "$0: Invalid action '$1'"
+    die "$Invalid action '$1'"
     ;;
 esac

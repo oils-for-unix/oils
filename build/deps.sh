@@ -99,11 +99,11 @@ readonly SOUFFLE_VERSION=2.4.1
 readonly SOUFFLE_URL=https://github.com/souffle-lang/souffle/archive/refs/tags/2.4.1.tar.gz
 
 log() {
-  echo "$0: $@" >& 2
+  echo "$@" >& 2
 }
 
 die() {
-  log "$@"
+  log "$0: fatal: $@"
   exit 1
 }
 

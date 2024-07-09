@@ -22,12 +22,12 @@ sh-strict() {
 
 log() {
   ### Write a message to stderr.
-  echo "$@" 1>&2
+  echo "$@" >&2
 }
 
 die() {
   ### Write a message to stderr and exit failure.
-  log 'fatal:' "$@"
+  log "$0: fatal: $@"
   exit 1
 }
 

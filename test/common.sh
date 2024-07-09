@@ -22,11 +22,11 @@ MAX_PROCS=${MAX_PROCS:-"$(( nproc <= 2 ? nproc : nproc - 1 ))"}
 readonly R_PATH=~/R
 
 log() {
-  echo "$@" 1>&2
+  echo "$@" >&2
 }
 
 die() {
-  log "$@"
+  log "$0: fatal: $@"
   exit 1
 }
 
