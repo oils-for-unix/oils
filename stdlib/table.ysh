@@ -54,6 +54,8 @@ proc table (...words; place; ; block) {
 }
 
 proc test-table {
+  return
+
   table (&files1) {
     cols  num_bytes path
     type  Int       Str

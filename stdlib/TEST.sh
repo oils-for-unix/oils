@@ -9,15 +9,45 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-soil-run() {
-  SH=bin/ysh
-  test/byo-client.sh run-tests $SH stdlib/stream.ysh 
+YSH=bin/ysh
 
-  test/byo-client.sh run-tests $SH stdlib/table.ysh 
+test-byo-protocol() {
+  return
+
+  # Usually the "BYO" command does this
+  BYO_COMMAND=detect $YSH stdlib/table.ysh
+
+  # TODO: need assertions here
+  # assert status
+
+  # assert-ok 'echo hi'
+  # assert-stdout 'echo hi'
+  # assert-fail 2 '(exit 2)'
+
+  # I think we usually don't need this
+  # assert-fail-stdout 2 '(exit 2)'
+
+  BYO_COMMAND=z $YSH stdlib/table.ysh
+
+  # missing
+  BYO_COMMAND=run-test $YSH stdlib/table.ysh
+
+  # TODO: test file with no tests
+}
+
+soil-run() {
+  test-byo-protocol
+
+  test/byo-client.sh run-tests $YSH stdlib/stream.ysh 
+
+  test/byo-client.sh run-tests $YSH stdlib/table.ysh 
 
   # I guess this needs tests, with an assertion library for stdout?
 
+  # TODO: if there are no tests, it should fail
   # test/byo-client.sh run-tests $SH stdlib/two.sh 
 }
+
+
 
 "$@"

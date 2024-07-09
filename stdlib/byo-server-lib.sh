@@ -8,22 +8,58 @@
 #
 # (It relies on compgen -A, and maybe declare -f, so it's not POSIX shell.)
 
+# TODO: How do I get stdlib/two.sh
+log() {
+  echo "$@" >& 2
+}
+
+die() {
+  log "$0: fatal: $@"
+  exit 1
+}
+
+
 byo-maybe-main() {
-  if test -n "${BYO_LIST_TESTS:-}"; then
-    # bash extension that OSH also implements
-    compgen -A function | grep '^test-'
-    exit 0
-  fi
+  local command=${BYO_COMMAND:-}
 
-  local test_name=${BYO_TEST_NAME:-}
-  if test -n "$test_name"; then
-    # Shell convention: we name functions test-*
-    $test_name
+  case $command in
+    '')
+      # Do nothing if it's not specified
+      return 
+      ;;
 
-    # Only run if not set -e.  Either way it's equivalent
-    exit $?
-  fi
+    detect)
+      # all the commands supported, except 'detect'
+      echo list-tests
+      echo run-test
 
-  # Do nothing if none of those variables is set.
+      exit 66  # ASCII code for 'B' - what the protocol specifies
+      ;;
+
+    list-tests)
+      # bash extension that OSH also implements
+      compgen -A function | grep '^test-'
+      exit 0
+      ;;
+
+    run-test)
+      local test_name=${BYO_ARG:-}
+      if test -z "$test_name"; then
+        die "BYO run-test: Expected BYO_ARG"
+      fi
+
+      # Shell convention: we name functions test-*
+      $test_name
+
+      # Only run if not set -e.  Either way it's equivalent
+      exit $?
+      ;;
+
+    *)
+      die "Invalid BYO command '$command'"
+      ;;
+  esac
+
+  # Do nothing if BYO_COMMAND is not set.
   # The program continues to its "main".
 }

@@ -59,7 +59,7 @@ run-tests() {
   local tmp=_tmp/byo-list.txt
 
   # First list the tests
-  BYO_LIST_TESTS=1 "$@" > $tmp
+  BYO_COMMAND=list-tests "$@" > $tmp
 
   local i=0
   local status
@@ -69,7 +69,7 @@ run-tests() {
     echo "${TAB}${test_name}"
 
     set +o errexit
-    BYO_RUN_TEST="$test_name" "$@"
+    BYO_COMMAND=run-test BYO_ARG="$test_name" "$@"
     status=$?
     set -o errexit
 

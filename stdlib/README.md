@@ -30,6 +30,53 @@ YSH
 
     prelude.ysh  # todo pass, hm
 
+## What We Actually Use in Oils
+
+    source stdlib/two.sh          #  I definitely use this
+    source stdlib/bash-strict.sh  # inherit_errexit
+
+    source stdlib/taskfile.sh  # questionable?
+                 # needs function docstring support
+                 # needs file docstring support
+
+    source stdlib/byo-server-lib.sh  # convert more of these
+
+## Task Files Templates
+
+Problem: user scripts wouldn't run under bash:
+
+    # Docstring
+    source --builtin bash-strict.sh
+    source --builtin two.sh
+    source --builtin taskfile.sh
+
+    foo() {
+      echo todo
+    }
+
+    taskfile "$@"
+
+Test:
+
+    # Docstring
+    source --builtin bash-strict.sh
+    source --builtin two.sh
+    source --builtin byo-server-lib.sh
+
+    source test/common.sh  # assertions
+
+    test-foo() {
+      echo TODO
+    }
+
+    byo-maybe-main
+
+Command usage:
+
+    byo test stdlib/TEST.sh
+
+I think that is reasonable.
+
 ## Polyfill ideas
 
 ### From Soil - Fix SSH and Bernstein chaining
