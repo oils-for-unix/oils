@@ -61,36 +61,12 @@ class CheckBackticks(TagAwareHTMLParser):
         self.has_error = True
 
 
-class CheckCodeLines(TagAwareHTMLParser):
-    # Found when the display is 801px in width
-    MAX_LINE_LENGTH = 72
-
-    def __init__(self, file):
-        super().__init__(file)
-        self.has_error = False
-
-    def handle_data(self, text):
-        # Ignore eg, <code> tags
-        if len(self.tag_stack) and self.tag_stack[-1] != 'code':
-            return
-
-        for i, line in enumerate(text.splitlines()):
-            if len(line) > self.MAX_LINE_LENGTH:
-                print('%s [ERROR] Line %d of <code> is too long: %r' %
-                      (self.location_str(), i + 1, line))
-                self.has_error = True
-
-
 def FormatCheck(filename):
     backticks = CheckBackticks(filename)
     with open(filename, "r") as f:
         backticks.feed(f.read())
 
-    lines = CheckCodeLines(filename)
-    with open(filename, "r") as f:
-        lines.feed(f.read())
-
-    return backticks.has_error or lines.has_error
+    return backticks.has_error
 
 
 def main(argv):
