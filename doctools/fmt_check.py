@@ -6,7 +6,6 @@ Check that the output HTML obeys the following rules:
 
  - No orphaned backticks '`' should be part of a `inline code block`
    (ie. any backticks not in a <code> block is treated as an error)
- - Lines in a <code> should be shorter than 70 chars (else they overflow)
 """
 
 import HTMLParser
