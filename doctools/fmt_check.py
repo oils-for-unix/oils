@@ -71,12 +71,10 @@ def FormatCheck(filename):
 
 
 def main(argv):
-    action = argv[1]
-
     any_error = False
     for path in argv[1:]:
         if not path.endswith('.html'):
-            raise RuntimeError('Expected %r to be a .html file' % filename)
+            raise RuntimeError('Expected %r to be a .html file' % path)
 
         this_error = FormatCheck(path)
         any_error = any_error or this_error
