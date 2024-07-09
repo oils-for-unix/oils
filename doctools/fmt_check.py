@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
+from __future__ import print_function
 """fmt_check.py
 
 Check that the output HTML obeys the following rules:
@@ -8,16 +9,16 @@ Check that the output HTML obeys the following rules:
  - Lines in a <code> should be shorter than 70 chars (else they overflow)
 """
 
-import html.parser
+import HTMLParser
 import sys
 
 from doctools.util import log
 
 
-class TagAwareHTMLParser(html.parser.HTMLParser):
+class TagAwareHTMLParser(HTMLParser.HTMLParser):
 
     def __init__(self, file):
-        super().__init__()
+        HTMLParser.HTMLParser.__init__(self)
         self.tag_stack = []
         self.file = file
 
@@ -42,7 +43,7 @@ class TagAwareHTMLParser(html.parser.HTMLParser):
 class CheckBackticks(TagAwareHTMLParser):
 
     def __init__(self, file):
-        super().__init__(file)
+        TagAwareHTMLParser.__init__(self, file)
         self.has_error = False
 
     def handle_data(self, text):
