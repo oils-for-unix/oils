@@ -19,7 +19,7 @@ sh-assert() {
   fi
 }
 
-capture-command() {
+capture-cmd() {
   ### capture status and stdout
 
   local -n out_status=$1
@@ -39,7 +39,7 @@ capture-command() {
   out_stdout=$__stdout
 }
 
-capture-command-2() {
+capture-cmd-2() {
   ### capture status and stderr 
   
   # This is almost identical to the above
@@ -66,16 +66,16 @@ _demo-stderr() {
   return 99
 }
 
-test-capture-command() {
+test-capture-cmd() {
   local status stdout
-  capture-command status stdout \
+  capture-cmd status stdout \
     echo hi
 
   sh-assert 0 = "$status"
   sh-assert 'hi' = "$stdout"
 
   local stderr
-  capture-command-2 status stderr \
+  capture-cmd-2 status stderr \
     _demo-stderr yyy
 
   #echo "stderr: [$stderr]"
@@ -83,7 +83,7 @@ test-capture-command() {
   sh-assert 99 = "$status"
   sh-assert 'zzz yyy' = "$stderr"
 
-  capture-command status stdout \
+  capture-cmd status stdout \
     _demo-stderr aaa
 
   #echo "stderr: [$stderr]"

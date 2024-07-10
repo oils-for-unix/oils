@@ -5,9 +5,11 @@
 # Usage:
 #   stdlib/TEST.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+# TODO:
+# : ${LIB_OSH=stlib/osh}
+# source $LIB_OSH/bash-strict.sh
+
+source stdlib/osh/bash-strict.sh
 
 YSH=bin/ysh
 
@@ -39,7 +41,7 @@ soil-run() {
   test-byo-protocol
 
   # Run this directly; don't create circular deps on BYO, etc.
-  stdlib/osh/testing.sh test-capture-command
+  stdlib/osh/testing.sh test-capture-cmd
 
   test/byo-client.sh run-tests $YSH stdlib/stream.ysh 
 

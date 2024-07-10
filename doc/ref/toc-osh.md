@@ -77,11 +77,12 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-stdlib
-  [two]            log             die
-  [byo-server-lib] byo-maybe-run   byo-must-run
+  [bash-strict]   
+  [two]           log             die
+  [testing]       capture-cmd     capture-cmd-2   sh-assert
+  [byo-server]    byo-maybe-run   byo-must-run
 ```
   <!--
-  [bash-strict.sh]
   [taskfile.sh]
   -->
 

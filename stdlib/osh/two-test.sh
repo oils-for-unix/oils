@@ -12,7 +12,7 @@ set -o errexit
 test-log() {
   local status stderr
 
-  capture-command-2 status stderr \
+  capture-cmd-2 status stderr \
     log hi
 
   sh-assert 'hi' = "$stderr"
@@ -22,7 +22,7 @@ test-log() {
 test-die() {
   local status
 
-  # This calls exit, so we don't use capture-command
+  # This calls exit, so we don't use capture-cmd
 
   set +o errexit
   ( die "bad" )

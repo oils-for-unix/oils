@@ -42,7 +42,7 @@ run-task() {
     exit
   fi
 
-  if ! declare -f "$1"; then
+  if ! declare -f "$1" >/dev/null; then
     echo "$0: '$1' isn't an action in this task file.  Try '$0 --help'"
     exit 1
   fi
