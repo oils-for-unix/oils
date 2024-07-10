@@ -1,9 +1,10 @@
 ---
+in_progress: yes
 default_highlighter: oils-sh
 ---
 
-YSH Design: Streams, Tables and Processes (and Trees?)
-======================================================
+Streams, Tables and Processes - awk, R, xargs
+=============================================
 
 *(July 2024)*
 
