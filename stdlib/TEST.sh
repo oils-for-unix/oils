@@ -5,11 +5,8 @@
 # Usage:
 #   stdlib/TEST.sh <function name>
 
-# TODO:
-# : ${LIB_OSH=stlib/osh}
-# source $LIB_OSH/bash-strict.sh
-
-source stdlib/osh/bash-strict.sh
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
 
 YSH=bin/ysh
 

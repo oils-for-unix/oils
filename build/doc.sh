@@ -99,8 +99,12 @@ readonly MARKDOWN_DOCS=(
   qsn
   qtt
   j8-notation
+  # Protocol
+  byo
   pretty-printing
   stream-table-process
+
+  lib-osh
 
   doc-toolchain
   doc-plugins

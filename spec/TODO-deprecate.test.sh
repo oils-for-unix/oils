@@ -60,5 +60,21 @@ status=42
 ## END
 
 
+#### source ///osh/two.sh rather than source --builtin osh/two.sh
 
+source --builtin osh/two.sh
+echo status=$?
 
+## STDOUT:
+status=0
+## END
+
+#### OILS_VERSION, not OIL_VERSION
+
+if test -n "$OIL_VERSION"; then
+  echo OIL
+fi
+
+## STDOUT:
+OIL
+## END

@@ -514,3 +514,24 @@ BoundFunc
 BoundFunc
 Range
 ## END
+
+#### source ///osh/two.sh and $LIB_OSH
+
+source ///osh/two.sh
+echo status=$?
+
+source $LIB_OSH/two.sh
+echo status=$?
+
+# errors
+source ///
+echo status=$?
+source ///x
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+status=2
+status=2
+## END

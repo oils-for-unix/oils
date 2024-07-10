@@ -81,20 +81,8 @@ X [Unsupported]   enable
   [two]           log             die
   [no-quotes]     nq-capture      nq-capture-2   nq-assert
   [byo-server]    byo-maybe-run   byo-must-run
-  [task-five]     taskfile
+  [task-five]
 ```
-
-<!--
-repo-root is left off because there are questions about
-
-pwd -P
-readlink -f $0
-
-There is not one way to do it when symlinks are involved.  And most of our
-scripts don't have it.
-
--->
-
 
 
 <h2 id="front-end">
