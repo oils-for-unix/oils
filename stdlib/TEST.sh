@@ -41,7 +41,7 @@ soil-run() {
   test-byo-protocol
 
   # Run this directly; don't create circular deps on BYO, etc.
-  stdlib/osh/testing.sh test-capture-cmd
+  stdlib/osh/no-quotes.sh test-nq-capture
 
   test/byo-client.sh run-tests $YSH stdlib/stream.ysh 
 

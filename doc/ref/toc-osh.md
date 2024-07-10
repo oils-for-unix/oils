@@ -79,12 +79,11 @@ X [Unsupported]   enable
 ```chapter-links-stdlib
   [bash-strict]   
   [two]           log             die
-  [testing]       capture-cmd     capture-cmd-2   sh-assert
+  [no-quotes]     nq-capture      nq-capture-2   nq-assert
   [byo-server]    byo-maybe-run   byo-must-run
+  [task-five]     taskfile
+  [repo-root]
 ```
-  <!--
-  [taskfile.sh]
-  -->
 
 <h2 id="front-end">
   Front End <a class="group-link" href="chap-front-end.html">front-end</a>
