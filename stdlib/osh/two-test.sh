@@ -1,36 +1,35 @@
 #!/usr/bin/env bash
 
-source stdlib/osh/two.sh
-source stdlib/osh/byo-server-lib.sh
+source stdlib/osh/two.sh  # module under test
 
-source test/common.sh  # assert
+source stdlib/osh/byo-server-lib.sh
+source stdlib/osh/testing.sh
 
 set -o nounset
 set -o pipefail
 set -o errexit
 
 test-log() {
-  local stderr
-  local status
+  local status stderr
 
-  set +o errexit
-  stderr=$(log hi 2>&1)
-  status=$?
-  set -o errexit
+  capture-command-2 status stderr \
+    log hi
 
-  assert 'hi' = "$stderr"
-  assert 0 -eq "$status"
+  sh-assert 'hi' = "$stderr"
+  sh-assert 0 = "$status"
 }
 
 test-die() {
   local status
+
+  # This calls exit, so we don't use capture-command
 
   set +o errexit
   ( die "bad" )
   status=$?
   set -o errexit
 
-  assert 1 -eq "$status"
+  sh-assert 1 -eq "$status"
 }
 
 byo-must-run

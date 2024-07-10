@@ -77,7 +77,8 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-stdlib
-  [two]           log        die
+  [two]            log             die
+  [byo-server-lib] byo-maybe-run   byo-must-run
 ```
   <!--
   [bash-strict.sh]

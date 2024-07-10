@@ -43,7 +43,7 @@ SECTION_RE = re.compile(
     r'''
   \s*
   \[
-  ([a-zA-Z0-9 /:]+)  # colon for ysh:upgrade
+  ([a-zA-Z0-9 /:-]+)  # allow ysh:upgrade, byo-server-lib, etc.
   \]
 ''', re.VERBOSE)
 

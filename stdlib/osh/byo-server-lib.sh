@@ -1,12 +1,15 @@
-# Library to turn a file into a "BYO test server"
+# Library to turn a shell file into a "BYO test server"
 #
 # Usage:
-#   source --builtin test/byo-server-lib.sh   # from Oils
-#   source test/byo-server-lib.sh             # can be used with bash
+#
+#   # from both bash and OSH
+#   if test -z "$LIB_OSH"; then LIB_OSH=stdlib/osh; fi
+#   source $LIB_OSH/byo-server-lib.sh
 #
 # The client creates a clean process state and directory state for each tests.
 #
-# (It relies on compgen -A, and maybe declare -f, so it's not POSIX shell.)
+# (This file requires compgen -A, and maybe declare -f, so it's not POSIX
+# shell.)
 
 # TODO: How do I get stdlib/two.sh
 log() {
