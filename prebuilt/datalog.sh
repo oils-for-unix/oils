@@ -9,7 +9,7 @@ readonly DEPS_DIR=$REPO_ROOT/../oil_DEPS
 
 source build/common.sh
 source build/dev-shell.sh
-source devtools/run-task.sh
+source devtools/task-five.sh
 
 compile_one() {
   in=$1
@@ -24,4 +24,4 @@ compile_all() {
   compile_one deps/source.medo/souffle/smoke-test.dl
 }
 
-run-task "$@"
+task-five "$@"

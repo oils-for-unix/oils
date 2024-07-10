@@ -17,14 +17,11 @@
 #
 # The client creates a clean process state and directory state for each tests.
 
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/two.sh
 
 readonly TAB=$'\t'
-
-source stdlib/osh/two.sh
 
 detect() {
   if test $# -eq 0; then

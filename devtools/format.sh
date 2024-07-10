@@ -8,7 +8,7 @@
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/dev-shell.sh  # python3 in $PATH
-source devtools/run-task.sh
+source devtools/task-five.sh
 
 # Hack to prevent interference.  TODO: Make a separate wedge for yapf.
 unset PYTHONPATH
@@ -148,4 +148,4 @@ test-asdl-format() {
   diff -u $file $tmp
 }
 
-run-task "$@"
+task-five "$@"

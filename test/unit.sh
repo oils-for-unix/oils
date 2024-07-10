@@ -21,7 +21,7 @@ readonly REPO_ROOT
 
 source build/dev-shell.sh    # R_LIBS_USER, but also changes python3
 source test/common.sh        # html-head
-source devtools/run-task.sh  # run-task
+source devtools/task-five.sh  # run-task
 source test/tsv-lib.sh
 
 banner() {
@@ -292,4 +292,4 @@ all-2() {
 # NOTE: Show options like this:
 # python -m unittest discover -h
 
-run-task "$@"
+task-five "$@"

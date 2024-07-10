@@ -13,7 +13,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/run-task.sh
+source devtools/task-five.sh
 source test/common.sh  # run-test-funcs
 
 run-shell() {
@@ -86,4 +86,4 @@ soil-run() {
   done
 }
 
-run-task "$@"
+task-five "$@"

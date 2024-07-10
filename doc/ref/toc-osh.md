@@ -214,6 +214,7 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [getopts]       OPTIND            OPTARG      X OPTERR
   [read]          REPLY
   [Functions]   X RANDOM            SECONDS
+  [Oils VM]       OILS_VERSION      LIB_OSH
 ```
 
 <h2 id="plugin">

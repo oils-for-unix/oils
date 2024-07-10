@@ -31,7 +31,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
 source deps/from-apt.sh  # PY3_BUILD_DEPS
 #source deps/podman.sh
-source devtools/run-task.sh  # run-task
+source devtools/task-five.sh  # run-task
 source test/tsv-lib.sh  # tsv-concat
 source web/table/html.sh  # table-sort-{begin,end}
 
@@ -1121,4 +1121,4 @@ for ext, total_bytes in bytes.most_common()[:n]:
 ' | commas
 }
 
-run-task "$@"
+task-five "$@"

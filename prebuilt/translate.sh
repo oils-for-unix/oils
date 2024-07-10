@@ -12,7 +12,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source mycpp/common.sh       # MYPY_REPO
-source devtools/run-task.sh  # run-task
+source devtools/task-five.sh  # run-task
 source build/ninja-rules-cpp.sh
 
 readonly TEMP_DIR=_build/tmp
@@ -144,4 +144,4 @@ deps() {
     python2 -c 'import sys; from core import error; print(sys.modules.keys())'
 }
 
-run-task "$@"
+task-five "$@"

@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 source build/dev-shell.sh  # python3
-source devtools/run-task.sh
+source devtools/task-five.sh
 
 py-demo() {
   echo mystdin | client/headless_demo.py --sh-binary bin/osh
@@ -57,4 +57,4 @@ soil-run-cpp() {
 }
 
 
-run-task "$@"
+task-five "$@"

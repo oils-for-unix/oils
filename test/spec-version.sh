@@ -11,7 +11,7 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source devtools/run-task.sh
+source devtools/task-five.sh
 source test/common.sh  # date-and-git-info
 source test/spec-common.sh  # OSH_LIST
 
@@ -126,4 +126,4 @@ interactive-version-text() {
   osh-version-text
 }
 
-run-task "$@"
+task-five "$@"

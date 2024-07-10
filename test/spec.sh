@@ -12,7 +12,7 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source test/common.sh
 source test/spec-common.sh
-source devtools/run-task.sh
+source devtools/task-five.sh
 
 if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 'dash', etc.
@@ -968,4 +968,4 @@ toysh-posix() {
   run-file toysh-posix "$@"
 }
 
-run-task "$@"
+task-five "$@"

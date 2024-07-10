@@ -697,8 +697,27 @@ These builtins accept shell code and run it.
 
     source SCRIPT ARG*
 
-Executes SCRIPT with given ARGs in the context of the current shell.  It will
-modify existing variables.
+Execute SCRIPT with the given ARGs, in the context of the current shell.  That is,
+existing variables will be modified.
+
+---
+
+Oils extension: If the SCRIPT starts with `///`, we look for scripts embedded in
+the `oils-for-unix` binary.  Example:
+
+    source ///osh/two.sh     # load embedded script
+
+    : ${LIB_OSH=fallback/dir}
+    source $LIB_OSH/two.sh   # same thing
+
+The [LIB_OSH][] form is useful for writing a script that works under both bash
+and OSH.
+
+- Related: the [cat-em][] tool prints embedded scripts.
+
+[LIB_OSH]: chap-special-var.html#LIB_OSH
+[cat-em]: chap-front-end.html#cat-em
+
 
 ### eval
 

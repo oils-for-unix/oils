@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/run-task.sh
+source devtools/task-five.sh
 source test/common.sh  # log
 
 BASE_DIR=_tmp/ltrace
@@ -47,4 +47,4 @@ soil-run() {
   test-home-dir
 }
 
-run-task "$@"
+task-five "$@"

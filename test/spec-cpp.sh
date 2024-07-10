@@ -16,7 +16,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/dev-shell.sh  # PYTHONPATH
-source devtools/run-task.sh
+source devtools/task-five.sh
 source test/common.sh  # html-head
 source test/spec-common.sh
 source web/table/html.sh
@@ -358,4 +358,4 @@ repro-all() {
   OSH_CC=$REPO_ROOT/_bin/clang-dbg/osh $0 all
 }
 
-run-task "$@"
+task-five "$@"

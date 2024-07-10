@@ -7,7 +7,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/run-task.sh
+source devtools/task-five.sh
 source soil/common.sh  # dump-env
 
 dump-timezone() {
@@ -136,5 +136,5 @@ os-info() {
   echo
 }
 
-run-task "$@"
+task-five "$@"
 

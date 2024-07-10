@@ -10,7 +10,7 @@ set -o pipefail
 set -o errexit
 shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
-source devtools/run-task.sh
+source devtools/task-five.sh
 source test/common.sh  # $OSH
 
 readonly TEMP_DIR=_tmp
@@ -656,4 +656,4 @@ case (var) {
 '
 }
 
-run-task "$@"
+task-five "$@"

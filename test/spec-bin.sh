@@ -24,7 +24,7 @@ set -o errexit
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
-source devtools/run-task.sh
+source devtools/task-five.sh
 #source test/spec-common.sh
 
 #
@@ -56,4 +56,4 @@ bash-upstream() {
     https://ftp.gnu.org/gnu/bash/bash-5.2.21.tar.gz
 }
 
-run-task "$@"
+task-five "$@"

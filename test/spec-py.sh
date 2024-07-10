@@ -14,7 +14,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source test/spec-common.sh
-source devtools/run-task.sh
+source devtools/task-five.sh
 
 run-file() {
   local spec_name=$1
@@ -166,4 +166,4 @@ all-and-smoosh() {
   test/spec.sh smoosh-hang-html "${more_flags[@]}"
 }
 
-run-task "$@"
+task-five "$@"

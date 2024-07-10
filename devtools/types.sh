@@ -8,7 +8,7 @@ set -o pipefail
 set -o errexit
 
 source build/dev-shell.sh  # python3 in $PATH
-source devtools/run-task.sh  # run-task
+source devtools/task-five.sh  # run-task
 
 readonly MYPY_FLAGS='--strict --no-strict-optional'
 
@@ -64,4 +64,4 @@ soil-run() {
   check-all
 }
 
-run-task "$@"
+task-five "$@"

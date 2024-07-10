@@ -10,7 +10,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/dev-shell.sh  # python3 in PATH
-source devtools/run-task.sh
+source devtools/task-five.sh
 source test/common.sh  # run-test-funcs
 
 unit() {
@@ -119,4 +119,4 @@ soil-run() {
   check
 }
 
-run-task "$@"
+task-five "$@"

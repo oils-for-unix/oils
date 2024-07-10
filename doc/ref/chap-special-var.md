@@ -101,9 +101,17 @@ YSH `read` sets this variable:
 
 ### `OILS_VERSION`
 
-The version of Oils that's being run, e.g. `0.9.0`.
+The version of Oils that's being run, e.g. `0.23.0`.
 
 <!-- TODO: specify comparison algorithm. -->
+
+### `LIB_OSH`
+
+The string `///osh`, which is meant for use with the [source][] builtin.
+
+[source]: chap-builtin-cmd.html#source
+
+
 
 ### `OILS_GC_THRESHOLD`
 

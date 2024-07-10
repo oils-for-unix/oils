@@ -10,7 +10,7 @@ set -o errexit
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source test/spec-common.sh
-source devtools/run-task.sh
+source devtools/task-five.sh
 
 run-file-with-osh-bash() {
   local spec_name=$1
@@ -38,4 +38,4 @@ _run-file-with-one() {
 run-file-with-osh() { _run-file-with-one $REPO_ROOT/bin/osh "$@"; }
 run-file-with-bash() { _run-file-with-one bash "$@"; }
 
-run-task "$@"
+task-five "$@"

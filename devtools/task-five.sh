@@ -3,9 +3,9 @@
 # Common shell functions for task scripts.
 #
 # Usage:
-#   source devtools/run-task.sh
+#   source devtools/task-five.sh
 #    ...  # define task functions
-#   run-task "$@"
+#   task-five "$@"
 
 # List all functions defined in this file (and not in sourced files).
 _bash-print-funcs() {
@@ -36,7 +36,7 @@ _show-help() {
   fi
 }
 
-run-task() {
+task-five() {
   if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
     _show-help
     exit

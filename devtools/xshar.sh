@@ -23,7 +23,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-source devtools/run-task.sh  # run-task
+source devtools/task-five.sh  # run-task
 
 print-shell() {
   local tar=$1
@@ -115,7 +115,7 @@ test-oils-manifest() {
   echo 'build/dev-shell.sh'
   echo 'build/py.sh'
   echo 'build/common.sh'
-  echo 'devtools/run-task.sh'
+  echo 'devtools/task-five.sh'
 
   # osh --tool shell-deps benchmarks/osh-runtime.sh
   # copied from benchmarks/osh-runtime.sh
@@ -161,4 +161,4 @@ soil-run-test-oils() {
   XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar --version
 }
 
-run-task "$@"
+task-five "$@"
