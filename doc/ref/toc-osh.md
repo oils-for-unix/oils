@@ -82,8 +82,20 @@ X [Unsupported]   enable
   [no-quotes]     nq-capture      nq-capture-2   nq-assert
   [byo-server]    byo-maybe-run   byo-must-run
   [task-five]     taskfile
-  [repo-root]
 ```
+
+<!--
+repo-root is left off because there are questions about
+
+pwd -P
+readlink -f $0
+
+There is not one way to do it when symlinks are involved.  And most of our
+scripts don't have it.
+
+-->
+
+
 
 <h2 id="front-end">
   Front End <a class="group-link" href="chap-front-end.html">front-end</a>
