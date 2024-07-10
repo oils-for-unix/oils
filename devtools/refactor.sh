@@ -5,11 +5,9 @@
 # Usage:
 #   devtools/refactor.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-
-source devtools/task-five.sh  # run-task
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 change-kind() {
   local kind=$1

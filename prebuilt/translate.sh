@@ -5,14 +5,13 @@
 # Usage:
 #   prebuilt/translate.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source mycpp/common.sh       # MYPY_REPO
-source devtools/task-five.sh  # run-task
 source build/ninja-rules-cpp.sh
 
 readonly TEMP_DIR=_build/tmp

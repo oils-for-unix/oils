@@ -22,16 +22,15 @@
 #
 #     rm -r -f ~/wedge  # would be better
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/dev-shell.sh  # python3 in PATH, PY3_LIBS_VERSION
 source deps/from-apt.sh  # PY3_BUILD_DEPS
 #source deps/podman.sh
-source devtools/task-five.sh  # run-task
 source test/tsv-lib.sh  # tsv-concat
 source web/table/html.sh  # table-sort-{begin,end}
 

@@ -5,10 +5,9 @@
 # Usage:
 #   test/lint.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
@@ -16,7 +15,6 @@ readonly REPO_ROOT
 source build/common.sh
 source build/dev-shell.sh  # python2 and python3
 source devtools/common.sh  # banner
-source devtools/task-five.sh  # run-task
 
 #
 # C++

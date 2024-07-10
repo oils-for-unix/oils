@@ -9,14 +9,13 @@
 #   test/spec-cpp.sh run-file smoke -r 0 -v
 #   NUM_SPEC_TASKS=2 test/spec-cpp.sh osh-all
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source build/dev-shell.sh  # PYTHONPATH
-source devtools/task-five.sh
 source test/common.sh  # html-head
 source test/spec-common.sh
 source web/table/html.sh

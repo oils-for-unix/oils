@@ -3,12 +3,11 @@
 # Usage:
 #   devtools/types.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh  # run-task
 
 source build/dev-shell.sh  # python3 in $PATH
-source devtools/task-five.sh  # run-task
 
 readonly MYPY_FLAGS='--strict --no-strict-optional'
 

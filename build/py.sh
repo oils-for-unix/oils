@@ -6,17 +6,12 @@
 # Usage:
 #   build/py.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-readonly REPO_ROOT
-
 source build/common.sh       # log, $CLANGXX
-source devtools/task-five.sh
-# TODO: We could have the user run deps/from-apt.sh directly
 
 if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 're2c'

@@ -3,16 +3,14 @@
 # Usage:
 #   test/spec.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source test/common.sh
 source test/spec-common.sh
-source devtools/task-five.sh
 
 if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 'dash', etc.

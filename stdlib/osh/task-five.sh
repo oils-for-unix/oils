@@ -3,18 +3,58 @@
 # Common shell functions for task scripts.
 #
 # Usage:
-#   source devtools/task-five.sh
-#    ...  # define task functions
+#   source $LIB_OSH/task-five.sh
+#
+#   test-foo() {  # define task functions
+#     echo foo
+#   }
 #   task-five "$@"
+
+# Definition of a "task"
+#
+# - File invokes task-five "$@"
+#   - or maybe you can look at its source
+# - It's a shell function
+#   - Has ### docstring
+#   - Doesn't start with _
 
 # List all functions defined in this file (and not in sourced files).
 _bash-print-funcs() {
+  ### Print shell functions in this file that don't start with _ (bash reflection)
+
   local funcs=($(compgen -A function))
   # extdebug makes `declare -F` print the file path, but, annoyingly, only
   # if you pass the function names as arguments.
   shopt -s extdebug
   declare -F "${funcs[@]}" | grep --fixed-strings " $0" | awk '{print $1}'
   shopt -u extdebug
+}
+
+_awk-print-funcs() {
+  ### Print shell functions in this file that don't start with _ (awk parsing)
+
+  # Using gawk because it has match()
+  # - doesn't start with _
+
+  # space     = / ' '* /
+  # shfunc    = / %begin
+  #               <capture !['_' ' '] ![' ']*>
+  #               '()' space '{' space
+  #               %end /
+  # docstring = / %begin
+  #               space '###' ' '+
+  #               <capture dot*>
+  #               %end /
+  awk '
+  match($0, /^([^_ ][^ ]*)\(\)[ ]*{[ ]*$/, m) {
+    print NR " shfunc " m[1]
+    #print m[0]
+  }
+
+  match($0, /^[ ]*###[ ]+(.*)$/, m) {
+    print NR " docstring " m[1]
+  }
+' $0
 }
 
 _show-help() {

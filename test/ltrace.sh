@@ -3,11 +3,10 @@
 # Usage:
 #   test/ltrace.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
-source devtools/task-five.sh
 source test/common.sh  # log
 
 BASE_DIR=_tmp/ltrace

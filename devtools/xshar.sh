@@ -19,11 +19,9 @@
 #   tar, gzip -d
 #   base64
 
-set -o nounset
-set -o pipefail
-set -o errexit
-
-source devtools/task-five.sh  # run-task
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh  # run-task
 
 print-shell() {
   local tar=$1
@@ -115,7 +113,7 @@ test-oils-manifest() {
   echo 'build/dev-shell.sh'
   echo 'build/py.sh'
   echo 'build/common.sh'
-  echo 'devtools/task-five.sh'
+  echo 'stdlib/osh/task-five.sh'
 
   # osh --tool shell-deps benchmarks/osh-runtime.sh
   # copied from benchmarks/osh-runtime.sh
