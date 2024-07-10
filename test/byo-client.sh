@@ -24,7 +24,32 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 
 readonly TAB=$'\t'
 
-source stdlib/two.sh
+source stdlib/osh/two.sh
+
+detect() {
+  if test $# -eq 0; then
+    die "Expected argv to run"
+  fi
+
+  local out
+
+  local status=0
+  set +o errexit
+  out=$(BYO_COMMAND=detect "$@" < /dev/null)
+  status=$?
+  set -o errexit
+
+  if test $status -ne 66; then
+    die "$(printf '%q ' "$@") doesn't implement BYO: expected status 66, got $status"
+  fi
+
+  # Verbose
+  if false; then
+    echo
+    echo "BYO commands detected in $(printf '%q ' "$@"):"
+    echo "$out"
+  fi
+}
 
 run-tests() {
   # argv is the command to run, like bash foo.sh
@@ -38,6 +63,13 @@ run-tests() {
   if test $# -eq 0; then
     die "Expected argv to run"
   fi
+
+  detect "$@"
+
+  log '---'
+  log "byo run-tests: $@"
+  log
+
 
   # TODO:
   # --no-chdir       Change directory by default, but this option disables it

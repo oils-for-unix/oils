@@ -42,12 +42,9 @@ soil-run() {
 
   test/byo-client.sh run-tests $YSH stdlib/table.ysh 
 
-  # I guess this needs tests, with an assertion library for stdout?
-
-  # TODO: if there are no tests, it should fail
-  # test/byo-client.sh run-tests $SH stdlib/two.sh 
+  # Run with bash and OSH
+  test/byo-client.sh run-tests bash stdlib/osh/two-test.sh 
+  test/byo-client.sh run-tests bin/osh stdlib/osh/two-test.sh 
 }
-
-
 
 "$@"

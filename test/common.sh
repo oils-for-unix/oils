@@ -39,9 +39,12 @@ assert() {
   ### Must be run with errexit off
 
   if ! test "$@"; then
+    # old message
     # note: it's extremely weird that we use -1 and 0, but that seems to be how
     # bash works.
-    die "${BASH_SOURCE[-1]}:${BASH_LINENO[0]}: assert '$@' failed"
+    #die "${BASH_SOURCE[-1]}:${BASH_LINENO[0]}: assert '$@' failed"
+
+    die "line ${BASH_LINENO[0]}: assert '$@' failed"
   fi
 }
 

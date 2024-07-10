@@ -35,7 +35,8 @@ def NinjaGraph(ru):
     files = glob('_devbuild/help/*')
 
     # stdlib
-    tmp = glob('stdlib/*.ysh') + glob('stdlib/*.sh')
+    # TODO: Might want stdlib/ysh as well
+    tmp = glob('stdlib/*.ysh') + glob('stdlib/osh/*.sh')
     # exclude test files
     for path in tmp:
         if fnmatch(path, '*-test.ysh'):

@@ -4,7 +4,7 @@
 #   source --builtin table.ysh
 
 # make this file a test server
-source --builtin byo-server-lib.sh
+source --builtin osh/byo-server-lib.sh
 
 proc table (...words; place; ; block) {
   var n = len(words)

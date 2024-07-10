@@ -127,6 +127,11 @@ class Source(vm._Builtin):
             e_usage('missing required argument', loc.Missing)
         arg_r.Next()
 
+        # Old:
+        #     source --builtin two.sh  # looks up stdlib/two.sh
+        # New:
+        #     source $LIB_OSH/two.sh  # looks up stdlib/osh/two.sh
+        #     source ///osh/two.sh  # looks up stdlib/osh/two.sh
         if arg.builtin:
             try:
                 path = os_path.join("stdlib", path)
