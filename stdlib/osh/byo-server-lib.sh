@@ -18,8 +18,7 @@ die() {
   exit 1
 }
 
-
-byo-maybe-main() {
+byo-maybe-run() {
   local command=${BYO_COMMAND:-}
 
   case $command in
@@ -62,4 +61,13 @@ byo-maybe-main() {
 
   # Do nothing if BYO_COMMAND is not set.
   # The program continues to its "main".
+}
+
+byo-must-run() {
+  local command=${BYO_COMMAND:-}
+  if test -z "$command"; then
+    die "Expected BYO_COMMAND= in environment"
+  fi
+
+  byo-maybe-run
 }

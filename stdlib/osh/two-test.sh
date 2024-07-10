@@ -33,4 +33,4 @@ test-die() {
   assert 1 -eq "$status"
 }
 
-byo-maybe-main
+byo-must-run

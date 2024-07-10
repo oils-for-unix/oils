@@ -42,8 +42,10 @@ soil-run() {
 
   test/byo-client.sh run-tests $YSH stdlib/table.ysh 
 
-  # Run with bash and OSH
-  test/byo-client.sh run-tests bash stdlib/osh/two-test.sh 
+  # Run shebang, bash
+  test/byo-client.sh run-tests stdlib/osh/two-test.sh 
+
+  # Run with osh
   test/byo-client.sh run-tests bin/osh stdlib/osh/two-test.sh 
 }
 

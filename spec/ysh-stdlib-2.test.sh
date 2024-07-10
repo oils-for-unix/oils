@@ -136,7 +136,7 @@ b.z
 
 #### smoke test for two.sh
 
-source --builtin two.sh
+source --builtin osh/two.sh
 
 log 'hi'
 

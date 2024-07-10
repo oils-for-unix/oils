@@ -147,4 +147,4 @@ proc summary {
   echo TODO
 }
 
-byo-maybe-main
+byo-maybe-run

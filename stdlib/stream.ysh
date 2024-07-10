@@ -136,4 +136,4 @@ run-byo-tests() {
   echo TODO
 }
 
-byo-maybe-main
+byo-maybe-run
