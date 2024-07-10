@@ -2,7 +2,7 @@
 
 source stdlib/osh/two.sh  # module under test
 
-source stdlib/osh/byo-server-lib.sh
+source stdlib/osh/byo-server.sh
 source stdlib/osh/testing.sh
 
 set -o nounset

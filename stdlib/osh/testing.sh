@@ -2,7 +2,7 @@
 #
 # Testing library for bash and OSH.
 #
-# Capture status/stdout/stderr, and sh-assert.
+# Capture status/stdout/stderr, and sh-assert those values.
 
 source stdlib/osh/two.sh
 
@@ -96,4 +96,3 @@ name=$(basename $0)
 if test "$name" = 'testing.sh'; then
   "$@"
 fi
-
