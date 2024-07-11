@@ -167,6 +167,15 @@ parser (&spec) {
   arg file
 }
 
+# but flag/arg are unavailable outside of `parser`
+# _error.code = 127 is set on "command not found" errors
+
+try { flag }
+if (_error.code !== 127) { error 'expected failure' }
+
+try { arg }
+if (_error.code !== 127) { error 'expected failure' }
+
 ## status: 0
 ## STDOUT:
 flag -h --help
