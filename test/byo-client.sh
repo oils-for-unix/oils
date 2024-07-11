@@ -20,6 +20,7 @@
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/two.sh
+source $LIB_OSH/task-five.sh
 
 readonly TAB=$'\t'
 
@@ -116,14 +117,4 @@ run-tests() {
   echo "$0: $i tests passed."
 }
 
-# TODO:
-# BYO_PROBE=1
-#
-# must print capabilities
-#
-# - testing - success/fail
-# - benchmarks - output TSV file I think?  Or a directory of TSV files?
-#   - BYO_RESULTS
-# - shell auto-completion
-
-"$@"
+task-five "$@"

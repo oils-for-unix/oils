@@ -146,6 +146,7 @@ X [Testing]       describe               Test harness
 X [Lines]         slurp-by               combine adjacent lines into cells
 X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block) - xargs
                   each-row               --max-jobs (Str, Template, Block) - xargs
+                  each-word              xargs-like splitting, similar to IFS too
                   split-by               (str=\n, ifs=':', pattern=/s+/)
                   if-split-by  
                   chop                   alias for split-by (pattern=/s+/)

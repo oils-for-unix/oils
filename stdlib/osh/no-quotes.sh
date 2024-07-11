@@ -4,15 +4,35 @@
 #
 # Capture status/stdout/stderr, and nq-assert those values.
 
-source stdlib/osh/two.sh
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/two.sh
 
 nq-assert() {
-  ### Must be run with errexit off
+  ### Assertion with same syntax as shell 'test'
 
   if ! test "$@"; then
-    die "line ${BASH_LINENO[0]}: nq-assert '$@' failed"
+    die "line ${BASH_LINENO[0]}: nq-assert $(printf '%q ' "$@") failed"
   fi
 }
+
+# Problem: we want to capture status and stdout at the same time
+#
+# We use:
+#
+#  __stdout=$(set -o errexit; "$@")
+#  __status=$?
+#
+# However, we lose the trailing \n, since that's how command subs work.
+
+# Here is another possibility:
+#
+# shopt -s lastpipe  # need this too
+# ( set -o errexit; "$@" ) | read -r -d __stdout
+# __status=${PIPESTATUS[0]}
+# shopt -u lastpipe
+#
+# But this feels complex for just the \n issue, which can be easily worked
+# around.
 
 nq-capture() {
   ### capture status and stdout
@@ -64,10 +84,15 @@ _demo-stderr() {
 test-nq-capture() {
   local status stdout
   nq-capture status stdout \
-    echo hi
-
+    echo -n hi
   nq-assert 0 = "$status"
   nq-assert 'hi' = "$stdout"
+
+  nq-capture status stdout \
+    echo hi
+  nq-assert 0 = "$status"
+  # Note that we LOSE the last newline!
+  #nq-assert $'hi\n' = "$stdout"
 
   local stderr
   nq-capture-2 status stderr \
@@ -88,6 +113,6 @@ test-nq-capture() {
 }
 
 name=$(basename $0)
-if test "$name" = 'testing.sh'; then
+if test "$name" = 'no-quotes.sh'; then
   "$@"
 fi
