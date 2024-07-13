@@ -34,6 +34,23 @@ nq-assert() {
 # But this feels complex for just the \n issue, which can be easily worked
 # around.
 
+nq-run() {
+  ### capture status only
+
+  local -n out_status=$1
+  shift
+
+  local __status
+
+  # Tricky: turn errexit off so we can capture it, but turn it on against
+  set +o errexit
+  ( set -o errexit; "$@" )
+  __status=$?
+  set -o errexit
+
+  out_status=$__status
+}
+
 nq-capture() {
   ### capture status and stdout
 

@@ -111,53 +111,55 @@ test-append() {
 }
 
 test-usage() {
-  # no args
-  set +o errexit
-
-  time-tool; status=$?
+  local status
+  nq-run status \
+    time-tool
   nq-assert $status -eq 2
 
-  time-tool --output; status=$?
+  nq-run status \
+    time-tool --output
   nq-assert $status -eq 2
 
-  time-tool sleep 0.1
-  time-tool --append sleep 0.1; status=$?
+  nq-run status \
+    time-tool sleep 0.1
   nq-assert $status -eq 0
 
-  set -o errexit
+  nq-run status \
+    time-tool --append sleep 0.1
+  nq-assert $status -eq 0
 }
 
 test-bad-tsv-chars() {
+  local status
   local out=_tmp/time2.tsv
   rm -f $out
 
-  set +o errexit
-
   # Newline should fail
-  time-tool --tsv -o $out --field $'\n' -- sleep 0.001; status=$?
-  nq-assert $status -eq 1
+  nq-run status \
+    time-tool --tsv -o $out --field $'\n' -- sleep 0.001
+  nq-assert $status = 1
 
   # Tab should fail
-  time-tool --tsv -o $out --field $'\t' -- sleep 0.001; status=$?
-  nq-assert $status -eq 1
+  nq-run status \
+    time-tool --tsv -o $out --field $'\t' -- sleep 0.001
+  nq-assert $status = 1
 
   # Quote should fail
-  time-tool --tsv -o $out --field '"' -- sleep 0.001; status=$?
-  nq-assert $status -eq 1
+  nq-run status \
+    time-tool --tsv -o $out --field '"' -- sleep 0.001
+  nq-assert $status = 1
 
   # Backslash is OK
-  time-tool --tsv -o $out --field '\' -- sleep 0.001; status=$?
-  nq-assert $status -eq 0
+  nq-run status \
+    time-tool --tsv -o $out --field '\' -- sleep 0.001
+  nq-assert $status = 0
 
   # Space is OK, although canonical form would be " "
-  time-tool --tsv -o $out --field ' ' -- sleep 0.001; status=$?
-  nq-assert $status -eq 0
-
-  set -o errexit
+  nq-run status \
+    time-tool --tsv -o $out --field ' ' -- sleep 0.001
+  nq-assert $status = 0
 
   cat $out
-
-  echo $'OK\ttest-bad-tsv-chars'
 }
 
 test-stdout() {
@@ -218,34 +220,38 @@ test-maxrss() {
 }
 
 test-print-header() {
-  set +o errexit
+  local status
 
   # no arguments allowed
-  time-tool --tsv --print-header foo bar
-  nq-assert $? -eq 2
+  nq-run status \
+    time-tool --tsv --print-header foo bar
+  nq-assert $status = 2
 
-  time-tool --tsv --print-header --field name
-  nq-assert $? -eq 0
+  nq-run status \
+    time-tool --tsv --print-header --field name
+  nq-assert $status = 0
 
-  time-tool --tsv --print-header --rusage --field name
-  nq-assert $? -eq 0
+  nq-run status \
+    time-tool --tsv --print-header --rusage --field name
+  nq-assert $status = 0
 
-  time-tool --print-header --rusage --field foo --field bar
-  nq-assert $? -eq 0
+  nq-run status \
+    time-tool --print-header --rusage --field foo --field bar
+  nq-assert $status = 0
 
-  time-tool -o _tmp/time-test-1 \
+  nq-run status \
+    time-tool -o _tmp/time-test-1 \
     --print-header --rusage --stdout DUMMY --tsv --field a --field b
-  nq-assert $? -eq 0
+  nq-assert $status = 0
 
-  #set -x
   head _tmp/time-test-1
+
+  echo OK
 }
 
 test-time-helper() {
-  set +o errexit
-
+  local status
   local tmp=_tmp/time-helper.txt
-
   local th=_devbuild/bin/time-helper
 
   # Make some work show up
@@ -254,26 +260,32 @@ test-time-helper() {
   echo 'will be overwritten' > $tmp
   cat $tmp
 
-  $th
-  nq-assert $? -ne 0  # it's 1, but could be 2
+  nq-run status \
+    $th
+  nq-assert $status != 0  # it's 1, but could be 2
 
-  $th /bad
-  nq-assert $? -eq 1
+  nq-run status \
+    $th /bad
+  nq-assert $status = 1
 
-  $th -o $tmp -d $'\t' -x -e -- sh -c "$cmd"
-  nq-assert $? -eq 42
+  nq-run status \
+    $th -o $tmp -d $'\t' -x -e -- sh -c "$cmd"
+  nq-assert $status = 42
   cat $tmp
   echo
 
   # Now append
-  $th -o $tmp -a -d , -x -e -U -S -M -- sh -c "$cmd"
-  nq-assert $? -eq 42
+
+  nq-run status \
+    $th -o $tmp -a -d , -x -e -U -S -M -- sh -c "$cmd"
+  nq-assert $status = 42
   cat $tmp
   echo
   
   # Error case
-  $th -q
-  nq-assert $? -eq 2
+  nq-run status \
+    $th -q
+  nq-assert $status -eq 2
 }
 
 test-time-tsv() {
@@ -283,12 +295,8 @@ test-time-tsv() {
   rm -f -v $out
 
   # Similar to what soil/worker.sh does
-  set +o errexit
-  time-tsv -o $out --append -- zz
-  status=$?
-  set -o errexit
-
-  echo status=$status
+  nq-run status \
+    time-tsv -o $out --append -- zz
   nq-assert $status -eq 1
 
   cat $out
