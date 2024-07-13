@@ -3,12 +3,12 @@
 # Usage:
 #   benchmarks/id-test.sh <function name>
 
-source benchmarks/id.sh
-source test/common.sh
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/no-quotes.sh
 
-set -o nounset
-set -o pipefail
-set -o errexit
+source benchmarks/id.sh
+source test/common.sh  # run-test-funcs
 
 test-shell-prov() {
   shell-provenance-2 no-host 2022-12-29 _tmp/ \
@@ -19,7 +19,7 @@ test-out-param() {
   local mylocal
 
   out-param mylocal
-  assert "$mylocal" = 'returned'
+  nq-assert "$mylocal" = 'returned'
 
   echo "mylocal=$mylocal"
 }

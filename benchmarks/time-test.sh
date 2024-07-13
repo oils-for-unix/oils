@@ -3,9 +3,9 @@
 # Usage:
 #   benchmarks/time-test.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/no-quotes.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
@@ -115,14 +115,14 @@ test-usage() {
   set +o errexit
 
   time-tool; status=$?
-  assert $status -eq 2
+  nq-assert $status -eq 2
 
   time-tool --output; status=$?
-  assert $status -eq 2
+  nq-assert $status -eq 2
 
   time-tool sleep 0.1
   time-tool --append sleep 0.1; status=$?
-  assert $status -eq 0
+  nq-assert $status -eq 0
 
   set -o errexit
 }
@@ -135,23 +135,23 @@ test-bad-tsv-chars() {
 
   # Newline should fail
   time-tool --tsv -o $out --field $'\n' -- sleep 0.001; status=$?
-  assert $status -eq 1
+  nq-assert $status -eq 1
 
   # Tab should fail
   time-tool --tsv -o $out --field $'\t' -- sleep 0.001; status=$?
-  assert $status -eq 1
+  nq-assert $status -eq 1
 
   # Quote should fail
   time-tool --tsv -o $out --field '"' -- sleep 0.001; status=$?
-  assert $status -eq 1
+  nq-assert $status -eq 1
 
   # Backslash is OK
   time-tool --tsv -o $out --field '\' -- sleep 0.001; status=$?
-  assert $status -eq 0
+  nq-assert $status -eq 0
 
   # Space is OK, although canonical form would be " "
   time-tool --tsv -o $out --field ' ' -- sleep 0.001; status=$?
-  assert $status -eq 0
+  nq-assert $status -eq 0
 
   set -o errexit
 
@@ -222,20 +222,20 @@ test-print-header() {
 
   # no arguments allowed
   time-tool --tsv --print-header foo bar
-  assert $? -eq 2
+  nq-assert $? -eq 2
 
   time-tool --tsv --print-header --field name
-  assert $? -eq 0
+  nq-assert $? -eq 0
 
   time-tool --tsv --print-header --rusage --field name
-  assert $? -eq 0
+  nq-assert $? -eq 0
 
   time-tool --print-header --rusage --field foo --field bar
-  assert $? -eq 0
+  nq-assert $? -eq 0
 
   time-tool -o _tmp/time-test-1 \
     --print-header --rusage --stdout DUMMY --tsv --field a --field b
-  assert $? -eq 0
+  nq-assert $? -eq 0
 
   #set -x
   head _tmp/time-test-1
@@ -255,25 +255,25 @@ test-time-helper() {
   cat $tmp
 
   $th
-  assert $? -ne 0  # it's 1, but could be 2
+  nq-assert $? -ne 0  # it's 1, but could be 2
 
   $th /bad
-  assert $? -eq 1
+  nq-assert $? -eq 1
 
   $th -o $tmp -d $'\t' -x -e -- sh -c "$cmd"
-  assert $? -eq 42
+  nq-assert $? -eq 42
   cat $tmp
   echo
 
   # Now append
   $th -o $tmp -a -d , -x -e -U -S -M -- sh -c "$cmd"
-  assert $? -eq 42
+  nq-assert $? -eq 42
   cat $tmp
   echo
   
   # Error case
   $th -q
-  assert $? -eq 2
+  nq-assert $? -eq 2
 }
 
 test-time-tsv() {
@@ -289,7 +289,7 @@ test-time-tsv() {
   set -o errexit
 
   echo status=$status
-  assert $status -eq 1
+  nq-assert $status -eq 1
 
   cat $out
   echo
