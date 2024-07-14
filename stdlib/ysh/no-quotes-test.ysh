@@ -1,10 +1,11 @@
-#!/usr/bin/env bash
+#!bin/ysh
+
+shopt -s redefine_proc_func  # log
+shopt -s parse_sh_arith  # ${BASH_SOURCE[0]}
+
+source ///ysh/no-quotes.ysh  # module under test
 
 : ${LIB_OSH=stdlib/osh}
-
-source $LIB_OSH/no-quotes.sh  # module under test
-
-source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/two.sh  
 source $LIB_OSH/task-five.sh
 
@@ -17,7 +18,7 @@ test-nq-capture() {
   local status stdout
 
   nq-capture status stdout \
-    echo -n hi
+    echo hi
   nq-assert 0 = "$status"
   nq-assert 'hi' = "$stdout"
 
@@ -27,6 +28,7 @@ test-nq-capture() {
   # Note that we LOSE the last newline!
   #nq-assert $'hi\n' = "$stdout"
 
+  # TODO: _demo-stderr fails - we catch this earlier though!
   local stderr
   nq-capture-2 status stderr \
     _demo-stderr yyy

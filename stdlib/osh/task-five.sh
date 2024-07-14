@@ -35,7 +35,7 @@ _bash-print-funcs() {
   shopt -u extdebug
 }
 
-_awk-print-funcs() {
+_gawk-print-funcs() {
   ### Print shell functions in this file that don't start with _ (awk parsing)
 
   # Using gawk because it has match()
@@ -50,9 +50,10 @@ _awk-print-funcs() {
   #               space '###' ' '+
   #               <capture dot*>
   #               %end /
-  awk '
+  gawk '
   match($0, /^([^_ ][^ ]*)\(\)[ ]*{[ ]*$/, m) {
-    print NR " shfunc " m[1]
+    #print NR " shfunc " m[1]
+    print m[1]
     #print m[0]
   }
 
@@ -60,6 +61,14 @@ _awk-print-funcs() {
     print NR " docstring " m[1]
   }
 ' $0
+}
+
+_print-funcs() {
+  if command -v gawk > /dev/null; then
+    _gawk-print-funcs
+  else
+    _bash-print-funcs
+  fi
 }
 
 _show-help() {
@@ -77,9 +86,9 @@ _show-help() {
   echo "Tasks:"
 
   if command -v column >/dev/null; then
-    _bash-print-funcs | column
+    _print-funcs | column
   else
-    _bash-print-funcs
+    _print-funcs
   fi
 }
 
