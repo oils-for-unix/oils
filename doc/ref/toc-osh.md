@@ -77,10 +77,9 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-stdlib
-  [bash-strict]   
   [two]           log             die
-  [no-quotes]     nq-capture      nq-capture-2   nq-assert
-  [byo-server]    byo-maybe-run   byo-must-run
+  [no-quotes]     nq-run          nq-capture      nq-capture-2   nq-assert
+  [bash-strict]   
   [task-five]     
 ```
 

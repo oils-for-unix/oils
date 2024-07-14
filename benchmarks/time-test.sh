@@ -5,7 +5,9 @@
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/byo-server.sh
 source $LIB_OSH/no-quotes.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
@@ -320,4 +322,4 @@ soil-run() {
   run-test-funcs
 }
 
-"$@"
+task-five "$@"

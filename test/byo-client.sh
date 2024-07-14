@@ -5,17 +5,11 @@
 # TODO: doc/byo.md
 #
 # Usage:
-#   test/byo-client.sh run-tests ARGS...
+#   test/byo-client.sh run-tests FLAGS* ARGS*
 #
-# The ARGS... are run with an environment variable, e.g.
-#
-#   ./myscript.py
-#   python3 ./myscript.py
-#   ./myscript.sh
-#   dash ./myscript.sh
-#   osh ./myscript.sh
-#
-# The client creates a clean process state and directory state for each tests.
+# TODO:
+# - client creates a clean process state for each test
+# - clean directory state for each test.
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
@@ -49,47 +43,141 @@ detect() {
   fi
 }
 
+print-help() {
+  # Other flags:
+  #
+  # --host       host to upload to?
+  # --auth       allow writing to host
+  # --no-taskset disable taskset?
+
+  cat <<EOF
+Usage: byo run-tests FLAGS*
+EOF
+}
+
+# Test params:
+#
+# SH=dash SH=bash SH=bin/osh          # test/spec.sh
+# OSH=bin/osh OSH=_bin/cxx-asan/osh   # e.g. test/*{parse,runtime}-errors.sh
+# YSH=bin/osh YSH=_bin/cxx-asan/osh   # e.g. test/*{parse,runtime}-errors.sh
+#
+# benchmarks/compute.sh has 3 dimensions:
+#   ( workload name, param1, param2 )
+#
+# Pretty much all tests are parameterized by shell
+#
+# There's also python2 vs. python3 vs. awk etc.
+# benchmarks/compute
+#
+# Should it be 
+# BYO_PARAM_OSH
+#
+# Usage:
+#
+#   $ byo run-tests test/osh-usage
+#   $ byo run-tests --param OSH=bin/osh test/osh-usage
+#   $ byo run-tests --param OSH=bin/osh --param OSH=_bin/cxx-asan/osh test/osh-usage
+#   $ byo run-tests --param OSH='bin/osh;_bin/cxx-asan/osh' test/osh-usage
+#
+# Run with each value of param in sequence, and then make a big table later?
+# I think you just loop over the param flags
+
+# If no params, we run once.  Otherwise we run once per param value
+FLAG_params=()
+FLAG_fresh_dir=''
+FLAG_capture=''
+
+parse-flags-for-test() {
+  ### Sets global vars FLAG_*
+
+  while test $# -ne 0; do
+    case "$1" in
+      -h|--help)
+        print-help
+        exit
+        ;;
+
+      # Capture stdout and stderr? Or let it go to the terminal
+      --capture)
+        FLAG_capture=T
+        ;;
+
+      # Is each test case run in its own dir?  Or set TEST_TEMP_DIR
+      --fresh-dir)
+        FLAG_fresh_dir=T
+        ;;
+
+      --param)
+        if test $# -eq 1; then
+          die "--param requires an argument"
+        fi
+        shift
+
+        pat='[A-Z_]+=.*'
+        if ! [[ $1 =~ $pat ]]; then
+            die "Expected string like PARAM_NAME=value, got $1"
+        fi
+        FLAG_params+=( $1 )
+        ;;
+
+      -*)
+        die "Invalid flag '$1'"
+        break
+        ;;
+
+      --)
+        shift
+        break
+        ;;
+
+      *)
+        # Move on to args
+        break
+        ;;
+
+    esac
+    shift
+  done
+
+  ARGV=( "$@" )
+}
+
 run-tests() {
-  # argv is the command to run, like bash foo.sh
+  if test $# -eq 0; then
+    die "Expected argv to run"
+  fi
+
+  # Set FLAG_* and ARGV
+  parse-flags-for-test "$@"
+
+  # ARGV is the command to run, like bash foo.sh
   #
   # It's an array rather than a single command, so you can run the same scripts
   # under multiple shells:
   #
   #   bash myscript.sh
   #   osh myscript.sh
+  #
+  # This matters so two-test.sh can SOURCE two.sh, and run under both bash and
+  # OSH.
+  # That could be or --use-interp bin/osh
+  #
+  # could you have --use-interp python3 too?  e.g. I want benchmarks/time_.py
+  # to work under both?  See time-tsv3 in tsv-lib.sh
+  #
+  # No that's a test param PYTHON=python3 PYTHON=python2
 
-  if test $# -eq 0; then
-    die "Expected argv to run"
-  fi
-
-  detect "$@"
+  detect "${ARGV[@]}"
 
   log '---'
-  log "byo run-tests: $@"
+  log "byo run-tests: ${ARGV[@]}"
   log
-
-
-  # TODO:
-  # --no-chdir       Change directory by default, but this option disables it
-  # --no-stdout-log  stdout is not redirected to its own, named file
-  # --max-jobs       Parallelism
-  #
-  # And how do we run test binaries that are just one big process?
-  # - Python - inside a file, we probably don't have any tests to run in parallel
-  # - C++    - ditto
-  # - R      - we have a few unit tests
-  #
-  # So maybe we need BYO_LIST_TEST_BIN - list the test binaries?
-  # Or mycpp/TEST.sh etc. should list them.   Yes that is true!
-  # We can also list things to build.
-  #
-  # BYO_LIST_NINJA=1
 
   mkdir -p _tmp
   local tmp=_tmp/byo-list.txt
 
   # First list the tests
-  BYO_COMMAND=list-tests "$@" > $tmp
+  BYO_COMMAND=list-tests "${ARGV[@]}" > $tmp
 
   local i=0
   local status
@@ -99,7 +187,13 @@ run-tests() {
     echo "${TAB}${test_name}"
 
     set +o errexit
-    BYO_COMMAND=run-test BYO_ARG="$test_name" "$@"
+    if test -n "$FLAG_capture"; then
+      # TODO: Capture it to a string
+      # - Write to nice HTML file?
+      BYO_COMMAND=run-test BYO_ARG="$test_name" "${ARGV[@]}" >/dev/null 2>&1
+    else
+      BYO_COMMAND=run-test BYO_ARG="$test_name" "${ARGV[@]}"
+    fi
     status=$?
     set -o errexit
 

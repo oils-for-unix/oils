@@ -18,11 +18,16 @@
 #   - Has ### docstring
 #   - Doesn't start with _
 
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/byo-server.sh
+
+
 # List all functions defined in this file (and not in sourced files).
 _bash-print-funcs() {
   ### Print shell functions in this file that don't start with _ (bash reflection)
 
-  local funcs=($(compgen -A function))
+  local funcs
+  funcs=($(compgen -A function))
   # extdebug makes `declare -F` print the file path, but, annoyingly, only
   # if you pass the function names as arguments.
   shopt -s extdebug
@@ -61,6 +66,8 @@ _show-help() {
   # TODO:
   # - Use awk to find comments at the top of the file?
   # - Use OSH to extract docstrings
+  # - BYO_COMMAND=list-tasks will reuse that logic?  It only applies to the
+  #   current file, not anything in a different file?
 
   echo "Usage: $0 TASK_NAME ARGS..."
   echo
@@ -77,10 +84,15 @@ _show-help() {
 }
 
 task-five() {
-  if [[ $# -eq 0 || $1 =~ ^(--help|-h)$ ]]; then
-    _show-help
-    exit
-  fi
+  # Respond to BYO_COMMAND=list-tasks, etc.  All task files need this.
+  byo-maybe-run
+
+  case ${1:-} in
+    ''|--help|-h)
+      _show-help
+      exit 0
+      ;;
+  esac
 
   if ! declare -f "$1" >/dev/null; then
     echo "$0: '$1' isn't an action in this task file.  Try '$0 --help'"
