@@ -9,45 +9,50 @@ source ///ysh/no-quotes.ysh  # module under test
 source $LIB_OSH/two.sh  
 source $LIB_OSH/task-five.sh
 
+proc _check (; val) {  # TODO: assert
+  if (not val) {
+    pp line (val)
+    error "Failed:"
+  }
+}
+
 _demo-stderr() {
   echo zzz "$@" >& 2
   return 99
 }
 
-test-nq-capture() {
-  local status stdout
+proc test-nq-capture {
 
-  nq-capture status stdout \
-    echo hi
-  nq-assert 0 = "$status"
-  nq-assert 'hi' = "$stdout"
+  nq-capture (&r) {
+    write --end '' hi
+  }
+  _check (0 === r.status)
+  _check ('hi' === r.stdout)
 
-  nq-capture status stdout \
+  #return
+
+  nq-capture (&r) {
     echo hi
-  nq-assert 0 = "$status"
-  # Note that we LOSE the last newline!
-  #nq-assert $'hi\n' = "$stdout"
+  }
+  #pp line (r)
+  _check (0 === r.status)
+  _check (u'hi\n' === r.stdout)
 
   # TODO: _demo-stderr fails - we catch this earlier though!
-  local stderr
-  nq-capture-2 status stderr \
+  nq-capture-2 (&r) {
     _demo-stderr yyy
+  }
+  _check (99 === r.status)
+  _check (u'zzz yyy\n' === r.stderr)
 
-  #echo "stderr: [$stderr]"
-
-  nq-assert 99 = "$status"
-  nq-assert 'zzz yyy' = "$stderr"
-
-  nq-capture status stdout \
+  nq-capture (&r) {
     _demo-stderr aaa
-
-  #echo "stderr: [$stderr]"
-
-  nq-assert 99 = "$status"
-  nq-assert '' = "$stdout"
+  }
+  _check (99 === r.status)
+  _check ('' === r.stdout)
 }
 
-test-nq-redir() {
+proc test-nq-redir {
   local status stdout_file
 
   nq-redir status stdout_file \

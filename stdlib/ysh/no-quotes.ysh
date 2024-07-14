@@ -51,46 +51,36 @@ nq-run() {
   out_status=$__status
 }
 
-nq-capture() {
-  ### capture status and stdout
+proc nq-capture(; out; ; block) {
+  ### capture status and stderr 
 
-  local -n out_status=$1
-  local -n out_stdout=$2
-  shift 2
+  var stdout = ''
+  try {
+    eval (block) | read --all (&stdout)
+  }
+  # TODO: if 'block' contains a pipeline, we lose this agic var
+  var result = {status: _pipeline_status[0], stdout}
 
-  local __status
-  local __stdout
+  #echo 'result-1'
+  #pp line (result)
 
-  # Tricky: turn errexit off so we can capture it, but turn it on against
-  set +o errexit
-  __stdout=$(set -o errexit; "$@")
-  __status=$?
-  set -o errexit
-
-  out_status=$__status
-  out_stdout=$__stdout
+  call out->setValue(result)
 }
 
-nq-capture-2() {
+proc nq-capture-2(; out; ; block) {
   ### capture status and stderr 
-  
-  # This is almost identical to the above
 
-  local -n out_status=$1
-  local -n out_stderr=$2
-  shift 2
+  var stderr = ''
+  try {
+    eval (block) 2>&1 | read --all (&stderr)
+  }
+  #pp line (_pipeline_status)
 
-  local __status
-  local __stderr
+  var result = {status: _pipeline_status[0], stderr}
+  #echo 'result-2'
+  #pp line (result)
 
-  # Tricky: turn errexit off so we can capture it, but turn it on against
-  set +o errexit
-  __stderr=$(set -o errexit; "$@" 2>&1)
-  __status=$?
-  set -o errexit
-
-  out_status=$__status
-  out_stderr=$__stderr
+  call out->setValue(result)
 }
 
 # 'byo test' can set this?
