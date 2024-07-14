@@ -114,6 +114,7 @@ test-oils-manifest() {
   echo 'build/py.sh'
   echo 'build/common.sh'
   echo 'stdlib/osh/task-five.sh'
+  echo 'stdlib/osh/byo-server.sh'
 
   # osh --tool shell-deps benchmarks/osh-runtime.sh
   # copied from benchmarks/osh-runtime.sh
