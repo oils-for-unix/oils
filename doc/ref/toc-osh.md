@@ -78,7 +78,9 @@ X [Unsupported]   enable
 
 ```chapter-links-stdlib
   [two]           log             die
-  [no-quotes]     nq-run          nq-capture      nq-capture-2   nq-assert
+  [no-quotes]     nq-assert       nq-run          
+                  nq-capture      nq-capture-2
+                  nq-redir        nq-redir-2
   [bash-strict]   
   [task-five]     
 ```

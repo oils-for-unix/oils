@@ -86,6 +86,7 @@ EOF
 FLAG_params=()
 FLAG_fresh_dir=''
 FLAG_capture=''
+FLAG_test_filter=''
 
 parse-flags-for-test() {
   ### Sets global vars FLAG_*
@@ -105,6 +106,16 @@ parse-flags-for-test() {
       # Is each test case run in its own dir?  Or set TEST_TEMP_DIR
       --fresh-dir)
         FLAG_fresh_dir=T
+        ;;
+
+      --test-filter)
+        if test $# -eq 1; then
+          die "--test-filter requires an argument"
+        fi
+        shift
+
+        # Regex in ERE syntax
+        FLAG_test_filter=$1
         ;;
 
       --param)
