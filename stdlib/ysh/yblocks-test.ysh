@@ -1,8 +1,6 @@
 #!bin/ysh
 
-shopt -s parse_sh_arith  # ${BASH_SOURCE[0]}
-
-source ///ysh/yblocks.ysh  # module under test
+source $LIB_YSH/yblocks.ysh  # module under test
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/two.sh  
@@ -51,27 +49,29 @@ proc test-yb-capture {
   _check ('' === r.stdout)
 }
 
-proc test-yb-redir {
-  local status stdout_file
+proc test-yb-redir-not-needed {
+  # TODO: need $BYO_TEMP_DIR maybe?  Or is that implicit with 'cd'?  We don't
+  # always have a temp dir
 
-  yb-redir status stdout_file \
+  var tmp = "${BYO_TEMP_DIR:-/tmp}/$$"
+
+  try > $tmp {
     seq 3
-  nq-assert 0 = "$status"
-  diff -u $stdout_file - << EOF
+  }
+  _check (0 === _error.code)
+
+  diff -u $tmp - << EOF
 1
 2
 3
 EOF
 
-  local stderr_file
-  yb-redir-2 status stderr_file \
+  try 2>$tmp {
     log $'hi\nthere'
-  nq-assert 0 = "$status"
+  }
+  _check (0 === _error.code)
 
-  # TODO: nq-diff - this can diff files and show LINE number of error
-
-  set +o errexit
-  diff -u $stderr_file - << EOF
+  diff -u $tmp - << EOF
 hi
 there
 EOF

@@ -928,8 +928,9 @@ def InitMem(mem, environ, version_str):
 
     SetGlobalString(mem, 'OILS_VERSION', version_str)
 
-    # The source builtin understands '///' to mean "relative to embedded stdin
+    # The source builtin understands '///' to mean "relative to embedded stdlib"
     SetGlobalString(mem, 'LIB_OSH', '///osh')
+    SetGlobalString(mem, 'LIB_YSH', '///ysh')
 
     _InitDefaults(mem)
     _InitVarsFromEnv(mem, environ)

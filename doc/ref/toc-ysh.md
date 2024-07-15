@@ -142,7 +142,8 @@ X [Testing]       assert                 takes an expression
                   arg
                   rest
                   parseArgs()
-X [Testing]       describe               Test harness
+  [yblocks]       yb-capture
+                  yb-capture-2
 X [Lines]         slurp-by               combine adjacent lines into cells
 X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block) - xargs
                   each-row               --max-jobs (Str, Template, Block) - xargs
@@ -329,6 +330,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Oils VM]       OILS_VERSION
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
+                  LIB_YSH
 ```
 
 <!-- ideas 

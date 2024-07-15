@@ -107,11 +107,19 @@ The version of Oils that's being run, e.g. `0.23.0`.
 
 ### `LIB_OSH`
 
-The string `///osh`, which is meant for use with the [source][] builtin.
+The string `///osh`, which you can use with the [source][] builtin.
+
+    source $LIB_OSH/two.sh    
 
 [source]: chap-builtin-cmd.html#source
 
+### `LIB_YSH`
 
+The string `///ysh`, which you can use with the [source][] builtin.
+
+    source $LIB_YSH/yblocks.ysh
+
+[source]: chap-builtin-cmd.html#source
 
 ### `OILS_GC_THRESHOLD`
 
