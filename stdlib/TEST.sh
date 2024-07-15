@@ -48,6 +48,8 @@ soil-run() {
 
   # Run with osh
   devtools/byo.sh run-tests bin/osh stdlib/osh/two-test.sh 
+
+  devtools/byo.sh run-tests bin/ysh stdlib/ysh/yblocks-test.ysh 
 }
 
 "$@"

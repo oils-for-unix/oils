@@ -1,7 +1,5 @@
 #!bin/ysh
 
-# TODO: fix these
-shopt -s redefine_proc_func  # log
 shopt -s parse_sh_arith  # ${BASH_SOURCE[0]}
 
 source ///ysh/yblocks.ysh  # module under test
@@ -22,9 +20,9 @@ _demo-stderr() {
   return 99
 }
 
-proc test-nq-capture {
+proc test-yb-capture {
 
-  nq-capture (&r) {
+  yb-capture (&r) {
     write --end '' hi
   }
   _check (0 === r.status)
@@ -32,7 +30,7 @@ proc test-nq-capture {
 
   #return
 
-  nq-capture (&r) {
+  yb-capture (&r) {
     echo hi
   }
   #pp line (r)
@@ -40,23 +38,23 @@ proc test-nq-capture {
   _check (u'hi\n' === r.stdout)
 
   # TODO: _demo-stderr fails - we catch this earlier though!
-  nq-capture-2 (&r) {
+  yb-capture-2 (&r) {
     _demo-stderr yyy
   }
   _check (99 === r.status)
   _check (u'zzz yyy\n' === r.stderr)
 
-  nq-capture (&r) {
+  yb-capture (&r) {
     _demo-stderr aaa
   }
   _check (99 === r.status)
   _check ('' === r.stdout)
 }
 
-proc test-nq-redir {
+proc test-yb-redir {
   local status stdout_file
 
-  nq-redir status stdout_file \
+  yb-redir status stdout_file \
     seq 3
   nq-assert 0 = "$status"
   diff -u $stdout_file - << EOF
@@ -66,7 +64,7 @@ proc test-nq-redir {
 EOF
 
   local stderr_file
-  nq-redir-2 status stderr_file \
+  yb-redir-2 status stderr_file \
     log $'hi\nthere'
   nq-assert 0 = "$status"
 

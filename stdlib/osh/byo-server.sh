@@ -11,15 +11,8 @@
 # (This file requires compgen -A, and maybe declare -f, so it's not POSIX
 # shell.)
 
-# TODO: How do I get stdlib/two.sh
-log() {
-  echo "$@" >& 2
-}
-
-die() {
-  log "$0: fatal: $@"
-  exit 1
-}
+: ${LIB_OSH:-stdlib/osh}
+source $LIB_OSH/two.sh
 
 byo-maybe-run() {
   local command=${BYO_COMMAND:-}

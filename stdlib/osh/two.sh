@@ -10,6 +10,10 @@
 #    log 'hi'
 #    die 'expected a number'
 
+if command -v module >/dev/null; then  # include guard for YSH
+  module two || return 0
+fi
+
 log() {
   ### Write a message to stderr.
   echo "$@" >&2

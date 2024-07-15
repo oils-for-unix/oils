@@ -51,7 +51,7 @@ nq-run() {
   out_status=$__status
 }
 
-proc nq-capture(; out; ; block) {
+proc yb-capture(; out; ; block) {
   ### capture status and stderr 
 
   var stdout = ''
@@ -67,7 +67,7 @@ proc nq-capture(; out; ; block) {
   call out->setValue(result)
 }
 
-proc nq-capture-2(; out; ; block) {
+proc yb-capture-2(; out; ; block) {
   ### capture status and stderr 
 
   var stderr = ''
@@ -86,7 +86,7 @@ proc nq-capture-2(; out; ; block) {
 # 'byo test' can set this?
 : ${NQ_TEST_TEMP=/tmp}
 
-nq-redir() {
+yb-redir() {
   ### capture status and stdout
 
   local -n out_status=$1
@@ -94,7 +94,7 @@ nq-redir() {
   shift 2
 
   local __status
-  local __stdout_file=$NQ_TEST_TEMP/nq-redir-$$.txt
+  local __stdout_file=$NQ_TEST_TEMP/yb-redir-$$.txt
 
   # Tricky: turn errexit off so we can capture it, but turn it on against
   set +o errexit
@@ -106,7 +106,7 @@ nq-redir() {
   out_stdout_file=$__stdout_file
 }
 
-nq-redir-2() {
+yb-redir-2() {
   ### capture status and stdout
 
   local -n out_status=$1
@@ -114,7 +114,7 @@ nq-redir-2() {
   shift 2
 
   local __status
-  local __stderr_file=$NQ_TEST_TEMP/nq-redir-$$.txt
+  local __stderr_file=$NQ_TEST_TEMP/yb-redir-$$.txt
 
   # Tricky: turn errexit off so we can capture it, but turn it on against
   set +o errexit
