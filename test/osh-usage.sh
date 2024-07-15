@@ -116,31 +116,6 @@ test-osh-interactive() {
   nq-assert $? -eq 0
 }
 
-test-help() {
-  set +o errexit
-
-  # TODO: Test the oil.ovm binary as well as bin/oil.py.
-  export PYTHONPATH='.:vendor/'  # TODO: Put this in one place.
-
-  # Bundle usage.
-  bin/oils_for_unix.py --help
-  nq-assert $? -eq 0
-
-  # Pass applet as first name.
-  bin/oils_for_unix.py osh --help
-  nq-assert $? -eq 0
-
-  bin/oils_for_unix.py ysh --help
-  nq-assert $? -eq 0
-
-  # Symlinks.
-  bin/osh --help
-  nq-assert $? -eq 0
-
-  bin/oils_for_unix.py  --help
-  nq-assert $? -eq 0
-}
-
 test-exit-builtin-interactive() {
   set +o errexit
   echo 'echo one; exit 42; echo two' | bin/osh -i
@@ -175,9 +150,41 @@ test-noexec-fails-properly() {
   echo "$tmp appears empty, as expected"
 }
 
+test-help() {
+  local status
+
+  # TODO: Test the oil.ovm binary as well as bin/oil.py.
+  export PYTHONPATH='.:vendor/'  # TODO: Put this in one place.
+
+  # Bundle usage.
+  nq-run status \
+    bin/oils_for_unix.py --help
+  nq-assert $status -eq 0
+
+  # Pass applet as first name.
+  nq-run status \
+    bin/oils_for_unix.py osh --help
+  nq-assert $status -eq 0
+
+  nq-run status \
+    bin/oils_for_unix.py ysh --help
+  nq-assert $status -eq 0
+
+  # Symlinks.
+  nq-run status \
+    bin/osh --help
+  nq-assert $status -eq 0
+
+  nq-run status \
+    bin/oils_for_unix.py  --help
+  nq-assert $status -eq 0
+}
+
 test-version() {
-  set +o errexit
-  bin/osh --version
+  local status
+
+  nq-run status \
+    bin/osh --version
   nq-assert $? -eq 0
 }
 
@@ -201,6 +208,8 @@ DISABLED-test-symlink() {
   ./bash -c 'echo $OILS_VERSION'
   nq-assert $? -eq 0
 }
+
+# TODO: Use byo test for these two functions
 
 run-for-release() {
   run-other-suite-for-release osh-usage run-test-funcs

@@ -5,7 +5,6 @@
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
-source $LIB_OSH/byo-server.sh
 source $LIB_OSH/no-quotes.sh
 source $LIB_OSH/task-five.sh
 
@@ -319,7 +318,7 @@ test-grandchild-memory() {
 }
 
 soil-run() {
-  run-test-funcs
+  devtools/byo.sh test $0
 }
 
 task-five "$@"

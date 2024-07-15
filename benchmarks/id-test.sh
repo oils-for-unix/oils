@@ -6,9 +6,9 @@
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/no-quotes.sh
+source $LIB_OSH/task-five.sh
 
 source benchmarks/id.sh
-source test/common.sh  # run-test-funcs
 
 test-shell-prov() {
   shell-provenance-2 no-host 2022-12-29 _tmp/ \
@@ -35,7 +35,7 @@ test-compiler-id() {
 }
 
 soil-run() {
-  run-test-funcs
+  devtools/byo.sh test $0
 }
 
-"$@"
+task-five "$@"

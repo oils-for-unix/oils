@@ -37,19 +37,19 @@ test-byo-protocol() {
 soil-run() {
   test-byo-protocol
 
-  devtools/byo.sh run-tests $YSH stdlib/stream.ysh 
+  devtools/byo.sh test $YSH stdlib/stream.ysh 
 
-  devtools/byo.sh run-tests $YSH stdlib/table.ysh 
+  devtools/byo.sh test $YSH stdlib/table.ysh 
 
   # Run shebang, bash
-  devtools/byo.sh run-tests stdlib/osh/two-test.sh 
+  devtools/byo.sh test stdlib/osh/two-test.sh 
 
-  devtools/byo.sh run-tests stdlib/osh/no-quotes-test.sh 
+  devtools/byo.sh test stdlib/osh/no-quotes-test.sh 
 
   # Run with osh
-  devtools/byo.sh run-tests bin/osh stdlib/osh/two-test.sh 
+  devtools/byo.sh test bin/osh stdlib/osh/two-test.sh 
 
-  devtools/byo.sh run-tests bin/ysh stdlib/ysh/yblocks-test.ysh 
+  devtools/byo.sh test bin/ysh stdlib/ysh/yblocks-test.ysh 
 }
 
 "$@"

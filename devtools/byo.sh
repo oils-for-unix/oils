@@ -5,7 +5,7 @@
 # TODO: doc/byo.md
 #
 # Usage:
-#   test/byo-client.sh run-tests FLAGS* ARGS*
+#   devtools/byo.sh test FLAGS* ARGS*
 #
 # TODO:
 # - client creates a clean process state for each test
@@ -13,7 +13,6 @@
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/bash-strict.sh
-source $LIB_OSH/two.sh
 source $LIB_OSH/task-five.sh
 
 readonly TAB=$'\t'
@@ -222,4 +221,12 @@ run-tests() {
   echo "$0: $i tests passed."
 }
 
-task-five "$@"
+case $1 in
+  test)  # don't clobber this name
+    shift
+    run-tests "$@"
+    ;;
+  *)
+    task-five "$@"
+    ;;
+esac
