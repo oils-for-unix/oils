@@ -1,9 +1,10 @@
 #!bin/ysh
 
+# TODO: fix these
 shopt -s redefine_proc_func  # log
 shopt -s parse_sh_arith  # ${BASH_SOURCE[0]}
 
-source ///ysh/no-quotes.ysh  # module under test
+source ///ysh/yblocks.ysh  # module under test
 
 : ${LIB_OSH=stdlib/osh}
 source $LIB_OSH/two.sh  
