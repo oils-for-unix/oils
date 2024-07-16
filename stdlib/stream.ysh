@@ -12,7 +12,7 @@ source --builtin args.ysh
 
 proc slurp-by (; num_lines) {
   # TODO: (stdin)
-  for line in <> {
+  for line in (stdin) {
     echo TODO
   }
 }
@@ -35,7 +35,7 @@ proc each-line (...words; template=null; ; block=null) {
   # evaluate block with _line binding
   # block: execute in parallel with --max-jobs
 
-  for line in <> {
+  for line in (stdin) {
     echo TODO
   }
 }

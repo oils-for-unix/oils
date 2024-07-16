@@ -1193,7 +1193,7 @@ test-for-parse-bare-word() {
 test-for() {
   # Technically we could switch to a different lexer mode here, but it seems
   # easy enough to reuse the Id.Redir_LessGreat token
-  _ysh-should-parse '
+  _ysh-parse-error '
   for x in <> {
     echo $x
   }
@@ -1212,10 +1212,8 @@ test-for() {
   }
   '
 
-  return
-
   # Space between < >
-  _ysh-should-parse '
+  _ysh-parse-error '
   for x in < > {
     echo $x
   }

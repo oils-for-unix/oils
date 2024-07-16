@@ -437,16 +437,16 @@ You can also request the loop index:
     # 0 - README.md
     # 1 - __init__.py
 
-To iterate over lines of `stdin`, use the special form:
+To iterate over lines of `stdin`, use:
 
-    for line in <> {
+    for line in (stdin) {
       echo $line
     }
     # lines are buffered, so it's much faster than `while read --rawline`
 
 Ask for the loop index:
 
-    for i, line in <> {
+    for i, line in (stdin) {
       echo "$i $line"
     }
 

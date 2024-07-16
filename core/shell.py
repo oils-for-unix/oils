@@ -865,6 +865,8 @@ def Main(
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
     mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)
 
+    mem.SetNamed(location.LName('stdin'), value.Stdin, scope_e.GlobalOnly)
+
     #
     # Is the shell interactive?
     #

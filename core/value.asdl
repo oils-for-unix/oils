@@ -64,6 +64,7 @@ module value
     # Only used for val_ops.StdinIterator.  (It would be nice if we could
     # express iter_value.{Eof,Interrupted,Str,Int,...} in ASDL)
     Interrupted
+  | Stdin
 
     # Methods on state.Mem return value.Undef, but it's not visible in YSH.
     #

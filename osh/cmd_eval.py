@@ -1096,7 +1096,6 @@ class CommandEvaluator(object):
         # for YSH loop
         iter_expr = None  # type: expr_t
         expr_blame = None  # type: loc_t
-        iter_stdin = False
 
         iterable = node.iterable
         UP_iterable = iterable
@@ -1114,19 +1113,6 @@ class CommandEvaluator(object):
                 iterable = cast(for_iter.YshExpr, UP_iterable)
                 iter_expr = iterable.e
                 expr_blame = iterable.blame
-
-            elif case(for_iter_e.Files):
-                iterable = cast(for_iter.Files, UP_iterable)
-
-                # For now we only handle <>
-                assert len(iterable.words) == 0, iterable.words
-
-                if 0:
-                    words = braces.BraceExpandWords(iterable.words)
-                    iter_list = self.word_ev.EvalWordSequence(words)
-
-                expr_blame = iterable.left
-                iter_stdin = True
 
             else:
                 raise AssertionError()
@@ -1192,21 +1178,23 @@ class CommandEvaluator(object):
                             'Range iteration expects at most 2 loop variables',
                             node.keyword)
 
+                elif case(value_e.Stdin):
+                    # TODO: This could changed to magic iterator?
+                    it2 = val_ops.StdinIterator(expr_blame)
+                    if n == 1:
+                        name1 = location.LName(node.iter_names[0])
+                    elif n == 2:
+                        i_name = location.LName(node.iter_names[0])
+                        name1 = location.LName(node.iter_names[1])
+                    else:
+                        e_die_status(
+                            2,
+                            'Stdin iteration expects at most 2 loop variables',
+                            node.keyword)
                 else:
-                    raise error.TypeErr(val, 'for loop expected List or Dict',
-                                        node.keyword)
-
-        elif iter_stdin:
-            it2 = val_ops.StdinIterator(expr_blame)
-            if n == 1:
-                name1 = location.LName(node.iter_names[0])
-            elif n == 2:
-                i_name = location.LName(node.iter_names[0])
-                name1 = location.LName(node.iter_names[1])
-            else:
-                e_die_status(
-                    2, 'Files iteration expects at most 2 loop variables',
-                    node.keyword)
+                    raise error.TypeErr(
+                        val, 'for loop expected List, Dict, Range, or Stdin',
+                        node.keyword)
 
         else:
             assert iter_list is not None, iter_list
