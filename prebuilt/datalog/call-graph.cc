@@ -1,4 +1,4 @@
-#define SOUFFLE_GENERATOR_VERSION "UNKNOWN"
+#define SOUFFLE_GENERATOR_VERSION "39d42a366"
 #include "souffle/CompiledSouffle.h"
 #include "souffle/SignalHandler.h"
 #include "souffle/SouffleInterface.h"

@@ -1,0 +1,67 @@
+.once
+
+.include "control-flow.dl"
+.include "call-graph.dl"
+
+// Types
+// =====
+
+// Objects can be refered to by either local variables or object members.
+.type Reference = LocalVariable { f: Function, v: symbol }
+                | ObjectMember { o: symbol, m: symbol }
+
+.type Value = HeapObject { h: symbol } | Ref { r: Reference } | Empty {}
+
+// Facts and Relations
+// ===================
+// The facts and relations below use live variable analysis to determine when
+// variables need stack roots. See
+// https://en.wikipedia.org/wiki/Live-variable_analysis for more details.
+//
+// A variable is considered *live* at given statement if it might be used by a
+// future statement.
+
+// `f` assigns `v` is assigned to `r` in statement `s`.
+.decl assign(f:Function, s:Statement, r:Reference, v:Value)
+.input assign
+
+// `f` uses `r` in statement `s`.
+.decl use(f:Function, s:Statement, r:Reference)
+.input use
+
+// The set of variables considered live on the way in to a statement.
+.decl live_vars_in(f:Function, s:Statement, r:Reference)
+
+// The set of variables considered live on the way out of a statement.
+.decl live_vars_out(f:Function, s:Statement, r:Reference)
+
+// The set of references that a function should generate stack roots for.
+.decl stack_root_vars(f:Function, r: Reference)
+.output stack_root_vars(IO=file, filename="stack_root_vars.tsv", delimeter="\t")
+
+// Rules
+// =====
+
+// See the definition of the GEN set at https://en.wikipedia.org/wiki/Live-variable_analysis
+live_vars_in(f, s, r) :- use(f, s, r).
+// See the definition of the KILL set at https://en.wikipedia.org/wiki/Live-variable_analysis
+live_vars_in(f, s, r) :- !assign(f, s, r, _), live_vars_out(f, s, r).
+
+// The set of live variables leaving a statement is the union of the inbound
+// live variables of the statements sucessors in the control flow graph.
+live_vars_out(f, s1, r) :- cf_edge(f, s1, s2), live_vars_in(f, s2, r).
+
+// All variables considered live after a statement that, directly or indirectly,
+// invokes the GC must be rooted.
+//
+// TODO: We should omit roots for references that get bound to the args of the
+// offending function call here. The offending function will have to root the
+// param since it can't guarantee that the caller will have created the root.
+stack_root_vars(f, r) :- might_collect(f, s), live_vars_out(f, s, r).
+
+// If a function invokes the GC, directly or indirectly, all of its heap-managed
+// arguments must be rooted.
+stack_root_vars(f, $LocalVariable(f, v)) :- might_collect(f, _), assign(f, 0, $LocalVariable(f, v), $Empty()).
+
+// All members of context managers must be rooted.
+stack_root_vars(f, $ObjectMember("self", m)) :- match(".*ctx_.*__init__", f), assign(f, _, $ObjectMember("self", m), _).

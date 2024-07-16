@@ -49,7 +49,7 @@ class HeapObjectMember(object):
 
     def __init__(self, object_expr: Expression, object_type: Type,
                  member: str) -> None:
-        self.ojbect_expr = object_expr
+        self.object_expr = object_expr
         self.object_type = object_type
         self.member = member
 
@@ -152,11 +152,11 @@ class Virtual(object):
             return True  # by default they can be reordered
 
 
-def SymbolPathToSouffle(p: SymbolPath) -> str:
+def SymbolPathToReference(func: str, p: SymbolPath) -> str:
     if len(p) > 1:
-        return '$Member({}, {})'.format(join_name(p[:-1], delim='.'), p[-1])
+        return '$ObjectMember({}, {})'.format(join_name(p[:-1], delim='.'), p[-1])
 
-    return '$Variable({})'.format(p[0])
+    return '$LocalVariable({}, {})'.format(func, p[0])
 
 
 class Fact(object):
@@ -191,15 +191,17 @@ class Definition(Fact):
     The definition of a variable. This corresponds to an allocation.
     """
 
-    def __init__(self, variable: SymbolPath) -> None:
-        self.variable = variable
+    def __init__(self, ref: SymbolPath, obj: str) -> None:
+        self.ref = ref
+        self.obj = obj
 
     def name(self) -> str:
-        return 'define'
+        return 'assign'
 
     def Generate(self, func: str, statement: int) -> str:
-        return '{}\t{}\t{}\n'.format(func, statement,
-                                     SymbolPathToSouffle(self.variable))
+        return '{}\t{}\t{}\t{}\n'.format(func, statement,
+                                         SymbolPathToReference(func, self.ref),
+                                         self.obj)
 
 
 class Assignment(Fact):
@@ -215,9 +217,25 @@ class Assignment(Fact):
         return 'assign'
 
     def Generate(self, func: str, statement: int) -> str:
-        return '{}\t{}\t{}\t{}\n'.format(func, statement,
-                                         SymbolPathToSouffle(self.lhs),
-                                         SymbolPathToSouffle(self.rhs))
+        return '{}\t{}\t{}\t$Ref({})\n'.format(func, statement,
+                                         SymbolPathToReference(func, self.lhs),
+                                         SymbolPathToReference(func, self.rhs))
+
+
+class Use(Fact):
+    """
+    The use of a reference.
+    """
+
+    def __init__(self, ref: SymbolPath) -> None:
+        self.ref = ref
+
+    def name(self) -> str:
+        return 'use'
+
+    def Generate(self, func: str, statement: int) -> str:
+        return '{}\t{}\t{}\n'.format(func, statement,
+                                         SymbolPathToReference(func, self.ref))
 
 
 class ControlFlowGraph(object):
