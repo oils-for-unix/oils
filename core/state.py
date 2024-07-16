@@ -670,9 +670,9 @@ class MutableOpts(object):
 
         self._SetArrayByNum(opt_num, b)
 
-    def ShowOptions(self, opt_names):
-        # type: (List[str]) -> None
-        """For 'set -o' and 'shopt -p -o'."""
+    def ShowOptions(self, opt_names, as_command):
+        # type: (List[str], bool) -> None
+        """For 'set -o' and 'shopt -p -o' and 'shopt -o'."""
         # TODO: Maybe sort them differently?
 
         if len(opt_names) == 0:  # if none, supplied, show all
@@ -681,10 +681,13 @@ class MutableOpts(object):
         for opt_name in opt_names:
             opt_num = _SetOptionNum(opt_name)
             b = self.Get(opt_num)
-            print('set %so %s' % ('-' if b else '+', opt_name))
+            if as_command:
+                print('set %so %s' % ('-' if b else '+', opt_name))
+            else:
+                print('%-16s\t%s' % (opt_name, 'on' if b else 'off'))
 
-    def ShowShoptOptions(self, opt_names):
-        # type: (List[str]) -> None
+    def ShowShoptOptions(self, opt_names, as_command):
+        # type: (List[str], bool) -> None
         """For 'shopt -p'."""
 
         # Respect option groups.
@@ -712,8 +715,10 @@ class MutableOpts(object):
 
         for opt_num in opt_nums:
             b = self.Get(opt_num)
-            print('shopt -%s %s' %
-                  ('s' if b else 'u', consts.OptionName(opt_num)))
+            if as_command:
+                print('shopt -%s %s' % ('s' if b else 'u', consts.OptionName(opt_num)))
+            else:
+                print('%-20s\t%s' % (consts.OptionName(opt_num), 'on' if b else 'off', ))
 
 
 class _ArgFrame(object):

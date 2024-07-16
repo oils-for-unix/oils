@@ -169,7 +169,7 @@ class Set(vm._Builtin):
         # 'set -o' shows options.  This is actually used by autoconf-generated
         # scripts!
         if arg.show_options:
-            self.exec_opts.ShowOptions([])
+            self.exec_opts.ShowOptions([], False)
             return 0
 
         # Note: set -o nullglob is not valid.  The 'shopt' builtin is preferred in
@@ -193,12 +193,12 @@ class Shopt(vm._Builtin):
         self.mutable_opts = mutable_opts
         self.cmd_ev = cmd_ev
 
-    def _PrintOptions(self, use_set_opts, opt_names):
-        # type: (bool, List[str]) -> None
+    def _PrintOptions(self, use_set_opts, as_command, opt_names):
+        # type: (bool, bool, List[str]) -> None
         if use_set_opts:
-            self.mutable_opts.ShowOptions(opt_names)
+            self.mutable_opts.ShowOptions(opt_names, as_command)
         else:
-            self.mutable_opts.ShowShoptOptions(opt_names)
+            self.mutable_opts.ShowShoptOptions(opt_names, as_command)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -223,10 +223,10 @@ class Shopt(vm._Builtin):
         elif arg.u:
             b = False
         elif arg.p:  # explicit -p
-            self._PrintOptions(arg.o, opt_names)
+            self._PrintOptions(arg.o, arg.p, opt_names)
             return 0
         else:  # otherwise -p is implicit
-            self._PrintOptions(arg.o, opt_names)
+            self._PrintOptions(arg.o, arg.p, opt_names)
             return 0
 
         # shopt --set x { my-block }

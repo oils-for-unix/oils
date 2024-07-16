@@ -249,6 +249,10 @@ builtin-trap-bash() {
   run-file builtin-trap-bash "$@"
 }
 
+builtin-shopt-bash() {
+  run-file builtin-shopt-bash "$@"
+}
+
 # Bash implements type -t, but no other shell does.  For Nix.
 # zsh/mksh/dash don't have the 'help' builtin.
 builtin-bash() {
