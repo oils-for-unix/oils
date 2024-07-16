@@ -13,8 +13,8 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
-                        FuncDef, UnaryExpr, OpExpr, ComparisonExpr, CallExpr,
-                        IntExpr, ListExpr, DictExpr, ListComprehension)
+                        FuncDef, UnaryExpr, OpExpr, CallExpr,
+                        ListExpr, DictExpr, ListComprehension)
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
