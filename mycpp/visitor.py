@@ -6,7 +6,7 @@ from typing import overload, Union, Optional
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
-                        CallExpr, NameExpr)
+                        CallExpr)
 
 from mycpp.crash import catch_errors
 from mycpp.util import split_py_name
