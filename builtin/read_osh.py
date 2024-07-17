@@ -466,7 +466,8 @@ class Read(vm._Builtin):
             # the last name
             max_results = len(names)
 
-        if arg.Z:  # -0 is synonym for -r -d ''
+        if arg.Z:  # -0 is synonym for IFS= read -r -d ''
+            do_split = False
             raw = True
             delim_byte = 0
         else:

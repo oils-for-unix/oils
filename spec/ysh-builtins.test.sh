@@ -323,6 +323,20 @@ echo "[$REPLY]"
 [./a\b\c\d]
 ## END
 
+#### read -0 myvar doesn't do anything with IFS
+
+touch 'foo bar  '
+find -type f -print0 | read -0 
+echo "[$REPLY]"
+
+find -type f -print0 | read -0 myvar
+echo "[$myvar]"
+
+## STDOUT:
+[./foo bar  ]
+[./foo bar  ]
+## END
+
 #### simple_test_builtin
 
 test -n "foo"
