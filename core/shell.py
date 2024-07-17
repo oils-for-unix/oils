@@ -604,8 +604,9 @@ def Main(
                                       errfmt)
 
     # Module builtins
-    modules = {}  # type: Dict[str, bool]
-    b[builtin_i.module] = module_ysh.Module(modules, exec_opts, errfmt)
+    guards = {}  # type: Dict[str, bool]
+    b[builtin_i.source_guard] = module_ysh.SourceGuard(guards, exec_opts,
+                                                       errfmt)
     b[builtin_i.is_main] = module_ysh.IsMain(mem)
     b[builtin_i.use] = module_ysh.Use(mem, errfmt)
 

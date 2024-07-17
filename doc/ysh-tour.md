@@ -696,7 +696,6 @@ Here are some categories of builtin:
 - Processes: `fork  wait  forkwait  exec`
 - Interpreter settings: `shopt  shvar`
 - Meta: `command  builtin  runproc  type  eval`
-- Modules: `source  module`
 
 <!-- TODO: Link to a comprehensive list of builtins -->
 
@@ -1360,8 +1359,7 @@ A module is just a file, like this:
 #!/usr/bin/env ysh
 ### Deploy script
 
-module main || return 0         # declaration, "include guard"
-use bin cp mkdir                # optionally declare binaries used
+source-guard main || return 0   # declaration, "include guard"
 
 source $_this_dir/lib/util.ysh  # defines 'log' helper
 

@@ -52,7 +52,7 @@ _NORMAL_BUILTINS = [
     'append',
     'write', 'json', 'json8', 'pp',
     'hay', 'haynode',
-    'module', 'use',
+    'use',
     'error', 'failed',
 
     # take a block
@@ -136,6 +136,7 @@ def _Init(b):
     b.Add('[', enum_name='bracket')
 
     b.Add('push-registers', enum_name='push_registers')
+    b.Add('source-guard', enum_name='source_guard')
     b.Add('is-main', enum_name='is_main')
 
     # Implementation detail of $(<file)

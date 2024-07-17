@@ -10,8 +10,8 @@
 #    log 'hi'
 #    die 'expected a number'
 
-if command -v module >/dev/null; then  # include guard for YSH
-  module two || return 0
+if command -v source-guard >/dev/null; then  # include guard for YSH
+  source-guard two || return 0
 fi
 
 log() {
