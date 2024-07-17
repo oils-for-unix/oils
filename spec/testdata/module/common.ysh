@@ -1,5 +1,5 @@
 # Without this guard, the test would fail with 2 'common'
-module 'common' || return 0
+source-guard 'common' || return 0
 
 echo 'common'
 

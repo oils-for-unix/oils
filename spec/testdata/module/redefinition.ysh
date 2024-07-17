@@ -1,4 +1,4 @@
-module 'redefinition' || return 0
+source-guard 'redefinition' || return 0
 
 echo 'redefinition'
 
