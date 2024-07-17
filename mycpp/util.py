@@ -113,8 +113,7 @@ def IsStr(t: Type):
     return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
 
-def MaybeSkipIfStmt(visitor, stmt: IfStmt) -> bool:
-    """Returns true if the caller should not visit the entire if statement."""
+def _ShouldSkipIf(stmt: IfStmt) -> bool:
     cond = stmt.expr[0]
 
     # Omit anything that looks like if __name__ == ...
@@ -123,45 +122,56 @@ def MaybeSkipIfStmt(visitor, stmt: IfStmt) -> bool:
             cond.operands[0].name == '__name__'):
         return True
 
-    if isinstance(cond, IntExpr) and cond.value == 0:
-        # But write else: body
-        # Note: this would be invalid at the top level!
-        if stmt.else_body:
-            visitor.accept(stmt.else_body)
-
-        return True
-
     if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
         # Omit if TYPE_CHECKING blocks.  They contain type expressions that
         # don't type check!
         return True
 
-    if isinstance(cond, MemberExpr) and cond.name == 'CPP':
-        # just take the if block
-        if hasattr(visitor, 'def_write_ind'):
-            visitor.def_write_ind('// if MYCPP\n')
-            visitor.def_write_ind('')
-
-        for node in stmt.body:
-            visitor.accept(node)
-
-        if hasattr(visitor, 'def_write_ind'):
-            visitor.def_write_ind('// endif MYCPP\n')
-
-        return True
-
-    if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
-        # only accept the else block
-        if stmt.else_body:
-            if hasattr(visitor, 'def_write_ind'):
-                visitor.def_write_ind('// if not PYTHON\n')
-                visitor.def_write_ind('')
-
-            visitor.accept(stmt.else_body)
-
-            if hasattr(visitor, 'def_write_ind'):
-                visitor.def_write_ind('// endif MYCPP\n')
-
-        return True
-
     return False
+
+
+def GetSpecialIfCondition(stmt: IfStmt) -> Optional[str]:
+    cond = stmt.expr[0]
+    if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
+        return cond.name
+
+    if isinstance(cond, MemberExpr) and cond.name in ('PYTHON', 'CPP'):
+        return cond.name
+
+    return None
+
+
+def ShouldVisitIfExpr(stmt: IfStmt) -> bool:
+    if _ShouldSkipIf(stmt) or GetSpecialIfCondition(stmt) in ('PYTHON', 'CPP'):
+        return False
+
+    cond = stmt.expr[0]
+    if isinstance(cond, IntExpr) and cond.value == 0:
+        return False
+
+    return True
+
+
+def ShouldVisitIfBody(stmt: IfStmt) -> bool:
+    if _ShouldSkipIf(stmt):
+        return False
+
+    cond = stmt.expr[0]
+    if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
+        return False
+
+    if isinstance(cond, IntExpr) and cond.value == 0:
+        return False
+
+    return True
+
+
+def ShouldVisitElseBody(stmt: IfStmt) -> bool:
+    if _ShouldSkipIf(stmt):
+        return False
+
+    cond = stmt.expr[0]
+    if isinstance(cond, MemberExpr) and cond.name == 'CPP':
+        return False
+
+    return stmt.else_body is not None

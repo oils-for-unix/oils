@@ -2946,20 +2946,37 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             )
             return
 
-        if util.MaybeSkipIfStmt(self, o):
-            return
+        if util.ShouldVisitIfExpr(o):
+            self.def_write_ind('if (')
+            for e in o.expr:
+                self.accept(e)
+            self.def_write(') ')
 
-        self.def_write_ind('if (')
-        for e in o.expr:
-            self.accept(e)
-        self.def_write(') ')
+        if util.ShouldVisitIfBody(o):
+            cond = util.GetSpecialIfCondition(o)
+            if cond == 'CPP':
+                self.def_write_ind('// if MYCPP\n')
+                self.def_write_ind('')
 
-        for node in o.body:
-            self.accept(node)
+            for body in o.body:
+                self.accept(body)
 
-        if o.else_body:
-            self.def_write_ind('else ')
+            if cond == 'CPP':
+                self.def_write_ind('// endif MYCPP\n')
+
+        if util.ShouldVisitElseBody(o):
+            cond = util.GetSpecialIfCondition(o)
+            if cond == 'PYTHON':
+                self.def_write_ind('// if not PYTHON\n')
+                self.def_write_ind('')
+
+            if util.ShouldVisitIfBody(o):
+                self.def_write_ind('else ')
+
             self.accept(o.else_body)
+
+            if cond == 'PYTHON':
+                self.def_write_ind('// endif MYCPP\n')
 
     def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
         self.def_write_ind('break;\n')

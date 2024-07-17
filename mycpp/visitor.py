@@ -139,16 +139,15 @@ class SimpleVisitor(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(o.expr)
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
-        if util.MaybeSkipIfStmt(self, o):
-            return
+        if util.ShouldVisitIfExpr(o):
+            for expr in o.expr:
+                self.accept(expr)
 
-        for expr in o.expr:
-            self.accept(expr)
+        if util.ShouldVisitIfBody(o):
+            for body in o.body:
+                self.accept(body)
 
-        for body in o.body:
-            self.accept(body)
-
-        if o.else_body:
+        if util.ShouldVisitElseBody(o):
             self.accept(o.else_body)
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:
