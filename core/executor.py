@@ -5,7 +5,7 @@ from errno import EINTR
 
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.option_asdl import builtin_i
-from _devbuild.gen.runtime_asdl import RedirValue, trace
+from _devbuild.gen.runtime_asdl import RedirValue, trace, scope_e
 from _devbuild.gen.syntax_asdl import (
     command,
     command_e,
@@ -14,7 +14,7 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.value_asdl import value, value_e
 from builtin import hay_ysh
 from core import dev
 from core import error
@@ -283,6 +283,12 @@ class ShellExecutor(vm._Executor):
             # that's why you have = and 'type' inspect them
 
             proc_node = self.procs.get(arg0)
+
+            if proc_node is None:
+                cell = self.mem.GetCell(arg0, scope_e.LocalOnly)
+                if cell and cell.val.tag() == value_e.Proc:
+                    proc_node = cell.val
+
             if proc_node is not None:
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()
@@ -300,6 +306,7 @@ class ShellExecutor(vm._Executor):
                     # NOTE: Functions could call 'exit 42' directly, etc.
                     status = self.cmd_ev.RunProc(proc_node, cmd_val)
                 return status
+
 
         # Notes:
         # - procs shadow hay names
