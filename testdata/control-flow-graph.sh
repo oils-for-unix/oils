@@ -18,6 +18,7 @@ generate_one() {
   shift
   $mycpp '.:pyext' _tmp/mycpp-cfg-testdata mycpp/examples/"${ex}.py"
 
+  mkdir -p testdata/control-flow-graph/$ex
   for fact in "$@";
   do
     local fact_file="${fact}.facts"
@@ -30,6 +31,7 @@ generate_all() {
   generate_one control_flow cf_edge
   generate_one scoped_resource cf_edge
   generate_one test_switch cf_edge
+  generate_one classes assign define
 }
 
 task-five "$@"

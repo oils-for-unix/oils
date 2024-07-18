@@ -257,7 +257,10 @@ test-control-flow-graph() {
     banner "$ex"
 
     translate-example $ex
-    diff -u $data_dir/cf_edge.facts _tmp/mycpp-facts/cf_edge.facts
+    for fact_path in $data_dir/*.facts; do
+      local fact_file=$(basename $fact_path)
+      diff -u $data_dir/$fact_file _tmp/mycpp-facts/$fact_file
+    done
   done
 }
 
