@@ -264,10 +264,6 @@ test-control-flow-graph() {
   done
 }
 
-golden-control-flow-graph() {
-  run-test-func test-control-flow-graph _test/mycpp/test-cfg-examples.log
-}
-
 test-runtime() {
   # Run other unit tests, e.g. the GC tests
 
@@ -312,7 +308,7 @@ test-translator() {
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
-  golden-control-flow-graph
+  run-test-func test-control-flow-graph _test/mycpp/test-cfg-examples.log
 
   # Runs tests in cxx-asan variant, and benchmarks in cxx-opt variant
   if ! ninja mycpp-logs-equal; then
