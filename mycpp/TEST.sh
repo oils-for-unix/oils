@@ -262,7 +262,7 @@ test-control-flow-graph() {
 }
 
 golden-control-flow-graph() {
-  echo 'TODO: regenerate data in testdata/control-flow-graph'
+  run-test-func test-control-flow-graph _test/mycpp/test-cfg-examples.log
 }
 
 test-runtime() {
@@ -309,7 +309,7 @@ test-translator() {
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
-  #run-test-func test-control-flow-graph _test/mycpp/test-cfg-examples.log
+  golden-control-flow-graph
 
   # Runs tests in cxx-asan variant, and benchmarks in cxx-opt variant
   if ! ninja mycpp-logs-equal; then
