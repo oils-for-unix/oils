@@ -1291,7 +1291,7 @@ class CommandEvaluator(object):
                                            True)
 
     def _DefProcFunc(self, name, name_loc, val):
-        # type: (str, value_t) -> None
+        # type: (str, loc_t, value_t) -> None
         lval = location.LName(name)
 
         # Check that we haven't already defined a function

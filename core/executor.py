@@ -287,7 +287,7 @@ class ShellExecutor(vm._Executor):
             if proc_node is None:
                 cell = self.mem.GetCell(arg0, scope_e.LocalOnly)
                 if cell and cell.val.tag() == value_e.Proc:
-                    proc_node = cell.val
+                    proc_node = cast(value.Proc, cell.val)
 
             if proc_node is not None:
                 if self.exec_opts.strict_errexit():
