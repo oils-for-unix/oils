@@ -1,3 +1,5 @@
+## compare_shells: dash bash mksh zsh
+
 #
 # Tests for the blog.
 #
@@ -21,8 +23,9 @@ echo status=$?
 #### -a -a -a -a
 [ -a -a -a -a ]
 echo status=$?
-## stdout: status=1
-## BUG bash stdout: status=2
+## STDOUT:
+status=1
+## END
 
 #### -a -a -a -a -a
 [ -a -a -a -a -a ]
@@ -33,15 +36,23 @@ echo status=$?
 #### -a -a -a -a -a -a
 [ -a -a -a -a -a -a ]
 echo status=$?
-## stdout: status=2
-## BUG dash/zsh stdout: status=1
+## STDOUT:
+status=2
+## END
+
+## BUG dash/zsh STDOUT:
+status=1
+## END
 
 #### -a -a -a -a -a -a -a
 [ -a -a -a -a -a -a -a ]
 echo status=$?
-## stdout: status=1
-## BUG bash stdout: status=2
-## BUG dash/zsh stdout: status=0
+## STDOUT:
+status=1
+## END
+## BUG dash/zsh STDOUT:
+status=0
+## END
 
 #### -a -a -a -a -a -a -a -a
 [ -a -a -a -a -a -a -a -a ]

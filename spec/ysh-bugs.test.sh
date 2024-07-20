@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 2
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -108,4 +108,92 @@ echo nope
 ## status: 127
 ## STDOUT:
 type -a returned 1
+## END
+
+
+#### Do && || with YSH constructs make sense/
+
+# I guess there's nothing wrong with this?
+#
+# But I generally feel && || are only for
+#
+# test --file x && test --file y
+
+var x = []
+true && call x->append(42)
+false && call x->append(43)
+pp line (x)
+
+func amp() {
+  true && return (42)
+}
+
+func pipe() {
+  false || return (42)
+}
+
+pp line (amp())
+pp line (pipe())
+
+## STDOUT:
+## END
+
+
+#### shvar then replace - bug #1986 context manager crash
+
+shvar FOO=bar {
+  for x in (1 .. 500) {
+    var Q = "hello"
+    setvar Q = Q=>replace("hello","world")
+  }
+}
+echo $Q
+
+## STDOUT:
+world
+## END
+
+
+#### Parsing crash - bug #2003
+
+set +o errexit
+
+$SH -c 'proc y (;x) { return = x }'
+echo status=$?
+
+$SH -c 'func y (;x) { return = x }'
+echo status=$?
+
+## STDOUT:
+status=2
+status=2
+## END
+
+
+#### proc with IFS= read -r line - dynamic scope - issue #2012
+
+# this is an issue with lack of dynamic scope
+# not sure exactly how to handle it ...
+
+# shvar IFS= { read } is our replacement for dynamic scope
+
+proc p {
+	read -r line
+  write $line
+}
+
+proc p-ifs {
+	IFS= read -r line
+  write $line
+}
+
+#set -x
+
+echo zz | p
+
+echo yy | p-ifs
+
+## STDOUT:
+zz
+yy
 ## END

@@ -19,10 +19,18 @@ class BigInt(object):
         # type: (int) -> None
         self.i = i
 
-    # Prevent possible mistakes.  Could do this with other operators
     def __eq__(self, other):
         # type: (object) -> bool
-        raise AssertionError('Use mops.Equal()')
+
+        # Disabled check
+        # Prevent possible mistakes.  Could do this with other operators
+        # raise AssertionError('Use mops.Equal()')
+
+        if not isinstance(other, BigInt):
+            raise AssertionError()
+
+        # Used for hashing
+        return self.i == other.i
 
     def __gt__(self, other):
         # type: (object) -> bool
@@ -32,15 +40,36 @@ class BigInt(object):
         # type: (object) -> bool
         raise AssertionError('Use functions in mops.py')
 
+    def __hash__(self):
+        # type: () -> int
+        """For dict lookups."""
+        return hash(self.i)
+
 
 ZERO = BigInt(0)
 ONE = BigInt(1)
 MINUS_ONE = BigInt(-1)
+MINUS_TWO = BigInt(-2)  # for printf
 
 
 def ToStr(b):
     # type: (BigInt) -> str
     return str(b.i)
+
+
+def ToOctal(b):
+    # type: (BigInt) -> str
+    return '%o' % b.i
+
+
+def ToHexUpper(b):
+    # type: (BigInt) -> str
+    return '%X' % b.i
+
+
+def ToHexLower(b):
+    # type: (BigInt) -> str
+    return '%x' % b.i
 
 
 def FromStr(s, base=10):
@@ -57,6 +86,12 @@ def BigTruncate(b):
 def IntWiden(i):
     # type: (int) -> BigInt
     """Only widens in C++"""
+    return BigInt(i)
+
+
+def FromC(i):
+    # type: (int) -> BigInt
+    """A no-op in C, for RLIM_INFINITY"""
     return BigInt(i)
 
 

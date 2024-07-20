@@ -12,7 +12,7 @@ There are many ways to use Oils!
 - You can use it in *compatible* mode with `bin/osh`, or in *legacy-free* mode
   with `bin/ysh`.
 
-As of 2023, [OSH][] is mature, and [YSH][YSH] is under development.  See [blog
+As of 2024, [OSH][] is mature, and [YSH][YSH] is under development.  See [blog
 posts tagged #FAQ][blog-faqs] for more detail.
 
 [OSH]: https://www.oilshell.org/cross-ref.html?tag=OSH#OSH

@@ -80,6 +80,7 @@ var b = @(
   #echo $'binary \xff';
 
   echo '  " json \u03bc " '
+  echo '  j" json j prefix \u03bc " '
   echo " u' j8 u \\u{3bc} ' "
   echo " b' j8 b \\u{3bc} ' "
 
@@ -93,6 +94,7 @@ json write (b)
 [
   "unquoted \"\" word",
   " json μ ",
+  " json j prefix μ ",
   " j8 u μ ",
   " j8 b μ ",
   " j8 no prefix μ "

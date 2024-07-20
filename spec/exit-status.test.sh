@@ -171,17 +171,17 @@ Illegal number
 
 # bash disallows return at top level
 ## OK bash STDOUT:
-status=1
+status=2
 return: can only
-status=1
+status=2
 return: can only
-status=1
+status=2
 return: can only
 
 --- negative ---
-status=1
+status=2
 return: can only
-status=1
+status=2
 return: can only
 ## END
 

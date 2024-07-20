@@ -3,14 +3,12 @@
 # Usage:
 #   test/spec-util.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-
 source test/spec-common.sh
-source devtools/run-task.sh
 
 run-file-with-osh-bash() {
   local spec_name=$1
@@ -38,4 +36,4 @@ _run-file-with-one() {
 run-file-with-osh() { _run-file-with-one $REPO_ROOT/bin/osh "$@"; }
 run-file-with-bash() { _run-file-with-one bash "$@"; }
 
-run-task "$@"
+task-five "$@"

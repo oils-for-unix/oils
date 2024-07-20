@@ -5,7 +5,8 @@
 
 #include <algorithm>  // std::min()
 
-#include "mycpp/gc_str.h"  // len()
+#include "mycpp/gc_mops.h"  // mops::BigInt
+#include "mycpp/gc_str.h"   // len()
 
 template <typename L, typename R>
 class Tuple2;
@@ -13,24 +14,47 @@ class Tuple2;
 bool str_equals(BigStr* left, BigStr* right);
 bool maybe_str_equals(BigStr* left, BigStr* right);
 
-bool are_equal(BigStr* left, BigStr* right);
-
-bool are_equal(BigStr* left, BigStr* right);
-bool are_equal(int left, int right);
-bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
-bool are_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
-
-bool keys_equal(int left, int right);
+bool items_equal(BigStr* left, BigStr* right);
 bool keys_equal(BigStr* left, BigStr* right);
+
+// No List<T> comparison by pointer
+inline bool items_equal(void* left, void* right) {
+  assert(0);
+}
+
+// e.g. for Dict<Token*, int>, use object IDENTITY, not value
+inline bool keys_equal(void* left, void* right) {
+  return left == right;
+}
+
+inline bool items_equal(int left, int right) {
+  return left == right;
+}
+
+inline bool keys_equal(int left, int right) {
+  return items_equal(left, right);
+}
+
+inline bool items_equal(mops::BigInt left, mops::BigInt right) {
+  return left == right;
+}
+
+inline bool keys_equal(mops::BigInt left, mops::BigInt right) {
+  return items_equal(left, right);
+}
+
+bool items_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
 bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2);
+
+bool items_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
 bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2);
-bool keys_equal(void* left, void* right);
 
 namespace id_kind_asdl {
 enum class Kind;
 };
 
-bool are_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
+// Defined in cpp/translation_stubs.h
+bool items_equal(id_kind_asdl::Kind left, id_kind_asdl::Kind right);
 
 inline int int_cmp(int a, int b) {
   if (a == b) {

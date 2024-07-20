@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
-"""Flag_def.py."""
+"""Flag parser defintions."""
+
 from __future__ import print_function
 
 from frontend import args
@@ -40,6 +41,8 @@ NEW_VAR_SPEC.PlusFlag('n')  # named ref
 NEW_VAR_SPEC.ShortFlag('-a')
 NEW_VAR_SPEC.ShortFlag('-A')
 NEW_VAR_SPEC.ShortFlag('-i')  # no-op for integers
+NEW_VAR_SPEC.ShortFlag('-u')  # no-op for case
+NEW_VAR_SPEC.ShortFlag('-l')  # no-op for case
 
 UNSET_SPEC = FlagSpec('unset')
 UNSET_SPEC.ShortFlag('-v')
@@ -73,6 +76,7 @@ TYPE_SPEC.ShortFlag('-a')
 
 ALIAS_SPEC = FlagSpec('alias')  # no flags yet
 UNALIAS_SPEC = FlagSpec('unalias')  # no flags yet
+UNALIAS_SPEC.ShortFlag('-a')
 
 SHOPT_SPEC = FlagSpec('shopt')
 SHOPT_SPEC.ShortFlag('-s', long_name='--set')
@@ -112,21 +116,19 @@ READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 READ_SPEC.ShortFlag('-p', args.String)  # prompt
 
-# YSH extensions
-READ_SPEC.ShortFlag('-0')  # until NUL, like -r -d ''
+# OSH extension (not really considered YSH!)
+READ_SPEC.ShortFlag('-0')  # until NUL, like IFS= read -r -d ''
+# Arguably it could be named like
+#   grep --null -Z
+#   xargs --null -0
+# But this format is NOT recommended in YSH!  It's unbuffered and slow.  We
+# prefer lines with escaping.
+
 READ_SPEC.LongFlag('--all')
-READ_SPEC.LongFlag('--line')
+READ_SPEC.LongFlag('--raw-line')
 READ_SPEC.LongFlag('--num-bytes', args.Int)
 # don't strip the trailing newline
 READ_SPEC.LongFlag('--with-eol')
-READ_SPEC.LongFlag('--json',
-                   args.Bool,
-                   default=False,
-                   help='Read elements as JSON strings')
-READ_SPEC.LongFlag('--j8',
-                   args.Bool,
-                   default=False,
-                   help='Read elements as J8 strings')
 
 MAPFILE_SPEC = FlagSpec('mapfile')
 MAPFILE_SPEC.ShortFlag('-t')
@@ -177,6 +179,26 @@ JOB_SPEC.ShortFlag('-l', help='long format')
 JOB_SPEC.ShortFlag('-p', help='prints PID only')
 JOB_SPEC.LongFlag('--debug', help='display debug info')
 
+ULIMIT_SPEC = FlagSpec('ulimit')
+
+ULIMIT_SPEC.ShortFlag('-a', help='Print all limits')
+ULIMIT_SPEC.LongFlag('--all', help='Alias for -a')
+ULIMIT_SPEC.ShortFlag('-H', help='Use hard limit')
+ULIMIT_SPEC.ShortFlag('-S', help='Use soft limit')
+
+_ULIMIT_RESOURCES = [
+    '-c',
+    '-d',
+    '-f',
+    '-n',
+    '-s',
+    '-t',
+    '-v',
+]
+
+for u_flag in _ULIMIT_RESOURCES:
+    ULIMIT_SPEC.ShortFlag(u_flag)
+
 #
 # FlagSpecAndMore
 #
@@ -216,7 +238,8 @@ MAIN_SPEC.LongFlag('--version')
 #   parse-glob - to debug parsing
 #   parse-printf
 MAIN_SPEC.LongFlag('--tool', [
-    'tokens', 'lossless-cat', 'syntax-tree', 'fmt', 'ysh-ify', 'deps', 'cat-em'
+    'tokens', 'lossless-cat', 'syntax-tree', 'fmt', 'test', 'ysh-ify', 'deps',
+    'cat-em'
 ])
 
 MAIN_SPEC.ShortFlag('-i')  # interactive
@@ -331,7 +354,9 @@ def _DefineCompletionActions(spec):
     spec.Action('b', 'binding')
     spec.Action('c', 'command')
     spec.Action('d', 'directory')
+    spec.Action('e', 'export')
     spec.Action('f', 'file')
+    spec.Action('k', 'keyword')
     spec.Action('j', 'job')
     spec.Action('u', 'user')
     spec.Action('v', 'variable')
@@ -409,6 +434,7 @@ TRY_SPEC.LongFlag('--assign',
                   help='Assign status to this variable, and return 0')
 
 ERROR_SPEC = FlagSpec('error')
+FAILED_SPEC = FlagSpec('failed')
 
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
 
@@ -435,7 +461,7 @@ FORK_SPEC = FlagSpec('fork')
 FORKWAIT_SPEC = FlagSpec('forkwait')
 
 # Might want --list at some point
-MODULE_SPEC = FlagSpec('module')
+MODULE_SPEC = FlagSpec('source-guard')
 
 RUNPROC_SPEC = FlagSpec('runproc')
 RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')

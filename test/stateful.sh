@@ -26,9 +26,6 @@ readonly REPO_ROOT
 source test/common.sh  # log, $OSH
 source test/tsv-lib.sh
 
-# This uses ../oil_DEPS/spec-bin/{bash,dash} if they exist
-# The ovm-tarball container that has spec-bin doesn't have python3 :-(  Really
-# we should build another container
 source build/dev-shell.sh
 
 readonly BASE_DIR=_tmp/spec/stateful

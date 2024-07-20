@@ -26,7 +26,6 @@ Notes on ninja_syntax.py:
 from __future__ import print_function
 
 import collections
-import glob
 import os
 import sys
 
@@ -35,11 +34,6 @@ def log(msg, *args):
   if args:
     msg = msg % args
   print(msg, file=sys.stderr)
-
-
-def globs(pat):
-  """Deterministic glob, e.g. for _gen/bin/text_files.cc."""
-  return sorted(glob.glob(pat))
 
 
 # Matrix of configurations
@@ -267,7 +261,7 @@ class Rules(object):
       o = cc_lib.obj_lookup[config]
       objects.extend(o)
 
-    v = [('compiler', compiler), ('variant', variant)]
+    v = [('compiler', compiler), ('variant', variant), ('more_link_flags', "''")]
     self.n.build([out_bin], 'link', objects, variables=v)
     self.n.newline()
 
@@ -496,4 +490,29 @@ class Rules(object):
             variables=[('template', template)])
     self.n.newline()
 
+  def souffle_binary(self, souffle_cpp):
+    """
+    Compile a souffle C++ into a native executable.
+    """
+    rel_path, _ = os.path.splitext(souffle_cpp)
+    basename = os.path.basename(rel_path)
 
+    souffle_obj = '_build/obj/datalog/%s.o' % basename
+    self.n.build(
+        [souffle_obj], 'compile_one', souffle_cpp,
+        variables=[
+            ('compiler', 'cxx'),
+            ('variant', 'opt'),
+            ('more_cxx_flags', "'-Ivendor -std=c++17'")
+        ])
+
+    souffle_bin = '_bin/datalog/%s' % basename
+    self.n.build(
+        [souffle_bin], 'link', souffle_obj,
+        variables=[
+            ('compiler', 'cxx'),
+            ('variant', 'opt'),
+            ('more_link_flags', "'-lstdc++fs'")
+        ])
+
+    self.n.newline()

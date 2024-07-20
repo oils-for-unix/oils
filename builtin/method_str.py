@@ -237,11 +237,27 @@ class Upper(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        string = rd.PosStr()
+        s = rd.PosStr()
         rd.Done()
 
-        res = string.upper()
-        return value.Str(res)
+        # TODO: unicode support
+        return value.Str(s.upper())
+
+
+class Lower(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        s = rd.PosStr()
+        rd.Done()
+
+        # TODO: unicode support
+        return value.Str(s.lower())
 
 
 SEARCH = 0

@@ -1,0 +1,80 @@
+#!bin/ysh
+
+source $LIB_YSH/yblocks.ysh  # module under test
+
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/two.sh  
+source $LIB_OSH/task-five.sh
+
+proc _check (; val) {  # TODO: assert
+  if (not val) {
+    pp line (val)
+    error "Failed:"
+  }
+}
+
+_demo-stderr() {
+  echo zzz "$@" >& 2
+  return 99
+}
+
+proc test-yb-capture {
+
+  yb-capture (&r) {
+    write --end '' hi
+  }
+  _check (0 === r.status)
+  _check ('hi' === r.stdout)
+
+  #return
+
+  yb-capture (&r) {
+    echo hi
+  }
+  #pp line (r)
+  _check (0 === r.status)
+  _check (u'hi\n' === r.stdout)
+
+  # TODO: _demo-stderr fails - we catch this earlier though!
+  yb-capture-2 (&r) {
+    _demo-stderr yyy
+  }
+  _check (99 === r.status)
+  _check (u'zzz yyy\n' === r.stderr)
+
+  yb-capture (&r) {
+    _demo-stderr aaa
+  }
+  _check (99 === r.status)
+  _check ('' === r.stdout)
+}
+
+proc test-yb-redir-not-needed {
+  # TODO: need $BYO_TEMP_DIR maybe?  Or is that implicit with 'cd'?  We don't
+  # always have a temp dir
+
+  var tmp = "${BYO_TEMP_DIR:-/tmp}/$$"
+
+  try > $tmp {
+    seq 3
+  }
+  _check (0 === _error.code)
+
+  diff -u $tmp - << EOF
+1
+2
+3
+EOF
+
+  try 2>$tmp {
+    log $'hi\nthere'
+  }
+  _check (0 === _error.code)
+
+  diff -u $tmp - << EOF
+hi
+there
+EOF
+}
+
+task-five "$@"

@@ -7,6 +7,7 @@
 
 #include "mycpp/gc_alloc.h"  // gHeap
 #include "mycpp/gc_dict.h"   // for dict_erase()
+#include "mycpp/gc_mops.h"
 #include "mycpp/gc_tuple.h"
 
 template <class K, class V>
@@ -64,6 +65,8 @@ inline int ByteInSet(int byte, BigStr* byte_set) {
 
 BigStr* JoinBytes(List<int>* byte_list);
 
+void BigIntSort(List<mops::BigInt>* keys);
+
 // const int kStdout = 1;
 // const int kStderr = 2;
 
@@ -118,23 +121,10 @@ void dict_erase(Dict<K, V>* haystack, K needle) {
   DCHECK(haystack->len_ < haystack->capacity_);
 }
 
-// NOTE: Can use OverAllocatedStr for all of these, rather than copying
-
 inline BigStr* hex_lower(int i) {
+  // Note: Could also use OverAllocatedStr, but most strings are small?
   char buf[kIntBufSize];
   int len = snprintf(buf, kIntBufSize, "%x", i);
-  return ::StrFromC(buf, len);
-}
-
-inline BigStr* hex_upper(int i) {
-  char buf[kIntBufSize];
-  int len = snprintf(buf, kIntBufSize, "%X", i);
-  return ::StrFromC(buf, len);
-}
-
-inline BigStr* octal(int i) {
-  char buf[kIntBufSize];
-  int len = snprintf(buf, kIntBufSize, "%o", i);
   return ::StrFromC(buf, len);
 }
 

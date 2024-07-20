@@ -15,6 +15,28 @@ if TYPE_CHECKING:
 _ = log
 
 
+class Eval(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class CaptureStdout(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
 class PromptVal(vm._Callable):
     """
     _io->promptVal('$') is like \$ 
@@ -41,3 +63,25 @@ class PromptVal(vm._Callable):
 
         prompt_ev = cast(prompt.Evaluator, io.prompt_ev)
         return value.Str(prompt_ev.PromptVal(what))
+
+
+class Time(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class Strftime(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null

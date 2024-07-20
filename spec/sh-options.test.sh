@@ -1,7 +1,7 @@
 # Test set flags, sh flags.
 
 ## compare_shells: bash dash mksh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 ## tags: interactive
 
 #### $- with -c
@@ -245,15 +245,40 @@ echo $?
 ## N-I dash status: 2
 
 #### shopt -p -o prints 'set' options
+case $SH in dash|mksh) exit ;; esac
+
 shopt -po nounset
 set -o nounset
 shopt -po nounset
+
+echo --
+
+shopt -po | egrep -o 'errexit|noglob|nounset'
+
 ## STDOUT: 
 set +o nounset
 set -o nounset
+--
+errexit
+noglob
+nounset
 ## END
-## N-I dash/mksh stdout-json: ""
-## N-I dash/mksh status: 127
+## N-I dash/mksh STDOUT:
+## END
+
+#### shopt -o prints 'set' options
+case $SH in dash|mksh) exit ;; esac
+
+shopt -o | egrep -o 'errexit|noglob|nounset'
+echo --
+## STDOUT: 
+errexit
+noglob
+nounset
+--
+## END
+## N-I dash/mksh STDOUT:
+## END
 
 #### shopt -p prints 'shopt' options
 shopt -p nullglob
@@ -318,8 +343,16 @@ echo $?
 set +x
 echo $SHELLOPTS | grep -q xtrace
 echo $?
-## stdout-json: "1\n0\n1\n"
-## N-I dash/mksh stdout-json: "1\n1\n1\n"
+## STDOUT:
+1
+0
+1
+## END
+## N-I dash/mksh STDOUT:
+1
+1
+1
+## END
 
 #### SHELLOPTS is readonly
 SHELLOPTS=x
@@ -330,6 +363,22 @@ echo status=$?
 # Setting a readonly variable in osh is a hard failure.
 ## OK osh status: 1
 ## OK osh stdout-json: ""
+
+#### SHELLOPTS and BASHOPTS are set
+
+# 2024-06 - tickled by Samuel testing Gentoo
+
+# bash: bracexpand:hashall etc.
+
+echo shellopts ${SHELLOPTS:?} > /dev/null
+echo bashopts ${BASHOPTS:?} > /dev/null
+
+## STDOUT:
+## END
+
+## N-I dash status: 2
+## N-I mksh status: 1
+
 
 #### set - -
 set a b
@@ -485,7 +534,7 @@ __assoc['k e y']='v a l'
 __assoc[a]=b
 set | grep '^__'
 ## STDOUT:
-__assoc=(["k e y"]="v a l" [a]="b" )
+__assoc=([a]="b" ["k e y"]="v a l" )
 ## END
 ## N-I mksh stdout-json: ""
 ## N-I mksh status: 1

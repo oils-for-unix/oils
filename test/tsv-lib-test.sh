@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 #
 # Usage:
-#   devtools/tsv-lib-test.sh <function name>
+#   test/tsv-lib-test.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/no-quotes.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source test/tsv-lib.sh
-source test/common.sh  # fail
 
 test-concat-rows() {
-  set +o errexit
+  local status
 
   mkdir -p _tmp
   cat >_tmp/test1.csv <<EOF
@@ -26,19 +26,18 @@ name,age
 carol,20
 EOF
 
-  tsv-concat _tmp/test{1,2}.csv
+  nq-run status \
+    tsv-concat _tmp/test{1,2}.csv
+  nq-assert 0 = "$status"
 
   cat >_tmp/bad.csv <<EOF
 name,age,another
 dave,30,oops
 EOF
 
-  tsv-concat _tmp/test{1,2}.csv _tmp/bad.csv
-  if test $? -eq 1; then
-    echo 'Expected failure OK'
-  else
-    fail 'Should have failed'
-  fi
+  nq-run status \
+    tsv-concat _tmp/test{1,2}.csv _tmp/bad.csv
+  nq-assert 1 = "$status"
 }
 
 test-add-const-column() {
@@ -66,7 +65,7 @@ EOF
 }
 
 soil-run() {
-  run-test-funcs
+  devtools/byo.sh test $0
 }
 
-"$@"
+task-five "$@"

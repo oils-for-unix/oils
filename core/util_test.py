@@ -35,12 +35,10 @@ class UtilTest(unittest.TestCase):
             None if IS_DARWIN else (r'', '', ['']),
             (r'^$', '', ['']),
             (r'^.$', '', None),
-
             (r'(a*)(b*)', '', ['', '', '']),
             (r'(a*)(b*)', 'aa', ['aa', 'aa', '']),
             (r'(a*)(b*)', 'bb', ['bb', '', 'bb']),
             (r'(a*)(b*)', 'aabb', ['aabb', 'aa', 'bb']),
-
             (r'(a*(z)?)|(b*)', 'aaz', ['aaz', 'aaz', 'z', '']),
             (r'(a*(z)?)|(b*)', 'bb', ['bb', '', '', 'bb']),
         ]

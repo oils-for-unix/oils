@@ -1,17 +1,23 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Special Variables (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Special Variables
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes special variables
-for OSH and YSH.
+[Oils Reference](index.html) &mdash;
+Chapter **Special Variables**
 
-<div id="toc">
+</div>
+
+This chapter describes special variables for OSH and YSH.
+
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
 
 ## YSH Vars
@@ -38,30 +44,37 @@ It's useful for "relative imports".
 
 ### `_status`
 
-An `Int` that's set by the `try` builtin.
-
-    try {
-      ls /bad  # exits with status 2
-    }
-    if (_status !== 0) {  # _status is 2
-      echo 'failed'
-    }
+DEPRECATED: Use `_error.code` instead.
 
 ### `_error`
 
-A `Dict` that's set by the `try` builtin when catching certain errors.
+A `Dict` that's set by the `try` builtin.
 
-Such errors include JSON/J8 encoding/decoding errors, and user errors from the
-`error` builtin.
+The integer `_error.code` is always present:
+
+    try {
+      ls /tmp
+    }
+    echo "status is $[_error.code]"
+
+Some errors also have a `message` field, like JSON/J8 encoding/decoding errors,
+and user errors from the [error][] builtin.
 
     try {
       echo $[toJson( /d+/ )]  # invalid Eggex type
     }
     echo "failed: $[_error.message]"  # => failed: Can't serialize ...
 
+[error]: chap-builtin-cmd.html#error
+
+
 ### `_pipeline_status`
 
-Alias for [PIPESTATUS]($osh-help).
+After a pipeline of processes is executed, this array contains the exit code of
+each process.
+
+Each exit code is an [Int](chap-type-method.html#Int).  Compare with
+[`PIPESTATUS`](#PIPESTATUS).
 
 ### `_process_sub_status`
 
@@ -88,9 +101,25 @@ YSH `read` sets this variable:
 
 ### `OILS_VERSION`
 
-The version of Oils that's being run, e.g. `0.9.0`.
+The version of Oils that's being run, e.g. `0.23.0`.
 
 <!-- TODO: specify comparison algorithm. -->
+
+### `LIB_OSH`
+
+The string `///osh`, which you can use with the [source][] builtin.
+
+    source $LIB_OSH/two.sh    
+
+[source]: chap-builtin-cmd.html#source
+
+### `LIB_YSH`
+
+The string `///ysh`, which you can use with the [source][] builtin.
+
+    source $LIB_YSH/yblocks.ysh
+
+[source]: chap-builtin-cmd.html#source
 
 ### `OILS_GC_THRESHOLD`
 
@@ -163,10 +192,32 @@ Result of regex evaluation `[[ $x =~ $pat ]]`.
 
 ### PIPESTATUS
 
-Exit code of each element in a pipeline.
+After a pipeline of processes is executed, this array contains the exit code of
+each process.
 
+Each exit code is a [Str](chap-type-method.html#Str).  Compare with
+[`_pipeline_status`](#_pipeline_status).
+
+## Platform
+
+### HOSTNAME
+
+The name of the "host" or machine that Oils is running on, determined by
+`gethostname()`.
+
+### OSTYPE
+
+The operating system that Oils is running on, determined by `uname()`.
+
+Examples: `linux darwin ...`
 
 ## Call Stack
+
+### BASH_SOURCE
+
+### FUNCNAME
+
+### BASH_LINENO
 
 ## Tracing
 
@@ -206,6 +257,10 @@ Discouraged; for compatibility with bash.
 Discouraged; for compatibility with bash.
 
 ### COMP_POINT
+
+Discouraged; for compatibility with bash.
+
+### COMP_WORDBREAKS
 
 Discouraged; for compatibility with bash.
 

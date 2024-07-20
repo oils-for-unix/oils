@@ -40,7 +40,7 @@ from data_lang import j8_lite
 from frontend import location
 from frontend import match
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr, tagswitch, iteritems
+from mycpp.mylib import log, print_stderr, probe, tagswitch, iteritems
 
 import posix_ as posix
 from posix_ import (
@@ -678,6 +678,7 @@ class ExternalProgram(object):
 
         Called by:   ls /   exec ls /   ( ls / )
         """
+        probe('process', 'ExternalProgram_Exec', argv0_path)
         self._Exec(argv0_path, cmd_val.argv, cmd_val.arg_locs[0], environ,
                    True)
         assert False, "This line should never execute"  # NO RETURN
@@ -839,6 +840,7 @@ class SubProgramThunk(Thunk):
     def Run(self):
         # type: () -> None
         #self.errfmt.OneLineErrExit()  # don't quote code in child processes
+        probe('process', 'SubProgramThunk_Run')
 
         # TODO: break circular dep.  Bit flags could go in ASDL or headers.
         from osh import cmd_eval
@@ -908,6 +910,7 @@ class _HereDocWriterThunk(Thunk):
     def Run(self):
         # type: () -> None
         """do_exit: For small pipelines."""
+        probe('process', 'HereDocWriterThunk_Run')
         #log('Writing %r', self.body_str)
         posix.write(self.w, self.body_str)
         #log('Wrote %r', self.body_str)
@@ -1406,6 +1409,11 @@ class Pipeline(Job):
 
         # Fix lastpipe / job control / DEBUG trap interaction
         cmd_flags = cmd_eval.NoDebugTrap if self.job_control.Enabled() else 0
+
+        # The ERR trap only runs for the WHOLE pipeline, not the COMPONENTS in
+        # a pipeline.
+        cmd_flags |= cmd_eval.NoErrTrap
+
         io_errors = []  # type: List[error.IOError_OSError]
         with ctx_Pipe(fd_state, r, io_errors):
             cmd_ev.ExecuteAndCatch(last_node, cmd_flags)

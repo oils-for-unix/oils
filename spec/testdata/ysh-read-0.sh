@@ -9,12 +9,12 @@ seq 2 | {
 }
 echo
 
-echo 'read --line'
+echo 'read --raw-line'
 seq 2 | {
-  read --line
+  read --raw-line
   echo _reply=$_reply
 
-  read --line
+  read --raw-line
   echo _reply=$_reply
 }
 echo
@@ -27,7 +27,7 @@ seq 4 | {
   read -r
   echo REPLY=$REPLY
 
-  read --line
+  read --raw-line
   echo _reply=$_reply
 
   read -r

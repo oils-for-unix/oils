@@ -9,6 +9,7 @@
 #include "mycpp/comparators.h"
 #include "mycpp/gc_alloc.h"     // Alloc
 #include "mycpp/gc_builtins.h"  // ValueError
+#include "mycpp/gc_mops.h"      // BigInt
 #include "mycpp/gc_slab.h"
 
 // GlobalList is layout-compatible with List (unit tests assert this), and it
@@ -310,7 +311,7 @@ template <typename T>
 int List<T>::index(T value) {
   int element_count = len(this);
   for (int i = 0; i < element_count; i++) {
-    if (are_equal(slab_->items_[i], value)) {
+    if (items_equal(slab_->items_[i], value)) {
       return i;
     }
   }
@@ -392,13 +393,22 @@ void List<T>::extend(List<T>* other) {
   len_ = new_len;
 }
 
-inline bool _cmp(BigStr* a, BigStr* b) {
+inline bool CompareBigStr(BigStr* a, BigStr* b) {
   return mylib::str_cmp(a, b) < 0;
 }
 
-template <typename T>
-void List<T>::sort() {
-  std::sort(slab_->items_, slab_->items_ + len_, _cmp);
+template <>
+inline void List<BigStr*>::sort() {
+  std::sort(slab_->items_, slab_->items_ + len_, CompareBigStr);
+}
+
+inline bool CompareBigInt(mops::BigInt a, mops::BigInt b) {
+  return a < b;
+}
+
+template <>
+inline void List<mops::BigInt>::sort() {
+  std::sort(slab_->items_, slab_->items_ + len_, CompareBigInt);
 }
 
 // TODO: mycpp can just generate the constructor instead?
@@ -413,7 +423,7 @@ template <typename T>
 inline bool list_contains(List<T>* haystack, T needle) {
   int n = len(haystack);
   for (int i = 0; i < n; ++i) {
-    if (are_equal(haystack->at(i), needle)) {
+    if (items_equal(haystack->at(i), needle)) {
       return true;
     }
   }

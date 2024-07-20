@@ -1,10 +1,6 @@
 #!/usr/bin/env python2
 from __future__ import print_function
-"""
-dynamic_deps_test.py: Tests for dynamic_deps.py
-"""
 
-import sys
 import unittest
 
 import dynamic_deps  # module under test

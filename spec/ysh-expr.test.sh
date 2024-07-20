@@ -537,7 +537,7 @@ comsub=6
 var s = 'hi'
 
 # TODO: This does a bound method thing we probably don't want
-var s2 = s->upper()
+var s2 = s=>upper()
 echo $s2
 ## STDOUT:
 HI
@@ -662,11 +662,35 @@ echo $x
 var e = ^[1 + 2]
 
 echo type=$[type(e)]
-echo eval=$[evalExpr(e)]
+echo $[evalExpr(e)]
+
+var e = ^[2 < 1]
+echo $[evalExpr(e)]
+
+var x = 42
+var e = ^[42 === x and true]
+echo $[evalExpr(e)]
+
+var mylist = ^[3, 4]
+pp line (evalExpr(mylist))
+
 ## STDOUT:
 type=Expr
-eval=3
+3
+false
+true
+(List)   [3,4]
 ## END
+
+#### No list comprehension in ^[]
+
+var mylist = ^[x for x in y]  
+pp line (evalExpr(mylist))
+
+## status: 2
+## STDOUT:
+## END
+
 
 #### expression literals, evaluation failure
 var e = ^[1 / 0]

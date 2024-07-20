@@ -1,6 +1,7 @@
 // mycpp/gc_heap_test.cc
 
 #include "mycpp/runtime.h"
+#include "mycpp/test_common.h"
 #include "vendor/greatest.h"
 
 #define ASSERT_NUM_LIVE_OBJS(x) \
@@ -209,22 +210,6 @@ TEST dict_resize_policy_test() {
 
   PASS();
 }
-
-class Point {
- public:
-  Point(int x, int y) : x_(x), y_(y) {
-  }
-  int size() {
-    return x_ + y_;
-  }
-
-  static constexpr ObjHeader obj_header() {
-    return ObjHeader::ClassFixed(kZeroMask, sizeof(Point));
-  }
-
-  int x_;
-  int y_;
-};
 
 const int kLineMask = 0x3;  // 0b0011
 

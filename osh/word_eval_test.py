@@ -15,7 +15,7 @@ import unittest
 from core import error
 from core import test_lib
 from core import util
-from osh import word_eval
+from frontend import consts
 from osh.cmd_parse_test import assertParseSimpleCommand
 
 
@@ -39,7 +39,6 @@ class RegexTest(unittest.TestCase):
             # var name, op, value
             ('s', ['s', '', '']),
             ('value', ['value', '', '']),
-
             ('s!', None),
             ('!', None),
             ('=s', None),
@@ -51,12 +50,34 @@ class RegexTest(unittest.TestCase):
         ]
 
         for s, expected in CASES:
-            actual = util.RegexSearch(word_eval.ASSIGN_ARG_RE, s)
+            actual = util.RegexSearch(consts.ASSIGN_ARG_RE, s)
             if actual is None:
                 self.assertEqual(expected, actual)  # no match
             else:
                 _, var_name, _, op, value = actual
                 self.assertEqual(expected, [var_name, op, value])
+
+    def testTestV(self):
+        CASES = [
+            ('mystr', ['mystr', '']),
+            ('myarray[1]', ['myarray', '1']),
+            ('assoc[name]', ['assoc', 'name']),
+            # Should we allow spaces?
+            ('assoc[name] ', None),
+            ('assoc[name]]', None),
+            ('assoc[name]z', None),
+            ('assoc[name', None),
+            ('not-var', None),
+        ]
+
+        for s, expected in CASES:
+            actual = util.RegexSearch(consts.TEST_V_RE, s)
+            if actual is None:
+                self.assertEqual(expected, actual)  # no match
+            else:
+                print(actual)
+                _, name, _, index = actual
+                self.assertEqual(expected, [name, index])
 
 
 class WordEvalTest(unittest.TestCase):

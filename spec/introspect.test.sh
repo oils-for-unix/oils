@@ -93,8 +93,8 @@ esac
 ['${}', 'source']
 ['  $', 'source']
 -----
-['  @', 'source']
-['  0', 'source']
+['  @']
+['  0', '']
 ['${}', '']
 ['  $', '']
 -----
@@ -260,15 +260,7 @@ cd $REPO_ROOT
 $SH -c 'true;
 source spec/testdata/bash-source-pushtemp.sh'
 
-## BUG bash STDOUT:
-F
-G
-STACK:spec/testdata/bash-source-pushtemp.sh:g:3
-STACK:spec/testdata/bash-source-pushtemp.sh:f:19
-STACK:spec/testdata/bash-source-pushtemp.sh:source:1
-## END
-
-## OK osh STDOUT:
+## STDOUT:
 F
 G
 STACK:spec/testdata/bash-source-pushtemp.sh:g:3

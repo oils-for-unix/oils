@@ -19,11 +19,9 @@
 #   tar, gzip -d
 #   base64
 
-set -o nounset
-set -o pipefail
-set -o errexit
-
-source devtools/run-task.sh  # run-task
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh  # run-task
 
 print-shell() {
   local tar=$1
@@ -82,7 +80,6 @@ create() {
   local tar=_tmp/$name.tar.gz
 
   # Need --files-from because we can run out of ARGV!
-
   tar --create --gzip --files-from $manifest --file $tar "$main"
   ls -l $tar
 
@@ -116,7 +113,8 @@ test-oils-manifest() {
   echo 'build/dev-shell.sh'
   echo 'build/py.sh'
   echo 'build/common.sh'
-  echo 'devtools/run-task.sh'
+  echo 'stdlib/osh/task-five.sh'
+  echo 'stdlib/osh/byo-server.sh'
 
   # osh --tool shell-deps benchmarks/osh-runtime.sh
   # copied from benchmarks/osh-runtime.sh
@@ -131,9 +129,9 @@ EOF
   echo 'benchmarks/gc_stats_to_tsv.py'
   echo 'devtools/tsv_concat.py'
 
-  find testdata/osh-runtime
+  find testdata/osh-runtime -type f
 
-  find Python-2.7.13/
+  find Python-2.7.13/ -type f
 }
 
 create-test-oils() {
@@ -162,4 +160,4 @@ soil-run-test-oils() {
   XSHAR_DIR=/tmp/test-oils.xshar.REUSED _release/test-oils.xshar --version
 }
 
-run-task "$@"
+task-five "$@"

@@ -42,7 +42,7 @@ class Json(vm._Builtin):
         self.errfmt = errfmt
 
         self.is_j8 = is_j8
-        self.name = 'j8' if is_j8 else 'json'  # for error messages
+        self.name = 'json8' if is_j8 else 'json'  # for error messages
 
         self.stdout_ = mylib.Stdout()
 

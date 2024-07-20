@@ -120,16 +120,20 @@ deploy-data() {
   local user=${1:-$SOIL_USER}
   local host=${2:-$SOIL_HOST}
 
+  # www/ prefix for Mythic beasts
+  local host_dir=$SOIL_REMOTE_DIR
+
+  # TODO: Better to put HTML in www/$host/uuu/github-jobs, etc.
   ssh $user@$host mkdir -v -p \
-    $host/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github} \
-    $host/web/table
+    $host_dir/{travis-jobs,srht-jobs,github-jobs,circle-jobs,cirrus-jobs,web,status-api/github} \
+    $host_dir/web/table
 
   home-page "$host" > _tmp/index.html
 
   # note: duplicating CSS
-  scp _tmp/index.html $user@$host:$host/
-  scp web/{base.css,soil.css,ajax.js} $user@$host:$host/web
-  scp web/table/*.{js,css} $user@$host:$host/web/table
+  scp _tmp/index.html $user@$host:$host_dir/
+  scp web/{base.css,soil.css,ajax.js} $user@$host:$host_dir/web
+  scp web/table/*.{js,css} $user@$host:$host_dir/web/table
 }
 
 soil-web-manifest() {
@@ -146,19 +150,24 @@ soil-web-manifest() {
 multi() { ~/git/tree-tools/bin/multi "$@"; }
 
 deploy-code() {
+  local user=${1:-$SOIL_USER}
+  local host=${2:-$SOIL_HOST}
+
   soil-web-manifest | multi cp _tmp/soil-web
   tree _tmp/soil-web
-  rsync --archive --verbose _tmp/soil-web/ $SOIL_USER_HOST:soil-web/
+  rsync --archive --verbose _tmp/soil-web/ $user@$host:soil-web/
 }
 
 deploy() {
-  deploy-data
+  deploy-data "$@"
   deploy-code
 }
 
 remote-test() {
-  ssh $SOIL_USER_HOST \
-    soil-web/soil/web.sh smoke-test '~/travis-ci.oilshell.org/jobs'
+  local user=${1:-$SOIL_USER}
+  local host=${2:-$SOIL_HOST}
+
+  ssh $user@$host soil-web/soil/web.sh hello
 }
 
 

@@ -148,6 +148,7 @@ shopt -s strict_control_flow
 shopt -s strict_errexit
 shopt -s strict_glob
 shopt -s strict_nameref
+shopt -s strict_parse_slice
 shopt -s strict_tilde
 shopt -s strict_word_eval
 ## END
@@ -660,7 +661,7 @@ echo finished
 finished
 ## END
 
-#### redefine_proc for shell functions
+#### Shell functions can't be refined with YSH (redefine_proc_func off)
 
 f() {
   echo 1
@@ -672,7 +673,7 @@ f() {
 }
 echo 'second'
 
-shopt --set oil:upgrade
+shopt --set ysh:upgrade
 f() {
   echo 3
 }

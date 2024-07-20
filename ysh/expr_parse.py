@@ -249,9 +249,11 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
 
             continue
 
-        # ", """ and ^"
-        if tok.id in (Id.Left_DoubleQuote, Id.Left_TDoubleQuote,
+        # "   $"   """   $"""   ^"
+        if tok.id in (Id.Left_DoubleQuote, Id.Left_DollarDoubleQuote,
+                      Id.Left_TDoubleQuote, Id.Left_DollarTDoubleQuote,
                       Id.Left_CaretDoubleQuote):
+
             left_token = tok
             line_reader = reader.DisallowedLineReader(parse_ctx.arena, tok)
             w_parser = parse_ctx.MakeWordParser(lex, line_reader)
@@ -309,7 +311,7 @@ def _PushYshTokens(parse_ctx, gr, p, lex):
             last_token = w_parser.ReadSingleQuoted(sq_mode, left_token, tokens,
                                                    True)
 
-            sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
+            sval = word_compile.EvalSingleQuoted(left_token.id, tokens)
             sq_part = SingleQuoted(left_token, sval, last_token)
 
             typ = Id.Expr_CastedDummy

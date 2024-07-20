@@ -45,43 +45,64 @@ init-deb-cache() {
   echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 }
 
-layer-wedge-builder() {
-  local -a packages=(
-    # xz-utils  # do we need this for extraction?
+readonly -a BUILD_PACKAGES=(
+  gcc
+  g++  # re2c is C++
+  make  # to build re2c
 
-    gcc
-    g++  # re2c is C++
-    make  # to build re2c
+  # for cmark
+  cmake
 
-    # for cmark
-    cmake
+  # cmake -G Ninja can be used
+  ninja-build
 
-    # cmake -G Ninja can be used
-    ninja-build
+  # For 'deps/wedge.sh unboxed-install'
+  sudo
 
-    # For 'deps/wedge.sh unboxed-install'
-    sudo
+  # uftrace configure uses pkg-config to find python3 flags
+  pkg-config
 
-    # uftrace configure uses pkg-config to find python3 flags
-    pkg-config
+  # 2024-06: I think this is necessary for the boxed build of zsh
+  # Not sure why the wedge-setup-debian VM build doesn't need it.  Oh probably
+  # because Github Actions pre-installs many packages for you.
+  libncursesw5-dev
+
+  # for USDT probes
+  systemtap-sdt-dev
+
+  # Dependencies for building our own Python3 wedge.  Otherwise 'pip install'
+  # won't work.
+  # TODO: We should move 'pip install' to build time.
+  "${PY3_BUILD_DEPS[@]}"
+
+  # For installing R packages
+  "${R_BUILD_DEPS[@]}"
+)
+
+layer-wedge-bootstrap-debian() {
+  apt-get update
+
+  # Pass aditional deps
+  apt-install "${BUILD_PACKAGES[@]}" "$@"
+}
+
+layer-wedge-bootstrap-debian-10() {
+  # Default packages
+  layer-wedge-bootstrap-debian
+}
+
+layer-wedge-bootstrap-debian-12() {
+  local -a uftrace_packages=(
     # uftrace configure detects with #include "Python.h"
     python3-dev
     # shared library for uftrace to do dlopen()
     # requires path in uftrace source
-    libpython3.7
+    libpython3.11
 
-    # Dependencies for building our own Python3 wedge.  Otherwise 'pip install'
-    # won't work.
-    # TODO: We should move 'pip install' to build time.
-    "${PY3_BUILD_DEPS[@]}"
-
-    # For installing R packages
-    "${R_BUILD_DEPS[@]}"
+    #libpython3.7
   )
 
-  apt-get update
-
-  apt-install "${packages[@]}"
+  layer-wedge-bootstrap-debian "${uftrace_packages[@]}"
 }
 
 layer-python-symlink() {
@@ -89,21 +110,21 @@ layer-python-symlink() {
   ln -s -f -v /usr/bin/python2 /usr/bin/python
 }
 
-layer-for-soil() {
-  # git: for checking out code
-  # python2: for various tools
-
-  # TODO: change python2 to python3
-  apt-install git python2
-}
-
-layer-common() {
-  # with RUN --mount=type=cache
-
+layer-debian-10() {
   # Can't install packages in Debian without this
   apt-get update  # uses /var/lib/apt
 
-  layer-for-soil  # uses /var/cache/apt
+  # uses /var/cache/apt
+  apt-install git python2
+}
+
+layer-debian-12() {
+  # Can't install packages in Debian without this
+  apt-get update  # uses /var/lib/apt
+
+  # uses /var/cache/apt
+  # Soil's time-tsv3 can run under python3 too
+  apt-install git python3
 }
 
 layer-locales() {
@@ -208,6 +229,9 @@ cpp-small() {
 
     # for test/ltrace
     ltrace
+
+    # for USDT probes
+    systemtap-sdt-dev
   )
 
   apt-install "${packages[@]}"
@@ -221,7 +245,7 @@ benchmarks() {
     libreadline-dev
     python2-dev
 
-    # To build Oil
+    # To build Oils
     g++
     ninja-build
     make  # to build R packages
@@ -253,31 +277,32 @@ benchmarks() {
   apt-install "${packages[@]}"
 }
 
+bloaty() {
+  local -a packages=(
+    g++  # for C++ tarball
+    curl  # wait for cpp-tarball
+  )
+
+  apt-install "${packages[@]}"
+}
+
 benchmarks2() {
   ### uftrace needs a Python plugin
 
   local -a packages=(
-    # for build/py.sh all
-    libreadline-dev
-    python2-dev
-
-    # To build Oil
-    g++
-    ninja-build
+    curl  # fetch C++ tarball
+    g++   # build it
 
     # uftrace needs a Python 3 plugin
-    # Technically we don't need 'python3' or 'python3.7' -- only the shared
+    # This is different than 'python3' or 'python3.11' -- it's only the shared
     # lib?
-    libpython3.7
+    libpython3.11
 
     # for stable benchmarks.
     valgrind
 
     # Analyze uftrace
     r-base-core
-
-    # for MyPy git clone https://.  TODO: remove when the build is hermetic
-    ca-certificates
   )
 
   apt-install "${packages[@]}"

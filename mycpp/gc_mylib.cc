@@ -43,6 +43,11 @@ BigStr* JoinBytes(List<int>* byte_list) {
   return result;
 }
 
+// For BashArray
+void BigIntSort(List<mops::BigInt>* keys) {
+  keys->sort();
+}
+
 class MutableStr : public BigStr {};
 
 MutableStr* NewMutableStr(int n) {
@@ -101,14 +106,19 @@ BigStr* CFile::readline() {
   // Reset errno because we turn the EOF error into empty string (like Python).
   errno = 0;
   ssize_t len = getline(&line, &allocated_size, f_);
+  // log("getline = %d", len);
   if (len < 0) {
+    // Reset EOF flag so the next readline() will get a line.
+    clearerr(f_);
+
     // man page says the buffer should be freed even if getline fails
     free(line);
+
     if (errno != 0) {  // Unexpected error
-      log("getline() error: %s", strerror(errno));
+      // log("getline() error: %s", strerror(errno));
       throw Alloc<IOError>(errno);
     }
-    return kEmptyString;  // EOF indicated by by empty string, like Python
+    return kEmptyString;  // Indicate EOF with empty string, like Python
   }
 
   // Note: getline() NUL-terminates the buffer
@@ -165,16 +175,25 @@ Writer* gStderr;
 //
 
 void CFile::write(BigStr* s) {
-  // note: throwing away the return value
-  fwrite(s->data_, sizeof(char), len(s), f_);
+  // Writes can be short!
+  int n = len(s);
+  int num_written = ::fwrite(s->data_, sizeof(char), n, f_);
+  // Similar to CPython fileobject.c
+  if (num_written != n) {
+    throw Alloc<IOError>(errno);
+  }
 }
 
 void CFile::flush() {
-  ::fflush(f_);
+  if (::fflush(f_) != 0) {
+    throw Alloc<IOError>(errno);
+  }
 }
 
 void CFile::close() {
-  ::fclose(f_);
+  if (::fclose(f_) != 0) {
+    throw Alloc<IOError>(errno);
+  }
 }
 
 //

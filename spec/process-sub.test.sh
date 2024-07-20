@@ -1,3 +1,6 @@
+## compare_shells: bash-4.4 zsh
+
+# mksh and dash don't support it
 
 #### Process sub input
 f=_tmp/process-sub.txt
@@ -80,7 +83,7 @@ shopt --set parse_at
 
 cat <(seq 2; exit 2) <(seq 3; exit 3)
 
-case $SH in bash|zsh) exit ;; esac
+case $SH in bash*|zsh) exit ;; esac
 
 echo status @_process_sub_status
 echo done
@@ -104,7 +107,7 @@ done
 
 #### shopt -s process_sub_fail
 
-case $SH in bash|zsh) exit ;; esac
+case $SH in bash*|zsh) exit ;; esac
 
 shopt --set parse_at
 
@@ -142,7 +145,7 @@ b
 #### process subs and pipelines together
 
 # zsh is very similar to bash, but don't bother with the assertions
-case $SH in bash|zsh) exit ;; esac
+case $SH in bash*|zsh) exit ;; esac
 
 shopt --set parse_at
 

@@ -437,9 +437,21 @@ You can also request the loop index:
     # 0 - README.md
     # 1 - __init__.py
 
+To iterate over lines of `stdin`, use:
+
+    for line in (stdin) {
+      echo $line
+    }
+    # lines are buffered, so it's much faster than `while read --rawline`
+
+Ask for the loop index:
+
+    for i, line in (stdin) {
+      echo "$i $line"
+    }
+
 To iterate over a typed data, use parentheses around an **expression**.  The
-expression should evaluate to an integer range, `List`, `Dict`, or `Str`
-(TODO).
+expression should evaluate to an integer `Range`, `List`, or `Dict`:
 
     for i in (3 .. 5) {  # range operator ..
       echo "i = $i"
@@ -458,16 +470,9 @@ List:
     # ale
     # bean
 
-Again you can request the index:
+Again, you can request the index with `for i, item in ...`.
 
-    for i, item in (foods) {
-      echo "$i - $item"
-    }
-    # =>
-    # 0 - ale
-    # 1 - bean
-
-Likewise, here's the most general form of the dictionary loop:
+Here's the most general form of the loop over `Dict`:
 
     var mydict = {pea: 42, nut: 10}
     for i, k, v in (mydict) {
@@ -587,13 +592,13 @@ Procs use this style (because of shell's *disabled `errexit` quirk*):
     try {
       myproc
     }
-    if (_status !== 0) {
+    if failed {
       echo 'failed'
     }
 
-For a complete list of examples, see [YSH vs. Shell Idioms > Error
-Handling](idioms.html#error-handling).  For design goals and a reference, see
-[YSH Fixes Shell's Error Handling](error-handling.html).
+For a complete list of examples, see [YSH Error
+Handling](ysh-error.html).  For design goals and a reference, see [YSH
+Fixes Shell's Error Handling](error-handling.html).
 
 #### `break`, `continue`, `return`, `exit`
 
@@ -691,7 +696,6 @@ Here are some categories of builtin:
 - Processes: `fork  wait  forkwait  exec`
 - Interpreter settings: `shopt  shvar`
 - Meta: `command  builtin  runproc  type  eval`
-- Modules: `source  module`
 
 <!-- TODO: Link to a comprehensive list of builtins -->
 
@@ -1239,7 +1243,7 @@ It will cover:
 - Boolean shell options with `shopt`: `parse_paren`, `simple_word_eval`, etc.
 - String shell options with `shvar`: `IFS`, `PATH`
 - **Registers** that are silently modified by the interpreter
-  - `$?` and `_status`
+  - `$?` and `_error`
   - `$!` for the last PID
   - `_this_dir`
   - `_reply`
@@ -1355,8 +1359,7 @@ A module is just a file, like this:
 #!/usr/bin/env ysh
 ### Deploy script
 
-module main || return 0         # declaration, "include guard"
-use bin cp mkdir                # optionally declare binaries used
+source-guard main || return 0   # declaration, "include guard"
 
 source $_this_dir/lib/util.ysh  # defines 'log' helper
 

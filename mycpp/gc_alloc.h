@@ -29,7 +29,7 @@ static void ValidateRoot(const RawObject* obj) {
   }
 
   ObjHeader* header = ObjHeader::FromObject(obj);
-  log("obj %p header %p", obj, header);
+  // log("obj %p header %p", obj, header);
 
   switch (header->heap_tag) {
   case HeapTag::Global:

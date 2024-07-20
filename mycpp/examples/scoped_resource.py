@@ -7,6 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
+from mycpp import mylib
 from mycpp.mylib import log
 from typing import List, Optional, Any
 
@@ -22,6 +23,18 @@ def Error(error):
     # type: (bool) -> None
     if error:
         raise MyError()
+
+
+#class BadName(object):
+class ctx_BadName(object):
+
+    def __init__(self):
+        # type: () -> None
+        self.i = 42
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.i = 43
 
 
 class ctx_NoArgs(object):
@@ -48,6 +61,11 @@ class ctx_DirStack(object):
         self.state = state
         state.Push(entry)
 
+        # Bug #1986: add heap-allocated member of context manager
+        self.restored = []  # type: List[str]
+        self.restored.append('foo')
+        self.non_pointer_member = 42  # make sure we don't root this
+
     def __enter__(self):
         # type: () -> None
         """no-op, but it has to exist to be used as context manager."""
@@ -55,6 +73,7 @@ class ctx_DirStack(object):
 
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
+        self.restored.pop()
         self.state.Pop()
 
 
@@ -182,8 +201,12 @@ def run_benchmarks():
     # type: () -> None
     d = DirStack()
     for i in xrange(1000000):
+        # Does NOT trigger the bug!
+        #mylib.MaybeCollect()
         try:
             with ctx_DirStack(d, 'foo') as _:
+                # Bug #1986: add collection in this loop
+                mylib.MaybeCollect()
                 if i % 10000 == 0:
                     raise MyError()
         except MyError:

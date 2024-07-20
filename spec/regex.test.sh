@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 0
-## compare_shells: bash zsh
+## compare_shells: bash-4.4 zsh
 
 #
 # Only bash and zsh seem to implement [[ foo =~ '' ]]

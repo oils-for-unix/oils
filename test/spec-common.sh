@@ -33,10 +33,10 @@ sh-spec() {
 
   # - Prepend spec/bin on the front of the $PATH.  We can't isolate $PATH
   #   because we might be running in Nix, etc.
-  # - Force LC_ALL=C.UTF-8 because
-  #   - bash behaves differently with en_US.UTF-8, but no other shell does.
-  #     (Not sure if OSH should support it, probably not.)
-  #   - en_US.UTF-8 seems hard to support on Debian, even though it's the default on Debian.
+  # - Force LC_ALL=C.UTF-8 for unicode testing
+  #   - TODO: should test with LC_ALL=C as well
+  #     - or do we put that in spec tests?
+  #     - en_US.UTF-8 seems hard to support on Debian, even though it's the default on Debian.
   #   - Description: https://stackoverflow.com/questions/55673886/what-is-the-difference-between-c-utf-8-and-en-us-utf-8-locales/55693338
   # - LOCALE_ARCHIVE is allowed to leak for Nix.
   # - OILS_GC_ON_EXIT is to pass ASAN.

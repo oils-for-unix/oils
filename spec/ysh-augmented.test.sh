@@ -203,6 +203,33 @@ echo @mylist
 31 10.5
 ## END
 
+#### Dict with nonexistent key (bug fix)
+
+var d = {x: 42}
+
+setvar d.x += 1
+setglobal d.x += 1
+echo $[d.x]
+
+setvar d.missing -= 1
+setglobal d.missing -= 1
+
+
+## status: 3
+## STDOUT:
+44
+## END
+
+
+#### List with nonexistent elemnt
+var L = [42]
+setvar L[99] += 1
+
+## status: 3
+## STDOUT:
+## END
+
+
 #### Augmented assignment doesn't work with multiple LHS
 
 var x = 3
@@ -213,5 +240,6 @@ echo $x $y
 ## status: 2
 ## STDOUT:
 ## END
+
 
 

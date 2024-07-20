@@ -5,7 +5,6 @@ Shared between sh_spec.py (Python 2) and spec/stateful/harness.py (Python 3)!
 """
 from __future__ import print_function
 
-import optparse
 import os
 import re
 import sys
@@ -25,6 +24,9 @@ OSH_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/osh')  # e.g. $PWD/_bin/cxx-dbg/osh
 YSH_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/ysh')  # e.g. $PWD/_bin/cxx-dbg/ysh
 OIL_CPP_RE = re.compile(r'_bin/\w+-\w+(-sh)?/oil')
 
+# e.g. bash-4.4   bash 5.2.21
+BASH_RE = re.compile(r'(bash-\d)[\d.]+$')
+
 def MakeShellPairs(shells):
   shell_pairs = []
 
@@ -33,8 +35,12 @@ def MakeShellPairs(shells):
   saw_oil = False
 
   for path in shells:
-    name, _ = os.path.splitext(path)
-    label = os.path.basename(name)
+    m = BASH_RE.match(path)
+    if m:
+      label = m.group(1)  # bash-4 or to fit
+    else:
+      first, _ = os.path.splitext(path)
+      label = os.path.basename(first)
 
     if label == 'osh':
       # change the second 'osh' to 'osh_ALT' so it's distinct
@@ -199,9 +205,10 @@ def DefineShSpec(p):
   # - utf-8 is the Ubuntu default
   # - this flag has limited usefulness.  It may be better to simply export LANG=
   #   in this test case itself.
-  p.add_option(
-      '--lang-env', dest='lang_env', default='en_US.UTF-8',
-      help="The LANG= setting, which affects various libc functions.")
+  if 0:
+      p.add_option(
+          '--lang-env', dest='lang_env', default='en_US.UTF-8',
+          help="The LANG= setting, which affects various libc functions.")
   p.add_option(
       '--env-pair', dest='env_pair', default=[], action='append',
       help='A key=value pair to add to the environment')

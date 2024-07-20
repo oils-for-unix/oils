@@ -21,6 +21,7 @@ from core import error
 from core import process
 from core.error import e_die, e_die_status
 from core import pyos
+from core import pyutil
 from core import state
 from core import ui
 from core import vm
@@ -203,17 +204,31 @@ class ShellExecutor(vm._Executor):
 
         builtin_func = self.builtins[builtin_id]
 
-        with vm.ctx_FlushStdout():
+        io_errors = []  # type: List[error.IOError_OSError]
+        with vm.ctx_FlushStdout(io_errors):
             # note: could be second word, like 'builtin read'
             with ui.ctx_Location(self.errfmt, cmd_val.arg_locs[0]):
                 try:
                     status = builtin_func.Run(cmd_val)
                     assert isinstance(status, int)
+                except (IOError, OSError) as e:
+                    self.errfmt.PrintMessage(
+                        '%s builtin I/O error: %s' %
+                        (cmd_val.argv[0], pyutil.strerror(e)),
+                        cmd_val.arg_locs[0])
+                    return 1
                 except error.Usage as e:
                     arg0 = cmd_val.argv[0]
                     # e.g. 'type' doesn't accept flag '-x'
                     self.errfmt.PrefixPrint(e.msg, '%r ' % arg0, e.location)
-                    status = 2  # consistent error code for usage error
+                    return 2  # consistent error code for usage error
+
+        if len(io_errors):  # e.g. disk full, ulimit
+            self.errfmt.PrintMessage(
+                '%s builtin I/O error: %s' %
+                (cmd_val.argv[0], pyutil.strerror(io_errors[0])),
+                cmd_val.arg_locs[0])
+            return 1
 
         return status
 
@@ -466,18 +481,25 @@ class ShellExecutor(vm._Executor):
         node = cs_part.child
 
         # Hack for weird $(<file) construct
-        if node.tag() == command_e.Simple:
-            simple = cast(command.Simple, node)
+        if node.tag() == command_e.Redirect:
+            redir_node = cast(command.Redirect, node)
             # Detect '< file'
-            if (len(simple.words) == 0 and len(simple.redirects) == 1 and
-                    simple.redirects[0].op.id == Id.Redir_Less):
-                # change it to __cat < file
-                # TODO: change to 'internal cat' (issue 1013)
+            if (len(redir_node.redirects) == 1 and
+                    redir_node.redirects[0].op.id == Id.Redir_Less and
+                    redir_node.child.tag() == command_e.NoOp):
+
+                # Change it to __cat < file.
+                # TODO: could be 'internal cat' (issue #1013)
                 tok = lexer.DummyToken(Id.Lit_Chars, '__cat')
                 cat_word = CompoundWord([tok])
-                # MUTATE the command.Simple node.  This will only be done the first
-                # time in the parent process.
-                simple.words.append(cat_word)
+
+                # Blame < because __cat has no location
+                blame_tok = redir_node.redirects[0].op
+                simple = command.Simple(blame_tok, [], [cat_word], None, None,
+                                        True)
+
+                # MUTATE redir node so it's like $(<file _cat)
+                redir_node.child = simple
 
         p = self._MakeProcess(node,
                               inherit_errexit=self.exec_opts.inherit_errexit())

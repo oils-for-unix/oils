@@ -3,12 +3,11 @@
 # Usage:
 #   client/run.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 source build/dev-shell.sh  # python3
-source devtools/run-task.sh
 
 py-demo() {
   echo mystdin | client/headless_demo.py --sh-binary bin/osh
@@ -57,4 +56,4 @@ soil-run-cpp() {
 }
 
 
-run-task "$@"
+task-five "$@"

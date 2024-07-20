@@ -3,11 +3,10 @@
 # Usage:
 #   soil/diagnose.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
-source devtools/run-task.sh
 source soil/common.sh  # dump-env
 
 dump-timezone() {
@@ -63,7 +62,7 @@ dump-hardware() {
 }
 
 dump-distro() {
-  local path=/etc/lsb-release
+  local path=/etc/os-release
   if test -f $path; then
     cat $path
   else
@@ -126,7 +125,15 @@ os-info() {
 
   dump-hardware
   echo
+
+  # Process limits
+  echo 'Soft limits:'
+  ulimit -S -a
+  echo
+  echo 'Hard limits:'
+  ulimit -H -a
+  echo
 }
 
-run-task "$@"
+task-five "$@"
 

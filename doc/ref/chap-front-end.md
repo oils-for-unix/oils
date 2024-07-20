@@ -1,20 +1,26 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Front End (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Front End
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes command line usage
-and lexing.
+[Oils Reference](index.html) &mdash;
+Chapter **Front End**
 
-<div id="toc">
 </div>
 
-<h2 id="usage">Command Line Usage</h3>
+This chapter describes command line usage and lexing.
+
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
+</div>
+
+<h2 id="usage">Command Line Usage</h2>
 
 <h3 id="oils-usage" class="osh-ysh-topic" oils-embed="1">
   oils-usage
@@ -114,6 +120,13 @@ Pass --norc to disable the startup directory.
 
 History is read?
 
+<h3 id="line-editing" class="osh-ysh-topic">line-editing</h3>
+
+Oils is often built with GNU readline, which recognizes many terminal commands
+for editing input.
+
+A useful option is `set -o vi`, which tells GNU readline to accept vi keys.
+
 <h3 id="exit-codes" class="osh-ysh-topic">exit-codes</h3>
 
 The meaning of exit codes is a convention, and generally follows one of two
@@ -144,7 +157,7 @@ Hint: Error checking often looks like this:
     try {
       ls /bad
     }
-    if (_status !== 0) {
+    if (_error.code !== 0) {
       echo 'failed'
     }
 
@@ -224,8 +237,10 @@ General rules:
 - In J8 **data** languages, control chars other than whitespace are illegal.
   This is consistent with the JSON spec.
 - In **source code**, control chars are allowed (but discouraged).
-  - For example, we don't check for control chars in unquoted OSH words, or YSH
-    string literals.  They are treated like printable chars.
+  - For example, in OSH, we don't check for control chars unquoted words
+    words or string literals.  They are treated like printable chars.
+  - TODO: YSH should only allow printable characters, which implies valid
+    UTF-8.
 
 Note about `NUL` aka `0x00`:
 

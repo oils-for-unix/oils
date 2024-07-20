@@ -776,7 +776,7 @@ test-error-builtin() {
   _ysh-error-X 10 'error -- oops'
   _ysh-error-X 10 'error oops'
 
-  _ysh-error-X 99 'error oops (status=99)'
+  _ysh-error-X 99 'error oops (code=99)'
 }
 
 test-fat-arrow() {

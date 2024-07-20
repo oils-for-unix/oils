@@ -53,6 +53,38 @@ TEST static_cast_test() {
   PASS();
 }
 
+TEST conversion_test() {
+  mops::BigInt int_min{INT64_MIN};
+  mops::BigInt int_max{INT64_MAX};
+  BigStr* int_str;
+
+  int_str = mops::ToStr(15);
+  ASSERT(str_equals0("15", int_str));
+  print(mops::ToStr(int_min));
+  print(mops::ToStr(int_max));
+  print(kEmptyString);
+
+  int_str = mops::ToOctal(15);
+  ASSERT(str_equals0("17", int_str));
+  print(mops::ToOctal(int_min));
+  print(mops::ToOctal(int_max));
+  print(kEmptyString);
+
+  int_str = mops::ToHexLower(15);
+  ASSERT(str_equals0("f", int_str));
+  print(mops::ToHexLower(int_min));
+  print(mops::ToHexLower(int_max));
+  print(kEmptyString);
+
+  int_str = mops::ToHexUpper(15);
+  ASSERT(str_equals0("F", int_str));
+  print(mops::ToHexUpper(int_min));
+  print(mops::ToHexUpper(int_max));
+  print(kEmptyString);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -62,6 +94,7 @@ int main(int argc, char** argv) {
 
   RUN_TEST(bigint_test);
   RUN_TEST(static_cast_test);
+  RUN_TEST(conversion_test);
 
   gHeap.CleanProcessExit();
 

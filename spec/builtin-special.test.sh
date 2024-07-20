@@ -1,4 +1,7 @@
-#
+## oils_failures_allowed: 4
+## compare_shells: bash dash mksh zsh
+
+
 # POSIX rule about special builtins pointed at:
 #
 # https://www.reddit.com/r/oilshell/comments/5ykpi3/oildev_is_alive/
@@ -108,4 +111,31 @@ echo status=$?
 ## STDOUT:
 true func
 status=0
+## END
+
+
+#### command, builtin - both can be redefined, not special (regression)
+case $SH in dash) exit ;; esac
+
+builtin echo b
+command echo c
+
+builtin() {
+  echo builtin-redef "$@"
+}
+
+command() {
+  echo command-redef "$@"
+}
+
+builtin echo b
+command echo c
+
+## STDOUT:
+b
+c
+builtin-redef echo b
+command-redef echo c
+## END
+## N-I dash STDOUT:
 ## END

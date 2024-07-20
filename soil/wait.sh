@@ -110,10 +110,10 @@ for-cpp-tarball()  {
   local num_retries=${3:-18}
   local interval=${4:-10}
 
-  local git_commit_dir
-  git_commit_dir=$(git-commit-dir $prefix)
+  local git_commit_url
+  git_commit_url=$(git-commit-url $prefix)
 
-  local url="$git_commit_dir/oils-for-unix.tar"
+  local url="$git_commit_url/oils-for-unix.tar"
 
   set -x
   sleep $sleep_secs

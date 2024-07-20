@@ -223,7 +223,7 @@ def InitCommandEvaluator(parse_ctx=None,
 
     readline = None  # simulate not having it
 
-    new_var = assign_osh.NewVar(mem, procs, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, exec_opts, errfmt)
     assign_builtins = {
         builtin_i.declare: new_var,
         builtin_i.typeset: new_var,

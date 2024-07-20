@@ -1,0 +1,29 @@
+FROM debian:buster-slim
+
+WORKDIR /home/uke/tmp
+
+# Copy build scripts into the container and run them
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+
+RUN deps/from-apt.sh init-deb-cache
+
+# --no-cache will make these invisible
+# And it appears that id= makes them stable across Dockerfile.{common,pea} ?
+# So we have a single shared cache.
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh layer-debian-10
+
+# Note: can't remove apt lists yet, because other images will install more
+# packages.
+
+RUN useradd --create-home uke && chown -R uke /home/uke
+
+# TODO: try making this a relative wedge:
+# - It's installed in /home/wedge-builder/wedge/...
+# - It's RUN from /home/uke/wedge/...
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/time-helper/2023-02-28 \
+  /wedge/oils-for-unix.org/pkg/time-helper/2023-02-28

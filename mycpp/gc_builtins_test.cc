@@ -1,14 +1,16 @@
 #include "mycpp/gc_builtins.h"
 
 #include <assert.h>
-#include <limits.h>  // INT_MAX
-#include <math.h>    // INFINITY
-#include <stdarg.h>  // va_list, etc.
-#include <stdio.h>   // vprintf
+#include <inttypes.h>  // PRId64
+#include <limits.h>    // INT_MAX
+#include <math.h>      // INFINITY
+#include <stdarg.h>    // va_list, etc.
+#include <stdio.h>     // vprintf
 
 #include "mycpp/gc_dict.h"
 #include "mycpp/gc_list.h"
 #include "mycpp/gc_tuple.h"
+#include "mycpp/test_common.h"
 #include "vendor/greatest.h"
 
 GLOBAL_STR(kStrFood, "food");
@@ -134,16 +136,16 @@ TEST StringToInteger_test() {
 
   ok = _StringToInt64(StrFromC("345"), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT((int64_t)345, i, "%ld");
+  ASSERT_EQ_FMT((int64_t)345, i, "%" PRId64);
 
   // Hack to test slicing.  Truncated "345" at "34".
   ok = _StringToInt64(StrFromC("345", 2), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT((int64_t)34, i, "%ld");
+  ASSERT_EQ_FMT((int64_t)34, i, "%" PRId64);
 
   ok = _StringToInt64(StrFromC("12345678909"), &i, 10);
   ASSERT(ok);
-  ASSERT_EQ_FMT((int64_t)12345678909, i, "%ld");
+  ASSERT_EQ_FMT((int64_t)12345678909, i, "%" PRId64);
 
   // overflow
   ok = _StringToInt64(StrFromC("12345678901234567890"), &i, 10);
@@ -254,14 +256,72 @@ TEST comparators_test() {
   ASSERT(!maybe_str_equals(kEmptyString, nullptr));
   ASSERT(maybe_str_equals(nullptr, nullptr));
 
+  // Compare by VALUE, not by pointer.
   // TODO: check for this bug elsewhere
-  log("Tuple2<BigStr*, int> are_equal()");
+  log("Tuple2<BigStr*, int> items_equal()");
   auto t1 = Alloc<Tuple2<BigStr*, int>>(StrFromC("42"), 42);
   auto t2 = Alloc<Tuple2<BigStr*, int>>(StrFromC("42"), 42);
   auto t3 = Alloc<Tuple2<BigStr*, int>>(StrFromC("99"), 99);
 
-  ASSERT(are_equal(t1, t2));
-  ASSERT(!are_equal(t2, t3));
+  ASSERT(items_equal(t1, t2));
+  ASSERT(!items_equal(t2, t3));
+
+  PASS();
+}
+
+TEST container_test() {
+  //
+  // User-defined class
+  //
+
+  // We used Dict<Token*, V> to get rid of the span_id, e.g. for --tool ysh-ify
+  auto* dp = Alloc<Dict<Point*, BigStr*>>();
+  for (int i = 0; i < 32; ++i) {
+    Point* p2 = Alloc<Point>(42, 43);
+    dp->set(p2, kEmptyString);
+  }
+  ASSERT_EQ_FMT(32, len(dp), "%d");
+
+  // For now, we're not allowed to compare lists by pointers.
+#if 0
+  auto* lp = Alloc<List<Point*>>();
+  lp->append(Alloc<Point>(0, 1));
+  lp->append(Alloc<Point>(2, 3));
+  ASSERT(!list_contains(lp, Alloc<Point>(4, 5)));
+#endif
+
+  //
+  // int
+  //
+  auto* di = Alloc<Dict<int, BigStr*>>();
+  for (int i = 0; i < 32; ++i) {
+    int p2 = 1 << i;
+    di->set(p2, kEmptyString);
+  }
+  ASSERT_EQ_FMT(32, len(di), "%d");
+
+  auto* li = Alloc<List<int>>();
+  li->append(1 << 30);
+  li->append(1 << 31);
+  ASSERT(!list_contains(li, 0));
+
+  //
+  // mops::BigInt
+  //
+
+  // Failed before we had keys_equal() for mops::BigInt
+  auto* d = Alloc<Dict<mops::BigInt, BigStr*>>();
+  for (int i = 0; i < 64; ++i) {
+    mops::BigInt p2 = mops::BigInt{1} << i;
+    d->set(p2, kEmptyString);
+  }
+  ASSERT_EQ_FMT(64, len(d), "%d");
+
+  // Failed before we had items_equal() for mops::BigInt
+  auto* lb = Alloc<List<mops::BigInt>>();
+  lb->append(mops::BigInt{1} << 32);
+  lb->append(mops::BigInt{1} << 33);
+  ASSERT(!list_contains(lb, mops::BigInt{0}));
 
   PASS();
 }
@@ -370,6 +430,7 @@ int main(int argc, char** argv) {
   RUN_TEST(float_to_str_test);
 
   RUN_TEST(comparators_test);
+  RUN_TEST(container_test);
 
   RUN_TEST(exceptions_test);
 

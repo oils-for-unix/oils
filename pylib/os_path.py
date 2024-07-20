@@ -5,7 +5,7 @@ os_path.py - Copy of code from Python's posixpath.py and genericpath.py.
 import posix_ as posix
 
 from mycpp import mylib
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 
 extsep = '.'
 sep = '/'

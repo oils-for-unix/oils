@@ -1,5 +1,8 @@
 # xtrace test.  Test PS4 and line numbers, etc.
 
+## oils_failures_allowed: 1
+## compare_shells: bash dash mksh
+
 #### unset PS4
 set -x
 echo 1

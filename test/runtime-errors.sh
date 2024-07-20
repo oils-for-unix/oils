@@ -678,6 +678,12 @@ test-unset_expr() {
   _osh-error-2 'unset -v 1+2'
 }
 
+test-strict-arith() {
+  _osh-error-1 'shopt -s strict_arith; echo $(( undef[0] ))'
+  _osh-error-1 'shopt -s strict_arith; s=abc; echo $(( s[0] ))'
+  _osh-error-1 'shopt -s strict_arith; var i = 42; echo $(( i[0] ))'
+}
+
 # Only dash flags this as an error.
 unquoted-string_to_int_arith() {
   local x='ZZZ'
@@ -1109,6 +1115,17 @@ test-fallback_locations() {
   echo done
 }
 
+test-var-op-qmark() {
+  _osh-error-1 'echo ${zz?}'
+  _osh-error-1 'echo ${zz:?}'
+
+  _osh-should-run 'zz=""; echo ${zz?}'
+  _osh-error-1 'zz=""; echo ${zz:?}'
+
+  _osh-error-1 'echo ${zz?Required}'
+  _osh-error-1 'echo ${zz:?Required}'
+}
+
 test-external_cmd_typed_args() {
   _ysh-error-X 1 'cat ("myfile")'
 }
@@ -1125,6 +1142,29 @@ test-arith_ops_str() {
   _ysh-error-X 3 '= "age: " + "100"'
   _ysh-error-X 3 'var myvar = "a string"
 = 100 + myvar'
+}
+
+assert-test-v-error() {
+  local code=$1
+
+  # note: the test builtin fails with status 2, but the shell doesn't fail
+  _osh-error-2 "shopt -s strict_word_eval; a=(1 2 3); $code"
+}
+
+test-test-v-expr() {
+  assert-test-v-error 'test -v ""'
+  assert-test-v-error 'test -v "a[foo"'
+  assert-test-v-error 'test -v "a[not-int]"'
+  assert-test-v-error 'test -v "a[-42]"'
+
+  _osh-error-2 'shopt -s strict_word_eval; s=""; test -v s[0]'
+}
+
+test-long-shell-line() {
+  # Example from https://github.com/oilshell/oil/issues/1973
+
+  _ysh-error-1 'myvar=$(printf "what a very long string that we have here, which forces the command line to wrap around the terminal width. long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long long") && echo $myvar'
+  echo
 }
 
 #

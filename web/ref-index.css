@@ -2,6 +2,22 @@
   body {
     font-size: large;
   }
+  body > pre {
+    margin-left: initial;
+  }
+}
+
+/* Not used - could we use it for chapters? */
+.custom-toc {
+  background-color: oldlace;
+  /*
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  */
+
+  column-width: 8em;
 }
 
 a:link {
@@ -11,10 +27,11 @@ a:hover {
   text-decoration: underline;
 }
 
-/* where help-index.html links to h2 in help.html */
+/* e.g. type-method for chap-type-method.html */
 .group-link {
   font-family: monospace;
-  color: darkgreen;
+  font-weight: normal; /* not bold like heading */
+  float: right;
 }
 
 h1 {
@@ -46,13 +63,6 @@ p code, li code, h2 code, h3 code, div code {
 #sublang {
   /* Works in Chrome but not Firefox? */
   break-after: column;
-}
-
-
-/* blocks of code */
-pre {
-  /* 80 character width */
-  width: 80ch;
 }
 
 #compact-title {

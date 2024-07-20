@@ -1,5 +1,7 @@
 ## compare_shells: bash
-## oils_failures_allowed: 5
+## oils_failures_allowed: 6
+
+# TODO: bash 5.2.21 with lower case
 
 #### Lower Case with , and ,,
 x='ABC DEF'
@@ -27,7 +29,7 @@ empty=
 empty=
 ## END
 
-#### Case Folding of Unicode Characters
+#### Case folding - Unicode characters
 
 # https://www.utf8-chartable.de/unicode-utf8-table.pl
 
@@ -57,6 +59,87 @@ l áé
 L áé
 ## END
 
+#### Case folding - multi code point
+
+echo shell
+small=$'\u00DF'
+echo u ${small^}
+echo U ${small^^}
+
+echo l ${small,}
+echo L ${small,,}
+echo
+
+echo python2
+python2 -c '
+small = u"\u00DF"
+print(small.upper().encode("utf-8"))
+print(small.lower().encode("utf-8"))
+'
+echo
+
+# Not in the container images, but python 3 DOES support it!
+# This is moved to demo/survey-case-fold.sh
+
+if false; then
+echo python3
+python3 -c '
+import sys
+small = u"\u00DF"
+sys.stdout.buffer.write(small.upper().encode("utf-8") + b"\n")
+sys.stdout.buffer.write(small.lower().encode("utf-8") + b"\n")
+'
+fi
+
+if false; then
+  # Yes, supported
+  echo node.js
+
+  nodejs -e '
+  var small = "\u00DF"
+  console.log(small.toUpperCase())
+  console.log(small.toLowerCase())
+  '
+fi
+
+## STDOUT:
+## END
+## BUG bash STDOUT:
+shell
+u ß
+U ß
+l ß
+L ß
+
+python2
+ß
+ß
+
+## END
+
+#### Case folding that depends on locale (not enabled, requires Turkish locale)
+
+# Hm this works in demo/survey-case-fold.sh
+# Is this a bash 4.4 thing?
+
+#export LANG='tr_TR.UTF-8'
+#echo $LANG
+
+x='i'
+
+echo u ${x^}
+echo U ${x^^}
+
+echo l ${x,}
+echo L ${x,,}
+
+## OK bash/osh STDOUT:
+u I
+U I
+l i
+L i
+## END
+
 #### Lower Case with constant string (VERY WEIRD)
 x='AAA ABC DEF'
 echo ${x,A}
@@ -73,24 +156,28 @@ export LC_ALL=en_US.UTF-8
 
 x='ABC DEF'
 echo ${x,[d-f]}
-echo ${x,,[d-f]}  # This seems buggy, it doesn't include F?
+echo ${x,,[d-f]}  # bash 4.4 fixed in bash 5.2.21
 ## STDOUT:
 ABC DEF
-ABC deF
+ABC DEF
 ## END
 
-#### ${x@u} U l L upper / lower case (bash 5.1 feature)
+#### ${x@u} U L - upper / lower case (bash 5.1 feature)
 
 # https://www.gnu.org/software/bash/manual/html_node/Shell-Parameter-Expansion.html
 
-x='abc def'
+x='abc DEF'
+
 echo "${x@u}"
 
-# TODO: we need to upgrade the spec tests to bash 5.1 (or bash 5.2 is coming
-# out soon)
+echo "${x@U}"
 
-## N-I bash status: 1
-## N-I bash STDOUT:
+echo "${x@L}"
+
+## STDOUT:
+Abc DEF
+ABC DEF
+abc def
 ## END
 
 

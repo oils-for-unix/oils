@@ -230,7 +230,12 @@ class ExprEvaluator(object):
                         index = val_ops.ToInt(lval.index,
                                               'List index should be Int',
                                               loc.Missing)
-                        lhs_val_ = obj.items[index]
+                        try:
+                            lhs_val_ = obj.items[index]
+                        except IndexError:
+                            raise error.Expr(
+                                'List index out of range: %d' % index,
+                                loc.Missing)
 
                     elif case(value_e.Dict):
                         obj = cast(value.Dict, UP_obj)
@@ -238,7 +243,11 @@ class ExprEvaluator(object):
                         key = val_ops.ToStr(lval.index,
                                             'Dict index should be Str',
                                             loc.Missing)
-                        lhs_val_ = obj.d[key]
+                        try:
+                            lhs_val_ = obj.d[key]
+                        except KeyError:
+                            raise error.Expr('Dict entry not found: %r' % key,
+                                             loc.Missing)
 
                     else:
                         raise error.TypeErr(
@@ -895,7 +904,8 @@ class ExprEvaluator(object):
                             return obj.items[i]
                         except IndexError:
                             # TODO: expr.Subscript has no error location
-                            raise error.Expr('index out of range', loc.Missing)
+                            raise error.Expr('List index out of range: %d' % i,
+                                             loc.Missing)
 
                     else:
                         raise error.TypeErr(
@@ -913,7 +923,7 @@ class ExprEvaluator(object):
                     return obj.d[index.s]
                 except KeyError:
                     # TODO: expr.Subscript has no error location
-                    raise error.Expr('Dict entry %r not found' % index.s,
+                    raise error.Expr('Dict entry not found: %r' % index.s,
                                      loc.Missing)
 
         raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',

@@ -182,12 +182,6 @@ zz=$'one\ntwo'
 declare -- zz=$'one\ntwo'
 ## END
 
-# bash uses a different format for 'declare' and 'declare -p'!
-## OK bash STDOUT:
-zz=$'one\ntwo'
-declare -- zz="one
-two"
-## END
 ## OK mksh STDOUT:
 typeset zz
 typeset zz=$'one\ntwo'

@@ -21,7 +21,19 @@ unsigned hash_key(BigStr* s) {
 }
 
 unsigned hash_key(int n) {
-  return n;
+  return fnv1(reinterpret_cast<const char*>(&n), sizeof(n));
+}
+
+unsigned hash_key(mops::BigInt n) {
+  // Bug fix: our dict sizing is a power of 2, and we don't want integers in
+  // the workload to interact badly with it.
+  return fnv1(reinterpret_cast<const char*>(&n), sizeof(n));
+}
+
+unsigned hash_key(void* p) {
+  // e.g. for Dict<Token*, int>, hash the pointer itself, which means we use
+  // object IDENTITY, not value.
+  return fnv1(reinterpret_cast<const char*>(&p), sizeof(void*));
 }
 
 unsigned hash_key(Tuple2<int, int>* t1) {
@@ -30,10 +42,4 @@ unsigned hash_key(Tuple2<int, int>* t1) {
 
 unsigned hash_key(Tuple2<BigStr*, int>* t1) {
   return t1->at0()->hash(fnv1) + t1->at1();
-}
-
-// e.g. for Dict<Token*, int>, hash the pointer itself, which means we use
-// object IDENTITY, not value.
-unsigned hash_key(void* p) {
-  return fnv1(reinterpret_cast<const char*>(&p), sizeof(void*));
 }

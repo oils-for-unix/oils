@@ -6,33 +6,32 @@ all_docs_url: -
 All Docs
 ========
 
-Oils is **our upgrade path from bash** to a better language and runtime.  This
-page links to all the documentation.
+This page links to all docs.  A dagger &dagger; means a doc isn't finished.
 
+See [Published Docs](published.html) for those that are ready to read.
+
+
+<!--
 <div id="toc">
 </div>
+-->
 
-&dagger; means a doc is not ready to read yet.
+## Good Places to Start
+
+- [A Tour of YSH](ysh-tour.html)
+- [YSH vs. Shell Idioms](idioms.html) 
+- [**Oils Reference**](ref/index.html) - underlies the [help][] builtin
+- [FAQ on Docs](faq-doc.html).  **Look here if you can't find
+  something**.
+
+[help]: ref/chap-builtin-cmd.html#help
 
 ## Preliminaries
 
-- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in the
-  tarball.  <!-- TODO: C++ tarball -->
+- [INSTALL](INSTALL.html). How do I install Oils?  This text file is also in
+  the `oils-for-unix` tarball.
+  - [Portability](portability.html)
 - [Getting Started](getting-started.html).  How do I use the shell?
-- [FAQ on Documentation](faq-doc.html).  **Look here if you can't find
-  something**.
-
-## Reference
-
-Like many other docs, the reference is still in progress:
-
-- [Oils Reference](ref/index.html) &dagger; - These docs underlie `help` builtin, and
-  are also published online.
-- Links to topics within each chapter:
-  - [OSH Table of Contents](ref/toc-osh.html) &dagger;
-  - [YSH Table of Contents](ref/toc-ysh.html) &dagger;
-  - [Data Notation Table of Contents](ref/toc-data.html) &dagger;
-- [Style Guide](style-guide.html) gives coding recommendations.
 
 ## Interactive Shell
 
@@ -41,22 +40,24 @@ Like many other docs, the reference is still in progress:
 
 ## OSH is a Compatible Shell
 
-These docs are for advanced users:
+- [Shell Language Idioms](shell-idioms.html) has some advice for using any
+  shell, not just Oils.
+- [OSH Standard Library](lib-osh.html) &dagger;.  Small but useful enhancements.
+
+For sophisticated users:
 
 - [Known Differences Between OSH and Other Shells](known-differences.html)
 - [OSH Quirks](quirks.html) for compatibility.
-- [Shell Language Idioms](shell-idioms.html) has some advice for using any
-  shell, not just Oils.
 
-## YSH is a Shell with Structured Data
+## YSH is a New, Powerful Shell
 
 - [A Tour of YSH](ysh-tour.html).  Explains YSH from scratch, without referring
   to shell's legacy.
 - [What Breaks When You Upgrade to YSH](upgrade-breakage.html).  When you turn
   on YSH, there are some shell constructs you can no longer use.  We try to
   minimize the length of this list.
-- [YSH Language FAQ](ysh-faq.html).  Common questions about the
-  language.
+- [YSH Language FAQ](ysh-faq.html)
+- [YSH Style Guide](style-guide.html)
 
 ### Comparisons
 
@@ -91,16 +92,19 @@ YSH has 3 main sublanguages:
   - [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
   - [YSH Regex API](ysh-regex-api.html).  Convenient and powerful.
 
-Crosscutting design issues:
+Features:
 
+- [Guide to YSH Error Handling](ysh-error.html)
 - [Guide to Procs and Funcs](proc-func.html)
   - [Block Literals](block-literals.html) &dagger;
+- [Streams, Tables, Processes - awk, R, xargs](stream-table-process.html) &dagger;
+
+Crosscutting design issues:
+
 - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
 - [YSH I/O Builtins](io-builtins.html) &dagger;
-
-<!-- TODO: proc-func.html -- Informal guide to procs and funcs -->
 
 ## Data Languages Avoid Ad-Hoc Parsing
 
@@ -111,11 +115,8 @@ the wire, **not** the other way around.
 - [J8 Notation](j8-notation.html).  An upgrade of JSON to bytes, strings,
   lines, and structured data.
   - [JSON](json.html).  Some usage details.
-  - [Framing](framing.html)
-
-TODO:
-
-- Packle &dagger;
+  - [Framing](framing.html) &dagger;
+- [BYO Protocols](byo.html) - for testing and completion.
 
 ## The Shared Oils Runtime
 
@@ -153,5 +154,10 @@ Internal Architecture:
 - [The blog](https://www.oilshell.org/blog/) has useful background information,
   although older posts are more likely to have incorrect information.
 - [The home page](https://www.oilshell.org/) has links to docs for new users.
+
+Old:
+
+- [INSTALL-old](INSTALL-old.html) for the slow `oil-$VERSION` tarball, based on
+  CPython.
 
 <!-- vim: set sw=2: -->

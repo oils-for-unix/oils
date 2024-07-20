@@ -41,9 +41,14 @@ VISIBLE_SHOPT_NUMS = option_def.VISIBLE_SHOPT_NUMS  # used to print
 
 BUILTIN_NAMES = builtin_def.BUILTIN_NAMES  # Used by builtin_comp.py
 
-# The 'compen' and 'type' builtins introspect on keywords and builtins.
+# Keywords for introspection with bash 'compgen' and 'type'
 OSH_KEYWORD_NAMES = [name for _, name, _ in lexer_def.KEYWORDS]
-OSH_KEYWORD_NAMES.append('{')  # not in our lexer list
+OSH_KEYWORD_NAMES.append('{')  # not handled by our lexer
+OSH_KEYWORD_NAMES.append('=')  # YSH keyword not handled by our lexer
+
+# bash considers these closing delimiters keywords
+OSH_KEYWORD_NAMES.append('}')
+OSH_KEYWORD_NAMES.append(']]')
 
 
 def GetKind(id_):
@@ -338,3 +343,41 @@ def IfsEdge(state, ch):
     # type: (state_t, char_kind_t) -> Tuple[state_t, emit_t]
     """Follow edges of the IFS state machine."""
     return _IFS_EDGES[state, ch]
+
+
+# Pattern to use libc regexec() to parse NAME, NAME=value, and NAME+=value.
+#
+# We want submatch extraction, which would need a new type of binding, and
+# doing it with libc seems easy enough.
+
+ASSIGN_ARG_RE = '^(' + lexer_def.VAR_NAME_RE + r')((=|\+=)(.*))?$'
+
+# Eggex equivalent:
+#
+# VarName = /
+#   [a-z A-Z _ ]
+#   [a-z A-Z 0-9 _ ]*
+# /
+#
+# SplitArg = /
+#   %begin
+#   <capture VarName>
+#   (
+#     <capture '=' | '+='> <capture dot*>
+#   )?
+#   %end
+
+# Weird rules for brackets: put ] first
+NOT_BRACKETS = '[^][]*'
+TEST_V_RE = '^(' + lexer_def.VAR_NAME_RE + r')(\[(' + NOT_BRACKETS + ')\])?$'
+
+# NotBracket = / ![ ']' '[' ] /
+#
+# TestV = /
+#   %begin
+#   <capture VarName>
+#   (
+#     '[' <capture NotBrackets> ']'
+#   )?
+#   %end
+# /

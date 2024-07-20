@@ -3,16 +3,14 @@
 # Usage:
 #   test/spec.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
 source test/common.sh
 source test/spec-common.sh
-source devtools/run-task.sh
 
 if test -z "${IN_NIX_SHELL:-}"; then
   source build/dev-shell.sh  # to run 'dash', etc.
@@ -99,8 +97,7 @@ blog1() {
 }
 
 blog2() {
-  sh-spec spec/blog2.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file blog2 "$@"
 }
 
 blog-other1() {
@@ -132,8 +129,7 @@ assign() {
 
 # These cases apply to a few shells.
 assign-extended() {
-  sh-spec spec/assign-extended.test.sh \
-    $BASH $MKSH $OSH_LIST "$@" 
+  run-file assign-extended "$@"
 }
 
 # Corner cases that OSH doesn't handle
@@ -161,9 +157,12 @@ quote() {
     ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
 }
 
+unicode() {
+  run-file unicode "$@"
+}
+
 loop() {
-  sh-spec spec/loop.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file loop "$@"
 }
 
 case_() {
@@ -175,13 +174,20 @@ if_() {
     ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
 }
 
-builtins() {
-  run-file builtins "$@"
+builtin-misc() {
+  run-file builtin-misc "$@"
+}
+
+builtin-process() {
+  run-file builtin-process "$@"
+}
+
+builtin-cd() {
+  run-file builtin-cd "$@"
 }
 
 builtin-eval-source() {
-  sh-spec spec/builtin-eval-source.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file builtin-eval-source "$@"
 }
 
 builtin-echo() {
@@ -205,8 +211,8 @@ builtin-printf() {
   run-file builtin-printf "$@"
 }
 
-builtins2() {
-  run-file builtins2 "$@"
+builtin-meta() {
+  run-file builtin-meta  "$@"
 }
 
 builtin-history() {
@@ -232,8 +238,11 @@ builtin-bracket() {
 }
 
 builtin-trap() {
-  sh-spec spec/builtin-trap.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file builtin-trap "$@"
+}
+
+builtin-trap-err() {
+  run-file builtin-trap-err "$@"
 }
 
 builtin-trap-bash() {
@@ -267,8 +276,7 @@ builtin-completion() {
 }
 
 builtin-special() {
-  sh-spec spec/builtin-special.test.sh --oils-failures-allowed 4 \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file builtin-special "$@"
 }
 
 builtin-times() {
@@ -284,14 +292,11 @@ func-parsing() {
 }
 
 sh-func() {
-  sh-spec spec/sh-func.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file sh-func "$@"
 }
 
 glob() {
-  # Note: can't pass because it assumes 'bin' exists, etc.
-  sh-spec spec/glob.test.sh --oils-failures-allowed 3 \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file glob "$@"
 }
 
 globignore() {
@@ -323,8 +328,7 @@ explore-parsing() {
 }
 
 parse-errors() {
-  sh-spec spec/parse-errors.test.sh --oils-failures-allowed 3 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file parse-errors "$@"
 }
 
 here-doc() {
@@ -339,8 +343,11 @@ here-doc() {
 }
 
 redirect() {
-  sh-spec spec/redirect.test.sh --oils-failures-allowed 2 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file redirect "$@"
+}
+
+redirect-command() {
+  run-file redirect-command "$@"
 }
 
 redirect-multi() {
@@ -371,15 +378,11 @@ var-op-len() {
 
 var-op-patsub() {
   # 1 unicode failure, and [^]] which is a parsing divergence
-  sh-spec spec/var-op-patsub.test.sh --oils-failures-allowed 2 \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
-  # TODO: can add $BUSYBOX_ASH
+  run-file var-op-patsub "$@"
 }
 
 var-op-slice() {
-  # dash doesn't support any of these operations
-  sh-spec spec/var-op-slice.test.sh --oils-failures-allowed 1 \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file var-op-slice "$@"
 }
 
 var-op-bash() {
@@ -416,13 +419,11 @@ sh-options() {
 }
 
 xtrace() {
-  sh-spec spec/xtrace.test.sh --oils-failures-allowed 1 \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file xtrace "$@"
 }
 
 strict-options() {
-  sh-spec spec/strict-options.test.sh \
-    ${REF_SHELLS[@]} $OSH_LIST "$@"
+  run-file strict-options "$@"
 }
 
 exit-status() {
@@ -430,8 +431,7 @@ exit-status() {
 }
 
 errexit() {
-  sh-spec spec/errexit.test.sh \
-    ${REF_SHELLS[@]} $BUSYBOX_ASH $OSH_LIST "$@"
+  run-file errexit "$@"
 }
 
 errexit-osh() {
@@ -449,13 +449,15 @@ fatal-errors() {
 
 # There as many non-POSIX arithmetic contexts.
 arith-context() {
-  sh-spec spec/arith-context.test.sh \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file arith-context "$@"
 }
 
 array() {
-  sh-spec spec/array.test.sh \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file array "$@"
+}
+
+array-basic() {
+  run-file array-basic "$@"
 }
 
 array-compat() {
@@ -486,8 +488,7 @@ dbracket() {
 }
 
 dparen() {
-  sh-spec spec/dparen.test.sh --oils-failures-allowed 1 \
-    $BASH $MKSH $ZSH $OSH_LIST "$@"
+  run-file dparen "$@"
 }
 
 brace-expansion() {
@@ -499,15 +500,12 @@ regex() {
 }
 
 process-sub() {
-  # mksh and dash don't support it
-  sh-spec spec/process-sub.test.sh \
-    $BASH $ZSH $OSH_LIST "$@"
+  run-file process-sub "$@"
 }
 
 # This does file system globbing
 extglob-files() {
-  sh-spec spec/extglob-files.test.sh --oils-failures-allowed 1 \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file extglob-files "$@"
 }
 
 # This does string matching.
@@ -526,11 +524,9 @@ var-ref() {
   run-file var-ref "$@"
 }
 
-# declare / local -n
-# there is one divergence when combining -n and ${!ref}
 nameref() {
-  sh-spec spec/nameref.test.sh --oils-failures-allowed 7 \
-    $BASH $MKSH $OSH_LIST "$@"
+  ### declare -n / local -n
+  run-file nameref "$@"
 }
 
 let() {
@@ -538,8 +534,7 @@ let() {
 }
 
 for-expr() {
-  sh-spec spec/for-expr.test.sh \
-    $BASH $ZSH $OSH_LIST "$@"
+  run-file for-expr "$@"
 }
 
 empty-bodies() {
@@ -817,6 +812,10 @@ ysh-expr-sub() {
   run-file ysh-expr-sub "$@"
 }
 
+ysh-cmd-lang() {
+  run-file ysh-cmd-lang "$@"
+}
+
 ysh-for() {
   run-file ysh-for "$@"
 }
@@ -956,18 +955,15 @@ ble-idioms() {
 }
 
 ble-features() {
-  sh-spec spec/ble-features.test.sh \
-    $BASH $ZSH $MKSH $BUSYBOX_ASH $DASH yash $OSH_LIST "$@"
+  run-file ble-features "$@"
 }
 
 toysh() {
-  sh-spec spec/toysh.test.sh --oils-failures-allowed 3 \
-    $BASH $MKSH $OSH_LIST "$@"
+  run-file toysh "$@"
 }
 
 toysh-posix() {
-  sh-spec spec/toysh-posix.test.sh --oils-failures-allowed 3 \
-    ${REF_SHELLS[@]} $ZSH yash $OSH_LIST "$@"
+  run-file toysh-posix "$@"
 }
 
-run-task "$@"
+task-five "$@"

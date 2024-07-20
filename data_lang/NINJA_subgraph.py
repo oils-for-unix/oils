@@ -16,14 +16,9 @@ def NinjaGraph(ru):
     ru.asdl_library('data_lang/nil8.asdl')
     ru.asdl_library('data_lang/pretty.asdl')
 
-    # By Crockford
-    # https://github.com/douglascrockford/JSON-c/
-    ru.cc_library('//data_lang/utf8_impls/utf8_decode',
-                  srcs=['data_lang/utf8_impls/utf8_decode.c'])
-
     ru.cc_binary(
         'data_lang/utf8_test.cc',
-        deps=['//data_lang/utf8_impls/utf8_decode', '//data_lang/utf8'],
+        deps=['//data_lang/utf8'],
         # Add tcmalloc for malloc_address_test
         matrix=ninja_lib.COMPILERS_VARIANTS + [('cxx', 'tcmalloc')])
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
+from __future__ import print_function
 """
 virtual_memory.py
 """
 
-import csv
 import os
 import sys
 import re
@@ -12,13 +12,22 @@ import re
 METRIC_RE = re.compile('^(VmPeak|VmRSS):\s*(\d+)')
 
 
+class TsvWriter(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def writerow(self, row):
+        self.f.write('\t'.join(row) + '\n')
+
+
 def main(argv):
     action = argv[1]
 
     if action == 'baseline':
         input_dirs = argv[2:]
 
-        out = csv.writer(sys.stdout)
+        out = TsvWriter(sys.stdout)
         out.writerow(('host', 'shell_name', 'shell_hash', 'metric_name',
                       'metric_value'))
 
@@ -46,5 +55,5 @@ if __name__ == '__main__':
     try:
         main(sys.argv)
     except RuntimeError as e:
-        print >> sys.stderr, 'FATAL: %s' % e
+        print('FATAL: %s' % e, file=sys.stderr)
         sys.exit(1)

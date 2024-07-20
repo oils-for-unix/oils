@@ -170,7 +170,7 @@ consistent with other YSH expressions:
 The "sigil pairs" with parens enclose commands:
 
     echo $(ls | wc -l)             # command sub
-    echo @(seq 3)                  # split command usb
+    echo @(seq 3)                  # split command sub
 
     var myblock = ^(echo $PWD)     # block literal in expression mode
 

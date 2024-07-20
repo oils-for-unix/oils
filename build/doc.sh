@@ -11,6 +11,7 @@ set -o errexit
 #  doc/
 #    index.html
 #    INSTALL.html
+#    INSTALL-old.html
 
 readonly OIL_VERSION=$(head -n 1 oil-version.txt)
 export OIL_VERSION  # for quick_ref.py
@@ -50,11 +51,6 @@ mandoc() {
   $MANDOC_DIR/mandoc "$@"
 }
 
-_build-timestamp() {
-  echo '<hr/>'
-  echo "<i>Generated on $(date)</i>"
-}
-
 # Places version is used
 #
 # - in --version
@@ -73,11 +69,13 @@ cmark() {
 }
 
 readonly MARKDOWN_DOCS=(
-  # Help index has its own rendering
+  published
 
   # polished
   getting-started
+  portability
   known-differences
+  ysh-error
   error-handling
   error-catalog
   json
@@ -101,7 +99,12 @@ readonly MARKDOWN_DOCS=(
   qsn
   qtt
   j8-notation
+  # Protocol
+  byo
   pretty-printing
+  stream-table-process
+
+  lib-osh
 
   doc-toolchain
   doc-plugins
@@ -277,8 +280,11 @@ special() {
     "$web_dir/base.css $web_dir/manual.css $web_dir/toc.css" 'Oils Source Code'
 
   local web_dir='../web'
-  render-only 'INSTALL.txt' '' \
+  render-only INSTALL.txt '' \
     "$web_dir/base.css $web_dir/install.css" 'Installing Oils'
+
+  render-only INSTALL-old.txt '' \
+    "$web_dir/base.css $web_dir/install.css" 'Installing Oils - old CPython build'
 
   # These pages aren't in doc/
   split-and-render doc/release-index.md _tmp/release-index.html
@@ -316,6 +322,8 @@ oil-language-tour ysh-tour
 oil-language-faq ysh-faq
 oil-help ysh-help
 oil-help-topics ysh-help-topics
+ysh-help ref/toc-ysh
+ysh-help-topics ref/toc-ysh
 EOF
 }
 
@@ -338,14 +346,12 @@ _sed-ext() {
 }
 
 update-src-versions() {
+  # Update tarball names, etc.
   _sed-ext \
     "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" \
-    doc/release-*.md
+    doc/release-*.md INSTALL.txt INSTALL-old.txt
 
-  # we need to update tarball paths, /release/0.8.4/ URL, etc.
-  _sed-ext \
-    "s/[0-9]+\.[0-9]+\.[a-z0-9]+/$OIL_VERSION/g" INSTALL.txt
-
+  # Update /release/0.8.4/ URL, etc.
   _sed-ext \
     "s;/release/[0-9]+\.[0-9]+\.[a-z0-9]+/;/release/$OIL_VERSION/;g" \
     doc/osh.1
@@ -405,11 +411,25 @@ cards-from-chapters() {
 }
 
 ref-check() {
-  ### Check indexes and chapters against each other
-
   help-gen ref-check \
     doc/ref/toc-*.md \
-    _release/VERSION/doc/ref/chap-*.html
+    _release/VERSION/doc/ref/chap-*.html 
+}
+
+fmt-check() {
+  PYTHONPATH=. doctools/fmt_check.py _release/VERSION/doc/ref/*.html
+}
+
+
+write-metrics() {
+  ### Check indexes and chapters against each other
+
+  local out=_release/VERSION/doc/metrics.txt
+
+  # send stderr to the log file too
+  ref-check > $out 2>&1
+
+  echo "Wrote $out"
 }
 
 tour() {
@@ -434,7 +454,8 @@ EOF
   popd
 
   # My own dev tools
-  if test -d ~/vm-shared; then
+  # if test -d ~/vm-shared; then
+  if false; then
     local path=_release/VERSION/doc/$name.html
     cp -v $path ~/vm-shared/$path
   fi
@@ -480,6 +501,10 @@ all-ref() {
   for d in doc/ref/*.md; do
     split-and-render $d '' '../../web'
   done
+
+  # Note: if we want a $ref-topic shortcut, we might want to use Ninja to
+  # extract topics from all chapters first, and then make help_meta.json, like
+  # we have _devbuild/gen/help_meta.py.
 
   # Text cards
   cards-from-indices
@@ -639,7 +664,11 @@ run-for-release() {
   all-ref
   all-redirects  # backward compat
 
+  fmt-check  # Needs to run *after* we build the HTML
+
   patch-release-pages
+
+  write-metrics
 
   # Problem: You can't preview it without .wwz!
   # Maybe have local redirects VERSION/test/wild/ to 

@@ -71,7 +71,7 @@ os-info          soil/diagnose.sh os-info           -
 dump-env         soil/diagnose.sh dump-env          -
 wedge-deps       build/deps.sh wedge-deps-$distro   -
 fetch            build/deps.sh fetch                -
-install-wedges   build/deps.sh install-wedges-fast  _build/wedge/logs/index.html
+install-wedges   build/deps.sh install-wedges-soil  _build/wedge/logs/index.html
 py-all-and-ninja soil/worker.sh py-all-and-ninja    -
 smoke-test       build/dev-setup-test.sh smoke-test -
 wedge-report     build/deps.sh wedge-report         -
@@ -93,7 +93,6 @@ dev-setup-debian-tasks() {
   # (task_name, script, action, result_html)
 
   dev-setup-for debian
-  #spec-bin-for debian
 }
 
 dev-setup-fedora-tasks() {
@@ -106,7 +105,6 @@ dev-setup-alpine-tasks() {
   # (task_name, script, action, result_html)
 
   dev-setup-for alpine
-  #spec-bin-for alpine
 }
 
 pea-tasks() {
@@ -143,7 +141,7 @@ repo-overview       metrics/source-code.sh overview              -
 lint                test/lint.sh soil-run                        -
 asdl-types          asdl/TEST.sh check-types                     -
 oil-types           devtools/types.sh soil-run                   -
-unit                test/unit.sh soil-run                        -
+unit                test/unit.sh minimal                         _test/py-unit/
 lossless            test/lossless.sh soil-run                    -
 parse-errors        test/parse-errors.sh soil-run-py             -
 runtime-errors      test/runtime-errors.sh soil-run-py           -
@@ -155,6 +153,7 @@ j8-errors           data_lang/j8-errors.sh soil-run-py           -
 link-busybox-ash    test/spec-bin.sh link-busybox-ash            -
 osh-minimal         test/spec-py.sh osh-minimal                  _tmp/spec/osh-minimal/index.html
 headless            client/run.sh soil-run-py                    -
+stdlib-test         stdlib/TEST.sh soil-run                      -
 EOF
 }
 
@@ -202,8 +201,8 @@ benchmarks-tasks() {
 os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+dev-shell-test   build/dev-shell-test.sh soil-run      -
 id-test          benchmarks/id-test.sh soil-run        -
-native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/
 osh-parser       benchmarks/osh-parser.sh soil-run     _tmp/osh-parser/index.html
 osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.html
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
@@ -213,15 +212,25 @@ mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/-wwz-
 EOF
 }
 
+bloaty-tasks() {
+  cat <<EOF
+os-info          soil/diagnose.sh os-info              -
+dump-env         soil/diagnose.sh dump-env             -
+wait-for-tarball soil/wait.sh for-cpp-tarball          -
+test-tar         devtools/release-native.sh test-tar   -
+native-code      metrics/native-code.sh oils-for-unix  _tmp/metrics/oils-for-unix/
+EOF
+}
+
 benchmarks2-tasks() {
   # Note: id-test doesn't run in 'other-tests' because 'gawk' isn't in that image
   cat <<EOF
 os-info          soil/diagnose.sh os-info              -
 dump-env         soil/diagnose.sh dump-env             -
-py-all-and-ninja soil/worker.sh py-all-and-ninja       -
-dev-shell-test   build/dev-shell-test.sh soil-run      -
-gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
+wait-for-tarball soil/wait.sh for-cpp-tarball          -
+test-tar         devtools/release-native.sh test-tar   -
 uftrace          benchmarks/uftrace.sh soil-run        _tmp/uftrace/index.html
+gc-cachegrind    benchmarks/gc-cachegrind.sh soil-run  _tmp/gc-cachegrind/index.html
 EOF
 }
 
@@ -269,6 +278,7 @@ cpp-small-tasks() {
 os-info          soil/diagnose.sh os-info    -
 dump-env         soil/diagnose.sh dump-env   -
 py-all-and-ninja soil/worker.sh py-all-and-ninja       -
+py-unit          test/unit.sh all                      _test/py-unit/
 yaks             yaks/TEST.sh soil-run                 -
 oils-cpp-smoke   build/native.sh soil-run              -
 cpp-unit         test/cpp-unit.sh soil-run             _test/-wwz-index
@@ -287,6 +297,8 @@ ysh-runtime-errors test/ysh-runtime-errors.sh soil-run-cpp -
 ysh-every-string test/ysh-every-string.sh soil-run-cpp -
 ysh-large        ysh/run.sh soil-run-cpp               -
 j8-errors        data_lang/j8-errors.sh soil-run-cpp   -
+houston-fp       demo/houston-fp/run.sh soil-run       -
+souffle-smoke-test       test/souffle-smoke.sh soil-run       -
 EOF
 }
 
@@ -326,8 +338,11 @@ tools-deps        test/tools-deps.sh soil-run            -
 make-tarball      devtools/release.sh py-tarball         _release/oil.tar
 ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
-ref-check         build/doc.sh ref-check                 -
+doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
 EOF
+
+# doc-metrics is a no-op, just for the link.  Because soil-run just runs the
+# release, which creates metrics.
 }
 
 # Reuse ovm-tarball container
@@ -607,6 +622,7 @@ JOB-cpp-small() { job-main 'cpp-small'; }
 JOB-cpp-tarball() { job-main 'cpp-tarball'; }
 JOB-cpp-spec() { job-main 'cpp-spec'; }
 
+JOB-bloaty() { job-main 'bloaty'; }
 JOB-benchmarks() { job-main 'benchmarks'; }
 JOB-benchmarks2() { job-main 'benchmarks2'; }
 

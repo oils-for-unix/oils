@@ -1,11 +1,10 @@
 #!/usr/bin/env python2
-"""
-cmark_test.py: Tests for cmark.py
-"""
+"""cmark_test.py: Tests for cmark.py."""
 from __future__ import print_function
 
 import cStringIO
 import unittest
+from pprint import pprint
 
 import cmark  # module under test
 
@@ -77,7 +76,6 @@ This kind of heading gets an h4.  It's not in the TOC, but it can be linked to.
 
 """
 
-
 DOC_WITH_METADATA = cStringIO.StringIO("""
 - repo-url: doc/README.md
 
@@ -87,51 +85,7 @@ Title
 ## One
 """)
 
-
-class RenderTest(unittest.TestCase):
-
-  def testRender(self):
-    opts, _ = cmark.Options().parse_args([])
-
-    out_file = cStringIO.StringIO()
-    cmark.Render(opts, {}, SIMPLE_DOC, out_file)
-    self.assertEqual('<p>hi</p>\n', out_file.getvalue())
-
-    out_file = cStringIO.StringIO()
-    cmark.Render(opts, {}, TOC_DOC, out_file)
-    print(out_file.getvalue())
-
-  def testNewRender(self):
-    # New style of doc
-
-    new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3']
-    opts, _ = cmark.Options().parse_args(new_flags)
-
-    in_file = cStringIO.StringIO(NEW_DOC)
-    out_file = cStringIO.StringIO()
-    cmark.Render(opts, {}, in_file, out_file)
-
-    h = out_file.getvalue()
-    self.assert_('<div class="toclevel1"><a href="#one">' in h, h)
-
-  def testNewPrettyHref(self):
-    # New style of doc
-
-    new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3', '--toc-pretty-href']
-    opts, _ = cmark.Options().parse_args(new_flags)
-
-    in_file = cStringIO.StringIO(NEW_DOC)
-    out_file = cStringIO.StringIO()
-    cmark.Render(opts, {}, in_file, out_file)
-    h = out_file.getvalue()
-    self.assert_('<a name="subsubheading">' in h, h)
-
-    self.assert_('<div class="toclevel1"><a href="#one">' in h, h)
-    print(h)
-
-  def testExtractor(self):
-    parser = cmark.TocExtractor()
-    parser.feed('''
+_HTML_1 = '''
 <p>dummy
 </p>
 
@@ -148,45 +102,102 @@ hello one.
 
 <h2 id="explicit">Two</h2>
 
-''')
+'''
 
-    self.assertEqual(5, parser.toc_begin_line)
 
-    for heading in parser.headings:
-      print(heading)
+class RenderTest(unittest.TestCase):
 
-    headings = parser.headings
-    self.assertEqual(4, len(headings))
+    def testRender(self):
+        opts, _ = cmark.Options().parse_args([])
 
-    line_num, tag, css_id, html, text = headings[0]
-    self.assertEqual(8, line_num)
-    self.assertEqual('h2', tag)
-    self.assertEqual(None, css_id)
-    # nested <a> tags are omitted!
-    self.assertEqual('One link', ''.join(html))
-    self.assertEqual('One link', ''.join(text))
+        out_file = cStringIO.StringIO()
+        cmark.Render(opts, {}, SIMPLE_DOC, out_file)
+        self.assertEqual('<p>hi</p>\n', out_file.getvalue())
 
-    line_num, tag, css_id, html, text = headings[1]
-    self.assertEqual(12, line_num)
-    self.assertEqual('h3', tag)
-    self.assertEqual(None, css_id)
-    self.assertEqual('subheading <code>backticks</code>', ''.join(html))
-    self.assertEqual('subheading backticks', ''.join(text))
+        out_file = cStringIO.StringIO()
+        cmark.Render(opts, {}, TOC_DOC, out_file)
+        print(out_file.getvalue())
 
-    line_num, tag, css_id, html, text = headings[2]
-    self.assertEqual(14, line_num)
-    self.assertEqual('h3', tag)
-    self.assertEqual(None, css_id)
-    self.assertEqual('one &amp; two', ''.join(html))
-    self.assertEqual('one  two', ''.join(text))
+    def testNewRender(self):
+        # New style of doc
 
-    line_num, tag, css_id, html, text = headings[3]
-    self.assertEqual(16, line_num)
-    self.assertEqual('h2', tag)
-    self.assertEqual('explicit', css_id)
-    self.assertEqual('Two', ''.join(html))
-    self.assertEqual('Two', ''.join(text))
+        new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3']
+        opts, _ = cmark.Options().parse_args(new_flags)
+
+        in_file = cStringIO.StringIO(NEW_DOC)
+        out_file = cStringIO.StringIO()
+        cmark.Render(opts, {}, in_file, out_file)
+
+        h = out_file.getvalue()
+        self.assert_('<div class="toclevel1"><a href="#one">' in h, h)
+
+    def testNewPrettyHref(self):
+        # New style of doc
+
+        new_flags = ['--toc-tag', 'h2', '--toc-tag', 'h3', '--toc-pretty-href']
+        opts, _ = cmark.Options().parse_args(new_flags)
+
+        in_file = cStringIO.StringIO(NEW_DOC)
+        out_file = cStringIO.StringIO()
+        cmark.Render(opts, {}, in_file, out_file)
+        h = out_file.getvalue()
+        self.assert_('<a name="subsubheading">' in h, h)
+
+        self.assert_('<div class="toclevel1"><a href="#one">' in h, h)
+        print(h)
+
+    def testExtractor(self):
+        parser = cmark.TocExtractor()
+        parser.feed(_HTML_1)
+        self.assertEqual(5, parser.toc_begin_line)
+
+        for heading in parser.headings:
+            print(heading)
+
+        headings = parser.headings
+        self.assertEqual(4, len(headings))
+
+        line_num, tag, css_id, html, text = headings[0]
+        self.assertEqual(8, line_num)
+        self.assertEqual('h2', tag)
+        self.assertEqual(None, css_id)
+        # nested <a> tags are omitted!
+        self.assertEqual('One link', ''.join(html))
+        self.assertEqual('One link', ''.join(text))
+
+        line_num, tag, css_id, html, text = headings[1]
+        self.assertEqual(12, line_num)
+        self.assertEqual('h3', tag)
+        self.assertEqual(None, css_id)
+        self.assertEqual('subheading <code>backticks</code>', ''.join(html))
+        self.assertEqual('subheading backticks', ''.join(text))
+
+        line_num, tag, css_id, html, text = headings[2]
+        self.assertEqual(14, line_num)
+        self.assertEqual('h3', tag)
+        self.assertEqual(None, css_id)
+        self.assertEqual('one &amp; two', ''.join(html))
+        self.assertEqual('one  two', ''.join(text))
+
+        line_num, tag, css_id, html, text = headings[3]
+        self.assertEqual(16, line_num)
+        self.assertEqual('h2', tag)
+        self.assertEqual('explicit', css_id)
+        self.assertEqual('Two', ''.join(html))
+        self.assertEqual('Two', ''.join(text))
+
+    def testExtractorDense(self):
+        parser = cmark.TocExtractor()
+        parser.feed(_HTML_1.replace('"toc"', '"dense-toc"'))
+
+        self.assertEqual(-1, parser.toc_begin_line)
+        self.assertEqual(5, parser.dense_toc_begin_line)
+
+        insertions = cmark._MakeTocInsertionsDense(parser.headings,
+                                                   parser.dense_toc_begin_line,
+                                                   True)
+        pprint(insertions)
 
 
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

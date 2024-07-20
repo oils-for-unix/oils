@@ -51,19 +51,16 @@ do eiusmod.)
 (BashArray)   (BashArray 'world' null '*.py')
 (BashArray)
 (BashArray
-    'Lorem'
-    'ipsum'
-    'dolor'
-    'sit'
-    'amet,'
-    'consectetur'
-    'adipiscing'
-    'elit,'
-    'sed'
-    'do'
+    'Lorem'       'ipsum'       'dolor'       'sit'         'amet,'
+    'consectetur' 'adipiscing'  'elit,'       'sed'         'do'
     'eiusmod.'
 )
 ## END
+
+#### Bash Assoc: string formatting
+declare -A assoc=(['k']=$'foo \x01\u03bc')
+= assoc
+## stdout: (BashAssoc)   (BashAssoc ['k']=$'foo \u0001μ')
 
 #### Bash Assoc
 declare -A assoc_0=()

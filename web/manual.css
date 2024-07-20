@@ -33,12 +33,6 @@ h3 {
   padding-top: 1em;  /* separate sections */
 }
 
-h4 {
-  margin-left: 2em;
-
-  padding-top: 1em;  /* separate sections */
-}
-
 /* inline code 
  *
  * BUG FIX: Selector is 'p code' and not 'code' because markdown generates
@@ -50,19 +44,26 @@ p code, li code, h2 code, h3 code, div code {
   padding: 4px;
 }
 
-/* for doc/ref */
+/* like web/toc.css */
+.doc-ref-header {
+  background-color: oldlace;
+  padding-left: 1em;
+  padding-right: 1em;
+  padding-top: 1px;
+  padding-bottom: 1px;
 
-.help-body h3 {
-  /* Make it block and use normal spacing
-   * TODO: It would be nice to use the spacing of the manual
-   */
-
-  font-size: 1em;
-  /* margin-left: 2em; */
-  padding: 1em; 
-
-  color: black;
+  font-size: 1.2em;
 }
+
+/* remove underline for the header only */
+.doc-ref-header a:link {
+  text-decoration: none;
+}
+.doc-ref-header a:hover {
+  text-decoration: underline;
+}
+
+/* Obsolete: we should make something that doesn't require markdown
 
 .osh-topic {
   border-left: solid;
@@ -80,18 +81,4 @@ p code, li code, h2 code, h3 code, div code {
   border-color: darkcyan;
 }
 
-  border-left: solid;
-  border-color: brown;
-}
-
-.osh-ysh-topic {
-  border-left: solid;
-  border-right: solid;
-  border-color: darkgreen;
-}
-
-.ysh-topic {
-  border-right: solid;
-  border-color: darkcyan;
-}
-
+*/

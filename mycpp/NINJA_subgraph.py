@@ -413,3 +413,6 @@ def NinjaGraph(ru):
     out = '_test/benchmark-table.tsv'
     n.build([out], 'benchmark-table', benchmark_tasks)
     n.newline()
+
+    ru.souffle_binary('prebuilt/datalog/call-graph.cc')
+    ru.souffle_binary('prebuilt/datalog/smoke-test.cc')

@@ -184,6 +184,9 @@ class SpecBuilder(object):
             elif name == 'directory':
                 a = completion.FileSystemAction(True, False, False)
 
+            elif name == 'export':
+                a = completion.ExportedVarsAction(cmd_ev.mem)
+
             elif name == 'file':
                 a = completion.FileSystemAction(False, False, False)
 
@@ -192,6 +195,9 @@ class SpecBuilder(object):
 
             elif name == 'job':
                 a = _FixedWordsAction(['jobs-not-implemented'])
+
+            elif name == 'keyword':
+                a = _FixedWordsAction(consts.OSH_KEYWORD_NAMES)
 
             elif name == 'user':
                 a = completion.UsersAction()

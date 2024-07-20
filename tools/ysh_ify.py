@@ -330,8 +330,7 @@ class YshPrinter(object):
     def DoRedirect(self, node, local_symbols):
         # type: (Redir, Dict[str, bool]) -> None
         """
-        Currently Unused
-        TODO: It would be nice to change here docs to <<< '''
+        Change here docs to <<< '''
         """
         #print(node, file=sys.stderr)
         op_id = node.op.id
@@ -531,10 +530,6 @@ class YshPrinter(object):
         for w in node.words:
             self.DoWordInCommand(w, local_symbols)
 
-        # It would be nice to convert here docs to multi-line strings
-        for r in node.redirects:
-            self.DoRedirect(r, local_symbols)
-
         # TODO: Print the terminator.  Could be \n or ;
         # Need to print env like PYTHONPATH = 'foo' && ls
         # Need to print redirects:
@@ -560,6 +555,15 @@ class YshPrinter(object):
                     self.DoCommand(child,
                                    local_symbols,
                                    at_top_level=at_top_level)
+
+            elif case(command_e.Redirect):
+                node = cast(command.Redirect, UP_node)
+
+                self.DoCommand(node.child,
+                               local_symbols,
+                               at_top_level=at_top_level)
+                for r in node.redirects:
+                    self.DoRedirect(r, local_symbols)
 
             elif case(command_e.Simple):
                 node = cast(command.Simple, UP_node)

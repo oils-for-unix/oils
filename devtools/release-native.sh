@@ -13,8 +13,8 @@ shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
 # adapted from build/ovm-compile.sh
 # and devtools/release.sh
 
-OIL_VERSION=$(head -n 1 oil-version.txt)
-readonly OIL_VERSION
+OILS_VERSION=$(head -n 1 oil-version.txt)
+readonly OILS_VERSION
 
 gen-oils-sh() {
   PYTHONPATH=. build/ninja_main.py shell
@@ -38,10 +38,10 @@ make-tar() {
   # Build default target to generate code
   ninja
 
-  local sed_expr="s,^,${app_name}-${OIL_VERSION}/,"
+  local sed_expr="s,^,${app_name}-${OILS_VERSION}/,"
   tarball-manifest | xargs -- tar --create --transform "$sed_expr" --file $tar
 
-  local tar_gz=_release/${app_name}-${OIL_VERSION}.tar.gz
+  local tar_gz=_release/${app_name}-${OILS_VERSION}.tar.gz
   gzip -c $tar > $tar_gz
 
   ls -l _release
@@ -56,7 +56,7 @@ test-tar() {
   cd $tmp
   tar -x < ../../_release/oils-for-unix.tar
 
-  pushd oils-for-unix-$OIL_VERSION
+  pushd oils-for-unix-$OILS_VERSION
   build/native.sh tarball-demo
 
   if test -n "$install"; then
@@ -86,7 +86,7 @@ extract-for-benchmarks() {
   tar -x < $tar
 
   # For benchmarks
-  pushd oils-for-unix-$OIL_VERSION
+  pushd oils-for-unix-$OILS_VERSION
 
   # Remove binaries left over from old attempts
   rm -v _bin/cxx-{dbg,opt}-sh/* || true
@@ -102,7 +102,7 @@ extract-for-benchmarks() {
   fi
   popd
 
-  git add oils-for-unix-$OIL_VERSION
+  git add oils-for-unix-$OILS_VERSION
 
   git status
   echo "Now run git commit"

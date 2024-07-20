@@ -134,3 +134,25 @@ a.z
 b.z
 ## END
 
+#### smoke test for two.sh
+
+source --builtin osh/two.sh
+
+log 'hi'
+
+set +o errexit
+( die "bad" )
+echo status=$?
+
+## STDOUT:
+status=1
+## END
+
+#### smoke test for stream.ysh and table.ysh 
+
+shopt --set redefine_proc_func   # byo-maybe-main
+
+source --builtin stream.ysh
+source --builtin table.ysh
+
+## status: 0

@@ -241,13 +241,12 @@ print-tasks-xshar() {
   local num_shells=${4:-1}
   local num_workloads=${5:-1}
 
-  local s=0
-  local w=0
-
   for i in $(seq $num_iters); do
 
+    local s=0
     for sh_path in $osh_native bash dash; do
 
+      local w=0
       for workload in "${ALL_WORKLOADS[@]}"; do
         tsv-row $host_name $sh_path $workload
 
@@ -264,6 +263,17 @@ print-tasks-xshar() {
 
     done
   done
+}
+
+test-print-tasks-xshar() {
+  print-tasks-xshar $(hostname) osh 1 1 1
+  echo
+  print-tasks-xshar $(hostname) osh 1 2 1
+  echo
+  print-tasks-xshar $(hostname) osh 1 2 2
+  echo
+  print-tasks-xshar $(hostname) osh 1 2 3
+  echo
 }
 
 run-tasks-wrapper() {
@@ -434,21 +444,20 @@ EOF
 
 test-oils-run() {
   local osh=$1
+  local job_id=$2
+  local host_name=$3
 
   # flags passed by caller
-  local num_iters=${2:-1}
-  local num_shells=${3:-1}
-  local num_workloads=${4:-1}
+  local num_iters=${4:-1}
+  local num_shells=${5:-1}
+  local num_workloads=${6:-1}
 
-  local time_py=$XSHAR_DIR/benchmarks/time_.py
+  local time_py=${XSHAR_DIR:-$REPO_ROOT}/benchmarks/time_.py
   $time_py --tsv --rusage -- \
     $osh -c 'echo "smoke test: hi from benchmarks/osh-runtime.sh"'
 
-  local host_name
-  host_name=$(hostname)
-
-  local job_id
-  job_id=$(print-job-id)
+  # Fresh build
+  rm -r -f -v $BASE_DIR _tmp/{shell,host}-id
 
   # Write _tmp/provenance.* and _tmp/{host,shell}-id
   shell-provenance-2 \
@@ -456,12 +465,16 @@ test-oils-run() {
     bash dash $osh
 
   # e.g. 2024-05-01__10-11-12.ci-vm-name
-  local raw_out_dir="$BASE_DIR/$job_id.$host_name"
+  local raw_out_dir="$BASE_DIR/raw"
   mkdir -p $raw_out_dir
 
   # Similar to 'measure', for soil-run and release
-  print-tasks-xshar $host_name $osh $num_iters $num_shells $num_workloads \
-    | run-tasks-wrapper $host_name $raw_out_dir
+  print-tasks-xshar $host_name $osh \
+      $num_iters $num_shells $num_workloads \
+    | tee $BASE_DIR/tasks.txt
+
+  run-tasks-wrapper $host_name $raw_out_dir < $BASE_DIR/tasks.txt
+  echo
 
   # Note: 'stage1' in soil-run is a trivial concatenation, so we can create input for
   # benchmarks/report.R.  We don't need that here

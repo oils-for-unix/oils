@@ -1,4 +1,4 @@
-## compare_shells: bash
+## compare_shells: bash-4.4
 
 # Tests for bash's type flags on cells.  Hopefully we don't have to implement
 # this, but it's good to know the behavior.
@@ -7,6 +7,37 @@
 # locations.
 #
 # See https://github.com/oilshell/oil/issues/26
+
+
+#### declare -i -l -u errors can be silenced - ignore_flags_not_impl
+
+declare -i foo=2+3
+echo status=$?
+echo foo=$foo
+echo
+
+shopt -s ignore_flags_not_impl
+declare -i bar=2+3
+echo status=$?
+echo bar=$bar
+
+## STDOUT:
+status=2
+foo=
+
+status=0
+bar=2+3
+## END
+
+# bash doesn't need this
+
+## OK bash STDOUT:
+status=0
+foo=5
+
+status=0
+bar=5
+## END
 
 #### declare -i with +=
 declare s
@@ -102,4 +133,27 @@ argv.py "${#assoc[@]}" "${!assoc[@]}" "${assoc[@]}"
 ## N-I osh STDOUT:
 ['0']
 ['0']
+## END
+
+
+#### declare -l -u
+
+declare -l lower=FOO
+declare -u upper=foo
+
+echo $lower
+echo $upper
+
+# other:
+# -t trace
+# -I inherit attributes
+
+## STDOUT:
+foo
+FOO
+## END
+
+## N-I osh STDOUT:
+FOO
+foo
 ## END

@@ -341,7 +341,8 @@ class WordParserTest(unittest.TestCase):
         # This is allowed
         w = _assertReadWord(self, '${foo::1}')
         # No beginning
-        self.assertEqual(None, _GetSuffixOp(self, w).begin)
+        self.assertEqual(arith_expr_e.EmptyZero,
+                         _GetSuffixOp(self, w).begin.tag())
 
     def testLength(self):
         # Synonym for $#, had a bug here

@@ -1,51 +1,108 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: YSH Expression Language (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-YSH Expression Language
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes the YSH expression
-language, which includes [Egg Expressions]($xref:eggex).
+[Oils Reference](index.html) &mdash;
+Chapter **YSH Expression Language**
 
-<div id="toc">
 </div>
+
+This chapter describes the YSH expression language, which includes [Egg
+Expressions]($xref:eggex).
+
+<div id="dense-toc">
+</div>
+
+## Assignment
+
+### assign
+
+The `=` operator is used with assignment keywords:
+
+    var x = 42
+    setvar x = 43
+
+    const y = 'k'
+
+    setglobal z = 'g'
+
+### aug-assign
+
+The augmented assignment operators are:
+
+    +=   -=   *=   /=   **=   //=   %=
+    &=   |=   ^=   <<=   >>=
+
+They are used with `setvar` and `setglobal`.  For example:
+
+    setvar x += 2
+
+is the same as:
+
+    setvar x = x + 2
+
+Likewise, these are the same:
+
+    setglobal a[i] -= 1
+
+    setglobal a[i] = a[i] - 1
 
 ## Literals
 
-### bool-literal
+### atom-literal
 
 YSH uses JavaScript-like spellings for these three "atoms":
 
-    true   false   null
+    null           # type Null
+    true   false   # type Bool
 
-Note that the empty string is a good "special" value in some cases.  The `null`
-value can't be interpolated into words.
+Note: to signify "no value", you may sometimes use an empty string `''`,
+instead of `null`.
 
 ### int-literal
 
-    var myint = 42
+Examples of integer literals:
+
+    var decimal = 42
+    var big = 42_000
+
+    var hex = 0x0010_ffff
+
+    var octal = 0o755
+
+    var binary = 0b0001_0000
+
+### float-lit
+
+Examples of float literals:
+
     var myfloat = 3.14
-    var float2 = 1e100
 
-### rune-literal
-
-    #'a'   #'_'   \n   \\   \u{3bc}
+    var f2 = -1.5e-100
 
 ### ysh-string
 
-Double quoted strings are identical to shell:
+YSH has single and double-quoted strings borrowed from Bourne shell, and
+C-style strings borrowed from J8 Notation.
+
+Double quoted strings respect `$` interpolation:
 
     var dq = "hello $world and $(hostname)"
+
+You can add a `$` before the left quote to be explicit: `$"x is $x"` rather
+than `"x is $x"`.
 
 Single quoted strings may be raw:
 
     var s = r'line\n'      # raw string means \n is literal, NOT a newline
 
-Or escaped *J8 strings*:
+Or *J8 strings* with backslash escapes:
 
     var s = u'line\n \u{3bc}'        # unicode string means \n is a newline
     var s = b'line\n \u{3bc} \yff'   # same thing, but also allows bytes
@@ -53,7 +110,7 @@ Or escaped *J8 strings*:
 Both `u''` and `b''` strings evaluate to the single `Str` type.  The difference
 is that `b''` strings allow the `\yff` byte escape.
 
----
+#### Notes
 
 There's no way to express a single quote in raw strings.  Use one of the other
 forms instead:
@@ -75,7 +132,7 @@ The `u''` and `b''` strings are called *J8 strings* because the syntax in YSH
 
 More examples:
 
-    var myRaw = r'[a-z]\n'      # raw strings are useful for regexes (not
+    var myRaw = r'[a-z]\n'      # raw strings can be used for regexes (not
                                 # eggexes)
 
 ### triple-quoted
@@ -126,22 +183,39 @@ Related topics:
 
 Lists have a Python-like syntax:
 
-    var mylist = ['one', 'two', 3]
+    var mylist = ['one', 'two', [42, 43]]
 
 And a shell-like syntax:
 
-    var list2 = %| one two |
+    var list2 = :| one two |
 
-The shell-like syntax accepts the same syntax that a command can:
+The shell-like syntax accepts the same syntax as a simple command:
 
     ls $mystr @ARGV *.py {foo,bar}@example.com
 
-    # Rather than executing ls, evaluate and store words
+    # Rather than executing ls, evaluate words into a List
     var cmd = :| ls $mystr @ARGV *.py {foo,bar}@example.com |
 
 ### dict-literal
 
-    {name: 'value'}
+Dicts look like JavaScript.
+
+    var d = {
+      key1: 'value',  # key can be unquoted if it looks like a var name
+      'key2': 42,     # or quote it
+
+      ['key2' ++ suffix]: 43,   # bracketed expression
+    }
+
+Omitting a value means that the corresponding key takes the value of a var of
+the same name:
+
+    ysh$ var x = 42
+    ysh$ var y = 43
+
+    ysh$ var d = {x, y}  # values omitted
+    ysh$ = d
+    (Dict)  {x: 42, y: 43}
 
 ### range
 
@@ -154,36 +228,67 @@ A range is a sequence of numbers that can be iterated over:
     => 1
     => 2
 
-As with slices, the last number isn't included.  Idiom to iterate from 1 to n:
+As with slices, the last number isn't included.  To iterate from 1 to n, you
+can use this idiom:
 
     for i in (1 .. n+1) {
       echo $i
     }
 
-### block-literal
+### block-expr
 
-    var myblock = ^(echo $PWD)
+In YSH expressions, we use `^()` to create a [Command][] object:
 
-### expr-lit
+    var myblock = ^(echo $PWD; ls *.txt)
+
+It's more common for [Command][] objects to be created with block arguments,
+which are not expressions:
+
+    cd /tmp {
+      echo $PWD
+      ls *.txt
+    }
+
+[Command]: chap-type-method.html#Command
+
+### expr-literal
+
+An expression literal is an object that holds an unevaluated expression:
 
     var myexpr = ^[1 + 2*3]
 
+[Expr]: chap-type-method.html#Expr
+
 ## Operators
+
+### op-precedence
+
+YSH operator precedence is identical to Python's operator precedence.
+
+New operators:
+
+- `++` has the same precedence as `+`
+- `->` and `=>` have the same precedence as `.`
+
+<!-- TODO: show grammar -->
+
 
 <h3 id="concat">concat <code>++</code></h3>
 
-The concatenation operator works on strings:
+The concatenation operator works on `Str` objects:
 
-    var s = 'hello'
-    var t = s ++ ' world'
-    = t
+    ysh$ var s = 'hello'
+    ysh$ var t = s ++ ' world'
+
+    ysh$ = t
     (Str)   "hello world"
 
-and lists:
+and `List` objects:
 
-    var L = ['one', 'two']
-    var M = L ++ ['three', '4']
-    = M
+    ysh$ var L = ['one', 'two']
+    ysh$ var M = L ++ ['three', '4']
+
+    ysh$ = M
     (List)   ["one", "two", "three", "4"]
 
 String interpolation can be nicer than `++`:
@@ -194,18 +299,88 @@ Likewise, splicing lists can be nicer:
 
     var M2 = :| @L three 4 |  # same as M
 
+### ysh-equals
+
+YSH has strict equality:
+
+    a === b       # Python-like, without type conversion
+    a !== b       # negated
+
+And type converting equality:
+
+    '3' ~== 3     # True, type conversion
+
+The `~==` operator expects a string as the left operand.
+
+---
+
+Note that:
+
+- `3 === 3.0` is false because integers and floats are different types, and
+  there is no type conversion.
+- `3 ~== 3.0` is an error, because the left operand isn't a string.
+
+You may want to use explicit `int()` and `float()` to convert numbers, and then
+compare them.
+
+---
+
+Compare objects for identity with `is`:
+
+    ysh$ var d = {}    
+    ysh$ var e = d
+
+    ysh$ = d is d
+    (Bool)   true
+
+    ysh$ = d is {other: 'dict'}
+    (Bool)   false
+
+To negate `is`, use `is not` (like Python:
+
+    ysh$ d is not {other: 'dict'}
+    (Bool)   true
+
+### ysh-in
+
+The `in` operator tests if a key is in a dictionary:
+
+    var d = {k: 42}
+    if ('k' in d) {
+      echo yes
+    }  # => yes
+
+Unlike Python, `in` doesn't work on `Str` and `List` instances.  This because
+those operations take linear time rather than constant time (O(n) rather than
+O(1)).
+
+TODO: Use `includes() / contains()` methods instead.
+
 ### ysh-compare
 
-    a == b        # Python-like equality, no type conversion
-    3 ~== 3.0     # True, type conversion
-    3 ~== '3'     # True, type conversion
-    3 ~== '3.0'   # True, type conversion
+The comparison operators apply to integers or floats:
+
+    4 < 4   # => false
+    4 <= 4  # => true
+
+    5.0 > 5.0   # => false
+    5.0 >= 5.0  # => true
+
+Example in context:
+
+    if (x < 0) {
+      echo 'x is negative'
+    }
 
 ### ysh-logical
 
-    not  and  or
+The logical operators take boolean operands, and are spelled like Python:
 
-Note that these are distinct from `!  &&  ||`.
+    not
+    and  or
+
+Note that they are distinct from `!  &&  ||`, which are part of the [command
+language](chap-cmd-lang.html).
 
 ### ysh-arith
 
@@ -246,35 +421,71 @@ an `Int`.
 
 ### ysh-bitwise
 
-    ~  &  |  ^
+Bitwise operators are like Python and C:
+
+    ~        # unary complement
+
+    &  |  ^  # binary and, or, xor
+
+    >>  <<   # bit shift
 
 ### ysh-ternary
 
-Like Python:
+The ternary operator is borrowed from Python:
 
     display = 'yes' if len(s) else 'empty'
 
 ### ysh-index
 
-Like Python:
+`Str` objects can be indexed by byte:
 
-    myarray[3]
-    mystr[3]
+    ysh$ var s = 'cat'
+    ysh$ = mystr[1]
+    (Str)   'a'  
 
-TODO: Does string indexing give you an integer back?
+    ysh$ = mystr[-1]  # index from the end
+    (Str)   't'
+
+`List` objects:
+
+    ysh$ var mylist = [1, 2, 3]
+    ysh$ = mylist[2]
+    (Int)  3
+
+`Dict` objects are indexed by string key:
+
+    ysh$ var mydict = {'key': 42}
+    ysh$ = mydict['key']
+    (Int)  42
+
+### ysh-attr
+
+The expression `mydict.key` is short for `mydict['key']`.
+
+(Like JavaScript, but unlike Python.)
 
 ### ysh-slice
 
-Like Python:
+Slicing gives you a subsequence of a `Str` or `List`, like Python.
 
-    myarray[1 : -1]
-    mystr[1 : -1]
+Negative indices are relative to the end.
 
 ### func-call
 
-Like Python:
+A function call expression looks like Python:
 
-    f(x, y)
+    ysh$ = f('s', 't', named=42)
+
+A semicolon `;` can be used after positional args and before named args, but
+isn't always required:
+
+    ysh$ = f('s', 't'; named=42)
+
+In these cases, the `;` is necessary:
+
+    ysh$ = f(...args; ...kwargs)
+
+    ysh$ = f(42, 43; ...kwargs)
 
 ### thin-arrow
 
@@ -400,7 +611,7 @@ Omit quotes on ASCII characters:
 
     [ x y z ]  # avoid typing 'x' 'y' 'z'
 
-Sets of characters can be written as trings
+Sets of characters can be written as strings
 
     [ 'xyz' ]  # any of 3 chars, not a sequence of 3 chars
 

@@ -359,18 +359,17 @@ bool str_equals(BigStr* left, BigStr* right) {
     return true;
   }
 
+  // TODO: It would be nice to remove this condition, but I think we need MyPy
+  // strict None checking for it
   if (left == nullptr || right == nullptr) {
     return false;
   }
 
-  // obj_len equal implies string lengths are equal
-
-  if (left->len_ == right->len_) {
-    // assert(len(left) == len(right));
-    return memcmp(left->data_, right->data_, left->len_) == 0;
+  if (left->len_ != right->len_) {
+    return false;
   }
 
-  return false;
+  return memcmp(left->data_, right->data_, left->len_) == 0;
 }
 
 bool maybe_str_equals(BigStr* left, BigStr* right) {
@@ -385,49 +384,28 @@ bool maybe_str_equals(BigStr* left, BigStr* right) {
   return false;  // one is None and one is a BigStr*
 }
 
-// TODO: inline these functions?
-bool are_equal(int left, int right) {
-  return left == right;
-}
-
-bool keys_equal(int left, int right) {
-  return left == right;
-}
-
-bool are_equal(BigStr* left, BigStr* right) {
+bool items_equal(BigStr* left, BigStr* right) {
   return str_equals(left, right);
 }
 
 bool keys_equal(BigStr* left, BigStr* right) {
-  return are_equal(left, right);
+  return items_equal(left, right);
 }
 
-// Shouldn't be used?
-bool are_equal(void* left, void* right) {
-  assert(0);
-}
-
-// e.g. for Dict<Token*, int>, use object IDENTITY, not value
-bool keys_equal(void* left, void* right) {
-  return left == right;
-}
-
-bool are_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
-  bool result = are_equal(t1->at0(), t2->at0());
-  result = result && (t1->at1() == t2->at1());
-  return result;
-}
-
-bool are_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
-  return t1->at0() == t2->at0() && t1->at1() == t2->at1();
+bool items_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
+  return (t1->at0() == t2->at0()) && (t1->at1() == t2->at1());
 }
 
 bool keys_equal(Tuple2<int, int>* t1, Tuple2<int, int>* t2) {
-  return are_equal(t1, t2);
+  return items_equal(t1, t2);
+}
+
+bool items_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
+  return items_equal(t1->at0(), t2->at0()) && (t1->at1() == t2->at1());
 }
 
 bool keys_equal(Tuple2<BigStr*, int>* t1, Tuple2<BigStr*, int>* t2) {
-  return are_equal(t1, t2);
+  return items_equal(t1, t2);
 }
 
 bool str_equals_c(BigStr* s, const char* c_string, int c_len) {

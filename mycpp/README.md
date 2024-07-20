@@ -111,7 +111,6 @@ More work in this pass:
 
 - Collect member variables and write them at the end of the definition
 - Collect locals for "hoisting".  Written in the next pass.
-- Creates `fmtN()` functions to compile Python's `%` formatting operator.
 
 (c) Definition Pass.
 

@@ -9,6 +9,7 @@ import pprint
 import unittest
 
 from test.sh_spec import *  # module under test
+from test import sh_spec
 from test import spec_lib
 
 TEST1 = """\
@@ -151,6 +152,30 @@ class ShSpecTest(unittest.TestCase):
     print(pairs)
     self.assertEqual(
         [('osh', 'bin/osh'), ('osh-cpp', '_bin/cxx-dbg-sh/osh')], pairs)
+
+
+class FunctionsTest(unittest.TestCase):
+
+  def testSuccessOrFailure(self):
+    stats = sh_spec.Stats(3, ['bash', 'dash'])
+
+    stats.Set('num_failed', 0)
+    stats.Set('oils_num_failed', 0)
+    # zero allowed
+    status = sh_spec._SuccessOrFailure('foo', 0, stats)
+    self.assertEqual(0, status)
+
+    # 1 allowed
+    status = sh_spec._SuccessOrFailure('foo', 1, stats)
+    self.assertEqual(1, status)
+
+    stats.Set('num_failed', 1)
+    stats.Set('oils_num_failed', 1)
+    status = sh_spec._SuccessOrFailure('foo', 0, stats)
+    self.assertEqual(1, status)
+
+    status = sh_spec._SuccessOrFailure('foo', 1, stats)
+    self.assertEqual(0, status)
 
 
 if __name__ == '__main__':

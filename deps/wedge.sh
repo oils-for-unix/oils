@@ -11,7 +11,7 @@
 #
 # Host build, without containers:
 #
-#   $0 unboxed-build      deps/source.medo/re2c/
+#   $0 unboxed            deps/source.medo/re2c/
 #
 # Individual steps:
 #
@@ -29,15 +29,18 @@
 #       re2c-3.0.blob  # .tar.gz file that you can 'medo sync'
 #       re2c-3.1.blob
 #     opaque.medo/     # Binary files, e.g. Clang
-#     derived.medo/    # Svaed output of 'wedge build'
+#     derived.medo/    # Saved output of 'wedge build'
 #
 #   _build/            # Temp dirs and output
 #     obj/             # for C++ / Ninja
+#     deps-source/     # sync'd from deps/source.medo - should it be
+#                      # _build/wedge/source?
 #     wedge/           # for containerized builds
-#       source/        # sync'd from deps/source.medo
-#       unboxed-tmp/   # build directory
+#       tmp/           # build directory
 #       boxed/         # output of containerized build
 #                      # TODO: rename from /binary/
+#       logs/
+#       smoke-test/    # current dir for smoke test
 
 # Every package ("wedge") has these dirs associated with it:
 #
@@ -89,8 +92,12 @@ OILS_ABSOLUTE_ROOT='/wedge/oils-for-unix.org'
 # The user may build a wedge outside a container here
 OILS_RELATIVE_ROOT="$HOME/wedge/oils-for-unix.org"
 
+log() {
+  echo "$@" >&2
+}
+
 die() {
-  echo "$0: $@" >& 2
+  log "$0: fatal: $@"
   exit 1
 }
 
@@ -100,7 +107,6 @@ die() {
 
 source-dir() {
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
-
     # for Python-3.10.4 to override 'python3' package name
     echo "$REPO_ROOT/_build/deps-source/$WEDGE_NAME/$WEDGE_TARBALL_NAME-$WEDGE_VERSION"
 
@@ -111,7 +117,7 @@ source-dir() {
 
 build-dir() {
   # call it tmp-build?
-  echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME"
+  echo "$REPO_ROOT/_build/wedge/tmp/$WEDGE_NAME-$WEDGE_VERSION"
 }
 
 install-dir() {
@@ -121,17 +127,26 @@ install-dir() {
   else
     prefix=$OILS_RELATIVE_ROOT
   fi
+
+  # TODO: We want to support multiple versions of the same wedge
+  # So maybe we can provide
+  # 
+  # WEDGE_VERSION_LIST='4.4 5.2'
+  #
+  # And then provide a flag to select them?
+
   echo "$prefix/pkg/$WEDGE_NAME/$WEDGE_VERSION"
 }
 
 smoke-test-dir() {
-  echo "$REPO_ROOT/_build/wedge/smoke-test/$WEDGE_NAME"
+  echo "$REPO_ROOT/_build/wedge/smoke-test/$WEDGE_NAME-$WEDGE_VERSION"
 }
 
 load-wedge() {
   ### source .wedge.sh file and ensure it conforms to protocol
 
   local wedge_dir=$1
+  local version_requested=${2:-}
 
   echo "Loading $wedge_dir"
   echo
@@ -139,7 +154,31 @@ load-wedge() {
   source $wedge_dir/WEDGE
 
   echo "  OK  name: ${WEDGE_NAME?"$wedge_dir: WEDGE_NAME required"}"
-  echo "  OK  version: ${WEDGE_VERSION?"$wedge_dir: WEDGE_VERSION required"}"
+
+  # This WEDGE supports a single version.
+  if test -n "${WEDGE_VERSION:-}"; then
+    echo "  --  single version: $WEDGE_VERSION"
+  fi
+
+  # Can validate version against this
+  if test -n "${WEDGE_VERSION_LIST:-}"; then
+    echo "  --  version list: $WEDGE_VERSION_LIST"
+
+    if test -z "$version_requested"; then
+      die "FAIL  Expected explicit version, one of: $WEDGE_VERSION_LIST"
+    fi
+
+    case "$WEDGE_VERSION_LIST" in
+      *"$version_requested"*)
+        echo "  OK  Setting WEDGE_VERSION to $version_requested"
+        WEDGE_VERSION=$version_requested
+        ;;
+      *)
+        die "FAIL  Requested version $version_requested should be one of: $WEDGE_VERSION_LIST"
+        ;;
+    esac
+  fi
+
   if test -n "${WEDGE_TARBALL_NAME:-}"; then
     echo "  --  tarball name: $WEDGE_TARBALL_NAME"
   fi
@@ -152,7 +191,24 @@ load-wedge() {
     echo '  --  WEDGE_LEAKY_BUILD'
   fi
 
-  for func in wedge-make wedge-install wedge-smoke-test; do
+  if declare -f wedge-make; then
+    echo "  OK  wedge-make"
+  elif declare -f wedge-make-from-source-dir; then
+    echo "  OK  wedge-make-from-source-dir"
+  else
+    die "$wedge_dir: wedge-make(-from-source-dir) not declared"
+  fi
+
+  if declare -f wedge-install; then
+    echo "  OK  wedge-install"
+  elif declare -f wedge-make-from-source-dir; then
+    echo "  OK  wedge-install-from-source-dir"
+  else
+    die "$wedge_dir: wedge-install(-from-source-dir) not declared"
+  fi
+
+  # Just one function for now
+  for func in wedge-smoke-test; do
     if declare -f $func > /dev/null; then
       echo "  OK  $func"
     else
@@ -175,32 +231,43 @@ _run-sourced-func() {
 
 validate() {
   local wedge=$1
+  local version_requested=${2:-}
 
-  load-wedge $wedge
+  load-wedge $wedge "$version_requested"
 }
 
 unboxed-make() {
   ### Build on the host
 
   local wedge=$1  # e.g. re2c.wedge.sh
+  local version_requested=${2:-}  # e.g. 5.2
 
-  load-wedge $wedge
+  load-wedge $wedge "$version_requested"
 
-  local build_dir=$(build-dir) 
+  local source_dir
+  source_dir=$(source-dir) 
+  echo " SRC $source_dir"
+
+  local build_dir
+  build_dir=$(build-dir) 
 
   # NOT created because it might require root permissions!
-  local install_dir=$(install-dir)
+  local install_dir
+  install_dir=$(install-dir)
 
   rm -r -f -v $build_dir
   mkdir -p $build_dir
 
-  echo SOURCE $(source-dir)
-
-  # TODO: pushd/popd error handling
-
-  pushd $build_dir
-  wedge-make $(source-dir) $build_dir $install_dir
-  popd
+  if declare -f wedge-make-from-source-dir; then
+    # e.g. for yash, which can't build outside the source tree
+    pushd $source_dir
+    wedge-make-from-source-dir $source_dir $install_dir
+    popd
+  else
+    pushd $build_dir
+    wedge-make $source_dir $build_dir $install_dir
+    popd
+  fi
 }
 
 
@@ -214,15 +281,31 @@ unboxed-make() {
 
 _unboxed-install() {
   local wedge=$1  # e.g. re2c.wedge.sh
+  local version_requested=${2:-}  # e.g. 5.2
 
-  load-wedge $wedge
+  load-wedge $wedge "$version_requested"
+
+  local source_dir
+  source_dir=$(source-dir) 
+
+  local build_dir
+  build_dir=$(build-dir) 
 
   local install_dir
   install_dir=$(install-dir)
   mkdir -p $install_dir
 
-  # Note: install-dir needed for time-helper, but not others
-  wedge-install $(build-dir) $install_dir
+  if declare -f wedge-make-from-source-dir; then
+    pushd $source_dir
+    wedge-install-from-source-dir $source_dir $install_dir
+    popd
+  else
+    # Note: install-dir needed for time-helper, but not others
+    #
+    # I think it would nicer to pushd $build_dir in most cases
+
+    wedge-install $build_dir $install_dir
+  fi
 }
 
 unboxed-install() {
@@ -237,11 +320,14 @@ unboxed-install() {
 
 unboxed-smoke-test() {
   local wedge_dir=$1  # e.g. re2c/ with WEDGE
+  local version_requested=${2:-}  # e.g. 5.2
 
-  load-wedge $wedge_dir
+  load-wedge $wedge_dir "$version_requested"
 
-  local smoke_test_dir=$(smoke-test-dir)
-  local install_dir=$(install-dir)
+  local smoke_test_dir
+  smoke_test_dir=$(smoke-test-dir)
+  local install_dir
+  install_dir=$(install-dir)
 
   echo '  SMOKE TEST'
 
@@ -273,7 +359,7 @@ unboxed-smoke-test() {
 unboxed-stats() {
   local wedge=$1
 
-  load-wedge $wedge
+  load-wedge $wedge "$version_requested"
 
   du --si -s $(source-dir)
   echo
@@ -285,32 +371,39 @@ unboxed-stats() {
   echo
 }
 
-unboxed-build() {
+unboxed() {
   local wedge_dir=$1
+
+  # Can override default version.  Could be a flag since it's optional?  But
+  # right now we always pass it.
+  local version_requested=${2:-}
 
   # TODO:
   # - Would be nice to export the logs somewhere
 
-  unboxed-make $wedge_dir
+  unboxed-make $wedge_dir "$version_requested"
 
-  unboxed-install $wedge_dir
+  unboxed-install $wedge_dir "$version_requested"
 
-  unboxed-smoke-test $wedge_dir
+  unboxed-smoke-test $wedge_dir "$version_requested"
 }
 
-readonly BUILD_IMAGE=oilshell/soil-wedge-builder
-readonly BUILD_IMAGE_TAG=v-2023-03-01
+readonly DEFAULT_DISTRO=debian-10  # Debian Buster
 
 DOCKER=${DOCKER:-docker}
 
-build() {
+boxed() {
   ### Build inside a container, and put output in a specific place.
 
   # TODO: Specify the container OS, CPU like x86-64, etc.
 
   local wedge=$1
+  local version_requested=${2:-}
+  local distro=${3:-$DEFAULT_DISTRO}
 
-  load-wedge $wedge
+  local bootstrap_image=oilshell/wedge-bootstrap-$distro
+
+  load-wedge $wedge "$version_requested"
 
   # Permissions will be different, so we separate the two
 
@@ -321,7 +414,7 @@ build() {
     wedge_guest_dir=/wedge
   else
     wedge_host_dir=_build/wedge/relative
-    wedge_guest_dir=/home/wedge-builder/wedge
+    wedge_guest_dir=/home/uke0/wedge
   fi
 
   mkdir -v -p $wedge_host_dir
@@ -336,7 +429,8 @@ build() {
 
   # Run unboxed-{build,install,smoke-test} INSIDE the container
   local -a args=(
-      sh -c 'cd ~/oil; deps/wedge.sh unboxed-build $1' dummy "$wedge"
+      sh -c 'cd ~/oil; deps/wedge.sh unboxed "$1" "$2"'
+      dummy "$wedge" "$version_requested"
   )
 
   local -a docker_flags=()
@@ -356,18 +450,22 @@ build() {
 
   # -E to preserve CONTAINERS_REGISTRIES_CONF
   sudo -E $DOCKER run "${docker_flags[@]}" \
-    --mount "type=bind,source=$REPO_ROOT,target=/home/wedge-builder/oil" \
+    --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oil" \
     --mount "type=bind,source=$PWD/$wedge_host_dir,target=$wedge_guest_dir" \
-    $BUILD_IMAGE:$BUILD_IMAGE_TAG \
+    $bootstrap_image \
     "${args[@]}"
 }
 
 smoke-test() {
   local wedge_dir=$1
   local wedge_out_dir=${2:-_build/wedge/binary}  # TODO: rename to /boxed
-  local debug_shell=${3:-}
+  local version_requested=${3:-}
+  local distro=${4:-$DEFAULT_DISTRO}
+  local debug_shell=${5:-}
 
-  load-wedge $wedge_dir
+  load-wedge $wedge_dir "$version_requested"
+
+  local bootstrap_image=oilshell/wedge-bootstrap-$distro
 
   local -a args=(
       sh -c 'cd ~/oil; deps/wedge.sh unboxed-smoke-test $1' dummy "$wedge_dir"
@@ -382,14 +480,14 @@ smoke-test() {
   if test -n "${WEDGE_IS_ABSOLUTE:-}"; then
     wedge_mount_dir=/wedge
   else
-    wedge_mount_dir=/home/wedge-builder/wedge
+    wedge_mount_dir=/home/uke0/wedge
   fi
 
   sudo $DOCKER run "${docker_flags[@]}" \
     --network none \
-    --mount "type=bind,source=$REPO_ROOT,target=/home/wedge-builder/oil" \
+    --mount "type=bind,source=$REPO_ROOT,target=/home/uke0/oil" \
     --mount "type=bind,source=$PWD/$wedge_out_dir,target=$wedge_mount_dir" \
-    $BUILD_IMAGE:$BUILD_IMAGE_TAG \
+    $bootstrap_image \
     "${args[@]}"
 }
 
@@ -406,14 +504,14 @@ fi
 
 case $1 in
   validate|\
-  unboxed-build|\
+  unboxed|\
   unboxed-make|unboxed-install|_unboxed-install|\
   unboxed-smoke-test|unboxed-stats|\
-  build|smoke-test)
+  boxed|smoke-test)
     "$@"
     ;;
 
   *)
-    die "$0: Invalid action '$1'"
+    die "$Invalid action '$1'"
     ;;
 esac

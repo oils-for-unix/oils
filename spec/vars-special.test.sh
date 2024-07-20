@@ -1,5 +1,5 @@
 ## oils_failures_allowed: 2
-## compare_shells: dash bash mksh zsh
+## compare_shells: dash bash-4.4 mksh zsh
 
 
 # NOTE:
@@ -81,10 +81,19 @@ zsh sets HOME
 
 
 #### $1 .. $9 are scoped, while $0 is not
-fun() { echo $0 $1 $2 | sed -e 's/.*sh/sh/'; }
+fun() {
+  echo $0 | grep -o 'sh'
+  echo $1 $2
+}
 fun a b
-## stdout: sh a b
-## BUG zsh stdout: fun a b
+
+## STDOUT:
+sh
+a b
+## END
+## BUG zsh STDOUT:
+a b
+## END
 
 #### $?
 echo $?  # starts out as 0
@@ -587,7 +596,7 @@ status=0
 
 #### BASH_VERSION / OILS_VERSION
 case $SH in
-  bash)
+  bash*)
     # BASH_VERSION=zz
 
     echo $BASH_VERSION | egrep -o '4\.4\.0' > /dev/null

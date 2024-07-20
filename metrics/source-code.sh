@@ -21,6 +21,14 @@ filter-py() {
 
 readonly -a OSH_ASDL=( {frontend,core}/*.asdl )
 
+oils-files() {
+  # what's in the runtime
+  osh-files
+  ysh-files
+  data-lang-files
+  tools-files
+}
+
 # OSH and common
 osh-files() {
   # Exclude:
@@ -355,7 +363,7 @@ _overview() {
 
   spec-gold-counts $count "$@"
 
-  test/unit.sh py2-tests | $count \
+  test/unit.sh files-to-count | $count \
     'Python Unit Tests' '' "$@"
 
   ls test/*.{sh,py,R} | filter-py | grep -v jsontemplate.py | $count \

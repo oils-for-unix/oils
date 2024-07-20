@@ -1,6 +1,7 @@
-#
-# Usage:
-#   ./errexit.test.sh <function name>
+## compare_shells: dash bash mksh ash
+## oils_failures_allowed: 0
+
+# TODO: upgrade to bash 5.2 and make OSH behave like that!  redirect failures
 
 #### errexit aborts early
 set -o errexit
@@ -68,6 +69,30 @@ test -n X && false
 echo status=$?
 ## stdout-json: ""
 ## status: 1
+
+#### More && || 
+
+$SH -c 'set -e; false || { echo group; false; }; echo bad'
+echo status=$?
+echo
+
+$SH -c 'set -e; false || ( echo subshell; exit 42 ); echo bad'
+echo status=$?
+echo
+
+# noforklast optimization
+$SH -c 'set -e; false || /bin/false; echo bad'
+echo status=$?
+
+## STDOUT:
+group
+status=1
+
+subshell
+status=42
+
+status=1
+## END
 
 #### errexit and loop
 set -o errexit
@@ -280,7 +305,106 @@ one
 [three]
 ## END
 
-#### compound command
+#### simple command / assign - redir failure DOES respect errexit
+
+$SH -c '
+set -o errexit
+true > /
+echo builtin status=$?
+'
+echo status=$?
+
+$SH -c '
+set -o errexit
+/bin/true > /
+echo extern status=$?
+'
+echo status=$?
+
+$SH -c '
+set -o errexit
+assign=foo > /
+echo assign status=$?
+'
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+status=1
+## END
+## OK dash STDOUT:
+status=2
+status=2
+status=2
+## END
+
+#### simple command that's an alias - redir failure checked
+
+# bash 5.2 fixed bash 4.4 bug: this is now checked
+
+$SH -c '
+shopt -s expand_aliases
+
+set -o errexit
+alias zz="{ echo 1; echo 2; }"
+zz > /
+echo alias status=$?
+'
+echo status=$?
+
+## STDOUT:
+status=1
+## END
+
+## BUG dash STDOUT:
+alias status=2
+status=0
+## END
+
+## BUG ash STDOUT:
+alias status=1
+status=0
+## END
+
+#### bash atoms [[ (( - redir failure checked
+
+# bash 5.2 fixed bash 4.4 bug: this is now checked
+
+case $SH in dash) exit ;; esac
+
+$SH -c '
+set -o errexit
+[[ x = x ]] > /
+echo dbracket status=$?
+'
+echo status=$?
+
+$SH -c '
+set -o errexit
+(( 42 )) > /
+echo dparen status=$?
+'
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+## END
+
+## OK ash STDOUT:
+status=1
+status=2
+## END
+
+## N-I dash STDOUT:
+## END
+
+
+#### brace group - redir failure checked
+
+# bash 5.2 fixed bash 4.4 bug: this is now checked
+
 # case from
 # https://lists.gnu.org/archive/html/bug-bash/2020-05/msg00066.html
 
@@ -290,19 +414,28 @@ set -o errexit
 
 echo status=$?
 echo 'should not get here'
+
 ## status: 1
-## stdout-json: ""
-## BUG dash/bash/ash status: 0
-## BUG bash/ash STDOUT:
-status=1
-should not get here
+## STDOUT:
 ## END
+
+## BUG dash status: 0
 ## BUG dash STDOUT:
 status=2
 should not get here
 ## END
 
-#### while loop
+## BUG ash status: 0
+## BUG ash STDOUT:
+status=1
+should not get here
+## END
+
+
+#### while loop - redirect failure checked
+
+# bash 5.2 fixed bash 4.4 bug: this is now checked
+
 # case from
 # https://lists.gnu.org/archive/html/bug-bash/2020-05/msg00066.html
 
@@ -314,17 +447,23 @@ done < not_exist.txt
 
 echo status=$?
 echo 'should not get here'
+
 ## status: 1
-## stdout-json: ""
-## BUG dash/bash/ash status: 0
-## BUG bash/ash STDOUT:
-status=1
-should not get here
+## STDOUT:
 ## END
+
+## BUG dash status: 0
 ## BUG dash STDOUT:
 status=2
 should not get here
 ## END
+
+## BUG ash status: 0
+## BUG ash STDOUT:
+status=1
+should not get here
+## END
+
 
 #### set -e enabled in function (regression)
 foo() {

@@ -13,6 +13,7 @@ from _devbuild.gen.syntax_asdl import (
     word_part_e,
     word_part_t,
 )
+from core.error import p_die
 from data_lang import j8
 from frontend import consts
 from frontend import lexer
@@ -62,10 +63,13 @@ def EvalCharLiteralForRegex(tok):
 
 def EvalCStringToken(id_, value):
     # type: (Id_t, str) -> Optional[str]
-    """This function is shared between echo -e and $''.
-
-    $'' could use it at compile time, much like brace expansion in braces.py.
+    """All types of C-style backslash-escaped strings use this function:
+    
+    - echo -e and printf at runtime
+    - $'' and b'' u'' at parse time
     """
+    code_point = -1
+
     if id_ in (Id.Lit_Chars, Id.Lit_CharsWithoutPrefix, Id.Unknown_Backslash):
         # shopt -u parse_backslash detects Unknown_Backslash at PARSE time in YSH.
         return value
@@ -82,7 +86,7 @@ def EvalCStringToken(id_, value):
         return None
 
     elif id_ in (Id.Char_Octal3, Id.Char_Octal4):
-        if id_ == Id.Char_Octal3:  # $'\377' (disallowed at parse time in YSH)
+        if id_ == Id.Char_Octal3:  # $'\377'
             s = value[1:]
         else:  # echo -e '\0377'
             s = value[2:]
@@ -99,22 +103,27 @@ def EvalCStringToken(id_, value):
         i = int(s, 16)
         return chr(i)
 
+    # Note: we're not doing the surrogate range and max code point checks for
+    # echo -e and printf:
+    #
+    # 1. It's not compatible with bash
+    # 2. We don't have good error locations anyway
+
     elif id_ in (Id.Char_Unicode4, Id.Char_Unicode8):
         s = value[2:]
-        i = int(s, 16)
-        #util.log('i = %d', i)
-        return j8.Utf8Encode(i)
+        code_point = int(s, 16)
+        return j8.Utf8Encode(code_point)
 
     elif id_ == Id.Char_UBraced:
         s = value[3:-1]  # \u{123}
-        i = int(s, 16)
-        return j8.Utf8Encode(i)
+        code_point = int(s, 16)
+        return j8.Utf8Encode(code_point)
 
     else:
         raise AssertionError(Id_str(id_))
 
 
-def EvalSingleQuoted2(id_, tokens):
+def EvalSingleQuoted(id_, tokens):
     # type: (Id_t, List[Token]) -> str
     """ Done at parse time """
     if id_ in (Id.Left_SingleQuote, Id.Left_RSingleQuote, Id.Left_TSingleQuote,
@@ -128,7 +137,25 @@ def EvalSingleQuoted2(id_, tokens):
             for t in tokens:
                 print('T %s' % t)
 
-        strs = [EvalCStringToken(t.id, lexer.TokenVal(t)) for t in tokens]
+        strs = []
+        for t in tokens:
+            # More parse time validation for code points.
+            # EvalCStringToken() redoes some of this work, but right now it's
+            # shared with dynamic echo -e / printf, which don't have tokens.
+
+            # Only check J8 style strings, not Char_Unicode4 and Char_Unicode8,
+            # which are in OSH
+            if t.id == Id.Char_UBraced:
+                s = lexer.TokenSlice(t, 3, -1)
+                code_point = int(s, 16)
+                if code_point > 0x10ffff:
+                    p_die("Code point can't be greater than U+10ffff", t)
+                if 0xD800 <= code_point and code_point < 0xE000:
+                    p_die(
+                        r"%s escape is illegal because it's in the surrogate range"
+                        % lexer.TokenVal(t), t)
+
+            strs.append(EvalCStringToken(t.id, lexer.TokenVal(t)))
 
     else:
         raise AssertionError(id_)
@@ -278,3 +305,6 @@ def RemoveLeadingSpaceSQ(tokens):
             tok.id = Id.Lit_CharsWithoutPrefix
 
             #log('STRIP tok %s', tok)
+
+
+# vim: sw=4

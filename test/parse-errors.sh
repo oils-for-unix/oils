@@ -64,22 +64,23 @@ test-patsub() {
   _osh-should-parse 'echo ${x//foo/replace$foo}'
 }
 
+test-slice() {
+  _osh-should-parse '${foo:42}'
+  _osh-should-parse '${foo:42+1}'
+
+  # Slicing
+  _osh-parse-error 'echo ${a:1;}'
+  _osh-parse-error 'echo ${a:1:2;}'
+}
+
 # osh/word_parse.py
 test-word-parse() {
   _osh-parse-error 'echo ${'
-
-  # This parses like a slice, but that's OK.  Maybe talk about arithmetic
-  # expression.  Maybe say where it started?
-  _osh-parse-error '${foo:}'
 
   _osh-parse-error 'echo ${a[@Z'
 
   _osh-parse-error 'echo ${x.}'
   _osh-parse-error 'echo ${!x.}'
-
-  # Slicing
-  _osh-parse-error 'echo ${a:1;}'
-  _osh-parse-error 'echo ${a:1:2;}'
 
   # I don't seem to be able to tickle errors here
   #_osh-parse-error 'echo ${a:-}'
@@ -112,6 +113,42 @@ test-word-parse() {
   _osh-parse-error '${x:'
 }
 
+test-dparen() {
+  # (( ))
+
+  _osh-should-parse '(())'
+  _osh-should-parse '(( ))'
+  _osh-parse-error '(( )'
+  _osh-parse-error '(( )x'
+  #_osh-should-parse '$(echo $(( 1 + 2 )) )'
+
+  # Hard case
+  _osh-should-parse '$(echo $(( 1 + 2 )))'
+  _osh-should-parse '$( (()))'
+
+  # More
+  _osh-parse-error '(( 1 + 2 /'
+  _osh-parse-error '(( 1 + 2 )/'
+  _osh-parse-error '(( 1'
+  _osh-parse-error '(('
+}
+
+test-arith-sub() {
+  # $(( ))
+
+  _osh-should-parse 'echo $(( ))'
+  _osh-should-parse 'echo $(())'
+  _osh-parse-error 'echo $(()x'
+
+  _osh-parse-error 'echo $(()'
+
+  _osh-parse-error 'echo $(( 1 + 2 ;'
+  _osh-parse-error 'echo $(( 1 + 2 );'
+  _osh-parse-error 'echo $(( '
+  _osh-parse-error 'echo $(( 1'
+}
+
+
 test-array-literal() {
   # Array literal with invalid TokenWord.
   _osh-parse-error 'a=(1 & 2)'
@@ -121,12 +158,6 @@ test-array-literal() {
 }
 
 test-arith-context() {
-  # $(( ))
-  _osh-parse-error 'echo $(( 1 + 2 ;'
-  _osh-parse-error 'echo $(( 1 + 2 );'
-  _osh-parse-error 'echo $(( '
-  _osh-parse-error 'echo $(( 1'
-
   # Disable Oil stuff for osh_{parse,eval}.asan
   if false; then
     # Non-standard arith sub $[1 + 2]
@@ -138,12 +169,6 @@ test-arith-context() {
     _osh-parse-error 'echo $[ 1 + 2 / 3'
     _osh-parse-error 'echo $['
   fi
-
-  # (( ))
-  _osh-parse-error '(( 1 + 2 /'
-  _osh-parse-error '(( 1 + 2 )/'
-  _osh-parse-error '(( 1'
-  _osh-parse-error '(('
 
   # Should be an error
   _osh-parse-error 'a[x+]=1'
@@ -746,7 +771,6 @@ esac'
     echo bash=$?
     set -o errexit
   done
-
 }
 
 all() {

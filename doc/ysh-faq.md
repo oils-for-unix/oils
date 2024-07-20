@@ -157,10 +157,12 @@ fundamentally different than `$[array[i]]` syntax (with brackets).
   - The index is legacy/deprecated shell arithmetic like `${array[i++]}` or
     `${assoc["$key"]}`.
   - The index **cannot** be a raw string like `r'\'`.
-- YSH supports both, but [expression substitution]($oil-help:expr-sub) syntax
+- YSH supports both, but [expression substitution][expr-sub] syntax
   `$[array[i]]` is preferred.
   - It accepts YSH expressions like `$[array[i + 1]` or `$[mydict[key]]`.
   - A raw string like `r'\'` is a valid key, e.g.  `$[mydict[r'\']]`.
+
+[expr-sub]: ref/chap-expr-lang.html#expr-sub
 
 Of course, YSH style is preferred when compatibility isn't an issue.
 

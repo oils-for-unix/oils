@@ -246,16 +246,16 @@ scope.  In YSH, they only mutate the **local** scope:
 
 These builtins are also "isolated" inside procs, using local scope:
 
-- [read]($osh-help) (`$REPLY`)
-- [readarray]($osh-help) aka `mapfile`
-- [getopts]($osh-help) (`$OPTIND`, `$OPTARG`, etc.)
-- [printf]($osh-help) -v
-- [unset]($osh-help)
+- [read](ref/chap-builtin-cmd.html#read) (`$REPLY`)
+- [readarray](ref/chap-builtin-cmd.html#readarray) aka `mapfile`
+- [getopts](ref/chap-builtin-cmd.html#getopts) (`$OPTIND`, `$OPTARG`, etc.)
+- [printf](ref/chap-builtin-cmd.html#printf) -v
+- [unset](ref/chap-osh-assign.html#unset)
 
 YSH Builtins:
 
-- [compadjust]($osh-help)
-- [try]($oil-help) and `_status`
+- [compadjust](ref/chap-builtin-cmd.html#compadjust)
+- [try](ref/chap-builtin-cmd.html#try) and `_error`
 
 <!-- TODO: should YSH builtins always behave the same way?  Isn't that a little
 faster? I think read --all is not consistent.  -->

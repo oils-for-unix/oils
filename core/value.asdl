@@ -61,17 +61,25 @@ module value
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
   # value_t instances are stored in state.Mem().
   value =
+    # Only used for val_ops.StdinIterator.  (It would be nice if we could
+    # express iter_value.{Eof,Interrupted,Str,Int,...} in ASDL)
+    Interrupted
+  | Stdin
+
     # Methods on state.Mem return value.Undef, but it's not visible in YSH.
     #
     # A var bound to Undef is different than no binding because of dynamic
     # scope.  Undef can shadow values lower on the stack.
-    Undef
+  | Undef
 
   | Str(str s)
 
     # "holes" in the array are represented by None
-    # TODO: Use Dict[int, str] representation
   | BashArray(List[str] strs)
+    # TODO: Switch to this more efficient representation?
+    # max_index makes append-sparse workload faster, and normal append loops too
+  | SparseArray(Dict[BigInt, str] d, BigInt max_index)
+
   | BashAssoc(Dict[str, str] d)
 
     # DATA model for YSH follows JSON.  Note: YSH doesn't have 'undefined' and
@@ -103,10 +111,6 @@ module value
 
     # ^[42 + a[i]]
   | Expr(expr e)
-
-    # ^"$1 and $2"
-    # TODO: fix bug with shared variant across files, then collapse this
-  | Template(DoubleQuoted dq)
 
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
   | Command(command c)

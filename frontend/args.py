@@ -209,6 +209,11 @@ class Reader(object):
         # type: () -> bool
         return self.i >= self.n  # must be >= and not ==
 
+    def Done(self):
+        # type: () -> None
+        if not self.AtEnd():
+            e_usage('got too many arguments', self.Location())
+
     def _FirstLocation(self):
         # type: () -> loc_t
         if self.locs is not None and self.locs[0] is not None:
@@ -260,10 +265,10 @@ class _ArgAction(_Action):
     def __init__(self, name, quit_parsing_flags, valid=None):
         # type: (str, bool, Optional[List[str]]) -> None
         """
-    Args:
-      quit_parsing_flags: Stop parsing args after this one.  for sh -c.
-        python -c behaves the same way.
-    """
+        Args:
+          quit_parsing_flags: Stop parsing args after this one.  for sh -c.
+            python -c behaves the same way.
+        """
         self.name = name
         self.quit_parsing_flags = quit_parsing_flags
         self.valid = valid
@@ -352,7 +357,6 @@ class SetToString(_ArgAction):
 
 
 class SetAttachedBool(_Action):
-    """This is the Go-like syntax of --verbose=1, --verbose, or --verbose=0."""
 
     def __init__(self, name):
         # type: (str) -> None
@@ -361,6 +365,12 @@ class SetAttachedBool(_Action):
     def OnMatch(self, attached_arg, arg_r, out):
         # type: (Optional[str], Reader, _Attributes) -> bool
         """Called when the flag matches."""
+
+        # TODO: Delete this part?  Is this eqvuivalent to SetToTrue?
+        #
+        # We're not using Go-like --verbose=1, --verbose, or --verbose=0
+        #
+        # 'attached_arg' is also used for -t0 though, which is weird
 
         if attached_arg is not None:  # '0' in --verbose=0
             if attached_arg in ('0', 'F', 'false',
@@ -625,7 +635,7 @@ def ParseMore(spec, arg_r):
             if action is None:
                 e_usage('got invalid flag %r' % arg, arg_r.Location())
 
-            # TODO: attached_arg could be 'bar' for --foo=bar
+            # Note: not parsing --foo=bar as attached_arg, as above
             action.OnMatch(None, arg_r, out)
             arg_r.Next()
             continue

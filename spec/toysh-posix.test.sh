@@ -1,4 +1,5 @@
-# toysh-posix
+## oils_failures_allowed: 3
+## compare_shells: bash dash mksh zsh yash
 
 #### Fatal error
 # http://landley.net/notes.html#20-06-2020
@@ -315,7 +316,7 @@ cc() { echo =$1$2=;}; cc "" ""
 
 $SH -c 'for i in a"$@"b;do echo =$i=;done;}' 123 456 789
 ## status: 2
-## OK bash/mksh/zsh status: 1
+## OK mksh/zsh status: 1
 ## STDOUT:
 ## END
 
@@ -326,15 +327,11 @@ echo $(if true)
 echo $?
 echo $(false)
 echo $?
-## status: 2
-## OK mksh/zsh status: 1
-## stdout-json: ""
-## BUG bash status: 0
-## BUG bash STDOUT:
-1
 
-0
-## END
+## status: 2
+## stdout-json: ""
+
+## OK mksh/zsh status: 1
 
 
 #### Pipeline - http://landley.net/notes-2019.html#16-12-2019

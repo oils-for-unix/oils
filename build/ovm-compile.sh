@@ -375,7 +375,7 @@ make-tar() {
 
   tar --create --transform "$sed_expr" --file $out \
     LICENSE.txt \
-    INSTALL.txt \
+    INSTALL-old.txt \
     configure \
     install \
     uninstall \

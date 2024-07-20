@@ -88,8 +88,24 @@ mylib::File* fdopen(int fd, BigStr* c_mode) {
 void execve(BigStr* argv0, List<BigStr*>* argv,
             Dict<BigStr*, BigStr*>* environ) {
   int n_args = len(argv);
+  int n_env = len(environ);
+  int combined_size = 0;
+  for (DictIter<BigStr*, BigStr*> it(environ); !it.Done(); it.Next()) {
+    BigStr* k = it.Key();
+    BigStr* v = it.Value();
+
+    int joined_len = len(k) + len(v) + 2;  // = and NUL terminator
+    combined_size += joined_len;
+  }
+  const int argv_size = (n_args + 1) * sizeof(char*);
+  const int env_size = (n_env + 1) * sizeof(char*);
+  combined_size += argv_size;
+  combined_size += env_size;
+  char* combined_buf = static_cast<char*>(malloc(combined_size));
+
   // never deallocated
-  char** _argv = static_cast<char**>(malloc((n_args + 1) * sizeof(char*)));
+  char** _argv = reinterpret_cast<char**>(combined_buf);
+  combined_buf += argv_size;
 
   // Annoying const_cast
   // https://stackoverflow.com/questions/190184/execv-and-const-ness
@@ -99,16 +115,16 @@ void execve(BigStr* argv0, List<BigStr*>* argv,
   _argv[n_args] = nullptr;
 
   // Convert environ into an array of pointers to strings of the form: "k=v".
-  int n_env = len(environ);
-  char** envp = static_cast<char**>(malloc((n_env + 1) * sizeof(char*)));
-
+  char** envp = reinterpret_cast<char**>(combined_buf);
+  combined_buf += env_size;
   int env_index = 0;
   for (DictIter<BigStr*, BigStr*> it(environ); !it.Done(); it.Next()) {
     BigStr* k = it.Key();
     BigStr* v = it.Value();
 
+    char* buf = combined_buf;
     int joined_len = len(k) + len(v) + 1;
-    char* buf = static_cast<char*>(malloc(joined_len + 1));
+    combined_buf += joined_len + 1;
     memcpy(buf, k->data_, len(k));
     buf[len(k)] = '=';
     memcpy(buf + len(k) + 1, v->data_, len(v));

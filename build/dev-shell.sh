@@ -40,10 +40,15 @@ if test -d $UFTRACE_WEDGE_DIR; then
   export PATH="$UFTRACE_WEDGE_DIR:$PATH"
 fi
 
-# FALLBACK without test/spec-bin: test/spec.sh link-busybox-ash
+# FALLBACK without busybox wedge: test/spec.sh link-busybox-ash
 readonly ASH_SYMLINK_DIR="$PWD/_tmp/shells"
 if test -d $ASH_SYMLINK_DIR; then
   export PATH="$ASH_SYMLINK_DIR:$PATH"
+fi
+
+readonly WEDGE_SOUFFLE_DIR=$USER_WEDGE_DIR/pkg/souffle/2.4.1/bin
+if test -d $WEDGE_SOUFFLE_DIR; then
+  export PATH="$WEDGE_SOUFFLE_DIR:$PATH"
 fi
 
 # test/spec-bin.sh builds binaries
@@ -52,6 +57,46 @@ readonly SPEC_DIR="$PWD/../oil_DEPS/spec-bin"
 
 if test -d $SPEC_DIR; then
   export PATH="$SPEC_DIR:$PATH"
+fi
+
+#
+# NEW spec-bin wedges found before old ../oil_DEPS
+#
+
+readonly BASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/bash/4.4/bin
+if test -d $BASH_WEDGE_DIR; then
+  export PATH="$BASH_WEDGE_DIR:$PATH"
+fi
+
+# bash 5 found before bash 4
+readonly BASH5_WEDGE_DIR=$USER_WEDGE_DIR/pkg/bash/5.2.21/bin
+if test -d $BASH5_WEDGE_DIR; then
+  export PATH="$BASH5_WEDGE_DIR:$PATH"
+fi
+
+readonly DASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/dash/0.5.10.2/bin
+if test -d $DASH_WEDGE_DIR; then
+  export PATH="$DASH_WEDGE_DIR:$PATH"
+fi
+
+readonly MKSH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/mksh/R52c
+if test -d $MKSH_WEDGE_DIR; then
+  export PATH="$MKSH_WEDGE_DIR:$PATH"
+fi
+
+readonly ZSH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/zsh/5.1.1/bin
+if test -d $ZSH_WEDGE_DIR; then
+  export PATH="$ZSH_WEDGE_DIR:$PATH"
+fi
+
+readonly BUSYBOX_WEDGE_DIR=$USER_WEDGE_DIR/pkg/busybox/1.35.0
+if test -d $BUSYBOX_WEDGE_DIR; then
+  export PATH="$BUSYBOX_WEDGE_DIR:$PATH"
+fi
+
+readonly YASH_WEDGE_DIR=$USER_WEDGE_DIR/pkg/yash/2.49/bin
+if test -d $YASH_WEDGE_DIR; then
+  export PATH="$YASH_WEDGE_DIR:$PATH"
 fi
 
 if test -d ~/R; then

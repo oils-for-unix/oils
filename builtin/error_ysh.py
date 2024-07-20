@@ -3,19 +3,21 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.value_asdl import value, value_e
 from core import error
 from core.error import e_die_status, e_usage
 from core import executor
+from core import num
 from core import state
 from core import vm
 from frontend import flag_util
 from frontend import typed_args
 from mycpp import mops
-from mycpp.mylib import log
+from mycpp.mylib import tagswitch, log
 
 _ = log
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import ui
     from osh import cmd_eval
@@ -58,8 +60,10 @@ class Try(vm._Builtin):
     - Set _error_location
     - These could be used by a 'raise' builtin?  Or 'reraise'
 
-    try foo
-    if (_status != 0) {
+    try {
+      foo
+    }
+    if (_status !== 0) {
       echo 'hello'
       raise  # reads _status, _error_str, and _error_location ?
     }
@@ -90,6 +94,8 @@ class Try(vm._Builtin):
         cmd = rd.RequiredBlock()
         rd.Done()
 
+        error_dict = None  # type: value.Dict
+
         status = 0  # success by default
         try:
             with ctx_Try(self.mutable_opts):
@@ -100,11 +106,54 @@ class Try(vm._Builtin):
             status = e.ExitStatus()
 
         except error.Structured as e:
+            #log('*** STRUC %s', e)
             status = e.ExitStatus()
-            self.mem.SetTryError(e.ToDict())
+            error_dict = e.ToDict()
 
+        if error_dict is None:
+            error_dict = value.Dict({'code': num.ToBig(status)})
+
+        # Always set _error
+        self.mem.SetTryError(error_dict)
+
+        # TODO: remove _status in favor of _error.code.  This is marked in
+        # spec/TODO-deprecate
         self.mem.SetTryStatus(status)
         return 0
+
+
+class Failed(vm._Builtin):
+
+    def __init__(self, mem):
+        # type: (state.Mem) -> None
+        self.mem = mem
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        _, arg_r = flag_util.ParseCmdVal('failed', cmd_val)
+
+        # No args
+        arg_r.Done()
+
+        # Should we have
+        #   failed (_error) ?
+
+        err = self.mem.TryError()
+        code = err.d.get('code')
+        if code is None:
+            # No error
+            return 1
+
+        UP_code = code
+        with tagswitch(code) as case:
+            if case(value_e.Int):
+                code = cast(value.Int, UP_code)
+                # return 0 if and only if it failed
+                return 1 if mops.Equal(code.i, mops.ZERO) else 0
+            else:
+                # This should never happen because the interpreter controls the
+                # contents of TryError()
+                raise AssertionError()
 
 
 class Error(vm._Builtin):
@@ -129,7 +178,7 @@ class Error(vm._Builtin):
         # use status 3 for expressions and 4 for encode/decode, and 10 "leaves
         # room" for others.
         # The user is of course free to choose status 1.
-        status = mops.BigTruncate(rd.NamedInt('status', 10))
+        status = mops.BigTruncate(rd.NamedInt('code', 10))
 
         # attach rest of named args to _error Dict
         properties = rd.RestNamed()

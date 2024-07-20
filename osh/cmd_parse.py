@@ -341,12 +341,11 @@ def _SplitSimpleCommandPrefix(words):
 def _MakeSimpleCommand(
         preparsed_list,  # type: List[ParsedAssignment]
         suffix_words,  # type: List[CompoundWord]
-        redirects,  # type: List[Redir]
         typed_args,  # type: Optional[ArgList]
         block,  # type: Optional[LiteralBlock]
 ):
     # type: (...) -> command.Simple
-    """Create an command.Simple node."""
+    """Create a command.Simple"""
 
     # FOO=(1 2 3) ls is not allowed.
     for preparsed in preparsed_list:
@@ -381,8 +380,7 @@ def _MakeSimpleCommand(
     _AppendMoreEnv(preparsed_list, more_env)
 
     # do_fork by default
-    return command.Simple(blame_tok, more_env, words3, redirects, typed_args,
-                          block, True)
+    return command.Simple(blame_tok, more_env, words3, typed_args, block, True)
 
 
 class VarChecker(object):
@@ -783,6 +781,31 @@ class CommandParser(object):
 
         return redirects
 
+    def _MaybeParseRedirectList(self, node):
+        # type: (command_t) -> command_t
+        """Try parsing redirects at the current position.
+
+        If there are any, then wrap the command_t argument with a
+        command.Redirect node.  Otherwise, return argument unchanged.
+        """
+        self._GetWord()
+        if self.c_kind != Kind.Redir:
+            return node
+
+        redirects = [self.ParseRedirect()]
+
+        while True:
+            # This prediction needs to ONLY accept redirect operators.  Should we
+            # make them a separate Kind?
+            self._GetWord()
+            if self.c_kind != Kind.Redir:
+                break
+
+            redirects.append(self.ParseRedirect())
+            self._SetNext()
+
+        return command.Redirect(node, redirects)
+
     def _ScanSimpleCommand(self):
         # type: () -> Tuple[List[Redir], List[CompoundWord], Optional[ArgList], Optional[LiteralBlock]]
         """YSH extends simple commands with typed args and blocks.
@@ -898,8 +921,7 @@ class CommandParser(object):
             prev_byte = self.lexer.ByteLookBack()
             if prev_byte not in (SPACE_CH, TAB_CH):
                 if self.parse_opts.parse_at():
-                    p_die('Space required before (',
-                          loc.Word(self.cur_word))
+                    p_die('Space required before (', loc.Word(self.cur_word))
                 else:
                     # inline func call like @sorted(x) is invalid in OSH, but the
                     # solution isn't a space
@@ -915,8 +937,7 @@ class CommandParser(object):
             # of a word, and we don't know if it will end.
             next_id = self.lexer.LookPastSpace(lex_mode_e.ShCommand)
             if next_id == Id.Op_RParen:
-                p_die('Empty arg list not allowed',
-                      loc.Word(self.cur_word))
+                p_die('Empty arg list not allowed', loc.Word(self.cur_word))
 
             typed_args = self.w_parser.ParseProcCallArgs(
                 grammar_nt.ysh_eager_arglist)
@@ -1181,13 +1202,7 @@ class CommandParser(object):
             assert len(redirects) != 0
             if typed_loc is not None:
                 p_die("Unexpected typed args", typed_loc)
-
-            simple = command.Simple.CreateNull()
-            simple.blame_tok = redirects[0].op
-            simple.more_env = []
-            simple.words = []
-            simple.redirects = redirects
-            return simple
+            return command.Redirect(command.NoOp, redirects)
 
         preparsed_list, suffix_words = _SplitSimpleCommandPrefix(words)
         if len(preparsed_list):
@@ -1218,11 +1233,21 @@ class CommandParser(object):
                     _MakeAssignPair(self.parse_ctx, preparsed, self.arena))
 
             left_tok = location.LeftTokenForCompoundWord(words[0])
-            return command.ShAssignment(left_tok, pairs, redirects)
+            assign_node = command.ShAssignment(left_tok, pairs)
+            if len(redirects):
+                return command.Redirect(assign_node, redirects)
+            else:
+                return assign_node
 
         kind, kw_token = word_.IsControlFlow(suffix_words[0])
 
         if kind == Kind.ControlFlow:
+            if not self.parse_opts.parse_ignored() and len(redirects):
+                p_die("Control flow shouldn't have redirects", kw_token)
+            if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
+                p_die("Control flow shouldn't have environment bindings",
+                      preparsed_list[0].left)
+
             if kw_token.id == Id.ControlFlow_Return:
                 # return x - inside procs and shell functions
                 # return (x) - inside funcs
@@ -1241,14 +1266,9 @@ class CommandParser(object):
                               typed_loc)
                     return command.Retval(kw_token, typed_args.pos_args[0])
 
+            # Except for return (x), we shouldn't have typed args
             if typed_loc is not None:
                 p_die("Unexpected typed args", typed_loc)
-            if not self.parse_opts.parse_ignored() and len(redirects):
-                p_die("Control flow shouldn't have redirects", kw_token)
-
-            if len(preparsed_list):  # FOO=bar local spam=eggs not allowed
-                p_die("Control flow shouldn't have environment bindings",
-                      preparsed_list[0].left)
 
             # Attach the token for errors.  (ShAssignment may not need it.)
             if len(suffix_words) == 1:
@@ -1269,15 +1289,21 @@ class CommandParser(object):
                 # Attach env bindings and redirects to the expanded node.
                 more_env = []  # type: List[EnvPair]
                 _AppendMoreEnv(preparsed_list, more_env)
-                exp = command.ExpandedAlias(expanded_node, redirects, more_env)
-                return exp
+                exp = command.ExpandedAlias(expanded_node, more_env)
+                if len(redirects):
+                    return command.Redirect(exp, redirects)
+                else:
+                    return exp
 
         # TODO: check that we don't have env1=x x[1]=y env2=z here.
 
         # FOO=bar printenv.py FOO
-        node = _MakeSimpleCommand(preparsed_list, suffix_words, redirects,
-                                  typed_args, block)
-        return node
+        node = _MakeSimpleCommand(preparsed_list, suffix_words, typed_args,
+                                  block)
+        if len(redirects):
+            return command.Redirect(node, redirects)
+        else:
+            return node
 
     def ParseBraceGroup(self):
         # type: () -> BraceGroup
@@ -1317,8 +1343,7 @@ class CommandParser(object):
         # would allow us to revert this back to None, which was changed in
         # https://github.com/oilshell/oil/pull/1211.  Choosing the C++ nullptr
         # behavior saves allocations, but is less type safe.
-        return BraceGroup(left, doc_token, c_list.children, [],
-                          right)  # no redirects yet
+        return BraceGroup(left, doc_token, c_list.children, right)
 
     def ParseDoGroup(self):
         # type: () -> command.DoGroup
@@ -1452,22 +1477,59 @@ class CommandParser(object):
 
         self._GetWord()
         if self.c_id == Id.KW_In:
-            # Ideally we would want ( not 'in'.  But we still have to fix the bug
-            # where we require a SPACE between in and (
-            #   for x in(y)   # should be accepted, but isn't
-
             expr_blame = word_.AsKeywordToken(self.cur_word)
 
             self._SetNext()  # skip in
-            if self.w_parser.LookPastSpace() == Id.Op_LParen:
+
+            next_id = self.w_parser.LookPastSpace()
+            #log('%s', Id_str(next_id))
+
+            if next_id == Id.Op_LParen:  # for x in (expr) {
                 enode = self.w_parser.ParseYshExprForCommand()
                 node.iterable = for_iter.YshExpr(enode, expr_blame)
 
-                # For simplicity, we don't accept for x in (obj); do ...
+                # We don't accept for x in (obj); do ...
                 self._GetWord()
                 if self.c_id != Id.Lit_LBrace:
                     p_die('Expected { after iterable expression',
                           loc.Word(self.cur_word))
+
+            elif next_id == Id.Redir_LessGreat:  # for x in <> {
+                # <> is Id.Redir_Great - reuse this for simplicity
+                w = self._Eat(Id.Redir_LessGreat)
+                p_die('Reserved syntax', loc.Word(self.cur_word))
+
+                #left = word_.AsOperatorToken(w)
+
+                #node.iterable = for_iter.Files(left, [])
+
+                ## Must be { not 'do'
+                #self._GetWord()
+                #if self.c_id != Id.Lit_LBrace:
+                #    p_die('Expected { after files', loc.Word(self.cur_word))
+
+            elif next_id == Id.Redir_Less:  # for x in < > {
+                w = self._Eat(Id.Redir_Less)
+                p_die('Reserved syntax', loc.Word(self.cur_word))
+
+                #left = word_.AsOperatorToken(w)
+
+                # TODO: we could accept
+                #
+                # for x in < README.md *.py > {
+                # for x in < @myfiles > {
+                #
+                # And set _filename _line_num, similar to awk
+
+                #self._Eat(Id.Redir_Great)
+
+                #node.iterable = for_iter.Files(left, [])
+
+                ## Must be { not 'do'
+                #self._GetWord()
+                #if self.c_id != Id.Lit_LBrace:
+                #    p_die('Expected { after files', loc.Word(self.cur_word))
+
             else:
                 semi_tok = None  # type: Optional[Token]
                 iter_words, semi_tok = self.ParseForWords()
@@ -1528,13 +1590,11 @@ class CommandParser(object):
 
             # for (( i = 0; i < 10; i++)
             n1 = self._ParseForExprLoop(for_kw)
-            n1.redirects = self._ParseRedirectList()
-            return n1
+            return self._MaybeParseRedirectList(n1)
         else:
             # for x in a b; do echo hi; done
             n2 = self._ParseForEachLoop(for_kw)
-            n2.redirects = self._ParseRedirectList()
-            return n2
+            return self._MaybeParseRedirectList(n2)
 
     def _ParseConditionList(self):
         # type: () -> condition_t
@@ -1577,8 +1637,7 @@ class CommandParser(object):
         else:
             body_node = self.ParseDoGroup()
 
-        # no redirects yet
-        return command.WhileUntil(keyword, cond, body_node, None)
+        return command.WhileUntil(keyword, cond, body_node)
 
     def ParseCaseArm(self):
         # type: () -> CaseArm
@@ -1726,8 +1785,7 @@ class CommandParser(object):
         arms_end = word_.AsOperatorToken(ate)
         arms_end.id = Id.Lit_RBrace
 
-        return command.Case(case_kw, to_match, arms_start, arms, arms_end,
-                            None)
+        return command.Case(case_kw, to_match, arms_start, arms, arms_end)
 
     def ParseOldCase(self, case_kw):
         # type: (Token) -> command.Case
@@ -1778,8 +1836,7 @@ class CommandParser(object):
         arms_end = word_.AsKeywordToken(ate)
 
         # no redirects yet
-        return command.Case(case_kw, to_match, arms_start, arms, arms_end,
-                            None)
+        return command.Case(case_kw, to_match, arms_start, arms, arms_end)
 
     def ParseCase(self):
         # type: () -> command.Case
@@ -1984,47 +2041,41 @@ class CommandParser(object):
         self._GetWord()
         if self.c_id == Id.Lit_LBrace:
             n1 = self.ParseBraceGroup()
-            n1.redirects = self._ParseRedirectList()
-            return n1
+            return self._MaybeParseRedirectList(n1)
         if self.c_id == Id.Op_LParen:
             n2 = self.ParseSubshell()
-            n2.redirects = self._ParseRedirectList()
-            return n2
+            return self._MaybeParseRedirectList(n2)
 
         if self.c_id == Id.KW_For:
-            # Note: Redirects parsed in this call.  POSIX for and bash for (( have
-            # redirects, but YSH for doesn't.
+            # Note: Redirects parsed in this call.  POSIX for and bash for ((
+            # have different nodetypes.
             return self.ParseFor()
         if self.c_id in (Id.KW_While, Id.KW_Until):
             keyword = word_.AsKeywordToken(self.cur_word)
             n3 = self.ParseWhileUntil(keyword)
-            n3.redirects = self._ParseRedirectList()
-            return n3
+            return self._MaybeParseRedirectList(n3)
 
         if self.c_id == Id.KW_If:
             n4 = self.ParseIf()
-            n4.redirects = self._ParseRedirectList()
-            return n4
+            return self._MaybeParseRedirectList(n4)
+
         if self.c_id == Id.KW_Case:
             n5 = self.ParseCase()
-            n5.redirects = self._ParseRedirectList()
-            return n5
+            return self._MaybeParseRedirectList(n5)
 
         if self.c_id == Id.KW_DLeftBracket:
             if not self.parse_opts.parse_dbracket():
                 p_die('Bash [[ not allowed in YSH (parse_dbracket)',
                       loc.Word(self.cur_word))
             n6 = self.ParseDBracket()
-            n6.redirects = self._ParseRedirectList()
-            return n6
+            return self._MaybeParseRedirectList(n6)
         if self.c_id == Id.Op_DLeftParen:
             if not self.parse_opts.parse_dparen():
                 p_die(
                     'Bash (( not allowed in YSH (parse_dparen, see OILS-ERR-14 for wart)',
                     loc.Word(self.cur_word))
             n7 = self.ParseDParen()
-            n7.redirects = self._ParseRedirectList()
-            return n7
+            return self._MaybeParseRedirectList(n7)
 
         # bash extensions: no redirects
         if self.c_id == Id.KW_Time:
@@ -2252,7 +2303,7 @@ class CommandParser(object):
         ate = self._Eat(Id.Right_Subshell)
         right = word_.AsOperatorToken(ate)
 
-        return command.Subshell(left, child, right, None)  # no redirects yet
+        return command.Subshell(left, child, right)
 
     def ParseDBracket(self):
         # type: () -> command.DBracket
@@ -2265,7 +2316,7 @@ class CommandParser(object):
         self._SetNext()  # skip [[
         b_parser = bool_parse.BoolParser(self.w_parser)
         bnode, right = b_parser.Parse()  # May raise
-        return command.DBracket(left, bnode, right, None)  # no redirects yet
+        return command.DBracket(left, bnode, right)
 
     def ParseDParen(self):
         # type: () -> command.DParen
@@ -2275,7 +2326,7 @@ class CommandParser(object):
         anode, right = self.w_parser.ReadDParen()
         assert anode is not None
 
-        return command.DParen(left, anode, right, None)  # no redirects yet
+        return command.DParen(left, anode, right)
 
     def ParseCommand(self):
         # type: () -> command_t
@@ -2413,9 +2464,9 @@ class CommandParser(object):
                 part0 = parts[0]
                 if part0.tag() == word_part_e.Literal:
                     tok = cast(Token, part0)
-                    if (match.IsValidVarName(lexer.LazyStr(tok)) and
-                            self.w_parser.LookPastSpace() == Id.Lit_Equals):
-                        assert tok.id == Id.Lit_Chars, tok
+                    if (tok.id == Id.Lit_Chars and
+                            self.w_parser.LookPastSpace() == Id.Lit_Equals and
+                            match.IsValidVarName(lexer.LazyStr(tok))):
 
                         if (len(self.hay_attrs_stack) and
                                 self.hay_attrs_stack[-1]):

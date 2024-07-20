@@ -231,6 +231,9 @@ test-invalid-examples() {
       */invalid_global.py)
         expected_status=2
         ;;
+      */invalid_python.py)
+        expected_status=5
+        ;;
       */invalid_switch.py)
         expected_status=5
         ;;
@@ -243,14 +246,36 @@ test-invalid-examples() {
   done
 }
 
+test-control-flow-graph() {
+  local mycpp=_bin/shwrap/mycpp_main
+  ninja $mycpp
+  for ex in mycpp/examples/*.py; do
+    local data_dir=testdata/control-flow-graph/$(basename -s .py $ex)
+    if ! test -d $data_dir; then
+      continue
+    fi
+    banner "$ex"
+
+    translate-example $ex
+    for fact_path in $data_dir/*.facts; do
+      local fact_file=$(basename $fact_path)
+      diff -u $data_dir/$fact_file _tmp/mycpp-facts/$fact_file
+    done
+  done
+}
+
 test-runtime() {
   # Run other unit tests, e.g. the GC tests
 
-  # Special test
+  if can-compile-32-bit; then
+    unit '' asan32+gcalways  # ASAN on 32-bit
+  else
+    log ''
+    log "*** Can't compile 32-bit binaries (gcc-multilib g++-multilib needed on Debian)"
+    log ''
+  fi
 
-  # TODO: Switch when the CI supports it
-  # We also want to change test/cpp-unit.sh all-tests
-
+  # TODO: Run with Clang UBSAN in CI as well
   local ubsan_compiler=cxx
   #local ubsan_compiler=clang
 
@@ -267,12 +292,6 @@ test-runtime() {
   unit '' asan
   unit '' asan+gcalways
   unit '' opt
-
-  if can-compile-32-bit; then
-    unit '' asan32+gcalways  # ASAN on 32-bit
-  else
-    log "Can't compile 32-bit binaries (gcc-multilib g++-multilib needed on Debian)"
-  fi
 }
 
 #
@@ -288,6 +307,8 @@ test-translator() {
   examples-variant '' asan+gcalways
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
+
+  run-test-func test-control-flow-graph _test/mycpp/test-cfg-examples.log
 
   # Runs tests in cxx-asan variant, and benchmarks in cxx-opt variant
   if ! ninja mycpp-logs-equal; then

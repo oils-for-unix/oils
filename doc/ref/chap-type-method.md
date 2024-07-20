@@ -1,27 +1,97 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Types and Methods (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-YSH Types and Methods
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes YSH types and methods.
+[Oils Reference](index.html) &mdash; Chapter **Types and Methods**
 
-<div id="toc">
 </div>
 
-## Null
+This chapter describes YSH types and methods.  There are also two OSH types for
+bash compatibility.
 
-## Bool
+<span class="in-progress">(in progress)</span>
 
-## Int
+<div id="dense-toc">
+</div>
 
-## Float
+## OSH
+
+These two types are for OSH code only.
+
+### BashArray
+
+A bash array holds a sequence of strings.  Some entries may be unset, i.e.
+*not* an empty string.
+
+See [sh-array][] for details.  In YSH, prefer to use [List](#List) instances.
+
+[sh-array]: chap-osh-assign.html#sh-array
+
+
+### BashAssoc
+
+A bash associative array is a mapping from strings to strings.
+
+See [sh-assoc][] for details.  In YSH, prefer to use [Dict](#Dict) instances.
+
+[sh-assoc]: chap-osh-assign.html#sh-assoc
+
+## Atom Types
+
+### Null
+
+The `Null` type has a single value spelled `null`.  (Related:
+[atom-literal][]).
+
+[atom-literal]: chap-expr-lang.html#atom-literal
+
+### Bool
+
+The `Bool` type has 2 values: `true` and `false`.  (Related: [atom-literal][]).
+
+## Number Types
+
+### Int
+
+Integers are currently 64-bit signed integers (on all platforms).  TODO: they
+should be arbitrary precision.
+
+There are many way of writing integers; see [int-literal][].
+
+In shell, ASCII strings like `'42'` are often used for calculations on
+integers.  But you can use a "real" integer type in YSH.
+
+[int-literal]: chap-expr-lang.html#int-literal
+
+
+### Float
+
+Floats are at least 32 bits wide.
+
+See [float-literal][] for how to denote them.
+
+[float-literal]: chap-expr-lang.html#float-literal
+
+<!-- TODO: reduce from 64-bit to 32-bit -->
 
 ## Str
+
+In Oils, strings may contains any sequence of bytes, which may be UTF-8
+encoded.
+
+Internal NUL bytes (`0x00`) are allowed.
+
+When passing such strings to say the [cd][] builtin, the string will be
+truncated before the NUL.  This is because most C functions like `chdir()` take
+NUL-terminated strings.
+
+[cd]: chap-builtin-cmd.html#cd
 
 ### find()
 
@@ -91,10 +161,10 @@ Matching is done based on bytes, not runes.
 
 ### endsWith()
 
-Like 'startsWith()` but returns true if the _end_ of the string matches.
+Like `startsWith()` but returns true if the _end_ of the string matches.
 
-    = b'123YSH' => endsWith("YSH")  # => true
-    = b'YSH123' => endsWith(/ d+ /) # => true
+    = b'123YSH' => endsWith("YSH")   # => true
+    = b'YSH123' => endsWith(/ d+ /)  # => true
 
 ### trim()
 
@@ -125,8 +195,8 @@ whitespace.
  - U+FEFF -- Zero-width no-break space `<ZWNBSP>`
 
 While the Unicode standard defines other codepoints as being spaces, Oils
-limits itself to just these codepoints so that the specifcation is stable,
-and doesn't depend on an external standard that has reclassify characters.
+limits itself to just these codepoints so that the specification is stable, and
+doesn't depend on an external standard that has reclassify characters.
 
 ### trimStart()
 
@@ -180,13 +250,119 @@ The `%start` or `^` metacharacter will only match when `pos` is zero.
     var m = 'aye' => leftMatch(/[aeiou]/)
     # matches 'a'
 
-`leftMatch()` Can be used to implement lexers that consome every byte of input.
+`leftMatch()` Can be used to implement lexers that consume every byte of input.
 
     var lexer = / <capture digit+> | <capture space+> /
 
 (Similar to Python's `re.match()`.)
 
+## List
+
+A List contains an ordered sequence of values.
+
+### List/append()
+
+Add an element to a list.
+
+    var fruits = :|apple banana pear|
+    call fruits->append("orange")
+    echo @fruits  # => apple banana pear orange
+
+Similar names: [append][]
+
+[append]: chap-index.html#append
+
+### pop()
+
+remove an element from a list and return it.
+
+    var fruits = :|apple banana pear orange|
+    var last = fruits->pop()  # "orange" is removed AND returned
+    echo $last                # => orange
+    echo @fruits              # => apple banana pear
+
+### extend()
+
+Extend an existing list with the elements of another list.
+
+    var foods = :|cheese chocolate|
+    var fruits = :|apple banana|
+    call foods->extend(fruits)
+    echo @foods  # => cheese chocolate apple banana
+
+### indexOf()
+
+Returns the first index of the element in the list, or -1 if it's not present.
+
+    var names = :| Jane Peter Joana Sam |
+    echo $[names => indexOf("Sam")]    # => 3
+    echo $[names => indexOf("Simon")]  # => -1
+
+### insert()
+
+### remove()
+
+### reverse()
+
+Reverses a list in place.
+
+    var fruits = :|apple banana pear|
+    call fruits->reverse()
+    echo @fruits  # => pear banana apple
+
+## Dict
+
+A Dict contains an ordered sequence of key-value pairs.  Given the key, the
+value can be retrieved efficiently.
+
+### keys()
+
+Returns all existing keys from a dict as a list of strings.
+
+    var en2fr = {
+      hello: "bonjour",
+      friend: "ami",
+      cat: "chat"
+    }
+    = en2fr => keys()
+    # => (List 0x4689)   ["hello","friend","cat"]
+
+### values()
+
+Similar to `keys()`, but returns the values of the dictionary.
+
+    var person = {
+      name: "Foo",
+      age: 25,
+      hobbies: :|walking reading|
+    }
+    = en2fr => values()]
+    # => (List 0x4689)   ["Foo",25,["walking","reading"]]
+
+### get()
+
+### erase()
+
+### inc()
+
+### accum()
+
+## Range
+  
+A `Range` is a pair of two numbers, like `42 .. 45`.
+
+Ranges are used for iteration; see [ysh-for][].
+
+[ysh-for]: chap-cmd-lang.html#ysh-for
+
+## Eggex
+
+An `Eggex` is a composable regular expression.  It can be spliced into other
+regular expressions.
+
 ## Match
+
+A `Match` is the result searching for an `Eggex` within a `Str`.
 
 ### group()
 
@@ -231,88 +407,6 @@ rather than its value.
 
     echo $[m => end('minute')]  # => 5 for '59'
 
-## List
-
-### append()
-
-Add an element to a list.
-
-    var fruits = :|apple banana pear|
-    call fruits->append("orange")
-    echo @fruits  # => apple banana pear orange
-
-### pop()
-
-remove an element from a list and return it.
-
-    var fruits = :|apple banana pear orange|
-    var last = fruits->pop()  # "orange" is removed AND returned
-    echo $last                # => orange
-    echo @fruits              # => apple banana pear
-
-### extend()
-
-Extend an existing list with the elements of another list.
-
-    var foods = :|cheese chocolate|
-    var fruits = :|apple banana|
-    call foods->extend(fruits)
-    echo @foods  # => cheese chocolate apple banana
-
-### indexOf()
-
-Returns the first index of the element in the list, or -1 if it's not present.
-
-    var names = :| Jane Peter Joana Sam |
-    echo $[names => indexOf("Sam")]    # => 3
-    echo $[names => indexOf("Simon")]  # => -1
-
-### insert()
-
-### remove()
-
-### reverse()
-
-Reverses a list in place.
-
-    var fruits = :|apple banana pear|
-    call fruits->reverse()
-    echo @fruits  # => pear banana apple
-
-## Dict
-
-### keys()
-
-Returns all existing keys from a dict as a list of strings.
-
-    var en2fr = {
-      hello: "bonjour",
-      friend: "ami",
-      cat: "chat"
-    }
-    = en2fr => keys()
-    # => (List 0x4689)   ["hello","friend","cat"]
-
-### values()
-
-Similar to `keys()`, but returns the values of the dictionary.
-
-    var person = {
-      name: "Foo",
-      age: 25,
-      hobbies: :|walking reading|
-    }
-    = en2fr => values()]
-    # => (List 0x4689)   ["Foo",25,["walking","reading"]]
-
-### get()
-
-### erase()
-
-### inc()
-
-### accum()
-
 ## Place
 
 ### setValue()
@@ -327,6 +421,56 @@ A Place is used as an "out param" by calling setValue():
     p (&x)
     echo x=$x  # => x=hi
 
+
+## Code Types
+
+### Expr
+
+An unevaluated expression.  You can create an `Expr` with an expression literal
+([expr-literal][]):
+
+    var expr = ^[42 + a[i]]
+
+[expr-literal]: chap-expr-lang.html#expr-lit
+
+### Command
+
+An unevaluated command.  You can create a `Command` with a "block expression"
+([block-expr][]):
+
+    var block = ^(echo $PWD; ls *.txt)
+
+[block-expr]: chap-expr-lang.html#block-expr
+
+### BuiltinFunc
+
+A func that's part of Oils, like `len()`.
+
+### BoundFunc
+
+The [thin-arrow][] and [fat-arrow][] create bound funcs:
+
+    var bound = '' => upper
+    var bound2 = [] -> append
+
+[thin-arrow]: chap-expr-lang.html#thin-arrow
+[fat-arrow]: chap-expr-lang.html#thin-arrow
+
+## Func
+
+User-defined functions.
+
+## Proc
+
+User-defined procs.
+
+## Module
+
+TODO:
+
+A module is a file with YSH code.
+
+<!-- can it be a directory or tree of files too? -->
 
 ## IO
 
@@ -349,7 +493,6 @@ An API the wraps the `$PS1` language.  For example, to simulate `PS1='\w\$ '`:
       call parts->append(' ')
       return (join(parts))
     }
-
 
 ### time()
 

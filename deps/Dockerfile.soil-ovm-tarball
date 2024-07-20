@@ -1,0 +1,77 @@
+FROM oilshell/soil-common
+
+# Copy again to prevent unsound caching
+COPY deps/from-apt.sh /home/uke/tmp/deps/from-apt.sh
+
+# layer-locales also has to install packages
+RUN --mount=type=cache,id=var-cache-apt,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh layer-locales && \
+    deps/from-apt.sh ovm-tarball
+
+RUN deps/from-apt.sh layer-python-symlink
+
+USER uke
+
+# Copy pre-built wedges
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/cmark/0.29.0 \
+  /wedge/oils-for-unix.org/pkg/cmark/0.29.0
+
+COPY --chown=uke \
+  _build/wedge/binary/oils-for-unix.org/pkg/re2c/3.0 \
+  /wedge/oils-for-unix.org/pkg/re2c/3.0
+
+# Shells for spec tests
+
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/bash/4.4 \
+  /home/uke/wedge/oils-for-unix.org/pkg/bash/4.4
+
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/bash/5.2.21 \
+  /home/uke/wedge/oils-for-unix.org/pkg/bash/5.2.21
+
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/busybox/1.35.0 \
+  /home/uke/wedge/oils-for-unix.org/pkg/busybox/1.35.0
+
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/dash/0.5.10.2 \
+  /home/uke/wedge/oils-for-unix.org/pkg/dash/0.5.10.2
+
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/mksh/R52c \
+  /home/uke/wedge/oils-for-unix.org/pkg/mksh/R52c
+
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/yash/2.49 \
+  /home/uke/wedge/oils-for-unix.org/pkg/yash/2.49
+
+COPY --chown=uke \
+  _build/wedge/relative/oils-for-unix.org/pkg/zsh/5.1.1 \
+  /home/uke/wedge/oils-for-unix.org/pkg/zsh/5.1.1
+
+# Should we use the Python 2.7.18 wedge instead of our own dir?  Probably not,
+# because it's
+
+# Copy into current directory
+COPY --chown=uke \
+  Python-2.7.13/ \
+  /home/uke/tmp/Python-2.7.13/
+
+COPY build/common.sh /home/uke/tmp/build/common.sh
+COPY deps/from-tar.sh /home/uke/tmp/deps/from-tar.sh
+
+# For bootstrapping the OVM build
+RUN deps/from-tar.sh layer-cpython
+
+#COPY devtools/run-task.sh /home/uke/tmp/devtools/run-task.sh
+#COPY test/spec-common.sh /home/uke/tmp/test/spec-common.sh
+#COPY test/spec-bin.sh /home/uke/tmp/test/spec-bin.sh
+
+#RUN test/spec-bin.sh all-steps
+
+CMD ["sh", "-c", "echo 'hello from oilshell/ovm-tarball'"]

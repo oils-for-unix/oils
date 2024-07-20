@@ -1,5 +1,4 @@
 ## compare_shells: bash dash mksh zsh
-## oils_failures_allowed: 1
 
 #### ~ expansion in assignment
 HOME=/home/bob
@@ -144,14 +143,11 @@ echo $x
 # Most shells agree on a different behavior, but with the OSH parsing model,
 # it's easier to agree with yash.  bash disagrees in a different way
 
-## OK bash STDOUT:
-/home/bar:/home/bar:~
+## STDOUT:
+/home/bar:/home/bar:/home/bar
 ## END
 ## OK osh/yash STDOUT:
 /home/bar:~:~
-## END
-## STDOUT:
-/home/bar:/home/bar:/home/bar
 ## END
 
 #### strict tilde

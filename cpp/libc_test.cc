@@ -1,7 +1,9 @@
 #include "cpp/libc.h"
 
+#include <locale.h>  // setlocale()
 #include <regex.h>   // regcomp()
 #include <unistd.h>  // gethostname()
+#include <wctype.h>  // towupper()
 
 #include "mycpp/runtime.h"
 #include "vendor/greatest.h"
@@ -57,14 +59,6 @@ TEST libc_test() {
 
   libc::print_time(0.1, 0.2, 0.3);
 
-  BigStr* s1 = (StrFromC("foo.py "))->strip();
-  ASSERT(libc::fnmatch(StrFromC("*.py"), s1));
-  ASSERT(!libc::fnmatch(StrFromC("*.py"), StrFromC("foo.p")));
-
-  // extended glob
-  ASSERT(libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.py")));
-  ASSERT(!libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.p")));
-
   PASS();
 }
 
@@ -83,7 +77,7 @@ static List<BigStr*>* Groups(BigStr* s, List<int>* indices) {
   return groups;
 }
 
-TEST regex_test() {
+TEST regex_wrapper_test() {
   BigStr* s1 = StrFromC("-abaacaaa");
   List<int>* indices = libc::regex_search(StrFromC("(a+).(a+)"), 0, s1, 0);
   List<BigStr*>* results = Groups(s1, indices);
@@ -104,6 +98,23 @@ TEST regex_test() {
   ASSERT_EQ(nullptr, results->at(1));
   ASSERT(str_equals(StrFromC("b"), results->at(2)));
 
+  // Like Unicode test below
+  indices = libc::regex_search(StrFromC("_._"), 0, StrFromC("_x_"), 0);
+  ASSERT(indices != nullptr);
+  ASSERT_EQ_FMT(2, len(indices), "%d");
+  ASSERT_EQ_FMT(0, indices->at(0), "%d");
+  ASSERT_EQ_FMT(3, indices->at(1), "%d");
+
+  // TODO(unicode)
+#if 0
+  //indices = libc::regex_search(StrFromC("_._"), 0, StrFromC("_\u03bc_"), 0);
+  indices = libc::regex_search(StrFromC("_._"), 0, StrFromC("_μ_"), 0);
+  ASSERT(indices != nullptr);
+  ASSERT_EQ_FMT(2, len(indices), "%d");
+  ASSERT_EQ_FMT(0, indices->at(0), "%d");
+  ASSERT_EQ_FMT(0, indices->at(0), "%d");
+#endif
+
   Tuple2<int, int>* result;
   BigStr* s = StrFromC("oXooXoooXoX");
   result = libc::regex_first_group_match(StrFromC("(X.)"), s, 0);
@@ -121,7 +132,7 @@ TEST regex_test() {
   PASS();
 }
 
-TEST libc_glob_test() {
+TEST glob_test() {
   // This depends on the file system
   auto files = libc::glob(StrFromC("*.testdata"));
   // 3 files are made by the shell wrapper
@@ -131,6 +142,25 @@ TEST libc_glob_test() {
 
   auto files2 = libc::glob(StrFromC("*.pyzzz"));
   ASSERT_EQ_FMT(0, len(files2), "%d");
+
+  PASS();
+}
+
+TEST fnmatch_test() {
+  BigStr* s1 = (StrFromC("foo.py "))->strip();
+  ASSERT(libc::fnmatch(StrFromC("*.py"), s1));
+  ASSERT(!libc::fnmatch(StrFromC("*.py"), StrFromC("foo.p")));
+
+  // Unicode - ? is byte or code point?
+  ASSERT(libc::fnmatch(StrFromC("_?_"), StrFromC("_x_")));
+
+  // TODO(unicode)
+  // ASSERT(libc::fnmatch(StrFromC("_?_"), StrFromC("_\u03bc_")));
+  // ASSERT(libc::fnmatch(StrFromC("_?_"), StrFromC("_μ_")));
+
+  // extended glob
+  ASSERT(libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.py")));
+  ASSERT(!libc::fnmatch(StrFromC("*(foo|bar).py"), StrFromC("foo.p")));
 
   PASS();
 }
@@ -248,6 +278,98 @@ TEST regex_alt_with_capture() {
   PASS();
 }
 
+TEST regex_unicode() {
+  regex_t pat;
+
+  // 1 or 2 bytes
+  // const char* p = "_..?_";
+  // const char* p = "_[^a]_";
+  const char* p = "_._";  // 1 byte, not code point?
+
+  if (regcomp(&pat, p, REG_EXTENDED) != 0) {
+    FAIL();
+  }
+  int outlen = pat.re_nsub + 1;  // number of captures
+  regmatch_t* pmatch =
+      static_cast<regmatch_t*>(malloc(sizeof(regmatch_t) * outlen));
+
+  int result;
+
+  const char* bad = "_xyz_";
+  result = regexec(&pat, bad, outlen, pmatch, 0);
+  ASSERT_EQ_FMT(1, result, "%d");  // does not match
+
+  const char* a = "_x_";
+  result = regexec(&pat, a, outlen, pmatch, 0);
+  ASSERT_EQ_FMT(0, result, "%d");
+
+  // Doesn't change anything
+  // int lc_what = LC_ALL;
+  int lc_what = LC_CTYPE;
+
+  // char* saved_locale = setlocale(LC_ALL, "");
+  // char* saved_locale = setlocale(LC_ALL, NULL);
+
+  // char* saved_locale = setlocale(lc_what, NULL);
+
+#if 0
+  // Doesn't change anything?
+  //if (setlocale(LC_CTYPE, "C.utf8") == NULL) {
+  if (setlocale(LC_CTYPE, "en_US.UTF-8") == NULL) {
+    log("Couldn't set locale to C.utf8");
+    FAIL();
+  }
+#endif
+
+  // const char* u = "_μ_";
+  const char* u = "_\u03bc_";
+  log("a = %d bytes", strlen(a));
+  log("u = %d bytes", strlen(u));
+  result = regexec(&pat, u, outlen, pmatch, 0);
+
+#if 0
+  if (setlocale(lc_what, saved_locale) == NULL) {
+    log("Couldn't restore locale");
+    FAIL();
+  }
+#endif
+
+  free(pmatch);  // Clean up before test failures
+  regfree(&pat);
+
+  // TODO(unicode)
+  // ASSERT_EQ_FMT(0, result, "%d");
+
+  PASS();
+}
+
+TEST casefold_test() {
+#if 0
+  // Turkish
+  if (setlocale(LC_CTYPE, "tr_TR.utf8") == NULL) {
+    log("Couldn't set locale to tr_TR.utf8");
+    FAIL();
+  }
+#endif
+
+  // LC_CTYPE_MASK instead of LC_CTYPE
+  locale_t turkish = newlocale(LC_CTYPE_MASK, "tr_TR.utf8", NULL);
+
+  int u = toupper('i');
+  int wu = towupper('i');
+  int wul = towupper_l('i', turkish);
+
+  // Regular: upper case i is I, 73
+  // Turkish: upper case is 304
+  log("upper = %d", u);
+  log("wide upper = %d", wu);
+  log("wide upper locale = %d", wul);
+
+  freelocale(turkish);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -258,8 +380,9 @@ int main(int argc, char** argv) {
   RUN_TEST(hostname_test);
   RUN_TEST(realpath_test);
   RUN_TEST(libc_test);
-  RUN_TEST(regex_test);
-  RUN_TEST(libc_glob_test);
+  RUN_TEST(regex_wrapper_test);
+  RUN_TEST(glob_test);
+  RUN_TEST(fnmatch_test);
   RUN_TEST(for_test_coverage);
 
   RUN_TEST(regex_unanchored);
@@ -268,6 +391,10 @@ int main(int argc, char** argv) {
   RUN_TEST(regex_repeat_with_capture);
   RUN_TEST(regex_alt_with_capture);
   RUN_TEST(regex_nested_capture);
+  RUN_TEST(regex_unicode);
+
+  // Crashes in CI?  Because of Turkish locale?
+  // RUN_TEST(casefold_test);
 
   gHeap.CleanProcessExit();
 
