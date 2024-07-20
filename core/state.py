@@ -2309,6 +2309,34 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
+class Procs:
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        self.mem = mem
+        self.procs = {}  # type: Dict[str, value.Proc]
+
+    def SetProc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.mem.var_stack[0][name] = Cell(False, False, False, proc)
+
+    def SetShFunc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.procs[name] = proc
+
+    def GetProc(self, name):
+        # type: (str) -> value.Proc
+        if name in self.mem.var_stack[0]:
+            maybe_proc = self.mem.var_stack[0][name]
+            if maybe_proc.val.tag() == value_e.Proc:
+                return cast(value.Proc, maybe_proc.val)
+
+        if name in self.procs:
+            return self.procs[name]
+
+        return None
+
+
 #
 # Wrappers to Set Variables
 #

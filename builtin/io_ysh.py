@@ -45,7 +45,7 @@ class Pp(_Builtin):
     """
 
     def __init__(self, mem, errfmt, procs, arena):
-        # type: (state.Mem, ErrorFormatter, Dict[str, value.Proc], Arena) -> None
+        # type: (state.Mem, ErrorFormatter, state.Procs, Arena) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.procs = procs
         self.arena = arena
@@ -130,18 +130,19 @@ class Pp(_Builtin):
             names, locs = arg_r.Rest2()
             if len(names):
                 for i, name in enumerate(names):
-                    node = self.procs.get(name)
+                    node = self.procs.GetProc(name)
                     if node is None:
                         self.errfmt.Print_('Invalid proc %r' % name,
                                            blame_loc=locs[i])
                         return 1
             else:
-                names = sorted(self.procs)
+                # TODO: can we list procs and not just sh-funcs too?
+                names = sorted(self.procs.procs)  # also this is ugly...
 
             # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
-                proc = self.procs[name]  # must exist
+                proc = self.procs.GetProc(name)  # must exist
                 #log('Proc %s', proc)
                 body = proc.body
 

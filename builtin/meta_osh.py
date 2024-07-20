@@ -248,7 +248,7 @@ class Command(vm._Builtin):
     def __init__(
             self,
             shell_ex,  # type: vm._Executor
-            funcs,  # type: Dict[str, value.Proc]
+            funcs,  # type: state.Procs
             aliases,  # type: Dict[str, str]
             search_path,  # type: state.SearchPath
     ):
@@ -351,7 +351,7 @@ class Builtin(vm._Builtin):
 class RunProc(vm._Builtin):
 
     def __init__(self, shell_ex, procs, errfmt):
-        # type: (vm._Executor, Dict[str, value.Proc], ui.ErrorFormatter) -> None
+        # type: (vm._Executor, state.Procs, ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex
         self.procs = procs
         self.errfmt = errfmt
@@ -367,7 +367,7 @@ class RunProc(vm._Builtin):
             raise error.Usage('requires arguments', loc.Missing)
 
         name = argv[0]
-        if name not in self.procs:
+        if not self.procs.GetProc(name):
             self.errfmt.PrintMessage('runproc: no proc named %r' % name)
             return 1
 
@@ -382,7 +382,7 @@ class RunProc(vm._Builtin):
 
 def _ResolveName(
         name,  # type: str
-        funcs,  # type: Dict[str, value.Proc]
+        funcs,  # type: state.Procs
         aliases,  # type: Dict[str, str]
         search_path,  # type: state.SearchPath
         do_all,  # type: bool
@@ -394,7 +394,7 @@ def _ResolveName(
 
     results = []  # type: List[Tuple[str, str, Optional[str]]]
 
-    if name in funcs:
+    if funcs and funcs.GetProc(name):
         results.append((name, 'function', no_str))
 
     if name in aliases:
@@ -426,7 +426,7 @@ class Type(vm._Builtin):
 
     def __init__(
             self,
-            funcs,  # type: Dict[str, value.Proc]
+            funcs,  # type: state.Procs
             aliases,  # type: Dict[str, str]
             search_path,  # type: state.SearchPath
             errfmt,  # type: ui.ErrorFormatter
@@ -443,7 +443,7 @@ class Type(vm._Builtin):
         arg = arg_types.type(attrs.attrs)
 
         if arg.f:  # suppress function lookup
-            funcs = {}  # type: Dict[str, value.Proc]
+            funcs = None  # type: state.Procs
         else:
             funcs = self.funcs
 

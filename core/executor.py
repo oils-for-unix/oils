@@ -110,7 +110,7 @@ class ShellExecutor(vm._Executor):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, _Builtin]
             search_path,  # type: state.SearchPath
@@ -282,7 +282,7 @@ class ShellExecutor(vm._Executor):
             # Pitfall: What happens if there are two of the same name?  I guess
             # that's why you have = and 'type' inspect them
 
-            proc_node = self.procs.get(arg0)
+            proc_node = self.procs.GetProc(arg0)
             if proc_node is not None:
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()

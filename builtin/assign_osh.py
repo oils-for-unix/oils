@@ -363,7 +363,7 @@ class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
     def __init__(self, mem, procs, exec_opts, errfmt):
-        # type: (Mem, Dict[str, value.Proc], optview.Exec, ui.ErrorFormatter) -> None
+        # type: (Mem, state.Procs, optview.Exec, ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.exec_opts = exec_opts
@@ -373,7 +373,7 @@ class NewVar(vm._AssignBuiltin):
         # type: (List[str]) -> int
         status = 0
         for name in names:
-            if name in self.procs:
+            if self.procs.GetProc(name):
                 print(name)
                 # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
                 # could use that too.
@@ -407,7 +407,7 @@ class NewVar(vm._AssignBuiltin):
                 status = self._PrintFuncs(names)
             else:
                 # bash quirk: with no names, they're printed in a different format!
-                for func_name in sorted(self.procs):
+                for func_name in sorted(self.procs.procs):  # TODO
                     print('declare -f %s' % (func_name))
             return status
 
@@ -496,7 +496,7 @@ class Unset(vm._Builtin):
     def __init__(
             self,
             mem,  # type: state.Mem
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             unsafe_arith,  # type: sh_expr_eval.UnsafeArith
             errfmt,  # type: ui.ErrorFormatter
     ):
@@ -526,7 +526,9 @@ class Unset(vm._Builtin):
             return False
 
         if proc_fallback and not found:
-            mylib.dict_erase(self.procs, arg)
+            # TODO: Hmmmm, this is an interesting interaction. Is this right?
+            mylib.dict_erase(self.procs.procs, arg)
+            # mylib.dict_erase(self.procs, arg)
 
         return True
 
@@ -540,7 +542,9 @@ class Unset(vm._Builtin):
             location = arg_locs[i]
 
             if arg.f:
-                mylib.dict_erase(self.procs, name)
+                # TODO: here too
+                mylib.dict_erase(self.procs.procs, name)
+                # mylib.dict_erase(self.procs, name)
 
             elif arg.v:
                 if not self._UnsetVar(name, location, False):
