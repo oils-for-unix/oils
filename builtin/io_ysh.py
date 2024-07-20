@@ -7,7 +7,6 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
-from _devbuild.gen.value_asdl import value
 from asdl import format as fmt
 from core import error
 from core.error import e_usage
@@ -21,7 +20,7 @@ from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import TYPE_CHECKING, cast, Dict
+from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from core.alloc import Arena
     from core.ui import ErrorFormatter

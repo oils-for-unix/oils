@@ -23,7 +23,7 @@ from osh import cmd_eval
 from osh import sh_expr_eval
 from data_lang import j8_lite
 
-from typing import cast, Optional, Dict, List, TYPE_CHECKING
+from typing import cast, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from core import optview

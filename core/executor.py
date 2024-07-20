@@ -14,7 +14,6 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
-from _devbuild.gen.value_asdl import value
 from builtin import hay_ysh
 from core import dev
 from core import error
