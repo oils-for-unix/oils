@@ -1,17 +1,24 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Word Language (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Word Language
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes the word language
-for OSH and YSH.
+[Oils Reference](index.html) &mdash;
+Chapter **Word Language**
 
-<div id="toc">
+</div>
+
+This chapter describes the word language for OSH and YSH.  Words evaluate to
+strings, or arrays of strings.
+
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
 
 <h2 id="expression">Expressions to Words</h2>
@@ -108,6 +115,17 @@ Used as a shortcut for a user's home directory:
 
     ~/src     # my home dir
     ~bob/src  # user bob's home dir
+
+### proc-sub
+
+Open stdout as a named file in `/dev/fd`, which can be passed to a command:
+
+    diff <(sort L.txt) <(sort R.txt)
+
+Open stdin as a named file in `/dev/fd`:
+
+    seq 3 | tee >(sleep 1; tac)
+
 
 ## Var Ops
 

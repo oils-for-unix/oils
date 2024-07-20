@@ -116,7 +116,7 @@ Other:
 
 Not unicode aware:
 
-- `strcmp()` does byte-wise and UTF-wise comparisons?
+- `strcmp()` does byte-wise and UTF-8 wise comparisons?
 
 ### Data Languages
 
@@ -171,6 +171,18 @@ Not sure:
 ## Tips
 
 - The GNU `iconv` program converts text from one encoding to another.
+
+<!--
+## Spec Tests
+
+June 2024 notes:
+
+- `spec/var-op-patsub` has failing cases, e.g. `LC_ALL=C`
+  - ${s//?/a}
+- glob() and fnmatch() seem to be OK?   As long as locale is UTF-8.
+
+-->
+
 
 
 <!--

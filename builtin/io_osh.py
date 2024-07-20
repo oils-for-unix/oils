@@ -79,7 +79,8 @@ class Echo(vm._Builtin):
 
                     p = word_compile.EvalCStringToken(id_, s)
 
-                    # Unusual behavior: '\c' prints what is there and aborts processing!
+                    # Unusual behavior: '\c' prints what is there and aborts
+                    # processing!
                     if p is None:
                         backslash_c = True
                         break
@@ -93,15 +94,18 @@ class Echo(vm._Builtin):
             # Replace it
             argv = new_argv
 
+        buf = mylib.BufWriter()
+
         #log('echo argv %s', argv)
         for i, a in enumerate(argv):
             if i != 0:
-                self.f.write(' ')  # arg separator
-            self.f.write(a)
+                buf.write(' ')  # arg separator
+            buf.write(a)
 
         if not arg.n and not backslash_c:
-            self.f.write('\n')
+            buf.write('\n')
 
+        self.f.write(buf.getvalue())
         return 0
 
 
@@ -127,16 +131,14 @@ class MapFile(vm._Builtin):
         while True:
             # bash uses this slow algorithm; YSH could provide read --all-lines
             try:
-                line = read_osh.ReadLineSlowly(self.cmd_ev)
+                line, _ = read_osh.ReadLineSlowly(self.cmd_ev,
+                                                  with_eol=not arg.t)
             except pyos.ReadError as e:
                 self.errfmt.PrintMessage("mapfile: read() error: %s" %
                                          posix.strerror(e.err_num))
                 return 1
             if len(line) == 0:
                 break
-            # note: at least on Linux, bash doesn't strip \r\n
-            if arg.t and line.endswith('\n'):
-                line = line[:-1]
             lines.append(line)
 
         state.BuiltinSetArray(self.mem, var_name, lines)

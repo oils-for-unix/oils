@@ -8,7 +8,10 @@ set -o errexit
 
 # sourced
 WEDGE_NAME='bash'
-WEDGE_VERSION='4.4'
+
+# Validate requested version against this list
+# The global variable WEDGE_VERSION gets SET after validation.
+WEDGE_VERSION_LIST='4.4 5.2 5.2.21'
 
 wedge-make() {
   local src_dir=$1
@@ -36,4 +39,10 @@ wedge-smoke-test() {
   local install_dir=$1
 
   $install_dir/bin/bash -c 'echo "hi from bash"'
+  $install_dir/bin/bash --version
+
+  # Create bash-4.4 and bash-5.2 symlinks for use in spec tests
+  pushd $install_dir/bin
+  ln -s -v bash bash-$WEDGE_VERSION
+  popd
 }

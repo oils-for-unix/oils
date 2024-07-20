@@ -625,7 +625,7 @@ RuntimeReport = function(in_dir, out_dir) {
 }
 
 VmBaselineReport = function(in_dir, out_dir) {
-  vm = read.csv(file.path(in_dir, 'vm-baseline.csv'))
+  vm = readTsv(file.path(in_dir, 'vm-baseline.tsv'))
   #print(vm)
 
   # Not using DistinctHosts() because field host_hash isn't collected
@@ -644,7 +644,7 @@ VmBaselineReport = function(in_dir, out_dir) {
 
   print(vm)
 
-  writeCsv(vm, file.path(out_dir, 'vm-baseline'))
+  writeTsv(vm, file.path(out_dir, 'vm-baseline'))
 }
 
 WriteOvmBuildDetails = function(distinct_hosts, distinct_compilers, out_dir) {

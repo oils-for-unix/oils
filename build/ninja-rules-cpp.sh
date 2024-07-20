@@ -293,8 +293,9 @@ link() {
 
   local compiler=$1
   local variant=$2
-  local out=$3
-  shift 3
+  local more_link_flags=$3
+  local out=$4
+  shift 4
   # rest are inputs
 
   setglobal_link_flags $variant
@@ -311,7 +312,7 @@ link() {
   fi
   # IMPORTANT: Flags like -ltcmalloc have to come AFTER objects!  Weird but
   # true.
-  $prefix "$cxx" -o "$out" "$@" $link_flags
+  $prefix "$cxx" -o "$out" "$@" $link_flags $more_link_flags
 }
 
 compile_and_link() {

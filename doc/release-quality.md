@@ -4,7 +4,7 @@ all_docs_url: -
 version_url: -
 ---
 
-Oils 0.21.0 Quality
+Oils 0.22.0 Quality
 ===================
 
 <!-- NOTE: This file is published to /release/$VERSION/quality.html -->
@@ -110,15 +110,15 @@ compared with the shell interpreter?
 - Generated C++ code
   - [oils-cpp](pub/metrics.wwz/line-counts/oils-cpp.txt).  The C++ code in the
     `oils-for-unix` tarball.
-  - [preprocessed](pub/metrics.wwz/preprocessed/index.html).  How much code is
+  - [preprocessed](pub/metrics.wwz/preprocessed/-wwz-index).  How much code is
     passed to the compiler?
     - [cxx-dbg](pub/metrics.wwz/preprocessed/cxx-dbg.txt),
       [cxx-opt](pub/metrics.wwz/preprocessed/cxx-opt.txt)
-  - [Binary code size](pub/metrics.wwz/oils-for-unix/index.html) reported by
+  - [Binary code size](pub/metrics.wwz/oils-for-unix/-wwz-index) reported by
     [Bloaty][].  How much code is output by the compiler?
     - [overview](pub/metrics.wwz/oils-for-unix/overview.txt),
       [symbols](pub/metrics.wwz/oils-for-unix/symbols.txt)
-
+- [Doc Metrics](doc/metrics.txt)
 
 [cloc]: https://github.com/AlDanial/cloc
 [Bloaty]: https://github.com/google/bloaty

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: dash bash mksh zsh ash
 
 # printf
@@ -340,15 +340,55 @@ printf '[%u]\n' 42
 printf '[%o]\n' 42
 printf '[%x]\n' 42
 printf '[%X]\n' 42
+echo
+
 printf '[%X]\n' \'a  # if first character is a quote, use character code
 printf '[%X]\n' \'ab # extra chars ignored
+
 ## STDOUT:
 [42]
 [52]
 [2a]
 [2A]
+
 [61]
 [61]
+## END
+
+#### unsigned / octal / hex big
+
+for big in $(( 1 << 32 )) $(( (1 << 63) - 1 )); do
+  printf '[%u]\n' $big
+  printf '[%o]\n' $big
+  printf '[%x]\n' $big
+  printf '[%X]\n' $big
+  echo
+done
+
+## STDOUT:
+[4294967296]
+[40000000000]
+[100000000]
+[100000000]
+
+[9223372036854775807]
+[777777777777777777777]
+[7fffffffffffffff]
+[7FFFFFFFFFFFFFFF]
+
+## END
+
+## BUG mksh STDOUT:
+[1]
+[1]
+[1]
+[1]
+
+[2147483647]
+[17777777777]
+[7fffffff]
+[7FFFFFFF]
+
 ## END
 
 #### empty string (osh is more strict)
@@ -360,7 +400,7 @@ printf '%d\n' ''
 0
 ## END
 
-#### No char after ' (osh is more strict)
+#### No char after ' => zero code point
 
 # most shells use 0 here
 printf '%d\n' \'
@@ -372,18 +412,177 @@ printf '%d\n' \"
 0
 ## END
 
-#### Unicode char with ' (osh is more strict)
+#### Unicode char with ' 
+#env
 
 # the mu character is U+03BC
 
 printf '%x\n' \'μ
+printf '%u\n' \'μ
+printf '%o\n' \'μ
+echo
+
+u3=三
+# u4=😘
+
+printf '%x\n' \'$u3
+printf '%u\n' \'$u3
+printf '%o\n' \'$u3
+echo
+
+# mksh DOES respect unicode on the new Debian bookworm.
+# but even building the SAME SOURCE from scratch, somehow it doesn't on Ubuntu 8.
+# TBH I should probably just upgrade the mksh version.
+#
+# $ ./mksh -c 'printf "%u\n" \"$1' dummy $'\u03bc'
+# printf: warning: : character(s) following character constant have been ignored
+# 206
+# 
+# andy@lenny:~/wedge/oils-for-unix.org/pkg/mksh/R52c$ cat /etc/os-release
+# NAME="Ubuntu"
+# VERSION="18.04.5 LTS (Bionic Beaver)"
+# ID=ubuntu
+# ID_LIKE=debian
+# PRETTY_NAME="Ubuntu 18.04.5 LTS"
+# VERSION_ID="18.04"
+# HOME_URL="https://www.ubuntu.com/"
+# SUPPORT_URL="https://help.ubuntu.com/"
+# BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+# PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+# VERSION_CODENAME=bionic
+# UBUNTU_CODENAME=bionic
+# andy@lenny:~/wedge/oils-for-unix.org/pkg/mksh/R52c$ env|egrep 'LC|LANG'
+# LANG=en_US.UTF-8
+# andy@lenny:~/wedge/oils-for-unix.org/pkg/mksh/R52c$ LC_CTYPE=C.UTF-8 ./mksh -c 'printf "%u\n" \"$1' dummy $'\u03bc'
+# printf: warning: : character(s) following character constant have been ignored
+# 206
+# andy@lenny:~/wedge/oils-for-unix.org/pkg/mksh/R52c$ LANG=C.UTF-8 ./mksh -c 'printf "%u\n" \"$1' dummy $'\u03bc'
+# printf: warning: : character(s) following character constant have been ignored
+# 206
+# andy@lenny:~/wedge/oils-for-unix.org/pkg/mksh/R52c$ LC_ALL=C.UTF-8 ./mksh -c 'printf "%u\n" \"$1' dummy $'\u03bc'
+# printf: warning: : character(s) following character constant have been ignored
+# 206
+# andy@lenny:~/wedge/oils-for-unix.org/pkg/mksh/R52c$ LC_ALL=en_US.UTF-8 ./mksh -c 'printf "%u\n" \"$1' dummy $'\u03bc'
+# printf: warning: : character(s) following character constant have been ignored
+# 206
+# andy@lenny:~/wedge/oils-for-unix.org/pkg/mksh/R52c$ LC_ALL=en_US.utf-8 ./mksh -c 'printf "%u\n" \"$1' dummy $'\u03bc'
+# printf: warning: : character(s) following character constant have been ignored
+# 206
+
 
 ## STDOUT:
 3bc
+956
+1674
+
+4e09
+19977
+47011
+
 ## END
-## BUG dash/mksh/ash STDOUT:
+## BUG dash/ash/mksh STDOUT:
 ce
+206
+316
+
+e4
+228
+344
+
 ## END
+
+#### Invalid UTF-8
+
+echo bytes1
+not_utf8=$(python2 -c 'print("\xce\xce")')
+
+printf '%x\n' \'$not_utf8
+printf '%u\n' \'$not_utf8
+printf '%o\n' \'$not_utf8
+echo
+
+echo bytes2
+not_utf8=$(python2 -c 'print("\xbc\xbc")')
+printf '%x\n' \'$not_utf8
+printf '%u\n' \'$not_utf8
+printf '%o\n' \'$not_utf8
+echo
+
+# Copied from data_lang/utf8_test.cc
+
+echo overlong2
+overlong2=$(python2 -c 'print("\xC1\x81")')
+printf '%x\n' \'$overlong2
+printf '%u\n' \'$overlong2
+printf '%o\n' \'$overlong2
+echo
+
+echo overlong3
+overlong3=$(python2 -c 'print("\xE0\x81\x81")')
+printf '%x\n' \'$overlong3
+printf '%u\n' \'$overlong3
+printf '%o\n' \'$overlong3
+echo
+
+## STDOUT:
+bytes1
+ce
+206
+316
+
+bytes2
+bc
+188
+274
+
+overlong2
+c1
+193
+301
+
+overlong3
+e0
+224
+340
+
+## END
+
+
+#### Too large
+
+echo too large
+too_large=$(python2 -c 'print("\xF4\x91\x84\x91")')
+printf '%x\n' \'$too_large
+printf '%u\n' \'$too_large
+printf '%o\n' \'$too_large
+echo
+
+## STDOUT:
+too large
+111111
+1118481
+4210421
+
+## END
+
+## BUG dash/ash/mksh STDOUT:
+too large
+f4
+244
+364
+
+## END
+
+# osh rejects code points that are too large for a DIFFERENT reason
+
+## OK osh STDOUT:
+too large
+f4
+244
+364
+
+## END
+
 
 #### negative numbers with unsigned / octal / hex
 printf '[%u]\n' -42

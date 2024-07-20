@@ -1,3 +1,4 @@
+## compare_shells: dash bash-4.4 mksh zsh
 
 #### implicit for loop
 # This is like "for i in $@".

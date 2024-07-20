@@ -1,8 +1,8 @@
 
-#### module
+#### source-guard
 shopt --set ysh:upgrade
 
-module 'main' || return 0
+source-guard 'main' || return 0
 source $REPO_ROOT/spec/testdata/module/common.ysh
 source $REPO_ROOT/spec/testdata/module/module1.ysh
 ## STDOUT:

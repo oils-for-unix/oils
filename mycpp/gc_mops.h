@@ -21,8 +21,13 @@ typedef int64_t BigInt;
 extern const BigInt ZERO;
 extern const BigInt ONE;
 extern const BigInt MINUS_ONE;
+extern const BigInt MINUS_TWO;
 
 BigStr* ToStr(BigInt b);
+BigStr* ToOctal(BigInt b);
+BigStr* ToHexUpper(BigInt b);
+BigStr* ToHexLower(BigInt b);
+
 BigInt FromStr(BigStr* s, int base = 10);
 
 inline int BigTruncate(BigInt b) {
@@ -31,6 +36,10 @@ inline int BigTruncate(BigInt b) {
 
 inline BigInt IntWiden(int b) {
   return static_cast<BigInt>(b);
+}
+
+inline BigInt FromC(int64_t i) {
+  return i;
 }
 
 inline BigInt FromBool(bool b) {

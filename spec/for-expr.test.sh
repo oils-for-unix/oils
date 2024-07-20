@@ -1,4 +1,5 @@
-#
+## compare_shells: bash-4.4 zsh
+
 # Constructs borrowed from ksh.  Hm I didn't realize zsh also implements these!
 # mksh implements most too.
 
@@ -115,3 +116,58 @@ for ((i = $"3"; i < $"5"; ++i)); do echo $i; done
 ## OK zsh STDOUT:
 ## END
 
+
+#### Integers near 31, 32, 62 bits
+
+# Hm this was never a bug, but it's worth testing.
+# The bug was EvalToInt() in the condition.
+
+for base in 31 32 62; do
+
+  start=$(( (1 << $base) - 2))
+  end=$(( (1 << $base) + 2))
+
+  for ((i = start; i < end; ++i)); do
+    echo $i
+  done
+  echo ---
+done
+
+## STDOUT:
+2147483646
+2147483647
+2147483648
+2147483649
+---
+4294967294
+4294967295
+4294967296
+4294967297
+---
+4611686018427387902
+4611686018427387903
+4611686018427387904
+4611686018427387905
+---
+## END
+
+
+#### Condition that's greater than 32 bits
+
+iters=0
+
+for ((i = 1 << 32; i; ++i)); do
+  echo $i
+  iters=$(( iters + 1 ))
+  if test $iters -eq 5; then
+    break
+  fi
+done
+
+## STDOUT:
+4294967296
+4294967297
+4294967298
+4294967299
+4294967300
+## END

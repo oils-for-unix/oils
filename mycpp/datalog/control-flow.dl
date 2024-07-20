@@ -1,0 +1,8 @@
+.once
+
+.type Function <: symbol
+.type Statement <: number
+
+// True if there is an edge from s1 to s2 in the control flow graph of f.
+.decl cf_edge(f:Function, s1:Statement, s2:Statement)
+.input cf_edge

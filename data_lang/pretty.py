@@ -74,6 +74,8 @@ maximum line width.
 # group printed flat, then it will print flat. This takes into account not only
 # the group itself, but the content before and after it on the same line.
 #
+# IfFlat(a, b) prints a if in flat mode or b otherwise.
+#
 # ~ Measures ~
 #
 # The algorithm used here is close to the one originally described by Wadler,
@@ -112,9 +114,18 @@ _ = log
 ################
 
 
-def _StrWidth(string):
+def TryUnicodeWidth(s):
     # type: (str) -> int
-    return libc.wcswidth(string)
+    try:
+        width = libc.wcswidth(s)
+    except UnicodeError:
+        # e.g. en_US.UTF-8 locale missing, just return the number of bytes
+        width = len(s)
+
+    if width == -1:  # non-printable wide char
+        return len(s)
+
+    return width
 
 
 def _EmptyMeasure():
@@ -161,13 +172,13 @@ def _SuffixLen(measure):
 def _Text(string):
     # type: (str) -> MeasuredDoc
     """Print `string` (which must not contain a newline)."""
-    return MeasuredDoc(doc.Text(string), Measure(_StrWidth(string), -1))
+    return MeasuredDoc(doc.Text(string), Measure(TryUnicodeWidth(string), -1))
 
 
 def _Break(string):
     # type: (str) -> MeasuredDoc
     """If in `flat` mode, print `string`, otherwise print `\n`."""
-    return MeasuredDoc(doc.Break(string), Measure(_StrWidth(string), 0))
+    return MeasuredDoc(doc.Break(string), Measure(TryUnicodeWidth(string), 0))
 
 
 def _Indent(indent, mdoc):
@@ -191,6 +202,14 @@ def _Group(mdoc):
     return MeasuredDoc(doc.Group(mdoc), mdoc.measure)
 
 
+def _IfFlat(flat_mdoc, nonflat_mdoc):
+    # type: (MeasuredDoc, MeasuredDoc) -> MeasuredDoc
+    """If in flat mode, print `flat_mdoc` otherwise print `nonflat_mdoc`."""
+    return MeasuredDoc(
+        doc.IfFlat(flat_mdoc, nonflat_mdoc),
+        Measure(flat_mdoc.measure.flat, nonflat_mdoc.measure.nonflat))
+
+
 ###################
 # Pretty Printing #
 ###################
@@ -199,6 +218,7 @@ _DEFAULT_MAX_WIDTH = 80
 _DEFAULT_INDENTATION = 4
 _DEFAULT_USE_STYLES = True
 _DEFAULT_SHOW_TYPE_PREFIX = True
+_DEFAULT_MAX_TABULAR_WIDTH = 16  # Tuned for float-demo in data_lang/pretty-benchmark.sh
 
 
 class PrettyPrinter(object):
@@ -213,6 +233,7 @@ class PrettyPrinter(object):
         self.indent = _DEFAULT_INDENTATION
         self.use_styles = _DEFAULT_USE_STYLES
         self.show_type_prefix = _DEFAULT_SHOW_TYPE_PREFIX
+        self.max_tabular_width = _DEFAULT_MAX_TABULAR_WIDTH
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
@@ -240,11 +261,18 @@ class PrettyPrinter(object):
         E.g. `(Bool)   true`"""
         self.show_type_prefix = show_type_prefix
 
+    def SetMaxTabularWidth(self, max_tabular_width):
+        # type: (int) -> None
+        """Set the maximum width that list elements can be, for them to be
+        vertically aligned."""
+        self.max_tabular_width = max_tabular_width
+
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
         constructor = _DocConstructor(self.indent, self.use_styles,
-                                      self.show_type_prefix)
+                                      self.show_type_prefix,
+                                      self.max_tabular_width)
         document = constructor.Value(val)
         self._PrintDoc(document, buf)
 
@@ -318,6 +346,16 @@ class PrettyPrinter(object):
                         DocFragment(group.mdoc, frag.indent, flat,
                                     frag.measure))
 
+                elif case(doc_e.IfFlat):
+                    if_flat = cast(doc.IfFlat, frag.mdoc.doc)
+                    if frag.is_flat:
+                        subdoc = if_flat.flat_mdoc
+                    else:
+                        subdoc = if_flat.nonflat_mdoc
+                    fragments.append(
+                        DocFragment(subdoc, frag.indent, frag.is_flat,
+                                    frag.measure))
+
 
 ################
 # Value -> Doc #
@@ -327,11 +365,13 @@ class PrettyPrinter(object):
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
 
-    def __init__(self, indent, use_styles, show_type_prefix):
-        # type: (int, bool, bool) -> None
+    def __init__(self, indent, use_styles, show_type_prefix,
+                 max_tabular_width):
+        # type: (int, bool, bool, int) -> None
         self.indent = indent
         self.use_styles = use_styles
         self.show_type_prefix = show_type_prefix
+        self.max_tabular_width = max_tabular_width
         self.visiting = {}  # type: Dict[int, bool]
 
         # These can be configurable later
@@ -422,12 +462,84 @@ class _DocConstructor:
         third
         ```
         """
-        seq = [items[0]]
-        for item in items[1:]:
-            seq.append(_Text(sep))
-            seq.append(_Break(space))
+        seq = []  # type: List[MeasuredDoc]
+        for i, item in enumerate(items):
+            if i != 0:
+                seq.append(_Text(sep))
+                seq.append(_Break(space))
             seq.append(item)
         return _Concat(seq)
+
+    def _Tabular(self, items, sep):
+        # type: (List[MeasuredDoc], str) -> MeasuredDoc
+        """Join `items` together, using one of three styles:
+
+        (showing spaces as underscores for clarity)
+        ```
+        first,_second,_third,_fourth,_fifth,_sixth,_seventh,_eighth
+        ------
+        first,___second,__third,
+        fourth,__fifth,___sixth,
+        seventh,_eighth
+        ------
+        first,
+        second,
+        third,
+        fourth,
+        fifth,
+        sixth,
+        seventh,
+        eighth
+        ```
+
+        The first "single line" style is used if the items fit on one line.  The
+        second "tabular' style is used if the flat width of all items is no
+        greater than `self.max_tabular_width`. The third "multi line" style is
+        used otherwise.
+        """
+
+        # Why not "just" use tabular alignment so long as two items fit on every
+        # line?  Because it isn't possible to check for that in the pretty
+        # printing language. There are two sorts of conditionals we can do:
+        #
+        # A. Inside the pretty printing language, which supports exactly one
+        #    conditional: "does it fit on one line?".
+        # B. Outside the pretty printing language we can run arbitrary Python
+        #    code, but we don't know how much space is available on the line
+        #    because it depends on the context in which we're printed, which may
+        #    vary.
+        #
+        # We're picking between the three styles, by using (A) to check if the
+        # first style fits on one line, then using (B) with "are all the items
+        # smaller than `self.max_tabular_width`?" to pick between style 2 and
+        # style 3.
+
+        if len(items) == 0:
+            return _Text("")
+
+        max_flat_len = 0
+        seq = []  # type: List[MeasuredDoc]
+        for i, item in enumerate(items):
+            if i != 0:
+                seq.append(_Text(sep))
+                seq.append(_Break(" "))
+            seq.append(item)
+            max_flat_len = max(max_flat_len, item.measure.flat)
+        non_tabular = _Concat(seq)
+
+        sep_width = TryUnicodeWidth(sep)
+        if max_flat_len + sep_width + 1 <= self.max_tabular_width:
+            tabular_seq = []  # type: List[MeasuredDoc]
+            for i, item in enumerate(items):
+                tabular_seq.append(item)
+                if i != len(items) - 1:
+                    padding = max_flat_len - item.measure.flat + 1
+                    tabular_seq.append(_Text(sep))
+                    tabular_seq.append(_Group(_Break(" " * padding)))
+            tabular = _Concat(tabular_seq)
+            return _Group(_IfFlat(non_tabular, tabular))
+        else:
+            return non_tabular
 
     def _DictKey(self, s):
         # type: (str) -> MeasuredDoc
@@ -453,7 +565,7 @@ class _DocConstructor:
         if len(vlist.items) == 0:
             return _Text("[]")
         mdocs = [self._Value(item) for item in vlist.items]
-        return self._Surrounded("[", self._Join(mdocs, ",", " "), "]")
+        return self._Surrounded("[", self._Tabular(mdocs, ","), "]")
 
     def _YshDict(self, vdict):
         # type: (value.Dict) -> MeasuredDoc
@@ -479,7 +591,7 @@ class _DocConstructor:
             else:
                 mdocs.append(self._BashStringLiteral(s))
         return self._SurroundedAndPrefixed("(", type_name, " ",
-                                           self._Join(mdocs, "", " "), ")")
+                                           self._Tabular(mdocs, ""), ")")
 
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc

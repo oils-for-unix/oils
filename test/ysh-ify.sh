@@ -3,14 +3,12 @@
 # Test ysh-prettify transformations
 #
 # Usage:
-#   ./ysh-prettify.sh <function name>
+#   ./ysh-ify.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
-source devtools/run-task.sh
 source test/common.sh  # $OSH
 
 readonly TEMP_DIR=_tmp
@@ -411,6 +409,16 @@ if true {
 } else {
   echo no
 }'
+
+  # Redirect
+  check-osh2ysh '
+if true; then
+  echo yes
+fi > out' \
+  '
+if true {
+  echo yes
+} > out'
 }
 
 TODO-test-then-next-line() {
@@ -646,4 +654,4 @@ case (var) {
 '
 }
 
-run-task "$@"
+task-five "$@"

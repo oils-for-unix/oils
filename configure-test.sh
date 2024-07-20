@@ -72,8 +72,8 @@ test_echo_cpp() {
     die "Unexpected echo_cpp output: $output"
   fi
 
-  # pretend detected_readline was called
-  detected_readline=1
+  # pretend detected_deps was called
+  detected_deps=1
 
   # no readline
   output="$(echo_cpp)"
@@ -97,7 +97,7 @@ test_echo_cpp() {
   esac
 
   # clean-up
-  detected_readline=''
+  detected_deps=''
   have_readline=''
 }
 
@@ -114,7 +114,7 @@ test_echo_vars() {
   fi
 
   # pretend detect_readline was called
-  detected_readline=1
+  detected_deps=1
 
   # no readline
   output="$(echo_shell_vars)"
@@ -123,6 +123,7 @@ test_echo_vars() {
   fi
   if ! test "$output" = 'HAVE_READLINE=
 READLINE_DIR=
+HAVE_SYSTEMTAP_SDT=
 PREFIX=/usr/local
 DATAROOTDIR=
 STRIP_FLAGS=--gc-sections'; then
@@ -137,6 +138,7 @@ STRIP_FLAGS=--gc-sections'; then
   fi
   if ! test "$output" = 'HAVE_READLINE=1
 READLINE_DIR=
+HAVE_SYSTEMTAP_SDT=
 PREFIX=/usr/local
 DATAROOTDIR=
 STRIP_FLAGS=--gc-sections'; then
@@ -152,6 +154,7 @@ STRIP_FLAGS=--gc-sections'; then
   fi
   if ! test "$output" = 'HAVE_READLINE=1
 READLINE_DIR=/path/to/readline
+HAVE_SYSTEMTAP_SDT=
 PREFIX=/usr/local
 DATAROOTDIR=
 STRIP_FLAGS=--gc-sections'; then
@@ -159,9 +162,10 @@ STRIP_FLAGS=--gc-sections'; then
   fi
 
   # clean-up
-  detected_readline=''
+  detected_deps=''
   have_readline=''
   readline_dir=''
+  have_systemtap_sdt=''
 }
 
 soil_run() {

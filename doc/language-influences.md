@@ -137,6 +137,14 @@ The `@` character comes from Perl (and PowerShell):
       echo $i
     }
 
+<!--
+The unbuffered `for` loop is similar to Perl's `while (<>) { ...`:
+
+    for line in <> {
+      echo $line
+    }
+-->
+
 Perl can be viewed as a mixture of shell, awk, and sed.  YSH is a similar
 agglomeration of languages, but it's statically parsed.
 
@@ -267,9 +275,9 @@ Hay blocks in YSH allow this to be expressed very similarly:
 
 PHP has global variables like `_REQUEST` and `_POST`.
 
-YSH has `_status`, `_group()`, `_start()`, etc.  These are global variables
-that are "silently" mutated by the interpreter (and functions to access such
-global data).
+YSH has `_error`, `_group()`, `_start()`, etc.  These are global variables that
+are "silently" mutated by the interpreter (and functions to access such global
+data).
 
 ### Lua
 

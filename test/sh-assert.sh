@@ -162,5 +162,3 @@ _ysh-should-run-here() {
   _ysh-should-run "$(cat)"
 }
 
-
-

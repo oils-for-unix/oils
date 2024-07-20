@@ -990,8 +990,8 @@ TEST test_str_split() {
     List<BigStr*>* parts = StrFromC("abc def")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(2, len(parts));
-    ASSERT(are_equal(parts->at(0), StrFromC("abc")));
-    ASSERT(are_equal(parts->at(1), StrFromC("def")));
+    ASSERT(items_equal(parts->at(0), StrFromC("abc")));
+    ASSERT(items_equal(parts->at(1), StrFromC("def")));
   }
 
   {
@@ -1009,43 +1009,43 @@ TEST test_str_split() {
     List<BigStr*>* parts = StrFromC(" ### ")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(4, len(parts));
-    ASSERT(are_equal(parts->at(0), StrFromC(" ")));
-    ASSERT(are_equal(parts->at(1), StrFromC("")));
-    ASSERT(are_equal(parts->at(2), StrFromC("")));
-    ASSERT(are_equal(parts->at(3), StrFromC(" ")));
+    ASSERT(items_equal(parts->at(0), StrFromC(" ")));
+    ASSERT(items_equal(parts->at(1), StrFromC("")));
+    ASSERT(items_equal(parts->at(2), StrFromC("")));
+    ASSERT(items_equal(parts->at(3), StrFromC(" ")));
   }
 
   {
     List<BigStr*>* parts = StrFromC(" # ")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(3, len(parts));
-    ASSERT(are_equal(parts->at(0), StrFromC("")));
-    ASSERT(are_equal(parts->at(1), StrFromC("#")));
-    ASSERT(are_equal(parts->at(2), StrFromC("")));
+    ASSERT(items_equal(parts->at(0), StrFromC("")));
+    ASSERT(items_equal(parts->at(1), StrFromC("#")));
+    ASSERT(items_equal(parts->at(2), StrFromC("")));
   }
 
   {
     List<BigStr*>* parts = StrFromC("  #")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(2, len(parts));
-    ASSERT(are_equal(parts->at(0), StrFromC("  ")));
-    ASSERT(are_equal(parts->at(1), StrFromC("")));
+    ASSERT(items_equal(parts->at(0), StrFromC("  ")));
+    ASSERT(items_equal(parts->at(1), StrFromC("")));
   }
 
   {
     List<BigStr*>* parts = StrFromC("#  #")->split(StrFromC("#"));
     ShowList(parts);
     ASSERT_EQ(3, len(parts));
-    ASSERT(are_equal(parts->at(0), StrFromC("")));
-    ASSERT(are_equal(parts->at(1), StrFromC("  ")));
-    ASSERT(are_equal(parts->at(2), StrFromC("")));
+    ASSERT(items_equal(parts->at(0), StrFromC("")));
+    ASSERT(items_equal(parts->at(1), StrFromC("  ")));
+    ASSERT(items_equal(parts->at(2), StrFromC("")));
   }
 
   {
     List<BigStr*>* parts = StrFromC("")->split(StrFromC(" "));
     ShowList(parts);
     ASSERT_EQ(1, len(parts));
-    ASSERT(are_equal(parts->at(0), StrFromC("")));
+    ASSERT(items_equal(parts->at(0), StrFromC("")));
   }
 
   {
@@ -1053,16 +1053,16 @@ TEST test_str_split() {
     List<BigStr*>* parts = s->split(StrFromC(","));
     ShowList(parts);
     ASSERT_EQ(7, len(parts));
-    ASSERT(are_equal(parts->at(0), StrFromC("a")));
+    ASSERT(items_equal(parts->at(0), StrFromC("a")));
 
     // ask for 3 splits
     parts = s->split(StrFromC(","), 3);
     ShowList(parts);
     ASSERT_EQ_FMT(4, len(parts), "%d");
-    ASSERT(are_equal(parts->at(0), StrFromC("a")));
-    ASSERT(are_equal(parts->at(1), StrFromC("b")));
-    ASSERT(are_equal(parts->at(2), StrFromC("c")));
-    ASSERT(are_equal(parts->at(3), StrFromC("d,e,f,g")));
+    ASSERT(items_equal(parts->at(0), StrFromC("a")));
+    ASSERT(items_equal(parts->at(1), StrFromC("b")));
+    ASSERT(items_equal(parts->at(2), StrFromC("c")));
+    ASSERT(items_equal(parts->at(3), StrFromC("d,e,f,g")));
 
     // ask for 0 splits
     parts = s->split(StrFromC(","), 0);
@@ -1074,9 +1074,9 @@ TEST test_str_split() {
     parts = StrFromC("###")->split(StrFromC("#"), 2);
     ShowList(parts);
     ASSERT_EQ(3, len(parts));
-    ASSERT(are_equal(parts->at(0), StrFromC("")));
-    ASSERT(are_equal(parts->at(1), StrFromC("")));
-    ASSERT(are_equal(parts->at(2), StrFromC("#")));
+    ASSERT(items_equal(parts->at(0), StrFromC("")));
+    ASSERT(items_equal(parts->at(1), StrFromC("")));
+    ASSERT(items_equal(parts->at(2), StrFromC("#")));
   }
 
   printf("---------- Done ----------\n");
@@ -1092,14 +1092,14 @@ TEST test_str_join() {
   {
     BigStr* result = kEmptyString->join(Alloc<List<BigStr*>>());
     ShowString(result);
-    ASSERT(are_equal(kEmptyString, result));
+    ASSERT(items_equal(kEmptyString, result));
     ASSERT_EQ(kEmptyString, result);  // pointers equal
   }
 
   {
     BigStr* result = StrFromC("anything")->join(Alloc<List<BigStr*>>());
     ShowString(result);
-    ASSERT(are_equal(kEmptyString, result));
+    ASSERT(items_equal(kEmptyString, result));
     ASSERT_EQ(kEmptyString, result);  // pointers equal
   }
 
@@ -1108,7 +1108,7 @@ TEST test_str_join() {
     // NewList avoids std::initializer_list()
     BigStr* result = StrFromC("anything")->join(NewList<BigStr*>({one_string}));
     ShowString(result);
-    ASSERT(are_equal(one_string, result));
+    ASSERT(items_equal(one_string, result));
     ASSERT_EQ(one_string, result);  // pointers equal
   }
 
@@ -1116,7 +1116,7 @@ TEST test_str_join() {
     BigStr* result = kEmptyString->join(
         NewList<BigStr*>({StrFromC("abc"), StrFromC("def")}));
     ShowString(result);
-    ASSERT(are_equal(result, StrFromC("abcdef")));
+    ASSERT(items_equal(result, StrFromC("abcdef")));
   }
   {
     BigStr* result = (StrFromC(" "))
@@ -1125,7 +1125,7 @@ TEST test_str_join() {
                               StrFromC("def"), StrFromC("abc"), StrFromC("def"),
                               StrFromC("abc"), StrFromC("def")}));
     ShowString(result);
-    ASSERT(are_equal(result, StrFromC("abc def abc def abc def abc def")));
+    ASSERT(items_equal(result, StrFromC("abc def abc def abc def abc def")));
   }
 
   printf("---------- Done ----------\n");

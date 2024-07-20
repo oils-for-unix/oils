@@ -20,7 +20,7 @@ from core import util
 from frontend import reader
 from osh import cmd_eval
 from mycpp import mylib
-from mycpp.mylib import log, print_stderr, tagswitch
+from mycpp.mylib import log, print_stderr, probe, tagswitch
 
 import fanos
 import posix_ as posix
@@ -336,6 +336,7 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
     """
     status = 0
     while True:
+        probe('main_loop', 'Batch_parse_enter')
         try:
             node = c_parser.ParseLogicalLine()  # can raise ParseError
             if node is None:  # EOF
@@ -356,14 +357,20 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
                 c_parser.line_reader.LastLineHint()):
             cmd_flags |= cmd_eval.Optimize
 
+        probe('main_loop', 'Batch_parse_exit')
+
+        probe('main_loop', 'Batch_execute_enter')
         # can't optimize this because we haven't seen the end yet
         is_return, is_fatal = cmd_ev.ExecuteAndCatch(node, cmd_flags=cmd_flags)
         status = cmd_ev.LastStatus()
         # e.g. 'return' in middle of script, or divide by zero
         if is_return or is_fatal:
             break
+        probe('main_loop', 'Batch_execute_exit')
 
+        probe('main_loop', 'Batch_collect_enter')
         mylib.MaybeCollect()  # manual GC point
+        probe('main_loop', 'Batch_collect_exit')
 
     return status
 

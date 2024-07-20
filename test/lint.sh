@@ -5,10 +5,9 @@
 # Usage:
 #   test/lint.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 readonly REPO_ROOT
@@ -16,10 +15,6 @@ readonly REPO_ROOT
 source build/common.sh
 source build/dev-shell.sh  # python2 and python3
 source devtools/common.sh  # banner
-source devtools/run-task.sh  # run-task
-
-# TODO: synchronize with metrics/source-code.sh
-readonly -a CODE_DIRS=(asdl bin builtin core data_lang frontend osh tools yaks ysh)
 
 #
 # C++
@@ -39,40 +34,19 @@ cpplint() {
 }
 
 #
-# Python
+# Space checks
 #
 
-find-prune() {
-  ### find real source files
-
-  # benchmarks/testdata should be excluded
-  # excluding _build, _devbuild.  Although it might be OK to test generated
-  # code for tabs.
-  find . '(' -type d -a -name '_*' \
-          -o -name testdata \
-          -o -name $PY27 \
-         ')' -a -prune \
-         "$@"
-}
-
-find-src-files() {
-  find-prune \
-    -o -type f -a \
-   '(' -name '*.py' \
-    -o -name '*.sh' \
-    -o -name '*.asdl' \
-    -o -name '*.[ch]' \
-    -o -name '*.cc' \
-   ')' -a -print 
-}
-
 find-tabs() {
-  find-src-files | xargs grep -n $'\t'
+  devtools/repo.sh find-src-files \
+    | egrep -v 'tools/(xargs|find)' \
+    | xargs grep -n $'\t'
 }
 
 find-long-lines() {
   # Exclude URLs
-  find-src-files | xargs grep -n '^.\{81\}' | grep -v 'http'
+  devtools/repo.sh find-src-files \
+    | xargs grep -n '^.\{81\}' | grep -v 'http'
 }
 
 #
@@ -95,11 +69,43 @@ py3-lint() {
   oils-lint py3 "$@"
 }
 
+# TODO: Use devtools/repo.sh instead of this hard-coded list
+readonly -a CODE_DIRS=(
+  asdl bin builtin core data_lang doctools frontend osh tools yaks ysh
+
+  prebuilt
+  pyext
+  lazylex
+  benchmarks
+  build
+
+  #pylib
+  #test
+)
+
+py2-files-to-lint() {
+  if false; then
+    # TODO: This is better
+    # Although we should filter by $2
+
+    devtools/repo.sh py-manifest \
+      | egrep -v 'opy/|tools/find/|tools/xargs/' \
+      | awk '$1 == "py2" { print $2 }'
+    return
+  fi
+
+  for dir in "${CODE_DIRS[@]}"; do
+    for name in $dir/*.py; do
+      echo $name
+    done
+  done | grep -v 'NINJA_subgraph'  # leave out for now
+}
+
 py2() {
   banner 'Linting Python 2 code'
 
   # syntax_abbrev.py doesn't stand alone
-  py2-files-to-format | grep -v '_abbrev.py' | xargs $0 py2-lint
+  py2-files-to-lint | grep -v '_abbrev.py' | xargs $0 py2-lint
 }
 
 py3-files() {
@@ -133,24 +139,6 @@ mycpp-files() {
 
     echo $f
   done
-}
-
-py2-files-to-format() {
-  for dir in "${CODE_DIRS[@]}"; do
-    for name in $dir/*.py; do
-      echo $name
-    done
-  done | grep -v 'NINJA_subgraph'  # leave out for now
-}
-
-run-docformatter() {
-  ### Format docstrings
-
-  # Only done as a ONE OFF to indent docstrings after yapf-2
-  # Because it tends to mangle comments, e.g. grammar comments in
-  # ysh/expr_to_ast.py
-  time py2-files-to-format \
-    | xargs --verbose -- python3 -m docformatter --in-place
 }
 
 #
@@ -321,4 +309,4 @@ translation() {
     #| xargs egrep -n -A 1 'finally:'
 }
  
-run-task "$@"
+task-five "$@"

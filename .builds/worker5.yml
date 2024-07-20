@@ -1,0 +1,29 @@
+# https://man.sr.ht/builds.sr.ht/compatibility.md#fedora-linux
+
+image: fedora/40
+
+packages:
+  # Same package names as Ubuntu
+  # https://packages.fedoraproject.org/pkgs/zip/zip/
+  #- python2.7
+  - python3
+  - time
+  - zip
+    # for SSH debugging!
+  - vim
+
+secrets:
+  - 839206d4-55e5-4840-8b1f-867dc3ac622e
+
+tasks:
+  - dev-setup-fedora: |
+      cd oil
+      soil/worker.sh JOB-dev-setup-fedora
+
+  - publish-dev-setup-fedora: |
+      cd oil
+      soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-fedora
+
+  - did-all-succeed: |
+      cd oil
+      soil/host-shim.sh did-all-succeed dev-setup-fedora

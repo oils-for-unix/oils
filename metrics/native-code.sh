@@ -111,11 +111,9 @@ collect-and-report() {
 oils-for-unix() {
   ### Report on the ones we just built
 
-  # TODO: could compare GCC and Clang once we have R on the CI images
-  local -a targets=(_bin/cxx-{dbg,opt}/oils-for-unix)
-  ninja "${targets[@]}"
+  soil/cpp-tarball.sh build-like-ninja dbg opt
 
-  collect-and-report $OIL_BASE_DIR "${targets[@]}"
+  collect-and-report $OIL_BASE_DIR _bin/cxx-{dbg,opt}/oils-for-unix
 
   ls -l $OIL_BASE_DIR
 }

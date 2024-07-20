@@ -112,8 +112,6 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
         self.log('IntExpr %d', o.value)
 
     def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
-        # - Need new BigStr() everywhere because "foo" doesn't match BigStr* :-(
-
         id_ = 'str%d' % self.unique_id
         self.unique_id += 1
 
@@ -163,6 +161,9 @@ class Collect(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
         self.log('CallExpr')
         self.accept(o.callee)  # could be f() or obj.method()
+        if o.callee.name == 'probe':
+            # don't generate constants for probe names
+            return
 
         self.indent += 1
         for arg in o.args:

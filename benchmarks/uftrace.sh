@@ -142,8 +142,8 @@ record-oils-cpp() {
     # -F 'StrFromC' -A 'StrFromC@arg1' -A 'StrFromC@arg2'
   fi
 
+  soil/cpp-tarball.sh build-like-ninja uftrace
   local bin=_bin/cxx-uftrace/osh
-  ninja $bin
 
   mkdir -p $out_dir
   time uftrace record --demangle full -d $out_dir "${flags[@]}" $bin "$@"
@@ -344,7 +344,6 @@ soil-run() {
   measure-all
   export-all
   analyze-all
-
 }
 
 "$@"

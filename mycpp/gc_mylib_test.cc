@@ -55,14 +55,6 @@ TEST int_to_str_test() {
   print(int_str);
   print(mylib::hex_lower(int_min));
 
-  int_str = mylib::hex_upper(15);
-  ASSERT(str_equals0("F", int_str));
-  print(mylib::hex_upper(int_min));
-
-  int_str = mylib::octal(15);
-  ASSERT(str_equals0("17", int_str));
-  print(mylib::octal(int_min));
-
   PASS();
 }
 

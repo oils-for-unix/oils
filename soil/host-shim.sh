@@ -30,13 +30,18 @@ live-image-tag() {
       # rebuild with curl, then g++
       echo 'v-2023-10-05a'
       ;;
+    (bloaty)
+      # new image and task
+      echo 'v-2024-06-08'
+      ;;
     (benchmarks)
       # freshen up
       echo 'v-2023-07-15'
       ;;
     (benchmarks2)
-      # freshen up
-      echo 'v-2023-07-15'
+      # debian 12, python3, new R-libs, cmark
+      # new uftrace version
+      echo 'v-2024-06-09'
       ;;
     (cpp-spec)
       # Rebuild with jq, procps
@@ -44,7 +49,7 @@ live-image-tag() {
       ;;
     (pea)
       # freshen up
-      echo 'v-2023-07-15'
+      echo 'v-2024-06-08'
       ;;
     (cpp-small)
       # Rebuild with Docker, remove dead code
@@ -55,8 +60,8 @@ live-image-tag() {
       echo 'v-2023-08-09'
       ;;
     (ovm-tarball)
-      # freshen up, still need spec-bin wedge
-      echo 'v-2023-07-15'
+      # bash 5.2.21
+      echo 'v-2024-06-09b'
       ;;
     (other-tests)
       # freshen up
@@ -64,7 +69,7 @@ live-image-tag() {
       ;;
     (dummy)
       # freshen up
-      echo 'v-2023-07-15'
+      echo 'v-2024-06-08'
       ;;
     (dev-minimal)
       # Use python3 wedge and mypy-0.780 repo

@@ -1,20 +1,127 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Global Shell Options (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Global Shell Options
-===
+<div class="doc-ref-header">
 
-This chapter in the [Oils Reference](index.html) describes global shell options
-for OSH and YSH.
+[Oils Reference](index.html) &mdash;
+Chapter **Global Shell Options**
 
-<div id="toc">
 </div>
 
-## Option Groups
+This chapter describes global shell options in Oils.  Some options are from
+POSIX shell, and some are from [bash]($xref).  We also use options to turn
+[OSH]($xref) into [YSH]($xref).
+
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
+</div>
+
+## Errors
+
+These options are from POSIX shell:
+
+    nounset -u  
+    errexit -e
+
+These are from bash:
+
+    inherit_errexit:
+    pipefail
+
+## Globbing
+
+These options are from POSIX shell:
+
+    noglob -f
+
+From bash:
+
+    nullglob   failglob   dotglob
+
+From Oils:
+
+    dashglob
+
+Some details:
+
+### nullglob
+
+When `nullglob` is on, a glob matching no files expands to no arguments:
+
+    shopt -s nullglob
+    $ echo L *.py R
+    L R
+
+Without this option, the glob string itself is returned:
+
+    $ echo L *.py R  # no Python files in this dir
+    L *.py R
+
+(This option is from GNU bash.)
+
+### dashglob
+
+Do globs return results that start with `-`?  It's on by default in `bin/osh`,
+but off when YSH is enabled.
+
+Turning it off prevents a command like `rm *` from being confused by a file
+called `-rf`.
+
+    $ touch -- myfile -rf
+
+    $ echo *
+    -rf myfile
+
+    $ shopt -u dashglob
+    $ echo *
+    myfile
+
+## Debugging
+
+These options are from POSIX shell:
+
+    xtrace   verbose
+
+From bash:
+
+    extdebug
+
+## Interactive
+
+These options are from bash.
+
+    emacs   vi
+
+## Other Option
+
+    noclobber   # Redirects don't overwrite files
+
+## Compat
+
+### eval_unsafe_arith
+
+Allow dynamically parsed `a[$(echo 42)]`  For bash compatibility.
+
+### ignore_flags_not_impl
+
+Suppress failures from flags not implemented.  Example:
+
+    shopt --set ignore_flags_not_impl
+
+    declare -i foo=2+3  # not evaluated to 5, but doesn't fail either
+
+This option can be useful for "getting past" errors while testing.
+
+## Groups
+
+To turn OSH into YSH, we use three option groups.  Some of them allow new
+features, and some disallow old features.
 
 <!-- note: explicit anchor necessary because of mangling -->
 <h3 id="strict:all">strict:all</h3>
@@ -22,13 +129,30 @@ for OSH and YSH.
 Option in this group disallow problematic or confusing shell constructs.  The
 resulting script will still run in another shell.
 
-    shopt --set strict:all  # turn on all options
-    shopt -p strict:all     # print their current state
+    shopt --set strict:all    # turn on all options
+    shopt -p strict:all       # print their current state
+
+Parsing options:
+
+      strict_parse_slice      # No implicit length for ${a[@]::}
+    X strict_parse_utf8       # Source code must be valid UTF-8
+
+Runtime options:
+
+      strict_argv             # No empty argv
+      strict_arith            # Fatal parse errors (on by default)
+      strict_array            # Arrays and strings aren't confused
+      strict_control_flow     # Disallow misplaced keyword, empty arg
+      strict_errexit          # Disallow code that ignores failure
+      strict_nameref          # Trap invalid variable names
+      strict_word_eval        # Expose unicode and slicing errors
+      strict_tilde            # Tilde subst can result in error
+    X strict_glob             # Parse the sublanguage more strictly
 
 <h3 id="ysh:upgrade">ysh:upgrade</h3>
 
-Options in this group enable YSH features that are less likely to break
-existing shell scripts.
+Options in this group enable new YSH features.  It doesn't break existing shell
+scripts when it's avoidable.
 
 For example, `parse_at` means that `@myarray` is now the operation to splice
 an array.  This will break scripts that expect `@` to be literal, but you can
@@ -37,15 +161,81 @@ simply quote it like `'@literal'` to fix the problem.
     shopt --set ysh:upgrade   # turn on all options
     shopt -p ysh:upgrade      # print their current state
 
+Details on each option:
+
+      parse_at                echo @array @[arrayfunc(x, y)]
+      parse_brace             if true { ... }; cd ~/src { ... }
+      parse_equals            x = 'val' in Caps { } config blocks
+      parse_paren             if (x > 0) ...
+      parse_proc              proc p { ... }
+      parse_triple_quote      """$x"""  '''x''' (command mode)
+      parse_ysh_string        echo r'\' u'\\' b'\\' (command mode)
+      command_sub_errexit     Synchronous errexit check
+      process_sub_fail        Analogous to pipefail for process subs
+      sigpipe_status_ok       status 141 -> 0 in pipelines
+      simple_word_eval        No splitting, static globbing
+      xtrace_rich             Hierarchical and process tracing
+      xtrace_details (-u)     Disable most tracing with +
+      dashglob (-u)           Disabled to avoid files like -rf
+    X env_dict                Copy environ into ENV dict
+
+
 <h3 id="ysh:all">ysh:all</h3>
 
 Enable the full YSH language.  This includes everything in the `ysh:upgrade`
-group.
+group and the `strict:all` group.
 
-    shopt --set ysh:all     # turn on all options
-    shopt -p ysh:all        # print their current state
+    shopt --set ysh:all       # turn on all options
+    shopt -p ysh:all          # print their current state
 
-## Strictness
+Details on options that are not in `ysh:upgrade` and `strict:all`:
+
+      parse_at_all            @ starting any word is an operator
+      parse_backslash (-u)    Allow bad backslashes in "" and $''
+      parse_backticks (-u)    Allow legacy syntax `echo hi`
+      parse_bare_word (-u)    'case unquoted' and 'for x in unquoted'
+      parse_dollar (-u)       Allow bare $ to mean \$  (maybe $/d+/)
+      parse_dbracket (-u)     Is legacy [[ allowed?
+      parse_dparen (-u)       Is (( legacy arithmetic allowed?
+      parse_ignored (-u)      Parse, but ignore, certain redirects
+      parse_sh_arith (-u)     Allow legacy shell arithmetic
+      expand_aliases (-u)     Whether aliases are expanded
+    X no_env_vars             Use $[ENV.PYTHONPATH], not $PYTHONPATH
+    X old_builtins (-u)       local/declare/etc.  pushd/popd/dirs
+                              ... source  unset  printf  [un]alias
+                              ... getopts
+    X old_syntax (-u)         ( )   ${x%prefix}  ${a[@]}   $$
+      simple_echo             echo doesn't accept flags -e -n
+      simple_eval_builtin     eval takes exactly 1 argument
+      simple_test_builtin     3 args or fewer; use test not [
+    X simple_trap             Function name only
+      verbose_errexit         Whether to print detailed errors
+
+## YSH Details
+
+### opts-redefine
+
+In the interactive shell, you can redefine procs and funcs.
+
+      redefine_module           'module' builtin always returns 0
+      redefine_proc_func (-u)   Can shell func, proc and func be redefined?
+    X redefine_const            Can consts be redefined?
+
+### opts-internal
+
+These options are used by the interpreter.  You generally shouldn't set them
+yourself.
+
+    _allow_command_sub  To implement strict_errexit, eval_unsafe_arith
+    _allow_process_sub  To implement strict_errexit
+    dynamic_scope       To implement proc and func
+    _no_debug_trap      Used in pipelines in job control shell
+    _running_trap       To disable strict_errexit
+    _running_hay        Hay evaluation
+
+## Unlinked Descriptions
+
+Here are some descriptions of individual options.
 
 ### strict_control_flow
 
@@ -57,9 +247,6 @@ Disallow `break` and `continue` at the top level, and disallow empty args like
 Failed tilde expansions cause hard errors (like zsh) rather than silently
 evaluating to `~` or `~bad`.
 
-### strict_word_eval
-
-TODO
 
 ### strict_nameref
 
@@ -82,22 +269,6 @@ For compatibility, YSH will parse some constructs it doesn't execute, like:
     return 0 2>&1  # redirect on control flow
 
 When this option is disabled, that statement is a syntax error.
-
-## ysh:upgrade
-
-### parse_at
-
-TODO
-
-### parse_brace
-
-TODO
-
-TODO
-
-### parse_paren
-
-TODO
 
 ### parse_triple_quote
 
@@ -137,72 +308,10 @@ J8 byte strings:
 (This option affects only command mode.  Such strings are always parsed in
 expression mode.)
 
-### command_sub_errexit
-
-TODO
-
-### process_sub_fail
-
-TODO
-
 ### sigpipe_status_ok
 
 If a process that's part of a pipeline exits with status 141 when this is
 option is on, it's turned into status 0, which avoids failure.
 
 SIGPIPE errors occur in cases like 'yes | head', and generally aren't useful.
-
-### simple_word_eval
-
-TODO:
-
-<!-- See doc/simple-word-eval.html -->
-
-## YSH Breaking
-
-### copy_env
-
-### parse_equals
-
-## Errors
-
-## Globbing
-
-### nullglob
-
-Normally, when no files match  a glob, the glob itself is returned:
-
-    $ echo L *.py R  # no Python files in this dir
-    L *.py R
-
-With nullglob on, the glob expands to no arguments:
-
-    shopt -s nullglob
-    $ echo L *.py R
-    L R
-
-(This option is in GNU bash as well.)
-
-### dashglob
-
-Do globs return results that start with `-`?  It's on by default in `bin/osh`,
-but off when YSH is enabled.
-
-Turning it off prevents a command like `rm *` from being confused by a file
-called `-rf`.
-
-    $ touch -- myfile -rf
-
-    $ echo *
-    -rf myfile
-
-    $ shopt -u dashglob
-    $ echo *
-    myfile
-
-## Debugging
-
-## Interactive
-
-## Other Option
 

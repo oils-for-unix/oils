@@ -5,7 +5,7 @@ pytrace.py
 
 import cStringIO
 import os
-import struct
+#import struct
 import sys
 
 # TODO: Two kinds of tracing?

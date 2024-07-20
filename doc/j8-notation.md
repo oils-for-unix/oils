@@ -75,7 +75,7 @@ surrogate pair or half. -->
 Now, starting with J8 strings, we define the formats JSON8:
 
     { name: "Alice",
-      signature: b'\y01 ... \yff',  // binary data
+      signature: b'\y01 ... \yff',  # binary data
     }
 
 J8 Lines:
@@ -201,7 +201,7 @@ Properties of JSON:
 
 There are 3 **styles** of J8 strings:
 
-1. JSON strings `""`
+1. JSON strings `j""`, which may be written `""`
 1. `b''` strings
 1. `u''` strings
 
@@ -214,8 +214,8 @@ There are 3 **styles** of J8 strings:
     \"  \\  \/          # same as JSON
     \b  \f  \n  \r  \t  
 
-(JSON-style double-quoted strings remain the same in J8 Notation; they do not
-add the `\'` escape.)
+(JSON-style double-quoted do not add the `\'` escape.  Except for the optional
+`j` prefix, they remain the same.)
 
 Examples:
 
@@ -377,9 +377,9 @@ probably NIL8:
 Example:
 
 ```
-{ name: "Bob",  // comment
+{ name: "Bob",  # comment
   age: 30,
-  sig: b'\y00\y01 ... \yff',  // trailing comma, binary data
+  sig: b'\y00\y01 ... \yff',  # trailing comma, binary data
 }
 ```
 
@@ -590,6 +590,20 @@ The list of errors at [ref/chap-errors.html](ref/chap-errors.html) may be a
 good starting point.
 
 TODO: describe the Oils implementation.
+
+### Should a J8 number be mapped to an Int, Float, or Decimal type?
+
+J8 Notation is like JSON: it only specifies the syntax of messages on the wire.
+
+The mapping of text to types is left to implementers, and depends on the
+programming language:
+
+- Languages like C, C++, and Rust have different sizes of ints and floats
+- Languages like JavaScript favor floats
+- It's valid to map to a Decimal type, if the language runtime supports it
+
+OSH and YSH happen to use `Int` and `Float`, but this is logically separate
+from J8 Notation.
 
 ## Glossary
 

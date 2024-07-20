@@ -5,11 +5,11 @@
 # Usage:
 #   test/osh-usage.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/no-quotes.sh
 
-source test/common.sh
+source test/common.sh  # run-test-funcs
 
 DISABLED-test-oheap() {
   # OHeap was disabled
@@ -97,54 +97,29 @@ EOF
 test-osh-interactive() {
   set +o errexit
   echo 'echo hi' | $OSH -i
-  assert $? -eq 0
+  nq-assert $? -eq 0
 
   echo 'exit' | $OSH -i
-  assert $? -eq 0
+  nq-assert $? -eq 0
 
   # Parse failure
   echo ';' | $OSH -i
-  assert $? -eq 2
+  nq-assert $? -eq 2
 
   # Bug fix: this shouldn't try execute 'echo OIL OIL'
   # The line lexer wasn't getting reset on parse failures.
   echo ';echo OIL OIL' | $OSH -i
-  assert $? -eq 2
+  nq-assert $? -eq 2
 
   # Bug fix: c_parser.Peek() in main_loop.InteractiveLoop can raise exceptions
   echo 'v=`echo \"`' | $OSH -i
-  assert $? -eq 0
-}
-
-test-help() {
-  set +o errexit
-
-  # TODO: Test the oil.ovm binary as well as bin/oil.py.
-  export PYTHONPATH='.:vendor/'  # TODO: Put this in one place.
-
-  # Bundle usage.
-  bin/oil.py --help
-  assert $? -eq 0
-
-  # Pass applet as first name.
-  bin/oil.py osh --help
-  assert $? -eq 0
-
-  bin/oil.py oil --help
-  assert $? -eq 0
-
-  # Symlinks.
-  bin/osh --help
-  assert $? -eq 0
-
-  bin/oil --help
-  assert $? -eq 0
+  nq-assert $? -eq 0
 }
 
 test-exit-builtin-interactive() {
   set +o errexit
   echo 'echo one; exit 42; echo two' | bin/osh -i
-  assert $? -eq 42
+  nq-assert $? -eq 42
 }
 
 test-rc-file() {
@@ -154,31 +129,63 @@ test-rc-file() {
   echo 'PS1="TESTRC$ "' > $rc
 
   bin/osh -i --rcfile $rc < /dev/null
-  assert $? -eq 0
+  nq-assert $? -eq 0
 
   bin/osh -i --rcfile /dev/null < /dev/null
-  assert $? -eq 0
+  nq-assert $? -eq 0
 
   # oshrc is optional
   # TODO: Could warn about nonexistent explicit --rcfile?
   bin/osh -i --rcfile nonexistent__ < /dev/null
-  assert $? -eq 0
+  nq-assert $? -eq 0
 }
 
 test-noexec-fails-properly() {
   set +o errexit
   local tmp=_tmp/osh-usage-noexec.txt
   bin/osh -n -c 'echo; echo; |' > $tmp
-  assert $? -eq 2
+  nq-assert $? -eq 2
   read < $tmp
-  assert $? -eq 1  # shouldn't have read any lines!
+  nq-assert $? -eq 1  # shouldn't have read any lines!
   echo "$tmp appears empty, as expected"
 }
 
+test-help() {
+  local status
+
+  # TODO: Test the oil.ovm binary as well as bin/oil.py.
+  export PYTHONPATH='.:vendor/'  # TODO: Put this in one place.
+
+  # Bundle usage.
+  nq-run status \
+    bin/oils_for_unix.py --help
+  nq-assert $status -eq 0
+
+  # Pass applet as first name.
+  nq-run status \
+    bin/oils_for_unix.py osh --help
+  nq-assert $status -eq 0
+
+  nq-run status \
+    bin/oils_for_unix.py ysh --help
+  nq-assert $status -eq 0
+
+  # Symlinks.
+  nq-run status \
+    bin/osh --help
+  nq-assert $status -eq 0
+
+  nq-run status \
+    bin/oils_for_unix.py  --help
+  nq-assert $status -eq 0
+}
+
 test-version() {
-  set +o errexit
-  bin/osh --version
-  assert $? -eq 0
+  local status
+
+  nq-run status \
+    bin/osh --version
+  nq-assert $? -eq 0
 }
 
 DISABLED-test-symlink() {
@@ -196,11 +203,13 @@ DISABLED-test-symlink() {
 
   cd $tmp
 
-  ./osh -c 'echo $OIL_VERSION'
-  assert $? -eq 0
-  ./bash -c 'echo $OIL_VERSION'
-  assert $? -eq 0
+  ./osh -c 'echo $OILS_VERSION'
+  nq-assert $? -eq 0
+  ./bash -c 'echo $OILS_VERSION'
+  nq-assert $? -eq 0
 }
+
+# TODO: Use byo test for these two functions
 
 run-for-release() {
   run-other-suite-for-release osh-usage run-test-funcs

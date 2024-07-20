@@ -21,7 +21,7 @@ class MopsTest(unittest.TestCase):
         #print(-i)
 
         try:
-            print(i == j)
+            print(i < j)
         except AssertionError:
             pass
         else:

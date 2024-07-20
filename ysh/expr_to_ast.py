@@ -316,9 +316,9 @@ class Transformer(object):
         if n > 1 and p_node.GetChild(1).typ == grammar_nt.comp_for:
             elt = self.Expr(p_node.GetChild(0))
             comp = self._CompFor(p_node.GetChild(1))
-            if id0 == Id.Op_LParen:
+            if id0 == Id.Op_LParen:  # (x+1 for x in y)
                 return expr.GeneratorExp(elt, [comp])
-            if id0 == Id.Op_LBracket:
+            if id0 == Id.Op_LBracket:  # [x+1 for x in y]
                 return expr.ListComp(parent.tok, elt, [comp])
             raise AssertionError()
 
@@ -370,6 +370,10 @@ class Transformer(object):
                                  expr_context_e.Store)  # unused expr_context_e
 
             return self._TestlistComp(parent, parent.GetChild(1), id_)
+
+        if id_ == Id.Left_CaretBracket:  # ^[42 + x]
+            child = self.Expr(parent.GetChild(1))
+            return expr.Literal(child)
 
         if id_ == Id.Op_LBrace:
             # atom: ... | '{' [Op_Newline] [dict] '}'
@@ -651,10 +655,6 @@ class Transformer(object):
                 node = expr.Binary(op_tok, node, factor)
 
             return node
-
-        elif typ == grammar_nt.literal_expr:
-            inner = self.Expr(pnode.GetChild(1))
-            return expr.Literal(inner)
 
         elif typ == grammar_nt.eggex:
             return self._Eggex(pnode)

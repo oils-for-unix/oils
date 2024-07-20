@@ -15,12 +15,22 @@ class LibStrTest(unittest.TestCase):
     def test_NextUtf8Char(self):
         CASES = [
             ([1, 3, 6, 10], '\x24\xC2\xA2\xE0\xA4\xB9\xF0\x90\x8D\x88'),
-            ([1, 3,
-              'Invalid UTF-8 continuation byte'], '\x24\xC2\xA2\xE0\xE0\xA4'),
-            ([1, 3, 6, 'Invalid start of UTF-8 character'],
-             '\x24\xC2\xA2\xE0\xA4\xA4\xB9'),
-            ([1, 3, 'Invalid start of UTF-8 character'], '\x24\xC2\xA2\xFF'),
-            ([1, 'Incomplete UTF-8 character'], '\x24\xF0\x90\x8D'),
+            ([
+                1, 3,
+                'UTF-8 decode: Bad encoding at offset 3 in string of 6 bytes'
+            ], '\x24\xC2\xA2\xE0\xE0\xA4'),
+            ([
+                1, 3, 6,
+                'UTF-8 decode: Bad encoding at offset 6 in string of 7 bytes'
+            ], '\x24\xC2\xA2\xE0\xA4\xA4\xB9'),
+            ([
+                1, 3,
+                'UTF-8 decode: Bad encoding at offset 3 in string of 4 bytes'
+            ], '\x24\xC2\xA2\xFF'),
+            ([
+                1,
+                'UTF-8 decode: Truncated bytes at offset 1 in string of 4 bytes'
+            ], '\x24\xF0\x90\x8D'),
         ]
         for expected_indexes, input_str in CASES:
             print()
@@ -60,9 +70,12 @@ class LibStrTest(unittest.TestCase):
 
     def test_DecodeUtf8CharError(self):
         CASES = [
-            ('Incomplete UTF-8 character', '\xC0'),
-            ('Invalid UTF-8 continuation byte', '\xC0\x01'),
-            ('Invalid start of UTF-8 character', '\xff'),
+            ('UTF-8 decode: Truncated bytes at offset 0 in string of 1 bytes',
+             '\xC0'),
+            ('UTF-8 decode: Bad encoding at offset 0 in string of 2 bytes',
+             '\xC0\x01'),
+            ('UTF-8 decode: Bad encoding at offset 0 in string of 1 bytes',
+             '\xff'),
         ]
         for msg, input in CASES:
             with self.assertRaises(error.Expr) as ctx:
@@ -74,11 +87,11 @@ class LibStrTest(unittest.TestCase):
         # with NextUtf8Char, at the expense of more complexity.
         CASES = [
             ([6, 3, 1, 0], '\x24\xC2\xA2\xE0\xA4\xB9\xF0\x90\x8D\x88'),
-            ([6, 3, 1, 'Invalid start of UTF-8 character'],
+            ([6, 3, 1, 'Invalid start of UTF-8 sequence'],
              '\xA2\xC2\xA2\xE0\xA4\xB9\xF0\x90\x8D\x88'),
-            ([10, 'Invalid start of UTF-8 character'],
+            ([10, 'Invalid start of UTF-8 sequence'],
              '\xF0\x90\x8D\x88\x90\x8D\x88\x90\x8D\x88\x24'),
-            ([3, 'Invalid start of UTF-8 character'], '\xF0\x90\x8D\x24'),
+            ([3, 'Invalid start of UTF-8 sequence'], '\xF0\x90\x8D\x24'),
         ]
         for expected_indexes, input_str in CASES:
             print()

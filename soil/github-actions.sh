@@ -68,10 +68,10 @@ publish-html-assuming-ssh-key() {
 load-secret-key() {
   local privkey=/tmp/rsa_github_actions
 
-  if test -n "${TOIL_KEY:-}"; then
-    echo "$TOIL_KEY" > $privkey
+  if test -n "${OILS_GITHUB_KEY:-}"; then
+    echo "$OILS_GITHUB_KEY" > $privkey
   else
-    echo '$TOIL_KEY not set'
+    echo '$OILS_GITHUB_KEY not set'
     exit 1
   fi
 

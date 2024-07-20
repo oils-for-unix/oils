@@ -8,7 +8,7 @@
 lexer.py - Library for lexing.
 """
 
-from _devbuild.gen.syntax_asdl import Token, WideToken, SourceLine
+from _devbuild.gen.syntax_asdl import Token, SourceLine
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.id_kind_asdl import Id_t, Id, Id_str
 from mycpp.mylib import log
@@ -91,14 +91,6 @@ def TokenSlice(tok, left, right):
     start = tok.col + left
     end = tok.col + tok.length + right
     return tok.line.content[start:end]
-
-
-def LazyStr2(tok):
-    # type: (WideToken) -> str
-    """
-    TODO: Remove .tval from Token; use WideToken instead
-    """
-    return ''
 
 
 def LazyStr(tok):

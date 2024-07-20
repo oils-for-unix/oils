@@ -57,7 +57,6 @@ EOF
 EOF
 }
 
-
 make-report() {
   mkdir -p $BASE_DIR/{stage1,stage2}
 
@@ -76,7 +75,6 @@ make-report() {
   benchmarks/report.sh stage3 $BASE_DIR
 }
 
-
 soil-run() {
   ### Run in soil/benchmarks2 (stable timings)
 
@@ -84,6 +82,5 @@ soil-run() {
 
   make-report
 }
-
 
 "$@"

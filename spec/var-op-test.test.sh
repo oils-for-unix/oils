@@ -1,5 +1,4 @@
-## oils_failures_allowed: 1
-## compare_shells: bash dash mksh zsh
+## compare_shells: bash-4.4 dash mksh zsh
 
 #### Lazy Evaluation of Alternative
 i=0

@@ -23,6 +23,8 @@ except ImportError:
 
 from typing import (Tuple, List, Dict, Optional, Iterator, Any, TypeVar,
                     Generic, cast, TYPE_CHECKING)
+if TYPE_CHECKING:
+    from mycpp import mops
 
 # For conditional translation
 CPP = False
@@ -100,6 +102,16 @@ def JoinBytes(byte_list):
     # type: (List[int]) -> str
 
     return ''.join(chr(b) for b in byte_list)
+
+
+#
+# Added for SparseArray
+#
+
+
+def BigIntSort(keys):
+    # type: (List[mops.BigInt]) -> None
+    keys.sort(key=lambda big: big.i)
 
 
 class File:
@@ -362,16 +374,6 @@ def hex_lower(i):
     return '%x' % i
 
 
-def hex_upper(i):
-    # type: (int) -> str
-    return '%X' % i
-
-
-def octal(i):
-    # type: (int) -> str
-    return '%o' % i
-
-
 def dict_erase(d, key):
     # type: (Dict[Any, Any], Any) -> None
     """
@@ -473,6 +475,13 @@ class UniqueObjects(object):
         return self.addresses.get(addr, -1)
 
     # Note: self.memo.clear() doesn't appear to be used
+
+
+def probe(provider, name, *args):
+    # type: (str, str, Any) -> None
+    """Create a probe for use with profilers like linux perf and ebpf or dtrace."""
+    # Noop. Just a marker for mycpp to emit a DTRACE_PROBE()
+    return
 
 
 if 0:

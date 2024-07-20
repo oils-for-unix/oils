@@ -7,6 +7,8 @@
 from . import grammar, token, tokenize
 from mycpp.mylib import log
 
+_ = log
+
 
 class PythonTokDef(object):
 

@@ -1,0 +1,32 @@
+FROM debian:bookworm-slim
+
+WORKDIR /home/uke0/tmp
+
+# Copy again to prevent unsound caching
+COPY deps/from-apt.sh /home/uke0/tmp/deps/from-apt.sh
+
+RUN deps/from-apt.sh init-deb-cache
+
+# Notes:
+#
+# - We do apt-get update here too
+# - The IDs are 
+#   var-cache-apt-debian-12
+#   var-lib-apt-debian-12
+#
+# And then soil-{other-tests,benchmarks,benchmarks2} will use the same cache ID
+# We also need wedges under each distro?
+
+RUN --mount=type=cache,id=var-cache-apt-debian-12,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=var-lib-apt-debian-12,target=/var/lib/apt,sharing=locked \
+    du --si -s /var/cache/apt /var/lib/apt && \
+    deps/from-apt.sh layer-wedge-bootstrap-debian-12
+
+# Password-less sudo for 'sudo make install'
+RUN useradd --create-home -G sudo uke0 && \
+  echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+  chown -R uke0 /home/uke0
+
+USER uke0
+
+CMD ["sh", "-c", "echo 'hello from oilshell/wedge-bootstrap-debian-12'"]

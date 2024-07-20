@@ -181,7 +181,8 @@ class Structured(FatalRuntime):
         # before these required fields.  But we always want the required fields
         # to take precedence, so it makes sense.
 
-        self.properties['status'] = num.ToBig(self.ExitStatus())
+        # _error.code is better than _error.status
+        self.properties['code'] = num.ToBig(self.ExitStatus())
         self.properties['message'] = value.Str(self.msg)
 
         return value.Dict(self.properties)

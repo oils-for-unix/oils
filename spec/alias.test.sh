@@ -92,9 +92,28 @@ echo status=$?
 status=1
 ## END
 
-#### listing given aliases
+#### unalias -a
+
+alias foo=bar
+alias spam=eggs
+
+alias | egrep 'foo|spam' | wc -l
+
+unalias -a
+
+alias
+echo status=$?
+
+## STDOUT:
+2
+status=0
+## END
+
+#### List aliases by providing names
+
 alias e=echo ll='ls -l'
 alias e ll
+
 ## STDOUT:
 alias e='echo'
 alias ll='ls -l'

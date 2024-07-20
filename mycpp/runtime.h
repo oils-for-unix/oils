@@ -17,6 +17,8 @@
 #include "mycpp/gc_mylib.h"  // Python-like file I/O, etc.
 #include "mycpp/hash.h"
 
+#include "mycpp/probes.h"
+
 // clang-format on
 
 #endif  // MYCPP_RUNTIME_H

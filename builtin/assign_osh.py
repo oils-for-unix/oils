@@ -26,6 +26,7 @@ from data_lang import j8_lite
 from typing import cast, Optional, Dict, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
+    from core import optview
     from core import ui
     from frontend.args import _Attributes
 
@@ -39,10 +40,10 @@ _EXPORT = 2
 def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     # type: (Mem, cmd_value.Assign, _Attributes, bool, int) -> int
     """
-  Args:
-    print_flags: whether to print flags
-    builtin: is it the readonly or export builtin?
-  """
+    Args:
+      print_flags: whether to print flags
+      builtin: is it the readonly or export builtin?
+    """
     flag = attrs.attrs
 
     # Turn dynamic vars to static.
@@ -361,10 +362,11 @@ class Readonly(vm._AssignBuiltin):
 class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
-    def __init__(self, mem, procs, errfmt):
-        # type: (Mem, Dict[str, value.Proc], ui.ErrorFormatter) -> None
+    def __init__(self, mem, procs, exec_opts, errfmt):
+        # type: (Mem, Dict[str, value.Proc], optview.Exec, ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
+        self.exec_opts = exec_opts
         self.errfmt = errfmt
 
     def _PrintFuncs(self, names):
@@ -414,11 +416,22 @@ class NewVar(vm._AssignBuiltin):
         elif len(cmd_val.pairs) == 0:
             return _PrintVariables(self.mem, cmd_val, attrs, False)
 
+        if not self.exec_opts.ignore_flags_not_impl():
+            if arg.i:
+                e_usage(
+                    "doesn't implement flag -i (shopt --set ignore_flags_not_impl)",
+                    loc.Missing)
+
+            if arg.l or arg.u:
+                # Just print a warning!  The program may still run.
+                self.errfmt.Print_(
+                    "Warning: OSH doesn't implement flags -l or -u (shopt --set ignore_flags_not_impl)",
+                    loc.Missing)
+
         #
         # Set variables
         #
 
-        #raise error.Usage("doesn't understand %s" % cmd_val.argv[1:])
         if cmd_val.builtin_id == builtin_i.local:
             which_scopes = scope_e.LocalOnly
         else:  # declare/typeset

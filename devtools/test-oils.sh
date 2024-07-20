@@ -27,6 +27,7 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source benchmarks/id.sh
 source test/common.sh  # die
 
 OILS_VERSION=$(head -n 1 oil-version.txt)
@@ -36,6 +37,10 @@ REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 FLAG_num_iters=1  # iterations
 FLAG_num_shells=1
 FLAG_num_workloads=1
+FLAG_upload=''
+FLAG_subdir=''
+FLAG_url=http://travis-ci.oilshell.org/wwup.cgi
+FLAG_dry_run=''
 
 readonly XSHAR_NAME=test-oils.xshar  # hard-coded for now
 
@@ -67,6 +72,16 @@ Actions:
 
     -w --num-workloads           Run the first N of the workloads
 
+    -u --upload                  Upload .wwz results to the CI server
+
+    --subdir                     Subdirectory for the wwz. results
+                                 default: git-\$commit
+
+    --url                        Upload to this URL
+                                 default: $FLAG_url
+
+    --dry-run                    Print out tasks, but don't execute them
+
   Workloads:
 EOF
   benchmarks/osh-runtime.sh print-workloads
@@ -89,7 +104,8 @@ osh-runtime dependencies:
   - C++ compiler, for oils-for-unix and benchmarks/time-helper.c
     - On OS X, the compiler comes with XCode
   - python2 for - benchmarks/time_.py, tsv*.py, gc_stats*.py
-  - curl for uploading results via HTTP
+  - zip for creating the .wwz payload
+  - curl for uploading it via HTTP
 EOF
 }
 
@@ -132,7 +148,31 @@ parse-flags-osh-runtime() {
           die "-w / --num-workloads requires an argument"
         fi
         shift
-        FLAG_num_shells=$1
+        FLAG_num_workloads=$1
+        ;;
+
+      -u|--upload)
+        FLAG_upload=T
+        ;;
+
+      --subdir)
+        if test $# -eq 1; then
+          die "--subdir requires an argument"
+        fi
+        shift
+        FLAG_subdir=$1
+        ;;
+
+      --url)
+        if test $# -eq 1; then
+          die "--url requires an argument"
+        fi
+        shift
+        FLAG_url=$1
+        ;;
+
+      --dry-run)
+        FLAG_dry_run=T
         ;;
 
       *)
@@ -174,8 +214,77 @@ osh-runtime() {
   popd
   popd
 
-  benchmarks/osh-runtime.sh test-oils-run $osh \
-    $FLAG_num_shells $FLAG_num_workloads $FLAG_num_iters
+  local job_id host_name
+  # this form used by benchmarks to name raw TSV
+  job_id=$(print-job-id)  # benchmarks/id.sh
+  host_name=$(hostname)
+
+
+  if test -n "$FLAG_dry_run"; then
+    echo
+    echo '--- Tasks that would be run ---'
+    echo
+
+    benchmarks/osh-runtime.sh print-tasks-xshar $host_name $osh \
+      $FLAG_num_iters $FLAG_num_shells $FLAG_num_workloads
+
+    echo
+
+    return
+  fi
+
+  benchmarks/osh-runtime.sh test-oils-run $osh $job_id $host_name \
+    $FLAG_num_iters $FLAG_num_shells $FLAG_num_workloads
+
+  # /uuu/
+  #   osh-runtime/
+  #     $FLAG_subdir/     # Human-readable label
+  #     git-$hash/  # For PRs
+  #       $(date).$machine.wwz/
+  #         osh-runtime/
+  #           times.tsv
+  #           gc_stats.tsv
+  #           provenance.tsv
+  #         shell-id/
+  #         host-id/
+
+  if test -n "$FLAG_upload"; then
+
+    if ! command -v zip >/dev/null; then
+      echo "$0: zip command not found.  It's needed to upload benchmark results."
+      # For now, don't return 1, because the CI will fail
+      return 1
+    fi
+
+    local wwz_name="${job_id}.${host_name}.wwz"
+
+    pushd _tmp
+    # Only zip metadata files in osh-runtime, so we don't serve untrusted stuff
+    zip -r $wwz_name \
+      osh-runtime/*.txt osh-runtime/raw/*.tsv shell-id/ host-id/
+    popd
+
+    local wwz_path=_tmp/$wwz_name
+    unzip -l $wwz_path
+
+    local subdir
+    if test -n "$FLAG_subdir"; then
+      subdir=$FLAG_subdir
+    else
+      if test -n "${XSHAR_GIT_COMMIT:-}"; then
+        local suffix=${XSHAR_GIT_COMMIT:0:8}  # like benchmarks/id.sh
+        subdir="git-$suffix"
+      else
+        subdir=unknown
+      fi
+    fi
+
+    curl --verbose \
+      --form "payload-type=osh-runtime" \
+      --form "subdir=$subdir" \
+      --form "wwz=@$wwz_path" \
+      $FLAG_url
+  fi
 
   # TODO: upload these with curl
   #

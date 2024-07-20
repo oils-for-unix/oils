@@ -1,4 +1,4 @@
-## oils_failures_allowed: 5
+## oils_failures_allowed: 3
 
 #### append onto BashArray a=(1 2)
 shopt -s parse_at
@@ -155,12 +155,41 @@ echo status=$?
 status=2
 ## END
 
+#### read --raw-line
+
+echo hi | read --raw-line
+echo "reply=$_reply"
+echo len=$[len(_reply)]
+
+echo hi | read -r
+if test "$REPLY" = "$_reply"; then
+  echo pass
+fi
+
+## STDOUT:
+reply=hi
+len=2
+pass
+## END
+
 #### Mixing read --line with read -r
 
 $SH $REPO_ROOT/spec/testdata/ysh-read-0.sh
 
 ## STDOUT:
-TODO
+read -r
+REPLY=1
+REPLY=2
+
+read --raw-line
+_reply=1
+_reply=2
+
+Mixed
+REPLY=1
+REPLY=2
+_reply=3
+REPLY=4
 ## END
 
 #### read --line --with-eol
@@ -175,9 +204,16 @@ myline=a
 myline=b
 ## END
 
-#### read --line --j8
+#### read --raw-line --j8
 
-echo $'u\'foo\'' | read --line --j8
+# TODO: is this similar to @() ?  It reads j8 lines?
+#
+# But using a function is better?
+#
+# var x = fromJ8Line(_reply)
+# var x = fromJson(_reply)  # this is https://jsonlines.org
+
+echo $'u\'foo\'' | read --raw-line --j8
 write -- "$_reply"
 
 ## STDOUT:
@@ -285,6 +321,20 @@ echo "[$REPLY]"
 ## STDOUT:
 [./a\b\c\d]
 [./a\b\c\d]
+## END
+
+#### read -0 myvar doesn't do anything with IFS
+
+touch 'foo bar  '
+find -type f -print0 | read -0 
+echo "[$REPLY]"
+
+find -type f -print0 | read -0 myvar
+echo "[$myvar]"
+
+## STDOUT:
+[./foo bar  ]
+[./foo bar  ]
 ## END
 
 #### simple_test_builtin
@@ -477,4 +527,25 @@ BuiltinFunc
 BoundFunc
 BoundFunc
 Range
+## END
+
+#### source ///osh/two.sh and $LIB_OSH
+
+source ///osh/two.sh
+echo status=$?
+
+source $LIB_OSH/two.sh
+echo status=$?
+
+# errors
+source ///
+echo status=$?
+source ///x
+echo status=$?
+
+## STDOUT:
+status=0
+status=0
+status=2
+status=2
 ## END

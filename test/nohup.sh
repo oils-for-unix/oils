@@ -9,11 +9,10 @@
 # Usage:
 #   test/nohup.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
-source devtools/run-task.sh
 source test/common.sh  # run-test-funcs
 
 run-shell() {
@@ -64,6 +63,7 @@ test-json-read() {
   run-shell bin/osh -c 'json read'
 }
 
+# TODO: Use byo-server
 soil-run() {
   # Make sure there's a TTY
   echo TTY
@@ -86,4 +86,4 @@ soil-run() {
   done
 }
 
-run-task "$@"
+task-five "$@"

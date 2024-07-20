@@ -30,7 +30,7 @@ messages-in-stream() {
   my-curl \
     -u "$bot_email:$bot_api_key" \
     -d 'anchor=newest' \
-    -d 'num_before=1000' \
+    -d 'num_before=3000' \
     -d 'num_after=0' \
     -d 'apply_markdown=false' \
     --data-urlencode narrow="$narrow" \

@@ -1,21 +1,27 @@
 ---
-in_progress: yes
-body_css_class: width40 help-body
+title: Builtin Commands (Oils Reference)
+all_docs_url: ..
+body_css_class: width40
 default_highlighter: oils-sh
 preserve_anchor_case: yes
 ---
 
-Builtin Commands
-===
+<div class="doc-ref-header">
+
+[Oils Reference](index.html) &mdash; Chapter **Builtin Commands**
+
+</div>
 
 This chapter in the [Oils Reference](index.html) describes builtin commands for OSH and YSH.
 
-<div id="toc">
+<span class="in-progress">(in progress)</span>
+
+<div id="dense-toc">
 </div>
 
 ## Memory
 
-### append
+### cmd/append
 
 Append word arguments to a list:
 
@@ -30,6 +36,10 @@ It's a shortcut for:
 
     call myflags->append('-c')
     call myflags->append('echo hi')
+
+Similar names: [append][]
+
+[append]: chap-index.html#append
 
 ### pp
 
@@ -49,17 +59,60 @@ Examples:
 
 ## Handle Errors
 
+### error
+
+The `error` builtin interrupts shell execution.
+
+If there's a surrounding `try` block, the `_error` register is set, and
+execution proceeds after the block.
+
+Otherwise, the shell exits with a non-zero status.
+
+Examples:
+
+    error 'Missing /tmp'            # program fails with status 10
+
+    try {
+       error 'Another problem'
+    }
+    echo $[error.code] # => 10
+
+Override the default error code of `10` with a named argument:
+
+    error 'Missing /tmp' (code=99)  # program fails with status 99
+
+Named arguments add arbitrary properties to the resulting `_error` register:
+
+    error 'Oops' (path='foo.json')
+
+See [YSH Error Handling](../ysh-error-handling.html) for more examples.
+
+### failed
+
+A shortcut for `(_error.code !== 0)`:
+
+    try {
+      ls /tmp
+    }
+    if failed {
+      echo 'ls failed'
+    }
+
+It saves you 7 punctuation characters: `( _ . !== )`
+
+See [YSH Error Handling](../ysh-error-handling.html) for more examples.
+
 ### try
 
-Run a block of code, stopping at the first error.  In other words, shopt
-`errexit` is enabled.
+Run a block of code, stopping at the first error.  (This is implemented with
+`shopt --set errexit`)
 
-Set the `_status` variable to the exit status of the block, and return 0.
+`try` sets the `_error` register to a dict, and always returns 0.
 
     try {
       ls /nonexistent
     }
-    if (_status !== 0) {
+    if (_error.code !== 0) {
       echo 'ls failed'
     }
 
@@ -81,73 +134,26 @@ The case statement can be useful:
     try {
       grep PATTERN FILE.txt
     }
-    case (_status) {
+    case (_error.code) {
       (0)    { echo 'found' }
       (1)    { echo 'not found' }
-      (else) { echo "grep returned status $_status" }
+      (else) { echo "grep returned status $[_error.code]" }
     }
 
-The `try` builtin may also set the `_error` register.
+See [YSH Error Handling](../ysh-error-handling.html) for more examples.
 
 ### boolstatus
 
-Runs a command and requires the exit code to be 0 or 1.
+Runs a command, and requires the exit code to be 0 or 1.
 
-    if boolstatus egrep '[0-9]+' myfile {  # may abort
+    if boolstatus egrep '[0-9]+' myfile {  # e.g. aborts on status 2
       echo 'found'               # status 0 means found
     } else {
       echo 'not found'           # status 1 means not found
     }
 
-### error
-
-The `error` builtin interrupts the shell program.  
-
-    error 'Missing /tmp'  # program fails with status 10
-
-Override the default status of `10` with a named argument:
-
-    error 'Missing /tmp' (status=99) 
-
-In YSH, it's customary to use `error` instead of `return 1`, since it provides
-more information:
-
-    proc p {
-      if ! test -d /tmp {
-        error 'Missing /tmp'  # more descriptive than return
-      }
-      echo hi
-    }
-
-Handle the error with the `try` builtin:
-
-    try {
-      p
-    }
-    if (_status !== 0) {
-      echo $[_error.message]  # => Missing /tmp
-    }
-
-The integer `_status` is always set, and the Dict `_error` is set for all
-"structured" errors, which includes errors raised by the `try` builtin.
-
-Special properties of `_error`:
-
-- `_error.message` - the positional string arg
-- `_error.status` - the named `status` arg, or the default 10
-
-You can attach other, arbitrary properties to the error:
-
-    error 'Oops' (path='foo.json')
-
-They are attached to `_error`:
-
-    try {
-      error 'Oops' (path='foo.json')
-    }
-    if (_status !== 0) {
-      echo $[_error.path]  # => foo.json
-    }
+It's meant for external commands that "return" more than 2 values, like true /
+false / fail, rather than pass / fail.
 
 ## Shell State
 
@@ -252,7 +258,7 @@ Current list of registers:
 
     Regex data underlying BASH_REMATCH, _group(), _start(), _end()
     $?             
-    _status               # set by the try builtin
+    _error                # set by the try builtin
     PIPESTATUS            # aka  _pipeline_status
     _process_sub_status
 
@@ -332,31 +338,30 @@ Also a declaration
 
 YSH adds long flags to shell's `read`:
 
-    read --all               # whole file including newline, fills $_reply
+    read --all               # whole file including trailing \n, fills $_reply
     read --all (&x)          # fills $x
 
     read --num-bytes 3       # read N bytes, fills _reply
     read --num-bytes 3 (&x)  # fills $x
 
+    read --raw-line             # unbuffered read of line, omitting trailing \n
+    read --raw-line (&x)        # fills $x
+
+    read --raw-line --with-eol  # include the trailing \n
+
 And a convenience:
 
     read -0                 # read until NUL, synonym for read -r -d ''
 
-TODO: We used to have `read --line`, but buffered I/O doesn't mix with shell
-I/O, which is reads directly from file descriptors.
+You may want to use `fromJson8()` or `fromJson()` after reading a line.
 
 <!--
 
-buffered, line-oriented I/O 
+TODO:
 
-    read --line             # fills $_reply var with line
-    read --line (&x)        # fills $x (&x is a place)
+- read --netstr
+- fromJ8Line() is different than from Json8!  It's like @()
 
-    read --line --with-eol  # keep the \n
-
-You may want to use `fromJ8()` or `fromJson()` after reading a line.
-
-TODO: read --netstr
 -->
 
 <!--
@@ -430,6 +435,24 @@ a"hi"  # what about this?
 Technically we CAN read those as literal strings
 -->
 
+### ysh-echo
+
+Print arguments to stdout, separated by a space.
+
+    ysh$ echo hi there
+    hi there
+
+The [simple_echo][] option means that flags aren't accepted, and `--` is not
+accepted.
+
+    ysh$ echo -n
+    -n
+
+See the [YSH FAQ][echo-en] for details.
+
+[simple_echo]: chap-option.html#ysh:all
+[echo-en]: ../ysh-faq.html#how-do-i-write-the-equivalent-of-echo-e-or-echo-n
+
 ### write
 
 write fixes problems with shell's `echo` builtin.
@@ -459,10 +482,14 @@ You may want to use `toJson8()` or `toJson()` before writing:
 
 ### fork
 
-The preferred alternative to shell's `&`.
+Run a command, but don't wait for it to finish.
 
     fork { sleep 1 }
     wait -n
+
+In YSH, use `fork` rather than shell's `&` ([ampersand][]).
+
+[ampersand]: chap-cmd-lang.html#ampersand
 
 ### forkwait
 
@@ -473,6 +500,29 @@ The preferred alternative to shell's `()`.  Prefer `cd` with a block if possible
     }
     echo $not_mutated
 
+### fopen
+
+Runs a block passed to it.  It's designed so redirects have a **prefix**
+syntax:
+
+    fopen >out.txt {
+      echo 1
+      echo 2
+    }
+
+Rather than shell style:
+
+    { echo 1
+      echo 2
+    } >out.txt
+
+When a block is long, the former is more readable.
+
+## Hay Config
+
+### hay
+
+### haynode
 
 
 ## Data Formats
@@ -494,7 +544,10 @@ Or use an explicit place:
     var x = ''
     json read (&x) < myfile.txt
 
-Related: [json-encode-err]() and [json-decode-error]()
+Related: [err-json-encode][] and [err-json-decode][]
+
+[err-json-encode]: chap-errors.html#err-json-encode
+[err-json-decode]: chap-errors.html#err-json-decode
 
 ### json8
 
@@ -506,7 +559,10 @@ On decoding side:
 
 - Understands `b'' u''` strings
 
-Related: [json8-encode-err]() and [json8-decode-error]()
+Related: [err-json8-encode]() and [err-json8-decode]()
+
+[err-json8-encode]: chap-errors.html#err-json8-encode
+[err-json8-decode]: chap-errors.html#err-json8-decode
 
 ## Testing
 
@@ -561,7 +617,7 @@ Flags:
     -n  omit the trailing newline
 <!--  -E  -->
 
-See [char-escapes]($osh-help).
+See [char-escapes](chap-mini-lang.html#char-escapes).
 
 ### printf
 
@@ -570,7 +626,7 @@ See [char-escapes]($osh-help).
 Formats values and prints them.  The FMT string contain three types of objects:
 
 1. Literal Characters
-2. Character escapes like `\t`.  See [char-escapes]($osh-help).
+2. Character escapes like `\t`.  See [char-escapes](chap-mini-lang.html#char-escapes).
 3. Percent codes like `%s` that specify how to format each each ARG.
 
 If not enough ARGS are passed, the empty string is used.  If too many are
@@ -641,8 +697,27 @@ These builtins accept shell code and run it.
 
     source SCRIPT ARG*
 
-Executes SCRIPT with given ARGs in the context of the current shell.  It will
-modify existing variables.
+Execute SCRIPT with the given ARGs, in the context of the current shell.  That is,
+existing variables will be modified.
+
+---
+
+Oils extension: If the SCRIPT starts with `///`, we look for scripts embedded in
+the `oils-for-unix` binary.  Example:
+
+    source ///osh/two.sh     # load embedded script
+
+    : ${LIB_OSH=fallback/dir}
+    source $LIB_OSH/two.sh   # same thing
+
+The [LIB_OSH][] form is useful for writing a script that works under both bash
+and OSH.
+
+- Related: the [cat-em][] tool prints embedded scripts.
+
+[LIB_OSH]: chap-special-var.html#LIB_OSH
+[cat-em]: chap-front-end.html#cat-em
+
 
 ### eval
 
@@ -719,6 +794,7 @@ Flags:
     -s --set    Turn the named options on
     -u --unset  Turn the named options off
     -p          Print option values
+    -o          Use older set of options, normally controlled by 'set -o'
     -q          Return 0 if the option is true, else 1
 
 Examples: 
@@ -860,6 +936,59 @@ directories.
 Oils currently supports writing masks in octal.
 
 If no MODE, show the current mask.
+
+### ulimit
+
+    ulimit --all
+    ulimit -a
+    ulimit FLAGS* -RESOURCE_FLAG VALUE?
+
+    ulimit FLAGS* VALUE?  # discouraged
+
+Show and modify process resource limits.
+
+Flags:
+
+    -S  for soft limit
+    -H  for hard limit
+
+    -c -d -f ...  # ulimit --all shows all resource flags
+
+Show a table of resources:
+
+    ulimit --all
+    ulimit -a
+
+For example, the table shows that `-n` is the flag that controls the number
+file descriptors, the soft and hard limit for `-n`, and the multiplication
+"factor" for the integer VALUE you pass.
+
+---
+
+Here are examples of using resource flags.
+
+Get the soft limit for the number of file descriptors:
+ 
+    ulimit -S -n
+    ulimit -n     # same thing
+
+Get the hard limit:
+
+    ulimit -H -n
+
+Set the soft or hard limit:
+
+    ulimit -S -n 100
+    ulimit -H -n 100
+
+Set both limits:
+
+    ulimit -n 100
+
+A special case that's discouraged: with no resource flag, `-f` is assumed:
+
+    ulimit      # equivalent to ulimit -f
+    ulimit 100  # equivalent to ulimit -f 100
 
 ### times
 
@@ -1071,7 +1200,7 @@ Flag:
     -p PATH  Inhibit path search, PATH is used as location for NAME.
     -t       Print the full path of one or more NAME.-->
 
-### type
+### cmd/type
 
     type FLAG* NAME+
 
@@ -1085,6 +1214,10 @@ Flags:
     -f  Don't search for shell functions
     -P  Only search for executable files
     -t  Print a single word: alias, builtin, file, function, or keyword
+
+Similar names: [type][]
+
+[type]: chap-index.html#type
 
 <!-- TODO:
 - procs are counted as shell functions, should be their own thing
@@ -1150,7 +1283,7 @@ to aliases like:
 Functions are less likely to cause parsing problems.
 
 - Quoting like `\ls` or `'ls'` disables alias expansion
-- To remove an existing alias, use [unalias]($osh-help).
+- To remove an existing alias, use [unalias](chap-builtin-cmd.html#unalias).
 
 ### unalias
 
@@ -1190,188 +1323,3 @@ Flags:
 
 Bash has this, but OSH won't implement it.
 
-
-## Args Parser
-
-YSH includes a command-line argument parsing utility called `parseArgs`. This
-is intended to be used for command-line interfaces to YSH programs.
-
-To use it, first import `args.ysh`:
-
-    source --builtin args.ysh
-
-Then, create an argument parser **spec**ification:
-
-    parser (&spec) {
-      flag -v --verbose (help="Verbosely")  # default is Bool, false
-
-      flag -P --max-procs ('int', default=-1, help='''
-        Run at most P processes at a time
-        ''')
-
-      flag -i --invert ('bool', default=true, help='''
-        Long multiline
-        Description
-        ''')
-
-      arg src (help='Source')
-      arg dest (help='Dest')
-
-      rest files
-    }
-
-Finally, parse `ARGV` (or any other array of strings) with:
-
-    var args = parseArgs(spec, ARGV)
-
-The returned `args` is a `Dict` containing key-value pairs with the parsed
-values (or defaults) for each flag and argument. For example, given
-`ARGV = :| mysrc -P 12 mydest a b c |`, `args` would be:
-
-    {
-        "verbose": false,
-        "max-procs": 12,
-        "invert": true,
-        "src": "mysrc",
-        "dest": "mydest",
-        "files": ["a", "b", "c"]
-    }
-
-### parser
-
-`parseArgs()` requires a parser specification to indicate how to parse the
-`ARGV` array. This specification should be constructed using the `parser` proc.
-
-    parser (&spec) {
-      flag -f --my-flag
-      arg myarg
-      rest otherArgs
-    }
-
-In the above example, `parser` takes in a place `&spec`, which will store the
-resulting specification and a block which is evaluated to build that
-specification.
-
-Inside of a `parser` block, you should call the following procs:
-
-- `flag` to add `--flag` options
-- `arg` to add positional arguments
-- `rest` to capture remaining positional arguments into a list
-
-`parser` will validate the parser specification for errors such as duplicate
-flag or argument names.
-
-    parser (&spec) {
-      flag -n --name
-      flag -n --name  # Duplicate!
-    }
-
-    # => raises "Duplicate flag/arg name 'name' in spec" (status = 3)
-
-### flag
-
-`flag` should be called within a `parser` block.
-
-    parser (&spec) {
-      flag -v --verbose
-    }
-
-The above example declares a flag "--verbose" and a short alias "-v".
-`parseArgs()` will then store a boolean value under `args.verbose`:
-- `true` if the flag was passed at least once
-- `false` otherwise
-
-Flags can also accept values. For example, if you wanted to accept an integer count:
-
-    parser (&spec) {
-      flag -N --count ('int')
-    }
-
-Calling `parseArgs` with `ARGV = :| -n 5 |` or `ARGV = :| --count 5 |` will
-store the integer `5` under `args.count`. If the user passes in a non-integer
-value like `ARGV = :| --count abc |`, `parseArgs` will raise an error.
-
-Default values for an argument can be set with the `default` named argument.
-
-    parser (&spec) {
-      flag -N --count ('int', default=2)
-
-      # Boolean flags can be given default values too
-      flag -O --optimize ('bool', default=true)
-    }
-
-    var args = parseArgs(spec, :| -n 3 |)
-    # => args.count = 2
-    # => args.optimize = true
-
-Each name passed to `flag` must be unique to that specific `parser`. Calling
-`flag` with the same name twice will raise an error inside of `parser`.
-
-<!-- TODO: how can we explicitly pass false to a boolean flag? -->
-<!-- TODO: how about --no-XXXX variants of flags? -->
-
-### arg
-
-`arg` should be called within a `parser` block.
-
-    parser (&spec) {
-      arg query
-      arg path
-    }
-
-The above example declares two positional arguments called "query" and "path".
-`parseArgs()` will then store strings under `args.query` and `args.path`. Order
-matters, so the first positional argument will be stored to `query` and the
-second to `path`. If not enough positional arguments are passed, then
-`parseArgs` will raise an error.
-
-Similar to `flag`, each `arg` name must be unique. Calling `arg` with the same
-name twice will cause `parser` to raise an error.
-
-### rest
-
-`rest` should be called within a `parser` block.
-
-    parser (&spec) {
-      arg query
-      rest files
-    }
-
-Capture zero or more positional arguments not already captured by `arg`. So,
-for `ARGV = :| hello file.txt message.txt README.md |`, we would have
-`args.query = "file.txt"` and `args.files = ["file.txt", "message.txt",
-"README.md"]`.
-
-Without rest, passing extraneous arguments will raise an error in
-`parseArgs()`.
-
-`rest` can only be called _once_ within a `parser`. Calling it multiple times
-will raise an error in `parser`.
-
-### parseArgs()
-
-Given a parser specification `spec` produced by `parser`, parse a list of
-strings (usually `ARGV`.)
-
-    var args = parseArgs(spec, ARGV)
-
-The returned `args` is a dictionary mapping the names of each `arg`, `flag` and
-`rest` to their captured values. (See the example at the [start of this
-topic](#Args-Parser).)
-
-`parseArgs` will raise an error if the `ARGV` is invalid per the parser
-specification. For example, if it's missing a required positional argument:
-
-    parser (&spec) {
-      arg path
-    }
-
-    var args = parseArgs(spec, [])
-    # => raises an error about the missing 'path' (status = 2)
-
-<!--
-TODO: Document chaining parsers / sub-commands
-      - Either will allow parser nesting
-      - Or can use `rest rest` and `parseArgs` again on `rest`
-TODO: Document the help named argument. Punting while we do not generate help messages
--->

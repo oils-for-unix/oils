@@ -1,7 +1,6 @@
 """
 cppgen.py - AST pass to that prints C++ code
 """
-import io
 import itertools
 import json  # for "C escaping"
 
@@ -14,12 +13,13 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
-                        FuncDef, UnaryExpr, OpExpr, ComparisonExpr, CallExpr,
-                        IntExpr, ListExpr, DictExpr, ListComprehension)
+                        FuncDef, UnaryExpr, OpExpr, CallExpr,
+                        ListExpr, DictExpr, ListComprehension)
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
-from mycpp.util import log
+from mycpp.util import log, join_name, split_py_name, IsStr
+from mycpp import pass_state
 from mycpp import util
 
 from typing import Tuple, List
@@ -31,6 +31,10 @@ NAME_CONFLICTS = ('stdin', 'stdout', 'stderr')
 
 class UnsupportedException(Exception):
     pass
+
+
+def _IsContextManager(class_name):
+    return class_name[-1].startswith('ctx_')
 
 
 def _SkipAssignment(var_name):
@@ -129,11 +133,6 @@ def _GetContainsFunc(t):
         contains_func = _GetContainsFunc(t.items[0])
 
     return contains_func  # None checked later
-
-
-def IsStr(t):
-    """Helper to check if a type is a string."""
-    return isinstance(t, Instance) and t.type.fullname == 'builtins.str'
 
 
 def _EqualsFunc(left_type):
@@ -309,28 +308,60 @@ def GetCType(t, param=False, local=False):
         is_pointer = True
 
     elif isinstance(t, UnionType):
-        # Special case for Optional[T] == Union[T, None]
-        if len(t.items) != 2:
-            raise NotImplementedError('Expected 2 items in Union, got %s' %
-                                      len(t.items))
+        # Special case for Optional[IOError_OSError]
+        # == Union[IOError, OSError, None]
 
-        t0 = t.items[0]
-        t1 = t.items[1]
+        num_items = len(t.items)
 
-        c_type = None
-        if isinstance(t1, NoneTyp):  # Optional[T0]
-            c_type = GetCType(t.items[0])
-        else:
-            # Detect type alias defined in core/error.py
-            # IOError_OSError = Union[IOError, OSError]
+        if num_items == 3:
+            t0 = t.items[0]
+            t1 = t.items[1]
+            t2 = t.items[2]
+
             t0_name = t0.type.fullname
             t1_name = t1.type.fullname
-            if t0_name == 'builtins.IOError' and t1_name == 'builtins.OSError':
-                c_type = 'IOError_OSError'
-                is_pointer = True
 
-        if c_type is None:
-            raise NotImplementedError('Unexpected Union type %s' % t)
+            if t0_name != 'builtins.IOError':
+                raise NotImplementedError(
+                    'Expected Union[IOError, OSError, None]: t0 = %s' %
+                    t0_name)
+
+            if t1_name != 'builtins.OSError':
+                raise NotImplementedError(
+                    'Expected Union[IOError, OSError, None]: t1 = %s' %
+                    t1_name)
+
+            if not isinstance(t2, NoneTyp):
+                raise NotImplementedError(
+                    'Expected Union[IOError, OSError, None]')
+
+            c_type = 'IOError_OSError'
+            is_pointer = True
+
+        elif num_items == 2:
+
+            t0 = t.items[0]
+            t1 = t.items[1]
+
+            c_type = None
+            if isinstance(t1, NoneTyp):  # Optional[T0]
+                c_type = GetCType(t.items[0])
+            else:
+                # Detect type alias defined in core/error.py
+                # IOError_OSError = Union[IOError, OSError]
+                t0_name = t0.type.fullname
+                t1_name = t1.type.fullname
+                if (t0_name == 'builtins.IOError' and
+                        t1_name == 'builtins.OSError'):
+                    c_type = 'IOError_OSError'
+                    is_pointer = True
+
+            if c_type is None:
+                raise NotImplementedError('Unexpected Union type %s' % t)
+
+        else:
+            raise NotImplementedError(
+                'Expected 2 or 3 items in Union, got %s' % num_items)
 
     elif isinstance(t, CallableType):
         # Function types are expanded
@@ -401,23 +432,21 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                  f,
                  virtual=None,
                  local_vars=None,
-                 fmt_ids=None,
-                 field_gc=None,
+                 ctx_member_vars=None,
                  decl=False,
                  forward_decl=False,
-                 stack_roots_warn=None):
+                 stack_roots_warn=None,
+                 dot_exprs=None):
         self.types = types
         self.const_lookup = const_lookup
         self.f = f
 
         self.virtual = virtual
-        # local_vars: FuncDef node -> list of type, var
-        # This is different from member_vars because we collect it in the
-        # 'decl' phase, and write it in the definition phase.
-        self.local_vars = local_vars
-        self.fmt_ids = fmt_ids
-        self.field_gc = field_gc
-        self.fmt_funcs = io.StringIO()
+
+        # We collect local_vars and ctx-member_vars in the DECL phase, and
+        # write them in the IMPL phase.
+        self.local_vars = local_vars  # Dict[FuncDef node, list of type, var]
+        self.ctx_member_vars = ctx_member_vars  # for rooting
 
         self.decl = decl
         self.forward_decl = forward_decl
@@ -428,27 +457,24 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent = 0
         self.local_var_list = []  # Collected at assignment
         self.prepend_to_block = None  # For writing vars after {
-        self.current_func_node = None
-        self.current_stmt_node = None
+
         # Temporary lists to use as output params for generators
         self.yield_accumulators = {
         }  # type: Dict[Union[Statement, FuncDef], Tuple[str, str]]
 
-        # This is cleared when we start visiting a class.  Then we visit all the
-        # methods, and accumulate the types of everything that looks like
-        # self.foo = 1.  Then we write C++ class member declarations at the end
-        # of the class.
-        # This is all in the 'decl' phase.
-        self.member_vars: Dict[str, Type] = {}
+        self.current_func_node = None
+        self.current_stmt_node = None
 
+        # DECL pass: self.current_member_vars holds the vars for the current
+        # class.  It's cleared when we start looking at a class.  Then we visit
+        # all the methods, and accumulate the types of everything that looks
+        # like self.foo = 1.  Then we write C++ class member declarations at
+        # the end of the class.
+        self.current_member_vars: Dict[str, Type] = {}
         self.current_class_name = None  # for prototypes
         self.current_method_name = None
 
-        self.imported_names = set()  # MemberExpr -> module::Foo() or self->foo
-
-        # HACK for conditional import inside mylib.PYTHON
-        # in core/shell.py
-        self.imported_names.add('help_meta')
+        self.dot_exprs = dot_exprs
 
         # So we can report multiple at once
         # module path, line number, message
@@ -537,17 +563,16 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         err = (self.module_path, node.line, msg)
         self.errors_keep_going.append(err)
 
+    def not_translated(self, node: Union[Statement, Expression], name: str):
+        self.report_error(node, '%s not translated' % name)
+
+    def not_python2(self, node: Union[Statement, Expression], name: str):
+        self.report_error(node, "%s: shouldn't get here in Python 2" % name)
+
     # Not in superclasses:
 
     def visit_mypy_file(self, o: 'mypy.nodes.MypyFile') -> T:
-        # Skip some stdlib stuff.  A lot of it is brought in by 'import
-        # typing'.
-        if o.fullname in ('__future__', 'sys', 'types', 'typing', 'abc',
-                          '_ast', 'ast', '_weakrefset', 'collections',
-                          'cStringIO', 're', 'builtins'):
-
-            # These module are special; their contents are currently all
-            # built-in primitives.
+        if util.ShouldSkipPyFile(o):
             return
 
         #self.log('')
@@ -578,12 +603,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 continue
             self.accept(node)
 
-        # Write fmtX() functions inside the namespace.
-        if self.decl:
-            self.always_write('\n')
-            self.always_write(self.fmt_funcs.getvalue())
-            self.fmt_funcs = io.StringIO()  # clear it for the next file
-
         if self.forward_decl:
             self.indent -= 1
 
@@ -602,29 +621,33 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_int_expr(self, o: 'mypy.nodes.IntExpr') -> T:
         self.def_write(str(o.value))
 
-    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
-        self.def_write(self.const_lookup[o])
-
-    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
-        pass
-
-    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> T:
-        pass
-
     def visit_float_expr(self, o: 'mypy.nodes.FloatExpr') -> T:
         # e.g. for arg.t > 0.0
         self.def_write(str(o.value))
 
+    def visit_str_expr(self, o: 'mypy.nodes.StrExpr') -> T:
+        self.def_write(self.const_lookup[o])
+
+    # UNHANDLED
+
+    def visit_bytes_expr(self, o: 'mypy.nodes.BytesExpr') -> T:
+        self.not_python2(o, 'bytes expr')
+
+    def visit_unicode_expr(self, o: 'mypy.nodes.UnicodeExpr') -> T:
+        self.not_translated(o, 'unicode expr')
+
     def visit_complex_expr(self, o: 'mypy.nodes.ComplexExpr') -> T:
-        pass
+        self.not_translated(o, 'complex expr')
+
+    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> T:
+        # is this in .pyi files only?
+        self.not_translated(o, 'ellipsis')
 
     # Expressions
 
-    def visit_ellipsis(self, o: 'mypy.nodes.EllipsisExpr') -> T:
-        pass
-
     def visit_star_expr(self, o: 'mypy.nodes.StarExpr') -> T:
-        pass
+        # mycpp/examples/invalid_python.py doesn't hit this?
+        self.not_translated(o, 'star expr')
 
     def visit_name_expr(self, o: 'mypy.nodes.NameExpr') -> T:
         if o.name == 'None':
@@ -651,37 +674,19 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
     def visit_member_expr(self, o: 'mypy.nodes.MemberExpr') -> T:
         if o.expr:
-            # Why do we not get some of the types?  e.g. hnode.Record in asdl/runtime
-            # But this might suffice for the "Str_v" and "value_v" refactoring.
-            # We want to rewrite w.parts not to w->parts, but to w.parts() (method call)
+            dot_expr = self.dot_exprs[o]
 
-            is_small_str = False
-            if util.SMALL_STR:
-                lhs_type = self.types.get(o.expr)
-                if IsStr(lhs_type):
-                    is_small_str = True
-                else:
-                    #self.log('NOT a string %s %s', o.expr, o.name)
-                    pass
-                """
-                if lhs_type is not None and isinstance(lhs_type, Instance):
-                    self.log('lhs_type %s expr %s name %s',
-                             lhs_type.type.fullname, o.expr, o.name)
-
-                 """
-
-            is_asdl = o.name == 'CreateNull'  # hack for MyType.CreateNull(alloc_lists=True)
-            is_module = (isinstance(o.expr, NameExpr) and
-                         o.expr.name in self.imported_names)
-
-            # This is an approximate hack that assumes that locals don't shadow
-            # imported names.  Might be a problem with names like 'word'?
-            if is_small_str:
+            if isinstance(dot_expr, pass_state.StackObjectMember):
                 op = '.'
-            elif is_asdl or is_module:
+
+            elif isinstance(dot_expr, pass_state.StaticObjectMember) or isinstance(dot_expr, pass_state.ModuleMember):
                 op = '::'
+
+            elif isinstance(dot_expr, pass_state.HeapObjectMember):
+                op = '->'
+
             else:
-                op = '->'  # Everything is a pointer
+                assert False, o
 
             self.accept(o.expr)
             self.def_write(op)
@@ -698,7 +703,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.def_write('%s', o.name)
 
     def visit_yield_from_expr(self, o: 'mypy.nodes.YieldFromExpr') -> T:
-        pass
+        self.not_python2(o, 'yield from')
 
     def visit_yield_expr(self, o: 'mypy.nodes.YieldExpr') -> T:
         assert self.current_func_node in self.yield_accumulators
@@ -756,23 +761,52 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         return False
 
+    def _ProbeExpr(self, o):
+        assert len(o.args) >= 2 and len(o.args) < 13, o.args
+        assert isinstance(o.args[0], mypy.nodes.StrExpr), o.args[0]
+        assert isinstance(o.args[1], mypy.nodes.StrExpr), o.args[1]
+        arity = len(o.args) - 2
+        macro = 'DTRACE_PROBE'
+        if arity > 0:
+            macro = 'DTRACE_PROBE%d' % arity
+
+        self.def_write('%s(%s, %s', macro, o.args[0].value, o.args[1].value)
+
+        for arg in o.args[2:]:
+            arg_type = self.types[arg]
+            self.def_write(', ')
+            if (isinstance(arg_type, Instance) and
+                    arg_type.type.fullname == 'builtins.str'):
+                self.def_write('%s->data()' % arg.name)
+            else:
+                self.accept(arg)
+
+        self.def_write(')')
+
+    def _LogExpr(self, o):
+        args = o.args
+        if len(args) == 1:  # log(CONST)
+            self.def_write('mylib::print_stderr(')
+            self.accept(args[0])
+            self.def_write(')')
+            return
+
+        quoted_fmt = PythonStringLiteral(args[0].value)
+
+        self.def_write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
+        for i, arg in enumerate(args[1:]):
+            if i != 0:
+                self.def_write(', ')
+            self.accept(arg)
+        self.def_write('))')
+
     def visit_call_expr(self, o: 'mypy.nodes.CallExpr') -> T:
+        if o.callee.name == 'probe':
+            self._ProbeExpr(o)
+            return
+
         if o.callee.name == 'isinstance':
-            assert len(o.args) == 2, o.args
-            obj = o.args[0]
-            typ = o.args[1]
-
-            if 0:
-                log('obj %s', obj)
-                log('typ %s', typ)
-
-            self.accept(obj)
-            self.def_write('->tag() == ')
-            assert isinstance(typ, NameExpr), typ
-
-            # source__CFlag -> source_e::CFlag
-            tag = typ.name.replace('__', '_e::')
-            self.def_write(tag)
+            self.report_error(o, 'isinstance() not allowed')
             return
 
         #    return cast(ShArrayLiteral, tok)
@@ -797,22 +831,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         #   =>
         # log(StrFormat('foo %s', x))
         if o.callee.name == 'log':
-            args = o.args
-            if len(args) == 1:  # log(CONST)
-                self.def_write('mylib::print_stderr(')
-                self.accept(args[0])
-                self.def_write(')')
-                return
-
-            quoted_fmt = PythonStringLiteral(args[0].value)
-
-            # DEFINITION PASS
-            self.def_write('mylib::print_stderr(StrFormat(%s, ' % quoted_fmt)
-            for i, arg in enumerate(args[1:]):
-                if i != 0:
-                    self.def_write(', ')
-                self.accept(arg)
-            self.def_write('))')
+            self._LogExpr(o)
             return
 
         callee_name = o.callee.name
@@ -1087,10 +1106,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         pass
 
     def visit_super_expr(self, o: 'mypy.nodes.SuperExpr') -> T:
-        pass
+        self.not_translated(o, 'super expr')
 
     def visit_assignment_expr(self, o: 'mypy.nodes.AssignmentExpr') -> T:
-        pass
+        self.not_translated(o, 'assign expr')
 
     def visit_unary_expr(self, o: 'mypy.nodes.UnaryExpr') -> T:
         # e.g. a[-1] or 'not x'
@@ -1168,7 +1187,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.def_write('))')
 
     def visit_set_expr(self, o: 'mypy.nodes.SetExpr') -> T:
-        pass
+        self.not_translated(o, 'set expr')
 
     def visit_index_expr(self, o: 'mypy.nodes.IndexExpr') -> T:
         self.accept(o.base)
@@ -1286,10 +1305,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 if _SkipAssignment(lval_item.name):
                     continue
 
-                item_c_type = GetCType(item_type)
                 # declare it at the top of the function
                 if self.decl:
-                    self.local_var_list.append((lval_item.name, item_c_type))
+                    self.local_var_list.append((lval_item.name, item_type))
                 self.def_write_ind('%s', lval_item.name)
             else:
                 # Could be MemberExpr like self.foo, self.bar = baz
@@ -1299,6 +1317,183 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # Tuples that are return values aren't pointers
             op = '.' if is_return else '->'
             self.def_write(' = %s%sat%d();\n', temp_name, op, i)  # RHS
+
+    def _ListComprehensionImpl(self, o, lval, c_type):
+        """
+        Special case for list comprehensions.  Note that the LHS MUST be on the
+        LHS, so we can append to it.
+        
+        y = [i+1 for i in x[1:] if i]
+          =>
+        y = []
+        for i in x[1:]:
+          if i:
+            y.append(i+1)
+        (but in C++)
+        """
+        gen = o.rvalue.generator  # GeneratorExpr
+        left_expr = gen.left_expr
+        index_expr = gen.indices[0]
+        seq = gen.sequences[0]
+        cond = gen.condlists[0]
+
+        # BUG: can't use this to filter
+        # results = [x for x in results]
+        if isinstance(seq, NameExpr) and seq.name == lval.name:
+            raise AssertionError(
+                "Can't use var %r in list comprehension because it would "
+                "be overwritten" % lval.name)
+
+        # Write empty container as initialization.
+        assert c_type.endswith('*'), c_type  # Hack
+        self.def_write('Alloc<%s>();\n' % c_type[:-1])
+
+        over_type = self.types[seq]
+
+        if over_type.type.fullname == 'builtins.list':
+            c_type = GetCType(over_type)
+            assert c_type.endswith('*'), c_type
+            c_iter_type = c_type.replace('List', 'ListIter',
+                                         1)[:-1]  # remove *
+        else:
+            # Example: assoc == Optional[Dict[str, str]]
+            c_iter_type = 'TODO_ASSOC'
+
+        self.def_write_ind('for (%s it(', c_iter_type)
+        self.accept(seq)
+        self.def_write('); !it.Done(); it.Next()) {\n')
+
+        item_type = over_type.args[0]  # get 'int' from 'List<int>'
+
+        if isinstance(item_type, Instance):
+            self.def_write_ind('  %s ', GetCType(item_type))
+            # TODO(StackRoots): for ch in 'abc'
+            self.accept(index_expr)
+            self.def_write(' = it.Value();\n')
+
+        elif isinstance(item_type, TupleType):  # for x, y in pairs
+            c_item_type = GetCType(item_type)
+
+            if isinstance(index_expr, TupleExpr):
+                temp_name = 'tup%d' % self.unique_id
+                self.unique_id += 1
+                self.def_write_ind('  %s %s = it.Value();\n', c_item_type,
+                                   temp_name)
+
+                self.indent += 1
+
+                self._write_tuple_unpacking(temp_name, index_expr.items,
+                                            item_type.items)
+
+                self.indent -= 1
+            else:
+                raise AssertionError()
+
+        else:
+            raise AssertionError('Unexpected type %s' % item_type)
+
+        if cond:
+            self.indent += 1
+            self.def_write_ind('if (')
+            self.accept(cond[0])  # Just the first one
+            self.def_write(') {\n')
+
+        self.def_write_ind('  %s->append(', lval.name)
+        self.accept(left_expr)
+        self.def_write(');\n')
+
+        if cond:
+            self.def_write_ind('}\n')
+            self.indent -= 1
+
+        self.def_write_ind('}\n')
+
+    def _AssignNewDictImpl(self, lval):
+        """
+           d = NewDict()  # type: Dict[int, int]
+        -> auto* d = NewDict<int, int>();
+        
+        - NewDict exists in Python, it makes ordered dictionaries
+        - We translate it here because we need type inference
+        
+        I think we could get rid of NewDict in C++, and have it only in
+        Python.
+        
+        We used to have the "allocating in a constructor" rooting
+        problem, but I believe that's gone now.
+        """
+        lval_type = self.types[lval]
+
+        # Fix for Dict[str, value]? in ASDL
+
+        #self.log('lval type %s', lval_type)
+        if (isinstance(lval_type, UnionType) and len(lval_type.items) == 2 and
+                isinstance(lval_type.items[1], NoneTyp)):
+            lval_type = lval_type.items[0]
+
+        c_type = GetCType(lval_type)
+        if self.decl:
+            self.local_var_list.append((lval.name, lval_type))
+
+        assert c_type.endswith('*')
+
+        # Hack for declaration vs. definition.  TODO: clean this up
+        prefix = '' if self.current_func_node else 'auto* '
+
+        self.def_write_ind('%s%s = Alloc<%s>();\n', prefix, lval.name,
+                           c_type[:-1])
+
+    def _AssignCastImpl(self, o, lval):
+        """
+        is_downcast_and_shadow idiom:
+        
+           src = cast(source__SourcedFile, UP_src)
+        -> source__SourcedFile* src = static_cast<source__SourcedFile>(UP_src)
+        """
+        assert isinstance(lval, NameExpr)
+        call = o.rvalue
+        type_expr = call.args[0]
+        subtype_name = _GetCTypeForCast(type_expr)
+
+        cast_kind = _GetCastKind(self.module_path, subtype_name)
+
+        is_downcast_and_shadow = False
+        to_cast = call.args[1]
+        if isinstance(to_cast, NameExpr):
+            if to_cast.name.startswith('UP_'):
+                is_downcast_and_shadow = True
+
+        if is_downcast_and_shadow:
+            # Declare NEW local variable inside case, which shadows it
+            self.def_write_ind('%s %s = %s<%s>(', subtype_name, lval.name,
+                               cast_kind, subtype_name)
+        else:
+            # Normal variable
+            if self.decl:
+                self.local_var_list.append((lval.name, subtype_name))
+            self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
+                               subtype_name)
+
+        self.accept(call.args[1])  # variable being casted
+        self.def_write(');\n')
+
+    def _IteratorImpl(self, o, lval, rval_type):
+        # We're calling a generator. Create a temporary List<T> on the stack
+        # to accumulate the results in one big batch, then wrap it in
+        # ListIter<T>.
+        assert len(rval_type.args) == 1, rval_type.args
+        c_type = GetCType(rval_type)
+        type_param = rval_type.args[0]
+        inner_c_type = GetCType(type_param)
+        iter_buf = ('_iter_buf_%s' % lval.name, 'List<%s>*' % inner_c_type)
+        self.def_write_ind('List<%s> %s;\n', inner_c_type, iter_buf[0])
+        self.current_stmt_node = o
+        self.yield_accumulators[o] = iter_buf
+        self.def_write_ind('')
+        self.accept(o.rvalue)
+        self.current_stmt_node = None
+        self.def_write(';\n')
+        self.def_write_ind('%s %s(&%s);\n', c_type, lval.name, iter_buf[0])
 
     def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
         # Declare constant strings.  They have to be at the top level.
@@ -1313,14 +1508,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         assert len(o.lvalues) == 1, o.lvalues
         lval = o.lvalues[0]
 
-        # GLOBAL CONSTANTS
-        # Avoid Alloc<T>, since that can't be done until main().
-
+        # GLOBAL CONSTANTS - Avoid Alloc<T>, since that can't be done until main().
         if self.indent == 0:
             assert isinstance(lval, NameExpr), lval
             if _SkipAssignment(lval.name):
                 return
-
             #self.log('    GLOBAL: %s', lval.name)
 
             lval_type = self.types[lval]
@@ -1371,108 +1563,30 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                 )
                 return
 
+            # myconst = 1 << 3  =>  myconst = 1 << 3  is currently allowed
+
         #
         # Non-top-level
         #
 
         if isinstance(o.rvalue, CallExpr):
-            #    d = NewDict()  # type: Dict[int, int]
-            # -> auto* d = NewDict<int, int>();
-            #
-            # - NewDict exists in Python, it makes ordered dictionaries
-            # - We translate it here because we need type inference
-            #
-            # I think we could get rid of NewDict in C++, and have it only in
-            # Python.
-            #
-            # We used to have the "allocating in a constructor" rooting
-            # problem, but I believe that's gone now.
-
             callee = o.rvalue.callee
 
             if callee.name == 'NewDict':
-                lval_type = self.types[lval]
-
-                # Fix for Dict[str, value]? in ASDL
-
-                #self.log('lval type %s', lval_type)
-                if (isinstance(lval_type, UnionType) and
-                        len(lval_type.items) == 2 and
-                        isinstance(lval_type.items[1], NoneTyp)):
-                    lval_type = lval_type.items[0]
-
-                c_type = GetCType(lval_type)
-                if self.decl:
-                    self.local_var_list.append((lval.name, c_type))
-
-                assert c_type.endswith('*')
-
-                # Hack for declaration vs. definition.  TODO: clean this up
-                prefix = '' if self.current_func_node else 'auto* '
-
-                self.def_write_ind('%s%s = Alloc<%s>();\n', prefix, lval.name,
-                                   c_type[:-1])
+                self._AssignNewDictImpl(lval)
                 return
 
-            # is_downcast_and_shadow idiom:
-            #
-            #    src = cast(source__SourcedFile, UP_src)
-            # -> source__SourcedFile* src = static_cast<source__SourcedFile>(UP_src)
-
             if callee.name == 'cast':
-                assert isinstance(lval, NameExpr)
-                call = o.rvalue
-                type_expr = call.args[0]
-                subtype_name = _GetCTypeForCast(type_expr)
-
-                cast_kind = _GetCastKind(self.module_path, subtype_name)
-
-                is_downcast_and_shadow = False
-                to_cast = call.args[1]
-                if isinstance(to_cast, NameExpr):
-                    if to_cast.name.startswith('UP_'):
-                        is_downcast_and_shadow = True
-
-                if is_downcast_and_shadow:
-                    # Declare NEW local variable inside case, which shadows it
-                    self.def_write_ind('%s %s = %s<%s>(', subtype_name,
-                                       lval.name, cast_kind, subtype_name)
-                else:
-                    # Normal variable
-                    if self.decl:
-                        self.local_var_list.append((lval.name, subtype_name))
-                    self.def_write_ind('%s = %s<%s>(', lval.name, cast_kind,
-                                       subtype_name)
-
-                self.accept(call.args[1])  # variable being casted
-                self.def_write(');\n')
+                self._AssignCastImpl(o, lval)
                 return
 
             rval_type = self.types[o.rvalue]
             if (isinstance(rval_type, Instance) and
                     rval_type.type.fullname == 'typing.Iterator'):
-                # We're calling a generator. Create a temporary List<T> on the stack
-                # to accumulate the results in one big batch, then wrap it in
-                # ListIter<T>.
-                assert len(rval_type.args) == 1, rval_type.args
-                c_type = GetCType(rval_type)
-                type_param = rval_type.args[0]
-                inner_c_type = GetCType(type_param)
-                iter_buf = ('_iter_buf_%s' % lval.name,
-                            'List<%s>*' % inner_c_type)
-                self.def_write_ind('List<%s> %s;\n', inner_c_type, iter_buf[0])
-                self.current_stmt_node = o
-                self.yield_accumulators[o] = iter_buf
-                self.def_write_ind('')
-                self.accept(o.rvalue)
-                self.current_stmt_node = None
-                self.def_write(';\n')
-                self.def_write_ind('%s %s(&%s);\n', c_type, lval.name,
-                                   iter_buf[0])
+                self._IteratorImpl(o, lval, rval_type)
                 return
 
         if isinstance(lval, NameExpr):
-
             lval_type = self.types[lval]
             #c_type = GetCType(lval_type, local=self.indent != 0)
             c_type = GetCType(lval_type)
@@ -1481,106 +1595,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if self.current_func_node:
                 self.def_write_ind('%s = ', lval.name)
                 if self.decl:
-                    self.local_var_list.append((lval.name, c_type))
+                    self.local_var_list.append((lval.name, lval_type))
             else:
                 # globals always get a type -- they're not mutated
                 self.def_write_ind('%s %s = ', c_type, lval.name)
 
-            # Special case for list comprehensions.  Note that a variable has to
-            # be on the LHS, so we can append to it.
-            #
-            # y = [i+1 for i in x[1:] if i]
-            #   =>
-            # y = []
-            # for i in x[1:]:
-            #   if i:
-            #     y.append(i+1)
-            # (but in C++)
-
             if isinstance(o.rvalue, ListComprehension):
-                gen = o.rvalue.generator  # GeneratorExpr
-                left_expr = gen.left_expr
-                index_expr = gen.indices[0]
-                seq = gen.sequences[0]
-                cond = gen.condlists[0]
-
-                # BUG: can't use this to filter
-                # results = [x for x in results]
-                if isinstance(seq, NameExpr) and seq.name == lval.name:
-                    raise AssertionError(
-                        "Can't use var %r in list comprehension because it would "
-                        "be overwritten" % lval.name)
-
-                # Write empty container as initialization.
-                assert c_type.endswith('*'), c_type  # Hack
-                self.def_write('Alloc<%s>();\n' % c_type[:-1])
-
-                over_type = self.types[seq]
-
-                if over_type.type.fullname == 'builtins.list':
-                    c_type = GetCType(over_type)
-                    assert c_type.endswith('*'), c_type
-                    c_iter_type = c_type.replace('List', 'ListIter',
-                                                 1)[:-1]  # remove *
-                else:
-                    # Example: assoc == Optional[Dict[str, str]]
-                    c_iter_type = 'TODO_ASSOC'
-
-                self.def_write_ind('for (%s it(', c_iter_type)
-                self.accept(seq)
-                self.def_write('); !it.Done(); it.Next()) {\n')
-
-                item_type = over_type.args[0]  # get 'int' from 'List<int>'
-
-                if isinstance(item_type, Instance):
-                    self.def_write_ind('  %s ', GetCType(item_type))
-                    # TODO(StackRoots): for ch in 'abc'
-                    self.accept(index_expr)
-                    self.def_write(' = it.Value();\n')
-
-                elif isinstance(item_type, TupleType):  # for x, y in pairs
-                    c_item_type = GetCType(item_type)
-
-                    if isinstance(index_expr, TupleExpr):
-                        temp_name = 'tup%d' % self.unique_id
-                        self.unique_id += 1
-                        self.def_write_ind('  %s %s = it.Value();\n',
-                                           c_item_type, temp_name)
-
-                        self.indent += 1
-
-                        self._write_tuple_unpacking(temp_name,
-                                                    index_expr.items,
-                                                    item_type.items)
-
-                        self.indent -= 1
-                    else:
-                        raise AssertionError()
-
-                else:
-                    raise AssertionError('Unexpected type %s' % item_type)
-
-                if cond:
-                    self.indent += 1
-                    self.def_write_ind('if (')
-                    self.accept(cond[0])  # Just the first one
-                    self.def_write(') {\n')
-
-                self.def_write_ind('  %s->append(', lval.name)
-                self.accept(left_expr)
-                self.def_write(');\n')
-
-                if cond:
-                    self.def_write_ind('}\n')
-                    self.indent -= 1
-
-                self.def_write_ind('}\n')
+                self._ListComprehensionImpl(o, lval, c_type)
                 return
 
             self.accept(o.rvalue)
             self.def_write(';\n')
+            return
 
-        elif isinstance(lval, MemberExpr):
+        if isinstance(lval, MemberExpr):  # self.x = foo
             self.def_write_ind('')
             self.accept(lval)
             self.def_write(' = ')
@@ -1600,9 +1628,13 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                         lval.expr.name == 'self'):
                     #log('    lval.name %s', lval.name)
                     lval_type = self.types[lval]
-                    self.member_vars[lval.name] = lval_type
+                    c_type = GetCType(lval_type)
+                    is_managed = CTypeIsManaged(c_type)
+                    self.current_member_vars[lval.name] = (lval_type, c_type,
+                                                           is_managed)
+            return
 
-        elif isinstance(lval, IndexExpr):  # a[x] = 1
+        if isinstance(lval, IndexExpr):  # a[x] = 1
             # d->set(x, 1) for both List and Dict
             self.def_write_ind('')
             self.accept(lval.base)
@@ -1611,8 +1643,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             self.def_write(', ')
             self.accept(o.rvalue)
             self.def_write(');\n')
+            return
 
-        elif isinstance(lval, TupleExpr):
+        if isinstance(lval, TupleExpr):
             # An assignment to an n-tuple turns into n+1 statements.  Example:
             #
             # x, y = mytuple
@@ -1646,9 +1679,9 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
                                         lval.items,
                                         rvalue_type.items,
                                         is_return=is_return)
+            return
 
-        else:
-            raise AssertionError(lval)
+        raise AssertionError(lval)
 
     def _write_body(self, body):
         """Write a block without the { }."""
@@ -1916,47 +1949,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if o.else_body:
             raise AssertionError("can't translate for-else")
 
-    def _collect_cases(self, if_node, out):
-        """
-        The MyPy AST has a recursive structure for if-elif-elif rather than a
-        flat one.  It's a bit confusing.
-
-        Appends (expr, block) cases to out param, and returns the default
-        block, which has no expression.
-
-        default block may be None.
-
-        Returns False if there is no default block.
-        """
-        assert isinstance(if_node, IfStmt), if_node
-        assert len(if_node.expr) == 1, if_node.expr
-        assert len(if_node.body) == 1, if_node.body
-
-        expr = if_node.expr[0]
-        body = if_node.body[0]
-
-        if not isinstance(expr, CallExpr):
-            self.report_error(expr,
-                              'Expected call like case(x), got %s' % expr)
-            return
-
-        out.append((expr, body))
-
-        if if_node.else_body:
-            first_of_block = if_node.else_body.body[0]
-            # BUG: this is meant for 'elif' only.  But it also triggers for
-            #
-            # else:
-            #   if 0:
-
-            if isinstance(first_of_block, IfStmt):
-                return self._collect_cases(first_of_block, out)
-            else:
-                # default case - no expression
-                return if_node.else_body
-
-        return False  # NO DEFAULT BLOCK - Different than None
-
     def _write_cases(self, switch_expr, cases, default_block):
         """ Write a list of (expr, block) pairs """
 
@@ -2004,7 +1996,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path,
+                                            if_node,
+                                            cases,
+                                            errors=self.errors_keep_going)
         self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
@@ -2024,7 +2019,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         self.indent += 1
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path,
+                                            if_node,
+                                            cases,
+                                            errors=self.errors_keep_going)
         self._write_cases(expr, cases, default_block)
 
         self.indent -= 1
@@ -2084,7 +2082,10 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         self.indent += 1
 
         cases = []
-        default_block = self._collect_cases(if_node, cases)
+        default_block = util._collect_cases(self.module_path,
+                                            if_node,
+                                            cases,
+                                            errors=self.errors_keep_going)
 
         grouped_cases = self._str_switch_cases(cases)
         # Warning: this consumes internal iterator
@@ -2314,7 +2315,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # only do it in one place.  TODO: Check if locals are used in
             # __init__ after allocation.
             if update_locals:
-                self.local_var_list.append((arg_name, c_type))
+                self.local_var_list.append((arg_name, arg_type))
 
             # We can't use __str__ on these Argument objects?  That seems like an
             # oversight
@@ -2358,7 +2359,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         if not self.decl and self.current_class_name:
             # definition looks like
             # void Class::method(...);
-            func_name = '%s::%s' % (self.current_class_name, o.name)
+            func_name = join_name((self.current_class_name[-1], o.name))
         else:
             # declaration inside class { }
             func_name = o.name
@@ -2371,7 +2372,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             # accumulator for the results.
             self.yield_accumulators[o] = ('_out_yield_acc', c_iter_list_type)
 
-        # Avoid ++ warnings by prepending [[noreturn]]
+        # Avoid C++ warnings by prepending [[noreturn]]
         noreturn = ''
         if func_name in ('e_die', 'e_die_status', 'e_strict', 'e_usage',
                          'p_die'):
@@ -2390,23 +2391,20 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
         if self.decl:
             self.always_write(');\n')
-            self.accept(
-                o.body)  # Collect member_vars, but don't write anything
+        else:
+            self.def_write(') ')
+            if not self.forward_decl:
+                arg_names = [arg.variable.name for arg in o.arguments]
+                #log('arg_names %s', arg_names)
+                #log('local_vars %s', self.local_vars[o])
+                self.prepend_to_block = []
+                for (lval_name, lval_type) in self.local_vars[o]:
+                    c_type = lval_type
+                    if not isinstance(lval_type, str):
+                        c_type = GetCType(lval_type)
 
-            self.current_func_node = None
-            return
-
-        self.def_write(') ')
-
-        # Write local vars we collected in the 'decl' phase
-        if not self.forward_decl and not self.decl:
-            arg_names = [arg.variable.name for arg in o.arguments]
-            #log('arg_names %s', arg_names)
-            #log('local_vars %s', self.local_vars[o])
-            self.prepend_to_block = [
-                (lval_name, c_type, lval_name in arg_names)
-                for (lval_name, c_type) in self.local_vars[o]
-            ]
+                    self.prepend_to_block.append((lval_name, c_type, lval_name
+                                                  in arg_names))
 
         self.accept(o.body)
         self.current_func_node = None
@@ -2414,6 +2412,277 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     def visit_overloaded_func_def(self,
                                   o: 'mypy.nodes.OverloadedFuncDef') -> T:
         pass
+
+    def _TracingMetadataDecl(self, o, field_gc, mask_bits):
+        if mask_bits:
+            self.always_write_ind('\n')
+            self.always_write_ind('static constexpr uint32_t field_mask() {\n')
+            self.always_write_ind('  return ')
+            for i, b in enumerate(mask_bits):
+                if i != 0:
+                    self.always_write('\n')
+                    self.always_write_ind('       | ')
+                self.always_write(b)
+            self.always_write(';\n')
+            self.always_write_ind('}\n')
+
+        obj_tag, obj_arg = field_gc
+        if obj_tag == 'HeapTag::FixedSize':
+            obj_mask = obj_arg
+            obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (obj_mask,
+                                                                    o.name)
+        elif obj_tag == 'HeapTag::Scanned':
+            num_pointers = obj_arg
+            obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
+                num_pointers, o.name)
+        else:
+            raise AssertionError(o.name)
+
+        self.always_write('\n')
+        self.always_write_ind('static constexpr ObjHeader obj_header() {\n')
+        self.always_write_ind('  return %s;\n' % obj_header)
+        self.always_write_ind('}\n')
+
+    def _MemberDecl(self, o, base_class_name):
+        # List of field mask expressions
+        mask_bits = []
+        if self.virtual.CanReorderFields(split_py_name(o.fullname)):
+            # No inheritance, so we are free to REORDER member vars, putting
+            # pointers at the front.
+
+            pointer_members = []
+            non_pointer_members = []
+
+            for name in self.current_member_vars:
+                _, c_type, is_managed = self.current_member_vars[name]
+                if is_managed:
+                    pointer_members.append(name)
+                else:
+                    non_pointer_members.append(name)
+
+            # So we declare them in the right order
+            sorted_member_names = pointer_members + non_pointer_members
+
+            field_gc = ('HeapTag::Scanned', len(pointer_members))
+        else:
+            # Has inheritance
+
+            # The field mask of a derived class is unioned with its base's
+            # field mask.
+            if base_class_name:
+                mask_bits.append(
+                    '%s::field_mask()' %
+                    join_name(base_class_name, strip_package=True))
+
+            for name in sorted(self.current_member_vars):
+                _, c_type, is_managed = self.current_member_vars[name]
+                if is_managed:
+                    mask_bits.append('maskbit(offsetof(%s, %s))' %
+                                     (o.name, name))
+
+            # A base class with no fields has kZeroMask.
+            if not base_class_name and not mask_bits:
+                mask_bits.append('kZeroMask')
+
+            sorted_member_names = sorted(self.current_member_vars)
+
+            field_gc = ('HeapTag::FixedSize', 'field_mask()')
+
+        # Write member variables
+
+        #log('MEMBERS for %s: %s', o.name, list(self.current_member_vars.keys()))
+        if len(self.current_member_vars):
+            if base_class_name:
+                self.always_write('\n')  # separate from functions
+
+            for name in sorted_member_names:
+                _, c_type, _ = self.current_member_vars[name]
+                self.always_write_ind('%s %s;\n', c_type, name)
+
+        if _IsContextManager(self.current_class_name):
+            # Copy ctx member vars out of this class
+            assert self.ctx_member_vars is not None
+            self.ctx_member_vars[o] = dict(self.current_member_vars)
+        else:
+            self._TracingMetadataDecl(o, field_gc, mask_bits)
+
+        self.always_write('\n')
+        self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
+        self.indent -= 1
+        self.always_write_ind('};\n')
+        self.always_write('\n')
+
+    def _ClassDefDecl(self, o, base_class_name):
+        self.current_member_vars.clear()  # make a new list
+
+        self.always_write_ind('class %s', o.name)  # block after this
+
+        # e.g. class TextOutput : public ColorOutput
+        if base_class_name:
+            self.always_write(' : public %s',
+                              join_name(base_class_name, strip_package=True))
+
+        self.always_write(' {\n')
+        self.always_write_ind(' public:\n')
+
+        block = o.defs
+
+        self.indent += 1
+        for stmt in block.body:
+
+            # Ignore things that look like docstrings
+            if (isinstance(stmt, ExpressionStmt) and
+                    isinstance(stmt.expr, StrExpr)):
+                continue
+
+            # Constructor is named after class
+            if isinstance(stmt, FuncDef):
+                method_name = stmt.name
+                if method_name == '__init__':
+                    self.always_write_ind('%s(', o.name)
+                    self._WriteFuncParams(stmt.type.arg_types,
+                                          stmt.arguments,
+                                          write_defaults=True)
+                    self.always_write(');\n')
+
+                    # Visit for member vars
+                    self.current_method_name = method_name
+                    self.accept(stmt.body)
+                    self.current_method_name = None
+                    continue
+
+                if method_name == '__enter__':
+                    continue
+
+                if method_name == '__exit__':
+                    # Turn it into a destructor with NO ARGS
+                    self.always_write_ind('~%s();\n', o.name)
+                    continue
+
+                if method_name == '__repr__':
+                    # skip during declaration, just like visit_func_def does during definition
+                    continue
+
+                # Any other function: Visit for member vars
+                self.current_method_name = method_name
+                self.accept(stmt)
+                self.current_method_name = None
+                continue
+
+            # TODO: Remove this?  Everything under a class is a method?
+            self.accept(stmt)
+
+        self._MemberDecl(o, base_class_name)
+
+    def _ConstructorImpl(self, o, stmt, base_class_name):
+        self.def_write('\n')
+        self.def_write('%s::%s(', o.name, o.name)
+        self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
+        self.def_write(')')
+
+        first_index = 0
+
+        # Skip docstring
+        maybe_skip_stmt = stmt.body.body[0]
+        if (isinstance(maybe_skip_stmt, ExpressionStmt) and
+                isinstance(maybe_skip_stmt.expr, StrExpr)):
+            first_index += 1
+
+        # Check for Base.__init__(self, ...) and move that to the initializer list.
+        first_stmt = stmt.body.body[first_index]
+        if (isinstance(first_stmt, ExpressionStmt) and
+                isinstance(first_stmt.expr, CallExpr)):
+            expr = first_stmt.expr
+            #log('expr %s', expr)
+            callee = first_stmt.expr.callee
+
+            # TextOutput() : ColorOutput(f), ... {
+            if (isinstance(callee, MemberExpr) and callee.name == '__init__'):
+                base_constructor_args = expr.args
+                #log('ARGS %s', base_constructor_args)
+                self.def_write(' : %s(',
+                               join_name(base_class_name, strip_package=True))
+                for i, arg in enumerate(base_constructor_args):
+                    if i == 0:
+                        continue  # Skip 'this'
+                    if i != 1:
+                        self.def_write(', ')
+                    self.accept(arg)
+                self.def_write(')')
+
+                first_index += 1
+
+        self.def_write(' {\n')
+
+        # Now visit the rest of the statements
+        self.indent += 1
+
+        if _IsContextManager(self.current_class_name):
+            # For ctx_* classes only, do gHeap.PushRoot() for all the pointer
+            # members
+            member_vars = self.ctx_member_vars[o]
+            for name in sorted(member_vars):
+                _, c_type, is_managed = member_vars[name]
+                if is_managed:
+                    # VALIDATE_ROOTS doesn't complain even if it's not
+                    # initialized?  Should be initialized after PushRoot().
+                    #self.def_write_ind('this->%s = nullptr;\n' % name)
+                    self.def_write_ind(
+                        'gHeap.PushRoot(reinterpret_cast<RawObject**>(&(this->%s)));\n'
+                        % name)
+
+        for node in stmt.body.body[first_index:]:
+            self.accept(node)
+        self.indent -= 1
+        self.def_write('}\n')
+
+    def _DestructorImpl(self, o, stmt, base_class_name):
+        self.always_write('\n')
+        self.always_write_ind('%s::~%s()', o.name, o.name)
+
+        self.def_write(' {\n')
+        self.indent += 1
+
+        # TODO:
+        # - Can't throw exception in destructor.
+        # - Check that you don't return early from destructor.  If so, we skip
+        #   PopRoot(), which messes up the invariant!
+
+        for node in stmt.body.body:
+            self.accept(node)
+
+        # For ctx_* classes only , gHeap.PopRoot() for all the pointer members
+        if _IsContextManager(self.current_class_name):
+            member_vars = self.ctx_member_vars[o]
+            for name in sorted(member_vars):
+                _, c_type, is_managed = member_vars[name]
+                if is_managed:
+                    self.def_write_ind('gHeap.PopRoot();\n')
+        else:
+            self.report_error(
+                o, 'Any class with __exit__ should be named ctx_Foo (%s)' %
+                (self.current_class_name, ))
+            return
+
+        self.indent -= 1
+        self.def_write('}\n')
+
+    def _ClassDefImpl(self, o, base_class_name):
+        block = o.defs
+        for stmt in block.body:
+            if isinstance(stmt, FuncDef):
+                if stmt.name == '__init__':
+                    self._ConstructorImpl(o, stmt, base_class_name)
+                    continue
+
+                if stmt.name == '__enter__':  # We never use these
+                    continue
+
+                if stmt.name == '__exit__':
+                    self._DestructorImpl(o, stmt, base_class_name)
+                    continue
+
+                self.accept(stmt)
 
     def visit_class_def(self, o: 'mypy.nodes.ClassDef') -> T:
         #log('  CLASS %s', o.name)
@@ -2423,254 +2692,35 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if isinstance(b, NameExpr):
                 # TODO: inherit from std::exception?
                 if b.name != 'object' and b.name != 'Exception':
-                    base_class_name = b.name
+                    base_class_name = split_py_name(b.fullname)
             elif isinstance(b, MemberExpr):  # vm._Executor -> vm::_Executor
                 assert isinstance(b.expr, NameExpr), b
-                base_class_name = '%s::%s' % (b.expr.name, b.name)
+                base_class_name = split_py_name(b.expr.fullname) + (b.name, )
 
         # Forward declare types because they may be used in prototypes
         if self.forward_decl:
             self.always_write_ind('class %s;\n', o.name)
             if base_class_name:
-                self.virtual.OnSubclass(base_class_name, o.name)
+                self.virtual.OnSubclass(base_class_name,
+                                        split_py_name(o.fullname))
             # Visit class body so we get method declarations
-            self.current_class_name = o.name
+            self.current_class_name = split_py_name(o.fullname)
             self._write_body(o.defs.body)
             self.current_class_name = None
             return
 
         if self.decl:
-            self.member_vars.clear()  # make a new list
-
-            self.always_write_ind('class %s', o.name)  # block after this
-
-            # e.g. class TextOutput : public ColorOutput
-            if base_class_name:
-                self.always_write(' : public %s', base_class_name)
-
-            self.always_write(' {\n')
-            self.always_write_ind(' public:\n')
-
-            block = o.defs
-
-            self.indent += 1
-            self.current_class_name = o.name
-            for stmt in block.body:
-
-                # Ignore things that look like docstrings
-                if (isinstance(stmt, ExpressionStmt) and
-                        isinstance(stmt.expr, StrExpr)):
-                    continue
-
-                # Constructor is named after class
-                if isinstance(stmt, FuncDef):
-                    method_name = stmt.name
-                    if method_name == '__init__':
-                        self.always_write_ind('%s(', o.name)
-                        self._WriteFuncParams(stmt.type.arg_types,
-                                              stmt.arguments,
-                                              write_defaults=True)
-                        self.always_write(');\n')
-
-                        # Visit for member vars
-                        self.current_method_name = method_name
-                        self.accept(stmt.body)
-                        self.current_method_name = None
-                        continue
-
-                    if method_name == '__enter__':
-                        continue
-
-                    if method_name == '__exit__':
-                        # Turn it into a destructor with NO ARGS
-                        self.always_write_ind('~%s();\n', o.name)
-                        continue
-
-                    if method_name == '__repr__':
-                        # skip during declaration, just like visit_func_def does during definition
-                        continue
-
-                    # Any other function: Visit for member vars
-                    self.current_method_name = method_name
-                    self.accept(stmt)
-                    self.current_method_name = None
-                    continue
-
-                # TODO: Remove this?  Everything under a class is a method?
-                self.accept(stmt)
-
-            # List of field mask expressions
-            mask_bits = []
-            if self.virtual.CanReorderFields(o.name):
-                # No inheritance, so we are free to REORDER member vars, putting
-                # pointers at the front.
-
-                pointer_members = []
-                non_pointer_members = []
-
-                for name in self.member_vars:
-                    c_type = GetCType(self.member_vars[name])
-                    if CTypeIsManaged(c_type):
-                        pointer_members.append(name)
-                    else:
-                        non_pointer_members.append(name)
-
-                # So we declare them in the right order
-                sorted_member_names = pointer_members + non_pointer_members
-
-                self.field_gc[o] = ('HeapTag::Scanned', len(pointer_members))
-            else:
-                # Has inheritance
-
-                # The field mask of a derived class is unioned with its base's
-                # field mask.
-                if base_class_name:
-                    mask_bits.append('%s::field_mask()' % base_class_name)
-
-                for name in sorted(self.member_vars):
-                    c_type = GetCType(self.member_vars[name])
-                    if CTypeIsManaged(c_type):
-                        mask_bits.append('maskbit(offsetof(%s, %s))' %
-                                         (o.name, name))
-
-                # A base class with no fields has kZeroMask.
-                if not base_class_name and not mask_bits:
-                    mask_bits.append('kZeroMask')
-
-                sorted_member_names = sorted(self.member_vars)
-
-                self.field_gc[o] = ('HeapTag::FixedSize', 'field_mask()')
-
-            # Write member variables
-
-            #log('MEMBERS for %s: %s', o.name, list(self.member_vars.keys()))
-            if self.member_vars:
-                if base_class_name:
-                    self.always_write('\n')  # separate from functions
-
-                for name in sorted_member_names:
-                    c_type = GetCType(self.member_vars[name])
-                    self.always_write_ind('%s %s;\n', c_type, name)
-
+            self.current_class_name = split_py_name(o.fullname)
+            self._ClassDefDecl(o, base_class_name)
             self.current_class_name = None
-
-            if mask_bits:
-                self.always_write_ind('\n')
-                self.always_write_ind(
-                    'static constexpr uint32_t field_mask() {\n')
-                self.always_write_ind('  return ')
-                for i, b in enumerate(mask_bits):
-                    if i != 0:
-                        self.always_write('\n')
-                        self.always_write_ind('       | ')
-                    self.always_write(b)
-                self.always_write(';\n')
-                self.always_write_ind('}\n')
-
-            obj_tag, obj_arg = self.field_gc[o]
-            if obj_tag == 'HeapTag::FixedSize':
-                obj_mask = obj_arg
-                obj_header = 'ObjHeader::ClassFixed(%s, sizeof(%s))' % (
-                    obj_mask, o.name)
-            elif obj_tag == 'HeapTag::Scanned':
-                num_pointers = obj_arg
-                obj_header = 'ObjHeader::ClassScanned(%s, sizeof(%s))' % (
-                    num_pointers, o.name)
-            else:
-                raise AssertionError(o.name)
-
-            self.always_write('\n')
-            self.always_write_ind(
-                'static constexpr ObjHeader obj_header() {\n')
-            self.always_write_ind('  return %s;\n' % obj_header)
-            self.always_write_ind('}\n')
-
-            self.always_write('\n')
-            self.always_write_ind('DISALLOW_COPY_AND_ASSIGN(%s)\n', o.name)
-            self.indent -= 1
-            self.always_write_ind('};\n')
-            self.always_write('\n')
-
             return
 
-        self.current_class_name = o.name
-
-        #
-        # Now we're visiting for definitions (not declarations).
-        #
-        block = o.defs
-        for stmt in block.body:
-            if isinstance(stmt, FuncDef):
-                # Collect __init__ calls within __init__, and turn them into
-                # initializer lists.
-                if stmt.name == '__init__':
-                    self.def_write('\n')
-                    self.def_write('%s::%s(', o.name, o.name)
-                    self._WriteFuncParams(stmt.type.arg_types, stmt.arguments)
-                    self.def_write(')')
-
-                    # Check for Base.__init__(self, ...) and move that to the initializer list.
-
-                    first_index = 0
-
-                    # Skip docstring
-                    maybe_skip_stmt = stmt.body.body[0]
-                    if (isinstance(maybe_skip_stmt, ExpressionStmt) and
-                            isinstance(maybe_skip_stmt.expr, StrExpr)):
-                        first_index += 1
-
-                    first_stmt = stmt.body.body[first_index]
-                    if (isinstance(first_stmt, ExpressionStmt) and
-                            isinstance(first_stmt.expr, CallExpr)):
-                        expr = first_stmt.expr
-                        #log('expr %s', expr)
-                        callee = first_stmt.expr.callee
-
-                        # TextOutput() : ColorOutput(f), ... {
-                        if (isinstance(callee, MemberExpr) and
-                                callee.name == '__init__'):
-                            base_constructor_args = expr.args
-                            #log('ARGS %s', base_constructor_args)
-                            self.def_write(' : %s(', base_class_name)
-                            for i, arg in enumerate(base_constructor_args):
-                                if i == 0:
-                                    continue  # Skip 'this'
-                                if i != 1:
-                                    self.def_write(', ')
-                                self.accept(arg)
-                            self.def_write(')')
-
-                            first_index += 1
-
-                    self.def_write(' {\n')
-
-                    # Debug Tag!
-                    # self.def_write('  type_tag_ = kMycppDebugType;\n')
-
-                    # Now visit the rest of the statements
-                    self.indent += 1
-                    for node in stmt.body.body[first_index:]:
-                        self.accept(node)
-                    self.indent -= 1
-                    self.def_write('}\n')
-
-                    continue  # wrote FuncDef for constructor
-
-                if stmt.name == '__enter__':
-                    continue
-
-                if stmt.name == '__exit__':
-                    self.always_write('\n')
-                    self.always_write_ind('%s::~%s()', o.name, o.name)
-                    self.accept(stmt.body)
-                    continue
-
-                self.accept(stmt)
-
+        self.current_class_name = split_py_name(o.fullname)
+        self._ClassDefImpl(o, base_class_name)
         self.current_class_name = None  # Stop prefixing functions with class
 
     def visit_global_decl(self, o: 'mypy.nodes.GlobalDecl') -> T:
-        pass
+        self.report_error(o, 'global not allowed')
 
     def visit_nonlocal_decl(self, o: 'mypy.nodes.NonlocalDecl') -> T:
         pass
@@ -2684,13 +2734,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
     # Module structure
 
     def visit_import(self, o: 'mypy.nodes.Import') -> T:
-        for name, as_name in o.ids:
-            if as_name is not None:
-                # import time as time_
-                self.imported_names.add(as_name)
-            else:
-                # import libc
-                self.imported_names.add(name)
+        pass
 
     def visit_import_from(self, o: 'mypy.nodes.ImportFrom') -> T:
         """
@@ -2698,14 +2742,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
         We need them in the 'decl' phase for default arguments like
         runtime_asdl::scope_e -> scope_e
         """
-        # For MemberExpr . -> module::func() or this->field.  Also needed in
-        # the decl phase for default arg values.
-        for name, alias in o.names:
-            if alias:
-                self.imported_names.add(alias)
-            else:
-                self.imported_names.add(name)
-
         if o.id in ('__future__', 'typing'):
             return  # do nothing
 
@@ -2722,7 +2758,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if o.id == 'mycpp.mylib':
                 # These mylib functions are translated in a special way
                 if name in ('switch', 'tagswitch', 'str_switch', 'iteritems',
-                            'NewDict'):
+                            'NewDict', 'probe'):
                     continue
                 # STDIN_FILENO is #included
                 if name == 'STDIN_FILENO':
@@ -2824,9 +2860,8 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             if len(roots):
                 if (self.stack_roots_warn and
                         len(roots) > self.stack_roots_warn):
-                    log('WARNING: %s::%s() has %d stack roots. Consider refactoring this function.'
-                        % (self.current_class_name or
-                           '', self.current_func_node.name, len(roots)))
+                    log('WARNING: %s() has %d stack roots. Consider refactoring this function.'
+                        % (self.current_func_node.fullname, len(roots)))
 
                 for i, r in enumerate(roots):
                     self.def_write_ind('StackRoot _root%d(&%s);\n' % (i, r))
@@ -2911,53 +2946,37 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             )
             return
 
-        # Omit anything that looks like if __name__ == ...
-        if (isinstance(cond, ComparisonExpr) and
-                isinstance(cond.operands[0], NameExpr) and
-                cond.operands[0].name == '__name__'):
-            return
+        if util.ShouldVisitIfExpr(o):
+            self.def_write_ind('if (')
+            for e in o.expr:
+                self.accept(e)
+            self.def_write(') ')
 
-        # Omit if 0:
-        if isinstance(cond, IntExpr) and cond.value == 0:
-            # But write else: body
-            # Note: this would be invalid at the top level!
-            if o.else_body:
-                self.accept(o.else_body)
-            return
+        if util.ShouldVisitIfBody(o):
+            cond = util.GetSpecialIfCondition(o)
+            if cond == 'CPP':
+                self.def_write_ind('// if MYCPP\n')
+                self.def_write_ind('')
 
-        # Omit if TYPE_CHECKING blocks.  They contain type expressions that
-        # don't type check!
-        if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
-            return
-        # mylib.CPP
-        if isinstance(cond, MemberExpr) and cond.name == 'CPP':
-            # just take the if block
-            self.def_write_ind('// if MYCPP\n')
-            self.def_write_ind('')
-            for node in o.body:
-                self.accept(node)
-            self.def_write_ind('// endif MYCPP\n')
-            return
-        # mylib.PYTHON
-        if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
-            if o.else_body:
+            for body in o.body:
+                self.accept(body)
+
+            if cond == 'CPP':
+                self.def_write_ind('// endif MYCPP\n')
+
+        if util.ShouldVisitElseBody(o):
+            cond = util.GetSpecialIfCondition(o)
+            if cond == 'PYTHON':
                 self.def_write_ind('// if not PYTHON\n')
                 self.def_write_ind('')
-                self.accept(o.else_body)
-                self.def_write_ind('// endif MYCPP\n')
-            return
 
-        self.def_write_ind('if (')
-        for e in o.expr:
-            self.accept(e)
-        self.def_write(') ')
+            if util.ShouldVisitIfBody(o):
+                self.def_write_ind('else ')
 
-        for node in o.body:
-            self.accept(node)
-
-        if o.else_body:
-            self.def_write_ind('else ')
             self.accept(o.else_body)
+
+            if cond == 'PYTHON':
+                self.def_write_ind('// endif MYCPP\n')
 
     def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
         self.def_write_ind('break;\n')
@@ -3046,4 +3065,4 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             'File should start with "from __future__ import print_function"')
 
     def visit_exec_stmt(self, o: 'mypy.nodes.ExecStmt') -> T:
-        pass
+        self.report_error(o, 'exec not allowed')

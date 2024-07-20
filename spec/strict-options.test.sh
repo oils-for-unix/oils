@@ -1,3 +1,6 @@
+## compare_shells: dash bash-4.4 mksh
+
+
 # In this file:
 #
 # - strict_control-flow: break/continue at the top level should be fatal!
@@ -246,4 +249,29 @@ status=0
 two
 status=0
 ---
+## END
+
+
+#### strict_parse_slice means you need explicit  length
+case $SH in bash*|dash|mksh) exit ;; esac
+
+$SH -c '
+a=(1 2 3); echo /${a[@]::}/
+'
+echo status=$?
+
+$SH -c '
+shopt --set strict_parse_slice
+
+a=(1 2 3); echo /${a[@]::}/
+'
+echo status=$?
+
+## STDOUT:
+//
+status=0
+status=2
+## END
+
+## N-I bash/dash/mksh STDOUT:
 ## END

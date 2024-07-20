@@ -9,6 +9,8 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+source soil/common.sh
+
 fast-forward()  {
   # Generate a token in "Settings" -> Developer Settings
   # https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
@@ -123,7 +125,7 @@ soil-run() {
   mkdir -p $dir
 
   # These tiny files are written by each Soil task
-  local url_base="http://travis-ci.oilshell.org/status-api/github/$run_id"
+  local url_base="http://$SOIL_HOST/status-api/github/$run_id"
 
   #local jobs='dummy pea other-tests'  # minimal set of jobs to wait for
   local jobs=$(soil/worker.sh list-jobs)

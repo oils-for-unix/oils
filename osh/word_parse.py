@@ -87,6 +87,7 @@ from _devbuild.gen.syntax_asdl import (
     Func,
     Subscript,
     Attribute,
+    arith_expr,
 )
 from core import alloc
 from core.error import p_die
@@ -262,29 +263,48 @@ class WordParser(WordEmitter):
 
     def _ReadSliceVarOp(self):
         # type: () -> suffix_op.Slice
-        """VarOf ':' ArithExpr (':' ArithExpr )?"""
-        self._SetNext(lex_mode_e.Arith)
-        self._GetToken()
-        cur_id = self.token_type  # e.g. Id.Arith_Colon
+        """
+        Looking token after first ':'
 
-        if self.token_type == Id.Arith_Colon:  # A pun for Id.VOp2_Colon
-            # no beginning specified
-            begin = None  # type: Optional[arith_expr_t]
+        ArithExpr? (':' ArithExpr? )? '}'
+        """
+        self._NextNonSpace()
+
+        cur_id = self.token_type
+
+        if cur_id in (Id.Arith_RBrace, Id.Arith_Colon):  #  ${a:} or ${a::}
+            begin = arith_expr.EmptyZero  # type: arith_expr_t
         else:
             begin = self.a_parser.Parse()
-            cur_id = self.a_parser.CurrentId()
+            cur_id = self.a_parser.CurrentId()  # advance
 
-        if cur_id == Id.Arith_RBrace:
-            no_length = None  # type: Optional[arith_expr_t]  # No length specified
+        if cur_id == Id.Arith_RBrace:  #  ${a:1} or ${@:1}
+            # No length specified, so it's N
+            no_length = None  # type: Optional[arith_expr_t]
             return suffix_op.Slice(begin, no_length)
 
-        # Id.Arith_Colon is a pun for Id.VOp2_Colon
-        if cur_id == Id.Arith_Colon:
-            self._SetNext(lex_mode_e.Arith)
-            length = self._ReadArithExpr(Id.Arith_RBrace)
+        elif cur_id == Id.Arith_Colon:  # ${a:1:} or ${@:1:}
+            colon_tok = self.cur_token
+            self._NextNonSpace()
+
+            if self.token_type == Id.Arith_RBrace:
+                # quirky bash behavior:
+                # ${a:1:} or ${a::} means length ZERO
+                # but ${a:1} or ${a:} means length N
+                if self.parse_opts.strict_parse_slice():
+                    p_die(
+                        "Slice length: Add explicit zero, or omit : for N (strict_parse_slice)",
+                        colon_tok)
+
+                length = arith_expr.EmptyZero  # type: arith_expr_t
+            else:
+                length = self._ReadArithExpr(Id.Arith_RBrace)
+
             return suffix_op.Slice(begin, length)
 
-        p_die("Expected : or } in slice", self.cur_token)
+        else:
+            p_die("Expected : or } in slice", self.cur_token)
+
         raise AssertionError()  # for MyPy
 
     def _ReadPatSubVarOp(self):
@@ -636,7 +656,7 @@ class WordParser(WordEmitter):
         # In command mode, we never disallow backslashes like '\'
         right_quote = self.ReadSingleQuoted(lex_mode, left_token, tokens,
                                             False)
-        sval = word_compile.EvalSingleQuoted2(left_token.id, tokens)
+        sval = word_compile.EvalSingleQuoted(left_token.id, tokens)
         node = SingleQuoted(left_token, sval, right_quote)
         return node
 
@@ -736,14 +756,6 @@ class WordParser(WordEmitter):
                 p_die(
                     r"%s escapes not allowed in u'' strings" %
                     lexer.TokenVal(tok), tok)
-            # \u{dc00} isn't valid
-            if tok.id == Id.Char_UBraced:
-                h = lexer.TokenSlice(tok, 3, -1)  # \u{123456}
-                i = int(h, 16)
-                if 0xD800 <= i and i < 0xE000:
-                    p_die(
-                        r"%s escape is illegal because it's in the surrogate range"
-                        % lexer.TokenVal(tok), tok)
 
         out_tokens.extend(tokens)
         return self.cur_token
@@ -986,7 +998,11 @@ class WordParser(WordEmitter):
           out_parts: list of word_part to append to
         """
         if left_token:
-            expected_end_tokens = 3 if left_token.id == Id.Left_TDoubleQuote else 1
+            if left_token.id in (Id.Left_TDoubleQuote,
+                                 Id.Left_DollarTDoubleQuote):
+                expected_end_tokens = 3
+            else:
+                expected_end_tokens = 1
         else:
             expected_end_tokens = 1000  # here doc will break
 
@@ -1065,7 +1081,8 @@ class WordParser(WordEmitter):
             out_parts.pop()
 
         # Remove space from """ in both expression mode and command mode
-        if left_token and left_token.id == Id.Left_TDoubleQuote:
+        if (left_token and left_token.id
+                in (Id.Left_TDoubleQuote, Id.Left_DollarTDoubleQuote)):
             word_compile.RemoveLeadingSpaceDQ(out_parts)
 
         # Return nothing, since we appended to 'out_parts'
@@ -1470,14 +1487,16 @@ class WordParser(WordEmitter):
         # $((echo * foo))  # looks like multiplication
         # $((echo / foo))  # looks like division
 
-        self._SetNext(lex_mode_e.Arith)
-        anode = self._ReadArithExpr(Id.Arith_RParen)
+        # $(( )) is valid
+        anode = arith_expr.EmptyZero  # type: arith_expr_t
 
-        # TODO: This could be DQ or Arith too
+        self._NextNonSpace()
+        if self.token_type != Id.Arith_RParen:
+            anode = self._ReadArithExpr(Id.Arith_RParen)
+
         self._SetNext(lex_mode_e.ShCommand)
 
-        # PROBLEM: $(echo $(( 1 + 2 )) )
-        # Two right parens break the Id.Eof_RParen scheme
+        # Ensure we get closing )
         self._GetToken()
         if self.token_type != Id.Right_DollarDParen:
             p_die('Expected second ) to end arith sub', self.cur_token)
@@ -1492,32 +1511,41 @@ class WordParser(WordEmitter):
         We're using the word parser because it's very similar to _ReadArithExpr
         above.
 
-        This also returns the terminating `Op_DRightParen` token for use as location
-        tracking.
+        This also returns the terminating Id.Op_DRightParen token for location
+        info.
         """
-        # The second one needs to be disambiguated in stuff like stuff like:
-        # TODO: Be consistent with ReadForExpression below and use lex_mode_e.Arith?
-        # Then you can get rid of this.
+        # (( )) is valid
+        anode = arith_expr.EmptyZero  # type: arith_expr_t
+
         self.lexer.PushHint(Id.Op_RParen, Id.Op_DRightParen)
 
-        self._SetNext(lex_mode_e.Arith)
-        anode = self._ReadArithExpr(Id.Arith_RParen)
+        self._NextNonSpace()
+        if self.token_type != Id.Arith_RParen:
+            anode = self._ReadArithExpr(Id.Arith_RParen)
 
         self._SetNext(lex_mode_e.ShCommand)
 
-        # PROBLEM: $(echo $(( 1 + 2 )) )
+        # Ensure we get the second )
         self._GetToken()
         right = self.cur_token
-        if self.token_type != Id.Op_DRightParen:
-            p_die('Expected second ) to end arith statement', self.cur_token)
+        if right.id != Id.Op_DRightParen:
+            p_die('Expected second ) to end arith statement', right)
 
         self._SetNext(lex_mode_e.ShCommand)
 
         return anode, right
 
-    def _SetNextNonSpace(self):
+    def _NextNonSpace(self):
         # type: () -> None
-        """Same logic as _ReadWord, but for ReadForExpression."""
+        """Advance in lex_mode_e.Arith until non-space token.
+
+        Same logic as _ReadWord, but used in
+           $(( ))
+           (( ))
+           for (( ))
+
+        You can read self.token_type after this, without calling _GetToken.
+        """
         while True:
             self._SetNext(lex_mode_e.Arith)
             self._GetToken()
@@ -1527,17 +1555,15 @@ class WordParser(WordEmitter):
     def ReadForExpression(self):
         # type: () -> command.ForExpr
         """Read ((i=0; i<5; ++i)) -- part of command context."""
-        self._SetNextNonSpace()  # skip over ((
-
-        self._GetToken()
+        self._NextNonSpace()  # skip over ((
         cur_id = self.token_type  # for end of arith expressions
 
         if cur_id == Id.Arith_Semi:  # for (( ; i < 10; i++ ))
-            init_node = None  # type: Optional[arith_expr_t]
+            init_node = arith_expr.EmptyZero  # type: arith_expr_t
         else:
             init_node = self.a_parser.Parse()
             cur_id = self.a_parser.CurrentId()
-        self._SetNextNonSpace()
+        self._NextNonSpace()
 
         # It's odd to keep track of both cur_id and self.token_type in this
         # function, but it works, and is tested in 'test/parse_error.sh
@@ -1549,25 +1575,22 @@ class WordParser(WordEmitter):
         cur_id = self.token_type
 
         if cur_id == Id.Arith_Semi:  # for (( ; ; i++ ))
-            cond_node = None  # type: Optional[arith_expr_t]
+            # empty condition is TRUE
+            cond_node = arith_expr.EmptyOne  # type: arith_expr_t
         else:
             cond_node = self.a_parser.Parse()
             cur_id = self.a_parser.CurrentId()
-        self._SetNextNonSpace()
 
         if cur_id != Id.Arith_Semi:  # for (( x=0; x<5 b ))
             p_die("Expected ; here", loc.Word(self.a_parser.cur_word))
 
-        self._GetToken()
-        cur_id = self.token_type
-
-        if cur_id == Id.Arith_RParen:  # for (( ; ; ))
-            update_node = None  # type: Optional[arith_expr_t]
+        self._NextNonSpace()
+        if self.token_type == Id.Arith_RParen:  # for (( ; ; ))
+            update_node = arith_expr.EmptyZero  # type: arith_expr_t
         else:
             update_node = self._ReadArithExpr(Id.Arith_RParen)
-        self._SetNextNonSpace()
 
-        self._GetToken()
+        self._NextNonSpace()
         if self.token_type != Id.Arith_RParen:
             p_die('Expected ) to end for loop expression', self.cur_token)
         self._SetNext(lex_mode_e.ShCommand)

@@ -12,7 +12,7 @@ how this parsing engine works.
 from mycpp.mylib import log
 _ = log
 
-from typing import TYPE_CHECKING, Optional, Any, List
+from typing import TYPE_CHECKING, Optional, List
 from pgen2.pnode import PNode, PNodeAllocator
 
 if TYPE_CHECKING:

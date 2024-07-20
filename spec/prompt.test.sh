@@ -96,7 +96,6 @@ echo "${PS1@P}"
 #### Single backslash
 PS1='\'
 echo "${PS1@P}"
-## BUG bash stdout-json: "\\\u0002\n"
 ## STDOUT:
 \
 ## END
@@ -104,7 +103,6 @@ echo "${PS1@P}"
 #### Escaped backslash
 PS1='\\'
 echo "${PS1@P}"
-## BUG bash stdout-json: "\\\u0002\n"
 ## STDOUT:
 \
 ## END

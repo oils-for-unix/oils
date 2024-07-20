@@ -14,9 +14,11 @@ from mypy.build import build as mypy_build
 from mypy.build import BuildSource
 from mypy.main import process_options
 
+from mycpp import ir_pass
 from mycpp import const_pass
 from mycpp import cppgen_pass
 from mycpp import debug_pass
+from mycpp import control_flow_pass
 from mycpp import pass_state
 from mycpp.util import log
 
@@ -212,7 +214,7 @@ def main(argv):
 
     # GLOBAL Constant pass over all modules.  We want to collect duplicate
     # strings together.  And have globally unique IDs str0, str1, ... strN.
-    const_lookup = {}
+    const_lookup = {}  # Dict {StrExpr node => string name}
     const_code = []
     pass1 = const_pass.Collect(result.types, const_lookup, const_code)
 
@@ -266,6 +268,14 @@ def main(argv):
 
 """)
 
+    # Convert the mypy AST into our own IR.
+    dot_exprs = {} # module name -> {expr node -> access type}
+    log('\tmycpp pass: IR')
+    for _, module in to_compile:
+        p = ir_pass.Build(result.types)
+        p.visit_mypy_file(module)
+        dot_exprs[module.path] = p.dot_exprs
+
     # Collect constants and then emit code.
     log('\tmycpp pass: CONST')
     for name, module in to_compile:
@@ -297,7 +307,8 @@ def main(argv):
                                   const_lookup,
                                   out_f,
                                   virtual=virtual,
-                                  forward_decl=True)
+                                  forward_decl=True,
+                                  dot_exprs=dot_exprs[module.path])
 
         p2.visit_mypy_file(module)
         MaybeExitWithErrors(p2)
@@ -310,11 +321,8 @@ def main(argv):
         log('has_vtable %s', virtual.has_vtable)
 
     local_vars = {}  # FuncDef node -> (name, c_type) list
-    field_gc = {}  # ClassDef node -> maskof_Foo() string, if it's required
-
-    # Node -> fmt_name, plus a hack for the counter
-    # TODO: This could be a class with 2 members
-    fmt_ids = {'_counter': 0}
+    ctx_member_vars = {
+    }  # Dict[ClassDef node for ctx_Foo, Dict[member_name: str, Type]]
 
     log('\tmycpp pass: PROTOTYPES')
 
@@ -330,13 +338,29 @@ def main(argv):
                                   const_lookup,
                                   out_f,
                                   local_vars=local_vars,
-                                  fmt_ids=fmt_ids,
-                                  field_gc=field_gc,
+                                  ctx_member_vars=ctx_member_vars,
                                   virtual=virtual,
-                                  decl=True)
+                                  decl=True,
+                                  dot_exprs=dot_exprs[module.path])
 
         p3.visit_mypy_file(module)
         MaybeExitWithErrors(p3)
+
+    if 0:
+        log('\tctx_member_vars')
+        from pprint import pformat
+        print(pformat(ctx_member_vars), file=sys.stderr)
+
+    log('\tmycpp pass: CONTROL FLOW')
+
+    cfgs = {}  # fully qualified function name -> control flow graph
+    for name, module in to_compile:
+        cfg_pass = control_flow_pass.Build(result.types, virtual, local_vars,
+                                           dot_exprs[module.path])
+        cfg_pass.visit_mypy_file(module)
+        cfgs.update(cfg_pass.cfgs)
+
+    pass_state.DumpControlFlowGraphs(cfgs)
 
     log('\tmycpp pass: IMPL')
 
@@ -348,9 +372,9 @@ def main(argv):
                                   const_lookup,
                                   f,
                                   local_vars=local_vars,
-                                  fmt_ids=fmt_ids,
-                                  field_gc=field_gc,
-                                  stack_roots_warn=opts.stack_roots_warn)
+                                  ctx_member_vars=ctx_member_vars,
+                                  stack_roots_warn=opts.stack_roots_warn,
+                                  dot_exprs=dot_exprs[module.path])
         p4.visit_mypy_file(module)
         MaybeExitWithErrors(p4)
 

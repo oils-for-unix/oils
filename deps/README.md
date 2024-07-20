@@ -30,20 +30,14 @@ The file system in our images looks like this:
       tmp/             # Dockerfiles copy build scripts here
       oil/             # soil/host-shim.sh mounts the repo here
         _tmp/          # published as .wwz files to CI
-      oil_DEPS/        # Built into containers
-        cpython-full/  # build of Python
-        py3/           # like cpython-full
-
-        mycpp-venv/    # installed by python3 -m pip
-        mypy/          # git repo
-
-        spec-bin/
-        wild/          # Pure data
-
-        cmark/
-
-        libcmark.so    # shared library
-        python3        # Plain executable
+      wedge/
+        oils-for-unix.org  # should be oils.pub
+          pkg/
+            bash/
+              4.4/
+              5.2/
+            R-libs/
+              ...
 
 Note that `build/dev-shell.sh` puts some executables in `$PATH`.
 

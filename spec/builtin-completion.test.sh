@@ -1,5 +1,4 @@
-
-## oils_failures_allowed: 9
+## oils_failures_allowed: 3
 ## compare_shells: bash
 
 #### complete with no args and complete -p both print completion spec
@@ -302,14 +301,26 @@ while
 status=0
 ## END
 
-#### compgen -k by itself shows all reserved shell keywords
-compgen -k | grep -E '^(\!|\[\[|\]\]|case|coproc|do|done|elif|else|esac|fi|for|function|if|in|select|then|time|until|while|\{|\})$' | sort
+#### compgen -k shows the same keywords as bash
+
+# bash adds ]] and } and coproc
+
+# Use bash as an oracle
+bash -c 'compgen -k' | sort > bash.txt
+
+# osh vs. bash, or bash vs. bash
+$SH -c 'compgen -k' | sort > this-shell.txt
+
+#comm bash.txt this-shell.txt
+
+# show lines in both files
+comm -12 bash.txt this-shell.txt | egrep -v 'coproc|select'
+
 ## STDOUT:
 !
 [[
 ]]
 case
-coproc
 do
 done
 elif
@@ -320,13 +331,40 @@ for
 function
 if
 in
-select
 then
 time
 until
 while
 {
 }
+## END
+
+#### compgen -k shows Oils keywords too
+
+# YSH has a superset of keywords:
+# const var
+# setvar setglobal
+# proc func typed
+# call =   # hm = is not here
+
+compgen -k | sort | egrep '^(const|var|setvar|setglobal|proc|func|typed|call|=)$'
+echo --
+
+## STDOUT:
+=
+call
+const
+func
+proc
+setglobal
+setvar
+typed
+var
+--
+## END
+
+## N-I bash STDOUT:
+--
 ## END
 
 #### compgen -k completes reserved shell keywords

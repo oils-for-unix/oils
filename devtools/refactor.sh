@@ -5,11 +5,9 @@
 # Usage:
 #   devtools/refactor.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
-
-source devtools/run-task.sh  # run-task
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 change-kind() {
   local kind=$1
@@ -237,6 +235,10 @@ asdl-create() {
     | egrep -v '_devbuild|_test.py' | tee _tmp/asdl
 }
 
+readline() {
+  metrics/source-code.sh oils-files | xargs fgrep -n 'readline('
+}
+
 #
 # To improve code formatting
 #
@@ -272,4 +274,4 @@ test-files() {
   sed -i -f _tmp/sedr test/runtime-errors.sh
 }
 
-run-task "$@"
+task-five "$@"

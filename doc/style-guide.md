@@ -67,7 +67,7 @@ Special shell variables:
 Global variables that are **silently mutated** by the interpreter start with
 `_`:
 
-    _status   _pipeline_status   _reply
+    _error   _pipeline_status   _reply
 
 As do functions to access such mutable vars:
 
@@ -75,8 +75,10 @@ As do functions to access such mutable vars:
 
 Example:
 
-    try false
-    if (_status !== 0) {
+    try {
+      false
+    }
+    if (_error.code !== 0) {
       echo 'failed'
     }
 

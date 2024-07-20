@@ -31,7 +31,9 @@ class Option(object):
         self.groups = groups or []  # list of groups
 
         # for optview
-        self.is_parse = name.startswith('parse_') or name == 'expand_aliases'
+        self.is_parse = (name.startswith('parse_') or
+                         name.startswith('strict_parse_') or
+                         name == 'expand_aliases')
         # interactive() is an accessor
         self.is_exec = implemented and not self.is_parse
 
@@ -74,9 +76,11 @@ _OTHER_SET_OPTIONS = [
     (None, 'emacs'),
 ]
 
-# These are RUNTIME strict options.  We also have parse time ones like
-# parse_backslash.
-_STRICT_OPTION_NAMES = [
+_STRICT_OPTS = [
+    # $a{[@]::} is not allowed, you need ${a[@]::0} or ${a[@]::n}
+    'strict_parse_slice',
+
+    # These are RUNTIME strict options.
     'strict_argv',  # empty argv not allowed
     'strict_arith',  # string to integer conversions, e.g. x=foo; echo $(( x ))
 
@@ -106,7 +110,7 @@ _STRICT_OPTION_NAMES = [
 #
 # Note that inherit_errexit is a strict option.
 
-_BASIC_RUNTIME_OPTIONS = [
+_UPGRADE_RUNTIME_OPTS = [
     ('simple_word_eval', False),  # No splitting; arity isn't data-dependent
     # Don't reparse program data as globs
     ('dashglob', True),  # do globs return files starting with - ?
@@ -123,8 +127,8 @@ _BASIC_RUNTIME_OPTIONS = [
     # Whether status 141 in pipelines is turned into 0
     ('sigpipe_status_ok', False),
 
-    # Can procs and shell functions be redefined?  On in OSH, off in YSH batch,
-    # on in interactive shell
+    # This applies to shell functions too
+    # It's also turned on in interactive mode
     ('redefine_proc_func', True),
 ]
 
@@ -132,7 +136,7 @@ _BASIC_RUNTIME_OPTIONS = [
 # valid, because it has an extra argument.  Builtins are inconsistent about
 # checking this.
 
-_AGGRESSIVE_RUNTIME_OPTIONS = [
+_YSH_RUNTIME_OPTS = [
     ('simple_echo', False),  # echo takes 0 or 1 arguments
     ('simple_eval_builtin', False),  # eval takes exactly 1 argument
 
@@ -147,8 +151,8 @@ _AGGRESSIVE_RUNTIME_OPTIONS = [
 ]
 
 # Stuff that doesn't break too many programs.
-_BASIC_PARSE_OPTIONS = [
-    'parse_at',  # @foo, @array(a, b)
+_UPGRADE_PARSE_OPTS = [
+    'parse_at',  # @array, @[expr]
     'parse_proc',  # proc p { ... }
     'parse_func',  # func f(x) { ... }
     'parse_brace',  # cd /bin { ... }
@@ -163,7 +167,7 @@ _BASIC_PARSE_OPTIONS = [
 ]
 
 # Extra stuff that breaks too many programs.
-_AGGRESSIVE_PARSE_OPTIONS = [
+_YSH_PARSE_OPTS = [
     ('parse_at_all', False),  # @ starting any word, e.g. @[] @{} @@ @_ @-
 
     # Legacy syntax that is removed.  These options are distinct from strict_*
@@ -279,9 +283,11 @@ def _Init(opt_def):
     opt_def.Add('extglob')
     opt_def.Add('nocasematch')
 
-    # Compatibility
-    opt_def.Add(
-        'eval_unsafe_arith')  # recursive parsing and evaluation (ble.sh)
+    # recursive parsing and evaluation - for compatibility, ble.sh, etc.
+    opt_def.Add('eval_unsafe_arith')
+
+    opt_def.Add('ignore_flags_not_impl')
+    opt_def.Add('ignore_opts_not_impl')
 
     # For implementing strict_errexit
     # TODO: could be _no_command_sub / _no_process_sub, if we had to discourage
@@ -294,6 +300,8 @@ def _Init(opt_def):
 
     # On in interactive shell
     opt_def.Add('redefine_module', default=False)
+    # Hm these aren't the same?
+    #opt_def.Add('redefine_proc_func', default=False),
 
     # For disabling strict_errexit while running traps.  Because we run in the
     # main loop, the value can be "off".  Prefix with _ because it's undocumented
@@ -304,24 +312,27 @@ def _Init(opt_def):
 
     # For fixing lastpipe / job control / DEBUG trap interaction
     opt_def.Add('_no_debug_trap')
+    # To implement ERR trap semantics - it's only run for the WHOLE pipeline,
+    # not each part (even the last part)
+    opt_def.Add('_no_err_trap')
 
     # shopt -s strict_arith, etc.
-    for name in _STRICT_OPTION_NAMES:
+    for name in _STRICT_OPTS:
         opt_def.Add(name, groups=['strict:all', 'ysh:all'])
 
     #
     # Options that enable YSH features
     #
 
-    for name in _BASIC_PARSE_OPTIONS:
+    for name in _UPGRADE_PARSE_OPTS:
         opt_def.Add(name, groups=['ysh:upgrade', 'ysh:all'])
     # shopt -s simple_word_eval, etc.
-    for name, default in _BASIC_RUNTIME_OPTIONS:
+    for name, default in _UPGRADE_RUNTIME_OPTS:
         opt_def.Add(name, default=default, groups=['ysh:upgrade', 'ysh:all'])
 
-    for name, default in _AGGRESSIVE_PARSE_OPTIONS:
+    for name, default in _YSH_PARSE_OPTS:
         opt_def.Add(name, default=default, groups=['ysh:all'])
-    for name, default in _AGGRESSIVE_RUNTIME_OPTIONS:
+    for name, default in _YSH_RUNTIME_OPTS:
         opt_def.Add(name, default=default, groups=['ysh:all'])
 
     opt_def.DoneWithImplementedOptions()

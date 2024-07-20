@@ -82,11 +82,11 @@ TEST string_collection_test() {
 
   StackRoots _roots({&test_str});
 
-  ASSERT(are_equal(test_str, StrFromC("foo")));
+  ASSERT(items_equal(test_str, StrFromC("foo")));
 
   gHeap.Collect();
 
-  ASSERT(are_equal(test_str, StrFromC("foo")));
+  ASSERT(items_equal(test_str, StrFromC("foo")));
 
   PASS();
 }
@@ -108,8 +108,8 @@ TEST list_collection_test() {
 
     // Verify the list looks as we expected
     {
-      ASSERT(are_equal(test_list->at(0), test_str0));
-      ASSERT(are_equal(test_list->at(1), test_str1));
+      ASSERT(items_equal(test_list->at(0), test_str0));
+      ASSERT(items_equal(test_list->at(1), test_str1));
 
       ASSERT_EQ(test_list->at(0), test_str0);
       ASSERT_EQ(test_list->at(1), test_str1);
@@ -120,8 +120,8 @@ TEST list_collection_test() {
     gHeap.Collect();
 
     {
-      ASSERT(are_equal(test_list->at(0), test_str0));
-      ASSERT(are_equal(test_list->at(1), test_str1));
+      ASSERT(items_equal(test_list->at(0), test_str0));
+      ASSERT(items_equal(test_list->at(1), test_str1));
 
       ASSERT_EQ(test_list->at(0), test_str0);
       ASSERT_EQ(test_list->at(1), test_str1);

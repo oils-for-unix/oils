@@ -9,6 +9,8 @@ h1 {
 
 h2 {
   font-size: 1.2em;  /* reduce to what browsers apparently use for h3 */
+
+  padding-top: 1em;  /* separate sections */
 }
 
 h3 {

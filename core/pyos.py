@@ -5,7 +5,6 @@ Like py{error,util}.py, it won't be translated to C++.
 """
 from __future__ import print_function
 
-from errno import EINTR
 import pwd
 import resource
 import signal
@@ -14,13 +13,15 @@ import sys
 import termios  # for read -n
 import time
 
-from core import pyutil
+from mycpp import mops
 from mycpp.mylib import log
 
 import posix_ as posix
 from posix_ import WUNTRACED
 
-from typing import Optional, Tuple, List, Dict, cast, Any
+from typing import Optional, Tuple, List, Dict, cast, Any, TYPE_CHECKING
+if TYPE_CHECKING:
+    from core import error
 
 _ = log
 
@@ -29,9 +30,18 @@ NEWLINE_CH = 10  # ord('\n')
 
 
 def FlushStdout():
-    # type: () -> None
-    """Flush CPython buffers."""
-    sys.stdout.flush()
+    # type: () -> Optional[error.IOError_OSError]
+    """Flush CPython buffers.
+
+    Return error because we call this in a C++ destructor, and those can't
+    throw exceptions.
+    """
+    err = None  # type: Optional[error.IOError_OSError]
+    try:
+        sys.stdout.flush()
+    except (IOError, OSError) as e:
+        err = e
+    return err
 
 
 def WaitPid(waitpid_options):
@@ -109,38 +119,6 @@ def ReadByte(fd):
             return EOF_SENTINEL, 0
 
 
-if 0:
-
-    def ReadLineBuffered():
-        # type: () -> str
-        """Obsolete
-        """
-        ch_array = []  # type: List[int]
-        while True:
-            ch, err_num = ReadByte(0)
-
-            if ch < 0:
-                if err_num == EINTR:
-                    # Instead of retrying, return EOF, which is what libc.stdin_readline()
-                    # did.  I think this interface is easier with getline().
-                    # This causes 'read --line' to return status 1.
-                    return ''
-                else:
-                    raise ReadError(err_num)
-
-            elif ch == EOF_SENTINEL:
-                break
-
-            else:
-                ch_array.append(ch)
-
-            # TODO: Add option to omit newline
-            if ch == NEWLINE_CH:
-                break
-
-        return pyutil.ChArrayToString(ch_array)
-
-
 def Environ():
     # type: () -> Dict[str, str]
     return posix.environ
@@ -212,6 +190,23 @@ def GetUserName(uid):
         return "<ERROR: Couldn't determine user name for uid %d>" % uid
     else:
         return e.pw_name
+
+
+def GetRLimit(res):
+    # type: (int) -> Tuple[mops.BigInt, mops.BigInt]
+    """
+    Raises IOError
+    """
+    soft, hard = resource.getrlimit(res)
+    return (mops.IntWiden(soft), mops.IntWiden(hard))
+
+
+def SetRLimit(res, soft, hard):
+    # type: (int, mops.BigInt, mops.BigInt) -> None
+    """
+    Raises IOError
+    """
+    resource.setrlimit(res, (soft.i, hard.i))
 
 
 def Time():

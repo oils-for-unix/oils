@@ -1,5 +1,8 @@
-#
 # Test ${x/pat*/replace}
+# TODO: can add $BUSYBOX_ASH
+
+## oils_failures_allowed: 2
+## compare_shells: bash mksh zsh
 
 #### Pattern replacement
 v=abcde
@@ -239,7 +242,7 @@ _μ_ and _μ_
 _μ_ and _μ_
 ## END
 
-#### Can't substitute one unicode character when LC_ALL=C
+#### When LC_ALL=C, pattern ? doesn't match multibyte character
 export LC_ALL='C'
 
 s='_μ_ and _μ_'
@@ -249,11 +252,22 @@ s='_μ_ and _μ_'
 echo ${s//_?_/foo}  # all
 echo ${s/#_?_/foo}  # left
 echo ${s/%_?_/foo}  # right
+echo
+
+a='_x_ and _y_'
+
+echo ${a//_?_/foo}  # all
+echo ${a/#_?_/foo}  # left
+echo ${a/%_?_/foo}  # right
 
 ## STDOUT:
 _μ_ and _μ_
 _μ_ and _μ_
 _μ_ and _μ_
+
+foo and foo
+foo and _y_
+_x_ and foo
 ## END
 
 #### ${x/^} regression
