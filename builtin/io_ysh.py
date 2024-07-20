@@ -135,8 +135,7 @@ class Pp(_Builtin):
                                            blame_loc=locs[i])
                         return 1
             else:
-                # TODO: can we list procs and not just sh-funcs too?
-                names = sorted(self.procs.procs)  # also this is ugly...
+                names = self.procs.GetProcNames()
 
             # TSV8 header
             print('proc_name\tdoc_comment')

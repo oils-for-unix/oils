@@ -250,6 +250,10 @@ proc myproc {
 }
 
 declare -F
+
+# this doesn't really test that anymore...
+exit 1  # force a failure
+
 ## STDOUT:
 declare -f myfunc
 declare -f myproc

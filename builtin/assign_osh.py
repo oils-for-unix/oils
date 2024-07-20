@@ -407,7 +407,7 @@ class NewVar(vm._AssignBuiltin):
                 status = self._PrintFuncs(names)
             else:
                 # bash quirk: with no names, they're printed in a different format!
-                for func_name in sorted(self.procs.procs):  # TODO
+                for func_name in self.procs.GetProcNames():
                     print('declare -f %s' % (func_name))
             return status
 
@@ -526,9 +526,7 @@ class Unset(vm._Builtin):
             return False
 
         if proc_fallback and not found:
-            # TODO: Hmmmm, this is an interesting interaction. Is this right?
-            mylib.dict_erase(self.procs.procs, arg)
-            # mylib.dict_erase(self.procs, arg)
+            self.procs.DelProc(arg)
 
         return True
 
@@ -542,9 +540,7 @@ class Unset(vm._Builtin):
             location = arg_locs[i]
 
             if arg.f:
-                # TODO: here too
-                mylib.dict_erase(self.procs.procs, name)
-                # mylib.dict_erase(self.procs, name)
+                self.procs.DelProc(name)
 
             elif arg.v:
                 if not self._UnsetVar(name, location, False):

@@ -2316,13 +2316,19 @@ class Procs:
         self.mem = mem
         self.procs = {}  # type: Dict[str, value.Proc]
 
+        self.proc_names = []  # type: List[str]
+
     def SetProc(self, name, proc):
         # type: (str, value.Proc) -> None
         self.mem.var_stack[0][name] = Cell(False, False, False, proc)
+        self.proc_names.append(name)
+        self.proc_names.sort()
 
     def SetShFunc(self, name, proc):
         # type: (str, value.Proc) -> None
         self.procs[name] = proc
+        self.proc_names.append(name)
+        self.proc_names.sort()
 
     def GetProc(self, name):
         # type: (str) -> value.Proc
@@ -2335,6 +2341,24 @@ class Procs:
             return self.procs[name]
 
         return None
+
+    def DelProc(self, to_del):
+        # type: (str) -> None
+        """If a proc/sh-func with name `to_del` has been defined, undefined it"""
+        if not self.GetProc(to_del):
+            return
+
+        if to_del in self.procs:
+            mylib.dict_erase(self.procs, to_del)
+        else:
+            mylib.dict_erase(self.mem.var_stack[0], to_del)
+
+        self.proc_names.remove(to_del)
+
+    def GetProcNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all proc names"""
+        return self.proc_names
 
 
 #

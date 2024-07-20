@@ -64,7 +64,7 @@ class _DynamicProcDictAction(completion.CompletionAction):
         # TODO: Okay, yeah, we need to support this type of lookup...
         # for name in sorted(self.d):
 
-        for name in sorted(self.d.procs):
+        for name in self.d.GetProcNames():
             if name.startswith(comp.to_complete):
                 yield name
 
