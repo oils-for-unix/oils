@@ -17,45 +17,45 @@ secrets:
 
 tasks:
   - mount-perms: |
-      cd oil
+      cd oils
       soil/host-shim.sh mount-perms $PWD
 
   - cpp-tarball: |
-      cd oil
+      cd oils
       soil/host-shim.sh run-job-uke podman $PWD cpp-tarball
 
   - publish-cpp-tarball: |
-      cd oil
+      cd oils
       soil/sourcehut.sh publish-html-assuming-ssh-key cpp-tarball
 
   - job-reset-1: |
-      cd oil
+      cd oils
       soil/host-shim.sh job-reset
 
   - benchmarks: |
-      cd oil
+      cd oils
       soil/host-shim.sh run-job-uke podman $PWD benchmarks
 
   - publish-benchmarks: |
-      cd oil
+      cd oils
       soil/sourcehut.sh publish-html-assuming-ssh-key benchmarks
 
       #- cpp-spec: |
-      #cd oil
+      #cd oils
       #soil/host-shim.sh run-job-uke podman $PWD cpp-spec
 
       #- publish-cpp-spec: |
-      #cd oil
+      #cd oils
       #soil/sourcehut.sh publish-html-assuming-ssh-key cpp-spec
 
       #- other-tests: |
-      #    cd oil
+      #    cd oils
       #    soil/host-shim.sh run-job-uke podman $PWD other-tests
 
       #- publish-other-tests: |
-      #    cd oil
+      #    cd oils
       #    soil/sourcehut.sh publish-html-assuming-ssh-key other-tests
 
   - did-all-succeed: |
-      cd oil
+      cd oils
       soil/host-shim.sh did-all-succeed cpp-tarball benchmarks

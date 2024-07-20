@@ -20,56 +20,56 @@ secrets:
 
 tasks:
   - mount-perms: |
-      cd oil
+      cd oils
       soil/host-shim.sh mount-perms $PWD
 
   - dummy: |
-      cd oil
+      cd oils
       soil/host-shim.sh run-job-uke podman $PWD dummy
   
   # Relies on SSH key, so do it outside the container
   - publish-dummy: |
-      cd oil
+      cd oils
       soil/sourcehut.sh publish-html-assuming-ssh-key dummy
   
   - job-reset-1: |
-      cd oil
+      cd oils
       soil/host-shim.sh job-reset
 
   - pea: |
-      cd oil
+      cd oils
       soil/host-shim.sh run-job-uke podman $PWD pea
 
   - publish-pea: |
-      cd oil
+      cd oils
       soil/sourcehut.sh publish-html-assuming-ssh-key pea
 
   - job-reset-2: |
-      cd oil
+      cd oils
       soil/host-shim.sh job-reset
 
   - cpp-small: |
-      cd oil
+      cd oils
       soil/host-shim.sh run-job-uke podman $PWD cpp-small
 
   - publish-cpp-small: |
-      cd oil
+      cd oils
       soil/sourcehut.sh publish-html-assuming-ssh-key cpp-small
 
       #  - cpp-coverage: |
-      #      cd oil
+      #      cd oils
       #      soil/host-shim.sh run-job-uke podman $PWD cpp-coverage
       #
       #  - publish-cpp-coverage: |
-      #      cd oil
+      #      cd oils
       #      soil/sourcehut.sh publish-html-assuming-ssh-key
       #
       #  - job-reset-2: |
-      #      cd oil
+      #      cd oils
       #      soil/host-shim.sh job-reset
 
 
   - did-all-succeed: |
-      cd oil
+      cd oils
       soil/host-shim.sh did-all-succeed dummy pea cpp-small
       #soil/host-shim.sh did-all-succeed pea cpp-coverage dummy
