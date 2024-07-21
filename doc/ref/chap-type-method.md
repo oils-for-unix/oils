@@ -343,6 +343,19 @@ Similar to `keys()`, but returns the values of the dictionary.
 
 ### erase()
 
+Accepts a key and deletes the relevant key-value pair. The method is idempotent.
+
+    var book = {
+      title: "The Histories",
+      author: "Herodotus",
+    }
+    = book
+    # => (Dict)   {title: "The Histories", author: "Herodotus"}
+
+    call book->erase("author")
+    = book
+    # => (Dict)   {title: "The Histories"}
+
 ### inc()
 
 ### accum()
