@@ -2223,7 +2223,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 # del mydict[mykey] raises KeyError, which we don't want
                 raise AssertionError(
-                    'Use mylib.maybe_remove(d, key) instead of del d[key]')
+                    'Use mylib.dict_erase(d, key) instead of del d[key]')
 
             self.def_write(';\n')
 
