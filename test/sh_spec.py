@@ -728,13 +728,9 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         sys.exit(1)
 
       p.stdin.write(code)
-      p.stdin.close()
 
       actual = {}
-      actual['stdout'] = p.stdout.read()
-      actual['stderr'] = p.stderr.read()
-      p.stdout.close()
-      p.stderr.close()
+      actual['stdout'], actual['stderr'] = p.communicate()
 
       actual['status'] = p.wait()
 

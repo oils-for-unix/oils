@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 4
 ## tags: dev-minimal
 
 #### usage errors
@@ -1076,5 +1076,66 @@ echo status=$?
 ## STDOUT:
 status=1
 status=1
+## END
+
+#### Data after internal NUL (issue #2026)
+
+$SH <<'EOF'
+pp line (fromJson(b'123\y00abc'))
+EOF
+echo status=$?
+
+$SH <<'EOF'
+pp line (fromJson(b'123\y01abc'))
+EOF
+echo status=$?
+
+$SH <<'EOF'
+shopt --set ysh:upgrade  # b'' syntax
+json read <<< b'123\y00abc'
+EOF
+echo status=$?
+
+$SH <<'EOF'
+shopt --set ysh:upgrade  # b'' syntax
+json read <<< b'123\y01abc'
+EOF
+echo status=$?
+
+## STDOUT:
+status=4
+status=4
+status=1
+status=1
+## END
+
+#### Number too big
+
+$SH <<'EOF'
+json read <<< '123456789123456789123456789'
+pp line (_reply)
+EOF
+echo status=$?
+
+$SH <<'EOF'
+json read <<< '-123456789123456789123456789'
+pp line (_reply)
+EOF
+echo status=$?
+
+## STDOUT:
+status=1
+status=1
+## END
+
+#### Too many opening [[[ - blocking stack
+
+python2 -c 'print("[" * 10000)' | json read
+pp line (_reply)
+
+python2 -c 'print("{" * 10000)' | json read
+pp line (_reply)
+
+## STDOUT:
 ## END
 
