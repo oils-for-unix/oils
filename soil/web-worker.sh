@@ -62,7 +62,9 @@ remote-cleanup-jobs-index() {
 }
 
 remote-cleanup-status-api() {
-  sshq soil-web/soil/web.sh cleanup-status-api false
+  #sshq soil-web/soil/web.sh cleanup-status-api false
+  # 2024-07 - work around bug.  The logic in soil/web.sh doesn't seem right
+  sshq soil-web/soil/web.sh cleanup-status-api true
 }
 
 my-scp() {

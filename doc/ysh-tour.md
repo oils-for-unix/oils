@@ -437,16 +437,16 @@ You can also request the loop index:
     # 0 - README.md
     # 1 - __init__.py
 
-To iterate over lines of `stdin`, use the special form:
+To iterate over lines of `stdin`, use:
 
-    for line in <> {
+    for line in (stdin) {
       echo $line
     }
     # lines are buffered, so it's much faster than `while read --rawline`
 
 Ask for the loop index:
 
-    for i, line in <> {
+    for i, line in (stdin) {
       echo "$i $line"
     }
 
@@ -696,7 +696,6 @@ Here are some categories of builtin:
 - Processes: `fork  wait  forkwait  exec`
 - Interpreter settings: `shopt  shvar`
 - Meta: `command  builtin  runproc  type  eval`
-- Modules: `source  module`
 
 <!-- TODO: Link to a comprehensive list of builtins -->
 
@@ -1360,8 +1359,7 @@ A module is just a file, like this:
 #!/usr/bin/env ysh
 ### Deploy script
 
-module main || return 0         # declaration, "include guard"
-use bin cp mkdir                # optionally declare binaries used
+source-guard main || return 0   # declaration, "include guard"
 
 source $_this_dir/lib/util.ysh  # defines 'log' helper
 

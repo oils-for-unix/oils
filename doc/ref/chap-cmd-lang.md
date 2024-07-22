@@ -528,11 +528,11 @@ You can also ask for the index:
 
 Here's how to iterate over the lines of stdin:
 
-    for line in <> {
+    for line in (stdin) {
       echo $line
     }
 
-Likewise, you can ask for the index with `for i, line in <> { ...`.
+Likewise, you can ask for the index with `for i, line in (stdin) { ...`.
 
 #### Expressions
 

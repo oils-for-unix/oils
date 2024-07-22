@@ -33,32 +33,32 @@ class IsMain(vm._Builtin):
         return 0 if self.mem.is_main else 1
 
 
-class Module(vm._Builtin):
-    """module builtin.
+class SourceGuard(vm._Builtin):
+    """source-guard builtin.
 
-    module main || return
+    source-guard main || return
     """
 
-    def __init__(self, modules, exec_opts, errfmt):
+    def __init__(self, guards, exec_opts, errfmt):
         # type: (Dict[str, bool], optview.Exec, ui.ErrorFormatter) -> None
-        self.modules = modules
+        self.guards = guards
         self.exec_opts = exec_opts
         self.errfmt = errfmt
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-        _, arg_r = flag_util.ParseCmdVal('module', cmd_val)
+        _, arg_r = flag_util.ParseCmdVal('source-guard', cmd_val)
         name, _ = arg_r.ReadRequired2('requires a name')
-        #log('modules %s', self.modules)
-        if name in self.modules:
+        #log('guards %s', self.guards)
+        if name in self.guards:
             # already defined
             if self.exec_opts.redefine_module():
-                self.errfmt.PrintMessage('(interactive) Reloading module %r' %
-                                         name)
+                self.errfmt.PrintMessage(
+                    '(interactive) Reloading source file %r' % name)
                 return 0
             else:
                 return 1
-        self.modules[name] = True
+        self.guards[name] = True
         return 0
 
 

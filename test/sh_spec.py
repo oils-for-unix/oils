@@ -706,6 +706,8 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
           raise
 
       # Some tests assume _tmp exists
+      # TODO: get rid of this in the common case, to save inodes!  I guess have
+      # an opt-in setting per FILE, like make_underscore_tmp: true.
       try:
         os.mkdir(os.path.join(case_tmp_dir, '_tmp'))
       except OSError as e:
@@ -726,13 +728,9 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         sys.exit(1)
 
       p.stdin.write(code)
-      p.stdin.close()
 
       actual = {}
-      actual['stdout'] = p.stdout.read()
-      actual['stderr'] = p.stderr.read()
-      p.stdout.close()
-      p.stderr.close()
+      actual['stdout'], actual['stderr'] = p.communicate()
 
       actual['status'] = p.wait()
 

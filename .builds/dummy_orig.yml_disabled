@@ -8,8 +8,8 @@ secrets:
   - 2678474d-b22b-449f-a19a-16cb403c94cd
 tasks:
   - dummy: |
-      cd oil
+      cd oils
       soil/worker.sh JOB-dummy
   - publish-html: |
-      cd oil
+      cd oils
       soil/sourcehut.sh publish-html-assuming-ssh-key

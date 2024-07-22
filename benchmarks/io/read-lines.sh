@@ -51,7 +51,7 @@ exec-ysh-count() {
 
   local code='
 var i = 0
-for _ in <> {
+for _ in (stdin) {
   setvar i += 1
 }
 echo $i
@@ -191,7 +191,7 @@ test-ysh-read-error() {
   ### testing errno!
 
   set +o errexit
-  $YSH_ASAN -c 'for x in <> { echo $x }' < /tmp
+  $YSH_ASAN -c 'for x in (stdin) { echo $x }' < /tmp
   echo status=$?
 }
 

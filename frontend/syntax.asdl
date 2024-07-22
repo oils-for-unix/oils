@@ -330,7 +330,7 @@ module syntax
   | Words(List[word] words)       # for x in 'foo' *.py { echo $x }
                                   # like ShArrayLiteral, but no location for %(
   | YshExpr(expr e, Token blame)  # for x in (mylist) { echo $x }
-  | Files(Token left, List[word] words)
+  #| Files(Token left, List[word] words)
                                   # for x in <> {
                                   # for x in < @myfiles > {
 

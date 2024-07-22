@@ -6,7 +6,7 @@ from typing import overload, Union, Optional
 import mypy
 from mypy.visitor import ExpressionVisitor, StatementVisitor
 from mypy.nodes import (Expression, Statement, ExpressionStmt, StrExpr,
-                        CallExpr, NameExpr)
+                        CallExpr)
 
 from mycpp.crash import catch_errors
 from mycpp.util import split_py_name
@@ -139,19 +139,15 @@ class SimpleVisitor(ExpressionVisitor[T], StatementVisitor[None]):
             self.accept(o.expr)
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
-        # Omit if TYPE_CHECKING blocks.  They contain type expressions that
-        # don't type check!
-        cond = o.expr[0]
-        if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
-            return
+        if util.ShouldVisitIfExpr(o):
+            for expr in o.expr:
+                self.accept(expr)
 
-        for expr in o.expr:
-            self.accept(expr)
+        if util.ShouldVisitIfBody(o):
+            for body in o.body:
+                self.accept(body)
 
-        for body in o.body:
-            self.accept(body)
-
-        if o.else_body:
+        if util.ShouldVisitElseBody(o):
             self.accept(o.else_body)
 
     def visit_raise_stmt(self, o: 'mypy.nodes.RaiseStmt') -> T:

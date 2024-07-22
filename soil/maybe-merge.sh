@@ -57,7 +57,7 @@ fast-forward()  {
     -H "Content-Type: application/json" \
     -H "Accept: application/vnd.github.v3+json" \
     -H "Authorization: token ${github_token}" \
-    https://api.github.com/repos/oilshell/oil/git/refs/heads/$to_branch \
+    https://api.github.com/repos/oils-for-unix/oils/git/refs/heads/$to_branch \
     -d '{"sha": "'$commit_hash'", "force": false }'
     
   local error

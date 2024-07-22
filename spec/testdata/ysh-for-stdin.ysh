@@ -6,13 +6,13 @@
 # < *.py README.md >
 # etc.
 
-seq 3 | for x in <> { 
+seq 3 | for x in (stdin) { 
   echo "-$x-"
 }
 echo
 
 
-seq 3 | for i, x in <> { 
+seq 3 | for i, x in (stdin) { 
   echo "$i $x"
 }
 echo
@@ -20,7 +20,7 @@ echo
 echo 'empty'
 
 fopen < /dev/null {
-  for x in <> { 
+  for x in (stdin) { 
     echo "$x"
   }
 }
@@ -30,7 +30,7 @@ echo
 
 echo 'empty2'
 
-for x in <> { 
+for x in (stdin) { 
   echo "$x"
 } < /dev/null
 
@@ -39,6 +39,6 @@ echo
 
 echo 'space'
 
-echo 'hi' | for x in < > { 
+echo 'hi' | for x in ( stdin ) { 
   echo "$x"
 }

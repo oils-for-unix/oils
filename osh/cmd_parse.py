@@ -1496,20 +1496,23 @@ class CommandParser(object):
 
             elif next_id == Id.Redir_LessGreat:  # for x in <> {
                 # <> is Id.Redir_Great - reuse this for simplicity
-
                 w = self._Eat(Id.Redir_LessGreat)
-                left = word_.AsOperatorToken(w)
+                p_die('Reserved syntax', loc.Word(self.cur_word))
 
-                node.iterable = for_iter.Files(left, [])
+                #left = word_.AsOperatorToken(w)
 
-                # Must be { not 'do'
-                self._GetWord()
-                if self.c_id != Id.Lit_LBrace:
-                    p_die('Expected { after files', loc.Word(self.cur_word))
+                #node.iterable = for_iter.Files(left, [])
+
+                ## Must be { not 'do'
+                #self._GetWord()
+                #if self.c_id != Id.Lit_LBrace:
+                #    p_die('Expected { after files', loc.Word(self.cur_word))
 
             elif next_id == Id.Redir_Less:  # for x in < > {
                 w = self._Eat(Id.Redir_Less)
-                left = word_.AsOperatorToken(w)
+                p_die('Reserved syntax', loc.Word(self.cur_word))
+
+                #left = word_.AsOperatorToken(w)
 
                 # TODO: we could accept
                 #
@@ -1518,14 +1521,14 @@ class CommandParser(object):
                 #
                 # And set _filename _line_num, similar to awk
 
-                self._Eat(Id.Redir_Great)
+                #self._Eat(Id.Redir_Great)
 
-                node.iterable = for_iter.Files(left, [])
+                #node.iterable = for_iter.Files(left, [])
 
-                # Must be { not 'do'
-                self._GetWord()
-                if self.c_id != Id.Lit_LBrace:
-                    p_die('Expected { after files', loc.Word(self.cur_word))
+                ## Must be { not 'do'
+                #self._GetWord()
+                #if self.c_id != Id.Lit_LBrace:
+                #    p_die('Expected { after files', loc.Word(self.cur_word))
 
             else:
                 semi_tok = None  # type: Optional[Token]

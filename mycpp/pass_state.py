@@ -47,7 +47,7 @@ class HeapObjectMember(object):
     e.g foo.empty() => foo->empty()
     """
 
-    def __init__(self, object_expr: Expression, object_type: Optional[Type],
+    def __init__(self, object_expr: Expression, object_type: Type,
                  member: str) -> None:
         self.ojbect_expr = object_expr
         self.object_type = object_type
@@ -152,6 +152,13 @@ class Virtual(object):
             return True  # by default they can be reordered
 
 
+def SymbolPathToSouffle(p: SymbolPath) -> str:
+    if len(p) > 1:
+        return '$Member({}, {})'.format(join_name(p[:-1], delim='.'), p[-1])
+
+    return '$Variable({})'.format(p[0])
+
+
 class Fact(object):
     """
     An abstract fact. These can be used to build up datalog programs.
@@ -177,6 +184,40 @@ class FunctionCall(Fact):
 
     def Generate(self, func: str, statement: int) -> str:
         return '{}\t{}\t{}\n'.format(func, statement, self.callee)
+
+
+class Definition(Fact):
+    """
+    The definition of a variable. This corresponds to an allocation.
+    """
+
+    def __init__(self, variable: SymbolPath) -> None:
+        self.variable = variable
+
+    def name(self) -> str:
+        return 'define'
+
+    def Generate(self, func: str, statement: int) -> str:
+        return '{}\t{}\t{}\n'.format(func, statement,
+                                     SymbolPathToSouffle(self.variable))
+
+
+class Assignment(Fact):
+    """
+    The assignment of one variable or object member to another.
+    """
+
+    def __init__(self, lhs: SymbolPath, rhs: SymbolPath) -> None:
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def name(self) -> str:
+        return 'assign'
+
+    def Generate(self, func: str, statement: int) -> str:
+        return '{}\t{}\t{}\t{}\n'.format(func, statement,
+                                         SymbolPathToSouffle(self.lhs),
+                                         SymbolPathToSouffle(self.rhs))
 
 
 class ControlFlowGraph(object):
