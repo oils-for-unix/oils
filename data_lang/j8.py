@@ -915,8 +915,13 @@ class Parser(_Parser):
         """ Raises error.Decode. """
         self._Next()
         obj = self._ParseValue()
-        if self.tok_id != Id.Eol_Tok:
-            raise self._ParseError('Unexpected trailing input')
+
+        n = len(self.s)
+        if self.start_pos != n:
+            extra = n - self.start_pos
+            #log('n %d pos %d', n, self.start_pos)
+            raise self._ParseError(
+                'Got %d bytes of unexpected trailing input' % extra)
         return obj
 
 
