@@ -964,35 +964,6 @@ echo status=$?
 status=1
 ## END
 
-#### decode deeply nested structure (stack overflow)
-
-shopt -s ysh:upgrade
-
-proc pairs(n) {
-  var m = int(n)  # TODO: 1 .. n should auto-convert?
-
-  for i in (1 .. m) {
-    write -n -- '['
-  }
-  for i in (1 .. m) {
-    write -n -- ']'
-  }
-}
-
-# This is all Python can handle; C++ can handle more
-msg=$(pairs 50)
-
-#echo $msg
-
-echo "$msg" | json read
-pp line (_reply)
-echo len=$[len(_reply)]
-
-## STDOUT:
-(List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
-len=1
-## END
-
 #### decode integer larger than 2^32
 
 json=$(( 1 << 33 ))
@@ -1005,6 +976,29 @@ pp line (_reply)
 8589934592
 (Int)   8589934592
 ## END
+
+#### decode integer larger than 2^64
+
+$SH <<'EOF'
+json read <<< '123456789123456789123456789'
+echo status=$?
+pp line (_reply)
+EOF
+
+$SH <<'EOF'
+json read <<< '-123456789123456789123456789'
+echo status=$?
+pp line (_reply)
+EOF
+
+echo ok
+
+## STDOUT:
+status=1
+status=1
+ok
+## END
+
 
 #### round trip: read/write with ysh
 
@@ -1109,24 +1103,56 @@ status=1
 status=1
 ## END
 
-#### Number too big
+#### Float too big
 
 $SH <<'EOF'
-json read <<< '123456789123456789123456789'
+json read <<< '123456789123456789123456789.12345e67890'
+echo status=$?
 pp line (_reply)
 EOF
-echo status=$?
 
 $SH <<'EOF'
-json read <<< '-123456789123456789123456789'
+json read <<< '-123456789123456789123456789.12345e67890'
+echo status=$?
 pp line (_reply)
 EOF
-echo status=$?
 
 ## STDOUT:
-status=1
-status=1
+status=0
+(Float)   inf
+status=0
+(Float)   -inf
 ## END
+
+#### Many [[[ , but not too many
+
+shopt -s ysh:upgrade
+
+proc pairs(n) {
+  var m = int(n)  # TODO: 1 .. n should auto-convert?
+
+  for i in (1 .. m) {
+    write -n -- '['
+  }
+  for i in (1 .. m) {
+    write -n -- ']'
+  }
+}
+
+# This is all Python can handle; C++ can handle more
+msg=$(pairs 50)
+
+#echo $msg
+
+echo "$msg" | json read
+pp line (_reply)
+echo len=$[len(_reply)]
+
+## STDOUT:
+(List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+len=1
+## END
+
 
 #### Too many opening [[[ - blocking stack
 
