@@ -874,3 +874,8 @@ foo
 bar
 declare -f foo
 ## END
+## N-I mksh status: 0
+## N-I mksh STDOUT:
+bar
+bar
+## END
