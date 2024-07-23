@@ -465,3 +465,29 @@ p word (42, n=99) {
 (Int)   99
 Block
 ## END
+
+#### unset and procs
+# See also assign > 'unset and shell funcs'
+
+shopt -s ysh:upgrade
+
+proc foo() {
+  echo bar
+}
+
+try { foo }
+echo status=$[_error.code]
+
+declare -F
+unset foo
+declare -F
+
+try { foo }
+echo status=$[_error.code]
+
+## STDOUT:
+bar
+status=0
+declare -f foo
+status=127
+## END

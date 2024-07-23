@@ -2316,19 +2316,13 @@ class Procs:
         self.mem = mem
         self.procs = {}  # type: Dict[str, value.Proc]
 
-        self.proc_names = []  # type: List[str]
-
     def SetProc(self, name, proc):
         # type: (str, value.Proc) -> None
         self.mem.var_stack[0][name] = Cell(False, False, False, proc)
-        self.proc_names.append(name)
-        self.proc_names.sort()
 
     def SetShFunc(self, name, proc):
         # type: (str, value.Proc) -> None
         self.procs[name] = proc
-        self.proc_names.append(name)
-        self.proc_names.sort()
 
     def GetProc(self, name):
         # type: (str) -> value.Proc
@@ -2353,12 +2347,16 @@ class Procs:
         else:
             mylib.dict_erase(self.mem.var_stack[0], to_del)
 
-        self.proc_names.remove(to_del)
-
     def GetProcNames(self):
         # type: () -> List[str]
         """Returns a *sorted* list of all proc names"""
-        return self.proc_names
+        names = list(self.procs)
+
+        for name, cell in self.mem.var_stack[0].items():
+            if cell.val.tag() == value_e.Proc:
+                names.append(name)
+
+        return sorted(names)
 
 
 #
