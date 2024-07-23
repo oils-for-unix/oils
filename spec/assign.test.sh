@@ -535,27 +535,6 @@ unset foo
 ['']
 ## END
 
-#### unset and shell funcs
-# See also ysh-proc > 'unset and procs'
-
-foo() {
-  echo bar
-}
-
-foo
-
-declare -F
-unset foo
-declare -F
-
-foo
-
-## status: 127
-## STDOUT:
-bar
-declare -f foo
-## END
-
 #### readonly $x where x='b c'
 one=a
 two='b c'

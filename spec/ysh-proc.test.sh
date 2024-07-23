@@ -467,8 +467,6 @@ Block
 ## END
 
 #### unset and procs
-# See also assign > 'unset and shell funcs'
-
 shopt -s ysh:upgrade
 
 proc foo() {
