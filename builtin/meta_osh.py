@@ -366,7 +366,7 @@ class RunProc(vm._Builtin):
             raise error.Usage('requires arguments', loc.Missing)
 
         name = argv[0]
-        if not self.procs.GetProc(name):
+        if not self.procs.Get(name):
             self.errfmt.PrintMessage('runproc: no proc named %r' % name)
             return 1
 
@@ -393,7 +393,7 @@ def _ResolveName(
 
     results = []  # type: List[Tuple[str, str, Optional[str]]]
 
-    if funcs and funcs.GetProc(name):
+    if funcs and funcs.Get(name):
         results.append((name, 'function', no_str))
 
     if name in aliases:

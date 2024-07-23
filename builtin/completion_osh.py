@@ -60,11 +60,7 @@ class _DynamicProcDictAction(completion.CompletionAction):
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
-
-        # TODO: Okay, yeah, we need to support this type of lookup...
-        # for name in sorted(self.d):
-
-        for name in self.d.GetProcNames():
+        for name in self.d.GetNames():
             if name.startswith(comp.to_complete):
                 yield name
 
@@ -143,7 +139,7 @@ class SpecBuilder(object):
         # obviously it's better to check here.
         if arg.F is not None:
             func_name = arg.F
-            func = cmd_ev.procs.GetProc(func_name)
+            func = cmd_ev.procs.Get(func_name)
             if func is None:
                 raise error.Usage('function %r not found' % func_name,
                                   loc.Missing)

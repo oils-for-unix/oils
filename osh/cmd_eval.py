@@ -1282,7 +1282,7 @@ class CommandEvaluator(object):
 
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
-        if self.procs.GetProc(node.name) and not self.exec_opts.redefine_proc_func():
+        if self.procs.Get(node.name) and not self.exec_opts.redefine_proc_func():
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
@@ -1292,7 +1292,7 @@ class CommandEvaluator(object):
     def _DoProc(self, node):
         # type: (Proc) -> None
         proc_name = lexer.TokenVal(node.name)
-        if self.procs.GetProc(proc_name) and not self.exec_opts.redefine_proc_func():
+        if self.procs.Get(proc_name) and not self.exec_opts.redefine_proc_func():
             e_die(
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,
                 node.name)

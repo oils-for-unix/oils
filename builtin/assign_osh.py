@@ -372,7 +372,7 @@ class NewVar(vm._AssignBuiltin):
         # type: (List[str]) -> int
         status = 0
         for name in names:
-            if self.procs.GetProc(name):
+            if self.procs.Get(name):
                 print(name)
                 # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
                 # could use that too.
@@ -406,7 +406,7 @@ class NewVar(vm._AssignBuiltin):
                 status = self._PrintFuncs(names)
             else:
                 # bash quirk: with no names, they're printed in a different format!
-                for func_name in self.procs.GetProcNames():
+                for func_name in self.procs.GetNames():
                     print('declare -f %s' % (func_name))
             return status
 
@@ -525,7 +525,7 @@ class Unset(vm._Builtin):
             return False
 
         if proc_fallback and not found:
-            self.procs.DelProc(arg)
+            self.procs.Del(arg)
 
         return True
 
@@ -539,7 +539,7 @@ class Unset(vm._Builtin):
             location = arg_locs[i]
 
             if arg.f:
-                self.procs.DelProc(name)
+                self.procs.Del(name)
 
             elif arg.v:
                 if not self._UnsetVar(name, location, False):

@@ -2324,7 +2324,7 @@ class Procs:
         # type: (str, value.Proc) -> None
         self.procs[name] = proc
 
-    def GetProc(self, name):
+    def Get(self, name):
         # type: (str) -> value.Proc
         vars = self.mem.var_stack[0]
         if name in vars:
@@ -2337,10 +2337,10 @@ class Procs:
 
         return None
 
-    def DelProc(self, to_del):
+    def Del(self, to_del):
         # type: (str) -> None
         """If a proc/sh-func with name `to_del` has been defined, undefined it"""
-        if not self.GetProc(to_del):
+        if not self.Get(to_del):
             return
 
         if to_del in self.procs:
@@ -2348,7 +2348,7 @@ class Procs:
         else:
             mylib.dict_erase(self.mem.var_stack[0], to_del)
 
-    def GetProcNames(self):
+    def GetNames(self):
         # type: () -> List[str]
         """Returns a *sorted* list of all proc names"""
         names = list(self.procs.keys())
