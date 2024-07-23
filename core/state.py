@@ -2326,8 +2326,9 @@ class Procs:
 
     def GetProc(self, name):
         # type: (str) -> value.Proc
-        if name in self.mem.var_stack[0]:
-            maybe_proc = self.mem.var_stack[0][name]
+        vars = self.mem.var_stack[0]
+        if name in vars:
+            maybe_proc = vars[name]
             if maybe_proc.val.tag() == value_e.Proc:
                 return cast(value.Proc, maybe_proc.val)
 
@@ -2350,9 +2351,11 @@ class Procs:
     def GetProcNames(self):
         # type: () -> List[str]
         """Returns a *sorted* list of all proc names"""
-        names = list(self.procs)
+        names = list(self.procs.keys())
 
-        for name, cell in self.mem.var_stack[0].items():
+        vars = self.mem.var_stack[0]
+        for name in vars:
+            cell = vars[name]
             if cell.val.tag() == value_e.Proc:
                 names.append(name)
 
