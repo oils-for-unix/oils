@@ -17,7 +17,6 @@ from core import state
 from core import vm
 from frontend import flag_util
 from frontend import args
-from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
