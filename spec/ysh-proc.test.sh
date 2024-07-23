@@ -238,7 +238,7 @@ p
 ## STDOUT:
 ## END
 
-#### procs are in same namespace as shell functions
+#### declare -F prints procs and shell-funcs
 shopt --set parse_proc
 
 myfunc() {
@@ -251,14 +251,24 @@ proc myproc {
 
 declare -F
 
-# this doesn't really test that anymore...
-exit 1  # force a failure
-
+## status: 0
 ## STDOUT:
 declare -f myfunc
 declare -f myproc
 ## END
 
+#### procs are in same namespace as variables
+shopt --set parse_proc
+
+proc myproc {
+  echo hi
+}
+
+echo "myproc is a $[type(myproc)]"
+
+## STDOUT:
+myproc is a Proc
+## END
 
 #### Nested proc is disallowed at parse time
 shopt --set parse_proc
