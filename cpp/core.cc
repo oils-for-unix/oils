@@ -4,6 +4,7 @@
 
 #include <ctype.h>  // ispunct()
 #include <errno.h>
+#include <float.h>
 #include <math.h>  // fmod()
 #include <pwd.h>   // passwd
 #include <signal.h>
@@ -329,7 +330,13 @@ void PopTermAttrs(int fd, int orig_local_modes, void* term_attrs) {
 
 namespace pyutil {
 
-static grammar::Grammar* gOilGrammar = nullptr;
+float infinity() {
+  return INFINITY;  // float.h
+}
+
+float nan() {
+  return NAN;  // float.h
+}
 
 // TODO: SHARE with pyext
 bool IsValidCharEscape(BigStr* c) {
@@ -404,6 +411,8 @@ BigStr* strerror(IOError_OSError* e) {
   BigStr* s = StrFromC(::strerror(e->errno_));
   return s;
 }
+
+static grammar::Grammar* gOilGrammar = nullptr;
 
 grammar::Grammar* LoadYshGrammar(_ResourceLoader*) {
   if (gOilGrammar != nullptr) {

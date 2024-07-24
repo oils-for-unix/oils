@@ -2,11 +2,6 @@
 """
 j8.py: J8 Notation, a superset of JSON
 
-TODO:
-
-- Many more tests
-  - Run JSONTestSuite
-
 Later:
 
 - PrettyPrinter uses hnode.asdl?
@@ -32,6 +27,8 @@ Later:
     - JSON8 could have trailing commas rule
     - NIL8 at least has no commas for [1 2 "hi"]
 """
+
+import math
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
@@ -145,6 +142,7 @@ def Utf8Encode(code):
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
 LOSSY_JSON = 1 << 3  # JSON is lossy
+INF_NAN_ARE_NULL = 1 << 4  # for JSON
 
 # Hack until we fully translate
 assert pyj8.LOSSY_JSON == LOSSY_JSON
@@ -176,7 +174,7 @@ def PrintJsonMessage(val, buf, indent):
     Caller must handle error.Encode()
     Doesn't decay to b'' strings - will use Unicode replacement char.
     """
-    _Print(val, buf, indent, options=LOSSY_JSON)
+    _Print(val, buf, indent, options=LOSSY_JSON | INF_NAN_ARE_NULL)
 
 
 def PrintLine(val, f):
@@ -352,9 +350,20 @@ class InstancePrinter(object):
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
-                # TODO: avoid intrmediate allocation with
-                # self.buf.WriteFloat(val.f)
-                self.buf.write(str(val.f))
+
+                fl = val.f
+                if ((self.options & INF_NAN_ARE_NULL) and
+                    (math.isnan(fl) or math.isinf(fl))):
+                    # JavaScript JSON lib behavior: Inf and NaN are null
+                    # Python has a bug in the encoder by default, and then
+                    # allow_nan=False raises an error
+                    s = 'null'
+                else:
+                    # TODO: can we avoid intermediate allocation?
+                    # self.buf.WriteFloat(val.f)
+                    s = str(fl)
+
+                self.buf.write(s)
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)

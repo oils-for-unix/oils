@@ -141,6 +141,20 @@ When the shell process exists, print GC stats to stderr.
 
 When the shell process exists, print GC stats to this file descriptor.
 
+## Float
+
+### NAN
+
+The float value for "not a number".
+
+(The name is consistent with the C language.)
+
+### INFINITY
+
+The float value for "infinity".  You can negate it to get "negative infinity".
+
+(The name is consistent with the C language.)
+
 ## Shell Vars
 
 ### IFS

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -891,12 +891,7 @@ status=0
 ## END
 
 
-
-#### Inf and NaN can't be encoded or decoded
-
-# This works in Python, should probably support it
-#var n = float("NaN")
-#var i = float("inf")
+#### Inf is encoded as null, like JavaScript
 
 # WRONG LOCATION!  Gah
 #var x = fromJson(repeat('123', 20))
@@ -905,22 +900,59 @@ shopt --set ysh:upgrade
 
 source --builtin list.ysh
 
-var s = repeat('123', 20)
-pp line (s)
-var x = fromJson(s)
-pp line (x)
+# Create inf
+var big = repeat('12345678', 100) ++ '.0'
+#pp line (s)
+var inf = fromJson(big)
+var neg_inf = fromJson('-' ++ big)
 
+# Can be printed
+pp line (inf)
+pp line (neg_inf)
+echo --
 
-pp line (n)
-pp line (i)
+# Can't be serialized
+try {
+  json write (inf)
+}
+echo error=$[_error.code]
 
-json dump (n)
-json dump (i)
+try {
+  json write (neg_inf)
+}
+echo error=$[_error.code]
 
-## status: 2
+echo --
+echo $[toJson(inf)]
+echo $[toJson(neg_inf)]
+
 ## STDOUT:
-fds
+(Float)   inf
+(Float)   -inf
+--
+null
+error=0
+null
+error=0
+--
+null
+null
 ## END
+
+#### NaN is encoded as null, like JavaScript
+
+pp line (NAN)
+
+json write (NAN)
+
+echo $[toJson(NAN)]
+
+## STDOUT:
+(Float)   nan
+null
+null
+## END
+
 
 #### Invalid UTF-8 in JSON is rejected
 

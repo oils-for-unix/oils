@@ -337,6 +337,7 @@ X [External Lang] BEGIN   END   when (awk)
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
                   LIB_YSH
+  [Float]         NAN                 INFINITY
 ```
 
 <!-- ideas 

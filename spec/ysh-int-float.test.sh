@@ -1,3 +1,5 @@
+## oils_failures_allowed: 1
+
 #### Pound char literal (is an integer TODO: could be ord())
 const a = #'a'
 const A = #'A'
@@ -114,3 +116,10 @@ echo float=$[float(s)]
 float=0.0
 ## END
 
+
+#### INFINITY NAN floatEquals()
+
+echo TODO
+
+## STDOUT:
+## END

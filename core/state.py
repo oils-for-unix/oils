@@ -932,6 +932,16 @@ def InitMem(mem, environ, version_str):
     SetGlobalString(mem, 'LIB_OSH', '///osh')
     SetGlobalString(mem, 'LIB_YSH', '///ysh')
 
+    # - C spells it NAN
+    # - JavaScript spells it NaN
+    # - Python 2 has float('nan'), while Python 3 has math.nan.
+    #
+    # - libc prints the strings 'nan' and 'inf'
+    # - Python 3 prints the strings 'nan' and 'inf'
+    # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
+    _SetGlobalValue(mem, 'NAN', value.Float(pyutil.nan()))
+    _SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
+
     _InitDefaults(mem)
     _InitVarsFromEnv(mem, environ)
 
@@ -2369,6 +2379,12 @@ def SetGlobalArray(mem, name, a):
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
     mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
+
+
+def _SetGlobalValue(mem, name, val):
+    # type: (Mem, str, value_t) -> None
+    """Helper for completion, etc."""
+    mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):

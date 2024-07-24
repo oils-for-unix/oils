@@ -242,6 +242,9 @@ Tuple2<BigStr*, int>* MakeDirCacheKey(BigStr* path);
 
 namespace pyutil {
 
+float infinity();
+float nan();
+
 bool IsValidCharEscape(BigStr* c);
 BigStr* ChArrayToString(List<int>* ch_array);
 
