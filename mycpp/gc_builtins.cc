@@ -38,7 +38,7 @@ BigStr* str(double d) {
   // %.9g digits for string that can be converted back to the same FLOAT
   // (not double)
   //
-  // See mycpp/float_test.cc - floats can be 
+  // See mycpp/float_test.cc for round-tripping test
   //
   // https://stackoverflow.com/a/21162120
   // https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10

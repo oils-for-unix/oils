@@ -9,7 +9,7 @@
 #include "_gen/yaks/yaks.asdl.h"
 #include "cpp/data_lang.h"
 #include "cpp/frontend_match.h"
-#include "cpp/stdlib.h"  // needed for math::{isnan,isinf}
+#include "cpp/stdlib.h"     // needed for math::{isnan,isinf}
 #include "mycpp/runtime.h"  // runtime library e.g. with Python data structures
 
 // TODO: Why do we need these?

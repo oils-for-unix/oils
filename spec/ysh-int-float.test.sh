@@ -123,3 +123,24 @@ echo TODO
 
 ## STDOUT:
 ## END
+
+#### Regression: 1/3 gives 0.3+
+
+# We were using float precision, not double
+
+shopt --set ysh:upgrade
+
+pp line (1/3) | read --all
+if (_reply ~ / '0.' '3'+ / ) {
+  echo one-third
+}
+
+pp line (2/3) | read --all
+if (_reply ~ / '0.' '6'+ '7' / ) {
+  echo two-thirds
+}
+
+## STDOUT:
+one-third
+two-thirds
+## END
