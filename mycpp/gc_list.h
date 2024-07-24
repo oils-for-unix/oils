@@ -342,7 +342,7 @@ T List<T>::pop(int i) {
   len_--;
 
   // Shift everything by one
-  memmove(slab_->items_ + i, slab_->items_ + (i + 1), len_ * sizeof(T));
+  memmove(slab_->items_ + i, slab_->items_ + (i + 1), (len_ - i) * sizeof(T));
 
   /*
   for (int j = 0; j < len_; j++) {
