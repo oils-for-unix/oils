@@ -463,7 +463,7 @@ TEST test_list_remove() {
   PASS();
 }
 
-TEST test_list_pop() {
+TEST test_list_pop_mem_safe() {
   auto l = NewList<int>();
 
   // List::pop(int) had a memory bug where it would buffer overflow due to a
@@ -473,7 +473,7 @@ TEST test_list_pop() {
     l->append(i);
   }
 
-  l->pop(15);
+  l->pop(15);  // This would cause a buffer overflow
 
   PASS();
 }
@@ -498,7 +498,8 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_copy);
   RUN_TEST(test_list_sort);
   RUN_TEST(test_list_remove);
-  RUN_TEST(test_list_pop);
+
+  RUN_TEST(test_list_pop_mem_safe);
 
   gHeap.CleanProcessExit();
 
