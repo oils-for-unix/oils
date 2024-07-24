@@ -23,7 +23,6 @@ BigStr* str(int i) {
 }
 
 // TODO:
-// - This could use a fancy exact algorithm, not libc
 // - Does libc depend on locale?
 BigStr* str(double d) {
   char buf[64];  // overestimate, but we use snprintf() to be safe
@@ -32,12 +31,15 @@ BigStr* str(double d) {
   // %f prints 3.0000000 and 3.500000
   // %g prints 3 and 3.5
   //
-  // We want literal syntax to indicate float, so add '.'
+  // We want 3.0 and 3.5, so add '.0' in some cases
 
   int n = sizeof(buf) - 2;  // in case we add '.0'
 
   // %.9g digits for string that can be converted back to the same FLOAT
   // (not double)
+  //
+  // See mycpp/float_test.cc - floats can be 
+  //
   // https://stackoverflow.com/a/21162120
   // https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10
   int length = snprintf(buf, n, "%.9g", d);
@@ -45,7 +47,7 @@ BigStr* str(double d) {
   // %a is a hexfloat form, could use that somewhere
   // int length = snprintf(buf, n, "%a", d);
 
-  if (strchr(buf, 'i')) {  // inf or -inf
+  if (strchr(buf, 'i') || strchr(buf, 'n')) {  // inf, -inf, nan
     return StrFromC(buf);
   }
 
