@@ -218,7 +218,10 @@ _DEFAULT_MAX_WIDTH = 80
 _DEFAULT_INDENTATION = 4
 _DEFAULT_USE_STYLES = True
 _DEFAULT_SHOW_TYPE_PREFIX = True
-_DEFAULT_MAX_TABULAR_WIDTH = 16  # Tuned for float-demo in data_lang/pretty-benchmark.sh
+
+# Tuned for 'data_lang/pretty-benchmark.sh float-demo'
+# TODO: might want options for float width
+_DEFAULT_MAX_TABULAR_WIDTH = 22
 
 
 class PrettyPrinter(object):

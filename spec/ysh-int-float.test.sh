@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Pound char literal (is an integer TODO: could be ord())
 const a = #'a'
@@ -117,11 +117,41 @@ float=0.0
 ## END
 
 
-#### INFINITY NAN floatEquals()
+#### floatEquals() INFINITY NAN
 
-echo TODO
+shopt --set ysh:upgrade
+source --builtin list.ysh
+
+# Create inf
+var big = repeat('12345678', 100) ++ '.0'
+
+var inf = fromJson(big)
+var neg_inf = fromJson('-' ++ big)
+
+if (floatsEqual(inf, INFINITY)) {
+  echo inf
+}
+
+if (floatsEqual(neg_inf, -INFINITY)) {
+  echo neg_inf
+}
+
+if (floatsEqual(NAN, INFINITY)) {
+  echo bad
+}
+
+if (floatsEqual(NAN, NAN)) {
+  echo bad
+}
+
+if (not floatsEqual(NAN, NAN)) {
+  echo 'nan is not nan'
+}
 
 ## STDOUT:
+inf
+neg_inf
+nan is not nan
 ## END
 
 #### Regression: 1/3 gives 0.3+
@@ -143,4 +173,36 @@ if (_reply ~ / '0.' '6'+ '7' / ) {
 ## STDOUT:
 one-third
 two-thirds
+## END
+
+#### Number of digits in 1/3 
+shopt --set ysh:upgrade
+
+# - Python 2 and bin/ysh: 14
+# - Python 3: 18
+# - YSH C++: 19 - see mycpp/float_test.cc, tip from Bruce Dawson
+
+var s = str(1/3)
+#echo "ysh len $[len(s)]"
+#echo ysh=$s
+
+# Don't bother to distinguish OSH Python vs C++ here
+case (len(s)) {
+  (14) { echo pass }
+  (19) { echo pass }
+  (else) { echo FAIL }
+}
+
+exit
+
+var py2 = $(python2 -c 'print(1.0/3)')
+echo "py2 len $[len(py2)]"
+echo py2=$py2
+
+var py3 = $(python3 -c 'print(1/3)')
+echo "py3 len $[len(py3)]"
+echo py3=$py3
+
+## STDOUT:
+pass
 ## END
