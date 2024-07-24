@@ -11,8 +11,8 @@
 
 namespace math {
 
-bool isinf(float f);
-bool isnan(float f);
+bool isinf(double f);
+bool isnan(double f);
 
 }  // namespace math
 

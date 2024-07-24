@@ -22,11 +22,11 @@ using error::e_die;
 
 namespace math {
 
-bool isinf(float f) {
+bool isinf(double f) {
   return ::isinf(f);
 }
 
-bool isnan(float f) {
+bool isnan(double f) {
   return ::isnan(f);
 }
 

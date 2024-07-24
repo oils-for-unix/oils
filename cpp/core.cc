@@ -330,11 +330,11 @@ void PopTermAttrs(int fd, int orig_local_modes, void* term_attrs) {
 
 namespace pyutil {
 
-float infinity() {
+double infinity() {
   return INFINITY;  // float.h
 }
 
-float nan() {
+double nan() {
   return NAN;  // float.h
 }
 
