@@ -379,6 +379,21 @@ class Split(vm._Callable):
         return value.List(l)
 
 
+class FloatsEqual(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        left = rd.PosFloat()
+        right = rd.PosFloat()
+        rd.Done()
+
+        return value.Bool(left == right)
+
+
 class Glob(vm._Callable):
 
     def __init__(self, globber):

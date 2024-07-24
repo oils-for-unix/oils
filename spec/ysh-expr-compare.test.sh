@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Exact equality with === and !==
 shopt -s ysh:all
@@ -123,30 +123,16 @@ status=3
 ## END
 
 
-#### ~== on Float - TODO floatEquals()
-shopt -s ysh:all
+#### floatsEqual()
 
-if (42 ~== 42.0) {
-  echo int-float
-}
-if (42 ~== 43.0) {
-  echo FAIL
-}
+var x = 42.0
+pp line (floatsEqual(42.0, x))
 
-if ('42' ~== 42.0) {
-  echo str-float
-}
-if ('42' ~== 43.0) {
-  echo FAIL
-}
+pp line (floatsEqual(42.0, x + 1))
 
-if (42 ~== '42.0') {
-  echo int-str-float
-}
-if (42 ~== '43.0') {
-  echo FAIL
-}
 ## STDOUT:
+(Bool)   true
+(Bool)   false
 ## END
 
 #### Comparison converts from Str -> Int or Float

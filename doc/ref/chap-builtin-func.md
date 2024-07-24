@@ -233,6 +233,20 @@ It's also often called with the `=>` chaining operator:
     json write (items => join(' '))   # => "1 2 3"
     json write (items => join(', '))  # => "1, 2, 3"
 
+## Float
+
+### floatsEqual()
+
+Check if two floating point numbers are equal.
+
+    = floatsEqual(42.0, 42.0)
+    (Bool)   true
+
+It's usually better to make an approximate comparison:
+
+    = abs(float1 - float2) < 0.001
+    (Bool)   false
+
 ## Word
 
 ### glob() 

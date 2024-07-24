@@ -72,22 +72,23 @@ X [Guts]           heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()        func/type()
-  [Conversions]   bool()       int()           float()   str()   list()   dict()
-                X runes()    X encodeRunes()
-                X bytes()    X encodeBytes()
-  [Str]         X strcmp()   X split()         shSplit()
+  [Values]        len()             func/type()
+  [Conversions]   bool()            int()           float()
+                  str()             list()          dict()
+                X runes()         X encodeRunes()
+                X bytes()         X encodeBytes()
+  [Str]         X strcmp()        X split()         shSplit()
   [List]          join()       
-  [Float]       X isinf()    X isnan()     
-  [Collections] X copy()     X deepCopy()
-  [Word]          glob()       maybe()
-  [Serialize]     toJson()     fromJson()
-                  toJson8()    fromJson8()
-X [J8 Decode]     J8.Bool()    J8.Int()        ...
-  [Pattern]       _group()     _start()        _end()
-  [Introspection] shvarGet()   getVar()        evalExpr()
-  [Hay Config]    parseHay()   evalHay()
-X [Hashing]       sha1dc()     sha256()
+  [Float]         floatsEqual()   X isinf()    X isnan()
+  [Collections] X copy()          X deepCopy()
+  [Word]          glob()            maybe()
+  [Serialize]     toJson()          fromJson()
+                  toJson8()         fromJson8()
+X [J8 Decode]     J8.Bool()         J8.Int()        ...
+  [Pattern]       _group()          _start()        _end()
+  [Introspection] shvarGet()        getVar()        evalExpr()
+  [Hay Config]    parseHay()        evalHay()
+X [Hashing]       sha1dc()          sha256()
 ```
 
 <!-- ideas

@@ -826,8 +826,6 @@ def Main(
                                                        mem))
     _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
-    _SetGlobalFunc(mem, 'join', func_misc.Join())
-    _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
 
     # type conversions
@@ -843,21 +841,32 @@ def Main(
     _SetGlobalFunc(mem, 'bytes', func_misc.Bytes())
     _SetGlobalFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
 
+    # Str
+    #_SetGlobalFunc(mem, 'strcmp', None)
     # TODO: This should be Python style splitting
     _SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
     _SetGlobalFunc(mem, 'shSplit', func_misc.Split(splitter))
 
+    # Float
+    _SetGlobalFunc(mem, 'floatsEqual', func_misc.FloatsEqual())
+
+    # List
+    _SetGlobalFunc(mem, 'join', func_misc.Join())
+    _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
+
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'getVar', func_misc.GetVar(mem))
     _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
+    # Serialize
     _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))
     _SetGlobalFunc(mem, 'toJson', func_misc.ToJson8(False))
 
     _SetGlobalFunc(mem, 'fromJson8', func_misc.FromJson8(True))
     _SetGlobalFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
+    # Demos
     _SetGlobalFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
     _SetGlobalFunc(mem, '_d2sp', func_misc.DictToSparse())
     _SetGlobalFunc(mem, '_opsp', func_misc.SparseOp())
