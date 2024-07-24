@@ -1,7 +1,7 @@
 ## oils_failures_allowed: 1
 
 #### Exact equality with === and !==
-shopt -s oil:all
+shopt -s ysh:all
 
 if (3 === 3) {
   echo 'ok'
@@ -39,7 +39,7 @@ ok
 ## END
 
 #### Approximate equality of Str x {Str, Int, Bool} with ~==
-shopt -s oil:all
+shopt -s ysh:all
 
 # Note: for now there's no !~== operator.  Use:   not (a ~== b)
 
@@ -82,7 +82,7 @@ bool matrix
 ## END
 
 #### Wrong Types with ~==
-shopt -s oil:all
+shopt -s ysh:all
 
 # The LHS side should be a string
 
@@ -101,9 +101,30 @@ if (3 ~== 3) {
 one
 ## END
 
+#### === on float not allowed
+
+$SH -c '
+shopt -s ysh:upgrade
+pp line (1.0 === 2.0)
+echo ok
+'
+echo status=$?
+
+$SH -c '
+shopt -s ysh:upgrade
+pp line (42 === 3.0)
+echo ok
+'
+echo status=$?
+
+## STDOUT:
+status=3
+status=3
+## END
+
 
 #### ~== on Float - TODO floatEquals()
-shopt -s oil:all
+shopt -s ysh:all
 
 if (42 ~== 42.0) {
   echo int-float

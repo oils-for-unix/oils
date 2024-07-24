@@ -685,15 +685,9 @@ class ExprEvaluator(object):
                 result = self._CompareNumeric(left, right, op)
 
             elif op.id == Id.Expr_TEqual:
-                if left.tag() != right.tag():
-                    result = False
-                else:
-                    result = val_ops.ExactlyEqual(left, right, op)
+                result = val_ops.ExactlyEqual(left, right, op)
             elif op.id == Id.Expr_NotDEqual:
-                if left.tag() != right.tag():
-                    result = True
-                else:
-                    result = not val_ops.ExactlyEqual(left, right, op)
+                result = not val_ops.ExactlyEqual(left, right, op)
 
             elif op.id == Id.Expr_In:
                 result = val_ops.Contains(left, right)

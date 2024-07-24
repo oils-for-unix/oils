@@ -373,6 +373,11 @@ def ToBool(val):
 
 def ExactlyEqual(left, right, blame_loc):
     # type: (value_t, value_t, loc_t) -> bool
+
+    if left.tag() == value_e.Float or right.tag() == value_e.Float:
+        raise error.TypeErrVerbose(
+            "Equality isn't defined on Float values (OILS-ERR-202)", blame_loc)
+
     if left.tag() != right.tag():
         return False
 
@@ -396,10 +401,7 @@ def ExactlyEqual(left, right, blame_loc):
             return mops.Equal(left.i, right.i)
 
         elif case(value_e.Float):
-            # Note: could provide floatEquals(), and suggest it
-            # Suggested idiom is abs(f1 - f2) < 0.1
-            raise error.TypeErrVerbose("Equality isn't defined on Float",
-                                       blame_loc)
+            raise AssertionError()
 
         elif case(value_e.Str):
             left = cast(value.Str, UP_left)

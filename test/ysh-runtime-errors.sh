@@ -731,6 +731,14 @@ test-equality() {
   '
 }
 
+test-float-equality() {
+  _ysh-expr-error '
+var x = 1
+pp line (42.0 === x)'
+
+  _ysh-expr-error 'pp line (2.0 === 1.0)'
+}
+
 test-place() {
   _ysh-expr-error '
   var a = null

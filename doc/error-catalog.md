@@ -311,6 +311,24 @@ test/runtime-errors.sh test-arith_ops_str
   [`int()`](ref/chap-builtin-func.html#int) or
   [`float()`](ref/chap-builtin-func.html#float).
 
+### OILS-ERR-202
+
+<!--
+Generated with:
+test/ysh-runtime-errors.sh test-float-equality
+-->
+
+```
+  pp line (42.0 === x)
+                ^~~
+[ -c flag ]:3: fatal: Equality isn't defined on Float values (OILS-ERR-202)
+```
+
+Floating point numbers shouldn't be tested for equality.  Alternatives:
+
+    = abs(42.0 - x) < 0.1
+    = floatEquals(42.0, x) 
+
 ## Appendix
 
 ### Kinds of Errors from Oils
