@@ -466,7 +466,7 @@ p word (42, n=99) {
 Block
 ## END
 
-#### unset and procs
+#### can unset procs without -f
 shopt -s ysh:upgrade
 
 proc foo() {
@@ -476,6 +476,7 @@ proc foo() {
 try { foo }
 echo status=$[_error.code]
 
+# TODO: should we abandon declare -F in favour of `pp proc`?
 declare -F
 unset foo
 declare -F
@@ -488,4 +489,38 @@ bar
 status=0
 declare -f foo
 status=127
+## END
+
+#### procs shadow sh-funcs
+shopt -s ysh:upgrade redefine_proc_func
+
+f() {
+  echo sh-func
+}
+
+proc f {
+  echo proc
+}
+
+f
+## STDOUT:
+proc
+## END
+
+#### first word skips non-proc variables
+shopt -s ysh:upgrade
+
+grep() {
+  echo 'sh-func grep'
+}
+
+var grep = 'variable grep'
+
+grep
+
+# We first find `var grep`, but it's a Str not a Proc, so we skip it and then
+# find `function grep`.
+
+## STDOUT:
+sh-func grep
 ## END
