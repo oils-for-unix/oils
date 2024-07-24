@@ -99,8 +99,10 @@ Expect
 >     [
 >         100, 200,
 >         300
->     ],
->     [100, 200, 300]
+>     ], [
+>         100, 200,
+>         300
+>     ]
 > ]
 
 Width  > 11
@@ -110,8 +112,7 @@ Expect
 >         100,
 >         200,
 >         300
->     ],
->     [
+>     ], [
 >         100,
 >         200,
 >         300
@@ -356,8 +357,7 @@ Expect
 >         stringy_primitives: "string"
 >     },
 >     compounds: [
->         [1, 2, 3],
->         {dict: "ionary"}
+>         [1, 2, 3], {dict: "ionary"}
 >     ],
 >     "variety-pack": [
 >         null,
@@ -384,8 +384,7 @@ Expect
 >         stringy_primitives: "string"
 >     },
 >     compounds: [
->         [1, 2, 3],
->         {dict: "ionary"}
+>         [1, 2, 3], {dict: "ionary"}
 >     ],
 >     "variety-pack": [
 >         null,
@@ -416,8 +415,9 @@ Expect
 >         stringy_primitives: "string"
 >     },
 >     compounds: [
->         [1, 2, 3],
->         {dict: "ionary"}
+>         [1, 2, 3],        {
+>             dict: "ionary"
+>         }
 >     ],
 >     "variety-pack": [
 >         null,
@@ -449,8 +449,7 @@ Expect
 >             [
 >                 [[[5], 4], 3],
 >                 2
->             ],
->             1
+>             ], 1
 >         ]
 >     ]
 > }
