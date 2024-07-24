@@ -74,17 +74,6 @@ class Type(vm._Callable):
         return value.Str(ui.ValType(val))
 
 
-class Repeat(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        return value.Null
-
-
 class Join(vm._Callable):
     """Both free function join() and List->join() method."""
 

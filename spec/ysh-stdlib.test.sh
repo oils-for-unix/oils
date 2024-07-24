@@ -158,3 +158,65 @@ json write (sum([1, 2, 3]))
 0
 6
 ## END
+
+
+#### repeat() string
+
+source --builtin list.ysh
+
+echo three=$[repeat('foo', 3)]
+echo zero=$[repeat('foo', 0)]
+echo negative=$[repeat('foo', -1)]
+
+## STDOUT:
+three=foofoofoo
+zero=
+negative=
+## END
+
+#### repeat() list
+
+source --builtin list.ysh
+
+var L = ['foo', 'bar']
+echo three @[repeat(L, 3)]
+echo zero @[repeat(L, 0)]
+echo negative @[repeat(L, -1)]
+
+## STDOUT:
+three foo bar foo bar foo bar
+zero
+negative
+## END
+
+#### repeat() error
+
+try {
+  $SH -c '
+  source --builtin list.ysh
+  pp line (repeat(null, 3))
+  echo bad'
+}
+echo code=$[_error.code]
+
+try {
+  $SH -c '
+  source --builtin list.ysh
+  pp line (repeat({}, 3))
+  echo bad'
+}
+echo code=$[_error.code]
+
+try {
+  $SH -c '
+  source --builtin list.ysh
+  pp line (repeat(42, 3))
+  echo bad'
+}
+echo code=$[_error.code]
+
+## STDOUT:
+code=10
+code=10
+code=10
+## END

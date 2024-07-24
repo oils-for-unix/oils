@@ -818,7 +818,6 @@ def Main(
 
     _SetGlobalFunc(mem, 'len', func_misc.Len())
     _SetGlobalFunc(mem, 'type', func_misc.Type())
-    _SetGlobalFunc(mem, 'repeat', func_misc.Repeat())
 
     g = func_eggex.MatchFunc(func_eggex.G, expr_ev, mem)
     _SetGlobalFunc(mem, '_group', g)

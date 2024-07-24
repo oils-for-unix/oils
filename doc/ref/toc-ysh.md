@@ -72,15 +72,15 @@ X [Guts]           heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()        func/type()   X repeat()
+  [Values]        len()        func/type()
   [Conversions]   bool()       int()           float()   str()   list()   dict()
                 X runes()    X encodeRunes()
                 X bytes()    X encodeBytes()
   [Str]         X strcmp()   X split()         shSplit()
-  [List]          join()       any()           all()
+  [List]          join()       
+  [Float]       X isinf()    X isnan()     
   [Collections] X copy()     X deepCopy()
   [Word]          glob()       maybe()
-  [Math]          abs()        max()           min()   X round()   sum()
   [Serialize]     toJson()     fromJson()
                   toJson8()    fromJson8()
 X [J8 Decode]     J8.Bool()    J8.Int()        ...
@@ -137,7 +137,13 @@ X [Testing]       assert                 takes an expression
 <!-- linkify_stop_col is 42 -->
 
 ```chapter-links-stdlib_42
-  [Args Parser]   parser                 Parse command line arguments
+  [math]          abs()     
+                  max()     min()
+                X round()
+                  sum()     
+  [list]          all()     any()     
+                  repeat()
+  [args]          parser                 Parse command line arguments
                   flag
                   arg
                   rest

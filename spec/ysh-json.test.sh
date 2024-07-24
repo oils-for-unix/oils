@@ -895,9 +895,21 @@ status=0
 #### Inf and NaN can't be encoded or decoded
 
 # This works in Python, should probably support it
+#var n = float("NaN")
+#var i = float("inf")
 
-var n = float("NaN")
-var i = float("inf")
+# WRONG LOCATION!  Gah
+#var x = fromJson(repeat('123', 20))
+
+shopt --set ysh:upgrade
+
+source --builtin list.ysh
+
+var s = repeat('123', 20)
+pp line (s)
+var x = fromJson(s)
+pp line (x)
+
 
 pp line (n)
 pp line (i)
@@ -907,6 +919,7 @@ json dump (i)
 
 ## status: 2
 ## STDOUT:
+fds
 ## END
 
 #### Invalid UTF-8 in JSON is rejected

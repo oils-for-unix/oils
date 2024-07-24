@@ -1,7 +1,6 @@
 func any(list) {
-  ## Returns true if any value in the list is truthy.
-  ##
-  ## If the list is empty, return false.
+  ### Returns true if any value in the list is truthy.
+  # Empty list: returns false
 
   for item in (list) {
     if (item) {
@@ -13,8 +12,7 @@ func any(list) {
 
 func all(list) {
   ## Returns true if all values in the list are truthy.
-  ##
-  ## If the list is empty, return true.
+  # Empty list: returns true
 
   for item in (list) {
     if (not item) {
@@ -25,13 +23,40 @@ func all(list) {
 }
 
 func sum(list; start=0) {
-  ## Computes the sum of all elements in the list.
-  ##
-  ## Returns 0 for an empty list.
+  ### Returns the sum of all elements in the list.
+  # Empty list: returns 0
 
   var sum = start
   for item in (list) {
     setvar sum += item
   }
   return (sum)
+}
+
+func repeat(x, n) {
+  ### Returns a list with the given string or list repeated
+
+  # Like Python's 'foo'*3 or ['foo', 'bar']*3
+  # negative numbers are like 0 in Python
+
+  var t = type(x)
+  case (t) {
+    Str {
+      var parts = []
+      for i in (0 .. n) {
+        call parts->append(x)
+      }
+      return (join(parts))
+    }
+    List {
+      var result = []
+      for i in (0 .. n) {
+        call result->extend(x)
+      }
+      return (result)
+    }
+    (else) {
+      error "Expected Str or List, got $t"
+    }
+  }
 }
