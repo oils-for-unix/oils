@@ -5,7 +5,7 @@
 #### --builtin flag
 shopt --set ysh:upgrade
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 json write (max(1, 2))
 ## STDOUT:

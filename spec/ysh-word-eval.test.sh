@@ -47,7 +47,7 @@ echo done
 shopt -s oil:upgrade
 
 source --builtin funcs.ysh
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 echo bool $[identity(true)]
 echo int $[len(['a', 'b'])]
@@ -134,7 +134,7 @@ ___
 #### Wrong sigil @[max(3, 4)]
 shopt -s oil:upgrade
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 write @[max(3, 4)]
 echo 'should not get here'

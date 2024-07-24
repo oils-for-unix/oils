@@ -120,7 +120,7 @@ float=0.0
 #### floatEquals() INFINITY NAN
 
 shopt --set ysh:upgrade
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 # Create inf
 var big = repeat('12345678', 100) ++ '.0'
