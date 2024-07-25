@@ -30,34 +30,99 @@
 
 #### Range
 var x = 1..100
-= x
-## stdout: (Range)   1 .. 100
+
+pp (x)
+
+# TODO: show type here, like (Range 1 .. 100)
+
+pp ({k: x})
+
+echo
+
+remove-addr() {
+  sed 's/0x[0-9a-f]\+/0x---/'
+}
+
+pp line (x) | remove-addr
+pp line ({k: x}) | remove-addr
+
+## STDOUT:
+(Range)   1 .. 100
+(Dict)   {k: 1 .. 100}
+
+(Range)   <Range 0x--->
+(Dict)   {"k":<Range 0x--->}
+## END
+
 
 #### Eggex (reference type)
 var pat = /d+/
-pp (pat) | sed 's/0x[0-9a-f]\+/0x---/'
+
+remove-addr() {
+  sed 's/0x[0-9a-f]\+/0x---/'
+}
+
+pp (pat) | remove-addr
+
+pp ({k: pat}) | remove-addr
 
 # TODO: change this
 
+echo
+
+pp line (pat) | remove-addr
+pp line ({k: pat}) | remove-addr
+
 ## STDOUT:
 (Eggex)   <Eggex 0x--->
+(Dict)   {k: <Eggex 0x--->}
+
+(Eggex)   <Eggex 0x--->
+(Dict)   {"k":<Eggex 0x--->}
 ## END
 
-#### Bash Array
-declare -a array_0=()
+#### BashArray
+declare -a empty=()
 declare -a array_1=(hello)
+
+pp (empty)
+pp (array_1)
+echo
+
+pp ({k: empty})
+pp ({k: array_1})
+echo
+
+pp line (empty)
+pp line (array_1)
+echo
+
+pp line ({k: empty})
+pp line ({k: array_1})
+
+## STDOUT:
+(BashArray)   (BashArray)
+(BashArray)   (BashArray 'hello')
+
+(Dict)   {k: (BashArray)}
+(Dict)   {k: (BashArray 'hello')}
+
+(BashArray)   []
+(BashArray)   ["hello"]
+
+(Dict)   {"k":[]}
+(Dict)   {"k":["hello"]}
+## END
+
+#### BashArray Long
 declare -a array_3
 array_3[0]="world"
 array_3[2]=*.py
 declare array_long=(Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
 do eiusmod.)
-= array_0
-= array_1
 = array_3
 = array_long
 ## STDOUT:
-(BashArray)   (BashArray)
-(BashArray)   (BashArray 'hello')
 (BashArray)   (BashArray 'world' null '*.py')
 (BashArray)
 (BashArray
@@ -67,12 +132,41 @@ do eiusmod.)
 )
 ## END
 
-#### Bash Assoc: string formatting
+#### BashAssoc, short
+declare -A empty
 declare -A assoc=(['k']=$'foo \x01\u03bc')
-= assoc
-## stdout: (BashAssoc)   (BashAssoc ['k']=$'foo \u0001μ')
 
-#### Bash Assoc
+pp (empty)
+pp (assoc)
+echo
+
+pp ({k:empty})
+pp ({k:assoc})
+echo
+
+pp line (empty)
+pp line (assoc)
+echo
+
+pp line ({k:empty})
+pp line ({k:assoc})
+
+## STDOUT:
+(BashAssoc)   (BashAssoc)
+(BashAssoc)   (BashAssoc ['k']=$'foo \u0001μ')
+
+(Dict)   {k: (BashAssoc)}
+(Dict)   {k: (BashAssoc ['k']=$'foo \u0001μ')}
+
+(BashAssoc)   {}
+(BashAssoc)   {"k":"foo \u0001μ"}
+
+(Dict)   {"k":{}}
+(Dict)   {"k":{"k":"foo \u0001μ"}}
+## END
+
+
+#### BashAssoc, long
 declare -A assoc_0=()
 declare -A assoc_1=([1]=one)
 declare assoc_3=([1]=one [two]=2 [3]=three)

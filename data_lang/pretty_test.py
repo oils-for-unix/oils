@@ -23,14 +23,11 @@ def IntValue(i):
 
 class PrettyTest(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         # Use settings that make testing easier.
-        cls.printer = pretty.PrettyPrinter()
-        cls.printer.SetUseStyles(False)
-        cls.printer.SetShowTypePrefix(False)
-        # NOTE: We don't SetYshStyle() here ... we changed the format after
-        # writing these tests
+        self.printer = pretty.PrettyPrinter()
+        self.printer.SetUseStyles(False)
+        self.printer.SetYshStyle()
 
     def assertPretty(self, width, value_str, expected, lineno=None):
         # type: (int, str, str, Optional[int]) -> None
@@ -54,6 +51,10 @@ class PrettyTest(unittest.TestCase):
         self.assertEqual(buf.getvalue(), expected)
 
     def testsFromFile(self):
+        # TODO: convert tests to this new style
+        self.printer.SetShowTypePrefix(False)
+        self.printer.ysh_style = False
+
         chunks = [(None, -1, [])]
         for lineno, line in enumerate(
                 open(TEST_DATA_FILENAME).read().splitlines()):
@@ -97,16 +98,13 @@ class PrettyTest(unittest.TestCase):
     def testStyles(self):
         self.printer.SetUseStyles(True)
         self.assertPretty(
-            20, '[null, "ok", 15]', '[' + ansi.BOLD + ansi.RED + 'null' +
-            ansi.RESET + ", " + ansi.GREEN + '"ok"' + ansi.RESET + ", " +
+            20, '[null, "ok", 15]', '(List)\n[' + ansi.BOLD + ansi.RED + 'null' +
+            ansi.RESET + ", " + ansi.GREEN + "'ok'" + ansi.RESET + ", " +
             ansi.YELLOW + '15' + ansi.RESET + ']')
-        self.printer.SetUseStyles(False)
 
     def testTypePrefix(self):
-        self.printer.SetShowTypePrefix(True)
-        self.assertPretty(25, '[null, "ok", 15]', '(List)   [null, "ok", 15]')
-        self.assertPretty(24, '[null, "ok", 15]', '(List)\n[null, "ok", 15]')
-        self.printer.SetShowTypePrefix(False)
+        self.assertPretty(25, '[null, "ok", 15]', "(List)   [null, 'ok', 15]")
+        self.assertPretty(24, '[null, "ok", 15]', "(List)\n[null, 'ok', 15]")
 
 
 if __name__ == '__main__':

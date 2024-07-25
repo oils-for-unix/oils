@@ -440,7 +440,7 @@ class _DocConstructor:
                 _Concat([
                     _Text("(" + ysh_type + ")"),
                     _Break("   "),
-                    self._Value(val)
+                    self._Value(val, type_shown=True)
                 ]))
         else:
             return self._Value(val)
@@ -680,8 +680,8 @@ class _DocConstructor:
         return self._SurroundedAndPrefixed("(", type_name, " ",
                                            self._Join(mdocs, "", " "), ")")
 
-    def _Value(self, val):
-        # type: (value_t) -> MeasuredDoc
+    def _Value(self, val, type_shown=False):
+        # type: (value_t, bool) -> MeasuredDoc
 
         with tagswitch(val) as case:
             if case(value_e.Null):
