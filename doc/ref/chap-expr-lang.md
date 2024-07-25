@@ -632,6 +632,8 @@ Backslash escapes are respected:
     [ \\ \' \" \0 ]
     [ \xFF \u0100 ]
 
+(Note that we don't use `\yFF`, as in J8 strings.)
+
 Splicing:
 
     [ @str_var ]

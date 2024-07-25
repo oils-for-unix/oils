@@ -102,6 +102,7 @@ atom: (
   | Expr_BinInt | Expr_OctInt | Expr_HexInt 
 
   | Char_OneChar  # char literal \n \\ etc.
+  | Char_YHex
   | Char_UBraced  # char literal \u{3bc}
 
   | dq_string | sq_string

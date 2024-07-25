@@ -679,11 +679,11 @@ class Transformer(object):
             return cast(BracedVarSub, pnode.GetChild(1).tok)
 
         elif typ == grammar_nt.dq_string:
-            s = cast(DoubleQuoted, pnode.GetChild(1).tok)
+            dq = cast(DoubleQuoted, pnode.GetChild(1).tok)
             # sugar: ^"..." is short for ^["..."]
             if pnode.GetChild(0).typ == Id.Left_CaretDoubleQuote:
-                return expr.Literal(s)
-            return s
+                return expr.Literal(dq)
+            return dq
 
         elif typ == grammar_nt.sq_string:
             return cast(SingleQuoted, pnode.GetChild(1).tok)
@@ -756,24 +756,23 @@ class Transformer(object):
         elif typ == Id.Expr_False:
             cval = value.Bool(False)
 
-        # What to do with the char constants?
-        # \n  \u{3bc}  #'a'
-        # Are they integers or strings?
-        #
-        # Integers could be ord(\n), or strings could chr(\n)
-        # Or just remove them, with ord(u'\n') and chr(u'\n')
-        #
-        # I think this relies on small string optimization.  If we have it,
-        # then 1-4 byte characters are efficient, and don't require heap
-        # allocation.
+        elif typ == Id.Char_OneChar:  # \n
+            assert len(tok_str) == 2, tok_str
+            s = consts.LookupCharC(lexer.TokenSliceLeft(tok, 1))
+            cval = value.Str(s)
 
-        elif typ == Id.Char_OneChar:
-            cval = value.Str(consts.LookupCharC(tok_str[1]))
+        elif typ == Id.Char_YHex:  # \yff
+            assert len(tok_str) == 4, tok_str
+            hex_str = lexer.TokenSliceLeft(tok, 2)
+            s = chr(int(hex_str, 16))
+            cval = value.Str(s)
 
-        elif typ == Id.Char_UBraced:
-            hex_str = tok_str[3:-1]  # \u{123}
+        elif typ == Id.Char_UBraced:  # \u{123}
+            hex_str = lexer.TokenSlice(tok, 3, -1)
             code_point = int(hex_str, 16)
-            cval = value.Str(j8.Utf8Encode(code_point))
+            s = j8.Utf8Encode(code_point)
+            cval = value.Str(s)
+
         else:
             raise AssertionError(typ)
 

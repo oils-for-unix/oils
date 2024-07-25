@@ -1,5 +1,4 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
 
 #### Unquoted backslash escapes, as in J8 strings
 
@@ -41,18 +40,22 @@ mu μ
 mu μ
 ## END
 
-#### Unquoted \y23 escape
+#### Unquoted \y24 escape
 
-var x = 'foo ' ++ \y23
+var x = 'foo ' ++ \y24
 echo $x
 
-echo foo $[\y34]
-echo "foo $[\y35]"
+var y = 0x24
+echo $y
+
+echo foo $[\y40]
+echo "foo $[\y41]"
 
 ## STDOUT:
-mu μ
-mu μ
-mu μ
+foo $
+36
+foo @
+foo A
 ## END
 
 #### single quoted -- implicit and explicit raw
