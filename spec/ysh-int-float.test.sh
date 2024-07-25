@@ -1,26 +1,5 @@
 ## oils_failures_allowed: 0
 
-#### Pound char literal (is an integer TODO: could be ord())
-const a = #'a'
-const A = #'A'
-echo "$a $A"
-## STDOUT:
-97 65
-## END
-
-#### The literal #''' isn't accepted (use \' instead)
-
-# This looks too much like triple quoted strings!
-
-echo nope
-const bad = #'''
-echo "$bad"
-
-## status: 2
-## STDOUT:
-nope
-## END
-
 #### Float Literals with e-1
 
 shopt -s ysh:upgrade

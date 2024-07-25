@@ -497,10 +497,6 @@ EXPR_CHARS = [
     R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
     _X_CHAR_STRICT,
 
-    # Because 'a' is a string, we use the syntax #'a' for char literals.
-    # We explicitly leave out #''' because it's confusing.
-    # Note: we're not doing utf-8 validation here.
-    R(r"#'[^'\0]'", Id.Char_Pound),
     _U_BRACED_CHAR,
 ]
 

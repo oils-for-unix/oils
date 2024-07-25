@@ -775,12 +775,6 @@ class Transformer(object):
             # ValueError shouldn't happen because lexer validates
             cval = value.Int(mops.FromStr(hex_str, 16))
 
-        # This could be a char integer?  Not sure
-        elif typ == Id.Char_Pound:
-            # TODO: accept UTF-8 code point instead of single byte
-            byte = tok_str[2]  # the a in #'a'
-            cval = num.ToBig(ord(byte))  # It's an integer
-
         else:
             raise AssertionError(typ)
 
