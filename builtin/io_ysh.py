@@ -57,11 +57,24 @@ class Pp(_Builtin):
                                            cmd_val,
                                            accept_typed_args=True)
 
-        action, action_loc = arg_r.ReadRequired2(
-            'expected an action (proc, cell, etc.)')
+        action, action_loc = arg_r.Peek2()
 
         # Actions that print unstable formats start with '.'
-        if action == 'cell':
+        if action is None:
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
+            print(cmd_val)
+            print("Value:", val)
+
+            ysh_type = ui.ValType(val)
+            self.stdout_.write('(%s)   ' % ysh_type)
+
+            j8.PrintLine(val, self.stdout_)
+
+            status = 0
+
+        elif action == 'cell':
             argv, locs = arg_r.Rest2()
 
             status = 0

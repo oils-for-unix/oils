@@ -533,7 +533,7 @@ def Main(
     bool_ev = sh_expr_eval.BoolEvaluator(mem, exec_opts, mutable_opts,
                                          parse_ctx, errfmt)
     expr_ev = expr_eval.ExprEvaluator(mem, mutable_opts, methods, splitter,
-                                      errfmt)
+                                      errfmt, arena)
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
 

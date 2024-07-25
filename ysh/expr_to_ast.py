@@ -147,9 +147,10 @@ class Transformer(object):
       atom, trailer, etc. are private, named after productions in grammar.pgen2.
     """
 
-    def __init__(self, gr):
+    def __init__(self, gr, arena):
         # type: (Grammar) -> None
         self.number2symbol = gr.number2symbol
+        self.arena = arena
         if mylib.PYTHON:
             names = MakeGrammarNames(gr)
             # print raw nodes
@@ -372,8 +373,13 @@ class Transformer(object):
             return self._TestlistComp(parent, parent.GetChild(1), id_)
 
         if id_ == Id.Left_CaretBracket:  # ^[42 + x]
+            left_token = parent.GetChild(0).tok
             child = self.Expr(parent.GetChild(1))
-            return expr.Literal(child)
+            right_token = parent.GetChild(2).tok
+            code_str = self.arena.SnipCodeString(left_token, right_token)
+            print("expr_to_ast")
+            print(code_str)
+            return expr.Literal(left_token, child, right_token)
 
         if id_ == Id.Op_LBrace:
             # atom: ... | '{' [Op_Newline] [dict] '}'
@@ -679,10 +685,12 @@ class Transformer(object):
             return cast(BracedVarSub, pnode.GetChild(1).tok)
 
         elif typ == grammar_nt.dq_string:
+            left_token = pnode.GetChild(0).tok
             s = cast(DoubleQuoted, pnode.GetChild(1).tok)
+            right_token = pnode.GetChild(2).tok
             # sugar: ^"..." is short for ^["..."]
             if pnode.GetChild(0).typ == Id.Left_CaretDoubleQuote:
-                return expr.Literal(s)
+                return expr.Literal(left_token, s, right_token)
             return s
 
         elif typ == grammar_nt.sq_string:

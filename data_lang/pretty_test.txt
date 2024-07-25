@@ -454,3 +454,9 @@ Expect
 >         ]
 >     ]
 > }
+
+Input [[1, 2, 3], { "dict": "ionary" }]
+Width > 30
+Expect
+> oops
+E

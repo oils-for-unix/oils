@@ -214,6 +214,7 @@ class Arena(object):
         saving = False
         found_left = False
         found_right = False
+        print("alloc.py lines:", self.lines_list)
         for li in self.lines_list:
             if li == left.line:
                 found_left = True

@@ -1,5 +1,7 @@
 # Runtime value
 
+# from _devbuild.gen.syntax_asdl import (SourceLine)
+
 module value
 {
   # import from frontend/syntax.asdl
@@ -11,6 +13,7 @@ module value
     LiteralBlock Func
     NameType
     EggexFlag
+    SourceLine
   }
 
   use core runtime {
@@ -102,7 +105,7 @@ module value
   | Match %RegexMatch
 
     # ^[42 + a[i]]
-  | Expr(expr e)
+  | Expr(expr e, str src)
 
     # ^(echo 1; echo 2) and cd { echo 1; echo 2 } 
   | Command(command c)

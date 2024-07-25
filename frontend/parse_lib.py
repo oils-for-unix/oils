@@ -206,7 +206,7 @@ class ParseContext(object):
 
         # NOTE: The transformer is really a pure function.
         if ysh_grammar:
-            self.tr = expr_to_ast.Transformer(ysh_grammar)
+            self.tr = expr_to_ast.Transformer(ysh_grammar, arena)
         else:  # hack for unit tests, which pass None
             self.tr = None
 

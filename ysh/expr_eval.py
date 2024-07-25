@@ -48,6 +48,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName)
 from core import error
 from core.error import e_die, e_die_status
+from core import alloc
 from core import num
 from core import pyutil
 from core import state
@@ -174,6 +175,7 @@ class ExprEvaluator(object):
             methods,  # type: Dict[int, Dict[str, vm._Callable]]
             splitter,  # type: split.SplitContext
             errfmt,  # type: ui.ErrorFormatter
+            arena,  # type: alloc.Arena
     ):
         # type: (...) -> None
         self.shell_ex = None  # type: vm._Executor
@@ -185,6 +187,7 @@ class ExprEvaluator(object):
         self.methods = methods
         self.splitter = splitter
         self.errfmt = errfmt
+        self.arena = arena
 
     def CheckCircularDeps(self):
         # type: () -> None
@@ -1191,7 +1194,8 @@ class ExprEvaluator(object):
 
             elif case(expr_e.Literal):  # ^[1 + 2]
                 node = cast(expr.Literal, UP_node)
-                return value.Expr(node.inner)
+                code_str = self.arena.SnipCodeString(node.left, node.right)
+                return value.Expr(node.inner, code_str)
 
             elif case(expr_e.Lambda):  # |x| x+1 syntax is reserved
                 # TODO: Location information for |, or func

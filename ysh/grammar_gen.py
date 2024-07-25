@@ -212,7 +212,7 @@ def main(argv):
         p_printer.Print(pnode)
 
         if is_expr:
-            tr = expr_to_ast.Transformer(gr)
+            tr = expr_to_ast.Transformer(gr, arena)
             if start_symbol == 'eval_input':
                 ast_node = tr.Expr(pnode)
             elif start_symbol == 'ysh_case_pat':

@@ -14,6 +14,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, ProcDefaults,
 
 from core import error
 from core.error import e_die
+from core import alloc
 from core import state
 from core import vm
 from frontend import lexer
@@ -210,6 +211,7 @@ def _EvalArgList(
 def EvalTypedArgsToProc(
         expr_ev,  # type: expr_eval.ExprEvaluator
         mutable_opts,  # type: state.MutableOpts
+        arena,  # type: alloc.Arena
         node,  # type: command.Simple
         cmd_val,  # type: cmd_value.Argv
 ):
@@ -225,12 +227,14 @@ def EvalTypedArgsToProc(
     cmd_val.pos_args = []
 
     ty = node.typed_args
+    print("typed_args:", ty)
     if ty:
         if ty.left.id == Id.Op_LBracket:  # assert [42 === x]
             # Defer evaluation by wrapping in value.Expr
+            code_str = arena.SnipCodeString(ty.left, ty.right)
 
             for exp in ty.pos_args:
-                cmd_val.pos_args.append(value.Expr(exp))
+                cmd_val.pos_args.append(value.Expr(exp, code_str))
             # TODO: ...spread is illegal
 
             n1 = ty.named_args
@@ -238,7 +242,7 @@ def EvalTypedArgsToProc(
                 cmd_val.named_args = NewDict()
                 for named_arg in n1:
                     name = lexer.TokenVal(named_arg.name)
-                    cmd_val.named_args[name] = value.Expr(named_arg.value)
+                    cmd_val.named_args[name] = value.Expr(named_arg.value, code_str)
                 # TODO: ...spread is illegal
 
         else:  # json write (x)
