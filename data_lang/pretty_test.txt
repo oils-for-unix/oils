@@ -99,10 +99,8 @@ Expect
 >     [
 >         100, 200,
 >         300
->     ], [
->         100, 200,
->         300
->     ]
+>     ],
+>     [100, 200, 300]
 > ]
 
 Width  > 11
@@ -112,7 +110,8 @@ Expect
 >         100,
 >         200,
 >         300
->     ], [
+>     ],
+>     [
 >         100,
 >         200,
 >         300
@@ -261,6 +260,16 @@ Expect
 >     "aaaaaaaaaaaaaaaaaaa",
 >     "bbbbbbbbbbbbbbbbbbbbb",
 >     "cccccccccccccccccccc"
+> ]
+
+# Last element in tabular alignment wants to split across multiple lines,
+# but should not.
+Input > ["aaaaaaa", "bbbbbbb", "ccccccc", {"d": "k"}]
+Width > 40
+Expect
+> [
+>     "aaaaaaa", "bbbbbbb", "ccccccc",
+>     {d: "k"}
 > ]
 
 
@@ -415,9 +424,8 @@ Expect
 >         stringy_primitives: "string"
 >     },
 >     compounds: [
->         [1, 2, 3],        {
->             dict: "ionary"
->         }
+>         [1, 2, 3],
+>         {dict: "ionary"}
 >     ],
 >     "variety-pack": [
 >         null,

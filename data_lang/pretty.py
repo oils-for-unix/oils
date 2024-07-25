@@ -76,6 +76,8 @@ maximum line width.
 #
 # IfFlat(a, b) prints a if in flat mode or b otherwise.
 #
+# Flat(a) prints a in flat mode. You should generally not need to use it.
+#
 # ~ Measures ~
 #
 # The algorithm used here is close to the one originally described by Wadler,
@@ -226,6 +228,11 @@ def _IfFlat(flat_mdoc, nonflat_mdoc):
     return MeasuredDoc(
         doc.IfFlat(flat_mdoc, nonflat_mdoc),
         Measure(flat_mdoc.measure.flat, nonflat_mdoc.measure.nonflat))
+
+def _Flat(mdoc):
+    # type: (MeasuredDoc) -> MeasuredDoc
+    """Prints `mdoc` in flat mode."""
+    return MeasuredDoc(doc.Flat(mdoc), _FlattenMeasure(mdoc.measure))
 
 
 ###################
@@ -381,6 +388,11 @@ class PrettyPrinter(object):
                     fragments.append(
                         DocFragment(subdoc, frag.indent, frag.is_flat,
                                     frag.measure))
+
+                elif case(doc_e.Flat):
+                    flat_doc = cast(doc.Flat, frag.mdoc.doc)
+                    fragments.append(
+                        DocFragment(flat_doc.mdoc, frag.indent, True, frag.measure))
 
 
 ################
@@ -559,7 +571,7 @@ class _DocConstructor:
         if max_flat_len + sep_width + 1 <= self.max_tabular_width:
             tabular_seq = []  # type: List[MeasuredDoc]
             for i, item in enumerate(items):
-                tabular_seq.append(item)
+                tabular_seq.append(_Flat(item))
                 if i != len(items) - 1:
                     padding = max_flat_len - item.measure.flat + 1
                     tabular_seq.append(_Text(sep))
