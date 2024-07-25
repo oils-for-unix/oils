@@ -575,7 +575,7 @@ class _DocConstructor:
             encoded = s
         else:
             if self.ysh_style:
-                encoded = j8_lite.EncodeStringYsh(s)
+                encoded = j8_lite.YshEncodeString(s)
             else:
                 encoded = j8_lite.EncodeString(s)
         return _Text(encoded)
@@ -584,7 +584,7 @@ class _DocConstructor:
         # type: (str) -> MeasuredDoc
         if self.ysh_style:
             # YSH r'' or b'' style
-            encoded = j8_lite.EncodeStringYsh(s)
+            encoded = j8_lite.YshEncodeString(s)
         else:
             # JSON "" or J8 b'' style
             encoded = j8_lite.EncodeString(s)

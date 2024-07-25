@@ -21,11 +21,11 @@
 ## END
 
 #### String
-= "double quoted"  
+= "double quoted"
 = 'single quoted'
 ## STDOUT:
-(Str)   "double quoted"
-(Str)   "single quoted"
+(Str)   'double quoted'
+(Str)   'single quoted'
 ## END
 
 #### Range
@@ -92,7 +92,7 @@ setvar cyclic_dict["live_end"] = cyclic_dict
 = cyclic_array
 = cyclic_dict
 ## STDOUT:
-(List)   ["one", "two", [...]]
+(List)   ['one', 'two', [...]]
 (Dict)   {dead_end: null, live_end: {...}}
 ## END
 

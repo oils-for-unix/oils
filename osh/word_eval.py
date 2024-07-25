@@ -1021,11 +1021,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(val) as case:
                 if case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-
-                    # TODO: use fastfunc.ShellEncode or
-                    # fastfunc.PosixShellEncode()
                     result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
-                    # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
+                    # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
+                    # bash
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
