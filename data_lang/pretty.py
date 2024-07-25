@@ -435,13 +435,18 @@ class _DocConstructor:
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
         self.visiting.clear()
         if self.show_type_prefix:
-            ysh_type = ValType(val)
+            # These JSON-like types have a special notation, so print type
+            # explicitly
+            if val.tag() in (value_e.Null, value_e.Bool, value_e.Int,
+                             value_e.Float, value_e.Str, value_e.List,
+                             value_e.Dict):
+                ysh_type = ValType(val)
+                maybe_type = [_Text("(" + ysh_type + ")"), _Break("   ")]
+            else:
+                maybe_type = []
+
             return _Group(
-                _Concat([
-                    _Text("(" + ysh_type + ")"),
-                    _Break("   "),
-                    self._Value(val, type_shown=True)
-                ]))
+                _Concat(maybe_type + [self._Value(val, type_shown=True)]))
         else:
             return self._Value(val)
 
@@ -706,13 +711,11 @@ class _DocConstructor:
 
             elif case(value_e.Range):
                 r = cast(value.Range, val)
-                return self._Styled(
-                    self.number_style,
-                    _Concat([
-                        _Text(str(r.lower)),
-                        _Text(" .. "),
-                        _Text(str(r.upper))
-                    ]))
+                type_name = self._Styled(self.type_style, _Text(ValType(r)))
+                mdocs = [_Text(str(r.lower)), _Text(".."), _Text(str(r.upper))]
+                return self._SurroundedAndPrefixed("(", type_name, " ",
+                                                   self._Join(mdocs, "", " "),
+                                                   ")")
 
             elif case(value_e.List):
                 vlist = cast(value.List, val)

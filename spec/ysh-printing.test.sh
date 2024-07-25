@@ -47,8 +47,8 @@ pp line (x) | remove-addr
 pp line ({k: x}) | remove-addr
 
 ## STDOUT:
-(Range)   1 .. 100
-(Dict)   {k: 1 .. 100}
+(Range 1 .. 100)
+(Dict)   {k: (Range 1 .. 100)}
 
 (Range)   <Range 0x--->
 (Dict)   {"k":<Range 0x--->}
@@ -74,14 +74,14 @@ pp line (pat) | remove-addr
 pp line ({k: pat}) | remove-addr
 
 ## STDOUT:
-(Eggex)   <Eggex 0x--->
+<Eggex 0x--->
 (Dict)   {k: <Eggex 0x--->}
 
 (Eggex)   <Eggex 0x--->
 (Dict)   {"k":<Eggex 0x--->}
 ## END
 
-#### BashArray
+#### BashArray, short
 declare -a empty=()
 declare -a array_1=(hello)
 
@@ -101,8 +101,8 @@ pp line ({k: empty})
 pp line ({k: array_1})
 
 ## STDOUT:
-(BashArray)   (BashArray)
-(BashArray)   (BashArray 'hello')
+(BashArray)
+(BashArray 'hello')
 
 (Dict)   {k: (BashArray)}
 (Dict)   {k: (BashArray 'hello')}
@@ -114,7 +114,7 @@ pp line ({k: array_1})
 (Dict)   {"k":["hello"]}
 ## END
 
-#### BashArray Long
+#### BashArray, long
 declare -a array_3
 array_3[0]="world"
 array_3[2]=*.py
@@ -123,8 +123,7 @@ do eiusmod.)
 = array_3
 = array_long
 ## STDOUT:
-(BashArray)   (BashArray 'world' null '*.py')
-(BashArray)
+(BashArray 'world' null '*.py')
 (BashArray
     'Lorem'       'ipsum'       'dolor'       'sit'         'amet,'
     'consectetur' 'adipiscing'  'elit,'       'sed'         'do'
@@ -152,8 +151,8 @@ pp line ({k:empty})
 pp line ({k:assoc})
 
 ## STDOUT:
-(BashAssoc)   (BashAssoc)
-(BashAssoc)   (BashAssoc ['k']=$'foo \u0001μ')
+(BashAssoc)
+(BashAssoc ['k']=$'foo \u0001μ')
 
 (Dict)   {k: (BashAssoc)}
 (Dict)   {k: (BashAssoc ['k']=$'foo \u0001μ')}
@@ -176,10 +175,9 @@ declare assoc_long=([Lorem]=ipsum [dolor]="sit amet," ['consectetur adipiscing']
 = assoc_3
 = assoc_long
 ## STDOUT:
-(BashAssoc)   (BashAssoc)
-(BashAssoc)   (BashAssoc ['1']='one')
-(BashAssoc)   (BashAssoc ['1']='one' ['two']='2' ['3']='three')
 (BashAssoc)
+(BashAssoc ['1']='one')
+(BashAssoc ['1']='one' ['two']='2' ['3']='three')
 (BashAssoc
     ['Lorem']='ipsum'
     ['dolor']='sit amet,'
