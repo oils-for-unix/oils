@@ -274,7 +274,7 @@ X [External Lang] BEGIN   END   when (awk)
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ ; re-flags ; ERE /
                   re-primitive  %zero    'sq'
-                  class-literal [c a-z 'abc' @str_var \\ \xFF \u0100]
+                  class-literal [c a-z 'abc' @str_var \\ \xFF \u{3bc}]
                   named-class    dot   digit   space   word   d  s  w
                   re-repeat     d?   d*   d+   d{3}   d{2,4}
                   re-compound    seq1 seq2   alt1|alt2   (expr1 expr2)

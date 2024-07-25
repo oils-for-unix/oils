@@ -1518,6 +1518,14 @@ class Transformer(object):
             return cast(SingleQuoted, child0.GetChild(1).tok)
 
         if typ0 == grammar_nt.char_literal:
+            # Note: ERE doesn't seem to support escapes like Python
+            #    https://docs.python.org/3/library/re.html
+            # We might want to do a translation like this;
+            #
+            # \u{03bc} -> \u03bc
+            # \x00 -> \x00
+            # \n -> \n
+
             # Must be Id.Char_{OneChar,Hex,UBraced}
             assert consts.GetKind(tok0.id) == Kind.Char
             s = word_compile.EvalCStringToken(tok0.id, lexer.TokenVal(tok0))

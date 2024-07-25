@@ -251,12 +251,12 @@ You can also add type conversion functions:
 
 Example:
 
-    [ a-f 'A'-'F' \xFF \u0100 \n \\ \' \" \0 ]
+    [ a-f 'A'-'F' \xFF \u{03bc} \n \\ \' \" \0 ]
 
 Terms:
 
 - Ranges: `a-f` or `'A' - 'F'`
-- Literals: `\n`, `\x01`, `\u0100`, etc.
+- Literals: `\n`, `\x01`, `\u{3bc}`, etc.
 - Sets specified as strings: `'abc'`
 
 Only letters, numbers, and the underscore may be unquoted:

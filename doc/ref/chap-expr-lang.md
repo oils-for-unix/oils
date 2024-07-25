@@ -630,7 +630,7 @@ Sets of characters can be written as strings
 Backslash escapes are respected:
 
     [ \\ \' \" \0 ]
-    [ \xFF \u0100 ]
+    [ \xFF \u{3bc} ]
 
 (Note that we don't use `\yFF`, as in J8 strings.)
 
