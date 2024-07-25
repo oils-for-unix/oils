@@ -31,7 +31,7 @@ BigStr* str(double d) {
   // %.9g - FLOAT round trip
   // %.17g - DOUBLE round trip
   // But this causes problems in practice, e.g. for 3.14, or 1/3
-  //int length = snprintf(buf, n, "%.17g", d);
+  // int length = snprintf(buf, n, "%.17g", d);
 
   // So use 1 less digit, which happens to match Python 3 and node.js (but not
   // Python 2)
@@ -39,8 +39,12 @@ BigStr* str(double d) {
 
   // TODO: This may depend on LC_NUMERIC locale!
 
-  if (strchr(buf, 'i') || strchr(buf, 'n')) {  // inf, -inf, nan
-    return StrFromC(buf);
+  // We may return the strings:
+  //    inf  -inf   nan
+  // But this shouldn't come up much, because Python code changes it to:
+  //    INFINITY   -INFINITY   NAN
+  if (strchr(buf, 'i') || strchr(buf, 'n')) {
+    return StrFromC(buf);  // don't add .0
   }
 
   // Problem:

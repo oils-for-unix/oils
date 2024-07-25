@@ -133,6 +133,16 @@ neg_inf
 nan is not nan
 ## END
 
+#### pretty print INFINITY, -INFINITY, NAN
+
+= [INFINITY, -INFINITY, NAN]
+pp line ([INFINITY, -INFINITY, NAN])
+
+## STDOUT:
+(List)   [INFINITY, -INFINITY, NAN]
+(List)   [INFINITY,-INFINITY,NAN]
+## END
+
 #### Regression: 1/3 gives 0.3+
 
 # We were using float precision, not double
@@ -186,3 +196,5 @@ echo py3=$py3
 ## STDOUT:
 pass
 ## END
+
+

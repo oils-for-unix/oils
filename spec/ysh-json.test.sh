@@ -927,8 +927,8 @@ echo $[toJson(inf)]
 echo $[toJson(neg_inf)]
 
 ## STDOUT:
-(Float)   inf
-(Float)   -inf
+(Float)   INFINITY
+(Float)   -INFINITY
 --
 null
 error=0
@@ -948,7 +948,7 @@ json write (NAN)
 echo $[toJson(NAN)]
 
 ## STDOUT:
-(Float)   nan
+(Float)   NAN
 null
 null
 ## END
@@ -1164,9 +1164,9 @@ EOF
 
 ## STDOUT:
 status=0
-(Float)   inf
+(Float)   INFINITY
 status=0
-(Float)   -inf
+(Float)   -INFINITY
 ## END
 
 #### Many [[[ , but not too many

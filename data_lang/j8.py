@@ -352,12 +352,21 @@ class InstancePrinter(object):
                 val = cast(value.Float, UP_val)
 
                 fl = val.f
-                if ((self.options & INF_NAN_ARE_NULL) and
-                    (math.isnan(fl) or math.isinf(fl))):
-                    # JavaScript JSON lib behavior: Inf and NaN are null
-                    # Python has a bug in the encoder by default, and then
-                    # allow_nan=False raises an error
-                    s = 'null'
+                if math.isinf(fl):
+                    if self.options & INF_NAN_ARE_NULL:
+                        s = 'null'  # negative infinity is null too
+                    else:
+                        s = 'INFINITY'
+                        if fl < 0:
+                            s = '-' + s
+                elif math.isnan(fl):
+                    if self.options & INF_NAN_ARE_NULL:
+                        # JavaScript JSON lib behavior: Inf and NaN are null
+                        # Python has a bug in the encoder by default, and then
+                        # allow_nan=False raises an error
+                        s = 'null'
+                    else:
+                        s = 'NAN'
                 else:
                     # TODO: can we avoid intermediate allocation?
                     # self.buf.WriteFloat(val.f)

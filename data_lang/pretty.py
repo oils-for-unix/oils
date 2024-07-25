@@ -96,6 +96,8 @@ maximum line width.
 
 from __future__ import print_function
 
+import math
+
 from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 from data_lang.j8 import ValueIdString, HeapValueId
@@ -108,6 +110,22 @@ import fastfunc
 import libc
 
 _ = log
+
+
+def _FloatString(fl):
+    # type: (float) -> str
+
+    # Print in YSH syntax, similar to data_lang/j8.py
+    if math.isinf(fl):
+        s = 'INFINITY'
+        if fl < 0:
+            s = '-' + s
+    elif math.isnan(fl):
+        s = 'NAN'
+    else:
+        s = str(fl)
+    return s
+
 
 ################
 # Measurements #
@@ -631,7 +649,7 @@ class _DocConstructor:
 
             elif case(value_e.Float):
                 f = cast(value.Float, val).f
-                return self._Styled(self.number_style, _Text(str(f)))
+                return self._Styled(self.number_style, _Text(_FloatString(f)))
 
             elif case(value_e.Str):
                 s = cast(value.Str, val).s
