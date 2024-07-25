@@ -49,7 +49,6 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
 from core.error import p_die
-from core import num
 from data_lang import j8
 from frontend import consts
 from frontend import lexer
