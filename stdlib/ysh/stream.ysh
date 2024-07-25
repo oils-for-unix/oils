@@ -6,9 +6,9 @@
 # For reading lines, decoding, extracting, splitting
 
 # make this file a test server
-source --builtin osh/byo-server.sh
+source $LIB_OSH/byo-server.sh
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 proc slurp-by (; num_lines) {
   # TODO: (stdin)
