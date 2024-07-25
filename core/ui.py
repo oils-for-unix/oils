@@ -518,12 +518,14 @@ def PrintAst(node, flag):
         ast_f.write('\n')
 
 
-def PrettyPrintValue(val, f):
-    # type: (value_t, mylib.Writer) -> None
+def PrettyPrintValue(val, f, ysh_style=True):
+    # type: (value_t, mylib.Writer, bool) -> None
     """For the = keyword"""
 
     printer = pretty.PrettyPrinter()
     printer.SetUseStyles(f.isatty())
+    if ysh_style:
+        printer.SetYshStyle()
     try:
         width = libc.get_terminal_width()
         if width > 0:

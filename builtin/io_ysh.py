@@ -56,8 +56,20 @@ class Pp(_Builtin):
                                            cmd_val,
                                            accept_typed_args=True)
 
-        action, action_loc = arg_r.ReadRequired2(
-            'expected an action (proc, cell, etc.)')
+        action, action_loc = arg_r.Peek2()
+
+        # pp (x) prints in the same way that '= x' does
+        # TODO: We also need pp [x], which shows the expression
+        if action is None:
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
+
+            # IOError caught by builtin wrapper
+            ui.PrettyPrintValue(val, mylib.Stdout(), ysh_style=True)
+            return 0
+
+        arg_r.Next()
 
         # Actions that print unstable formats start with '.'
         if action == 'cell':

@@ -100,13 +100,13 @@ import math
 
 from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
-from data_lang.j8 import ValueIdString, HeapValueId
+from data_lang import j8
+from data_lang import j8_lite
 from core import ansi
 from frontend import match
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, BufWriter, iteritems
 from typing import cast, List, Dict
-import fastfunc
 import libc
 
 _ = log
@@ -255,6 +255,7 @@ class PrettyPrinter(object):
         self.use_styles = _DEFAULT_USE_STYLES
         self.show_type_prefix = _DEFAULT_SHOW_TYPE_PREFIX
         self.max_tabular_width = _DEFAULT_MAX_TABULAR_WIDTH
+        self.ysh_style = False
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
@@ -267,12 +268,12 @@ class PrettyPrinter(object):
 
     def SetIndent(self, indent):
         # type: (int) -> None
-        """Set the number of spaces per indentation level."""
+        """Set the number of spaces per indent."""
         self.indent = indent
 
     def SetUseStyles(self, use_styles):
         # type: (bool) -> None
-        """If true, print with ansi colors and styles. Otherwise print with plain text."""
+        """Print with ansi colors and styles, rather than plain text."""
         self.use_styles = use_styles
 
     def SetShowTypePrefix(self, show_type_prefix):
@@ -288,12 +289,16 @@ class PrettyPrinter(object):
         vertically aligned."""
         self.max_tabular_width = max_tabular_width
 
+    def SetYshStyle(self):
+        # type: () -> None
+        self.ysh_style = True
+
     def PrintValue(self, val, buf):
         # type: (value_t, BufWriter) -> None
         """Pretty print an Oils value to a BufWriter."""
         constructor = _DocConstructor(self.indent, self.use_styles,
                                       self.show_type_prefix,
-                                      self.max_tabular_width)
+                                      self.max_tabular_width, self.ysh_style)
         document = constructor.Value(val)
         self._PrintDoc(document, buf)
 
@@ -386,13 +391,15 @@ class PrettyPrinter(object):
 class _DocConstructor:
     """Converts Oil values into `doc`s, which can then be pretty printed."""
 
-    def __init__(self, indent, use_styles, show_type_prefix,
-                 max_tabular_width):
-        # type: (int, bool, bool, int) -> None
+    def __init__(self, indent, use_styles, show_type_prefix, max_tabular_width,
+                 ysh_style):
+        # type: (int, bool, bool, int, bool) -> None
         self.indent = indent
         self.use_styles = use_styles
         self.show_type_prefix = show_type_prefix
         self.max_tabular_width = max_tabular_width
+        self.ysh_style = ysh_style
+
         self.visiting = {}  # type: Dict[int, bool]
 
         # These can be configurable later
@@ -565,20 +572,32 @@ class _DocConstructor:
     def _DictKey(self, s):
         # type: (str) -> MeasuredDoc
         if match.IsValidVarName(s):
-            return _Text(s)
+            encoded = s
         else:
-            return _Text(fastfunc.J8EncodeString(s, True))  # lossy_json=True
+            if self.ysh_style:
+                encoded = j8_lite.EncodeStringYsh(s)
+            else:
+                encoded = j8_lite.EncodeString(s)
+        return _Text(encoded)
 
     def _StringLiteral(self, s):
         # type: (str) -> MeasuredDoc
-        return self._Styled(self.string_style,
-                            _Text(fastfunc.J8EncodeString(
-                                s, True)))  # lossy_json=True
+        if self.ysh_style:
+            # YSH r'' or b'' style
+            encoded = j8_lite.EncodeStringYsh(s)
+        else:
+            # JSON "" or J8 b'' style
+            encoded = j8_lite.EncodeString(s)
+        return self._Styled(self.string_style, _Text(encoded))
 
     def _BashStringLiteral(self, s):
         # type: (str) -> MeasuredDoc
-        return self._Styled(self.string_style,
-                            _Text(fastfunc.ShellEncodeString(s, 0)))
+
+        # Should we also respect ysh_style?
+
+        # e.g. r'' or $'' style
+        encoded = j8_lite.ShellEncode(s)
+        return self._Styled(self.string_style, _Text(encoded))
 
     def _YshList(self, vlist):
         # type: (value.List) -> MeasuredDoc
@@ -667,7 +686,7 @@ class _DocConstructor:
 
             elif case(value_e.List):
                 vlist = cast(value.List, val)
-                heap_id = HeapValueId(vlist)
+                heap_id = j8.HeapValueId(vlist)
                 if self.visiting.get(heap_id, False):
                     return _Concat([
                         _Text("["),
@@ -682,7 +701,7 @@ class _DocConstructor:
 
             elif case(value_e.Dict):
                 vdict = cast(value.Dict, val)
-                heap_id = HeapValueId(vdict)
+                heap_id = j8.HeapValueId(vdict)
                 if self.visiting.get(heap_id, False):
                     return _Concat([
                         _Text("{"),
@@ -705,7 +724,7 @@ class _DocConstructor:
 
             else:
                 ysh_type = value_str(val.tag(), dot=False)
-                id_str = ValueIdString(val)
+                id_str = j8.ValueIdString(val)
                 return self._Styled(self.type_style,
                                     _Text("<" + ysh_type + id_str + ">"))
 

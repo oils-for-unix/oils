@@ -218,3 +218,40 @@ proc_name	doc_comment
 f	"doc ' comment with \" quotes"
 ## END
 
+
+#### pp (x) is like = keyword
+
+shopt --set ysh:upgrade
+source $LIB_YSH/list.ysh
+
+# It can be piped!
+
+# We should print:
+# - first in shell '' , if there is no '
+#   - what about '\' ?  Well we could add an r'' there if we want to
+#   - that would help copy and paste
+# - then in u'', which can express all strings
+# - then in b'', for byte strings
+
+pp ('foo') | cat
+
+#pp ("single quote isn't foo") | cat
+
+#pp ('"dq $myvar"') | cat
+
+#pp (r'\ backslash \\') | cat
+
+#pp (u'one \t two \n') | cat
+
+# Without a terminal, default width is 80
+pp (repeat([123], 40)) | cat
+
+## STDOUT:
+(Str)   "foo"
+(List)
+[
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123
+]
+## END
