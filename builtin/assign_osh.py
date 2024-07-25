@@ -17,13 +17,12 @@ from core import state
 from core import vm
 from frontend import flag_util
 from frontend import args
-from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
 from data_lang import j8_lite
 
-from typing import cast, Optional, Dict, List, TYPE_CHECKING
+from typing import cast, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from core import optview
@@ -363,7 +362,7 @@ class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
     def __init__(self, mem, procs, exec_opts, errfmt):
-        # type: (Mem, Dict[str, value.Proc], optview.Exec, ui.ErrorFormatter) -> None
+        # type: (Mem, state.Procs, optview.Exec, ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
         self.exec_opts = exec_opts
@@ -373,7 +372,7 @@ class NewVar(vm._AssignBuiltin):
         # type: (List[str]) -> int
         status = 0
         for name in names:
-            if name in self.procs:
+            if self.procs.Get(name):
                 print(name)
                 # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
                 # could use that too.
@@ -407,7 +406,7 @@ class NewVar(vm._AssignBuiltin):
                 status = self._PrintFuncs(names)
             else:
                 # bash quirk: with no names, they're printed in a different format!
-                for func_name in sorted(self.procs):
+                for func_name in self.procs.GetNames():
                     print('declare -f %s' % (func_name))
             return status
 
@@ -496,7 +495,7 @@ class Unset(vm._Builtin):
     def __init__(
             self,
             mem,  # type: state.Mem
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             unsafe_arith,  # type: sh_expr_eval.UnsafeArith
             errfmt,  # type: ui.ErrorFormatter
     ):
@@ -526,7 +525,7 @@ class Unset(vm._Builtin):
             return False
 
         if proc_fallback and not found:
-            mylib.dict_erase(self.procs, arg)
+            self.procs.Del(arg)
 
         return True
 
@@ -540,7 +539,7 @@ class Unset(vm._Builtin):
             location = arg_locs[i]
 
             if arg.f:
-                mylib.dict_erase(self.procs, name)
+                self.procs.Del(name)
 
             elif arg.v:
                 if not self._UnsetVar(name, location, False):

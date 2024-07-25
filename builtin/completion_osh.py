@@ -55,12 +55,12 @@ class _DynamicProcDictAction(completion.CompletionAction):
     """
 
     def __init__(self, d):
-        # type: (Dict[str, value.Proc]) -> None
+        # type: (state.Procs) -> None
         self.d = d
 
     def Matches(self, comp):
         # type: (Api) -> Iterator[str]
-        for name in sorted(self.d):
+        for name in self.d.GetNames():
             if name.startswith(comp.to_complete):
                 yield name
 
@@ -139,7 +139,7 @@ class SpecBuilder(object):
         # obviously it's better to check here.
         if arg.F is not None:
             func_name = arg.F
-            func = cmd_ev.procs.get(func_name)
+            func = cmd_ev.procs.Get(func_name)
             if func is None:
                 raise error.Usage('function %r not found' % func_name,
                                   loc.Missing)

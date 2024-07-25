@@ -2319,6 +2319,58 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
+class Procs:
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        self.mem = mem
+        self.sh_funcs = {}  # type: Dict[str, value.Proc]
+
+    def SetProc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.mem.var_stack[0][name] = Cell(False, False, False, proc)
+
+    def SetShFunc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.sh_funcs[name] = proc
+
+    def Get(self, name):
+        # type: (str) -> value.Proc
+        """Try to find a proc/sh-func by `name`, or return None if not found.
+
+        First, we search for a proc, and then a sh-func. This means that procs
+        can shadow the definition of sh-funcs.
+        """
+        vars = self.mem.var_stack[0]
+        if name in vars:
+            maybe_proc = vars[name]
+            if maybe_proc.val.tag() == value_e.Proc:
+                return cast(value.Proc, maybe_proc.val)
+
+        if name in self.sh_funcs:
+            return self.sh_funcs[name]
+
+        return None
+
+    def Del(self, to_del):
+        # type: (str) -> None
+        """Undefine a sh-func with name `to_del`, if it exists."""
+        mylib.dict_erase(self.sh_funcs, to_del)
+
+    def GetNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all proc names"""
+        names = list(self.sh_funcs.keys())
+
+        vars = self.mem.var_stack[0]
+        for name in vars:
+            cell = vars[name]
+            if cell.val.tag() == value_e.Proc:
+                names.append(name)
+
+        return sorted(names)
+
+
 #
 # Wrappers to Set Variables
 #

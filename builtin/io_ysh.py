@@ -7,7 +7,6 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
-from _devbuild.gen.value_asdl import value
 from asdl import format as fmt
 from core import error
 from core.error import e_usage
@@ -21,7 +20,7 @@ from frontend import typed_args
 from mycpp import mylib
 from mycpp.mylib import log
 
-from typing import TYPE_CHECKING, cast, Dict
+from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from core.alloc import Arena
     from core.ui import ErrorFormatter
@@ -45,7 +44,7 @@ class Pp(_Builtin):
     """
 
     def __init__(self, mem, errfmt, procs, arena):
-        # type: (state.Mem, ErrorFormatter, Dict[str, value.Proc], Arena) -> None
+        # type: (state.Mem, ErrorFormatter, state.Procs, Arena) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.procs = procs
         self.arena = arena
@@ -130,18 +129,18 @@ class Pp(_Builtin):
             names, locs = arg_r.Rest2()
             if len(names):
                 for i, name in enumerate(names):
-                    node = self.procs.get(name)
+                    node = self.procs.Get(name)
                     if node is None:
                         self.errfmt.Print_('Invalid proc %r' % name,
                                            blame_loc=locs[i])
                         return 1
             else:
-                names = sorted(self.procs)
+                names = self.procs.GetNames()
 
             # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
-                proc = self.procs[name]  # must exist
+                proc = self.procs.Get(name)  # must exist
                 #log('Proc %s', proc)
                 body = proc.body
 

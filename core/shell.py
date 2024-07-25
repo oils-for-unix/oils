@@ -211,7 +211,7 @@ def _SetGlobalFunc(mem, name, func):
 
 def InitAssignmentBuiltins(
         mem,  # type: state.Mem
-        procs,  # type: Dict[str, value.Proc]
+        procs,  # type: state.Procs
         exec_opts,  # type: optview.Exec
         errfmt,  # type: ui.ErrorFormatter
 ):
@@ -516,7 +516,7 @@ def Main(
 
     # Global proc namespace.  Funcs are defined in the common variable
     # namespace.
-    procs = {}  # type: Dict[str, value.Proc]
+    procs = state.Procs(mem)  # type: state.Procs
 
     builtins = {}  # type: Dict[int, vm._Builtin]
 
