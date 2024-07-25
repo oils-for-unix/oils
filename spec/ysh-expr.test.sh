@@ -313,29 +313,6 @@ SHELL
 sum 40
 ## END
 
-#### Backslash char literal (is an integer)
-const newline = \n
-const backslash = \\
-const sq = \'
-const dq = \"
-echo "$newline $backslash $sq $dq"
-## STDOUT:
-10 92 39 34
-## END
-
-#### \u{3bc} is char literal
-shopt -s oil:all
-
-var mu = \u{3bc}
-if (mu === 0x3bc) {  # this is the same!
-  echo 'yes'
-}
-echo "mu $mu"
-## STDOUT:
-yes
-mu 956
-## END
-
 #### Exponentiation with **
 var x = 2**3
 echo $x

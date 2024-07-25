@@ -50,6 +50,7 @@ from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
 from core.error import p_die
 from core import num
+from data_lang import j8
 from frontend import consts
 from frontend import lexer
 from frontend import location
@@ -768,13 +769,12 @@ class Transformer(object):
         # allocation.
 
         elif typ == Id.Char_OneChar:
-            # TODO: look up integer directly?
-            cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
+            cval = value.Str(consts.LookupCharC(tok_str[1]))
+
         elif typ == Id.Char_UBraced:
             hex_str = tok_str[3:-1]  # \u{123}
-            # ValueError shouldn't happen because lexer validates
-            cval = value.Int(mops.FromStr(hex_str, 16))
-
+            code_point = int(hex_str, 16)
+            cval = value.Str(j8.Utf8Encode(code_point))
         else:
             raise AssertionError(typ)
 

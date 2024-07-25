@@ -1,5 +1,59 @@
 ## our_shell: ysh
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
+
+#### Unquoted backslash escapes, as in J8 strings
+
+# everything except \b \f \n
+
+var nl = \n
+pp line (nl)
+
+var tab = \t
+pp line (tab)
+
+pp line (\r)
+
+pp line (\" ++ \' ++ \\)
+
+echo backslash $[\\]
+echo "backslash $[\\]"
+
+## STDOUT:
+(Str)   "\n"
+(Str)   "\t"
+(Str)   "\r"
+(Str)   "\"'\\"
+backslash \
+backslash \
+## END
+
+#### Unquoted \u{3bc} escape
+
+var x = 'mu ' ++ \u{3bc}
+echo $x
+
+echo mu $[\u{3bc}]
+echo "mu $[\u{3bc}]"
+
+## STDOUT:
+mu μ
+mu μ
+mu μ
+## END
+
+#### Unquoted \y23 escape
+
+var x = 'foo ' ++ \y23
+echo $x
+
+echo foo $[\y34]
+echo "foo $[\y35]"
+
+## STDOUT:
+mu μ
+mu μ
+mu μ
+## END
 
 #### single quoted -- implicit and explicit raw
 var x = 'foo bar'

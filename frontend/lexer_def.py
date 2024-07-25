@@ -490,11 +490,13 @@ _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
 
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
 
+#_JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 EXPR_CHARS = [
-    # This is like Rust.  We don't have the legacy C escapes like \b.
-
-    # NOTE: \' and \" are more readable versions of '"' and "'" in regexs
-    R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
+    # Allow same backslash escapes as in J8 strings, except for legacy \b \f
+    # and unnecessary \/
+    # Issues:
+    # - \0 should be written \y00?
+    R(r'''\\[\\"'nrt]''', Id.Char_OneChar),
     _X_CHAR_STRICT,
 
     _U_BRACED_CHAR,

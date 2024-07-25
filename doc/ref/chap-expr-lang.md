@@ -86,6 +86,18 @@ Examples of float literals:
 
     var f2 = -1.5e-100
 
+### char-literal
+
+Three kinds of unquoted backslash escapes are allowed in expression mode.  They
+match what's available in quoted J8-style strings:
+
+    var backslash = \\
+    var quotes = \' ++ \"   # same as u'\'' ++ '"'
+
+    var mu = \u{3bc}        # same as u'\u{3bc}'
+
+    var nul = \y00          # same as b'\y00'
+
 ### ysh-string
 
 YSH has single and double-quoted strings borrowed from Bourne shell, and

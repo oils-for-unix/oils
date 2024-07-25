@@ -243,6 +243,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Literals]      atom-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
+                  char-literal  \\ \t \"   \y00   \u{3bc}
                 X num-suffix    42 K Ki M Mi G Gi T Ti / ms us
                   ysh-string    "x is $x"  $"x is $x"   r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
