@@ -229,6 +229,7 @@ def _IfFlat(flat_mdoc, nonflat_mdoc):
         doc.IfFlat(flat_mdoc, nonflat_mdoc),
         Measure(flat_mdoc.measure.flat, nonflat_mdoc.measure.nonflat))
 
+
 def _Flat(mdoc):
     # type: (MeasuredDoc) -> MeasuredDoc
     """Prints `mdoc` in flat mode."""
@@ -392,7 +393,8 @@ class PrettyPrinter(object):
                 elif case(doc_e.Flat):
                     flat_doc = cast(doc.Flat, frag.mdoc.doc)
                     fragments.append(
-                        DocFragment(flat_doc.mdoc, frag.indent, True, frag.measure))
+                        DocFragment(flat_doc.mdoc, frag.indent, True,
+                                    frag.measure))
 
 
 ################
