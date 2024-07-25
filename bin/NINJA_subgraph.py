@@ -34,9 +34,12 @@ def NinjaGraph(ru):
     # We could probably create a _build/ninja-stamp/HELP file and so forth
     files = glob('_devbuild/help/*')
 
-    # stdlib
-    # TODO: Might want stdlib/ysh as well
-    tmp = glob('stdlib/*.ysh') + glob('stdlib/osh/*.sh')
+    # OSH and YSH stdlib
+    tmp = glob('stdlib/ysh/*.ysh') + glob('stdlib/osh/*.sh')
+
+    # Remove this?
+    tmp.extend(glob('stdlib/*.ysh'))
+
     # exclude test files
     for path in tmp:
         if fnmatch(path, '*-test.ysh'):
