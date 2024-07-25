@@ -478,9 +478,28 @@ The expression `mydict.key` is short for `mydict['key']`.
 
 ### ysh-slice
 
-Slicing gives you a subsequence of a `Str` or `List`, like Python.
+Slicing gives you a subsequence of a `Str` or `List`, as in Python.
 
 Negative indices are relative to the end.
+
+String example:
+
+    $ var s = 'spam eggs'
+    $ pp line (s[1:-1])
+    (Str)   "pam egg"
+
+    $ echo "x $[s[2:]]"
+    x am eggs
+
+List example:
+
+    $ var foods = ['ale', 'bean', 'corn']
+    $ pp line (foods[-2:])
+    (List)   ["bean","corn"]
+    
+    $ write -- @[foods[:2]]
+    ale
+    bean
 
 ### func-call
 

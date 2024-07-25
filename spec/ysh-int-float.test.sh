@@ -145,7 +145,8 @@ if (_reply ~ / '0.' '3'+ / ) {
 }
 
 pp line (2/3) | read --all
-if (_reply ~ / '0.' '6'+ '7' / ) {
+#pp line (_reply)
+if (_reply ~ / '0.' '6'+ / ) {
   echo two-thirds
 }
 
@@ -159,7 +160,7 @@ shopt --set ysh:upgrade
 
 # - Python 2 and bin/ysh: 14
 # - Python 3: 18
-# - YSH C++: 19 - see mycpp/float_test.cc, tip from Bruce Dawson
+# - YSH C++: 18
 
 var s = str(1/3)
 #echo "ysh len $[len(s)]"
@@ -168,7 +169,7 @@ var s = str(1/3)
 # Don't bother to distinguish OSH Python vs C++ here
 case (len(s)) {
   (14) { echo pass }
-  (19) { echo pass }
+  (18) { echo pass }
   (else) { echo FAIL }
 }
 

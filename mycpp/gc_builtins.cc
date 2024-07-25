@@ -27,14 +27,16 @@ BigStr* str(double d) {
 
   int n = sizeof(buf) - 2;  // in case we add '.0'
 
-  // See mycpp/float_test.cc for round-tripping test
+  // The round tripping test in mycpp/float_test.cc tells us:
   // %.9g - FLOAT round trip
   // %.17g - DOUBLE round trip
-  //
-  // https://stackoverflow.com/a/21162120
-  // https://en.cppreference.com/w/cpp/types/numeric_limits/max_digits10
+  // But this causes problems in practice, e.g. for 3.14, or 1/3
+  //int length = snprintf(buf, n, "%.17g", d);
 
-  int length = snprintf(buf, n, "%.17g", d);
+  // So use 1 less digit, which happens to match Python 3 and node.js (but not
+  // Python 2)
+  int length = snprintf(buf, n, "%.16g", d);
+
   // TODO: This may depend on LC_NUMERIC locale!
 
   if (strchr(buf, 'i') || strchr(buf, 'n')) {  // inf, -inf, nan
