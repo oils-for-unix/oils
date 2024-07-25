@@ -114,6 +114,12 @@ import libc
 _ = log
 
 
+def ValType(val):
+    # type: (value_t) -> str
+    """Returns a user-facing string like Int, Eggex, BashArray, etc."""
+    return value_str(val.tag(), dot=False)
+
+
 def _FloatString(fl):
     # type: (float) -> str
 
@@ -429,7 +435,7 @@ class _DocConstructor:
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
         self.visiting.clear()
         if self.show_type_prefix:
-            ysh_type = value_str(val.tag(), dot=False)
+            ysh_type = ValType(val)
             return _Group(
                 _Concat([
                     _Text("(" + ysh_type + ")"),
@@ -747,7 +753,7 @@ class _DocConstructor:
                 return self._BashAssoc(vassoc)
 
             else:
-                ysh_type = value_str(val.tag(), dot=False)
+                ysh_type = ValType(val)
                 id_str = j8.ValueIdString(val)
                 return self._Styled(self.type_style,
                                     _Text("<" + ysh_type + id_str + ">"))

@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
     source,
     source_e,
 )
-from _devbuild.gen.value_asdl import (value_t, value_str)
+from _devbuild.gen.value_asdl import value_t
 from asdl import format as fmt
 from data_lang import pretty
 from frontend import lexer
@@ -44,7 +44,8 @@ def ValType(val):
     # type: (value_t) -> str
     """For displaying type errors in the UI."""
 
-    return value_str(val.tag(), dot=False)
+    # TODO: consolidate these functions
+    return pretty.ValType(val)
 
 
 def CommandType(cmd):

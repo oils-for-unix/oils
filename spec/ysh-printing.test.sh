@@ -33,6 +33,16 @@ var x = 1..100
 = x
 ## stdout: (Range)   1 .. 100
 
+#### Eggex (reference type)
+var pat = /d+/
+pp (pat) | sed 's/0x[0-9a-f]\+/0x---/'
+
+# TODO: change this
+
+## STDOUT:
+(Eggex)   <Eggex 0x--->
+## END
+
 #### Bash Array
 declare -a array_0=()
 declare -a array_1=(hello)

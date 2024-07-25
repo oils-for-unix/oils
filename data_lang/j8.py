@@ -183,7 +183,10 @@ def PrintLine(val, f):
 
     # error.Encode should be impossible - we show cycles and non-data
     buf = mylib.BufWriter()
+
+    # TODO: Omit type at top level
     _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
+
     f.write(buf.getvalue())
     f.write('\n')
 
@@ -433,13 +436,15 @@ class InstancePrinter(object):
                 self._PrintDict(val, level)
                 self.visited[heap_id] = FINISHED
 
-            # BashArray and BashAssoc should be printed with pp line (x), e.g.
-            # for spec tests.
-            # - BashAssoc has a clear encoding.
-            # - BashArray could eventually be Dict[int, str].  But that's not
-            #   encodable in JSON, which has string keys!
-            #   So I think we can print it like ["a",null,'b"] and that won't
-            #   change.  That's what users expect.
+            # TODO: New format, which should consistent with pretty printing
+            # pp line (x) supports BashArray and BashAssoc, e.g. for spec
+            # tests.
+
+            # - BashAssoc is Dict[str, str]
+            #   (BashAssoc ['1']='foo' ['3']='bar')
+            # - BashArray will be Dict[int, str] - SparseArray.  We should write it like
+            #   (BashArray [1]='foo' [3]='bar')
+
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
 
