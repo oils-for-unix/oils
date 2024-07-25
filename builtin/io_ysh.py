@@ -65,8 +65,8 @@ class Pp(_Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            # IOError caught by builtin wrapper
-            ui.PrettyPrintValue(val, mylib.Stdout(), ysh_style=True)
+            # IOError caught by caller
+            ui.PrettyPrintValue(val, mylib.Stdout())
             return 0
 
         arg_r.Next()

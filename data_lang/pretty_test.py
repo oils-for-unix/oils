@@ -29,6 +29,8 @@ class PrettyTest(unittest.TestCase):
         cls.printer = pretty.PrettyPrinter()
         cls.printer.SetUseStyles(False)
         cls.printer.SetShowTypePrefix(False)
+        # NOTE: We don't SetYshStyle() here ... we changed the format after
+        # writing these tests
 
     def assertPretty(self, width, value_str, expected, lineno=None):
         # type: (int, str, str, Optional[int]) -> None

@@ -577,6 +577,7 @@ class _DocConstructor:
             if self.ysh_style:
                 encoded = j8_lite.YshEncodeString(s)
             else:
+                # TODO: remove this dead branch after fixing tests
                 encoded = j8_lite.EncodeString(s)
         return _Text(encoded)
 
@@ -586,16 +587,25 @@ class _DocConstructor:
             # YSH r'' or b'' style
             encoded = j8_lite.YshEncodeString(s)
         else:
-            # JSON "" or J8 b'' style
+            # TODO: remove this dead branch after fixing tests
             encoded = j8_lite.EncodeString(s)
         return self._Styled(self.string_style, _Text(encoded))
 
     def _BashStringLiteral(self, s):
         # type: (str) -> MeasuredDoc
 
-        # Should we also respect ysh_style?
+        # '' or $'' style
+        #
+        # We mimic bash syntax by using $'\\' instead of b'\\'
+        #
+        # $ declare -a array=($'\\')
+        # $ = array
+        # (BashArray)   (BashArray $'\\')
+        #
+        # $ declare -A assoc=([k]=$'\\')
+        # $ = assoc
+        # (BashAssoc)   (BashAssoc ['k']=$'\\')
 
-        # e.g. r'' or $'' style
         encoded = j8_lite.ShellEncode(s)
         return self._Styled(self.string_style, _Text(encoded))
 
