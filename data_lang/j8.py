@@ -322,6 +322,103 @@ class InstancePrinter(object):
             self._BracketIndent(level)
             self.buf.write('}')
 
+    def _PrintBashPrefix(self, type_str, level):
+        # type: (str, int) -> None
+
+        self.buf.write('{')
+        self._MaybeNewline()
+        self._ItemIndent(level)
+        self.buf.write('"type":')
+        self._MaybeSpace()
+        self.buf.write(type_str)  # "BashArray",  or "BashAssoc",
+
+        self._MaybeNewline()
+
+        self._ItemIndent(level)
+        self.buf.write('"value":')
+        self._MaybeSpace()
+
+    def _PrintBashSuffix(self, level):
+        # type: (int) -> None
+        level -= 1
+        self._MaybeNewline()
+        self._BracketIndent(level)
+        self.buf.write('}')
+
+    def _PrintBashArray(self, val, level):
+        # type: (value.BashArray, int) -> None
+
+        self._PrintBashPrefix('"BashArray",', level)
+
+        if len(val.strs) == 0:  # Special case like Python/JS
+            self.buf.write('{}')
+        else:
+            self.buf.write('{')
+            self._MaybeNewline()
+
+            level += 1
+            first = True
+            for i, s in enumerate(val.strs):
+                if s is None:
+                    continue
+
+                if not first:
+                    self.buf.write(',')
+                    self._MaybeNewline()
+
+                self._ItemIndent(level)
+
+                pyj8.WriteString(str(i), self.options, self.buf)
+                self.buf.write(':')
+                self._MaybeSpace()
+
+                pyj8.WriteString(s, self.options, self.buf)
+
+                first = False
+
+            self._MaybeNewline()
+
+            self._BracketIndent(level)
+            self.buf.write('}')
+
+        self._PrintBashSuffix(level)
+
+    def _PrintBashAssoc(self, val, level):
+        # type: (value.BashAssoc, int) -> None
+
+        self._PrintBashPrefix('"BashAssoc",', level)
+
+        if len(val.d) == 0:  # Special case like Python/JS
+            self.buf.write('{}')
+        else:
+            self.buf.write('{')
+            self._MaybeNewline()
+
+            level += 1
+            i = 0
+            for k2, v2 in iteritems(val.d):
+                if i != 0:
+                    self.buf.write(',')
+                    self._MaybeNewline()
+
+                self._ItemIndent(level)
+
+                pyj8.WriteString(k2, self.options, self.buf)
+
+                self.buf.write(':')
+                self._MaybeSpace()
+
+                pyj8.WriteString(v2, self.options, self.buf)
+
+                i += 1
+
+            self._MaybeNewline()
+
+            self._BracketIndent(level)
+            self.buf.write('}')
+
+        self._PrintBashSuffix(level)
+
     def Print(self, val, level=0):
         # type: (value_t, int) -> None
 
@@ -447,77 +544,11 @@ class InstancePrinter(object):
 
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-
-                self.buf.write('{')
-                self._MaybeNewline()
-                self._ItemIndent(level)
-                self.buf.write('"type":')
-                self._MaybeSpace()
-                self.buf.write('"BashArray",')
-
-                self._MaybeNewline()
-
-                self._ItemIndent(level)
-                self.buf.write('"value":')
-                self._MaybeSpace()
-                self.buf.write('{')
-                self._MaybeNewline()
-
-                level += 1
-                first = True
-                for i, s in enumerate(val.strs):
-                    if s is None:
-                        continue
-
-                    if not first:
-                        self.buf.write(',')
-                        self._MaybeNewline()
-
-                    self._ItemIndent(level)
-
-                    pyj8.WriteString(str(i), self.options, self.buf)
-                    self.buf.write(':')
-                    self._MaybeSpace()
-
-                    pyj8.WriteString(s, self.options, self.buf)
-
-                    first = False
-
-                self._MaybeNewline()
-
-                self._BracketIndent(level)
-                self.buf.write('}')
-
-                level -= 1
-                self._MaybeNewline()
-                self._BracketIndent(level)
-                self.buf.write('}')
+                self._PrintBashArray(val, level)
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
-
-                self.buf.write('{')
-                self._MaybeNewline()
-                i = 0
-                for k2, v2 in iteritems(val.d):
-                    if i != 0:
-                        self.buf.write(',')
-                        self._MaybeNewline()
-
-                    self._ItemIndent(level)
-
-                    pyj8.WriteString(k2, self.options, self.buf)
-
-                    self.buf.write(':')
-                    self._MaybeSpace()
-
-                    pyj8.WriteString(v2, self.options, self.buf)
-
-                    i += 1
-
-                self._MaybeNewline()
-                self._BracketIndent(level)
-                self.buf.write('}')
+                self._PrintBashAssoc(val, level)
 
             else:
                 pass  # mycpp workaround

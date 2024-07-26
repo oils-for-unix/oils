@@ -168,7 +168,7 @@ pp line (assoc or 'zz')
 
 ## STDOUT:
 {"type":"BashArray","value":{"0":"1","1":"2","2":"3"}}
-(BashAssoc)   {"k":"v"}
+{"type":"BashAssoc","value":{"k":"v"}}
 ## END
 
 #### x if b else y

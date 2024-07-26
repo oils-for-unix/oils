@@ -9,8 +9,11 @@ set -o errexit
 
 g() {
   readonly g=1
-  readonly -a bash_array=(a b)
+  local -a bash_array=(a b)
   bash_array[5]=z
+  readonly bash_array
+
+  readonly -A bash_assoc=([x]=y [foo]=bar)
 
   echo foo > $bar
 }

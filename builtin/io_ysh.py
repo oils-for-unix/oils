@@ -5,7 +5,6 @@ builtin/io_ysh.py - YSH builtins that perform I/O
 from __future__ import print_function
 
 from _devbuild.gen import arg_types
-from _devbuild.gen.value_asdl import value_e
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
 from asdl import format as fmt
@@ -128,8 +127,7 @@ class Pp(_Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            if pretty.TypeNotPrinted(val) or val.tag() in (
-                    value_e.BashAssoc, ):
+            if pretty.TypeNotPrinted(val):
                 ysh_type = ui.ValType(val)
                 self.stdout_.write('(%s)   ' % ysh_type)
 

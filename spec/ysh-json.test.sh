@@ -1210,3 +1210,50 @@ pp line (_reply)
 ## STDOUT:
 ## END
 
+#### BashArray can be serialized
+
+declare -a empty_array
+
+declare -a array=(x y)
+array[5]=z
+
+json write (empty_array)
+json write (array)
+
+## STDOUT:
+{
+  "type": "BashArray",
+  "value": {}
+}
+{
+  "type": "BashArray",
+  "value": {
+    "0": "x",
+    "1": "y",
+    "5": "z"
+  }
+}
+## END
+
+#### BashAssoc can be serialized
+
+declare -A empty_assoc
+
+declare -A assoc=([foo]=bar [42]=43)
+
+json write (empty_assoc)
+json write (assoc)
+
+## STDOUT:
+{
+  "type": "BashAssoc",
+  "value": {}
+}
+{
+  "type": "BashAssoc",
+  "value": {
+    "foo": "bar",
+    "42": "43"
+  }
+}
+## END

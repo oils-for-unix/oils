@@ -154,8 +154,8 @@ pp line (assoc)
 ## STDOUT:
 {"type":"BashArray","value":{"0":"a","1":"b","2":"c"}}
 {"type":"BashArray","value":{"0":"a","1":"b","2":"c","5":"z"}}
-(BashAssoc)   {"k":"v","k2":"v2"}
-(BashAssoc)   {"k":"v","k2":"v2","k3":""}
+{"type":"BashAssoc","value":{"k":"v","k2":"v2"}}
+{"type":"BashAssoc","value":{"k":"v","k2":"v2","k3":""}}
 ## END
 
 

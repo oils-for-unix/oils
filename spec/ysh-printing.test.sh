@@ -157,11 +157,11 @@ pp line ({k:assoc})
 (Dict)   {k: (BashAssoc)}
 (Dict)   {k: (BashAssoc ['k']=$'foo \u0001μ')}
 
-(BashAssoc)   {}
-(BashAssoc)   {"k":"foo \u0001μ"}
+{"type":"BashAssoc","value":{}}
+{"type":"BashAssoc","value":{"k":"foo \u0001μ"}}
 
-(Dict)   {"k":{}}
-(Dict)   {"k":{"k":"foo \u0001μ"}}
+(Dict)   {"k":{"type":"BashAssoc","value":{}}}
+(Dict)   {"k":{"type":"BashAssoc","value":{"k":"foo \u0001μ"}}}
 ## END
 
 
