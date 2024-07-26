@@ -107,11 +107,11 @@ pp line ({k: array_1})
 (Dict)   {k: (BashArray)}
 (Dict)   {k: (BashArray 'hello')}
 
-{"type":"BashArray","value":{}}
-{"type":"BashArray","value":{"0":"hello"}}
+{"type":"BashArray","data":{}}
+{"type":"BashArray","data":{"0":"hello"}}
 
-(Dict)   {"k":{"type":"BashArray","value":{}}}
-(Dict)   {"k":{"type":"BashArray","value":{"0":"hello"}}}
+(Dict)   {"k":{"type":"BashArray","data":{}}}
+(Dict)   {"k":{"type":"BashArray","data":{"0":"hello"}}}
 ## END
 
 #### BashArray, long
@@ -157,11 +157,11 @@ pp line ({k:assoc})
 (Dict)   {k: (BashAssoc)}
 (Dict)   {k: (BashAssoc ['k']=$'foo \u0001μ')}
 
-{"type":"BashAssoc","value":{}}
-{"type":"BashAssoc","value":{"k":"foo \u0001μ"}}
+{"type":"BashAssoc","data":{}}
+{"type":"BashAssoc","data":{"k":"foo \u0001μ"}}
 
-(Dict)   {"k":{"type":"BashAssoc","value":{}}}
-(Dict)   {"k":{"type":"BashAssoc","value":{"k":"foo \u0001μ"}}}
+(Dict)   {"k":{"type":"BashAssoc","data":{}}}
+(Dict)   {"k":{"type":"BashAssoc","data":{"k":"foo \u0001μ"}}}
 ## END
 
 

@@ -167,8 +167,8 @@ declare -A assoc=([k]=v)
 pp line (assoc or 'zz')
 
 ## STDOUT:
-{"type":"BashArray","value":{"0":"1","1":"2","2":"3"}}
-{"type":"BashAssoc","value":{"k":"v"}}
+{"type":"BashArray","data":{"0":"1","1":"2","2":"3"}}
+{"type":"BashAssoc","data":{"k":"v"}}
 ## END
 
 #### x if b else y

@@ -152,10 +152,10 @@ assoc['k3']=
 pp line (assoc)
 
 ## STDOUT:
-{"type":"BashArray","value":{"0":"a","1":"b","2":"c"}}
-{"type":"BashArray","value":{"0":"a","1":"b","2":"c","5":"z"}}
-{"type":"BashAssoc","value":{"k":"v","k2":"v2"}}
-{"type":"BashAssoc","value":{"k":"v","k2":"v2","k3":""}}
+{"type":"BashArray","data":{"0":"a","1":"b","2":"c"}}
+{"type":"BashArray","data":{"0":"a","1":"b","2":"c","5":"z"}}
+{"type":"BashAssoc","data":{"k":"v","k2":"v2"}}
+{"type":"BashAssoc","data":{"k":"v","k2":"v2","k3":""}}
 ## END
 
 

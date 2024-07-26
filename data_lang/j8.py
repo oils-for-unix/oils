@@ -335,7 +335,7 @@ class InstancePrinter(object):
         self._MaybeNewline()
 
         self._ItemIndent(level)
-        self.buf.write('"value":')
+        self.buf.write('"data":')
         self._MaybeSpace()
 
     def _PrintBashSuffix(self, level):

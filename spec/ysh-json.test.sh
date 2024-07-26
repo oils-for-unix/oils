@@ -1223,11 +1223,11 @@ json write (array)
 ## STDOUT:
 {
   "type": "BashArray",
-  "value": {}
+  "data": {}
 }
 {
   "type": "BashArray",
-  "value": {
+  "data": {
     "0": "x",
     "1": "y",
     "5": "z"
@@ -1247,11 +1247,11 @@ json write (assoc)
 ## STDOUT:
 {
   "type": "BashAssoc",
-  "value": {}
+  "data": {}
 }
 {
   "type": "BashAssoc",
-  "value": {
+  "data": {
     "foo": "bar",
     "42": "43"
   }

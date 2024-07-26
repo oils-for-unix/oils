@@ -788,21 +788,10 @@ def _DumpVarFrame(frame):
 
         with tagswitch(cell.val) as case:
             if case(value_e.Undef):
-                cell_json['type'] = value.Str('Undef')
+                cell_json['val'] = value.Null
 
-            elif case(value_e.Str):
-                cell_json['type'] = value.Str('Str')
-                cell_json['value'] = cell.val
-
-            elif case(value_e.BashArray):
-                cell_json['type'] = value.Str('BashArray')
-                # TODO: this results in a nested {type: ..., value: ...} dict
-                cell_json['value'] = cell.val
-
-            elif case(value_e.BashAssoc):
-                cell_json['type'] = value.Str('BashAssoc')
-                # TODO: this results in a nested {type: ..., value: ...} dict
-                cell_json['value'] = cell.val
+            elif case(value_e.Str, value_e.BashArray, value_e.BashAssoc):
+                cell_json['val'] = cell.val
 
             else:
                 # TODO: should we show the object ID here?
