@@ -81,6 +81,43 @@ pp line ({k: pat}) | remove-addr
 (Dict)   {"k":<Eggex 0x--->}
 ## END
 
+#### SparseArray, new representation for bash array
+declare -a empty=()
+declare -a array_1=(hello)
+array_1[5]=5
+
+var empty = _a2sp(empty)
+var array_1 = _a2sp(array_1)
+
+pp (empty)
+pp (array_1)
+echo
+
+pp ({k: empty})
+pp ({k: array_1})
+echo
+
+pp line (empty)
+pp line (array_1)
+echo
+
+pp line ({k: empty})
+pp line ({k: array_1})
+
+## STDOUT:
+(SparseArray)
+(SparseArray [0]='hello' [5]='5')
+
+(Dict)   {k: (SparseArray)}
+(Dict)   {k: (SparseArray [0]='hello' [5]='5')}
+
+{"type":"SparseArray","data":{}}
+{"type":"SparseArray","data":{"0":"hello","5":"5"}}
+
+(Dict)   {"k":{"type":"SparseArray","data":{}}}
+(Dict)   {"k":{"type":"SparseArray","data":{"0":"hello","5":"5"}}}
+## END
+
 #### BashArray, short
 declare -a empty=()
 declare -a array_1=(hello)

@@ -344,6 +344,41 @@ class InstancePrinter(object):
         self._BracketIndent(level)
         self.buf.write('}')
 
+    def _PrintSparseArray(self, val, level):
+        # type: (value.SparseArray, int) -> None
+
+        self._PrintBashPrefix('"SparseArray",', level)
+
+        if len(val.d) == 0:  # Special case like Python/JS
+            self.buf.write('{}')
+        else:
+            self.buf.write('{')
+            self._MaybeNewline()
+
+            first = True
+            i = 0
+            for k, v in iteritems(val.d):
+                if i != 0:
+                    self.buf.write(',')
+                    self._MaybeNewline()
+
+                self._ItemIndent(level + 1)
+                pyj8.WriteString(mops.ToStr(k), self.options, self.buf)
+
+                self.buf.write(':')
+                self._MaybeSpace()
+
+                pyj8.WriteString(v, self.options, self.buf)
+
+                i += 1
+
+            self._MaybeNewline()
+
+            self._BracketIndent(level + 1)
+            self.buf.write('}')
+
+        self._PrintBashSuffix(level)
+
     def _PrintBashArray(self, val, level):
         # type: (value.BashArray, int) -> None
 
@@ -529,14 +564,9 @@ class InstancePrinter(object):
                 self._PrintDict(val, level)
                 self.visited[heap_id] = FINISHED
 
-            # TODO: New format, which should consistent with pretty printing
-            # pp line (x) supports BashArray and BashAssoc, e.g. for spec
-            # tests.
-
-            # - BashAssoc is Dict[str, str]
-            #   (BashAssoc ['1']='foo' ['3']='bar')
-            # - BashArray will be Dict[int, str] - SparseArray.  We should write it like
-            #   (BashArray [1]='foo' [3]='bar')
+            elif case(value_e.SparseArray):
+                val = cast(value.SparseArray, UP_val)
+                self._PrintSparseArray(val, level)
 
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)

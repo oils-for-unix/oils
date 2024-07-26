@@ -691,6 +691,23 @@ class _DocConstructor:
         return self._SurroundedAndPrefixed("(", type_name, " ",
                                            self._Join(mdocs, "", " "), ")")
 
+    def _SparseArray(self, val):
+        # type: (value.SparseArray) -> MeasuredDoc
+        type_name = self._Styled(self.type_style, _Text("SparseArray"))
+        if len(val.d) == 0:
+            return _Concat([_Text("("), type_name, _Text(")")])
+        mdocs = []  # type: List[MeasuredDoc]
+        for k2, v2 in iteritems(val.d):
+            mdocs.append(
+                _Concat([
+                    _Text("["),
+                    self._Styled(self.int_style, _Text(mops.ToStr(k2))),
+                    _Text("]="),
+                    self._BashStringLiteral(v2)
+                ]))
+        return self._SurroundedAndPrefixed("(", type_name, " ",
+                                           self._Join(mdocs, "", " "), ")")
+
     def _Value(self, val):
         # type: (value_t) -> MeasuredDoc
 
@@ -752,6 +769,10 @@ class _DocConstructor:
                     result = self._YshDict(vdict)
                     self.visiting[heap_id] = False
                     return result
+
+            elif case(value_e.SparseArray):
+                sparse = cast(value.SparseArray, val)
+                return self._SparseArray(sparse)
 
             elif case(value_e.BashArray):
                 varray = cast(value.BashArray, val)
