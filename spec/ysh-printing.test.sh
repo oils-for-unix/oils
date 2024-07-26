@@ -50,7 +50,7 @@ pp line ({k: x}) | remove-addr
 (Range 1 .. 100)
 (Dict)   {k: (Range 1 .. 100)}
 
-(Range)   <Range 0x--->
+<Range 0x--->
 (Dict)   {"k":<Range 0x--->}
 ## END
 
@@ -77,7 +77,7 @@ pp line ({k: pat}) | remove-addr
 <Eggex 0x--->
 (Dict)   {k: <Eggex 0x--->}
 
-(Eggex)   <Eggex 0x--->
+<Eggex 0x--->
 (Dict)   {"k":<Eggex 0x--->}
 ## END
 

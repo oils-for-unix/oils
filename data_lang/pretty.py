@@ -120,6 +120,13 @@ def ValType(val):
     return value_str(val.tag(), dot=False)
 
 
+def TypeNotPrinted(val):
+    # type: (value_t) -> bool
+    return val.tag() in (value_e.Null, value_e.Bool, value_e.Int,
+                         value_e.Float, value_e.Str, value_e.List,
+                         value_e.Dict)
+
+
 def _FloatString(fl):
     # type: (float) -> str
 
@@ -437,9 +444,7 @@ class _DocConstructor:
         if self.show_type_prefix:
             # These JSON-like types have a special notation, so print type
             # explicitly
-            if val.tag() in (value_e.Null, value_e.Bool, value_e.Int,
-                             value_e.Float, value_e.Str, value_e.List,
-                             value_e.Dict):
+            if TypeNotPrinted(val):
                 ysh_type = ValType(val)
                 maybe_type = [_Text("(" + ysh_type + ")"), _Break("   ")]
             else:
