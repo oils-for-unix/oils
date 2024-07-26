@@ -119,12 +119,6 @@ pp line ({"d": 1} and {})
 echo $[0 or 0.0 or false or [] or {} or "OR"]
 echo $[1 and 1.0 and true and [5] and {"d":1} and "AND"]
 
-declare -a array=(1 2 3)
-pp line (array or 'yy')
-
-declare -A assoc=([k]=v)
-pp line (assoc or 'zz')
-
 ## STDOUT:
 s
 None
@@ -163,6 +157,16 @@ y
 (Dict)   {}
 OR
 AND
+## END
+
+#### or BashArray, or BashAssoc
+declare -a array=(1 2 3)
+pp line (array or 'yy')
+
+declare -A assoc=([k]=v)
+pp line (assoc or 'zz')
+
+## STDOUT:
 (BashArray)   ["1","2","3"]
 (BashAssoc)   {"k":"v"}
 ## END

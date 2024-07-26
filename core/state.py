@@ -731,9 +731,10 @@ class _ArgFrame(object):
 
     def Dump(self):
         # type: () -> Dict[str, value_t]
+        items = [value.Str(s) for s in self.argv]  # type: List[value_t]
+        argv = value.List(items)
         return {
-            # Easier to serialize value.BashArray than value.List
-            'argv': value.BashArray(self.argv),
+            'argv': argv,
             'num_shifted': num.ToBig(self.num_shifted),
         }
 

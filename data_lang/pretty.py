@@ -431,11 +431,11 @@ class _DocConstructor:
 
         # These can be configurable later
         self.number_style = ansi.YELLOW
-        self.null_style = ansi.BOLD + ansi.RED
-        self.bool_style = ansi.BOLD + ansi.BLUE
+        self.null_style = ansi.BOLD
+        self.bool_style = ansi.YELLOW
         self.string_style = ansi.GREEN
-        self.cycle_style = ansi.BOLD + ansi.MAGENTA
-        self.type_style = ansi.CYAN
+        self.cycle_style = ansi.BOLD + ansi.BLUE
+        self.type_style = ansi.MAGENTA
 
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
@@ -445,7 +445,8 @@ class _DocConstructor:
             # These JSON-like types have a special notation, so print type
             # explicitly
             if TypeNotPrinted(val):
-                mdocs = [_Text("(" + ValType(val) + ")"), _Break("   ")]
+                type_name = self._Styled(self.type_style, _Text(ValType(val)))
+                mdocs = [_Text("("), type_name, _Text(")"), _Break("   ")]
             else:
                 mdocs = []
 
@@ -760,10 +761,9 @@ class _DocConstructor:
                 return self._BashAssoc(vassoc)
 
             else:
-                ysh_type = ValType(val)
+                type_name = self._Styled(self.type_style, _Text(ValType(val)))
                 id_str = j8.ValueIdString(val)
-                return self._Styled(self.type_style,
-                                    _Text("<" + ysh_type + id_str + ">"))
+                return _Concat([_Text("<"), type_name, _Text(id_str + ">")])
 
 
 # vim: sw=4
