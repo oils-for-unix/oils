@@ -128,8 +128,8 @@ class Pp(_Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            if pretty.TypeNotPrinted(val) or val.tag() in (value_e.BashArray,
-                                                           value_e.BashAssoc):
+            if pretty.TypeNotPrinted(val) or val.tag() in (
+                    value_e.BashAssoc, ):
                 ysh_type = ui.ValType(val)
                 self.stdout_.write('(%s)   ' % ysh_type)
 

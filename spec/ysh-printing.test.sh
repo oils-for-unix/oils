@@ -107,11 +107,11 @@ pp line ({k: array_1})
 (Dict)   {k: (BashArray)}
 (Dict)   {k: (BashArray 'hello')}
 
-(BashArray)   []
-(BashArray)   ["hello"]
+{"type":"BashArray","value":{}}
+{"type":"BashArray","value":{"0":"hello"}}
 
-(Dict)   {"k":[]}
-(Dict)   {"k":["hello"]}
+(Dict)   {"k":{"type":"BashArray","value":{}}}
+(Dict)   {"k":{"type":"BashArray","value":{"0":"hello"}}}
 ## END
 
 #### BashArray, long

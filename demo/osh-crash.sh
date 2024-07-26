@@ -8,7 +8,10 @@ set -o pipefail
 set -o errexit
 
 g() {
-  local g=1
+  readonly g=1
+  readonly -a bash_array=(a b)
+  bash_array[5]=z
+
   echo foo > $bar
 }
 

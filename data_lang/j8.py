@@ -448,23 +448,50 @@ class InstancePrinter(object):
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
 
-                self.buf.write('[')
+                self.buf.write('{')
                 self._MaybeNewline()
+                self._ItemIndent(level)
+                self.buf.write('"type":')
+                self._MaybeSpace()
+                self.buf.write('"BashArray",')
+
+                self._MaybeNewline()
+
+                self._ItemIndent(level)
+                self.buf.write('"value":')
+                self._MaybeSpace()
+                self.buf.write('{')
+                self._MaybeNewline()
+
+                level += 1
+                first = True
                 for i, s in enumerate(val.strs):
-                    if i != 0:
+                    if s is None:
+                        continue
+
+                    if not first:
                         self.buf.write(',')
                         self._MaybeNewline()
 
                     self._ItemIndent(level)
-                    if s is None:
-                        self.buf.write('null')
-                    else:
-                        pyj8.WriteString(s, self.options, self.buf)
+
+                    pyj8.WriteString(str(i), self.options, self.buf)
+                    self.buf.write(':')
+                    self._MaybeSpace()
+
+                    pyj8.WriteString(s, self.options, self.buf)
+
+                    first = False
 
                 self._MaybeNewline()
 
                 self._BracketIndent(level)
-                self.buf.write(']')
+                self.buf.write('}')
+
+                level -= 1
+                self._MaybeNewline()
+                self._BracketIndent(level)
+                self.buf.write('}')
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)

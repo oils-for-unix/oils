@@ -152,8 +152,8 @@ assoc['k3']=
 pp line (assoc)
 
 ## STDOUT:
-(BashArray)   ["a","b","c"]
-(BashArray)   ["a","b","c",null,null,"z"]
+{"type":"BashArray","value":{"0":"a","1":"b","2":"c"}}
+{"type":"BashArray","value":{"0":"a","1":"b","2":"c","5":"z"}}
 (BashAssoc)   {"k":"v","k2":"v2"}
 (BashAssoc)   {"k":"v","k2":"v2","k3":""}
 ## END
