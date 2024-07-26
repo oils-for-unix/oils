@@ -569,34 +569,6 @@ class BashArrayToSparse(vm._Callable):
         return value.SparseArray(d, max_index)
 
 
-class DictToSparse(vm._Callable):
-    """
-    value.Dict -> value.SparseArray, for testing
-    """
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        d = rd.PosDict()
-        rd.Done()
-
-        blame_tok = rd.LeftParenToken()
-
-        mydict = {}  # type: Dict[mops.BigInt, str]
-        for k, v in iteritems(d):
-            i = mops.FromStr(k)
-            s = val_ops.ToStr(v, 'expected str', blame_tok)
-
-            mydict[i] = s
-
-        max_index = mops.MINUS_ONE  # TODO:
-        return value.SparseArray(mydict, max_index)
-
-
 class SparseOp(vm._Callable):
     """
     All ops on value.SparseArray, for testing performance

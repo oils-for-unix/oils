@@ -868,7 +868,6 @@ def Main(
 
     # Demos
     _SetGlobalFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
-    _SetGlobalFunc(mem, '_d2sp', func_misc.DictToSparse())
     _SetGlobalFunc(mem, '_opsp', func_misc.SparseOp())
 
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
