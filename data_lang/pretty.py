@@ -445,13 +445,12 @@ class _DocConstructor:
             # These JSON-like types have a special notation, so print type
             # explicitly
             if TypeNotPrinted(val):
-                ysh_type = ValType(val)
-                maybe_type = [_Text("(" + ysh_type + ")"), _Break("   ")]
+                mdocs = [_Text("(" + ValType(val) + ")"), _Break("   ")]
             else:
-                maybe_type = []
+                mdocs = []
 
-            return _Group(
-                _Concat(maybe_type + [self._Value(val, type_shown=True)]))
+            mdocs.append(self._Value(val))
+            return _Group(_Concat(mdocs))
         else:
             return self._Value(val)
 
@@ -690,8 +689,8 @@ class _DocConstructor:
         return self._SurroundedAndPrefixed("(", type_name, " ",
                                            self._Join(mdocs, "", " "), ")")
 
-    def _Value(self, val, type_shown=False):
-        # type: (value_t, bool) -> MeasuredDoc
+    def _Value(self, val):
+        # type: (value_t) -> MeasuredDoc
 
         with tagswitch(val) as case:
             if case(value_e.Null):
