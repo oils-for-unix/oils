@@ -270,6 +270,7 @@ void BufWriter::write(BigStr* s) {
 }
 
 void BufWriter::write_spaces(int n) {
+  DCHECK(n >= 0);
   if (n == 0) {
     return;
   }

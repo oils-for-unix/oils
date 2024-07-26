@@ -340,7 +340,6 @@ class InstancePrinter(object):
 
     def _PrintBashSuffix(self, level):
         # type: (int) -> None
-        level -= 1
         self._MaybeNewline()
         self._BracketIndent(level)
         self.buf.write('}')
@@ -356,7 +355,6 @@ class InstancePrinter(object):
             self.buf.write('{')
             self._MaybeNewline()
 
-            level += 1
             first = True
             for i, s in enumerate(val.strs):
                 if s is None:
@@ -366,9 +364,9 @@ class InstancePrinter(object):
                     self.buf.write(',')
                     self._MaybeNewline()
 
-                self._ItemIndent(level)
-
+                self._ItemIndent(level + 1)
                 pyj8.WriteString(str(i), self.options, self.buf)
+
                 self.buf.write(':')
                 self._MaybeSpace()
 
@@ -378,7 +376,7 @@ class InstancePrinter(object):
 
             self._MaybeNewline()
 
-            self._BracketIndent(level)
+            self._BracketIndent(level + 1)
             self.buf.write('}')
 
         self._PrintBashSuffix(level)
@@ -394,15 +392,13 @@ class InstancePrinter(object):
             self.buf.write('{')
             self._MaybeNewline()
 
-            level += 1
             i = 0
             for k2, v2 in iteritems(val.d):
                 if i != 0:
                     self.buf.write(',')
                     self._MaybeNewline()
 
-                self._ItemIndent(level)
-
+                self._ItemIndent(level + 1)
                 pyj8.WriteString(k2, self.options, self.buf)
 
                 self.buf.write(':')
@@ -414,7 +410,7 @@ class InstancePrinter(object):
 
             self._MaybeNewline()
 
-            self._BracketIndent(level)
+            self._BracketIndent(level + 1)
             self.buf.write('}')
 
         self._PrintBashSuffix(level)
