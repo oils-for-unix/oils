@@ -416,7 +416,7 @@ class PrettyPrinter(object):
 
 
 class _DocConstructor:
-    """Converts Oil values into `doc`s, which can then be pretty printed."""
+    """Converts Oils values into `doc`s, which can then be pretty printed."""
 
     def __init__(self, indent, use_styles, show_type_prefix, max_tabular_width,
                  ysh_style):
@@ -430,9 +430,10 @@ class _DocConstructor:
         self.visiting = {}  # type: Dict[int, bool]
 
         # These can be configurable later
-        self.number_style = ansi.YELLOW
-        self.null_style = ansi.BOLD
-        self.bool_style = ansi.YELLOW
+        self.int_style = ansi.YELLOW
+        self.float_style = ansi.BLUE
+        self.null_style = ansi.RED
+        self.bool_style = ansi.CYAN
         self.string_style = ansi.GREEN
         self.cycle_style = ansi.BOLD + ansi.BLUE
         self.type_style = ansi.MAGENTA
@@ -704,11 +705,11 @@ class _DocConstructor:
 
             elif case(value_e.Int):
                 i = cast(value.Int, val).i
-                return self._Styled(self.number_style, _Text(mops.ToStr(i)))
+                return self._Styled(self.int_style, _Text(mops.ToStr(i)))
 
             elif case(value_e.Float):
                 f = cast(value.Float, val).f
-                return self._Styled(self.number_style, _Text(_FloatString(f)))
+                return self._Styled(self.float_style, _Text(_FloatString(f)))
 
             elif case(value_e.Str):
                 s = cast(value.Str, val).s

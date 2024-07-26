@@ -98,9 +98,9 @@ class PrettyTest(unittest.TestCase):
     def testStyles(self):
         self.printer.SetUseStyles(True)
         self.assertPretty(
-            20, '[null, "ok", 15]', '(List)\n[' + ansi.BOLD + ansi.RED +
-            'null' + ansi.RESET + ", " + ansi.GREEN + "'ok'" + ansi.RESET +
-            ", " + ansi.YELLOW + '15' + ansi.RESET + ']')
+            20, '[null, "ok", 15]', '(' + ansi.MAGENTA + 'List' + ansi.RESET +
+            ')\n[' + ansi.RED + 'null' + ansi.RESET + ", " + ansi.GREEN +
+            "'ok'" + ansi.RESET + ", " + ansi.YELLOW + '15' + ansi.RESET + ']')
 
     def testTypePrefix(self):
         self.assertPretty(25, '[null, "ok", 15]', "(List)   [null, 'ok', 15]")
