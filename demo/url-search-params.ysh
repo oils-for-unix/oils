@@ -35,7 +35,7 @@
 # - need assert [x] for testing
 # - task files need completion
 #
-# - Eggex can use multiline /// syntax
+# - Eggex can use multiline /// syntax, though you can use \ for line continuation
 # - Eggex could use "which" match
 # - m=>group('lit') sorta bothers me, it should be 
 #   - m.group('lit')
@@ -52,13 +52,6 @@
 source $LIB_OSH/task-five.sh
 #source $LIB_YSH/yblocks.ysh
 
-proc _check (; val) {  # TODO: assert
-  if (not val) {
-    pp line (val)
-    error "Failed: $val"
-  }
-}
-
 func strFromTwoHex(two_hex) {
   var result
   # TODO: provide alternative to old OSH style!
@@ -72,7 +65,11 @@ func strFromTwoHex(two_hex) {
 
 const Hex = / [0-9 a-f A-F] /
 
-const Quoted = / <capture !['%+']+ as lit> | <capture '+' as plus> | '%' <capture Hex Hex as two_hex> /
+const Quoted = / \
+    <capture !['%+']+ as lit> \
+  | <capture '+' as plus> \
+  | '%' <capture Hex Hex as two_hex> \
+  /
 
 func unquote (s) {
   ### Turn strings with %20 into space, etc.
@@ -144,12 +141,16 @@ proc test-part() {
   #_check ('foo bar' === unquote('foo+bar'))
 
   for s in (PART_CASES) {
-    js-decode-part $s | json read
+    js-decode-part $s | json read (&js)
     echo 'JS'
-    pp line (_reply)
+    pp line (js)
 
     echo 'YSH'
-    = unquote(s)
+    var y = unquote(s)
+    pp line (y)
+
+    assert [y === js]
+
     echo
     #break
   }
@@ -228,9 +229,6 @@ const QUERY_CASES = [
   'k=v&foo%23=bar+baz+%24%25&k=v',
   'foo+bar=z',
 
-  # JavaScript converts %ff to the Unicode replacement char - its strings can't represent bytes
-  'foo%ffbar=z',
-
   'missing_val=&k=',
 
   '=missing_key&=m2',
@@ -239,28 +237,36 @@ const QUERY_CASES = [
   '=&=',
   '=&=&',
 
-  # JavaScript treats = as literal - that seems wrong
-  # YSH treating this as an error seems right
-  #'==',
 ]
 
-proc test-query() {
-  #_check ('foo bar' === unquote('foo+bar'))
+const OTHER_CASES = [
 
+  # JavaScript converts %ff to the Unicode replacement char - its strings can't represent bytes
+  'foo%ffbar=z',
+
+  # JavaScript treats = as literal - that seems wrong
+  # YSH treating this as an error seems right
+  '==',
+]
+
+
+proc test-query() {
   for s in (QUERY_CASES) {
+  #for s in (OTHER_CASES) {
     echo 'INPUT'
     echo "  $s"
 
-    js-decode-query $s | json read
+    js-decode-query $s | json read (&js)
     echo 'JS'
-    pp line (_reply)
+    pp line (js)
 
     echo 'YSH'
     var pairs = URLSearchParams(s)
     pp line (pairs)
 
+    assert [pairs === js]
+
     echo
-    #break
   }
 }
 

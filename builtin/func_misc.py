@@ -443,27 +443,6 @@ class GetVar(vm._Callable):
         return state.DynamicGetVar(self.mem, name, scope_e.LocalOrGlobal)
 
 
-class Assert(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        val = rd.PosValue()
-
-        msg = rd.OptionalStr(default_='')
-
-        rd.Done()
-
-        if not val_ops.ToBool(val):
-            raise error.AssertionErr(msg, rd.LeftParenToken())
-
-        return value.Null
-
-
 class EvalExpr(vm._Callable):
 
     def __init__(self, expr_ev):

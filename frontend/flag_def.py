@@ -437,6 +437,7 @@ ERROR_SPEC = FlagSpec('error')
 FAILED_SPEC = FlagSpec('failed')
 
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
+ASSERT_SPEC = FlagSpec('assert')
 
 # Future directions:
 # run --builtin, run --command, run --proc:

@@ -616,6 +616,7 @@ def Main(
     b[builtin_i.boolstatus] = error_ysh.BoolStatus(shell_ex, errfmt)
     b[builtin_i.try_] = error_ysh.Try(mutable_opts, mem, cmd_ev, shell_ex,
                                       errfmt)
+    b[builtin_i.assert_] = error_ysh.Assert(expr_ev, errfmt)
 
     # Pure builtins
     true_ = pure_osh.Boolean(0)
@@ -857,7 +858,6 @@ def Main(
 
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'getVar', func_misc.GetVar(mem))
-    _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
     # Serialize
     _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))

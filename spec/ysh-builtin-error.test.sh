@@ -261,4 +261,153 @@ ok 2
 ## END
 
 
+#### assert on values
 
+try {
+  $SH -c '
+  assert (true)
+  echo passed
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  func f() { return (false) }
+
+  assert (f())
+  echo "unreachable"
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert (null)
+  echo "unreachable"
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  func f() { return (false) }
+
+  assert (true === f())
+  echo "unreachable"
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert (42 === 42)
+  echo passed
+  '
+}
+echo code $[_error.code]
+echo
+
+## STDOUT:
+passed
+code 0
+
+code 3
+
+code 3
+
+code 3
+
+passed
+code 0
+
+## END
+
+
+#### assert on expressions
+
+try {
+  $SH -c '
+  assert [true]
+  echo passed
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  func f() { return (false) }
+
+  assert [f()]
+  echo "unreachable"
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert [null]
+  echo "unreachable"
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  func f() { return (false) }
+
+  assert [true === f()]
+  echo "unreachable"
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert [42 === 42]
+  echo passed
+  '
+}
+echo code $[_error.code]
+echo
+
+## STDOUT:
+passed
+code 0
+
+code 3
+
+code 3
+
+code 3
+
+passed
+code 0
+
+## END
+
+
+#### assert on chained comparison expression is not special
+
+try {
+  $SH -c '
+  #pp line (42 === 42 === 43)
+  assert [42 === 42 === 43]
+  echo unreachable
+  '
+}
+echo code $[_error.code]
+echo
+
+## STDOUT:
+code 3
+
+## END

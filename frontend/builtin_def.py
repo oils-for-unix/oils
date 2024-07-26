@@ -127,6 +127,7 @@ def _Init(b):
     b.Add('true', enum_name='true_')  # C++ Keywords
     b.Add('false', enum_name='false_')
     b.Add('try', enum_name='try_')
+    b.Add('assert', enum_name='assert_')  # avoid Python keyword
 
     for name in _NORMAL_BUILTINS:
         b.Add(name)

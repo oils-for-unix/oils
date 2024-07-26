@@ -155,6 +155,27 @@ Runs a command, and requires the exit code to be 0 or 1.
 It's meant for external commands that "return" more than 2 values, like true /
 false / fail, rather than pass / fail.
 
+### assert
+
+Evaluates and expression, and fails if it is not truthy.
+
+    assert (false)   # fails
+    assert [false]   # also fails (the expression is evaluated)
+
+It's common to pass an unevaluated expression with `===`:
+
+    func f() { return (42) }
+
+    assert [43 === f()]
+
+In this special case, you get a nicer error message:
+
+> Expected: 43
+> Got:      42
+
+That is, the left-hand side should be the expected value, and the right-hand
+side should be the actual value.
+
 ## Shell State
 
 ### ysh-cd

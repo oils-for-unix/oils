@@ -184,11 +184,22 @@ def PrintLine(val, f):
     # error.Encode should be impossible - we show cycles and non-data
     buf = mylib.BufWriter()
 
-    # TODO: Omit type at top level
     _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
 
     f.write(buf.getvalue())
     f.write('\n')
+
+
+def Repr(val):
+    # type: (value_t) -> str
+    """ For assert [x]
+
+    This is like Python's repr
+    """
+    # error.Encode should be impossible - we show cycles and non-data
+    buf = mylib.BufWriter()
+    _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
+    return buf.getvalue()
 
 
 def EncodeString(s, buf, unquoted_ok=False):

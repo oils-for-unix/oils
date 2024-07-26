@@ -1,8 +1,9 @@
 from __future__ import print_function
 
 from _devbuild.gen.option_asdl import option_i
+from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
-from _devbuild.gen.syntax_asdl import loc
+from _devbuild.gen.syntax_asdl import loc, loc_t, expr, expr_e
 from _devbuild.gen.value_asdl import value, value_e
 from core import error
 from core.error import e_die_status, e_usage
@@ -10,10 +11,12 @@ from core import executor
 from core import num
 from core import state
 from core import vm
+from data_lang import j8
 from frontend import flag_util
 from frontend import typed_args
 from mycpp import mops
 from mycpp.mylib import tagswitch, log
+from ysh import val_ops
 
 _ = log
 
@@ -21,6 +24,7 @@ from typing import Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from core import ui
     from osh import cmd_eval
+    from ysh import expr_eval
 
 
 class ctx_Try(object):
@@ -222,3 +226,76 @@ class BoolStatus(vm._Builtin):
                          locs[0])
 
         return status
+
+
+class Assert(vm._Builtin):
+
+    def __init__(self, expr_ev, errfmt):
+        # type: (expr_eval.ExprEvaluator, ui.ErrorFormatter) -> None
+        self.expr_ev = expr_ev
+        self.errfmt = errfmt
+
+    def _AssertComparison(self, exp, blame_loc):
+        # type: (expr.Compare, loc_t) -> None
+
+        # We checked exp.ops
+        assert len(exp.comparators) == 1, exp.comparators
+
+        expected = self.expr_ev.EvalExpr(exp.left, loc.Missing)
+        actual = self.expr_ev.EvalExpr(exp.comparators[0], loc.Missing)
+
+        if not val_ops.ExactlyEqual(expected, actual, blame_loc):
+            self.errfmt.StderrLine('')
+            self.errfmt.StderrLine('  Expected: %s' % j8.Repr(expected))
+            self.errfmt.StderrLine('  Got:      %s' % j8.Repr(actual))
+
+            raise error.Expr("Not equal", exp.ops[0])
+
+    def _AssertExpression(self, val, blame_loc):
+        # type: (value.Expr, loc_t) -> None
+
+        # Special case for assert [true === f()]
+        exp = val.e
+        UP_exp = exp
+        with tagswitch(exp) as case:
+            if case(expr_e.Compare):
+                exp = cast(expr.Compare, UP_exp)
+
+                # Only assert [x === y] is treated as special
+                # Not  assert [x === y === z]
+                if len(exp.ops) == 1:
+                    id_ = exp.ops[0].id
+                    if id_ == Id.Expr_TEqual:
+                        self._AssertComparison(exp, blame_loc)
+                        return
+
+        # Any other expression
+        result = self.expr_ev.EvalExpr(val.e, blame_loc)
+        b = val_ops.ToBool(result)
+        if not b:
+            s = j8.Repr(result)
+            raise error.Expr('Assertion (of expr) %s' % s, blame_loc)
+
+    def Run(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+
+        _, arg_r = flag_util.ParseCmdVal('assert',
+                                         cmd_val,
+                                         accept_typed_args=True)
+
+        rd = typed_args.ReaderForProc(cmd_val)
+        val = rd.PosValue()
+        rd.Done()
+
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.Expr):  # Destructured assert [true === f()]
+                val = cast(value.Expr, UP_val)
+                self._AssertExpression(val, rd.LeftParenToken())
+            else:
+                b = val_ops.ToBool(val)
+                if not b:
+                    raise error.Expr('Assert: %s' % j8.Repr(val),
+                                     rd.LeftParenToken())
+
+        return 0

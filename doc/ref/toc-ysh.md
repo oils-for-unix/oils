@@ -110,6 +110,7 @@ X [Wok]           _field()
                   try                    Run with errexit, set _error
                   failed                 Test if _error.code !== 0
                   boolstatus             Enforce 0 or 1 exit status
+                  assert                 assert [42 === f(x)]
   [Shell State]   ysh-cd       ysh-shopt compatible, and takes a block
                   shvar                  Temporary modify global settings
                   ctx                    Share and update a temporary "context"
@@ -128,7 +129,6 @@ X [Wok]           _field()
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
                   json8                  read write
-X [Testing]       assert                 takes an expression
 ```
 
 <h2 id="stdlib">
