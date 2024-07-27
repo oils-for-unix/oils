@@ -56,12 +56,13 @@ GLOBAL_STR(str47, "\u001b[33m");
 GLOBAL_STR(str48, "\u001b[34m");
 GLOBAL_STR(str49, "\u001b[35m");
 GLOBAL_STR(str50, "\u001b[36m");
-GLOBAL_STR(str51, "&");
-GLOBAL_STR(str52, "&amp;");
-GLOBAL_STR(str53, "<");
-GLOBAL_STR(str54, "&lt;");
-GLOBAL_STR(str55, ">");
-GLOBAL_STR(str56, "&gt;");
+GLOBAL_STR(str51, "\u001b[37m");
+GLOBAL_STR(str52, "&");
+GLOBAL_STR(str53, "&amp;");
+GLOBAL_STR(str54, "<");
+GLOBAL_STR(str55, "&lt;");
+GLOBAL_STR(str56, ">");
+GLOBAL_STR(str57, "&gt;");
 
 namespace ansi {  // forward declare
 
@@ -90,7 +91,7 @@ extern BigStr* YELLOW;
 extern BigStr* BLUE;
 extern BigStr* MAGENTA;
 extern BigStr* CYAN;
-
+extern BigStr* WHITE;
 
 }  // declare namespace ansi
 
@@ -98,16 +99,15 @@ namespace cgi {  // declare
 
 BigStr* escape(BigStr* s);
 
-
 }  // declare namespace cgi
 
 namespace j8_lite {  // declare
 
 BigStr* EncodeString(BigStr* s, bool unquoted_ok = false);
+BigStr* YshEncodeString(BigStr* s);
 BigStr* MaybeShellEncode(BigStr* s);
 BigStr* ShellEncode(BigStr* s);
 BigStr* YshEncode(BigStr* s, bool unquoted_ok = false);
-
 
 }  // declare namespace j8_lite
 
@@ -220,7 +220,7 @@ Tuple2<BigStr*, int> ColorOutput::GetRaw() {
   return Tuple2<BigStr*, int>(f->getvalue(), this->num_chars);
 }
 
-TextOutput::TextOutput(mylib::Writer* f) : ColorOutput(f) {
+TextOutput::TextOutput(mylib::Writer* f) : ::format::ColorOutput(f) {
 }
 
 format::TextOutput* TextOutput::NewTempBuffer() {
@@ -235,7 +235,7 @@ void TextOutput::PopColor() {
   ;  // pass
 }
 
-HtmlOutput::HtmlOutput(mylib::Writer* f) : ColorOutput(f) {
+HtmlOutput::HtmlOutput(mylib::Writer* f) : ::format::ColorOutput(f) {
 }
 
 format::HtmlOutput* HtmlOutput::NewTempBuffer() {
@@ -294,7 +294,7 @@ void HtmlOutput::write(BigStr* s) {
   this->num_chars += len(s);
 }
 
-AnsiOutput::AnsiOutput(mylib::Writer* f) : ColorOutput(f) {
+AnsiOutput::AnsiOutput(mylib::Writer* f) : ::format::ColorOutput(f) {
 }
 
 format::AnsiOutput* AnsiOutput::NewTempBuffer() {
@@ -718,6 +718,7 @@ BigStr* YELLOW = str47;
 BigStr* BLUE = str48;
 BigStr* MAGENTA = str49;
 BigStr* CYAN = str50;
+BigStr* WHITE = str51;
 
 }  // define namespace ansi
 
@@ -727,9 +728,9 @@ namespace cgi {  // define
 BigStr* escape(BigStr* s) {
   StackRoot _root0(&s);
 
-  s = s->replace(str51, str52);
-  s = s->replace(str53, str54);
-  s = s->replace(str55, str56);
+  s = s->replace(str52, str53);
+  s = s->replace(str54, str55);
+  s = s->replace(str56, str57);
   return s;
 }
 
@@ -745,6 +746,12 @@ BigStr* EncodeString(BigStr* s, bool unquoted_ok) {
     return s;
   }
   return fastfunc::J8EncodeString(s, 1);
+}
+
+BigStr* YshEncodeString(BigStr* s) {
+  StackRoot _root0(&s);
+
+  return fastfunc::ShellEncodeString(s, 1);
 }
 
 BigStr* MaybeShellEncode(BigStr* s) {

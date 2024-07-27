@@ -70,7 +70,6 @@ class TraversalState {
 extern BigStr* TRUE_STR;
 extern BigStr* FALSE_STR;
 
-
 }  // declare namespace runtime
 
 namespace format {  // declare
@@ -103,7 +102,7 @@ class ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
 
-class TextOutput : public ColorOutput {
+class TextOutput : public ::format::ColorOutput {
  public:
   TextOutput(mylib::Writer* f);
   virtual format::TextOutput* NewTempBuffer();
@@ -111,7 +110,7 @@ class TextOutput : public ColorOutput {
   virtual void PopColor();
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -121,7 +120,7 @@ class TextOutput : public ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(TextOutput)
 };
 
-class HtmlOutput : public ColorOutput {
+class HtmlOutput : public ::format::ColorOutput {
  public:
   HtmlOutput(mylib::Writer* f);
   virtual format::HtmlOutput* NewTempBuffer();
@@ -132,7 +131,7 @@ class HtmlOutput : public ColorOutput {
   virtual void write(BigStr* s);
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -142,7 +141,7 @@ class HtmlOutput : public ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(HtmlOutput)
 };
 
-class AnsiOutput : public ColorOutput {
+class AnsiOutput : public ::format::ColorOutput {
  public:
   AnsiOutput(mylib::Writer* f);
   virtual format::AnsiOutput* NewTempBuffer();
@@ -150,7 +149,7 @@ class AnsiOutput : public ColorOutput {
   virtual void PopColor();
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -180,7 +179,6 @@ class _PrettyPrinter {
 bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
-
 
 }  // declare namespace format
 
@@ -221,6 +219,7 @@ class Reader {
   List<BigStr*>* Rest();
   Tuple2<List<BigStr*>*, List<syntax_asdl::CompoundWord*>*> Rest2();
   bool AtEnd();
+  void Done();
   syntax_asdl::loc_t* _FirstLocation();
   syntax_asdl::loc_t* Location();
   List<BigStr*>* argv;
@@ -251,7 +250,7 @@ class _Action {
   DISALLOW_COPY_AND_ASSIGN(_Action)
 };
 
-class _ArgAction : public _Action {
+class _ArgAction : public ::args::_Action {
  public:
   _ArgAction(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid = nullptr);
   virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
@@ -262,7 +261,7 @@ class _ArgAction : public _Action {
   List<BigStr*>* valid;
   
   static constexpr uint32_t field_mask() {
-    return _Action::field_mask()
+    return ::args::_Action::field_mask()
          | maskbit(offsetof(_ArgAction, name))
          | maskbit(offsetof(_ArgAction, valid));
   }
@@ -274,13 +273,13 @@ class _ArgAction : public _Action {
   DISALLOW_COPY_AND_ASSIGN(_ArgAction)
 };
 
-class SetToInt : public _ArgAction {
+class SetToInt : public ::args::_ArgAction {
  public:
   SetToInt(BigStr* name);
   virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return _ArgAction::field_mask();
+    return ::args::_ArgAction::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -290,13 +289,13 @@ class SetToInt : public _ArgAction {
   DISALLOW_COPY_AND_ASSIGN(SetToInt)
 };
 
-class SetToFloat : public _ArgAction {
+class SetToFloat : public ::args::_ArgAction {
  public:
   SetToFloat(BigStr* name);
   virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return _ArgAction::field_mask();
+    return ::args::_ArgAction::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -306,13 +305,13 @@ class SetToFloat : public _ArgAction {
   DISALLOW_COPY_AND_ASSIGN(SetToFloat)
 };
 
-class SetToString : public _ArgAction {
+class SetToString : public ::args::_ArgAction {
  public:
   SetToString(BigStr* name, bool quit_parsing_flags, List<BigStr*>* valid = nullptr);
   virtual value_asdl::value_t* _Value(BigStr* arg, syntax_asdl::loc_t* location);
   
   static constexpr uint32_t field_mask() {
-    return _ArgAction::field_mask();
+    return ::args::_ArgAction::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -322,7 +321,7 @@ class SetToString : public _ArgAction {
   DISALLOW_COPY_AND_ASSIGN(SetToString)
 };
 
-class SetAttachedBool : public _Action {
+class SetAttachedBool : public ::args::_Action {
  public:
   SetAttachedBool(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
@@ -330,7 +329,7 @@ class SetAttachedBool : public _Action {
   BigStr* name;
   
   static constexpr uint32_t field_mask() {
-    return _Action::field_mask()
+    return ::args::_Action::field_mask()
          | maskbit(offsetof(SetAttachedBool, name));
   }
 
@@ -341,7 +340,7 @@ class SetAttachedBool : public _Action {
   DISALLOW_COPY_AND_ASSIGN(SetAttachedBool)
 };
 
-class SetToTrue : public _Action {
+class SetToTrue : public ::args::_Action {
  public:
   SetToTrue(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
@@ -349,7 +348,7 @@ class SetToTrue : public _Action {
   BigStr* name;
   
   static constexpr uint32_t field_mask() {
-    return _Action::field_mask()
+    return ::args::_Action::field_mask()
          | maskbit(offsetof(SetToTrue, name));
   }
 
@@ -360,7 +359,7 @@ class SetToTrue : public _Action {
   DISALLOW_COPY_AND_ASSIGN(SetToTrue)
 };
 
-class SetOption : public _Action {
+class SetOption : public ::args::_Action {
  public:
   SetOption(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
@@ -368,7 +367,7 @@ class SetOption : public _Action {
   BigStr* name;
   
   static constexpr uint32_t field_mask() {
-    return _Action::field_mask()
+    return ::args::_Action::field_mask()
          | maskbit(offsetof(SetOption, name));
   }
 
@@ -379,7 +378,7 @@ class SetOption : public _Action {
   DISALLOW_COPY_AND_ASSIGN(SetOption)
 };
 
-class SetNamedOption : public _Action {
+class SetNamedOption : public ::args::_Action {
  public:
   SetNamedOption(bool shopt = false);
   void ArgName(BigStr* name);
@@ -389,7 +388,7 @@ class SetNamedOption : public _Action {
   bool shopt;
   
   static constexpr uint32_t field_mask() {
-    return _Action::field_mask()
+    return ::args::_Action::field_mask()
          | maskbit(offsetof(SetNamedOption, names));
   }
 
@@ -400,7 +399,7 @@ class SetNamedOption : public _Action {
   DISALLOW_COPY_AND_ASSIGN(SetNamedOption)
 };
 
-class SetAction : public _Action {
+class SetAction : public ::args::_Action {
  public:
   SetAction(BigStr* name);
   virtual bool OnMatch(BigStr* attached_arg, args::Reader* arg_r, args::_Attributes* out);
@@ -408,7 +407,7 @@ class SetAction : public _Action {
   BigStr* name;
   
   static constexpr uint32_t field_mask() {
-    return _Action::field_mask()
+    return ::args::_Action::field_mask()
          | maskbit(offsetof(SetAction, name));
   }
 
@@ -419,7 +418,7 @@ class SetAction : public _Action {
   DISALLOW_COPY_AND_ASSIGN(SetAction)
 };
 
-class SetNamedAction : public _Action {
+class SetNamedAction : public ::args::_Action {
  public:
   SetNamedAction();
   void ArgName(BigStr* name);
@@ -428,7 +427,7 @@ class SetNamedAction : public _Action {
   List<BigStr*>* names;
   
   static constexpr uint32_t field_mask() {
-    return _Action::field_mask()
+    return ::args::_Action::field_mask()
          | maskbit(offsetof(SetNamedAction, names));
   }
 
@@ -442,7 +441,6 @@ class SetNamedAction : public _Action {
 args::_Attributes* Parse(flag_spec::_FlagSpec* spec, args::Reader* arg_r);
 args::_Attributes* ParseLikeEcho(flag_spec::_FlagSpec* spec, args::Reader* arg_r);
 args::_Attributes* ParseMore(flag_spec::_FlagSpecAndMore* spec, args::Reader* arg_r);
-
 
 }  // declare namespace args
 

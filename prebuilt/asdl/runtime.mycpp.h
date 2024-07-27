@@ -45,7 +45,6 @@ class TraversalState {
 extern BigStr* TRUE_STR;
 extern BigStr* FALSE_STR;
 
-
 }  // declare namespace runtime
 
 namespace format {  // declare
@@ -78,7 +77,7 @@ class ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(ColorOutput)
 };
 
-class TextOutput : public ColorOutput {
+class TextOutput : public ::format::ColorOutput {
  public:
   TextOutput(mylib::Writer* f);
   virtual format::TextOutput* NewTempBuffer();
@@ -86,7 +85,7 @@ class TextOutput : public ColorOutput {
   virtual void PopColor();
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -96,7 +95,7 @@ class TextOutput : public ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(TextOutput)
 };
 
-class HtmlOutput : public ColorOutput {
+class HtmlOutput : public ::format::ColorOutput {
  public:
   HtmlOutput(mylib::Writer* f);
   virtual format::HtmlOutput* NewTempBuffer();
@@ -107,7 +106,7 @@ class HtmlOutput : public ColorOutput {
   virtual void write(BigStr* s);
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -117,7 +116,7 @@ class HtmlOutput : public ColorOutput {
   DISALLOW_COPY_AND_ASSIGN(HtmlOutput)
 };
 
-class AnsiOutput : public ColorOutput {
+class AnsiOutput : public ::format::ColorOutput {
  public:
   AnsiOutput(mylib::Writer* f);
   virtual format::AnsiOutput* NewTempBuffer();
@@ -125,7 +124,7 @@ class AnsiOutput : public ColorOutput {
   virtual void PopColor();
   
   static constexpr uint32_t field_mask() {
-    return ColorOutput::field_mask();
+    return ::format::ColorOutput::field_mask();
   }
 
   static constexpr ObjHeader obj_header() {
@@ -155,7 +154,6 @@ class _PrettyPrinter {
 bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
-
 
 }  // declare namespace format
 
