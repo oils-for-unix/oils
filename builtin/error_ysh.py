@@ -263,18 +263,16 @@ class Assert(vm._Builtin):
 
                 # Only assert [x === y] is treated as special
                 # Not  assert [x === y === z]
-                if len(exp.ops) == 1:
-                    id_ = exp.ops[0].id
-                    if id_ == Id.Expr_TEqual:
-                        self._AssertComparison(exp, blame_loc)
-                        return
+                if len(exp.ops) == 1 and exp.ops[0].id == Id.Expr_TEqual:
+                    self._AssertComparison(exp, blame_loc)
+                    return
 
         # Any other expression
         result = self.expr_ev.EvalExpr(val.e, blame_loc)
         b = val_ops.ToBool(result)
         if not b:
             s = j8.Repr(result)
-            raise error.Expr('Assertion (of expr) %s' % s, blame_loc)
+            raise error.Expr("Expression isn't true: %s" % s, blame_loc)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -295,7 +293,7 @@ class Assert(vm._Builtin):
             else:
                 b = val_ops.ToBool(val)
                 if not b:
-                    raise error.Expr('Assert: %s' % j8.Repr(val),
+                    raise error.Expr("Value isn't true: %s" % j8.Repr(val),
                                      rd.LeftParenToken())
 
         return 0

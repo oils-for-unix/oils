@@ -533,7 +533,5 @@ def PrettyPrintValue(val, f):
     except (IOError, OSError):
         pass
 
-    buf = mylib.BufWriter()
-    printer.PrintValue(val, buf)
-    f.write(buf.getvalue())
+    printer.PrintValue(val, f)
     f.write('\n')

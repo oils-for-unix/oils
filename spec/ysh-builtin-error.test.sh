@@ -395,6 +395,34 @@ code 0
 ## END
 
 
+#### assert on expression that fails
+
+try {
+  $SH -c '
+  assert [NAN === 1/0]  # not true
+  echo unreachable
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert ["oof" === $(false)]
+  echo unreachable
+  '
+}
+echo code $[_error.code]
+echo
+
+
+## STDOUT:
+code 3
+
+code 1
+
+## END
+
 #### assert on chained comparison expression is not special
 
 try {
