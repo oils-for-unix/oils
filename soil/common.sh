@@ -20,7 +20,7 @@ dump-env() {
   env | grep -v '^encrypted_' | sort
 }
 
-if false; then
+if true; then
   readonly SOIL_USER='travis_admin'
   readonly SOIL_HOST='travis-ci.oilshell.org'
   readonly SOIL_HOST_DIR=~/travis-ci.oilshell.org  # used on server
