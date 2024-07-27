@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
 from __future__ import print_function
-"""ui_test.py: Tests for ui.py."""
 
 import unittest
 

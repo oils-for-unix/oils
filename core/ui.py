@@ -31,7 +31,7 @@ from mycpp.mylib import print_stderr, tagswitch, log
 from data_lang import j8_lite
 import libc
 
-from typing import List, Optional, Any, cast, TYPE_CHECKING
+from typing import List, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen import arg_types
     from core import error
@@ -259,13 +259,22 @@ def GetLineSourceString(line, quote_filename=False):
 
 def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     # type: (str, str, loc_t, bool) -> None
-    """Should we have multiple error formats:
+    """Print an error message attached to a location.
+
+    We may quote code this:
+
+        echo $foo
+             ^~~~
+        [ -c flag ]:1: Failed
+
+    Should we have multiple locations?
 
     - single line and verbose?
     - and turn on "stack" tracing?  For 'source' and more?
     """
     f = mylib.Stderr()
     if blame_loc.tag() == loc_e.TokenTooLong:
+        # test/spec.sh parse-errors shows this
         _PrintTokenTooLong(cast(loc.TokenTooLong, blame_loc), f)
         return
 
@@ -277,7 +286,7 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     orig_col = blame_tok.col
     src = blame_tok.line.src
     line = blame_tok.line.content
-    line_num = blame_tok.line.line_num  # overwritten by source__LValue case
+    line_num = blame_tok.line.line_num  # overwritten by source.Reparsed case
 
     if show_code:
         UP_src = src
@@ -324,7 +333,7 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
                 f.write('%s:%d\n' % (source_str, line_num))
                 f.write('\n')
 
-                # Now print OUTER location, with error message
+                # Recursive call: Print OUTER location, with error message
                 _PrintWithLocation(prefix, msg, src.location, show_code)
                 return
 
@@ -336,6 +345,23 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     # TODO: If the line is blank, it would be nice to print the last non-blank
     # line too?
     f.write('%s:%d: %s%s\n' % (source_str, line_num, prefix, msg))
+
+
+def CodeExcerptAndPrefix(blame_tok):
+    # type: (Token) -> Tuple[str, str]
+    """Return a string that quotes code, and a string location prefix.
+
+    Similar logic as _PrintWithLocation, except we know we have a token.
+    """
+    line = blame_tok.line
+
+    buf = mylib.BufWriter()
+    _PrintCodeExcerpt(line.content, blame_tok.col, blame_tok.length, buf)
+
+    source_str = GetLineSourceString(line, quote_filename=True)
+    prefix = '%s:%d: ' % (source_str, blame_tok.line.line_num)
+
+    return buf.getvalue(), prefix
 
 
 class ctx_Location(object):

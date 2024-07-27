@@ -646,7 +646,7 @@ def Main(
     b[builtin_i.fopen] = io_ysh.Fopen(mem, cmd_ev)
 
     # (pp output format isn't stable)
-    b[builtin_i.pp] = io_ysh.Pp(mem, errfmt, procs, arena)
+    b[builtin_i.pp] = io_ysh.Pp(expr_ev, mem, errfmt, procs, arena)
 
     # Input
     b[builtin_i.cat] = io_osh.Cat()  # for $(<file)

@@ -940,6 +940,23 @@ test-assert() {
   _ysh-expr-error 'assert [{k: list(3 .. 40)} === list(1 .. 50)]'
 }
 
+test-pp() {
+  _ysh-expr-error 'pp (42/0)'
+  _ysh-expr-error 'pp [42/0]'
+
+  _ysh-expr-error 'pp [5, 6]'
+
+  _ysh-should-run 'pp (42)'
+  _ysh-should-run 'var x = 42; pp (x)'
+  _ysh-should-run '
+var x = 42;
+pp [x]'
+
+  _ysh-should-run '
+var x = list(1 .. 50);
+pp [x]'
+}
+
 soil-run-py() {
   run-test-funcs
 }
