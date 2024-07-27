@@ -3,7 +3,7 @@ from __future__ import print_function
 
 from display import ansi
 from core import completion
-from data_lang import pretty
+from display import pretty
 import libc
 
 from mycpp import mylib

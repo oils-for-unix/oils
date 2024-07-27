@@ -19,7 +19,7 @@ filter-py() {
   grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py|NINJA_subgraph.py$'
 }
 
-readonly -a OSH_ASDL=( {frontend,core}/*.asdl )
+readonly -a OSH_ASDL=( {frontend,core,display}/*.asdl )
 
 oils-files() {
   # what's in the runtime

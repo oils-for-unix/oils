@@ -7,7 +7,7 @@ import unittest
 from display import ansi
 from display import ui
 from data_lang import j8
-from data_lang import pretty  # module under test
+from display import pretty  # module under test
 from mycpp import mylib
 from typing import Optional
 

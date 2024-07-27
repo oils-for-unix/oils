@@ -23,7 +23,7 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.value_asdl import value_e, value_t
 from asdl import format as fmt
-from data_lang import pretty
+from display import pretty
 from frontend import lexer
 from frontend import location
 from mycpp import mylib

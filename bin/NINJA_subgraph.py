@@ -107,7 +107,7 @@ def NinjaGraph(ru):
                          '//cpp/frontend_match',
                          '//cpp/frontend_pyreadline',
                          '//data_lang/nil8.asdl',
-                         '//data_lang/pretty.asdl',
+                         '//display/pretty.asdl',
                          '//frontend/arg_types',
                          '//frontend/consts',
                          '//frontend/help_meta',
