@@ -53,7 +53,6 @@ class PrettyTest(unittest.TestCase):
 
     def setUp(self):
         # Use settings that make testing easier.
-        self.printer = pretty.PrettyPrinter()
         self.encoder = pretty.ValueEncoder()
         self.encoder.SetUseStyles(False)
         self.encoder.SetYshStyle()
@@ -64,10 +63,11 @@ class PrettyTest(unittest.TestCase):
         val = parser.ParseValue()
 
         buf = mylib.BufWriter()
-        self.printer.SetMaxWidth(width)
 
         doc = self.encoder.Value(val)
-        self.printer.PrintDoc(doc, buf)
+
+        printer = pretty.PrettyPrinter(width)
+        printer.PrintDoc(doc, buf)
 
         actual = buf.getvalue()
         _PrintCase(actual, expected, lineno=lineno)

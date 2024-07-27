@@ -246,26 +246,15 @@ def _Flat(mdoc):
 # Pretty Printing #
 ###################
 
-_DEFAULT_MAX_WIDTH = 80
-
 
 class PrettyPrinter(object):
     """Pretty print an Oils value."""
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, max_width):
+        # type: (int) -> None
         """Construct a PrettyPrinter with default configuration options.
 
         Use the Set*() methods for configuration before printing."""
-        self.max_width = _DEFAULT_MAX_WIDTH
-
-    def SetMaxWidth(self, max_width):
-        # type: (int) -> None
-        """Set the maximum line width.
-
-        Pretty printing will attempt to (but does not guarantee to) fit the doc
-        within this width.
-        """
         self.max_width = max_width
 
     def _Fits(self, prefix_len, group, suffix_measure):

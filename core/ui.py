@@ -525,6 +525,18 @@ def TypeNotPrinted(val):
                          value_e.Float, value_e.Str, value_e.List,
                          value_e.Dict)
 
+def _GetMaxWidth():
+    # type: () -> int
+    max_width = 80  # default value
+    try:
+        width = libc.get_terminal_width()
+        if width > 0:
+            max_width = width
+    except (IOError, OSError):
+        pass  # leave at default
+
+    return max_width
+
 
 def PrettyPrintValue(val, f, max_width=-1):
     # type: (value_t, mylib.Writer, int) -> None
@@ -542,16 +554,10 @@ def PrettyPrintValue(val, f, max_width=-1):
     else:
         doc = encoder.Value(val)
 
-    printer = pretty.PrettyPrinter()
-    if max_width != -1:  # for testing
-        printer.SetMaxWidth(max_width)
-    else:
-        try:
-            width = libc.get_terminal_width()
-            if width > 0:
-                printer.SetMaxWidth(width)
-        except (IOError, OSError):
-            pass
+    if max_width == -1:
+        max_width = _GetMaxWidth()
+
+    printer = pretty.PrettyPrinter(max_width)
 
     buf = mylib.BufWriter()
     printer.PrintDoc(doc, buf)
