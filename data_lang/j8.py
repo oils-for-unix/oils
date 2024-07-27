@@ -190,16 +190,17 @@ def PrintLine(val, f):
     f.write('\n')
 
 
-def Repr(val):
-    # type: (value_t) -> str
-    """ For assert [x]
+if 0:
 
-    This is like Python's repr
-    """
-    # error.Encode should be impossible - we show cycles and non-data
-    buf = mylib.BufWriter()
-    _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
-    return buf.getvalue()
+    def Repr(val):
+        # type: (value_t) -> str
+        """ Unused
+        This is like Python's repr
+        """
+        # error.Encode should be impossible - we show cycles and non-data
+        buf = mylib.BufWriter()
+        _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
+        return buf.getvalue()
 
 
 def EncodeString(s, buf, unquoted_ok=False):

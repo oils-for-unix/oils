@@ -278,7 +278,7 @@ try {
 
   assert (f())
   echo "unreachable"
-  '
+  ' | grep -v Value
 }
 echo code $[_error.code]
 echo
@@ -287,7 +287,7 @@ try {
   $SH -c '
   assert (null)
   echo "unreachable"
-  '
+  ' | grep -v Value
 }
 echo code $[_error.code]
 echo
@@ -298,7 +298,7 @@ try {
 
   assert (true === f())
   echo "unreachable"
-  '
+  ' | grep -v Value
 }
 echo code $[_error.code]
 echo
@@ -316,9 +316,12 @@ echo
 passed
 code 0
 
-code 3
 
 code 3
+
+
+code 3
+
 
 code 3
 
@@ -365,7 +368,7 @@ try {
 
   assert [true === f()]
   echo "unreachable"
-  '
+  ' | grep -v '(Bool)'
 }
 echo code $[_error.code]
 echo
@@ -386,6 +389,7 @@ code 0
 code 3
 
 code 3
+
 
 code 3
 

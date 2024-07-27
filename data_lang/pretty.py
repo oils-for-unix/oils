@@ -393,7 +393,15 @@ class ValueEncoder:
         # type: (str) -> List[MeasuredDoc]
         """Return docs for type string "(List)", which may break afterward."""
         type_name = self._Styled(self.type_style, _Text(type_str))
-        mdocs = [_Text("("), type_name, _Text(")"), _Break("   ")]
+
+        n = len(type_str)
+        # Our maximum string is "Float"
+        assert n <= 5, type_str
+
+        # Start printing in column 8.   Adjust to 6 because () takes 2 spaces.
+        spaces = ' ' * (6 - n)
+
+        mdocs = [_Text("("), type_name, _Text(")"), _Break(spaces)]
         return mdocs
 
     def Value(self, val):

@@ -20,7 +20,6 @@ from mycpp import mylib
 from mycpp.mylib import tagswitch, log
 from ysh import val_ops
 
-
 _ = log
 
 from typing import Any, cast, TYPE_CHECKING
@@ -277,8 +276,10 @@ class Assert(vm._Builtin):
         result = self.expr_ev.EvalExpr(val.e, blame_loc)
         b = val_ops.ToBool(result)
         if not b:
-            s = j8.Repr(result)
-            raise error.Expr("Expression isn't true: %s" % s, blame_loc)
+            # Don't print the value for something like assert [x < 4]
+            #self.f.write('\n')
+            #ui.PrettyPrintValue("Expression isn't true: ", result, self.f)
+            raise error.Expr("Expression isn't true", blame_loc)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -299,7 +300,11 @@ class Assert(vm._Builtin):
             else:
                 b = val_ops.ToBool(val)
                 if not b:
-                    raise error.Expr("Value isn't true: %s" % j8.Repr(val),
-                                     rd.LeftParenToken())
+                    # assert (42 === null) should be written
+                    # assert [42 === null] to get a better error message
+                    # But show the value anyway
+                    self.f.write('\n')
+                    ui.PrettyPrintValue("Value isn't true: ", val, self.f)
+                    raise error.Expr('assertion', rd.LeftParenToken())
 
         return 0

@@ -2,22 +2,28 @@
 
 #### Int
 =  -123
-## stdout: (Int)   -123
+## STDOUT:
+(Int)   -123
+## END
 
 #### Float
 = -0.00
-## stdout: (Float)   -0.0
+## STDOUT:
+(Float) -0.0
+## END
 
 #### Null
 = null
-## stdout: (Null)   null
+## STDOUT:
+(Null)  null
+## END
 
 #### Bool
 =       true
 =       false
 ## STDOUT:
-(Bool)   true
-(Bool)   false
+(Bool)  true
+(Bool)  false
 ## END
 
 #### String
@@ -48,7 +54,7 @@ pp line ({k: x}) | remove-addr
 
 ## STDOUT:
 (Range 1 .. 100)
-(Dict)   {k: (Range 1 .. 100)}
+(Dict)  {k: (Range 1 .. 100)}
 
 <Range 0x--->
 (Dict)   {"k":<Range 0x--->}
@@ -75,7 +81,7 @@ pp line ({k: pat}) | remove-addr
 
 ## STDOUT:
 <Eggex 0x--->
-(Dict)   {k: <Eggex 0x--->}
+(Dict)  {k: <Eggex 0x--->}
 
 <Eggex 0x--->
 (Dict)   {"k":<Eggex 0x--->}
@@ -108,8 +114,8 @@ pp line ({k: array_1})
 (SparseArray)
 (SparseArray [0]='hello' [5]='5')
 
-(Dict)   {k: (SparseArray)}
-(Dict)   {k: (SparseArray [0]='hello' [5]='5')}
+(Dict)  {k: (SparseArray)}
+(Dict)  {k: (SparseArray [0]='hello' [5]='5')}
 
 {"type":"SparseArray","data":{}}
 {"type":"SparseArray","data":{"0":"hello","5":"5"}}
@@ -141,8 +147,8 @@ pp line ({k: array_1})
 (BashArray)
 (BashArray 'hello')
 
-(Dict)   {k: (BashArray)}
-(Dict)   {k: (BashArray 'hello')}
+(Dict)  {k: (BashArray)}
+(Dict)  {k: (BashArray 'hello')}
 
 {"type":"BashArray","data":{}}
 {"type":"BashArray","data":{"0":"hello"}}
@@ -191,8 +197,8 @@ pp line ({k:assoc})
 (BashAssoc)
 (BashAssoc ['k']=$'foo \u0001μ')
 
-(Dict)   {k: (BashAssoc)}
-(Dict)   {k: (BashAssoc ['k']=$'foo \u0001μ')}
+(Dict)  {k: (BashAssoc)}
+(Dict)  {k: (BashAssoc ['k']=$'foo \u0001μ')}
 
 {"type":"BashAssoc","data":{}}
 {"type":"BashAssoc","data":{"k":"foo \u0001μ"}}
@@ -231,8 +237,8 @@ setvar cyclic_dict["live_end"] = cyclic_dict
 = cyclic_array
 = cyclic_dict
 ## STDOUT:
-(List)   ['one', 'two', [...]]
-(Dict)   {dead_end: null, live_end: {...}}
+(List)  ['one', 'two', [...]]
+(Dict)  {dead_end: null, live_end: {...}}
 ## END
 
 #### Complex Cycles

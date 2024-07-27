@@ -139,7 +139,7 @@ nan is not nan
 pp line ([INFINITY, -INFINITY, NAN])
 
 ## STDOUT:
-(List)   [INFINITY, -INFINITY, NAN]
+(List)  [INFINITY, -INFINITY, NAN]
 (List)   [INFINITY,-INFINITY,NAN]
 ## END
 
