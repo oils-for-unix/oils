@@ -11,7 +11,7 @@ from asdl import format as fmt
 from core import error
 from core import state
 from core import test_lib
-from core import ui
+from display import ui
 from frontend import lexer
 
 from osh import word_

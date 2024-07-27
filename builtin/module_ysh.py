@@ -6,7 +6,7 @@ from _devbuild.gen.value_asdl import (value, value_e)
 
 from core import error
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import args
 from frontend import flag_util

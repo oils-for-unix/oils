@@ -4,7 +4,7 @@ from __future__ import print_function
 import unittest
 
 from core import test_lib
-from core import ui  # module under test
+from display import ui  # module under test
 
 
 class UiTest(unittest.TestCase):

@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (loc, arith_expr, arith_expr_e,
                                        arith_expr_t, word_e, word_t,
                                        CompoundWord, Token)
 from core.error import p_die
-from core import ui
+from display import ui
 from mycpp import mylib
 from mycpp.mylib import tagswitch
 from osh import word_

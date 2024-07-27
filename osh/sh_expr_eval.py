@@ -49,7 +49,7 @@ from core import error
 from core.error import e_die, e_die_status, e_strict, e_usage
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import lexer
@@ -69,7 +69,6 @@ from libc import FNM_CASEFOLD, REG_ICASE
 
 from typing import Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from core.ui import ErrorFormatter
     from core import optview
 
 _ = log
@@ -310,7 +309,7 @@ class ArithEvaluator(object):
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
             parse_ctx,  # type: Optional[parse_lib.ParseContext]
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         self.word_ev = None  # type: word_eval.StringWordEvaluator
@@ -954,7 +953,7 @@ class BoolEvaluator(ArithEvaluator):
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: Optional[state.MutableOpts]
             parse_ctx,  # type: Optional[parse_lib.ParseContext]
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
             always_strict=False  # type: bool
     ):
         # type: (...) -> None

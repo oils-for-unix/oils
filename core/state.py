@@ -26,7 +26,7 @@ from core import num
 from core import pyos
 from core import pyutil
 from core import optview
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import location

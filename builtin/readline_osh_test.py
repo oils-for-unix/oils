@@ -14,7 +14,7 @@ from builtin import readline_osh  # module under test
 from core import test_lib
 from core import state
 from core import alloc
-from core import ui
+from display import ui
 from frontend import flag_def  # side effect: flags are defined!
 
 _ = flag_def

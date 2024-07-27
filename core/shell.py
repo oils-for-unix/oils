@@ -24,7 +24,7 @@ from core import pyos
 from core import process
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 

@@ -21,7 +21,7 @@ from mycpp.mylib import log
 from typing import Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.pyutil import _ResourceLoader
-    from core import ui
+    from display import ui
 
 _ = log
 

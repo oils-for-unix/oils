@@ -58,7 +58,7 @@ from _devbuild.gen.syntax_asdl import (
 from core import alloc
 from core import error
 from core.error import p_die
-from core import ui
+from display import ui
 from frontend import consts
 from frontend import lexer
 from frontend import location

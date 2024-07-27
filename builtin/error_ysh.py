@@ -10,7 +10,7 @@ from core.error import e_die_status, e_usage
 from core import executor
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import flag_util
 from frontend import typed_args
@@ -23,7 +23,7 @@ _ = log
 
 from typing import Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from core import ui
+    from display import ui
     from osh import cmd_eval
     from ysh import expr_eval
 

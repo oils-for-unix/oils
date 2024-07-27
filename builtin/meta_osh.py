@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from frontend import args
     from frontend.parse_lib import ParseContext
     from core import optview
-    from core import ui
+    from display import ui
     from osh.cmd_eval import CommandEvaluator
     from osh.cmd_parse import CommandParser
 

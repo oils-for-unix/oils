@@ -106,7 +106,7 @@ from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, Measured
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 from data_lang import j8
 from data_lang import j8_lite
-from core import ansi
+from display import ansi
 from frontend import match
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, BufWriter, iteritems

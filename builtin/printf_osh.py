@@ -44,7 +44,7 @@ import posix_ as posix
 from typing import Dict, List, Optional, TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
-    from core import ui
+    from display import ui
     from frontend import parse_lib
 
 _ = log

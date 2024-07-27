@@ -42,7 +42,6 @@ builtin/read_osh.py
 builtin/readline_osh.py
 builtin/trap_osh.py
 core/alloc.py
-core/ansi.py
 core/comp_ui.py
 core/completion.py
 core/dev.py
@@ -56,13 +55,14 @@ core/pyos.py
 core/pyutil.py
 core/shell.py
 core/state.py
-core/ui.py
 core/util.py
 core/vm.py
 data_lang/j8.py
 data_lang/j8_lite.py
 data_lang/pretty.py
 data_lang/pyj8.py
+display/ansi.py
+display/ui.py
 frontend/args.py
 frontend/builtin_def.py
 frontend/consts.py

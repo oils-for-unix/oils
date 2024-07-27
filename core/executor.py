@@ -22,7 +22,7 @@ from core.error import e_die, e_die_status
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import consts
 from frontend import lexer

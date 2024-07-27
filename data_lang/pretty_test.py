@@ -4,8 +4,8 @@
 import os
 import unittest
 
-from core import ansi
-from core import ui
+from display import ansi
+from display import ui
 from data_lang import j8
 from data_lang import pretty  # module under test
 from mycpp import mylib

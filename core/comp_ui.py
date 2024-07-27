@@ -1,7 +1,7 @@
 """comp_ui.py."""
 from __future__ import print_function
 
-from core import ansi
+from display import ansi
 from core import completion
 from data_lang import pretty
 import libc

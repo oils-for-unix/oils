@@ -10,7 +10,7 @@ from core import alloc
 from core.error import e_usage, e_die
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import args
 from frontend import consts

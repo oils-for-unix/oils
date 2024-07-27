@@ -26,7 +26,7 @@ from typing import cast, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
     from core import optview
-    from core import ui
+    from display import ui
     from frontend.args import _Attributes
 
 _ = log

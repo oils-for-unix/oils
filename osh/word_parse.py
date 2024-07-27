@@ -93,7 +93,7 @@ from core import alloc
 from core.error import p_die
 from mycpp.mylib import log
 from core import pyutil
-from core import ui
+from display import ui
 from frontend import consts
 from frontend import lexer
 from frontend import reader

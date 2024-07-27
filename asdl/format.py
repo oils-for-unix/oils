@@ -15,7 +15,7 @@ from typing import Tuple, List
 
 from _devbuild.gen.hnode_asdl import (hnode, hnode_e, hnode_t, color_e,
                                       color_t)
-from core import ansi
+from display import ansi
 from data_lang import j8_lite
 from pylib import cgi
 from mycpp import mylib

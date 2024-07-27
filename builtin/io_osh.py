@@ -23,7 +23,7 @@ import posix_ as posix
 from typing import List, Dict, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
-    from core import ui
+    from display import ui
     from osh import cmd_eval
 
 _ = log

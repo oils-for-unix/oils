@@ -74,7 +74,7 @@ from core import num
 from core import pyos  # Time().  TODO: rename
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 from frontend import consts

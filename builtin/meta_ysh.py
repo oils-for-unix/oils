@@ -19,7 +19,7 @@ _ = log
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from core import state
-    from core import ui
+    from display import ui
 
 
 class Shvm(vm._Builtin):

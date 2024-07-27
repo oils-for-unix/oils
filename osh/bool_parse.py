@@ -34,7 +34,7 @@ from _devbuild.gen.id_kind_asdl import Id, Kind
 from _devbuild.gen.types_asdl import lex_mode_t, lex_mode_e
 from _devbuild.gen.syntax_asdl import (loc, word_t, word_e, bool_expr,
                                        bool_expr_t, Token)
-from core import ui
+from display import ui
 from core.error import p_die
 from frontend import consts
 from mycpp.mylib import log

@@ -23,7 +23,7 @@ from mycpp.mylib import iteritems, print_stderr
 from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
-    from core.ui import ErrorFormatter
+    from display import ui
     from frontend.parse_lib import ParseContext
 
 _ = log
@@ -157,7 +157,7 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 class Trap(vm._Builtin):
 
     def __init__(self, trap_state, parse_ctx, tracer, errfmt):
-        # type: (TrapState, ParseContext, dev.Tracer, ErrorFormatter) -> None
+        # type: (TrapState, ParseContext, dev.Tracer, ui.ErrorFormatter) -> None
         self.trap_state = trap_state
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena

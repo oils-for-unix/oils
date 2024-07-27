@@ -10,7 +10,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from core import error
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8
 from frontend import match

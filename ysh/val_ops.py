@@ -7,7 +7,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, regex_match, RegexMatch)
 from core import error
 from core.error import e_die
-from core import ui
+from display import ui
 from mycpp import mops
 from mycpp import mylib
 from mycpp.mylib import tagswitch, log

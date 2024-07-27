@@ -7,7 +7,7 @@ from _devbuild.gen.syntax_asdl import (loc, Token, DoubleQuoted, SingleQuoted,
 from _devbuild.gen.id_kind_asdl import Id, Kind, Id_str
 from _devbuild.gen.types_asdl import lex_mode_e
 
-from core import ui
+from display import ui
 from core.error import p_die
 from frontend import consts
 from frontend import lexer

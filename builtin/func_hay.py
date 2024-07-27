@@ -9,7 +9,7 @@ from core import alloc
 from core import error
 from core import main_loop
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import reader
 from frontend import typed_args
