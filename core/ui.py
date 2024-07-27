@@ -525,6 +525,7 @@ def TypeNotPrinted(val):
                          value_e.Float, value_e.Str, value_e.List,
                          value_e.Dict)
 
+
 def _GetMaxWidth():
     # type: () -> int
     max_width = 80  # default value
@@ -549,8 +550,8 @@ def PrettyPrintValue(val, f, max_width=-1):
     if TypeNotPrinted(val):
         mdocs = encoder.TypePrefix(pretty.ValType(val))
         mdocs.append(encoder.Value(val))
-        # TOOD: these constructor wrappers shouldn't be private
-        doc = pretty._Group(pretty._Concat(mdocs))
+        # TODO: these constructor wrappers shouldn't be private
+        doc = pretty._Concat(mdocs)
     else:
         doc = encoder.Value(val)
 

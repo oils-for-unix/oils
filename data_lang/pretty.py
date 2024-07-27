@@ -89,12 +89,14 @@ maximum line width.
 # - Measure.nonflat is the width of the doc until the _earliest possible_
 #   newline, or -1 if it doesn't contain a Break.
 #
-# Measures are used in two steps. First, they're computed bottom-up on the
-# `doc`, measuring the size of each node. Later, PrintDoc() stores a measure in
-# each DocFragment. These Measures measure something different: the width from
-# the doc _to the end of the entire doc tree_. This second set of Measures (the
-# ones in the DocFragments) are computed top-down, and they're used to decide
-# for each Group whether to use flat mode or not, without needing to scan ahead.
+# Measures are used in two steps:
+# (1) First, they're computed bottom-up on the `doc`, measuring the size of each
+#     node.
+# (2) Later, PrintDoc() stores a measure in each DocFragment. These Measures
+#     measure something different: the width from the doc _to the end of the
+#     entire doc tree_. This second set of Measures (the ones in the
+#     DocFragments) are computed top-down, and they're used to decide for each
+#     Group whether to use flat mode or not, without needing to scan ahead.
 
 from __future__ import print_function
 
@@ -395,10 +397,12 @@ class ValueEncoder:
 
     def SetYshStyle(self):
         # type: () -> None
+        """Set the string literal style."""
         self.ysh_style = True
 
     def TypePrefix(self, type_str):
         # type: (str) -> List[MeasuredDoc]
+        """Return a fragment for (List), which may break afterward."""
         type_name = self._Styled(self.type_style, _Text(type_str))
         mdocs = [_Text("("), type_name, _Text(")"), _Break("   ")]
         return mdocs
