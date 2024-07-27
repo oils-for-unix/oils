@@ -523,9 +523,13 @@ def PrettyPrintValue(val, f):
     # type: (value_t, mylib.Writer) -> None
     """For the = keyword"""
 
+    encoder = pretty.ValueEncoder()
+    encoder.SetUseStyles(f.isatty())
+    encoder.SetYshStyle()
+
+    doc = encoder.Value(val)
+
     printer = pretty.PrettyPrinter()
-    printer.SetUseStyles(f.isatty())
-    printer.SetYshStyle()
     try:
         width = libc.get_terminal_width()
         if width > 0:
@@ -534,6 +538,6 @@ def PrettyPrintValue(val, f):
         pass
 
     buf = mylib.BufWriter()
-    printer.PrintValue(val, buf)
+    printer.PrintDoc(doc, buf)
     f.write(buf.getvalue())
     f.write('\n')

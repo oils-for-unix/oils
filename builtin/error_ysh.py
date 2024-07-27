@@ -228,6 +228,10 @@ class BoolStatus(vm._Builtin):
         return status
 
 
+#from core import ui
+#from mycpp import mylib
+
+
 class Assert(vm._Builtin):
 
     def __init__(self, expr_ev, errfmt):
@@ -248,6 +252,12 @@ class Assert(vm._Builtin):
             self.errfmt.StderrLine('')
             self.errfmt.StderrLine('  Expected: %s' % j8.Repr(expected))
             self.errfmt.StderrLine('  Got:      %s' % j8.Repr(actual))
+
+            # Long values could also show DIFF, rather than wrapping
+            # We could have assert --diff or something
+            # TODO: Prefix
+            #ui.PrettyPrintValue(expected, mylib.Stdout())
+            #ui.PrettyPrintValue(actual, mylib.Stdout())
 
             raise error.Expr("Not equal", exp.ops[0])
 

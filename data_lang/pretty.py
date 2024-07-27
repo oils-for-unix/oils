@@ -90,7 +90,7 @@ maximum line width.
 #   newline, or -1 if it doesn't contain a Break.
 #
 # Measures are used in two steps. First, they're computed bottom-up on the
-# `doc`, measuring the size of each node. Later, _PrintDoc() stores a measure in
+# `doc`, measuring the size of each node. Later, PrintDoc() stores a measure in
 # each DocFragment. These Measures measure something different: the width from
 # the doc _to the end of the entire doc tree_. This second set of Measures (the
 # ones in the DocFragments) are computed top-down, and they're used to decide
@@ -254,13 +254,6 @@ def _Flat(mdoc):
 ###################
 
 _DEFAULT_MAX_WIDTH = 80
-_DEFAULT_INDENTATION = 4
-_DEFAULT_USE_STYLES = True
-_DEFAULT_SHOW_TYPE_PREFIX = True
-
-# Tuned for 'data_lang/pretty-benchmark.sh float-demo'
-# TODO: might want options for float width
-_DEFAULT_MAX_TABULAR_WIDTH = 22
 
 
 class PrettyPrinter(object):
@@ -272,11 +265,6 @@ class PrettyPrinter(object):
 
         Use the Set*() methods for configuration before printing."""
         self.max_width = _DEFAULT_MAX_WIDTH
-        self.indent = _DEFAULT_INDENTATION
-        self.use_styles = _DEFAULT_USE_STYLES
-        self.show_type_prefix = _DEFAULT_SHOW_TYPE_PREFIX
-        self.max_tabular_width = _DEFAULT_MAX_TABULAR_WIDTH
-        self.ysh_style = False
 
     def SetMaxWidth(self, max_width):
         # type: (int) -> None
@@ -287,42 +275,6 @@ class PrettyPrinter(object):
         """
         self.max_width = max_width
 
-    def SetIndent(self, indent):
-        # type: (int) -> None
-        """Set the number of spaces per indent."""
-        self.indent = indent
-
-    def SetUseStyles(self, use_styles):
-        # type: (bool) -> None
-        """Print with ansi colors and styles, rather than plain text."""
-        self.use_styles = use_styles
-
-    def SetShowTypePrefix(self, show_type_prefix):
-        # type: (bool) -> None
-        """Set whether or not to print a type before the top-level value.
-
-        E.g. `(Bool)   true`"""
-        self.show_type_prefix = show_type_prefix
-
-    def SetMaxTabularWidth(self, max_tabular_width):
-        # type: (int) -> None
-        """Set the maximum width that list elements can be, for them to be
-        vertically aligned."""
-        self.max_tabular_width = max_tabular_width
-
-    def SetYshStyle(self):
-        # type: () -> None
-        self.ysh_style = True
-
-    def PrintValue(self, val, buf):
-        # type: (value_t, BufWriter) -> None
-        """Pretty print an Oils value to a BufWriter."""
-        constructor = _DocConstructor(self.indent, self.use_styles,
-                                      self.show_type_prefix,
-                                      self.max_tabular_width, self.ysh_style)
-        document = constructor.Value(val)
-        self._PrintDoc(document, buf)
-
     def _Fits(self, prefix_len, group, suffix_measure):
         # type: (int, doc.Group, Measure) -> bool
         """Will `group` fit flat on the current line?"""
@@ -330,7 +282,7 @@ class PrettyPrinter(object):
                                  suffix_measure)
         return prefix_len + _SuffixLen(measure) <= self.max_width
 
-    def _PrintDoc(self, document, buf):
+    def PrintDoc(self, document, buf):
         # type: (MeasuredDoc, BufWriter) -> None
         """Pretty print a `pretty.doc` to a BufWriter."""
 
@@ -414,18 +366,25 @@ class PrettyPrinter(object):
 # Value -> Doc #
 ################
 
+_DEFAULT_INDENTATION = 4
+_DEFAULT_USE_STYLES = True
+_DEFAULT_SHOW_TYPE_PREFIX = True
 
-class _DocConstructor:
+# Tuned for 'data_lang/pretty-benchmark.sh float-demo'
+# TODO: might want options for float width
+_DEFAULT_MAX_TABULAR_WIDTH = 22
+
+
+class ValueEncoder:
     """Converts Oils values into `doc`s, which can then be pretty printed."""
 
-    def __init__(self, indent, use_styles, show_type_prefix, max_tabular_width,
-                 ysh_style):
-        # type: (int, bool, bool, int, bool) -> None
-        self.indent = indent
-        self.use_styles = use_styles
-        self.show_type_prefix = show_type_prefix
-        self.max_tabular_width = max_tabular_width
-        self.ysh_style = ysh_style
+    def __init__(self):
+        # type: () -> None
+        self.indent = _DEFAULT_INDENTATION
+        self.use_styles = _DEFAULT_USE_STYLES
+        self.show_type_prefix = _DEFAULT_SHOW_TYPE_PREFIX
+        self.max_tabular_width = _DEFAULT_MAX_TABULAR_WIDTH
+        self.ysh_style = False
 
         self.visiting = {}  # type: Dict[int, bool]
 
@@ -437,6 +396,33 @@ class _DocConstructor:
         self.string_style = ansi.GREEN
         self.cycle_style = ansi.BOLD + ansi.BLUE
         self.type_style = ansi.MAGENTA
+
+    def SetIndent(self, indent):
+        # type: (int) -> None
+        """Set the number of spaces per indent."""
+        self.indent = indent
+
+    def SetUseStyles(self, use_styles):
+        # type: (bool) -> None
+        """Print with ansi colors and styles, rather than plain text."""
+        self.use_styles = use_styles
+
+    def SetShowTypePrefix(self, show_type_prefix):
+        # type: (bool) -> None
+        """Set whether or not to print a type before the top-level value.
+
+        E.g. `(Bool)   true`"""
+        self.show_type_prefix = show_type_prefix
+
+    def SetMaxTabularWidth(self, max_tabular_width):
+        # type: (int) -> None
+        """Set the maximum width that list elements can be, for them to be
+        vertically aligned."""
+        self.max_tabular_width = max_tabular_width
+
+    def SetYshStyle(self):
+        # type: () -> None
+        self.ysh_style = True
 
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc

@@ -26,8 +26,9 @@ class PrettyTest(unittest.TestCase):
     def setUp(self):
         # Use settings that make testing easier.
         self.printer = pretty.PrettyPrinter()
-        self.printer.SetUseStyles(False)
-        self.printer.SetYshStyle()
+        self.encoder = pretty.ValueEncoder()
+        self.encoder.SetUseStyles(False)
+        self.encoder.SetYshStyle()
 
     def assertPretty(self, width, value_str, expected, lineno=None):
         # type: (int, str, str, Optional[int]) -> None
@@ -36,7 +37,10 @@ class PrettyTest(unittest.TestCase):
 
         buf = mylib.BufWriter()
         self.printer.SetMaxWidth(width)
-        self.printer.PrintValue(val, buf)
+
+        doc = self.encoder.Value(val)
+        self.printer.PrintDoc(doc, buf)
+
         actual = buf.getvalue()
 
         if actual != expected:
@@ -52,8 +56,8 @@ class PrettyTest(unittest.TestCase):
 
     def testsFromFile(self):
         # TODO: convert tests to this new style
-        self.printer.SetShowTypePrefix(False)
-        self.printer.ysh_style = False
+        self.encoder.SetShowTypePrefix(False)
+        self.encoder.ysh_style = False
 
         chunks = [(None, -1, [])]
         for lineno, line in enumerate(
@@ -96,7 +100,7 @@ class PrettyTest(unittest.TestCase):
             self.assertPretty(width, value, expected, lineno)
 
     def testStyles(self):
-        self.printer.SetUseStyles(True)
+        self.encoder.SetUseStyles(True)
         self.assertPretty(
             20, '[null, "ok", 15]', '(' + ansi.MAGENTA + 'List' + ansi.RESET +
             ')\n[' + ansi.RED + 'null' + ansi.RESET + ", " + ansi.GREEN +
