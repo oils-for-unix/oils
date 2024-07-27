@@ -250,13 +250,9 @@ def _Flat(mdoc):
 
 
 class PrettyPrinter(object):
-    """Pretty print an Oils value."""
 
     def __init__(self, max_width):
         # type: (int) -> None
-        """Construct a PrettyPrinter with default configuration options.
-
-        Use the Set*() methods for configuration before printing."""
         self.max_width = max_width
 
     def _Fits(self, prefix_len, group, suffix_measure):
@@ -350,23 +346,21 @@ class PrettyPrinter(object):
 # Value -> Doc #
 ################
 
-_DEFAULT_INDENTATION = 4
-_DEFAULT_USE_STYLES = True
-
-# Tuned for 'data_lang/pretty-benchmark.sh float-demo'
-# TODO: might want options for float width
-_DEFAULT_MAX_TABULAR_WIDTH = 22
-
 
 class ValueEncoder:
     """Converts Oils values into `doc`s, which can then be pretty printed."""
 
     def __init__(self):
         # type: () -> None
-        self.indent = _DEFAULT_INDENTATION
-        self.use_styles = _DEFAULT_USE_STYLES
-        self.max_tabular_width = _DEFAULT_MAX_TABULAR_WIDTH
-        self.ysh_style = False
+
+        # Default values
+        self.indent = 4
+        self.use_styles = True
+        # Tuned for 'data_lang/pretty-benchmark.sh float-demo'
+        # TODO: might want options for float width
+        self.max_tabular_width = 22
+
+        self.ysh_style = True
 
         self.visiting = {}  # type: Dict[int, bool]
 
@@ -395,14 +389,9 @@ class ValueEncoder:
         vertically aligned."""
         self.max_tabular_width = max_tabular_width
 
-    def SetYshStyle(self):
-        # type: () -> None
-        """Set the string literal style."""
-        self.ysh_style = True
-
     def TypePrefix(self, type_str):
         # type: (str) -> List[MeasuredDoc]
-        """Return a fragment for (List), which may break afterward."""
+        """Return docs for type string "(List)", which may break afterward."""
         type_name = self._Styled(self.type_style, _Text(type_str))
         mdocs = [_Text("("), type_name, _Text(")"), _Break("   ")]
         return mdocs

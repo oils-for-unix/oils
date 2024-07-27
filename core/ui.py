@@ -545,7 +545,6 @@ def PrettyPrintValue(val, f, max_width=-1):
 
     encoder = pretty.ValueEncoder()
     encoder.SetUseStyles(f.isatty())
-    encoder.SetYshStyle()
 
     if TypeNotPrinted(val):
         mdocs = encoder.TypePrefix(pretty.ValType(val))

@@ -55,7 +55,6 @@ class PrettyTest(unittest.TestCase):
         # Use settings that make testing easier.
         self.encoder = pretty.ValueEncoder()
         self.encoder.SetUseStyles(False)
-        self.encoder.SetYshStyle()
 
     def assertPretty(self, width, value_str, expected, lineno=None):
         # type: (int, str, str, Optional[int]) -> None
