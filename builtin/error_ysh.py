@@ -12,7 +12,6 @@ from core import num
 from core import state
 from core import ui
 from core import vm
-from data_lang import j8
 from frontend import flag_util
 from frontend import typed_args
 from mycpp import mops

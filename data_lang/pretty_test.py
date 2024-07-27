@@ -44,9 +44,9 @@ class UiTest(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     def testTypePrefix(self):
-        self.assertPretty(25, '[null, "ok", 15]',
-                          "(List)   [null, 'ok', 15]\n")
-        self.assertPretty(24, '[null, "ok", 15]', "(List)\n[null, 'ok', 15]\n")
+        self.assertPretty(24, '[null, "ok", 15]',
+                          "(List)  [null, 'ok', 15]\n")
+        self.assertPretty(23, '[null, "ok", 15]', "(List)\n[null, 'ok', 15]\n")
 
 
 class PrettyTest(unittest.TestCase):
