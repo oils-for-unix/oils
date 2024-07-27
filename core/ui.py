@@ -539,20 +539,30 @@ def _GetMaxWidth():
     return max_width
 
 
-def PrettyPrintValue(val, f, max_width=-1):
-    # type: (value_t, mylib.Writer, int) -> None
+def PrettyPrintValue(prefix, val, f, max_width=-1):
+    # type: (str, value_t, mylib.Writer, int) -> None
     """For the = keyword"""
 
     encoder = pretty.ValueEncoder()
     encoder.SetUseStyles(f.isatty())
 
+    # TODO: pretty._Concat, etc. shouldn't be private
     if TypeNotPrinted(val):
         mdocs = encoder.TypePrefix(pretty.ValType(val))
         mdocs.append(encoder.Value(val))
-        # TODO: these constructor wrappers shouldn't be private
         doc = pretty._Concat(mdocs)
     else:
         doc = encoder.Value(val)
+
+    if len(prefix):
+        # If you want the type name to be indented, which we don't
+        # inner = pretty._Concat([pretty._Break(""), doc])
+
+        doc = pretty._Concat([
+            pretty._Text(prefix),
+            #pretty._Break(""),
+            pretty._Indent(4, doc)
+        ])
 
     if max_width == -1:
         max_width = _GetMaxWidth()

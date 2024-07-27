@@ -37,7 +37,7 @@ class UiTest(unittest.TestCase):
         val = parser.ParseValue()
 
         buf = mylib.BufWriter()
-        ui.PrettyPrintValue(val, buf, max_width=width)
+        ui.PrettyPrintValue('', val, buf, max_width=width)
 
         actual = buf.getvalue()
         _PrintCase(actual, expected)

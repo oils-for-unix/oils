@@ -66,7 +66,7 @@ class Pp(_Builtin):
             rd.Done()
 
             # IOError caught by caller
-            ui.PrettyPrintValue(val, mylib.Stdout())
+            ui.PrettyPrintValue('', val, mylib.Stdout())
             return 0
 
         arg_r.Next()

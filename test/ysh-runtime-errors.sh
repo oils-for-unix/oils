@@ -924,6 +924,18 @@ pp line (d)
    '
 }
 
+test-assert() {
+  _ysh-expr-error 'assert [null === 42]'
+
+  # One is long
+  _ysh-expr-error 'assert [null === list(1 .. 100)]'
+
+  # Both are long
+  _ysh-expr-error '
+assert [{k: list(3 .. 50)} === list(1 .. 100)]
+  '
+}
+
 soil-run-py() {
   run-test-funcs
 }

@@ -10,13 +10,16 @@ from core.error import e_die_status, e_usage
 from core import executor
 from core import num
 from core import state
+from core import ui
 from core import vm
 from data_lang import j8
 from frontend import flag_util
 from frontend import typed_args
 from mycpp import mops
+from mycpp import mylib
 from mycpp.mylib import tagswitch, log
 from ysh import val_ops
+
 
 _ = log
 
@@ -228,16 +231,13 @@ class BoolStatus(vm._Builtin):
         return status
 
 
-#from core import ui
-#from mycpp import mylib
-
-
 class Assert(vm._Builtin):
 
     def __init__(self, expr_ev, errfmt):
         # type: (expr_eval.ExprEvaluator, ui.ErrorFormatter) -> None
         self.expr_ev = expr_ev
         self.errfmt = errfmt
+        self.f = mylib.Stdout()
 
     def _AssertComparison(self, exp, blame_loc):
         # type: (expr.Compare, loc_t) -> None
@@ -249,15 +249,11 @@ class Assert(vm._Builtin):
         actual = self.expr_ev.EvalExpr(exp.comparators[0], loc.Missing)
 
         if not val_ops.ExactlyEqual(expected, actual, blame_loc):
-            self.errfmt.StderrLine('')
-            self.errfmt.StderrLine('  Expected: %s' % j8.Repr(expected))
-            self.errfmt.StderrLine('  Got:      %s' % j8.Repr(actual))
-
+            self.f.write('\n')
             # Long values could also show DIFF, rather than wrapping
             # We could have assert --diff or something
-            # TODO: Prefix
-            #ui.PrettyPrintValue(expected, mylib.Stdout())
-            #ui.PrettyPrintValue(actual, mylib.Stdout())
+            ui.PrettyPrintValue('Expected: ', expected, self.f)
+            ui.PrettyPrintValue('Got:      ', actual, self.f)
 
             raise error.Expr("Not equal", exp.ops[0])
 

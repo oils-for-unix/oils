@@ -942,7 +942,7 @@ class CommandEvaluator(object):
             io_errors = []  # type: List[error.IOError_OSError]
             with vm.ctx_FlushStdout(io_errors):
                 try:
-                    ui.PrettyPrintValue(val, mylib.Stdout())
+                    ui.PrettyPrintValue('', val, mylib.Stdout())
                 except (IOError, OSError) as e:
                     self.errfmt.PrintMessage(
                         'I/O error during = keyword: %s' % pyutil.strerror(e),
@@ -1282,17 +1282,20 @@ class CommandEvaluator(object):
 
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
-        if self.procs.Get(node.name) and not self.exec_opts.redefine_proc_func():
+        if (self.procs.Get(node.name) and
+                not self.exec_opts.redefine_proc_func()):
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
-        sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open, node.body, None, True)
+        sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open,
+                             node.body, None, True)
         self.procs.SetShFunc(node.name, sh_func)
 
     def _DoProc(self, node):
         # type: (Proc) -> None
         proc_name = lexer.TokenVal(node.name)
-        if self.procs.Get(proc_name) and not self.exec_opts.redefine_proc_func():
+        if (self.procs.Get(proc_name) and
+                not self.exec_opts.redefine_proc_func()):
             e_die(
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,
                 node.name)
@@ -1304,7 +1307,8 @@ class CommandEvaluator(object):
             proc_defaults = None
 
         # no dynamic scope
-        proc = value.Proc(proc_name, node.name, node.sig, node.body, proc_defaults, False)
+        proc = value.Proc(proc_name, node.name, node.sig, node.body,
+                          proc_defaults, False)
         self.procs.SetProc(proc_name, proc)
 
     def _DoFunc(self, node):
