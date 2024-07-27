@@ -59,9 +59,9 @@ core/util.py
 core/vm.py
 data_lang/j8.py
 data_lang/j8_lite.py
-data_lang/pretty.py
 data_lang/pyj8.py
 display/ansi.py
+display/pretty.py
 display/ui.py
 frontend/args.py
 frontend/builtin_def.py
