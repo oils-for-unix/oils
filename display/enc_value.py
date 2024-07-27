@@ -11,7 +11,8 @@ from _devbuild.gen.pretty_asdl import (doc, MeasuredDoc)
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 from data_lang import j8
 from data_lang import j8_lite
-from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent, _Text, _EmptyMeasure, TryUnicodeWidth)
+from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent,
+                            _Text, _EmptyMeasure, TryUnicodeWidth)
 from display import ansi
 from frontend import match
 from mycpp import mops

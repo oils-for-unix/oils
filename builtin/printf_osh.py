@@ -322,8 +322,8 @@ class Printf(vm._Builtin):
                             # the rest of the bytes.
                             # Something like strict_arith or strict_printf
                             # could throw an error in this case.
-                            self.errfmt.Print_('Warning: %s' %
-                                               e.UserErrorString(), word_loc)
+                            self.errfmt.Print_(
+                                'Warning: %s' % e.UserErrorString(), word_loc)
                             small_i = ord(s[1])
 
                         d = mops.IntWiden(small_i)

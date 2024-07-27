@@ -142,9 +142,9 @@ class Source(vm._Builtin):
                 load_path = os_path.join("stdlib", builtin_path)
                 contents = self.loader.Get(load_path)
             except (IOError, OSError):
-                self.errfmt.Print_(
-                    'source failed: No builtin file %r' % load_path,
-                    blame_loc=cmd_val.arg_locs[2])
+                self.errfmt.Print_('source failed: No builtin file %r' %
+                                   load_path,
+                                   blame_loc=cmd_val.arg_locs[2])
                 return 2
 
             line_reader = reader.StringLineReader(contents, self.arena)
@@ -153,7 +153,8 @@ class Source(vm._Builtin):
 
         else:
             # 'source' respects $PATH
-            resolved = self.search_path.LookupOne(path_arg, exec_required=False)
+            resolved = self.search_path.LookupOne(path_arg,
+                                                  exec_required=False)
             if resolved is None:
                 resolved = path_arg
 

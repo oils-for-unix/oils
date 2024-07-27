@@ -503,7 +503,6 @@ EXPR_CHARS = [
     # Eggex.  This is a LITERAL translation to \xff in ERE?  So it's not \yff
     # It doesn't have semantics; it's just syntax.
     R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
-
     _U_BRACED_CHAR,
 ]
 

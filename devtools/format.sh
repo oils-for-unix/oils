@@ -57,7 +57,7 @@ yapf-known() {
   ### yapf some files that have been normalized
 
   time yapf-files \
-    {asdl,benchmarks,builtin,core,data_lang,doctools,frontend,lazylex,mycpp,mycpp/examples,osh,spec/*,yaks,ysh}/*.py \
+    {asdl,benchmarks,builtin,core,data_lang,display,doctools,frontend,lazylex,mycpp,mycpp/examples,osh,spec/*,yaks,ysh}/*.py \
     */NINJA_subgraph.py
 }
 
