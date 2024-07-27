@@ -23,12 +23,13 @@ from _devbuild.gen.syntax_asdl import (
 )
 from _devbuild.gen.value_asdl import value_e, value_t
 from asdl import format as fmt
+from data_lang import j8_lite
+from display import enc_value
 from display import pretty
 from frontend import lexer
 from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, log
-from data_lang import j8_lite
 import libc
 
 from typing import List, Tuple, Optional, Any, cast, TYPE_CHECKING
@@ -45,7 +46,7 @@ def ValType(val):
     """For displaying type errors in the UI."""
 
     # TODO: consolidate these functions
-    return pretty.ValType(val)
+    return enc_value.ValType(val)
 
 
 def CommandType(cmd):
@@ -569,12 +570,12 @@ def PrettyPrintValue(prefix, val, f, max_width=-1):
     # type: (str, value_t, mylib.Writer, int) -> None
     """For the = keyword"""
 
-    encoder = pretty.ValueEncoder()
+    encoder = enc_value.ValueEncoder()
     encoder.SetUseStyles(f.isatty())
 
     # TODO: pretty._Concat, etc. shouldn't be private
     if TypeNotPrinted(val):
-        mdocs = encoder.TypePrefix(pretty.ValType(val))
+        mdocs = encoder.TypePrefix(enc_value.ValType(val))
         mdocs.append(encoder.Value(val))
         doc = pretty._Concat(mdocs)
     else:
