@@ -4,15 +4,18 @@
 #define FRONTEND_ARGS_MYCPP_H
 
 #include "_gen/asdl/hnode.asdl.h"
+#include "_gen/display/pretty.asdl.h"
 #include "cpp/data_lang.h"
 #include "mycpp/runtime.h"
 
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
+#include "_gen/display/pretty.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/frontend_flag_spec.h"
 
 using value_asdl::value;  // This is a bit ad hoc
+using pretty_asdl::doc;
 
 namespace runtime {  // forward declare
 
@@ -179,6 +182,7 @@ class _PrettyPrinter {
 bool _TrySingleLineObj(hnode::Record* node, format::ColorOutput* f, int max_chars);
 bool _TrySingleLine(hnode_asdl::hnode_t* node, format::ColorOutput* f, int max_chars);
 void PrintTree(hnode_asdl::hnode_t* node, format::ColorOutput* f);
+void PrintTree2(hnode_asdl::hnode_t* node, format::ColorOutput* f);
 
 }  // declare namespace format
 

@@ -430,6 +430,7 @@ class Rules(object):
 
     # SYSTEM header, _gen/asdl/hnode.asdl.h
     deps.append('//asdl/hnode.asdl')
+    deps.append('//display/pretty.asdl')
 
     # to create _gen/mycpp/examples/expr.asdl.h
     prefix = '_gen/%s' % asdl_path

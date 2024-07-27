@@ -4,6 +4,7 @@
 #define CORE_ERROR_MYCPP_H
 
 #include "_gen/asdl/hnode.asdl.h"
+#include "_gen/display/pretty.asdl.h"
 #include "cpp/data_lang.h"
 #include "mycpp/runtime.h"
 

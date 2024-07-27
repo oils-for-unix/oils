@@ -103,27 +103,12 @@ from __future__ import print_function
 from _devbuild.gen.pretty_asdl import doc, doc_e, DocFragment, Measure, MeasuredDoc
 from mycpp.mylib import log, tagswitch, BufWriter
 from typing import cast, List
-import libc
 
 _ = log
 
 ################
 # Measurements #
 ################
-
-
-def TryUnicodeWidth(s):
-    # type: (str) -> int
-    try:
-        width = libc.wcswidth(s)
-    except UnicodeError:
-        # e.g. en_US.UTF-8 locale missing, just return the number of bytes
-        width = len(s)
-
-    if width == -1:  # non-printable wide char
-        return len(s)
-
-    return width
 
 
 def _EmptyMeasure():
@@ -167,16 +152,19 @@ def _SuffixLen(measure):
 ####################
 
 
-def _Text(string):
+def AsciiText(string):
     # type: (str) -> MeasuredDoc
     """Print `string` (which must not contain a newline)."""
-    return MeasuredDoc(doc.Text(string), Measure(TryUnicodeWidth(string), -1))
+    return MeasuredDoc(doc.Text(string), Measure(len(string), -1))
 
 
 def _Break(string):
     # type: (str) -> MeasuredDoc
-    """If in `flat` mode, print `string`, otherwise print `\n`."""
-    return MeasuredDoc(doc.Break(string), Measure(TryUnicodeWidth(string), 0))
+    """If in `flat` mode, print `string`, otherwise print `\n`.
+
+    Note: Doesn't try to compute Unicode width, since we control these strings.
+    """
+    return MeasuredDoc(doc.Break(string), Measure(len(string), 0))
 
 
 def _Indent(indent, mdoc):

@@ -6,7 +6,7 @@ import unittest
 
 from display import ansi
 from display import pretty  # module under test
-from display import enc_value
+from display import pp_value
 from display import ui
 from data_lang import j8
 from mycpp import mylib
@@ -53,7 +53,7 @@ class PrettyTest(unittest.TestCase):
 
     def setUp(self):
         # Use settings that make testing easier.
-        self.encoder = enc_value.ValueEncoder()
+        self.encoder = pp_value.ValueEncoder()
         self.encoder.SetUseStyles(False)
 
     def assertPretty(self, width, value_str, expected, lineno=None):

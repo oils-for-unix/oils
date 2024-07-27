@@ -7,17 +7,19 @@ from __future__ import print_function
 
 import math
 
-from _devbuild.gen.pretty_asdl import (doc, MeasuredDoc)
+from _devbuild.gen.pretty_asdl import (doc, Measure, MeasuredDoc)
 from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
 from data_lang import j8
 from data_lang import j8_lite
 from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent,
-                            _Text, _EmptyMeasure, TryUnicodeWidth)
+                            _EmptyMeasure)
 from display import ansi
 from frontend import match
 from mycpp import mops
 from mycpp.mylib import log, tagswitch, iteritems
 from typing import cast, List, Dict
+
+import libc
 
 _ = log
 
@@ -41,6 +43,31 @@ def _FloatString(fl):
     else:
         s = str(fl)
     return s
+
+
+#
+# Unicode Helpers
+#
+
+
+def TryUnicodeWidth(s):
+    # type: (str) -> int
+    try:
+        width = libc.wcswidth(s)
+    except UnicodeError:
+        # e.g. en_US.UTF-8 locale missing, just return the number of bytes
+        width = len(s)
+
+    if width == -1:  # non-printable wide char
+        return len(s)
+
+    return width
+
+
+def UText(string):
+    # type: (str) -> MeasuredDoc
+    """Print `string` (which must not contain a newline)."""
+    return MeasuredDoc(doc.Text(string), Measure(TryUnicodeWidth(string), -1))
 
 
 class ValueEncoder:
@@ -88,7 +115,7 @@ class ValueEncoder:
     def TypePrefix(self, type_str):
         # type: (str) -> List[MeasuredDoc]
         """Return docs for type string "(List)", which may break afterward."""
-        type_name = self._Styled(self.type_style, _Text(type_str))
+        type_name = self._Styled(self.type_style, UText(type_str))
 
         n = len(type_str)
         # Our maximum string is "Float"
@@ -97,7 +124,7 @@ class ValueEncoder:
         # Start printing in column 8.   Adjust to 6 because () takes 2 spaces.
         spaces = ' ' * (6 - n)
 
-        mdocs = [_Text("("), type_name, _Text(")"), _Break(spaces)]
+        mdocs = [UText("("), type_name, UText(")"), _Break(spaces)]
         return mdocs
 
     def Value(self, val):
@@ -131,10 +158,10 @@ class ValueEncoder:
         """
         return _Group(
             _Concat([
-                _Text(open),
+                UText(open),
                 _Indent(self.indent, _Concat([_Break(""), mdoc])),
                 _Break(""),
-                _Text(close)
+                UText(close)
             ]))
 
     def _SurroundedAndPrefixed(self, open, prefix, sep, mdoc, close):
@@ -152,10 +179,10 @@ class ValueEncoder:
         """
         return _Group(
             _Concat([
-                _Text(open), prefix,
+                UText(open), prefix,
                 _Indent(self.indent, _Concat([_Break(sep), mdoc])),
                 _Break(""),
-                _Text(close)
+                UText(close)
             ]))
 
     def _Join(self, items, sep, space):
@@ -174,7 +201,7 @@ class ValueEncoder:
         seq = []  # type: List[MeasuredDoc]
         for i, item in enumerate(items):
             if i != 0:
-                seq.append(_Text(sep))
+                seq.append(UText(sep))
                 seq.append(_Break(space))
             seq.append(item)
         return _Concat(seq)
@@ -224,13 +251,13 @@ class ValueEncoder:
         # style 3.
 
         if len(items) == 0:
-            return _Text("")
+            return UText("")
 
         max_flat_len = 0
         seq = []  # type: List[MeasuredDoc]
         for i, item in enumerate(items):
             if i != 0:
-                seq.append(_Text(sep))
+                seq.append(UText(sep))
                 seq.append(_Break(" "))
             seq.append(item)
             max_flat_len = max(max_flat_len, item.measure.flat)
@@ -243,7 +270,7 @@ class ValueEncoder:
                 tabular_seq.append(_Flat(item))
                 if i != len(items) - 1:
                     padding = max_flat_len - item.measure.flat + 1
-                    tabular_seq.append(_Text(sep))
+                    tabular_seq.append(UText(sep))
                     tabular_seq.append(_Group(_Break(" " * padding)))
             tabular = _Concat(tabular_seq)
             return _Group(_IfFlat(non_tabular, tabular))
@@ -260,7 +287,7 @@ class ValueEncoder:
             else:
                 # TODO: remove this dead branch after fixing tests
                 encoded = j8_lite.EncodeString(s)
-        return _Text(encoded)
+        return UText(encoded)
 
     def _StringLiteral(self, s):
         # type: (str) -> MeasuredDoc
@@ -270,7 +297,7 @@ class ValueEncoder:
         else:
             # TODO: remove this dead branch after fixing tests
             encoded = j8_lite.EncodeString(s)
-        return self._Styled(self.string_style, _Text(encoded))
+        return self._Styled(self.string_style, UText(encoded))
 
     def _BashStringLiteral(self, s):
         # type: (str) -> MeasuredDoc
@@ -288,37 +315,37 @@ class ValueEncoder:
         # (BashAssoc)   (BashAssoc ['k']=$'\\')
 
         encoded = j8_lite.ShellEncode(s)
-        return self._Styled(self.string_style, _Text(encoded))
+        return self._Styled(self.string_style, UText(encoded))
 
     def _YshList(self, vlist):
         # type: (value.List) -> MeasuredDoc
         """Print a string literal."""
         if len(vlist.items) == 0:
-            return _Text("[]")
+            return UText("[]")
         mdocs = [self._Value(item) for item in vlist.items]
         return self._Surrounded("[", self._Tabular(mdocs, ","), "]")
 
     def _YshDict(self, vdict):
         # type: (value.Dict) -> MeasuredDoc
         if len(vdict.d) == 0:
-            return _Text("{}")
+            return UText("{}")
         mdocs = []  # type: List[MeasuredDoc]
         for k, v in iteritems(vdict.d):
             mdocs.append(
                 _Concat([self._DictKey(k),
-                         _Text(": "),
+                         UText(": "),
                          self._Value(v)]))
         return self._Surrounded("{", self._Join(mdocs, ",", " "), "}")
 
     def _BashArray(self, varray):
         # type: (value.BashArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, _Text("BashArray"))
+        type_name = self._Styled(self.type_style, UText("BashArray"))
         if len(varray.strs) == 0:
-            return _Concat([_Text("("), type_name, _Text(")")])
+            return _Concat([UText("("), type_name, UText(")")])
         mdocs = []  # type: List[MeasuredDoc]
         for s in varray.strs:
             if s is None:
-                mdocs.append(_Text("null"))
+                mdocs.append(UText("null"))
             else:
                 mdocs.append(self._BashStringLiteral(s))
         return self._SurroundedAndPrefixed("(", type_name, " ",
@@ -326,16 +353,16 @@ class ValueEncoder:
 
     def _BashAssoc(self, vassoc):
         # type: (value.BashAssoc) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, _Text("BashAssoc"))
+        type_name = self._Styled(self.type_style, UText("BashAssoc"))
         if len(vassoc.d) == 0:
-            return _Concat([_Text("("), type_name, _Text(")")])
+            return _Concat([UText("("), type_name, UText(")")])
         mdocs = []  # type: List[MeasuredDoc]
         for k2, v2 in iteritems(vassoc.d):
             mdocs.append(
                 _Concat([
-                    _Text("["),
+                    UText("["),
                     self._BashStringLiteral(k2),
-                    _Text("]="),
+                    UText("]="),
                     self._BashStringLiteral(v2)
                 ]))
         return self._SurroundedAndPrefixed("(", type_name, " ",
@@ -343,16 +370,16 @@ class ValueEncoder:
 
     def _SparseArray(self, val):
         # type: (value.SparseArray) -> MeasuredDoc
-        type_name = self._Styled(self.type_style, _Text("SparseArray"))
+        type_name = self._Styled(self.type_style, UText("SparseArray"))
         if len(val.d) == 0:
-            return _Concat([_Text("("), type_name, _Text(")")])
+            return _Concat([UText("("), type_name, UText(")")])
         mdocs = []  # type: List[MeasuredDoc]
         for k2, v2 in iteritems(val.d):
             mdocs.append(
                 _Concat([
-                    _Text("["),
-                    self._Styled(self.int_style, _Text(mops.ToStr(k2))),
-                    _Text("]="),
+                    UText("["),
+                    self._Styled(self.int_style, UText(mops.ToStr(k2))),
+                    UText("]="),
                     self._BashStringLiteral(v2)
                 ]))
         return self._SurroundedAndPrefixed("(", type_name, " ",
@@ -363,20 +390,20 @@ class ValueEncoder:
 
         with tagswitch(val) as case:
             if case(value_e.Null):
-                return self._Styled(self.null_style, _Text("null"))
+                return self._Styled(self.null_style, UText("null"))
 
             elif case(value_e.Bool):
                 b = cast(value.Bool, val).b
                 return self._Styled(self.bool_style,
-                                    _Text("true" if b else "false"))
+                                    UText("true" if b else "false"))
 
             elif case(value_e.Int):
                 i = cast(value.Int, val).i
-                return self._Styled(self.int_style, _Text(mops.ToStr(i)))
+                return self._Styled(self.int_style, UText(mops.ToStr(i)))
 
             elif case(value_e.Float):
                 f = cast(value.Float, val).f
-                return self._Styled(self.float_style, _Text(_FloatString(f)))
+                return self._Styled(self.float_style, UText(_FloatString(f)))
 
             elif case(value_e.Str):
                 s = cast(value.Str, val).s
@@ -384,8 +411,8 @@ class ValueEncoder:
 
             elif case(value_e.Range):
                 r = cast(value.Range, val)
-                type_name = self._Styled(self.type_style, _Text(ValType(r)))
-                mdocs = [_Text(str(r.lower)), _Text(".."), _Text(str(r.upper))]
+                type_name = self._Styled(self.type_style, UText(ValType(r)))
+                mdocs = [UText(str(r.lower)), UText(".."), UText(str(r.upper))]
                 return self._SurroundedAndPrefixed("(", type_name, " ",
                                                    self._Join(mdocs, "", " "),
                                                    ")")
@@ -395,9 +422,9 @@ class ValueEncoder:
                 heap_id = j8.HeapValueId(vlist)
                 if self.visiting.get(heap_id, False):
                     return _Concat([
-                        _Text("["),
-                        self._Styled(self.cycle_style, _Text("...")),
-                        _Text("]")
+                        UText("["),
+                        self._Styled(self.cycle_style, UText("...")),
+                        UText("]")
                     ])
                 else:
                     self.visiting[heap_id] = True
@@ -410,9 +437,9 @@ class ValueEncoder:
                 heap_id = j8.HeapValueId(vdict)
                 if self.visiting.get(heap_id, False):
                     return _Concat([
-                        _Text("{"),
-                        self._Styled(self.cycle_style, _Text("...")),
-                        _Text("}")
+                        UText("{"),
+                        self._Styled(self.cycle_style, UText("...")),
+                        UText("}")
                     ])
                 else:
                     self.visiting[heap_id] = True
@@ -433,9 +460,9 @@ class ValueEncoder:
                 return self._BashAssoc(vassoc)
 
             else:
-                type_name = self._Styled(self.type_style, _Text(ValType(val)))
+                type_name = self._Styled(self.type_style, UText(ValType(val)))
                 id_str = j8.ValueIdString(val)
-                return _Concat([_Text("<"), type_name, _Text(id_str + ">")])
+                return _Concat([UText("<"), type_name, UText(id_str + ">")])
 
 
 # vim: sw=4
