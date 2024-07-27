@@ -120,13 +120,6 @@ def ValType(val):
     return value_str(val.tag(), dot=False)
 
 
-def TypeNotPrinted(val):
-    # type: (value_t) -> bool
-    return val.tag() in (value_e.Null, value_e.Bool, value_e.Int,
-                         value_e.Float, value_e.Str, value_e.List,
-                         value_e.Dict)
-
-
 def _FloatString(fl):
     # type: (float) -> str
 
@@ -368,7 +361,6 @@ class PrettyPrinter(object):
 
 _DEFAULT_INDENTATION = 4
 _DEFAULT_USE_STYLES = True
-_DEFAULT_SHOW_TYPE_PREFIX = True
 
 # Tuned for 'data_lang/pretty-benchmark.sh float-demo'
 # TODO: might want options for float width
@@ -382,7 +374,6 @@ class ValueEncoder:
         # type: () -> None
         self.indent = _DEFAULT_INDENTATION
         self.use_styles = _DEFAULT_USE_STYLES
-        self.show_type_prefix = _DEFAULT_SHOW_TYPE_PREFIX
         self.max_tabular_width = _DEFAULT_MAX_TABULAR_WIDTH
         self.ysh_style = False
 
@@ -407,13 +398,6 @@ class ValueEncoder:
         """Print with ansi colors and styles, rather than plain text."""
         self.use_styles = use_styles
 
-    def SetShowTypePrefix(self, show_type_prefix):
-        # type: (bool) -> None
-        """Set whether or not to print a type before the top-level value.
-
-        E.g. `(Bool)   true`"""
-        self.show_type_prefix = show_type_prefix
-
     def SetMaxTabularWidth(self, max_tabular_width):
         # type: (int) -> None
         """Set the maximum width that list elements can be, for them to be
@@ -424,23 +408,17 @@ class ValueEncoder:
         # type: () -> None
         self.ysh_style = True
 
+    def TypePrefix(self, type_str):
+        # type: (str) -> List[MeasuredDoc]
+        type_name = self._Styled(self.type_style, _Text(type_str))
+        mdocs = [_Text("("), type_name, _Text(")"), _Break("   ")]
+        return mdocs
+
     def Value(self, val):
         # type: (value_t) -> MeasuredDoc
         """Convert an Oils value into a `doc`, which can then be pretty printed."""
         self.visiting.clear()
-        if self.show_type_prefix:
-            # These JSON-like types have a special notation, so print type
-            # explicitly
-            if TypeNotPrinted(val):
-                type_name = self._Styled(self.type_style, _Text(ValType(val)))
-                mdocs = [_Text("("), type_name, _Text(")"), _Break("   ")]
-            else:
-                mdocs = []
-
-            mdocs.append(self._Value(val))
-            return _Group(_Concat(mdocs))
-        else:
-            return self._Value(val)
+        return self._Value(val)
 
     def _Styled(self, style, mdoc):
         # type: (str, MeasuredDoc) -> MeasuredDoc

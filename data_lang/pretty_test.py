@@ -4,11 +4,11 @@
 import os
 import unittest
 
-from _devbuild.gen.value_asdl import value, value_t
 from core import ansi
+from core import ui
 from data_lang import j8
 from data_lang import pretty  # module under test
-from mycpp import mylib, mops
+from mycpp import mylib
 from typing import Optional
 
 import libc
@@ -16,9 +16,37 @@ import libc
 TEST_DATA_FILENAME = os.path.join(os.path.dirname(__file__), "pretty_test.txt")
 
 
-def IntValue(i):
-    # type: (int) -> value_t
-    return value.Int(mops.IntWiden(i))
+def _PrintCase(actual, expected, lineno=None):
+    if actual != expected:
+        # Print the different with real newlines, for easier reading.
+        print("ACTUAL:")
+        print(actual)
+        print("EXPECTED:")
+        print(expected)
+        print("END")
+        if lineno is not None:
+            print("ON LINE " + str(lineno + 1))
+
+
+class UiTest(unittest.TestCase):
+    """Test higher level ui.PrettyPrintValue()."""
+
+    def assertPretty(self, width, value_str, expected):
+        # type: (int, str, str, Optional[int]) -> None
+        parser = j8.Parser(value_str, True)
+        val = parser.ParseValue()
+
+        buf = mylib.BufWriter()
+        ui.PrettyPrintValue(val, buf, max_width=width)
+
+        actual = buf.getvalue()
+        _PrintCase(actual, expected)
+        self.assertEqual(actual, expected)
+
+    def testTypePrefix(self):
+        self.assertPretty(25, '[null, "ok", 15]',
+                          "(List)   [null, 'ok', 15]\n")
+        self.assertPretty(24, '[null, "ok", 15]', "(List)\n[null, 'ok', 15]\n")
 
 
 class PrettyTest(unittest.TestCase):
@@ -42,21 +70,11 @@ class PrettyTest(unittest.TestCase):
         self.printer.PrintDoc(doc, buf)
 
         actual = buf.getvalue()
-
-        if actual != expected:
-            # Print the different with real newlines, for easier reading.
-            print("ACTUAL:")
-            print(actual)
-            print("EXPECTED:")
-            print(expected)
-            print("END")
-            if lineno is not None:
-                print("ON LINE " + str(lineno + 1))
-        self.assertEqual(buf.getvalue(), expected)
+        _PrintCase(actual, expected, lineno=lineno)
+        self.assertEqual(actual, expected)
 
     def testsFromFile(self):
         # TODO: convert tests to this new style
-        self.encoder.SetShowTypePrefix(False)
         self.encoder.ysh_style = False
 
         chunks = [(None, -1, [])]
@@ -102,13 +120,9 @@ class PrettyTest(unittest.TestCase):
     def testStyles(self):
         self.encoder.SetUseStyles(True)
         self.assertPretty(
-            20, '[null, "ok", 15]', '(' + ansi.MAGENTA + 'List' + ansi.RESET +
-            ')\n[' + ansi.RED + 'null' + ansi.RESET + ", " + ansi.GREEN +
-            "'ok'" + ansi.RESET + ", " + ansi.YELLOW + '15' + ansi.RESET + ']')
-
-    def testTypePrefix(self):
-        self.assertPretty(25, '[null, "ok", 15]', "(List)   [null, 'ok', 15]")
-        self.assertPretty(24, '[null, "ok", 15]', "(List)\n[null, 'ok', 15]")
+            20, '[null, "ok", 15]',
+            '[' + ansi.RED + 'null' + ansi.RESET + ", " + ansi.GREEN + "'ok'" +
+            ansi.RESET + ", " + ansi.YELLOW + '15' + ansi.RESET + ']')
 
 
 if __name__ == '__main__':

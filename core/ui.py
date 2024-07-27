@@ -21,7 +21,7 @@ from _devbuild.gen.syntax_asdl import (
     source,
     source_e,
 )
-from _devbuild.gen.value_asdl import value_t
+from _devbuild.gen.value_asdl import value_e, value_t
 from asdl import format as fmt
 from data_lang import pretty
 from frontend import lexer
@@ -519,23 +519,39 @@ def PrintAst(node, flag):
         ast_f.write('\n')
 
 
-def PrettyPrintValue(val, f):
-    # type: (value_t, mylib.Writer) -> None
+def TypeNotPrinted(val):
+    # type: (value_t) -> bool
+    return val.tag() in (value_e.Null, value_e.Bool, value_e.Int,
+                         value_e.Float, value_e.Str, value_e.List,
+                         value_e.Dict)
+
+
+def PrettyPrintValue(val, f, max_width=-1):
+    # type: (value_t, mylib.Writer, int) -> None
     """For the = keyword"""
 
     encoder = pretty.ValueEncoder()
     encoder.SetUseStyles(f.isatty())
     encoder.SetYshStyle()
 
-    doc = encoder.Value(val)
+    if TypeNotPrinted(val):
+        mdocs = encoder.TypePrefix(pretty.ValType(val))
+        mdocs.append(encoder.Value(val))
+        # TOOD: these constructor wrappers shouldn't be private
+        doc = pretty._Group(pretty._Concat(mdocs))
+    else:
+        doc = encoder.Value(val)
 
     printer = pretty.PrettyPrinter()
-    try:
-        width = libc.get_terminal_width()
-        if width > 0:
-            printer.SetMaxWidth(width)
-    except (IOError, OSError):
-        pass
+    if max_width != -1:  # for testing
+        printer.SetMaxWidth(max_width)
+    else:
+        try:
+            width = libc.get_terminal_width()
+            if width > 0:
+                printer.SetMaxWidth(width)
+        except (IOError, OSError):
+            pass
 
     buf = mylib.BufWriter()
     printer.PrintDoc(doc, buf)

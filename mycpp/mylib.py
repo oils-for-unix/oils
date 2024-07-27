@@ -209,6 +209,10 @@ class BufWriter(Writer):
         # type: (str) -> None
         self.parts.append(s)
 
+    def isatty(self):
+        # type: () -> bool
+        return False
+
     def write_spaces(self, n):
         # type: (int) -> None
         """For JSON indenting.  Avoid intermediate allocations in C++."""
@@ -226,7 +230,6 @@ class BufWriter(Writer):
         # type: () -> None
 
         # No-op for now - we could invalidate write()?
-
         pass
 
 

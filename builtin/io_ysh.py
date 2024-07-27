@@ -14,7 +14,6 @@ from core import state
 from core import ui
 from core import vm
 from data_lang import j8
-from data_lang import pretty
 from frontend import flag_util
 from frontend import match
 from frontend import typed_args
@@ -127,7 +126,7 @@ class Pp(_Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            if pretty.TypeNotPrinted(val):
+            if ui.TypeNotPrinted(val):
                 ysh_type = ui.ValType(val)
                 self.stdout_.write('(%s)   ' % ysh_type)
 
