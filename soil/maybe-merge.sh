@@ -23,7 +23,7 @@ fast-forward()  {
   # local testing
   if test -z "$github_token"; then
     # set by YAML
-    github_token=${SOIL_GITHUB_API_TOKEN:-}
+    github_token=${OILS_GITHUB_KEY:-}
 
     # Local testing
     if test -z "$github_token"; then
@@ -97,7 +97,7 @@ all-status-zero() {
 }
 
 soil-run() {
-  local github_token=${1:-}  # SOIL_GITHUB_API_TOKEN
+  local github_token=${1:-}  # OILS_GITHUB_KEY
   local run_id=${2:-}  # $GITHUB_RUN_ID
   local commit_hash=${3:-}  # GITHUB_SHA
   local to_branch=${4:-}  # defaults to master
