@@ -180,10 +180,10 @@ class FdState(object):
             errfmt,  # type: ui.ErrorFormatter
             job_control,  # type: JobControl
             job_list,  # type: JobList
-            mem,  #type: state.Mem
+            mem,  # type: state.Mem
             tracer,  # type: Optional[dev.Tracer]
             waiter,  # type: Optional[Waiter]
-            exec_opts,  #type: optview.Exec
+            exec_opts,  # type: optview.Exec
     ):
         # type: (...) -> None
         """
@@ -402,19 +402,15 @@ class FdState(object):
                 try:
                     open_fd = posix.open(arg.filename, mode, 0o666)
                 except (IOError, OSError) as e:
-                    if noclobber_mode != 0 and e.errno == EEXIST:
-                        self.errfmt.PrintMessage(
-                            "I/O redirect error: can't overwrite existing file %r: %s"
-                            % (arg.filename, pyutil.strerror(e)),
-                            r.op_loc)
+                    if e.errno == EEXIST and self.exec_opts.noclobber():
+                        extra = ' (noclobber)'
                     else:
-                        self.errfmt.PrintMessage(
-                            "I/O redirect error: can't open file %r: %s" %
-                            (arg.filename, pyutil.strerror(e)),
-                            r.op_loc)
-                    raise IOError(
-                        0
-                    )  # redirect failed, errno=0 to hide error at parent level
+                        extra = ''
+                    self.errfmt.Print_(
+                        "Can't open %r%s: %s" %
+                        (arg.filename, extra, pyutil.strerror(e)),
+                        blame_loc=r.op_loc)
+                    raise  # redirect failed
 
                 new_fd = self._PushDup(open_fd, r.loc)
                 if new_fd != NO_FD:
