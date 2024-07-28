@@ -4,6 +4,7 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
 from _devbuild.gen.value_asdl import (value, value_t, value_str)
 from core import num
+from mycpp.mylib import NewDict
 
 from typing import Dict, Union, NoReturn, TYPE_CHECKING
 
@@ -173,19 +174,19 @@ class Structured(FatalRuntime):
     def ToDict(self):
         # type: () -> value.Dict
 
-        if self.properties is None:
-            self.properties = {}
+        d = NewDict()  # type: Dict[str, value_t]
 
-        # Override status and message.
-        # The _error Dict order is a bit quirky -- the optional properties come
-        # before these required fields.  But we always want the required fields
-        # to take precedence, so it makes sense.
+        # The _error Dict order is odd -- the optional properties come BEFORE
+        # required fields.  We always want the required fields to be present so
+        # it makes sense.
+        if self.properties is not None:
+            d.update(self.properties)
 
         # _error.code is better than _error.status
-        self.properties['code'] = num.ToBig(self.ExitStatus())
-        self.properties['message'] = value.Str(self.msg)
+        d['code'] = num.ToBig(self.ExitStatus())
+        d['message'] = value.Str(self.msg)
 
-        return value.Dict(self.properties)
+        return value.Dict(d)
 
 
 class AssertionErr(Expr):

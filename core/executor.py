@@ -30,7 +30,7 @@ from mycpp.mylib import log
 
 import posix_ as posix
 
-from typing import cast, Dict, List, Optional, TYPE_CHECKING
+from typing import cast, Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import (cmd_value, CommandStatus,
                                             StatusArray)
@@ -462,11 +462,49 @@ class ShellExecutor(vm._Executor):
 
         return p.RunProcess(self.waiter, trace.ForkWait)
 
+    def CaptureStdout(self, node):
+        # type: (command_t) -> Tuple[int, str]
+
+        p = self._MakeProcess(node, self.exec_opts.inherit_errexit(),
+                              self.exec_opts.errtrace())
+        # Shell quirk: Command subs remain part of the shell's process group, so we
+        # don't use p.AddStateChange(process.SetPgid(...))
+
+        r, w = posix.pipe()
+        p.AddStateChange(process.StdoutToPipe(r, w))
+
+        p.StartProcess(trace.CommandSub)
+        #log('Command sub started %d', pid)
+
+        chunks = []  # type: List[str]
+        posix.close(w)  # not going to write
+        while True:
+            n, err_num = pyos.Read(r, 4096, chunks)
+
+            if n < 0:
+                if err_num == EINTR:
+                    pass  # retry
+                else:
+                    # Like the top level IOError handler
+                    e_die_status(
+                        2,
+                        'Oils I/O error (read): %s' % posix.strerror(err_num))
+
+            elif n == 0:  # EOF
+                break
+        posix.close(r)
+
+        status = p.Wait(self.waiter)
+        stdout_str = ''.join(chunks).rstrip('\n')
+
+        return status, stdout_str
+
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
 
         if not self.exec_opts._allow_command_sub():
-            # _allow_command_sub is used in two places.  Only one of them turns off _allow_process_sub
+            # _allow_command_sub is used in two places.  Only one of them turns
+            # off _allow_process_sub
             if not self.exec_opts._allow_process_sub():
                 why = "status wouldn't be checked (strict_errexit)"
             else:
@@ -498,36 +536,7 @@ class ShellExecutor(vm._Executor):
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple
 
-        p = self._MakeProcess(node, self.exec_opts.inherit_errexit(),
-                              self.exec_opts.errtrace())
-        # Shell quirk: Command subs remain part of the shell's process group, so we
-        # don't use p.AddStateChange(process.SetPgid(...))
-
-        r, w = posix.pipe()
-        p.AddStateChange(process.StdoutToPipe(r, w))
-
-        p.StartProcess(trace.CommandSub)
-        #log('Command sub started %d', pid)
-
-        chunks = []  # type: List[str]
-        posix.close(w)  # not going to write
-        while True:
-            n, err_num = pyos.Read(r, 4096, chunks)
-
-            if n < 0:
-                if err_num == EINTR:
-                    pass  # retry
-                else:
-                    # Like the top level IOError handler
-                    e_die_status(
-                        2,
-                        'osh I/O error (read): %s' % posix.strerror(err_num))
-
-            elif n == 0:  # EOF
-                break
-        posix.close(r)
-
-        status = p.Wait(self.waiter)
+        status, stdout_str = self.CaptureStdout(node)
 
         # OSH has the concept of aborting in the middle of a WORD.  We're not
         # waiting until the command is over!
@@ -551,7 +560,7 @@ class ShellExecutor(vm._Executor):
         # Runtime errors test case: # $("echo foo > $@")
         # Why rstrip()?
         # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
-        return ''.join(chunks).rstrip('\n')
+        return stdout_str
 
     def RunProcessSub(self, cs_part):
         # type: (CommandSub) -> str

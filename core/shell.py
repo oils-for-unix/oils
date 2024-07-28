@@ -788,7 +788,7 @@ def Main(
         'eval': method_io.Eval(),
 
         # identical to command sub
-        'captureStdout': method_io.CaptureStdout(),
+        'captureStdout': method_io.CaptureStdout(shell_ex),
         'promptVal': method_io.PromptVal(),
         'time': method_io.Time(),
         'strftime': method_io.Strftime(),

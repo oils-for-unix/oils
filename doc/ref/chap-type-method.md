@@ -498,7 +498,16 @@ Like the `eval` builtin, but useful in pure functions.
 
 ### captureStdout()
 
-Like `$()`, but useful in pure functions.
+Capture stdout of a command a string.
+
+    var c = ^(echo hi)
+    var stdout_str = _io->captureStdout(c)  # => "hi"
+
+It's like `$()`, but useful in pure functions.  Trailing newlines `\n` are
+removed.
+
+If the command fails, `captureStdout()` raises an error, which can be caught
+with `try`.
 
 ### promptVal()
 

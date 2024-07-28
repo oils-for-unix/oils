@@ -824,6 +824,10 @@ ysh-methods() {
   run-file ysh-methods "$@"
 }
 
+ysh-method-io() {
+  run-file ysh-method-io "$@"
+}
+
 ysh-func() {
   run-file ysh-func "$@"
 }

@@ -10,7 +10,7 @@ from core import error
 from core import pyos
 from mycpp.mylib import log
 
-from typing import List, Any, TYPE_CHECKING
+from typing import List, Tuple, Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value, RedirValue
     from _devbuild.gen.syntax_asdl import (command, command_t, CommandSub)
@@ -197,6 +197,10 @@ class _Executor(object):
     def RunSubshell(self, node):
         # type: (command_t) -> int
         return 0
+
+    def CaptureStdout(self, node):
+        # type: (command_t) -> Tuple[int, str]
+        return 0, ''
 
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str

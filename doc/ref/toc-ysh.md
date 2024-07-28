@@ -60,7 +60,7 @@ error handling, and more.
 X [Func]           name()         location()    toJson()
 X [Proc]           name()         location()    toJson()
 X [Module]         name()         filename()
-  [IO]           X eval()       X captureStdout()
+  [IO]           X eval()         captureStdout()
                    promptVal()
                  X time()       X strftime()
                  X glob()
