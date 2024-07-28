@@ -46,13 +46,13 @@ Similar names: [append][]
 The most common use is to pretty print expressions:
 
     $ var x = 42
-    $ pp [x + 5]               # pass unevaluated expression
+    $ pp (x + 5)
     myfile.ysh:1: (Int)   47   # print value with code location
 
-You can also print a value, with no code location:
+You can also pass an unevaluated expression:
 
-    $ pp (x + 5)
-    (Int) 47
+    $ pp [x + 5]
+    myfile.ysh:1: (Int)   47   # evaluate first
 
 The `pp` builtin can also print low-level interpreter state.  Some of of these
 are implementation details, subject to change.

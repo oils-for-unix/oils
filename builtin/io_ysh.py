@@ -7,7 +7,7 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
-from _devbuild.gen.value_asdl import value, value_e
+from _devbuild.gen.value_asdl import value, value_e, value_t
 from asdl import format as fmt
 from core import error
 from core.error import e_usage
@@ -65,20 +65,29 @@ class Pp(_Builtin):
         val = rd.PosValue()
         rd.Done()
 
+        blame_tok = rd.LeftParenToken()
+
+        # It might be nice to add a string too, like
+        # pp 'my annotation' (actual)
+        # But the var name should meaningful in most cases
+
         UP_val = val
+        result = None  # type: value_t
         with tagswitch(val) as case:
             if case(value_e.Expr):  # Destructured assert [true === f()]
                 val = cast(value.Expr, UP_val)
-                blame_tok = rd.LeftParenToken()
-                result = self.expr_ev.EvalExpr(val.e, blame_tok)
 
-                # Show it with location
-                excerpt, prefix = ui.CodeExcerptAndPrefix(blame_tok)
-                self.stdout_.write(excerpt)
-                ui.PrettyPrintValue(prefix, result, self.stdout_)
+                # In this case, we could get the unevaluated code string and
+                # print it.  Although quoting the line seems enough.
+                result = self.expr_ev.EvalExpr(val.e, blame_tok)
             else:
-                # IOError caught by caller
-                ui.PrettyPrintValue('', val, self.stdout_)
+                result = val
+
+        # Show it with location
+        excerpt, prefix = ui.CodeExcerptAndPrefix(blame_tok)
+        self.stdout_.write(excerpt)
+        ui.PrettyPrintValue(prefix, result, self.stdout_)
+
         return 0
 
     def Run(self, cmd_val):
