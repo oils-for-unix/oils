@@ -184,9 +184,9 @@ X [Unsupported]   enable
   [Errors]         nounset -u      errexit -e   inherit_errexit   pipefail
   [Globbing]       noglob -f       nullglob     failglob        X dotglob
                    dashglob (true)
+  [Other Option]   noclobber -C    errtrace -E
   [Debugging]      xtrace        X verbose    X extdebug
   [Interactive]    emacs           vi
-  [Other POSIX]  X noclobber
   [Compat]         eval_unsafe_arith            ignore_flags_not_impl
 ```
 
