@@ -47,13 +47,17 @@ class TrapState(object):
         self.hooks = {}  # type: Dict[str, command_t]
         self.traps = {}  # type: Dict[int, command_t]
 
-    def ClearForSubProgram(self):
-        # type: () -> None
+    def ClearForSubProgram(self, inherit_errtrace):
+        # type: (bool) -> None
         """SubProgramThunk uses this because traps aren't inherited."""
 
-        # bash clears DEBUG hook in subshell, command sub, etc.  See
-        # spec/builtin-trap-bash.
+        # bash clears hooks like DEBUG in subshells.
+        # The ERR can be preserved if set -o errtrace
+        hook_err = self.hooks.get('ERR')
         self.hooks.clear()
+        if hook_err is not None and inherit_errtrace:
+            self.hooks['ERR'] = hook_err
+
         self.traps.clear()
 
     def GetHook(self, hook_name):
