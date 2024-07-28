@@ -12,18 +12,34 @@ from osh import prompt
 from typing import Dict, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import typed_args
+    from osh import cmd_eval
 
 _ = log
 
 
 class Eval(vm._Callable):
+    """
+    These are similar:
 
-    def __init__(self):
-        # type: () -> None
-        pass
+        var c = ^(echo hi)
+
+        eval (c)
+        call _io->eval(c)
+
+    The CALLER must handle errors.
+    """
+    def __init__(self, cmd_ev):
+        # type: (cmd_eval.CommandEvaluator) -> None
+        self.cmd_ev = cmd_ev
 
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
+        io = rd.PosIO()
+        cmd = rd.PosCommand()
+        rd.Done()  # no more args
+
+        # errors can arise from false' and 'exit'
+        unused_status = self.cmd_ev.EvalCommand(cmd)
         return value.Null
 
 
@@ -42,11 +58,14 @@ class CaptureStdout(vm._Callable):
 
         status, stdout_str = self.shell_ex.CaptureStdout(cmd)
         if status != 0:
+            # Note that $() raises error.ErrExit with the status.
+            # But I think that results in a more confusing error message, so we
+            # "wrap" the errors.
             properties = {
                 'status': num.ToBig(status)
             }  # type: Dict[str, value_t]
             raise error.Structured(
-                4, 'Captured command failed with status %d' % status,
+                4, 'captureStdout(): command failed with status %d' % status,
                 rd.LeftParenToken(), properties)
 
         return value.Str(stdout_str)

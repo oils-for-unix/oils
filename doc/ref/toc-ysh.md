@@ -48,7 +48,7 @@ error handling, and more.
                    search()       leftMatch()
   [List]           List/append()  pop()         extend()    indexOf()
                  X insert()     X remove()      reverse()
-  [Dict]           keys()         values()    X get()     X erase()
+  [Dict]           keys()         values()    X get()       erase()
                  X inc()        X accum()
   [Range] 
   [Eggex] 
@@ -60,7 +60,7 @@ error handling, and more.
 X [Func]           name()         location()    toJson()
 X [Proc]           name()         location()    toJson()
 X [Module]         name()         filename()
-  [IO]           X eval()         captureStdout()
+  [IO]             eval()         captureStdout()
                    promptVal()
                  X time()       X strftime()
                  X glob()

@@ -2013,7 +2013,17 @@ class CommandEvaluator(object):
         # type: (command_t) -> int
         """For builtins to evaluate command args.
 
-        e.g. cd /tmp (x)
+        Many exceptions are raised.
+
+        Examples:
+
+            cd /tmp (; ; mycmd)
+
+        And:
+            eval (mycmd)
+            call _io->eval(mycmd)
+
+        (Should those be more like eval 'mystring'?)
         """
         status = 0
         try:

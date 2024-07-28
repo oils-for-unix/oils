@@ -97,3 +97,44 @@ p {
 ## STDOUT:
 TODO
 ## END
+
+
+#### eval 'mystring' vs. eval (myblock)
+
+eval 'echo plain'
+echo plain=$?
+var b = ^(echo plain)
+eval (b)
+echo plain=$?
+
+echo
+
+# This calls main_loop.Batch(), which catches
+# - error.Parse
+# - error.ErrExit
+# - error.FatalRuntime - glob errors, etc.?
+
+try {
+  eval 'echo one; false; echo two'
+}
+pp line (_error)
+
+# This calls CommandEvaluator.EvalCommand(), as blocks do
+
+var b = ^(echo one; false; echo two)
+try {
+  eval (b)
+}
+pp line (_error)
+
+## STDOUT:
+plain
+plain=0
+plain
+plain=0
+
+one
+(Dict)   {"code":1}
+one
+(Dict)   {"code":1}
+## END

@@ -494,7 +494,19 @@ A module is a file with YSH code.
 
 ### eval()
 
-Like the `eval` builtin, but useful in pure functions.
+Evaluate a command, and return `null`.
+
+    var c = ^(echo hi)
+    call _io->eval(c)
+
+It's like like the `eval` builtin, and meant to be used in pure functions.
+
+<!--
+TODO: We should be able to bind positional args, env vars, and inspect the
+shell VM.
+
+Though this runs in the same VM, not a new one.
+-->
 
 ### captureStdout()
 
@@ -508,6 +520,10 @@ removed.
 
 If the command fails, `captureStdout()` raises an error, which can be caught
 with `try`.
+
+    try {
+      var s = _io->captureStdout(c)
+    }
 
 ### promptVal()
 

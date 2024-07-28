@@ -785,7 +785,7 @@ def Main(
     methods[value_e.IO] = {
         # io->eval(myblock) is the functional version of eval (myblock)
         # Should we also have expr->eval() instead of evalExpr?
-        'eval': method_io.Eval(),
+        'eval': method_io.Eval(cmd_ev),
 
         # identical to command sub
         'captureStdout': method_io.CaptureStdout(shell_ex),
