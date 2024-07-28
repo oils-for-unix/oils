@@ -407,8 +407,8 @@ class FdState(object):
                     else:
                         extra = ''
                     self.errfmt.Print_(
-                        "Can't open %r%s: %s" %
-                        (arg.filename, extra, pyutil.strerror(e)),
+                        "Can't open %r: %s%s" %
+                        (arg.filename, pyutil.strerror(e), extra),
                         blame_loc=r.op_loc)
                     raise  # redirect failed
 
