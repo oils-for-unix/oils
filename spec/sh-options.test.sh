@@ -315,25 +315,54 @@ failglob
 
 #### noclobber off
 set -o errexit
-echo foo > $TMP/can-clobber
+
+echo foo > can-clobber
+echo status=$?
 set +C
-echo foo > $TMP/can-clobber
+
+echo foo > can-clobber
+echo status=$?
 set +o noclobber
-echo foo > $TMP/can-clobber
-cat $TMP/can-clobber
-## stdout: foo
+
+echo foo > can-clobber
+echo status=$?
+cat can-clobber
+
+## STDOUT:
+status=0
+status=0
+status=0
+foo
+## END
 
 #### noclobber on
-rm $TMP/no-clobber
+
+rm -f no-clobber
 set -C
-echo foo > $TMP/no-clobber
-echo $?
-echo foo > $TMP/no-clobber
-echo $?
-echo foo >| $TMP/no-clobber
-echo $?
-## stdout-json: "0\n1\n0\n"
-## OK dash stdout-json: "0\n2\n0\n"
+
+echo foo > no-clobber
+echo create=$?
+
+echo ovewrite > no-clobber
+echo overwrite=$?
+
+echo force >| no-clobber
+echo force=$?
+
+cat no-clobber
+
+## STDOUT:
+create=0
+overwrite=1
+force=0
+force
+## END
+## OK dash STDOUT:
+create=0
+overwrite=2
+force=0
+force
+## END
 
 #### noclobber on <>
 set -C
