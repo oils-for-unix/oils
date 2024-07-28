@@ -31,8 +31,6 @@
 #
 # - need Vim syntax highlighting!
 #   - e.g. multiline '' strings aren't higlighted
-# - need pp [x] for debugging
-# - need assert [x] for testing
 # - task files need completion
 #
 # - Eggex can use multiline /// syntax, though you can use \ for line continuation
@@ -46,8 +44,8 @@
 #
 # - ERROR messages for URL parsing should bubble up to the user!
 #   - USER code should be able to point out to location info for bad escapes
-#   like %f or %0z
-#   - I guess we just need an idiom for this?  A "class"?
+#     like %f or %0z
+#   - I guess we just need an idiom for this?
 
 source $LIB_OSH/task-five.sh
 #source $LIB_YSH/yblocks.ysh
