@@ -240,15 +240,27 @@ pp (u'one \t two \n') | cat
 pp (repeat([123], 40)) | cat
 
 ## STDOUT:
-(Str)   'foo'
-(Str)   b'isn\'t this sq'
-(Str)   '"dq $myvar"'
-(Str)   b'\\ backslash \\\\'
-(Str)   b'one \t two \n'
-(List)
-[
-    123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
-    123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
-    123, 123, 123, 123, 123, 123, 123, 123, 123, 123
-]
+  pp ('foo') | cat
+     ^
+[ stdin ]:5: (Str)   'foo'
+  pp ("isn't this sq") | cat
+     ^
+[ stdin ]:7: (Str)   b'isn\'t this sq'
+  pp ('"dq $myvar"') | cat
+     ^
+[ stdin ]:9: (Str)   '"dq $myvar"'
+  pp (r'\ backslash \\') | cat
+     ^
+[ stdin ]:11: (Str)   b'\\ backslash \\\\'
+  pp (u'one \t two \n') | cat
+     ^
+[ stdin ]:13: (Str)   b'one \t two \n'
+  pp (repeat([123], 40)) | cat
+     ^
+[ stdin ]:15: (List)
+    [
+        123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
+        123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
+        123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123
+    ]
 ## END
