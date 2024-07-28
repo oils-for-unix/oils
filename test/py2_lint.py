@@ -16,7 +16,7 @@ import sys
 from pyflakes import api
 from pyflakes import reporter
 
-from core import ansi
+from display import ansi
 
 # Our config for flake8
 # local fatal_errors='E901,E999,F821,F822,F823,F401'

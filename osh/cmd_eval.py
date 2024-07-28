@@ -74,7 +74,7 @@ from core import num
 from core import pyos  # Time().  TODO: rename
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 from frontend import consts
@@ -112,6 +112,7 @@ IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
 Optimize = 1 << 2
 NoDebugTrap = 1 << 3
+NoErrTrap = 1 << 4
 
 
 def MakeBuiltinArgv(argv1):
@@ -164,7 +165,8 @@ def _HasManyStatuses(node):
                 # Multiple parts like 'ls | wc' is disallowed
                 return True
 
-        # - ShAssignment could be allowed, but its exit code will always be 0 without command subs
+        # - ShAssignment could be allowed, though its exit code will always be
+        #   0 without command subs
         # - Naively, (non-singleton) pipelines could be allowed because pipefail.
         #   BUT could be a proc executed inside a child process, which causes a
         #   problem: the strict_errexit check has to occur at runtime and there's
@@ -242,23 +244,6 @@ class ctx_LoopLevel(object):
         self.cmd_ev.loop_level -= 1
 
 
-class ctx_ErrTrap(object):
-    """For trap ERR."""
-
-    def __init__(self, cmd_ev):
-        # type: (CommandEvaluator) -> None
-        cmd_ev.running_err_trap = True
-        self.cmd_ev = cmd_ev
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self.cmd_ev.running_err_trap = False
-
-
 class CommandEvaluator(object):
     """Executes the program by tree-walking.
 
@@ -271,7 +256,7 @@ class CommandEvaluator(object):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             errfmt,  # type: ui.ErrorFormatter
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
@@ -309,7 +294,6 @@ class CommandEvaluator(object):
         self.trap_state = trap_state
         self.signal_safe = signal_safe
 
-        self.running_err_trap = False
         self.loop_level = 0  # for detecting bad top-level break/continue
         self.check_command_sub_status = False  # a hack.  Modified by ShellExecutor
 
@@ -783,7 +767,6 @@ class CommandEvaluator(object):
     def _DoSimple(self, node, cmd_st):
         # type: (command.Simple, CommandStatus) -> int
         probe('cmd_eval', '_DoSimple_enter')
-        cmd_st.check_errexit = True
 
         # PROBLEM: We want to log argv in 'xtrace' mode, but we may have already
         # redirected here, which screws up logging.  For example, 'echo hi
@@ -959,7 +942,7 @@ class CommandEvaluator(object):
             io_errors = []  # type: List[error.IOError_OSError]
             with vm.ctx_FlushStdout(io_errors):
                 try:
-                    ui.PrettyPrintValue(val, mylib.Stdout())
+                    ui.PrettyPrintValue('', val, mylib.Stdout())
                 except (IOError, OSError) as e:
                     self.errfmt.PrintMessage(
                         'I/O error during = keyword: %s' % pyutil.strerror(e),
@@ -1070,7 +1053,6 @@ class CommandEvaluator(object):
 
             if i == n - 1:  # errexit handled differently for last child
                 status = self._Execute(child)
-                cmd_st.check_errexit = True
             else:
                 # blame the right && or ||
                 self._StrictErrExit(child)
@@ -1132,6 +1114,9 @@ class CommandEvaluator(object):
                 iter_expr = iterable.e
                 expr_blame = iterable.blame
 
+            else:
+                raise AssertionError()
+
         n = len(node.iter_names)
         assert n > 0
 
@@ -1140,8 +1125,8 @@ class CommandEvaluator(object):
         name1 = None  # type: LeftName
         name2 = None  # type: Optional[LeftName]
 
-        it2 = None  # type: val_ops._ContainerIter
-        if iter_list is None:  # for_expr.YshExpr
+        it2 = None  # type: val_ops.Iterator
+        if iter_expr:  # for_expr.YshExpr
             val = self.expr_ev.EvalExpr(iter_expr, expr_blame)
 
             UP_val = val
@@ -1193,10 +1178,27 @@ class CommandEvaluator(object):
                             'Range iteration expects at most 2 loop variables',
                             node.keyword)
 
+                elif case(value_e.Stdin):
+                    # TODO: This could changed to magic iterator?
+                    it2 = val_ops.StdinIterator(expr_blame)
+                    if n == 1:
+                        name1 = location.LName(node.iter_names[0])
+                    elif n == 2:
+                        i_name = location.LName(node.iter_names[0])
+                        name1 = location.LName(node.iter_names[1])
+                    else:
+                        e_die_status(
+                            2,
+                            'Stdin iteration expects at most 2 loop variables',
+                            node.keyword)
                 else:
-                    raise error.TypeErr(val, 'for loop expected List or Dict',
-                                        node.keyword)
+                    raise error.TypeErr(
+                        val, 'for loop expected List, Dict, Range, or Stdin',
+                        node.keyword)
+
         else:
+            assert iter_list is not None, iter_list
+
             #log('iter list %s', iter_list)
             it2 = val_ops.ArrayIter(iter_list)
 
@@ -1213,8 +1215,19 @@ class CommandEvaluator(object):
 
         status = 0  # in case we loop zero times
         with ctx_LoopLevel(self):
-            while not it2.Done():
-                self.mem.SetLocalName(name1, it2.FirstValue())
+            while True:
+                first = it2.FirstValue()
+                #log('first %s', first)
+                if first is None:  # for StdinIterator
+                    #log('first is None')
+                    break
+
+                if first.tag() == value_e.Interrupted:
+                    self.RunPendingTraps()
+                    #log('Done running traps')
+                    continue
+
+                self.mem.SetLocalName(name1, first)
                 if name2:
                     self.mem.SetLocalName(name2, it2.SecondValue())
                 if i_name:
@@ -1245,16 +1258,13 @@ class CommandEvaluator(object):
         body = node.body
         update = node.update
 
-        if init:
-            self.arith_ev.Eval(init)
-
+        self.arith_ev.Eval(init)
         with ctx_LoopLevel(self):
             while True:
-                if for_cond:
-                    # We only accept integers as conditions
-                    cond_int = self.arith_ev.EvalToBigInt(for_cond)
-                    if mops.Equal(cond_int, mops.ZERO):  # false
-                        break
+                # We only accept integers as conditions
+                cond_int = self.arith_ev.EvalToBigInt(for_cond)
+                if mops.Equal(cond_int, mops.ZERO):  # false
+                    break
 
                 try:
                     status = self._Execute(body)
@@ -1266,25 +1276,26 @@ class CommandEvaluator(object):
                     elif action == flow_e.Raise:
                         raise
 
-                if update:
-                    self.arith_ev.Eval(update)
+                self.arith_ev.Eval(update)
 
         return status
 
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
-        if node.name in self.procs and not self.exec_opts.redefine_proc_func():
+        if (self.procs.Get(node.name) and
+                not self.exec_opts.redefine_proc_func()):
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
-        self.procs[node.name] = value.Proc(node.name, node.name_tok,
-                                           proc_sig.Open, node.body, None,
-                                           True)
+        sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open,
+                             node.body, None, True)
+        self.procs.SetShFunc(node.name, sh_func)
 
     def _DoProc(self, node):
         # type: (Proc) -> None
         proc_name = lexer.TokenVal(node.name)
-        if proc_name in self.procs and not self.exec_opts.redefine_proc_func():
+        if (self.procs.Get(proc_name) and
+                not self.exec_opts.redefine_proc_func()):
             e_die(
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,
                 node.name)
@@ -1296,8 +1307,9 @@ class CommandEvaluator(object):
             proc_defaults = None
 
         # no dynamic scope
-        self.procs[proc_name] = value.Proc(proc_name, node.name, node.sig,
-                                           node.body, proc_defaults, False)
+        proc = value.Proc(proc_name, node.name, node.sig, node.body,
+                          proc_defaults, False)
+        self.procs.SetProc(proc_name, proc)
 
     def _DoFunc(self, node):
         # type: (Func) -> None
@@ -1449,10 +1461,6 @@ class CommandEvaluator(object):
     def _DoRedirect(self, node, cmd_st):
         # type: (command.Redirect, CommandStatus) -> int
 
-        # set -e affects redirect error, like mksh and bash 5.2, but unlike
-        # dash/ash
-        cmd_st.check_errexit = True
-
         status = 0
         redirects = []  # type: List[RedirValue]
 
@@ -1526,6 +1534,7 @@ class CommandEvaluator(object):
                     self.mem.SetTokenForLine(node.blame_tok)
 
                 self._MaybeRunDebugTrap()
+                cmd_st.check_errexit = True
                 status = self._DoSimple(node, cmd_st)
 
             elif case(command_e.ExpandedAlias):
@@ -1543,6 +1552,10 @@ class CommandEvaluator(object):
 
             elif case(command_e.Redirect):
                 node = cast(command.Redirect, UP_node)
+
+                # set -e affects redirect error, like mksh and bash 5.2, but unlike
+                # dash/ash
+                cmd_st.check_errexit = True
                 status = self._DoRedirect(node, cmd_st)
 
             elif case(command_e.Pipeline):
@@ -1551,6 +1564,8 @@ class CommandEvaluator(object):
 
             elif case(command_e.Subshell):
                 node = cast(command.Subshell, UP_node)
+
+                # This is a leaf from the parent process POV
                 cmd_st.check_errexit = True
                 status = self.shell_ex.RunSubshell(node.child)
 
@@ -1634,17 +1649,14 @@ class CommandEvaluator(object):
             elif case(command_e.CommandList):
                 node = cast(command.CommandList, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False
 
             elif case(command_e.DoGroup):
                 node = cast(command.DoGroup, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False  # not real statements
 
             elif case(command_e.BraceGroup):
                 node = cast(BraceGroup, UP_node)
                 status = self._ExecuteList(node.children)
-                cmd_st.check_errexit = False
 
             elif case(command_e.AndOr):
                 node = cast(command.AndOr, UP_node)
@@ -1751,10 +1763,6 @@ class CommandEvaluator(object):
 
         # Manual GC point before every statement
         mylib.MaybeCollect()
-
-        # This has to go around redirect handling because the process sub could be
-        # in the redirect word:
-        #     { echo one; echo two; } > >(tac)
 
         # Optimization: These 2 records have rarely-used lists, so we don't pass
         # alloc_lists=True.  We create them on demand.
@@ -1939,11 +1947,12 @@ class CommandEvaluator(object):
         status = -1  # uninitialized
 
         try:
+            options = []  # type: List[int]
             if cmd_flags & NoDebugTrap:
-                with state.ctx_Option(self.mutable_opts,
-                                      [option_i._no_debug_trap], True):
-                    status = self._Execute(node)
-            else:
+                options.append(option_i._no_debug_trap)
+            if cmd_flags & NoErrTrap:
+                options.append(option_i._no_err_trap)
+            with state.ctx_Option(self.mutable_opts, options, True):
                 status = self._Execute(node)
         except vm.IntControlFlow as e:
             if cmd_flags & RaiseControlFlow:
@@ -2049,7 +2058,10 @@ class CommandEvaluator(object):
 
     def _MaybeRunDebugTrap(self):
         # type: () -> None
-        """If a DEBUG trap handler exists, run it."""
+        """Run user-specified DEBUG code before certain commands."""
+        node = self.trap_state.GetHook('DEBUG')  # type: command_t
+        if node is None:
+            return
 
         # Fix lastpipe / job control / DEBUG trap interaction
         if self.exec_opts._no_debug_trap():
@@ -2059,35 +2071,49 @@ class CommandEvaluator(object):
         if not self.mem.ShouldRunDebugTrap():
             return
 
-        node = self.trap_state.GetHook('DEBUG')  # type: command_t
-        if node:
-            # NOTE: Don't set option_i._running_trap, because that's for
-            # RunPendingTraps() in the MAIN LOOP
+        # NOTE: Don't set option_i._running_trap, because that's for
+        # RunPendingTraps() in the MAIN LOOP
 
-            with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
-                with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-                    # for SetTokenForLine $LINENO
-                    with state.ctx_DebugTrap(self.mem):
-                        # Don't catch util.UserExit, etc.
-                        self._Execute(node)
+        with dev.ctx_Tracer(self.tracer, 'trap DEBUG', None):
+            with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+                # for SetTokenForLine $LINENO
+                with state.ctx_DebugTrap(self.mem):
+                    # Don't catch util.UserExit, etc.
+                    self._Execute(node)
 
     def _MaybeRunErrTrap(self):
         # type: () -> None
-        """If a ERR trap handler exists, run it."""
-
-        # Prevent infinite recursion
-        if self.running_err_trap:
+        """
+        Run user-specified ERR code after checking the status of certain
+        commands (pipelines)
+        """
+        node = self.trap_state.GetHook('ERR')  # type: command_t
+        if node is None:
             return
 
-        node = self.trap_state.GetHook('ERR')  # type: command_t
-        if node:
-            # NOTE: Don't set option_i._running_trap, because that's for
-            # RunPendingTraps() in the MAIN LOOP
+        # ERR trap is only run for a whole pipeline, not its parts
+        if self.exec_opts._no_err_trap():
+            return
 
-            with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
-                #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
-                with ctx_ErrTrap(self):
-                    self._Execute(node)
+        # Prevent infinite recursion
+        if self.mem.running_err_trap:
+            return
+
+        # "disabled errexit" rule
+        if self.mutable_opts.ErrExitIsDisabled():
+            return
+
+        # bash rule - affected by set -o errtrace
+        if self.mem.InsideFunction():
+            return
+
+        # NOTE: Don't set option_i._running_trap, because that's for
+        # RunPendingTraps() in the MAIN LOOP
+
+        with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
+            #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
+            with state.ctx_ErrTrap(self.mem):
+                self._Execute(node)
 
     def RunProc(self, proc, cmd_val):
         # type: (value.Proc, cmd_value.Argv) -> int

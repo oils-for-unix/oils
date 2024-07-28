@@ -41,15 +41,16 @@ readonly SHELLS=( ${OTHER_SHELLS[@]} bin/osh $OSH_OVM )
 # Awk wants this to be \\. ?  Probably should stop using Awk.
 readonly OSH_CPP_REGEX='_bin/.*/osh'
 
+log() {
+  echo "$@" >&2
+}
+
 # NOTE: This is in {build,test}/common.sh too.
 die() {
-  echo "FATAL: $@" 1>&2
+  log "$0: fatal: $@"
   exit 1
 }
 
-log() {
-  echo "$@" 1>&2
-}
 
 cmark() {
   # A filter to making reports

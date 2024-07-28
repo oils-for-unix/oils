@@ -179,6 +179,6 @@ pp line (max)
 ## STDOUT:
 "􏿿"
 "􏿿"
-(Str)   "􏿿"
+(Str)   '􏿿'
 (Str)   "􏿿"
 ## END

@@ -86,6 +86,18 @@ Examples of float literals:
 
     var f2 = -1.5e-100
 
+### char-literal
+
+Three kinds of unquoted backslash escapes are allowed in expression mode.  They
+match what's available in quoted J8-style strings:
+
+    var backslash = \\
+    var quotes = \' ++ \"   # same as u'\'' ++ '"'
+
+    var mu = \u{3bc}        # same as u'\u{3bc}'
+
+    var nul = \y00          # same as b'\y00'
+
 ### ysh-string
 
 YSH has single and double-quoted strings borrowed from Bourne shell, and
@@ -466,9 +478,28 @@ The expression `mydict.key` is short for `mydict['key']`.
 
 ### ysh-slice
 
-Slicing gives you a subsequence of a `Str` or `List`, like Python.
+Slicing gives you a subsequence of a `Str` or `List`, as in Python.
 
 Negative indices are relative to the end.
+
+String example:
+
+    $ var s = 'spam eggs'
+    $ pp line (s[1:-1])
+    (Str)   "pam egg"
+
+    $ echo "x $[s[2:]]"
+    x am eggs
+
+List example:
+
+    $ var foods = ['ale', 'bean', 'corn']
+    $ pp line (foods[-2:])
+    (List)   ["bean","corn"]
+    
+    $ write -- @[foods[:2]]
+    ale
+    bean
 
 ### func-call
 
@@ -618,7 +649,9 @@ Sets of characters can be written as strings
 Backslash escapes are respected:
 
     [ \\ \' \" \0 ]
-    [ \xFF \u0100 ]
+    [ \xFF \u{3bc} ]
+
+(Note that we don't use `\yFF`, as in J8 strings.)
 
 Splicing:
 

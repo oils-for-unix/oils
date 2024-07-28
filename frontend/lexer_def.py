@@ -484,23 +484,25 @@ LEXER_DEF[lex_mode_e.SQ_Raw] = [
 _U_BRACED_CHAR = R(r'\\[uU]\{[0-9a-fA-F]{1,6}\}', Id.Char_UBraced)
 
 _X_CHAR_LOOSE = R(r'\\x[0-9a-fA-F]{1,2}', Id.Char_Hex)  # bash
-_X_CHAR_STRICT = R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex)  # YSH
+_CHAR_YHEX = R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex)  # \yff - J8 only
 
 _U4_CHAR_LOOSE = R(r'\\u[0-9a-fA-F]{1,4}', Id.Char_Unicode4)  # bash
 
 _U4_CHAR_STRICT = R(r'\\u[0-9a-fA-F]{4}', Id.Char_Unicode4)  # JSON-only
 
+#_JSON_ONE_CHAR = R(r'\\[\\"/bfnrt]', Id.Char_OneChar)
 EXPR_CHARS = [
-    # This is like Rust.  We don't have the legacy C escapes like \b.
+    # Allow same backslash escapes as J8 strings, except;
+    # - legacy \b \f
+    # - unnecessary \/
+    #
+    # Note that \0 should be written \y00.
+    R(r'''\\[\\"'nrt]''', Id.Char_OneChar),
+    _CHAR_YHEX,
 
-    # NOTE: \' and \" are more readable versions of '"' and "'" in regexs
-    R(r'\\[0rtn\\"%s]' % "'", Id.Char_OneChar),
-    _X_CHAR_STRICT,
-
-    # Because 'a' is a string, we use the syntax #'a' for char literals.
-    # We explicitly leave out #''' because it's confusing.
-    # Note: we're not doing utf-8 validation here.
-    R(r"#'[^'\0]'", Id.Char_Pound),
+    # Eggex.  This is a LITERAL translation to \xff in ERE?  So it's not \yff
+    # It doesn't have semantics; it's just syntax.
+    R(r'\\x[0-9a-fA-F]{2}', Id.Char_Hex),
     _U_BRACED_CHAR,
 ]
 
@@ -634,7 +636,7 @@ _J8_STR_COMMON = [
     C("'", Id.Right_SingleQuote),  # end for J8
     _JSON_ONE_CHAR,
     C("\\'", Id.Char_OneChar),  # since ' ends, allow \'
-    R(r'\\y[0-9a-fA-F]{2}', Id.Char_YHex),  # \yff - J8 only
+    _CHAR_YHEX,
     _U_BRACED_CHAR,  # \u{123456} - J8 only
 
     # osh/word_parse.py relies on this.  It has to be consistent with $''

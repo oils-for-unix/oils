@@ -15,7 +15,7 @@ YSH:
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.syntax_asdl import loc, Token, suffix_op
 from core import pyutil
-from core import ui
+from display import ui
 from core import error
 from core.error import e_die, e_strict
 from mycpp.mylib import log

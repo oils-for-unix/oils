@@ -34,7 +34,7 @@ from core import process
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 from frontend import lexer
@@ -216,7 +216,7 @@ def InitCommandEvaluator(parse_ctx=None,
     fd_state = process.FdState(errfmt, job_control, job_list, None, None, None,
                                exec_opts)
     aliases = {} if aliases is None else aliases
-    procs = {}
+    procs = state.Procs(mem)
     methods = {}
 
     compopt_state = completion.OptionState()
@@ -224,7 +224,7 @@ def InitCommandEvaluator(parse_ctx=None,
 
     readline = None  # simulate not having it
 
-    new_var = assign_osh.NewVar(mem, procs, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, exec_opts, errfmt)
     assign_builtins = {
         builtin_i.declare: new_var,
         builtin_i.typeset: new_var,

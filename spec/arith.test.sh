@@ -759,3 +759,117 @@ echo $((-10 % -3))
 1
 -1
 ## END
+
+#### undef[0]
+case $SH in dash) exit ;; esac
+
+echo ARITH $(( undef[0] ))
+echo status=$?
+echo
+
+(( undef[0] ))
+echo status=$?
+echo
+
+echo UNDEF ${undef[0]}
+echo status=$?
+
+## STDOUT:
+ARITH 0
+status=0
+
+status=1
+
+UNDEF
+status=0
+## END
+## N-I dash STDOUT:
+## END
+
+#### undef[0] with nounset
+case $SH in dash) exit ;; esac
+
+set -o nounset
+echo UNSET $(( undef[0] ))
+echo status=$?
+
+## status: 1
+## STDOUT:
+## END
+
+## N-I dash status: 0
+
+## BUG mksh/zsh status: 0
+## BUG mksh/zsh STDOUT:
+UNSET 0
+status=0
+## END
+
+## N-I dash STDOUT:
+## END
+
+#### s[0] with string abc
+case $SH in dash) exit ;; esac
+
+s='abc'
+echo abc $(( s[0] )) $(( s[1] ))
+echo status=$?
+echo
+
+(( s[0] ))
+echo status=$?
+echo
+
+## STDOUT:
+abc 0 0
+status=0
+
+status=1
+
+## END
+## N-I dash STDOUT:
+## END
+
+#### s[0] with string 42 
+case $SH in dash) exit ;; esac
+
+s='42'
+echo 42 $(( s[0] )) $(( s[1] ))
+echo status=$?
+
+## STDOUT:
+42 42 0
+status=0
+## END
+## N-I dash STDOUT:
+## END
+
+## BUG zsh STDOUT:
+42 0 4
+status=0
+## END
+
+#### s[0] with string '12 34'
+
+s='12 34'
+echo '12 34' $(( s[0] )) $(( s[1] ))
+echo status=$?
+
+## status: 1
+## STDOUT:
+## END
+
+## OK dash status: 2
+
+## BUG zsh status: 0
+## BUG zsh STDOUT:
+12 34 0 1
+status=0
+## END
+
+# bash prints an error, but doesn't fail
+
+## BUG bash status: 0
+## BUG bash STDOUT:
+status=1
+## END

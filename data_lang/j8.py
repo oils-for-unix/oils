@@ -2,11 +2,6 @@
 """
 j8.py: J8 Notation, a superset of JSON
 
-TODO:
-
-- Many more tests
-  - Run JSONTestSuite
-
 Later:
 
 - PrettyPrinter uses hnode.asdl?
@@ -32,6 +27,8 @@ Later:
     - JSON8 could have trailing commas rule
     - NIL8 at least has no commas for [1 2 "hi"]
 """
+
+import math
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
@@ -145,6 +142,7 @@ def Utf8Encode(code):
 SHOW_CYCLES = 1 << 1  # show as [...] or {...} I think, with object ID
 SHOW_NON_DATA = 1 << 2  # non-data objects like Eggex can be <Eggex 0xff>
 LOSSY_JSON = 1 << 3  # JSON is lossy
+INF_NAN_ARE_NULL = 1 << 4  # for JSON
 
 # Hack until we fully translate
 assert pyj8.LOSSY_JSON == LOSSY_JSON
@@ -176,7 +174,7 @@ def PrintJsonMessage(val, buf, indent):
     Caller must handle error.Encode()
     Doesn't decay to b'' strings - will use Unicode replacement char.
     """
-    _Print(val, buf, indent, options=LOSSY_JSON)
+    _Print(val, buf, indent, options=LOSSY_JSON | INF_NAN_ARE_NULL)
 
 
 def PrintLine(val, f):
@@ -185,9 +183,24 @@ def PrintLine(val, f):
 
     # error.Encode should be impossible - we show cycles and non-data
     buf = mylib.BufWriter()
+
     _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
+
     f.write(buf.getvalue())
     f.write('\n')
+
+
+if 0:
+
+    def Repr(val):
+        # type: (value_t) -> str
+        """ Unused
+        This is like Python's repr
+        """
+        # error.Encode should be impossible - we show cycles and non-data
+        buf = mylib.BufWriter()
+        _Print(val, buf, -1, options=SHOW_CYCLES | SHOW_NON_DATA)
+        return buf.getvalue()
 
 
 def EncodeString(s, buf, unquoted_ok=False):
@@ -321,6 +334,134 @@ class InstancePrinter(object):
             self._BracketIndent(level)
             self.buf.write('}')
 
+    def _PrintBashPrefix(self, type_str, level):
+        # type: (str, int) -> None
+
+        self.buf.write('{')
+        self._MaybeNewline()
+        self._ItemIndent(level)
+        self.buf.write('"type":')
+        self._MaybeSpace()
+        self.buf.write(type_str)  # "BashArray",  or "BashAssoc",
+
+        self._MaybeNewline()
+
+        self._ItemIndent(level)
+        self.buf.write('"data":')
+        self._MaybeSpace()
+
+    def _PrintBashSuffix(self, level):
+        # type: (int) -> None
+        self._MaybeNewline()
+        self._BracketIndent(level)
+        self.buf.write('}')
+
+    def _PrintSparseArray(self, val, level):
+        # type: (value.SparseArray, int) -> None
+
+        self._PrintBashPrefix('"SparseArray",', level)
+
+        if len(val.d) == 0:  # Special case like Python/JS
+            self.buf.write('{}')
+        else:
+            self.buf.write('{')
+            self._MaybeNewline()
+
+            first = True
+            i = 0
+            for k, v in iteritems(val.d):
+                if i != 0:
+                    self.buf.write(',')
+                    self._MaybeNewline()
+
+                self._ItemIndent(level + 1)
+                pyj8.WriteString(mops.ToStr(k), self.options, self.buf)
+
+                self.buf.write(':')
+                self._MaybeSpace()
+
+                pyj8.WriteString(v, self.options, self.buf)
+
+                i += 1
+
+            self._MaybeNewline()
+
+            self._BracketIndent(level + 1)
+            self.buf.write('}')
+
+        self._PrintBashSuffix(level)
+
+    def _PrintBashArray(self, val, level):
+        # type: (value.BashArray, int) -> None
+
+        self._PrintBashPrefix('"BashArray",', level)
+
+        if len(val.strs) == 0:  # Special case like Python/JS
+            self.buf.write('{}')
+        else:
+            self.buf.write('{')
+            self._MaybeNewline()
+
+            first = True
+            for i, s in enumerate(val.strs):
+                if s is None:
+                    continue
+
+                if not first:
+                    self.buf.write(',')
+                    self._MaybeNewline()
+
+                self._ItemIndent(level + 1)
+                pyj8.WriteString(str(i), self.options, self.buf)
+
+                self.buf.write(':')
+                self._MaybeSpace()
+
+                pyj8.WriteString(s, self.options, self.buf)
+
+                first = False
+
+            self._MaybeNewline()
+
+            self._BracketIndent(level + 1)
+            self.buf.write('}')
+
+        self._PrintBashSuffix(level)
+
+    def _PrintBashAssoc(self, val, level):
+        # type: (value.BashAssoc, int) -> None
+
+        self._PrintBashPrefix('"BashAssoc",', level)
+
+        if len(val.d) == 0:  # Special case like Python/JS
+            self.buf.write('{}')
+        else:
+            self.buf.write('{')
+            self._MaybeNewline()
+
+            i = 0
+            for k2, v2 in iteritems(val.d):
+                if i != 0:
+                    self.buf.write(',')
+                    self._MaybeNewline()
+
+                self._ItemIndent(level + 1)
+                pyj8.WriteString(k2, self.options, self.buf)
+
+                self.buf.write(':')
+                self._MaybeSpace()
+
+                pyj8.WriteString(v2, self.options, self.buf)
+
+                i += 1
+
+            self._MaybeNewline()
+
+            self._BracketIndent(level + 1)
+            self.buf.write('}')
+
+        self._PrintBashSuffix(level)
+
     def Print(self, val, level=0):
         # type: (value_t, int) -> None
 
@@ -352,9 +493,29 @@ class InstancePrinter(object):
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
-                # TODO: avoid intrmediate allocation with
-                # self.buf.WriteFloat(val.f)
-                self.buf.write(str(val.f))
+
+                fl = val.f
+                if math.isinf(fl):
+                    if self.options & INF_NAN_ARE_NULL:
+                        s = 'null'  # negative infinity is null too
+                    else:
+                        s = 'INFINITY'
+                        if fl < 0:
+                            s = '-' + s
+                elif math.isnan(fl):
+                    if self.options & INF_NAN_ARE_NULL:
+                        # JavaScript JSON lib behavior: Inf and NaN are null
+                        # Python has a bug in the encoder by default, and then
+                        # allow_nan=False raises an error
+                        s = 'null'
+                    else:
+                        s = 'NAN'
+                else:
+                    # TODO: can we avoid intermediate allocation?
+                    # self.buf.WriteFloat(val.f)
+                    s = str(fl)
+
+                self.buf.write(s)
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
@@ -415,59 +576,17 @@ class InstancePrinter(object):
                 self._PrintDict(val, level)
                 self.visited[heap_id] = FINISHED
 
-            # BashArray and BashAssoc should be printed with pp line (x), e.g.
-            # for spec tests.
-            # - BashAssoc has a clear encoding.
-            # - BashArray could eventually be Dict[int, str].  But that's not
-            #   encodable in JSON, which has string keys!
-            #   So I think we can print it like ["a",null,'b"] and that won't
-            #   change.  That's what users expect.
+            elif case(value_e.SparseArray):
+                val = cast(value.SparseArray, UP_val)
+                self._PrintSparseArray(val, level)
+
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
-
-                self.buf.write('[')
-                self._MaybeNewline()
-                for i, s in enumerate(val.strs):
-                    if i != 0:
-                        self.buf.write(',')
-                        self._MaybeNewline()
-
-                    self._ItemIndent(level)
-                    if s is None:
-                        self.buf.write('null')
-                    else:
-                        pyj8.WriteString(s, self.options, self.buf)
-
-                self._MaybeNewline()
-
-                self._BracketIndent(level)
-                self.buf.write(']')
+                self._PrintBashArray(val, level)
 
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
-
-                self.buf.write('{')
-                self._MaybeNewline()
-                i = 0
-                for k2, v2 in iteritems(val.d):
-                    if i != 0:
-                        self.buf.write(',')
-                        self._MaybeNewline()
-
-                    self._ItemIndent(level)
-
-                    pyj8.WriteString(k2, self.options, self.buf)
-
-                    self.buf.write(':')
-                    self._MaybeSpace()
-
-                    pyj8.WriteString(v2, self.options, self.buf)
-
-                    i += 1
-
-                self._MaybeNewline()
-                self._BracketIndent(level)
-                self.buf.write('}')
+                self._PrintBashAssoc(val, level)
 
             else:
                 pass  # mycpp workaround
@@ -884,7 +1003,11 @@ class Parser(_Parser):
         elif self.tok_id == Id.J8_Int:
             part = self.s[self.start_pos:self.end_pos]
             self._Next()
-            return value.Int(mops.FromStr(part))
+            try:
+                big = mops.FromStr(part)
+            except ValueError:
+                raise self._ParseError('Integer is too big')
+            return value.Int(big)
 
         elif self.tok_id == Id.J8_Float:
             part = self.s[self.start_pos:self.end_pos]
@@ -911,8 +1034,13 @@ class Parser(_Parser):
         """ Raises error.Decode. """
         self._Next()
         obj = self._ParseValue()
-        if self.tok_id != Id.Eol_Tok:
-            raise self._ParseError('Unexpected trailing input')
+
+        n = len(self.s)
+        if self.start_pos != n:
+            extra = n - self.start_pos
+            #log('n %d pos %d', n, self.start_pos)
+            raise self._ParseError(
+                'Got %d bytes of unexpected trailing input' % extra)
         return obj
 
 

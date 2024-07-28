@@ -61,11 +61,16 @@ module value
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
   # value_t instances are stored in state.Mem().
   value =
+    # Only used for val_ops.StdinIterator.  (It would be nice if we could
+    # express iter_value.{Eof,Interrupted,Str,Int,...} in ASDL)
+    Interrupted
+  | Stdin
+
     # Methods on state.Mem return value.Undef, but it's not visible in YSH.
     #
     # A var bound to Undef is different than no binding because of dynamic
     # scope.  Undef can shadow values lower on the stack.
-    Undef
+  | Undef
 
   | Str(str s)
 

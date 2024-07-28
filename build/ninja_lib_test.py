@@ -155,6 +155,7 @@ class NinjaTest(unittest.TestCase):
     n, ru = self._Rules()
 
     ru.asdl_library('asdl/hnode.asdl', pretty_print_methods = False)  # REQUIRED
+    ru.asdl_library('display/pretty.asdl')
 
     ru.asdl_library('mycpp/examples/expr.asdl')
 
@@ -170,6 +171,8 @@ class NinjaTest(unittest.TestCase):
     self.assertEqual([
         'asdl-cpp',
         'asdl-cpp',
+        'asdl-cpp',
+        'compile_one',
         'compile_one',
         'compile_one',
         'link'],
@@ -180,6 +183,7 @@ class NinjaTest(unittest.TestCase):
     # Important implicit dependencies on generated headers!
     self.assertEqual([
         '_gen/asdl/hnode.asdl.h',
+        '_gen/display/pretty.asdl.h',
         '_gen/mycpp/examples/expr.asdl.h',
         ],
         compile_parse.implicit)
@@ -188,6 +192,7 @@ class NinjaTest(unittest.TestCase):
 
     self.assertEqual([
         '_build/obj/cxx-dbg/_gen/mycpp/examples/parse.mycpp.o',
+        '_build/obj/cxx-dbg/_gen/display/pretty.asdl.o',
         '_build/obj/cxx-dbg/_gen/mycpp/examples/expr.asdl.o',
         ],
         last.inputs)
@@ -196,6 +201,7 @@ class NinjaTest(unittest.TestCase):
     n, ru = self._Rules()
 
     ru.asdl_library('asdl/hnode.asdl', pretty_print_methods = False)  # REQUIRED
+    ru.asdl_library('display/pretty.asdl')
 
     ru.asdl_library('asdl/examples/demo_lib.asdl')
 
@@ -205,7 +211,7 @@ class NinjaTest(unittest.TestCase):
         deps = ['//asdl/examples/demo_lib.asdl'])
     
     actions = [call.rule for call in n.build_calls]
-    self.assertEqual(['asdl-cpp', 'asdl-cpp', 'asdl-cpp'], actions)
+    self.assertEqual(['asdl-cpp', 'asdl-cpp', 'asdl-cpp', 'asdl-cpp'], actions)
 
     ru.cc_binary(
         'asdl/gen_cpp_test.cc',
@@ -215,8 +221,10 @@ class NinjaTest(unittest.TestCase):
     ru.WriteRules()
 
     actions = [call.rule for call in n.build_calls]
+    print(actions)
     self.assertEqual([
-        'asdl-cpp', 'asdl-cpp', 'asdl-cpp',
+        'asdl-cpp', 'asdl-cpp', 'asdl-cpp', 'asdl-cpp',
+        'compile_one',
         'compile_one',  # compile demo_lib
         'compile_one',  # compile typed_demo
         'compile_one',  # compile gen_cpp_test
@@ -231,7 +239,8 @@ class NinjaTest(unittest.TestCase):
     # the header demo_lib.asdl.h
     self.assertEqual(
         [ '_gen/asdl/examples/demo_lib.asdl.h',
-          '_gen/asdl/hnode.asdl.h' ],
+          '_gen/asdl/hnode.asdl.h',
+          '_gen/display/pretty.asdl.h' ],
         sorted(c.implicit))
 
     c = CallFor(n, '_build/obj/cxx-dbg/asdl/gen_cpp_test.o')
@@ -241,6 +250,7 @@ class NinjaTest(unittest.TestCase):
         [ '_gen/asdl/examples/demo_lib.asdl.h',
           '_gen/asdl/examples/typed_demo.asdl.h',
           '_gen/asdl/hnode.asdl.h',
+          '_gen/display/pretty.asdl.h',
         ],
         sorted(c.implicit))
 

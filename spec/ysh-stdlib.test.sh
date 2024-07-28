@@ -23,7 +23,7 @@ null
 ## END
 
 #### max
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 json write (max(1, 2))
 json write (max([1, 2, 3]))
@@ -50,7 +50,7 @@ status=3
 ## END
 
 #### min
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 json write (min(2, 3))
 json write (min([1, 2, 3]))
@@ -77,7 +77,7 @@ status=3
 ## END
 
 #### abs
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 json write (abs(-1))
 json write (abs(0))
@@ -98,7 +98,7 @@ status=0
 ## END
 
 #### any
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 json write (any([]))
 json write (any([true]))
@@ -122,7 +122,7 @@ true
 ## END
 
 #### all
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 json write (all([]))
 json write (all([true]))
@@ -148,7 +148,7 @@ false
 ## END
 
 #### sum
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 json write (sum([]))
 json write (sum([0]))
@@ -157,4 +157,66 @@ json write (sum([1, 2, 3]))
 0
 0
 6
+## END
+
+
+#### repeat() string
+
+source $LIB_YSH/list.ysh
+
+echo three=$[repeat('foo', 3)]
+echo zero=$[repeat('foo', 0)]
+echo negative=$[repeat('foo', -1)]
+
+## STDOUT:
+three=foofoofoo
+zero=
+negative=
+## END
+
+#### repeat() list
+
+source $LIB_YSH/list.ysh
+
+var L = ['foo', 'bar']
+echo three @[repeat(L, 3)]
+echo zero @[repeat(L, 0)]
+echo negative @[repeat(L, -1)]
+
+## STDOUT:
+three foo bar foo bar foo bar
+zero
+negative
+## END
+
+#### repeat() error
+
+try {
+  $SH -c '
+  source $LIB_YSH/list.ysh
+  pp line (repeat(null, 3))
+  echo bad'
+}
+echo code=$[_error.code]
+
+try {
+  $SH -c '
+  source $LIB_YSH/list.ysh
+  pp line (repeat({}, 3))
+  echo bad'
+}
+echo code=$[_error.code]
+
+try {
+  $SH -c '
+  source $LIB_YSH/list.ysh
+  pp line (repeat(42, 3))
+  echo bad'
+}
+echo code=$[_error.code]
+
+## STDOUT:
+code=10
+code=10
+code=10
 ## END

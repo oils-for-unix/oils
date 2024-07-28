@@ -17,15 +17,15 @@ from typing import Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from frontend.py_readline import Readline
-    from core.ui import ErrorFormatter
     from core import shell
+    from display import ui
 
 
 class Bind(vm._Builtin):
     """For :, true, false."""
 
     def __init__(self, readline, errfmt):
-        # type: (Optional[Readline], ErrorFormatter) -> None
+        # type: (Optional[Readline], ui.ErrorFormatter) -> None
         self.readline = readline
         self.errfmt = errfmt
 
@@ -43,7 +43,7 @@ class History(vm._Builtin):
             self,
             readline,  # type: Optional[Readline]
             sh_files,  # type: shell.ShellFiles
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
             f,  # type: mylib.Writer
     ):
         # type: (...) -> None

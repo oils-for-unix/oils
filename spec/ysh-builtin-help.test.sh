@@ -70,7 +70,7 @@ echo status=$?
 status=0
 ## END
 
-#### help List/append chr etc.
+#### help List/append, runes, etc.
 
 shopt --set ysh:upgrade
 
@@ -88,7 +88,7 @@ echo status=$?
 assert-lines help cmd/append
 echo status=$?
 
-assert-lines help chr
+assert-lines help runes
 echo status=$?
 
 ## STDOUT:

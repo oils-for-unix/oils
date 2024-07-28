@@ -131,8 +131,9 @@ module syntax
     # TODO: Implement YSH ${x|html} and ${x %.3f}
   | Static(Token tok, str arg)
   | PatSub(CompoundWord pat, rhs_word replace, id replace_mode, Token slash_tok)
-    # begin is optional with ${array::1}
-  | Slice(arith_expr? begin, arith_expr? length)
+    # optional begin is arith_expr.EmptyZero
+    # optional length is None, because it's handled in a special way
+  | Slice(arith_expr begin, arith_expr? length)
 
   BracedVarSub = (
       Token left,        # in dynamic ParseVarRef, same as name_tok
@@ -236,7 +237,9 @@ module syntax
   | UnparsedIndex(Token left, str name, str index)  # for translation
 
   arith_expr =
-    VarSub %Token          # e.g. $(( x ))  Id.Arith_VarLike
+    EmptyZero              # these are valid:  $(( ))  (( ))  ${a[@]: : }
+  | EmptyOne               # condition is 1 for infinite loop:  for (( ; ; ))
+  | VarSub %Token          # e.g. $(( x ))  Id.Arith_VarLike
   | Word %CompoundWord     # e.g. $(( 123'456'$y ))
 
   | UnaryAssign(id op_id, arith_expr child)
@@ -327,6 +330,9 @@ module syntax
   | Words(List[word] words)       # for x in 'foo' *.py { echo $x }
                                   # like ShArrayLiteral, but no location for %(
   | YshExpr(expr e, Token blame)  # for x in (mylist) { echo $x }
+  #| Files(Token left, List[word] words)
+                                  # for x in <> {
+                                  # for x in < @myfiles > {
 
   BraceGroup = (
       Token left, Token? doc_token, List[command] children, Token right

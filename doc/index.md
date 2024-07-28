@@ -42,6 +42,7 @@ See [Published Docs](published.html) for those that are ready to read.
 
 - [Shell Language Idioms](shell-idioms.html) has some advice for using any
   shell, not just Oils.
+- [OSH Standard Library](lib-osh.html) &dagger;.  Small but useful enhancements.
 
 For sophisticated users:
 
@@ -91,11 +92,15 @@ YSH has 3 main sublanguages:
   - [Egg Expressions](eggex.html).  A new regex syntax, abbreviated *eggex*.
   - [YSH Regex API](ysh-regex-api.html).  Convenient and powerful.
 
-Crosscutting design issues:
+Features:
 
+- [Guide to YSH Error Handling](ysh-error.html)
 - [Guide to Procs and Funcs](proc-func.html)
   - [Block Literals](block-literals.html) &dagger;
-- [Guide to YSH Error Handling](ysh-error.html)
+- [Streams, Tables, Processes - awk, R, xargs](stream-table-process.html) &dagger;
+
+Crosscutting design issues:
+
 - [Variable Declaration, Mutation, and Scope](variables.html)
 - [Strings: Quotes, Interpolation, Escaping, and Buffers](strings.html) &dagger;
   - [Unicode](unicode.html) &dagger;.  Oils supports and prefers UTF-8.
@@ -111,6 +116,7 @@ the wire, **not** the other way around.
   lines, and structured data.
   - [JSON](json.html).  Some usage details.
   - [Framing](framing.html) &dagger;
+- [BYO Protocols](byo.html) - for testing and completion.
 
 ## The Shared Oils Runtime
 

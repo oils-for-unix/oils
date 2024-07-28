@@ -72,6 +72,19 @@ preserve_anchor_case: yes
 X [Unsupported]   enable
 ```
 
+<h2 id="stdlib">
+  Standard Library <a class="group-link" href="chap-stdlib.html">stdlib</a>
+</h2>
+
+```chapter-links-stdlib
+  [two]           log             die
+  [no-quotes]     nq-assert       nq-run          
+                  nq-capture      nq-capture-2
+                  nq-redir        nq-redir-2
+  [bash-strict]   
+  [task-five]     
+```
+
 <h2 id="front-end">
   Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>
@@ -149,10 +162,10 @@ X [Unsupported]   enable
                   sh-bitwise    ~a ^ b
   [Boolean]       bool-expr     [[ ! $x && $y || $z ]]
                                 test ! $x -a $y -o $z
-                  bool-infix    [[ $a -nt $b ]]  [[ $x == $y ]]
-                  bool-path     [[ -d /etc ]]
-                  bool-str      [[ -z '' ]]
-                  bool-other    [[ -o errexit ]]
+                  bool-infix    $a -nt $b    $x == $y
+                  bool-path     -d /etc
+                  bool-str      -n foo   -z '' 
+                  bool-other    -o errexit   -v name[index]
   [Patterns]      glob-pat      *.py
                   extglob       ,(*.py|*.sh)
                   regex         [[ foo =~ [a-z]+ ]]
@@ -174,7 +187,7 @@ X [Unsupported]   enable
   [Debugging]      xtrace        X verbose    X extdebug
   [Interactive]    emacs           vi
   [Other POSIX]  X noclobber
-  [Compat]         eval_unsafe_arith
+  [Compat]         eval_unsafe_arith            ignore_flags_not_impl
 ```
 
 <h2 id="special-var">
@@ -202,6 +215,7 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [getopts]       OPTIND            OPTARG      X OPTERR
   [read]          REPLY
   [Functions]   X RANDOM            SECONDS
+  [Oils VM]       OILS_VERSION      LIB_OSH
 ```
 
 <h2 id="plugin">

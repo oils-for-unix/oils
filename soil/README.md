@@ -44,6 +44,13 @@ Continuous testing on many platforms.
           09ab09ab.html  # links to ../345/dev-minimal.wwz/
           1010abab.html
 
+## Tokens / Authentication
+
+- `SOIL_GITHUB_API_TOKEN` - used by `maybe-merge` task, to use Github API to fast forward
+  - appears in `.github/workflows/all-builds.yml` for **only** the `maybe-merge` task
+- `OILS_GITHUB_KEY` - used by all tasks to publish HTML
+  - - should really be called `OILS_SSH_FROM_GITHUB_ACTIONS`
+
 ## Code
 
 Running a job starts at either:

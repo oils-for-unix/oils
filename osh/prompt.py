@@ -15,7 +15,7 @@ from core import main_loop
 from core import error
 from core import pyos
 from core import state
-from core import ui
+from display import ui
 from frontend import consts
 from frontend import match
 from frontend import reader

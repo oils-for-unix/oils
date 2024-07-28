@@ -1,5 +1,5 @@
 ## compare_shells: bash-4.4
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 
 # NOTE:
@@ -642,4 +642,156 @@ argv.py "${arr[@]}"
 ## STDOUT:
 ['30', '31', '40', '41']
 ['a', 'b', 'x', 'y']
+## END
+
+#### test -v assoc[key]
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
+
+echo 'no quotes'
+
+test -v assoc[empty]
+echo empty=$?
+
+test -v assoc[k]
+echo k=$?
+
+test -v assoc[nonexistent]
+echo nonexistent=$?
+
+echo
+
+# Now with quotes
+echo 'quotes'
+
+test -v assoc["empty"]
+echo empty=$?
+
+test -v assoc['k']
+echo k=$?
+
+test -v assoc['nonexistent'] 
+echo nonexistent=$?
+
+## STDOUT:
+no quotes
+empty=0
+k=0
+nonexistent=1
+
+quotes
+empty=0
+k=0
+nonexistent=1
+## END
+
+#### test -v with dynamic parsing
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
+
+key=empty
+test -v 'assoc[$key]'
+echo empty=$?
+
+key=k
+test -v 'assoc[$key]'
+echo k=$?
+
+key=nonexistent
+test -v 'assoc[$key]'
+echo nonexistent=$?
+
+## STDOUT:
+empty=0
+k=0
+nonexistent=1
+## END
+
+#### [[ -v assoc[key] ]]
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
+
+echo 'no quotes'
+
+[[ -v assoc[empty] ]]
+echo empty=$?
+
+[[ -v assoc[k] ]]
+echo k=$?
+
+[[ -v assoc[nonexistent] ]]
+echo nonexistent=$?
+
+echo
+
+# Now with quotes
+echo 'quotes'
+
+[[ -v assoc["empty"] ]]
+echo empty=$?
+
+[[ -v assoc['k'] ]]
+echo k=$?
+
+[[ -v assoc['nonexistent'] ]]
+echo nonexistent=$?
+
+echo
+
+echo 'vars'
+
+key=empty
+[[ -v assoc[$key] ]]
+echo empty=$?
+
+key=k
+[[ -v assoc[$key] ]]
+echo k=$?
+
+key=nonexistent
+[[ -v assoc[$key] ]]
+echo nonexistent=$?
+
+## STDOUT:
+no quotes
+empty=0
+k=0
+nonexistent=1
+
+quotes
+empty=0
+k=0
+nonexistent=1
+
+vars
+empty=0
+k=0
+nonexistent=1
+## END
+
+## N-I mksh status: 1
+## N-I mksh STDOUT:
+## END
+
+#### [[ -v assoc[key] ]] syntax errors
+
+typeset -A assoc
+assoc=([empty]='' [k]=v)
+
+[[ -v assoc[empty] ]]
+echo empty=$?
+
+[[ -v assoc[k] ]]
+echo k=$?
+
+[[ -v assoc[k]z ]]
+echo typo=$?
+
+## STDOUT:
+empty=0
+k=0
+typo=1
 ## END

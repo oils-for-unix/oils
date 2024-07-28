@@ -1,3 +1,6 @@
+## compare_shells: dash bash mksh ash
+## oils_failures_allowed: 0
+
 # builtin-trap.test.sh
 
 #### trap accepts/ignores --
@@ -11,12 +14,16 @@ hi
 #### trap 'echo hi' KILL (regression test, caught by smoosh suite)
 trap 'echo hi' 9
 echo status=$?
+
 trap 'echo hi' KILL
 echo status=$?
+
 trap 'echo hi' STOP
 echo status=$?
+
 trap 'echo hi' TERM
 echo status=$?
+
 ## STDOUT:
 status=0
 status=0
@@ -55,19 +62,39 @@ echo $?
 #### Invalid trap invocation
 trap 'foo'
 echo status=$?
-## stdout: status=2
-## OK dash stdout: status=1
-## BUG mksh stdout: status=0
+## STDOUT:
+status=2
+## END
+## OK dash/ash STDOUT:
+status=1
+## END
+## BUG mksh STDOUT:
+status=0
+## END
 
 #### exit 1 when trap code string is invalid
 # All shells spew warnings to stderr, but don't actually exit!  Bad!
 trap 'echo <' EXIT
 echo status=$?
-## stdout: status=1
+## STDOUT:
+status=1
+## END
+
 ## BUG mksh status: 1
-## BUG mksh stdout: status=0
+## BUG mksh STDOUT:
+status=0
+## END
+
+## BUG ash status: 2
+## BUG ash STDOUT:
+status=0
+## END
+
 ## BUG dash/bash status: 0
-## BUG dash/bash stdout: status=0
+## BUG dash/bash STDOUT:
+status=0
+## END
+
 
 #### trap EXIT calling exit
 cleanup() {
@@ -125,123 +152,6 @@ command sub
 subshell
 pipeline
 EXIT TRAP
-## END
-
-#### trap ERR
-err() {
-  echo "err [$@] $?"
-}
-trap 'err x y' ERR 
-
-echo A
-
-false
-echo B
-
-( exit 42 )
-echo C
-
-trap - ERR  # disable trap
-
-false
-echo D
-
-trap 'echo after errexit $?' ERR 
-
-set -o errexit
-
-( exit 99 )
-echo E
-
-## status: 99
-## STDOUT:
-A
-err [x y] 1
-B
-err [x y] 42
-C
-D
-after errexit 99
-## END
-## N-I dash STDOUT:
-A
-B
-C
-D
-## END
-
-#### trap ERR and pipelines (lastpipe and PIPESTATUS difference)
-case $SH in dash) exit ;; esac
-
-err() {
-  echo "err [$@] status=$? [${PIPESTATUS[@]}]"
-}
-trap 'err' ERR 
-
-echo A
-
-false
-
-# succeeds
-echo B | grep B
-
-# fails
-echo C | grep zzz
-
-echo D | grep zzz | cat
-
-set -o pipefail
-echo E | grep zzz | cat
-
-trap - ERR  # disable trap
-
-echo F | grep zz
-echo ok
-
-## STDOUT:
-A
-err [] status=1 [1]
-B
-err [] status=1 [0 1]
-err [] status=1 [0 1 0]
-ok
-## END
-
-# lastpipe semantics mean we get another call!
-# also we don't set PIPESTATUS unless we get a pipeline
-
-## OK osh STDOUT:
-A
-err [] status=1 []
-B
-err [] status=1 [0 0]
-err [] status=1 [0 1]
-err [] status=1 [0 1 0]
-ok
-## END
-
-## N-I dash STDOUT:
-## END
-
-#### error in trap ERR (recursive)
-case $SH in dash) exit ;; esac
-
-err() {
-  echo err status $?
-  ( exit 2 )
-}
-trap 'err' ERR 
-
-echo A
-false
-echo B
-
-## STDOUT:
-A
-err status 1
-B
-## END
-## N-I dash STDOUT:
 ## END
 
 #### trap 0 is equivalent to EXIT

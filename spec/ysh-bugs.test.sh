@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -111,14 +111,18 @@ type -a returned 1
 ## END
 
 
-#### && || with YSH constructs ?
+#### Do && || with YSH constructs make sense/
 
+# I guess there's nothing wrong with this?
+#
+# But I generally feel && || are only for
+#
+# test --file x && test --file y
 
 var x = []
 true && call x->append(42)
 false && call x->append(43)
 pp line (x)
-
 
 func amp() {
   true && return (42)
@@ -163,4 +167,33 @@ echo status=$?
 ## STDOUT:
 status=2
 status=2
+## END
+
+
+#### proc with IFS= read -r line - dynamic scope - issue #2012
+
+# this is an issue with lack of dynamic scope
+# not sure exactly how to handle it ...
+
+# shvar IFS= { read } is our replacement for dynamic scope
+
+proc p {
+	read -r line
+  write $line
+}
+
+proc p-ifs {
+	IFS= read -r line
+  write $line
+}
+
+#set -x
+
+echo zz | p
+
+echo yy | p-ifs
+
+## STDOUT:
+zz
+yy
 ## END

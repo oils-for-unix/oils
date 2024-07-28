@@ -7,25 +7,25 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_e, BraceGroup, loc
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.value_asdl import value, value_e
 from asdl import format as fmt
 from core import error
 from core.error import e_usage
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8
 from frontend import flag_util
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import log
+from mycpp.mylib import tagswitch, log
 
-from typing import TYPE_CHECKING, cast, Dict
+from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from core.alloc import Arena
-    from core.ui import ErrorFormatter
     from osh import cmd_eval
+    from ysh import expr_eval
 
 _ = log
 
@@ -33,7 +33,7 @@ _ = log
 class _Builtin(vm._Builtin):
 
     def __init__(self, mem, errfmt):
-        # type: (state.Mem, ErrorFormatter) -> None
+        # type: (state.Mem, ui.ErrorFormatter) -> None
         self.mem = mem
         self.errfmt = errfmt
 
@@ -44,12 +44,42 @@ class Pp(_Builtin):
     'pp cell a' is a lot easier to type than 'argv.py "${a[@]}"'.
     """
 
-    def __init__(self, mem, errfmt, procs, arena):
-        # type: (state.Mem, ErrorFormatter, Dict[str, value.Proc], Arena) -> None
+    def __init__(
+            self,
+            expr_ev,  # type: expr_eval.ExprEvaluator
+            mem,  # type: state.Mem
+            errfmt,  # type: ui.ErrorFormatter
+            procs,  # type: state.Procs
+            arena,  # type: Arena
+    ):
+        # type: (...) -> None
         _Builtin.__init__(self, mem, errfmt)
+        self.expr_ev = expr_ev
         self.procs = procs
         self.arena = arena
         self.stdout_ = mylib.Stdout()
+
+    def _PrettyPrint(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        rd = typed_args.ReaderForProc(cmd_val)
+        val = rd.PosValue()
+        rd.Done()
+
+        UP_val = val
+        with tagswitch(val) as case:
+            if case(value_e.Expr):  # Destructured assert [true === f()]
+                val = cast(value.Expr, UP_val)
+                blame_tok = rd.LeftParenToken()
+                result = self.expr_ev.EvalExpr(val.e, blame_tok)
+
+                # Show it with location
+                excerpt, prefix = ui.CodeExcerptAndPrefix(blame_tok)
+                self.stdout_.write(excerpt)
+                ui.PrettyPrintValue(prefix, result, self.stdout_)
+            else:
+                # IOError caught by caller
+                ui.PrettyPrintValue('', val, self.stdout_)
+        return 0
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -57,8 +87,14 @@ class Pp(_Builtin):
                                            cmd_val,
                                            accept_typed_args=True)
 
-        action, action_loc = arg_r.ReadRequired2(
-            'expected an action (proc, cell, etc.)')
+        action, action_loc = arg_r.Peek2()
+
+        # pp (x) prints in the same way that '= x' does
+        # TODO: We also need pp [x], which shows the expression
+        if action is None:
+            return self._PrettyPrint(cmd_val)
+
+        arg_r.Next()
 
         # Actions that print unstable formats start with '.'
         if action == 'cell':
@@ -115,8 +151,9 @@ class Pp(_Builtin):
             val = rd.PosValue()
             rd.Done()
 
-            ysh_type = ui.ValType(val)
-            self.stdout_.write('(%s)   ' % ysh_type)
+            if ui.TypeNotPrinted(val):
+                ysh_type = ui.ValType(val)
+                self.stdout_.write('(%s)   ' % ysh_type)
 
             j8.PrintLine(val, self.stdout_)
 
@@ -130,18 +167,18 @@ class Pp(_Builtin):
             names, locs = arg_r.Rest2()
             if len(names):
                 for i, name in enumerate(names):
-                    node = self.procs.get(name)
+                    node = self.procs.Get(name)
                     if node is None:
                         self.errfmt.Print_('Invalid proc %r' % name,
                                            blame_loc=locs[i])
                         return 1
             else:
-                names = sorted(self.procs)
+                names = self.procs.GetNames()
 
             # TSV8 header
             print('proc_name\tdoc_comment')
             for name in names:
-                proc = self.procs[name]  # must exist
+                proc = self.procs.Get(name)  # must exist
                 #log('Proc %s', proc)
                 body = proc.body
 
@@ -180,7 +217,7 @@ class Write(_Builtin):
     """
 
     def __init__(self, mem, errfmt):
-        # type: (state.Mem, ErrorFormatter) -> None
+        # type: (state.Mem, ui.ErrorFormatter) -> None
         _Builtin.__init__(self, mem, errfmt)
         self.stdout_ = mylib.Stdout()
 

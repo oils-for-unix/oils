@@ -4,11 +4,12 @@
 import os
 import unittest
 
-from _devbuild.gen.value_asdl import value, value_t
-from core import ansi
+from display import ansi
+from display import pretty  # module under test
+from display import pp_value
+from display import ui
 from data_lang import j8
-from data_lang import pretty  # module under test
-from mycpp import mylib, mops
+from mycpp import mylib
 from typing import Optional
 
 import libc
@@ -16,19 +17,44 @@ import libc
 TEST_DATA_FILENAME = os.path.join(os.path.dirname(__file__), "pretty_test.txt")
 
 
-def IntValue(i):
-    # type: (int) -> value_t
-    return value.Int(mops.IntWiden(i))
+def _PrintCase(actual, expected, lineno=None):
+    if actual != expected:
+        # Print the different with real newlines, for easier reading.
+        print("ACTUAL:")
+        print(actual)
+        print("EXPECTED:")
+        print(expected)
+        print("END")
+        if lineno is not None:
+            print("ON LINE " + str(lineno + 1))
+
+
+class UiTest(unittest.TestCase):
+    """Test higher level ui.PrettyPrintValue()."""
+
+    def assertPretty(self, width, value_str, expected):
+        # type: (int, str, str, Optional[int]) -> None
+        parser = j8.Parser(value_str, True)
+        val = parser.ParseValue()
+
+        buf = mylib.BufWriter()
+        ui.PrettyPrintValue('', val, buf, max_width=width)
+
+        actual = buf.getvalue()
+        _PrintCase(actual, expected)
+        self.assertEqual(actual, expected)
+
+    def testTypePrefix(self):
+        self.assertPretty(24, '[null, "ok", 15]', "(List)  [null, 'ok', 15]\n")
+        self.assertPretty(23, '[null, "ok", 15]', "(List)\n[null, 'ok', 15]\n")
 
 
 class PrettyTest(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         # Use settings that make testing easier.
-        cls.printer = pretty.PrettyPrinter()
-        cls.printer.SetUseStyles(False)
-        cls.printer.SetShowTypePrefix(False)
+        self.encoder = pp_value.ValueEncoder()
+        self.encoder.SetUseStyles(False)
 
     def assertPretty(self, width, value_str, expected, lineno=None):
         # type: (int, str, str, Optional[int]) -> None
@@ -36,22 +62,20 @@ class PrettyTest(unittest.TestCase):
         val = parser.ParseValue()
 
         buf = mylib.BufWriter()
-        self.printer.SetMaxWidth(width)
-        self.printer.PrintValue(val, buf)
-        actual = buf.getvalue()
 
-        if actual != expected:
-            # Print the different with real newlines, for easier reading.
-            print("ACTUAL:")
-            print(actual)
-            print("EXPECTED:")
-            print(expected)
-            print("END")
-            if lineno is not None:
-                print("ON LINE " + str(lineno + 1))
-        self.assertEqual(buf.getvalue(), expected)
+        doc = self.encoder.Value(val)
+
+        printer = pretty.PrettyPrinter(width)
+        printer.PrintDoc(doc, buf)
+
+        actual = buf.getvalue()
+        _PrintCase(actual, expected, lineno=lineno)
+        self.assertEqual(actual, expected)
 
     def testsFromFile(self):
+        # TODO: convert tests to this new style
+        self.encoder.ysh_style = False
+
         chunks = [(None, -1, [])]
         for lineno, line in enumerate(
                 open(TEST_DATA_FILENAME).read().splitlines()):
@@ -93,18 +117,11 @@ class PrettyTest(unittest.TestCase):
             self.assertPretty(width, value, expected, lineno)
 
     def testStyles(self):
-        self.printer.SetUseStyles(True)
+        self.encoder.SetUseStyles(True)
         self.assertPretty(
-            20, '[null, "ok", 15]', '[' + ansi.BOLD + ansi.RED + 'null' +
-            ansi.RESET + ", " + ansi.GREEN + '"ok"' + ansi.RESET + ", " +
-            ansi.YELLOW + '15' + ansi.RESET + ']')
-        self.printer.SetUseStyles(False)
-
-    def testTypePrefix(self):
-        self.printer.SetShowTypePrefix(True)
-        self.assertPretty(25, '[null, "ok", 15]', '(List)   [null, "ok", 15]')
-        self.assertPretty(24, '[null, "ok", 15]', '(List)\n[null, "ok", 15]')
-        self.printer.SetShowTypePrefix(False)
+            20, '[null, "ok", 15]',
+            '[' + ansi.RED + 'null' + ansi.RESET + ", " + ansi.GREEN + "'ok'" +
+            ansi.RESET + ", " + ansi.YELLOW + '15' + ansi.RESET + ']')
 
 
 if __name__ == '__main__':

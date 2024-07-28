@@ -79,6 +79,10 @@ OTHER_OSH = ('osh_ALT',)
 YSH_CPYTHON = ('ysh', 'ysh-dbg')
 OTHER_YSH = ('oil_ALT',)
 
+# For now, only count the Oils CPython failures.  TODO: the spec-cpp job should
+# assert the osh-cpp and ysh-cpp deltas.
+OTHER_OILS = OTHER_OSH + OTHER_YSH + ('osh-cpp', 'ysh-cpp')
+
 
 class ParseError(Exception):
   pass
@@ -565,7 +569,7 @@ class Stats(object):
     elif cell_result == Result.FAIL:
       # Special logic: don't count osh_ALT because its failures will be
       # counted in the delta.
-      if sh_label not in OTHER_OSH + OTHER_YSH:
+      if sh_label not in OTHER_OILS:
         c['num_failed'] += 1
 
       if sh_label in OSH_CPYTHON + YSH_CPYTHON:
@@ -702,6 +706,8 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
           raise
 
       # Some tests assume _tmp exists
+      # TODO: get rid of this in the common case, to save inodes!  I guess have
+      # an opt-in setting per FILE, like make_underscore_tmp: true.
       try:
         os.mkdir(os.path.join(case_tmp_dir, '_tmp'))
       except OSError as e:
@@ -722,13 +728,9 @@ def RunCases(cases, case_predicate, shells, env, out, opts):
         sys.exit(1)
 
       p.stdin.write(code)
-      p.stdin.close()
 
       actual = {}
-      actual['stdout'] = p.stdout.read()
-      actual['stderr'] = p.stderr.read()
-      p.stdout.close()
-      p.stderr.close()
+      actual['stdout'], actual['stderr'] = p.communicate()
 
       actual['status'] = p.wait()
 
@@ -1389,33 +1391,28 @@ def main(argv):
       f.write(opts.stats_template % stats.counters)
       f.write('\n')  # bash 'read' requires a newline
 
-  if stats.Get('num_failed') == 0:
-    return 0
-
   # spec/smoke.test.sh -> smoke
   test_name = os.path.basename(test_file).split('.')[0]
 
-  allowed = opts.oils_failures_allowed
+  return _SuccessOrFailure(test_name, opts.oils_failures_allowed, stats)
+
+
+def _SuccessOrFailure(test_name, allowed, stats):
   all_count = stats.Get('num_failed')
   oils_count = stats.Get('oils_num_failed')
-  if allowed == 0:
-    log('')
-    log('%s: FATAL: %d tests failed (%d oils failures)', test_name, all_count,
-        oils_count)
-    log('')
-  else:
-    # If we got EXACTLY the allowed number of failures, exit 0.
-    if allowed == all_count and all_count == oils_count:
-      log('%s: note: Got %d allowed oils failures (exit with code 0)',
-          test_name, allowed)
-      return 0
-    else:
-      log('')
-      log('%s: FATAL: Got %d failures (%d oils failures), but %d are allowed',
-          test_name, all_count, oils_count, allowed)
-      log('')
 
-  return 1
+  # If we got EXACTLY the allowed number of failures, exit 0.
+  if allowed == all_count and all_count == oils_count:
+    log('%s: note: Got %d allowed oils failures (exit with code 0)',
+        test_name, allowed)
+    return 0
+  else:
+    log('')
+    log('%s: FATAL: Got %d failures (%d oils failures), but %d are allowed',
+        test_name, all_count, oils_count, allowed)
+    log('')
+
+    return 1
 
 
 if __name__ == '__main__':
@@ -1427,3 +1424,5 @@ if __name__ == '__main__':
   except RuntimeError as e:
     print('FATAL: %s' % e, file=sys.stderr)
     sys.exit(1)
+
+# vim: sw=2

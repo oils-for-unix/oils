@@ -19,11 +19,12 @@ from core import error
 from core import executor
 from core import completion
 from core import main_loop
+from core import optview
 from core import pyos
 from core import process
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 
@@ -210,14 +211,15 @@ def _SetGlobalFunc(mem, name, func):
 
 def InitAssignmentBuiltins(
         mem,  # type: state.Mem
-        procs,  # type: Dict[str, value.Proc]
+        procs,  # type: state.Procs
+        exec_opts,  # type: optview.Exec
         errfmt,  # type: ui.ErrorFormatter
 ):
     # type: (...) -> Dict[int, vm._AssignBuiltin]
 
     assign_b = {}  # type: Dict[int, vm._AssignBuiltin]
 
-    new_var = assign_osh.NewVar(mem, procs, errfmt)
+    new_var = assign_osh.NewVar(mem, procs, exec_opts, errfmt)
     assign_b[builtin_i.declare] = new_var
     assign_b[builtin_i.typeset] = new_var
     assign_b[builtin_i.local] = new_var
@@ -515,7 +517,7 @@ def Main(
 
     # Global proc namespace.  Funcs are defined in the common variable
     # namespace.
-    procs = {}  # type: Dict[str, value.Proc]
+    procs = state.Procs(mem)  # type: state.Procs
 
     builtins = {}  # type: Dict[int, vm._Builtin]
 
@@ -538,7 +540,7 @@ def Main(
     word_ev = word_eval.NormalWordEvaluator(mem, exec_opts, mutable_opts,
                                             tilde_ev, splitter, errfmt)
 
-    assign_b = InitAssignmentBuiltins(mem, procs, errfmt)
+    assign_b = InitAssignmentBuiltins(mem, procs, exec_opts, errfmt)
     cmd_ev = cmd_eval.CommandEvaluator(mem, exec_opts, errfmt, procs, assign_b,
                                        arena, cmd_deps, trap_state,
                                        signal_safe)
@@ -603,8 +605,9 @@ def Main(
                                       errfmt)
 
     # Module builtins
-    modules = {}  # type: Dict[str, bool]
-    b[builtin_i.module] = module_ysh.Module(modules, exec_opts, errfmt)
+    guards = {}  # type: Dict[str, bool]
+    b[builtin_i.source_guard] = module_ysh.SourceGuard(guards, exec_opts,
+                                                       errfmt)
     b[builtin_i.is_main] = module_ysh.IsMain(mem)
     b[builtin_i.use] = module_ysh.Use(mem, errfmt)
 
@@ -614,6 +617,7 @@ def Main(
     b[builtin_i.boolstatus] = error_ysh.BoolStatus(shell_ex, errfmt)
     b[builtin_i.try_] = error_ysh.Try(mutable_opts, mem, cmd_ev, shell_ex,
                                       errfmt)
+    b[builtin_i.assert_] = error_ysh.Assert(expr_ev, errfmt)
 
     # Pure builtins
     true_ = pure_osh.Boolean(0)
@@ -643,7 +647,7 @@ def Main(
     b[builtin_i.fopen] = io_ysh.Fopen(mem, cmd_ev)
 
     # (pp output format isn't stable)
-    b[builtin_i.pp] = io_ysh.Pp(mem, errfmt, procs, arena)
+    b[builtin_i.pp] = io_ysh.Pp(expr_ev, mem, errfmt, procs, arena)
 
     # Input
     b[builtin_i.cat] = io_osh.Cat()  # for $(<file)
@@ -781,11 +785,13 @@ def Main(
     methods[value_e.IO] = {
         # io->eval(myblock) is the functional version of eval (myblock)
         # Should we also have expr->eval() instead of evalExpr?
-        'eval': None,
+        'eval': method_io.Eval(),
 
         # identical to command sub
-        'captureStdout': None,
+        'captureStdout': method_io.CaptureStdout(),
         'promptVal': method_io.PromptVal(),
+        'time': method_io.Time(),
+        'strftime': method_io.Strftime(),
     }
 
     methods[value_e.Place] = {
@@ -813,6 +819,7 @@ def Main(
     _SetGlobalFunc(mem, '_hay', hay_func)
 
     _SetGlobalFunc(mem, 'len', func_misc.Len())
+    _SetGlobalFunc(mem, 'type', func_misc.Type())
 
     g = func_eggex.MatchFunc(func_eggex.G, expr_ev, mem)
     _SetGlobalFunc(mem, '_group', g)
@@ -821,9 +828,6 @@ def Main(
                                                        mem))
     _SetGlobalFunc(mem, '_end', func_eggex.MatchFunc(func_eggex.E, None, mem))
 
-    _SetGlobalFunc(mem, 'join', func_misc.Join())
-    _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
-    _SetGlobalFunc(mem, 'type', func_misc.Type())
     _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
 
     # type conversions
@@ -834,27 +838,43 @@ def Main(
     _SetGlobalFunc(mem, 'list', func_misc.List_())
     _SetGlobalFunc(mem, 'dict', func_misc.Dict_())
 
+    _SetGlobalFunc(mem, 'runes', func_misc.Runes())
+    _SetGlobalFunc(mem, 'encodeRunes', func_misc.EncodeRunes())
+    _SetGlobalFunc(mem, 'bytes', func_misc.Bytes())
+    _SetGlobalFunc(mem, 'encodeBytes', func_misc.EncodeBytes())
+
+    # Str
+    #_SetGlobalFunc(mem, 'strcmp', None)
     # TODO: This should be Python style splitting
     _SetGlobalFunc(mem, 'split', func_misc.Split(splitter))
     _SetGlobalFunc(mem, 'shSplit', func_misc.Split(splitter))
 
+    # Float
+    _SetGlobalFunc(mem, 'floatsEqual', func_misc.FloatsEqual())
+
+    # List
+    _SetGlobalFunc(mem, 'join', func_misc.Join())
+    _SetGlobalFunc(mem, 'maybe', func_misc.Maybe())
     _SetGlobalFunc(mem, 'glob', func_misc.Glob(globber))
+
     _SetGlobalFunc(mem, 'shvarGet', func_misc.Shvar_get(mem))
     _SetGlobalFunc(mem, 'getVar', func_misc.GetVar(mem))
-    _SetGlobalFunc(mem, 'assert_', func_misc.Assert())
 
+    # Serialize
     _SetGlobalFunc(mem, 'toJson8', func_misc.ToJson8(True))
     _SetGlobalFunc(mem, 'toJson', func_misc.ToJson8(False))
 
     _SetGlobalFunc(mem, 'fromJson8', func_misc.FromJson8(True))
     _SetGlobalFunc(mem, 'fromJson', func_misc.FromJson8(False))
 
+    # Demos
     _SetGlobalFunc(mem, '_a2sp', func_misc.BashArrayToSparse())
-    _SetGlobalFunc(mem, '_d2sp', func_misc.DictToSparse())
     _SetGlobalFunc(mem, '_opsp', func_misc.SparseOp())
 
     mem.SetNamed(location.LName('_io'), global_io, scope_e.GlobalOnly)
     mem.SetNamed(location.LName('_guts'), global_guts, scope_e.GlobalOnly)
+
+    mem.SetNamed(location.LName('stdin'), value.Stdin, scope_e.GlobalOnly)
 
     #
     # Is the shell interactive?

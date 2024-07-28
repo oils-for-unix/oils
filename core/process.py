@@ -34,7 +34,7 @@ from core.error import e_die
 from core import pyutil
 from core import pyos
 from core import state
-from core import ui
+from display import ui
 from core import util
 from data_lang import j8_lite
 from frontend import location
@@ -70,7 +70,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
     from builtin import trap_osh
     from core import optview
-    from core.ui import ErrorFormatter
     from core.util import _DebugFile
     from osh.cmd_eval import CommandEvaluator
 
@@ -671,7 +670,7 @@ class ExternalProgram(object):
             self,
             hijack_shebang,  # type: str
             fd_state,  # type: FdState
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
             debug_f,  # type: _DebugFile
     ):
         # type: (...) -> None
@@ -1400,6 +1399,11 @@ class Pipeline(Job):
 
         # Fix lastpipe / job control / DEBUG trap interaction
         cmd_flags = cmd_eval.NoDebugTrap if self.job_control.Enabled() else 0
+
+        # The ERR trap only runs for the WHOLE pipeline, not the COMPONENTS in
+        # a pipeline.
+        cmd_flags |= cmd_eval.NoErrTrap
+
         io_errors = []  # type: List[error.IOError_OSError]
         with ctx_Pipe(fd_state, r, io_errors):
             cmd_ev.ExecuteAndCatch(last_node, cmd_flags)

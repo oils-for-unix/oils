@@ -506,30 +506,58 @@ Command or expression:
 
 ### ysh-for
 
-Two forms for shell-style loops:
+#### Words
 
-    for name in *.py {
-      echo "$name"
+This is a shell-style loop over "words":
+
+    for name in README.md *.py {
+      echo $name
     }
+    # => README.md
+    # => foo.py
 
-    for i, name in *.py {
+You can also ask for the index:
+
+    for i, name in README.md *.py {
       echo "$i $name"
     }
+    # => 0 README.md
+    # => 1 foo.py
 
-Two forms for expressions that evaluate to a `List`:
+#### Lines of `stdin`
 
+Here's how to iterate over the lines of stdin:
+
+    for line in (stdin) {
+      echo $line
+    }
+
+Likewise, you can ask for the index with `for i, line in (stdin) { ...`.
+
+#### Expressions
+
+Expressions are enclosed in `()`.
+
+Iterating over a `List` or `Range` is like iterating over words or lines:
+
+    var mylist = [42, 43]
     for item in (mylist) {
-      echo "$item"
+      echo $item
     }
+    # => 42
+    # => 43
 
-    for i, item in (mylist) {
-      echo "$i $item"
+    var n = 5
+    for i in (3 .. n) {
+      echo $i
     }
+    # => 3
+    # => 4
 
-Three forms for expressions that evaluate to a `Dict`:
+However, there are **three** ways of iterating over a `Dict`:
 
     for key in (mydict) {
-      echo "$key"
+      echo $key
     }
 
     for key, value in (mydict) {
@@ -539,3 +567,7 @@ Three forms for expressions that evaluate to a `Dict`:
     for i, key, value in (mydict) {
       echo "$i $key $value"
     }
+
+That is, if you ask for two things, you'll get the key and value.  If you ask
+for three, you'll also get the index.
+

@@ -731,6 +731,14 @@ test-equality() {
   '
 }
 
+test-float-equality() {
+  _ysh-expr-error '
+var x = 1
+pp line (42.0 === x)'
+
+  _ysh-expr-error 'pp line (2.0 === 1.0)'
+}
+
 test-place() {
   _ysh-expr-error '
   var a = null
@@ -914,6 +922,43 @@ pp line (d)
 setglobal d.e.f += 1
 pp line (d)
    '
+}
+
+test-assert() {
+  _ysh-expr-error 'assert [0.0]'
+  _ysh-expr-error 'assert [3 > 4]'
+
+  _ysh-expr-error 'assert (0)'
+  _ysh-expr-error 'assert (null === 42)'
+
+  _ysh-expr-error 'assert [null === 42]'
+
+  # One is long
+  _ysh-expr-error 'assert [null === list(1 .. 50)]'
+
+  # Both are long
+  _ysh-expr-error 'assert [{k: list(3 .. 40)} === list(1 .. 50)]'
+}
+
+test-pp() {
+  _ysh-expr-error 'pp (42/0)'
+  _ysh-expr-error 'pp [42/0]'
+
+  # Multiple lines
+  _ysh-expr-error 'pp [42
+/0]'
+
+  _ysh-expr-error 'pp [5, 6]'
+
+  _ysh-should-run 'pp (42)'
+  _ysh-should-run 'var x = 42; pp (x)'
+  _ysh-should-run '
+var x = 42;
+pp [x]'
+
+  _ysh-should-run '
+var x = list(1 .. 50);
+pp [x]'
 }
 
 soil-run-py() {

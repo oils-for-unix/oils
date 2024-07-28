@@ -40,7 +40,8 @@ See [All Docs](index.html) for links to drafts.
   | [Variable Declaration, Mutation, and Scope](variables.html)
   | [Hay - Custom Languages for Unix Systems](hay.html)
 - Data Languages:
-  - [JSON](json.html) | [J8 Notation](j8-notation.html)
+  - [JSON](json.html) | [J8 Notation](j8-notation.html) |
+    [BYO Protocols](byo.html)
 - Language Design:
   - [Syntactic Concepts](syntactic-concepts.html) 
   | [Command vs. Expression Mode](command-vs-expression-mode.html)

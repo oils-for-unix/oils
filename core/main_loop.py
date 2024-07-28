@@ -15,7 +15,7 @@ from _devbuild.gen.syntax_asdl import (command, command_t, parse_result,
                                        parse_result_e)
 from core import error
 from core import process
-from core import ui
+from display import ui
 from core import util
 from frontend import reader
 from osh import cmd_eval
@@ -28,7 +28,6 @@ import posix_ as posix
 from typing import cast, Any, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.comp_ui import _IDisplay
-    from core.ui import ErrorFormatter
     from frontend import parse_lib
     from osh.cmd_parse import CommandParser
     from osh.cmd_eval import CommandEvaluator
@@ -101,7 +100,7 @@ class Headless(object):
     """Main loop for headless mode."""
 
     def __init__(self, cmd_ev, parse_ctx, errfmt):
-        # type: (CommandEvaluator, parse_lib.ParseContext, ErrorFormatter) -> None
+        # type: (CommandEvaluator, parse_lib.ParseContext, ui.ErrorFormatter) -> None
         self.cmd_ev = cmd_ev
         self.parse_ctx = parse_ctx
         self.errfmt = errfmt
@@ -197,7 +196,7 @@ def Interactive(
         display,  # type: _IDisplay
         prompt_plugin,  # type: UserPlugin
         waiter,  # type: process.Waiter
-        errfmt,  # type: ErrorFormatter
+        errfmt,  # type: ui.ErrorFormatter
 ):
     # type: (...) -> int
     status = 0

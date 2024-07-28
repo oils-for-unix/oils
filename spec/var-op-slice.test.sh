@@ -2,10 +2,7 @@
 #
 # NOTE: There are also slice tests in {array,arith-context}.test.sh.
 
-
-## oils_failures_allowed: 1
 ## compare_shells: bash mksh zsh
-
 
 #### String slice
 foo=abcdefg
@@ -167,10 +164,13 @@ ab
 #### Simple ${@:offset}
 
 set -- 4 5 6
+
 result=$(argv.py ${@:0})
 echo ${result//"$0"/'SHELL'}
+
 argv.py ${@:1}
 argv.py ${@:2}
+
 ## STDOUT:
 ['SHELL', '4', '5', '6']
 ['4', '5', '6']
@@ -299,21 +299,105 @@ SHELL
 ## END
 ## N-I mksh stdout-json: "\n"
 
-#### ${array[@]::0}
+#### Permutations of implicit begin and length
 array=(1 2 3)
-argv.py ${array[@]::0}
-## STDOUT:
-[]
-## END
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh stdout-json: ""
 
-#### ${array[@]::}
+argv.py ${array[@]}
+
+# *** implicit length of N **
+argv.py ${array[@]:0}
+
+# Why is this one not allowed
+#argv.py ${array[@]:}
+
+# ** implicit length of ZERO **
+#argv.py ${array[@]::}
+#argv.py ${array[@]:0:}
+
+argv.py ${array[@]:0:0}
+echo
+
+# Same agreed upon permutations
+set -- 1 2 3
+argv.py ${@}
+argv.py ${@:1}
+argv.py ${@:1:0}
+echo
+
+s='123'
+argv.py "${s}"
+argv.py "${s:0}"
+argv.py "${s:0:0}"
+
+## STDOUT:
+['1', '2', '3']
+['1', '2', '3']
+[]
+
+['1', '2', '3']
+['1', '2', '3']
+[]
+
+['123']
+['123']
+['']
+## END
+
+## BUG mksh status: 1
+## BUG mksh STDOUT:
+['1', '2', '3']
+## END
+
+#### ${array[@]:} vs ${array[@]: }  - bash and zsh inconsistent
+
+$SH -c 'array=(1 2 3); argv.py ${array[@]:}'
+$SH -c 'array=(1 2 3); argv.py space ${array[@]: }'
+
+$SH -c 's=123; argv.py ${s:}'
+$SH -c 's=123; argv.py space ${s: }'
+
+## STDOUT:
+['space', '1', '2', '3']
+['space', '123']
+## END
+
+## OK osh STDOUT:
+['1', '2', '3']
+['space', '1', '2', '3']
+['123']
+['space', '123']
+## END
+
+## BUG mksh STDOUT:
+['space', '123']
+## END
+
+#### ${array[@]::} has implicit length of zero - for ble.sh
+
+# https://oilshell.zulipchat.com/#narrow/stream/121540-oil-discuss/topic/.24.7Barr.5B.40.5D.3A.3A.7D.20in.20bash.20-.20is.20it.20documented.3F
+
 array=(1 2 3)
 argv.py ${array[@]::}
+argv.py ${array[@]:0:}
+
+echo
+
+set -- 1 2 3
+argv.py ${@::}
+argv.py ${@:0:}
+
+## status: 0
+## STDOUT:
+
+## status: 0
 ## STDOUT:
 []
+[]
+
+[]
+[]
 ## END
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh status: 1
-## N-I mksh/zsh stdout-json: ""
+
+## OK mksh/zsh status: 1
+## OK mksh/zsh STDOUT:
+## END

@@ -245,15 +245,40 @@ echo $?
 ## N-I dash status: 2
 
 #### shopt -p -o prints 'set' options
+case $SH in dash|mksh) exit ;; esac
+
 shopt -po nounset
 set -o nounset
 shopt -po nounset
+
+echo --
+
+shopt -po | egrep -o 'errexit|noglob|nounset'
+
 ## STDOUT: 
 set +o nounset
 set -o nounset
+--
+errexit
+noglob
+nounset
 ## END
-## N-I dash/mksh stdout-json: ""
-## N-I dash/mksh status: 127
+## N-I dash/mksh STDOUT:
+## END
+
+#### shopt -o prints 'set' options
+case $SH in dash|mksh) exit ;; esac
+
+shopt -o | egrep -o 'errexit|noglob|nounset'
+echo --
+## STDOUT: 
+errexit
+noglob
+nounset
+--
+## END
+## N-I dash/mksh STDOUT:
+## END
 
 #### shopt -p prints 'shopt' options
 shopt -p nullglob

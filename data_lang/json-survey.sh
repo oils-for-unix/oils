@@ -285,6 +285,7 @@ encode-nan() {
   python3 -c 'import json; val = float("nan"); s = json.dumps(val); print(s); print(json.loads(s))' || true
   echo
 
+  # raises error
   python3 -c 'import json; val = float("nan"); s = json.dumps(val, allow_nan=False); print(s); print(json.loads(s))' || true
   echo
 
@@ -302,6 +303,7 @@ encode-inf() {
   python3 -c 'import json; val = float("-inf"); print(val); s = json.dumps(val); print(s); print(json.loads(s))' || true
   echo
 
+  # raises error
   python3 -c 'import json; val = float("-inf"); print(val); s = json.dumps(val, allow_nan=False); print(s); print(json.loads(s))' || true
   echo
 

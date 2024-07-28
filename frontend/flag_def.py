@@ -41,6 +41,8 @@ NEW_VAR_SPEC.PlusFlag('n')  # named ref
 NEW_VAR_SPEC.ShortFlag('-a')
 NEW_VAR_SPEC.ShortFlag('-A')
 NEW_VAR_SPEC.ShortFlag('-i')  # no-op for integers
+NEW_VAR_SPEC.ShortFlag('-u')  # no-op for case
+NEW_VAR_SPEC.ShortFlag('-l')  # no-op for case
 
 UNSET_SPEC = FlagSpec('unset')
 UNSET_SPEC.ShortFlag('-v')
@@ -114,21 +116,19 @@ READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 READ_SPEC.ShortFlag('-p', args.String)  # prompt
 
-# YSH extensions
-READ_SPEC.ShortFlag('-0')  # until NUL, like -r -d ''
+# OSH extension (not really considered YSH!)
+READ_SPEC.ShortFlag('-0')  # until NUL, like IFS= read -r -d ''
+# Arguably it could be named like
+#   grep --null -Z
+#   xargs --null -0
+# But this format is NOT recommended in YSH!  It's unbuffered and slow.  We
+# prefer lines with escaping.
+
 READ_SPEC.LongFlag('--all')
-READ_SPEC.LongFlag('--line')
+READ_SPEC.LongFlag('--raw-line')
 READ_SPEC.LongFlag('--num-bytes', args.Int)
 # don't strip the trailing newline
 READ_SPEC.LongFlag('--with-eol')
-READ_SPEC.LongFlag('--json',
-                   args.Bool,
-                   default=False,
-                   help='Read elements as JSON strings')
-READ_SPEC.LongFlag('--j8',
-                   args.Bool,
-                   default=False,
-                   help='Read elements as J8 strings')
 
 MAPFILE_SPEC = FlagSpec('mapfile')
 MAPFILE_SPEC.ShortFlag('-t')
@@ -238,7 +238,8 @@ MAIN_SPEC.LongFlag('--version')
 #   parse-glob - to debug parsing
 #   parse-printf
 MAIN_SPEC.LongFlag('--tool', [
-    'tokens', 'lossless-cat', 'syntax-tree', 'fmt', 'test', 'ysh-ify', 'deps', 'cat-em'
+    'tokens', 'lossless-cat', 'syntax-tree', 'fmt', 'test', 'ysh-ify', 'deps',
+    'cat-em'
 ])
 
 MAIN_SPEC.ShortFlag('-i')  # interactive
@@ -436,6 +437,7 @@ ERROR_SPEC = FlagSpec('error')
 FAILED_SPEC = FlagSpec('failed')
 
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
+ASSERT_SPEC = FlagSpec('assert')
 
 # Future directions:
 # run --builtin, run --command, run --proc:
@@ -460,7 +462,7 @@ FORK_SPEC = FlagSpec('fork')
 FORKWAIT_SPEC = FlagSpec('forkwait')
 
 # Might want --list at some point
-MODULE_SPEC = FlagSpec('module')
+MODULE_SPEC = FlagSpec('source-guard')
 
 RUNPROC_SPEC = FlagSpec('runproc')
 RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')

@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 ## tags: dev-minimal
 
 #### usage errors
@@ -891,23 +891,68 @@ status=0
 ## END
 
 
+#### Inf is encoded as null, like JavaScript
 
-#### Inf and NaN can't be encoded or decoded
+# WRONG LOCATION!  Gah
+#var x = fromJson(repeat('123', 20))
 
-# This works in Python, should probably support it
+shopt --set ysh:upgrade
 
-var n = float("NaN")
-var i = float("inf")
+source $LIB_YSH/list.ysh
 
-pp line (n)
-pp line (i)
+# Create inf
+var big = repeat('12345678', 100) ++ '.0'
+#pp line (s)
+var inf = fromJson(big)
+var neg_inf = fromJson('-' ++ big)
 
-json dump (n)
-json dump (i)
+# Can be printed
+pp line (inf)
+pp line (neg_inf)
+echo --
 
-## status: 2
+# Can't be serialized
+try {
+  json write (inf)
+}
+echo error=$[_error.code]
+
+try {
+  json write (neg_inf)
+}
+echo error=$[_error.code]
+
+echo --
+echo $[toJson(inf)]
+echo $[toJson(neg_inf)]
+
 ## STDOUT:
+(Float)   INFINITY
+(Float)   -INFINITY
+--
+null
+error=0
+null
+error=0
+--
+null
+null
 ## END
+
+#### NaN is encoded as null, like JavaScript
+
+pp line (NAN)
+
+json write (NAN)
+
+echo $[toJson(NAN)]
+
+## STDOUT:
+(Float)   NAN
+null
+null
+## END
+
 
 #### Invalid UTF-8 in JSON is rejected
 
@@ -964,35 +1009,6 @@ echo status=$?
 status=1
 ## END
 
-#### decode deeply nested structure (stack overflow)
-
-shopt -s ysh:upgrade
-
-proc pairs(n) {
-  var m = int(n)  # TODO: 1 .. n should auto-convert?
-
-  for i in (1 .. m) {
-    write -n -- '['
-  }
-  for i in (1 .. m) {
-    write -n -- ']'
-  }
-}
-
-# This is all Python can handle; C++ can handle more
-msg=$(pairs 50)
-
-#echo $msg
-
-echo "$msg" | json read
-pp line (_reply)
-echo len=$[len(_reply)]
-
-## STDOUT:
-(List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
-len=1
-## END
-
 #### decode integer larger than 2^32
 
 json=$(( 1 << 33 ))
@@ -1005,6 +1021,29 @@ pp line (_reply)
 8589934592
 (Int)   8589934592
 ## END
+
+#### decode integer larger than 2^64
+
+$SH <<'EOF'
+json read <<< '123456789123456789123456789'
+echo status=$?
+pp line (_reply)
+EOF
+
+$SH <<'EOF'
+json read <<< '-123456789123456789123456789'
+echo status=$?
+pp line (_reply)
+EOF
+
+echo ok
+
+## STDOUT:
+status=1
+status=1
+ok
+## END
+
 
 #### round trip: read/write with ysh
 
@@ -1078,3 +1117,143 @@ status=1
 status=1
 ## END
 
+#### Data after internal NUL (issue #2026)
+
+$SH <<'EOF'
+pp line (fromJson(b'123\y00abc'))
+EOF
+echo status=$?
+
+$SH <<'EOF'
+pp line (fromJson(b'123\y01abc'))
+EOF
+echo status=$?
+
+$SH <<'EOF'
+shopt --set ysh:upgrade  # b'' syntax
+json read <<< b'123\y00abc'
+EOF
+echo status=$?
+
+$SH <<'EOF'
+shopt --set ysh:upgrade  # b'' syntax
+json read <<< b'123\y01abc'
+EOF
+echo status=$?
+
+## STDOUT:
+status=4
+status=4
+status=1
+status=1
+## END
+
+#### Float too big
+
+$SH <<'EOF'
+json read <<< '123456789123456789123456789.12345e67890'
+echo status=$?
+pp line (_reply)
+EOF
+
+$SH <<'EOF'
+json read <<< '-123456789123456789123456789.12345e67890'
+echo status=$?
+pp line (_reply)
+EOF
+
+## STDOUT:
+status=0
+(Float)   INFINITY
+status=0
+(Float)   -INFINITY
+## END
+
+#### Many [[[ , but not too many
+
+shopt -s ysh:upgrade
+
+proc pairs(n) {
+  var m = int(n)  # TODO: 1 .. n should auto-convert?
+
+  for i in (1 .. m) {
+    write -n -- '['
+  }
+  for i in (1 .. m) {
+    write -n -- ']'
+  }
+}
+
+# This is all Python can handle; C++ can handle more
+msg=$(pairs 50)
+
+#echo $msg
+
+echo "$msg" | json read
+pp line (_reply)
+echo len=$[len(_reply)]
+
+## STDOUT:
+(List)   [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+len=1
+## END
+
+
+#### Too many opening [[[ - blocking stack
+
+python2 -c 'print("[" * 10000)' | json read
+pp line (_reply)
+
+python2 -c 'print("{" * 10000)' | json read
+pp line (_reply)
+
+## STDOUT:
+## END
+
+#### BashArray can be serialized
+
+declare -a empty_array
+
+declare -a array=(x y)
+array[5]=z
+
+json write (empty_array)
+json write (array)
+
+## STDOUT:
+{
+  "type": "BashArray",
+  "data": {}
+}
+{
+  "type": "BashArray",
+  "data": {
+    "0": "x",
+    "1": "y",
+    "5": "z"
+  }
+}
+## END
+
+#### BashAssoc can be serialized
+
+declare -A empty_assoc
+
+declare -A assoc=([foo]=bar [42]=43)
+
+json write (empty_assoc)
+json write (assoc)
+
+## STDOUT:
+{
+  "type": "BashAssoc",
+  "data": {}
+}
+{
+  "type": "BashAssoc",
+  "data": {
+    "foo": "bar",
+    "42": "43"
+  }
+}
+## END

@@ -70,6 +70,30 @@ echo status=$?
 ## stdout-json: ""
 ## status: 1
 
+#### More && || 
+
+$SH -c 'set -e; false || { echo group; false; }; echo bad'
+echo status=$?
+echo
+
+$SH -c 'set -e; false || ( echo subshell; exit 42 ); echo bad'
+echo status=$?
+echo
+
+# noforklast optimization
+$SH -c 'set -e; false || /bin/false; echo bad'
+echo status=$?
+
+## STDOUT:
+group
+status=1
+
+subshell
+status=42
+
+status=1
+## END
+
 #### errexit and loop
 set -o errexit
 for x in 1 2 3; do

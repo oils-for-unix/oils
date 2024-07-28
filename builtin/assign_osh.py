@@ -17,16 +17,16 @@ from core import state
 from core import vm
 from frontend import flag_util
 from frontend import args
-from mycpp import mylib
 from mycpp.mylib import log
 from osh import cmd_eval
 from osh import sh_expr_eval
 from data_lang import j8_lite
 
-from typing import cast, Optional, Dict, List, TYPE_CHECKING
+from typing import cast, Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from core.state import Mem
-    from core import ui
+    from core import optview
+    from display import ui
     from frontend.args import _Attributes
 
 _ = log
@@ -39,10 +39,10 @@ _EXPORT = 2
 def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
     # type: (Mem, cmd_value.Assign, _Attributes, bool, int) -> int
     """
-  Args:
-    print_flags: whether to print flags
-    builtin: is it the readonly or export builtin?
-  """
+    Args:
+      print_flags: whether to print flags
+      builtin: is it the readonly or export builtin?
+    """
     flag = attrs.attrs
 
     # Turn dynamic vars to static.
@@ -158,7 +158,6 @@ def _PrintVariables(mem, cmd_val, attrs, print_flags, builtin=_OTHER):
 
         if val.tag() == value_e.Str:
             str_val = cast(value.Str, val)
-            # TODO: Use fastfunc.ShellEncode()
             decl.extend(["=", j8_lite.MaybeShellEncode(str_val.s)])
 
         elif val.tag() == value_e.BashArray:
@@ -361,17 +360,18 @@ class Readonly(vm._AssignBuiltin):
 class NewVar(vm._AssignBuiltin):
     """declare/typeset/local."""
 
-    def __init__(self, mem, procs, errfmt):
-        # type: (Mem, Dict[str, value.Proc], ui.ErrorFormatter) -> None
+    def __init__(self, mem, procs, exec_opts, errfmt):
+        # type: (Mem, state.Procs, optview.Exec, ui.ErrorFormatter) -> None
         self.mem = mem
         self.procs = procs
+        self.exec_opts = exec_opts
         self.errfmt = errfmt
 
     def _PrintFuncs(self, names):
         # type: (List[str]) -> int
         status = 0
         for name in names:
-            if name in self.procs:
+            if self.procs.Get(name):
                 print(name)
                 # TODO: Could print LST for -f, or render LST.  Bash does this.  'trap'
                 # could use that too.
@@ -405,7 +405,7 @@ class NewVar(vm._AssignBuiltin):
                 status = self._PrintFuncs(names)
             else:
                 # bash quirk: with no names, they're printed in a different format!
-                for func_name in sorted(self.procs):
+                for func_name in self.procs.GetNames():
                     print('declare -f %s' % (func_name))
             return status
 
@@ -414,11 +414,22 @@ class NewVar(vm._AssignBuiltin):
         elif len(cmd_val.pairs) == 0:
             return _PrintVariables(self.mem, cmd_val, attrs, False)
 
+        if not self.exec_opts.ignore_flags_not_impl():
+            if arg.i:
+                e_usage(
+                    "doesn't implement flag -i (shopt --set ignore_flags_not_impl)",
+                    loc.Missing)
+
+            if arg.l or arg.u:
+                # Just print a warning!  The program may still run.
+                self.errfmt.Print_(
+                    "Warning: OSH doesn't implement flags -l or -u (shopt --set ignore_flags_not_impl)",
+                    loc.Missing)
+
         #
         # Set variables
         #
 
-        #raise error.Usage("doesn't understand %s" % cmd_val.argv[1:])
         if cmd_val.builtin_id == builtin_i.local:
             which_scopes = scope_e.LocalOnly
         else:  # declare/typeset
@@ -483,7 +494,7 @@ class Unset(vm._Builtin):
     def __init__(
             self,
             mem,  # type: state.Mem
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             unsafe_arith,  # type: sh_expr_eval.UnsafeArith
             errfmt,  # type: ui.ErrorFormatter
     ):
@@ -513,7 +524,7 @@ class Unset(vm._Builtin):
             return False
 
         if proc_fallback and not found:
-            mylib.dict_erase(self.procs, arg)
+            self.procs.Del(arg)
 
         return True
 
@@ -527,7 +538,7 @@ class Unset(vm._Builtin):
             location = arg_locs[i]
 
             if arg.f:
-                mylib.dict_erase(self.procs, name)
+                self.procs.Del(name)
 
             elif arg.v:
                 if not self._UnsetVar(name, location, False):

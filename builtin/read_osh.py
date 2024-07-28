@@ -12,7 +12,7 @@ from core.error import e_die
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import flag_util
 from frontend import reader
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 _ = log
 
-# The Read builtin splits using IFS.
+# The read builtin splits using IFS.
 #
 # Summary:
 # - Split with IFS, except \ can escape them!  This is different than the
@@ -185,18 +185,15 @@ def _ReadPortion(delim_byte, max_chars, cmd_ev):
     return pyutil.ChArrayToString(ch_array), eof
 
 
-# sys.stdin.readline() in Python has its own buffering which is incompatible
-# with shell semantics.  dash, mksh, and zsh all read a single byte at a
-# time with read(0, 1).
+def ReadLineSlowly(cmd_ev, with_eol=True):
+    # type: (CommandEvaluator, bool) -> Tuple[str, bool]
+    """Read a line from stdin, unbuffered 
 
-# TODO:
-# - ReadLineSlowly should have keep_newline (mapfile -t)
-#   - this halves memory usage!
-
-
-def ReadLineSlowly(cmd_ev):
-    # type: (CommandEvaluator) -> str
-    """Read a line from stdin."""
+    sys.stdin.readline() in Python has its own buffering which is incompatible
+    with shell semantics.  dash, mksh, and zsh all read a single byte at a time
+    with read(0, 1).
+    """
+    eof = False
     ch_array = []  # type: List[int]
     while True:
         ch, err_num = pyos.ReadByte(0)
@@ -209,16 +206,18 @@ def ReadLineSlowly(cmd_ev):
                 raise pyos.ReadError(err_num)
 
         elif ch == pyos.EOF_SENTINEL:
+            eof = True
             break
 
         else:
             ch_array.append(ch)
 
-        # TODO: Add option to omit newline
         if ch == pyos.NEWLINE_CH:
+            if not with_eol:
+                ch_array.pop()
             break
 
-    return pyutil.ChArrayToString(ch_array)
+    return pyutil.ChArrayToString(ch_array), eof
 
 
 def ReadAll():
@@ -233,8 +232,9 @@ def ReadAll():
 
         if n < 0:
             if err_num == EINTR:
-                # Retry only.  Like read --line (and command sub), read --all doesn't
-                # run traps.  It would be a bit weird to run every 4096 bytes.
+                # Retry only.  Like read --line (and command sub), read --all
+                # doesn't run traps.  It would be a bit weird to run every 4096
+                # bytes.
                 pass
             else:
                 raise pyos.ReadError(err_num)
@@ -368,24 +368,24 @@ class Read(vm._Builtin):
         if next_arg is not None:
             raise error.Usage('got extra argument', next_loc)
 
-        if arg.line:  # read --line is buffered, calls getline()
-            raise error.Usage(
-                "no longer supports --line; please use read -r instead (unbuffered I/O)",
-                next_loc)
-
         num_bytes = mops.BigTruncate(arg.num_bytes)
         if num_bytes != -1:  # read --num-bytes
             contents = _ReadN(num_bytes, self.cmd_ev)
-            self.mem.SetPlace(place, value.Str(contents), blame_loc)
-            return 0
+            status = 0
 
-        if arg.all:  # read --all
+        elif arg.raw_line:  # read --raw-line is unbuffered
+            contents, eof = ReadLineSlowly(self.cmd_ev, with_eol=arg.with_eol)
+            status = 1 if eof else 0
+
+        elif arg.all:  # read --all
             contents = ReadAll()
-            self.mem.SetPlace(place, value.Str(contents), blame_loc)
-            return 0
+            status = 0
 
-        # arg.line or arg.all should be true
-        raise AssertionError()
+        else:
+            raise AssertionError()
+
+        self.mem.SetPlace(place, value.Str(contents), blame_loc)
+        return status
 
     def _Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -395,10 +395,7 @@ class Read(vm._Builtin):
         arg = arg_types.read(attrs.attrs)
         names = arg_r.Rest()
 
-        #if arg.q and not arg.line:
-        #    e_usage('--qsn can only be used with --line', loc.Missing)
-
-        if arg.line or arg.all or mops.BigTruncate(arg.num_bytes) != -1:
+        if arg.raw_line or arg.all or mops.BigTruncate(arg.num_bytes) != -1:
             return self._ReadYsh(arg, arg_r, cmd_val)
 
         if cmd_val.typed_args:
@@ -469,7 +466,8 @@ class Read(vm._Builtin):
             # the last name
             max_results = len(names)
 
-        if arg.Z:  # -0 is synonym for -r -d ''
+        if arg.Z:  # -0 is synonym for IFS= read -r -d ''
+            do_split = False
             raw = True
             delim_byte = 0
         else:

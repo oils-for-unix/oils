@@ -855,3 +855,27 @@ status=0
 #### invalid var name
 typeset foo/bar
 ## status: 1
+
+#### unset and shell funcs
+foo() {
+  echo bar
+}
+
+foo
+
+declare -F
+unset foo
+declare -F
+
+foo
+
+## status: 127
+## STDOUT:
+bar
+declare -f foo
+## END
+## N-I mksh status: 0
+## N-I mksh STDOUT:
+bar
+bar
+## END

@@ -238,7 +238,7 @@ p
 ## STDOUT:
 ## END
 
-#### procs are in same namespace as shell functions
+#### declare -F prints procs and shell-funcs
 shopt --set parse_proc
 
 myfunc() {
@@ -250,11 +250,25 @@ proc myproc {
 }
 
 declare -F
+
+## status: 0
 ## STDOUT:
 declare -f myfunc
 declare -f myproc
 ## END
 
+#### procs are in same namespace as variables
+shopt --set parse_proc
+
+proc myproc {
+  echo hi
+}
+
+echo "myproc is a $[type(myproc)]"
+
+## STDOUT:
+myproc is a Proc
+## END
 
 #### Nested proc is disallowed at parse time
 shopt --set parse_proc
@@ -450,4 +464,63 @@ p word (42, n=99) {
 (Int)   42
 (Int)   99
 Block
+## END
+
+#### can unset procs without -f
+shopt -s ysh:upgrade
+
+proc foo() {
+  echo bar
+}
+
+try { foo }
+echo status=$[_error.code]
+
+# TODO: should we abandon declare -F in favour of `pp proc`?
+declare -F
+unset foo
+declare -F
+
+try { foo }
+echo status=$[_error.code]
+
+## STDOUT:
+bar
+status=0
+declare -f foo
+status=127
+## END
+
+#### procs shadow sh-funcs
+shopt -s ysh:upgrade redefine_proc_func
+
+f() {
+  echo sh-func
+}
+
+proc f {
+  echo proc
+}
+
+f
+## STDOUT:
+proc
+## END
+
+#### first word skips non-proc variables
+shopt -s ysh:upgrade
+
+grep() {
+  echo 'sh-func grep'
+}
+
+var grep = 'variable grep'
+
+grep
+
+# We first find `var grep`, but it's a Str not a Proc, so we skip it and then
+# find `function grep`.
+
+## STDOUT:
+sh-func grep
 ## END

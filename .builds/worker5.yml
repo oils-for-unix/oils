@@ -17,13 +17,13 @@ secrets:
 
 tasks:
   - dev-setup-fedora: |
-      cd oil
+      cd oils
       soil/worker.sh JOB-dev-setup-fedora
 
   - publish-dev-setup-fedora: |
-      cd oil
+      cd oils
       soil/sourcehut.sh publish-html-assuming-ssh-key dev-setup-fedora
 
   - did-all-succeed: |
-      cd oil
+      cd oils
       soil/host-shim.sh did-all-succeed dev-setup-fedora

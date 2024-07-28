@@ -2,7 +2,7 @@
 ## oils_failures_allowed: 1
 
 #### args.ysh example usage
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose (help="Verbosely")  # default is Bool, false
@@ -33,7 +33,7 @@ Verbose false
 
 #### Bool flag, positional args, more positional
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose ('bool')
@@ -65,7 +65,7 @@ z
 
 #### Test multiple ARGVs against a parser
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose ('bool', default=false)
@@ -104,7 +104,7 @@ $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
 
 #### Basic help message
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   # TODO: implement description, prog and help message
@@ -138,7 +138,7 @@ options:
 
 #### Compare parseArgs() vs Python argparse
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 var spec = {
   flags: [
@@ -209,7 +209,7 @@ Namespace(filename='example.sh', count='150', verbose=True)
 
 #### Define spec and print it
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose ('bool')
@@ -247,7 +247,7 @@ json write (spec)
 ## END
 
 #### Default values
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -S --sanitize ('bool', default=false)
@@ -263,7 +263,7 @@ pp line (args)
 ## END
 
 #### Duplicate argument/flag names
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 try {
   parser (&spec) {
@@ -296,7 +296,7 @@ status=3
 ## END
 
 #### Error cases
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose

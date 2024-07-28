@@ -22,6 +22,7 @@ module pretty
     | Concat(List[MeasuredDoc] mdocs)
     | Group(MeasuredDoc mdoc)
     | IfFlat(MeasuredDoc flat_mdoc, MeasuredDoc nonflat_mdoc)
+    | Flat(MeasuredDoc mdoc)
   
   # Used internally while pretty printing.
   # See comments in PrettyPrinter._PrintDoc.

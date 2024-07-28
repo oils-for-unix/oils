@@ -7,11 +7,11 @@ Guide to YSH Error Handling
 
 There are just a few concepts to know:
 
-- [try][] builtin - Run a block, and set the [_error][] register to a `Dict`.
-  - `_error.code` will be `0` on success, or non-zero on failure.
 - [error][] builtin - "Throw" an error, with a custom message, error code, and
-  other
-  properties.
+  other properties.
+- [try][] builtin - Run a block, and set the [_error][] register to a `Dict`.
+  - `_error.code` will be `0` on success, or non-zero if an error is thrown in
+    the block.
 - [failed][] builtin - A handy shortcut to test for a non-zero error code.
 
 [try]: ref/chap-builtin-cmd.html#try

@@ -33,17 +33,27 @@ chapters.
 
 <div class="highlight">
 
+[**Data Notation Table of Contents**](toc-data.html)
+
+</div>
+
+1. [JSON / J8 Notation](chap-j8.html)
+1. [Errors](chap-errors.html)
+
+<div class="highlight">
+
 [**OSH Table of Contents**](toc-osh.html) - Compatible
 
 [**YSH Table of Contents**](toc-ysh.html) - New and Powerful
 
 </div>
 
-1. [Types and Methods](chap-type-method.html)
+3. [Types and Methods](chap-type-method.html)
 1. [Builtin Functions](chap-builtin-func.html)
 1. [Builtin Commands](chap-builtin-cmd.html)
 1. [Front End](chap-front-end.html)
 1. [Command Language](chap-cmd-lang.html)
+1. [Standard Library](chap-stdlib.html)
 1. [OSH Assignment](chap-osh-assign.html)
 1. [YSH Command Language Keywords](chap-ysh-cmd.html)
 1. [Word Language](chap-word-lang.html)
@@ -52,15 +62,6 @@ chapters.
 1. [Global Shell Options](chap-option.html)
 1. [Special Variables](chap-special-var.html)
 1. [Plugins and Hooks](chap-plugin.html)
-
-<div class="highlight">
-
-[**Data Notation Table of Contents**](toc-data.html)
-
-</div>
-
-14. [JSON / J8 Notation](chap-j8.html)
-1. [Errors](chap-errors.html)
 
 <div class="highlight">
 

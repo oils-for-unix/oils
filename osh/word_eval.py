@@ -40,7 +40,7 @@ from _devbuild.gen.runtime_asdl import (
     VarSubState,
     Piece,
 )
-from _devbuild.gen.option_asdl import option_i
+from _devbuild.gen.option_asdl import option_i, builtin_i
 from _devbuild.gen.value_asdl import (
     value,
     value_e,
@@ -52,7 +52,7 @@ from core import error
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from data_lang import j8
 from data_lang import j8_lite
@@ -76,7 +76,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import builtin_t
     from core import optview
     from core.state import Mem
-    from core.ui import ErrorFormatter
     from core.vm import _Executor
     from osh.split import SplitContext
     from osh import prompt
@@ -140,26 +139,32 @@ def GetArrayItem(strs, index):
     return s
 
 
-# Use libc to parse NAME, NAME=value, and NAME+=value.  We want submatch
-# extraction, but I haven't used that in re2c, and we would need a new kind of
-# binding.
-#
-ASSIGN_ARG_RE = '^([a-zA-Z_][a-zA-Z0-9_]*)((=|\+=)(.*))?$'
+def _DetectMetaBuiltinStr(s):
+    # type: (str) -> bool
+    """
+    We need to detect all of these cases:
 
-# Eggex equivalent:
-#
-# VarName = /
-#   [a-z A-Z _ ]
-#   [a-z A-Z 0-9 _ ]*
-# /
-#
-# SplitArg = /
-#   %begin
-#   < VarName >
-#   < < '=' | '+=' > < dot* > > ?
-#   %end
-# /
-# Note: must use < > for grouping because there is no non-capturing group.
+        builtin local
+        command local
+        builtin builtin local
+        builtin command local
+
+    Fundamentally, assignment builtins have different WORD EVALUATION RULES
+    for a=$x (no word splitting), so it seems hard to do this in
+    meta_osh.Builtin() or meta_osh.Command()
+    """
+    return (consts.LookupNormalBuiltin(s)
+            in (builtin_i.builtin, builtin_i.command))
+
+
+def _DetectMetaBuiltin(val0):
+    # type: (part_value_t) -> bool
+    UP_val0 = val0
+    if val0.tag() == part_value_e.String:
+        val0 = cast(Piece, UP_val0)
+        if not val0.quoted:
+            return _DetectMetaBuiltinStr(val0.s)
+    return False
 
 
 def _SplitAssignArg(arg, blame_word):
@@ -170,7 +175,7 @@ def _SplitAssignArg(arg, blame_word):
     """
     # Note: it would be better to cache regcomp(), but we don't have an API for
     # that, and it probably isn't a bottleneck now
-    m = util.RegexSearch(ASSIGN_ARG_RE, arg)
+    m = util.RegexSearch(consts.ASSIGN_ARG_RE, arg)
     if m is None:
         e_die("Assignment builtin expected NAME=value, got %r" % arg,
               blame_word)
@@ -377,9 +382,8 @@ def _PerformSlice(
             # NOTE: This error is ALWAYS fatal in bash.  It's inconsistent with
             # strings.
             if has_length and length < 0:
-                e_die(
-                    "The length index of a array slice can't be negative: %d" %
-                    length, loc.WordPart(part))
+                e_die("Array slice can't have negative length: %d" % length,
+                      loc.WordPart(part))
 
             # Quirk: "begin" for positional arguments ($@ and $*) counts $0.
             if arg0_val is not None:
@@ -625,6 +629,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         with tagswitch(val) as case:
             if case(value_e.Undef):
                 is_falsey = True
+
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 if tok.id in (Id.VTest_ColonHyphen, Id.VTest_ColonEquals,
@@ -632,13 +637,16 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     is_falsey = len(val.s) == 0
                 else:
                     is_falsey = False
+
             elif case(value_e.BashArray):
                 val = cast(value.BashArray, UP_val)
                 # TODO: allow undefined
                 is_falsey = len(val.strs) == 0
+
             elif case(value_e.BashAssoc):
                 val = cast(value.BashAssoc, UP_val)
                 is_falsey = len(val.d) == 0
+
             else:
                 # value.Eggex, etc. are all false
                 is_falsey = False
@@ -711,7 +719,38 @@ class AbstractWordEvaluator(StringWordEvaluator):
                                          eval_flags)
                 error_str = _DecayPartValuesToString(
                     error_part_vals, self.splitter.GetJoinChar())
-                e_die("unset variable %r" % error_str, blame_token)
+
+                #
+                # Display fancy/helpful error
+                #
+                if vtest_place.name is None:
+                    var_name = '???'
+                else:
+                    var_name = vtest_place.name
+
+                if 0:
+                    # This hint is nice, but looks too noisy for now
+                    op_str = lexer.LazyStr(tok)
+                    if tok.id == Id.VTest_ColonQMark:
+                        why = 'empty or unset'
+                    else:
+                        why = 'unset'
+
+                    self.errfmt.Print_(
+                        "Hint: operator %s means a variable can't be %s" %
+                        (op_str, why), tok)
+
+                if val.tag() == value_e.Undef:
+                    actual = 'unset'
+                else:
+                    actual = 'empty'
+
+                if len(error_str):
+                    suffix = ': %r' % error_str
+                else:
+                    suffix = ''
+                e_die("Var %s is %s%s" % (var_name, actual, suffix),
+                      blame_token)
 
             else:
                 return False
@@ -931,10 +970,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
     def _Slice(self, val, op, var_name, part):
         # type: (value_t, suffix_op.Slice, Optional[str], BracedVarSub) -> value_t
 
-        if op.begin:
-            begin = self.arith_ev.EvalToInt(op.begin)
-        else:
-            begin = 0
+        begin = self.arith_ev.EvalToInt(op.begin)
 
         # Note: bash allows lengths to be negative (with odd semantics), but
         # we don't allow that right now.
@@ -984,11 +1020,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(val) as case:
                 if case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-
-                    # TODO: use fastfunc.ShellEncode or
-                    # fastfunc.PosixShellEncode()
                     result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
-                    # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
+                    # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
+                    # bash
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
@@ -2024,20 +2058,21 @@ class AbstractWordEvaluator(StringWordEvaluator):
         #log('argv: %s', argv)
         return argv
 
-    def _EvalAssignBuiltin(self, builtin_id, arg0, words):
-        # type: (builtin_t, str, List[CompoundWord]) -> cmd_value.Assign
+    def _EvalAssignBuiltin(self, builtin_id, arg0, words, meta_offset):
+        # type: (builtin_t, str, List[CompoundWord], int) -> cmd_value.Assign
         """Handles both static and dynamic assignment, e.g.
 
-        x='foo=bar' local a=(1 2) $x
-        """
-        # Grammar:
-        #
-        # ('builtin' | 'command')* keyword flag* pair*
-        # flag = [-+].*
-        #
-        # There is also command -p, but we haven't implemented it.  Maybe just punt
-        # on it.  Punted on 'builtin' and 'command' for now too.
+        x='foo=bar'
+        local a=(1 2) $x
 
+        Grammar:
+        
+            ('builtin' | 'command')* keyword flag* pair*
+            flag = [-+].*
+        
+        There is also command -p, but we haven't implemented it.  Maybe just
+        punt on it.
+        """
         eval_to_pairs = True  # except for -f and -F
         started_pairs = False
 
@@ -2046,7 +2081,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         assign_args = []  # type: List[AssignArg]
 
         n = len(words)
-        for i in xrange(1, n):  # skip first word
+        for i in xrange(meta_offset + 1, n):  # skip first word
             w = words[i]
 
             if word_.IsVarLike(w):
@@ -2110,22 +2145,41 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         return cmd_value.Assign(builtin_id, flags, flag_locs, assign_args)
 
+    def _DetectAssignBuiltinStr(self, arg0, words, meta_offset):
+        # type: (str, List[CompoundWord], int) -> Optional[cmd_value.Assign]
+        builtin_id = consts.LookupAssignBuiltin(arg0)
+        if builtin_id != consts.NO_INDEX:
+            return self._EvalAssignBuiltin(builtin_id, arg0, words,
+                                           meta_offset)
+        return None
+
+    def _DetectAssignBuiltin(self, val0, words, meta_offset):
+        # type: (part_value_t, List[CompoundWord], int) -> Optional[cmd_value.Assign]
+        UP_val0 = val0
+        if val0.tag() == part_value_e.String:
+            val0 = cast(Piece, UP_val0)
+            if not val0.quoted:
+                return self._DetectAssignBuiltinStr(val0.s, words, meta_offset)
+        return None
+
     def SimpleEvalWordSequence2(self, words, allow_assign):
         # type: (List[CompoundWord], bool) -> cmd_value_t
         """Simple word evaluation for YSH."""
         strs = []  # type: List[str]
         locs = []  # type: List[CompoundWord]
 
+        meta_offset = 0
         for i, w in enumerate(words):
             # No globbing in the first arg for command.Simple.
-            if i == 0 and allow_assign:
-                strs0 = self._EvalWordToArgv(w)  # respects strict-array
+            if i == meta_offset and allow_assign:
+                strs0 = self._EvalWordToArgv(w)
+                # TODO: Remove this because YSH will disallow assignment
+                # builtins?  (including export?)
                 if len(strs0) == 1:
-                    arg0 = strs0[0]
-                    builtin_id = consts.LookupAssignBuiltin(arg0)
-                    if builtin_id != consts.NO_INDEX:
-                        # Same logic as legacy word eval, with no splitting
-                        return self._EvalAssignBuiltin(builtin_id, arg0, words)
+                    cmd_val = self._DetectAssignBuiltinStr(
+                        strs0[0], words, meta_offset)
+                    if cmd_val:
+                        return cmd_val
 
                 strs.extend(strs0)
                 for _ in strs0:
@@ -2177,10 +2231,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         Unlike the EvalWord*() methods, it does globbing.
 
         Args:
-          words: list of Word instances
-
-        Returns:
-          argv: list of string arguments, or None if there was an eval error
+          allow_assign: True for command.Simple, False for BashArray a=(1 2 3)
         """
         if self.exec_opts.simple_word_eval():
             return self.SimpleEvalWordSequence2(words, allow_assign)
@@ -2201,6 +2252,12 @@ class AbstractWordEvaluator(StringWordEvaluator):
         strs = []  # type: List[str]
         locs = []  # type: List[CompoundWord]
 
+        # 0 for declare x
+        # 1 for builtin declare x
+        # 2 for command builtin declare x
+        # etc.
+        meta_offset = 0
+
         n = 0
         for i, w in enumerate(words):
             fast_str = word_.FastStrEval(w)
@@ -2209,11 +2266,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 locs.append(w)
 
                 # e.g. the 'local' in 'local a=b c=d' will be here
-                if allow_assign and i == 0:
-                    builtin_id = consts.LookupAssignBuiltin(fast_str)
-                    if builtin_id != consts.NO_INDEX:
-                        return self._EvalAssignBuiltin(builtin_id, fast_str,
-                                                       words)
+                if allow_assign and i == meta_offset:
+                    cmd_val = self._DetectAssignBuiltinStr(
+                        fast_str, words, meta_offset)
+                    if cmd_val:
+                        return cmd_val
+
+                if i <= meta_offset and _DetectMetaBuiltinStr(fast_str):
+                    meta_offset += 1
+
                 continue
 
             part_vals = []  # type: List[part_value_t]
@@ -2228,16 +2289,15 @@ class AbstractWordEvaluator(StringWordEvaluator):
             #
             # But we don't want to evaluate the first word twice in the case of:
             #   $(some-command) --flag
-            if allow_assign and i == 0 and len(part_vals) == 1:
-                val0 = part_vals[0]
-                UP_val0 = val0
-                if val0.tag() == part_value_e.String:
-                    val0 = cast(Piece, UP_val0)
-                    if not val0.quoted:
-                        builtin_id = consts.LookupAssignBuiltin(val0.s)
-                        if builtin_id != consts.NO_INDEX:
-                            return self._EvalAssignBuiltin(
-                                builtin_id, val0.s, words)
+            if len(part_vals) == 1:
+                if allow_assign and i == meta_offset:
+                    cmd_val = self._DetectAssignBuiltin(
+                        part_vals[0], words, meta_offset)
+                    if cmd_val:
+                        return cmd_val
+
+                if i <= meta_offset and _DetectMetaBuiltin(part_vals[0]):
+                    meta_offset += 1
 
             if 0:
                 log('')
@@ -2289,7 +2349,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
             mutable_opts,  # type: state.MutableOpts
             tilde_ev,  # type: TildeEvaluator
             splitter,  # type: SplitContext
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,
@@ -2347,7 +2407,7 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
             mutable_opts,  # type: state.MutableOpts
             tilde_ev,  # type: TildeEvaluator
             splitter,  # type: SplitContext
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,

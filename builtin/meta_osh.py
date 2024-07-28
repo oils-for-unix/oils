@@ -7,7 +7,6 @@ from __future__ import print_function
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import source, loc
-from _devbuild.gen.value_asdl import value
 from core import alloc
 from core import dev
 from core import error
@@ -37,7 +36,7 @@ if TYPE_CHECKING:
     from frontend import args
     from frontend.parse_lib import ParseContext
     from core import optview
-    from core import ui
+    from display import ui
     from osh.cmd_eval import CommandEvaluator
     from osh.cmd_parse import CommandParser
 
@@ -122,37 +121,49 @@ class Source(vm._Builtin):
         attrs, arg_r = flag_util.ParseCmdVal('source', cmd_val)
         arg = arg_types.source(attrs.attrs)
 
-        path = arg_r.Peek()
-        if path is None:
+        path_arg = arg_r.Peek()
+        if path_arg is None:
             e_usage('missing required argument', loc.Missing)
         arg_r.Next()
 
+        # Old:
+        #     source --builtin two.sh  # looks up stdlib/two.sh
+        # New:
+        #     source $LIB_OSH/two.sh  # looks up stdlib/osh/two.sh
+        #     source ///osh/two.sh  # looks up stdlib/osh/two.sh
+        builtin_path = None  # type: Optional[str]
         if arg.builtin:
+            builtin_path = path_arg
+        elif path_arg.startswith('///'):
+            builtin_path = path_arg[3:]
+
+        if builtin_path is not None:
             try:
-                path = os_path.join("stdlib", path)
-                contents = self.loader.Get(path)
+                load_path = os_path.join("stdlib", builtin_path)
+                contents = self.loader.Get(load_path)
             except (IOError, OSError):
-                self.errfmt.Print_(
-                    'source --builtin %r failed: No such builtin file' % path,
-                    blame_loc=cmd_val.arg_locs[2])
+                self.errfmt.Print_('source failed: No builtin file %r' %
+                                   load_path,
+                                   blame_loc=cmd_val.arg_locs[2])
                 return 2
 
             line_reader = reader.StringLineReader(contents, self.arena)
             c_parser = self.parse_ctx.MakeOshParser(line_reader)
-            return self._Exec(cmd_val, arg_r, path, c_parser)
+            return self._Exec(cmd_val, arg_r, load_path, c_parser)
 
         else:
             # 'source' respects $PATH
-            resolved = self.search_path.LookupOne(path, exec_required=False)
+            resolved = self.search_path.LookupOne(path_arg,
+                                                  exec_required=False)
             if resolved is None:
-                resolved = path
+                resolved = path_arg
 
             try:
                 # Shell can't use descriptors 3-9
                 f = self.fd_state.Open(resolved)
             except (IOError, OSError) as e:
                 self.errfmt.Print_('source %r failed: %s' %
-                                   (path, pyutil.strerror(e)),
+                                   (path_arg, pyutil.strerror(e)),
                                    blame_loc=cmd_val.arg_locs[1])
                 return 1
 
@@ -160,7 +171,7 @@ class Source(vm._Builtin):
             c_parser = self.parse_ctx.MakeOshParser(line_reader)
 
             with process.ctx_FileCloser(f):
-                return self._Exec(cmd_val, arg_r, path, c_parser)
+                return self._Exec(cmd_val, arg_r, path_arg, c_parser)
 
     def _Exec(self, cmd_val, arg_r, path, c_parser):
         # type: (cmd_value.Argv, args.Reader, str, CommandParser) -> int
@@ -237,7 +248,7 @@ class Command(vm._Builtin):
     def __init__(
             self,
             shell_ex,  # type: vm._Executor
-            funcs,  # type: Dict[str, value.Proc]
+            funcs,  # type: state.Procs
             aliases,  # type: Dict[str, str]
             search_path,  # type: state.SearchPath
     ):
@@ -340,7 +351,7 @@ class Builtin(vm._Builtin):
 class RunProc(vm._Builtin):
 
     def __init__(self, shell_ex, procs, errfmt):
-        # type: (vm._Executor, Dict[str, value.Proc], ui.ErrorFormatter) -> None
+        # type: (vm._Executor, state.Procs, ui.ErrorFormatter) -> None
         self.shell_ex = shell_ex
         self.procs = procs
         self.errfmt = errfmt
@@ -356,7 +367,7 @@ class RunProc(vm._Builtin):
             raise error.Usage('requires arguments', loc.Missing)
 
         name = argv[0]
-        if name not in self.procs:
+        if not self.procs.Get(name):
             self.errfmt.PrintMessage('runproc: no proc named %r' % name)
             return 1
 
@@ -371,7 +382,7 @@ class RunProc(vm._Builtin):
 
 def _ResolveName(
         name,  # type: str
-        funcs,  # type: Dict[str, value.Proc]
+        funcs,  # type: state.Procs
         aliases,  # type: Dict[str, str]
         search_path,  # type: state.SearchPath
         do_all,  # type: bool
@@ -383,7 +394,7 @@ def _ResolveName(
 
     results = []  # type: List[Tuple[str, str, Optional[str]]]
 
-    if name in funcs:
+    if funcs and funcs.Get(name):
         results.append((name, 'function', no_str))
 
     if name in aliases:
@@ -415,7 +426,7 @@ class Type(vm._Builtin):
 
     def __init__(
             self,
-            funcs,  # type: Dict[str, value.Proc]
+            funcs,  # type: state.Procs
             aliases,  # type: Dict[str, str]
             search_path,  # type: state.SearchPath
             errfmt,  # type: ui.ErrorFormatter
@@ -432,7 +443,7 @@ class Type(vm._Builtin):
         arg = arg_types.type(attrs.attrs)
 
         if arg.f:  # suppress function lookup
-            funcs = {}  # type: Dict[str, value.Proc]
+            funcs = None  # type: state.Procs
         else:
             funcs = self.funcs
 

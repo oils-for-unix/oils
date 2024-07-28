@@ -26,7 +26,7 @@ from core import num
 from core import pyos
 from core import pyutil
 from core import optview
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import location
@@ -214,6 +214,23 @@ class ctx_DebugTrap(object):
         self.mem.running_debug_trap = False
 
 
+class ctx_ErrTrap(object):
+    """For trap ERR."""
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        mem.running_err_trap = True
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value, traceback):
+        # type: (Any, Any, Any) -> None
+        self.mem.running_err_trap = False
+
+
 class ctx_Option(object):
     """Shopt --unset errexit { false }"""
 
@@ -222,8 +239,8 @@ class ctx_Option(object):
         for opt_num in opt_nums:
             mutable_opts.Push(opt_num, b)
             if opt_num == option_i.errexit:
-                mutable_opts.errexit_disabled_tok.append(
-                    None)  # it wasn't disabled
+                # it wasn't disabled
+                mutable_opts.errexit_disabled_tok.append(None)
 
         self.mutable_opts = mutable_opts
         self.opt_nums = opt_nums
@@ -564,6 +581,16 @@ class MutableOpts(object):
 
         return self.errexit_disabled_tok[-1]
 
+    def ErrExitIsDisabled(self):
+        # type: () -> bool
+        """
+        Similar to ErrExitDisabledToken, for ERR trap
+        """
+        if len(self.errexit_disabled_tok) == 0:
+            return False
+
+        return self.errexit_disabled_tok[-1] is not None
+
     def _SetOldOption(self, opt_name, b):
         # type: (str, bool) -> None
         """Private version for synchronizing from SHELLOPTS."""
@@ -704,9 +731,10 @@ class _ArgFrame(object):
 
     def Dump(self):
         # type: () -> Dict[str, value_t]
+        items = [value.Str(s) for s in self.argv]  # type: List[value_t]
+        argv = value.List(items)
         return {
-            # Easier to serialize value.BashArray than value.List
-            'argv': value.BashArray(self.argv),
+            'argv': argv,
             'num_shifted': num.ToBig(self.num_shifted),
         }
 
@@ -760,19 +788,10 @@ def _DumpVarFrame(frame):
 
         with tagswitch(cell.val) as case:
             if case(value_e.Undef):
-                cell_json['type'] = value.Str('Undef')
+                cell_json['val'] = value.Null
 
-            elif case(value_e.Str):
-                cell_json['type'] = value.Str('Str')
-                cell_json['value'] = cell.val
-
-            elif case(value_e.BashArray):
-                cell_json['type'] = value.Str('BashArray')
-                cell_json['value'] = cell.val
-
-            elif case(value_e.BashAssoc):
-                cell_json['type'] = value.Str('BashAssoc')
-                cell_json['value'] = cell.val
+            elif case(value_e.Str, value_e.BashArray, value_e.BashAssoc):
+                cell_json['val'] = cell.val
 
             else:
                 # TODO: should we show the object ID here?
@@ -900,6 +919,21 @@ def InitMem(mem, environ, version_str):
     SetGlobalString(mem, 'OIL_VERSION', version_str)
 
     SetGlobalString(mem, 'OILS_VERSION', version_str)
+
+    # The source builtin understands '///' to mean "relative to embedded stdlib"
+    SetGlobalString(mem, 'LIB_OSH', '///osh')
+    SetGlobalString(mem, 'LIB_YSH', '///ysh')
+
+    # - C spells it NAN
+    # - JavaScript spells it NaN
+    # - Python 2 has float('nan'), while Python 3 has math.nan.
+    #
+    # - libc prints the strings 'nan' and 'inf'
+    # - Python 3 prints the strings 'nan' and 'inf'
+    # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
+    _SetGlobalValue(mem, 'NAN', value.Float(pyutil.nan()))
+    _SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
+
     _InitDefaults(mem)
     _InitVarsFromEnv(mem, environ)
 
@@ -1150,6 +1184,7 @@ class Mem(object):
         self.last_bg_pid = -1  # Uninitialized value mutable public variable
 
         self.running_debug_trap = False  # set by ctx_DebugTrap()
+        self.running_err_trap = False  # set by ctx_ErrTrap
         self.is_main = True  # we start out in main
 
         # For the ctx builtin
@@ -1243,7 +1278,7 @@ class Mem(object):
         Although most of that should be taken over by 'with ui.ctx_Location()`,
         for the errfmt.
         """
-        if self.running_debug_trap:
+        if self.running_debug_trap or self.running_err_trap:
             return
 
         #if tok.span_id == runtime.NO_SPID:
@@ -1368,6 +1403,13 @@ class Mem(object):
             return False
 
         return True
+
+    def InsideFunction(self):
+        # type: () -> bool
+        """For the ERR trap"""
+
+        # Don't run it inside functions
+        return len(self.var_stack) > 1
 
     def PushSource(self, source_name, argv):
         # type: (str, List[str]) -> None
@@ -2269,6 +2311,58 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
+class Procs:
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        self.mem = mem
+        self.sh_funcs = {}  # type: Dict[str, value.Proc]
+
+    def SetProc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.mem.var_stack[0][name] = Cell(False, False, False, proc)
+
+    def SetShFunc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.sh_funcs[name] = proc
+
+    def Get(self, name):
+        # type: (str) -> value.Proc
+        """Try to find a proc/sh-func by `name`, or return None if not found.
+
+        First, we search for a proc, and then a sh-func. This means that procs
+        can shadow the definition of sh-funcs.
+        """
+        vars = self.mem.var_stack[0]
+        if name in vars:
+            maybe_proc = vars[name]
+            if maybe_proc.val.tag() == value_e.Proc:
+                return cast(value.Proc, maybe_proc.val)
+
+        if name in self.sh_funcs:
+            return self.sh_funcs[name]
+
+        return None
+
+    def Del(self, to_del):
+        # type: (str) -> None
+        """Undefine a sh-func with name `to_del`, if it exists."""
+        mylib.dict_erase(self.sh_funcs, to_del)
+
+    def GetNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all proc names"""
+        names = list(self.sh_funcs.keys())
+
+        vars = self.mem.var_stack[0]
+        for name in vars:
+            cell = vars[name]
+            if cell.val.tag() == value_e.Proc:
+                names.append(name)
+
+        return sorted(names)
+
+
 #
 # Wrappers to Set Variables
 #
@@ -2329,6 +2423,12 @@ def SetGlobalArray(mem, name, a):
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
     mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
+
+
+def _SetGlobalValue(mem, name, val):
+    # type: (Mem, str, value_t) -> None
+    """Helper for completion, etc."""
+    mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):

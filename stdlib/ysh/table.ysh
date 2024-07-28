@@ -1,0 +1,150 @@
+# table.ysh - Library for tables.
+#
+# Usage:
+#   source --builtin table.ysh
+
+# make this file a test server
+source --builtin osh/byo-server.sh
+
+proc table (...words; place; ; block) {
+  var n = len(words)
+
+  # TODO: parse flags
+  #
+  # --by-row
+  # --by-col
+  #
+  # Place is optional
+
+  if (n === 0) {
+    echo TODO
+    return
+  }
+
+  var action = words[0]
+
+  # textual operations
+  case (action) {
+    cat {
+      echo todo
+    }
+    align {
+      echo todo
+    }
+    tabify {
+      echo todo
+    }
+    tabify {
+      echo todo
+    }
+    header {
+      echo todo
+    }
+    slice {
+      # this has typed args
+      # do we do some sort of splat?
+      echo todo
+    }
+    to-tsv {
+      echo todo
+    }
+  }
+
+  echo TODO
+}
+
+proc test-table {
+  return
+
+  table (&files1) {
+    cols  num_bytes path
+    type  Int       Str
+
+    row   10        README.md
+    row   12        main.py
+
+    row   (12,      'lib.py')
+    row   (num_bytes=12, path='util.py')
+  }
+
+  # 2 columns - The default is by column?
+  assert ['Dict' === type(files1)]
+  assert [2 === len(files1)]
+
+  # Same table
+  table --by-row (&files2) {
+    cols  num_bytes path
+    type  Int       Str
+
+    row   10        README.md
+    row   12        main.py
+
+    row   (12,      'lib.py')
+    row   (num_bytes=12, path='util.py')
+  }
+
+  # 4 rows
+  assert ['List' === type(files2)]
+  assert [4 === len(files2)]
+}
+
+# "subcommands" of the dialect
+
+proc cols (...names) {
+  # cols name age
+  echo TODO
+}
+
+proc types (...types) {
+  # types - Int? Str?
+  echo TODO
+}
+
+proc attr (name; ...values) {
+  # attr units ('-', 'secs')
+  echo TODO
+}
+
+# is this allowed outside table {} blocks too?
+proc row {
+  echo TODO
+}
+
+#
+# dplyr names
+#
+
+# TODO: can we parse select?
+
+proc where {
+  echo
+}
+
+# TODO: should be able to test argv[0] or something
+# Or pass to _mutate-transmute
+
+proc mutate {
+  echo TODO
+}
+
+proc transmute {
+  echo TODO
+}
+
+proc rename {
+  echo TODO
+}
+
+proc group-by {
+  echo TODO
+}
+
+proc sort-by {
+  echo TODO
+}
+
+proc summary {
+  echo TODO
+}
+
+byo-maybe-run

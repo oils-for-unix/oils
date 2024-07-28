@@ -16,7 +16,7 @@ from _devbuild.gen.types_asdl import opt_group_i
 from core import error
 from core.error import e_usage
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8_lite
 from frontend import args
@@ -193,6 +193,13 @@ class Shopt(vm._Builtin):
         self.mutable_opts = mutable_opts
         self.cmd_ev = cmd_ev
 
+    def _PrintOptions(self, use_set_opts, opt_names):
+        # type: (bool, List[str]) -> None
+        if use_set_opts:
+            self.mutable_opts.ShowOptions(opt_names)
+        else:
+            self.mutable_opts.ShowShoptOptions(opt_names)
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
         attrs, arg_r = flag_util.ParseCmdVal('shopt',
@@ -201,13 +208,6 @@ class Shopt(vm._Builtin):
 
         arg = arg_types.shopt(attrs.attrs)
         opt_names = arg_r.Rest()
-
-        if arg.p:  # print values
-            if arg.o:  # use set -o names
-                self.mutable_opts.ShowOptions(opt_names)
-            else:
-                self.mutable_opts.ShowShoptOptions(opt_names)
-            return 0
 
         if arg.q:  # query values
             for name in opt_names:
@@ -222,13 +222,14 @@ class Shopt(vm._Builtin):
             b = True
         elif arg.u:
             b = False
-        else:
-            # If no flags are passed, print the options.  bash prints uses a
-            # different format for 'shopt', but we use the same format as 'shopt
-            # -p'.
-            self.mutable_opts.ShowShoptOptions(opt_names)
+        elif arg.p:  # explicit -p
+            self._PrintOptions(arg.o, opt_names)
+            return 0
+        else:  # otherwise -p is implicit
+            self._PrintOptions(arg.o, opt_names)
             return 0
 
+        # shopt --set x { my-block }
         cmd = typed_args.OptionalBlock(cmd_val)
         if cmd:
             opt_nums = []  # type: List[int]

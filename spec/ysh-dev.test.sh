@@ -149,10 +149,10 @@ found crash dump
 $SH --tool cat-em zzZZ
 echo status=$?
 
-$SH --tool cat-em stdlib/math.ysh > /dev/null
+$SH --tool cat-em stdlib/ysh/math.ysh > /dev/null
 echo status=$?
 
-$SH --tool cat-em zzZZ stdlib/math.ysh > /dev/null
+$SH --tool cat-em zzZZ stdlib/ysh/math.ysh > /dev/null
 echo status=$?
 
 ## STDOUT:
@@ -160,5 +160,4 @@ status=1
 status=0
 status=1
 ## END
-
 

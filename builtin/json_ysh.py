@@ -22,7 +22,7 @@ import posix_ as posix
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from core.ui import ErrorFormatter
+    from display import ui
 
 _ = log
 
@@ -37,7 +37,7 @@ class Json(vm._Builtin):
     """
 
     def __init__(self, mem, errfmt, is_j8):
-        # type: (state.Mem, ErrorFormatter, bool) -> None
+        # type: (state.Mem, ui.ErrorFormatter, bool) -> None
         self.mem = mem
         self.errfmt = errfmt
 

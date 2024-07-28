@@ -40,8 +40,8 @@ _NORMAL_BUILTINS = [
 
     'getopts',
 
-    # introspection
-    'command', 'type', 'hash', 'help', 'history',
+    # introspection / meta
+    'builtin', 'command', 'type', 'hash', 'help', 'history',
 
     'alias', 'unalias',
     'bind',
@@ -52,7 +52,7 @@ _NORMAL_BUILTINS = [
     'append',
     'write', 'json', 'json8', 'pp',
     'hay', 'haynode',
-    'module', 'use',
+    'use',
     'error', 'failed',
 
     # take a block
@@ -112,7 +112,7 @@ def _Init(b):
     b.Add('.', enum_name='dot', kind='special')
     # Python keyword
     b.Add('exec', enum_name='exec_', kind='special')
-    for name in ['eval', 'set', 'shift', 'times', 'trap', 'unset', 'builtin']:
+    for name in ['eval', 'set', 'shift', 'times', 'trap', 'unset']:
         b.Add(name, kind='special')
 
     #
@@ -127,6 +127,7 @@ def _Init(b):
     b.Add('true', enum_name='true_')  # C++ Keywords
     b.Add('false', enum_name='false_')
     b.Add('try', enum_name='try_')
+    b.Add('assert', enum_name='assert_')  # avoid Python keyword
 
     for name in _NORMAL_BUILTINS:
         b.Add(name)
@@ -136,6 +137,7 @@ def _Init(b):
     b.Add('[', enum_name='bracket')
 
     b.Add('push-registers', enum_name='push_registers')
+    b.Add('source-guard', enum_name='source_guard')
     b.Add('is-main', enum_name='is_main')
 
     # Implementation detail of $(<file)

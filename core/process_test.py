@@ -15,7 +15,7 @@ from core import dev
 from core import process  # module under test
 from core import pyos
 from core import test_lib
-from core import ui
+from display import ui
 from core import util
 from mycpp.mylib import log
 from core import state

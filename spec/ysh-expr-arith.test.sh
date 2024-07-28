@@ -246,8 +246,8 @@ echo float=$?
 ## STDOUT:
 (Float)   0.12345
 float=0
-(Float)   inf
-(Float)   -inf
+(Float)   INFINITY
+(Float)   -INFINITY
 float=0
 (Float)   0.0
 (Float)   -0.0

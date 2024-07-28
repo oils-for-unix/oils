@@ -10,7 +10,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from core import error
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8
 from frontend import match
@@ -59,6 +59,21 @@ class Len(vm._Callable):
                             rd.BlamePos())
 
 
+class Type(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        val = rd.PosValue()
+        rd.Done()
+
+        return value.Str(ui.ValType(val))
+
+
 class Join(vm._Callable):
     """Both free function join() and List->join() method."""
 
@@ -102,21 +117,6 @@ class Maybe(vm._Callable):
             return value.List([val])  # use val to avoid needlessly copy
 
         return value.List([])
-
-
-class Type(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        val = rd.PosValue()
-        rd.Done()
-
-        return value.Str(ui.ValType(val))
 
 
 class Bool(vm._Callable):
@@ -248,7 +248,7 @@ class List_(vm._Callable):
         rd.Done()
 
         l = []  # type: List[value_t]
-        it = None  # type: val_ops._ContainerIter
+        it = None  # type: val_ops.Iterator
         UP_val = val
         with tagswitch(val) as case:
             if case(value_e.List):
@@ -269,8 +269,11 @@ class List_(vm._Callable):
                                     rd.BlamePos())
 
         assert it is not None
-        while not it.Done():
-            l.append(it.FirstValue())
+        while True:
+            first = it.FirstValue()
+            if first is None:
+                break
+            l.append(first)
             it.Next()
 
         return value.List(l)
@@ -310,6 +313,50 @@ class Dict_(vm._Callable):
                             rd.BlamePos())
 
 
+class Runes(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class EncodeRunes(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class Bytes(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
+class EncodeBytes(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        return value.Null
+
+
 class Split(vm._Callable):
 
     def __init__(self, splitter):
@@ -330,6 +377,21 @@ class Split(vm._Callable):
             for elem in self.splitter.SplitForWordEval(s, ifs=ifs)
         ]  # type: List[value_t]
         return value.List(l)
+
+
+class FloatsEqual(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        left = rd.PosFloat()
+        right = rd.PosFloat()
+        rd.Done()
+
+        return value.Bool(left == right)
 
 
 class Glob(vm._Callable):
@@ -379,27 +441,6 @@ class GetVar(vm._Callable):
         name = rd.PosStr()
         rd.Done()
         return state.DynamicGetVar(self.mem, name, scope_e.LocalOrGlobal)
-
-
-class Assert(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        val = rd.PosValue()
-
-        msg = rd.OptionalStr(default_='')
-
-        rd.Done()
-
-        if not val_ops.ToBool(val):
-            raise error.AssertionErr(msg, rd.LeftParenToken())
-
-        return value.Null
 
 
 class EvalExpr(vm._Callable):
@@ -496,43 +537,15 @@ class BashArrayToSparse(vm._Callable):
         rd.Done()
 
         d = {}  # type: Dict[mops.BigInt, str]
-        max_index = mops.MINUS_ONE   # max index for empty array
+        max_index = mops.MINUS_ONE  # max index for empty array
         for i, s in enumerate(strs):
             if s is not None:
                 big_i = mops.IntWiden(i)
                 d[big_i] = s
-                if mops.Greater(big_i,  max_index):
+                if mops.Greater(big_i, max_index):
                     max_index = big_i
 
         return value.SparseArray(d, max_index)
-
-
-class DictToSparse(vm._Callable):
-    """
-    value.Dict -> value.SparseArray, for testing
-    """
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        d = rd.PosDict()
-        rd.Done()
-
-        blame_tok = rd.LeftParenToken()
-
-        mydict = {}  # type: Dict[mops.BigInt, str]
-        for k, v in iteritems(d):
-            i = mops.FromStr(k)
-            s = val_ops.ToStr(v, 'expected str', blame_tok)
-
-            mydict[i] = s
-
-        max_index = mops.MINUS_ONE  # TODO:
-        return value.SparseArray(mydict, max_index)
 
 
 class SparseOp(vm._Callable):

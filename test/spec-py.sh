@@ -7,14 +7,12 @@
 # Usage:
 #   test/spec-py.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-
 source test/spec-common.sh
-source devtools/run-task.sh
 
 run-file() {
   local spec_name=$1
@@ -166,4 +164,4 @@ all-and-smoosh() {
   test/spec.sh smoosh-hang-html "${more_flags[@]}"
 }
 
-run-task "$@"
+task-five "$@"

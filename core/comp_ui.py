@@ -1,9 +1,9 @@
 """comp_ui.py."""
 from __future__ import print_function
 
-from core import ansi
 from core import completion
-from data_lang import pretty
+from display import ansi
+from display import pp_value
 import libc
 
 from mycpp import mylib
@@ -48,7 +48,7 @@ def _PromptLen(prompt_str):
             # mycpp: rewrite of +=
             display_str = display_str + c
     last_line = display_str.split('\n')[-1]
-    return pretty.TryUnicodeWidth(last_line)
+    return pp_value.TryUnicodeWidth(last_line)
 
 
 class PromptState(object):
