@@ -343,7 +343,7 @@ Similar to `keys()`, but returns the values of the dictionary.
 
 ### erase()
 
-Accepts a key and deletes the relevant key-value pair. The method is idempotent.
+Ensures that the given key does not exist in the dictionary.
 
     var book = {
       title: "The Histories",
@@ -352,6 +352,11 @@ Accepts a key and deletes the relevant key-value pair. The method is idempotent.
     = book
     # => (Dict)   {title: "The Histories", author: "Herodotus"}
 
+    call book->erase("author")
+    = book
+    # => (Dict)   {title: "The Histories"}
+
+    # repeating the erase call does not cause an error
     call book->erase("author")
     = book
     # => (Dict)   {title: "The Histories"}
