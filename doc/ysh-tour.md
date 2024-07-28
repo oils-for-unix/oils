@@ -1164,10 +1164,10 @@ Example:
 
 ### Structured: JSON8, TSV8
 
-You can write and read **tree-shaped** as [JSON][]:
+You can write and read **tree-shaped** data as [JSON][]:
 
     var d = {key: 'value'}
-    json write (d)                # dump variable d as JSON
+    json write (d)                 # dump variable d as JSON
     # =>
     # {
     #   "key": "value"
@@ -1176,9 +1176,8 @@ You can write and read **tree-shaped** as [JSON][]:
     echo '["ale", 42]' > example.json
 
     json read (&d2) < example.json  # parse JSON into var d2
-    pp cell d2                      # inspect the in-memory value
-    # =>
-    # ['ale', 42]
+    pp (d2)                         # pretty print it 
+    # => (List)  ['ale', 42]
 
 [JSON][] will lose information when strings have binary data, but the slight
 [JSON8]($xref) upgrade won't:
@@ -1191,12 +1190,6 @@ You can write and read **tree-shaped** as [JSON][]:
     # }
 
 [JSON]: $xref
-
-<!--
-TODO:
-- Fix pp cell output
-- Use json write (d) syntax
--->
 
 **Table-shaped** data can be read and written as [TSV8]($xref).  (TODO: not yet
 implemented.)
