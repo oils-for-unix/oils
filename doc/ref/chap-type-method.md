@@ -343,6 +343,24 @@ Similar to `keys()`, but returns the values of the dictionary.
 
 ### erase()
 
+Ensures that the given key does not exist in the dictionary.
+
+    var book = {
+      title: "The Histories",
+      author: "Herodotus",
+    }
+    = book
+    # => (Dict)   {title: "The Histories", author: "Herodotus"}
+
+    call book->erase("author")
+    = book
+    # => (Dict)   {title: "The Histories"}
+
+    # repeating the erase call does not cause an error
+    call book->erase("author")
+    = book
+    # => (Dict)   {title: "The Histories"}
+
 ### inc()
 
 ### accum()

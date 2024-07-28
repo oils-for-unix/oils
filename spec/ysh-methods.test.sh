@@ -393,6 +393,19 @@ pp line (en2fr => values())
 (List)   ["bonjour","ami","chat"]
 ## END
 
+#### Dict -> erase()
+var book = {title: "The Histories", author: "Herodotus"}
+call book->erase("author")
+pp line (book)
+# confirm method is idempotent
+call book->erase("author")
+pp line (book)
+## status: 0
+## STDOUT:
+(Dict)   {"title":"The Histories"}
+(Dict)   {"title":"The Histories"}
+## END
+
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
 pp line (check("a"))

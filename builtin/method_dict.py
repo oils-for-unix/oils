@@ -6,6 +6,7 @@ from _devbuild.gen.value_asdl import (value, value_t)
 
 from core import vm
 from frontend import typed_args
+from mycpp import mylib
 from mycpp.mylib import log
 
 from typing import List
@@ -43,3 +44,20 @@ class Values(vm._Callable):
 
         values = dictionary.values()  # type: List[value_t]
         return value.List(values)
+
+
+class Erase(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        dictionary = rd.PosDict()
+        key = rd.PosStr()
+        rd.Done()
+
+        mylib.dict_erase(dictionary, key)
+        return value.Null
