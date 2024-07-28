@@ -807,12 +807,7 @@ class ExternalThunk(Thunk):
 class SubProgramThunk(Thunk):
     """A subprogram that can be executed in another process."""
 
-    def __init__(self,
-                 cmd_ev,
-                 node,
-                 trap_state,
-                 multi_trace,
-                 inherit_errexit,
+    def __init__(self, cmd_ev, node, trap_state, multi_trace, inherit_errexit,
                  inherit_errtrace):
         # type: (CommandEvaluator, command_t, trap_osh.TrapState, dev.MultiTracer, bool, bool) -> None
         self.cmd_ev = cmd_ev

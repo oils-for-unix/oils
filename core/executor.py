@@ -184,11 +184,8 @@ class ShellExecutor(vm._Executor):
         #   interleaved.
         # - We could turn the `exit` builtin into a error.FatalRuntime exception
         #   and get this check for "free".
-        thunk = process.SubProgramThunk(self.cmd_ev,
-                                        node,
-                                        self.trap_state,
-                                        self.multi_trace,
-                                        inherit_errexit,
+        thunk = process.SubProgramThunk(self.cmd_ev, node, self.trap_state,
+                                        self.multi_trace, inherit_errexit,
                                         inherit_errtrace)
         p = process.Process(thunk, self.job_control, self.job_list,
                             self.tracer)
@@ -501,7 +498,8 @@ class ShellExecutor(vm._Executor):
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple
 
-        p = self._MakeProcess(node, self.exec_opts.inherit_errexit(), self.exec_opts.errtrace())
+        p = self._MakeProcess(node, self.exec_opts.inherit_errexit(),
+                              self.exec_opts.errtrace())
         # Shell quirk: Command subs remain part of the shell's process group, so we
         # don't use p.AddStateChange(process.SetPgid(...))
 
