@@ -418,7 +418,8 @@ def Main(
 
     job_control = process.JobControl()
     job_list = process.JobList()
-    fd_state = process.FdState(errfmt, job_control, job_list, mem, None, None)
+    fd_state = process.FdState(errfmt, job_control, job_list, mem, None, None,
+                               exec_opts)
 
     my_pid = posix.getpid()
 

@@ -213,7 +213,8 @@ def InitCommandEvaluator(parse_ctx=None,
     errfmt = ui.ErrorFormatter()
     job_control = process.JobControl()
     job_list = process.JobList()
-    fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
+    fd_state = process.FdState(errfmt, job_control, job_list, None, None, None,
+                               exec_opts)
     aliases = {} if aliases is None else aliases
     procs = state.Procs(mem)
     methods = {}

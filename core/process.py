@@ -9,7 +9,7 @@ process.py - Launch processes and manipulate file descriptors.
 """
 from __future__ import print_function
 
-from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC
+from errno import EACCES, EBADF, ECHILD, EINTR, ENOENT, ENOEXEC, EEXIST
 import fcntl as fcntl_
 from fcntl import F_DUPFD, F_GETFD, F_SETFD, FD_CLOEXEC
 from signal import (SIG_DFL, SIG_IGN, SIGINT, SIGPIPE, SIGQUIT, SIGTSTP,
@@ -54,6 +54,7 @@ from posix_ import (
     WNOHANG,
     O_APPEND,
     O_CREAT,
+    O_EXCL,
     O_NONBLOCK,
     O_NOCTTY,
     O_RDONLY,
@@ -179,9 +180,10 @@ class FdState(object):
             errfmt,  # type: ui.ErrorFormatter
             job_control,  # type: JobControl
             job_list,  # type: JobList
-            mem,  #type: state.Mem
+            mem,  # type: state.Mem
             tracer,  # type: Optional[dev.Tracer]
             waiter,  # type: Optional[Waiter]
+            exec_opts,  # type: optview.Exec
     ):
         # type: (...) -> None
         """
@@ -197,6 +199,7 @@ class FdState(object):
         self.mem = mem
         self.tracer = tracer
         self.waiter = waiter
+        self.exec_opts = exec_opts
 
     def Open(self, path):
         # type: (str) -> mylib.LineReader
@@ -377,16 +380,17 @@ class FdState(object):
 
             if case(redirect_arg_e.Path):
                 arg = cast(redirect_arg.Path, UP_arg)
-
+                # noclobber flag is OR'd with other flags when allowed
+                noclobber_mode = O_EXCL if self.exec_opts.noclobber() else 0
                 if r.op_id in (Id.Redir_Great, Id.Redir_AndGreat):  # >   &>
                     # NOTE: This is different than >| because it respects noclobber, but
                     # that option is almost never used.  See test/wild.sh.
-                    mode = O_CREAT | O_WRONLY | O_TRUNC
+                    mode = O_CREAT | O_WRONLY | O_TRUNC | noclobber_mode
                 elif r.op_id == Id.Redir_Clobber:  # >|
                     mode = O_CREAT | O_WRONLY | O_TRUNC
                 elif r.op_id in (Id.Redir_DGreat,
                                  Id.Redir_AndDGreat):  # >>   &>>
-                    mode = O_CREAT | O_WRONLY | O_APPEND
+                    mode = O_CREAT | O_WRONLY | O_APPEND | noclobber_mode
                 elif r.op_id == Id.Redir_Less:  # <
                     mode = O_RDONLY
                 elif r.op_id == Id.Redir_LessGreat:  # <>
@@ -398,9 +402,14 @@ class FdState(object):
                 try:
                     open_fd = posix.open(arg.filename, mode, 0o666)
                 except (IOError, OSError) as e:
-                    self.errfmt.Print_("Can't open %r: %s" %
-                                       (arg.filename, pyutil.strerror(e)),
-                                       blame_loc=r.op_loc)
+                    if e.errno == EEXIST and self.exec_opts.noclobber():
+                        extra = ' (noclobber)'
+                    else:
+                        extra = ''
+                    self.errfmt.Print_(
+                        "Can't open %r: %s%s" %
+                        (arg.filename, pyutil.strerror(e), extra),
+                        blame_loc=r.op_loc)
                     raise  # redirect failed
 
                 new_fd = self._PushDup(open_fd, r.loc)
