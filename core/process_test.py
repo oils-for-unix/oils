@@ -71,7 +71,8 @@ class ProcessTest(unittest.TestCase):
                                      self.tracer)
         errfmt = ui.ErrorFormatter()
         self.fd_state = process.FdState(errfmt, self.job_control,
-                                        self.job_list, None, self.tracer, None)
+                                        self.job_list, None, self.tracer, None,
+                                        exec_opts)
         self.ext_prog = process.ExternalProgram('', self.fd_state, errfmt,
                                                 util.NullDebugFile())
 
