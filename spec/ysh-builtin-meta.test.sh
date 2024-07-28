@@ -135,29 +135,6 @@ pp asdl (d) | fgrep -o 'cycle ...'
 cycle ...
 ## END
 
-#### pp line supports BashArray, BashAssoc
-
-declare -a array=(a b c)
-pp line (array)
-
-array[5]=z
-pp line (array)
-
-declare -A assoc=([k]=v [k2]=v2)
-pp line (assoc)
-
-# I think assoc arrays can never null / unset
-
-assoc['k3']=
-pp line (assoc)
-
-## STDOUT:
-{"type":"BashArray","data":{"0":"a","1":"b","2":"c"}}
-{"type":"BashArray","data":{"0":"a","1":"b","2":"c","5":"z"}}
-{"type":"BashAssoc","data":{"k":"v","k2":"v2"}}
-{"type":"BashAssoc","data":{"k":"v","k2":"v2","k3":""}}
-## END
-
 
 #### pp gc-stats
 
@@ -218,49 +195,78 @@ proc_name	doc_comment
 f	"doc ' comment with \" quotes"
 ## END
 
+#### pp (x) and pp [x] quote code
 
-#### pp (x) is like = keyword
+pp (42)
+
+shopt --set ysh:upgrade
+
+pp [42]
+
+## STDOUT:
+
+  pp (42)
+     ^
+[ stdin ]:1: (Int)   42
+
+  pp [42]
+     ^
+[ stdin ]:5: (Int)   42
+## END
+
+#### pp line supports BashArray, BashAssoc
+
+declare -a array=(a b c)
+pp line (array)
+
+array[5]=z
+pp line (array)
+
+declare -A assoc=([k]=v [k2]=v2)
+pp line (assoc)
+
+# I think assoc arrays can never null / unset
+
+assoc['k3']=
+pp line (assoc)
+
+## STDOUT:
+{"type":"BashArray","data":{"0":"a","1":"b","2":"c"}}
+{"type":"BashArray","data":{"0":"a","1":"b","2":"c","5":"z"}}
+{"type":"BashAssoc","data":{"k":"v","k2":"v2"}}
+{"type":"BashAssoc","data":{"k":"v","k2":"v2","k3":""}}
+## END
+
+#### pp value (x) is like = keyword
 
 shopt --set ysh:upgrade
 source $LIB_YSH/list.ysh
 
 # It can be piped!
 
-pp ('foo') | cat
+pp value ('foo') | cat
 
-pp ("isn't this sq") | cat
+pp value ("isn't this sq") | cat
 
-pp ('"dq $myvar"') | cat
+pp value ('"dq $myvar"') | cat
 
-pp (r'\ backslash \\') | cat
+pp value (r'\ backslash \\') | cat
 
-pp (u'one \t two \n') | cat
+pp value (u'one \t two \n') | cat
 
 # Without a terminal, default width is 80
-pp (repeat([123], 40)) | cat
+pp value (repeat([123], 40)) | cat
 
 ## STDOUT:
-  pp ('foo') | cat
-     ^
-[ stdin ]:5: (Str)   'foo'
-  pp ("isn't this sq") | cat
-     ^
-[ stdin ]:7: (Str)   b'isn\'t this sq'
-  pp ('"dq $myvar"') | cat
-     ^
-[ stdin ]:9: (Str)   '"dq $myvar"'
-  pp (r'\ backslash \\') | cat
-     ^
-[ stdin ]:11: (Str)   b'\\ backslash \\\\'
-  pp (u'one \t two \n') | cat
-     ^
-[ stdin ]:13: (Str)   b'one \t two \n'
-  pp (repeat([123], 40)) | cat
-     ^
-[ stdin ]:15: (List)
-    [
-        123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
-        123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
-        123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123
-    ]
+(Str)   'foo'
+(Str)   b'isn\'t this sq'
+(Str)   '"dq $myvar"'
+(Str)   b'\\ backslash \\\\'
+(Str)   b'one \t two \n'
+(List)
+[
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123
+]
 ## END

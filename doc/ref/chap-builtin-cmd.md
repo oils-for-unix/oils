@@ -54,8 +54,28 @@ You can also pass an unevaluated expression:
     $ pp [x + 5]
     myfile.ysh:1: (Int)   47   # evaluate first
 
+The `value` command is a synonym for the interactive `=` operator:
+
+    $ pp value (x)
+    (Int)   42
+
+    $ = x 
+    (Int)   42
+
+Print proc names and doc comments:
+
+    $ pp proc  # subject to change
+
 The `pp` builtin can also print low-level interpreter state.  Some of of these
 are implementation details, subject to change.
+
+<!--
+TODO: 
+pp _test
+pp _asdl
+pp _cell
+pp _gc-stats
+-->
 
 Examples:
 
@@ -65,9 +85,6 @@ Examples:
     pp asdl (x)  # dump the ASDL "guts"
 
     pp line (x)  # single-line stable format, for spec tests
-
-    pp proc  # print all procs and their doc comments
-
 
 ## Handle Errors
 

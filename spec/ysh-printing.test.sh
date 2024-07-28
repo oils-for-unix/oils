@@ -37,11 +37,11 @@
 #### Range
 var x = 1..100
 
-pp (x)
+pp value (x)
 
 # TODO: show type here, like (Range 1 .. 100)
 
-pp ({k: x})
+pp value ({k: x})
 
 echo
 
@@ -68,9 +68,9 @@ remove-addr() {
   sed 's/0x[0-9a-f]\+/0x---/'
 }
 
-pp (pat) | remove-addr
+pp value (pat) | remove-addr
 
-pp ({k: pat}) | remove-addr
+pp value ({k: pat}) | remove-addr
 
 # TODO: change this
 
@@ -95,12 +95,12 @@ array_1[5]=5
 var empty = _a2sp(empty)
 var array_1 = _a2sp(array_1)
 
-pp (empty)
-pp (array_1)
+pp value (empty)
+pp value (array_1)
 echo
 
-pp ({k: empty})
-pp ({k: array_1})
+pp value ({k: empty})
+pp value ({k: array_1})
 echo
 
 pp line (empty)
@@ -128,12 +128,12 @@ pp line ({k: array_1})
 declare -a empty=()
 declare -a array_1=(hello)
 
-pp (empty)
-pp (array_1)
+pp value (empty)
+pp value (array_1)
 echo
 
-pp ({k: empty})
-pp ({k: array_1})
+pp value ({k: empty})
+pp value ({k: array_1})
 echo
 
 pp line (empty)
@@ -178,12 +178,12 @@ do eiusmod.)
 declare -A empty
 declare -A assoc=(['k']=$'foo \x01\u03bc')
 
-pp (empty)
-pp (assoc)
+pp value (empty)
+pp value (assoc)
 echo
 
-pp ({k:empty})
-pp ({k:assoc})
+pp value ({k:empty})
+pp value ({k:assoc})
 echo
 
 pp line (empty)

@@ -84,6 +84,7 @@ class Pp(_Builtin):
                 result = val
 
         # Show it with location
+        self.stdout_.write('\n')
         excerpt, prefix = ui.CodeExcerptAndPrefix(blame_tok)
         self.stdout_.write(excerpt)
         ui.PrettyPrintValue(prefix, result, self.stdout_)
@@ -98,15 +99,67 @@ class Pp(_Builtin):
 
         action, action_loc = arg_r.Peek2()
 
-        # pp (x) prints in the same way that '= x' does
-        # TODO: We also need pp [x], which shows the expression
+        # Special cases
+        # pp (x) quotes its code location
+        # pp [x] also evaluates
         if action is None:
             return self._PrettyPrint(cmd_val)
 
         arg_r.Next()
 
-        # Actions that print unstable formats start with '.'
+        if action == 'value':
+            # pp value (x) prints in the same way that '= x' does
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
+
+            ui.PrettyPrintValue('', val, self.stdout_)
+            return 0
+
+        if action == 'asdl':
+            # TODO: could be pp asdl (x, y, z)
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
+
+            tree = val.PrettyTree()
+            #tree = val.AbbreviatedTree()  # I used this to test cycle detection
+
+            # TODO: ASDL should print the IDs.  And then they will be
+            # line-wrapped.
+            # The IDs should also be used to detect cycles, and omit values
+            # already printed.
+            #id_str = vm.ValueIdString(val)
+            #f.write('    <%s%s>\n' % (ysh_type, id_str))
+
+            pretty_f = fmt.DetectConsoleOutput(self.stdout_)
+            fmt.PrintTree(tree, pretty_f)
+            self.stdout_.write('\n')
+
+            return 0
+
+        if action == 'line':
+            # TODO: could be pp _test
+
+            # Print format for spec tests
+
+            # TODO: could be pp line (x, y, z)
+            rd = typed_args.ReaderForProc(cmd_val)
+            val = rd.PosValue()
+            rd.Done()
+
+            if ui.TypeNotPrinted(val):
+                ysh_type = ui.ValType(val)
+                self.stdout_.write('(%s)   ' % ysh_type)
+
+            j8.PrintLine(val, self.stdout_)
+
+            return 0
+
         if action == 'cell':
+            # should this be pp .cell, and pp .asdl?
+            # or pp _cell pp _asdl?
+            # pp _test is possible too
             argv, locs = arg_r.Rest2()
 
             status = 0
@@ -129,48 +182,11 @@ class Pp(_Builtin):
                     pretty_f = fmt.DetectConsoleOutput(self.stdout_)
                     fmt.PrintTree(cell.PrettyTree(), pretty_f)
                     self.stdout_.write('\n')
-
-        elif action == 'asdl':
-            # TODO: could be pp asdl (x, y, z)
-            rd = typed_args.ReaderForProc(cmd_val)
-            val = rd.PosValue()
-            rd.Done()
-
-            tree = val.PrettyTree()
-            #tree = val.AbbreviatedTree()  # I used this to test cycle detection
-
-            # TODO: ASDL should print the IDs.  And then they will be
-            # line-wrapped.
-            # The IDs should also be used to detect cycles, and omit values
-            # already printed.
-            #id_str = vm.ValueIdString(val)
-            #f.write('    <%s%s>\n' % (ysh_type, id_str))
-
-            pretty_f = fmt.DetectConsoleOutput(self.stdout_)
-            fmt.PrintTree(tree, pretty_f)
-            self.stdout_.write('\n')
-
-            status = 0
-
-        elif action == 'line':
-            # Print format for unit tests
-
-            # TODO: could be pp line (x, y, z)
-            rd = typed_args.ReaderForProc(cmd_val)
-            val = rd.PosValue()
-            rd.Done()
-
-            if ui.TypeNotPrinted(val):
-                ysh_type = ui.ValType(val)
-                self.stdout_.write('(%s)   ' % ysh_type)
-
-            j8.PrintLine(val, self.stdout_)
-
-            status = 0
+            return status
 
         elif action == 'gc-stats':
             print('TODO')
-            status = 0
+            return 0
 
         elif action == 'proc':
             names, locs = arg_r.Rest2()
@@ -208,12 +224,10 @@ class Pp(_Builtin):
                 j8.EncodeString(doc, buf, unquoted_ok=True)
                 print(buf.getvalue())
 
-            status = 0
+            return 0
 
-        else:
-            e_usage('got invalid action %r' % action, action_loc)
-
-        return status
+        e_usage('got invalid action %r' % action, action_loc)
+        #return status
 
 
 class Write(_Builtin):

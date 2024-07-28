@@ -105,7 +105,8 @@ X [Wok]           _field()
 
 ```chapter-links-builtin-cmd_42
   [Memory]        cmd/append             Add elements to end of array
-                  pp                     asdl   cell   X gc-stats   line   proc
+                  pp                     value   proc     line
+                                         asdl    cell   X gc-stats
   [Handle Errors] error                  error 'failed' (status=2)
                   try                    Run with errexit, set _error
                   failed                 Test if _error.code !== 0
