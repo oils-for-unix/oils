@@ -268,7 +268,7 @@ json write (fib(10))
 ## END
 
 #### Recursive functions with LRU Cache
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 var cache = []
 var maxSize = 4

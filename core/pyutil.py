@@ -19,6 +19,20 @@ from typing import List, Union
 _PUNCT = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 
 
+def nan():
+    # type: () -> float
+
+    # note: Python 3 has math.nan
+    return float('nan')
+
+
+def infinity():
+    # type: () -> float
+
+    # note: Python 3 has math.inf
+    return float('inf')
+
+
 def IsValidCharEscape(ch):
     # type: (str) -> bool
     """Is this a valid character escape when unquoted?"""

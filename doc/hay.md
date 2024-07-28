@@ -339,13 +339,13 @@ You can put hay definitions in their own file:
 In this case, you can use `echo` and `write`, but the interpreted is
 **restricted** (see below).
 
-Parse it with `parse_hay()`, and evaluate it with `eval_hay()`:
+Parse it with `parseHay()`, and evaluate it with `evalHay()`:
 
     # my-evaluator.ysh
 
     hay define Rule  # node types for the file
-    const h = parse_hay('build.hay')
-    const result = eval_hay(h)
+    const h = parseHay('build.hay')
+    const result = evalHay(h)
 
     json write (result)
     # =>
@@ -379,7 +379,7 @@ This is mainly for testing and demos.
 The "restrictions" are **not** a security boundary!  (They could be, but we're
 not making promises now.)
 
-Even with `eval_hay()` and `hay eval`, the config file is evaluated in the
+Even with `evalHay()` and `hay eval`, the config file is evaluated in the
 **same interpreter**.  But the following restrictions apply:
 
 - External commands aren't allowed
@@ -414,8 +414,8 @@ Here is a list of all the mechanisms mentioned.
 
 ### Functions
 
-- `parse_hay()` parses a file, just as `bin/ysh` does.
-- `eval_hay()` evaluates the parsed file in restricted mode, like `hay eval`.
+- `parseHay()` parses a file, just as `bin/ysh` does.
+- `evalHay()` evaluates the parsed file in restricted mode, like `hay eval`.
 - `_hay()` retrieves the current result
   - It's useful interactive debugging.
   - The name starts with `_` because it's a "register" mutated by the
@@ -572,8 +572,8 @@ The general pattern is:
 The evaluator does the following:
 
 1. Sets up the execution context with `hay define`
-1. Parses `my-config.hay` with `parse_hay()`
-1. Evaluates it with `eval_hay()`
+1. Parses `my-config.hay` with `parseHay()`
+1. Evaluates it with `evalHay()`
 1. Prints the result as JSON.
 
 Then a separate YSH processes reads this JSON and executes application code.
@@ -610,7 +610,7 @@ This can be done with an evaluator that simply enumerates all files:
 
     var results = []
     for path in myconfig.d/*.hay {
-      const code = parse_hay(path)
+      const code = parseHay(path)
       const result = eval(hay)
       call results->append(result)
     }
@@ -619,8 +619,8 @@ This can be done with an evaluator that simply enumerates all files:
 
 ### Parallel Loading
 
-TODO: Example of using `xargs -P` to spawn processes with `parse_hay()` and
-`eval_hay()`.  Then merge the JSON results.
+TODO: Example of using `xargs -P` to spawn processes with `parseHay()` and
+`evalHay()`.  Then merge the JSON results.
 
 ## Style
 

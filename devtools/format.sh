@@ -5,20 +5,17 @@
 # Usage:
 #   test/format.sh <function name>
 
-REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
+REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 source build/dev-shell.sh  # python3 in $PATH
-source devtools/run-task.sh
 
 # Hack to prevent interference.  TODO: Make a separate wedge for yapf.
 unset PYTHONPATH
 
-. build/common.sh  # $CLANG_DIR
-
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+source build/common.sh  # $CLANG_DIR
 
 #
 # Python
@@ -60,7 +57,7 @@ yapf-known() {
   ### yapf some files that have been normalized
 
   time yapf-files \
-    {asdl,benchmarks,builtin,core,data_lang,doctools,frontend,lazylex,mycpp,mycpp/examples,osh,spec/*,yaks,ysh}/*.py \
+    {asdl,benchmarks,builtin,core,data_lang,display,doctools,frontend,lazylex,mycpp,mycpp/examples,osh,spec/*,yaks,ysh}/*.py \
     */NINJA_subgraph.py
 }
 
@@ -148,4 +145,4 @@ test-asdl-format() {
   diff -u $file $tmp
 }
 
-run-task "$@"
+task-five "$@"

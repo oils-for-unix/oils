@@ -49,7 +49,7 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.value_asdl import value, value_t
 from _devbuild.gen import grammar_nt
 from core.error import p_die
-from core import num
+from data_lang import j8
 from frontend import consts
 from frontend import lexer
 from frontend import location
@@ -679,11 +679,11 @@ class Transformer(object):
             return cast(BracedVarSub, pnode.GetChild(1).tok)
 
         elif typ == grammar_nt.dq_string:
-            s = cast(DoubleQuoted, pnode.GetChild(1).tok)
+            dq = cast(DoubleQuoted, pnode.GetChild(1).tok)
             # sugar: ^"..." is short for ^["..."]
             if pnode.GetChild(0).typ == Id.Left_CaretDoubleQuote:
-                return expr.Literal(s)
-            return s
+                return expr.Literal(dq)
+            return dq
 
         elif typ == grammar_nt.sq_string:
             return cast(SingleQuoted, pnode.GetChild(1).tok)
@@ -756,30 +756,22 @@ class Transformer(object):
         elif typ == Id.Expr_False:
             cval = value.Bool(False)
 
-        # What to do with the char constants?
-        # \n  \u{3bc}  #'a'
-        # Are they integers or strings?
-        #
-        # Integers could be ord(\n), or strings could chr(\n)
-        # Or just remove them, with ord(u'\n') and chr(u'\n')
-        #
-        # I think this relies on small string optimization.  If we have it,
-        # then 1-4 byte characters are efficient, and don't require heap
-        # allocation.
+        elif typ == Id.Char_OneChar:  # \n
+            assert len(tok_str) == 2, tok_str
+            s = consts.LookupCharC(lexer.TokenSliceLeft(tok, 1))
+            cval = value.Str(s)
 
-        elif typ == Id.Char_OneChar:
-            # TODO: look up integer directly?
-            cval = num.ToBig(ord(consts.LookupCharC(tok_str[1])))
-        elif typ == Id.Char_UBraced:
-            hex_str = tok_str[3:-1]  # \u{123}
-            # ValueError shouldn't happen because lexer validates
-            cval = value.Int(mops.FromStr(hex_str, 16))
+        elif typ == Id.Char_YHex:  # \yff
+            assert len(tok_str) == 4, tok_str
+            hex_str = lexer.TokenSliceLeft(tok, 2)
+            s = chr(int(hex_str, 16))
+            cval = value.Str(s)
 
-        # This could be a char integer?  Not sure
-        elif typ == Id.Char_Pound:
-            # TODO: accept UTF-8 code point instead of single byte
-            byte = tok_str[2]  # the a in #'a'
-            cval = num.ToBig(ord(byte))  # It's an integer
+        elif typ == Id.Char_UBraced:  # \u{123}
+            hex_str = lexer.TokenSlice(tok, 3, -1)
+            code_point = int(hex_str, 16)
+            s = j8.Utf8Encode(code_point)
+            cval = value.Str(s)
 
         else:
             raise AssertionError(typ)
@@ -1526,6 +1518,14 @@ class Transformer(object):
             return cast(SingleQuoted, child0.GetChild(1).tok)
 
         if typ0 == grammar_nt.char_literal:
+            # Note: ERE doesn't seem to support escapes like Python
+            #    https://docs.python.org/3/library/re.html
+            # We might want to do a translation like this;
+            #
+            # \u{03bc} -> \u03bc
+            # \x00 -> \x00
+            # \n -> \n
+
             # Must be Id.Char_{OneChar,Hex,UBraced}
             assert consts.GetKind(tok0.id) == Kind.Char
             s = word_compile.EvalCStringToken(tok0.id, lexer.TokenVal(tok0))

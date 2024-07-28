@@ -11,7 +11,7 @@ GLOBAL_STR(str2, "_");
 GLOBAL_STR(str3, "T");
 GLOBAL_STR(str4, "F");
 GLOBAL_STR(str5, "<%s %r>");
-GLOBAL_STR(str6, "status");
+GLOBAL_STR(str6, "code");
 GLOBAL_STR(str7, "message");
 GLOBAL_STR(str8, "%s, got %s");
 GLOBAL_STR(str9, " (line %d, offset %d-%d: %r)");
@@ -49,7 +49,6 @@ class TraversalState {
 extern BigStr* TRUE_STR;
 extern BigStr* FALSE_STR;
 
-
 }  // declare namespace runtime
 
 namespace num {  // declare
@@ -61,7 +60,6 @@ mops::BigInt IntDivide(mops::BigInt x, mops::BigInt y);
 int IntDivide2(int x, int y);
 mops::BigInt IntRemainder(mops::BigInt x, mops::BigInt y);
 int IntRemainder2(int x, int y);
-
 
 }  // declare namespace num
 
@@ -131,19 +129,19 @@ BigStr* _ErrorWithLocation::UserErrorString() {
   return this->msg;
 }
 
-Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+Usage::Usage(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+Parse::Parse(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+FailGlob::FailGlob(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+RedirectEval::RedirectEval(BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
 }
 
-FatalRuntime::FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location) : _ErrorWithLocation(msg, location) {
+FatalRuntime::FatalRuntime(int exit_status, BigStr* msg, syntax_asdl::loc_t* location) : ::error::_ErrorWithLocation(msg, location) {
   this->exit_status = exit_status;
 }
 
@@ -151,17 +149,17 @@ int FatalRuntime::ExitStatus() {
   return this->exit_status;
 }
 
-Strict::Strict(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(1, msg, location) {
+Strict::Strict(BigStr* msg, syntax_asdl::loc_t* location) : ::error::FatalRuntime(1, msg, location) {
 }
 
-ErrExit::ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code) : FatalRuntime(exit_status, msg, location) {
+ErrExit::ErrExit(int exit_status, BigStr* msg, syntax_asdl::loc_t* location, bool show_code) : ::error::FatalRuntime(exit_status, msg, location) {
   this->show_code = show_code;
 }
 
-Expr::Expr(BigStr* msg, syntax_asdl::loc_t* location) : FatalRuntime(3, msg, location) {
+Expr::Expr(BigStr* msg, syntax_asdl::loc_t* location) : ::error::FatalRuntime(3, msg, location) {
 }
 
-Structured::Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties) : FatalRuntime(status, msg, location) {
+Structured::Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties) : ::error::FatalRuntime(status, msg, location) {
   this->properties = properties;
 }
 
@@ -174,13 +172,13 @@ value::Dict* Structured::ToDict() {
   return Alloc<value::Dict>(this->properties);
 }
 
-AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : ::error::Expr(msg, location) {
 }
 
-TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : Expr(msg, location) {
+TypeErrVerbose::TypeErrVerbose(BigStr* msg, syntax_asdl::loc_t* location) : ::error::Expr(msg, location) {
 }
 
-TypeErr::TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
+TypeErr::TypeErr(value_asdl::value_t* actual_val, BigStr* msg, syntax_asdl::loc_t* location) : ::error::TypeErrVerbose(StrFormat("%s, got %s", msg, _ValType(actual_val)), location) {
 }
 
 Runtime::Runtime(BigStr* msg) {

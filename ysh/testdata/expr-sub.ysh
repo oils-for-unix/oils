@@ -5,7 +5,7 @@
 
 shopt -s ysh:upgrade
 
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 simple-demo() {
   var myarray = %(spam eggs ham)

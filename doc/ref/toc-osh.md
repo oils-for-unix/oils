@@ -72,6 +72,19 @@ preserve_anchor_case: yes
 X [Unsupported]   enable
 ```
 
+<h2 id="stdlib">
+  Standard Library <a class="group-link" href="chap-stdlib.html">stdlib</a>
+</h2>
+
+```chapter-links-stdlib
+  [two]           log             die
+  [no-quotes]     nq-assert       nq-run          
+                  nq-capture      nq-capture-2
+                  nq-redir        nq-redir-2
+  [bash-strict]   
+  [task-five]     
+```
+
 <h2 id="front-end">
   Front End <a class="group-link" href="chap-front-end.html">front-end</a>
 </h2>
@@ -202,6 +215,7 @@ X [Shell State]   BASH_CMDS        @DIRSTACK
   [getopts]       OPTIND            OPTARG      X OPTERR
   [read]          REPLY
   [Functions]   X RANDOM            SECONDS
+  [Oils VM]       OILS_VERSION      LIB_OSH
 ```
 
 <h2 id="plugin">

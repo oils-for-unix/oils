@@ -24,9 +24,9 @@ if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import cmd_value
     from _devbuild.gen.syntax_asdl import bool_expr_t
     from _devbuild.gen.types_asdl import lex_mode_t
-    from core.ui import ErrorFormatter
     from core import optview
     from core import state
+    from display import ui
 
 
 class _StringWordEmitter(word_parse.WordEmitter):
@@ -172,7 +172,7 @@ def _ThreeArgs(w_parser):
 class Test(vm._Builtin):
 
     def __init__(self, need_right_bracket, exec_opts, mem, errfmt):
-        # type: (bool, optview.Exec, state.Mem, ErrorFormatter) -> None
+        # type: (bool, optview.Exec, state.Mem, ui.ErrorFormatter) -> None
         self.need_right_bracket = need_right_bracket
         self.exec_opts = exec_opts
         self.mem = mem

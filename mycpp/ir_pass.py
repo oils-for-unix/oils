@@ -94,6 +94,6 @@ class Build(SimpleVisitor):
 
         else:
             self.dot_exprs[o] = pass_state.HeapObjectMember(
-                o.expr, self.types.get(o.expr), o.name)
+                o.expr, self.types[o.expr], o.name)
 
         self.accept(o.expr)

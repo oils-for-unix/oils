@@ -98,7 +98,7 @@ echo -$[len(s)]-
 #### Func with multiple args in multiple contexts
 shopt --set ysh:upgrade  # needed for math.ysh
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 var x = max(1+2, 3+4)
 echo $x $[max(1+2, 3+4)]
@@ -111,7 +111,7 @@ echo $x $[max(1+2, 3+4)]
 #### Trailing Comma in Param list
 shopt --set ysh:upgrade  # needed for math.ysh
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 var x = max(1+2, 3+4,)
 echo $x $[max(1+2, 3+4,)]
@@ -311,29 +311,6 @@ SHELL
 1005
 65551
 sum 40
-## END
-
-#### Backslash char literal (is an integer)
-const newline = \n
-const backslash = \\
-const sq = \'
-const dq = \"
-echo "$newline $backslash $sq $dq"
-## STDOUT:
-10 92 39 34
-## END
-
-#### \u{3bc} is char literal
-shopt -s oil:all
-
-var mu = \u{3bc}
-if (mu === 0x3bc) {  # this is the same!
-  echo 'yes'
-}
-echo "mu $mu"
-## STDOUT:
-yes
-mu 956
 ## END
 
 #### Exponentiation with **

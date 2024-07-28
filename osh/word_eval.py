@@ -52,7 +52,7 @@ from core import error
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from data_lang import j8
 from data_lang import j8_lite
@@ -76,7 +76,6 @@ if TYPE_CHECKING:
     from _devbuild.gen.option_asdl import builtin_t
     from core import optview
     from core.state import Mem
-    from core.ui import ErrorFormatter
     from core.vm import _Executor
     from osh.split import SplitContext
     from osh import prompt
@@ -1021,11 +1020,9 @@ class AbstractWordEvaluator(StringWordEvaluator):
             with tagswitch(val) as case:
                 if case(value_e.Str):
                     str_val = cast(value.Str, UP_val)
-
-                    # TODO: use fastfunc.ShellEncode or
-                    # fastfunc.PosixShellEncode()
                     result = value.Str(j8_lite.MaybeShellEncode(str_val.s))
-                    # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in bash
+                    # oddly, 'echo ${x@Q}' is equivalent to 'echo "${x@Q}"' in
+                    # bash
                     quoted2 = True
                 elif case(value_e.BashArray):
                     array_val = cast(value.BashArray, UP_val)
@@ -2352,7 +2349,7 @@ class NormalWordEvaluator(AbstractWordEvaluator):
             mutable_opts,  # type: state.MutableOpts
             tilde_ev,  # type: TildeEvaluator
             splitter,  # type: SplitContext
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,
@@ -2410,7 +2407,7 @@ class CompletionWordEvaluator(AbstractWordEvaluator):
             mutable_opts,  # type: state.MutableOpts
             tilde_ev,  # type: TildeEvaluator
             splitter,  # type: SplitContext
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         AbstractWordEvaluator.__init__(self, mem, exec_opts, mutable_opts,

@@ -463,6 +463,21 @@ TEST test_list_remove() {
   PASS();
 }
 
+TEST test_list_pop_mem_safe() {
+  auto l = NewList<int>();
+
+  // List::pop(int) had a memory bug where it would buffer overflow due to a
+  // mistake when calling memmove. To reproduce, the list had to be at least 16
+  // items long, otherwise ASAN will not catch the error.
+  for (int i = 0; i < 16; ++i) {
+    l->append(i);
+  }
+
+  l->pop(15);  // This would cause a buffer overflow
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -483,6 +498,8 @@ int main(int argc, char** argv) {
   RUN_TEST(test_list_copy);
   RUN_TEST(test_list_sort);
   RUN_TEST(test_list_remove);
+
+  RUN_TEST(test_list_pop_mem_safe);
 
   gHeap.CleanProcessExit();
 

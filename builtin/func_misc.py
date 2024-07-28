@@ -10,7 +10,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from core import error
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8
 from frontend import match
@@ -72,17 +72,6 @@ class Type(vm._Callable):
         rd.Done()
 
         return value.Str(ui.ValType(val))
-
-
-class Repeat(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-        return value.Null
 
 
 class Join(vm._Callable):
@@ -390,6 +379,21 @@ class Split(vm._Callable):
         return value.List(l)
 
 
+class FloatsEqual(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        left = rd.PosFloat()
+        right = rd.PosFloat()
+        rd.Done()
+
+        return value.Bool(left == right)
+
+
 class Glob(vm._Callable):
 
     def __init__(self, globber):
@@ -437,27 +441,6 @@ class GetVar(vm._Callable):
         name = rd.PosStr()
         rd.Done()
         return state.DynamicGetVar(self.mem, name, scope_e.LocalOrGlobal)
-
-
-class Assert(vm._Callable):
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        val = rd.PosValue()
-
-        msg = rd.OptionalStr(default_='')
-
-        rd.Done()
-
-        if not val_ops.ToBool(val):
-            raise error.AssertionErr(msg, rd.LeftParenToken())
-
-        return value.Null
 
 
 class EvalExpr(vm._Callable):
@@ -563,34 +546,6 @@ class BashArrayToSparse(vm._Callable):
                     max_index = big_i
 
         return value.SparseArray(d, max_index)
-
-
-class DictToSparse(vm._Callable):
-    """
-    value.Dict -> value.SparseArray, for testing
-    """
-
-    def __init__(self):
-        # type: () -> None
-        pass
-
-    def Call(self, rd):
-        # type: (typed_args.Reader) -> value_t
-
-        d = rd.PosDict()
-        rd.Done()
-
-        blame_tok = rd.LeftParenToken()
-
-        mydict = {}  # type: Dict[mops.BigInt, str]
-        for k, v in iteritems(d):
-            i = mops.FromStr(k)
-            s = val_ops.ToStr(v, 'expected str', blame_tok)
-
-            mydict[i] = s
-
-        max_index = mops.MINUS_ONE  # TODO:
-        return value.SparseArray(mydict, max_index)
 
 
 class SparseOp(vm._Callable):

@@ -26,7 +26,7 @@ from core import num
 from core import pyos
 from core import pyutil
 from core import optview
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import location
@@ -757,9 +757,10 @@ class _ArgFrame(object):
 
     def Dump(self):
         # type: () -> Dict[str, value_t]
+        items = [value.Str(s) for s in self.argv]  # type: List[value_t]
+        argv = value.List(items)
         return {
-            # Easier to serialize value.BashArray than value.List
-            'argv': value.BashArray(self.argv),
+            'argv': argv,
             'num_shifted': num.ToBig(self.num_shifted),
         }
 
@@ -813,19 +814,10 @@ def _DumpVarFrame(frame):
 
         with tagswitch(cell.val) as case:
             if case(value_e.Undef):
-                cell_json['type'] = value.Str('Undef')
+                cell_json['val'] = value.Null
 
-            elif case(value_e.Str):
-                cell_json['type'] = value.Str('Str')
-                cell_json['value'] = cell.val
-
-            elif case(value_e.BashArray):
-                cell_json['type'] = value.Str('BashArray')
-                cell_json['value'] = cell.val
-
-            elif case(value_e.BashAssoc):
-                cell_json['type'] = value.Str('BashAssoc')
-                cell_json['value'] = cell.val
+            elif case(value_e.Str, value_e.BashArray, value_e.BashAssoc):
+                cell_json['val'] = cell.val
 
             else:
                 # TODO: should we show the object ID here?
@@ -953,6 +945,21 @@ def InitMem(mem, environ, version_str):
     SetGlobalString(mem, 'OIL_VERSION', version_str)
 
     SetGlobalString(mem, 'OILS_VERSION', version_str)
+
+    # The source builtin understands '///' to mean "relative to embedded stdlib"
+    SetGlobalString(mem, 'LIB_OSH', '///osh')
+    SetGlobalString(mem, 'LIB_YSH', '///ysh')
+
+    # - C spells it NAN
+    # - JavaScript spells it NaN
+    # - Python 2 has float('nan'), while Python 3 has math.nan.
+    #
+    # - libc prints the strings 'nan' and 'inf'
+    # - Python 3 prints the strings 'nan' and 'inf'
+    # - JavaScript prints 'NaN' and 'Infinity', which is more stylized
+    _SetGlobalValue(mem, 'NAN', value.Float(pyutil.nan()))
+    _SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
+
     _InitDefaults(mem)
     _InitVarsFromEnv(mem, environ)
 
@@ -2330,6 +2337,58 @@ class Mem(object):
         return self.ctx_stack.pop()
 
 
+class Procs:
+
+    def __init__(self, mem):
+        # type: (Mem) -> None
+        self.mem = mem
+        self.sh_funcs = {}  # type: Dict[str, value.Proc]
+
+    def SetProc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.mem.var_stack[0][name] = Cell(False, False, False, proc)
+
+    def SetShFunc(self, name, proc):
+        # type: (str, value.Proc) -> None
+        self.sh_funcs[name] = proc
+
+    def Get(self, name):
+        # type: (str) -> value.Proc
+        """Try to find a proc/sh-func by `name`, or return None if not found.
+
+        First, we search for a proc, and then a sh-func. This means that procs
+        can shadow the definition of sh-funcs.
+        """
+        vars = self.mem.var_stack[0]
+        if name in vars:
+            maybe_proc = vars[name]
+            if maybe_proc.val.tag() == value_e.Proc:
+                return cast(value.Proc, maybe_proc.val)
+
+        if name in self.sh_funcs:
+            return self.sh_funcs[name]
+
+        return None
+
+    def Del(self, to_del):
+        # type: (str) -> None
+        """Undefine a sh-func with name `to_del`, if it exists."""
+        mylib.dict_erase(self.sh_funcs, to_del)
+
+    def GetNames(self):
+        # type: () -> List[str]
+        """Returns a *sorted* list of all proc names"""
+        names = list(self.sh_funcs.keys())
+
+        vars = self.mem.var_stack[0]
+        for name in vars:
+            cell = vars[name]
+            if cell.val.tag() == value_e.Proc:
+                names.append(name)
+
+        return sorted(names)
+
+
 #
 # Wrappers to Set Variables
 #
@@ -2390,6 +2449,12 @@ def SetGlobalArray(mem, name, a):
     """Used by completion, shell initialization, etc."""
     assert isinstance(a, list)
     mem.SetNamed(location.LName(name), value.BashArray(a), scope_e.GlobalOnly)
+
+
+def _SetGlobalValue(mem, name, val):
+    # type: (Mem, str, value_t) -> None
+    """Helper for completion, etc."""
+    mem.SetNamed(location.LName(name), val, scope_e.GlobalOnly)
 
 
 def ExportGlobalString(mem, name, s):

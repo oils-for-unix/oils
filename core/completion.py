@@ -44,7 +44,7 @@ from _devbuild.gen.value_asdl import (value, value_e)
 from core import error
 from core import pyos
 from core import state
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import lexer

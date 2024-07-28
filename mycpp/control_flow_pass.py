@@ -6,9 +6,10 @@ from typing import overload, Union, Optional, Dict
 
 import mypy
 from mypy.nodes import (Block, Expression, Statement, ExpressionStmt, StrExpr,
-                        CallExpr, FuncDef, IfStmt, NameExpr, MemberExpr)
+                        CallExpr, FuncDef, IfStmt, NameExpr, MemberExpr,
+                        IndexExpr, TupleExpr, IntExpr)
 
-from mypy.types import CallableType, Instance, Type, UnionType
+from mypy.types import CallableType, Instance, Type, UnionType, NoneTyp, TupleType
 
 from mycpp.crash import catch_errors
 from mycpp.util import join_name, split_py_name
@@ -19,6 +20,20 @@ from mycpp import pass_state
 
 class UnsupportedException(Exception):
     pass
+
+
+def GetObjectTypeName(t: Type) -> util.SymbolPath:
+    if isinstance(t, Instance):
+        return split_py_name(t.type.fullname)
+
+    elif isinstance(t, UnionType):
+        assert len(t.items) == 2
+        if isinstance(t.items[0], NoneTyp):
+            return GetObjectTypeName(t.items[1])
+
+        return GetObjectTypeName(t.items[0])
+
+    assert False, t
 
 
 class Build(SimpleVisitor):
@@ -35,7 +50,7 @@ class Build(SimpleVisitor):
         self.virtual = virtual
         self.local_vars = local_vars
         self.dot_exprs = dot_exprs
-        self.callees = {} # statement object -> SymbolPath of the callee
+        self.callees = {}  # statement object -> SymbolPath of the callee
 
     def current_cfg(self):
         if not self.current_func_node:
@@ -129,6 +144,84 @@ class Build(SimpleVisitor):
 
         # Don't currently get here
         raise AssertionError()
+
+    def get_variable_name(self, expr: Expression) -> Optional[util.SymbolPath]:
+        """
+        To do dataflow analysis we need to track changes to objects, which
+        requires naming them. This function returns the name of the object
+        referred to by the given expression. If the expression doesn't refer to
+        an object or variable it returns None.
+
+        Objects are named slightly differently than they appear in the source
+        code.
+
+        Objects referenced by local variables are referred to by the name of the
+        local. For example, the name of the object in both statements below is
+        `x`.
+
+            x = module.SomeObject()
+            x = None
+
+        Member expressions are named after the parent object's type. For
+        example, the names of the objects in the member assignment statements
+        below are both `module.SomeObject.member_a`. This makes it possible to
+        track data flow across object members without having to track individual
+        heap objects, which would increase the search space for analyses and
+        slow things down.
+
+            x = module.SomeObject()
+            y = module.SomeObject()
+            x.member_a = 'foo'
+            y.member_a = 'bar'
+
+        Index expressions are named after their bases, for the same reasons as
+        member expressions. The coarse-grained precision should lead to an
+        over-approximation of where objects are in use, but should not miss any
+        references. This should be fine for our purposes. In the snippet below
+        the last two assignments are named `x` and `module.SomeObject.a_list`.
+
+            x = [None] # list[Thing]
+            y = module.SomeObject()
+            x[0] = Thing()
+            y.a_list[1] = Blah()
+
+        Index expressions over tuples are treated differently, though. Tuples
+        have a fixed size, tend to be small, and their elements have distinct
+        types. So, each element can be (and probably needs to be) individually
+        named. In the snippet below, the name of the RHS in the second
+        assignment is `t.0`.
+
+            t = (1, 2, 3, 4)
+            x = t[0]
+
+        The examples above all deal with assignments, but these rules apply to
+        any expression that uses an object or variable.
+        """
+        if isinstance(expr,
+                      NameExpr) and expr.name not in {'True', 'False', 'None'}:
+            return (expr.name, )
+
+        elif isinstance(expr, MemberExpr):
+            dot_expr = self.dot_exprs[expr]
+            if isinstance(dot_expr, pass_state.ModuleMember):
+                return dot_expr.module_path + (dot_expr.member, )
+
+            elif isinstance(dot_expr, pass_state.HeapObjectMember):
+                return GetObjectTypeName(
+                    dot_expr.object_type) + (dot_expr.member, )
+
+            elif isinstance(dot_expr, pass_state.StackObjectMember):
+                return GetObjectTypeName(
+                    dot_expr.object_type) + (dot_expr.member, )
+
+        elif isinstance(expr, IndexExpr):
+            if isinstance(self.types[expr.base], TupleType):
+                assert isinstance(expr.index, IntExpr)
+                return self.get_variable_name(expr.base) + (str(expr.index.value),)
+
+            return self.get_variable_name(expr.base)
+
+        return None
 
     #
     # COPIED from IRBuilder
@@ -253,6 +346,10 @@ class Build(SimpleVisitor):
                 cfg.AddFact(0, pass_state.FunctionCall(sub))
 
         self.current_func_node = o
+        cfg = self.current_cfg()
+        for arg in o.arguments:
+            cfg.AddFact(0, pass_state.Definition((arg.variable.name,)))
+
         self.accept(o.body)
         self.current_func_node = None
         self.current_statement_id = None
@@ -291,16 +388,19 @@ class Build(SimpleVisitor):
 
     def visit_if_stmt(self, o: 'mypy.nodes.IfStmt') -> T:
         cfg = self.current_cfg()
-        for expr in o.expr:
-            self.accept(expr)
+
+        if util.ShouldVisitIfExpr(o):
+            for expr in o.expr:
+                self.accept(expr)
 
         with pass_state.CfgBranchContext(
                 cfg, self.current_statement_id) as branch_ctx:
-            with branch_ctx.AddBranch():
-                for node in o.body:
-                    self.accept(node)
+            if util.ShouldVisitIfBody(o):
+                with branch_ctx.AddBranch():
+                    for node in o.body:
+                        self.accept(node)
 
-            if o.else_body:
+            if util.ShouldVisitElseBody(o):
                 with branch_ctx.AddBranch():
                     self.accept(o.else_body)
 
@@ -330,6 +430,77 @@ class Build(SimpleVisitor):
             for t, v, handler in zip(o.types, o.vars, o.handlers):
                 with try_ctx.AddBranch(try_block.exit):
                     self.accept(handler)
+
+    def visit_assignment_stmt(self, o: 'mypy.nodes.AssignmentStmt') -> T:
+        cfg = self.current_cfg()
+        if cfg:
+            assert len(o.lvalues) == 1
+            lval = o.lvalues[0]
+            lval_names = []
+            if isinstance(lval, TupleExpr):
+                lval_names.extend(
+                    [self.get_variable_name(item) for item in lval.items])
+
+            else:
+                lval_names.append(self.get_variable_name(lval))
+
+            assert lval_names, o
+
+            rval_type = self.types[o.rvalue]
+            rval_names = []
+            if isinstance(o.rvalue, CallExpr):
+                # The RHS is either an object constructor or something that
+                # returns a primitive type (e.g. Tuple[int, int] or str).
+                # XXX: When we add inter-procedural analysis we should treat
+                # these not as definitions but as some new kind of assignment.
+                rval_names = [None for _ in lval_names]
+
+            elif isinstance(o.rvalue, TupleExpr) and len(lval_names) == 1:
+                # We're constructing a tuple. Since tuples have have a fixed
+                # (and usually small) size, we can name each of the
+                # elements.
+                base = lval_names[0]
+                lval_names = [
+                    base + (str(i), ) for i in range(len(o.rvalue.items))
+                ]
+                rval_names = [
+                    self.get_variable_name(item) for item in o.rvalue.items
+                ]
+
+            elif isinstance(rval_type, TupleType):
+                # We're unpacking a tuple. Like the tuple construction case,
+                # give each element a name.
+                rval_name = self.get_variable_name(o.rvalue)
+                assert rval_name, o.rvalue
+                rval_names = [
+                    rval_name + (str(i), ) for i in range(len(lval_names))
+                ]
+
+            else:
+                rval_names = [self.get_variable_name(o.rvalue)]
+
+            assert len(rval_names) == len(lval_names)
+
+            for lhs, rhs in zip(lval_names, rval_names):
+                assert lhs, lval
+                if rhs:
+                    # In this case rhe RHS is another variable. Record the
+                    # assignment so we can keep track of aliases.
+                    cfg.AddFact(self.current_statement_id,
+                                pass_state.Assignment(lhs, rhs))
+                else:
+                    # In this case the RHS is either some kind of literal (e.g.
+                    # [] or 'foo') or a call to an object constructor. Mark this
+                    # statement as an (re-)definition of a variable.
+                    cfg.AddFact(
+                        self.current_statement_id,
+                        pass_state.Definition(lhs),
+                    )
+
+        for lval in o.lvalues:
+            self.accept(lval)
+
+        self.accept(o.rvalue)
 
     # Expressions
 

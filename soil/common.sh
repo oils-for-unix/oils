@@ -25,7 +25,7 @@ if false; then
   readonly SOIL_HOST='travis-ci.oilshell.org'
   readonly SOIL_HOST_DIR=~/travis-ci.oilshell.org  # used on server
   readonly SOIL_REMOTE_DIR=travis-ci.oilshell.org  # used on client
-elif false; then
+elif true; then
   readonly SOIL_USER='oils'
   readonly SOIL_HOST='mb.oils.pub'
   # Extra level

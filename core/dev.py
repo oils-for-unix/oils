@@ -14,7 +14,7 @@ from core import error
 from core import optview
 from core import num
 from core import state
-from core import ui
+from display import ui
 from data_lang import j8
 from frontend import location
 from osh import word_

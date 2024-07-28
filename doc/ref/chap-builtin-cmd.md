@@ -43,12 +43,21 @@ Similar names: [append][]
 
 ### pp
 
-Pretty prints interpreter state.  Some of these are implementation details,
-subject to change.
+The most common use is to pretty print expressions:
+
+    $ var x = 42
+    $ pp [x + 5]               # pass unevaluated expression
+    myfile.ysh:1: (Int)   47   # print value with code location
+
+You can also print a value, with no code location:
+
+    $ pp (x + 5)
+    (Int) 47
+
+The `pp` builtin can also print low-level interpreter state.  Some of of these
+are implementation details, subject to change.
 
 Examples:
-
-    pp proc  # print all procs and their doc comments
 
     var x = :| one two |
     pp cell x  # dump the "guts" of a cell, which is a location for a value
@@ -56,6 +65,9 @@ Examples:
     pp asdl (x)  # dump the ASDL "guts"
 
     pp line (x)  # single-line stable format, for spec tests
+
+    pp proc  # print all procs and their doc comments
+
 
 ## Handle Errors
 
@@ -154,6 +166,27 @@ Runs a command, and requires the exit code to be 0 or 1.
 
 It's meant for external commands that "return" more than 2 values, like true /
 false / fail, rather than pass / fail.
+
+### assert
+
+Evaluates and expression, and fails if it is not truthy.
+
+    assert (false)   # fails
+    assert [false]   # also fails (the expression is evaluated)
+
+It's common to pass an unevaluated expression with `===`:
+
+    func f() { return (42) }
+
+    assert [43 === f()]
+
+In this special case, you get a nicer error message:
+
+> Expected: 43
+> Got:      42
+
+That is, the left-hand side should be the expected value, and the right-hand
+side should be the actual value.
 
 ## Shell State
 
@@ -697,8 +730,27 @@ These builtins accept shell code and run it.
 
     source SCRIPT ARG*
 
-Executes SCRIPT with given ARGs in the context of the current shell.  It will
-modify existing variables.
+Execute SCRIPT with the given ARGs, in the context of the current shell.  That is,
+existing variables will be modified.
+
+---
+
+Oils extension: If the SCRIPT starts with `///`, we look for scripts embedded in
+the `oils-for-unix` binary.  Example:
+
+    source ///osh/two.sh     # load embedded script
+
+    : ${LIB_OSH=fallback/dir}
+    source $LIB_OSH/two.sh   # same thing
+
+The [LIB_OSH][] form is useful for writing a script that works under both bash
+and OSH.
+
+- Related: the [cat-em][] tool prints embedded scripts.
+
+[LIB_OSH]: chap-special-var.html#LIB_OSH
+[cat-em]: chap-front-end.html#cat-em
+
 
 ### eval
 
@@ -1304,188 +1356,3 @@ Flags:
 
 Bash has this, but OSH won't implement it.
 
-
-## Args Parser
-
-YSH includes a command-line argument parsing utility called `parseArgs`. This
-is intended to be used for command-line interfaces to YSH programs.
-
-To use it, first import `args.ysh`:
-
-    source --builtin args.ysh
-
-Then, create an argument parser **spec**ification:
-
-    parser (&spec) {
-      flag -v --verbose (help="Verbosely")  # default is Bool, false
-
-      flag -P --max-procs ('int', default=-1, help='''
-        Run at most P processes at a time
-        ''')
-
-      flag -i --invert ('bool', default=true, help='''
-        Long multiline
-        Description
-        ''')
-
-      arg src (help='Source')
-      arg dest (help='Dest')
-
-      rest files
-    }
-
-Finally, parse `ARGV` (or any other array of strings) with:
-
-    var args = parseArgs(spec, ARGV)
-
-The returned `args` is a `Dict` containing key-value pairs with the parsed
-values (or defaults) for each flag and argument. For example, given
-`ARGV = :| mysrc -P 12 mydest a b c |`, `args` would be:
-
-    {
-        "verbose": false,
-        "max-procs": 12,
-        "invert": true,
-        "src": "mysrc",
-        "dest": "mydest",
-        "files": ["a", "b", "c"]
-    }
-
-### parser
-
-`parseArgs()` requires a parser specification to indicate how to parse the
-`ARGV` array. This specification should be constructed using the `parser` proc.
-
-    parser (&spec) {
-      flag -f --my-flag
-      arg myarg
-      rest otherArgs
-    }
-
-In the above example, `parser` takes in a place `&spec`, which will store the
-resulting specification and a block which is evaluated to build that
-specification.
-
-Inside of a `parser` block, you should call the following procs:
-
-- `flag` to add `--flag` options
-- `arg` to add positional arguments
-- `rest` to capture remaining positional arguments into a list
-
-`parser` will validate the parser specification for errors such as duplicate
-flag or argument names.
-
-    parser (&spec) {
-      flag -n --name
-      flag -n --name  # Duplicate!
-    }
-
-    # => raises "Duplicate flag/arg name 'name' in spec" (status = 3)
-
-### flag
-
-`flag` should be called within a `parser` block.
-
-    parser (&spec) {
-      flag -v --verbose
-    }
-
-The above example declares a flag "--verbose" and a short alias "-v".
-`parseArgs()` will then store a boolean value under `args.verbose`:
-- `true` if the flag was passed at least once
-- `false` otherwise
-
-Flags can also accept values. For example, if you wanted to accept an integer count:
-
-    parser (&spec) {
-      flag -N --count ('int')
-    }
-
-Calling `parseArgs` with `ARGV = :| -n 5 |` or `ARGV = :| --count 5 |` will
-store the integer `5` under `args.count`. If the user passes in a non-integer
-value like `ARGV = :| --count abc |`, `parseArgs` will raise an error.
-
-Default values for an argument can be set with the `default` named argument.
-
-    parser (&spec) {
-      flag -N --count ('int', default=2)
-
-      # Boolean flags can be given default values too
-      flag -O --optimize ('bool', default=true)
-    }
-
-    var args = parseArgs(spec, :| -n 3 |)
-    # => args.count = 2
-    # => args.optimize = true
-
-Each name passed to `flag` must be unique to that specific `parser`. Calling
-`flag` with the same name twice will raise an error inside of `parser`.
-
-<!-- TODO: how can we explicitly pass false to a boolean flag? -->
-<!-- TODO: how about --no-XXXX variants of flags? -->
-
-### arg
-
-`arg` should be called within a `parser` block.
-
-    parser (&spec) {
-      arg query
-      arg path
-    }
-
-The above example declares two positional arguments called "query" and "path".
-`parseArgs()` will then store strings under `args.query` and `args.path`. Order
-matters, so the first positional argument will be stored to `query` and the
-second to `path`. If not enough positional arguments are passed, then
-`parseArgs` will raise an error.
-
-Similar to `flag`, each `arg` name must be unique. Calling `arg` with the same
-name twice will cause `parser` to raise an error.
-
-### rest
-
-`rest` should be called within a `parser` block.
-
-    parser (&spec) {
-      arg query
-      rest files
-    }
-
-Capture zero or more positional arguments not already captured by `arg`. So,
-for `ARGV = :| hello file.txt message.txt README.md |`, we would have
-`args.query = "file.txt"` and `args.files = ["file.txt", "message.txt",
-"README.md"]`.
-
-Without rest, passing extraneous arguments will raise an error in
-`parseArgs()`.
-
-`rest` can only be called _once_ within a `parser`. Calling it multiple times
-will raise an error in `parser`.
-
-### parseArgs()
-
-Given a parser specification `spec` produced by `parser`, parse a list of
-strings (usually `ARGV`.)
-
-    var args = parseArgs(spec, ARGV)
-
-The returned `args` is a dictionary mapping the names of each `arg`, `flag` and
-`rest` to their captured values. (See the example at the [start of this
-topic](#Args-Parser).)
-
-`parseArgs` will raise an error if the `ARGV` is invalid per the parser
-specification. For example, if it's missing a required positional argument:
-
-    parser (&spec) {
-      arg path
-    }
-
-    var args = parseArgs(spec, [])
-    # => raises an error about the missing 'path' (status = 2)
-
-<!--
-TODO: Document chaining parsers / sub-commands
-      - Either will allow parser nesting
-      - Or can use `rest rest` and `parseArgs` again on `rest`
-TODO: Document the help named argument. Punting while we do not generate help messages
--->

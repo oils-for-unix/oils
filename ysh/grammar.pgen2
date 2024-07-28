@@ -102,8 +102,8 @@ atom: (
   | Expr_BinInt | Expr_OctInt | Expr_HexInt 
 
   | Char_OneChar  # char literal \n \\ etc.
+  | Char_YHex
   | Char_UBraced  # char literal \u{3bc}
-  | Char_Pound    # char literal #'A' etc.
 
   | dq_string | sq_string
     # Expr_Symbol could be %mykey

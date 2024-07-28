@@ -1,0 +1,139 @@
+# stream.ysh
+#
+# Usage:
+#   source --builtin stream.ysh
+#
+# For reading lines, decoding, extracting, splitting
+
+# make this file a test server
+source $LIB_OSH/byo-server.sh
+
+source $LIB_YSH/args.ysh
+
+proc slurp-by (; num_lines) {
+  # TODO: (stdin)
+  for line in (stdin) {
+    echo TODO
+  }
+}
+
+# Note:
+# - these are all the same algorithm
+# - also word, block, etc. are all optional
+
+proc each-line (...words; template=null; ; block=null) {
+  # TODO: 
+  # parse --j8 --max-jobs flag
+
+  # parse template_str as string
+  # TODO: this is dangerous though ... because you can execute code
+  # I think you need a SAFE version
+
+  # evaluate template string expression - I guess that allows $(echo hi) and so
+  # forth
+
+  # evaluate block with _line binding
+  # block: execute in parallel with --max-jobs
+
+  for line in (stdin) {
+    echo TODO
+  }
+}
+
+proc test-each-line {
+  echo 'TODO: need basic test runner'
+
+  # ysh-tool test stream.ysh
+  # 
+  # Col
+
+
+}
+
+proc each-row (; ; block) {
+  echo TODO
+}
+
+proc split-by (; ifs=null; block) {
+  echo TODO
+}
+
+proc if-split-by (; ifs=null; block) {
+  echo TODO
+}
+
+proc chop () {
+  ### alias for if-split-by
+  echo TODO
+}
+
+proc must-match (; pattern; block) {
+  echo TODO
+}
+
+proc if-match (; pattern; block) {
+  echo TODO
+}
+
+# Protocol:
+#
+# - The file lists its tests the "actions"
+# - Then the test harness runs them
+# - But should it be ENV vars
+#
+# - BYO_LIST_TESTS=1
+# - BYO_RUN_TEST=foo
+# - $PWD is a CLEAN temp dir, the process doesn't have to do anything
+
+#   - silent on success, but prints file on output
+#   - OK this makes sense
+#
+# The trivial test in Python:
+#   
+# from test import byo
+# byo.maybe_main()
+#
+# bash library:
+#  source --builtin byo-server.sh
+#
+# byo-maybe-main   # reads env variables, and then exits
+#
+#  source --builtin assertions.ysh
+#
+# assert-ok 'echo hi'
+# assert-stdout 'hi' 'echo -n hi'
+#
+# "$@"
+#
+# Run all tests
+# util/byo-client.sh run-tests $YSH stdlib/table.ysh
+# util/byo-client.sh run-tests -f x $YSH stdlib/table.ysh
+
+# Clean process
+# Clean working dir
+
+#
+# Stream Protocol:
+#     #.byo - is this she-dot, that's for a file
+# Do we need metadata?
+#
+
+# The harness
+#
+# It's process based testing.
+#
+# Test runner process: bash or OSH (unlike sharness!)
+# Tested process: any language - bash, 
+#
+# Key point: you don't have to quote shell code?
+
+list-byo-tests() {
+  echo TODO
+}
+
+run-byo-tests() {
+  # source it
+  echo TODO
+}
+
+byo-maybe-run

@@ -11,17 +11,14 @@
 #   test/unit.sh all
 #   test/unit.sh minimal
 
-set -o nounset
-set -o pipefail
-set -o errexit
-shopt -s strict:all 2>/dev/null || true  # dogfood for OSH
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh  # run-task
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)  # tsv-lib.sh uses this
-readonly REPO_ROOT
 
 source build/dev-shell.sh    # R_LIBS_USER, but also changes python3
 source test/common.sh        # html-head
-source devtools/run-task.sh  # run-task
 source test/tsv-lib.sh
 
 banner() {
@@ -292,4 +289,4 @@ all-2() {
 # NOTE: Show options like this:
 # python -m unittest discover -h
 
-run-task "$@"
+task-five "$@"

@@ -15,7 +15,7 @@ argv.py $z
 
 #### abs
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 # Also test smooshing
 write $[abs(-5)]$[abs(-0)]$[abs(5)]
@@ -28,7 +28,7 @@ write $[abs(-5)] $[abs(-0)] $[abs(5)]
 ## END
 
 #### any() and all()
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 var a1 = all( :|yes yes| )
 var a2 = all( :|yes ''| )
@@ -53,7 +53,7 @@ false
 ## END
 
 #### sum()
-source --builtin list.ysh
+source $LIB_YSH/list.ysh
 
 var start = 42
 
@@ -134,3 +134,25 @@ a.z
 b.z
 ## END
 
+#### smoke test for two.sh
+
+source --builtin osh/two.sh
+
+log 'hi'
+
+set +o errexit
+( die "bad" )
+echo status=$?
+
+## STDOUT:
+status=1
+## END
+
+#### smoke test for stream.ysh and table.ysh 
+
+shopt --set redefine_proc_func   # byo-maybe-main
+
+source $LIB_YSH/stream.ysh
+source $LIB_YSH/table.ysh
+
+## status: 0

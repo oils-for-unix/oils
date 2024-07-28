@@ -233,34 +233,19 @@ It's also often called with the `=>` chaining operator:
     json write (items => join(' '))   # => "1 2 3"
     json write (items => join(', '))  # => "1, 2, 3"
 
+## Float
 
-### any()
+### floatsEqual()
 
-Returns true if any value in the list is truthy (`x` is truthy if `Bool(x)`
-returns true).
+Check if two floating point numbers are equal.
 
-If the list is empty, return false.
+    = floatsEqual(42.0, 42.0)
+    (Bool)   true
 
-    = any([])  # => false
-    = any([true, false])  # => true
-    = any([false, false])  # => false
-    = any([false, "foo", false])  # => true
+It's usually better to make an approximate comparison:
 
-Note, you will need to `source --builtin list.ysh` to use this function.
-
-### all()
-
-Returns true if all values in the list are truthy (`x` is truthy if `Bool(x)`
-returns true).
-
-If the list is empty, return true.
-
-    = any([])  # => true
-    = any([true, true])  # => true
-    = any([false, true])  # => false
-    = any(["foo", true, true])  # => true
-
-Note, you will need to `source --builtin list.ysh` to use this function.
+    = abs(float1 - float2) < 0.001
+    (Bool)   false
 
 ## Word
 
@@ -269,64 +254,6 @@ Note, you will need to `source --builtin list.ysh` to use this function.
 See `glob-pat` topic for syntax.
 
 ### maybe()
-
-## Math
-
-### abs()
-
-Compute the absolute (positive) value of a number (float or int).
-
-    = abs(-1)  # => 1
-    = abs(0)   # => 0
-    = abs(1)   # => 1
-
-Note, you will need to `source --builtin math.ysh` to use this function.
-
-### max()
-
-Compute the maximum of 2 or more values.
-
-`max` takes two different signatures:
-
-  1. `max(a, b)` to return the maximum of `a`, `b`
-  2. `max(list)` to return the greatest item in the `list`
-
-For example:
-
-      = max(1, 2)  # => 2
-      = max([1, 2, 3])  # => 3
-
-Note, you will need to `source --builtin math.ysh` to use this function.
-
-### min()
-
-Compute the minimum of 2 or more values.
-
-`min` takes two different signatures:
-
-  1. `min(a, b)` to return the minimum of `a`, `b`
-  2. `min(list)` to return the least item in the `list`
-
-For example:
-
-    = min(2, 3)  # => 2
-    = max([1, 2, 3])  # => 1
-
-Note, you will need to `source --builtin math.ysh` to use this function.
-
-### round()
-
-### sum()
-
-Computes the sum of all elements in the list.
-
-Returns 0 for an empty list.
-
-    = sum([])  # => 0
-    = sum([0])  # => 0
-    = sum([1, 2, 3])  # => 6
-
-Note, you will need to `source --builtin list.ysh` to use this function.
 
 ## Serialize
 

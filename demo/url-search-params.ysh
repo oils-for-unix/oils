@@ -1,0 +1,277 @@
+#!bin/ysh
+#
+# Usage:
+#   demo/url-search-params.ysh <function name>
+#
+# Tested against JavaScript's URLSearchParams.  Differences:
+#
+# - JS strings can't represent bytes, so %ff turns into the Unicode replacement char.
+#   - YSH turns this into the 0xff byte, denoted as b'\yff'
+# - JS accepts '==' as key="" value="="
+#   - In YSH, this is a syntax error.
+# - On the other hand, both JS and YSH agree that =&=&= is 3 empty key value pairs:
+#   [["", ""]
+#    ["", ""],
+#    ["", ""]]
+#
+# Evaluation of "the YSH experience":
+#
+# GOOD:
+#
+# - Eggex is elegant
+#   - This code is structured better than the Python stdlib urlparse.py!
+#   - This problem is also hard/ugly in JavaScript.  They use an extra
+#     s=>replace() on top of decodeURIComponent()!
+# - Task files in YSH basically work!
+#   - I think this file has a nice structure
+# - It's nice to mix INTERIOR YSH testing and EXTERIOR comparison to node.js 
+# - Triple quoted multiline strings are nice!
+#
+# NEEDS WORK:
+#
+# - need Vim syntax highlighting!
+#   - e.g. multiline '' strings aren't higlighted
+# - need pp [x] for debugging
+# - need assert [x] for testing
+# - task files need completion
+#
+# - Eggex can use multiline /// syntax, though you can use \ for line continuation
+# - Eggex could use "which" match
+# - m=>group('lit') sorta bothers me, it should be 
+#   - m.group('lit')
+#   - $lit - probably!
+#   - with vars(m.groupDict()) { ... }
+# - Alternative to printf -v probably needed, or at least wrap it in the YSH
+#   stdlib
+#
+# - ERROR messages for URL parsing should bubble up to the user!
+#   - USER code should be able to point out to location info for bad escapes
+#   like %f or %0z
+#   - I guess we just need an idiom for this?  A "class"?
+
+source $LIB_OSH/task-five.sh
+#source $LIB_YSH/yblocks.ysh
+
+func strFromTwoHex(two_hex) {
+  var result
+  # TODO: provide alternative to old OSH style!
+
+  # Python style would include something like this
+  # var i = int(two_hex, 16)
+
+  printf -v result "\\x$two_hex"
+  return (result)
+}
+
+const Hex = / [0-9 a-f A-F] /
+
+const Quoted = / \
+    <capture !['%+']+ as lit> \
+  | <capture '+' as plus> \
+  | '%' <capture Hex Hex as two_hex> \
+  /
+
+func unquote (s) {
+  ### Turn strings with %20 into space, etc.
+
+  #echo
+  #echo "unquote $s"
+
+  var pos = 0
+  var parts = []
+  while (true) {
+    var m = s => leftMatch(Quoted, pos=pos)
+    if (not m) {
+      break
+    }
+
+    var lit = m => group('lit')
+    var plus = m => group('plus')
+    var two_hex = m => group('two_hex')
+
+    var part
+    if (lit) {
+      #echo "  lit $lit"
+      setvar part = lit
+    } elif (plus) {
+      #echo "  plus $plus"
+      setvar part = ' '
+    } elif (two_hex) {
+      #echo "  two_hex $two_hex"
+      #setvar part = two_hex
+
+      setvar part = strFromTwoHex(two_hex)
+    }
+    call parts->append(part)
+
+    setvar pos = m => end(0)
+    #echo
+  }
+  if (pos !== len(s)) {
+    error "Unexpected trailing input in unquote"
+  }
+
+  return (join(parts))
+}
+
+proc js-decode-part(s) {
+  nodejs -e '''
+
+  var encoded = process.argv[1];
+  
+  // It does not handle +, because is only for query params, not components?
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/decodeURIComponent
+  var encoded = encoded.replace(/\+/g, " ")
+  
+  var j = JSON.stringify(decodeURIComponent(encoded))
+  process.stdout.write(j);
+  
+  ''' $s
+}
+
+const PART_CASES = [
+  'foo+bar',
+  'foo%23%40',
+  # empty key, empty value, invalid % , etc.
+]
+
+proc test-part() {
+  echo hi
+
+  #_check ('foo bar' === unquote('foo+bar'))
+
+  for s in (PART_CASES) {
+    js-decode-part $s | json read (&js)
+    echo 'JS'
+    pp line (js)
+
+    echo 'YSH'
+    var y = unquote(s)
+    pp line (y)
+
+    assert [y === js]
+
+    echo
+    #break
+  }
+}
+
+#
+# Query
+#
+
+# JavaScript allows either side of k=v to be empty, so we match that
+const Tok = / !['&= ']* /
+
+const Pair = / <capture Tok as key> '=' <capture Tok as value> /
+
+const Pairs = / Pair <capture '&' as sep>? /
+
+func URLSearchParams(s) {
+  ### Turn k=v&foo=spam+eggs&k=v into a list of pairs
+
+  # Loop over matches
+  var pos = 0
+  #echo Pairs=$Pairs
+
+  var pairs = []
+  while (true) {
+    var m = s => leftMatch(Pairs, pos=pos)
+    if (not m) {
+      break
+    }
+    #pp line (m)
+    #pp line (m => group(0))
+    var k = m => group('key')
+    var v = m => group('value')
+
+    #pp line (k)
+    #pp line (v)
+
+    call pairs->append([unquote(k), unquote(v)])
+
+    setvar pos = m => end(0)
+    #pp line (pos)
+
+    var sep = m => group('sep')
+    if (not sep) {
+      break
+    }
+  }
+  if (pos !== len(s)) {
+    error "Unexpected trailing input in URLSearchParams $pos != $[len(s)]"
+  }
+
+  return (pairs)
+}
+
+proc js-decode-query(s) {
+  nodejs -e '''
+
+  const u = new URLSearchParams(process.argv[1]);
+  //console.log(JSON.stringify(u));
+  
+  var pairs = []
+  for (pair of u) {
+    pairs.push(pair)
+  }
+  
+  var j = JSON.stringify(pairs);
+  
+  //console.log(j):
+  process.stdout.write(j);
+  ''' $s
+}
+
+const QUERY_CASES = [
+  'k=foo+bar',
+  'key=foo%23%40',
+  'k=v&foo%23=bar+baz+%24%25&k=v',
+  'foo+bar=z',
+
+  'missing_val=&k=',
+
+  '=missing_key&=m2',
+
+  # This is valid
+  '=&=',
+  '=&=&',
+
+]
+
+const OTHER_CASES = [
+
+  # JavaScript converts %ff to the Unicode replacement char - its strings can't represent bytes
+  'foo%ffbar=z',
+
+  # JavaScript treats = as literal - that seems wrong
+  # YSH treating this as an error seems right
+  '==',
+]
+
+
+proc test-query() {
+  for s in (QUERY_CASES) {
+  #for s in (OTHER_CASES) {
+    echo 'INPUT'
+    echo "  $s"
+
+    js-decode-query $s | json read (&js)
+    echo 'JS'
+    pp line (js)
+
+    echo 'YSH'
+    var pairs = URLSearchParams(s)
+    pp line (pairs)
+
+    assert [pairs === js]
+
+    echo
+  }
+}
+
+proc run-tests() {
+  devtools/byo.sh test $0
+}
+
+task-five "$@"

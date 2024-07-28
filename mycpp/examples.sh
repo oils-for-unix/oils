@@ -93,17 +93,8 @@ translate-parse() {
   # Need this otherwise we get type errors
   codegen-parse
 
-  local snippet='
-
-#include "expr_asdl.h"
-
-Str* repr(void* obj) {
-  return StrFromC("TODO: repr()");
-}
-
-'
   # TODO: This is similar to prebuilt/translate.sh ASDL_FILES
-  translate-ordered parse "$snippet"  \
+  translate-ordered parse ''  \
     $REPO_ROOT/pylib/cgi.py \
     $REPO_ROOT/asdl/runtime.py \
     $REPO_ROOT/asdl/format.py \

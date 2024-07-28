@@ -3,7 +3,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
-                                       command_t, expr_t)
+                                       command_t, expr_t, Token)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
 from core import error
 from core.error import e_usage
@@ -128,7 +128,7 @@ class Reader(object):
         self.fallback_loc = blame_loc
 
     def LeftParenToken(self):
-        # type: () -> loc_t
+        # type: () -> Token
         """ Used by functions in library/func_misc.py """
         return self.arg_list.left
 

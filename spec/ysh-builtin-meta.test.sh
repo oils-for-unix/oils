@@ -152,10 +152,10 @@ assoc['k3']=
 pp line (assoc)
 
 ## STDOUT:
-(BashArray)   ["a","b","c"]
-(BashArray)   ["a","b","c",null,null,"z"]
-(BashAssoc)   {"k":"v","k2":"v2"}
-(BashAssoc)   {"k":"v","k2":"v2","k3":""}
+{"type":"BashArray","data":{"0":"a","1":"b","2":"c"}}
+{"type":"BashArray","data":{"0":"a","1":"b","2":"c","5":"z"}}
+{"type":"BashAssoc","data":{"k":"v","k2":"v2"}}
+{"type":"BashAssoc","data":{"k":"v","k2":"v2","k3":""}}
 ## END
 
 
@@ -218,3 +218,37 @@ proc_name	doc_comment
 f	"doc ' comment with \" quotes"
 ## END
 
+
+#### pp (x) is like = keyword
+
+shopt --set ysh:upgrade
+source $LIB_YSH/list.ysh
+
+# It can be piped!
+
+pp ('foo') | cat
+
+pp ("isn't this sq") | cat
+
+pp ('"dq $myvar"') | cat
+
+pp (r'\ backslash \\') | cat
+
+pp (u'one \t two \n') | cat
+
+# Without a terminal, default width is 80
+pp (repeat([123], 40)) | cat
+
+## STDOUT:
+(Str)   'foo'
+(Str)   b'isn\'t this sq'
+(Str)   '"dq $myvar"'
+(Str)   b'\\ backslash \\\\'
+(Str)   b'one \t two \n'
+(List)
+[
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123, 123,
+    123, 123, 123, 123, 123, 123, 123, 123, 123, 123
+]
+## END

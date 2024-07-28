@@ -6,6 +6,7 @@
 #include <dirent.h>  // closedir(), opendir(), readdir()
 #include <errno.h>
 #include <fcntl.h>      // open
+#include <math.h>       // isinf, isnan
 #include <signal.h>     // kill
 #include <sys/stat.h>   // umask
 #include <sys/types.h>  // umask
@@ -18,6 +19,18 @@
 #include "prebuilt/core/error.mycpp.h"
 
 using error::e_die;
+
+namespace math {
+
+bool isinf(double f) {
+  return ::isinf(f);
+}
+
+bool isnan(double f) {
+  return ::isnan(f);
+}
+
+}  // namespace math
 
 namespace fcntl_ {
 

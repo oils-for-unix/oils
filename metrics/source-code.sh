@@ -19,7 +19,7 @@ filter-py() {
   grep -E -v '__init__.py$|_gen.py|_test.py|_tests.py|NINJA_subgraph.py$'
 }
 
-readonly -a OSH_ASDL=( {frontend,core}/*.asdl )
+readonly -a OSH_ASDL=( {frontend,core,display}/*.asdl )
 
 oils-files() {
   # what's in the runtime
@@ -35,8 +35,9 @@ osh-files() {
   # - line_input.c because I didn't write it.  It still should be minimized.
   # - code generators
   # - test library
-
-  ls bin/oils_for_unix.py {osh,core,frontend}/*.py builtin/*_osh.py \
+  #
+  # note: could move display/ to a separate part
+  ls bin/oils_for_unix.py {osh,core,display,frontend}/*.py builtin/*_osh.py \
     pyext/*.c */*.pyi \
     "${OSH_ASDL[@]}" \
     | filter-py | grep -E -v 'posixmodule.c$|line_input.c$|_gen.py$|test_lib.py$|os.pyi$'

@@ -116,14 +116,15 @@ READ_SPEC.ShortFlag('-a', args.String)  # name of array to read into
 READ_SPEC.ShortFlag('-d', args.String)
 READ_SPEC.ShortFlag('-p', args.String)  # prompt
 
-# YSH extensions
-READ_SPEC.ShortFlag('-0')  # until NUL, like -r -d ''
+# OSH extension (not really considered YSH!)
+READ_SPEC.ShortFlag('-0')  # until NUL, like IFS= read -r -d ''
+# Arguably it could be named like
+#   grep --null -Z
+#   xargs --null -0
+# But this format is NOT recommended in YSH!  It's unbuffered and slow.  We
+# prefer lines with escaping.
+
 READ_SPEC.LongFlag('--all')
-
-# Why not have --j8-line, a shortcut for fromJ8Line()?
-# Because buffered vs. unbuffered should be ORTHOGONAL to encoding
-# TODO: my-j8-read should be possible
-
 READ_SPEC.LongFlag('--raw-line')
 READ_SPEC.LongFlag('--num-bytes', args.Int)
 # don't strip the trailing newline
@@ -436,6 +437,7 @@ ERROR_SPEC = FlagSpec('error')
 FAILED_SPEC = FlagSpec('failed')
 
 BOOLSTATUS_SPEC = FlagSpec('boolstatus')
+ASSERT_SPEC = FlagSpec('assert')
 
 # Future directions:
 # run --builtin, run --command, run --proc:
@@ -460,7 +462,7 @@ FORK_SPEC = FlagSpec('fork')
 FORKWAIT_SPEC = FlagSpec('forkwait')
 
 # Might want --list at some point
-MODULE_SPEC = FlagSpec('module')
+MODULE_SPEC = FlagSpec('source-guard')
 
 RUNPROC_SPEC = FlagSpec('runproc')
 RUNPROC_SPEC.ShortFlag('-h', args.Bool, help='Show all procs')

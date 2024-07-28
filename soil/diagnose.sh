@@ -3,11 +3,10 @@
 # Usage:
 #   soil/diagnose.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
-source devtools/run-task.sh
 source soil/common.sh  # dump-env
 
 dump-timezone() {
@@ -136,5 +135,5 @@ os-info() {
   echo
 }
 
-run-task "$@"
+task-five "$@"
 

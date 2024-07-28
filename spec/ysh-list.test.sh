@@ -70,14 +70,14 @@ echo $[len(l)]
 ## END
 
 #### List append()/extend() should return null
-shopt -s oil:all
+shopt -s ysh:all
 var l = list(1..3)
 
 var result = l->extend(list(3..6))
-call assert_(result === null)
+assert [null === result]
 
 setvar result = l->append(6)
-call assert_(result === null)
+assert [null === result]
 
 echo pass
 ## STDOUT:
@@ -85,12 +85,12 @@ pass
 ## END
 
 #### List pop()
-shopt -s oil:all
+shopt -s ysh:all
 var l = list(1..5)
-call assert_(l->pop() === 4)
-call assert_(l->pop() === 3)
-call assert_(l->pop() === 2)
-call assert_(l->pop() === 1)
+assert [4 === l->pop()]
+assert [3 === l->pop()]
+assert [2 === l->pop()]
+assert [1 === l->pop()]
 echo pass
 ## STDOUT:
 pass

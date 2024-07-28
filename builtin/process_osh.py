@@ -34,7 +34,7 @@ from typing import TYPE_CHECKING, List, Tuple, Optional, cast
 if TYPE_CHECKING:
     from core.process import Waiter, ExternalProgram, FdState
     from core.state import Mem, SearchPath
-    from core.ui import ErrorFormatter
+    from display import ui
 
 
 class Jobs(vm._Builtin):
@@ -188,7 +188,7 @@ class ForkWait(vm._Builtin):
 class Exec(vm._Builtin):
 
     def __init__(self, mem, ext_prog, fd_state, search_path, errfmt):
-        # type: (Mem, ExternalProgram, FdState, SearchPath, ErrorFormatter) -> None
+        # type: (Mem, ExternalProgram, FdState, SearchPath, ui.ErrorFormatter) -> None
         self.mem = mem
         self.ext_prog = ext_prog
         self.fd_state = fd_state
@@ -240,7 +240,7 @@ class Wait(vm._Builtin):
     """
 
     def __init__(self, waiter, job_list, mem, tracer, errfmt):
-        # type: (Waiter, process.JobList, Mem, dev.Tracer, ErrorFormatter) -> None
+        # type: (Waiter, process.JobList, Mem, dev.Tracer, ui.ErrorFormatter) -> None
         self.waiter = waiter
         self.job_list = job_list
         self.mem = mem

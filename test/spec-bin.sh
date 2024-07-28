@@ -1,31 +1,13 @@
 #!/usr/bin/env bash
 #
-# Build binaries for the spec tests.  This is necessary because they tickle
-# behavior in minor versions of each shell.
-#
 # Usage:
 #   test/spec-bin.sh <function name>
-#
-# Instructions:
-#   test/spec-bin.sh download     # Get the right version of every tarball
-#   test/spec-bin.sh extract-all  # Extract source
-#   test/spec-bin.sh build-all    # Compile
-#   test/spec-bin.sh copy-all     # Put them in ../oil_DEPS/spec-bin
-#   test/spec-bin.sh test-all     # Run a small smoke test
-#
-# Once you've run all steps manually and understand how they work, run them
-# all at once with:
-#
-#   test/spec-bin.sh all-steps
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
-
-source devtools/run-task.sh
-#source test/spec-common.sh
 
 #
 # "Non-hermetic"
@@ -56,4 +38,4 @@ bash-upstream() {
     https://ftp.gnu.org/gnu/bash/bash-5.2.21.tar.gz
 }
 
-run-task "$@"
+task-five "$@"
