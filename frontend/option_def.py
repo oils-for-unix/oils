@@ -69,6 +69,7 @@ _OTHER_SET_OPTIONS = [
     ('v', 'verbose'),  # like xtrace, but prints unevaluated commands
     ('f', 'noglob'),
     ('C', 'noclobber'),
+    ('E', 'errtrace'),
 
     # A no-op for modernish.
     (None, 'posix'),

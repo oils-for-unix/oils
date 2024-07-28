@@ -157,8 +157,8 @@ class ShellExecutor(vm._Executor):
         # type: () -> None
         assert self.cmd_ev is not None
 
-    def _MakeProcess(self, node, inherit_errexit=True):
-        # type: (command_t, bool) -> process.Process
+    def _MakeProcess(self, node, inherit_errexit, inherit_errtrace):
+        # type: (command_t, bool, bool) -> process.Process
         """Assume we will run the node in another process.
 
         Return a process.
@@ -188,7 +188,8 @@ class ShellExecutor(vm._Executor):
                                         node,
                                         self.trap_state,
                                         self.multi_trace,
-                                        inherit_errexit=inherit_errexit)
+                                        inherit_errexit,
+                                        inherit_errtrace)
         p = process.Process(thunk, self.job_control, self.job_list,
                             self.tracer)
         return p
@@ -395,7 +396,7 @@ class ShellExecutor(vm._Executor):
             pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
                                   self.job_control, self.job_list, self.tracer)
             for child in node.children:
-                p = self._MakeProcess(child)
+                p = self._MakeProcess(child, True, self.exec_opts.errtrace())
                 p.Init_ParentPipeline(pi)
                 pi.Add(p)
 
@@ -411,7 +412,7 @@ class ShellExecutor(vm._Executor):
             # have to register SIGCHLD.  But then that introduces race conditions.
             # If we haven't called Register yet, then we won't know who to notify.
 
-            p = self._MakeProcess(node)
+            p = self._MakeProcess(node, True, self.exec_opts.errtrace())
             if self.job_control.Enabled():
                 p.AddStateChange(
                     process.SetPgid(process.OWN_LEADER, self.tracer))
@@ -439,7 +440,7 @@ class ShellExecutor(vm._Executor):
             # TODO: determine these locations at parse time?
             pipe_locs.append(loc.Command(child))
 
-            p = self._MakeProcess(child)
+            p = self._MakeProcess(child, True, self.exec_opts.errtrace())
             p.Init_ParentPipeline(pi)
             pi.Add(p)
 
@@ -458,7 +459,7 @@ class ShellExecutor(vm._Executor):
 
     def RunSubshell(self, node):
         # type: (command_t) -> int
-        p = self._MakeProcess(node)
+        p = self._MakeProcess(node, True, self.exec_opts.errtrace())
         if self.job_control.Enabled():
             p.AddStateChange(process.SetPgid(process.OWN_LEADER, self.tracer))
 
@@ -500,8 +501,7 @@ class ShellExecutor(vm._Executor):
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple
 
-        p = self._MakeProcess(node,
-                              inherit_errexit=self.exec_opts.inherit_errexit())
+        p = self._MakeProcess(node, self.exec_opts.inherit_errexit(), self.exec_opts.errtrace())
         # Shell quirk: Command subs remain part of the shell's process group, so we
         # don't use p.AddStateChange(process.SetPgid(...))
 
@@ -606,7 +606,7 @@ class ShellExecutor(vm._Executor):
                 "Process subs not allowed here because status wouldn't be checked (strict_errexit)",
                 cs_loc)
 
-        p = self._MakeProcess(cs_part.child)
+        p = self._MakeProcess(cs_part.child, True, self.exec_opts.errtrace())
 
         r, w = posix.pipe()
         #log('pipe = %d, %d', r, w)

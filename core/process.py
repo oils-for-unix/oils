@@ -812,13 +812,15 @@ class SubProgramThunk(Thunk):
                  node,
                  trap_state,
                  multi_trace,
-                 inherit_errexit=True):
-        # type: (CommandEvaluator, command_t, trap_osh.TrapState, dev.MultiTracer, bool) -> None
+                 inherit_errexit,
+                 inherit_errtrace):
+        # type: (CommandEvaluator, command_t, trap_osh.TrapState, dev.MultiTracer, bool, bool) -> None
         self.cmd_ev = cmd_ev
         self.node = node
         self.trap_state = trap_state
         self.multi_trace = multi_trace
         self.inherit_errexit = inherit_errexit  # for bash errexit compatibility
+        self.inherit_errtrace = inherit_errtrace  # for bash errtrace compatibility
 
     def UserString(self):
         # type: () -> str
@@ -839,7 +841,7 @@ class SubProgramThunk(Thunk):
         from osh import cmd_eval
 
         # signal handlers aren't inherited
-        self.trap_state.ClearForSubProgram()
+        self.trap_state.ClearForSubProgram(self.inherit_errtrace)
 
         # NOTE: may NOT return due to exec().
         if not self.inherit_errexit:
