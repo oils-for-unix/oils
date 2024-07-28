@@ -326,28 +326,28 @@ echo 'should not get here'
 ## END
 
 #### Float Division
-pp line (5/2)
-pp line (-5/2)
-pp line (5/-2)
-pp line (-5/-2)
+pp test_ (5/2)
+pp test_ (-5/2)
+pp test_ (5/-2)
+pp test_ (-5/-2)
 
 echo ---
 
 var x = 9
 setvar x /= 2
-pp line (x)
+pp test_ (x)
 
 var x = -9
 setvar x /= 2
-pp line (x)
+pp test_ (x)
 
 var x = 9
 setvar x /= -2
-pp line (x)
+pp test_ (x)
 
 var x = -9
 setvar x /= -2
-pp line (x)
+pp test_ (x)
 
 
 ## STDOUT:
@@ -363,28 +363,28 @@ pp line (x)
 ## END
 
 #### Integer Division (rounds toward zero)
-pp line (5//2)
-pp line (-5//2)
-pp line (5//-2)
-pp line (-5//-2)
+pp test_ (5//2)
+pp test_ (-5//2)
+pp test_ (5//-2)
+pp test_ (-5//-2)
 
 echo ---
 
 var x = 9
 setvar x //= 2
-pp line (x)
+pp test_ (x)
 
 var x = -9
 setvar x //= 2
-pp line (x)
+pp test_ (x)
 
 var x = 9
 setvar x //= -2
-pp line (x)
+pp test_ (x)
 
 var x = -9
 setvar x //= -2
-pp line (x)
+pp test_ (x)
 
 ## STDOUT:
 (Int)   2
@@ -399,20 +399,20 @@ pp line (x)
 ## END
 
 #### % operator is remainder
-pp line ( 5 % 3)
-pp line (-5 % 3)
+pp test_ ( 5 % 3)
+pp test_ (-5 % 3)
 
 # negative divisor illegal (tested in test/ysh-runtime-errors.sh)
-#pp line ( 5 % -3)
-#pp line (-5 % -3)
+#pp test_ ( 5 % -3)
+#pp test_ (-5 % -3)
 
 var z = 10
 setvar z %= 3
-pp line (z)
+pp test_ (z)
 
 var z = -10
 setvar z %= 3
-pp line (z)
+pp test_ (z)
 
 ## STDOUT:
 (Int)   2
@@ -649,7 +649,7 @@ var e = ^[42 === x and true]
 echo $[evalExpr(e)]
 
 var mylist = ^[3, 4]
-pp line (evalExpr(mylist))
+pp test_ (evalExpr(mylist))
 
 ## STDOUT:
 type=Expr
@@ -662,7 +662,7 @@ true
 #### No list comprehension in ^[]
 
 var mylist = ^[x for x in y]  
-pp line (evalExpr(mylist))
+pp test_ (evalExpr(mylist))
 
 ## status: 2
 ## STDOUT:

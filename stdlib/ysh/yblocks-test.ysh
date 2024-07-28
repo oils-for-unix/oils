@@ -8,7 +8,7 @@ source $LIB_OSH/task-five.sh
 
 proc _check (; val) {  # TODO: assert
   if (not val) {
-    pp line (val)
+    pp test_ (val)
     error "Failed:"
   }
 }
@@ -31,7 +31,7 @@ proc test-yb-capture {
   yb-capture (&r) {
     echo hi
   }
-  #pp line (r)
+  #pp test_ (r)
   _check (0 === r.status)
   _check (u'hi\n' === r.stdout)
 

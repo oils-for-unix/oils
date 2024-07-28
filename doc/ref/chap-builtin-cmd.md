@@ -43,13 +43,15 @@ Similar names: [append][]
 
 ### pp
 
-The most common use is to pretty print expressions:
+The `pp` builtin pretty prints values and interpreter state.
+
+Pretty printing expressions is the most common:
 
     $ var x = 42
     $ pp (x + 5)
     myfile.ysh:1: (Int)   47   # print value with code location
 
-You can also pass an unevaluated expression:
+You can pass an unevaluated expression:
 
     $ pp [x + 5]
     myfile.ysh:1: (Int)   47   # evaluate first
@@ -66,17 +68,21 @@ Print proc names and doc comments:
 
     $ pp proc  # subject to change
 
-The `pp` builtin can also print low-level interpreter state.  The trailing `_`
-indicates that the exact format may change:
+You can also print low-level interpreter state.  The trailing `_` indicates
+that the exact format may change:
 
 Examples:
 
     $ var x = :| one two |
-    $ pp cell_ x  # dump the "guts" of a cell, which is a location for a value
 
     $ pp asdl_ (x)  # dump the ASDL "guts"
 
     $ pp test_ (x)  # single-line stable format, for spec tests
+
+    # dump the ASDL representation of a "Cell", which is a location for a value
+    # (not the value itself)
+    $ pp cell_ x
+
 
 ## Handle Errors
 

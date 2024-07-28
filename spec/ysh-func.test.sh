@@ -64,7 +64,7 @@ x=4
 #### Named args with ...rest
 func f(; x=3, ...named) {
   echo x=$x
-  pp line (named)
+  pp test_ (named)
 }
 
 call f()
@@ -104,8 +104,8 @@ call f(; ...args)
 #### Multiple spreads
 
 func f(...pos; ...named) {
-  pp line (pos)
-  pp line (named)
+  pp test_ (pos)
+  pp test_ (named)
 }
 
 var a = [1,2,3]
@@ -229,9 +229,9 @@ func f(x) {
   setvar x = 'bar'
 }
 
-pp line (x)
-pp line (f(x))
-pp line (x)
+pp test_ (x)
+pp test_ (f(x))
+pp test_ (x)
 
 # reference
 var y = ['a', 'b', 'c']
@@ -240,9 +240,9 @@ func g(y) {
   setvar y[0] = 'z'
 }
 
-pp line (y)
-pp line (g(y))
-pp line (y)
+pp test_ (y)
+pp test_ (g(y))
+pp test_ (y)
 ## STDOUT:
 (Str)   "foo"
 (Null)   null
@@ -349,7 +349,7 @@ hit: 8
 
 #### Varadic arguments, no other args
 func f(...args) {
-pp line (args)
+pp test_ (args)
 }
 
 call f()
@@ -365,7 +365,7 @@ call f(1, 2, 3)
 
 #### Varadic arguments, other args
 func f(a, b, ...args) {
-pp line ([a, b, args])
+pp test_ ([a, b, args])
 }
 
 call f(1, 2)

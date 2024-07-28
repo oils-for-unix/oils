@@ -734,9 +734,9 @@ test-equality() {
 test-float-equality() {
   _ysh-expr-error '
 var x = 1
-pp line (42.0 === x)'
+pp test_ (42.0 === x)'
 
-  _ysh-expr-error 'pp line (2.0 === 1.0)'
+  _ysh-expr-error 'pp test_ (2.0 === 1.0)'
 }
 
 test-place() {
@@ -906,21 +906,21 @@ test-setglobal() {
    _ysh-should-run '
 var a = [0]
 setglobal a[1-1] = 42
-pp line (a)
+pp test_ (a)
    '
 
    _ysh-expr-error '
 var a = [0]
 setglobal a[a.bad] = 42
-pp line (a)
+pp test_ (a)
    '
 
    _ysh-should-run '
 var d = {e:{f:0}}
 setglobal d.e.f = 42
-pp line (d)
+pp test_ (d)
 setglobal d.e.f += 1
-pp line (d)
+pp test_ (d)
    '
 }
 

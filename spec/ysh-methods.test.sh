@@ -376,7 +376,7 @@ var en2fr = {}
 setvar en2fr["hello"] = "bonjour"
 setvar en2fr["friend"] = "ami"
 setvar en2fr["cat"] = "chat"
-pp line (en2fr => keys())
+pp test_ (en2fr => keys())
 ## status: 0
 ## STDOUT:
 (List)   ["hello","friend","cat"]
@@ -387,7 +387,7 @@ var en2fr = {}
 setvar en2fr["hello"] = "bonjour"
 setvar en2fr["friend"] = "ami"
 setvar en2fr["cat"] = "chat"
-pp line (en2fr => values())
+pp test_ (en2fr => values())
 ## status: 0
 ## STDOUT:
 (List)   ["bonjour","ami","chat"]
@@ -396,10 +396,10 @@ pp line (en2fr => values())
 #### Dict -> erase()
 var book = {title: "The Histories", author: "Herodotus"}
 call book->erase("author")
-pp line (book)
+pp test_ (book)
 # confirm method is idempotent
 call book->erase("author")
-pp line (book)
+pp test_ (book)
 ## status: 0
 ## STDOUT:
 (Dict)   {"title":"The Histories"}
@@ -408,7 +408,7 @@ pp line (book)
 
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
-pp line (check("a"))
+pp test_ (check("a"))
 ## status: 0
 ## STDOUT:
 (Bool)   true
@@ -417,15 +417,15 @@ pp line (check("a"))
 #### Bound methods, receiver value/reference semantics
 var is_a_ref = { "foo": "bar" }
 const f = is_a_ref => keys
-pp line (f())
+pp test_ (f())
 setvar is_a_ref["baz"] = 42
-pp line (f())
+pp test_ (f())
 
 var is_a_val = "abc"
 const g = is_a_val => startsWith
-pp line (g("a"))
+pp test_ (g("a"))
 setvar is_a_val = "xyz"
-pp line (g("a"))
+pp test_ (g("a"))
 ## status: 0
 ## STDOUT:
 (List)   ["foo"]
@@ -479,10 +479,10 @@ call a->reverse()
 call b->reverse()
 call c->reverse()
 
-pp line (empty)
-pp line (a)
-pp line (b)
-pp line (c)
+pp test_ (empty)
+pp test_ (a)
+pp test_ (b)
+pp test_ (c)
 
 ## STDOUT:
 (List)   []

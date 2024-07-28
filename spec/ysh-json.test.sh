@@ -166,7 +166,7 @@ y = (Cell exported:F readonly:F nameref:F val:(value.Dict d:[Dict age (value.Int
 #### invalid JSON
 echo '{' | json read (&y)
 echo pipeline status = $?
-pp line (y)
+pp test_ (y)
 ## status: 1
 ## STDOUT:
 pipeline status = 1
@@ -236,7 +236,7 @@ setvar L[0] = L
 
 shopt -s ysh:upgrade
 fopen >tmp.txt {
-  pp line (L)
+  pp test_ (L)
 }
 fgrep -n -o '[ -->' tmp.txt
 
@@ -255,7 +255,7 @@ setvar d.k = d
 
 shopt -s ysh:upgrade
 fopen >tmp.txt {
-  pp line (d)
+  pp test_ (d)
 }
 fgrep -n -o '{ -->' tmp.txt
 
@@ -288,7 +288,7 @@ json read <<EOF
 EOF
 echo status=$?
 
-#pp line (_reply)
+#pp test_ (_reply)
 
 json read <<EOF
 {"key": b'val'}
@@ -354,13 +354,13 @@ echo
 
 echo "$msg" | json8 read
 echo json8=$?
-pp line (_reply)
+pp test_ (_reply)
 echo
 
 var msg = r'j"\u0041"'
 echo "$msg" | json8 read
 echo json8=$?
-pp line (_reply)
+pp test_ (_reply)
 
 
 ## STDOUT:
@@ -444,13 +444,13 @@ json read <<EOF
 "'"
 EOF
 
-pp line (_reply)
+pp test_ (_reply)
 
 json8 read <<EOF
 u'"'
 EOF
 
-pp line (_reply)
+pp test_ (_reply)
 
 ## STDOUT:
 (Str)   "'"
@@ -468,7 +468,7 @@ echo reply=$_reply
 json8 read <<'EOF'
 b'\'\'\b\f\n\r\t\"\\'
 EOF
-pp line (_reply)
+pp test_ (_reply)
 
 # Suppress traceback
 python3 -c 'import json, sys; print(json.load(sys.stdin))' 2>/dev/null <<'EOF'
@@ -505,36 +505,36 @@ b'\u{1}\yff\u{1f}'
 #### json8 read
 
 echo '{ }' | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo '[ ]' | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo '[42]' | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo '[true, false]' | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo '{"k": "v"}' | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo '{"k": null}' | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo '{"k": 1, "k2": 2}' | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo "{u'k': {b'k2': null}}" | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo '{"k": {"k2": "v2"}, "k3": "backslash \\ \" \n line 2 \u03bc "}' | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 json8 read (&x) <<'EOF'
 {u'k': {u'k2': u'v2'}, u'k3': u'backslash \\ \" \n line 2 \u{3bc} '}
 EOF
-pp line (x)
+pp test_ (x)
 
 ## STDOUT:
 (Dict)   {}
@@ -581,7 +581,7 @@ var d = {
 
 json write (d) | json read
 
-pp line (_reply)
+pp test_ (_reply)
 
 ## STDOUT:
 (Dict)   {"short":"-v","long":"--verbose","type":null,"default":"","help":"Enable verbose logging"}
@@ -624,7 +624,7 @@ shopt -s ysh:upgrade
 for j in '"\ud83e"' '"\udd26"' {
   var s = fromJson(j)
   write -- "$j"
-  pp line (s)
+  pp test_ (s)
 
   write -n 'json ';  json write (s)
 
@@ -688,11 +688,11 @@ var m1 = '[42,1.5,null,true,"hi"]'
 # JSON8 message
 var m2 = '[42,1.5,null,true,"hi",' ++ "u''" ++ ']'
 
-pp line (fromJson8(m1))
-pp line (fromJson(m1))
+pp test_ (fromJson8(m1))
+pp test_ (fromJson(m1))
 
-pp line (fromJson8(m2))
-pp line (fromJson(m2))  # fails
+pp test_ (fromJson8(m2))
+pp test_ (fromJson(m2))  # fails
 
 ## status: 4
 ## STDOUT:
@@ -827,12 +827,12 @@ echo -n u'''\yfd''' | od -A n -t x1
 json8 read (&b) <<'EOF'
 b'\yfe'
 EOF
-pp line (b)
+pp test_ (b)
 
 json8 read (&u) <<'EOF'
 u'\yfe'
 EOF
-pp line (u)  # undefined
+pp test_ (u)  # undefined
 
 ## status: 1
 ## STDOUT:
@@ -902,13 +902,13 @@ source $LIB_YSH/list.ysh
 
 # Create inf
 var big = repeat('12345678', 100) ++ '.0'
-#pp line (s)
+#pp test_ (s)
 var inf = fromJson(big)
 var neg_inf = fromJson('-' ++ big)
 
 # Can be printed
-pp line (inf)
-pp line (neg_inf)
+pp test_ (inf)
+pp test_ (neg_inf)
 echo --
 
 # Can't be serialized
@@ -941,7 +941,7 @@ null
 
 #### NaN is encoded as null, like JavaScript
 
-pp line (NAN)
+pp test_ (NAN)
 
 json write (NAN)
 
@@ -995,10 +995,10 @@ status=1
 #### '' means the same thing as u''
 
 echo "''" | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo "'\u{3bc}'" | json8 read
-pp line (_reply)
+pp test_ (_reply)
 
 echo "'\yff'" | json8 read
 echo status=$?
@@ -1015,7 +1015,7 @@ json=$(( 1 << 33 ))
 echo $json
 
 echo $json | json read
-pp line (_reply)
+pp test_ (_reply)
 
 ## STDOUT:
 8589934592
@@ -1027,13 +1027,13 @@ pp line (_reply)
 $SH <<'EOF'
 json read <<< '123456789123456789123456789'
 echo status=$?
-pp line (_reply)
+pp test_ (_reply)
 EOF
 
 $SH <<'EOF'
 json read <<< '-123456789123456789123456789'
 echo status=$?
-pp line (_reply)
+pp test_ (_reply)
 EOF
 
 echo ok
@@ -1120,12 +1120,12 @@ status=1
 #### Data after internal NUL (issue #2026)
 
 $SH <<'EOF'
-pp line (fromJson(b'123\y00abc'))
+pp test_ (fromJson(b'123\y00abc'))
 EOF
 echo status=$?
 
 $SH <<'EOF'
-pp line (fromJson(b'123\y01abc'))
+pp test_ (fromJson(b'123\y01abc'))
 EOF
 echo status=$?
 
@@ -1153,13 +1153,13 @@ status=1
 $SH <<'EOF'
 json read <<< '123456789123456789123456789.12345e67890'
 echo status=$?
-pp line (_reply)
+pp test_ (_reply)
 EOF
 
 $SH <<'EOF'
 json read <<< '-123456789123456789123456789.12345e67890'
 echo status=$?
-pp line (_reply)
+pp test_ (_reply)
 EOF
 
 ## STDOUT:
@@ -1190,7 +1190,7 @@ msg=$(pairs 50)
 #echo $msg
 
 echo "$msg" | json read
-pp line (_reply)
+pp test_ (_reply)
 echo len=$[len(_reply)]
 
 ## STDOUT:
@@ -1202,10 +1202,10 @@ len=1
 #### Too many opening [[[ - blocking stack
 
 python2 -c 'print("[" * 10000)' | json read
-pp line (_reply)
+pp test_ (_reply)
 
 python2 -c 'print("{" * 10000)' | json read
-pp line (_reply)
+pp test_ (_reply)
 
 ## STDOUT:
 ## END

@@ -5,14 +5,14 @@
 # everything except \b \f \n
 
 var nl = \n
-pp line (nl)
+pp test_ (nl)
 
 var tab = \t
-pp line (tab)
+pp test_ (tab)
 
-pp line (\r)
+pp test_ (\r)
 
-pp line (\" ++ \' ++ \\)
+pp test_ (\" ++ \' ++ \\)
 
 echo backslash $[\\]
 echo "backslash $[\\]"

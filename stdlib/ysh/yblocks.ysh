@@ -23,7 +23,7 @@ proc yb-capture(; out; ; block) {
   var result = {status: _pipeline_status[0], stdout}
 
   #echo 'result-1'
-  #pp line (result)
+  #pp test_ (result)
 
   call out->setValue(result)
 }
@@ -35,11 +35,11 @@ proc yb-capture-2(; out; ; block) {
   try {
     eval (block) 2>&1 | read --all (&stderr)
   }
-  #pp line (_pipeline_status)
+  #pp test_ (_pipeline_status)
 
   var result = {status: _pipeline_status[0], stderr}
   #echo 'result-2'
-  #pp line (result)
+  #pp test_ (result)
 
   call out->setValue(result)
 }

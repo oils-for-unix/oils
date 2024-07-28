@@ -248,7 +248,7 @@ multiple-refs() {
 }
 
 oils-cycles() {
-  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp line (d); pp asdl_ (d); json write (d)'
+  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp test_ (d); pp asdl_ (d); json write (d)'
 }
 
 surrogate-pair() {

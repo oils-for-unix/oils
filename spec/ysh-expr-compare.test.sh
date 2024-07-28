@@ -105,14 +105,14 @@ one
 
 $SH -c '
 shopt -s ysh:upgrade
-pp line (1.0 === 2.0)
+pp test_ (1.0 === 2.0)
 echo ok
 '
 echo status=$?
 
 $SH -c '
 shopt -s ysh:upgrade
-pp line (42 === 3.0)
+pp test_ (42 === 3.0)
 echo ok
 '
 echo status=$?
@@ -126,9 +126,9 @@ status=3
 #### floatsEqual()
 
 var x = 42.0
-pp line (floatsEqual(42.0, x))
+pp test_ (floatsEqual(42.0, x))
 
-pp line (floatsEqual(42.0, x + 1))
+pp test_ (floatsEqual(42.0, x + 1))
 
 ## STDOUT:
 (Bool)   true

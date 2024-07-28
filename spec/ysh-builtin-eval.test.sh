@@ -117,7 +117,7 @@ echo
 try {
   eval 'echo one; false; echo two'
 }
-pp line (_error)
+pp test_ (_error)
 
 # This calls CommandEvaluator.EvalCommand(), as blocks do
 
@@ -125,7 +125,7 @@ var b = ^(echo one; false; echo two)
 try {
   eval (b)
 }
-pp line (_error)
+pp test_ (_error)
 
 ## STDOUT:
 plain

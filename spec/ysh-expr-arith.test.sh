@@ -219,27 +219,27 @@ json write (~'3.5')
 
 $SH -c '
 var x = 0.12345
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
 $SH -c '
 # Becomes infinity
 var x = 0.123456789e1234567
-pp line (x)
+pp test_ (x)
 
 var x = -0.123456789e1234567
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
 $SH -c '
 # Becomes infinity
 var x = 0.123456789e-1234567
-pp line (x)
+pp test_ (x)
 
 var x = -0.123456789e-1234567
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
@@ -259,52 +259,52 @@ float=0
 # Decimal
 $SH -c '
 var x = 1111
-pp line (x)
+pp test_ (x)
 '
 echo dec=$?
 
 $SH -c '
 var x = 1111_2222_3333_4444_5555_6666
-pp line (x)
+pp test_ (x)
 '
 echo dec=$?
 
 # Binary
 $SH -c '
 var x = 0b11
-pp line (x)
+pp test_ (x)
 '
 echo bin=$?
 
 $SH -c '
 var x = 0b1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
-pp line (x)
+pp test_ (x)
 '
 echo bin=$?
 
 # Octal
 $SH -c '
 var x = 0o77
-pp line (x)
+pp test_ (x)
 '
 echo oct=$?
 
 $SH -c '
 var x = 0o1111_2222_3333_4444_5555_6666
-pp line (x)
+pp test_ (x)
 '
 echo oct=$?
 
 # Hex
 $SH -c '
 var x = 0xff
-pp line (x)
+pp test_ (x)
 '
 echo hex=$?
 
 $SH -c '
 var x = 0xaaaa_bbbb_cccc_dddd_eeee_ffff
-pp line (x)
+pp test_ (x)
 '
 echo hex=$?
 

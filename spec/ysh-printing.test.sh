@@ -49,8 +49,8 @@ remove-addr() {
   sed 's/0x[0-9a-f]\+/0x---/'
 }
 
-pp line (x) | remove-addr
-pp line ({k: x}) | remove-addr
+pp test_ (x) | remove-addr
+pp test_ ({k: x}) | remove-addr
 
 ## STDOUT:
 (Range 1 .. 100)
@@ -76,8 +76,8 @@ pp value ({k: pat}) | remove-addr
 
 echo
 
-pp line (pat) | remove-addr
-pp line ({k: pat}) | remove-addr
+pp test_ (pat) | remove-addr
+pp test_ ({k: pat}) | remove-addr
 
 ## STDOUT:
 <Eggex 0x--->
@@ -103,12 +103,12 @@ pp value ({k: empty})
 pp value ({k: array_1})
 echo
 
-pp line (empty)
-pp line (array_1)
+pp test_ (empty)
+pp test_ (array_1)
 echo
 
-pp line ({k: empty})
-pp line ({k: array_1})
+pp test_ ({k: empty})
+pp test_ ({k: array_1})
 
 ## STDOUT:
 (SparseArray)
@@ -136,12 +136,12 @@ pp value ({k: empty})
 pp value ({k: array_1})
 echo
 
-pp line (empty)
-pp line (array_1)
+pp test_ (empty)
+pp test_ (array_1)
 echo
 
-pp line ({k: empty})
-pp line ({k: array_1})
+pp test_ ({k: empty})
+pp test_ ({k: array_1})
 
 ## STDOUT:
 (BashArray)
@@ -186,12 +186,12 @@ pp value ({k:empty})
 pp value ({k:assoc})
 echo
 
-pp line (empty)
-pp line (assoc)
+pp test_ (empty)
+pp test_ (assoc)
 echo
 
-pp line ({k:empty})
-pp line ({k:assoc})
+pp test_ ({k:empty})
+pp test_ ({k:assoc})
 
 ## STDOUT:
 (BashAssoc)

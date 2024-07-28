@@ -26,12 +26,12 @@ dq 1
 #### Can print type of List with pp
 
 var b = :|true|  # this is a string
-pp line (b)
+pp test_ (b)
 
 # = b
 
 var empty = :||
-pp line (empty)
+pp test_ (empty)
 
 # = empty
 

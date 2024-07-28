@@ -27,13 +27,13 @@ OK
 
 # consistent with if statement, ternary if, and, or
 
-pp line (not "s")
-pp line (not 3)
-pp line (not 4.5)
-pp line (not {})
-pp line (not [])
-pp line (not false)
-pp line (not true)
+pp test_ (not "s")
+pp test_ (not 3)
+pp test_ (not 4.5)
+pp test_ (not {})
+pp test_ (not [])
+pp test_ (not false)
+pp test_ (not true)
 
 ## STDOUT:
 (Bool)   false
@@ -110,11 +110,11 @@ echo $[0 and 42]
 echo $[0.0 or 0.5]
 echo $[0.0 and 0.5]
 
-pp line (["a"] or [])
-pp line (["a"] and [])
+pp test_ (["a"] or [])
+pp test_ (["a"] and [])
 
-pp line ({"d": 1} or {})
-pp line ({"d": 1} and {})
+pp test_ ({"d": 1} or {})
+pp test_ ({"d": 1} and {})
 
 echo $[0 or 0.0 or false or [] or {} or "OR"]
 echo $[1 and 1.0 and true and [5] and {"d":1} and "AND"]
@@ -161,10 +161,10 @@ AND
 
 #### or BashArray, or BashAssoc
 declare -a array=(1 2 3)
-pp line (array or 'yy')
+pp test_ (array or 'yy')
 
 declare -A assoc=([k]=v)
-pp line (assoc or 'zz')
+pp test_ (assoc or 'zz')
 
 ## STDOUT:
 {"type":"BashArray","data":{"0":"1","1":"2","2":"3"}}

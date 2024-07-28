@@ -122,7 +122,7 @@ type -a returned 1
 var x = []
 true && call x->append(42)
 false && call x->append(43)
-pp line (x)
+pp test_ (x)
 
 func amp() {
   true && return (42)
@@ -132,8 +132,8 @@ func pipe() {
   false || return (42)
 }
 
-pp line (amp())
-pp line (pipe())
+pp test_ (amp())
+pp test_ (pipe())
 
 ## STDOUT:
 ## END

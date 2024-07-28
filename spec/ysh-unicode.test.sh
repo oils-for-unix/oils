@@ -79,10 +79,10 @@ echo status too_big=$?
 # python2 -c 'import sys; c = sys.argv[1].decode("utf-8"); print len(c)' "$too_big"
 
 var max = u'\u{10ffff}'
-pp line (max)
+pp test_ (max)
 
 var too_big = u'\u{110000}'
-pp line (too_big)  # should not get here
+pp test_ (too_big)  # should not get here
 
 # These are errors too
 var max = b'\u{10ffff}'
@@ -111,11 +111,11 @@ EOF
 
 echo "var x = u'"$max"'; = x" | $SH
 echo status=$?
-#pp line (_reply)
+#pp test_ (_reply)
 
 echo "var x = u'"$too_big"'; = x" | $SH
 echo status=$?
-#pp line (_reply)
+#pp test_ (_reply)
 
 ## STDOUT:
 ## END
@@ -138,24 +138,24 @@ EOF
 
 echo '"'$max'"' | json read
 echo status=$?
-#pp line (_reply)
+#pp test_ (_reply)
 
 # Need to propagate the reason here
 
 echo '"'$too_big'"' | json read
 echo status=$?
-#pp line (_reply)
+#pp test_ (_reply)
 
 
 # J8 string
 
 echo "u'"$max"'" | json8 read
 echo status=$?
-#pp line (_reply)
+#pp test_ (_reply)
 
 echo "u'"$too_big"'" | json8 read
 echo status=$?
-#pp line (_reply)
+#pp test_ (_reply)
 
 ## STDOUT:
 status=0
@@ -164,7 +164,7 @@ status=0
 status=1
 ## END
 
-#### Max code point: json, json8, = keyword, pp line
+#### Max code point: json, json8, = keyword, pp test_
 
 var max = u'\u{10ffff}'
 
@@ -172,7 +172,7 @@ json write (max)
 json8 write (max)
 
 = max
-pp line (max)
+pp test_ (max)
 
 #echo "var x = u'"$max"'; = x" | $SH
 

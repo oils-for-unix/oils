@@ -138,8 +138,8 @@ class Pp(_Builtin):
 
             return 0
 
-        if action == 'line':  # Print format for spec tests
-            # TODO: could be pp line (x, y, z)
+        if action == 'test_':  # Print format for spec tests
+            # TODO: could be pp test_ (x, y, z)
             rd = typed_args.ReaderForProc(cmd_val)
             val = rd.PosValue()
             rd.Done()

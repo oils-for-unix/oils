@@ -319,7 +319,7 @@ test/ysh-runtime-errors.sh test-float-equality
 -->
 
 ```
-  pp line (42.0 === x)
+  pp (42.0 === x)
                 ^~~
 [ -c flag ]:3: fatal: Equality isn't defined on Float values (OILS-ERR-202)
 ```

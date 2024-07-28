@@ -274,7 +274,7 @@ echo "${a[@]}"
 
 case $SH in bash|zsh|mksh|ash) exit ;; esac
 
-#pp line (a)
+#pp test_ (a)
 
 a=( foo {25..27} bar )
 

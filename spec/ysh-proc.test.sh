@@ -134,10 +134,10 @@ shopt --set ysh:upgrade
 
 # TODO: duplicate param names aren't allowed
 proc p (a; mylist, mydict; opt Int = 42) {
-  pp line (a)
-  pp line (mylist)
-  pp line (mydict)
-  #pp line (opt)
+  pp test_ (a)
+  pp test_ (mylist)
+  pp test_ (mydict)
+  #pp test_ (opt)
 }
 
 p WORD ([1,2,3], {name: 'bob'})
@@ -331,11 +331,11 @@ expression
 shopt --set ysh:upgrade
 
 proc p2 (...words; ...typed; ...named; block) {
-  pp line (words)
-  pp line (typed)
-  pp line (named)
-  #pp line (block)
-  # To avoid <Block 0x??> - could change pp line
+  pp test_ (words)
+  pp test_ (typed)
+  pp test_ (named)
+  #pp test_ (block)
+  # To avoid <Block 0x??> - could change pp test_
   echo $[type(block)]
 }
 
@@ -448,9 +448,9 @@ argv.py global @ARGV
 shopt -s ysh:upgrade
 
 typed proc p (w; t; n; block) {
-  pp line (w)
-  pp line (t)
-  pp line (n)
+  pp test_ (w)
+  pp test_ (t)
+  pp test_ (n)
   echo $[type(block)]
 }
 

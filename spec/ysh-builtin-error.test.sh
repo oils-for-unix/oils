@@ -74,18 +74,18 @@ message=divide by zero: 5 / 0
 try {
   error 'bad' (code=99)
 }
-pp line (_error)
+pp test_ (_error)
 
 # Note: myData co
 try {
   error 'bad' (code=99, myData={spam:'eggs'})
 }
-pp line (_error)
+pp test_ (_error)
 
 try {
   error 'bad' (code=99, message='cannot override')
 }
-pp line (_error)
+pp test_ (_error)
 
 ## STDOUT:
 (Dict)   {"code":99,"message":"bad"}
@@ -431,7 +431,7 @@ code 1
 
 try {
   $SH -c '
-  #pp line (42 === 42 === 43)
+  #pp test_ (42 === 42 === 43)
   assert [42 === 42 === 43]
   echo unreachable
   '

@@ -50,9 +50,9 @@ echo
 
 proc ty (w; t; n; block) {
   echo 'ty'
-  pp line (w)
-  pp line (t)
-  pp line (n)
+  pp test_ (w)
+  pp test_ (t)
+  pp test_ (n)
   echo $[type(block)]
 }
 
@@ -126,7 +126,7 @@ shopt -s ysh:upgrade
 var d = {}
 setvar d.cycle = d
 
-pp line (d) | fgrep -o '{"cycle":'
+pp test_ (d) | fgrep -o '{"cycle":'
 
 pp asdl_ (d) | fgrep -o 'cycle ...'
 
@@ -214,21 +214,21 @@ pp [42]
 [ stdin ]:5: (Int)   42
 ## END
 
-#### pp line supports BashArray, BashAssoc
+#### pp test_ supports BashArray, BashAssoc
 
 declare -a array=(a b c)
-pp line (array)
+pp test_ (array)
 
 array[5]=z
-pp line (array)
+pp test_ (array)
 
 declare -A assoc=([k]=v [k2]=v2)
-pp line (assoc)
+pp test_ (assoc)
 
 # I think assoc arrays can never null / unset
 
 assoc['k3']=
-pp line (assoc)
+pp test_ (assoc)
 
 ## STDOUT:
 {"type":"BashArray","data":{"0":"a","1":"b","2":"c"}}

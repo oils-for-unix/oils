@@ -1250,29 +1250,29 @@ test-bug-1118() {
 }
 
 test-bug-1850() {
-  _ysh-should-parse 'pp line (42); pp line (43)'
-  #_osh-should-parse 'pp line (42); pp line (43)'
+  _ysh-should-parse 'pp test_ (42); pp line (43)'
+  #_osh-should-parse 'pp test_ (42); pp line (43)'
 
   # Extra word is bad
-  _ysh-parse-error 'pp line (42) extra'
+  _ysh-parse-error 'pp test_ (42) extra'
 
   # Bug -- newline or block should come after arg list
-  _ysh-parse-error 'pp line (42), echo'
+  _ysh-parse-error 'pp test_ (42), echo'
 
   # This properly checks a similar error.  It's in a word.
-  _ysh-parse-error 'pp line @(echo), echo'
+  _ysh-parse-error 'pp test_ @(echo), echo'
 
   # Common cases
-  _ysh-should-parse 'pp line (42)'
-  _ysh-should-parse 'pp line (42) '
-  _ysh-should-parse 'pp line (42);'
-  _ysh-should-parse 'pp line (42) { echo hi }'
+  _ysh-should-parse 'pp test_ (42)'
+  _ysh-should-parse 'pp test_ (42) '
+  _ysh-should-parse 'pp test_ (42);'
+  _ysh-should-parse 'pp test_ (42) { echo hi }'
 
   # Original bug
 
   # Accidental comma instead of ;
   # Wow this is parsed horribly - (42) replaced (43)
-  _ysh-parse-error 'pp line (42), pp line (43)'
+  _ysh-parse-error 'pp test_ (42), pp line (43)'
 }
 
 test-bug-1850-more() {

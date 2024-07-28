@@ -136,7 +136,7 @@ nan is not nan
 #### pretty print INFINITY, -INFINITY, NAN
 
 = [INFINITY, -INFINITY, NAN]
-pp line ([INFINITY, -INFINITY, NAN])
+pp test_ ([INFINITY, -INFINITY, NAN])
 
 ## STDOUT:
 (List)  [INFINITY, -INFINITY, NAN]
@@ -149,13 +149,13 @@ pp line ([INFINITY, -INFINITY, NAN])
 
 shopt --set ysh:upgrade
 
-pp line (1/3) | read --all
+pp test_ (1/3) | read --all
 if (_reply ~ / '0.' '3'+ / ) {
   echo one-third
 }
 
-pp line (2/3) | read --all
-#pp line (_reply)
+pp test_ (2/3) | read --all
+#pp test_ (_reply)
 if (_reply ~ / '0.' '6'+ / ) {
   echo two-thirds
 }

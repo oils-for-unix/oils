@@ -25,7 +25,7 @@ parser (&spec) {
 var args = parseArgs(spec, :| mysrc -P 12 mydest a b c |)
 
 echo "Verbose $[args.verbose]"
-pp line (args)
+pp test_ (args)
 ## STDOUT:
 Verbose false
 (Dict)   {"src":"mysrc","max-procs":12,"dest":"mydest","files":["a","b","c"],"verbose":false,"invert":true}
@@ -48,7 +48,7 @@ var argv = ['-v', 'src/path', 'dst/path', 'x', 'y', 'z']
 
 var args = parseArgs(spec, argv)
 
-pp line (args)
+pp test_ (args)
 
 if (args.verbose) {
   echo "$[args.src] -> $[args.dst]"
@@ -83,7 +83,7 @@ for args in (argsCases) {
   var args_str = join(args, ' ')
   echo "----------  $args_str  ----------"
   echo "\$ bin/ysh example.sh $args_str"
-  pp line (parseArgs(spec, args))
+  pp test_ (parseArgs(spec, args))
 
   echo
 }
@@ -175,7 +175,7 @@ for args in (argsCases) {
   var args_str = args->join(" ")
   echo "----------  $args_str  ----------"
   echo "\$ bin/ysh example.sh $args_str"
-  pp line (parseArgs(spec, args))
+  pp test_ (parseArgs(spec, args))
 
   echo
   echo "\$ python3 example.py $args_str"
@@ -257,7 +257,7 @@ parser (&spec) {
 
 var args = parseArgs(spec, [])
 
-pp line (args)
+pp test_ (args)
 ## STDOUT:
 (Dict)   {"sanitize":false,"verbose":false,"max-procs":null}
 ## END

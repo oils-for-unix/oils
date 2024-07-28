@@ -194,7 +194,7 @@ negative
 try {
   $SH -c '
   source $LIB_YSH/list.ysh
-  pp line (repeat(null, 3))
+  pp test_ (repeat(null, 3))
   echo bad'
 }
 echo code=$[_error.code]
@@ -202,7 +202,7 @@ echo code=$[_error.code]
 try {
   $SH -c '
   source $LIB_YSH/list.ysh
-  pp line (repeat({}, 3))
+  pp test_ (repeat({}, 3))
   echo bad'
 }
 echo code=$[_error.code]
@@ -210,7 +210,7 @@ echo code=$[_error.code]
 try {
   $SH -c '
   source $LIB_YSH/list.ysh
-  pp line (repeat(42, 3))
+  pp test_ (repeat(42, 3))
   echo bad'
 }
 echo code=$[_error.code]
