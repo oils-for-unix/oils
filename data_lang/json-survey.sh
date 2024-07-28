@@ -243,12 +243,12 @@ multiple-refs() {
   echo
 
   # Same with Oils
-  bin/osh -c 'var mylist = [1,2,3]; var val = [mylist, mylist]; = val; json write (val); pp asdl (val)'
+  bin/osh -c 'var mylist = [1,2,3]; var val = [mylist, mylist]; = val; json write (val); pp asdl_ (val)'
   echo
 }
 
 oils-cycles() {
-  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp line (d); pp asdl (d); json write (d)'
+  bin/ysh -c 'var d = {}; setvar d.key = d; = d; pp line (d); pp asdl_ (d); json write (d)'
 }
 
 surrogate-pair() {

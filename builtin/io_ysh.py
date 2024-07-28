@@ -116,8 +116,8 @@ class Pp(_Builtin):
             ui.PrettyPrintValue('', val, self.stdout_)
             return 0
 
-        if action == 'asdl':
-            # TODO: could be pp asdl (x, y, z)
+        if action == 'asdl_':
+            # TODO: could be pp asdl_ (x, y, z)
             rd = typed_args.ReaderForProc(cmd_val)
             val = rd.PosValue()
             rd.Done()
@@ -138,11 +138,7 @@ class Pp(_Builtin):
 
             return 0
 
-        if action == 'line':
-            # TODO: could be pp _test
-
-            # Print format for spec tests
-
+        if action == 'line':  # Print format for spec tests
             # TODO: could be pp line (x, y, z)
             rd = typed_args.ReaderForProc(cmd_val)
             val = rd.PosValue()
@@ -156,16 +152,11 @@ class Pp(_Builtin):
 
             return 0
 
-        if action == 'cell':
-            # should this be pp .cell, and pp .asdl?
-            # or pp _cell pp _asdl?
-            # pp _test is possible too
+        if action == 'cell_':  # Format may change
             argv, locs = arg_r.Rest2()
 
             status = 0
             for i, name in enumerate(argv):
-                if name.startswith(':'):
-                    name = name[1:]
 
                 if not match.IsValidVarName(name):
                     raise error.Usage('got invalid variable name %r' % name,
@@ -184,11 +175,11 @@ class Pp(_Builtin):
                     self.stdout_.write('\n')
             return status
 
-        elif action == 'gc-stats':
+        if action == 'gc-stats_':
             print('TODO')
             return 0
 
-        elif action == 'proc':
+        if action == 'proc':
             names, locs = arg_r.Rest2()
             if len(names):
                 for i, name in enumerate(names):

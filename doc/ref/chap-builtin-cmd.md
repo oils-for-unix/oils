@@ -66,25 +66,17 @@ Print proc names and doc comments:
 
     $ pp proc  # subject to change
 
-The `pp` builtin can also print low-level interpreter state.  Some of of these
-are implementation details, subject to change.
-
-<!--
-TODO: 
-pp _test
-pp _asdl
-pp _cell
-pp _gc-stats
--->
+The `pp` builtin can also print low-level interpreter state.  The trailing `_`
+indicates that the exact format may change:
 
 Examples:
 
-    var x = :| one two |
-    pp cell x  # dump the "guts" of a cell, which is a location for a value
+    $ var x = :| one two |
+    $ pp cell_ x  # dump the "guts" of a cell, which is a location for a value
 
-    pp asdl (x)  # dump the ASDL "guts"
+    $ pp asdl_ (x)  # dump the ASDL "guts"
 
-    pp line (x)  # single-line stable format, for spec tests
+    $ pp test_ (x)  # single-line stable format, for spec tests
 
 ## Handle Errors
 

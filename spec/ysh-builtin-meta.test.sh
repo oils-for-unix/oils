@@ -91,7 +91,7 @@ Block
 ## END
 
 
-#### pp asdl
+#### pp asdl_
 
 shopt -s ysh:upgrade
 
@@ -99,11 +99,11 @@ fopen >out.txt {
   x=42
   setvar y = {foo: x}
 
-  pp asdl (x)
-  pp asdl (y)
+  pp asdl_ (x)
+  pp asdl_ (y)
 
   # TODO, this might be nice?
-  # pp asdl (x, y)
+  # pp asdl_ (x, y)
 }
 
 # Two lines with value.Str
@@ -119,7 +119,7 @@ grep -n -o value.Str out.txt
 2:value.Str
 ## END
 
-#### pp asdl can handle an object cycle
+#### pp asdl_ can handle an object cycle
 
 shopt -s ysh:upgrade
 
@@ -128,7 +128,7 @@ setvar d.cycle = d
 
 pp line (d) | fgrep -o '{"cycle":'
 
-pp asdl (d) | fgrep -o 'cycle ...'
+pp asdl_ (d) | fgrep -o 'cycle ...'
 
 ## STDOUT:
 {"cycle":
@@ -136,24 +136,24 @@ cycle ...
 ## END
 
 
-#### pp gc-stats
+#### pp gc-stats_
 
-pp gc-stats
+pp gc-stats_
 
 ## STDOUT:
 ## END
 
 
-#### pp cell
+#### pp cell_
 x=42
 
-pp cell x
+pp cell_ x
 echo status=$?
 
-pp -- cell :x
+pp -- cell_ x
 echo status=$?
 
-pp cell nonexistent
+pp cell_ nonexistent
 echo status=$?
 ## STDOUT:
 x = (Cell exported:F readonly:F nameref:F val:(value.Str s:42))
@@ -163,10 +163,10 @@ status=0
 status=1
 ## END
 
-#### pp cell on indexed array with hole
+#### pp cell_ on indexed array with hole
 declare -a array
 array[3]=42
-pp cell array
+pp cell_ array
 ## STDOUT:
 array = (Cell exported:F readonly:F nameref:F val:(value.BashArray strs:[_ _ _ 42]))
 ## END
