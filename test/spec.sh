@@ -87,6 +87,10 @@ bugs() {
   run-file bugs "$@"
 }
 
+osh-bugs() {
+  run-file osh-bugs "$@"
+}
+
 TODO-deprecate() {
   run-file TODO-deprecate "$@"
 }

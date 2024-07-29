@@ -286,7 +286,21 @@ class ctx_YshExpr(object):
 
     def __init__(self, mutable_opts):
         # type: (MutableOpts) -> None
+
+        # Similar to $LIB_OSH/bash-strict.sh
+
+        # TODO: consider errexit:all group, or even ysh:all
+        # It would be nice if this were more efficient
         mutable_opts.Push(option_i.command_sub_errexit, True)
+        mutable_opts.Push(option_i.errexit, True)
+        mutable_opts.Push(option_i.pipefail, True)
+        mutable_opts.Push(option_i.inherit_errexit, True)
+        mutable_opts.Push(option_i.strict_errexit, True)
+
+        # What about nounset?  This has a similar pitfall -- it's not running
+        # like YSH.
+        # e.g. var x = $(echo $zz)
+
         self.mutable_opts = mutable_opts
 
     def __enter__(self):
@@ -296,6 +310,10 @@ class ctx_YshExpr(object):
     def __exit__(self, type, value, traceback):
         # type: (Any, Any, Any) -> None
         self.mutable_opts.Pop(option_i.command_sub_errexit)
+        self.mutable_opts.Pop(option_i.errexit)
+        self.mutable_opts.Pop(option_i.pipefail)
+        self.mutable_opts.Pop(option_i.inherit_errexit)
+        self.mutable_opts.Pop(option_i.strict_errexit)
 
 
 class ctx_ErrExit(object):
