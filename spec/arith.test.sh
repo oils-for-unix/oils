@@ -750,14 +750,57 @@ echo $((-10 % 3))
 echo $(( 10 % -3))
 echo $((-10 % -3))
 
-# Algorithm: Make both number spositive, then take the sign of the first
-# number?
-
 ## STDOUT:
 1
 -1
 1
 -1
+## END
+
+#### Negative numbers with bit shift
+
+echo $(( 5 << 1 ))
+echo $(( 5 << 0 ))
+$SH -c 'echo $(( 5 << -1 ))'  # implementation defined - OSH fails
+echo ---
+
+echo $(( 16 >> 1 ))
+echo $(( 16 >> 0 ))
+$SH -c 'echo $(( 16 >> -1 ))'  # not sure why this is zero
+$SH -c 'echo $(( 16 >> -2 ))'  # also 0
+echo ---
+
+## STDOUT:
+10
+5
+---
+8
+16
+---
+## END
+
+## OK bash/dash/mksh/zsh STDOUT:
+10
+5
+-9223372036854775808
+---
+8
+16
+0
+0
+---
+## END
+
+## BUG mksh STDOUT:
+10
+5
+-2147483648
+---
+8
+16
+0
+0
+---
 ## END
 
 #### undef[0]

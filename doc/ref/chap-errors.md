@@ -111,7 +111,7 @@ JSON encoding has these errors:
    - e.g. a Dict that points to itself, a List that points to itself, and other
      permutations
 1. Float values of NaN, Inf, and -Inf can't be encoded.
-   - TODO: option to use `null` like JavaScript.
+   - (These encode to `null` in Oils, following JavaScript.)
 
 Note that invalid UTF-8 bytes like `0xfe` produce a Unicode replacement
 character, not a hard error.

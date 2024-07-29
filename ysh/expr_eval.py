@@ -570,9 +570,14 @@ class ExprEvaluator(object):
                 return value.Int(mops.BitXor(i1, i2))
 
             elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):  # >>
+                if mops.Greater(mops.ZERO, i2):  # i2 < 0
+                    raise error.Expr("Can't right shift by negative number",
+                                     op)
                 return value.Int(mops.RShift(i1, i2))
 
             elif case(Id.Arith_DLess, Id.Arith_DLessEqual):  # <<
+                if mops.Greater(mops.ZERO, i2):  # i2 < 0
+                    raise error.Expr("Can't left shift by negative number", op)
                 return value.Int(mops.LShift(i1, i2))
 
             else:

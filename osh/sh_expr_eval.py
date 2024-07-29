@@ -802,8 +802,14 @@ class ArithEvaluator(object):
 
                 # Note: how to define shift of negative numbers?
                 elif op_id == Id.Arith_DLess:
+                    if mops.Greater(mops.ZERO, rhs_big):  # rhs_big < 0
+                        raise error.Expr("Can't left shift by negative number",
+                                         node.op)
                     result = mops.LShift(lhs_big, rhs_big)
                 elif op_id == Id.Arith_DGreat:
+                    if mops.Greater(mops.ZERO, rhs_big):  # rhs_big < 0
+                        raise error.Expr(
+                            "Can't right shift by negative number", node.op)
                     result = mops.RShift(lhs_big, rhs_big)
                 else:
                     raise AssertionError(op_id)

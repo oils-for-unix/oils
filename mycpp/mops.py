@@ -172,14 +172,13 @@ def Greater(a, b):
 
 def LShift(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    """
-    Any semantic issues here?  Signed left shift
-    """
+    assert b.i >= 0, b.i  # Must be checked by caller
     return BigInt(a.i << b.i)
 
 
 def RShift(a, b):
     # type: (BigInt, BigInt) -> BigInt
+    assert b.i >= 0, b.i  # Must be checked by caller
     return BigInt(a.i >> b.i)
 
 

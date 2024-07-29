@@ -323,6 +323,37 @@ hex=0
 hex=2
 ## END
 
+#### Bit shift by negative number is not allowed
+
+shopt -s ysh:upgrade
+
+pp test_ (1 << 1)
+pp test_ (1 << 0)
+try {
+  pp test_ (1 << -1)
+}
+echo failed $[_error.code]
+echo
+
+pp test_ (16 >> 2)
+pp test_ (16 >> 1)
+pp test_ (16 >> 0)
+try {
+  pp test_ (16 >> -1)
+}
+echo failed $[_error.code]
+
+## STDOUT:
+(Int)   2
+(Int)   1
+failed 3
+
+(Int)   4
+(Int)   8
+(Int)   16
+failed 3
+## END
+
 #### 64-bit operations
 
 shopt -s ysh:upgrade

@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -197,3 +197,28 @@ echo yy | p-ifs
 zz
 yy
 ## END
+
+#### func call inside proc call - error message attribution
+
+try 2> foo {
+  $SH -c '
+func ident(x) {
+  return (x)
+}
+
+proc p (; x) {
+  echo $x
+}
+
+# BUG: it points to ( in ident(
+#      should point to ( in eval (
+
+eval (ident([1,2,3]))
+'
+}
+
+cat foo
+
+## STDOUT:
+## END
+
