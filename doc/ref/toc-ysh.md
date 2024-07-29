@@ -125,7 +125,6 @@ X [Wok]           _field()
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
-                X dbg                    Only thing that can be used in funcs
   [Hay Config]    hay          haynode   For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
@@ -136,32 +135,30 @@ X [Wok]           _field()
   Standard Library<a class="group-link" href="chap-stdlib.html">stdlib</a>
 </h2>
 
+```chapter-links-stdlib
+  [math]          abs()         max()          min()   X round()
+                  sum()     
+  [list]          all()         any()          repeat()
+  [yblocks]       yb-capture    yb-capture-2
+  [args]          parser        flag           arg       rest
+                  parseArgs()
+```
+
 <!-- linkify_stop_col is 42 -->
 
+Design for streams and tables (awk/xargs/dplyr):
+
 ```chapter-links-stdlib_42
-  [math]          abs()     
-                  max()     min()
-                X round()
-                  sum()     
-  [list]          all()     any()     
-                  repeat()
-  [args]          parser                 Parse command line arguments
-                  flag
-                  arg
-                  rest
-                  parseArgs()
-  [yblocks]       yb-capture
-                  yb-capture-2
 X [Lines]         slurp-by               combine adjacent lines into cells
-X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block) - xargs
-                  each-row               --max-jobs (Str, Template, Block) - xargs
+X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block)
+                  each-row               --max-jobs (Str, Template, Block)
                   each-word              xargs-like splitting, similar to IFS too
                   split-by               (str=\n, ifs=':', pattern=/s+/)
-                  if-split-by  
+                  if-split-by            only lines that match
                   chop                   alias for split-by (pattern=/s+/)
                   must-match             (/ <capture d+> </capture w+> /)
-                  if-match               
-X [Table Create]  table                  --by-row --by-col (&place); construct/parse a table
+                  if-match               only lines that match
+X [Table Create]  table                  construct/parse --by-row --by-col (&place)
                   table/cols             cols name age - cols name:Str age:Int
                   types                  type       Str Int
                   attr                   attr units -   secs
@@ -169,16 +166,17 @@ X [Table Create]  table                  --by-row --by-col (&place); construct/p
                   table cat              concatenate TSV8
                   table align            to ssv8
                   table tabify           to tsv8
-                  table header           (cols = :|name age|, types = :|Str Int|, units = :|- secs|)
+                  table header           cols = :|name age|, types = :|Str Int|, ...
                   table slice            e.g. slice (1, -1)   slice (5, 7)
                   table to-tsv           lose type info, and error on \t in cells
 X [Table Ops]     where                  subset of rows; dplyr filter()
                   pick                   subset of columns ('select' taken by shell)
-                  mutate    transmute    [average = count / sum] - drop the ones that are used?
+                  mutate                 [average = count / sum]
+                  transmuate             drop columns that are used
                   rename                 (bytes='bytes', path='filename')
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
-                  summary                count, sum, histogram, any, all, reduce(), etc. [ext]
+                  summary                count/sum, histogram, any/all, reduce, ...
 ```
 
 <!--

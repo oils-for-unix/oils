@@ -6,15 +6,8 @@ source $LIB_YSH/yblocks.ysh  # module under test
 source $LIB_OSH/two.sh  
 source $LIB_OSH/task-five.sh
 
-proc _check (; val) {  # TODO: assert
-  if (not val) {
-    pp test_ (val)
-    error "Failed:"
-  }
-}
-
-_demo-stderr() {
-  echo zzz "$@" >& 2
+proc _demo-stderr {
+  echo zzz @ARGV >& 2
   return 99
 }
 
@@ -23,8 +16,8 @@ proc test-yb-capture {
   yb-capture (&r) {
     write --end '' hi
   }
-  _check (0 === r.status)
-  _check ('hi' === r.stdout)
+  assert [0 === r.status]
+  assert ['hi' === r.stdout]
 
   #return
 
@@ -32,21 +25,20 @@ proc test-yb-capture {
     echo hi
   }
   #pp test_ (r)
-  _check (0 === r.status)
-  _check (u'hi\n' === r.stdout)
+  assert [0 === r.status]
+  assert [u'hi\n' === r.stdout]
 
-  # TODO: _demo-stderr fails - we catch this earlier though!
   yb-capture-2 (&r) {
     _demo-stderr yyy
   }
-  _check (99 === r.status)
-  _check (u'zzz yyy\n' === r.stderr)
+  assert [99 === r.status]
+  assert [u'zzz yyy\n' === r.stderr]
 
   yb-capture (&r) {
     _demo-stderr aaa
   }
-  _check (99 === r.status)
-  _check ('' === r.stdout)
+  assert [99 === r.status]
+  assert ['' === r.stdout]
 }
 
 proc test-yb-redir-not-needed {
@@ -58,7 +50,7 @@ proc test-yb-redir-not-needed {
   try > $tmp {
     seq 3
   }
-  _check (0 === _error.code)
+  assert [0 === _error.code]
 
   diff -u $tmp - << EOF
 1
@@ -69,7 +61,7 @@ EOF
   try 2>$tmp {
     log $'hi\nthere'
   }
-  _check (0 === _error.code)
+  assert [0 === _error.code]
 
   diff -u $tmp - << EOF
 hi
@@ -77,4 +69,4 @@ there
 EOF
 }
 
-task-five "$@"
+task-five @ARGV
