@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 4
+## oils_failures_allowed: 3
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -223,7 +223,7 @@ cat foo
 ## END
 
 
-#### Crash in parsing case - issue #2037
+#### Crash in parsing case on EOF condition - issue #2037
 
 var WEIGHT = ${1:-}
 case (WEIGHT) {
@@ -231,5 +231,6 @@ case (WEIGHT) {
   (else) { echo $WEIGHT
 }
 
+## status: 2
 ## STDOUT:
 ## END

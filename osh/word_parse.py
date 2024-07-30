@@ -1423,7 +1423,8 @@ class WordParser(WordEmitter):
 
             # Cannot lookahead past lines
             if next_id == Id.Unknown_Tok:
-                self.lexer.MoveToNextLine()
+                if not self.lexer.MoveToNextLine():  # Try to move to next line
+                    break  # EOF
                 continue
 
             next_kind = consts.GetKind(next_id)
