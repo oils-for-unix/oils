@@ -143,6 +143,28 @@ pp test_ ([INFINITY, -INFINITY, NAN])
 (List)   [INFINITY,-INFINITY,NAN]
 ## END
 
+#### can't convert NAN, INFINITY to integer
+shopt --set ysh:upgrade
+
+#echo $[int(NAN)]
+try {
+  echo $[int(NAN)]
+}
+echo code $[_error.code]
+#pp test_ (_error)
+
+#echo $[int(-INFINITY)]
+try {
+  echo $[int(-INFINITY)]
+}
+echo code $[_error.code]
+#pp test_ (_error)
+
+## STDOUT:
+code 3
+code 3
+## END
+
 #### Regression: 1/3 gives 0.3+
 
 # We were using float precision, not double
@@ -196,5 +218,3 @@ echo py3=$py3
 ## STDOUT:
 pass
 ## END
-
-

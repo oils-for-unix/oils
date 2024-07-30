@@ -30,7 +30,7 @@ def ValType(val):
     return value_str(val.tag(), dot=False)
 
 
-def _FloatString(fl):
+def FloatString(fl):
     # type: (float) -> str
 
     # Print in YSH syntax, similar to data_lang/j8.py
@@ -403,7 +403,7 @@ class ValueEncoder:
 
             elif case(value_e.Float):
                 f = cast(value.Float, val).f
-                return self._Styled(self.float_style, UText(_FloatString(f)))
+                return self._Styled(self.float_style, UText(FloatString(f)))
 
             elif case(value_e.Str):
                 s = cast(value.Str, val).s

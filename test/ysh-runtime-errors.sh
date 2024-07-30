@@ -364,7 +364,10 @@ test-int-convert() {
   _ysh-expr-error '= int([])'
   _ysh-expr-error '= int("foo")'
   _ysh-expr-error '= int(len)'
-  _ysh-expr-error '= int("foo"->startswith)'
+  _ysh-expr-error '= int("foo" => startsWith)'
+
+  _ysh-expr-error '= int(NAN)'
+  _ysh-expr-error '= int(-INFINITY)'
 }
 
 test-float-convert() {

@@ -12,6 +12,8 @@ interface?
 """
 from __future__ import print_function
 
+from typing import Tuple
+
 
 class BigInt(object):
 
@@ -108,9 +110,15 @@ def ToFloat(b):
 
 
 def FromFloat(f):
-    # type: (float) -> BigInt
+    # type: (float) -> Tuple[bool, BigInt]
     """Used by int(3.14) in Oils"""
-    return BigInt(int(f))
+    try:
+        big = int(f)
+    except ValueError:  # NAN
+        return False, MINUS_ONE
+    except OverflowError:  # INFINITY
+        return False, MINUS_ONE
+    return True, BigInt(big)
 
 
 # Can't use operator overloading

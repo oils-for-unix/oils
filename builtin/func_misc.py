@@ -10,6 +10,7 @@ from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from core import error
 from core import num
 from core import state
+from display import pp_value
 from display import ui
 from core import vm
 from data_lang import j8
@@ -157,12 +158,18 @@ class Int(vm._Callable):
 
             elif case(value_e.Float):
                 val = cast(value.Float, UP_val)
-                return value.Int(mops.FromFloat(val.f))
+                ok, big_int = mops.FromFloat(val.f)
+                if ok:
+                    return value.Int(big_int)
+                else:
+                    raise error.Expr(
+                        "Can't convert float %s to Int" %
+                        pp_value.FloatString(val.f), rd.BlamePos())
 
             elif case(value_e.Str):
                 val = cast(value.Str, UP_val)
                 if not match.LooksLikeInteger(val.s):
-                    raise error.Expr('Cannot convert %s to Int' % val.s,
+                    raise error.Expr("Can't convert %s to Int" % val.s,
                                      rd.BlamePos())
 
                 return value.Int(mops.FromStr(val.s))

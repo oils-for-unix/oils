@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "mycpp/common.h"  // DCHECK
+#include "mycpp/gc_tuple.h"
 
 class BigStr;
 
@@ -29,6 +30,7 @@ BigStr* ToHexUpper(BigInt b);
 BigStr* ToHexLower(BigInt b);
 
 BigInt FromStr(BigStr* s, int base = 10);
+Tuple2<bool, BigInt> FromFloat(double f);
 
 inline int BigTruncate(BigInt b) {
   return static_cast<int>(b);
@@ -48,10 +50,6 @@ inline BigInt FromBool(bool b) {
 
 inline double ToFloat(BigInt b) {
   return static_cast<double>(b);
-}
-
-inline BigInt FromFloat(double f) {
-  return static_cast<BigInt>(f);
 }
 
 inline BigInt Negate(BigInt b) {

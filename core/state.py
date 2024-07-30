@@ -2065,8 +2065,10 @@ class Mem(object):
                 return value.Str(self.last_arg)
 
             elif case('SECONDS'):
-                return value.Int(
-                    mops.FromFloat(time_.time() - self.seconds_start))
+                f = time_.time() - self.seconds_start
+                ok, big_int = mops.FromFloat(f)
+                assert ok, f  # should never be NAN or INFINITY
+                return value.Int(big_int)
 
             else:
                 # In the case 'declare -n ref='a[42]', the result won't be a cell.  Idea to

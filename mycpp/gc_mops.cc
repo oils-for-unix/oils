@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <inttypes.h>  // PRIo64, PRIx64
+#include <math.h>      // isnan(), isinf()
 #include <stdio.h>
 
 #include "mycpp/gc_alloc.h"
@@ -53,6 +54,13 @@ BigInt FromStr(BigStr* s, int base) {
   } else {
     throw Alloc<ValueError>();
   }
+}
+
+Tuple2<bool, BigInt> FromFloat(double f) {
+  if (isnan(f) || isinf(f)) {
+    return Tuple2<bool, BigInt>(false, MINUS_ONE);
+  }
+  return Tuple2<bool, BigInt>(true, static_cast<BigInt>(f));
 }
 
 }  // namespace mops
