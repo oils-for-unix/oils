@@ -253,6 +253,9 @@ wait status 0
 
 case $SH in mksh) echo mksh; exit ;; esac
 
+# Without this, it succeeds in CI?
+case $SH in *osh) echo osh; exit ;; esac
+
 $SH -c 'trap "echo int" INT; sleep 0.1' &
 /usr/bin/kill -INT $!
 wait

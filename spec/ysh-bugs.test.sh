@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 4
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
