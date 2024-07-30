@@ -152,7 +152,8 @@ def Div(a, b):
     Question: does Oils behave like C remainder when it's positive?  Then we
     could be more efficient with a different layering?
     """
-    assert a.i >= 0 and b.i >= 0, (a.i, b.i)
+    assert a.i >= 0, a.i
+    assert b.i > 0, b.i  # can't be zero, caller checks
     return BigInt(a.i // b.i)
 
 
@@ -161,7 +162,8 @@ def Rem(a, b):
     """
     Remainder, for positive integers only
     """
-    assert a.i >= 0 and b.i >= 0, (a.i, b.i)
+    assert a.i >= 0, a.i
+    assert b.i > 0, b.i  # can't be zero, caller checks
     return BigInt(a.i % b.i)
 
 

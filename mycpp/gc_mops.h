@@ -69,18 +69,16 @@ inline BigInt Mul(BigInt a, BigInt b) {
 }
 
 inline BigInt Div(BigInt a, BigInt b) {
-  // Is the behavior of negative values defined in C++?  Avoid difference with
-  // Python.
+  // Same check as in mops.py
   DCHECK(a >= 0);
-  DCHECK(b >= 0);
+  DCHECK(b > 0);  // can't be zero
   return a / b;
 }
 
 inline BigInt Rem(BigInt a, BigInt b) {
-  // Is the behavior of negative values defined in C++?  Avoid difference with
-  // Python.
+  // Same check as in mops.py
   DCHECK(a >= 0);
-  DCHECK(b >= 0);
+  DCHECK(b > 0);  // can't be zero
   return a % b;
 }
 
@@ -93,10 +91,12 @@ inline bool Greater(BigInt a, BigInt b) {
 }
 
 inline BigInt LShift(BigInt a, BigInt b) {
+  DCHECK(b >= 0);
   return a << b;
 }
 
 inline BigInt RShift(BigInt a, BigInt b) {
+  DCHECK(b >= 0);
   return a >> b;
 }
 

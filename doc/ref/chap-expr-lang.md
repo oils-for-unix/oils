@@ -485,7 +485,7 @@ Negative indices are relative to the end.
 String example:
 
     $ var s = 'spam eggs'
-    $ pp line (s[1:-1])
+    $ pp (s[1:-1])
     (Str)   "pam egg"
 
     $ echo "x $[s[2:]]"
@@ -494,7 +494,7 @@ String example:
 List example:
 
     $ var foods = ['ale', 'bean', 'corn']
-    $ pp line (foods[-2:])
+    $ pp (foods[-2:])
     (List)   ["bean","corn"]
     
     $ write -- @[foods[:2]]

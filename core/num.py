@@ -24,11 +24,6 @@ def Exponent(x, y):
     return result
 
 
-def Exponent2(x, y):
-    # type: (int, int) -> int
-    return mops.BigTruncate(Exponent(mops.IntWiden(x), mops.IntWiden(y)))
-
-
 def IntDivide(x, y):
     # type: (mops.BigInt, mops.BigInt) -> mops.BigInt
     """
@@ -40,27 +35,21 @@ def IntDivide(x, y):
     """
     assert y.i != 0, 'checked by caller'
 
-    ZERO = mops.BigInt(0)
     sign = 1
 
-    if mops.Greater(ZERO, x):
+    if mops.Greater(mops.ZERO, x):
         ax = mops.Negate(x)
         sign = -1
     else:
         ax = x
 
-    if mops.Greater(ZERO, y):
+    if mops.Greater(mops.ZERO, y):
         ay = mops.Negate(y)
         sign = -sign
     else:
         ay = y
 
     return mops.Mul(mops.IntWiden(sign), mops.Div(ax, ay))
-
-
-def IntDivide2(x, y):
-    # type: (int, int) -> int
-    return mops.BigTruncate(IntDivide(mops.IntWiden(x), mops.IntWiden(y)))
 
 
 def IntRemainder(x, y):
@@ -76,24 +65,17 @@ def IntRemainder(x, y):
     """
     assert y.i != 0, 'checked by caller'
 
-    ZERO = mops.BigInt(0)
-
-    if mops.Greater(ZERO, x):
+    if mops.Greater(mops.ZERO, x):
         ax = mops.Negate(x)
         sign = -1
     else:
         ax = x
         sign = 1
 
-    if mops.Greater(ZERO, y):
+    if mops.Greater(mops.ZERO, y):
         ay = mops.Negate(y)
     else:
         ay = y
 
     # Only use host language % on non-negative numbers.  Apply sign afteward.
     return mops.Mul(mops.IntWiden(sign), mops.Rem(ax, ay))
-
-
-def IntRemainder2(x, y):
-    # type: (int, int) -> int
-    return mops.BigTruncate(IntRemainder(mops.IntWiden(x), mops.IntWiden(y)))
