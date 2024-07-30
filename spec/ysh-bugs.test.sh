@@ -222,3 +222,14 @@ cat foo
 ## STDOUT:
 ## END
 
+
+#### Crash in parsing case - issue #2037
+
+var WEIGHT = ${1:-}
+case (WEIGHT) {
+  "-" { echo "got nothing" }
+  (else) { echo $WEIGHT
+}
+
+## STDOUT:
+## END
