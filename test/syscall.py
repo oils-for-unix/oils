@@ -47,11 +47,11 @@ WC_LINE = re.compile(r'''
 (\d+)     # number of lines
 \s+
 (\d{2})   # case ID
--
-([a-z]+)  # shell name
+\.
+([a-z-]+)  # shell name
 ''', re.VERBOSE)
 
-assert WC_LINE.match('    68 01-ash.19610')
+assert WC_LINE.match('    68 01.osh-cpp.19610')
 
 
 def Options():
@@ -163,9 +163,9 @@ def main(argv):
     f.write('%6d\t' % procs_by_shell[sh])
   f.write('\n\n')
   f.write("Cases where ...\n")
-  f.write("  Oil isn't the minimum: %d\n" % not_minimum)
-  f.write("  Oil starts more than bash: %d\n" % more_than_bash)
-  f.write("  Oil starts fewer than bash: %d\n\n" % fewer_than_bash)
+  f.write("  OSH isn't the minimum: %d\n" % not_minimum)
+  f.write("  OSH starts more than bash: %d\n" % more_than_bash)
+  f.write("  OSH starts fewer than bash: %d\n\n" % fewer_than_bash)
 
   #
   # Print Table of Syscall Counts

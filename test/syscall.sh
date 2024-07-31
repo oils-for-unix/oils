@@ -5,13 +5,16 @@
 # Usage:
 #   test/syscall.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 source build/dev-shell.sh
 
-readonly -a SHELLS=(dash bash mksh zsh ash yash osh)
+OSH=${OSH:-osh}
+YSH=${YSH:-ysh}
+
+readonly -a SHELLS=(dash bash mksh zsh ash yash $OSH $YSH)
 
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
@@ -28,8 +31,17 @@ count-procs() {
     # avoid the extra processes that bin/osh starts!
     # relies on word splitting
     #(X)  # to compare against osh 0.8.pre3 installed
-    (osh)
-      sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oil.py osh"
+    osh)
+      sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oils_for_unix.py osh"
+      ;;
+    ysh)
+      sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oils_for_unix.py ysh"
+      ;;
+    osh-cpp)
+      sh=_bin/cxx-dbg/osh
+      ;;
+    ysh-cpp)
+      sh=_bin/cxx-dbg/ysh
       ;;
   esac
 
@@ -43,7 +55,7 @@ run-case() {
   local code_str=$2
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num-$sh
+    local out_prefix=$RAW_DIR/$num.$sh
     echo "--- $sh"
     count-procs $out_prefix $sh -c "$code_str"
   done
@@ -58,7 +70,7 @@ run-case-file() {
   echo -n "$code_str" > _tmp/$num.sh
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num-$sh
+    local out_prefix=$RAW_DIR/$num.$sh
     echo "--- $sh"
     count-procs $out_prefix $sh _tmp/$num.sh
   done
@@ -71,7 +83,7 @@ run-case-stdin() {
   local code_str=$2
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num-$sh
+    local out_prefix=$RAW_DIR/$num.$sh
     echo "--- $sh"
     echo -n "$code_str" | count-procs $out_prefix $sh
   done
@@ -268,7 +280,6 @@ EOF
 
   count-lines $suite
   summarize $suite 3 0
-
 }
 
 # Quick hack: every shell uses 2 processes for this... doesn't illuminate much.
@@ -326,6 +337,16 @@ by-code() {
   # omit total line
   count-lines $suite
   summarize $suite 3 0
+}
+
+by-code-cpp() {
+  ninja _bin/cxx-dbg/{osh,ysh}
+  OSH=osh-cpp YSH=ysh-cpp $0 by-code "$@"
+}
+
+by-input-cpp() {
+  ninja _bin/cxx-dbg/{osh,ysh}
+  OSH=osh-cpp YSH=ysh-cpp $0 by-input "$@"
 }
 
 syscall-py() {
@@ -408,4 +429,4 @@ cpython-configure() {
   popd
 }
 
-"$@"
+task-five "$@"
