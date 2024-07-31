@@ -146,25 +146,52 @@ def Mul(a, b):
 
 def Div(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    """
-    Divide, for positive integers only
+    """Integer division.
 
-    Question: does Oils behave like C remainder when it's positive?  Then we
-    could be more efficient with a different layering?
+    Oils rounds toward zero.
+
+    Python rounds toward negative infinity, while C++ rounds toward zero.  We
+    have to work around Python a bit.
     """
-    assert a.i >= 0, a.i
-    assert b.i > 0, b.i  # can't be zero, caller checks
-    return BigInt(a.i // b.i)
+    assert b.i != 0, b.i  # divisor can't be zero -- caller checks
+
+    # Only use Python // on non-negative numbers.  Apply sign afterward.
+    sign = 1
+
+    if a.i < 0:
+        pa = -a.i
+        sign = -1
+    else:
+        pa = a.i
+
+    if b.i < 0:
+        pb = -b.i
+        sign = -sign
+    else:
+        pb = b.i
+
+    return BigInt(sign * (pa // pb))
 
 
 def Rem(a, b):
     # type: (BigInt, BigInt) -> BigInt
-    """
-    Remainder, for positive integers only
-    """
-    assert a.i >= 0, a.i
-    assert b.i > 0, b.i  # can't be zero, caller checks
-    return BigInt(a.i % b.i)
+    """Integer remainder."""
+    assert b.i != 0, b.i  # YSH divisor must be positive, but OSH can be negative
+
+    # Only use Python % on non-negative numbers.  Apply sign afterward.
+    if a.i < 0:
+        pa = -a.i
+        sign = -1
+    else:
+        pa = a.i
+        sign = 1
+
+    if b.i < 0:
+        pb = -b.i
+    else:
+        pb = b.i
+
+    return BigInt(sign * (pa % pb))
 
 
 def Equal(a, b):

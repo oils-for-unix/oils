@@ -544,13 +544,13 @@ class ExprEvaluator(object):
                     # Disallow this to remove confusion between modulus and remainder
                     raise error.Expr("Divisor can't be negative", op)
 
-                return value.Int(num.IntRemainder(i1, i2))
+                return value.Int(mops.Rem(i1, i2))
 
             # a // b   setvar a //= b
             elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
                 if mops.Equal(i2, mops.ZERO):
                     raise error.Expr('Divide by zero', op)
-                return value.Int(num.IntDivide(i1, i2))
+                return value.Int(mops.Div(i1, i2))
 
             # a ** b   setvar a **= b (ysh only)
             elif case(Id.Arith_DStar, Id.Expr_DStarEqual):

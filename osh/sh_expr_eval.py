@@ -617,12 +617,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_SlashEqual:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_big = num.IntDivide(old_big, rhs_big)
+                    new_big = mops.Div(old_big, rhs_big)
 
                 elif op_id == Id.Arith_PercentEqual:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_big = num.IntRemainder(old_big, rhs_big)
+                    new_big = mops.Rem(old_big, rhs_big)
 
                 elif op_id == Id.Arith_DGreatEqual:
                     new_big = mops.RShift(old_big, rhs_big)
@@ -763,12 +763,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_Slash:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', node.op)
-                    result = num.IntDivide(lhs_big, rhs_big)
+                    result = mops.Div(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_Percent:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', node.op)
-                    result = num.IntRemainder(lhs_big, rhs_big)
+                    result = mops.Rem(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DStar:
                     if mops.Greater(mops.ZERO, rhs_big):

@@ -70,15 +70,13 @@ inline BigInt Mul(BigInt a, BigInt b) {
 
 inline BigInt Div(BigInt a, BigInt b) {
   // Same check as in mops.py
-  DCHECK(a >= 0);
-  DCHECK(b > 0);  // can't be zero
+  DCHECK(b != 0);  // divisor can't be zero
   return a / b;
 }
 
 inline BigInt Rem(BigInt a, BigInt b) {
   // Same check as in mops.py
-  DCHECK(a >= 0);
-  DCHECK(b > 0);  // can't be zero
+  DCHECK(b != 0);  // divisor can't be zero
   return a % b;
 }
 
