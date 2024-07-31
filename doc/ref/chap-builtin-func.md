@@ -52,29 +52,6 @@ Similar names: [type][]
 
 [type]: chap-index.html#type
 
-### repeat()
-
-TODO:
-
-    = repeat('a', 3)
-    (Str)   'aaa'
-
-    = repeat(['a'], 3)
-    (List)   ['a', 'a', 'a']
-
-Note that list elements are NOT copied.  They are repeated by reference, which
-means the List can have aliases.
-
-    = repeat([[42]], 3)
-    (List)   [[42], [42], [42]]
-
-Modeled after these Python expressions:
-
-    >>> 'a' * 3
-    'aaa'
-    >>> ['a'] * 3
-    ['a', 'a', 'a']
-
 
 ## Conversions
 

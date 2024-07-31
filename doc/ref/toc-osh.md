@@ -142,7 +142,7 @@ X [Unsupported]   enable
                   proc-sub      diff <(sort L.txt) <(sort R.txt)
   [Var Ops]       op-test       ${x:-default}  
                   op-strip      ${x%%suffix}  etc.
-                  op-replace    ${x//y/z}
+                  op-patsub     ${x//y/z}
                   op-index      ${a[i+1}
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}

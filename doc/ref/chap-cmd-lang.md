@@ -421,7 +421,7 @@ That is, it's single arg of type `value.Expr`.
 
 Redirects can also appear after the lazy typed args:
 
-    assert [42 ===x] >out.txt
+    assert [42 === x] >out.txt
 
 ### block-arg
 
@@ -449,20 +449,6 @@ Redirects can appear after the block arg:
     } >out.txt
 
 ## YSH Cond
-
-### ysh-if
-
-Like shell, you can use a command:
-
-    if test --file $x {
-      echo "$x is a file"
-    }
-
-You can also use an expression:
-
-    if (x > 0) {
-      echo 'positive'
-    }
 
 ### ysh-case
 
@@ -493,16 +479,21 @@ The `else` is a special keyword that matches any value.
     }
     # => Markdown
 
-## YSH Iter
+### ysh-if
 
-### ysh-while
+Like shell, you can use a command:
 
-Command or expression:
-
-    var x = 5
-    while (x < 0) {
-      setvar x -= 1
+    if test --file $x {
+      echo "$x is a file"
     }
+
+You can also use an expression:
+
+    if (x > 0) {
+      echo 'positive'
+    }
+
+## YSH Iter
 
 ### ysh-for
 
@@ -533,6 +524,22 @@ Here's how to iterate over the lines of stdin:
     }
 
 Likewise, you can ask for the index with `for i, line in (stdin) { ...`.
+
+### ysh-while
+
+You can use an expression as the condition:
+
+    var x = 5
+    while (x < 0) {
+      setvar x -= 1
+    }
+
+You or a command:
+
+    while test -f myfile {
+      echo 'myfile'
+      sleep 1
+    }
 
 #### Expressions
 

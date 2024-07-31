@@ -200,6 +200,13 @@ Negative repetitions are equivalent to zero:
     = repeat('foo', -5)           # => ''
     = repeat(['foo', 'bar'], -5)  # => []
 
+Note that the `repeat()` function is modeled after these Python expressions:
+
+    >>> 'a' * 3
+    'aaa'
+    >>> ['a'] * 3
+    ['a', 'a', 'a']
+
 ## yblocks
 
 Helpers to assert the status and output of commands.

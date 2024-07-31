@@ -64,7 +64,6 @@ X [Module]         name()         filename()
                    promptVal()
                  X time()       X strftime()
                  X glob()
-X [Guts]           heapId()
 ```
 
 <h2 id="builtin-func">
@@ -80,7 +79,6 @@ X [Guts]           heapId()
   [Str]         X strcmp()        X split()         shSplit()
   [List]          join()       
   [Float]         floatsEqual()   X isinf()       X isnan()
-  [Collections] X copy()          X deepCopy()
   [Word]          glob()            maybe()
   [Serialize]     toJson()          fromJson()
                   toJson8()         fromJson8()
@@ -117,9 +115,9 @@ X [Wok]           _field()
                   ctx                    Share and update a temporary "context"
                   push-registers         Save registers like $?, PIPESTATUS
   [Modules]       runproc                Run a proc; use as main entry point
-                  module                 guard against duplicate 'source'
+                  source-guard           guard against duplicate 'source'
                   is-main                false when sourcing a file
-                  use                    change first word lookup
+                X use                    use names,
   [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
                   write                  Like echo, with --, --sep, --end
@@ -158,21 +156,22 @@ X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block)
                   chop                   alias for split-by (pattern=/s+/)
                   must-match             (/ <capture d+> </capture w+> /)
                   if-match               only lines that match
-X [Table Create]  table                  construct/parse --by-row --by-col (&place)
-                  table/cols             cols name age - cols name:Str age:Int
-                  types                  type       Str Int
-                  attr                   attr units -   secs
+X [Table Create]  table def              &place or print TSV8
+                  table parse            --by-row --by-col (&place), TSV or TSV8
+                  table/cols             cols       name age, or name:Str age:Int
+                  types                  type       Str  Int
+                  attr                   attr units   -  secs
                   row                    emit row
                   table cat              concatenate TSV8
                   table align            to ssv8
-                  table tabify           to tsv8
+                  table tabify           to tsv8 (similar to table parse)
                   table header           cols = :|name age|, types = :|Str Int|, ...
                   table slice            e.g. slice (1, -1)   slice (5, 7)
                   table to-tsv           lose type info, and error on \t in cells
 X [Table Ops]     where                  subset of rows; dplyr filter()
                   pick                   subset of columns ('select' taken by shell)
                   mutate                 [average = count / sum]
-                  transmuate             drop columns that are used
+                  transmute              drop columns that are used
                   rename                 (bytes='bytes', path='filename')
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
@@ -209,8 +208,8 @@ X [External Lang] BEGIN   END   when (awk)
                   block-arg     cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
   [YSH Cond]      ysh-case      case (x) { *.py { echo 'python' } }
                   ysh-if        if (x > 0) { echo }
-  [YSH Iter]      ysh-while     while (x > 0) { echo }
-                  ysh-for       for i, item in (mylist) { echo }
+  [YSH Iter]      ysh-for       for i, item in (mylist) { echo }
+                  ysh-while     while (x > 0) { echo }
 ```
 
 <h2 id="ysh-cmd">
@@ -297,7 +296,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Substitutions] expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
                   var-splice    @myarray @ARGV
-                  command-sub   @(split command)
+                  command-sub   @(cat my-j8-lines.txt)
   [Formatting]  X ysh-printf    ${x %.3f}
                 X ysh-format    ${x|html}
 ```

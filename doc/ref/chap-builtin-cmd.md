@@ -325,18 +325,18 @@ level statement in a "task file":
     
 Like 'builtin' and 'command', it affects the lookup of the first word.
 
-### module
+### source-guard
 
-Registers a name in the global module dict.  Returns 0 if it doesn't exist, or
-1 if it does.
+Registers a name in the global "module" dict.  Returns 0 if it doesn't exist,
+or 1 if it does.
 
 Use it like this in executable files:
 
-    module main || return 0   
+    source-guard main || return 0   
 
 And like this in libraries:
 
-    module myfile.ysh || return 0   
+    source-guard myfile.ysh || return 0   
 
 ### is-main
 
@@ -357,8 +357,8 @@ TODO
 
 Reuse code from other files, respecting namespaces.
 
-    use lib/foo.ysh  # relative import, i.ie implicit $_this_dir?
-                     # makes name 'foo' available
+    use lib/foo.ysh  # foo myproc, $[foo.attr]
+                     # implicit $_this_dir aka relative import
 
 Bind a specific name:
 
@@ -367,13 +367,14 @@ Bind a specific name:
 Bind multiple names:
 
     use lib/foo.ysh (&myvar) {
-      var log, die
+      pick log die
     }
 
 Maybe:
 
     use lib/foo.ysh (&myvar) {
-      var mylog = myvar.log
+      pick log (&mylog)
+      pick die (&mydie)
     }
 
 Also a declaration
