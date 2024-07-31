@@ -337,8 +337,8 @@ osh-usage         test/osh-usage.sh soil-run             -
 tools-deps        test/tools-deps.sh soil-run            -
 make-tarball      devtools/release.sh py-tarball         _release/oil.tar
 ysh-ovm-tarball   test/spec-py.sh ysh-ovm-tarball        _tmp/spec/ysh-py/index.html
-doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
 docs              build/doc.sh soil-run                  _release/VERSION/index.html
+doc-metrics       echo no-op                             _release/VERSION/doc/metrics.txt
 EOF
 
 # doc-metrics is a no-op, just for the link.  Because soil-run just runs the
@@ -474,7 +474,8 @@ run-tasks() {
       # explicitly connect TTY, e.g. for soil/interactive
       "${argv[@]}" > $log_path 2>&1 < $stdin_tty
     else
-      "${argv[@]}" > $log_path 2>&1
+      # Temporary fix: build/doc.sh soil-run reads from stdin!
+      "${argv[@]}" > $log_path 2>&1 < /dev/null
     fi
     status=$?
     set -o errexit

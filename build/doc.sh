@@ -450,7 +450,8 @@ log() { echo "$@" 1>&2; }
 EOF
 
   pushd $work_dir
-  $REPO_ROOT/bin/ysh $name.txt
+  # Fix: don't supply stdin!
+  $REPO_ROOT/bin/ysh $name.txt < /dev/null
   popd
 
   # My own dev tools
