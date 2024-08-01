@@ -374,6 +374,7 @@ other-tests-tasks() {
 os-info                soil/diagnose.sh os-info    -
 dump-env               soil/diagnose.sh dump-env   -
 build-minimal          build/py.sh minimal                        -
+web-remote-test        soil/web-remote-test.sh soil-run           -
 configure-test         ./configure-test.sh soil_run               -
 time-test              benchmarks/time-test.sh soil-run           -
 tsv-lib-test           test/tsv-lib-test.sh soil-run              -

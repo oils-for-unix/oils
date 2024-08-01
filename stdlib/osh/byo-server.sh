@@ -43,8 +43,11 @@ byo-maybe-run() {
         die "BYO run-test: Expected BYO_ARG"
       fi
 
+      # Avoid issues polluting recursive calls!
+      unset BYO_COMMAND BYO_ARG
+
       # Shell convention: we name functions test-*
-      $test_name
+      "$test_name"
 
       # Only run if not set -e.  Either way it's equivalent
       exit $?
