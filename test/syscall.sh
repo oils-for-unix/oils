@@ -215,7 +215,7 @@ by-input() {
   local suite='by-input'
 
   rm -r -f -v $RAW_DIR
-  mkdir -p $RAW_DIR
+  mkdir -p $RAW_DIR $BASE_DIR
 
   # Wow this newline makes a difference in shells!
 
@@ -257,7 +257,7 @@ by-input() {
   # This is identical for all shells
   #run-case 32 $'date; date\n#comment\n'
 
-  cat >$BASE_DIR/${suite}-cases.txt <<EOF
+  cat >$BASE_DIR/cases.${suite}.txt <<EOF
 30 -c: zero lines
 31 -c: one line
 32 -c: one line and comment
@@ -294,7 +294,7 @@ weird-command-sub() {
 
   local suite=weird-command-sub
 
-  cat >$BASE_DIR/${suite}-cases.txt <<EOF
+  cat >$BASE_DIR/cases.${suite}.txt <<EOF
 60 \$(< file)
 61 \$(< file; echo hi)
 EOF
@@ -322,7 +322,7 @@ by-code() {
   write-sourced
 
   local suite='by-code'
-  local cases=$BASE_DIR/${suite}-cases.txt
+  local cases=$BASE_DIR/cases.${suite}.txt
 
   number-cases > $cases
   head -n $max_cases $cases | while read -r num code_str; do
@@ -359,7 +359,7 @@ write-sourced() {
 
 count-lines() {
   local suite=${1:-by-code}
-  ( cd $RAW_DIR && wc -l * ) | head -n -1 > $BASE_DIR/${suite}-counts.txt
+  ( cd $RAW_DIR && wc -l * ) | head -n -1 > $BASE_DIR/wc.${suite}.txt
 }
 
 summarize() {
@@ -367,16 +367,17 @@ summarize() {
   local not_minimum=${2:-0}
   local more_than_bash=${3:-0}
 
-  local out=$BASE_DIR/${suite}.txt
   set +o errexit
-  cat $BASE_DIR/${suite}-counts.txt \
-    | syscall-py --not-minimum $not_minimum --more-than-bash $more_than_bash \
-                 $BASE_DIR/${suite}-cases.txt \
-    > $out
+  cat $BASE_DIR/wc.${suite}.txt \
+    | syscall-py \
+      --not-minimum $not_minimum \
+      --more-than-bash $more_than_bash \
+      --suite $suite \
+      $BASE_DIR/cases.${suite}.txt \
+      $BASE_DIR
   local status=$?
   set -o errexit
 
-  echo "Wrote $out"
   if test $status -eq 0; then
     echo 'OK'
   else

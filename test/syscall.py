@@ -16,6 +16,7 @@ from __future__ import print_function
 
 import collections
 import optparse
+import os
 import re
 import sys
 
@@ -62,77 +63,8 @@ def WriteHeader(f, shells, col=''):
     f.write("\n")
 
 
-def Options():
-    """Returns an option parser instance."""
-    p = optparse.OptionParser()
-    p.add_option(
-        '--not-minimum',
-        dest='not_minimum',
-        type=int,
-        default=0,
-        help=
-        "Expected number of cases where OSH doesn't start the minimum number of"
-        "processes")
-    p.add_option(
-        '--more-than-bash',
-        dest='more_than_bash',
-        type=int,
-        default=0,
-        help=
-        'Expected number of cases where OSH starts more processes than bash')
-    return p
-
-
-def main(argv):
-    o = Options()
-    opts, argv = o.parse_args(argv[1:])
-
-    code_strs = {}
-    with open(argv[0]) as f:
-        for line in f:
-            case_id, code_str = line.split(None, 1)  # whitespace
-            code_strs[case_id] = code_str
-
-    cases = set()
-    shells = set()
-
-    num_procs = collections.defaultdict(int)
-    procs_by_shell = collections.defaultdict(int)
-
-    num_syscalls = collections.defaultdict(int)
-    syscalls_by_shell = collections.defaultdict(int)
-
-    #
-    # Summarize Data
-    #
-
-    for line in sys.stdin:
-        m = WC_LINE.match(line)
-        if not m:
-            raise RuntimeError('Invalid line %r' % line)
-        num_sys, case, sh = m.groups()
-        num_sys = int(num_sys)
-
-        cases.add(case)
-        shells.add(sh)
-
-        num_procs[case, sh] += 1
-        num_syscalls[case, sh] += num_sys
-
-        procs_by_shell[sh] += 1
-        syscalls_by_shell[sh] += num_sys
-
-    f = sys.stdout
-
-    # Orders columns by how good the results are, then shell name.
-    proc_sh = sorted(procs_by_shell, key=lambda sh: (procs_by_shell[sh], sh))
-    syscall_sh = sorted(syscalls_by_shell,
-                        key=lambda sh: (syscalls_by_shell[sh], sh))
-
-    #
-    # Print Tables
-    #
-
+def WriteProcessReport(f, cases, code_strs, proc_sh, num_procs,
+                       procs_by_shell):
     f.write('Number of Processes Started, by shell and test case\n\n')
 
     WriteHeader(f, proc_sh, col='osh>min')
@@ -174,10 +106,11 @@ def main(argv):
     f.write("  OSH starts more than bash: %d\n" % more_than_bash)
     f.write("  OSH starts fewer than bash: %d\n\n" % fewer_than_bash)
 
-    #
-    # Print Table of Syscall Counts
-    #
+    return not_minimum, more_than_bash, fewer_than_bash
 
+
+def WriteSyscallReport(f, cases, code_strs, syscall_sh, num_syscalls,
+                       syscalls_by_shell):
     f.write('Number of Syscalls\n\n')
 
     WriteHeader(f, syscall_sh)
@@ -199,6 +132,99 @@ def main(argv):
     for sh in syscall_sh:
         f.write('%6d\t' % syscalls_by_shell[sh])
     f.write('\n\n')
+
+
+def Options():
+    """Returns an option parser instance."""
+    p = optparse.OptionParser()
+    p.add_option('--suite',
+                 dest='suite',
+                 default='SUITE',
+                 help='Test suite name')
+    p.add_option(
+        '--not-minimum',
+        dest='not_minimum',
+        type=int,
+        default=0,
+        help=
+        "Expected number of cases where OSH doesn't start the minimum number of"
+        "processes")
+    p.add_option(
+        '--more-than-bash',
+        dest='more_than_bash',
+        type=int,
+        default=0,
+        help=
+        'Expected number of cases where OSH starts more processes than bash')
+    return p
+
+
+def main(argv):
+    o = Options()
+    opts, argv = o.parse_args(argv[1:])
+
+    cases_path = argv[0]
+    out_dir = argv[1]
+
+    code_strs = {}
+    with open(cases_path) as f:
+        for line in f:
+            case_id, code_str = line.split(None, 1)  # whitespace
+            code_strs[case_id] = code_str
+
+    cases = set()
+    shells = set()
+
+    num_procs = collections.defaultdict(int)
+    procs_by_shell = collections.defaultdict(int)
+
+    num_syscalls = collections.defaultdict(int)
+    syscalls_by_shell = collections.defaultdict(int)
+
+    #
+    # Summarize Data
+    #
+
+    for line in sys.stdin:
+        m = WC_LINE.match(line)
+        if not m:
+            raise RuntimeError('Invalid line %r' % line)
+        num_sys, case, sh = m.groups()
+        num_sys = int(num_sys)
+
+        cases.add(case)
+        shells.add(sh)
+
+        num_procs[case, sh] += 1
+        num_syscalls[case, sh] += num_sys
+
+        procs_by_shell[sh] += 1
+        syscalls_by_shell[sh] += num_sys
+
+    # Orders columns by how good the results are, then shell name.
+    proc_sh = sorted(procs_by_shell, key=lambda sh: (procs_by_shell[sh], sh))
+    syscall_sh = sorted(syscalls_by_shell,
+                        key=lambda sh: (syscalls_by_shell[sh], sh))
+
+    #
+    # Print Tables
+    #
+
+    out_path = os.path.join(out_dir, 'processes.%s.txt' % opts.suite)
+    with open(out_path, 'w') as f:
+        not_minimum, more_than_bash, fewer_than_bash = WriteProcessReport(
+            f, cases, code_strs, proc_sh, num_procs, procs_by_shell)
+    log('Wrote %s', out_path)
+
+    #
+    # Print Table of Syscall Counts
+    #
+
+    out_path = os.path.join(out_dir, 'syscalls.%s.txt' % opts.suite)
+    with open(out_path, 'w') as f:
+        WriteSyscallReport(f, cases, code_strs, syscall_sh, num_syscalls,
+                           syscalls_by_shell)
+    log('Wrote %s', out_path)
 
     ok = True
     if more_than_bash != opts.more_than_bash:
