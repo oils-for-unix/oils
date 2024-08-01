@@ -43,8 +43,8 @@ soil-run() {
 
   # Run shebang, bash
   devtools/byo.sh test stdlib/osh/two-test.sh 
-
   devtools/byo.sh test stdlib/osh/no-quotes-test.sh 
+  devtools/byo.sh test stdlib/osh/byo-server-test.sh 
 
   # Run with osh
   devtools/byo.sh test bin/osh stdlib/osh/two-test.sh 

@@ -20,10 +20,20 @@ _bash-print-funcs() {
 
   local funcs
   funcs=($(compgen -A function))
+
   # extdebug makes `declare -F` print the file path, but, annoyingly, only
   # if you pass the function names as arguments.
   shopt -s extdebug
-  declare -F "${funcs[@]}" | grep --fixed-strings " $0" | awk '{print $1}'
+
+  # bash format:
+  # func1 1 path1
+  # func2 2 path2  # where 2 is the linen umber
+
+  #declare -F "${funcs[@]}"
+
+  # TODO: do we need to normalize the LHS and RHS of $3 == path?
+  declare -F "${funcs[@]}" | awk -v "path=$0" '$3 == path { print $1 }'
+
   shopt -u extdebug
 }
 

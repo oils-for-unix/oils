@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 
-set -o nounset
-set -o pipefail
-set -o errexit
-
 : ${LIB_OSH=stdlib/osh}
 
 source $LIB_OSH/two.sh  # module under test
-
+source $LIB_OSH/bash-strict.sh
 source $LIB_OSH/no-quotes.sh
 source $LIB_OSH/task-five.sh
 
