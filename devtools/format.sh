@@ -57,7 +57,7 @@ yapf-known() {
   ### yapf some files that have been normalized
 
   time yapf-files \
-    {asdl,benchmarks,builtin,core,data_lang,display,doctools,frontend,lazylex,mycpp,mycpp/examples,osh,spec/*,yaks,ysh}/*.py \
+    {asdl,benchmarks,builtin,core,data_lang,display,doctools,frontend,lazylex,mycpp,mycpp/examples,osh,spec/*,test,yaks,ysh}/*.py \
     */NINJA_subgraph.py
 }
 
@@ -86,7 +86,7 @@ docstrings() {
   #time test/lint.sh py2-files-to-lint \
   #  | xargs --verbose -- python3 -m docformatter --in-place
 
-  python3 -m docformatter --in-place lazylex/*.py
+  python3 -m docformatter --in-place test/*.py
 }
 
 #

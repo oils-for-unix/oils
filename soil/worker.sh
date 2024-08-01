@@ -208,7 +208,7 @@ osh-runtime      benchmarks/osh-runtime.sh soil-run    _tmp/osh-runtime/index.ht
 vm-baseline      benchmarks/vm-baseline.sh soil-run    _tmp/vm-baseline/index.html
 compute          benchmarks/compute.sh soil-run        _tmp/compute/index.html
 gc               benchmarks/gc.sh soil-run             _tmp/gc/index.html
-mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/-wwz-index
+mycpp-benchmarks benchmarks/mycpp.sh soil-run          _tmp/mycpp-examples/index.html
 EOF
 }
 
@@ -329,8 +329,7 @@ ovm-tarball-tasks() {
 os-info           soil/diagnose.sh os-info    -
 dump-env          soil/diagnose.sh dump-env   -
 py-all            build/py.sh all                        -
-syscall-by-code   test/syscall.sh by-code                _tmp/syscall/by-code.txt
-syscall-by-input  test/syscall.sh by-input               _tmp/syscall/by-input.txt
+syscall-by-code   test/syscall.sh soil-run               _tmp/syscall/-wwz-index
 osh-spec          test/spec-py.sh osh-all-serial         _tmp/spec/osh-py/index.html
 gold              test/gold.sh soil-run                  -
 osh-usage         test/osh-usage.sh soil-run             -

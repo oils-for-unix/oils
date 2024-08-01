@@ -384,9 +384,7 @@ summarize() {
   fi
 }
 
-run-for-release() {
-  ### Run the two syscall suites
-
+soil-run() {
   # Invoked as one of the "other" tests.  Soil runs by-code and by-input
   # separately.
 
@@ -395,6 +393,12 @@ run-for-release() {
   by-input
 
   echo 'OK'
+}
+
+run-for-release() {
+  ### Run the two syscall suites
+
+  soil-run
 }
 
 #

@@ -7,7 +7,6 @@ import sys
 
 from test import py2_lint
 
-
 if __name__ == '__main__':
     try:
         sys.exit(py2_lint.main(sys.argv[1:]))
