@@ -14,6 +14,60 @@
 : ${LIB_OSH:-stdlib/osh}
 source $LIB_OSH/two.sh
 
+# List all functions defined in this file (and not in sourced files).
+_bash-print-funcs() {
+  ### Print shell functions in this file that don't start with _ (bash reflection)
+
+  local funcs
+  funcs=($(compgen -A function))
+  # extdebug makes `declare -F` print the file path, but, annoyingly, only
+  # if you pass the function names as arguments.
+  shopt -s extdebug
+  declare -F "${funcs[@]}" | grep --fixed-strings " $0" | awk '{print $1}'
+  shopt -u extdebug
+}
+
+_gawk-print-funcs() {
+  ### Print shell functions in this file that don't start with _ (awk parsing)
+
+  # Using gawk because it has match()
+  # - doesn't start with _
+
+  # space     = / ' '* /
+  # shfunc    = / %begin
+  #               <capture !['_' ' '] ![' ']*>
+  #               '()' space '{' space
+  #               %end /
+  # docstring = / %begin
+  #               space '###' ' '+
+  #               <capture dot*>
+  #               %end /
+  gawk '
+  match($0, /^([^_ ][^ ]*)\(\)[ ]*{[ ]*$/, m) {
+    #print NR " shfunc " m[1]
+    print m[1]
+    #print m[0]
+  }
+
+  match($0, /^[ ]*###[ ]+(.*)$/, m) {
+    print NR " docstring " m[1]
+  }
+' $0
+}
+
+_print-funcs() {
+  _bash-print-funcs
+  return
+
+  # TODO: make gawk work, with docstrings
+  if command -v gawk > /dev/null; then
+    _gawk-print-funcs
+  else
+    _bash-print-funcs
+  fi
+}
+
+
 byo-maybe-run() {
   local command=${BYO_COMMAND:-}
 
@@ -32,7 +86,9 @@ byo-maybe-run() {
       ;;
 
     list-tests)
-      # bash extension that OSH also implements
+      # TODO: use _bash-print-funcs?  This fixes the transitive test problem,
+      # which happened in soil/web-remote-test.sh
+      # But it should work with OSH, not just bash!  We need shopt -s extdebug
       compgen -A function | grep '^test-'
       exit 0
       ;;

@@ -7,6 +7,8 @@ source $LIB_OSH/no-quotes.sh
 
 REPO_ROOT=$(cd "$(dirname $0)/.."; pwd)
 
+# Problem: this includes test-collect-json
+# (which uses python3)
 source soil/web-worker.sh  # make-job-wwz
 
 test-format-wwz-index() {
