@@ -1930,6 +1930,7 @@ class CommandEvaluator(object):
         """
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
+            #if self.exec_opts.no_fork_last():
             self._NoForkLast(node)  # turn the last ones into exec
 
         if 0:

@@ -41,7 +41,7 @@ esrch-test() {
 }
 
 #
-# Bug #1853 - trap and fork optimizations -also hit by Samuel
+# Bug #1853 - trap and fork optimizations - also hit by Samuel
 #
 
 trap-1() {
@@ -59,6 +59,21 @@ trap-2() {
 
   # This runs it
   $sh -x -c 'trap "echo int" INT; sleep 5; echo last'
+}
+
+trap-line() {
+  echo outer line=$LINENO
+  trap 'echo "trap line=$LINENO"' INT  # shows line 1
+  sleep 5
+  echo hi
+}
+
+bug-1853() {
+  local sh=${1:-bin/osh}
+
+  $sh -c 'trap "echo hi" EXIT; $(which true)'
+  echo --
+  $sh -c 'trap "echo hi" EXIT; $(which true); echo last'
 }
 
 "$@"

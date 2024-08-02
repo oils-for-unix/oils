@@ -1148,7 +1148,7 @@ class Process(Job):
         # type: (int, int) -> None
         """Called by the Waiter when this Process finishes."""
 
-        #log('WhenDone %d %d', pid, status)
+        #log('Process WhenDone %d %d', pid, status)
         assert pid == self.pid, 'Expected %d, got %d' % (self.pid, pid)
         self.status = status
         self.state = job_state_e.Done
