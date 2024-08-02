@@ -26,7 +26,7 @@ from display import ui
 from core import vm
 from frontend import consts
 from frontend import lexer
-from mycpp.mylib import log
+from mycpp.mylib import log, print_stderr
 
 import posix_ as posix
 
@@ -402,7 +402,7 @@ class ShellExecutor(vm._Executor):
             last_pid = pi.LastPid()
             self.mem.last_bg_pid = last_pid  # for $!
 
-            self.job_list.AddJob(pi)  # show in 'jobs' list
+            job_id = self.job_list.AddJob(pi)  # show in 'jobs' list
 
         else:
             # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -417,7 +417,12 @@ class ShellExecutor(vm._Executor):
             p.SetBackground()
             pid = p.StartProcess(trace.Fork)
             self.mem.last_bg_pid = pid  # for $!
-            self.job_list.AddJob(p)  # show in 'jobs' list
+            job_id = self.job_list.AddJob(p)  # show in 'jobs' list
+
+        if self.exec_opts.interactive():
+            # Print it like %1 to show it's a job
+            print_stderr('[%%%d] %d' % (job_id, self.mem.last_bg_pid))
+
         return 0
 
     def RunPipeline(self, node, status_out):

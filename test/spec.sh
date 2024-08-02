@@ -322,8 +322,7 @@ command_() {
 }
 
 pipeline() {
-  sh-spec spec/pipeline.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file pipeline "$@"
 }
 
 explore-parsing() {

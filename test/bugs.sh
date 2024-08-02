@@ -72,6 +72,12 @@ bug-1853() {
   local sh=${1:-bin/osh}
 
   $sh -c 'trap "echo hi" EXIT; $(which true)'
+
+  echo --
+  # NEWLINE
+  $sh -c 'trap "echo hi" EXIT; $(which true)
+'
+
   echo --
   $sh -c 'trap "echo hi" EXIT; $(which true); echo last'
 }

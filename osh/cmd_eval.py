@@ -1894,6 +1894,33 @@ class CommandEvaluator(object):
                 node = cast(BraceGroup, UP_node)
                 self._NoForkLast(node.children[-1])
 
+    def _NoForkSentence(self, node):
+        # type: (command_t) -> None
+
+        if 0:
+            log('optimizing')
+            node.PrettyPrint(sys.stderr)
+            log('')
+
+        UP_node = node
+        with tagswitch(node) as case:
+            if case(command_e.Simple):
+                node = cast(command.Simple, UP_node)
+                node.do_fork = False
+                if 0:
+                    log('Simple optimized')
+
+            #elif case(command_e.Pipeline):
+            #    node = cast(command.Pipeline, UP_node)
+            #    if node.negated is None:
+            #        #log ('pipe')
+            #        self._NoForkLast(node.children[-1])
+
+            elif case(command_e.Sentence):
+                node = cast(command.Sentence, UP_node)
+                if node.terminator.id == Id.Op_Amp:
+                    self._NoForkSentence(node.child)
+
     def _RemoveSubshells(self, node):
         # type: (command_t) -> command_t
         """Eliminate redundant subshells like ( echo hi ) | wc -l etc.
@@ -1932,6 +1959,11 @@ class CommandEvaluator(object):
             node = self._RemoveSubshells(node)
             #if self.exec_opts.no_fork_last():
             self._NoForkLast(node)  # turn the last ones into exec
+
+            # wow: this makes a difference in job control test
+            # yeah there is a PID difference of two
+            # we have to restore nofork
+            #self._NoForkSentence(node)
 
         if 0:
             log('after opt:')

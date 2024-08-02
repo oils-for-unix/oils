@@ -47,7 +47,8 @@ count-procs() {
       ;;
   esac
 
-  strace -ff -o $out_prefix -- $sh "$@"
+  # Ignore failure, because we are just counting
+  strace -ff -o $out_prefix -- $sh "$@" || true
 }
 
 run-case() {
@@ -156,6 +157,9 @@ echo \$( ( date ); echo hi )
 # simple pipeline
 date | wc -l
 
+# negated
+! date | wc -l
+
 # every shell does 3
 echo a | wc -l
 
@@ -164,6 +168,9 @@ command echo a | wc -l
 
 # bash does 4 here!
 command date | wc -l
+
+# negated
+! command date | wc -l
 
 # 3 processes for all?
 # osh gives FIVE???  But others give 3.  That's bad.

@@ -310,9 +310,9 @@ def no_spurious_tty_take(sh):
     # background cat should have been stopped by SIGTTIN immediately, but we don't
     # hear about it from wait() until the foreground process has been started because
     # the shell was blocked in readline when the signal fired.
-    time.sleep(
-        0.1
-    )  # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+
+    # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+    time.sleep(0.1)
     sh.sendline(PYCAT % 'bar')
     if 'osh' in sh.shell_label:
         # Quirk of osh. TODO: suppress this print for background jobs?
@@ -331,24 +331,22 @@ def fg_current_previous(sh):
     'Resume the special jobs: %- and %+'
     expect_prompt(sh)
 
-    sh.sendline(
-        'sleep 1000 &')  # will be terminated as soon as we're done with it
+    # will be terminated as soon as we're done with it
+    sh.sendline('sleep 1000 &')
 
     # Start two jobs. Both will get stopped by SIGTTIN when they try to read() on
     # STDIN. According to POSIX, %- and %+ should always refer to stopped jobs if
     # there are at least two of them.
     sh.sendline((PYCAT % 'bar') + ' &')
 
-    time.sleep(
-        0.1
-    )  # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+    # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+    time.sleep(0.1)
     sh.sendline('cat &')
     if 'osh' in sh.shell_label:
         sh.expect('.*Stopped.*')
 
-    time.sleep(
-        0.1
-    )  # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+    # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+    time.sleep(0.1)
     if 'osh' in sh.shell_label:
         sh.sendline('')
         sh.expect('.*Stopped.*')
@@ -411,9 +409,8 @@ def fg_job_id(sh):
 
     sh.sendline((PYCAT % 'foo') + ' &')  # %1
 
-    time.sleep(
-        0.1
-    )  # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+    # TODO: need to wait a bit for jobs to get SIGTTIN. can we be more precise?
+    time.sleep(0.1)
     sh.sendline((PYCAT % 'bar') + ' &')  # %2
     if 'osh' in sh.shell_label:
         sh.expect('.*Stopped.*')

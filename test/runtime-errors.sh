@@ -226,8 +226,17 @@ test-errexit-multiple-processes() {
 
   _sep
 
-  # no pipefail
+  # BUG introduced by shopt -s no_last_fork: Even though set -o pipefail is on
+  # in YSH, the entire shell does NOT exit!
+  #
+  # This is because 'wc -l' does exec.  And then there is nothing to "modify"
+  # the exit status based on pipefail.
+  #
+  # So it's actually unsound to do this optmization when set -o pipefail is on.
+  # Combined with shopt -s lastpipe
+
   _ysh-should-run 'ls | false | wc -l'
+  #_ysh-error-1 'ls | false | wc -l'
 
   _sep
 

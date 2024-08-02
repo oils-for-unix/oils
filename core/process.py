@@ -1159,6 +1159,7 @@ class Process(Job):
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
                 if self.in_background:
+                    # TODO: bash only prints this interactively
                     print_stderr('[%d] Done PID %d' % (self.job_id, self.pid))
 
                 self.job_list.RemoveJob(self.job_id)
