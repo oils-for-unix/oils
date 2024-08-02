@@ -9,7 +9,7 @@ Input looks like
 01-dash
 01-osh
 01-osh
-01-osh
+01-bash-4.4
 ...
 """
 from __future__ import print_function
@@ -46,17 +46,24 @@ WC_LINE = re.compile(
 \s*  
 (\d+)     # number of lines
 \s+
+([a-z0-9.-]+)  # shell name, could be bash-4.4
+__
 (\d{2})   # case ID
-\.
-([a-z-]+)  # shell name
 ''', re.VERBOSE)
 
-assert WC_LINE.match('    68 01.osh-cpp.19610')
+assert WC_LINE.match('    68 osh-cpp__01.19610')
+# This is unfortunate
+assert WC_LINE.match('    68 bash-4.4__01.19610')
 
 
 def WriteHeader(f, shells, col=''):
     f.write("ID\t")
     for sh in shells:
+        # abbreviate
+        if sh.startswith('bash-4'):
+            sh = 'bash-4'
+        elif sh.startswith('bash-5'):
+            sh = 'bash-5'
         f.write("%6s\t" % sh)
     f.write('%s\t' % col)
     f.write('Description')
@@ -88,7 +95,7 @@ def WriteProcessReport(f, cases, code_strs, proc_sh, num_procs,
         else:
             f.write('\t')
 
-        bash_count = num_procs[case_id, 'bash']
+        bash_count = num_procs[case_id, 'bash-4.4']
         if osh_count > bash_count:
             more_than_bash += 1
         if osh_count < bash_count:
@@ -189,7 +196,7 @@ def main(argv):
         m = WC_LINE.match(line)
         if not m:
             raise RuntimeError('Invalid line %r' % line)
-        num_sys, case, sh = m.groups()
+        num_sys, sh, case = m.groups()
         num_sys = int(num_sys)
 
         cases.add(case)

@@ -14,7 +14,9 @@ source build/dev-shell.sh
 OSH=${OSH:-osh}
 YSH=${YSH:-ysh}
 
-readonly -a SHELLS=(dash bash mksh zsh ash yash $OSH $YSH)
+# Compare bash 4 vs. bash 5
+#readonly -a SHELLS=(dash bash-4.4 bash $OSH)
+readonly -a SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash yash $OSH)
 
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
@@ -55,7 +57,7 @@ run-case() {
   local code_str=$2
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num.$sh
+    local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     count-procs $out_prefix $sh -c "$code_str"
   done
@@ -70,7 +72,7 @@ run-case-file() {
   echo -n "$code_str" > _tmp/$num.sh
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num.$sh
+    local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     count-procs $out_prefix $sh _tmp/$num.sh
   done
@@ -83,12 +85,11 @@ run-case-stdin() {
   local code_str=$2
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num.$sh
+    local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     echo -n "$code_str" | count-procs $out_prefix $sh
   done
 }
-
 
 print-cases() {
   # format:  number, whitespace, then an arbitrary code string
