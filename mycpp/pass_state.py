@@ -4,12 +4,14 @@ pass_state.py
 from __future__ import print_function
 
 import os
+import re
+import subprocess
 from collections import defaultdict
 
 from mypy.types import Type
 from mypy.nodes import Expression
 
-from mycpp.util import join_name, log, SymbolPath
+from mycpp.util import join_name, log, split_py_name, SymbolPath
 
 from typing import Optional
 
@@ -476,6 +478,22 @@ class CfgLoopContext(object):
             self.cfg.predecessors.add(b)
 
 
+class StackRoots(object):
+    """
+    Output of the souffle stack roots solver.
+    """
+
+    def __init__(self, tuples: set[tuple[SymbolPath, SymbolPath]]) -> None:
+        self.root_tuples = tuples
+
+
+    def needs_root(self, func: SymbolPath, reference: SymbolPath) -> bool:
+        """
+        Returns true if the given reference should have a stack root.
+        """
+        return (func, reference) in self.root_tuples
+
+
 def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
                           facts_dir='_tmp/mycpp-facts') -> None:
     """
@@ -503,3 +521,39 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
 
     for f in fact_files.values():
         f.close()
+
+
+def ComputeStackRoots(cfgs: dict[str, ControlFlowGraph],
+                      facts_dir:str = '_tmp/mycpp-facts',
+                      souffle_output_dir:str = '_tmp') -> StackRoots:
+    """
+    Run the the souffle stack roots solver and translate its output in a format
+    that can be queried by cppgen_pass.
+    """
+    DumpControlFlowGraphs(cfgs, facts_dir=facts_dir)
+    subprocess.check_call(
+        [
+            '_bin/datalog/dataflow',
+            '-F', facts_dir,
+            '-D', souffle_output_dir,
+        ]
+    )
+
+    tuples: set[tuple[SymbolPath, SymbolPath]] = set({})
+    with open('{}/stack_root_vars.tsv'.format(souffle_output_dir), 'r') as roots_f:
+        pat = re.compile(r'\$(.*)\((.*), (.*)\)')
+        for line in roots_f:
+            function, ref = line.split('\t')
+            m = pat.match(ref)
+            assert m.group(1) in ('LocalVariable', 'ObjectMember')
+            if m.group(1) == 'LocalVariable':
+                _, ref_func, var_name = m.groups()
+                assert ref_func == function
+                tuples.add((split_py_name(function), (var_name,)))
+
+            if m.group(1) == 'ObjectMember':
+                _, base_obj, member_name = m.groups()
+                tuples.add((split_py_name(function),
+                            split_py_name(base_obj) + (member_name,)))
+
+    return StackRoots(tuples)
