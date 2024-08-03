@@ -32,8 +32,12 @@ sourceUrl2 = function(filename) {
       filename)
 }
 
-mycppUrl = function(path) {
-  sprintf('https://github.com/oilshell/oil/blob/master/mycpp/examples/%s.py', path)
+mycppUrl = function(name) {
+  sprintf('https://github.com/oilshell/oil/blob/master/mycpp/examples/%s.py', name)
+}
+
+genUrl = function(name) {
+  sprintf('../../_gen/mycpp/examples/%s.mycpp.cc', name)
 }
 
 
@@ -964,6 +968,8 @@ MyCppReport = function(in_dir, out_dir) {
   # Don't care about elapsed and system
   times %>% select(-c(status, elapsed_secs, bin, task_out)) %>%
     mutate(example_name_HREF = mycppUrl(example_name),
+           gen = c('gen'),
+           gen_HREF = genUrl(example_name),
            user_ms = user_secs * 1000, 
            sys_ms = sys_secs * 1000, 
            max_rss_MB = max_rss_KiB * 1024 / 1e6) %>%
