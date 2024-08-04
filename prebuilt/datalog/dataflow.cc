@@ -1409,9 +1409,16 @@ rel_might_collect_ef1d0b06d36e4ddc(&rel_might_collect_ef1d0b06d36e4ddc){
 }
 
 void Stratum_might_collect_beadc513d07ff032::run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret){
-signalHandler->setMsg(R"_(might_collect(f,s) :- 
+signalHandler->setMsg(R"_(might_collect("mylib.MaybeCollect",0).
+in file call-graph.dl [14:1-14:40])_");
+[&](){
+CREATE_OP_CONTEXT(rel_might_collect_ef1d0b06d36e4ddc_op_ctxt,rel_might_collect_ef1d0b06d36e4ddc->createContext());
+Tuple<RamDomain,2> tuple{{ramBitCast(RamSigned(0)),ramBitCast(RamSigned(0))}};
+rel_might_collect_ef1d0b06d36e4ddc->insert(tuple,READ_OP_CONTEXT(rel_might_collect_ef1d0b06d36e4ddc_op_ctxt));
+}
+();signalHandler->setMsg(R"_(might_collect(f,s) :- 
    call(f,s,"mylib.MaybeCollect").
-in file call-graph.dl [14:1-14:57])_");
+in file call-graph.dl [15:1-15:57])_");
 if(!(rel_call_ee1d8972d66cc25f->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_call_ee1d8972d66cc25f_op_ctxt,rel_call_ee1d8972d66cc25f->createContext());
@@ -1437,7 +1444,7 @@ for(;;) {
 signalHandler->setMsg(R"_(might_collect(f,s) :- 
    call(f,s,g),
    might_collect(g,_).
-in file call-graph.dl [15:1-15:59])_");
+in file call-graph.dl [16:1-16:59])_");
 if(!(rel_call_ee1d8972d66cc25f->empty()) && !(rel_delta_might_collect_d651f71586aafe59->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_delta_might_collect_d651f71586aafe59_op_ctxt,rel_delta_might_collect_d651f71586aafe59->createContext());
@@ -1882,6 +1889,12 @@ IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll
 }
 
 void Sf__::loadAll([[maybe_unused]] std::string inputDirectoryArg){
+try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","f\ts\tr\tv"},{"auxArity","0"},{"fact-dir","."},{"name","assign"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 4, \"params\": [\"f\", \"s\", \"r\", \"v\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 4, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"+:Value\"]}}"}});
+if (!inputDirectoryArg.empty()) {directiveMap["fact-dir"] = inputDirectoryArg;}
+IOSystem::getInstance().getReader(directiveMap, symTable, recordTable)->readAll(*rel_assign_e4bb6e0824a16a37);
+} catch (std::exception& e) {std::cerr << "Error loading assign data: " << e.what() << '\n';
+exit(1);
+}
 try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","caller\ts\tr\tcallee\tparam"},{"auxArity","0"},{"fact-dir","."},{"name","bind"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 5, \"params\": [\"caller\", \"s\", \"r\", \"callee\", \"param\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 5, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"s:Function\", \"s:symbol\"]}}"}});
 if (!inputDirectoryArg.empty()) {directiveMap["fact-dir"] = inputDirectoryArg;}
 IOSystem::getInstance().getReader(directiveMap, symTable, recordTable)->readAll(*rel_bind_c9210fdc63280a40);
@@ -1892,12 +1905,6 @@ try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeN
 if (!inputDirectoryArg.empty()) {directiveMap["fact-dir"] = inputDirectoryArg;}
 IOSystem::getInstance().getReader(directiveMap, symTable, recordTable)->readAll(*rel_call_ee1d8972d66cc25f);
 } catch (std::exception& e) {std::cerr << "Error loading call data: " << e.what() << '\n';
-exit(1);
-}
-try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","f\ts\tr\tv"},{"auxArity","0"},{"fact-dir","."},{"name","assign"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 4, \"params\": [\"f\", \"s\", \"r\", \"v\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 4, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"+:Value\"]}}"}});
-if (!inputDirectoryArg.empty()) {directiveMap["fact-dir"] = inputDirectoryArg;}
-IOSystem::getInstance().getReader(directiveMap, symTable, recordTable)->readAll(*rel_assign_e4bb6e0824a16a37);
-} catch (std::exception& e) {std::cerr << "Error loading assign data: " << e.what() << '\n';
 exit(1);
 }
 try {std::map<std::string, std::string> directiveMap({{"IO","file"},{"attributeNames","f\ts1\ts2"},{"auxArity","0"},{"fact-dir","."},{"name","cf_edge"},{"operation","input"},{"params","{\"records\": {}, \"relation\": {\"arity\": 3, \"params\": [\"f\", \"s1\", \"s2\"]}}"},{"types","{\"ADTs\": {\"+:Reference\": {\"arity\": 2, \"branches\": [{\"name\": \"LocalVariable\", \"types\": [\"s:Function\", \"s:symbol\"]}, {\"name\": \"ObjectMember\", \"types\": [\"s:symbol\", \"s:symbol\"]}], \"enum\": false}, \"+:Value\": {\"arity\": 3, \"branches\": [{\"name\": \"Empty\", \"types\": []}, {\"name\": \"HeapObject\", \"types\": [\"s:symbol\"]}, {\"name\": \"Ref\", \"types\": [\"+:Reference\"]}], \"enum\": false}}, \"records\": {}, \"relation\": {\"arity\": 3, \"types\": [\"s:Function\", \"i:Statement\", \"i:Statement\"]}}"}});
@@ -1917,6 +1924,12 @@ exit(1);
 void Sf__::dumpInputs(){
 try {std::map<std::string, std::string> rwOperation;
 rwOperation["IO"] = "stdout";
+rwOperation["name"] = "assign";
+rwOperation["types"] = "{\"relation\": {\"arity\": 4, \"auxArity\": 0, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"+:Value\"]}}";
+IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_assign_e4bb6e0824a16a37);
+} catch (std::exception& e) {std::cerr << e.what();exit(1);}
+try {std::map<std::string, std::string> rwOperation;
+rwOperation["IO"] = "stdout";
 rwOperation["name"] = "bind";
 rwOperation["types"] = "{\"relation\": {\"arity\": 5, \"auxArity\": 0, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"s:Function\", \"s:symbol\"]}}";
 IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_bind_c9210fdc63280a40);
@@ -1926,12 +1939,6 @@ rwOperation["IO"] = "stdout";
 rwOperation["name"] = "call";
 rwOperation["types"] = "{\"relation\": {\"arity\": 3, \"auxArity\": 0, \"types\": [\"s:Function\", \"i:Statement\", \"s:Function\"]}}";
 IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_call_ee1d8972d66cc25f);
-} catch (std::exception& e) {std::cerr << e.what();exit(1);}
-try {std::map<std::string, std::string> rwOperation;
-rwOperation["IO"] = "stdout";
-rwOperation["name"] = "assign";
-rwOperation["types"] = "{\"relation\": {\"arity\": 4, \"auxArity\": 0, \"types\": [\"s:Function\", \"i:Statement\", \"+:Reference\", \"+:Value\"]}}";
-IOSystem::getInstance().getWriter(rwOperation, symTable, recordTable)->writeAll(*rel_assign_e4bb6e0824a16a37);
 } catch (std::exception& e) {std::cerr << e.what();exit(1);}
 try {std::map<std::string, std::string> rwOperation;
 rwOperation["IO"] = "stdout";
