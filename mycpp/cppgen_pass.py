@@ -1880,16 +1880,6 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 self.def_write(' = it.Value();\n')
 
-            # Register loop variable as a stack root.
-            # Note we have mylib.Collect() in CommandEvaluator::_Execute(), and
-            # it's called in a loop by _ExecuteList().  Although the 'child'
-            # variable is already live by other means.
-            # TODO: Test how much this affects performance.
-            if CTypeIsManaged(c_item_type):
-                self.def_write_ind('  StackRoot _for(&')
-                self.accept(index_expr)
-                self.def_write_ind(');\n')
-
         elif isinstance(item_type, TupleType):  # for x, y in pairs
             if over_dict:
                 assert isinstance(o.index, TupleExpr), o.index
