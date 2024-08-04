@@ -241,6 +241,26 @@ class Use(Fact):
                                      SymbolPathToReference(func, self.ref))
 
 
+class Bind(Fact):
+    """
+    Binding a reference to a function parameter.
+    """
+
+    def __init__(self, ref: SymbolPath, callee: SymbolPath,
+                 param: str) -> None:
+        self.ref = ref
+        self.callee = callee
+        self.param = param
+
+    def name(self) -> str:
+        return 'bind'
+
+    def Generate(self, func: str, statement: int) -> str:
+        return '{}\t{}\t{}\t{}\t{}\n'.format(
+            func, statement, SymbolPathToReference(func, self.ref),
+            join_name(self.callee, delim='.'), self.param)
+
+
 class ControlFlowGraph(object):
     """
     A simple control-flow graph.
