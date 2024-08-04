@@ -168,7 +168,7 @@ o << " arity 4 direct b-tree index 0 lex-order [0,1,2,3]\n";
 ind_0.printStats(o);
 }
 } // namespace souffle::t_btree_iiii__0_1_2_3__1110__1111__1100 
-namespace souffle::t_btree_iiiii__0_1_2_3_4__11100__11111 {
+namespace souffle::t_btree_iiiii__0_1_2_3_4__11111__11110 {
 using namespace souffle;
 struct Type {
 static constexpr Relation::arity_type Arity = 5;
@@ -203,10 +203,10 @@ iterator find(const t_tuple& t, context& h) const;
 iterator find(const t_tuple& t) const;
 range<iterator> lowerUpperRange_00000(const t_tuple& /* lower */, const t_tuple& /* upper */, context& /* h */) const;
 range<iterator> lowerUpperRange_00000(const t_tuple& /* lower */, const t_tuple& /* upper */) const;
-range<t_ind_0::iterator> lowerUpperRange_11100(const t_tuple& lower, const t_tuple& upper, context& h) const;
-range<t_ind_0::iterator> lowerUpperRange_11100(const t_tuple& lower, const t_tuple& upper) const;
 range<t_ind_0::iterator> lowerUpperRange_11111(const t_tuple& lower, const t_tuple& upper, context& h) const;
 range<t_ind_0::iterator> lowerUpperRange_11111(const t_tuple& lower, const t_tuple& upper) const;
+range<t_ind_0::iterator> lowerUpperRange_11110(const t_tuple& lower, const t_tuple& upper, context& h) const;
+range<t_ind_0::iterator> lowerUpperRange_11110(const t_tuple& lower, const t_tuple& upper) const;
 bool empty() const;
 std::vector<range<iterator>> partition() const;
 void purge();
@@ -214,8 +214,8 @@ iterator begin() const;
 iterator end() const;
 void printStatistics(std::ostream& o) const;
 };
-} // namespace souffle::t_btree_iiiii__0_1_2_3_4__11100__11111 
-namespace souffle::t_btree_iiiii__0_1_2_3_4__11100__11111 {
+} // namespace souffle::t_btree_iiiii__0_1_2_3_4__11111__11110 
+namespace souffle::t_btree_iiiii__0_1_2_3_4__11111__11110 {
 using namespace souffle;
 using t_ind_0 = Type::t_ind_0;
 using iterator = Type::iterator;
@@ -263,18 +263,6 @@ return range<iterator>(ind_0.begin(),ind_0.end());
 range<iterator> Type::lowerUpperRange_00000(const t_tuple& /* lower */, const t_tuple& /* upper */) const {
 return range<iterator>(ind_0.begin(),ind_0.end());
 }
-range<t_ind_0::iterator> Type::lowerUpperRange_11100(const t_tuple& lower, const t_tuple& upper, context& h) const {
-t_comparator_0 comparator;
-int cmp = comparator(lower, upper);
-if (cmp > 0) {
-    return make_range(ind_0.end(), ind_0.end());
-}
-return make_range(ind_0.lower_bound(lower, h.hints_0_lower), ind_0.upper_bound(upper, h.hints_0_upper));
-}
-range<t_ind_0::iterator> Type::lowerUpperRange_11100(const t_tuple& lower, const t_tuple& upper) const {
-context h;
-return lowerUpperRange_11100(lower,upper,h);
-}
 range<t_ind_0::iterator> Type::lowerUpperRange_11111(const t_tuple& lower, const t_tuple& upper, context& h) const {
 t_comparator_0 comparator;
 int cmp = comparator(lower, upper);
@@ -292,6 +280,18 @@ return make_range(ind_0.lower_bound(lower, h.hints_0_lower), ind_0.upper_bound(u
 range<t_ind_0::iterator> Type::lowerUpperRange_11111(const t_tuple& lower, const t_tuple& upper) const {
 context h;
 return lowerUpperRange_11111(lower,upper,h);
+}
+range<t_ind_0::iterator> Type::lowerUpperRange_11110(const t_tuple& lower, const t_tuple& upper, context& h) const {
+t_comparator_0 comparator;
+int cmp = comparator(lower, upper);
+if (cmp > 0) {
+    return make_range(ind_0.end(), ind_0.end());
+}
+return make_range(ind_0.lower_bound(lower, h.hints_0_lower), ind_0.upper_bound(upper, h.hints_0_upper));
+}
+range<t_ind_0::iterator> Type::lowerUpperRange_11110(const t_tuple& lower, const t_tuple& upper) const {
+context h;
+return lowerUpperRange_11110(lower,upper,h);
 }
 bool Type::empty() const {
 return ind_0.empty();
@@ -312,7 +312,7 @@ void Type::printStatistics(std::ostream& o) const {
 o << " arity 5 direct b-tree index 0 lex-order [0,1,2,3,4]\n";
 ind_0.printStats(o);
 }
-} // namespace souffle::t_btree_iiiii__0_1_2_3_4__11100__11111 
+} // namespace souffle::t_btree_iiiii__0_1_2_3_4__11111__11110 
 namespace souffle::t_btree_iii__2_0_1__001__111 {
 using namespace souffle;
 struct Type {
@@ -458,137 +458,6 @@ o << " arity 3 direct b-tree index 0 lex-order [2,0,1]\n";
 ind_0.printStats(o);
 }
 } // namespace souffle::t_btree_iii__2_0_1__001__111 
-namespace souffle::t_btree_ii__0_1__11 {
-using namespace souffle;
-struct Type {
-static constexpr Relation::arity_type Arity = 2;
-using t_tuple = Tuple<RamDomain, 2>;
-struct t_comparator_0{
- int operator()(const t_tuple& a, const t_tuple& b) const {
-  return (ramBitCast<RamSigned>(a[0]) < ramBitCast<RamSigned>(b[0])) ? -1 : (ramBitCast<RamSigned>(a[0]) > ramBitCast<RamSigned>(b[0])) ? 1 :((ramBitCast<RamSigned>(a[1]) < ramBitCast<RamSigned>(b[1])) ? -1 : (ramBitCast<RamSigned>(a[1]) > ramBitCast<RamSigned>(b[1])) ? 1 :(0));
- }
-bool less(const t_tuple& a, const t_tuple& b) const {
-  return (ramBitCast<RamSigned>(a[0]) < ramBitCast<RamSigned>(b[0]))|| ((ramBitCast<RamSigned>(a[0]) == ramBitCast<RamSigned>(b[0])) && ((ramBitCast<RamSigned>(a[1]) < ramBitCast<RamSigned>(b[1]))));
- }
-bool equal(const t_tuple& a, const t_tuple& b) const {
-return (ramBitCast<RamSigned>(a[0]) == ramBitCast<RamSigned>(b[0]))&&(ramBitCast<RamSigned>(a[1]) == ramBitCast<RamSigned>(b[1]));
- }
-};
-using t_ind_0 = btree_set<t_tuple,t_comparator_0>;
-t_ind_0 ind_0;
-using iterator = t_ind_0::iterator;
-struct context {
-t_ind_0::operation_hints hints_0_lower;
-t_ind_0::operation_hints hints_0_upper;
-};
-context createContext() { return context(); }
-bool insert(const t_tuple& t);
-bool insert(const t_tuple& t, context& h);
-bool insert(const RamDomain* ramDomain);
-bool insert(RamDomain a0,RamDomain a1);
-bool contains(const t_tuple& t, context& h) const;
-bool contains(const t_tuple& t) const;
-std::size_t size() const;
-iterator find(const t_tuple& t, context& h) const;
-iterator find(const t_tuple& t) const;
-range<iterator> lowerUpperRange_00(const t_tuple& /* lower */, const t_tuple& /* upper */, context& /* h */) const;
-range<iterator> lowerUpperRange_00(const t_tuple& /* lower */, const t_tuple& /* upper */) const;
-range<t_ind_0::iterator> lowerUpperRange_11(const t_tuple& lower, const t_tuple& upper, context& h) const;
-range<t_ind_0::iterator> lowerUpperRange_11(const t_tuple& lower, const t_tuple& upper) const;
-bool empty() const;
-std::vector<range<iterator>> partition() const;
-void purge();
-iterator begin() const;
-iterator end() const;
-void printStatistics(std::ostream& o) const;
-};
-} // namespace souffle::t_btree_ii__0_1__11 
-namespace souffle::t_btree_ii__0_1__11 {
-using namespace souffle;
-using t_ind_0 = Type::t_ind_0;
-using iterator = Type::iterator;
-using context = Type::context;
-bool Type::insert(const t_tuple& t) {
-context h;
-return insert(t, h);
-}
-bool Type::insert(const t_tuple& t, context& h) {
-if (ind_0.insert(t, h.hints_0_lower)) {
-return true;
-} else return false;
-}
-bool Type::insert(const RamDomain* ramDomain) {
-RamDomain data[2];
-std::copy(ramDomain, ramDomain + 2, data);
-const t_tuple& tuple = reinterpret_cast<const t_tuple&>(data);
-context h;
-return insert(tuple, h);
-}
-bool Type::insert(RamDomain a0,RamDomain a1) {
-RamDomain data[2] = {a0,a1};
-return insert(data);
-}
-bool Type::contains(const t_tuple& t, context& h) const {
-return ind_0.contains(t, h.hints_0_lower);
-}
-bool Type::contains(const t_tuple& t) const {
-context h;
-return contains(t, h);
-}
-std::size_t Type::size() const {
-return ind_0.size();
-}
-iterator Type::find(const t_tuple& t, context& h) const {
-return ind_0.find(t, h.hints_0_lower);
-}
-iterator Type::find(const t_tuple& t) const {
-context h;
-return find(t, h);
-}
-range<iterator> Type::lowerUpperRange_00(const t_tuple& /* lower */, const t_tuple& /* upper */, context& /* h */) const {
-return range<iterator>(ind_0.begin(),ind_0.end());
-}
-range<iterator> Type::lowerUpperRange_00(const t_tuple& /* lower */, const t_tuple& /* upper */) const {
-return range<iterator>(ind_0.begin(),ind_0.end());
-}
-range<t_ind_0::iterator> Type::lowerUpperRange_11(const t_tuple& lower, const t_tuple& upper, context& h) const {
-t_comparator_0 comparator;
-int cmp = comparator(lower, upper);
-if (cmp == 0) {
-    auto pos = ind_0.find(lower, h.hints_0_lower);
-    auto fin = ind_0.end();
-    if (pos != fin) {fin = pos; ++fin;}
-    return make_range(pos, fin);
-}
-if (cmp > 0) {
-    return make_range(ind_0.end(), ind_0.end());
-}
-return make_range(ind_0.lower_bound(lower, h.hints_0_lower), ind_0.upper_bound(upper, h.hints_0_upper));
-}
-range<t_ind_0::iterator> Type::lowerUpperRange_11(const t_tuple& lower, const t_tuple& upper) const {
-context h;
-return lowerUpperRange_11(lower,upper,h);
-}
-bool Type::empty() const {
-return ind_0.empty();
-}
-std::vector<range<iterator>> Type::partition() const {
-return ind_0.getChunks(400);
-}
-void Type::purge() {
-ind_0.clear();
-}
-iterator Type::begin() const {
-return ind_0.begin();
-}
-iterator Type::end() const {
-return ind_0.end();
-}
-void Type::printStatistics(std::ostream& o) const {
-o << " arity 2 direct b-tree index 0 lex-order [0,1]\n";
-ind_0.printStats(o);
-}
-} // namespace souffle::t_btree_ii__0_1__11 
 namespace souffle::t_btree_ii__0_1__11__10 {
 using namespace souffle;
 struct Type {
@@ -1010,6 +879,137 @@ o << " arity 3 direct b-tree index 0 lex-order [0,1,2]\n";
 ind_0.printStats(o);
 }
 } // namespace souffle::t_btree_iii__0_1_2__110__111 
+namespace souffle::t_btree_ii__0_1__11 {
+using namespace souffle;
+struct Type {
+static constexpr Relation::arity_type Arity = 2;
+using t_tuple = Tuple<RamDomain, 2>;
+struct t_comparator_0{
+ int operator()(const t_tuple& a, const t_tuple& b) const {
+  return (ramBitCast<RamSigned>(a[0]) < ramBitCast<RamSigned>(b[0])) ? -1 : (ramBitCast<RamSigned>(a[0]) > ramBitCast<RamSigned>(b[0])) ? 1 :((ramBitCast<RamSigned>(a[1]) < ramBitCast<RamSigned>(b[1])) ? -1 : (ramBitCast<RamSigned>(a[1]) > ramBitCast<RamSigned>(b[1])) ? 1 :(0));
+ }
+bool less(const t_tuple& a, const t_tuple& b) const {
+  return (ramBitCast<RamSigned>(a[0]) < ramBitCast<RamSigned>(b[0]))|| ((ramBitCast<RamSigned>(a[0]) == ramBitCast<RamSigned>(b[0])) && ((ramBitCast<RamSigned>(a[1]) < ramBitCast<RamSigned>(b[1]))));
+ }
+bool equal(const t_tuple& a, const t_tuple& b) const {
+return (ramBitCast<RamSigned>(a[0]) == ramBitCast<RamSigned>(b[0]))&&(ramBitCast<RamSigned>(a[1]) == ramBitCast<RamSigned>(b[1]));
+ }
+};
+using t_ind_0 = btree_set<t_tuple,t_comparator_0>;
+t_ind_0 ind_0;
+using iterator = t_ind_0::iterator;
+struct context {
+t_ind_0::operation_hints hints_0_lower;
+t_ind_0::operation_hints hints_0_upper;
+};
+context createContext() { return context(); }
+bool insert(const t_tuple& t);
+bool insert(const t_tuple& t, context& h);
+bool insert(const RamDomain* ramDomain);
+bool insert(RamDomain a0,RamDomain a1);
+bool contains(const t_tuple& t, context& h) const;
+bool contains(const t_tuple& t) const;
+std::size_t size() const;
+iterator find(const t_tuple& t, context& h) const;
+iterator find(const t_tuple& t) const;
+range<iterator> lowerUpperRange_00(const t_tuple& /* lower */, const t_tuple& /* upper */, context& /* h */) const;
+range<iterator> lowerUpperRange_00(const t_tuple& /* lower */, const t_tuple& /* upper */) const;
+range<t_ind_0::iterator> lowerUpperRange_11(const t_tuple& lower, const t_tuple& upper, context& h) const;
+range<t_ind_0::iterator> lowerUpperRange_11(const t_tuple& lower, const t_tuple& upper) const;
+bool empty() const;
+std::vector<range<iterator>> partition() const;
+void purge();
+iterator begin() const;
+iterator end() const;
+void printStatistics(std::ostream& o) const;
+};
+} // namespace souffle::t_btree_ii__0_1__11 
+namespace souffle::t_btree_ii__0_1__11 {
+using namespace souffle;
+using t_ind_0 = Type::t_ind_0;
+using iterator = Type::iterator;
+using context = Type::context;
+bool Type::insert(const t_tuple& t) {
+context h;
+return insert(t, h);
+}
+bool Type::insert(const t_tuple& t, context& h) {
+if (ind_0.insert(t, h.hints_0_lower)) {
+return true;
+} else return false;
+}
+bool Type::insert(const RamDomain* ramDomain) {
+RamDomain data[2];
+std::copy(ramDomain, ramDomain + 2, data);
+const t_tuple& tuple = reinterpret_cast<const t_tuple&>(data);
+context h;
+return insert(tuple, h);
+}
+bool Type::insert(RamDomain a0,RamDomain a1) {
+RamDomain data[2] = {a0,a1};
+return insert(data);
+}
+bool Type::contains(const t_tuple& t, context& h) const {
+return ind_0.contains(t, h.hints_0_lower);
+}
+bool Type::contains(const t_tuple& t) const {
+context h;
+return contains(t, h);
+}
+std::size_t Type::size() const {
+return ind_0.size();
+}
+iterator Type::find(const t_tuple& t, context& h) const {
+return ind_0.find(t, h.hints_0_lower);
+}
+iterator Type::find(const t_tuple& t) const {
+context h;
+return find(t, h);
+}
+range<iterator> Type::lowerUpperRange_00(const t_tuple& /* lower */, const t_tuple& /* upper */, context& /* h */) const {
+return range<iterator>(ind_0.begin(),ind_0.end());
+}
+range<iterator> Type::lowerUpperRange_00(const t_tuple& /* lower */, const t_tuple& /* upper */) const {
+return range<iterator>(ind_0.begin(),ind_0.end());
+}
+range<t_ind_0::iterator> Type::lowerUpperRange_11(const t_tuple& lower, const t_tuple& upper, context& h) const {
+t_comparator_0 comparator;
+int cmp = comparator(lower, upper);
+if (cmp == 0) {
+    auto pos = ind_0.find(lower, h.hints_0_lower);
+    auto fin = ind_0.end();
+    if (pos != fin) {fin = pos; ++fin;}
+    return make_range(pos, fin);
+}
+if (cmp > 0) {
+    return make_range(ind_0.end(), ind_0.end());
+}
+return make_range(ind_0.lower_bound(lower, h.hints_0_lower), ind_0.upper_bound(upper, h.hints_0_upper));
+}
+range<t_ind_0::iterator> Type::lowerUpperRange_11(const t_tuple& lower, const t_tuple& upper) const {
+context h;
+return lowerUpperRange_11(lower,upper,h);
+}
+bool Type::empty() const {
+return ind_0.empty();
+}
+std::vector<range<iterator>> Type::partition() const {
+return ind_0.getChunks(400);
+}
+void Type::purge() {
+ind_0.clear();
+}
+iterator Type::begin() const {
+return ind_0.begin();
+}
+iterator Type::end() const {
+return ind_0.end();
+}
+void Type::printStatistics(std::ostream& o) const {
+o << " arity 2 direct b-tree index 0 lex-order [0,1]\n";
+ind_0.printStats(o);
+}
+} // namespace souffle::t_btree_ii__0_1__11 
 namespace  souffle {
 using namespace souffle;
 class Stratum_assign_e0d78e44f4df6411 {
@@ -1063,7 +1063,7 @@ namespace  souffle {
 using namespace souffle;
 class Stratum_bind_8b0da46e2379b6cd {
 public:
- Stratum_bind_8b0da46e2379b6cd(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiiii__0_1_2_3_4__11100__11111::Type& rel_bind_c9210fdc63280a40);
+ Stratum_bind_8b0da46e2379b6cd(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiiii__0_1_2_3_4__11111__11110::Type& rel_bind_c9210fdc63280a40);
 void run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret);
 private:
 SymbolTable& symTable;
@@ -1076,12 +1076,12 @@ std::atomic<std::size_t>& iter;
 std::atomic<RamDomain>& ctr;
 std::string& inputDirectory;
 std::string& outputDirectory;
-t_btree_iiiii__0_1_2_3_4__11100__11111::Type* rel_bind_c9210fdc63280a40;
+t_btree_iiiii__0_1_2_3_4__11111__11110::Type* rel_bind_c9210fdc63280a40;
 };
 } // namespace  souffle
 namespace  souffle {
 using namespace souffle;
- Stratum_bind_8b0da46e2379b6cd::Stratum_bind_8b0da46e2379b6cd(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiiii__0_1_2_3_4__11100__11111::Type& rel_bind_c9210fdc63280a40):
+ Stratum_bind_8b0da46e2379b6cd::Stratum_bind_8b0da46e2379b6cd(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiiii__0_1_2_3_4__11111__11110::Type& rel_bind_c9210fdc63280a40):
 symTable(symTable),
 recordTable(recordTable),
 regexCache(regexCache),
@@ -1261,7 +1261,7 @@ rel_use_e955e932f22dad4d(&rel_use_e955e932f22dad4d){
 void Stratum_live_vars_in_a363f2025538826a::run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret){
 signalHandler->setMsg(R"_(live_vars_in(f,s,r) :- 
    use(f,s,r).
-in file dataflow.dl [49:1-49:39])_");
+in file dataflow.dl [50:1-50:39])_");
 if(!(rel_use_e955e932f22dad4d->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_live_vars_in_0b002b95687eda95_op_ctxt,rel_live_vars_in_0b002b95687eda95->createContext());
@@ -1294,7 +1294,7 @@ for(;;) {
 signalHandler->setMsg(R"_(live_vars_in(f,s,r) :- 
    !assign(f,s,r,_),
    live_vars_out(f,s,r).
-in file dataflow.dl [51:1-51:70])_");
+in file dataflow.dl [52:1-52:70])_");
 if(!(rel_delta_live_vars_out_acc66913cea62d16->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_delta_live_vars_out_acc66913cea62d16_op_ctxt,rel_delta_live_vars_out_acc66913cea62d16->createContext());
@@ -1312,7 +1312,7 @@ rel_new_live_vars_in_0b01be53183b2351->insert(tuple,READ_OP_CONTEXT(rel_new_live
 signalHandler->setMsg(R"_(live_vars_out(f,s1,r) :- 
    cf_edge(f,s1,s2),
    live_vars_in(f,s2,r).
-in file dataflow.dl [55:1-55:71])_");
+in file dataflow.dl [56:1-56:71])_");
 if(!(rel_cf_edge_4931a04c8c74bb72->empty()) && !(rel_delta_live_vars_in_fccc4ee6df066f63->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_delta_live_vars_in_fccc4ee6df066f63_op_ctxt,rel_delta_live_vars_in_fccc4ee6df066f63->createContext());
@@ -1370,7 +1370,7 @@ namespace  souffle {
 using namespace souffle;
 class Stratum_might_collect_beadc513d07ff032 {
 public:
- Stratum_might_collect_beadc513d07ff032(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_ii__0_1__11__10::Type& rel_delta_might_collect_d651f71586aafe59,t_btree_ii__0_1__11__10::Type& rel_new_might_collect_5d48ef45a97e4618,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_ii__0_1__11::Type& rel_might_collect_ef1d0b06d36e4ddc);
+ Stratum_might_collect_beadc513d07ff032(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_ii__0_1__11__10::Type& rel_delta_might_collect_d651f71586aafe59,t_btree_ii__0_1__11__10::Type& rel_new_might_collect_5d48ef45a97e4618,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_ii__0_1__11__10::Type& rel_might_collect_ef1d0b06d36e4ddc);
 void run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret);
 private:
 SymbolTable& symTable;
@@ -1386,12 +1386,12 @@ std::string& outputDirectory;
 t_btree_ii__0_1__11__10::Type* rel_delta_might_collect_d651f71586aafe59;
 t_btree_ii__0_1__11__10::Type* rel_new_might_collect_5d48ef45a97e4618;
 t_btree_iii__2_0_1__001__111::Type* rel_call_ee1d8972d66cc25f;
-t_btree_ii__0_1__11::Type* rel_might_collect_ef1d0b06d36e4ddc;
+t_btree_ii__0_1__11__10::Type* rel_might_collect_ef1d0b06d36e4ddc;
 };
 } // namespace  souffle
 namespace  souffle {
 using namespace souffle;
- Stratum_might_collect_beadc513d07ff032::Stratum_might_collect_beadc513d07ff032(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_ii__0_1__11__10::Type& rel_delta_might_collect_d651f71586aafe59,t_btree_ii__0_1__11__10::Type& rel_new_might_collect_5d48ef45a97e4618,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_ii__0_1__11::Type& rel_might_collect_ef1d0b06d36e4ddc):
+ Stratum_might_collect_beadc513d07ff032::Stratum_might_collect_beadc513d07ff032(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_ii__0_1__11__10::Type& rel_delta_might_collect_d651f71586aafe59,t_btree_ii__0_1__11__10::Type& rel_new_might_collect_5d48ef45a97e4618,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_ii__0_1__11__10::Type& rel_might_collect_ef1d0b06d36e4ddc):
 symTable(symTable),
 recordTable(recordTable),
 regexCache(regexCache),
@@ -1476,7 +1476,6 @@ else if (!outputDirectory.empty()) {directiveMap["output-dir"] = outputDirectory
 IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll(*rel_might_collect_ef1d0b06d36e4ddc);
 } catch (std::exception& e) {std::cerr << e.what();exit(1);}
 }
-if (pruneImdtRels) rel_call_ee1d8972d66cc25f->purge();
 }
 
 } // namespace  souffle
@@ -1485,7 +1484,7 @@ namespace  souffle {
 using namespace souffle;
 class Stratum_stack_root_vars_4df5b9c3cd2e7586 {
 public:
- Stratum_stack_root_vars_4df5b9c3cd2e7586(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiii__0_1_2_3__1110__1111__1100::Type& rel_assign_e4bb6e0824a16a37,t_btree_iiiii__0_1_2_3_4__11100__11111::Type& rel_bind_c9210fdc63280a40,t_btree_iii__0_1_2__110__111::Type& rel_live_vars_out_f94306e028b67aa4,t_btree_ii__0_1__11::Type& rel_might_collect_ef1d0b06d36e4ddc,t_btree_ii__0_1__11::Type& rel_stack_root_vars_a138611bd47fd3ff);
+ Stratum_stack_root_vars_4df5b9c3cd2e7586(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiii__0_1_2_3__1110__1111__1100::Type& rel_assign_e4bb6e0824a16a37,t_btree_iiiii__0_1_2_3_4__11111__11110::Type& rel_bind_c9210fdc63280a40,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_iii__0_1_2__110__111::Type& rel_live_vars_out_f94306e028b67aa4,t_btree_ii__0_1__11__10::Type& rel_might_collect_ef1d0b06d36e4ddc,t_btree_ii__0_1__11::Type& rel_stack_root_vars_a138611bd47fd3ff);
 void run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret);
 private:
 SymbolTable& symTable;
@@ -1499,16 +1498,17 @@ std::atomic<RamDomain>& ctr;
 std::string& inputDirectory;
 std::string& outputDirectory;
 t_btree_iiii__0_1_2_3__1110__1111__1100::Type* rel_assign_e4bb6e0824a16a37;
-t_btree_iiiii__0_1_2_3_4__11100__11111::Type* rel_bind_c9210fdc63280a40;
+t_btree_iiiii__0_1_2_3_4__11111__11110::Type* rel_bind_c9210fdc63280a40;
+t_btree_iii__2_0_1__001__111::Type* rel_call_ee1d8972d66cc25f;
 t_btree_iii__0_1_2__110__111::Type* rel_live_vars_out_f94306e028b67aa4;
-t_btree_ii__0_1__11::Type* rel_might_collect_ef1d0b06d36e4ddc;
+t_btree_ii__0_1__11__10::Type* rel_might_collect_ef1d0b06d36e4ddc;
 t_btree_ii__0_1__11::Type* rel_stack_root_vars_a138611bd47fd3ff;
 std::vector<std::regex> regexes;
 };
 } // namespace  souffle
 namespace  souffle {
 using namespace souffle;
- Stratum_stack_root_vars_4df5b9c3cd2e7586::Stratum_stack_root_vars_4df5b9c3cd2e7586(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiii__0_1_2_3__1110__1111__1100::Type& rel_assign_e4bb6e0824a16a37,t_btree_iiiii__0_1_2_3_4__11100__11111::Type& rel_bind_c9210fdc63280a40,t_btree_iii__0_1_2__110__111::Type& rel_live_vars_out_f94306e028b67aa4,t_btree_ii__0_1__11::Type& rel_might_collect_ef1d0b06d36e4ddc,t_btree_ii__0_1__11::Type& rel_stack_root_vars_a138611bd47fd3ff):
+ Stratum_stack_root_vars_4df5b9c3cd2e7586::Stratum_stack_root_vars_4df5b9c3cd2e7586(SymbolTable& symTable,RecordTable& recordTable,ConcurrentCache<std::string,std::regex>& regexCache,bool& pruneImdtRels,bool& performIO,SignalHandler*& signalHandler,std::atomic<std::size_t>& iter,std::atomic<RamDomain>& ctr,std::string& inputDirectory,std::string& outputDirectory,t_btree_iiii__0_1_2_3__1110__1111__1100::Type& rel_assign_e4bb6e0824a16a37,t_btree_iiiii__0_1_2_3_4__11111__11110::Type& rel_bind_c9210fdc63280a40,t_btree_iii__2_0_1__001__111::Type& rel_call_ee1d8972d66cc25f,t_btree_iii__0_1_2__110__111::Type& rel_live_vars_out_f94306e028b67aa4,t_btree_ii__0_1__11__10::Type& rel_might_collect_ef1d0b06d36e4ddc,t_btree_ii__0_1__11::Type& rel_stack_root_vars_a138611bd47fd3ff):
 symTable(symTable),
 recordTable(recordTable),
 regexCache(regexCache),
@@ -1521,6 +1521,7 @@ inputDirectory(inputDirectory),
 outputDirectory(outputDirectory),
 rel_assign_e4bb6e0824a16a37(&rel_assign_e4bb6e0824a16a37),
 rel_bind_c9210fdc63280a40(&rel_bind_c9210fdc63280a40),
+rel_call_ee1d8972d66cc25f(&rel_call_ee1d8972d66cc25f),
 rel_live_vars_out_f94306e028b67aa4(&rel_live_vars_out_f94306e028b67aa4),
 rel_might_collect_ef1d0b06d36e4ddc(&rel_might_collect_ef1d0b06d36e4ddc),
 rel_stack_root_vars_a138611bd47fd3ff(&rel_stack_root_vars_a138611bd47fd3ff),
@@ -1531,22 +1532,26 @@ regexes({
 
 void Stratum_stack_root_vars_4df5b9c3cd2e7586::run([[maybe_unused]] const std::vector<RamDomain>& args,[[maybe_unused]] std::vector<RamDomain>& ret){
 signalHandler->setMsg(R"_(stack_root_vars(f,r) :- 
-   !bind(f,s,r,_,_),
-   might_collect(f,s),
+   call(f,s,g),
+   might_collect(g,_),
+   !bind(f,s,r,g,_),
    live_vars_out(f,s,r).
-in file dataflow.dl [59:1-59:92])_");
-if(!(rel_might_collect_ef1d0b06d36e4ddc->empty()) && !(rel_live_vars_out_f94306e028b67aa4->empty())) {
+in file dataflow.dl [60:1-60:107])_");
+if(!(rel_might_collect_ef1d0b06d36e4ddc->empty()) && !(rel_live_vars_out_f94306e028b67aa4->empty()) && !(rel_call_ee1d8972d66cc25f->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_bind_c9210fdc63280a40_op_ctxt,rel_bind_c9210fdc63280a40->createContext());
+CREATE_OP_CONTEXT(rel_call_ee1d8972d66cc25f_op_ctxt,rel_call_ee1d8972d66cc25f->createContext());
 CREATE_OP_CONTEXT(rel_live_vars_out_f94306e028b67aa4_op_ctxt,rel_live_vars_out_f94306e028b67aa4->createContext());
 CREATE_OP_CONTEXT(rel_might_collect_ef1d0b06d36e4ddc_op_ctxt,rel_might_collect_ef1d0b06d36e4ddc->createContext());
 CREATE_OP_CONTEXT(rel_stack_root_vars_a138611bd47fd3ff_op_ctxt,rel_stack_root_vars_a138611bd47fd3ff->createContext());
-for(const auto& env0 : *rel_might_collect_ef1d0b06d36e4ddc) {
+for(const auto& env0 : *rel_call_ee1d8972d66cc25f) {
+if( !rel_might_collect_ef1d0b06d36e4ddc->lowerUpperRange_10(Tuple<RamDomain,2>{{ramBitCast(env0[2]), ramBitCast<RamDomain>(MIN_RAM_SIGNED)}},Tuple<RamDomain,2>{{ramBitCast(env0[2]), ramBitCast<RamDomain>(MAX_RAM_SIGNED)}},READ_OP_CONTEXT(rel_might_collect_ef1d0b06d36e4ddc_op_ctxt)).empty()) {
 auto range = rel_live_vars_out_f94306e028b67aa4->lowerUpperRange_110(Tuple<RamDomain,3>{{ramBitCast(env0[0]), ramBitCast(env0[1]), ramBitCast<RamDomain>(MIN_RAM_SIGNED)}},Tuple<RamDomain,3>{{ramBitCast(env0[0]), ramBitCast(env0[1]), ramBitCast<RamDomain>(MAX_RAM_SIGNED)}},READ_OP_CONTEXT(rel_live_vars_out_f94306e028b67aa4_op_ctxt));
 for(const auto& env1 : range) {
-if( !(!rel_bind_c9210fdc63280a40->lowerUpperRange_11100(Tuple<RamDomain,5>{{ramBitCast(env0[0]), ramBitCast(env0[1]), ramBitCast(env1[2]), ramBitCast<RamDomain>(MIN_RAM_SIGNED), ramBitCast<RamDomain>(MIN_RAM_SIGNED)}},Tuple<RamDomain,5>{{ramBitCast(env0[0]), ramBitCast(env0[1]), ramBitCast(env1[2]), ramBitCast<RamDomain>(MAX_RAM_SIGNED), ramBitCast<RamDomain>(MAX_RAM_SIGNED)}},READ_OP_CONTEXT(rel_bind_c9210fdc63280a40_op_ctxt)).empty())) {
+if( !(!rel_bind_c9210fdc63280a40->lowerUpperRange_11110(Tuple<RamDomain,5>{{ramBitCast(env0[0]), ramBitCast(env0[1]), ramBitCast(env1[2]), ramBitCast(env0[2]), ramBitCast<RamDomain>(MIN_RAM_SIGNED)}},Tuple<RamDomain,5>{{ramBitCast(env0[0]), ramBitCast(env0[1]), ramBitCast(env1[2]), ramBitCast(env0[2]), ramBitCast<RamDomain>(MAX_RAM_SIGNED)}},READ_OP_CONTEXT(rel_bind_c9210fdc63280a40_op_ctxt)).empty())) {
 Tuple<RamDomain,2> tuple{{ramBitCast(env0[0]),ramBitCast(env1[2])}};
 rel_stack_root_vars_a138611bd47fd3ff->insert(tuple,READ_OP_CONTEXT(rel_stack_root_vars_a138611bd47fd3ff_op_ctxt));
+}
 }
 }
 }
@@ -1555,7 +1560,7 @@ rel_stack_root_vars_a138611bd47fd3ff->insert(tuple,READ_OP_CONTEXT(rel_stack_roo
 signalHandler->setMsg(R"_(stack_root_vars(f,$LocalVariable(f, v)) :- 
    might_collect(f,_),
    assign(f,0,$LocalVariable(f, v),$Empty()).
-in file dataflow.dl [63:1-63:111])_");
+in file dataflow.dl [64:1-64:111])_");
 if(!(rel_might_collect_ef1d0b06d36e4ddc->empty()) && !(rel_assign_e4bb6e0824a16a37->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_assign_e4bb6e0824a16a37_op_ctxt,rel_assign_e4bb6e0824a16a37->createContext());
@@ -1596,7 +1601,7 @@ rel_stack_root_vars_a138611bd47fd3ff->insert(tuple,READ_OP_CONTEXT(rel_stack_roo
 signalHandler->setMsg(R"_(stack_root_vars(f,$ObjectMember("self", m)) :- 
    match(".*ctx_.*__init__", f),
    assign(f,_,$ObjectMember("self", m),_).
-in file dataflow.dl [66:1-66:121])_");
+in file dataflow.dl [67:1-67:121])_");
 if(!(rel_assign_e4bb6e0824a16a37->empty())) {
 [&](){
 CREATE_OP_CONTEXT(rel_assign_e4bb6e0824a16a37_op_ctxt,rel_assign_e4bb6e0824a16a37->createContext());
@@ -1634,6 +1639,7 @@ IOSystem::getInstance().getWriter(directiveMap, symTable, recordTable)->writeAll
 }
 if (pruneImdtRels) rel_assign_e4bb6e0824a16a37->purge();
 if (pruneImdtRels) rel_bind_c9210fdc63280a40->purge();
+if (pruneImdtRels) rel_call_ee1d8972d66cc25f->purge();
 if (pruneImdtRels) rel_live_vars_out_f94306e028b67aa4->purge();
 }
 
@@ -1711,12 +1717,12 @@ SpecializedRecordTable<0,2> recordTable;
 ConcurrentCache<std::string,std::regex> regexCache;
 Own<t_btree_iiii__0_1_2_3__1110__1111__1100::Type> rel_assign_e4bb6e0824a16a37;
 souffle::RelationWrapper<t_btree_iiii__0_1_2_3__1110__1111__1100::Type> wrapper_rel_assign_e4bb6e0824a16a37;
-Own<t_btree_iiiii__0_1_2_3_4__11100__11111::Type> rel_bind_c9210fdc63280a40;
-souffle::RelationWrapper<t_btree_iiiii__0_1_2_3_4__11100__11111::Type> wrapper_rel_bind_c9210fdc63280a40;
+Own<t_btree_iiiii__0_1_2_3_4__11111__11110::Type> rel_bind_c9210fdc63280a40;
+souffle::RelationWrapper<t_btree_iiiii__0_1_2_3_4__11111__11110::Type> wrapper_rel_bind_c9210fdc63280a40;
 Own<t_btree_iii__2_0_1__001__111::Type> rel_call_ee1d8972d66cc25f;
 souffle::RelationWrapper<t_btree_iii__2_0_1__001__111::Type> wrapper_rel_call_ee1d8972d66cc25f;
-Own<t_btree_ii__0_1__11::Type> rel_might_collect_ef1d0b06d36e4ddc;
-souffle::RelationWrapper<t_btree_ii__0_1__11::Type> wrapper_rel_might_collect_ef1d0b06d36e4ddc;
+Own<t_btree_ii__0_1__11__10::Type> rel_might_collect_ef1d0b06d36e4ddc;
+souffle::RelationWrapper<t_btree_ii__0_1__11__10::Type> wrapper_rel_might_collect_ef1d0b06d36e4ddc;
 Own<t_btree_ii__0_1__11__10::Type> rel_delta_might_collect_d651f71586aafe59;
 Own<t_btree_ii__0_1__11__10::Type> rel_new_might_collect_5d48ef45a97e4618;
 Own<t_btree_iii__0_1_2__111::Type> rel_cf_edge_4931a04c8c74bb72;
@@ -1760,11 +1766,11 @@ recordTable(),
 regexCache(),
 rel_assign_e4bb6e0824a16a37(mk<t_btree_iiii__0_1_2_3__1110__1111__1100::Type>()),
 wrapper_rel_assign_e4bb6e0824a16a37(0, *rel_assign_e4bb6e0824a16a37, *this, "assign", std::array<const char *,4>{{"s:Function","i:Statement","+:Reference","+:Value"}}, std::array<const char *,4>{{"f","s","r","v"}}, 0),
-rel_bind_c9210fdc63280a40(mk<t_btree_iiiii__0_1_2_3_4__11100__11111::Type>()),
+rel_bind_c9210fdc63280a40(mk<t_btree_iiiii__0_1_2_3_4__11111__11110::Type>()),
 wrapper_rel_bind_c9210fdc63280a40(1, *rel_bind_c9210fdc63280a40, *this, "bind", std::array<const char *,5>{{"s:Function","i:Statement","+:Reference","s:Function","s:symbol"}}, std::array<const char *,5>{{"caller","s","r","callee","param"}}, 0),
 rel_call_ee1d8972d66cc25f(mk<t_btree_iii__2_0_1__001__111::Type>()),
 wrapper_rel_call_ee1d8972d66cc25f(2, *rel_call_ee1d8972d66cc25f, *this, "call", std::array<const char *,3>{{"s:Function","i:Statement","s:Function"}}, std::array<const char *,3>{{"caller","s","callee"}}, 0),
-rel_might_collect_ef1d0b06d36e4ddc(mk<t_btree_ii__0_1__11::Type>()),
+rel_might_collect_ef1d0b06d36e4ddc(mk<t_btree_ii__0_1__11__10::Type>()),
 wrapper_rel_might_collect_ef1d0b06d36e4ddc(3, *rel_might_collect_ef1d0b06d36e4ddc, *this, "might_collect", std::array<const char *,2>{{"s:Function","i:Statement"}}, std::array<const char *,2>{{"f","s"}}, 0),
 rel_delta_might_collect_d651f71586aafe59(mk<t_btree_ii__0_1__11__10::Type>()),
 rel_new_might_collect_5d48ef45a97e4618(mk<t_btree_ii__0_1__11__10::Type>()),
@@ -1788,7 +1794,7 @@ stratum_call_587d2d7effb5d130(symTable,recordTable,regexCache,pruneImdtRels,perf
 stratum_cf_edge_4017fef287699967(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_cf_edge_4931a04c8c74bb72),
 stratum_live_vars_in_c3dc49a4823a7f1e(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_delta_live_vars_in_fccc4ee6df066f63,*rel_delta_live_vars_out_acc66913cea62d16,*rel_new_live_vars_in_0b01be53183b2351,*rel_new_live_vars_out_2d78073638bb3740,*rel_assign_e4bb6e0824a16a37,*rel_cf_edge_4931a04c8c74bb72,*rel_live_vars_in_0b002b95687eda95,*rel_live_vars_out_f94306e028b67aa4,*rel_use_e955e932f22dad4d),
 stratum_might_collect_cc50af26f53a71ac(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_delta_might_collect_d651f71586aafe59,*rel_new_might_collect_5d48ef45a97e4618,*rel_call_ee1d8972d66cc25f,*rel_might_collect_ef1d0b06d36e4ddc),
-stratum_stack_root_vars_49e4f510c537163e(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_assign_e4bb6e0824a16a37,*rel_bind_c9210fdc63280a40,*rel_live_vars_out_f94306e028b67aa4,*rel_might_collect_ef1d0b06d36e4ddc,*rel_stack_root_vars_a138611bd47fd3ff),
+stratum_stack_root_vars_49e4f510c537163e(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_assign_e4bb6e0824a16a37,*rel_bind_c9210fdc63280a40,*rel_call_ee1d8972d66cc25f,*rel_live_vars_out_f94306e028b67aa4,*rel_might_collect_ef1d0b06d36e4ddc,*rel_stack_root_vars_a138611bd47fd3ff),
 stratum_use_2e20cb5441769259(symTable,recordTable,regexCache,pruneImdtRels,performIO,signalHandler,iter,ctr,inputDirectory,outputDirectory,*rel_use_e955e932f22dad4d){
 addRelation("assign", wrapper_rel_assign_e4bb6e0824a16a37, true, false);
 addRelation("bind", wrapper_rel_bind_c9210fdc63280a40, true, false);

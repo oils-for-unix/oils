@@ -57,7 +57,7 @@ live_vars_out(f, s1, r) :- cf_edge(f, s1, s2), live_vars_in(f, s2, r).
 
 // All variables considered live after a statement that, directly or indirectly,
 // invokes the GC must be rooted.
-stack_root_vars(f, r) :- !bind(f, s, r, _, _), might_collect(f, s), live_vars_out(f, s, r).
+stack_root_vars(f, r) :- call(f, s, g), might_collect(g, _), !bind(f, s, r, g, _), live_vars_out(f, s, r).
 
 // If a function invokes the GC, directly or indirectly, all of its heap-managed
 // arguments must be rooted.
