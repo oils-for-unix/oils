@@ -928,8 +928,8 @@ class Job(object):
         self.job_id = -1
         self.in_background = False
 
-    def DisplayJob(self, job_id, f, style):
-        # type: (int, mylib.Writer, int) -> None
+    def DisplayJob(self, job_id, f, style, extra):
+        # type: (int, mylib.Writer, int, str) -> None
         raise NotImplementedError()
 
     def State(self):
@@ -1014,12 +1014,12 @@ class Process(Job):
 
         return self.pid
 
-    def DisplayJob(self, job_id, f, style):
-        # type: (int, mylib.Writer, int) -> None
+    def DisplayJob(self, job_id, f, style, extra):
+        # type: (int, mylib.Writer, int, str) -> None
         if job_id == -1:
             job_id_str = '  '
         else:
-            job_id_str = '%%%d' % job_id
+            job_id_str = '%%%d%s' % (job_id, extra)
         if style == STYLE_PID_ONLY:
             f.write('%d\n' % self.pid)
         else:
@@ -1232,20 +1232,20 @@ class Pipeline(Job):
         """Returns the group ID of this pipeline."""
         return self.pgid
 
-    def DisplayJob(self, job_id, f, style):
-        # type: (int, mylib.Writer, int) -> None
+    def DisplayJob(self, job_id, f, style, extra):
+        # type: (int, mylib.Writer, int, str) -> None
         if style == STYLE_PID_ONLY:
             f.write('%d\n' % self.procs[0].pid)
         else:
             # Note: this is STYLE_LONG.
             for i, proc in enumerate(self.procs):
                 if i == 0:  # show job ID for first element in pipeline
-                    job_id_str = '%%%d' % job_id
+                    job_id_str = '%%%d%s' % (job_id, extra)
                 else:
                     job_id_str = '  '  # 2 spaces
 
-                    f.write('%s %d %7s ' %
-                            (job_id_str, proc.pid, _JobStateStr(proc.state)))
+                    f.write('%s%s %d %7s ' %
+                            (job_id_str, extra, proc.pid, _JobStateStr(proc.state)))
                     f.write(proc.thunk.UserString())
                     f.write('\n')
 
@@ -1777,9 +1777,17 @@ class JobList(object):
         #      24510                       | sleep 5 &
 
         f = mylib.Stdout()
+        current, previous = self.GetCurrentAndPreviousJobs()
         for job_id, job in iteritems(self.jobs):
             # Use the %1 syntax
-            job.DisplayJob(job_id, f, style)
+            extra = ''
+            if current and current.job_id == job_id:
+                extra = '+'
+
+            elif previous and previous.job_id == job_id:
+                extra = '-'
+
+            job.DisplayJob(job_id, f, style, extra)
 
     def DebugPrint(self):
         # type: () -> None
@@ -1789,7 +1797,7 @@ class JobList(object):
         f.write('[process debug info]\n')
 
         for pid, proc in iteritems(self.child_procs):
-            proc.DisplayJob(-1, f, STYLE_DEFAULT)
+            proc.DisplayJob(-1, f, STYLE_DEFAULT, '')
             #p = ' |' if proc.parent_pipeline else ''
             #print('%d %7s %s%s' % (pid, _JobStateStr(proc.state), proc.thunk.UserString(), p))
 
