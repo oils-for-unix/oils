@@ -1019,6 +1019,7 @@ class Process(Job):
         if job_id == -1:
             job_id_str = '  '
         else:
+            # Use the %1 syntax
             job_id_str = '%%%d%s' % (job_id, extra)
         if style == STYLE_PID_ONLY:
             f.write('%d\n' % self.pid)
@@ -1779,8 +1780,7 @@ class JobList(object):
         f = mylib.Stdout()
         current, previous = self.GetCurrentAndPreviousJobs()
         for job_id, job in iteritems(self.jobs):
-            # Use the %1 syntax
-            extra = ''
+            extra = ' '
             if current and current.job_id == job_id:
                 extra = '+'
 
