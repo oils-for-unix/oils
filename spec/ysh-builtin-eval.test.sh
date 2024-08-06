@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 6
+## oils_failures_allowed: 8
 
 #### Eval does not take a literal block - can restore this later
 
@@ -99,24 +99,42 @@ TODO
 ## END
 
 #### eval with argv bindings
-eval ^[echo "$@"] (argv=:| foo bar baz |)
-eval ^[pp line (:| $1 $2 $3 |)] (argv=:| foo bar baz |)
-
-## status: 0
+eval (^(echo "$@")) (pos_args=:| foo bar baz |)
+eval (^(pp test_ (:| $1 $2 $3 |))) (pos_args=:| foo bar baz |)
 ## STDOUT:
 foo bar baz
 (List)   ["foo","bar","baz"]
 ## END
 
+#### eval lines with argv bindings
+proc lines (;;; block) {
+  while read --line {
+    var cols = _reply => split()
+    eval (block, pos_args=cols)
+  }
+}
+
+printf 'a b\nc d' | lines { echo $1 }
+
+## STDOUT:
+a
+c
+## END
+
+#### eval with custom arg0
+eval (^(write $0)) (arg0="my arg0")
+## STDOUT:
+my arg0
+## END
+
 #### eval with vars bindings
 var myVar = "abc"
-eval (^(pp line (myVar)))
-eval (^(pp line (myVar)), vars={ 'myVar': '123' })
+eval (^(pp test_ (myVar)))
+eval (^(pp test_ (myVar)), vars={ 'myVar': '123' })
 
 # eval doesn't modify it's environment
-eval (^(pp line (myVar)))
+eval (^(pp test_ (myVar)))
 
-## status: 0
 ## STDOUT:
 abc
 123
@@ -135,13 +153,12 @@ proc foreach (binding, in_; list ;; block) {
 
 var mydicts = [{'a': 1}, {'b': 2}, {'c': 3}]
 foreach mydict in (mydicts) {
-  pp line (mydict)
+  pp test_ (mydict)
   setvar mydict.d = 0
 }
 
-pp line (mydicts)
+pp test_ (mydicts)
 
-## status: 0
 ## STDOUT:
 (Dict)   {"a":1}
 (Dict)   {"b":2}
@@ -176,7 +193,6 @@ if (_error.code !== 127) { error 'expected failure' }
 try { arg }
 if (_error.code !== 127) { error 'expected failure' }
 
-## status: 0
 ## STDOUT:
 flag -h --help
 arg file
@@ -185,9 +201,8 @@ arg file
 #### vars initializes the variable frame, but does not remember it
 var vars = { 'foo': 123 }
 eval (^(var bar = 321), vars=vars)
-pp line (vars)
+pp test_ (vars)
 
-## status: 0
 ## STDOUT:
 (Dict)   {"foo":123}
 ## END
