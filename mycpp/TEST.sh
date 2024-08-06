@@ -155,7 +155,7 @@ run-unit-tests() {
   local variant=${2:-asan+gcalways}
 
   log ''
-  log "$0 unit $compiler $variant"
+  log "$0 run-unit-tests $compiler $variant"
   log ''
 
   ninja mycpp-unit-$compiler-$variant
@@ -338,7 +338,7 @@ unit-test-coverage() {
   ninja $bin
   run-test-bin $bin
 
-  unit clang coverage
+  run-unit-tests clang coverage
 
   local out_dir=_test/clang-coverage/mycpp
   test/coverage.sh html-report $out_dir \
