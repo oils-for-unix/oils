@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 1
+## oils_failures_allowed: 8
 
 #### Eval does not take a literal block - can restore this later
 
@@ -98,6 +98,114 @@ p {
 TODO
 ## END
 
+#### eval with argv bindings
+eval (^(echo "$@")) (pos_args=:| foo bar baz |)
+eval (^(pp test_ (:| $1 $2 $3 |))) (pos_args=:| foo bar baz |)
+## STDOUT:
+foo bar baz
+(List)   ["foo","bar","baz"]
+## END
+
+#### eval lines with argv bindings
+proc lines (;;; block) {
+  while read --line {
+    var cols = _reply => split()
+    eval (block, pos_args=cols)
+  }
+}
+
+printf 'a b\nc d' | lines { echo $1 }
+
+## STDOUT:
+a
+c
+## END
+
+#### eval with custom arg0
+eval (^(write $0)) (arg0="my arg0")
+## STDOUT:
+my arg0
+## END
+
+#### eval with vars bindings
+var myVar = "abc"
+eval (^(pp test_ (myVar)))
+eval (^(pp test_ (myVar)), vars={ 'myVar': '123' })
+
+# eval doesn't modify it's environment
+eval (^(pp test_ (myVar)))
+
+## STDOUT:
+abc
+123
+## END
+
+#### dynamic binding names and mutation
+proc foreach (binding, in_; list ;; block) {
+  if (in_ !== "in") {
+    error 'Must use the "syntax" `foreach <binding> in (<expr>) { ... }`'
+  }
+
+  for _ in (list) {
+    eval (block, vars={ binding: _ })
+  }
+}
+
+var mydicts = [{'a': 1}, {'b': 2}, {'c': 3}]
+foreach mydict in (mydicts) {
+  pp test_ (mydict)
+  setvar mydict.d = 0
+}
+
+pp test_ (mydicts)
+
+## STDOUT:
+(Dict)   {"a":1}
+(Dict)   {"b":2}
+(Dict)   {"c":3}
+(List)   [{"a":1,"d":0},{"b":2,"d":0},{"c":3,"d":0}]
+## END
+
+#### binding procs in the eval-ed namespace
+proc __flag (short, long) {
+  echo "flag $short $long"
+}
+
+proc __arg (name) {
+  echo "arg $name"
+}
+
+proc parser (; spec ;; block) {
+  eval (block, vars={ 'flag': __flag, 'arg': __arg })
+}
+
+parser (&spec) {
+  flag -h --help
+  arg file
+}
+
+# but flag/arg are unavailable outside of `parser`
+# _error.code = 127 is set on "command not found" errors
+
+try { flag }
+if (_error.code !== 127) { error 'expected failure' }
+
+try { arg }
+if (_error.code !== 127) { error 'expected failure' }
+
+## STDOUT:
+flag -h --help
+arg file
+## END
+
+#### vars initializes the variable frame, but does not remember it
+var vars = { 'foo': 123 }
+eval (^(var bar = 321), vars=vars)
+pp test_ (vars)
+
+## STDOUT:
+(Dict)   {"foo":123}
+## END
 
 #### eval 'mystring' vs. eval (myblock)
 
