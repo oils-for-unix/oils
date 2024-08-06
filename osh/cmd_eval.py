@@ -1876,8 +1876,9 @@ class CommandEvaluator(object):
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
-                if node.negated is None:
-                    #log ('pipe')
+                # Bug fix: if we change the status, we can't exec the last
+                # element!
+                if node.negated is None and not self.exec_opts.pipefail():
                     self._NoForkLast(node.children[-1])
 
             elif case(command_e.Sentence):

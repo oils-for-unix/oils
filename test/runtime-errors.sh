@@ -235,8 +235,8 @@ test-errexit-multiple-processes() {
   # So it's actually unsound to do this optmization when set -o pipefail is on.
   # Combined with shopt -s lastpipe
 
-  _ysh-should-run 'ls | false | wc -l'
-  #_ysh-error-1 'ls | false | wc -l'
+  #_ysh-should-run 'ls | false | wc -l'
+  _ysh-error-1 'ls | false | wc -l'
 
   _sep
 
