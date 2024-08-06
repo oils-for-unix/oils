@@ -82,6 +82,11 @@ called `-rf`.
     $ echo *
     myfile
 
+## Other Option
+
+    noclobber -C  # Redirects can't overwrite files
+    errtrace -E   # Enable ERR trap is both shell functions and subshells
+
 ## Debugging
 
 These options are from POSIX shell:
@@ -98,9 +103,6 @@ These options are from bash.
 
     emacs   vi
 
-## Other Option
-
-    noclobber   # Redirects don't overwrite files
 
 ## Compat
 

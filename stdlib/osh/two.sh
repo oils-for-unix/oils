@@ -10,6 +10,10 @@
 #    log 'hi'
 #    die 'expected a number'
 
+if command -v source-guard >/dev/null; then  # include guard for YSH
+  source-guard two || return 0
+fi
+
 log() {
   ### Write a message to stderr.
   echo "$@" >&2

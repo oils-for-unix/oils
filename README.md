@@ -2,7 +2,7 @@ Oils Source Code
 ================
 
 [![Build
-Status](https://github.com/oilshell/oil/actions/workflows/all-builds.yml/badge.svg)](https://github.com/oilshell/oil/actions/workflows/all-builds.yml) <a href="https://gitpod.io/from-referrer/">
+Status](https://github.com/oils-for-unix/oils/actions/workflows/all-builds.yml/badge.svg)](https://github.com/oils-for-unix/oils/actions/workflows/all-builds.yml) <a href="https://gitpod.io/from-referrer/">
   <img src="https://img.shields.io/badge/Contribute%20with-Gitpod-908a85?logo=gitpod" alt="Contribute with Gitpod" />
 </a>
 
@@ -32,7 +32,7 @@ The deployed executable doesn't depend on Python.
 
 This README is at the root of the [git repo][git-repo].
 
-[git-repo]: https://github.com/oilshell/oil
+[git-repo]: https://github.com/oils-for-unix/oils
 
 <div id="toc">
 </div>
@@ -45,10 +45,10 @@ This README is at the root of the [git repo][git-repo].
 * If it doesn't, let us know.  You can post on the `#oil-dev` channel of
   [oilshell.zulipchat.com][], or file an issue on Github.
 * Feel free to grab an [issue from
-  Github](https://github.com/oilshell/oil/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+  Github](https://github.com/oils-for-unix/oils/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
   Let us know what you're thinking before you get too far.
 
-[Contributing]: https://github.com/oilshell/oil/wiki/Contributing
+[Contributing]: https://github.com/oils-for-unix/oils/wiki/Contributing
 [oilshell.zulipchat.com]: https://oilshell.zulipchat.com/
 [blog]: https://www.oilshell.org/blog/
 
@@ -96,7 +96,7 @@ It's great for prototyping.
   step, although it often just works. 
 - You can **influence the design** of [YSH][].  If you have an itch to
   scratch, be ambitious.  For example, you might want to show us how to
-  implement [nonlinear pipelines](https://github.com/oilshell/oil/issues/843).
+  implement [nonlinear pipelines](https://github.com/oils-for-unix/oils/issues/843).
 
 ### I aim for 24 hour response time
 
@@ -113,7 +113,7 @@ Thank you for the contributions!
 
 ### Docs
 
-The [Wiki](https://github.com/oilshell/oil/wiki) has many developer docs.  Feel
+The [Wiki](https://github.com/oils-for-unix/oils/wiki) has many developer docs.  Feel
 free to edit them.  If you make a major change, let us know on Zulip!
 
 There are also READMEs in some subdirectories, like `opy/` and `mycpp/`.
@@ -143,11 +143,12 @@ languages, Zephyr ASDL, and a statically-typed subset of Python.
     osh/              # OSH parsers and evaluators (cmd, word, sh_expr)
     ysh/              # YSH parser and evaluator
     data_lang/        # Languages based on JSON
-    builtin/          # Builtin commands and functions
     core/             # Other code shared between OSH and YSH
+    builtin/          # Builtin commands and functions
     pyext/            # Python extension modules, e.g. libc.c
     pylib/            # Borrowed from the Python standard library.
     tools/            # User-facing tools, e.g. the osh2oil translator
+    display/          # User interface
 
 ### DSLs / Code Generators
 

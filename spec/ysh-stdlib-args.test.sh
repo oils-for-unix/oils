@@ -2,7 +2,7 @@
 ## oils_failures_allowed: 1
 
 #### args.ysh example usage
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose (help="Verbosely")  # default is Bool, false
@@ -25,7 +25,7 @@ parser (&spec) {
 var args = parseArgs(spec, :| mysrc -P 12 mydest a b c |)
 
 echo "Verbose $[args.verbose]"
-pp line (args)
+pp test_ (args)
 ## STDOUT:
 Verbose false
 (Dict)   {"src":"mysrc","max-procs":12,"dest":"mydest","files":["a","b","c"],"verbose":false,"invert":true}
@@ -33,7 +33,7 @@ Verbose false
 
 #### Bool flag, positional args, more positional
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose ('bool')
@@ -48,7 +48,7 @@ var argv = ['-v', 'src/path', 'dst/path', 'x', 'y', 'z']
 
 var args = parseArgs(spec, argv)
 
-pp line (args)
+pp test_ (args)
 
 if (args.verbose) {
   echo "$[args.src] -> $[args.dst]"
@@ -65,7 +65,7 @@ z
 
 #### Test multiple ARGVs against a parser
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose ('bool', default=false)
@@ -83,7 +83,7 @@ for args in (argsCases) {
   var args_str = join(args, ' ')
   echo "----------  $args_str  ----------"
   echo "\$ bin/ysh example.sh $args_str"
-  pp line (parseArgs(spec, args))
+  pp test_ (parseArgs(spec, args))
 
   echo
 }
@@ -104,7 +104,7 @@ $ bin/ysh example.sh -v --count 120 example.sh -v --count 150
 
 #### Basic help message
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   # TODO: implement description, prog and help message
@@ -138,7 +138,7 @@ options:
 
 #### Compare parseArgs() vs Python argparse
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 var spec = {
   flags: [
@@ -175,7 +175,7 @@ for args in (argsCases) {
   var args_str = args->join(" ")
   echo "----------  $args_str  ----------"
   echo "\$ bin/ysh example.sh $args_str"
-  pp line (parseArgs(spec, args))
+  pp test_ (parseArgs(spec, args))
 
   echo
   echo "\$ python3 example.py $args_str"
@@ -209,7 +209,7 @@ Namespace(filename='example.sh', count='150', verbose=True)
 
 #### Define spec and print it
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose ('bool')
@@ -247,7 +247,7 @@ json write (spec)
 ## END
 
 #### Default values
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -S --sanitize ('bool', default=false)
@@ -257,13 +257,13 @@ parser (&spec) {
 
 var args = parseArgs(spec, [])
 
-pp line (args)
+pp test_ (args)
 ## STDOUT:
 (Dict)   {"sanitize":false,"verbose":false,"max-procs":null}
 ## END
 
 #### Duplicate argument/flag names
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 try {
   parser (&spec) {
@@ -296,7 +296,7 @@ status=3
 ## END
 
 #### Error cases
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 parser (&spec) {
   flag -v --verbose

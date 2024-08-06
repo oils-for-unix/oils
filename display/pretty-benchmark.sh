@@ -48,10 +48,15 @@ float-demo() {
   # Note: this could change if we change how floats are printed, e.g. strtof
   # vs. strtod.
 
-  bin/ysh -c '
+  local ysh=_bin/cxx-asan/ysh
+  ninja $ysh
+
+  #ysh=bin/ysh
+
+  $ysh -c '
 var L = []
 for i in (1 .. 200) {
-  call L->append(i/3)
+  call L->append(i/30)
 }
 = L
 '

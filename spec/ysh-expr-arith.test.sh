@@ -219,35 +219,35 @@ json write (~'3.5')
 
 $SH -c '
 var x = 0.12345
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
 $SH -c '
 # Becomes infinity
 var x = 0.123456789e1234567
-pp line (x)
+pp test_ (x)
 
 var x = -0.123456789e1234567
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
 $SH -c '
 # Becomes infinity
 var x = 0.123456789e-1234567
-pp line (x)
+pp test_ (x)
 
 var x = -0.123456789e-1234567
-pp line (x)
+pp test_ (x)
 '
 echo float=$?
 
 ## STDOUT:
 (Float)   0.12345
 float=0
-(Float)   inf
-(Float)   -inf
+(Float)   INFINITY
+(Float)   -INFINITY
 float=0
 (Float)   0.0
 (Float)   -0.0
@@ -259,52 +259,52 @@ float=0
 # Decimal
 $SH -c '
 var x = 1111
-pp line (x)
+pp test_ (x)
 '
 echo dec=$?
 
 $SH -c '
 var x = 1111_2222_3333_4444_5555_6666
-pp line (x)
+pp test_ (x)
 '
 echo dec=$?
 
 # Binary
 $SH -c '
 var x = 0b11
-pp line (x)
+pp test_ (x)
 '
 echo bin=$?
 
 $SH -c '
 var x = 0b1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111
-pp line (x)
+pp test_ (x)
 '
 echo bin=$?
 
 # Octal
 $SH -c '
 var x = 0o77
-pp line (x)
+pp test_ (x)
 '
 echo oct=$?
 
 $SH -c '
 var x = 0o1111_2222_3333_4444_5555_6666
-pp line (x)
+pp test_ (x)
 '
 echo oct=$?
 
 # Hex
 $SH -c '
 var x = 0xff
-pp line (x)
+pp test_ (x)
 '
 echo hex=$?
 
 $SH -c '
 var x = 0xaaaa_bbbb_cccc_dddd_eeee_ffff
-pp line (x)
+pp test_ (x)
 '
 echo hex=$?
 
@@ -321,6 +321,37 @@ oct=2
 (Int)   255
 hex=0
 hex=2
+## END
+
+#### Bit shift by negative number is not allowed
+
+shopt -s ysh:upgrade
+
+pp test_ (1 << 1)
+pp test_ (1 << 0)
+try {
+  pp test_ (1 << -1)
+}
+echo failed $[_error.code]
+echo
+
+pp test_ (16 >> 2)
+pp test_ (16 >> 1)
+pp test_ (16 >> 0)
+try {
+  pp test_ (16 >> -1)
+}
+echo failed $[_error.code]
+
+## STDOUT:
+(Int)   2
+(Int)   1
+failed 3
+
+(Int)   4
+(Int)   8
+(Int)   16
+failed 3
 ## END
 
 #### 64-bit operations

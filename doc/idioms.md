@@ -231,7 +231,7 @@ Yes:
 
 Yes:
 
-    for line in <> {
+    for line in (stdin) {
       echo $line
     }
     # this reads buffered lines, which is much faster

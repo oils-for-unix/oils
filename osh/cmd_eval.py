@@ -74,7 +74,7 @@ from core import num
 from core import pyos  # Time().  TODO: rename
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 from frontend import consts
@@ -256,7 +256,7 @@ class CommandEvaluator(object):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             errfmt,  # type: ui.ErrorFormatter
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             assign_builtins,  # type: Dict[builtin_t, _AssignBuiltin]
             arena,  # type: Arena
             cmd_deps,  # type: Deps
@@ -942,7 +942,7 @@ class CommandEvaluator(object):
             io_errors = []  # type: List[error.IOError_OSError]
             with vm.ctx_FlushStdout(io_errors):
                 try:
-                    ui.PrettyPrintValue(val, mylib.Stdout())
+                    ui.PrettyPrintValue('', val, mylib.Stdout())
                 except (IOError, OSError) as e:
                     self.errfmt.PrintMessage(
                         'I/O error during = keyword: %s' % pyutil.strerror(e),
@@ -1096,7 +1096,6 @@ class CommandEvaluator(object):
         # for YSH loop
         iter_expr = None  # type: expr_t
         expr_blame = None  # type: loc_t
-        iter_stdin = False
 
         iterable = node.iterable
         UP_iterable = iterable
@@ -1114,19 +1113,6 @@ class CommandEvaluator(object):
                 iterable = cast(for_iter.YshExpr, UP_iterable)
                 iter_expr = iterable.e
                 expr_blame = iterable.blame
-
-            elif case(for_iter_e.Files):
-                iterable = cast(for_iter.Files, UP_iterable)
-
-                # For now we only handle <>
-                assert len(iterable.words) == 0, iterable.words
-
-                if 0:
-                    words = braces.BraceExpandWords(iterable.words)
-                    iter_list = self.word_ev.EvalWordSequence(words)
-
-                expr_blame = iterable.left
-                iter_stdin = True
 
             else:
                 raise AssertionError()
@@ -1192,21 +1178,23 @@ class CommandEvaluator(object):
                             'Range iteration expects at most 2 loop variables',
                             node.keyword)
 
+                elif case(value_e.Stdin):
+                    # TODO: This could changed to magic iterator?
+                    it2 = val_ops.StdinIterator(expr_blame)
+                    if n == 1:
+                        name1 = location.LName(node.iter_names[0])
+                    elif n == 2:
+                        i_name = location.LName(node.iter_names[0])
+                        name1 = location.LName(node.iter_names[1])
+                    else:
+                        e_die_status(
+                            2,
+                            'Stdin iteration expects at most 2 loop variables',
+                            node.keyword)
                 else:
-                    raise error.TypeErr(val, 'for loop expected List or Dict',
-                                        node.keyword)
-
-        elif iter_stdin:
-            it2 = val_ops.StdinIterator(expr_blame)
-            if n == 1:
-                name1 = location.LName(node.iter_names[0])
-            elif n == 2:
-                i_name = location.LName(node.iter_names[0])
-                name1 = location.LName(node.iter_names[1])
-            else:
-                e_die_status(
-                    2, 'Files iteration expects at most 2 loop variables',
-                    node.keyword)
+                    raise error.TypeErr(
+                        val, 'for loop expected List, Dict, Range, or Stdin',
+                        node.keyword)
 
         else:
             assert iter_list is not None, iter_list
@@ -1294,18 +1282,20 @@ class CommandEvaluator(object):
 
     def _DoShFunction(self, node):
         # type: (command.ShFunction) -> None
-        if node.name in self.procs and not self.exec_opts.redefine_proc_func():
+        if (self.procs.Get(node.name) and
+                not self.exec_opts.redefine_proc_func()):
             e_die(
                 "Function %s was already defined (redefine_proc_func)" %
                 node.name, node.name_tok)
-        self.procs[node.name] = value.Proc(node.name, node.name_tok,
-                                           proc_sig.Open, node.body, None,
-                                           True)
+        sh_func = value.Proc(node.name, node.name_tok, proc_sig.Open,
+                             node.body, None, True)
+        self.procs.SetShFunc(node.name, sh_func)
 
     def _DoProc(self, node):
         # type: (Proc) -> None
         proc_name = lexer.TokenVal(node.name)
-        if proc_name in self.procs and not self.exec_opts.redefine_proc_func():
+        if (self.procs.Get(proc_name) and
+                not self.exec_opts.redefine_proc_func()):
             e_die(
                 "Proc %s was already defined (redefine_proc_func)" % proc_name,
                 node.name)
@@ -1317,8 +1307,9 @@ class CommandEvaluator(object):
             proc_defaults = None
 
         # no dynamic scope
-        self.procs[proc_name] = value.Proc(proc_name, node.name, node.sig,
-                                           node.body, proc_defaults, False)
+        proc = value.Proc(proc_name, node.name, node.sig, node.body,
+                          proc_defaults, False)
+        self.procs.SetProc(proc_name, proc)
 
     def _DoFunc(self, node):
         # type: (Func) -> None
@@ -1939,6 +1930,7 @@ class CommandEvaluator(object):
         """
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
+            #if self.exec_opts.no_fork_last():
             self._NoForkLast(node)  # turn the last ones into exec
 
         if 0:
@@ -2022,7 +2014,17 @@ class CommandEvaluator(object):
         # type: (command_t) -> int
         """For builtins to evaluate command args.
 
-        e.g. cd /tmp (x)
+        Many exceptions are raised.
+
+        Examples:
+
+            cd /tmp (; ; mycmd)
+
+        And:
+            eval (mycmd)
+            call _io->eval(mycmd)
+
+        (Should those be more like eval 'mystring'?)
         """
         status = 0
         try:
@@ -2111,7 +2113,7 @@ class CommandEvaluator(object):
             return
 
         # bash rule - affected by set -o errtrace
-        if self.mem.InsideFunction():
+        if not self.exec_opts.errtrace() and self.mem.InsideFunction():
             return
 
         # NOTE: Don't set option_i._running_trap, because that's for

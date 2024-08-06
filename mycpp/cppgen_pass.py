@@ -13,8 +13,8 @@ from mypy.types import (Type, AnyType, NoneTyp, TupleType, Instance, NoneType,
                         PartialType, TypeAliasType)
 from mypy.nodes import (Expression, Statement, NameExpr, IndexExpr, MemberExpr,
                         TupleExpr, ExpressionStmt, IfStmt, StrExpr, SliceExpr,
-                        FuncDef, UnaryExpr, OpExpr, ComparisonExpr, CallExpr,
-                        IntExpr, ListExpr, DictExpr, ListComprehension)
+                        FuncDef, UnaryExpr, OpExpr, CallExpr,
+                        ListExpr, DictExpr, ListComprehension)
 
 from mycpp import format_strings
 from mycpp.crash import catch_errors
@@ -2223,7 +2223,7 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             else:
                 # del mydict[mykey] raises KeyError, which we don't want
                 raise AssertionError(
-                    'Use mylib.maybe_remove(d, key) instead of del d[key]')
+                    'Use mylib.dict_erase(d, key) instead of del d[key]')
 
             self.def_write(';\n')
 
@@ -2946,53 +2946,37 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
             )
             return
 
-        # Omit anything that looks like if __name__ == ...
-        if (isinstance(cond, ComparisonExpr) and
-                isinstance(cond.operands[0], NameExpr) and
-                cond.operands[0].name == '__name__'):
-            return
+        if util.ShouldVisitIfExpr(o):
+            self.def_write_ind('if (')
+            for e in o.expr:
+                self.accept(e)
+            self.def_write(') ')
 
-        # Omit if 0:
-        if isinstance(cond, IntExpr) and cond.value == 0:
-            # But write else: body
-            # Note: this would be invalid at the top level!
-            if o.else_body:
-                self.accept(o.else_body)
-            return
+        if util.ShouldVisitIfBody(o):
+            cond = util.GetSpecialIfCondition(o)
+            if cond == 'CPP':
+                self.def_write_ind('// if MYCPP\n')
+                self.def_write_ind('')
 
-        # Omit if TYPE_CHECKING blocks.  They contain type expressions that
-        # don't type check!
-        if isinstance(cond, NameExpr) and cond.name == 'TYPE_CHECKING':
-            return
-        # mylib.CPP
-        if isinstance(cond, MemberExpr) and cond.name == 'CPP':
-            # just take the if block
-            self.def_write_ind('// if MYCPP\n')
-            self.def_write_ind('')
-            for node in o.body:
-                self.accept(node)
-            self.def_write_ind('// endif MYCPP\n')
-            return
-        # mylib.PYTHON
-        if isinstance(cond, MemberExpr) and cond.name == 'PYTHON':
-            if o.else_body:
+            for body in o.body:
+                self.accept(body)
+
+            if cond == 'CPP':
+                self.def_write_ind('// endif MYCPP\n')
+
+        if util.ShouldVisitElseBody(o):
+            cond = util.GetSpecialIfCondition(o)
+            if cond == 'PYTHON':
                 self.def_write_ind('// if not PYTHON\n')
                 self.def_write_ind('')
-                self.accept(o.else_body)
-                self.def_write_ind('// endif MYCPP\n')
-            return
 
-        self.def_write_ind('if (')
-        for e in o.expr:
-            self.accept(e)
-        self.def_write(') ')
+            if util.ShouldVisitIfBody(o):
+                self.def_write_ind('else ')
 
-        for node in o.body:
-            self.accept(node)
-
-        if o.else_body:
-            self.def_write_ind('else ')
             self.accept(o.else_body)
+
+            if cond == 'PYTHON':
+                self.def_write_ind('// endif MYCPP\n')
 
     def visit_break_stmt(self, o: 'mypy.nodes.BreakStmt') -> T:
         self.def_write_ind('break;\n')

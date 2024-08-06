@@ -48,7 +48,7 @@ error handling, and more.
                    search()       leftMatch()
   [List]           List/append()  pop()         extend()    indexOf()
                  X insert()     X remove()      reverse()
-  [Dict]           keys()         values()    X get()     X erase()
+  [Dict]           keys()         values()    X get()       erase()
                  X inc()        X accum()
   [Range] 
   [Eggex] 
@@ -60,11 +60,10 @@ error handling, and more.
 X [Func]           name()         location()    toJson()
 X [Proc]           name()         location()    toJson()
 X [Module]         name()         filename()
-  [IO]           X eval()       X captureStdout()
+  [IO]             eval()         captureStdout()
                    promptVal()
                  X time()       X strftime()
                  X glob()
-X [Guts]           heapId()
 ```
 
 <h2 id="builtin-func">
@@ -72,22 +71,22 @@ X [Guts]           heapId()
 </h2>
 
 ```chapter-links-builtin-func
-  [Values]        len()        func/type()   X repeat()
-  [Conversions]   bool()       int()           float()   str()   list()   dict()
-                X runes()    X encodeRunes()
-                X bytes()    X encodeBytes()
-  [Str]         X strcmp()   X split()         shSplit()
-  [List]          join()       any()           all()
-  [Collections] X copy()     X deepCopy()
-  [Word]          glob()       maybe()
-  [Math]          abs()        max()           min()   X round()   sum()
-  [Serialize]     toJson()     fromJson()
-                  toJson8()    fromJson8()
-X [J8 Decode]     J8.Bool()    J8.Int()        ...
-  [Pattern]       _group()     _start()        _end()
-  [Introspection] shvarGet()   getVar()        evalExpr()
-  [Hay Config]    parseHay()   evalHay()
-X [Hashing]       sha1dc()     sha256()
+  [Values]        len()             func/type()
+  [Conversions]   bool()            int()           float()
+                  str()             list()          dict()
+                X runes()         X encodeRunes()
+                X bytes()         X encodeBytes()
+  [Str]         X strcmp()        X split()         shSplit()
+  [List]          join()       
+  [Float]         floatsEqual()   X isinf()       X isnan()
+  [Word]          glob()            maybe()
+  [Serialize]     toJson()          fromJson()
+                  toJson8()         fromJson8()
+X [J8 Decode]     J8.Bool()         J8.Int()        ...
+  [Pattern]       _group()          _start()        _end()
+  [Introspection] shvarGet()        getVar()        evalExpr()
+  [Hay Config]    parseHay()        evalHay()
+X [Hashing]       sha1dc()          sha256()
 ```
 
 <!-- ideas
@@ -104,71 +103,79 @@ X [Wok]           _field()
 
 ```chapter-links-builtin-cmd_42
   [Memory]        cmd/append             Add elements to end of array
-                  pp                     asdl   cell   X gc-stats   line   proc
+                  pp                     value   proc      test_
+                                         asdl_   cell_   X gc-stats_
   [Handle Errors] error                  error 'failed' (status=2)
                   try                    Run with errexit, set _error
                   failed                 Test if _error.code !== 0
                   boolstatus             Enforce 0 or 1 exit status
+                  assert                 assert [42 === f(x)]
   [Shell State]   ysh-cd       ysh-shopt compatible, and takes a block
                   shvar                  Temporary modify global settings
                   ctx                    Share and update a temporary "context"
                   push-registers         Save registers like $?, PIPESTATUS
   [Modules]       runproc                Run a proc; use as main entry point
-                  module                 guard against duplicate 'source'
+                  source-guard           guard against duplicate 'source'
                   is-main                false when sourcing a file
-                  use                    change first word lookup
+                X use                    use names,
   [I/O]           ysh-read               flags --all, -0
                   ysh-echo               no -e -n with simple_echo
                   write                  Like echo, with --, --sep, --end
                   fork         forkwait  Replace & and (), and takes a block
                   fopen                  Open multiple streams, takes a block
-                X dbg                    Only thing that can be used in funcs
   [Hay Config]    hay          haynode   For DSLs and config files
   [Completion]    compadjust   compexport
   [Data Formats]  json                   read write
                   json8                  read write
-X [Testing]       assert                 takes an expression
 ```
 
 <h2 id="stdlib">
   Standard Library<a class="group-link" href="chap-stdlib.html">stdlib</a>
 </h2>
 
+```chapter-links-stdlib
+  [math]          abs()         max()          min()   X round()
+                  sum()     
+  [list]          all()         any()          repeat()
+  [yblocks]       yb-capture    yb-capture-2
+  [args]          parser        flag           arg       rest
+                  parseArgs()
+```
+
 <!-- linkify_stop_col is 42 -->
 
+Design for streams and tables (awk/xargs/dplyr):
+
 ```chapter-links-stdlib_42
-  [Args Parser]   parser                 Parse command line arguments
-                  flag
-                  arg
-                  rest
-                  parseArgs()
-X [Testing]       describe               Test harness
 X [Lines]         slurp-by               combine adjacent lines into cells
-X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block) - xargs
-                  each-row               --max-jobs (Str, Template, Block) - xargs
+X [Awk]           each-line              --j8 --max-jobs (Str, Template, Block)
+                  each-row               --max-jobs (Str, Template, Block)
+                  each-word              xargs-like splitting, similar to IFS too
                   split-by               (str=\n, ifs=':', pattern=/s+/)
-                  if-split-by  
+                  if-split-by            only lines that match
                   chop                   alias for split-by (pattern=/s+/)
                   must-match             (/ <capture d+> </capture w+> /)
-                  if-match               
-X [Table Create]  table                  --by-row --by-col (&place); construct/parse a table
-                  table/cols             cols name age - cols name:Str age:Int
-                  types                  type       Str Int
-                  attr                   attr units -   secs
+                  if-match               only lines that match
+X [Table Create]  table def              &place or print TSV8
+                  table parse            --by-row --by-col (&place), TSV or TSV8
+                  table/cols             cols       name age, or name:Str age:Int
+                  types                  type       Str  Int
+                  attr                   attr units   -  secs
                   row                    emit row
                   table cat              concatenate TSV8
                   table align            to ssv8
-                  table tabify           to tsv8
-                  table header           (cols = :|name age|, types = :|Str Int|, units = :|- secs|)
+                  table tabify           to tsv8 (similar to table parse)
+                  table header           cols = :|name age|, types = :|Str Int|, ...
                   table slice            e.g. slice (1, -1)   slice (5, 7)
                   table to-tsv           lose type info, and error on \t in cells
 X [Table Ops]     where                  subset of rows; dplyr filter()
                   pick                   subset of columns ('select' taken by shell)
-                  mutate    transmute    [average = count / sum] - drop the ones that are used?
+                  mutate                 [average = count / sum]
+                  transmute              drop columns that are used
                   rename                 (bytes='bytes', path='filename')
                   group-by               add a column with a group ID [ext]
                   sort-by                sort by columns; dplyr arrange() [ext]
-                  summary                count, sum, histogram, any, all, reduce(), etc. [ext]
+                  summary                count/sum, histogram, any/all, reduce, ...
 ```
 
 <!--
@@ -201,8 +208,8 @@ X [External Lang] BEGIN   END   when (awk)
                   block-arg     cd /tmp { echo $PWD }; cd /tmp (; ; blockexpr)
   [YSH Cond]      ysh-case      case (x) { *.py { echo 'python' } }
                   ysh-if        if (x > 0) { echo }
-  [YSH Iter]      ysh-while     while (x > 0) { echo }
-                  ysh-for       for i, item in (mylist) { echo }
+  [YSH Iter]      ysh-for       for i, item in (mylist) { echo }
+                  ysh-while     while (x > 0) { echo }
 ```
 
 <h2 id="ysh-cmd">
@@ -234,6 +241,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Literals]      atom-literal  true   false   null
                   int-literal   42  65_536  0xFF  0o755  0b10
                   float-lit     3.14  1.5e-10
+                  char-literal  \\ \t \"   \y00   \u{3bc}
                 X num-suffix    42 K Ki M Mi G Gi T Ti / ms us
                   ysh-string    "x is $x"  $"x is $x"   r'[a-z]\n'
                                 u'line\n'  b'byte \yff'
@@ -264,7 +272,7 @@ X [External Lang] BEGIN   END   when (awk)
                   match-ops     ~   !~   ~~   !~~
   [Eggex]         re-literal    / d+ ; re-flags ; ERE /
                   re-primitive  %zero    'sq'
-                  class-literal [c a-z 'abc' @str_var \\ \xFF \u0100]
+                  class-literal [c a-z 'abc' @str_var \\ \xFF \u{3bc}]
                   named-class    dot   digit   space   word   d  s  w
                   re-repeat     d?   d*   d+   d{3}   d{2,4}
                   re-compound    seq1 seq2   alt1|alt2   (expr1 expr2)
@@ -288,7 +296,7 @@ X [External Lang] BEGIN   END   when (awk)
   [Substitutions] expr-sub      echo $[42 + a[i]]
                   expr-splice   echo @[split(x)]
                   var-splice    @myarray @ARGV
-                  command-sub   @(split command)
+                  command-sub   @(cat my-j8-lines.txt)
   [Formatting]  X ysh-printf    ${x %.3f}
                 X ysh-format    ${x|html}
 ```
@@ -328,6 +336,8 @@ X [External Lang] BEGIN   END   when (awk)
   [Oils VM]       OILS_VERSION
                   OILS_GC_THRESHOLD   OILS_GC_ON_EXIT
                   OILS_GC_STATS       OILS_GC_STATS_FD
+                  LIB_YSH
+  [Float]         NAN                 INFINITY
 ```
 
 <!-- ideas 

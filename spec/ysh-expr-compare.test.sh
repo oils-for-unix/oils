@@ -1,7 +1,7 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 
 #### Exact equality with === and !==
-shopt -s oil:all
+shopt -s ysh:all
 
 if (3 === 3) {
   echo 'ok'
@@ -39,7 +39,7 @@ ok
 ## END
 
 #### Approximate equality of Str x {Str, Int, Bool} with ~==
-shopt -s oil:all
+shopt -s ysh:all
 
 # Note: for now there's no !~== operator.  Use:   not (a ~== b)
 
@@ -82,7 +82,7 @@ bool matrix
 ## END
 
 #### Wrong Types with ~==
-shopt -s oil:all
+shopt -s ysh:all
 
 # The LHS side should be a string
 
@@ -101,31 +101,38 @@ if (3 ~== 3) {
 one
 ## END
 
+#### === on float not allowed
 
-#### ~== on Float - TODO floatEquals()
-shopt -s oil:all
+$SH -c '
+shopt -s ysh:upgrade
+pp test_ (1.0 === 2.0)
+echo ok
+'
+echo status=$?
 
-if (42 ~== 42.0) {
-  echo int-float
-}
-if (42 ~== 43.0) {
-  echo FAIL
-}
+$SH -c '
+shopt -s ysh:upgrade
+pp test_ (42 === 3.0)
+echo ok
+'
+echo status=$?
 
-if ('42' ~== 42.0) {
-  echo str-float
-}
-if ('42' ~== 43.0) {
-  echo FAIL
-}
-
-if (42 ~== '42.0') {
-  echo int-str-float
-}
-if (42 ~== '43.0') {
-  echo FAIL
-}
 ## STDOUT:
+status=3
+status=3
+## END
+
+
+#### floatsEqual()
+
+var x = 42.0
+pp test_ (floatsEqual(42.0, x))
+
+pp test_ (floatsEqual(42.0, x + 1))
+
+## STDOUT:
+(Bool)   true
+(Bool)   false
 ## END
 
 #### Comparison converts from Str -> Int or Float

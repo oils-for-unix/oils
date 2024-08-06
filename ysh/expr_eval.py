@@ -51,7 +51,7 @@ from core.error import e_die, e_die_status
 from core import num
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8
 from frontend import lexer
@@ -544,13 +544,13 @@ class ExprEvaluator(object):
                     # Disallow this to remove confusion between modulus and remainder
                     raise error.Expr("Divisor can't be negative", op)
 
-                return value.Int(num.IntRemainder(i1, i2))
+                return value.Int(mops.Rem(i1, i2))
 
             # a // b   setvar a //= b
             elif case(Id.Expr_DSlash, Id.Expr_DSlashEqual):
                 if mops.Equal(i2, mops.ZERO):
                     raise error.Expr('Divide by zero', op)
-                return value.Int(num.IntDivide(i1, i2))
+                return value.Int(mops.Div(i1, i2))
 
             # a ** b   setvar a **= b (ysh only)
             elif case(Id.Arith_DStar, Id.Expr_DStarEqual):
@@ -570,9 +570,14 @@ class ExprEvaluator(object):
                 return value.Int(mops.BitXor(i1, i2))
 
             elif case(Id.Arith_DGreat, Id.Arith_DGreatEqual):  # >>
+                if mops.Greater(mops.ZERO, i2):  # i2 < 0
+                    raise error.Expr("Can't right shift by negative number",
+                                     op)
                 return value.Int(mops.RShift(i1, i2))
 
             elif case(Id.Arith_DLess, Id.Arith_DLessEqual):  # <<
+                if mops.Greater(mops.ZERO, i2):  # i2 < 0
+                    raise error.Expr("Can't left shift by negative number", op)
                 return value.Int(mops.LShift(i1, i2))
 
             else:
@@ -685,15 +690,9 @@ class ExprEvaluator(object):
                 result = self._CompareNumeric(left, right, op)
 
             elif op.id == Id.Expr_TEqual:
-                if left.tag() != right.tag():
-                    result = False
-                else:
-                    result = val_ops.ExactlyEqual(left, right, op)
+                result = val_ops.ExactlyEqual(left, right, op)
             elif op.id == Id.Expr_NotDEqual:
-                if left.tag() != right.tag():
-                    result = True
-                else:
-                    result = not val_ops.ExactlyEqual(left, right, op)
+                result = not val_ops.ExactlyEqual(left, right, op)
 
             elif op.id == Id.Expr_In:
                 result = val_ops.Contains(left, right)

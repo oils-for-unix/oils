@@ -142,19 +142,77 @@ Notes:
 
 ### glob-pat
 
-TODO: glob syntax
+Glob patterns look like:
+
+    echo *.py    # Ends with .py
+    echo *.[ch]  # Ends with .c or .h
+
+This syntax is used in:
+
+- "Array of words" contexts
+  - [simple-command][] - like `echo *.py`
+  - bash arrays `a=( *.py )`
+  - YSH arrays `var a = :| *.py |`
+  - for loops `for x in *.py; do ...`
+- [case][] patterns
+- [dbracket][] - `[[ x == *.py ]]`
+- Word operations
+  - [op-strip][] - `${x#*.py}`
+  - [op-patsub][] - `${x//*.py/replace}` - 
+
+[simple-command]: chap-cmd-lang.html#simple-command
+[case]: chap-cmd-lang.html#case
+[dbracket]: chap-cmd-lang.html#dbracket
+
+[op-strip]: chap-word-lang.html#op-strip
+[op-patsub]: chap-word-lang.html#op-patsub
 
 ### extglob
 
-TODO: extended glob syntax
+Extended globs let you use logical operations with globs.
+
+They may be **slow**.  Regexes and eggexes are preferred.
+
+    echo @(*.cc|*.h)   # Show files ending with .cc or .h
+    echo !(*.cc|*.h)   # Show every file that does NOT end with .cc or .h
+
+Extended globs can appear in most of the places globs can, except
+[op-patsub][] (because we implement it by translating.
 
 ### regex
 
-Part of [dbracket](chap-cmd-lang.html#dbracket)
+POSIX ERE (extended regular expressions) are part of bash's [dbracket][]:
+
+    x=123
+    if [[ x =~ '[0-9]+ ]]; then
+      echo 'looks like a number'
+    fi
 
 ## Other Sublang
 
 ### braces
+
+Brace expansion saves you typing:
+
+    $ echo {foo,bar}@example.com
+    foo@example.com bar@example.com
+
+You can use it with number ranges:
+
+    $ echo foo{1..3}
+    foo1 foo2 foo3
+
+(The numbers must be **constant**.)
+
+Technically, it does a cartesian product, which is 3 X 2 in this case:
+
+    $ for x in foo{1..3}-{X,Y}; do echo $x; done
+    foo1-X
+    foo1-Y
+    foo2-X
+    foo2-Y
+    foo3-X
+    foo3-Y
 
 ### histsub
 

@@ -74,18 +74,18 @@ message=divide by zero: 5 / 0
 try {
   error 'bad' (code=99)
 }
-pp line (_error)
+pp test_ (_error)
 
 # Note: myData co
 try {
   error 'bad' (code=99, myData={spam:'eggs'})
 }
-pp line (_error)
+pp test_ (_error)
 
 try {
   error 'bad' (code=99, message='cannot override')
 }
-pp line (_error)
+pp test_ (_error)
 
 ## STDOUT:
 (Dict)   {"code":99,"message":"bad"}
@@ -261,4 +261,185 @@ ok 2
 ## END
 
 
+#### assert on values
 
+try {
+  $SH -c '
+  assert (true)
+  echo passed
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  func f() { return (false) }
+
+  assert (f())
+  echo "unreachable"
+  ' | grep -v Value
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert (null)
+  echo "unreachable"
+  ' | grep -v Value
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  func f() { return (false) }
+
+  assert (true === f())
+  echo "unreachable"
+  ' | grep -v Value
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert (42 === 42)
+  echo passed
+  '
+}
+echo code $[_error.code]
+echo
+
+## STDOUT:
+passed
+code 0
+
+
+code 3
+
+
+code 3
+
+
+code 3
+
+passed
+code 0
+
+## END
+
+
+#### assert on expressions
+
+try {
+  $SH -c '
+  assert [true]
+  echo passed
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  func f() { return (false) }
+
+  assert [f()]
+  echo "unreachable"
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert [null]
+  echo "unreachable"
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  func f() { return (false) }
+
+  assert [true === f()]
+  echo "unreachable"
+  ' | grep -v '(Bool)'
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert [42 === 42]
+  echo passed
+  '
+}
+echo code $[_error.code]
+echo
+
+## STDOUT:
+passed
+code 0
+
+code 3
+
+code 3
+
+
+code 3
+
+passed
+code 0
+
+## END
+
+
+#### assert on expression that fails
+
+try {
+  $SH -c '
+  assert [NAN === 1/0]  # not true
+  echo unreachable
+  '
+}
+echo code $[_error.code]
+echo
+
+try {
+  $SH -c '
+  assert ["oof" === $(false)]
+  echo unreachable
+  '
+}
+echo code $[_error.code]
+echo
+
+
+## STDOUT:
+code 3
+
+code 1
+
+## END
+
+#### assert on chained comparison expression is not special
+
+try {
+  $SH -c '
+  #pp test_ (42 === 42 === 43)
+  assert [42 === 42 === 43]
+  echo unreachable
+  '
+}
+echo code $[_error.code]
+echo
+
+## STDOUT:
+code 3
+
+## END

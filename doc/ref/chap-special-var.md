@@ -107,11 +107,19 @@ The version of Oils that's being run, e.g. `0.23.0`.
 
 ### `LIB_OSH`
 
-The string `///osh`, which is meant for use with the [source][] builtin.
+The string `///osh`, which you can use with the [source][] builtin.
+
+    source $LIB_OSH/two.sh    
 
 [source]: chap-builtin-cmd.html#source
 
+### `LIB_YSH`
 
+The string `///ysh`, which you can use with the [source][] builtin.
+
+    source $LIB_YSH/yblocks.ysh
+
+[source]: chap-builtin-cmd.html#source
 
 ### `OILS_GC_THRESHOLD`
 
@@ -132,6 +140,20 @@ When the shell process exists, print GC stats to stderr.
 ### `OILS_GC_STATS_FD`
 
 When the shell process exists, print GC stats to this file descriptor.
+
+## Float
+
+### NAN
+
+The float value for "not a number".
+
+(The name is consistent with the C language.)
+
+### INFINITY
+
+The float value for "infinity".  You can negate it to get "negative infinity".
+
+(The name is consistent with the C language.)
 
 ## Shell Vars
 

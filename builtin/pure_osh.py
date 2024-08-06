@@ -16,7 +16,7 @@ from _devbuild.gen.types_asdl import opt_group_i
 from core import error
 from core.error import e_usage
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from data_lang import j8_lite
 from frontend import args

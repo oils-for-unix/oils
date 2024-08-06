@@ -14,7 +14,7 @@ import pexpect
 import signal
 import sys
 
-from core import ansi
+from display import ansi
 from test import spec_lib  # Using this for a common interface
 
 log = spec_lib.log

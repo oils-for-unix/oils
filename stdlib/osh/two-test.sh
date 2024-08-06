@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 
-source stdlib/osh/two.sh  # module under test
+: ${LIB_OSH=stdlib/osh}
 
-source stdlib/osh/byo-server.sh
-source stdlib/osh/no-quotes.sh
-
-set -o nounset
-set -o pipefail
-set -o errexit
+source $LIB_OSH/two.sh  # module under test
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/no-quotes.sh
+source $LIB_OSH/task-five.sh
 
 test-log() {
   local status stderr
@@ -32,4 +30,4 @@ test-die() {
   nq-assert 1 -eq "$status"
 }
 
-byo-must-run
+task-five "$@"

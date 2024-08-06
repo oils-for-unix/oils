@@ -43,19 +43,46 @@ Similar names: [append][]
 
 ### pp
 
-Pretty prints interpreter state.  Some of these are implementation details,
-subject to change.
+The `pp` builtin pretty prints values and interpreter state.
+
+Pretty printing expressions is the most common:
+
+    $ var x = 42
+    $ pp (x + 5)
+    myfile.ysh:1: (Int)   47   # print value with code location
+
+You can pass an unevaluated expression:
+
+    $ pp [x + 5]
+    myfile.ysh:1: (Int)   47   # evaluate first
+
+The `value` command is a synonym for the interactive `=` operator:
+
+    $ pp value (x)
+    (Int)   42
+
+    $ = x 
+    (Int)   42
+
+Print proc names and doc comments:
+
+    $ pp proc  # subject to change
+
+You can also print low-level interpreter state.  The trailing `_` indicates
+that the exact format may change:
 
 Examples:
 
-    pp proc  # print all procs and their doc comments
+    $ var x = :| one two |
 
-    var x = :| one two |
-    pp cell x  # dump the "guts" of a cell, which is a location for a value
+    $ pp asdl_ (x)  # dump the ASDL "guts"
 
-    pp asdl (x)  # dump the ASDL "guts"
+    $ pp test_ (x)  # single-line stable format, for spec tests
 
-    pp line (x)  # single-line stable format, for spec tests
+    # dump the ASDL representation of a "Cell", which is a location for a value
+    # (not the value itself)
+    $ pp cell_ x
+
 
 ## Handle Errors
 
@@ -154,6 +181,27 @@ Runs a command, and requires the exit code to be 0 or 1.
 
 It's meant for external commands that "return" more than 2 values, like true /
 false / fail, rather than pass / fail.
+
+### assert
+
+Evaluates and expression, and fails if it is not truthy.
+
+    assert (false)   # fails
+    assert [false]   # also fails (the expression is evaluated)
+
+It's common to pass an unevaluated expression with `===`:
+
+    func f() { return (42) }
+
+    assert [43 === f()]
+
+In this special case, you get a nicer error message:
+
+> Expected: 43
+> Got:      42
+
+That is, the left-hand side should be the expected value, and the right-hand
+side should be the actual value.
 
 ## Shell State
 
@@ -277,18 +325,18 @@ level statement in a "task file":
     
 Like 'builtin' and 'command', it affects the lookup of the first word.
 
-### module
+### source-guard
 
-Registers a name in the global module dict.  Returns 0 if it doesn't exist, or
-1 if it does.
+Registers a name in the global "module" dict.  Returns 0 if it doesn't exist,
+or 1 if it does.
 
 Use it like this in executable files:
 
-    module main || return 0   
+    source-guard main || return 0   
 
 And like this in libraries:
 
-    module myfile.ysh || return 0   
+    source-guard myfile.ysh || return 0   
 
 ### is-main
 
@@ -309,8 +357,8 @@ TODO
 
 Reuse code from other files, respecting namespaces.
 
-    use lib/foo.ysh  # relative import, i.ie implicit $_this_dir?
-                     # makes name 'foo' available
+    use lib/foo.ysh  # foo myproc, $[foo.attr]
+                     # implicit $_this_dir aka relative import
 
 Bind a specific name:
 
@@ -319,13 +367,14 @@ Bind a specific name:
 Bind multiple names:
 
     use lib/foo.ysh (&myvar) {
-      var log, die
+      pick log die
     }
 
 Maybe:
 
     use lib/foo.ysh (&myvar) {
-      var mylog = myvar.log
+      pick log (&mylog)
+      pick die (&mydie)
     }
 
 Also a declaration

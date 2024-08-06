@@ -48,9 +48,11 @@ def NinjaGraph(ru):
     ru.cc_library(
         '//prebuilt/asdl/runtime.mycpp',
         srcs=['prebuilt/asdl/runtime.mycpp.cc'],
+        # TODO: make a common library for these deps?
         deps=[
             '//asdl/hnode.asdl',
             '//cpp/data_lang',  # for fastfunc
+            '//display/pretty.asdl',
         ])
 
     ru.cc_library(
@@ -61,6 +63,7 @@ def NinjaGraph(ru):
             '//core/value.asdl',
             '//frontend/syntax.asdl',
             '//cpp/data_lang',  # for fastfunc
+            '//display/pretty.asdl',
         ])
 
     ru.cc_library(
@@ -72,4 +75,5 @@ def NinjaGraph(ru):
             '//frontend/syntax.asdl',
             '//cpp/data_lang',  # for fastfunc
             '//cpp/frontend_flag_spec',
+            '//display/pretty.asdl',
         ])

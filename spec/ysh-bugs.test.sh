@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### fastlex: NUL byte not allowed inside char literal #' '
 
@@ -122,7 +122,7 @@ type -a returned 1
 var x = []
 true && call x->append(42)
 false && call x->append(43)
-pp line (x)
+pp test_ (x)
 
 func amp() {
   true && return (42)
@@ -132,8 +132,8 @@ func pipe() {
   false || return (42)
 }
 
-pp line (amp())
-pp line (pipe())
+pp test_ (amp())
+pp test_ (pipe())
 
 ## STDOUT:
 ## END
@@ -196,4 +196,41 @@ echo yy | p-ifs
 ## STDOUT:
 zz
 yy
+## END
+
+#### func call inside proc call - error message attribution
+
+try 2> foo {
+  $SH -c '
+func ident(x) {
+  return (x)
+}
+
+proc p (; x) {
+  echo $x
+}
+
+# BUG: it points to ( in ident(
+#      should point to ( in eval (
+
+eval (ident([1,2,3]))
+'
+}
+
+cat foo
+
+## STDOUT:
+## END
+
+
+#### Crash in parsing case on EOF condition - issue #2037
+
+var WEIGHT = ${1:-}
+case (WEIGHT) {
+  "-" { echo "got nothing" }
+  (else) { echo $WEIGHT
+}
+
+## status: 2
+## STDOUT:
 ## END

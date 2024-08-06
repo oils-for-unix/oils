@@ -48,6 +48,7 @@ oils-part() {
     echo "#define $guard"
     echo
     echo '#include "_gen/asdl/hnode.asdl.h"'
+    echo '#include "_gen/display/pretty.asdl.h"'
     echo '#include "cpp/data_lang.h"'
     echo '#include "mycpp/runtime.h"'
     echo "$more_include"
@@ -69,7 +70,7 @@ EOF
 }
 
 readonly -a ASDL_FILES=(
-  $REPO_ROOT/{asdl/runtime,asdl/format,core/ansi,pylib/cgi,data_lang/j8_lite}.py \
+  $REPO_ROOT/{asdl/runtime,asdl/format,display/ansi,display/pretty,pylib/cgi,data_lang/j8_lite}.py \
 )
 
 asdl-runtime() {
@@ -78,13 +79,19 @@ asdl-runtime() {
     prebuilt/asdl/runtime.mycpp \
     $TEMP_DIR/asdl/runtime_raw.mycpp.h \
     ASDL_RUNTIME_MYCPP_H \
-    '' \
+    '
+#include "_gen/display/pretty.asdl.h"
+
+using pretty_asdl::doc;  // ad hoc
+      ' \
     --to-header asdl.runtime \
     --to-header asdl.format \
     "${ASDL_FILES[@]}"
 }
 
 core-error() {
+  ### For cpp/osh_test.cc
+
   # Depends on frontend/syntax_asdl
 
   mkdir -p prebuilt/core $TEMP_DIR/core
@@ -105,6 +112,8 @@ using value_asdl::value;  // This is a bit ad hoc
 }
 
 frontend-args() {
+  ### For cpp/frontend_args_test.cc
+
   # Depends on core/runtime_asdl
 
   mkdir -p prebuilt/frontend $TEMP_DIR/frontend
@@ -115,10 +124,12 @@ frontend-args() {
     '
 #include "_gen/core/runtime.asdl.h"
 #include "_gen/core/value.asdl.h"
+#include "_gen/display/pretty.asdl.h"
 #include "_gen/frontend/syntax.asdl.h"
 #include "cpp/frontend_flag_spec.h"
 
 using value_asdl::value;  // This is a bit ad hoc
+using pretty_asdl::doc;
 ' \
     --to-header asdl.runtime \
     --to-header asdl.format \

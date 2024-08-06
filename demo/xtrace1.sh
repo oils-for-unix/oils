@@ -64,7 +64,7 @@ posix() {
 #
 # Related debugging features of OSH:
 #
-# - pp cell (ASDL), pp proc (QTT)
+# - pp cell_ (ASDL), pp proc (QTT)
 # - osh -n (ASDL)
 # - Oil expressions: = keyword (ASDL)
 

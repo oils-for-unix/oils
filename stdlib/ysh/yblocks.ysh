@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+#
+# Testing library for bash and OSH.
+#
+# Capture status/stdout/stderr, and nq-assert those values.
+
+#module yblocks || return 0
+
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/two.sh
+
+# There is no yb-run, because you can just use try { } and inspect _error.code
+# There is no yb-redir, because you can just use try >$tmp { } and inspect _error.code
+
+proc yb-capture(; out; ; block) {
+  ### capture status and stderr 
+
+  var stdout = ''
+  try {
+    eval (block) | read --all (&stdout)
+  }
+  # TODO: if 'block' contains a pipeline, we lose this magic var
+  var result = {status: _pipeline_status[0], stdout}
+
+  #echo 'result-1'
+  #pp test_ (result)
+
+  call out->setValue(result)
+}
+
+proc yb-capture-2(; out; ; block) {
+  ### capture status and stderr 
+
+  var stderr = ''
+  try {
+    eval (block) 2>&1 | read --all (&stderr)
+  }
+  #pp test_ (_pipeline_status)
+
+  var result = {status: _pipeline_status[0], stderr}
+  #echo 'result-2'
+  #pp test_ (result)
+
+  call out->setValue(result)
+}

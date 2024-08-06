@@ -294,16 +294,16 @@ status=1
 
 #### circular dict - TODO 2023-06 REGRESS
 var d = {name: 'foo'}
-pp line (d)
+pp test_ (d)
 
 setvar d['name'] = 123
-pp line (d)
+pp test_ (d)
 
 setvar d['name'] = 'mystr'
-pp line (d)
+pp test_ (d)
 
 setvar d['name'] = d
-pp line (d)
+pp test_ (d)
 
 # This used to print ...
 

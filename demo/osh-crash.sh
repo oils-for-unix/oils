@@ -8,7 +8,13 @@ set -o pipefail
 set -o errexit
 
 g() {
-  local g=1
+  readonly g=1
+  local -a bash_array=(a b)
+  bash_array[5]=z
+  readonly bash_array
+
+  readonly -A bash_assoc=([x]=y [foo]=bar)
+
   echo foo > $bar
 }
 

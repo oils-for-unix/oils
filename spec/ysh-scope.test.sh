@@ -338,16 +338,16 @@ proc mutate {
   setglobal g['key2'] = 'mutated'
 
   echo 'local that is ignored'
-  pp line (g)
+  pp test_ (g)
 }
 
 echo 'BEFORE mutate global'
-pp line (g)
+pp test_ (g)
 
 mutate
 
 echo 'AFTER mutate global'
-pp line (g)
+pp test_ (g)
 
 ## STDOUT:
 BEFORE mutate global
@@ -369,16 +369,16 @@ proc mutate {
   echo 'local that is ignored'
   setglobal a[0] = 42
 
-  pp line (a)
+  pp test_ (a)
 }
 
 echo 'BEFORE mutate global'
-pp line (a)
+pp test_ (a)
 
 mutate
 
 echo 'AFTER mutate global'
-pp line (a)
+pp test_ (a)
 
 ## STDOUT:
 BEFORE mutate global
@@ -406,8 +406,8 @@ proc mutate {
 
 mutate
 
-pp line (mylist)
-pp line (mydict)
+pp test_ (mylist)
+pp test_ (mydict)
 
 ## STDOUT:
 (List)   [5]
@@ -445,14 +445,14 @@ proc mutate2 {
 
 mutate1
 
-pp line (mylist)
-pp line (mydict)
+pp test_ (mylist)
+pp test_ (mydict)
 echo
 
 mutate2
 
-pp line (mylist)
-pp line (mydict)
+pp test_ (mylist)
+pp test_ (mydict)
 
 ## STDOUT:
 (List)   [0,11]

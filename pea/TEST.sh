@@ -5,9 +5,9 @@
 # Usage:
 #   pea/TEST.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/no-quotes.sh
 
 source test/common.sh  # run-test-funcs
 source devtools/common.sh
@@ -315,15 +315,15 @@ test-syntax-error() {
 
   # error in Python syntax
   parse-one pea/testdata/py_err.py
-  assert $? -eq 1
+  nq-assert $? -eq 1
 
   # error in signature
   parse-one pea/testdata/sig_err.py
-  assert $? -eq 1
+  nq-assert $? -eq 1
 
   # error in assignment
   parse-one pea/testdata/assign_err.py
-  assert $? -eq 1
+  nq-assert $? -eq 1
 }
 
 run-tests() {

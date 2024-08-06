@@ -23,7 +23,7 @@ from mycpp.mylib import iteritems, print_stderr
 from typing import Dict, List, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.syntax_asdl import command_t
-    from core.ui import ErrorFormatter
+    from display import ui
     from frontend.parse_lib import ParseContext
 
 _ = log
@@ -47,13 +47,17 @@ class TrapState(object):
         self.hooks = {}  # type: Dict[str, command_t]
         self.traps = {}  # type: Dict[int, command_t]
 
-    def ClearForSubProgram(self):
-        # type: () -> None
+    def ClearForSubProgram(self, inherit_errtrace):
+        # type: (bool) -> None
         """SubProgramThunk uses this because traps aren't inherited."""
 
-        # bash clears DEBUG hook in subshell, command sub, etc.  See
-        # spec/builtin-trap-bash.
+        # bash clears hooks like DEBUG in subshells.
+        # The ERR can be preserved if set -o errtrace
+        hook_err = self.hooks.get('ERR')
         self.hooks.clear()
+        if hook_err is not None and inherit_errtrace:
+            self.hooks['ERR'] = hook_err
+
         self.traps.clear()
 
     def GetHook(self, hook_name):
@@ -157,7 +161,7 @@ _HOOK_NAMES = ['EXIT', 'ERR', 'RETURN', 'DEBUG']
 class Trap(vm._Builtin):
 
     def __init__(self, trap_state, parse_ctx, tracer, errfmt):
-        # type: (TrapState, ParseContext, dev.Tracer, ErrorFormatter) -> None
+        # type: (TrapState, ParseContext, dev.Tracer, ui.ErrorFormatter) -> None
         self.trap_state = trap_state
         self.parse_ctx = parse_ctx
         self.arena = parse_ctx.arena

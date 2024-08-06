@@ -45,17 +45,17 @@ x=11
 #### Augmented assignment on string changes to Int Float
 
 var x = '42'
-pp line (x)
+pp test_ (x)
 
 setvar x += 4 * 1
-pp line (x)
+pp test_ (x)
 
 setvar x += '9'
-pp line (x)
+pp test_ (x)
 
 setvar x = '42'
 setvar x /= 4
-pp line (x)
+pp test_ (x)
 
 ## STDOUT:
 (Str)   "42"

@@ -14,7 +14,7 @@ import unittest
 from _devbuild.gen.types_asdl import lex_mode_e
 from core import error
 from core import test_lib
-from core import ui
+from display import ui
 from osh import sh_expr_eval
 from osh import split
 from osh import word_eval

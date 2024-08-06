@@ -9,6 +9,13 @@
 
 #include "mycpp/runtime.h"
 
+namespace math {
+
+bool isinf(double f);
+bool isnan(double f);
+
+}  // namespace math
+
 namespace fcntl_ {
 
 // for F_GETFD

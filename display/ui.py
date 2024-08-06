@@ -21,17 +21,18 @@ from _devbuild.gen.syntax_asdl import (
     source,
     source_e,
 )
-from _devbuild.gen.value_asdl import (value_t, value_str)
+from _devbuild.gen.value_asdl import value_e, value_t
 from asdl import format as fmt
-from data_lang import pretty
+from data_lang import j8_lite
+from display import pp_value
+from display import pretty
 from frontend import lexer
 from frontend import location
 from mycpp import mylib
 from mycpp.mylib import print_stderr, tagswitch, log
-from data_lang import j8_lite
 import libc
 
-from typing import List, Optional, Any, cast, TYPE_CHECKING
+from typing import List, Tuple, Optional, Any, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen import arg_types
     from core import error
@@ -44,7 +45,8 @@ def ValType(val):
     # type: (value_t) -> str
     """For displaying type errors in the UI."""
 
-    return value_str(val.tag(), dot=False)
+    # TODO: consolidate these functions
+    return pp_value.ValType(val)
 
 
 def CommandType(cmd):
@@ -258,13 +260,22 @@ def GetLineSourceString(line, quote_filename=False):
 
 def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     # type: (str, str, loc_t, bool) -> None
-    """Should we have multiple error formats:
+    """Print an error message attached to a location.
+
+    We may quote code this:
+
+        echo $foo
+             ^~~~
+        [ -c flag ]:1: Failed
+
+    Should we have multiple locations?
 
     - single line and verbose?
     - and turn on "stack" tracing?  For 'source' and more?
     """
     f = mylib.Stderr()
     if blame_loc.tag() == loc_e.TokenTooLong:
+        # test/spec.sh parse-errors shows this
         _PrintTokenTooLong(cast(loc.TokenTooLong, blame_loc), f)
         return
 
@@ -276,7 +287,7 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     orig_col = blame_tok.col
     src = blame_tok.line.src
     line = blame_tok.line.content
-    line_num = blame_tok.line.line_num  # overwritten by source__LValue case
+    line_num = blame_tok.line.line_num  # overwritten by source.Reparsed case
 
     if show_code:
         UP_src = src
@@ -323,7 +334,7 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
                 f.write('%s:%d\n' % (source_str, line_num))
                 f.write('\n')
 
-                # Now print OUTER location, with error message
+                # Recursive call: Print OUTER location, with error message
                 _PrintWithLocation(prefix, msg, src.location, show_code)
                 return
 
@@ -335,6 +346,23 @@ def _PrintWithLocation(prefix, msg, blame_loc, show_code):
     # TODO: If the line is blank, it would be nice to print the last non-blank
     # line too?
     f.write('%s:%d: %s%s\n' % (source_str, line_num, prefix, msg))
+
+
+def CodeExcerptAndPrefix(blame_tok):
+    # type: (Token) -> Tuple[str, str]
+    """Return a string that quotes code, and a string location prefix.
+
+    Similar logic as _PrintWithLocation, except we know we have a token.
+    """
+    line = blame_tok.line
+
+    buf = mylib.BufWriter()
+    _PrintCodeExcerpt(line.content, blame_tok.col, blame_tok.length, buf)
+
+    source_str = GetLineSourceString(line, quote_filename=True)
+    prefix = '%s:%d: ' % (source_str, blame_tok.line.line_num)
+
+    return buf.getvalue(), prefix
 
 
 class ctx_Location(object):
@@ -518,20 +546,57 @@ def PrintAst(node, flag):
         ast_f.write('\n')
 
 
-def PrettyPrintValue(val, f):
-    # type: (value_t, mylib.Writer) -> None
-    """For the = keyword"""
+def TypeNotPrinted(val):
+    # type: (value_t) -> bool
+    return val.tag() in (value_e.Null, value_e.Bool, value_e.Int,
+                         value_e.Float, value_e.Str, value_e.List,
+                         value_e.Dict)
 
-    printer = pretty.PrettyPrinter()
-    printer.SetUseStyles(f.isatty())
+
+def _GetMaxWidth():
+    # type: () -> int
+    max_width = 80  # default value
     try:
         width = libc.get_terminal_width()
         if width > 0:
-            printer.SetMaxWidth(width)
+            max_width = width
     except (IOError, OSError):
-        pass
+        pass  # leave at default
+
+    return max_width
+
+
+def PrettyPrintValue(prefix, val, f, max_width=-1):
+    # type: (str, value_t, mylib.Writer, int) -> None
+    """For the = keyword"""
+
+    encoder = pp_value.ValueEncoder()
+    encoder.SetUseStyles(f.isatty())
+
+    # TODO: pretty._Concat, etc. shouldn't be private
+    if TypeNotPrinted(val):
+        mdocs = encoder.TypePrefix(pp_value.ValType(val))
+        mdocs.append(encoder.Value(val))
+        doc = pretty._Concat(mdocs)
+    else:
+        doc = encoder.Value(val)
+
+    if len(prefix):
+        # If you want the type name to be indented, which we don't
+        # inner = pretty._Concat([pretty._Break(""), doc])
+
+        doc = pretty._Concat([
+            pretty.AsciiText(prefix),
+            #pretty._Break(""),
+            pretty._Indent(4, doc)
+        ])
+
+    if max_width == -1:
+        max_width = _GetMaxWidth()
+
+    printer = pretty.PrettyPrinter(max_width)
 
     buf = mylib.BufWriter()
-    printer.PrintValue(val, buf)
+    printer.PrintDoc(doc, buf)
     f.write(buf.getvalue())
     f.write('\n')

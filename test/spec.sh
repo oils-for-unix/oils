@@ -87,6 +87,10 @@ bugs() {
   run-file bugs "$@"
 }
 
+osh-bugs() {
+  run-file osh-bugs "$@"
+}
+
 TODO-deprecate() {
   run-file TODO-deprecate "$@"
 }
@@ -822,6 +826,10 @@ ysh-for() {
 
 ysh-methods() {
   run-file ysh-methods "$@"
+}
+
+ysh-method-io() {
+  run-file ysh-method-io "$@"
 }
 
 ysh-func() {

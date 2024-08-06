@@ -98,7 +98,7 @@ echo -$[len(s)]-
 #### Func with multiple args in multiple contexts
 shopt --set ysh:upgrade  # needed for math.ysh
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 var x = max(1+2, 3+4)
 echo $x $[max(1+2, 3+4)]
@@ -111,7 +111,7 @@ echo $x $[max(1+2, 3+4)]
 #### Trailing Comma in Param list
 shopt --set ysh:upgrade  # needed for math.ysh
 
-source --builtin math.ysh
+source $LIB_YSH/math.ysh
 
 var x = max(1+2, 3+4,)
 echo $x $[max(1+2, 3+4,)]
@@ -313,29 +313,6 @@ SHELL
 sum 40
 ## END
 
-#### Backslash char literal (is an integer)
-const newline = \n
-const backslash = \\
-const sq = \'
-const dq = \"
-echo "$newline $backslash $sq $dq"
-## STDOUT:
-10 92 39 34
-## END
-
-#### \u{3bc} is char literal
-shopt -s oil:all
-
-var mu = \u{3bc}
-if (mu === 0x3bc) {  # this is the same!
-  echo 'yes'
-}
-echo "mu $mu"
-## STDOUT:
-yes
-mu 956
-## END
-
 #### Exponentiation with **
 var x = 2**3
 echo $x
@@ -349,28 +326,28 @@ echo 'should not get here'
 ## END
 
 #### Float Division
-pp line (5/2)
-pp line (-5/2)
-pp line (5/-2)
-pp line (-5/-2)
+pp test_ (5/2)
+pp test_ (-5/2)
+pp test_ (5/-2)
+pp test_ (-5/-2)
 
 echo ---
 
 var x = 9
 setvar x /= 2
-pp line (x)
+pp test_ (x)
 
 var x = -9
 setvar x /= 2
-pp line (x)
+pp test_ (x)
 
 var x = 9
 setvar x /= -2
-pp line (x)
+pp test_ (x)
 
 var x = -9
 setvar x /= -2
-pp line (x)
+pp test_ (x)
 
 
 ## STDOUT:
@@ -386,28 +363,28 @@ pp line (x)
 ## END
 
 #### Integer Division (rounds toward zero)
-pp line (5//2)
-pp line (-5//2)
-pp line (5//-2)
-pp line (-5//-2)
+pp test_ (5//2)
+pp test_ (-5//2)
+pp test_ (5//-2)
+pp test_ (-5//-2)
 
 echo ---
 
 var x = 9
 setvar x //= 2
-pp line (x)
+pp test_ (x)
 
 var x = -9
 setvar x //= 2
-pp line (x)
+pp test_ (x)
 
 var x = 9
 setvar x //= -2
-pp line (x)
+pp test_ (x)
 
 var x = -9
 setvar x //= -2
-pp line (x)
+pp test_ (x)
 
 ## STDOUT:
 (Int)   2
@@ -422,20 +399,20 @@ pp line (x)
 ## END
 
 #### % operator is remainder
-pp line ( 5 % 3)
-pp line (-5 % 3)
+pp test_ ( 5 % 3)
+pp test_ (-5 % 3)
 
 # negative divisor illegal (tested in test/ysh-runtime-errors.sh)
-#pp line ( 5 % -3)
-#pp line (-5 % -3)
+#pp test_ ( 5 % -3)
+#pp test_ (-5 % -3)
 
 var z = 10
 setvar z %= 3
-pp line (z)
+pp test_ (z)
 
 var z = -10
 setvar z %= 3
-pp line (z)
+pp test_ (z)
 
 ## STDOUT:
 (Int)   2
@@ -672,7 +649,7 @@ var e = ^[42 === x and true]
 echo $[evalExpr(e)]
 
 var mylist = ^[3, 4]
-pp line (evalExpr(mylist))
+pp test_ (evalExpr(mylist))
 
 ## STDOUT:
 type=Expr
@@ -685,7 +662,7 @@ true
 #### No list comprehension in ^[]
 
 var mylist = ^[x for x in y]  
-pp line (evalExpr(mylist))
+pp test_ (evalExpr(mylist))
 
 ## status: 2
 ## STDOUT:

@@ -1,7 +1,7 @@
 # Test set flags, sh flags.
 
 ## compare_shells: bash dash mksh
-## oils_failures_allowed: 3
+## oils_failures_allowed: 2
 ## tags: interactive
 
 #### $- with -c
@@ -315,24 +315,65 @@ failglob
 
 #### noclobber off
 set -o errexit
-echo foo > $TMP/can-clobber
+
+echo foo > can-clobber
+echo status=$?
 set +C
-echo foo > $TMP/can-clobber
+
+echo foo > can-clobber
+echo status=$?
 set +o noclobber
-echo foo > $TMP/can-clobber
-cat $TMP/can-clobber
-## stdout: foo
+
+echo foo > can-clobber
+echo status=$?
+cat can-clobber
+
+## STDOUT:
+status=0
+status=0
+status=0
+foo
+## END
 
 #### noclobber on
-# Not implemented yet.
-rm $TMP/no-clobber
+
+rm -f no-clobber
 set -C
-echo foo > $TMP/no-clobber
-echo $?
-echo foo > $TMP/no-clobber
-echo $?
-## stdout-json: "0\n1\n"
-## OK dash stdout-json: "0\n2\n"
+
+echo foo > no-clobber
+echo create=$?
+
+echo overwrite > no-clobber
+echo overwrite=$?
+
+echo force >| no-clobber
+echo force=$?
+
+cat no-clobber
+
+## STDOUT:
+create=0
+overwrite=1
+force=0
+force
+## END
+## OK dash STDOUT:
+create=0
+overwrite=2
+force=0
+force
+## END
+
+#### noclobber on <>
+set -C
+echo foo >| $TMP/no-clobber
+exec 3<> $TMP/no-clobber
+read -n 1 <&3
+echo -n . >&3
+exec 3>&-
+cat $TMP/no-clobber
+## stdout-json: "f.o\n"
+## N-I dash stdout-json: ".oo\n"
 
 #### SHELLOPTS is updated when options are changed
 echo $SHELLOPTS | grep -q xtrace

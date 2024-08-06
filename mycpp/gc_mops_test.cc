@@ -85,6 +85,29 @@ TEST conversion_test() {
   PASS();
 }
 
+TEST float_test() {
+  double f = mops::ToFloat(1) / mops::ToFloat(3);
+  // double f = static_cast<double>(1) / static_cast<double>(3);
+
+  log("one third = %f", f);
+  // wtf, why does this has a 43
+  log("one third = %.9g", f);
+  log("one third = %.10g", f);
+  log("one third = %.11g", f);
+
+  f = mops::ToFloat(2) / mops::ToFloat(3);
+  log("one third = %.9g", f);
+  log("one third = %.10g", f);
+
+  double one = mops::ToFloat(1);
+  double three = mops::ToFloat(3);
+  log("one = %.10g", one);
+  log("three = %.10g", three);
+  log("one / three = %.10g", one / three);
+
+  PASS();
+}
+
 GREATEST_MAIN_DEFS();
 
 int main(int argc, char** argv) {
@@ -95,6 +118,7 @@ int main(int argc, char** argv) {
   RUN_TEST(bigint_test);
   RUN_TEST(static_cast_test);
   RUN_TEST(conversion_test);
+  RUN_TEST(float_test);
 
   gHeap.CleanProcessExit();
 

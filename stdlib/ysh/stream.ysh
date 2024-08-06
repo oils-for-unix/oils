@@ -6,13 +6,13 @@
 # For reading lines, decoding, extracting, splitting
 
 # make this file a test server
-source --builtin osh/byo-server.sh
+source $LIB_OSH/byo-server.sh
 
-source --builtin args.ysh
+source $LIB_YSH/args.ysh
 
 proc slurp-by (; num_lines) {
   # TODO: (stdin)
-  for line in <> {
+  for line in (stdin) {
     echo TODO
   }
 }
@@ -35,7 +35,7 @@ proc each-line (...words; template=null; ; block=null) {
   # evaluate block with _line binding
   # block: execute in parallel with --max-jobs
 
-  for line in <> {
+  for line in (stdin) {
     echo TODO
   }
 }

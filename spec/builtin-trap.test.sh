@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 0
+## oils_failures_allowed: 1
 
 # builtin-trap.test.sh
 
@@ -244,4 +244,27 @@ SIGURG
 begin child
 end child
 wait status 0
+## END
+
+#### trap INT, sleep, SIGINT: non-interactively
+
+# mksh behaves differently in CI -- maybe when it's not connected to a
+# terminal?
+
+case $SH in mksh) echo mksh; exit ;; esac
+
+# Without this, it succeeds in CI?
+case $SH in *osh) echo osh; exit ;; esac
+
+$SH -c 'trap "echo int" INT; sleep 0.1' &
+/usr/bin/kill -INT $!
+wait
+
+# Only mksh shows 'int'?
+# OSH shows "done"
+
+## STDOUT:
+## END
+## OK mksh STDOUT:
+mksh
 ## END

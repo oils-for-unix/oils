@@ -12,7 +12,7 @@ from core.error import e_die
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import flag_util
 from frontend import reader
@@ -466,7 +466,8 @@ class Read(vm._Builtin):
             # the last name
             max_results = len(names)
 
-        if arg.Z:  # -0 is synonym for -r -d ''
+        if arg.Z:  # -0 is synonym for IFS= read -r -d ''
+            do_split = False
             raw = True
             delim_byte = 0
         else:

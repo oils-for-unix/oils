@@ -18,7 +18,7 @@ from mycpp.mylib import tagswitch
 from typing import TYPE_CHECKING, cast, Any, Dict, List, Tuple
 
 if TYPE_CHECKING:
-    from core import ui
+    from display import ui
     from osh.cmd_eval import CommandEvaluator
 
 

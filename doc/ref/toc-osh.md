@@ -77,10 +77,11 @@ X [Unsupported]   enable
 </h2>
 
 ```chapter-links-stdlib
-  [bash-strict]   
   [two]           log             die
-  [no-quotes]     nq-capture      nq-capture-2   nq-assert
-  [byo-server]    byo-maybe-run   byo-must-run
+  [no-quotes]     nq-assert       nq-run          
+                  nq-capture      nq-capture-2
+                  nq-redir        nq-redir-2
+  [bash-strict]   
   [task-five]     
 ```
 
@@ -141,7 +142,7 @@ X [Unsupported]   enable
                   proc-sub      diff <(sort L.txt) <(sort R.txt)
   [Var Ops]       op-test       ${x:-default}  
                   op-strip      ${x%%suffix}  etc.
-                  op-replace    ${x//y/z}
+                  op-patsub     ${x//y/z}
                   op-index      ${a[i+1}
                   op-slice      ${a[@]:0:1}
                   op-format     ${x@P}
@@ -183,9 +184,9 @@ X [Unsupported]   enable
   [Errors]         nounset -u      errexit -e   inherit_errexit   pipefail
   [Globbing]       noglob -f       nullglob     failglob        X dotglob
                    dashglob (true)
+  [Other Option]   noclobber -C    errtrace -E
   [Debugging]      xtrace        X verbose    X extdebug
   [Interactive]    emacs           vi
-  [Other POSIX]  X noclobber
   [Compat]         eval_unsafe_arith            ignore_flags_not_impl
 ```
 

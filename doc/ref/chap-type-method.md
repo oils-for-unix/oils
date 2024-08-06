@@ -343,6 +343,24 @@ Similar to `keys()`, but returns the values of the dictionary.
 
 ### erase()
 
+Ensures that the given key does not exist in the dictionary.
+
+    var book = {
+      title: "The Histories",
+      author: "Herodotus",
+    }
+    = book
+    # => (Dict)   {title: "The Histories", author: "Herodotus"}
+
+    call book->erase("author")
+    = book
+    # => (Dict)   {title: "The Histories"}
+
+    # repeating the erase call does not cause an error
+    call book->erase("author")
+    = book
+    # => (Dict)   {title: "The Histories"}
+
 ### inc()
 
 ### accum()
@@ -476,11 +494,36 @@ A module is a file with YSH code.
 
 ### eval()
 
-Like the `eval` builtin, but useful in pure functions.
+Evaluate a command, and return `null`.
+
+    var c = ^(echo hi)
+    call _io->eval(c)
+
+It's like like the `eval` builtin, and meant to be used in pure functions.
+
+<!--
+TODO: We should be able to bind positional args, env vars, and inspect the
+shell VM.
+
+Though this runs in the same VM, not a new one.
+-->
 
 ### captureStdout()
 
-Like `$()`, but useful in pure functions.
+Capture stdout of a command a string.
+
+    var c = ^(echo hi)
+    var stdout_str = _io->captureStdout(c)  # => "hi"
+
+It's like `$()`, but useful in pure functions.  Trailing newlines `\n` are
+removed.
+
+If the command fails, `captureStdout()` raises an error, which can be caught
+with `try`.
+
+    try {
+      var s = _io->captureStdout(c)
+    }
 
 ### promptVal()
 

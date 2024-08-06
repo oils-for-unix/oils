@@ -3,6 +3,8 @@
 
 #include <type_traits>
 
+#include "mycpp/gc_obj.h"
+
 template <class A, class B>
 class Tuple2 {
   typedef Tuple2<A, B> this_type;

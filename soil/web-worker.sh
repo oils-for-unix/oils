@@ -62,7 +62,9 @@ remote-cleanup-jobs-index() {
 }
 
 remote-cleanup-status-api() {
-  sshq soil-web/soil/web.sh cleanup-status-api false
+  #sshq soil-web/soil/web.sh cleanup-status-api false
+  # 2024-07 - work around bug.  The logic in soil/web.sh doesn't seem right
+  sshq soil-web/soil/web.sh cleanup-status-api true
 }
 
 my-scp() {
@@ -234,6 +236,7 @@ make-job-wwz() {
   zip -q -r $wwz \
     index.html \
     _build/wedge/logs \
+    _gen/mycpp/examples \
     _test \
     _tmp/{soil,spec,src-tree-www,wild-www,stateful,process-table,syscall,benchmark-data,metrics,mycpp-examples,compute,gc,gc-cachegrind,perf,vm-baseline,osh-runtime,osh-parser,host-id,shell-id} \
     _tmp/uftrace/{index.html,stage2} \

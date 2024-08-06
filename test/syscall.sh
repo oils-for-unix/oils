@@ -5,13 +5,18 @@
 # Usage:
 #   test/syscall.sh <function name>
 
-set -o nounset
-set -o pipefail
-set -o errexit
+: ${LIB_OSH=stdlib/osh}
+source $LIB_OSH/bash-strict.sh
+source $LIB_OSH/task-five.sh
 
 source build/dev-shell.sh
 
-readonly -a SHELLS=(dash bash mksh zsh ash yash osh)
+OSH=${OSH:-osh}
+YSH=${YSH:-ysh}
+
+# Compare bash 4 vs. bash 5
+#readonly -a SHELLS=(dash bash-4.4 bash $OSH)
+readonly -a SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash yash $OSH)
 
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
@@ -28,8 +33,17 @@ count-procs() {
     # avoid the extra processes that bin/osh starts!
     # relies on word splitting
     #(X)  # to compare against osh 0.8.pre3 installed
-    (osh)
-      sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oil.py osh"
+    osh)
+      sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oils_for_unix.py osh"
+      ;;
+    ysh)
+      sh="env PYTHONPATH=$REPO_ROOT:$REPO_ROOT/vendor $REPO_ROOT/bin/oils_for_unix.py ysh"
+      ;;
+    osh-cpp)
+      sh=_bin/cxx-dbg/osh
+      ;;
+    ysh-cpp)
+      sh=_bin/cxx-dbg/ysh
       ;;
   esac
 
@@ -43,7 +57,7 @@ run-case() {
   local code_str=$2
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num-$sh
+    local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     count-procs $out_prefix $sh -c "$code_str"
   done
@@ -58,7 +72,7 @@ run-case-file() {
   echo -n "$code_str" > _tmp/$num.sh
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num-$sh
+    local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     count-procs $out_prefix $sh _tmp/$num.sh
   done
@@ -71,12 +85,11 @@ run-case-stdin() {
   local code_str=$2
 
   for sh in "${SHELLS[@]}"; do
-    local out_prefix=$RAW_DIR/$num-$sh
+    local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     echo -n "$code_str" | count-procs $out_prefix $sh
   done
 }
-
 
 print-cases() {
   # format:  number, whitespace, then an arbitrary code string
@@ -203,7 +216,7 @@ by-input() {
   local suite='by-input'
 
   rm -r -f -v $RAW_DIR
-  mkdir -p $RAW_DIR
+  mkdir -p $RAW_DIR $BASE_DIR
 
   # Wow this newline makes a difference in shells!
 
@@ -245,7 +258,7 @@ by-input() {
   # This is identical for all shells
   #run-case 32 $'date; date\n#comment\n'
 
-  cat >$BASE_DIR/${suite}-cases.txt <<EOF
+  cat >$BASE_DIR/cases.${suite}.txt <<EOF
 30 -c: zero lines
 31 -c: one line
 32 -c: one line and comment
@@ -268,7 +281,6 @@ EOF
 
   count-lines $suite
   summarize $suite 3 0
-
 }
 
 # Quick hack: every shell uses 2 processes for this... doesn't illuminate much.
@@ -283,7 +295,7 @@ weird-command-sub() {
 
   local suite=weird-command-sub
 
-  cat >$BASE_DIR/${suite}-cases.txt <<EOF
+  cat >$BASE_DIR/cases.${suite}.txt <<EOF
 60 \$(< file)
 61 \$(< file; echo hi)
 EOF
@@ -311,7 +323,7 @@ by-code() {
   write-sourced
 
   local suite='by-code'
-  local cases=$BASE_DIR/${suite}-cases.txt
+  local cases=$BASE_DIR/cases.${suite}.txt
 
   number-cases > $cases
   head -n $max_cases $cases | while read -r num code_str; do
@@ -328,6 +340,16 @@ by-code() {
   summarize $suite 3 0
 }
 
+by-code-cpp() {
+  ninja _bin/cxx-dbg/{osh,ysh}
+  OSH=osh-cpp YSH=ysh-cpp $0 by-code "$@"
+}
+
+by-input-cpp() {
+  ninja _bin/cxx-dbg/{osh,ysh}
+  OSH=osh-cpp YSH=ysh-cpp $0 by-input "$@"
+}
+
 syscall-py() {
   PYTHONPATH=. test/syscall.py "$@"
 }
@@ -338,7 +360,7 @@ write-sourced() {
 
 count-lines() {
   local suite=${1:-by-code}
-  ( cd $RAW_DIR && wc -l * ) | head -n -1 > $BASE_DIR/${suite}-counts.txt
+  ( cd $RAW_DIR && wc -l * ) | head -n -1 > $BASE_DIR/wc.${suite}.txt
 }
 
 summarize() {
@@ -346,16 +368,17 @@ summarize() {
   local not_minimum=${2:-0}
   local more_than_bash=${3:-0}
 
-  local out=$BASE_DIR/${suite}.txt
   set +o errexit
-  cat $BASE_DIR/${suite}-counts.txt \
-    | syscall-py --not-minimum $not_minimum --more-than-bash $more_than_bash \
-                 $BASE_DIR/${suite}-cases.txt \
-    > $out
+  cat $BASE_DIR/wc.${suite}.txt \
+    | syscall-py \
+      --not-minimum $not_minimum \
+      --more-than-bash $more_than_bash \
+      --suite $suite \
+      $BASE_DIR/cases.${suite}.txt \
+      $BASE_DIR
   local status=$?
   set -o errexit
 
-  echo "Wrote $out"
   if test $status -eq 0; then
     echo 'OK'
   else
@@ -363,9 +386,7 @@ summarize() {
   fi
 }
 
-run-for-release() {
-  ### Run the two syscall suites
-
+soil-run() {
   # Invoked as one of the "other" tests.  Soil runs by-code and by-input
   # separately.
 
@@ -374,6 +395,12 @@ run-for-release() {
   by-input
 
   echo 'OK'
+}
+
+run-for-release() {
+  ### Run the two syscall suites
+
+  soil-run
 }
 
 #
@@ -408,4 +435,4 @@ cpython-configure() {
   popd
 }
 
-"$@"
+task-five "$@"

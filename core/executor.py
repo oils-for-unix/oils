@@ -14,7 +14,6 @@ from _devbuild.gen.syntax_asdl import (
     loc,
     loc_t,
 )
-from _devbuild.gen.value_asdl import value
 from builtin import hay_ysh
 from core import dev
 from core import error
@@ -23,7 +22,7 @@ from core.error import e_die, e_die_status
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import vm
 from frontend import consts
 from frontend import lexer
@@ -31,7 +30,7 @@ from mycpp.mylib import log
 
 import posix_ as posix
 
-from typing import cast, Dict, List, Optional, TYPE_CHECKING
+from typing import cast, Dict, List, Tuple, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from _devbuild.gen.runtime_asdl import (cmd_value, CommandStatus,
                                             StatusArray)
@@ -110,7 +109,7 @@ class ShellExecutor(vm._Executor):
             mem,  # type: state.Mem
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
-            procs,  # type: Dict[str, value.Proc]
+            procs,  # type: state.Procs
             hay_state,  # type: hay_ysh.HayState
             builtins,  # type: Dict[int, _Builtin]
             search_path,  # type: state.SearchPath
@@ -158,8 +157,8 @@ class ShellExecutor(vm._Executor):
         # type: () -> None
         assert self.cmd_ev is not None
 
-    def _MakeProcess(self, node, inherit_errexit=True):
-        # type: (command_t, bool) -> process.Process
+    def _MakeProcess(self, node, inherit_errexit, inherit_errtrace):
+        # type: (command_t, bool, bool) -> process.Process
         """Assume we will run the node in another process.
 
         Return a process.
@@ -185,11 +184,9 @@ class ShellExecutor(vm._Executor):
         #   interleaved.
         # - We could turn the `exit` builtin into a error.FatalRuntime exception
         #   and get this check for "free".
-        thunk = process.SubProgramThunk(self.cmd_ev,
-                                        node,
-                                        self.trap_state,
-                                        self.multi_trace,
-                                        inherit_errexit=inherit_errexit)
+        thunk = process.SubProgramThunk(self.cmd_ev, node, self.trap_state,
+                                        self.multi_trace, inherit_errexit,
+                                        inherit_errtrace)
         p = process.Process(thunk, self.job_control, self.job_list,
                             self.tracer)
         return p
@@ -282,7 +279,7 @@ class ShellExecutor(vm._Executor):
             # Pitfall: What happens if there are two of the same name?  I guess
             # that's why you have = and 'type' inspect them
 
-            proc_node = self.procs.get(arg0)
+            proc_node = self.procs.Get(arg0)
             if proc_node is not None:
                 if self.exec_opts.strict_errexit():
                     disabled_tok = self.mutable_opts.ErrExitDisabledToken()
@@ -396,7 +393,7 @@ class ShellExecutor(vm._Executor):
             pi = process.Pipeline(self.exec_opts.sigpipe_status_ok(),
                                   self.job_control, self.job_list, self.tracer)
             for child in node.children:
-                p = self._MakeProcess(child)
+                p = self._MakeProcess(child, True, self.exec_opts.errtrace())
                 p.Init_ParentPipeline(pi)
                 pi.Add(p)
 
@@ -412,7 +409,7 @@ class ShellExecutor(vm._Executor):
             # have to register SIGCHLD.  But then that introduces race conditions.
             # If we haven't called Register yet, then we won't know who to notify.
 
-            p = self._MakeProcess(node)
+            p = self._MakeProcess(node, True, self.exec_opts.errtrace())
             if self.job_control.Enabled():
                 p.AddStateChange(
                     process.SetPgid(process.OWN_LEADER, self.tracer))
@@ -440,7 +437,7 @@ class ShellExecutor(vm._Executor):
             # TODO: determine these locations at parse time?
             pipe_locs.append(loc.Command(child))
 
-            p = self._MakeProcess(child)
+            p = self._MakeProcess(child, True, self.exec_opts.errtrace())
             p.Init_ParentPipeline(pi)
             pi.Add(p)
 
@@ -459,17 +456,55 @@ class ShellExecutor(vm._Executor):
 
     def RunSubshell(self, node):
         # type: (command_t) -> int
-        p = self._MakeProcess(node)
+        p = self._MakeProcess(node, True, self.exec_opts.errtrace())
         if self.job_control.Enabled():
             p.AddStateChange(process.SetPgid(process.OWN_LEADER, self.tracer))
 
         return p.RunProcess(self.waiter, trace.ForkWait)
 
+    def CaptureStdout(self, node):
+        # type: (command_t) -> Tuple[int, str]
+
+        p = self._MakeProcess(node, self.exec_opts.inherit_errexit(),
+                              self.exec_opts.errtrace())
+        # Shell quirk: Command subs remain part of the shell's process group, so we
+        # don't use p.AddStateChange(process.SetPgid(...))
+
+        r, w = posix.pipe()
+        p.AddStateChange(process.StdoutToPipe(r, w))
+
+        p.StartProcess(trace.CommandSub)
+        #log('Command sub started %d', pid)
+
+        chunks = []  # type: List[str]
+        posix.close(w)  # not going to write
+        while True:
+            n, err_num = pyos.Read(r, 4096, chunks)
+
+            if n < 0:
+                if err_num == EINTR:
+                    pass  # retry
+                else:
+                    # Like the top level IOError handler
+                    e_die_status(
+                        2,
+                        'Oils I/O error (read): %s' % posix.strerror(err_num))
+
+            elif n == 0:  # EOF
+                break
+        posix.close(r)
+
+        status = p.Wait(self.waiter)
+        stdout_str = ''.join(chunks).rstrip('\n')
+
+        return status, stdout_str
+
     def RunCommandSub(self, cs_part):
         # type: (CommandSub) -> str
 
         if not self.exec_opts._allow_command_sub():
-            # _allow_command_sub is used in two places.  Only one of them turns off _allow_process_sub
+            # _allow_command_sub is used in two places.  Only one of them turns
+            # off _allow_process_sub
             if not self.exec_opts._allow_process_sub():
                 why = "status wouldn't be checked (strict_errexit)"
             else:
@@ -501,36 +536,7 @@ class ShellExecutor(vm._Executor):
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple
 
-        p = self._MakeProcess(node,
-                              inherit_errexit=self.exec_opts.inherit_errexit())
-        # Shell quirk: Command subs remain part of the shell's process group, so we
-        # don't use p.AddStateChange(process.SetPgid(...))
-
-        r, w = posix.pipe()
-        p.AddStateChange(process.StdoutToPipe(r, w))
-
-        p.StartProcess(trace.CommandSub)
-        #log('Command sub started %d', pid)
-
-        chunks = []  # type: List[str]
-        posix.close(w)  # not going to write
-        while True:
-            n, err_num = pyos.Read(r, 4096, chunks)
-
-            if n < 0:
-                if err_num == EINTR:
-                    pass  # retry
-                else:
-                    # Like the top level IOError handler
-                    e_die_status(
-                        2,
-                        'osh I/O error (read): %s' % posix.strerror(err_num))
-
-            elif n == 0:  # EOF
-                break
-        posix.close(r)
-
-        status = p.Wait(self.waiter)
+        status, stdout_str = self.CaptureStdout(node)
 
         # OSH has the concept of aborting in the middle of a WORD.  We're not
         # waiting until the command is over!
@@ -554,7 +560,7 @@ class ShellExecutor(vm._Executor):
         # Runtime errors test case: # $("echo foo > $@")
         # Why rstrip()?
         # https://unix.stackexchange.com/questions/17747/why-does-shell-command-substitution-gobble-up-a-trailing-newline-char
-        return ''.join(chunks).rstrip('\n')
+        return stdout_str
 
     def RunProcessSub(self, cs_part):
         # type: (CommandSub) -> str
@@ -607,7 +613,7 @@ class ShellExecutor(vm._Executor):
                 "Process subs not allowed here because status wouldn't be checked (strict_errexit)",
                 cs_loc)
 
-        p = self._MakeProcess(cs_part.child)
+        p = self._MakeProcess(cs_part.child, True, self.exec_opts.errtrace())
 
         r, w = posix.pipe()
         #log('pipe = %d, %d', r, w)

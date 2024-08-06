@@ -75,6 +75,12 @@ are **no encoding errors**.
 1. Byte escapes like `\yff` should not be in `u''` string.
    - By design, they're only valid in `b''` strings.
 
+Implementation-defined limit:
+
+4. Max string length (NYI)
+   - e.g. more than 4 billion bytes could overflow a length field, in some
+     implementations
+
 ## J8 Lines
 
 Roughly speaking, J8 Lines are an encoding for a stream of J8 strings.  In
@@ -105,7 +111,7 @@ JSON encoding has these errors:
    - e.g. a Dict that points to itself, a List that points to itself, and other
      permutations
 1. Float values of NaN, Inf, and -Inf can't be encoded.
-   - TODO: option to use `null` like JavaScript.
+   - (These encode to `null` in Oils, following JavaScript.)
 
 Note that invalid UTF-8 bytes like `0xfe` produce a Unicode replacement
 character, not a hard error.
@@ -123,6 +129,19 @@ character, not a hard error.
    - like the message `}{`
 1. Unexpected trailing input
    - like the message `42]` or `{}]`
+
+Implementation-defined limits, i.e. outside the grammar:
+
+5. Integer too big
+   - implementations may decode to a 64-bit integer
+1. Floats that are too big 
+   - may decode to `Inf`
+1. Max array length (NYI)
+   - e.g. more than 4 billion objects in an array could overflow a length
+     field, in some implementations
+1. Max object length (NYI)
+1. Max depth for arrays and objects (NYI)
+   - to avoid a recursive parser blowing the stack
 
 ## JSON8
 

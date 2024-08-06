@@ -34,7 +34,7 @@ from core import process
 from core import pyos
 from core import pyutil
 from core import state
-from core import ui
+from display import ui
 from core import util
 from core import vm
 from frontend import lexer
@@ -213,9 +213,10 @@ def InitCommandEvaluator(parse_ctx=None,
     errfmt = ui.ErrorFormatter()
     job_control = process.JobControl()
     job_list = process.JobList()
-    fd_state = process.FdState(errfmt, job_control, job_list, None, None, None)
+    fd_state = process.FdState(errfmt, job_control, job_list, None, None, None,
+                               exec_opts)
     aliases = {} if aliases is None else aliases
-    procs = {}
+    procs = state.Procs(mem)
     methods = {}
 
     compopt_state = completion.OptionState()

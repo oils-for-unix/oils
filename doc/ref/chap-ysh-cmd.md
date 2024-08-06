@@ -150,7 +150,15 @@ Compare with [sh-func](chap-builtin-cmd.html#sh-func).
 
 ### func
 
-TODO
+Define pure functions, in the style of Python and JavaScript:
+
+    func add(x, y) {
+      return (x + y)
+    }
+
+    echo $[add(3, 2)]  # => 5
+
+See the [Guide to Procs and Funcs](../proc-func.html) for details.
 
 ### ysh-return
 

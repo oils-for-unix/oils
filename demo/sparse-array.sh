@@ -8,7 +8,6 @@
 #
 #   core/shell.py defines these functions:
 #     _a2sp
-#     _d2sp
 #     _opsp
 #   builtin/func_misc.py is where they are implemented
 #

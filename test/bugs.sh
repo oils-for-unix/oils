@@ -40,4 +40,40 @@ esrch-test() {
   esrch-code-1 1000 | $osh -i
 }
 
+#
+# Bug #1853 - trap and fork optimizations - also hit by Samuel
+#
+
+trap-1() {
+  local sh=${1:-bin/osh}
+  set +o errexit
+
+  # This fails to run the trap
+  $sh -x -c 'trap "echo int" INT; sleep 5'
+}
+
+# Run with bin/ysh -x to show fork opts
+trap-2() {
+  local sh=${1:-bin/osh}
+  set +o errexit
+
+  # This runs it
+  $sh -x -c 'trap "echo int" INT; sleep 5; echo last'
+}
+
+trap-line() {
+  echo outer line=$LINENO
+  trap 'echo "trap line=$LINENO"' INT  # shows line 1
+  sleep 5
+  echo hi
+}
+
+bug-1853() {
+  local sh=${1:-bin/osh}
+
+  $sh -c 'trap "echo hi" EXIT; $(which true)'
+  echo --
+  $sh -c 'trap "echo hi" EXIT; $(which true); echo last'
+}
+
 "$@"

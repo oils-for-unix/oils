@@ -71,7 +71,7 @@ py3-lint() {
 
 # TODO: Use devtools/repo.sh instead of this hard-coded list
 readonly -a CODE_DIRS=(
-  asdl bin builtin core data_lang doctools frontend osh tools yaks ysh
+  asdl bin builtin core data_lang display doctools frontend osh tools yaks ysh
 
   prebuilt
   pyext

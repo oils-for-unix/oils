@@ -152,7 +152,7 @@ for i, file in *.py {README,foo}.md {
 3 foo.md
 ## END
 
-#### for x in <> { 
+#### for x in (stdin) { 
 
 # to avoid stdin conflict
 
@@ -177,12 +177,12 @@ space
 hi
 ## END
 
-#### I/O error in for x in <> { 
+#### I/O error in for x in (stdin) { 
 
 set +o errexit
 
 # EISDIR - stdin descriptor is dir
-$SH -c 'for x in <> { echo $x }' < /
+$SH -c 'for x in (stdin) { echo $x }' < /
 if test $? -ne 0; then
   echo pass
 fi

@@ -257,12 +257,11 @@ test-control-flow-graph() {
     banner "$ex"
 
     translate-example $ex
-    diff -u $data_dir/cf_edge.facts _tmp/mycpp-facts/cf_edge.facts
+    for fact_path in $data_dir/*.facts; do
+      local fact_file=$(basename $fact_path)
+      diff -u $data_dir/$fact_file _tmp/mycpp-facts/$fact_file
+    done
   done
-}
-
-golden-control-flow-graph() {
-  echo 'TODO: regenerate data in testdata/control-flow-graph'
 }
 
 test-runtime() {
@@ -309,7 +308,7 @@ test-translator() {
 
   run-test-func test-invalid-examples _test/mycpp/test-invalid-examples.log
 
-  #run-test-func test-control-flow-graph _test/mycpp/test-cfg-examples.log
+  run-test-func test-control-flow-graph _test/mycpp/test-cfg-examples.log
 
   # Runs tests in cxx-asan variant, and benchmarks in cxx-opt variant
   if ! ninja mycpp-logs-equal; then

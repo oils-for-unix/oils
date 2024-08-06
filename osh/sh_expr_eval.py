@@ -49,7 +49,7 @@ from core import error
 from core.error import e_die, e_die_status, e_strict, e_usage
 from core import num
 from core import state
-from core import ui
+from display import ui
 from core import util
 from frontend import consts
 from frontend import lexer
@@ -69,7 +69,6 @@ from libc import FNM_CASEFOLD, REG_ICASE
 
 from typing import Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
-    from core.ui import ErrorFormatter
     from core import optview
 
 _ = log
@@ -310,7 +309,7 @@ class ArithEvaluator(object):
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: state.MutableOpts
             parse_ctx,  # type: Optional[parse_lib.ParseContext]
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
     ):
         # type: (...) -> None
         self.word_ev = None  # type: word_eval.StringWordEvaluator
@@ -618,12 +617,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_SlashEqual:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_big = num.IntDivide(old_big, rhs_big)
+                    new_big = mops.Div(old_big, rhs_big)
 
                 elif op_id == Id.Arith_PercentEqual:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero')  # TODO: location
-                    new_big = num.IntRemainder(old_big, rhs_big)
+                    new_big = mops.Rem(old_big, rhs_big)
 
                 elif op_id == Id.Arith_DGreatEqual:
                     new_big = mops.RShift(old_big, rhs_big)
@@ -764,12 +763,12 @@ class ArithEvaluator(object):
                 elif op_id == Id.Arith_Slash:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', node.op)
-                    result = num.IntDivide(lhs_big, rhs_big)
+                    result = mops.Div(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_Percent:
                     if mops.Equal(rhs_big, mops.ZERO):
                         e_die('Divide by zero', node.op)
-                    result = num.IntRemainder(lhs_big, rhs_big)
+                    result = mops.Rem(lhs_big, rhs_big)
 
                 elif op_id == Id.Arith_DStar:
                     if mops.Greater(mops.ZERO, rhs_big):
@@ -803,8 +802,14 @@ class ArithEvaluator(object):
 
                 # Note: how to define shift of negative numbers?
                 elif op_id == Id.Arith_DLess:
+                    if mops.Greater(mops.ZERO, rhs_big):  # rhs_big < 0
+                        raise error.Expr("Can't left shift by negative number",
+                                         node.op)
                     result = mops.LShift(lhs_big, rhs_big)
                 elif op_id == Id.Arith_DGreat:
+                    if mops.Greater(mops.ZERO, rhs_big):  # rhs_big < 0
+                        raise error.Expr(
+                            "Can't right shift by negative number", node.op)
                     result = mops.RShift(lhs_big, rhs_big)
                 else:
                     raise AssertionError(op_id)
@@ -954,7 +959,7 @@ class BoolEvaluator(ArithEvaluator):
             exec_opts,  # type: optview.Exec
             mutable_opts,  # type: Optional[state.MutableOpts]
             parse_ctx,  # type: Optional[parse_lib.ParseContext]
-            errfmt,  # type: ErrorFormatter
+            errfmt,  # type: ui.ErrorFormatter
             always_strict=False  # type: bool
     ):
         # type: (...) -> None

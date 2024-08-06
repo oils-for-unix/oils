@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include "mycpp/common.h"  // DCHECK
+#include "mycpp/gc_tuple.h"
 
 class BigStr;
 
@@ -29,6 +30,7 @@ BigStr* ToHexUpper(BigInt b);
 BigStr* ToHexLower(BigInt b);
 
 BigInt FromStr(BigStr* s, int base = 10);
+Tuple2<bool, BigInt> FromFloat(double f);
 
 inline int BigTruncate(BigInt b) {
   return static_cast<int>(b);
@@ -46,14 +48,8 @@ inline BigInt FromBool(bool b) {
   return b ? BigInt(1) : BigInt(0);
 }
 
-inline float ToFloat(BigInt b) {
-  // TODO: test this
-  return static_cast<float>(b);
-}
-
-inline BigInt FromFloat(float f) {
-  // TODO: test this
-  return static_cast<BigInt>(f);
+inline double ToFloat(BigInt b) {
+  return static_cast<double>(b);
 }
 
 inline BigInt Negate(BigInt b) {
@@ -73,18 +69,14 @@ inline BigInt Mul(BigInt a, BigInt b) {
 }
 
 inline BigInt Div(BigInt a, BigInt b) {
-  // Is the behavior of negative values defined in C++?  Avoid difference with
-  // Python.
-  DCHECK(a >= 0);
-  DCHECK(b >= 0);
+  // Same check as in mops.py
+  DCHECK(b != 0);  // divisor can't be zero
   return a / b;
 }
 
 inline BigInt Rem(BigInt a, BigInt b) {
-  // Is the behavior of negative values defined in C++?  Avoid difference with
-  // Python.
-  DCHECK(a >= 0);
-  DCHECK(b >= 0);
+  // Same check as in mops.py
+  DCHECK(b != 0);  // divisor can't be zero
   return a % b;
 }
 
@@ -97,10 +89,12 @@ inline bool Greater(BigInt a, BigInt b) {
 }
 
 inline BigInt LShift(BigInt a, BigInt b) {
+  DCHECK(b >= 0);
   return a << b;
 }
 
 inline BigInt RShift(BigInt a, BigInt b) {
+  DCHECK(b >= 0);
   return a >> b;
 }
 

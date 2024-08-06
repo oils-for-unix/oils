@@ -93,7 +93,7 @@ from core import alloc
 from core.error import p_die
 from mycpp.mylib import log
 from core import pyutil
-from core import ui
+from display import ui
 from frontend import consts
 from frontend import lexer
 from frontend import reader
@@ -1423,7 +1423,8 @@ class WordParser(WordEmitter):
 
             # Cannot lookahead past lines
             if next_id == Id.Unknown_Tok:
-                self.lexer.MoveToNextLine()
+                if not self.lexer.MoveToNextLine():  # Try to move to next line
+                    break  # EOF
                 continue
 
             next_kind = consts.GetKind(next_id)

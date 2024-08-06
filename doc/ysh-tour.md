@@ -437,16 +437,16 @@ You can also request the loop index:
     # 0 - README.md
     # 1 - __init__.py
 
-To iterate over lines of `stdin`, use the special form:
+To iterate over lines of `stdin`, use:
 
-    for line in <> {
+    for line in (stdin) {
       echo $line
     }
     # lines are buffered, so it's much faster than `while read --rawline`
 
 Ask for the loop index:
 
-    for i, line in <> {
+    for i, line in (stdin) {
       echo "$i $line"
     }
 
@@ -696,7 +696,6 @@ Here are some categories of builtin:
 - Processes: `fork  wait  forkwait  exec`
 - Interpreter settings: `shopt  shvar`
 - Meta: `command  builtin  runproc  type  eval`
-- Modules: `source  module`
 
 <!-- TODO: Link to a comprehensive list of builtins -->
 
@@ -1165,10 +1164,10 @@ Example:
 
 ### Structured: JSON8, TSV8
 
-You can write and read **tree-shaped** as [JSON][]:
+You can write and read **tree-shaped** data as [JSON][]:
 
     var d = {key: 'value'}
-    json write (d)                # dump variable d as JSON
+    json write (d)                 # dump variable d as JSON
     # =>
     # {
     #   "key": "value"
@@ -1177,9 +1176,8 @@ You can write and read **tree-shaped** as [JSON][]:
     echo '["ale", 42]' > example.json
 
     json read (&d2) < example.json  # parse JSON into var d2
-    pp cell d2                      # inspect the in-memory value
-    # =>
-    # ['ale', 42]
+    pp (d2)                         # pretty print it 
+    # => (List)  ['ale', 42]
 
 [JSON][] will lose information when strings have binary data, but the slight
 [JSON8]($xref) upgrade won't:
@@ -1192,12 +1190,6 @@ You can write and read **tree-shaped** as [JSON][]:
     # }
 
 [JSON]: $xref
-
-<!--
-TODO:
-- Fix pp cell output
-- Use json write (d) syntax
--->
 
 **Table-shaped** data can be read and written as [TSV8]($xref).  (TODO: not yet
 implemented.)
@@ -1360,8 +1352,7 @@ A module is just a file, like this:
 #!/usr/bin/env ysh
 ### Deploy script
 
-module main || return 0         # declaration, "include guard"
-use bin cp mkdir                # optionally declare binaries used
+source-guard main || return 0   # declaration, "include guard"
 
 source $_this_dir/lib/util.ysh  # defines 'log' helper
 
