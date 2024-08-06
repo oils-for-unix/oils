@@ -57,6 +57,12 @@ def Options():
         type='int',
         help='Emit warnings about functions with too many stack roots')
 
+    p.add_option(
+        '--minimize-stack-roots',
+        dest='minimize_stack_roots',
+        default=False,
+        help='Try to minimize the number of GC stack roots.')
+
     return p
 
 
@@ -361,7 +367,11 @@ def main(argv):
         cfgs.update(cfg_pass.cfgs)
 
     log('\tmycpp pass: DATAFLOW')
-    stack_roots = pass_state.ComputeStackRoots(cfgs)
+    stack_roots = None
+    if opts.minimize_stack_roots:
+        stack_roots = pass_state.ComputeStackRoots(cfgs)
+    else:
+        pass_state.DumpControlFlowGraphs(cfgs)
 
     log('\tmycpp pass: IMPL')
 

@@ -2849,11 +2849,11 @@ class Generate(ExpressionVisitor[T], StatementVisitor[None]):
 
             for lval_name, c_type, is_param in self.prepend_to_block:
                 #self.log('%s %s %s', lval_name, c_type, is_param)
-                if lval_name not in roots and CTypeIsManaged(
-                        c_type
-                ) and self.stack_roots and self.stack_roots.needs_root(
-                        full_func_name, split_py_name(lval_name)):
-                    roots.append(lval_name)
+                if lval_name not in roots and CTypeIsManaged(c_type):
+                    if not self.stack_roots or self.stack_roots.needs_root(
+                            full_func_name, split_py_name(lval_name)):
+                        roots.append(lval_name)
+
             #self.log('roots %s', roots)
 
             if len(roots):
