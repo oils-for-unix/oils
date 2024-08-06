@@ -125,6 +125,17 @@ class TrapState(object):
 
         return run_list
 
+    def ThisProcessHasTraps(self):
+        # type: () -> bool
+        """
+        nolastfork optimizations should be disabled when the process has code
+        to run after fork!
+        """
+        if 0:
+            log('traps %d', len(self.traps))
+            log('hooks %d', len(self.hooks))
+        return len(self.traps) != 0 or len(self.hooks) != 0
+
 
 def _GetSignalNumber(sig_spec):
     # type: (str) -> int

@@ -1959,11 +1959,15 @@ class CommandEvaluator(object):
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
             #if self.exec_opts.no_fork_last():
+
+            # Bug: analysis happens too early:
+            #
+            # sh -c 'trap "echo trap" EXIT; date'
+            #if not self.trap_state.ThisProcessHasTraps():
+
             self._NoForkLast(node)  # turn the last ones into exec
 
-            # wow: this makes a difference in job control test
-            # yeah there is a PID difference of two
-            # we have to restore nofork
+            # TODO: this makes a difference in job control test
             #self._NoForkSentence(node)
 
         if 0:

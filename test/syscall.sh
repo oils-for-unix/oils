@@ -16,7 +16,10 @@ YSH=${YSH:-ysh}
 
 # Compare bash 4 vs. bash 5
 #readonly -a SHELLS=(dash bash-4.4 bash $OSH)
-readonly -a SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash yash $OSH)
+#readonly -a SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash yash $OSH)
+
+# Remove yash since functions are over-optimized - by-code.wrapped
+readonly -a SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash $OSH)
 
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
@@ -56,6 +59,11 @@ run-case() {
 
   local num=$1
   local code_str=$2
+  local func_wrap=${3:-}
+
+  if test -n "$func_wrap"; then
+    code_str="wrapper() { $code_str; }; wrapper"
+  fi
 
   for sh in "${SHELLS[@]}"; do
     local out_prefix=$RAW_DIR/${sh}__${num}
@@ -102,8 +110,11 @@ echo hi
 # external command
 date
 
-# Oil sentence
+# OSH calls this "sentence"
 date ;
+
+# trap - bash has special logic for this
+trap 'echo mytrap' EXIT; date
 
 # external then builtin
 date; echo hi
@@ -196,6 +207,14 @@ date | read x
 
 # osh does 5 when others do 3.
 ( echo a; echo b ) | ( wc -l )
+
+echo hi & wait
+
+date & wait
+
+echo hi | wc -l & wait
+
+date | wc -l & wait
 EOF
 
 # Discarded because they're identical
@@ -316,6 +335,7 @@ readonly MAX_CASES=100
 
 by-code() {
   ### Run cases that vary by code snippet
+  local func_wrap=${1:-}
 
   if ! strace true; then
     echo "Aborting because we couldn't run strace"
@@ -329,7 +349,13 @@ by-code() {
 
   write-sourced
 
-  local suite='by-code'
+  local suite
+  if test -n "$func_wrap"; then
+    suite='by-code-wrapped'
+  else
+    suite='by-code'
+  fi
+
   local cases=$BASE_DIR/cases.${suite}.txt
 
   number-cases > $cases
@@ -339,7 +365,7 @@ by-code() {
     echo "$num     $code_str"
     echo
 
-    run-case $num "$code_str"
+    run-case $num "$code_str" "$func_wrap"
   done
 
   # omit total line
@@ -399,6 +425,10 @@ soil-run() {
 
   # Note: Only $BASE_DIR/*.txt is included in the release/$VERSION/other.wwz
   by-code
+
+  # wrapped
+  by-code T
+
   by-input
 
   echo 'OK'

@@ -88,9 +88,9 @@ class FileLineReader(_Reader):
     def __init__(self, f, arena):
         # type: (mylib.LineReader, Arena) -> None
         """
-    Args:
-      lines: List of (line_id, line) pairs
-    """
+        Args:
+          lines: List of (line_id, line) pairs
+        """
         _Reader.__init__(self, arena)
         self.f = f
         self.last_line_hint = False
