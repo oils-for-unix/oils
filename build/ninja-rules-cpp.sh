@@ -91,6 +91,9 @@ setglobal_compile_flags() {
   case $variant in
     *+bumpleak|*+bumproot)
       ;;
+    *+bigint)
+      flags="$flags -D MARK_SWEEP -D BIGINT"
+      ;;
     *)
       flags="$flags -D MARK_SWEEP"
       ;;

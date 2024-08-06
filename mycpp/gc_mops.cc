@@ -60,6 +60,10 @@ Tuple2<bool, BigInt> FromFloat(double f) {
   if (isnan(f) || isinf(f)) {
     return Tuple2<bool, BigInt>(false, MINUS_ONE);
   }
+#ifdef BIGINT
+  // Testing that _bin/cxx-opt+bigint/ysh is actually different!
+  log("*** BIGINT active ***");
+#endif
   return Tuple2<bool, BigInt>(true, static_cast<BigInt>(f));
 }
 

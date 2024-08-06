@@ -7,7 +7,7 @@ from __future__ import print_function
 import os
 import sys
 
-from build.ninja_lib import log, COMPILERS_VARIANTS
+from build.ninja_lib import log, COMPILERS_VARIANTS, OTHER_VARIANTS
 
 _ = log
 
@@ -57,7 +57,7 @@ def DefineTargets(ru):
     ]:
         ru.cc_binary(test_main,
                      deps=['//mycpp/runtime'],
-                     matrix=COMPILERS_VARIANTS,
+                     matrix=(COMPILERS_VARIANTS + OTHER_VARIANTS),
                      phony_prefix='mycpp-unit')
 
     ru.cc_binary(

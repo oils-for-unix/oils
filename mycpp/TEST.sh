@@ -149,8 +149,7 @@ ex-opt-bench() {
 # Unit Tests
 #
 
-unit() {
-  ### Run by test/cpp-unit.sh
+run-unit-tests() {
 
   local compiler=${1:-cxx}
   local variant=${2:-asan+gcalways}
@@ -264,34 +263,40 @@ test-control-flow-graph() {
   done
 }
 
-test-runtime() {
+# TODO: Run with Clang UBSAN in CI as well
+readonly UBSAN_COMPILER=cxx
+
+unit() {
+  ### Run by test/cpp-unit.sh
+
   # Run other unit tests, e.g. the GC tests
 
   if can-compile-32-bit; then
-    unit '' asan32+gcalways  # ASAN on 32-bit
+    run-unit-tests '' asan32+gcalways  # ASAN on 32-bit
   else
     log ''
     log "*** Can't compile 32-bit binaries (gcc-multilib g++-multilib needed on Debian)"
     log ''
   fi
 
-  # TODO: Run with Clang UBSAN in CI as well
-  local ubsan_compiler=cxx
-  #local ubsan_compiler=clang
+  # Run other tests with all variants
 
-  for config in cxx-asan+bumpleak $ubsan_compiler-ubsan+bumpleak; do
+  run-unit-tests $UBSAN_COMPILER ubsan
+
+  run-unit-tests '' asan
+  run-unit-tests '' asan+gcalways
+  run-unit-tests '' opt
+  run-unit-tests '' asan+bigint
+
+  bump-leak-heap-test
+}
+
+bump-leak-heap-test() {
+  for config in cxx-asan+bumpleak $UBSAN_COMPILER-ubsan+bumpleak; do
     local bin=_bin/$config/mycpp/bump_leak_heap_test
     ninja $bin
     run-test-bin $bin
   done
-
-  # Run other tests with all variants
-
-  unit $ubsan_compiler ubsan
-
-  unit '' asan
-  unit '' asan+gcalways
-  unit '' opt
 }
 
 #
