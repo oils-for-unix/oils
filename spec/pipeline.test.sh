@@ -1,4 +1,4 @@
-## oils_failures_allowed: 1
+## oils_failures_allowed: 0
 ## compare_shells: bash dash mksh zsh
 
 #
@@ -232,7 +232,3 @@ status=1
 
 ## N-I dash STDOUT:
 ## END
-
-
-
-
