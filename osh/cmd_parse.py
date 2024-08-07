@@ -2304,7 +2304,7 @@ class CommandParser(object):
         ate = self._Eat(Id.Right_Subshell)
         right = word_.AsOperatorToken(ate)
 
-        return command.Subshell(left, child, right)
+        return command.Subshell(left, child, right, False)
 
     def ParseDBracket(self):
         # type: () -> command.DBracket

@@ -1570,7 +1570,13 @@ class CommandEvaluator(object):
 
                 # This is a leaf from the parent process POV
                 cmd_st.check_errexit = True
-                status = self.shell_ex.RunSubshell(node.child)
+
+                if node.is_last_cmd:
+                    # If the subshell is the last command in the process, just
+                    # run it in this process.  See _MarkIsLastCmd().
+                    status = self._Execute(node.child)
+                else:
+                    status = self.shell_ex.RunSubshell(node.child)
 
             elif case(command_e.DBracket):  # LEAF command
                 node = cast(command.DBracket, UP_node)
@@ -1863,7 +1869,7 @@ class CommandEvaluator(object):
         """For main_loop.py to determine the exit code of the shell itself."""
         return self.mem.LastStatus()
 
-    def _NoForkLast(self, node):
+    def _MarkIsLastCmd(self, node):
         # type: (command_t) -> None
 
         if 0:
@@ -1879,53 +1885,30 @@ class CommandEvaluator(object):
                 if 0:
                     log('Simple optimized')
 
+            elif case(command_e.Subshell):
+                node = cast(command.Subshell, UP_node)
+                node.is_last_cmd = True
+
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
                 # Bug fix: if we change the status, we can't exec the last
                 # element!
                 if node.negated is None and not self.exec_opts.pipefail():
-                    self._NoForkLast(node.children[-1])
+                    self._MarkIsLastCmd(node.children[-1])
 
             elif case(command_e.Sentence):
                 node = cast(command.Sentence, UP_node)
-                self._NoForkLast(node.child)
+                self._MarkIsLastCmd(node.child)
 
             elif case(command_e.CommandList):
                 # Subshells often have a CommandList child
                 node = cast(command.CommandList, UP_node)
-                self._NoForkLast(node.children[-1])
+                self._MarkIsLastCmd(node.children[-1])
 
             elif case(command_e.BraceGroup):
                 # TODO: What about redirects?
                 node = cast(BraceGroup, UP_node)
-                self._NoForkLast(node.children[-1])
-
-    def _NoForkSentence(self, node):
-        # type: (command_t) -> None
-
-        if 0:
-            log('optimizing')
-            node.PrettyPrint(sys.stderr)
-            log('')
-
-        UP_node = node
-        with tagswitch(node) as case:
-            if case(command_e.Simple):
-                node = cast(command.Simple, UP_node)
-                node.is_last_cmd = False
-                if 0:
-                    log('Simple optimized')
-
-            #elif case(command_e.Pipeline):
-            #    node = cast(command.Pipeline, UP_node)
-            #    if node.negated is None:
-            #        #log ('pipe')
-            #        self._NoForkLast(node.children[-1])
-
-            elif case(command_e.Sentence):
-                node = cast(command.Sentence, UP_node)
-                if node.terminator.id == Id.Op_Amp:
-                    self._NoForkSentence(node.child)
+                self._MarkIsLastCmd(node.children[-1])
 
     def _RemoveSubshells(self, node):
         # type: (command_t) -> command_t
@@ -1963,17 +1946,8 @@ class CommandEvaluator(object):
         """
         if cmd_flags & Optimize:
             node = self._RemoveSubshells(node)
-            #if self.exec_opts.no_fork_last():
-
-            # Bug: analysis happens too early:
-            #
-            # sh -c 'trap "echo trap" EXIT; date'
-            #if not self.trap_state.ThisProcessHasTraps():
-
-            self._NoForkLast(node)  # turn the last ones into exec
-
-            # TODO: this makes a difference in job control test
-            #self._NoForkSentence(node)
+            # mark the last command in process, so we may avoid forks
+            self._MarkIsLastCmd(node)
 
         if 0:
             log('after opt:')

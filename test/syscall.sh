@@ -147,6 +147,14 @@ date; { date; }
 
 echo hi; (date)
 
+echo hi; (date;)
+
+echo hi; (echo hi;)
+
+echo hi; (echo hi; date)
+
+( echo hi ); echo hi
+
 # Sentence in Oil
 (date;) > /tmp/out.txt
 
@@ -207,8 +215,9 @@ date | read x
 # osh does 4 when others do 3.  So every shell optimizes this extra pipeline.
 ( echo a; echo b ) | wc -l
 
-# osh does 5 when others do 3.
 ( echo a; echo b ) | ( wc -l )
+
+{ echo prefix; ( echo a; echo b ); } | ( wc -l )
 
 echo hi & wait
 
