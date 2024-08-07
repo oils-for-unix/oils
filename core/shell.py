@@ -990,7 +990,7 @@ def Main(
 
         # Same logic as interactive shell
         mut_status = IntParamBox(status)
-        cmd_ev.MaybeRunExitTrap(mut_status)
+        cmd_ev.RunTrapsOnExit(mut_status)
         status = mut_status.i
 
         return status
@@ -1060,7 +1060,7 @@ def Main(
                 status = e.status
 
             mut_status = IntParamBox(status)
-            cmd_ev.MaybeRunExitTrap(mut_status)
+            cmd_ev.RunTrapsOnExit(mut_status)
             status = mut_status.i
 
         if readline:
@@ -1139,7 +1139,7 @@ def Main(
         except util.UserExit as e:
             status = e.status
     mut_status = IntParamBox(status)
-    cmd_ev.MaybeRunExitTrap(mut_status)
+    cmd_ev.RunTrapsOnExit(mut_status)
 
     multi_trace.WriteDumps()
 
