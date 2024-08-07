@@ -62,33 +62,35 @@ class Eval(vm._Builtin):
         self.errfmt = errfmt
         self.mem = mem
 
+    def RunTyped(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        """For eval (mycmd)"""
+        rd = typed_args.ReaderForProc(cmd_val)
+        cmd = rd.PosCommand()
+        dollar0 = rd.NamedStr("dollar0", None)
+        pos_args_raw = rd.NamedList("pos_args", None)
+        vars = rd.NamedDict("vars", None)
+        rd.Done()
+
+        pos_args = None  # type: List[str]
+        if pos_args_raw is not None:
+            pos_args = []
+            for arg in pos_args_raw:
+                if arg.tag() != value_e.Str:
+                    raise error.TypeErr(
+                        arg,
+                        "Expected pos_args to be a list of Strs",
+                        rd.LeftParenToken())
+
+                pos_args.append(cast(value.Str, arg).s)
+
+        with state.ctx_Eval(self.mem, dollar0, pos_args, vars):
+            return self.cmd_ev.EvalCommand(cmd)
+
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-
-        if cmd_val.proc_args:  # eval (mycmd)
-            rd = typed_args.ReaderForProc(cmd_val)
-            cmd = rd.PosCommand()
-            dollar0 = rd.NamedStr("dollar0", None)
-
-            pos_args_raw = rd.NamedList("pos_args", None)
-            if pos_args_raw is not None:
-                pos_args = []  # type: List[str]
-                for arg in pos_args_raw:
-                    if arg.tag() != value_e.Str:
-                        raise error.TypeErr(
-                            arg,
-                            "Expected pos_args to be a list of Str",
-                            rd.LeftParenToken())
-
-                    pos_args.append(cast(value.Str, arg).s)
-            else:
-                pos_args = None
-
-            vars = rd.NamedDict("vars", None)
-
-            rd.Done()
-            with state.ctx_Eval(self.mem, dollar0, pos_args, vars):
-                return self.cmd_ev.EvalCommand(cmd)
+        if cmd_val.proc_args:
+            return self.RunTyped(cmd_val)
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_util.ParseCmdVal('eval', cmd_val)
