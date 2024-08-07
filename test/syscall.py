@@ -95,7 +95,7 @@ def WriteProcessReport(f, cases, code_strs, proc_sh, num_procs,
         else:
             f.write('\t')
 
-        bash_count = num_procs[case_id, 'bash-4.4']
+        bash_count = num_procs[case_id, 'bash-5.2.21']
         if osh_count > bash_count:
             more_than_bash += 1
         if osh_count < bash_count:
@@ -110,8 +110,8 @@ def WriteProcessReport(f, cases, code_strs, proc_sh, num_procs,
     f.write('\n\n')
     f.write("Cases where ...\n")
     f.write("  OSH isn't the minimum: %d\n" % not_minimum)
-    f.write("  OSH starts more than bash: %d\n" % more_than_bash)
-    f.write("  OSH starts fewer than bash: %d\n\n" % fewer_than_bash)
+    f.write("  OSH starts more than bash 5: %d\n" % more_than_bash)
+    f.write("  OSH starts fewer than bash 5: %d\n\n" % fewer_than_bash)
 
     return not_minimum, more_than_bash, fewer_than_bash
 

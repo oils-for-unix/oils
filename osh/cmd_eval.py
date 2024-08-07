@@ -1887,7 +1887,12 @@ class CommandEvaluator(object):
 
             elif case(command_e.Subshell):
                 node = cast(command.Subshell, UP_node)
+                # Mark ourselves as the last
                 node.is_last_cmd = True
+
+                # Also mark 'date' as the last one
+                # echo 1; (echo 2; date)
+                self._MarkIsLastCmd(node.child)
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
