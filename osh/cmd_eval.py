@@ -111,9 +111,10 @@ if TYPE_CHECKING:
 # ExecuteAndCatch, along with SetValue() flags.
 IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
-Optimize = 1 << 2
-NoDebugTrap = 1 << 3
-NoErrTrap = 1 << 4
+OptimizeSubshells = 1 << 2
+MarkLastCommands = 1 << 3
+NoDebugTrap = 1 << 4
+NoErrTrap = 1 << 5
 
 
 def MakeBuiltinArgv(argv1):
@@ -1573,7 +1574,7 @@ class CommandEvaluator(object):
 
                 if node.is_last_cmd:
                     # If the subshell is the last command in the process, just
-                    # run it in this process.  See _MarkIsLastCmd().
+                    # run it in this process.  See _MarkLastCommands().
                     status = self._Execute(node.child)
                 else:
                     status = self.shell_ex.RunSubshell(node.child)
@@ -1869,7 +1870,7 @@ class CommandEvaluator(object):
         """For main_loop.py to determine the exit code of the shell itself."""
         return self.mem.LastStatus()
 
-    def _MarkIsLastCmd(self, node):
+    def _MarkLastCommands(self, node):
         # type: (command_t) -> None
 
         if 0:
@@ -1892,28 +1893,28 @@ class CommandEvaluator(object):
 
                 # Also mark 'date' as the last one
                 # echo 1; (echo 2; date)
-                self._MarkIsLastCmd(node.child)
+                self._MarkLastCommands(node.child)
 
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
                 # Bug fix: if we change the status, we can't exec the last
                 # element!
                 if node.negated is None and not self.exec_opts.pipefail():
-                    self._MarkIsLastCmd(node.children[-1])
+                    self._MarkLastCommands(node.children[-1])
 
             elif case(command_e.Sentence):
                 node = cast(command.Sentence, UP_node)
-                self._MarkIsLastCmd(node.child)
+                self._MarkLastCommands(node.child)
 
             elif case(command_e.CommandList):
                 # Subshells often have a CommandList child
                 node = cast(command.CommandList, UP_node)
-                self._MarkIsLastCmd(node.children[-1])
+                self._MarkLastCommands(node.children[-1])
 
             elif case(command_e.BraceGroup):
                 # TODO: What about redirects?
                 node = cast(BraceGroup, UP_node)
-                self._MarkIsLastCmd(node.children[-1])
+                self._MarkLastCommands(node.children[-1])
 
     def _RemoveSubshells(self, node):
         # type: (command_t) -> command_t
@@ -1930,7 +1931,7 @@ class CommandEvaluator(object):
                 return self._RemoveSubshells(node.child)
         return node
 
-    def ExecuteAndCatch(self, node, cmd_flags=0):
+    def ExecuteAndCatch(self, node, cmd_flags):
         # type: (command_t, int) -> Tuple[bool, bool]
         """Execute a subprogram, handling vm.IntControlFlow and fatal exceptions.
 
@@ -1949,10 +1950,12 @@ class CommandEvaluator(object):
         Note: To do what optimize does, dash has EV_EXIT flag and yash has a
         finally_exit boolean.  We use a different algorithm.
         """
-        if cmd_flags & Optimize:
+        if cmd_flags & OptimizeSubshells:
             node = self._RemoveSubshells(node)
-            # mark the last command in process, so we may avoid forks
-            self._MarkIsLastCmd(node)
+
+        if cmd_flags & MarkLastCommands:
+            # Mark the last command in each process, so we may avoid forks
+            self._MarkLastCommands(node)
 
         if 0:
             log('after opt:')
@@ -2079,7 +2082,7 @@ class CommandEvaluator(object):
             # RunPendingTraps() in the MAIN LOOP
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
-                    is_return, is_fatal = self.ExecuteAndCatch(node)
+                    is_return, is_fatal = self.ExecuteAndCatch(node, 0)
                 except util.UserExit as e:  # explicit exit
                     mut_status.i = e.status
                     return
