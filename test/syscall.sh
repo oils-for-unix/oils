@@ -161,8 +161,17 @@ echo hi; (echo hi; date)
 
 ( echo hi ); echo hi
 
-# Sentence in Oil
-(date;) > /tmp/out.txt
+date > /tmp/redir.txt
+
+(date;) > /tmp/sentence.txt
+
+date 2> /tmp/stderr.txt | wc -l
+
+echo hi > /tmp/redir.txt
+
+(echo hi;) > /tmp/sentence.txt
+
+echo hi 2> /tmp/stderr.txt | wc -l
 
 (date; echo hi)
 

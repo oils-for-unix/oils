@@ -1906,6 +1906,16 @@ class CommandEvaluator(object):
                 node = cast(command.Sentence, UP_node)
                 self._MarkLastCommands(node.child)
 
+            elif case(command_e.Redirect):
+                node = cast(command.Sentence, UP_node)
+                # Don't need to restore the redirect in any of these cases:
+
+                # bin/osh -c 'echo hi 2>stderr'
+                # bin/osh -c '{ echo hi; date; } 2>stderr'
+                # echo hi 2>stderr | wc -l
+
+                self._MarkLastCommands(node.child)
+
             elif case(command_e.CommandList):
                 # Subshells often have a CommandList child
                 node = cast(command.CommandList, UP_node)
