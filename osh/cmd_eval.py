@@ -2049,8 +2049,18 @@ class CommandEvaluator(object):
         """
         like ExecuteAndCatch
         """
-        # TODO: catch
-        self.RunPendingTraps()
+        # Note: exit status is lost
+        try:
+            self.RunPendingTraps()
+        except vm.IntControlFlow as e:
+            # I think we can ignore this - traps are used for side effects
+            pass
+        except error.ErrExit as e:
+            # Print error
+            pass
+        except error.FatalRuntime as e:
+            # Print error
+            pass
 
     def EvalCommand(self, block):
         # type: (command_t) -> int
@@ -2080,7 +2090,7 @@ class CommandEvaluator(object):
 
         return status
 
-    def MaybeRunExitTrap(self, mut_status):
+    def RunTrapsOnExit(self, mut_status):
         # type: (IntParamBox) -> None
         """If an EXIT trap handler exists, run it.
 
