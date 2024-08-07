@@ -1748,11 +1748,32 @@ class CommandEvaluator(object):
             with state.ctx_Option(self.mutable_opts, [option_i._running_trap],
                                   True):
                 for trap_node in trap_nodes:
-                    # Isolate the exit status.
                     with state.ctx_Registers(self.mem):
-                        # Trace it.  TODO: Show the trap kind too
+                        # TODO: show trap kind in trace
                         with dev.ctx_Tracer(self.tracer, 'trap', None):
+                            # Note: exit status is lost
                             self._Execute(trap_node)
+
+    def RunPendingTrapsAndCatch(self):
+        # type: () -> None
+        """
+        Like the above, but calls ExecuteAndCatch(), which may raise util.UserExit
+        """
+        trap_nodes = self.trap_state.GetPendingTraps()
+        if trap_nodes is not None:
+            with state.ctx_Option(self.mutable_opts, [option_i._running_trap],
+                                  True):
+                for trap_node in trap_nodes:
+                    with state.ctx_Registers(self.mem):
+                        # TODO: show trap kind in trace
+                        with dev.ctx_Tracer(self.tracer, 'trap', None):
+                            # Note: exit status is lost
+                            try:
+                                self.ExecuteAndCatch(trap_node, 0)
+                            except util.UserExit:
+                                # If user calls 'exit', stop running traps, but
+                                # we still run the EXIT trap later.
+                                break
 
     def _Execute(self, node):
         # type: (command_t) -> int
@@ -2043,24 +2064,6 @@ class CommandEvaluator(object):
 
         self.mem.SetLastStatus(status)
         return is_return, is_fatal
-
-    def RunPendingTrapsAndCatch(self):
-        # type: () -> None
-        """
-        like ExecuteAndCatch
-        """
-        # Note: exit status is lost
-        try:
-            self.RunPendingTraps()
-        except vm.IntControlFlow as e:
-            # I think we can ignore this - traps are used for side effects
-            pass
-        except error.ErrExit as e:
-            # Print error
-            pass
-        except error.FatalRuntime as e:
-            # Print error
-            pass
 
     def EvalCommand(self, block):
         # type: (command_t) -> int
