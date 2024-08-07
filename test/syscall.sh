@@ -17,11 +17,13 @@ YSH=${YSH:-ysh}
 #readonly -a SHELLS=(dash bash-4.4 bash $OSH)
 
 # Compare bash 4 vs. bash 5
-readonly -a SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash $OSH)
+SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash $OSH $YSH)
+
+SHELLS_MORE=( ${SHELLS[@]} yash )
 
 # yash does something fundamentally different in by-code.wrapped - it
 # understands functions
-# SHELLS+=(yash)
+#SHELLS+=(yash)
 
 readonly BASE_DIR='_tmp/syscall'  # What we'll publish
 readonly RAW_DIR='_tmp/syscall-raw'  # Raw data
@@ -63,11 +65,15 @@ run-case() {
   local code_str=$2
   local func_wrap=${3:-}
 
+  local -a shells
   if test -n "$func_wrap"; then
     code_str="wrapper() { $code_str; }; wrapper"
+    shells=( "${SHELLS[@]}" )
+  else
+    shells=( "${SHELLS_MORE[@]}" )
   fi
 
-  for sh in "${SHELLS[@]}"; do
+  for sh in "${shells[@]}"; do
     local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     count-procs $out_prefix $sh -c "$code_str"
@@ -82,7 +88,7 @@ run-case-file() {
 
   echo -n "$code_str" > _tmp/$num.sh
 
-  for sh in "${SHELLS[@]}"; do
+  for sh in "${SHELLS_MORE[@]}"; do
     local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     count-procs $out_prefix $sh _tmp/$num.sh
@@ -95,7 +101,7 @@ run-case-stdin() {
   local num=$1
   local code_str=$2
 
-  for sh in "${SHELLS[@]}"; do
+  for sh in "${SHELLS_MORE[@]}"; do
     local out_prefix=$RAW_DIR/${sh}__${num}
     echo "--- $sh"
     echo -n "$code_str" | count-procs $out_prefix $sh
@@ -147,8 +153,25 @@ date; { date; }
 
 echo hi; (date)
 
-# Sentence in Oil
-(date;) > /tmp/out.txt
+echo hi; (date;)
+
+echo hi; (echo hi;)
+
+echo hi; (echo hi; date)
+
+( echo hi ); echo hi
+
+date > /tmp/redir.txt
+
+(date;) > /tmp/sentence.txt
+
+date 2> /tmp/stderr.txt | wc -l
+
+echo hi > /tmp/redir.txt
+
+(echo hi;) > /tmp/sentence.txt
+
+echo hi 2> /tmp/stderr.txt | wc -l
 
 (date; echo hi)
 
@@ -207,8 +230,9 @@ date | read x
 # osh does 4 when others do 3.  So every shell optimizes this extra pipeline.
 ( echo a; echo b ) | wc -l
 
-# osh does 5 when others do 3.
 ( echo a; echo b ) | ( wc -l )
+
+{ echo prefix; ( echo a; echo b ); } | ( wc -l )
 
 echo hi & wait
 
@@ -267,51 +291,51 @@ by-input() {
   newline2=$'date\n\ndate\n#comment'
 
   # zsh is the only shell to optimize all 6 cases!  2 processes instead of 3.
-  run-case 30 "$zero"
-  run-case 31 "$one"
-  run-case 32 "$two"
-  run-case 33 "$comment"
-  run-case 34 "$newline"
-  run-case 35 "$newline2"
+  run-case 50 "$zero"
+  run-case 51 "$one"
+  run-case 52 "$two"
+  run-case 53 "$comment"
+  run-case 54 "$newline"
+  run-case 55 "$newline2"
 
-  run-case-file 40 "$zero"
-  run-case-file 41 "$one"
-  run-case-file 42 "$two"
-  run-case-file 43 "$comment"
-  run-case-file 44 "$newline2"
-  run-case-file 45 "$newline2"
+  run-case-file 60 "$zero"
+  run-case-file 61 "$one"
+  run-case-file 62 "$two"
+  run-case-file 63 "$comment"
+  run-case-file 64 "$newline2"
+  run-case-file 65 "$newline2"
 
   # yash is the only shell to optimize the stdin case at all!
   # it looks for a lack of trailing newline.
-  run-case-stdin 50 "$zero"
-  run-case-stdin 51 "$one"
-  run-case-stdin 52 "$two"
-  run-case-stdin 53 "$comment"
-  run-case-stdin 54 "$newline2"
-  run-case-stdin 55 "$newline2"
+  run-case-stdin 70 "$zero"
+  run-case-stdin 71 "$one"
+  run-case-stdin 72 "$two"
+  run-case-stdin 73 "$comment"
+  run-case-stdin 74 "$newline2"
+  run-case-stdin 75 "$newline2"
 
   # This is identical for all shells
   #run-case 32 $'date; date\n#comment\n'
 
   cat >$BASE_DIR/cases.${suite}.txt <<EOF
-30 -c: zero lines
-31 -c: one line
-32 -c: one line and comment
-33 -c: comment first
-34 -c: newline
-35 -c: newline2
-40 file: zero lines
-41 file: one line
-42 file: one line and comment
-43 file: comment first
-44 file: newline
-45 file: newline2
-50 stdin: zero lines
-51 stdin: one line
-52 stdin: one line and comment
-53 stdin: comment first
-54 stdin: newline
-55 stdin: newline2
+50 -c: zero lines
+51 -c: one line
+52 -c: one line and comment
+53 -c: comment first
+54 -c: newline
+55 -c: newline2
+60 file: zero lines
+61 file: one line
+62 file: one line and comment
+63 file: comment first
+64 file: newline
+65 file: newline2
+70 stdin: zero lines
+71 stdin: one line
+72 stdin: one line and comment
+73 stdin: comment first
+74 stdin: newline
+75 stdin: newline2
 EOF
 
   count-lines $suite

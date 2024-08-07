@@ -111,9 +111,10 @@ if TYPE_CHECKING:
 # ExecuteAndCatch, along with SetValue() flags.
 IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
-Optimize = 1 << 2
-NoDebugTrap = 1 << 3
-NoErrTrap = 1 << 4
+OptimizeSubshells = 1 << 2
+MarkLastCommands = 1 << 3
+NoDebugTrap = 1 << 4
+NoErrTrap = 1 << 5
 
 
 def MakeBuiltinArgv(argv1):
@@ -1570,7 +1571,13 @@ class CommandEvaluator(object):
 
                 # This is a leaf from the parent process POV
                 cmd_st.check_errexit = True
-                status = self.shell_ex.RunSubshell(node.child)
+
+                if node.is_last_cmd:
+                    # If the subshell is the last command in the process, just
+                    # run it in this process.  See _MarkLastCommands().
+                    status = self._Execute(node.child)
+                else:
+                    status = self.shell_ex.RunSubshell(node.child)
 
             elif case(command_e.DBracket):  # LEAF command
                 node = cast(command.DBracket, UP_node)
@@ -1863,7 +1870,7 @@ class CommandEvaluator(object):
         """For main_loop.py to determine the exit code of the shell itself."""
         return self.mem.LastStatus()
 
-    def _NoForkLast(self, node):
+    def _MarkLastCommands(self, node):
         # type: (command_t) -> None
 
         if 0:
@@ -1879,53 +1886,45 @@ class CommandEvaluator(object):
                 if 0:
                     log('Simple optimized')
 
+            elif case(command_e.Subshell):
+                node = cast(command.Subshell, UP_node)
+                # Mark ourselves as the last
+                node.is_last_cmd = True
+
+                # Also mark 'date' as the last one
+                # echo 1; (echo 2; date)
+                self._MarkLastCommands(node.child)
+
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
                 # Bug fix: if we change the status, we can't exec the last
                 # element!
                 if node.negated is None and not self.exec_opts.pipefail():
-                    self._NoForkLast(node.children[-1])
+                    self._MarkLastCommands(node.children[-1])
 
             elif case(command_e.Sentence):
                 node = cast(command.Sentence, UP_node)
-                self._NoForkLast(node.child)
+                self._MarkLastCommands(node.child)
+
+            elif case(command_e.Redirect):
+                node = cast(command.Sentence, UP_node)
+                # Don't need to restore the redirect in any of these cases:
+
+                # bin/osh -c 'echo hi 2>stderr'
+                # bin/osh -c '{ echo hi; date; } 2>stderr'
+                # echo hi 2>stderr | wc -l
+
+                self._MarkLastCommands(node.child)
 
             elif case(command_e.CommandList):
                 # Subshells often have a CommandList child
                 node = cast(command.CommandList, UP_node)
-                self._NoForkLast(node.children[-1])
+                self._MarkLastCommands(node.children[-1])
 
             elif case(command_e.BraceGroup):
                 # TODO: What about redirects?
                 node = cast(BraceGroup, UP_node)
-                self._NoForkLast(node.children[-1])
-
-    def _NoForkSentence(self, node):
-        # type: (command_t) -> None
-
-        if 0:
-            log('optimizing')
-            node.PrettyPrint(sys.stderr)
-            log('')
-
-        UP_node = node
-        with tagswitch(node) as case:
-            if case(command_e.Simple):
-                node = cast(command.Simple, UP_node)
-                node.is_last_cmd = False
-                if 0:
-                    log('Simple optimized')
-
-            #elif case(command_e.Pipeline):
-            #    node = cast(command.Pipeline, UP_node)
-            #    if node.negated is None:
-            #        #log ('pipe')
-            #        self._NoForkLast(node.children[-1])
-
-            elif case(command_e.Sentence):
-                node = cast(command.Sentence, UP_node)
-                if node.terminator.id == Id.Op_Amp:
-                    self._NoForkSentence(node.child)
+                self._MarkLastCommands(node.children[-1])
 
     def _RemoveSubshells(self, node):
         # type: (command_t) -> command_t
@@ -1942,7 +1941,7 @@ class CommandEvaluator(object):
                 return self._RemoveSubshells(node.child)
         return node
 
-    def ExecuteAndCatch(self, node, cmd_flags=0):
+    def ExecuteAndCatch(self, node, cmd_flags):
         # type: (command_t, int) -> Tuple[bool, bool]
         """Execute a subprogram, handling vm.IntControlFlow and fatal exceptions.
 
@@ -1961,19 +1960,12 @@ class CommandEvaluator(object):
         Note: To do what optimize does, dash has EV_EXIT flag and yash has a
         finally_exit boolean.  We use a different algorithm.
         """
-        if cmd_flags & Optimize:
+        if cmd_flags & OptimizeSubshells:
             node = self._RemoveSubshells(node)
-            #if self.exec_opts.no_fork_last():
 
-            # Bug: analysis happens too early:
-            #
-            # sh -c 'trap "echo trap" EXIT; date'
-            #if not self.trap_state.ThisProcessHasTraps():
-
-            self._NoForkLast(node)  # turn the last ones into exec
-
-            # TODO: this makes a difference in job control test
-            #self._NoForkSentence(node)
+        if cmd_flags & MarkLastCommands:
+            # Mark the last command in each process, so we may avoid forks
+            self._MarkLastCommands(node)
 
         if 0:
             log('after opt:')
@@ -2094,13 +2086,16 @@ class CommandEvaluator(object):
         Could use i & (n-1) == i & 255  because we have a power of 2.
         https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
         """
+        # TODO: This calls _Execute(), but we may need ExecuteAndCatch()
+        #self.RunPendingTraps()
+
         node = self.trap_state.GetHook('EXIT')  # type: command_t
         if node:
             # NOTE: Don't set option_i._running_trap, because that's for
             # RunPendingTraps() in the MAIN LOOP
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
-                    is_return, is_fatal = self.ExecuteAndCatch(node)
+                    is_return, is_fatal = self.ExecuteAndCatch(node, 0)
                 except util.UserExit as e:  # explicit exit
                     mut_status.i = e.status
                     return
@@ -2162,6 +2157,8 @@ class CommandEvaluator(object):
         # RunPendingTraps() in the MAIN LOOP
 
         with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
+            # In bash, the PIPESTATUS register leaks.  See spec/builtin-trap-err.
+            # So unlike other traps, we don't isolate registers.
             #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
             with state.ctx_ErrTrap(self.mem):
                 self._Execute(node)

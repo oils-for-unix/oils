@@ -843,7 +843,9 @@ class SubProgramThunk(Thunk):
             self.cmd_ev.mutable_opts.DisableErrExit()
         try:
             # optimize to eliminate redundant subshells like ( echo hi ) | wc -l etc.
-            self.cmd_ev.ExecuteAndCatch(self.node, cmd_flags=cmd_eval.Optimize)
+            self.cmd_ev.ExecuteAndCatch(
+                self.node,
+                cmd_eval.OptimizeSubshells | cmd_eval.MarkLastCommands)
             status = self.cmd_ev.LastStatus()
             # NOTE: We ignore the is_fatal return value.  The user should set -o
             # errexit so failures in subprocesses cause failures in the parent.

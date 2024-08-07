@@ -56,8 +56,8 @@ assert WC_LINE.match('    68 osh-cpp__01.19610')
 assert WC_LINE.match('    68 bash-4.4__01.19610')
 
 
-def WriteHeader(f, shells, col=''):
-    f.write("ID\t")
+def WriteHeader(f, shells, more_cols=None):
+    f.write("ID\t",)
     for sh in shells:
         # abbreviate
         if sh.startswith('bash-4'):
@@ -65,53 +65,80 @@ def WriteHeader(f, shells, col=''):
         elif sh.startswith('bash-5'):
             sh = 'bash-5'
         f.write("%6s\t" % sh)
-    f.write('%s\t' % col)
+    if more_cols:
+        for col in more_cols:
+            f.write('%s\t' % col)
     f.write('Description')
     f.write("\n")
 
 
 def WriteProcessReport(f, cases, code_strs, proc_sh, num_procs,
                        procs_by_shell):
-    f.write('Number of Processes Started, by shell and test case\n\n')
-
-    WriteHeader(f, proc_sh, col='osh>min')
-
     not_minimum = 0
     more_than_bash = 0
     fewer_than_bash = 0
+    osh_not_equal_ysh = 0
 
+    minimum = {}  # case -> number of procses
     for case_id in sorted(cases):
-        f.write(case_id + "\t")
         min_procs = 20
         for sh in proc_sh:
             n = num_procs[case_id, sh]
-            f.write(Cell(n) + "\t")
             min_procs = min(n, min_procs)
+        minimum[case_id] = min_procs
 
         osh_count = num_procs[case_id, 'osh']
-        if osh_count != min_procs:
-            f.write('%d>%d\t' % (osh_count, min_procs))
-            not_minimum += 1
-        else:
-            f.write('\t')
+        ysh_count = num_procs[case_id, 'ysh']
 
-        bash_count = num_procs[case_id, 'bash-4.4']
+        if osh_count != min_procs:
+            not_minimum += 1
+
+        if ysh_count != osh_count:
+            osh_not_equal_ysh += 1
+
+        bash_count = num_procs[case_id, 'bash-5.2.21']
         if osh_count > bash_count:
             more_than_bash += 1
         if osh_count < bash_count:
             fewer_than_bash += 1
 
-        f.write(code_strs[case_id])
-        f.write("\n")
+    f.write('Number of Processes Started, by shell and test case\n')
+    f.write('\n')
+    f.write("Cases where ...\n")
+    f.write("  OSH isn't the minimum: %d\n" % not_minimum)
+    f.write("  OSH starts more than bash 5: %d\n" % more_than_bash)
+    f.write("  OSH starts fewer than bash 5: %d\n\n" % fewer_than_bash)
+    f.write("  YSH not equal to OSH: %d\n\n" % osh_not_equal_ysh)
+    f.write('\n')
+    WriteHeader(f, proc_sh, more_cols=['osh>min', 'ysh!osh'])
+    f.write('\n')
 
     f.write("TOTAL\t")
     for sh in proc_sh:
         f.write('%6d\t' % procs_by_shell[sh])
-    f.write('\n\n')
-    f.write("Cases where ...\n")
-    f.write("  OSH isn't the minimum: %d\n" % not_minimum)
-    f.write("  OSH starts more than bash: %d\n" % more_than_bash)
-    f.write("  OSH starts fewer than bash: %d\n\n" % fewer_than_bash)
+    f.write('\n')
+    f.write('\n')
+
+    for case_id in sorted(cases):
+        f.write(case_id + "\t")
+        for sh in proc_sh:
+            n = num_procs[case_id, sh]
+            f.write(Cell(n) + "\t")
+
+        osh_count = num_procs[case_id, 'osh']
+        ysh_count = num_procs[case_id, 'ysh']
+        min_procs = minimum[case_id]
+
+        if osh_count != min_procs:
+            f.write('%d>%d' % (osh_count, min_procs))
+        f.write('\t')
+
+        if ysh_count != osh_count:
+            f.write('%d!=%d' % (ysh_count, osh_count))
+        f.write('\t')
+
+        f.write(code_strs[case_id])
+        f.write("\n")
 
     return not_minimum, more_than_bash, fewer_than_bash
 
@@ -129,8 +156,6 @@ def WriteSyscallReport(f, cases, code_strs, syscall_sh, num_syscalls,
             n = num_syscalls[case_id, sh]
             f.write('%6d\t' % n)
             #min_procs = min(n, min_procs)
-
-        f.write('\t')
 
         f.write(code_strs[case_id])
         f.write("\n")
