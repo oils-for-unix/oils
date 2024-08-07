@@ -50,7 +50,7 @@ trap-1() {
   set +o errexit
 
   # This fails to run the trap
-  $sh -x -c 'trap "echo int" INT; sleep 5'
+  $sh -x -c 'echo pid=$$; trap "echo int" INT; sleep 5'
 
   echo "$sh status=$?"
 }
@@ -61,7 +61,7 @@ trap-2() {
   set +o errexit
 
   # This runs it
-  $sh -x -c 'trap "echo int" INT; sleep 5; echo last'
+  $sh -x -c 'echo pid=$$; trap "echo int" INT; sleep 5; echo last'
 
   echo "$sh status=$?"
 }
