@@ -406,6 +406,18 @@ pp test_ (book)
 (Dict)   {"title":"The Histories"}
 ## END
 
+#### Dict -> get()
+var book = {title: "Hitchhiker's Guide", published: 1979}
+pp test_ (book => get("title", ""))
+pp test_ (book => get("published", 0))
+pp test_ (book => get("author", ""))
+## status: 0
+## STDOUT:
+(Str)   "Hitchhiker's Guide"
+(Int)   1979
+(Str)   ""
+## END
+
 #### Separation of -> attr and () calling
 const check = "abc" => startsWith
 pp test_ (check("a"))
