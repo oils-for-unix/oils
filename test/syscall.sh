@@ -17,7 +17,7 @@ YSH=${YSH:-ysh}
 #readonly -a SHELLS=(dash bash-4.4 bash $OSH)
 
 # Compare bash 4 vs. bash 5
-SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash $OSH)
+SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash $OSH $YSH)
 
 SHELLS_MORE=( ${SHELLS[@]} yash )
 

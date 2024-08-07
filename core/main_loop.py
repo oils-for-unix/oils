@@ -355,7 +355,8 @@ def Batch(cmd_ev, c_parser, errfmt, cmd_flags=0):
         if (cmd_flags & cmd_eval.IsMainProgram and
                 c_parser.line_reader.LastLineHint()):
             cmd_flags |= cmd_eval.OptimizeSubshells
-            cmd_flags |= cmd_eval.MarkLastCommands
+            if not cmd_ev.exec_opts.verbose_errexit():
+                cmd_flags |= cmd_eval.MarkLastCommands
 
         probe('main_loop', 'Batch_parse_exit')
 
