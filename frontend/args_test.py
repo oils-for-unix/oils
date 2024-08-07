@@ -20,8 +20,7 @@ def _MakeBuiltinArgv(argv):
     argv = [''] + argv  # add dummy since arg_vec includes argv[0]
     # no location info
     missing = loc.Missing  # type: loc_t
-    return cmd_value.Argv(argv, [missing] * len(argv), False, None, None, None,
-                          None)
+    return cmd_value.Argv(argv, [missing] * len(argv), False, None)
 
 
 def _MakeReader(argv):

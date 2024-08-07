@@ -3,8 +3,7 @@ flag_util.py - API for builtin commands
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import cmd_value
-from _devbuild.gen.syntax_asdl import ArgList
+from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
 from core.error import e_usage
 from frontend import args
 from frontend import flag_spec
@@ -23,18 +22,18 @@ if mylib.PYTHON:
         return flag_spec.FLAG_SPEC_AND_MORE[name]
 
 
-def _DoesNotAccept(arg_list):
-    # type: (Optional[ArgList]) -> None
+def _DoesNotAccept(proc_args):
+    # type: (Optional[ProcArgs]) -> None
     """ Copy from frontend/typed_args.py, to break dependency """
-    if arg_list is not None:
-        e_usage('got unexpected typed args', arg_list.left)
+    if proc_args is not None:
+        e_usage('got unexpected typed args', proc_args.typed_args.left)
 
 
 def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
     # type: (str, cmd_value.Argv, bool) -> Tuple[args._Attributes, args.Reader]
 
     if not accept_typed_args:
-        _DoesNotAccept(cmd_val.typed_args)
+        _DoesNotAccept(cmd_val.proc_args)
 
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # move past the builtin name
@@ -46,7 +45,7 @@ def ParseCmdVal(spec_name, cmd_val, accept_typed_args=False):
 def ParseLikeEcho(spec_name, cmd_val):
     # type: (str, cmd_value.Argv) -> Tuple[args._Attributes, args.Reader]
 
-    _DoesNotAccept(cmd_val.typed_args)
+    _DoesNotAccept(cmd_val.proc_args)
 
     arg_r = args.Reader(cmd_val.argv, locs=cmd_val.arg_locs)
     arg_r.Next()  # move past the builtin name

@@ -55,11 +55,12 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
     cmd_value_e,
+    CommandStatus,
+    flow_e,
     RedirValue,
     redirect_arg,
-    flow_e,
+    ProcArgs,
     scope_e,
-    CommandStatus,
     StatusArray,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
@@ -120,8 +121,7 @@ def MakeBuiltinArgv(argv1):
     argv = ['']  # dummy for argv[0]
     argv.extend(argv1)
     missing = None  # type: CompoundWord
-    return cmd_value.Argv(argv, [missing] * len(argv), False, None, None, None,
-                          None)
+    return cmd_value.Argv(argv, [missing] * len(argv), False, None)
 
 
 class Deps(object):
@@ -801,8 +801,9 @@ class CommandEvaluator(object):
                 self.mem.SetLastArgument('')
 
             if node.typed_args or node.block:  # guard to avoid allocs
+                cmd_val.proc_args = ProcArgs(node.typed_args, None, None, None)
                 func_proc.EvalTypedArgsToProc(self.expr_ev, self.mutable_opts,
-                                              node, cmd_val)
+                                              node, cmd_val.proc_args)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",

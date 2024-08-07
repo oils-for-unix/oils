@@ -96,12 +96,12 @@ class Json(vm._Builtin):
             attrs = flag_util.Parse('json_read', arg_r)
             #arg_jr = arg_types.json_read(attrs.attrs)
 
-            if cmd_val.typed_args:  # json read (&x)
+            if cmd_val.proc_args:  # json read (&x)
                 rd = typed_args.ReaderForProc(cmd_val)
                 place = rd.PosPlace()
                 rd.Done()
 
-                blame_loc = cmd_val.typed_args.left  # type: loc_t
+                blame_loc = cmd_val.proc_args.typed_args.left  # type: loc_t
 
             else:  # json read
                 var_name = '_reply'

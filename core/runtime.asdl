@@ -19,15 +19,22 @@ module runtime
   # in 'local foo', rval is None.
   AssignArg = (str var_name, value? rval, bool plus_eq, CompoundWord blame_word)
 
+  ProcArgs = (
+    # Unevaluated args
+    ArgList typed_args,
+
+    # Evaluated args, similar to typed_args.py Reader
+    List[value]? pos_args, Dict[str, value]? named_args,
+
+    # block_arg comes from either p (; ; myblock) or p { echo b }
+    value? block_arg
+  )
+
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
     Argv(List[str] argv, List[CompoundWord] arg_locs,
          bool is_last_cmd,
-         ArgList? typed_args,
-         # Evaluated args, similar to typed_args.py Reader
-         List[value]? pos_args, Dict[str, value]? named_args,
-         # block_arg comes from either p (; ; myblock) or p { echo b }
-         value? block_arg)
+         ProcArgs? proc_args)
 
   | Assign(int builtin_id,
            List[str] argv, List[CompoundWord] arg_locs,

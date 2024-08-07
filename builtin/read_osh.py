@@ -349,12 +349,12 @@ class Read(vm._Builtin):
         """
         place = None  # type: value.Place
 
-        if cmd_val.typed_args:  # read --flag (&x)
+        if cmd_val.proc_args:  # read --flag (&x)
             rd = typed_args.ReaderForProc(cmd_val)
             place = rd.PosPlace()
             rd.Done()
 
-            blame_loc = cmd_val.typed_args.left  # type: loc_t
+            blame_loc = cmd_val.proc_args.typed_args.left  # type: loc_t
 
         else:  # read --flag
             var_name = '_reply'
@@ -398,10 +398,10 @@ class Read(vm._Builtin):
         if arg.raw_line or arg.all or mops.BigTruncate(arg.num_bytes) != -1:
             return self._ReadYsh(arg, arg_r, cmd_val)
 
-        if cmd_val.typed_args:
+        if cmd_val.proc_args:
             raise error.Usage(
                 "doesn't accept typed args without --all, or --num-bytes",
-                cmd_val.typed_args.left)
+                cmd_val.proc_args.typed_args.left)
 
         if arg.t >= 0.0:
             if arg.t != 0.0:

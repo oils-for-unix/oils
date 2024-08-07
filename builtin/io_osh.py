@@ -58,7 +58,7 @@ class Echo(vm._Builtin):
         argv = cmd_val.argv[1:]
 
         if self.exec_opts.simple_echo():
-            typed_args.DoesNotAccept(cmd_val.typed_args)  # Disallow echo (42)
+            typed_args.DoesNotAccept(cmd_val.proc_args)  # Disallow echo (42)
             arg = self._SimpleFlag()  # Avoid parsing -e -n
         else:
             attrs, arg_r = flag_util.ParseLikeEcho('echo', cmd_val)

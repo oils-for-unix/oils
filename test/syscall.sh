@@ -14,9 +14,10 @@ source build/dev-shell.sh
 OSH=${OSH:-osh}
 YSH=${YSH:-ysh}
 
-# Compare bash 4 vs. bash 5
 #readonly -a SHELLS=(dash bash-4.4 bash $OSH)
-readonly -a SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash yash $OSH)
+
+# Compare bash 4 vs. bash 5
+readonly -a SHELLS=(dash bash-4.4 bash-5.2.21 mksh zsh ash $OSH)
 
 # yash does something fundamentally different in by-code.wrapped - it
 # understands functions

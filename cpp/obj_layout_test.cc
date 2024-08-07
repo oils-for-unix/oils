@@ -22,7 +22,7 @@ TEST sizeof_syntax() {
 
   // Reordered to be 16 bytes
   log("sizeof(runtime_asdl::Cell) = %d", sizeof(runtime_asdl::Cell));
-  // 56 bytes - I think we should try to remove 4 pointers
+  // now 32 bytes, down from 56
   log("sizeof(runtime_asdl::cmd_value::Argv) = %d", sizeof(runtime_asdl::cmd_value::Argv));
 
   // 24 bytes: std::vector
