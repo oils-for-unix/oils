@@ -811,8 +811,15 @@ class CommandEvaluator(object):
             # shells aren't consistent.
             # self.mem.SetLastArgument('')
 
-        run_flags = executor.DO_FORK if node.do_fork else 0
-        # NOTE: RunSimpleCommand never returns when do_fork=False!
+        if self.trap_state.ThisProcessHasTraps():
+            run_flags = executor.DO_FORK
+        else:
+            if node.is_last_cmd:
+                run_flags = 0
+            else:
+                run_flags = executor.DO_FORK
+
+        # NOTE: RunSimpleCommand may never return
         if len(node.more_env):  # I think this guard is necessary?
             is_other_special = False  # TODO: There are other special builtins too!
             if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
@@ -1870,7 +1877,7 @@ class CommandEvaluator(object):
         with tagswitch(node) as case:
             if case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
-                node.do_fork = False
+                node.is_last_cmd = True
                 if 0:
                     log('Simple optimized')
 
@@ -1886,7 +1893,7 @@ class CommandEvaluator(object):
                 self._NoForkLast(node.child)
 
             elif case(command_e.CommandList):
-                # Subshells start with CommandList, even if there's only one.
+                # Subshells often have a CommandList child
                 node = cast(command.CommandList, UP_node)
                 self._NoForkLast(node.children[-1])
 
@@ -1907,7 +1914,7 @@ class CommandEvaluator(object):
         with tagswitch(node) as case:
             if case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
-                node.do_fork = False
+                node.is_last_cmd = False
                 if 0:
                     log('Simple optimized')
 

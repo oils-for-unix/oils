@@ -215,6 +215,13 @@ date & wait
 echo hi | wc -l & wait
 
 date | wc -l & wait
+
+trap 'echo mytrap' EXIT; date & wait
+
+trap 'echo mytrap' EXIT; date | wc -l & wait
+
+# trap in SubProgramThunk
+{ trap 'echo mytrap' EXIT; date; } & wait
 EOF
 
 # Discarded because they're identical

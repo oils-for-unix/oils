@@ -379,8 +379,9 @@ def _MakeSimpleCommand(
     more_env = []  # type: List[EnvPair]
     _AppendMoreEnv(preparsed_list, more_env)
 
-    # do_fork by default
-    return command.Simple(blame_tok, more_env, words3, typed_args, block, True)
+    # is_last_cmd is False by default
+    return command.Simple(blame_tok, more_env, words3, typed_args, block,
+                          False)
 
 
 class VarChecker(object):

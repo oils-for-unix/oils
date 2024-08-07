@@ -536,7 +536,7 @@ class ShellExecutor(vm._Executor):
                 # Blame < because __cat has no location
                 blame_tok = redir_node.redirects[0].op
                 simple = command.Simple(blame_tok, [], [cat_word], None, None,
-                                        True)
+                                        False)
 
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple

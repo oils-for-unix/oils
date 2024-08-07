@@ -373,8 +373,8 @@ module syntax
            List[EnvPair] more_env,
            List[word] words,
            ArgList? typed_args, LiteralBlock? block,
-           # do_fork is semantic, not syntactic
-           bool do_fork)
+           # is_last_cmd is used for fork() optimizations
+           bool is_last_cmd)
 
     # This doesn't technically belong in the LST, but it's convenient for
     # execution

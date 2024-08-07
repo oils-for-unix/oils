@@ -294,12 +294,11 @@ class Command(vm._Builtin):
                                   cmd_val.pos_args, cmd_val.named_args,
                                   cmd_val.block_arg)
 
-        # If we respected do_fork here instead of passing True, the case
-        # 'command date | wc -l' would take 2 processes instead of 3.  But no other
-        # shell does that, and this rare case isn't worth the bookkeeping.
-        # See test/syscall
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
 
+        # If we respected do_fork here instead of passing DO_FORK
+        # unconditionally, the case 'command date | wc -l' would take 2
+        # processes instead of 3.  See test/syscall
         run_flags = executor.DO_FORK | executor.NO_CALL_PROCS
         if arg.p:
             run_flags |= executor.USE_DEFAULT_PATH
