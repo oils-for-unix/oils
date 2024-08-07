@@ -4,7 +4,7 @@ $SH -c 'trap "echo int" INT; sleep 0.1' &
 
 sleep 0.05
 
-/usr/bin/kill -INT $!
+$(which kill) -INT $!
 
 wait
 
