@@ -96,7 +96,9 @@ class WordEvalTest(unittest.TestCase):
             node = assertParseSimpleCommand(self, case)
             ev = InitEvaluator()
             try:
-                argv = ev.EvalWordSequence2(node.words, allow_assign=True)
+                argv = ev.EvalWordSequence2(node.words,
+                                            False,
+                                            allow_assign=True)
             except error.FatalRuntime:
                 pass
             else:
@@ -143,7 +145,7 @@ class WordEvalTest(unittest.TestCase):
             print('\t%s' % case)
             node = assertParseSimpleCommand(self, case)
             ev = InitEvaluator()
-            argv = ev.EvalWordSequence2(node.words, allow_assign=True)
+            argv = ev.EvalWordSequence2(node.words, False, allow_assign=True)
 
             print()
             print('\tcmd_value:')

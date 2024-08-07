@@ -53,8 +53,8 @@ import posix_ as posix
 
 
 def MakeBuiltinArgv(argv):
-    return cmd_value.Argv(argv, [loc.Missing] * len(argv), None, None, None,
-                          None)
+    return cmd_value.Argv(argv, [loc.Missing] * len(argv), False, None, None,
+                          None, None)
 
 
 def FakeTok(id_, val):
