@@ -274,19 +274,11 @@ wait status 0
 
 #### trap USR1, sleep, SIGINT: non-interactively
 
-# mksh behaves differently in CI -- maybe when it's not connected to a
-# terminal?
-case $SH in mksh) echo mksh; exit ;; esac
-
-$REPO_ROOT/spec/testdata/builtin-trap-1.sh
+$REPO_ROOT/spec/testdata/builtin-trap-usr1.sh
 
 ## STDOUT:
 usr1
 status=0
-## END
-
-## OK mksh STDOUT:
-mksh
 ## END
 
 #### trap INT, sleep, SIGINT: non-interactively
@@ -295,7 +287,7 @@ mksh
 # terminal?
 case $SH in mksh) echo mksh; exit ;; esac
 
-$REPO_ROOT/spec/testdata/builtin-trap-1.sh
+$REPO_ROOT/spec/testdata/builtin-trap-int.sh
 
 ## STDOUT:
 int
