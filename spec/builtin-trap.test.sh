@@ -276,21 +276,20 @@ wait status 0
 
 # mksh behaves differently in CI -- maybe when it's not connected to a
 # terminal?
-
 case $SH in mksh) echo mksh; exit ;; esac
 
-# Without this, it succeeds in CI?
-case $SH in *osh) echo osh; exit ;; esac
-
+# Why don't other shells run this trap?  It's not a subshell
 $SH -c 'trap "echo int" INT; sleep 0.1' &
+sleep 0.05
 /usr/bin/kill -INT $!
 wait
-
-# Only mksh shows 'int'?
-# OSH shows "done"
+echo status=$?
 
 ## STDOUT:
+int
+status=0
 ## END
+
 ## OK mksh STDOUT:
 mksh
 ## END
