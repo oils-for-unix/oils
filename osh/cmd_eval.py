@@ -2044,6 +2044,14 @@ class CommandEvaluator(object):
         self.mem.SetLastStatus(status)
         return is_return, is_fatal
 
+    def RunPendingTrapsAndCatch(self):
+        # type: () -> None
+        """
+        like ExecuteAndCatch
+        """
+        # TODO: catch
+        self.RunPendingTraps()
+
     def EvalCommand(self, block):
         # type: (command_t) -> int
         """For builtins to evaluate command args.
@@ -2086,8 +2094,7 @@ class CommandEvaluator(object):
         Could use i & (n-1) == i & 255  because we have a power of 2.
         https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
         """
-        # TODO: This calls _Execute(), but we may need ExecuteAndCatch()
-        #self.RunPendingTraps()
+        self.RunPendingTrapsAndCatch()
 
         node = self.trap_state.GetHook('EXIT')  # type: command_t
         if node:
