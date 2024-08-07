@@ -524,3 +524,28 @@ grep
 ## STDOUT:
 sh-func grep
 ## END
+
+#### proc resolution changes with the local scope
+shopt -s ysh:upgrade
+
+proc foo {
+  echo foo
+}
+
+proc bar {
+  echo bar
+}
+
+proc inner {
+  var foo = bar
+  foo  # Will now reference `proc bar`
+}
+
+foo
+inner
+foo  # Back to the global scope, foo still references `proc foo`
+## STDOUT:
+foo
+bar
+foo
+## END
