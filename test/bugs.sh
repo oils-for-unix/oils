@@ -87,6 +87,20 @@ sleep 5
   echo "$sh status=$?"
 }
 
+two-traps-exit() {
+  local sh=${1:-bin/osh}
+
+  set +o errexit
+
+  $sh -x -c '
+trap "echo int; exit 44" INT
+trap "echo exit; exit 55" EXIT
+sleep 5
+'
+  # bash gives 130?
+  echo "$sh status=$?"
+}
+
 two-traps-status() {
   local sh=${1:-bin/osh}
 
