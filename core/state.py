@@ -1136,6 +1136,56 @@ def _MakeArgvCell(argv):
     return Cell(False, False, False, value.List(items))
 
 
+class ctx_Eval(object):
+    """Push temporary variable frame and override $0, $1, $2, etc."""
+
+    def __init__(self, mem, dollar0, pos_args, vars):
+        # type: (Mem, Optional[str], Optional[List[str]], Optional[Dict[str, value_t]]) -> None
+        if pos_args is None:
+            self.pushed_pos_args = False
+        else:
+            self.pushed_pos_args = True
+            mem.argv_stack.append(_ArgFrame(pos_args))
+
+        # $0 needs to have lexical scoping. So we store it with other locals.
+        # As "0" cannot be parsed as an lvalue, we can safely store arg0 there.
+        if dollar0 is None:
+            self.pushed_dollar0 = False
+        else:
+            self.pushed_dollar0 = True
+            assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
+            self.lval = LeftName("0", loc.Missing)
+            mem.SetLocalName(self.lval, value.Str(dollar0))
+
+        if vars is None:
+            self.pushed_vars = False
+        else:
+            self.pushed_vars = True
+
+            frame = {}  # type: Dict[str, Cell]
+            for name in vars:
+                frame[name] = Cell(False, False, False, vars[name])
+
+            mem.var_stack.append(frame)
+
+        self.mem = mem
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+        if self.pushed_vars:
+            self.mem.var_stack.pop()
+
+        if self.pushed_pos_args:
+            self.mem.argv_stack.pop()
+
+        if self.pushed_dollar0:
+            self.mem.SetLocalName(self.lval, value.Undef)
+
+
 class Mem(object):
     """For storing variables.
 

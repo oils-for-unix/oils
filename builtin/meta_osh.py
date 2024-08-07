@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
+from _devbuild.gen.value_asdl import value, value_e
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import dev
@@ -31,7 +32,7 @@ from posix_ import X_OK  # translated directly to C macro
 
 _ = log
 
-from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
+from typing import Dict, List, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import args
     from frontend.parse_lib import ParseContext
@@ -50,6 +51,7 @@ class Eval(vm._Builtin):
             cmd_ev,  # type: CommandEvaluator
             tracer,  # type: dev.Tracer
             errfmt,  # type: ui.ErrorFormatter
+            mem,  # type: state.Mem
     ):
         # type: (...) -> None
         self.parse_ctx = parse_ctx
@@ -58,6 +60,7 @@ class Eval(vm._Builtin):
         self.cmd_ev = cmd_ev
         self.tracer = tracer
         self.errfmt = errfmt
+        self.mem = mem
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
@@ -65,8 +68,27 @@ class Eval(vm._Builtin):
         if cmd_val.proc_args:  # eval (mycmd)
             rd = typed_args.ReaderForProc(cmd_val)
             cmd = rd.PosCommand()
+            dollar0 = rd.NamedStr("dollar0", None)
+
+            pos_args_raw = rd.NamedList("pos_args", None)
+            if pos_args_raw is not None:
+                pos_args = []  # type: List[str]
+                for arg in pos_args_raw:
+                    if arg.tag() != value_e.Str:
+                        raise error.TypeErr(
+                            arg,
+                            "Expected pos_args to be a list of Str",
+                            rd.LeftParenToken())
+
+                    pos_args.append(cast(value.Str, arg).s)
+            else:
+                pos_args = None
+
+            vars = rd.NamedDict("vars", None)
+
             rd.Done()
-            return self.cmd_ev.EvalCommand(cmd)
+            with state.ctx_Eval(self.mem, dollar0, pos_args, vars):
+                return self.cmd_ev.EvalCommand(cmd)
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_util.ParseCmdVal('eval', cmd_val)

@@ -321,6 +321,7 @@ class SearchMatch(vm._Callable):
         return RegexMatch(string, indices, capture)
 
 
+# TODO: replace this with state.ctx_Eval
 class ctx_EvalReplace(object):
     """For $0, $1, $2, $3, ... replacements in Str => replace()"""
 

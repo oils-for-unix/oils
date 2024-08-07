@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 8
+## oils_failures_allowed: 1
 
 #### Eval does not take a literal block - can restore this later
 
