@@ -72,28 +72,21 @@ def WriteHeader(f, shells, col=''):
 
 def WriteProcessReport(f, cases, code_strs, proc_sh, num_procs,
                        procs_by_shell):
-    f.write('Number of Processes Started, by shell and test case\n\n')
-
-    WriteHeader(f, proc_sh, col='osh>min')
-
     not_minimum = 0
     more_than_bash = 0
     fewer_than_bash = 0
 
+    minimum = {}  # case -> number of procses
     for case_id in sorted(cases):
-        f.write(case_id + "\t")
         min_procs = 20
         for sh in proc_sh:
             n = num_procs[case_id, sh]
-            f.write(Cell(n) + "\t")
             min_procs = min(n, min_procs)
+        minimum[case_id] = min_procs
 
         osh_count = num_procs[case_id, 'osh']
         if osh_count != min_procs:
-            f.write('%d>%d\t' % (osh_count, min_procs))
             not_minimum += 1
-        else:
-            f.write('\t')
 
         bash_count = num_procs[case_id, 'bash-5.2.21']
         if osh_count > bash_count:
@@ -101,17 +94,37 @@ def WriteProcessReport(f, cases, code_strs, proc_sh, num_procs,
         if osh_count < bash_count:
             fewer_than_bash += 1
 
-        f.write(code_strs[case_id])
-        f.write("\n")
-
-    f.write("TOTAL\t")
-    for sh in proc_sh:
-        f.write('%6d\t' % procs_by_shell[sh])
-    f.write('\n\n')
+    f.write('Number of Processes Started, by shell and test case\n')
+    f.write('\n')
     f.write("Cases where ...\n")
     f.write("  OSH isn't the minimum: %d\n" % not_minimum)
     f.write("  OSH starts more than bash 5: %d\n" % more_than_bash)
     f.write("  OSH starts fewer than bash 5: %d\n\n" % fewer_than_bash)
+    f.write('\n')
+    WriteHeader(f, proc_sh, col='osh>min')
+    f.write('\n')
+
+    f.write("TOTAL\t")
+    for sh in proc_sh:
+        f.write('%6d\t' % procs_by_shell[sh])
+    f.write('\n')
+    f.write('\n')
+
+    for case_id in sorted(cases):
+        f.write(case_id + "\t")
+        for sh in proc_sh:
+            n = num_procs[case_id, sh]
+            f.write(Cell(n) + "\t")
+
+        osh_count = num_procs[case_id, 'osh']
+        min_procs = minimum[case_id]
+        if osh_count != min_procs:
+            f.write('%d>%d\t' % (osh_count, min_procs))
+        else:
+            f.write('\t')
+
+        f.write(code_strs[case_id])
+        f.write("\n")
 
     return not_minimum, more_than_bash, fewer_than_bash
 
