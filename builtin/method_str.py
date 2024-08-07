@@ -2,10 +2,9 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_t, loc
-from _devbuild.gen.runtime_asdl import scope_e
+from _devbuild.gen.syntax_asdl import loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
-                                      eggex_ops_t, RegexMatch, LeftName)
+                                      eggex_ops_t, RegexMatch)
 from builtin import pure_ysh
 from core import error
 from core import state
@@ -21,7 +20,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, Any, List, Optional, Tuple
+from typing import cast, List, Tuple
 
 _ = log
 
