@@ -172,7 +172,46 @@ len=2
 pass
 ## END
 
-#### Mixing read --line with read -r
+#### read --raw-line handles line without end, --with-eol
+
+write --end '' $'a\nb\n' | while read --raw-line; do
+  pp test_ (_reply)
+done
+
+echo
+
+write --end '' $'a\nb' | while read --raw-line; do
+  pp test_ (_reply)
+done
+
+echo
+
+write --end '' $'a\nb\n' | while read --raw-line --with-eol; do
+  pp test_ (_reply)
+done
+
+echo
+
+write --end '' $'a\nb' | while read --raw-line --with-eol; do
+  pp test_ (_reply)
+done
+
+
+## STDOUT:
+(Str)   "a"
+(Str)   "b"
+
+(Str)   "a"
+(Str)   "b"
+
+(Str)   "a\n"
+(Str)   "b\n"
+
+(Str)   "a\n"
+(Str)   "b"
+## END
+
+#### Mixing read --raw-line with read -r
 
 $SH $REPO_ROOT/spec/testdata/ysh-read-0.sh
 
@@ -192,7 +231,7 @@ _reply=3
 REPLY=4
 ## END
 
-#### read --line --with-eol
+#### read --raw-line --with-eol
 
 $SH $REPO_ROOT/spec/testdata/ysh-read-1.sh
 

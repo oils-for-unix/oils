@@ -2086,6 +2086,9 @@ class CommandEvaluator(object):
         Could use i & (n-1) == i & 255  because we have a power of 2.
         https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
         """
+        # TODO: This calls _Execute(), but we may need ExecuteAndCatch()
+        #self.RunPendingTraps()
+
         node = self.trap_state.GetHook('EXIT')  # type: command_t
         if node:
             # NOTE: Don't set option_i._running_trap, because that's for
@@ -2154,6 +2157,8 @@ class CommandEvaluator(object):
         # RunPendingTraps() in the MAIN LOOP
 
         with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
+            # In bash, the PIPESTATUS register leaks.  See spec/builtin-trap-err.
+            # So unlike other traps, we don't isolate registers.
             #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
             with state.ctx_ErrTrap(self.mem):
                 self._Execute(node)
