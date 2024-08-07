@@ -2162,8 +2162,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
                 return self._DetectAssignBuiltinStr(val0.s, words, meta_offset)
         return None
 
-    def SimpleEvalWordSequence2(self, words, allow_assign):
-        # type: (List[CompoundWord], bool) -> cmd_value_t
+    def SimpleEvalWordSequence2(self, words, is_last_cmd, allow_assign):
+        # type: (List[CompoundWord], bool, bool) -> cmd_value_t
         """Simple word evaluation for YSH."""
         strs = []  # type: List[str]
         locs = []  # type: List[CompoundWord]
@@ -2222,10 +2222,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
                     strs.append(''.join(tmp))  # no split or glob
                     locs.append(w)
 
-        return cmd_value.Argv(strs, locs, None, None, None, None)
+        return cmd_value.Argv(strs, locs, is_last_cmd, None, None, None, None)
 
-    def EvalWordSequence2(self, words, allow_assign=False):
-        # type: (List[CompoundWord], bool) -> cmd_value_t
+    def EvalWordSequence2(self, words, is_last_cmd, allow_assign=False):
+        # type: (List[CompoundWord], bool, bool) -> cmd_value_t
         """Turns a list of Words into a list of strings.
 
         Unlike the EvalWord*() methods, it does globbing.
@@ -2234,7 +2234,8 @@ class AbstractWordEvaluator(StringWordEvaluator):
           allow_assign: True for command.Simple, False for BashArray a=(1 2 3)
         """
         if self.exec_opts.simple_word_eval():
-            return self.SimpleEvalWordSequence2(words, allow_assign)
+            return self.SimpleEvalWordSequence2(words, is_last_cmd,
+                                                allow_assign)
 
         # Parse time:
         # 1. brace expansion.  TODO: Do at parse time.
@@ -2325,7 +2326,7 @@ class AbstractWordEvaluator(StringWordEvaluator):
         # A non-assignment command.
         # NOTE: Can't look up builtins here like we did for assignment, because
         # functions can override builtins.
-        return cmd_value.Argv(strs, locs, None, None, None, None)
+        return cmd_value.Argv(strs, locs, is_last_cmd, None, None, None, None)
 
     def EvalWordSequence(self, words):
         # type: (List[CompoundWord]) -> List[str]
@@ -2333,11 +2334,10 @@ class AbstractWordEvaluator(StringWordEvaluator):
 
         They don't allow assignment builtins.
         """
-        UP_cmd_val = self.EvalWordSequence2(words)
-
-        assert UP_cmd_val.tag() == cmd_value_e.Argv
-        cmd_val = cast(cmd_value.Argv, UP_cmd_val)
-        return cmd_val.argv
+        # is_last_cmd is irrelevant
+        cmd_val = self.EvalWordSequence2(words, False)
+        assert cmd_val.tag() == cmd_value_e.Argv
+        return cast(cmd_value.Argv, cmd_val).argv
 
 
 class NormalWordEvaluator(AbstractWordEvaluator):

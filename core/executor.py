@@ -88,8 +88,8 @@ class _ProcessSubFrame(object):
         status_array.locs = locs
 
 
-# Big flgas for RunSimpleCommand
-DO_FORK = 1 << 1
+# Big flags for RunSimpleCommand
+IS_LAST_CMD = 1 << 1
 NO_CALL_PROCS = 1 << 2  # command ls suppresses function lookup
 USE_DEFAULT_PATH = 1 << 3  # for command -p ls changes the path
 
@@ -340,8 +340,13 @@ class ShellExecutor(vm._Executor):
             self.errfmt.Print_('%r not found (OILS-ERR-100)' % arg0, arg0_loc)
             return 127
 
+        if self.trap_state.ThisProcessHasTraps():
+            do_fork = True
+        else:
+            do_fork = not cmd_val.is_last_cmd
+
         # Normal case: ls /
-        if run_flags & DO_FORK:
+        if do_fork:
             thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val,
                                           environ)
             p = process.Process(thunk, self.job_control, self.job_list,

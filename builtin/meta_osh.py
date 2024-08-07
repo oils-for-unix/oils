@@ -290,16 +290,18 @@ class Command(vm._Builtin):
 
             return status
 
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args,
-                                  cmd_val.block_arg)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
+                                  cmd_val.typed_args, cmd_val.pos_args,
+                                  cmd_val.named_args, cmd_val.block_arg)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
 
         # If we respected do_fork here instead of passing DO_FORK
         # unconditionally, the case 'command date | wc -l' would take 2
         # processes instead of 3.  See test/syscall
-        run_flags = executor.DO_FORK | executor.NO_CALL_PROCS
+        run_flags = executor.NO_CALL_PROCS
+        if cmd_val.is_last_cmd:
+            run_flags |= executor.IS_LAST_CMD
         if arg.p:
             run_flags |= executor.USE_DEFAULT_PATH
 
@@ -309,8 +311,9 @@ class Command(vm._Builtin):
 def _ShiftArgv(cmd_val):
     # type: (cmd_value.Argv) -> cmd_value.Argv
     return cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
-                          cmd_val.typed_args, cmd_val.pos_args,
-                          cmd_val.named_args, cmd_val.block_arg)
+                          cmd_val.is_last_cmd, cmd_val.typed_args,
+                          cmd_val.pos_args, cmd_val.named_args,
+                          cmd_val.block_arg)
 
 
 class Builtin(vm._Builtin):
@@ -370,13 +373,13 @@ class RunProc(vm._Builtin):
             self.errfmt.PrintMessage('runproc: no proc named %r' % name)
             return 1
 
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args,
-                                  cmd_val.block_arg)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
+                                  cmd_val.typed_args, cmd_val.pos_args,
+                                  cmd_val.named_args, cmd_val.block_arg)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,
-                                              executor.DO_FORK)
+        run_flags = executor.IS_LAST_CMD if cmd_val.is_last_cmd else 0
+        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
 
 
 def _ResolveName(

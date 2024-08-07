@@ -22,6 +22,7 @@ module runtime
   # note: could import 'builtin' from synthetic option_asdl
   cmd_value =
     Argv(List[str] argv, List[CompoundWord] arg_locs,
+         bool is_last_cmd,
          ArgList? typed_args,
          # Evaluated args, similar to typed_args.py Reader
          List[value]? pos_args, Dict[str, value]? named_args,

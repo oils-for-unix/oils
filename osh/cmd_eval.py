@@ -120,7 +120,8 @@ def MakeBuiltinArgv(argv1):
     argv = ['']  # dummy for argv[0]
     argv.extend(argv1)
     missing = None  # type: CompoundWord
-    return cmd_value.Argv(argv, [missing] * len(argv), None, None, None, None)
+    return cmd_value.Argv(argv, [missing] * len(argv), False, None, None, None,
+                          None)
 
 
 class Deps(object):
@@ -786,7 +787,9 @@ class CommandEvaluator(object):
         # - $() and <() can have failures.  This can happen in DBracket,
         #   DParen, etc. too
         # - Tracing: this can start processes for proc sub and here docs!
-        cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
+        cmd_val = self.word_ev.EvalWordSequence2(words,
+                                                 node.is_last_cmd,
+                                                 allow_assign=True)
 
         UP_cmd_val = cmd_val
         if UP_cmd_val.tag() == cmd_value_e.Argv:
@@ -811,13 +814,7 @@ class CommandEvaluator(object):
             # shells aren't consistent.
             # self.mem.SetLastArgument('')
 
-        if self.trap_state.ThisProcessHasTraps():
-            run_flags = executor.DO_FORK
-        else:
-            if node.is_last_cmd:
-                run_flags = 0
-            else:
-                run_flags = executor.DO_FORK
+        run_flags = executor.IS_LAST_CMD if node.is_last_cmd else 0
 
         # NOTE: RunSimpleCommand may never return
         if len(node.more_env):  # I think this guard is necessary?

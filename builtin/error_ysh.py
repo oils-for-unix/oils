@@ -213,13 +213,13 @@ class BoolStatus(vm._Builtin):
             e_usage('expected a command to run', loc.Missing)
 
         argv, locs = arg_r.Rest2()
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args,
-                                  cmd_val.block_arg)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
+                                  cmd_val.typed_args, cmd_val.pos_args,
+                                  cmd_val.named_args, cmd_val.block_arg)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,
-                                                executor.DO_FORK)
+        run_flags = executor.IS_LAST_CMD if cmd_val.is_last_cmd else 0
+        status = self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
 
         if status not in (0, 1):
             e_die_status(status,
