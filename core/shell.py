@@ -745,7 +745,7 @@ def Main(
         'fullMatch': None,
     }
     methods[value_e.Dict] = {
-        'get': None,  # doesn't raise an error
+        'get': method_dict.Get(),
         'erase': method_dict.Erase(),
         'keys': method_dict.Keys(),
         'values': method_dict.Values(),
