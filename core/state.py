@@ -2403,11 +2403,9 @@ class Procs:
         First, we search for a proc, and then a sh-func. This means that procs
         can shadow the definition of sh-funcs.
         """
-        vars = self.mem.var_stack[0]
-        if name in vars:
-            maybe_proc = vars[name]
-            if maybe_proc.val.tag() == value_e.Proc:
-                return cast(value.Proc, maybe_proc.val)
+        maybe_proc = self.mem.GetValue(name)
+        if maybe_proc.tag() == value_e.Proc:
+            return cast(value.Proc, maybe_proc)
 
         if name in self.sh_funcs:
             return self.sh_funcs[name]
