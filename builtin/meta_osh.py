@@ -78,8 +78,7 @@ class Eval(vm._Builtin):
             for arg in pos_args_raw:
                 if arg.tag() != value_e.Str:
                     raise error.TypeErr(
-                        arg,
-                        "Expected pos_args to be a list of Strs",
+                        arg, "Expected pos_args to be a list of Strs",
                         rd.LeftParenToken())
 
                 pos_args.append(cast(value.Str, arg).s)

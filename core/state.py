@@ -820,7 +820,7 @@ def _DumpVarFrame(frame):
     return vars_json
 
 
-def _GetWorkingDir():
+def GetWorkingDir():
     # type: () -> str
     """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
     try:
@@ -881,7 +881,7 @@ def _InitDefaults(mem):
     #   set_home_var ();
 
 
-def _InitVarsFromEnv(mem, environ):
+def InitVarsFromEnv(mem, environ):
     # type: (Mem, Dict[str, str]) -> None
 
     # This is the way dash and bash work -- at startup, they turn everything in
@@ -912,7 +912,7 @@ def _InitVarsFromEnv(mem, environ):
     # compute it.
     val = mem.GetValue('PWD')
     if val.tag() == value_e.Undef:
-        SetGlobalString(mem, 'PWD', _GetWorkingDir())
+        SetGlobalString(mem, 'PWD', GetWorkingDir())
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
     mem.SetNamed(location.LName('PWD'),
@@ -953,15 +953,6 @@ def InitMem(mem, environ, version_str):
     _SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
 
     _InitDefaults(mem)
-    _InitVarsFromEnv(mem, environ)
-
-    # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
-    # it can't be modified by users.
-    val = mem.GetValue('PWD')
-    # should be true since it's exported
-    assert val.tag() == value_e.Str, val
-    pwd = cast(value.Str, val).s
-    mem.SetPwd(pwd)
 
 
 def InitInteractive(mem):

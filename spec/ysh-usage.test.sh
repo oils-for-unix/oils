@@ -66,3 +66,12 @@ wc -l on.txt off.txt
  0 off.txt
  3 total
 ## END
+
+#### YSH shows options correctly (bug fix)
+
+$SH -o | egrep 'errexit|pipefail'
+
+## STDOUT:
+set -o errexit
+set -o pipefail
+## END

@@ -107,22 +107,79 @@ foo bar baz
 ## END
 
 #### eval lines with argv bindings
-proc lines (;;; block) {
+proc my-split (;;; block) {
   while read --raw-line {
     var cols = _reply => split()
     eval (block, pos_args=cols)
   }
 }
 
-printf 'a b\nc d\n' | lines { echo $1 }
+printf 'a b\nc d\n' | my-split {
+  echo "$2 $1"
+}
+
+printf 'a b\nc d\n' | my-split {
+  var mylocal = 'mylocal'
+  echo "$2 $1 $mylocal"
+}
+
+# Now do the same thing inside a proc
+proc p {
+  printf 'a b\nc d\n' | my-split {
+    var local2 = 'local2'
+    echo "$2 $1 $local2"
+  }
+}
+
+echo
+p
 
 ## STDOUT:
-a
-c
+b a
+d c
+b a mylocal
+d c mylocal
+
+b a local2
+d c local2
+## END
+
+#### eval lines with var bindings
+
+proc my-split (;;; block) {
+  while read --raw-line {
+    var cols = _reply => split()
+    eval (block, vars={_line: _reply, _first: cols[0]})
+  }
+}
+
+printf 'a b\nc d\n' | my-split {
+  var mylocal = 'mylocal'
+  echo "$_line | $_first $mylocal"
+}
+
+# Now do the same thing inside a proc
+proc p {
+  printf 'a b\nc d\n' | my-split {
+    var local2 = 'local2'
+    echo "$_line | $_first $local2"
+  }
+}
+
+echo
+p
+
+## STDOUT:
+a b | a mylocal
+c d | c mylocal
+
+a b | a local2
+c d | c local2
 ## END
 
 #### eval with custom dollar0
-eval (^(write $0), dollar0="my arg0")
+var b = ^(write $0)
+eval (b, dollar0="my arg0")
 ## STDOUT:
 my arg0
 ## END
@@ -154,17 +211,26 @@ proc foreach (binding, in_; list ;; block) {
 
 var mydicts = [{'a': 1}, {'b': 2}, {'c': 3}]
 foreach mydict in (mydicts) {
+  var mylocal = 'z'
+  setvar mydict.z = mylocal
+
   pp test_ (mydict)
   setvar mydict.d = 0
 }
+echo
 
-pp test_ (mydicts)
+for d in (mydicts) {
+  pp test_ (d)
+}
 
 ## STDOUT:
-(Dict)   {"a":1}
-(Dict)   {"b":2}
-(Dict)   {"c":3}
-(List)   [{"a":1,"d":0},{"b":2,"d":0},{"c":3,"d":0}]
+(Dict)   {"a":1,"z":"z"}
+(Dict)   {"b":2,"z":"z"}
+(Dict)   {"c":3,"z":"z"}
+
+(Dict)   {"a":1,"z":"z","d":0}
+(Dict)   {"b":2,"z":"z","d":0}
+(Dict)   {"c":3,"z":"z","d":0}
 ## END
 
 #### binding procs in the eval-ed namespace

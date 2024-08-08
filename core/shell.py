@@ -355,19 +355,34 @@ def Main(
     mem.exec_opts = exec_opts  # circular dep
     mutable_opts.Init()
 
-    version_str = pyutil.GetVersion(loader)
-    state.InitMem(mem, environ, version_str)
-
-    if attrs.show_options:  # special case: sh -o
-        mutable_opts.ShowOptions([])
-        return 0
-
     # Set these BEFORE processing flags, so they can be overridden.
     if lang == 'ysh':
         mutable_opts.SetAnyOption('ysh:all', True)
 
     pure_osh.SetOptionsFromFlags(mutable_opts, attrs.opt_changes,
                                  attrs.shopt_changes)
+
+    version_str = pyutil.GetVersion(loader)
+    state.InitMem(mem, environ, version_str)
+
+    # TODO: consider turning on no_copy_env in YSH
+    if exec_opts.no_copy_env():
+        # Don't consult the environment
+        mem.SetPwd(state.GetWorkingDir())
+    else:
+        state.InitVarsFromEnv(mem, environ)
+
+        # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
+        # it can't be modified by users.
+        val = mem.GetValue('PWD')
+        # should be true since it's exported
+        assert val.tag() == value_e.Str, val
+        pwd = cast(value.Str, val).s
+        mem.SetPwd(pwd)
+
+    if attrs.show_options:  # special case: sh -o
+        mutable_opts.ShowOptions([])
+        return 0
 
     # feedback between runtime and parser
     aliases = {}  # type: Dict[str, str]

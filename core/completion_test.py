@@ -303,7 +303,7 @@ class RootCompleterTest(unittest.TestCase):
         self.assertEqual(7, comp.end)
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo $PWD' in m, 'Got %s' % m)
+        self.assert_('echo $PPID' in m, 'Got %s' % m)
         self.assert_('echo $PS4' in m, 'Got %s' % m)
 
         #
@@ -322,7 +322,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo ${P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo ${PWD' in m, 'Got %s' % m)
+        self.assert_('echo ${PPID' in m, 'Got %s' % m)
         self.assert_('echo ${PS4' in m, 'Got %s' % m)
 
         # Odd word break
@@ -330,7 +330,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo ${undef:-$P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo ${undef:-$PWD' in m, 'Got %s' % m)
+        self.assert_('echo ${undef:-$PPID' in m, 'Got %s' % m)
         self.assert_('echo ${undef:-$PS4' in m, 'Got %s' % m)
 
         comp = MockApi(line='echo ${undef:-$')
@@ -353,7 +353,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo "$P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo "$PWD' in m, 'Got %s' % m)
+        self.assert_('echo "$PPID' in m, 'Got %s' % m)
         self.assert_('echo "$PS4' in m, 'Got %s' % m)
 
         #
@@ -370,7 +370,7 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo "${#P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo "${#PWD' in m, 'Got %s' % m)
+        self.assert_('echo "${#PPID' in m, 'Got %s' % m)
         self.assert_('echo "${#PS4' in m, 'Got %s' % m)
 
         #
@@ -380,13 +380,13 @@ class RootCompleterTest(unittest.TestCase):
         comp = MockApi(line='echo "$((PWD +P')  # bare word
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo "$((PWD +PWD' in m, 'Got %s' % m)
+        self.assert_('echo "$((PWD +PPID' in m, 'Got %s' % m)
         self.assert_('echo "$((PWD +PS4' in m, 'Got %s' % m)
 
         comp = MockApi(line='echo "$(( $P')
         print(comp)
         m = list(r.Matches(comp))
-        self.assert_('echo "$(( $PWD' in m, 'Got %s' % m)  # word with $
+        self.assert_('echo "$(( $PPID' in m, 'Got %s' % m)  # word with $
         self.assert_('echo "$(( $PS4' in m, 'Got %s' % m)
 
     def testCompletesCommandSubs(self):

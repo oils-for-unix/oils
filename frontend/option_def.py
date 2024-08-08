@@ -284,11 +284,9 @@ def _Init(opt_def):
     opt_def.Add('extglob')
     opt_def.Add('nocasematch')
 
-    # TODO: Opt-in to optimization, which may causes correctness issues:
-    # - running traps
-    # - job control restoration with set -m
-    # - verbose_errexit doesn't get a chance to run
-    opt_def.Add('no_fork_last')
+    # Should we copy the environment in to the global stack frame?
+    # TODO: This may be off in YSH
+    opt_def.Add('no_copy_env')
 
     # recursive parsing and evaluation - for compatibility, ble.sh, etc.
     opt_def.Add('eval_unsafe_arith')
