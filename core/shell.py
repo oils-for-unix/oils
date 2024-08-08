@@ -845,6 +845,8 @@ def Main(
 
     _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
 
+    _SetGlobalFunc(mem, 'Object', func_misc.Object())
+
     # type conversions
     _SetGlobalFunc(mem, 'bool', func_misc.Bool())
     _SetGlobalFunc(mem, 'int', func_misc.Int())

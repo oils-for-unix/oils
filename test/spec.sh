@@ -831,6 +831,10 @@ ysh-method-io() {
   run-file ysh-method-io "$@"
 }
 
+ysh-object() {
+  run-file ysh-object "$@"
+}
+
 ysh-func() {
   run-file ysh-func "$@"
 }

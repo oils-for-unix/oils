@@ -31,6 +31,28 @@ if TYPE_CHECKING:
 _ = log
 
 
+class Object(vm._Callable):
+    """
+    Create an object.  The order of params follows JavaScript's Object.create()
+
+    var obj = Object(prototype, props)
+    """
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        prototype = rd.PosObject()
+        props = rd.PosDict()
+        rd.Done()
+
+        # Opposite order
+        return Dict_(props, prototype)
+
+
 class Len(vm._Callable):
 
     def __init__(self):

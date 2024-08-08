@@ -271,6 +271,14 @@ class Reader(object):
         raise error.TypeErr(val, 'Arg %d should be a Dict' % self.pos_consumed,
                             self.BlamePos())
 
+    def _ToObject(self, val):
+        # type: (value_t) -> Dict_
+        if val.tag() == value_e.Dict:
+            return cast(Dict_, val)
+
+        raise error.TypeErr(val, 'Arg %d should be a Dict' % self.pos_consumed,
+                            self.BlamePos())
+
     def _ToPlace(self, val):
         # type: (value_t) -> value.Place
         if val.tag() == value_e.Place:
@@ -403,6 +411,11 @@ class Reader(object):
         # type: () -> Dict[str, value_t]
         val = self.PosValue()
         return self._ToDict(val)
+
+    def PosObject(self):
+        # type: () -> Dict_
+        val = self.PosValue()
+        return self._ToObject(val)
 
     def PosPlace(self):
         # type: () -> value.Place

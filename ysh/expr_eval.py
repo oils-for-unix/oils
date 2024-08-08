@@ -929,6 +929,27 @@ class ExprEvaluator(object):
         raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
                             loc.Missing)
 
+    def _ChainedLookup(self, obj, current, attr_name):
+        # type: (Dict_, Dict_, str) -> Optional[value_t]
+        """Prototype chain lookup.
+
+        Args:
+          obj: properties we might bind to
+          current: our location in the prototype chain
+        """
+        val = current.d.get(attr_name)
+        if val is not None:
+            # Special bound method logic for objects, but NOT modules
+            if val.tag() in (value_e.Func, value_e.BuiltinFunc):
+                return value.BoundFunc(obj, val)
+            else:
+                return val
+
+        if current.prototype is not None:
+            return self._ChainedLookup(obj, current.prototype, attr_name)
+
+        return None
+
     def _EvalDot(self, node, obj):
         # type: (Attribute, value_t) -> value_t
         """ obj.attr on RHS or LHS
@@ -941,16 +962,25 @@ class ExprEvaluator(object):
             if case(value_e.Dict):
                 obj = cast(Dict_, UP_obj)
                 attr_name = node.attr_name
-                try:
-                    result = obj.d[attr_name]
-                except KeyError:
-                    raise error.Expr('Dict entry %r not found' % attr_name,
-                                     node.op)
+
+                # Dict key / normal attribute lookup
+                result = obj.d.get(attr_name)
+                if result is not None:
+                    return result
+
+                # Prototype lookup - with special logic for BoundMethod
+                if obj.prototype is not None:
+                    result = self._ChainedLookup(obj, obj.prototype, attr_name)
+                    if result is not None:
+                        return result
+
+                raise error.Expr('Dict entry %r not found' % attr_name,
+                                 node.op)
 
             else:
                 raise error.TypeErr(obj, 'Dot operator expected Dict', node.op)
 
-        return result
+        raise AssertionError()
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
