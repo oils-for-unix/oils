@@ -1142,25 +1142,21 @@ class ctx_Eval(object):
     def __init__(self, mem, dollar0, pos_args, vars):
         # type: (Mem, Optional[str], Optional[List[str]], Optional[Dict[str, value_t]]) -> None
         self.mem = mem
-        self.pushed_pos_args = False
-        self.pushed_dollar0 = False
-        self.pushed_vars = False
+        self.dollar0 = dollar0
+        self.pos_args = pos_args
+        self.vars = vars
 
         # $0 needs to have lexical scoping. So we store it with other locals.
-        # As "0" cannot be parsed as an lvalue, we can safely store arg0 there.
+        # As "0" cannot be parsed as an lvalue, we can safely store dollar0 there.
         if dollar0 is not None:
-            self.pushed_dollar0 = True
             assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
-            self.lval = LeftName("0", loc.Missing)
-            mem.SetLocalName(self.lval, value.Str(dollar0))
+            self.dollar0_lval = LeftName("0", loc.Missing)
+            mem.SetLocalName(self.dollar0_lval, value.Str(dollar0))
 
         if pos_args is not None:
-            self.pushed_pos_args = True
             mem.argv_stack.append(_ArgFrame(pos_args))
 
         if vars is not None:
-            self.pushed_vars = True
-
             frame = {}  # type: Dict[str, Cell]
             for name in vars:
                 frame[name] = Cell(False, False, False, vars[name])
@@ -1173,14 +1169,14 @@ class ctx_Eval(object):
 
     def __exit__(self, type, value_, traceback):
         # type: (Any, Any, Any) -> None
-        if self.pushed_vars:
+        if self.vars is not None:
             self.mem.var_stack.pop()
 
-        if self.pushed_pos_args:
+        if self.pos_args is not None:
             self.mem.argv_stack.pop()
 
-        if self.pushed_dollar0:
-            self.mem.SetLocalName(self.lval, value.Undef)
+        if self.dollar0 is not None:
+            self.mem.SetLocalName(self.dollar0_lval, value.Undef)
 
 
 class Mem(object):

@@ -544,6 +544,13 @@ proc inner {
 foo
 inner
 foo  # Back to the global scope, foo still references `proc foo`
+
+# Without this behavior, features like `eval(b, vars={ flag: __flag })`, needed
+# by parseArgs, will not work. `eval` with `vars` adds a new frame to the end of
+# `mem.var_stack` with a local `flag` set to `proc __flag`. However, then we
+# cannot resolve `flag` by only checking `mem.var_stack[0]` like we could with
+# a proc declared normally, so we must search `mem.var_stack` from last to first.
+
 ## STDOUT:
 foo
 bar
