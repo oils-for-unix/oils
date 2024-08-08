@@ -3,7 +3,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import source, loc, command_t
-from _devbuild.gen.value_asdl import value
+from _devbuild.gen.value_asdl import value, Dict_
 from builtin import hay_ysh
 from core import alloc
 from core import error
@@ -106,7 +106,7 @@ class EvalHay(vm._Callable):
 
         cmd = rd.PosCommand()
         rd.Done()
-        return value.Dict(self._Call(cmd))
+        return Dict_(self._Call(cmd), None)
 
 
 class BlockAsStr(vm._Callable):
@@ -147,4 +147,4 @@ class HayFunc(vm._Callable):
         # type: (typed_args.Reader) -> value_t
 
         # TODO: check args
-        return value.Dict(self._Call())
+        return Dict_(self._Call(), None)

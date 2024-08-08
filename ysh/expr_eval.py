@@ -45,7 +45,8 @@ from _devbuild.gen.runtime_asdl import (
     Piece,
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
-                                      y_lvalue_e, y_lvalue_t, IntBox, LeftName)
+                                      y_lvalue_e, y_lvalue_t, IntBox, LeftName,
+                                      Dict_)
 from core import error
 from core.error import e_die, e_die_status
 from core import num
@@ -238,7 +239,7 @@ class ExprEvaluator(object):
                                 loc.Missing)
 
                     elif case(value_e.Dict):
-                        obj = cast(value.Dict, UP_obj)
+                        obj = cast(Dict_, UP_obj)
                         index = -1  # silence C++ warning
                         key = val_ops.ToStr(lval.index,
                                             'Dict index should be Str',
@@ -267,7 +268,7 @@ class ExprEvaluator(object):
                         obj.items[index] = new_val_
 
                     elif case(value_e.Dict):
-                        obj = cast(value.Dict, UP_obj)
+                        obj = cast(Dict_, UP_obj)
                         obj.d[key] = new_val_
 
             else:
@@ -912,7 +913,7 @@ class ExprEvaluator(object):
                             loc.Missing)
 
             elif case(value_e.Dict):
-                obj = cast(value.Dict, UP_obj)
+                obj = cast(Dict_, UP_obj)
                 if index.tag() != value_e.Str:
                     raise error.TypeErr(index, 'Dict index expected Str',
                                         loc.Missing)
@@ -938,7 +939,7 @@ class ExprEvaluator(object):
         UP_obj = obj
         with tagswitch(obj) as case:
             if case(value_e.Dict):
-                obj = cast(value.Dict, UP_obj)
+                obj = cast(Dict_, UP_obj)
                 attr_name = node.attr_name
                 try:
                     result = obj.d[attr_name]
@@ -1178,7 +1179,7 @@ class ExprEvaluator(object):
                                       loc.Missing)
                     d[k] = values[i]
 
-                return value.Dict(d)
+                return Dict_(d, None)
 
             elif case(expr_e.ListComp):
                 e_die_status(

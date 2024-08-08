@@ -851,7 +851,7 @@ def Main(
     _SetGlobalFunc(mem, 'float', func_misc.Float())
     _SetGlobalFunc(mem, 'str', func_misc.Str_())
     _SetGlobalFunc(mem, 'list', func_misc.List_())
-    _SetGlobalFunc(mem, 'dict', func_misc.Dict_())
+    _SetGlobalFunc(mem, 'dict', func_misc.DictFunc())
 
     _SetGlobalFunc(mem, 'runes', func_misc.Runes())
     _SetGlobalFunc(mem, 'encodeRunes', func_misc.EncodeRunes())

@@ -19,7 +19,7 @@ from _devbuild.gen.types_asdl import opt_group_i
 from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
                                       sh_lvalue_e, sh_lvalue_t, LeftName,
                                       y_lvalue_e, regex_match, regex_match_e,
-                                      regex_match_t, RegexMatch)
+                                      regex_match_t, RegexMatch, Dict_)
 from core import error
 from core.error import e_usage, e_die
 from core import num
@@ -815,7 +815,7 @@ def _DumpVarFrame(frame):
                 # TODO: should we show the object ID here?
                 pass
 
-        vars_json[name] = value.Dict(cell_json)
+        vars_json[name] = Dict_(cell_json, None)
 
     return vars_json
 
@@ -1071,7 +1071,7 @@ class ctx_Registers(object):
         last = mem.last_status[-1]
         mem.last_status.append(last)
         mem.try_status.append(0)
-        mem.try_error.append(value.Dict({}))
+        mem.try_error.append(Dict_({}, None))
 
         # TODO: We should also copy these values!  Turn the whole thing into a
         # frame.
@@ -1225,7 +1225,7 @@ class Mem(object):
         # - push-registers builtin
         self.last_status = [0]  # type: List[int]  # a stack
         self.try_status = [0]  # type: List[int]  # a stack
-        self.try_error = [value.Dict({})]  # type: List[value.Dict]  # a stack
+        self.try_error = [Dict_({}, None)]  # type: List[Dict_]  # a stack
         self.pipe_status = [[]]  # type: List[List[int]]  # stack
         self.process_sub_status = [[]]  # type: List[List[int]]  # stack
 
@@ -1271,9 +1271,9 @@ class Mem(object):
         # type: () -> Tuple[List[value_t], List[value_t], List[value_t]]
         """Copy state before unwinding the stack."""
         var_stack = [
-            value.Dict(_DumpVarFrame(frame)) for frame in self.var_stack
+            Dict_(_DumpVarFrame(frame), None) for frame in self.var_stack
         ]  # type: List[value_t]
-        argv_stack = [value.Dict(frame.Dump())
+        argv_stack = [Dict_(frame.Dump(), None)
                       for frame in self.argv_stack]  # type: List[value_t]
 
         debug_stack = []  # type: List[value_t]
@@ -1308,7 +1308,7 @@ class Mem(object):
                     frame = cast(debug_frame.Main, UP_frame)
                     d = {'type': t_main, 'dollar0': value.Str(frame.dollar0)}
 
-            debug_stack.append(value.Dict(d))
+            debug_stack.append(Dict_(d, None))
         return var_stack, argv_stack, debug_stack
 
     def SetLastArgument(self, s):
@@ -1376,7 +1376,7 @@ class Mem(object):
         return self.try_status[-1]
 
     def TryError(self):
-        # type: () -> value.Dict
+        # type: () -> Dict_
         return self.try_error[-1]
 
     def PipeStatus(self):
@@ -1392,7 +1392,7 @@ class Mem(object):
         self.try_status[-1] = x
 
     def SetTryError(self, x):
-        # type: (value.Dict) -> None
+        # type: (Dict_) -> None
         self.try_error[-1] = x
 
     def SetPipeStatus(self, x):

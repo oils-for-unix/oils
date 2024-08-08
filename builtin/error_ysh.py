@@ -4,7 +4,7 @@ from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.id_kind_asdl import Id
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
 from _devbuild.gen.syntax_asdl import loc, loc_t, expr, expr_e
-from _devbuild.gen.value_asdl import value, value_e
+from _devbuild.gen.value_asdl import value, value_e, Dict_
 from core import error
 from core.error import e_die_status, e_usage
 from core import executor
@@ -99,7 +99,7 @@ class Try(vm._Builtin):
         cmd = rd.RequiredBlock()
         rd.Done()
 
-        error_dict = None  # type: value.Dict
+        error_dict = None  # type: Dict_
 
         status = 0  # success by default
         try:
@@ -116,7 +116,7 @@ class Try(vm._Builtin):
             error_dict = e.ToDict()
 
         if error_dict is None:
-            error_dict = value.Dict({'code': num.ToBig(status)})
+            error_dict = Dict_({'code': num.ToBig(status)}, None)
 
         # Always set _error
         self.mem.SetTryError(error_dict)

@@ -8,7 +8,8 @@ from __future__ import print_function
 import math
 
 from _devbuild.gen.pretty_asdl import (doc, Measure, MeasuredDoc)
-from _devbuild.gen.value_asdl import value, value_e, value_t, value_str
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str,
+                                      Dict_)
 from data_lang import j8
 from data_lang import j8_lite
 from display.pretty import (_Break, _Concat, _Flat, _Group, _IfFlat, _Indent,
@@ -326,7 +327,7 @@ class ValueEncoder:
         return self._Surrounded("[", self._Tabular(mdocs, ","), "]")
 
     def _YshDict(self, vdict):
-        # type: (value.Dict) -> MeasuredDoc
+        # type: (Dict_) -> MeasuredDoc
         if len(vdict.d) == 0:
             return UText("{}")
         mdocs = []  # type: List[MeasuredDoc]
@@ -433,7 +434,7 @@ class ValueEncoder:
                     return result
 
             elif case(value_e.Dict):
-                vdict = cast(value.Dict, val)
+                vdict = cast(Dict_, val)
                 heap_id = j8.HeapValueId(vdict)
                 if self.visiting.get(heap_id, False):
                     return _Concat([

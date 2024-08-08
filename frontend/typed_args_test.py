@@ -36,7 +36,7 @@ class TypedArgsTest(unittest.TestCase):
             value.Str('foo'),
             value.List([value.Int(1), value.Int(2),
                         value.Int(3)]),
-            value.Dict({
+            Dict_({
                 'a': value.Int(0xaa),
                 'b': value.Int(0xbb)
             }),
@@ -110,7 +110,7 @@ class TypedArgsTest(unittest.TestCase):
             'numbers': value.List([value.Int(1),
                                    value.Int(2),
                                    value.Int(3)]),
-            'blah': value.Dict({
+            'blah': Dict_({
                 'a': value.Int(0xaa),
                 'b': value.Int(0xbb)
             }),
