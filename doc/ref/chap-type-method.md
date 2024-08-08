@@ -341,6 +341,21 @@ Similar to `keys()`, but returns the values of the dictionary.
 
 ### get()
 
+Return value for given key, falling back to the default value if the key 
+doesn't exist. Default is required.
+
+    var book = {
+      title: "Hitchhiker's Guide",
+      published: 1979,
+    }
+    var published = book => get("published", null)
+    = published
+    # => (Int 1979)
+
+    var author = book => get("author", "???")
+    = author
+    # => (Str "???")
+
 ### erase()
 
 Ensures that the given key does not exist in the dictionary.

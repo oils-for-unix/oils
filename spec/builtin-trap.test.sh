@@ -272,25 +272,27 @@ end child
 wait status 0
 ## END
 
+#### trap USR1, sleep, SIGINT: non-interactively
+
+$REPO_ROOT/spec/testdata/builtin-trap-usr1.sh
+
+## STDOUT:
+usr1
+status=0
+## END
+
 #### trap INT, sleep, SIGINT: non-interactively
 
 # mksh behaves differently in CI -- maybe when it's not connected to a
 # terminal?
-
 case $SH in mksh) echo mksh; exit ;; esac
 
-# Without this, it succeeds in CI?
-case $SH in *osh) echo osh; exit ;; esac
-
-$SH -c 'trap "echo int" INT; sleep 0.1' &
-/usr/bin/kill -INT $!
-wait
-
-# Only mksh shows 'int'?
-# OSH shows "done"
+$REPO_ROOT/spec/testdata/builtin-trap-int.sh
 
 ## STDOUT:
+status=0
 ## END
+
 ## OK mksh STDOUT:
 mksh
 ## END

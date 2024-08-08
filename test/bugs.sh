@@ -50,7 +50,7 @@ trap-1() {
   set +o errexit
 
   # This fails to run the trap
-  $sh -x -c 'trap "echo int" INT; sleep 5'
+  $sh -x -c 'echo pid=$$; trap "echo int" INT; sleep 5'
 
   echo "$sh status=$?"
 }
@@ -61,7 +61,7 @@ trap-2() {
   set +o errexit
 
   # This runs it
-  $sh -x -c 'trap "echo int" INT; sleep 5; echo last'
+  $sh -x -c 'echo pid=$$; trap "echo int" INT; sleep 5; echo last'
 
   echo "$sh status=$?"
 }
@@ -81,6 +81,20 @@ two-traps-return() {
   $sh -x -c '
 trap "echo int; return 44" INT
 trap "echo exit; return 55" EXIT
+sleep 5
+'
+  # bash gives 130?
+  echo "$sh status=$?"
+}
+
+two-traps-exit() {
+  local sh=${1:-bin/osh}
+
+  set +o errexit
+
+  $sh -x -c '
+trap "echo int; exit 44" INT
+trap "echo exit; exit 55" EXIT
 sleep 5
 '
   # bash gives 130?
