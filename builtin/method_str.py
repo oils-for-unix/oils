@@ -2,10 +2,9 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_t, loc
-from _devbuild.gen.runtime_asdl import scope_e
+from _devbuild.gen.syntax_asdl import loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
-                                      eggex_ops_t, RegexMatch, LeftName)
+                                      eggex_ops_t, RegexMatch)
 from builtin import pure_ysh
 from core import error
 from core import state
@@ -21,7 +20,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, Any, List, Optional, Tuple
+from typing import cast, List, Tuple
 
 _ = log
 
@@ -321,37 +320,6 @@ class SearchMatch(vm._Callable):
         return RegexMatch(string, indices, capture)
 
 
-class ctx_EvalReplace(object):
-    """For $0, $1, $2, $3, ... replacements in Str => replace()"""
-
-    def __init__(self, mem, arg0, argv):
-        # type: (state.Mem, str, Optional[List[str]]) -> None
-        # argv will be None for Str => replace(Str, Expr)
-        if argv is None:
-            self.pushed_argv = False
-        else:
-            mem.argv_stack.append(state._ArgFrame(argv))
-            self.pushed_argv = True
-
-        # $0 needs to have lexical scoping. So we store it with other locals.
-        # As "0" cannot be parsed as an lvalue, we can safely store arg0 there.
-        assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
-        self.lval = LeftName("0", loc.Missing)
-        mem.SetLocalName(self.lval, value.Str(arg0))
-
-        self.mem = mem
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value_, traceback):
-        # type: (Any, Any, Any) -> None
-        self.mem.SetLocalName(self.lval, value.Undef)
-        if self.pushed_argv:
-            self.mem.argv_stack.pop()
-
-
 class Replace(vm._Callable):
 
     def __init__(self, mem, expr_ev):
@@ -429,7 +397,7 @@ class Replace(vm._Callable):
                 s = subst_str.s
             if subst_expr:
                 # Eval with $0 set to string_val (the matched substring)
-                with ctx_EvalReplace(self.mem, string_val.s, None):
+                with state.ctx_Eval(self.mem, string_val.s, None, None):
                     s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
             assert s is not None
 
@@ -491,7 +459,7 @@ class Replace(vm._Callable):
                 if subst_str:
                     s = subst_str.s
                 if subst_expr:
-                    with ctx_EvalReplace(self.mem, arg0, argv):
+                    with state.ctx_Eval(self.mem, arg0, argv, None):
                         with pure_ysh.ctx_Shvar(self.mem, named_vars):
                             s = self.EvalSubstExpr(subst_expr,
                                                    rd.LeftParenToken())

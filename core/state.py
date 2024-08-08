@@ -1136,6 +1136,49 @@ def _MakeArgvCell(argv):
     return Cell(False, False, False, value.List(items))
 
 
+class ctx_Eval(object):
+    """Push temporary variable frame and override $0, $1, $2, etc."""
+
+    def __init__(self, mem, dollar0, pos_args, vars):
+        # type: (Mem, Optional[str], Optional[List[str]], Optional[Dict[str, value_t]]) -> None
+        self.mem = mem
+        self.dollar0 = dollar0
+        self.pos_args = pos_args
+        self.vars = vars
+
+        # $0 needs to have lexical scoping. So we store it with other locals.
+        # As "0" cannot be parsed as an lvalue, we can safely store dollar0 there.
+        if dollar0 is not None:
+            assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
+            self.dollar0_lval = LeftName("0", loc.Missing)
+            mem.SetLocalName(self.dollar0_lval, value.Str(dollar0))
+
+        if pos_args is not None:
+            mem.argv_stack.append(_ArgFrame(pos_args))
+
+        if vars is not None:
+            frame = {}  # type: Dict[str, Cell]
+            for name in vars:
+                frame[name] = Cell(False, False, False, vars[name])
+
+            mem.var_stack.append(frame)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+        if self.vars is not None:
+            self.mem.var_stack.pop()
+
+        if self.pos_args is not None:
+            self.mem.argv_stack.pop()
+
+        if self.dollar0 is not None:
+            self.mem.SetLocalName(self.dollar0_lval, value.Undef)
+
+
 class Mem(object):
     """For storing variables.
 
@@ -2353,11 +2396,9 @@ class Procs:
         First, we search for a proc, and then a sh-func. This means that procs
         can shadow the definition of sh-funcs.
         """
-        vars = self.mem.var_stack[0]
-        if name in vars:
-            maybe_proc = vars[name]
-            if maybe_proc.val.tag() == value_e.Proc:
-                return cast(value.Proc, maybe_proc.val)
+        maybe_proc = self.mem.GetValue(name)
+        if maybe_proc.tag() == value_e.Proc:
+            return cast(value.Proc, maybe_proc)
 
         if name in self.sh_funcs:
             return self.sh_funcs[name]

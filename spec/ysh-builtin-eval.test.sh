@@ -1,7 +1,7 @@
 # YSH specific features of eval
 
 ## our_shell: ysh
-## oils_failures_allowed: 8
+## oils_failures_allowed: 1
 
 #### Eval does not take a literal block - can restore this later
 
@@ -99,8 +99,8 @@ TODO
 ## END
 
 #### eval with argv bindings
-eval (^(echo "$@")) (pos_args=:| foo bar baz |)
-eval (^(pp test_ (:| $1 $2 $3 |))) (pos_args=:| foo bar baz |)
+eval (^(echo "$@"), pos_args=:| foo bar baz |)
+eval (^(pp test_ (:| $1 $2 $3 |)), pos_args=:| foo bar baz |)
 ## STDOUT:
 foo bar baz
 (List)   ["foo","bar","baz"]
@@ -108,21 +108,21 @@ foo bar baz
 
 #### eval lines with argv bindings
 proc lines (;;; block) {
-  while read --line {
+  while read --raw-line {
     var cols = _reply => split()
     eval (block, pos_args=cols)
   }
 }
 
-printf 'a b\nc d' | lines { echo $1 }
+printf 'a b\nc d\n' | lines { echo $1 }
 
 ## STDOUT:
 a
 c
 ## END
 
-#### eval with custom arg0
-eval (^(write $0)) (arg0="my arg0")
+#### eval with custom dollar0
+eval (^(write $0), dollar0="my arg0")
 ## STDOUT:
 my arg0
 ## END
@@ -136,8 +136,9 @@ eval (^(pp test_ (myVar)), vars={ 'myVar': '123' })
 eval (^(pp test_ (myVar)))
 
 ## STDOUT:
-abc
-123
+(Str)   "abc"
+(Str)   "123"
+(Str)   "abc"
 ## END
 
 #### dynamic binding names and mutation
@@ -146,8 +147,8 @@ proc foreach (binding, in_; list ;; block) {
     error 'Must use the "syntax" `foreach <binding> in (<expr>) { ... }`'
   }
 
-  for _ in (list) {
-    eval (block, vars={ binding: _ })
+  for item in (list) {
+    eval (block, vars={ [binding]: item })
   }
 }
 
@@ -200,12 +201,16 @@ arg file
 
 #### vars initializes the variable frame, but does not remember it
 var vars = { 'foo': 123 }
-eval (^(var bar = 321), vars=vars)
+eval (^(var bar = 321;), vars=vars)
 pp test_ (vars)
 
 ## STDOUT:
 (Dict)   {"foo":123}
 ## END
+
+#### eval pos_args must be strings
+eval (^(true), pos_args=[1, 2, 3])
+## status: 3
 
 #### eval 'mystring' vs. eval (myblock)
 

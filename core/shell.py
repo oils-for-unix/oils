@@ -602,7 +602,7 @@ def Main(
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
     b[builtin_i.eval] = meta_osh.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
-                                      errfmt)
+                                      errfmt, mem)
 
     # Module builtins
     guards = {}  # type: Dict[str, bool]
