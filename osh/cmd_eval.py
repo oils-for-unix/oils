@@ -65,7 +65,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
-                                      y_lvalue_e, y_lvalue_t, LeftName, Dict_)
+                                      y_lvalue_e, y_lvalue_t, LeftName)
 
 from core import dev
 from core import error
@@ -743,7 +743,7 @@ class CommandEvaluator(object):
                             obj.items[index] = rval
 
                         elif case(value_e.Dict):
-                            obj = cast(Dict_, UP_obj)
+                            obj = cast(value.Dict, UP_obj)
                             key = val_ops.ToStr(lval.index,
                                                 'Dict index should be Str',
                                                 loc.Missing)
@@ -1154,7 +1154,7 @@ class CommandEvaluator(object):
                             node.keyword)
 
                 elif case(value_e.Dict):
-                    val = cast(Dict_, UP_val)
+                    val = cast(value.Dict, UP_val)
                     it2 = val_ops.DictIterator(val)
 
                     if n == 1:

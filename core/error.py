@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 from _devbuild.gen.syntax_asdl import loc_e, loc_t, loc
-from _devbuild.gen.value_asdl import (value, value_t, value_str, Dict_)
+from _devbuild.gen.value_asdl import (value, value_t, value_str)
 from core import num
 from mycpp.mylib import NewDict
 
@@ -172,7 +172,7 @@ class Structured(FatalRuntime):
         self.properties = properties
 
     def ToDict(self):
-        # type: () -> Dict_
+        # type: () -> value.Dict
 
         d = NewDict()  # type: Dict[str, value_t]
 
@@ -186,7 +186,7 @@ class Structured(FatalRuntime):
         d['code'] = num.ToBig(self.ExitStatus())
         d['message'] = value.Str(self.msg)
 
-        return Dict_(d, None)
+        return value.Dict(d)
 
 
 class AssertionErr(Expr):

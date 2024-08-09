@@ -5,8 +5,7 @@ func_misc.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (scope_e)
-from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str,
-                                      Dict_, Obj)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 
 from core import error
 from core import num
@@ -84,7 +83,7 @@ class Len(vm._Callable):
                 return num.ToBig(len(x.items))
 
             elif case(value_e.Dict):
-                x = cast(Dict_, UP_x)
+                x = cast(value.Dict, UP_x)
                 return num.ToBig(len(x.d))
 
             elif case(value_e.Str):
@@ -298,7 +297,7 @@ class List_(vm._Callable):
                 it = val_ops.ListIterator(val)
 
             elif case(value_e.Dict):
-                val = cast(Dict_, UP_val)
+                val = cast(value.Dict, UP_val)
                 it = val_ops.DictIterator(val)
 
             elif case(value_e.Range):
@@ -337,11 +336,11 @@ class DictFunc(vm._Callable):
         with tagswitch(val) as case:
             if case(value_e.Dict):
                 d = NewDict()  # type: Dict[str, value_t]
-                val = cast(Dict_, UP_val)
+                val = cast(value.Dict, UP_val)
                 for k, v in iteritems(val.d):
                     d[k] = v
 
-                return Dict_(d, None)
+                return value.Dict(d)
 
             elif case(value_e.BashAssoc):
                 d = NewDict()
@@ -349,7 +348,7 @@ class DictFunc(vm._Callable):
                 for k, s in iteritems(val.d):
                     d[k] = value.Str(s)
 
-                return Dict_(d, None)
+                return value.Dict(d)
 
         raise error.TypeErr(val, 'dict() expected Dict or BashAssoc',
                             rd.BlamePos())

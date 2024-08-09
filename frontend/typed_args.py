@@ -4,8 +4,7 @@ from __future__ import print_function
 from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
                                        command_t, expr_t, Token)
-from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch,
-                                      Dict_, Obj)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
 from core import error
 from core.error import e_usage
 from frontend import location
@@ -266,17 +265,9 @@ class Reader(object):
     def _ToDict(self, val):
         # type: (value_t) -> Dict[str, value_t]
         if val.tag() == value_e.Dict:
-            return cast(Dict_, val).d
+            return cast(value.Dict, val).d
 
         raise error.TypeErr(val, 'Arg %d should be a Dict' % self.pos_consumed,
-                            self.BlamePos())
-
-    def _ToObj(self, val):
-        # type: (value_t) -> Obj
-        if val.tag() == value_e.Obj:
-            return cast(Obj, val)
-
-        raise error.TypeErr(val, 'Arg %d should be an Obj' % self.pos_consumed,
                             self.BlamePos())
 
     def _ToPlace(self, val):
@@ -411,11 +402,6 @@ class Reader(object):
         # type: () -> Dict[str, value_t]
         val = self.PosValue()
         return self._ToDict(val)
-
-    def PosObj(self):
-        # type: () -> Obj
-        val = self.PosValue()
-        return self._ToObj(val)
 
     def PosPlace(self):
         # type: () -> value.Place
@@ -567,7 +553,7 @@ class Reader(object):
         val = self.named_args[param_name]
         UP_val = val
         if val.tag() == value_e.Dict:
-            val = cast(Dict_, UP_val)
+            val = cast(value.Dict, UP_val)
             mylib.dict_erase(self.named_args, param_name)
             return val.d
 

@@ -6,7 +6,7 @@ typed_args_test.py: Tests for typed_args.py
 import unittest
 
 from _devbuild.gen.syntax_asdl import ArgList, expr
-from _devbuild.gen.value_asdl import value, Dict_
+from _devbuild.gen.value_asdl import value
 from core import error
 from core import test_lib
 from frontend import typed_args  # module under test
@@ -36,10 +36,10 @@ class TypedArgsTest(unittest.TestCase):
             value.Str('foo'),
             value.List([value.Int(1), value.Int(2),
                         value.Int(3)]),
-            Dict_({
+            value.Dict({
                 'a': value.Int(0xaa),
                 'b': value.Int(0xbb)
-            }, None),
+            }),
             value.Float(3.14),
             value.Int(0xdead),
             value.Int(0xbeef),
@@ -110,10 +110,10 @@ class TypedArgsTest(unittest.TestCase):
             'numbers': value.List([value.Int(1),
                                    value.Int(2),
                                    value.Int(3)]),
-            'blah': Dict_({
+            'blah': value.Dict({
                 'a': value.Int(0xaa),
                 'b': value.Int(0xbb)
-            }, None),
+            }),
             'pi': value.Float(3.14),
             'a': value.Int(0xdead),
             'b': value.Int(0xbeef),

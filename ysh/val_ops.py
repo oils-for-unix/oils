@@ -4,8 +4,7 @@ from errno import EINTR
 
 from _devbuild.gen.syntax_asdl import loc, loc_t, command_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
-                                      eggex_ops_t, regex_match, RegexMatch,
-                                      Dict_)
+                                      eggex_ops_t, regex_match, RegexMatch)
 from core import error
 from core.error import e_die
 from display import ui
@@ -23,15 +22,6 @@ _ = log
 
 if TYPE_CHECKING:
     from core import state
-
-if 0:
-
-    def PlainDict(d):
-        # type: (Dict[str, value_t]) -> Dict_
-        """
-        Shorthand for "plain old data", i.e. data without behavior
-        """
-        return Dict_(d, None)
 
 
 def ToInt(val, msg, blame_loc):
@@ -78,7 +68,7 @@ def ToDict(val, msg, blame_loc):
     # type: (value_t, str, loc_t) -> Dict[str, value_t]
     UP_val = val
     if val.tag() == value_e.Dict:
-        val = cast(Dict_, UP_val)
+        val = cast(value.Dict, UP_val)
         return val.d
 
     raise error.TypeErr(val, msg, blame_loc)
@@ -309,7 +299,7 @@ class DictIterator(Iterator):
     """ for x in (mydict) { """
 
     def __init__(self, val):
-        # type: (Dict_) -> None
+        # type: (value.Dict) -> None
         Iterator.__init__(self)
 
         # TODO: Don't materialize these Lists
@@ -374,7 +364,7 @@ def ToBool(val):
             return len(val.items) > 0
 
         elif case(value_e.Dict):
-            val = cast(Dict_, UP_val)
+            val = cast(value.Dict, UP_val)
             return len(val.d) > 0
 
         else:
@@ -443,8 +433,8 @@ def ExactlyEqual(left, right, blame_loc):
             return True
 
         elif case(value_e.BashAssoc):
-            left = cast(Dict_, UP_left)
-            right = cast(Dict_, UP_right)
+            left = cast(value.Dict, UP_left)
+            right = cast(value.Dict, UP_right)
             if len(left.d) != len(right.d):
                 return False
 
@@ -455,8 +445,8 @@ def ExactlyEqual(left, right, blame_loc):
             return True
 
         elif case(value_e.Dict):
-            left = cast(Dict_, UP_left)
-            right = cast(Dict_, UP_right)
+            left = cast(value.Dict, UP_left)
+            right = cast(value.Dict, UP_right)
             if len(left.d) != len(right.d):
                 return False
 
@@ -481,7 +471,7 @@ def Contains(needle, haystack):
     UP_haystack = haystack
     with tagswitch(haystack) as case:
         if case(value_e.Dict):
-            haystack = cast(Dict_, UP_haystack)
+            haystack = cast(value.Dict, UP_haystack)
             s = ToStr(needle, "LHS of 'in' should be Str", loc.Missing)
             return s in haystack.d
 

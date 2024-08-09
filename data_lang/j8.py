@@ -31,8 +31,7 @@ Later:
 import math
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str,
-                                      Dict_)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
 from _devbuild.gen.nil8_asdl import (nvalue, nvalue_t)
 
 from asdl import format as fmt
@@ -307,7 +306,7 @@ class InstancePrinter(object):
             self.buf.write(']')
 
     def _PrintDict(self, val, level):
-        # type: (Dict_, int) -> None
+        # type: (value.Dict, int) -> None
 
         if len(val.d) == 0:  # Special case like Python/JS
             self.buf.write('{}')
@@ -551,7 +550,7 @@ class InstancePrinter(object):
                 self.visited[heap_id] = FINISHED
 
             elif case(value_e.Dict):
-                val = cast(Dict_, UP_val)
+                val = cast(value.Dict, UP_val)
 
                 # Cycle detection, only for containers that can be in cycles
                 heap_id = HeapValueId(val)
@@ -940,7 +939,7 @@ class Parser(_Parser):
         self._Next()
         if self.tok_id == Id.J8_RBrace:
             self._Next()
-            return Dict_(d, None)
+            return value.Dict(d)
 
         k, v = self._ParsePair()
         d[k] = v
@@ -956,7 +955,7 @@ class Parser(_Parser):
 
         #log('< Dict')
 
-        return Dict_(d, None)
+        return value.Dict(d)
 
     def _ParseList(self):
         # type: () -> value_t

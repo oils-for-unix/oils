@@ -59,7 +59,6 @@ module value
   | Yes %RegexMatch
 
   # prototype is for the attribute lookup chain
-  Dict_ = (Dict[str, value] d, Dict_? prototype)
   Obj = (Dict[str, value] d, Obj? prototype)
 
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
@@ -94,7 +93,7 @@ module value
   #| Int(int i)
   | Float(float f)
   | List(List[value] items)
-  | Dict %Dict_
+  | Dict(Dict[str, value] d)
 
     # for polymorphism - should replace value.{IO,Module} too
     # because they have attributes (functions), methods - not just methods

@@ -10,7 +10,7 @@ from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, ParamGroup,
                                        NamedArg, Func, loc, ArgList, expr,
                                        expr_e, expr_t)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, ProcDefaults,
-                                      LeftName, Dict_)
+                                      LeftName)
 
 from core import error
 from core.error import e_die
@@ -168,7 +168,7 @@ def _EvalNamedArgs(expr_ev, named_exprs):
             if val.tag() != value_e.Dict:
                 raise error.TypeErr(val, 'Spread expected a Dict',
                                     val_expr.left)
-            named_args.update(cast(Dict_, val).d)
+            named_args.update(cast(value.Dict, val).d)
         else:
             val = expr_ev.EvalExpr(n.value, n.name)
             name = lexer.TokenVal(n.name)
@@ -403,7 +403,7 @@ def _BindNamed(
     rest = group.rest_of
     if rest:
         lval = LeftName(rest.name, rest.blame_tok)
-        mem.SetLocalName(lval, Dict_(named_args, None))
+        mem.SetLocalName(lval, value.Dict(named_args))
     else:
         num_args = len(named_args)
         num_params = len(group.params)

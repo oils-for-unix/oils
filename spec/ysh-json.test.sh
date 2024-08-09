@@ -153,14 +153,14 @@ echo '{"age": 42}'  > $TMP/foo.txt
 json read (&x) < $TMP/foo.txt
 pp cell_ x
 ## STDOUT:
-x = (Cell exported:F readonly:F nameref:F val:(Dict_ d:[Dict age (value.Int i:42)]))
+x = (Cell exported:F readonly:F nameref:F val:(value.Dict d:[Dict age (value.Int i:42)]))
 ## END
 
 #### json read at end of pipeline (relies on lastpipe)
 echo '{"age": 43}' | json read (&y)
 pp cell_ y
 ## STDOUT:
-y = (Cell exported:F readonly:F nameref:F val:(Dict_ d:[Dict age (value.Int i:43)]))
+y = (Cell exported:F readonly:F nameref:F val:(value.Dict d:[Dict age (value.Int i:43)]))
 ## END
 
 #### invalid JSON

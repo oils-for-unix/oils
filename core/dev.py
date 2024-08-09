@@ -8,7 +8,7 @@ from _devbuild.gen.runtime_asdl import (cmd_value, scope_e, trace, trace_e,
                                         trace_t)
 from _devbuild.gen.syntax_asdl import assign_op_e, Token
 from _devbuild.gen.value_asdl import (value, value_e, value_t, sh_lvalue,
-                                      sh_lvalue_e, LeftName, Dict_)
+                                      sh_lvalue_e, LeftName)
 
 from core import error
 from core import optview
@@ -143,7 +143,7 @@ class CrashDumper(object):
             'var_stack': value.List(self.var_stack),
             'argv_stack': value.List(self.argv_stack),
             'debug_stack': value.List(self.debug_stack),
-            'error': Dict_(self.error, None),
+            'error': value.Dict(self.error),
             'status': num.ToBig(status),
             'pid': num.ToBig(my_pid),
         }  # type: Dict[str, value_t]
@@ -153,7 +153,7 @@ class CrashDumper(object):
 
         # TODO: This should be JSON with unicode replacement char?
         buf = mylib.BufWriter()
-        j8.PrintMessage(Dict_(d, None), buf, 2)
+        j8.PrintMessage(value.Dict(d), buf, 2)
         json_str = buf.getvalue()
 
         try:
@@ -346,7 +346,7 @@ class MultiTracer(object):
             a = value.Str(argv0)
             c = value.Int(mops.IntWiden(count))
             d = {'argv0': a, 'count': c}
-            metric_argv0.append(Dict_(d, None))
+            metric_argv0.append(value.Dict(d))
 
         # Other things we need: the reason for the crash!  _ErrorWithLocation is
         # required I think.
@@ -359,7 +359,7 @@ class MultiTracer(object):
         path = os_path.join(self.out_dir, '%d.argv0.json' % self.this_pid)
 
         buf = mylib.BufWriter()
-        j8.PrintMessage(Dict_(j, None), buf, 2)
+        j8.PrintMessage(value.Dict(j), buf, 2)
         json8_str = buf.getvalue()
 
         try:

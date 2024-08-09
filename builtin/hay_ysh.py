@@ -3,7 +3,7 @@ from __future__ import print_function
 from _devbuild.gen.option_asdl import option_i
 from _devbuild.gen.runtime_asdl import (scope_e, HayNode)
 from _devbuild.gen.syntax_asdl import loc
-from _devbuild.gen.value_asdl import (value, value_e, value_t, Dict_)
+from _devbuild.gen.value_asdl import (value, value_e, value_t)
 
 from asdl import format as fmt
 from core import alloc
@@ -157,7 +157,7 @@ class HayState(object):
         UP_children = self.result_stack[-1]['children']
         assert UP_children.tag() == value_e.List, UP_children
         children = cast(value.List, UP_children)
-        children.items.append(Dict_(d, None))
+        children.items.append(value.Dict(d))
 
     def Result(self):
         # type: () -> Dict[str, value_t]
@@ -206,7 +206,7 @@ class HayState(object):
         top = self.result_stack[-1]
         # TODO: Store this more efficiently?  See osh/builtin_pure.py
         children = cast(value.List, top['children'])
-        last_child = cast(Dict_, children.items[-1])
+        last_child = cast(value.Dict, children.items[-1])
         self.result_stack.append(last_child.d)
 
         #log('> PUSH')
@@ -295,7 +295,7 @@ class Hay(vm._Builtin):
 
             result = self.hay_state.Result()
 
-            val = Dict_(result, None)
+            val = value.Dict(result)
             self.mem.SetNamed(location.LName(var_name), val, scope_e.LocalOnly)
 
         elif action == 'reset':
@@ -426,6 +426,6 @@ class HayNode_(vm._Builtin):
 
                     attrs[name] = cell.val
 
-                result['attrs'] = Dict_(attrs, None)
+                result['attrs'] = value.Dict(attrs)
 
         return 0
