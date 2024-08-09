@@ -1128,7 +1128,7 @@ def _MakeArgvCell(argv):
 
 
 class ctx_Eval(object):
-    """Push temporary variable frame and override $0, $1, $2, etc."""
+    """Push temporary set of variables, $0, $1, $2, etc."""
 
     def __init__(self, mem, dollar0, pos_args, vars):
         # type: (Mem, Optional[str], Optional[List[str]], Optional[Dict[str, value_t]]) -> None
@@ -1148,11 +1148,8 @@ class ctx_Eval(object):
             mem.argv_stack.append(_ArgFrame(pos_args))
 
         if vars is not None:
-            frame = {}  # type: Dict[str, Cell]
-            for name in vars:
-                frame[name] = Cell(False, False, False, vars[name])
-
-            mem.var_stack.append(frame)
+            self.restore = []  # type: List[Tuple[LeftName, value_t]]
+            self._Push(vars)
 
     def __enter__(self):
         # type: () -> None
@@ -1161,13 +1158,32 @@ class ctx_Eval(object):
     def __exit__(self, type, value_, traceback):
         # type: (Any, Any, Any) -> None
         if self.vars is not None:
-            self.mem.var_stack.pop()
+            self._Pop()
 
         if self.pos_args is not None:
             self.mem.argv_stack.pop()
 
         if self.dollar0 is not None:
             self.mem.SetLocalName(self.dollar0_lval, value.Undef)
+
+    # Note: _Push and _Pop are separate methods because the C++ translation
+    # doesn't like when they are inline in __init__ and __exit__.
+    def _Push(self, vars):
+        # type: (Dict[str, value_t]) -> None
+        for name in vars:
+            lval = location.LName(name)
+            # LocalOnly because we are only overwriting the current scope
+            old_val = self.mem.GetValue(name, scope_e.LocalOnly)
+            self.restore.append((lval, old_val))
+            self.mem.SetNamed(lval, vars[name], scope_e.LocalOnly)
+
+    def _Pop(self):
+        # type: () -> None
+        for lval, old_val in self.restore:
+            if old_val.tag() == value_e.Undef:
+                self.mem.Unset(lval, scope_e.LocalOnly)
+            else:
+                self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
 
 
 class Mem(object):

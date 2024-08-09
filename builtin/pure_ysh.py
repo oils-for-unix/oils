@@ -3,61 +3,22 @@ builtin/pure_ysh.py - YSH builtins that don't do I/O.
 """
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import (cmd_value, scope_e)
+from _devbuild.gen.runtime_asdl import cmd_value
 from _devbuild.gen.syntax_asdl import command_t, loc, loc_t
-from _devbuild.gen.value_asdl import (value, value_e, value_t, LeftName)
+from _devbuild.gen.value_asdl import value, value_e, value_t
 from core import error
 from core import state
 from core import vm
 from frontend import flag_util
-from frontend import location
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, NewDict
 
-from typing import TYPE_CHECKING, cast, Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, cast, Any, Dict, List
 
 if TYPE_CHECKING:
     from display import ui
     from osh.cmd_eval import CommandEvaluator
-
-
-class ctx_Shvar(object):
-    """For shvar LANG=C _ESCAPER=posix-sh-word _DIALECT=ninja."""
-
-    def __init__(self, mem, pairs):
-        # type: (state.Mem, List[Tuple[str, value_t]]) -> None
-        #log('pairs %s', pairs)
-        self.mem = mem
-        self.restore = []  # type: List[Tuple[LeftName, value_t]]
-        self._Push(pairs)
-
-    def __enter__(self):
-        # type: () -> None
-        pass
-
-    def __exit__(self, type, value, traceback):
-        # type: (Any, Any, Any) -> None
-        self._Pop()
-
-    # Note: _Push and _Pop are separate methods because the C++ translation
-    # doesn't like when they are inline in __init__ and __exit__.
-    def _Push(self, pairs):
-        # type: (List[Tuple[str, value_t]]) -> None
-        for name, v in pairs:
-            lval = location.LName(name)
-            # LocalOnly because we are only overwriting the current scope
-            old_val = self.mem.GetValue(name, scope_e.LocalOnly)
-            self.restore.append((lval, old_val))
-            self.mem.SetNamed(lval, v, scope_e.LocalOnly)
-
-    def _Pop(self):
-        # type: () -> None
-        for lval, old_val in self.restore:
-            if old_val.tag() == value_e.Undef:
-                self.mem.Unset(lval, scope_e.LocalOnly)
-            else:
-                self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
 
 
 class Shvar(vm._Builtin):
@@ -80,7 +41,7 @@ class Shvar(vm._Builtin):
             # But should there be a whitelist?
             raise error.Usage('expected a block', loc.Missing)
 
-        pairs = []  # type: List[Tuple[str, value_t]]
+        vars = NewDict()  # type: Dict[str, value_t]
         args, arg_locs = arg_r.Rest2()
         if len(args) == 0:
             raise error.Usage('Expected name=value', loc.Missing)
@@ -90,13 +51,13 @@ class Shvar(vm._Builtin):
             if s is None:
                 raise error.Usage('Expected name=value', arg_locs[i])
             v = value.Str(s)  # type: value_t
-            pairs.append((name, v))
+            vars[name] = v
 
             # Important fix: shvar PATH='' { } must make all binaries invisible
             if name == 'PATH':
                 self.search_path.ClearCache()
 
-        with ctx_Shvar(self.mem, pairs):
+        with state.ctx_Eval(self.mem, None, None, vars):
             unused = self.cmd_ev.EvalCommand(cmd)
 
         return 0

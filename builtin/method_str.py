@@ -5,7 +5,6 @@ from __future__ import print_function
 from _devbuild.gen.syntax_asdl import loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, RegexMatch)
-from builtin import pure_ysh
 from core import error
 from core import state
 from core import vm
@@ -20,7 +19,7 @@ from ysh import val_ops
 import libc
 from libc import REG_NOTBOL
 
-from typing import cast, List, Tuple
+from typing import cast, Dict, List, Tuple
 
 _ = log
 
@@ -423,7 +422,7 @@ class Replace(vm._Callable):
                 # Collect captures
                 arg0 = None  # type: str
                 argv = []  # type: List[str]
-                named_vars = []  # type: List[Tuple[str, value_t]]
+                named_vars = {}  # type: Dict[str, value_t]
                 num_groups = len(indices) / 2
                 for group in xrange(num_groups):
                     start = indices[2 * group]
@@ -454,15 +453,13 @@ class Replace(vm._Callable):
                     if group != 0:
                         name = eggex_val.capture_names[group - 2]
                         if name is not None:
-                            named_vars.append((name, val))
+                            named_vars[name] = val
 
                 if subst_str:
                     s = subst_str.s
                 if subst_expr:
-                    with state.ctx_Eval(self.mem, arg0, argv, None):
-                        with pure_ysh.ctx_Shvar(self.mem, named_vars):
-                            s = self.EvalSubstExpr(subst_expr,
-                                                   rd.LeftParenToken())
+                    with state.ctx_Eval(self.mem, arg0, argv, named_vars):
+                        s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
                 assert s is not None
 
                 start = indices[0]

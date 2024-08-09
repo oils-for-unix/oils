@@ -278,6 +278,26 @@ pp test_ (vars)
 eval (^(true), pos_args=[1, 2, 3])
 ## status: 3
 
+#### eval with vars follows same scoping as without
+proc local-scope {
+  var myVar = "foo"
+  eval (^(echo $myVar), vars={ someOtherVar: "bar" })
+  eval (^(echo $myVar))
+}
+
+# In global scope
+var myVar = "baz"
+eval (^(echo $myVar), vars={ someOtherVar: "bar" })
+eval (^(echo $myVar))
+
+local-scope
+## STDOUT:
+baz
+baz
+foo
+foo
+## END
+
 #### eval 'mystring' vs. eval (myblock)
 
 eval 'echo plain'
