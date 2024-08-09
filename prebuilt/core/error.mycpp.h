@@ -187,7 +187,7 @@ class Expr : public ::error::FatalRuntime {
 class Structured : public ::error::FatalRuntime {
  public:
   Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Dict<BigStr*, value_asdl::value_t*>* properties = nullptr);
-  value_asdl::Dict_* ToDict();
+  value::Dict* ToDict();
 
   Dict<BigStr*, value_asdl::value_t*>* properties;
   

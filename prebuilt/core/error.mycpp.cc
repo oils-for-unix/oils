@@ -99,7 +99,6 @@ using syntax_asdl::loc;
 using value_asdl::value;
 using value_asdl::value_t;
 using value_asdl::value_str;
-using value_asdl::Dict_;
 
 BigStr* _ValType(value_asdl::value_t* val) {
   StackRoot _root0(&val);
@@ -159,7 +158,7 @@ Structured::Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Di
   this->properties = properties;
 }
 
-value_asdl::Dict_* Structured::ToDict() {
+value::Dict* Structured::ToDict() {
   Dict<BigStr*, value_asdl::value_t*>* d = nullptr;
   StackRoot _root0(&d);
 
@@ -169,7 +168,7 @@ value_asdl::Dict_* Structured::ToDict() {
   }
   d->set(str6, num::ToBig(this->ExitStatus()));
   d->set(str7, Alloc<value::Str>(this->msg));
-  return Alloc<Dict_>(d, nullptr);
+  return Alloc<value::Dict>(d);
 }
 
 AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : ::error::Expr(msg, location) {
