@@ -1,5 +1,5 @@
 ## our_shell: ysh
-## oils_failures_allowed: 2
+## oils_failures_allowed: 3
 
 #### Object() creates prototype chain
 
@@ -38,6 +38,65 @@ area1 = 12
 area2 = 200
 ## END
 
+#### prototype()
+
+func Rect_area(this) {
+  return (this.x * this.y)
+}
+
+var Rect = Object(null, {area: Rect_area})
+
+var obj = Object(Rect, {x: 3, y: 4})
+
+pp test_ (prototype(Rect))
+pp test_ (prototype(obj))
+
+## STDOUT:
+## END
+
+#### Copy to Dict with dict(), and mutate
+
+var rect = Object(null, {x: 3, y: 4})
+var d = dict(rect)
+
+pp test_ (rect)
+pp test_ (d)
+
+# Right now, object attributes aren't mutable!  Could change this.
+#
+setvar rect.x = 99
+setvar d.x = 100
+
+pp test_ (rect)
+pp test_ (d)
+## STDOUT:
+(Obj)   {"x":3,"y":4}
+(Dict)   {"x":3,"y":4}
+(Obj)   {"x":99,"y":4}
+(Dict)   {"x":100,"y":4}
+## END
+
+#### setvar obj.attr = and += and ...
+
+var rect = Object(null, {x: 3, y: 4})
+pp test_ (rect)
+
+setvar rect.y = 99
+pp test_ (rect)
+
+setvar rect.y += 3
+pp test_ (rect)
+
+setvar rect.x *= 5
+pp test_ (rect)
+
+## STDOUT:
+(Obj)   {"x":3,"y":4}
+(Obj)   {"x":3,"y":99}
+(Obj)   {"x":3,"y":102}
+(Obj)   {"x":15,"y":102}
+## END
+
 #### can't encode objects as JSON
 
 var Rect = Object(null, {})
@@ -67,27 +126,6 @@ pp test_ (o2)
 ## STDOUT:
 ## END
 
-#### setvar obj.attr
-
-func Rect_area(this) {
-  return (this.x * this.y)
-}
-
-var Rect = Object(null, {area: Rect_area})
-
-var rect1 = Object(Rect, {x: 3, y: 4})
-
-pp test_ (rect1)
-
-# Right now it's not mutable
-setvar rect1.x = 99
-
-pp test_ (rect1)
-
-## STDOUT:
-(Obj)   {"x":3,"y":4} ==> {"area":<Func>}
-## END
-
 #### Can all builtin methods with s.upper()
 
 var s = 'foo'
@@ -97,13 +135,24 @@ var y = "--$[x.lower()]"
 pp test_ (x)
 pp test_ (y)
 
-# TODO:
-# keys(d) values(d) instead of d.keys() and d.values()
-#
-# mutating methods are OK?
-#   call d->inc(x)
-
 ## STDOUT:
 (Str)   "FOO"
 (Str)   "--foo"
 ## END
+
+
+#### Dict.keys(d), Dict.values(d), Dict.get(d, key)
+
+var d = {a: 42, b: 99}
+
+pp test_ (Dict.keys(d))
+pp test_ (Dict.values(d))
+
+pp test_ (Dict.get(d, 'key', 'default'))
+
+# mutating methods are OK?
+#   call d->inc(x)
+
+## STDOUT:
+## END
+

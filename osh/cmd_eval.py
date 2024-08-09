@@ -65,7 +65,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
-                                      y_lvalue_e, y_lvalue_t, LeftName)
+                                      y_lvalue_e, y_lvalue_t, LeftName, Obj)
 
 from core import dev
 from core import error
@@ -749,9 +749,16 @@ class CommandEvaluator(object):
                                                 loc.Missing)
                             obj.d[key] = rval
 
+                        elif case(value_e.Obj):
+                            obj = cast(Obj, UP_obj)
+                            key = val_ops.ToStr(lval.index,
+                                                'Obj index should be Str',
+                                                loc.Missing)
+                            obj.d[key] = rval
+
                         else:
                             raise error.TypeErr(
-                                obj, "obj[index] expected List or Dict",
+                                obj, "obj[index] expected List, Dict, or Obj",
                                 loc.Missing)
 
                 else:

@@ -31,10 +31,10 @@ _ = log
 
 
 class Object(vm._Callable):
-    """
-    Create an object.  The order of params follows JavaScript's Object.create()
+    """Create a value.Obj
 
-    var obj = Object(prototype, props)
+    The order of params follows JavaScript's Object.create():
+        var obj = Object(prototype, props)
     """
 
     def __init__(self):
@@ -62,6 +62,20 @@ class Object(vm._Callable):
 
         # Opposite order
         return Obj(props, chain)
+
+
+class Prototype(vm._Callable):
+    """Get an object's prototype."""
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        # TODO
+        return value.Null
 
 
 class Len(vm._Callable):
@@ -342,6 +356,14 @@ class DictFunc(vm._Callable):
 
                 return value.Dict(d)
 
+            elif case(value_e.Obj):
+                d = NewDict()
+                val = cast(Obj, UP_val)
+                for k, v in iteritems(val.d):
+                    d[k] = v
+
+                return value.Dict(d)
+
             elif case(value_e.BashAssoc):
                 d = NewDict()
                 val = cast(value.BashAssoc, UP_val)
@@ -350,7 +372,7 @@ class DictFunc(vm._Callable):
 
                 return value.Dict(d)
 
-        raise error.TypeErr(val, 'dict() expected Dict or BashAssoc',
+        raise error.TypeErr(val, 'dict() expected Dict, Obj, or BashAssoc',
                             rd.BlamePos())
 
 

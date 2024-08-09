@@ -760,8 +760,13 @@ def Main(
         'fullMatch': None,
     }
     methods[value_e.Dict] = {
-        'get': method_dict.Get(),
+        # TODO: __mut_erase
         'erase': method_dict.Erase(),
+
+        # Dict.get()
+        # Dict.keys()
+        # Dict.values()
+        'get': method_dict.Get(),
         'keys': method_dict.Keys(),
         'values': method_dict.Values(),
 
@@ -778,6 +783,7 @@ def Main(
         'accum': None,
     }
     methods[value_e.List] = {
+        # TODO: __mut_{reverse,append,extend,pop,insert,remove}
         'reverse': method_list.Reverse(),
         'append': method_list.Append(),
         'extend': method_list.Extend(),
@@ -798,6 +804,10 @@ def Main(
     }
 
     methods[value_e.IO] = {
+        # TODO: io.eval() or io->eval()?
+        # We are not mutating the object itself - we are mutating the system.
+        # That is already captured by io, so let's make it io.eval().
+
         # io->eval(myblock) is the functional version of eval (myblock)
         # Should we also have expr->eval() instead of evalExpr?
         'eval': method_io.Eval(cmd_ev),
@@ -810,6 +820,8 @@ def Main(
     }
 
     methods[value_e.Place] = {
+        # __mut_setValue()
+
         # instead of setplace keyword
         'setValue': method_other.SetValue(mem),
     }
@@ -846,6 +858,7 @@ def Main(
     _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
 
     _SetGlobalFunc(mem, 'Object', func_misc.Object())
+    _SetGlobalFunc(mem, 'prototype', func_misc.Prototype())
 
     # type conversions
     _SetGlobalFunc(mem, 'bool', func_misc.Bool())
