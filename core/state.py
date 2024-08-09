@@ -1150,7 +1150,7 @@ class ctx_Eval(object):
         if vars is not None:
             self.restore = []  # type: List[Tuple[LeftName, value_t]]
 
-            pairs = []  # type: List[Tuple[LeftName, value_t]]
+            pairs = []  # type: List[Tuple[str, value_t]]
             for name in vars:
                 pairs.append((name, vars[name]))
             self._Push(pairs)  # TODO: just use the `vars` dict directly
