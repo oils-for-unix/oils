@@ -31,7 +31,7 @@ Later:
 import math
 
 from _devbuild.gen.id_kind_asdl import Id, Id_t, Id_str
-from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 from _devbuild.gen.nil8_asdl import (nvalue, nvalue_t)
 
 from asdl import format as fmt
@@ -305,16 +305,15 @@ class InstancePrinter(object):
             self._BracketIndent(level)
             self.buf.write(']')
 
-    def _PrintDict(self, val, level):
-        # type: (value.Dict, int) -> None
-
-        if len(val.d) == 0:  # Special case like Python/JS
+    def _PrintMapping(self, d, level):
+        # type: (Dict[str, value_t], int) -> None
+        if len(d) == 0:  # Special case like Python/JS
             self.buf.write('{}')
         else:
             self.buf.write('{')
             self._MaybeNewline()
             i = 0
-            for k, v in iteritems(val.d):
+            for k, v in iteritems(d):
                 if i != 0:
                     self.buf.write(',')
                     self._MaybeNewline()
@@ -333,6 +332,19 @@ class InstancePrinter(object):
             self._MaybeNewline()
             self._BracketIndent(level)
             self.buf.write('}')
+
+    def _PrintDict(self, val, level):
+        # type: (value.Dict, int) -> None
+        self._PrintMapping(val.d, level)
+
+    def _PrintObj(self, val, level):
+        # type: (Obj, int) -> None
+
+        self._PrintMapping(val.d, level)
+
+        if val.prototype:
+            self.buf.write(' ==> ')
+            self._PrintObj(val.prototype, level)
 
     def _PrintBashPrefix(self, type_str, level):
         # type: (str, int) -> None
@@ -576,6 +588,41 @@ class InstancePrinter(object):
                 self._PrintDict(val, level)
                 self.visited[heap_id] = FINISHED
 
+            elif case(value_e.Obj):
+                val = cast(Obj, UP_val)
+
+                if not (self.options & SHOW_NON_DATA):
+                    raise error.Encode("Can't encode value of type Obj")
+
+                # Cycle detection, only for containers that can be in cycles
+                heap_id = HeapValueId(val)
+
+                node_state = self.visited.get(heap_id, UNSEEN)
+                if node_state == FINISHED:
+                    # Print it AGAIN.  We print a JSON tree, which means we can
+                    # visit and print nodes MANY TIMES, as long as they're not
+                    # in a cycle.
+                    self._PrintObj(val, level)
+                    return
+                if node_state == EXPLORING:
+                    if self.options & SHOW_CYCLES:
+                        self.buf.write('{ -->%s }' % ValueIdString(val))
+                        return
+                    else:
+                        # node.js prints which key closes the cycle
+                        raise error.Encode(
+                            "Can't encode Obj%s in object cycle" %
+                            ValueIdString(val))
+
+                # TODO: cycle detection is a bit wrong, I think because the
+                # properties are a Dict[str, value_t], not something with an
+                # identity
+                #
+                # This is only used for pp test_, because SHOW_NON_DATA.
+                self.visited[heap_id] = EXPLORING
+                self._PrintObj(val, level)
+                self.visited[heap_id] = FINISHED
+
             elif case(value_e.SparseArray):
                 val = cast(value.SparseArray, UP_val)
                 self._PrintSparseArray(val, level)
@@ -594,8 +641,9 @@ class InstancePrinter(object):
                     # Similar to = operator, ui.DebugPrint()
                     # TODO: that prints value.Range in a special way
                     ysh_type = ValType(val)
-                    id_str = ValueIdString(val)
-                    self.buf.write('<%s%s>' % (ysh_type, id_str))
+                    # Don't show ID in 'pp test_'
+                    #id_str = ValueIdString(val)
+                    self.buf.write('<%s>' % ysh_type)
                 else:
                     raise error.Encode("Can't serialize object of type %s" %
                                        ValType(val))

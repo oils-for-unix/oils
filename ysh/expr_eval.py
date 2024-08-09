@@ -990,7 +990,20 @@ class ExprEvaluator(object):
                                  node.op)
 
             else:
-                raise error.TypeErr(obj, 'Dot operator expected Dict', node.op)
+                # Method lookup on builtin types.
+                # They don't have attributes or prototype chains -- we only
+                # have a flat dict.
+                type_methods = self.methods.get(obj.tag())
+                name = node.attr_name
+                vm_callable = (type_methods.get(name)
+                               if type_methods is not None else None)
+                if vm_callable:
+                    func_val = value.BuiltinFunc(vm_callable)
+                    return value.BoundFunc(obj, func_val)
+
+                raise error.TypeErrVerbose(
+                    'Method %r does not exist on builtin type %s' %
+                    (name, ui.ValType(obj)), node.attr)
 
         raise AssertionError()
 

@@ -45,19 +45,15 @@ pp value ({k: x})
 
 echo
 
-remove-addr() {
-  sed 's/0x[0-9a-f]\+/0x---/'
-}
-
-pp test_ (x) | remove-addr
-pp test_ ({k: x}) | remove-addr
+pp test_ (x)
+pp test_ ({k: x})
 
 ## STDOUT:
 (Range 1 .. 100)
 (Dict)  {k: (Range 1 .. 100)}
 
-<Range 0x--->
-(Dict)   {"k":<Range 0x--->}
+<Range>
+(Dict)   {"k":<Range>}
 ## END
 
 
@@ -76,15 +72,15 @@ pp value ({k: pat}) | remove-addr
 
 echo
 
-pp test_ (pat) | remove-addr
-pp test_ ({k: pat}) | remove-addr
+pp test_ (pat)
+pp test_ ({k: pat})
 
 ## STDOUT:
 <Eggex 0x--->
 (Dict)  {k: <Eggex 0x--->}
 
-<Eggex 0x--->
-(Dict)   {"k":<Eggex 0x--->}
+<Eggex>
+(Dict)   {"k":<Eggex>}
 ## END
 
 #### SparseArray, new representation for bash array
