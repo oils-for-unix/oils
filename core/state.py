@@ -1149,11 +1149,7 @@ class ctx_Eval(object):
 
         if vars is not None:
             self.restore = []  # type: List[Tuple[LeftName, value_t]]
-
-            pairs = []  # type: List[Tuple[str, value_t]]
-            for name in vars:
-                pairs.append((name, vars[name]))
-            self._Push(pairs)  # TODO: just use the `vars` dict directly
+            self._Push(vars)
 
     def __enter__(self):
         # type: () -> None
@@ -1172,14 +1168,14 @@ class ctx_Eval(object):
 
     # Note: _Push and _Pop are separate methods because the C++ translation
     # doesn't like when they are inline in __init__ and __exit__.
-    def _Push(self, pairs):
-        # type: (List[Tuple[str, value_t]]) -> None
-        for name, v in pairs:
+    def _Push(self, vars):
+        # type: (Dict[str, value_t]) -> None
+        for name in vars:
             lval = location.LName(name)
             # LocalOnly because we are only overwriting the current scope
             old_val = self.mem.GetValue(name, scope_e.LocalOnly)
             self.restore.append((lval, old_val))
-            self.mem.SetNamed(lval, v, scope_e.LocalOnly)
+            self.mem.SetNamed(lval, vars[name], scope_e.LocalOnly)
 
     def _Pop(self):
         # type: () -> None
