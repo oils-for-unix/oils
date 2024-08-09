@@ -12,7 +12,7 @@ from core import vm
 from frontend import flag_util
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import tagswitch
+from mycpp.mylib import tagswitch, NewDict
 
 from typing import TYPE_CHECKING, cast, Any, Dict, List
 
@@ -41,7 +41,7 @@ class Shvar(vm._Builtin):
             # But should there be a whitelist?
             raise error.Usage('expected a block', loc.Missing)
 
-        vars = {}  # type: Dict[str, value_t]
+        vars = NewDict()  # type: Dict[str, value_t]
         args, arg_locs = arg_r.Rest2()
         if len(args) == 0:
             raise error.Usage('Expected name=value', loc.Missing)
