@@ -46,7 +46,7 @@ from _devbuild.gen.runtime_asdl import (
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
                                       y_lvalue_e, y_lvalue_t, IntBox, LeftName,
-                                      Dict_)
+                                      Dict_, Obj)
 from core import error
 from core.error import e_die, e_die_status
 from core import num
@@ -930,7 +930,7 @@ class ExprEvaluator(object):
                             loc.Missing)
 
     def _ChainedLookup(self, obj, current, attr_name):
-        # type: (Dict_, Dict_, str) -> Optional[value_t]
+        # type: (Obj, Obj, str) -> Optional[value_t]
         """Prototype chain lookup.
 
         Args:
@@ -960,7 +960,19 @@ class ExprEvaluator(object):
         UP_obj = obj
         with tagswitch(obj) as case:
             if case(value_e.Dict):
-                obj = cast(Dict_, UP_obj)
+                obj = cast(Obj, UP_obj)
+                attr_name = node.attr_name
+
+                # Dict key / normal attribute lookup
+                result = obj.d.get(attr_name)
+                if result is not None:
+                    return result
+
+                raise error.Expr('Dict entry %r not found' % attr_name,
+                                 node.op)
+
+            elif case(value_e.Obj):
+                obj = cast(Obj, UP_obj)
                 attr_name = node.attr_name
 
                 # Dict key / normal attribute lookup
@@ -974,7 +986,7 @@ class ExprEvaluator(object):
                     if result is not None:
                         return result
 
-                raise error.Expr('Dict entry %r not found' % attr_name,
+                raise error.Expr('Obj attribute %r not found' % attr_name,
                                  node.op)
 
             else:

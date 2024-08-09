@@ -6,7 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (scope_e)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str,
-                                      Dict_)
+                                      Dict_, Obj)
 
 from core import error
 from core import num
@@ -23,7 +23,7 @@ from mycpp.mylib import NewDict, iteritems, log, tagswitch
 from ysh import expr_eval
 from ysh import val_ops
 
-from typing import TYPE_CHECKING, Dict, List, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, cast
 if TYPE_CHECKING:
     from osh import glob_
     from osh import split
@@ -45,12 +45,24 @@ class Object(vm._Callable):
     def Call(self, rd):
         # type: (typed_args.Reader) -> value_t
 
-        prototype = rd.PosObject()
+        prototype = rd.PosValue()
         props = rd.PosDict()
         rd.Done()
 
+        chain = None  # type: Optional[Obj]
+        UP_prototype = prototype
+        with tagswitch(prototype) as case:
+            if case(value_e.Null):
+                pass
+            elif case(value_e.Obj):
+                prototype = cast(Obj, UP_prototype)
+                chain = prototype
+            else:
+                raise error.TypeErr(prototype, 'Object() expected Obj or Null',
+                                    rd.BlamePos())
+
         # Opposite order
-        return Dict_(props, prototype)
+        return Obj(props, chain)
 
 
 class Len(vm._Callable):

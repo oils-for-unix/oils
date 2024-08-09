@@ -5,7 +5,7 @@ from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
                                        command_t, expr_t, Token)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch,
-                                      Dict_)
+                                      Dict_, Obj)
 from core import error
 from core.error import e_usage
 from frontend import location
@@ -271,12 +271,12 @@ class Reader(object):
         raise error.TypeErr(val, 'Arg %d should be a Dict' % self.pos_consumed,
                             self.BlamePos())
 
-    def _ToObject(self, val):
-        # type: (value_t) -> Dict_
-        if val.tag() == value_e.Dict:
-            return cast(Dict_, val)
+    def _ToObj(self, val):
+        # type: (value_t) -> Obj
+        if val.tag() == value_e.Obj:
+            return cast(Obj, val)
 
-        raise error.TypeErr(val, 'Arg %d should be a Dict' % self.pos_consumed,
+        raise error.TypeErr(val, 'Arg %d should be an Obj' % self.pos_consumed,
                             self.BlamePos())
 
     def _ToPlace(self, val):
@@ -412,10 +412,10 @@ class Reader(object):
         val = self.PosValue()
         return self._ToDict(val)
 
-    def PosObject(self):
-        # type: () -> Dict_
+    def PosObj(self):
+        # type: () -> Obj
         val = self.PosValue()
-        return self._ToObject(val)
+        return self._ToObj(val)
 
     def PosPlace(self):
         # type: () -> value.Place

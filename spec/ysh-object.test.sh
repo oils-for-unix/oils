@@ -6,7 +6,7 @@ func Rect_area(this) {
   return (this.x * this.y)
 }
 
-var Rect = {area: Rect_area}
+var Rect = Object(null, {area: Rect_area})
 
 var rect1 = Object(Rect, {x: 3, y: 4})
 var rect2 = Object(Rect, {x: 10, y: 20})
@@ -22,10 +22,17 @@ var rect2 = Object(Rect, {x: 10, y: 20})
 var area1 = rect1.area()
 var area2 = rect2.area()
 
+pp test_ ([rect1.x, rect1.y])
 echo "area1 = $area1"
+
+pp test_ ([rect2.x, rect2.y])
 echo "area2 = $area2"
 
+#pp test_ (rect1.nonexistent)
+
 ## STDOUT:
+(List)   [3,4]
 area1 = 12
+(List)   [10,20]
 area2 = 200
 ## END
