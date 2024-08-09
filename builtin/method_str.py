@@ -459,8 +459,7 @@ class Replace(vm._Callable):
                     s = subst_str.s
                 if subst_expr:
                     with state.ctx_Eval(self.mem, arg0, argv, named_vars):
-                        s = self.EvalSubstExpr(subst_expr,
-                                               rd.LeftParenToken())
+                        s = self.EvalSubstExpr(subst_expr, rd.LeftParenToken())
                 assert s is not None
 
                 start = indices[0]

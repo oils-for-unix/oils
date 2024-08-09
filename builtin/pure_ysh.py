@@ -41,7 +41,7 @@ class Shvar(vm._Builtin):
             # But should there be a whitelist?
             raise error.Usage('expected a block', loc.Missing)
 
-        vars = {} # type: Dict[str, value_t]
+        vars = {}  # type: Dict[str, value_t]
         args, arg_locs = arg_r.Rest2()
         if len(args) == 0:
             raise error.Usage('Expected name=value', loc.Missing)
