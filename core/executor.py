@@ -426,7 +426,8 @@ class ShellExecutor(vm._Executor):
 
         if self.exec_opts.interactive():
             # Print it like %1 to show it's a job
-            print_stderr('[%%%d] PID %d Started' % (job_id, self.mem.last_bg_pid))
+            print_stderr('[%%%d] PID %d Started' %
+                         (job_id, self.mem.last_bg_pid))
 
         return 0
 

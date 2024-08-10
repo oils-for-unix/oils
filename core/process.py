@@ -1162,7 +1162,8 @@ class Process(Job):
                 # assigned a job ID.
                 if self.in_background:
                     # TODO: bash only prints this interactively
-                    print_stderr('[%%%d] PID %d Done' % (self.job_id, self.pid))
+                    print_stderr('[%%%d] PID %d Done' %
+                                 (self.job_id, self.pid))
 
                 self.job_list.RemoveJob(self.job_id)
 
@@ -1542,12 +1543,14 @@ class JobControl(object):
 
     def Enabled(self):
         # type: () -> bool
+        """
+        Only the main shell process should bother with job control functions.
+        """
+        #log('ENABLED? %d', self.shell_tty_fd)
 
-        # TODO: get rid of this syscall?  SubProgramThunk should set a flag I
-        # think.
-        curr_pid = posix.getpid()
-        # Only the main shell should bother with job control functions.
-        return curr_pid == self.shell_pid and self.shell_tty_fd != -1
+        # TODO: get rid of getpid()?  I think SubProgramThunk should set a
+        # flag.
+        return self.shell_tty_fd != -1 and posix.getpid() == self.shell_pid
 
     # TODO: This isn't a PID.  This is a process group ID?
     #
@@ -1941,7 +1944,8 @@ class Waiter(object):
             stop_sig = WSTOPSIG(status)
 
             print_stderr('')
-            print_stderr('oils: PID %d Stopped with signal %d' % (pid, stop_sig))
+            print_stderr('oils: PID %d Stopped with signal %d' %
+                         (pid, stop_sig))
             proc.WhenStopped(stop_sig)
 
         else:

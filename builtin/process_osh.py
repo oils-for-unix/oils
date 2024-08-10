@@ -382,7 +382,8 @@ class Umask(vm._Builtin):
             except ValueError:
                 # NOTE: This also happens when we have '8' or '9' in the input.
                 print_stderr(
-                    "oils warning: umask with symbolic input isn't implemented")
+                    "oils warning: umask with symbolic input isn't implemented"
+                )
                 return 1
 
             posix.umask(new_mask)
