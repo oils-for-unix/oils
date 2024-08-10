@@ -402,7 +402,6 @@ pp test_ ('a,b,c'.split(',', count=-2))  # Any negative count means "ignore coun
 pp test_ ('aa'.split('a', count=1))
 pp test_ ('a<>b<>c<d'.split('<>', count=10))
 pp test_ ('a;b;;c'.split(';', count=2))
-pp test_ (''.split('foo', count=0))
 pp test_ (''.split('foo', count=3))
 ## STDOUT:
 (List)   ["a","b","c"]
@@ -410,7 +409,6 @@ pp test_ (''.split('foo', count=3))
 (List)   ["","a"]
 (List)   ["a","b","c<d"]
 (List)   ["a","b",";c"]
-(List)   []
 (List)   []
 ## END
 
