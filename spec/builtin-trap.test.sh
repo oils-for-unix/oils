@@ -296,3 +296,13 @@ status=0
 ## OK mksh STDOUT:
 mksh
 ## END
+
+#### trap EXIT, sleep, SIGINT: non-interactively
+
+$REPO_ROOT/spec/testdata/builtin-trap-exit.sh
+
+## STDOUT:
+on exit
+status=0
+## END
+

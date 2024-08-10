@@ -106,6 +106,12 @@ class TrapState(object):
         """Transfer ownership of the current queue of pending trap handlers to
         the caller."""
         signals = self.signal_safe.TakePendingSignals()
+        if 0:
+            log('*** GetPendingTraps')
+            for si in signals:
+                log('SIGNAL %d', si)
+            #import traceback
+            #traceback.print_stack()
 
         # Optimization for the common case: do not allocate a list.  This function
         # is called in the interpreter loop.
@@ -128,8 +134,8 @@ class TrapState(object):
     def ThisProcessHasTraps(self):
         # type: () -> bool
         """
-        nolastfork optimizations should be disabled when the process has code
-        to run after fork!
+        noforklast optimizations are not enabled when the process has code to
+        run after fork!
         """
         if 0:
             log('traps %d', len(self.traps))

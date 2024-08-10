@@ -92,6 +92,15 @@ spec-sig-all() {
   done
 }
 
+sigint-loop() {
+  local sh=${1:-bin/osh}
+
+  # Hm _bin/cxx-asan/osh behaves differently here -- it doesn't run it 5 times
+  # It quits the first time.
+  # bin/osh works like bash/dash/mksh/zsh - they all agree
+  $sh -c 'trap "echo int" INT; for i in 1 2 3 4 5; do sleep 1; done'
+}
+
 trap-with-errexit() {
   local sh=${1:-bin/osh}
 
