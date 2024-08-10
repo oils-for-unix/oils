@@ -382,6 +382,51 @@ pp test_ (en2fr => keys())
 (List)   ["hello","friend","cat"]
 ## END
 
+#### Str => split(sep), non-empty sep
+pp test_ ('a,b,c'.split(','))
+pp test_ ('aa'.split('a'))
+pp test_ ('a<>b<>c<d'.split('<>'))
+pp test_ ('a;b;;c'.split(';'))
+pp test_ (''.split('foo'))
+## STDOUT:
+(List)   ["a","b","c"]
+(List)   ["","",""]
+(List)   ["a","b","c<d"]
+(List)   ["a","b","","c"]
+(List)   []
+## END
+
+#### Str => split(sep, count), non-empty sep
+pp test_ ('a,b,c'.split(',', count=-1))
+pp test_ ('a,b,c'.split(',', count=-2))  # Any negative count means "ignore count"
+pp test_ ('aa'.split('a', count=1))
+pp test_ ('a<>b<>c<d'.split('<>', count=10))
+pp test_ ('a;b;;c'.split(';', count=2))
+pp test_ (''.split('foo', count=0))
+pp test_ (''.split('foo', count=3))
+## STDOUT:
+(List)   ["a","b","c"]
+(List)   ["a","b","c"]
+(List)   ["","a"]
+(List)   ["a","b","c<d"]
+(List)   ["a","b",";c"]
+(List)   []
+(List)   []
+## END
+
+#### Str => split(), usage errors
+try { pp test_ ('abc'.split(''))           } # Sep cannot be ""
+echo status=$[_error.code]
+try { pp test_ ('abc'.split())             } # Sep must be present
+echo status=$[_error.code]
+try { pp test_ ('abc'.split('b', count=0)) } # Count cannot be 0
+echo status=$[_error.code]
+## STDOUT:
+status=3
+status=3
+status=3
+## END
+
 #### Dict => values()
 var en2fr = {}
 setvar en2fr["hello"] = "bonjour"
