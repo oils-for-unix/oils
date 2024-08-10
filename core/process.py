@@ -1162,7 +1162,7 @@ class Process(Job):
                 # assigned a job ID.
                 if self.in_background:
                     # TODO: bash only prints this interactively
-                    print_stderr('[%d] Done PID %d' % (self.job_id, self.pid))
+                    print_stderr('[%%%d] PID %d Done' % (self.job_id, self.pid))
 
                 self.job_list.RemoveJob(self.job_id)
 
@@ -1445,7 +1445,7 @@ class Pipeline(Job):
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
                 if self.in_background:
-                    print_stderr('[%d] Done PGID %d' %
+                    print_stderr('[%%%d] PGID %d Done' %
                                  (self.job_id, self.pids[0]))
 
                 self.job_list.RemoveJob(self.job_id)
@@ -1914,7 +1914,7 @@ class Waiter(object):
         # notification of its exit, even though we didn't start it.  We can't have
         # any knowledge of such processes, so print a warning.
         if pid not in self.job_list.child_procs:
-            print_stderr("osh: PID %d stopped, but osh didn't start it" % pid)
+            print_stderr("oils: PID %d Stopped, but osh didn't start it" % pid)
             return W1_OK
 
         proc = self.job_list.child_procs[pid]
@@ -1941,7 +1941,7 @@ class Waiter(object):
             stop_sig = WSTOPSIG(status)
 
             print_stderr('')
-            print_stderr('[PID %d] Stopped with signal %d' % (pid, stop_sig))
+            print_stderr('oils: PID %d Stopped with signal %d' % (pid, stop_sig))
             proc.WhenStopped(stop_sig)
 
         else:

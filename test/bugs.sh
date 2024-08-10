@@ -66,6 +66,32 @@ trap-2() {
   echo "$sh status=$?"
 }
 
+spec-sig() {
+  ### Run spec test outside the sh-spec framework
+
+  local sh=${1:-bin/osh}
+  local sig=${2:-int}
+
+  SH=$sh $sh spec/testdata/builtin-trap-$sig.sh
+}
+
+spec-sig-all() {
+  local sig=${1:-int}
+
+  # they all run usr1
+  # they differ with respect int - only zsh prints it, and bin/osh
+  #
+  # zsh prints 'int'
+
+  for sh in bin/osh bash dash mksh zsh; do
+    echo '-----'
+    echo "$sh"
+    echo
+
+    spec-sig $sh $sig
+  done
+}
+
 trap-with-errexit() {
   local sh=${1:-bin/osh}
 

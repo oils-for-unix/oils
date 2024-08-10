@@ -48,7 +48,7 @@ def expect_no_job(sh):
 
 def expect_continued(sh):
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
     else:
         sh.expect('cat')
 
@@ -89,7 +89,7 @@ def bug_1004(sh):
 
     sh.sendline('fg')
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
     else:
         sh.expect('cat')
 
@@ -209,7 +209,7 @@ def stopped_process(sh):
     sh.sendline('fg')
 
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
     else:
         sh.expect('cat')
 
@@ -245,7 +245,7 @@ def stopped_pipeline(sh):
     sh.sendline('fg')
 
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
     else:
         sh.expect('cat')
 
@@ -354,7 +354,7 @@ def fg_current_previous(sh):
     # Bring back the newest stopped job
     sh.sendline('fg %+')
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
 
     sh.sendline('foo')
     sh.expect('foo')
@@ -363,7 +363,7 @@ def fg_current_previous(sh):
     # Bring back the second-newest stopped job
     sh.sendline('fg %-')
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
 
     sh.sendline('')
     sh.expect('bar')
@@ -376,7 +376,7 @@ def fg_current_previous(sh):
     # Now that cat is gone, %- should refer to the running job
     sh.sendline('fg %-')
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
 
     sh.sendline('true')
     time.sleep(0.5)
@@ -386,14 +386,14 @@ def fg_current_previous(sh):
     # %+ and %- should refer to the same thing now that there's only one job
     sh.sendline('fg %+')
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
 
     sh.sendline('woof')
     sh.expect('woof')
     ctrl_z(sh)
     sh.sendline('fg %-')
     if 'osh' in sh.shell_label:
-        sh.expect(r'Continue PID \d+')
+        sh.expect(r'.*PID \d+ Continue')
 
     sh.sendline('meow')
     sh.expect('meow')
