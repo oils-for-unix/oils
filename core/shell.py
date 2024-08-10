@@ -740,6 +740,7 @@ def Main(
         'trimEnd': method_str.Trim(method_str.END),
         'upper': method_str.Upper(),
         'lower': method_str.Lower(),
+        'split': method_str.Split(),
 
         # finds a substring, optional position to start at
         'find': None,

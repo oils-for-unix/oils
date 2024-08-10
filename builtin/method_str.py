@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc_t
+from _devbuild.gen.syntax_asdl import loc, loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, RegexMatch)
 from core import error
@@ -477,3 +477,53 @@ class Replace(vm._Callable):
             return value.Str("".join(parts))
 
         raise AssertionError()
+
+
+class Split(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+        """
+        s.split(sep, count=-1)
+
+        Count behaves like in replace() in that:
+        - A negative `count` => ignore
+        - A positive `count` => there will be at most `count` splits
+        - EXECPTION: a zero count is an error
+        """
+        string = rd.PosStr()
+        sep = rd.PosStr()
+        count = mops.BigTruncate(rd.NamedInt("count", -1))
+        rd.Done()
+
+        if count == 0:
+            raise error.Structured(3, "count cannot be zero", rd.LeftParenToken())
+
+        if len(sep) == 0:
+            raise error.Structured(3, "sep must be non-empty", rd.LeftParenToken())
+
+        if len(string) == 0:
+            return value.List([])
+
+        cursor = 0
+        chunks = []  # type: List[value_t]
+        while cursor < len(string) and count != 0:
+            next = string.find(sep, cursor)
+            if next == -1:
+                break
+
+            chunks.append(value.Str(string[cursor:next]))
+            cursor = next + len(sep)
+            count -= 1
+
+        if cursor == len(string):
+            # An instance of sep was against the end of the string
+            chunks.append(value.Str(""))
+        else:
+            chunks.append(value.Str(string[cursor:]))
+
+        return value.List(chunks)
