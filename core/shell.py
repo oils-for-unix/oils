@@ -355,19 +355,34 @@ def Main(
     mem.exec_opts = exec_opts  # circular dep
     mutable_opts.Init()
 
-    version_str = pyutil.GetVersion(loader)
-    state.InitMem(mem, environ, version_str)
-
-    if attrs.show_options:  # special case: sh -o
-        mutable_opts.ShowOptions([])
-        return 0
-
     # Set these BEFORE processing flags, so they can be overridden.
     if lang == 'ysh':
         mutable_opts.SetAnyOption('ysh:all', True)
 
     pure_osh.SetOptionsFromFlags(mutable_opts, attrs.opt_changes,
                                  attrs.shopt_changes)
+
+    version_str = pyutil.GetVersion(loader)
+    state.InitMem(mem, environ, version_str)
+
+    # TODO: consider turning on no_copy_env in YSH
+    if exec_opts.no_copy_env():
+        # Don't consult the environment
+        mem.SetPwd(state.GetWorkingDir())
+    else:
+        state.InitVarsFromEnv(mem, environ)
+
+        # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
+        # it can't be modified by users.
+        val = mem.GetValue('PWD')
+        # should be true since it's exported
+        assert val.tag() == value_e.Str, val
+        pwd = cast(value.Str, val).s
+        mem.SetPwd(pwd)
+
+    if attrs.show_options:  # special case: sh -o
+        mutable_opts.ShowOptions([])
+        return 0
 
     # feedback between runtime and parser
     aliases = {}  # type: Dict[str, str]
@@ -602,7 +617,7 @@ def Main(
     b[builtin_i.source] = source_builtin
     b[builtin_i.dot] = source_builtin
     b[builtin_i.eval] = meta_osh.Eval(parse_ctx, exec_opts, cmd_ev, tracer,
-                                      errfmt)
+                                      errfmt, mem)
 
     # Module builtins
     guards = {}  # type: Dict[str, bool]
@@ -745,8 +760,13 @@ def Main(
         'fullMatch': None,
     }
     methods[value_e.Dict] = {
-        'get': None,  # doesn't raise an error
+        # TODO: __mut_erase
         'erase': method_dict.Erase(),
+
+        # Dict.get()
+        # Dict.keys()
+        # Dict.values()
+        'get': method_dict.Get(),
         'keys': method_dict.Keys(),
         'values': method_dict.Values(),
 
@@ -763,6 +783,7 @@ def Main(
         'accum': None,
     }
     methods[value_e.List] = {
+        # TODO: __mut_{reverse,append,extend,pop,insert,remove}
         'reverse': method_list.Reverse(),
         'append': method_list.Append(),
         'extend': method_list.Extend(),
@@ -783,6 +804,10 @@ def Main(
     }
 
     methods[value_e.IO] = {
+        # TODO: io.eval() or io->eval()?
+        # We are not mutating the object itself - we are mutating the system.
+        # That is already captured by io, so let's make it io.eval().
+
         # io->eval(myblock) is the functional version of eval (myblock)
         # Should we also have expr->eval() instead of evalExpr?
         'eval': method_io.Eval(cmd_ev),
@@ -795,6 +820,8 @@ def Main(
     }
 
     methods[value_e.Place] = {
+        # __mut_setValue()
+
         # instead of setplace keyword
         'setValue': method_other.SetValue(mem),
     }
@@ -830,13 +857,16 @@ def Main(
 
     _SetGlobalFunc(mem, 'evalExpr', func_misc.EvalExpr(expr_ev))
 
+    _SetGlobalFunc(mem, 'Object', func_misc.Object())
+    _SetGlobalFunc(mem, 'prototype', func_misc.Prototype())
+
     # type conversions
     _SetGlobalFunc(mem, 'bool', func_misc.Bool())
     _SetGlobalFunc(mem, 'int', func_misc.Int())
     _SetGlobalFunc(mem, 'float', func_misc.Float())
     _SetGlobalFunc(mem, 'str', func_misc.Str_())
     _SetGlobalFunc(mem, 'list', func_misc.List_())
-    _SetGlobalFunc(mem, 'dict', func_misc.Dict_())
+    _SetGlobalFunc(mem, 'dict', func_misc.DictFunc())
 
     _SetGlobalFunc(mem, 'runes', func_misc.Runes())
     _SetGlobalFunc(mem, 'encodeRunes', func_misc.EncodeRunes())
@@ -990,7 +1020,7 @@ def Main(
 
         # Same logic as interactive shell
         mut_status = IntParamBox(status)
-        cmd_ev.MaybeRunExitTrap(mut_status)
+        cmd_ev.RunTrapsOnExit(mut_status)
         status = mut_status.i
 
         return status
@@ -1060,7 +1090,7 @@ def Main(
                 status = e.status
 
             mut_status = IntParamBox(status)
-            cmd_ev.MaybeRunExitTrap(mut_status)
+            cmd_ev.RunTrapsOnExit(mut_status)
             status = mut_status.i
 
         if readline:
@@ -1139,7 +1169,7 @@ def Main(
         except util.UserExit as e:
             status = e.status
     mut_status = IntParamBox(status)
-    cmd_ev.MaybeRunExitTrap(mut_status)
+    cmd_ev.RunTrapsOnExit(mut_status)
 
     multi_trace.WriteDumps()
 

@@ -5,7 +5,7 @@ func_misc.py
 from __future__ import print_function
 
 from _devbuild.gen.runtime_asdl import (scope_e)
-from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str)
+from _devbuild.gen.value_asdl import (value, value_e, value_t, value_str, Obj)
 
 from core import error
 from core import num
@@ -22,12 +22,60 @@ from mycpp.mylib import NewDict, iteritems, log, tagswitch
 from ysh import expr_eval
 from ysh import val_ops
 
-from typing import TYPE_CHECKING, Dict, List, cast
+from typing import TYPE_CHECKING, Dict, List, Optional, cast
 if TYPE_CHECKING:
     from osh import glob_
     from osh import split
 
 _ = log
+
+
+class Object(vm._Callable):
+    """Create a value.Obj
+
+    The order of params follows JavaScript's Object.create():
+        var obj = Object(prototype, props)
+    """
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        prototype = rd.PosValue()
+        props = rd.PosDict()
+        rd.Done()
+
+        chain = None  # type: Optional[Obj]
+        UP_prototype = prototype
+        with tagswitch(prototype) as case:
+            if case(value_e.Null):
+                pass
+            elif case(value_e.Obj):
+                prototype = cast(Obj, UP_prototype)
+                chain = prototype
+            else:
+                raise error.TypeErr(prototype, 'Object() expected Obj or Null',
+                                    rd.BlamePos())
+
+        # Opposite order
+        return Obj(props, chain)
+
+
+class Prototype(vm._Callable):
+    """Get an object's prototype."""
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        # TODO
+        return value.Null
 
 
 class Len(vm._Callable):
@@ -286,7 +334,7 @@ class List_(vm._Callable):
         return value.List(l)
 
 
-class Dict_(vm._Callable):
+class DictFunc(vm._Callable):
 
     def __init__(self):
         # type: () -> None
@@ -308,6 +356,14 @@ class Dict_(vm._Callable):
 
                 return value.Dict(d)
 
+            elif case(value_e.Obj):
+                d = NewDict()
+                val = cast(Obj, UP_val)
+                for k, v in iteritems(val.d):
+                    d[k] = v
+
+                return value.Dict(d)
+
             elif case(value_e.BashAssoc):
                 d = NewDict()
                 val = cast(value.BashAssoc, UP_val)
@@ -316,7 +372,7 @@ class Dict_(vm._Callable):
 
                 return value.Dict(d)
 
-        raise error.TypeErr(val, 'dict() expected Dict or BashAssoc',
+        raise error.TypeErr(val, 'dict() expected Dict, Obj, or BashAssoc',
                             rd.BlamePos())
 
 

@@ -5,7 +5,7 @@ User-defined funcs and procs
 from __future__ import print_function
 
 from _devbuild.gen.id_kind_asdl import Id
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
 from _devbuild.gen.syntax_asdl import (proc_sig, proc_sig_e, Param, ParamGroup,
                                        NamedArg, Func, loc, ArgList, expr,
                                        expr_e, expr_t)
@@ -211,18 +211,18 @@ def EvalTypedArgsToProc(
         expr_ev,  # type: expr_eval.ExprEvaluator
         mutable_opts,  # type: state.MutableOpts
         node,  # type: command.Simple
-        cmd_val,  # type: cmd_value.Argv
+        proc_args,  # type: ProcArgs
 ):
     # type: (...) -> None
     """Evaluate word, typed, named, and block args for a proc."""
-    cmd_val.typed_args = node.typed_args
+    proc_args.typed_args = node.typed_args
 
     # We only got here if the call looks like
     #    p (x)
     #    p { echo hi }
     #    p () { echo hi }
     # So allocate this unconditionally
-    cmd_val.pos_args = []
+    proc_args.pos_args = []
 
     ty = node.typed_args
     if ty:
@@ -230,23 +230,24 @@ def EvalTypedArgsToProc(
             # Defer evaluation by wrapping in value.Expr
 
             for exp in ty.pos_args:
-                cmd_val.pos_args.append(value.Expr(exp))
+                proc_args.pos_args.append(value.Expr(exp))
             # TODO: ...spread is illegal
 
             n1 = ty.named_args
             if n1 is not None:
-                cmd_val.named_args = NewDict()
+                proc_args.named_args = NewDict()
                 for named_arg in n1:
                     name = lexer.TokenVal(named_arg.name)
-                    cmd_val.named_args[name] = value.Expr(named_arg.value)
+                    proc_args.named_args[name] = value.Expr(named_arg.value)
                 # TODO: ...spread is illegal
 
         else:  # json write (x)
             with state.ctx_YshExpr(mutable_opts):  # What EvalExpr() does
-                _EvalPosArgs(expr_ev, ty.pos_args, cmd_val.pos_args)
+                _EvalPosArgs(expr_ev, ty.pos_args, proc_args.pos_args)
 
                 if ty.named_args is not None:
-                    cmd_val.named_args = _EvalNamedArgs(expr_ev, ty.named_args)
+                    proc_args.named_args = _EvalNamedArgs(
+                        expr_ev, ty.named_args)
 
         if ty.block_expr and node.block:
             e_die("Can't accept both block expression and block literal",
@@ -255,22 +256,22 @@ def EvalTypedArgsToProc(
         # p ( ; ; block) is an expression to be evaluated
         if ty.block_expr:
             # fallback location is (
-            cmd_val.block_arg = expr_ev.EvalExpr(ty.block_expr, ty.left)
+            proc_args.block_arg = expr_ev.EvalExpr(ty.block_expr, ty.left)
 
     # p { echo hi } is an unevaluated block
     if node.block:
         # TODO: conslidate value.Block (holds LiteralBlock) and value.Command
-        cmd_val.block_arg = value.Block(node.block)
+        proc_args.block_arg = value.Block(node.block)
 
         # Add location info so the cmd_val looks the same for both:
         #   cd /tmp (; ; ^(echo hi))
         #   cd /tmp { echo hi }
-        if not cmd_val.typed_args:
-            cmd_val.typed_args = ArgList.CreateNull()
+        if not proc_args.typed_args:
+            proc_args.typed_args = ArgList.CreateNull()
 
             # Also add locations for error message: ls { echo invalid }
-            cmd_val.typed_args.left = node.block.brace_group.left
-            cmd_val.typed_args.right = node.block.brace_group.right
+            proc_args.typed_args.left = node.block.brace_group.left
+            proc_args.typed_args.right = node.block.brace_group.right
 
 
 def _BindWords(
@@ -453,6 +454,8 @@ def _BindFuncArgs(func, rd, mem):
 def BindProcArgs(proc, cmd_val, mem):
     # type: (value.Proc, cmd_value.Argv, state.Mem) -> None
 
+    proc_args = cmd_val.proc_args
+
     UP_sig = proc.sig
     if UP_sig.tag() != proc_sig_e.Closed:  # proc is-closed ()
         return
@@ -482,15 +485,16 @@ def BindProcArgs(proc, cmd_val, mem):
 
     ### Handle typed positional args.  This includes a block arg, if any.
 
-    if cmd_val.typed_args:  # blame ( of call site
-        blame_loc = cmd_val.typed_args.left
+    if proc_args and proc_args.typed_args:  # blame ( of call site
+        blame_loc = proc_args.typed_args.left
 
+    pos_args = proc_args.pos_args if proc_args else None
     if sig.positional:  # or sig.block_param:
         _BindTyped(proc.name, sig.positional, proc.defaults.for_typed,
-                   cmd_val.pos_args, mem, blame_loc)
+                   pos_args, mem, blame_loc)
     else:
-        if cmd_val.pos_args is not None:
-            num_pos = len(cmd_val.pos_args)
+        if pos_args is not None:
+            num_pos = len(pos_args)
             if num_pos != 0:
                 raise error.Expr(
                     "Proc %r takes no typed args, but got %d" %
@@ -498,17 +502,18 @@ def BindProcArgs(proc, cmd_val, mem):
 
     ### Handle typed named args
 
-    if cmd_val.typed_args:  # blame ; of call site if possible
-        semi = cmd_val.typed_args.semi_tok
+    if proc_args and proc_args.typed_args:  # blame ; of call site if possible
+        semi = proc_args.typed_args.semi_tok
         if semi is not None:
             blame_loc = semi
 
+    named_args = proc_args.named_args if proc_args else None
     if sig.named:
-        _BindNamed(proc.name, sig.named, proc.defaults.for_named,
-                   cmd_val.named_args, mem, blame_loc)
+        _BindNamed(proc.name, sig.named, proc.defaults.for_named, named_args,
+                   mem, blame_loc)
     else:
-        if cmd_val.named_args is not None:
-            num_named = len(cmd_val.named_args)
+        if named_args is not None:
+            num_named = len(named_args)
             if num_named != 0:
                 raise error.Expr(
                     "Proc %r takes no named args, but got %d" %
@@ -516,15 +521,15 @@ def BindProcArgs(proc, cmd_val, mem):
 
     # Maybe blame second ; of call site.  Because value_t doesn't generally
     # have location info, as opposed to expr_t.
-    if cmd_val.typed_args:
-        semi = cmd_val.typed_args.semi_tok2
+    if proc_args and proc_args.typed_args:
+        semi = proc_args.typed_args.semi_tok2
         if semi is not None:
             blame_loc = semi
 
     ### Handle block arg
 
     block_param = sig.block_param
-    block_arg = cmd_val.block_arg
+    block_arg = proc_args.block_arg if proc_args else None
 
     if block_param:
         if block_arg is None:

@@ -47,7 +47,7 @@ class Boolean(vm._Builtin):
         # type: (cmd_value.Argv) -> int
 
         # These ignore regular args, but shouldn't accept typed args.
-        typed_args.DoesNotAccept(cmd_val.typed_args)
+        typed_args.DoesNotAccept(cmd_val.proc_args)
         return self.status
 
 

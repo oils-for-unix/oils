@@ -36,6 +36,8 @@ if TYPE_CHECKING:
     from core.state import Mem, SearchPath
     from display import ui
 
+_ = log
+
 
 class Jobs(vm._Builtin):
     """List jobs."""
@@ -83,7 +85,7 @@ class Fg(vm._Builtin):
 
         job = self.job_list.GetJobWithSpec(job_spec)
         if job is None:
-            log('No job to put in the foreground')
+            print_stderr('fg: No job to put in the foreground')
             return 1
 
         pgid = job.ProcessGroupId()
@@ -91,7 +93,7 @@ class Fg(vm._Builtin):
             'Processes put in the background should have a PGID'
 
         # TODO: Print job ID rather than the PID
-        log('Continue PID %d', pgid)
+        print_stderr('fg: PID %d Continued' % pgid)
         # Put the job's process group back into the foreground. GiveTerminal() must
         # be called before sending SIGCONT or else the process might immediately get
         # suspsended again if it tries to read/write on the terminal.
@@ -212,8 +214,8 @@ class Exec(vm._Builtin):
             e_die_status(127, 'exec: %r not found' % cmd, cmd_val.arg_locs[1])
 
         # shift off 'exec', and remove typed args because they don't apply
-        c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:], None, None,
-                            None, None)
+        c2 = cmd_value.Argv(cmd_val.argv[i:], cmd_val.arg_locs[i:],
+                            cmd_val.is_last_cmd, None)
 
         self.ext_prog.Exec(argv0_path, c2, environ)  # NEVER RETURNS
         # makes mypy and C++ compiler happy
@@ -380,7 +382,8 @@ class Umask(vm._Builtin):
             except ValueError:
                 # NOTE: This also happens when we have '8' or '9' in the input.
                 print_stderr(
-                    "osh warning: umask with symbolic input isn't implemented")
+                    "oils warning: umask with symbolic input isn't implemented"
+                )
                 return 1
 
             posix.umask(new_mask)
@@ -575,7 +578,7 @@ class Ulimit(vm._Builtin):
             except (ValueError, resource.error) as e:
                 # Annoying: Python binding changes IOError -> ValueError
 
-                print_stderr('ulimit error: %s' % e)
+                print_stderr('oils: ulimit error: %s' % e)
 
                 # Extra info we could expose in C++ too
                 print_stderr('soft=%s hard=%s -> soft=%s hard=%s' % (
@@ -589,7 +592,7 @@ class Ulimit(vm._Builtin):
             try:
                 pyos.SetRLimit(what, soft, hard)
             except (IOError, OSError) as e:
-                print_stderr('ulimit error: %s' % pyutil.strerror(e))
+                print_stderr('oils: ulimit error: %s' % pyutil.strerror(e))
                 return 1
 
         return 0

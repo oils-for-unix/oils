@@ -58,6 +58,9 @@ module value
     No
   | Yes %RegexMatch
 
+  # prototype is for the attribute lookup chain
+  Obj = (Dict[str, value] d, Obj? prototype)
+
   # Commands, words, and expressions from syntax.asdl are evaluated to a VALUE.
   # value_t instances are stored in state.Mem().
   value =
@@ -91,6 +94,10 @@ module value
   | Float(float f)
   | List(List[value] items)
   | Dict(Dict[str, value] d)
+
+    # for polymorphism - should replace value.{IO,Module} too
+    # because they have attributes (functions), methods - not just methods
+  | Obj %Obj
 
   # CODE types
   #   unevaluated: Eggex, Expr, Template, Command/Block

@@ -504,11 +504,6 @@ namespace num {  // declare
 
 value::Int* ToBig(int i);
 mops::BigInt Exponent(mops::BigInt x, mops::BigInt y);
-int Exponent2(int x, int y);
-mops::BigInt IntDivide(mops::BigInt x, mops::BigInt y);
-int IntDivide2(int x, int y);
-mops::BigInt IntRemainder(mops::BigInt x, mops::BigInt y);
-int IntRemainder2(int x, int y);
 
 }  // declare namespace num
 
@@ -1475,12 +1470,16 @@ Structured::Structured(int status, BigStr* msg, syntax_asdl::loc_t* location, Di
 }
 
 value::Dict* Structured::ToDict() {
-  if (this->properties == nullptr) {
-    this->properties = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
+  Dict<BigStr*, value_asdl::value_t*>* d = nullptr;
+  StackRoot _root0(&d);
+
+  d = Alloc<Dict<BigStr*, value_asdl::value_t*>>();
+  if (this->properties != nullptr) {
+    d->update(this->properties);
   }
-  this->properties->set(str62, num::ToBig(this->ExitStatus()));
-  this->properties->set(str63, Alloc<value::Str>(this->msg));
-  return Alloc<value::Dict>(this->properties);
+  d->set(str62, num::ToBig(this->ExitStatus()));
+  d->set(str63, Alloc<value::Str>(this->msg));
+  return Alloc<value::Dict>(d);
 }
 
 AssertionErr::AssertionErr(BigStr* msg, syntax_asdl::loc_t* location) : ::error::Expr(msg, location) {
@@ -1586,65 +1585,6 @@ mops::BigInt Exponent(mops::BigInt x, mops::BigInt y) {
     result = mops::Mul(result, x);
   }
   return result;
-}
-
-int Exponent2(int x, int y) {
-  return mops::BigTruncate(Exponent(mops::IntWiden(x), mops::IntWiden(y)));
-}
-
-mops::BigInt IntDivide(mops::BigInt x, mops::BigInt y) {
-  mops::BigInt ZERO;
-  int sign;
-  mops::BigInt ax;
-  mops::BigInt ay;
-  ZERO = mops::BigInt(0);
-  sign = 1;
-  if (mops::Greater(ZERO, x)) {
-    ax = mops::Negate(x);
-    sign = -1;
-  }
-  else {
-    ax = x;
-  }
-  if (mops::Greater(ZERO, y)) {
-    ay = mops::Negate(y);
-    sign = -sign;
-  }
-  else {
-    ay = y;
-  }
-  return mops::Mul(mops::IntWiden(sign), mops::Div(ax, ay));
-}
-
-int IntDivide2(int x, int y) {
-  return mops::BigTruncate(IntDivide(mops::IntWiden(x), mops::IntWiden(y)));
-}
-
-mops::BigInt IntRemainder(mops::BigInt x, mops::BigInt y) {
-  mops::BigInt ZERO;
-  mops::BigInt ax;
-  int sign;
-  mops::BigInt ay;
-  ZERO = mops::BigInt(0);
-  if (mops::Greater(ZERO, x)) {
-    ax = mops::Negate(x);
-    sign = -1;
-  }
-  else {
-    ax = x;
-    sign = 1;
-  }
-  if (mops::Greater(ZERO, y)) {
-    ay = mops::Negate(y);
-  }
-  else {
-    ay = y;
-  }
-  return mops::Mul(mops::IntWiden(sign), mops::Rem(ax, ay));
-}
-
-int IntRemainder2(int x, int y) {
-  return mops::BigTruncate(IntRemainder(mops::IntWiden(x), mops::IntWiden(y)));
 }
 
 }  // define namespace num

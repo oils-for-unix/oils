@@ -373,8 +373,8 @@ module syntax
            List[EnvPair] more_env,
            List[word] words,
            ArgList? typed_args, LiteralBlock? block,
-           # do_fork is semantic, not syntactic
-           bool do_fork)
+           # is_last_cmd is used for fork() optimizations
+           bool is_last_cmd)
 
     # This doesn't technically belong in the LST, but it's convenient for
     # execution
@@ -396,7 +396,7 @@ module syntax
     # A brace group is a compound command, with redirects.
   | BraceGroup %BraceGroup
     # Contains a single child, like CommandSub
-  | Subshell(Token left, command child, Token right)
+  | Subshell(Token left, command child, Token right, bool is_last_cmd)
   | DParen(Token left, arith_expr child, Token right)
   | DBracket(Token left, bool_expr expr, Token right)
 

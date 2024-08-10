@@ -1,5 +1,5 @@
 ## compare_shells: dash bash mksh ash
-## oils_failures_allowed: 1
+## oils_failures_allowed: 2
 
 # builtin-trap.test.sh
 
@@ -154,6 +154,32 @@ pipeline
 EXIT TRAP
 ## END
 
+#### trap EXIT doesn't run with shopt -s no_fork_last
+
+# There doesn't seem to be a way to get it to run, so specify that it doesn't
+
+$SH -c 'trap "echo exit1" EXIT; /bin/true'
+
+# newline
+$SH -c 'trap "echo exit2" EXIT; /bin/true
+'
+
+# Newline makes a difference!
+# It doesn't get a chance to run
+$SH -c 'shopt -s no_fork_last
+trap "echo exit3" EXIT; /bin/true'
+
+## STDOUT:
+exit1
+exit2
+## END
+
+## N-I dash/bash/mksh/ash STDOUT:
+exit1
+exit2
+exit3
+## END
+
 #### trap 0 is equivalent to EXIT
 # not sure why this is, but POSIX wants it.
 trap 'echo EXIT' 0
@@ -246,25 +272,37 @@ end child
 wait status 0
 ## END
 
+#### trap USR1, sleep, SIGINT: non-interactively
+
+$REPO_ROOT/spec/testdata/builtin-trap-usr1.sh
+
+## STDOUT:
+usr1
+status=0
+## END
+
 #### trap INT, sleep, SIGINT: non-interactively
 
 # mksh behaves differently in CI -- maybe when it's not connected to a
 # terminal?
-
 case $SH in mksh) echo mksh; exit ;; esac
 
-# Without this, it succeeds in CI?
-case $SH in *osh) echo osh; exit ;; esac
-
-$SH -c 'trap "echo int" INT; sleep 0.1' &
-/usr/bin/kill -INT $!
-wait
-
-# Only mksh shows 'int'?
-# OSH shows "done"
+$REPO_ROOT/spec/testdata/builtin-trap-int.sh
 
 ## STDOUT:
+status=0
 ## END
+
 ## OK mksh STDOUT:
 mksh
 ## END
+
+#### trap EXIT, sleep, SIGINT: non-interactively
+
+$REPO_ROOT/spec/testdata/builtin-trap-exit.sh
+
+## STDOUT:
+on exit
+status=0
+## END
+

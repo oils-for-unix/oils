@@ -1,7 +1,9 @@
+## oils_failures_allowed: 1
+
 # Hay Metaprogramming
 
 #### Conditional Inside Blocks
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define Rule
 
@@ -35,7 +37,7 @@ EOF
 
 
 #### Conditional Outside Block
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define Rule
 
@@ -64,7 +66,7 @@ EOF
 
 
 #### Iteration Inside Block
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define Rule
 
@@ -98,7 +100,7 @@ EOF
 
 
 #### Iteration Outside Block
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define Rule
 
@@ -126,8 +128,63 @@ EOF
 ## END
 
 
+#### Iteration outside Hay node - example from Samuel
+
+shopt --set ysh:all
+
+hay define task
+
+# BUG with hay eval!
+hay eval :result {
+  var all_hellos = [ "You", "lovely", "people", "Chuck Norris" ]
+  for hello in (all_hellos) {
+    task "Say $hello" {
+      var extend = "Say Hello"
+      var overrides = {
+        WORD: hello
+      }
+    }
+  }
+}
+
+json write (result) | jq '.children[].attrs' > actual.txt
+
+#json write (_hay()) | jq '.children[].attrs' > actual.txt
+
+diff -u - actual.txt <<EOF
+{
+  "extend": "Say Hello",
+  "overrides": {
+    "WORD": "You"
+  }
+}
+{
+  "extend": "Say Hello",
+  "overrides": {
+    "WORD": "lovely"
+  }
+}
+{
+  "extend": "Say Hello",
+  "overrides": {
+    "WORD": "people"
+  }
+}
+{
+  "extend": "Say Hello",
+  "overrides": {
+    "WORD": "Chuck Norris"
+  }
+}
+EOF
+echo status=$?
+
+## STDOUT:
+status=0
+## END
+
 #### Proc Inside Block
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define rule  # lower case allowed
 
@@ -161,7 +218,7 @@ p
 
 
 #### Proc That Defines Block
-shopt --set oil:all
+shopt --set ysh:all
 
 hay define Rule
 

@@ -45,7 +45,8 @@ from _devbuild.gen.runtime_asdl import (
     Piece,
 )
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
-                                      y_lvalue_e, y_lvalue_t, IntBox, LeftName)
+                                      y_lvalue_e, y_lvalue_t, IntBox, LeftName,
+                                      Obj)
 from core import error
 from core.error import e_die, e_die_status
 from core import num
@@ -241,13 +242,26 @@ class ExprEvaluator(object):
                         obj = cast(value.Dict, UP_obj)
                         index = -1  # silence C++ warning
                         key = val_ops.ToStr(lval.index,
-                                            'Dict index should be Str',
+                                            'Dict key should be Str',
                                             loc.Missing)
                         try:
                             lhs_val_ = obj.d[key]
                         except KeyError:
-                            raise error.Expr('Dict entry not found: %r' % key,
+                            raise error.Expr('Dict key not found: %r' % key,
                                              loc.Missing)
+
+                    elif case(value_e.Obj):
+                        obj = cast(Obj, UP_obj)
+                        index = -1  # silence C++ warning
+                        key = val_ops.ToStr(lval.index,
+                                            'Obj attribute should be Str',
+                                            loc.Missing)
+                        try:
+                            lhs_val_ = obj.d[key]
+                        except KeyError:
+                            raise error.Expr(
+                                'Obj attribute not found: %r' % key,
+                                loc.Missing)
 
                     else:
                         raise error.TypeErr(
@@ -269,6 +283,13 @@ class ExprEvaluator(object):
                     elif case(value_e.Dict):
                         obj = cast(value.Dict, UP_obj)
                         obj.d[key] = new_val_
+
+                    elif case(value_e.Obj):
+                        obj = cast(Obj, UP_obj)
+                        obj.d[key] = new_val_
+
+                    else:
+                        raise AssertionError()
 
             else:
                 raise AssertionError()
@@ -928,6 +949,27 @@ class ExprEvaluator(object):
         raise error.TypeErr(obj, 'Subscript expected Str, List, or Dict',
                             loc.Missing)
 
+    def _ChainedLookup(self, obj, current, attr_name):
+        # type: (Obj, Obj, str) -> Optional[value_t]
+        """Prototype chain lookup.
+
+        Args:
+          obj: properties we might bind to
+          current: our location in the prototype chain
+        """
+        val = current.d.get(attr_name)
+        if val is not None:
+            # Special bound method logic for objects, but NOT modules
+            if val.tag() in (value_e.Func, value_e.BuiltinFunc):
+                return value.BoundFunc(obj, val)
+            else:
+                return val
+
+        if current.prototype is not None:
+            return self._ChainedLookup(obj, current.prototype, attr_name)
+
+        return None
+
     def _EvalDot(self, node, obj):
         # type: (Attribute, value_t) -> value_t
         """ obj.attr on RHS or LHS
@@ -938,18 +980,52 @@ class ExprEvaluator(object):
         UP_obj = obj
         with tagswitch(obj) as case:
             if case(value_e.Dict):
-                obj = cast(value.Dict, UP_obj)
+                obj = cast(Obj, UP_obj)
                 attr_name = node.attr_name
-                try:
-                    result = obj.d[attr_name]
-                except KeyError:
-                    raise error.Expr('Dict entry %r not found' % attr_name,
-                                     node.op)
+
+                # Dict key / normal attribute lookup
+                result = obj.d.get(attr_name)
+                if result is not None:
+                    return result
+
+                raise error.Expr('Dict entry %r not found' % attr_name,
+                                 node.op)
+
+            elif case(value_e.Obj):
+                obj = cast(Obj, UP_obj)
+                attr_name = node.attr_name
+
+                # Dict key / normal attribute lookup
+                result = obj.d.get(attr_name)
+                if result is not None:
+                    return result
+
+                # Prototype lookup - with special logic for BoundMethod
+                if obj.prototype is not None:
+                    result = self._ChainedLookup(obj, obj.prototype, attr_name)
+                    if result is not None:
+                        return result
+
+                raise error.Expr('Obj attribute %r not found' % attr_name,
+                                 node.op)
 
             else:
-                raise error.TypeErr(obj, 'Dot operator expected Dict', node.op)
+                # Method lookup on builtin types.
+                # They don't have attributes or prototype chains -- we only
+                # have a flat dict.
+                type_methods = self.methods.get(obj.tag())
+                name = node.attr_name
+                vm_callable = (type_methods.get(name)
+                               if type_methods is not None else None)
+                if vm_callable:
+                    func_val = value.BuiltinFunc(vm_callable)
+                    return value.BoundFunc(obj, func_val)
 
-        return result
+                raise error.TypeErrVerbose(
+                    'Method %r does not exist on builtin type %s' %
+                    (name, ui.ValType(obj)), node.attr)
+
+        raise AssertionError()
 
     def _EvalAttribute(self, node):
         # type: (Attribute) -> value_t
@@ -958,6 +1034,16 @@ class ExprEvaluator(object):
         UP_o = o
 
         with switch(node.op.id) as case:
+            # TODO:
+            # ->   add value.Obj rule - mut_mymethod()
+            #      then change value.List to have __mut_append()?
+            #      this means you can no longer do call foo => end(), which we want
+            #
+            # =>   eventually remove method lookup - it's only the chaining
+            #      operator
+            #        s => upper() => strip() might be OK though
+            # versus s.upper().strip()
+
             # Right now => is a synonym for ->
             # Later we may enforce that => is pure, and -> is for mutation and
             # I/O.

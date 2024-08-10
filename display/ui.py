@@ -550,7 +550,7 @@ def TypeNotPrinted(val):
     # type: (value_t) -> bool
     return val.tag() in (value_e.Null, value_e.Bool, value_e.Int,
                          value_e.Float, value_e.Str, value_e.List,
-                         value_e.Dict)
+                         value_e.Dict, value_e.Obj)
 
 
 def _GetMaxWidth():

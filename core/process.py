@@ -843,7 +843,9 @@ class SubProgramThunk(Thunk):
             self.cmd_ev.mutable_opts.DisableErrExit()
         try:
             # optimize to eliminate redundant subshells like ( echo hi ) | wc -l etc.
-            self.cmd_ev.ExecuteAndCatch(self.node, cmd_flags=cmd_eval.Optimize)
+            self.cmd_ev.ExecuteAndCatch(
+                self.node,
+                cmd_eval.OptimizeSubshells | cmd_eval.MarkLastCommands)
             status = self.cmd_ev.LastStatus()
             # NOTE: We ignore the is_fatal return value.  The user should set -o
             # errexit so failures in subprocesses cause failures in the parent.
@@ -1159,7 +1161,9 @@ class Process(Job):
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
                 if self.in_background:
-                    print_stderr('[%d] Done PID %d' % (self.job_id, self.pid))
+                    # TODO: bash only prints this interactively
+                    print_stderr('[%%%d] PID %d Done' %
+                                 (self.job_id, self.pid))
 
                 self.job_list.RemoveJob(self.job_id)
 
@@ -1442,7 +1446,7 @@ class Pipeline(Job):
                 # Job might have been brought to the foreground after being
                 # assigned a job ID.
                 if self.in_background:
-                    print_stderr('[%d] Done PGID %d' %
+                    print_stderr('[%%%d] PGID %d Done' %
                                  (self.job_id, self.pids[0]))
 
                 self.job_list.RemoveJob(self.job_id)
@@ -1539,12 +1543,14 @@ class JobControl(object):
 
     def Enabled(self):
         # type: () -> bool
+        """
+        Only the main shell process should bother with job control functions.
+        """
+        #log('ENABLED? %d', self.shell_tty_fd)
 
-        # TODO: get rid of this syscall?  SubProgramThunk should set a flag I
-        # think.
-        curr_pid = posix.getpid()
-        # Only the main shell should bother with job control functions.
-        return curr_pid == self.shell_pid and self.shell_tty_fd != -1
+        # TODO: get rid of getpid()?  I think SubProgramThunk should set a
+        # flag.
+        return self.shell_tty_fd != -1 and posix.getpid() == self.shell_pid
 
     # TODO: This isn't a PID.  This is a process group ID?
     #
@@ -1911,7 +1917,7 @@ class Waiter(object):
         # notification of its exit, even though we didn't start it.  We can't have
         # any knowledge of such processes, so print a warning.
         if pid not in self.job_list.child_procs:
-            print_stderr("osh: PID %d stopped, but osh didn't start it" % pid)
+            print_stderr("oils: PID %d Stopped, but osh didn't start it" % pid)
             return W1_OK
 
         proc = self.job_list.child_procs[pid]
@@ -1938,7 +1944,8 @@ class Waiter(object):
             stop_sig = WSTOPSIG(status)
 
             print_stderr('')
-            print_stderr('[PID %d] Stopped with signal %d' % (pid, stop_sig))
+            print_stderr('oils: PID %d Stopped with signal %d' %
+                         (pid, stop_sig))
             proc.WhenStopped(stop_sig)
 
         else:

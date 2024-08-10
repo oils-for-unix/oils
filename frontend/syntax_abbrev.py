@@ -103,7 +103,8 @@ def _BracedVarSub(obj):
 def _command__Simple(obj):
     # type: (command.Simple) -> hnode_t
     p_node = runtime.NewRecord('C')
-    if (obj.more_env or obj.typed_args or obj.block or obj.do_fork == False):
+    if (obj.more_env or obj.typed_args or obj.block or
+            obj.is_last_cmd == True):
         return None  # we have other fields to display; don't abbreviate
 
     p_node.abbrev = True

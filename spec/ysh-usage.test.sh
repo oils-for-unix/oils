@@ -45,3 +45,33 @@ no-quoting:1
 "with spaces.sh":1
 b'bad \yff':1
 ## END
+
+
+#### shopt --set verbose_errexit
+
+try {
+  $SH -c '/bin/false' 2>on.txt
+}
+
+try {
+  $SH +o verbose_errexit -c '/bin/false' 2>off.txt
+}
+
+wc -l on.txt off.txt
+#echo
+#cat on.txt off.txt
+
+## STDOUT:
+ 3 on.txt
+ 0 off.txt
+ 3 total
+## END
+
+#### YSH shows options correctly (bug fix)
+
+$SH -o | egrep 'errexit|pipefail'
+
+## STDOUT:
+set -o errexit
+set -o pipefail
+## END

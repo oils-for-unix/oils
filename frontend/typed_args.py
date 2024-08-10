@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from _devbuild.gen.runtime_asdl import cmd_value
+from _devbuild.gen.runtime_asdl import cmd_value, ProcArgs
 from _devbuild.gen.syntax_asdl import (loc, loc_t, ArgList, LiteralBlock,
                                        command_t, expr_t, Token)
 from _devbuild.gen.value_asdl import (value, value_e, value_t, RegexMatch)
@@ -17,10 +17,10 @@ from typing import Dict, List, Optional, cast
 _ = log
 
 
-def DoesNotAccept(arg_list):
-    # type: (Optional[ArgList]) -> None
-    if arg_list is not None:
-        e_usage('got unexpected typed args', arg_list.left)
+def DoesNotAccept(proc_args):
+    # type: (Optional[ProcArgs]) -> None
+    if proc_args is not None:
+        e_usage('got unexpected typed args', proc_args.typed_args.left)
 
 
 def OptionalBlock(cmd_val):
@@ -28,7 +28,7 @@ def OptionalBlock(cmd_val):
     """Helper for shopt, etc."""
 
     cmd = None  # type: Optional[command_t]
-    if cmd_val.typed_args:
+    if cmd_val.proc_args:
         r = ReaderForProc(cmd_val)
         cmd = r.OptionalBlock()
         r.Done()
@@ -40,7 +40,7 @@ def OptionalLiteralBlock(cmd_val):
     """Helper for Hay """
 
     block = None  # type: Optional[LiteralBlock]
-    if cmd_val.typed_args:
+    if cmd_val.proc_args:
         r = ReaderForProc(cmd_val)
         block = r.OptionalLiteralBlock()
         r.Done()
@@ -50,14 +50,25 @@ def OptionalLiteralBlock(cmd_val):
 def ReaderForProc(cmd_val):
     # type: (cmd_value.Argv) -> Reader
 
-    # mycpp rewrite: doesn't understand 'or' pattern
-    pos_args = (cmd_val.pos_args if cmd_val.pos_args is not None else [])
-    named_args = (cmd_val.named_args if cmd_val.named_args is not None else {})
+    proc_args = cmd_val.proc_args
 
-    arg_list = (cmd_val.typed_args
-                if cmd_val.typed_args is not None else ArgList.CreateNull())
+    if proc_args:
+        # mycpp rewrite: doesn't understand 'or' pattern
+        pos_args = (proc_args.pos_args
+                    if proc_args.pos_args is not None else [])
+        named_args = (proc_args.named_args
+                      if proc_args.named_args is not None else {})
 
-    rd = Reader(pos_args, named_args, cmd_val.block_arg, arg_list)
+        arg_list = (proc_args.typed_args if proc_args.typed_args is not None
+                    else ArgList.CreateNull())
+        block_arg = proc_args.block_arg
+    else:
+        pos_args = []
+        named_args = {}
+        arg_list = ArgList.CreateNull()
+        block_arg = None
+
+    rd = Reader(pos_args, named_args, block_arg, arg_list)
 
     # Fix location info bug with 'try' or try foo' -- it should get a typed arg
     rd.SetFallbackLocation(cmd_val.arg_locs[0])

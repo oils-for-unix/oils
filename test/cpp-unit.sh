@@ -22,7 +22,7 @@ all-tests() {
 
   # uses Ninja to run (cxx, gcalways) variant.  Could also run (clang, ubsan),
   # which finds more bugs.
-  mycpp/TEST.sh test-runtime
+  mycpp/TEST.sh unit
 
   yaks/TEST.sh unit
 }

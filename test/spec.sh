@@ -322,8 +322,7 @@ command_() {
 }
 
 pipeline() {
-  sh-spec spec/pipeline.test.sh \
-    ${REF_SHELLS[@]} $ZSH $OSH_LIST "$@"
+  run-file pipeline "$@"
 }
 
 explore-parsing() {
@@ -830,6 +829,10 @@ ysh-methods() {
 
 ysh-method-io() {
   run-file ysh-method-io "$@"
+}
+
+ysh-object() {
+  run-file ysh-object "$@"
 }
 
 ysh-func() {

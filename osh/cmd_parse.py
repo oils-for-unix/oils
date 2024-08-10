@@ -379,8 +379,9 @@ def _MakeSimpleCommand(
     more_env = []  # type: List[EnvPair]
     _AppendMoreEnv(preparsed_list, more_env)
 
-    # do_fork by default
-    return command.Simple(blame_tok, more_env, words3, typed_args, block, True)
+    # is_last_cmd is False by default
+    return command.Simple(blame_tok, more_env, words3, typed_args, block,
+                          False)
 
 
 class VarChecker(object):
@@ -2303,7 +2304,7 @@ class CommandParser(object):
         ate = self._Eat(Id.Right_Subshell)
         right = word_.AsOperatorToken(ate)
 
-        return command.Subshell(left, child, right)
+        return command.Subshell(left, child, right, False)
 
     def ParseDBracket(self):
         # type: () -> command.DBracket

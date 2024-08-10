@@ -820,7 +820,7 @@ def _DumpVarFrame(frame):
     return vars_json
 
 
-def _GetWorkingDir():
+def GetWorkingDir():
     # type: () -> str
     """Fallback for pwd and $PWD when there's no 'cd' and no inherited $PWD."""
     try:
@@ -881,7 +881,7 @@ def _InitDefaults(mem):
     #   set_home_var ();
 
 
-def _InitVarsFromEnv(mem, environ):
+def InitVarsFromEnv(mem, environ):
     # type: (Mem, Dict[str, str]) -> None
 
     # This is the way dash and bash work -- at startup, they turn everything in
@@ -912,7 +912,7 @@ def _InitVarsFromEnv(mem, environ):
     # compute it.
     val = mem.GetValue('PWD')
     if val.tag() == value_e.Undef:
-        SetGlobalString(mem, 'PWD', _GetWorkingDir())
+        SetGlobalString(mem, 'PWD', GetWorkingDir())
     # Now mark it exported, no matter what.  This is one of few variables
     # EXPORTED.  bash and dash both do it.  (e.g. env -i -- dash -c env)
     mem.SetNamed(location.LName('PWD'),
@@ -953,15 +953,6 @@ def InitMem(mem, environ, version_str):
     _SetGlobalValue(mem, 'INFINITY', value.Float(pyutil.infinity()))
 
     _InitDefaults(mem)
-    _InitVarsFromEnv(mem, environ)
-
-    # MUTABLE GLOBAL that's SEPARATE from $PWD.  Used by the 'pwd' builtin, but
-    # it can't be modified by users.
-    val = mem.GetValue('PWD')
-    # should be true since it's exported
-    assert val.tag() == value_e.Str, val
-    pwd = cast(value.Str, val).s
-    mem.SetPwd(pwd)
 
 
 def InitInteractive(mem):
@@ -1134,6 +1125,65 @@ def _MakeArgvCell(argv):
     # type: (List[str]) -> Cell
     items = [value.Str(a) for a in argv]  # type: List[value_t]
     return Cell(False, False, False, value.List(items))
+
+
+class ctx_Eval(object):
+    """Push temporary set of variables, $0, $1, $2, etc."""
+
+    def __init__(self, mem, dollar0, pos_args, vars):
+        # type: (Mem, Optional[str], Optional[List[str]], Optional[Dict[str, value_t]]) -> None
+        self.mem = mem
+        self.dollar0 = dollar0
+        self.pos_args = pos_args
+        self.vars = vars
+
+        # $0 needs to have lexical scoping. So we store it with other locals.
+        # As "0" cannot be parsed as an lvalue, we can safely store dollar0 there.
+        if dollar0 is not None:
+            assert mem.GetValue("0", scope_e.LocalOnly).tag() == value_e.Undef
+            self.dollar0_lval = LeftName("0", loc.Missing)
+            mem.SetLocalName(self.dollar0_lval, value.Str(dollar0))
+
+        if pos_args is not None:
+            mem.argv_stack.append(_ArgFrame(pos_args))
+
+        if vars is not None:
+            self.restore = []  # type: List[Tuple[LeftName, value_t]]
+            self._Push(vars)
+
+    def __enter__(self):
+        # type: () -> None
+        pass
+
+    def __exit__(self, type, value_, traceback):
+        # type: (Any, Any, Any) -> None
+        if self.vars is not None:
+            self._Pop()
+
+        if self.pos_args is not None:
+            self.mem.argv_stack.pop()
+
+        if self.dollar0 is not None:
+            self.mem.SetLocalName(self.dollar0_lval, value.Undef)
+
+    # Note: _Push and _Pop are separate methods because the C++ translation
+    # doesn't like when they are inline in __init__ and __exit__.
+    def _Push(self, vars):
+        # type: (Dict[str, value_t]) -> None
+        for name in vars:
+            lval = location.LName(name)
+            # LocalOnly because we are only overwriting the current scope
+            old_val = self.mem.GetValue(name, scope_e.LocalOnly)
+            self.restore.append((lval, old_val))
+            self.mem.SetNamed(lval, vars[name], scope_e.LocalOnly)
+
+    def _Pop(self):
+        # type: () -> None
+        for lval, old_val in self.restore:
+            if old_val.tag() == value_e.Undef:
+                self.mem.Unset(lval, scope_e.LocalOnly)
+            else:
+                self.mem.SetNamed(lval, old_val, scope_e.LocalOnly)
 
 
 class Mem(object):
@@ -2353,11 +2403,9 @@ class Procs:
         First, we search for a proc, and then a sh-func. This means that procs
         can shadow the definition of sh-funcs.
         """
-        vars = self.mem.var_stack[0]
-        if name in vars:
-            maybe_proc = vars[name]
-            if maybe_proc.val.tag() == value_e.Proc:
-                return cast(value.Proc, maybe_proc.val)
+        maybe_proc = self.mem.GetValue(name)
+        if maybe_proc.tag() == value_e.Proc:
+            return cast(value.Proc, maybe_proc)
 
         if name in self.sh_funcs:
             return self.sh_funcs[name]

@@ -46,10 +46,13 @@ esrch-test() {
 
 trap-1() {
   local sh=${1:-bin/osh}
+
   set +o errexit
 
   # This fails to run the trap
-  $sh -x -c 'trap "echo int" INT; sleep 5'
+  $sh -x -c 'echo pid=$$; trap "echo int" INT; sleep 5'
+
+  echo "$sh status=$?"
 }
 
 # Run with bin/ysh -x to show fork opts
@@ -58,7 +61,93 @@ trap-2() {
   set +o errexit
 
   # This runs it
-  $sh -x -c 'trap "echo int" INT; sleep 5; echo last'
+  $sh -x -c 'echo pid=$$; trap "echo int" INT; sleep 5; echo last'
+
+  echo "$sh status=$?"
+}
+
+spec-sig() {
+  ### Run spec test outside the sh-spec framework
+
+  local sh=${1:-bin/osh}
+  local sig=${2:-int}
+
+  SH=$sh $sh spec/testdata/builtin-trap-$sig.sh
+}
+
+spec-sig-all() {
+  local sig=${1:-int}
+
+  # they all run usr1
+  # they differ with respect int - only zsh prints it, and bin/osh
+  #
+  # zsh prints 'int'
+
+  for sh in bin/osh bash dash mksh zsh; do
+    echo '-----'
+    echo "$sh"
+    echo
+
+    spec-sig $sh $sig
+  done
+}
+
+sigint-loop() {
+  local sh=${1:-bin/osh}
+
+  # Hm _bin/cxx-asan/osh behaves differently here -- it doesn't run it 5 times
+  # It quits the first time.
+  # bin/osh works like bash/dash/mksh/zsh - they all agree
+  $sh -c 'trap "echo int" INT; for i in 1 2 3 4 5; do sleep 1; done'
+}
+
+trap-with-errexit() {
+  local sh=${1:-bin/osh}
+
+  # This can't raise
+  $sh -x -c 'set -e; trap "echo false; false" INT; sleep 5'
+}
+
+two-traps-return() {
+  local sh=${1:-bin/osh}
+
+  set +o errexit
+
+  $sh -x -c '
+trap "echo int; return 44" INT
+trap "echo exit; return 55" EXIT
+sleep 5
+'
+  # bash gives 130?
+  echo "$sh status=$?"
+}
+
+two-traps-exit() {
+  local sh=${1:-bin/osh}
+
+  set +o errexit
+
+  $sh -x -c '
+trap "echo int; exit 44" INT
+trap "echo exit; exit 55" EXIT
+sleep 5
+'
+  # bash gives 130?
+  echo "$sh status=$?"
+}
+
+two-traps-status() {
+  local sh=${1:-bin/osh}
+
+  set +o errexit
+
+  $sh -x -c '
+trap "echo int; ( exit 44 )" INT
+trap "echo exit; ( exit 55 )" EXIT
+sleep 5
+'
+  # bash gives 130?
+  echo "$sh status=$?"
 }
 
 trap-line() {
@@ -72,6 +161,12 @@ bug-1853() {
   local sh=${1:-bin/osh}
 
   $sh -c 'trap "echo hi" EXIT; $(which true)'
+
+  echo --
+  # NEWLINE
+  $sh -c 'trap "echo hi" EXIT; $(which true)
+'
+
   echo --
   $sh -c 'trap "echo hi" EXIT; $(which true); echo last'
 }

@@ -26,7 +26,7 @@ from display import ui
 from core import vm
 from frontend import consts
 from frontend import lexer
-from mycpp.mylib import log
+from mycpp.mylib import log, print_stderr
 
 import posix_ as posix
 
@@ -88,8 +88,8 @@ class _ProcessSubFrame(object):
         status_array.locs = locs
 
 
-# Big flgas for RunSimpleCommand
-DO_FORK = 1 << 1
+# Big flags for RunSimpleCommand
+IS_LAST_CMD = 1 << 1
 NO_CALL_PROCS = 1 << 2  # command ls suppresses function lookup
 USE_DEFAULT_PATH = 1 << 3  # for command -p ls changes the path
 
@@ -326,10 +326,10 @@ class ShellExecutor(vm._Executor):
 
         environ = self.mem.GetExported()  # Include temporary variables
 
-        if cmd_val.typed_args:
+        if cmd_val.proc_args:
             e_die(
                 '%r appears to be external. External commands don\'t accept typed args (OILS-ERR-200)'
-                % arg0, cmd_val.typed_args.left)
+                % arg0, cmd_val.proc_args.typed_args.left)
 
         # Resolve argv[0] BEFORE forking.
         if run_flags & USE_DEFAULT_PATH:
@@ -340,8 +340,13 @@ class ShellExecutor(vm._Executor):
             self.errfmt.Print_('%r not found (OILS-ERR-100)' % arg0, arg0_loc)
             return 127
 
+        if self.trap_state.ThisProcessHasTraps():
+            do_fork = True
+        else:
+            do_fork = not cmd_val.is_last_cmd
+
         # Normal case: ls /
-        if run_flags & DO_FORK:
+        if do_fork:
             thunk = process.ExternalThunk(self.ext_prog, argv0_path, cmd_val,
                                           environ)
             p = process.Process(thunk, self.job_control, self.job_list,
@@ -402,7 +407,7 @@ class ShellExecutor(vm._Executor):
             last_pid = pi.LastPid()
             self.mem.last_bg_pid = last_pid  # for $!
 
-            self.job_list.AddJob(pi)  # show in 'jobs' list
+            job_id = self.job_list.AddJob(pi)  # show in 'jobs' list
 
         else:
             # Problem: to get the 'set -b' behavior of immediate notifications, we
@@ -417,7 +422,13 @@ class ShellExecutor(vm._Executor):
             p.SetBackground()
             pid = p.StartProcess(trace.Fork)
             self.mem.last_bg_pid = pid  # for $!
-            self.job_list.AddJob(p)  # show in 'jobs' list
+            job_id = self.job_list.AddJob(p)  # show in 'jobs' list
+
+        if self.exec_opts.interactive():
+            # Print it like %1 to show it's a job
+            print_stderr('[%%%d] PID %d Started' %
+                         (job_id, self.mem.last_bg_pid))
+
         return 0
 
     def RunPipeline(self, node, status_out):
@@ -531,7 +542,7 @@ class ShellExecutor(vm._Executor):
                 # Blame < because __cat has no location
                 blame_tok = redir_node.redirects[0].op
                 simple = command.Simple(blame_tok, [], [cat_word], None, None,
-                                        True)
+                                        False)
 
                 # MUTATE redir node so it's like $(<file _cat)
                 redir_node.child = simple

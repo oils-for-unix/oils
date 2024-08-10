@@ -19,7 +19,7 @@ from frontend import flag_util
 from frontend import match
 from frontend import typed_args
 from mycpp import mylib
-from mycpp.mylib import tagswitch, log
+from mycpp.mylib import tagswitch, log, iteritems
 
 from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
@@ -174,6 +174,21 @@ class Pp(_Builtin):
                     fmt.PrintTree(cell.PrettyTree(), pretty_f)
                     self.stdout_.write('\n')
             return status
+
+        if action == 'stacks_':  # Format may change
+            if mylib.PYTHON:
+                var_stack, argv_stack, unused = self.mem.Dump()
+                print(var_stack)
+                print('===')
+                print(argv_stack)
+            if 0:
+                var_stack = self.mem.var_stack
+                for i, frame in enumerate(var_stack):
+                    print('=== Frame %d' % i)
+                    for name, cell in iteritems(frame):
+                        print('%s = %s' % (name, cell))
+
+            return 0
 
         if action == 'gc-stats_':
             print('TODO')

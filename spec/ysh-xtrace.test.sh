@@ -345,7 +345,7 @@ status=0
 . builtin set '+x'
 < wait
 > wait
-[1] Done PGID 12345
+[%1] PGID 12345 Done
 | part 12345
 | part 12345
 | part 12345
@@ -385,8 +385,8 @@ sed --regexp-extended 's/[[:digit:]]{2,}/12345/g' err.txt |
 < wait
 > wait
 > wait
-[1] Done PID 12345
-[1] Done PID 12345
+[%1] PID 12345 Done
+[%1] PID 12345 Done
 | fork 12345
 | fork 12345
 ## END

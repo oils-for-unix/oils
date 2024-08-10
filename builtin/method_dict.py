@@ -61,3 +61,20 @@ class Erase(vm._Callable):
 
         mylib.dict_erase(dictionary, key)
         return value.Null
+
+
+class Get(vm._Callable):
+
+    def __init__(self):
+        # type: () -> None
+        pass
+
+    def Call(self, rd):
+        # type: (typed_args.Reader) -> value_t
+
+        dictionary = rd.PosDict()
+        key = rd.PosStr()
+        default_value = rd.PosValue()
+        rd.Done()
+
+        return dictionary.get(key, default_value)

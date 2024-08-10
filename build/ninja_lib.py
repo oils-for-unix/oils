@@ -61,7 +61,6 @@ GC_PERF_VARIANTS = [
     ('cxx', 'opt+nopool'),
 
     # TODO: should be binary with different files
-    ('cxx', 'opt+cheney'),
     ('cxx', 'opt+tcmalloc'),
 
     # For tracing allocations, or debugging
@@ -70,6 +69,11 @@ GC_PERF_VARIANTS = [
     # Test performance of 32-bit build.  (It uses less memory usage, but can be
     # slower.)
     ('cxx', 'opt32'),
+]
+
+OTHER_VARIANTS = [
+    ('cxx', 'opt+bigint'),
+    ('cxx', 'asan+bigint'),
 ]
 
 SMALL_TEST_MATRIX = [

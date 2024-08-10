@@ -6,6 +6,7 @@ from __future__ import print_function
 
 from _devbuild.gen import arg_types
 from _devbuild.gen.runtime_asdl import cmd_value, CommandStatus
+from _devbuild.gen.value_asdl import value, value_e
 from _devbuild.gen.syntax_asdl import source, loc
 from core import alloc
 from core import dev
@@ -31,7 +32,7 @@ from posix_ import X_OK  # translated directly to C macro
 
 _ = log
 
-from typing import Dict, List, Tuple, Optional, TYPE_CHECKING
+from typing import Dict, List, Tuple, Optional, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from frontend import args
     from frontend.parse_lib import ParseContext
@@ -50,6 +51,7 @@ class Eval(vm._Builtin):
             cmd_ev,  # type: CommandEvaluator
             tracer,  # type: dev.Tracer
             errfmt,  # type: ui.ErrorFormatter
+            mem,  # type: state.Mem
     ):
         # type: (...) -> None
         self.parse_ctx = parse_ctx
@@ -58,15 +60,36 @@ class Eval(vm._Builtin):
         self.cmd_ev = cmd_ev
         self.tracer = tracer
         self.errfmt = errfmt
+        self.mem = mem
+
+    def RunTyped(self, cmd_val):
+        # type: (cmd_value.Argv) -> int
+        """For eval (mycmd)"""
+        rd = typed_args.ReaderForProc(cmd_val)
+        cmd = rd.PosCommand()
+        dollar0 = rd.NamedStr("dollar0", None)
+        pos_args_raw = rd.NamedList("pos_args", None)
+        vars = rd.NamedDict("vars", None)
+        rd.Done()
+
+        pos_args = None  # type: List[str]
+        if pos_args_raw is not None:
+            pos_args = []
+            for arg in pos_args_raw:
+                if arg.tag() != value_e.Str:
+                    raise error.TypeErr(
+                        arg, "Expected pos_args to be a list of Strs",
+                        rd.LeftParenToken())
+
+                pos_args.append(cast(value.Str, arg).s)
+
+        with state.ctx_Eval(self.mem, dollar0, pos_args, vars):
+            return self.cmd_ev.EvalCommand(cmd)
 
     def Run(self, cmd_val):
         # type: (cmd_value.Argv) -> int
-
-        if cmd_val.typed_args:  # eval (mycmd)
-            rd = typed_args.ReaderForProc(cmd_val)
-            cmd = rd.PosCommand()
-            rd.Done()
-            return self.cmd_ev.EvalCommand(cmd)
+        if cmd_val.proc_args:
+            return self.RunTyped(cmd_val)
 
         # There are no flags, but we need it to respect --
         _, arg_r = flag_util.ParseCmdVal('eval', cmd_val)
@@ -290,17 +313,17 @@ class Command(vm._Builtin):
 
             return status
 
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args,
-                                  cmd_val.block_arg)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
+                                  cmd_val.proc_args)
 
-        # If we respected do_fork here instead of passing True, the case
-        # 'command date | wc -l' would take 2 processes instead of 3.  But no other
-        # shell does that, and this rare case isn't worth the bookkeeping.
-        # See test/syscall
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
 
-        run_flags = executor.DO_FORK | executor.NO_CALL_PROCS
+        # If we respected do_fork here instead of passing DO_FORK
+        # unconditionally, the case 'command date | wc -l' would take 2
+        # processes instead of 3.  See test/syscall
+        run_flags = executor.NO_CALL_PROCS
+        if cmd_val.is_last_cmd:
+            run_flags |= executor.IS_LAST_CMD
         if arg.p:
             run_flags |= executor.USE_DEFAULT_PATH
 
@@ -310,8 +333,7 @@ class Command(vm._Builtin):
 def _ShiftArgv(cmd_val):
     # type: (cmd_value.Argv) -> cmd_value.Argv
     return cmd_value.Argv(cmd_val.argv[1:], cmd_val.arg_locs[1:],
-                          cmd_val.typed_args, cmd_val.pos_args,
-                          cmd_val.named_args, cmd_val.block_arg)
+                          cmd_val.is_last_cmd, cmd_val.proc_args)
 
 
 class Builtin(vm._Builtin):
@@ -371,13 +393,12 @@ class RunProc(vm._Builtin):
             self.errfmt.PrintMessage('runproc: no proc named %r' % name)
             return 1
 
-        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.typed_args,
-                                  cmd_val.pos_args, cmd_val.named_args,
-                                  cmd_val.block_arg)
+        cmd_val2 = cmd_value.Argv(argv, locs, cmd_val.is_last_cmd,
+                                  cmd_val.proc_args)
 
         cmd_st = CommandStatus.CreateNull(alloc_lists=True)
-        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st,
-                                              executor.DO_FORK)
+        run_flags = executor.IS_LAST_CMD if cmd_val.is_last_cmd else 0
+        return self.shell_ex.RunSimpleCommand(cmd_val2, cmd_st, run_flags)
 
 
 def _ResolveName(

@@ -55,16 +55,17 @@ from _devbuild.gen.syntax_asdl import (
 from _devbuild.gen.runtime_asdl import (
     cmd_value,
     cmd_value_e,
+    CommandStatus,
+    flow_e,
     RedirValue,
     redirect_arg,
-    flow_e,
+    ProcArgs,
     scope_e,
-    CommandStatus,
     StatusArray,
 )
 from _devbuild.gen.types_asdl import redir_arg_type_e
 from _devbuild.gen.value_asdl import (value, value_e, value_t, y_lvalue,
-                                      y_lvalue_e, y_lvalue_t, LeftName)
+                                      y_lvalue_e, y_lvalue_t, LeftName, Obj)
 
 from core import dev
 from core import error
@@ -110,9 +111,10 @@ if TYPE_CHECKING:
 # ExecuteAndCatch, along with SetValue() flags.
 IsMainProgram = 1 << 0  # the main shell program, not eval/source/subshell
 RaiseControlFlow = 1 << 1  # eval/source builtins
-Optimize = 1 << 2
-NoDebugTrap = 1 << 3
-NoErrTrap = 1 << 4
+OptimizeSubshells = 1 << 2
+MarkLastCommands = 1 << 3
+NoDebugTrap = 1 << 4
+NoErrTrap = 1 << 5
 
 
 def MakeBuiltinArgv(argv1):
@@ -120,7 +122,7 @@ def MakeBuiltinArgv(argv1):
     argv = ['']  # dummy for argv[0]
     argv.extend(argv1)
     missing = None  # type: CompoundWord
-    return cmd_value.Argv(argv, [missing] * len(argv), None, None, None, None)
+    return cmd_value.Argv(argv, [missing] * len(argv), False, None)
 
 
 class Deps(object):
@@ -747,9 +749,16 @@ class CommandEvaluator(object):
                                                 loc.Missing)
                             obj.d[key] = rval
 
+                        elif case(value_e.Obj):
+                            obj = cast(Obj, UP_obj)
+                            key = val_ops.ToStr(lval.index,
+                                                'Obj index should be Str',
+                                                loc.Missing)
+                            obj.d[key] = rval
+
                         else:
                             raise error.TypeErr(
-                                obj, "obj[index] expected List or Dict",
+                                obj, "obj[index] expected List, Dict, or Obj",
                                 loc.Missing)
 
                 else:
@@ -786,7 +795,9 @@ class CommandEvaluator(object):
         # - $() and <() can have failures.  This can happen in DBracket,
         #   DParen, etc. too
         # - Tracing: this can start processes for proc sub and here docs!
-        cmd_val = self.word_ev.EvalWordSequence2(words, allow_assign=True)
+        cmd_val = self.word_ev.EvalWordSequence2(words,
+                                                 node.is_last_cmd,
+                                                 allow_assign=True)
 
         UP_cmd_val = cmd_val
         if UP_cmd_val.tag() == cmd_value_e.Argv:
@@ -798,8 +809,9 @@ class CommandEvaluator(object):
                 self.mem.SetLastArgument('')
 
             if node.typed_args or node.block:  # guard to avoid allocs
+                cmd_val.proc_args = ProcArgs(node.typed_args, None, None, None)
                 func_proc.EvalTypedArgsToProc(self.expr_ev, self.mutable_opts,
-                                              node, cmd_val)
+                                              node, cmd_val.proc_args)
         else:
             if node.block:
                 e_die("ShAssignment builtins don't accept blocks",
@@ -811,8 +823,9 @@ class CommandEvaluator(object):
             # shells aren't consistent.
             # self.mem.SetLastArgument('')
 
-        run_flags = executor.DO_FORK if node.do_fork else 0
-        # NOTE: RunSimpleCommand never returns when do_fork=False!
+        run_flags = executor.IS_LAST_CMD if node.is_last_cmd else 0
+
+        # NOTE: RunSimpleCommand may never return
         if len(node.more_env):  # I think this guard is necessary?
             is_other_special = False  # TODO: There are other special builtins too!
             if cmd_val.tag() == cmd_value_e.Assign or is_other_special:
@@ -1565,7 +1578,13 @@ class CommandEvaluator(object):
 
                 # This is a leaf from the parent process POV
                 cmd_st.check_errexit = True
-                status = self.shell_ex.RunSubshell(node.child)
+
+                if node.is_last_cmd:
+                    # If the subshell is the last command in the process, just
+                    # run it in this process.  See _MarkLastCommands().
+                    status = self._Execute(node.child)
+                else:
+                    status = self.shell_ex.RunSubshell(node.child)
 
             elif case(command_e.DBracket):  # LEAF command
                 node = cast(command.DBracket, UP_node)
@@ -1736,11 +1755,32 @@ class CommandEvaluator(object):
             with state.ctx_Option(self.mutable_opts, [option_i._running_trap],
                                   True):
                 for trap_node in trap_nodes:
-                    # Isolate the exit status.
                     with state.ctx_Registers(self.mem):
-                        # Trace it.  TODO: Show the trap kind too
+                        # TODO: show trap kind in trace
                         with dev.ctx_Tracer(self.tracer, 'trap', None):
+                            # Note: exit status is lost
                             self._Execute(trap_node)
+
+    def RunPendingTrapsAndCatch(self):
+        # type: () -> None
+        """
+        Like the above, but calls ExecuteAndCatch(), which may raise util.UserExit
+        """
+        trap_nodes = self.trap_state.GetPendingTraps()
+        if trap_nodes is not None:
+            with state.ctx_Option(self.mutable_opts, [option_i._running_trap],
+                                  True):
+                for trap_node in trap_nodes:
+                    with state.ctx_Registers(self.mem):
+                        # TODO: show trap kind in trace
+                        with dev.ctx_Tracer(self.tracer, 'trap', None):
+                            # Note: exit status is lost
+                            try:
+                                self.ExecuteAndCatch(trap_node, 0)
+                            except util.UserExit:
+                                # If user calls 'exit', stop running traps, but
+                                # we still run the EXIT trap later.
+                                break
 
     def _Execute(self, node):
         # type: (command_t) -> int
@@ -1858,7 +1898,7 @@ class CommandEvaluator(object):
         """For main_loop.py to determine the exit code of the shell itself."""
         return self.mem.LastStatus()
 
-    def _NoForkLast(self, node):
+    def _MarkLastCommands(self, node):
         # type: (command_t) -> None
 
         if 0:
@@ -1870,29 +1910,49 @@ class CommandEvaluator(object):
         with tagswitch(node) as case:
             if case(command_e.Simple):
                 node = cast(command.Simple, UP_node)
-                node.do_fork = False
+                node.is_last_cmd = True
                 if 0:
                     log('Simple optimized')
 
+            elif case(command_e.Subshell):
+                node = cast(command.Subshell, UP_node)
+                # Mark ourselves as the last
+                node.is_last_cmd = True
+
+                # Also mark 'date' as the last one
+                # echo 1; (echo 2; date)
+                self._MarkLastCommands(node.child)
+
             elif case(command_e.Pipeline):
                 node = cast(command.Pipeline, UP_node)
-                if node.negated is None:
-                    #log ('pipe')
-                    self._NoForkLast(node.children[-1])
+                # Bug fix: if we change the status, we can't exec the last
+                # element!
+                if node.negated is None and not self.exec_opts.pipefail():
+                    self._MarkLastCommands(node.children[-1])
 
             elif case(command_e.Sentence):
                 node = cast(command.Sentence, UP_node)
-                self._NoForkLast(node.child)
+                self._MarkLastCommands(node.child)
+
+            elif case(command_e.Redirect):
+                node = cast(command.Sentence, UP_node)
+                # Don't need to restore the redirect in any of these cases:
+
+                # bin/osh -c 'echo hi 2>stderr'
+                # bin/osh -c '{ echo hi; date; } 2>stderr'
+                # echo hi 2>stderr | wc -l
+
+                self._MarkLastCommands(node.child)
 
             elif case(command_e.CommandList):
-                # Subshells start with CommandList, even if there's only one.
+                # Subshells often have a CommandList child
                 node = cast(command.CommandList, UP_node)
-                self._NoForkLast(node.children[-1])
+                self._MarkLastCommands(node.children[-1])
 
             elif case(command_e.BraceGroup):
                 # TODO: What about redirects?
                 node = cast(BraceGroup, UP_node)
-                self._NoForkLast(node.children[-1])
+                self._MarkLastCommands(node.children[-1])
 
     def _RemoveSubshells(self, node):
         # type: (command_t) -> command_t
@@ -1909,7 +1969,7 @@ class CommandEvaluator(object):
                 return self._RemoveSubshells(node.child)
         return node
 
-    def ExecuteAndCatch(self, node, cmd_flags=0):
+    def ExecuteAndCatch(self, node, cmd_flags):
         # type: (command_t, int) -> Tuple[bool, bool]
         """Execute a subprogram, handling vm.IntControlFlow and fatal exceptions.
 
@@ -1928,10 +1988,12 @@ class CommandEvaluator(object):
         Note: To do what optimize does, dash has EV_EXIT flag and yash has a
         finally_exit boolean.  We use a different algorithm.
         """
-        if cmd_flags & Optimize:
+        if cmd_flags & OptimizeSubshells:
             node = self._RemoveSubshells(node)
-            #if self.exec_opts.no_fork_last():
-            self._NoForkLast(node)  # turn the last ones into exec
+
+        if cmd_flags & MarkLastCommands:
+            # Mark the last command in each process, so we may avoid forks
+            self._MarkLastCommands(node)
 
         if 0:
             log('after opt:')
@@ -2038,7 +2100,7 @@ class CommandEvaluator(object):
 
         return status
 
-    def MaybeRunExitTrap(self, mut_status):
+    def RunTrapsOnExit(self, mut_status):
         # type: (IntParamBox) -> None
         """If an EXIT trap handler exists, run it.
 
@@ -2052,13 +2114,16 @@ class CommandEvaluator(object):
         Could use i & (n-1) == i & 255  because we have a power of 2.
         https://stackoverflow.com/questions/14997165/fastest-way-to-get-a-positive-modulo-in-c-c
         """
+        # This does not raise, even on 'exit', etc.
+        self.RunPendingTrapsAndCatch()
+
         node = self.trap_state.GetHook('EXIT')  # type: command_t
         if node:
             # NOTE: Don't set option_i._running_trap, because that's for
             # RunPendingTraps() in the MAIN LOOP
             with dev.ctx_Tracer(self.tracer, 'trap EXIT', None):
                 try:
-                    is_return, is_fatal = self.ExecuteAndCatch(node)
+                    is_return, is_fatal = self.ExecuteAndCatch(node, 0)
                 except util.UserExit as e:  # explicit exit
                     mut_status.i = e.status
                     return
@@ -2120,6 +2185,8 @@ class CommandEvaluator(object):
         # RunPendingTraps() in the MAIN LOOP
 
         with dev.ctx_Tracer(self.tracer, 'trap ERR', None):
+            # In bash, the PIPESTATUS register leaks.  See spec/builtin-trap-err.
+            # So unlike other traps, we don't isolate registers.
             #with state.ctx_Registers(self.mem):  # prevent setting $? etc.
             with state.ctx_ErrTrap(self.mem):
                 self._Execute(node)

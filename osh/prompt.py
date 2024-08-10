@@ -370,4 +370,4 @@ class UserPlugin(object):
         # Save this so PROMPT_COMMAND can't set $?
         with state.ctx_Registers(self.mem):
             # Catches fatal execution error
-            self.cmd_ev.ExecuteAndCatch(node)
+            self.cmd_ev.ExecuteAndCatch(node, 0)
