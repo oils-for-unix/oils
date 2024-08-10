@@ -369,7 +369,7 @@ def main(argv):
     log('\tmycpp pass: DATAFLOW')
     stack_roots = None
     if opts.minimize_stack_roots:
-        stack_roots = pass_state.ComputeStackRoots(cfgs)
+        stack_roots = pass_state.ComputeMinimalStackRoots(cfgs)
     else:
         pass_state.DumpControlFlowGraphs(cfgs)
 

@@ -543,7 +543,7 @@ def DumpControlFlowGraphs(cfgs: dict[str, ControlFlowGraph],
         f.close()
 
 
-def ComputeStackRoots(cfgs: dict[str, ControlFlowGraph],
+def ComputeMinimalStackRoots(cfgs: dict[str, ControlFlowGraph],
                       facts_dir: str = '_tmp/mycpp-facts',
                       souffle_output_dir: str = '_tmp') -> StackRoots:
     """
