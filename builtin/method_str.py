@@ -493,7 +493,7 @@ class Split(vm._Callable):
         Count behaves like in replace() in that:
         - A negative `count` => ignore
         - A positive `count` => there will be at most `count` splits
-        - EXECPTION: a zero count is an error
+        - Exception: `count = 0` is an error
         """
         string = rd.PosStr()
         sep = rd.PosStr()
