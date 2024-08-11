@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-from _devbuild.gen.syntax_asdl import loc, loc_t
+from _devbuild.gen.syntax_asdl import loc_t
 from _devbuild.gen.value_asdl import (value, value_e, value_t, eggex_ops,
                                       eggex_ops_t, RegexMatch)
 from core import error
