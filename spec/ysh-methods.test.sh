@@ -425,6 +425,12 @@ status=3
 status=3
 ## END
 
+#### Str => split(), non-ascii
+pp test_ ('🌞🌝🌞🌝🌞'.split('🌝'))
+## STDOUT:
+(List)   ["🌞","🌞","🌞"]
+## END
+
 #### Dict => values()
 var en2fr = {}
 setvar en2fr["hello"] = "bonjour"
